@@ -82,6 +82,14 @@ public class MLModelManagerConfig extends MLModelManagerDTO implements Config, C
         nexus.setPassword(nexusProps.getProperty("password"));
         block.setNexus(nexus);
       }
+      case "maps" ->{
+        ConfigurationProperties mapsProps = (ConfigurationProperties) storeConfig.get("maps");
+        var maps = new MapsConfig();
+        maps.setUrl(mapsProps.getProperty("url"));
+        maps.setUser(mapsProps.getProperty("user"));
+        maps.setPassword(mapsProps.getProperty("password"));
+        block.setMaps(maps);
+      }
     }
     this.modelStore.setConfig(block);
   }
@@ -180,6 +188,16 @@ public class MLModelManagerConfig extends MLModelManagerDTO implements Config, C
             nexusProps.put("user", nexus.getUser());
             nexusProps.put("password", nexus.getPassword());
             storeConfig.put("nexus", nexusProps);
+          }
+        }
+        case "maps" -> {
+          var maps = cfg.getMaps();
+          if (maps != null) {
+            ConfigurationProperties mapsProps = new ConfigurationProperties();
+            mapsProps.put("url", maps.getUrl());
+            mapsProps.put("user", maps.getUser());
+            mapsProps.put("password", maps.getPassword());
+            storeConfig.put("maps", mapsProps);
           }
         }
       }

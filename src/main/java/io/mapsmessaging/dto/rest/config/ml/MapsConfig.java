@@ -25,18 +25,14 @@ import lombok.NoArgsConstructor;
 
 @Data
 @NoArgsConstructor
-public class ModelStoreConfigBlock {
+public class MapsConfig {
 
-  @Schema(description = "S3 configuration for the model store")
-  private S3Config s3;
+  @Schema(description = "Maps Server RestAPI URL", example = "https://mapsserver001:8080/")
+  private String url;
 
-  @Schema(description = "Local file system configuration for the model store")
-  private FileConfig file;
+  @Schema(description = "Username for Maps Server access (optional)", example = "maps-user")
+  private String user;
 
-  @Schema(description = "Nexus repository configuration for the model store")
-  private NexusConfig nexus;
-
-  @Schema(description = "Maps Server RestAPI configuration for the model store")
-  private MapsConfig maps;
-
+  @Schema(description = "Password for Maps Server access (optional)", example = "maps-pass")
+  private String password;
 }

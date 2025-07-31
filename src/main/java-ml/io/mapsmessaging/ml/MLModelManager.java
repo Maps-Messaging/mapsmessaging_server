@@ -19,11 +19,9 @@
 
 package io.mapsmessaging.ml;
 
+import io.mapsmessaging.MessageDaemon;
 import io.mapsmessaging.config.ml.MLModelManagerConfig;
-import io.mapsmessaging.dto.rest.config.ml.FileConfig;
-import io.mapsmessaging.dto.rest.config.ml.ModelStoreConfig;
-import io.mapsmessaging.dto.rest.config.ml.NexusConfig;
-import io.mapsmessaging.dto.rest.config.ml.S3Config;
+import io.mapsmessaging.dto.rest.config.ml.*;
 import io.mapsmessaging.dto.rest.system.SubSystemStatusDTO;
 import io.mapsmessaging.selector.ml.ModelStore;
 import io.mapsmessaging.selector.ml.impl.store.FileModelStore;
@@ -32,6 +30,8 @@ import io.mapsmessaging.selector.ml.impl.store.S3ModelStore;
 import io.mapsmessaging.selector.operators.functions.ml.MLFunction;
 import io.mapsmessaging.utilities.Agent;
 import software.amazon.awssdk.regions.Region;
+
+import java.io.IOException;
 
 public class MLModelManager implements Agent {
 
@@ -60,6 +60,7 @@ public class MLModelManager implements Agent {
       if (store != null) {
         modelStore = new CachingModelStore(store, mlModelManagerConfig);
         MLFunction.setModelStore(modelStore);
+        MessageDaemon.getInstance().getSubSystemManager().setModelStore(modelStore);
       }
     }
   }
@@ -97,6 +98,14 @@ public class MLModelManager implements Agent {
         nexusModelStore.login(nexusConfig.getUser(), nexusConfig.getPassword());
       }
       return nexusModelStore;
+    }
+    else if(config.getType().equalsIgnoreCase("maps")) {
+      MapsConfig mapsConfig = config.getConfig().getMaps();
+      try {
+        return new MapsModelStore(mapsConfig.getUrl(), mapsConfig.getUser(), mapsConfig.getPassword());
+      } catch (IOException e) {
+        // log this
+      }
     }
     return null;
   }

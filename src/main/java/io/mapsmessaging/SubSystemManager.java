@@ -44,10 +44,13 @@ import io.mapsmessaging.network.protocol.transformation.TransformationManager;
 import io.mapsmessaging.rest.RestApiServerManager;
 import io.mapsmessaging.rest.jolokia.JolokaManager;
 import io.mapsmessaging.routing.RoutingManager;
+import io.mapsmessaging.selector.ml.ModelStore;
 import io.mapsmessaging.utilities.Agent;
 import io.mapsmessaging.utilities.AgentOrder;
 import io.mapsmessaging.utilities.service.Service;
 import io.mapsmessaging.utilities.service.ServiceManager;
+import lombok.Getter;
+import lombok.Setter;
 
 import java.io.IOException;
 import java.util.*;
@@ -64,6 +67,9 @@ public class SubSystemManager {
   private final String uniqueId;
   private final int sessionPipeLines;
   private final FeatureManager featureManager;
+  @Getter
+  @Setter
+  private ModelStore modelStore;
 
   public SubSystemManager(String uniqueId, boolean enableSystemTopics, boolean enableDeviceIntegration, int sessionPipeLines, FeatureManager featureManager) {
     agentMap = new LinkedHashMap<>();

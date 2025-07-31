@@ -29,9 +29,9 @@ public  class ModelStoreConfig {
   @Schema(
       description = "Type of model store",
       example = "s3",
-      allowableValues = { "s3", "file", "nexus" }
+      allowableValues = { "s3", "file", "nexus", "maps" }
   )
-  private String type; // s3 | file | nexus | map
+  private String type; // s3 | file | nexus | maps
 
   @Schema(description = "Store-specific configuration block")
   private ModelStoreConfigBlock config;
