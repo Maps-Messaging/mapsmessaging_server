@@ -220,6 +220,20 @@ public class SubSystemManager {
     if (enableDeviceIntegration && licensed) {
       addToMap(2200, 70, new DeviceManager(featureManager));
     }
+
+    if(featureManager.isEnabled("ml")) {
+      try {
+        Class<?> clazz = Class.forName("io.mapsmessaging.ml.MLModelManager");
+        Object mlManager = clazz.getConstructor().newInstance();
+        if(mlManager instanceof Agent) {
+          addToMap(900, 30, (Agent) mlManager);
+        }
+      } catch (ClassNotFoundException e) {
+        // ML component not present — ignore
+      } catch (Exception e) {
+        e.printStackTrace();
+      }
+    }
   }
 
 

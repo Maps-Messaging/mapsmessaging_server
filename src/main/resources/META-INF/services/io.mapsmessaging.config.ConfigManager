@@ -31,3 +31,4 @@ io.mapsmessaging.config.RoutingManagerConfig
 io.mapsmessaging.config.TenantManagementConfig
 io.mapsmessaging.config.SecurityManagerConfig
 io.mapsmessaging.config.LicenseConfig
+io.mapsmessaging.config.ml.MLModelManagerConfig
