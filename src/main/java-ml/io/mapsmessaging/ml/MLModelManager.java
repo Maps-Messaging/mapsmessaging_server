@@ -25,6 +25,7 @@ import io.mapsmessaging.dto.rest.config.ml.*;
 import io.mapsmessaging.dto.rest.system.SubSystemStatusDTO;
 
 import io.mapsmessaging.selector.ml.impl.store.FileModelStore;
+import io.mapsmessaging.selector.ml.impl.store.MapModelStore;
 import io.mapsmessaging.selector.ml.impl.store.NexusModelStore;
 import io.mapsmessaging.selector.ml.impl.store.S3ModelStore;
 import io.mapsmessaging.selector.model.ModelStore;
@@ -39,7 +40,7 @@ public class MLModelManager implements Agent {
   private CachingModelStore modelStore;
 
   public MLModelManager(){
-
+    // Need a default constructor to load as an Agent
   }
 
   @Override
@@ -108,6 +109,6 @@ public class MLModelManager implements Agent {
         // log this
       }
     }
-    return null;
+    return new MapModelStore(); // avoid null pointers but unless the server is learning there will be no new models
   }
 }
