@@ -41,7 +41,7 @@ import java.io.InputStream;
 
 import static io.mapsmessaging.rest.api.Constants.URI_PATH;
 
-@Tag(name = "Model Store", description = "Endpoints for managing ML models in the system.")
+@Tag(name = "ML Model Store")
 @Path(URI_PATH)
 public class ModelStoreApi extends BaseRestApi {
 

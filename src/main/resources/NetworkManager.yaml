@@ -141,11 +141,11 @@ NetworkManager:
         selectorThreadCount: 1
         registered: "*,12,/sensors/weather/indoor:*,11,/sensors/weather/outdoor:*,8,/sensors/water/garden:*,9,/sensors/water/house"
 
-      - name: "OrbComm OGWS interface"
-        protocol: ogws
-        auth: anon
-        url: ogws://localhost:0/
-        clientId: "ogws client id"
-        clientSecret: "ogws client secret"
-        httpRequestTimeoutSec: 10
-        baseUrl: "https://ogws.orbcomm.com/api/v1.0"
+#      - name: "OrbComm OGWS interface"
+#        protocol: ogws
+#        auth: anon
+#        url: ogws://localhost:0/
+#        clientId: "ogws client id"
+#        clientSecret: "ogws client secret"
+#        httpRequestTimeoutSec: 10
+#        baseUrl: "https://ogws.orbcomm.com/api/v1.0"

@@ -53,7 +53,7 @@ import static io.mapsmessaging.rest.api.Constants.URI_PATH;
         title = "Maps Messaging Rest Server",
         contact =
         @Contact(
-            name = "Matthew Buckton",
+            name = "Info MapsMessaging B.V.",
             email = "info@mapsmessaging.io",
             url = "http://mapsmessaging.io"),
         license = @License(name = "Apache 2.0", url = "http://www.apache.org/licenses/LICENSE-2.0")),
@@ -123,8 +123,10 @@ import static io.mapsmessaging.rest.api.Constants.URI_PATH;
         @Tag(
             name = "User Authentication",
             description = "Provides the rest api login, logout and token refresh"
+        ),
+        @Tag(name = "ML Model Store",
+            description = "Endpoints for managing ML models in the system."
         )
-
     },
 
     externalDocs =

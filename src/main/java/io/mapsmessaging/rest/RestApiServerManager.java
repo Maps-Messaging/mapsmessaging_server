@@ -203,6 +203,7 @@ public class RestApiServerManager implements Agent {
     endpoints.add("io.mapsmessaging.rest.api.impl.hardware");
     endpoints.add("io.mapsmessaging.rest.api.impl.server");
     endpoints.add("io.mapsmessaging.rest.api.impl.logging");
+    endpoints.add("io.mapsmessaging.rest.api.impl.ml");
     try {
       final ResourceConfig resourceConfig = new ResourceConfig();
       resourceConfig.packages(false, endpoints.toArray(new String[0]));

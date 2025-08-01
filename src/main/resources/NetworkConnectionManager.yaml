@@ -54,26 +54,26 @@ NetworkConnectionManager:
               managerFactory: SunX509
     data:
       -
-        name: orbcomm ST2100 Satellite Modem
-        url: serial://local:0/
-        serial:
-          serialNo: A403JUVR
-          port: com12
-          baudRate: 9600
-          dataBits: 8
-          stopBits: 1
-          parity: n
-          flowControl: 1
-
-        protocol: stogi
-        transformation: "Message-Json"
-        remote:
-          sessionId: <not required>
-          username: <not required>
-          password: <not required>
-        links:
-          -
-            direction: push
-            local_namespace: /local/topic
-            remote_namespace: "/stogi/alex/#"
-            include_schema: false
+#        name: orbcomm ST2100 Satellite Modem
+#        url: serial://local:0/
+#        serial:
+#          serialNo: A403JUVR
+#          port: com12
+#          baudRate: 9600
+#          dataBits: 8
+#          stopBits: 1
+#          parity: n
+#          flowControl: 1
+#
+#        protocol: stogi
+#        transformation: "Message-Json"
+#        remote:
+#          sessionId: <not required>
+#          username: <not required>
+#          password: <not required>
+#        links:
+#          -
+#            direction: push
+#            local_namespace: /local/topic
+#            remote_namespace: "/stogi/alex/#"
+#           include_schema: false
