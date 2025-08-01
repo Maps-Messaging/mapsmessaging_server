@@ -21,7 +21,9 @@ package io.mapsmessaging.ml;
 
 import io.mapsmessaging.config.ml.MLModelManagerConfig;
 import io.mapsmessaging.dto.rest.config.ml.AutoRefreshConfig;
-import io.mapsmessaging.selector.ml.ModelStore;
+
+
+import io.mapsmessaging.selector.model.ModelStore;
 import io.mapsmessaging.utilities.threads.SimpleTaskScheduler;
 import lombok.Getter;
 
@@ -107,6 +109,12 @@ public class CachingModelStore implements ModelStore {
     cache.remove(s);
     return store.deleteModel(s);
   }
+
+  @Override
+  public List<String> listModels() throws IOException{
+    return store.listModels();
+  }
+
 
   private void processAutoRefresh(){
     for(Map.Entry<String, CacheEntry> entry : cache.entrySet()){

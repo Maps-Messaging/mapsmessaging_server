@@ -23,7 +23,7 @@ package io.mapsmessaging.rest.api.impl.ml;
 import io.mapsmessaging.MessageDaemon;
 import io.mapsmessaging.rest.api.impl.BaseRestApi;
 import io.mapsmessaging.rest.responses.StatusResponse;
-import io.mapsmessaging.selector.ml.ModelStore;
+import io.mapsmessaging.selector.model.ModelStore;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -147,4 +147,31 @@ public class ModelStoreApi extends BaseRestApi {
     response.setStatus(HttpServletResponse.SC_NOT_FOUND);
     return new StatusResponse("Failure");
   }
+
+  @GET
+  @Path("/server/models")
+  @Produces(MediaType.APPLICATION_JSON)
+  @Operation(
+      summary = "List all models",
+      description = "Returns a list of all available model names.",
+      responses = {
+          @ApiResponse(
+              responseCode = "200",
+              description = "List of model names",
+              content = @Content(schema = @Schema(implementation = String[].class))
+          ),
+          @ApiResponse(responseCode = "406", description = "ML not supported")
+      }
+  )
+  public Response listModels() throws IOException {
+    hasAccess(RESOURCE);
+    ModelStore modelStore = MessageDaemon.getInstance().getSubSystemManager().getModelStore();
+    if (modelStore == null) {
+      response.setStatus(HttpServletResponse.SC_NOT_ACCEPTABLE);
+      return Response.status(HttpServletResponse.SC_NOT_ACCEPTABLE).build();
+    }
+
+    return Response.ok(modelStore.listModels()).build();
+  }
+
 }

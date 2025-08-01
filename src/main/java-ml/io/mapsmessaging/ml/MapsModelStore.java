@@ -19,9 +19,10 @@
 
 package io.mapsmessaging.ml;
 
+import com.google.gson.Gson;
 import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
-import io.mapsmessaging.selector.ml.ModelStore;
+import io.mapsmessaging.selector.model.ModelStore;
+
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -30,6 +31,7 @@ import java.net.URI;
 import java.net.http.*;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
+import java.util.List;
 
 public class MapsModelStore implements ModelStore {
 
@@ -174,4 +176,29 @@ public class MapsModelStore implements ModelStore {
       return false;
     }
   }
+
+  @Override
+  public List<String> listModels() throws IOException {
+    HttpRequest request = withAuth(HttpRequest.newBuilder())
+        .uri(URI.create(baseUrl + "/server/models"))
+        .timeout(Duration.ofSeconds(5))
+        .GET()
+        .build();
+
+    try {
+      HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+      if (response.statusCode() != 200) {
+        throw new IOException("Failed to list models: " + response.statusCode() + " - " + response.body());
+      }
+
+      String body = response.body();
+      Gson gson = new Gson();
+      return gson.fromJson(body, List.class); // generic List<String>
+
+    } catch (InterruptedException e) {
+      Thread.currentThread().interrupt();
+      throw new IOException("List interrupted", e);
+    }
+  }
+
 }
