@@ -29,10 +29,12 @@ import lombok.Getter;
 
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
@@ -44,25 +46,26 @@ public class CachingModelStore implements ModelStore {
   private final int cacheSize;
   private final ScheduledFuture<?> trimTask;
   private final ScheduledFuture<?> autofetchTask;
+  private final List<ModelEventListener> listeners;
 
   public CachingModelStore(ModelStore store, MLModelManagerConfig modelStoreConfig) {
     this.store = store;
     this.cacheTime = (modelStoreConfig.getCacheExpiryMinutes() * 60 *1000);
     this.cacheSize = modelStoreConfig.getCacheSize();
-
-    cache = new ConcurrentHashMap<>();
+    this.listeners = new CopyOnWriteArrayList<>();
+    this.cache = new ConcurrentHashMap<>();
     if(cacheTime > 0 || cacheSize > 0) {
-      trimTask = SimpleTaskScheduler.getInstance().schedule(this::trimCache, 1, TimeUnit.MINUTES);
+      this.trimTask = SimpleTaskScheduler.getInstance().schedule(this::trimCache, 1, TimeUnit.MINUTES);
     }
     else{
-      trimTask = null;
+      this.trimTask = null;
     }
     AutoRefreshConfig autoRefreshConfig = modelStoreConfig.getAutoRefresh();
     if(autoRefreshConfig != null && autoRefreshConfig.isEnabled()) {
-      autofetchTask = SimpleTaskScheduler.getInstance().schedule(this::processAutoRefresh, autoRefreshConfig.getIntervalMinutes(), TimeUnit.MINUTES);
+      this.autofetchTask = SimpleTaskScheduler.getInstance().schedule(this::processAutoRefresh, autoRefreshConfig.getIntervalMinutes(), TimeUnit.MINUTES);
     }
     else{
-      autofetchTask = null;
+      this.autofetchTask = null;
     }
     for(String name: modelStoreConfig.getPreloadModels()){
       try {
@@ -71,6 +74,14 @@ public class CachingModelStore implements ModelStore {
         // log this
       }
     }
+  }
+
+  public void addListener(ModelEventListener listener) {
+    listeners.add(listener);
+  }
+
+  public void removeListener(ModelEventListener listener) {
+    listeners.remove(listener);
   }
 
   public void stop(){
@@ -86,35 +97,46 @@ public class CachingModelStore implements ModelStore {
   public void saveModel(String s, byte[] bytes) throws IOException {
     cache.put(s, new CacheEntry(s, bytes));
     store.saveModel(s, bytes);
-  }
-
-  @Override
-  public byte[] loadModel(String s) throws IOException {
-    if(cache.containsKey(s)){
-      return cache.get(s).getData();
+    for (ModelEventListener listener : listeners) {
+      listener.modelCreated(s);
     }
-    return store.loadModel(s);
   }
 
   @Override
-  public boolean modelExists(String s) throws IOException {
-    if(cache.containsKey(s)){
+  public byte[] loadModel(String modelName) throws IOException {
+    try {
+      if (cache.containsKey(modelName)) {
+        return cache.get(modelName).getData();
+      }
+      return store.loadModel(modelName);
+    } finally {
+      for (ModelEventListener listener : listeners) {
+        listener.modelLoaded(modelName);
+      }
+    }
+  }
+
+  @Override
+  public boolean modelExists(String modelName) throws IOException {
+    if (cache.containsKey(modelName)) {
       return true;
     }
-    return store.modelExists(s);
+    return store.modelExists(modelName);
   }
 
   @Override
-  public boolean deleteModel(String s) throws IOException {
-    cache.remove(s);
-    return store.deleteModel(s);
+  public boolean deleteModel(String modelName) throws IOException {
+    cache.remove(modelName);
+    for (ModelEventListener listener : listeners) {
+      listener.modelDeleted(modelName);
+    }
+    return store.deleteModel(modelName);
   }
 
   @Override
   public List<String> listModels() throws IOException{
     return store.listModels();
   }
-
 
   private void processAutoRefresh(){
     for(Map.Entry<String, CacheEntry> entry : cache.entrySet()){

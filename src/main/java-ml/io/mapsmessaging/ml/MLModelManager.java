@@ -24,6 +24,7 @@ import io.mapsmessaging.config.ml.MLModelManagerConfig;
 import io.mapsmessaging.dto.rest.config.ml.*;
 import io.mapsmessaging.dto.rest.system.SubSystemStatusDTO;
 
+import io.mapsmessaging.ml.streams.StreamManager;
 import io.mapsmessaging.selector.ml.impl.store.FileModelStore;
 import io.mapsmessaging.selector.ml.impl.store.MapModelStore;
 import io.mapsmessaging.selector.ml.impl.store.NexusModelStore;
@@ -38,6 +39,7 @@ import java.io.IOException;
 public class MLModelManager implements Agent {
 
   private CachingModelStore modelStore;
+  private StreamManager streamManager;
 
   public MLModelManager(){
     // Need a default constructor to load as an Agent
@@ -59,16 +61,17 @@ public class MLModelManager implements Agent {
     ModelStoreConfig modelStoreConfig = mlModelManagerConfig.getModelStore();
     if(modelStoreConfig != null) {
       ModelStore store = buildModelStore(modelStoreConfig);
-      if (store != null) {
-        modelStore = new CachingModelStore(store, mlModelManagerConfig);
-        MLFunction.setModelStore(modelStore);
-        MessageDaemon.getInstance().getSubSystemManager().setModelStore(modelStore);
-      }
+      modelStore = new CachingModelStore(store, mlModelManagerConfig);
+      MLFunction.setModelStore(modelStore);
+      MessageDaemon.getInstance().getSubSystemManager().setModelStore(modelStore);
+      streamManager = new StreamManager(mlModelManagerConfig.getEventStreams());
+      streamManager.start();
     }
   }
 
   @Override
   public void stop() {
+    streamManager.stop();
     modelStore.stop();
   }
 
