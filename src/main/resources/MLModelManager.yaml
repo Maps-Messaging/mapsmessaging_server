@@ -48,4 +48,14 @@ MLModelManager:
         url: https://repository.mapsmessaging.io/maps_ml_store
 
 
+  eventStreams:
+    - id: air_quality.outlier
+      topicFilter: /device/i2c/1/#
+      schemaId: 3-sensor-shared         # Abstracted schema reference across multiple sources
+      selector: isolation_forest(is_anomaly, air_quality.outlier.arff, CO₂, temperature, humidity) = 1
+      outlierTopic: /device/outliers/air_quality
+      maxTrainEvents: 10000
+      maxTrainTimeSeconds: 0 # Wait for events
+      retrainThreshold: 0.03
+
 

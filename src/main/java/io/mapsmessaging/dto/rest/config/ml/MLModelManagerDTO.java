@@ -49,4 +49,6 @@ public class MLModelManagerDTO extends BaseConfigDTO {
   @Schema(description = "Model store configuration")
   protected ModelStoreConfig modelStore;
 
+  @Schema(description = "List of configured model event streams")
+  protected List<MLEventStreamDTO> eventStreams;
 }

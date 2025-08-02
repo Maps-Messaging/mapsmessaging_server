@@ -91,6 +91,28 @@ public class MLModelManagerConfig extends MLModelManagerDTO implements Config, C
         block.setMaps(maps);
       }
     }
+    if (config.get("eventStreams") != null) {
+      this.eventStreams = new ArrayList<>();
+      Object eventStreamsObj = config.get("eventStreams");
+      List<ConfigurationProperties> list = new ArrayList<>();
+      if (eventStreamsObj instanceof List) {
+        list = (List<ConfigurationProperties>) eventStreamsObj;
+      } else if (eventStreamsObj instanceof ConfigurationProperties) {
+        list.add((ConfigurationProperties) eventStreamsObj);
+      }
+      for (ConfigurationProperties streamProps : list) {
+        MLEventStreamDTO dto = new MLEventStreamDTO();
+        dto.setId(streamProps.getProperty("id"));
+        dto.setTopicFilter(streamProps.getProperty("topicFilter"));
+        dto.setSchemaId(streamProps.getProperty("schemaId"));
+        dto.setSelector(streamProps.getProperty("selector"));
+        dto.setOutlierTopic(streamProps.getProperty("outlierTopic"));
+        dto.setMaxTrainEvents(streamProps.getIntProperty("maxTrainEvents", 10000));
+        dto.setMaxTrainTimeSeconds(streamProps.getIntProperty("maxTrainTimeSeconds", 0));
+        dto.setRetrainThreshold(streamProps.getDoubleProperty("retrainThreshold", 0.05));
+        this.eventStreams.add(dto);
+      }
+    }
     this.modelStore.setConfig(block);
   }
 
