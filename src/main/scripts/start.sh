@@ -61,7 +61,11 @@ export MAPS_CONF=$MAPS_HOME/conf
 #
 # Note::: The conf directory must be at the start else the configuration is loaded from the jars
 #
-export CLASSPATH="$MAPS_CONF":$MAPS_LIB/maps-$VERSION.jar:"$MAPS_LIB/*"
+CLASSPATH="$MAPS_CONF:$MAPS_LIB/maps-$VERSION.jar"
+for jar in "$MAPS_LIB"/*.jar; do
+  [[ "$jar" != "$MAPS_LIB/maps-$VERSION.jar" ]] && CLASSPATH="$CLASSPATH:$jar"
+done
+
 export LD_LIBRARY_PATH=$MAPS_LIB:$LD_LIBRARY_PATH
 #
 # Loop to restart server on specific exit code

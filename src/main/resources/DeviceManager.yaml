@@ -22,7 +22,7 @@
 DeviceManager:
   global:
     enabled: true    # Enabled hardware interface
-    demoEnabled: true
+    demoEnabled: false
     trigger: everyMinute
     scanTime: 30000 # Scan time looking for new hardware
     topicNameTemplate: /device/[bus_name]/[device_name]
@@ -49,7 +49,7 @@ DeviceManager:
 
     -
       name: i2c
-      enabled: false  # Enable or disable I2C bus interface
+      enabled: true  # Enable or disable I2C bus interface
       config:
         -
           bus: 0
@@ -59,15 +59,15 @@ DeviceManager:
 
         -
           bus: 1
-          enabled: false
-          autoScan: false
+          enabled: true
+          autoScan: true
           topicNameTemplate: /device/[device_type]/[bus_name]/[bus_number]/[device_addr]/[device_name]
           trigger: everySecond
 
         -
           bus: 2  # Demo bus
-          enabled: true
-          autoScan: true
+          enabled: false
+          autoScan: false
           topicNameTemplate: /device/[device_type]/[bus_name]/[bus_number]/[device_addr]/[device_name]
           trigger: everySecond
 
