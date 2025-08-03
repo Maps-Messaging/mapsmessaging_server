@@ -46,6 +46,9 @@ public class MLModelManagerDTO extends BaseConfigDTO {
   @Schema(description = "Auto-refresh configuration")
   protected AutoRefreshConfig autoRefresh;
 
+  @Schema(description = "LLM access configuration")
+  protected LlmConfigDTO llmConfig;
+
   @Schema(description = "Model store configuration")
   protected ModelStoreConfig modelStore;
 

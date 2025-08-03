@@ -1,5 +1,6 @@
 package io.mapsmessaging.ml.streams;
 
+import io.mapsmessaging.dto.rest.config.ml.LlmConfigDTO;
 import io.mapsmessaging.dto.rest.config.ml.MLEventStreamDTO;
 
 import java.util.ArrayList;
@@ -9,10 +10,10 @@ public class StreamManager {
 
   private final List<StreamHandler> streamHandlers;
 
-  public StreamManager(List<MLEventStreamDTO> eventStreams) {
+  public StreamManager(List<MLEventStreamDTO> eventStreams, LlmConfigDTO llmConfigDTO) {
     this.streamHandlers = new ArrayList<>();
     for (MLEventStreamDTO eventStream : eventStreams) {
-      streamHandlers.add(new StreamHandler(eventStream));
+      streamHandlers.add(new StreamHandler(eventStream, llmConfigDTO));
     }
   }
 

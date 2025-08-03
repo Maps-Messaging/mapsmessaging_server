@@ -4,8 +4,10 @@ import io.mapsmessaging.api.*;
 import io.mapsmessaging.api.features.ClientAcknowledgement;
 import io.mapsmessaging.api.features.DestinationMode;
 import io.mapsmessaging.api.features.QualityOfService;
+import io.mapsmessaging.dto.rest.config.ml.LlmConfigDTO;
 import io.mapsmessaging.dto.rest.config.ml.MLEventStreamDTO;
 import io.mapsmessaging.engine.session.ClientConnection;
+import io.mapsmessaging.ml.llm.ChatGPTSelectorClient;
 import io.mapsmessaging.selector.ParseException;
 import io.mapsmessaging.selector.SelectorParser;
 import io.mapsmessaging.selector.operators.ParserExecutor;
@@ -23,13 +25,20 @@ public class StreamHandler implements ClientConnection, MessageListener {
   private ParserExecutor parserExecutor;
   private Session session;
 
-  public StreamHandler(MLEventStreamDTO eventStream) {
+  public StreamHandler(MLEventStreamDTO eventStream, LlmConfigDTO llmConfigDTO) {
+    ChatGPTSelectorClient client = new ChatGPTSelectorClient(llmConfigDTO.getModel(), llmConfigDTO.getApiToken());
+    String hint = "This schema represents structured event data. Use only numeric fields that represent live data for anomaly detection. Do not use timestamps, status flags, or identifiers.\n";
     this.eventStream = eventStream;
     try {
-      parserExecutor = SelectorParser.compile(eventStream.getSelector());
-      // I need to get the model name, and the keys that it needs
+      String selector = client.generateSelector(getSchema(), hint);
+      parserExecutor = SelectorParser.compile(selector);
     } catch (ParseException e) {
+      e.printStackTrace();
       // log this
+    } catch (IOException e) {
+      e.printStackTrace();
+    } catch (InterruptedException e) {
+      throw new RuntimeException(e);
     }
     try {
       session = createSession(eventStream);
@@ -109,7 +118,204 @@ public class StreamHandler implements ClientConnection, MessageListener {
   @Override
   public void sendMessage(@NotNull @NonNull MessageEvent messageEvent) {
     System.err.println("Message Received: " + messageEvent.getMessage());
-    parserExecutor.evaluate(messageEvent.getMessage());
-    // here we process the event and the model
+    if (parserExecutor.evaluate(messageEvent.getMessage())) {
+      // send to outlier topic and process the outliers
+    }
+  }
+
+  private String getSchema() {
+    return "{\n" +
+        "  \"schema\": {\n" +
+        "    \"format\": \"JSON\",\n" +
+        "    \"uuid\": \"0f9f2c92-c081-5b8a-ac30-1e39e0fc3a7a\",\n" +
+        "    \"creation\": \"2025-08-01T16:02:18.140841707\",\n" +
+        "    \"comments\": \"Air Quality Sensor for PM, RH/T, VOC, Nox, CO2, HCOH\",\n" +
+        "    \"version\": \"1\",\n" +
+        "    \"title\": \"SEN6x\",\n" +
+        "    \"mime-type\": \"application/json\",\n" +
+        "    \"resource-type\": \"sensor\",\n" +
+        "    \"interface-description\": \"Returns Air Quality valies in JSON\",\n" +
+        "    \"jsonSchema\": {\n" +
+        "      \"$schema\": \"https://json-schema.org/draft/2020-12/schema\",\n" +
+        "      \"title\": \"SEN6x\",\n" +
+        "      \"description\": \"Air Quality Sensor for PM, RH/T, VOC, Nox, CO2, HCOH\",\n" +
+        "      \"type\": \"object\",\n" +
+        "      \"properties\": {\n" +
+        "        \"DeviceStaticDataSchema\": {\n" +
+        "          \"type\": \"object\"\n" +
+        "        },\n" +
+        "        \"SensorDataSchema\": {\n" +
+        "          \"$schema\": \"https://json-schema.org/draft/2020-12/schema\",\n" +
+        "          \"type\": \"object\",\n" +
+        "          \"properties\": {\n" +
+        "            \"timestamp\": {\n" +
+        "              \"type\": \"string\",\n" +
+        "              \"format\": \"date-time\",\n" +
+        "              \"description\": \"Optional ISO 8601 UTC timestamp (e.g., 2025-05-29T07:28:15.123Z)\",\n" +
+        "              \"readOnly\": true\n" +
+        "            },\n" +
+        "            \"Product Name\": {\n" +
+        "              \"type\": \"string\",\n" +
+        "              \"description\": \"Unit: \"\n" +
+        "            },\n" +
+        "            \"Serial Number\": {\n" +
+        "              \"type\": \"string\",\n" +
+        "              \"description\": \"Unit: \"\n" +
+        "            },\n" +
+        "            \"status\": {\n" +
+        "              \"timestamp\": {\n" +
+        "                \"type\": \"string\",\n" +
+        "                \"format\": \"date-time\",\n" +
+        "                \"description\": \"Optional ISO 8601 UTC timestamp (e.g., 2025-05-29T07:28:15.123Z)\",\n" +
+        "                \"readOnly\": true\n" +
+        "              },\n" +
+        "              \"Fan Error\": {\n" +
+        "                \"type\": \"boolean\",\n" +
+        "                \"description\": \"Unit: Fan failure detected\",\n" +
+        "                \"readOnly\": true\n" +
+        "              },\n" +
+        "              \"RHT Error\": {\n" +
+        "                \"type\": \"boolean\",\n" +
+        "                \"description\": \"Unit: Humidity/Temperature sensor error\",\n" +
+        "                \"readOnly\": true\n" +
+        "              },\n" +
+        "              \"Gas Error\": {\n" +
+        "                \"type\": \"boolean\",\n" +
+        "                \"description\": \"Unit: Gas sensor failure\",\n" +
+        "                \"readOnly\": true\n" +
+        "              },\n" +
+        "              \"CO₂-2 Error\": {\n" +
+        "                \"type\": \"boolean\",\n" +
+        "                \"description\": \"Unit: CO₂ sensor 2 failure\",\n" +
+        "                \"readOnly\": true\n" +
+        "              },\n" +
+        "              \"HCHO Error\": {\n" +
+        "                \"type\": \"boolean\",\n" +
+        "                \"description\": \"Unit: Formaldehyde sensor error\",\n" +
+        "                \"readOnly\": true\n" +
+        "              },\n" +
+        "              \"PM Error\": {\n" +
+        "                \"type\": \"boolean\",\n" +
+        "                \"description\": \"Unit: Particulate Matter sensor error\",\n" +
+        "                \"readOnly\": true\n" +
+        "              },\n" +
+        "              \"CO₂-1 Error\": {\n" +
+        "                \"type\": \"boolean\",\n" +
+        "                \"description\": \"Unit: CO₂ sensor 1 failure\",\n" +
+        "                \"readOnly\": true\n" +
+        "              },\n" +
+        "              \"Speed Warning\": {\n" +
+        "                \"type\": \"boolean\",\n" +
+        "                \"description\": \"Unit: Fan speed abnormal\",\n" +
+        "                \"readOnly\": true\n" +
+        "              },\n" +
+        "              \"Compensation Active\": {\n" +
+        "                \"type\": \"boolean\",\n" +
+        "                \"description\": \"Unit: Compensation enabled\",\n" +
+        "                \"readOnly\": true\n" +
+        "              }\n" +
+        "            },\n" +
+        "            \"CO₂\": {\n" +
+        "              \"type\": \"number\",\n" +
+        "              \"minimum\": 400,\n" +
+        "              \"maximum\": 5000,\n" +
+        "              \"x-precision\": 0,\n" +
+        "              \"description\": \"Unit: ppm\"\n" +
+        "            },\n" +
+        "            \"temperature\": {\n" +
+        "              \"type\": \"number\",\n" +
+        "              \"minimum\": -10,\n" +
+        "              \"maximum\": 60,\n" +
+        "              \"x-precision\": 2,\n" +
+        "              \"description\": \"Unit: °C\"\n" +
+        "            },\n" +
+        "            \"humidity\": {\n" +
+        "              \"type\": \"number\",\n" +
+        "              \"minimum\": 0,\n" +
+        "              \"maximum\": 100,\n" +
+        "              \"x-precision\": 1,\n" +
+        "              \"description\": \"Unit: %\"\n" +
+        "            },\n" +
+        "            \"vocIndex\": {\n" +
+        "              \"type\": \"number\",\n" +
+        "              \"minimum\": 0,\n" +
+        "              \"maximum\": 500,\n" +
+        "              \"x-precision\": 0,\n" +
+        "              \"description\": \"Unit: index\"\n" +
+        "            },\n" +
+        "            \"noxIndex\": {\n" +
+        "              \"type\": \"number\",\n" +
+        "              \"minimum\": 0,\n" +
+        "              \"maximum\": 500,\n" +
+        "              \"x-precision\": 0,\n" +
+        "              \"description\": \"Unit: index\"\n" +
+        "            },\n" +
+        "            \"pm1_0\": {\n" +
+        "              \"type\": \"number\",\n" +
+        "              \"minimum\": 0,\n" +
+        "              \"maximum\": 1000,\n" +
+        "              \"x-precision\": 1,\n" +
+        "              \"description\": \"Unit: µg/m³\"\n" +
+        "            },\n" +
+        "            \"pm2_5\": {\n" +
+        "              \"type\": \"number\",\n" +
+        "              \"minimum\": 0,\n" +
+        "              \"maximum\": 1000,\n" +
+        "              \"x-precision\": 1,\n" +
+        "              \"description\": \"Unit: µg/m³\"\n" +
+        "            },\n" +
+        "            \"pm4_0\": {\n" +
+        "              \"type\": \"number\",\n" +
+        "              \"minimum\": 0,\n" +
+        "              \"maximum\": 1000,\n" +
+        "              \"x-precision\": 1,\n" +
+        "              \"description\": \"Unit: µg/m³\"\n" +
+        "            },\n" +
+        "            \"pm10_0\": {\n" +
+        "              \"type\": \"number\",\n" +
+        "              \"minimum\": 0,\n" +
+        "              \"maximum\": 1000,\n" +
+        "              \"x-precision\": 1,\n" +
+        "              \"description\": \"Unit: µg/m³\"\n" +
+        "            },\n" +
+        "            \"airQualityValue\": {\n" +
+        "              \"type\": \"string\",\n" +
+        "              \"description\": \"Unit: \"\n" +
+        "            },\n" +
+        "            \"airQualityIndex\": {\n" +
+        "              \"type\": \"number\",\n" +
+        "              \"minimum\": 0,\n" +
+        "              \"maximum\": 500,\n" +
+        "              \"x-precision\": 0,\n" +
+        "              \"description\": \"Unit: AQI\"\n" +
+        "            }\n" +
+        "          },\n" +
+        "          \"required\": [\n" +
+        "            \"Product Name\",\n" +
+        "            \"Serial Number\",\n" +
+        "            \"status\",\n" +
+        "            \"CO₂\",\n" +
+        "            \"temperature\",\n" +
+        "            \"humidity\",\n" +
+        "            \"vocIndex\",\n" +
+        "            \"noxIndex\",\n" +
+        "            \"pm1_0\",\n" +
+        "            \"pm2_5\",\n" +
+        "            \"pm4_0\",\n" +
+        "            \"pm10_0\",\n" +
+        "            \"airQualityValue\",\n" +
+        "            \"airQualityIndex\"\n" +
+        "          ],\n" +
+        "          \"additionalProperties\": false\n" +
+        "        }\n" +
+        "      },\n" +
+        "      \"required\": [\n" +
+        "        \"DeviceStaticDataSchema\",\n" +
+        "        \"SensorDataSchema\"\n" +
+        "      ],\n" +
+        "      \"additionalProperties\": false\n" +
+        "    }\n" +
+        "  }\n" +
+        "}";
   }
 }

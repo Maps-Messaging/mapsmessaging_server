@@ -47,6 +47,9 @@ MLModelManager:
       nexus:
         url: https://repository.mapsmessaging.io/maps_ml_store
 
+  llm:
+    api_token: <your key here>
+    model: gpt-4.1
 
   eventStreams:
     - id: air_quality.outlier

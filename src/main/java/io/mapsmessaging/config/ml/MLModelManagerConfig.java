@@ -113,6 +113,13 @@ public class MLModelManagerConfig extends MLModelManagerDTO implements Config, C
         this.eventStreams.add(dto);
       }
     }
+    if (config.get("llm") != null) {
+      ConfigurationProperties llmProps = (ConfigurationProperties) config.get("llm");
+      LlmConfigDTO llm = new LlmConfigDTO();
+      llm.setApiToken(llmProps.getProperty("api_token"));
+      llm.setModel(llmProps.getProperty("model"));
+      this.llmConfig = llm;
+    }
     this.modelStore.setConfig(block);
   }
 
@@ -154,7 +161,10 @@ public class MLModelManagerConfig extends MLModelManagerDTO implements Config, C
       this.modelStore = dto.getModelStore();
       changed = true;
     }
-
+    if (!equalsSafe(this.llmConfig, dto.getLlmConfig())) {
+      this.llmConfig = dto.getLlmConfig();
+      changed = true;
+    }
     return changed;
   }
 
@@ -222,6 +232,12 @@ public class MLModelManagerConfig extends MLModelManagerDTO implements Config, C
             storeConfig.put("maps", mapsProps);
           }
         }
+      }
+      if (this.llmConfig != null) {
+        ConfigurationProperties llmProps = new ConfigurationProperties();
+        llmProps.put("api_token", this.llmConfig.getApiToken());
+        llmProps.put("model", this.llmConfig.getModel());
+        props.put("llm", llmProps);
       }
 
       storeProps.put("config", storeConfig);
