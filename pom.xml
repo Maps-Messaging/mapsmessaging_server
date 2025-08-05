@@ -272,12 +272,6 @@
             <enabled>true</enabled>
           </snapshots>
         </repository>
-
-          <repository>
-            <id>maps_license_store</id>
-            <name>maps_license_store</name>
-            <url>https://repository.mapsmessaging.io/repository/maps_license_store/</url>
-          </repository>
       </repositories>
     </profile>
     <profile>
@@ -413,12 +407,6 @@
             <enabled>true</enabled>
           </snapshots>
         </repository>
-        <repository>
-          <id>maps_license_store</id>
-          <name>maps_license_store</name>
-          <url>https://repository.mapsmessaging.io/repository/maps_license_store/</url>
-        </repository>
-
       </repositories>
     </profile>
 
@@ -889,6 +877,11 @@
       <id>maps_test_libs</id>
       <name>artifactory-releases</name>
       <url>https://repository.mapsmessaging.io/repository/maps_test_libs/</url>
+    </repository>
+    <repository>
+      <id>maps_license_store</id>
+      <name>maps_license_store</name>
+      <url>https://repository.mapsmessaging.io/repository/maps_license_store/</url>
     </repository>
   </repositories>
 
