@@ -76,6 +76,8 @@ import static io.mapsmessaging.logging.ServerLogMessages.MESSAGE_DAEMON_WAIT_PRE
  */
 public class MessageDaemon {
 
+  @Getter
+  private static FileLockManager lockManager;
 
   @Getter
   private static MessageDaemon instance;
@@ -350,7 +352,7 @@ public class MessageDaemon {
     Path mapsData = new File(directoryPath).toPath();
     Path lockFilePath = Paths.get(directoryPath, "mapsMessaging.lock");
     Files.createDirectories(mapsData);
-    FileLockManager lockManager = new FileLockManager(lockFilePath, 30000); // 30s lease
+    lockManager = new FileLockManager(lockFilePath, 30000); // 30s lease
 
     while (!lockManager.tryAcquireLockWithTakeover()) {
       if (lockManager.isShutdown()) {

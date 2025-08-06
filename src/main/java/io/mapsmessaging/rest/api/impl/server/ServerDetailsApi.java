@@ -231,6 +231,6 @@ public class ServerDetailsApi extends ServerBaseRestApi {
   }
 
   private void shutdown(int exitCode) {
-    MessageDaemon.getExitRunner().deletePidFile(exitCode);
+    MessageDaemon.getLockManager().shutdown();
   }
 }

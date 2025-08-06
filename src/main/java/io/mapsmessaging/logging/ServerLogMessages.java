@@ -29,6 +29,11 @@ import lombok.Getter;
 public enum ServerLogMessages implements LogMessage {
 
   //-------------------------------------------------------------------------------------------------------------
+  // <editor-fold desc="File Lock Management">
+  LOCKFILE_STALE_HEARTBEAT(LEVEL.ERROR, SERVER_CATEGORY.ENGINE, "Heartbeat is stale, attempting forced takeover"),
+  LOCKFILE_DELETED(LEVEL.ERROR, SERVER_CATEGORY.ENGINE, "Lock file deleted"),
+  LOCKFILE_STOP_DETECTED(LEVEL.ERROR, SERVER_CATEGORY.ENGINE, "Stop signal detected. Shutting down"),
+  // </editor-fold>
 
   // <editor-fold desc="Generic messages">
   PUSH_WRITE(LEVEL.DEBUG, SERVER_CATEGORY.PROTOCOL, "Pushed Packet for write, {}"),
