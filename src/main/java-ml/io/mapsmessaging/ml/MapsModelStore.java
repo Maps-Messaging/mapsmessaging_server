@@ -33,7 +33,10 @@ import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.List;
 
+@SuppressWarnings("java:S1075")
 public class MapsModelStore implements ModelStore {
+
+  private static final String URI_PATH="/server/model/";
 
   private final HttpClient client;
   private final String baseUrl;
@@ -103,7 +106,7 @@ public class MapsModelStore implements ModelStore {
     byteStream.write(("\r\n--" + boundary + "--\r\n").getBytes(StandardCharsets.UTF_8));
 
     HttpRequest request = withAuth(HttpRequest.newBuilder())
-        .uri(URI.create(baseUrl + "/server/model/" + modelName))
+        .uri(URI.create(baseUrl + URI_PATH + modelName))
         .timeout(Duration.ofSeconds(15))
         .header("Content-Type", "multipart/form-data; boundary=" + boundary)
         .POST(HttpRequest.BodyPublishers.ofByteArray(byteStream.toByteArray()))
@@ -123,7 +126,7 @@ public class MapsModelStore implements ModelStore {
   @Override
   public byte[] loadModel(String modelName) throws IOException {
     HttpRequest request = withAuth(HttpRequest.newBuilder())
-        .uri(URI.create(baseUrl + "/server/model/" + modelName))
+        .uri(URI.create(baseUrl + URI_PATH + modelName))
         .timeout(Duration.ofSeconds(10))
         .GET()
         .build();
@@ -146,7 +149,7 @@ public class MapsModelStore implements ModelStore {
   @Override
   public boolean modelExists(String modelName) throws IOException {
     HttpRequest request = withAuth(HttpRequest.newBuilder())
-        .uri(URI.create(baseUrl + "/server/model/" + modelName))
+        .uri(URI.create(baseUrl + URI_PATH + modelName))
         .timeout(Duration.ofSeconds(5))
         .method("HEAD", HttpRequest.BodyPublishers.noBody())
         .build();
@@ -163,7 +166,7 @@ public class MapsModelStore implements ModelStore {
   @Override
   public boolean deleteModel(String modelName) throws IOException {
     HttpRequest request = withAuth(HttpRequest.newBuilder())
-        .uri(URI.create(baseUrl + "/server/model/" + modelName))
+        .uri(URI.create(baseUrl + URI_PATH + modelName))
         .timeout(Duration.ofSeconds(5))
         .DELETE()
         .build();

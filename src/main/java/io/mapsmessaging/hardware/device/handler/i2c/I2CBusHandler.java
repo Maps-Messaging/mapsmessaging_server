@@ -93,7 +93,7 @@ public class I2CBusHandler extends BusHandler {
         i2CBusManager.scanForDevices(10);
       }
     } catch (InterruptedException e) {
-      //
+      Thread.currentThread().interrupt();
     }
     return i2CBusManager.getActive();
   }

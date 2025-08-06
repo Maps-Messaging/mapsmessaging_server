@@ -29,10 +29,12 @@ public enum RollbackPriority {
 
   private final String name;
   private final int priorityDelta;
+  private final String description;
 
   RollbackPriority(String name, String description, int priorityDelta) {
     this.name = name;
     this.priorityDelta = priorityDelta;
+    this.description = description;
   }
 
   public int incrementPriority(int originalPriority) {

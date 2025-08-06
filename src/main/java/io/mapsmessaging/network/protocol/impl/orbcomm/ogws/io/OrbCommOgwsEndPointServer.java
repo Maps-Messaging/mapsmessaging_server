@@ -23,7 +23,6 @@ import io.mapsmessaging.dto.rest.config.network.EndPointServerConfigDTO;
 import io.mapsmessaging.dto.rest.config.protocol.ProtocolConfigDTO;
 import io.mapsmessaging.dto.rest.config.protocol.impl.OrbCommOgwsDTO;
 import io.mapsmessaging.logging.Logger;
-import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.network.EndPointURL;
 import io.mapsmessaging.network.io.AcceptHandler;
 import io.mapsmessaging.network.io.EndPoint;
@@ -46,7 +45,6 @@ import static io.mapsmessaging.logging.ServerLogMessages.OGWS_NO_CONFIGURATION_F
 
 public class OrbCommOgwsEndPointServer extends EndPointServer implements IncomingMessageHandler {
 
-  private final Logger logger = LoggerFactory.getLogger(OrbCommOgwsEndPointServer.class);
   private final OrbcommOgwsClient orbcommOgwsClient;
   private final  ProtocolConfigDTO protocolConfigDTO;
 

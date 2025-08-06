@@ -64,7 +64,7 @@ public class MLModelManager implements Agent {
       modelStore = new CachingModelStore(store, mlModelManagerConfig);
       MLFunction.setModelStore(modelStore);
       MessageDaemon.getInstance().getSubSystemManager().setModelStore(modelStore);
-      streamManager = new StreamManager(mlModelManagerConfig.getEventStreams(), mlModelManagerConfig.getLlmConfig());
+      streamManager = new StreamManager(mlModelManagerConfig);
       streamManager.start();
     }
   }

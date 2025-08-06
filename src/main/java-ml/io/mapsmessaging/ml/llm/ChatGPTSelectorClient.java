@@ -41,7 +41,7 @@ public class ChatGPTSelectorClient {
   private String buildPrompt(String schema, String contextHint) {
     return String.format("""
             You are a system that generates JMS selector expressions for anomaly detection.\n
-            Schema events are sensor readings arriving once per second.\n
+            Schema events are sensor readings arriving at the server when changed or in a cycle of 1/10th of seconds to minutes.\n
             Only use numeric fields from the schema that represent sensor values (not timestamps or status flags).\n
             Return only one selector expression like:\n
             isolation_forest(is_anomaly, model_name.arff, field1, field2, ...) = 1\n

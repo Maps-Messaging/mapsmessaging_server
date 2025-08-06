@@ -237,7 +237,7 @@ public class SubSystemManager {
       } catch (ClassNotFoundException e) {
         // ML component not present — ignore
       } catch (Exception e) {
-        e.printStackTrace();
+        // ignore, we do not support ML
       }
     }
   }

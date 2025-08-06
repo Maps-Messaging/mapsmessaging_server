@@ -75,11 +75,7 @@ import static io.mapsmessaging.logging.ServerLogMessages.MESSAGE_DAEMON_WAIT_PRE
  * The main method is used to start the daemon.
  */
 public class MessageDaemon {
-  private static String PID_FILE = "pid";
-  private static String LOCK_FILE = "haLockFile";
 
-  @Getter
-  private static ExitRunner exitRunner;
 
   @Getter
   private static MessageDaemon instance;
@@ -321,7 +317,6 @@ public class MessageDaemon {
    * 3. If the above conditions are not met, the hostname of the local machine is returned as the unique identifier.
    *
    * @return The unique identifier for the MessageDaemon instance.
-   * @throws UnknownHostException If the hostname of the local machine cannot be determined.
    */
   private String generateUniqueId() {
     String env = SystemProperties.getInstance().getProperty("SERVER_ID", SystemProperties.getInstance().getEnvProperty("SERVER_ID"));
@@ -345,15 +340,16 @@ public class MessageDaemon {
     return subSystemManager.getSubSystemStatus();
   }
 
+  @SuppressWarnings("java:S106") // we use system.err here since we have not actually been able to start up yet
   public static void main(String[] args) throws IOException, InterruptedException {
     String directoryPath = MapsEnvironment.getMapsData();
-    if (directoryPath == null || directoryPath.isEmpty()) {
+    if (directoryPath.isEmpty()) {
       System.err.println("MAPS_DATA not set");
       return;
     }
-    Path maps_data = new File(directoryPath).toPath();
+    Path mapsData = new File(directoryPath).toPath();
     Path lockFilePath = Paths.get(directoryPath, "mapsMessaging.lock");
-    Files.createDirectories(maps_data);
+    Files.createDirectories(mapsData);
     FileLockManager lockManager = new FileLockManager(lockFilePath, 30000); // 30s lease
 
     while (!lockManager.tryAcquireLockWithTakeover()) {

@@ -423,10 +423,8 @@ public class DestinationImpl implements BaseDestination {
     } catch (IOException e) {
       failedFiles.append(directoryToBeDeleted.getAbsolutePath()).append(",");
     }
-    if(!failedFiles.isEmpty()) {
-      if(recursionDepth < 3) {
-        SimpleTaskScheduler.getInstance().schedule(() -> deleteFile(directoryToBeDeleted, recursionDepth), 10, TimeUnit.SECONDS);
-      }
+    if(!failedFiles.isEmpty() && recursionDepth < 3) {
+      SimpleTaskScheduler.getInstance().schedule(() -> deleteFile(directoryToBeDeleted, recursionDepth), 10, TimeUnit.SECONDS);
     }
   }
 
