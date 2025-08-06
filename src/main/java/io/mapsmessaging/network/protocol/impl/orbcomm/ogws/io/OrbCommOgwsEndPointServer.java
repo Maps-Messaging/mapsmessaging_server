@@ -45,21 +45,19 @@ import static io.mapsmessaging.logging.ServerLogMessages.OGWS_NO_CONFIGURATION_F
 
 public class OrbCommOgwsEndPointServer extends EndPointServer implements IncomingMessageHandler {
 
-  private final OrbcommOgwsClient orbcommOgwsClient;
   private final  ProtocolConfigDTO protocolConfigDTO;
 
-  private GatewayManager gatewayManager;
+  private final GatewayManager gatewayManager;
 
 
   protected OrbCommOgwsEndPointServer(AcceptHandler accept, EndPointURL url, EndPointServerConfigDTO config) throws IOException {
     super(accept, url, config);
     protocolConfigDTO = config.getProtocolConfig("ogws");
-    if(!(protocolConfigDTO instanceof OrbCommOgwsDTO)) {
+    if(!(protocolConfigDTO instanceof OrbCommOgwsDTO orbCommOgwsDTO)) {
       logger.log(OGWS_NO_CONFIGURATION_FOUND);
       throw new IOException("no configuration found");
     }
-    OrbCommOgwsDTO orbCommOgwsDTO = (OrbCommOgwsDTO) protocolConfigDTO;
-    orbcommOgwsClient = new OrbcommOgwsClient(orbCommOgwsDTO);
+    OrbcommOgwsClient orbcommOgwsClient = new OrbcommOgwsClient(orbCommOgwsDTO);
     gatewayManager = new GatewayManager(orbcommOgwsClient, orbCommOgwsDTO.getPollInterval(), this);
   }
 
