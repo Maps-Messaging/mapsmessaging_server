@@ -52,7 +52,7 @@ public class TerminalTop {
   private int idx = 0;
   private long switchDisplay = System.currentTimeMillis() + 3000;
 
-
+  @SuppressWarnings("java:S2095") // Yes we create a resource for the terminal, but will close on exit
   public TerminalTop(String url, String username, String password) throws IOException {
     runFlag = new AtomicBoolean(true);
     restConnection = RestRequestManager.getInstance();

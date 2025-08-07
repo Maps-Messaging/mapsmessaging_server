@@ -45,25 +45,24 @@ public class TransactionHandler extends JetStreamFrameHandler {
     String subject = frame.getSubject();
 
     String[] parts = subject.split("\\.");
-    if (parts.length < 6) {
-      return null;
-    }
-    TransactionSubject transactionSubject = TransactionSubject.parse(subject);
-    StreamSubscriptionInfo info = lookupInfo(transactionSubject, sessionState);
-    if(info != null) {
-      String commandString = new String(frame.getPayload()).trim().toLowerCase();
-      switch (commandString) {
-        case "+ack":
-        case "+term":
-          ackProcessor.handle(info, transactionSubject);
-          break;
-        case "-nak":
-          nackProcessor.handle(info, transactionSubject);
-          break;
+    if (parts.length >= 6) {
+      TransactionSubject transactionSubject = TransactionSubject.parse(subject);
+      StreamSubscriptionInfo info = lookupInfo(transactionSubject, sessionState);
+      if (info != null) {
+        String commandString = new String(frame.getPayload()).trim().toLowerCase();
+        switch (commandString) {
+          case "+ack":
+          case "+term":
+            ackProcessor.handle(info, transactionSubject);
+            break;
+          case "-nak":
+            nackProcessor.handle(info, transactionSubject);
+            break;
 
-        case "+nxt":
-        default:
-          return null;
+          case "+nxt":
+          default:
+            break;
+        }
       }
     }
     return null;

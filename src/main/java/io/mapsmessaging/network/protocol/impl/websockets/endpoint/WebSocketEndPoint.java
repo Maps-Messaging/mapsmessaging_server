@@ -37,7 +37,6 @@ public class WebSocketEndPoint extends EndPoint {
   private final EndPoint endPoint;
   private final WebSocketPacket wsReadPacket;
   private final WebSocketPacket wsWritePacket;
-  private final String name;
 
   public WebSocketEndPoint(EndPoint endPoint) {
     super(endPoint.getId(), endPoint.getServer());

@@ -106,7 +106,7 @@ class ComplianceTests extends MQTTBaseTest{
     bclient.connect(bOptions);
     System.err.println("Reconnected to MQTT broker");
     int count = 0;
-    while(callback.counter.get() != 2 & count < 10){
+    while(callback.counter.get() != 2 && count < 10){
       Thread.sleep(100);
       count++;
     }

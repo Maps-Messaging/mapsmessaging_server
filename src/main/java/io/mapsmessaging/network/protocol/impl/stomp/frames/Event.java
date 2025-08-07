@@ -58,7 +58,7 @@ public abstract class Event extends Frame {
   @Getter
   protected boolean base64Encode;
 
-  private String encoded;
+  private String encodedString;
 
   protected Event(int maxBufferSize, boolean base64Encode) {
     this.maxBufferSize = maxBufferSize;
@@ -110,7 +110,7 @@ public abstract class Event extends Frame {
   }
 
   public byte[] getData() {
-    if(encoded != null && encoded.equalsIgnoreCase("base64")){
+    if(encodedString != null && encodedString.equalsIgnoreCase("base64")){
       return Base64.getDecoder().decode(buffer);
     }
     return buffer;
@@ -138,7 +138,7 @@ public abstract class Event extends Frame {
   public void parseCompleted() throws IOException {
     super.parseCompleted();
     String lengthString = getHeader(CONTENT_LENGTH);
-    encoded = getHeader(ENCODED);
+    encodedString = getHeader(ENCODED);
     if (lengthString != null) {
       lengthString = lengthString.trim();
       int length = Integer.parseInt(lengthString);
