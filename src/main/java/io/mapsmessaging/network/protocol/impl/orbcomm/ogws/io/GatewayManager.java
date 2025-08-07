@@ -75,7 +75,7 @@ public class GatewayManager {
             knownTerminals.put(terminal.getPrimeId(), terminal);
           }
         }
-        SimpleTaskScheduler.getInstance().schedule(this::pollGateway, pollInterval, TimeUnit.SECONDS);
+        SimpleTaskScheduler.getInstance().scheduleAtFixedRate(this::pollGateway, pollInterval, pollInterval, TimeUnit.SECONDS);
       }
       else{
         logger.log(OGWS_FAILED_AUTHENTICATION);
@@ -95,9 +95,11 @@ public class GatewayManager {
     try {
       FromMobileMessagesResponse response = ogwsClient.getFromMobileMessages(lastMessageUtc);
       if(response != null && response.isSuccess()){
-        lastMessageUtc = response.getNextFromUtc();
-        incomingEvents.addAll(response.getMessages());
-        handler.handleIncomingMessage();
+        if(!response.getMessages().isEmpty()) {
+          lastMessageUtc = response.getNextFromUtc();
+          incomingEvents.addAll(response.getMessages());
+          handler.handleIncomingMessage();
+        }
       }
       else{
         logger.log(OGWS_FAILED_POLL, response != null ? response.getErrorId() : "<null error>");

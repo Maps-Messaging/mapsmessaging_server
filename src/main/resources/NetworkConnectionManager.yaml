@@ -53,7 +53,6 @@ NetworkConnectionManager:
               passphrase: changeit
               managerFactory: SunX509
     data:
-
       - name: "ST2100 Modem"
         url: serial://localhost:0/
         protocol: stogi
@@ -79,29 +78,3 @@ NetworkConnectionManager:
           stopBits: 1
           parity: n
           flowControl: 0
-
-
-
-#        name: orbcomm ST2100 Satellite Modem
-#        url: serial://local:0/
-#        serial:
-#          serialNo: A403JUVR
-#          port: com12
-#          baudRate: 9600
-#          dataBits: 8
-#          stopBits: 1
-#          parity: n
-#          flowControl: 1
-#
-#        protocol: stogi
-#        transformation: "Message-Json"
-#        remote:
-#          sessionId: <not required>
-#          username: <not required>
-#          password: <not required>
-#        links:
-#          -
-#            direction: push
-#            local_namespace: /local/topic
-#            remote_namespace: "/stogi/alex/#"
-#           include_schema: false

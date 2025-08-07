@@ -126,3 +126,13 @@ NetworkManager:
         url: tcp://:::1883/
         protocol: mqtt
         auth: default
+
+      - name: "OrbComm OGWS interface"
+        protocol: ogws
+        auth: anon
+        url: ogws://localhost:0/
+        clientId: "ogws client id"
+        clientSecret: "ogws client secret"
+        httpRequestTimeoutSec: 30
+        pollInterval: 10
+        baseUrl: "http://localhost:8081/api/v1.0"

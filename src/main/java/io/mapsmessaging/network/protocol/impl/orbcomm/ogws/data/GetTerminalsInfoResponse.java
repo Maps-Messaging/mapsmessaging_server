@@ -39,6 +39,6 @@ public class GetTerminalsInfoResponse {
   private List<TerminalInfo> terminals;
 
   public boolean isSuccess() {
-    return errorId != null && errorId == 0;
+    return errorId == null || errorId == 0;
   }
 }

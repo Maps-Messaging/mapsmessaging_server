@@ -98,9 +98,12 @@ public class OrbcommOgwsClient {
     return gson.fromJson(response.body(), GetTerminalsInfoResponse.class);
   }
 
-  public FromMobileMessagesResponse getFromMobileMessages(@NotNull String fromUtc) throws Exception {
+  public FromMobileMessagesResponse getFromMobileMessages(String fromUtc) throws Exception {
     reauthenticate();
-    String url = baseUrl + "/get/re_messages?FromUTC=" + encode(fromUtc);
+    String url = baseUrl + "/get/re_messages?IncludeRawPayload=true";
+    if(fromUtc != null){
+      url = url+"&FromUTC=" + encode(fromUtc);
+    }
     HttpRequest request = HttpRequest.newBuilder()
         .uri(URI.create(url))
         .header("Authorization", "Bearer " + bearerToken)

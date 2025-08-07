@@ -150,23 +150,17 @@ public class OrbCommOgwsProtocol extends Protocol {
   }
 
   public void handleIncomingMessage(ReturnMessage message) throws ExecutionException, InterruptedException {
-    CommonMessage commonMessage = message.getPayload();
-    if(commonMessage.getMin() == 1  && commonMessage.getSin() == 128) {
-      // Process incoming publish event
-      List<Field> fields = commonMessage.getFields();
-      Field data =fields.stream().filter(field -> field.getName().equals("data")).findFirst().orElseGet(null);
-      if(data != null) {
-        processMessage(data);
-      }
-    }
-    else{
-      logger.log(OGWS_UNPROCESSED_MESSAGE, commonMessage.getSin(), commonMessage.getMin(), message.getMobileId());
-    }
+    byte[] data  = Base64.decode(message.getRawPayload());
+
+    processMessage(data);
   }
 
-  private void processMessage(Field data) throws ExecutionException, InterruptedException {
-    byte[] raw = Base64.decode(data.getValue());
-    OrbCommMessage orbCommMessage = new OrbCommMessage(raw);
+  private void processMessage(byte[] raw) throws ExecutionException, InterruptedException {
+    byte sin = raw[0];
+    byte min = raw[1];
+    byte[] tmp = new byte[raw.length - 1];
+    System.arraycopy(raw, 1, tmp, 0, tmp.length);
+    OrbCommMessage orbCommMessage = new OrbCommMessage(tmp);
     byte[] buffer = orbCommMessage.getMessage();
     String namespace = orbCommMessage.getNamespace();
     MessageBuilder messageBuilder = new MessageBuilder();

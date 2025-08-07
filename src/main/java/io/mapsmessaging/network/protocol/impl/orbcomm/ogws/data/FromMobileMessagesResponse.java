@@ -42,6 +42,6 @@ public class FromMobileMessagesResponse {
   private List<ReturnMessage> messages;
 
   public boolean isSuccess() {
-    return errorId != null && errorId == 0;
+    return errorId == null || errorId == 0;
   }
 }
