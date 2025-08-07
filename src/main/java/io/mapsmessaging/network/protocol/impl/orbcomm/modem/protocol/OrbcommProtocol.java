@@ -19,14 +19,19 @@
 
 package io.mapsmessaging.network.protocol.impl.orbcomm.modem.protocol;
 
-import io.mapsmessaging.api.MessageEvent;
-import io.mapsmessaging.api.Session;
-import io.mapsmessaging.api.SessionContextBuilder;
-import io.mapsmessaging.api.SessionManager;
+import io.mapsmessaging.api.*;
+import io.mapsmessaging.api.features.DestinationMode;
+import io.mapsmessaging.api.features.DestinationType;
+import io.mapsmessaging.api.features.Priority;
+import io.mapsmessaging.api.features.QualityOfService;
+import io.mapsmessaging.api.message.Message;
+import io.mapsmessaging.api.message.TypedData;
 import io.mapsmessaging.api.transformers.Transformer;
-import io.mapsmessaging.configuration.ConfigurationProperties;
+
+import io.mapsmessaging.dto.rest.config.protocol.impl.OrbCommDTO;
 import io.mapsmessaging.dto.rest.protocol.ProtocolInformationDTO;
 import io.mapsmessaging.dto.rest.protocol.impl.OrbcommProtocolInformation;
+import io.mapsmessaging.engine.destination.MessageOverrides;
 import io.mapsmessaging.network.ProtocolClientConnection;
 import io.mapsmessaging.network.io.EndPoint;
 import io.mapsmessaging.network.io.Packet;
@@ -34,10 +39,12 @@ import io.mapsmessaging.network.io.impl.SelectorTask;
 import io.mapsmessaging.network.protocol.Protocol;
 import io.mapsmessaging.network.protocol.ProtocolMessageTransformation;
 import io.mapsmessaging.network.protocol.impl.orbcomm.modem.device.Modem;
+import io.mapsmessaging.network.protocol.impl.orbcomm.modem.device.messages.SendMessageState;
+import io.mapsmessaging.network.protocol.impl.orbcomm.modem.device.values.MessageFormat;
 import io.mapsmessaging.network.protocol.impl.orbcomm.protocol.OrbCommMessage;
 import io.mapsmessaging.network.protocol.transformation.TransformationManager;
 import io.mapsmessaging.selector.operators.ParserExecutor;
-import io.mapsmessaging.utilities.configuration.ConfigurationManager;
+import io.mapsmessaging.utilities.threads.SimpleTaskScheduler;
 import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -46,7 +53,9 @@ import javax.security.auth.Subject;
 import javax.security.auth.login.LoginException;
 import java.io.IOException;
 import java.nio.channels.SelectionKey;
-import java.util.concurrent.ExecutionException;
+import java.util.*;
+import java.util.Queue;
+import java.util.concurrent.*;
 import java.util.function.Consumer;
 
 public class OrbcommProtocol extends Protocol implements Consumer<Packet> {
@@ -54,10 +63,16 @@ public class OrbcommProtocol extends Protocol implements Consumer<Packet> {
   private final Session session;
   private final SelectorTask selectorTask;
   private final Modem modem;
+  private final OrbCommDTO modemConfig;
+  private final ScheduledFuture<?> scheduledFuture;
+  private final Map<String, String> topicNameMapping;
+  private int messageId;
+  private final Queue<OrbCommMessage> outboundQueue;
 
   public OrbcommProtocol(EndPoint endPoint, Packet packet) throws LoginException, IOException {
     super(endPoint,  endPoint.getConfig().getProtocolConfig("stogi"));
-
+    topicNameMapping = new ConcurrentHashMap<>();
+    outboundQueue = new ConcurrentLinkedQueue<>();
     if (packet != null) {
       packet.clear();
     }
@@ -75,18 +90,32 @@ public class OrbcommProtocol extends Protocol implements Consumer<Packet> {
         session.getSecurityContext().getUsername()
     );
     setTransformation(transformation);
-    ConfigurationProperties configurationProperties = ConfigurationManager.getInstance().getProperties("stogi");
-    boolean setServerLocation = configurationProperties.getBooleanProperty("serverLocation", false);
+    modemConfig = (OrbCommDTO)getProtocolConfig();
+
     modem = new Modem(this);
     try {
       String init = modem.initializeModem().get();
       String query = modem.queryModemInfo().get();
+
     } catch (InterruptedException e) {
       Thread.currentThread().interrupt();
     } catch (ExecutionException e) {
-      // log this...
+      throw new IOException(e.getCause());
+    }
+    messageId = 0;
+    scheduledFuture = SimpleTaskScheduler.getInstance().scheduleAtFixedRate(this::pollModemForMessages, modemConfig.getMessagePollInterval(), modemConfig.getMessagePollInterval(), TimeUnit.MILLISECONDS);
+    completedConnection();
+    endPoint.getServer().handleNewEndPoint(endPoint);
+  }
+
+  @Override
+  public void close() throws IOException {
+    super.close();
+    if(scheduledFuture != null) {
+      scheduledFuture.cancel(true);
     }
   }
+
 
   @Override
   public void connect(String sessionId, String username, String password) throws IOException {
@@ -99,9 +128,48 @@ public class OrbcommProtocol extends Protocol implements Consumer<Packet> {
   }
 
   @Override
+  public void subscribeLocal(@NonNull @NotNull String resource, @NonNull @NotNull String mappedResource, @Nullable String selector, @Nullable Transformer transformer) throws IOException {
+    topicNameMapping.put(resource, mappedResource);
+    if (transformer != null) {
+      destinationTransformerMap.put(mappedResource, transformer);
+    }
+    SubscriptionContextBuilder builder = createSubscriptionContextBuilder(resource, selector, QualityOfService.AT_MOST_ONCE, 1024);
+    session.addSubscription(builder.build());
+  }
+
   public void sendMessage(@NotNull @NonNull MessageEvent messageEvent) {
-    OrbCommMessage message = new OrbCommMessage(messageEvent);
-    modem.sendMessage("maps_messaging", 1, 128, 0,  message.packToSend());
+    String destinationName = messageEvent.getDestinationName();
+    Message message = processTransformer(destinationName, messageEvent.getMessage());
+
+    byte[] payload;
+    if (transformation != null) {
+      payload = transformation.outgoing(message, messageEvent.getDestinationName());
+    } else {
+      payload = message.getOpaqueData();
+    }
+    if (topicNameMapping != null) {
+      String tmp = topicNameMapping.get(destinationName);
+      if (tmp != null) {
+        destinationName = tmp;
+      }
+      else{
+        for (String key : topicNameMapping.keySet()) {
+          int index = key.indexOf("#");
+          if (index > 0) {
+            String sub = key.substring(0, index);
+            if (destinationName.startsWith(sub)) {
+              destinationName = topicNameMapping.get(key) + destinationName.substring(sub.length());
+            }
+          }
+        }
+      }
+    }
+    OrbCommMessage orbCommMessage = new OrbCommMessage(destinationName, payload);
+    outboundQueue.add(orbCommMessage);
+    if(outboundQueue.size() == 1) {
+      sendMessageViaModem(outboundQueue.peek());
+    }
+    messageEvent.getCompletionTask().run();
   }
 
   @Override
@@ -155,6 +223,135 @@ public class OrbcommProtocol extends Protocol implements Consumer<Packet> {
     updateInformation(information);
     information.setSessionInfo(session.getSessionInformation());
     return information;
+  }
+
+
+  private void pollModemForMessages(){
+    try {
+      processOutboundMessages();
+      processInboundMessages();
+    } catch (Throwable e) {
+      e.printStackTrace();
+    }
+  }
+
+
+  private void processInboundMessages() {
+    CompletableFuture<List<String>> outgoing = modem.listSentMessages();
+    List<String> outgoingList = outgoing.join();
+    for(String name:outgoingList){
+      if(!name.trim().equalsIgnoreCase("ok") && !name.trim().equalsIgnoreCase("%MGRS:")) {
+        SendMessageState state = new SendMessageState(name);
+        if(state.getState().equals(SendMessageState.State.TX_FAILED) ||
+            state.getState().equals(SendMessageState.State.TX_COMPLETED) ) {
+          modem.deleteSentMessages();
+          outboundQueue.poll();
+          if(!outboundQueue.isEmpty()) {
+            sendMessageViaModem(outboundQueue.peek());
+          }
+        }
+      }
+    }
+  }
+  private void processOutboundMessages(){
+    CompletableFuture<List<byte[]>>incoming = modem.fetchAllMessages(MessageFormat.BASE64);
+    List<byte[]> messages = incoming.join();
+    for(byte[] message:messages){
+      OrbCommMessage orbCommMessage = new OrbCommMessage( message);
+      sendMessageToTopic(orbCommMessage.getNamespace(), orbCommMessage.getMessage());
+    }
+  }
+
+  private void sendMessageViaModem(OrbCommMessage orbCommMessage) {
+    messageId = (messageId+1) % 0xff;
+    int sin = (orbCommMessage.getNamespace().hashCode() & 0x7F) | 0x80;
+    modem.sendMessage("maps", 2, sin, messageId,  orbCommMessage.packToSend());
+  }
+
+
+  private void sendMessageToTopic(String topic, byte[] data){
+    Transformer transformer = destinationTransformationLookup(topic);
+    Message message = createMessage(
+        data,
+        getTransformation(),
+        transformer,
+        this
+    );
+    ParserExecutor parserExecutor = getParser(topic);
+    if(parserExecutor != null && !parserExecutor.evaluate(message)) {
+      return;
+    }
+    String destinationName = parseForLookup(topic);
+    try {
+      processValidDestinations(destinationName, message);
+    } catch (ExecutionException e) {
+      // log this
+    } catch (InterruptedException e) {
+      Thread.currentThread().interrupt();
+    }
+  }
+
+
+  private void processValidDestinations(String topicName, Message message)
+      throws ExecutionException, InterruptedException {
+    CompletableFuture<Destination> future = session.findDestination(topicName, DestinationType.TOPIC);
+    future.thenApply(destination -> {
+      if (destination != null) {
+        try {
+          destination.storeMessage(message);
+        } catch (IOException e) {
+          try {
+            endPoint.close();
+          } catch (IOException ioException) {
+            // Ignore we are in an error state
+          }
+          future.completeExceptionally(e);
+        }
+      }
+      return destination;
+    });
+    future.get();
+  }
+
+  private Message createMessage(byte[] msg,  ProtocolMessageTransformation transformation, Transformer transformer, Protocol protocol) {
+    HashMap<String, String> meta = new LinkedHashMap<>();
+    meta.put("protocol", "STOGI");
+    meta.put("version", "1");
+
+    HashMap<String, TypedData> dataHashMap = new LinkedHashMap<>();
+    MessageBuilder mb = new MessageBuilder();
+    mb.setDataMap(dataHashMap)
+        .setPriority(Priority.NORMAL)
+        .setRetain(false)
+        .setOpaqueData(msg)
+        .setMeta(meta)
+        .setQoS(QualityOfService.AT_MOST_ONCE)
+        .storeOffline(false)
+        .setTransformation(transformation)
+        .setDestinationTransformer(transformer);
+    return MessageOverrides.createMessageBuilder(protocol.getProtocolConfig().getMessageDefaults(), mb).build();
+  }
+
+  private String parseForLookup(String initialLookup){
+    String lookup = topicNameMapping.get(initialLookup);
+    if (lookup == null) {
+      lookup = initialLookup;
+      for(Map.Entry<String, String> remote:topicNameMapping.entrySet()){
+        if(remote.getKey().endsWith("#")){
+          String check = remote.getValue();
+          String tmp = remote.getKey().substring(0, remote.getKey().length()-1);
+          if(lookup.startsWith(tmp)){
+            if (lookup.toLowerCase().startsWith(DestinationMode.SCHEMA.getNamespace())) {
+              lookup = lookup.substring(DestinationMode.SCHEMA.getNamespace().length());
+            }
+            lookup = check + lookup;
+            lookup = lookup.replace("#", "");
+            lookup = lookup.replaceAll("//", "/");
+          }
+        }
+      }
+    }
+    return lookup;
   }
 
 }

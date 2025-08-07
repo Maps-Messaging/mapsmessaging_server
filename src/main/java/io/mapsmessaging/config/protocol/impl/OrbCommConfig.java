@@ -32,6 +32,8 @@ public class OrbCommConfig extends OrbCommDTO implements Config {
     ProtocolConfigFactory.unpack(config, this);
     serial = new SerialConfig(config);
     initialSetup = config.getProperty("initialSetup", "");
+    messagePollInterval = config.getLongProperty("messagePollInterval", 5000);
+    ignoreFirstByte = config.getBooleanProperty("ignoreFirstByte", false);
   }
 
   @Override
@@ -42,6 +44,14 @@ public class OrbCommConfig extends OrbCommDTO implements Config {
       result = ((SerialConfig)serial).update(config) || result;
       if(!initialSetup.equalsIgnoreCase(((OrbCommDTO) config).getInitialSetup())){
         initialSetup = ((OrbCommDTO) config).getInitialSetup();
+        result = true;
+      }
+      if(messagePollInterval != ((OrbCommDTO) config).getMessagePollInterval()){
+        messagePollInterval = ((OrbCommDTO) config).getMessagePollInterval();
+        result = true;
+      }
+      if(ignoreFirstByte != ((OrbCommDTO) config).isIgnoreFirstByte()){
+        ignoreFirstByte = ((OrbCommDTO) config).isIgnoreFirstByte();
         result = true;
       }
     }
@@ -56,6 +66,8 @@ public class OrbCommConfig extends OrbCommDTO implements Config {
     if(serial instanceof SerialConfig){
       properties.put("serial", ((SerialConfig) serial).toConfigurationProperties());
     }
+    properties.put("messagePollInterval", messagePollInterval);
+    properties.put("ignoreFirstByte", ignoreFirstByte);
     return properties;
   }
 }

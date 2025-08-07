@@ -118,7 +118,8 @@ public class OrbCommOgwsProtocol extends Protocol {
 
   @Override
   public void sendMessage(@NotNull @NonNull MessageEvent messageEvent) {
-    OrbCommMessage orbCommMessage = new OrbCommMessage(messageEvent);
+    // To Do - Transform here
+    OrbCommMessage orbCommMessage = new OrbCommMessage(messageEvent.getDestinationName(), messageEvent.getMessage().getOpaqueData());
     CommonMessage commonMessage = new CommonMessage();
     commonMessage.setSin(128);
     commonMessage.setMin(1);
@@ -166,8 +167,12 @@ public class OrbCommOgwsProtocol extends Protocol {
   private void processMessage(Field data) throws ExecutionException, InterruptedException {
     byte[] raw = Base64.decode(data.getValue());
     OrbCommMessage orbCommMessage = new OrbCommMessage(raw);
-    Message mapsMessage = orbCommMessage.getMessage();
+    byte[] buffer = orbCommMessage.getMessage();
     String namespace = orbCommMessage.getNamespace();
+    MessageBuilder messageBuilder = new MessageBuilder();
+    messageBuilder.setOpaqueData(buffer);
+    Message mapsMessage = messageBuilder.build();
+    // Transform
 
     CompletableFuture<Destination> future = session.findDestination(namespace, DestinationType.TOPIC);
     future.thenApply(destination -> {

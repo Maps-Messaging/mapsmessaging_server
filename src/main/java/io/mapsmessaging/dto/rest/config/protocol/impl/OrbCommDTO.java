@@ -35,6 +35,11 @@ public class OrbCommDTO extends ProtocolConfigDTO {
   @Schema(description = "Serial port configuration")
   protected SerialConfigDTO serial;
 
+  @Schema(description = "Time in milliseconds to poll the modem for incoming messages")
+  protected long messagePollInterval;
+
+  @Schema(description = "Incoming messages from the St2100 modem has a 0 byte appended which we need to ignore")
+  protected boolean ignoreFirstByte;
 
   @Schema(description = "Initial modem setup string")
   protected String initialSetup;

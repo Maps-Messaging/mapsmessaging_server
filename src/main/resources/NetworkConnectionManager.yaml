@@ -53,7 +53,35 @@ NetworkConnectionManager:
               passphrase: changeit
               managerFactory: SunX509
     data:
-      -
+
+      - name: "ST2100 Modem"
+        url: serial://localhost:0/
+        protocol: stogi
+        initialSetup: ""
+        messagePollInterval: 1000  # 5 seconds
+        ignoreFirstByte: true
+
+        remote:
+          sessionId: <not required>
+          username: <not required>
+          password: <not required>
+
+        links:
+          - direction: push
+            local_namespace: /local/topic/#
+            remote_namespace: "/satellite/alex/#"
+            include_schema: false
+
+        serial:
+          port: com12
+          baudRate: 9600
+          dataBits: 8
+          stopBits: 1
+          parity: n
+          flowControl: 0
+
+
+
 #        name: orbcomm ST2100 Satellite Modem
 #        url: serial://local:0/
 #        serial:

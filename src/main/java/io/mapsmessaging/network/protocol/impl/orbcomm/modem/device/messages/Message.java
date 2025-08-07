@@ -97,7 +97,7 @@ public class Message {
   public String toATCommand() {
     String encodedPayload = format.encode(payload);
     return String.format(
-        "\"%s\",%d,%d,%d,%d,%s",
+        "\"%s\",%d,%d.%d,%d,%s",
         name, priority, SIN, MIN, format.getCode(), encodedPayload
     );
   }

@@ -73,6 +73,7 @@ public class SimpleStreamHandler implements StreamHandler {
       packet.get(outBuffer, 0, available);
       output.write(outBuffer, 0, available);
     }
+    output.flush();
     return total;
   }
 }

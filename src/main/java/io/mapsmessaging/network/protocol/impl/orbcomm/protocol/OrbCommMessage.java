@@ -19,10 +19,6 @@
 
 package io.mapsmessaging.network.protocol.impl.orbcomm.protocol;
 
-import io.mapsmessaging.api.MessageBuilder;
-import io.mapsmessaging.api.MessageEvent;
-import io.mapsmessaging.api.message.Message;
-import io.mapsmessaging.network.protocol.transformation.MessageBinaryTransformation;
 import lombok.Getter;
 
 import java.nio.ByteBuffer;
@@ -31,14 +27,12 @@ import java.nio.charset.StandardCharsets;
 @Getter
 public class OrbCommMessage {
 
-  private final MessageBinaryTransformation transformation = new MessageBinaryTransformation();
-
   private String namespace;
-  private Message message;
+  private byte[] message;
 
-  public OrbCommMessage(MessageEvent event) {
-    namespace = event.getDestinationName();
-    message = event.getMessage();
+  public OrbCommMessage(String namespace,  byte[] message) {
+    this.namespace =namespace;
+    this.message = message;
   }
 
   public OrbCommMessage(byte[] incomingPackedMessage) {
@@ -46,18 +40,17 @@ public class OrbCommMessage {
   }
 
   public byte[] packToSend(){
-    byte[] outgoingPackedMessage = transformation.outgoing(message, namespace);
     byte[] namespaceBytes = namespace.getBytes(StandardCharsets.UTF_8);
-    ByteBuffer header = ByteBuffer.allocate(namespaceBytes.length + 4 + outgoingPackedMessage.length);
+    ByteBuffer header = ByteBuffer.allocate(namespaceBytes.length + 4 + message.length);
     header.putInt(namespaceBytes.length);
     header.put(namespaceBytes);
-    header.put(outgoingPackedMessage);
+    header.put(message);
     return header.array();
   }
 
   private void unpackFromReceived(byte[] data) {
     ByteBuffer buffer = ByteBuffer.wrap(data);
-
+    buffer.get(); // initial byte is 0 for some reason
     // 1. Read the 4-byte namespace length
     int namespaceLength = buffer.getInt();
 
@@ -67,12 +60,8 @@ public class OrbCommMessage {
     namespace = new String(namespaceBytes, StandardCharsets.UTF_8);
 
     // 3. Extract the remaining bytes as the message
-    byte[] messageBytes = new byte[buffer.remaining()];
-    buffer.get(messageBytes);
-    MessageBuilder messageBuilder = new MessageBuilder();
-    messageBuilder.setOpaqueData(messageBytes);
-    transformation.incoming(messageBuilder);
-    message = messageBuilder.build();
+    message = new byte[buffer.remaining()];
+    buffer.get(message);
   }
 
 }

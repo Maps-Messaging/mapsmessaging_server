@@ -137,12 +137,15 @@ public class Modem {
   //region Sent message functions
 
   public CompletableFuture<List<String>> listSentMessages() {
-    return sendATCommand("AT%MGFS")
+    return sendATCommand("AT%MGRS")
         .thenApply(resp -> Arrays.stream(resp.split("\r\n"))
-            .filter(line -> line.startsWith("FM"))
             .map(String::trim)
             .toList());
   }
+  public CompletableFuture<Void> deleteSentMessages() {
+    return sendATCommand("AT%MGRD").thenApply(x -> null);
+  }
+
 
   public CompletableFuture<Void> markSentMessageRead(String name) {
     return sendATCommand("AT%MGFR=" + name).thenApply(x -> null);
@@ -163,40 +166,55 @@ public class Modem {
     message.setMIN(min);
     message.setSIN(sin);
     message.setFormat(MessageFormat.BASE64);
-    packetSender.accept(packetWith("AT%MGRT="+message.toATCommand()));
+    sendATCommand("AT%MGRT="+message.toATCommand());
   }
   //endregion
 
   //region Incoming message functions
   public CompletableFuture<List<String>> listIncomingMessages() {
     return sendATCommand("AT%MGFN")
-        .thenApply(resp -> Arrays.stream(resp.split("\r\n"))
-            .filter(line -> line.startsWith("FM")) // FMaa.ss or FMaa.ss0
-            .map(String::trim)
-            .toList());
+        .thenApply(resp -> {
+          return Arrays.stream(resp.split("\r\n"))
+              .filter(line -> line.contains("FM"))
+              .map(String::trim)
+              .map(line -> line.replaceAll("^\"|\"$", "")) // remove surrounding quotes
+              .toList();
+        });
   }
 
-  public CompletableFuture<byte[]> getMessage(String name, MessageFormat format) {
-    String quotedName = "\"" + name + "\"";
-    return sendATCommand("AT%MGFG=" + quotedName + "," + format.getCode())
+  public CompletableFuture<byte[]> getMessage(String metaLine, MessageFormat format) {
+    String name = metaLine.trim();
+    if (name.startsWith("%MGFN:")) {
+      name = name.substring(name.indexOf('"') + 1);
+    }
+    name = name.split(",")[0].replace("\"", "").trim(); // Extract FMxxx
+
+    String command = "AT%MGFG=\"" + name + "\"," + format.getCode();
+
+    return sendATCommand(command)
         .thenApply(resp -> {
           for (String line : resp.split("\r\n")) {
             line = line.trim();
-            if (line.startsWith("+MGFG:")) {
-              int start = line.indexOf('"');
-              int end = line.lastIndexOf('"');
-              if (start >= 0 && end > start) {
-                String encoded = line.substring(start + 1, end);
+            if (line.startsWith("%MGFG:")) {
+              String[] parts = line.split(",");
+              if (parts.length >= 8) {
+                String encoded = parts[7].replace("\"", "").trim();
                 return format.decode(encoded);
               }
             }
           }
+
           throw new IllegalStateException("Unable to parse payload from: " + resp);
         });
   }
 
-  public CompletableFuture<Void> markMessageRetrieved(String name) {
-    return sendATCommand("AT%MGFM=" + name).thenApply(x -> null);
+  public CompletableFuture<Void> markMessageRetrieved(String metaLine) {
+    String name = metaLine.trim();
+    if (name.startsWith("%MGFN:")) {
+      name = name.substring(name.indexOf('"') + 1);
+    }
+    name = name.split(",")[0].replace("\"", "").trim(); // Extract FMxxx
+    return sendATCommand("AT%MGFM=\"" + name+"\"").thenApply(x -> null);
   }
 
   public CompletableFuture<List<byte[]>> fetchAllMessages(MessageFormat format) {
@@ -253,7 +271,7 @@ public class Modem {
   }
 
   private Packet packetWith(String cmd) {
-    byte[] data = (cmd + "\r").getBytes(StandardCharsets.US_ASCII);
+    byte[] data = (cmd + "\r\n").getBytes(StandardCharsets.US_ASCII);
     Packet packet = new Packet(data.length, false);
     packet.put(data).flip();
     return packet;
@@ -272,7 +290,6 @@ public class Modem {
         response += "\r\n";
       }
       response += line;
-
       currentCommand.future.complete(response);
       currentCommand = null;
       responseBuffer.setLength(0);
