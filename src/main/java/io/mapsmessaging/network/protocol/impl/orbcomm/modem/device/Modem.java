@@ -63,6 +63,10 @@ public class Modem {
     return sendATCommand("ATI0;+GMM;+GMR;+GMR;+GMI");
   }
 
+  public CompletableFuture<String> enableLocation(){
+    return sendATCommand("ATS39=10");
+  }
+
   public CompletableFuture<String> getTemperature() {
     return sendATCommand("ATS85?");
   }
@@ -120,7 +124,7 @@ public class Modem {
   }
 
   public CompletableFuture<String> requestPosition() {
-    return sendATCommand("AT%GPS=1,180");
+    return sendATCommand("AT%GPS=60,120");
   }
 
   public CompletableFuture<String> requestPositionReport() {

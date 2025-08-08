@@ -17,7 +17,7 @@
  *  limitations under the License.
  */
 
-package io.mapsmessaging.network.protocol.impl.orbcomm.ogws.io;
+package io.mapsmessaging.network.protocol.impl.orbcomm.inmarsat.io;
 
 import io.mapsmessaging.dto.rest.config.network.EndPointServerConfigDTO;
 import io.mapsmessaging.network.EndPointURL;
@@ -27,11 +27,12 @@ import io.mapsmessaging.network.io.EndPointServer;
 import io.mapsmessaging.network.io.EndPointServerFactory;
 import io.mapsmessaging.network.io.impl.SelectorLoadManager;
 
+
 import java.io.IOException;
 
-public class OrbcommOgwsEndPointServerFactory implements EndPointServerFactory {
+public class InmarsatEndPointServerFactory implements EndPointServerFactory {
 
-  public OrbcommOgwsEndPointServerFactory() {
+  public InmarsatEndPointServerFactory() {
     super();
   }
 
@@ -44,7 +45,7 @@ public class OrbcommOgwsEndPointServerFactory implements EndPointServerFactory {
       EndPointManagerJMX managerMBean)
       throws IOException {
     AcceptHandler accept = endpoint -> {};
-    return new OrbCommOgwsEndPointServer(accept,  url, config);
+    return new InmarsatEndPointServer(accept,  url, config);
   }
 
   @Override
@@ -54,12 +55,12 @@ public class OrbcommOgwsEndPointServerFactory implements EndPointServerFactory {
 
   @Override
   public String getName() {
-    return "ogws";
+    return "inmarsat";
   }
 
   @Override
   public String getDescription() {
-    return "OrbComm Gateway Services";
+    return "Inmarsat Gateway Services";
   }
 
 }

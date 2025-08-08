@@ -96,7 +96,7 @@ public class OrbcommProtocol extends Protocol implements Consumer<Packet> {
     try {
       String init = modem.initializeModem().get();
       String query = modem.queryModemInfo().get();
-
+      String location = modem.enableLocation().get();
     } catch (InterruptedException e) {
       Thread.currentThread().interrupt();
     } catch (ExecutionException e) {

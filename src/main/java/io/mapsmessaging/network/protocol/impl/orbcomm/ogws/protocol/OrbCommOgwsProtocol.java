@@ -51,7 +51,6 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 
 import static io.mapsmessaging.logging.ServerLogMessages.OGWS_FAILED_TO_SAVE_MESSAGE;
-import static io.mapsmessaging.logging.ServerLogMessages.OGWS_UNPROCESSED_MESSAGE;
 
 
 public class OrbCommOgwsProtocol extends Protocol {
