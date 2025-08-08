@@ -19,6 +19,7 @@
 
 package io.mapsmessaging.network.protocol.impl.orbcomm.inmarsat.io;
 
+import io.mapsmessaging.config.protocol.impl.InmarsatConfig;
 import io.mapsmessaging.dto.rest.config.network.EndPointServerConfigDTO;
 import io.mapsmessaging.dto.rest.config.protocol.ProtocolConfigDTO;
 import io.mapsmessaging.dto.rest.config.protocol.impl.OrbCommOgwsDTO;
@@ -42,12 +43,10 @@ public class InmarsatEndPointServer extends EndPointServer implements IncomingMe
 
   private final ProtocolConfigDTO protocolConfigDTO;
 
-
-
   protected InmarsatEndPointServer(AcceptHandler accept, EndPointURL url, EndPointServerConfigDTO config) throws IOException {
     super(accept, url, config);
     protocolConfigDTO = config.getProtocolConfig("inmarsat");
-    if(!(protocolConfigDTO instanceof OrbCommOgwsDTO orbCommOgwsDTO)) {
+    if (!(protocolConfigDTO instanceof InmarsatConfig)) {
       logger.log(OGWS_NO_CONFIGURATION_FOUND);
       throw new IOException("no configuration found");
     }
@@ -79,8 +78,7 @@ public class InmarsatEndPointServer extends EndPointServer implements IncomingMe
     //
   }
 
-  private OrbcommOgwsEndPoint locateOrCreateEndPoint(TerminalInfo terminalInfo) throws IOException, LoginException {
-
+  private InmarsatEndPoint locateOrCreateEndPoint() throws IOException, LoginException {
     return null;
   }
 

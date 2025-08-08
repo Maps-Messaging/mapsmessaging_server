@@ -30,6 +30,7 @@ import io.mapsmessaging.dto.rest.config.protocol.ProtocolConfigDTO;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 
 public class EndPointConfigFactory {
 
@@ -139,9 +140,7 @@ public class EndPointConfigFactory {
       List<ProtocolConfigDTO> protocolConfigs = new ArrayList<>();
       for (String protocolName : protocolList) {
         ProtocolConfigDTO protocolConfig = createProtocolConfig(protocolName.trim(), config);
-        if (protocolConfig != null) {
-          protocolConfigs.add(protocolConfig);
-        }
+        protocolConfigs.add(protocolConfig);
       }
       server.setProtocolConfigs(protocolConfigs);
     }
@@ -150,64 +149,42 @@ public class EndPointConfigFactory {
   private static List<ConfigurationProperties> packProtocolConfig(EndPointServerConfigDTO server) {
     List<ConfigurationProperties> protocolConfigs = new ArrayList<>();
     for(ProtocolConfigDTO protocolConfigDTO : server.getProtocolConfigs()){
-      if(protocolConfigDTO instanceof Config){
-        protocolConfigs.add  (((Config)protocolConfigDTO).toConfigurationProperties());
+      if (protocolConfigDTO instanceof Config protocolConfig) {
+        protocolConfigs.add(protocolConfig.toConfigurationProperties());
       }
     }
     return protocolConfigs;
   }
-
   private static EndPointConfigDTO createEndPointConfig(String url, ConfigurationProperties properties) {
-    if (url.toLowerCase().startsWith("tcp") || url.toLowerCase().startsWith("ws")) {
-      return new TcpConfig(properties);
-    } else if (url.toLowerCase().startsWith("ssl") || url.toLowerCase().startsWith("wss")) {
-      return new TlsConfig(properties);
-    } else if (url.toLowerCase().startsWith("udp")
-        || url.toLowerCase().startsWith("hmac")
-        || url.toLowerCase().startsWith("lora")) {
-      return new UdpConfig(properties);
-    } else if (url.toLowerCase().startsWith("dtls")) {
-      return new DtlsConfig(properties);
-    } else if (url.toLowerCase().startsWith("serial")) {
-      return new SerialConfig(properties);
-    }
-    else if(url.toLowerCase().startsWith("ogws")) {
-      return new EndPointConfigDTO(); // needs to exist, doesn't actually matter
-    }
+    String u = url.toLowerCase();
+    if (u.startsWith("tcp") || u.startsWith("ws")) return new TcpConfig(properties);
+    if (u.startsWith("ssl") || u.startsWith("wss")) return new TlsConfig(properties);
+    if (u.startsWith("udp") || u.startsWith("hmac") || u.startsWith("lora")) return new UdpConfig(properties);
+    if (u.startsWith("dtls")) return new DtlsConfig(properties);
+    if (u.startsWith("serial")) return new SerialConfig(properties);
+    if (u.startsWith("ogws")) return new EndPointConfigDTO(); // placeholder
     return null;
   }
 
   private static ProtocolConfigDTO createProtocolConfig(String protocol, ConfigurationProperties config) {
-    if (protocol.equalsIgnoreCase("mqtt")) {
-      return new MqttV5Config(config);
-    } else if (protocol.equalsIgnoreCase("amqp")) {
-      return new AmqpConfig(config);
-    } else if (protocol.equalsIgnoreCase("stomp")) {
-      return new StompConfig(config);
-    } else if (protocol.equalsIgnoreCase("nats")) {
-      return new NatsConfig(config);
-    } else if (protocol.equalsIgnoreCase("semtech")) {
-      return new SemtechConfig(config);
-    } else if (protocol.equalsIgnoreCase("mqtt-sn")) {
-      return new MqttSnConfig(config);
-    } else if (protocol.equalsIgnoreCase("coap")) {
-      return new CoapConfig(config);
-    } else if (protocol.equalsIgnoreCase("NMEA-0183")) {
-      return new NmeaConfig(config);
-    } else if (protocol.equalsIgnoreCase("lora")) {
-      return new LoRaProtocolConfig(config);
-    } else if (protocol.equalsIgnoreCase("echo")) {
-      return new EchoProtocolConfig(config);
-    } else if (protocol.equalsIgnoreCase("stogi")) {
-      return new OrbCommConfig(config);
-    } else if (protocol.equalsIgnoreCase("ogws")) {
-      return new OrbCommOgwsConfig(config);
-    }
-    else if(protocol.equalsIgnoreCase("ws") ||
-        protocol.equalsIgnoreCase("wss")){
-      return new WebSocketConfig(config);
-    }
-    return new ExtensionConfig(config);
+    String p = protocol.toLowerCase(Locale.ROOT);
+    return switch (p) {
+      case "mqtt" -> new MqttV5Config(config);
+      case "amqp" -> new AmqpConfig(config);
+      case "stomp" -> new StompConfig(config);
+      case "nats" -> new NatsConfig(config);
+      case "semtech" -> new SemtechConfig(config);
+      case "mqtt-sn" -> new MqttSnConfig(config);
+      case "coap" -> new CoapConfig(config);
+      case "nmea-0183" -> new NmeaConfig(config);
+      case "lora" -> new LoRaProtocolConfig(config);
+      case "echo" -> new EchoProtocolConfig(config);
+      case "stogi" -> new OrbCommConfig(config);
+      case "ogws" -> new OrbCommOgwsConfig(config);
+      case "inmarsat" -> new InmarsatConfig(config);
+      case "ws", "wss" -> new WebSocketConfig(config);
+      default -> new ExtensionConfig(config);
+    };
   }
 
   private EndPointConfigFactory() {}
