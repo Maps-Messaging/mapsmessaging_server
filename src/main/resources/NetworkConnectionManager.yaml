@@ -59,6 +59,7 @@ NetworkConnectionManager:
         initialSetup: ""
         messagePollInterval: 1000  # 5 seconds
         ignoreFirstByte: true
+        modemResponseTimeout: 5000
 
         remote:
           sessionId: <not required>

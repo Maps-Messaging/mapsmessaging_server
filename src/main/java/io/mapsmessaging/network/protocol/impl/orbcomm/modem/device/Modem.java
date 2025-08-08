@@ -19,6 +19,8 @@
 
 package io.mapsmessaging.network.protocol.impl.orbcomm.modem.device;
 
+import io.mapsmessaging.logging.Logger;
+import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.network.io.Packet;
 import io.mapsmessaging.network.protocol.impl.orbcomm.modem.device.messages.Message;
 import io.mapsmessaging.network.protocol.impl.orbcomm.modem.device.values.GnssTrackingMode;
@@ -31,8 +33,13 @@ import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 
+import static io.mapsmessaging.logging.ServerLogMessages.STOGI_RECEIVED_AT_MESSAGE;
+import static io.mapsmessaging.logging.ServerLogMessages.STOGI_SEND_AT_MESSAGE;
+
 
 public class Modem {
+
+  private final Logger logger = LoggerFactory.getLogger(this.getClass());
 
   private final Consumer<Packet> packetSender;
   private final Queue<Command> commandQueue = new ArrayDeque<>();
@@ -259,6 +266,7 @@ public class Modem {
   }
 
   protected synchronized CompletableFuture<String> sendATCommand(String cmd) {
+    logger.log(STOGI_SEND_AT_MESSAGE, cmd);
     CompletableFuture<String> future = new CompletableFuture<>();
     commandQueue.add(new Command(cmd, future));
     if (currentCommand == null) {
@@ -282,6 +290,7 @@ public class Modem {
   }
 
   private synchronized void handleLine(String line) {
+    logger.log(STOGI_RECEIVED_AT_MESSAGE, line);
     if (currentCommand == null) {
       // Unsolicited line, forward to listener
       handleUnsolicitedLine(line);

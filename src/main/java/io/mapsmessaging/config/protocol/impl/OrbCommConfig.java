@@ -34,6 +34,7 @@ public class OrbCommConfig extends OrbCommDTO implements Config {
     initialSetup = config.getProperty("initialSetup", "");
     messagePollInterval = config.getLongProperty("messagePollInterval", 5000);
     ignoreFirstByte = config.getBooleanProperty("ignoreFirstByte", false);
+    modemResponseTimeout = config.getLongProperty("modemResponseTimeout", 5000);
   }
 
   @Override
@@ -54,6 +55,9 @@ public class OrbCommConfig extends OrbCommDTO implements Config {
         ignoreFirstByte = ((OrbCommDTO) config).isIgnoreFirstByte();
         result = true;
       }
+      if (modemResponseTimeout != ((OrbCommDTO) config).getModemResponseTimeout()) {
+        modemResponseTimeout = ((OrbCommDTO) config).getModemResponseTimeout();
+      }
     }
     return result;
   }
@@ -68,6 +72,7 @@ public class OrbCommConfig extends OrbCommDTO implements Config {
     }
     properties.put("messagePollInterval", messagePollInterval);
     properties.put("ignoreFirstByte", ignoreFirstByte);
+    properties.put("modemResponseTimeout", modemResponseTimeout);
     return properties;
   }
 }

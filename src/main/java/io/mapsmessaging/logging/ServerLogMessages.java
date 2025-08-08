@@ -763,6 +763,12 @@ public enum ServerLogMessages implements LogMessage {
   OGWS_UNPROCESSED_MESSAGE(LEVEL.FATAL, SERVER_CATEGORY.NETWORK, "Received a message SIN:{} MIN:{} from ClientId:{} but not configured to process it"),
   OGWS_NO_CONFIGURATION_FOUND(LEVEL.FATAL, SERVER_CATEGORY.NETWORK, "No configuration found for ogws server"),
   OGWS_EXCEPTION_PROCESSING_MESSAGE(LEVEL.FATAL, SERVER_CATEGORY.ENGINE, "Exception raised processing inbound message"),
+
+  //-------------------------------------------------------------------------------------------------------------
+
+  STOGI_SEND_AT_MESSAGE(LEVEL.DEBUG, SERVER_CATEGORY.NETWORK, "Sending to modem: {} "),
+  STOGI_RECEIVED_AT_MESSAGE(LEVEL.DEBUG, SERVER_CATEGORY.NETWORK, "Received from modem : {}"),
+
   //-------------------------------------------------------------------------------------------------------------
   LAST_LOG_MESSAGE(LEVEL.DEBUG, SERVER_CATEGORY.PROTOCOL, "Last message to make it simpler to add more");
 

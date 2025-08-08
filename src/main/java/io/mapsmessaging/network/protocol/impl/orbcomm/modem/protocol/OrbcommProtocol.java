@@ -63,11 +63,11 @@ public class OrbcommProtocol extends Protocol implements Consumer<Packet> {
   private final Session session;
   private final SelectorTask selectorTask;
   private final Modem modem;
-  private final OrbCommDTO modemConfig;
   private final ScheduledFuture<?> scheduledFuture;
   private final Map<String, String> topicNameMapping;
-  private int messageId;
   private final Queue<OrbCommMessage> outboundQueue;
+
+  private int messageId;
 
   public OrbcommProtocol(EndPoint endPoint, Packet packet) throws LoginException, IOException {
     super(endPoint,  endPoint.getConfig().getProtocolConfig("stogi"));
@@ -90,16 +90,16 @@ public class OrbcommProtocol extends Protocol implements Consumer<Packet> {
         session.getSecurityContext().getUsername()
     );
     setTransformation(transformation);
-    modemConfig = (OrbCommDTO)getProtocolConfig();
-
+    OrbCommDTO modemConfig = (OrbCommDTO) getProtocolConfig();
+    long modemResponseTimeout = modemConfig.getModemResponseTimeout();
     modem = new Modem(this);
     try {
-      String init = modem.initializeModem().get();
-      String query = modem.queryModemInfo().get();
-      String location = modem.enableLocation().get();
+      String init = modem.initializeModem().get(modemResponseTimeout, TimeUnit.MILLISECONDS);
+      String query = modem.queryModemInfo().get(modemResponseTimeout, TimeUnit.MILLISECONDS);
+      String location = modem.enableLocation().get(modemResponseTimeout, TimeUnit.MILLISECONDS);
     } catch (InterruptedException e) {
       Thread.currentThread().interrupt();
-    } catch (ExecutionException e) {
+    } catch (ExecutionException | TimeoutException e) {
       throw new IOException(e.getCause());
     }
     messageId = 0;
@@ -225,7 +225,6 @@ public class OrbcommProtocol extends Protocol implements Consumer<Packet> {
     return information;
   }
 
-
   private void pollModemForMessages(){
     try {
       processOutboundMessages();
@@ -234,7 +233,6 @@ public class OrbcommProtocol extends Protocol implements Consumer<Packet> {
       e.printStackTrace();
     }
   }
-
 
   private void processInboundMessages() {
     CompletableFuture<List<String>> outgoing = modem.listSentMessages();
