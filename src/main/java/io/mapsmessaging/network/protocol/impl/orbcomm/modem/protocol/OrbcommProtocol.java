@@ -237,7 +237,6 @@ public class OrbcommProtocol extends Protocol implements Consumer<Packet> {
     try {
       processOutboundMessages();
       processInboundMessages();
-      modem.getLocation();
     } catch (Throwable e) {
       e.printStackTrace();
     }
