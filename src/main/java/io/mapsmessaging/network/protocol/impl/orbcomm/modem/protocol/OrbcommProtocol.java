@@ -243,18 +243,14 @@ public class OrbcommProtocol extends Protocol implements Consumer<Packet> {
   }
 
   private void processInboundMessages() {
-    CompletableFuture<List<String>> outgoing = modem.listSentMessages();
-    List<String> outgoingList = outgoing.join();
-    for(String name:outgoingList){
-      if(!name.trim().equalsIgnoreCase("ok") && !name.trim().equalsIgnoreCase("%MGRS:")) {
-        SendMessageState state = new SendMessageState(name);
-        if(state.getState().equals(SendMessageState.State.TX_FAILED) ||
-            state.getState().equals(SendMessageState.State.TX_COMPLETED) ) {
-          modem.deleteSentMessages();
-          outboundQueue.poll();
-          if(!outboundQueue.isEmpty()) {
-            sendMessageViaModem(outboundQueue.peek());
-          }
+    CompletableFuture<List<SendMessageState>> outgoing = modem.listSentMessages();
+    for(SendMessageState state:outgoing.join()){
+      if(state.getState().equals(SendMessageState.State.TX_FAILED) ||
+          state.getState().equals(SendMessageState.State.TX_COMPLETED) ) {
+        modem.deleteSentMessages(state.getMessageName());
+        outboundQueue.poll();
+        if(!outboundQueue.isEmpty()) {
+          sendMessageViaModem(outboundQueue.peek());
         }
       }
     }
@@ -263,8 +259,10 @@ public class OrbcommProtocol extends Protocol implements Consumer<Packet> {
     CompletableFuture<List<byte[]>>incoming = modem.fetchAllMessages(MessageFormat.BASE64);
     List<byte[]> messages = incoming.join();
     for(byte[] message:messages){
-      OrbCommMessage orbCommMessage = new OrbCommMessage( message);
-      sendMessageToTopic(orbCommMessage.getNamespace(), orbCommMessage.getMessage());
+      if(message != null) {
+        OrbCommMessage orbCommMessage = new OrbCommMessage(message);
+        sendMessageToTopic(orbCommMessage.getNamespace(), orbCommMessage.getMessage());
+      }
     }
   }
 

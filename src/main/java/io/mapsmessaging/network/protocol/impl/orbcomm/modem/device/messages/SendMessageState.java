@@ -57,24 +57,27 @@ public class SendMessageState {
   private final int bytesAcknowledged;
 
   public SendMessageState(String line) {
-    if (!line.startsWith("%MGRS:")) {
-      throw new IllegalArgumentException("Not a valid %MGRS line: " + line);
-    }
-
     String content = line.substring(line.indexOf(':') + 1).trim();
     String[] parts = content.split(",");
 
-    if (parts.length != 7) {
-      throw new IllegalArgumentException("Expected 7 fields, got " + parts.length + ": " + line);
+    if (parts.length == 7) {
+      this.messageName = parts[0].replace("\"", "").trim();
+      this.messageNumber = Double.parseDouble(parts[1].trim());
+      this.priority = Integer.parseInt(parts[2].trim());
+      this.sin = Integer.parseInt(parts[3].trim());
+      this.state = State.fromCode(Integer.parseInt(parts[4].trim()));
+      this.length = Integer.parseInt(parts[5].trim());
+      this.bytesAcknowledged = Integer.parseInt(parts[6].trim());
     }
-
-    this.messageName = parts[0].replace("\"", "").trim();
-    this.messageNumber = Double.parseDouble(parts[1].trim());
-    this.priority = Integer.parseInt(parts[2].trim());
-    this.sin = Integer.parseInt(parts[3].trim());
-    this.state = State.fromCode(Integer.parseInt(parts[4].trim()));
-    this.length = Integer.parseInt(parts[5].trim());
-    this.bytesAcknowledged = Integer.parseInt(parts[6].trim());
+    else{
+      this.messageName = parts[1].replace("\"", "").trim();
+      this.messageNumber =0.0;
+      this.state = State.fromCode(Integer.parseInt(parts[3].trim()));
+      this.priority = 1;
+      this.sin = 0;
+      this.length = Integer.parseInt(parts[7].trim());
+      this.bytesAcknowledged = Integer.parseInt(parts[8].trim());
+    }
   }
 
   public String getMessageName() { return messageName; }

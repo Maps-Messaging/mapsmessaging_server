@@ -24,17 +24,25 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
 
+import java.util.concurrent.atomic.AtomicInteger;
+
 @Data
 @ToString
 @NoArgsConstructor
 public class Message {
+  private static final AtomicInteger nextId = new AtomicInteger(0);
+
+  private int getNextId() {
+    return nextId.getAndIncrement() % 999;
+  }
+
   private String name;
   private byte[] payload;
   private int SIN;
   private int MIN;
   private int priority;
   private MessageFormat format;
-
+  private int messageId = getNextId();
 
 
   public Message(String line) {
@@ -102,6 +110,17 @@ public class Message {
     );
   }
 
+  public String toOgxCommand(){
+    byte[] extended = new byte[payload.length + 2];
+    extended[0] = (byte) SIN;
+    extended[1] = (byte) MIN;
+    System.arraycopy(payload, 0, extended, 2, payload.length);
+    String encodedPayload = format.encode(extended);
+    return String.format(
+        "%d,%d,%d,%d,%d,%s",
+        messageId, priority, 10, encodedPayload.length(), format.getCode(), encodedPayload
+    );
+  }
 
   private static int findNthComma(String s, int n) {
     int pos = -1;

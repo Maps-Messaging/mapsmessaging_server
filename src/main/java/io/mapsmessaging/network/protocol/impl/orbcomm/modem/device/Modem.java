@@ -22,7 +22,11 @@ package io.mapsmessaging.network.protocol.impl.orbcomm.modem.device;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.network.io.Packet;
+import io.mapsmessaging.network.protocol.impl.orbcomm.modem.device.impl.BaseModemProtocol;
+import io.mapsmessaging.network.protocol.impl.orbcomm.modem.device.impl.IdpModemProtocol;
+import io.mapsmessaging.network.protocol.impl.orbcomm.modem.device.impl.OgxModemProtocol;
 import io.mapsmessaging.network.protocol.impl.orbcomm.modem.device.messages.Message;
+import io.mapsmessaging.network.protocol.impl.orbcomm.modem.device.messages.SendMessageState;
 import io.mapsmessaging.network.protocol.impl.orbcomm.modem.device.values.GnssTrackingMode;
 import io.mapsmessaging.network.protocol.impl.orbcomm.modem.device.values.MessageFormat;
 import io.mapsmessaging.network.protocol.impl.orbcomm.modem.device.values.ModemMessageStatusFlag;
@@ -47,6 +51,7 @@ public class Modem {
 
   private ModemLineHandler currentHandler;
   private Command currentCommand = null;
+  private BaseModemProtocol modemProtocol = null;
 
   public Modem(Consumer<Packet> packetSender) {
     this.packetSender = packetSender;
@@ -62,7 +67,15 @@ public class Modem {
   }
 
   public CompletableFuture<String> initializeModem() {
-    return sendATCommand("ATE0;&W;I5");
+    return sendATCommand("ATE0;&W;I5").thenApply(response->{
+      if(response.startsWith("8")) {
+        modemProtocol = new IdpModemProtocol(this);
+      }
+      else if(response.startsWith("10")) {
+        modemProtocol = new OgxModemProtocol(this);
+      }
+      return response;
+    });
   }
 
   //region Modem Status functions
@@ -71,11 +84,11 @@ public class Modem {
   }
 
   public CompletableFuture<String> enableLocation(){
-    return sendATCommand("ATS39=10");
+    return sendATCommand("AT%TRK=10,1");
   }
 
   public CompletableFuture<String> getLocation(){
-    return sendATCommand("AT%GPS=1,45,\"RMC,GGA,GSA\"");
+    return sendATCommand("AT%GPS=15,1,\"GGA\",\"RMC\",\"GSV\"");
   }
 
   public CompletableFuture<String> getTemperature() {
@@ -150,27 +163,24 @@ public class Modem {
   //region Outgoing message functions
 
   //region Sent message functions
-
-  public CompletableFuture<List<String>> listSentMessages() {
-    return sendATCommand("AT%MGRS")
-        .thenApply(resp -> Arrays.stream(resp.split("\r\n"))
-            .map(String::trim)
-            .toList());
+  public CompletableFuture<List<SendMessageState>> listSentMessages() {
+    return modemProtocol.listSentMessages();
   }
-  public CompletableFuture<Void> deleteSentMessages() {
-    return sendATCommand("AT%MGRD").thenApply(x -> null);
+
+  public CompletableFuture<Void> deleteSentMessages(String msgName) {
+    return modemProtocol.deleteSentMessages(msgName);
   }
 
 
   public CompletableFuture<Void> markSentMessageRead(String name) {
-    return sendATCommand("AT%MGFR=" + name).thenApply(x -> null);
+    return modemProtocol.markSentMessageRead(name);
   }
 
 //endregion
 
 
   public void listOutgoingMessages() {
-    sendATCommand("AT%MGRL"); // From-Mobile Message List
+    modemProtocol.listOutgoingMessages();
   }
 
   public void sendMessage(String name, int priority, int sin, int min, byte[] payload) {
@@ -181,68 +191,25 @@ public class Modem {
     message.setMIN(min);
     message.setSIN(sin);
     message.setFormat(MessageFormat.BASE64);
-    sendATCommand("AT%MGRT="+message.toATCommand());
+    modemProtocol.sendMessage(message);
   }
   //endregion
 
   //region Incoming message functions
   public CompletableFuture<List<String>> listIncomingMessages() {
-    return sendATCommand("AT%MGFN")
-        .thenApply(resp -> {
-          return Arrays.stream(resp.split("\r\n"))
-              .filter(line -> line.contains("FM"))
-              .map(String::trim)
-              .map(line -> line.replaceAll("^\"|\"$", "")) // remove surrounding quotes
-              .toList();
-        });
+    return modemProtocol.listIncomingMessages();
   }
 
   public CompletableFuture<byte[]> getMessage(String metaLine, MessageFormat format) {
-    String name = metaLine.trim();
-    if (name.startsWith("%MGFN:")) {
-      name = name.substring(name.indexOf('"') + 1);
-    }
-    name = name.split(",")[0].replace("\"", "").trim(); // Extract FMxxx
-
-    String command = "AT%MGFG=\"" + name + "\"," + format.getCode();
-
-    return sendATCommand(command)
-        .thenApply(resp -> {
-          for (String line : resp.split("\r\n")) {
-            line = line.trim();
-            if (line.startsWith("%MGFG:")) {
-              String[] parts = line.split(",");
-              if (parts.length >= 8) {
-                String encoded = parts[7].replace("\"", "").trim();
-                return format.decode(encoded);
-              }
-            }
-          }
-
-          throw new IllegalStateException("Unable to parse payload from: " + resp);
-        });
+    return modemProtocol.getMessage(metaLine, format);
   }
 
   public CompletableFuture<Void> markMessageRetrieved(String metaLine) {
-    String name = metaLine.trim();
-    if (name.startsWith("%MGFN:")) {
-      name = name.substring(name.indexOf('"') + 1);
-    }
-    name = name.split(",")[0].replace("\"", "").trim(); // Extract FMxxx
-    return sendATCommand("AT%MGFM=\"" + name+"\"").thenApply(x -> null);
+    return modemProtocol.markMessageRetrieved(metaLine);
   }
 
   public CompletableFuture<List<byte[]>> fetchAllMessages(MessageFormat format) {
-    return listIncomingMessages()
-        .thenCompose(names -> {
-          List<CompletableFuture<byte[]>> futures = names.stream()
-              .map(name -> getMessage(name, format)
-                  .thenCompose(data -> markMessageRetrieved(name).thenApply(v -> data)))
-              .toList();
-
-          return CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]))
-              .thenApply(v -> futures.stream().map(CompletableFuture::join).toList());
-        });
+    return modemProtocol.fetchAllMessages(format);
   }
   //endregion
 
@@ -269,7 +236,7 @@ public class Modem {
             .toList());
   }
 
-  protected synchronized CompletableFuture<String> sendATCommand(String cmd) {
+  public synchronized CompletableFuture<String> sendATCommand(String cmd) {
     logger.log(STOGI_SEND_AT_MESSAGE, cmd);
     CompletableFuture<String> future = new CompletableFuture<>();
     commandQueue.add(new Command(cmd, future));

@@ -49,6 +49,7 @@ public class OrbCommMessage {
   }
 
   private void unpackFromReceived(byte[] data) {
+    if(data == null) return;
     ByteBuffer buffer = ByteBuffer.wrap(data);
     buffer.get(); // initial byte is 0 for some reason
     // 1. Read the 4-byte namespace length
