@@ -62,7 +62,7 @@ public class Modem {
   }
 
   public CompletableFuture<String> initializeModem() {
-    return sendATCommand("ATE0;&W");
+    return sendATCommand("ATE0;&W;I5");
   }
 
   //region Modem Status functions
@@ -72,6 +72,10 @@ public class Modem {
 
   public CompletableFuture<String> enableLocation(){
     return sendATCommand("ATS39=10");
+  }
+
+  public CompletableFuture<String> getLocation(){
+    return sendATCommand("AT%GPS=1,45,\"RMC,GGA,GSA\"");
   }
 
   public CompletableFuture<String> getTemperature() {

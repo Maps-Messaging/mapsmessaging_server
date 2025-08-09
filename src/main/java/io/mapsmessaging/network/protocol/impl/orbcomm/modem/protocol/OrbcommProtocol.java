@@ -94,9 +94,17 @@ public class OrbcommProtocol extends Protocol implements Consumer<Packet> {
     long modemResponseTimeout = modemConfig.getModemResponseTimeout();
     modem = new Modem(this);
     try {
+
       String init = modem.initializeModem().get(modemResponseTimeout, TimeUnit.MILLISECONDS);
+      if(init != null && init.startsWith("8")){
+        System.err.println("ODI modem detected");
+      }
+      else{
+        System.err.println("OGx modem detected");
+      }
       String query = modem.queryModemInfo().get(modemResponseTimeout, TimeUnit.MILLISECONDS);
-      String location = modem.enableLocation().get(modemResponseTimeout, TimeUnit.MILLISECONDS);
+      String enable = modem.enableLocation().get(modemResponseTimeout, TimeUnit.MILLISECONDS);
+      String location = modem.getLocation().get(modemResponseTimeout, TimeUnit.MILLISECONDS);
     } catch (InterruptedException e) {
       Thread.currentThread().interrupt();
     } catch (ExecutionException | TimeoutException e) {
@@ -229,6 +237,7 @@ public class OrbcommProtocol extends Protocol implements Consumer<Packet> {
     try {
       processOutboundMessages();
       processInboundMessages();
+      modem.getLocation();
     } catch (Throwable e) {
       e.printStackTrace();
     }
