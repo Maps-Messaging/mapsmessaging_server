@@ -43,9 +43,6 @@ public final class DevicesClient extends BaseInmarsatClient {
     return BaseInmarsatClient.xMailbox(mailboxId, mailboxPassword);
   }
 
-  /**
-   * Mailbox-scoped: GET /{v}/device?deviceId=&limit=&offset
-   */
   public List<DeviceInfo> listDevices(String bearer, String xMailbox, Integer limit, Integer offset, String deviceId) {
     Map<String, String> q = new LinkedHashMap<>();
     if (deviceId != null && !deviceId.isBlank()) q.put("deviceId", deviceId);
@@ -54,9 +51,6 @@ public final class DevicesClient extends BaseInmarsatClient {
     return get("device", q, bearer, xMailbox, DEVICE_LIST);
   }
 
-  /**
-   * VAR: GET /{v}/devices?folderId=&limit=&offset  (no X-Mailbox)
-   */
   public JsonObject listAllDevicesVAR(String bearer, String folderId, Integer limit, Integer offset) {
     Map<String, String> q = new LinkedHashMap<>();
     q.put("folderId", folderId);
