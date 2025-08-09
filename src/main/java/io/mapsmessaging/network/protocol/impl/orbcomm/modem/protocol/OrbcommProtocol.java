@@ -4,9 +4,17 @@
  *  Copyright [ 2024 - 2025 ] MapsMessaging B.V.
  *
  *  Licensed under the Apache License, Version 2.0 with the Commons Clause
- *  http://www.apache.org/licenses/LICENSE-2.0
- *  https://commonsclause.com/
+ *  (the "License"); you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at:
  *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://commonsclause.com/
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
  */
 
 package io.mapsmessaging.network.protocol.impl.orbcomm.modem.protocol;
@@ -30,10 +38,9 @@ import io.mapsmessaging.network.io.Packet;
 import io.mapsmessaging.network.io.impl.SelectorTask;
 import io.mapsmessaging.network.protocol.Protocol;
 import io.mapsmessaging.network.protocol.ProtocolMessageTransformation;
-import io.mapsmessaging.network.protocol.impl.orbcomm.modem.device.BaseModem;
-import io.mapsmessaging.network.protocol.impl.orbcomm.modem.device.ModemFactory;
-import io.mapsmessaging.network.protocol.impl.orbcomm.modem.device.messages.PayloadMessage;
+import io.mapsmessaging.network.protocol.impl.orbcomm.modem.device.Modem;
 import io.mapsmessaging.network.protocol.impl.orbcomm.modem.device.messages.SendMessageState;
+import io.mapsmessaging.network.protocol.impl.orbcomm.modem.device.values.MessageFormat;
 import io.mapsmessaging.network.protocol.impl.orbcomm.protocol.OrbCommMessage;
 import io.mapsmessaging.network.protocol.transformation.TransformationManager;
 import io.mapsmessaging.selector.operators.ParserExecutor;
@@ -55,82 +62,48 @@ public class OrbcommProtocol extends Protocol implements Consumer<Packet> {
 
   private final Session session;
   private final SelectorTask selectorTask;
-  private final BaseModem modem;
+  private final Modem modem;
   private final ScheduledFuture<?> scheduledFuture;
   private final Map<String, String> topicNameMapping;
   private final Queue<OrbCommMessage> outboundQueue;
+
+  private int messageId;
 
   public OrbcommProtocol(EndPoint endPoint, Packet packet) throws LoginException, IOException {
     super(endPoint,  endPoint.getConfig().getProtocolConfig("stogi"));
     topicNameMapping = new ConcurrentHashMap<>();
     outboundQueue = new ConcurrentLinkedQueue<>();
-    if (packet != null) packet.clear();
-
-    SessionContextBuilder sessionContextBuilder =
-        new SessionContextBuilder("stogi" + endPoint.getId(), new ProtocolClientConnection(this));
+    if (packet != null) {
+      packet.clear();
+    }
+    SessionContextBuilder sessionContextBuilder = new SessionContextBuilder("stogi" + endPoint.getId(), new ProtocolClientConnection(this));
     sessionContextBuilder.setSessionExpiry(0);
     sessionContextBuilder.setKeepAlive(0);
     sessionContextBuilder.setPersistentSession(false);
     session = SessionManager.getInstance().create(sessionContextBuilder.build(), this);
-
     selectorTask = new SelectorTask(this, endPoint.getConfig().getEndPointConfig());
     endPoint.register(SelectionKey.OP_READ, selectorTask.getReadTask());
-
-    ProtocolMessageTransformation transformation =
-        TransformationManager.getInstance().getTransformation(
-            endPoint.getProtocol(),
-            endPoint.getName(),
-            "stogi",
-            session.getSecurityContext().getUsername());
+    ProtocolMessageTransformation transformation = TransformationManager.getInstance().getTransformation(
+        endPoint.getProtocol(),
+        endPoint.getName(),
+        "stogi",
+        session.getSecurityContext().getUsername()
+    );
     setTransformation(transformation);
-
     OrbCommDTO modemConfig = (OrbCommDTO) getProtocolConfig();
     long modemResponseTimeout = modemConfig.getModemResponseTimeout();
-
-    // Create modem via factory and perform minimal bring-up
-    modem = ModemFactory.create(this);
+    modem = new Modem(this);
     try {
-      modem.getFirmwareId().get(modemResponseTimeout, TimeUnit.MILLISECONDS);
-      try {
-        modem.setGnssPower(true).get(modemResponseTimeout, TimeUnit.MILLISECONDS);
-      } catch (Exception ignore) {
-      }
+      String init = modem.initializeModem().get(modemResponseTimeout, TimeUnit.MILLISECONDS);
+      String query = modem.queryModemInfo().get(modemResponseTimeout, TimeUnit.MILLISECONDS);
+      String location = modem.enableLocation().get(modemResponseTimeout, TimeUnit.MILLISECONDS);
     } catch (InterruptedException e) {
       Thread.currentThread().interrupt();
     } catch (ExecutionException | TimeoutException e) {
       throw new IOException(e.getCause());
     }
-
-    // Typed event sink for URCs/messages
-    modem.setMessageSink(msg -> {
-      if (msg instanceof SendMessageState state) {
-        switch (state.getState()) {
-          case TX_COMPLETED, TX_FAILED -> {
-            outboundQueue.poll();
-            if (!outboundQueue.isEmpty()) sendMessageViaModem(outboundQueue.peek());
-          }
-          default -> {
-          }
-        }
-        return;
-      }
-      if (msg instanceof PayloadMessage pm) {
-        byte[] payload = pm.getPayload();
-        if (payload != null && payload.length > 0) {
-          OrbCommMessage m = new OrbCommMessage(payload);
-          sendMessageToTopic(m.getNamespace(), m.getMessage());
-        }
-      }
-      // Position and other message types can be handled later.
-    });
-
-    scheduledFuture = SimpleTaskScheduler.getInstance().scheduleAtFixedRate(
-        this::pollModemForMessages,
-        modemConfig.getMessagePollInterval(),
-        modemConfig.getMessagePollInterval(),
-        TimeUnit.MILLISECONDS
-    );
-
+    messageId = 0;
+    scheduledFuture = SimpleTaskScheduler.getInstance().scheduleAtFixedRate(this::pollModemForMessages, modemConfig.getMessagePollInterval(), modemConfig.getMessagePollInterval(), TimeUnit.MILLISECONDS);
     completedConnection();
     endPoint.getServer().handleNewEndPoint(endPoint);
   }
@@ -138,9 +111,11 @@ public class OrbcommProtocol extends Protocol implements Consumer<Packet> {
   @Override
   public void close() throws IOException {
     super.close();
-    if (scheduledFuture != null) scheduledFuture.cancel(true);
-    if (modem != null) modem.close();
+    if(scheduledFuture != null) {
+      scheduledFuture.cancel(true);
+    }
   }
+
 
   @Override
   public void connect(String sessionId, String username, String password) throws IOException {
@@ -148,18 +123,17 @@ public class OrbcommProtocol extends Protocol implements Consumer<Packet> {
   }
 
   @Override
-  public void subscribeRemote(@NonNull @NotNull String resource, @NonNull @NotNull String mappedResource,
-                              @Nullable ParserExecutor executor, @Nullable Transformer transformer) {
-    // no-op for now
+  public void subscribeRemote(@NonNull @NotNull String resource, @NonNull @NotNull String mappedResource, @Nullable ParserExecutor executor, @Nullable Transformer transformer) {
+    // Will send a subscribe event, once we have one
   }
 
   @Override
-  public void subscribeLocal(@NonNull @NotNull String resource, @NonNull @NotNull String mappedResource,
-                             @Nullable String selector, @Nullable Transformer transformer) throws IOException {
+  public void subscribeLocal(@NonNull @NotNull String resource, @NonNull @NotNull String mappedResource, @Nullable String selector, @Nullable Transformer transformer) throws IOException {
     topicNameMapping.put(resource, mappedResource);
-    if (transformer != null) destinationTransformerMap.put(mappedResource, transformer);
-    SubscriptionContextBuilder builder =
-        createSubscriptionContextBuilder(resource, selector, QualityOfService.AT_MOST_ONCE, 1024);
+    if (transformer != null) {
+      destinationTransformerMap.put(mappedResource, transformer);
+    }
+    SubscriptionContextBuilder builder = createSubscriptionContextBuilder(resource, selector, QualityOfService.AT_MOST_ONCE, 1024);
     session.addSubscription(builder.build());
   }
 
@@ -167,15 +141,18 @@ public class OrbcommProtocol extends Protocol implements Consumer<Packet> {
     String destinationName = messageEvent.getDestinationName();
     Message message = processTransformer(destinationName, messageEvent.getMessage());
 
-    byte[] payload = (transformation != null)
-        ? transformation.outgoing(message, messageEvent.getDestinationName())
-        : message.getOpaqueData();
-
+    byte[] payload;
+    if (transformation != null) {
+      payload = transformation.outgoing(message, messageEvent.getDestinationName());
+    } else {
+      payload = message.getOpaqueData();
+    }
     if (topicNameMapping != null) {
       String tmp = topicNameMapping.get(destinationName);
       if (tmp != null) {
         destinationName = tmp;
-      } else {
+      }
+      else{
         for (String key : topicNameMapping.keySet()) {
           int index = key.indexOf("#");
           if (index > 0) {
@@ -187,11 +164,10 @@ public class OrbcommProtocol extends Protocol implements Consumer<Packet> {
         }
       }
     }
-
     OrbCommMessage orbCommMessage = new OrbCommMessage(destinationName, payload);
     outboundQueue.add(orbCommMessage);
-    if (outboundQueue.size() == 1) {
-      sendMessageViaModem(orbCommMessage);
+    if(outboundQueue.size() == 1) {
+      sendMessageViaModem(outboundQueue.peek());
     }
     messageEvent.getCompletionTask().run();
   }
@@ -201,17 +177,21 @@ public class OrbcommProtocol extends Protocol implements Consumer<Packet> {
     return session.getSecurityContext().getSubject();
   }
 
+
   @Override
-  public void sendKeepAlive() { /* no op */ }
+  public void sendKeepAlive() {
+    // no op
+  }
 
   @Override
   public boolean processPacket(Packet packet) throws IOException {
     while (packet.hasRemaining()) {
-      modem.onPacket(packet);
+      modem.process(packet);
     }
     endPoint.register(SelectionKey.OP_READ, selectorTask.getReadTask());
     return true;
   }
+
 
   @Override
   public String getName() {
@@ -247,6 +227,7 @@ public class OrbcommProtocol extends Protocol implements Consumer<Packet> {
 
   private void pollModemForMessages(){
     try {
+      processOutboundMessages();
       processInboundMessages();
     } catch (Throwable e) {
       e.printStackTrace();
@@ -254,39 +235,37 @@ public class OrbcommProtocol extends Protocol implements Consumer<Packet> {
   }
 
   private void processInboundMessages() {
-    try {
-      List<Long> ids = modem.listMtIds().get(1500, TimeUnit.MILLISECONDS);
-      if (ids == null || ids.isEmpty()) return;
-
-      for (Long id : ids) {
-        if (id == null) continue;
-        byte[] payload = modem.fetchMtPayload(id).get(3000, TimeUnit.MILLISECONDS);
-        if (payload != null && payload.length > 0) {
-          OrbCommMessage m = new OrbCommMessage(payload);
-          sendMessageToTopic(m.getNamespace(), m.getMessage());
-        }
-        try {
-          modem.ackMt(id).get(1500, TimeUnit.MILLISECONDS);
-        } catch (Exception ignore) {
+    CompletableFuture<List<String>> outgoing = modem.listSentMessages();
+    List<String> outgoingList = outgoing.join();
+    for(String name:outgoingList){
+      if(!name.trim().equalsIgnoreCase("ok") && !name.trim().equalsIgnoreCase("%MGRS:")) {
+        SendMessageState state = new SendMessageState(name);
+        if(state.getState().equals(SendMessageState.State.TX_FAILED) ||
+            state.getState().equals(SendMessageState.State.TX_COMPLETED) ) {
+          modem.deleteSentMessages();
+          outboundQueue.poll();
+          if(!outboundQueue.isEmpty()) {
+            sendMessageViaModem(outboundQueue.peek());
+          }
         }
       }
-    } catch (InterruptedException e) {
-      Thread.currentThread().interrupt();
-    } catch (Exception ignore) {
-      // swallow and retry next tick
+    }
+  }
+  private void processOutboundMessages(){
+    CompletableFuture<List<byte[]>>incoming = modem.fetchAllMessages(MessageFormat.BASE64);
+    List<byte[]> messages = incoming.join();
+    for(byte[] message:messages){
+      OrbCommMessage orbCommMessage = new OrbCommMessage( message);
+      sendMessageToTopic(orbCommMessage.getNamespace(), orbCommMessage.getMessage());
     }
   }
 
   private void sendMessageViaModem(OrbCommMessage orbCommMessage) {
+    messageId = (messageId+1) % 0xff;
     int sin = (orbCommMessage.getNamespace().hashCode() & 0x7F) | 0x80;
-    modem.sendMoMessage("maps", 2, sin, orbCommMessage.packToSend())
-        .whenComplete((resp, ex) -> {
-          outboundQueue.poll();
-          if (!outboundQueue.isEmpty()) {
-            sendMessageViaModem(outboundQueue.peek());
-          }
-        });
+    modem.sendMessage("maps", 2, sin, messageId,  orbCommMessage.packToSend());
   }
+
 
   private void sendMessageToTopic(String topic, byte[] data){
     Transformer transformer = destinationTransformationLookup(topic);
@@ -309,6 +288,7 @@ public class OrbcommProtocol extends Protocol implements Consumer<Packet> {
       Thread.currentThread().interrupt();
     }
   }
+
 
   private void processValidDestinations(String topicName, Message message)
       throws ExecutionException, InterruptedException {
@@ -371,4 +351,5 @@ public class OrbcommProtocol extends Protocol implements Consumer<Packet> {
     }
     return lookup;
   }
+
 }

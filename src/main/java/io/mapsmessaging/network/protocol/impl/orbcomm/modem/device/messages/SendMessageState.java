@@ -19,7 +19,7 @@
 
 package io.mapsmessaging.network.protocol.impl.orbcomm.modem.device.messages;
 
-public class SendMessageState implements ModemMessage {
+public class SendMessageState {
   public enum State {
     TX_READY(4),
     TX_SENDING(5),
