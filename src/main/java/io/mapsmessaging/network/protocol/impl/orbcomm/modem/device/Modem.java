@@ -19,9 +19,11 @@
 
 package io.mapsmessaging.network.protocol.impl.orbcomm.modem.device;
 
+import io.mapsmessaging.configuration.ConfigurationProperties;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.network.io.Packet;
+import io.mapsmessaging.network.protocol.impl.nmea.sentences.SentenceFactory;
 import io.mapsmessaging.network.protocol.impl.orbcomm.modem.device.impl.BaseModemProtocol;
 import io.mapsmessaging.network.protocol.impl.orbcomm.modem.device.impl.IdpModemProtocol;
 import io.mapsmessaging.network.protocol.impl.orbcomm.modem.device.impl.OgxModemProtocol;
@@ -31,6 +33,7 @@ import io.mapsmessaging.network.protocol.impl.orbcomm.modem.device.values.GnssTr
 import io.mapsmessaging.network.protocol.impl.orbcomm.modem.device.values.MessageFormat;
 import io.mapsmessaging.network.protocol.impl.orbcomm.modem.device.values.ModemMessageStatusFlag;
 import io.mapsmessaging.network.protocol.impl.orbcomm.modem.device.values.PositioningMode;
+import io.mapsmessaging.utilities.configuration.ConfigurationManager;
 
 import java.nio.charset.StandardCharsets;
 import java.util.*;
@@ -48,6 +51,7 @@ public class Modem {
   private final Consumer<Packet> packetSender;
   private final Queue<Command> commandQueue = new ArrayDeque<>();
   private final StringBuilder responseBuffer = new StringBuilder();
+  private final SentenceFactory sentenceFactory;
 
   private ModemLineHandler currentHandler;
   private Command currentCommand = null;
@@ -56,6 +60,9 @@ public class Modem {
   public Modem(Consumer<Packet> packetSender) {
     this.packetSender = packetSender;
     currentHandler = new TextResponseHandler(this::handleLine);
+
+    ConfigurationProperties configurationProperties = ConfigurationManager.getInstance().getProperties("NMEA-0183");
+    sentenceFactory = new SentenceFactory((ConfigurationProperties) configurationProperties.get("sentences"));
   }
 
   public void process(Packet packet) {
@@ -87,8 +94,11 @@ public class Modem {
     return sendATCommand("AT%TRK=10,1");
   }
 
-  public CompletableFuture<String> getLocation(){
-    return sendATCommand("AT%GPS=15,1,\"GGA\",\"RMC\",\"GSV\"");
+  public CompletableFuture<List<String>> getLocation() {
+    return sendATCommand("AT%GPS=15,1,\"GGA\",\"RMC\",\"GSV\"").thenApply(response -> {
+      List<String> sentences = new ArrayList<>();
+      return sentences;
+    });
   }
 
   public CompletableFuture<String> getTemperature() {
@@ -183,9 +193,8 @@ public class Modem {
     modemProtocol.listOutgoingMessages();
   }
 
-  public void sendMessage(String name, int priority, int sin, int min, byte[] payload) {
+  public void sendMessage(int priority, int sin, int min, byte[] payload) {
     Message message = new Message();
-    message.setName(name);
     message.setPriority(priority);
     message.setPayload(payload);
     message.setMIN(min);

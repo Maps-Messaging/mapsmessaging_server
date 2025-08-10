@@ -237,7 +237,7 @@ public class OrbcommProtocol extends Protocol implements Consumer<Packet> {
       processOutboundMessages();
       processInboundMessages();
       if (lastLocationPoll + 60_000 < System.currentTimeMillis()) {
-        String location = modem.getLocation().get(5000, TimeUnit.MILLISECONDS);
+        List<String> location = modem.getLocation().get(5000, TimeUnit.MILLISECONDS);
         lastLocationPoll = System.currentTimeMillis();
       }
     } catch (Throwable e) {
@@ -272,7 +272,7 @@ public class OrbcommProtocol extends Protocol implements Consumer<Packet> {
   private void sendMessageViaModem(OrbCommMessage orbCommMessage) {
     messageId = (messageId+1) % 0xff;
     int sin = (orbCommMessage.getNamespace().hashCode() & 0x7F) | 0x80;
-    modem.sendMessage("maps", 2, sin, messageId,  orbCommMessage.packToSend());
+    modem.sendMessage(2, sin, messageId, orbCommMessage.packToSend());
   }
 
 

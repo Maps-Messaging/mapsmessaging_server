@@ -57,6 +57,13 @@ public class NMEAPacket {
     }
   }
 
+  public NMEAPacket(String sentence) {
+    this.sentence = sentence;
+    entries = new ArrayList<>(Arrays.asList(sentence.split(",")));
+    name = entries.remove(0);
+  }
+
+
   public Iterator<String> getEntries() {
     return entries.iterator();
   }

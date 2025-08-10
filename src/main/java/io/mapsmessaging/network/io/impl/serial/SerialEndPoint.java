@@ -104,7 +104,6 @@ public class SerialEndPoint extends EndPoint implements StreamEndPoint {
   @Override
   public FutureTask<SelectionKey> register(int selectionKey, Selectable runner) {
     if (selectionKey == SelectionKey.OP_READ) {
-      System.err.println("Registering SerialReader thread \n" + Thread.currentThread());
       readExecutor.execute(new SerialReader(runner));
     } else {
       writeExecutor.execute(new SerialWriter(runner));
@@ -179,12 +178,10 @@ public class SerialEndPoint extends EndPoint implements StreamEndPoint {
     }
 
     public void run() {
-      System.err.println("Starting SerialReader thread \n" + Thread.currentThread());
       while (serialPort.bytesAvailable() == 0) {
         LockSupport.parkNanos(1000000);
       }
       runner.selected(runner, null, SelectionKey.OP_READ);
-      System.err.println("Completed SerialReader thread \n" + Thread.currentThread());
     }
   }
   //</editor-fold>
