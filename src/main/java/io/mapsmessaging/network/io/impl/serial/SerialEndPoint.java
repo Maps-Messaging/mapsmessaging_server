@@ -24,7 +24,6 @@ import io.mapsmessaging.dto.rest.config.network.impl.SerialConfigDTO;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.network.admin.EndPointJMX;
-import io.mapsmessaging.network.admin.EndPointManagerJMX;
 import io.mapsmessaging.network.io.*;
 
 import java.io.IOException;
@@ -41,7 +40,8 @@ import static com.fazecast.jSerialComm.SerialPort.TIMEOUT_READ_BLOCKING;
 
 public class SerialEndPoint extends EndPoint implements StreamEndPoint {
 
-  private static ExecutorService executor = Executors.newFixedThreadPool(4);
+  private final ExecutorService readExecutor = Executors.newFixedThreadPool(1);
+  private final ExecutorService writeExecutor = Executors.newFixedThreadPool(1);
 
   private final SerialPort serialPort;
   private final OutputStream outputStream;
@@ -104,9 +104,10 @@ public class SerialEndPoint extends EndPoint implements StreamEndPoint {
   @Override
   public FutureTask<SelectionKey> register(int selectionKey, Selectable runner) {
     if (selectionKey == SelectionKey.OP_READ) {
-      executor.execute(new SerialReader(runner));
+      System.err.println("Registering SerialReader thread \n" + Thread.currentThread());
+      readExecutor.execute(new SerialReader(runner));
     } else {
-      executor.execute(new SerialWriter(runner));
+      writeExecutor.execute(new SerialWriter(runner));
     }
     return null;
   }
@@ -178,10 +179,12 @@ public class SerialEndPoint extends EndPoint implements StreamEndPoint {
     }
 
     public void run() {
+      System.err.println("Starting SerialReader thread \n" + Thread.currentThread());
       while (serialPort.bytesAvailable() == 0) {
         LockSupport.parkNanos(1000000);
       }
       runner.selected(runner, null, SelectionKey.OP_READ);
+      System.err.println("Completed SerialReader thread \n" + Thread.currentThread());
     }
   }
   //</editor-fold>

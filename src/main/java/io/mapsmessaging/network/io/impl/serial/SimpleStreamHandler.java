@@ -49,6 +49,8 @@ public class SimpleStreamHandler implements StreamHandler {
     packet.getRawBuffer().clear();
     while (available != 0) {
       int read = input.read(inBuffer, 0, available);
+      System.err.println("Read: " + read);
+      System.err.println("[" + new String(inBuffer, 0, read) + "]");
       if (read > 0) {
         packet.put(inBuffer, 0, read);
         totalRead += read;

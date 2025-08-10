@@ -36,6 +36,7 @@ import io.mapsmessaging.network.ProtocolClientConnection;
 import io.mapsmessaging.network.io.EndPoint;
 import io.mapsmessaging.network.io.Packet;
 import io.mapsmessaging.network.io.impl.SelectorTask;
+import io.mapsmessaging.network.io.impl.serial.SerialEndPoint;
 import io.mapsmessaging.network.protocol.Protocol;
 import io.mapsmessaging.network.protocol.ProtocolMessageTransformation;
 import io.mapsmessaging.network.protocol.impl.orbcomm.modem.device.Modem;
@@ -67,6 +68,7 @@ public class OrbcommProtocol extends Protocol implements Consumer<Packet> {
   private final Map<String, String> topicNameMapping;
   private final Queue<OrbCommMessage> outboundQueue;
 
+  private long lastLocationPoll;
   private int messageId;
 
   public OrbcommProtocol(EndPoint endPoint, Packet packet) throws LoginException, IOException {
@@ -76,38 +78,35 @@ public class OrbcommProtocol extends Protocol implements Consumer<Packet> {
     if (packet != null) {
       packet.clear();
     }
+    if (endPoint instanceof SerialEndPoint serialEndPoint) {
+      serialEndPoint.setStreamHandler(new ModemStreamHandler());
+    }
     SessionContextBuilder sessionContextBuilder = new SessionContextBuilder("stogi" + endPoint.getId(), new ProtocolClientConnection(this));
     sessionContextBuilder.setSessionExpiry(0);
     sessionContextBuilder.setKeepAlive(0);
     sessionContextBuilder.setPersistentSession(false);
     session = SessionManager.getInstance().create(sessionContextBuilder.build(), this);
     selectorTask = new SelectorTask(this, endPoint.getConfig().getEndPointConfig());
-    endPoint.register(SelectionKey.OP_READ, selectorTask.getReadTask());
     ProtocolMessageTransformation transformation = TransformationManager.getInstance().getTransformation(
         endPoint.getProtocol(),
         endPoint.getName(),
         "stogi",
         session.getSecurityContext().getUsername()
     );
+    lastLocationPoll = System.currentTimeMillis();
     setTransformation(transformation);
     OrbCommDTO modemConfig = (OrbCommDTO) getProtocolConfig();
     long modemResponseTimeout = modemConfig.getModemResponseTimeout();
+    endPoint.register(SelectionKey.OP_READ, selectorTask.getReadTask());
     modem = new Modem(this);
     try {
-
       String init = modem.initializeModem().get(modemResponseTimeout, TimeUnit.MILLISECONDS);
-      if(init != null && init.startsWith("8")){
-        System.err.println("ODI modem detected");
-      }
-      else{
-        System.err.println("OGx modem detected");
-      }
       String query = modem.queryModemInfo().get(modemResponseTimeout, TimeUnit.MILLISECONDS);
       String enable = modem.enableLocation().get(modemResponseTimeout, TimeUnit.MILLISECONDS);
-      String location = modem.getLocation().get(modemResponseTimeout, TimeUnit.MILLISECONDS);
     } catch (InterruptedException e) {
       Thread.currentThread().interrupt();
     } catch (ExecutionException | TimeoutException e) {
+      close();
       throw new IOException(e.getCause());
     }
     messageId = 0;
@@ -118,10 +117,10 @@ public class OrbcommProtocol extends Protocol implements Consumer<Packet> {
 
   @Override
   public void close() throws IOException {
-    super.close();
     if(scheduledFuture != null) {
       scheduledFuture.cancel(true);
     }
+    super.close();
   }
 
 
@@ -237,6 +236,10 @@ public class OrbcommProtocol extends Protocol implements Consumer<Packet> {
     try {
       processOutboundMessages();
       processInboundMessages();
+      if (lastLocationPoll + 60_000 < System.currentTimeMillis()) {
+        String location = modem.getLocation().get(5000, TimeUnit.MILLISECONDS);
+        lastLocationPoll = System.currentTimeMillis();
+      }
     } catch (Throwable e) {
       e.printStackTrace();
     }

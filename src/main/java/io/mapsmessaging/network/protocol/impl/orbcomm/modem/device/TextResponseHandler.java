@@ -25,7 +25,6 @@ import java.util.function.Consumer;
 
 public class TextResponseHandler implements ModemLineHandler {
   private final Consumer<String> lineConsumer;
-  private final StringBuilder lineBuffer = new StringBuilder();
 
   public TextResponseHandler(Consumer<String> lineConsumer) {
     this.lineConsumer = lineConsumer;
@@ -33,15 +32,10 @@ public class TextResponseHandler implements ModemLineHandler {
 
   @Override
   public void onData(Packet packet) {
-    while (packet.hasRemaining()) {
-      byte b = packet.get();
-      if (b == '\n') {
-        String line = lineBuffer.toString().trim();
-        lineBuffer.setLength(0);
-        if (!line.isEmpty()) lineConsumer.accept(line);
-      } else if (b != '\r') {
-        lineBuffer.append((char) b);
-      }
-    }
+    byte[] lineBuffer = new byte[packet.available() - 2]; // exclude the /r/n
+    packet.get(lineBuffer);
+    lineConsumer.accept(new String(lineBuffer));
+    byte[] end = new byte[2];
+    packet.get(end); // ignore this
   }
 }
