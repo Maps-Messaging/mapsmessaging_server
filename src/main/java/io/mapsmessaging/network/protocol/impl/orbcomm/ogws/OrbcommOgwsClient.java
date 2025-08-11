@@ -172,7 +172,6 @@ public class OrbcommOgwsClient {
   public SubmitMessagesResponse submitMessage(List<SubmitMessage> submitMessages) throws Exception {
     reauthenticate();
     String jsonMessages = gson.toJson(submitMessages);
-    System.err.println(jsonMessages);
     HttpRequest request = HttpRequest.newBuilder()
         .uri(URI.create(baseUrl + "/submit/messages"))
         .header("Authorization", "Bearer " + bearerToken)
