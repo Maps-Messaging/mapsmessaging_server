@@ -77,7 +77,7 @@ public class OrbCommOgwsProtocol extends Protocol {
     session.resumeState(); // We have established a session to read/write with this prime id
     SubscriptionContextBuilder subBuilder = new SubscriptionContextBuilder("/outbound/"+primeId, ClientAcknowledgement.AUTO);
     subBuilder.setQos(QualityOfService.AT_MOST_ONCE)
-        .setReceiveMaximum(1)
+        .setReceiveMaximum(2)
         .setNoLocalMessages(true);
     session.addSubscription(subBuilder.build());
   }
@@ -132,8 +132,8 @@ public class OrbCommOgwsProtocol extends Protocol {
       System.arraycopy(tmp, 0, payload, 2, tmp.length);
       SubmitMessage submitMessage = new SubmitMessage();
       submitMessage.setRawPayload(Base64.encodeAsString(payload));
+      submitMessage.setCompletionCallback(messageEvent.getCompletionTask());
       ((OrbcommOgwsEndPoint) endPoint).sendMessage(submitMessage);
-      messageEvent.getCompletionTask().run();
     }
   }
 

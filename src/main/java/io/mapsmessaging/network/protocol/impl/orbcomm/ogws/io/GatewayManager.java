@@ -35,6 +35,7 @@ import java.util.Map;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
 import static io.mapsmessaging.logging.ServerLogMessages.*;
@@ -45,6 +46,7 @@ public class GatewayManager {
   private final OrbcommOgwsClient ogwsClient;
   private final IncomingMessageHandler handler;
   private final int pollInterval;
+  private ScheduledFuture<?> scheduledFuture;
 
 
   private final Map<String, TerminalInfo> knownTerminals;
@@ -74,7 +76,7 @@ public class GatewayManager {
             knownTerminals.put(terminal.getPrimeId(), terminal);
           }
         }
-        SimpleTaskScheduler.getInstance().scheduleAtFixedRate(this::pollGateway, pollInterval, pollInterval, TimeUnit.SECONDS);
+        scheduledFuture = SimpleTaskScheduler.getInstance().scheduleAtFixedRate(this::pollGateway, pollInterval, pollInterval, TimeUnit.SECONDS);
       } else {
         logger.log(OGWS_FAILED_AUTHENTICATION);
       }
@@ -85,11 +87,23 @@ public class GatewayManager {
     }
   }
 
+  public void stop(){
+    if(scheduledFuture != null){
+      scheduledFuture.cancel(true);
+      scheduledFuture = null;
+    }
+  }
+
   public TerminalInfo getTerminal(String id) {
     return knownTerminals.get(id);
   }
 
   public void pollGateway() {
+    scanForIncoming();
+    ogwsClient.submitMessage();
+  }
+
+  private void scanForIncoming(){
     try {
       FromMobileMessagesResponse response = ogwsClient.getFromMobileMessages(lastMessageUtc);
       if (response != null && response.isSuccess()) {
@@ -102,7 +116,6 @@ public class GatewayManager {
         logger.log(OGWS_FAILED_POLL, response != null ? response.getErrorId() : "<null error>");
       }
     } catch (Exception e) {
-      e.printStackTrace();
       logger.log(OGWS_REQUEST_FAILED, e);
     }
   }
@@ -110,9 +123,8 @@ public class GatewayManager {
   public void sendClientMessage(String primeId, SubmitMessage submitMessage) {
     submitMessage.setDestinationId(primeId);
     try {
-      ogwsClient.submitMessage(List.of(submitMessage));
+      ogwsClient.submitMessage(submitMessage);
     } catch (Throwable e) {
-      e.printStackTrace();
       logger.log(OGWS_REQUEST_FAILED, e);
     }
   }

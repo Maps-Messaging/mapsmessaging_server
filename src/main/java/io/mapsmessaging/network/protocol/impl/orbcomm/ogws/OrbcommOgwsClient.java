@@ -26,6 +26,7 @@ import io.mapsmessaging.dto.rest.config.protocol.impl.OrbCommOgwsDTO;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.network.protocol.impl.orbcomm.ogws.data.*;
+import io.mapsmessaging.utilities.threads.SimpleTaskScheduler;
 
 import java.io.IOException;
 import java.net.URI;
@@ -36,7 +37,10 @@ import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodyHandlers;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
 
 import static io.mapsmessaging.logging.ServerLogMessages.OGWS_SENDING_REQUEST;
 
@@ -45,6 +49,7 @@ public class OrbcommOgwsClient {
       .registerTypeAdapter(ElementType.class, new ElementTypeAdapter())
       .disableHtmlEscaping()
       .create();
+
   private final Logger logger = LoggerFactory.getLogger(OrbcommOgwsClient.class);
 
   private final String baseUrl;
@@ -54,12 +59,14 @@ public class OrbcommOgwsClient {
   private final OrbCommOgwsDTO config;
   private String bearerToken;
   private long reAuthenticateTime;
+  private final List<SubmitMessage> pendingMessages;
 
   public OrbcommOgwsClient(OrbCommOgwsDTO config) {
     this.config = config;
     this.baseUrl = config.getBaseUrl();
     this.clientId = config.getClientId();
     this.clientSecret = config.getClientSecret();
+    pendingMessages = new ArrayList<>();
     if ((clientId == null || clientId.isEmpty()) || clientSecret == null || clientSecret.isEmpty()) {
       throw new IllegalArgumentException("Client id or secret cannot be null or empty");
     }
@@ -168,20 +175,46 @@ public class OrbcommOgwsClient {
     return gson.fromJson(response.body(), GetTerminalInfoResponse.class);
   }
 
+  public void submitMessage(SubmitMessage submitMessages) {
+    synchronized (pendingMessages) {
+      pendingMessages.add(submitMessages);
+    }
+  }
 
-  public SubmitMessagesResponse submitMessage(List<SubmitMessage> submitMessages) throws Exception {
-    reauthenticate();
-    String jsonMessages = gson.toJson(submitMessages);
-    HttpRequest request = HttpRequest.newBuilder()
-        .uri(URI.create(baseUrl + "/submit/messages"))
-        .header("Authorization", "Bearer " + bearerToken)
-        .header("Content-Type", "application/json")
-        .POST(HttpRequest.BodyPublishers.ofString(jsonMessages))
-        .build();
+  public SubmitMessagesResponse submitMessage() {
+    if(pendingMessages.isEmpty())return null;
+    HttpResponse<String> response = null;
+    List<SubmitMessage> pending = null;
+    try {
+      reauthenticate();
+      synchronized (pendingMessages) {
+        pending = new ArrayList<>(pendingMessages);
+        pendingMessages.clear();
+      }
+      String jsonMessages = gson.toJson(pending);
+      HttpRequest request = HttpRequest.newBuilder()
+          .uri(URI.create(baseUrl + "/submit/messages"))
+          .header("Authorization", "Bearer " + bearerToken)
+          .header("Content-Type", "application/json")
+          .POST(BodyPublishers.ofString(jsonMessages))
+          .build();
 
-    HttpResponse<String> response = httpClient.send(request, BodyHandlers.ofString());
-    logger.log(OGWS_SENDING_REQUEST, request.uri(), response.statusCode());
-
+      response = httpClient.send(request, BodyHandlers.ofString());
+      logger.log(OGWS_SENDING_REQUEST, request.uri(), response.statusCode());
+    } catch (IOException e) {
+      // Log this
+    } catch (InterruptedException e) {
+      Thread.currentThread().interrupt();
+    }
+    finally {
+      if(pending != null && !pending.isEmpty()) {
+        for (SubmitMessage message : pending) {
+          if (message.getCompletionCallback() != null) {
+            message.getCompletionCallback().run();
+          }
+        }
+      }
+    }
     return gson.fromJson(response.body(), SubmitMessagesResponse.class);
   }
 

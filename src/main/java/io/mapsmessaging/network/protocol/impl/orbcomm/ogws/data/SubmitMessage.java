@@ -49,4 +49,6 @@ public class SubmitMessage {
 
   @SerializedName("MessageClass")
   private Integer messageClass; // 1: Premium, 2: Normal (default), 3: Background
+
+  private transient Runnable completionCallback;
 }

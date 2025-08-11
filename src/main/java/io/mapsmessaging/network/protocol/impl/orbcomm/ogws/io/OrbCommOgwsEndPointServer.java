@@ -79,6 +79,12 @@ public class OrbCommOgwsEndPointServer extends EndPointServer implements Incomin
   }
 
   @Override
+  public void close() throws IOException {
+    super.close();
+    gatewayManager.stop();
+  }
+
+  @Override
   protected Logger createLogger(String url) {
     return logger;
   }
