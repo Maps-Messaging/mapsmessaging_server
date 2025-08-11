@@ -196,7 +196,7 @@ public class OrbcommProtocol extends Protocol implements Consumer<Packet> {
     destinationName = scanForName(destinationName);
 
     List<OrbCommMessage> messages = OrbCommMessageFactory.createMessages(destinationName, payload);
-    messages.getLast().setCompletionCallback(messageEvent.getCompletionTask());
+    messages.get(messages.size()-1).setCompletionCallback(messageEvent.getCompletionTask());
     outboundQueue.addAll(messages);
   }
 
