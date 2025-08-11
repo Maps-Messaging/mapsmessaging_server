@@ -34,7 +34,7 @@ public enum ElementType {
 
   private final String attribute;
 
-  ElementType(String name){
+  ElementType(String name) {
     attribute = name;
   }
 

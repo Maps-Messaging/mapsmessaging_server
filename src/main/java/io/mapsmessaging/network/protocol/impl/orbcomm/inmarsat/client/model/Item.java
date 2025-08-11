@@ -17,38 +17,27 @@
  *  limitations under the License.
  */
 
-package io.mapsmessaging.network.protocol.impl.orbcomm.ogws.data;
+package io.mapsmessaging.network.protocol.impl.orbcomm.inmarsat.client.model;
 
+import com.google.gson.JsonObject;
 import com.google.gson.annotations.SerializedName;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.Getter;
 
-import java.util.List;
+@Getter
+public final class Item {
+  @SerializedName("destinationId")
+  private final String destinationId;
+  @SerializedName("userMessageId")
+  private final String userMessageId; // optional
+  @SerializedName("payloadRaw")
+  private final String payloadRaw;    // optional (Base64)
+  @SerializedName("payloadJson")
+  private final JsonObject payloadJson; // optional
 
-@NoArgsConstructor
-@AllArgsConstructor
-@Data
-public class CommonMessage {
-
-  @SerializedName("Name")
-  private String name;
-
-  @SerializedName("IsForward")
-  private Boolean isForward; // optional
-
-  @SerializedName("RawPayload")
-  private String rawPayload; // optional (only present in some contexts)
-
-  @SerializedName("TransportType")
-  private int transportType = 0;
-
-  @SerializedName("MessageLifetime")
-  private int messageLifetime = 24; // Hours
-
-  @SerializedName("MessageCLass")
-  private int messageClass = 2; // normal
-
-  @SerializedName("Fields")
-  private List<Field> fields;
+  public Item(String destinationId, String userMessageId, String payloadRaw, JsonObject payloadJson) {
+    this.destinationId = destinationId;
+    this.userMessageId = userMessageId;
+    this.payloadRaw = payloadRaw;
+    this.payloadJson = payloadJson;
+  }
 }

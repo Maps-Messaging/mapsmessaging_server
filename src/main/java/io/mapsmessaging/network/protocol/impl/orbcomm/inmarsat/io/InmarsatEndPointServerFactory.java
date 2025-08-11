@@ -27,7 +27,6 @@ import io.mapsmessaging.network.io.EndPointServer;
 import io.mapsmessaging.network.io.EndPointServerFactory;
 import io.mapsmessaging.network.io.impl.SelectorLoadManager;
 
-
 import java.io.IOException;
 
 public class InmarsatEndPointServerFactory implements EndPointServerFactory {
@@ -44,8 +43,9 @@ public class InmarsatEndPointServerFactory implements EndPointServerFactory {
       EndPointServerConfigDTO config,
       EndPointManagerJMX managerMBean)
       throws IOException {
-    AcceptHandler accept = endpoint -> {};
-    return new InmarsatEndPointServer(accept,  url, config);
+    AcceptHandler accept = endpoint -> {
+    };
+    return new InmarsatEndPointServer(accept, url, config);
   }
 
   @Override

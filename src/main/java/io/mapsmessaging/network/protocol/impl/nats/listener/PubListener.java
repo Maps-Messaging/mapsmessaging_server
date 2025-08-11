@@ -78,6 +78,7 @@ public class PubListener implements FrameListener {
       metaData.put("protocol", "NATS");
       metaData.put("version", engine.getProtocol().getVersion());
       metaData.put("sessionId", engine.getSession().getName());
+      metaData.put("time_ms", "" + System.currentTimeMillis());
 
       MessageBuilder mb = new MessageBuilder();
       mb.setDataMap(dataMap)

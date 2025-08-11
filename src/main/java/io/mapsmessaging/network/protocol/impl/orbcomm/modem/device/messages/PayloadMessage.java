@@ -28,10 +28,10 @@ import lombok.Setter;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-public class PayloadMessage implements ModemMessage{
+public class PayloadMessage implements ModemMessage {
   private byte[] payload;
 
-  public byte[] pack(){
+  public byte[] pack() {
     return payload;
   }
 

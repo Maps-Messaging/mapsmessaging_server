@@ -20,6 +20,7 @@
 package io.mapsmessaging.network.protocol.impl.orbcomm.protocol;
 
 import lombok.Getter;
+import lombok.Setter;
 
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
@@ -28,20 +29,28 @@ import java.nio.charset.StandardCharsets;
 public class OrbCommMessage {
 
   private String namespace;
+  private boolean compressed;
+  private int packetNumber;
   private byte[] message;
+  @Setter
+  private Runnable completionCallback;
 
-  public OrbCommMessage(String namespace,  byte[] message) {
-    this.namespace =namespace;
+  public OrbCommMessage(String namespace, byte[] message, int packetNumber, boolean compressed) {
+    this.namespace = namespace;
     this.message = message;
+    this.compressed = compressed;
+    this.packetNumber = packetNumber;
   }
 
   public OrbCommMessage(byte[] incomingPackedMessage) {
     unpackFromReceived(incomingPackedMessage);
   }
 
-  public byte[] packToSend(){
+  public byte[] packToSend() {
     byte[] namespaceBytes = namespace.getBytes(StandardCharsets.UTF_8);
-    ByteBuffer header = ByteBuffer.allocate(namespaceBytes.length + 4 + message.length);
+    ByteBuffer header = ByteBuffer.allocate(namespaceBytes.length + 7 + message.length);
+    header.put(compressed ? (byte) 0x1 : (byte) 0x0);
+    header.putShort((short) packetNumber);
     header.putInt(namespaceBytes.length);
     header.put(namespaceBytes);
     header.put(message);
@@ -49,9 +58,12 @@ public class OrbCommMessage {
   }
 
   private void unpackFromReceived(byte[] data) {
-    if(data == null) return;
+    if (data == null) return;
     ByteBuffer buffer = ByteBuffer.wrap(data);
     buffer.get(); // initial byte is 0 for some reason
+    compressed = buffer.get() != 0;
+    packetNumber = buffer.getShort();
+
     // 1. Read the 4-byte namespace length
     int namespaceLength = buffer.getInt();
 

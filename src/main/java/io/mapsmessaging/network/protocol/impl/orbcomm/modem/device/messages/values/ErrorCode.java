@@ -29,15 +29,15 @@ public enum ErrorCode {
     this.code = code;
   }
 
-  public int getCode() {
-    return code;
-  }
-
   public static ErrorCode from(int code) {
     for (ErrorCode e : values()) {
       if (e.code == code) return e;
     }
     return null;
+  }
+
+  public int getCode() {
+    return code;
   }
 }
 

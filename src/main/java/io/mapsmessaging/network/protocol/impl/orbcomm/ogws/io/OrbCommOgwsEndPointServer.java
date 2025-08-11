@@ -32,6 +32,7 @@ import io.mapsmessaging.network.io.impl.Selector;
 import io.mapsmessaging.network.protocol.impl.orbcomm.ogws.OrbcommOgwsClient;
 import io.mapsmessaging.network.protocol.impl.orbcomm.ogws.data.CommonMessage;
 import io.mapsmessaging.network.protocol.impl.orbcomm.ogws.data.ReturnMessage;
+import io.mapsmessaging.network.protocol.impl.orbcomm.ogws.data.SubmitMessage;
 import io.mapsmessaging.network.protocol.impl.orbcomm.ogws.data.TerminalInfo;
 import io.mapsmessaging.network.protocol.impl.orbcomm.ogws.protocol.OrbCommOgwsProtocol;
 
@@ -45,7 +46,7 @@ import static io.mapsmessaging.logging.ServerLogMessages.OGWS_NO_CONFIGURATION_F
 
 public class OrbCommOgwsEndPointServer extends EndPointServer implements IncomingMessageHandler {
 
-  private final  ProtocolConfigDTO protocolConfigDTO;
+  private final ProtocolConfigDTO protocolConfigDTO;
 
   private final GatewayManager gatewayManager;
 
@@ -53,7 +54,7 @@ public class OrbCommOgwsEndPointServer extends EndPointServer implements Incomin
   protected OrbCommOgwsEndPointServer(AcceptHandler accept, EndPointURL url, EndPointServerConfigDTO config) throws IOException {
     super(accept, url, config);
     protocolConfigDTO = config.getProtocolConfig("ogws");
-    if(!(protocolConfigDTO instanceof OrbCommOgwsDTO orbCommOgwsDTO)) {
+    if (!(protocolConfigDTO instanceof OrbCommOgwsDTO orbCommOgwsDTO)) {
       logger.log(OGWS_NO_CONFIGURATION_FOUND);
       throw new IOException("no configuration found");
     }
@@ -88,9 +89,9 @@ public class OrbCommOgwsEndPointServer extends EndPointServer implements Incomin
   }
 
   private OrbcommOgwsEndPoint locateOrCreateEndPoint(TerminalInfo terminalInfo) throws IOException, LoginException {
-    for(EndPoint endPoint: getActiveEndPoints()){
+    for (EndPoint endPoint : getActiveEndPoints()) {
       OrbcommOgwsEndPoint orbcommOgwsEndPoint = (OrbcommOgwsEndPoint) endPoint;
-      if(orbcommOgwsEndPoint.getTerminalInfo().getPrimeId().equals(terminalInfo.getPrimeId())){
+      if (orbcommOgwsEndPoint.getTerminalInfo().getPrimeId().equals(terminalInfo.getPrimeId())) {
         return orbcommOgwsEndPoint;
       }
     }
@@ -105,22 +106,21 @@ public class OrbCommOgwsEndPointServer extends EndPointServer implements Incomin
   @Override
   public void handleIncomingMessage() {
     Queue<ReturnMessage> incomingQueue = gatewayManager.getIncomingEvents();
-    while(!incomingQueue.isEmpty()){
+    while (!incomingQueue.isEmpty()) {
       ReturnMessage event = incomingQueue.poll();
-      TerminalInfo info =  gatewayManager.getTerminal(event.getMobileId());
+      TerminalInfo info = gatewayManager.getTerminal(event.getMobileId());
       try {
         OrbcommOgwsEndPoint endPoint = locateOrCreateEndPoint(info);
-        ((OrbCommOgwsProtocol)endPoint.getBoundProtocol()).handleIncomingMessage(event);
+        ((OrbCommOgwsProtocol) endPoint.getBoundProtocol()).handleIncomingMessage(event);
       } catch (IOException | LoginException | ExecutionException e) {
         logger.log(OGWS_EXCEPTION_PROCESSING_MESSAGE);
-      }
-      catch (InterruptedException e) {
+      } catch (InterruptedException e) {
         Thread.currentThread().interrupt();
       }
     }
   }
 
-  public void sendClientMessage(String primeId, CommonMessage commonMessage) {
-    gatewayManager.sendClientMessage(primeId, commonMessage);
+  public void sendClientMessage(String primeId, SubmitMessage submitMessage) {
+    gatewayManager.sendClientMessage(primeId, submitMessage);
   }
 }

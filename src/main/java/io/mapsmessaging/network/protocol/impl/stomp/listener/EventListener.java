@@ -49,6 +49,7 @@ public abstract class EventListener implements FrameListener {
     metaData.put("protocol", "STOMP");
     metaData.put("version", engine.getProtocol().getVersion());
     metaData.put("sessionId", engine.getSession().getName());
+    metaData.put("time_ms", "" + System.currentTimeMillis());
     MessageBuilder mb = new MessageBuilder();
     mb.setDataMap(dataMap)
         .setPriority(Priority.getInstance(event.getPriority()))

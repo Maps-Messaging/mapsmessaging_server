@@ -22,11 +22,11 @@ package io.mapsmessaging.network.protocol.impl.orbcomm.modem.device;
 import java.util.concurrent.CompletableFuture;
 
 public class Command {
-  final String command;
+  final String cmd;
   final CompletableFuture<String> future;
 
-  Command(String command, CompletableFuture<String> future) {
-    this.command = command;
+  Command(String cmd, CompletableFuture<String> future) {
+    this.cmd = cmd;
     this.future = future;
   }
 }

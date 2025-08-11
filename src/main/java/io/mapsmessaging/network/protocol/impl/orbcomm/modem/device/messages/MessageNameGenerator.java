@@ -21,6 +21,9 @@ package io.mapsmessaging.network.protocol.impl.orbcomm.modem.device.messages;
 
 public class MessageNameGenerator {
 
+  private MessageNameGenerator() {
+  }
+
   public static String incrementString(String current) {
     long value = base36ToDecimal(current);
     return decimalToBase36(value + 1);
@@ -55,24 +58,6 @@ public class MessageNameGenerator {
       sb.append(c);
       value /= 36;
     }
-    return String.format("%8s", sb.reverse().toString());
-  }
-
-  private MessageNameGenerator() {
-  }
-
-  public static void main(String[] args) {
-    String current = "";
-    for (int i = 0; i < 100000; i++) {
-      current = incrementString(current);
-      long val = base36ToDecimal(current);
-      String back = decimalToBase36(val);
-      if (!current.equals(back)) {
-        System.err.println("Mismatch: " + current + " -> " + val + " -> " + back);
-      }
-      if (i % 10000 == 0) {
-        System.out.println(current + " = " + val);
-      }
-    }
+    return String.format("%8s", sb.reverse());
   }
 }

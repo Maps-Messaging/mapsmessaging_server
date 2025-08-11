@@ -60,8 +60,8 @@ public class PositionMessage implements ModemMessage {
     int rawLong = ((b4 & 0x7F) << 18) | (b5 << 10) | (b6 << 2) | ((b7 >> 6) & 0x03);
     int tmplongitude = (rawLong & 0x1000000) != 0 ? rawLong | 0xFE000000 : rawLong;
 
-    longitude = tmplongitude * 0.001/60.0;
-    latitude = tmplatitude * 0.001/60.0;
+    longitude = tmplongitude * 0.001 / 60.0;
+    latitude = tmplatitude * 0.001 / 60.0;
 
     int rawAlt = ((b7 & 0x3F) << 9) | (b8 << 1) | ((b9 >> 7) & 0x01);
     altitude = (rawAlt & 0x4000) != 0 ? rawAlt | 0xFFFF8000 : rawAlt;

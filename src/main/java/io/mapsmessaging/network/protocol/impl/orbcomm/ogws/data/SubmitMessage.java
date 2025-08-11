@@ -38,11 +38,8 @@ public class SubmitMessage {
   @SerializedName("RawPayload")
   private String rawPayload;
 
-  @SerializedName("Payload")
-  private CommonMessage payload;
-
   @SerializedName("TransportType")
-  private Integer transportType; // 0: Any, 1: Satellite, 2: Cellular
+  private Integer transportType;
 
   @SerializedName("MessageLifetime")
   private Integer messageLifetime; // in hours

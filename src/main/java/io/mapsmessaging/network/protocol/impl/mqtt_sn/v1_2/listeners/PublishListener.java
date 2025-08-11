@@ -69,6 +69,8 @@ public class PublishListener extends PacketListener {
     meta.put("protocol", "MQTT-SN");
     meta.put("version", "1.2");
     meta.put("sessionId", session.getName());
+    meta.put("time_ms", "" + System.currentTimeMillis());
+
 
     MessageBuilder messageBuilder = new MessageBuilder();
     messageBuilder.setQoS(qos)

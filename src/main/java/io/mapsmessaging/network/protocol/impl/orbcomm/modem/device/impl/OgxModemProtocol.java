@@ -35,7 +35,7 @@ public class OgxModemProtocol extends BaseModemProtocol {
   }
 
   public void sendMessage(Message message) {
-    modem.sendATCommand("AT%MOMT="+message.toOgxCommand());
+    modem.sendATCommand("AT%MOMT=" + message.toOgxCommand());
   }
 
   //region Outgoing message functions
@@ -47,7 +47,7 @@ public class OgxModemProtocol extends BaseModemProtocol {
               .filter(s -> !s.equals("OK") && !s.equals("%MOQS:"))
               .toList();
           List<SendMessageState> states = new ArrayList<>();
-          for(String s : tmpList) {
+          for (String s : tmpList) {
             states.add(new SendMessageState(s));
           }
           return states;
@@ -55,7 +55,7 @@ public class OgxModemProtocol extends BaseModemProtocol {
   }
 
   public CompletableFuture<Void> deleteSentMessages(String msgId) {
-    return modem.sendATCommand("AT%MOMD="+msgId).thenApply(x -> null);
+    return modem.sendATCommand("AT%MOMD=" + msgId).thenApply(x -> null);
   }
 
 
@@ -88,7 +88,7 @@ public class OgxModemProtocol extends BaseModemProtocol {
       name = name.substring("%MTQS:".length());
     }
     name = name.split(",")[0].replace("\"", "").trim();
-    if(name.isEmpty() || name.equals("OK")){
+    if (name.isEmpty() || name.equals("OK")) {
       return CompletableFuture.completedFuture(null);
     }
     String command = "AT%MTMG=" + name + "," + format.getCode();
@@ -99,12 +99,11 @@ public class OgxModemProtocol extends BaseModemProtocol {
             if (line.startsWith("%MTMG:")) {
               String[] parts = line.split(",");
               if (parts.length >= 5) {
-                String encoded = parts[parts.length-1].replace("\"", "").trim();
+                String encoded = parts[parts.length - 1].replace("\"", "").trim();
                 return format.decode(encoded);
               }
             }
           }
-
           throw new IllegalStateException("Unable to parse payload from: " + resp);
         });
   }
@@ -115,7 +114,7 @@ public class OgxModemProtocol extends BaseModemProtocol {
       name = name.substring("%MTQS:".length());
     }
     name = name.split(",")[0].replace("\"", "").trim();
-    if(name.isEmpty() || name.equals("OK")){
+    if (name.isEmpty() || name.equals("OK")) {
       return CompletableFuture.completedFuture(null);
     }
     return modem.sendATCommand("AT%MTMD=" + name).thenApply(x -> null);
@@ -132,5 +131,10 @@ public class OgxModemProtocol extends BaseModemProtocol {
           return CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]))
               .thenApply(v -> futures.stream().map(CompletableFuture::join).toList());
         });
+  }
+
+  @Override
+  public String getType() {
+    return "OGx mode modem";
   }
 }

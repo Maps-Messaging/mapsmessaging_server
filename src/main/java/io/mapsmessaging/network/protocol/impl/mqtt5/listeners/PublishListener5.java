@@ -55,6 +55,7 @@ public class PublishListener5 extends PacketListener5 {
     meta.put("protocol", "MQTT");
     meta.put("version", "5");
     meta.put("sessionId", sessionId);
+    meta.put("time_ms", "" + System.currentTimeMillis());
 
     MessageBuilder mb = new MessageBuilder();
     mb.setPriority(priority)

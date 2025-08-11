@@ -34,14 +34,14 @@ public enum ModemProductId {
     this.id = id;
   }
 
-  public int getId() {
-    return id;
-  }
-
   public static ModemProductId fromId(int id) {
     for (ModemProductId p : values()) {
       if (p.id == id) return p;
     }
     return null;
+  }
+
+  public int getId() {
+    return id;
   }
 }

@@ -39,14 +39,14 @@ public enum ModemWakeupPeriod {
     this.code = code;
   }
 
-  public int getCode() {
-    return code;
-  }
-
   public static ModemWakeupPeriod fromCode(int code) {
     for (ModemWakeupPeriod period : values()) {
       if (period.code == code) return period;
     }
     return UNKNOWN;
+  }
+
+  public int getCode() {
+    return code;
   }
 }

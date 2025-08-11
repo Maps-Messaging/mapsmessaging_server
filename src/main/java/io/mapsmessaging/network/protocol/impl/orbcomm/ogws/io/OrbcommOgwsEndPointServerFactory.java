@@ -43,8 +43,9 @@ public class OrbcommOgwsEndPointServerFactory implements EndPointServerFactory {
       EndPointServerConfigDTO config,
       EndPointManagerJMX managerMBean)
       throws IOException {
-    AcceptHandler accept = endpoint -> {};
-    return new OrbCommOgwsEndPointServer(accept,  url, config);
+    AcceptHandler accept = endpoint -> {
+    };
+    return new OrbCommOgwsEndPointServer(accept, url, config);
   }
 
   @Override

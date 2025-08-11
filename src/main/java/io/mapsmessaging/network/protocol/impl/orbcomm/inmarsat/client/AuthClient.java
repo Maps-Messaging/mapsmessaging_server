@@ -61,7 +61,7 @@ public final class AuthClient extends BaseInmarsatClient {
         }
       }
     }
-    return c.token.getAccessToken();
+    return c.token.getToken();
   }
 
   private record Cached(AccessToken token, Instant obtainedAt) {

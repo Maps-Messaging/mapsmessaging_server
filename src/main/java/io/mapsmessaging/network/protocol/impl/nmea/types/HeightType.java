@@ -34,7 +34,12 @@ public class HeightType implements Type {
       //Ignore, it could simply be blank
     }
     height = t;
-    this.unit = unit.toUpperCase(Locale.ROOT).charAt(0);
+    if(!unit.isEmpty()) {
+      this.unit = unit.toUpperCase(Locale.ROOT).charAt(0);
+    }
+    else{
+      this.unit = 'M';
+    }
   }
 
   public char getUnit() {

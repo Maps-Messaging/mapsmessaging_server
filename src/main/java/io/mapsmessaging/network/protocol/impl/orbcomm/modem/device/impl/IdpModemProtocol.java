@@ -37,7 +37,7 @@ public class IdpModemProtocol extends BaseModemProtocol {
 
 
   public void sendMessage(Message message) {
-    modem.sendATCommand("AT%MGRT="+message.toATCommand());
+    modem.sendATCommand("AT%MGRT=" + message.toATCommand());
   }
 
   //region outgoing message functions
@@ -49,14 +49,15 @@ public class IdpModemProtocol extends BaseModemProtocol {
               .filter(s -> !s.equals("OK") && !s.equals("%MGRS:"))
               .toList();
           List<SendMessageState> states = new ArrayList<>();
-          for(String s : tmpList) {
+          for (String s : tmpList) {
             states.add(new SendMessageState(s));
           }
           return states;
         });
   }
+
   public CompletableFuture<Void> deleteSentMessages(String msgName) {
-    return modem.sendATCommand("AT%MOMD").thenApply(x -> null);
+    return modem.sendATCommand("AT%MGRD="+msgName).thenApply(x -> null);
   }
 
 
@@ -74,13 +75,11 @@ public class IdpModemProtocol extends BaseModemProtocol {
   //region Incoming message functions
   public CompletableFuture<List<String>> listIncomingMessages() {
     return modem.sendATCommand("AT%MGFN")
-        .thenApply(resp -> {
-          return Arrays.stream(resp.split("\r\n"))
-              .filter(line -> line.contains("FM"))
-              .map(String::trim)
-              .map(line -> line.replaceAll("^\"|\"$", "")) // remove surrounding quotes
-              .toList();
-        });
+        .thenApply(resp -> Arrays.stream(resp.split("\r\n"))
+            .filter(line -> line.contains("FM"))
+            .map(String::trim)
+            .map(line -> line.replaceAll("^\"|\"$", "")) // remove surrounding quotes
+            .toList());
   }
 
   public CompletableFuture<byte[]> getMessage(String metaLine, MessageFormat format) {
@@ -115,7 +114,7 @@ public class IdpModemProtocol extends BaseModemProtocol {
       name = name.substring(name.indexOf('"') + 1);
     }
     name = name.split(",")[0].replace("\"", "").trim(); // Extract FMxxx
-    return modem.sendATCommand("AT%MGFM=\"" + name+"\"").thenApply(x -> null);
+    return modem.sendATCommand("AT%MGFM=\"" + name + "\"").thenApply(x -> null);
   }
 
   public CompletableFuture<List<byte[]>> fetchAllMessages(MessageFormat format) {
@@ -129,6 +128,11 @@ public class IdpModemProtocol extends BaseModemProtocol {
           return CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]))
               .thenApply(v -> futures.stream().map(CompletableFuture::join).toList());
         });
+  }
+
+  @Override
+  public String getType() {
+    return "IDG mode modem";
   }
   //endregion
 }

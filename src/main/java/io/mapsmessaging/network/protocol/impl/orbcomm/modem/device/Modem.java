@@ -19,24 +19,21 @@
 
 package io.mapsmessaging.network.protocol.impl.orbcomm.modem.device;
 
-import io.mapsmessaging.configuration.ConfigurationProperties;
+
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.network.io.Packet;
-import io.mapsmessaging.network.protocol.impl.nmea.sentences.SentenceFactory;
 import io.mapsmessaging.network.protocol.impl.orbcomm.modem.device.impl.BaseModemProtocol;
 import io.mapsmessaging.network.protocol.impl.orbcomm.modem.device.impl.IdpModemProtocol;
 import io.mapsmessaging.network.protocol.impl.orbcomm.modem.device.impl.OgxModemProtocol;
 import io.mapsmessaging.network.protocol.impl.orbcomm.modem.device.messages.Message;
 import io.mapsmessaging.network.protocol.impl.orbcomm.modem.device.messages.SendMessageState;
-import io.mapsmessaging.network.protocol.impl.orbcomm.modem.device.values.GnssTrackingMode;
 import io.mapsmessaging.network.protocol.impl.orbcomm.modem.device.values.MessageFormat;
-import io.mapsmessaging.network.protocol.impl.orbcomm.modem.device.values.ModemMessageStatusFlag;
-import io.mapsmessaging.network.protocol.impl.orbcomm.modem.device.values.PositioningMode;
-import io.mapsmessaging.utilities.configuration.ConfigurationManager;
 
 import java.nio.charset.StandardCharsets;
-import java.util.*;
+import java.util.ArrayDeque;
+import java.util.List;
+import java.util.Queue;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 
@@ -51,34 +48,25 @@ public class Modem {
   private final Consumer<Packet> packetSender;
   private final Queue<Command> commandQueue = new ArrayDeque<>();
   private final StringBuilder responseBuffer = new StringBuilder();
-  private final SentenceFactory sentenceFactory;
+  private final ModemLineHandler currentHandler;
 
-  private ModemLineHandler currentHandler;
   private Command currentCommand = null;
   private BaseModemProtocol modemProtocol = null;
 
   public Modem(Consumer<Packet> packetSender) {
     this.packetSender = packetSender;
     currentHandler = new TextResponseHandler(this::handleLine);
-
-    ConfigurationProperties configurationProperties = ConfigurationManager.getInstance().getProperties("NMEA-0183");
-    sentenceFactory = new SentenceFactory((ConfigurationProperties) configurationProperties.get("sentences"));
   }
 
   public void process(Packet packet) {
-    if (currentHandler != null) {
-      currentHandler.onData(packet);
-    } else {
-      // Fallback buffer accumulation (e.g. for early boot noise)
-    }
+    currentHandler.onData(packet);
   }
 
   public CompletableFuture<String> initializeModem() {
-    return sendATCommand("ATE0;&W;I5").thenApply(response->{
-      if(response.startsWith("8")) {
+    return sendATCommand("ATE0;&W;I5").thenApply(response -> {
+      if (response.startsWith("8")) {
         modemProtocol = new IdpModemProtocol(this);
-      }
-      else if(response.startsWith("10")) {
+      } else {
         modemProtocol = new OgxModemProtocol(this);
       }
       return response;
@@ -90,55 +78,27 @@ public class Modem {
     return sendATCommand("ATI0;+GMM;+GMR;+GMR;+GMI");
   }
 
-  public CompletableFuture<String> enableLocation(){
+  public CompletableFuture<String> enableLocation() {
     return sendATCommand("AT%TRK=10,1");
   }
 
   public CompletableFuture<List<String>> getLocation() {
-    return sendATCommand("AT%GPS=15,1,\"GGA\",\"RMC\",\"GSV\"").thenApply(response -> {
-      List<String> sentences = new ArrayList<>();
-      return sentences;
-    });
+    return sendATCommand("AT%GPS=15,1,\"GGA\",\"RMC\",\"GSV\"").thenApply(resp ->
+        java.util.Arrays.stream(resp.split("\\R"))
+            .map(String::trim)
+            .map(s -> s.replaceFirst("^%GPS:\\s*", "")) // strip leading "%GPS: "
+            .filter(s -> s.startsWith("$")) // keep only NMEA lines
+            .toList()
+    );
   }
 
   public CompletableFuture<String> getTemperature() {
     return sendATCommand("ATS85?");
   }
 
-  public CompletableFuture<List<ModemMessageStatusFlag>> getActiveStatuses(){
-    return getActiveStatuses("ATS88?");
-  }
-
-  public CompletableFuture<List<ModemMessageStatusFlag>> getStatusChanges(){
-    return getActiveStatuses("ATS89?");
-  }
-
-  private CompletableFuture<List<ModemMessageStatusFlag>> getActiveStatuses(String command) {
-    return sendATCommand(command)
-        .thenApply(response -> {
-          int value;
-          try {
-            value = Integer.parseInt(response.trim());
-          } catch (NumberFormatException e) {
-            throw new IllegalArgumentException("Invalid ATS88 response: " + response, e);
-          }
-
-          List<ModemMessageStatusFlag> flags = new ArrayList<>();
-          for (ModemMessageStatusFlag flag : ModemMessageStatusFlag.values()) {
-            if (flag.isSet(value)) {
-              flags.add(flag);
-            }
-          }
-          return flags;
-        });
-  }
   //endregion
 
   //region Positioning controls
-  public CompletableFuture<String> setTrackingMode(GnssTrackingMode mode) {
-    return sendATCommand("ATS80=" + mode.getCode());
-  }
-
   public CompletableFuture<Integer> getJammingIndicator() {
     return sendATCommand("ATS57?")
         .thenApply(resp -> {
@@ -157,17 +117,6 @@ public class Modem {
         });
   }
 
-  public CompletableFuture<String> requestPosition() {
-    return sendATCommand("AT%GPS=60,120");
-  }
-
-  public CompletableFuture<String> requestPositionReport() {
-    return sendATCommand("AT%POSR");
-  }
-
-  public CompletableFuture<String> setPositioningMode(PositioningMode mode) {
-    return sendATCommand("ATS39=" + mode.getCode());
-  }
   //endregion
 
   //region Outgoing message functions
@@ -197,9 +146,10 @@ public class Modem {
     Message message = new Message();
     message.setPriority(priority);
     message.setPayload(payload);
-    message.setMIN(min);
-    message.setSIN(sin);
+    message.setMin(min);
+    message.setSin(sin);
     message.setFormat(MessageFormat.BASE64);
+
     modemProtocol.sendMessage(message);
   }
   //endregion
@@ -222,29 +172,6 @@ public class Modem {
   }
   //endregion
 
-  public void factoryReset() {
-    sendATCommand("AT&F;Z");
-  }
-
-  public void shutdownModem() {
-    sendATCommand("AT%OFF");
-  }
-
-  public void enableTraceLog() {
-    sendATCommand("AT%TRK=1");
-  }
-
-  public void disableTraceLog() {
-    sendATCommand("AT%TRK=0");
-  }
-
-  public CompletableFuture<List<String>> querySyslog() {
-    return sendATCommand("AT%SYSL")
-        .thenApply(response -> Arrays.stream(response.split("\r\n"))
-            .filter(line -> !line.isBlank())
-            .toList());
-  }
-
   public synchronized CompletableFuture<String> sendATCommand(String cmd) {
     logger.log(STOGI_SEND_AT_MESSAGE, cmd);
     CompletableFuture<String> future = new CompletableFuture<>();
@@ -258,7 +185,7 @@ public class Modem {
   private synchronized void sendNextCommand() {
     currentCommand = commandQueue.poll();
     if (currentCommand != null) {
-      packetSender.accept(packetWith(currentCommand.command));
+      packetSender.accept(packetWith(currentCommand.cmd));
     }
   }
 
@@ -321,4 +248,7 @@ public class Modem {
   }
 
 
+  public String getType() {
+    return modemProtocol.getType();
+  }
 }

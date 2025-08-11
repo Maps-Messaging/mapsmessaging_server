@@ -21,5 +21,7 @@ package io.mapsmessaging.network.protocol.impl.orbcomm.modem.device.messages;
 
 public interface ModemMessage {
 
-  default byte[] pack(){return new byte[0];}
+  default byte[] pack() {
+    return new byte[0];
+  }
 }

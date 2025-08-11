@@ -64,25 +64,20 @@ public class TerminalInfo {
 
   @SerializedName("LastOperationMode")
   private Integer lastOperationModeRaw;
+  @SerializedName("TerminalWakeupPeriod")
+  private Integer terminalWakeupPeriod;
+  @SerializedName("PairedTerminalPrimeID")
+  private String pairedTerminalPrimeId;
+  @SerializedName("IsRegistered")
+  private Integer isRegistered;
+  @SerializedName("LastCellAccessUTC")
+  private String lastCellAccessUtc;
+  @SerializedName("UpdateUTC")
+  private String updateUtc;
 
   public OperationMode getLastOperationMode() {
     return OperationMode.fromCode(lastOperationModeRaw);
   }
-
-  @SerializedName("TerminalWakeupPeriod")
-  private Integer terminalWakeupPeriod;
-
-  @SerializedName("PairedTerminalPrimeID")
-  private String pairedTerminalPrimeId;
-
-  @SerializedName("IsRegistered")
-  private Integer isRegistered;
-
-  @SerializedName("LastCellAccessUTC")
-  private String lastCellAccessUtc;
-
-  @SerializedName("UpdateUTC")
-  private String updateUtc;
 
 
   public enum OperationMode {
@@ -97,16 +92,16 @@ public class TerminalInfo {
       this.code = code;
     }
 
-    public int getCode() {
-      return code;
-    }
-
     public static OperationMode fromCode(Integer code) {
       if (code == null) return null;
       for (OperationMode mode : values()) {
         if (mode.code == code) return mode;
       }
       return null;
+    }
+
+    public int getCode() {
+      return code;
     }
   }
 

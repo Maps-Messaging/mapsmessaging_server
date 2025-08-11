@@ -24,7 +24,6 @@ import io.mapsmessaging.network.protocol.impl.orbcomm.modem.device.messages.Mess
 import io.mapsmessaging.network.protocol.impl.orbcomm.modem.device.messages.SendMessageState;
 import io.mapsmessaging.network.protocol.impl.orbcomm.modem.device.values.MessageFormat;
 
-import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
@@ -42,15 +41,23 @@ public abstract class BaseModemProtocol {
   public abstract void sendMessage(Message message);
 
   public abstract CompletableFuture<List<SendMessageState>> listSentMessages();
+
   public abstract CompletableFuture<Void> deleteSentMessages(String msgName);
+
   public abstract CompletableFuture<Void> markSentMessageRead(String name);
+
   public abstract void listOutgoingMessages();
 
   /*
   Handle incoming messages
    */
   public abstract CompletableFuture<List<String>> listIncomingMessages();
+
   public abstract CompletableFuture<byte[]> getMessage(String metaLine, MessageFormat format);
+
   public abstract CompletableFuture<Void> markMessageRetrieved(String metaLine);
+
   public abstract CompletableFuture<List<byte[]>> fetchAllMessages(MessageFormat format);
+
+  public abstract String getType();
 }

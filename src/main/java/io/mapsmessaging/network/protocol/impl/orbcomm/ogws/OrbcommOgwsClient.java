@@ -26,7 +26,6 @@ import io.mapsmessaging.dto.rest.config.protocol.impl.OrbCommOgwsDTO;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.network.protocol.impl.orbcomm.ogws.data.*;
-import jakarta.validation.constraints.NotNull;
 
 import java.io.IOException;
 import java.net.URI;
@@ -44,6 +43,7 @@ import static io.mapsmessaging.logging.ServerLogMessages.OGWS_SENDING_REQUEST;
 public class OrbcommOgwsClient {
   private final Gson gson = new GsonBuilder()
       .registerTypeAdapter(ElementType.class, new ElementTypeAdapter())
+      .disableHtmlEscaping()
       .create();
   private final Logger logger = LoggerFactory.getLogger(OrbcommOgwsClient.class);
 
@@ -51,9 +51,8 @@ public class OrbcommOgwsClient {
   private final HttpClient httpClient;
   private final String clientId;
   private final String clientSecret;
-  private String bearerToken;
-
   private final OrbCommOgwsDTO config;
+  private String bearerToken;
   private long reAuthenticateTime;
 
   public OrbcommOgwsClient(OrbCommOgwsDTO config) {
@@ -61,7 +60,7 @@ public class OrbcommOgwsClient {
     this.baseUrl = config.getBaseUrl();
     this.clientId = config.getClientId();
     this.clientSecret = config.getClientSecret();
-    if((clientId == null || clientId.isEmpty() ) || clientSecret == null || clientSecret.isEmpty()) {
+    if ((clientId == null || clientId.isEmpty()) || clientSecret == null || clientSecret.isEmpty()) {
       throw new IllegalArgumentException("Client id or secret cannot be null or empty");
     }
     this.httpClient = HttpClient.newBuilder()
@@ -87,7 +86,7 @@ public class OrbcommOgwsClient {
 
     GetTokenResponse tokenResponse = gson.fromJson(response.body(), GetTokenResponse.class);
     this.bearerToken = tokenResponse.getAccessToken();
-    reAuthenticateTime = System.currentTimeMillis()+ (tokenResponse.getExpiresIn()*1000L);
+    reAuthenticateTime = System.currentTimeMillis() + (tokenResponse.getExpiresIn() * 1000L);
     return tokenResponse.isSuccess();
   }
 
@@ -101,8 +100,8 @@ public class OrbcommOgwsClient {
   public FromMobileMessagesResponse getFromMobileMessages(String fromUtc) throws Exception {
     reauthenticate();
     String url = baseUrl + "/get/re_messages?IncludeRawPayload=true";
-    if(fromUtc != null){
-      url = url+"&FromUTC=" + encode(fromUtc);
+    if (fromUtc != null) {
+      url = url + "&FromUTC=" + encode(fromUtc);
     }
     HttpRequest request = HttpRequest.newBuilder()
         .uri(URI.create(url))
@@ -153,7 +152,10 @@ public class OrbcommOgwsClient {
     String url = baseUrl + "/info/service" + (includeErrorCodes ? "?GetErrorCodes=true" : "");
     HttpRequest request = authorizedGet(url);
     HttpResponse<String> response = httpClient.send(request, BodyHandlers.ofString());
-    return gson.fromJson(response.body(), ServiceInfoResponse.class);
+    if(response.statusCode() == 200) {
+      return gson.fromJson(response.body(), ServiceInfoResponse.class);
+    }
+    return null;
   }
 
   public GetTerminalInfoResponse getTerminal(String primeId) throws Exception {
@@ -170,6 +172,7 @@ public class OrbcommOgwsClient {
   public SubmitMessagesResponse submitMessage(List<SubmitMessage> submitMessages) throws Exception {
     reauthenticate();
     String jsonMessages = gson.toJson(submitMessages);
+    System.err.println(jsonMessages);
     HttpRequest request = HttpRequest.newBuilder()
         .uri(URI.create(baseUrl + "/submit/messages"))
         .header("Authorization", "Bearer " + bearerToken)
@@ -196,7 +199,7 @@ public class OrbcommOgwsClient {
   }
 
   private void reauthenticate() throws IOException, InterruptedException {
-    if(System.currentTimeMillis() > reAuthenticateTime){
+    if (System.currentTimeMillis() > reAuthenticateTime) {
       authenticate();
     }
   }

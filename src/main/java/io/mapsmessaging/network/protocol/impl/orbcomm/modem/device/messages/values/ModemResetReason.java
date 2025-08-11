@@ -41,18 +41,18 @@ public enum ModemResetReason {
     this.value = value;
   }
 
+  public static ModemResetReason fromValue(int value) {
+    for (ModemResetReason r : values()) {
+      if (r.value == value) return r;
+    }
+    return UNKNOWN;
+  }
+
   public int getValue() {
     return value;
   }
 
   public boolean isSet(int bits) {
     return (bits & (1 << value)) != 0;
-  }
-
-  public static ModemResetReason fromValue(int value) {
-    for (ModemResetReason r : values()) {
-      if (r.value == value) return r;
-    }
-    return UNKNOWN;
   }
 }

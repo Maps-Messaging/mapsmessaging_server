@@ -108,16 +108,16 @@ public enum MessageFormat {
     this.modemCode = modemCode;
   }
 
-  public int getCode() {
-    return modemCode;
-  }
-
   public static MessageFormat fromCode(int code) {
     for (MessageFormat f : values()) if (f.getCode() == code) return f;
     throw new IllegalArgumentException("Unknown dataFormat: " + code);
   }
 
+  public int getCode() {
+    return modemCode;
+  }
 
   public abstract String encode(byte[] data);
+
   public abstract byte[] decode(String encoded);
 }

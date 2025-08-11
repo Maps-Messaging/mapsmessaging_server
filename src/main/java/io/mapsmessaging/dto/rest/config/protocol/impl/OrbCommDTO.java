@@ -47,5 +47,6 @@ public class OrbCommDTO extends ProtocolConfigDTO {
   @Schema(description = "Initial modem setup string")
   protected String initialSetup;
 
-
+  @Schema(description = "Set server location from modem GPS")
+  protected boolean setServerLocation;
 }

@@ -19,11 +19,12 @@
 
 package io.mapsmessaging.network.protocol.impl.orbcomm.inmarsat.client.model;
 
-import com.google.gson.JsonObject;
 import com.google.gson.annotations.SerializedName;
+import lombok.Getter;
 
 import java.util.List;
 
+@Getter
 public final class MobileTerminatedSubmitRequest {
   @SerializedName("messages")
   private List<Item> messages;
@@ -34,39 +35,5 @@ public final class MobileTerminatedSubmitRequest {
 
   public List<Item> getMessages() {
     return messages;
-  }
-
-  public static final class Item {
-    @SerializedName("destinationId")
-    private final String destinationId;
-    @SerializedName("userMessageId")
-    private final String userMessageId; // optional
-    @SerializedName("payloadRaw")
-    private final String payloadRaw;    // optional (Base64)
-    @SerializedName("payloadJson")
-    private final JsonObject payloadJson; // optional
-
-    public Item(String destinationId, String userMessageId, String payloadRaw, JsonObject payloadJson) {
-      this.destinationId = destinationId;
-      this.userMessageId = userMessageId;
-      this.payloadRaw = payloadRaw;
-      this.payloadJson = payloadJson;
-    }
-
-    public String getDestinationId() {
-      return destinationId;
-    }
-
-    public String getUserMessageId() {
-      return userMessageId;
-    }
-
-    public String getPayloadRaw() {
-      return payloadRaw;
-    }
-
-    public JsonObject getPayloadJson() {
-      return payloadJson;
-    }
   }
 }

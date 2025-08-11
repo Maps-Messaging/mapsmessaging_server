@@ -22,7 +22,6 @@ package io.mapsmessaging.network.protocol.impl.orbcomm.inmarsat.io;
 import io.mapsmessaging.config.protocol.impl.InmarsatConfig;
 import io.mapsmessaging.dto.rest.config.network.EndPointServerConfigDTO;
 import io.mapsmessaging.dto.rest.config.protocol.ProtocolConfigDTO;
-import io.mapsmessaging.dto.rest.config.protocol.impl.OrbCommOgwsDTO;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.network.EndPointURL;
 import io.mapsmessaging.network.io.AcceptHandler;
@@ -30,9 +29,7 @@ import io.mapsmessaging.network.io.EndPointServer;
 import io.mapsmessaging.network.io.Selectable;
 import io.mapsmessaging.network.io.impl.Selector;
 import io.mapsmessaging.network.protocol.impl.orbcomm.ogws.data.CommonMessage;
-import io.mapsmessaging.network.protocol.impl.orbcomm.ogws.data.TerminalInfo;
 import io.mapsmessaging.network.protocol.impl.orbcomm.ogws.io.IncomingMessageHandler;
-import io.mapsmessaging.network.protocol.impl.orbcomm.ogws.io.OrbcommOgwsEndPoint;
 
 import javax.security.auth.login.LoginException;
 import java.io.IOException;

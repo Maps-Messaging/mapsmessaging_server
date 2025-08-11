@@ -44,7 +44,7 @@ public class SleepScheduleMessage implements ModemMessage {
     wakeupType = ModemWakeupPeriod.fromCode(buffer.get() & 0xFF);
     int tmp = buffer.getShort() & 0xFFFF;
     mobileInitiated = (tmp & 0x80) != 0;
-    messageReference = (tmp>>4) & 0x7FF;
+    messageReference = (tmp >> 4) & 0x7FF;
   }
 
   public byte[] pack() {

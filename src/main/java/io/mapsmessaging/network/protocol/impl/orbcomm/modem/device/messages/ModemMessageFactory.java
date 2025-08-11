@@ -21,8 +21,11 @@ package io.mapsmessaging.network.protocol.impl.orbcomm.modem.device.messages;
 
 public class ModemMessageFactory {
 
-  public static ModemMessage create(int min, byte[] data){
-    switch(min){
+  private ModemMessageFactory() {
+  }
+
+  public static ModemMessage create(int min, byte[] data) {
+    switch (min) {
       case 0:
         return new ModemIdentificationMessage(data);
       case 1:
@@ -42,6 +45,4 @@ public class ModemMessageFactory {
         return null;
     }
   }
-
-  private ModemMessageFactory() {}
 }

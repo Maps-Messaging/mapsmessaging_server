@@ -21,7 +21,9 @@ package io.mapsmessaging.network.protocol.impl.orbcomm.ogws.protocol;
 
 import com.amazonaws.util.Base64;
 import io.mapsmessaging.api.*;
+import io.mapsmessaging.api.features.ClientAcknowledgement;
 import io.mapsmessaging.api.features.DestinationType;
+import io.mapsmessaging.api.features.QualityOfService;
 import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.dto.rest.config.protocol.ProtocolConfigDTO;
 import io.mapsmessaging.dto.rest.protocol.ProtocolInformationDTO;
@@ -32,19 +34,17 @@ import io.mapsmessaging.network.ProtocolClientConnection;
 import io.mapsmessaging.network.io.EndPoint;
 import io.mapsmessaging.network.io.Packet;
 import io.mapsmessaging.network.protocol.Protocol;
-import io.mapsmessaging.network.protocol.impl.orbcomm.ogws.data.CommonMessage;
-import io.mapsmessaging.network.protocol.impl.orbcomm.ogws.data.ElementType;
-import io.mapsmessaging.network.protocol.impl.orbcomm.ogws.data.Field;
-import io.mapsmessaging.network.protocol.impl.orbcomm.ogws.data.ReturnMessage;
+import io.mapsmessaging.network.protocol.impl.orbcomm.ogws.data.*;
 import io.mapsmessaging.network.protocol.impl.orbcomm.ogws.io.OrbcommOgwsEndPoint;
 import io.mapsmessaging.network.protocol.impl.orbcomm.protocol.OrbCommMessage;
+import io.mapsmessaging.network.protocol.impl.orbcomm.protocol.OrbCommMessageFactory;
+import io.mapsmessaging.network.protocol.impl.orbcomm.protocol.OrbCommMessageRebuilder;
 import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
 
 import javax.security.auth.Subject;
 import javax.security.auth.login.LoginException;
 import java.io.IOException;
-import java.net.SocketAddress;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
@@ -56,14 +56,16 @@ import static io.mapsmessaging.logging.ServerLogMessages.OGWS_FAILED_TO_SAVE_MES
 public class OrbCommOgwsProtocol extends Protocol {
 
   private final Logger logger = LoggerFactory.getLogger(OrbCommOgwsProtocol.class);
+  private final OrbCommMessageRebuilder messageRebuilder;
   private final Session session;
   private final String primeId;
   private boolean closed;
 
   public OrbCommOgwsProtocol(@NonNull @NotNull EndPoint endPoint, @NotNull @NonNull ProtocolConfigDTO protocolConfig) throws LoginException, IOException {
     super(endPoint, protocolConfig);
-    primeId = ((OrbcommOgwsEndPoint)endPoint).getTerminalInfo().getPrimeId();
+    primeId = ((OrbcommOgwsEndPoint) endPoint).getTerminalInfo().getPrimeId();
     closed = false;
+    messageRebuilder = new OrbCommMessageRebuilder();
     SessionContextBuilder scb = new SessionContextBuilder(primeId, new ProtocolClientConnection(this));
     scb.setPersistentSession(false)
         .setResetState(true)
@@ -73,13 +75,11 @@ public class OrbCommOgwsProtocol extends Protocol {
 
     session = SessionManager.getInstance().create(scb.build(), this);
     session.resumeState(); // We have established a session to read/write with this prime id
-  }
-
-  protected OrbCommOgwsProtocol(@NonNull @NotNull EndPoint endPoint, @NonNull @NotNull SocketAddress socketAddress, @NotNull @NonNull ProtocolConfigDTO protocolConfig) {
-    super(endPoint, socketAddress, protocolConfig);
-    primeId = ((OrbcommOgwsEndPoint)endPoint).getTerminalInfo().getPrimeId();
-    closed = false;
-    session = null;
+    SubscriptionContextBuilder subBuilder = new SubscriptionContextBuilder("/outbound/"+primeId, ClientAcknowledgement.AUTO);
+    subBuilder.setQos(QualityOfService.AT_MOST_ONCE)
+        .setReceiveMaximum(1)
+        .setNoLocalMessages(true);
+    session.addSubscription(subBuilder.build());
   }
 
   @Override
@@ -92,7 +92,7 @@ public class OrbCommOgwsProtocol extends Protocol {
   }
 
   public Subject getSubject() {
-    if(session != null) {
+    if (session != null) {
       return session.getSecurityContext().getSubject();
     }
     return new Subject();
@@ -118,19 +118,23 @@ public class OrbCommOgwsProtocol extends Protocol {
   @Override
   public void sendMessage(@NotNull @NonNull MessageEvent messageEvent) {
     // To Do - Transform here
-    OrbCommMessage orbCommMessage = new OrbCommMessage(messageEvent.getDestinationName(), messageEvent.getMessage().getOpaqueData());
-    CommonMessage commonMessage = new CommonMessage();
-    commonMessage.setSin(128);
-    commonMessage.setMin(1);
-    commonMessage.setName("maps_message");
-    List<Field> fields = new ArrayList<>();
-    Field field = new Field();
-    field.setName("data");
-    field.setValue(Base64.encodeAsString(orbCommMessage.packToSend()));
-    field.setType(ElementType.DATA);
-    fields.add(field);
-    commonMessage.setFields(fields);
-    ((OrbcommOgwsEndPoint)endPoint).sendMessage(commonMessage);
+    String destinationName = messageEvent.getDestinationName();
+    if(destinationName.equalsIgnoreCase("/outbound/"+primeId)){
+      destinationName = "/inbound";
+    }
+
+    List<OrbCommMessage> orbCommMessages = OrbCommMessageFactory.createMessages(destinationName, messageEvent.getMessage().getOpaqueData());
+    for (OrbCommMessage orbCommMessage : orbCommMessages) {
+      byte[] tmp = orbCommMessage.packToSend();
+      byte[] payload = new byte[tmp.length + 2];
+      payload[0] = (byte) 0x81;
+      payload[1] = (byte) 1;
+      System.arraycopy(tmp, 0, payload, 2, tmp.length);
+      SubmitMessage submitMessage = new SubmitMessage();
+      submitMessage.setRawPayload(Base64.encodeAsString(payload));
+      ((OrbcommOgwsEndPoint) endPoint).sendMessage(submitMessage);
+      messageEvent.getCompletionTask().run();
+    }
   }
 
   @Override
@@ -140,7 +144,7 @@ public class OrbCommOgwsProtocol extends Protocol {
 
   @Override
   public String getName() {
-    return ((OrbcommOgwsEndPoint)endPoint).getTerminalInfo().getPrimeId();
+    return ((OrbcommOgwsEndPoint) endPoint).getTerminalInfo().getPrimeId();
   }
 
   @Override
@@ -149,7 +153,7 @@ public class OrbCommOgwsProtocol extends Protocol {
   }
 
   public void handleIncomingMessage(ReturnMessage message) throws ExecutionException, InterruptedException {
-    byte[] data  = Base64.decode(message.getRawPayload());
+    byte[] data = Base64.decode(message.getRawPayload());
 
     processMessage(data);
   }
@@ -160,30 +164,33 @@ public class OrbCommOgwsProtocol extends Protocol {
     byte[] tmp = new byte[raw.length - 1];
     System.arraycopy(raw, 1, tmp, 0, tmp.length);
     OrbCommMessage orbCommMessage = new OrbCommMessage(tmp);
-    byte[] buffer = orbCommMessage.getMessage();
-    String namespace = orbCommMessage.getNamespace();
-    MessageBuilder messageBuilder = new MessageBuilder();
-    messageBuilder.setOpaqueData(buffer);
-    Message mapsMessage = messageBuilder.build();
-    // Transform
+    orbCommMessage = messageRebuilder.rebuild(orbCommMessage);
+    if (orbCommMessage != null) {
+      byte[] buffer = orbCommMessage.getMessage();
+      String namespace = orbCommMessage.getNamespace();
+      MessageBuilder messageBuilder = new MessageBuilder();
+      messageBuilder.setOpaqueData(buffer);
+      Message mapsMessage = messageBuilder.build();
+      // Transform
 
-    CompletableFuture<Destination> future = session.findDestination(namespace, DestinationType.TOPIC);
-    future.thenApply(destination -> {
-      if (destination != null) {
-        try {
-          destination.storeMessage(mapsMessage);
-        } catch (IOException e) {
-          logger.log(OGWS_FAILED_TO_SAVE_MESSAGE, e);
+      CompletableFuture<Destination> future = session.findDestination(namespace, DestinationType.TOPIC);
+      future.thenApply(destination -> {
+        if (destination != null) {
           try {
-            endPoint.close();
-          } catch (IOException ioException) {
-           // ignore
+            destination.storeMessage(mapsMessage);
+          } catch (IOException e) {
+            logger.log(OGWS_FAILED_TO_SAVE_MESSAGE, e);
+            try {
+              endPoint.close();
+            } catch (IOException ioException) {
+              // ignore
+            }
+            future.completeExceptionally(e);
           }
-          future.completeExceptionally(e);
         }
-      }
-      return destination;
-    });
-    future.get();
+        return destination;
+      });
+      future.get();
+    }
   }
 }

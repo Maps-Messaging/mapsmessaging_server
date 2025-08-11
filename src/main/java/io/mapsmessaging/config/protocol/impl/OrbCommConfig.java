@@ -35,6 +35,7 @@ public class OrbCommConfig extends OrbCommDTO implements Config {
     messagePollInterval = config.getLongProperty("messagePollInterval", 5000);
     ignoreFirstByte = config.getBooleanProperty("ignoreFirstByte", false);
     modemResponseTimeout = config.getLongProperty("modemResponseTimeout", 5000);
+    setServerLocation = config.getBooleanProperty("setServerLocation", true);
   }
 
   @Override
@@ -57,6 +58,11 @@ public class OrbCommConfig extends OrbCommDTO implements Config {
       }
       if (modemResponseTimeout != ((OrbCommDTO) config).getModemResponseTimeout()) {
         modemResponseTimeout = ((OrbCommDTO) config).getModemResponseTimeout();
+        result = true;
+      }
+      if(setServerLocation != ((OrbCommDTO)config).isSetServerLocation()){
+        setServerLocation = ((OrbCommDTO)config).isSetServerLocation();
+        result = true;
       }
     }
     return result;
@@ -73,6 +79,7 @@ public class OrbCommConfig extends OrbCommDTO implements Config {
     properties.put("messagePollInterval", messagePollInterval);
     properties.put("ignoreFirstByte", ignoreFirstByte);
     properties.put("modemResponseTimeout", modemResponseTimeout);
+    properties.put("setServerLocation", setServerLocation);
     return properties;
   }
 }

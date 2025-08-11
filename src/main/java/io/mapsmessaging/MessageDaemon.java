@@ -43,7 +43,6 @@ import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.logging.ServerLogMessages;
 import io.mapsmessaging.security.uuid.UuidGenerator;
 import io.mapsmessaging.stats.StatsReporter;
-import io.mapsmessaging.utilities.PidFileManager;
 import io.mapsmessaging.utilities.SystemProperties;
 import io.mapsmessaging.utilities.admin.JMXManager;
 import io.mapsmessaging.utilities.admin.SimpleTaskSchedulerJMX;

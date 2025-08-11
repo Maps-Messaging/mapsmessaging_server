@@ -48,12 +48,11 @@ public class GatewayManager {
 
 
   private final Map<String, TerminalInfo> knownTerminals;
-  private String lastMessageUtc;
-
-  @Getter
-  private boolean authenticated;
   @Getter
   private final Queue<ReturnMessage> incomingEvents;
+  private String lastMessageUtc;
+  @Getter
+  private boolean authenticated;
 
   public GatewayManager(OrbcommOgwsClient ogwsClient, int pollInterval, IncomingMessageHandler handler) {
     this.ogwsClient = ogwsClient;
@@ -68,16 +67,15 @@ public class GatewayManager {
   public void start() {
     try {
       authenticated = ogwsClient.authenticate();
-      if(authenticated) {
+      if (authenticated) {
         GetTerminalsInfoResponse response = ogwsClient.getTerminals();
-        if(response != null && response.isSuccess()) {
-          for(TerminalInfo terminal : response.getTerminals()) {
+        if (response != null && response.isSuccess()) {
+          for (TerminalInfo terminal : response.getTerminals()) {
             knownTerminals.put(terminal.getPrimeId(), terminal);
           }
         }
         SimpleTaskScheduler.getInstance().scheduleAtFixedRate(this::pollGateway, pollInterval, pollInterval, TimeUnit.SECONDS);
-      }
-      else{
+      } else {
         logger.log(OGWS_FAILED_AUTHENTICATION);
       }
     } catch (IOException e) {
@@ -94,28 +92,27 @@ public class GatewayManager {
   public void pollGateway() {
     try {
       FromMobileMessagesResponse response = ogwsClient.getFromMobileMessages(lastMessageUtc);
-      if(response != null && response.isSuccess()){
-        if(!response.getMessages().isEmpty()) {
+      if (response != null && response.isSuccess()) {
+        if (!response.getMessages().isEmpty()) {
           lastMessageUtc = response.getNextFromUtc();
           incomingEvents.addAll(response.getMessages());
           handler.handleIncomingMessage();
         }
-      }
-      else{
+      } else {
         logger.log(OGWS_FAILED_POLL, response != null ? response.getErrorId() : "<null error>");
       }
     } catch (Exception e) {
+      e.printStackTrace();
       logger.log(OGWS_REQUEST_FAILED, e);
     }
   }
 
-  public void sendClientMessage(String primeId, CommonMessage commonMessage) {
-    SubmitMessage submitMessage = new SubmitMessage();
-    submitMessage.setPayload(commonMessage);
+  public void sendClientMessage(String primeId, SubmitMessage submitMessage) {
     submitMessage.setDestinationId(primeId);
     try {
-      ogwsClient.submitMessage(List.of(submitMessage) );
-    } catch (Exception e) {
+      ogwsClient.submitMessage(List.of(submitMessage));
+    } catch (Throwable e) {
+      e.printStackTrace();
       logger.log(OGWS_REQUEST_FAILED, e);
     }
   }

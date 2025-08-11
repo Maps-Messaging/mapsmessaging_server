@@ -55,7 +55,8 @@ public class PushDataHandler extends Handler {
           Map<String, String> meta = new LinkedHashMap<>();
           meta.put("protocol", "SemTech");
           meta.put("version", String.valueOf(VERSION));
-
+          meta.put("sessionId", protocol.getSessionId());
+          meta.put("time_ms", "" + System.currentTimeMillis());
           MessageBuilder builder = new MessageBuilder();
           builder.setOpaqueData(pushData.getJsonObject().getBytes(StandardCharsets.UTF_8));
           builder.setMeta(meta);

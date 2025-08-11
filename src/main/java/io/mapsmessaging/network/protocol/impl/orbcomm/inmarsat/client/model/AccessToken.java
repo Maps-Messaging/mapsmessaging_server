@@ -30,7 +30,7 @@ public final class AccessToken {
   @SerializedName("expires_in")
   private int expiresIn;
   @SerializedName("access_token")
-  private String accessToken;
+  private String token;
   @SerializedName("scope")
   private String scope;
 
@@ -43,8 +43,8 @@ public final class AccessToken {
     return expiresIn;
   }
 
-  public String getAccessToken() {
-    return accessToken;
+  public String getToken() {
+    return token;
   }
 
   public String getScope() {

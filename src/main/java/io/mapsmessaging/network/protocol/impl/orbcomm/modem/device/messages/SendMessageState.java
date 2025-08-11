@@ -20,6 +20,86 @@
 package io.mapsmessaging.network.protocol.impl.orbcomm.modem.device.messages;
 
 public class SendMessageState {
+  private final String messageName;
+  private final double messageNumber;
+  private final int priority;
+  private final int sin;
+  private final State state;
+  private final int length;
+  private final int bytesAcknowledged;
+  public SendMessageState(String line) {
+    String content = line.substring(line.indexOf(':') + 1).trim();
+    String[] parts = content.split(",");
+
+    if (parts.length == 7) {
+      this.messageName = parts[0].replace("\"", "").trim();
+      this.messageNumber = Double.parseDouble(parts[1].trim());
+      this.priority = Integer.parseInt(parts[2].trim());
+      this.sin = Integer.parseInt(parts[3].trim());
+      this.state = State.fromCode(Integer.parseInt(parts[4].trim()));
+      this.length = Integer.parseInt(parts[5].trim());
+      this.bytesAcknowledged = Integer.parseInt(parts[6].trim());
+    } else {
+      this.messageName = parts[1].replace("\"", "").trim();
+      this.messageNumber = 0.0;
+      this.state = State.fromCode(Integer.parseInt(parts[3].trim()));
+      this.priority = 1;
+      this.sin = 0;
+      this.length = Integer.parseInt(parts[7].trim());
+      this.bytesAcknowledged = Integer.parseInt(parts[8].trim());
+    }
+  }
+
+  public String getMessageName() {
+    return messageName;
+  }
+
+  public double getMessageNumber() {
+    return messageNumber;
+  }
+
+  public int getPriority() {
+    return priority;
+  }
+
+  public int getSin() {
+    return sin;
+  }
+
+  public State getState() {
+    return state;
+  }
+
+  public int getLength() {
+    return length;
+  }
+
+  public int getBytesAcknowledged() {
+    return bytesAcknowledged;
+  }
+
+  public boolean isReady() {
+    return state == State.TX_READY;
+  }
+
+  public boolean isSending() {
+    return state == State.TX_SENDING;
+  }
+
+  public boolean isComplete() {
+    return state == State.TX_COMPLETED;
+  }
+
+  public boolean isFailed() {
+    return state == State.TX_FAILED;
+  }
+
+  @Override
+  public String toString() {
+    return String.format("SendMessageState[name=%s, num=%.1f, pri=%d, sin=%d, state=%s, len=%d, ack=%d]",
+        messageName, messageNumber, priority, sin, state, length, bytesAcknowledged);
+  }
+
   public enum State {
     TX_READY(4),
     TX_SENDING(5),
@@ -33,10 +113,6 @@ public class SendMessageState {
       this.code = code;
     }
 
-    public int getCode() {
-      return code;
-    }
-
     public static State fromCode(int code) {
       return switch (code) {
         case 4 -> TX_READY;
@@ -46,56 +122,9 @@ public class SendMessageState {
         default -> UNKNOWN;
       };
     }
-  }
 
-  private final String messageName;
-  private final double messageNumber;
-  private final int priority;
-  private final int sin;
-  private final State state;
-  private final int length;
-  private final int bytesAcknowledged;
-
-  public SendMessageState(String line) {
-    String content = line.substring(line.indexOf(':') + 1).trim();
-    String[] parts = content.split(",");
-
-    if (parts.length == 7) {
-      this.messageName = parts[0].replace("\"", "").trim();
-      this.messageNumber = Double.parseDouble(parts[1].trim());
-      this.priority = Integer.parseInt(parts[2].trim());
-      this.sin = Integer.parseInt(parts[3].trim());
-      this.state = State.fromCode(Integer.parseInt(parts[4].trim()));
-      this.length = Integer.parseInt(parts[5].trim());
-      this.bytesAcknowledged = Integer.parseInt(parts[6].trim());
+    public int getCode() {
+      return code;
     }
-    else{
-      this.messageName = parts[1].replace("\"", "").trim();
-      this.messageNumber =0.0;
-      this.state = State.fromCode(Integer.parseInt(parts[3].trim()));
-      this.priority = 1;
-      this.sin = 0;
-      this.length = Integer.parseInt(parts[7].trim());
-      this.bytesAcknowledged = Integer.parseInt(parts[8].trim());
-    }
-  }
-
-  public String getMessageName() { return messageName; }
-  public double getMessageNumber() { return messageNumber; }
-  public int getPriority() { return priority; }
-  public int getSin() { return sin; }
-  public State getState() { return state; }
-  public int getLength() { return length; }
-  public int getBytesAcknowledged() { return bytesAcknowledged; }
-
-  public boolean isReady()     { return state == State.TX_READY; }
-  public boolean isSending()   { return state == State.TX_SENDING; }
-  public boolean isComplete()  { return state == State.TX_COMPLETED; }
-  public boolean isFailed()    { return state == State.TX_FAILED; }
-
-  @Override
-  public String toString() {
-    return String.format("SendMessageState[name=%s, num=%.1f, pri=%d, sin=%d, state=%s, len=%d, ack=%d]",
-        messageName, messageNumber, priority, sin, state, length, bytesAcknowledged);
   }
 }
