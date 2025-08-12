@@ -30,25 +30,19 @@ public class OrbCommOgwsConfig extends OrbCommOgwsDTO implements Config {
     setType("ogws");
     ProtocolConfigFactory.unpack(config, this);
     baseUrl = config.getProperty("baseUrl", "https://ogws.orbcomm.com/api/v1.0");
-    clientId = config.getProperty("clientId");
-    clientSecret = config.getProperty("clientSecret");
-    pollInterval = config.getIntProperty("pollInterval", 10);
-    httpRequestTimeout = config.getIntProperty("httpRequestTimeoutSec", 10);
+    pollInterval = config.getIntProperty("pollInterval", 7);
+    httpRequestTimeout = config.getIntProperty("httpRequestTimeoutSec", 30);
+    maxInflightEventsPerModem = config.getIntProperty("maxInflightEventsPerModem", 2);
+    outboundNamespaceRoot = config.getProperty("outboundNamespaceRoot", "");
   }
 
   @Override
   public boolean update(BaseConfigDTO config) {
     boolean result = false;
-    if (config instanceof OrbCommOgwsDTO){
-      OrbCommOgwsDTO orbCommOgwsDTO = (OrbCommOgwsDTO)config;
+    if (config instanceof OrbCommOgwsDTO orbCommOgwsDTO){
       result = ProtocolConfigFactory.update(this, orbCommOgwsDTO);
-
-      if(!clientId.equalsIgnoreCase(orbCommOgwsDTO.getClientId()) ){
-        clientId = orbCommOgwsDTO.getClientId();
-        result = true;
-      }
-      if(!clientSecret.equalsIgnoreCase(orbCommOgwsDTO.getClientSecret()) ){
-        clientSecret = orbCommOgwsDTO.getClientSecret();
+      if(!outboundNamespaceRoot.equalsIgnoreCase(orbCommOgwsDTO.getOutboundNamespaceRoot()) ){
+        outboundNamespaceRoot = orbCommOgwsDTO.getOutboundNamespaceRoot();
         result = true;
       }
       if(!baseUrl.equalsIgnoreCase(orbCommOgwsDTO.getBaseUrl()) ){
@@ -63,6 +57,11 @@ public class OrbCommOgwsConfig extends OrbCommOgwsDTO implements Config {
         httpRequestTimeout = orbCommOgwsDTO.getHttpRequestTimeout();
         result = true;
       }
+      if(maxInflightEventsPerModem != orbCommOgwsDTO.getMaxInflightEventsPerModem() ){
+        maxInflightEventsPerModem = orbCommOgwsDTO.getMaxInflightEventsPerModem();
+        result = true;
+      }
+
     }
     return result;
   }
@@ -72,10 +71,10 @@ public class OrbCommOgwsConfig extends OrbCommOgwsDTO implements Config {
     ConfigurationProperties properties = new ConfigurationProperties();
     ProtocolConfigFactory.pack(properties, this);
     properties.put("baseUrl", baseUrl);
-    properties.put("clientId", clientId);
-    properties.put("clientSecret", clientSecret);
     properties.put("pollInterval", pollInterval);
     properties.put("httpRequestTimeoutSec", httpRequestTimeout);
+    properties.put("maxInflightEventsPerClient", maxInflightEventsPerModem);
+    properties.put("outboundNamespaceRoot", outboundNamespaceRoot);
     return properties;
   }
 }

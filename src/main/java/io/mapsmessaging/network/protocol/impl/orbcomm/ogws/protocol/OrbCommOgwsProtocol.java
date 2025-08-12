@@ -25,7 +25,9 @@ import io.mapsmessaging.api.features.ClientAcknowledgement;
 import io.mapsmessaging.api.features.DestinationType;
 import io.mapsmessaging.api.features.QualityOfService;
 import io.mapsmessaging.api.message.Message;
+import io.mapsmessaging.config.protocol.impl.OrbCommOgwsConfig;
 import io.mapsmessaging.dto.rest.config.protocol.ProtocolConfigDTO;
+import io.mapsmessaging.dto.rest.config.protocol.impl.OrbCommOgwsDTO;
 import io.mapsmessaging.dto.rest.protocol.ProtocolInformationDTO;
 import io.mapsmessaging.dto.rest.protocol.impl.OrbcommProtocolInformation;
 import io.mapsmessaging.logging.Logger;
@@ -45,7 +47,6 @@ import org.jetbrains.annotations.NotNull;
 import javax.security.auth.Subject;
 import javax.security.auth.login.LoginException;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
@@ -59,11 +60,14 @@ public class OrbCommOgwsProtocol extends Protocol {
   private final OrbCommMessageRebuilder messageRebuilder;
   private final Session session;
   private final String primeId;
+  private final String namespacePath;
   private boolean closed;
 
   public OrbCommOgwsProtocol(@NonNull @NotNull EndPoint endPoint, @NotNull @NonNull ProtocolConfigDTO protocolConfig) throws LoginException, IOException {
     super(endPoint, protocolConfig);
     primeId = ((OrbcommOgwsEndPoint) endPoint).getTerminalInfo().getPrimeId();
+    OrbCommOgwsConfig config = (OrbCommOgwsConfig) protocolConfig;
+
     closed = false;
     messageRebuilder = new OrbCommMessageRebuilder();
     SessionContextBuilder scb = new SessionContextBuilder(primeId, new ProtocolClientConnection(this));
@@ -71,15 +75,25 @@ public class OrbCommOgwsProtocol extends Protocol {
         .setResetState(true)
         .setKeepAlive(60000)
         .setSessionExpiry(100)
-        .setReceiveMaximum(2);
-
+        .setReceiveMaximum(config.getMaxInflightEventsPerModem());
     session = SessionManager.getInstance().create(scb.build(), this);
     session.resumeState(); // We have established a session to read/write with this prime id
-    SubscriptionContextBuilder subBuilder = new SubscriptionContextBuilder("/outbound/"+primeId, ClientAcknowledgement.AUTO);
-    subBuilder.setQos(QualityOfService.AT_MOST_ONCE)
-        .setReceiveMaximum(2)
-        .setNoLocalMessages(true);
-    session.addSubscription(subBuilder.build());
+    namespacePath = config.getOutboundNamespaceRoot().trim();
+    if(!namespacePath.isEmpty()){
+      String path;
+      if(namespacePath.endsWith("/")){
+        path = namespacePath +primeId;
+      }
+      else{
+        path = namespacePath + "/"+primeId;
+      }
+      SubscriptionContextBuilder subBuilder = new SubscriptionContextBuilder(path, ClientAcknowledgement.AUTO);
+      subBuilder.setQos(QualityOfService.AT_MOST_ONCE)
+          .setReceiveMaximum(config.getMaxInflightEventsPerModem())
+          .setNoLocalMessages(true);
+      session.addSubscription(subBuilder.build());
+    }
+
   }
 
   @Override
@@ -119,7 +133,7 @@ public class OrbCommOgwsProtocol extends Protocol {
   public void sendMessage(@NotNull @NonNull MessageEvent messageEvent) {
     // To Do - Transform here
     String destinationName = messageEvent.getDestinationName();
-    if(destinationName.equalsIgnoreCase("/outbound/"+primeId)){
+    if(!namespacePath.isEmpty() && !destinationName.startsWith(namespacePath)){
       destinationName = "/inbound";
     }
 

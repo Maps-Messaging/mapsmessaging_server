@@ -64,8 +64,8 @@ public class OrbcommOgwsClient {
   public OrbcommOgwsClient(OrbCommOgwsDTO config) {
     this.config = config;
     this.baseUrl = config.getBaseUrl();
-    this.clientId = config.getClientId();
-    this.clientSecret = config.getClientSecret();
+    this.clientId = config.getRemoteAuthConfig().getUsername();
+    this.clientSecret = config.getRemoteAuthConfig().getPassword();
     pendingMessages = new ArrayList<>();
     if ((clientId == null || clientId.isEmpty()) || clientSecret == null || clientSecret.isEmpty()) {
       throw new IllegalArgumentException("Client id or secret cannot be null or empty");
