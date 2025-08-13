@@ -18,7 +18,7 @@
  */
 
 // src/main/java/io/mapsmessaging/network/protocol/impl/orbcomm/inmarsat/AuthClient.java
-package io.mapsmessaging.network.protocol.impl.orbcomm.inmarsat.client;
+package io.mapsmessaging.network.protocol.impl.orbcomm.inmarsat.client.endpoints;
 
 import com.google.gson.Gson;
 import io.mapsmessaging.network.protocol.impl.orbcomm.inmarsat.client.model.AccessToken;

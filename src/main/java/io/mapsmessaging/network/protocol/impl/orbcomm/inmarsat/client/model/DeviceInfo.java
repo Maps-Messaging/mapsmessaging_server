@@ -20,42 +20,28 @@
 package io.mapsmessaging.network.protocol.impl.orbcomm.inmarsat.client.model;
 
 import com.google.gson.annotations.SerializedName;
+import lombok.Getter;
+import lombok.ToString;
 
+@ToString
+@Getter
 public final class DeviceInfo {
+  @SerializedName("mailboxId")
+  private String mailboxId;
   @SerializedName("deviceId")
   private String deviceId;
-  @SerializedName("alias")
-  private String alias;                 // optional
+  @SerializedName("lastModemRegistrationTime")
+  private String lastModemRegistrationTime; // ISO-8601
+  @SerializedName("wakeUpInterval")
+  private int wakeUpInterval;
+  @SerializedName("provisioningTime")
+  private String provisioningTime;
+  @SerializedName("lastUpdatedTime")
+  private String lastUpdatedTime;
+  @SerializedName("mailboxAlias")
+  private String mailboxAlias;                 // optional
+  @SerializedName("operationMode")
+  private Integer operationMode;                  // 0..3 (ALWAYS_ON, WAKE_UP, RECEIVE_ON_SEND, HYBRID)
   @SerializedName("network")
   private Integer network;            // 0=IDP, 1=OGx
-  @SerializedName("mode")
-  private Integer mode;                  // 0..3 (ALWAYS_ON, WAKE_UP, RECEIVE_ON_SEND, HYBRID)
-  @SerializedName("lastRegistration")
-  private String lastRegistration; // ISO-8601
-  @SerializedName("lastMessageTime")
-  private String lastMessageTime;   // ISO-8601
-
-  public String getDeviceId() {
-    return deviceId;
-  }
-
-  public String getAlias() {
-    return alias;
-  }
-
-  public Integer getNetwork() {
-    return network;
-  }
-
-  public Integer getMode() {
-    return mode;
-  }
-
-  public String getLastRegistration() {
-    return lastRegistration;
-  }
-
-  public String getLastMessageTime() {
-    return lastMessageTime;
-  }
 }

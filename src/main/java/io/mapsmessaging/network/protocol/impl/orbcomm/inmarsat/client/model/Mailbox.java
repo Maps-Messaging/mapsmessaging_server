@@ -20,24 +20,26 @@
 package io.mapsmessaging.network.protocol.impl.orbcomm.inmarsat.client.model;
 
 import com.google.gson.annotations.SerializedName;
+import lombok.Getter;
+import lombok.ToString;
 
+@Getter
+@ToString
 public final class Mailbox {
   @SerializedName("mailboxId")
   private String mailboxId;
+  @SerializedName("alias")
+  private String alias;
   @SerializedName("enabled")
   private Boolean enabled;
-  @SerializedName("created")
-  private String created; // ISO-8601
-
-  public String getMailboxId() {
-    return mailboxId;
-  }
-
-  public Boolean getEnabled() {
-    return enabled;
-  }
-
-  public String getCreated() {
-    return created;
-  }
+  @SerializedName("provisioningTime")
+  private String provisioningTime;
+  @SerializedName("codecFileName")
+  private String codecFileName;
+  @SerializedName("codecFileUploadTime")
+  private String codecFileUploadTime;
+  @SerializedName("numberOfActiveDevices")
+  private Integer numberOfActiveDevices;
+  @SerializedName("numberOfActiveBroadcasts")
+  private Integer numberOfActiveBroadcasts;
 }

@@ -24,7 +24,6 @@ import io.mapsmessaging.network.io.EndPoint;
 import io.mapsmessaging.network.io.EndPointServerStatus;
 import io.mapsmessaging.network.io.Packet;
 import io.mapsmessaging.network.io.Selectable;
-import io.mapsmessaging.network.protocol.impl.orbcomm.ogws.data.CommonMessage;
 import io.mapsmessaging.network.protocol.impl.orbcomm.ogws.data.SubmitMessage;
 import io.mapsmessaging.network.protocol.impl.orbcomm.ogws.data.TerminalInfo;
 import lombok.Getter;

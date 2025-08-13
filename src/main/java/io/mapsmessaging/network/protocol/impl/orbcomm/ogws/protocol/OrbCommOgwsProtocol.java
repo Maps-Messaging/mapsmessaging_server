@@ -25,9 +25,8 @@ import io.mapsmessaging.api.features.ClientAcknowledgement;
 import io.mapsmessaging.api.features.DestinationType;
 import io.mapsmessaging.api.features.QualityOfService;
 import io.mapsmessaging.api.message.Message;
-import io.mapsmessaging.config.protocol.impl.OrbCommOgwsConfig;
 import io.mapsmessaging.dto.rest.config.protocol.ProtocolConfigDTO;
-import io.mapsmessaging.dto.rest.config.protocol.impl.OrbCommOgwsDTO;
+import io.mapsmessaging.dto.rest.config.protocol.impl.SatelliteConfigDTO;
 import io.mapsmessaging.dto.rest.protocol.ProtocolInformationDTO;
 import io.mapsmessaging.dto.rest.protocol.impl.OrbcommProtocolInformation;
 import io.mapsmessaging.logging.Logger;
@@ -36,7 +35,8 @@ import io.mapsmessaging.network.ProtocolClientConnection;
 import io.mapsmessaging.network.io.EndPoint;
 import io.mapsmessaging.network.io.Packet;
 import io.mapsmessaging.network.protocol.Protocol;
-import io.mapsmessaging.network.protocol.impl.orbcomm.ogws.data.*;
+import io.mapsmessaging.network.protocol.impl.orbcomm.ogws.data.ReturnMessage;
+import io.mapsmessaging.network.protocol.impl.orbcomm.ogws.data.SubmitMessage;
 import io.mapsmessaging.network.protocol.impl.orbcomm.ogws.io.OrbcommOgwsEndPoint;
 import io.mapsmessaging.network.protocol.impl.orbcomm.protocol.OrbCommMessage;
 import io.mapsmessaging.network.protocol.impl.orbcomm.protocol.OrbCommMessageFactory;
@@ -59,14 +59,13 @@ public class OrbCommOgwsProtocol extends Protocol {
   private final Logger logger = LoggerFactory.getLogger(OrbCommOgwsProtocol.class);
   private final OrbCommMessageRebuilder messageRebuilder;
   private final Session session;
-  private final String primeId;
   private final String namespacePath;
   private boolean closed;
 
   public OrbCommOgwsProtocol(@NonNull @NotNull EndPoint endPoint, @NotNull @NonNull ProtocolConfigDTO protocolConfig) throws LoginException, IOException {
     super(endPoint, protocolConfig);
-    primeId = ((OrbcommOgwsEndPoint) endPoint).getTerminalInfo().getPrimeId();
-    OrbCommOgwsConfig config = (OrbCommOgwsConfig) protocolConfig;
+    String primeId = ((OrbcommOgwsEndPoint) endPoint).getTerminalInfo().getPrimeId();
+    SatelliteConfigDTO config = (SatelliteConfigDTO) protocolConfig;
 
     closed = false;
     messageRebuilder = new OrbCommMessageRebuilder();
@@ -75,25 +74,27 @@ public class OrbCommOgwsProtocol extends Protocol {
         .setResetState(true)
         .setKeepAlive(60000)
         .setSessionExpiry(100)
-        .setReceiveMaximum(config.getMaxInflightEventsPerModem());
+        .setReceiveMaximum(config.getMaxInflightEventsPerDevice());
     session = SessionManager.getInstance().create(scb.build(), this);
-    session.resumeState(); // We have established a session to read/write with this prime id
+    session.resumeState();
     namespacePath = config.getOutboundNamespaceRoot().trim();
     if(!namespacePath.isEmpty()){
-      String path;
-      if(namespacePath.endsWith("/")){
-        path = namespacePath +primeId;
-      }
-      else{
-        path = namespacePath + "/"+primeId;
-      }
+      String path = namespacePath.replace("{deviceId}", primeId);
       SubscriptionContextBuilder subBuilder = new SubscriptionContextBuilder(path, ClientAcknowledgement.AUTO);
       subBuilder.setQos(QualityOfService.AT_MOST_ONCE)
-          .setReceiveMaximum(config.getMaxInflightEventsPerModem())
+          .setReceiveMaximum(config.getMaxInflightEventsPerDevice())
           .setNoLocalMessages(true);
       session.addSubscription(subBuilder.build());
     }
 
+    String bcast = config.getOutboundBroadcast();
+    if(bcast != null && !bcast.isEmpty()){
+      SubscriptionContextBuilder subBuilder = new SubscriptionContextBuilder(bcast, ClientAcknowledgement.AUTO);
+      subBuilder.setQos(QualityOfService.AT_MOST_ONCE)
+          .setReceiveMaximum(config.getMaxInflightEventsPerDevice())
+          .setNoLocalMessages(true);
+      session.addSubscription(subBuilder.build());
+    }
   }
 
   @Override

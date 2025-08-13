@@ -29,9 +29,9 @@ import javax.security.auth.login.LoginException;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 
-public class OrbcommProtocolFactory extends ProtocolImplFactory {
+public class StoGiProtocolFactory extends ProtocolImplFactory {
 
-  public OrbcommProtocolFactory() {
+  public StoGiProtocolFactory() {
     super("stogi", "OrbComm OGWS protocol", new NoOpDetection());
   }
 
@@ -46,7 +46,7 @@ public class OrbcommProtocolFactory extends ProtocolImplFactory {
 
   private Protocol build(EndPoint endPoint, Packet packet) throws IOException {
     try {
-      return new OrbcommProtocol(endPoint, packet);
+      return new StoGiProtocol(endPoint, packet);
     } catch (LoginException e) {
       // Ignore since it should just work
     }

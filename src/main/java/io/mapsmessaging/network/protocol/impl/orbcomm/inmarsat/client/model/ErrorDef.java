@@ -20,24 +20,16 @@
 package io.mapsmessaging.network.protocol.impl.orbcomm.inmarsat.client.model;
 
 import com.google.gson.annotations.SerializedName;
+import lombok.Getter;
+import lombok.ToString;
 
+@ToString
+@Getter
 public final class ErrorDef {
   @SerializedName("code")
   private Integer code;
-  @SerializedName("name")
-  private String name;
-  @SerializedName("description")
-  private String description;
-
-  public Integer getCode() {
-    return code;
-  }
-
-  public String getName() {
-    return name;
-  }
-
-  public String getDescription() {
-    return description;
-  }
+  @SerializedName("reason")
+  private String reason;
+  @SerializedName("message")
+  private String message;
 }

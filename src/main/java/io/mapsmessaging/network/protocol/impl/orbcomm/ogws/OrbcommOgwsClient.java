@@ -22,11 +22,10 @@ package io.mapsmessaging.network.protocol.impl.orbcomm.ogws;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import io.mapsmessaging.dto.rest.config.protocol.impl.OrbCommOgwsDTO;
+import io.mapsmessaging.dto.rest.config.protocol.impl.SatelliteConfigDTO;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.network.protocol.impl.orbcomm.ogws.data.*;
-import io.mapsmessaging.utilities.threads.SimpleTaskScheduler;
 
 import java.io.IOException;
 import java.net.URI;
@@ -39,8 +38,6 @@ import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.ScheduledFuture;
-import java.util.concurrent.TimeUnit;
 
 import static io.mapsmessaging.logging.ServerLogMessages.OGWS_SENDING_REQUEST;
 
@@ -56,12 +53,12 @@ public class OrbcommOgwsClient {
   private final HttpClient httpClient;
   private final String clientId;
   private final String clientSecret;
-  private final OrbCommOgwsDTO config;
+  private final SatelliteConfigDTO config;
   private String bearerToken;
   private long reAuthenticateTime;
   private final List<SubmitMessage> pendingMessages;
 
-  public OrbcommOgwsClient(OrbCommOgwsDTO config) {
+  public OrbcommOgwsClient(SatelliteConfigDTO config) {
     this.config = config;
     this.baseUrl = config.getBaseUrl();
     this.clientId = config.getRemoteAuthConfig().getUsername();

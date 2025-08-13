@@ -23,11 +23,11 @@ import io.mapsmessaging.config.Config;
 import io.mapsmessaging.config.network.impl.SerialConfig;
 import io.mapsmessaging.configuration.ConfigurationProperties;
 import io.mapsmessaging.dto.rest.config.BaseConfigDTO;
-import io.mapsmessaging.dto.rest.config.protocol.impl.OrbCommDTO;
+import io.mapsmessaging.dto.rest.config.protocol.impl.StoGiConfigDTO;
 
-public class OrbCommConfig extends OrbCommDTO implements Config {
+public class StoGiConfig extends StoGiConfigDTO implements Config {
 
-  public OrbCommConfig(ConfigurationProperties config) {
+  public StoGiConfig(ConfigurationProperties config) {
     setType("stogi");
     ProtocolConfigFactory.unpack(config, this);
     serial = new SerialConfig(config);
@@ -36,32 +36,37 @@ public class OrbCommConfig extends OrbCommDTO implements Config {
     ignoreFirstByte = config.getBooleanProperty("ignoreFirstByte", false);
     modemResponseTimeout = config.getLongProperty("modemResponseTimeout", 5000);
     setServerLocation = config.getBooleanProperty("setServerLocation", true);
+    modemStatsTopic = config.getProperty("modemStatsTopic", "");
   }
 
   @Override
   public boolean update(BaseConfigDTO config) {
     boolean result = false;
-    if (config instanceof OrbCommDTO){
-      result = ProtocolConfigFactory.update(this, (OrbCommDTO) config);
+    if (config instanceof StoGiConfigDTO orbCommConfig) {
+      result = ProtocolConfigFactory.update(this, orbCommConfig);
       result = ((SerialConfig)serial).update(config) || result;
-      if(!initialSetup.equalsIgnoreCase(((OrbCommDTO) config).getInitialSetup())){
-        initialSetup = ((OrbCommDTO) config).getInitialSetup();
+      if(!modemStatsTopic.equals(orbCommConfig.getModemStatsTopic())){
+        modemStatsTopic = orbCommConfig.getModemStatsTopic();
         result = true;
       }
-      if(messagePollInterval != ((OrbCommDTO) config).getMessagePollInterval()){
-        messagePollInterval = ((OrbCommDTO) config).getMessagePollInterval();
+      if(!initialSetup.equalsIgnoreCase(orbCommConfig.getInitialSetup())){
+        initialSetup = orbCommConfig.getInitialSetup();
         result = true;
       }
-      if(ignoreFirstByte != ((OrbCommDTO) config).isIgnoreFirstByte()){
-        ignoreFirstByte = ((OrbCommDTO) config).isIgnoreFirstByte();
+      if(messagePollInterval != orbCommConfig.getMessagePollInterval()){
+        messagePollInterval = orbCommConfig.getMessagePollInterval();
         result = true;
       }
-      if (modemResponseTimeout != ((OrbCommDTO) config).getModemResponseTimeout()) {
-        modemResponseTimeout = ((OrbCommDTO) config).getModemResponseTimeout();
+      if(ignoreFirstByte != orbCommConfig.isIgnoreFirstByte()){
+        ignoreFirstByte = orbCommConfig.isIgnoreFirstByte();
         result = true;
       }
-      if(setServerLocation != ((OrbCommDTO)config).isSetServerLocation()){
-        setServerLocation = ((OrbCommDTO)config).isSetServerLocation();
+      if (modemResponseTimeout != orbCommConfig.getModemResponseTimeout()) {
+        modemResponseTimeout = orbCommConfig.getModemResponseTimeout();
+        result = true;
+      }
+      if(setServerLocation != orbCommConfig.isSetServerLocation()){
+        setServerLocation = orbCommConfig.isSetServerLocation();
         result = true;
       }
     }
@@ -73,8 +78,8 @@ public class OrbCommConfig extends OrbCommDTO implements Config {
     ConfigurationProperties properties = new ConfigurationProperties();
     ProtocolConfigFactory.pack(properties, this);
     properties.put("initialSetup", initialSetup);
-    if(serial instanceof SerialConfig){
-      properties.put("serial", ((SerialConfig) serial).toConfigurationProperties());
+    if(serial instanceof SerialConfig serialConfig){
+      properties.put("serial", serialConfig.toConfigurationProperties());
     }
     properties.put("messagePollInterval", messagePollInterval);
     properties.put("ignoreFirstByte", ignoreFirstByte);

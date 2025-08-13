@@ -179,7 +179,7 @@ public class EndPointConfigFactory {
       case "nmea-0183" -> new NmeaConfig(config);
       case "lora" -> new LoRaProtocolConfig(config);
       case "echo" -> new EchoProtocolConfig(config);
-      case "stogi" -> new OrbCommConfig(config);
+      case "stogi" -> new StoGiConfig(config);
       case "ogws" -> new OrbCommOgwsConfig(config);
       case "inmarsat" -> new InmarsatConfig(config);
       case "ws", "wss" -> new WebSocketConfig(config);
