@@ -19,6 +19,7 @@
 
 package io.mapsmessaging.network.protocol.impl.orbcomm.modem.protocol;
 
+import com.google.gson.JsonObject;
 import io.mapsmessaging.api.*;
 import io.mapsmessaging.api.features.DestinationMode;
 import io.mapsmessaging.api.features.DestinationType;
@@ -27,7 +28,7 @@ import io.mapsmessaging.api.features.QualityOfService;
 import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.api.message.TypedData;
 import io.mapsmessaging.api.transformers.Transformer;
-import io.mapsmessaging.dto.rest.config.protocol.impl.OrbCommDTO;
+import io.mapsmessaging.dto.rest.config.protocol.impl.StoGiConfigDTO;
 import io.mapsmessaging.dto.rest.protocol.ProtocolInformationDTO;
 import io.mapsmessaging.dto.rest.protocol.impl.OrbcommProtocolInformation;
 import io.mapsmessaging.engine.destination.MessageOverrides;
@@ -42,6 +43,7 @@ import io.mapsmessaging.network.io.impl.serial.SerialEndPoint;
 import io.mapsmessaging.network.protocol.Protocol;
 import io.mapsmessaging.network.protocol.ProtocolMessageTransformation;
 import io.mapsmessaging.network.protocol.impl.nmea.sentences.Sentence;
+import io.mapsmessaging.network.protocol.impl.nmea.types.LongType;
 import io.mapsmessaging.network.protocol.impl.nmea.types.PositionType;
 import io.mapsmessaging.network.protocol.impl.orbcomm.modem.device.Modem;
 import io.mapsmessaging.network.protocol.impl.orbcomm.modem.device.messages.SendMessageState;
@@ -67,10 +69,10 @@ import java.util.function.Consumer;
 
 import static io.mapsmessaging.logging.ServerLogMessages.*;
 
-public class OrbcommProtocol extends Protocol implements Consumer<Packet> {
+public class StoGiProtocol extends Protocol implements Consumer<Packet> {
 
 
-  private final Logger logger = LoggerFactory.getLogger(OrbcommProtocol.class);
+  private final Logger logger = LoggerFactory.getLogger(StoGiProtocol.class);
 
   private final Session session;
   private final SelectorTask selectorTask;
@@ -81,11 +83,12 @@ public class OrbcommProtocol extends Protocol implements Consumer<Packet> {
   private final OrbCommMessageRebuilder orbCommMessageRebuilder;
   private final LocationParser locationParser;
   private final boolean setServerLocation;
+  private Destination destination;
 
   private long lastLocationPoll;
   private int messageId;
 
-  public OrbcommProtocol(EndPoint endPoint, Packet packet) throws LoginException, IOException {
+  public StoGiProtocol(EndPoint endPoint, Packet packet) throws LoginException, IOException {
     super(endPoint, endPoint.getConfig().getProtocolConfig("stogi"));
     topicNameMapping = new ConcurrentHashMap<>();
     outboundQueue = new ConcurrentLinkedQueue<>();
@@ -93,7 +96,6 @@ public class OrbcommProtocol extends Protocol implements Consumer<Packet> {
     locationParser = new LocationParser();
     lastLocationPoll = System.currentTimeMillis();
     messageId = 0;
-    modem = new Modem(this);
 
 
     if (packet != null) {
@@ -111,8 +113,13 @@ public class OrbcommProtocol extends Protocol implements Consumer<Packet> {
         session.getSecurityContext().getUsername()
     );
 
+
+
     setTransformation(transformation);
-    OrbCommDTO modemConfig = (OrbCommDTO) getProtocolConfig();
+    StoGiConfigDTO modemConfig = (StoGiConfigDTO) getProtocolConfig();
+
+    modem = new Modem(this, modemConfig.getModemResponseTimeout());
+
     setServerLocation = modemConfig.isSetServerLocation();
     selectorTask = new SelectorTask(this, endPoint.getConfig().getEndPointConfig());
     endPoint.register(SelectionKey.OP_READ, selectorTask.getReadTask());
@@ -120,6 +127,10 @@ public class OrbcommProtocol extends Protocol implements Consumer<Packet> {
     scheduledFuture = SimpleTaskScheduler.getInstance().scheduleAtFixedRate(this::pollModemForMessages, modemConfig.getMessagePollInterval(), modemConfig.getMessagePollInterval(), TimeUnit.MILLISECONDS);
     completedConnection();
     endPoint.getServer().handleNewEndPoint(endPoint);
+    String statsDestination = modemConfig.getModemStatsTopic();
+    if(statsDestination != null && !statsDestination.isEmpty()) {
+      destination = session.findDestination(statsDestination, DestinationType.TOPIC).join();
+    }
   }
 
   private Session setupSession() throws LoginException, IOException {
@@ -148,6 +159,10 @@ public class OrbcommProtocol extends Protocol implements Consumer<Packet> {
   public void close() throws IOException {
     if (scheduledFuture != null) {
       scheduledFuture.cancel(true);
+    }
+    if(session != null) {
+      SessionManager.getInstance().close(session, false);
+      modem.close();
     }
     super.close();
   }
@@ -275,6 +290,50 @@ public class OrbcommProtocol extends Protocol implements Consumer<Packet> {
     }
   }
 
+  private void publishStats( String lat, String lon, String satellites) {
+    Integer jamIndicator =  modem.getJammingIndicator().join();
+    int jamStatus = modem.getJammingStatus().join();
+    int status = jamStatus & 0x3;
+    String jammingStatus = switch (status) {
+      case 0 -> "unknown";
+      case 1 -> "OK";
+      case 2 -> "Warning - fix OK";
+      case 3 -> "Critical - NO FIX WARNING";
+      default -> "";
+    };
+
+    boolean jammed = (jamStatus & 0x04) != 0;
+    boolean antennaCut = (jamStatus & 0x80) != 0;
+
+    JsonObject obj = new JsonObject();
+    obj.addProperty("latitude", lat);
+    obj.addProperty("longitude", lon);
+    obj.addProperty("jammingIndicator", jamIndicator);
+    obj.addProperty("jammingStatus", jammingStatus);
+    obj.addProperty("satellites", satellites);
+
+    if(jammed){
+      obj.addProperty("status", "JAMMED");
+    }
+    if(antennaCut){
+      obj.addProperty("status", "Antenna Cut");
+    }
+
+    String temp = modem.getTemperature().join();
+    if(temp != null){
+      float f = toFloat(temp);
+      obj.addProperty("temperature", f);
+    }
+    String payload = obj.toString();
+    MessageBuilder messageBuilder = new MessageBuilder();
+    messageBuilder.setOpaqueData(payload.getBytes());
+    try {
+      destination.storeMessage(messageBuilder.build());
+    } catch (IOException e) {
+      // Log this
+    }
+  }
+
   private void processLocationRequest() {
     if (lastLocationPoll + 60_000 < System.currentTimeMillis()) {
       List<String> location = modem.getLocation().join();
@@ -283,9 +342,14 @@ public class OrbcommProtocol extends Protocol implements Consumer<Packet> {
         if (sentence != null && sentence.getName().equalsIgnoreCase("GPGGA")) {
           PositionType latitude = (PositionType) sentence.get("latitude");
           PositionType longitude = (PositionType) sentence.get("longitude");
+          LongType satellites = (LongType)sentence.get("satellites");
           LocationManager.getInstance().setPosition(latitude.getPosition(), longitude.getPosition());
+          if(destination !=null) {
+            publishStats(latitude.toString(), longitude.toString(), satellites.toString());
+          }
         }
       }
+
       lastLocationPoll = System.currentTimeMillis();
     }
   }
@@ -321,16 +385,27 @@ public class OrbcommProtocol extends Protocol implements Consumer<Packet> {
 
   private void processInboundMessages() {
     CompletableFuture<List<byte[]>> incoming = modem.fetchAllMessages(MessageFormat.BASE64);
-    List<byte[]> messages = incoming.join();
+    List<byte[]> messages;
+    try {
+      messages = incoming.join();
+    }
+    catch (CompletionException| CancellationException e) {
+      try {
+        close();
+      } catch (IOException ex) {
+        // ignore we have issues and are winding up
+      }
+      return;
+    }
     for (byte[] message : messages) {
       if (message != null) {
-        OrbCommMessage orbCommMessage = new OrbCommMessage(message);
-        orbCommMessage = orbCommMessageRebuilder.rebuild(orbCommMessage);
+        OrbCommMessage loaded = new OrbCommMessage(message);
+        OrbCommMessage orbCommMessage = orbCommMessageRebuilder.rebuild(loaded);
         if (orbCommMessage != null) {
           logger.log(STOGI_PROCESSING_INBOUND_EVENT, orbCommMessage.getNamespace());
           sendMessageToTopic(orbCommMessage.getNamespace(), orbCommMessage.getMessage());
         } else {
-          logger.log(STOGI_RECEIVED_PARTIAL_MESSAGE, orbCommMessage.getNamespace(), orbCommMessage.getPacketNumber());
+          logger.log(STOGI_RECEIVED_PARTIAL_MESSAGE, loaded.getNamespace(), loaded.getPacketNumber());
         }
       }
     }
@@ -447,4 +522,12 @@ public class OrbcommProtocol extends Protocol implements Consumer<Packet> {
   }
 
 
+  private float toFloat(String temp){
+    try {
+      temp = temp.substring(0, 5);
+      return Float.parseFloat(temp.trim())/10.0f;
+    } catch (NumberFormatException e) {
+      return Float.NaN;
+    }
+  }
 }

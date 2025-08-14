@@ -43,7 +43,7 @@ io.mapsmessaging.network.protocol.impl.nmea.NMEAProtocolFactory
 #
 # OrbComm based protocols to support Satellite communications
 #
-io.mapsmessaging.network.protocol.impl.orbcomm.modem.protocol.OrbcommProtocolFactory
+io.mapsmessaging.network.protocol.impl.orbcomm.modem.protocol.StoGiProtocolFactory
 
 #
 # UDP based protocols

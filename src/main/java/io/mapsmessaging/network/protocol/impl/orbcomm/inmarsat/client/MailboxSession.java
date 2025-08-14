@@ -19,148 +19,121 @@
 
 package io.mapsmessaging.network.protocol.impl.orbcomm.inmarsat.client;
 
-import com.google.gson.Gson;
+import io.mapsmessaging.network.protocol.impl.orbcomm.inmarsat.client.endpoints.*;
 import io.mapsmessaging.network.protocol.impl.orbcomm.inmarsat.client.model.*;
 
-import java.net.URI;
-import java.net.http.HttpClient;
-import java.time.Duration;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
+import java.util.function.Function;
+import java.util.function.IntFunction;
+import java.util.function.Supplier;
 
 public final class MailboxSession {
-  private final URI base;                // e.g. https://apis.inmarsat.com/v1/
-  private final String clientId;
-  private final String clientSecret;
-  private final String xMailbox;         // base64(mailboxId:mailboxPassword)
 
-  private final HttpClient http;
-  private final Gson gson;
+  private final String mailboxId;
+  private final String xMailbox;
 
-  private final AuthClient auth;
+  private final Supplier<String> bearer;
   private final MessagesClient messages;
   private final CommandsClient commands;
   private final DevicesClient devices;
   private final MailboxClient mailbox;
-  private final InfoClient info;
 
-  private MailboxSession(URI base, String clientId, String clientSecret,
-                         String mailboxId, String mailboxPassword,
-                         HttpClient http, Gson gson) {
-    this.base = Objects.requireNonNull(base);
-    this.clientId = Objects.requireNonNull(clientId);
-    this.clientSecret = Objects.requireNonNull(clientSecret);
-    this.xMailbox = BaseInmarsatClient.xMailbox(
-        Objects.requireNonNull(mailboxId),
-        Objects.requireNonNull(mailboxPassword));
+  private final Function<Integer, Optional<ErrorDef>> findErrorFn;
+  private final IntFunction<String> explainErrorFn;
 
-    this.http = Objects.requireNonNullElseGet(http,
-        () -> HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(20)).build());
-    this.gson = Objects.requireNonNullElseGet(gson, Gson::new);
-
-    this.auth = new AuthClient(base.resolve("/"), this.http, this.gson);
-    this.messages = new MessagesClient(base, this.http, this.gson);
-    this.commands = new CommandsClient(base, this.http, this.gson);
-    this.devices = new DevicesClient(base, this.http, this.gson);
-    this.mailbox = new MailboxClient(base, this.http, this.gson);
-    this.info = new InfoClient(base, this.http, this.gson);
+  MailboxSession(String mailboxId,
+                 String xMailbox,
+                 Supplier<String> bearer,
+                 MessagesClient messages,
+                 CommandsClient commands,
+                 DevicesClient devices,
+                 MailboxClient mailbox,
+                 Function<Integer, Optional<ErrorDef>> findErrorFn,
+                 IntFunction<String> explainErrorFn) {
+    this.mailboxId = Objects.requireNonNull(mailboxId);
+    this.xMailbox = Objects.requireNonNull(xMailbox);
+    this.bearer = Objects.requireNonNull(bearer);
+    this.messages = Objects.requireNonNull(messages);
+    this.commands = Objects.requireNonNull(commands);
+    this.devices = Objects.requireNonNull(devices);
+    this.mailbox = Objects.requireNonNull(mailbox);
+    this.findErrorFn = Objects.requireNonNull(findErrorFn);
+    this.explainErrorFn = Objects.requireNonNull(explainErrorFn);
   }
 
-  // --------- Factory ---------
-  public static MailboxSession of(String baseUrlWithVersion, // e.g. "https://apis.inmarsat.com/v1/"
-                                  String clientId, String clientSecret,
-                                  String mailboxId, String mailboxPassword,
-                                  HttpClient http, Gson gson) {
-    return new MailboxSession(URI.create(ensureTrailingSlash(baseUrlWithVersion)),
-        clientId, clientSecret, mailboxId, mailboxPassword, http, gson);
-  }
+  public String mailboxId() { return mailboxId; }
 
-  private static String ensureTrailingSlash(String s) {
-    return s.endsWith("/") ? s : s + "/";
-  }
+  // ---- Messaging ------------------------------------------------------------
 
-  // --------- Sub-clients (if you want to call them directly) ---------
-  public MessagesClient messages() {
-    return messages;
-  }
-
-  public CommandsClient commands() {
-    return commands;
-  }
-
-  public DevicesClient devices() {
-    return devices;
-  }
-
-  public MailboxClient mailbox() {
-    return mailbox;
-  }
-
-  public InfoClient info() {
-    return info;
-  }
-
-  // --------- Convenience wrappers (bearer handled for you) ---------
-  private String bearer() {
-    return auth.getValidBearer(clientId, clientSecret);
-  }
-
-  // MO
   public MobileOriginatedResponse pollMO(String startTimeIso) {
-    return messages.getMobileOriginated(bearer(), xMailbox, startTimeIso);
+    return messages.getMobileOriginated(bearer.get(), xMailbox, startTimeIso);
   }
 
-  // MT submit
   public MobileTerminatedSubmitResponse submitMT(MobileTerminatedSubmitRequest body) {
-    return messages.submitMobileTerminated(bearer(), xMailbox, body);
+    return messages.submitMobileTerminated(bearer.get(), xMailbox, body);
   }
 
-  // MT status + details
   public MobileTerminatedStatusResponse pollMTStatus(String startTimeIso) {
-    return messages.getMobileTerminatedStatus(bearer(), xMailbox, startTimeIso);
+    return messages.getMobileTerminatedStatus(bearer.get(), xMailbox, startTimeIso);
   }
 
   public List<MobileTerminatedDetail> getMTDetails(List<String> messageIds) {
-    return messages.getMobileTerminatedDetails(bearer(), xMailbox, messageIds);
+    return messages.getMobileTerminatedDetails(bearer.get(), xMailbox, messageIds);
   }
 
-  // Commands (GET-with-body by default; set usePost=true if supported)
+  // ---- Commands -------------------------------------------------------------
+
   public MobileTerminatedSubmitResponse changeMode(List<ChangeModeCommand> cmds, boolean usePost) {
-    return commands.changeMode(bearer(), xMailbox, cmds, usePost);
+    return commands.changeMode(bearer.get(), xMailbox, cmds, usePost);
   }
 
   public MobileTerminatedSubmitResponse mute(List<MuteCommand> cmds, boolean usePost) {
-    return commands.mute(bearer(), xMailbox, cmds, usePost);
+    return commands.mute(bearer.get(), xMailbox, cmds, usePost);
   }
 
   public MobileTerminatedSubmitResponse reset(List<ResetCommand> cmds, boolean usePost) {
-    return commands.reset(bearer(), xMailbox, cmds, usePost);
+    return commands.reset(bearer.get(), xMailbox, cmds, usePost);
   }
 
-  // Devices
+  // ---- Devices --------------------------------------------------------------
+
   public List<DeviceInfo> listDevices(Integer limit, Integer offset, String deviceId) {
-    return devices.listDevices(bearer(), xMailbox, limit, offset, deviceId);
+    return devices.listDevices(bearer.get(), xMailbox, limit, offset, deviceId);
   }
 
-  // Mailbox admin
+  // ---- Mailbox admin --------------------------------------------------------
+
   public Mailbox getMailbox() {
-    return mailbox.getMailbox(bearer(), xMailbox);
+    return mailbox.getMailbox(bearer.get(), xMailbox);
   }
 
   public MailboxCodecAck uploadCodec(MailboxCodecUploadRequest req) {
-    return mailbox.uploadCodec(bearer(), xMailbox, req);
+    return mailbox.uploadCodec(bearer.get(), xMailbox, req);
   }
 
   public void deleteCodec() {
-    mailbox.deleteCodec(bearer(), xMailbox);
+    mailbox.deleteCodec(bearer.get(), xMailbox);
   }
 
   public MailboxPasswordResponse changeMailboxPassword(String newPasswordOrNull) {
-    return mailbox.changePassword(bearer(), xMailbox, newPasswordOrNull);
+    return mailbox.changePassword(bearer.get(), xMailbox, newPasswordOrNull);
   }
 
-  // Info
-  public List<ErrorDef> getErrorCodes() {
-    return info.getErrorCodes(bearer());
+  // ---- Error helpers --------------------------------------------------------
+
+  public Optional<ErrorDef> findError(int code) { return findErrorFn.apply(code); }
+
+  public String explainError(int code) { return explainErrorFn.apply(code); }
+
+  // ---- Convenience ----------------------------------------------------------
+
+  /** Create a new handle with a different password (local xMailbox update). */
+  public MailboxSession withPassword(String newPassword) {
+    String newXMailbox = BaseInmarsatClient.xMailbox(mailboxId, Objects.requireNonNull(newPassword));
+    return new MailboxSession(
+        mailboxId, newXMailbox, bearer, messages, commands, devices, mailbox, findErrorFn, explainErrorFn
+    );
   }
 }

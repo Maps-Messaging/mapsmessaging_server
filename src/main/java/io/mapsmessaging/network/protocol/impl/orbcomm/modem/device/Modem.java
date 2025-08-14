@@ -29,12 +29,16 @@ import io.mapsmessaging.network.protocol.impl.orbcomm.modem.device.impl.OgxModem
 import io.mapsmessaging.network.protocol.impl.orbcomm.modem.device.messages.Message;
 import io.mapsmessaging.network.protocol.impl.orbcomm.modem.device.messages.SendMessageState;
 import io.mapsmessaging.network.protocol.impl.orbcomm.modem.device.values.MessageFormat;
+import io.mapsmessaging.utilities.threads.SimpleTaskScheduler;
 
+import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayDeque;
 import java.util.List;
 import java.util.Queue;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
 import static io.mapsmessaging.logging.ServerLogMessages.STOGI_RECEIVED_AT_MESSAGE;
@@ -49,13 +53,41 @@ public class Modem {
   private final Queue<Command> commandQueue = new ArrayDeque<>();
   private final StringBuilder responseBuffer = new StringBuilder();
   private final ModemLineHandler currentHandler;
+  private final long modemTimeout;
+
+  private ScheduledFuture<?> future;
 
   private Command currentCommand = null;
   private BaseModemProtocol modemProtocol = null;
 
-  public Modem(Consumer<Packet> packetSender) {
+  public Modem(Consumer<Packet> packetSender, long modemTimeout) {
     this.packetSender = packetSender;
     currentHandler = new TextResponseHandler(this::handleLine);
+    if(modemTimeout < 10000 || modemTimeout > 120000){
+      modemTimeout = 15000;
+    }
+    this.modemTimeout = modemTimeout;
+
+    future = SimpleTaskScheduler.getInstance().scheduleAtFixedRate(this::scanTimeouts, modemTimeout, modemTimeout, TimeUnit.MILLISECONDS);
+  }
+
+  public void close(){
+    for(Command command : commandQueue){
+      command.future.completeExceptionally(new IOException("Modem has been closed"));
+    }
+    commandQueue.clear();
+    if(future != null){
+      future.cancel(false);
+      future = null;
+    }
+  }
+
+  private void scanTimeouts(){
+    long time = System.currentTimeMillis();
+    if(currentCommand != null && currentCommand.timeout < time){
+      close();
+      currentCommand.future.completeExceptionally(new IOException("Modem has been closed"));
+    }
   }
 
   public void process(Packet packet) {
@@ -99,6 +131,24 @@ public class Modem {
   //endregion
 
   //region Positioning controls
+  public CompletableFuture<Integer> getJammingStatus() {
+    return sendATCommand("ATS56?")
+        .thenApply(resp -> {
+          String[] lines = resp.split("\r\n");
+          for (String line : lines) {
+            line = line.trim();
+            if (!line.equalsIgnoreCase("OK") && !line.startsWith("ERROR") && !line.isEmpty()) {
+              try {
+                return Integer.parseInt(line);
+              } catch (NumberFormatException e) {
+                throw new IllegalArgumentException("Invalid ATS56 response: " + line, e);
+              }
+            }
+          }
+          throw new IllegalStateException("No valid response line found in ATS56 result: " + resp);
+        });
+  }
+
   public CompletableFuture<Integer> getJammingIndicator() {
     return sendATCommand("ATS57?")
         .thenApply(resp -> {
@@ -185,6 +235,7 @@ public class Modem {
   private synchronized void sendNextCommand() {
     currentCommand = commandQueue.poll();
     if (currentCommand != null) {
+      currentCommand.timeout = System.currentTimeMillis()+modemTimeout;
       packetSender.accept(packetWith(currentCommand.cmd));
     }
   }
@@ -251,4 +302,5 @@ public class Modem {
   public String getType() {
     return modemProtocol.getType();
   }
+
 }

@@ -47,6 +47,7 @@ public class InmarsatEndPointServer extends EndPointServer implements IncomingMe
       logger.log(OGWS_NO_CONFIGURATION_FOUND);
       throw new IOException("no configuration found");
     }
+
   }
 
 

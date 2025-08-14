@@ -24,8 +24,6 @@ import io.mapsmessaging.configuration.ConfigurationProperties;
 import io.mapsmessaging.dto.rest.config.BaseConfigDTO;
 import io.mapsmessaging.dto.rest.config.protocol.impl.InmarsatDTO;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Objects;
 
 public class InmarsatConfig extends InmarsatDTO implements Config {
@@ -34,44 +32,33 @@ public class InmarsatConfig extends InmarsatDTO implements Config {
     setType("inmarsat");
     ProtocolConfigFactory.unpack(config, this);
 
-    baseUrl = config.getProperty("baseUrl", "https://apis.inmarsat.com/v1/");
-    clientId = config.getProperty("clientId");
-    clientSecret = config.getProperty("clientSecret");
-    pollInterval = config.getIntProperty("pollInterval", 10);
+    baseUrl = config.getProperty("baseUrl", "https://api-sandbox.inmarsat.com/v1/");
+    pollInterval = config.getIntProperty("pollInterval", 15);
     httpRequestTimeout = config.getIntProperty("httpRequestTimeoutSec", 30);
+    maxInflightEventsPerDevice = config.getIntProperty("maxInflightEventsPerDevice", 2);
+    outboundNamespaceRoot = config.getProperty("outboundNamespaceRoot", "");
+    outboundBroadcast = config.getProperty("outboundBroadcast", "");
 
-    // Load mailboxes[i].*
-    List<MailboxConfig> boxes = new ArrayList<>();
-    for (int i = 0; ; i++) {
-      String id = config.getProperty("mailboxes[" + i + "].id", null);
-      if (id == null || id.isBlank()) break;
-      String pw = config.getProperty("mailboxes[" + i + "].password", "");
-      MailboxConfig mb = new MailboxConfig();
-      mb.setId(id);
-      mb.setPassword(pw);
-      boxes.add(mb);
+    if(pollInterval<10){
+      pollInterval = 10;
     }
-    this.mailboxes = boxes;
+    mailboxId = (config.getProperty("mailboxId"));
+    mailboxPassword = (config.getProperty("mailboxPassword"));
+    namespace = (config.getProperty("namespaceRoot"));
   }
+
 
   @Override
   public boolean update(BaseConfigDTO cfg) {
     boolean changed = false;
     if (cfg instanceof InmarsatDTO dto) {
-      changed |= ProtocolConfigFactory.update(this, dto);
+      changed = ProtocolConfigFactory.update(this, dto);
 
       if (!Objects.equals(baseUrl, dto.getBaseUrl())) {
         baseUrl = dto.getBaseUrl();
         changed = true;
       }
-      if (!Objects.equals(clientId, dto.getClientId())) {
-        clientId = dto.getClientId();
-        changed = true;
-      }
-      if (!Objects.equals(clientSecret, dto.getClientSecret())) {
-        clientSecret = dto.getClientSecret();
-        changed = true;
-      }
+
       if (pollInterval != dto.getPollInterval()) {
         pollInterval = dto.getPollInterval();
         changed = true;
@@ -80,45 +67,48 @@ public class InmarsatConfig extends InmarsatDTO implements Config {
         httpRequestTimeout = dto.getHttpRequestTimeout();
         changed = true;
       }
-      if (!equalMailboxes(this.mailboxes, dto.getMailboxes())) {
-        this.mailboxes = dto.getMailboxes() == null ? List.of() : new ArrayList<>(dto.getMailboxes());
+      if(maxInflightEventsPerDevice != dto.getMaxInflightEventsPerDevice()){
+        maxInflightEventsPerDevice = dto.getMaxInflightEventsPerDevice();
         changed = true;
       }
+      if (!outboundNamespaceRoot.equals(dto.getOutboundNamespaceRoot())) {
+        outboundNamespaceRoot = dto.getOutboundNamespaceRoot();
+        changed = true;
+      }
+      if (!outboundBroadcast.equals(dto.getOutboundBroadcast())) {
+        outboundBroadcast = dto.getOutboundBroadcast();
+        changed = true;
+      }
+      if(!mailboxId.equals(dto.getMailboxId())) {
+        mailboxId = dto.getMailboxId();
+        changed = true;
+      }
+      if(!mailboxPassword.equals(dto.getMailboxPassword())) {
+        mailboxPassword = dto.getMailboxPassword();
+        changed = true;
+      }
+      if(!namespace.equals(dto.getNamespace())) {
+        namespace = dto.getNamespace();
+        changed = true;
+      }
+
     }
     return changed;
   }
 
   @Override
   public ConfigurationProperties toConfigurationProperties() {
-    ConfigurationProperties p = new ConfigurationProperties();
-    ProtocolConfigFactory.pack(p, this);
-    p.put("baseUrl", baseUrl);
-    p.put("clientId", clientId);
-    p.put("clientSecret", clientSecret);
-    p.put("pollInterval", pollInterval);
-    p.put("httpRequestTimeoutSec", httpRequestTimeout);
-
-    // Write mailboxes[i].*
-    if (mailboxes != null) {
-      for (int i = 0; i < mailboxes.size(); i++) {
-        MailboxConfig mb = mailboxes.get(i);
-        p.put("mailboxes[" + i + "].id", mb.getId());
-        p.put("mailboxes[" + i + "].password", mb.getPassword());
-      }
-    }
-    return p;
-  }
-
-  private static boolean equalMailboxes(List<MailboxConfig> a, List<MailboxConfig> b) {
-    if (a == b) return true;
-    if (a == null || b == null) return false;
-    if (a.size() != b.size()) return false;
-    for (int i = 0; i < a.size(); i++) {
-      MailboxConfig x = a.get(i);
-      MailboxConfig y = b.get(i);
-      if (!Objects.equals(x.getId(), y.getId())) return false;
-      if (!Objects.equals(x.getPassword(), y.getPassword())) return false;
-    }
-    return true;
+    ConfigurationProperties properties = new ConfigurationProperties();
+    ProtocolConfigFactory.pack(properties, this);
+    properties.put("baseUrl", baseUrl);
+    properties.put("pollInterval", pollInterval);
+    properties.put("httpRequestTimeoutSec", httpRequestTimeout);
+    properties.put("maxInflightEventsPerDevice", maxInflightEventsPerDevice);
+    properties.put("outboundNamespaceRoot", outboundNamespaceRoot);
+    properties.put("outboundBroadcast", outboundBroadcast);
+    properties.put("mailboxId", mailboxId);
+    properties.put("mailboxPassword", mailboxPassword);
+    properties.put("namespaceRoot", namespace);
+    return properties;
   }
 }

@@ -24,6 +24,7 @@ import java.util.concurrent.CompletableFuture;
 public class Command {
   final String cmd;
   final CompletableFuture<String> future;
+  long timeout;
 
   Command(String cmd, CompletableFuture<String> future) {
     this.cmd = cmd;

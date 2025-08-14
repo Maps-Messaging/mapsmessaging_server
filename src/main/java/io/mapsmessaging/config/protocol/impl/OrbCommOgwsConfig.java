@@ -32,8 +32,13 @@ public class OrbCommOgwsConfig extends OrbCommOgwsDTO implements Config {
     baseUrl = config.getProperty("baseUrl", "https://ogws.orbcomm.com/api/v1.0");
     pollInterval = config.getIntProperty("pollInterval", 7);
     httpRequestTimeout = config.getIntProperty("httpRequestTimeoutSec", 30);
-    maxInflightEventsPerModem = config.getIntProperty("maxInflightEventsPerModem", 2);
+    maxInflightEventsPerDevice = config.getIntProperty("maxInflightEventsPerDevice", 2);
     outboundNamespaceRoot = config.getProperty("outboundNamespaceRoot", "");
+    outboundBroadcast = config.getProperty("outboundBroadcast", "");
+
+    if(pollInterval<10){
+      pollInterval = 10;
+    }
   }
 
   @Override
@@ -45,6 +50,11 @@ public class OrbCommOgwsConfig extends OrbCommOgwsDTO implements Config {
         outboundNamespaceRoot = orbCommOgwsDTO.getOutboundNamespaceRoot();
         result = true;
       }
+      if(!outboundBroadcast.equalsIgnoreCase(orbCommOgwsDTO.getOutboundBroadcast()) ){
+        outboundBroadcast = orbCommOgwsDTO.getOutboundBroadcast();
+        result = true;
+      }
+
       if(!baseUrl.equalsIgnoreCase(orbCommOgwsDTO.getBaseUrl()) ){
         baseUrl = orbCommOgwsDTO.getBaseUrl();
         result = true;
@@ -57,8 +67,8 @@ public class OrbCommOgwsConfig extends OrbCommOgwsDTO implements Config {
         httpRequestTimeout = orbCommOgwsDTO.getHttpRequestTimeout();
         result = true;
       }
-      if(maxInflightEventsPerModem != orbCommOgwsDTO.getMaxInflightEventsPerModem() ){
-        maxInflightEventsPerModem = orbCommOgwsDTO.getMaxInflightEventsPerModem();
+      if(maxInflightEventsPerDevice != orbCommOgwsDTO.getMaxInflightEventsPerDevice() ){
+        maxInflightEventsPerDevice = orbCommOgwsDTO.getMaxInflightEventsPerDevice();
         result = true;
       }
 
@@ -73,8 +83,9 @@ public class OrbCommOgwsConfig extends OrbCommOgwsDTO implements Config {
     properties.put("baseUrl", baseUrl);
     properties.put("pollInterval", pollInterval);
     properties.put("httpRequestTimeoutSec", httpRequestTimeout);
-    properties.put("maxInflightEventsPerClient", maxInflightEventsPerModem);
+    properties.put("maxInflightEventsPerDevice", maxInflightEventsPerDevice);
     properties.put("outboundNamespaceRoot", outboundNamespaceRoot);
+    properties.put("outboundBroadcast", outboundBroadcast);
     return properties;
   }
 }

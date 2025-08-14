@@ -19,6 +19,7 @@
 
 package io.mapsmessaging.dto.rest.config.protocol.impl;
 
+import io.mapsmessaging.dto.rest.config.network.impl.SerialConfigDTO;
 import io.mapsmessaging.dto.rest.config.protocol.ProtocolConfigDTO;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
@@ -28,7 +29,27 @@ import lombok.NoArgsConstructor;
 @Data
 @EqualsAndHashCode(callSuper = true)
 @NoArgsConstructor
-@Schema(description = "OrbComm OGWS Protocol Configuration DTO")
-public class OrbCommOgwsDTO  extends SatelliteConfigDTO {
+@Schema(description = "OrbComm ST and OGi Modem Protocol Configuration DTO")
+public class StoGiConfigDTO extends ProtocolConfigDTO {
 
+  @Schema(description = "Serial port configuration")
+  protected SerialConfigDTO serial;
+
+  @Schema(description = "Time in milliseconds to poll the modem for incoming messages")
+  protected long messagePollInterval;
+
+  @Schema(description = "Time in milliseconds to wait for a modem response")
+  protected long modemResponseTimeout;
+
+  @Schema(description = "Incoming messages from the St2100 modem has a 0 byte appended which we need to ignore")
+  protected boolean ignoreFirstByte;
+
+  @Schema(description = "Initial modem setup string")
+  protected String initialSetup;
+
+  @Schema(description = "Set server location from modem GPS")
+  protected boolean setServerLocation;
+
+  @Schema(description = "If present, then the name of the topic to send modem statistics to")
+  protected String modemStatsTopic;
 }

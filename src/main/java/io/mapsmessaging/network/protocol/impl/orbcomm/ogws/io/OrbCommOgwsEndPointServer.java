@@ -21,7 +21,7 @@ package io.mapsmessaging.network.protocol.impl.orbcomm.ogws.io;
 
 import io.mapsmessaging.dto.rest.config.network.EndPointServerConfigDTO;
 import io.mapsmessaging.dto.rest.config.protocol.ProtocolConfigDTO;
-import io.mapsmessaging.dto.rest.config.protocol.impl.OrbCommOgwsDTO;
+import io.mapsmessaging.dto.rest.config.protocol.impl.SatelliteConfigDTO;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.network.EndPointURL;
 import io.mapsmessaging.network.io.AcceptHandler;
@@ -30,7 +30,6 @@ import io.mapsmessaging.network.io.EndPointServer;
 import io.mapsmessaging.network.io.Selectable;
 import io.mapsmessaging.network.io.impl.Selector;
 import io.mapsmessaging.network.protocol.impl.orbcomm.ogws.OrbcommOgwsClient;
-import io.mapsmessaging.network.protocol.impl.orbcomm.ogws.data.CommonMessage;
 import io.mapsmessaging.network.protocol.impl.orbcomm.ogws.data.ReturnMessage;
 import io.mapsmessaging.network.protocol.impl.orbcomm.ogws.data.SubmitMessage;
 import io.mapsmessaging.network.protocol.impl.orbcomm.ogws.data.TerminalInfo;
@@ -54,7 +53,7 @@ public class OrbCommOgwsEndPointServer extends EndPointServer implements Incomin
   protected OrbCommOgwsEndPointServer(AcceptHandler accept, EndPointURL url, EndPointServerConfigDTO config) throws IOException {
     super(accept, url, config);
     protocolConfigDTO = config.getProtocolConfig("ogws");
-    if (!(protocolConfigDTO instanceof OrbCommOgwsDTO orbCommOgwsDTO)) {
+    if (!(protocolConfigDTO instanceof SatelliteConfigDTO orbCommOgwsDTO)) {
       logger.log(OGWS_NO_CONFIGURATION_FOUND);
       throw new IOException("no configuration found");
     }

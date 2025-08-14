@@ -19,7 +19,6 @@
 
 package io.mapsmessaging.dto.rest.config.protocol.impl;
 
-import io.mapsmessaging.dto.rest.config.network.impl.SerialConfigDTO;
 import io.mapsmessaging.dto.rest.config.protocol.ProtocolConfigDTO;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
@@ -29,24 +28,25 @@ import lombok.NoArgsConstructor;
 @Data
 @EqualsAndHashCode(callSuper = true)
 @NoArgsConstructor
-@Schema(description = "OrbComm ST and OGi Modem Protocol Configuration DTO")
-public class OrbCommDTO extends ProtocolConfigDTO {
+@Schema(description = "Base Satellite Configuration DTO")
+public class SatelliteConfigDTO extends ProtocolConfigDTO {
 
-  @Schema(description = "Serial port configuration")
-  protected SerialConfigDTO serial;
+  @Schema(description = "URL of the server")
+  protected String baseUrl;
 
-  @Schema(description = "Time in milliseconds to poll the modem for incoming messages")
-  protected long messagePollInterval;
+  @Schema(description = "Interval between polling for incoming messages")
+  protected int pollInterval;
 
-  @Schema(description = "Time in milliseconds to wait for a modem response")
-  protected long modemResponseTimeout;
+  @Schema(description = "HTTP Request time out in seconds")
+  protected int httpRequestTimeout;
 
-  @Schema(description = "Incoming messages from the St2100 modem has a 0 byte appended which we need to ignore")
-  protected boolean ignoreFirstByte;
+  @Schema(description = "Max number of events to be in flight per each modems")
+  protected int maxInflightEventsPerDevice;
 
-  @Schema(description = "Initial modem setup string")
-  protected String initialSetup;
+  @Schema(description = "Namespace path for outbound topic mapping for individual modems")
+  protected String outboundNamespaceRoot;
 
-  @Schema(description = "Set server location from modem GPS")
-  protected boolean setServerLocation;
+  @Schema(description = "Namespace path for outbound topic broadcast for all devices")
+  protected String outboundBroadcast;
+
 }

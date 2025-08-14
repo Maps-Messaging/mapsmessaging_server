@@ -16,7 +16,7 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package io.mapsmessaging.network.protocol.impl.orbcomm.inmarsat.client;
+package io.mapsmessaging.network.protocol.impl.orbcomm.inmarsat.client.endpoints;
 
 public final class AuthException extends RuntimeException {
   private final int statusCode;

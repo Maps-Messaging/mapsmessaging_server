@@ -17,7 +17,7 @@
  *  limitations under the License.
  */
 
-package io.mapsmessaging.network.protocol.impl.orbcomm.inmarsat.client;
+package io.mapsmessaging.network.protocol.impl.orbcomm.inmarsat.client.endpoints;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;

@@ -17,7 +17,7 @@
  *  limitations under the License.
  */
 
-package io.mapsmessaging.network.protocol.impl.orbcomm.inmarsat.client;
+package io.mapsmessaging.network.protocol.impl.orbcomm.inmarsat.client.endpoints;
 
 import com.google.gson.Gson;
 
@@ -34,7 +34,7 @@ import java.time.Duration;
 import java.util.*;
 import java.util.concurrent.ThreadLocalRandom;
 
-abstract class BaseInmarsatClient {
+public abstract class BaseInmarsatClient {
   private static final String USER_AGENT = "MapsMessaging-InmarsatClient/1.0";
   private static final Duration REQUEST_TIMEOUT = Duration.ofSeconds(30);
   private static final int MAX_RETRIES = 3;
@@ -49,7 +49,7 @@ abstract class BaseInmarsatClient {
     this.gson = Objects.requireNonNull(gson);
   }
 
-  protected static String xMailbox(String mailboxId, String mailboxPassword) {
+  public static String xMailbox(String mailboxId, String mailboxPassword) {
     return Base64.getEncoder().encodeToString((mailboxId + ":" + mailboxPassword).getBytes(StandardCharsets.UTF_8));
   }
 
