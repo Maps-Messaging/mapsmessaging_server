@@ -26,7 +26,7 @@ import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 
 @Getter
-public class OrbCommMessage {
+public class SatelliteMessage {
 
   private String namespace;
   private boolean compressed;
@@ -35,14 +35,14 @@ public class OrbCommMessage {
   @Setter
   private Runnable completionCallback;
 
-  public OrbCommMessage(String namespace, byte[] message, int packetNumber, boolean compressed) {
+  public SatelliteMessage(String namespace, byte[] message, int packetNumber, boolean compressed) {
     this.namespace = namespace;
     this.message = message;
     this.compressed = compressed;
     this.packetNumber = packetNumber;
   }
 
-  public OrbCommMessage(byte[] incomingPackedMessage) {
+  public SatelliteMessage(byte[] incomingPackedMessage) {
     unpackFromReceived(incomingPackedMessage);
   }
 

@@ -48,9 +48,9 @@ import io.mapsmessaging.network.protocol.impl.nmea.types.PositionType;
 import io.mapsmessaging.network.protocol.impl.satellite.modem.device.Modem;
 import io.mapsmessaging.network.protocol.impl.satellite.modem.device.messages.SendMessageState;
 import io.mapsmessaging.network.protocol.impl.satellite.modem.device.values.MessageFormat;
-import io.mapsmessaging.network.protocol.impl.satellite.protocol.OrbCommMessage;
-import io.mapsmessaging.network.protocol.impl.satellite.protocol.OrbCommMessageFactory;
-import io.mapsmessaging.network.protocol.impl.satellite.protocol.OrbCommMessageRebuilder;
+import io.mapsmessaging.network.protocol.impl.satellite.protocol.SatelliteMessage;
+import io.mapsmessaging.network.protocol.impl.satellite.protocol.SatelliteMessageFactory;
+import io.mapsmessaging.network.protocol.impl.satellite.protocol.SatelliteMessageRebuilder;
 import io.mapsmessaging.network.protocol.transformation.TransformationManager;
 import io.mapsmessaging.selector.operators.ParserExecutor;
 import io.mapsmessaging.utilities.threads.SimpleTaskScheduler;
@@ -79,8 +79,8 @@ public class StoGiProtocol extends Protocol implements Consumer<Packet> {
   private final Modem modem;
   private final ScheduledFuture<?> scheduledFuture;
   private final Map<String, String> topicNameMapping;
-  private final Queue<OrbCommMessage> outboundQueue;
-  private final OrbCommMessageRebuilder orbCommMessageRebuilder;
+  private final Queue<SatelliteMessage> outboundQueue;
+  private final SatelliteMessageRebuilder satelliteMessageRebuilder;
   private final LocationParser locationParser;
   private final boolean setServerLocation;
   private Destination destination;
@@ -92,7 +92,7 @@ public class StoGiProtocol extends Protocol implements Consumer<Packet> {
     super(endPoint, endPoint.getConfig().getProtocolConfig("stogi"));
     topicNameMapping = new ConcurrentHashMap<>();
     outboundQueue = new ConcurrentLinkedQueue<>();
-    orbCommMessageRebuilder = new OrbCommMessageRebuilder();
+    satelliteMessageRebuilder = new SatelliteMessageRebuilder();
     locationParser = new LocationParser();
     lastLocationPoll = System.currentTimeMillis();
     messageId = 0;
@@ -210,7 +210,7 @@ public class StoGiProtocol extends Protocol implements Consumer<Packet> {
 
     destinationName = scanForName(destinationName);
 
-    List<OrbCommMessage> messages = OrbCommMessageFactory.createMessages(destinationName, payload);
+    List<SatelliteMessage> messages = SatelliteMessageFactory.createMessages(destinationName, payload);
     messages.get(messages.size()-1).setCompletionCallback(messageEvent.getCompletionTask());
     outboundQueue.addAll(messages);
   }
@@ -361,7 +361,7 @@ public class StoGiProtocol extends Protocol implements Consumer<Packet> {
     CompletableFuture<List<SendMessageState>> outgoing = modem.listSentMessages();
     List<SendMessageState> stateList = outgoing.join();
     if (stateList.isEmpty()) {
-      OrbCommMessage msg = outboundQueue.peek();
+      SatelliteMessage msg = outboundQueue.peek();
       if (msg != null) {
         sendMessageViaModem(msg);
       }
@@ -375,7 +375,7 @@ public class StoGiProtocol extends Protocol implements Consumer<Packet> {
       if (state.getState().equals(SendMessageState.State.TX_FAILED) ||
           state.getState().equals(SendMessageState.State.TX_COMPLETED)) {
         modem.deleteSentMessages(state.getMessageName());
-        OrbCommMessage msg = outboundQueue.poll();
+        SatelliteMessage msg = outboundQueue.poll();
         if (msg != null && msg.getCompletionCallback() != null) {
           msg.getCompletionCallback().run();
         }
@@ -399,11 +399,11 @@ public class StoGiProtocol extends Protocol implements Consumer<Packet> {
     }
     for (byte[] message : messages) {
       if (message != null) {
-        OrbCommMessage loaded = new OrbCommMessage(message);
-        OrbCommMessage orbCommMessage = orbCommMessageRebuilder.rebuild(loaded);
-        if (orbCommMessage != null) {
-          logger.log(STOGI_PROCESSING_INBOUND_EVENT, orbCommMessage.getNamespace());
-          sendMessageToTopic(orbCommMessage.getNamespace(), orbCommMessage.getMessage());
+        SatelliteMessage loaded = new SatelliteMessage(message);
+        SatelliteMessage satelliteMessage = satelliteMessageRebuilder.rebuild(loaded);
+        if (satelliteMessage != null) {
+          logger.log(STOGI_PROCESSING_INBOUND_EVENT, satelliteMessage.getNamespace());
+          sendMessageToTopic(satelliteMessage.getNamespace(), satelliteMessage.getMessage());
         } else {
           logger.log(STOGI_RECEIVED_PARTIAL_MESSAGE, loaded.getNamespace(), loaded.getPacketNumber());
         }
@@ -411,11 +411,11 @@ public class StoGiProtocol extends Protocol implements Consumer<Packet> {
     }
   }
 
-  private void sendMessageViaModem(OrbCommMessage orbCommMessage) {
+  private void sendMessageViaModem(SatelliteMessage satelliteMessage) {
     messageId = (messageId + 1) % 0xff;
-    int sin = (orbCommMessage.getNamespace().hashCode() & 0x7F) | 0x80;
-    modem.sendMessage(2, sin, messageId, orbCommMessage.packToSend());
-    logger.log(STOGI_SEND_MESSAGE_TO_MODEM, orbCommMessage.getNamespace(), orbCommMessage.getPacketNumber());
+    int sin = (satelliteMessage.getNamespace().hashCode() & 0x7F) | 0x80;
+    modem.sendMessage(2, sin, messageId, satelliteMessage.packToSend());
+    logger.log(STOGI_SEND_MESSAGE_TO_MODEM, satelliteMessage.getNamespace(), satelliteMessage.getPacketNumber());
   }
 
 

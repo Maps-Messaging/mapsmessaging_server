@@ -34,17 +34,17 @@ import java.util.zip.Inflater;
 import static io.mapsmessaging.logging.ServerLogMessages.*;
 
 @Slf4j
-public class OrbCommMessageFactory {
+public class SatelliteMessageFactory {
 
   private static final int MAX_MESSAGE_SIZE = 4000;
   private static final int MIN_COMPRESSED_MESSAGE_SIZE = 512;
-  private static final Logger logger = LoggerFactory.getLogger(OrbCommMessageFactory.class);
+  private static final Logger logger = LoggerFactory.getLogger(SatelliteMessageFactory.class);
 
-  private OrbCommMessageFactory() {
+  private SatelliteMessageFactory() {
   }
 
-  public static List<OrbCommMessage> createMessages(String namespace, byte[] payload) {
-    List<OrbCommMessage> messages = new ArrayList<>();
+  public static List<SatelliteMessage> createMessages(String namespace, byte[] payload) {
+    List<SatelliteMessage> messages = new ArrayList<>();
     boolean compressed = false;
 
     if (payload.length > MIN_COMPRESSED_MESSAGE_SIZE) {
@@ -63,7 +63,7 @@ public class OrbCommMessageFactory {
       int len = Math.min(maxSize, payload.length - offset);
       byte[] chunk = new byte[len];
       System.arraycopy(payload, offset, chunk, 0, len);
-      OrbCommMessage message = new OrbCommMessage(
+      SatelliteMessage message = new SatelliteMessage(
           namespace,
           chunk,
           totalChunks - 1 - chunkIndex, // count down to 0
@@ -77,12 +77,12 @@ public class OrbCommMessageFactory {
     return messages;
   }
 
-  public static OrbCommMessage reconstructMessage(List<OrbCommMessage> messages) {
+  public static SatelliteMessage reconstructMessage(List<SatelliteMessage> messages) {
     String namespace = messages.get(0).getNamespace();
     boolean compressed = messages.get(0).isCompressed();
     ByteArrayOutputStream baos = new ByteArrayOutputStream();
     try {
-      for (OrbCommMessage message : messages) {
+      for (SatelliteMessage message : messages) {
         baos.write(message.getMessage());
       }
     } catch (IOException e) {
@@ -92,7 +92,7 @@ public class OrbCommMessageFactory {
     if (compressed) {
       recombined = decompress(recombined);
     }
-    return new OrbCommMessage(namespace, recombined, 0, false);
+    return new SatelliteMessage(namespace, recombined, 0, false);
   }
 
   public static byte[] compress(byte[] data) {

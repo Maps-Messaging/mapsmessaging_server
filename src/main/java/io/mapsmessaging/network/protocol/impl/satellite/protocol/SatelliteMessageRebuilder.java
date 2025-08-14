@@ -24,12 +24,12 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class OrbCommMessageRebuilder {
+public class SatelliteMessageRebuilder {
 
-  private final Map<String, List<OrbCommMessage>> fragments;
+  private final Map<String, List<SatelliteMessage>> fragments;
 
 
-  public OrbCommMessageRebuilder() {
+  public SatelliteMessageRebuilder() {
     fragments = new HashMap<>();
   }
 
@@ -37,15 +37,15 @@ public class OrbCommMessageRebuilder {
     fragments.clear();
   }
 
-  public OrbCommMessage rebuild(OrbCommMessage message) {
+  public SatelliteMessage rebuild(SatelliteMessage message) {
     fragments
         .computeIfAbsent(message.getNamespace(), k -> new ArrayList<>())
         .add(message);
     if (message.getPacketNumber() == 0) {
       // this is the final packet or simply a single packet, so lets rebuild
-      List<OrbCommMessage> list = fragments.remove(message.getNamespace());
+      List<SatelliteMessage> list = fragments.remove(message.getNamespace());
       if (list != null) {
-        return OrbCommMessageFactory.reconstructMessage(list);
+        return SatelliteMessageFactory.reconstructMessage(list);
       }
     }
     return null;

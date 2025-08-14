@@ -36,9 +36,9 @@ import io.mapsmessaging.network.io.Packet;
 import io.mapsmessaging.network.protocol.Protocol;
 import io.mapsmessaging.network.protocol.impl.satellite.gateway.model.MessageData;
 import io.mapsmessaging.network.protocol.impl.satellite.gateway.io.SatelliteEndPoint;
-import io.mapsmessaging.network.protocol.impl.satellite.protocol.OrbCommMessage;
-import io.mapsmessaging.network.protocol.impl.satellite.protocol.OrbCommMessageFactory;
-import io.mapsmessaging.network.protocol.impl.satellite.protocol.OrbCommMessageRebuilder;
+import io.mapsmessaging.network.protocol.impl.satellite.protocol.SatelliteMessage;
+import io.mapsmessaging.network.protocol.impl.satellite.protocol.SatelliteMessageFactory;
+import io.mapsmessaging.network.protocol.impl.satellite.protocol.SatelliteMessageRebuilder;
 import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
 
@@ -55,7 +55,7 @@ import static io.mapsmessaging.logging.ServerLogMessages.OGWS_FAILED_TO_SAVE_MES
 public class SatelliteGatewayProtocol extends Protocol {
 
   private final Logger logger = LoggerFactory.getLogger(SatelliteGatewayProtocol.class);
-  private final OrbCommMessageRebuilder messageRebuilder;
+  private final SatelliteMessageRebuilder messageRebuilder;
   private final Session session;
   private final String namespacePath;
   private boolean closed;
@@ -66,7 +66,7 @@ public class SatelliteGatewayProtocol extends Protocol {
     SatelliteConfigDTO config = (SatelliteConfigDTO) protocolConfig;
 
     closed = false;
-    messageRebuilder = new OrbCommMessageRebuilder();
+    messageRebuilder = new SatelliteMessageRebuilder();
     SessionContextBuilder scb = new SessionContextBuilder(primeId, new ProtocolClientConnection(this));
     scb.setPersistentSession(false)
         .setResetState(true)
@@ -136,9 +136,9 @@ public class SatelliteGatewayProtocol extends Protocol {
       destinationName = "/inbound";
     }
 
-    List<OrbCommMessage> orbCommMessages = OrbCommMessageFactory.createMessages(destinationName, messageEvent.getMessage().getOpaqueData());
-    for (OrbCommMessage orbCommMessage : orbCommMessages) {
-      byte[] tmp = orbCommMessage.packToSend();
+    List<SatelliteMessage> satelliteMessages = SatelliteMessageFactory.createMessages(destinationName, messageEvent.getMessage().getOpaqueData());
+    for (SatelliteMessage satelliteMessage : satelliteMessages) {
+      byte[] tmp = satelliteMessage.packToSend();
       byte[] payload = new byte[tmp.length + 2];
       payload[0] = (byte) 0x81;
       payload[1] = (byte) 1;
@@ -171,11 +171,11 @@ public class SatelliteGatewayProtocol extends Protocol {
     byte min = raw[1];
     byte[] tmp = new byte[raw.length - 1];
     System.arraycopy(raw, 1, tmp, 0, tmp.length);
-    OrbCommMessage orbCommMessage = new OrbCommMessage(tmp);
-    orbCommMessage = messageRebuilder.rebuild(orbCommMessage);
-    if (orbCommMessage != null) {
-      byte[] buffer = orbCommMessage.getMessage();
-      String namespace = orbCommMessage.getNamespace();
+    SatelliteMessage satelliteMessage = new SatelliteMessage(tmp);
+    satelliteMessage = messageRebuilder.rebuild(satelliteMessage);
+    if (satelliteMessage != null) {
+      byte[] buffer = satelliteMessage.getMessage();
+      String namespace = satelliteMessage.getNamespace();
       MessageBuilder messageBuilder = new MessageBuilder();
       messageBuilder.setOpaqueData(buffer);
       Message mapsMessage = messageBuilder.build();
