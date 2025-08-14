@@ -26,6 +26,7 @@ import io.mapsmessaging.network.protocol.impl.satellite.gateway.inmarsat.protoco
 import java.lang.reflect.Type;
 import java.net.URI;
 import java.net.http.HttpClient;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -38,7 +39,8 @@ public final class MessagesClient extends BaseInmarsatClient {
   }
 
   public MobileOriginatedResponse getMobileOriginated(String bearer, String xMailbox, String startTimeIso) {
-    return get("messages/mobileOriginated", Map.of("startTime", startTimeIso), bearer, xMailbox, MobileOriginatedResponse.class);
+    Map<String, String> params = Map.of("includeRawPayload", "true","startTime", startTimeIso );
+    return get("messages/mobileOriginated", params, bearer, xMailbox, MobileOriginatedResponse.class);
   }
 
   public MobileTerminatedSubmitResponse submitMobileTerminated(String bearer, String xMailbox, MobileTerminatedSubmitRequest body) {

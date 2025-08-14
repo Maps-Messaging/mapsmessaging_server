@@ -22,6 +22,7 @@ package io.mapsmessaging.network.protocol.impl.satellite.gateway.io;
 import io.mapsmessaging.dto.rest.config.protocol.impl.SatelliteConfigDTO;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
+import io.mapsmessaging.network.protocol.impl.satellite.gateway.model.MessageData;
 import io.mapsmessaging.network.protocol.impl.satellite.gateway.model.RemoteDeviceInfo;
 import io.mapsmessaging.network.protocol.impl.satellite.gateway.ogws.data.*;
 import io.mapsmessaging.utilities.threads.SimpleTaskScheduler;
@@ -64,8 +65,13 @@ public class GatewayManager {
       if (authenticated) {
         List<RemoteDeviceInfo> response = satelliteClient.getTerminals();
         for (RemoteDeviceInfo terminal : response) {
-          System.err.println("Found terminal " + terminal);
-          knownTerminals.put(terminal.getUniqueId(), terminal);
+          if(DeviceIdUtil.isValidDeviceId(terminal.getUniqueId())) {
+            System.err.println("Found terminal " + terminal);
+            knownTerminals.put(terminal.getUniqueId(), terminal);
+          }
+          else{
+            System.err.println("Found unknown terminal " + terminal);
+          }
         }
         scheduledFuture = SimpleTaskScheduler.getInstance().scheduleAtFixedRate(this::pollGateway, pollInterval, pollInterval, TimeUnit.SECONDS);
       } else {
@@ -90,8 +96,8 @@ public class GatewayManager {
   }
 
 
-  public void sendClientMessage(String primeId, SubmitMessage submitMessage) {
-    submitMessage.setDestinationId(primeId);
+  public void sendClientMessage(String primeId, MessageData submitMessage) {
+    submitMessage.setUniqueId(primeId);
     try {
       satelliteClient.queueMessagesForDelivery(submitMessage);
     } catch (Throwable e) {

@@ -17,9 +17,8 @@
  *  limitations under the License.
  */
 
-package io.mapsmessaging.network.protocol.impl.satellite.gateway.ogws.protocol;
+package io.mapsmessaging.network.protocol.impl.satellite.gateway.protocol;
 
-import com.amazonaws.util.Base64;
 import io.mapsmessaging.api.*;
 import io.mapsmessaging.api.features.ClientAcknowledgement;
 import io.mapsmessaging.api.features.DestinationType;
@@ -35,8 +34,7 @@ import io.mapsmessaging.network.ProtocolClientConnection;
 import io.mapsmessaging.network.io.EndPoint;
 import io.mapsmessaging.network.io.Packet;
 import io.mapsmessaging.network.protocol.Protocol;
-import io.mapsmessaging.network.protocol.impl.satellite.gateway.ogws.data.ReturnMessage;
-import io.mapsmessaging.network.protocol.impl.satellite.gateway.ogws.data.SubmitMessage;
+import io.mapsmessaging.network.protocol.impl.satellite.gateway.model.MessageData;
 import io.mapsmessaging.network.protocol.impl.satellite.gateway.io.SatelliteEndPoint;
 import io.mapsmessaging.network.protocol.impl.satellite.protocol.OrbCommMessage;
 import io.mapsmessaging.network.protocol.impl.satellite.protocol.OrbCommMessageFactory;
@@ -54,15 +52,15 @@ import java.util.concurrent.ExecutionException;
 import static io.mapsmessaging.logging.ServerLogMessages.OGWS_FAILED_TO_SAVE_MESSAGE;
 
 
-public class OrbCommOgwsProtocol extends Protocol {
+public class SatelliteGatewayProtocol extends Protocol {
 
-  private final Logger logger = LoggerFactory.getLogger(OrbCommOgwsProtocol.class);
+  private final Logger logger = LoggerFactory.getLogger(SatelliteGatewayProtocol.class);
   private final OrbCommMessageRebuilder messageRebuilder;
   private final Session session;
   private final String namespacePath;
   private boolean closed;
 
-  public OrbCommOgwsProtocol(@NonNull @NotNull EndPoint endPoint, @NotNull @NonNull ProtocolConfigDTO protocolConfig) throws LoginException, IOException {
+  public SatelliteGatewayProtocol(@NonNull @NotNull EndPoint endPoint, @NotNull @NonNull ProtocolConfigDTO protocolConfig) throws LoginException, IOException {
     super(endPoint, protocolConfig);
     String primeId = ((SatelliteEndPoint) endPoint).getTerminalInfo().getUniqueId();
     SatelliteConfigDTO config = (SatelliteConfigDTO) protocolConfig;
@@ -145,8 +143,8 @@ public class OrbCommOgwsProtocol extends Protocol {
       payload[0] = (byte) 0x81;
       payload[1] = (byte) 1;
       System.arraycopy(tmp, 0, payload, 2, tmp.length);
-      SubmitMessage submitMessage = new SubmitMessage();
-      submitMessage.setRawPayload(Base64.encodeAsString(payload));
+      MessageData submitMessage = new MessageData();
+      submitMessage.setPayload(payload);
       submitMessage.setCompletionCallback(messageEvent.getCompletionTask());
       ((SatelliteEndPoint) endPoint).sendMessage(submitMessage);
     }
@@ -167,13 +165,8 @@ public class OrbCommOgwsProtocol extends Protocol {
     return "0.1-beta";
   }
 
-  public void handleIncomingMessage(ReturnMessage message) throws ExecutionException, InterruptedException {
-    byte[] data = Base64.decode(message.getRawPayload());
-
-    processMessage(data);
-  }
-
-  private void processMessage(byte[] raw) throws ExecutionException, InterruptedException {
+  public void handleIncomingMessage(MessageData message) throws ExecutionException, InterruptedException {
+    byte[] raw = message.getPayload();
     byte sin = raw[0];
     byte min = raw[1];
     byte[] tmp = new byte[raw.length - 1];

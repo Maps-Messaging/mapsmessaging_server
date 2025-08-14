@@ -21,14 +21,11 @@ package io.mapsmessaging.network.protocol.impl.satellite.gateway.inmarsat;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import io.mapsmessaging.dto.rest.config.protocol.ConnectionAuthConfigDTO;
 import io.mapsmessaging.dto.rest.config.protocol.impl.SatelliteConfigDTO;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.network.protocol.impl.satellite.gateway.inmarsat.protocol.endpoints.*;
 import io.mapsmessaging.network.protocol.impl.satellite.gateway.inmarsat.protocol.model.*;
-import io.mapsmessaging.network.protocol.impl.satellite.gateway.ogws.OrbcommOgwsClient;
-
 
 import java.net.URI;
 import java.net.http.HttpClient;
@@ -43,7 +40,7 @@ public final class InmarsatSession {
   private final Gson gson = new GsonBuilder()
       .create();
 
-  private final Logger logger = LoggerFactory.getLogger(OrbcommOgwsClient.class);
+  private final Logger logger = LoggerFactory.getLogger(InmarsatSession.class);
 
 
   private final String clientId;

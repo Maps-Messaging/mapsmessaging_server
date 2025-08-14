@@ -17,13 +17,15 @@
  *  limitations under the License.
  */
 
-package io.mapsmessaging.network.protocol.impl.satellite.gateway.io;
+package io.mapsmessaging.network.protocol.impl.satellite.gateway.model;
 
-import io.mapsmessaging.network.protocol.impl.satellite.gateway.model.MessageData;
-import io.mapsmessaging.network.protocol.impl.satellite.gateway.ogws.data.ReturnMessage;
+import lombok.Data;
 
-import java.util.Queue;
+@Data
+public class MessageData {
+  private String uniqueId;
+  private byte[] payload;
 
-public interface IncomingMessageHandler {
-  void handleIncomingMessage(Queue<MessageData> incomingQueue);
+
+  private transient Runnable completionCallback;
 }

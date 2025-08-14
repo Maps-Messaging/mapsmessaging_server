@@ -20,12 +20,14 @@
 package io.mapsmessaging.network.protocol.impl.satellite.gateway.ogws;
 
 
+import com.amazonaws.util.Base64;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import io.mapsmessaging.dto.rest.config.protocol.impl.SatelliteConfigDTO;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.network.protocol.impl.satellite.gateway.io.SatelliteClient;
+import io.mapsmessaging.network.protocol.impl.satellite.gateway.model.MessageData;
 import io.mapsmessaging.network.protocol.impl.satellite.gateway.model.RemoteDeviceInfo;
 import io.mapsmessaging.network.protocol.impl.satellite.gateway.ogws.data.*;
 
@@ -60,7 +62,7 @@ public class OrbcommOgwsClient implements SatelliteClient {
   private final SatelliteConfigDTO config;
   private String bearerToken;
   private long reAuthenticateTime;
-  private final List<SubmitMessage> pendingMessages;
+  private final List<MessageData> pendingMessages;
   private String lastMessageUtc;
 
   public OrbcommOgwsClient(SatelliteConfigDTO config) {
@@ -115,7 +117,7 @@ public class OrbcommOgwsClient implements SatelliteClient {
     throw new IOException("Failed to get terminals");
   }
 
-  public FromMobileMessagesResponse getFromMobileMessages(String fromUtc) throws Exception {
+  private FromMobileMessagesResponse getFromMobileMessages(String fromUtc) throws Exception {
     reauthenticate();
     String url = baseUrl + "/get/re_messages?IncludeRawPayload=true";
     if (fromUtc != null) {
@@ -186,20 +188,25 @@ public class OrbcommOgwsClient implements SatelliteClient {
     return gson.fromJson(response.body(), GetTerminalInfoResponse.class);
   }
 
-  public void queueMessagesForDelivery(SubmitMessage submitMessages) {
+  public void queueMessagesForDelivery(MessageData submitMessages) {
     synchronized (pendingMessages) {
       pendingMessages.add(submitMessages);
     }
   }
 
-  public Queue<ReturnMessage> scanForIncoming(){
-    Queue<ReturnMessage> incomingEvents = new LinkedList<>();
+  public Queue<MessageData> scanForIncoming(){
+    Queue<MessageData> incomingEvents = new LinkedList<>();
     try {
       FromMobileMessagesResponse response = getFromMobileMessages(lastMessageUtc);
       if (response != null && response.isSuccess()) {
         if (!response.getMessages().isEmpty()) {
           lastMessageUtc = response.getNextFromUtc();
-          incomingEvents.addAll(response.getMessages());
+          for(ReturnMessage returnMessage: response.getMessages()){
+            MessageData messageData = new MessageData();
+            messageData.setUniqueId(returnMessage.getMobileId());
+            messageData.setPayload(Base64.decode(returnMessage.getRawPayload()));
+            incomingEvents.add(messageData);
+          }
         }
       } else {
         logger.log(OGWS_FAILED_POLL, response != null ? response.getErrorId() : "<null error>");
@@ -213,11 +220,17 @@ public class OrbcommOgwsClient implements SatelliteClient {
   public void processPendingMessages() {
     if(pendingMessages.isEmpty())return;
     HttpResponse<String> response = null;
-    List<SubmitMessage> pending = null;
+    List<SubmitMessage> pending = new LinkedList<>();
     try {
       reauthenticate();
       synchronized (pendingMessages) {
-        pending = new ArrayList<>(pendingMessages);
+        for(MessageData messageData: pendingMessages) {
+          SubmitMessage submitMessage = new SubmitMessage();
+          submitMessage.setRawPayload(Base64.encodeAsString(messageData.getPayload()));
+          submitMessage.setDestinationId(messageData.getUniqueId());
+          submitMessage.setCompletionCallback(messageData.getCompletionCallback());
+          pending.add(submitMessage);
+        }
         pendingMessages.clear();
       }
       String jsonMessages = gson.toJson(pending);
@@ -236,7 +249,7 @@ public class OrbcommOgwsClient implements SatelliteClient {
       Thread.currentThread().interrupt();
     }
     finally {
-      if(pending != null && !pending.isEmpty()) {
+      if(!pending.isEmpty()) {
         for (SubmitMessage message : pending) {
           if (message.getCompletionCallback() != null) {
             message.getCompletionCallback().run();

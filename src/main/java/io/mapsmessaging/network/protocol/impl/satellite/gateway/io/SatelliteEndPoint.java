@@ -24,6 +24,7 @@ import io.mapsmessaging.network.io.EndPoint;
 import io.mapsmessaging.network.io.EndPointServerStatus;
 import io.mapsmessaging.network.io.Packet;
 import io.mapsmessaging.network.io.Selectable;
+import io.mapsmessaging.network.protocol.impl.satellite.gateway.model.MessageData;
 import io.mapsmessaging.network.protocol.impl.satellite.gateway.model.RemoteDeviceInfo;
 import io.mapsmessaging.network.protocol.impl.satellite.gateway.ogws.data.SubmitMessage;
 
@@ -45,7 +46,7 @@ public class SatelliteEndPoint extends EndPoint {
 
   }
 
-  public void sendMessage(SubmitMessage submitMessage) {
+  public void sendMessage(MessageData submitMessage) {
     ((SatelliteEndPointServer) server).sendClientMessage(terminalInfo.getUniqueId(), submitMessage);
   }
 

@@ -29,10 +29,10 @@ import io.mapsmessaging.network.io.EndPoint;
 import io.mapsmessaging.network.io.EndPointServer;
 import io.mapsmessaging.network.io.Selectable;
 import io.mapsmessaging.network.io.impl.Selector;
+import io.mapsmessaging.network.protocol.impl.satellite.gateway.model.MessageData;
 import io.mapsmessaging.network.protocol.impl.satellite.gateway.model.RemoteDeviceInfo;
-import io.mapsmessaging.network.protocol.impl.satellite.gateway.ogws.data.ReturnMessage;
 import io.mapsmessaging.network.protocol.impl.satellite.gateway.ogws.data.SubmitMessage;
-import io.mapsmessaging.network.protocol.impl.satellite.gateway.ogws.protocol.OrbCommOgwsProtocol;
+import io.mapsmessaging.network.protocol.impl.satellite.gateway.protocol.SatelliteGatewayProtocol;
 
 import javax.security.auth.login.LoginException;
 import java.io.IOException;
@@ -100,20 +100,20 @@ public class SatelliteEndPointServer extends EndPointServer implements IncomingM
     }
     // Wire up a new endpoint and bind the Orbcomm OGWS Protocol to it, this will handle specific events to from this client
     SatelliteEndPoint endPoint = new SatelliteEndPoint(generateID(), this, terminalInfo);
-    OrbCommOgwsProtocol protocol = new OrbCommOgwsProtocol(endPoint, protocolConfigDTO);
+    SatelliteGatewayProtocol protocol = new SatelliteGatewayProtocol(endPoint, protocolConfigDTO);
     endPoint.setBoundProtocol(protocol);
     handleNewEndPoint(endPoint);
     return endPoint;
   }
 
   @Override
-  public void handleIncomingMessage(Queue<ReturnMessage> incomingQueue) {
+  public void handleIncomingMessage(Queue<MessageData> incomingQueue) {
     while (!incomingQueue.isEmpty()) {
-      ReturnMessage event = incomingQueue.poll();
-      RemoteDeviceInfo info = gatewayManager.getTerminal(event.getMobileId());
+      MessageData event = incomingQueue.poll();
+      RemoteDeviceInfo info = gatewayManager.getTerminal(event.getUniqueId());
       try {
         SatelliteEndPoint endPoint = locateOrCreateEndPoint(info);
-        ((OrbCommOgwsProtocol) endPoint.getBoundProtocol()).handleIncomingMessage(event);
+        ((SatelliteGatewayProtocol) endPoint.getBoundProtocol()).handleIncomingMessage(event);
       } catch (IOException | LoginException | ExecutionException e) {
         logger.log(OGWS_EXCEPTION_PROCESSING_MESSAGE);
       } catch (InterruptedException e) {
@@ -122,7 +122,7 @@ public class SatelliteEndPointServer extends EndPointServer implements IncomingM
     }
   }
 
-  public void sendClientMessage(String primeId, SubmitMessage submitMessage) {
+  public void sendClientMessage(String primeId, MessageData submitMessage) {
     gatewayManager.sendClientMessage(primeId, submitMessage);
   }
 }

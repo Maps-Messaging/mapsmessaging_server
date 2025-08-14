@@ -19,11 +19,8 @@
 
 package io.mapsmessaging.network.protocol.impl.satellite.gateway.io;
 
+import io.mapsmessaging.network.protocol.impl.satellite.gateway.model.MessageData;
 import io.mapsmessaging.network.protocol.impl.satellite.gateway.model.RemoteDeviceInfo;
-import io.mapsmessaging.network.protocol.impl.satellite.gateway.ogws.data.FromMobileMessagesResponse;
-import io.mapsmessaging.network.protocol.impl.satellite.gateway.ogws.data.GetTerminalsInfoResponse;
-import io.mapsmessaging.network.protocol.impl.satellite.gateway.ogws.data.ReturnMessage;
-import io.mapsmessaging.network.protocol.impl.satellite.gateway.ogws.data.SubmitMessage;
 
 import java.io.IOException;
 import java.util.List;
@@ -40,11 +37,12 @@ public interface SatelliteClient {
   List<RemoteDeviceInfo> getTerminals() throws IOException, InterruptedException;
 
   // Receive
-  Queue<ReturnMessage> scanForIncoming();
+  Queue<MessageData> scanForIncoming();
 
-  FromMobileMessagesResponse getFromMobileMessages(String lastMessageUtc)throws Exception;
+  // Queue messages for delivery
+  void queueMessagesForDelivery(MessageData submitMessage);
 
-  void queueMessagesForDelivery(SubmitMessage submitMessage);
+  // Process any pending messages
   void processPendingMessages();
 
 }

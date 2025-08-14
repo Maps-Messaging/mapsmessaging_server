@@ -19,13 +19,12 @@
 
 package io.mapsmessaging.network.protocol.impl.satellite.gateway.inmarsat;
 
+import com.google.gson.JsonObject;
 import io.mapsmessaging.dto.rest.config.protocol.impl.SatelliteConfigDTO;
-import io.mapsmessaging.network.protocol.impl.satellite.gateway.inmarsat.protocol.model.ErrorDef;
+import io.mapsmessaging.network.protocol.impl.satellite.gateway.inmarsat.protocol.model.MobileOriginatedResponse;
 import io.mapsmessaging.network.protocol.impl.satellite.gateway.io.SatelliteClient;
+import io.mapsmessaging.network.protocol.impl.satellite.gateway.model.MessageData;
 import io.mapsmessaging.network.protocol.impl.satellite.gateway.model.RemoteDeviceInfo;
-import io.mapsmessaging.network.protocol.impl.satellite.gateway.ogws.data.FromMobileMessagesResponse;
-import io.mapsmessaging.network.protocol.impl.satellite.gateway.ogws.data.ReturnMessage;
-import io.mapsmessaging.network.protocol.impl.satellite.gateway.ogws.data.SubmitMessage;
 
 import java.io.IOException;
 import java.util.*;
@@ -34,11 +33,13 @@ public class InmarsatClient implements SatelliteClient {
 
   private final InmarsatSession inmarsatSession;
   private InmarsatSession.MailboxSession mailboxSession;
-
+  private final List<MessageData> pendingMessages;
+  private String lastMoTimeUTC;
 
   public InmarsatClient(SatelliteConfigDTO satelliteConfigDTO) {
     inmarsatSession = new InmarsatSession(satelliteConfigDTO);
-
+    pendingMessages = new ArrayList<>();
+    lastMoTimeUTC = null;
   }
 
   @Override
@@ -48,10 +49,7 @@ public class InmarsatClient implements SatelliteClient {
   @Override
   public boolean authenticate() throws IOException, InterruptedException {
     mailboxSession  = inmarsatSession.openMailbox();
-    for (ErrorDef errorDef: inmarsatSession.getErrorCodes()){
-      System.err.println(errorDef);
-    }
-    return true;
+    return mailboxSession.getMailbox().getEnabled();
   }
 
   @Override
@@ -60,22 +58,42 @@ public class InmarsatClient implements SatelliteClient {
   }
 
   @Override
-  public Queue<ReturnMessage> scanForIncoming() {
-    return new LinkedList<>();
-  }
-
-  @Override
-  public FromMobileMessagesResponse getFromMobileMessages(String lastMessageUtc) throws IOException {
-    return null;
-  }
-
-  @Override
-  public void queueMessagesForDelivery(SubmitMessage submitMessage) {
-
+  public Queue<MessageData> scanForIncoming() {
+    Queue<MessageData> queue = new LinkedList<>();
+    MobileOriginatedResponse moResponse = mailboxSession.pollMO(lastMoTimeUTC);
+    if(moResponse != null){
+      lastMoTimeUTC = moResponse.getNextStartTime();
+      List<JsonObject> msgs = moResponse.getMessages();
+      for (JsonObject msg : msgs) {
+        if (msg.has("payloadRaw") && !msg.get("payloadRaw").isJsonNull()) {
+          String rawBase64 = msg.get("payloadRaw").getAsString();
+          byte[] payload = Base64.getDecoder().decode(rawBase64);
+          MessageData data = new MessageData();
+          data.setPayload(payload);
+          if (msg.has("deviceId")) {
+            data.setUniqueId(msg.get("deviceId").getAsString());
+          }
+          queue.add(data);
+        }
+      }
+    }
+    return queue;
   }
 
   @Override
   public void processPendingMessages() {
-
+    List<MessageData> tmp;
+    synchronized (pendingMessages) {
+      tmp = new ArrayList<>(pendingMessages);
+      pendingMessages.clear();
+    }
+    // now send the messages to the remote server for delivery
   }
+
+  public void queueMessagesForDelivery(MessageData submitMessages) {
+    synchronized (pendingMessages) {
+      pendingMessages.add(submitMessages);
+    }
+  }
+
 }
