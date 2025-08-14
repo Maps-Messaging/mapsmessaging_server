@@ -162,7 +162,7 @@ public class EndPointConfigFactory {
     if (u.startsWith("udp") || u.startsWith("hmac") || u.startsWith("lora")) return new UdpConfig(properties);
     if (u.startsWith("dtls")) return new DtlsConfig(properties);
     if (u.startsWith("serial")) return new SerialConfig(properties);
-    if (u.startsWith("ogws")) return new EndPointConfigDTO(); // placeholder
+    if (u.startsWith("satellite")) return new EndPointConfigDTO(); // placeholder
     return null;
   }
 
@@ -180,8 +180,7 @@ public class EndPointConfigFactory {
       case "lora" -> new LoRaProtocolConfig(config);
       case "echo" -> new EchoProtocolConfig(config);
       case "stogi" -> new StoGiConfig(config);
-      case "ogws" -> new OrbCommOgwsConfig(config);
-      case "inmarsat" -> new InmarsatConfig(config);
+      case "satellite" -> new SatelliteConfig(config);
       case "ws", "wss" -> new WebSocketConfig(config);
       default -> new ExtensionConfig(config);
     };

@@ -48,5 +48,4 @@ io.mapsmessaging.network.io.impl.dtls.DTLSEndPointServerFactory
 #
 # Rest based interconnected end points
 #
-io.mapsmessaging.network.protocol.impl.orbcomm.ogws.io.OrbcommOgwsEndPointServerFactory
-io.mapsmessaging.network.protocol.impl.orbcomm.inmarsat.io.InmarsatEndPointServerFactory
+io.mapsmessaging.network.protocol.impl.satellite.gateway.io.SatelliteServerFactory

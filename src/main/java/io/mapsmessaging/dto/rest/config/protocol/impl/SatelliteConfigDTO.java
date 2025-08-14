@@ -49,4 +49,13 @@ public class SatelliteConfigDTO extends ProtocolConfigDTO {
   @Schema(description = "Namespace path for outbound topic broadcast for all devices")
   protected String outboundBroadcast;
 
+  @Schema(description = "Mailbox ID")
+  protected String mailboxId;
+
+  @Schema(description = "Mailbox password")
+  protected String mailboxPassword;
+
+  @Schema(description = "Namespace root for the mailbox")
+  protected String namespace;
+
 }
