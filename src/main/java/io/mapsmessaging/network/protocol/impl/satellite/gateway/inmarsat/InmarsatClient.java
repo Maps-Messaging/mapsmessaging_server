@@ -21,7 +21,10 @@ package io.mapsmessaging.network.protocol.impl.satellite.gateway.inmarsat;
 
 import com.google.gson.JsonObject;
 import io.mapsmessaging.dto.rest.config.protocol.impl.SatelliteConfigDTO;
+import io.mapsmessaging.network.protocol.impl.satellite.gateway.inmarsat.protocol.model.Item;
 import io.mapsmessaging.network.protocol.impl.satellite.gateway.inmarsat.protocol.model.MobileOriginatedResponse;
+import io.mapsmessaging.network.protocol.impl.satellite.gateway.inmarsat.protocol.model.MobileTerminatedSubmitRequest;
+import io.mapsmessaging.network.protocol.impl.satellite.gateway.inmarsat.protocol.model.MobileTerminatedSubmitResponse;
 import io.mapsmessaging.network.protocol.impl.satellite.gateway.io.SatelliteClient;
 import io.mapsmessaging.network.protocol.impl.satellite.gateway.model.MessageData;
 import io.mapsmessaging.network.protocol.impl.satellite.gateway.model.RemoteDeviceInfo;
@@ -33,13 +36,16 @@ public class InmarsatClient implements SatelliteClient {
 
   private final InmarsatSession inmarsatSession;
   private InmarsatSession.MailboxSession mailboxSession;
-  private final List<MessageData> pendingMessages;
   private String lastMoTimeUTC;
 
   public InmarsatClient(SatelliteConfigDTO satelliteConfigDTO) {
     inmarsatSession = new InmarsatSession(satelliteConfigDTO);
-    pendingMessages = new ArrayList<>();
-    lastMoTimeUTC = null;
+    lastMoTimeUTC = java.time.ZonedDateTime.now()
+        .withZoneSameInstant(java.time.ZoneOffset.UTC)
+        .minusDays(1)
+        .toInstant()
+        .truncatedTo(java.time.temporal.ChronoUnit.SECONDS)
+        .toString();
   }
 
   @Override
@@ -53,8 +59,8 @@ public class InmarsatClient implements SatelliteClient {
   }
 
   @Override
-  public List<RemoteDeviceInfo> getTerminals() {
-    return new ArrayList<>(mailboxSession.listDevices());
+  public List<RemoteDeviceInfo> getTerminals(String deviceId) {
+    return new ArrayList<>(mailboxSession.listDevices(deviceId));
   }
 
   @Override
@@ -62,7 +68,9 @@ public class InmarsatClient implements SatelliteClient {
     Queue<MessageData> queue = new LinkedList<>();
     MobileOriginatedResponse moResponse = mailboxSession.pollMO(lastMoTimeUTC);
     if(moResponse != null){
-      lastMoTimeUTC = moResponse.getNextStartTime();
+      if(moResponse.getNextStartTime() != null){
+        lastMoTimeUTC = moResponse.getNextStartTime();
+      }
       List<JsonObject> msgs = moResponse.getMessages();
       for (JsonObject msg : msgs) {
         if (msg.has("payloadRaw") && !msg.get("payloadRaw").isJsonNull()) {
@@ -81,19 +89,16 @@ public class InmarsatClient implements SatelliteClient {
   }
 
   @Override
-  public void processPendingMessages() {
-    List<MessageData> tmp;
-    synchronized (pendingMessages) {
-      tmp = new ArrayList<>(pendingMessages);
-      pendingMessages.clear();
+  public void processPendingMessages(List<MessageData> pendingMessages) {
+    List<Item> messageList = new ArrayList<>();
+    for(MessageData msg : pendingMessages){
+      String payload = Base64.getEncoder().encodeToString(msg.getPayload());
+      Item item = new Item(msg.getUniqueId(), null, payload, null);
+      messageList.add(item);
     }
-    // now send the messages to the remote server for delivery
-  }
-
-  public void queueMessagesForDelivery(MessageData submitMessages) {
-    synchronized (pendingMessages) {
-      pendingMessages.add(submitMessages);
-    }
+    MobileTerminatedSubmitRequest req = new MobileTerminatedSubmitRequest(messageList);
+    MobileTerminatedSubmitResponse response = mailboxSession.submitMT(req);
+    System.err.println("Response: " + response);
   }
 
 }

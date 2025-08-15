@@ -39,8 +39,12 @@ public final class MessagesClient extends BaseInmarsatClient {
   }
 
   public MobileOriginatedResponse getMobileOriginated(String bearer, String xMailbox, String startTimeIso) {
-    Map<String, String> params = Map.of("includeRawPayload", "true","startTime", startTimeIso );
-    return get("messages/mobileOriginated", params, bearer, xMailbox, MobileOriginatedResponse.class);
+    try {
+      Map<String, String> params = Map.of("includeRawPayload", "true","startTime", startTimeIso );
+      return get("messages/mobileOriginated", params, bearer, xMailbox, MobileOriginatedResponse.class);
+    } catch (Throwable e) {
+      return null;
+    }
   }
 
   public MobileTerminatedSubmitResponse submitMobileTerminated(String bearer, String xMailbox, MobileTerminatedSubmitRequest body) {

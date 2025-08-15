@@ -74,7 +74,6 @@ public abstract class BusHandler implements Runnable {
   private SessionContext createContext(DeviceHandler deviceHandler){
     SessionContextBuilder builder = new SessionContextBuilder(deviceHandler.getBusName()+"_"+deviceHandler.getName(), new DeviceClientConnection(deviceHandler));
     builder.setPersistentSession(false)
-    .setKeepAlive(0)
     .setResetState(true)
     .setUsername("anonymous")
     .setPassword(new char[0])

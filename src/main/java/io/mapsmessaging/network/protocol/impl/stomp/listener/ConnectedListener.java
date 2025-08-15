@@ -76,7 +76,6 @@ public class ConnectedListener extends BaseConnectListener {
   private CompletableFuture<Session> createSession(SessionState engine) {
     SessionContextBuilder scb = new SessionContextBuilder(UuidGenerator.getInstance().generate().toString(), new ProtocolClientConnection(engine.getProtocol()));
     scb.setPersistentSession(false);
-    scb.setKeepAlive(120);
     scb.setReceiveMaximum(engine.getProtocol().getMaxReceiveSize());
     scb.setSessionExpiry(0); // There is no idle Stomp sessions, so once disconnected the state is thrown away
     return SessionManager.getInstance().createAsync(scb.build(), engine.getProtocol());

@@ -51,14 +51,12 @@ class SelectorTest extends MessageAPITest implements MessageListener {
     SessionContextBuilder scb1 = new SessionContextBuilder(name+"_1", new ProtocolClientConnection(new FakeProtocol(this)));
     scb1.setReceiveMaximum(1); // ensure it is low
     scb1.setSessionExpiry(2); // 2 seconds, more then enough time
-    scb1.setKeepAlive(60); // large enough to not worry about
     scb1.setPersistentSession(true); // store the details
     Session session1 = createSession(scb1, this);
 
     SessionContextBuilder scb2 = new SessionContextBuilder(name+"_2", new ProtocolClientConnection(new FakeProtocol(this)));
     scb2.setReceiveMaximum(1); // ensure it is low
     scb2.setSessionExpiry(2); // 2 seconds, more then enough time
-    scb2.setKeepAlive(60); // large enough to not worry about
     scb2.setPersistentSession(true); // store the details
     Session session2 = createSession(scb2, this);
 
@@ -115,14 +113,12 @@ class SelectorTest extends MessageAPITest implements MessageListener {
     SessionContextBuilder scb1 = new SessionContextBuilder(name+"_1", new ProtocolClientConnection(new FakeProtocol(this)));
     scb1.setReceiveMaximum(1); // ensure it is low
     scb1.setSessionExpiry(2); // 2 seconds, more then enough time
-    scb1.setKeepAlive(60); // large enough to not worry about
     scb1.setPersistentSession(true); // store the details
     Session session1 = createSession(scb1, this);
 
     SessionContextBuilder scb2 = new SessionContextBuilder(name+"_2", new ProtocolClientConnection(new FakeProtocol(this)));
     scb2.setReceiveMaximum(1); // ensure it is low
     scb2.setSessionExpiry(2); // 2 seconds, more then enough time
-    scb2.setKeepAlive(60); // large enough to not worry about
     scb2.setPersistentSession(true); // store the details
     Session session2 = createSession(scb2, this);
 
@@ -182,14 +178,12 @@ class SelectorTest extends MessageAPITest implements MessageListener {
     SessionContextBuilder scb1 = new SessionContextBuilder(name+"_1", new ProtocolClientConnection(new FakeProtocol(this)));
     scb1.setReceiveMaximum(1); // ensure it is low
     scb1.setSessionExpiry(2); // 2 seconds, more then enough time
-    scb1.setKeepAlive(60); // large enough to not worry about
     scb1.setPersistentSession(true); // store the details
     Session session1 = createSession(scb1, this);
 
     SessionContextBuilder scb2 = new SessionContextBuilder(name+"_2", new ProtocolClientConnection(new FakeProtocol(this)));
     scb2.setReceiveMaximum(1); // ensure it is low
     scb2.setSessionExpiry(2); // 2 seconds, more then enough time
-    scb2.setKeepAlive(60); // large enough to not worry about
     scb2.setPersistentSession(true); // store the details
     Session session2 = createSession(scb2, this);
 
@@ -244,14 +238,12 @@ class SelectorTest extends MessageAPITest implements MessageListener {
     SessionContextBuilder scb1 = new SessionContextBuilder(name+"_1", new ProtocolClientConnection(new FakeProtocol(this)));
     scb1.setReceiveMaximum(1); // ensure it is low
     scb1.setSessionExpiry(2); // 2 seconds, more then enough time
-    scb1.setKeepAlive(60); // large enough to not worry about
     scb1.setPersistentSession(true); // store the details
     Session session1 = createSession(scb1, this);
 
     SessionContextBuilder scb2 = new SessionContextBuilder(name+"_2", new ProtocolClientConnection(new FakeProtocol(this)));
     scb2.setReceiveMaximum(1); // ensure it is low
     scb2.setSessionExpiry(2); // 2 seconds, more then enough time
-    scb2.setKeepAlive(60); // large enough to not worry about
     scb2.setPersistentSession(true); // store the details
     Session session2 = createSession(scb2, this);
 

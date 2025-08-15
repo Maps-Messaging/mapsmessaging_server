@@ -44,7 +44,6 @@ public class QueueTest extends MessageAPITest implements MessageListener {
     SessionContextBuilder scb = new SessionContextBuilder("createQueueAndSendEvents_1", new ProtocolClientConnection(protocol));
     scb.setReceiveMaximum(1); // ensure it is low
     scb.setSessionExpiry(2); // 2 seconds, more then enough time
-    scb.setKeepAlive(120); // large enough to not worry about
     scb.setPersistentSession(true); // store the details
 
     Session session = SessionManager.getInstance().create(scb.build(), protocol);

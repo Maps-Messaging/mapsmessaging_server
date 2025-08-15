@@ -81,7 +81,6 @@ public class NMEAProtocol extends Protocol {
     }
     SessionContextBuilder sessionContextBuilder = new SessionContextBuilder("NMEA-0183" + endPoint.getId(), new ProtocolClientConnection(this));
     sessionContextBuilder.setSessionExpiry(0);
-    sessionContextBuilder.setKeepAlive(0);
     sessionContextBuilder.setPersistentSession(false);
     session = SessionManager.getInstance().create(sessionContextBuilder.build(), this);
     selectorTask = new SelectorTask(this, endPoint.getConfig().getEndPointConfig());

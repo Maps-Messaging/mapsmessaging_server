@@ -50,7 +50,6 @@ public class InitialConnectionState implements State {
       Connect connect = (Connect) mqtt;
       SessionContextBuilder scb = new SessionContextBuilder(connect.getClientId(), new ProtocolClientConnection(protocol));
       scb.setResetState(connect.clean());
-      scb.setKeepAlive(connect.getDuration());
       protocol.setKeepAlive(TimeUnit.SECONDS.toMillis(connect.getDuration()));
       MqttSnConfig config = (MqttSnConfig)endPoint.getConfig().getProtocolConfig("mqtt-sn");
 

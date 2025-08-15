@@ -31,7 +31,6 @@ import io.mapsmessaging.network.io.Selectable;
 import io.mapsmessaging.network.io.impl.Selector;
 import io.mapsmessaging.network.protocol.impl.satellite.gateway.model.MessageData;
 import io.mapsmessaging.network.protocol.impl.satellite.gateway.model.RemoteDeviceInfo;
-import io.mapsmessaging.network.protocol.impl.satellite.gateway.ogws.data.SubmitMessage;
 import io.mapsmessaging.network.protocol.impl.satellite.gateway.protocol.SatelliteGatewayProtocol;
 
 import javax.security.auth.login.LoginException;
@@ -107,6 +106,11 @@ public class SatelliteEndPointServer extends EndPointServer implements IncomingM
   }
 
   @Override
+  public void registerTerminal(RemoteDeviceInfo terminalInfo) throws LoginException, IOException {
+    locateOrCreateEndPoint(terminalInfo);
+  }
+
+  @Override
   public void handleIncomingMessage(Queue<MessageData> incomingQueue) {
     while (!incomingQueue.isEmpty()) {
       MessageData event = incomingQueue.poll();
@@ -124,5 +128,9 @@ public class SatelliteEndPointServer extends EndPointServer implements IncomingM
 
   public void sendClientMessage(String primeId, MessageData submitMessage) {
     gatewayManager.sendClientMessage(primeId, submitMessage);
+  }
+
+  public RemoteDeviceInfo updateTerminalInfo(String uniqueId) throws IOException, InterruptedException {
+    return gatewayManager.updateTerminalInfo(uniqueId);
   }
 }

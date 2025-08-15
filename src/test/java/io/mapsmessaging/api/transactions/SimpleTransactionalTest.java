@@ -50,7 +50,6 @@ class SimpleTransactionalTest extends MessageAPITest implements MessageListener 
     SessionContextBuilder scb = new SessionContextBuilder(name + "_1", new ProtocolClientConnection(new FakeProtocol(this)));
     scb.setReceiveMaximum(1); // ensure it is low
     scb.setSessionExpiry(2); // 2 seconds, more then enough time
-    scb.setKeepAlive(120); // large enough to not worry about
     scb.setPersistentSession(true); // store the details
 
     Session session = SessionManager.getInstance().create(scb.build(), this);

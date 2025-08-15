@@ -20,20 +20,14 @@
 package io.mapsmessaging.network.protocol.impl.satellite.gateway.inmarsat.protocol.model;
 
 import com.google.gson.annotations.SerializedName;
+import lombok.AllArgsConstructor;
 import lombok.Getter;
 
 import java.util.List;
 
 @Getter
+@AllArgsConstructor
 public final class MobileTerminatedSubmitRequest {
   @SerializedName("messages")
   private List<Item> messages;
-
-  public MobileTerminatedSubmitRequest(List<Item> messages) {
-    this.messages = messages;
-  }
-
-  public List<Item> getMessages() {
-    return messages;
-  }
 }

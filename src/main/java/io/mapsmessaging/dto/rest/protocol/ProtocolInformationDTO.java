@@ -43,7 +43,7 @@ import java.util.Map;
     @JsonSubTypes.Type(value = StompProtocolInformation.class, name = "stomp"),
     @JsonSubTypes.Type(value = RestProtocolInformation.class, name = "rest"),
     @JsonSubTypes.Type(value = ExtensionProtocolInformation.class, name = "extension"),
-    @JsonSubTypes.Type(value = OrbcommProtocolInformation.class, name = "orbcomm"),
+    @JsonSubTypes.Type(value = SatelliteProtocolInformation.class, name = "orbcomm"),
     @JsonSubTypes.Type(value = SatelliteDeviceProtocolInformation.class, name = "satellite"),
 })
 @Schema(
@@ -62,7 +62,7 @@ import java.util.Map;
         @DiscriminatorMapping(value = "stomp", schema = StompProtocolInformation.class),
         @DiscriminatorMapping(value = "rest", schema = RestProtocolInformation.class),
         @DiscriminatorMapping(value = "extension", schema = ExtensionProtocolInformation.class),
-        @DiscriminatorMapping(value = "orbcomm", schema = OrbcommProtocolInformation.class),
+        @DiscriminatorMapping(value = "orbcomm", schema = SatelliteProtocolInformation.class),
         @DiscriminatorMapping(value = "satellite", schema = SatelliteDeviceProtocolInformation.class),
 
     },

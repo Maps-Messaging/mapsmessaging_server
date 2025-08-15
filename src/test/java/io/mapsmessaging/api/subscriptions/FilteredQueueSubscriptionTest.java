@@ -75,7 +75,6 @@ class FilteredQueueSubscriptionTest extends MessageAPITest implements MessageLis
       SessionContextBuilder scb = new SessionContextBuilder(name + "_"+x, new ProtocolClientConnection(new FakeProtocol(listener)));
       scb.setReceiveMaximum(1); // ensure it is low
       scb.setSessionExpiry(2); // 2 seconds, more than enough time
-      scb.setKeepAlive(60); // large enough to not worry about
       scb.setPersistentSession(false); // store the details
       sessions[x] = createSession(scb, listener);
       sessions[x].findDestination(destinationName, DestinationType.QUEUE).get();
@@ -139,7 +138,6 @@ class FilteredQueueSubscriptionTest extends MessageAPITest implements MessageLis
         SessionContextBuilder scb = new SessionContextBuilder(name + "_" + index, new ProtocolClientConnection(new FakeProtocol(listener)));
         scb.setReceiveMaximum(1); // ensure it is low
         scb.setSessionExpiry(0); // 2 seconds, more then enough time
-        scb.setKeepAlive(60); // large enough to not worry about
         scb.setPersistentSession(false); // store the details
         sessions[index] = createSession(scb, listener);
         sessions[index].findDestination(s, DestinationType.QUEUE).get();

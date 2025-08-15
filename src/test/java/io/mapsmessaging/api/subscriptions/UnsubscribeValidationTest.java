@@ -77,7 +77,6 @@ class UnsubscribeValidationTest extends MessageAPITest implements MessageListene
     SessionContextBuilder scb1 = new SessionContextBuilder(name+"_1", new ProtocolClientConnection(new FakeProtocol(this)));
     scb1.setReceiveMaximum(1); // ensure it is low
     scb1.setSessionExpiry(2); // 2 seconds, more than enough time
-    scb1.setKeepAlive(120); // large enough to not worry about
     scb1.setPersistentSession(true); // store the details
 
     Session delayedSession1 = createSession(scb1, this);
@@ -85,7 +84,6 @@ class UnsubscribeValidationTest extends MessageAPITest implements MessageListene
     SessionContextBuilder scb2 = new SessionContextBuilder(name+"_2", new ProtocolClientConnection(new FakeProtocol(this)));
     scb2.setReceiveMaximum(1); // ensure it is low
     scb2.setSessionExpiry(2); // 2 seconds, more than enough time
-    scb2.setKeepAlive(120); // large enough to not worry about
     scb2.setPersistentSession(true); // store the details
     Session delayedSession2 = createSession(scb2, this);
 

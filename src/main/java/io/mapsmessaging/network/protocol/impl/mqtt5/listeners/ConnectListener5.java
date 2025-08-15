@@ -166,8 +166,7 @@ public class ConnectListener5 extends PacketListener5 {
     }
     protocol.setKeepAlive(keepAlive * 1000L);
 
-    scb.setResetState(connect.isCleanSession())
-        .setKeepAlive(keepAlive);
+    scb.setResetState(connect.isCleanSession());
 
     if (connect.hasPassword()) {
       scb.setPassword(connect.getPassword());

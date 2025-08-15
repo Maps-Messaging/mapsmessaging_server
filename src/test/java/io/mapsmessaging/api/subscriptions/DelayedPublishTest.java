@@ -54,7 +54,6 @@ class DelayedPublishTest extends MessageAPITest {
     SessionContextBuilder scb1 = new SessionContextBuilder(name+"_1", new ProtocolClientConnection(new FakeProtocol(messageReceiver)));
     scb1.setReceiveMaximum(10); // ensure it is low
     scb1.setSessionExpiry(60); // 60 seconds, more then enough time
-    scb1.setKeepAlive(60); // large enough to not worry about
     scb1.setPersistentSession(true); // store the details
     Session session = createSession(scb1, messageReceiver);
 

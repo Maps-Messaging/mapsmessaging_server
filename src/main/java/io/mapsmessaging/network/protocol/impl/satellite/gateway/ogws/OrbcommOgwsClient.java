@@ -62,7 +62,6 @@ public class OrbcommOgwsClient implements SatelliteClient {
   private final SatelliteConfigDTO config;
   private String bearerToken;
   private long reAuthenticateTime;
-  private final List<MessageData> pendingMessages;
   private String lastMessageUtc;
 
   public OrbcommOgwsClient(SatelliteConfigDTO config) {
@@ -70,7 +69,6 @@ public class OrbcommOgwsClient implements SatelliteClient {
     this.baseUrl = config.getBaseUrl();
     this.clientId = config.getRemoteAuthConfig().getUsername();
     this.clientSecret = config.getRemoteAuthConfig().getPassword();
-    pendingMessages = new ArrayList<>();
     if ((clientId == null || clientId.isEmpty()) || clientSecret == null || clientSecret.isEmpty()) {
       throw new IllegalArgumentException("Client id or secret cannot be null or empty");
     }
@@ -106,8 +104,27 @@ public class OrbcommOgwsClient implements SatelliteClient {
     return tokenResponse.isSuccess();
   }
 
-  public List<RemoteDeviceInfo> getTerminals() throws IOException, InterruptedException {
+  public List<RemoteDeviceInfo> getTerminals(String deviceId) throws IOException, InterruptedException {
     reauthenticate();
+    if (deviceId == null) {
+      return getAllTerminals();
+    }
+    else{
+      return getTerminalInfo(deviceId);
+    }
+  }
+
+  private List<RemoteDeviceInfo> getTerminalInfo(String deviceId) throws IOException, InterruptedException {
+    HttpRequest request = authorizedGet("/info/terminal?PrimeID="+deviceId);
+    HttpResponse<String> response = httpClient.send(request, BodyHandlers.ofString());
+    GetTerminalInfoResponse terminalInfoRemote = gson.fromJson(response.body(), GetTerminalInfoResponse.class);
+    if(terminalInfoRemote.isSuccess()) {
+      return List.of(terminalInfoRemote.getTerminal());
+    }
+    throw new IOException("Failed to get terminals");
+  }
+
+  private List<RemoteDeviceInfo> getAllTerminals() throws IOException, InterruptedException {
     HttpRequest request = authorizedGet("/info/terminals");
     HttpResponse<String> response = httpClient.send(request, BodyHandlers.ofString());
     GetTerminalsInfoResponse terminalsInfoResponse = gson.fromJson(response.body(), GetTerminalsInfoResponse.class);
@@ -188,12 +205,6 @@ public class OrbcommOgwsClient implements SatelliteClient {
     return gson.fromJson(response.body(), GetTerminalInfoResponse.class);
   }
 
-  public void queueMessagesForDelivery(MessageData submitMessages) {
-    synchronized (pendingMessages) {
-      pendingMessages.add(submitMessages);
-    }
-  }
-
   public Queue<MessageData> scanForIncoming(){
     Queue<MessageData> incomingEvents = new LinkedList<>();
     try {
@@ -217,21 +228,18 @@ public class OrbcommOgwsClient implements SatelliteClient {
     return incomingEvents;
   }
 
-  public void processPendingMessages() {
+  public void processPendingMessages(List<MessageData> pendingMessages) {
     if(pendingMessages.isEmpty())return;
     HttpResponse<String> response = null;
     List<SubmitMessage> pending = new LinkedList<>();
     try {
       reauthenticate();
-      synchronized (pendingMessages) {
-        for(MessageData messageData: pendingMessages) {
-          SubmitMessage submitMessage = new SubmitMessage();
-          submitMessage.setRawPayload(Base64.encodeAsString(messageData.getPayload()));
-          submitMessage.setDestinationId(messageData.getUniqueId());
-          submitMessage.setCompletionCallback(messageData.getCompletionCallback());
-          pending.add(submitMessage);
-        }
-        pendingMessages.clear();
+      for(MessageData messageData: pendingMessages) {
+        SubmitMessage submitMessage = new SubmitMessage();
+        submitMessage.setRawPayload(Base64.encodeAsString(messageData.getPayload()));
+        submitMessage.setDestinationId(messageData.getUniqueId());
+        submitMessage.setCompletionCallback(messageData.getCompletionCallback());
+        pending.add(submitMessage);
       }
       String jsonMessages = gson.toJson(pending);
       HttpRequest request = HttpRequest.newBuilder()

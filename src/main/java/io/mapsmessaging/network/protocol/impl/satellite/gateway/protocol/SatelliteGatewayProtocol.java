@@ -27,7 +27,7 @@ import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.dto.rest.config.protocol.ProtocolConfigDTO;
 import io.mapsmessaging.dto.rest.config.protocol.impl.SatelliteConfigDTO;
 import io.mapsmessaging.dto.rest.protocol.ProtocolInformationDTO;
-import io.mapsmessaging.dto.rest.protocol.impl.OrbcommProtocolInformation;
+import io.mapsmessaging.dto.rest.protocol.impl.SatelliteProtocolInformation;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.network.ProtocolClientConnection;
@@ -46,6 +46,7 @@ import javax.security.auth.Subject;
 import javax.security.auth.login.LoginException;
 import java.io.IOException;
 import java.util.List;
+import java.util.Random;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 
@@ -70,9 +71,11 @@ public class SatelliteGatewayProtocol extends Protocol {
     SessionContextBuilder scb = new SessionContextBuilder(primeId, new ProtocolClientConnection(this));
     scb.setPersistentSession(false)
         .setResetState(true)
-        .setKeepAlive(60000)
         .setSessionExpiry(100)
         .setReceiveMaximum(config.getMaxInflightEventsPerDevice());
+
+    Random random = new Random();
+    setKeepAlive(300000 + random.nextLong(600000));
     session = SessionManager.getInstance().create(scb.build(), this);
     session.resumeState();
     namespacePath = config.getOutboundNamespaceRoot().trim();
@@ -111,6 +114,16 @@ public class SatelliteGatewayProtocol extends Protocol {
     return new Subject();
   }
 
+  public void sendKeepAlive() {
+    try {
+      ((SatelliteEndPoint) endPoint).updateTerminalInfo();
+    } catch (IOException e) {
+      // log
+    } catch (InterruptedException e) {
+      Thread.currentThread().interrupt();
+    }
+  }
+
   @Override
   public String getSessionId() {
     if (session == null) {
@@ -121,8 +134,9 @@ public class SatelliteGatewayProtocol extends Protocol {
 
   @Override
   public ProtocolInformationDTO getInformation() {
-    OrbcommProtocolInformation information = new OrbcommProtocolInformation();
+    SatelliteProtocolInformation information = new SatelliteProtocolInformation();
     updateInformation(information);
+    information.setRemoteDeviceInfo(((SatelliteEndPoint) endPoint).getTerminalInfo());
     information.setSessionInfo(session.getSessionInformation());
     return information;
   }

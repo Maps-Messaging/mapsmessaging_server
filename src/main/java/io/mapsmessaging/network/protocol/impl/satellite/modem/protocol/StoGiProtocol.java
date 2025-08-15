@@ -30,7 +30,7 @@ import io.mapsmessaging.api.message.TypedData;
 import io.mapsmessaging.api.transformers.Transformer;
 import io.mapsmessaging.dto.rest.config.protocol.impl.StoGiConfigDTO;
 import io.mapsmessaging.dto.rest.protocol.ProtocolInformationDTO;
-import io.mapsmessaging.dto.rest.protocol.impl.OrbcommProtocolInformation;
+import io.mapsmessaging.dto.rest.protocol.impl.SatelliteProtocolInformation;
 import io.mapsmessaging.engine.destination.MessageOverrides;
 import io.mapsmessaging.location.LocationManager;
 import io.mapsmessaging.logging.Logger;
@@ -45,6 +45,7 @@ import io.mapsmessaging.network.protocol.ProtocolMessageTransformation;
 import io.mapsmessaging.network.protocol.impl.nmea.sentences.Sentence;
 import io.mapsmessaging.network.protocol.impl.nmea.types.LongType;
 import io.mapsmessaging.network.protocol.impl.nmea.types.PositionType;
+import io.mapsmessaging.network.protocol.impl.satellite.gateway.io.SatelliteEndPoint;
 import io.mapsmessaging.network.protocol.impl.satellite.modem.device.Modem;
 import io.mapsmessaging.network.protocol.impl.satellite.modem.device.messages.SendMessageState;
 import io.mapsmessaging.network.protocol.impl.satellite.modem.device.values.MessageFormat;
@@ -136,7 +137,6 @@ public class StoGiProtocol extends Protocol implements Consumer<Packet> {
   private Session setupSession() throws LoginException, IOException {
     SessionContextBuilder sessionContextBuilder = new SessionContextBuilder("stogi" + endPoint.getId(), new ProtocolClientConnection(this));
     sessionContextBuilder.setSessionExpiry(0);
-    sessionContextBuilder.setKeepAlive(0);
     sessionContextBuilder.setPersistentSession(false);
     return SessionManager.getInstance().create(sessionContextBuilder.build(), this);
   }
@@ -275,8 +275,9 @@ public class StoGiProtocol extends Protocol implements Consumer<Packet> {
 
   @Override
   public ProtocolInformationDTO getInformation() {
-    OrbcommProtocolInformation information = new OrbcommProtocolInformation();
+    SatelliteProtocolInformation information = new SatelliteProtocolInformation();
     updateInformation(information);
+    information.setRemoteDeviceInfo(((SatelliteEndPoint) endPoint).getTerminalInfo());
     information.setSessionInfo(session.getSessionInformation());
     return information;
   }

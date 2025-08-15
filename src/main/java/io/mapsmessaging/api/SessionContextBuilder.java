@@ -47,7 +47,6 @@ public class SessionContextBuilder {
   private boolean persistentSession;
   private long sessionExpiry;
   private int receiveMaximum;
-  private int duration;
   private boolean authorized;
 
   public SessionContextBuilder(@NonNull @NotNull String id, @NonNull @NotNull ClientConnection clientConnection) {
@@ -64,7 +63,6 @@ public class SessionContextBuilder {
     willDelay = 0;
     sessionExpiry = -1;
     receiveMaximum = (1 << 16) - 1;
-    duration = -1;
   }
 
   public @NonNull @NotNull SessionContextBuilder setUsername(@NonNull @NotNull String username) {
@@ -119,10 +117,6 @@ public class SessionContextBuilder {
 
   public @NonNull @NotNull SessionContextBuilder isAuthorized(boolean authorized) {
     this.authorized = authorized;
-    return this;
-  }
-  public @NonNull @NotNull SessionContextBuilder setKeepAlive(int duration) {
-    this.duration = duration;
     return this;
   }
 

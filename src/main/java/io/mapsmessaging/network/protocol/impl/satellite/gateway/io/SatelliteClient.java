@@ -34,15 +34,12 @@ public interface SatelliteClient {
   void close();
 
   // Get information on all known modems/devices
-  List<RemoteDeviceInfo> getTerminals() throws IOException, InterruptedException;
+  List<RemoteDeviceInfo> getTerminals(String deviceId) throws IOException, InterruptedException;
 
   // Receive
   Queue<MessageData> scanForIncoming();
 
-  // Queue messages for delivery
-  void queueMessagesForDelivery(MessageData submitMessage);
-
   // Process any pending messages
-  void processPendingMessages();
+  void processPendingMessages(List<MessageData> queue);
 
 }

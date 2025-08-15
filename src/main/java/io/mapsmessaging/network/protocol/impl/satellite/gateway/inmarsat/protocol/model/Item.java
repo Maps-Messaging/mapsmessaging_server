@@ -21,9 +21,13 @@ package io.mapsmessaging.network.protocol.impl.satellite.gateway.inmarsat.protoc
 
 import com.google.gson.JsonObject;
 import com.google.gson.annotations.SerializedName;
+import lombok.AllArgsConstructor;
+import lombok.Data;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 
-@Getter
+@Data
+@AllArgsConstructor
 public final class Item {
   @SerializedName("destinationId")
   private final String destinationId;
@@ -33,11 +37,4 @@ public final class Item {
   private final String payloadRaw;    // optional (Base64)
   @SerializedName("payloadJson")
   private final JsonObject payloadJson; // optional
-
-  public Item(String destinationId, String userMessageId, String payloadRaw, JsonObject payloadJson) {
-    this.destinationId = destinationId;
-    this.userMessageId = userMessageId;
-    this.payloadRaw = payloadRaw;
-    this.payloadJson = payloadJson;
-  }
 }

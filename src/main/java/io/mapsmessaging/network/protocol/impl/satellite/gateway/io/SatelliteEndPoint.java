@@ -20,13 +20,13 @@
 package io.mapsmessaging.network.protocol.impl.satellite.gateway.io;
 
 import io.mapsmessaging.logging.Logger;
+import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.network.io.EndPoint;
 import io.mapsmessaging.network.io.EndPointServerStatus;
 import io.mapsmessaging.network.io.Packet;
 import io.mapsmessaging.network.io.Selectable;
 import io.mapsmessaging.network.protocol.impl.satellite.gateway.model.MessageData;
 import io.mapsmessaging.network.protocol.impl.satellite.gateway.model.RemoteDeviceInfo;
-import io.mapsmessaging.network.protocol.impl.satellite.gateway.ogws.data.SubmitMessage;
 
 import lombok.Getter;
 
@@ -38,16 +38,24 @@ import java.util.concurrent.FutureTask;
 public class SatelliteEndPoint extends EndPoint {
 
   @Getter
-  private final RemoteDeviceInfo terminalInfo;
+  private RemoteDeviceInfo terminalInfo;
+
+  private final Logger logger = LoggerFactory.getLogger(SatelliteEndPoint.class);
 
   protected SatelliteEndPoint(long id, EndPointServerStatus server, RemoteDeviceInfo terminal) {
     super(id, server);
     this.terminalInfo = terminal;
-
   }
 
   public void sendMessage(MessageData submitMessage) {
     ((SatelliteEndPointServer) server).sendClientMessage(terminalInfo.getUniqueId(), submitMessage);
+  }
+
+  public void updateTerminalInfo() throws IOException, InterruptedException {
+    RemoteDeviceInfo info = ((SatelliteEndPointServer) server).updateTerminalInfo(terminalInfo.getUniqueId());
+    if(info != null && info.getUniqueId().equals(terminalInfo.getUniqueId())) {
+      terminalInfo = info;
+    }
   }
 
   @Override
@@ -82,7 +90,7 @@ public class SatelliteEndPoint extends EndPoint {
 
   @Override
   protected Logger createLogger() {
-    return null;
+    return logger;
   }
 
 }

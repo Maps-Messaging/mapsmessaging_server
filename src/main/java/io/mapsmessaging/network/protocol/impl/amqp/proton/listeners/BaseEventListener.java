@@ -86,7 +86,7 @@ public abstract class BaseEventListener implements EventListener {
       String username = protocol.getUsername();
       boolean isAuthorised = protocol.isAuthorised();
       SessionContextBuilder contextBuilder = new SessionContextBuilder(sessionId, new ProtocolClientConnection(protocol));
-      contextBuilder.setKeepAlive(60)
+      contextBuilder
           .setPersistentSession(true)
           .setSessionExpiry(600)
           .setPassword(new char[0])

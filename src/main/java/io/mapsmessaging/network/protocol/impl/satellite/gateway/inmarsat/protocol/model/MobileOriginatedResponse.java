@@ -21,20 +21,14 @@ package io.mapsmessaging.network.protocol.impl.satellite.gateway.inmarsat.protoc
 
 import com.google.gson.JsonObject;
 import com.google.gson.annotations.SerializedName;
+import lombok.Data;
 
 import java.util.List;
 
+@Data
 public final class MobileOriginatedResponse {
   @SerializedName("nextStartTime")
   private String nextStartTime; // ISO-8601 UTC
   @SerializedName("messages")
   private List<JsonObject> messages; // schema varies; keep flexible
-
-  public String getNextStartTime() {
-    return nextStartTime;
-  }
-
-  public List<JsonObject> getMessages() {
-    return messages;
-  }
 }

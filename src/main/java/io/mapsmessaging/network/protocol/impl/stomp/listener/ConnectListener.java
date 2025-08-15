@@ -96,7 +96,7 @@ public class ConnectListener extends BaseConnectListener {
       scb.setUsername(username).setPassword(connect.getPasscode().toCharArray());
     }
     scb.setPersistentSession(false);
-    scb.setKeepAlive(hb.getPreferred());
+
     int inFlight = connect.getReceiveMaximum();
     if (inFlight <= 0) {
       inFlight =  (engine.getProtocol().getMaxReceiveSize());

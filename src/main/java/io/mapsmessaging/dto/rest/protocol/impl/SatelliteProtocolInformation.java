@@ -21,16 +21,18 @@ package io.mapsmessaging.dto.rest.protocol.impl;
 
 import io.mapsmessaging.dto.rest.protocol.ProtocolInformationDTO;
 import io.mapsmessaging.dto.rest.session.SessionInformationDTO;
+import io.mapsmessaging.network.protocol.impl.satellite.gateway.model.RemoteDeviceInfo;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
 @Data
 @EqualsAndHashCode(callSuper = false)
-public class OrbcommProtocolInformation extends ProtocolInformationDTO {
+public class SatelliteProtocolInformation extends ProtocolInformationDTO {
 
   private SessionInformationDTO sessionInfo;
+  private RemoteDeviceInfo remoteDeviceInfo;
 
-  public OrbcommProtocolInformation() {
-    type = "orbcomm";
+  public SatelliteProtocolInformation() {
+    type = "satellite";
   }
 }

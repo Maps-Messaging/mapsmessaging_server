@@ -134,8 +134,7 @@ public class ConnAckListener5 extends PacketListener5 {
     protocol.setKeepAlive(keepAlive * 1000L);
 
     scb.setPersistentSession(true)
-        .setResetState(connect.isCleanSession())
-        .setKeepAlive(keepAlive);
+        .setResetState(connect.isCleanSession());
 
     if (connect.hasPassword()) {
       scb.setPassword(connect.getPassword());

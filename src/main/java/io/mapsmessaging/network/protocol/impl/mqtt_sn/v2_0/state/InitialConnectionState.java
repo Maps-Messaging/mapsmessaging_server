@@ -78,7 +78,7 @@ public class InitialConnectionState implements State {
       SessionContextBuilder scb = new SessionContextBuilder(connect.getClientId(), new ProtocolClientConnection(protocol));
       scb.setResetState(connect.isCleanStart());
       scb.setPersistentSession(!connect.isCleanStart());
-      scb.setKeepAlive(connect.getKeepAlive());
+
       int receiveMax = ((MqttSnConfig)endPoint.getConfig().getProtocolConfig("mqtt-sn")).getReceiveMaximum();
       scb.setReceiveMaximum(receiveMax);
       scb.setSessionExpiry(connect.getSessionExpiry());

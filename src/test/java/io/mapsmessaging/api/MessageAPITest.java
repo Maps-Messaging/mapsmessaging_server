@@ -58,7 +58,6 @@ public class MessageAPITest extends BaseTestConfig {
     Protocol fakeProtocol = new FakeProtocol(listener);
     SessionContextBuilder scb = new SessionContextBuilder(name, new ProtocolClientConnection(fakeProtocol));
     scb.setPersistentSession(true)
-        .setKeepAlive(keepAlive)
         .setPersistentSession(persistent)
         .setResetState(resetState)
         .setSessionExpiry(expiry);

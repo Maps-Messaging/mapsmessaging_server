@@ -201,8 +201,8 @@ public final class InmarsatSession {
     }
 
     // Devices
-    public List<DeviceInfo> listDevices() {
-      return devices.listDevices(bearer(), xMailbox, null, null, null);
+    public List<DeviceInfo> listDevices(String deviceId) {
+      return devices.listDevices(bearer(), xMailbox, null, null, deviceId);
     }
 
     public List<DeviceInfo> listDevices(Integer limit, Integer offset, String deviceId) {

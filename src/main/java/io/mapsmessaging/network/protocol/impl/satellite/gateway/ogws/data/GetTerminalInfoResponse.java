@@ -32,6 +32,10 @@ public class GetTerminalInfoResponse {
   @SerializedName("ErrorID")
   private Integer errorId;
 
-  @SerializedName("Terminals")
+  @SerializedName("Terminal")
   private TerminalInfoRemote terminal;
+
+  public boolean isSuccess() {
+    return errorId == null || errorId == 0;
+  }
 }
