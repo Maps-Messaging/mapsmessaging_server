@@ -38,9 +38,13 @@ public class SatelliteConfig extends SatelliteConfigDTO implements Config {
     maxInflightEventsPerDevice = config.getIntProperty("maxInflightEventsPerDevice", 2);
     outboundNamespaceRoot = config.getProperty("outboundNamespaceRoot", "");
     outboundBroadcast = config.getProperty("outboundBroadcast", "");
+    deviceInfoUpdateMinutes = config.getIntProperty("deviceInfoUpdateMinutes", 15);
 
     if(pollInterval<10){
       pollInterval = 10;
+    }
+    if(deviceInfoUpdateMinutes < 10){
+      deviceInfoUpdateMinutes = 15;
     }
     // This is optional and used for ViaSat
     mailboxId = config.getProperty("mailboxId", "");
@@ -92,6 +96,9 @@ public class SatelliteConfig extends SatelliteConfigDTO implements Config {
         namespace = dto.getNamespace();
         changed = true;
       }
+      if(deviceInfoUpdateMinutes != dto.getDeviceInfoUpdateMinutes()) {
+        deviceInfoUpdateMinutes = dto.getDeviceInfoUpdateMinutes();
+      }
 
     }
     return changed;
@@ -110,6 +117,7 @@ public class SatelliteConfig extends SatelliteConfigDTO implements Config {
     properties.put("mailboxId", mailboxId);
     properties.put("mailboxPassword", mailboxPassword);
     properties.put("namespaceRoot", namespace);
+    properties.put("deviceInfoUpdateMinutes", deviceInfoUpdateMinutes);
     return properties;
   }
 }

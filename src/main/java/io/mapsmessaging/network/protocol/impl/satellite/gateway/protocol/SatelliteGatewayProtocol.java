@@ -49,6 +49,7 @@ import java.util.List;
 import java.util.Random;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
 
 import static io.mapsmessaging.logging.ServerLogMessages.OGWS_FAILED_TO_SAVE_MESSAGE;
 
@@ -74,8 +75,10 @@ public class SatelliteGatewayProtocol extends Protocol {
         .setSessionExpiry(100)
         .setReceiveMaximum(config.getMaxInflightEventsPerDevice());
 
+
+    long millis = TimeUnit.SECONDS.toMillis(config.getMaxInflightEventsPerDevice());
     Random random = new Random();
-    setKeepAlive(300000 + random.nextLong(600000));
+    setKeepAlive(millis + random.nextLong(millis));
     session = SessionManager.getInstance().create(scb.build(), this);
     session.resumeState();
     namespacePath = config.getOutboundNamespaceRoot().trim();

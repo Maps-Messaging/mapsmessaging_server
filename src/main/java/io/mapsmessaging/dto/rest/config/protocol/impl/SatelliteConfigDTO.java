@@ -58,4 +58,6 @@ public class SatelliteConfigDTO extends ProtocolConfigDTO {
   @Schema(description = "Namespace root for the mailbox")
   protected String namespace;
 
+  @Schema(description = "Device Info update time in minutes")
+  protected int deviceInfoUpdateMinutes;
 }
