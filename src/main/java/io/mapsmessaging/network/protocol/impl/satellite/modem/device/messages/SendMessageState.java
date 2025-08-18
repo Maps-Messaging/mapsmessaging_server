@@ -19,6 +19,9 @@
 
 package io.mapsmessaging.network.protocol.impl.satellite.modem.device.messages;
 
+import lombok.Getter;
+
+@Getter
 public class SendMessageState {
   private final String messageName;
   private final double messageNumber;
@@ -27,11 +30,10 @@ public class SendMessageState {
   private final State state;
   private final int length;
   private final int bytesAcknowledged;
-  public SendMessageState(String line) {
+  public SendMessageState(String line, boolean isOgx) {
     String content = line.substring(line.indexOf(':') + 1).trim();
     String[] parts = content.split(",");
-
-    if (parts.length == 7) {
+    if (!isOgx) { // IDP/ST
       this.messageName = parts[0].replace("\"", "").trim();
       this.messageNumber = Double.parseDouble(parts[1].trim());
       this.priority = Integer.parseInt(parts[2].trim());
@@ -39,7 +41,7 @@ public class SendMessageState {
       this.state = State.fromCode(Integer.parseInt(parts[4].trim()));
       this.length = Integer.parseInt(parts[5].trim());
       this.bytesAcknowledged = Integer.parseInt(parts[6].trim());
-    } else {
+    } else { // OGx
       this.messageName = parts[1].replace("\"", "").trim();
       this.messageNumber = 0.0;
       this.state = State.fromCode(Integer.parseInt(parts[3].trim()));
@@ -48,34 +50,7 @@ public class SendMessageState {
       this.length = Integer.parseInt(parts[7].trim());
       this.bytesAcknowledged = Integer.parseInt(parts[8].trim());
     }
-  }
 
-  public String getMessageName() {
-    return messageName;
-  }
-
-  public double getMessageNumber() {
-    return messageNumber;
-  }
-
-  public int getPriority() {
-    return priority;
-  }
-
-  public int getSin() {
-    return sin;
-  }
-
-  public State getState() {
-    return state;
-  }
-
-  public int getLength() {
-    return length;
-  }
-
-  public int getBytesAcknowledged() {
-    return bytesAcknowledged;
   }
 
   public boolean isReady() {
@@ -100,6 +75,7 @@ public class SendMessageState {
         messageName, messageNumber, priority, sin, state, length, bytesAcknowledged);
   }
 
+  @Getter
   public enum State {
     TX_READY(4),
     TX_SENDING(5),
@@ -121,10 +97,6 @@ public class SendMessageState {
         case 7 -> TX_FAILED;
         default -> UNKNOWN;
       };
-    }
-
-    public int getCode() {
-      return code;
     }
   }
 }

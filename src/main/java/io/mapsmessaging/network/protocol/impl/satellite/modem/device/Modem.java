@@ -26,19 +26,22 @@ import io.mapsmessaging.network.io.Packet;
 import io.mapsmessaging.network.protocol.impl.satellite.modem.device.impl.BaseModemProtocol;
 import io.mapsmessaging.network.protocol.impl.satellite.modem.device.impl.IdpModemProtocol;
 import io.mapsmessaging.network.protocol.impl.satellite.modem.device.impl.OgxModemProtocol;
-import io.mapsmessaging.network.protocol.impl.satellite.modem.device.messages.Message;
+import io.mapsmessaging.network.protocol.impl.satellite.modem.device.messages.IncomingMessageDetails;
+import io.mapsmessaging.network.protocol.impl.satellite.modem.device.messages.ModemSatelliteMessage;
 import io.mapsmessaging.network.protocol.impl.satellite.modem.device.messages.SendMessageState;
 import io.mapsmessaging.network.protocol.impl.satellite.modem.device.values.MessageFormat;
+import io.mapsmessaging.network.protocol.impl.satellite.modem.protocol.ModemStreamHandler;
 import io.mapsmessaging.utilities.threads.SimpleTaskScheduler;
+import lombok.Getter;
+import lombok.Setter;
+import org.apache.commons.lang3.concurrent.ConcurrentException;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayDeque;
 import java.util.List;
 import java.util.Queue;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ScheduledFuture;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 import java.util.function.Consumer;
 
 import static io.mapsmessaging.logging.ServerLogMessages.STOGI_RECEIVED_AT_MESSAGE;
@@ -52,16 +55,25 @@ public class Modem {
   private final Consumer<Packet> packetSender;
   private final Queue<Command> commandQueue = new ArrayDeque<>();
   private final StringBuilder responseBuffer = new StringBuilder();
-  private final ModemLineHandler currentHandler;
   private final long modemTimeout;
+
+  @Getter
+  private final ModemStreamHandler streamHandler;
+
+  private ModemLineHandler currentHandler;
 
   private ScheduledFuture<?> future;
 
   private Command currentCommand = null;
   private BaseModemProtocol modemProtocol = null;
+  @Getter
+  @Setter
+  private boolean oneShotResponse;
 
-  public Modem(Consumer<Packet> packetSender, long modemTimeout) {
+  public Modem(Consumer<Packet> packetSender, long modemTimeout, ModemStreamHandler streamHandler) {
+    this.streamHandler = streamHandler;
     this.packetSender = packetSender;
+    oneShotResponse = false;
     currentHandler = new TextResponseHandler(this::handleLine);
     if(modemTimeout < 10000 || modemTimeout > 120000){
       modemTimeout = 15000;
@@ -176,60 +188,47 @@ public class Modem {
     return modemProtocol.listSentMessages();
   }
 
-  public CompletableFuture<Void> deleteSentMessages(String msgName) {
+  public CompletableFuture<Boolean> deleteSentMessages(String msgName) {
     return modemProtocol.deleteSentMessages(msgName);
-  }
-
-
-  public CompletableFuture<Void> markSentMessageRead(String name) {
-    return modemProtocol.markSentMessageRead(name);
   }
 
 //endregion
 
 
-  public void listOutgoingMessages() {
-    modemProtocol.listOutgoingMessages();
-  }
-
   public void sendMessage(int priority, int sin, int min, byte[] payload) {
-    Message message = new Message();
-    message.setPriority(priority);
-    message.setPayload(payload);
-    message.setMin(min);
-    message.setSin(sin);
-    message.setFormat(MessageFormat.BASE64);
+    ModemSatelliteMessage modemSatelliteMessage = new ModemSatelliteMessage();
+    modemSatelliteMessage.setPriority(priority);
+    modemSatelliteMessage.setPayload(payload);
+    modemSatelliteMessage.setMin(min);
+    modemSatelliteMessage.setSin(sin);
+    modemSatelliteMessage.setFormat(MessageFormat.BASE64);
 
-    modemProtocol.sendMessage(message);
+    modemProtocol.sendMessage(modemSatelliteMessage);
   }
   //endregion
 
   //region Incoming message functions
-  public CompletableFuture<List<String>> listIncomingMessages() {
+  public CompletableFuture<List<IncomingMessageDetails>> listIncomingMessages() {
     return modemProtocol.listIncomingMessages();
   }
 
-  public CompletableFuture<byte[]> getMessage(String metaLine, MessageFormat format) {
-    return modemProtocol.getMessage(metaLine, format);
+  public CompletableFuture<ModemSatelliteMessage> getMessage(IncomingMessageDetails details) {
+    return modemProtocol.getMessage(details);
   }
 
-  public CompletableFuture<Void> markMessageRetrieved(String metaLine) {
-    return modemProtocol.markMessageRetrieved(metaLine);
-  }
-
-  public CompletableFuture<List<byte[]>> fetchAllMessages(MessageFormat format) {
-    return modemProtocol.fetchAllMessages(format);
+  public  CompletableFuture<Boolean> markMessageRetrieved(String name) {
+    return modemProtocol.markMessageRetrieved(name);
   }
   //endregion
 
   public synchronized CompletableFuture<String> sendATCommand(String cmd) {
     logger.log(STOGI_SEND_AT_MESSAGE, cmd);
-    CompletableFuture<String> future = new CompletableFuture<>();
-    commandQueue.add(new Command(cmd, future));
+    CompletableFuture<String> futureResponse = new CompletableFuture<>();
+    commandQueue.add(new Command(cmd, futureResponse));
     if (currentCommand == null) {
       sendNextCommand();
     }
-    return future;
+    return futureResponse;
   }
 
   private synchronized void sendNextCommand() {
@@ -240,6 +239,11 @@ public class Modem {
     }
   }
 
+  public void resetCommandQueue() {
+    this.commandQueue.clear();
+    this.currentCommand = null;
+  }
+
   private Packet packetWith(String cmd) {
     byte[] data = (cmd + "\r\n").getBytes(StandardCharsets.US_ASCII);
     Packet packet = new Packet(data.length, false);
@@ -248,6 +252,9 @@ public class Modem {
   }
 
   private synchronized void handleLine(String line) {
+    if(line.isEmpty()){
+      return;
+    }
     logger.log(STOGI_RECEIVED_AT_MESSAGE, line);
     if (currentCommand == null) {
       // Unsolicited line, forward to listener
@@ -255,7 +262,8 @@ public class Modem {
       return;
     }
 
-    if (line.equalsIgnoreCase("OK") || line.startsWith("ERROR")) {
+    if (line.equalsIgnoreCase("OK") || line.startsWith("ERROR") || oneShotResponse) {
+      oneShotResponse = false;
       String response = responseBuffer.toString().trim();
       if (!response.isEmpty()) {
         response += "\r\n";
@@ -264,6 +272,11 @@ public class Modem {
       currentCommand.future.complete(response);
       currentCommand = null;
       responseBuffer.setLength(0);
+      Command command = this.commandQueue.peek();
+
+      if(command != null) {
+        System.err.println("Next Command: " +command.cmd);
+      }
       sendNextCommand();
     } else {
       responseBuffer.append(line).append("\r\n");
@@ -289,18 +302,35 @@ public class Modem {
 
     } else if (line.startsWith("%POSR:") || line.startsWith("%GPSPOS:")) {
       System.out.println("Position report: " + line);
-
     } else if (line.startsWith("%RING")) {
       System.out.println("Incoming event: %RING");
-
     } else {
       System.out.println("Unhandled unsolicited: " + line);
     }
   }
 
+  public void waitForModemActivity(){
+    boolean ready = false;
+    int countDown = 5;
+    while (!ready && countDown > 0) {
+      try {
+        CompletableFuture<String> res = sendATCommand("AT");
+        String response = res.get(2000, TimeUnit.MILLISECONDS);
+        if (response != null) {
+          ready = true;
+        }
+      }
+      catch(TimeoutException | ExecutionException te){
+        resetCommandQueue();
+        countDown--;
+      } catch (InterruptedException e) {
+        ready =true;
+        Thread.currentThread().interrupt();
+      }
+    }
+  }
 
   public String getType() {
     return modemProtocol.getType();
   }
-
 }

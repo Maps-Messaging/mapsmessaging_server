@@ -38,6 +38,10 @@ public class SatelliteMessageRebuilder {
   }
 
   public SatelliteMessage rebuild(SatelliteMessage message) {
+    if(!fragments.containsKey(message.getNamespace()) && !message.isCompressed() && message.getPacketNumber() == 0) {
+      return message; // there is NO rebuild required, finish fast!
+    }
+
     fragments
         .computeIfAbsent(message.getNamespace(), k -> new ArrayList<>())
         .add(message);

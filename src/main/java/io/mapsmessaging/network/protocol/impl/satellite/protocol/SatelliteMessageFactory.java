@@ -45,6 +45,10 @@ public class SatelliteMessageFactory {
 
   public static List<SatelliteMessage> createMessages(String namespace, byte[] payload) {
     List<SatelliteMessage> messages = new ArrayList<>();
+    SatelliteMessage satelliteMessage = new SatelliteMessage(namespace, payload, 0, false);
+    messages.add(satelliteMessage);
+    return messages;
+/*
     boolean compressed = false;
 
     if (payload.length > MIN_COMPRESSED_MESSAGE_SIZE) {
@@ -75,9 +79,14 @@ public class SatelliteMessageFactory {
       logger.log(STOGI_SPLIT_MESSAGE, namespace, messages.size());
     }
     return messages;
+
+ */
   }
 
   public static SatelliteMessage reconstructMessage(List<SatelliteMessage> messages) {
+    if(messages.size() == 1 && !messages.get(0).isCompressed()) {
+      return messages.get(0);
+    }
     String namespace = messages.get(0).getNamespace();
     boolean compressed = messages.get(0).isCompressed();
     ByteArrayOutputStream baos = new ByteArrayOutputStream();

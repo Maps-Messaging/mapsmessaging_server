@@ -110,8 +110,6 @@ public class GatewayManager {
   // timed task to read /write to the remote server
   protected void pollGateway() {
     handler.handleIncomingMessage(satelliteClient.scanForIncoming());
-
-
     List<MessageData> tmp;
     synchronized (pendingMessages) {
       tmp = new ArrayList<>(pendingMessages);

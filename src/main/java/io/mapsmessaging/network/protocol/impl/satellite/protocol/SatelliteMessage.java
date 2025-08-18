@@ -60,7 +60,6 @@ public class SatelliteMessage {
   private void unpackFromReceived(byte[] data) {
     if (data == null) return;
     ByteBuffer buffer = ByteBuffer.wrap(data);
-    buffer.get(); // initial byte is 0 for some reason
     compressed = buffer.get() != 0;
     packetNumber = buffer.getShort();
 

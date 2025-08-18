@@ -16,7 +16,7 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-
+// == ModemStreamHandler with pluggable bypass ==
 package io.mapsmessaging.network.protocol.impl.satellite.modem.protocol;
 
 import io.mapsmessaging.network.io.Packet;
@@ -26,6 +26,8 @@ import io.mapsmessaging.network.protocol.impl.nmea.Constants;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.atomic.AtomicReference;
 
 public class ModemStreamHandler implements StreamHandler {
 
@@ -34,34 +36,50 @@ public class ModemStreamHandler implements StreamHandler {
   private final byte[] inputBuffer;
   private final byte[] outBuffer;
 
-  ModemStreamHandler() {
+  private final AtomicReference<StreamBypass> bypass;
+  private OutputStream serialOut;   // cached link out for bypass
+
+  public ModemStreamHandler() {
     inputBuffer = new byte[BUFFER_SIZE];
-    outBuffer = new byte[BUFFER_SIZE];
+    outBuffer   = new byte[BUFFER_SIZE];
+    bypass = new AtomicReference<>();
+    serialOut = null;
   }
 
   @Override
-  public void close() {
-    // There is nothing to do here
-  }
+  public void close() { /* no-op */ }
 
   @Override
   public int parseInput(InputStream input, Packet packet) throws IOException {
+    // ---- Bypass path ----
+    StreamBypass b = bypass.get();
+    if (b != null) {
+      if (serialOut == null) throw new IOException("Bypass active before output stream is available");
+      int consumed = b.parseInput(input, serialOut);  // may block until complete
+      if (b.isComplete()) {
+        clearBypass();
+        packet.put("\r\n".getBytes());
+        return 3;
+      }
+      return consumed; // not complete yet (rare; e.g., partial reads)
+    }
+
+    // ---- Default line mode ----
     int idx = 0;
-    int b;
+    int ch;
 
-// skip empty lines (CR/LF only)
+    // skip empty lines
     do {
-      b = input.read();
-      if (b == -1) return 0; // EOF, no data
-    } while (b == Constants.CR || b == Constants.LF);
+      ch = input.read();
+      if (ch == -1) return 0;
+    } while (ch == Constants.CR || ch == Constants.LF);
 
-// read until first CR/LF after any data
-    inputBuffer[idx++] = (byte) b;
+    inputBuffer[idx++] = (byte) ch;
+
     while (idx < inputBuffer.length) {
-      b = input.read();
-      if (b == -1) break;                 // EOF mid-line
-      if (b == Constants.CR || b == Constants.LF) break; // end of line (we'll add CR/LF later)
-      inputBuffer[idx++] = (byte) b;
+      ch = input.read();
+      if (ch == -1 || ch == Constants.CR || ch == Constants.LF) break;
+      inputBuffer[idx++] = (byte) ch;
     }
 
     if (idx == inputBuffer.length) {
@@ -75,11 +93,20 @@ public class ModemStreamHandler implements StreamHandler {
 
   @Override
   public int parseOutput(OutputStream output, Packet packet) throws IOException {
+    // cache for bypass use
+    if (this.serialOut == null) this.serialOut = output;
+
+    StreamBypass b = bypass.get();
+    if (b != null) {
+      // Let bypass decide how to handle outbound data; most will pass-through
+      return b.parseOutput(output, packet);
+    }
+
     int available = packet.available();
     int total = available;
     while (available > outBuffer.length) {
-      packet.get(outBuffer, 0, available);
-      output.write(outBuffer, 0, available);
+      packet.get(outBuffer, 0, outBuffer.length);
+      output.write(outBuffer, 0, outBuffer.length);
       available = packet.available();
     }
     if (available > 0) {
@@ -88,5 +115,15 @@ public class ModemStreamHandler implements StreamHandler {
     }
     output.flush();
     return total;
+  }
+
+  // ---- Bypass control ----
+  public void clearBypass() {
+    this.bypass.set(null);
+  }
+
+  /** Convenience: start XMODEM receive */
+  public synchronized void startXModem(int length, long crc32, CompletableFuture<byte[]> future) {
+    this.bypass.set(new XmodemBypass(length, crc32, 1000, future));
   }
 }

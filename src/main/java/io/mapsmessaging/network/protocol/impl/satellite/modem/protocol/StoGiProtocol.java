@@ -47,6 +47,8 @@ import io.mapsmessaging.network.protocol.impl.nmea.types.LongType;
 import io.mapsmessaging.network.protocol.impl.nmea.types.PositionType;
 import io.mapsmessaging.network.protocol.impl.satellite.gateway.io.SatelliteEndPoint;
 import io.mapsmessaging.network.protocol.impl.satellite.modem.device.Modem;
+import io.mapsmessaging.network.protocol.impl.satellite.modem.device.messages.IncomingMessageDetails;
+import io.mapsmessaging.network.protocol.impl.satellite.modem.device.messages.ModemSatelliteMessage;
 import io.mapsmessaging.network.protocol.impl.satellite.modem.device.messages.SendMessageState;
 import io.mapsmessaging.network.protocol.impl.satellite.modem.device.values.MessageFormat;
 import io.mapsmessaging.network.protocol.impl.satellite.protocol.SatelliteMessage;
@@ -54,7 +56,6 @@ import io.mapsmessaging.network.protocol.impl.satellite.protocol.SatelliteMessag
 import io.mapsmessaging.network.protocol.impl.satellite.protocol.SatelliteMessageRebuilder;
 import io.mapsmessaging.network.protocol.transformation.TransformationManager;
 import io.mapsmessaging.selector.operators.ParserExecutor;
-import io.mapsmessaging.utilities.threads.SimpleTaskScheduler;
 import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -72,18 +73,25 @@ import static io.mapsmessaging.logging.ServerLogMessages.*;
 
 public class StoGiProtocol extends Protocol implements Consumer<Packet> {
 
+  private static ExecutorService existingPool = Executors.newFixedThreadPool(4);
+
+  private static   ScheduledExecutorService scheduler =
+      new ScheduledThreadPoolExecutor(4, ((ThreadPoolExecutor) existingPool).getThreadFactory());
 
   private final Logger logger = LoggerFactory.getLogger(StoGiProtocol.class);
 
   private final Session session;
   private final SelectorTask selectorTask;
   private final Modem modem;
-  private final ScheduledFuture<?> scheduledFuture;
   private final Map<String, String> topicNameMapping;
   private final Queue<SatelliteMessage> outboundQueue;
   private final SatelliteMessageRebuilder satelliteMessageRebuilder;
   private final LocationParser locationParser;
   private final boolean setServerLocation;
+  private final long messagePoll;
+
+
+  private ScheduledFuture<?> scheduledFuture;
   private Destination destination;
 
   private long lastLocationPoll;
@@ -97,16 +105,17 @@ public class StoGiProtocol extends Protocol implements Consumer<Packet> {
     locationParser = new LocationParser();
     lastLocationPoll = System.currentTimeMillis();
     messageId = 0;
-
-
     if (packet != null) {
       packet.clear();
     }
+
+    ModemStreamHandler streamHandler = new ModemStreamHandler();
     if (endPoint instanceof SerialEndPoint serialEndPoint) {
-      serialEndPoint.setStreamHandler(new ModemStreamHandler());
+      serialEndPoint.setStreamHandler(streamHandler);
     }
 
     session = setupSession();
+    session.resumeState();
     transformation = TransformationManager.getInstance().getTransformation(
         endPoint.getProtocol(),
         endPoint.getName(),
@@ -114,18 +123,18 @@ public class StoGiProtocol extends Protocol implements Consumer<Packet> {
         session.getSecurityContext().getUsername()
     );
 
-
-
     setTransformation(transformation);
     StoGiConfigDTO modemConfig = (StoGiConfigDTO) getProtocolConfig();
 
-    modem = new Modem(this, modemConfig.getModemResponseTimeout());
+    modem = new Modem(this, modemConfig.getModemResponseTimeout(), streamHandler);
 
     setServerLocation = modemConfig.isSetServerLocation();
     selectorTask = new SelectorTask(this, endPoint.getConfig().getEndPointConfig());
     endPoint.register(SelectionKey.OP_READ, selectorTask.getReadTask());
     initialiseModem(modemConfig.getModemResponseTimeout());
-    scheduledFuture = SimpleTaskScheduler.getInstance().scheduleAtFixedRate(this::pollModemForMessages, modemConfig.getMessagePollInterval(), modemConfig.getMessagePollInterval(), TimeUnit.MILLISECONDS);
+
+    messagePoll =  modemConfig.getMessagePollInterval();
+    scheduledFuture = scheduler.schedule(this::pollModemForMessages, messagePoll, TimeUnit.MILLISECONDS);
     completedConnection();
     endPoint.getServer().handleNewEndPoint(endPoint);
     String statsDestination = modemConfig.getModemStatsTopic();
@@ -269,6 +278,7 @@ public class StoGiProtocol extends Protocol implements Consumer<Packet> {
     try {
       endPoint.sendPacket(packet);
     } catch (IOException e) {
+      e.printStackTrace();
       logger.log(STOGI_EXCEPTION_PROCESSING_PACKET, e);
     }
   }
@@ -283,11 +293,19 @@ public class StoGiProtocol extends Protocol implements Consumer<Packet> {
   }
 
   private void pollModemForMessages() {
-    logger.log(STOGI_POLLING_MODEM, modem.getType());
-    processOutboundMessages();
-    processInboundMessages();
-    if (setServerLocation) {
-      processLocationRequest();
+    try {
+      logger.log(STOGI_POLLING_MODEM, modem.getType());
+      processOutboundMessages();
+      processInboundMessages();
+      if (setServerLocation) {
+        processLocationRequest();
+      }
+    }
+    catch(Throwable th){
+      th.printStackTrace();
+    }
+    finally {
+      scheduledFuture = scheduler.schedule(this::pollModemForMessages, messagePoll, TimeUnit.MILLISECONDS);
     }
   }
 
@@ -385,29 +403,48 @@ public class StoGiProtocol extends Protocol implements Consumer<Packet> {
   }
 
   private void processInboundMessages() {
-    CompletableFuture<List<byte[]>> incoming = modem.fetchAllMessages(MessageFormat.BASE64);
-    List<byte[]> messages;
-    try {
-      messages = incoming.join();
+    List<IncomingMessageDetails> incoming = modem.listIncomingMessages().join();
+    if (!incoming.isEmpty()) {
+      List<ModemSatelliteMessage> messages = retrieveIncomingList(incoming);
+      processMessages(messages);
     }
-    catch (CompletionException| CancellationException e) {
-      try {
-        close();
-      } catch (IOException ex) {
-        // ignore we have issues and are winding up
+  }
+
+  private List<ModemSatelliteMessage> retrieveIncomingList(List<IncomingMessageDetails> incoming) {
+    List<ModemSatelliteMessage> modemSatelliteMessages = new ArrayList<>();
+    for(IncomingMessageDetails details : incoming) {
+      ModemSatelliteMessage satelliteMessage;
+      satelliteMessage = modem.getMessage(details).join();
+      if(satelliteMessage != null) {
+        modemSatelliteMessages.add(satelliteMessage);
       }
-      return;
     }
-    for (byte[] message : messages) {
+    return modemSatelliteMessages;
+  }
+
+  private void processMessages(List<ModemSatelliteMessage> messages) {
+    for (ModemSatelliteMessage message : messages) {
       if (message != null) {
-        SatelliteMessage loaded = new SatelliteMessage(message);
+        SatelliteMessage loaded = new SatelliteMessage(message.getPayload());
         SatelliteMessage satelliteMessage = satelliteMessageRebuilder.rebuild(loaded);
         if (satelliteMessage != null) {
           logger.log(STOGI_PROCESSING_INBOUND_EVENT, satelliteMessage.getNamespace());
-          sendMessageToTopic(satelliteMessage.getNamespace(), satelliteMessage.getMessage());
+          try {
+            sendMessageToTopic(satelliteMessage.getNamespace(), satelliteMessage.getMessage());
+          } catch (Throwable e) {
+            e.printStackTrace();
+          }
         } else {
           logger.log(STOGI_RECEIVED_PARTIAL_MESSAGE, loaded.getNamespace(), loaded.getPacketNumber());
         }
+      }
+    }
+    modem.waitForModemActivity();
+
+    for(ModemSatelliteMessage message : messages) {
+      System.err.println("Deleting "+message.getName());
+      if(!modem.markMessageRetrieved(message.getName()).join()){
+        System.err.println("Unable to delete message "+message.getName());
       }
     }
   }
@@ -445,12 +482,14 @@ public class StoGiProtocol extends Protocol implements Consumer<Packet> {
 
   private void processValidDestinations(String topicName, Message message)
       throws ExecutionException, InterruptedException {
+    if(topicName == null ||topicName.isEmpty() ) return;
     CompletableFuture<Destination> future = session.findDestination(topicName, DestinationType.TOPIC);
     future.thenApply(destination -> {
       if (destination != null) {
         try {
           destination.storeMessage(message);
         } catch (IOException e) {
+          e.printStackTrace();
           try {
             endPoint.close();
           } catch (IOException ioException) {

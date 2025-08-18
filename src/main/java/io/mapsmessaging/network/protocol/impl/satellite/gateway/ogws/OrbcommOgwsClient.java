@@ -213,16 +213,23 @@ public class OrbcommOgwsClient implements SatelliteClient {
         if (!response.getMessages().isEmpty()) {
           lastMessageUtc = response.getNextFromUtc();
           for(ReturnMessage returnMessage: response.getMessages()){
-            MessageData messageData = new MessageData();
-            messageData.setUniqueId(returnMessage.getMobileId());
-            messageData.setPayload(Base64.decode(returnMessage.getRawPayload()));
-            incomingEvents.add(messageData);
+            if(returnMessage.getPayload() == null) {
+              System.err.println("Received:: " + returnMessage);
+              MessageData messageData = new MessageData();
+              messageData.setUniqueId(returnMessage.getMobileId());
+              messageData.setPayload(Base64.decode(returnMessage.getRawPayload()));
+              incomingEvents.add(messageData);
+            }
+            else{
+              System.err.println("Received:: " + returnMessage.getPayload());
+            }
           }
         }
       } else {
         logger.log(OGWS_FAILED_POLL, response != null ? response.getErrorId() : "<null error>");
       }
     } catch (Exception e) {
+      e.printStackTrace();
       logger.log(OGWS_REQUEST_FAILED, e);
     }
     return incomingEvents;
