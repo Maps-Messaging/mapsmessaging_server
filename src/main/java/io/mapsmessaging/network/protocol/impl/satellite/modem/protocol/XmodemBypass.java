@@ -67,6 +67,7 @@ public class XmodemBypass implements StreamBypass {
     }
     return 0;
   }
+
   @Override
   public int parseOutput(OutputStream out, Packet packet) throws IOException {
     int avail = packet.available();
@@ -83,9 +84,15 @@ public class XmodemBypass implements StreamBypass {
     return total;
   }
 
-  @Override public boolean isComplete() { return complete; }
+  @Override
+  public boolean isComplete() {
+    return complete;
+  }
 
-  @Override public byte[] result() { return payload.toByteArray(); }
+  @Override
+  public byte[] result() {
+    return payload.toByteArray();
+  }
 
   @Override
   public void reset() {

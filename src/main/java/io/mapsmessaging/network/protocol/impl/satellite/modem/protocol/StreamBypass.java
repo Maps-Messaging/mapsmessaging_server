@@ -29,9 +29,13 @@ import java.io.OutputStream;
 interface StreamBypass {
 
   int parseInput(InputStream in, OutputStream linkOut) throws IOException;
+
   int parseOutput(OutputStream out, Packet packet) throws IOException;
+
   boolean isComplete();
+
   byte[] result() throws IOException;
+
   void reset();
 
 }

@@ -49,6 +49,10 @@ import static io.mapsmessaging.logging.ServerLogMessages.STOGI_SEND_AT_MESSAGE;
 
 public class Modem {
 
+  private static final String OK = "OK";
+  private static final String ERROR = "ERROR";
+  private static final String EOL = "\r\n";
+
   private final Logger logger = LoggerFactory.getLogger(this.getClass());
 
   private final Consumer<Packet> packetSender;
@@ -59,7 +63,7 @@ public class Modem {
   @Getter
   private final ModemStreamHandler streamHandler;
 
-  private ModemLineHandler currentHandler;
+  private final ModemLineHandler currentHandler;
 
   private ScheduledFuture<?> future;
 
@@ -74,7 +78,7 @@ public class Modem {
     this.packetSender = packetSender;
     oneShotResponse = false;
     currentHandler = new TextResponseHandler(this::handleLine);
-    if(modemTimeout < 10000 || modemTimeout > 120000){
+    if (modemTimeout < 10000 || modemTimeout > 120000) {
       modemTimeout = 15000;
     }
     this.modemTimeout = modemTimeout;
@@ -82,20 +86,20 @@ public class Modem {
     future = SimpleTaskScheduler.getInstance().scheduleAtFixedRate(this::scanTimeouts, modemTimeout, modemTimeout, TimeUnit.MILLISECONDS);
   }
 
-  public void close(){
-    for(Command command : commandQueue){
+  public void close() {
+    for (Command command : commandQueue) {
       command.future.completeExceptionally(new IOException("Modem has been closed"));
     }
     commandQueue.clear();
-    if(future != null){
+    if (future != null) {
       future.cancel(false);
       future = null;
     }
   }
 
-  private void scanTimeouts(){
+  private void scanTimeouts() {
     long time = System.currentTimeMillis();
-    if(currentCommand != null && currentCommand.timeout < time){
+    if (currentCommand != null && currentCommand.timeout < time) {
       close();
       currentCommand.future.completeExceptionally(new IOException("Modem has been closed"));
     }
@@ -145,10 +149,10 @@ public class Modem {
   public CompletableFuture<Integer> getJammingStatus() {
     return sendATCommand("ATS56?")
         .thenApply(resp -> {
-          String[] lines = resp.split("\r\n");
+          String[] lines = resp.split(EOL);
           for (String line : lines) {
             line = line.trim();
-            if (!line.equalsIgnoreCase("OK") && !line.startsWith("ERROR") && !line.isEmpty()) {
+            if (!line.equalsIgnoreCase(OK) && !line.startsWith(ERROR) && !line.isEmpty()) {
               try {
                 return Integer.parseInt(line);
               } catch (NumberFormatException e) {
@@ -163,10 +167,10 @@ public class Modem {
   public CompletableFuture<Integer> getJammingIndicator() {
     return sendATCommand("ATS57?")
         .thenApply(resp -> {
-          String[] lines = resp.split("\r\n");
+          String[] lines = resp.split(EOL);
           for (String line : lines) {
             line = line.trim();
-            if (!line.equalsIgnoreCase("OK") && !line.startsWith("ERROR") && !line.isEmpty()) {
+            if (!line.equalsIgnoreCase(OK) && !line.startsWith(ERROR) && !line.isEmpty()) {
               try {
                 return Integer.parseInt(line);
               } catch (NumberFormatException e) {
@@ -215,7 +219,7 @@ public class Modem {
     return modemProtocol.getMessage(details);
   }
 
-  public  CompletableFuture<Boolean> markMessageRetrieved(String name) {
+  public CompletableFuture<Boolean> markMessageRetrieved(String name) {
     return modemProtocol.deleteIncomingMessage(name);
   }
   //endregion
@@ -233,7 +237,7 @@ public class Modem {
   private synchronized void sendNextCommand() {
     currentCommand = commandQueue.poll();
     if (currentCommand != null) {
-      currentCommand.timeout = System.currentTimeMillis()+modemTimeout;
+      currentCommand.timeout = System.currentTimeMillis() + modemTimeout;
       packetSender.accept(packetWith(currentCommand.cmd));
     }
   }
@@ -244,28 +248,27 @@ public class Modem {
   }
 
   private Packet packetWith(String cmd) {
-    byte[] data = (cmd + "\r\n").getBytes(StandardCharsets.US_ASCII);
+    byte[] data = (cmd + EOL).getBytes(StandardCharsets.US_ASCII);
     Packet packet = new Packet(data.length, false);
     packet.put(data).flip();
     return packet;
   }
 
   private synchronized void handleLine(String line) {
-    if(line.isEmpty()){
+    if (line.isEmpty()) {
       return;
     }
     logger.log(STOGI_RECEIVED_AT_MESSAGE, line);
     if (currentCommand == null) {
-      // Unsolicited line, forward to listener
-      handleUnsolicitedLine(line);
+      // log this
       return;
     }
 
-    if (line.equalsIgnoreCase("OK") || line.startsWith("ERROR") || oneShotResponse) {
+    if (line.equalsIgnoreCase(OK) || line.startsWith(ERROR) || oneShotResponse) {
       oneShotResponse = false;
       String response = responseBuffer.toString().trim();
       if (!response.isEmpty()) {
-        response += "\r\n";
+        response += EOL;
       }
       response += line;
       currentCommand.future.complete(response);
@@ -273,37 +276,11 @@ public class Modem {
       responseBuffer.setLength(0);
       sendNextCommand();
     } else {
-      responseBuffer.append(line).append("\r\n");
+      responseBuffer.append(line).append(EOL);
     }
   }
 
-
-  private void handleUnsolicitedLine(String line) {
-    if (line.startsWith("%MGU:")) {
-      String msgName = line.substring("%MGU:".length()).trim();
-      System.out.println("New to-mobile message available: " + msgName);
-      // Optionally auto-fetch: listIncomingMessages() → getMessage(name)
-
-    } else if (line.startsWith("%SYSE:")) {
-      String error = line.substring("%SYSE:".length()).trim();
-      System.err.println("System error: " + error);
-
-    } else if (line.startsWith("%PWRDWN")) {
-      System.out.println("Modem is shutting down.");
-
-    } else if (line.startsWith("%TRK:")) {
-      System.out.println("Trace event: " + line);
-
-    } else if (line.startsWith("%POSR:") || line.startsWith("%GPSPOS:")) {
-      System.out.println("Position report: " + line);
-    } else if (line.startsWith("%RING")) {
-      System.out.println("Incoming event: %RING");
-    } else {
-      System.out.println("Unhandled unsolicited: " + line);
-    }
-  }
-
-  public void waitForModemActivity(){
+  public void waitForModemActivity() {
     boolean ready = false;
     int countDown = 5;
     while (!ready && countDown > 0) {
@@ -313,12 +290,11 @@ public class Modem {
         if (response != null) {
           ready = true;
         }
-      }
-      catch(TimeoutException | ExecutionException te){
+      } catch (TimeoutException | ExecutionException te) {
         resetCommandQueue();
         countDown--;
       } catch (InterruptedException e) {
-        ready =true;
+        ready = true;
         Thread.currentThread().interrupt();
       }
     }

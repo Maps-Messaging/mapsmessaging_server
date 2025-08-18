@@ -56,48 +56,46 @@ public class OgxModemProtocol extends BaseModemProtocol {
   }
 
   public CompletableFuture<ModemSatelliteMessage> getMessage(IncomingMessageDetails details) {
-    if(details.getBytes() > 1024){
+    if (details.getBytes() > 1024) {
       MessageFormat format = MessageFormat.DATA;
       String command = "AT%MTMG=" + details.getId() + "," + format.getCode();
       modem.setOneShotResponse(true); // respond before the OK is received, we just want the first line
       return modem.sendATCommand(command)
-              .thenCompose(resp -> processXmodemRequest(resp)
-                  .thenApply(x -> {
-                    if(x == null){
-                      return null;
-                    }
-                    byte[] payload = Arrays.copyOfRange(x, 2, x.length);
-                    ModemSatelliteMessage modemSatelliteMessage = new ModemSatelliteMessage();
-                    modemSatelliteMessage.setPayload(payload);
-                    modemSatelliteMessage.setFormat(format);
-                    modemSatelliteMessage.setName(details.getId());
-                    modemSatelliteMessage.setMin(x[1]);
-                    modemSatelliteMessage.setSin(x[0]);
-                    return modemSatelliteMessage;
-                  }));
-    }
-    else{
+          .thenCompose(resp -> processXmodemRequest(resp)
+              .thenApply(x -> {
+                if (x == null) {
+                  return null;
+                }
+                byte[] payload = Arrays.copyOfRange(x, 2, x.length);
+                ModemSatelliteMessage modemSatelliteMessage = new ModemSatelliteMessage();
+                modemSatelliteMessage.setPayload(payload);
+                modemSatelliteMessage.setFormat(format);
+                modemSatelliteMessage.setName(details.getId());
+                modemSatelliteMessage.setMin(x[1]);
+                modemSatelliteMessage.setSin(x[0]);
+                return modemSatelliteMessage;
+              }));
+    } else {
       MessageFormat format = MessageFormat.BASE64;
       String command = "AT%MTMG=" + details.getId() + "," + format.getCode();
       return modem.sendATCommand(command).thenApply(super::parseIncomingMessageResponse);
     }
   }
 
-  public  CompletableFuture<Boolean> deleteIncomingMessage(String name) {
+  public CompletableFuture<Boolean> deleteIncomingMessage(String name) {
     return modem.sendATCommand("AT%MTMD=" + name).thenApply(x -> x.equalsIgnoreCase("ok"));
   }
 
   //endregion
 
-  public CompletableFuture<byte[]> processXmodemRequest(String request){
-    if(request.startsWith("%MTMG:")){
+  public CompletableFuture<byte[]> processXmodemRequest(String request) {
+    if (request.startsWith("%MTMG:")) {
       request = request.substring("%MTMG:".length());
     }
     CompletableFuture<byte[]> future = new CompletableFuture<>();
-    if(request.equalsIgnoreCase("ok")){
+    if (request.equalsIgnoreCase("ok")) {
       future.complete(null);
-    }
-    else {
+    } else {
       request = request.trim();
       String[] parts = request.split(",");
       int length = Integer.parseInt(parts[2]);

@@ -30,6 +30,10 @@ import java.util.concurrent.CompletableFuture;
 
 public abstract class BaseModemProtocol {
 
+  private static final String OK = "OK";
+  private static final String ERROR = "ERROR";
+  private static final String EOL = "\r\n";
+
   protected final Modem modem;
   protected final boolean isOgx;
 
@@ -68,27 +72,26 @@ public abstract class BaseModemProtocol {
     for (String line : lines) {
       line = line.trim();
       if (!line.isEmpty() &&
-          !line.equalsIgnoreCase("ok") &&
-          !line.equalsIgnoreCase("error")) {
+          !line.equalsIgnoreCase(OK) &&
+          !line.equalsIgnoreCase(ERROR)) {
         states.add(new SendMessageState(line, isOgx));
       }
     }
     return states;
   }
 
-
   protected List<IncomingMessageDetails> parseIncomingListResponse(String resp) {
     List<IncomingMessageDetails> response = new ArrayList<>();
-    String[] lines = resp.split("\r\n");
+    String[] lines = resp.split(EOL);
     for (String line : lines) {
       line = line.trim();
       if (!line.isEmpty() &&
-          !line.equalsIgnoreCase("ok") &&
-          !line.equalsIgnoreCase("error")) {
-        if(line.toLowerCase().startsWith("%mgfn:") || line.toLowerCase().startsWith("%mtqs:")) {
+          !line.equalsIgnoreCase(OK) &&
+          !line.equalsIgnoreCase(ERROR)) {
+        if (line.toLowerCase().startsWith("%mgfn:") || line.toLowerCase().startsWith("%mtqs:")) {
           line = line.substring(6).trim(); // same size
         }
-        if(!line.isEmpty()) {
+        if (!line.isEmpty()) {
           response.add(new IncomingMessageDetails(line, isOgx));
         }
       }
@@ -97,12 +100,12 @@ public abstract class BaseModemProtocol {
   }
 
   protected ModemSatelliteMessage parseIncomingMessageResponse(String resp) {
-    String[] lines = resp.split("\r\n");
+    String[] lines = resp.split(EOL);
     for (String line : lines) {
       line = line.trim();
       if (!line.isEmpty() &&
-          !line.equalsIgnoreCase("ok") &&
-          !line.equalsIgnoreCase("error")) {
+          !line.equalsIgnoreCase(OK) &&
+          !line.equalsIgnoreCase(ERROR)) {
         return new ModemSatelliteMessage(line, isOgx);
       }
     }

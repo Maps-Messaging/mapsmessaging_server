@@ -32,13 +32,66 @@ public final class XmodemReceiver {
   private static final int CAN = 0x18;
   private static final int CHAR_C = 0x43; // 'C'
 
-  public static class Result {
-    public final int blocks;
-    public final int retries;
-    public final long durationMs;
-    public Result(int blocks, int retries, long durationMs) {
-      this.blocks = blocks; this.retries = retries; this.durationMs = durationMs;
+  private static int readByteWithTimeout(InputStream in, int timeoutMs) throws IOException {
+    long end = System.nanoTime() + timeoutMs * 1_000_000L;
+    while (true) {
+      if (in.available() > 0) {
+        int b = in.read();
+        if (b < 0) throw new EOFException("Link closed");
+        return b & 0xFF;
+      }
+      if (System.nanoTime() >= end) return -1;
+      try {
+        Thread.sleep(5);
+      } catch (InterruptedException ie) {
+        Thread.currentThread().interrupt();
+        throw new InterruptedIOException();
+      }
     }
+  }
+
+  private static int readU8(InputStream in) throws IOException {
+    int b = in.read();
+    if (b < 0) throw new EOFException("Link closed");
+    return b & 0xFF;
+  }
+
+  private static byte[] readFully(InputStream in, int len) throws IOException {
+    byte[] buf = new byte[len];
+    int off = 0;
+    while (off < len) {
+      int r = in.read(buf, off, len - off);
+      if (r < 0) throw new EOFException("Link closed");
+      off += r;
+    }
+    return buf;
+  }
+
+  // CRC-16/XMODEM: poly 0x1021, init 0x0000, no refin/refout, no xorout
+  private static int crc16Xmodem(byte[] data, int off, int len) {
+    int crc = 0x0000;
+    for (int i = 0; i < len; i++) {
+      crc ^= (data[off + i] & 0xFF) << 8;
+      for (int b = 0; b < 8; b++) {
+        if ((crc & 0x8000) != 0) crc = (crc << 1) ^ 0x1021;
+        else crc <<= 1;
+        crc &= 0xFFFF;
+      }
+    }
+    return crc & 0xFFFF;
+  }
+
+  // CRC-32/MPEG-2 (poly 0x04C11DB7, init 0xFFFFFFFF, refin=false, refout=false, xorout=0)
+  static long crc32Mpeg2(byte[] data, int len) {
+    int crc = 0xFFFFFFFF;
+    for (int i = 0; i < len; i++) {
+      crc ^= (data[i] & 0xFF) << 24;
+      for (int b = 0; b < 8; b++) {
+        crc = ((crc & 0x80000000) != 0) ? (crc << 1) ^ 0x04C11DB7 : (crc << 1);
+      }
+      crc &= 0xFFFFFFFF;
+    }
+    return crc; // already no xorout
   }
 
   /**
@@ -76,7 +129,8 @@ public final class XmodemReceiver {
         if (expectedBlock == 0) expectedBlock = 1;
         totalBlocks++;
       } else if (b == EOT) {
-        linkOut.write(ACK); linkOut.flush();
+        linkOut.write(ACK);
+        linkOut.flush();
         return finalizeAndWrite(dst, buffer, announcedLength, expectedCrc32, start, totalBlocks, totalRetries);
       } else if (b == CAN) {
         // Expect double CAN; treat any CAN here as abort.
@@ -89,7 +143,8 @@ public final class XmodemReceiver {
     while (true) {
       int header = readByteWithTimeout(linkIn, readTimeoutMs);
       if (header == EOT) {
-        linkOut.write(ACK); linkOut.flush();
+        linkOut.write(ACK);
+        linkOut.flush();
         return finalizeAndWrite(dst, buffer, announcedLength, expectedCrc32, start, totalBlocks, totalRetries);
       } else if (header == SOH || header == STX) {
         boolean delivered = false;
@@ -99,7 +154,8 @@ public final class XmodemReceiver {
             int wrote = processBlock(linkIn, linkOut, buffer, announcedLength, header, expectedBlock);
             // If block number matched expected, counted as delivered
             if (wrote >= 0) {
-              expectedBlock = (expectedBlock + 1) & 0xFF; if (expectedBlock == 0) expectedBlock = 1;
+              expectedBlock = (expectedBlock + 1) & 0xFF;
+              if (expectedBlock == 0) expectedBlock = 1;
               totalBlocks++;
             }
             delivered = true; // either delivered or duplicate-acked inside processBlock
@@ -107,7 +163,8 @@ public final class XmodemReceiver {
             perBlockRetries++;
             totalRetries++;
             if (perBlockRetries > maxPerBlockRetries) throw new IOException("Too many NAKs/timeouts on block " + expectedBlock);
-            linkOut.write(NAK); linkOut.flush();
+            linkOut.write(NAK);
+            linkOut.flush();
             // Re-read header for the resent block
             header = readByteWithTimeout(linkIn, readTimeoutMs);
             if (header != SOH && header != STX) throw new IOException("Expected SOH/STX on retry, got: " + header);
@@ -121,7 +178,9 @@ public final class XmodemReceiver {
     }
   }
 
-  /** Reads one block; returns >=0 when delivered (bytes written or 0 if duplicate), throws RetryBlock to request NAK/resend. */
+  /**
+   * Reads one block; returns >=0 when delivered (bytes written or 0 if duplicate), throws RetryBlock to request NAK/resend.
+   */
   private int processBlock(InputStream in,
                            OutputStream out,
                            ByteArrayOutputStream buf,
@@ -149,11 +208,13 @@ public final class XmodemReceiver {
       int remaining = announcedLength - buf.size();
       int toWrite = Math.max(0, Math.min(remaining, data.length));
       if (toWrite > 0) buf.write(data, 0, toWrite);
-      out.write(ACK); out.flush();
+      out.write(ACK);
+      out.flush();
       return toWrite;
     } else if (blk == last) {
       // duplicate of last delivered; ACK again, do not re-deliver
-      out.write(ACK); out.flush();
+      out.write(ACK);
+      out.flush();
       return 0;
     } else {
       // unexpected block number
@@ -183,65 +244,22 @@ public final class XmodemReceiver {
     return new Result(totalBlocks, totalRetries, durMs);
   }
 
-  private static int readByteWithTimeout(InputStream in, int timeoutMs) throws IOException {
-    long end = System.nanoTime() + timeoutMs * 1_000_000L;
-    while (true) {
-      if (in.available() > 0) {
-        int b = in.read();
-        if (b < 0) throw new EOFException("Link closed");
-        return b & 0xFF;
-      }
-      if (System.nanoTime() >= end) return -1;
-      try { Thread.sleep(5); } catch (InterruptedException ie) { Thread.currentThread().interrupt(); throw new InterruptedIOException(); }
-    }
-  }
+  public static class Result {
+    public final int blocks;
+    public final int retries;
+    public final long durationMs;
 
-  private static int readU8(InputStream in) throws IOException {
-    int b = in.read();
-    if (b < 0) throw new EOFException("Link closed");
-    return b & 0xFF;
-  }
-
-  private static byte[] readFully(InputStream in, int len) throws IOException {
-    byte[] buf = new byte[len];
-    int off = 0;
-    while (off < len) {
-      int r = in.read(buf, off, len - off);
-      if (r < 0) throw new EOFException("Link closed");
-      off += r;
+    public Result(int blocks, int retries, long durationMs) {
+      this.blocks = blocks;
+      this.retries = retries;
+      this.durationMs = durationMs;
     }
-    return buf;
-  }
-
-  // CRC-16/XMODEM: poly 0x1021, init 0x0000, no refin/refout, no xorout
-  private static int crc16Xmodem(byte[] data, int off, int len) {
-    int crc = 0x0000;
-    for (int i = 0; i < len; i++) {
-      crc ^= (data[off + i] & 0xFF) << 8;
-      for (int b = 0; b < 8; b++) {
-        if ((crc & 0x8000) != 0) crc = (crc << 1) ^ 0x1021;
-        else crc <<= 1;
-        crc &= 0xFFFF;
-      }
-    }
-    return crc & 0xFFFF;
   }
 
   private static final class RetryBlock extends IOException {
-    RetryBlock(String m) { super(m); }
-  }
-
-  // CRC-32/MPEG-2 (poly 0x04C11DB7, init 0xFFFFFFFF, refin=false, refout=false, xorout=0)
-  static long crc32Mpeg2(byte[] data, int len) {
-    int crc = 0xFFFFFFFF;
-    for (int i = 0; i < len; i++) {
-      crc ^= (data[i] & 0xFF) << 24;
-      for (int b = 0; b < 8; b++) {
-        crc = ((crc & 0x80000000) != 0) ? (crc << 1) ^ 0x04C11DB7 : (crc << 1);
-      }
-      crc &= 0xFFFFFFFF;
+    RetryBlock(String m) {
+      super(m);
     }
-    return crc; // already no xorout
   }
 
 }

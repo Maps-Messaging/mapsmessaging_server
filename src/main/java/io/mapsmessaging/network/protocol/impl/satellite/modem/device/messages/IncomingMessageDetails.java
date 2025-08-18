@@ -36,7 +36,7 @@ public class IncomingMessageDetails {
   public IncomingMessageDetails(String line, boolean isOgx) {
 
     String[] parts = line.split(",");
-    if(isOgx) {
+    if (isOgx) {
       id = parts[1];
       messageId = Float.NaN;
       sin = -1;
@@ -44,8 +44,7 @@ public class IncomingMessageDetails {
       dateTime = parts[2];
       bytes = Integer.parseInt(parts[5]);  // Same
       bytesReceived = bytes;
-    }
-    else {
+    } else {
       id = parts[0];
       messageId = Float.parseFloat(parts[1]);
       sin = Integer.parseInt(parts[2]);

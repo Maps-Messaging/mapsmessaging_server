@@ -41,7 +41,7 @@ public class ModemStreamHandler implements StreamHandler {
 
   public ModemStreamHandler() {
     inputBuffer = new byte[BUFFER_SIZE];
-    outBuffer   = new byte[BUFFER_SIZE];
+    outBuffer = new byte[BUFFER_SIZE];
     bypass = new AtomicReference<>();
     serialOut = null;
   }
@@ -122,7 +122,9 @@ public class ModemStreamHandler implements StreamHandler {
     this.bypass.set(null);
   }
 
-  /** Convenience: start XMODEM receive */
+  /**
+   * Convenience: start XMODEM receive
+   */
   public synchronized void startXModem(int length, long crc32, CompletableFuture<byte[]> future) {
     this.bypass.set(new XmodemBypass(length, crc32, 1000, future));
   }

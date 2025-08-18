@@ -30,6 +30,7 @@ public class SendMessageState {
   private final State state;
   private final int length;
   private final int bytesAcknowledged;
+
   public SendMessageState(String line, boolean isOgx) {
     String content = line.substring(line.indexOf(':') + 1).trim();
     String[] parts = content.split(",");

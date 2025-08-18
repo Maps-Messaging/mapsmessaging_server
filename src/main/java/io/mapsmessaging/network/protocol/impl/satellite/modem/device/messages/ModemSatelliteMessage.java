@@ -42,23 +42,22 @@ public class ModemSatelliteMessage {
   private String datetime;
 
   public ModemSatelliteMessage(String line, boolean isOgx) {
-    if (line.startsWith("%MGFG:") || line.startsWith("%MTMG:") ) {
+    if (line.startsWith("%MGFG:") || line.startsWith("%MTMG:")) {
       line = line.substring(6);
     }
 
     String data;
     String[] parts = line.split(",");
-    if(isOgx){
+    if (isOgx) {
       name = parts[0];
       datetime = parts[1];
-      format = MessageFormat.fromCode(Integer.parseInt(parts[parts.length-2]));
-      data = parts[parts.length-1];
-      if(format.equals(MessageFormat.TEXT)){
+      format = MessageFormat.fromCode(Integer.parseInt(parts[parts.length - 2]));
+      data = parts[parts.length - 1];
+      if (format.equals(MessageFormat.TEXT)) {
         min = Integer.parseInt(parts[3]);
         sin = Integer.parseInt(parts[4]);
       }
-    }
-    else{
+    } else {
       name = parts[0];
       sin = Integer.parseInt(parts[3]);
       priority = Integer.parseInt(parts[4]);
@@ -67,12 +66,12 @@ public class ModemSatelliteMessage {
     }
 
     this.payload = (data.isEmpty()) ? new byte[0] : this.format.decode(data);
-    if(!format.equals(MessageFormat.TEXT) && isOgx){
+    if (!format.equals(MessageFormat.TEXT) && isOgx) {
       sin = payload[0];
       min = payload[1];
       payload = Arrays.copyOfRange(payload, 2, payload.length);
     }
-    if(!isOgx){
+    if (!isOgx) {
       min = payload[0];
       payload = Arrays.copyOfRange(payload, 1, payload.length);
     }

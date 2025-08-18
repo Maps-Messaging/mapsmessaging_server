@@ -52,11 +52,11 @@ public enum MessageFormat {
 
     @Override
     public byte[] decode(String encoded) {
-      if(encoded.startsWith("\"")){
-        encoded=encoded.substring(1);
+      if (encoded.startsWith("\"")) {
+        encoded = encoded.substring(1);
       }
-      if(encoded.endsWith("\"")){
-        encoded=encoded.substring(0,encoded.length()-1);
+      if (encoded.endsWith("\"")) {
+        encoded = encoded.substring(0, encoded.length() - 1);
       }
       ByteArrayOutputStream out = new ByteArrayOutputStream();
       for (int i = 0; i < encoded.length(); ) {

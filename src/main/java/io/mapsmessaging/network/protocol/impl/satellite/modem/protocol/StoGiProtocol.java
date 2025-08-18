@@ -74,14 +74,10 @@ public class StoGiProtocol extends Protocol implements Consumer<Packet> {
 
   private static final ExecutorService existingPool = Executors.newFixedThreadPool(4);
 
-  private static final  ScheduledExecutorService scheduler =
+  private static final ScheduledExecutorService scheduler =
       new ScheduledThreadPoolExecutor(4, ((ThreadPoolExecutor) existingPool).getThreadFactory());
-
-  private final Logger logger = LoggerFactory.getLogger(StoGiProtocol.class);
-
   private static final String STOGI = "stogi";
-
-
+  private final Logger logger = LoggerFactory.getLogger(StoGiProtocol.class);
   private final Session session;
   private final SelectorTask selectorTask;
   private final Modem modem;
@@ -134,12 +130,12 @@ public class StoGiProtocol extends Protocol implements Consumer<Packet> {
     endPoint.register(SelectionKey.OP_READ, selectorTask.getReadTask());
     initialiseModem(modemConfig.getModemResponseTimeout());
 
-    messagePoll =  modemConfig.getMessagePollInterval();
+    messagePoll = modemConfig.getMessagePollInterval();
     scheduledFuture = scheduler.schedule(this::pollModemForMessages, messagePoll, TimeUnit.MILLISECONDS);
     completedConnection();
     endPoint.getServer().handleNewEndPoint(endPoint);
     String statsDestination = modemConfig.getModemStatsTopic();
-    if(statsDestination != null && !statsDestination.isEmpty()) {
+    if (statsDestination != null && !statsDestination.isEmpty()) {
       destination = session.findDestination(statsDestination, DestinationType.TOPIC).join();
     }
   }
@@ -170,7 +166,7 @@ public class StoGiProtocol extends Protocol implements Consumer<Packet> {
     if (scheduledFuture != null) {
       scheduledFuture.cancel(true);
     }
-    if(session != null) {
+    if (session != null) {
       SessionManager.getInstance().close(session, false);
       modem.close();
     }
@@ -221,7 +217,7 @@ public class StoGiProtocol extends Protocol implements Consumer<Packet> {
     destinationName = scanForName(destinationName);
 
     List<SatelliteMessage> messages = SatelliteMessageFactory.createMessages(destinationName, payload);
-    messages.get(messages.size()-1).setCompletionCallback(messageEvent.getCompletionTask());
+    messages.get(messages.size() - 1).setCompletionCallback(messageEvent.getCompletionTask());
     outboundQueue.addAll(messages);
   }
 
@@ -301,18 +297,16 @@ public class StoGiProtocol extends Protocol implements Consumer<Packet> {
       if (locationPollInterval > 0) {
         processLocationRequest();
       }
-    }
-    catch(Throwable th){
+    } catch (Throwable th) {
       // Log This, it's important
       th.printStackTrace();
-    }
-    finally {
+    } finally {
       scheduledFuture = scheduler.schedule(this::pollModemForMessages, messagePoll, TimeUnit.MILLISECONDS);
     }
   }
 
-  private void publishStats( String lat, String lon, String satellites) {
-    Integer jamIndicator =  modem.getJammingIndicator().join();
+  private void publishStats(String lat, String lon, String satellites) {
+    Integer jamIndicator = modem.getJammingIndicator().join();
     int jamStatus = modem.getJammingStatus().join();
     int status = jamStatus & 0x3;
     String jammingStatus = switch (status) {
@@ -333,15 +327,15 @@ public class StoGiProtocol extends Protocol implements Consumer<Packet> {
     obj.addProperty("jammingStatus", jammingStatus);
     obj.addProperty("satellites", satellites);
 
-    if(jammed){
+    if (jammed) {
       obj.addProperty("status", "JAMMED");
     }
-    if(antennaCut){
+    if (antennaCut) {
       obj.addProperty("status", "Antenna Cut");
     }
 
     String temp = modem.getTemperature().join();
-    if(temp != null){
+    if (temp != null) {
       float f = toFloat(temp);
       obj.addProperty("temperature", f);
     }
@@ -363,9 +357,9 @@ public class StoGiProtocol extends Protocol implements Consumer<Packet> {
         if (sentence != null && sentence.getName().equalsIgnoreCase("GPGGA")) {
           PositionType latitude = (PositionType) sentence.get("latitude");
           PositionType longitude = (PositionType) sentence.get("longitude");
-          LongType satellites = (LongType)sentence.get("satellites");
+          LongType satellites = (LongType) sentence.get("satellites");
           LocationManager.getInstance().setPosition(latitude.getPosition(), longitude.getPosition());
-          if(destination !=null) {
+          if (destination != null) {
             publishStats(latitude.toString(), longitude.toString(), satellites.toString());
           }
         }
@@ -414,10 +408,10 @@ public class StoGiProtocol extends Protocol implements Consumer<Packet> {
 
   private List<ModemSatelliteMessage> retrieveIncomingList(List<IncomingMessageDetails> incoming) {
     List<ModemSatelliteMessage> modemSatelliteMessages = new ArrayList<>();
-    for(IncomingMessageDetails details : incoming) {
+    for (IncomingMessageDetails details : incoming) {
       ModemSatelliteMessage satelliteMessage;
       satelliteMessage = modem.getMessage(details).join();
-      if(satelliteMessage != null) {
+      if (satelliteMessage != null) {
         modemSatelliteMessages.add(satelliteMessage);
       }
       try {
@@ -448,7 +442,7 @@ public class StoGiProtocol extends Protocol implements Consumer<Packet> {
     }
     modem.waitForModemActivity();
 
-    for(ModemSatelliteMessage message : messages) {
+    for (ModemSatelliteMessage message : messages) {
       modem.markMessageRetrieved(message.getName()).join();
     }
   }
@@ -486,7 +480,7 @@ public class StoGiProtocol extends Protocol implements Consumer<Packet> {
 
   private void processValidDestinations(String topicName, Message message)
       throws ExecutionException, InterruptedException {
-    if(topicName == null ||topicName.isEmpty() ) return;
+    if (topicName == null || topicName.isEmpty()) return;
     CompletableFuture<Destination> future = session.findDestination(topicName, DestinationType.TOPIC);
     future.thenApply(destination -> {
       if (destination != null) {
@@ -566,10 +560,10 @@ public class StoGiProtocol extends Protocol implements Consumer<Packet> {
   }
 
 
-  private float toFloat(String temp){
+  private float toFloat(String temp) {
     try {
       temp = temp.substring(0, 5);
-      return Float.parseFloat(temp.trim())/10.0f;
+      return Float.parseFloat(temp.trim()) / 10.0f;
     } catch (NumberFormatException e) {
       return Float.NaN;
     }
