@@ -56,12 +56,12 @@ public class IdpModemProtocol extends BaseModemProtocol {
   }
 
   public CompletableFuture<ModemSatelliteMessage> getMessage(IncomingMessageDetails details) {
-    String command = "AT%MGFG=\"" + details.getMessageId() + "\"," + MessageFormat.BASE64.getCode();
+    String command = "AT%MGFG=" + details.getId() + "," + MessageFormat.BASE64.getCode();
     return modem.sendATCommand(command).thenApply(super::parseIncomingMessageResponse);
   }
 
   public CompletableFuture<Boolean> markMessageRetrieved(String name) {
-    return modem.sendATCommand("AT%MGFM=\"" + name + "\"").thenApply(x -> x.equalsIgnoreCase("ok"));
+    return modem.sendATCommand("AT%MGFM=" + name ).thenApply(x -> x.equalsIgnoreCase("ok"));
   }
   //endregion
 

@@ -272,11 +272,6 @@ public class Modem {
       currentCommand.future.complete(response);
       currentCommand = null;
       responseBuffer.setLength(0);
-      Command command = this.commandQueue.peek();
-
-      if(command != null) {
-        System.err.println("Next Command: " +command.cmd);
-      }
       sendNextCommand();
     } else {
       responseBuffer.append(line).append("\r\n");

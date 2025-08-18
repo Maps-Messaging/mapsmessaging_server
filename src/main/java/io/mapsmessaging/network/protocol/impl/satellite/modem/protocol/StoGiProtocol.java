@@ -302,6 +302,7 @@ public class StoGiProtocol extends Protocol implements Consumer<Packet> {
       }
     }
     catch(Throwable th){
+      // Log This, it's important
       th.printStackTrace();
     }
     finally {
@@ -418,6 +419,11 @@ public class StoGiProtocol extends Protocol implements Consumer<Packet> {
       if(satelliteMessage != null) {
         modemSatelliteMessages.add(satelliteMessage);
       }
+      try {
+        Thread.sleep(500); // Required to allow modem to return to normal mode
+      } catch (InterruptedException e) {
+        Thread.currentThread().interrupt();
+      }
     }
     return modemSatelliteMessages;
   }
@@ -432,7 +438,7 @@ public class StoGiProtocol extends Protocol implements Consumer<Packet> {
           try {
             sendMessageToTopic(satelliteMessage.getNamespace(), satelliteMessage.getMessage());
           } catch (Throwable e) {
-            e.printStackTrace();
+            // ToDo Log
           }
         } else {
           logger.log(STOGI_RECEIVED_PARTIAL_MESSAGE, loaded.getNamespace(), loaded.getPacketNumber());
@@ -442,10 +448,7 @@ public class StoGiProtocol extends Protocol implements Consumer<Packet> {
     modem.waitForModemActivity();
 
     for(ModemSatelliteMessage message : messages) {
-      System.err.println("Deleting "+message.getName());
-      if(!modem.markMessageRetrieved(message.getName()).join()){
-        System.err.println("Unable to delete message "+message.getName());
-      }
+      modem.markMessageRetrieved(message.getName()).join();
     }
   }
 
