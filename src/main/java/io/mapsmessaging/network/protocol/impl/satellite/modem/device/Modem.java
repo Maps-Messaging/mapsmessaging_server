@@ -34,7 +34,6 @@ import io.mapsmessaging.network.protocol.impl.satellite.modem.protocol.ModemStre
 import io.mapsmessaging.utilities.threads.SimpleTaskScheduler;
 import lombok.Getter;
 import lombok.Setter;
-import org.apache.commons.lang3.concurrent.ConcurrentException;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;

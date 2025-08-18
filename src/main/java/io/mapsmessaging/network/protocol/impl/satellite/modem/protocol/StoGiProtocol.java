@@ -50,7 +50,6 @@ import io.mapsmessaging.network.protocol.impl.satellite.modem.device.Modem;
 import io.mapsmessaging.network.protocol.impl.satellite.modem.device.messages.IncomingMessageDetails;
 import io.mapsmessaging.network.protocol.impl.satellite.modem.device.messages.ModemSatelliteMessage;
 import io.mapsmessaging.network.protocol.impl.satellite.modem.device.messages.SendMessageState;
-import io.mapsmessaging.network.protocol.impl.satellite.modem.device.values.MessageFormat;
 import io.mapsmessaging.network.protocol.impl.satellite.protocol.SatelliteMessage;
 import io.mapsmessaging.network.protocol.impl.satellite.protocol.SatelliteMessageFactory;
 import io.mapsmessaging.network.protocol.impl.satellite.protocol.SatelliteMessageRebuilder;

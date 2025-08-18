@@ -21,6 +21,7 @@ package io.mapsmessaging.network.protocol.impl.satellite.modem.protocol;
 
 
 import io.mapsmessaging.network.io.Packet;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;

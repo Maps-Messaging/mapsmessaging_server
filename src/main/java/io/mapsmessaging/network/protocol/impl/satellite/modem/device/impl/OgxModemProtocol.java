@@ -28,9 +28,6 @@ import io.mapsmessaging.network.protocol.impl.satellite.modem.device.values.Mess
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 
 public class OgxModemProtocol extends BaseModemProtocol {
   public OgxModemProtocol(Modem modem) {
