@@ -59,15 +59,16 @@ public enum MessageFormat {
         encoded = encoded.substring(0, encoded.length() - 1);
       }
       ByteArrayOutputStream out = new ByteArrayOutputStream();
-      for (int i = 0; i < encoded.length(); ) {
+      int i = 0;
+      while (i < encoded.length()) {
         char c = encoded.charAt(i);
         if (c == '\\' && i + 2 < encoded.length()) {
           String hex = encoded.substring(i + 1, i + 3);
           out.write(Integer.parseInt(hex, 16));
-          i += 3;
+          i += 3; // consume escape and hex digits
         } else {
           out.write((byte) c);
-          i++;
+          i++; // consume single char
         }
       }
       return out.toByteArray();
