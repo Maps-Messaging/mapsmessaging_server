@@ -72,12 +72,15 @@ import static io.mapsmessaging.logging.ServerLogMessages.*;
 
 public class StoGiProtocol extends Protocol implements Consumer<Packet> {
 
-  private static ExecutorService existingPool = Executors.newFixedThreadPool(4);
+  private static final ExecutorService existingPool = Executors.newFixedThreadPool(4);
 
-  private static   ScheduledExecutorService scheduler =
+  private static final  ScheduledExecutorService scheduler =
       new ScheduledThreadPoolExecutor(4, ((ThreadPoolExecutor) existingPool).getThreadFactory());
 
   private final Logger logger = LoggerFactory.getLogger(StoGiProtocol.class);
+
+  private static final String STOGI = "stogi";
+
 
   private final Session session;
   private final SelectorTask selectorTask;
@@ -86,18 +89,16 @@ public class StoGiProtocol extends Protocol implements Consumer<Packet> {
   private final Queue<SatelliteMessage> outboundQueue;
   private final SatelliteMessageRebuilder satelliteMessageRebuilder;
   private final LocationParser locationParser;
-  private final boolean setServerLocation;
+  private final long locationPollInterval;
   private final long messagePoll;
-
 
   private ScheduledFuture<?> scheduledFuture;
   private Destination destination;
-
   private long lastLocationPoll;
   private int messageId;
 
   public StoGiProtocol(EndPoint endPoint, Packet packet) throws LoginException, IOException {
-    super(endPoint, endPoint.getConfig().getProtocolConfig("stogi"));
+    super(endPoint, endPoint.getConfig().getProtocolConfig(STOGI));
     topicNameMapping = new ConcurrentHashMap<>();
     outboundQueue = new ConcurrentLinkedQueue<>();
     satelliteMessageRebuilder = new SatelliteMessageRebuilder();
@@ -118,7 +119,7 @@ public class StoGiProtocol extends Protocol implements Consumer<Packet> {
     transformation = TransformationManager.getInstance().getTransformation(
         endPoint.getProtocol(),
         endPoint.getName(),
-        "stogi",
+        STOGI,
         session.getSecurityContext().getUsername()
     );
 
@@ -127,7 +128,8 @@ public class StoGiProtocol extends Protocol implements Consumer<Packet> {
 
     modem = new Modem(this, modemConfig.getModemResponseTimeout(), streamHandler);
 
-    setServerLocation = modemConfig.isSetServerLocation();
+    locationPollInterval = modemConfig.getLocationPollInterval();
+
     selectorTask = new SelectorTask(this, endPoint.getConfig().getEndPointConfig());
     endPoint.register(SelectionKey.OP_READ, selectorTask.getReadTask());
     initialiseModem(modemConfig.getModemResponseTimeout());
@@ -143,7 +145,7 @@ public class StoGiProtocol extends Protocol implements Consumer<Packet> {
   }
 
   private Session setupSession() throws LoginException, IOException {
-    SessionContextBuilder sessionContextBuilder = new SessionContextBuilder("stogi" + endPoint.getId(), new ProtocolClientConnection(this));
+    SessionContextBuilder sessionContextBuilder = new SessionContextBuilder(STOGI + endPoint.getId(), new ProtocolClientConnection(this));
     sessionContextBuilder.setSessionExpiry(0);
     sessionContextBuilder.setPersistentSession(false);
     return SessionManager.getInstance().create(sessionContextBuilder.build(), this);
@@ -259,12 +261,12 @@ public class StoGiProtocol extends Protocol implements Consumer<Packet> {
 
   @Override
   public String getName() {
-    return "stogi";
+    return STOGI;
   }
 
   @Override
   public String getSessionId() {
-    return "stogi" + endPoint.getName();
+    return STOGI + endPoint.getName();
   }
 
   @Override
@@ -296,7 +298,7 @@ public class StoGiProtocol extends Protocol implements Consumer<Packet> {
       logger.log(STOGI_POLLING_MODEM, modem.getType());
       processOutboundMessages();
       processInboundMessages();
-      if (setServerLocation) {
+      if (locationPollInterval > 0) {
         processLocationRequest();
       }
     }
@@ -354,7 +356,7 @@ public class StoGiProtocol extends Protocol implements Consumer<Packet> {
   }
 
   private void processLocationRequest() {
-    if (lastLocationPoll + 60_000 < System.currentTimeMillis()) {
+    if (lastLocationPoll + locationPollInterval < System.currentTimeMillis()) {
       List<String> location = modem.getLocation().join();
       for (String loc : location) {
         Sentence sentence = locationParser.parseLocation(loc);

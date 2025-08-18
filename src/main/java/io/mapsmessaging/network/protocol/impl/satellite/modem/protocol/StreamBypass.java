@@ -27,18 +27,11 @@ import java.io.InputStream;
 import java.io.OutputStream;
 
 interface StreamBypass {
-  /** Consume from serial input, emit control bytes via linkOut as needed (may block). */
+
   int parseInput(InputStream in, OutputStream linkOut) throws IOException;
-
-  /** Optional: intercept app->modem output during bypass. Default: pass-through. */
   int parseOutput(OutputStream out, Packet packet) throws IOException;
-
-  /** True when bypass has finished and result() is ready. */
   boolean isComplete();
-
-  /** Final payload to inject into the Packet stream when complete. */
   byte[] result() throws IOException;
-
-  /** Clear internal state so handler can be reused. */
   void reset();
+
 }

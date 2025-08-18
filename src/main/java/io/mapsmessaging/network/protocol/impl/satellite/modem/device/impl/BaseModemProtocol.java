@@ -41,9 +41,9 @@ public abstract class BaseModemProtocol {
   /*
   Handle outgoing messages
    */
-  public abstract void sendMessage(ModemSatelliteMessage modemSatelliteMessage);
-
   public abstract CompletableFuture<List<SendMessageState>> listSentMessages();
+
+  public abstract void sendMessage(ModemSatelliteMessage modemSatelliteMessage);
 
   public abstract CompletableFuture<Boolean> deleteSentMessages(String msgName);
 
@@ -54,14 +54,14 @@ public abstract class BaseModemProtocol {
 
   public abstract CompletableFuture<ModemSatelliteMessage> getMessage(IncomingMessageDetails details);
 
-  public abstract CompletableFuture<Boolean> markMessageRetrieved(String name);
-
-  public abstract String getType();
-
+  public abstract CompletableFuture<Boolean> deleteIncomingMessage(String name);
 
   /*
   Generic helpers
    */
+  public abstract String getType();
+
+
   protected List<SendMessageState> parseOutgoingMessageList(String resp) {
     List<SendMessageState> states = new ArrayList<>();
     String[] lines = resp.split("\n");

@@ -35,12 +35,12 @@ public class OgxModemProtocol extends BaseModemProtocol {
   }
 
   //region Outgoing message functions
-  public void sendMessage(ModemSatelliteMessage modemSatelliteMessage) {
-    modem.sendATCommand("AT%MOMT=" + modemSatelliteMessage.toOgxCommand());
-  }
-
   public CompletableFuture<List<SendMessageState>> listSentMessages() {
     return modem.sendATCommand("AT%MGRS").thenApply(super::parseOutgoingMessageList);
+  }
+
+  public void sendMessage(ModemSatelliteMessage modemSatelliteMessage) {
+    modem.sendATCommand("AT%MOMT=" + modemSatelliteMessage.toOgxCommand());
   }
 
   public CompletableFuture<Boolean> deleteSentMessages(String msgId) {
@@ -83,7 +83,7 @@ public class OgxModemProtocol extends BaseModemProtocol {
     }
   }
 
-  public  CompletableFuture<Boolean> markMessageRetrieved(String name) {
+  public  CompletableFuture<Boolean> deleteIncomingMessage(String name) {
     return modem.sendATCommand("AT%MTMD=" + name).thenApply(x -> x.equalsIgnoreCase("ok"));
   }
 

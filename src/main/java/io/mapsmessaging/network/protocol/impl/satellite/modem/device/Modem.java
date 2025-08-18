@@ -216,7 +216,7 @@ public class Modem {
   }
 
   public  CompletableFuture<Boolean> markMessageRetrieved(String name) {
-    return modemProtocol.markMessageRetrieved(name);
+    return modemProtocol.deleteIncomingMessage(name);
   }
   //endregion
 

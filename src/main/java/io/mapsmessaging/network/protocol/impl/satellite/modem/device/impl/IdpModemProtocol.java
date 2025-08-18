@@ -60,7 +60,7 @@ public class IdpModemProtocol extends BaseModemProtocol {
     return modem.sendATCommand(command).thenApply(super::parseIncomingMessageResponse);
   }
 
-  public CompletableFuture<Boolean> markMessageRetrieved(String name) {
+  public CompletableFuture<Boolean> deleteIncomingMessage(String name) {
     return modem.sendATCommand("AT%MGFM=" + name ).thenApply(x -> x.equalsIgnoreCase("ok"));
   }
   //endregion

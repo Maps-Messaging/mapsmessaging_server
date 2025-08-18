@@ -33,9 +33,8 @@ public class StoGiConfig extends StoGiConfigDTO implements Config {
     serial = new SerialConfig(config);
     initialSetup = config.getProperty("initialSetup", "");
     messagePollInterval = config.getLongProperty("messagePollInterval", 5000);
-    ignoreFirstByte = config.getBooleanProperty("ignoreFirstByte", false);
     modemResponseTimeout = config.getLongProperty("modemResponseTimeout", 5000);
-    setServerLocation = config.getBooleanProperty("setServerLocation", true);
+    locationPollInterval = config.getLongProperty("locationPollInterval", 0);
     modemStatsTopic = config.getProperty("modemStatsTopic", "");
   }
 
@@ -57,16 +56,12 @@ public class StoGiConfig extends StoGiConfigDTO implements Config {
         messagePollInterval = orbCommConfig.getMessagePollInterval();
         result = true;
       }
-      if(ignoreFirstByte != orbCommConfig.isIgnoreFirstByte()){
-        ignoreFirstByte = orbCommConfig.isIgnoreFirstByte();
-        result = true;
-      }
       if (modemResponseTimeout != orbCommConfig.getModemResponseTimeout()) {
         modemResponseTimeout = orbCommConfig.getModemResponseTimeout();
         result = true;
       }
-      if(setServerLocation != orbCommConfig.isSetServerLocation()){
-        setServerLocation = orbCommConfig.isSetServerLocation();
+      if(locationPollInterval != orbCommConfig.getLocationPollInterval()){
+        locationPollInterval = orbCommConfig.getLocationPollInterval();
         result = true;
       }
     }
@@ -82,9 +77,8 @@ public class StoGiConfig extends StoGiConfigDTO implements Config {
       properties.put("serial", serialConfig.toConfigurationProperties());
     }
     properties.put("messagePollInterval", messagePollInterval);
-    properties.put("ignoreFirstByte", ignoreFirstByte);
     properties.put("modemResponseTimeout", modemResponseTimeout);
-    properties.put("setServerLocation", setServerLocation);
+    properties.put("locationPollInterval", getLocationPollInterval());
     return properties;
   }
 }

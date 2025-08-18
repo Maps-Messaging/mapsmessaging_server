@@ -41,15 +41,13 @@ public class StoGiConfigDTO extends ProtocolConfigDTO {
   @Schema(description = "Time in milliseconds to wait for a modem response")
   protected long modemResponseTimeout;
 
-  @Schema(description = "Incoming messages from the St2100 modem has a 0 byte appended which we need to ignore")
-  protected boolean ignoreFirstByte;
-
   @Schema(description = "Initial modem setup string")
   protected String initialSetup;
 
-  @Schema(description = "Set server location from modem GPS")
-  protected boolean setServerLocation;
+  @Schema(description ="Time in milliseconds between polling modem location and statistics, 0 disables it")
+  protected long locationPollInterval;
 
   @Schema(description = "If present, then the name of the topic to send modem statistics to")
   protected String modemStatsTopic;
+
 }
