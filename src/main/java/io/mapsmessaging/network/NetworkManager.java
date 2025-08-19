@@ -158,7 +158,6 @@ public class NetworkManager implements ServiceManager, Agent {
             EndPointManager endPointManager = new EndPointManager(endPointURL, endPointServerFactory, endPointServerConfig, bean);
             endPointManagers.put(endPointURL.toString(), endPointManager);
           } catch (IOException | RuntimeException iox) {
-            iox.printStackTrace();
             logger.log(ServerLogMessages.NETWORK_MANAGER_START_FAILURE, iox, endPointURL.toString());
           }
         } else {

@@ -67,7 +67,10 @@ public class IdpModemProtocol extends BaseModemProtocol {
   }
 
   public CompletableFuture<Boolean> deleteIncomingMessage(String name) {
-    return modem.sendATCommand("AT%MGFM=" + name).thenApply(x -> x.equalsIgnoreCase("ok"));
+    CompletableFuture<Boolean> future = new CompletableFuture<>(); // handled by the modem
+    future.complete(true);
+    return future;
+//    return modem.sendATCommand("AT%MGFM=" + name).thenApply(x -> x.equalsIgnoreCase("ok"));
   }
   //endregion
 

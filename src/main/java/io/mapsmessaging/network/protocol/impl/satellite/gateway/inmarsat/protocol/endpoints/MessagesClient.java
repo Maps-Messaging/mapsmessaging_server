@@ -26,7 +26,6 @@ import io.mapsmessaging.network.protocol.impl.satellite.gateway.inmarsat.protoco
 import java.lang.reflect.Type;
 import java.net.URI;
 import java.net.http.HttpClient;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 

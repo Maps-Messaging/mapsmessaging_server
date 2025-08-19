@@ -68,7 +68,6 @@ import java.util.*;
 import java.util.Queue;
 import java.util.concurrent.*;
 import java.util.function.Consumer;
-import java.util.stream.Collectors;
 
 import static io.mapsmessaging.logging.ServerLogMessages.*;
 
@@ -161,8 +160,8 @@ public class StoGiProtocol extends Protocol implements Consumer<Packet> {
       if(init == null){
         throw new IOException("Unable to detect modem version");
       }
-      String query = modem.queryModemInfo().get(modemResponseTimeout, TimeUnit.MILLISECONDS);
-      String enable = modem.enableLocation().get(modemResponseTimeout, TimeUnit.MILLISECONDS);
+      modem.queryModemInfo().get(modemResponseTimeout, TimeUnit.MILLISECONDS);
+      modem.enableLocation().get(modemResponseTimeout, TimeUnit.MILLISECONDS);
     } catch (InterruptedException e) {
       Thread.currentThread().interrupt();
     } catch (ExecutionException | TimeoutException e) {
@@ -285,7 +284,6 @@ public class StoGiProtocol extends Protocol implements Consumer<Packet> {
     try {
       endPoint.sendPacket(packet);
     } catch (IOException e) {
-      e.printStackTrace();
       logger.log(STOGI_EXCEPTION_PROCESSING_PACKET, e);
     }
   }
@@ -309,7 +307,6 @@ public class StoGiProtocol extends Protocol implements Consumer<Packet> {
       }
     } catch (Throwable th) {
       // Log This, it's important
-      th.printStackTrace();
     } finally {
       scheduledFuture = scheduler.schedule(this::pollModemForMessages, messagePoll, TimeUnit.MILLISECONDS);
     }
@@ -492,12 +489,12 @@ public class StoGiProtocol extends Protocol implements Consumer<Packet> {
       throws ExecutionException, InterruptedException {
     if (topicName == null || topicName.isEmpty()) return;
     CompletableFuture<Destination> future = session.findDestination(topicName, DestinationType.TOPIC);
-    future.thenApply(destination -> {
-      if (destination != null) {
+    future.thenApply(topic -> {
+      if (topic != null) {
         try {
-          destination.storeMessage(message);
+          topic.storeMessage(message);
         } catch (IOException e) {
-          e.printStackTrace();
+          // log this!
           try {
             endPoint.close();
           } catch (IOException ioException) {

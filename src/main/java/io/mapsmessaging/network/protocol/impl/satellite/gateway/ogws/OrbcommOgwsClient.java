@@ -225,7 +225,6 @@ public class OrbcommOgwsClient implements SatelliteClient {
         logger.log(OGWS_FAILED_POLL, response != null ? response.getErrorId() : "<null error>");
       }
     } catch (Exception e) {
-      e.printStackTrace();
       logger.log(OGWS_REQUEST_FAILED, e);
     }
     return incomingEvents;

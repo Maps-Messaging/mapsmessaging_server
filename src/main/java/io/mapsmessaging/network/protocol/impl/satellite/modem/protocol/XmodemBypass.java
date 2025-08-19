@@ -59,7 +59,6 @@ public class XmodemBypass implements StreamBypass {
         complete = true;
         future.complete(result);
       } catch (IOException e) {
-        e.printStackTrace();
         future.completeExceptionally(e);
         complete = true;
         throw e;

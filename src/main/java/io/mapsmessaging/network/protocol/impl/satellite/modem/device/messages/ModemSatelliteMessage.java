@@ -30,7 +30,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 @ToString
 public class ModemSatelliteMessage {
   private static final AtomicInteger nextId = new AtomicInteger(0);
-  private String name;// = MessageNameGenerator.incrementString().trim();
+  private String name;
   private byte[] payload;
   private int sin;
   private int min;
