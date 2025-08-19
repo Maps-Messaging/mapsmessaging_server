@@ -26,6 +26,7 @@ import io.mapsmessaging.network.protocol.impl.satellite.gateway.inmarsat.protoco
 import io.mapsmessaging.network.protocol.impl.satellite.gateway.inmarsat.protocol.model.MobileTerminatedSubmitRequest;
 import io.mapsmessaging.network.protocol.impl.satellite.gateway.inmarsat.protocol.model.MobileTerminatedSubmitResponse;
 import io.mapsmessaging.network.protocol.impl.satellite.gateway.io.SatelliteClient;
+import io.mapsmessaging.network.protocol.impl.satellite.gateway.io.StateManager;
 import io.mapsmessaging.network.protocol.impl.satellite.gateway.model.MessageData;
 import io.mapsmessaging.network.protocol.impl.satellite.gateway.model.RemoteDeviceInfo;
 
@@ -40,12 +41,15 @@ public class InmarsatClient implements SatelliteClient {
 
   public InmarsatClient(SatelliteConfigDTO satelliteConfigDTO) {
     inmarsatSession = new InmarsatSession(satelliteConfigDTO);
-    lastMoTimeUTC = java.time.ZonedDateTime.now()
-        .withZoneSameInstant(java.time.ZoneOffset.UTC)
-        .minusDays(1)
-        .toInstant()
-        .truncatedTo(java.time.temporal.ChronoUnit.SECONDS)
-        .toString();
+    lastMoTimeUTC  = StateManager.loadLastMessageUtc(inmarsatSession.clientId, inmarsatSession.clientSecret);
+    if(lastMoTimeUTC == null) {
+      lastMoTimeUTC = java.time.ZonedDateTime.now()
+          .withZoneSameInstant(java.time.ZoneOffset.UTC)
+          .minusDays(1)
+          .toInstant()
+          .truncatedTo(java.time.temporal.ChronoUnit.SECONDS)
+          .toString();
+    }
   }
 
   @Override
@@ -70,6 +74,7 @@ public class InmarsatClient implements SatelliteClient {
     if(moResponse != null){
       if(moResponse.getNextStartTime() != null){
         lastMoTimeUTC = moResponse.getNextStartTime();
+        StateManager.saveLastMessageUtc(inmarsatSession.clientId, inmarsatSession.clientSecret, lastMoTimeUTC);
       }
       List<JsonObject> msgs = moResponse.getMessages();
       for (JsonObject msg : msgs) {

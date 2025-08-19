@@ -27,6 +27,7 @@ import io.mapsmessaging.dto.rest.config.protocol.impl.SatelliteConfigDTO;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.network.protocol.impl.satellite.gateway.io.SatelliteClient;
+import io.mapsmessaging.network.protocol.impl.satellite.gateway.io.StateManager;
 import io.mapsmessaging.network.protocol.impl.satellite.gateway.model.MessageData;
 import io.mapsmessaging.network.protocol.impl.satellite.gateway.model.RemoteDeviceInfo;
 import io.mapsmessaging.network.protocol.impl.satellite.gateway.ogws.data.*;
@@ -75,7 +76,9 @@ public class OrbcommOgwsClient implements SatelliteClient {
     this.httpClient = HttpClient.newBuilder()
         .connectTimeout(Duration.ofSeconds(config.getHttpRequestTimeout()))
         .build();
+    lastMessageUtc = StateManager.loadLastMessageUtc(clientId, clientSecret);
   }
+
 
   @Override
   public void close(){
@@ -219,6 +222,9 @@ public class OrbcommOgwsClient implements SatelliteClient {
               messageData.setPayload(Base64.decode(returnMessage.getRawPayload()));
               incomingEvents.add(messageData);
             }
+          }
+          if(lastMessageUtc != null) {
+            StateManager.saveLastMessageUtc(clientId, clientSecret,lastMessageUtc);
           }
         }
       } else {
