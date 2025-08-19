@@ -26,38 +26,47 @@ import com.google.gson.JsonParser;
 import io.mapsmessaging.engine.schema.SchemaManager;
 import io.mapsmessaging.schemas.config.SchemaConfig;
 import io.mapsmessaging.schemas.config.SchemaConfigFactory;
-import okhttp3.OkHttpClient;
-import okhttp3.Request;
-import okhttp3.Response;
 
 import java.io.IOException;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.time.Duration;
 
 public class SchemaMonitor implements Runnable {
 
   private final String remoteUrl;
+  private final HttpClient httpClient;
   private long lastUpdateCount;
 
-  public SchemaMonitor(String remoteUrl){
+  public SchemaMonitor(String remoteUrl) {
     this.remoteUrl = remoteUrl;
+    this.httpClient = HttpClient.newBuilder()
+        .connectTimeout(Duration.ofSeconds(10))
+        .build();
     lastUpdateCount = 0;
   }
 
-  public void scanForUpdates(long lastUpdateCount){
-    if(this.lastUpdateCount != lastUpdateCount){
+  public void scanForUpdates(long lastUpdateCount) {
+    if (this.lastUpdateCount != lastUpdateCount) {
       this.lastUpdateCount = lastUpdateCount;
       run();
     }
   }
 
-  public void run(){
-    Request request = new Request.Builder()
-        .url(remoteUrl+"/api/v1/server/schema/")
+  @Override
+  public void run() {
+    HttpRequest request = HttpRequest.newBuilder()
+        .uri(URI.create(remoteUrl + "/api/v1/server/schema/"))
+        .timeout(Duration.ofSeconds(20))
+        .GET()
         .build();
-    OkHttpClient client = new OkHttpClient();
-    try (Response response = client.newCall(request).execute()) {
-      if (response.isSuccessful() && response.body() != null) {
-        String responseBody = response.body().string();
-        JsonObject json = JsonParser.parseString(responseBody).getAsJsonObject();
+
+    try {
+      HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+      if (response.statusCode() >= 200 && response.statusCode() < 300 && response.body() != null) {
+        JsonObject json = JsonParser.parseString(response.body()).getAsJsonObject();
         JsonArray jsonArray = json.getAsJsonArray("data");
 
         if (jsonArray != null && !jsonArray.isEmpty()) {
@@ -69,13 +78,11 @@ public class SchemaMonitor implements Runnable {
           }
         }
       } else {
-        // ToDo log exception
-        throw new RuntimeException("Request failed: " + response.code() + " " + response.message());
+        throw new RuntimeException("Request failed: " + response.statusCode());
       }
-    } catch (IOException e) {
-      // ToDo log exception
-      throw new RuntimeException("Request failed due to IOException", e);
+    } catch (IOException | InterruptedException e) {
+      Thread.currentThread().interrupt();
+      throw new RuntimeException("Request failed", e);
     }
   }
-
 }
