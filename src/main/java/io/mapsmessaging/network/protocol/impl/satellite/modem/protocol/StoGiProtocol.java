@@ -47,6 +47,7 @@ import io.mapsmessaging.network.protocol.impl.nmea.types.LongType;
 import io.mapsmessaging.network.protocol.impl.nmea.types.PositionType;
 import io.mapsmessaging.network.protocol.impl.satellite.gateway.io.SatelliteEndPoint;
 import io.mapsmessaging.network.protocol.impl.satellite.modem.device.Modem;
+import io.mapsmessaging.network.protocol.impl.satellite.modem.device.impl.BaseModemProtocol;
 import io.mapsmessaging.network.protocol.impl.satellite.modem.device.messages.IncomingMessageDetails;
 import io.mapsmessaging.network.protocol.impl.satellite.modem.device.messages.ModemSatelliteMessage;
 import io.mapsmessaging.network.protocol.impl.satellite.modem.device.messages.SendMessageState;
@@ -67,6 +68,7 @@ import java.util.*;
 import java.util.Queue;
 import java.util.concurrent.*;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
 
 import static io.mapsmessaging.logging.ServerLogMessages.*;
 
@@ -87,6 +89,9 @@ public class StoGiProtocol extends Protocol implements Consumer<Packet> {
   private final LocationParser locationParser;
   private final long locationPollInterval;
   private final long messagePoll;
+
+  private final int maxBufferSize;
+  private final int compressionThreshold;
 
   private ScheduledFuture<?> scheduledFuture;
   private Destination destination;
@@ -125,6 +130,8 @@ public class StoGiProtocol extends Protocol implements Consumer<Packet> {
     modem = new Modem(this, modemConfig.getModemResponseTimeout(), streamHandler);
 
     locationPollInterval = modemConfig.getLocationPollInterval();
+    maxBufferSize = modemConfig.getMaxBufferSize();
+    compressionThreshold = modemConfig.getCompressionCutoffSize();
 
     selectorTask = new SelectorTask(this, endPoint.getConfig().getEndPointConfig());
     endPoint.register(SelectionKey.OP_READ, selectorTask.getReadTask());
@@ -150,7 +157,10 @@ public class StoGiProtocol extends Protocol implements Consumer<Packet> {
 
   private void initialiseModem(long modemResponseTimeout) throws IOException {
     try {
-      String init = modem.initializeModem().get(modemResponseTimeout, TimeUnit.MILLISECONDS);
+      BaseModemProtocol init = modem.initializeModem().get(modemResponseTimeout, TimeUnit.MILLISECONDS);
+      if(init == null){
+        throw new IOException("Unable to detect modem version");
+      }
       String query = modem.queryModemInfo().get(modemResponseTimeout, TimeUnit.MILLISECONDS);
       String enable = modem.enableLocation().get(modemResponseTimeout, TimeUnit.MILLISECONDS);
     } catch (InterruptedException e) {
@@ -216,7 +226,7 @@ public class StoGiProtocol extends Protocol implements Consumer<Packet> {
 
     destinationName = scanForName(destinationName);
 
-    List<SatelliteMessage> messages = SatelliteMessageFactory.createMessages(destinationName, payload);
+    List<SatelliteMessage> messages = SatelliteMessageFactory.createMessages(destinationName, payload, maxBufferSize, compressionThreshold);
     messages.get(messages.size() - 1).setCompletionCallback(messageEvent.getCompletionTask());
     outboundQueue.addAll(messages);
   }

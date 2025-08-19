@@ -39,6 +39,8 @@ public class SatelliteConfig extends SatelliteConfigDTO implements Config {
     outboundNamespaceRoot = config.getProperty("outboundNamespaceRoot", "");
     outboundBroadcast = config.getProperty("outboundBroadcast", "");
     deviceInfoUpdateMinutes = config.getIntProperty("deviceInfoUpdateMinutes", 15);
+    maxBufferSize = config.getIntProperty("maxBufferSize", 4000);
+    compressionCutoffSize = config.getIntProperty("compressionCutoffSize", 128);
 
     if(pollInterval<10){
       pollInterval = 10;
@@ -99,7 +101,14 @@ public class SatelliteConfig extends SatelliteConfigDTO implements Config {
       if(deviceInfoUpdateMinutes != dto.getDeviceInfoUpdateMinutes()) {
         deviceInfoUpdateMinutes = dto.getDeviceInfoUpdateMinutes();
       }
-
+      if(maxBufferSize != dto.getMaxBufferSize()) {
+        maxBufferSize = dto.getMaxBufferSize();
+        changed = true;
+      }
+      if(compressionCutoffSize != dto.getCompressionCutoffSize()) {
+        compressionCutoffSize = dto.getCompressionCutoffSize();
+        changed = true;
+      }
     }
     return changed;
   }
@@ -118,6 +127,8 @@ public class SatelliteConfig extends SatelliteConfigDTO implements Config {
     properties.put("mailboxPassword", mailboxPassword);
     properties.put("namespaceRoot", namespace);
     properties.put("deviceInfoUpdateMinutes", deviceInfoUpdateMinutes);
+    properties.put("maxBufferSize", maxBufferSize);
+    properties.put("compressionCutoffSize", compressionCutoffSize);
     return properties;
   }
 }

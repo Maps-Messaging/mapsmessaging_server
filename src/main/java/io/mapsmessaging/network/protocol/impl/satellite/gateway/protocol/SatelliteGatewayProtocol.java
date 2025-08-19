@@ -60,6 +60,9 @@ public class SatelliteGatewayProtocol extends Protocol {
   private final SatelliteMessageRebuilder messageRebuilder;
   private final Session session;
   private final String namespacePath;
+  private final int maxBufferSize;
+  private final int compressionThreshold;
+
   private boolean closed;
 
   public SatelliteGatewayProtocol(@NonNull @NotNull EndPoint endPoint, @NotNull @NonNull ProtocolConfigDTO protocolConfig) throws LoginException, IOException {
@@ -67,6 +70,8 @@ public class SatelliteGatewayProtocol extends Protocol {
     String primeId = ((SatelliteEndPoint) endPoint).getTerminalInfo().getUniqueId();
     SatelliteConfigDTO config = (SatelliteConfigDTO) protocolConfig;
 
+    maxBufferSize = config.getMaxBufferSize();
+    compressionThreshold = config.getCompressionCutoffSize();
     closed = false;
     messageRebuilder = new SatelliteMessageRebuilder();
     SessionContextBuilder scb = new SessionContextBuilder(primeId, new ProtocolClientConnection(this));
@@ -153,7 +158,7 @@ public class SatelliteGatewayProtocol extends Protocol {
       destinationName = "/inbound";
     }
 
-    List<SatelliteMessage> satelliteMessages = SatelliteMessageFactory.createMessages(destinationName, messageEvent.getMessage().getOpaqueData());
+    List<SatelliteMessage> satelliteMessages = SatelliteMessageFactory.createMessages(destinationName, messageEvent.getMessage().getOpaqueData(), maxBufferSize, compressionThreshold);
     for (SatelliteMessage satelliteMessage : satelliteMessages) {
       byte[] tmp = satelliteMessage.packToSend();
       byte[] payload = new byte[tmp.length + 2];
@@ -186,8 +191,8 @@ public class SatelliteGatewayProtocol extends Protocol {
     byte[] raw = message.getPayload();
     byte sin = raw[0];
     byte min = raw[1];
-    byte[] tmp = new byte[raw.length - 1];
-    System.arraycopy(raw, 1, tmp, 0, tmp.length);
+    byte[] tmp = new byte[raw.length - 2];
+    System.arraycopy(raw, 2, tmp, 0, tmp.length);
     SatelliteMessage satelliteMessage = new SatelliteMessage(tmp);
     satelliteMessage = messageRebuilder.rebuild(satelliteMessage);
     if (satelliteMessage != null) {

@@ -21,7 +21,6 @@ package io.mapsmessaging.network.protocol.impl.satellite.protocol;
 
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
-import lombok.extern.slf4j.Slf4j;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -33,25 +32,18 @@ import java.util.zip.Inflater;
 
 import static io.mapsmessaging.logging.ServerLogMessages.*;
 
-@Slf4j
 public class SatelliteMessageFactory {
 
-  private static final int MAX_MESSAGE_SIZE = 4000;
-  private static final int MIN_COMPRESSED_MESSAGE_SIZE = 512;
   private static final Logger logger = LoggerFactory.getLogger(SatelliteMessageFactory.class);
 
   private SatelliteMessageFactory() {
   }
 
-  public static List<SatelliteMessage> createMessages(String namespace, byte[] payload) {
+  public static List<SatelliteMessage> createMessages(String namespace, byte[] payload, int maxMessageSize, int minCompressedMessageSize) {
     List<SatelliteMessage> messages = new ArrayList<>();
-    SatelliteMessage satelliteMessage = new SatelliteMessage(namespace, payload, 0, false);
-    messages.add(satelliteMessage);
-    return messages;
-/*
     boolean compressed = false;
 
-    if (payload.length > MIN_COMPRESSED_MESSAGE_SIZE) {
+    if (payload.length > minCompressedMessageSize && minCompressedMessageSize > 0) {
       byte[] payload1 = compress(payload);
       if (payload1.length < payload.length) {
         logger.log(STOGI_COMPRESS_MESSAGE, namespace, payload.length, payload1.length);
@@ -59,7 +51,7 @@ public class SatelliteMessageFactory {
         compressed = true;
       }
     }
-    int maxSize = MAX_MESSAGE_SIZE - namespace.length();
+    int maxSize = maxMessageSize - namespace.length();
 
     int totalChunks = ((payload.length + namespace.length()) + maxSize - 1) / maxSize;
 
@@ -79,8 +71,6 @@ public class SatelliteMessageFactory {
       logger.log(STOGI_SPLIT_MESSAGE, namespace, messages.size());
     }
     return messages;
-
- */
   }
 
   public static SatelliteMessage reconstructMessage(List<SatelliteMessage> messages) {

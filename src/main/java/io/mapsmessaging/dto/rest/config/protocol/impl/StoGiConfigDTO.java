@@ -50,4 +50,11 @@ public class StoGiConfigDTO extends ProtocolConfigDTO {
   @Schema(description = "If present, then the name of the topic to send modem statistics to")
   protected String modemStatsTopic;
 
+  @Schema(description = "maximum buffer size allowed by the satellite communications", example = "4000", defaultValue = "4000")
+  protected int maxBufferSize;
+
+  @Schema(description = "minimum sized buffer that will be compressed", example = "512", defaultValue = "256")
+  protected int compressionCutoffSize;
+
+
 }

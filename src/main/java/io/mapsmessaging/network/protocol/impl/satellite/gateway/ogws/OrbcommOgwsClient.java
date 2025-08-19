@@ -214,14 +214,10 @@ public class OrbcommOgwsClient implements SatelliteClient {
           lastMessageUtc = response.getNextFromUtc();
           for(ReturnMessage returnMessage: response.getMessages()){
             if(returnMessage.getPayload() == null) {
-              System.err.println("Received:: " + returnMessage);
               MessageData messageData = new MessageData();
               messageData.setUniqueId(returnMessage.getMobileId());
               messageData.setPayload(Base64.decode(returnMessage.getRawPayload()));
               incomingEvents.add(messageData);
-            }
-            else{
-              System.err.println("Received:: " + returnMessage.getPayload());
             }
           }
         }

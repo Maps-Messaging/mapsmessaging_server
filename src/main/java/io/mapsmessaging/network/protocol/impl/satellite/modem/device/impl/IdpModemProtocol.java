@@ -41,10 +41,16 @@ public class IdpModemProtocol extends BaseModemProtocol {
   }
 
   public CompletableFuture<List<SendMessageState>> listSentMessages() {
-    return modem.sendATCommand("AT%MGRS").thenApply(super::parseOutgoingMessageList);
+    return modem.sendATCommand("AT%MGRL").thenApply(super::parseOutgoingMessageList);
   }
 
   public CompletableFuture<Boolean> deleteSentMessages(String msgName) {
+    if(!msgName.startsWith("\"")){
+      msgName = "\"" + msgName;
+    }
+    if(!msgName.endsWith("\"")){
+      msgName = msgName + "\"";
+    }
     return modem.sendATCommand("AT%MGRD=" + msgName).thenApply(x -> true);
   }
   //endregion
