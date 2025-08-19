@@ -388,15 +388,6 @@
           <classifier>repository</classifier>
           <type>zip</type>
         </dependency>
-        <!-- https://mvnrepository.com/artifact/org.mlflow/mlflow-client -->
-        <dependency>
-          <groupId>org.mlflow</groupId>
-          <artifactId>mlflow-client</artifactId>
-          <version>3.2.0</version>
-        </dependency>
-
-
-
       </dependencies>
       <repositories>
         <repository>
@@ -588,14 +579,6 @@
           <artifactId>device_library</artifactId>
           <version>1.0.8</version>
         </dependency>
-
-        <!-- https://mvnrepository.com/artifact/org.mlflow/mlflow-client -->
-        <dependency>
-          <groupId>org.mlflow</groupId>
-          <artifactId>mlflow-client</artifactId>
-          <version>3.2.0</version>
-        </dependency>
-
       </dependencies>
 
     </profile>
