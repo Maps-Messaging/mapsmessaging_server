@@ -27,6 +27,7 @@ import io.mapsmessaging.dto.rest.config.protocol.impl.SatelliteConfigDTO;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.network.protocol.impl.satellite.gateway.io.SatelliteClient;
+import io.mapsmessaging.network.protocol.impl.satellite.gateway.io.StateManager;
 import io.mapsmessaging.network.protocol.impl.satellite.gateway.model.MessageData;
 import io.mapsmessaging.network.protocol.impl.satellite.gateway.model.RemoteDeviceInfo;
 import io.mapsmessaging.network.protocol.impl.satellite.gateway.ogws.data.*;
@@ -75,7 +76,9 @@ public class OrbcommOgwsClient implements SatelliteClient {
     this.httpClient = HttpClient.newBuilder()
         .connectTimeout(Duration.ofSeconds(config.getHttpRequestTimeout()))
         .build();
+    lastMessageUtc = StateManager.loadLastMessageUtc(clientId, clientSecret);
   }
+
 
   @Override
   public void close(){
@@ -214,22 +217,20 @@ public class OrbcommOgwsClient implements SatelliteClient {
           lastMessageUtc = response.getNextFromUtc();
           for(ReturnMessage returnMessage: response.getMessages()){
             if(returnMessage.getPayload() == null) {
-              System.err.println("Received:: " + returnMessage);
               MessageData messageData = new MessageData();
               messageData.setUniqueId(returnMessage.getMobileId());
               messageData.setPayload(Base64.decode(returnMessage.getRawPayload()));
               incomingEvents.add(messageData);
             }
-            else{
-              System.err.println("Received:: " + returnMessage.getPayload());
-            }
+          }
+          if(lastMessageUtc != null) {
+            StateManager.saveLastMessageUtc(clientId, clientSecret,lastMessageUtc);
           }
         }
       } else {
         logger.log(OGWS_FAILED_POLL, response != null ? response.getErrorId() : "<null error>");
       }
     } catch (Exception e) {
-      e.printStackTrace();
       logger.log(OGWS_REQUEST_FAILED, e);
     }
     return incomingEvents;

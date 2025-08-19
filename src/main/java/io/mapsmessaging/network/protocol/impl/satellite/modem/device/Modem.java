@@ -27,6 +27,7 @@ import io.mapsmessaging.network.protocol.impl.satellite.modem.device.impl.BaseMo
 import io.mapsmessaging.network.protocol.impl.satellite.modem.device.impl.IdpModemProtocol;
 import io.mapsmessaging.network.protocol.impl.satellite.modem.device.impl.OgxModemProtocol;
 import io.mapsmessaging.network.protocol.impl.satellite.modem.device.messages.IncomingMessageDetails;
+import io.mapsmessaging.network.protocol.impl.satellite.modem.device.messages.MessageNameGenerator;
 import io.mapsmessaging.network.protocol.impl.satellite.modem.device.messages.ModemSatelliteMessage;
 import io.mapsmessaging.network.protocol.impl.satellite.modem.device.messages.SendMessageState;
 import io.mapsmessaging.network.protocol.impl.satellite.modem.device.values.MessageFormat;
@@ -109,14 +110,18 @@ public class Modem {
     currentHandler.onData(packet);
   }
 
-  public CompletableFuture<String> initializeModem() {
+  public CompletableFuture<BaseModemProtocol> initializeModem() {
     return sendATCommand("ATE0;&W;I5").thenApply(response -> {
-      if (response.startsWith("8")) {
-        modemProtocol = new IdpModemProtocol(this);
-      } else {
-        modemProtocol = new OgxModemProtocol(this);
+      String[] lines = response.split(EOL);
+      for(String line : lines) {
+        line = line.trim();
+        if (line.startsWith("8")) {
+          modemProtocol = new IdpModemProtocol(this);
+        } else if (line.startsWith("10")) {
+          modemProtocol = new OgxModemProtocol(this);
+        }
       }
-      return response;
+      return modemProtocol;
     });
   }
 
@@ -200,12 +205,12 @@ public class Modem {
 
   public void sendMessage(int priority, int sin, int min, byte[] payload) {
     ModemSatelliteMessage modemSatelliteMessage = new ModemSatelliteMessage();
+    modemSatelliteMessage.setName(MessageNameGenerator.incrementString().trim());
     modemSatelliteMessage.setPriority(priority);
     modemSatelliteMessage.setPayload(payload);
     modemSatelliteMessage.setMin(min);
     modemSatelliteMessage.setSin(sin);
     modemSatelliteMessage.setFormat(MessageFormat.BASE64);
-
     modemProtocol.sendMessage(modemSatelliteMessage);
   }
   //endregion

@@ -36,7 +36,7 @@ public class OgxModemProtocol extends BaseModemProtocol {
 
   //region Outgoing message functions
   public CompletableFuture<List<SendMessageState>> listSentMessages() {
-    return modem.sendATCommand("AT%MGRS").thenApply(super::parseOutgoingMessageList);
+    return modem.sendATCommand("AT%MOQS").thenApply(super::parseOutgoingMessageList);
   }
 
   public void sendMessage(ModemSatelliteMessage modemSatelliteMessage) {

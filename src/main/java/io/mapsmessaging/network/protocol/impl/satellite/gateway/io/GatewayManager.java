@@ -36,7 +36,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
-import static io.mapsmessaging.logging.ServerLogMessages.*;
+import static io.mapsmessaging.logging.ServerLogMessages.OGWS_FAILED_AUTHENTICATION;
 
 public class GatewayManager {
 

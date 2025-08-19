@@ -21,7 +21,6 @@ package io.mapsmessaging.network.protocol.impl.satellite.modem.device.messages;
 
 import io.mapsmessaging.network.protocol.impl.satellite.modem.device.values.MessageFormat;
 import lombok.Data;
-import lombok.NoArgsConstructor;
 import lombok.ToString;
 
 import java.util.Arrays;
@@ -29,10 +28,9 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 @Data
 @ToString
-@NoArgsConstructor
 public class ModemSatelliteMessage {
   private static final AtomicInteger nextId = new AtomicInteger(0);
-  private String name = MessageNameGenerator.incrementString().trim();
+  private String name;
   private byte[] payload;
   private int sin;
   private int min;
@@ -41,8 +39,12 @@ public class ModemSatelliteMessage {
   private int messageId = getNextId();
   private String datetime;
 
+  public ModemSatelliteMessage() {
+
+  }
+
   public ModemSatelliteMessage(String line, boolean isOgx) {
-    if (line.startsWith("%MGFG:") || line.startsWith("%MTMG:")) {
+    if (line.startsWith("%MGFS:") || line.startsWith("%MTMG:")) {
       line = line.substring(6);
     }
 

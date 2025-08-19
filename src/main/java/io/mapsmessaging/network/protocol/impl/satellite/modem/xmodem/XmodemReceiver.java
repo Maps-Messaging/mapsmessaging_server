@@ -109,75 +109,108 @@ public final class XmodemReceiver {
 
     final long start = System.nanoTime();
     final ByteArrayOutputStream buffer = new ByteArrayOutputStream(Math.max(announcedLength, 128));
-    final int maxHandshakeTries = 15;
-    final int maxPerBlockRetries = 10;
 
+    RxState state = handshake(linkIn, linkOut, buffer, announcedLength, readTimeoutMs);
+    return receiveLoop(linkIn, linkOut, dst, buffer, announcedLength, expectedCrc32, readTimeoutMs, start, state);
+  }
+
+  private static final class RxState {
     int expectedBlock = 1;
     int totalBlocks = 0;
     int totalRetries = 0;
-    boolean started = false;
+  }
 
-    // Handshake loop: request CRC with 'C' until first frame
+  private RxState handshake(InputStream linkIn,
+                            OutputStream linkOut,
+                            ByteArrayOutputStream buffer,
+                            int announcedLength,
+                            int readTimeoutMs) throws IOException {
+    final int maxHandshakeTries = 15;
+    RxState s = new RxState();
+
+    boolean started = false;
     for (int tries = 0; !started && tries < maxHandshakeTries; tries++) {
       linkOut.write(CHAR_C);
       linkOut.flush();
+
       int b = readByteWithTimeout(linkIn, readTimeoutMs);
       if (b == SOH || b == STX) {
         started = true;
-        processBlock(linkIn, linkOut, buffer, announcedLength, b, expectedBlock);
-        expectedBlock = (expectedBlock + 1) & 0xFF;
-        if (expectedBlock == 0) expectedBlock = 1;
-        totalBlocks++;
+        processBlock(linkIn, linkOut, buffer, announcedLength, b, s.expectedBlock);
+        s.expectedBlock = nextExpected(s.expectedBlock);
+        s.totalBlocks++;
       } else if (b == EOT) {
         linkOut.write(ACK);
         linkOut.flush();
-        return finalizeAndWrite(dst, buffer, announcedLength, expectedCrc32, start, totalBlocks, totalRetries);
+        // Early EOT: no data; finalize happens in caller using zero counts
+        return s;
       } else if (b == CAN) {
-        // Expect double CAN; treat any CAN here as abort.
         throw new IOException("Sender cancelled (CAN)");
-      } // else ignore stray bytes/timeouts and loop
+      }
+      // else: ignore stray/timeout and continue
     }
-    if (!started) throw new IOException("XMODEM handshake failed (no SOH/STX/EOT)");
 
-    // Main receive loop
+    if (!started) throw new IOException("XMODEM handshake failed (no SOH/STX/EOT)");
+    return s;
+  }
+
+  private Result receiveLoop(InputStream linkIn,
+                             OutputStream linkOut,
+                             OutputStream dst,
+                             ByteArrayOutputStream buffer,
+                             int announcedLength,
+                             long expectedCrc32,
+                             int readTimeoutMs,
+                             long startNs,
+                             RxState s) throws IOException {
+
+    final int maxPerBlockRetries = 10;
+
     while (true) {
       int header = readByteWithTimeout(linkIn, readTimeoutMs);
+
       if (header == EOT) {
         linkOut.write(ACK);
         linkOut.flush();
-        return finalizeAndWrite(dst, buffer, announcedLength, expectedCrc32, start, totalBlocks, totalRetries);
-      } else if (header == SOH || header == STX) {
-        boolean delivered = false;
+        return finalizeAndWrite(dst, buffer, announcedLength, expectedCrc32, startNs, s.totalBlocks, s.totalRetries);
+      }
+
+      if (header == SOH || header == STX) {
         int perBlockRetries = 0;
-        while (!delivered) {
+        while (true) {
           try {
-            int wrote = processBlock(linkIn, linkOut, buffer, announcedLength, header, expectedBlock);
-            // If block number matched expected, counted as delivered
-            if (wrote >= 0) {
-              expectedBlock = (expectedBlock + 1) & 0xFF;
-              if (expectedBlock == 0) expectedBlock = 1;
-              totalBlocks++;
+            int wrote = processBlock(linkIn, linkOut, buffer, announcedLength, header, s.expectedBlock);
+            if (wrote >= 0) {            // delivered (not a duplicate)
+              s.expectedBlock = nextExpected(s.expectedBlock);
+              s.totalBlocks++;
             }
-            delivered = true; // either delivered or duplicate-acked inside processBlock
+            break;                       // delivered or duplicate handled
           } catch (RetryBlock e) {
-            perBlockRetries++;
-            totalRetries++;
-            if (perBlockRetries > maxPerBlockRetries) throw new IOException("Too many NAKs/timeouts on block " + expectedBlock);
+            if (++perBlockRetries > maxPerBlockRetries)
+              throw new IOException("Too many NAKs/timeouts on block " + s.expectedBlock);
+
+            s.totalRetries++;
             linkOut.write(NAK);
             linkOut.flush();
-            // Re-read header for the resent block
+
             header = readByteWithTimeout(linkIn, readTimeoutMs);
-            if (header != SOH && header != STX) throw new IOException("Expected SOH/STX on retry, got: " + header);
+            if (header != SOH && header != STX)
+              throw new IOException("Expected SOH/STX on retry, got: " + header);
           }
         }
-      } else if (header == CAN) {
-        throw new IOException("Sender cancelled (CAN)");
-      } else if (header < 0) {
-        throw new EOFException("Link closed");
-      } // else ignore stray bytes and continue
+        continue;
+      }
+
+      if (header == CAN) throw new IOException("Sender cancelled (CAN)");
+      if (header < 0) throw new EOFException("Link closed");
+      // else ignore stray bytes and continue
     }
   }
 
+  private int nextExpected(int current) {
+    int n = (current + 1) & 0xFF;
+    return (n == 0) ? 1 : n;
+  }
   /**
    * Reads one block; returns >=0 when delivered (bytes written or 0 if duplicate), throws RetryBlock to request NAK/resend.
    */

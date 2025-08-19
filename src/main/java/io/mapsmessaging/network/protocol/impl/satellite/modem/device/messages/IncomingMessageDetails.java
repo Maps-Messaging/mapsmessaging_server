@@ -29,29 +29,39 @@ public class IncomingMessageDetails {
   private float messageId;
   private int sin;
   private int min;
+  private int priority;
   private int bytes;
   private int bytesReceived;
+  private int state;
+  private boolean closed;
+  private boolean completed;
   private String dateTime;
 
   public IncomingMessageDetails(String line, boolean isOgx) {
-
     String[] parts = line.split(",");
     if (isOgx) {
-      id = parts[1];
       messageId = Float.NaN;
       sin = -1;
-      min = Integer.parseInt(parts[0]);
+      min = -1;
+
+      // parts[0] == type 1 < 1024 or 2 >= 1024, we ignore this
+      id = parts[1];
       dateTime = parts[2];
-      bytes = Integer.parseInt(parts[5]);  // Same
+      state = Integer.parseInt(parts[3]);
+      closed = parts[4].equals("1");
+      bytes = Integer.parseInt(parts[5]);
       bytesReceived = bytes;
+      completed = state == 5;
     } else {
       id = parts[0];
       messageId = Float.parseFloat(parts[1]);
-      sin = Integer.parseInt(parts[2]);
-      min = Integer.parseInt(parts[3]);
-      bytes = Integer.parseInt(parts[4]);
-      bytesReceived = Integer.parseInt(parts[5]);
+      priority = Integer.parseInt(parts[2]);
+      sin = Integer.parseInt(parts[3]);
+      state = Integer.parseInt(parts[4]);
+      bytes = Integer.parseInt(parts[5]);
+      bytesReceived = Integer.parseInt(parts[6]);
       dateTime = "";
+      completed = state == 3;
     }
   }
 }

@@ -73,7 +73,9 @@ public abstract class BaseModemProtocol {
       line = line.trim();
       if (!line.isEmpty() &&
           !line.equalsIgnoreCase(OK) &&
-          !line.equalsIgnoreCase(ERROR)) {
+          !line.equalsIgnoreCase(ERROR) &&
+          !line.equalsIgnoreCase("%MGRL:") &&
+          !line.equalsIgnoreCase("%MOQS:")) {
         states.add(new SendMessageState(line, isOgx));
       }
     }

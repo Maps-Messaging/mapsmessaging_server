@@ -21,7 +21,6 @@ package io.mapsmessaging.network.protocol.impl.satellite.gateway.io;
 
 import io.mapsmessaging.network.protocol.impl.satellite.gateway.model.MessageData;
 import io.mapsmessaging.network.protocol.impl.satellite.gateway.model.RemoteDeviceInfo;
-import io.mapsmessaging.network.protocol.impl.satellite.gateway.ogws.data.ReturnMessage;
 
 import javax.security.auth.login.LoginException;
 import java.io.IOException;

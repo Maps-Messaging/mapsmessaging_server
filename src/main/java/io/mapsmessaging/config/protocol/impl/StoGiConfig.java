@@ -36,6 +36,8 @@ public class StoGiConfig extends StoGiConfigDTO implements Config {
     modemResponseTimeout = config.getLongProperty("modemResponseTimeout", 5000);
     locationPollInterval = config.getLongProperty("locationPollInterval", 0);
     modemStatsTopic = config.getProperty("modemStatsTopic", "");
+    maxBufferSize = config.getIntProperty("maxBufferSize", 4000);
+    compressionCutoffSize = config.getIntProperty("compressionCutoffSize", 128);
   }
 
   @Override
@@ -64,6 +66,14 @@ public class StoGiConfig extends StoGiConfigDTO implements Config {
         locationPollInterval = orbCommConfig.getLocationPollInterval();
         result = true;
       }
+      if(maxBufferSize != orbCommConfig.getMaxBufferSize()) {
+        maxBufferSize = orbCommConfig.getMaxBufferSize();
+        result = true;
+      }
+      if(compressionCutoffSize != orbCommConfig.getCompressionCutoffSize()) {
+        compressionCutoffSize = orbCommConfig.getCompressionCutoffSize();
+        result = true;
+      }
     }
     return result;
   }
@@ -79,6 +89,8 @@ public class StoGiConfig extends StoGiConfigDTO implements Config {
     properties.put("messagePollInterval", messagePollInterval);
     properties.put("modemResponseTimeout", modemResponseTimeout);
     properties.put("locationPollInterval", getLocationPollInterval());
+    properties.put("maxBufferSize", maxBufferSize);
+    properties.put("compressionCutoffSize", compressionCutoffSize);
     return properties;
   }
 }

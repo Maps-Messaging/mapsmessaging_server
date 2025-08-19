@@ -43,8 +43,8 @@ public final class InmarsatSession {
   private final Logger logger = LoggerFactory.getLogger(InmarsatSession.class);
 
 
-  private final String clientId;
-  private final String clientSecret;
+  protected final String clientId;
+  protected final String clientSecret;
   private final String mailboxId;
   private final String mailboxPassword;
 
