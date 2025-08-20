@@ -33,8 +33,8 @@ public class SatelliteConfig extends SatelliteConfigDTO implements Config {
     ProtocolConfigFactory.unpack(config, this);
 
     baseUrl = config.getProperty("baseUrl", "");
-    incomingPollInterval = config.getIntProperty("incomingPollInterval", 15);
-    outgoingPollInterval = config.getIntProperty("outgoingPollInterval", 60);
+    incomingMessagePollInterval = config.getIntProperty("incomingMessagePollInterval", 15);
+    outgoingMessagePollInterval = config.getIntProperty("outgoingPollInterval", 60);
     httpRequestTimeout = config.getIntProperty("httpRequestTimeoutSec", 30);
     maxInflightEventsPerDevice = config.getIntProperty("maxInflightEventsPerDevice", 2);
     outboundNamespaceRoot = config.getProperty("outboundNamespaceRoot", "");
@@ -43,12 +43,13 @@ public class SatelliteConfig extends SatelliteConfigDTO implements Config {
     maxBufferSize = config.getIntProperty("maxBufferSize", 4000);
     compressionCutoffSize = config.getIntProperty("compressionCutoffSize", 128);
     messageLifeTimeInMinutes = config.getIntProperty("messageLifeTimeInMinutes", 10);
+    sharedSecret = config.getProperty("sharedSecret", "");
 
-    if(incomingPollInterval <10){
-      incomingPollInterval = 10;
+    if(incomingMessagePollInterval <10){
+      incomingMessagePollInterval = 10;
     }
-    if(outgoingPollInterval <15){
-      outgoingPollInterval = 15;
+    if(outgoingMessagePollInterval <15){
+      outgoingMessagePollInterval = 15;
     }
 
     if(deviceInfoUpdateMinutes < 10){
@@ -72,12 +73,12 @@ public class SatelliteConfig extends SatelliteConfigDTO implements Config {
         changed = true;
       }
 
-      if (incomingPollInterval != dto.getIncomingPollInterval()) {
-        incomingPollInterval = dto.getIncomingPollInterval();
+      if (incomingMessagePollInterval != dto.getIncomingMessagePollInterval()) {
+        incomingMessagePollInterval = dto.getIncomingMessagePollInterval();
         changed = true;
       }
-      if (outgoingPollInterval != dto.getOutgoingPollInterval()) {
-        outgoingPollInterval = dto.getOutgoingPollInterval();
+      if (outgoingMessagePollInterval != dto.getOutgoingMessagePollInterval()) {
+        outgoingMessagePollInterval = dto.getOutgoingMessagePollInterval();
         changed = true;
       }
       if (httpRequestTimeout != dto.getHttpRequestTimeout()) {
@@ -123,6 +124,10 @@ public class SatelliteConfig extends SatelliteConfigDTO implements Config {
         messageLifeTimeInMinutes = dto.getMessageLifeTimeInMinutes();
         changed = true;
       }
+      if(!sharedSecret.equals(dto.getSharedSecret())) {
+        sharedSecret = dto.getSharedSecret();
+        changed = true;
+      }
     }
     return changed;
   }
@@ -132,8 +137,8 @@ public class SatelliteConfig extends SatelliteConfigDTO implements Config {
     ConfigurationProperties properties = new ConfigurationProperties();
     ProtocolConfigFactory.pack(properties, this);
     properties.put("baseUrl", baseUrl);
-    properties.put("incomingPollInterval", incomingPollInterval);
-    properties.put("outgoingPollInterval", outgoingPollInterval);
+    properties.put("incomingMessagePollInterval", incomingMessagePollInterval);
+    properties.put("outgoingMessagePollInterval", outgoingMessagePollInterval);
     properties.put("httpRequestTimeoutSec", httpRequestTimeout);
     properties.put("maxInflightEventsPerDevice", maxInflightEventsPerDevice);
     properties.put("outboundNamespaceRoot", outboundNamespaceRoot);
@@ -145,6 +150,7 @@ public class SatelliteConfig extends SatelliteConfigDTO implements Config {
     properties.put("maxBufferSize", maxBufferSize);
     properties.put("compressionCutoffSize", compressionCutoffSize);
     properties.put("messageLifeTimeInMinutes", messageLifeTimeInMinutes);
+    properties.put("sharedSecret", sharedSecret);
     return properties;
   }
 }

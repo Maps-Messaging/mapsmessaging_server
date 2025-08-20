@@ -55,7 +55,7 @@ public class GatewayManager {
 
   public GatewayManager(SatelliteConfigDTO satelliteConfigDTO, IncomingMessageHandler handler) {
     this.satelliteClient = ClientFactory.createSatelliteClient(satelliteConfigDTO);
-    this.pollInterval = satelliteConfigDTO.getIncomingPollInterval();
+    this.pollInterval = (int)satelliteConfigDTO.getIncomingMessagePollInterval();
     this.handler = handler;
     authenticated = false;
     knownTerminals = new ConcurrentHashMap<>();

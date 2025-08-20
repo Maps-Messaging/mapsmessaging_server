@@ -87,6 +87,7 @@ public class StoGiProtocol extends Protocol implements Consumer<Packet> {
   private final long outgoingMessagePollInterval;
   private final AtomicReference<Map<String, List<byte[]>>> pendingMessages;
   private final int messageLifeTime;
+  private final CipherManager cipherManager;
 
   private final int maxBufferSize;
   private final int compressionThreshold;
@@ -135,6 +136,12 @@ public class StoGiProtocol extends Protocol implements Consumer<Packet> {
     messageLifeTime = modemConfig.getMessageLifeTimeInMinutes();
     modem = new Modem(this, modemConfig.getModemResponseTimeout(), streamHandler);
 
+    if(!modemConfig.getSharedSecret().trim().isEmpty()) {
+      cipherManager = new CipherManager(modemConfig.getSharedSecret().getBytes());
+    }
+    else{
+      cipherManager = null;
+    }
     locationPollInterval = modemConfig.getLocationPollInterval() * 1000;
     maxBufferSize = modemConfig.getMaxBufferSize();
     compressionThreshold = modemConfig.getCompressionCutoffSize();
@@ -389,7 +396,7 @@ public class StoGiProtocol extends Protocol implements Consumer<Packet> {
       lastOutgoingMessagePollInterval = System.currentTimeMillis();
       if(currentList.isEmpty()){
         Map<String, List<byte[]>> replacement = this.pendingMessages.getAndSet(new LinkedHashMap<>());
-        MessageQueuePacker.Packed packedQueue = MessageQueuePacker.pack(replacement, compressionThreshold);
+        MessageQueuePacker.Packed packedQueue = MessageQueuePacker.pack(replacement, compressionThreshold, cipherManager);
         currentList.addAll(SatelliteMessageFactory.createMessages(currentStreamId,  packedQueue.data(), maxBufferSize, packedQueue.compressed()));
         currentStreamId++;
       }
@@ -443,7 +450,7 @@ public class StoGiProtocol extends Protocol implements Consumer<Packet> {
         if (satelliteMessage != null) {
           logger.log(STOGI_PROCESSING_INBOUND_EVENT, satelliteMessage.getPacketNumber());
           try {
-            Map<String, List<byte[]>> receivedEventMap = MessageQueueUnpacker.unpack(satelliteMessage.getMessage(), satelliteMessage.isCompressed());
+            Map<String, List<byte[]>> receivedEventMap = MessageQueueUnpacker.unpack(satelliteMessage.getMessage(), satelliteMessage.isCompressed(), cipherManager);
             publishIncomingMap(receivedEventMap);
           } catch (Throwable e) {
             // ToDo Log

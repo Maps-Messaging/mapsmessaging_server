@@ -34,20 +34,31 @@ public final class MessageQueuePacker {
 
   public record Packed(byte[] data, boolean compressed) {}
 
-  public static Packed pack(Map<String, List<byte[]>> queuedMessages, int minCompressSize) {
-    byte[] uncompressedFrame = convertToByteArray(queuedMessages);
-    if (uncompressedFrame.length >= minCompressSize) {
-      byte[] compressedFrame = null;
+  public static Packed pack(Map<String, List<byte[]>> queuedMessages, int minCompressSize, CipherManager cipherManager) {
+    byte[] buffer = convertToByteArray(queuedMessages);
+    byte[] resultant = compress(buffer, minCompressSize);
+
+    boolean compressed = resultant != buffer; // it will be the same object or not
+
+    // Encrypt post zip
+    if(cipherManager != null) {
+      resultant = cipherManager.encrypt(resultant);
+    }
+    return new Packed(resultant, compressed);
+  }
+
+  private static byte[] compress(byte[] buffer, int minCompressSize) {
+    if (buffer.length >= minCompressSize) {
       try {
-        compressedFrame = deflate(uncompressedFrame);
+        byte[] compressedFrame = deflate(buffer);
+        if (buffer.length > compressedFrame.length) {
+          buffer = compressedFrame;
+        }
       } catch (IOException e) {
-        compressedFrame = uncompressedFrame;
-      }
-      if (compressedFrame.length < uncompressedFrame.length) {
-        return new Packed(compressedFrame, true);
+        // ignore
       }
     }
-    return new Packed(uncompressedFrame, false);
+    return buffer;
   }
 
   private static byte[] convertToByteArray(Map<String, List<byte[]>> queuedMessages) {

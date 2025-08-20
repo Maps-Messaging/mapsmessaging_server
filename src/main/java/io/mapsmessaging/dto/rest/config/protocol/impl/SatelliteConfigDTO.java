@@ -29,16 +29,10 @@ import lombok.NoArgsConstructor;
 @EqualsAndHashCode(callSuper = true)
 @NoArgsConstructor
 @Schema(description = "Base Satellite Configuration DTO")
-public class SatelliteConfigDTO extends ProtocolConfigDTO {
+public class SatelliteConfigDTO extends BaseSatelliteConfigDTO {
 
   @Schema(description = "URL of the server")
   protected String baseUrl;
-
-  @Schema(description = "Interval between polling for incoming messages in seconds", example = "15", defaultValue = "10", minimum = "10")
-  protected int incomingPollInterval;
-
-  @Schema(description = "Interval between polling for outgoing messages in seconds", example = "120", defaultValue = "60", minimum = "10")
-  protected int outgoingPollInterval;
 
   @Schema(description = "HTTP Request time out in seconds")
   protected int httpRequestTimeout;
@@ -64,12 +58,4 @@ public class SatelliteConfigDTO extends ProtocolConfigDTO {
   @Schema(description = "Device Info update time in minutes")
   protected int deviceInfoUpdateMinutes;
 
-  @Schema(description = "maximum buffer size allowed by the satellite communications", example = "4000", defaultValue = "4000")
-  protected int maxBufferSize;
-
-  @Schema(description = "minimum sized buffer that will be compressed", example = "512", defaultValue = "256")
-  protected int compressionCutoffSize;
-
-  @Schema(description = "life time of message in minutes", example = "5", defaultValue = "10")
-  protected int messageLifeTimeInMinutes;
 }

@@ -65,6 +65,7 @@ public class SatelliteGatewayProtocol extends Protocol {
   private final int compressionThreshold;
   private final AtomicReference<Map<String, List<byte[]>>> pendingMessages;
   private final long outgoingPollInterval;
+  private final CipherManager cipherManager;
 
   private ScheduledFuture<?> scheduledFuture;
   private boolean closed;
@@ -76,7 +77,14 @@ public class SatelliteGatewayProtocol extends Protocol {
     pendingMessages.set(new LinkedHashMap<>());
     String primeId = ((SatelliteEndPoint) endPoint).getTerminalInfo().getUniqueId();
     SatelliteConfigDTO config = (SatelliteConfigDTO) protocolConfig;
-    outgoingPollInterval = config.getOutgoingPollInterval();
+
+    if(!config.getSharedSecret().trim().isEmpty()) {
+      cipherManager = new CipherManager(config.getSharedSecret().getBytes());
+    }
+    else{
+      cipherManager = null;
+    }
+    outgoingPollInterval = config.getOutgoingMessagePollInterval();
     maxBufferSize = config.getMaxBufferSize();
     compressionThreshold = config.getCompressionCutoffSize();
     closed = false;
@@ -201,7 +209,7 @@ public class SatelliteGatewayProtocol extends Protocol {
     try {
       Map<String, List<byte[]>> replacement = pendingMessages.getAndSet(new LinkedHashMap<>());
       if(!replacement.isEmpty()) {
-        MessageQueuePacker.Packed packedQueue = MessageQueuePacker.pack(replacement, compressionThreshold);
+        MessageQueuePacker.Packed packedQueue = MessageQueuePacker.pack(replacement, compressionThreshold, cipherManager);
         List<SatelliteMessage> toSend = SatelliteMessageFactory.createMessages(currentStreamId, packedQueue.data(), maxBufferSize, packedQueue.compressed());
         int sin = (currentStreamId &0x7f) | 0x80;
         int idx =0;
@@ -246,7 +254,7 @@ public class SatelliteGatewayProtocol extends Protocol {
     satelliteMessage = messageRebuilder.rebuild(satelliteMessage);
     if (satelliteMessage != null) {
       try {
-        Map<String, List<byte[]>> receivedEventMap = MessageQueueUnpacker.unpack(satelliteMessage.getMessage(), satelliteMessage.isCompressed());
+        Map<String, List<byte[]>> receivedEventMap = MessageQueueUnpacker.unpack(satelliteMessage.getMessage(), satelliteMessage.isCompressed(), cipherManager);
         for(Map.Entry<String, List<byte[]>> entry : receivedEventMap.entrySet()){
           publishEvents(entry.getKey(), entry.getValue());
         }

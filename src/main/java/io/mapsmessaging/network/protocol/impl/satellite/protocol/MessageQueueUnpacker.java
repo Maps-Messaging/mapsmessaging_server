@@ -31,9 +31,15 @@ public final class MessageQueueUnpacker {
 
   private MessageQueueUnpacker() {}
 
-  public static Map<String, List<byte[]>> unpack(byte[] data, boolean compressed) throws IOException {
+  public static Map<String, List<byte[]>> unpack(byte[] data, boolean compressed, CipherManager cipherManager) throws IOException {
+    // Decrypt before we decompress
+    if(cipherManager != null){
+      data = cipherManager.decrypt(data);
+    }
     byte[] rawBuffer = compressed ? inflate(data) : data;
     if (rawBuffer == null || rawBuffer.length < 2) return Map.of();
+
+    // Decrypt post unzip
 
     ByteBuffer frameBuffer = ByteBuffer.wrap(rawBuffer);
     if (frameBuffer.remaining() < 2) return Map.of();
