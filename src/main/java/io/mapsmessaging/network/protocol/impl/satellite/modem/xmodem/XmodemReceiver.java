@@ -16,83 +16,11 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-
 package io.mapsmessaging.network.protocol.impl.satellite.modem.xmodem;
 
 import java.io.*;
 
-public final class XmodemReceiver {
-
-  // Control bytes
-  private static final int SOH = 0x01;   // 128-byte block
-  private static final int STX = 0x02;   // 1024-byte block
-  private static final int EOT = 0x04;
-  private static final int ACK = 0x06;
-  private static final int NAK = 0x15;
-  private static final int CAN = 0x18;
-  private static final int CHAR_C = 0x43; // 'C'
-
-  private static int readByteWithTimeout(InputStream in, int timeoutMs) throws IOException {
-    long end = System.nanoTime() + timeoutMs * 1_000_000L;
-    while (true) {
-      if (in.available() > 0) {
-        int b = in.read();
-        if (b < 0) throw new EOFException("Link closed");
-        return b & 0xFF;
-      }
-      if (System.nanoTime() >= end) return -1;
-      try {
-        Thread.sleep(5);
-      } catch (InterruptedException ie) {
-        Thread.currentThread().interrupt();
-        throw new InterruptedIOException();
-      }
-    }
-  }
-
-  private static int readU8(InputStream in) throws IOException {
-    int b = in.read();
-    if (b < 0) throw new EOFException("Link closed");
-    return b & 0xFF;
-  }
-
-  private static byte[] readFully(InputStream in, int len) throws IOException {
-    byte[] buf = new byte[len];
-    int off = 0;
-    while (off < len) {
-      int r = in.read(buf, off, len - off);
-      if (r < 0) throw new EOFException("Link closed");
-      off += r;
-    }
-    return buf;
-  }
-
-  // CRC-16/XMODEM: poly 0x1021, init 0x0000, no refin/refout, no xorout
-  private static int crc16Xmodem(byte[] data, int off, int len) {
-    int crc = 0x0000;
-    for (int i = 0; i < len; i++) {
-      crc ^= (data[off + i] & 0xFF) << 8;
-      for (int b = 0; b < 8; b++) {
-        if ((crc & 0x8000) != 0) crc = (crc << 1) ^ 0x1021;
-        else crc <<= 1;
-        crc &= 0xFFFF;
-      }
-    }
-    return crc & 0xFFFF;
-  }
-
-  // CRC-32/MPEG-2 (poly 0x04C11DB7, init 0xFFFFFFFF, refin=false, refout=false, xorout=0)
-  static long crc32Mpeg2(byte[] data, int len) {
-    int crc = 0xFFFFFFFF;
-    for (int i = 0; i < len; i++) {
-      crc ^= (data[i] & 0xFF) << 24;
-      for (int b = 0; b < 8; b++) {
-        crc = ((crc & 0x80000000) != 0) ? (crc << 1) ^ 0x04C11DB7 : (crc << 1);
-      }
-      crc &= 0xFFFFFFFF;
-    }
-    return crc; // already no xorout
-  }
+public class XmodemReceiver extends Xmodem {
 
   /**
    * Receive one XMODEM transfer in CRC mode.
@@ -100,7 +28,7 @@ public final class XmodemReceiver {
    * - Writes exactly announcedLength bytes to dst (truncates any 0x1A padding).
    * - If expectedCrc32 >= 0, verifies CRC32 over the announcedLength bytes.
    */
-  public Result receive(InputStream linkIn,
+  public ReceiverResult receive(InputStream linkIn,
                         OutputStream linkOut,
                         OutputStream dst,
                         int announcedLength,
@@ -112,12 +40,6 @@ public final class XmodemReceiver {
 
     RxState state = handshake(linkIn, linkOut, buffer, announcedLength, readTimeoutMs);
     return receiveLoop(linkIn, linkOut, dst, buffer, announcedLength, expectedCrc32, readTimeoutMs, start, state);
-  }
-
-  private static final class RxState {
-    int expectedBlock = 1;
-    int totalBlocks = 0;
-    int totalRetries = 0;
   }
 
   private RxState handshake(InputStream linkIn,
@@ -142,19 +64,17 @@ public final class XmodemReceiver {
       } else if (b == EOT) {
         linkOut.write(ACK);
         linkOut.flush();
-        // Early EOT: no data; finalize happens in caller using zero counts
-        return s;
+        return s; // early EOT
       } else if (b == CAN) {
         throw new IOException("Sender cancelled (CAN)");
       }
-      // else: ignore stray/timeout and continue
     }
 
     if (!started) throw new IOException("XMODEM handshake failed (no SOH/STX/EOT)");
     return s;
   }
 
-  private Result receiveLoop(InputStream linkIn,
+  private ReceiverResult receiveLoop(InputStream linkIn,
                              OutputStream linkOut,
                              OutputStream dst,
                              ByteArrayOutputStream buffer,
@@ -180,11 +100,11 @@ public final class XmodemReceiver {
         while (true) {
           try {
             int wrote = processBlock(linkIn, linkOut, buffer, announcedLength, header, s.expectedBlock);
-            if (wrote >= 0) {            // delivered (not a duplicate)
+            if (wrote >= 0) {
               s.expectedBlock = nextExpected(s.expectedBlock);
               s.totalBlocks++;
             }
-            break;                       // delivered or duplicate handled
+            break;
           } catch (RetryBlock e) {
             if (++perBlockRetries > maxPerBlockRetries)
               throw new IOException("Too many NAKs/timeouts on block " + s.expectedBlock);
@@ -203,17 +123,10 @@ public final class XmodemReceiver {
 
       if (header == CAN) throw new IOException("Sender cancelled (CAN)");
       if (header < 0) throw new EOFException("Link closed");
-      // else ignore stray bytes and continue
     }
   }
 
-  private int nextExpected(int current) {
-    int n = (current + 1) & 0xFF;
-    return (n == 0) ? 1 : n;
-  }
-  /**
-   * Reads one block; returns >=0 when delivered (bytes written or 0 if duplicate), throws RetryBlock to request NAK/resend.
-   */
+  /** Reads one block; returns >=0 when delivered (bytes written or 0 if duplicate), throws RetryBlock to request NAK/resend. */
   private int processBlock(InputStream in,
                            OutputStream out,
                            ByteArrayOutputStream buf,
@@ -237,7 +150,6 @@ public final class XmodemReceiver {
     int expected = expectedBlock & 0xFF;
     int last = ((expected - 2) & 0xFF) + 1; // previous delivered block in 1..255 space
     if (blk == expected) {
-      // deliver (but cap to announced length to avoid padding spill)
       int remaining = announcedLength - buf.size();
       int toWrite = Math.max(0, Math.min(remaining, data.length));
       if (toWrite > 0) buf.write(data, 0, toWrite);
@@ -245,17 +157,15 @@ public final class XmodemReceiver {
       out.flush();
       return toWrite;
     } else if (blk == last) {
-      // duplicate of last delivered; ACK again, do not re-deliver
       out.write(ACK);
       out.flush();
       return 0;
     } else {
-      // unexpected block number
       throw new RetryBlock("Unexpected block " + blk + " (expected " + expected + ")");
     }
   }
 
-  private Result finalizeAndWrite(OutputStream dst,
+  private ReceiverResult finalizeAndWrite(OutputStream dst,
                                   ByteArrayOutputStream buf,
                                   int announcedLength,
                                   long expectedCrc32,
@@ -265,7 +175,6 @@ public final class XmodemReceiver {
 
     byte[] all = buf.toByteArray();
     if (all.length < announcedLength) throw new IOException("Transfer ended early: got " + all.length + " < " + announcedLength);
-    // Trim to announced length (drop any 0x1A padding)
     dst.write(all, 0, announcedLength);
     dst.flush();
     if (expectedCrc32 >= 0) {
@@ -274,25 +183,11 @@ public final class XmodemReceiver {
       if (got != exp) throw new IOException(String.format("CRC32 mismatch: got 0x%08X expected 0x%08X", got, exp));
     }
     long durMs = (System.nanoTime() - startNano) / 1_000_000L;
-    return new Result(totalBlocks, totalRetries, durMs);
+    return new ReceiverResult(totalBlocks, totalRetries, durMs);
   }
 
-  public static class Result {
-    public final int blocks;
-    public final int retries;
-    public final long durationMs;
-
-    public Result(int blocks, int retries, long durationMs) {
-      this.blocks = blocks;
-      this.retries = retries;
-      this.durationMs = durationMs;
-    }
-  }
 
   private static final class RetryBlock extends IOException {
-    RetryBlock(String m) {
-      super(m);
-    }
+    RetryBlock(String m) { super(m); }
   }
-
 }

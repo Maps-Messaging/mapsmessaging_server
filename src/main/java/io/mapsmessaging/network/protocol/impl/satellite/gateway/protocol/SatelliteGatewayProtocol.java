@@ -192,10 +192,6 @@ public class SatelliteGatewayProtocol extends Protocol {
     Map<String, List<byte[]>> pending = pendingMessages.get();
     List<byte[]> list =pending.computeIfAbsent(destinationName, key -> new ArrayList<>());
     list.add(payload);
-    while(list.size() > 1){
-      list.remove(0);
-    }
-
     if(messageEvent.getCompletionTask() != null) {
       messageEvent.getCompletionTask().run();
     }
