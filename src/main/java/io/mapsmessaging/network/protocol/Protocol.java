@@ -54,6 +54,8 @@ public abstract class Protocol implements SelectorCallback, MessageListener, Tim
 
   @Getter
   protected final Map<String, Transformer> destinationTransformerMap;
+  protected final Map<String, String> topicNameMapping;
+
 
   @Getter
   protected final Map<String, ParserExecutor> parserLookup;
@@ -82,6 +84,7 @@ public abstract class Protocol implements SelectorCallback, MessageListener, Tim
     completed = false;
     destinationTransformerMap = new ConcurrentHashMap<>();
     parserLookup = new ConcurrentHashMap<>();
+    topicNameMapping = new ConcurrentHashMap<>();
     endPoint.setBoundProtocol(this);
   }
 
@@ -98,6 +101,7 @@ public abstract class Protocol implements SelectorCallback, MessageListener, Tim
     completed = false;
     destinationTransformerMap = new ConcurrentHashMap<>();
     parserLookup = new ConcurrentHashMap<>();
+    topicNameMapping = new ConcurrentHashMap<>();
     endPoint.setBoundProtocol(this);
   }
 
@@ -230,5 +234,20 @@ public abstract class Protocol implements SelectorCallback, MessageListener, Tim
     }
     dto.setSelectorMapping(parseMap);
   }
+
+
+  protected String scanForName(String destinationName) {
+    for (Map.Entry<String, String> entry : topicNameMapping.entrySet()) {
+      int index = entry.getKey().indexOf("#");
+      if (index > 0) {
+        String sub = entry.getKey().substring(0, index);
+        if (destinationName.startsWith(sub)) {
+          destinationName = entry.getValue() + destinationName.substring(sub.length());
+        }
+      }
+    }
+    return destinationName;
+  }
+
 
 }

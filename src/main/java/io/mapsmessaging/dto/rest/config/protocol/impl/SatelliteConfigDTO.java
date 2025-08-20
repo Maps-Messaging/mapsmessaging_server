@@ -34,8 +34,11 @@ public class SatelliteConfigDTO extends ProtocolConfigDTO {
   @Schema(description = "URL of the server")
   protected String baseUrl;
 
-  @Schema(description = "Interval between polling for incoming messages")
-  protected int pollInterval;
+  @Schema(description = "Interval between polling for incoming messages in seconds", example = "15", defaultValue = "10", minimum = "10")
+  protected int incomingPollInterval;
+
+  @Schema(description = "Interval between polling for outgoing messages in seconds", example = "120", defaultValue = "60", minimum = "10")
+  protected int outgoingPollInterval;
 
   @Schema(description = "HTTP Request time out in seconds")
   protected int httpRequestTimeout;
@@ -66,4 +69,7 @@ public class SatelliteConfigDTO extends ProtocolConfigDTO {
 
   @Schema(description = "minimum sized buffer that will be compressed", example = "512", defaultValue = "256")
   protected int compressionCutoffSize;
+
+  @Schema(description = "life time of message in minutes", example = "5", defaultValue = "10")
+  protected int messageLifeTimeInMinutes;
 }

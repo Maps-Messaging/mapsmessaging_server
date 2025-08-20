@@ -36,25 +36,26 @@ import io.mapsmessaging.network.io.Packet;
 import io.mapsmessaging.network.protocol.Protocol;
 import io.mapsmessaging.network.protocol.impl.satellite.gateway.io.SatelliteEndPoint;
 import io.mapsmessaging.network.protocol.impl.satellite.gateway.model.MessageData;
-import io.mapsmessaging.network.protocol.impl.satellite.protocol.SatelliteMessage;
-import io.mapsmessaging.network.protocol.impl.satellite.protocol.SatelliteMessageFactory;
-import io.mapsmessaging.network.protocol.impl.satellite.protocol.SatelliteMessageRebuilder;
+import io.mapsmessaging.network.protocol.impl.satellite.protocol.*;
 import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
 
 import javax.security.auth.Subject;
 import javax.security.auth.login.LoginException;
 import java.io.IOException;
-import java.util.List;
-import java.util.Random;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
+import java.util.*;
+import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static io.mapsmessaging.logging.ServerLogMessages.OGWS_FAILED_TO_SAVE_MESSAGE;
 
 
 public class SatelliteGatewayProtocol extends Protocol {
+
+  private static final ExecutorService existingPool = Executors.newFixedThreadPool(4);
+
+  private static final ScheduledExecutorService scheduler =
+      new ScheduledThreadPoolExecutor(4, ((ThreadPoolExecutor) existingPool).getThreadFactory());
 
   private final Logger logger = LoggerFactory.getLogger(SatelliteGatewayProtocol.class);
   private final SatelliteMessageRebuilder messageRebuilder;
@@ -62,14 +63,20 @@ public class SatelliteGatewayProtocol extends Protocol {
   private final String namespacePath;
   private final int maxBufferSize;
   private final int compressionThreshold;
+  private final AtomicReference<Map<String, List<byte[]>>> pendingMessages;
+  private final long outgoingPollInterval;
 
+  private ScheduledFuture<?> scheduledFuture;
   private boolean closed;
+  private int currentStreamId =0;
 
   public SatelliteGatewayProtocol(@NonNull @NotNull EndPoint endPoint, @NotNull @NonNull ProtocolConfigDTO protocolConfig) throws LoginException, IOException {
     super(endPoint, protocolConfig);
+    pendingMessages = new AtomicReference<>();
+    pendingMessages.set(new LinkedHashMap<>());
     String primeId = ((SatelliteEndPoint) endPoint).getTerminalInfo().getUniqueId();
     SatelliteConfigDTO config = (SatelliteConfigDTO) protocolConfig;
-
+    outgoingPollInterval = config.getOutgoingPollInterval();
     maxBufferSize = config.getMaxBufferSize();
     compressionThreshold = config.getCompressionCutoffSize();
     closed = false;
@@ -104,11 +111,15 @@ public class SatelliteGatewayProtocol extends Protocol {
           .setNoLocalMessages(true);
       session.addSubscription(subBuilder.build());
     }
+    scheduledFuture = scheduler.schedule(this::processOutstandingMessages, outgoingPollInterval, TimeUnit.SECONDS);
   }
 
   @Override
   public void close() throws IOException {
     if (!closed) {
+      if(scheduledFuture != null){
+        scheduledFuture.cancel(true);
+      }
       closed = true;
       SessionManager.getInstance().close(session, false);
       super.close();
@@ -122,6 +133,7 @@ public class SatelliteGatewayProtocol extends Protocol {
     return new Subject();
   }
 
+  @Override
   public void sendKeepAlive() {
     try {
       ((SatelliteEndPoint) endPoint).updateTerminalInfo();
@@ -152,23 +164,65 @@ public class SatelliteGatewayProtocol extends Protocol {
 
   @Override
   public void sendMessage(@NotNull @NonNull MessageEvent messageEvent) {
-    // To Do - Transform here
     String destinationName = messageEvent.getDestinationName();
-    if(!namespacePath.isEmpty() && !destinationName.startsWith(namespacePath)){
-      destinationName = "/inbound";
+    if(destinationName.startsWith("/orbcomm/broadcast")){
+      destinationName = destinationName.replace("/orbcomm/broadcast", "");
+    }
+    Message message = processTransformer(destinationName, messageEvent.getMessage());
+
+    byte[] payload;
+    if (transformation != null) {
+      payload = transformation.outgoing(message, messageEvent.getDestinationName());
+    } else {
+      payload = message.getOpaqueData();
     }
 
-    List<SatelliteMessage> satelliteMessages = SatelliteMessageFactory.createMessages(destinationName, messageEvent.getMessage().getOpaqueData(), maxBufferSize, compressionThreshold);
-    for (SatelliteMessage satelliteMessage : satelliteMessages) {
-      byte[] tmp = satelliteMessage.packToSend();
-      byte[] payload = new byte[tmp.length + 2];
-      payload[0] = (byte) 0x81;
-      payload[1] = (byte) 1;
-      System.arraycopy(tmp, 0, payload, 2, tmp.length);
-      MessageData submitMessage = new MessageData();
-      submitMessage.setPayload(payload);
-      submitMessage.setCompletionCallback(messageEvent.getCompletionTask());
-      ((SatelliteEndPoint) endPoint).sendMessage(submitMessage);
+    if (topicNameMapping != null) {
+      String tmp = topicNameMapping.get(destinationName);
+      if (tmp != null) {
+        destinationName = tmp;
+      } else {
+        scanForName(destinationName);
+      }
+    }
+
+    destinationName = scanForName(destinationName);
+
+
+    Map<String, List<byte[]>> pending = pendingMessages.get();
+    List<byte[]> list =pending.computeIfAbsent(destinationName, key -> new ArrayList<>());
+    list.add(payload);
+    while(list.size() > 1){
+      list.remove(0);
+    }
+
+    if(messageEvent.getCompletionTask() != null) {
+      messageEvent.getCompletionTask().run();
+    }
+  }
+
+  private void processOutstandingMessages() {
+    try {
+      Map<String, List<byte[]>> replacement = pendingMessages.getAndSet(new LinkedHashMap<>());
+      if(!replacement.isEmpty()) {
+        MessageQueuePacker.Packed packedQueue = MessageQueuePacker.pack(replacement, compressionThreshold);
+        List<SatelliteMessage> toSend = SatelliteMessageFactory.createMessages(currentStreamId, packedQueue.data(), maxBufferSize, packedQueue.compressed());
+        int sin = (currentStreamId &0x7f) | 0x80;
+        int idx =0;
+        for (SatelliteMessage satelliteMessage : toSend) {
+          byte[] tmp = satelliteMessage.packToSend();
+          byte[] payload = new byte[tmp.length + 2];
+          payload[0] = (byte)sin;
+          payload[1] = (byte) idx++;
+          System.arraycopy(tmp, 0, payload, 2, tmp.length);
+          MessageData submitMessage = new MessageData();
+          submitMessage.setPayload(payload);
+          ((SatelliteEndPoint) endPoint).sendMessage(submitMessage);
+        }
+        currentStreamId++;
+      }
+    } finally {
+      scheduledFuture = scheduler.schedule(this::processOutstandingMessages, outgoingPollInterval, TimeUnit.SECONDS);
     }
   }
 
@@ -190,14 +244,24 @@ public class SatelliteGatewayProtocol extends Protocol {
   public void handleIncomingMessage(MessageData message) throws ExecutionException, InterruptedException {
     byte[] raw = message.getPayload();
     byte sin = raw[0];
-    byte min = raw[1];
     byte[] tmp = new byte[raw.length - 2];
     System.arraycopy(raw, 2, tmp, 0, tmp.length);
-    SatelliteMessage satelliteMessage = new SatelliteMessage(tmp);
+    SatelliteMessage satelliteMessage = new SatelliteMessage(sin, tmp);
     satelliteMessage = messageRebuilder.rebuild(satelliteMessage);
     if (satelliteMessage != null) {
-      byte[] buffer = satelliteMessage.getMessage();
-      String namespace = satelliteMessage.getNamespace();
+      try {
+        Map<String, List<byte[]>> receivedEventMap = MessageQueueUnpacker.unpack(satelliteMessage.getMessage(), satelliteMessage.isCompressed());
+        for(Map.Entry<String, List<byte[]>> entry : receivedEventMap.entrySet()){
+          publishEvents(entry.getKey(), entry.getValue());
+        }
+      } catch (IOException e) {
+        e.printStackTrace();
+      }
+    }
+  }
+
+  private void publishEvents(String namespace, List<byte[]> list) throws ExecutionException, InterruptedException {
+    for (byte[] buffer : list) {
       MessageBuilder messageBuilder = new MessageBuilder();
       messageBuilder.setOpaqueData(buffer);
       Message mapsMessage = messageBuilder.build();
@@ -223,4 +287,5 @@ public class SatelliteGatewayProtocol extends Protocol {
       future.get();
     }
   }
+
 }

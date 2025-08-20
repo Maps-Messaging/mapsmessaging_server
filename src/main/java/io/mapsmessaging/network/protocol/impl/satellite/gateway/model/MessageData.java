@@ -26,6 +26,5 @@ public class MessageData {
   private String uniqueId;
   private byte[] payload;
 
-
   private transient Runnable completionCallback;
 }

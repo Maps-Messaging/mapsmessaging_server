@@ -23,36 +23,34 @@ import lombok.Getter;
 import lombok.Setter;
 
 import java.nio.ByteBuffer;
-import java.nio.charset.StandardCharsets;
 
 @Getter
 public class SatelliteMessage {
-
-  private String namespace;
+  private final int streamNumber;
   private boolean compressed;
   private int packetNumber;
   private byte[] message;
+
   @Setter
   private Runnable completionCallback;
 
-  public SatelliteMessage(String namespace, byte[] message, int packetNumber, boolean compressed) {
-    this.namespace = namespace;
+  public SatelliteMessage(int streamNumber, byte[] message, int packetNumber, boolean compressed) {
+    this.streamNumber = streamNumber;
     this.message = message;
     this.compressed = compressed;
     this.packetNumber = packetNumber;
   }
 
-  public SatelliteMessage(byte[] incomingPackedMessage) {
+  public SatelliteMessage(int streamNumber, byte[] incomingPackedMessage) {
+    this.streamNumber = streamNumber;
     unpackFromReceived(incomingPackedMessage);
   }
 
   public byte[] packToSend() {
-    byte[] namespaceBytes = namespace.getBytes(StandardCharsets.UTF_8);
-    ByteBuffer header = ByteBuffer.allocate(namespaceBytes.length + 7 + message.length);
+    ByteBuffer header = ByteBuffer.allocate( 7 + message.length);
     header.put(compressed ? (byte) 0x1 : (byte) 0x0);
     header.putShort((short) packetNumber);
-    header.putInt(namespaceBytes.length);
-    header.put(namespaceBytes);
+    header.putShort((short) message.length);
     header.put(message);
     return header.array();
   }
@@ -60,19 +58,16 @@ public class SatelliteMessage {
   private void unpackFromReceived(byte[] data) {
     if (data == null) return;
     ByteBuffer buffer = ByteBuffer.wrap(data);
+    //Load the flags, currently just compressed
     compressed = buffer.get() != 0;
     packetNumber = buffer.getShort();
+    int messageLength = buffer.getShort();
 
-    // 1. Read the 4-byte namespace length
-    int namespaceLength = buffer.getInt();
-    if(namespaceLength > 1024) return; // Ignore data, seems corrupted
-    // 2. Extract and decode the namespace
-    byte[] namespaceBytes = new byte[namespaceLength];
-    buffer.get(namespaceBytes);
-    namespace = new String(namespaceBytes, StandardCharsets.UTF_8);
+    // Simple validate here
+    if(buffer.remaining() < messageLength) return; // exceeded buffer, seems odd
 
-    // 3. Extract the remaining bytes as the message
-    message = new byte[buffer.remaining()];
+    // create and load buffers
+    message = new byte[messageLength];
     buffer.get(message);
   }
 

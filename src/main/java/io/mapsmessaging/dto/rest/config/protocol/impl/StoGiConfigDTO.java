@@ -35,8 +35,11 @@ public class StoGiConfigDTO extends ProtocolConfigDTO {
   @Schema(description = "Serial port configuration")
   protected SerialConfigDTO serial;
 
-  @Schema(description = "Time in milliseconds to poll the modem for incoming messages")
-  protected long messagePollInterval;
+  @Schema(description = "Time in seconds to poll the modem for incoming messages", example = "15", defaultValue = "10")
+  protected long incomingMessagePollInterval;
+
+  @Schema(description = "Time in seconds to poll for outgoing messages", example = "60", defaultValue = "60")
+  protected long outgoingMessagePollInterval;
 
   @Schema(description = "Time in milliseconds to wait for a modem response")
   protected long modemResponseTimeout;
@@ -44,7 +47,7 @@ public class StoGiConfigDTO extends ProtocolConfigDTO {
   @Schema(description = "Initial modem setup string")
   protected String initialSetup;
 
-  @Schema(description ="Time in milliseconds between polling modem location and statistics, 0 disables it")
+  @Schema(description ="Time in seconds between polling modem location and statistics, 0 disables it", example = "60", defaultValue = "0")
   protected long locationPollInterval;
 
   @Schema(description = "If present, then the name of the topic to send modem statistics to")
@@ -56,5 +59,7 @@ public class StoGiConfigDTO extends ProtocolConfigDTO {
   @Schema(description = "minimum sized buffer that will be compressed", example = "512", defaultValue = "256")
   protected int compressionCutoffSize;
 
+  @Schema(description = "life time of message in minutes", example = "5", defaultValue = "10")
+  protected int messageLifeTimeInMinutes;
 
 }

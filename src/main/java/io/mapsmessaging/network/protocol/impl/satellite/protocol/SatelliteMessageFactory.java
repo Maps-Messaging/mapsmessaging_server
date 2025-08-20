@@ -26,9 +26,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.zip.DataFormatException;
-import java.util.zip.Deflater;
-import java.util.zip.Inflater;
 
 import static io.mapsmessaging.logging.ServerLogMessages.*;
 
@@ -38,29 +35,17 @@ public class SatelliteMessageFactory {
 
   private SatelliteMessageFactory() {
   }
-
-  public static List<SatelliteMessage> createMessages(String namespace, byte[] payload, int maxMessageSize, int minCompressedMessageSize) {
+  public static List<SatelliteMessage> createMessages(int streamId, byte[] payload, int maxMessageSize, boolean compressed) {
     List<SatelliteMessage> messages = new ArrayList<>();
-    boolean compressed = false;
 
-    if (payload.length > minCompressedMessageSize && minCompressedMessageSize > 0) {
-      byte[] payload1 = compress(payload);
-      if (payload1.length < payload.length) {
-        logger.log(STOGI_COMPRESS_MESSAGE, namespace, payload.length, payload1.length);
-        payload = payload1;
-        compressed = true;
-      }
-    }
-    int maxSize = maxMessageSize - namespace.length();
+    int totalChunks = (payload.length + maxMessageSize - 1) / maxMessageSize;
 
-    int totalChunks = ((payload.length + namespace.length()) + maxSize - 1) / maxSize;
-
-    for (int offset = 0, chunkIndex = 0; offset < payload.length; offset += maxSize, chunkIndex++) {
-      int len = Math.min(maxSize, payload.length - offset);
+    for (int offset = 0, chunkIndex = 0; offset < payload.length; offset += maxMessageSize, chunkIndex++) {
+      int len = Math.min(maxMessageSize, payload.length - offset);
       byte[] chunk = new byte[len];
       System.arraycopy(payload, offset, chunk, 0, len);
       SatelliteMessage message = new SatelliteMessage(
-          namespace,
+          streamId,
           chunk,
           totalChunks - 1 - chunkIndex, // count down to 0
           compressed
@@ -68,7 +53,7 @@ public class SatelliteMessageFactory {
       messages.add(message);
     }
     if (messages.size() > 1) {
-      logger.log(STOGI_SPLIT_MESSAGE, namespace, messages.size());
+      logger.log(STOGI_SPLIT_MESSAGE,  messages.size());
     }
     return messages;
   }
@@ -77,7 +62,7 @@ public class SatelliteMessageFactory {
     if(messages.size() == 1 && !messages.get(0).isCompressed()) {
       return messages.get(0);
     }
-    String namespace = messages.get(0).getNamespace();
+    int streamId = messages.get(0).getStreamNumber();
     boolean compressed = messages.get(0).isCompressed();
     ByteArrayOutputStream baos = new ByteArrayOutputStream();
     try {
@@ -88,44 +73,7 @@ public class SatelliteMessageFactory {
       // Log this, since this is weird!!!
     }
     byte[] recombined = baos.toByteArray();
-    if (compressed) {
-      recombined = decompress(recombined);
-    }
-    return new SatelliteMessage(namespace, recombined, 0, false);
+    return new SatelliteMessage(streamId, recombined, 0, compressed);
   }
 
-  public static byte[] compress(byte[] data) {
-    Deflater deflater = new Deflater(Deflater.BEST_COMPRESSION);
-    deflater.setInput(data);
-    deflater.finish();
-    byte[] buffer = new byte[1024];
-    int len;
-    try (java.io.ByteArrayOutputStream baos = new java.io.ByteArrayOutputStream()) {
-      while (!deflater.finished()) {
-        len = deflater.deflate(buffer);
-        baos.write(buffer, 0, len);
-      }
-      return baos.toByteArray();
-    } catch (java.io.IOException e) {
-      logger.log(STOGI_EXCEPTION_PROCESSING_PACKET, e);
-    }
-    return data; // no compression
-  }
-
-  public static byte[] decompress(byte[] compressedData) {
-    Inflater inflater = new Inflater();
-    inflater.setInput(compressedData);
-    byte[] buffer = new byte[1024];
-    int len;
-    try (java.io.ByteArrayOutputStream baos = new java.io.ByteArrayOutputStream()) {
-      while (!inflater.finished()) {
-        len = inflater.inflate(buffer);
-        baos.write(buffer, 0, len);
-      }
-      return baos.toByteArray();
-    } catch (IOException | DataFormatException exception) {
-      logger.log(STOGI_EXCEPTION_PROCESSING_PACKET, exception);
-    }
-    return compressedData;
-  }
 }

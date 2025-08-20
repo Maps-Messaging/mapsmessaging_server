@@ -32,12 +32,14 @@ public class StoGiConfig extends StoGiConfigDTO implements Config {
     ProtocolConfigFactory.unpack(config, this);
     serial = new SerialConfig(config);
     initialSetup = config.getProperty("initialSetup", "");
-    messagePollInterval = config.getLongProperty("messagePollInterval", 5000);
+    incomingMessagePollInterval = config.getLongProperty("incomingMessagePollInterval", 10);
+    outgoingMessagePollInterval = config.getLongProperty("outgoingMessagePollInterval", 60);
     modemResponseTimeout = config.getLongProperty("modemResponseTimeout", 5000);
     locationPollInterval = config.getLongProperty("locationPollInterval", 0);
     modemStatsTopic = config.getProperty("modemStatsTopic", "");
     maxBufferSize = config.getIntProperty("maxBufferSize", 4000);
     compressionCutoffSize = config.getIntProperty("compressionCutoffSize", 128);
+    messageLifeTimeInMinutes = config.getIntProperty("messageLifeTimeInMinutes", 10);
   }
 
   @Override
@@ -54,8 +56,12 @@ public class StoGiConfig extends StoGiConfigDTO implements Config {
         initialSetup = orbCommConfig.getInitialSetup();
         result = true;
       }
-      if(messagePollInterval != orbCommConfig.getMessagePollInterval()){
-        messagePollInterval = orbCommConfig.getMessagePollInterval();
+      if(incomingMessagePollInterval != orbCommConfig.getIncomingMessagePollInterval()){
+        incomingMessagePollInterval = orbCommConfig.getIncomingMessagePollInterval();
+        result = true;
+      }
+      if(outgoingMessagePollInterval != orbCommConfig.getOutgoingMessagePollInterval()){
+        outgoingMessagePollInterval = orbCommConfig.getOutgoingMessagePollInterval();
         result = true;
       }
       if (modemResponseTimeout != orbCommConfig.getModemResponseTimeout()) {
@@ -74,6 +80,10 @@ public class StoGiConfig extends StoGiConfigDTO implements Config {
         compressionCutoffSize = orbCommConfig.getCompressionCutoffSize();
         result = true;
       }
+      if(messageLifeTimeInMinutes != orbCommConfig.getMessageLifeTimeInMinutes()) {
+        messageLifeTimeInMinutes = orbCommConfig.getMessageLifeTimeInMinutes();
+        result = true;
+      }
     }
     return result;
   }
@@ -86,11 +96,13 @@ public class StoGiConfig extends StoGiConfigDTO implements Config {
     if(serial instanceof SerialConfig serialConfig){
       properties.put("serial", serialConfig.toConfigurationProperties());
     }
-    properties.put("messagePollInterval", messagePollInterval);
+    properties.put("incomingMessagePollInterval", incomingMessagePollInterval);
+    properties.put("outgoingMessagePollInterval", outgoingMessagePollInterval);
     properties.put("modemResponseTimeout", modemResponseTimeout);
     properties.put("locationPollInterval", getLocationPollInterval());
     properties.put("maxBufferSize", maxBufferSize);
     properties.put("compressionCutoffSize", compressionCutoffSize);
+    properties.put("messageLifeTimeInMinutes", messageLifeTimeInMinutes);
     return properties;
   }
 }

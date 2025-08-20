@@ -26,7 +26,7 @@ import java.util.Map;
 
 public class SatelliteMessageRebuilder {
 
-  private final Map<String, List<SatelliteMessage>> fragments;
+  private final Map<Integer, List<SatelliteMessage>> fragments;
 
 
   public SatelliteMessageRebuilder() {
@@ -38,16 +38,16 @@ public class SatelliteMessageRebuilder {
   }
 
   public SatelliteMessage rebuild(SatelliteMessage message) {
-    if(!fragments.containsKey(message.getNamespace()) && !message.isCompressed() && message.getPacketNumber() == 0) {
-      return message; // there is NO rebuild required, finish fast!
+    if(!fragments.containsKey(message.getStreamNumber()) && !message.isCompressed() && message.getPacketNumber() == 0) {
+      return message;
     }
 
     fragments
-        .computeIfAbsent(message.getNamespace(), k -> new ArrayList<>())
+        .computeIfAbsent(message.getStreamNumber(), k -> new ArrayList<>())
         .add(message);
+
     if (message.getPacketNumber() == 0) {
-      // this is the final packet or simply a single packet, so lets rebuild
-      List<SatelliteMessage> list = fragments.remove(message.getNamespace());
+      List<SatelliteMessage> list = fragments.remove(message.getStreamNumber());
       if (list != null) {
         return SatelliteMessageFactory.reconstructMessage(list);
       }

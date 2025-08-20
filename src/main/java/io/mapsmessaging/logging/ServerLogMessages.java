@@ -771,12 +771,12 @@ public enum ServerLogMessages implements LogMessage {
   STOGI_EXCEPTION_PROCESSING_PACKET(LEVEL.FATAL, SERVER_CATEGORY.NETWORK, "Exception raised processing inbound packet"),
   STOGI_STORE_EVENT_EXCEPTION(LEVEL.FATAL, SERVER_CATEGORY.NETWORK, "Exception raised storing event"),
   STOGI_POLLING_MODEM(LEVEL.DEBUG, SERVER_CATEGORY.NETWORK, "Polling modem: {}"),
-  STOGI_PROCESSING_INBOUND_EVENT(LEVEL.DEBUG, SERVER_CATEGORY.NETWORK, "Processing inbound event for topic {}"),
-  STOGI_SEND_MESSAGE_TO_MODEM(LEVEL.DEBUG, SERVER_CATEGORY.NETWORK, "Sending message to modem: {} msg no: {}"),
-  STOGI_RECEIVED_PARTIAL_MESSAGE(LEVEL.DEBUG, SERVER_CATEGORY.NETWORK, "Received from partial message for topic: {} msg no: {}"),
+  STOGI_PROCESSING_INBOUND_EVENT(LEVEL.DEBUG, SERVER_CATEGORY.NETWORK, "Processing inbound event for msg no: {}"),
+  STOGI_SEND_MESSAGE_TO_MODEM(LEVEL.DEBUG, SERVER_CATEGORY.NETWORK, "Sending message to modem, msg no: {}"),
+  STOGI_RECEIVED_PARTIAL_MESSAGE(LEVEL.DEBUG, SERVER_CATEGORY.NETWORK, "Received from partial message msg no: {}"),
 
-  STOGI_COMPRESS_MESSAGE(LEVEL.DEBUG, SERVER_CATEGORY.NETWORK, "Compressing message for topic: {} from {} to {} bytes"),
-  STOGI_SPLIT_MESSAGE(LEVEL.DEBUG, SERVER_CATEGORY.NETWORK, "Splitting message for topic: {} into {} messages"),
+  STOGI_COMPRESS_MESSAGE(LEVEL.DEBUG, SERVER_CATEGORY.NETWORK, "Compressing message for from {} to {} bytes"),
+  STOGI_SPLIT_MESSAGE(LEVEL.DEBUG, SERVER_CATEGORY.NETWORK, "Splitting message into {} messages"),
   //-------------------------------------------------------------------------------------------------------------
   LAST_LOG_MESSAGE(LEVEL.DEBUG, SERVER_CATEGORY.PROTOCOL, "Last message to make it simpler to add more");
 

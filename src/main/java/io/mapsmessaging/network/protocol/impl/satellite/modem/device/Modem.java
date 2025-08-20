@@ -203,13 +203,14 @@ public class Modem {
 //endregion
 
 
-  public void sendMessage(int priority, int sin, int min, byte[] payload) {
+  public void sendMessage(int priority, int sin, int min, int messageLifeTime, byte[] payload) {
     ModemSatelliteMessage modemSatelliteMessage = new ModemSatelliteMessage();
     modemSatelliteMessage.setName(MessageNameGenerator.incrementString().trim());
     modemSatelliteMessage.setPriority(priority);
     modemSatelliteMessage.setPayload(payload);
     modemSatelliteMessage.setMin(min);
     modemSatelliteMessage.setSin(sin);
+    modemSatelliteMessage.setLifeTime(messageLifeTime);
     modemSatelliteMessage.setFormat(MessageFormat.BASE64);
     modemProtocol.sendMessage(modemSatelliteMessage);
   }

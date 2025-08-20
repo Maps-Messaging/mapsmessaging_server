@@ -30,17 +30,21 @@ import java.util.concurrent.atomic.AtomicInteger;
 @ToString
 public class ModemSatelliteMessage {
   private static final AtomicInteger nextId = new AtomicInteger(0);
+  private static final int OGX_SERVICE_CLASS = 2;
+
   private String name;
   private byte[] payload;
   private int sin;
   private int min;
   private int priority;
   private MessageFormat format;
-  private int messageId = getNextId();
+  private int messageId;
   private String datetime;
+  private int lifeTime;
 
   public ModemSatelliteMessage() {
-
+    lifeTime = 10;
+    messageId = getNextId();
   }
 
   public ModemSatelliteMessage(String line, boolean isOgx) {
@@ -95,7 +99,16 @@ public class ModemSatelliteMessage {
     extended[1] = (byte) min;
     System.arraycopy(payload, 0, extended, 2, payload.length);
     String encodedPayload = format.encode(extended);
-    return String.format("%d,%d,%d,%d,%d,%s", messageId, priority, 10, encodedPayload.length(), format.getCode(), encodedPayload
+    return String.format("%d,%d,%d,%d,%d,%s", messageId, OGX_SERVICE_CLASS, lifeTime, extended.length, format.getCode(), encodedPayload
     );
   }
+
+  public static void main(String[] args){
+      String t = "qSMAAAAAAAAXL3NhdGVsbGl0ZS9hbGV4L3RvcDM1NTVIaSBUaGVyZSwgdGhpcyBpcyBBdGhlbnMgcmVzcG9uZGluZw==";
+      System.out.println(t.length());
+    MessageFormat format = MessageFormat.BASE64;
+    byte[] decoded = format.decode(t);
+    System.out.println(Arrays.toString(decoded));
+  }
 }
+

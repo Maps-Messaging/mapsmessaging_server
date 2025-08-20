@@ -51,9 +51,7 @@ import io.mapsmessaging.network.protocol.impl.satellite.modem.device.impl.BaseMo
 import io.mapsmessaging.network.protocol.impl.satellite.modem.device.messages.IncomingMessageDetails;
 import io.mapsmessaging.network.protocol.impl.satellite.modem.device.messages.ModemSatelliteMessage;
 import io.mapsmessaging.network.protocol.impl.satellite.modem.device.messages.SendMessageState;
-import io.mapsmessaging.network.protocol.impl.satellite.protocol.SatelliteMessage;
-import io.mapsmessaging.network.protocol.impl.satellite.protocol.SatelliteMessageFactory;
-import io.mapsmessaging.network.protocol.impl.satellite.protocol.SatelliteMessageRebuilder;
+import io.mapsmessaging.network.protocol.impl.satellite.protocol.*;
 import io.mapsmessaging.network.protocol.transformation.TransformationManager;
 import io.mapsmessaging.selector.operators.ParserExecutor;
 import lombok.NonNull;
@@ -65,8 +63,8 @@ import javax.security.auth.login.LoginException;
 import java.io.IOException;
 import java.nio.channels.SelectionKey;
 import java.util.*;
-import java.util.Queue;
 import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 
 import static io.mapsmessaging.logging.ServerLogMessages.*;
@@ -82,29 +80,37 @@ public class StoGiProtocol extends Protocol implements Consumer<Packet> {
   private final Session session;
   private final SelectorTask selectorTask;
   private final Modem modem;
-  private final Map<String, String> topicNameMapping;
-  private final Queue<SatelliteMessage> outboundQueue;
   private final SatelliteMessageRebuilder satelliteMessageRebuilder;
   private final LocationParser locationParser;
   private final long locationPollInterval;
   private final long messagePoll;
+  private final long outgoingMessagePollInterval;
+  private final AtomicReference<Map<String, List<byte[]>>> pendingMessages;
+  private final int messageLifeTime;
 
   private final int maxBufferSize;
   private final int compressionThreshold;
+  private final List<SatelliteMessage> currentList;
 
   private ScheduledFuture<?> scheduledFuture;
   private Destination destination;
   private long lastLocationPoll;
+  private long lastOutgoingMessagePollInterval;
+
+  private int currentStreamId;
   private int messageId;
 
   public StoGiProtocol(EndPoint endPoint, Packet packet) throws LoginException, IOException {
     super(endPoint, endPoint.getConfig().getProtocolConfig(STOGI));
-    topicNameMapping = new ConcurrentHashMap<>();
-    outboundQueue = new ConcurrentLinkedQueue<>();
+
     satelliteMessageRebuilder = new SatelliteMessageRebuilder();
     locationParser = new LocationParser();
     lastLocationPoll = System.currentTimeMillis();
     messageId = 0;
+    currentStreamId = 0;
+    currentList = new ArrayList<>();
+    pendingMessages = new AtomicReference<>();
+    pendingMessages.set(new LinkedHashMap<>());
     if (packet != null) {
       packet.clear();
     }
@@ -126,9 +132,10 @@ public class StoGiProtocol extends Protocol implements Consumer<Packet> {
     setTransformation(transformation);
     StoGiConfigDTO modemConfig = (StoGiConfigDTO) getProtocolConfig();
 
+    messageLifeTime = modemConfig.getMessageLifeTimeInMinutes();
     modem = new Modem(this, modemConfig.getModemResponseTimeout(), streamHandler);
 
-    locationPollInterval = modemConfig.getLocationPollInterval();
+    locationPollInterval = modemConfig.getLocationPollInterval() * 1000;
     maxBufferSize = modemConfig.getMaxBufferSize();
     compressionThreshold = modemConfig.getCompressionCutoffSize();
 
@@ -136,7 +143,8 @@ public class StoGiProtocol extends Protocol implements Consumer<Packet> {
     endPoint.register(SelectionKey.OP_READ, selectorTask.getReadTask());
     initialiseModem(modemConfig.getModemResponseTimeout());
 
-    messagePoll = modemConfig.getMessagePollInterval();
+    messagePoll = modemConfig.getIncomingMessagePollInterval() * 1000;
+    outgoingMessagePollInterval = modemConfig.getOutgoingMessagePollInterval() * 1000;
     scheduledFuture = scheduler.schedule(this::pollModemForMessages, messagePoll, TimeUnit.MILLISECONDS);
     completedConnection();
     endPoint.getServer().handleNewEndPoint(endPoint);
@@ -144,6 +152,7 @@ public class StoGiProtocol extends Protocol implements Consumer<Packet> {
     if (statsDestination != null && !statsDestination.isEmpty()) {
       destination = session.findDestination(statsDestination, DestinationType.TOPIC).join();
     }
+    lastOutgoingMessagePollInterval = System.currentTimeMillis();
   }
 
   private Session setupSession() throws LoginException, IOException {
@@ -224,24 +233,17 @@ public class StoGiProtocol extends Protocol implements Consumer<Packet> {
     }
 
     destinationName = scanForName(destinationName);
-
-    List<SatelliteMessage> messages = SatelliteMessageFactory.createMessages(destinationName, payload, maxBufferSize, compressionThreshold);
-    messages.get(messages.size() - 1).setCompletionCallback(messageEvent.getCompletionTask());
-    outboundQueue.addAll(messages);
-  }
-
-  private String scanForName(String destinationName) {
-    for (Map.Entry<String, String> entry : topicNameMapping.entrySet()) {
-      int index = entry.getKey().indexOf("#");
-      if (index > 0) {
-        String sub = entry.getKey().substring(0, index);
-        if (destinationName.startsWith(sub)) {
-          destinationName = entry.getValue() + destinationName.substring(sub.length());
-        }
-      }
+    Map<String, List<byte[]>> pending = pendingMessages.get();
+    List<byte[]> list = pending.computeIfAbsent(destinationName, key -> new ArrayList<>());
+    list.add(payload);
+    while(list.size() > 1){
+      list.remove(0);
     }
-    return destinationName;
+    if(messageEvent.getCompletionTask() != null) {
+      messageEvent.getCompletionTask().run();
+    }
   }
+
 
   @Override
   public Subject getSubject() {
@@ -298,17 +300,21 @@ public class StoGiProtocol extends Protocol implements Consumer<Packet> {
   }
 
   private void pollModemForMessages() {
+    boolean hasOutgoing = false;
     try {
       logger.log(STOGI_POLLING_MODEM, modem.getType());
-      processOutboundMessages();
-      processInboundMessages();
-      if (locationPollInterval > 0) {
-        processLocationRequest();
+      hasOutgoing = processOutboundMessages();
+      if(!hasOutgoing) {
+        processInboundMessages();
+        if (locationPollInterval > 0) {
+          processLocationRequest();
+        }
       }
     } catch (Throwable th) {
       // Log This, it's important
     } finally {
-      scheduledFuture = scheduler.schedule(this::pollModemForMessages, messagePoll, TimeUnit.MILLISECONDS);
+      long poll = hasOutgoing?500:messagePoll;
+      scheduledFuture = scheduler.schedule(this::pollModemForMessages, poll, TimeUnit.MILLISECONDS);
     }
   }
 
@@ -376,20 +382,26 @@ public class StoGiProtocol extends Protocol implements Consumer<Packet> {
     }
   }
 
-  private void processOutboundMessages() {
-    if (outboundQueue.isEmpty()) {
-      return;
-    }
+  private boolean processOutboundMessages() {
     CompletableFuture<List<SendMessageState>> outgoing = modem.listSentMessages();
     List<SendMessageState> stateList = outgoing.join();
+    if (stateList.isEmpty() &&  currentList.isEmpty() && lastOutgoingMessagePollInterval + outgoingMessagePollInterval > System.currentTimeMillis()) {
+      return false;
+    }
     if (stateList.isEmpty()) {
-      SatelliteMessage msg = outboundQueue.peek();
-      if (msg != null) {
-        sendMessageViaModem(msg);
+      lastOutgoingMessagePollInterval = System.currentTimeMillis();
+      if(currentList.isEmpty()){
+        Map<String, List<byte[]>> replacement = this.pendingMessages.getAndSet(new LinkedHashMap<>());
+        MessageQueuePacker.Packed packedQueue = MessageQueuePacker.pack(replacement, compressionThreshold);
+        currentList.addAll(SatelliteMessageFactory.createMessages(currentStreamId,  packedQueue.data(), maxBufferSize, packedQueue.compressed()));
+        currentStreamId++;
       }
+      sendMessageViaModem(currentStreamId, currentList.remove(0));
+      return currentList.isEmpty();
     } else {
       handleMsgStates(stateList);
     }
+    return true;
   }
 
   private void handleMsgStates(List<SendMessageState> stateList) {
@@ -397,10 +409,6 @@ public class StoGiProtocol extends Protocol implements Consumer<Packet> {
       if (state.getState().equals(SendMessageState.State.TX_FAILED) ||
           state.getState().equals(SendMessageState.State.TX_COMPLETED)) {
         modem.deleteSentMessages(state.getMessageName());
-        SatelliteMessage msg = outboundQueue.poll();
-        if (msg != null && msg.getCompletionCallback() != null) {
-          msg.getCompletionCallback().run();
-        }
       }
     }
   }
@@ -433,17 +441,18 @@ public class StoGiProtocol extends Protocol implements Consumer<Packet> {
   private void processMessages(List<ModemSatelliteMessage> messages) {
     for (ModemSatelliteMessage message : messages) {
       if (message != null) {
-        SatelliteMessage loaded = new SatelliteMessage(message.getPayload());
+        SatelliteMessage loaded = new SatelliteMessage(message.getSin(), message.getPayload());
         SatelliteMessage satelliteMessage = satelliteMessageRebuilder.rebuild(loaded);
         if (satelliteMessage != null) {
-          logger.log(STOGI_PROCESSING_INBOUND_EVENT, satelliteMessage.getNamespace());
+          logger.log(STOGI_PROCESSING_INBOUND_EVENT, satelliteMessage.getPacketNumber());
           try {
-            sendMessageToTopic(satelliteMessage.getNamespace(), satelliteMessage.getMessage());
+            Map<String, List<byte[]>> receivedEventMap = MessageQueueUnpacker.unpack(satelliteMessage.getMessage(), satelliteMessage.isCompressed());
+            publishIncomingMap(receivedEventMap);
           } catch (Throwable e) {
             // ToDo Log
           }
         } else {
-          logger.log(STOGI_RECEIVED_PARTIAL_MESSAGE, loaded.getNamespace(), loaded.getPacketNumber());
+          logger.log(STOGI_RECEIVED_PARTIAL_MESSAGE, loaded.getPacketNumber());
         }
       }
     }
@@ -454,11 +463,19 @@ public class StoGiProtocol extends Protocol implements Consumer<Packet> {
     }
   }
 
-  private void sendMessageViaModem(SatelliteMessage satelliteMessage) {
+  private void publishIncomingMap(Map<String, List<byte[]>> incomingMap) {
+    for(Map.Entry<String, List<byte[]>> entry : incomingMap.entrySet()) {
+      for(byte[] bytes : entry.getValue()) {
+        sendMessageToTopic(entry.getKey(), bytes);
+      }
+    }
+  }
+
+  private void sendMessageViaModem(int streamNumber, SatelliteMessage satelliteMessage) {
     messageId = (messageId + 1) % 0xff;
-    int sin = (satelliteMessage.getNamespace().hashCode() & 0x7F) | 0x80;
-    modem.sendMessage(2, sin, messageId, satelliteMessage.packToSend());
-    logger.log(STOGI_SEND_MESSAGE_TO_MODEM, satelliteMessage.getNamespace(), satelliteMessage.getPacketNumber());
+    int sin = (streamNumber & 0x7F) | 0x80;
+    modem.sendMessage(2, sin, messageId, messageLifeTime,  satelliteMessage.packToSend());
+    logger.log(STOGI_SEND_MESSAGE_TO_MODEM, satelliteMessage.getPacketNumber());
   }
 
 
