@@ -40,6 +40,8 @@ public class StoGiConfig extends StoGiConfigDTO implements Config {
     maxBufferSize = config.getIntProperty("maxBufferSize", 4000);
     compressionCutoffSize = config.getIntProperty("compressionCutoffSize", 128);
     messageLifeTimeInMinutes = config.getIntProperty("messageLifeTimeInMinutes", 10);
+    sharedSecret = config.getProperty("sharedSecret", "");
+
   }
 
   @Override
@@ -84,6 +86,10 @@ public class StoGiConfig extends StoGiConfigDTO implements Config {
         messageLifeTimeInMinutes = orbCommConfig.getMessageLifeTimeInMinutes();
         result = true;
       }
+      if(!sharedSecret.equals(orbCommConfig.getSharedSecret())) {
+        sharedSecret = orbCommConfig.getSharedSecret();
+        result = true;
+      }
     }
     return result;
   }
@@ -103,6 +109,7 @@ public class StoGiConfig extends StoGiConfigDTO implements Config {
     properties.put("maxBufferSize", maxBufferSize);
     properties.put("compressionCutoffSize", compressionCutoffSize);
     properties.put("messageLifeTimeInMinutes", messageLifeTimeInMinutes);
+    properties.put("sharedSecret", sharedSecret);
     return properties;
   }
 }
