@@ -34,7 +34,7 @@ public class SatelliteConfig extends SatelliteConfigDTO implements Config {
 
     baseUrl = config.getProperty("baseUrl", "");
     incomingMessagePollInterval = config.getIntProperty("incomingMessagePollInterval", 15);
-    outgoingMessagePollInterval = config.getIntProperty("outgoingPollInterval", 60);
+    outgoingMessagePollInterval = config.getIntProperty("outgoingMessagePollInterval", 60);
     httpRequestTimeout = config.getIntProperty("httpRequestTimeoutSec", 30);
     maxInflightEventsPerDevice = config.getIntProperty("maxInflightEventsPerDevice", 2);
     outboundNamespaceRoot = config.getProperty("outboundNamespaceRoot", "");
