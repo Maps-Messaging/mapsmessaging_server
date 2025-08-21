@@ -20,6 +20,7 @@
 package io.mapsmessaging.network.protocol.impl.satellite.modem.device.impl;
 
 import io.mapsmessaging.network.protocol.impl.satellite.modem.device.Modem;
+import io.mapsmessaging.network.protocol.impl.satellite.modem.device.impl.data.NetworkStatus;
 import io.mapsmessaging.network.protocol.impl.satellite.modem.device.messages.IncomingMessageDetails;
 import io.mapsmessaging.network.protocol.impl.satellite.modem.device.messages.ModemSatelliteMessage;
 import io.mapsmessaging.network.protocol.impl.satellite.modem.device.messages.SendMessageState;
@@ -42,6 +43,7 @@ public abstract class BaseModemProtocol {
     this.isOgx = isOgx;
   }
 
+  public abstract NetworkStatus getCurrentNetworkStatus();
   /*
   Handle outgoing messages
    */

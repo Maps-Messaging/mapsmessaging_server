@@ -20,6 +20,7 @@
 package io.mapsmessaging.network.protocol.impl.satellite.modem.device.impl;
 
 import io.mapsmessaging.network.protocol.impl.satellite.modem.device.Modem;
+import io.mapsmessaging.network.protocol.impl.satellite.modem.device.impl.data.NetworkStatus;
 import io.mapsmessaging.network.protocol.impl.satellite.modem.device.messages.IncomingMessageDetails;
 import io.mapsmessaging.network.protocol.impl.satellite.modem.device.messages.ModemSatelliteMessage;
 import io.mapsmessaging.network.protocol.impl.satellite.modem.device.messages.SendMessageState;
@@ -32,6 +33,17 @@ import java.util.concurrent.CompletableFuture;
 public class OgxModemProtocol extends BaseModemProtocol {
   public OgxModemProtocol(Modem modem) {
     super(modem, true);
+  }
+
+
+  @Override
+  public NetworkStatus getCurrentNetworkStatus() {
+    return modem.sendATCommand("AT%NETINFO")
+        .thenApply(resp -> {
+          String firstLine = resp.split("\\R", 2)[0].trim();
+          return NetworkStatus.parse(firstLine);
+        })
+        .join();
   }
 
   //region Outgoing message functions

@@ -19,7 +19,6 @@
 
 package io.mapsmessaging.network.protocol.impl.satellite.modem.protocol;
 
-import com.google.gson.JsonObject;
 import io.mapsmessaging.api.*;
 import io.mapsmessaging.api.features.DestinationMode;
 import io.mapsmessaging.api.features.DestinationType;
@@ -32,7 +31,6 @@ import io.mapsmessaging.dto.rest.config.protocol.impl.StoGiConfigDTO;
 import io.mapsmessaging.dto.rest.protocol.ProtocolInformationDTO;
 import io.mapsmessaging.dto.rest.protocol.impl.SatelliteProtocolInformation;
 import io.mapsmessaging.engine.destination.MessageOverrides;
-import io.mapsmessaging.location.LocationManager;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.network.ProtocolClientConnection;
@@ -42,13 +40,11 @@ import io.mapsmessaging.network.io.impl.SelectorTask;
 import io.mapsmessaging.network.io.impl.serial.SerialEndPoint;
 import io.mapsmessaging.network.protocol.Protocol;
 import io.mapsmessaging.network.protocol.ProtocolMessageTransformation;
-import io.mapsmessaging.network.protocol.impl.nmea.sentences.Sentence;
-import io.mapsmessaging.network.protocol.impl.nmea.types.LongType;
-import io.mapsmessaging.network.protocol.impl.nmea.types.PositionType;
 import io.mapsmessaging.network.protocol.impl.satellite.TaskManager;
 import io.mapsmessaging.network.protocol.impl.satellite.gateway.io.SatelliteEndPoint;
 import io.mapsmessaging.network.protocol.impl.satellite.modem.device.Modem;
 import io.mapsmessaging.network.protocol.impl.satellite.modem.device.impl.BaseModemProtocol;
+import io.mapsmessaging.network.protocol.impl.satellite.modem.device.impl.data.NetworkStatus;
 import io.mapsmessaging.network.protocol.impl.satellite.modem.device.messages.IncomingMessageDetails;
 import io.mapsmessaging.network.protocol.impl.satellite.modem.device.messages.ModemSatelliteMessage;
 import io.mapsmessaging.network.protocol.impl.satellite.modem.device.messages.SendMessageState;
@@ -80,8 +76,6 @@ public class StoGiProtocol extends Protocol implements Consumer<Packet> {
   private final SelectorTask selectorTask;
   private final Modem modem;
   private final SatelliteMessageRebuilder satelliteMessageRebuilder;
-  private final LocationParser locationParser;
-  private final long locationPollInterval;
   private final long messagePoll;
   private final long outgoingMessagePollInterval;
   private final AtomicReference<Map<String, List<byte[]>>> pendingMessages;
@@ -91,10 +85,13 @@ public class StoGiProtocol extends Protocol implements Consumer<Packet> {
   private final int maxBufferSize;
   private final int compressionThreshold;
   private final List<SatelliteMessage> currentList;
+  private final LocationHandler locationHandler;
+
+  private boolean satelliteOnline;
+  private int satelliteOnlineCount;
 
   private ScheduledFuture<?> scheduledFuture;
   private Destination destination;
-  private long lastLocationPoll;
   private long lastOutgoingMessagePollInterval;
 
   private int currentStreamId;
@@ -102,11 +99,10 @@ public class StoGiProtocol extends Protocol implements Consumer<Packet> {
 
   public StoGiProtocol(EndPoint endPoint, Packet packet) throws LoginException, IOException {
     super(endPoint, endPoint.getConfig().getProtocolConfig(STOGI));
-
+    satelliteOnline = false;
+    satelliteOnlineCount = 0;
     taskManager = new TaskManager();
     satelliteMessageRebuilder = new SatelliteMessageRebuilder();
-    locationParser = new LocationParser();
-    lastLocationPoll = System.currentTimeMillis();
     messageId = 0;
     currentStreamId = 0;
     currentList = new ArrayList<>();
@@ -142,7 +138,7 @@ public class StoGiProtocol extends Protocol implements Consumer<Packet> {
     else{
       cipherManager = null;
     }
-    locationPollInterval = modemConfig.getLocationPollInterval() * 1000;
+    long locationPollInterval = modemConfig.getLocationPollInterval() * 1000;
     maxBufferSize = modemConfig.getMaxBufferSize();
     compressionThreshold = modemConfig.getCompressionCutoffSize();
 
@@ -152,7 +148,6 @@ public class StoGiProtocol extends Protocol implements Consumer<Packet> {
 
     messagePoll = modemConfig.getIncomingMessagePollInterval() * 1000;
     outgoingMessagePollInterval = modemConfig.getOutgoingMessagePollInterval() * 1000;
-    scheduledFuture = taskManager.schedule(this::pollModemForMessages, messagePoll, TimeUnit.MILLISECONDS);
     completedConnection();
     endPoint.getServer().handleNewEndPoint(endPoint);
     String statsDestination = modemConfig.getModemStatsTopic();
@@ -160,6 +155,55 @@ public class StoGiProtocol extends Protocol implements Consumer<Packet> {
       destination = session.findDestination(statsDestination, DestinationType.TOPIC).join();
     }
     lastOutgoingMessagePollInterval = System.currentTimeMillis();
+    locationHandler = new LocationHandler(modem, locationPollInterval, destination);
+    scheduledFuture = taskManager.schedule(this::pollModemForMessages, messagePoll, TimeUnit.MILLISECONDS);
+  }
+
+  // Main function loop, handles modem message flow
+  private void pollModemForMessages() {
+    boolean hasOutgoing = false;
+    long poll = messagePoll;
+    try {
+      logger.log(STOGI_POLLING_MODEM, modem.getType());
+      NetworkStatus networkStatus = modem.getNetworkStatus();
+      if(!networkStatus.canSend()) {
+        poll = 1000; // check every second while not connected
+        satelliteOnlineCount = 0;
+        satelliteOnline = false;
+        // Log this!!
+      }
+      else{
+        if(!satelliteOnline){
+          satelliteOnlineCount++;
+          if(satelliteOnlineCount > 10){
+            satelliteOnline = true;
+            satelliteOnlineCount = 0;
+          }
+        }
+      }
+      hasOutgoing = processOutboundMessages();
+      if(!hasOutgoing) {
+        processInboundMessages();
+        locationHandler.processLocationRequest();
+      }
+    } catch (Throwable th) {
+      // Log This, it's important
+    } finally {
+      poll = hasOutgoing?500:poll;
+      scheduledFuture = taskManager.schedule(this::pollModemForMessages, poll, TimeUnit.MILLISECONDS);
+    }
+  }
+
+  @Override
+  public void close() throws IOException {
+    if (scheduledFuture != null) {
+      scheduledFuture.cancel(true);
+    }
+    if (session != null) {
+      SessionManager.getInstance().close(session, false);
+      modem.close();
+    }
+    super.close();
   }
 
   private Session setupSession() throws LoginException, IOException {
@@ -185,19 +229,6 @@ public class StoGiProtocol extends Protocol implements Consumer<Packet> {
       throw new IOException(e.getCause());
     }
   }
-
-  @Override
-  public void close() throws IOException {
-    if (scheduledFuture != null) {
-      scheduledFuture.cancel(true);
-    }
-    if (session != null) {
-      SessionManager.getInstance().close(session, false);
-      modem.close();
-    }
-    super.close();
-  }
-
 
   @Override
   public void connect(String sessionId, String username, String password) throws IOException {
@@ -303,89 +334,12 @@ public class StoGiProtocol extends Protocol implements Consumer<Packet> {
     return information;
   }
 
-  private void pollModemForMessages() {
-    boolean hasOutgoing = false;
-    try {
-      logger.log(STOGI_POLLING_MODEM, modem.getType());
-      hasOutgoing = processOutboundMessages();
-      if(!hasOutgoing) {
-        processInboundMessages();
-        if (locationPollInterval > 0) {
-          processLocationRequest();
-        }
-      }
-    } catch (Throwable th) {
-      // Log This, it's important
-    } finally {
-      long poll = hasOutgoing?500:messagePoll;
-      scheduledFuture = taskManager.schedule(this::pollModemForMessages, poll, TimeUnit.MILLISECONDS);
-    }
-  }
-
-  private void publishStats(double lat, double lon, String satellites) {
-    Integer jamIndicator = modem.getJammingIndicator().join();
-    int jamStatus = modem.getJammingStatus().join();
-    int status = jamStatus & 0x3;
-    String jammingStatus = switch (status) {
-      case 0 -> "unknown";
-      case 1 -> "OK";
-      case 2 -> "Warning - fix OK";
-      case 3 -> "Critical - NO FIX WARNING";
-      default -> "";
-    };
-
-    boolean jammed = (jamStatus & 0x04) != 0;
-    boolean antennaCut = (jamStatus & 0x80) != 0;
-
-    JsonObject obj = new JsonObject();
-    obj.addProperty("latitude", toDMS(lat, false));
-    obj.addProperty("longitude", toDMS(lon, true));
-    obj.addProperty("jammingIndicator", jamIndicator);
-    obj.addProperty("jammingStatus", jammingStatus);
-    obj.addProperty("satellites", satellites);
-
-    if (jammed) {
-      obj.addProperty("status", "JAMMED");
-    }
-    if (antennaCut) {
-      obj.addProperty("status", "Antenna Cut");
-    }
-
-    String temp = modem.getTemperature().join();
-    if (temp != null) {
-      float f = toFloat(temp);
-      obj.addProperty("temperature", f);
-    }
-    String payload = obj.toString();
-    MessageBuilder messageBuilder = new MessageBuilder();
-    messageBuilder.setOpaqueData(payload.getBytes());
-    try {
-      destination.storeMessage(messageBuilder.build());
-    } catch (IOException e) {
-      // Log this
-    }
-  }
-
-  private void processLocationRequest() {
-    if (lastLocationPoll + locationPollInterval < System.currentTimeMillis()) {
-      List<String> location = modem.getLocation().join();
-      for (String loc : location) {
-        Sentence sentence = locationParser.parseLocation(loc);
-        if (sentence != null && sentence.getName().equalsIgnoreCase("GPGGA")) {
-          PositionType latitude = (PositionType) sentence.get("latitude");
-          PositionType longitude = (PositionType) sentence.get("longitude");
-          LongType satellites = (LongType) sentence.get("satellites");
-          LocationManager.getInstance().setPosition(latitude.getPosition(), longitude.getPosition());
-          if (destination != null) {
-            publishStats(latitude.getPosition(), longitude.getPosition(), satellites.toString());
-          }
-        }
-      }
-      lastLocationPoll = System.currentTimeMillis();
-    }
-  }
 
   private boolean processOutboundMessages() {
+    if(!satelliteOnline) {
+      return false;
+    }
+
     CompletableFuture<List<SendMessageState>> outgoing = modem.listSentMessages();
     List<SendMessageState> stateList = outgoing.join();
     if (stateList.isEmpty() &&  currentList.isEmpty() && lastOutgoingMessagePollInterval + outgoingMessagePollInterval > System.currentTimeMillis()) {
@@ -588,27 +542,5 @@ public class StoGiProtocol extends Protocol implements Consumer<Packet> {
     return result;
   }
 
-
-  private float toFloat(String temp) {
-    try {
-      temp = temp.substring(0, 5);
-      return Float.parseFloat(temp.trim()) / 10.0f;
-    } catch (NumberFormatException e) {
-      return Float.NaN;
-    }
-  }
-  private String toDMS(double value, boolean isLongitude) {
-    String hemisphere = isLongitude
-        ? (value >= 0 ? "E" : "W")
-        : (value >= 0 ? "N" : "S");
-
-    double absVal = Math.abs(value);
-    int degrees = (int) absVal;
-    double minutesFull = (absVal - degrees) * 60.0;
-    int minutes = (int) minutesFull;
-    double seconds = (minutesFull - minutes) * 60.0;  // fractional seconds
-
-    return String.format("%d° %02d' %06.3f %s", degrees, minutes, seconds, hemisphere);
-  }
 
 }

@@ -20,6 +20,7 @@
 package io.mapsmessaging.network.protocol.impl.satellite.modem.device.impl;
 
 import io.mapsmessaging.network.protocol.impl.satellite.modem.device.Modem;
+import io.mapsmessaging.network.protocol.impl.satellite.modem.device.impl.data.NetworkStatus;
 import io.mapsmessaging.network.protocol.impl.satellite.modem.device.messages.IncomingMessageDetails;
 import io.mapsmessaging.network.protocol.impl.satellite.modem.device.messages.ModemSatelliteMessage;
 import io.mapsmessaging.network.protocol.impl.satellite.modem.device.messages.SendMessageState;
@@ -35,9 +36,21 @@ public class IdpModemProtocol extends BaseModemProtocol {
   }
 
 
+
+
   //region outgoing message functions
   public void sendMessage(ModemSatelliteMessage modemSatelliteMessage) {
     modem.sendATCommand("AT%MGRT=" + modemSatelliteMessage.toATCommand());
+  }
+
+  @Override
+  public NetworkStatus getCurrentNetworkStatus() {
+    return modem.sendATCommand("ATS54?")
+        .thenApply(resp -> {
+          String firstLine = resp.split("\\R", 2)[0].trim();
+          return NetworkStatus.parse(firstLine);
+        })
+        .join();
   }
 
   public CompletableFuture<List<SendMessageState>> listSentMessages() {

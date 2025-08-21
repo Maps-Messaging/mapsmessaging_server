@@ -26,6 +26,7 @@ import io.mapsmessaging.network.io.Packet;
 import io.mapsmessaging.network.protocol.impl.satellite.modem.device.impl.BaseModemProtocol;
 import io.mapsmessaging.network.protocol.impl.satellite.modem.device.impl.IdpModemProtocol;
 import io.mapsmessaging.network.protocol.impl.satellite.modem.device.impl.OgxModemProtocol;
+import io.mapsmessaging.network.protocol.impl.satellite.modem.device.impl.data.NetworkStatus;
 import io.mapsmessaging.network.protocol.impl.satellite.modem.device.messages.IncomingMessageDetails;
 import io.mapsmessaging.network.protocol.impl.satellite.modem.device.messages.MessageNameGenerator;
 import io.mapsmessaging.network.protocol.impl.satellite.modem.device.messages.ModemSatelliteMessage;
@@ -123,6 +124,10 @@ public class Modem {
       }
       return modemProtocol;
     });
+  }
+
+  public NetworkStatus getNetworkStatus() {
+    return modemProtocol.getCurrentNetworkStatus();
   }
 
   //region Modem Status functions
