@@ -19,6 +19,8 @@
 
 package io.mapsmessaging.network.protocol.impl.satellite.protocol;
 
+import io.mapsmessaging.network.protocol.impl.satellite.modem.xmodem.Xmodem;
+
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -77,12 +79,15 @@ public final class MessageQueuePacker {
       totalFrameLength += 2 + namespaceStream.length;
     }
 
-    ByteBuffer frameBuffer = ByteBuffer.allocate(totalFrameLength);
+    ByteBuffer frameBuffer = ByteBuffer.allocate(totalFrameLength+4);
     frameBuffer.putShort((short) numberOfNamespaces);
     for (byte[] namespaceStream : namespaceStreams) {
       frameBuffer.putShort((short) namespaceStream.length);
       frameBuffer.put(namespaceStream);
     }
+    byte[] frame = frameBuffer.array();
+    int crc= (int)(Xmodem.crc32Mpeg2(frame, frame.length-4) & 0xFFFFFFFF);
+    frameBuffer.putInt(crc);
     return frameBuffer.array();
   }
 

@@ -19,6 +19,8 @@
 
 package io.mapsmessaging.network.protocol.impl.satellite.protocol;
 
+import io.mapsmessaging.network.protocol.impl.satellite.modem.xmodem.Xmodem;
+
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -43,8 +45,16 @@ public final class MessageQueueUnpacker {
     if (rawBuffer == null || rawBuffer.length < 2) return Map.of();
 
     // Decrypt post unzip
+    int length = rawBuffer.length;
+    int receivedCrc = ByteBuffer.wrap(rawBuffer, length - 4, 4).getInt();
+    int computedCrc = (int)(Xmodem.crc32Mpeg2(rawBuffer, rawBuffer.length-4) & 0xFFFFFFFF );
+    if(receivedCrc != computedCrc){
+      throw new IOException("crc check failed");
+    }
 
-    ByteBuffer frameBuffer = ByteBuffer.wrap(rawBuffer);
+    ByteBuffer frameBuffer = ByteBuffer.wrap(rawBuffer, 0, rawBuffer.length - 4);
+
+
     if (frameBuffer.remaining() < 2) return Map.of();
     int numberOfNamespaces = Short.toUnsignedInt(frameBuffer.getShort());
 
