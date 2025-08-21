@@ -21,11 +21,11 @@ package io.mapsmessaging.network.protocol.impl.satellite.gateway.inmarsat.protoc
 
 import com.google.gson.annotations.SerializedName;
 import io.mapsmessaging.network.protocol.impl.satellite.gateway.model.RemoteDeviceInfo;
-import lombok.Getter;
+import lombok.Data;
 import lombok.ToString;
 
 @ToString
-@Getter
+@Data
 public final class DeviceInfo extends RemoteDeviceInfo {
   @SerializedName("mailboxId")
   private String mailboxId;

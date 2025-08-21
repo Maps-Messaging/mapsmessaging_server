@@ -144,9 +144,8 @@ public abstract class BaseInmarsatClient {
     String msg = "HTTP " + resp.statusCode();
     try {
       ApiError e = gson.fromJson(body, ApiError.class);
-      if (e != null && (e.message != null || e.error != null)) {
-        msg += " — " + (e.message != null ? e.message : e.error);
-        if (e.code != null) msg += " (code=" + e.code + ")";
+      if (e != null ){
+        msg += " - "+e;
       } else if (body != null && !body.isBlank()) {
         msg += " — " + body;
       }
@@ -190,22 +189,9 @@ public abstract class BaseInmarsatClient {
   }
 
   // ---------- No X-Mailbox (VAR endpoints) ----------
-  protected <T> T getNoMailbox(String path, Map<String, String> query, String bearer, Class<T> cls) {
-    HttpRequest req = baseRequest(path + qs(query), bearer).GET().build();
-    return send(req, cls);
-  }
-
   protected <T> T getNoMailbox(String path, Map<String, String> query, String bearer, Type type) {
     HttpRequest req = baseRequest(path + qs(query), bearer).GET().build();
     return send(req, type);
-  }
-
-  protected <T> T postJsonNoMailbox(String path, Object body, String bearer, Class<T> cls) {
-    HttpRequest req = baseRequest(path, bearer)
-        .header("Content-Type", "application/json")
-        .POST(HttpRequest.BodyPublishers.ofString(gson.toJson(body)))
-        .build();
-    return send(req, cls);
   }
 
   // ---------- Common base for all requests ----------
@@ -220,9 +206,4 @@ public abstract class BaseInmarsatClient {
     return b;
   }
 
-  private static final class ApiError {
-    String message;
-    String error;
-    Integer code;
-  }
 }

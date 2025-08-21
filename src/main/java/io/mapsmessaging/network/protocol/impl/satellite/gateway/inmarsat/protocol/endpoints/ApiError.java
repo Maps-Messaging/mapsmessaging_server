@@ -17,17 +17,24 @@
  *  limitations under the License.
  */
 
-package io.mapsmessaging.network.protocol.impl.satellite.gateway.inmarsat.protocol.model;
+package io.mapsmessaging.network.protocol.impl.satellite.gateway.inmarsat.protocol.endpoints;
 
-import com.google.gson.annotations.SerializedName;
-import lombok.AllArgsConstructor;
 import lombok.Data;
-import lombok.ToString;
 
 @Data
-@ToString
-@AllArgsConstructor
-public final class MailboxPasswordChangeRequest {
-  @SerializedName("newPassword")
-  public final String newPassword; // nullable; server can generate
+public class ApiError {
+  private String message;
+  private String error;
+  private Integer code;
+
+
+  @Override
+  public String toString(){
+    String ret = "";
+    if (getMessage() != null || getError() != null) {
+      ret += getMessage() != null ? getMessage() : getError();
+    }
+    if (getCode() != null) ret += " (code=" + getCode() + ")";
+    return ret;
+  }
 }

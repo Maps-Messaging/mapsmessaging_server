@@ -29,7 +29,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.concurrent.CompletableFuture;
 
-public class XmodemBypass implements StreamBypass {
+public class XmodemReceieveBypass implements StreamBypass {
   private final int announcedLength;
   private final long expectedCrc32;  // pass -1 to skip CRC32 check
   private final int readTimeoutMs;
@@ -39,7 +39,7 @@ public class XmodemBypass implements StreamBypass {
   private volatile boolean complete = false;
   private volatile boolean started = false;
 
-  public XmodemBypass(int announcedLength, long expectedCrc32, int readTimeoutMs, CompletableFuture<byte[]> future) {
+  public XmodemReceieveBypass(int announcedLength, long expectedCrc32, int readTimeoutMs, CompletableFuture<byte[]> future) {
     this.future = future;
     this.payload = new ByteArrayOutputStream();
     this.announcedLength = announcedLength;

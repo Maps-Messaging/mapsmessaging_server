@@ -19,7 +19,11 @@
 package io.mapsmessaging.network.protocol.impl.satellite.gateway.inmarsat.protocol.model;
 
 import com.google.gson.annotations.SerializedName;
+import lombok.Data;
+import lombok.ToString;
 
+@Data
+@ToString
 public final class MobileTerminatedDetail {
   @SerializedName("messageId")
   private String messageId;     // UUID
@@ -35,32 +39,4 @@ public final class MobileTerminatedDetail {
   private Integer errorCode;    // optional
   @SerializedName("errorMsg")
   private String errorMsg;      // optional
-
-  public String getMessageId() {
-    return messageId;
-  }
-
-  public String getDestinationId() {
-    return destinationId;
-  }
-
-  public Integer getState() {
-    return state;
-  }
-
-  public String getSubmitTime() {
-    return submitTime;
-  }
-
-  public String getUpdatedTime() {
-    return updatedTime;
-  }
-
-  public Integer getErrorCode() {
-    return errorCode;
-  }
-
-  public String getErrorMsg() {
-    return errorMsg;
-  }
 }

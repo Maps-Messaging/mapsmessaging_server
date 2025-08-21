@@ -26,6 +26,7 @@ import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.network.protocol.impl.satellite.gateway.inmarsat.protocol.endpoints.*;
 import io.mapsmessaging.network.protocol.impl.satellite.gateway.inmarsat.protocol.model.*;
+import lombok.Getter;
 
 import java.net.URI;
 import java.net.http.HttpClient;
@@ -36,15 +37,18 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import static io.mapsmessaging.logging.ServerLogMessages.INMARSAT_WEB_REQUEST_STATS;
+
 public final class InmarsatSession {
-  private final Gson gson = new GsonBuilder()
-      .create();
+  private final Gson gson = new GsonBuilder().create();
 
   private final Logger logger = LoggerFactory.getLogger(InmarsatSession.class);
 
+  @Getter
+  private final String clientId;
+  @Getter
+  private final String clientSecret;
 
-  protected final String clientId;
-  protected final String clientSecret;
   private final String mailboxId;
   private final String mailboxPassword;
 
@@ -168,62 +172,99 @@ public final class InmarsatSession {
     }
 
     private String bearer() { return InmarsatSession.this.bearer(); }
-    public String mailboxId() { return mailboxId; }
 
     // Messaging
     public MobileOriginatedResponse pollMO(String startTimeIso) {
-      return messages.getMobileOriginated(bearer(), xMailbox, startTimeIso);
+      long start = System.currentTimeMillis();
+      try {
+        return messages.getMobileOriginated(bearer(), xMailbox, startTimeIso);
+      } finally {
+        logger.log(INMARSAT_WEB_REQUEST_STATS, "pollMO", System.currentTimeMillis() - start);
+      }
     }
 
     public MobileTerminatedSubmitResponse submitMT(MobileTerminatedSubmitRequest body) {
-      return messages.submitMobileTerminated(bearer(), xMailbox, body);
+      long start = System.currentTimeMillis();
+      try {
+        return messages.submitMobileTerminated(bearer(), xMailbox, body);
+      } finally {
+        logger.log(INMARSAT_WEB_REQUEST_STATS, "submitMT", System.currentTimeMillis() - start);
+      }
     }
 
     public MobileTerminatedStatusResponse pollMTStatus(String startTimeIso) {
-      return messages.getMobileTerminatedStatus(bearer(), xMailbox, startTimeIso);
+      long start = System.currentTimeMillis();
+      try {
+        return messages.getMobileTerminatedStatus(bearer(), xMailbox, startTimeIso);
+      } finally {
+        logger.log(INMARSAT_WEB_REQUEST_STATS, "pollMTStatus", System.currentTimeMillis() - start);
+      }
     }
 
     public List<MobileTerminatedDetail> getMTDetails(List<String> messageIds) {
-      return messages.getMobileTerminatedDetails(bearer(), xMailbox, messageIds);
+      long start = System.currentTimeMillis();
+      try {
+        return messages.getMobileTerminatedDetails(bearer(), xMailbox, messageIds);
+      } finally {
+        logger.log(INMARSAT_WEB_REQUEST_STATS, "getMTDetails", System.currentTimeMillis() - start);
+      }
     }
 
     // Commands
     public MobileTerminatedSubmitResponse changeMode(List<ChangeModeCommand> cmds, boolean usePost) {
-      return commands.changeMode(bearer(), xMailbox, cmds, usePost);
+      long start = System.currentTimeMillis();
+      try {
+        return commands.changeMode(bearer(), xMailbox, cmds, usePost);
+      } finally {
+        logger.log(INMARSAT_WEB_REQUEST_STATS, "changeMode", System.currentTimeMillis() - start);
+      }
     }
 
     public MobileTerminatedSubmitResponse mute(List<MuteCommand> cmds, boolean usePost) {
-      return commands.mute(bearer(), xMailbox, cmds, usePost);
+      long start = System.currentTimeMillis();
+      try {
+        return commands.mute(bearer(), xMailbox, cmds, usePost);
+      } finally {
+        logger.log(INMARSAT_WEB_REQUEST_STATS, "mute", System.currentTimeMillis() - start);
+      }
     }
 
     public MobileTerminatedSubmitResponse reset(List<ResetCommand> cmds, boolean usePost) {
-      return commands.reset(bearer(), xMailbox, cmds, usePost);
+      long start = System.currentTimeMillis();
+      try {
+        return commands.reset(bearer(), xMailbox, cmds, usePost);
+      } finally {
+        logger.log(INMARSAT_WEB_REQUEST_STATS, "reset", System.currentTimeMillis() - start);
+      }
     }
 
     // Devices
     public List<DeviceInfo> listDevices(String deviceId) {
-      return devices.listDevices(bearer(), xMailbox, null, null, deviceId);
+      long start = System.currentTimeMillis();
+      try {
+        return devices.listDevices(bearer(), xMailbox, null, null, deviceId);
+      } finally {
+        logger.log(INMARSAT_WEB_REQUEST_STATS, "listDevices", System.currentTimeMillis() - start);
+      }
     }
 
     public List<DeviceInfo> listDevices(Integer limit, Integer offset, String deviceId) {
-      return devices.listDevices(bearer(), xMailbox, limit, offset, deviceId);
+      long start = System.currentTimeMillis();
+      try {
+        return devices.listDevices(bearer(), xMailbox, limit, offset, deviceId);
+      } finally {
+        logger.log(INMARSAT_WEB_REQUEST_STATS, "listDevices", System.currentTimeMillis() - start);
+      }
     }
 
     // Mailbox admin
     public Mailbox getMailbox() {
-      return mailbox.getMailbox(bearer(), xMailbox);
-    }
-
-    public MailboxCodecAck uploadCodec(MailboxCodecUploadRequest req) {
-      return mailbox.uploadCodec(bearer(), xMailbox, req);
-    }
-
-    public void deleteCodec() {
-      mailbox.deleteCodec(bearer(), xMailbox);
-    }
-
-    public MailboxPasswordResponse changeMailboxPassword(String newPasswordOrNull) {
-      return mailbox.changePassword(bearer(), xMailbox, newPasswordOrNull);
+      long start = System.currentTimeMillis();
+      try {
+        return mailbox.getMailbox(bearer(), xMailbox);
+      } finally {
+        logger.log(INMARSAT_WEB_REQUEST_STATS, "getMailbox", System.currentTimeMillis() - start);
+      }
     }
 
     // Error help

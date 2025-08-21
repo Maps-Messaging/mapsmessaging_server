@@ -45,6 +45,7 @@ import io.mapsmessaging.network.protocol.ProtocolMessageTransformation;
 import io.mapsmessaging.network.protocol.impl.nmea.sentences.Sentence;
 import io.mapsmessaging.network.protocol.impl.nmea.types.LongType;
 import io.mapsmessaging.network.protocol.impl.nmea.types.PositionType;
+import io.mapsmessaging.network.protocol.impl.satellite.TaskManager;
 import io.mapsmessaging.network.protocol.impl.satellite.gateway.io.SatelliteEndPoint;
 import io.mapsmessaging.network.protocol.impl.satellite.modem.device.Modem;
 import io.mapsmessaging.network.protocol.impl.satellite.modem.device.impl.BaseModemProtocol;
@@ -71,11 +72,9 @@ import static io.mapsmessaging.logging.ServerLogMessages.*;
 
 public class StoGiProtocol extends Protocol implements Consumer<Packet> {
 
-  private static final ExecutorService existingPool = Executors.newFixedThreadPool(4);
-
-  private static final ScheduledExecutorService scheduler =
-      new ScheduledThreadPoolExecutor(4, ((ThreadPoolExecutor) existingPool).getThreadFactory());
   private static final String STOGI = "stogi";
+
+  private final TaskManager taskManager;
   private final Logger logger = LoggerFactory.getLogger(StoGiProtocol.class);
   private final Session session;
   private final SelectorTask selectorTask;
@@ -104,6 +103,7 @@ public class StoGiProtocol extends Protocol implements Consumer<Packet> {
   public StoGiProtocol(EndPoint endPoint, Packet packet) throws LoginException, IOException {
     super(endPoint, endPoint.getConfig().getProtocolConfig(STOGI));
 
+    taskManager = new TaskManager();
     satelliteMessageRebuilder = new SatelliteMessageRebuilder();
     locationParser = new LocationParser();
     lastLocationPoll = System.currentTimeMillis();
@@ -152,7 +152,7 @@ public class StoGiProtocol extends Protocol implements Consumer<Packet> {
 
     messagePoll = modemConfig.getIncomingMessagePollInterval() * 1000;
     outgoingMessagePollInterval = modemConfig.getOutgoingMessagePollInterval() * 1000;
-    scheduledFuture = scheduler.schedule(this::pollModemForMessages, messagePoll, TimeUnit.MILLISECONDS);
+    scheduledFuture = taskManager.schedule(this::pollModemForMessages, messagePoll, TimeUnit.MILLISECONDS);
     completedConnection();
     endPoint.getServer().handleNewEndPoint(endPoint);
     String statsDestination = modemConfig.getModemStatsTopic();
@@ -318,11 +318,11 @@ public class StoGiProtocol extends Protocol implements Consumer<Packet> {
       // Log This, it's important
     } finally {
       long poll = hasOutgoing?500:messagePoll;
-      scheduledFuture = scheduler.schedule(this::pollModemForMessages, poll, TimeUnit.MILLISECONDS);
+      scheduledFuture = taskManager.schedule(this::pollModemForMessages, poll, TimeUnit.MILLISECONDS);
     }
   }
 
-  private void publishStats(String lat, String lon, String satellites) {
+  private void publishStats(double lat, double lon, String satellites) {
     Integer jamIndicator = modem.getJammingIndicator().join();
     int jamStatus = modem.getJammingStatus().join();
     int status = jamStatus & 0x3;
@@ -338,8 +338,8 @@ public class StoGiProtocol extends Protocol implements Consumer<Packet> {
     boolean antennaCut = (jamStatus & 0x80) != 0;
 
     JsonObject obj = new JsonObject();
-    obj.addProperty("latitude", lat);
-    obj.addProperty("longitude", lon);
+    obj.addProperty("latitude", toDMS(lat, false));
+    obj.addProperty("longitude", toDMS(lon, true));
     obj.addProperty("jammingIndicator", jamIndicator);
     obj.addProperty("jammingStatus", jammingStatus);
     obj.addProperty("satellites", satellites);
@@ -377,11 +377,10 @@ public class StoGiProtocol extends Protocol implements Consumer<Packet> {
           LongType satellites = (LongType) sentence.get("satellites");
           LocationManager.getInstance().setPosition(latitude.getPosition(), longitude.getPosition());
           if (destination != null) {
-            publishStats(latitude.toString(), longitude.toString(), satellites.toString());
+            publishStats(latitude.getPosition(), longitude.getPosition(), satellites.toString());
           }
         }
       }
-
       lastLocationPoll = System.currentTimeMillis();
     }
   }
@@ -396,9 +395,11 @@ public class StoGiProtocol extends Protocol implements Consumer<Packet> {
       lastOutgoingMessagePollInterval = System.currentTimeMillis();
       if(currentList.isEmpty()){
         Map<String, List<byte[]>> replacement = this.pendingMessages.getAndSet(new LinkedHashMap<>());
-        MessageQueuePacker.Packed packedQueue = MessageQueuePacker.pack(replacement, compressionThreshold, cipherManager);
-        currentList.addAll(SatelliteMessageFactory.createMessages(currentStreamId,  packedQueue.data(), maxBufferSize, packedQueue.compressed()));
-        currentStreamId++;
+        if(!replacement.isEmpty()){
+          MessageQueuePacker.Packed packedQueue = MessageQueuePacker.pack(replacement, compressionThreshold, cipherManager);
+          currentList.addAll(SatelliteMessageFactory.createMessages(currentStreamId,  packedQueue.data(), maxBufferSize, packedQueue.compressed()));
+          currentStreamId++;
+        }
       }
       sendMessageViaModem(currentStreamId, currentList.remove(0));
       return currentList.isEmpty();
@@ -596,4 +597,18 @@ public class StoGiProtocol extends Protocol implements Consumer<Packet> {
       return Float.NaN;
     }
   }
+  private String toDMS(double value, boolean isLongitude) {
+    String hemisphere = isLongitude
+        ? (value >= 0 ? "E" : "W")
+        : (value >= 0 ? "N" : "S");
+
+    double absVal = Math.abs(value);
+    int degrees = (int) absVal;
+    double minutesFull = (absVal - degrees) * 60.0;
+    int minutes = (int) minutesFull;
+    double seconds = (minutesFull - minutes) * 60.0;  // fractional seconds
+
+    return String.format("%d° %02d' %06.3f %s", degrees, minutes, seconds, hemisphere);
+  }
+
 }

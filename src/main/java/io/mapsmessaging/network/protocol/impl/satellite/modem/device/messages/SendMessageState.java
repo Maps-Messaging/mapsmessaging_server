@@ -29,6 +29,7 @@ public class SendMessageState {
   private final int sin;
   private final State state;
   private final int length;
+  private final int expiry;
   private final int bytesAcknowledged;
 
   public SendMessageState(String line, boolean isOgx) {
@@ -42,12 +43,14 @@ public class SendMessageState {
       this.state = State.fromCode(Integer.parseInt(parts[4].trim()));
       this.length = Integer.parseInt(parts[5].trim());
       this.bytesAcknowledged = Integer.parseInt(parts[6].trim());
+      expiry = 0;
     } else { // OGx
       this.messageName = parts[1].replace("\"", "").trim();
       this.messageNumber = 0.0;
       this.state = State.fromCode(Integer.parseInt(parts[3].trim()));
       this.priority = 1;
       this.sin = 0;
+      this.expiry = Integer.parseInt(parts[6].trim());
       this.length = Integer.parseInt(parts[7].trim());
       this.bytesAcknowledged = Integer.parseInt(parts[8].trim());
     }
@@ -72,16 +75,20 @@ public class SendMessageState {
 
   @Override
   public String toString() {
-    return String.format("SendMessageState[name=%s, num=%.1f, pri=%d, sin=%d, state=%s, len=%d, ack=%d]",
-        messageName, messageNumber, priority, sin, state, length, bytesAcknowledged);
+    return String.format("SendMessageState[name=%s, num=%.1f, pri=%d, sin=%d, state=%s, expiry=%s len=%d, ack=%d]",
+        messageName, messageNumber, priority, sin, state, expiry, length, bytesAcknowledged);
   }
 
   @Getter
   public enum State {
-    TX_READY(4),
-    TX_SENDING(5),
+    TX_INITIALIZING(1),
+    TX_OFFLINE(2),
+    TX_READY(3),
+    TX_SENDING(4),
     TX_COMPLETED(6),
     TX_FAILED(7),
+    TX_EXPIRED(8),
+    TX_CANCELLED(14),
     UNKNOWN(-1);
 
     private final int code;
@@ -92,12 +99,21 @@ public class SendMessageState {
 
     public static State fromCode(int code) {
       return switch (code) {
-        case 4 -> TX_READY;
+        case 1 -> TX_INITIALIZING;
+        case 2 -> TX_OFFLINE;
+        case 3 -> TX_READY;
         case 5 -> TX_SENDING;
         case 6 -> TX_COMPLETED;
         case 7 -> TX_FAILED;
+        case 8 -> TX_EXPIRED;
+        case 14 -> TX_CANCELLED;
         default -> UNKNOWN;
       };
     }
+  }
+
+  public static void main(String[] args) {
+    SendMessageState state = new SendMessageState("%MOQS: 1,3,2025-08-21 02:21:39,3,0,2,20,84,0", true);
+    System.out.println(state);
   }
 }

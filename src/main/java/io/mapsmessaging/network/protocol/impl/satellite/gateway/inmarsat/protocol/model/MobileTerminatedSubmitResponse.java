@@ -20,29 +20,14 @@
 package io.mapsmessaging.network.protocol.impl.satellite.gateway.inmarsat.protocol.model;
 
 import com.google.gson.annotations.SerializedName;
+import lombok.Data;
+import lombok.ToString;
 
 import java.util.List;
 
+@Data
+@ToString
 public final class MobileTerminatedSubmitResponse {
   @SerializedName("messages")
   private List<Ack> messages;
-
-  public List<Ack> getMessages() {
-    return messages;
-  }
-
-  public static final class Ack {
-    @SerializedName("messageId")
-    private String messageId;   // UUID
-    @SerializedName("destinationId")
-    private String destinationId;
-
-    public String getMessageId() {
-      return messageId;
-    }
-
-    public String getDestinationId() {
-      return destinationId;
-    }
-  }
 }

@@ -38,7 +38,7 @@ public final class AuthClient extends BaseInmarsatClient {
     super(baseUrl, http, gson);
   }
 
-  public AccessToken getAccessToken(String clientId, String clientSecret) {
+  public void loadAccessToken(String clientId, String clientSecret) {
     URI reqUri = base.resolve("oauth/token");
     HttpRequest req = HttpRequest.newBuilder(reqUri)
         .header("ClientId", Objects.requireNonNull(clientId))
@@ -47,7 +47,6 @@ public final class AuthClient extends BaseInmarsatClient {
         .build();
     AccessToken token = send(req, AccessToken.class);
     cache.set(new Cached(token, Instant.now()));
-    return token;
   }
 
   public String getValidBearer(String clientId, String clientSecret) {
@@ -57,7 +56,7 @@ public final class AuthClient extends BaseInmarsatClient {
       synchronized (this) {
         c = cache.get();
         if (c == null || now.isAfter(c.token.expiresAt(c.obtainedAt, DEFAULT_SKEW_SECONDS))) {
-          getAccessToken(clientId, clientSecret);
+          loadAccessToken(clientId, clientSecret);
           c = cache.get();
         }
       }

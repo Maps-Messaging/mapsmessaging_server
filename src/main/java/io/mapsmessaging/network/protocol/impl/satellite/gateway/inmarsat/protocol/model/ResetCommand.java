@@ -20,7 +20,13 @@
 package io.mapsmessaging.network.protocol.impl.satellite.gateway.inmarsat.protocol.model;
 
 import com.google.gson.annotations.SerializedName;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.ToString;
 
+@Data
+@AllArgsConstructor
+@ToString
 public final class ResetCommand {
   @SerializedName("destinationId")
   private final String destinationId;
@@ -30,11 +36,4 @@ public final class ResetCommand {
   private final Boolean resetModem;       // optional
   @SerializedName("resetApplication")
   private final Boolean resetApplication; // optional
-
-  public ResetCommand(String destinationId, String userMessageId, Boolean resetModem, Boolean resetApplication) {
-    this.destinationId = destinationId;
-    this.userMessageId = userMessageId;
-    this.resetModem = resetModem;
-    this.resetApplication = resetApplication;
-  }
 }

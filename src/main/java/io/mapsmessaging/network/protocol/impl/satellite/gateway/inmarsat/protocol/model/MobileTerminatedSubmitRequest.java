@@ -21,12 +21,14 @@ package io.mapsmessaging.network.protocol.impl.satellite.gateway.inmarsat.protoc
 
 import com.google.gson.annotations.SerializedName;
 import lombok.AllArgsConstructor;
-import lombok.Getter;
+import lombok.Data;
+import lombok.ToString;
 
 import java.util.List;
 
-@Getter
+@Data
 @AllArgsConstructor
+@ToString
 public final class MobileTerminatedSubmitRequest {
   @SerializedName("messages")
   private List<Item> messages;

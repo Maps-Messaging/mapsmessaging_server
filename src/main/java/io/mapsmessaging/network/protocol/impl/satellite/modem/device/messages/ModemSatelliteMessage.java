@@ -20,6 +20,7 @@
 package io.mapsmessaging.network.protocol.impl.satellite.modem.device.messages;
 
 import io.mapsmessaging.network.protocol.impl.satellite.modem.device.values.MessageFormat;
+import io.mapsmessaging.network.protocol.impl.satellite.modem.xmodem.XmodemSender;
 import lombok.Data;
 import lombok.ToString;
 
@@ -99,16 +100,27 @@ public class ModemSatelliteMessage {
     extended[1] = (byte) min;
     System.arraycopy(payload, 0, extended, 2, payload.length);
     String encodedPayload = format.encode(extended);
-    return String.format("%d,%d,%d,%d,%d,%s", messageId, OGX_SERVICE_CLASS, lifeTime, extended.length, format.getCode(), encodedPayload
-    );
+    return String.format("%d,%d,%d,%d,%d,%s", messageId, OGX_SERVICE_CLASS, lifeTime, extended.length, format.getCode(), encodedPayload);
   }
 
-  public static void main(String[] args){
-      String t = "qSMAAAAAAAAXL3NhdGVsbGl0ZS9hbGV4L3RvcDM1NTVIaSBUaGVyZSwgdGhpcyBpcyBBdGhlbnMgcmVzcG9uZGluZw==";
-      System.out.println(t.length());
-    MessageFormat format = MessageFormat.BASE64;
-    byte[] decoded = format.decode(t);
-    System.out.println(Arrays.toString(decoded));
+  public XmodemData toOgxXModemCommand() {
+    byte[] extended = new byte[payload.length + 2];
+    extended[0] = (byte) sin;
+    extended[1] = (byte) min;
+    System.arraycopy(payload, 0, extended, 2, payload.length);
+    long crc = XmodemSender.crc32Mpeg2(extended, extended.length) & 0xffffffffL;
+    XmodemData data = new XmodemData();
+    data.setCrc(crc);
+    data.setData(extended);
+    data.command = String.format("%d,%d,%d,%d,%d,%08X", messageId, OGX_SERVICE_CLASS, lifeTime, extended.length, 0, crc);
+    return data;
+  }
+
+  @Data
+  public static class XmodemData{
+    String command;
+    byte[] data;
+    long crc;
   }
 }
 

@@ -27,7 +27,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-import static io.mapsmessaging.logging.ServerLogMessages.*;
+import static io.mapsmessaging.logging.ServerLogMessages.STOGI_SPLIT_MESSAGE;
 
 public class SatelliteMessageFactory {
 

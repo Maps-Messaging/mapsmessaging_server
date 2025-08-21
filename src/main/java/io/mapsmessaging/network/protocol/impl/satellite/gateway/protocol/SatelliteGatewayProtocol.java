@@ -34,6 +34,7 @@ import io.mapsmessaging.network.ProtocolClientConnection;
 import io.mapsmessaging.network.io.EndPoint;
 import io.mapsmessaging.network.io.Packet;
 import io.mapsmessaging.network.protocol.Protocol;
+import io.mapsmessaging.network.protocol.impl.satellite.TaskManager;
 import io.mapsmessaging.network.protocol.impl.satellite.gateway.io.SatelliteEndPoint;
 import io.mapsmessaging.network.protocol.impl.satellite.gateway.model.MessageData;
 import io.mapsmessaging.network.protocol.impl.satellite.protocol.*;
@@ -44,7 +45,10 @@ import javax.security.auth.Subject;
 import javax.security.auth.login.LoginException;
 import java.io.IOException;
 import java.util.*;
-import java.util.concurrent.*;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static io.mapsmessaging.logging.ServerLogMessages.OGWS_FAILED_TO_SAVE_MESSAGE;
@@ -52,11 +56,7 @@ import static io.mapsmessaging.logging.ServerLogMessages.OGWS_FAILED_TO_SAVE_MES
 
 public class SatelliteGatewayProtocol extends Protocol {
 
-  private static final ExecutorService existingPool = Executors.newFixedThreadPool(4);
-
-  private static final ScheduledExecutorService scheduler =
-      new ScheduledThreadPoolExecutor(4, ((ThreadPoolExecutor) existingPool).getThreadFactory());
-
+  private final TaskManager taskManager;
   private final Logger logger = LoggerFactory.getLogger(SatelliteGatewayProtocol.class);
   private final SatelliteMessageRebuilder messageRebuilder;
   private final Session session;
@@ -75,6 +75,7 @@ public class SatelliteGatewayProtocol extends Protocol {
     super(endPoint, protocolConfig);
     pendingMessages = new AtomicReference<>();
     pendingMessages.set(new LinkedHashMap<>());
+    taskManager = new TaskManager();
     String primeId = ((SatelliteEndPoint) endPoint).getTerminalInfo().getUniqueId();
     SatelliteConfigDTO config = (SatelliteConfigDTO) protocolConfig;
 
@@ -119,18 +120,21 @@ public class SatelliteGatewayProtocol extends Protocol {
           .setNoLocalMessages(true);
       session.addSubscription(subBuilder.build());
     }
-    scheduledFuture = scheduler.schedule(this::processOutstandingMessages, outgoingPollInterval, TimeUnit.SECONDS);
+    ((SatelliteEndPoint) endPoint).unmute();
+    scheduledFuture = taskManager.schedule(this::processOutstandingMessages, outgoingPollInterval, TimeUnit.SECONDS);
   }
 
   @Override
   public void close() throws IOException {
     if (!closed) {
+      ((SatelliteEndPoint) endPoint).mute();
       if(scheduledFuture != null){
         scheduledFuture.cancel(true);
       }
       closed = true;
       SessionManager.getInstance().close(session, false);
       super.close();
+      taskManager.close();
     }
   }
 
@@ -173,18 +177,13 @@ public class SatelliteGatewayProtocol extends Protocol {
   @Override
   public void sendMessage(@NotNull @NonNull MessageEvent messageEvent) {
     String destinationName = messageEvent.getDestinationName();
-    if(destinationName.startsWith("/orbcomm/broadcast")){
-      destinationName = destinationName.replace("/orbcomm/broadcast", "");
-    }
     Message message = processTransformer(destinationName, messageEvent.getMessage());
-
     byte[] payload;
     if (transformation != null) {
       payload = transformation.outgoing(message, messageEvent.getDestinationName());
     } else {
       payload = message.getOpaqueData();
     }
-
     if (topicNameMapping != null) {
       String tmp = topicNameMapping.get(destinationName);
       if (tmp != null) {
@@ -193,10 +192,7 @@ public class SatelliteGatewayProtocol extends Protocol {
         scanForName(destinationName);
       }
     }
-
     destinationName = scanForName(destinationName);
-
-
     Map<String, List<byte[]>> pending = pendingMessages.get();
     List<byte[]> list =pending.computeIfAbsent(destinationName, key -> new ArrayList<>());
     list.add(payload);
@@ -226,7 +222,7 @@ public class SatelliteGatewayProtocol extends Protocol {
         currentStreamId++;
       }
     } finally {
-      scheduledFuture = scheduler.schedule(this::processOutstandingMessages, outgoingPollInterval, TimeUnit.SECONDS);
+      scheduledFuture = taskManager.schedule(this::processOutstandingMessages, outgoingPollInterval, TimeUnit.SECONDS);
     }
   }
 

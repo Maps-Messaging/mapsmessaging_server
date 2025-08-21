@@ -22,9 +22,9 @@ package io.mapsmessaging.network.protocol.impl.satellite.gateway.io;
 import io.mapsmessaging.dto.rest.config.protocol.impl.SatelliteConfigDTO;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
+import io.mapsmessaging.network.protocol.impl.satellite.TaskManager;
 import io.mapsmessaging.network.protocol.impl.satellite.gateway.model.MessageData;
 import io.mapsmessaging.network.protocol.impl.satellite.gateway.model.RemoteDeviceInfo;
-import io.mapsmessaging.utilities.threads.SimpleTaskScheduler;
 import lombok.Getter;
 
 import javax.security.auth.login.LoginException;
@@ -45,10 +45,11 @@ public class GatewayManager {
   private final IncomingMessageHandler handler;
   private final int pollInterval;
   private final List<MessageData> pendingMessages;
+  private final Map<String, RemoteDeviceInfo> knownTerminals;
 
+  private TaskManager taskManager;
   private ScheduledFuture<?> scheduledFuture;
 
-  private final Map<String, RemoteDeviceInfo> knownTerminals;
 
   @Getter
   private boolean authenticated;
@@ -64,20 +65,19 @@ public class GatewayManager {
 
   public void start() {
     try {
+      taskManager = new TaskManager();
       authenticated = satelliteClient.authenticate();
       if (authenticated) {
         List<RemoteDeviceInfo> response = satelliteClient.getTerminals(null);
         for (RemoteDeviceInfo terminal : response) {
           if (DeviceIdUtil.isValidDeviceId(terminal.getUniqueId())) {
             knownTerminals.put(terminal.getUniqueId(), terminal);
-          } else {
-            System.err.println("Found unknown terminal " + terminal);
           }
         }
         for (RemoteDeviceInfo terminal : knownTerminals.values()) {
           handler.registerTerminal(terminal);
         }
-        scheduledFuture = SimpleTaskScheduler.getInstance().scheduleAtFixedRate(this::pollGateway, pollInterval, pollInterval, TimeUnit.SECONDS);
+        scheduledFuture = taskManager.schedule(this::pollGateway, pollInterval, TimeUnit.SECONDS);
       } else {
         logger.log(OGWS_FAILED_AUTHENTICATION);
       }
@@ -93,6 +93,15 @@ public class GatewayManager {
       scheduledFuture.cancel(true);
       scheduledFuture = null;
     }
+    taskManager.close();
+  }
+
+  public void muteClient(String id){
+    satelliteClient.mute(id);
+  }
+
+  public void unmuteClient(String id){
+    satelliteClient.unmute(id);
   }
 
   public RemoteDeviceInfo getTerminal(String id) {
@@ -109,14 +118,19 @@ public class GatewayManager {
 
   // timed task to read /write to the remote server
   protected void pollGateway() {
-    handler.handleIncomingMessage(satelliteClient.scanForIncoming());
-    List<MessageData> tmp;
-    synchronized (pendingMessages) {
-      tmp = new ArrayList<>(pendingMessages);
-      pendingMessages.clear();
+    try {
+      handler.handleIncomingMessage(satelliteClient.scanForIncoming());
+      List<MessageData> tmp;
+      synchronized (pendingMessages) {
+        tmp = new ArrayList<>(pendingMessages);
+        pendingMessages.clear();
+      }
+      if (!tmp.isEmpty()) {
+        satelliteClient.processPendingMessages(tmp);
+      }
     }
-    if(!tmp.isEmpty()) {
-      satelliteClient.processPendingMessages(tmp);
+    finally {
+      scheduledFuture = taskManager.schedule(this::pollGateway, pollInterval, TimeUnit.SECONDS);
     }
   }
 

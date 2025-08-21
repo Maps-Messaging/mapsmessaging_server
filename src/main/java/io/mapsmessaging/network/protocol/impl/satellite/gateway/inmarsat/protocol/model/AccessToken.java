@@ -21,9 +21,13 @@
 package io.mapsmessaging.network.protocol.impl.satellite.gateway.inmarsat.protocol.model;
 
 import com.google.gson.annotations.SerializedName;
+import lombok.Data;
+import lombok.ToString;
 
 import java.time.Instant;
 
+@Data
+@ToString
 public final class AccessToken {
   @SerializedName("token_type")
   private String tokenType;
@@ -33,23 +37,6 @@ public final class AccessToken {
   private String token;
   @SerializedName("scope")
   private String scope;
-
-  // getters
-  public String getTokenType() {
-    return tokenType;
-  }
-
-  public int getExpiresIn() {
-    return expiresIn;
-  }
-
-  public String getToken() {
-    return token;
-  }
-
-  public String getScope() {
-    return scope;
-  }
 
   public Instant expiresAt(Instant obtainedAt, int skewSeconds) {
     return obtainedAt.plusSeconds(Math.max(0L, (long) expiresIn - Math.max(0, skewSeconds)));

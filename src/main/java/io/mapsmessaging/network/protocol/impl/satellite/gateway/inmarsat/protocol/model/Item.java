@@ -23,8 +23,10 @@ import com.google.gson.JsonObject;
 import com.google.gson.annotations.SerializedName;
 import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.ToString;
 
 @Data
+@ToString
 @AllArgsConstructor
 public final class Item {
   @SerializedName("destinationId")

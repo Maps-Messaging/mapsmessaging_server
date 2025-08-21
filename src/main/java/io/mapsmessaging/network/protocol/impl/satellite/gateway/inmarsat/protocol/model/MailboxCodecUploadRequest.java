@@ -20,15 +20,16 @@
 package io.mapsmessaging.network.protocol.impl.satellite.gateway.inmarsat.protocol.model;
 
 import com.google.gson.annotations.SerializedName;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.ToString;
 
+@Data
+@ToString
+@AllArgsConstructor
 public final class MailboxCodecUploadRequest {
   @SerializedName("name")
-  public final String name;
+  private final String name;
   @SerializedName("data")
-  public final String data; // .idpmsg XML as string
-
-  public MailboxCodecUploadRequest(String name, String data) {
-    this.name = name;
-    this.data = data;
-  }
+  private final String data; // .idpmsg XML as string
 }

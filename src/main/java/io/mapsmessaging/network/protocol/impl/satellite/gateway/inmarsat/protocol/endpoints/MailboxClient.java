@@ -37,10 +37,6 @@ public final class MailboxClient extends BaseInmarsatClient {
     super(base, http, gson);
   }
 
-  public static String xMailbox(String mailboxId, String mailboxPassword) {
-    return BaseInmarsatClient.xMailbox(mailboxId, mailboxPassword);
-  }
-
   // X-Mailbox endpoints
   public Mailbox getMailbox(String bearer, String xMailbox) {
     return get("mailbox", Map.of(), bearer, xMailbox, Mailbox.class);
@@ -64,21 +60,4 @@ public final class MailboxClient extends BaseInmarsatClient {
         bearer, xMailbox, MailboxPasswordResponse.class);
   }
 
-  // VAR endpoints (NO X-Mailbox)
-  public MailboxPasswordResponse resetPasswordVAR(String bearer, String folderId, String mailboxId, String newPasswordOrNull) {
-    return postJsonNoMailbox("mailbox/password/reset",
-        new MailboxPasswordChangeRequest(newPasswordOrNull),
-        bearer,
-        MailboxPasswordResponse.class
-    ); // folderId/mailboxId as query params:
-    // If you prefer explicit map-based query handling, add a postJsonNoMailboxWithQuery(...) helper.
-  }
-
-  public List<Mailbox> listMailboxesVAR(String bearer, String folderId, Integer limit, Integer offset) {
-    var q = new java.util.LinkedHashMap<String, String>();
-    q.put("folderId", folderId);
-    if (limit != null) q.put("limit", String.valueOf(limit));
-    if (offset != null) q.put("offset", String.valueOf(offset));
-    return getNoMailbox("mailboxes", q, bearer, MAILBOX_LIST);
-  }
 }

@@ -50,7 +50,7 @@ public class Xmodem {
   }
 
   // CRC-32/MPEG-2 (poly 0x04C11DB7, init 0xFFFFFFFF, refin=false, refout=false, xorout=0)
-  protected long crc32Mpeg2(byte[] data, int len) {
+  public static long crc32Mpeg2(byte[] data, int len) {
     int crc = 0xFFFFFFFF;
     for (int i = 0; i < len; i++) {
       crc ^= (data[i] & 0xFF) << 24;

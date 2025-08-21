@@ -34,10 +34,6 @@ public final class CommandsClient extends BaseInmarsatClient {
     super(base, http, gson);
   }
 
-  public static String xMailbox(String mailboxId, String mailboxPassword) {
-    return BaseInmarsatClient.xMailbox(mailboxId, mailboxPassword);
-  }
-
   // usePost=false -> GET-with-body (matches Postman collection); true -> POST
   public MobileTerminatedSubmitResponse changeMode(String bearer, String xMailbox, List<ChangeModeCommand> cmds, boolean usePost) {
     return usePost

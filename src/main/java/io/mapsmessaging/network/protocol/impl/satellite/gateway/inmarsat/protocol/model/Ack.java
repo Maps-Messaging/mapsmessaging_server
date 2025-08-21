@@ -16,17 +16,18 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package io.mapsmessaging.network.protocol.impl.satellite.gateway.inmarsat.protocol.endpoints;
 
-public final class AuthException extends RuntimeException {
-  private final int statusCode;
+package io.mapsmessaging.network.protocol.impl.satellite.gateway.inmarsat.protocol.model;
 
-  public AuthException(int statusCode, String body) {
-    super("Auth failed: " + statusCode + (body == null ? "" : " — " + body));
-    this.statusCode = statusCode;
-  }
+import com.google.gson.annotations.SerializedName;
+import lombok.Data;
+import lombok.ToString;
 
-  public int getStatusCode() {
-    return statusCode;
-  }
+@Data
+@ToString
+public class Ack {
+  @SerializedName("messageId")
+  private String messageId;   // UUID
+  @SerializedName("destinationId")
+  private String destinationId;
 }

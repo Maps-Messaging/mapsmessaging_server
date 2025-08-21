@@ -21,10 +21,7 @@ package io.mapsmessaging.network.protocol.impl.satellite.gateway.inmarsat;
 
 import com.google.gson.JsonObject;
 import io.mapsmessaging.dto.rest.config.protocol.impl.SatelliteConfigDTO;
-import io.mapsmessaging.network.protocol.impl.satellite.gateway.inmarsat.protocol.model.Item;
-import io.mapsmessaging.network.protocol.impl.satellite.gateway.inmarsat.protocol.model.MobileOriginatedResponse;
-import io.mapsmessaging.network.protocol.impl.satellite.gateway.inmarsat.protocol.model.MobileTerminatedSubmitRequest;
-import io.mapsmessaging.network.protocol.impl.satellite.gateway.inmarsat.protocol.model.MobileTerminatedSubmitResponse;
+import io.mapsmessaging.network.protocol.impl.satellite.gateway.inmarsat.protocol.model.*;
 import io.mapsmessaging.network.protocol.impl.satellite.gateway.io.SatelliteClient;
 import io.mapsmessaging.network.protocol.impl.satellite.gateway.io.StateManager;
 import io.mapsmessaging.network.protocol.impl.satellite.gateway.model.MessageData;
@@ -41,11 +38,11 @@ public class InmarsatClient implements SatelliteClient {
 
   public InmarsatClient(SatelliteConfigDTO satelliteConfigDTO) {
     inmarsatSession = new InmarsatSession(satelliteConfigDTO);
-    lastMoTimeUTC  = StateManager.loadLastMessageUtc(inmarsatSession.clientId, inmarsatSession.clientSecret);
+    lastMoTimeUTC  = StateManager.loadLastMessageUtc(inmarsatSession.getClientId(), inmarsatSession.getClientSecret());
     if(lastMoTimeUTC == null) {
       lastMoTimeUTC = java.time.ZonedDateTime.now()
           .withZoneSameInstant(java.time.ZoneOffset.UTC)
-          .minusDays(1)
+          .minusDays(7)
           .toInstant()
           .truncatedTo(java.time.temporal.ChronoUnit.SECONDS)
           .toString();
@@ -67,6 +64,20 @@ public class InmarsatClient implements SatelliteClient {
     return new ArrayList<>(mailboxSession.listDevices(deviceId));
   }
 
+  public void unmute(String deviceId) {
+    setDeviceMuteState(deviceId, false);
+  }
+
+  public void mute(String deviceId) {
+    setDeviceMuteState(deviceId, true);
+  }
+
+  private void setDeviceMuteState(String deviceId, boolean mute) {
+    MuteCommand command = new MuteCommand(deviceId, "mute_cmd"+deviceId, mute);
+    List<MuteCommand> list = List.of(command);
+    mailboxSession.mute(list, true);
+  }
+
   @Override
   public Queue<MessageData> scanForIncoming() {
     Queue<MessageData> queue = new LinkedList<>();
@@ -74,7 +85,7 @@ public class InmarsatClient implements SatelliteClient {
     if(moResponse != null){
       if(moResponse.getNextStartTime() != null){
         lastMoTimeUTC = moResponse.getNextStartTime();
-        StateManager.saveLastMessageUtc(inmarsatSession.clientId, inmarsatSession.clientSecret, lastMoTimeUTC);
+        StateManager.saveLastMessageUtc(inmarsatSession.getClientId(), inmarsatSession.getClientSecret(), lastMoTimeUTC);
       }
       List<JsonObject> msgs = moResponse.getMessages();
       for (JsonObject msg : msgs) {
@@ -103,6 +114,9 @@ public class InmarsatClient implements SatelliteClient {
     }
     MobileTerminatedSubmitRequest req = new MobileTerminatedSubmitRequest(messageList);
     MobileTerminatedSubmitResponse response = mailboxSession.submitMT(req);
+    for(Ack ack:response.getMessages()){
+      System.err.println(ack);
+    }
     System.err.println("Response: " + response);
   }
 

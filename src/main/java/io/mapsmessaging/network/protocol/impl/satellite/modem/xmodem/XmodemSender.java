@@ -37,7 +37,10 @@
 
 package io.mapsmessaging.network.protocol.impl.satellite.modem.xmodem;
 
-import java.io.*;
+import java.io.EOFException;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 
 public class XmodemSender extends Xmodem {
 
@@ -45,24 +48,16 @@ public class XmodemSender extends Xmodem {
   private static final int MAX_PER_BLOCK_RETRIES = 10;
   private static final int MAX_EOT_RETRIES = 10;
 
-
-  /**
-   * Send one XMODEM-CRC transfer.
-   *
-   * If {@code precomputedCrc32 >= 0}, it is returned in the result without recomputing.
-   * Otherwise, this method computes CRC-32/MPEG-2 over exactly {@code announcedLength} bytes from {@code src}.
-   * For on-the-fly computation, {@code src} must support mark/reset; otherwise precompute and pass the CRC.
-   */
+  /** Send one XMODEM-CRC transfer using 128-byte blocks only. */
   public SenderResult send(InputStream src,
-                     OutputStream linkOut,
-                     InputStream linkIn,
-                     int announcedLength,
-                     boolean use1kBlocks,
-                     int readTimeoutMs,
-                     long precomputedCrc32) throws IOException {
+                           OutputStream linkOut,
+                           InputStream linkIn,
+                           int announcedLength,
+                           int readTimeoutMs,
+                           long precomputedCrc32) throws IOException {
 
     final long startNs = System.nanoTime();
-    final int blockSize = use1kBlocks ? 1024 : 128;
+    final int blockSize = 128;
 
     long crc32;
     if (precomputedCrc32 >= 0) {
@@ -84,21 +79,19 @@ public class XmodemSender extends Xmodem {
     int bytesOnWire = 0;
 
     byte[] dataBuf = new byte[blockSize];
-    byte[] frameBuf = new byte[3 + blockSize + 2]; // hdr + blk + ~blk + data + crc16
+    byte[] frameBuf = new byte[3 + blockSize + 2]; // SOH + blk + ~blk + data + crc16
 
     while (bytesRemaining > 0) {
       int toRead = Math.min(blockSize, bytesRemaining);
       int got = readExactly(src, dataBuf, 0, toRead);
       if (got < toRead) throw new EOFException("Source ended early: got " + got + " < " + toRead);
 
-      // pad with 0x1A to full block
       if (got < blockSize) {
-        for (int i = got; i < blockSize; i++) dataBuf[i] = 0x1A;
+        for (int i = got; i < blockSize; i++) dataBuf[i] = 0x1A; // pad
       }
 
       int idx = 0;
-      int header = use1kBlocks ? STX : SOH;
-      frameBuf[idx++] = (byte) header;
+      frameBuf[idx++] = (byte) SOH; // 128-byte block header
       frameBuf[idx++] = (byte) (expectedBlock & 0xFF);
       frameBuf[idx++] = (byte) ((~expectedBlock) & 0xFF);
       System.arraycopy(dataBuf, 0, frameBuf, idx, blockSize);
@@ -109,7 +102,7 @@ public class XmodemSender extends Xmodem {
       frameBuf[idx++] = (byte) (crc16 & 0xFF);
 
       int perBlockRetries = 0;
-      while (true) {
+      for (;;) {
         linkOut.write(frameBuf, 0, idx);
         linkOut.flush();
         bytesOnWire += idx;
@@ -126,7 +119,6 @@ public class XmodemSender extends Xmodem {
             throw new IOException("Too many NAKs/timeouts on block " + expectedBlock);
           }
           totalRetries++;
-          // retransmit
         } else if (resp == CAN) {
           throw new IOException("Receiver cancelled (CAN)");
         } else {
@@ -140,7 +132,7 @@ public class XmodemSender extends Xmodem {
     }
 
     int eotRetries = 0;
-    while (true) {
+    for (;;) {
       linkOut.write(EOT);
       linkOut.flush();
       bytesOnWire += 1;
@@ -152,7 +144,6 @@ public class XmodemSender extends Xmodem {
         cancel(linkOut);
         throw new IOException("No ACK to EOT");
       }
-      // retry EOT
     }
 
     long durMs = (System.nanoTime() - startNs) / 1_000_000L;
@@ -161,24 +152,19 @@ public class XmodemSender extends Xmodem {
 
   /** Convenience overload: computes CRC32 using mark/reset. */
   public SenderResult send(InputStream src,
-                     OutputStream linkOut,
-                     InputStream linkIn,
-                     int announcedLength,
-                     boolean use1kBlocks,
-                     int readTimeoutMs) throws IOException {
-    return send(src, linkOut, linkIn, announcedLength, use1kBlocks, readTimeoutMs, -1);
+                           OutputStream linkOut,
+                           InputStream linkIn,
+                           int announcedLength,
+                           int readTimeoutMs) throws IOException {
+    return send(src, linkOut, linkIn, announcedLength, readTimeoutMs, -1);
   }
-
-  // ---- helpers ----
 
   private void waitForC(InputStream in, int timeoutMs) throws IOException {
     for (int tries = 0; tries < MAX_HANDSHAKE_TRIES; tries++) {
       int b = readByteWithTimeout(in, timeoutMs);
       if (b == CHAR_C) return;
       if (b == CAN) throw new IOException("Receiver cancelled (CAN) during handshake");
-      // ignore others/timeouts
     }
     throw new IOException("Handshake failed: no 'C' from receiver");
   }
-
 }

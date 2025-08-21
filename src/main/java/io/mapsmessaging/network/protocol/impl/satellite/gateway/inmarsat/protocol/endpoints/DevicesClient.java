@@ -20,7 +20,6 @@
 package io.mapsmessaging.network.protocol.impl.satellite.gateway.inmarsat.protocol.endpoints;
 
 import com.google.gson.Gson;
-import com.google.gson.JsonObject;
 import com.google.gson.reflect.TypeToken;
 import io.mapsmessaging.network.protocol.impl.satellite.gateway.inmarsat.protocol.model.DeviceInfo;
 
@@ -39,23 +38,11 @@ public final class DevicesClient extends BaseInmarsatClient {
     super(base, http, gson);
   }
 
-  public static String xMailbox(String mailboxId, String mailboxPassword) {
-    return BaseInmarsatClient.xMailbox(mailboxId, mailboxPassword);
-  }
-
   public List<DeviceInfo> listDevices(String bearer, String xMailbox, Integer limit, Integer offset, String deviceId) {
     Map<String, String> q = new LinkedHashMap<>();
     if (deviceId != null && !deviceId.isBlank()) q.put("deviceId", deviceId);
     if (limit != null) q.put("limit", String.valueOf(limit));
     if (offset != null) q.put("offset", String.valueOf(offset));
     return get("device", q, bearer, xMailbox, DEVICE_LIST);
-  }
-
-  public JsonObject listAllDevicesVAR(String bearer, String folderId, Integer limit, Integer offset) {
-    Map<String, String> q = new LinkedHashMap<>();
-    q.put("folderId", folderId);
-    if (limit != null) q.put("limit", String.valueOf(limit));
-    if (offset != null) q.put("offset", String.valueOf(offset));
-    return getNoMailbox("devices", q, bearer, JsonObject.class);
   }
 }

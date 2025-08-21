@@ -126,6 +126,14 @@ public class SatelliteEndPointServer extends EndPointServer implements IncomingM
     }
   }
 
+  public void mute(String primeId){
+    gatewayManager.muteClient(primeId);
+  }
+
+  public void unmute(String primeId){
+    gatewayManager.unmuteClient(primeId);
+  }
+
   public void sendClientMessage(String primeId, MessageData submitMessage) {
     gatewayManager.sendClientMessage(primeId, submitMessage);
   }

@@ -57,6 +57,14 @@ public class SatelliteEndPoint extends EndPoint {
     }
   }
 
+  public void mute(){
+    ((SatelliteEndPointServer) server).mute(terminalInfo.getUniqueId());
+  }
+
+  public void unmute(){
+    ((SatelliteEndPointServer) server).unmute(terminalInfo.getUniqueId());
+  }
+
   @Override
   public String getProtocol() {
     return "satellite";

@@ -77,6 +77,9 @@ public class ModemStreamHandler implements StreamHandler {
     inputBuffer[idx++] = (byte) ch;
 
     while (idx < inputBuffer.length) {
+      if(bypass.get() != null) {
+        return parseInput(input, packet);
+      }
       ch = input.read();
       if (ch == -1 || ch == Constants.CR || ch == Constants.LF) break;
       inputBuffer[idx++] = (byte) ch;
@@ -125,7 +128,11 @@ public class ModemStreamHandler implements StreamHandler {
   /**
    * Convenience: start XMODEM receive
    */
-  public synchronized void startXModem(int length, long crc32, CompletableFuture<byte[]> future) {
-    this.bypass.set(new XmodemBypass(length, crc32, 1000, future));
+  public synchronized void startXModemReceive(int length, long crc32, CompletableFuture<byte[]> future) {
+    this.bypass.set(new XmodemReceieveBypass(length, crc32, 1000, future));
+  }
+
+  public synchronized void startXModemTransmit(byte[] buffer, long crc, CompletableFuture<byte[]> future) {
+    this.bypass.set(new XmodemSendBypass(buffer, 1000, future, crc));
   }
 }

@@ -20,10 +20,14 @@
 package io.mapsmessaging.network.protocol.impl.satellite.gateway.inmarsat.protocol.model;
 
 import com.google.gson.annotations.SerializedName;
+import lombok.Data;
+import lombok.ToString;
 
+@Data
+@ToString
 public final class MailboxCodecAck {
   @SerializedName("mailboxId")
-  public String mailboxId;
+  private String mailboxId;
   @SerializedName("name")
-  public String name;
+  private String name;
 }

@@ -20,20 +20,16 @@
 package io.mapsmessaging.network.protocol.impl.satellite.gateway.inmarsat.protocol.model;
 
 import com.google.gson.annotations.SerializedName;
+import lombok.Data;
+import lombok.ToString;
 
 import java.util.List;
 
+@Data
+@ToString
 public final class MobileTerminatedStatusResponse {
   @SerializedName("nextStartTime")
   private String nextStartTime; // ISO-8601
   @SerializedName("statuses")
   private List<MobileTerminatedStatus> statuses;
-
-  public String getNextStartTime() {
-    return nextStartTime;
-  }
-
-  public List<MobileTerminatedStatus> getStatuses() {
-    return statuses;
-  }
 }

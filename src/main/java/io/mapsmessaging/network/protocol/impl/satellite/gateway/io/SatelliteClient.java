@@ -42,4 +42,8 @@ public interface SatelliteClient {
   // Process any pending messages
   void processPendingMessages(List<MessageData> queue);
 
+  void unmute(String deviceId);
+
+  void mute(String deviceId);
+
 }

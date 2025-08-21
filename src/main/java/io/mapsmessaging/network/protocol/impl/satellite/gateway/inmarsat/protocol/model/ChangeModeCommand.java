@@ -20,7 +20,13 @@
 package io.mapsmessaging.network.protocol.impl.satellite.gateway.inmarsat.protocol.model;
 
 import com.google.gson.annotations.SerializedName;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.ToString;
 
+@Data
+@AllArgsConstructor
+@ToString
 public final class ChangeModeCommand {
   @SerializedName("deviceId")
   private final String deviceId;
@@ -30,11 +36,4 @@ public final class ChangeModeCommand {
   private final int operationMode;    // 0..3
   @SerializedName("wakeupInterval")
   private final int wakeupInterval;   // 0..15
-
-  public ChangeModeCommand(String deviceId, String userMessageId, int operationMode, int wakeupInterval) {
-    this.deviceId = deviceId;
-    this.userMessageId = userMessageId;
-    this.operationMode = operationMode;
-    this.wakeupInterval = wakeupInterval;
-  }
 }

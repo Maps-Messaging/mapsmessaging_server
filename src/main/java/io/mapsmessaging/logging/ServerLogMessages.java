@@ -765,7 +765,9 @@ public enum ServerLogMessages implements LogMessage {
   OGWS_EXCEPTION_PROCESSING_MESSAGE(LEVEL.FATAL, SERVER_CATEGORY.ENGINE, "Exception raised processing inbound message"),
 
   //-------------------------------------------------------------------------------------------------------------
-
+  INMARSAT_WEB_REQUEST_FAILED(LEVEL.DEBUG, SERVER_CATEGORY.NETWORK, "Web request failed with error code {},retrying {} more times"),
+  INMARSAT_WEB_REQUEST_STATS(LEVEL.INFO, SERVER_CATEGORY.NETWORK, "Web request for {} took {} ms"),
+  //-------------------------------------------------------------------------------------------------------------
   STOGI_SEND_AT_MESSAGE(LEVEL.DEBUG, SERVER_CATEGORY.NETWORK, "Sending to modem: {} "),
   STOGI_RECEIVED_AT_MESSAGE(LEVEL.DEBUG, SERVER_CATEGORY.NETWORK, "Received from modem : {}"),
   STOGI_EXCEPTION_PROCESSING_PACKET(LEVEL.FATAL, SERVER_CATEGORY.NETWORK, "Exception raised processing inbound packet"),
@@ -777,6 +779,7 @@ public enum ServerLogMessages implements LogMessage {
 
   STOGI_COMPRESS_MESSAGE(LEVEL.DEBUG, SERVER_CATEGORY.NETWORK, "Compressing message for from {} to {} bytes"),
   STOGI_SPLIT_MESSAGE(LEVEL.DEBUG, SERVER_CATEGORY.NETWORK, "Splitting message into {} messages"),
+
   //-------------------------------------------------------------------------------------------------------------
   LAST_LOG_MESSAGE(LEVEL.DEBUG, SERVER_CATEGORY.PROTOCOL, "Last message to make it simpler to add more");
 

@@ -40,7 +40,17 @@ public class OgxModemProtocol extends BaseModemProtocol {
   }
 
   public void sendMessage(ModemSatelliteMessage modemSatelliteMessage) {
-    modem.sendATCommand("AT%MOMT=" + modemSatelliteMessage.toOgxCommand());
+    if(modemSatelliteMessage.getPayload().length > 1020){
+      ModemSatelliteMessage.XmodemData data =  modemSatelliteMessage.toOgxXModemCommand();
+      CompletableFuture<byte[]> future = new CompletableFuture<>();
+      modem.setOneShotResponse(true);
+      modem.sendATCommand("AT%MOMT=" + data.getCommand());
+      modem.getStreamHandler().startXModemTransmit(data.getData(), data.getCrc(), future);
+      future.join();
+    }
+    else {
+      modem.sendATCommand("AT%MOMT=" + modemSatelliteMessage.toOgxCommand());
+    }
   }
 
   public CompletableFuture<Boolean> deleteSentMessages(String msgId) {
@@ -100,7 +110,7 @@ public class OgxModemProtocol extends BaseModemProtocol {
       String[] parts = request.split(",");
       int length = Integer.parseInt(parts[2]);
       long crc = Long.parseLong(parts[4], 16);
-      modem.getStreamHandler().startXModem(length, crc, future);
+      modem.getStreamHandler().startXModemReceive(length, crc, future);
     }
     return future;
   }

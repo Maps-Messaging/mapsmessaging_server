@@ -276,6 +276,16 @@ public class OrbcommOgwsClient implements SatelliteClient {
     SubmitMessagesResponse submitMessagesResponse = gson.fromJson(response.body(), SubmitMessagesResponse.class);
   }
 
+  @Override
+  public void unmute(String deviceId) {
+    // No Op for Orbcomm
+  }
+
+  @Override
+  public void mute(String deviceId) {
+    // No Op for Orbcomm
+  }
+
   private HttpRequest authorizedGet(String path) {
     return HttpRequest.newBuilder()
         .uri(URI.create(baseUrl + path))

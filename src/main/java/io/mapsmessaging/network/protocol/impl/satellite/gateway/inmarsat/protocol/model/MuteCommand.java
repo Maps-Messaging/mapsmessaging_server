@@ -20,7 +20,13 @@
 package io.mapsmessaging.network.protocol.impl.satellite.gateway.inmarsat.protocol.model;
 
 import com.google.gson.annotations.SerializedName;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.ToString;
 
+@Data
+@AllArgsConstructor
+@ToString
 public final class MuteCommand {
   @SerializedName("destinationId")
   private final String destinationId;
@@ -28,10 +34,4 @@ public final class MuteCommand {
   private final String userMessageId; // optional
   @SerializedName("mute")
   private final boolean mute;
-
-  public MuteCommand(String destinationId, String userMessageId, boolean mute) {
-    this.destinationId = destinationId;
-    this.userMessageId = userMessageId;
-    this.mute = mute;
-  }
 }
