@@ -118,94 +118,56 @@ public class OrbcommOgwsClient implements SatelliteClient {
   }
 
   private List<RemoteDeviceInfo> getTerminalInfo(String deviceId) throws IOException, InterruptedException {
-    HttpRequest request = authorizedGet("/info/terminal?PrimeID="+deviceId);
-    HttpResponse<String> response = httpClient.send(request, BodyHandlers.ofString());
-    GetTerminalInfoResponse terminalInfoRemote = gson.fromJson(response.body(), GetTerminalInfoResponse.class);
-    if(terminalInfoRemote.isSuccess()) {
-      return List.of(terminalInfoRemote.getTerminal());
+    long time = System.currentTimeMillis();
+    try {
+      HttpRequest request = authorizedGet("/info/terminal?PrimeID="+deviceId);
+      HttpResponse<String> response = httpClient.send(request, BodyHandlers.ofString());
+      GetTerminalInfoResponse terminalInfoRemote = gson.fromJson(response.body(), GetTerminalInfoResponse.class);
+      if(terminalInfoRemote.isSuccess()) {
+        return List.of(terminalInfoRemote.getTerminal());
+      }
+      throw new IOException("Failed to get terminals");
+    } finally {
+      logger.log(OGWS_WEB_REQUEST_STATS, "getTerminalInfo", System.currentTimeMillis() - time);
     }
-    throw new IOException("Failed to get terminals");
   }
 
   private List<RemoteDeviceInfo> getAllTerminals() throws IOException, InterruptedException {
-    HttpRequest request = authorizedGet("/info/terminals");
-    HttpResponse<String> response = httpClient.send(request, BodyHandlers.ofString());
-    GetTerminalsInfoResponse terminalsInfoResponse = gson.fromJson(response.body(), GetTerminalsInfoResponse.class);
-    if(terminalsInfoResponse.isSuccess()) {
-      return new ArrayList<>(terminalsInfoResponse.getTerminals());
+    long time = System.currentTimeMillis();
+    try {
+      HttpRequest request = authorizedGet("/info/terminals");
+      HttpResponse<String> response = httpClient.send(request, BodyHandlers.ofString());
+      GetTerminalsInfoResponse terminalsInfoResponse = gson.fromJson(response.body(), GetTerminalsInfoResponse.class);
+      if(terminalsInfoResponse.isSuccess()) {
+        return new ArrayList<>(terminalsInfoResponse.getTerminals());
+      }
+      throw new IOException("Failed to get terminals");
+    } finally {
+      logger.log(OGWS_WEB_REQUEST_STATS, "getAllTerminals", System.currentTimeMillis() - time);
     }
-    throw new IOException("Failed to get terminals");
   }
 
   private FromMobileMessagesResponse getFromMobileMessages(String fromUtc) throws Exception {
-    reauthenticate();
-    String url = baseUrl + "/get/re_messages?IncludeRawPayload=true";
-    if (fromUtc != null) {
-      url = url + "&FromUTC=" + encode(fromUtc);
+    long time = System.currentTimeMillis();
+    try {
+      reauthenticate();
+      String url = baseUrl + "/get/re_messages?IncludeRawPayload=true";
+      if (fromUtc != null) {
+        url = url + "&FromUTC=" + encode(fromUtc);
+      }
+      HttpRequest request = HttpRequest.newBuilder()
+          .uri(URI.create(url))
+          .header("Authorization", "Bearer " + bearerToken)
+          .GET()
+          .build();
+
+      HttpResponse<String> response = httpClient.send(request, BodyHandlers.ofString());
+      logger.log(OGWS_SENDING_REQUEST, request.uri(), response.statusCode());
+
+      return gson.fromJson(response.body(), FromMobileMessagesResponse.class);
+    } finally {
+      logger.log(OGWS_WEB_REQUEST_STATS, "getFromMobileMessages", System.currentTimeMillis() - time);
     }
-    HttpRequest request = HttpRequest.newBuilder()
-        .uri(URI.create(url))
-        .header("Authorization", "Bearer " + bearerToken)
-        .GET()
-        .build();
-
-    HttpResponse<String> response = httpClient.send(request, BodyHandlers.ofString());
-    logger.log(OGWS_SENDING_REQUEST, request.uri(), response.statusCode());
-
-    return gson.fromJson(response.body(), FromMobileMessagesResponse.class);
-  }
-
-  public FwStatusResponse getFwStatuses(List<Long> ids) throws Exception {
-    reauthenticate();
-    String idParams = String.join("&IDList=", ids.stream().map(String::valueOf).toList());
-    HttpRequest request = HttpRequest.newBuilder()
-        .uri(URI.create(baseUrl + "/get/fw_statuses?IDList=" + idParams))
-        .header("Authorization", "Bearer " + bearerToken)
-        .GET()
-        .build();
-
-    HttpResponse<String> response = httpClient.send(request, BodyHandlers.ofString());
-    logger.log(OGWS_SENDING_REQUEST, request.uri(), response.statusCode());
-
-    return gson.fromJson(response.body(), FwStatusResponse.class);
-  }
-
-  public CancelMessagesResponse submitCancellations(List<Long> messageIds) throws Exception {
-    reauthenticate();
-    String body = gson.toJson(messageIds);
-
-    HttpRequest request = HttpRequest.newBuilder()
-        .uri(URI.create(baseUrl + "/submit/cancellations"))
-        .header("Authorization", "Bearer " + bearerToken)
-        .header("Content-Type", "application/json")
-        .POST(BodyPublishers.ofString(body))
-        .build();
-
-    HttpResponse<String> response = httpClient.send(request, BodyHandlers.ofString());
-    logger.log(OGWS_SENDING_REQUEST, request.uri(), response.statusCode());
-
-    return gson.fromJson(response.body(), CancelMessagesResponse.class);
-  }
-
-  public ServiceInfoResponse getServiceInfo(boolean includeErrorCodes) throws Exception {
-    reauthenticate();
-    String url = baseUrl + "/info/service" + (includeErrorCodes ? "?GetErrorCodes=true" : "");
-    HttpRequest request = authorizedGet(url);
-    HttpResponse<String> response = httpClient.send(request, BodyHandlers.ofString());
-    if(response.statusCode() == 200) {
-      return gson.fromJson(response.body(), ServiceInfoResponse.class);
-    }
-    return null;
-  }
-
-  public GetTerminalInfoResponse getTerminal(String primeId) throws Exception {
-    reauthenticate();
-    String url = baseUrl + "/info/terminal?PrimeID=" + encode(primeId);
-    HttpRequest request = authorizedGet(url);
-    HttpResponse<String> response = httpClient.send(request, BodyHandlers.ofString());
-    logger.log(OGWS_SENDING_REQUEST, request.uri(), response.statusCode());
-
-    return gson.fromJson(response.body(), GetTerminalInfoResponse.class);
   }
 
   public Queue<MessageData> scanForIncoming(){

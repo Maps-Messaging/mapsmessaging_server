@@ -763,10 +763,12 @@ public enum ServerLogMessages implements LogMessage {
   OGWS_UNPROCESSED_MESSAGE(LEVEL.FATAL, SERVER_CATEGORY.NETWORK, "Received a message SIN:{} MIN:{} from ClientId:{} but not configured to process it"),
   OGWS_NO_CONFIGURATION_FOUND(LEVEL.FATAL, SERVER_CATEGORY.NETWORK, "No configuration found for ogws server"),
   OGWS_EXCEPTION_PROCESSING_MESSAGE(LEVEL.FATAL, SERVER_CATEGORY.ENGINE, "Exception raised processing inbound message"),
+  OGWS_WEB_REQUEST_STATS(LEVEL.INFO, SERVER_CATEGORY.NETWORK, "Web request for {} took {} ms"),
 
   //-------------------------------------------------------------------------------------------------------------
   INMARSAT_WEB_REQUEST_FAILED(LEVEL.DEBUG, SERVER_CATEGORY.NETWORK, "Web request failed with error code {},retrying {} more times"),
   INMARSAT_WEB_REQUEST_STATS(LEVEL.INFO, SERVER_CATEGORY.NETWORK, "Web request for {} took {} ms"),
+  INMARSAT_FAILED_PROCESSING_INCOMING(LEVEL.INFO, SERVER_CATEGORY.NETWORK, "Processing incoming message raised exception {}"),
   //-------------------------------------------------------------------------------------------------------------
   STOGI_STARTED_SESSION(LEVEL.WARN, SERVER_CATEGORY.NETWORK, "Successfully started modem session, detected modem type {}, read intervals of {} ms and write intervals of {} ms"),
   STOGI_ENCRYPTION_STATUS(LEVEL.WARN, SERVER_CATEGORY.NETWORK, "Encryption is {} for {}"),

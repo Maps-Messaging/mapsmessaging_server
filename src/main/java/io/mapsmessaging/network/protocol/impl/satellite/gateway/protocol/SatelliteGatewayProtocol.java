@@ -51,7 +51,7 @@ import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
-import static io.mapsmessaging.logging.ServerLogMessages.OGWS_FAILED_TO_SAVE_MESSAGE;
+import static io.mapsmessaging.logging.ServerLogMessages.*;
 
 
 public class SatelliteGatewayProtocol extends Protocol {
@@ -150,7 +150,7 @@ public class SatelliteGatewayProtocol extends Protocol {
     try {
       ((SatelliteEndPoint) endPoint).updateTerminalInfo();
     } catch (IOException e) {
-      // log
+      logger.log(INMARSAT_WEB_REQUEST_FAILED, e);
     } catch (InterruptedException e) {
       Thread.currentThread().interrupt();
     }
@@ -255,7 +255,7 @@ public class SatelliteGatewayProtocol extends Protocol {
           publishEvents(entry.getKey(), entry.getValue());
         }
       } catch (IOException e) {
-        e.printStackTrace();
+        logger.log(INMARSAT_FAILED_PROCESSING_INCOMING, e);
       }
     }
   }
