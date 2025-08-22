@@ -23,7 +23,6 @@ import com.google.gson.JsonObject;
 import io.mapsmessaging.api.Destination;
 import io.mapsmessaging.api.MessageBuilder;
 import io.mapsmessaging.location.LocationManager;
-import io.mapsmessaging.network.io.EndPoint;
 import io.mapsmessaging.network.protocol.impl.nmea.sentences.Sentence;
 import io.mapsmessaging.network.protocol.impl.nmea.types.LongType;
 import io.mapsmessaging.network.protocol.impl.nmea.types.PositionType;
@@ -34,7 +33,7 @@ import io.mapsmessaging.network.protocol.impl.satellite.modem.device.impl.data.N
 import java.io.IOException;
 import java.util.List;
 
-public class LocationHandler {
+public class StatsManager {
   private final Modem modem;
   private final long locationPollInterval;
   private final LocationParser locationParser;
@@ -42,7 +41,7 @@ public class LocationHandler {
 
   private long lastLocationPoll;
 
-  public LocationHandler(Modem modem, long locationPollInterval, Destination destination) {
+  public StatsManager(Modem modem, long locationPollInterval, Destination destination) {
     this.modem = modem;
     this.destination = destination;
     this.locationPollInterval = locationPollInterval;
@@ -94,7 +93,7 @@ public class LocationHandler {
       stats.addProperty("sentMsgs", baseModemProtocol.getSentPackets().get());
       stats.addProperty("bytesSent", baseModemProtocol.getSentBytes().get());
       stats.addProperty("bytesRead", baseModemProtocol.getReceivedBytes().get());
-      obj.add("stats", stats);
+      obj.add("satellite", stats);
     }
 
     JsonObject location = new JsonObject();

@@ -44,6 +44,7 @@ public class SatelliteConfig extends SatelliteConfigDTO implements Config {
     compressionCutoffSize = config.getIntProperty("compressionCutoffSize", 128);
     messageLifeTimeInMinutes = config.getIntProperty("messageLifeTimeInMinutes", 10);
     sharedSecret = config.getProperty("sharedSecret", "");
+    sendHighPriorityMessages = config.getBooleanProperty("sendHighPriorityMessages", false);
 
     if(incomingMessagePollInterval <10){
       incomingMessagePollInterval = 10;
@@ -72,7 +73,10 @@ public class SatelliteConfig extends SatelliteConfigDTO implements Config {
         baseUrl = dto.getBaseUrl();
         changed = true;
       }
-
+      if(sendHighPriorityMessages != dto.isSendHighPriorityMessages()) {
+        sendHighPriorityMessages = dto.isSendHighPriorityMessages();
+        changed = true;
+      }
       if (incomingMessagePollInterval != dto.getIncomingMessagePollInterval()) {
         incomingMessagePollInterval = dto.getIncomingMessagePollInterval();
         changed = true;
@@ -151,6 +155,7 @@ public class SatelliteConfig extends SatelliteConfigDTO implements Config {
     properties.put("compressionCutoffSize", compressionCutoffSize);
     properties.put("messageLifeTimeInMinutes", messageLifeTimeInMinutes);
     properties.put("sharedSecret", sharedSecret);
+    properties.put("sendHighPriorityMessages", sendHighPriorityMessages);
     return properties;
   }
 }

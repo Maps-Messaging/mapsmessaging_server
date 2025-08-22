@@ -22,6 +22,7 @@ package io.mapsmessaging.network.protocol.impl.satellite.gateway.protocol;
 import io.mapsmessaging.api.*;
 import io.mapsmessaging.api.features.ClientAcknowledgement;
 import io.mapsmessaging.api.features.DestinationType;
+import io.mapsmessaging.api.features.Priority;
 import io.mapsmessaging.api.features.QualityOfService;
 import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.dto.rest.config.protocol.ProtocolConfigDTO;
@@ -64,9 +65,13 @@ public class SatelliteGatewayProtocol extends Protocol {
   private final int maxBufferSize;
   private final int compressionThreshold;
   private final AtomicReference<Map<String, List<byte[]>>> pendingMessages;
+  private final AtomicReference<Map<String, List<byte[]>>> priorityMessages;
   private final long outgoingPollInterval;
   private final CipherManager cipherManager;
+  private final boolean sendHighPriorityEvents;
 
+
+  private long nextOutgoingTime;
   private ScheduledFuture<?> scheduledFuture;
   private boolean closed;
   private int currentStreamId =0;
@@ -75,10 +80,12 @@ public class SatelliteGatewayProtocol extends Protocol {
     super(endPoint, protocolConfig);
     pendingMessages = new AtomicReference<>();
     pendingMessages.set(new LinkedHashMap<>());
+    priorityMessages = new AtomicReference<>();
+    priorityMessages.set(new LinkedHashMap<>());
     taskManager = new TaskManager();
     String primeId = ((SatelliteEndPoint) endPoint).getTerminalInfo().getUniqueId();
     SatelliteConfigDTO config = (SatelliteConfigDTO) protocolConfig;
-
+    sendHighPriorityEvents = config.isSendHighPriorityMessages();
     if(!config.getSharedSecret().trim().isEmpty()) {
       cipherManager = new CipherManager(config.getSharedSecret().getBytes());
     }
@@ -121,7 +128,8 @@ public class SatelliteGatewayProtocol extends Protocol {
       session.addSubscription(subBuilder.build());
     }
     ((SatelliteEndPoint) endPoint).unmute();
-    scheduledFuture = taskManager.schedule(this::processOutstandingMessages, outgoingPollInterval, TimeUnit.SECONDS);
+    nextOutgoingTime = System.currentTimeMillis() + outgoingPollInterval;
+    scheduledFuture = taskManager.schedule(this::processOutstandingMessages, 1, TimeUnit.SECONDS);
   }
 
   @Override
@@ -193,7 +201,14 @@ public class SatelliteGatewayProtocol extends Protocol {
       }
     }
     destinationName = scanForName(destinationName);
-    Map<String, List<byte[]>> pending = pendingMessages.get();
+    Map<String, List<byte[]>> pending;
+    if(sendHighPriorityEvents && message.getPriority().getValue() > Priority.TWO_BELOW_HIGHEST.getValue()){
+      pending = priorityMessages.get();
+    }
+    else {
+      pending = pendingMessages.get();
+    }
+
     List<byte[]> list =pending.computeIfAbsent(destinationName, key -> new ArrayList<>());
     list.add(payload);
     if(messageEvent.getCompletionTask() != null) {
@@ -201,28 +216,41 @@ public class SatelliteGatewayProtocol extends Protocol {
     }
   }
 
+  private void packAndSend(Map<String, List<byte[]>> replacement){
+    if(!replacement.isEmpty()) {
+      MessageQueuePacker.Packed packedQueue = MessageQueuePacker.pack(replacement, compressionThreshold, cipherManager);
+      List<SatelliteMessage> toSend = SatelliteMessageFactory.createMessages(currentStreamId, packedQueue.data(), maxBufferSize, packedQueue.compressed());
+      int sin = (currentStreamId &0x7f) | 0x80;
+      int idx =0;
+      for (SatelliteMessage satelliteMessage : toSend) {
+        byte[] tmp = satelliteMessage.packToSend();
+        byte[] payload = new byte[tmp.length + 2];
+        payload[0] = (byte)sin;
+        payload[1] = (byte) idx++;
+        System.arraycopy(tmp, 0, payload, 2, tmp.length);
+        MessageData submitMessage = new MessageData();
+        submitMessage.setPayload(payload);
+        ((SatelliteEndPoint) endPoint).sendMessage(submitMessage);
+      }
+      currentStreamId++;
+    }
+  }
+
+
   private void processOutstandingMessages() {
     try {
-      Map<String, List<byte[]>> replacement = pendingMessages.getAndSet(new LinkedHashMap<>());
+      Map<String, List<byte[]>> replacement = priorityMessages.getAndSet(new LinkedHashMap<>());
       if(!replacement.isEmpty()) {
-        MessageQueuePacker.Packed packedQueue = MessageQueuePacker.pack(replacement, compressionThreshold, cipherManager);
-        List<SatelliteMessage> toSend = SatelliteMessageFactory.createMessages(currentStreamId, packedQueue.data(), maxBufferSize, packedQueue.compressed());
-        int sin = (currentStreamId &0x7f) | 0x80;
-        int idx =0;
-        for (SatelliteMessage satelliteMessage : toSend) {
-          byte[] tmp = satelliteMessage.packToSend();
-          byte[] payload = new byte[tmp.length + 2];
-          payload[0] = (byte)sin;
-          payload[1] = (byte) idx++;
-          System.arraycopy(tmp, 0, payload, 2, tmp.length);
-          MessageData submitMessage = new MessageData();
-          submitMessage.setPayload(payload);
-          ((SatelliteEndPoint) endPoint).sendMessage(submitMessage);
-        }
-        currentStreamId++;
+        packAndSend(replacement);
       }
+      else if(System.currentTimeMillis() < nextOutgoingTime) {
+        replacement = pendingMessages.getAndSet(new LinkedHashMap<>());
+        packAndSend(replacement);
+        nextOutgoingTime = System.currentTimeMillis() + outgoingPollInterval;
+      }
+
     } finally {
-      scheduledFuture = taskManager.schedule(this::processOutstandingMessages, outgoingPollInterval, TimeUnit.SECONDS);
+      scheduledFuture = taskManager.schedule(this::processOutstandingMessages, 15, TimeUnit.SECONDS);
     }
   }
 

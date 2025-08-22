@@ -29,4 +29,7 @@ public class BaseSatelliteConfigDTO extends ProtocolConfigDTO {
 
   @Schema(description = "Shared secret for encryption", example="this is a shared secret", defaultValue = "")
   protected String sharedSecret;
+
+  @Schema(description = "If set, then high priority messages will NOT be queued, will incur additional charges", defaultValue = "false", example = "false")
+  protected boolean sendHighPriorityMessages;
 }

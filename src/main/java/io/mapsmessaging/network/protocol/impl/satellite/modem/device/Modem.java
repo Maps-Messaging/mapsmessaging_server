@@ -34,7 +34,6 @@ import io.mapsmessaging.network.protocol.impl.satellite.modem.device.messages.Mo
 import io.mapsmessaging.network.protocol.impl.satellite.modem.device.messages.SendMessageState;
 import io.mapsmessaging.network.protocol.impl.satellite.modem.device.values.MessageFormat;
 import io.mapsmessaging.network.protocol.impl.satellite.modem.protocol.ModemStreamHandler;
-import io.mapsmessaging.utilities.threads.SimpleTaskScheduler;
 import lombok.Getter;
 import lombok.Setter;
 

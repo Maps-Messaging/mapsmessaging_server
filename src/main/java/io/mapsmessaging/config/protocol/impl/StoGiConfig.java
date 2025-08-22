@@ -41,7 +41,7 @@ public class StoGiConfig extends StoGiConfigDTO implements Config {
     compressionCutoffSize = config.getIntProperty("compressionCutoffSize", 128);
     messageLifeTimeInMinutes = config.getIntProperty("messageLifeTimeInMinutes", 10);
     sharedSecret = config.getProperty("sharedSecret", "");
-
+    sendHighPriorityMessages = config.getBooleanProperty("sendHighPriorityMessages", false);
   }
 
   @Override
@@ -82,6 +82,10 @@ public class StoGiConfig extends StoGiConfigDTO implements Config {
         compressionCutoffSize = orbCommConfig.getCompressionCutoffSize();
         result = true;
       }
+      if(sendHighPriorityMessages != orbCommConfig.isSendHighPriorityMessages()) {
+        sendHighPriorityMessages = orbCommConfig.isSendHighPriorityMessages();
+        result = true;
+      }
       if(messageLifeTimeInMinutes != orbCommConfig.getMessageLifeTimeInMinutes()) {
         messageLifeTimeInMinutes = orbCommConfig.getMessageLifeTimeInMinutes();
         result = true;
@@ -110,6 +114,7 @@ public class StoGiConfig extends StoGiConfigDTO implements Config {
     properties.put("compressionCutoffSize", compressionCutoffSize);
     properties.put("messageLifeTimeInMinutes", messageLifeTimeInMinutes);
     properties.put("sharedSecret", sharedSecret);
+    properties.put("sendHighPriorityMessages", sendHighPriorityMessages);
     return properties;
   }
 }
