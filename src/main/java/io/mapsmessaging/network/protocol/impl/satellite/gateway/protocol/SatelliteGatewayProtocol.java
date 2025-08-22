@@ -92,7 +92,7 @@ public class SatelliteGatewayProtocol extends Protocol {
     else{
       cipherManager = null;
     }
-    outgoingPollInterval = config.getOutgoingMessagePollInterval();
+    outgoingPollInterval = config.getOutgoingMessagePollInterval() * 1000;
     maxBufferSize = config.getMaxBufferSize();
     compressionThreshold = config.getCompressionCutoffSize();
     closed = false;
@@ -129,7 +129,7 @@ public class SatelliteGatewayProtocol extends Protocol {
     }
     ((SatelliteEndPoint) endPoint).unmute();
     nextOutgoingTime = System.currentTimeMillis() + outgoingPollInterval;
-    scheduledFuture = taskManager.schedule(this::processOutstandingMessages, 1, TimeUnit.SECONDS);
+    scheduledFuture = taskManager.schedule(this::processOutstandingMessages, 15, TimeUnit.SECONDS);
   }
 
   @Override
@@ -239,16 +239,18 @@ public class SatelliteGatewayProtocol extends Protocol {
 
   private void processOutstandingMessages() {
     try {
-      Map<String, List<byte[]>> replacement = priorityMessages.getAndSet(new LinkedHashMap<>());
-      if(!replacement.isEmpty()) {
-        packAndSend(replacement);
-      }
-      else if(System.currentTimeMillis() < nextOutgoingTime) {
+      Map<String, List<byte[]>> replacement;
+      if(System.currentTimeMillis() > nextOutgoingTime) {
         replacement = pendingMessages.getAndSet(new LinkedHashMap<>());
         packAndSend(replacement);
         nextOutgoingTime = System.currentTimeMillis() + outgoingPollInterval;
       }
-
+      else {
+        replacement = priorityMessages.getAndSet(new LinkedHashMap<>());
+        if (!replacement.isEmpty()) {
+          packAndSend(replacement);
+        }
+      }
     } finally {
       scheduledFuture = taskManager.schedule(this::processOutstandingMessages, 15, TimeUnit.SECONDS);
     }
