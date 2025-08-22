@@ -23,6 +23,7 @@ package io.mapsmessaging.network.protocol.impl.satellite.modem.device;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.network.io.Packet;
+import io.mapsmessaging.network.protocol.impl.satellite.TaskManager;
 import io.mapsmessaging.network.protocol.impl.satellite.modem.device.impl.BaseModemProtocol;
 import io.mapsmessaging.network.protocol.impl.satellite.modem.device.impl.IdpModemProtocol;
 import io.mapsmessaging.network.protocol.impl.satellite.modem.device.impl.OgxModemProtocol;
@@ -61,6 +62,7 @@ public class Modem {
   private final Queue<Command> commandQueue = new ArrayDeque<>();
   private final StringBuilder responseBuffer = new StringBuilder();
   private final long modemTimeout;
+  private final TaskManager taskManager;
 
   @Getter
   private final ModemStreamHandler streamHandler;
@@ -77,9 +79,10 @@ public class Modem {
   @Setter
   private boolean oneShotResponse;
 
-  public Modem(Consumer<Packet> packetSender, long modemTimeout, ModemStreamHandler streamHandler) {
+  public Modem(Consumer<Packet> packetSender, long modemTimeout, ModemStreamHandler streamHandler, TaskManager taskManager) {
     this.streamHandler = streamHandler;
     this.packetSender = packetSender;
+    this.taskManager = taskManager;
     oneShotResponse = false;
     currentHandler = new TextResponseHandler(this::handleLine);
     if (modemTimeout < 10000 || modemTimeout > 120000) {
@@ -87,7 +90,7 @@ public class Modem {
     }
     this.modemTimeout = modemTimeout;
 
-    future = SimpleTaskScheduler.getInstance().scheduleAtFixedRate(this::scanTimeouts, modemTimeout, modemTimeout, TimeUnit.MILLISECONDS);
+    future = taskManager.schedule(this::scanTimeouts, modemTimeout, TimeUnit.MILLISECONDS);
   }
 
   public void close() {
@@ -102,10 +105,14 @@ public class Modem {
   }
 
   private void scanTimeouts() {
-    long time = System.currentTimeMillis();
-    if (currentCommand != null && currentCommand.timeout < time) {
-      close();
-      currentCommand.future.completeExceptionally(new IOException("Modem has been closed"));
+    try {
+      long time = System.currentTimeMillis();
+      if (currentCommand != null && currentCommand.timeout < time) {
+        close();
+        currentCommand.future.completeExceptionally(new IOException("Modem has been closed"));
+      }
+    } finally {
+      future = taskManager.schedule(this::scanTimeouts, modemTimeout, TimeUnit.MILLISECONDS);
     }
   }
 

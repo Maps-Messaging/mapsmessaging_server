@@ -130,13 +130,15 @@ public class StoGiProtocol extends Protocol implements Consumer<Packet> {
     StoGiConfigDTO modemConfig = (StoGiConfigDTO) getProtocolConfig();
 
     messageLifeTime = modemConfig.getMessageLifeTimeInMinutes();
-    modem = new Modem(this, modemConfig.getModemResponseTimeout(), streamHandler);
+    modem = new Modem(this, modemConfig.getModemResponseTimeout(), streamHandler, taskManager);
 
     if(!modemConfig.getSharedSecret().trim().isEmpty()) {
       cipherManager = new CipherManager(modemConfig.getSharedSecret().getBytes());
+      logger.log(STOGI_ENCRYPTION_STATUS, "enabled");
     }
     else{
       cipherManager = null;
+      logger.log(STOGI_ENCRYPTION_STATUS, "disabled");
     }
     long locationPollInterval = modemConfig.getLocationPollInterval() * 1000;
     maxBufferSize = modemConfig.getMaxBufferSize();
@@ -157,25 +159,29 @@ public class StoGiProtocol extends Protocol implements Consumer<Packet> {
     lastOutgoingMessagePollInterval = System.currentTimeMillis();
     locationHandler = new LocationHandler(modem, locationPollInterval, destination);
     scheduledFuture = taskManager.schedule(this::pollModemForMessages, messagePoll, TimeUnit.MILLISECONDS);
+    logger.log(STOGI_STARTED_SESSION, modem.getModemProtocol().getType(), messagePoll,outgoingMessagePollInterval );
   }
 
   // Main function loop, handles modem message flow
   private void pollModemForMessages() {
+    long startTime = System.currentTimeMillis();
     boolean hasOutgoing = false;
     long poll = messagePoll;
     try {
-      logger.log(STOGI_POLLING_MODEM, modem.getType());
       NetworkStatus networkStatus = modem.getNetworkStatus();
       if(!networkStatus.canSend()) {
         poll = 1000; // check every second while not connected
-        satelliteOnlineCount = 0;
-        satelliteOnline = false;
-        // Log this!!
+        if(satelliteOnline) {
+          satelliteOnlineCount = 0;
+          satelliteOnline = false;
+          logger.log(STOGI_SATELLITES_STATUS_CHANGE, "Offline - "+networkStatus.noSendReason());
+        }
       }
       else{
         if(!satelliteOnline){
           satelliteOnlineCount++;
           if(satelliteOnlineCount > 10){
+            logger.log(STOGI_SATELLITES_STATUS_CHANGE, "Online");
             satelliteOnline = true;
             satelliteOnlineCount = 0;
           }
@@ -187,10 +193,12 @@ public class StoGiProtocol extends Protocol implements Consumer<Packet> {
         locationHandler.processLocationRequest(networkStatus);
       }
     } catch (Throwable th) {
-      // Log This, it's important
+      logger.log(STOGI_POLL_RAISED_EXCEPTION, th);
     } finally {
       poll = hasOutgoing?500:poll;
       scheduledFuture = taskManager.schedule(this::pollModemForMessages, poll, TimeUnit.MILLISECONDS);
+      startTime = System.currentTimeMillis() - startTime;
+      logger.log(STOGI_POLL_FOR_ACTIONS, startTime, poll);
     }
   }
 
@@ -204,6 +212,7 @@ public class StoGiProtocol extends Protocol implements Consumer<Packet> {
       modem.close();
     }
     super.close();
+    taskManager.close();
   }
 
   private Session setupSession() throws LoginException, IOException {
@@ -359,7 +368,9 @@ public class StoGiProtocol extends Protocol implements Consumer<Packet> {
           currentStreamId++;
         }
       }
-      sendMessageViaModem(currentStreamId, currentList.remove(0));
+      SatelliteMessage msg = currentList.remove(0);
+      sendMessageViaModem(currentStreamId,msg);
+      logger.log(STOGI_SENT_MESSAGE_TO_MODEM, msg.getMessage().length);
       return currentList.isEmpty();
     } else {
       handleMsgStates(stateList);
@@ -393,6 +404,7 @@ public class StoGiProtocol extends Protocol implements Consumer<Packet> {
         receivedMessage();
         endPoint.getEndPointStatus().updateReadBytes(satelliteMessage.getPayload().length);
         modemSatelliteMessages.add(satelliteMessage);
+        logger.log(STOGI_RECEIVED_MESSAGE_TO_MODEM, satelliteMessage.getPayload().length);
       }
       try {
         Thread.sleep(500); // Required to allow modem to return to normal mode
@@ -414,7 +426,7 @@ public class StoGiProtocol extends Protocol implements Consumer<Packet> {
             Map<String, List<byte[]>> receivedEventMap = MessageQueueUnpacker.unpack(satelliteMessage.getMessage(), satelliteMessage.isCompressed(), cipherManager);
             publishIncomingMap(receivedEventMap);
           } catch (Throwable e) {
-            // ToDo Log
+            logger.log(STOGI_EXCEPTION_PROCESSING_PACKET, e);
           }
         } else {
           logger.log(STOGI_RECEIVED_PARTIAL_MESSAGE, loaded.getPacketNumber());
@@ -463,7 +475,7 @@ public class StoGiProtocol extends Protocol implements Consumer<Packet> {
     try {
       processValidDestinations(destinationName, message);
     } catch (ExecutionException e) {
-      // log this
+      logger.log(STOGI_EXCEPTION_PROCESSING_PACKET, e);
     } catch (InterruptedException e) {
       Thread.currentThread().interrupt();
     }
@@ -546,7 +558,6 @@ public class StoGiProtocol extends Protocol implements Consumer<Packet> {
     }
 
     String result = bestVal + normLookup;
-    // Normalize: remove any '#', collapse multiple slashes
     result = result.replace("#", "").replaceAll("/{2,}", "/");
     return result;
   }
