@@ -52,6 +52,7 @@ public class OgxModemProtocol extends BaseModemProtocol {
   }
 
   public void sendMessage(ModemSatelliteMessage modemSatelliteMessage) {
+    sendingBytes(modemSatelliteMessage.getPayload().length);
     if(modemSatelliteMessage.getPayload().length > 1020){
       ModemSatelliteMessage.XmodemData data =  modemSatelliteMessage.toOgxXModemCommand();
       CompletableFuture<byte[]> future = new CompletableFuture<>();

@@ -184,7 +184,7 @@ public class StoGiProtocol extends Protocol implements Consumer<Packet> {
       hasOutgoing = processOutboundMessages();
       if(!hasOutgoing) {
         processInboundMessages();
-        locationHandler.processLocationRequest();
+        locationHandler.processLocationRequest(networkStatus);
       }
     } catch (Throwable th) {
       // Log This, it's important
@@ -329,6 +329,10 @@ public class StoGiProtocol extends Protocol implements Consumer<Packet> {
   public ProtocolInformationDTO getInformation() {
     SatelliteProtocolInformation information = new SatelliteProtocolInformation();
     updateInformation(information);
+    information.setPacketsSent(modem.getModemProtocol().getSentPackets().get());
+    information.setPacketsReceived(modem.getModemProtocol().getReceivedPackets().get());
+    information.setBytesReceived(modem.getModemProtocol().getReceivedBytes().get());
+    information.setBytesTransmitted(modem.getModemProtocol().getSentBytes().get());
     information.setRemoteDeviceInfo(((SatelliteEndPoint) endPoint).getTerminalInfo());
     information.setSessionInfo(session.getSessionInformation());
     return information;
@@ -386,6 +390,8 @@ public class StoGiProtocol extends Protocol implements Consumer<Packet> {
       ModemSatelliteMessage satelliteMessage;
       satelliteMessage = modem.getMessage(details).join();
       if (satelliteMessage != null) {
+        receivedMessage();
+        endPoint.getEndPointStatus().updateReadBytes(satelliteMessage.getPayload().length);
         modemSatelliteMessages.add(satelliteMessage);
       }
       try {
@@ -433,7 +439,10 @@ public class StoGiProtocol extends Protocol implements Consumer<Packet> {
   private void sendMessageViaModem(int streamNumber, SatelliteMessage satelliteMessage) {
     messageId = (messageId + 1) % 0xff;
     int sin = (streamNumber & 0x7F) | 0x80;
-    modem.sendMessage(2, sin, messageId, messageLifeTime,  satelliteMessage.packToSend());
+    byte[] buffer = satelliteMessage.packToSend();
+    sentMessage();
+    endPoint.getEndPointStatus().updateWriteBytes(buffer.length);
+    modem.sendMessage(2, sin, messageId, messageLifeTime,  buffer);
     logger.log(STOGI_SEND_MESSAGE_TO_MODEM, satelliteMessage.getPacketNumber());
   }
 

@@ -22,6 +22,7 @@ package io.mapsmessaging.dto.rest.protocol.impl;
 import io.mapsmessaging.dto.rest.protocol.ProtocolInformationDTO;
 import io.mapsmessaging.dto.rest.session.SessionInformationDTO;
 import io.mapsmessaging.network.protocol.impl.satellite.gateway.model.RemoteDeviceInfo;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
@@ -29,8 +30,40 @@ import lombok.EqualsAndHashCode;
 @EqualsAndHashCode(callSuper = false)
 public class SatelliteProtocolInformation extends ProtocolInformationDTO {
 
+  @Schema(
+      description = "Information about the session established with the satellite endpoint"
+  )
   private SessionInformationDTO sessionInfo;
+
+  @Schema(
+      description = "Information about the remote satellite device"
+  )
   private RemoteDeviceInfo remoteDeviceInfo;
+
+  @Schema(
+      description = "Total number of bytes transmitted through the satellite link",
+      example = "1048576"
+  )
+  private long bytesTransmitted;
+
+  @Schema(
+      description = "Total number of bytes received through the satellite link",
+      example = "524288"
+  )
+  private long bytesReceived;
+
+  @Schema(
+      description = "Total number of packets sent through the satellite link",
+      example = "250"
+  )
+  private long packetsSent;
+
+  @Schema(
+      description = "Total number of packets received through the satellite link",
+      example = "245"
+  )
+  private long packetsReceived;
+
 
   public SatelliteProtocolInformation() {
     type = "satellite";

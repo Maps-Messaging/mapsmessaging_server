@@ -24,16 +24,27 @@ import io.mapsmessaging.network.protocol.impl.satellite.modem.device.impl.data.N
 import io.mapsmessaging.network.protocol.impl.satellite.modem.device.messages.IncomingMessageDetails;
 import io.mapsmessaging.network.protocol.impl.satellite.modem.device.messages.ModemSatelliteMessage;
 import io.mapsmessaging.network.protocol.impl.satellite.modem.device.messages.SendMessageState;
+import lombok.Getter;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.atomic.AtomicLong;
 
 public abstract class BaseModemProtocol {
 
   private static final String OK = "OK";
   private static final String ERROR = "ERROR";
   private static final String EOL = "\r\n";
+
+  @Getter
+  protected final AtomicLong receivedBytes = new AtomicLong(0);
+  @Getter
+  protected final AtomicLong receivedPackets = new AtomicLong(0);
+  @Getter
+  protected final AtomicLong sentBytes = new AtomicLong(0);
+  @Getter
+  protected final AtomicLong sentPackets = new AtomicLong(0);
 
   protected final Modem modem;
   protected final boolean isOgx;
@@ -67,6 +78,10 @@ public abstract class BaseModemProtocol {
    */
   public abstract String getType();
 
+  protected void sendingBytes(int len){
+    sentBytes.addAndGet(len);
+    sentPackets.incrementAndGet();
+  }
 
   protected List<SendMessageState> parseOutgoingMessageList(String resp) {
     List<SendMessageState> states = new ArrayList<>();
@@ -110,7 +125,10 @@ public abstract class BaseModemProtocol {
       if (!line.isEmpty() &&
           !line.equalsIgnoreCase(OK) &&
           !line.equalsIgnoreCase(ERROR)) {
-        return new ModemSatelliteMessage(line, isOgx);
+        ModemSatelliteMessage msg = new ModemSatelliteMessage(line, isOgx);
+        this.receivedBytes.addAndGet(msg.getPayload().length);
+        this.receivedPackets.incrementAndGet();
+        return msg;
       }
     }
     return null;

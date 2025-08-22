@@ -70,6 +70,8 @@ public class Modem {
   private ScheduledFuture<?> future;
 
   private Command currentCommand = null;
+
+  @Getter
   private BaseModemProtocol modemProtocol = null;
   @Getter
   @Setter

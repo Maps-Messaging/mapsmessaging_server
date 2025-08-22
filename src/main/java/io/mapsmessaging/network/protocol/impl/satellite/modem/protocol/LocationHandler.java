@@ -23,10 +23,13 @@ import com.google.gson.JsonObject;
 import io.mapsmessaging.api.Destination;
 import io.mapsmessaging.api.MessageBuilder;
 import io.mapsmessaging.location.LocationManager;
+import io.mapsmessaging.network.io.EndPoint;
 import io.mapsmessaging.network.protocol.impl.nmea.sentences.Sentence;
 import io.mapsmessaging.network.protocol.impl.nmea.types.LongType;
 import io.mapsmessaging.network.protocol.impl.nmea.types.PositionType;
 import io.mapsmessaging.network.protocol.impl.satellite.modem.device.Modem;
+import io.mapsmessaging.network.protocol.impl.satellite.modem.device.impl.BaseModemProtocol;
+import io.mapsmessaging.network.protocol.impl.satellite.modem.device.impl.data.NetworkStatus;
 
 import java.io.IOException;
 import java.util.List;
@@ -47,7 +50,7 @@ public class LocationHandler {
     lastLocationPoll = System.currentTimeMillis();
   }
 
-  public void processLocationRequest() {
+  public void processLocationRequest(NetworkStatus networkStatus) {
     if(destination == null || locationPollInterval == 0) {
       return; // nothing to do
     }
@@ -60,7 +63,7 @@ public class LocationHandler {
           PositionType longitude = (PositionType) sentence.get("longitude");
           LongType satellites = (LongType) sentence.get("satellites");
           LocationManager.getInstance().setPosition(latitude.getPosition(), longitude.getPosition());
-          publishStats(latitude.getPosition(), longitude.getPosition(), satellites.toString());
+          publishStats(networkStatus, latitude.getPosition(), longitude.getPosition(), satellites.toString());
         }
       }
       lastLocationPoll = System.currentTimeMillis();
@@ -68,7 +71,7 @@ public class LocationHandler {
   }
 
 
-  private void publishStats(double lat, double lon, String satellites) {
+  private void publishStats(NetworkStatus networkStatus, double lat, double lon, String satellites) {
     Integer jamIndicator = modem.getJammingIndicator().join();
     int jamStatus = modem.getJammingStatus().join();
     int status = jamStatus & 0x3;
@@ -84,18 +87,39 @@ public class LocationHandler {
     boolean antennaCut = (jamStatus & 0x80) != 0;
 
     JsonObject obj = new JsonObject();
-    obj.addProperty("latitude", toDMS(lat, false));
-    obj.addProperty("longitude", toDMS(lon, true));
-    obj.addProperty("jammingIndicator", jamIndicator);
-    obj.addProperty("jammingStatus", jammingStatus);
-    obj.addProperty("satellites", satellites);
+    BaseModemProtocol baseModemProtocol = modem.getModemProtocol();
+    if(baseModemProtocol != null) {
+      JsonObject stats = new JsonObject();
+      stats.addProperty("receivedMsgs", baseModemProtocol.getReceivedPackets().get());
+      stats.addProperty("sentMsgs", baseModemProtocol.getSentPackets().get());
+      stats.addProperty("bytesSent", baseModemProtocol.getSentBytes().get());
+      stats.addProperty("bytesRead", baseModemProtocol.getReceivedBytes().get());
+      obj.add("stats", stats);
+    }
 
+    JsonObject location = new JsonObject();
+    location.addProperty("latitude", toDMS(lat, false));
+    location.addProperty("longitude", toDMS(lon, true));
+    location.addProperty("satellites", satellites);
+    obj.add("location", location);
+
+    JsonObject jamming = new JsonObject();
+    jamming.addProperty("jammingIndicator", jamIndicator);
+    jamming.addProperty("jammingStatus", jammingStatus);
     if (jammed) {
-      obj.addProperty("status", "JAMMED");
+      jamming.addProperty("status", "JAMMED");
     }
     if (antennaCut) {
-      obj.addProperty("status", "Antenna Cut");
+      jamming.addProperty("status", "Antenna Cut");
     }
+    obj.add("jamming", jamming);
+
+    JsonObject network = new JsonObject();
+    network.addProperty("canSend", networkStatus.canSend());
+    if(!networkStatus.canSend()) {
+      network.addProperty("reason", networkStatus.getReason());
+    }
+    obj.add("satelliteTxStatus", network);
 
     String temp = modem.getTemperature().join();
     if (temp != null) {

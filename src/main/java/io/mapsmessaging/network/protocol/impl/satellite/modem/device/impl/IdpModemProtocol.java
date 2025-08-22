@@ -40,6 +40,7 @@ public class IdpModemProtocol extends BaseModemProtocol {
 
   //region outgoing message functions
   public void sendMessage(ModemSatelliteMessage modemSatelliteMessage) {
+    sendingBytes(modemSatelliteMessage.getPayload().length);
     modem.sendATCommand("AT%MGRT=" + modemSatelliteMessage.toATCommand());
   }
 
@@ -83,7 +84,6 @@ public class IdpModemProtocol extends BaseModemProtocol {
     CompletableFuture<Boolean> future = new CompletableFuture<>(); // handled by the modem
     future.complete(true);
     return future;
-//    return modem.sendATCommand("AT%MGFM=" + name).thenApply(x -> x.equalsIgnoreCase("ok"));
   }
   //endregion
 

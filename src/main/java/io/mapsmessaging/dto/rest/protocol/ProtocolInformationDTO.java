@@ -74,14 +74,43 @@ import java.util.Map;
 public class ProtocolInformationDTO {
 
   @Schema(description = "Type of the protocol", allowableValues = {
-      "amqp", "coap", "lora", "mqtt", "mqtt-sn", "mqttV5", "NMEA-0183", "semtech", "stomp", "rest","extension", "orbcomm", "satellite"
+      "amqp", "coap", "lora", "mqtt", "mqtt-sn", "mqttV5", "NMEA-0183", "semtech", "stomp", "rest", "extension", "orbcomm", "satellite"
   })
   protected String type;
 
+  @Schema(
+      description = "Unique identifier of the session",
+      example = "session-12345"
+  )
   private String sessionId;
+
+  @Schema(
+      description = "Timeout in milliseconds before the protocol session is considered inactive",
+      example = "30000"
+  )
   private long timeout;
+
+  @Schema(
+      description = "Keep-alive interval in milliseconds for protocol connections",
+      example = "15000"
+  )
   private long keepAlive;
+
+  @Schema(
+      description = "Name of the message transformation applied to this protocol",
+      example = "default-transformation"
+  )
   private String messageTransformationName;
+
+  @Schema(
+      description = "Mapping of selectors to protocol-specific expressions",
+      example = "{\"temperature\": \"> 20\", \"status\": \"active\"}"
+  )
   private Map<String, String> selectorMapping;
+
+  @Schema(
+      description = "Mapping of destinations to transformation names",
+      example = "{\"alerts\": \"alert-transform\", \"telemetry\": \"telemetry-transform\"}"
+  )
   private Map<String, String> destinationTransformationMapping;
 }
