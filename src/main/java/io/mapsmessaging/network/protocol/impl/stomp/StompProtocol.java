@@ -41,6 +41,7 @@ import io.mapsmessaging.network.protocol.impl.stomp.frames.FrameFactory;
 import io.mapsmessaging.network.protocol.impl.stomp.frames.Subscribe;
 import io.mapsmessaging.network.protocol.impl.stomp.state.SessionState;
 import io.mapsmessaging.selector.operators.ParserExecutor;
+import io.mapsmessaging.utilities.filtering.NamespaceFilters;
 import lombok.Getter;
 import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
@@ -133,7 +134,7 @@ public class StompProtocol extends Protocol {
   }
 
   @Override
-  public void subscribeLocal(@NonNull @NotNull String resource, @NonNull @NotNull String mappedResource, String selector, @Nullable Transformer transformer) throws IOException {
+  public void subscribeLocal(@NonNull @NotNull String resource, @NonNull @NotNull String mappedResource, String selector, @Nullable Transformer transformer, @Nullable NamespaceFilters namespaceFilters) throws IOException {
     sessionState.addMapping(resource, mappedResource);
     if (transformer != null) {
       destinationTransformerMap.put(resource, transformer);

@@ -24,6 +24,7 @@ import io.mapsmessaging.config.ConfigHelper;
 import io.mapsmessaging.configuration.ConfigurationProperties;
 import io.mapsmessaging.dto.rest.config.BaseConfigDTO;
 import io.mapsmessaging.dto.rest.config.protocol.LinkConfigDTO;
+import io.mapsmessaging.utilities.filtering.NamespaceFilters;
 
 public class LinkConfig extends LinkConfigDTO implements Config {
 
@@ -34,9 +35,10 @@ public class LinkConfig extends LinkConfigDTO implements Config {
     this.selector = config.getProperty("selector");
     this.includeSchema = config.getBooleanProperty("include_schema", false);
     Object obj = config.get("transformer");
-    if (obj instanceof ConfigurationProperties) {
-      this.transformer = ConfigHelper.buildMap((ConfigurationProperties) obj);
+    if (obj instanceof ConfigurationProperties tfObj) {
+      this.transformer = ConfigHelper.buildMap(tfObj);
     }
+    this.namespaceFilters = new NamespaceFilters(config);
   }
 
   @Override
@@ -50,6 +52,9 @@ public class LinkConfig extends LinkConfigDTO implements Config {
     if (transformer != null) {
       config.put("transformer", new ConfigurationProperties(this.transformer));
     }
+    if(namespaceFilters != null) {
+      config.put("namespaceFilters", namespaceFilters.toConfigurationProperties());
+    }
     return config;
   }
 
@@ -57,8 +62,7 @@ public class LinkConfig extends LinkConfigDTO implements Config {
   public boolean update(BaseConfigDTO config) {
     boolean hasChanged = false;
 
-    if (config instanceof LinkConfigDTO) {
-      LinkConfigDTO newConfig = (LinkConfigDTO) config;
+    if (config instanceof LinkConfigDTO newConfig) {
       if (this.direction == null || !this.direction.equals(newConfig.getDirection())) {
         this.direction = newConfig.getDirection();
         hasChanged = true;

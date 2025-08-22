@@ -51,6 +51,8 @@ import io.mapsmessaging.network.protocol.impl.satellite.modem.device.messages.Se
 import io.mapsmessaging.network.protocol.impl.satellite.protocol.*;
 import io.mapsmessaging.network.protocol.transformation.TransformationManager;
 import io.mapsmessaging.selector.operators.ParserExecutor;
+import io.mapsmessaging.utilities.filtering.NamespaceFilter;
+import io.mapsmessaging.utilities.filtering.NamespaceFilters;
 import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -82,6 +84,7 @@ public class StoGiProtocol extends Protocol implements Consumer<Packet> {
   private final AtomicReference<Map<String, List<byte[]>>> priorityMessages;
   private final int messageLifeTime;
   private final CipherManager cipherManager;
+  private NamespaceFilters namespaceFilters;
 
   private final int maxBufferSize;
   private final int compressionThreshold;
@@ -255,7 +258,8 @@ public class StoGiProtocol extends Protocol implements Consumer<Packet> {
   }
 
   @Override
-  public void subscribeLocal(@NonNull @NotNull String resource, @NonNull @NotNull String mappedResource, @Nullable String selector, @Nullable Transformer transformer) throws IOException {
+  public void subscribeLocal(@NonNull @NotNull String resource, @NonNull @NotNull String mappedResource, @Nullable String selector, @Nullable Transformer transformer, NamespaceFilters namespaceFilters) throws IOException {
+    this.namespaceFilters = namespaceFilters;
     topicNameMapping.put(resource, mappedResource);
     if (transformer != null) {
       destinationTransformerMap.put(mappedResource, transformer);
@@ -266,6 +270,21 @@ public class StoGiProtocol extends Protocol implements Consumer<Packet> {
 
   public void sendMessage(@NotNull @NonNull MessageEvent messageEvent) {
     String destinationName = messageEvent.getDestinationName();
+    boolean filteredOverride = false;
+    int depth = 1;
+    NamespaceFilter namespaceFilter = namespaceFilters.findMatch(destinationName);
+    if(namespaceFilter != null){
+      if(namespaceFilter.getExecutor() != null && !namespaceFilter.getExecutor().evaluate(messageEvent.getMessage())){
+        if (messageEvent.getCompletionTask() != null) {
+          messageEvent.getCompletionTask().run();
+        }
+        return;
+      }
+      depth = namespaceFilter.getDepth();
+      filteredOverride = namespaceFilter.isForcePriority();
+    }
+
+
     Message message = processTransformer(destinationName, messageEvent.getMessage());
 
     byte[] payload;
@@ -285,8 +304,9 @@ public class StoGiProtocol extends Protocol implements Consumer<Packet> {
     }
 
     destinationName = scanForName(destinationName);
+
     Map<String, List<byte[]>> pending;
-    if(sendHighPriorityEvents && message.getPriority().getValue() > Priority.TWO_BELOW_HIGHEST.getValue()){
+    if(filteredOverride || sendHighPriorityEvents && message.getPriority().getValue() > Priority.TWO_BELOW_HIGHEST.getValue()){
       pending = priorityMessages.get();
     }
     else {
@@ -294,6 +314,9 @@ public class StoGiProtocol extends Protocol implements Consumer<Packet> {
     }
     List<byte[]> list = pending.computeIfAbsent(destinationName, key -> new ArrayList<>());
     list.add(payload);
+    while(list.size() > depth){
+      list.remove(0);
+    }
     if (messageEvent.getCompletionTask() != null) {
       messageEvent.getCompletionTask().run();
     }
@@ -377,10 +400,6 @@ public class StoGiProtocol extends Protocol implements Consumer<Packet> {
         if(replacement.isEmpty()){
           lastOutgoingMessagePollInterval = System.currentTimeMillis();
           replacement = this.pendingMessages.getAndSet(new LinkedHashMap<>());
-          System.err.println("Sending normal events");
-        }
-        else{
-          System.err.println("Sending high priority events "+replacement.size());
         }
         buildSendList(replacement);
       }

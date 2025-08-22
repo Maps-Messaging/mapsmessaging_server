@@ -20,11 +20,14 @@
 package io.mapsmessaging.dto.rest.config.protocol;
 
 import io.mapsmessaging.dto.rest.config.BaseConfigDTO;
+import io.mapsmessaging.utilities.filtering.NamespaceFilter;
+import io.mapsmessaging.utilities.filtering.NamespaceFilters;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 
+import java.util.List;
 import java.util.Map;
 
 @Data
@@ -50,4 +53,7 @@ public class LinkConfigDTO extends BaseConfigDTO {
 
   @Schema(description = "Transformer configuration map")
   protected Map<String, Object> transformer;
+
+  @Schema(description = "Specific filtering on namespace", nullable = true)
+  protected NamespaceFilters namespaceFilters;
 }

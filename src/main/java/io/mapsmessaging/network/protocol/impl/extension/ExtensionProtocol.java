@@ -38,6 +38,7 @@ import io.mapsmessaging.network.protocol.impl.extension.api.ServerApi;
 import io.mapsmessaging.network.protocol.impl.extension.api.SessionContext;
 import io.mapsmessaging.network.protocol.transformation.internal.MetaRouteHandler;
 import io.mapsmessaging.selector.operators.ParserExecutor;
+import io.mapsmessaging.utilities.filtering.NamespaceFilters;
 import jakarta.annotation.Nullable;
 import jakarta.validation.constraints.NotNull;
 import lombok.NonNull;
@@ -102,7 +103,7 @@ public class ExtensionProtocol extends Protocol implements MessageListener, Clie
   }
 
   @Override
-  public void subscribeLocal(@NonNull @NotNull String resource, @NonNull @NotNull String mappedResource, String selector, @Nullable Transformer transformer) throws IOException {
+  public void subscribeLocal(@NonNull @NotNull String resource, @NonNull @NotNull String mappedResource, String selector, @Nullable Transformer transformer, @org.jetbrains.annotations.Nullable NamespaceFilters namespaceFilters) throws IOException {
     nameMapping.put(resource, mappedResource);
     extension.registerLocalLink(mappedResource);
     if(transformer != null) {

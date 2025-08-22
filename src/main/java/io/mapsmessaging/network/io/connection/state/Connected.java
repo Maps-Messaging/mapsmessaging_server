@@ -28,6 +28,7 @@ import io.mapsmessaging.logging.ServerLogMessages;
 import io.mapsmessaging.network.io.connection.EndPointConnection;
 import io.mapsmessaging.selector.SelectorParser;
 import io.mapsmessaging.selector.operators.ParserExecutor;
+import io.mapsmessaging.utilities.filtering.NamespaceFilters;
 
 import java.io.IOException;
 import java.util.List;
@@ -61,6 +62,7 @@ public class Connected extends State {
       String remote = property.getRemoteNamespace();
       String selector = property.getSelector();
       boolean schema = property.isIncludeSchema();
+      NamespaceFilters filters = property.getNamespaceFilters();
 
       Transformer transformer = null;
       Map<String, Object> obj = property.getTransformer();
@@ -75,7 +77,7 @@ public class Connected extends State {
           if(remote.endsWith("#")){
             remote = remote.substring(0, remote.length()-1);
           }
-          subscribeLocal(local, remote, selector, transformer, schema);
+          subscribeLocal(local, remote, selector, transformer, schema, filters);
         }
         endPointConnection.getLogger().log(ServerLogMessages.END_POINT_CONNECTION_SUBSCRIPTION_ESTABLISHED, direction, local, remote);
       } catch (IOException ioException) {
@@ -86,10 +88,10 @@ public class Connected extends State {
     return success;
   }
 
-  private void subscribeLocal(String local, String remote, String selector, Transformer transformer, boolean includeSchema) throws IOException {
-    endPointConnection.getConnection().subscribeLocal(local, remote, selector, transformer);
+  private void subscribeLocal(String local, String remote, String selector, Transformer transformer, boolean includeSchema, NamespaceFilters filters) throws IOException {
+    endPointConnection.getConnection().subscribeLocal(local, remote, selector, transformer, filters);
     if(includeSchema){
-      endPointConnection.getConnection().subscribeLocal(constructSchema(local), constructSchema(remote), selector, transformer);
+      endPointConnection.getConnection().subscribeLocal(constructSchema(local), constructSchema(remote), selector, transformer,filters );
     }
   }
 
