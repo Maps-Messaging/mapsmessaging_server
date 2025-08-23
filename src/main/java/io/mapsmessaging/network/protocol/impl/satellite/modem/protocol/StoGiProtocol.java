@@ -84,7 +84,6 @@ public class StoGiProtocol extends Protocol implements Consumer<Packet> {
   private final AtomicReference<Map<String, List<byte[]>>> priorityMessages;
   private final int messageLifeTime;
   private final CipherManager cipherManager;
-  private NamespaceFilters namespaceFilters;
 
   private final int maxBufferSize;
   private final int compressionThreshold;
@@ -259,7 +258,7 @@ public class StoGiProtocol extends Protocol implements Consumer<Packet> {
 
   @Override
   public void subscribeLocal(@NonNull @NotNull String resource, @NonNull @NotNull String mappedResource, @Nullable String selector, @Nullable Transformer transformer, NamespaceFilters namespaceFilters) throws IOException {
-    this.namespaceFilters = namespaceFilters;
+    this.setNamespaceFilters(namespaceFilters);
     topicNameMapping.put(resource, mappedResource);
     if (transformer != null) {
       destinationTransformerMap.put(mappedResource, transformer);
@@ -269,24 +268,18 @@ public class StoGiProtocol extends Protocol implements Consumer<Packet> {
   }
 
   public void sendMessage(@NotNull @NonNull MessageEvent messageEvent) {
-    String destinationName = messageEvent.getDestinationName();
     boolean filteredOverride = false;
     int depth = 1;
-    NamespaceFilter namespaceFilter = namespaceFilters.findMatch(destinationName);
-    if(namespaceFilter != null){
-      if(namespaceFilter.getExecutor() != null && !namespaceFilter.getExecutor().evaluate(messageEvent.getMessage())){
-        if (messageEvent.getCompletionTask() != null) {
-          messageEvent.getCompletionTask().run();
-        }
-        return;
-      }
+    try {
+      NamespaceFilter namespaceFilter= filterMessage(messageEvent);
       depth = namespaceFilter.getDepth();
       filteredOverride = namespaceFilter.isForcePriority();
+    } catch (IOException e) {
+      return; // failed filtering
     }
 
-
+    String destinationName = messageEvent.getDestinationName();
     Message message = processTransformer(destinationName, messageEvent.getMessage());
-
     byte[] payload;
     if (transformation != null) {
       payload = transformation.outgoing(message, messageEvent.getDestinationName());
@@ -306,7 +299,9 @@ public class StoGiProtocol extends Protocol implements Consumer<Packet> {
     destinationName = scanForName(destinationName);
 
     Map<String, List<byte[]>> pending;
-    if(filteredOverride || sendHighPriorityEvents && message.getPriority().getValue() > Priority.TWO_BELOW_HIGHEST.getValue()){
+    if(sendHighPriorityEvents && (
+        message.getPriority().getValue() > Priority.TWO_BELOW_HIGHEST.getValue())||
+        filteredOverride){
       pending = priorityMessages.get();
     }
     else {

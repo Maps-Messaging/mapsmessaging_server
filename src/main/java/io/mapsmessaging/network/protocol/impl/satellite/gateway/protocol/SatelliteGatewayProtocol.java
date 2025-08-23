@@ -39,6 +39,7 @@ import io.mapsmessaging.network.protocol.impl.satellite.TaskManager;
 import io.mapsmessaging.network.protocol.impl.satellite.gateway.io.SatelliteEndPoint;
 import io.mapsmessaging.network.protocol.impl.satellite.gateway.model.MessageData;
 import io.mapsmessaging.network.protocol.impl.satellite.protocol.*;
+import io.mapsmessaging.utilities.filtering.NamespaceFilter;
 import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
 
@@ -181,9 +182,19 @@ public class SatelliteGatewayProtocol extends Protocol {
     return information;
   }
 
-
   @Override
   public void sendMessage(@NotNull @NonNull MessageEvent messageEvent) {
+
+    boolean filteredOverride = false;
+    int depth = 1;
+    try {
+      NamespaceFilter namespaceFilter= filterMessage(messageEvent);
+      depth = namespaceFilter.getDepth();
+      filteredOverride = namespaceFilter.isForcePriority();
+    } catch (IOException e) {
+      return; // failed filtering
+    }
+
     String destinationName = messageEvent.getDestinationName();
     Message message = processTransformer(destinationName, messageEvent.getMessage());
     byte[] payload;
@@ -202,7 +213,9 @@ public class SatelliteGatewayProtocol extends Protocol {
     }
     destinationName = scanForName(destinationName);
     Map<String, List<byte[]>> pending;
-    if(sendHighPriorityEvents && message.getPriority().getValue() > Priority.TWO_BELOW_HIGHEST.getValue()){
+    if( sendHighPriorityEvents &&
+        (message.getPriority().getValue() > Priority.TWO_BELOW_HIGHEST.getValue()) ||
+        filteredOverride){
       pending = priorityMessages.get();
     }
     else {
@@ -211,6 +224,9 @@ public class SatelliteGatewayProtocol extends Protocol {
 
     List<byte[]> list =pending.computeIfAbsent(destinationName, key -> new ArrayList<>());
     list.add(payload);
+    while(list.size()> depth){
+      list.remove(0);
+    }
     if(messageEvent.getCompletionTask() != null) {
       messageEvent.getCompletionTask().run();
     }

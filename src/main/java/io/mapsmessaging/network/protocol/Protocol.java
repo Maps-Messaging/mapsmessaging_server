@@ -20,6 +20,7 @@
 package io.mapsmessaging.network.protocol;
 
 import io.mapsmessaging.api.MessageBuilder;
+import io.mapsmessaging.api.MessageEvent;
 import io.mapsmessaging.api.MessageListener;
 import io.mapsmessaging.api.SubscriptionContextBuilder;
 import io.mapsmessaging.api.features.ClientAcknowledgement;
@@ -34,6 +35,7 @@ import io.mapsmessaging.network.io.EndPoint;
 import io.mapsmessaging.network.io.Timeoutable;
 import io.mapsmessaging.network.io.impl.SelectorCallback;
 import io.mapsmessaging.selector.operators.ParserExecutor;
+import io.mapsmessaging.utilities.filtering.NamespaceFilter;
 import io.mapsmessaging.utilities.filtering.NamespaceFilters;
 import lombok.Getter;
 import lombok.NonNull;
@@ -56,6 +58,10 @@ public abstract class Protocol implements SelectorCallback, MessageListener, Tim
   @Getter
   protected final Map<String, Transformer> destinationTransformerMap;
   protected final Map<String, String> topicNameMapping;
+
+  @Getter
+  @Setter
+  private NamespaceFilters namespaceFilters;
 
 
   @Getter
@@ -154,6 +160,20 @@ public abstract class Protocol implements SelectorCallback, MessageListener, Tim
 
   public void sendKeepAlive() {
     // by default, we don't do anything. A protocol that needs to do something can override this function
+  }
+
+  protected NamespaceFilter filterMessage(MessageEvent messageEvent) throws IOException {
+    String destinationName = messageEvent.getDestinationName();
+    NamespaceFilter namespaceFilter = getNamespaceFilters().findMatch(destinationName);
+    if(namespaceFilter != null &&
+      namespaceFilter.getExecutor() != null &&
+      !namespaceFilter.getExecutor().evaluate(messageEvent.getMessage())) {
+      if (messageEvent.getCompletionTask() != null) {
+        messageEvent.getCompletionTask().run();
+      }
+      throw new IOException("Failed filter selection");
+    }
+    return namespaceFilter;
   }
 
   @Override
