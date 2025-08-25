@@ -81,6 +81,7 @@ public abstract class PublishListener extends  Listener {
     HashMap<String, String> meta = new LinkedHashMap<>();
     meta.put("protocol", "CoAP");
     meta.put("version", "1");
+    meta.put("sessionId", protocol.getSessionId());
     meta.put("time_ms", "" + System.currentTimeMillis());
     messageBuilder.setMeta(meta);
 
