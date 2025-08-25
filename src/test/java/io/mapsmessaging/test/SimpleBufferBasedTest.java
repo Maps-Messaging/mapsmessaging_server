@@ -84,17 +84,13 @@ public class SimpleBufferBasedTest extends BaseTestConfig {
       delay(1000); // Pause for a second while things start up
       byte[] write = new byte[size];
       List<byte[]> list = parseToBytes(filename);
-      int idx = 0;
       OutputStream outputStream = testClient.getOutputStream();
       for (byte[] source: list) {
+        int idx = 0;
         while (idx < source.length) {
           int x = 0;
           while (x < write.length && idx < source.length) {
             write[x] = source[idx];
-            if (write[x] == 0xe0) {
-              outputStream.flush();
-              delay(1000);
-            }
             idx++;
             x++;
           }
@@ -105,6 +101,11 @@ public class SimpleBufferBasedTest extends BaseTestConfig {
             long delay = Math.abs(rdm.nextInt(2));
             delay(delay);
           }
+        }
+        try {
+          Thread.sleep(1000);
+        } catch (InterruptedException e) {
+          Thread.currentThread().interrupt();
         }
       }
       if(endFrame != null) {
@@ -124,9 +125,9 @@ public class SimpleBufferBasedTest extends BaseTestConfig {
         delay(1000); // Pause for a second while things start up
         List<byte[]> list = parseToBytes(filename);
         byte[] write = new byte[1024];
-        int idx = 0;
         OutputStream outputStream = testClient.getOutputStream();
         for(byte[] source: list) {
+          int idx = 0;
           while (idx < source.length) {
             int x = 0;
             while (x < write.length && idx < source.length) {
@@ -137,16 +138,16 @@ public class SimpleBufferBasedTest extends BaseTestConfig {
             outputStream.write(write, 0, x);
             outputStream.flush();
           }
-          if (endFrame != null) {
-            delay(END_FRAME_DELAY);
-            outputStream.write(endFrame);
-            outputStream.flush();
-          }
           try {
             Thread.sleep(1000);
           } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
           }
+        }
+        if (endFrame != null) {
+          delay(END_FRAME_DELAY);
+          outputStream.write(endFrame);
+          outputStream.flush();
         }
         waitForCompletion(testClient, totalFrames);
       }
@@ -179,6 +180,7 @@ public class SimpleBufferBasedTest extends BaseTestConfig {
     String[] lines = input.split("\n");
     List<byte[]> bytes = new ArrayList<>();
     for (String line : lines) {
+      line = line.trim();
       StringTokenizer st = new StringTokenizer(line, ",");
 
       ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
