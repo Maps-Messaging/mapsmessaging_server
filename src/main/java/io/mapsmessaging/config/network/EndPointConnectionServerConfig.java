@@ -38,6 +38,8 @@ public class EndPointConnectionServerConfig extends EndPointConnectionServerConf
     this.authConfig = new AuthConfig(props);
     this.linkTransformation = props.getProperty("transformation", "");
     this.pluginConnection = props.getBooleanProperty("plugin", false);
+    this.cost = props.getIntProperty("cost", 0);
+    this.groupName = props.getProperty("groupName", "");
 
     linkConfigs = new ArrayList<>();
     Object obj = props.get("links");
@@ -56,6 +58,8 @@ public class EndPointConnectionServerConfig extends EndPointConnectionServerConf
     EndPointConfigFactory.pack(config, this);
     config.put("transformation", linkTransformation);
     config.put("plugin", pluginConnection);
+    config.put("cost", cost);
+    config.put("groupName", groupName);
     List<ConfigurationProperties> linkProperties = new ArrayList<>();
     for (LinkConfigDTO linkConfig : linkConfigs) {
       linkProperties.add(((Config)linkConfig).toConfigurationProperties());
@@ -71,8 +75,7 @@ public class EndPointConnectionServerConfig extends EndPointConnectionServerConf
     if(update instanceof EndPointServerConfigDTO) {
       hasChanged = EndPointConfigFactory.update(this, (EndPointServerConfigDTO) update);
 
-      if (update instanceof EndPointConnectionServerConfigDTO) {
-        EndPointConnectionServerConfig config = (EndPointConnectionServerConfig) update;
+      if (update instanceof EndPointConnectionServerConfigDTO config) {
         if ((this.linkTransformation == null && config.getLinkTransformation() != null)
             || (this.linkTransformation != null
                 && !this.linkTransformation.equals(config.getLinkTransformation()))) {
@@ -84,8 +87,17 @@ public class EndPointConnectionServerConfig extends EndPointConnectionServerConf
           hasChanged = true;
         }
 
-        if (this.pluginConnection != config.pluginConnection) {
-          pluginConnection = config.pluginConnection;
+        if(cost != config.getCost()) {
+          cost = config.getCost();
+          hasChanged = true;
+        }
+        if(!groupName.equals(config.getGroupName())) {
+          groupName = config.getGroupName();
+          hasChanged = true;
+        }
+
+        if (this.pluginConnection != config.isPluginConnection()) {
+          pluginConnection = config.isPluginConnection();
           hasChanged = true;
         }
 

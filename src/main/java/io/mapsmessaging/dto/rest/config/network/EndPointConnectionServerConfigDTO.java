@@ -45,4 +45,10 @@ public class EndPointConnectionServerConfigDTO extends EndPointServerConfigDTO {
 
   @Schema(description = "Is this a 3rd party plugin connection")
   protected boolean pluginConnection;
+
+  @Schema(description = "An arbitrary cost associated with using this connection", defaultValue = "10", example = "0")
+  protected int cost;
+
+  @Schema(description = "Optional name of the group that the connection belongs to", defaultValue = "", example="Main data uplink")
+  protected String groupName;
 }
