@@ -54,6 +54,7 @@ public class StatsManager {
       return; // nothing to do
     }
     if (lastLocationPoll + locationPollInterval < System.currentTimeMillis()) {
+      lastLocationPoll = System.currentTimeMillis();
       List<String> location = modem.getLocation().join();
       for (String loc : location) {
         Sentence sentence = locationParser.parseLocation(loc);
@@ -65,7 +66,6 @@ public class StatsManager {
           publishStats(networkStatus, latitude.getPosition(), longitude.getPosition(), satellites.toString());
         }
       }
-      lastLocationPoll = System.currentTimeMillis();
     }
   }
 
