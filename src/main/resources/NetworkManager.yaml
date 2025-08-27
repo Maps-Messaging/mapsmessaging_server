@@ -34,8 +34,8 @@ NetworkManager:
       # ---------------------------------------------------------------------------------------------------------
       # Generic protocol configuration
       # ---------------------------------------------------------------------------------------------------------
-      serverReadBufferSize: 10K
-      serverWriteBufferSize: 10K
+      serverReadBufferSize: 100K
+      serverWriteBufferSize: 100K
       selectorThreadCount: 2
 
       # ---------------------------------------------------------------------------------------------------------
@@ -127,12 +127,22 @@ NetworkManager:
         protocol: mqtt
         auth: default
 
+
       - name: "OrbComm OGWS interface"
-        protocol: ogws
+        transformation: "Message-Raw"
+        protocol: satellite
         auth: anon
-        url: ogws://localhost:0/
-        clientId: "ogws client id"
-        clientSecret: "ogws client secret"
+        url: satellite://orbcomm:0/
         httpRequestTimeoutSec: 30
-        pollInterval: 10
+        pollInterval: 7
+        sharedSecret: "This is a shared secret to use"
+        maxInflightEventsPerDevice: 2
+        outboundNamespaceRoot: "/orbcomm/{deviceId}"
+        outboundBroadcast: "/sensors1/#"
         baseUrl: "http://localhost:8081/api/v1.0"
+        maxBufferSize: 4000
+        compressionCutoffSize: 128
+
+        remoteAuthConfig:
+          username: "ogws client id"
+          password: "ogws client secret"
