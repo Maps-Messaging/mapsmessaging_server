@@ -78,6 +78,72 @@
     <url>https://github.com/Maps-Messaging/mapsmessaging_server</url>
   </scm>
 
+
+  <properties>
+    <nvd.api.key>${env.NVD_API_KEY}</nvd.api.key>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+
+    <logback.version>1.5.18</logback.version>
+    <pi4j.version>2.8.0</pi4j.version>
+    <jersey.version>3.1.11</jersey.version>
+    <swagger-ui.version>3.17.0</swagger-ui.version>
+
+    <runSuite>**/*Suite.class</runSuite>
+
+    <sonar.sources>src/main</sonar.sources>
+    <sonar.test.exclusions>
+      **/*Test.*,
+      **/*IT.*,
+      **/apache_pulsar/*,
+      **.*JMH.*
+    </sonar.test.exclusions>
+
+    <sonar.exclusions>
+      **/META-INF/services/**,
+      **/html/swagger-ui/**
+    </sonar.exclusions>
+
+
+    <sonar.jacoco.reportPaths>target/jacoco.exec</sonar.jacoco.reportPaths>
+    <sonar.coverage.jacoco.xmlReportPaths>target/site/jacoco/jacoco.xml</sonar.coverage.jacoco.xmlReportPaths>
+
+    <sonar.issue.ignore.multicriteria>IgnoreVar</sonar.issue.ignore.multicriteria>
+    <sonar.issue.ignore.multicriteria.IgnoreVar.ruleKey>java:S6212</sonar.issue.ignore.multicriteria.IgnoreVar.ruleKey>
+    <sonar.issue.ignore.multicriteria.IgnoreVar.resourceKey>
+      **/*.java
+    </sonar.issue.ignore.multicriteria.IgnoreVar.resourceKey>
+
+    <sonar.java.coveragePlugin>jacoco</sonar.java.coveragePlugin>
+    <sonar.dynamicAnalysis>reuseReports</sonar.dynamicAnalysis>
+    <sonar.language>java</sonar.language>
+
+    <sonar.host.url>https://sonarcloud.io</sonar.host.url>
+    <sonar.organization>maps-messaging</sonar.organization>
+    <sonar.projectKey>Maps-Messaging_mapsmessaging_server</sonar.projectKey>
+
+    <sonar.c.file.suffixes>-</sonar.c.file.suffixes>
+    <sonar.cpp.file.suffixes>-</sonar.cpp.file.suffixes>
+    <sonar.objc.file.suffixes>-</sonar.objc.file.suffixes>
+    <sonar.branch.name>development</sonar.branch.name>
+    <branchName>development</branchName>
+    <java.version>17</java.version>
+
+    <!-- Base -->
+    <maps.logging.version>2.1.1-SNAPSHOT</maps.logging.version>
+    <maps.jms_selector.version>2.1.0-SNAPSHOT</maps.jms_selector.version>
+    <maps.nolc.version>1.2.1-SNAPSHOT</maps.nolc.version>
+
+    <!-- first level dependencies -->
+    <maps.nbts.version>2.2.1-SNAPSHOT</maps.nbts.version>
+    <maps.schema.version>2.2.1-SNAPSHOT</maps.schema.version>
+    <maps.config.version>1.1.1-SNAPSHOT</maps.config.version>
+
+    <!-- Second level dependencies -->
+    <maps.storage.version>2.5.1-SNAPSHOT</maps.storage.version>
+    <maps.device.version>2.0.1-SNAPSHOT</maps.device.version>
+    <maps.auth.version>2.0.1-SNAPSHOT</maps.auth.version>
+  </properties>
+
   <!--
   This section simply detects which OS is running and specifies the script extension
   used to create the self-signed certificates used to test SSL connections in the
@@ -187,24 +253,6 @@
     </profile>
     <profile>
       <id>snapshot</id>
-      <properties>
-        <branchName>development</branchName>
-        <java.version>17</java.version>
-        <!-- Base -->
-        <maps.logging.version>2.1.1-SNAPSHOT</maps.logging.version>
-        <maps.jms_selector.version>2.1.0-SNAPSHOT</maps.jms_selector.version>
-        <maps.nolc.version>1.2.1-SNAPSHOT</maps.nolc.version>
-
-        <!-- first level dependencies -->
-        <maps.nbts.version>2.2.1-SNAPSHOT</maps.nbts.version>
-        <maps.schema.version>2.2.1-SNAPSHOT</maps.schema.version>
-        <maps.config.version>1.1.1-SNAPSHOT</maps.config.version>
-
-        <!-- Second level dependencies -->
-        <maps.storage.version>2.5.1-SNAPSHOT</maps.storage.version>
-        <maps.device.version>2.0.1-SNAPSHOT</maps.device.version>
-        <maps.auth.version>2.0.1-SNAPSHOT</maps.auth.version>
-      </properties>
       <dependencies>
         <dependency>
           <groupId>org.graalvm.buildtools</groupId>
@@ -228,22 +276,9 @@
     <profile>
       <id>snapshot-ml</id>
       <properties>
-        <branchName>development</branchName>
         <java.version>21</java.version>
         <!-- Base -->
-        <maps.logging.version>2.1.1-SNAPSHOT</maps.logging.version>
         <maps.jms_selector.version>ml-2.1.0-SNAPSHOT</maps.jms_selector.version>
-        <maps.nolc.version>1.2.1-SNAPSHOT</maps.nolc.version>
-
-        <!-- first level dependencies -->
-        <maps.nbts.version>2.2.1-SNAPSHOT</maps.nbts.version>
-        <maps.schema.version>2.2.1-SNAPSHOT</maps.schema.version>
-        <maps.config.version>1.1.1-SNAPSHOT</maps.config.version>
-
-        <!-- Second level dependencies -->
-        <maps.storage.version>2.5.1-SNAPSHOT</maps.storage.version>
-        <maps.device.version>2.0.1-SNAPSHOT</maps.device.version>
-        <maps.auth.version>2.0.1-SNAPSHOT</maps.auth.version>
       </properties>
       <build>
         <plugins>
@@ -668,54 +703,6 @@
       <url>https://repository.mapsmessaging.io/repository/maps_license_store/</url>
     </repository>
   </repositories>
-
-  <properties>
-    <nvd.api.key>${env.NVD_API_KEY}</nvd.api.key>
-    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-
-    <logback.version>1.5.18</logback.version>
-    <pi4j.version>2.8.0</pi4j.version>
-    <jersey.version>3.1.11</jersey.version>
-    <swagger-ui.version>3.17.0</swagger-ui.version>
-
-    <runSuite>**/*Suite.class</runSuite>
-
-    <sonar.sources>src/main</sonar.sources>
-    <sonar.test.exclusions>
-      **/*Test.*,
-      **/*IT.*,
-      **/apache_pulsar/*,
-      **.*JMH.*
-    </sonar.test.exclusions>
-
-    <sonar.exclusions>
-      **/META-INF/services/**,
-      **/html/swagger-ui/**
-    </sonar.exclusions>
-
-
-    <sonar.jacoco.reportPaths>target/jacoco.exec</sonar.jacoco.reportPaths>
-    <sonar.coverage.jacoco.xmlReportPaths>target/site/jacoco/jacoco.xml</sonar.coverage.jacoco.xmlReportPaths>
-
-    <sonar.issue.ignore.multicriteria>IgnoreVar</sonar.issue.ignore.multicriteria>
-    <sonar.issue.ignore.multicriteria.IgnoreVar.ruleKey>java:S6212</sonar.issue.ignore.multicriteria.IgnoreVar.ruleKey>
-    <sonar.issue.ignore.multicriteria.IgnoreVar.resourceKey>
-      **/*.java
-    </sonar.issue.ignore.multicriteria.IgnoreVar.resourceKey>
-
-    <sonar.java.coveragePlugin>jacoco</sonar.java.coveragePlugin>
-    <sonar.dynamicAnalysis>reuseReports</sonar.dynamicAnalysis>
-    <sonar.language>java</sonar.language>
-
-    <sonar.host.url>https://sonarcloud.io</sonar.host.url>
-    <sonar.organization>maps-messaging</sonar.organization>
-    <sonar.projectKey>Maps-Messaging_mapsmessaging_server</sonar.projectKey>
-
-    <sonar.c.file.suffixes>-</sonar.c.file.suffixes>
-    <sonar.cpp.file.suffixes>-</sonar.cpp.file.suffixes>
-    <sonar.objc.file.suffixes>-</sonar.objc.file.suffixes>
-    <sonar.branch.name>development</sonar.branch.name>
-  </properties>
 
   <dependencyManagement>
     <dependencies>
