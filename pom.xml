@@ -190,71 +190,22 @@
       <properties>
         <branchName>development</branchName>
         <java.version>17</java.version>
+        <!-- Base -->
+        <maps.logging.version>2.1.1-SNAPSHOT</maps.logging.version>
+        <maps.jms_selector.version>2.1.0-SNAPSHOT</maps.jms_selector.version>
+        <maps.nolc.version>1.2.1-SNAPSHOT</maps.nolc.version>
+
+        <!-- first level dependencies -->
+        <maps.nbts.version>2.2.1-SNAPSHOT</maps.nbts.version>
+        <maps.schema.version>2.2.1-SNAPSHOT</maps.schema.version>
+        <maps.config.version>1.1.1-SNAPSHOT</maps.config.version>
+
+        <!-- Second level dependencies -->
+        <maps.storage.version>2.5.1-SNAPSHOT</maps.storage.version>
+        <maps.device.version>2.0.1-SNAPSHOT</maps.device.version>
+        <maps.auth.version>2.0.1-SNAPSHOT</maps.auth.version>
       </properties>
       <dependencies>
-        <!-- Consul client API -->
-        <dependency>
-          <groupId>com.ecwid.consul</groupId>
-          <artifactId>consul-api</artifactId>
-          <version>1.4.6</version>
-        </dependency>
-
-        <dependency>
-          <groupId>io.mapsmessaging</groupId>
-          <artifactId>authentication_library</artifactId>
-          <version>1.0.6-SNAPSHOT</version>
-        </dependency>
-
-        <dependency>
-          <groupId>io.mapsmessaging</groupId>
-          <artifactId>simple_logging</artifactId>
-          <version>2.1.0-SNAPSHOT</version>
-        </dependency>
-
-        <!-- JMS Selector logic module -->
-        <dependency>
-          <groupId>io.mapsmessaging</groupId>
-          <artifactId>jms_selector_parser</artifactId>
-          <version>2.1.0-SNAPSHOT</version>
-        </dependency>
-
-        <!-- Naturally order long collection -->
-        <dependency>
-          <groupId>io.mapsmessaging</groupId>
-          <artifactId>naturally_ordered_long_collections</artifactId>
-          <version>1.2.1-SNAPSHOT</version>
-        </dependency>
-
-        <!-- Non Blocking Task Queue module -->
-        <dependency>
-          <groupId>io.mapsmessaging</groupId>
-          <artifactId>non_block_task_scheduler</artifactId>
-          <version>2.1.10-SNAPSHOT</version>
-        </dependency>
-
-        <dependency>
-          <groupId>io.mapsmessaging</groupId>
-          <artifactId>configuration_library</artifactId>
-          <version>1.0.1-SNAPSHOT</version>
-        </dependency>
-
-        <dependency>
-          <groupId>io.mapsmessaging</groupId>
-          <artifactId>dynamic_storage</artifactId>
-          <version>2.4.13-SNAPSHOT</version>
-        </dependency>
-
-        <dependency>
-          <groupId>io.mapsmessaging</groupId>
-          <artifactId>schemas</artifactId>
-          <version>2.1.5-SNAPSHOT</version>
-        </dependency>
-
-        <dependency>
-          <groupId>io.mapsmessaging</groupId>
-          <artifactId>device_library</artifactId>
-          <version>1.0.9-SNAPSHOT</version>
-        </dependency>
         <dependency>
           <groupId>org.graalvm.buildtools</groupId>
           <artifactId>graalvm-reachability-metadata</artifactId>
@@ -279,6 +230,20 @@
       <properties>
         <branchName>development</branchName>
         <java.version>21</java.version>
+        <!-- Base -->
+        <maps.logging.version>2.1.1-SNAPSHOT</maps.logging.version>
+        <maps.jms_selector.version>ml-2.1.0-SNAPSHOT</maps.jms_selector.version>
+        <maps.nolc.version>1.2.1-SNAPSHOT</maps.nolc.version>
+
+        <!-- first level dependencies -->
+        <maps.nbts.version>2.2.1-SNAPSHOT</maps.nbts.version>
+        <maps.schema.version>2.2.1-SNAPSHOT</maps.schema.version>
+        <maps.config.version>1.1.1-SNAPSHOT</maps.config.version>
+
+        <!-- Second level dependencies -->
+        <maps.storage.version>2.5.1-SNAPSHOT</maps.storage.version>
+        <maps.device.version>2.0.1-SNAPSHOT</maps.device.version>
+        <maps.auth.version>2.0.1-SNAPSHOT</maps.auth.version>
       </properties>
       <build>
         <plugins>
@@ -317,70 +282,8 @@
           </plugin>
         </plugins>
       </build>
+
       <dependencies>
-        <!-- Consul client API -->
-        <dependency>
-          <groupId>com.ecwid.consul</groupId>
-          <artifactId>consul-api</artifactId>
-          <version>1.4.6</version>
-        </dependency>
-
-        <dependency>
-          <groupId>io.mapsmessaging</groupId>
-          <artifactId>authentication_library</artifactId>
-          <version>1.0.6-SNAPSHOT</version>
-        </dependency>
-
-        <dependency>
-          <groupId>io.mapsmessaging</groupId>
-          <artifactId>simple_logging</artifactId>
-          <version>2.1.1-SNAPSHOT</version>
-        </dependency>
-
-        <!-- JMS Selector logic module -->
-        <dependency>
-          <groupId>io.mapsmessaging</groupId>
-          <artifactId>jms_selector_parser</artifactId>
-          <version>ml-2.1.0-SNAPSHOT</version>
-        </dependency>
-
-        <!-- Naturally order long collection -->
-        <dependency>
-          <groupId>io.mapsmessaging</groupId>
-          <artifactId>naturally_ordered_long_collections</artifactId>
-          <version>1.2.1-SNAPSHOT</version>
-        </dependency>
-
-        <!-- Non Blocking Task Queue module -->
-        <dependency>
-          <groupId>io.mapsmessaging</groupId>
-          <artifactId>non_block_task_scheduler</artifactId>
-          <version>2.1.10-SNAPSHOT</version>
-        </dependency>
-
-        <dependency>
-          <groupId>io.mapsmessaging</groupId>
-          <artifactId>configuration_library</artifactId>
-          <version>1.0.1-SNAPSHOT</version>
-        </dependency>
-
-        <dependency>
-          <groupId>io.mapsmessaging</groupId>
-          <artifactId>dynamic_storage</artifactId>
-          <version>2.4.13-SNAPSHOT</version>
-        </dependency>
-
-        <dependency>
-          <groupId>io.mapsmessaging</groupId>
-          <artifactId>schemas</artifactId>
-          <version>2.1.5-SNAPSHOT</version>
-        </dependency>
-
-        <dependency>
-          <groupId>io.mapsmessaging</groupId>
-          <artifactId>device_library</artifactId>
-          <version>1.0.9-SNAPSHOT</version>
-        </dependency>
         <dependency>
           <groupId>org.graalvm.buildtools</groupId>
           <artifactId>graalvm-reachability-metadata</artifactId>
@@ -406,78 +309,41 @@
       <properties>
         <branchName>main</branchName>
         <java.version>17</java.version>
+        <!-- Base -->
+        <maps.logging.version>2.1.0</maps.logging.version>
+        <maps.jms_selector.version>2.0.0</maps.jms_selector.version>
+        <maps.nolc.version>1.2.0</maps.nolc.version>
+
+        <!-- first level dependencies -->
+        <maps.nbts.version>2.2.0</maps.nbts.version>
+        <maps.schema.version>2.2.0</maps.schema.version>
+        <maps.config.version>1.1.0</maps.config.version>
+
+        <!-- Second level dependencies -->
+        <maps.storage.version>2.5.0</maps.storage.version>
+        <maps.device.version>2.0.0</maps.device.version>
+        <maps.auth.version>2.0.0</maps.auth.version>
       </properties>
-
-      <dependencies>
-        <!-- Consul client API -->
-        <dependency>
-          <groupId>com.ecwid.consul</groupId>
-          <artifactId>consul-api</artifactId>
-          <version>1.4.6</version>
-        </dependency>
-
-        <dependency>
-          <groupId>io.mapsmessaging</groupId>
-          <artifactId>authentication_library</artifactId>
-          <version>1.0.5</version>
-        </dependency>
-
-        <dependency>
-          <groupId>io.mapsmessaging</groupId>
-          <artifactId>simple_logging</artifactId>
-          <version>2.1.0</version>
-        </dependency>
-
-        <!-- JMS Selector logic module -->
-        <dependency>
-          <groupId>io.mapsmessaging</groupId>
-          <artifactId>jms_selector_parser</artifactId>
-          <version>2.0.0</version>
-        </dependency>
-        <dependency>
-          <groupId>io.mapsmessaging</groupId>
-          <artifactId>configuration_library</artifactId>
-          <version>1.0.1-SNAPSHOT</version>
-        </dependency>
-        <!-- Naturally order long collection -->
-        <dependency>
-          <groupId>io.mapsmessaging</groupId>
-          <artifactId>naturally_ordered_long_collections</artifactId>
-          <version>1.2.0</version>
-        </dependency>
-
-        <!-- Non Blocking Task Queue module -->
-        <dependency>
-          <groupId>io.mapsmessaging</groupId>
-          <artifactId>non_block_task_scheduler</artifactId>
-          <version>2.1.9</version>
-        </dependency>
-
-        <dependency>
-          <groupId>io.mapsmessaging</groupId>
-          <artifactId>dynamic_storage</artifactId>
-          <version>2.4.12</version>
-        </dependency>
-
-        <dependency>
-          <groupId>io.mapsmessaging</groupId>
-          <artifactId>schemas</artifactId>
-          <version>2.1.4</version>
-        </dependency>
-
-        <dependency>
-          <groupId>io.mapsmessaging</groupId>
-          <artifactId>device_library</artifactId>
-          <version>1.0.8</version>
-        </dependency>
-      </dependencies>
-
     </profile>
     <profile>
       <id>release-ml</id>
       <properties>
         <branchName>main</branchName>
         <java.version>21</java.version>
+        <!-- Base -->
+        <maps.logging.version>2.1.0</maps.logging.version>
+        <maps.jms_selector.version>ml-2.0.0</maps.jms_selector.version>
+        <maps.nolc.version>1.2.0</maps.nolc.version>
+
+        <!-- first level dependencies -->
+        <maps.nbts.version>2.2.0</maps.nbts.version>
+        <maps.schema.version>2.2.0</maps.schema.version>
+        <maps.config.version>1.1.0</maps.config.version>
+
+        <!-- Second level dependencies -->
+        <maps.storage.version>2.5.0</maps.storage.version>
+        <maps.device.version>2.0.0</maps.device.version>
+        <maps.auth.version>2.0.0</maps.auth.version>
       </properties>
       <build>
         <plugins>
@@ -516,71 +382,6 @@
           </plugin>
         </plugins>
       </build>
-
-      <dependencies>
-        <!-- Consul client API -->
-        <dependency>
-          <groupId>com.ecwid.consul</groupId>
-          <artifactId>consul-api</artifactId>
-          <version>1.4.6</version>
-        </dependency>
-
-        <dependency>
-          <groupId>io.mapsmessaging</groupId>
-          <artifactId>authentication_library</artifactId>
-          <version>1.0.5</version>
-        </dependency>
-
-        <dependency>
-          <groupId>io.mapsmessaging</groupId>
-          <artifactId>simple_logging</artifactId>
-          <version>2.1.0</version>
-        </dependency>
-
-        <!-- JMS Selector logic module -->
-        <dependency>
-          <groupId>io.mapsmessaging</groupId>
-          <artifactId>jms_selector_parser</artifactId>
-          <version>ml-2.0.0</version>
-        </dependency>
-        <dependency>
-          <groupId>io.mapsmessaging</groupId>
-          <artifactId>configuration_library</artifactId>
-          <version>1.0.1-SNAPSHOT</version>
-        </dependency>
-        <!-- Naturally order long collection -->
-        <dependency>
-          <groupId>io.mapsmessaging</groupId>
-          <artifactId>naturally_ordered_long_collections</artifactId>
-          <version>1.2.0</version>
-        </dependency>
-
-        <!-- Non Blocking Task Queue module -->
-        <dependency>
-          <groupId>io.mapsmessaging</groupId>
-          <artifactId>non_block_task_scheduler</artifactId>
-          <version>2.1.9</version>
-        </dependency>
-
-        <dependency>
-          <groupId>io.mapsmessaging</groupId>
-          <artifactId>dynamic_storage</artifactId>
-          <version>2.4.12</version>
-        </dependency>
-
-        <dependency>
-          <groupId>io.mapsmessaging</groupId>
-          <artifactId>schemas</artifactId>
-          <version>2.1.4</version>
-        </dependency>
-
-        <dependency>
-          <groupId>io.mapsmessaging</groupId>
-          <artifactId>device_library</artifactId>
-          <version>1.0.8</version>
-        </dependency>
-      </dependencies>
-
     </profile>
   </profiles>
 
@@ -937,6 +738,59 @@
 
 
   <dependencies>
+    <dependency>
+      <groupId>io.mapsmessaging</groupId>
+      <artifactId>simple_logging</artifactId>
+      <version>${maps.logging.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>io.mapsmessaging</groupId>
+      <artifactId>jms_selector_parser</artifactId>
+      <version>${maps.jms_selector.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>io.mapsmessaging</groupId>
+      <artifactId>naturally_ordered_long_collections</artifactId>
+      <version>${maps.nolc.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>io.mapsmessaging</groupId>
+      <artifactId>non_block_task_scheduler</artifactId>
+      <version>${maps.nbts.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>io.mapsmessaging</groupId>
+      <artifactId>schemas</artifactId>
+      <version>${maps.schema.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>io.mapsmessaging</groupId>
+      <artifactId>configuration_library</artifactId>
+      <version>${maps.config.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>io.mapsmessaging</groupId>
+      <artifactId>dynamic_storage</artifactId>
+      <version>${maps.storage.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>io.mapsmessaging</groupId>
+      <artifactId>device_library</artifactId>
+      <version>${maps.device.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>io.mapsmessaging</groupId>
+      <artifactId>authentication_library</artifactId>
+      <version>${maps.auth.version}</version>
+    </dependency>
+
+    <!-- Consul client API -->
+    <dependency>
+      <groupId>com.ecwid.consul</groupId>
+      <artifactId>consul-api</artifactId>
+      <version>1.4.6</version>
+    </dependency>
+
 
     <!-- https://mvnrepository.com/artifact/ch.qos.logback/logback-core -->
     <dependency>
