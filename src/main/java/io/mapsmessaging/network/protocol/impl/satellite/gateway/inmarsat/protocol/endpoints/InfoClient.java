@@ -33,8 +33,8 @@ public final class InfoClient extends BaseInmarsatClient {
   private static final Type ERROR_LIST = new TypeToken<List<ErrorDef>>() {
   }.getType();
 
-  public InfoClient(URI base, HttpClient http, Gson gson) {
-    super(base, http, gson);
+  public InfoClient(URI base, HttpClient http, Gson gson, AuthReset authReset) {
+    super(base, http, gson, authReset);
   }
 
   /**

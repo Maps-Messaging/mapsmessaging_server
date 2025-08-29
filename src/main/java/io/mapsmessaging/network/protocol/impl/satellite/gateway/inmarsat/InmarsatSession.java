@@ -80,11 +80,11 @@ public final class InmarsatSession {
     this.errorCacheTtl = Duration.ofHours(24);
 
     this.auth = new AuthClient(base.resolve("/"), http, this.gson);
-    this.messages = new MessagesClient(base, http, this.gson);
-    this.commands = new CommandsClient(base, http, this.gson);
-    this.devices = new DevicesClient(base, http, this.gson);
-    this.mailbox = new MailboxClient(base, http, this.gson);
-    this.info = new InfoClient(base, http, this.gson);
+    this.messages = new MessagesClient(base, http, this.gson, auth);
+    this.commands = new CommandsClient(base, http, this.gson, auth);
+    this.devices = new DevicesClient(base, http, this.gson, auth);
+    this.mailbox = new MailboxClient(base, http, this.gson, auth);
+    this.info = new InfoClient(base, http, this.gson, auth);
   }
 
   private String bearer() {
@@ -210,31 +210,12 @@ public final class InmarsatSession {
       }
     }
 
-    // Commands
-    public MobileTerminatedSubmitResponse changeMode(List<ChangeModeCommand> cmds, boolean usePost) {
-      long start = System.currentTimeMillis();
-      try {
-        return commands.changeMode(bearer(), xMailbox, cmds, usePost);
-      } finally {
-        logger.log(INMARSAT_WEB_REQUEST_STATS, "changeMode", System.currentTimeMillis() - start);
-      }
-    }
-
     public MobileTerminatedSubmitResponse mute(List<MuteCommand> cmds, boolean usePost) {
       long start = System.currentTimeMillis();
       try {
         return commands.mute(bearer(), xMailbox, cmds, usePost);
       } finally {
         logger.log(INMARSAT_WEB_REQUEST_STATS, "mute", System.currentTimeMillis() - start);
-      }
-    }
-
-    public MobileTerminatedSubmitResponse reset(List<ResetCommand> cmds, boolean usePost) {
-      long start = System.currentTimeMillis();
-      try {
-        return commands.reset(bearer(), xMailbox, cmds, usePost);
-      } finally {
-        logger.log(INMARSAT_WEB_REQUEST_STATS, "reset", System.currentTimeMillis() - start);
       }
     }
 

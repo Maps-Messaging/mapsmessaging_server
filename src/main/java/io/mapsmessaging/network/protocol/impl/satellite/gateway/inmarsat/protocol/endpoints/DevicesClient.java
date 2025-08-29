@@ -34,8 +34,8 @@ public final class DevicesClient extends BaseInmarsatClient {
   private static final Type DEVICE_LIST = new TypeToken<List<DeviceInfo>>() {
   }.getType();
 
-  public DevicesClient(URI base, HttpClient http, Gson gson) {
-    super(base, http, gson);
+  public DevicesClient(URI base, HttpClient http, Gson gson, AuthReset authReset) {
+    super(base, http, gson, authReset);
   }
 
   public List<DeviceInfo> listDevices(String bearer, String xMailbox, Integer limit, Integer offset, String deviceId) {

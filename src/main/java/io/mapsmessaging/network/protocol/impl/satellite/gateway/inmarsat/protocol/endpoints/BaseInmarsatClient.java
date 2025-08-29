@@ -42,11 +42,13 @@ public abstract class BaseInmarsatClient {
   protected final URI base;           // e.g. https://apis.inmarsat.com/v1/
   protected final HttpClient http;
   protected final Gson gson;
+  protected final AuthReset authReset;
 
-  protected BaseInmarsatClient(URI base, HttpClient http, Gson gson) {
+  protected BaseInmarsatClient(URI base, HttpClient http, Gson gson, AuthReset authReset) {
     this.base = Objects.requireNonNull(base);
     this.http = Objects.requireNonNull(http);
     this.gson = Objects.requireNonNull(gson);
+    this.authReset = authReset;
   }
 
   public static String xMailbox(String mailboxId, String mailboxPassword) {
@@ -119,11 +121,17 @@ public abstract class BaseInmarsatClient {
         if (code / 100 == 2) {
           return resp.body();
         }
+        if(resp.statusCode() == 401){
+          if(authReset != null) {
+            authReset.resetAuth();
+          }
+        }
         if (shouldRetry(code) && attempt < MAX_RETRIES) {
           sleepBackoff(attempt, resp.headers());
           attempt++;
           continue;
         }
+
         throw errorFor(resp);
       } catch (InterruptedException ie) {
         Thread.currentThread().interrupt();

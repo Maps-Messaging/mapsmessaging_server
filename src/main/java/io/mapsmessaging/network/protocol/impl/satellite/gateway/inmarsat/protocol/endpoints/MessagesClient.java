@@ -33,8 +33,8 @@ public final class MessagesClient extends BaseInmarsatClient {
   private static final Type MT_DETAIL_LIST = new TypeToken<List<MobileTerminatedDetail>>() {
   }.getType();
 
-  public MessagesClient(URI base, HttpClient http, Gson gson) {
-    super(base, http, gson);
+  public MessagesClient(URI base, HttpClient http, Gson gson, AuthReset authReset) {
+    super(base, http, gson, authReset);
   }
 
   public MobileOriginatedResponse getMobileOriginated(String bearer, String xMailbox, String startTimeIso) {

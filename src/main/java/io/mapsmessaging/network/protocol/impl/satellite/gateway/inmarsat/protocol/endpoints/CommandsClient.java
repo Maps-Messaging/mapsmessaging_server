@@ -30,15 +30,8 @@ import java.net.http.HttpClient;
 import java.util.List;
 
 public final class CommandsClient extends BaseInmarsatClient {
-  public CommandsClient(URI base, HttpClient http, Gson gson) {
-    super(base, http, gson);
-  }
-
-  // usePost=false -> GET-with-body (matches Postman collection); true -> POST
-  public MobileTerminatedSubmitResponse changeMode(String bearer, String xMailbox, List<ChangeModeCommand> cmds, boolean usePost) {
-    return usePost
-        ? postJson("messages/mobileTerminated/mode", cmds, bearer, xMailbox, MobileTerminatedSubmitResponse.class)
-        : getWithBodyJson("messages/mobileTerminated/mode", cmds, bearer, xMailbox, MobileTerminatedSubmitResponse.class);
+  public CommandsClient(URI base, HttpClient http, Gson gson, AuthReset authReset) {
+    super(base, http, gson, authReset);
   }
 
   public MobileTerminatedSubmitResponse mute(String bearer, String xMailbox, List<MuteCommand> cmds, boolean usePost) {
@@ -47,22 +40,7 @@ public final class CommandsClient extends BaseInmarsatClient {
         : getWithBodyJson("messages/mobileTerminated/mute", cmds, bearer, xMailbox, MobileTerminatedSubmitResponse.class);
   }
 
-  public MobileTerminatedSubmitResponse reset(String bearer, String xMailbox, List<ResetCommand> cmds, boolean usePost) {
-    return usePost
-        ? postJson("messages/mobileTerminated/reset", cmds, bearer, xMailbox, MobileTerminatedSubmitResponse.class)
-        : getWithBodyJson("messages/mobileTerminated/reset", cmds, bearer, xMailbox, MobileTerminatedSubmitResponse.class);
-  }
-
-  // single-item convenience
-  public MobileTerminatedSubmitResponse changeMode(String b, String x, ChangeModeCommand c, boolean post) {
-    return changeMode(b, x, List.of(c), post);
-  }
-
   public MobileTerminatedSubmitResponse mute(String b, String x, MuteCommand c, boolean post) {
     return mute(b, x, List.of(c), post);
-  }
-
-  public MobileTerminatedSubmitResponse reset(String b, String x, ResetCommand c, boolean post) {
-    return reset(b, x, List.of(c), post);
   }
 }

@@ -19,22 +19,6 @@
 
 package io.mapsmessaging.network.protocol.impl.satellite.gateway.inmarsat.protocol.endpoints;
 
-import com.google.gson.Gson;
-import io.mapsmessaging.network.protocol.impl.satellite.gateway.inmarsat.protocol.model.*;
-
-import java.net.URI;
-import java.net.http.HttpClient;
-import java.util.Map;
-
-public final class MailboxClient extends BaseInmarsatClient {
-
-  public MailboxClient(URI base, HttpClient http, Gson gson, AuthReset authReset) {
-    super(base, http, gson, authReset);
-  }
-
-  // X-Mailbox endpoints
-  public Mailbox getMailbox(String bearer, String xMailbox) {
-    return get("mailbox", Map.of(), bearer, xMailbox, Mailbox.class);
-  }
-
+public interface AuthReset {
+  void resetAuth();
 }

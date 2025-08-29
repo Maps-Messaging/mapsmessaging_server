@@ -30,12 +30,12 @@ import java.time.Instant;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicReference;
 
-public final class AuthClient extends BaseInmarsatClient {
+public final class AuthClient extends BaseInmarsatClient implements AuthReset {
   private static final int DEFAULT_SKEW_SECONDS = 30;
   private final AtomicReference<Cached> cache = new AtomicReference<>();
 
   public AuthClient(URI baseUrl, HttpClient http, Gson gson) {
-    super(baseUrl, http, gson);
+    super(baseUrl, http, gson, null);
   }
 
   public void loadAccessToken(String clientId, String clientSecret) {
@@ -62,6 +62,10 @@ public final class AuthClient extends BaseInmarsatClient {
       }
     }
     return c.token.getToken();
+  }
+
+  public void resetAuth() {
+    cache.set(null);
   }
 
   private record Cached(AccessToken token, Instant obtainedAt) {
