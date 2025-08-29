@@ -20,18 +20,19 @@
 package io.mapsmessaging.network.protocol.impl.satellite;
 
 import com.fazecast.jSerialComm.SerialPort;
+import io.mapsmessaging.network.protocol.impl.satellite.idp.MoEntry;
+import io.mapsmessaging.network.protocol.impl.satellite.ogx.OgxModemRegistation;
+import lombok.Getter;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
-import java.util.Base64;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.function.Consumer;
 import java.util.function.Function;
 
 public class ModemResponder implements Runnable {
@@ -39,12 +40,23 @@ public class ModemResponder implements Runnable {
 
   private final String deviceName;
   private final Map<String, Function<ParsedAt, String>> handlers = new ConcurrentHashMap<>();
+
+  @Getter
+  private final Queue<MoEntry> oustandingEntries = new ConcurrentLinkedQueue<>();
   private volatile boolean running;
   private Thread worker;
   private SerialPort port;
+  @Getter
+  private final Queue<byte[]> incomingMessages;
+  @Getter
+  private final Queue<byte[]> outgoingMessages;
+  private final OgxModemRegistation idpModem;
 
-  public ModemResponder(String deviceName) {
+  public ModemResponder( Queue<byte[]> incomingMessages,  Queue<byte[]> outgoingMessages, String deviceName) {
     this.deviceName = Objects.requireNonNull(deviceName, "deviceName");
+    this.incomingMessages = incomingMessages;
+    this.outgoingMessages = outgoingMessages;
+    idpModem = new OgxModemRegistation(this);
   }
 
   /** Register a handler for a command name: "", "I", "+CSQ", "+FOO" etc. Return full payload (without CRLF). */
@@ -59,6 +71,7 @@ public class ModemResponder implements Runnable {
 
   public void start() {
     if (running) return;
+    idpModem.registerIdpModem();
     running = true;
     worker = new Thread(this, "AtResponder-" + deviceName);
     worker.start();
@@ -131,94 +144,5 @@ public class ModemResponder implements Runnable {
       out.write("OK\r\n".getBytes(StandardCharsets.US_ASCII));
     }
     out.flush();
-  }
-
-  public static void main(String[] args) throws IOException {
-    Queue<byte[]> queue = new ConcurrentLinkedQueue<>();
-    ModemResponder modemResponder = new ModemResponder("com7");
-    modemResponder.registerHandler("E0;&W;I5", at -> "\r\n10\r\nOK");
-    modemResponder.registerHandler("I0;+GMM;+GMR;+GMR;+GMI", at ->
-        "ORBCOMM Inc\r\n" +
-            "\r\n" +
-            "+GMM: IsatDataPro Modem Simulator\r\n" +
-            "\r\n" +
-            "+GMR: 5.003,2.0,10\r\n" +
-            "\r\n" +
-            "+GMR: 5.003,2.0,10\r\n" +
-            "\r\n" +
-            "+GMI: ORBCOMM Inc\r\n" +
-            "\r\n" +
-            "OK\r\n"
-    );
-    modemResponder.registerHandler("%GPS", at ->
-            "%GPS: $GPGGA,224444.000,2142.0675,S,15914.7646,E,1,05,3.0,0.00,M,,,,0000*2E\r\n" +
-            "\r\n" +
-            "$GPRMC,224444.000,A,2142.0675,S,15914.7646,E,0.00,000.00,250825,,,A*71\r\n" +
-            "\r\n" +
-            "$GPGSV,1,1,03,1,45,060,50,2,45,120,50,3,45,180,50*72\r\n" +
-            "\r\n" +
-            "OK\r\n"
-    );
-
-    // AT%TRK=10,1  → OK
-    modemResponder.registerHandler("%TRK=10,1", at -> "OK\r\n");
-
-    // AT%NETINFO  → %NETINFO: 2,6,0,0,0  + blank line + OK
-    modemResponder.registerHandler("%NETINFO", at ->
-        "%NETINFO: 2,6,0,0,0 \r\n" +
-            "\r\n" +
-            "OK\r\n"
-    );
-
-    // AT%MTQS  → %MTQS:  (empty) + blank line + OK
-    modemResponder.registerHandler("%MTQS", at ->
-        "%MTQS: \r\n" +
-            "\r\n" +
-            "OK\r\n"
-    );
-
-    modemResponder.registerHandler("S57", at ->
-        "\r\n" +
-        "005\r\n" +
-            "\r\n" +
-            "OK\r\n"
-    );
-
-    modemResponder.registerHandler("S56", at ->
-        "001\r\n" +
-            "\r\n" +
-            "OK\r\n"
-    );
-
-    modemResponder.registerHandler("S85", at ->
-        "00250\r\n" +
-            "\r\n" +
-            "OK\r\n"
-    );
-
-    registerOgxMomt(modemResponder, queue);
-    modemResponder.start();
-  }
-
-  public static void registerOgxMomt(ModemResponder responder, Queue<byte[]> onMomt) {
-    Objects.requireNonNull(responder, "responder");
-    Objects.requireNonNull(onMomt, "onMomt");
-
-    responder.registerHandler("%MOMT", at -> {
-      String params = at.getParams();                  // "0,2,10,352,3,gQE..."
-      if (params != null && !params.isEmpty()) {
-        String[] parts = params.split(",", 6);         // keep last field intact
-        if (parts.length == 6) {
-          String b64 = parts[5].trim();
-          try {
-            byte[] payload = Base64.getDecoder().decode(b64);
-            onMomt.add(payload);
-          } catch (IllegalArgumentException ignore) {
-            // bad base64; ignore or log in your test harness if needed
-          }
-        }
-      }
-      return "OK\r\n";
-    });
   }
 }
