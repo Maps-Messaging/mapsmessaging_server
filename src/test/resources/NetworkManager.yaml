@@ -304,3 +304,22 @@ NetworkManager:
         parity: n
         protocol: NMEA
         selectorThreadCount: 1
+
+      - name: "Inmarsat Iot nano interface"
+        protocol: satellite
+        auth: anon
+        url: satellite://inmarsat:0/
+        httpRequestTimeoutSec: 30
+        pollInterval: 15
+        sharedSecret: "This is a shared secret to use"
+        maxInflightEventsPerDevice: 2
+        outboundNamespaceRoot: "/inmarsat/{deviceId}"
+        outboundBroadcast: "/inmarsat/broadcast"
+        baseUrl: "http://localhost:8085/v1"
+        remoteAuthConfig:
+          username: "this is not real"
+          password: "this is just a junk password since we are in local mock test"
+
+        mailboxId: "again not valid, not real"
+        mailboxPassword: "whatever"
+        namespaceRoot: "/{mailboxId}/"
