@@ -189,8 +189,10 @@ public class SatelliteGatewayProtocol extends Protocol {
     int depth = 1;
     try {
       NamespaceFilter namespaceFilter= filterMessage(messageEvent);
-      depth = namespaceFilter.getDepth();
-      filteredOverride = namespaceFilter.isForcePriority();
+      if(namespaceFilter != null){
+        depth = namespaceFilter.getDepth();
+        filteredOverride = namespaceFilter.isForcePriority();
+      }
     } catch (IOException e) {
       return; // failed filtering
     }

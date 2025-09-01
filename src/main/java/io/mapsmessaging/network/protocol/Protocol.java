@@ -164,7 +164,11 @@ public abstract class Protocol implements SelectorCallback, MessageListener, Tim
 
   protected NamespaceFilter filterMessage(MessageEvent messageEvent) throws IOException {
     String destinationName = messageEvent.getDestinationName();
-    NamespaceFilter namespaceFilter = getNamespaceFilters().findMatch(destinationName);
+    NamespaceFilters filters = getNamespaceFilters();
+    if(filters == null) {
+      return null;
+    }
+    NamespaceFilter namespaceFilter = filters.findMatch(destinationName);
     if(namespaceFilter != null &&
       namespaceFilter.getExecutor() != null &&
       !namespaceFilter.getExecutor().evaluate(messageEvent.getMessage())) {
