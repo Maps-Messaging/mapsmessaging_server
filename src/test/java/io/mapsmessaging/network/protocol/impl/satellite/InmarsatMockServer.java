@@ -33,7 +33,6 @@ import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -374,47 +373,62 @@ public class InmarsatMockServer {
     sendJson(exchange, 200, response, reqId, t0, logBodies || trace);
   }
 
-  private void handleSubmitMobileTerminated(HttpExchange exchange, String reqId, long t0) throws IOException {
+  private void handleSubmitMobileTerminated(HttpExchange exchange, String requestId, long startNanos) throws IOException {
     applyCommonHeaders(exchange);
-    if (!requireMailbox(exchange, reqId, t0)) return;
-    if (checkForcedError(exchange, reqId, t0)) return;
+    if (!requireMailbox(exchange, requestId, startNanos)) return;
+    if (checkForcedError(exchange, requestId, startNanos)) return;
 
     maybeSleep(queryParam(exchange, "latencyMs"));
     boolean trace = "true".equalsIgnoreCase(queryParam(exchange, "trace"));
 
     String requestBody = readBody(exchange);
-    logRequest(reqId, exchange, requestBody, trace);
+    logRequest(requestId, exchange, requestBody, trace);
 
-    List<String> mobileIdList = extractAllStringFieldValues(requestBody, "mobileId");
-    List<String> payloadList = extractAllStringFieldValues(requestBody, "payload");
-    String payloadEncoding = firstStringFieldValue(requestBody, "payloadEncoding");
-    Integer sin = firstIntFieldValue(requestBody, "sin");
+    List<String> destinationIdList = extractAllStringFieldValues(requestBody, "destinationId");
+    List<String> payloadRawList   = extractAllStringFieldValues(requestBody, "payloadRaw");
 
     List<String> accepted = new ArrayList<>();
     List<String> rejected = new ArrayList<>();
 
-    int index = 0;
-    for (String mobileId : mobileIdList) {
-      boolean validId = isValidMobileId(mobileId);
-      boolean validEncoding = isValidPayloadEncoding(payloadEncoding);
-      if (!validId || !validEncoding) {
-        rejected.add(generateId("mt-rej"));
-      } else {
-        String id = generateId("mt");
-        accepted.add(id);
+    int count = Math.max(destinationIdList.size(), payloadRawList.size());
+    for (int i = 0; i < count; i++) {
+      String destinationId = i < destinationIdList.size() ? destinationIdList.get(i) : null;
+      String payloadRaw    = i < payloadRawList.size()   ? payloadRawList.get(i)   : null;
 
-        MobileTerminatedDetail detail = new MobileTerminatedDetail();
-        detail.id = id;
-        detail.mobileId = mobileId;
-        detail.submittedUtc = Instant.now().toString();
-        detail.status = "SENT";
-        detail.lastUpdateUtc = detail.submittedUtc;
-        detail.payload = index < payloadList.size() ? payloadList.get(index) : "";
-        detail.payloadEncoding = payloadEncoding == null ? "HEX" : payloadEncoding;
-        detail.sin = sin == null ? 0 : sin;
-        mobileTerminatedById.put(id, detail);
+      boolean hasDestination = destinationId != null && !destinationId.isBlank();
+      if(payloadRaw != null) {
+        if (payloadRaw.startsWith("\"")) {
+          payloadRaw = payloadRaw.substring(1, payloadRaw.length() - 1);
+        }
+        int idx = payloadRaw.indexOf('\"');
+        if (idx != -1) {
+          payloadRaw = payloadRaw.substring(0, idx);
+        }
+        payloadRaw = payloadRaw.replace("\\u003d", "=");
       }
-      index++;
+
+      boolean hasPayload     = payloadRaw != null && !payloadRaw.isBlank();
+
+      // Validate Base64 if present
+      boolean base64Ok = false;
+      if (hasPayload) {
+        try {
+          java.util.Base64.getDecoder().decode(payloadRaw);
+          base64Ok = true;
+        } catch (IllegalArgumentException ignore) {
+          ignore.printStackTrace();
+          base64Ok = false;
+        }
+      }
+
+      if (!hasDestination || !hasPayload || !base64Ok) {
+        rejected.add(generateId("mt-rej"));
+        continue;
+      }
+
+      String messageId = generateId("mt");
+      accepted.add(messageId);
+      outgoingMessages.add(java.util.Base64.getDecoder().decode(payloadRaw));
     }
 
     String submissionId = generateId("sub");
@@ -426,7 +440,7 @@ public class InmarsatMockServer {
     String response = "{\"submissionId\":\"" + submissionId + "\"," +
         "\"accepted\":" + acceptedJson + "," +
         "\"rejected\":" + rejectedJson + "}";
-    sendJson(exchange, 200, response, reqId, t0, logBodies || trace);
+    sendJson(exchange, 200, response, requestId, startNanos, logBodies || trace);
   }
 
   // ---- Handler ----
@@ -587,8 +601,6 @@ public class InmarsatMockServer {
       first = false;
 
       String b64 = java.util.Base64.getEncoder().encodeToString(payload);
-      // Derive a stable-looking 15-digit mobileId from mailboxId
-      long h = Math.abs(mailboxId.hashCode());
 
       String messageUtc = java.time.Instant.now().minusSeconds(1).toString();
       String receiveUtc = java.time.Instant.now().toString();

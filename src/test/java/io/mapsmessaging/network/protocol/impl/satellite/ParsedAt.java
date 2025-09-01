@@ -38,9 +38,6 @@ public class ParsedAt {
     String trimmed = line.trim();
     String rem = trimmed.substring(2); // after "AT"
     rem = rem.trim();                // may be empty (plain "AT")
-    if(rem.contains("GPS")) {
-      System.err.println("here we go");
-    }
     String name;
     String params = null;
     boolean isTest = false;

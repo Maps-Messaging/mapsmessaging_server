@@ -17,19 +17,22 @@
  *  limitations under the License.
  */
 
-package io.mapsmessaging.network.protocol.impl.satellite.ogx;
+package io.mapsmessaging.network.protocol.impl.satellite.modem.ogx;
 
 
-import io.mapsmessaging.network.protocol.impl.satellite.idp.MoEntry;
-import lombok.Data;
+import io.mapsmessaging.network.protocol.impl.satellite.modem.SentMessageEntry;
 import lombok.Getter;
-import lombok.NoArgsConstructor;
 import lombok.Setter;
-import org.checkerframework.checker.units.qual.N;
+
 
 @Getter
 @Setter
-public class OgxMoEntry extends MoEntry {
+public class OgxSentMessageEntry extends SentMessageEntry {
+  public static final int TX_READY = 3;
+  public static final int TX_SENDING = 4;
+  public static final int TX_COMPLETED = 6;
+  public static final int TX_FAILED = 7;
+
   private final int serviceClass;     // from %MOMT
   private final int lifetimeMins;     // from %MOMT
   private final int type;             // 1 if length <= 1024, else 2
@@ -39,8 +42,9 @@ public class OgxMoEntry extends MoEntry {
   private int bytesAck = 0;           // progress to length
   private boolean completedEmittedOnce = false;
 
-  public OgxMoEntry(int messageNo, int serviceClass, int lifetimeMins, int length) {
+  public OgxSentMessageEntry(String messageNo, int serviceClass, int lifetimeMins, int length) {
     super(messageNo, length);
+    setState(TX_READY);
     this.serviceClass = serviceClass;
     this.lifetimeMins = lifetimeMins;
     this.type = (length <= 1024) ? 1 : 2;

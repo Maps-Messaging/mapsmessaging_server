@@ -17,27 +17,36 @@
  *  limitations under the License.
  */
 
-package io.mapsmessaging.network.protocol.impl.satellite.ogx;
+package io.mapsmessaging.network.protocol.impl.satellite.modem.ogx;
 
-import io.mapsmessaging.network.protocol.impl.satellite.idp.MoEntry;
+import io.mapsmessaging.network.protocol.impl.satellite.modem.BaseModemRegistration;
+import io.mapsmessaging.network.protocol.impl.satellite.modem.SentMessageEntry;
 import io.mapsmessaging.network.protocol.impl.satellite.ModemResponder;
+import io.mapsmessaging.network.protocol.impl.satellite.modem.idp.IdpFwdEntry;
 
 import java.util.Base64;
+import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.atomic.AtomicInteger;
 
-import static io.mapsmessaging.network.protocol.impl.satellite.idp.MoEntry.*;
+import static io.mapsmessaging.network.protocol.impl.satellite.modem.ogx.OgxSentMessageEntry.TX_COMPLETED;
+import static io.mapsmessaging.network.protocol.impl.satellite.modem.ogx.OgxSentMessageEntry.TX_SENDING;
 
-public class OgxModemRegistation {
-  private static final java.time.format.DateTimeFormatter OGX_UTC_FMT =
+public class OgxModemRegistation extends BaseModemRegistration {
+
+  public static final java.time.format.DateTimeFormatter OGX_UTC_FMT =
       java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
           .withZone(java.time.ZoneOffset.UTC);
 
-  private final ModemResponder modemResponder;
+  private final ConcurrentLinkedQueue<OgxEntry> ogxInbox = new ConcurrentLinkedQueue<>();
+  private final AtomicInteger ogxMsgSeq = new AtomicInteger(0);
+
+
   public OgxModemRegistation(ModemResponder modemResponder) {
-    this.modemResponder = modemResponder;
+    super(modemResponder);
   }
 
-
-  public void registerIdpModem(){
+  @Override
+  protected void registerInit() {
     modemResponder.registerHandler("E0;&W;I5", at -> "\r\n10\r\nOK");
     modemResponder.registerHandler("I0;+GMM;+GMR;+GMR;+GMI", at ->
         "ORBCOMM Inc\r\n" +
@@ -52,57 +61,69 @@ public class OgxModemRegistation {
             "\r\n" +
             "OK\r\n"
     );
-    modemResponder.registerHandler("%GPS", at ->
-        "%GPS: $GPGGA,224444.000,2142.0675,S,15914.7646,E,1,05,3.0,0.00,M,,,,0000*2E\r\n" +
-            "\r\n" +
-            "$GPRMC,224444.000,A,2142.0675,S,15914.7646,E,0.00,000.00,250825,,,A*71\r\n" +
-            "\r\n" +
-            "$GPGSV,1,1,03,1,45,060,50,2,45,120,50,3,45,180,50*72\r\n" +
-            "\r\n" +
-            "OK\r\n"
-    );
-
-    // AT%TRK=10,1  → OK
-    modemResponder.registerHandler("%TRK=10,1", at -> "OK\r\n");
-
-    // AT%NETINFO  → %NETINFO: 2,6,0,0,0  + blank line + OK
     modemResponder.registerHandler("%NETINFO", at ->
         "%NETINFO: 2,6,0,0,0 \r\n" +
             "\r\n" +
             "OK\r\n"
     );
 
-    // AT%MTQS  → %MTQS:  (empty) + blank line + OK
-    modemResponder.registerHandler("%MTQS", at ->
-        "%MTQS: \r\n" +
-            "\r\n" +
-            "OK\r\n"
-    );
-
-    modemResponder.registerHandler("S57", at ->
-        "\r\n" +
-            "005\r\n" +
-            "\r\n" +
-            "OK\r\n"
-    );
-
-    modemResponder.registerHandler("S56", at ->
-        "001\r\n" +
-            "\r\n" +
-            "OK\r\n"
-    );
-
-    modemResponder.registerHandler("S85", at ->
-        "00250\r\n" +
-            "\r\n" +
-            "OK\r\n"
-    );
-    registerOgxMomt();
-    registerOgxMgrl();
   }
 
-  private void registerOgxMomt() {
+  @Override
+  protected void registerReceive() {
+
+    modemResponder.registerHandler("%MTQS", at -> {
+      for (byte[] p; (p = modemResponder.getIncomingMessages().poll()) != null; ) {
+        int num = ogxMsgSeq.getAndIncrement();
+
+        // Create entry with metadata + payload
+        ogxInbox.add(new OgxEntry(num, p));
+      }
+
+      StringBuilder out = new StringBuilder();
+      for (OgxEntry e : ogxInbox) {
+        out.append("%MTQS: ")
+            .append(e.type).append(",")
+            .append(e.msgId).append(",")
+            .append(e.timestamp).append(",")
+            .append(e.state).append(",")
+            .append(e.closed).append(",")
+            .append(e.length).append("\r\n");
+      }
+      out.append("\r\nOK\r\n");
+      return out.toString();
+    });
+
+    modemResponder.registerHandler("%MTMG", at -> {
+      String p = at.getParams();           // "123,3"
+      if (p == null || p.isBlank()) return "ERROR\r\n";
+      String[] parts = p.split(",", 2);
+      int msgId = parseIntOr(parts[0], -1);
+      int fmt = (parts.length > 1) ? parseIntOr(parts[1], 3) : 3;
+      if (msgId < 0 || fmt != 3) return "ERROR\r\n";
+
+      OgxEntry hit = null;
+      for (OgxEntry e : ogxInbox) { if (e.msgId == msgId) { hit = e; break; } }
+      if (hit == null) return "\r\nOK\r\n";
+
+      String b64 = java.util.Base64.getEncoder().encodeToString(hit.data);
+      String resp = "%MTMG: " + hit.msgId + "," + hit.timestamp + "," + hit.length + ",3," + b64 + "\r\n\r\nOK\r\n";
+      return resp;
+    });
+
+    modemResponder.registerHandler("%MTMD", at -> {
+      String p = at.getParams(); // "123"
+      if (p == null || p.isBlank()) return "ERROR\r\n";
+      int msgId = parseIntOr(p, -1);
+      if (msgId < 0) return "ERROR\r\n";
+      boolean removed = ogxInbox.removeIf(e -> e.msgId == msgId);
+      return removed ? "OK\r\n" : "ERROR\r\n";
+    });
+  }
+
+  protected void registerSend() {
     modemResponder.registerHandler("%MOMT", at -> {
+
       String params = at.getParams();                  // "0,2,10,352,3,gQE..."
       if (params != null && !params.isEmpty()) {
         String[] parts = params.split(",", 6);         // keep last field intact
@@ -114,7 +135,7 @@ public class OgxModemRegistation {
             byte[] payload = Base64.getDecoder().decode(b64);
             modemResponder.getOutgoingMessages().add(payload);
             if (length > 0 && !messageId.isEmpty()) {
-              modemResponder.getOustandingEntries().add(new OgxMoEntry(safeParseInt(messageId, 1), 2, 10, length));
+              modemResponder.getOustandingEntries().add(new OgxSentMessageEntry(messageId, 2, 10, length));
             }
           } catch (IllegalArgumentException ignore) {
             // bad base64; ignore or log in your test harness if needed
@@ -123,15 +144,13 @@ public class OgxModemRegistation {
       }
       return "OK\r\n";
     });
-  }
 
-  private void registerOgxMgrl() {
     modemResponder.registerHandler("%MOQS", at -> {
       StringBuilder resp = new StringBuilder();
-      java.util.concurrent.ConcurrentLinkedQueue<OgxMoEntry> next = new java.util.concurrent.ConcurrentLinkedQueue<>();
+      java.util.concurrent.ConcurrentLinkedQueue<OgxSentMessageEntry> next = new java.util.concurrent.ConcurrentLinkedQueue<>();
 
-      for (MoEntry entry; (entry = modemResponder.getOustandingEntries().poll()) != null; ) {
-        OgxMoEntry e = (OgxMoEntry) entry;
+      for (SentMessageEntry entry; (entry = modemResponder.getOustandingEntries().poll()) != null; ) {
+        OgxSentMessageEntry e = (OgxSentMessageEntry) entry;
         // timestamp first seen
         if (e.getUtcFirstSeen() == null) {
           e.setUtcFirstSeen(OGX_UTC_FMT.format(java.time.Instant.now()));
@@ -142,11 +161,11 @@ public class OgxModemRegistation {
           e.setBytesAck( Math.min(e.getLength(), e.getBytesAck() + step(e.getLength())));
           if (e.getBytesAck() >= e.getLength()) {
             e.setBytesAck(e.getLength());
-            e.setState( OGX_TX_COMPLETED);
+            e.setState( TX_COMPLETED);
             e.setClosed(1);
             e.setCompletedEmittedOnce(false); // emit once as completed, then drop on next call
           }
-        } else if (e.getState() == OGX_TX_COMPLETED) {
+        } else if (e.getState() == TX_COMPLETED) {
           if (e.isCompletedEmittedOnce()) {
             // drop entry (do not re-add)
             continue;
@@ -167,7 +186,7 @@ public class OgxModemRegistation {
             .append("\r\n");
 
         // keep for next round if not fully dropped
-        if (e.getState() == OGX_TX_COMPLETED) {
+        if (e.getState() == TX_COMPLETED) {
           e.setCompletedEmittedOnce(true);
           next.add(e);
         } else {
@@ -183,13 +202,6 @@ public class OgxModemRegistation {
     });
   }
 
-  private static int step(int length) {
-    // ceil(20% of length), at least 1 byte to ensure progress
-    int s = (int) Math.ceil(length * 0.2);
-    return Math.max(1, s);
-  }
+  private static int parseIntOr(String s, int def) { try { return Integer.parseInt(s.trim()); } catch (Exception e) { return def; } }
 
-  private static int safeParseInt(String s, int def) {
-    try { return Integer.parseInt(s); } catch (Exception e) { return def; }
-  }
 }

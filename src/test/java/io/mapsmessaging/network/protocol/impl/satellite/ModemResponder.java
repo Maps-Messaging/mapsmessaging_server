@@ -20,8 +20,10 @@
 package io.mapsmessaging.network.protocol.impl.satellite;
 
 import com.fazecast.jSerialComm.SerialPort;
-import io.mapsmessaging.network.protocol.impl.satellite.idp.MoEntry;
-import io.mapsmessaging.network.protocol.impl.satellite.ogx.OgxModemRegistation;
+import io.mapsmessaging.network.protocol.impl.satellite.modem.BaseModemRegistration;
+import io.mapsmessaging.network.protocol.impl.satellite.modem.SentMessageEntry;
+import io.mapsmessaging.network.protocol.impl.satellite.modem.idp.IdpModemRegistration;
+import io.mapsmessaging.network.protocol.impl.satellite.modem.ogx.OgxModemRegistation;
 import lombok.Getter;
 
 import java.io.IOException;
@@ -42,7 +44,7 @@ public class ModemResponder implements Runnable {
   private final Map<String, Function<ParsedAt, String>> handlers = new ConcurrentHashMap<>();
 
   @Getter
-  private final Queue<MoEntry> oustandingEntries = new ConcurrentLinkedQueue<>();
+  private final Queue<SentMessageEntry> oustandingEntries = new ConcurrentLinkedQueue<>();
   private volatile boolean running;
   private Thread worker;
   private SerialPort port;
@@ -50,7 +52,7 @@ public class ModemResponder implements Runnable {
   private final Queue<byte[]> incomingMessages;
   @Getter
   private final Queue<byte[]> outgoingMessages;
-  private final OgxModemRegistation idpModem;
+  private final BaseModemRegistration idpModem;
 
   public ModemResponder( Queue<byte[]> incomingMessages,  Queue<byte[]> outgoingMessages, String deviceName) {
     this.deviceName = Objects.requireNonNull(deviceName, "deviceName");
@@ -71,7 +73,7 @@ public class ModemResponder implements Runnable {
 
   public void start() {
     if (running) return;
-    idpModem.registerIdpModem();
+    idpModem.registerModem();
     running = true;
     worker = new Thread(this, "AtResponder-" + deviceName);
     worker.start();

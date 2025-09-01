@@ -17,32 +17,27 @@
  *  limitations under the License.
  */
 
-package io.mapsmessaging.network.protocol.impl.satellite.idp;
+package io.mapsmessaging.network.protocol.impl.satellite.modem.ogx;
 
 import lombok.Getter;
 import lombok.Setter;
 
 @Getter
 @Setter
-public class MoEntry {
-  public static final int TX_READY = 3;
-  public static final int TX_SENDING = 4;
-  public static final int TX_COMPLETED = 5;
-  public static final int OGX_TX_COMPLETED = 6;
+public class OgxEntry  {
+  final int msgId;
+  final int type;            // 1 if len <= 1024, else 2
+  final String timestamp;    // "yyyy-MM-dd HH:mm:ss" UTC
+  final int length;
+  final byte[] data;
+  int state = 5; // simple model: fixed 4 until delete
+  int closed = 0;                // 0 open, 1 final (flip to 1 when you want)
 
-  private final int messageId;
-  private final int length;
-  private int state;              // 3→4→5
-  private int bytesAck;           // 0..length
-  private boolean completedSeen;  // true after we’ve emitted TX_COMPLETED once
-
-  public MoEntry(int messageId, int length) {
-    this.messageId = messageId;
-    this.length = length;
-    this.state = TX_READY;
-    this.bytesAck = 0;
-    this.completedSeen = false;
+  OgxEntry(int msgId, byte[] data) {
+    this.msgId = msgId;
+    this.length = data.length;
+    this.type = (length <= 1024) ? 1 : 2;
+    this.timestamp = OgxModemRegistation.OGX_UTC_FMT.format(java.time.Instant.now());
+    this.data = data;
   }
 }
-
-
