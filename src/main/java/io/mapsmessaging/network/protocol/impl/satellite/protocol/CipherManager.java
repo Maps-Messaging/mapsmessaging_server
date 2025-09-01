@@ -4,6 +4,7 @@ import javax.crypto.Cipher;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.GCMParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
+import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.security.MessageDigest;
 import java.security.SecureRandom;
@@ -19,12 +20,12 @@ public final class CipherManager {
   private final SecureRandom rng = new SecureRandom();
 
   /** Accepts any-length shared secret; hashed to 256-bit AES key with SHA-256. */
-  public CipherManager(byte[] sharedSecret) {
+  public CipherManager(byte[] sharedSecret) throws IOException {
     this.key = new SecretKeySpec(sha256(sharedSecret), "AES");
   }
 
   /** encrypted = IV(12) || ciphertext+tag */
-  public byte[] encrypt(byte[] plaintext) {
+  public byte[] encrypt(byte[] plaintext) throws IOException {
     try {
       byte[] iv = new byte[IV_BYTES];
       rng.nextBytes(iv);
@@ -37,12 +38,12 @@ public final class CipherManager {
       out.put(iv).put(ct);
       return out.array();
     } catch (Exception e) {
-      throw new RuntimeException("AES-GCM encrypt failed", e);
+      throw new IOException("AES-GCM encrypt failed", e);
     }
   }
 
   /** Input must be IV(12) || ciphertext+tag */
-  public byte[] decrypt(byte[] ivPlusCiphertext) {
+  public byte[] decrypt(byte[] ivPlusCiphertext) throws IOException {
     if (ivPlusCiphertext == null || ivPlusCiphertext.length < IV_BYTES + 16)
       throw new IllegalArgumentException("Ciphertext too short");
     try {
@@ -53,16 +54,16 @@ public final class CipherManager {
       c.init(Cipher.DECRYPT_MODE, key, new GCMParameterSpec(GCM_TAG_BITS, iv));
       return c.doFinal(ct);
     } catch (Exception e) {
-      throw new RuntimeException("AES-GCM decrypt failed", e);
+      throw new IOException("AES-GCM decrypt failed", e);
     }
   }
 
-  private static byte[] sha256(byte[] in) {
+  private static byte[] sha256(byte[] in) throws IOException {
     try {
       MessageDigest md = MessageDigest.getInstance("SHA-256");
       return md.digest(in);
     } catch (Exception e) {
-      throw new RuntimeException(e);
+      throw new IOException(e);
     }
   }
 }

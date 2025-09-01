@@ -234,7 +234,7 @@ public class SatelliteGatewayProtocol extends Protocol {
     }
   }
 
-  private void packAndSend(Map<String, List<byte[]>> replacement){
+  private void packAndSend(Map<String, List<byte[]>> replacement) throws IOException {
     if(!replacement.isEmpty()) {
       MessageQueuePacker.Packed packedQueue = MessageQueuePacker.pack(replacement, compressionThreshold, cipherManager);
       List<SatelliteMessage> toSend = SatelliteMessageFactory.createMessages(currentStreamId, packedQueue.data(), maxBufferSize, packedQueue.compressed());
@@ -258,16 +258,20 @@ public class SatelliteGatewayProtocol extends Protocol {
   private void processOutstandingMessages() {
     try {
       Map<String, List<byte[]>> replacement;
-      if(System.currentTimeMillis() > nextOutgoingTime) {
-        replacement = pendingMessages.getAndSet(new LinkedHashMap<>());
-        packAndSend(replacement);
-        nextOutgoingTime = System.currentTimeMillis() + outgoingPollInterval;
-      }
-      else {
-        replacement = priorityMessages.getAndSet(new LinkedHashMap<>());
-        if (!replacement.isEmpty()) {
+      try {
+        if (System.currentTimeMillis() > nextOutgoingTime) {
+          replacement = pendingMessages.getAndSet(new LinkedHashMap<>());
           packAndSend(replacement);
+          nextOutgoingTime = System.currentTimeMillis() + outgoingPollInterval;
+        } else {
+          replacement = priorityMessages.getAndSet(new LinkedHashMap<>());
+          if (!replacement.isEmpty()) {
+            packAndSend(replacement);
+          }
         }
+      }
+      catch (IOException e) {
+        // Log this
       }
     } finally {
       scheduledFuture = taskManager.schedule(this::processOutstandingMessages, 15, TimeUnit.SECONDS);

@@ -23,42 +23,42 @@ import java.nio.ByteBuffer;
 
 public class MessageQueue {
 
-  private static final int MAX_U24 = 0xFFFFFF;
+  public static  byte LENGTH_BYTE_SIZE = 3;
 
-  protected void putTriByte(ByteBuffer buffer, int value) {
-    if (value < 0 || value > 0xFFFFFF) {
-      throw new IllegalArgumentException("Value out of 24-bit range: " + value);
+  protected void putVarUInt(ByteBuffer buffer, int value, int lengthBytes) {
+    if (lengthBytes < 1 || lengthBytes > 4) {
+      throw new IllegalArgumentException("lengthBytes must be 1..4: " + lengthBytes);
     }
-    buffer.put((byte) (value >>> 16));
-    buffer.put((byte) (value >>> 8));
-    buffer.put((byte) value);
-  }
-
-  protected int getTriByte(ByteBuffer buffer) {
-    int b1 = buffer.get() & 0xFF;
-    int b2 = buffer.get() & 0xFF;
-    int b3 = buffer.get() & 0xFF;
-    return (b1 << 16) | (b2 << 8) | b3;
-  }
-
-  protected void putTriByte(byte[] array, int offset, int value) {
-    if (value < 0 || value > 0xFFFFFF) {
-      throw new IllegalArgumentException("Value out of 24-bit range: " + value);
+    long max = (lengthBytes == 4) ? 0xFFFF_FFFFL : ((1L << (lengthBytes * 8)) - 1);
+    if (value < 0 || (value & 0xFFFF_FFFFL) > max) {
+      throw new IllegalArgumentException("Value out of range for u" + (lengthBytes * 8) + ": " + value);
     }
-    array[offset]     = (byte) (value >>> 16);
-    array[offset + 1] = (byte) (value >>> 8);
-    array[offset + 2] = (byte) value;
-  }
-  public static int getTriByte(byte[] array, int offset) {
-    return ((array[offset]     & 0xFF) << 16) |
-        ((array[offset + 1] & 0xFF) << 8)  |
-        (array[offset + 2] & 0xFF);
-  }
-
-
-  protected void requireU24(int value, String description) {
-    if (value < 0 || value > MAX_U24) {
-      throw new IllegalArgumentException(description + " out of range for u24: " + value);
+    for (int i = lengthBytes - 1; i >= 0; i--) {
+      buffer.put((byte) (value >>> (i * 8)));
     }
   }
+
+  protected int getVarUInt(ByteBuffer buffer, int lengthBytes) {
+    if (lengthBytes < 1 || lengthBytes > 4) {
+      throw new IllegalArgumentException("lengthBytes must be 1..4: " + lengthBytes);
+    }
+    int value = 0;
+    for (int i = 0; i < lengthBytes; i++) {
+      value = (value << 8) | (buffer.get() & 0xFF);
+    }
+    return value;
+  }
+
+
+  protected void requireUnsignedInRange(int value, int lengthBytes, String description) {
+    if (lengthBytes < 1 || lengthBytes > 4) {
+      throw new IllegalArgumentException("lengthBytes must be 1..4: " + lengthBytes);
+    }
+    long max = (lengthBytes == 4) ? 0xFFFF_FFFFL : ((1L << (lengthBytes * 8)) - 1);
+    if (value < 0 || (value & 0xFFFF_FFFFL) > max) {
+      throw new IllegalArgumentException(description + " out of range for u" + (lengthBytes * 8) + ": " + value);
+    }
+  }
+
+
 }

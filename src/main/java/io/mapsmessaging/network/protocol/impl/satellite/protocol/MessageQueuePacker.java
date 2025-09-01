@@ -33,7 +33,7 @@ public final class MessageQueuePacker extends MessageQueue{
 
   public record Packed(byte[] data, boolean compressed) {}
 
-  public static Packed pack(Map<String, List<byte[]>> queuedMessages, int minCompressSize, CipherManager cipherManager) {
+  public static Packed pack(Map<String, List<byte[]>> queuedMessages, int minCompressSize, CipherManager cipherManager) throws IOException {
     MessageQueuePacker packer = new MessageQueuePacker();
     byte[] buffer = packer.convertToByteArray(queuedMessages);
     byte[] resultant = compress(buffer, minCompressSize);
@@ -69,18 +69,19 @@ public final class MessageQueuePacker extends MessageQueue{
     List<byte[]> namespaceStreams = convertToStreams(orderedByNamespace);
 
     int numberOfNamespaces = namespaceStreams.size();
-    requireU24(numberOfNamespaces, "number of namespaces");
+    requireUnsignedInRange(numberOfNamespaces, LENGTH_BYTE_SIZE,"number of namespaces");
 
-    int totalFrameLength = 3; // numberOfNamespaces field
+    int totalFrameLength = LENGTH_BYTE_SIZE; // numberOfNamespaces field
     for (byte[] namespaceStream : namespaceStreams) {
-      requireU24(namespaceStream.length, "namespace stream length");
-      totalFrameLength += 3 + namespaceStream.length;
+      requireUnsignedInRange(namespaceStream.length, LENGTH_BYTE_SIZE, "namespace stream length");
+      totalFrameLength += LENGTH_BYTE_SIZE + namespaceStream.length;
     }
 
-    ByteBuffer frameBuffer = ByteBuffer.allocate(totalFrameLength+4);
-    putTriByte(frameBuffer, numberOfNamespaces);
+    ByteBuffer frameBuffer = ByteBuffer.allocate(totalFrameLength+5);
+    frameBuffer.put(LENGTH_BYTE_SIZE); // size used for packing/unpacking
+    putVarUInt(frameBuffer, numberOfNamespaces, LENGTH_BYTE_SIZE);
     for (byte[] namespaceStream : namespaceStreams) {
-      putTriByte(frameBuffer, namespaceStream.length);
+      putVarUInt(frameBuffer, namespaceStream.length, LENGTH_BYTE_SIZE);
       frameBuffer.put(namespaceStream);
     }
     byte[] frame = frameBuffer.array();
@@ -94,10 +95,10 @@ public final class MessageQueuePacker extends MessageQueue{
     for (Map.Entry<String, List<byte[]>> entry : queuedMessages.entrySet()) {
       String namespaceString = entry.getKey() == null ? "" : entry.getKey();
       byte[] namespaceBytes = namespaceString.getBytes(StandardCharsets.UTF_8);
-      requireU24(namespaceBytes.length, "namespace length");
+      requireUnsignedInRange(namespaceBytes.length,  LENGTH_BYTE_SIZE,"namespace length");
 
       List<byte[]> messagesForNamespace = entry.getValue() == null ? List.of() : entry.getValue();
-      requireU24(messagesForNamespace.size(), "message count for namespace: " + namespaceString);
+      requireUnsignedInRange(messagesForNamespace.size(),  LENGTH_BYTE_SIZE,"message count for namespace: " + namespaceString);
 
       namespaceStreams.add(packNamespaceStream(namespaceBytes, messagesForNamespace));
     }
@@ -105,21 +106,21 @@ public final class MessageQueuePacker extends MessageQueue{
   }
 
   private byte[] packNamespaceStream(byte[] namespaceBytes, List<byte[]> messagesForNamespace) {
-    int streamLength = 3 + namespaceBytes.length + 3; // namespace length + namespace + message count
+    int streamLength = LENGTH_BYTE_SIZE + namespaceBytes.length + LENGTH_BYTE_SIZE; // namespace length + namespace + message count
     for (byte[] messageBytes : messagesForNamespace) {
       int messageLength = (messageBytes == null) ? 0 : messageBytes.length;
-      requireU24(messageLength, "message length");
-      streamLength += 3 + messageLength;
+      requireUnsignedInRange(messageLength,  LENGTH_BYTE_SIZE,"message length");
+      streamLength += LENGTH_BYTE_SIZE + messageLength;
     }
-    requireU24(streamLength, "namespace stream total length");
+    requireUnsignedInRange(streamLength,  LENGTH_BYTE_SIZE,"namespace stream total length");
 
     ByteBuffer namespaceStreamBuffer = ByteBuffer.allocate(streamLength);
-    putTriByte(namespaceStreamBuffer, namespaceBytes.length);
+    putVarUInt(namespaceStreamBuffer,namespaceBytes.length, LENGTH_BYTE_SIZE);
     namespaceStreamBuffer.put(namespaceBytes);
-    putTriByte(namespaceStreamBuffer,messagesForNamespace.size());
+    putVarUInt(namespaceStreamBuffer, messagesForNamespace.size(),LENGTH_BYTE_SIZE);
     for (byte[] messageBytes : messagesForNamespace) {
       int messageLength = (messageBytes == null) ? 0 : messageBytes.length;
-      putTriByte(namespaceStreamBuffer, messageLength);
+      putVarUInt(namespaceStreamBuffer, messageLength, LENGTH_BYTE_SIZE);
       if (messageLength > 0) {
         namespaceStreamBuffer.put(messageBytes);
       }

@@ -398,7 +398,11 @@ public class StoGiProtocol extends Protocol implements Consumer<Packet> {
           lastOutgoingMessagePollInterval = System.currentTimeMillis();
           replacement = this.pendingMessages.getAndSet(new LinkedHashMap<>());
         }
-        buildSendList(replacement);
+        try {
+          buildSendList(replacement);
+        } catch (IOException e) {
+          // Log This
+        }
       }
       SatelliteMessage msg = currentList.remove(0);
       sendMessageViaModem(currentStreamId,msg);
@@ -410,7 +414,7 @@ public class StoGiProtocol extends Protocol implements Consumer<Packet> {
     return true;
   }
 
-  private void buildSendList(Map<String, List<byte[]>> replacement){
+  private void buildSendList(Map<String, List<byte[]>> replacement) throws IOException {
     if(!replacement.isEmpty()){
       MessageQueuePacker.Packed packedQueue = MessageQueuePacker.pack(replacement, compressionThreshold, cipherManager);
       currentList.addAll(SatelliteMessageFactory.createMessages(currentStreamId,  packedQueue.data(), maxBufferSize, packedQueue.compressed()));

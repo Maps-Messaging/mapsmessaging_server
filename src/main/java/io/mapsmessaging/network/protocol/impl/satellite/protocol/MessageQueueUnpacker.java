@@ -34,6 +34,8 @@ import java.util.zip.Inflater;
 
 public final class MessageQueueUnpacker extends MessageQueue {
 
+  private int lengthSize;
+
   private MessageQueueUnpacker() {}
 
 
@@ -48,7 +50,7 @@ public final class MessageQueueUnpacker extends MessageQueue {
       data = cipherManager.decrypt(data);
     }
     byte[] rawBuffer = compressed ? inflate(data) : data;
-    if (rawBuffer == null || rawBuffer.length < 3) return Map.of();
+    if (rawBuffer == null || rawBuffer.length < lengthSize) return Map.of();
 
     // Decrypt post unzip
     int length = rawBuffer.length;
@@ -59,10 +61,10 @@ public final class MessageQueueUnpacker extends MessageQueue {
     }
 
     ByteBuffer frameBuffer = ByteBuffer.wrap(rawBuffer, 0, rawBuffer.length - 4);
+    lengthSize = frameBuffer.get();
 
-
-    if (frameBuffer.remaining() < 3) return Map.of();
-    int numberOfNamespaces = getTriByte(frameBuffer);
+    if (frameBuffer.remaining() < lengthSize) return Map.of();
+    int numberOfNamespaces = getVarUInt(frameBuffer, lengthSize);
 
     // Preserve on-wire order; allow duplicates to merge
     Map<String, List<byte[]>> namespaceToMessages = new LinkedHashMap<>(Math.max(4, numberOfNamespaces));
@@ -76,8 +78,8 @@ public final class MessageQueueUnpacker extends MessageQueue {
   }
 
   private boolean unpackNamespaceStream(ByteBuffer frameBuffer, Map<String, List<byte[]>> namespaceToMessages) {
-    if (frameBuffer.remaining() < 3) return false;
-    int namespaceStreamLength = getTriByte(frameBuffer);
+    if (frameBuffer.remaining() < lengthSize) return false;
+    int namespaceStreamLength = getVarUInt(frameBuffer, lengthSize);
     if (frameBuffer.remaining() < namespaceStreamLength) return false;
 
     // Slice the namespace stream
@@ -89,22 +91,22 @@ public final class MessageQueueUnpacker extends MessageQueue {
     frameBuffer.limit(savedLimit);
 
     // <u16:namespaceLength>
-    if (namespaceBuffer.remaining() < 3) return false;
-    int namespaceLength = getTriByte(namespaceBuffer);
+    if (namespaceBuffer.remaining() < lengthSize) return false;
+    int namespaceLength = getVarUInt(namespaceBuffer, lengthSize);
 
     // Need namespace bytes + <u16:numberOfMessages>
-    if (namespaceBuffer.remaining() < namespaceLength + 3) return false;
+    if (namespaceBuffer.remaining() < namespaceLength + lengthSize) return false;
 
     byte[] namespaceBytes = new byte[namespaceLength];
     namespaceBuffer.get(namespaceBytes);
     String namespace = new String(namespaceBytes, StandardCharsets.UTF_8);
 
-    int numberOfMessages = getTriByte(namespaceBuffer);
+    int numberOfMessages = getVarUInt(namespaceBuffer, lengthSize);
     List<byte[]> messageList = namespaceToMessages.computeIfAbsent(namespace, k -> new ArrayList<>(numberOfMessages));
 
     for (int messageIndex = 0; messageIndex < numberOfMessages; messageIndex++) {
-      if (namespaceBuffer.remaining() < 3) return false;
-      int messageLength = getTriByte(namespaceBuffer);
+      if (namespaceBuffer.remaining() < lengthSize) return false;
+      int messageLength = getVarUInt(namespaceBuffer, lengthSize);
       if (namespaceBuffer.remaining() < messageLength) return false;
 
       byte[] messagePayload = new byte[messageLength];
