@@ -113,11 +113,7 @@ public class InmarsatClient implements SatelliteClient {
       messageList.add(item);
     }
     MobileTerminatedSubmitRequest req = new MobileTerminatedSubmitRequest(messageList);
-    MobileTerminatedSubmitResponse response = mailboxSession.submitMT(req);
-    for(Ack ack:response.getMessages()){
-      System.err.println(ack);
-    }
-    System.err.println("Response: " + response);
+    mailboxSession.submitMT(req);
   }
 
 }

@@ -90,8 +90,7 @@ public class ModemSatelliteMessage {
 
   public String toATCommand() {
     String encodedPayload = format.encode(payload);
-    return String.format("\"%s\",%d,%d.%d,%d,%s", name, priority, sin, min, format.getCode(), encodedPayload
-    );
+    return String.format("\"%s\",%d,%d.%d,%d,%s", name, priority, sin, min, format.getCode(), encodedPayload);
   }
 
   public String toOgxCommand() {

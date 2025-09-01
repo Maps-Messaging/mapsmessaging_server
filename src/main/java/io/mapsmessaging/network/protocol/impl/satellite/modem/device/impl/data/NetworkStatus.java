@@ -40,6 +40,9 @@ public class NetworkStatus {
       }
       if (line.contains(",")) { // OGx (%NETINFO)
         return parseOgx(line);
+      }
+      else if(line.equals("ERROR")){
+        return new NetworkStatus(true, "Modem Emulator");
       } else { // IDP (ATS54)
         return parseAts54(line);
       }
