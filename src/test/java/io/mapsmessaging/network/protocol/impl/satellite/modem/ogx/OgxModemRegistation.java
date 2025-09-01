@@ -21,8 +21,7 @@ package io.mapsmessaging.network.protocol.impl.satellite.modem.ogx;
 
 import io.mapsmessaging.network.protocol.impl.satellite.modem.BaseModemRegistration;
 import io.mapsmessaging.network.protocol.impl.satellite.modem.SentMessageEntry;
-import io.mapsmessaging.network.protocol.impl.satellite.ModemResponder;
-import io.mapsmessaging.network.protocol.impl.satellite.modem.idp.IdpFwdEntry;
+import io.mapsmessaging.network.protocol.impl.satellite.modem.ModemResponder;
 
 import java.util.Base64;
 import java.util.concurrent.ConcurrentLinkedQueue;

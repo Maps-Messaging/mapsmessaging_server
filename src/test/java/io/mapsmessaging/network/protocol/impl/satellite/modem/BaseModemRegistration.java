@@ -19,8 +19,6 @@
 
 package io.mapsmessaging.network.protocol.impl.satellite.modem;
 
-import io.mapsmessaging.network.protocol.impl.satellite.ModemResponder;
-
 public abstract class BaseModemRegistration {
 
   protected final ModemResponder modemResponder;

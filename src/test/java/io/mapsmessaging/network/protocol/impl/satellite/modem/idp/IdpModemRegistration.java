@@ -19,7 +19,7 @@
 
 package io.mapsmessaging.network.protocol.impl.satellite.modem.idp;
 
-import io.mapsmessaging.network.protocol.impl.satellite.ModemResponder;
+import io.mapsmessaging.network.protocol.impl.satellite.modem.ModemResponder;
 import io.mapsmessaging.network.protocol.impl.satellite.modem.BaseModemRegistration;
 import io.mapsmessaging.network.protocol.impl.satellite.modem.SentMessageEntry;
 
@@ -29,7 +29,6 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static io.mapsmessaging.network.protocol.impl.satellite.modem.idp.Constants.*;
-import static io.mapsmessaging.network.protocol.impl.satellite.modem.idp.IdpSentMessageEntry.*;
 
 public class IdpModemRegistration extends BaseModemRegistration {
   private final ConcurrentLinkedQueue<IdpFwdEntry> idpIncomingQueue = new ConcurrentLinkedQueue<>();

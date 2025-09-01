@@ -19,6 +19,9 @@
 
 package io.mapsmessaging.network.protocol.impl.satellite;
 
+import io.mapsmessaging.network.protocol.impl.satellite.gateway.InmarsatMockServer;
+import io.mapsmessaging.network.protocol.impl.satellite.modem.ModemResponder;
+
 import java.io.IOException;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;

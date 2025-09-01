@@ -17,7 +17,7 @@
  *  limitations under the License.
  */
 
-package io.mapsmessaging.network.protocol.impl.satellite;
+package io.mapsmessaging.network.protocol.impl.satellite.gateway;
 
 import com.sun.net.httpserver.Headers;
 import com.sun.net.httpserver.HttpExchange;

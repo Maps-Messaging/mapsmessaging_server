@@ -17,7 +17,7 @@
  *  limitations under the License.
  */
 
-package io.mapsmessaging.network.protocol.impl.satellite;
+package io.mapsmessaging.network.protocol.impl.satellite.modem;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;

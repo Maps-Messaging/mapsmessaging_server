@@ -17,12 +17,9 @@
  *  limitations under the License.
  */
 
-package io.mapsmessaging.network.protocol.impl.satellite;
+package io.mapsmessaging.network.protocol.impl.satellite.modem;
 
 import com.fazecast.jSerialComm.SerialPort;
-import io.mapsmessaging.network.protocol.impl.satellite.modem.BaseModemRegistration;
-import io.mapsmessaging.network.protocol.impl.satellite.modem.SentMessageEntry;
-import io.mapsmessaging.network.protocol.impl.satellite.modem.idp.IdpModemRegistration;
 import io.mapsmessaging.network.protocol.impl.satellite.modem.ogx.OgxModemRegistation;
 import lombok.Getter;
 
