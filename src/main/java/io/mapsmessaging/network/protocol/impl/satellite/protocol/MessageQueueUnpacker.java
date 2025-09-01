@@ -129,7 +129,7 @@ public final class MessageQueueUnpacker extends MessageQueue {
         try {
           bytesRead = inflater.inflate(tempBuffer);
         } catch (DataFormatException e) {
-          return null; // invalid compressed payload
+          throw new IOException(e);
         }
 
         if (bytesRead > 0) {
@@ -141,11 +141,13 @@ public final class MessageQueueUnpacker extends MessageQueue {
 
         // Stuck guard: neither finished nor producing nor needing input/dictionary
         if (!inflater.needsInput() && !inflater.needsDictionary() && bytesRead == 0) {
-          return null;
+          throw new IOException("Corrupted buffer");
         }
 
         if (inflater.needsInput()) break; // truncated input
-        if (inflater.needsDictionary()) return null; // unsupported dictionary
+        if (inflater.needsDictionary()) {
+          throw new IOException("Corrupted buffer");
+        }
       }
       return outputStream.toByteArray();
     } finally {

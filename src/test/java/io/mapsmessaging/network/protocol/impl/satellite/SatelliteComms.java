@@ -28,14 +28,12 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 
 public class SatelliteComms {
 
-  private final Queue<byte[]> modemMessages;
-  private final Queue<byte[]> satelliteMessages;
   private final InmarsatMockServer mockWebServer;
   private final ModemResponder modemResponder;
 
   public SatelliteComms(String comPort) throws IOException {
-    modemMessages = new ConcurrentLinkedQueue<>();
-    satelliteMessages = new ConcurrentLinkedQueue<>();
+    Queue<byte[]> modemMessages = new ConcurrentLinkedQueue<>();
+    Queue<byte[]> satelliteMessages = new ConcurrentLinkedQueue<>();
     mockWebServer = new InmarsatMockServer(modemMessages, satelliteMessages, 8085);
     modemResponder =new ModemResponder(satelliteMessages, modemMessages, comPort);
   }
@@ -48,10 +46,5 @@ public class SatelliteComms {
   public void stop(){
     modemResponder.stop();
     mockWebServer.stop();
-  }
-
-  public static void main(String[] args) throws IOException {
-    SatelliteComms satelliteComms = new SatelliteComms("COM7");
-    satelliteComms.start();
   }
 }

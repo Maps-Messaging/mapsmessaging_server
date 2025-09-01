@@ -87,10 +87,7 @@ class PackingPipelineTest {
 
   @Test
   void decompressCorruptionFailsAfterCrcAndDecrypt() throws IOException {
-    // To trigger a pure decompress failure, we need COMP=1 data and to avoid decrypt catching it first.
-    // Use an all-zero key (or whatever leaves plaintext) if your CipherManager supports a no-encrypt mode;
-    // otherwise this test may not be applicable.
-    CipherManager cmNoEnc = new CipherManager(new byte[0]); // assumes this disables encryption
+    CipherManager cmNoEnc = null;// assumes this disables encryption
     Map<String, List<byte[]>> batch = sampleBatch(1, 2, 4096, (byte) 0x00); // highly compressible
     int minCompressSize = 100;
 

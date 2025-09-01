@@ -34,6 +34,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.function.Function;
 
+import static io.mapsmessaging.network.protocol.impl.satellite.gateway.InmarsatMockServer.getEnvBool;
+
 public class ModemResponder implements Runnable {
 
 
@@ -50,11 +52,13 @@ public class ModemResponder implements Runnable {
   @Getter
   private final Queue<byte[]> outgoingMessages;
   private final BaseModemRegistration idpModem;
+  private final boolean logMessages;
 
   public ModemResponder( Queue<byte[]> incomingMessages,  Queue<byte[]> outgoingMessages, String deviceName) {
     this.deviceName = Objects.requireNonNull(deviceName, "deviceName");
     this.incomingMessages = incomingMessages;
     this.outgoingMessages = outgoingMessages;
+    logMessages = getEnvBool("MODEM_LOG_MESSAGES", false);
     idpModem = new OgxModemRegistation(this);
   }
 
@@ -123,7 +127,7 @@ public class ModemResponder implements Runnable {
 
   private void handleLine(String line, OutputStream out) throws IOException {
     // Must begin with AT (case-insensitive)
-    System.err.println("Received: " + line);
+    logMessage("IN ", line);
     if (!line.regionMatches(true, 0, "AT", 0, 2)) return;
     ParsedAt at = ParsedAt.parse(line);
     String key = at.getName().toUpperCase();  // "", "I", "+CSQ", "+FOO"
@@ -131,7 +135,7 @@ public class ModemResponder implements Runnable {
         handlers.getOrDefault(key, handlers.get("__DEFAULT__"));
 
     String payload = (handler != null) ? handler.apply(at) : "OK";
-    System.err.println(payload);
+    logMessage("OUT", payload);
     writeResponse(out, payload);
   }
 
@@ -143,5 +147,9 @@ public class ModemResponder implements Runnable {
       out.write("OK\r\n".getBytes(StandardCharsets.US_ASCII));
     }
     out.flush();
+  }
+
+  private void logMessage(String direction, String msg) {
+    System.err.println(direction + " > " + msg);
   }
 }

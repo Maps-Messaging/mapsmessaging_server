@@ -62,7 +62,7 @@ public class InmarsatMockServer {
 
 
   public InmarsatMockServer( Queue<byte[]> incomingMessages,  Queue<byte[]> outgoingMessages, int serverPort) throws IOException {
-    this(incomingMessages, outgoingMessages, serverPort, getEnvBool("INMARSAT_MOCK_LOG_HEADERS", true), getEnvBool("INMARSAT_MOCK_LOG_BODIES", true));
+    this(incomingMessages, outgoingMessages, serverPort, getEnvBool("INMARSAT_MOCK_LOG_HEADERS", false), getEnvBool("INMARSAT_MOCK_LOG_BODIES", false));
   }
 
   public InmarsatMockServer(Queue<byte[]> incomingMessages,  Queue<byte[]> outgoingMessages, int serverPort, boolean logHeaders, boolean logBodies) throws IOException {
@@ -745,11 +745,6 @@ public class InmarsatMockServer {
     return true;
   }
 
-  private boolean isValidPayloadEncoding(String encoding) {
-    if (encoding == null) return true;
-    String v = encoding.toUpperCase(Locale.ROOT);
-    return v.equals("HEX") || v.equals("BASE64") || v.equals("TEXT");
-  }
 
   private String generateId(String prefix) {
     return prefix + "-" + Math.abs(random.nextInt(1_000_000));
@@ -796,31 +791,12 @@ public class InmarsatMockServer {
     return values;
   }
 
-  private String firstStringFieldValue(String json, String fieldName) {
-    List<String> all = extractAllStringFieldValues(json, fieldName);
-    return all.isEmpty() ? null : all.get(0);
-  }
-
-  private Integer firstIntFieldValue(String json, String fieldName) {
-    if (isBlank(json) || isBlank(fieldName)) return null;
-    String needle = "\"" + fieldName + "\"";
-    int index = json.indexOf(needle);
-    if (index < 0) return null;
-    int colon = json.indexOf(':', index + needle.length());
-    if (colon < 0) return null;
-    int start = colon + 1;
-    while (start < json.length() && Character.isWhitespace(json.charAt(start))) start++;
-    int end = start;
-    while (end < json.length() && (Character.isDigit(json.charAt(end)) || json.charAt(end) == '-')) end++;
-    try { return Integer.parseInt(json.substring(start, end)); } catch (Exception e) { return null; }
-  }
-
   private String errorJson(String code, String message) {
     return "{\"error\":{\"code\":\"" + code + "\",\"message\":\"" + escapeJson(message) + "\"}}";
   }
 
   // ===== Logging =====
-  private static boolean getEnvBool(String name, boolean def) {
+  public static boolean getEnvBool(String name, boolean def) {
     String v = System.getenv(name);
     if (v == null) return def;
     return v.equalsIgnoreCase("1") || v.equalsIgnoreCase("true") || v.equalsIgnoreCase("yes");
@@ -836,10 +812,10 @@ public class InmarsatMockServer {
     String auth = ex.getRequestHeaders().getFirst("Authorization");
     int bodyLen = bodyOrNull == null ? -1 : bodyOrNull.getBytes(StandardCharsets.UTF_8).length;
 
-    System.err.printf("→ %s %s %s ip=%s mailbox=%s auth=%s body=%s%n",
-        reqId, method, uri, ip, safe(mailbox), safe(auth), bodyLen < 0 ? "-" : (bodyLen + "B"));
 
     if (logHeaders) {
+      System.err.printf("→ %s %s %s ip=%s mailbox=%s auth=%s body=%s%n",
+          reqId, method, uri, ip, safe(mailbox), safe(auth), bodyLen < 0 ? "-" : (bodyLen + "B"));
       Headers h = ex.getRequestHeaders();
       for (String k : h.keySet()) {
         for (String v : h.get(k)) {
