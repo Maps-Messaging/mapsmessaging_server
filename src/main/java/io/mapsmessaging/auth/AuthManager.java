@@ -223,20 +223,19 @@ public class AuthManager implements Agent {
   }
 
   public Subject getUserSubject(String username) {
-    Subject subject = subjectMap.get(username);
-    if (subject == null) {
-      subject = new Subject();
-      Set<Principal> principalList = subject.getPrincipals();
-      Identity map = authenticationStorage.findUser(username);
+    return subjectMap.computeIfAbsent(username, key -> {
+      Subject newSubject = new Subject();
+      Identity map = authenticationStorage.findUser(key);
       if (map != null) {
+        Set<Principal> principalList = newSubject.getPrincipals();
         principalList.add(new UniqueIdentifierPrincipal(map.getId()));
-        principalList.add(new UserPrincipal(username));
-        authenticationStorage.update(subject);
+        principalList.add(new UserPrincipal(key));
+        authenticationStorage.update(newSubject);
       }
-      subjectMap.put(username, subject);
-    }
-    return subject;
+      return newSubject;
+    });
   }
+
 
   public List<UserDetails> getUsers() {
     if (authenticationStorage != null) {

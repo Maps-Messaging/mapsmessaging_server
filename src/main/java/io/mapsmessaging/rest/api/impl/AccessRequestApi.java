@@ -48,6 +48,9 @@ import static io.mapsmessaging.rest.handler.SessionTracker.clearSession;
 @Path(URI_PATH)
 public class AccessRequestApi extends BaseRestApi {
 
+  private static final String SUCCESS = "Success";
+  private static final String FAILURE = "Failure";
+
   protected static final String USERNAME = "username";
 
   @GET
@@ -79,7 +82,7 @@ public class AccessRequestApi extends BaseRestApi {
       return new LoginResponse("Auth not enforced");
     }
     String username = session.getAttribute(USERNAME).toString();
-    return new LoginResponse("Success", subject, username);
+    return new LoginResponse(SUCCESS, subject, username);
   }
 
 
@@ -102,14 +105,14 @@ public class AccessRequestApi extends BaseRestApi {
     String accessToken = getAccessCookie(request);
     if (accessToken == null) {
       response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-      return "failed";
+      return FAILURE;
     }
 
     try {
       HttpSession session = request.getSession(false);
       if (session == null || session.getAttribute(USERNAME) == null) {
         response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-        return "failed";
+        return FAILURE;
       }
       validateToken(accessToken, session, request, response);
       renewSession(session, request, response);
@@ -117,7 +120,7 @@ public class AccessRequestApi extends BaseRestApi {
 
     } catch (JWTVerificationException ex) {
       response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-      return "failed";
+      return FAILURE;
     }
   }
 
@@ -175,7 +178,7 @@ public class AccessRequestApi extends BaseRestApi {
     hasAccess("root");
     Subject subject = (Subject) getSession().getAttribute("subject");
     String username = (String) getSession().getAttribute(USERNAME);
-    return new LoginResponse("Success", subject, username);
+    return new LoginResponse(SUCCESS, subject, username);
   }
 
   @POST
@@ -189,14 +192,13 @@ public class AccessRequestApi extends BaseRestApi {
           @ApiResponse(responseCode = "400", description = "Bad request or invalid session state")
       }
   )
-  public StatusResponse logout() throws IOException {
+  public StatusResponse logout() {
     HttpSession session = request.getSession(false);
-    String stringResponse = "Success";
     if (session != null) {
       clearSession(session);
       session.invalidate();
     }
     clearToken(request, response);
-    return new StatusResponse(stringResponse);
+    return new StatusResponse(SUCCESS);
   }
 }

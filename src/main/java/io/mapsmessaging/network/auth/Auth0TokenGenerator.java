@@ -57,14 +57,16 @@ public class Auth0TokenGenerator implements TokenGenerator {
       ObjectWriter ow = new ObjectMapper().writer().withDefaultPrettyPrinter();
       String json = ow.writeValueAsString(body);
 
-      HttpClient client = HttpClient.newHttpClient();
-      HttpRequest request = HttpRequest.newBuilder()
-          .uri(URI.create("https://" + domain + "/oauth/token"))
-          .header("Content-Type", "application/json")
-          .POST(HttpRequest.BodyPublishers.ofString(json))
-          .build();
+      HttpResponse<String> response;
+      try (HttpClient client = HttpClient.newHttpClient()) {
+        HttpRequest request = HttpRequest.newBuilder()
+            .uri(URI.create("https://" + domain + "/oauth/token"))
+            .header("Content-Type", "application/json")
+            .POST(HttpRequest.BodyPublishers.ofString(json))
+            .build();
 
-      HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+        response = client.send(request, HttpResponse.BodyHandlers.ofString());
+      }
 
       if (response.statusCode() != 200) {
         throw new IOException("Failed to fetch token: " + response.body());

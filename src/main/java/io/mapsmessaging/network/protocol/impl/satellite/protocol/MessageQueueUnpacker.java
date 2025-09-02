@@ -67,7 +67,7 @@ public final class MessageQueueUnpacker extends MessageQueue {
     int numberOfNamespaces = getVarUInt(frameBuffer, lengthSize);
 
     // Preserve on-wire order; allow duplicates to merge
-    Map<String, List<byte[]>> namespaceToMessages = new LinkedHashMap<>(Math.max(4, numberOfNamespaces));
+    Map<String, List<byte[]>> namespaceToMessages = new LinkedHashMap<>();
 
     for (int namespaceIndex = 0; namespaceIndex < numberOfNamespaces; namespaceIndex++) {
       if (!unpackNamespaceStream(frameBuffer, namespaceToMessages)) {
