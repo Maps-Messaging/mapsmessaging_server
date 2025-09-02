@@ -35,6 +35,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import static io.mapsmessaging.logging.ServerLogMessages.OGWS_FAILED_AUTHENTICATION;
 
@@ -46,6 +47,7 @@ public class GatewayManager {
   private final int pollInterval;
   private final List<MessageData> pendingMessages;
   private final Map<String, RemoteDeviceInfo> knownTerminals;
+  private final AtomicBoolean closed = new AtomicBoolean(false);
 
   private TaskManager taskManager;
   private ScheduledFuture<?> scheduledFuture;
@@ -64,8 +66,24 @@ public class GatewayManager {
   }
 
   public void start() {
+    taskManager = new TaskManager();
+    taskManager.schedule(this::initSession, 10, TimeUnit.SECONDS);
+  }
+
+  public void stop(){
+    closed.set(true);
+    if(scheduledFuture != null){
+      scheduledFuture.cancel(true);
+      scheduledFuture = null;
+    }
+    taskManager.close();
+  }
+
+  protected void initSession(){
+    if(closed.get()){
+      return;
+    }
     try {
-      taskManager = new TaskManager();
       authenticated = satelliteClient.authenticate();
       if (authenticated) {
         List<RemoteDeviceInfo> response = satelliteClient.getTerminals(null);
@@ -81,19 +99,16 @@ public class GatewayManager {
       } else {
         logger.log(OGWS_FAILED_AUTHENTICATION);
       }
-    } catch(LoginException | IOException login){
-      logger.log(OGWS_FAILED_AUTHENTICATION, login);
+    }
+    catch (RuntimeException| IOException e) {
+      // we can try again
+      taskManager.schedule(this::initSession, 1, TimeUnit.MINUTES);
     } catch (InterruptedException e) {
       Thread.currentThread().interrupt();
+    } catch (LoginException e) {
+      // We need to log the fact that this session is not allowed
     }
-  }
 
-  public void stop(){
-    if(scheduledFuture != null){
-      scheduledFuture.cancel(true);
-      scheduledFuture = null;
-    }
-    taskManager.close();
   }
 
   public void muteClient(String id){
