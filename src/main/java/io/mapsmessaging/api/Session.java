@@ -45,6 +45,8 @@ import java.util.concurrent.ExecutionException;
 
 public class Session {
 
+  private static final String SCHEMA = "$schema";
+
   private final SessionImpl sessionImpl;
   private final MessageListener listener;
   private final Map<String, Destination> destinations;
@@ -94,8 +96,8 @@ public class Session {
 
   public CompletableFuture<Destination> findDestination(@NonNull @NotNull String destinationName, @NonNull @NotNull DestinationType type) {
     CompletableFuture<Destination> future = new CompletableFuture<>();
-    if(destinationName.toLowerCase().startsWith("$schema")){
-      destinationName = "$schema" + destinationName.substring("$schema".length());
+    if(destinationName.toLowerCase().startsWith(SCHEMA)){
+      destinationName = SCHEMA + destinationName.substring(SCHEMA.length());
     }
     Destination result = destinations.get(destinationName);
     if (result == null) {

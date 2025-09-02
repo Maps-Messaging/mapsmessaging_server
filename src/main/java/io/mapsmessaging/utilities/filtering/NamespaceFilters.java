@@ -71,7 +71,7 @@ public class NamespaceFilters {
       NamespaceFilter filter = new NamespaceFilter(prop);
       addToTrie(filter);
     } catch (IOException e) {
-      e.printStackTrace();
+      //ToDo: log this
     }
   }
 

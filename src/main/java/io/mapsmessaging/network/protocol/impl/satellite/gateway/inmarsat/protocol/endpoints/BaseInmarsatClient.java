@@ -59,6 +59,7 @@ public abstract class BaseInmarsatClient {
     return status == 429 || status == 502 || status == 503 || status == 504;
   }
 
+  @SuppressWarnings("java:S2245") // this is a simple backoff there is no security here
   private static void sleepBackoff(int attempt, HttpHeaders headers) {
     long retryAfterMs = parseRetryAfter(headers).orElse(0L);
     long base = (long) Math.pow(2, attempt) * 250L; // 250ms, 500ms, 1000ms...

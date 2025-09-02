@@ -77,6 +77,7 @@ public class SatelliteGatewayProtocol extends Protocol {
   private boolean closed;
   private int currentStreamId =0;
 
+  @SuppressWarnings("java:S2245") // we use random here for polling, this is not a security based issue
   public SatelliteGatewayProtocol(@NonNull @NotNull EndPoint endPoint, @NotNull @NonNull ProtocolConfigDTO protocolConfig) throws LoginException, IOException {
     super(endPoint, protocolConfig);
     pendingMessages = new AtomicReference<>();

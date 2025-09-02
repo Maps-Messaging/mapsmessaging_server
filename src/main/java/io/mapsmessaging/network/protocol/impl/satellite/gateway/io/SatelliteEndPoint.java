@@ -39,8 +39,6 @@ public class SatelliteEndPoint extends EndPoint {
   @Getter
   private RemoteDeviceInfo terminalInfo;
 
-  private final Logger logger = LoggerFactory.getLogger(SatelliteEndPoint.class);
-
   protected SatelliteEndPoint(long id, EndPointServerStatus server, RemoteDeviceInfo terminal) {
     super(id, server);
     this.terminalInfo = terminal;
@@ -97,7 +95,7 @@ public class SatelliteEndPoint extends EndPoint {
 
   @Override
   protected Logger createLogger() {
-    return logger;
+    return LoggerFactory.getLogger(getClass());
   }
 
 }

@@ -85,10 +85,11 @@ public class Selector implements SelectorInt {
     }
   }
 
+  @SuppressWarnings("java:S2095") // we are switching out the channel selector it lives beyond this function
   private void rebuildSelector() {
+    java.nio.channels.Selector newSelector = null;
     try {
-      java.nio.channels.Selector newSelector = java.nio.channels.Selector.open();
-
+      newSelector = java.nio.channels.Selector.open();
       for (SelectionKey key : channelSelector.keys()) {
         try {
           if (key.isValid()) {
@@ -98,14 +99,25 @@ public class Selector implements SelectorInt {
           // Key may already be cancelled
         }
       }
-
-      channelSelector.close();
-      channelSelector = newSelector;
       logger.log(ServerLogMessages.SELECTOR_REBUILT);
     } catch (Exception e) {
+      try {
+        if(newSelector != null) newSelector.close();
+      } catch (IOException ex) {
+        // ignore
+      }
       logger.log(ServerLogMessages.SELECTOR_REBUILD_FAILED, e.getMessage());
-      isOpen.set(false);
+      return; // This becomes a no op!!!
     }
+    java.nio.channels.Selector oldSelector = channelSelector;
+    channelSelector = newSelector;
+    oldSelector.wakeup();
+    try {
+      oldSelector.close();
+    } catch (IOException e) {
+      //
+    }
+    channelSelector.wakeup();
   }
 
   private void processSelectionList(Set<SelectionKey> selectedKeys) {

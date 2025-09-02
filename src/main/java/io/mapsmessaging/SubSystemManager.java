@@ -102,8 +102,8 @@ public class SubSystemManager {
       try {
         ProtocolImplFactory parser = iterator.next();
         String name = parser.getName().toLowerCase();
-        name = name.replaceAll("-", "_");
-        name = name.replaceAll(" ", "_");
+        name = name.replace("-", "_");
+        name = name.replace(" ", "_");
         if(name.equals("loop") || featureManager.isEnabled("protocols."+name) ) {
           service.add(parser);
         }
@@ -226,21 +226,24 @@ public class SubSystemManager {
     if (enableDeviceIntegration && licensed) {
       addToMap(2200, 70, new DeviceManager(featureManager));
     }
+    addOptionalML();
+  }
+
+  private void addOptionalML(){
 
     if(featureManager.isEnabled("ml")) {
       try {
         Class<?> clazz = Class.forName("io.mapsmessaging.ml.MLModelManager");
         Object mlManager = clazz.getConstructor().newInstance();
-        if(mlManager instanceof Agent) {
-          addToMap(900, 30, (Agent) mlManager);
+        if(mlManager instanceof Agent mlAgent) {
+          addToMap(900, 30, mlAgent);
         }
-      } catch (ClassNotFoundException e) {
-        // ML component not present — ignore
       } catch (Exception e) {
         // ignore, we do not support ML
       }
     }
   }
+
 
 
   /**
@@ -258,9 +261,9 @@ public class SubSystemManager {
    */
   private void logServiceManagers() {
     for (Map.Entry<String, AgentOrder> agentEntry : agentMap.entrySet()) {
-      if (agentEntry.getValue().getAgent() instanceof ServiceManager) {
+      if (agentEntry.getValue().getAgent() instanceof ServiceManager serviceManager) {
         logger.log(ServerLogMessages.MESSAGE_DAEMON_SERVICE_LOADED, agentEntry.getKey());
-        logServices(((ServiceManager) agentEntry.getValue().getAgent()).getServices());
+        logServices(serviceManager.getServices());
       }
     }
     logServices(ProtocolFactory.getProtocolServiceList().stream().map(p -> (Service) p).iterator());
@@ -275,7 +278,6 @@ public class SubSystemManager {
       logger.log(ServerLogMessages.MESSAGE_DAEMON_SERVICE, service.getName(), service.getDescription());
     }
   }
-
 
   public List<SubSystemStatusDTO> getSubSystemStatus() {
     List<SubSystemStatusDTO> list = new ArrayList<>();

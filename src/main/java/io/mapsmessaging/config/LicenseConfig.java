@@ -50,7 +50,7 @@ public class LicenseConfig implements ConfigManager {
 
   @Override
   public void save() throws IOException {
-
+    // there is no option to save here
   }
 
   @Override

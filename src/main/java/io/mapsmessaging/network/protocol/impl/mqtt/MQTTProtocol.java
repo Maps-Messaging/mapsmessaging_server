@@ -69,8 +69,6 @@ public class MQTTProtocol extends Protocol {
 
   @Getter
   private final MqttConfigDTO mqttConfig;
-  @Getter
-  private final Map<String, String> topicNameMapping;
 
   private volatile boolean closed;
   @Getter
@@ -83,7 +81,6 @@ public class MQTTProtocol extends Protocol {
     ThreadContext.put("endpoint", endPoint.getName());
     ThreadContext.put("protocol", getName());
     ThreadContext.put("version", getVersion());
-    topicNameMapping = new ConcurrentHashMap<>();
     logger.log(ServerLogMessages.MQTT_START);
     mqttConfig = (MqttConfigDTO) protocolConfig;
     maxBufferSize =  mqttConfig.getMaximumBufferSize();
