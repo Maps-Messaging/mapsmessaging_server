@@ -32,5 +32,7 @@ public class Network {
   private boolean serial;
   private boolean ogws;
   private boolean stogi;
+  private boolean satellite;
+
   private int maxConnections;
 }

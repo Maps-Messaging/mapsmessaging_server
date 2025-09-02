@@ -32,8 +32,9 @@ public class Protocols {
   private boolean semtech;
   private boolean extensions;
   private boolean stomp;
-  private boolean restApi;
+  private boolean rest;
   private boolean lora;
   private boolean ws;
   private boolean wss;
+  private boolean stogi;
 }

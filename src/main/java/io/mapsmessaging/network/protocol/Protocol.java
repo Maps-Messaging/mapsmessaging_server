@@ -57,6 +57,7 @@ public abstract class Protocol implements SelectorCallback, MessageListener, Tim
 
   @Getter
   protected final Map<String, Transformer> destinationTransformerMap;
+  @Getter
   protected final Map<String, String> topicNameMapping;
 
   @Getter

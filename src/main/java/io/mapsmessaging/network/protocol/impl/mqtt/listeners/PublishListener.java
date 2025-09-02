@@ -79,7 +79,7 @@ public class PublishListener extends PacketListener {
   private String parseForLookup(Protocol protocol, Publish publish){
     String lookup = publish.getDestinationName();
 
-    Map<String, String> map = ((MQTTProtocol) protocol).getTopicNameMapping();
+    Map<String, String> map = protocol.getTopicNameMapping();
     if (map != null) {
       lookup = map.get(publish.getDestinationName());
       if (lookup == null) {
