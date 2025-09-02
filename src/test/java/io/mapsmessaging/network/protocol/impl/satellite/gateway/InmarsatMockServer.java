@@ -697,7 +697,9 @@ public class InmarsatMockServer {
       os.write(bytes);
     }
     long durationMs = (System.nanoTime() - t0) / 1_000_000;
-    logResponse(reqId, statusCode, durationMs, bytes.length, logBody ? snippet(json) : null);
+    if(logHeaders) {
+      logResponse(reqId, statusCode, durationMs, bytes.length, logBody ? snippet(json) : null);
+    }
   }
 
   private Map<String, String> parseQuery(String rawQuery) {

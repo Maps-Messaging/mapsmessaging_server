@@ -47,4 +47,9 @@ public class SatelliteComms {
     modemResponder.stop();
     mockWebServer.stop();
   }
+
+  public static void main(String[] args) throws IOException {
+    SatelliteComms satelliteComms = new SatelliteComms("COM7");
+    satelliteComms.start();
+  }
 }

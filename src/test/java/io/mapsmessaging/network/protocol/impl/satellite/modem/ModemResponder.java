@@ -150,6 +150,6 @@ public class ModemResponder implements Runnable {
   }
 
   private void logMessage(String direction, String msg) {
-    System.err.println(direction + " > " + msg);
+    if(logMessages)System.err.println(direction + " > " + msg);
   }
 }
