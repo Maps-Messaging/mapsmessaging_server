@@ -68,6 +68,9 @@ public class ConfigHelper {
     } else if (size.endsWith("G")) {
       return Long.parseLong(size.substring(0, size.length() - 1)) * 1024 * 1024 * 1024;
     } else {
+      if(size.contains(".")){
+        size = size.substring(0, size.indexOf("."));
+      }
       return Long.parseLong(size);
     }
   }
