@@ -1,7 +1,6 @@
 package io.mapsmessaging.rest.api.impl.destination;
 
 import java.util.*;
-import java.util.concurrent.*;
 
 public class FqnTree<T> {
   private final Node<T> root = new Node<>();
@@ -13,13 +12,15 @@ public class FqnTree<T> {
     for (String part : parts) {
       current = current.children.computeIfAbsent(part, k -> new Node<>());
     }
-    boolean isNew = current.value == null;
-    current.value = value;
+    T previous = current.value.getAndSet(value);
+    boolean isNew = (previous == null);
     listenerRegistry.notifyIfRegistered(fqn, value, isNew ? ChangeType.ADD : ChangeType.UPDATE);
   }
 
   public boolean remove(String fqn) {
     String[] parts = normalize(fqn);
+    if (parts.length == 0) return false; // don't remove root
+
     Deque<Node<T>> stack = new ArrayDeque<>();
     Node<T> current = root;
     stack.push(current);
@@ -29,14 +30,15 @@ public class FqnTree<T> {
       stack.push(current);
     }
 
-    boolean changed = current.value != null || !current.children.isEmpty();
-    current.value = null;
+    T previous = current.value.getAndSet(null);
+    boolean changed = (previous != null) || !current.children.isEmpty();
 
     for (int i = parts.length; i > 0; i--) {
       Node<T> child = stack.pop();
       Node<T> parent = stack.peek();
+      if (parent == null) break; // safety: root popped (shouldn't happen)
       String name = parts[i - 1];
-      if (child.value == null && child.children.isEmpty()) {
+      if (child.value.get() == null && child.children.isEmpty()) {
         parent.children.remove(name, child);
       } else {
         break;
@@ -49,9 +51,10 @@ public class FqnTree<T> {
     return changed;
   }
 
+
   public T getValue(String fqn) {
     Node<T> node = getNode(fqn);
-    return node != null ? node.value : null;
+    return node != null ? node.value.get() : null;
   }
 
   public Map<String, T> getChildren(String fqn) {
@@ -59,7 +62,7 @@ public class FqnTree<T> {
     if (node == null) return Collections.emptyMap();
     Map<String, T> result = new HashMap<>();
     for (Map.Entry<String, Node<T>> entry : node.children.entrySet()) {
-      result.put(entry.getKey(), entry.getValue().value);
+      result.put(entry.getKey(), entry.getValue().value.get());
     }
     return result;
   }
