@@ -66,7 +66,7 @@ public class Auth0TokenGenerator implements TokenGenerator {
             .build();
 
       response = client.send(request, HttpResponse.BodyHandlers.ofString());
-      client.close();
+
 
       if (response.statusCode() != 200) {
         throw new IOException("Failed to fetch token: " + response.body());
