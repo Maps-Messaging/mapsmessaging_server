@@ -87,6 +87,7 @@ public class DestinationStatusTopic extends SystemTopic {
             destinationStatusList.add(DestinationStatusHelper.createDestination(destination));
           }
         } catch(InterruptedException | ExecutionException e){
+          Thread.currentThread().interrupt();
           throw new RuntimeException(e);
         }
 

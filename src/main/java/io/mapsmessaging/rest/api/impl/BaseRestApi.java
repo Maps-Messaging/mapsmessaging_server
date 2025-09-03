@@ -97,19 +97,13 @@ public class BaseRestApi {
   }
 
   private long computeAccess(String method) {
-    switch (method) {
-      case "GET":
-      case "HEAD":
-        return RestAclMapping.READ_VALUE;
-      case "POST":
-        return RestAclMapping.CREATE_VALUE;
-      case "PUT":
-        return RestAclMapping.UPDATE_VALUE;
-      case "DELETE":
-        return RestAclMapping.DELETE_VALUE;
-      default:
-        return RestAclMapping.READ_VALUE;
-    }
+    return switch (method) {
+      case "GET", "HEAD" -> RestAclMapping.READ_VALUE;
+      case "POST" -> RestAclMapping.CREATE_VALUE;
+      case "PUT" -> RestAclMapping.UPDATE_VALUE;
+      case "DELETE" -> RestAclMapping.DELETE_VALUE;
+      default -> RestAclMapping.READ_VALUE;
+    };
   }
 
   protected <T> T getFromCache(CacheKey key, Class<T> type) {

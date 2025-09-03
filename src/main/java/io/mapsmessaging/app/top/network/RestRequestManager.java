@@ -150,6 +150,7 @@ public class RestRequestManager implements Runnable {
       try {
         Thread.sleep(6000);
       } catch (InterruptedException e) {
+        Thread.currentThread().interrupt();
         // ignore
       }
     }

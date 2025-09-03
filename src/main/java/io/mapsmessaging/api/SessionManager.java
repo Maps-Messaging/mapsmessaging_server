@@ -133,6 +133,7 @@ public class SessionManager {
           try {
             return MessageDaemon.getInstance().getDestinationManager().find(destination).get();
           } catch (InterruptedException | ExecutionException e) {
+            Thread.currentThread().interrupt();
             throw new CompletionException(e);
           }
         }, publisherScheduler)

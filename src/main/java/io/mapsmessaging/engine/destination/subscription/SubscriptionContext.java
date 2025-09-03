@@ -170,14 +170,6 @@ public class SubscriptionContext  extends PersistentObject implements Comparable
     writeByteArray(outputStream, getFlags().toByteArray());
   }
 
-  public SubscriptionContext setRootPath(String rootPath) {
-    this.rootPath = Objects.requireNonNullElse(rootPath, "");
-    if (rootPath.length() > 1 && !rootPath.endsWith("/")) {
-      this.rootPath = this.rootPath + File.separator;
-    }
-    return this;
-  }
-
   public void setDestinationName(String destinationName) {
     if (alias.equals(destinationName)) {
       alias = destinationName;

@@ -135,6 +135,7 @@ public abstract class BaseMessageStateManager implements MessageStateManager {
   }
 
 
+  @SuppressWarnings("java:S2201") // size also resets the internals
   @Override
   public synchronized long nextMessageId() {
     Long response = messagesAtRest.peek();

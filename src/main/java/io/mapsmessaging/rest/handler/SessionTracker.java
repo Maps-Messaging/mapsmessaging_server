@@ -24,12 +24,15 @@ import io.mapsmessaging.api.SessionManager;
 import io.mapsmessaging.dto.rest.endpoint.EndPointDetailsDTO;
 import io.mapsmessaging.dto.rest.endpoint.EndPointSummaryDTO;
 import io.mapsmessaging.dto.rest.protocol.impl.RestProtocolInformation;
+import io.mapsmessaging.rest.api.impl.messaging.impl.HttpSessionState;
 import io.mapsmessaging.rest.api.impl.messaging.impl.RestMessageListener;
+import io.mapsmessaging.rest.api.impl.messaging.impl.SessionState;
 import io.mapsmessaging.rest.auth.BaseAuthenticationFilter;
 import jakarta.servlet.annotation.WebListener;
 import jakarta.servlet.http.HttpSession;
 import jakarta.servlet.http.HttpSessionEvent;
 import jakarta.servlet.http.HttpSessionListener;
+import lombok.Getter;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -40,6 +43,8 @@ import java.util.concurrent.ConcurrentHashMap;
 @WebListener
 public class SessionTracker implements HttpSessionListener {
   private static final ConcurrentHashMap<String, HttpSession> sessions = new ConcurrentHashMap<>();
+  @Getter
+  private static final HttpSessionState sessionStates = new HttpSessionState();
 
   @Override
   public void sessionCreated(HttpSessionEvent se) {
@@ -54,18 +59,17 @@ public class SessionTracker implements HttpSessionListener {
   }
 
   public static void clearSession(HttpSession httpSession) {
-    Session session = (Session) httpSession.getAttribute("authenticatedSession");
-    RestMessageListener restMessageListener = (RestMessageListener) httpSession.getAttribute("restListener");
-    if(restMessageListener != null) {
-      httpSession.removeAttribute("restListener");
-      restMessageListener.close();
-    }
-    if(session != null) {
-      httpSession.removeAttribute("authenticatedSession");
-      try {
-        SessionManager.getInstance().close(session, false);
-      } catch (IOException e) {
-        // ignore
+    SessionState sessionState = sessionStates.removeSessionState(httpSession.getId());
+    if(sessionState != null) {
+      if(sessionState.getSession() != null){
+        try {
+          SessionManager.getInstance().close(sessionState.getSession(), false);
+        } catch (IOException e) {
+          // ignore
+        }
+      }
+      if(sessionState.getRestMessageListener() != null){
+        sessionState.getRestMessageListener().close();
       }
     }
   }
@@ -99,7 +103,8 @@ public class SessionTracker implements HttpSessionListener {
 
   private static EndPointDetailsDTO createDetails(HttpSession session){
     if(session == null)return null;
-    Session mapsSession = (Session) session.getAttribute("authenticatedSession");
+
+    SessionState state = sessionStates.getSessionState(session.getId());
 
 
     RestProtocolInformation protocolInformation = new RestProtocolInformation();
@@ -108,8 +113,8 @@ public class SessionTracker implements HttpSessionListener {
     protocolInformation.setSelectorMapping(new LinkedHashMap<>());
     protocolInformation.setDestinationTransformationMapping(new LinkedHashMap<>());
 
-    if(mapsSession != null){
-      protocolInformation.setSessionInfo(mapsSession.getSessionInformation());
+    if(state != null && state.getSession() != null){
+      protocolInformation.setSessionInfo(state.getSession().getSessionInformation());
     }
 
     EndPointDetailsDTO connection = new EndPointDetailsDTO();

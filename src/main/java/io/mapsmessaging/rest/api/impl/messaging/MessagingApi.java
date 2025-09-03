@@ -32,6 +32,8 @@ import io.mapsmessaging.engine.session.SessionContext;
 import io.mapsmessaging.rest.api.impl.BaseRestApi;
 import io.mapsmessaging.rest.api.impl.messaging.impl.RestClientConnection;
 import io.mapsmessaging.rest.api.impl.messaging.impl.RestMessageListener;
+import io.mapsmessaging.rest.api.impl.messaging.impl.SessionState;
+import io.mapsmessaging.rest.handler.SessionTracker;
 import io.mapsmessaging.rest.responses.*;
 import io.mapsmessaging.rest.token.TokenManager;
 import io.swagger.v3.oas.annotations.Operation;
@@ -111,7 +113,8 @@ public class MessagingApi extends BaseRestApi {
     hasAccess(RESOURCE);
     String destinationName = subscriptionRequest.getDestinationName();
     HttpSession httpSession = getSession();
-    RestMessageListener restMessageListener = (RestMessageListener) httpSession.getAttribute("restListener");
+    SessionState state = SessionTracker.getSessionStates().getSessionState(httpSession.getId());
+    RestMessageListener restMessageListener = state.getRestMessageListener();
     restMessageListener.deregisterEventManager(destinationName);
     return new StatusResponse("Successfully unsubscribed to " + destinationName);
   }
@@ -136,7 +139,8 @@ public class MessagingApi extends BaseRestApi {
     Session session = getAuthenticatedSession();
     HttpSession httpSession = getSession();
     SubscribedEventManager eventManager = subscribeToTopic(session, subscriptionRequest);
-    RestMessageListener restMessageListener = (RestMessageListener) httpSession.getAttribute("restListener");
+    SessionState state = SessionTracker.getSessionStates().getSessionState(httpSession.getId());
+    RestMessageListener restMessageListener = state.getRestMessageListener();
     restMessageListener.registerEventManager(subscriptionRequest.getDestinationName(), session, eventManager);
     return new StatusResponse("Successfully subscribed to " + subscriptionRequest.getDestinationName());
   }
@@ -191,12 +195,11 @@ public class MessagingApi extends BaseRestApi {
       response.setStatus(HttpServletResponse.SC_FORBIDDEN);
       return;
     }
-
     Session session = getAuthenticatedSession();
     HttpSession httpSession = getSession();
     SubscribedEventManager eventManager = subscribeToTopic(session, subscriptionRequest);
-    RestMessageListener restMessageListener = (RestMessageListener) httpSession.getAttribute("restListener");
-    restMessageListener.registerEventManager(subscriptionRequest.getDestinationName(), sse, eventSink, session, eventManager);
+    SessionState state = SessionTracker.getSessionStates().getSessionState(httpSession.getId());
+    state.getRestMessageListener().registerEventManager(subscriptionRequest.getDestinationName(), sse, eventSink, session, eventManager);
   }
 
 
@@ -220,8 +223,8 @@ public class MessagingApi extends BaseRestApi {
   @POST
   public StatusResponse commitMessages(@Valid TransactionData transactionData) {
     hasAccess(RESOURCE);
-    RestMessageListener messageListener = (RestMessageListener) getSession().getAttribute("restListener");
-    messageListener.ackReceived(transactionData.getDestinationName(), transactionData.getEventIds());
+    SessionState state = SessionTracker.getSessionStates().getSessionState(getSession().getId());
+    state.getRestMessageListener().ackReceived(transactionData.getDestinationName(), transactionData.getEventIds());
     return new StatusResponse("Successfully committed messages");
   }
 
@@ -245,8 +248,8 @@ public class MessagingApi extends BaseRestApi {
   @POST
   public StatusResponse abortMessages(@Valid TransactionData transactionData) {
     hasAccess(RESOURCE);
-    RestMessageListener messageListener = (RestMessageListener) getSession().getAttribute("restListener");
-    messageListener.nakReceived(transactionData.getDestinationName(), transactionData.getEventIds());
+    SessionState state = SessionTracker.getSessionStates().getSessionState(getSession().getId());
+    state.getRestMessageListener().nakReceived(transactionData.getDestinationName(), transactionData.getEventIds());
     return new StatusResponse("Successfully aborted messages");
   }
 
@@ -270,7 +273,8 @@ public class MessagingApi extends BaseRestApi {
   @POST
   public ConsumedResponse consumeMessages(@Valid ConsumeRequestDTO consumeRequestDTO) {
     hasAccess(RESOURCE);
-    RestMessageListener messageListener = (RestMessageListener) getSession().getAttribute("restListener");
+    SessionState state = SessionTracker.getSessionStates().getSessionState(getSession().getId());
+    RestMessageListener messageListener = state.getRestMessageListener();
     if (consumeRequestDTO.getDestination() == null || consumeRequestDTO.getDestination().isEmpty()) {
       List<ConsumedMessages> messages = new ArrayList<>();
       for (String destination : messageListener.getKnownDestinations()) {
@@ -303,7 +307,9 @@ public class MessagingApi extends BaseRestApi {
   @Consumes(MediaType.APPLICATION_JSON)
   public SubscriptionDepthResponse getSubscriptionDepth(@Valid ConsumeRequestDTO consumeRequestDTO) {
     hasAccess(RESOURCE);
-    RestMessageListener messageListener = (RestMessageListener) getSession().getAttribute("restListener");
+    SessionState state = SessionTracker.getSessionStates().getSessionState(getSession().getId());
+
+    RestMessageListener messageListener = state.getRestMessageListener();
     if (consumeRequestDTO.getDestination() == null || consumeRequestDTO.getDestination().isEmpty()) {
       Map<String, Integer> depth = messageListener.subscriptionDepth();
       List<SubscriptionDepth> depths = new ArrayList<>();
@@ -321,12 +327,12 @@ public class MessagingApi extends BaseRestApi {
 
   private Session getAuthenticatedSession() throws LoginException, IOException {
     HttpSession httpSession = getSession();
-    Object lookup = httpSession.getAttribute("authenticatedSession");
-    if (lookup == null) {
+    SessionState state = SessionTracker.getSessionStates().getSessionState(getSession().getId());
+    if(state == null) {
       boolean persistentSession = false;
       Object obj = httpSession.getAttribute("persistentSession");
-      if (obj instanceof Boolean) {
-        persistentSession = (Boolean) obj;
+      if (obj instanceof Boolean bool) {
+        persistentSession = bool;
       }
       RestClientConnection restClientConnection = new RestClientConnection(httpSession);
 
@@ -345,12 +351,12 @@ public class MessagingApi extends BaseRestApi {
       SessionContext sessionContext = sessionContextBuilder.build();
       RestMessageListener restMessageListener = new RestMessageListener();
       Session session = SessionManager.getInstance().create(sessionContext, restMessageListener);
-      httpSession.setAttribute("authenticatedSession", session);
-      httpSession.setAttribute("restListener", restMessageListener);
+      SessionState sessionState = new SessionState(session, restMessageListener);
+      SessionTracker.getSessionStates().setSessionState(getSession().getId(), sessionState);
       return session;
     }
-    if (lookup instanceof Session) {
-      return (Session) lookup;
+    if(state.getSession() != null){
+      return state.getSession();
     }
     throw new WebApplicationException("Access denied", Response.Status.FORBIDDEN);
   }
