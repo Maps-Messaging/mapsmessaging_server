@@ -23,34 +23,58 @@ set -e
 
 case "$1" in
   configure)
-# Create necessary directories
-    mkdir -p /etc/maps
-    mkdir -p /opt/maps_data
+    # Ensure service user
+    if ! id -u mapsmessaging >/dev/null 2>&1; then
+      useradd -r -s /usr/sbin/nologin -d /opt/maps mapsmessaging
+    fi
 
-    # Set permissions
+    # Create dirs
+    mkdir -p /etc/maps
+    mkdir -p /opt/maps
+    mkdir -p /opt/maps_data
+    mkdir -p /var/log/maps
+
+    # Permissions
     chown -R mapsmessaging:mapsmessaging /opt/maps
     chown -R mapsmessaging:mapsmessaging /opt/maps_data
-    chmod -R 755 /opt/maps/bin
-
-    if [ ! -d /var/log/maps ]; then
-        mkdir -p /var/log/maps
-        chown mapsmessaging:mapsmessaging /var/log/maps
-    fi
+    [ -d /opt/maps/bin ] && chmod -R 755 /opt/maps/bin
+    chown mapsmessaging:mapsmessaging /var/log/maps
     if [ ! -f /var/log/maps/maps.log ]; then
-        touch /var/log/maps/maps.log
-        chown mapsmessaging:mapsmessaging /var/log/maps/maps.log
+      touch /var/log/maps/maps.log
+      chown mapsmessaging:mapsmessaging /var/log/maps/maps.log
+      chmod 640 /var/log/maps/maps.log
     fi
 
-   # Copy the environment file
+    # Env + unit
     ln -sf /opt/maps/etc/maps.env /etc/maps/maps.env
-    ln -sf /opt/maps/etc/maps.service   /usr/lib/systemd/system/maps.service
+    ln -sf /opt/maps/etc/maps.service /lib/systemd/system/maps.service
 
-    # Install the message-daemon command
+    # CLI symlinks
     ln -sf /opt/maps/bin/maps /usr/local/bin/maps
     ln -sf /opt/maps/bin/mapsTop.sh /usr/local/bin/mapsTop
+    [ -x /opt/maps/bin/generator.sh ] || chmod +x /opt/maps/bin/generator.sh
 
-    # Enable the service
-    systemctl enable maps.service
+    # Systemd (guard if unavailable)
+    if command -v systemctl >/dev/null 2>&1; then
+      systemctl daemon-reload
+      systemctl enable maps.service || true
+    fi
+
+    # Generate self-signed keystores (idempotent, run as service user)
+    if command -v keytool >/dev/null 2>&1; then
+      umask 027
+      export MAPS_HOME="${MAPS_HOME:-/opt/maps}"
+      if [ ! -r "${MAPS_HOME}/my-keystore.jks" ] || [ ! -r "${MAPS_HOME}/my-truststore.jks" ]; then
+        echo "Generating keystores in ${MAPS_HOME}..."
+        runuser -u mapsmessaging -- bash -lc 'cd "${MAPS_HOME:-/opt/maps}" && ./bin/generator.sh'
+        chown mapsmessaging:mapsmessaging "${MAPS_HOME}/"*.jks || true
+        chmod 640 "${MAPS_HOME}/"*.jks || true
+      else
+        echo "Keystores already present; skipping generation."
+      fi
+    else
+      echo "keytool not found; skipping keystore generation."
+    fi
   ;;
 esac
 

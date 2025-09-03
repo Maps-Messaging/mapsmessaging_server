@@ -122,27 +122,121 @@ NetworkManager:
 
     data:
 
-      - name: "TCP MQTT Interface"
+      - name: "MQTT Interface"
         url: tcp://:::1883/
         protocol: mqtt
         auth: default
 
+      - name: "MQTT SSL Interface"
+        url: "ssl://0.0.0.0:1892/"
+        protocol: mqtt, ws
+        auth: default
 
-      - name: "OrbComm OGWS interface"
-        transformation: "Message-Raw"
-        protocol: satellite
-        auth: anon
-        url: satellite://orbcomm:0/
-        httpRequestTimeoutSec: 30
-        pollInterval: 7
-        sharedSecret: "This is a shared secret to use"
-        maxInflightEventsPerDevice: 2
-        outboundNamespaceRoot: "/orbcomm/{deviceId}"
-        outboundBroadcast: "/sensors1/#"
-        baseUrl: "http://localhost:8081/api/v1.0"
-        maxBufferSize: 4000
-        compressionCutoffSize: 128
+      - name: "NATS Interface"
+        url: "tcp://0.0.0.0:4222/"
+        protocol: nats
+        enableStreams: true
+        auth: default
 
-        remoteAuthConfig:
-          username: "ogws client id"
-          password: "ogws client secret"
+      - name: "Stomp Interface with WebSocket Support"
+        url: "tcp://0.0.0.0:8674/"
+        protocol: stomp,ws
+        auth: default
+
+      - name: "Stomp Interface - Authenticated Stomp over SSL"
+        url: "ssl://0.0.0.0:8695/"
+        protocol: stomp,wss
+        auth: default
+
+      - name: "AMQP Interface"
+        url: "tcp://0.0.0.0:5672/"
+        protocol : amqp
+        auth: default
+
+      - name: "AMQP anon ssl Interface"
+        url: "ssl://0.0.0.0:5692/"
+        protocol: amqp
+        auth: default
+
+      - name: "MQTT-SN Interface"
+        url: udp://0.0.0.0:1884/
+        protocol: mqtt-sn
+        eventsPerTopicDuringSleep: 10
+        maxTopicsInSleep: 10
+        advertiseGateway: true
+        enablePortChanges: true
+        enableAddressChanges: true
+        auth: default
+
+      - name: "DTLS MQTT-SN Interface"
+        url: dtls://0.0.0.0:1886/
+        protocol: mqtt-sn
+        eventsPerTopicDuringSleep: 10
+        maxTopicsInSleep: 10
+        advertiseGateway: true
+        auth: default
+
+      - name: "CoAP Interface"
+        url: udp://0.0.0.0:5683/
+        protocol: coap
+        maxBlockSize: 512
+        idleTimePeriod: 120
+        auth: default
+
+      - name: "DTLS CoAP Interface"
+        url: dtls://0.0.0.0:5684/
+        protocol: coap
+        maxBlockSize: 512
+        ssl_SSLContext: DTLS
+        auth: default
+
+
+#      - name: "Inmarsat Iot nano interface"
+#        protocol: satellite
+#        auth: anon
+#        url: satellite://inmarsat:0/
+#        httpRequestTimeoutSec: 30
+#        pollInterval: 15
+#        sharedSecret: "This is a shared secret to use"
+#        maxInflightEventsPerDevice: 2
+#        outboundNamespaceRoot: "/inmarsat/{deviceId}"
+#        outboundBroadcast: "/inmarsat/broadcast"
+#        baseUrl: "https://api.inmarsat.com/iotMessaging/v1"
+#        remoteAuthConfig:
+#          username: ""
+#          password: ""
+#
+#        mailboxId: ""
+#        mailboxPassword: ""
+#        namespaceRoot: "/{mailboxId}/"
+
+
+
+#      - name: "OrbComm OGWS interface"
+#        protocol: satellite
+#        auth: anon
+#        url: satellite://orbcomm:0/
+#        httpRequestTimeoutSec: 30
+#        pollInterval: 7
+#        sharedSecret: "This is a shared secret to use"
+#        maxInflightEventsPerDevice: 2
+#        outboundNamespaceRoot: "/orbcomm/{deviceId}"
+#        outboundBroadcast: "/orbcomm/broadcast"
+#        baseUrl: "http://localhost:8081/api/v1.0"
+#        maxBufferSize: 4000
+#        compressionCutoffSize: 128
+
+#        remoteAuthConfig:
+#          username: ""
+#          password: ""
+
+
+#      - name: NMEA GPS port
+#        url: serial://ttyUSB0,9600,8,N,1/
+#        port: ttyUSB0
+#        baudRate: 9600
+#        dataBits: 8
+#        stopBits: 1
+#        parity: n
+#        protocol: NMEA
+#        selectorThreadCount: 1
