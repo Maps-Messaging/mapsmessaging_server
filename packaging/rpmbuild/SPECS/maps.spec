@@ -52,7 +52,7 @@ tar -xzf %{SOURCE0} --strip-components=1 -C %{buildroot}/opt/maps
 # Ensure executables
 chmod +x %{buildroot}/opt/maps/bin/start.sh
 chmod +x %{buildroot}/opt/maps/bin/maps
-[ -f %{buildroot}/opt/maps/bin/generator.sh ] && chmod +x %{buildroot}/opt/maps/bin/generator.sh
+[ -f %{buildroot}/opt/maps/bin/generate.sh ] && chmod +x %{buildroot}/opt/maps/bin/generate.sh
 
 # Copy/etc
 cp %{buildroot}/opt/maps/etc/maps.env %{buildroot}/etc/maps/maps.env
@@ -82,13 +82,13 @@ if command -v keytool >/dev/null 2>&1; then
   MAPS_HOME="${MAPS_HOME:-/opt/maps}"
   if [ ! -r "${MAPS_HOME}/my-keystore.jks" ] || [ ! -r "${MAPS_HOME}/my-truststore.jks" ]; then
     umask 027
-    if [ -x "${MAPS_HOME}/bin/generator.sh" ]; then
+    if [ -x "${MAPS_HOME}/bin/generate.sh" ]; then
       echo "Generating keystores in ${MAPS_HOME}..."
-      runuser -u mapsmessaging -- bash -lc 'cd "${MAPS_HOME:-/opt/maps}" && ./bin/generator.sh'
+      runuser -u mapsmessaging -- bash -lc 'cd "${MAPS_HOME:-/opt/maps}" && ./bin/generate.sh'
       chown mapsmessaging:mapsmessaging "${MAPS_HOME}/"*.jks 2>/dev/null || true
       chmod 640 "${MAPS_HOME}/"*.jks 2>/dev/null || true
     else
-      echo "generator.sh not found or not executable; skipping keystore generation."
+      echo "generate.sh not found or not executable; skipping keystore generation."
     fi
   else
     echo "Keystores already present; skipping generation."

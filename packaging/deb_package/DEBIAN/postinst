@@ -52,7 +52,7 @@ case "$1" in
     # CLI symlinks
     ln -sf /opt/maps/bin/maps /usr/local/bin/maps
     ln -sf /opt/maps/bin/mapsTop.sh /usr/local/bin/mapsTop
-    [ -x /opt/maps/bin/generator.sh ] || chmod +x /opt/maps/bin/generator.sh
+    [ -x /opt/maps/bin/generate.sh ] || chmod +x /opt/maps/bin/generate.sh
 
     # Systemd (guard if unavailable)
     if command -v systemctl >/dev/null 2>&1; then
@@ -66,7 +66,7 @@ case "$1" in
       export MAPS_HOME="${MAPS_HOME:-/opt/maps}"
       if [ ! -r "${MAPS_HOME}/my-keystore.jks" ] || [ ! -r "${MAPS_HOME}/my-truststore.jks" ]; then
         echo "Generating keystores in ${MAPS_HOME}..."
-        runuser -u mapsmessaging -- bash -lc 'cd "${MAPS_HOME:-/opt/maps}" && ./bin/generator.sh'
+        runuser -u mapsmessaging -- bash -lc 'cd "${MAPS_HOME:-/opt/maps}" && ./bin/generate.sh'
         chown mapsmessaging:mapsmessaging "${MAPS_HOME}/"*.jks || true
         chmod 640 "${MAPS_HOME}/"*.jks || true
       else
