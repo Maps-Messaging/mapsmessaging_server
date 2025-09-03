@@ -22,6 +22,7 @@ package io.mapsmessaging.engine.session.persistence;
 import io.mapsmessaging.engine.destination.subscription.SubscriptionContext;
 import io.mapsmessaging.utilities.PersistentObject;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.ToString;
 
 import java.io.IOException;
@@ -32,6 +33,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+@EqualsAndHashCode(callSuper = true)
 @Data
 @ToString
 public class SessionDetails extends PersistentObject {

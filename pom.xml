@@ -126,7 +126,7 @@
     <sonar.objc.file.suffixes>-</sonar.objc.file.suffixes>
     <sonar.branch.name>development</sonar.branch.name>
     <branchName>development</branchName>
-    <java.version>17</java.version>
+    <java.version>21</java.version>
 
     <!-- Base -->
     <maps.logging.version>2.1.1-SNAPSHOT</maps.logging.version>
@@ -276,7 +276,6 @@
     <profile>
       <id>snapshot-ml</id>
       <properties>
-        <java.version>21</java.version>
         <!-- Base -->
         <maps.jms_selector.version>ml-2.1.0-SNAPSHOT</maps.jms_selector.version>
       </properties>
@@ -343,7 +342,6 @@
       <id>release</id>
       <properties>
         <branchName>main</branchName>
-        <java.version>17</java.version>
         <!-- Base -->
         <maps.logging.version>2.1.0</maps.logging.version>
         <maps.jms_selector.version>2.0.0</maps.jms_selector.version>
@@ -364,7 +362,6 @@
       <id>release-ml</id>
       <properties>
         <branchName>main</branchName>
-        <java.version>21</java.version>
         <!-- Base -->
         <maps.logging.version>2.1.0</maps.logging.version>
         <maps.jms_selector.version>ml-2.0.0</maps.jms_selector.version>
@@ -504,13 +501,14 @@
         </configuration>
       </plugin>
 
-      <!-- Now build the install gz, zip files with everything in it -->
+      <!-- pom.xml: single assembly execution for dist archives -->
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-assembly-plugin</artifactId>
         <version>3.7.1</version>
         <executions>
           <execution>
+            <id>dist</id>
             <phase>install</phase>
             <goals>
               <goal>single</goal>
@@ -519,43 +517,7 @@
               <descriptors>
                 <descriptor>src/main/assemble/scripts.xml</descriptor>
               </descriptors>
-              <archive>
-                <manifest>
-                  <mainClass>
-                    io.mapsmessaging.MessageDaemon
-                  </mainClass>
-                </manifest>
-              </archive>
-              <descriptorRefs>
-                <descriptorRef>jar-with-dependencies</descriptorRef>
-              </descriptorRefs>
-            </configuration>
-          </execution>
-        </executions>
-      </plugin>
-
-      <!-- Now build a single jar with everything in it -->
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-assembly-plugin</artifactId>
-        <version>3.7.1</version>
-        <executions>
-          <execution>
-            <phase>install</phase>
-            <goals>
-              <goal>single</goal>
-            </goals>
-            <configuration>
-              <archive>
-                <manifest>
-                  <mainClass>
-                    io.mapsmessaging.MessageDaemon
-                  </mainClass>
-                </manifest>
-              </archive>
-              <descriptorRefs>
-                <descriptorRef>jar-with-dependencies</descriptorRef>
-              </descriptorRefs>
+              <finalName>${project.artifactId}-${project.version}</finalName>
             </configuration>
           </execution>
         </executions>
@@ -576,7 +538,7 @@
         </executions>
       </plugin>
 
-      <!-- JavaDoc -->
+      <!-- POM: maven-javadoc-plugin — set output to match your assembly fileSet -->
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-javadoc-plugin</artifactId>
@@ -584,19 +546,18 @@
         <executions>
           <execution>
             <id>attach-javadocs</id>
-            <goals>
-              <goal>jar</goal>
-            </goals>
+            <goals><goal>jar</goal></goals>
           </execution>
         </executions>
         <configuration>
-          <outputDirectory>${project.build.directory}/site/docs</outputDirectory>
+          <outputDirectory>${project.build.directory}/apidocs</outputDirectory>
           <javadocExecutable>${java.home}/bin/javadoc</javadocExecutable>
           <show>public</show>
           <encoding>UTF-8</encoding>
           <charset>UTF-8</charset>
         </configuration>
       </plugin>
+
 
       <!-- Create a directory with all the dependencies in and move it into the lib directory -->
       <plugin>

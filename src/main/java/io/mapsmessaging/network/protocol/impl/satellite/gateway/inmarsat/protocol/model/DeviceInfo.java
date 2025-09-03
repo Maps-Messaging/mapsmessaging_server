@@ -22,8 +22,10 @@ package io.mapsmessaging.network.protocol.impl.satellite.gateway.inmarsat.protoc
 import com.google.gson.annotations.SerializedName;
 import io.mapsmessaging.network.protocol.impl.satellite.gateway.model.RemoteDeviceInfo;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.ToString;
 
+@EqualsAndHashCode(callSuper = true)
 @ToString
 @Data
 public final class DeviceInfo extends RemoteDeviceInfo {
