@@ -32,41 +32,26 @@ RestApi:
   cacheCleanup: 10000
   enableWadlEndPoint: false
 
-
-#    tls:
-#      clientCertificateRequired: false
-#      clientCertificateWanted: false
-        #-----------------------------------
-        # CRL Specific
-        # crlUrl: <URL TO CRL>
-        # crlInterval: <time in seconds to reload CRL>
+  tls:
+    clientCertificateRequired: false
+    clientCertificateWanted: false
       #-----------------------------------
+      # CRL Specific
+      # crlUrl: <URL TO CRL>
+      # crlInterval: <time in seconds to reload CRL>
+    #-----------------------------------
 
-#      keyStore:
-        #alias: server  # Optional
-#        type: JKS # | "PKCS11", "JKS", "PKCS12", "JCEKS", "BKS", "UBER"
-        # providerName: SunJSSE  # Typically not required for standard keystores
-#        managerFactory: SunX509
-        # Standard Key Store parameters
-#        path: my-keystore.jks
-#        passphrase: password
+    keyStore:
+      type: JKS
+      managerFactory: SunX509
+      path: my-keystore.jks
+      passphrase: password
 
-        #-----------------------------------
-        # PKCS11 specific settings
-        # provider: SunPKCS11
-        # config: pkcs11-config.cfg
-        #-----------------------------------
-
-    #  trustStore:
-#        type: JKS # | "PKCS11", "JKS", "PKCS12", "JCEKS", "BKS", "UBER"
-        # providerName: SunJSSE  # Typically not required for standard truststores
-        # Standard Key Store parameters
- #       path: my-truststore.jks
-  #      passphrase: password
-   #     managerFactory: SunX509
-        # PKCS11 specific settings
-        # provider: SunPKCS11
-        # config: pkcs11-config.cfg
+    trustStore:
+      type: JKS
+      path: my-truststore.jks
+      passphrase: password
+      managerFactory: SunX509
 
   static:
     enabled: true

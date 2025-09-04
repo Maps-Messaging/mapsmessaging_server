@@ -202,7 +202,7 @@ public class SubSystemManager {
     addToMap(600, 300, new SessionManager(securityManager, destinationManager, EnvironmentConfig.getInstance().getPathLookups().get("MAPS_DATA"),sessionPipeLines));
     addToMap(700, 150, new NetworkManager(featureManager));
     addToMap(900, 200, new NetworkConnectionManager());
-    if(featureManager.isEnabled("protocols.restApi")) {
+    if(featureManager.isEnabled("management.restApi")) {
       addToMap(1200, 400, new RestApiServerManager());
     }
     if(featureManager.isEnabled("interConnections.pushSupport") ||
