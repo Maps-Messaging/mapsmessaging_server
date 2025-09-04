@@ -54,71 +54,49 @@ NetworkConnectionManager:
               managerFactory: SunX509
 
     data:
-      -
-        name: zeropi04
-        url: tcp://10.140.62.208:1883/
-        protocol: mqtt
-        transformation: "Message-Raw"
-        remote:
-          sessionId: syd01-Pull1
-          username: matthew
-          password: doesntmatter
-        links:
-          -
-            direction: pull
-            local_namespace: "/sensors/"
-            remote_namespace: "/device/#"
-            include_schema: true
+#      - name: adafruit
+#        url: tcp://io.adafruit.com:1883/
+#        protocol: mqtt
+#        remote:
+#          sessionId: adafruitConnection
+#          username: <your name>
+#          password: <your password>
+#        links:
+#          -
+#            direction: push
+#            remote_namespace: <remote path>/InsideTemperature/json
+#            local_namespace: /sensors/airconditioner/temperature
 
-      -
-        name: zeropi05
-        url: tcp://10.140.62.32:1883/
-        protocol: mqtt
-        transformation: "Message-Raw"
-        remote:
-          sessionId: zeropi05-Pull2
-          username: matthew
-          password: doesntmatter
-        links:
-          -
-            direction: pull
-            local_namespace: "/sensors1/"
-            remote_namespace: "/device/#"
-            include_schema: true
-
-      - name: "ST2100 Modem"
-        url: serial://localhost:0/
-        protocol: stogi
-        transformation: "Message-Raw"
-        initialSetup: ""
-        incomingMessagePollInterval: 1  # 1 seconds
-        outgoingMessagePollInterval: 20
-        sharedSecret: "This is a shared secret to use"
-        sendHighPriorityMessages: false
-        modemResponseTimeout: 20000
-        locationPollInterval: 60
-        maxBufferSize: 4000
-        compressionCutoffSize: 128
-
-        modemStatsTopic: "/modem/stats"
-
-        remote:
-          sessionId: <not required>
-          username: <not required>
-          password: <not required>
-
-        links:
-          - direction: push
-            local_namespace: "/sensors/#"
-            remote_namespace: "/satellite/#"
-            include_schema: false
-
-
-
-        serial:
-          port: com12
-          baudRate: 9600
-          dataBits: 8
-          stopBits: 1
-          parity: n
-          flowControl: 0
+#      - name: "ST2100 Modem"
+#        url: serial://localhost:0/
+#        protocol: stogi
+#        transformation: "Message-Raw"
+#        initialSetup: ""
+#        incomingMessagePollInterval: 1  # 1 seconds
+#        outgoingMessagePollInterval: 20
+#        sharedSecret: "This is a shared secret to use"
+#        sendHighPriorityMessages: false
+#        modemResponseTimeout: 20000
+#        locationPollInterval: 60
+#        maxBufferSize: 4000
+#        compressionCutoffSize: 128
+#
+#        modemStatsTopic: "/modem/stats"
+#
+#        remote:
+#          sessionId: <not required>
+#          username: <not required>
+#          password: <not required>
+#
+#        links:
+#          - direction: push
+#            local_namespace: "/sensors/#"
+#            remote_namespace: "/satellite/#"
+#            include_schema: false
+#        serial:
+#          port: com12
+#          baudRate: 9600
+#          dataBits: 8
+#          stopBits: 1
+#          parity: n
+#          flowControl: 0
