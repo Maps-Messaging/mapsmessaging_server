@@ -1,23 +1,29 @@
 /*
- * Copyright [ 2020 - 2024 ] [Matthew Buckton]
  *
- *  Licensed under the Apache License, Version 2.0 (the "License");
- *  you may not use this file except in compliance with the License.
- *  You may obtain a copy of the License at
+ *  Copyright [ 2020 - 2024 ] Matthew Buckton
+ *  Copyright [ 2024 - 2025 ] MapsMessaging B.V.
+ *
+ *  Licensed under the Apache License, Version 2.0 with the Commons Clause
+ *  (the "License"); you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at:
  *
  *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://commonsclause.com/
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
  */
 
 package io.mapsmessaging.engine.system;
 
+import io.mapsmessaging.dto.rest.system.Status;
+import io.mapsmessaging.dto.rest.system.SubSystemStatusDTO;
 import io.mapsmessaging.engine.destination.DestinationManager;
+import io.mapsmessaging.logging.Logger;
+import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.utilities.Agent;
 import io.mapsmessaging.utilities.service.Service;
 import io.mapsmessaging.utilities.service.ServiceManager;
@@ -32,6 +38,8 @@ import java.util.List;
 import java.util.ServiceLoader;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+
+import static io.mapsmessaging.logging.ServerLogMessages.SYSTEM_TOPIC_MESSAGE_ERROR;
 
 public class SystemTopicManager implements Runnable, ServiceManager, Agent {
 
@@ -48,6 +56,7 @@ public class SystemTopicManager implements Runnable, ServiceManager, Agent {
   private final DestinationManager destinationManager;
 
   private Future<?> scheduledFuture;
+  private final Logger logger = LoggerFactory.getLogger(SystemTopicManager.class);
 
   public SystemTopicManager(DestinationManager destinationManager){
     systemTopics = ServiceLoader.load(SystemTopic.class);
@@ -61,8 +70,8 @@ public class SystemTopicManager implements Runnable, ServiceManager, Agent {
       if (systemTopic.hasUpdates()) {
         try {
           systemTopic.sendUpdate();
-        } catch (IOException e) {
-          // We can ignore this, since it would be temp on the connection
+        } catch (Throwable e) {
+          logger.log(SYSTEM_TOPIC_MESSAGE_ERROR, systemTopic.getClass().getSimpleName(), e);
         }
       }
     }
@@ -125,9 +134,25 @@ public class SystemTopicManager implements Runnable, ServiceManager, Agent {
   @Override
   public Iterator<Service> getServices() {
     List<Service> service = new ArrayList<>();
-    for (SystemTopic systemTopic : systemTopics) {
-      service.add(systemTopic);
-    }
+    systemTopics.forEach(service::add);
     return service.listIterator();
   }
+
+  @Override
+  public SubSystemStatusDTO getStatus() {
+    SubSystemStatusDTO status = new SubSystemStatusDTO();
+    status.setName(getName());
+    status.setComment("");
+    if (enableStatistics) {
+      status.setStatus(Status.OK);
+      if(enableAdvancedStats){
+        status.setComment("Advanced statistics being recorded");
+      }
+    }
+    else{
+      status.setStatus(Status.DISABLED);
+    }
+    return status;
+  }
+
 }

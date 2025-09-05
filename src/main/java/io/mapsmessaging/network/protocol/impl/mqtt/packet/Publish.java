@@ -1,18 +1,20 @@
 /*
- * Copyright [ 2020 - 2024 ] [Matthew Buckton]
  *
- *  Licensed under the Apache License, Version 2.0 (the "License");
- *  you may not use this file except in compliance with the License.
- *  You may obtain a copy of the License at
+ *  Copyright [ 2020 - 2024 ] Matthew Buckton
+ *  Copyright [ 2024 - 2025 ] MapsMessaging B.V.
+ *
+ *  Licensed under the Apache License, Version 2.0 with the Commons Clause
+ *  (the "License"); you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at:
  *
  *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://commonsclause.com/
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
  */
 
 package io.mapsmessaging.network.protocol.impl.mqtt.packet;
@@ -47,7 +49,7 @@ public class Publish extends MQTTPacket implements ServerPublishPacket {
 
   public Publish(boolean retain, byte[] payload, QualityOfService qos, int packetId, String destination) {
     super(PUBLISH);
-    this.payload = payload;
+    this.payload = payload != null ? payload : new byte[0];
     this.retain = retain;
     isDup = false;
     this.qos = qos;
@@ -84,7 +86,7 @@ public class Publish extends MQTTPacket implements ServerPublishPacket {
     if (qos.equals(QualityOfService.MQTT_SN_REGISTERED)) {
       throw new MalformedException("QoS must be 0, 1 or 2 only Reference: [MQTT-3.3.1-4]");
     }
-    if (destinationName.length() == 0) {
+    if (destinationName.isEmpty()) {
       throw new MalformedException("Topic name must be present Reference: [MQTT-3.3.2-1]");
     }
     if (!topicAllowed(destinationName) ||
@@ -140,7 +142,7 @@ public class Publish extends MQTTPacket implements ServerPublishPacket {
     if (qos.isSendPacketId()) {
       remaining += 2;
     }
-    remaining += payload.length;
+    remaining += (payload != null ? payload.length : 0);
 
     writeVariableInt(packet, remaining);
     writeUTF8(packet, destinationName);

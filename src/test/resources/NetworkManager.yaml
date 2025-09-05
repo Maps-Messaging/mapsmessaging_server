@@ -1,3 +1,20 @@
+#
+# Copyright [ 2020 - 2024 ] [Matthew Buckton]
+# Copyright [ 2024 - 2025 ] [Maps Messaging B.V.]
+#
+#   Licensed under the Apache License, Version 2.0 (the "License");
+#   you may not use this file except in compliance with the License.
+#   You may obtain a copy of the License at
+#
+#       http://www.apache.org/licenses/LICENSE-2.0
+#
+#   Unless required by applicable law or agreed to in writing, software
+#   distributed under the License is distributed on an "AS IS" BASIS,
+#   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#   See the License for the specific language governing permissions and
+#   limitations under the License.
+#
+
 ---
 NetworkManager:
   -
@@ -11,7 +28,7 @@ NetworkManager:
       timeout: 60000
       backlog: 100
 
-      readDelayOnFragmentation: 100
+      readDelayOnFragmentation: 10
       enableReadDelayOnFragmentation: true
 
       # ---------------------------------------------------------------------------------------------------------
@@ -53,59 +70,50 @@ NetworkManager:
       security:
         tls:
           clientCertificateRequired: false
-
+          context: TLSv1.3
           keyStore:
-            #alias: server  # Optional
-            type: JKS # | "PKCS11", "JKS", "PKCS12", "JCEKS", "BKS", "UBER"
-            # providerName: SunJSSE  # Typically not required for standard keystores
+            type: JKS
             managerFactory: SunX509
-            # Standard Key Store parameters
             path: my-keystore.jks
             passphrase: password
-            # PKCS11 specific settings
-            # provider: SunPKCS11
-            # config: pkcs11-config.cfg
 
           trustStore:
-            type: JKS # | "PKCS11", "JKS", "PKCS12", "JCEKS", "BKS", "UBER"
-            # providerName: SunJSSE  # Typically not required for standard truststores
-            # Standard Key Store parameters
+            type: JKS
             path: my-truststore.jks
             passphrase: password
             managerFactory: SunX509
-            # PKCS11 specific settings
-            # provider: SunPKCS11
-            # config: pkcs11-config.cfg
 
         dtls:
           clientCertificateRequired: false
 
           keyStore:
-            #alias: server  # Optional
-            type: JKS # | "PKCS11", "JKS", "PKCS12", "JCEKS", "BKS", "UBER"
-            # providerName: SunJSSE  # Typically not required for standard keystores
+            type: JKS
             managerFactory: SunX509
-            # Standard Key Store parameters
             path: my-keystore.jks
             passphrase: password
 
-            # PKCS11 specific settings
-            # provider: SunPKCS11
-            # config: pkcs11-config.cfg
-
           trustStore:
-            type: JKS # | "PKCS11", "JKS", "PKCS12", "JCEKS", "BKS", "UBER"
-            # providerName: SunJSSE  # Typically not required for standard truststores
-            # Standard Key Store parameters
+            type: JKS
             path: my-truststore.jks
             passphrase: password
             managerFactory: SunX509
-            # PKCS11 specific settings
-            # provider: SunPKCS11
-            # configPath: pkcs11-config.cfg
-
 
     data:
+
+      - name: "NATS TCP Test anon Interface for raw buffer writes"
+        url: "tcp://0.0.0.0:4222/"
+        protocol: nats
+        enableStreams: true
+        auth: anon
+
+
+      - name: "NATS TCP Test small keep alive"
+        url: "tcp://0.0.0.0:5222/"
+        protocol: nats
+        enableStreams: true
+        keepAlive: 50
+        auth: anon
+
 
       - name: "MQTT TCP Test anon Interface for raw buffer writes"
         url: "tcp://0.0.0.0:1888/"
@@ -262,14 +270,14 @@ NetworkManager:
         ssl_SSLContext: DTLS
 
       -
-        url: tcp://0.0.0.0:2001/
+        url: tcp://0.0.0.0:22001/
         name: "generic testing interface"
         protocol: echo
         auth: anon
 
       -
         url: ssl://0.0.0.0:8444/
-        protocol: all, echo
+        protocol: echo
         auth: anon
 
       -
@@ -289,5 +297,29 @@ NetworkManager:
       -
         name: NMEA GPS port
         url: serial://ttyUSB0,9600,8,N,1/
+        port: ttyUSB0
+        baudRate: 9600
+        dataBits: 8
+        stopBits: 1
+        parity: n
         protocol: NMEA
         selectorThreadCount: 1
+
+      - name: "Inmarsat Iot nano interface"
+        protocol: satellite
+        auth: anon
+        url: satellite://inmarsat:0/
+        httpRequestTimeoutSec: 30
+        pollInterval: 15
+        sharedSecret: "This is a shared secret to use"
+        maxInflightEventsPerDevice: 2
+        outboundNamespaceRoot: "/inmarsat/{deviceId}"
+        outboundBroadcast: "/inmarsat/broadcast"
+        baseUrl: "http://localhost:8085/v1"
+        remoteAuthConfig:
+          username: "this is not real"
+          password: "this is just a junk password since we are in local mock test"
+
+        mailboxId: "again not valid, not real"
+        mailboxPassword: "whatever"
+        namespaceRoot: "/{mailboxId}/"

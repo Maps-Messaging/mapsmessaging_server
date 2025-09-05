@@ -1,18 +1,20 @@
 /*
- * Copyright [ 2020 - 2023 ] [Matthew Buckton]
  *
- *  Licensed under the Apache License, Version 2.0 (the "License");
- *  you may not use this file except in compliance with the License.
- *  You may obtain a copy of the License at
+ *  Copyright [ 2020 - 2024 ] Matthew Buckton
+ *  Copyright [ 2024 - 2025 ] MapsMessaging B.V.
+ *
+ *  Licensed under the Apache License, Version 2.0 with the Commons Clause
+ *  (the "License"); you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at:
  *
  *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://commonsclause.com/
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
  */
 
 package io.mapsmessaging.network.protocol.impl.coap;
@@ -21,6 +23,9 @@ import io.mapsmessaging.api.MessageEvent;
 import io.mapsmessaging.api.Session;
 import io.mapsmessaging.api.SessionManager;
 import io.mapsmessaging.api.message.TypedData;
+import io.mapsmessaging.config.protocol.impl.CoapConfig;
+import io.mapsmessaging.dto.rest.protocol.ProtocolInformationDTO;
+import io.mapsmessaging.dto.rest.protocol.impl.CoapProtocolInformation;
 import io.mapsmessaging.engine.schema.SchemaManager;
 import io.mapsmessaging.engine.session.SessionContext;
 import io.mapsmessaging.logging.Logger;
@@ -28,7 +33,7 @@ import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.network.ProtocolClientConnection;
 import io.mapsmessaging.network.io.EndPoint;
 import io.mapsmessaging.network.io.Packet;
-import io.mapsmessaging.network.protocol.ProtocolImpl;
+import io.mapsmessaging.network.protocol.Protocol;
 import io.mapsmessaging.network.protocol.impl.coap.blockwise.BlockReceiveMonitor;
 import io.mapsmessaging.network.protocol.impl.coap.listeners.Listener;
 import io.mapsmessaging.network.protocol.impl.coap.listeners.ListenerFactory;
@@ -42,6 +47,7 @@ import lombok.Getter;
 import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
 
+import javax.security.auth.Subject;
 import javax.security.auth.login.LoginException;
 import java.io.IOException;
 import java.net.SocketAddress;
@@ -54,7 +60,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import static io.mapsmessaging.logging.ServerLogMessages.*;
 import static io.mapsmessaging.network.protocol.impl.coap.packet.options.Constants.BLOCK2;
 
-public class CoapProtocol extends ProtocolImpl {
+public class CoapProtocol extends Protocol {
 
   @Getter
   private final Logger logger;
@@ -89,7 +95,7 @@ public class CoapProtocol extends ProtocolImpl {
 
   protected CoapProtocol(@NonNull @NotNull EndPoint endPoint, @NonNull @NotNull CoapInterfaceManager coapInterfaceManager, @NonNull @NotNull SocketAddress socketAddress)
       throws LoginException, IOException {
-    super(endPoint, socketAddress);
+    super(endPoint, socketAddress, endPoint.getConfig().getProtocolConfig("coap"));
     lastAccess = new AtomicLong(System.currentTimeMillis());
     logger = LoggerFactory.getLogger(CoapProtocol.class);
     isClosed = false;
@@ -103,8 +109,9 @@ public class CoapProtocol extends ProtocolImpl {
     this.socketAddress = socketAddress;
     this.coapInterfaceManager = coapInterfaceManager;
     mtu = coapInterfaceManager.getMtu();
-    maxBlockSize = (int) endPoint.getConfig().getProperties().getLongProperty("maxBlockSize", 128);
-    int idle = (int) (endPoint.getConfig().getProperties().getLongProperty("idleTimePeriod", 120));
+    CoapConfig coapConfig = (CoapConfig) protocolConfig;
+    maxBlockSize = coapConfig.getMaxBlockSize();
+    int idle = coapConfig.getIdleTime();
     keepAlive = idle * 1000L;
     blockReceiveMonitor = new BlockReceiveMonitor();
 
@@ -119,6 +126,11 @@ public class CoapProtocol extends ProtocolImpl {
   }
 
   @Override
+  public Subject getSubject() {
+    return session.getSecurityContext().getSubject();
+  }
+
+  @Override
   public void close() throws IOException {
     if (isClosed) {
       return;
@@ -129,6 +141,7 @@ public class CoapProtocol extends ProtocolImpl {
     SessionManager.getInstance().close(session, true);
     outboundPipeline.close();
     coapInterfaceManager.close(socketAddress);
+    endPoint.getServer().handleCloseEndPoint(endPoint);
     if (mbean != null) {
       mbean.close();
     }
@@ -144,6 +157,8 @@ public class CoapProtocol extends ProtocolImpl {
     if (context == null) {
       return;
     }
+    endPoint.updateWriteBytes(messageEvent.getMessage().getOpaqueData().length);
+    endPoint.getEndPointStatus().incrementSentMessages();
     boolean doBlockwise = false;
     int blockSize = 0;
     int blockNumber = 0;
@@ -234,6 +249,8 @@ public class CoapProtocol extends ProtocolImpl {
   @Override
   public boolean processPacket(@NonNull @NotNull Packet packet) {
     try {
+      endPoint.updateReadBytes(packet.available());
+      endPoint.getEndPointStatus().incrementReceivedMessages();
       BasePacket basePacket = packetFactory.parseFrame(packet);
       lastAccess.set(System.currentTimeMillis());
       if (basePacket != null) {
@@ -335,5 +352,13 @@ public class CoapProtocol extends ProtocolImpl {
       transactionState.ack(ackPacket.getMessageId(), token);
     }
     outboundPipeline.ack(ackPacket);
+  }
+
+  @Override
+  public ProtocolInformationDTO getInformation() {
+    CoapProtocolInformation information = new CoapProtocolInformation();
+    updateInformation(information);
+    information.setSessionInfo(session.getSessionInformation());
+    return information;
   }
 }

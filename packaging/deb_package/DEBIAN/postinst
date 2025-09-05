@@ -1,0 +1,83 @@
+#!/bin/bash
+
+#
+#
+#  Copyright [ 2020 - 2024 ] Matthew Buckton
+#  Copyright [ 2024 - 2025 ] MapsMessaging B.V.
+#
+#  Licensed under the Apache License, Version 2.0 with the Commons Clause
+#  (the "License"); you may not use this file except in compliance with the License.
+#  You may obtain a copy of the License at:
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#      https://commonsclause.com/
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+#
+
+set -e
+
+case "$1" in
+  configure)
+    # Ensure service user
+    if ! id -u mapsmessaging >/dev/null 2>&1; then
+      useradd -r -s /usr/sbin/nologin -d /opt/maps mapsmessaging
+    fi
+
+    # Create dirs
+    mkdir -p /etc/maps
+    mkdir -p /opt/maps
+    mkdir -p /opt/maps_data
+    mkdir -p /var/log/maps
+
+    # Permissions
+    chown -R mapsmessaging:mapsmessaging /opt/maps
+    chown -R mapsmessaging:mapsmessaging /opt/maps_data
+    [ -d /opt/maps/bin ] && chmod -R 755 /opt/maps/bin
+    chown mapsmessaging:mapsmessaging /var/log/maps
+    if [ ! -f /var/log/maps/maps.log ]; then
+      touch /var/log/maps/maps.log
+      chown mapsmessaging:mapsmessaging /var/log/maps/maps.log
+      chmod 640 /var/log/maps/maps.log
+    fi
+
+    # Env + unit
+    ln -sf /opt/maps/etc/maps.env /etc/maps/maps.env
+    ln -sf /opt/maps/etc/maps.service /lib/systemd/system/maps.service
+
+    # CLI symlinks
+    ln -sf /opt/maps/bin/maps /usr/local/bin/maps
+    ln -sf /opt/maps/bin/mapsTop.sh /usr/local/bin/mapsTop
+    [ -x /opt/maps/bin/generate.sh ] || chmod +x /opt/maps/bin/generate.sh
+
+    # Systemd (guard if unavailable)
+    if command -v systemctl >/dev/null 2>&1; then
+      systemctl daemon-reload
+      systemctl enable maps.service || true
+    fi
+
+    # Generate self-signed keystores (idempotent, run as service user)
+    if command -v keytool >/dev/null 2>&1; then
+      umask 027
+      export MAPS_HOME="${MAPS_HOME:-/opt/maps}"
+      if [ ! -r "${MAPS_HOME}/my-keystore.jks" ] || [ ! -r "${MAPS_HOME}/my-truststore.jks" ]; then
+        echo "Generating keystores in ${MAPS_HOME}..."
+        runuser -u mapsmessaging -- bash -lc 'cd "${MAPS_HOME:-/opt/maps}" && ./bin/generate.sh'
+        chown mapsmessaging:mapsmessaging "${MAPS_HOME}/"*.jks || true
+        chmod 640 "${MAPS_HOME}/"*.jks || true
+      else
+        echo "Keystores already present; skipping generation."
+      fi
+    else
+      echo "keytool not found; skipping keystore generation."
+    fi
+  ;;
+esac
+
+#DEBHELPER#
+
+exit 0

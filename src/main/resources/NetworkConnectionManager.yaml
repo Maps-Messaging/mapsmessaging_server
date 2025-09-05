@@ -1,5 +1,6 @@
 #
-#   Copyright [ 2020 - 2023 ] [Matthew Buckton]
+# Copyright [ 2020 - 2024 ] [Matthew Buckton]
+# Copyright [ 2024 - 2025 ] [Maps Messaging B.V.]
 #
 #   Licensed under the Apache License, Version 2.0 (the "License");
 #   you may not use this file except in compliance with the License.
@@ -17,13 +18,13 @@
 ---
 NetworkConnectionManager:
     global:
-        selector_pool_size: 1
+        selector_pool_size: 5
 
         # ---------------------------------------------------------------------------------------------------------
         # tcp layer configuration
         # ---------------------------------------------------------------------------------------------------------
-        receiveBufferSize: 128000
-        sendBufferSize: 128000
+        receiveBufferSize: 1M
+        sendBufferSize: 1M
         timeout: 60000
 
         readDelayOnFragmentation: 100
@@ -36,53 +37,66 @@ NetworkConnectionManager:
         serverWriteBufferSize: 1M
         selectorThreadCount  : 5
 
-        # ---------------------------------------------------------------------------------------------------------
-        # SSL Configuration
-        # ---------------------------------------------------------------------------------------------------------
-        ssl_keyStoreFile: my-keystore.jks
-        ssl_keyStorePassphrase: password
-        ssl_trustStoreFile: my-keystore.jks
-        ssl_trustStorePassphrase: password
-        ssl_keyManagerFactory: SunX509
-        ssl_trustManagerFactory: SunX509
-        ssl_SSLContext: TLS
-        ssl_keyStore: JKS
-        ssl_trustStore: JKS
+        security:
+          tls:
+            context: TLSv1.3
+            clientCertificateRequired: false
+            clientCertificateWanted: false
+            keyStore:
+              type: JKS
+              managerFactory: SunX509
+              path: D:\certs\certs\loragateway01\loragateway01.jks
+              passphrase: changeit
+            trustStore:
+              type: JKS
+              path: D:\certs\ca\truststore.jks
+              passphrase: changeit
+              managerFactory: SunX509
 
     data:
-        - # ---------------------------------------------------------------------------------------------------------
-            #  Interface definitions for local loragateway
-            # ---------------------------------------------------------------------------------------------------------
-            name: loragateway
-            url: tcp://loragateway01:1883/
-            protocol: mqtt
-            username: user1
-            password: password
-            sessionId: thisisAsession0
-            links:
-                -
-                    direction: pull
-                    remote_namespace: /#
-                    local_namespace: /
-
-#        name: Generic name for the connection
-#        url: tcp|ssl|ws|wss://<hostname>:<port>/ This is optional, if left out it is assumed a local connection
-#        protocol: mqtt(4|5)|stomp|amqp           Only required it URL is supplied
-#        username: username to use
-#        password: password to use
-#        sessionId: Unique session identifier to use
-#
-#        The remote key is optional, and if present then username, password and sessionId are expected
-#        This enables remote connections to use different auth than local.
-#        If not present will use the standard supplied values
+#      - name: adafruit
+#        url: tcp://io.adafruit.com:1883/
+#        protocol: mqtt
 #        remote:
-#              username: remote username to be used
-#              password: remote password
-#              sessionId: remote session if
-#
-#
-#       links:
+#          sessionId: adafruitConnection
+#          username: <your name>
+#          password: <your password>
+#        links:
 #          -
-#            direction: pull|push
-#            remote_namespace: Destination name on the remote server
-#            local_namespace: Destination name on the local server
+#            direction: push
+#            remote_namespace: <remote path>/InsideTemperature/json
+#            local_namespace: /sensors/airconditioner/temperature
+
+#      - name: "ST2100 Modem"
+#        url: serial://localhost:0/
+#        protocol: stogi
+#        transformation: "Message-Raw"
+#        initialSetup: ""
+#        incomingMessagePollInterval: 1  # 1 seconds
+#        outgoingMessagePollInterval: 20
+#        sharedSecret: "This is a shared secret to use"
+#        sendHighPriorityMessages: false
+#        modemResponseTimeout: 20000
+#        locationPollInterval: 60
+#        maxBufferSize: 4000
+#        compressionCutoffSize: 128
+#
+#        modemStatsTopic: "/modem/stats"
+#
+#        remote:
+#          sessionId: <not required>
+#          username: <not required>
+#          password: <not required>
+#
+#        links:
+#          - direction: push
+#            local_namespace: "/sensors/#"
+#            remote_namespace: "/satellite/#"
+#            include_schema: false
+#        serial:
+#          port: com12
+#          baudRate: 9600
+#          dataBits: 8
+#          stopBits: 1
+#          parity: n
+#          flowControl: 0

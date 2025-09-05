@@ -1,18 +1,20 @@
 /*
- * Copyright [ 2020 - 2023 ] [Matthew Buckton]
  *
- *  Licensed under the Apache License, Version 2.0 (the "License");
- *  you may not use this file except in compliance with the License.
- *  You may obtain a copy of the License at
+ *  Copyright [ 2020 - 2024 ] Matthew Buckton
+ *  Copyright [ 2024 - 2025 ] MapsMessaging B.V.
+ *
+ *  Licensed under the Apache License, Version 2.0 with the Commons Clause
+ *  (the "License"); you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at:
  *
  *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://commonsclause.com/
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
  */
 
 package io.mapsmessaging.engine.destination.delayed;
@@ -25,6 +27,7 @@ import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * Base class that manages messages that have been written to a destination but are not yet active and can not be delivered as part of a subscription but are awaiting a trigger,
@@ -37,20 +40,20 @@ public class MessageManager {
   protected final List<Long> bucketList;
   private final BitSetFactory factory;
 
-  protected long counter;
+  protected AtomicLong counter;
 
 
   public MessageManager(BitSetFactory factory) {
     this.factory = factory;
     treeList = new LinkedHashMap<>();
     bucketList = new ArrayList<>();
-    counter = 0;
+    counter = new AtomicLong(0);
     List<Long> ids = factory.getUniqueIds();
     for (Long bucketId : ids) {
       bucketList.add(bucketId);
       DelayedBucket bucket = new DelayedBucket(bucketId);
       treeList.put(bucketId, bucket);
-      counter += bucket.size();
+      counter.getAndAdd(bucket.size());
     }
   }
 
@@ -58,13 +61,13 @@ public class MessageManager {
     factory.close();
     treeList.clear();
     bucketList.clear();
-    counter = 0;
+    counter.set(0);
   }
 
   public void delete() throws IOException {
     treeList.clear();
     bucketList.clear();
-    counter = 0;
+    counter.set(0);
     factory.delete();
   }
 
@@ -89,7 +92,7 @@ public class MessageManager {
       return new DelayedBucket(bucketId);
     });
     if (bucket.register(message.getIdentifier())) {
-      counter++;
+      counter.incrementAndGet();
     }
   }
 
@@ -104,7 +107,7 @@ public class MessageManager {
     if (!bucketList.isEmpty()) {
       DelayedBucket bucket = treeList.get(bucketId);
       if (bucket != null && bucket.delayedMessageState.remove(messageIdentifier)) {
-        counter--;
+        counter.decrementAndGet();
         return true;
       }
     }
@@ -120,7 +123,7 @@ public class MessageManager {
   public synchronized boolean delete(long bucketId) {
     DelayedBucket delayedBucket = treeList.remove(bucketId);
     if (delayedBucket != null) {
-      counter -= delayedBucket.delayedMessageState.size();
+      counter.getAndAdd(-delayedBucket.delayedMessageState.size());
       return true;
     }
     return false;
@@ -155,12 +158,12 @@ public class MessageManager {
    *
    * @return number of messages currently stored
    */
-  public synchronized long size() {
-    return counter;
+  public long size() {
+    return counter.get();
   }
 
-  public synchronized boolean isEmpty() {
-    return counter == 0;
+  public boolean isEmpty() {
+    return counter.get() == 0;
   }
 
   /**

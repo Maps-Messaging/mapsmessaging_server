@@ -1,18 +1,20 @@
 /*
- * Copyright [ 2020 - 2024 ] [Matthew Buckton]
  *
- *  Licensed under the Apache License, Version 2.0 (the "License");
- *  you may not use this file except in compliance with the License.
- *  You may obtain a copy of the License at
+ *  Copyright [ 2020 - 2024 ] Matthew Buckton
+ *  Copyright [ 2024 - 2025 ] MapsMessaging B.V.
+ *
+ *  Licensed under the Apache License, Version 2.0 with the Commons Clause
+ *  (the "License"); you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at:
  *
  *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://commonsclause.com/
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
  */
 
 package io.mapsmessaging.utilities.stats;
@@ -22,6 +24,7 @@ import io.mapsmessaging.utilities.stats.processors.AverageDataProcessor;
 import io.mapsmessaging.utilities.stats.processors.DataProcessor;
 import io.mapsmessaging.utilities.stats.processors.DifferenceDataProcessor;
 import io.mapsmessaging.utilities.threads.SimpleTaskScheduler;
+import lombok.Getter;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -44,6 +47,7 @@ public class MovingAverageFactory {
     return instance;
   }
 
+  @Getter
   public enum ACCUMULATOR {
     ADD("Adder", "Adds all incoming data, useful for tick type stats"),
     DIFF("Difference", "Subtracts the current from the last entry and adds it, useful for dealing with totals"),
@@ -57,13 +61,6 @@ public class MovingAverageFactory {
       this.description = description;
     }
 
-    public String getName() {
-      return name;
-    }
-
-    public String getDescription() {
-      return description;
-    }
   }
 
   protected final List<LinkedMovingAverages> movingAverages;
@@ -114,8 +111,8 @@ public class MovingAverageFactory {
         processor = new AverageDataProcessor();
         break;
 
-      default:
       case ADD:
+      default:
         processor = new AdderDataProcessor();
         break;
     }

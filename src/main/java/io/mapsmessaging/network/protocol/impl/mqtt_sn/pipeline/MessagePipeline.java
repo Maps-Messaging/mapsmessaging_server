@@ -1,25 +1,27 @@
 /*
- * Copyright [ 2020 - 2024 ] [Matthew Buckton]
  *
- *  Licensed under the Apache License, Version 2.0 (the "License");
- *  you may not use this file except in compliance with the License.
- *  You may obtain a copy of the License at
+ *  Copyright [ 2020 - 2024 ] Matthew Buckton
+ *  Copyright [ 2024 - 2025 ] MapsMessaging B.V.
+ *
+ *  Licensed under the Apache License, Version 2.0 with the Commons Clause
+ *  (the "License"); you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at:
  *
  *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://commonsclause.com/
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
  */
 
 package io.mapsmessaging.network.protocol.impl.mqtt_sn.pipeline;
 
 import io.mapsmessaging.api.MessageEvent;
 import io.mapsmessaging.api.features.QualityOfService;
-import io.mapsmessaging.configuration.ConfigurationProperties;
+import io.mapsmessaging.config.protocol.impl.MqttSnConfig;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.network.protocol.impl.mqtt.PacketIdManager;
@@ -66,11 +68,12 @@ public class MessagePipeline {
     paused = new AtomicBoolean(false);
     empty = new AtomicInteger(0);
     logger = LoggerFactory.getLogger(MessagePipeline.class);
-    ConfigurationProperties props = protocol.getEndPoint().getConfig().getProperties();
-    maxInFlightEvents = props.getIntProperty("maxInFlightEvents", 1);
-    dropQoS0 = props.getBooleanProperty("dropQoS0Events", false);
+    MqttSnConfig config = (MqttSnConfig) protocol.getEndPoint().getConfig().getProtocolConfig("mqtt-sn");
 
-    long t = TimeUnit.SECONDS.toMillis(props.getIntProperty("eventQueueTimeout", 0));
+    maxInFlightEvents = config.getMaxInFlightEvents();
+    dropQoS0 = config.isDropQoS0();
+
+    long t = TimeUnit.SECONDS.toMillis(config.getEventQueueTimeout());
     eventTimeout = t == 0 ? (Long.MAX_VALUE >> 2) : t;
     logger.log(MQTT_SN_PIPELINE_CREATED, protocol.getName(), dropQoS0, maxInFlightEvents, eventTimeout);
   }

@@ -1,24 +1,27 @@
 /*
- * Copyright [ 2020 - 2023 ] [Matthew Buckton]
  *
- *  Licensed under the Apache License, Version 2.0 (the "License");
- *  you may not use this file except in compliance with the License.
- *  You may obtain a copy of the License at
+ *  Copyright [ 2020 - 2024 ] Matthew Buckton
+ *  Copyright [ 2024 - 2025 ] MapsMessaging B.V.
+ *
+ *  Licensed under the Apache License, Version 2.0 with the Commons Clause
+ *  (the "License"); you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at:
  *
  *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://commonsclause.com/
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
  */
 
 package io.mapsmessaging.api;
 
 import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.engine.TransactionManager;
+import lombok.Getter;
 import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
 
@@ -47,7 +50,13 @@ public class Transaction {
 
   /**
    * The time that this transaction will expire, in milliseconds
+   * -- GETTER --
+   *  The current time that this transaction will last before it is automatically closed
+   *
+   * @return time in milliseconds that this transaction will expire
+
    */
+  @Getter
   private final long expiryTime;
 
   /**
@@ -148,16 +157,17 @@ public class Transaction {
     if (!list.containsKey(destination.getFullyQualifiedNamespace())) {
       list.put(destination.getFullyQualifiedNamespace(), destination);
     }
-    destination.destinationImpl.storeTransactionalMessage(internalId, message);
-  }
 
-  /**
-   * The current time that this transaction will last before it is automatically closed
-   *
-   * @return time in milliseconds that this transaction will expire
-   */
-  public long getExpiryTime() {
-    return expiryTime;
+    if(destination instanceof Schema){
+      destination.storeMessage(message);
+    }
+    else {
+      if(destination.destinationImpl.getSchema() != null) {
+        // Ensure the schema is applied to the incoming message
+        message.setSchemaId(destination.destinationImpl.getSchema().getUniqueId());
+      }
+      destination.destinationImpl.storeTransactionalMessage(internalId, message);
+    }
   }
 
   /**

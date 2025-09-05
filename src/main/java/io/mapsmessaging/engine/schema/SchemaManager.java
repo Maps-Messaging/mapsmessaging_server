@@ -1,22 +1,26 @@
 /*
- * Copyright [ 2020 - 2024 ] [Matthew Buckton]
  *
- *  Licensed under the Apache License, Version 2.0 (the "License");
- *  you may not use this file except in compliance with the License.
- *  You may obtain a copy of the License at
+ *  Copyright [ 2020 - 2024 ] Matthew Buckton
+ *  Copyright [ 2024 - 2025 ] MapsMessaging B.V.
+ *
+ *  Licensed under the Apache License, Version 2.0 with the Commons Clause
+ *  (the "License"); you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at:
  *
  *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://commonsclause.com/
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
  */
 
 package io.mapsmessaging.engine.schema;
 
+import io.mapsmessaging.dto.rest.system.Status;
+import io.mapsmessaging.dto.rest.system.SubSystemStatusDTO;
 import io.mapsmessaging.schemas.config.SchemaConfig;
 import io.mapsmessaging.schemas.config.impl.JsonSchemaConfig;
 import io.mapsmessaging.schemas.config.impl.NativeSchemaConfig;
@@ -66,6 +70,15 @@ public class SchemaManager implements SchemaRepository, Agent {
     } catch (Exception e) {
       // Unable to load the formatter
     }
+
+    if(repository.getSchemaByContext(path) != null){
+      List<SchemaConfig> schemas = repository.getSchemaByContext(path);
+      for(SchemaConfig schema : schemas){
+        if(schema.getUniqueId().equals(schemaConfig.getUniqueId())){
+          return schema;
+        }
+      }
+    }
     updateCount++;
     return repository.addSchema(path, schemaConfig);
   }
@@ -85,6 +98,12 @@ public class SchemaManager implements SchemaRepository, Agent {
   @Override
   public synchronized SchemaConfig getSchema(String uniqueId) {
     return repository.getSchema(uniqueId);
+
+  }
+
+  public synchronized SchemaConfig locateSchema(String destinationName) {
+    SchemaConfig config = SchemaLocationHelper.locateSchema(repository.getAll(), destinationName);
+    return config != null ? config : getSchema(SchemaManager.DEFAULT_RAW_UUID);
   }
 
   @Override
@@ -151,6 +170,7 @@ public class SchemaManager implements SchemaRepository, Agent {
   public void start() {
     SchemaConfig rawConfig = new RawSchemaConfig();
     rawConfig.setUniqueId(DEFAULT_RAW_UUID);
+    rawConfig.setTitle("Raw byte[]");
     rawConfig.setResourceType("unknown");
     rawConfig.setInterfaceDescription("raw");
     addSchema("", rawConfig);
@@ -158,21 +178,27 @@ public class SchemaManager implements SchemaRepository, Agent {
     NativeSchemaConfig nativeSchemaConfig = new NativeSchemaConfig();
     nativeSchemaConfig.setUniqueId(DEFAULT_NUMERIC_STRING_SCHEMA);
     nativeSchemaConfig.setType(TYPE.NUMERIC_STRING);
+    nativeSchemaConfig.setVersion(1);
+    nativeSchemaConfig.setTitle("Numeric String");
     nativeSchemaConfig.setInterfaceDescription("numeric");
     nativeSchemaConfig.setResourceType(MONITOR);
     addSchema("$SYS", nativeSchemaConfig);
 
     nativeSchemaConfig = new NativeSchemaConfig();
+    nativeSchemaConfig.setVersion(1);
     nativeSchemaConfig.setUniqueId(DEFAULT_STRING_SCHEMA);
+    nativeSchemaConfig.setTitle("String");
     nativeSchemaConfig.setType(TYPE.STRING);
     nativeSchemaConfig.setInterfaceDescription("string");
     nativeSchemaConfig.setResourceType(MONITOR);
     addSchema("$SYS", nativeSchemaConfig);
 
     JsonSchemaConfig jsonSchemaConfig = new JsonSchemaConfig();
+    nativeSchemaConfig.setVersion(1);
     jsonSchemaConfig.setUniqueId(DEFAULT_JSON_SCHEMA);
     jsonSchemaConfig.setInterfaceDescription("json");
     jsonSchemaConfig.setResourceType(MONITOR);
+    jsonSchemaConfig.setTitle("Generic JSON");
     addSchema("$SYS", jsonSchemaConfig);
 
     // This ensures the factory is loaded
@@ -182,6 +208,14 @@ public class SchemaManager implements SchemaRepository, Agent {
   private SchemaManager() {
     repository = new SimpleSchemaRepository();
     loadedFormatter = new LinkedHashMap<>();
+  }
+  @Override
+  public SubSystemStatusDTO getStatus() {
+    SubSystemStatusDTO status = new SubSystemStatusDTO();
+    status.setName(getName());
+    status.setComment("Registered Schemas: " + repository.getMappedSchemas().size());
+    status.setStatus(Status.OK);
+    return status;
   }
 
 }

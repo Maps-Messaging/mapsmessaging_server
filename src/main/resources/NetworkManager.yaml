@@ -1,5 +1,6 @@
 #
-#   Copyright [ 2020 - 2023 ] [Matthew Buckton]
+# Copyright [ 2020 - 2024 ] [Matthew Buckton]
+# Copyright [ 2024 - 2025 ] [Maps Messaging B.V.]
 #
 #   Licensed under the Apache License, Version 2.0 (the "License");
 #   you may not use this file except in compliance with the License.
@@ -17,6 +18,68 @@
 ---
 NetworkManager:
     global:
+
+      # ---------------------------------------------------------------------------------------------------------
+      # tcp layer configuration
+      # ---------------------------------------------------------------------------------------------------------
+      receiveBufferSize: 128000
+      sendBufferSize: 128000
+      timeout: 60000
+      backlog: 100
+      soLingerDelaySec: 10
+      readDelayOnFragmentation: 100
+      fragmentationLimit: 5
+      enableReadDelayOnFragmentation: true
+
+      # ---------------------------------------------------------------------------------------------------------
+      # Generic protocol configuration
+      # ---------------------------------------------------------------------------------------------------------
+      serverReadBufferSize: 100K
+      serverWriteBufferSize: 100K
+      selectorThreadCount: 2
+
+      # ---------------------------------------------------------------------------------------------------------
+      # MQTT Protocol configuration
+      # ---------------------------------------------------------------------------------------------------------
+      maximumSessionExpiry: 86400
+      maximumBufferSize: 10M
+      serverReceiveMaximum: 10
+      clientReceiveMaximum: 65535
+      clientMaximumTopicAlias: 32767
+      serverMaximumTopicAlias: 0
+      strictClientId: false
+
+      # ---------------------------------------------------------------------------------------------------------
+      # MQTT 5.0 specific
+      # ---------------------------------------------------------------------------------------------------------
+      minServerKeepAlive: 0
+      maxServerKeepAlive: 60
+
+      # ---------------------------------------------------------------------------------------------------------
+      # LoRa Gateway specific
+      # ---------------------------------------------------------------------------------------------------------
+      # Maximum Packets per second limit to ensure the radio isn't flooded
+      LoRaMaxTransmissionRate: 20
+
+      # ---------------------------------------------------------------------------------------------------------
+      # MQTT-SN specific configuration
+      # ---------------------------------------------------------------------------------------------------------
+      maxInFlightEvents: 1
+      dropQoS0Events: true
+      eventQueueTimeout: 0
+      advertiseGateway: false
+      enablePortChanges: true
+      enableAddressChanges: true
+      packetReuseTimeout: 1000
+
+      # ---------------------------------------------------------------------------------------------------------
+      # Global configuration
+      # ---------------------------------------------------------------------------------------------------------
+      discoverable: true             # If the server registers a mdns entry for the adapter
+      preferIPv6Addresses: true      # If the server should prefer IPv6 addresses over IPv4 addresses
+      scanNetworkChanges: true      # If true, the server will scan for new interfaces or disconnected interfaces
+      scanInterval: 60000            # Time in milliseconds to scan for network changes
+
         # ---------------------------------------------------------------------------------------------------------
         # Global configuration for SSL
         # ---------------------------------------------------------------------------------------------------------
@@ -31,202 +94,149 @@ NetworkManager:
             #-----------------------------------
 
           keyStore:
-            #alias: server  # Optional
-            type: JKS # | "PKCS11", "JKS", "PKCS12", "JCEKS", "BKS", "UBER"
-            # providerName: SunJSSE  # Typically not required for standard keystores
+            type: JKS
             managerFactory: SunX509
-            # Standard Key Store parameters
             path: my-keystore.jks
             passphrase: password
 
-            #-----------------------------------
-            # PKCS11 specific settings
-            # provider: SunPKCS11
-            # config: pkcs11-config.cfg
-            #-----------------------------------
-
           trustStore:
-            type: JKS # | "PKCS11", "JKS", "PKCS12", "JCEKS", "BKS", "UBER"
-            # providerName: SunJSSE  # Typically not required for standard truststores
-            # Standard Key Store parameters
+            type: JKS
             path: my-truststore.jks
             passphrase: password
             managerFactory: SunX509
-            # PKCS11 specific settings
-            # provider: SunPKCS11
-            # config: pkcs11-config.cfg
 
         dtls:
           clientCertificateRequired: false
 
           keyStore:
-            #alias: server  # Optional
-            type: JKS # | "PKCS11", "JKS", "PKCS12", "JCEKS", "BKS", "UBER"
-            # providerName: SunJSSE  # Typically not required for standard keystores
+            type: JKS
             managerFactory: SunX509
-            # Standard Key Store parameters
             path: my-keystore.jks
             passphrase: password
 
-            # PKCS11 specific settings
-            # provider: SunPKCS11
-            # config: pkcs11-config.cfg
-
           trustStore:
-            type: JKS # | "PKCS11", "JKS", "PKCS12", "JCEKS", "BKS", "UBER"
-            # providerName: SunJSSE  # Typically not required for standard truststores
-            # Standard Key Store parameters
+            type: JKS
             path: my-truststore.jks
             passphrase: password
             managerFactory: SunX509
-            # PKCS11 specific settings
-            # provider: SunPKCS11
-            # configPath: pkcs11-config.cfg
-
-      # ---------------------------------------------------------------------------------------------------------
-      # tcp layer configuration
-      # ---------------------------------------------------------------------------------------------------------
-        receiveBufferSize: 128000
-        sendBufferSize: 128000
-        timeout: 60000
-        backlog: 100
-        soLingerDelaySec: 10
-        readDelayOnFragmentation: 100
-        enableReadDelayOnFragmentation: true
-
-      # ---------------------------------------------------------------------------------------------------------
-      # Generic protocol configuration
-      # ---------------------------------------------------------------------------------------------------------
-        serverReadBufferSize :  10K
-        serverWriteBufferSize : 10K
-        selectorThreadCount: 2
-
-      # ---------------------------------------------------------------------------------------------------------
-      # MQTT Protocol configuration
-      # ---------------------------------------------------------------------------------------------------------
-        maximumSessionExpiry : 86400
-        maximumBufferSize: 10M
-        serverReceiveMaximum : 10
-        clientReceiveMaximum : 65535
-        clientMaximumTopicAlias : 32767
-        serverMaximumTopicAlias : 0
-        strictClientId : false
-
-      # ---------------------------------------------------------------------------------------------------------
-      # MQTT 5.0 specific
-      # ---------------------------------------------------------------------------------------------------------
-        minServerKeepAlive : 0
-        maxServerKeepAlive : 60
-
-      # ---------------------------------------------------------------------------------------------------------
-      # LoRa Gateway specific
-      # ---------------------------------------------------------------------------------------------------------
-      # Maximum Packets per second limit to ensure the radio isn't flooded
-        LoRaMaxTransmissionRate : 20
-
-      # ---------------------------------------------------------------------------------------------------------
-      # MQTT-SN specific configuration
-      # ---------------------------------------------------------------------------------------------------------
-        maxInFlightEvents : 1
-        dropQoS0Events: true
-        eventQueueTimeout: 0
-        advertiseGateway: false
-        enablePortChanges: true
-        enableAddressChanges: true
-        packetReuseTimeout: 1000
-
-      # ---------------------------------------------------------------------------------------------------------
-      # Global configuration
-      # ---------------------------------------------------------------------------------------------------------
-        discoverable: true             # If the server registers a mdns entry for the adapter
-        preferIPv6Addresses: true      # If the server should prefer IPv6 addresses over IPv4 addresses
-        scanNetworkChanges: false      # If true, the server will scan for new interfaces or disconnected interfaces
-        scanInterval: 60000            # Time in milliseconds to scan for network changes
 
     data:
-
-      - name: "AMQP Interface"
-        url: tcp://:::5672/
-        protocol: amqp
-        sasl:
-          mechanism: "SCRAM-SHA-512"
-          identityProvider: system
-        map: "/{{virtualHostName}}"
-        virtualHost:
-          - name: "hosta"
-            auth: anon
-            map: "/amqp/hosta/"
-
-          - name: "hostb"
-            auth: usernamePassword
-
-
-
-      - name: "AMQPs Interface"
-        url: ssl://:::5671/
-        protocol: amqp
-        auth: default
-        map: "/{{virtualHostName}}"
-        virtualHost:
-          - name: "hosta"
-            auth: anon
-            map: "/amqp/hosta/"
-
-          - name: "hostb"
-            auth: usernamePassword
 
       - name: "MQTT Interface"
         url: tcp://:::1883/
         protocol: mqtt
-        auth: usernamePassword
+        auth: default
 
-      - name: "Stomp Interface"
-        url: tcp://:::61613/
-        protocol: stomp
-        auth: usernamePassword
+      - name: "MQTT SSL Interface"
+        url: "ssl://0.0.0.0:1892/"
+        protocol: mqtt, ws
+        auth: default
 
-      - name: "Stomp Interface"
-        url: ssl://:::61614/
-        protocol: stomp
-        auth: usernamePassword
+      - name: "NATS Interface"
+        url: "tcp://0.0.0.0:4222/"
+        protocol: nats
+        enableStreams: true
+        auth: default
 
-      - url: udp://:::1883/
-        name: "MQTT-SN Interface"
+      - name: "Stomp Interface with WebSocket Support"
+        url: "tcp://0.0.0.0:8674/"
+        protocol: stomp,ws
+        auth: default
+
+      - name: "Stomp Interface - Authenticated Stomp over SSL"
+        url: "ssl://0.0.0.0:8695/"
+        protocol: stomp,wss
+        auth: default
+
+      - name: "AMQP Interface"
+        url: "tcp://0.0.0.0:5672/"
+        protocol : amqp
+        auth: default
+
+      - name: "AMQP anon ssl Interface"
+        url: "ssl://0.0.0.0:5692/"
+        protocol: amqp
+        auth: default
+
+      - name: "MQTT-SN Interface"
+        url: udp://0.0.0.0:1884/
         protocol: mqtt-sn
-        eventsPerTopicDuringSleep: 5
+        eventsPerTopicDuringSleep: 10
         maxTopicsInSleep: 10
         advertiseGateway: true
-        sasl:
-          realmName: "mapsMessaging"
-          mechanism: SCRAM-SHA-512
-          identityProvider: system
+        enablePortChanges: true
+        enableAddressChanges: true
+        auth: default
 
-      - url: dtls://:::8883/
-        name: "MQTT-SN Interface"
+      - name: "DTLS MQTT-SN Interface"
+        url: dtls://0.0.0.0:1886/
         protocol: mqtt-sn
-        eventsPerTopicDuringSleep: 5
+        eventsPerTopicDuringSleep: 10
         maxTopicsInSleep: 10
         advertiseGateway: true
-        sasl:
-          realmName: "mapsMessaging"
-          mechanism: SCRAM-SHA-512
-          identityProvider: system
+        auth: default
 
-      - url: udp://:::5683/
-        name: "CoAP Interface"
+      - name: "CoAP Interface"
+        url: udp://0.0.0.0:5683/
         protocol: coap
         maxBlockSize: 512
         idleTimePeriod: 120
+        auth: default
 
-      - url: dtls://:::5684/
-        name: "CoAP Interface"
+      - name: "DTLS CoAP Interface"
+        url: dtls://0.0.0.0:5684/
         protocol: coap
         maxBlockSize: 512
-        idleTimePeriod: 120
+        ssl_SSLContext: DTLS
+        auth: default
 
-      - url: udp://:::1700/
-        name: "SemTech Gateway"
-        protocol: semtech
-        inbound: /semtech/{gatewayId}/in
-        status: /semtech/{gatewayId}/status
-        outbound: /semtech/{gatewayId}/out
+
+#      - name: "Inmarsat Iot nano interface"
+#        protocol: satellite
+#        auth: anon
+#        url: satellite://inmarsat:0/
+#        httpRequestTimeoutSec: 30
+#        pollInterval: 15
+#        sharedSecret: "This is a shared secret to use"
+#        maxInflightEventsPerDevice: 2
+#        outboundNamespaceRoot: "/inmarsat/{deviceId}"
+#        outboundBroadcast: "/inmarsat/broadcast"
+#        baseUrl: "https://api.inmarsat.com/iotMessaging/v1"
+#        remoteAuthConfig:
+#          username: ""
+#          password: ""
+#
+#        mailboxId: ""
+#        mailboxPassword: ""
+#        namespaceRoot: "/{mailboxId}/"
+
+
+
+#      - name: "OrbComm OGWS interface"
+#        protocol: satellite
+#        auth: anon
+#        url: satellite://orbcomm:0/
+#        httpRequestTimeoutSec: 30
+#        pollInterval: 7
+#        sharedSecret: "This is a shared secret to use"
+#        maxInflightEventsPerDevice: 2
+#        outboundNamespaceRoot: "/orbcomm/{deviceId}"
+#        outboundBroadcast: "/orbcomm/broadcast"
+#        baseUrl: "http://localhost:8081/api/v1.0"
+#        maxBufferSize: 4000
+#        compressionCutoffSize: 128
+
+#        remoteAuthConfig:
+#          username: ""
+#          password: ""
+
+
+#      - name: NMEA GPS port
+#        url: serial://ttyUSB0,9600,8,N,1/
+#        port: ttyUSB0
+#        baudRate: 9600
+#        dataBits: 8
+#        stopBits: 1
+#        parity: n
+#        protocol: NMEA
+#        selectorThreadCount: 1

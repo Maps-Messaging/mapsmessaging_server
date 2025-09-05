@@ -1,43 +1,51 @@
 /*
- * Copyright [ 2020 - 2024 ] [Matthew Buckton]
  *
- *  Licensed under the Apache License, Version 2.0 (the "License");
- *  you may not use this file except in compliance with the License.
- *  You may obtain a copy of the License at
+ *  Copyright [ 2020 - 2024 ] Matthew Buckton
+ *  Copyright [ 2024 - 2025 ] MapsMessaging B.V.
+ *
+ *  Licensed under the Apache License, Version 2.0 with the Commons Clause
+ *  (the "License"); you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at:
  *
  *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://commonsclause.com/
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
  */
 
 package io.mapsmessaging.network.protocol.impl.amqp;
 
 import io.mapsmessaging.api.MessageEvent;
 import io.mapsmessaging.api.Session;
+import io.mapsmessaging.dto.rest.protocol.ProtocolInformationDTO;
+import io.mapsmessaging.dto.rest.protocol.impl.AmqpProtocolInformation;
+import io.mapsmessaging.dto.rest.session.SessionInformationDTO;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.logging.ThreadContext;
 import io.mapsmessaging.network.io.EndPoint;
 import io.mapsmessaging.network.io.Packet;
 import io.mapsmessaging.network.io.impl.SelectorTask;
-import io.mapsmessaging.network.protocol.ProtocolImpl;
+import io.mapsmessaging.network.protocol.Protocol;
 import io.mapsmessaging.network.protocol.impl.amqp.proton.ProtonEngine;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.Setter;
 import org.jetbrains.annotations.NotNull;
 
+import javax.security.auth.Subject;
 import java.io.IOException;
 import java.nio.channels.SelectionKey;
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
-public class AMQPProtocol extends ProtocolImpl {
+public class AMQPProtocol extends Protocol {
 
   private final Logger logger;
   private final SelectorTask selectorTask;
@@ -57,10 +65,10 @@ public class AMQPProtocol extends ProtocolImpl {
   private String sessionId;
 
   public AMQPProtocol(EndPoint endPoint, Packet packet) throws IOException {
-    super(endPoint);
+    super(endPoint,  endPoint.getConfig().getProtocolConfig("amqp"));
     version = "1.0";
     logger = LoggerFactory.getLogger("AMQP Protocol on " + endPoint.getName());
-    selectorTask = new SelectorTask(this, endPoint.getConfig().getProperties());
+    selectorTask = new SelectorTask(this, endPoint.getConfig().getEndPointConfig());
     ThreadContext.put("endpoint", endPoint.getName());
     ThreadContext.put("protocol", getName());
     ThreadContext.put("version", getVersion());
@@ -71,6 +79,15 @@ public class AMQPProtocol extends ProtocolImpl {
     protonEngine = new ProtonEngine(this);
     protonEngine.processPacket(packet);
     registerRead();
+  }
+
+  @Override
+  public Subject getSubject() {
+    if(!activeSessions.isEmpty()){
+      SessionManager sessionManager = activeSessions.values().iterator().next();
+      return sessionManager.getSession().getSecurityContext().getSubject();
+    }
+    return null;
   }
 
   @Override
@@ -163,5 +180,18 @@ public class AMQPProtocol extends ProtocolImpl {
       return (protonEngine.getSaslManager().isDone());
     }
     return false;
+  }
+
+
+  @Override
+  public ProtocolInformationDTO getInformation() {
+    AmqpProtocolInformation information = new AmqpProtocolInformation();
+    updateInformation(information);
+    List<SessionInformationDTO> sessions = new ArrayList<>();
+    for(SessionManager sessionManager : activeSessions.values()) {
+      sessions.add(sessionManager.getSession().getSessionInformation());
+    }
+    information.setSessionInfoList(sessions);
+    return information;
   }
 }

@@ -1,18 +1,20 @@
 /*
- * Copyright [ 2020 - 2023 ] [Matthew Buckton]
  *
- *  Licensed under the Apache License, Version 2.0 (the "License");
- *  you may not use this file except in compliance with the License.
- *  You may obtain a copy of the License at
+ *  Copyright [ 2020 - 2024 ] Matthew Buckton
+ *  Copyright [ 2024 - 2025 ] MapsMessaging B.V.
+ *
+ *  Licensed under the Apache License, Version 2.0 with the Commons Clause
+ *  (the "License"); you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at:
  *
  *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://commonsclause.com/
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
  */
 
 package io.mapsmessaging.api;
@@ -20,6 +22,7 @@ package io.mapsmessaging.api;
 import io.mapsmessaging.api.features.DestinationMode;
 import io.mapsmessaging.api.features.DestinationType;
 import io.mapsmessaging.api.message.Message;
+import io.mapsmessaging.dto.rest.session.SessionInformationDTO;
 import io.mapsmessaging.engine.closure.TemporaryDestinationDeletionTask;
 import io.mapsmessaging.engine.destination.DestinationImpl;
 import io.mapsmessaging.engine.destination.TemporaryDestination;
@@ -28,6 +31,10 @@ import io.mapsmessaging.engine.session.MessageCallback;
 import io.mapsmessaging.engine.session.SessionImpl;
 import io.mapsmessaging.engine.session.security.SecurityContext;
 import io.mapsmessaging.engine.session.will.WillDetails;
+import lombok.NonNull;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
 import java.io.IOException;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -35,14 +42,10 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
-import lombok.NonNull;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 public class Session {
 
-  private static final String SCHEMA_NAME = "$schema/";
-  private static final String METRICS_NAME = "$metrics/";
+  private static final String SCHEMA = "$schema";
 
   private final SessionImpl sessionImpl;
   private final MessageListener listener;
@@ -93,16 +96,16 @@ public class Session {
 
   public CompletableFuture<Destination> findDestination(@NonNull @NotNull String destinationName, @NonNull @NotNull DestinationType type) {
     CompletableFuture<Destination> future = new CompletableFuture<>();
+    if(destinationName.toLowerCase().startsWith(SCHEMA)){
+      destinationName = SCHEMA + destinationName.substring(SCHEMA.length());
+    }
     Destination result = destinations.get(destinationName);
     if (result == null) {
       String tmp = destinationName;
       DestinationType tmpMeta = type;
-      if (tmp.startsWith(SCHEMA_NAME)) {
-        tmp = tmp.substring(SCHEMA_NAME.length());
+      if (tmp.startsWith(DestinationMode.SCHEMA.getNamespace())) {
+        tmp = tmp.substring(DestinationMode.SCHEMA.getNamespace().length());
         tmpMeta = DestinationType.SCHEMA;
-      } else if (tmp.startsWith(METRICS_NAME)) {
-        tmp = tmp.substring(METRICS_NAME.length());
-        tmpMeta = DestinationType.METRICS;
       }
       String name = tmp;
       DestinationType meta = tmpMeta;
@@ -158,8 +161,12 @@ public class Session {
   }
 
   public CompletableFuture<Void> deleteDestination(Destination destination) {
+    return deleteDestinationImpl(destination.destinationImpl);
+  }
+
+  public CompletableFuture<Void> deleteDestinationImpl(DestinationImpl destination) {
     CompletableFuture<Void> result = new CompletableFuture<>();
-    CompletableFuture<DestinationImpl> future = sessionImpl.deleteDestination(destination.destinationImpl);
+    CompletableFuture<DestinationImpl> future = sessionImpl.deleteDestination(destination);
     future.thenApply(deleted -> {
       if (deleted != null) {
         destinations.remove(deleted.getFullyQualifiedNamespace());
@@ -259,12 +266,17 @@ public class Session {
       }
       String normalisedName = sessionImpl.absoluteToNormalised(destination);
       if (subscription.getContext().getDestinationMode().equals(DestinationMode.SCHEMA)) {
-        normalisedName = SCHEMA_NAME + normalisedName;
+        normalisedName = subscription.getContext().getDestinationMode().getNamespace() + normalisedName;
+        normalisedName = normalisedName.replace("//", "/");
       }
       MessageEvent event = new MessageEvent(normalisedName, subscription, message, completionTask);
       listener.sendMessage(event);
     }
   }
   //</editor-fold>
+
+  public SessionInformationDTO getSessionInformation() {
+    return sessionImpl.getSessionInformation();
+  }
 
 }

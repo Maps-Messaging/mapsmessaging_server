@@ -1,31 +1,35 @@
 /*
- * Copyright [ 2020 - 2024 ] [Matthew Buckton]
  *
- *  Licensed under the Apache License, Version 2.0 (the "License");
- *  you may not use this file except in compliance with the License.
- *  You may obtain a copy of the License at
+ *  Copyright [ 2020 - 2024 ] Matthew Buckton
+ *  Copyright [ 2024 - 2025 ] MapsMessaging B.V.
+ *
+ *  Licensed under the Apache License, Version 2.0 with the Commons Clause
+ *  (the "License"); you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at:
  *
  *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://commonsclause.com/
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
  */
 
 package io.mapsmessaging.network.protocol.impl.mqtt5.listeners;
 
 import io.mapsmessaging.api.*;
+import io.mapsmessaging.api.features.DestinationMode;
 import io.mapsmessaging.api.features.DestinationType;
 import io.mapsmessaging.api.features.Priority;
 import io.mapsmessaging.api.features.QualityOfService;
 import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.api.message.TypedData;
+import io.mapsmessaging.engine.destination.MessageOverrides;
 import io.mapsmessaging.logging.ServerLogMessages;
 import io.mapsmessaging.network.io.EndPoint;
-import io.mapsmessaging.network.protocol.ProtocolImpl;
+import io.mapsmessaging.network.protocol.Protocol;
 import io.mapsmessaging.network.protocol.ProtocolMessageTransformation;
 import io.mapsmessaging.network.protocol.impl.mqtt.packet.MQTTPacket;
 import io.mapsmessaging.network.protocol.impl.mqtt.packet.MalformedException;
@@ -46,11 +50,12 @@ import java.util.concurrent.TimeUnit;
 public class PublishListener5 extends PacketListener5 {
 
   public static Message createMessage(String sessionId, Collection<MessageProperty> properties, Priority priority, boolean isRetain, byte[] payload, QualityOfService qos,
-      ProtocolMessageTransformation transformation) {
+      ProtocolMessageTransformation transformation, Protocol protocol)  {
     HashMap<String, String> meta = new LinkedHashMap<>();
     meta.put("protocol", "MQTT");
     meta.put("version", "5");
     meta.put("sessionId", sessionId);
+    meta.put("time_ms", "" + System.currentTimeMillis());
 
     MessageBuilder mb = new MessageBuilder();
     mb.setPriority(priority)
@@ -96,14 +101,15 @@ public class PublishListener5 extends PacketListener5 {
           break; // Nothing to do, it might be that the properties are inside a different packet
       }
     }
-    return mb.setDataMap(dataHashMap).build();
+    mb.setDataMap(dataHashMap).build();
+    return  MessageOverrides.createMessageBuilder(protocol.getProtocolConfig().getMessageDefaults(), mb).build();
   }
 
   // unfortunately MQTT publishing has a large number of permutations and exceeds the base limit
   @SneakyThrows
   @java.lang.SuppressWarnings("squid:S3776")
   @Override
-  public MQTTPacket5 handlePacket(MQTTPacket5 mqttPacket, Session session, EndPoint endPoint, ProtocolImpl protocol) throws MalformedException {
+  public MQTTPacket5 handlePacket(MQTTPacket5 mqttPacket, Session session, EndPoint endPoint, Protocol protocol) throws MalformedException {
     Publish5 publish = (Publish5) mqttPacket;
     PublishMonitorPacket5 response = null;
     if (publish.getQos().equals(QualityOfService.AT_LEAST_ONCE)) {
@@ -128,10 +134,10 @@ public class PublishListener5 extends PacketListener5 {
       outstanding.add(id);
     }
 
-    if (!publish.getDestinationName().startsWith("$") || publish.getDestinationName().toLowerCase().startsWith("$schema")) {
+    if (!publish.getDestinationName().startsWith("$") || publish.getDestinationName().toLowerCase().startsWith(DestinationMode.SCHEMA.getNamespace())) {
       TopicAliasMapping topicAliasMapping = ((MQTT5Protocol) protocol).getClientTopicAliasMapping();
       String destinationName = publish.getDestinationName();
-      if (destinationName == null || destinationName.isEmpty()) {
+      if (destinationName.isEmpty()) {
         for (MessageProperty property : publish.getProperties().values()) {
           if (property.getId() == MessagePropertyFactory.TOPIC_ALIAS) {
             TopicAlias topicAlias = (TopicAlias) property;
@@ -191,7 +197,8 @@ public class PublishListener5 extends PacketListener5 {
                   publish.isRetain(),
                   publish.getPayload(),
                   publish.getQos(),
-                  protocol.getTransformation());
+                  protocol.getTransformation(),
+                  protocol);
           sent = processMessage(message, publish, session, response, destination);
         }
 

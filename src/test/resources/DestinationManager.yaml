@@ -1,30 +1,154 @@
-
 ---
 DestinationManager:
-   data:
-      -
-         name: root
-         directory: ./target/dataDirectory/destination
-         namespace: /
-         type: File # could be either File or Memory
-         sync: disable # Enable or Disable
-         itemCount: 20000 # Number of messages to be stored inside a partition
-         maxPartitionSize: 536870912  # 1/2 GB
-         expiredEventPoll: 1 # Time in seconds to scan for expired events
-         cache:
-            type: WeakReference # could be WeakReference or JCS for the apache cache implementation
-            writeThrough: enable # Could be either enable or disable
+  data:
+    - name: root
+      directory: ./target/dataDirectory/destination
+      namespace: /
+      type: File
+      sync: disable
+      itemCount: 20000
+      maxPartitionSize: 536870912  # 1/2 GB
+      expiredEventPoll: 1
+      cache:
+        type: WeakReference
+        writeThrough: enable
 
-      -
-         name: mqtt-sn
-         directory: ./target/dataMqttSn
-         namespace: /mqttsn/
-         type: File # Specifying Memory for MQTT-SN to test for slow disk I/O on performance of MQTT-SN
-         itemCount: 200 # Number of messages to be stored inside a partition
-         maxPartitionSize: 536870912  # 1/2 GB
-         expiredEventPoll: 10 # Time in seconds to scan for expired events
-         cache:
-            type: WeakReference # could be WeakReference or JCS for the apache cache implementation
-            writeThrough: enable # Could be either enable or disable
+    - name: mqtt-sn
+      directory: ./target/dataMqttSn
+      namespace: /mqttsn/
+      type: Memory
+      expiredEventPoll: 10
 
+    # MessageOverride tests - File backed
+    - name: file-retain
+      directory: ./target/testOverrides/file/retain
+      namespace: /messageOverrides/file/retain
+      type: File
+      messageOverrides:
+        retain: false
 
+    - name: file-qos
+      directory: ./target/testOverrides/file/qos
+      namespace: /messageOverrides/file/qos
+      type: File
+      messageOverrides:
+        qos: AT_MOST_ONCE
+
+    - name: file-expiry
+      directory: ./target/testOverrides/file/expiry
+      namespace: /messageOverrides/file/expiry
+      type: File
+      messageOverrides:
+        expiry: 5000
+
+    - name: file-meta
+      directory: ./target/testOverrides/file/meta
+      namespace: /messageOverrides/file/meta
+      type: File
+      messageOverrides:
+        meta:
+          mkey: mval
+
+    - name: file-datamap
+      directory: ./target/testOverrides/file/datamap
+      namespace: /messageOverrides/file/datamap
+      type: File
+      messageOverrides:
+        dataMap:
+          dkey: dval
+
+    - name: file-all
+      directory: ./target/testOverrides/file/all
+      namespace: /messageOverrides/file/all
+      type: File
+      messageOverrides:
+        expiry: 10000
+        qos: EXACTLY_ONCE
+        responseTopic: /override/response
+        contentType: application/xml
+        schemaId: test-schema
+        retain: true
+        meta:
+          mkey: mval
+        dataMap:
+          dkey: dval
+
+    # MessageOverride tests - Memory backed
+    - name: memory-retain
+      directory: ./target/testOverrides/memory/retain
+      namespace: /messageOverrides/memory/retain
+      type: Memory
+      messageOverrides:
+        retain: false
+
+    - name: memory-qos
+      directory: ./target/testOverrides/memory/qos
+      namespace: /messageOverrides/memory/qos
+      type: Memory
+      messageOverrides:
+        qos: AT_MOST_ONCE
+
+    - name: memory-expiry
+      directory: ./target/testOverrides/memory/expiry
+      namespace: /messageOverrides/memory/expiry
+      type: Memory
+      messageOverrides:
+        expiry: 5000
+
+    - name: memory-meta
+      directory: ./target/testOverrides/memory/meta
+      namespace: /messageOverrides/memory/meta
+      type: Memory
+      messageOverrides:
+        meta:
+          mkey: mval
+
+    - name: memory-datamap
+      directory: ./target/testOverrides/memory/datamap
+      namespace: /messageOverrides/memory/datamap
+      type: Memory
+      messageOverrides:
+        dataMap:
+          dkey: dval
+
+    - name: memory-all
+      directory: ./target/testOverrides/memory/all
+      namespace: /messageOverrides/memory/all
+      type: Memory
+      messageOverrides:
+        expiry: 10000
+        qos: EXACTLY_ONCE
+        responseTopic: /override/response
+        contentType: application/xml
+        schemaId: test-schema
+        retain: true
+        meta:
+          mkey: mval
+        dataMap:
+          dkey: dval
+
+    - name: file-all-inverted
+      directory: ./target/testOverrides/file/all-inverted
+      namespace: /messageOverrides/file/all-inverted
+      type: File
+      messageOverrides:
+        expiry: 2000                                 # Lower than original (10000)
+        qos: AT_LEAST_ONCE             # Lower QoS than EXACTLY_ONCE
+        responseTopic: /not/override/response       # Different topic
+        contentType: text/plain                     # Different MIME type
+        schemaId: other-schema                      # Different schema
+        priority: ONE_BELOW_NORMAL                  # Lower than NORMAL
+        retain: false                               # Was true
+
+    - name: memory-all-inverted
+      directory: ./target/testOverrides/memory/all-inverted
+      namespace: /messageOverrides/memory/all-inverted
+      type: File
+      messageOverrides:
+        expiry: 2000                                 # Lower than original (10000)
+        qos: AT_LEAST_ONCE             # Lower QoS than EXACTLY_ONCE
+        responseTopic: /not/override/response       # Different topic
+        contentType: text/plain                     # Different MIME type
+        schemaId: other-schema                      # Different schema
+        priority: ONE_BELOW_NORMAL                  # Lower than NORMAL
+        retain: false                               # Was true

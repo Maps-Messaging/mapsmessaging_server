@@ -1,23 +1,24 @@
 /*
- * Copyright [ 2020 - 2024 ] [Matthew Buckton]
  *
- *  Licensed under the Apache License, Version 2.0 (the "License");
- *  you may not use this file except in compliance with the License.
- *  You may obtain a copy of the License at
+ *  Copyright [ 2020 - 2024 ] Matthew Buckton
+ *  Copyright [ 2024 - 2025 ] MapsMessaging B.V.
+ *
+ *  Licensed under the Apache License, Version 2.0 with the Commons Clause
+ *  (the "License"); you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at:
  *
  *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://commonsclause.com/
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
  */
 
 package io.mapsmessaging.network.protocol.impl.mqtt5;
 
-import io.mapsmessaging.MessageDaemon;
 import io.mapsmessaging.api.MessageEvent;
 import io.mapsmessaging.api.Session;
 import io.mapsmessaging.api.SessionManager;
@@ -25,7 +26,10 @@ import io.mapsmessaging.api.SubscribedEventManager;
 import io.mapsmessaging.api.features.QualityOfService;
 import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.api.message.TypedData;
-import io.mapsmessaging.configuration.ConfigurationProperties;
+import io.mapsmessaging.config.protocol.impl.MqttV5Config;
+import io.mapsmessaging.dto.rest.config.auth.SaslConfigDTO;
+import io.mapsmessaging.dto.rest.protocol.ProtocolInformationDTO;
+import io.mapsmessaging.dto.rest.protocol.impl.MqttV5ProtocolInformation;
 import io.mapsmessaging.engine.destination.subscription.SubscriptionContext;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
@@ -36,7 +40,7 @@ import io.mapsmessaging.network.io.Packet;
 import io.mapsmessaging.network.io.ServerPacket;
 import io.mapsmessaging.network.io.impl.SelectorTask;
 import io.mapsmessaging.network.protocol.EndOfBufferException;
-import io.mapsmessaging.network.protocol.ProtocolImpl;
+import io.mapsmessaging.network.protocol.Protocol;
 import io.mapsmessaging.network.protocol.impl.mqtt.PacketIdManager;
 import io.mapsmessaging.network.protocol.impl.mqtt.packet.MalformedException;
 import io.mapsmessaging.network.protocol.impl.mqtt5.listeners.PacketListenerFactory5;
@@ -50,6 +54,7 @@ import lombok.NonNull;
 import lombok.Setter;
 import org.jetbrains.annotations.NotNull;
 
+import javax.security.auth.Subject;
 import java.io.IOException;
 import java.nio.BufferUnderflowException;
 import java.nio.channels.ClosedChannelException;
@@ -58,7 +63,7 @@ import java.util.Map;
 
 // Between MQTT 3/4 and 5 there is duplicate code base, yes this is by design
 @java.lang.SuppressWarnings("DuplicatedBlocks")
-public class MQTT5Protocol extends ProtocolImpl {
+public class MQTT5Protocol extends Protocol {
 
   private final Logger logger;
   private final PacketFactory5 packetFactory;
@@ -99,10 +104,11 @@ public class MQTT5Protocol extends ProtocolImpl {
   @Getter
   @Setter
   private boolean sendProblemInformation;
+  @Getter
+  private final MqttV5Config mqttConfig;
 
-
-  public MQTT5Protocol(EndPoint endPoint, Packet packet) throws IOException {
-    super(endPoint);
+  public MQTT5Protocol(EndPoint endPoint) throws IOException {
+    super(endPoint, endPoint.getConfig().getProtocolConfig("mqtt"));
     logger = LoggerFactory.getLogger("MQTT 5.0 Protocol on " + endPoint.getName());
 
     isClosing = false;
@@ -113,34 +119,42 @@ public class MQTT5Protocol extends ProtocolImpl {
     logger.log(ServerLogMessages.MQTT5_INITIALISATION);
     clientTopicAliasMapping = new TopicAliasMapping("Client");
     serverTopicAliasMapping = new TopicAliasMapping("Server");
-    ConfigurationProperties props = endPoint.getConfig().getProperties();
-    maxBufferSize = props.getLongProperty("maximumBufferSize", 0);
-    serverReceiveMaximum = props.getIntProperty("serverReceiveMaximum", DefaultConstants.SERVER_RECEIVE_MAXIMUM);
-    clientReceiveMaximum = props.getIntProperty("clientReceiveMaximum", DefaultConstants.CLIENT_RECEIVE_MAXIMUM);
-    int clientMaximumTopicAlias = props.getIntProperty("clientMaximumTopicAlias", DefaultConstants.CLIENT_TOPIC_ALIAS_MAX);
+    mqttConfig = (MqttV5Config)protocolConfig;
+    maxBufferSize = mqttConfig.getMaximumBufferSize();
+    serverReceiveMaximum = mqttConfig.getServerReceiveMaximum();
+    clientReceiveMaximum = mqttConfig.getClientReceiveMaximum();
+    int clientMaximumTopicAlias = mqttConfig.getClientMaximumTopicAlias();
     clientTopicAliasMapping.setMaximum(clientMaximumTopicAlias);
-    int serverMaximumTopicAlias = props.getIntProperty("serverMaximumTopicAlias", DefaultConstants.SERVER_TOPIC_ALIAS_MAX);
+    int serverMaximumTopicAlias = mqttConfig.getServerMaximumTopicAlias();
     serverTopicAliasMapping.setMaximum(serverMaximumTopicAlias);
-    keepAlive = props.getIntProperty("maxServerKeepAlive", DefaultConstants.KEEPALIVE_MAXIMUM) * 1000L; // Convert to milliseconds
-    minimumKeepAlive = props.getIntProperty("minServerKeepAlive", DefaultConstants.KEEPALIVE_MINIMUM) * 1000; // Convert to milliseconds
-    selectorTask = new SelectorTask(this, endPoint.getConfig().getProperties());
+    keepAlive = mqttConfig.getMaxServerKeepAlive() * 1000L;
+    minimumKeepAlive = mqttConfig.getMinServerKeepAlive() * 1000; // Convert to milliseconds
+    selectorTask = new SelectorTask(this, endPoint.getConfig().getEndPointConfig());
     packetListenerFactory = new PacketListenerFactory5();
     packetFactory = new PacketFactory5(this);
     closed = false;
     packetIdManager = new PacketIdManager();
     BitSetFactory bitsetFactory = new BitSetFactoryImpl(DefaultConstants.BITSET_BLOCK_SIZE);
     clientOutstanding = new NaturalOrderedLongList(0, bitsetFactory);
-
-    if(props.containsKey("sasl")){
-      ConfigurationProperties saslProps = (ConfigurationProperties) props.get("sasl");
-      String serverName = saslProps.getProperty("realmName", MessageDaemon.getInstance().getId());
-      authenticationContext = new AuthenticationContext(saslProps.getProperty("mechanism"), serverName, getName(), endPoint.getConfig().getProperties());
+    SaslConfigDTO saslConfig = endPoint.getConfig().getSaslConfig();
+    if( saslConfig!= null){
+      authenticationContext = new AuthenticationContext(saslConfig.getMechanism(), saslConfig.getRealmName(), getName(), endPoint.getConfig());
     }
     else{
       authenticationContext = null;
     }
+  }
+
+
+  public MQTT5Protocol(EndPoint endPoint, Packet packet) throws IOException {
+    this(endPoint);
     processPacket(packet);
     selectorTask.getReadTask().pushOutstandingData(packet);
+  }
+
+  @Override
+  public Subject getSubject() {
+    return session.getSecurityContext().getSubject();
   }
 
   @Override
@@ -148,9 +162,25 @@ public class MQTT5Protocol extends ProtocolImpl {
     if (!closed) {
       closed = true;
       selectorTask.close();
-      SessionManager.getInstance().close(session, false);
+      if (session != null) {
+        SessionManager.getInstance().close(session, false);
+      }
     }
     super.close();
+  }
+
+  @Override
+  public void connect(@NonNull @NotNull String sessionId, String username, String password) throws IOException {
+    Connect5 connect = new Connect5();
+    if (username != null) {
+      connect.setUsername(username);
+      connect.setPassword(password.trim().toCharArray());
+    }
+
+    connect.setSessionId(sessionId);
+    writeFrame(connect);
+    registerRead();
+    completedConnection();
   }
 
   public void registerRead() throws IOException {
@@ -204,11 +234,11 @@ public class MQTT5Protocol extends ProtocolImpl {
     MQTTPacket5 mqtt = packetFactory.parseFrame(packet);
     if (mqtt != null) {
       logger.log(ServerLogMessages.RECEIVE_PACKET, mqtt);
-      receivedMessageAverages.increment();
+      EndPoint.totalReceived.increment();
       boolean clientHasAuth = false;
       MessageProperty authMethod = null;
       if (mqtt instanceof Connect5) {
-        // We may have an auth / sasl request so lets check first, if so we need to park the connect until after
+        // We may have an auth / sasl request so lets c heck first, if so we need to park the connect until after
         // we have authenticated
         Connect5 connect5 = (Connect5) mqtt;
         authMethod = connect5.getProperties().get(MessagePropertyFactory.AUTHENTICATION_METHOD);
@@ -226,7 +256,7 @@ public class MQTT5Protocol extends ProtocolImpl {
 
   private void handleResponse(MQTTPacket5 response) {
     if (response != null) {
-      sentMessageAverages.increment();
+      EndPoint.totalSent.increment();
       if (logger.isInfoEnabled()) {
         logger.log(ServerLogMessages.RESPONSE_PACKET, response);
       }
@@ -297,7 +327,7 @@ public class MQTT5Protocol extends ProtocolImpl {
     if (!subInfo.isRetainAsPublish()) {
       retain = false;
     }
-    Publish5 publish = new Publish5(createPayload(message), qos, packetId, destinationName, retain);
+    Publish5 publish = new Publish5(createPayload(message, destinationName), qos, packetId, destinationName, retain);
     if (alias != null) {
       publish.add(alias);
     }
@@ -313,9 +343,9 @@ public class MQTT5Protocol extends ProtocolImpl {
     return 0;
   }
 
-  private byte[] createPayload(Message message) {
+  private byte[] createPayload(Message message, String destinationName) {
     if (transformation != null) {
-      return transformation.outgoing(message);
+      return transformation.outgoing(message, destinationName);
     } else {
       return message.getOpaqueData();
     }
@@ -353,5 +383,13 @@ public class MQTT5Protocol extends ProtocolImpl {
     sentMessage();
     selectorTask.push(frame);
     logger.log(ServerLogMessages.PUSH_WRITE, frame);
+  }
+
+  @Override
+  public ProtocolInformationDTO getInformation() {
+    MqttV5ProtocolInformation information = new MqttV5ProtocolInformation();
+    updateInformation(information);
+    information.setSessionInfo(session.getSessionInformation());
+    return information;
   }
 }

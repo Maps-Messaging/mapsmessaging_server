@@ -1,18 +1,20 @@
 /*
- * Copyright [ 2020 - 2024 ] [Matthew Buckton]
  *
- *  Licensed under the Apache License, Version 2.0 (the "License");
- *  you may not use this file except in compliance with the License.
- *  You may obtain a copy of the License at
+ *  Copyright [ 2020 - 2024 ] Matthew Buckton
+ *  Copyright [ 2024 - 2025 ] MapsMessaging B.V.
+ *
+ *  Licensed under the Apache License, Version 2.0 with the Commons Clause
+ *  (the "License"); you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at:
  *
  *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://commonsclause.com/
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
  */
 
 package io.mapsmessaging.network.protocol.impl.mqtt.listeners;
@@ -23,12 +25,13 @@ import io.mapsmessaging.api.features.Priority;
 import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.logging.ServerLogMessages;
 import io.mapsmessaging.network.io.EndPoint;
-import io.mapsmessaging.network.protocol.ProtocolImpl;
+import io.mapsmessaging.network.protocol.Protocol;
 import io.mapsmessaging.network.protocol.impl.mqtt.MQTTProtocol;
 import io.mapsmessaging.network.protocol.impl.mqtt.packet.ConnAck;
 import io.mapsmessaging.network.protocol.impl.mqtt.packet.Connect;
 import io.mapsmessaging.network.protocol.impl.mqtt.packet.MQTTPacket;
 import io.mapsmessaging.network.protocol.impl.mqtt.packet.MalformedException;
+import io.mapsmessaging.network.protocol.transformation.TransformationManager;
 import io.mapsmessaging.utilities.threads.SimpleTaskScheduler;
 
 import java.io.IOException;
@@ -40,7 +43,7 @@ public class ConnectListener extends BaseConnectionListener {
   private static final String RESTRICTED_CHARACTERS = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
   private static final int RESTRICTED_LENGTH = 23;
 
-  public MQTTPacket handlePacket(MQTTPacket mqttPacket, Session shouldBeNull, EndPoint endPoint, ProtocolImpl protocol) throws MalformedException {
+  public MQTTPacket handlePacket(MQTTPacket mqttPacket, Session shouldBeNull, EndPoint endPoint, Protocol protocol) throws MalformedException {
     if (shouldBeNull != null) {
       logger.log(ServerLogMessages.MQTT_CONNECT_LISTENER_SECOND_CONNECT);
       try {
@@ -56,6 +59,11 @@ public class ConnectListener extends BaseConnectionListener {
     boolean strict = checkStrict(connect, protocol);
 
     String sessionId = connect.getSessionId();
+    if(sessionId.contains("?Transformation=")){
+      String transformation = sessionId.split("\\?Transformation=")[1];
+      sessionId = sessionId.split("\\?Transformation=")[0];
+      protocol.setTransformation(TransformationManager.getInstance().getTransformation(transformation));
+    }
     if ((!connect.isCleanSession() && sessionId.isEmpty()) || !clientIdAllowed(sessionId, strict)) {
       connAck.setResponseCode(ConnAck.IDENTIFIER_REJECTED);
     } else {
@@ -74,14 +82,14 @@ public class ConnectListener extends BaseConnectionListener {
     CompletableFuture<Session> sessionFuture = constructSession(endPoint, protocol, sessionId, connect);
     sessionFuture.whenComplete((session, throwable) -> {
       if (throwable != null) {
-        handleSessionException(throwable, connAck, protocol);
+        handleSessionException(connAck, protocol);
       } else {
         try {
           setupConnAck(session, connAck);
           protocol.registerRead();
           protocol.writeFrame(connAck);
         } catch (IOException e) {
-          handleSessionException(e, connAck, protocol);
+          handleSessionException(connAck, protocol);
         }
       }
     });
@@ -94,17 +102,17 @@ public class ConnectListener extends BaseConnectionListener {
     connAck.setCallback(session::resumeState);
   }
 
-  private CompletableFuture<Session> constructSession(EndPoint endPoint, ProtocolImpl protocol, String sessionId, Connect connect) {
-    SessionContextBuilder scb = getBuilder(endPoint, protocol, sessionId, connect.isCleanSession(), connect.getKeepAlive(), connect.getUsername(), connect.getPassword());
+  private CompletableFuture<Session> constructSession(EndPoint endPoint, Protocol protocol, String sessionId, Connect connect) {
+    SessionContextBuilder scb = getBuilder(protocol, sessionId, connect.isCleanSession(), connect.getKeepAlive(), connect.getUsername(), connect.getPassword());
     if (connect.isWillFlag()) {
-      Message message = PublishListener.createMessage(connect.getWillMsg(), Priority.NORMAL, connect.isWillRetain(), connect.getWillQOS(), protocol.getTransformation(), null);
+      Message message = PublishListener.createMessage(connect.getWillMsg(), Priority.NORMAL, connect.isWillRetain(), connect.getWillQOS(), protocol.getTransformation(), null, null, protocol);
       scb.setWillMessage(message).setWillTopic(connect.getWillTopic());
     }
     protocol.setKeepAlive(connect.getKeepAlive());
     return createSession(endPoint, protocol, scb, sessionId);
   }
 
-  private void handleSessionException(Throwable e, ConnAck connAck, ProtocolImpl protocol) {
+  private void handleSessionException(ConnAck connAck, Protocol protocol) {
     connAck.setResponseCode(ConnAck.BAD_USERNAME_PASSWORD);
     connAck.setCallback(() -> SimpleTaskScheduler.getInstance().schedule(() -> {
       try {
@@ -115,12 +123,12 @@ public class ConnectListener extends BaseConnectionListener {
     }, 100, TimeUnit.MILLISECONDS));
   }
 
-  boolean checkStrict(Connect connect, ProtocolImpl protocol) {
+  boolean checkStrict(Connect connect, Protocol protocol) {
     boolean strict;
     if (connect.getProtocolLevel() == 3) {
       strict = true; // For MQTT 3.1 it must be strict to adhere to the standard
     } else {
-      strict = protocol.getEndPoint().getConfig().getProperties().getBooleanProperty("strictClientId", false);
+      strict =((MQTTProtocol)protocol).getMqttConfig().isStrictClientId();
     }
     return strict;
   }

@@ -1,18 +1,20 @@
 /*
- * Copyright [ 2020 - 2023 ] [Matthew Buckton]
  *
- *  Licensed under the Apache License, Version 2.0 (the "License");
- *  you may not use this file except in compliance with the License.
- *  You may obtain a copy of the License at
+ *  Copyright [ 2020 - 2024 ] Matthew Buckton
+ *  Copyright [ 2024 - 2025 ] MapsMessaging B.V.
+ *
+ *  Licensed under the Apache License, Version 2.0 with the Commons Clause
+ *  (the "License"); you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at:
  *
  *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://commonsclause.com/
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
  */
 
 package io.mapsmessaging.engine.destination.subscription.builders;
@@ -40,31 +42,32 @@ import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
 import java.util.Iterator;
+import java.util.Objects;
 
 public class BrowserSubscriptionBuilder extends SubscriptionBuilder {
 
   private final DestinationSubscription parent;
 
-  public BrowserSubscriptionBuilder(DestinationImpl destination, SubscriptionContext context, DestinationSubscription parent) throws IOException {
-    super(destination, context, parent.getContext());
+  public BrowserSubscriptionBuilder(DestinationImpl destination, SubscriptionContext context, @NonNull @NotNull DestinationSubscription parent) throws IOException {
+    super(destination, context, Objects.requireNonNull(parent.getContext()));
     this.parent = parent;
   }
 
   @Override
-  public Subscription construct(SessionImpl session, String sessionId, String uniqueSessionId) throws IOException {
+  public Subscription construct(SessionImpl session, String sessionId, String uniqueSessionId, long uniqueSession) throws IOException {
     AcknowledgementController acknowledgementController = createAcknowledgementController(context.getAcknowledgementController());
     MessageStateManager stateManager;
     if (parserExecutor == null) {
-      stateManager = new IteratorStateManagerImpl(context.getAlias(), (MessageStateManagerImpl) parent.getMessageStateManager(), true);
+      stateManager = new IteratorStateManagerImpl(context.getAlias(), session.getContext().getInternalSessionId(), (MessageStateManagerImpl) parent.getMessageStateManager(), true);
       return new DestinationSubscription(destination, context, session, sessionId, acknowledgementController, stateManager);
     } else {
       if (selectorHasChanged(parent.getContext().getSelector(), context.getSelector())) {
         // Need task to filter the messages from the parent to the current state manager
-        stateManager = new IteratorStateManagerImpl(context.getAlias(), (MessageStateManagerImpl) parent.getMessageStateManager(), false);
+        stateManager = new IteratorStateManagerImpl(context.getAlias(), session.getContext().getInternalSessionId(), (MessageStateManagerImpl) parent.getMessageStateManager(), false);
         StateManagerFilterTask task = new StateManagerFilterTask(destination, parent.getMessageStateManager(), stateManager, parserExecutor);
         destination.submit(task);
       } else {
-        stateManager = new IteratorStateManagerImpl(context.getAlias(), (MessageStateManagerImpl) parent.getMessageStateManager(), true);
+        stateManager = new IteratorStateManagerImpl(context.getAlias(), session.getContext().getInternalSessionId(), (MessageStateManagerImpl) parent.getMessageStateManager(), true);
       }
       return new SelectorDestinationSubscription(destination, context, session, sessionId, acknowledgementController, stateManager, parserExecutor);
     }
@@ -72,10 +75,10 @@ public class BrowserSubscriptionBuilder extends SubscriptionBuilder {
 
 
   private boolean selectorHasChanged(String parentSelector, String selector) throws IOException {
-    if (selector == null || selector.length() == 0) {
+    if (selector == null || selector.isEmpty()) {
       return false;
     }
-    if (parentSelector == null || parentSelector.length() == 0) {
+    if (parentSelector == null || parentSelector.isEmpty()) {
       return true; // It's true, since the selector has in fact been set by the new one
     }
     ParserExecutor executor = compileParser(selector);

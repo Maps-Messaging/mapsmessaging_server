@@ -1,18 +1,20 @@
 /*
- * Copyright [ 2020 - 2024 ] [Matthew Buckton]
  *
- *  Licensed under the Apache License, Version 2.0 (the "License");
- *  you may not use this file except in compliance with the License.
- *  You may obtain a copy of the License at
+ *  Copyright [ 2020 - 2024 ] Matthew Buckton
+ *  Copyright [ 2024 - 2025 ] MapsMessaging B.V.
+ *
+ *  Licensed under the Apache License, Version 2.0 with the Commons Clause
+ *  (the "License"); you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at:
  *
  *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://commonsclause.com/
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
  */
 
 package io.mapsmessaging.network.protocol.impl.amqp.proton.transformers.impl;
@@ -62,22 +64,20 @@ public class BaseMessageTranslator implements MessageTranslator {
     meta.put("type", "" + getType());
 
     Section section = protonMessage.getBody();
-    if (section instanceof AmqpValue) {
-      AmqpValue value = (AmqpValue) section;
+    if (section instanceof AmqpValue value) {
       Object val = value.getValue();
       byte[] buf;
-      if (val instanceof String) {
-        buf = ((String) val).getBytes();
+      if (val instanceof String str) {
+        buf = str.getBytes();
         meta.put(AMQP_TYPE, STRING_TYPE);
-      } else if (val instanceof byte[]) {
-        buf = (byte[]) val;
+      } else if (val instanceof byte[] buffer) {
+        buf = buffer;
         meta.put(AMQP_TYPE, BYTE_ARRAY_TYPE);
       } else {
         buf = new byte[0];
       }
       messageBuilder.setOpaqueData(buf);
-    } else if (section instanceof Data) {
-      Data data = (Data) section;
+    } else if (section instanceof Data data) {
       messageBuilder.setOpaqueData(data.getValue().getArray());
       meta.put(AMQP_TYPE, DATA_TYPE);
     }

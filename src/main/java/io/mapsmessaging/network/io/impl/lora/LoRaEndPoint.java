@@ -1,18 +1,20 @@
 /*
- * Copyright [ 2020 - 2024 ] [Matthew Buckton]
  *
- *  Licensed under the Apache License, Version 2.0 (the "License");
- *  you may not use this file except in compliance with the License.
- *  You may obtain a copy of the License at
+ *  Copyright [ 2020 - 2024 ] Matthew Buckton
+ *  Copyright [ 2024 - 2025 ] MapsMessaging B.V.
+ *
+ *  Licensed under the Apache License, Version 2.0 with the Commons Clause
+ *  (the "License"); you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at:
  *
  *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://commonsclause.com/
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
  */
 
 package io.mapsmessaging.network.io.impl.lora;
@@ -26,10 +28,12 @@ import io.mapsmessaging.network.io.EndPoint;
 import io.mapsmessaging.network.io.EndPointServer;
 import io.mapsmessaging.network.io.Packet;
 import io.mapsmessaging.network.io.Selectable;
+import io.mapsmessaging.network.io.impl.lora.device.LoRaChipDevice;
 import io.mapsmessaging.network.io.impl.lora.device.LoRaDatagram;
-import io.mapsmessaging.network.io.impl.lora.device.LoRaDevice;
 import io.mapsmessaging.network.io.impl.lora.stats.LoRaClientStats;
+import io.mapsmessaging.utilities.stats.StatsFactory;
 import io.mapsmessaging.utilities.threads.SimpleTaskScheduler;
+import lombok.Getter;
 
 import java.io.IOException;
 import java.net.InetAddress;
@@ -37,26 +41,28 @@ import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.net.UnknownHostException;
 import java.nio.channels.SelectionKey;
-import java.util.Collection;
-import java.util.LinkedHashMap;
-import java.util.LinkedList;
-import java.util.Queue;
+import java.util.*;
 import java.util.concurrent.FutureTask;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public class LoRaEndPoint extends EndPoint {
 
-  private volatile boolean isQueued;
-  private final LoRaDevice loRaDevice;
+  private final AtomicBoolean isQueued;
+
+  @Getter
   private final int nodeId;
+
+  private int lastRSSI;
+  private Selectable selectable;
+
+  private final LoRaChipDevice loRaDevice;
   private final Queue<LoRaDatagram> incoming;
   private final EndPointJMX mbean;
   private final LinkedHashMap<Integer, LoRaClientStats> clientStats;
-  private Selectable selectable;
-  private int lastRSSI;
 
-  public LoRaEndPoint(LoRaDevice loRaDevice, long id, EndPointServer server, EndPointManagerJMX managerMBean) throws IOException {
+  public LoRaEndPoint(LoRaChipDevice loRaDevice, long id, EndPointServer server, EndPointManagerJMX managerMBean) throws IOException {
     super(id, server);
-    isQueued = false;
+    isQueued = new AtomicBoolean(false);
     this.loRaDevice = loRaDevice;
     nodeId = (int) id;
     clientStats = new LinkedHashMap<>();
@@ -65,6 +71,7 @@ public class LoRaEndPoint extends EndPoint {
     mbean = new EndPointJMX(managerMBean.getTypePath(), this);
     jmxParentPath = mbean.getTypePath();
     selectable = null;
+    name = "LoRa_" + nodeId;
   }
 
   @Override
@@ -88,8 +95,16 @@ public class LoRaEndPoint extends EndPoint {
   }
 
 
-  public Collection<LoRaClientStats> getStats() {
-    return clientStats.values();
+  public int getIncomingQueueSize(){
+    return incoming.size();
+  }
+
+  public int getConnectionSize(){
+    return clientStats.size();
+  }
+
+  public List<LoRaClientStats> getStats() {
+    return new ArrayList<>(clientStats.values());
   }
 
   @Override
@@ -99,7 +114,11 @@ public class LoRaEndPoint extends EndPoint {
     int len = packet.available();
     byte[] buffer = new byte[len];
     packet.get(buffer);
-    loRaDevice.write(buffer, len, (byte) (nodeId & 0xff), ipAddress[3]);
+    byte to = ipAddress[3];
+    LoRaClientStats stats = getStats(to);
+    stats.setLastWriteTime(System.currentTimeMillis());
+    loRaDevice.write(buffer, len, (byte) (nodeId & 0xff), to);
+    updateWriteBytes(len);
     return len;
   }
 
@@ -114,6 +133,7 @@ public class LoRaEndPoint extends EndPoint {
         SocketAddress socketAddress = getSocketAddress(datagram.getFrom());
         packet.setFromAddress(socketAddress);
         read = buffer.length;
+        updateReadBytes(read);
       }
     }
     return read;
@@ -152,12 +172,7 @@ public class LoRaEndPoint extends EndPoint {
 
   @Override
   public String getAuthenticationConfig() {
-    return getConfig().getAuthConfig();
-  }
-
-  @Override
-  public String getName() {
-    return "LoRa_" + nodeId;
+    return getConfig().getAuthenticationRealm();
   }
 
   @Override
@@ -173,15 +188,19 @@ public class LoRaEndPoint extends EndPoint {
     synchronized (this) {
       lastRSSI = datagram.getRssi();
       incoming.add(datagram);
-      if (!isQueued && selectable != null) {
-        isQueued = true;
+      if (!isQueued.get() && selectable != null) {
+        isQueued.set(true);
         register(SelectionKey.OP_READ, selectable);
       }
       logger.log(ServerLogMessages.LORA_QUEUED_EVENT, incoming.size(), selectable != null);
       int from = datagram.getFrom();
-      LoRaClientStats stats = clientStats.computeIfAbsent(from, f -> new LoRaClientStats(jmxParentPath, f));
+      LoRaClientStats stats = getStats(from);
       stats.update(datagram);
     }
+  }
+
+  private LoRaClientStats getStats(int from) {
+    return clientStats.computeIfAbsent(from, f -> new LoRaClientStats(jmxParentPath, f, StatsFactory.getDefaultType()));
   }
 
   public class LoRaReader implements Runnable {
@@ -199,7 +218,7 @@ public class LoRaEndPoint extends EndPoint {
           if (!incoming.isEmpty()) {
             register(SelectionKey.OP_READ, selectable);
           } else {
-            isQueued = false;
+            isQueued.set(false);
           }
         }
       }

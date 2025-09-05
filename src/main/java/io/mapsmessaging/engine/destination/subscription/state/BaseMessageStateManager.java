@@ -1,18 +1,20 @@
 /*
- * Copyright [ 2020 - 2023 ] [Matthew Buckton]
  *
- *  Licensed under the Apache License, Version 2.0 (the "License");
- *  you may not use this file except in compliance with the License.
- *  You may obtain a copy of the License at
+ *  Copyright [ 2020 - 2024 ] Matthew Buckton
+ *  Copyright [ 2024 - 2025 ] MapsMessaging B.V.
+ *
+ *  Licensed under the Apache License, Version 2.0 with the Commons Clause
+ *  (the "License"); you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at:
  *
  *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://commonsclause.com/
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
  */
 
 package io.mapsmessaging.engine.destination.subscription.state;
@@ -23,6 +25,8 @@ import io.mapsmessaging.engine.Constants;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.logging.ServerLogMessages;
+import io.mapsmessaging.utilities.UniqueIdHelper;
+import io.mapsmessaging.utilities.collections.ConcurrentNaturalOrderedLongQueue;
 import io.mapsmessaging.utilities.collections.NaturalOrderedLongQueue;
 import io.mapsmessaging.utilities.collections.PriorityCollection;
 import io.mapsmessaging.utilities.collections.PriorityQueue;
@@ -30,7 +34,6 @@ import io.mapsmessaging.utilities.collections.bitset.BitSetFactory;
 import io.mapsmessaging.utilities.collections.bitset.BitSetFactoryImpl;
 
 import java.io.IOException;
-import java.util.List;
 import java.util.Queue;
 
 public abstract class BaseMessageStateManager implements MessageStateManager {
@@ -39,27 +42,27 @@ public abstract class BaseMessageStateManager implements MessageStateManager {
   protected final PriorityQueue<Long> messagesAtRest;
   protected final PriorityCollection<Long> messagesInFlight;
   protected final String name;
-  protected final BitSetFactory bitsetFactory;
 
-  protected BaseMessageStateManager(String name, BitSetFactory priorityBitSetFactory, BitSetFactory inflightBitSetFactory) {
+  protected BaseMessageStateManager(String name, long uniqueSessionId, BitSetFactory priorityBitSetFactory, BitSetFactory inflightBitSetFactory) {
     this.name = name;
-    this.bitsetFactory = priorityBitSetFactory;
     logger = LoggerFactory.getLogger(MessageStateManagerImpl.class);
     NaturalOrderedLongQueue[] priorityLists = new NaturalOrderedLongQueue[Priority.HIGHEST.getValue()];
     for (int x = 0; x < priorityLists.length; x++) {
-      priorityLists[x] = new NaturalOrderedLongQueue(x, bitsetFactory);
+      long priorityId = UniqueIdHelper.compute(uniqueSessionId, x);
+      priorityLists[x] = new ConcurrentNaturalOrderedLongQueue(priorityId, priorityBitSetFactory);
     }
     messagesAtRest = new PriorityQueue<>(priorityLists, null);
 
     priorityLists = new NaturalOrderedLongQueue[Priority.HIGHEST.getValue()];
     for (int x = 0; x < priorityLists.length; x++) {
-      priorityLists[x] = new NaturalOrderedLongQueue(x, inflightBitSetFactory);
+      priorityLists[x] = new ConcurrentNaturalOrderedLongQueue(x, inflightBitSetFactory);
     }
     messagesInFlight = new PriorityQueue<>(priorityLists, null);
   }
 
   public void close() throws IOException {
-    bitsetFactory.close();
+    messagesAtRest.clear();
+    messagesInFlight.clear();
   }
 
   @Override
@@ -88,7 +91,8 @@ public abstract class BaseMessageStateManager implements MessageStateManager {
 
   @Override
   public void delete() throws IOException {
-    bitsetFactory.delete();
+    close();
+    messagesInFlight.clear();
   }
 
   @Override
@@ -118,27 +122,26 @@ public abstract class BaseMessageStateManager implements MessageStateManager {
     logger.log(ServerLogMessages.MESSAGE_STATE_MANAGER_COMMIT, name, messageId);
   }
 
-  @Override
+
   public synchronized boolean rollback(long messageId) {
     logger.log(ServerLogMessages.MESSAGE_STATE_MANAGER_ROLLBACK, name, messageId);
-    List<Queue<Long>> priorityList = messagesInFlight.getPriorityStructure();
-    for (Queue<Long> queue : priorityList) {
-      NaturalOrderedLongQueue naturalOrderedLongQueue = (NaturalOrderedLongQueue) queue;
-      if (naturalOrderedLongQueue.contains(messageId)) {
-        messagesAtRest.add(messageId, naturalOrderedLongQueue.getUniqueId());
-        naturalOrderedLongQueue.remove(messageId);
-        messagesInFlight.remove(messageId);
-        return true;
-      }
+    int priority = messagesInFlight.removeAndGetPriority(messageId);
+    if (priority != -1) {
+      priority = io.mapsmessaging.api.features.Constants.getInstance().getRollbackPriority().incrementPriority(priority);
+      messagesAtRest.add(messageId, priority);
+      return true;
     }
     return false;
   }
 
+
+  @SuppressWarnings("java:S2201") // size also resets the internals
   @Override
   public synchronized long nextMessageId() {
     Long response = messagesAtRest.peek();
     if (response == null) {
       response = -1L;
+      messagesAtRest.size(); // reset the actual size since we do not have any messages
     }
     logger.log(ServerLogMessages.MESSAGE_STATE_MANAGER_NEXT, name, response);
     return response;

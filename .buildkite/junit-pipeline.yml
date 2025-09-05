@@ -1,0 +1,6 @@
+steps:
+  - label: ":test_tube: Run Unit Tests (detached)"
+    command: |
+      chmod +x .buildkite/start-unit-tests.sh
+      nohup .buildkite/start-unit-tests.sh > unit-tests.log 2>&1 &
+      echo "Detached unit test started"

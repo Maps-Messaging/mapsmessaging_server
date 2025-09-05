@@ -1,27 +1,30 @@
 /*
- * Copyright [ 2020 - 2023 ] [Matthew Buckton]
  *
- *  Licensed under the Apache License, Version 2.0 (the "License");
- *  you may not use this file except in compliance with the License.
- *  You may obtain a copy of the License at
+ *  Copyright [ 2020 - 2024 ] Matthew Buckton
+ *  Copyright [ 2024 - 2025 ] MapsMessaging B.V.
+ *
+ *  Licensed under the Apache License, Version 2.0 with the Commons Clause
+ *  (the "License"); you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at:
  *
  *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://commonsclause.com/
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
  */
 
 package io.mapsmessaging.network.io.impl.udp;
 
+import io.mapsmessaging.dto.rest.config.network.EndPointServerConfigDTO;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.network.EndPointURL;
-import io.mapsmessaging.network.NetworkConfig;
 import io.mapsmessaging.network.admin.EndPointManagerJMX;
+import io.mapsmessaging.network.io.EndPoint;
 import io.mapsmessaging.network.io.EndPointServer;
 import io.mapsmessaging.network.io.Selectable;
 import io.mapsmessaging.network.io.impl.NetworkInfoHelper;
@@ -49,14 +52,14 @@ public class UDPEndPointServer extends EndPointServer {
   private final int port;
 
   public UDPEndPointServer(InetSocketAddress inetSocketAddress, ProtocolFactory protocolFactory, EndPointURL url, SelectorLoadManager selectorLoadManager,
-      EndPointManagerJMX managerMBean, NetworkConfig config)
+      EndPointManagerJMX managerMBean, EndPointServerConfigDTO config)
       throws SocketException {
     super(null, url, config);
     this.managerMBean = managerMBean;
     this.selectorLoadManager = selectorLoadManager;
     this.protocolFactory = protocolFactory;
     bondedEndPoints = new ArrayList<>();
-    authenticationConfig = config.getAuthConfig();
+    authenticationConfig = config.getAuthenticationRealm();
     port = url.getPort();
     udpInterfaceInformations = createInterfaceList(inetSocketAddress);
   }
@@ -121,6 +124,12 @@ public class UDPEndPointServer extends EndPointServer {
         // We can ignore since we are closing
       }
     }
+  }
+
+
+  @Override
+  public void handleNewEndPoint(EndPoint endPoint) throws IOException {
+    activeEndPoints.put(endPoint.getId(), endPoint);
   }
 
   @Override

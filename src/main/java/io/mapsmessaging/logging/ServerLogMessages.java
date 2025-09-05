@@ -1,18 +1,20 @@
 /*
- * Copyright [ 2020 - 2023 ] [Matthew Buckton]
  *
- *  Licensed under the Apache License, Version 2.0 (the "License");
- *  you may not use this file except in compliance with the License.
- *  You may obtain a copy of the License at
+ *  Copyright [ 2020 - 2024 ] Matthew Buckton
+ *  Copyright [ 2024 - 2025 ] MapsMessaging B.V.
+ *
+ *  Licensed under the Apache License, Version 2.0 with the Commons Clause
+ *  (the "License"); you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at:
  *
  *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://commonsclause.com/
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
  */
 
 package io.mapsmessaging.logging;
@@ -27,6 +29,11 @@ import lombok.Getter;
 public enum ServerLogMessages implements LogMessage {
 
   //-------------------------------------------------------------------------------------------------------------
+  // <editor-fold desc="File Lock Management">
+  LOCKFILE_STALE_HEARTBEAT(LEVEL.ERROR, SERVER_CATEGORY.ENGINE, "Heartbeat is stale, attempting forced takeover"),
+  LOCKFILE_DELETED(LEVEL.ERROR, SERVER_CATEGORY.ENGINE, "Lock file deleted"),
+  LOCKFILE_STOP_DETECTED(LEVEL.ERROR, SERVER_CATEGORY.ENGINE, "Stop signal detected. Shutting down"),
+  // </editor-fold>
 
   // <editor-fold desc="Generic messages">
   PUSH_WRITE(LEVEL.DEBUG, SERVER_CATEGORY.PROTOCOL, "Pushed Packet for write, {}"),
@@ -39,28 +46,23 @@ public enum ServerLogMessages implements LogMessage {
   // </editor-fold>
 
   // <editor-fold desc="Main Message Daemon messages">
-  MESSAGE_DAEMON_STARTUP(LEVEL.WARN, SERVER_CATEGORY.ENGINE, "Starting Messaging Daemon Version:{} Build Date:{}"),
-  MESSAGE_DAEMON_STARTUP_BOOTSTRAP(LEVEL.WARN, SERVER_CATEGORY.ENGINE, "Messaging Daemon Unique Id has been assigned to {}"),
+  MESSAGE_DAEMON_STARTUP(LEVEL.WARN, SERVER_CATEGORY.DAEMON, "Starting Messaging Daemon Version:{} Build Date:{}"),
+  MESSAGE_DAEMON_STARTUP_BOOTSTRAP(LEVEL.WARN, SERVER_CATEGORY.DAEMON, "Messaging Daemon Unique Id has been assigned to {}"),
+  MESSAGE_DAEMON_WAIT_PREVIOUS_INSTANCE(LEVEL.FATAL, SERVER_CATEGORY.DAEMON, "{}"),
+  MAP_ENV_HOME_RESOLVED(LEVEL.INFO, SERVER_CATEGORY.DAEMON, "MAPS_HOME resolved to {} via {}"),
+  MAP_ENV_DATA_RESOLVED(LEVEL.INFO, SERVER_CATEGORY.DAEMON, "MAPS_DATA resolved to {} for OS {}"),
 
-  MESSAGE_DAEMON_NO_HOME_DIRECTORY(LEVEL.ERROR, SERVER_CATEGORY.ENGINE, "The supplied home directory, {}, does not exist"),
-  MESSAGE_DAEMON_HOME_DIRECTORY(LEVEL.ERROR, SERVER_CATEGORY.ENGINE, "The home directory has been defined as {}"),
-  MESSAGE_DAEMON_SERVICE(LEVEL.WARN, SERVER_CATEGORY.ENGINE, "\t\tLoaded service {}, {}"),
-  MESSAGE_DAEMON_SERVICE_LOADED(LEVEL.WARN, SERVER_CATEGORY.ENGINE, "Service Manager {} loaded"),
+  MESSAGE_DAEMON_NO_HOME_DIRECTORY(LEVEL.ERROR, SERVER_CATEGORY.DAEMON, "The supplied home directory, {}, does not exist"),
+  MESSAGE_DAEMON_HOME_DIRECTORY(LEVEL.ERROR, SERVER_CATEGORY.DAEMON, "The home directory has been defined as {}"),
+  MESSAGE_DAEMON_SERVICE(LEVEL.WARN, SERVER_CATEGORY.DAEMON, "\t\tLoaded service {}, {}"),
+  MESSAGE_DAEMON_SERVICE_LOADED(LEVEL.WARN, SERVER_CATEGORY.DAEMON, "Service Manager {} loaded"),
+  MESSAGE_DAEMON_PROTOCOL_NOT_AVAILABLE(LEVEL.ERROR, SERVER_CATEGORY.DAEMON, "Protocol not available, see stack trace for more details"),
 
-  MESSAGE_DAEMON_AGENT_STARTING(LEVEL.INFO, SERVER_CATEGORY.ENGINE, "Starting {} "),
-  MESSAGE_DAEMON_AGENT_STARTED(LEVEL.WARN, SERVER_CATEGORY.ENGINE, "Started {} took {}ms"),
+  MESSAGE_DAEMON_AGENT_STARTING(LEVEL.AUDIT, SERVER_CATEGORY.DAEMON, "Starting {} "),
+  MESSAGE_DAEMON_AGENT_STARTED(LEVEL.WARN, SERVER_CATEGORY.DAEMON, "Started {} took {}ms"),
 
-  MESSAGE_DAEMON_AGENT_STOPPING(LEVEL.INFO, SERVER_CATEGORY.ENGINE, "Stopping {} "),
-  MESSAGE_DAEMON_AGENT_STOPPED(LEVEL.WARN, SERVER_CATEGORY.ENGINE, "Stopped {} took {}ms"),
-  // </editor-fold>
-
-  // <editor-fold desc="hawtio messages">
-  HAWTIO_STARTUP(LEVEL.INFO, SERVER_CATEGORY.ENGINE, "Starting Hawtio interface"),
-  HAWTIO_STARTUP_FAILURE(LEVEL.WARN, SERVER_CATEGORY.ENGINE, "Hawtio failed to start"),
-  HAWTIO_WAR_FILE_NOT_FOUND(LEVEL.WARN, SERVER_CATEGORY.ENGINE, "Hawtio WAR file not found, at location {}"),
-  HAWTIO_NOT_CONFIGURED_TO_RUN(LEVEL.INFO, SERVER_CATEGORY.ENGINE, "Hawtio interface not configured to run"),
-  HAWTIO_INITIALISATION(LEVEL.INFO, SERVER_CATEGORY.ENGINE, "Hawtio initialisation started using file {} "),
-  HAWTIO_REGISTRATION_FAILED(LEVEL.WARN, SERVER_CATEGORY.ENGINE, "Hawtio failed to register with the mDNS server"),
+  MESSAGE_DAEMON_AGENT_STOPPING(LEVEL.AUDIT, SERVER_CATEGORY.DAEMON, "Stopping {} "),
+  MESSAGE_DAEMON_AGENT_STOPPED(LEVEL.WARN, SERVER_CATEGORY.DAEMON, "Stopped {} took {}ms"),
   // </editor-fold>
 
   // <editor-fold desc="routing manager messages">
@@ -72,10 +74,10 @@ public enum ServerLogMessages implements LogMessage {
   NETWORK_MANAGER_STARTUP(LEVEL.DEBUG, SERVER_CATEGORY.ENGINE, "Starting Network Manager"),
   NETWORK_MANAGER_LOAD_PROPERTIES(LEVEL.DEBUG, SERVER_CATEGORY.ENGINE, "Loading Network Manager Properties"),
   NETWORK_MANAGER_STARTUP_COMPLETE(LEVEL.DEBUG, SERVER_CATEGORY.ENGINE, "Completed startup Network Manager"),
-  NETWORK_MANAGER_START_ALL(LEVEL.DEBUG, SERVER_CATEGORY.ENGINE, "Starting all network interfaces"),
-  NETWORK_MANAGER_STOP_ALL(LEVEL.DEBUG, SERVER_CATEGORY.ENGINE, "Stopping all network interfaces"),
-  NETWORK_MANAGER_PAUSE_ALL(LEVEL.DEBUG, SERVER_CATEGORY.ENGINE, "Pausing all network interfaces"),
-  NETWORK_MANAGER_RESUME_ALL(LEVEL.DEBUG, SERVER_CATEGORY.ENGINE, "Resuming all network interfaces"),
+  NETWORK_MANAGER_START_ALL(LEVEL.AUDIT, SERVER_CATEGORY.ENGINE, "Starting all network interfaces"),
+  NETWORK_MANAGER_STOP_ALL(LEVEL.AUDIT, SERVER_CATEGORY.ENGINE, "Stopping all network interfaces"),
+  NETWORK_MANAGER_PAUSE_ALL(LEVEL.AUDIT, SERVER_CATEGORY.ENGINE, "Pausing all network interfaces"),
+  NETWORK_MANAGER_RESUME_ALL(LEVEL.AUDIT, SERVER_CATEGORY.ENGINE, "Resuming all network interfaces"),
   NETWORK_MANAGER_START_FAILURE(LEVEL.WARN, SERVER_CATEGORY.ENGINE, "Unable to start {} due to the following exception"),
   NETWORK_MANAGER_START_FAILED(LEVEL.WARN, SERVER_CATEGORY.ENGINE, "Failed to start interface {}"),
   NETWORK_MANAGER_STOP_FAILED(LEVEL.WARN, SERVER_CATEGORY.ENGINE, "Failed to stop interface {}"),
@@ -93,8 +95,6 @@ public enum ServerLogMessages implements LogMessage {
   END_POINT_MANAGER_RESUME(LEVEL.DEBUG, SERVER_CATEGORY.ENGINE, "Resume called on {}"),
   END_POINT_MANAGER_CLOSE_SERVER(LEVEL.DEBUG, SERVER_CATEGORY.ENGINE, "Closing end point on closed server"),
   END_POINT_MANAGER_NEW_SELECTOR(LEVEL.INFO, SERVER_CATEGORY.ENGINE, "Created thread safe selector implementation due to the JDK support on interface"),
-  END_POINT_MANAGER_OLD_SELECTOR(LEVEL.INFO, SERVER_CATEGORY.ENGINE,
-      "Created queue based selector implementation due to the JDK not supporting thread safe java.nio.Selector on interface"),
   END_POINT_MANAGER_ACCEPT_EXCEPTION(LEVEL.WARN, SERVER_CATEGORY.ENGINE, "Exception raised during accept handling of the new connection"),
   END_POINT_MANAGER_CLOSE_EXCEPTION(LEVEL.WARN, SERVER_CATEGORY.ENGINE, "Closing end point on accept server raised exception"),
   END_POINT_MANAGER_CLOSE_EXCEPTION_1(LEVEL.WARN, SERVER_CATEGORY.ENGINE, "Closing end point on closed server raised exception"),
@@ -111,6 +111,7 @@ public enum ServerLogMessages implements LogMessage {
   END_POINT_CONNECTION_CLOSED(LEVEL.WARN, SERVER_CATEGORY.NETWORK, "Closing connection"),
   END_POINT_CONNECTION_STATE_CHANGED(LEVEL.WARN, SERVER_CATEGORY.NETWORK, "Changing state on url {} protocol {} from {} to {}"),
   END_POINT_CONNECTION_STOPPING(LEVEL.WARN, SERVER_CATEGORY.NETWORK, "Stopping connection manager"),
+
   //</editor-fold>
 
   // <editor-fold desc="Selector and Selector task log messages">
@@ -131,6 +132,9 @@ public enum ServerLogMessages implements LogMessage {
   SELECTOR_CALLED_BACK(LEVEL.DEBUG, SERVER_CATEGORY.NETWORK, "Selected called back for {}"),
   SELECTOR_READ_TASK(LEVEL.DEBUG, SERVER_CATEGORY.NETWORK, "Selected calling Read task"),
   SELECTOR_WRITE_TASK(LEVEL.DEBUG, SERVER_CATEGORY.NETWORK, "Selected calling Write task"),
+  SELECTOR_SPIN_DETECTED(LEVEL.ERROR,  SERVER_CATEGORY.NETWORK, "Selector thread hit empty selector threshold"),
+  SELECTOR_REBUILT(LEVEL.ERROR,  SERVER_CATEGORY.NETWORK, "Selector has been rebuilt due to epoll issue"),
+  SELECTOR_REBUILD_FAILED(LEVEL.ERROR,  SERVER_CATEGORY.NETWORK, "Selector has failed to be rebuilt due to attached exception"),
   // </editor-fold>
 
   // <editor-fold desc="Read Task log messages">
@@ -267,6 +271,8 @@ public enum ServerLogMessages implements LogMessage {
   SESSION_MANAGER_CREATE_SECURITY_CONTEXT(LEVEL.DEBUG, SERVER_CATEGORY.ENGINE, "Created Security Context"),
   SESSION_MANAGER_FOUND_CLOSED(LEVEL.DEBUG, SERVER_CATEGORY.ENGINE, "Found and closed existing session that matched {}"),
   SESSION_MANAGER_KEEP_ALIVE_TASK(LEVEL.DEBUG, SERVER_CATEGORY.ENGINE, "Created new Keep Alive scheduler task"),
+  SESSION_ERROR_DURING_CREATION(LEVEL.ERROR, SERVER_CATEGORY.ENGINE, "Unexpected exception raised during session creation"),
+
   SESSION_MANAGER_WILL_TASK(LEVEL.DEBUG, SERVER_CATEGORY.ENGINE, "Build WillTask for {} WillTask:{}"),
   SESSION_MANAGER_LOADED_SUBSCRIPTION(LEVEL.DEBUG, SERVER_CATEGORY.ENGINE, "Loaded Subscription Manager {}, containing {}"),
   SESSION_MANAGER_NO_EXISTING(LEVEL.DEBUG, SERVER_CATEGORY.ENGINE, "No existing Subscription manager found for {}"),
@@ -348,6 +354,20 @@ public enum ServerLogMessages implements LogMessage {
   STOMP_FRAME_HANDLE_EXCEPTION(LEVEL.WARN, SERVER_CATEGORY.PROTOCOL, "Exception raised during frame {} processing"),
   // </editor-fold>
 
+  // <editor-fold desc="Nats Protocol log messages">
+  NATS_STATE_ENGINE_FAILED_COMPLETION(LEVEL.WARN, SERVER_CATEGORY.PROTOCOL, "Failed on frame completion callback"),
+  NATS_STARTING(LEVEL.DEBUG, SERVER_CATEGORY.PROTOCOL, "Starting Nats Protocol Implementation on {}"),
+  NATS_CLOSING(LEVEL.DEBUG, SERVER_CATEGORY.PROTOCOL, "Closing Nats Implementation {}"),
+  NATS_PUSHED_WRITE(LEVEL.DEBUG, SERVER_CATEGORY.PROTOCOL, "Pushed Frame for write, {}"),
+  NATS_FAILED_MAXIMUM_BUFFER(LEVEL.WARN, SERVER_CATEGORY.PROTOCOL, "Failed to set maximum buffer size, is not an integer::{}, using default of {}"),
+  NATS_FAILED_CLOSE(LEVEL.WARN, SERVER_CATEGORY.PROTOCOL, "Failed in close"),
+  NATS_PROCESSING_FRAME(LEVEL.INFO, SERVER_CATEGORY.PROTOCOL, "Processing frame {}"),
+  NATS_PROCESSING_FRAME_EXCEPTION(LEVEL.WARN, SERVER_CATEGORY.PROTOCOL, "Processing frame raised exception, closing session"),
+  NATS_INVALID_FRAME(LEVEL.WARN, SERVER_CATEGORY.PROTOCOL, "Invalid NATS frame received.. Unable to process::{}"),
+  NATS_FRAME_HANDLE_EXCEPTION(LEVEL.WARN, SERVER_CATEGORY.PROTOCOL, "Exception raised during frame {} processing"),
+  // </editor-fold>
+
+
   // <editor-fold desc="MQTT 3.1.1 log messages">
   MQTT_CONNECT_LISTENER_FAILED(LEVEL.DEBUG, SERVER_CATEGORY.PROTOCOL, "[MQTT-3.2.2-5] Connection failed with return code, {}, closing connection"),
   MQTT_CONNECT_LISTENER_SECOND_CONNECT(LEVEL.WARN, SERVER_CATEGORY.PROTOCOL, "[MQTT-3.1.0-2] Received a second CONNECT packet"),
@@ -411,7 +431,7 @@ public enum ServerLogMessages implements LogMessage {
   PROTOCOL_ACCEPT_SCANNING(LEVEL.DEBUG, SERVER_CATEGORY.PROTOCOL, "Scanning packet :{}"),
   PROTOCOL_ACCEPT_COMPLETE(LEVEL.DEBUG, SERVER_CATEGORY.PROTOCOL, "Selector callback completed"),
   PROTOCOL_ACCEPT_EXCEPTION(LEVEL.DEBUG, SERVER_CATEGORY.PROTOCOL, "Exception raised during close of end point"),
-  PROTOCOL_ACCEPT_FAILED_DETECT(LEVEL.INFO, SERVER_CATEGORY.PROTOCOL, "Failed to detect protocol on End Point {}"),
+  PROTOCOL_ACCEPT_FAILED_DETECT(LEVEL.WARN, SERVER_CATEGORY.PROTOCOL, "Failed to detect protocol on End Point {}"),
   PROTOCOL_ACCEPT_CREATED(LEVEL.WARN, SERVER_CATEGORY.PROTOCOL, "Created Protocol {}"),
   PROTOCOL_ACCEPT_CLOSED(LEVEL.WARN, SERVER_CATEGORY.PROTOCOL, "EndPoint closed during protocol negotiation"),
   // </editor-fold>
@@ -420,7 +440,7 @@ public enum ServerLogMessages implements LogMessage {
   JMX_MANAGER_REGISTER(LEVEL.DEBUG, SERVER_CATEGORY.ENGINE, "Registering MBean with [name={}]"),
   JMX_MANAGER_UNREGISTER(LEVEL.DEBUG, SERVER_CATEGORY.ENGINE, "Unregistering MBean with [name={}]"),
   JMX_MANAGER_REGISTER_FAIL(LEVEL.WARN, SERVER_CATEGORY.ENGINE, "Unable to register MBean [name={}] "),
-  JMX_MANAGER_UNREGISTER_FAIL(LEVEL.WARN, SERVER_CATEGORY.ENGINE, "Unable to unregister MBean [name={}]"),
+  JMX_MANAGER_UNREGISTER_FAIL(LEVEL.INFO, SERVER_CATEGORY.ENGINE, "Unable to unregister MBean [name={}]"),
   // </editor-fold>
 
   // <editor-fold desc="Configuration log messages">
@@ -467,12 +487,15 @@ public enum ServerLogMessages implements LogMessage {
 
   //<editor-fold desc="Destination Manager log messages">
   DESTINATION_MANAGER_ADD_SYSTEM_TOPIC(LEVEL.INFO, SERVER_CATEGORY.ENGINE, "Added new topic {}"),
+  DESTINATION_MANAGER_NOT_LICESNSED(LEVEL.ERROR, SERVER_CATEGORY.LICENSE, "Not license usage for {}"),
+  DESTINATION_MANAGER_EXCEEDED_LICESNSE(LEVEL.ERROR, SERVER_CATEGORY.LICENSE, "Exceeded license usage for {}, has {} limit is {}"),
   DESTINATION_MANAGER_USER_SYSTEM_TOPIC(LEVEL.INFO, SERVER_CATEGORY.ENGINE, "User attempted to create a system topic, {}, this is prohibited"),
   DESTINATION_MANAGER_CREATED_TOPIC(LEVEL.INFO, SERVER_CATEGORY.ENGINE, "New topic created {}"),
   DESTINATION_MANAGER_DELETED_TOPIC(LEVEL.INFO, SERVER_CATEGORY.ENGINE, "Topic, {}, has been deleted"),
   DESTINATION_MANAGER_STARTING(LEVEL.INFO, SERVER_CATEGORY.ENGINE, "Destination Manager starting"),
   DESTINATION_MANAGER_STARTED_TOPIC(LEVEL.INFO, SERVER_CATEGORY.ENGINE, "Reloaded {}"),
   DESTINATION_MANAGER_EXCEPTION_ON_START(LEVEL.ERROR, SERVER_CATEGORY.ENGINE, "Exception raised during Destination Manager startup"),
+  DESTINATION_MANAGER_EXCEPTION_ON_STOP(LEVEL.ERROR, SERVER_CATEGORY.ENGINE, "Exception raised during Destination Manager shutdown"),
   DESTINATION_MANAGER_STOPPING(LEVEL.INFO, SERVER_CATEGORY.ENGINE, "Shut down started"),
   DESTINATION_MANAGER_CLEARING(LEVEL.INFO, SERVER_CATEGORY.ENGINE, "Clear session id {} requested"),
   DESTINATION_MANAGER_DELETING_TEMPORARY_DESTINATION(LEVEL.INFO, SERVER_CATEGORY.ENGINE, "\"Reloaded temp destination {}, now deleting"),
@@ -658,13 +681,15 @@ public enum ServerLogMessages implements LogMessage {
 
   //<editor-fold desc="Device Integration, log messages">
   DEVICE_SELECTOR_PARSER_EXCEPTION(LEVEL.INFO, SERVER_CATEGORY.DEVICE, "Selection {}, failed to parse with the following exception {}"),
-  DEVICE_SCHEMA_UPDATE_EXCEPTION(LEVEL.INFO, SERVER_CATEGORY.DEVICE, "Schema failed to be updated {}"),
+  DEVICE_SCHEMA_UPDATED(LEVEL.WARN, SERVER_CATEGORY.DEVICE, "Device {} schema configuration updated"),
+  DEVICE_SCHEMA_UPDATE_EXCEPTION(LEVEL.INFO, SERVER_CATEGORY.DEVICE, "Schema failed to be updated {} while applying {}"),
   DEVICE_SUBSCRIPTION_EXCEPTION(LEVEL.INFO, SERVER_CATEGORY.DEVICE, "Subscription failed to be applied to {}"),
   DEVICE_PUBLISH_EXCEPTION(LEVEL.INFO, SERVER_CATEGORY.DEVICE, "Event publish failed {}"),
   DEVICE_START(LEVEL.INFO, SERVER_CATEGORY.DEVICE, "Starting device {}"),
   DEVICE_STOP(LEVEL.INFO, SERVER_CATEGORY.DEVICE, "Stopping device {}"),
 
   DEVICE_MANAGER_STARTUP(LEVEL.DEBUG, SERVER_CATEGORY.ENGINE, "Starting Device Manager"),
+  DEVICE_MANAGER_STARTUP_FAILED(LEVEL.WARN, SERVER_CATEGORY.ENGINE, "Device Manager failed to start"),
   DEVICE_MANAGER_FAILED_TO_REGISTER(LEVEL.INFO, SERVER_CATEGORY.DEVICE, "Failed to register device"),
   DEVICE_MANAGER_START_ALL(LEVEL.DEBUG, SERVER_CATEGORY.ENGINE, "Starting all registered devices"),
   DEVICE_MANAGER_STOP_ALL(LEVEL.DEBUG, SERVER_CATEGORY.ENGINE, "Stopping all registered devices"),
@@ -683,9 +708,86 @@ public enum ServerLogMessages implements LogMessage {
   //</editor-fold>
 
   //<editor-fold desc="Rest API log messages">
-  REST_API_ACCESS(LEVEL.INFO, SERVER_CATEGORY.PROTOCOL, "Address {} requested {}, returning Status:{} with length {} bytes"),
-  REST_API_FAILURE(LEVEL.ERROR, SERVER_CATEGORY.PROTOCOL, "Rest Server unable to start due to exception"),
+  REST_API_ACCESS(LEVEL.INFO, SERVER_CATEGORY.REST, "Address {} requested {}, returning Status:{} with length {} bytes"),
+  REST_API_FAILURE(LEVEL.ERROR, SERVER_CATEGORY.REST, "Rest Server unable to start due to exception"),
+  REST_API_SUCCESSFUL_REQUEST(LEVEL.INFO, SERVER_CATEGORY.REST, "Rest request type {} for {} with status {}"),
+  REST_CACHE_HIT(LEVEL.INFO, SERVER_CATEGORY.REST,"Cache hit for key: {}"),
+  REST_CACHE_MISS(LEVEL.INFO, SERVER_CATEGORY.REST,"Cache miss for key: {}"),
   //</editor-fold>
+
+  SYSTEM_TOPIC_MESSAGE_ERROR(LEVEL.ERROR, SERVER_CATEGORY.ENGINE, "Failed to send update to {}, exception raised"),
+
+  AUTH_STARTUP_FAILED(LEVEL.ERROR, SERVER_CATEGORY.AUTHENTICATION, "Authentication manager failed to start up"),
+  AUTH_SAVE_FAILED(LEVEL.ERROR, SERVER_CATEGORY.AUTHENTICATION, "Authentication manager failed to save initial user configuration"),
+  AUTH_STOP_FAILED(LEVEL.ERROR, SERVER_CATEGORY.AUTHENTICATION, "Authentication manager raised exception during stop"),
+  AUTH_ADDED_USER(LEVEL.AUDIT, SERVER_CATEGORY.AUTHENTICATION, "User: {} added"),
+  AUTH_DELETED_USER(LEVEL.AUDIT, SERVER_CATEGORY.AUTHENTICATION, "User: {} deleted"),
+  AUTH_MODIFIED_USER(LEVEL.AUDIT, SERVER_CATEGORY.AUTHENTICATION, "User: {} modified"),
+
+  AUTH_ADDED_GROUP(LEVEL.AUDIT, SERVER_CATEGORY.AUTHENTICATION, "Group: {} added"),
+  AUTH_DELETED_GROUP(LEVEL.AUDIT, SERVER_CATEGORY.AUTHENTICATION, "Group: {} deleted"),
+  AUTH_MODIFIED_GROUP(LEVEL.AUDIT, SERVER_CATEGORY.AUTHENTICATION, "User:{} {} Group: {}"),
+
+  AUTH_STORAGE_FAILED_TO_LOAD(LEVEL.ERROR, SERVER_CATEGORY.AUTHENTICATION, "Authentication storage level failed to load"),
+  AUTH_STORAGE_FAILED_ON_UPDATE(LEVEL.ERROR, SERVER_CATEGORY.AUTHENTICATION, "Authentication storage unable to update state"),
+
+  MESSAGE_TRANSFORMATION_EXCEPTION(LEVEL.ERROR, SERVER_CATEGORY.TRANSFORMATION, "Exception raised during transformation"),
+
+  LICENSE_INSTALLING(LEVEL.INFO, SERVER_CATEGORY.LICENSE, "Installing license edition {}"),
+  LICENSE_FAILED_INSTALLING(LEVEL.ERROR, SERVER_CATEGORY.LICENSE, "Failed to install license edition {}"),
+  LICENSE_MANAGER_NOT_FOUND(LEVEL.ERROR, SERVER_CATEGORY.LICENSE, "Failed to locate license manager for edition {}"),
+  LICENSE_FILE_RENAME_FAILED(LEVEL.INFO, SERVER_CATEGORY.LICENSE, "Failed to rename license file from {} to {}"),
+  LICENSE_FEATURES_AVAILABLE(LEVEL.WARN, SERVER_CATEGORY.LICENSE, "Loaded the following license {}"),
+
+  LICENSE_LOADING(LEVEL.INFO, SERVER_CATEGORY.LICENSE, "Loading license edition {}"),
+  LICENSE_EXPIRED(LEVEL.INFO, SERVER_CATEGORY.LICENSE, "License {} has expired Not Before {} and Not After {}"),
+  LICENSE_UNINSTALLING(LEVEL.INFO, SERVER_CATEGORY.LICENSE, "License {} is being uninstalled"),
+
+  LICENSE_FAILED_LOADING(LEVEL.ERROR, SERVER_CATEGORY.LICENSE, "Failed to load license edition {}"),
+  LICENSE_CONTACTING_SERVER(LEVEL.INFO, SERVER_CATEGORY.LICENSE, "Contacting licensing server for configured license using Client:{}"),
+  LICENSE_ERROR_CONTACTING_SERVER(LEVEL.ERROR, SERVER_CATEGORY.LICENSE, "Error response contacting licensing server"),
+  LICENSE_FAILED_CONTACTING_SERVER(LEVEL.INFO, SERVER_CATEGORY.LICENSE, "Failed to contact licensing server"),
+  LICENSE_SAVED_TO_FILE(LEVEL.INFO, SERVER_CATEGORY.LICENSE, "Saved license file to {}"),
+  LICENSE_FAILED_SAVED_TO_FILE(LEVEL.ERROR, SERVER_CATEGORY.LICENSE, "Failed to save license file to {}"),
+  LICENSE_FAILED_DELETE_FILE(LEVEL.ERROR, SERVER_CATEGORY.LICENSE, "Failed to delete license file {}"),
+  LICENSE_LOADED(LEVEL.ERROR, SERVER_CATEGORY.LICENSE, "Loaded license for {} by {}, created {}, valid after {} and till {} with features {}"),
+  LICENSE_UNKNOWN_FEATURE_KEY(LEVEL.ERROR, SERVER_CATEGORY.LICENSE, "Unknown feature name requested {}"),
+  LICENSE_DISABLED_FEATURE_KEY(LEVEL.ERROR, SERVER_CATEGORY.LICENSE, "Feature is not enabled {}"),
+
+  //-------------------------------------------------------------------------------------------------------------
+  OGWS_SENDING_REQUEST(LEVEL.DEBUG, SERVER_CATEGORY.NETWORK, "OGWS request {} returned status {}"),
+  OGWS_FAILED_AUTHENTICATION(LEVEL.FATAL, SERVER_CATEGORY.NETWORK, "Authentication failed, aborting connection"),
+  OGWS_FAILED_POLL(LEVEL.FATAL, SERVER_CATEGORY.NETWORK, "Poll of outstanding messaged failed with error code {}"),
+  OGWS_REQUEST_FAILED(LEVEL.FATAL, SERVER_CATEGORY.NETWORK, "Network based exception raised while communicating with the OGWS server"),
+  OGWS_FAILED_TO_SAVE_MESSAGE(LEVEL.FATAL, SERVER_CATEGORY.NETWORK, "Network based exception raised while communicating with the OGWS server"),
+  OGWS_UNPROCESSED_MESSAGE(LEVEL.FATAL, SERVER_CATEGORY.NETWORK, "Received a message SIN:{} MIN:{} from ClientId:{} but not configured to process it"),
+  OGWS_NO_CONFIGURATION_FOUND(LEVEL.FATAL, SERVER_CATEGORY.NETWORK, "No configuration found for ogws server"),
+  OGWS_EXCEPTION_PROCESSING_MESSAGE(LEVEL.FATAL, SERVER_CATEGORY.ENGINE, "Exception raised processing inbound message"),
+  OGWS_WEB_REQUEST_STATS(LEVEL.INFO, SERVER_CATEGORY.NETWORK, "Web request for {} took {} ms"),
+
+  //-------------------------------------------------------------------------------------------------------------
+  INMARSAT_WEB_REQUEST_FAILED(LEVEL.DEBUG, SERVER_CATEGORY.NETWORK, "Web request failed with error code {},retrying {} more times"),
+  INMARSAT_WEB_REQUEST_STATS(LEVEL.INFO, SERVER_CATEGORY.NETWORK, "Web request for {} took {} ms"),
+  INMARSAT_FAILED_PROCESSING_INCOMING(LEVEL.INFO, SERVER_CATEGORY.NETWORK, "Processing incoming message raised exception {}"),
+  //-------------------------------------------------------------------------------------------------------------
+  STOGI_STARTED_SESSION(LEVEL.WARN, SERVER_CATEGORY.NETWORK, "Successfully started modem session, detected modem type {}, read intervals of {} ms and write intervals of {} ms"),
+  STOGI_ENCRYPTION_STATUS(LEVEL.WARN, SERVER_CATEGORY.NETWORK, "Encryption is {} for {}"),
+  STOGI_POLL_FOR_ACTIONS(LEVEL.DEBUG, SERVER_CATEGORY.NETWORK, "Polled for actions took {} ms, next poll in {} ms"),
+  STOGI_POLL_RAISED_EXCEPTION(LEVEL.DEBUG, SERVER_CATEGORY.NETWORK, "Polling for action resulted in an exception"),
+  STOGI_SEND_AT_MESSAGE(LEVEL.DEBUG, SERVER_CATEGORY.NETWORK, "Sending to modem: {} "),
+  STOGI_RECEIVED_AT_MESSAGE(LEVEL.DEBUG, SERVER_CATEGORY.NETWORK, "Received from modem : {}"),
+  STOGI_SATELLITES_STATUS_CHANGE(LEVEL.FATAL, SERVER_CATEGORY.NETWORK, "Satellite transmission status has changed to {}"),
+  STOGI_SENT_MESSAGE_TO_MODEM(LEVEL.INFO, SERVER_CATEGORY.NETWORK, "Sent message to be transmitted to satellite of length {} bytes"),
+  STOGI_RECEIVED_MESSAGE_TO_MODEM(LEVEL.INFO, SERVER_CATEGORY.NETWORK, "Received message from satellite of length {} bytes"),
+  STOGI_EXCEPTION_PROCESSING_PACKET(LEVEL.FATAL, SERVER_CATEGORY.NETWORK, "Exception raised processing inbound packet"),
+  STOGI_STORE_EVENT_EXCEPTION(LEVEL.FATAL, SERVER_CATEGORY.NETWORK, "Exception raised storing event"),
+  STOGI_PROCESSING_INBOUND_EVENT(LEVEL.DEBUG, SERVER_CATEGORY.NETWORK, "Processing inbound event for msg no: {}"),
+  STOGI_SEND_MESSAGE_TO_MODEM(LEVEL.DEBUG, SERVER_CATEGORY.NETWORK, "Sending message to modem, msg no: {}"),
+  STOGI_RECEIVED_PARTIAL_MESSAGE(LEVEL.DEBUG, SERVER_CATEGORY.NETWORK, "Received from partial message msg no: {}"),
+
+  STOGI_COMPRESS_MESSAGE(LEVEL.DEBUG, SERVER_CATEGORY.NETWORK, "Compressing message for from {} to {} bytes"),
+  STOGI_SPLIT_MESSAGE(LEVEL.DEBUG, SERVER_CATEGORY.NETWORK, "Splitting message into {} messages"),
+
   //-------------------------------------------------------------------------------------------------------------
   LAST_LOG_MESSAGE(LEVEL.DEBUG, SERVER_CATEGORY.PROTOCOL, "Last message to make it simpler to add more");
 
@@ -714,7 +816,11 @@ public enum ServerLogMessages implements LogMessage {
     NETWORK("Network"),
     PROTOCOL("Protocol"),
     DISCOVERY("Discovery"),
+    REST("Rest"),
+    TRANSFORMATION("Transformation"),
     DEVICE("Device"),
+    LICENSE("License"),
+    DAEMON("Daemon"),
     ENGINE("Engine");
 
     private final @Getter String description;

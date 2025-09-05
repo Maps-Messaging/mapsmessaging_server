@@ -1,0 +1,279 @@
+#
+# Copyright [ 2020 - 2024 ] [Matthew Buckton]
+# Copyright [ 2024 - 2025 ] [Maps Messaging B.V.]
+#
+#   Licensed under the Apache License, Version 2.0 (the "License");
+#   you may not use this file except in compliance with the License.
+#   You may obtain a copy of the License at
+#
+#       http://www.apache.org/licenses/LICENSE-2.0
+#
+#   Unless required by applicable law or agreed to in writing, software
+#   distributed under the License is distributed on an "AS IS" BASIS,
+#   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#   See the License for the specific language governing permissions and
+#   limitations under the License.
+#
+
+NMEA-0183:
+  format: json          # Can be JSON or RAW
+  publish: true         # Publish to $NMEA topics or not
+  serverLocation: true  # Use as location source for the server
+  sentenceForPosition: GGA
+
+  sentences:
+    -
+      GPGGA:
+        description: Global Positioning System Fix Data
+        syntax:
+          1:
+            name: time
+            type: UTCTime
+          2:
+            name: latitude
+            type: Position
+          3:
+            name: longitude
+            type: Position
+          4:
+            name: fix_quality
+            type: Enum
+            param: '[{"0": "fix not available"}, {"1": "GPS Fix"}, {"2": "Differential GPS fix"} ]'
+          5:
+            name: satellites
+            type: long
+          6:
+            name: hdop
+            type: double
+          7:
+            name: altitude
+            type: Height
+          8:
+            name: height_of_geoid
+            type: Height
+          9:
+            name: time_since_dgps
+            type: long
+          10:
+            name: dgps_reference_id
+            type: String
+
+
+      GPGLL:
+        description: Geographic position, latitude / longitude
+        syntax:
+          1:
+            name: latitude
+            type: Position
+          2:
+            name: longitude
+            type: Position
+          3:
+            name: time
+            type: UTCTime
+          4:
+            name: GLLStatus
+            type: Enum
+            param: '[{"A": "Data Valid"},{"V": "Data Invalid"} ]'
+
+      GPGSA:
+        description: GPS DOP and active satellites
+        syntax:
+          1:
+            name: selectionMode
+            type: Enum
+            param: '[{"M": "Manual"},{"A": "Automatic"}]'
+          2:
+            name: mode
+            type: Enum
+            param: '[{"1": "Not available"}, {"2":"2D"}, {"3":"3D"}]'
+          3:
+            name: id
+            type: long
+            repeat: 12
+          4:
+            name: PDOP
+            type: double
+          5:
+            name: HDOP
+            type: double
+          6:
+            name: VDOP
+            type: double
+
+      GPGSV:
+        description: GPS Satellites in view
+        syntax:
+          1:
+            name: totalMessages
+            type: long
+          2:
+            name: messageNumber
+            type: long
+          3:
+            name: satellitesInView
+            type: long
+          4:
+            name: satelliteNumber
+            type: long
+          5:
+            name: elevationInDegrees
+            type: double
+          6:
+            name: azimuthInDegreesToTrue
+            type: double
+          7:
+            name: snrIndb
+            type: double
+
+      GPHDT:
+        description: Heading, True
+        syntax:
+          1:
+            name: headingDegreesTrue
+            type: double
+          2:
+            name: true
+            type: boolean
+            param: "T"
+
+      GPRMC:
+        description: Recommended minimum specific GPS/Transit data
+        syntax:
+          1:
+            name: Time
+            type: UTCTime
+          2:
+            name: RMCStatus
+            type: Enum
+            param: '[{"V": "Navigation receiver warning"},{"A": "Valid" }]'
+          3:
+            name: latitude
+            type: Position
+          4:
+            name: longitude
+            type: Position
+          5:
+            name: speedOverGround
+            type: double
+          6:
+            name: trackMadeGood
+            type: double
+          7:
+            name: date
+            type: Date
+          8:
+            name: magneticVariation
+            type: Position
+
+      GPVTG:
+        description: Recommended minimum specific GPS/Transit data
+        syntax:
+          1:
+            name: trackTrue
+            type: double
+          2:
+            name: trackIndicator
+            type: boolean
+            param: T
+          3:
+            name: trackMag
+            type: double
+          4:
+            name: trackMagIndicator
+            type: boolean
+            param: M
+          5:
+            name: speedOverGround
+            type: double
+          6:
+            name: nauticalSpeedIndicator
+            type: char
+          7:
+            name: kmPerHour
+            type: double
+          8:
+            name: kmPerHourIndicator
+            type: char
+          9:
+            name: modeIndicator
+            type: Enum
+            param: '[{"A": "Autonomous"},{"D": "Differential"},{"E": "Estimated (dead reckoning) mode"},{"M": "Manual input"},{"N": "Data not valid"}]'
+
+      GPZDA:
+        description: UTC time and date information
+        syntax:
+          1:
+            name: time
+            type: UTCTime
+          2:
+            name: day
+            type: long
+          3:
+            name: month
+            type: long
+          4:
+            name: year
+            type: long
+          5:
+            name: localZoneHours
+            type: long
+          6:
+            name: localZoneMinutes
+            type: long
+
+      GLGGA:
+        description: GLONASS Fix Data
+        aliasOf: GPGGA
+
+      GLGLL:
+        description: GLONASS Geographic position, latitude / longitude
+        aliasOf: GPGLL
+
+      GLGSA:
+        description: GLONASS DOP and active satellites
+        aliasOf: GPGSA
+
+      GLGSV:
+        description: GLONASS Satellites in view
+        aliasOf: GPGSV
+
+      GLRMC:
+        description: GLONASS Recommended minimum specific data
+        aliasOf: GPRMC
+
+      GLVTG:
+        description: GLONASS Track and speed
+        aliasOf: GPVTG
+
+      GLZDA:
+        description: GLONASS Time and date
+        aliasOf: GPZDA
+
+      BDGGA:
+        description: BeiDou Fix Data
+        aliasOf: GPGGA
+
+      BDGLL:
+        description: BeiDou Geographic position, latitude / longitude
+        aliasOf: GPGLL
+
+      BDGSA:
+        description: BeiDou DOP and active satellites
+        aliasOf: GPGSA
+
+      BDGSV:
+        description: BeiDou Satellites in view
+        aliasOf: GPGSV
+
+      BDRMC:
+        description: BeiDou Recommended minimum specific data
+        aliasOf: GPRMC
+
+      BDVTG:
+        description: BeiDou Track and speed
+        aliasOf: GPVTG
+
+      BDZDA:
+        description: BeiDou Time and date
+        aliasOf: GPZDA

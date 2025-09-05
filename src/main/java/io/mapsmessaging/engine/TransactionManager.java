@@ -1,29 +1,35 @@
 /*
- * Copyright [ 2020 - 2024 ] [Matthew Buckton]
  *
- *  Licensed under the Apache License, Version 2.0 (the "License");
- *  you may not use this file except in compliance with the License.
- *  You may obtain a copy of the License at
+ *  Copyright [ 2020 - 2024 ] Matthew Buckton
+ *  Copyright [ 2024 - 2025 ] MapsMessaging B.V.
+ *
+ *  Licensed under the Apache License, Version 2.0 with the Commons Clause
+ *  (the "License"); you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at:
  *
  *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://commonsclause.com/
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
  */
 
 package io.mapsmessaging.engine;
 
 import io.mapsmessaging.api.Transaction;
+import io.mapsmessaging.dto.rest.system.Status;
+import io.mapsmessaging.dto.rest.system.SubSystemStatusDTO;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.logging.ServerLogMessages;
 import io.mapsmessaging.utilities.Agent;
 import io.mapsmessaging.utilities.threads.SimpleTaskScheduler;
+import lombok.Getter;
 import lombok.NonNull;
+import lombok.Setter;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
@@ -38,28 +44,25 @@ import java.util.concurrent.TimeUnit;
  * This class manages the timeouts of transactions, if we do not have timeouts it is a simple DOS attack to simply start transactions and publish messages with no commit or abort,
  * resulting in a build up of messages that can never be delivered.
  */
+
+@SuppressWarnings("java:S6548") // yes it is a singleton
 public class TransactionManager implements Runnable, Agent {
 
-  private static long timeOutInterval = 100;
-  private static long expiryTime = 3600000;
-
-  public static void setTimeOutInterval(long timeout) {
-    timeOutInterval = timeout;
+  private static class Holder {
+    static final TransactionManager INSTANCE = new TransactionManager();
   }
-
-  public static long getExpiryTime() {
-    return expiryTime;
-  }
-
-  public static void setExpiryTime(long expiry) {
-    expiryTime = expiry;
-  }
-
-  private static final TransactionManager instance = new TransactionManager();
 
   public static TransactionManager getInstance() {
-    return instance;
+    return Holder.INSTANCE;
   }
+
+  @Setter
+  @Getter
+  private static long timeOutInterval = 100;
+
+  @Setter
+  @Getter
+  private static long expiryTime = 3600000;
 
   private final Logger logger = LoggerFactory.getLogger(TransactionManager.class);
   /**
@@ -143,5 +146,15 @@ public class TransactionManager implements Runnable, Agent {
     transactionList = new ConcurrentSkipListMap<>();
     schedule = null;
   }
+
+  @Override
+  public SubSystemStatusDTO getStatus() {
+    SubSystemStatusDTO status = new SubSystemStatusDTO();
+    status.setName(getName());
+    status.setComment("Transaction List: " + transactionList.size());
+    status.setStatus(Status.OK);
+    return status;
+  }
+
 
 }

@@ -1,0 +1,11 @@
+Package: %%PACKAGE_NAME%%
+Version: %%PACKAGE_VERSION%%
+Section: java
+Priority: optional
+Architecture: all
+Depends: default-jre-headless (>= 2:1.21) | openjdk-21-jre-headless | java21-runtime-headless | java21-runtime
+Recommends: pigpiod
+Maintainer: Maps Messaging B.V. <info@mapsmessaging.io>
+Description: A multi adapter and protocol server
+ A multi adapter and protocol server for handling messaging protocols.
+

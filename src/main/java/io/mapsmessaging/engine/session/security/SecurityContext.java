@@ -1,18 +1,20 @@
 /*
- * Copyright [ 2020 - 2023 ] [Matthew Buckton]
  *
- *  Licensed under the Apache License, Version 2.0 (the "License");
- *  you may not use this file except in compliance with the License.
- *  You may obtain a copy of the License at
+ *  Copyright [ 2020 - 2024 ] Matthew Buckton
+ *  Copyright [ 2024 - 2025 ] MapsMessaging B.V.
+ *
+ *  Licensed under the Apache License, Version 2.0 with the Commons Clause
+ *  (the "License"); you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at:
  *
  *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://commonsclause.com/
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
  */
 
 package io.mapsmessaging.engine.session.security;
@@ -20,8 +22,6 @@ package io.mapsmessaging.engine.session.security;
 import com.sun.security.auth.UserPrincipal;
 import io.mapsmessaging.security.SubjectHelper;
 import io.mapsmessaging.security.access.mapping.GroupIdMap;
-import io.mapsmessaging.security.identity.principals.GroupIdPrincipal;
-import io.mapsmessaging.security.identity.principals.UniqueIdentifierPrincipal;
 import lombok.Getter;
 
 import javax.security.auth.Subject;
@@ -46,7 +46,7 @@ public abstract class SecurityContext {
 
   public abstract void logout();
 
-  static protected Subject buildSubject(String user, Principal endPointPrincipal) {
+  protected static Subject buildSubject(String user, Principal endPointPrincipal) {
     Set<Principal> principalSet = new HashSet<>();
     Set<String> credentials = new HashSet<>();
     Set<String> privileges = new HashSet<>();
@@ -59,8 +59,9 @@ public abstract class SecurityContext {
     if (accessIds == null) {
       accessIds = new ArrayList<>();
       accessIds.add(SubjectHelper.getUniqueId(subject));
-      for (GroupIdPrincipal groupIdPrincipal : subject.getPrincipals(GroupIdPrincipal.class)) {
-        for (GroupIdMap g : groupIdPrincipal.getGroupIds()) {
+      List<GroupIdMap> groupIds = SubjectHelper.getGroupId(subject);
+      if (groupIds != null) {
+        for (GroupIdMap g : groupIds) {
           accessIds.add(g.getAuthId());
         }
       }

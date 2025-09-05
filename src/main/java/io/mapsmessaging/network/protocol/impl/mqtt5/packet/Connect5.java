@@ -1,18 +1,20 @@
 /*
- * Copyright [ 2020 - 2023 ] [Matthew Buckton]
  *
- *  Licensed under the Apache License, Version 2.0 (the "License");
- *  you may not use this file except in compliance with the License.
- *  You may obtain a copy of the License at
+ *  Copyright [ 2020 - 2024 ] Matthew Buckton
+ *  Copyright [ 2024 - 2025 ] MapsMessaging B.V.
+ *
+ *  Licensed under the Apache License, Version 2.0 with the Commons Clause
+ *  (the "License"); you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at:
  *
  *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://commonsclause.com/
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
  */
 
 package io.mapsmessaging.network.protocol.impl.mqtt5.packet;
@@ -22,6 +24,8 @@ import io.mapsmessaging.network.io.Packet;
 import io.mapsmessaging.network.protocol.EndOfBufferException;
 import io.mapsmessaging.network.protocol.impl.mqtt.packet.MalformedException;
 import io.mapsmessaging.network.protocol.impl.mqtt5.packet.properties.MessageProperty;
+import lombok.Getter;
+import lombok.Setter;
 
 /**
  * https://docs.oasis-open.org/mqtt/mqtt/v5.0/os/mqtt-v5.0-os.html#_Toc3901033
@@ -38,27 +42,54 @@ public class Connect5 extends MQTTPacket5 {
   //
   // Will fields
   //
+  @Getter
   private final MessageProperties willProperties;
+  @Getter
   private final boolean willFlag;
+  @Getter
   private final QualityOfService willQOS;
+  @Getter
   private final boolean willRetain;
+  @Getter
   private final String willTopic;
+  @Getter
   private final byte[] willMsg;
 
   //
   // Username / Password fields
   //
-  private final boolean passwordFlag;
-  private final boolean usernameFlag;
-  private final String username;
-  private final char[] password;
+  @Getter
+  @Setter
+  private String username;
+  @Getter
+  @Setter
+  private char[] password;
 
   //
   // Session fields
   //
+  @Getter
   private final boolean cleanSession;
+  @Getter
   private final int keepAlive;
-  private final String sessionId;
+
+  @Getter
+  @Setter
+  private String sessionId;
+
+  public Connect5(){
+    super(CONNECT);
+    protocolLevel = 5;
+    cleanSession = false;
+    keepAlive = 60;
+    sessionId = null;
+    willFlag = false;
+    willRetain = false;
+    willTopic = null;
+    willMsg = null;
+    willProperties = null;
+    willQOS = QualityOfService.AT_MOST_ONCE;
+  }
 
   // Due to the nature of a MQTT Version5 packet we validate as we go, else we can simply run off
   // the packet. This then causes the "complexity" score to be higher than configured. If could
@@ -102,8 +133,8 @@ public class Connect5 extends MQTTPacket5 {
     willFlag = (connectFlag & 0x4) != 0; // Bit 2
     willQOS = QualityOfService.getInstance((connectFlag & 0x18) >> 3); // Bit 3|4
     willRetain = (connectFlag & 0x20) != 0; // Bit 5
-    passwordFlag = (connectFlag & 0x40) != 0; // Bit 6
-    usernameFlag = (connectFlag & 0x80) != 0; // Bit 7
+    boolean passwordFlag = (connectFlag & 0x40) != 0; // Bit 6
+    boolean usernameFlag = (connectFlag & 0x80) != 0; // Bit 7
     if (!willFlag) {
       if (!willQOS.equals(QualityOfService.AT_MOST_ONCE)) {
         throw new MalformedException("If the Will Flag is set to 0, then the Will QoS MUST be set to 0 (0x00) [MQTT-3.1.2-13]");
@@ -161,68 +192,12 @@ public class Connect5 extends MQTTPacket5 {
     }
   }
 
-  public boolean isPasswordFlag() {
-    return passwordFlag;
+  public boolean hasUsername(){
+    return username != null && !username.isEmpty() && !username.isBlank();
   }
 
-  public boolean isUsernameFlag() {
-    return usernameFlag;
-  }
-
-  public byte getProtocolLevel() {
-    return protocolLevel;
-  }
-
-  public int getKeepAlive() {
-    return keepAlive;
-  }
-
-  public String getSessionId() {
-    return sessionId;
-  }
-
-  public String getWillTopic() {
-    return willTopic;
-  }
-
-  public byte[] getWillMsg() {
-    return willMsg;
-  }
-
-  public String getUsername() {
-    return username;
-  }
-
-  public char[] getPassword() {
-    return password;
-  }
-
-  public boolean isCleanSession() {
-    return cleanSession;
-  }
-
-  public boolean isWillFlag() {
-    return willFlag;
-  }
-
-  public QualityOfService getWillQOS() {
-    return willQOS;
-  }
-
-  public boolean isWillRetain() {
-    return willRetain;
-  }
-
-  public MessageProperties getWillProperties() {
-    return willProperties;
-  }
-
-  public char[] isPassword() {
-    return password;
-  }
-
-  public String isUsername() {
-    return username;
+  public boolean hasPassword(){
+    return password != null && password.length > 0;
   }
 
   @Override
@@ -243,12 +218,12 @@ public class Connect5 extends MQTTPacket5 {
           .append(willRetain)
           .append(">");
     }
-    sb.append("Username Flag:").append(usernameFlag);
-    if (usernameFlag) {
+    sb.append("Username Flag:").append(hasUsername());
+    if (hasUsername()) {
       sb.append(" username:").append(username);
     }
-    sb.append("Password Flag:").append(passwordFlag);
-    if (passwordFlag) {
+    sb.append("Password Flag:").append(hasPassword());
+    if (hasPassword()) {
       sb.append(" Password Len:").append(password.length);
     }
     MessageProperties props = getProperties();
@@ -258,7 +233,57 @@ public class Connect5 extends MQTTPacket5 {
     return sb.toString();
   }
 
+  @Override
   public int packFrame(Packet packet) {
-    return 0;
+    // Write the fixed MQTT string length (2 bytes) and "MQTT" string
+    packet.putShort(mqtt.length);
+    packet.put(mqtt);
+
+    // Write the protocol level
+    packet.put(protocolLevel);
+
+    // Construct and write the connection flags
+    byte connectFlag = 0;
+    if (cleanSession) connectFlag |= 0b00000010;  // Bit 1
+    if (willFlag) {
+      connectFlag |= 0b00000100;                 // Bit 2
+      connectFlag |= (byte) ((willQOS.getLevel() << 3) & 0xff);  // Bit 3|4 for QoS
+      if (willRetain) connectFlag |= 0b00100000; // Bit 5
+    }
+    if (hasPassword()) connectFlag |= 0b01000000;   // Bit 6
+    if (hasUsername()) connectFlag |= (byte) 0b10000000;   // Bit 7
+    packet.put(connectFlag);
+
+    // Write the Keep Alive field
+    packet.putShort(keepAlive);
+
+    // Write properties (sessionId)
+    writeUTF8(packet, sessionId);
+
+    // Write Will topic and message if the Will flag is set
+    if (willFlag) {
+      int size = propertiesSize(willProperties);
+      packProperties(packet, willProperties, size);
+      writeUTF8(packet, willTopic);
+      packet.put(willMsg);
+    }
+
+    // Write the Username if the flag is set
+    if (hasUsername()) {
+      writeUTF8(packet, username);
+    }
+
+    // Write the Password if the flag is set
+    if (hasPassword()) {
+      byte[] pswdBytes = new byte[password.length];
+      for (int i = 0; i < password.length; i++) {
+        pswdBytes[i] = (byte) password[i];
+      }
+      packet.put(pswdBytes);
+    }
+    // Return the number of bytes written to the packet
+    return packet.position();
   }
+
+
 }

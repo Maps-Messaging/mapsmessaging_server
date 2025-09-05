@@ -1,24 +1,31 @@
 /*
- * Copyright [ 2020 - 2024 ] [Matthew Buckton]
  *
- *  Licensed under the Apache License, Version 2.0 (the "License");
- *  you may not use this file except in compliance with the License.
- *  You may obtain a copy of the License at
+ *  Copyright [ 2020 - 2024 ] Matthew Buckton
+ *  Copyright [ 2024 - 2025 ] MapsMessaging B.V.
+ *
+ *  Licensed under the Apache License, Version 2.0 with the Commons Clause
+ *  (the "License"); you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at:
  *
  *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://commonsclause.com/
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
  */
 
 package io.mapsmessaging.network;
 
 import io.mapsmessaging.MessageDaemon;
-import io.mapsmessaging.configuration.ConfigurationProperties;
+import io.mapsmessaging.config.NetworkConnectionManagerConfig;
+import io.mapsmessaging.config.network.EndPointConnectionServerConfig;
+import io.mapsmessaging.config.protocol.impl.LocalLoopConfig;
+import io.mapsmessaging.dto.rest.config.protocol.ProtocolConfigDTO;
+import io.mapsmessaging.dto.rest.system.Status;
+import io.mapsmessaging.dto.rest.system.SubSystemStatusDTO;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.logging.ServerLogMessages;
@@ -26,14 +33,16 @@ import io.mapsmessaging.network.admin.EndPointConnectionHostJMX;
 import io.mapsmessaging.network.io.EndPointConnectionFactory;
 import io.mapsmessaging.network.io.connection.EndPointConnection;
 import io.mapsmessaging.network.io.impl.SelectorLoadManager;
+import io.mapsmessaging.network.protocol.impl.extension.ExtensionEndPointConnectionFactory;
 import io.mapsmessaging.utilities.Agent;
-import io.mapsmessaging.utilities.configuration.ConfigurationManager;
 import io.mapsmessaging.utilities.service.Service;
 import io.mapsmessaging.utilities.service.ServiceManager;
 import lombok.Getter;
 
 import java.io.IOException;
 import java.util.*;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class NetworkConnectionManager implements ServiceManager, Agent {
 
@@ -44,61 +53,100 @@ public class NetworkConnectionManager implements ServiceManager, Agent {
   private final List<EndPointConnection> endPointConnectionList;
 
   private final Logger logger = LoggerFactory.getLogger(NetworkConnectionManager.class);
-  private final ServiceLoader<EndPointConnectionFactory> endPointConnections;
+  private final List<EndPointConnectionFactory> endPointConnections;
   private final Map<String, EndPointConnectionHostJMX> hostMapping;
-  private final List<ConfigurationProperties> connectionConfiguration;
+  private final NetworkConnectionManagerConfig config;
 
   public NetworkConnectionManager() throws IOException {
     logger.log(ServerLogMessages.NETWORK_MANAGER_STARTUP);
-    ConfigurationProperties networkConnectionProperties = ConfigurationManager.getInstance().getProperties("NetworkConnectionManager");
-    connectionConfiguration = new ArrayList<>();
-    Object rootObj = networkConnectionProperties.get("data");
-    if (rootObj instanceof List) {
-      connectionConfiguration.addAll((List<ConfigurationProperties>) rootObj);
-    } else if (rootObj instanceof ConfigurationProperties) {
-      connectionConfiguration.add((ConfigurationProperties) rootObj);
-    }
-    endPointConnections = ServiceLoader.load(EndPointConnectionFactory.class);
+    config = NetworkConnectionManagerConfig.getInstance();
+    ServiceLoader<EndPointConnectionFactory>  endPointLoad = ServiceLoader.load(EndPointConnectionFactory.class);
+    endPointConnections = new CopyOnWriteArrayList<>();
+    endPointLoad.forEach(endPointConnections::add);
     logger.log(ServerLogMessages.NETWORK_MANAGER_STARTUP_COMPLETE);
-    selectorLoadManager = new SelectorLoadManager(10,networkConnectionProperties.getProperty("name", "Network Connection") );
+    int poolSize = 1;
+    if(!config.getEndPointServerConfigList().isEmpty() && config.getEndPointServerConfigList().get(0).getEndPointConfig() != null){
+      poolSize = config.getEndPointServerConfigList().get(0).getEndPointConfig().getSelectorThreadCount();
+    }
+    selectorLoadManager = new SelectorLoadManager(poolSize, "Network Interconnection" );
     endPointConnectionList = new ArrayList<>();
     hostMapping = new LinkedHashMap<>();
   }
 
   public void initialise() {
-    for (ConfigurationProperties properties : connectionConfiguration) {
-      String urlString = properties.getProperty("url");
-      if (urlString == null) {
-        urlString = "noop://localhost/";
-        properties.put("protocol", "loop");
-      }
-
-      EndPointURL endPointURL = new EndPointURL(urlString);
-      List<ConfigurationProperties> destinationMappings = new ArrayList<>();
-      Object linkReference = properties.get("links");
-      if (linkReference instanceof ConfigurationProperties) {
-        destinationMappings.add((ConfigurationProperties) linkReference);
-      } else if (linkReference instanceof List) {
-        destinationMappings.addAll((List<ConfigurationProperties>) linkReference);
-      }
-      if (!destinationMappings.isEmpty()) {
-        processEndPoint(endPointURL, properties,destinationMappings );
-      }
-    }
-  }
-
-  private void processEndPoint(EndPointURL endPointURL, ConfigurationProperties properties, List<ConfigurationProperties> destinationMappings){
-    for (EndPointConnectionFactory endPointConnectionFactory : endPointConnections) {
-      if (endPointConnectionFactory.getName().equals(endPointURL.getProtocol())) {
-        EndPointConnectionHostJMX hostJMXBean = null;
-        List<String> jmxList = MessageDaemon.getInstance().getTypePath();
-        if (!jmxList.isEmpty()) {
-          hostJMXBean = hostMapping.computeIfAbsent(endPointURL.host, k -> new EndPointConnectionHostJMX(jmxList, endPointURL.host));
+    for (EndPointConnectionServerConfig properties : config.getEndPointServerConfigList()) {
+      if (!properties.getLinkConfigs().isEmpty()) {
+        String urlString = properties.getUrl();
+        if (urlString == null) {
+          urlString = "noop://localhost/";
+          properties.setUrl("noop://localhost/");
+          LocalLoopConfig localProtocolInformation = new LocalLoopConfig();
+          List<ProtocolConfigDTO> protocols = new ArrayList<>();
+          protocols.add(localProtocolInformation);
+          properties.setProtocolConfigs(protocols);
         }
-        endPointConnectionList.add(new EndPointConnection(endPointURL, properties, destinationMappings, endPointConnectionFactory, selectorLoadManager, hostJMXBean));
+
+        EndPointURL endPointURL = new EndPointURL(urlString);
+        processEndPoint(endPointURL, properties);
       }
     }
   }
+
+  private void processEndPoint(EndPointURL endPointURL, EndPointConnectionServerConfig properties){
+    if(properties.isPluginConnection()){
+      EndPointConnectionHostJMX hostJMXBean = null;
+      List<String> jmxList = MessageDaemon.getInstance().getTypePath();
+      if (!jmxList.isEmpty()) {
+        hostJMXBean = hostMapping.computeIfAbsent(endPointURL.host, k -> new EndPointConnectionHostJMX(jmxList, endPointURL.host));
+      }
+      ExtensionEndPointConnectionFactory pluginEndPointConnectionFactory = new ExtensionEndPointConnectionFactory();
+      endPointConnectionList.add(new EndPointConnection(endPointURL, properties, pluginEndPointConnectionFactory, selectorLoadManager, hostJMXBean));
+    }
+    else {
+      for (EndPointConnectionFactory endPointConnectionFactory : endPointConnections) {
+        if (endPointConnectionFactory.getName().equals(endPointURL.getProtocol())) {
+          EndPointConnectionHostJMX hostJMXBean = null;
+          List<String> jmxList = MessageDaemon.getInstance().getTypePath();
+          if (!jmxList.isEmpty()) {
+            hostJMXBean = hostMapping.computeIfAbsent(endPointURL.host, k -> new EndPointConnectionHostJMX(jmxList, endPointURL.host));
+          }
+          endPointConnectionList.add(new EndPointConnection(endPointURL, properties, endPointConnectionFactory, selectorLoadManager, hostJMXBean));
+        }
+      }
+    }
+  }
+
+
+  @Override
+  public SubSystemStatusDTO getStatus() {
+    SubSystemStatusDTO status = new SubSystemStatusDTO();
+    status.setName(getName());
+    status.setComment("");
+    if(endPointConnectionList.isEmpty()){
+      status.setStatus(Status.OK);
+      status.setComment("No connections configured");
+      return status;
+    }
+    status.setStatus(Status.OK);
+    AtomicInteger stopped = new AtomicInteger(0);
+    endPointConnectionList.forEach(endPointConnection -> {
+      if (!endPointConnection.getState().getName().equals("Established")) {
+        stopped.incrementAndGet();
+      }
+    });
+    if(stopped.get() != 0){
+      if(stopped.get() == endPointConnectionList.size()){
+        status.setStatus(Status.ERROR);
+        status.setComment("No inter server connections have been established");
+      }
+      else{
+        status.setStatus(Status.WARN);
+        status.setComment("Some inter server connections have not been established : ("+stopped.get()+" of "+endPointConnectionList.size()+")");
+      }
+    }
+    return status;
+  }
+
 
   @Override
   public String getName() {
@@ -114,22 +162,37 @@ public class NetworkConnectionManager implements ServiceManager, Agent {
     initialise();
     logger.log(ServerLogMessages.NETWORK_MANAGER_START_ALL);
     for (EndPointConnection endPointConnection : endPointConnectionList) {
-      endPointConnection.start();
+      if (!endPointConnection.isStarted()) {
+        endPointConnection.start();
+      }
     }
   }
 
   public void stop() {
     for (EndPointConnection endPointConnection : endPointConnectionList) {
-      endPointConnection.stop();
+      if(endPointConnection.isStarted()){
+        endPointConnection.stop();
+      }
+    }
+  }
+
+
+  public void pause() {
+    for (EndPointConnection endPointConnection : endPointConnectionList) {
+      endPointConnection.pause();
+    }
+  }
+
+
+  public void resume() {
+    for (EndPointConnection endPointConnection : endPointConnectionList) {
+      endPointConnection.resume();
     }
   }
 
   @Override
   public Iterator<Service> getServices() {
-    List<Service> service = new ArrayList<>();
-    for (EndPointConnectionFactory endPointConnectionFactory : endPointConnections) {
-      service.add(endPointConnectionFactory);
-    }
+    List<Service> service = new ArrayList<>(endPointConnections);
     return service.listIterator();
   }
 }

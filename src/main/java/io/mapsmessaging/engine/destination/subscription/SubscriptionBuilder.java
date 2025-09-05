@@ -1,18 +1,20 @@
 /*
- * Copyright [ 2020 - 2023 ] [Matthew Buckton]
  *
- *  Licensed under the Apache License, Version 2.0 (the "License");
- *  you may not use this file except in compliance with the License.
- *  You may obtain a copy of the License at
+ *  Copyright [ 2020 - 2024 ] Matthew Buckton
+ *  Copyright [ 2024 - 2025 ] MapsMessaging B.V.
+ *
+ *  Licensed under the Apache License, Version 2.0 with the Commons Clause
+ *  (the "License"); you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at:
  *
  *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://commonsclause.com/
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
  */
 
 package io.mapsmessaging.engine.destination.subscription;
@@ -55,12 +57,12 @@ public abstract class SubscriptionBuilder {
   private String combineSelectors(String lhs, String rhs) {
     StringBuilder sb = new StringBuilder();
     boolean hasLhs = false;
-    if (lhs != null && lhs.length() > 0) {
+    if (lhs != null && !lhs.isEmpty()) {
       sb.append(lhs).append(" ");
       hasLhs = true;
     }
 
-    if (rhs != null && rhs.length() > 0) {
+    if (rhs != null && !rhs.isEmpty()) {
       if (hasLhs) {
         sb.append(" and ");
       }
@@ -69,7 +71,7 @@ public abstract class SubscriptionBuilder {
     return sb.toString();
   }
 
-  public abstract Subscription construct(SessionImpl session, String sessionId, String uniqueSessionId) throws IOException;
+  public abstract Subscription construct(SessionImpl session, String sessionId, String uniqueSessionId, long sessionUniqueId) throws IOException;
 
   protected AcknowledgementController createAcknowledgementController(ClientAcknowledgement acknowledgementController) {
     CreditManager creditManager = createCreditManager(context);
@@ -99,7 +101,7 @@ public abstract class SubscriptionBuilder {
 
   protected ParserExecutor compileParser(String selector) throws IOException {
     ParserExecutor parser;
-    if (selector != null && selector.length() > 0) {
+    if (selector != null && !selector.isEmpty()) {
       try {
         parser = SelectorParser.compile(selector);
       } catch (ParseException e) {

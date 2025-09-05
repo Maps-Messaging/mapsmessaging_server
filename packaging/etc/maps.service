@@ -1,0 +1,22 @@
+[Unit]
+Description=Maps Message Service
+After=network.target
+
+[Service]
+Type=simple
+EnvironmentFile=/etc/maps/maps.env
+WorkingDirectory=/opt/maps
+ExecStart=/opt/maps/bin/start.sh
+ExecStopPost=/usr/bin/touch /opt/maps_data/mapsMessaging.lock.stop
+PIDFile=/opt/maps_data/pid
+Restart=on-failure
+StandardOutput=append:/var/log/maps/maps.log
+StandardError=append:/var/log/maps/maps.log
+User=mapsmessaging
+Group=mapsmessaging
+LimitNOFILE=65535
+TimeoutStartSec=15s
+TimeoutStopSec=10s
+
+[Install]
+WantedBy=multi-user.target

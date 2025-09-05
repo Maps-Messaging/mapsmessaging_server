@@ -1,69 +1,90 @@
 /*
- * Copyright [ 2020 - 2023 ] [Matthew Buckton]
  *
- *  Licensed under the Apache License, Version 2.0 (the "License");
- *  you may not use this file except in compliance with the License.
- *  You may obtain a copy of the License at
+ *  Copyright [ 2020 - 2024 ] Matthew Buckton
+ *  Copyright [ 2024 - 2025 ] MapsMessaging B.V.
+ *
+ *  Licensed under the Apache License, Version 2.0 with the Commons Clause
+ *  (the "License"); you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at:
  *
  *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://commonsclause.com/
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
  */
 
 package io.mapsmessaging.engine.destination.subscription.impl;
 
 import io.mapsmessaging.admin.SubscriptionJMX;
 import io.mapsmessaging.api.message.Message;
+import io.mapsmessaging.dto.rest.session.SubscriptionStateDTO;
 import io.mapsmessaging.engine.destination.DestinationImpl;
 import io.mapsmessaging.engine.destination.subscription.Subscribable;
 import io.mapsmessaging.engine.destination.subscription.Subscription;
 import io.mapsmessaging.engine.destination.subscription.SubscriptionContext;
 import io.mapsmessaging.engine.destination.subscription.state.MessageStateManager;
 import io.mapsmessaging.engine.destination.subscription.transaction.AcknowledgementController;
+import io.mapsmessaging.engine.destination.tasks.NextMessageTask;
 import io.mapsmessaging.engine.session.ClientConnection;
 import io.mapsmessaging.engine.session.MessageCallback;
 import io.mapsmessaging.engine.session.SessionImpl;
+import io.mapsmessaging.engine.tasks.Response;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.logging.ServerLogMessages;
 import io.mapsmessaging.logging.ThreadContext;
 import io.mapsmessaging.utilities.threads.tasks.ThreadLocalContext;
 import lombok.Getter;
+import lombok.Setter;
+import lombok.ToString;
 
 import java.io.IOException;
 import java.nio.channels.CancelledKeyException;
 import java.util.Map;
 import java.util.Queue;
+import java.util.concurrent.Future;
 
 /**
  * Note: This is a complex class that maintains the state of events for a specific subscription to a specific destination.
  */
+@ToString
 public class DestinationSubscription extends Subscription {
 
   @Getter
   private final AcknowledgementController acknowledgementController;
+  @Getter
   private final MessageDeliveryCompletionTask completionTask;
 
   protected final Logger logger;
   private final SubscriptionJMX mbean;
   private final String sessionId;
 
+  @Getter
   protected final DestinationImpl destinationImpl;
+  @Getter
   protected final MessageStateManager messageStateManager;
 
   protected DestinationSubscription activeSubscription;
   protected ClientSubscribedEventManager eventStateManager;
+  // <editor-fold desc="Subscription pause/resume functions">
+  @Getter
   private boolean isPaused;
+
+  @Getter
+  @Setter
+  private boolean sync;
 
   protected long messagesIgnored;
   protected long messagesRegistered;
+  @Getter
   protected long messagesSent;
+  @Getter
   protected long messagesAcked;
+  @Getter
   protected long messagesRolledBack;
   protected long messagesExpired;
 
@@ -87,6 +108,7 @@ public class DestinationSubscription extends Subscription {
     messagesIgnored = 0;
     messagesExpired = 0;
     isPaused = false;
+    sync = context.isSync();
     mbean = new SubscriptionJMX(destinationImpl.getTypePath(), this);
     completionTask = new MessageDeliveryCompletionTask(this, acknowledgementController);
     destinationImpl.addSubscription(this);
@@ -160,10 +182,6 @@ public class DestinationSubscription extends Subscription {
     return 1;
   }
 
-  public MessageDeliveryCompletionTask getCompletionTask() {
-    return completionTask;
-  }
-
   @Override
   public String getSessionId() {
     return sessionId;
@@ -172,18 +190,6 @@ public class DestinationSubscription extends Subscription {
   @Override
   public String getName() {
     return destinationImpl.getFullyQualifiedNamespace();
-  }
-
-  public long getMessagesSent() {
-    return messagesSent;
-  }
-
-  public long getMessagesAcked() {
-    return messagesAcked;
-  }
-
-  public long getMessagesRolledBack() {
-    return messagesRolledBack;
   }
 
   public int getInFlight() {
@@ -196,6 +202,29 @@ public class DestinationSubscription extends Subscription {
   }
 
   @Override
+  public SubscriptionStateDTO getState() {
+    SubscriptionStateDTO subscriptionStateDTO = new SubscriptionStateDTO();
+    subscriptionStateDTO.setDestinationName(destinationImpl.getFullyQualifiedNamespace());
+    subscriptionStateDTO.setHibernating(hibernating);
+    subscriptionStateDTO.setSessionId(sessionId);
+    subscriptionStateDTO.setPaused(isPaused);
+    subscriptionStateDTO.setMessagesSent(messagesSent);
+    subscriptionStateDTO.setMessagesAcked(messagesAcked);
+    subscriptionStateDTO.setMessagesIgnored(messagesIgnored);
+    subscriptionStateDTO.setMessagesExpired(messagesExpired);
+    subscriptionStateDTO.setMessagesRegistered(messagesRegistered);
+    subscriptionStateDTO.setMessagesRolledBack(messagesRolledBack);
+    subscriptionStateDTO.setSync(sync);
+
+    subscriptionStateDTO.setPending(messageStateManager.pending());
+    subscriptionStateDTO.setSize(messageStateManager.size());
+    subscriptionStateDTO.setHasAtRestMessages(messageStateManager.hasAtRestMessages());
+    subscriptionStateDTO.setHasMessagesInFlight(messageStateManager.hasMessagesInFlight());
+
+    return subscriptionStateDTO;
+  }
+
+  @Override
   public Queue<Long> getAllAtRest() {
     return messageStateManager.getAllAtRest();
   }
@@ -203,10 +232,6 @@ public class DestinationSubscription extends Subscription {
   @Override
   public Queue<Long> getAll() {
     return messageStateManager.getAll();
-  }
-
-  public DestinationImpl getDestinationImpl() {
-    return destinationImpl;
   }
 
   public boolean hasAtRestMessages() {
@@ -255,10 +280,6 @@ public class DestinationSubscription extends Subscription {
     handleTransaction(false, messageId);
   }
 
-  public MessageStateManager getMessageStateManager() {
-    return messageStateManager;
-  }
-
   @Override
   public void sendMessage(Message message) {
     ThreadLocalContext.checkDomain(DestinationImpl.SUBSCRIPTION_TASK_KEY);
@@ -280,6 +301,45 @@ public class DestinationSubscription extends Subscription {
     ThreadContext.put("protocol", name);
     ThreadContext.put("endpoint", endpoint);
     ThreadContext.put("version", version);
+    callback.sendMessage(destinationImpl, eventStateManager, prepareMessage(message), completionTask);
+    logger.log(ServerLogMessages.DESTINATION_SUBSCRIPTION_SEND, destinationImpl.getFullyQualifiedNamespace(), sessionId, message.getIdentifier());
+    ThreadContext.clear();
+  }
+
+  public Future<Response> getNext()  {
+    return destinationImpl.submit( new NextMessageTask(this));
+  }
+
+  public Message rawGetNext() throws IOException {
+    Message message = retrieveNextMessage();
+    if (message != null) {
+      prepareMessage(message);
+    }
+    return message;
+  }
+
+  protected Message retrieveNextMessage() throws IOException {
+    while(messageStateManager.hasAtRestMessages()) {
+      long nextMessageId = messageStateManager.nextMessageId();
+      if (nextMessageId >= 0) {
+        Message message = destinationImpl.getMessage(nextMessageId);
+        if (message != null) {
+          messageStateManager.allocate(message);
+          messagesSent++;
+          return message;
+        } else {
+          messageStateManager.expired(nextMessageId);
+          messagesExpired++;
+        }
+      }
+      else{
+        break; // we have no events
+      }
+    }
+    return null;
+  }
+
+  private Message prepareMessage(Message message) {
     //
     // Update state in an atomic fashion and then send the message
     //
@@ -288,9 +348,7 @@ public class DestinationSubscription extends Subscription {
     }
     acknowledgementController.sent(message);
     eventStateManager.setSubscription(activeSubscription);
-    callback.sendMessage(destinationImpl, eventStateManager, message, completionTask);
-    logger.log(ServerLogMessages.DESTINATION_SUBSCRIPTION_SEND, destinationImpl.getFullyQualifiedNamespace(), sessionId, message.getIdentifier());
-    ThreadContext.clear();
+    return message;
   }
 
   @Override
@@ -381,21 +439,10 @@ public class DestinationSubscription extends Subscription {
   public void run() {
     ThreadLocalContext.checkDomain(DestinationImpl.SUBSCRIPTION_TASK_KEY);
     try {
-      //
-      // Now check to see if we can send any more events
-      //
       while (isReady()) {
-        long nextMessageId = messageStateManager.nextMessageId();
-        if (nextMessageId >= 0) {
-          Message message = destinationImpl.getMessage(nextMessageId);
-          if (message != null) {
-            messageStateManager.allocate(message);
-            sendMessage(message);
-            messagesSent++;
-          } else {
-            messageStateManager.expired(nextMessageId);
-            messagesExpired++;
-          }
+        Message message = retrieveNextMessage();
+        if(message != null) {
+          sendMessage(message);
         } else {
           break;
         }
@@ -421,15 +468,15 @@ public class DestinationSubscription extends Subscription {
   }
 
   protected boolean isReady() {
-    return (!isPaused && !hibernating && messageStateManager.hasAtRestMessages() && !getContexts().isEmpty() && acknowledgementController.canSend());
+    return (!isPaused &&
+        !sync &&
+        !hibernating &&
+        messageStateManager.hasAtRestMessages() &&
+        !isContextEmpty() &&
+        acknowledgementController.canSend());
   }
 
   // </editor-fold>
-
-  // <editor-fold desc="Subscription pause/resume functions">
-  public boolean isPaused() {
-    return isPaused;
-  }
 
   @Override
   public void pause() {
@@ -442,18 +489,4 @@ public class DestinationSubscription extends Subscription {
     schedule();
   }
   // </editor-fold>
-
-  @Override
-  public String toString() {
-    return "SessionID:" + sessionId
-        + " Ack Controller:" + acknowledgementController.toString()
-        + " Destination:" + destinationImpl.getFullyQualifiedNamespace()
-        + " MessageState:" + messageStateManager.toString()
-        + " Paused:" + isPaused
-        + " Sent:" + messagesSent
-        + " Acked:" + messagesAcked
-        + " Rolled:" + messagesRolledBack
-        + " Hibernating:" + hibernating
-        + super.toString();
-  }
 }

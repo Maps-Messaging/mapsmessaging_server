@@ -1,18 +1,20 @@
 /*
- * Copyright [ 2020 - 2024 ] [Matthew Buckton]
  *
- *  Licensed under the Apache License, Version 2.0 (the "License");
- *  you may not use this file except in compliance with the License.
- *  You may obtain a copy of the License at
+ *  Copyright [ 2020 - 2024 ] Matthew Buckton
+ *  Copyright [ 2024 - 2025 ] MapsMessaging B.V.
+ *
+ *  Licensed under the Apache License, Version 2.0 with the Commons Clause
+ *  (the "License"); you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at:
  *
  *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://commonsclause.com/
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
  */
 
 package io.mapsmessaging.api;
@@ -21,6 +23,8 @@ import io.mapsmessaging.MessageDaemon;
 import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.engine.session.SessionContext;
 import io.mapsmessaging.engine.session.SessionImpl;
+import io.mapsmessaging.logging.Logger;
+import io.mapsmessaging.logging.LoggerFactory;
 import lombok.NonNull;
 import lombok.SneakyThrows;
 import org.jetbrains.annotations.NotNull;
@@ -28,6 +32,8 @@ import org.jetbrains.annotations.NotNull;
 import javax.security.auth.login.LoginException;
 import java.io.IOException;
 import java.util.concurrent.*;
+
+import static io.mapsmessaging.logging.ServerLogMessages.SESSION_ERROR_DURING_CREATION;
 
 /**
  * Session lifetime management class. This class handles the life cycle of a Session, as well as the ability to perform anonymous publishes, if configured and allowed.
@@ -45,6 +51,7 @@ public class SessionManager {
 
   private final ExecutorService publisherScheduler;
 
+  private final Logger logger = LoggerFactory.getLogger(SessionManager.class);
 
   /**
    * Creates a new Session using the supplied context and the message listener to deliver events that match any future subscriptions
@@ -65,14 +72,16 @@ public class SessionManager {
     Callable<SessionImpl> task = () -> {
       SessionImpl sessionImpl = null;
       try {
-        sessionImpl = MessageDaemon.getInstance().getSessionManager().create(sessionContext);
+        sessionImpl = MessageDaemon.getInstance().getSubSystemManager().getSessionManager().create(sessionContext);
         completableFuture.complete(new Session(sessionImpl, listener));
-      } catch (LoginException e) {
-        completableFuture.completeExceptionally(e);
+      }
+      catch(Throwable t) {
+        logger.log(SESSION_ERROR_DURING_CREATION, t);
+        completableFuture.completeExceptionally(t);
       }
       return sessionImpl;
     };
-    MessageDaemon.getInstance().getSessionManager().submit(sessionContext.getId(), task);
+    MessageDaemon.getInstance().getSubSystemManager().getSessionManager().submit(sessionContext.getId(), task);
     return completableFuture;
   }
 
@@ -98,7 +107,7 @@ public class SessionManager {
     CompletableFuture<Session> completableFuture = new CompletableFuture<>();
     Callable<Void> task = () -> {
       try {
-        MessageDaemon.getInstance().getSessionManager().close(session.getSession(), clearWillTask);
+        MessageDaemon.getInstance().getSubSystemManager().getSessionManager().close(session.getSession(), clearWillTask);
         session.close();
         completableFuture.complete(session);
       } catch (Exception e) {
@@ -106,7 +115,7 @@ public class SessionManager {
       }
       return null;
     };
-    MessageDaemon.getInstance().getSessionManager().submit(session.getName(), task);
+    MessageDaemon.getInstance().getSubSystemManager().getSessionManager().submit(session.getName(), task);
     return completableFuture;
   }
 
@@ -124,6 +133,7 @@ public class SessionManager {
           try {
             return MessageDaemon.getInstance().getDestinationManager().find(destination).get();
           } catch (InterruptedException | ExecutionException e) {
+            Thread.currentThread().interrupt();
             throw new CompletionException(e);
           }
         }, publisherScheduler)

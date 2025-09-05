@@ -1,44 +1,48 @@
 /*
- * Copyright [ 2020 - 2023 ] [Matthew Buckton]
  *
- *  Licensed under the Apache License, Version 2.0 (the "License");
- *  you may not use this file except in compliance with the License.
- *  You may obtain a copy of the License at
+ *  Copyright [ 2020 - 2024 ] Matthew Buckton
+ *  Copyright [ 2024 - 2025 ] MapsMessaging B.V.
+ *
+ *  Licensed under the Apache License, Version 2.0 with the Commons Clause
+ *  (the "License"); you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at:
  *
  *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://commonsclause.com/
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
  */
 
 package io.mapsmessaging.network.io.impl.udp;
 
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
-import io.mapsmessaging.network.io.EndPoint;
-import io.mapsmessaging.network.io.EndPointServerStatus;
-import io.mapsmessaging.network.io.Packet;
-import io.mapsmessaging.network.io.Selectable;
+import io.mapsmessaging.network.io.*;
 
+import javax.security.auth.Subject;
 import java.io.IOException;
 import java.net.SocketAddress;
 import java.nio.channels.ClosedChannelException;
 import java.nio.channels.SelectionKey;
+import java.security.Principal;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.FutureTask;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class UDPFacadeEndPoint extends EndPoint {
+
+  private static final AtomicInteger counter = new AtomicInteger(0);
 
   private final EndPoint endPoint;
   private final SocketAddress fromAddress;
 
   public UDPFacadeEndPoint(EndPoint endPoint, SocketAddress fromAddress, EndPointServerStatus server) {
-    super(1, server);
+    super(counter.incrementAndGet(), server);
     this.endPoint = endPoint;
     this.fromAddress = fromAddress;
     List<String> end = new ArrayList<>(endPoint.getJMXTypePath());
@@ -49,6 +53,8 @@ public class UDPFacadeEndPoint extends EndPoint {
     String remote = strip("remoteHost=" + getName());
     end.add(remote);
     jmxParentPath = end;
+    EndPointServer endPointServer = (EndPointServer)server;
+    endPointServer.registerNewEndPoint(this);
   }
 
   private String strip(String val) {
@@ -62,12 +68,6 @@ public class UDPFacadeEndPoint extends EndPoint {
   public String getProtocol() {
     return endPoint.getProtocol();
   }
-
-  @Override
-  public List<String> getJMXTypePath() {
-    return jmxParentPath;
-  }
-
 
   @Override
   public int sendPacket(Packet packet) throws IOException {
@@ -103,4 +103,40 @@ public class UDPFacadeEndPoint extends EndPoint {
   protected Logger createLogger() {
     return LoggerFactory.getLogger(UDPFacadeEndPoint.class);
   }
+
+
+
+  @Override
+  public void close() throws IOException {
+    endPoint.close();
+    EndPointServer endPointServer = (EndPointServer)endPoint.getServer();
+    endPointServer.handleCloseEndPoint(this);
+  }
+
+  @Override
+  public boolean isClient(){
+    return endPoint.isClient();
+  }
+
+  @Override
+  public boolean isUDP() {
+    return endPoint.isUDP();
+  }
+
+  @Override
+  public Subject getEndPointSubject() {
+    return endPoint.getEndPointSubject();
+  }
+
+  @Override
+  public Principal getEndPointPrincipal() {
+    return endPoint.getEndPointPrincipal();
+  }
+
+  @Override
+  public boolean isSSL() {
+    return endPoint.isSSL();
+  }
+
+
 }

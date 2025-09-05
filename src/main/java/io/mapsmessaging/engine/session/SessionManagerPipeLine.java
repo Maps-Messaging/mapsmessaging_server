@@ -1,18 +1,20 @@
 /*
- * Copyright [ 2020 - 2024 ] [Matthew Buckton]
  *
- *  Licensed under the Apache License, Version 2.0 (the "License");
- *  you may not use this file except in compliance with the License.
- *  You may obtain a copy of the License at
+ *  Copyright [ 2020 - 2024 ] Matthew Buckton
+ *  Copyright [ 2024 - 2025 ] MapsMessaging B.V.
+ *
+ *  Licensed under the Apache License, Version 2.0 with the Commons Clause
+ *  (the "License"); you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at:
  *
  *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://commonsclause.com/
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
  */
 
 package io.mapsmessaging.engine.session;
@@ -32,13 +34,15 @@ import io.mapsmessaging.utilities.threads.SimpleTaskScheduler;
 import io.mapsmessaging.utilities.threads.tasks.SingleConcurrentTaskScheduler;
 
 import javax.security.auth.login.LoginException;
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
 import java.util.*;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.LongAdder;
-
 
 //
 // This class locks the specific hashed pipeline for Session creation and deletion
@@ -155,6 +159,7 @@ public class SessionManagerPipeLine {
     SubscriptionController subscriptionController;
     long expiry = sessionImpl.getExpiry();
     sessions.remove(sessionImpl.getName());
+    String storeName = (sessionImpl instanceof PersistentSession) ?  ((PersistentSession)sessionImpl).getStoreName(): "";
     sessionImpl.close();
 
     if (!clearWillTask) {
@@ -172,11 +177,11 @@ public class SessionManagerPipeLine {
     subscriptionController = sessionImpl.getSubscriptionController();
     if (expiry > 0) {
       subscriptionController.hibernateAll();
-      Future<?> schedule = SimpleTaskScheduler.getInstance().schedule(() -> closeSubscriptionController(subscriptionController), expiry, TimeUnit.SECONDS);
-      subscriptionController.setTimeout(schedule);
+      Future<?> sched = SimpleTaskScheduler.getInstance().schedule(() -> closeAndDeleteSubscriptionController(storeName, subscriptionController), expiry, TimeUnit.SECONDS);
+      subscriptionController.setTimeout(sched);
       disconnectedSessions.increment();
     } else {
-      closeSubscriptionController(subscriptionController);
+      closeAndDeleteSubscriptionController(storeName, subscriptionController);
     }
     connectedSessions.decrement();
   }
@@ -185,6 +190,15 @@ public class SessionManagerPipeLine {
     SubscriptionController subscriptionManager = new SubscriptionController(sessionId, uniqueSessionId, destinationManager, map);
     subscriptionManagerFactory.put(sessionId, subscriptionManager);
     disconnectedSessions.increment();
+  }
+
+  void closeAndDeleteSubscriptionController(String sessionStateFile, SubscriptionController subscriptionController) {
+    closeSubscriptionController(subscriptionController);
+    try {
+      Files.deleteIfExists(new File(sessionStateFile).toPath());
+    } catch (IOException e) {
+      // ignore
+    }
   }
 
   void closeSubscriptionController(SubscriptionController subscriptionController) {
@@ -210,8 +224,9 @@ public class SessionManagerPipeLine {
   //
   private SubscriptionController loadSubscriptionManager(SessionContext context) {
     context.setRestored(false);
-    SessionDetails sessionDetails = storeLookup.getSessionDetails(context.getId());
+    SessionDetails sessionDetails = storeLookup.getSessionDetails(context);
     context.setUniqueId(sessionDetails.getUniqueId());
+    context.setInternalSessionId(sessionDetails.getInternalUnqueId());
     SubscriptionController subscriptionManager = subscriptionManagerFactory.get(context.getId());
     if (subscriptionManager == null) {
       logger.log(ServerLogMessages.SESSION_MANAGER_NO_EXISTING, context.getId());

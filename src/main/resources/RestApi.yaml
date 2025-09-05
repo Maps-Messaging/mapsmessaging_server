@@ -1,5 +1,6 @@
 #
-#   Copyright [ 2020 - 2023 ] [Matthew Buckton]
+# Copyright [ 2020 - 2024 ] [Matthew Buckton]
+# Copyright [ 2024 - 2025 ] [Maps Messaging B.V.]
 #
 #   Licensed under the Apache License, Version 2.0 (the "License");
 #   you may not use this file except in compliance with the License.
@@ -17,8 +18,8 @@
 ---
 RestApi:
   enabled: true
-  enableAuthentication: true
-  hostnames: 0.0.0.0
+  enableAuthentication: false
+  hostnames: "0.0.0.0"
   port: 8080
   enableSwagger: true
   enableSwaggerUI: true
@@ -26,13 +27,38 @@ RestApi:
   enableSchemaManagement: true
   enableInterfaceManagement: true
   enableDestinationManagement: true
+  enableCache: true
+  cacheLifetime: 30000
+  cacheCleanup: 10000
+  enableWadlEndPoint: false
 
+  tls:
+    clientCertificateRequired: false
+    clientCertificateWanted: false
+      #-----------------------------------
+      # CRL Specific
+      # crlUrl: <URL TO CRL>
+      # crlInterval: <time in seconds to reload CRL>
+    #-----------------------------------
 
-  #ssl_keyStoreFile: my-keystore.jks
-  #ssl_keyStorePassphrase: password
-  #ssl_trustStoreFile: my-keystore.jks
-  #ssl_trustStorePassphrase: password
+    keyStore:
+      type: JKS
+      managerFactory: SunX509
+      path: my-keystore.jks
+      passphrase: password
+
+    trustStore:
+      type: JKS
+      path: my-truststore.jks
+      passphrase: password
+      managerFactory: SunX509
 
   static:
     enabled: true
-    directory: "{{MAPS_DATA}}/html"
+    directory: "{{MAPS_HOME}}/www"
+
+  corsHeaders:
+    Access-Control-Allow-Origin: "*"
+    Access-Control-Allow-Methods: "GET, POST, PUT, DELETE, OPTIONS"
+    Access-Control-Allow-Headers: "Content-Type, Authorization"
+    Access-Control-Allow-Credentials: "true"

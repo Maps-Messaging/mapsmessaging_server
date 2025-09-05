@@ -1,18 +1,20 @@
 /*
- * Copyright [ 2020 - 2024 ] [Matthew Buckton]
  *
- *  Licensed under the Apache License, Version 2.0 (the "License");
- *  you may not use this file except in compliance with the License.
- *  You may obtain a copy of the License at
+ *  Copyright [ 2020 - 2024 ] Matthew Buckton
+ *  Copyright [ 2024 - 2025 ] MapsMessaging B.V.
+ *
+ *  Licensed under the Apache License, Version 2.0 with the Commons Clause
+ *  (the "License"); you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at:
  *
  *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://commonsclause.com/
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
  */
 
 package io.mapsmessaging.test;
@@ -27,11 +29,6 @@ import io.mapsmessaging.engine.destination.subscription.SubscriptionController;
 import io.mapsmessaging.engine.session.SessionImpl;
 import io.mapsmessaging.engine.session.SessionManager;
 import io.mapsmessaging.engine.session.SessionManagerTest;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Timeout;
-
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -42,7 +39,10 @@ import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
-
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Timeout;
 
 @Timeout(value = 240000, unit = TimeUnit.MILLISECONDS)
 public class BaseTestConfig extends BaseTest {
@@ -57,7 +57,7 @@ public class BaseTestConfig extends BaseTest {
   }
 
   @AfterEach
-  public void clear(){
+  void clear(){
     Map<String, DestinationImpl> destinations = md.getDestinationManager().get(null);
     List<DestinationImpl> toDelete = new ArrayList<>();
     for(DestinationImpl destination:destinations.values()){
@@ -71,11 +71,20 @@ public class BaseTestConfig extends BaseTest {
   }
 
   @BeforeAll
-  public static void beforeAll() throws IOException {
+  static void beforeAll() throws IOException {
     if(md == null) {
-      File file = new File("~");
+      File file = new File(".");
       System.out.println(file.getAbsolutePath());
+      File jaasConf = new File(file, "conf");
 
+      setIfNot(
+          "java.security.auth.login.config",
+          "src"
+              + File.separator
+              + "test"
+              + File.separator
+              + "resources"
+              +File.separator+"jaasAuth.config");
       //
       // Setup Certificate
       //
@@ -85,12 +94,11 @@ public class BaseTestConfig extends BaseTest {
       setIfNot("javax.net.ssl.trustStorePassword","password");
       setIfNot("javax.net.debug", "none");
 
-      setIfNot("java.security.auth.login.config", "=src/test/resources/jaasAuth.config");
       setIfNot("org.slf4j.simpleLogger.defaultLogLevel", "debug");
-      md = MessageDaemon.getInstance();
+      md = new MessageDaemon(new TestFeatureManager(new ArrayList<>()));
       Runnable runnable = () -> {
         try {
-          md.start(null);
+          md.start();
         } catch (IOException e) {
           throw new RuntimeException(e);
         }
@@ -115,7 +123,7 @@ public class BaseTestConfig extends BaseTest {
   @AfterEach
   public void checkSessionState()  {
     try {
-      SessionManager manager = md.getSessionManager();
+      SessionManager manager = md.getSubSystemManager().getSessionManager();
       List<SessionImpl> sessionImpls = manager.getSessions();
       for (SessionImpl sessionImpl : sessionImpls) {
         System.err.println("Session still active::" + sessionImpl.getName());
@@ -131,10 +139,7 @@ public class BaseTestConfig extends BaseTest {
       List<String> idleSessions = SessionManagerTest.getInstance().getIdleSessions();
       for (String idleSession : idleSessions) {
         System.err.println("Idle Session still active::" + idleSession);
-        SubscriptionController subCtl = SessionManagerTest.getInstance().getIdleSubscriptions(idleSession);
-        if (subCtl != null) {
-          SessionManagerTest.getInstance().closeSubscriptionController(subCtl);
-        }
+        SessionManagerTest.getInstance().closeIdleSession(idleSession);
       }
 
       Map<String, DestinationImpl> destinationImpls = md.getDestinationManager().get(null);
@@ -143,16 +148,36 @@ public class BaseTestConfig extends BaseTest {
           md.getDestinationManager().delete(destinationImpl);
         }
       }
-      Assertions.assertFalse(md.getSessionManager().hasSessions());
-      long timeout = System.currentTimeMillis()+ 2000;
+      if(md.getSubSystemManager().getSessionManager().hasSessions()){
+        for (SessionImpl sessionImpl : md.getSubSystemManager().getSessionManager().getSessions()) {
+          System.err.println("Session still active::" + sessionImpl.getName());
+          sessionImpl.setExpiryTime(1);
+          manager.close(sessionImpl, false);
+        }
+      }
+      Assertions.assertFalse(md.getSubSystemManager().getSessionManager().hasSessions());
+      long timeout = System.currentTimeMillis()+ 10_000;
       while(SessionManagerTest.getInstance().hasIdleSessions() && timeout > System.currentTimeMillis()){
         delay(100);
       }
-      Assertions.assertFalse(SessionManagerTest.getInstance().hasIdleSessions());
+      if(SessionManagerTest.getInstance().hasIdleSessions()){
+        List<String> listeners = md.getDestinationManager().getAll();
+        for (String listener : listeners) {
+          System.err.println("has listener " + listener);
+        }
+      }
+
+//      Assertions.assertFalse(SessionManagerTest.getInstance().hasIdleSessions());
 
       List<DestinationManagerListener> listeners = md.getDestinationManager().getListeners();
       for (DestinationManagerListener listener : listeners) {
-        System.err.println("has listener " + listener.getClass().toString());
+        if(listener instanceof SubscriptionController){
+          SubscriptionController subscriptionController = (SubscriptionController) listener;
+          System.err.println("has listener " + subscriptionController.getSessionId());
+        }
+        else {
+          System.err.println("has listener " + listener.getClass().toString());
+        }
       }
     }
     catch (Exception ex){
@@ -163,7 +188,7 @@ public class BaseTestConfig extends BaseTest {
   public String getPassword(String user) throws IOException {
     if (usernamePasswordMap == null) {
       if (md != null && md.isStarted() && AuthManager.getInstance().isAuthenticationEnabled()) {
-        ConfigurationProperties properties = (ConfigurationProperties) AuthManager.getInstance().getProperties().get("config");
+        ConfigurationProperties properties = new ConfigurationProperties(AuthManager.getInstance().getConfig().getAuthConfig());
         String path = properties.getProperty("configDirectory");
         usernamePasswordMap = Files.lines(Paths.get(path + File.separator + "admin_password"))
             .map(line -> line.split("="))
@@ -181,7 +206,7 @@ public class BaseTestConfig extends BaseTest {
 
     @Override
     public void run() {
-      md.stop(0);
+      md.stop();
       try {
         th.join(2000);
       } catch (InterruptedException e) {

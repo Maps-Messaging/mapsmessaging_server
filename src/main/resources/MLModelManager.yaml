@@ -1,0 +1,64 @@
+#
+# Copyright [ 2020 - 2024 ] [Matthew Buckton]
+# Copyright [ 2024 - 2025 ] [Maps Messaging B.V.]
+#
+#   Licensed under the Apache License, Version 2.0 (the "License");
+#   you may not use this file except in compliance with the License.
+#   You may obtain a copy of the License at
+#
+#       http://www.apache.org/licenses/LICENSE-2.0
+#
+#   Unless required by applicable law or agreed to in writing, software
+#   distributed under the License is distributed on an "AS IS" BASIS,
+#   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#   See the License for the specific language governing permissions and
+#   limitations under the License.
+#
+
+
+---
+MLModelManager:
+
+  enableCaching: true
+  cacheSize: 100          # max number of models to keep in memory
+  cacheExpiryMinutes: 60  # auto-evict models if not accessed
+  preloadModels: model1.zip,model2.zip          # optionally preload these models at startup
+
+  autoRefresh:
+    enabled: true
+    intervalMinutes: 10
+
+
+  modelStore:
+    type: nexus # one of: s3 | file | nexus | map
+
+    config:
+#      s3:
+#        region: ap-southeast-2
+#        accessKey: your-access-key
+#        secretKey: your-secret-key
+#        bucket: your-bucket-name
+#        prefix: maps_store_prefix
+#        endpoint: https://minio.local:9000 # optional
+
+#      file:
+#        path: /var/models
+
+      nexus:
+        url: https://repository.mapsmessaging.io/maps_ml_store
+
+  llm:
+    api_token: <your key here>
+    model: gpt-4.1
+
+  eventStreams:
+    - id: air_quality.outlier
+      topicFilter: /device/i2c/1/#
+      schemaId: 3-sensor-shared         # Abstracted schema reference across multiple sources
+      selector: isolation_forest(is_anomaly, air_quality.outlier.arff, CO₂, temperature, humidity) = 1
+      outlierTopic: /device/outliers/air_quality
+      maxTrainEvents: 10000
+      maxTrainTimeSeconds: 0 # Wait for events
+      retrainThreshold: 0.03
+
+

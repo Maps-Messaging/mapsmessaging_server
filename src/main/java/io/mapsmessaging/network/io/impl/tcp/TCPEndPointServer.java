@@ -1,27 +1,29 @@
 /*
- * Copyright [ 2020 - 2023 ] [Matthew Buckton]
  *
- *  Licensed under the Apache License, Version 2.0 (the "License");
- *  you may not use this file except in compliance with the License.
- *  You may obtain a copy of the License at
+ *  Copyright [ 2020 - 2024 ] Matthew Buckton
+ *  Copyright [ 2024 - 2025 ] MapsMessaging B.V.
+ *
+ *  Licensed under the Apache License, Version 2.0 with the Commons Clause
+ *  (the "License"); you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at:
  *
  *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://commonsclause.com/
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
  */
 
 package io.mapsmessaging.network.io.impl.tcp;
 
+import io.mapsmessaging.dto.rest.config.network.EndPointServerConfigDTO;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.logging.ServerLogMessages;
 import io.mapsmessaging.network.EndPointURL;
-import io.mapsmessaging.network.NetworkConfig;
 import io.mapsmessaging.network.admin.EndPointManagerJMX;
 import io.mapsmessaging.network.io.AcceptHandler;
 import io.mapsmessaging.network.io.EndPointServer;
@@ -53,15 +55,15 @@ public class TCPEndPointServer extends EndPointServer {
   private SelectionKey selectionKey;
   private SelectableChannel selectable;
 
-  public TCPEndPointServer(InetSocketAddress bindAddr, SelectorLoadManager sel, AcceptHandler accept, NetworkConfig config, EndPointURL url, EndPointManagerJMX managerMBean) {
+  public TCPEndPointServer(InetSocketAddress bindAddr, SelectorLoadManager sel, AcceptHandler accept, EndPointServerConfigDTO config, EndPointURL url, EndPointManagerJMX managerMBean) {
     super(accept, url, config);
     this.managerMBean = managerMBean;
     selectorLoadManager = sel;
     selector = selectorLoadManager.allocate(); // Used for accept
-    authenticationConfig = config.getAuthConfig();
+    authenticationConfig = config.getAuthenticationRealm();
     bindAddress = bindAddr;
-    backLog = config.getProperties().getIntProperty("backlog", 100);
-    selectorTaskWait = config.getProperties().getIntProperty("taskWait", 10);
+    backLog = config.getBacklog();
+    selectorTaskWait = config.getSelectorTaskWait();
   }
 
   // We need to open a socket, its a socket library so we can ignore this issue

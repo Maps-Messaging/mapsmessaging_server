@@ -1,23 +1,27 @@
 /*
- * Copyright [ 2020 - 2023 ] [Matthew Buckton]
  *
- *  Licensed under the Apache License, Version 2.0 (the "License");
- *  you may not use this file except in compliance with the License.
- *  You may obtain a copy of the License at
+ *  Copyright [ 2020 - 2024 ] Matthew Buckton
+ *  Copyright [ 2024 - 2025 ] MapsMessaging B.V.
+ *
+ *  Licensed under the Apache License, Version 2.0 with the Commons Clause
+ *  (the "License"); you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at:
  *
  *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://commonsclause.com/
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
  */
 
 package io.mapsmessaging.network.protocol.impl.echo;
 
 import io.mapsmessaging.api.MessageEvent;
+import io.mapsmessaging.dto.rest.config.protocol.impl.LoRaProtocolConfigDTO;
+import io.mapsmessaging.dto.rest.protocol.ProtocolInformationDTO;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.logging.ServerLogMessages;
@@ -25,24 +29,25 @@ import io.mapsmessaging.network.io.EndPoint;
 import io.mapsmessaging.network.io.Packet;
 import io.mapsmessaging.network.io.Selectable;
 import io.mapsmessaging.network.io.impl.Selector;
+import io.mapsmessaging.network.protocol.Protocol;
 import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
 
+import javax.security.auth.Subject;
 import java.io.IOException;
 import java.nio.channels.ClosedChannelException;
 import java.nio.channels.SelectionKey;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 
-public class EchoProtocol extends io.mapsmessaging.network.protocol.ProtocolImpl
-    implements Selectable {
+public class EchoProtocol extends Protocol implements Selectable {
 
   private final Executor executor = Executors.newFixedThreadPool(10);
   private final Packet packet;
   private final Logger logger = LoggerFactory.getLogger(EchoProtocol.class);
 
   public EchoProtocol(EndPoint endPoint, Packet pck) throws IOException {
-    super(endPoint);
+    super(endPoint, new LoRaProtocolConfigDTO());
     packet = pck;
     endPoint.sendPacket(pck);
     endPoint.register(SelectionKey.OP_READ, this);
@@ -84,8 +89,18 @@ public class EchoProtocol extends io.mapsmessaging.network.protocol.ProtocolImpl
   }
 
   @Override
+  public Subject getSubject() {
+    return null;
+  }
+
+  @Override
   public void sendKeepAlive() {
     // There is no keep alive here
+  }
+
+  @Override
+  public ProtocolInformationDTO getInformation() {
+    return null;
   }
 
   private class Task implements Runnable {
@@ -100,10 +115,10 @@ public class EchoProtocol extends io.mapsmessaging.network.protocol.ProtocolImpl
           packet.clear();
           read = endPoint.readPacket(packet);
           if (read > 0) {
-            getReceivedMessages().increment();
+            EndPoint.totalReceived.increment();
             packet.flip();
             endPoint.sendPacket(packet);
-            getSentMessages().increment();
+            EndPoint.totalSent.increment();
           } else if (first) {
             endPoint.close();
             return;

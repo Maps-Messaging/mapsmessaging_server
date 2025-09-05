@@ -1,32 +1,36 @@
 /*
- * Copyright [ 2020 - 2024 ] [Matthew Buckton]
  *
- *  Licensed under the Apache License, Version 2.0 (the "License");
- *  you may not use this file except in compliance with the License.
- *  You may obtain a copy of the License at
+ *  Copyright [ 2020 - 2024 ] Matthew Buckton
+ *  Copyright [ 2024 - 2025 ] MapsMessaging B.V.
+ *
+ *  Licensed under the Apache License, Version 2.0 with the Commons Clause
+ *  (the "License"); you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at:
  *
  *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://commonsclause.com/
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
  */
 
 package io.mapsmessaging.network.io.impl.serial;
 
 import com.fazecast.jSerialComm.SerialPort;
+import io.mapsmessaging.dto.rest.config.network.EndPointServerConfigDTO;
+import io.mapsmessaging.dto.rest.config.network.impl.SerialConfigDTO;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.logging.ServerLogMessages;
 import io.mapsmessaging.network.EndPointURL;
-import io.mapsmessaging.network.NetworkConfig;
-import io.mapsmessaging.network.SerialEndPointURL;
 import io.mapsmessaging.network.admin.EndPointManagerJMX;
 import io.mapsmessaging.network.io.*;
 import io.mapsmessaging.network.io.impl.Selector;
+import io.mapsmessaging.network.io.impl.serial.management.SerialPortListener;
+import io.mapsmessaging.network.io.impl.serial.management.SerialPortScanner;
 import io.mapsmessaging.network.protocol.ProtocolFactory;
 import io.mapsmessaging.network.protocol.ProtocolImplFactory;
 import io.mapsmessaging.utilities.threads.SimpleTaskScheduler;
@@ -34,16 +38,16 @@ import io.mapsmessaging.utilities.threads.SimpleTaskScheduler;
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 
-public class SerialEndPointServer extends EndPointServer {
+public class SerialEndPointServer extends EndPointServer implements SerialPortListener {
 
   private final EndPointManagerJMX managerMBean;
   private final ProtocolFactory protocolFactory;
-  private final SerialEndPointURL serialEndPointURL;
   private SerialEndPoint serialEndPoint;
+  private final SerialConfigDTO serialConfig;
 
-  public SerialEndPointServer(AcceptHandler acceptHandler, EndPointURL url, NetworkConfig config, EndPointManagerJMX managerMBean) {
+  public SerialEndPointServer(AcceptHandler acceptHandler, EndPointURL url, EndPointServerConfigDTO config, EndPointManagerJMX managerMBean) {
     super(acceptHandler, url, config);
-    serialEndPointURL = (SerialEndPointURL) url;
+    serialConfig = (SerialConfigDTO)config.getEndPointConfig();
     protocolFactory = new ProtocolFactory(config.getProtocols());
     this.managerMBean = managerMBean;
     serialEndPoint = null;
@@ -76,7 +80,7 @@ public class SerialEndPointServer extends EndPointServer {
 
   @Override
   public String getName() {
-    return "serial_" + serialEndPointURL.getPortName();
+    return "serial_" + serialConfig.getPort();
   }
 
   @Override
@@ -93,19 +97,19 @@ public class SerialEndPointServer extends EndPointServer {
   public void handleCloseEndPoint(EndPoint endPoint) {
     super.handleCloseEndPoint(endPoint);
     serialEndPoint = null;
-    SerialEndPortScanner.getInstance().del(serialEndPointURL.getPortName());
-    SimpleTaskScheduler.getInstance().schedule(() -> {
-      try {
-        start();
-      } catch (IOException e) {
-        logger.log(ServerLogMessages.END_POINT_CLOSE_EXCEPTION, e);
-      }
-    }, 5, TimeUnit.SECONDS);
+    SerialPortScanner.getInstance().del(serialConfig.getPort());
+    SimpleTaskScheduler.getInstance().schedule(this::close, 5, TimeUnit.SECONDS);
   }
 
   @Override
   public void start() throws IOException {
-    SerialPort port = SerialEndPortScanner.getInstance().add(serialEndPointURL.getPortName(), this);
+    SerialPort port = null;
+    if(serialConfig.getSerialNo() != null && !serialConfig.getSerialNo().isEmpty()){
+      port = SerialPortScanner.getInstance().addBySerial(serialConfig.getSerialNo(), this);
+    }
+    else if(serialConfig.getPort() != null && !serialConfig.getPort().isEmpty()){
+      port = SerialPortScanner.getInstance().add(serialConfig.getPort(), this);
+    }
     if (port != null) {
       bind(port);
     }
@@ -118,7 +122,7 @@ public class SerialEndPointServer extends EndPointServer {
 
   @Override
   public void close() {
-    SerialEndPortScanner.getInstance().del(serialEndPointURL.getPortName());
+    SerialPortScanner.getInstance().del(serialConfig.getPort());
     if (serialEndPoint != null) {
       try {
         serialEndPoint.close();
@@ -134,10 +138,8 @@ public class SerialEndPointServer extends EndPointServer {
 
   }
 
-  public void bind(SerialPort port) throws IOException {
-    port.setBaudRate(serialEndPointURL.getBaudRate());
-    port.setComPortParameters(serialEndPointURL.getBaudRate(), serialEndPointURL.getData(), serialEndPointURL.getStop(), serialEndPointURL.getParity());
-    serialEndPoint = new SerialEndPoint(generateID(), this, port, managerMBean);
+  public void bind(SerialPort serialPort) throws IOException {
+    serialEndPoint = new SerialEndPoint(generateID(), this, serialPort, serialConfig, managerMBean.getTypePath());
     handleNewEndPoint(serialEndPoint);
   }
 

@@ -1,22 +1,26 @@
 /*
- * Copyright [ 2020 - 2023 ] [Matthew Buckton]
  *
- *  Licensed under the Apache License, Version 2.0 (the "License");
- *  you may not use this file except in compliance with the License.
- *  You may obtain a copy of the License at
+ *  Copyright [ 2020 - 2024 ] Matthew Buckton
+ *  Copyright [ 2024 - 2025 ] MapsMessaging B.V.
+ *
+ *  Licensed under the Apache License, Version 2.0 with the Commons Clause
+ *  (the "License"); you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at:
  *
  *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://commonsclause.com/
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
  */
 
 package io.mapsmessaging.network;
 
+import io.mapsmessaging.MessageDaemon;
+import io.mapsmessaging.dto.rest.config.network.EndPointServerConfigDTO;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.logging.ServerLogMessages;
@@ -29,10 +33,14 @@ import io.mapsmessaging.network.io.EndPointServer;
 import io.mapsmessaging.network.io.EndPointServerFactory;
 import io.mapsmessaging.network.io.impl.SelectorLoadManager;
 import io.mapsmessaging.network.protocol.ProtocolAcceptRunner;
+import io.mapsmessaging.security.uuid.NamedVersions;
+import io.mapsmessaging.security.uuid.UuidGenerator;
 import lombok.Getter;
 
 import java.io.Closeable;
 import java.io.IOException;
+import java.security.NoSuchAlgorithmException;
+import java.util.UUID;
 
 public class EndPointManager implements Closeable, AcceptHandler {
 
@@ -43,21 +51,33 @@ public class EndPointManager implements Closeable, AcceptHandler {
   @Getter
   private STATE state;
   @Getter
+  private final UUID uniqueId;
+
+  @Getter
   private EndPointServer endPointServer;
 
-  public EndPointManager(EndPointURL url, EndPointServerFactory factory, NetworkConfig nc, NetworkManagerJMX managerBean) throws IOException {
+  public EndPointManager(EndPointURL url, EndPointServerFactory factory, EndPointServerConfigDTO endPointServerConfig, NetworkManagerJMX managerBean) throws IOException {
     logger = LoggerFactory.getLogger(NetworkManager.class.getName());
     ThreadContext.put("endpoint", url.toString());
     endPointURL = url;
-    protocols = nc.getProtocols();
+    protocols = endPointServerConfig.getProtocols();
     endPointServer = null;
     state = STATE.STOPPED;
-    int selectorCount = nc.getProperties().getIntProperty("selectorThreadCount", 5);
+    int selectorCount = endPointServerConfig.getEndPointConfig().getSelectorThreadCount();
     EndPointManagerJMX bean = null;
     if (managerBean != null) {
-      bean = new EndPointManagerJMX(managerBean.getTypePath(), this, nc);
+      bean = new EndPointManagerJMX(managerBean.getTypePath(), this, endPointServerConfig);
     }
-    endPointServer = factory.instance(endPointURL, new SelectorLoadManager(selectorCount, url.toString()), this, nc, bean);
+    SelectorLoadManager selectorLoadManager = selectorCount > 0? new SelectorLoadManager(selectorCount, url.toString()) : null;
+
+    endPointServer = factory.instance(endPointURL,selectorLoadManager, this, endPointServerConfig, bean);
+    UUID uuid;
+    try {
+      uuid = UuidGenerator.getInstance().generate(NamedVersions.SHA1, MessageDaemon.getInstance().getUuid(), url.toString());
+    } catch (NoSuchAlgorithmException e) {
+      uuid = UuidGenerator.getInstance().generate();
+    }
+    uniqueId = uuid;
     ThreadContext.clearAll();
   }
 

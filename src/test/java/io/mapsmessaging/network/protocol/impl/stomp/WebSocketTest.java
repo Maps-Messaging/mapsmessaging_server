@@ -1,23 +1,33 @@
 /*
- * Copyright [ 2020 - 2023 ] [Matthew Buckton]
  *
- *  Licensed under the Apache License, Version 2.0 (the "License");
- *  you may not use this file except in compliance with the License.
- *  You may obtain a copy of the License at
+ *  Copyright [ 2020 - 2024 ] Matthew Buckton
+ *  Copyright [ 2024 - 2025 ] MapsMessaging B.V.
+ *
+ *  Licensed under the Apache License, Version 2.0 with the Commons Clause
+ *  (the "License"); you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at:
  *
  *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://commonsclause.com/
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
  */
 
 package io.mapsmessaging.network.protocol.impl.stomp;
 
 import io.mapsmessaging.test.WaitForState;
+import java.io.IOException;
+import java.lang.reflect.Type;
+import java.util.Arrays;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicLong;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
@@ -27,18 +37,9 @@ import org.springframework.messaging.simp.stomp.StompCommand;
 import org.springframework.messaging.simp.stomp.StompHeaders;
 import org.springframework.messaging.simp.stomp.StompSession;
 import org.springframework.messaging.simp.stomp.StompSessionHandler;
-import org.springframework.util.concurrent.ListenableFuture;
 import org.springframework.web.socket.client.WebSocketClient;
 import org.springframework.web.socket.client.standard.StandardWebSocketClient;
 import org.springframework.web.socket.messaging.WebSocketStompClient;
-
-import java.io.IOException;
-import java.lang.reflect.Type;
-import java.util.Arrays;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
-import java.util.concurrent.atomic.AtomicLong;
 
 class WebSocketTest extends StompBaseTest {
 
@@ -49,7 +50,7 @@ class WebSocketTest extends StompBaseTest {
     WebSocketStompClient webSocketStompClient = new WebSocketStompClient(client);
     webSocketStompClient.setMessageConverter(new SimpleMessageConverter());
     StompSessionHandlerImpl handler = new StompSessionHandlerImpl();
-    ListenableFuture<StompSession> futureSession = webSocketStompClient.connect("ws://localhost:8674", handler);
+    CompletableFuture<StompSession> futureSession = webSocketStompClient.connectAsync("ws://localhost:8674", handler);
 
     StompSession stompSession = futureSession.get(5000, TimeUnit.MILLISECONDS);
     Assertions.assertNotNull(stompSession);
@@ -82,7 +83,7 @@ class WebSocketTest extends StompBaseTest {
     WebSocketClient client = new StandardWebSocketClient();
     WebSocketStompClient webSocketStompClient = new WebSocketStompClient(client);
     StompSessionHandlerImpl handler = new StompSessionHandlerImpl();
-    ListenableFuture<StompSession> futureSession = webSocketStompClient.connect("ws://localhost:8674", handler);
+    CompletableFuture<StompSession> futureSession = webSocketStompClient.connectAsync("ws://localhost:8674", handler);
     StompSession stompSession = futureSession.get(5000, TimeUnit.MILLISECONDS);
     Assertions.assertNotNull(stompSession);
 

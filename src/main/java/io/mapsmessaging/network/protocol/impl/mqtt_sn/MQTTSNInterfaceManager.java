@@ -1,18 +1,20 @@
 /*
- * Copyright [ 2020 - 2023 ] [Matthew Buckton]
  *
- *  Licensed under the Apache License, Version 2.0 (the "License");
- *  you may not use this file except in compliance with the License.
- *  You may obtain a copy of the License at
+ *  Copyright [ 2020 - 2024 ] Matthew Buckton
+ *  Copyright [ 2024 - 2025 ] MapsMessaging B.V.
+ *
+ *  Licensed under the Apache License, Version 2.0 with the Commons Clause
+ *  (the "License"); you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at:
  *
  *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://commonsclause.com/
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
  */
 
 package io.mapsmessaging.network.protocol.impl.mqtt_sn;
@@ -20,6 +22,9 @@ package io.mapsmessaging.network.protocol.impl.mqtt_sn;
 import io.mapsmessaging.api.MessageBuilder;
 import io.mapsmessaging.api.SessionManager;
 import io.mapsmessaging.api.features.QualityOfService;
+import io.mapsmessaging.api.message.Message;
+import io.mapsmessaging.config.protocol.impl.MqttSnConfig;
+import io.mapsmessaging.engine.destination.MessageOverrides;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.logging.ServerLogMessages;
@@ -63,6 +68,9 @@ public class MQTTSNInterfaceManager implements SelectorCallback {
 
   private final boolean enablePortChanges;
   private final boolean enableAddressChanges;
+  private final boolean advertiseGateway;
+
+  private final MqttSnConfig mqttSnConfig;
 
 
   public MQTTSNInterfaceManager(byte gatewayId, SelectorTask selectorTask, EndPoint endPoint) {
@@ -71,36 +79,46 @@ public class MQTTSNInterfaceManager implements SelectorCallback {
     this.selectorTask = selectorTask;
     advertiserTask = null;
     this.endPoint = endPoint;
-    long timeout = endPoint.getConfig().getProperties().getLongProperty("idleSessionTimeout", 600);
-    enablePortChanges = endPoint.getConfig().getProperties().getBooleanProperty("enablePortChanges", true);
-    enableAddressChanges = endPoint.getConfig().getProperties().getBooleanProperty("enableAddressChanges", false);
+    mqttSnConfig = (MqttSnConfig) endPoint.getConfig().getProtocolConfig("mqtt-sn");
+    long timeout = mqttSnConfig.getIdleSessionTimeout();
+    enablePortChanges = mqttSnConfig.isEnablePortChanges();
+    enableAddressChanges = mqttSnConfig.isEnableAddressChanges();
+    advertiseGateway = mqttSnConfig.isAdvertiseGateway();
     currentSessions = new UDPSessionManager<>(timeout);
     packetFactory = new PacketFactory[2];
     packetFactory[0] = new PacketFactory();
     packetFactory[1] = new PacketFactoryV2();
-    transformation = TransformationManager.getInstance().getTransformation(getName(), "<registered>");
-    registeredTopicConfiguration = new RegisteredTopicConfiguration(endPoint.getConfig().getProperties());
+    transformation = TransformationManager.getInstance().getTransformation(
+        endPoint.getProtocol(),
+        endPoint.getName(),
+        "mqtt-sn",
+        "<registered>"
+    );
+
+    registeredTopicConfiguration = new RegisteredTopicConfiguration(mqttSnConfig);
   }
 
   public MQTTSNInterfaceManager(InterfaceInformation info, EndPoint endPoint, byte gatewayId) throws IOException {
     logger = LoggerFactory.getLogger("MQTT-SN Protocol on " + endPoint.getName());
     this.endPoint = endPoint;
     this.gatewayId = gatewayId;
-    long timeout = endPoint.getConfig().getProperties().getLongProperty("idleSessionTimeout", 600);
-    enablePortChanges = endPoint.getConfig().getProperties().getBooleanProperty("enablePortChanges", true);
-    enableAddressChanges = endPoint.getConfig().getProperties().getBooleanProperty("enableAddressChanges", false);
+    mqttSnConfig = (MqttSnConfig) endPoint.getConfig().getProtocolConfig("mqtt-sn");
+    long timeout = mqttSnConfig.getIdleSessionTimeout();
+    enablePortChanges = mqttSnConfig.isEnablePortChanges();
+    enableAddressChanges = mqttSnConfig.isEnableAddressChanges();
+    advertiseGateway = mqttSnConfig.isAdvertiseGateway();
 
     currentSessions = new UDPSessionManager<>(timeout);
     packetFactory = new PacketFactory[2];
     packetFactory[0] = new PacketFactory();
     packetFactory[1] = new PacketFactoryV2();
 
-    selectorTask = new SelectorTask(this, endPoint.getConfig().getProperties(), endPoint.isUDP());
+    selectorTask = new SelectorTask(this, endPoint.getConfig().getEndPointConfig(), endPoint.isUDP());
     selectorTask.register(SelectionKey.OP_READ);
     if (startAdvertiseTask(info)) {
       AdvertiserTask tmp = null;
       try {
-        tmp = new AdvertiserTask(gatewayId, endPoint, info, info.getBroadcast(), DefaultConstants.ADVERTISE_INTERVAL);
+        tmp = new AdvertiserTask(gatewayId, endPoint, info, info.getBroadcast(), mqttSnConfig.getAdvertiseInterval());
       } catch (UncheckedIOException e) {
         logger.log(ServerLogMessages.MQTT_SN_EXCEPTION_RASIED, e);
         // unable to run the advertiser task on this endpoint
@@ -109,13 +127,17 @@ public class MQTTSNInterfaceManager implements SelectorCallback {
     } else {
       advertiserTask = null;
     }
-    registeredTopicConfiguration = new RegisteredTopicConfiguration(endPoint.getConfig().getProperties());
-    transformation = TransformationManager.getInstance().getTransformation(getName(), "<registered>");
+    registeredTopicConfiguration = new RegisteredTopicConfiguration(mqttSnConfig);
+    transformation = TransformationManager.getInstance().getTransformation(
+        endPoint.getProtocol(),
+        endPoint.getName(),
+        "mqtt-sn",
+        "<registered>"
+    );
   }
 
   private boolean startAdvertiseTask(InterfaceInformation info) throws SocketException {
-    boolean configToSend = getEndPoint().getConfig().getProperties().getBooleanProperty("advertiseGateway", false);
-    return configToSend && info.getBroadcast() != null && !info.isLoopback();
+    return advertiseGateway && info.getBroadcast() != null && !info.isLoopback();
   }
 
   @Override
@@ -190,7 +212,7 @@ public class MQTTSNInterfaceManager implements SelectorCallback {
       // Cool, so we have a new connect, so let's create a new protocol Impl and add it into our list
       // of current sessions
       UDPFacadeEndPoint facade = new UDPFacadeEndPoint(endPoint, packet.getFromAddress(), endPoint.getServer());
-      MQTT_SNProtocol impl = new MQTT_SNProtocol(this, facade, packet.getFromAddress(), selectorTask, registeredTopicConfiguration, (Connect) mqttSn);
+      MQTT_SNProtocol impl = new MQTT_SNProtocol(this, facade, packet.getFromAddress(), selectorTask, registeredTopicConfiguration, (Connect) mqttSn, mqttSnConfig);
       UDPSessionState<MQTT_SNProtocol> state = new UDPSessionState<>(impl);
       state.setClientIdentifier( ((Connect) mqttSn).getClientId());
       currentSessions.addState(packet.getFromAddress(), state);
@@ -201,7 +223,7 @@ public class MQTTSNInterfaceManager implements SelectorCallback {
       // of current sessions
       UDPFacadeEndPoint facade = new UDPFacadeEndPoint(endPoint, packet.getFromAddress(), endPoint.getServer());
       io.mapsmessaging.network.protocol.impl.mqtt_sn.v2_0.packet.Connect connectV2 = (io.mapsmessaging.network.protocol.impl.mqtt_sn.v2_0.packet.Connect) mqttSn;
-      MQTT_SNProtocol impl = new MQTT_SNProtocolV2(this, facade, packet.getFromAddress(), selectorTask, registeredTopicConfiguration, connectV2);
+      MQTT_SNProtocol impl = new MQTT_SNProtocolV2(this, facade, packet.getFromAddress(), selectorTask, registeredTopicConfiguration, connectV2, mqttSnConfig);
       UDPSessionState<MQTT_SNProtocol> state = new UDPSessionState<>(impl);
       state.setClientIdentifier(connectV2.getClientId());
       currentSessions.addState(packet.getFromAddress(), state);
@@ -252,7 +274,7 @@ public class MQTTSNInterfaceManager implements SelectorCallback {
   }
 
   private void publishRegisteredTopic(String topic, Publish publish) throws IOException {
-    MessageBuilder messageBuilder = new MessageBuilder();
+    MessageBuilder messageBuilder =  new MessageBuilder();
     if (publish.retain()) {
       messageBuilder.storeOffline(true)
           .setRetain(true)
@@ -266,7 +288,8 @@ public class MQTTSNInterfaceManager implements SelectorCallback {
     }
     messageBuilder.setOpaqueData(publish.getMessage());
     try {
-      SessionManager.getInstance().publish(topic, messageBuilder.build()).get(1, TimeUnit.MINUTES);
+      Message message = MessageOverrides.createMessageBuilder(mqttSnConfig.getMessageDefaults(), messageBuilder).build();
+      SessionManager.getInstance().publish(topic, message).get(1, TimeUnit.MINUTES);
     } catch (ExecutionException | InterruptedException | TimeoutException e) {
       Thread.currentThread().interrupt();
       throw new IOException(e);

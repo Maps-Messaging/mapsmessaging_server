@@ -1,0 +1,68 @@
+@startuml
+
+skinparam componentStyle rectangle
+
+component "Maps Messaging Rest Server" as MMRS {
+
+  component "Authentication and Authorisation Management" as Auth {
+    [GET /api/v1/auth/groups]
+    [POST /api/v1/auth/groups]
+    [GET /api/v1/auth/users]
+    [POST /api/v1/auth/users]
+    [GET /api/v1/auth/groups/{groupUuid}]
+    [DELETE /api/v1/auth/groups/{groupUuid}]
+    [DELETE /api/v1/auth/users/{userUuid}]
+  }
+
+  component "Destination Management" as DestMgmt {
+    [GET /api/v1/server/destination]
+    [GET /api/v1/server/destination/{destination}]
+    [GET /api/v1/server/destination/status]
+  }
+
+  component "Messaging Interface" as Messaging {
+    [POST /api/v1/messaging/messaging/consume]
+    [POST /api/v1/messaging/messaging/publish]
+    [POST /api/v1/messaging/messaging/subscribe]
+  }
+
+  component "Server Health" as Health {
+    [GET /health]
+    [GET /api/v1/ping]
+    [GET /api/v1/updates]
+  }
+
+  component "Server Management" as ServerMgmt {
+    [GET /api/v1/server/details/info]
+    [GET /api/v1/server/restart]
+    [GET /api/v1/server/shutdown]
+  }
+
+  component "Schema Management" as SchemaMgmt {
+    [GET /api/v1/server/schema]
+    [POST /api/v1/server/schema]
+    [DELETE /api/v1/server/schema]
+    [GET /api/v1/server/schema/{schemaId}]
+    [DELETE /api/v1/server/schema/{schemaId}]
+    [GET /api/v1/server/schema/formats]
+  }
+
+  component "Connection Management" as ConnMgmt
+  component "Server Interface Management" as InterfaceMgmt
+  component "Discovery Management" as DiscoveryMgmt
+  component "Server Integration Management" as IntegrationMgmt
+
+  MMRS --> Auth : Handles authentication
+  MMRS --> DestMgmt : Manages destinations
+  MMRS --> Messaging : Manages messaging
+  MMRS --> Health : Health checks
+  MMRS --> ServerMgmt : Server operations
+  MMRS --> SchemaMgmt : Manages schemas
+  MMRS --> ConnMgmt : Manages connections
+  MMRS --> InterfaceMgmt : Network interface management
+  MMRS --> DiscoveryMgmt : Discovery of servers
+  MMRS --> IntegrationMgmt : Integration with brokers
+
+}
+
+@enduml

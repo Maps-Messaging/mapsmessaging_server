@@ -1,64 +1,85 @@
 /*
- * Copyright [ 2020 - 2024 ] [Matthew Buckton]
  *
- *  Licensed under the Apache License, Version 2.0 (the "License");
- *  you may not use this file except in compliance with the License.
- *  You may obtain a copy of the License at
+ *  Copyright [ 2020 - 2024 ] Matthew Buckton
+ *  Copyright [ 2024 - 2025 ] MapsMessaging B.V.
+ *
+ *  Licensed under the Apache License, Version 2.0 with the Commons Clause
+ *  (the "License"); you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at:
  *
  *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://commonsclause.com/
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
  */
 
 package io.mapsmessaging.rest;
 
 import io.mapsmessaging.MessageDaemon;
 import io.mapsmessaging.auth.AuthManager;
-import io.mapsmessaging.configuration.ConfigurationProperties;
+import io.mapsmessaging.config.RestApiManagerConfig;
+import io.mapsmessaging.config.network.impl.TlsConfig;
+import io.mapsmessaging.config.rest.StaticConfig;
+import io.mapsmessaging.dto.rest.system.Status;
+import io.mapsmessaging.dto.rest.system.SubSystemStatusDTO;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
-import io.mapsmessaging.rest.auth.AuthenticationFilter;
-import io.mapsmessaging.rest.translation.DebugMapper;
+import io.mapsmessaging.rest.api.Constants;
+import io.mapsmessaging.rest.api.impl.messaging.impl.RestMessageListener;
+import io.mapsmessaging.rest.auth.*;
+import io.mapsmessaging.rest.cache.impl.NoCache;
+import io.mapsmessaging.rest.cache.impl.RoleBasedCache;
+import io.mapsmessaging.rest.handler.CorsEnabledStaticHttpHandler;
+import io.mapsmessaging.rest.handler.CorsFilter;
+import io.mapsmessaging.rest.handler.SessionTracker;
+import io.mapsmessaging.rest.translation.GsonMessageBodyReader;
+import io.mapsmessaging.rest.translation.GsonMessageBodyWriter;
 import io.mapsmessaging.utilities.Agent;
-import io.mapsmessaging.utilities.configuration.ConfigurationManager;
+import io.mapsmessaging.utilities.threads.SimpleTaskScheduler;
 import jakarta.servlet.Servlet;
-import org.glassfish.grizzly.Connection;
-import org.glassfish.grizzly.http.server.*;
+import org.glassfish.grizzly.http.server.HttpServer;
+import org.glassfish.grizzly.http.server.StaticHttpHandler;
+import org.glassfish.grizzly.nio.transport.TCPNIOTransport;
 import org.glassfish.grizzly.servlet.ServletRegistration;
 import org.glassfish.grizzly.servlet.WebappContext;
 import org.glassfish.grizzly.ssl.SSLContextConfigurator;
 import org.glassfish.grizzly.ssl.SSLEngineConfigurator;
+import org.glassfish.grizzly.threadpool.ThreadPoolConfig;
 import org.glassfish.jersey.grizzly2.httpserver.GrizzlyHttpContainer;
 import org.glassfish.jersey.grizzly2.httpserver.GrizzlyHttpServerFactory;
+import org.glassfish.jersey.media.sse.SseFeature;
 import org.glassfish.jersey.server.ResourceConfig;
+import org.glassfish.jersey.server.ServerProperties;
 import org.glassfish.jersey.servlet.ServletContainer;
 import org.glassfish.jersey.uri.UriComponent;
 
 import javax.jmdns.ServiceInfo;
+import java.io.File;
 import java.io.IOException;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
 
-import static io.mapsmessaging.logging.ServerLogMessages.REST_API_ACCESS;
 import static io.mapsmessaging.logging.ServerLogMessages.REST_API_FAILURE;
 
 public class RestApiServerManager implements Agent {
 
-  private final ConfigurationProperties map;
+  private final RestApiManagerConfig config;
   private final Logger logger = LoggerFactory.getLogger(RestApiServerManager.class);
 
   private boolean isSecure;
   private ServiceInfo[] serviceInfos;
   private HttpServer httpServer;
+  private ScheduledFuture cleanupSchedule;
 
   public RestApiServerManager() {
-    map = ConfigurationManager.getInstance().getProperties("RestApi");
+    config = RestApiManagerConfig.getInstance();
     isSecure = false;
   }
 
@@ -73,11 +94,11 @@ public class RestApiServerManager implements Agent {
   }
 
   public void start() {
-    if (map.getBooleanProperty("enabled", false)) {
+    if (config.isEnabled()) {
       Thread t= new Thread(() -> {
         setupSSL();
         startServer();
-        serviceInfos = MessageDaemon.getInstance().getDiscoveryManager().register(this);
+        serviceInfos = MessageDaemon.getInstance().getSubSystemManager().getDiscoveryManager().register(this);
       });
       t.setDaemon(true);
       t.start();
@@ -86,11 +107,11 @@ public class RestApiServerManager implements Agent {
 
 
   public int getPort() {
-    return map.getIntProperty("port", 4567);
+    return config.getPort();
   }
 
   public String getHost() {
-    return map.getProperty("hostnames", "0.0.0.0");
+    return config.getHostnames();
   }
 
   public boolean isSecure() {
@@ -98,147 +119,131 @@ public class RestApiServerManager implements Agent {
   }
 
   private SSLContextConfigurator setupSSL() {
-    ConfigurationProperties securityProps = (ConfigurationProperties) map.get("security");
-    if (securityProps != null && securityProps.containsKey("tls")) {
-      ConfigurationProperties tls = (ConfigurationProperties) securityProps.get("tls");
-      ConfigurationProperties keyStoreProps = (ConfigurationProperties) tls.get("keyStore");
-      ConfigurationProperties trustStoreProps = (ConfigurationProperties) tls.get("trustStore");
-
-      String keyStore = keyStoreProps.getProperty("file", null);
-      String keyStorePass = keyStoreProps.getProperty("passphrase", null);
-
-      String trustStore = trustStoreProps.getProperty("file", null);
-      String trustStorePass = trustStoreProps.getProperty("passphrase", null);
-
-      if (keyStore != null &&
-          keyStorePass != null &&
-          trustStore != null &&
-          trustStorePass != null
-      ) {
-        isSecure = true;
-        SSLContextConfigurator sslCon = new SSLContextConfigurator();
-        sslCon.setKeyStoreFile(keyStore);
-        sslCon.setKeyStorePass(keyStorePass);
-        sslCon.setTrustStoreFile(trustStore);
-        sslCon.setTrustStorePass(trustStorePass);
-        return sslCon;
-      }
+    TlsConfig sslConfig = config.getTlsConfig();
+    if (sslConfig != null) {
+      isSecure = true;
+      SSLContextConfigurator sslCon = new SSLContextConfigurator();
+      sslCon.setKeyStoreFile(sslConfig.getSslConfig().getKeyStore().getPath());
+      sslCon.setKeyStorePass(sslConfig.getSslConfig().getKeyStore().getPassphrase());
+      sslCon.setTrustStoreFile(sslConfig.getSslConfig().getTrustStore().getPath());
+      sslCon.setTrustStorePass(sslConfig.getSslConfig().getTrustStore().getPassphrase());
+      return sslCon;
     }
     return null;
   }
 
+  private boolean isClientCertRequired() {
+    TlsConfig sslConfig = config.getTlsConfig();
+    if (sslConfig != null) {
+      return sslConfig.getSslConfig().isClientCertificateRequired();
+    }
+    return false;
+  }
+
+  private boolean isClientCertWanted() {
+    TlsConfig sslConfig = config.getTlsConfig();
+    if (sslConfig != null) {
+      return sslConfig.getSslConfig().isClientCertificateWanted();
+    }
+    return false;
+  }
+
   public void stop() {
+    if(cleanupSchedule != null) {
+      cleanupSchedule.cancel(true);
+    }
     if(serviceInfos != null) {
       for (ServiceInfo serviceInfo : serviceInfos) {
         httpServer.shutdown();
-        MessageDaemon.getInstance().getDiscoveryManager().deregister(serviceInfo);
+        MessageDaemon.getInstance().getSubSystemManager().getDiscoveryManager().deregister(serviceInfo);
       }
     }
-  }
-
-  private void loadStatic(){
-    if(map.containsKey("static")){
-      Object obj = map.get("static");
-      if(obj instanceof ConfigurationProperties){
-        ConfigurationProperties staticConfig = (ConfigurationProperties) obj;
-        if(staticConfig.getBooleanProperty("enabled", false)){
-          String path = staticConfig.getProperty("directory", "./html");
-          StaticHttpHandler staticHttpHandler = new StaticHttpHandler(path);
-          staticHttpHandler.setFileCacheEnabled(true);
-          httpServer.getServerConfiguration().addHttpHandler(staticHttpHandler, "/");
-
-          if (map.getBooleanProperty("enableSwaggerUI", false) && map.getBooleanProperty("enableSwagger", false)) {
-            String swaggerPath = path;
-            if (!swaggerPath.endsWith("/")) {
-              swaggerPath = swaggerPath + "/";
-            }
-            StaticHttpHandler swaggerHttpHandler = new StaticHttpHandler(swaggerPath + "swagger-ui");
-            swaggerHttpHandler.setFileCacheEnabled(true);
-            httpServer.getServerConfiguration().addHttpHandler(swaggerHttpHandler, "/swagger-ui/");
-          }
-        }
-      }
-    }
-  }
-
-  private void addLogging() {
-    httpServer.getServerConfiguration().getMonitoringConfig().getWebServerConfig()
-        .addProbes(new HttpServerProbe.Adapter() {
-
-          @Override
-          public void onRequestReceiveEvent(
-              HttpServerFilter filter,
-              Connection connection,
-              Request request) {
-          }
-
-          @Override
-          public void onRequestCompleteEvent(
-              HttpServerFilter filter,
-              Connection connection,
-              Response response) {
-
-            String uri = response.getRequest().getRequestURI();
-            String client = response.getRequest().getRemoteAddr();
-            long len = response.getContentLengthLong();
-            logger.log(REST_API_ACCESS, client, uri, response.getStatus(), len);
-          }
-        });
   }
 
   public void startServer() {
-    boolean enableSwagger = map.getBooleanProperty("enableSwagger", true);
-    boolean enableUserManagement = map.getBooleanProperty("enableUserManagement", true);
-    boolean enableSchemaManagement = map.getBooleanProperty("enableSchemaManagement", true);
-    boolean enableInterfaceManagement = map.getBooleanProperty("enableInterfaceManagement", true);
-    boolean enableDestinationManagement = map.getBooleanProperty("enableDestinationManagement", true);
+    RestMessageListener.setMaxSubscribedMessages(config.getMaxEventsPerDestination());
+    int inactiveTimeout = config.getInactiveTimeout();
+    if(inactiveTimeout < 10000) {
+      inactiveTimeout = 180000;
+    }
+    BaseAuthenticationFilter.setMaxInactiveInterval(inactiveTimeout);
+    if(config.isEnableCache()){
+      long entryLifeTime = config.getCacheLifetime();
+      long cleanupTime = config.getCacheCleanup();
+      io.mapsmessaging.rest.api.Constants.setCentralCache( new RoleBasedCache<>(entryLifeTime, cleanupTime));
+    }
+    else{
+      io.mapsmessaging.rest.api.Constants.setCentralCache(new NoCache<>());
+    }
     List<String> endpoints = new ArrayList<>();
     endpoints.add("io.mapsmessaging.rest.api.impl");
     endpoints.add("io.mapsmessaging.rest.api.impl.messaging");
     endpoints.add("io.mapsmessaging.rest.translation");
 
-    if (enableSwagger) {
+    if (config.isEnableSwagger()) {
       endpoints.add("io.swagger.v3.jaxrs2.integration.resources");
       endpoints.add("io.swagger.v3.jaxrs2.integration.resources.AcceptHeaderOpenApiResource");
     }
-    if (enableUserManagement) {
+    if (config.isEnableUserManagement()) {
       endpoints.add("io.mapsmessaging.rest.api.impl.auth");
     }
-    if (enableDestinationManagement) {
+    if (config.isEnableDestinationManagement()) {
       endpoints.add("io.mapsmessaging.rest.api.impl.destination");
     }
-    if (enableInterfaceManagement) {
+    if (config.isEnableInterfaceManagement()) {
       endpoints.add("io.mapsmessaging.rest.api.impl.interfaces");
+      endpoints.add("io.mapsmessaging.rest.api.impl.integration");
+      endpoints.add("io.mapsmessaging.rest.api.impl.connections");
+      endpoints.add("io.mapsmessaging.rest.api.impl.lora");
+      endpoints.add("io.mapsmessaging.rest.api.impl.discovery");
     }
-    if (enableSchemaManagement) {
+    if (config.isEnableSchemaManagement()) {
       endpoints.add("io.mapsmessaging.rest.api.impl.schema");
     }
-
+    endpoints.add("io.mapsmessaging.rest.api.impl.hardware");
+    endpoints.add("io.mapsmessaging.rest.api.impl.server");
+    endpoints.add("io.mapsmessaging.rest.api.impl.logging");
+    endpoints.add("io.mapsmessaging.rest.api.impl.ml");
     try {
-      final ResourceConfig config = new ResourceConfig();
-      config.packages(false, endpoints.toArray(new String[0]));
-      boolean enableAuth = map.getBooleanProperty("enableAuthentication", false);
-      if (enableAuth && AuthManager.getInstance().isAuthenticationEnabled()) {
-        config.register(new AuthenticationFilter());
+      final ResourceConfig resourceConfig = new ResourceConfig();
+      resourceConfig.packages(false, endpoints.toArray(new String[0]));
+      resourceConfig.property(ServerProperties.WADL_FEATURE_DISABLE, !config.isEnableWadlEndPoint());
+      resourceConfig.register(SseFeature.class);
+      // Register Gson providers
+      resourceConfig.register(GsonMessageBodyReader.class);
+      resourceConfig.register(GsonMessageBodyWriter.class);
+
+      if (config.isEnableAuthentication() && AuthManager.getInstance().isAuthenticationEnabled()) {
+        resourceConfig.register(new AuthenticationFilter());
+        AuthenticationContext.getInstance().setAccessControl(new RestAccessControl());
       }
-      config.register(DebugMapper.class);
-      ServletContainer sc = new ServletContainer(config);
+      else{
+        resourceConfig.register(new NoAuthenticationFilter());
+      }
+      resourceConfig.register(LoggingFilter.class);
+      resourceConfig.register(CorsFilter.class);
+      ServletContainer sc = new ServletContainer(resourceConfig);
       SSLContextConfigurator sslConfig = setupSSL();
       String protocol = "http";
       if(isSecure){
         protocol = "https";
       }
       String baseUri = protocol+"://" + getHost() + ":" + getPort() + "/";
+
       httpServer = startHttpService(URI.create(baseUri), sc, sslConfig);
-      loadStatic();
-      addLogging();
       httpServer.start();
+      cleanupSchedule = SimpleTaskScheduler.getInstance().scheduleAtFixedRate(
+          SessionTracker::scan,
+          inactiveTimeout,
+          10_000,
+          TimeUnit.MILLISECONDS
+      );
     } catch (IOException e) {
       logger.log(REST_API_FAILURE, e);
     }
   }
 
-  public HttpServer startHttpService(URI uri, Servlet servlet, SSLContextConfigurator sslConfig) {
+  public HttpServer startHttpService(URI uri, Servlet servlet, SSLContextConfigurator sslConfig) throws IOException {
     String path = uri.getPath();
     if (path == null || path.isEmpty() || path.charAt(0) != '/') {
       throw new IllegalArgumentException("The URI path, of the URI " + uri + ", must be non-null, present and start with a '/'");
@@ -247,16 +252,75 @@ public class RestApiServerManager implements Agent {
     path = String.format("/%s", (UriComponent.decodePath(uri.getPath(), true).get(1)).toString());
     WebappContext context = new WebappContext("GrizzlyContext", path);
     ServletRegistration registration = context.addServlet(servlet.getClass().getName(), servlet);
-
+    context.addListener(new SessionTracker());
     registration.addMapping("/*");
     HttpServer server;
     if (sslConfig != null) {
-      SSLEngineConfigurator sslEngineConfigurator = new SSLEngineConfigurator(sslConfig, false, false, false);
+      SSLEngineConfigurator sslEngineConfigurator = new SSLEngineConfigurator(sslConfig, false, isClientCertRequired(), isClientCertWanted());
       server = GrizzlyHttpServerFactory.createHttpServer(uri, ((GrizzlyHttpContainer) null), true, sslEngineConfigurator, false);
     } else {
-      server = GrizzlyHttpServerFactory.createHttpServer(uri);
+      server = GrizzlyHttpServerFactory.createHttpServer(uri, false);
     }
+    ThreadPoolConfig threadPoolConfig = ThreadPoolConfig.defaultConfig()
+        .setCorePoolSize(config.getMinThreads()) // Minimum threads
+        .setMaxPoolSize(config.getMaxThreads()) // Maximum threads
+        .setQueueLimit(config.getThreadQueueLimit()); // Task queue limit
+
+    TCPNIOTransport transport = server.getListener("grizzly").getTransport();
+    transport.setSelectorRunnersCount(config.getSelectorThreads());
+    transport.setWorkerThreadPoolConfig(threadPoolConfig);
+    transport.setKernelThreadPoolConfig(threadPoolConfig);
+
     context.deploy(server);
+    loadStatic(server);
+    server.getServerConfiguration().setSessionTimeoutSeconds(BaseAuthenticationFilter.getMaxInactiveInterval()/1000);
     return server;
   }
+
+  private void loadStatic(HttpServer server){
+    if (config.getStaticConfig() != null){
+      StaticConfig staticConfig = config.getStaticConfig();
+      if(staticConfig.isEnabled()){
+        String path = staticConfig.getDirectory();
+        if (!path.endsWith(File.separator)) {
+          path = path + File.separator;
+        }
+        mapDirectory(path, server );
+      }
+    }
+  }
+
+
+  private void mapDirectory(String path, HttpServer server) {
+    File files = new File(path);
+    if(files.exists() && files.isDirectory()) {
+      File[] fileList = files.listFiles();
+      if (fileList != null) {
+        for (File file : fileList) {
+          if (file.isDirectory()) {
+            String location = path+file.getName();
+            String uriMapping = "/"+file.getName()+"/";
+            StaticHttpHandler staticHttpHandler = new CorsEnabledStaticHttpHandler(location+File.separator);
+            staticHttpHandler.setFileCacheEnabled(true);
+            server.getServerConfiguration().addHttpHandler(staticHttpHandler, uriMapping+"*" );
+          }
+        }
+      }
+    }
+  }
+
+  @Override
+  public SubSystemStatusDTO getStatus() {
+    SubSystemStatusDTO status = new SubSystemStatusDTO();
+    status.setName("RestAPI Caching");
+    if(Constants.getCentralCache() instanceof RoleBasedCache){
+      status.setStatus(Status.OK);
+      status.setComment("Cached Items:"+Constants.getCentralCache().size());
+    }
+    else{
+      status.setStatus(Status.DISABLED);
+    }
+    return status;
+  }
+
 }

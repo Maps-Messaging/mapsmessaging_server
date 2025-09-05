@@ -1,23 +1,25 @@
 /*
- * Copyright [ 2020 - 2024 ] [Matthew Buckton]
  *
- *  Licensed under the Apache License, Version 2.0 (the "License");
- *  you may not use this file except in compliance with the License.
- *  You may obtain a copy of the License at
+ *  Copyright [ 2020 - 2024 ] Matthew Buckton
+ *  Copyright [ 2024 - 2025 ] MapsMessaging B.V.
+ *
+ *  Licensed under the Apache License, Version 2.0 with the Commons Clause
+ *  (the "License"); you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at:
  *
  *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://commonsclause.com/
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
  */
 
 package io.mapsmessaging.network.io.impl.tcp;
 
-import io.mapsmessaging.configuration.ConfigurationProperties;
+import io.mapsmessaging.dto.rest.config.network.impl.TcpConfigDTO;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.logging.ServerLogMessages;
@@ -25,8 +27,10 @@ import io.mapsmessaging.network.admin.EndPointJMX;
 import io.mapsmessaging.network.admin.EndPointManagerJMX;
 import io.mapsmessaging.network.io.*;
 import io.mapsmessaging.network.io.impl.Selector;
+import io.mapsmessaging.network.protocol.impl.proxy.ProxyProtocolInfo;
 
 import java.io.IOException;
+import java.net.InetAddress;
 import java.net.Socket;
 import java.net.SocketException;
 import java.nio.ByteBuffer;
@@ -38,6 +42,7 @@ import java.util.concurrent.FutureTask;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static io.mapsmessaging.logging.ServerLogMessages.*;
+import static io.mapsmessaging.network.io.impl.tcp.NetworkHelper.isInCidr;
 
 public class TCPEndPoint extends EndPoint {
 
@@ -45,7 +50,6 @@ public class TCPEndPoint extends EndPoint {
   protected final SocketChannel socketChannel;
   protected final Selector selector;
   private final String authenticationConfig;
-  private final String name;
   private final EndPointJMX mbean;
   private final AtomicBoolean isClosed;
 
@@ -61,9 +65,9 @@ public class TCPEndPoint extends EndPoint {
       if (isClient()) {
         name = getProtocol() + "_" + socket.getLocalAddress().toString() + "_" + socket.getLocalPort();
       } else {
-        name = getProtocol() + "_" + socket.getRemoteSocketAddress().toString();
+        name = getProtocol() + "_" + getRemoteSocketAddress();
       }
-      configure(endPointServerStatus.getConfig().getProperties());
+      configure((TcpConfigDTO) endPointServerStatus.getConfig().getEndPointConfig());
     } catch (IOException e) {
       logger.log(ServerLogMessages.TCP_CONNECT_FAILED, e, accepted.toString());
       throw e;
@@ -86,8 +90,8 @@ public class TCPEndPoint extends EndPoint {
       socketChannel = socket.getChannel();
       selector = select;
       authenticationConfig = authConfig;
-      name = getProtocol() + "_" + socket.getRemoteSocketAddress().toString();
-      configure(server.getConfig().getProperties());
+      name = getProtocol() + "_" + getRemoteSocketAddress();
+      configure((TcpConfigDTO) server.getConfig().getEndPointConfig());
     } catch (IOException e) {
       logger.log(ServerLogMessages.TCP_CONNECT_FAILED, e, accepted.toString());
       throw e;
@@ -125,6 +129,53 @@ public class TCPEndPoint extends EndPoint {
       }
     }
   }
+
+  public void setProxyProtocolInfo(ProxyProtocolInfo proxyProtocolInfo){
+    super.setProxyProtocolInfo(proxyProtocolInfo);
+    name = getProtocol() + "_" + getRemoteSocketAddress();
+  }
+
+  public boolean isValidProxySource() {
+    if (socket == null || proxyProtocolInfo == null) return false;
+    InetAddress remoteAddr = socket.getInetAddress();
+    if (remoteAddr == null) return false;
+    String actualRemote = remoteAddr.getHostAddress();
+    String proxySource = proxyProtocolInfo.getDestination().getAddress().getHostAddress();
+    return(actualRemote.equals(proxySource));
+  }
+
+  public boolean isProxyAllowed() {
+    String allowedProxyHosts = getConfig().getEndPointConfig().getAllowedProxyHosts();
+    if (!isValidProxySource()) return false;
+    if (allowedProxyHosts == null || allowedProxyHosts.isBlank()) return true;
+
+    String sourceHost = proxyProtocolInfo.getDestination().getAddress().getHostAddress();
+    String[] entries = allowedProxyHosts.split(",");
+
+    for (String entry : entries) {
+      String trimmed = entry.trim();
+      if (trimmed.isEmpty()) continue;
+
+      try {
+        if (trimmed.contains("/")) {
+          if (isInCidr(trimmed, sourceHost)) return true;
+        } else {
+          InetAddress allowed = InetAddress.getByName(trimmed);
+          if (allowed.getHostAddress().equals(sourceHost)) return true;
+        }
+      } catch (Exception ignored) {
+      }
+    }
+    return false;
+  }
+
+  private String getRemoteSocketAddress() {
+    if (getProxyProtocolInfo() == null) {
+      return socket.getRemoteSocketAddress().toString();
+    }
+    return getProxyProtocolInfo().getSource().getAddress().getHostAddress();
+  }
+
 
   public String getProtocol() {
     return "tcp";
@@ -184,7 +235,9 @@ public class TCPEndPoint extends EndPoint {
       this.server.incrementError();
       throw new IOException("Socket closed");
     }
-    updateReadBytes(count);
+    if(count > 0) {
+      updateReadBytes(count);
+    }
     return count;
   }
 
@@ -197,7 +250,7 @@ public class TCPEndPoint extends EndPoint {
     return LoggerFactory.getLogger(TCPEndPoint.class.getName() + "_" + getId());
   }
 
-  private void configure(ConfigurationProperties config) throws IOException {
+  private void configure(TcpConfigDTO config) throws IOException {
     /*
     These are NOT configurable and required for normal operation
      */
@@ -209,9 +262,9 @@ public class TCPEndPoint extends EndPoint {
     /*
     Configurable settings for Sockets
      */
-    int receiveSize = config.getIntProperty("receiveBufferSize", 128000);
-    int sendSize = config.getIntProperty("sendBufferSize", 128000);
-    int socketTimeOut = config.getIntProperty("timeout", 120000);
+    int receiveSize = config.getReceiveBufferSize();
+    int sendSize = config.getSendBufferSize();
+    int socketTimeOut = config.getTimeout();
 
     logger.log(TCP_CONFIGURED_PARAMETER, "receiveBufferSize", receiveSize);
     logger.log(TCP_CONFIGURED_PARAMETER, "sendBufferSize", sendSize);
@@ -226,7 +279,7 @@ public class TCPEndPoint extends EndPoint {
 
   @Override
   public void completedConnection() {
-    int linger = getConfig().getProperties().getIntProperty("soLingerDelaySec", 10);
+    int linger = ((TcpConfigDTO)getConfig().getEndPointConfig()).getSoLingerDelaySec();
     try {
       socket.setSoLinger(true, linger);
     } catch (SocketException e) {

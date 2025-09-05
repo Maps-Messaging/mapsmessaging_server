@@ -1,24 +1,27 @@
 /*
- * Copyright [ 2020 - 2024 ] [Matthew Buckton]
  *
- *  Licensed under the Apache License, Version 2.0 (the "License");
- *  you may not use this file except in compliance with the License.
- *  You may obtain a copy of the License at
+ *  Copyright [ 2020 - 2024 ] Matthew Buckton
+ *  Copyright [ 2024 - 2025 ] MapsMessaging B.V.
+ *
+ *  Licensed under the Apache License, Version 2.0 with the Commons Clause
+ *  (the "License"); you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at:
  *
  *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://commonsclause.com/
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
  */
 
 package io.mapsmessaging.engine.session;
 
 import io.mapsmessaging.admin.SessionManagerJMX;
-import io.mapsmessaging.configuration.ConfigurationProperties;
+import io.mapsmessaging.dto.rest.system.Status;
+import io.mapsmessaging.dto.rest.system.SubSystemStatusDTO;
 import io.mapsmessaging.engine.destination.DestinationManager;
 import io.mapsmessaging.engine.destination.subscription.SubscriptionContext;
 import io.mapsmessaging.engine.destination.subscription.SubscriptionController;
@@ -28,7 +31,6 @@ import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.logging.ServerLogMessages;
 import io.mapsmessaging.utilities.Agent;
-import io.mapsmessaging.utilities.configuration.ConfigurationManager;
 
 import javax.security.auth.login.LoginException;
 import java.util.ArrayList;
@@ -37,6 +39,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.Future;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.LongAdder;
 
 public class SessionManager implements Agent {
@@ -53,10 +56,10 @@ public class SessionManager implements Agent {
   private final LongAdder connectedSessions;
   private final LongAdder expiredSessions;
 
+  private final AtomicLong uniqueSessionId = new AtomicLong(0);
 
-  public SessionManager(SecurityManager security, DestinationManager destinationManager, String dataPath) {
-    ConfigurationProperties properties = ConfigurationManager.getInstance().getProperties("MessageDaemon");
-    int pipeLineSize = properties.getIntProperty("SessionPipeLines", 10);
+
+  public SessionManager(SecurityManager security, DestinationManager destinationManager, String dataPath, int pipeLineSize) {
     disconnectedSessions = new LongAdder();
     connectedSessions = new LongAdder();
     expiredSessions = new LongAdder();
@@ -88,6 +91,12 @@ public class SessionManager implements Agent {
     //
     for (String sessionId : storeLookup.getSessionNames()) {
       SessionDetails sessionDetails = storeLookup.getSessionDetails(sessionId);
+      if(sessionDetails.getInternalUnqueId() == 0){
+        sessionDetails.setInternalUnqueId(uniqueSessionId.incrementAndGet());
+      }
+      else if(sessionDetails.getInternalUnqueId() > uniqueSessionId.longValue()) {
+        uniqueSessionId.set(sessionDetails.getInternalUnqueId()+1);
+      }
       Map<String, SubscriptionContext> map = sessionDetails.getSubscriptionContextMap();
       if (logger.isInfoEnabled()) {
         logger.log(ServerLogMessages.SESSION_MANAGER_LOADING_SESSION, sessionId, map.size());
@@ -119,8 +128,7 @@ public class SessionManager implements Agent {
   }
 
   int getPipeLineIndex(String name) {
-    int hashCode = name.hashCode() % sessionPipeLines.length; // Reduce its size before we get the ABS
-    return Math.abs(hashCode);
+    return Math.abs(name.hashCode() % sessionPipeLines.length); // Reduce its size before we get the ABS
   }
   //</editor-fold>
 
@@ -164,6 +172,14 @@ public class SessionManager implements Agent {
   // get corruption as to which will or session was what.
   //
   public SessionImpl create(SessionContext sessionContext) throws LoginException {
+    if(sessionContext.getInternalSessionId() == 0){
+      sessionContext.setInternalSessionId(uniqueSessionId.incrementAndGet());
+    }
+    else{
+      if(uniqueSessionId.get() < sessionContext.getInternalSessionId()){
+        uniqueSessionId.set(sessionContext.getInternalSessionId()+1);
+      }
+    }
     logger.log(ServerLogMessages.SESSION_MANAGER_CREATE, sessionContext.toString());
     return sessionPipeLines[getPipeLineIndex(sessionContext.getId())].create(sessionContext);
   }
@@ -225,6 +241,20 @@ public class SessionManager implements Agent {
 
   public long getTotalExpired() {
     return expiredSessions.sum();
+  }
+
+  @Override
+  public SubSystemStatusDTO getStatus() {
+    SubSystemStatusDTO status = new SubSystemStatusDTO();
+    status.setName(getName());
+    status.setComment("");
+    status.setStatus(Status.OK);
+
+    if(sessionPipeLines.length == 0) {
+      status.setStatus(Status.ERROR);
+      status.setComment("No Pipelines defined!!");
+    }
+    return status;
   }
 
 }

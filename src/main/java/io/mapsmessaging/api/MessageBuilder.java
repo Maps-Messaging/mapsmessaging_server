@@ -1,18 +1,20 @@
 /*
- * Copyright [ 2020 - 2023 ] [Matthew Buckton]
  *
- *  Licensed under the Apache License, Version 2.0 (the "License");
- *  you may not use this file except in compliance with the License.
- *  You may obtain a copy of the License at
+ *  Copyright [ 2020 - 2024 ] Matthew Buckton
+ *  Copyright [ 2024 - 2025 ] MapsMessaging B.V.
+ *
+ *  Licensed under the Apache License, Version 2.0 with the Commons Clause
+ *  (the "License"); you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at:
  *
  *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://commonsclause.com/
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
  */
 
 package io.mapsmessaging.api;
@@ -22,13 +24,15 @@ import io.mapsmessaging.api.features.QualityOfService;
 import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.api.message.TypedData;
 import io.mapsmessaging.api.transformers.Transformer;
+import io.mapsmessaging.dto.rest.messaging.MessageDTO;
 import io.mapsmessaging.network.protocol.ProtocolMessageTransformation;
 import lombok.Data;
-import lombok.Getter;
 import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.Base64;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
@@ -88,6 +92,29 @@ public class MessageBuilder {
     delayed = previousMessage.getDelayed();
   }
 
+
+  public MessageBuilder(MessageDTO messageDTO) {
+    id = 0;
+    meta = null;
+    retain = false;
+    storeOffline = false;
+    payloadUTF8 = false;
+    delayed = 0;
+    creation = System.currentTimeMillis();
+    schemaId = null;
+
+    dataMap = new LinkedHashMap<>();
+    for(Map.Entry<String, Object> entry : messageDTO.getDataMap().entrySet()) {
+      dataMap.put(entry.getKey(), new TypedData(entry.getValue()));
+    }
+    opaqueData = Base64.getDecoder().decode(messageDTO.getPayload());
+    priority = Priority.getInstance(messageDTO.getPriority());
+    expiry = messageDTO.getExpiry();
+    contentType = messageDTO.getContentType();
+    correlationData = messageDTO.getCorrelationData();
+    qualityOfService = QualityOfService.getInstance(messageDTO.getQualityOfService());
+  }
+
   public @NonNull @NotNull MessageBuilder setCreation(long creation) {
     this.creation = creation;
     return this;
@@ -114,12 +141,22 @@ public class MessageBuilder {
   }
 
   public @NonNull @NotNull MessageBuilder setMeta(@Nullable Map<String, String> meta) {
-    this.meta = meta;
+    if(this.meta != null && meta != null) {
+      this.meta.putAll(meta);
+    }
+    else {
+      this.meta = meta;
+    }
     return this;
   }
 
   public @NonNull @NotNull MessageBuilder setDataMap(@Nullable Map<String, TypedData> dataMap) {
-    this.dataMap = dataMap;
+    if(this.dataMap != null && dataMap != null) {
+      this.dataMap.putAll(dataMap);
+    }
+    else {
+      this.dataMap = dataMap;
+    }
     return this;
   }
 

@@ -1,5 +1,6 @@
 #
-#   Copyright [ 2020 - 2023 ] [Matthew Buckton]
+# Copyright [ 2020 - 2024 ] [Matthew Buckton]
+# Copyright [ 2024 - 2025 ] [Maps Messaging B.V.]
 #
 #   Licensed under the Apache License, Version 2.0 (the "License");
 #   you may not use this file except in compliance with the License.
@@ -13,6 +14,7 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 #
+
 ---
 jolokia:
   enable: true # Flag to indicate if the jolokia plugin should be started
@@ -34,7 +36,6 @@ jolokia:
     serializeException: false # Flag to enable exception serialization
     #Discovery
     discoveryEnabled: false # Flag to enable discovery
-    discoveryAgentUrl: http://localhost:8181/hawtio/discovery/agent # The url to use for discovery
     multicastGroup: 239.192.48.48
     multicastPort: 24884
 

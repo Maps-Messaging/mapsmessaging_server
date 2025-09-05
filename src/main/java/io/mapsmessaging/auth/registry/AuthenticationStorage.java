@@ -1,18 +1,20 @@
 /*
- * Copyright [ 2020 - 2024 ] [Matthew Buckton]
  *
- *  Licensed under the Apache License, Version 2.0 (the "License");
- *  you may not use this file except in compliance with the License.
- *  You may obtain a copy of the License at
+ *  Copyright [ 2020 - 2024 ] Matthew Buckton
+ *  Copyright [ 2024 - 2025 ] MapsMessaging B.V.
+ *
+ *  Licensed under the Apache License, Version 2.0 with the Commons Clause
+ *  (the "License"); you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at:
  *
  *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://commonsclause.com/
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
  */
 
 package io.mapsmessaging.auth.registry;
@@ -24,25 +26,28 @@ import io.mapsmessaging.auth.registry.mapping.IdDbStore;
 import io.mapsmessaging.auth.registry.mapping.UserIdSerializer;
 import io.mapsmessaging.auth.registry.principal.SessionPrivilegePrincipal;
 import io.mapsmessaging.configuration.ConfigurationProperties;
+import io.mapsmessaging.logging.Logger;
+import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.security.SubjectHelper;
-import io.mapsmessaging.security.access.IdentityAccessManager;
+import io.mapsmessaging.security.access.*;
 import io.mapsmessaging.security.access.mapping.GroupIdMap;
 import io.mapsmessaging.security.access.mapping.UserIdMap;
-import io.mapsmessaging.security.identity.GroupEntry;
-import io.mapsmessaging.security.identity.IdentityEntry;
 import lombok.Getter;
 import org.mapdb.DB;
 import org.mapdb.DBMaker;
 
 import javax.security.auth.Subject;
-import java.io.Closeable;
 import java.io.File;
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.security.GeneralSecurityException;
 import java.util.*;
 
-public class AuthenticationStorage implements Closeable {
+import static io.mapsmessaging.logging.ServerLogMessages.AUTH_STORAGE_FAILED_ON_UPDATE;
+import static io.mapsmessaging.logging.ServerLogMessages.AUTH_STORAGE_FAILED_TO_LOAD;
+
+public class AuthenticationStorage {
+  private static final String CERTIFICATE_STORE = "certificateStore";
+
   @Getter
   private final IdentityAccessManager identityAccessManager;
   private final UserPermisionManager userPermisionManager;
@@ -50,7 +55,9 @@ public class AuthenticationStorage implements Closeable {
   @Getter
   private final boolean firstBoot;
 
-  public AuthenticationStorage(ConfigurationProperties config) throws Exception {
+  private final Logger logger = LoggerFactory.getLogger(AuthenticationStorage.class);
+
+  public AuthenticationStorage(ConfigurationProperties config)  {
     String securityDirectory = config.getProperty("configDirectory", "./.security");
     if (securityDirectory != null) {
       File file = new File(securityDirectory);
@@ -62,6 +69,7 @@ public class AuthenticationStorage implements Closeable {
     firstBoot = !(new File(securityDirectory + File.separator + ".auth.db").exists());
     db = DBMaker.fileDB(securityDirectory + File.separator + ".auth.db")
         .checksumStoreEnable()
+        .cleanerHackEnable()
         .fileChannelEnable()
         .fileMmapEnableIfSupported()
         .fileMmapPreclearDisable()
@@ -72,13 +80,13 @@ public class AuthenticationStorage implements Closeable {
     Map<UUID, GroupIdMap> groupMapSet = db.hashMap("groupIdMap", new UUIDSerializer(), new GroupIdSerializer()).createOrOpen();
     Map<UUID, SessionPrivileges> sessionPrivilegesMap = db.hashMap(UserPermisionManager.class.getName(), new UUIDSerializer(), new PrivilegeSerializer()).createOrOpen();
 
-    Map<String, Object> map = new LinkedHashMap<>();
+    Map<String, Object> map = new LinkedHashMap<>(config.getMap());
     map.put("configDirectory", securityDirectory);
-    map.put("passwordHander", config.getProperty("passwordHander"));
+    map.put("passwordHandler", config.getProperty("passwordHandler"));
 
-    if (config.containsKey("certificateStore")) {
-      Map<String, ?> cert = ((ConfigurationProperties) config.get("certificateStore")).getMap();
-      map.put("certificateStore", cert);
+    if (config.containsKey(CERTIFICATE_STORE)) {
+      Map<String, ?> cert = ((ConfigurationProperties) config.get(CERTIFICATE_STORE)).getMap();
+      map.put(CERTIFICATE_STORE, cert);
     }
 
     String authProvider = config.getProperty("identityProvider", "Apache-Basic-Auth");
@@ -86,58 +94,45 @@ public class AuthenticationStorage implements Closeable {
     userPermisionManager = new UserPermisionManager(sessionPrivilegesMap);
   }
 
-  public boolean addUser(String username, String password, SessionPrivileges quotas, String[] groups) {
+  public boolean addUser(String username, char[] password, SessionPrivileges quotas, String[] groups) {
     try {
-      UserIdMap userIdMap = identityAccessManager.createUser(username, password);
+      UserManagement userManagement = identityAccessManager.getUserManagement();
+      GroupManagement groupManagement = identityAccessManager.getGroupManagement();
+      UserIdMap userIdMap = userManagement.createUser(username, password);
       UUID uuid = userIdMap.getAuthId();
       for (String group : groups) {
-        if (identityAccessManager.getGroup(group) == null) {
-          identityAccessManager.createGroup(group);
+        if (groupManagement.getGroup(group) == null) {
+          groupManagement.createGroup(group);
         }
-        identityAccessManager.addUserToGroup(username, group);
+        groupManagement.addUserToGroup(username, group);
       }
       quotas.setUniqueId(uuid);
       userPermisionManager.add(quotas);
       return true;
     } catch (IOException | GeneralSecurityException e) {
-
+      logger.log(AUTH_STORAGE_FAILED_TO_LOAD, e);
     }
     return false;
   }
 
   public boolean delUser(String username) {
     try {
-      UserIdMap userIdMap = identityAccessManager.getUser(username);
+      UserManagement userManagement = identityAccessManager.getUserManagement();
+      Identity userIdMap = userManagement.getUser(username);
       if (userIdMap != null) {
-        identityAccessManager.deleteUser(username);
-        userPermisionManager.delete(userIdMap.getAuthId());
+        userManagement.deleteUser(username);
+        userPermisionManager.delete(userIdMap.getId());
       }
       return true;
     } catch (IOException e) {
-
+      logger.log(AUTH_STORAGE_FAILED_ON_UPDATE, e);
     }
     return false;
   }
 
 
-  public boolean validateUser(String username, String password) {
-    IdentityEntry identityEntry = identityAccessManager.getUserIdentity(username);
-    if (identityEntry != null) {
-      try {
-        byte[] passwordTest = identityEntry.getPasswordHasher().getPassword();
-        boolean res = Arrays.equals(password.getBytes(StandardCharsets.UTF_8), passwordTest);
-        Arrays.fill(passwordTest, (byte) 0x0);
-        return res;
-      } catch (IOException | GeneralSecurityException e) {
-        throw new RuntimeException(e);
-      }
-    }
-    return false;
-  }
-
-  @Override
-  public void close() throws IOException {
-    db.close();
+  public boolean validateUser(String username, char[] password) throws IOException {
+    return identityAccessManager.validateUser(username, password);
   }
 
   public SessionPrivileges getQuota(UUID userId) {
@@ -157,29 +152,32 @@ public class AuthenticationStorage implements Closeable {
     return subject1;
   }
 
-  public UserIdMap findUser(String username) {
-    return identityAccessManager.getUser(username);
+  public Identity findUser(String username) {
+    return identityAccessManager.getUserManagement().getUser(username);
   }
 
-  public UserIdMap findUser(UUID uuid) {
-    return identityAccessManager.getAllUsers().stream().filter(userIdMap -> userIdMap.getAuthId().equals(uuid)).findFirst().orElse(null);
+  public Identity findUser(UUID uuid) {
+    return identityAccessManager.getUserManagement().getAllUsers().stream().filter(userIdMap -> userIdMap.getId().equals(uuid)).findFirst().orElse(null);
+  }
+
+  public Group findGroup(String groupName) {
+    return identityAccessManager.getGroupManagement().getGroup(groupName);
+  }
+
+  public Group findGroup(UUID uuid) {
+    return identityAccessManager.getGroupManagement().getAllGroups().stream().filter(groupIdMap -> groupIdMap.getId().equals(uuid)).findFirst().orElse(null);
   }
 
   public List<UserDetails> getUsers() {
-    List<UserIdMap> userIdMaps = identityAccessManager.getAllUsers();
+    List<Identity> userIdMaps = identityAccessManager.getUserManagement().getAllUsers();
     List<UserDetails> users = new ArrayList<>();
-    for (UserIdMap userIdMap : userIdMaps) {
-      IdentityEntry entry = identityAccessManager.getUserIdentity(userIdMap.getUsername());
+    for (Identity entry : userIdMaps) {
       List<UUID> groupIds = new ArrayList<>();
-      List<GroupEntry> groupEntries = entry.getGroups();
-      for (GroupEntry groupEntry : groupEntries) {
-        GroupIdMap groupIdMap = identityAccessManager.getGroup(groupEntry.getName());
-        if (groupIdMap != null) {
-          groupIds.add(groupIdMap.getAuthId());
-        }
+      List<Group> groupEntries = entry.getGroupList();
+      for (Group group : groupEntries) {
+        groupIds.add(group.getId());
       }
       UserDetails details = new UserDetails(
-          userIdMap,
           entry,
           groupIds
       );
@@ -189,21 +187,20 @@ public class AuthenticationStorage implements Closeable {
   }
 
   public List<GroupDetails> getGroups() {
-    List<GroupIdMap> groupIdMaps = identityAccessManager.getAllGroups();
+    List<Group> groupIdMaps = identityAccessManager.getGroupManagement().getAllGroups();
     List<GroupDetails> groups = new ArrayList<>();
-    for (GroupIdMap groupIdMap : groupIdMaps) {
-      GroupEntry entry = identityAccessManager.getGroupDetails(groupIdMap.getGroupName());
+    for (Group entry : groupIdMaps) {
       List<UUID> userIds = new ArrayList<>();
-      Set<String> userList = entry.getUsers();
+      Set<String> userList = entry.getUserSet();
       for (String user : userList) {
-        UserIdMap userIdMap = identityAccessManager.getUser(user);
+        Identity userIdMap = identityAccessManager.getUserManagement().getUser(user);
         if (userIdMap != null) {
-          userIds.add(userIdMap.getAuthId());
+          userIds.add(userIdMap.getId());
         }
       }
       GroupDetails details = new GroupDetails(
-          groupIdMap.getGroupName(),
-          groupIdMap.getAuthId(),
+          entry.getName(),
+          entry.getId(),
           userIds
       );
       groups.add(details);
@@ -212,18 +209,22 @@ public class AuthenticationStorage implements Closeable {
   }
 
   public void delGroup(String groupName) throws IOException {
-    identityAccessManager.deleteGroup(groupName);
+    identityAccessManager.getGroupManagement().deleteGroup(groupName);
   }
 
   public GroupIdMap addGroup(String groupName) throws IOException {
-    return identityAccessManager.createGroup(groupName);
+    return identityAccessManager.getGroupManagement().createGroup(groupName);
   }
 
   public void addUserToGroup(String user, String group) throws IOException {
-    identityAccessManager.addUserToGroup(user, group);
+    identityAccessManager.getGroupManagement().addUserToGroup(user, group);
   }
 
   public void removeUserFromGroup(String username, String groupName) throws IOException {
-    identityAccessManager.removeUserFromGroup(username, groupName);
+    identityAccessManager.getGroupManagement().removeUserFromGroup(username, groupName);
+  }
+
+  public void close() {
+    db.close();
   }
 }

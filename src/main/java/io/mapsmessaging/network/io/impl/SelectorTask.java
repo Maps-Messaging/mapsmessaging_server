@@ -1,29 +1,35 @@
 /*
- * Copyright [ 2020 - 2024 ] [Matthew Buckton]
  *
- *  Licensed under the Apache License, Version 2.0 (the "License");
- *  you may not use this file except in compliance with the License.
- *  You may obtain a copy of the License at
+ *  Copyright [ 2020 - 2024 ] Matthew Buckton
+ *  Copyright [ 2024 - 2025 ] MapsMessaging B.V.
+ *
+ *  Licensed under the Apache License, Version 2.0 with the Commons Clause
+ *  (the "License"); you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at:
  *
  *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://commonsclause.com/
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
  */
 
 package io.mapsmessaging.network.io.impl;
 
-import io.mapsmessaging.configuration.ConfigurationProperties;
+import io.mapsmessaging.config.network.impl.TcpConfig;
+import io.mapsmessaging.config.network.impl.UdpConfig;
+import io.mapsmessaging.dto.rest.config.network.EndPointConfigDTO;
+import io.mapsmessaging.dto.rest.config.network.impl.TcpConfigDTO;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.logging.ServerLogMessages;
 import io.mapsmessaging.network.io.EndPoint;
 import io.mapsmessaging.network.io.Selectable;
 import io.mapsmessaging.network.io.ServerPacket;
+import lombok.Getter;
 
 import java.io.IOException;
 import java.nio.channels.SelectionKey;
@@ -37,38 +43,45 @@ import static java.nio.channels.SelectionKey.OP_WRITE;
 
 public class SelectorTask implements Selectable {
 
+  @Getter
+  private final ReadTask readTask;
+
   private final Logger logger;
   private final EndPoint endPoint;
   private final WriteTask writeTask;
-  private final ReadTask readTask;
 
   private int selectionOps;
   private FutureTask<SelectionKey> future;
   private SelectionKey selectionKey;
   private boolean isOpen;
 
-  public SelectorTask(SelectorCallback selectorCallback, ConfigurationProperties properties) {
+  public SelectorTask(SelectorCallback selectorCallback, EndPointConfigDTO properties) {
     this(selectorCallback, properties, false);
   }
 
-  public SelectorTask(SelectorCallback selectorCallback, ConfigurationProperties properties, boolean isUDP) {
+  public SelectorTask(SelectorCallback selectorCallback, EndPointConfigDTO properties, boolean isUDP) {
     logger = LoggerFactory.getLogger(SelectorTask.class);
-    int readBufferSize = properties.getIntProperty("serverReadBufferSize", DefaultConstants.TCP_READ_BUFFER_SIZE);
-    int writeBufferSize = properties.getIntProperty("serverWriteBufferSize", DefaultConstants.TCP_WRITE_BUFFER_SIZE);
-    long packetThreshold = properties.getLongProperty("packetReuseTimeout", 1000L);
+    int readBufferSize = (int)properties.getServerReadBufferSize();
+    int writeBufferSize = (int) properties.getServerWriteBufferSize();
     if (isUDP) {
+      long packetThreshold = 1000;
+      if(properties instanceof UdpConfig){
+        packetThreshold = ((UdpConfig)properties).getPacketReuseTimeout();
+      }
       readTask = new UDPReadTask(selectorCallback, readBufferSize, packetThreshold, logger);
       writeTask = new UDPWriteTask(selectorCallback, writeBufferSize, this, logger);
     } else {
       int readDelay = -1;
       int readFragmentation = -1;
-      boolean readDelayEnabled = properties.getBooleanProperty("enableReadDelayOnFragmentation", DefaultConstants.TCP_READ_DELAY_ENABLED);
-      if (readDelayEnabled) {
-        readDelay = properties.getIntProperty("readDelayOnFragmentation", DefaultConstants.TCP_READ_DELAY_ON_FRAGMENTATION);
-        if (readDelay <= 0) {
-          readDelay = DefaultConstants.TCP_READ_DELAY_ON_FRAGMENTATION;
+      if (properties instanceof TcpConfig) {
+        boolean readDelayEnabled = ((TcpConfigDTO) properties).isEnableReadDelayOnFragmentation();
+        if (readDelayEnabled) {
+          readDelay = ((TcpConfigDTO) properties).getReadDelayOnFragmentation();
+          if (readDelay <= 0) {
+            readDelay = DefaultConstants.TCP_READ_DELAY_ON_FRAGMENTATION;
+          }
+          readFragmentation = ((TcpConfigDTO) properties).getFragmentationLimit();
         }
-        readFragmentation = properties.getIntProperty("enableReadDelayOnFragmentation", DefaultConstants.TCP_READ_FRAGMENTATION_LIMIT);
       }
       readTask = new ReadTask(selectorCallback, readBufferSize, logger, readDelay, readFragmentation);
       writeTask = new WriteTask(selectorCallback, writeBufferSize, this, logger);
@@ -171,9 +184,5 @@ public class SelectorTask implements Selectable {
         writeTask.selected(selectable, selector, OP_WRITE);
       }
     }
-  }
-
-  public ReadTask getReadTask() {
-    return readTask;
   }
 }

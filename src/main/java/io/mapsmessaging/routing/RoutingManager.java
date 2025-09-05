@@ -1,29 +1,32 @@
 /*
- * Copyright [ 2020 - 2024 ] [Matthew Buckton]
  *
- *  Licensed under the Apache License, Version 2.0 (the "License");
- *  you may not use this file except in compliance with the License.
- *  You may obtain a copy of the License at
+ *  Copyright [ 2020 - 2024 ] Matthew Buckton
+ *  Copyright [ 2024 - 2025 ] MapsMessaging B.V.
+ *
+ *  Licensed under the Apache License, Version 2.0 with the Commons Clause
+ *  (the "License"); you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at:
  *
  *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://commonsclause.com/
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
  */
 
 package io.mapsmessaging.routing;
 
 import io.mapsmessaging.MessageDaemon;
-import io.mapsmessaging.configuration.ConfigurationProperties;
+import io.mapsmessaging.config.RoutingManagerConfig;
+import io.mapsmessaging.dto.rest.system.Status;
+import io.mapsmessaging.dto.rest.system.SubSystemStatusDTO;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.network.discovery.DiscoveryManager;
 import io.mapsmessaging.utilities.Agent;
-import io.mapsmessaging.utilities.configuration.ConfigurationManager;
 
 import javax.jmdns.ServiceEvent;
 import javax.jmdns.ServiceListener;
@@ -38,15 +41,11 @@ public class RoutingManager implements Agent, ServiceListener {
 
   private final Logger logger = LoggerFactory.getLogger(RoutingManager.class);
 
-  private final ConfigurationProperties properties;
-  private final boolean enabled;
-  private final boolean autoConfig;
+  private final RoutingManagerConfig config;
   private final Map<String, RemoteServerManager> remoteServers;
 
   public RoutingManager() {
-    properties = ConfigurationManager.getInstance().getProperties("routing");
-    enabled = properties.getBooleanProperty("enabled", false);
-    autoConfig = properties.getBooleanProperty("autoDiscovery", false);
+    config = RoutingManagerConfig.getInstance();
     remoteServers = new LinkedHashMap<>();
   }
 
@@ -61,10 +60,10 @@ public class RoutingManager implements Agent, ServiceListener {
   }
 
   public void start() {
-    if (enabled) {
+    if (config.isEnabled()) {
       logger.log(ROUTING_STARTUP);
-      if(autoConfig){
-        DiscoveryManager discoveryManager = MessageDaemon.getInstance().getDiscoveryManager();
+      if (config.isAutoDiscovery()) {
+        DiscoveryManager discoveryManager = MessageDaemon.getInstance().getSubSystemManager().getDiscoveryManager();
         if(discoveryManager.isEnabled()) {
           // Register listener for map server notification
           discoveryManager.registerListener("_maps._tcp.local.", this);
@@ -75,8 +74,8 @@ public class RoutingManager implements Agent, ServiceListener {
 
   public void stop() {
     logger.log(ROUTING_SHUTDOWN);
-    if(autoConfig) {
-      DiscoveryManager discoveryManager = MessageDaemon.getInstance().getDiscoveryManager();
+    if(config.isAutoDiscovery()) {
+      DiscoveryManager discoveryManager = MessageDaemon.getInstance().getSubSystemManager().getDiscoveryManager();
       if(discoveryManager.isEnabled()) {
         discoveryManager.removeListener("_maps._tcp.local.", this);
       }
@@ -138,4 +137,14 @@ public class RoutingManager implements Agent, ServiceListener {
     }
     return true;
   }
+
+  @Override
+  public SubSystemStatusDTO getStatus() {
+    SubSystemStatusDTO status = new SubSystemStatusDTO();
+    status.setName(getName());
+    status.setComment("Not Active");
+    status.setStatus(Status.DISABLED);
+    return status;
+  }
+
 }

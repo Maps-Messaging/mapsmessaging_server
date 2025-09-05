@@ -1,0 +1,52 @@
+#!/bin/bash
+
+#
+#
+#  Copyright [ 2020 - 2024 ] Matthew Buckton
+#  Copyright [ 2024 - 2025 ] MapsMessaging B.V.
+#
+#  Licensed under the Apache License, Version 2.0 with the Commons Clause
+#  (the "License"); you may not use this file except in compliance with the License.
+#  You may obtain a copy of the License at:
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#      https://commonsclause.com/
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+#
+
+set -e
+
+case "$1" in
+  remove|purge)
+    # Check if systemctl exists and is available
+    if command -v systemctl >/dev/null 2>&1; then
+        # Stop and disable the service if it's active
+        if systemctl is-active --quiet maps.service; then
+            systemctl stop maps.service || true
+        fi
+        systemctl disable maps.service || true
+    fi
+
+    # Remove the symlinks
+    rm -f /usr/local/bin/maps
+    rm -f /usr/local/bin/mapsTop
+
+    # Remove the environment file and service file
+    rm -f /etc/maps/maps.env
+    rm -f /usr/lib/systemd/system/maps.service
+
+    # Optional: Remove logs if purging
+    if [ "$1" = "purge" ]; then
+        rm -rf /var/log/maps
+    fi
+  ;;
+esac
+
+#DEBHELPER#
+
+exit 0

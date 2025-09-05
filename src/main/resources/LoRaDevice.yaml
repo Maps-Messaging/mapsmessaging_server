@@ -1,5 +1,6 @@
 #
-#   Copyright [ 2020 - 2023 ] [Matthew Buckton]
+# Copyright [ 2020 - 2024 ] [Matthew Buckton]
+# Copyright [ 2024 - 2025 ] [Maps Messaging B.V.]
 #
 #   Licensed under the Apache License, Version 2.0 (the "License");
 #   you may not use this file except in compliance with the License.
@@ -19,6 +20,7 @@ LoRaDevice:
   global:
     power: 20 # TX Power to use
     frequency: 915.0   # Frequency to use, must be the band authorised for your country
+    address: 2
 
     # ---------------------------------------------------------------------------------------------------------
     # Device specific values
@@ -29,8 +31,19 @@ LoRaDevice:
   data:
     -
       name: loraDevice0
-      cs: 7 # Chip Select pin used by the LoRa Radio Device
-      irq: 22 # Interrupt pin used by the LoRa Radio device indicating available data
-      rst: 25 # Reset Pin to use to reset the Radio Device, used during Startup to reset and clear the device
-      radio: rfm95 # Radio Model, currently only RFM95 supported
-      CADTimeout: 0  # A value of 0 is off, anything positive is then set
+      device:
+        cs: 7 # Chip Select pin used by the LoRa Radio Device
+        irq: 22 # Interrupt pin used by the LoRa Radio device indicating available data
+        rst: 25 # Reset Pin to use to reset the Radio Device, used during Startup to reset and clear the device
+        radio: rfm95 # Radio Model, currently only RFM95 supported
+        CADTimeout: 0  # A value of 0 is off, anything positive is then set
+
+    - name: loraDevice1
+      serial:
+        serialNo: C934764551504C3750202020FF042337
+        port: cu.usbmodem101
+        baudRate: 115200
+        dataBits: 8
+        stopBits: 1
+        parity: n
+        flowControl: 1

@@ -1,18 +1,20 @@
 /*
- * Copyright [ 2020 - 2023 ] [Matthew Buckton]
  *
- *  Licensed under the Apache License, Version 2.0 (the "License");
- *  you may not use this file except in compliance with the License.
- *  You may obtain a copy of the License at
+ *  Copyright [ 2020 - 2024 ] Matthew Buckton
+ *  Copyright [ 2024 - 2025 ] MapsMessaging B.V.
+ *
+ *  Licensed under the Apache License, Version 2.0 with the Commons Clause
+ *  (the "License"); you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at:
  *
  *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://commonsclause.com/
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
  */
 
 package io.mapsmessaging.network.io.impl.dtls.state;
@@ -60,21 +62,26 @@ public class HandShakeState extends State {
       SSLEngineResult r = stateEngine.getSslEngine().unwrap(packet.getRawBuffer(), iApp);
       SSLEngineResult.Status rs = r.getStatus();
       hs = r.getHandshakeStatus();
-      if (rs == SSLEngineResult.Status.OK) {
-        //
-      } else if (rs == SSLEngineResult.Status.BUFFER_OVERFLOW) {
-        // the client maximum fragment size config does not work?
-        throw new IOException("Buffer overflow: incorrect client maximum fragment size");
-      } else if (rs == SSLEngineResult.Status.BUFFER_UNDERFLOW) {
-        // bad packet, or the client maximum fragment size
-        // config does not work?
-        if (hs != NOT_HANDSHAKING) {
-          throw new IOException("Buffer underflow: incorrect client maximum fragment size");
-        } // otherwise, ignore this packet
-      } else if (rs == SSLEngineResult.Status.CLOSED) {
-        throw new IOException("SSL engine closed, handshake status is " + hs);
-      } else {
-        throw new IOException("Can't reach here, result is " + rs);
+      switch (rs) {
+        case OK:
+          // No action required
+          break;
+
+        case BUFFER_OVERFLOW:
+          throw new IOException("Buffer overflow: incorrect client maximum fragment size");
+
+        case BUFFER_UNDERFLOW:
+          if (hs != NOT_HANDSHAKING) {
+            throw new IOException("Buffer underflow: incorrect client maximum fragment size");
+          }
+          // Ignore this packet if not handshaking
+          break;
+
+        case CLOSED:
+          throw new IOException("SSL engine closed, handshake status is " + hs);
+
+        default:
+          throw new IOException("Unexpected result: " + rs);
       }
 
       if (hs == SSLEngineResult.HandshakeStatus.FINISHED) {

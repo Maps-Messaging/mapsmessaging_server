@@ -1,23 +1,26 @@
 /*
- * Copyright [ 2020 - 2023 ] [Matthew Buckton]
  *
- *  Licensed under the Apache License, Version 2.0 (the "License");
- *  you may not use this file except in compliance with the License.
- *  You may obtain a copy of the License at
+ *  Copyright [ 2020 - 2024 ] Matthew Buckton
+ *  Copyright [ 2024 - 2025 ] MapsMessaging B.V.
+ *
+ *  Licensed under the Apache License, Version 2.0 with the Commons Clause
+ *  (the "License"); you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at:
  *
  *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://commonsclause.com/
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
  */
 
 package io.mapsmessaging.engine.destination.subscription;
 
 import io.mapsmessaging.api.message.Message;
+import io.mapsmessaging.dto.rest.session.SubscriptionStateDTO;
 import io.mapsmessaging.engine.Constants;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
@@ -98,21 +101,24 @@ public class DestinationSubscriptionManager implements Subscribable {
 
   @Override
   public boolean hasMessage(long messageIdentifier) {
-    boolean response = false;
     for (Subscribable subscribable : subscriptions.values()) {
-      response = subscribable.hasMessage(messageIdentifier) || response;
+      if (subscribable.hasMessage(messageIdentifier)) {
+        return true;
+      }
     }
-    return response;
+    return false;
   }
 
   @Override
   public boolean expired(long messageIdentifier) {
-    boolean response = false;
     for (Subscribable subscribable : subscriptions.values()) {
-      response = subscribable.expired(messageIdentifier) || response;
+      if (subscribable.expired(messageIdentifier)) {
+        return true;
+      }
     }
-    return response;
+    return false;
   }
+
 
   @Override
   public int size() {
@@ -172,5 +178,15 @@ public class DestinationSubscriptionManager implements Subscribable {
 
   public Subscribable getSubscription(String subscriptionName) {
     return subscriptions.get(subscriptionName);
+  }
+
+  public List<SubscriptionStateDTO> getSubscriptionStates() {
+    List<SubscriptionStateDTO> states = new ArrayList<>();
+    for (Subscribable subscribable : subscriptions.values()) {
+      if (subscribable instanceof Subscription){
+        states.add( ((Subscription)subscribable).getState());
+      }
+    }
+    return states;
   }
 }

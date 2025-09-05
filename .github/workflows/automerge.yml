@@ -13,6 +13,6 @@ jobs:
       - name: Automerge
         uses: pascalgn/automerge-action@v0.14.3
         with:
-          mergeMethod: squash
-          commitMessageTemplate: "chore(dependencies): update dependencies"
-          token: ${{ secrets.GITHUB_TOKEN }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          merge-method: squash
+          commit-message-template: "chore(dependencies): update dependencies"

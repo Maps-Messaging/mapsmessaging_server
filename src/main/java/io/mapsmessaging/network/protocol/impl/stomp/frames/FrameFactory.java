@@ -1,18 +1,20 @@
 /*
- * Copyright [ 2020 - 2023 ] [Matthew Buckton]
  *
- *  Licensed under the Apache License, Version 2.0 (the "License");
- *  you may not use this file except in compliance with the License.
- *  You may obtain a copy of the License at
+ *  Copyright [ 2020 - 2024 ] Matthew Buckton
+ *  Copyright [ 2024 - 2025 ] MapsMessaging B.V.
+ *
+ *  Licensed under the Apache License, Version 2.0 with the Commons Clause
+ *  (the "License"); you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at:
  *
  *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://commonsclause.com/
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
  */
 
 package io.mapsmessaging.network.protocol.impl.stomp.frames;
@@ -30,12 +32,12 @@ public class FrameFactory {
   private final List<FrameLookup> frames;
   private final byte[] workingBuffer;
 
-  public FrameFactory(int maxBufferSize, boolean isClient) {
+  public FrameFactory(int maxBufferSize, boolean isClient, boolean base64Encode) {
     frames = new ArrayList<>();
     if (isClient) {
       frames.add(new FrameLookup("CONNECTED".getBytes(), new Connected(), new ConnectedListener()));
       frames.add(new FrameLookup("ERROR".getBytes(), new Error(), new ErrorListener()));
-      frames.add(new FrameLookup("MESSAGE".getBytes(), new Message(maxBufferSize), new MessageListener()));
+      frames.add(new FrameLookup("MESSAGE".getBytes(), new Message(maxBufferSize, base64Encode), new MessageListener()));
       frames.add(new FrameLookup("RECEIPT".getBytes(), new Receipt(), new ReceiptListener()));
     } else {
       frames.add(new FrameLookup("".getBytes(), new ClientHeartBeat(), new ClientHeartBeatListener()));
@@ -47,7 +49,7 @@ public class FrameFactory {
       frames.add(new FrameLookup("COMMIT".getBytes(), new Commit(), new CommitListener()));
       frames.add(new FrameLookup("DISCONNECT".getBytes(), new Disconnect(), new DisconnectListener()));
       frames.add(new FrameLookup("NACK".getBytes(), new Nack(), new NackListener()));
-      frames.add(new FrameLookup("SEND".getBytes(), new Send(maxBufferSize), new SendListener()));
+      frames.add(new FrameLookup("SEND".getBytes(), new Send(maxBufferSize, base64Encode), new SendListener()));
       frames.add(new FrameLookup("SUBSCRIBE".getBytes(), new Subscribe(), new SubscribeListener()));
       frames.add(new FrameLookup("UNSUBSCRIBE".getBytes(), new Unsubscribe(), new UnsubscribeListener()));
     }

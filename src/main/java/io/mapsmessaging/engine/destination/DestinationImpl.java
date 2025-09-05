@@ -1,18 +1,20 @@
 /*
- * Copyright [ 2020 - 2024 ] [Matthew Buckton]
  *
- *  Licensed under the Apache License, Version 2.0 (the "License");
- *  you may not use this file except in compliance with the License.
- *  You may obtain a copy of the License at
+ *  Copyright [ 2020 - 2024 ] Matthew Buckton
+ *  Copyright [ 2024 - 2025 ] MapsMessaging B.V.
+ *
+ *  Licensed under the Apache License, Version 2.0 with the Commons Clause
+ *  (the "License"); you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at:
  *
  *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://commonsclause.com/
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
  */
 
 package io.mapsmessaging.engine.destination;
@@ -21,6 +23,9 @@ import io.mapsmessaging.admin.DestinationJMX;
 import io.mapsmessaging.api.features.DestinationType;
 import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.configuration.ConfigurationProperties;
+import io.mapsmessaging.dto.rest.config.destination.DestinationConfigDTO;
+import io.mapsmessaging.dto.rest.config.destination.MessageOverrideDTO;
+import io.mapsmessaging.dto.rest.session.SubscriptionStateDTO;
 import io.mapsmessaging.engine.Constants;
 import io.mapsmessaging.engine.destination.delayed.DelayedMessageManager;
 import io.mapsmessaging.engine.destination.delayed.TransactionalMessageManager;
@@ -42,8 +47,10 @@ import io.mapsmessaging.engine.utils.FilePathHelper;
 import io.mapsmessaging.schemas.config.SchemaConfig;
 import io.mapsmessaging.schemas.config.SchemaConfigFactory;
 import io.mapsmessaging.utilities.collections.NaturalOrderedLongList;
+import io.mapsmessaging.utilities.collections.bitset.BitSetFactory;
 import io.mapsmessaging.utilities.collections.bitset.BitSetFactoryImpl;
 import io.mapsmessaging.utilities.queue.EventReaperQueue;
+import io.mapsmessaging.utilities.stats.StatsFactory;
 import io.mapsmessaging.utilities.threads.SimpleTaskScheduler;
 import io.mapsmessaging.utilities.threads.tasks.PriorityConcurrentTaskScheduler;
 import io.mapsmessaging.utilities.threads.tasks.PriorityTaskScheduler;
@@ -62,7 +69,6 @@ import java.util.List;
 import java.util.Queue;
 import java.util.UUID;
 import java.util.concurrent.*;
-import java.util.concurrent.atomic.LongAdder;
 
 /**
  * This class represents a mechanism for clients to publish to a known point, subscribe to this point and the complex mechanisms around that, including transactional publishing,
@@ -71,13 +77,8 @@ import java.util.concurrent.atomic.LongAdder;
  * single destination needs to do.
  */
 public class DestinationImpl implements BaseDestination {
-
-  private static final LongAdder totalRetained = new LongAdder();
-
-  public static long getTotalRetained() {
-    return totalRetained.sum();
-  }
-
+  @Getter
+  private static final DestinationGlobalStats globalStats = new DestinationGlobalStats(StatsFactory.getDefaultType());
 
   //<editor-fold desc="Global static final fields used by all destinations">
   public static final int TASK_QUEUE_PRIORITY_SIZE = 2;
@@ -92,6 +93,8 @@ public class DestinationImpl implements BaseDestination {
   //<editor-fold desc="Destination specific fields">
   protected final DestinationSubscriptionManager subscriptionManager;
   protected final DestinationSubscriptionManager schemaSubscriptionManager;
+  @Getter
+  protected final BitSetFactory subscriptionBitsetFactory;
   private final SharedSubscriptionRegister sharedSubscriptionRegistry;
   private final RetainManager retainManager;
 
@@ -107,7 +110,6 @@ public class DestinationImpl implements BaseDestination {
    * -- GETTER --
    *  Returns the stats object for this destination. All metrics about this destination are maintained in this class
    *
-   * @return DestinationStats for this instance
    */
   @Getter
   private final DestinationStats stats;
@@ -120,11 +122,11 @@ public class DestinationImpl implements BaseDestination {
   private final Resource resource;
   private final DestinationType destinationType;
 
+  private final MessageOverrideDTO messageOverrides;
   /**
    * -- GETTER --
    *  This returns the user supplied name for the destination
    *
-   * @return String name of the destination
    */
   @Getter
   private final String fullyQualifiedNamespace;       // This is the actual name of this resource within the servers namespace
@@ -149,9 +151,11 @@ public class DestinationImpl implements BaseDestination {
    * @param destinationType the type of resource that this destination represents
    * @throws IOException if, at anytime, the file system was unable to construct, read or write to the required files
    */
-  public DestinationImpl(@NonNull @NotNull String name, @NonNull @NotNull DestinationPathManager pathManager, @NonNull @NotNull UUID uuid,
-      @NonNull @NotNull DestinationType destinationType) throws IOException {
-    schema = new Schema(SchemaManager.getInstance().getSchema(SchemaManager.DEFAULT_RAW_UUID));
+  public DestinationImpl(@NonNull @NotNull String name, @NonNull @NotNull DestinationConfigDTO pathManager, @NonNull @NotNull UUID uuid,
+                         @NonNull @NotNull DestinationType destinationType) throws IOException {
+    SchemaConfig config = SchemaManager.getInstance().locateSchema(name);
+    schema = new Schema(config);
+    messageOverrides = pathManager.getMessageOverride();
     this.fullyQualifiedNamespace = name;
     fullyQualifiedDirectoryRoot = computePath(pathManager, uuid);
     resourceTaskQueue = new PriorityConcurrentTaskScheduler(RESOURCE_TASK_KEY, TASK_QUEUE_PRIORITY_SIZE);
@@ -159,19 +163,20 @@ public class DestinationImpl implements BaseDestination {
     this.destinationType = destinationType;
     subscriptionManager = new DestinationSubscriptionManager(name);
     schemaSubscriptionManager = new DestinationSubscriptionManager(name);
-    SchemaConfig config = SchemaManager.getInstance().getSchema(SchemaManager.DEFAULT_RAW_UUID);
     resource = ResourceFactory.getInstance().create(new MessageExpiryHandler(this), name, pathManager, fullyQualifiedDirectoryRoot, uuid, destinationType, config);
     resource.getResourceProperties().setSchema(config.toMap());
     retainManager = new RetainManager(isPersistent(), getPhysicalLocation());
 
-    stats = new DestinationStats();
-    resourceStatistics = new ResourceStatistics(resource);
+    stats = new DestinationStats(StatsFactory.getDefaultType());
+    resourceStatistics = new ResourceStatistics(resource, StatsFactory.getDefaultType());
     destinationJMXBean = new DestinationJMX(this, resourceTaskQueue, subscriptionTaskQueue);
     sharedSubscriptionRegistry = new SharedSubscriptionRegister();
-    delayedMessageManager = DestinationStateManagerFactory.getInstance().createDelayed(this, true, "delayed");
+
+    subscriptionBitsetFactory = DestinationStateManagerFactory.createSubscriptionFactory(this, true, "subscriptions");
+    delayedMessageManager = DestinationStateManagerFactory.createDelayed(this, true, "delayed");
     delayScheduler = SimpleTaskScheduler.getInstance().scheduleAtFixedRate(new DelayProcessor(), 990, 1000, TimeUnit.MILLISECONDS);
 
-    transactionMessageManager = DestinationStateManagerFactory.getInstance().createTransaction(this, true, "transactions");
+    transactionMessageManager = DestinationStateManagerFactory.createTransaction(this, true, "transactions");
     closed = false;
     completionQueue = new EventReaperQueue();
     loadSchema();
@@ -186,8 +191,9 @@ public class DestinationImpl implements BaseDestination {
    * @param destinationType the resource type detected during the reload
    * @throws IOException if, at any point, the underlying file structures are corrupt or unable to be used
    */
-  public DestinationImpl(@NonNull @NotNull String name, @NonNull @NotNull String directory, @NonNull @NotNull Resource resource, @NonNull @NotNull DestinationType destinationType)
+  public DestinationImpl(@NonNull @NotNull String name, @NonNull @NotNull String directory, @NonNull @NotNull Resource resource, @NonNull @NotNull DestinationType destinationType, MessageOverrideDTO messageOverrides)
       throws IOException {
+    this.messageOverrides = messageOverrides;
     this.fullyQualifiedNamespace = name;
     fullyQualifiedDirectoryRoot = directory;
     resourceTaskQueue = new PriorityConcurrentTaskScheduler(RESOURCE_TASK_KEY, TASK_QUEUE_PRIORITY_SIZE);
@@ -198,11 +204,11 @@ public class DestinationImpl implements BaseDestination {
     this.resource = resource;
     retainManager = new RetainManager(isPersistent(), getPhysicalLocation());
 
-    stats = new DestinationStats();
-    resourceStatistics = new ResourceStatistics(resource);
+    stats = new DestinationStats(StatsFactory.getDefaultType());
+    resourceStatistics = new ResourceStatistics(resource,StatsFactory.getDefaultType());
     destinationJMXBean = new DestinationJMX(this, resourceTaskQueue, subscriptionTaskQueue);
     sharedSubscriptionRegistry = new SharedSubscriptionRegister();
-    schema = new Schema(SchemaManager.getInstance().getSchema(SchemaManager.DEFAULT_RAW_UUID));
+    schema = new Schema(SchemaManager.getInstance().locateSchema(name));
     completionQueue = new EventReaperQueue();
 
     if(resource.getResourceProperties().getSchema() == null || resource.getResourceProperties().getSchema().isEmpty()){
@@ -213,10 +219,10 @@ public class DestinationImpl implements BaseDestination {
       loadSchema();
     }
     // Delayed Messages are automatically dealt with once the structure has been reloaded
-    delayedMessageManager = DestinationStateManagerFactory.getInstance().createDelayed(this, true, "delayed");
+    delayedMessageManager = DestinationStateManagerFactory.createDelayed(this, true, "delayed");
     delayScheduler = SimpleTaskScheduler.getInstance().scheduleAtFixedRate(new DelayProcessor(), 990, 1000, TimeUnit.MILLISECONDS);
-
-    transactionMessageManager = DestinationStateManagerFactory.getInstance().createTransaction(this, true, "transactions");
+    subscriptionBitsetFactory = DestinationStateManagerFactory.createSubscriptionFactory(this, true, "subscriptions");
+    transactionMessageManager = DestinationStateManagerFactory.createTransaction(this, true, "transactions");
     rollbackTransactionsOnReload();
     closed = false;
     reaperFuture = queueReaper();
@@ -230,8 +236,9 @@ public class DestinationImpl implements BaseDestination {
    * @param destinationType the type of the destination
    */
   public DestinationImpl(@NonNull @NotNull String name, @NonNull @NotNull DestinationType destinationType) throws IOException {
-    schema = new Schema(SchemaManager.getInstance().getSchema(SchemaManager.DEFAULT_RAW_UUID));
+    schema = new Schema(SchemaManager.getInstance().locateSchema(name));
     this.fullyQualifiedNamespace = name;
+    messageOverrides = null;
     fullyQualifiedDirectoryRoot = "";
     resourceTaskQueue = new PriorityConcurrentTaskScheduler(RESOURCE_TASK_KEY, TASK_QUEUE_PRIORITY_SIZE);
     subscriptionTaskQueue = new SingleConcurrentTaskScheduler(SUBSCRIPTION_TASK_KEY);
@@ -241,13 +248,14 @@ public class DestinationImpl implements BaseDestination {
     resource = new ResourceImpl();
     retainManager = new RetainManager(isPersistent(), getPhysicalLocation());
 
-    stats = new DestinationStats();
-    resourceStatistics = new ResourceStatistics(resource);
+    stats = new DestinationStats(StatsFactory.getDefaultType());
+
+    resourceStatistics = new ResourceStatistics(resource,StatsFactory.getDefaultType());
     destinationJMXBean = new DestinationJMX(this, resourceTaskQueue, subscriptionTaskQueue);
     sharedSubscriptionRegistry = new SharedSubscriptionRegister();
     delayedMessageManager = null;
     delayScheduler = null;
-
+    subscriptionBitsetFactory = DestinationStateManagerFactory.createSubscriptionFactory(this, false, "subscriptions");
     transactionMessageManager = null;
     closed = false;
     completionQueue = new EventReaperQueue();
@@ -277,6 +285,10 @@ public class DestinationImpl implements BaseDestination {
     if(resourceStatistics != null){
       resourceStatistics.close();
     }
+  }
+
+  public ResourceProperties getResourceProperties() {
+    return resource.getResourceProperties();
   }
 
   private ScheduledFuture<?> queueReaper() {
@@ -313,7 +325,7 @@ public class DestinationImpl implements BaseDestination {
     }
   }
 
-  private static String computePath(@NonNull @NotNull DestinationPathManager pathManager, UUID uuid) {
+  private static String computePath(@NonNull @NotNull DestinationConfigDTO pathManager, UUID uuid) {
     return FilePathHelper.cleanPath(pathManager.getDirectory() + File.separator + uuid.toString() + File.separator);
   }
 
@@ -349,6 +361,14 @@ public class DestinationImpl implements BaseDestination {
     }
   }
 
+  public List<SubscriptionStateDTO> getSubscriptionStates() {
+    List<SubscriptionStateDTO> result = new ArrayList<>();
+    result.addAll(subscriptionManager.getSubscriptionStates());
+    result.addAll(schemaSubscriptionManager.getSubscriptionStates());
+    result.addAll(sharedSubscriptionRegistry.getState());
+    return result;
+  }
+
   public void stopSubscriptions() {
     subscriptionTaskQueue.shutdown();
   }
@@ -372,12 +392,12 @@ public class DestinationImpl implements BaseDestination {
       if (destinationJMXBean != null) {
         destinationJMXBean.close();
       }
-      File location = new File(getPhysicalLocation());
-      deleteFile(location);
+      SimpleTaskScheduler.getInstance().schedule(()->deleteFile(new File(getPhysicalLocation()), 0), 10, TimeUnit.SECONDS);
     }
   }
 
-  public static void deleteFile(File directoryToBeDeleted) throws IOException {
+  public static void deleteFile(File directoryToBeDeleted, int count) {
+    int recursionDepth = count +1;
     StringBuilder failedFiles = new StringBuilder();
     File[] allContents = directoryToBeDeleted.listFiles();
     if (allContents != null) {
@@ -402,7 +422,9 @@ public class DestinationImpl implements BaseDestination {
       Files.delete(directoryToBeDeleted.toPath());
     } catch (IOException e) {
       failedFiles.append(directoryToBeDeleted.getAbsolutePath()).append(",");
-      throw new IOException("Failed to delete the following files: " + failedFiles, e);
+    }
+    if(!failedFiles.isEmpty() && recursionDepth < 3) {
+      SimpleTaskScheduler.getInstance().schedule(() -> deleteFile(directoryToBeDeleted, recursionDepth), 10, TimeUnit.SECONDS);
     }
   }
 
@@ -528,7 +550,7 @@ public class DestinationImpl implements BaseDestination {
       if (!eventQueue.isEmpty()) {
         eventQueue = subscriptionManager.scanForInterest(eventQueue);
         if (!eventQueue.isEmpty()) {
-          stats.getStoredMessageAverages().subtract(eventQueue.size());
+          stats.storedMessages(eventQueue.size());
           submit(new BulkRemoveMessageTask(this, eventQueue), PUBLISH_PRIORITY);
         }
       }
@@ -540,6 +562,11 @@ public class DestinationImpl implements BaseDestination {
   public void addSchemaSubscription(@NonNull @NotNull Subscription subscription) {
     stats.subscriptionAdded();
     schemaSubscriptionManager.put(subscription.getSessionId(), subscription);
+  }
+
+  public void removeSchemaSubscription(@NonNull @NotNull Subscription subscription) {
+    stats.subscriptionRemoved();
+    schemaSubscriptionManager.remove(subscription.getSessionId());
   }
 
   //<editor-fold desc="Message delivery and completion APIs">
@@ -556,7 +583,7 @@ public class DestinationImpl implements BaseDestination {
     Message message = resource.get(messageId);
     if (message != null) {
       nano = (System.nanoTime() - nano) / 1000;
-      getStats().getReadTimeAverages().add(nano);
+      getStats().messageReadTime(nano);
       long expiry = message.getExpiry();
       if (expiry > 0 && expiry < System.currentTimeMillis()) {
         submit(new RemoveMessageTask(this, messageId), RETRIEVE_PRIORITY);
@@ -596,6 +623,7 @@ public class DestinationImpl implements BaseDestination {
    */
   @Override
   public int storeMessage(@NonNull @NotNull Message message) throws IOException {
+    message = MessageOverrides.setOverrides(messageOverrides, message);
     Callable<Response> task;
     if (message.getDelayed() > 0 && delayedMessageManager != null) {
       task = new DelayedStoreMessageTask(this, message, delayedMessageManager, message.getDelayed());
@@ -776,12 +804,12 @@ public class DestinationImpl implements BaseDestination {
     long nano = System.nanoTime();
     resource.remove(messageId);
     if (messageId == retainManager.current()) {
-      totalRetained.decrement();
+      stats.retainedMessages(-1);
       retainManager.replace(-1);
     }
 
     nano = (System.nanoTime() - nano) / 1000; // Make it micro seconds
-    getStats().getDeleteTimeAverages().add(nano);
+    getStats().messageDeleteTime(nano);
   }
 
   /**
@@ -796,15 +824,15 @@ public class DestinationImpl implements BaseDestination {
     if (message.isRetain()) {
       if (message.getOpaqueData() == null || message.getOpaqueData().length == 0) {
         retainManager.replace(-1);
-        totalRetained.decrement();
+        stats.retainedMessages(-1);
       } else {
         retainManager.replace(message.getIdentifier());
-        totalRetained.increment();
+        stats.retainedMessages(1);
       }
     }
 
     nano = (System.nanoTime() - nano) / 1000;
-    getStats().getWriteTimeAverages().add(nano);
+    getStats().messageWriteTime(nano);
   }
 
   public DestinationSubscription getSubscription(String subscriptionName) {

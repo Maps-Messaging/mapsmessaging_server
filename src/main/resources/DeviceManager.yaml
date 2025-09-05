@@ -1,5 +1,6 @@
 #
-#   Copyright [ 2020 - 2023 ] [Matthew Buckton]
+# Copyright [ 2020 - 2024 ] [Matthew Buckton]
+# Copyright [ 2024 - 2025 ] [Maps Messaging B.V.]
 #
 #   Licensed under the Apache License, Version 2.0 (the "License");
 #   you may not use this file except in compliance with the License.
@@ -20,7 +21,8 @@
 
 DeviceManager:
   global:
-    enabled: false    # Enabled hardware interface
+    enabled: true    # Enabled hardware interface
+    demoEnabled: false
     trigger: everyMinute
     scanTime: 30000 # Scan time looking for new hardware
     topicNameTemplate: /device/[bus_name]/[device_name]
@@ -54,15 +56,6 @@ DeviceManager:
           enabled: false
           topicNameTemplate: /device/[device_type]/[bus_name]/[bus_number]/[device_addr]/[device_name]
           autoScan: false
-          devices:
-            -
-              address: 0x23
-              name: BH1750
-              selector: 'lux > 20.0'
-            -
-              address: 0x5d
-              name: LPS25
-              selector: 'temperature > 20.0'
 
         -
           bus: 1
@@ -70,9 +63,15 @@ DeviceManager:
           autoScan: true
           topicNameTemplate: /device/[device_type]/[bus_name]/[bus_number]/[device_addr]/[device_name]
           trigger: everySecond
-          devices:
-            - address: 0x10
-              name: DebugDevice
+
+        -
+          bus: 2  # Demo bus
+          enabled: false
+          autoScan: false
+          topicNameTemplate: /device/[device_type]/[bus_name]/[bus_number]/[device_addr]/[device_name]
+          trigger: everySecond
+
+
     -
       name: oneWire
       enabled: false  # enable / disable one wire interface

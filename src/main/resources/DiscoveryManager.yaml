@@ -1,5 +1,6 @@
 #
-#   Copyright [ 2020 - 2023 ] [Matthew Buckton]
+# Copyright [ 2020 - 2024 ] [Matthew Buckton]
+# Copyright [ 2024 - 2025 ] [Maps Messaging B.V.]
 #
 #   Licensed under the Apache License, Version 2.0 (the "License");
 #   you may not use this file except in compliance with the License.
@@ -17,7 +18,7 @@
 ---
 
 DiscoveryManager:
-  enabled: false                               # If true then the server will start the discovery server else the server will not run the service
-  hostnames: "::"                             # Array list of adapters to bind the discovery server to
+  enabled: true                               # If true then the server will start the discovery server else the server will not run the service
+  hostnames: "::"                  # Array list of adapters to bind the discovery server to
   addTxtRecords: true                         # Add more information to the TXT records
   domainName: ".local"                        # Domain name to use

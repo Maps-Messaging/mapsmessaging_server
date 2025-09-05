@@ -1,27 +1,33 @@
 /*
- * Copyright [ 2020 - 2023 ] [Matthew Buckton]
  *
- *  Licensed under the Apache License, Version 2.0 (the "License");
- *  you may not use this file except in compliance with the License.
- *  You may obtain a copy of the License at
+ *  Copyright [ 2020 - 2024 ] Matthew Buckton
+ *  Copyright [ 2024 - 2025 ] MapsMessaging B.V.
+ *
+ *  Licensed under the Apache License, Version 2.0 with the Commons Clause
+ *  (the "License"); you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at:
  *
  *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://commonsclause.com/
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
  */
 
 package io.mapsmessaging.network.protocol.impl.websockets.endpoint;
 
 import io.mapsmessaging.network.io.Packet;
 import io.mapsmessaging.network.protocol.EndOfBufferException;
+import lombok.Getter;
+import lombok.Setter;
+import lombok.ToString;
 
 import java.io.IOException;
 
+@ToString
 public class WebSocketHeader {
 
   protected static final int CONTINUATION = 0x0;
@@ -36,11 +42,19 @@ public class WebSocketHeader {
   private static final int LONG_INDICATOR = 127;
 
   private boolean isClosed;
+  @Setter
   private boolean finish;
+  @Getter
   private boolean mask;
+  @Getter
+  @Setter
   private byte opCode;
+  @Getter
   private long length;
+  @Getter
   private byte[] maskKey;
+  @Getter
+  @Setter
   private boolean completed;
 
   public WebSocketHeader() {
@@ -116,14 +130,6 @@ public class WebSocketHeader {
     completed = false;
   }
 
-  public boolean isCompleted() {
-    return completed;
-  }
-
-  public void setCompleted(boolean completed) {
-    this.completed = completed;
-  }
-
   public boolean isClose() {
     return isClosed;
   }
@@ -132,32 +138,8 @@ public class WebSocketHeader {
     this.isClosed = close;
   }
 
-  public boolean isMask() {
-    return mask;
-  }
-
-  public byte getOpCode() {
-    return opCode;
-  }
-
-  public void setOpCode(byte opCode) {
-    this.opCode = opCode;
-  }
-
-  public long getLength() {
-    return length;
-  }
-
   public void setLength(int length) {
     this.length = length;
-  }
-
-  public byte[] getMaskKey() {
-    return maskKey;
-  }
-
-  public void setFinish(boolean finish) {
-    this.finish = finish;
   }
 
   private boolean loadCompleteHeader(Packet header, int size) throws EndOfBufferException {

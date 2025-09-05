@@ -1,18 +1,20 @@
 /*
- * Copyright [ 2020 - 2024 ] [Matthew Buckton]
  *
- *  Licensed under the Apache License, Version 2.0 (the "License");
- *  you may not use this file except in compliance with the License.
- *  You may obtain a copy of the License at
+ *  Copyright [ 2020 - 2024 ] Matthew Buckton
+ *  Copyright [ 2024 - 2025 ] MapsMessaging B.V.
+ *
+ *  Licensed under the Apache License, Version 2.0 with the Commons Clause
+ *  (the "License"); you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at:
  *
  *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://commonsclause.com/
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
  */
 
 package io.mapsmessaging.network.protocol.impl.stomp.frames;
@@ -27,6 +29,7 @@ import lombok.Getter;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.util.Base64;
 import java.util.Map;
 
 public abstract class Event extends Frame {
@@ -34,6 +37,7 @@ public abstract class Event extends Frame {
   private static final String CONTENT_LENGTH = "content-length";
   private static final String END_OF_FRAME_MSG = "Expected end of frame";
   private static final String MORE_DATA = "Need more data";
+  private static final String ENCODED = "encoding";
 
   protected final int maxBufferSize;
 
@@ -51,8 +55,14 @@ public abstract class Event extends Frame {
   @Getter
   protected long delay;
 
-  protected Event(int maxBufferSize) {
+  @Getter
+  protected boolean base64Encode;
+
+  private String encodedString;
+
+  protected Event(int maxBufferSize, boolean base64Encode) {
     this.maxBufferSize = maxBufferSize;
+    this.base64Encode = base64Encode;
     buffer = null;
     byteArrayOutputStream = null;
     bufferPos = 0;
@@ -62,6 +72,7 @@ public abstract class Event extends Frame {
   }
 
   public void packMessage(String destination, Message internalMessage) {
+
     //
     // Map the data map to the header
     //
@@ -71,7 +82,7 @@ public abstract class Event extends Frame {
     }
 
     //
-    // Map the meta data to the header
+    // Map the meta-data to the header
     //
     Map<String, String> metaMap = internalMessage.getMeta();
     if (metaMap != null) {
@@ -79,18 +90,29 @@ public abstract class Event extends Frame {
         putHeader(entry.getKey(), entry.getValue());
       }
     }
+    //
+    // Ensure the destination is the last one added in case of overwrite
+    putHeader("destination", destination);
 
+    //
+    // Now lets deal with the buffer
+    buffer = internalMessage.getOpaqueData();
+    if(base64Encode) {
+      putHeader(ENCODED, "base64");
+      buffer = Base64.getEncoder().encode(buffer);
+    }
     //
     // Ensure the defined header messages are correct and not driven by the entries in the map
     //
-    putHeader("destination", destination);
-    if (internalMessage.getOpaqueData() != null && internalMessage.getOpaqueData().length > 0) {
-      putHeader(CONTENT_LENGTH, "" + internalMessage.getOpaqueData().length);
+    if (buffer != null && buffer.length > 0) {
+      putHeader(CONTENT_LENGTH, "" + buffer.length);
     }
-    buffer = internalMessage.getOpaqueData();
   }
 
   public byte[] getData() {
+    if(encodedString != null && encodedString.equalsIgnoreCase("base64")){
+      return Base64.getDecoder().decode(buffer);
+    }
     return buffer;
   }
 
@@ -109,13 +131,14 @@ public abstract class Event extends Frame {
     priority = parseHeaderInt("priority", Priority.NORMAL.getValue());
     expiry = parseHeaderLong("expiry", 0);
     delay = parseHeaderLong("delay", 0);
-    return destination != null && destination.length() > 0;
+    return destination != null && !destination.isEmpty();
   }
 
   @Override
   public void parseCompleted() throws IOException {
     super.parseCompleted();
     String lengthString = getHeader(CONTENT_LENGTH);
+    encodedString = getHeader(ENCODED);
     if (lengthString != null) {
       lengthString = lengthString.trim();
       int length = Integer.parseInt(lengthString);
@@ -221,7 +244,7 @@ public abstract class Event extends Frame {
 
   @Override
   public Frame instance() {
-    return new Send(maxBufferSize);
+    return new Send(maxBufferSize, base64Encode);
   }
 
 }

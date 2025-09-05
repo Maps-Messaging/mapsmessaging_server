@@ -12,7 +12,7 @@ Wire protocol standardization has promised interoperability and flexibility in I
 - **Extensibility:** Easily integrate new or proprietary protocols.
 - **Payload Transformation:** Configurable translations, such as XML to [JSON](https://github.com/Maps-Messaging/mapsmessaging_server/tree/main/src/main/java/io/mapsmessaging/api/transformers).
 - **Namespace Partitioning:** Distinct namespaces for users and groups to enhance security.
-- **Comprehensive Management:** JMX, JMX - RestAPI via [Jolokia](https://jolokia.org/), and web-based management with [hawtio](https://hawt.io/).
+- **Comprehensive Management:** JMX, JMX - RestAPI via [Jolokia](https://jolokia.org/)
 - **RestAPI Management:** Simple interface to manage connections, destinations, and schemas.
 
 ## Advanced Features
@@ -74,7 +74,25 @@ Additionally, the "Commons Clause" restricts the selling of the software, which 
 For full license terms, see the [LICENSE](LICENSE) file in the repository.
 
 
-[![SonarCloud](https://sonarcloud.io/images/project_badges/sonarcloud-white.svg)](https://sonarcloud.io/summary/new_code?id=Maps-Messaging_mapsmessaging_server)
+
+## Library and Server Build and Release Status
+
+| Library Name                             | Buildkite Build Status    | SonarQube Quality Status    |
+|------------------------------------------|---------------------|---------------------|
+| Authentication & Authorisation Framework | [![Build status](https://badge.buildkite.com/4fe7fb40cfdb2f718310fbc030aa1e9f0df618201fa21f9736.svg)](https://buildkite.com/mapsmessaging/040-authentication-and-authorisation-library-snapshot-build)| [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=Authentication_Library&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=Authentication_Library) |
+| Configuration Framework                  | [![Build status](https://badge.buildkite.com/4baaf7dabe5696aa511753a916992c7fb84634991063da5477.svg)](https://buildkite.com/mapsmessaging/030-configuration-library-snapshot-build)| [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=Configuration_Library&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=Configuration_Library) |
+| Device Integration Framework             | [![Build status](https://badge.buildkite.com/47e184de3ea886a8dc79016c4ae5797fddf74713e4f679d6be.svg)](https://buildkite.com/mapsmessaging/040-device-library-snapshot-build) | [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=deviceLibrary&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=deviceLibrary) |
+| Dynamic Storage Framework                | [![Build status](https://badge.buildkite.com/dc6145d667ab8f1ff9822dc81cda4eca34016f715950478bf6.svg)](https://buildkite.com/mapsmessaging/040-dynamic-storage-snapshot-build) | [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=dynamic_storage&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=dynamic_storage) |
+| JMS Selector                             | [![Build status](https://badge.buildkite.com/f583bc25c29d7d49b1d4566b07f06eda241d3de9c2cff056c0.svg)](https://buildkite.com/mapsmessaging/010-jms-selector-library-snapshot-build) | [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=Maps-Messaging_jms_selector&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=Maps-Messaging_jms_selector) |
+| Logging Framework                        | [![Build status](https://badge.buildkite.com/ae632d6e5e09714b9746e1a38649b73f3843fb3aa9265b64de.svg)](https://buildkite.com/mapsmessaging/010-logging-framework-snapshot-build) | [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=Simple_Logging&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=Simple_Logging) |
+| Naturally Ordered Structures Framework   | [![Build status](https://badge.buildkite.com/1a4f1cc90a99b5e19366acfbda446389d6a7597028360adeca.svg)](https://buildkite.com/mapsmessaging/010-natural-ordered-long-collection-snapshot-build) | [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=Naturally_Ordered_Long_Collections&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=Naturally_Ordered_Long_Collections) |
+| Schema Framework                         | [![Build status](https://badge.buildkite.com/de2b96ee355ffe630a56381a08714000250a2b6b6aaa2b5777.svg)](https://buildkite.com/mapsmessaging/020-schema-library-snapshot-build) | [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=Schemas&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=Schemas) |
+| Task Scheduler                           | [![Build status](https://badge.buildkite.com/ffcaa8c3475900a5a71cbc6a8e68ba12646f05de4fd3da1fb6.svg)](https://buildkite.com/mapsmessaging/020-non-blocking-task-scheduler-snapshot-build) | [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=Non_Blocking_Task_Scheduler&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=Non_Blocking_Task_Scheduler) |
+| Messaging Server                         | [![Build status](https://badge.buildkite.com/5ae49cac0606f85c59688101fbcf49824f4dcf53b7b7c5e63f.svg)](https://buildkite.com/mapsmessaging/090-server-snapshot-build)| [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=Maps-Messaging_mapsmessaging_server&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=Maps-Messaging_mapsmessaging_server)|
+| Web Admin Client                         | [![Build status](https://badge.buildkite.com/7cc9381cb4e32048a4978e91f483113a47217238b29461534e.svg)](https://buildkite.com/mapsmessaging/060-maps-web-client)| [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=web-admin-client&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=web-admin-client)|
+
+
+[![Mutable.ai Auto Wiki](https://img.shields.io/badge/Auto_Wiki-Mutable.ai-blue)](https://wiki.mutable.ai/Maps-Messaging/mapsmessaging_server)
 
 
 

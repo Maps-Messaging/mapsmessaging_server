@@ -1,18 +1,20 @@
 /*
- * Copyright [ 2020 - 2024 ] [Matthew Buckton]
  *
- *  Licensed under the Apache License, Version 2.0 (the "License");
- *  you may not use this file except in compliance with the License.
- *  You may obtain a copy of the License at
+ *  Copyright [ 2020 - 2024 ] Matthew Buckton
+ *  Copyright [ 2024 - 2025 ] MapsMessaging B.V.
+ *
+ *  Licensed under the Apache License, Version 2.0 with the Commons Clause
+ *  (the "License"); you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at:
  *
  *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://commonsclause.com/
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
  */
 
 package io.mapsmessaging.engine.destination;
@@ -21,6 +23,7 @@ import io.mapsmessaging.api.features.ClientAcknowledgement;
 import io.mapsmessaging.api.features.CreditHandler;
 import io.mapsmessaging.api.features.DestinationType;
 import io.mapsmessaging.api.features.QualityOfService;
+import io.mapsmessaging.dto.rest.config.destination.DestinationConfigDTO;
 import io.mapsmessaging.engine.audit.AuditEvent;
 import io.mapsmessaging.engine.destination.subscription.SubscriptionContext;
 import io.mapsmessaging.engine.destination.subscription.builders.CommonSubscriptionBuilder;
@@ -52,13 +55,13 @@ public class DestinationManagerPipeline {
 
   private final Map<String, DestinationImpl> destinationList;
   private final Logger logger = LoggerFactory.getLogger(DestinationManagerPipeline.class);
-  private final DestinationPathManager rootPath;
-  private final Map<String, DestinationPathManager> properties;
+  private final DestinationConfigDTO rootPath;
+  private final Map<String, DestinationConfigDTO> properties;
   private final DestinationUpdateManager destinationManagerListeners;
   private final ExecutorService taskScheduler;
 
 
-  DestinationManagerPipeline(DestinationPathManager rootPath, Map<String, DestinationPathManager> properties, DestinationUpdateManager destinationManagerListeners) {
+  DestinationManagerPipeline(DestinationConfigDTO rootPath, Map<String, DestinationConfigDTO> properties, DestinationUpdateManager destinationManagerListeners) {
     this.rootPath = rootPath;
     this.properties = properties;
     this.destinationManagerListeners = destinationManagerListeners;
@@ -133,12 +136,16 @@ public class DestinationManagerPipeline {
   }
 
 
-  public CompletableFuture<Void> stop() {
-    CompletableFuture<Void> future = new CompletableFuture<>();
-    Callable<Void> task = () -> {
-      stopInternal();
-      future.complete(null);
-      return null;
+  public CompletableFuture<Boolean> stop() {
+    CompletableFuture<Boolean> future = new CompletableFuture<>();
+    Callable<Boolean> task = () -> {
+      try {
+        stopInternal();
+      } catch (Exception e) {
+        logger.log(ServerLogMessages.DESTINATION_MANAGER_EXCEPTION_ON_STOP, e);
+      }
+      future.complete(true);
+      return true;
     };
     taskScheduler.submit(task);
     return future;
@@ -158,9 +165,9 @@ public class DestinationManagerPipeline {
     DestinationImpl destinationImpl = destinationList.get(name);
     if (destinationImpl == null) {
       UUID destinationUUID = UuidGenerator.getInstance().generate();
-      DestinationPathManager pathManager = rootPath;
+      DestinationConfigDTO pathManager = rootPath;
       String namespace = "";
-      for (Map.Entry<String, DestinationPathManager> entry : properties.entrySet()) {
+      for (Map.Entry<String, DestinationConfigDTO> entry : properties.entrySet()) {
         if (name.startsWith(entry.getKey()) &&
             namespace.length() < entry.getKey().length()) {
           pathManager = entry.getValue();
@@ -192,7 +199,7 @@ public class DestinationManagerPipeline {
       context.setQualityOfService(QualityOfService.AT_LEAST_ONCE);
       context.setSharedName(name);
       CommonSubscriptionBuilder builder = new QueueSubscriptionBuilder(destinationImpl, context);
-      builder.construct(null, name, name);
+      builder.construct(null, name, name, context.getAllocatedId());
     }
 
     //
@@ -207,7 +214,7 @@ public class DestinationManagerPipeline {
     DestinationImpl delete = destinationList.remove(destination.getFullyQualifiedNamespace());
     StoreMessageTask deleteDestinationTask = new ShutdownPhase1Task(delete, destinationManagerListeners, logger);
     Future<Response> response = destination.submit(deleteDestinationTask, TASK_QUEUE_PRIORITY_SIZE - 1);
-    long timeout = System.currentTimeMillis() + 10000; // ToDo: make configurable
+    long timeout = System.currentTimeMillis() + 10000;
     while (!response.isDone() && timeout > System.currentTimeMillis()) {
       LockSupport.parkNanos(10000000);
     }
@@ -260,4 +267,23 @@ public class DestinationManagerPipeline {
     }
     return size;
   }
+
+  public synchronized CompletableFuture<Integer> count(DestinationType type)  {
+    CompletableFuture<Integer> future = new CompletableFuture<>();
+    Callable<Void> task = () -> {
+      int count =0;
+      for(DestinationImpl destinationImpl : destinationList.values()) {
+        if(destinationImpl.getResourceType().equals(type) &&
+            !destinationImpl.getFullyQualifiedNamespace().contains("$SYS") &&
+            !destinationImpl.getFullyQualifiedNamespace().contains("$SCHEMA") ) {
+          count++;
+        }
+      }
+      future.complete(count);
+      return null;
+    };
+    taskScheduler.submit(task);
+    return future;
+  }
+
 }

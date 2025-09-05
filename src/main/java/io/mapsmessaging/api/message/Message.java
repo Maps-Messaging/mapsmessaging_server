@@ -1,18 +1,20 @@
 /*
- * Copyright [ 2020 - 2023 ] [Matthew Buckton]
  *
- *  Licensed under the Apache License, Version 2.0 (the "License");
- *  you may not use this file except in compliance with the License.
- *  You may obtain a copy of the License at
+ *  Copyright [ 2020 - 2024 ] Matthew Buckton
+ *  Copyright [ 2024 - 2025 ] MapsMessaging B.V.
+ *
+ *  Licensed under the Apache License, Version 2.0 with the Commons Clause
+ *  (the "License"); you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at:
  *
  *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://commonsclause.com/
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
  */
 
 package io.mapsmessaging.api.message;
@@ -22,7 +24,12 @@ import io.mapsmessaging.api.MessageBuilder;
 import io.mapsmessaging.api.features.Constants;
 import io.mapsmessaging.api.features.Priority;
 import io.mapsmessaging.api.features.QualityOfService;
+import io.mapsmessaging.engine.schema.SchemaManager;
 import io.mapsmessaging.location.LocationManager;
+import io.mapsmessaging.schemas.config.SchemaConfig;
+import io.mapsmessaging.schemas.formatters.MessageFormatter;
+import io.mapsmessaging.schemas.formatters.MessageFormatterFactory;
+import io.mapsmessaging.schemas.formatters.ParsedObject;
 import io.mapsmessaging.selector.IdentifierResolver;
 import io.mapsmessaging.storage.Storable;
 import io.mapsmessaging.storage.impl.streams.BufferObjectReader;
@@ -71,6 +78,7 @@ public class Message implements IdentifierResolver, Storable {
   @Getter
   private final Map<String, TypedData> dataMap;
 
+  @Setter
   @Getter
   private String schemaId;
 
@@ -93,6 +101,8 @@ public class Message implements IdentifierResolver, Storable {
   private long identifier;
   // </editor-fold>
 
+
+  private transient ParsedObject parsedObject;
 
   public Message(MessageBuilder builder) {
     flags = new BitSet(8);
@@ -209,6 +219,10 @@ public class Message implements IdentifierResolver, Storable {
   }
 
   ByteBuffer[] pack() throws IOException {
+    return pack(null);
+  }
+
+  ByteBuffer[] pack(Map<String, String> updatedMeta) throws IOException {
     ByteBuffer header = ByteBuffer.allocate(34);
     header.putLong(identifier);
     header.putLong(expiry);
@@ -217,9 +231,11 @@ public class Message implements IdentifierResolver, Storable {
     header.put((byte) priority.getValue());
     header.put((byte) qualityOfService.getLevel());
     header.flip();
-
+    if(updatedMeta == null){
+      updatedMeta = meta;
+    }
     byte containsBuffers = 0;
-    boolean hasMeta = meta != null && !meta.isEmpty();
+    boolean hasMeta = updatedMeta != null && !updatedMeta.isEmpty();
     boolean hasMap = dataMap != null && !dataMap.isEmpty();
     boolean hasOpaque = opaqueData != null;
     int bufferCount = 2;
@@ -236,6 +252,10 @@ public class Message implements IdentifierResolver, Storable {
       containsBuffers = (byte) (containsBuffers | 0x4);
     }
 
+    if(schemaId != null){
+      flags.set(SCHEMA_ID_PRESENT);
+    }
+
     boolean compress = Constants.getInstance().getMessageCompression().isCompresses() &&  opaqueData != null && opaqueData.length > Constants.getInstance().getMinimumMessageSize();
     flags.set(COMPRESSED_PACK, compress);
     ByteArrayOutputStream optional = new ByteArrayOutputStream(1024);
@@ -244,7 +264,7 @@ public class Message implements IdentifierResolver, Storable {
     optionalWriter.write(responseTopic);
     optionalWriter.write(contentType);
     optionalWriter.write(correlationData);
-    if (schemaId != null) {
+    if (flags.get(SCHEMA_ID_PRESENT)) {
       optionalWriter.write(schemaId);
     }
     optionalWriter.write(containsBuffers);
@@ -256,7 +276,7 @@ public class Message implements IdentifierResolver, Storable {
     if (hasMeta) {
       ByteArrayOutputStream metaStream = new ByteArrayOutputStream(1024);
       StreamObjectWriter metaWriter = new StreamObjectWriter(metaStream);
-      saveMeta(metaWriter);
+      saveMeta(updatedMeta, metaWriter);
       packed[idx] = ByteBuffer.wrap(metaStream.toByteArray());
       idx++;
     }
@@ -322,10 +342,26 @@ public class Message implements IdentifierResolver, Storable {
         return data.getData();
       }
     }
+    Object val = null;
     if (meta != null) {
-      return meta.get(key);
+      val = meta.get(key);
     }
-    return null;
+    if(parsedObject == null && val == null && schemaId != null){
+      SchemaConfig config = SchemaManager.getInstance().getSchema(schemaId);
+      if(config != null){
+        try {
+          MessageFormatter formatter = MessageFormatterFactory.getInstance().getFormatter(config);
+          parsedObject = formatter.parse(getOpaqueData());
+        } catch (IOException e) {
+          parsedObject = null;
+        }
+      }
+    }
+    if (parsedObject != null) {
+      val = parsedObject.get(key);
+    }
+
+    return val;
   }
 
   public boolean isRetain() {
@@ -418,10 +454,10 @@ public class Message implements IdentifierResolver, Storable {
     return result;
   }
 
-  private void saveMeta(ObjectWriter writer) throws IOException {
-    if (meta != null) {
-      writer.write(meta.size());
-      for (Map.Entry<String, String> entry : meta.entrySet()) {
+  private void saveMeta(Map<String, String> updatedMeta, ObjectWriter writer) throws IOException {
+    if (updatedMeta != null) {
+      writer.write(updatedMeta.size());
+      for (Map.Entry<String, String> entry : updatedMeta.entrySet()) {
         writer.write(entry.getKey());
         writer.write(entry.getValue());
       }

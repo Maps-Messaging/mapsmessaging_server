@@ -1,23 +1,27 @@
 /*
- * Copyright [ 2020 - 2023 ] [Matthew Buckton]
  *
- *  Licensed under the Apache License, Version 2.0 (the "License");
- *  you may not use this file except in compliance with the License.
- *  You may obtain a copy of the License at
+ *  Copyright [ 2020 - 2024 ] Matthew Buckton
+ *  Copyright [ 2024 - 2025 ] MapsMessaging B.V.
+ *
+ *  Licensed under the Apache License, Version 2.0 with the Commons Clause
+ *  (the "License"); you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at:
  *
  *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://commonsclause.com/
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
  */
 
 package io.mapsmessaging.utilities.stats;
 
+import io.mapsmessaging.dto.rest.stats.LinkedMovingAverageRecordDTO;
 import io.mapsmessaging.utilities.stats.processors.DataProcessor;
+import lombok.Getter;
 import org.apache.commons.math3.stat.descriptive.SummaryStatistics;
 
 import java.util.ArrayList;
@@ -25,6 +29,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.LongAdder;
 
 /**
@@ -35,11 +40,15 @@ import java.util.concurrent.atomic.LongAdder;
  * @version 1.0
  * @since 1.0
  */
-public class LinkedMovingAverages {
+public class LinkedMovingAverages implements Stats {
 
   protected final List<MovingAverage> movingAverages;
   protected final DataProcessor dataProcessor;
   private final LongAdder total;
+  private final LongAdder currentQuantum;
+
+  private final AtomicLong perSecond;
+  @Getter
   private final String name;
   private final String unitName;
   private final long timeSpan;
@@ -63,6 +72,8 @@ public class LinkedMovingAverages {
     this.name = name;
     this.unitName = unitName;
     total = new LongAdder();
+    currentQuantum = new LongAdder();
+    perSecond = new AtomicLong();
     movingAverages = new ArrayList<>();
     int start = 0;
     for (int time : timeList) {
@@ -72,18 +83,14 @@ public class LinkedMovingAverages {
       }
     }
     previous = 0;
-    lastUpdate = 0L;
+    lastUpdate = System.currentTimeMillis();
     timeSpan = unit.toMillis(timeList[0]);
     currentStatistics = new SummaryStatistics();
   }
 
-  /**
-   * @return The name of this instance
-   */
-  public String getName() {
-    return name;
+  public float getPerSecond(){
+    return perSecond.get()/100f;
   }
-
   /**
    * @return The name of the units being measured
    */
@@ -91,12 +98,12 @@ public class LinkedMovingAverages {
     return unitName;
   }
 
-  public LinkedMovingAverageRecord getRecord(){
+  public LinkedMovingAverageRecordDTO getRecord(){
     Map<String, Long> stats = new LinkedHashMap<>();
     for(MovingAverage movingAverage:movingAverages){
       stats.put(movingAverage.getName(), movingAverage.getAverage());
     }
-    return new LinkedMovingAverageRecord(name, unitName, timeSpan, total.sum(), stats);
+    return new LinkedMovingAverageRecordDTO(name, unitName, timeSpan, total.sum(), stats);
   }
   /**
    * @return A list of complete names of all moving averages
@@ -143,13 +150,6 @@ public class LinkedMovingAverages {
     updateValue(value * -1);
   }
 
-  private void updateValue(long value) {
-    long corrected = dataProcessor.add(value, previous);
-    total.add(corrected);
-    currentStatistics.addValue(corrected);
-    previous = value;
-  }
-
   /**
    * @return The current value
    */
@@ -177,29 +177,55 @@ public class LinkedMovingAverages {
     return -1;
   }
 
+  @Override
+  public boolean supportMovingAverage(){
+    return true;
+  }
   /**
    * Resets all the moving averages and clears all data
    */
   public void reset() {
+    lastUpdate = System.currentTimeMillis();
     previous = 0;
     total.reset();
+    currentQuantum.reset();
     dataProcessor.reset();
+    perSecond.set(0);
     for (MovingAverage average : movingAverages) {
       average.reset();
     }
   }
 
-  protected void update() {
-    if (lastUpdate < System.currentTimeMillis()) {
-      lastUpdate = System.currentTimeMillis() + timeSpan;
+  public void update() {
+    long now = System.currentTimeMillis();
+    if (lastUpdate < now) {
       long ave = dataProcessor.calculate();
       for (MovingAverage movingAverage : movingAverages) {
         movingAverage.add(ave);
         movingAverage.update();
       }
+      long measurementTime = (now - (lastUpdate-timeSpan))/1000;
+      if(measurementTime >= 2) {
+        perSecond.set(( (currentQuantum.sum() * 100)/ measurementTime));
+      }
+
       previousStatistics = currentStatistics;
       currentStatistics = new SummaryStatistics();
+      lastUpdate = now + timeSpan;
+      currentQuantum.reset();
     }
   }
 
+  private void updateValue(long value) {
+    long corrected = dataProcessor.add(value, previous);
+    currentQuantum.add(corrected);
+    total.add(corrected);
+    currentStatistics.addValue(corrected);
+    previous = value;
+  }
+
+  @Override
+  public String toString(){
+    return name+" "+getCurrent()+" "+getUnits()+" "+getPerSecond()+" "+getUnits()+"/sec"+" Total: "+getTotal()+" "+getUnits();
+  }
 }

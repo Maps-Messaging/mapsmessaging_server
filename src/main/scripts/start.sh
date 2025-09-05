@@ -1,18 +1,21 @@
+#!/bin/bash
 #
-# Copyright [ 2020 - 2023 ] [Matthew Buckton]
 #
-#  Licensed under the Apache License, Version 2.0 (the "License");
-#  you may not use this file except in compliance with the License.
-#  You may obtain a copy of the License at
+#  Copyright [ 2020 - 2024 ] Matthew Buckton
+#  Copyright [ 2024 - 2025 ] MapsMessaging B.V.
+#
+#  Licensed under the Apache License, Version 2.0 with the Commons Clause
+#  (the "License"); you may not use this file except in compliance with the License.
+#  You may obtain a copy of the License at:
 #
 #      http://www.apache.org/licenses/LICENSE-2.0
+#      https://commonsclause.com/
 #
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
 #
 
 #
@@ -58,16 +61,31 @@ export MAPS_CONF=$MAPS_HOME/conf
 #
 # Note::: The conf directory must be at the start else the configuration is loaded from the jars
 #
-export CLASSPATH="$MAPS_CONF":$MAPS_LIB/message_daemon-$VERSION.jar:"$MAPS_LIB/*"
+CLASSPATH="$MAPS_CONF:$MAPS_LIB/maps-$VERSION.jar"
+for jar in "$MAPS_LIB"/*.jar; do
+  [[ "$jar" != "$MAPS_LIB/maps-$VERSION.jar" ]] && CLASSPATH="$CLASSPATH:$jar"
+done
+
 export LD_LIBRARY_PATH=$MAPS_LIB:$LD_LIBRARY_PATH
 #
-# Now start the the daemon
+# Loop to restart server on specific exit code
 #
-java -classpath $CLASSPATH $JAVA_OPTS \
-    -DUSE_UUID=false \
-    -DConsulUrl="${CONSUL_URL}" \
-    -DConsulPath="${CONSUL_PATH}" \
-    -DConsulToken="${CONSUL_TOKEN}" \
-    -Djava.security.auth.login.config="${MAPS_CONF}/jaasAuth.config" \
-    -DMAPS_HOME="${MAPS_HOME}" \
-    io.mapsmessaging.MessageDaemon
+while true; do
+    java -classpath $CLASSPATH $JAVA_OPTS \
+        -DUSE_UUID=false \
+        -DConsulUrl="${CONSUL_URL}" \
+        -DConsulPath="${CONSUL_PATH}" \
+        -DConsulToken="${CONSUL_TOKEN}" \
+        -Djava.security.auth.login.config="${MAPS_CONF}/jaasAuth.config" \
+        -DMAPS_HOME="${MAPS_HOME}" \
+        io.mapsmessaging.MessageDaemon
+
+    EXIT_CODE=$?
+
+    if [ $EXIT_CODE -eq 8 ]; then
+        echo "Restarting server..."
+    else
+        echo "Exiting with code $EXIT_CODE"
+        exit $EXIT_CODE
+    fi
+done

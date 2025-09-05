@@ -1,47 +1,40 @@
 /*
- * Copyright [ 2020 - 2023 ] [Matthew Buckton]
  *
- *  Licensed under the Apache License, Version 2.0 (the "License");
- *  you may not use this file except in compliance with the License.
- *  You may obtain a copy of the License at
+ *  Copyright [ 2020 - 2024 ] Matthew Buckton
+ *  Copyright [ 2024 - 2025 ] MapsMessaging B.V.
+ *
+ *  Licensed under the Apache License, Version 2.0 with the Commons Clause
+ *  (the "License"); you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at:
  *
  *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://commonsclause.com/
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
  */
 
 package io.mapsmessaging.network.protocol.impl.stomp;
 
+import java.io.IOException;
+import java.net.SocketTimeoutException;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
+import javax.security.auth.login.LoginException;
 import net.ser1.stomp.Client;
 import net.ser1.stomp.Listener;
+import org.apache.activemq.transport.stomp.StompConnection;
+import org.apache.activemq.transport.stomp.StompFrame;
 import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
-import org.projectodd.stilts.stomp.StompException;
-import org.projectodd.stilts.stomp.StompMessage;
-import org.projectodd.stilts.stomp.StompMessages;
-import org.projectodd.stilts.stomp.Subscription.AckMode;
-import org.projectodd.stilts.stomp.client.ClientSubscription;
-import org.projectodd.stilts.stomp.client.ClientTransaction;
-import org.projectodd.stilts.stomp.client.StompClient;
-
-import javax.net.ssl.SSLException;
-import javax.security.auth.login.LoginException;
-import java.io.IOException;
-import java.net.URISyntaxException;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.concurrent.TimeoutException;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
 
 class StompPublishEventTest extends StompBaseTest implements Listener {
 
@@ -96,122 +89,113 @@ class StompPublishEventTest extends StompBaseTest implements Listener {
   }
 
   @Test
-  @Disabled("Old log implementation in the client")
   @DisplayName("Test Transactional publishing with content length")
-  void testTransactionalPublishContentLength() throws URISyntaxException, StompException, InterruptedException, SSLException, TimeoutException {
-    StompClient client = new StompClient("stomp://127.0.0.1/");
-    client.connect(10000);
+  void testTransactionalPublishContentLength() throws Exception {
+    StompConnection stompConnection = new StompConnection();
+    stompConnection.open("127.0.0.1", 8674 );
+    stompConnection.connect("admin", getPassword("admin"), "client1");
     String topicName = getTopicName();
+    StompSubscriber stompSubscriber = new StompSubscriber(topicName, "127.0.0.1", 8674, "admin");
 
-    Assertions.assertTrue(client.isConnected());
-    AtomicInteger counter = new AtomicInteger(0);
-    ClientSubscription subscription = client.subscribe(topicName)
-        .withAckMode(AckMode.CLIENT_INDIVIDUAL)
-        .withMessageHandler(stompMessage -> {
-          counter.incrementAndGet();
-          try {
-            stompMessage.ack();
-          } catch (StompException e) {
-            e.printStackTrace();
-          }
-        })
-        .start();
     byte[] buffer = new byte[10];
     for (int x = 0; x < buffer.length; x++) {
       buffer[x] = (byte) ((x + 32) % 110);
     }
     String tmp = new String(buffer);
-    ClientTransaction transaction = client.begin();
+    stompConnection.begin("tx1");
     for (int x = 0; x < 10; x++) {
-      StompMessage msg = StompMessages.createStompMessage(topicName, tmp);
-      transaction.send(msg);
+      stompConnection.send(topicName, tmp, "tx1", new HashMap<>());
     }
-    transaction.commit();
+    stompConnection.commit("tx1");
+
+
     long waitTime = System.currentTimeMillis()+10000;
-    int start = counter.get();
-    while(waitTime > System.currentTimeMillis() && counter.get() != 100){
+    int start = stompSubscriber.counter.get();
+    while(waitTime > System.currentTimeMillis() && stompSubscriber.counter.get() != 100){
       delay(10);
-      if(start != counter.get()){
+      if(start != stompSubscriber.counter.get()){
         waitTime = System.currentTimeMillis()+10000;
-        start = counter.get();
+        start = stompSubscriber.counter.get();
       }
     }
+    Assertions.assertEquals(10, stompSubscriber.counter.get());
 
-    waitTime = System.currentTimeMillis()+10000;
-    start = counter.get();
-    while(waitTime > System.currentTimeMillis() && counter.get() != 100){
-      delay(10);
-      if(start != counter.get()){
-        waitTime = System.currentTimeMillis()+10000;
-        start = counter.get();
-      }
-    }
-
-    transaction = client.begin();
+    stompConnection.begin("tx2");
     for (int x = 0; x < 100; x++) {
-      StompMessage msg = StompMessages.createStompMessage(topicName, tmp);
-      transaction.send(msg);
+      stompConnection.send(topicName, tmp, "tx2", new HashMap<>());
     }
-    transaction.abort();
-    Assertions.assertTrue(client.isConnected());
+    stompConnection.abort("tx2");
+      try {
+          stompConnection.receive(1000);
+          Assertions.fail("No events expected");
+      } catch (SocketTimeoutException e) {
+        //excpected
+      }
 
+    stompSubscriber.unsubscribe();
+    stompSubscriber.close();
+    stompConnection.disconnect();
+    Assertions.assertEquals(10, stompSubscriber.counter.get());
 
-    subscription.unsubscribe();
-    Assertions.assertEquals(100, counter.get());
-    Assertions.assertTrue(client.isConnected());
-    client.disconnect(1000);
-    Assertions.assertFalse(client.isConnected());
   }
-
-
-  @ParameterizedTest
-  @MethodSource("testParameters")
-  @DisplayName("Test Transactional delay publishing")
-  void testTransactionalDelayPublish(String protocol, boolean auth) throws IOException, LoginException, InterruptedException {
-    Client client = getClient(protocol, auth);
-    Assertions.assertTrue(client.isConnected());
-    Map<String, String> map = new HashMap<>();
-    String topicName = getTopicName();
-
-    map.put("id","subscribe1");
-    client.subscribe(topicName, map);
-    byte[] buffer = new byte[10];
-    for (int x = 0; x < buffer.length; x++) {
-      buffer[x] = (byte) ((x % 90)+32);
-    }
-    String tmp = new String(buffer);
-    map = new HashMap<>();
-    map.put("transaction","transactionId1");
-    map.put("delay", "2000");
-    client.begin(map);
-    for (int x = 0; x < 1000; x++) {
-      client.send(topicName, tmp, map);
-    }
-    client.commit(map);
-
-    map.put("transaction","transactionId2");
-    map.put("delay", "2000");
-    client.begin(map);
-    for (int x = 0; x < 1000; x++) {
-      client.send(topicName, tmp, map);
-    }
-    client.abort(map);
-
-    Map<String, String> map1 = new HashMap<>();
-    map1.put("packet_id","END");
-    client.sendW(topicName, tmp, map1);
-    Assertions.assertTrue(client.isConnected());
-    client.unsubscribe(topicName, map);
-    Assertions.assertTrue(client.isConnected());
-    client.disconnect();
-    Assertions.assertFalse(client.isConnected());
-  }
+  
 
   @Override
   public void message(Map map, String s) {
     if (map.get("packet_id").equals("END")) {
       System.err.println("End Received");
       end.set(true);
+    }
+  }
+
+  private class StompSubscriber implements Runnable{
+
+    private final StompConnection stompConnection;
+    private final AtomicInteger counter = new AtomicInteger(0);
+    private final AtomicBoolean end = new AtomicBoolean(false);
+    private final String topicName;
+    private final HashMap<String, String> headers;
+
+    public StompSubscriber(String topicName, String hostname, int port, String username) throws Exception {
+      this.topicName = topicName;
+      stompConnection = new StompConnection();
+      stompConnection.open(hostname, port );
+      stompConnection.connect(username, getPassword(username), "client-subscribe");
+      headers = new HashMap<>();
+      headers.put("id", topicName);
+      stompConnection.subscribe(topicName, "client-individual", headers);
+      Thread t = new Thread(this);
+      t.start();
+    }
+
+    public void close() throws Exception {
+      end.set(true);
+      stompConnection.disconnect();
+    }
+
+    public void unsubscribe() throws Exception {
+      stompConnection.unsubscribe(topicName, headers);
+    }
+
+    @Override
+    public void run() {
+      while (!end.get()) {
+        try {
+          try {
+            StompFrame stompFrame = stompConnection.receive(1000);
+            if (stompFrame.isMessage()) {
+                stompConnection.ack(stompFrame);
+            }
+            counter.incrementAndGet();
+          } catch (SocketTimeoutException e) {
+            System.err.println("SocketTimeoutException");
+            // ignore
+          }
+        } catch (Exception e) {
+          e.printStackTrace();
+          end.set(true);
+        }
+      }
     }
   }
 }

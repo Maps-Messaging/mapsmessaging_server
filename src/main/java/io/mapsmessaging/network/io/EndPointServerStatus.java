@@ -1,27 +1,28 @@
 /*
- * Copyright [ 2020 - 2024 ] [Matthew Buckton]
  *
- *  Licensed under the Apache License, Version 2.0 (the "License");
- *  you may not use this file except in compliance with the License.
- *  You may obtain a copy of the License at
+ *  Copyright [ 2020 - 2024 ] Matthew Buckton
+ *  Copyright [ 2024 - 2025 ] MapsMessaging B.V.
+ *
+ *  Licensed under the Apache License, Version 2.0 with the Commons Clause
+ *  (the "License"); you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at:
  *
  *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://commonsclause.com/
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
  */
 
 package io.mapsmessaging.network.io;
 
+import io.mapsmessaging.dto.rest.config.network.EndPointServerConfigDTO;
+import io.mapsmessaging.dto.rest.stats.LinkedMovingAverageRecordDTO;
 import io.mapsmessaging.network.EndPointURL;
-import io.mapsmessaging.network.NetworkConfig;
-import io.mapsmessaging.utilities.stats.LinkedMovingAverageRecord;
-import io.mapsmessaging.utilities.stats.LinkedMovingAverages;
-import io.mapsmessaging.utilities.stats.MovingAverageFactory;
+import io.mapsmessaging.utilities.stats.*;
 import lombok.Getter;
 
 import java.io.IOException;
@@ -32,6 +33,9 @@ public abstract class EndPointServerStatus {
 
   public static final LongAdder SystemTotalPacketsSent = new LongAdder();
   public static final LongAdder SystemTotalPacketsReceived = new LongAdder();
+  public static final LongAdder SystemTotalBytesReceived = new LongAdder();
+  public static final LongAdder SystemTotalBytesSent = new LongAdder();
+  public static final LongAdder SystemTotalFailedConnections = new LongAdder();
 
   private final LongAdder totalErrors;
   private final LongAdder totalPacketsSent;
@@ -39,24 +43,28 @@ public abstract class EndPointServerStatus {
   private final LongAdder totalBytesSent;
   private final LongAdder totalBytesRead;
 
-  private final LinkedMovingAverages averageBytesSent = MovingAverageFactory.getInstance().createLinked(MovingAverageFactory.ACCUMULATOR.ADD, "Total Sent Bytes", 1, 5, 4, TimeUnit.MINUTES, "Bytes");
-  private final LinkedMovingAverages averageBytesRead = MovingAverageFactory.getInstance().createLinked(MovingAverageFactory.ACCUMULATOR.ADD, "Total Read Bytes", 1, 5, 4, TimeUnit.MINUTES, "Bytes");
-  private final LinkedMovingAverages averagePacketsSent = MovingAverageFactory.getInstance().createLinked(MovingAverageFactory.ACCUMULATOR.ADD, "Total Sent Packets", 1, 5, 4, TimeUnit.MINUTES, "Packets");
-  private final LinkedMovingAverages averagePacketsRead = MovingAverageFactory.getInstance().createLinked(MovingAverageFactory.ACCUMULATOR.ADD, "Total Read Packets", 1, 5, 4, TimeUnit.MINUTES, "Packets");
+  private final Stats averageBytesSent;
+  private final Stats averageBytesRead;
+  private final Stats averagePacketsSent;
+  private final Stats averagePacketsRead;
 
   @Getter
   protected final EndPointURL url;
 
-  protected EndPointServerStatus(EndPointURL url) {
+  protected EndPointServerStatus(EndPointURL url, StatsType type) {
     this.url = url;
     totalPacketsSent = new LongAdder();
     totalPacketsRead = new LongAdder();
     totalBytesSent = new LongAdder();
     totalBytesRead = new LongAdder();
     totalErrors = new LongAdder();
+    averageBytesSent = StatsFactory.create(type, "Total Sent Bytes",  "Bytes",  MovingAverageFactory.ACCUMULATOR.ADD, 1, 5, 4, TimeUnit.MINUTES);
+    averageBytesRead = StatsFactory.create(type, "Total Read Bytes", "Bytes", MovingAverageFactory.ACCUMULATOR.ADD,1, 5, 4, TimeUnit.MINUTES );
+    averagePacketsSent = StatsFactory.create(type, "Total Sent Packets", "Packets", MovingAverageFactory.ACCUMULATOR.ADD,1, 5, 4, TimeUnit.MINUTES );
+    averagePacketsRead = StatsFactory.create(type, "Total Read Packets","Packets",  MovingAverageFactory.ACCUMULATOR.ADD,1, 5, 4, TimeUnit.MINUTES);
   }
 
-  public abstract NetworkConfig getConfig();
+  public abstract EndPointServerConfigDTO getConfig();
 
   public abstract void handleNewEndPoint(EndPoint endPoint) throws IOException;
 
@@ -93,28 +101,15 @@ public abstract class EndPointServerStatus {
   public void updateBytesSent(int count) {
     totalBytesSent.add(count);
     averageBytesSent.add(count);
+    SystemTotalBytesReceived.add(count);
   }
 
   public void updateBytesRead(int count) {
     totalBytesRead.add(count);
     averageBytesRead.add(count);
+    SystemTotalBytesSent.add(count);
   }
 
-  public LinkedMovingAverageRecord getAverageBytesSent() {
-    return averageBytesSent.getRecord();
-  }
-
-  public LinkedMovingAverageRecord getAverageBytesRead() {
-    return averageBytesRead.getRecord();
-  }
-
-  public LinkedMovingAverageRecord getAveragePacketsSent() {
-    return averagePacketsSent.getRecord();
-  }
-
-  public LinkedMovingAverageRecord getAveragePacketsRead() {
-    return averagePacketsRead.getRecord();
-  }
 
   public void incrementError() {
     totalErrors.increment();
@@ -123,5 +118,39 @@ public abstract class EndPointServerStatus {
   public long getTotalErrors() {
     return totalErrors.sum();
   }
+
+  public float getBytesSentPerSecond(){
+    return averageBytesSent.getPerSecond();
+  }
+
+
+  public float getBytesReadPerSecond(){
+    return averageBytesRead.getPerSecond();
+  }
+
+  public float getMessagesSentPerSecond(){
+    return averagePacketsSent.getPerSecond();
+  }
+
+  public float getMessagesReadPerSecond(){
+    return averagePacketsRead.getPerSecond();
+  }
+
+  public LinkedMovingAverageRecordDTO getAverageBytesSent() {
+    return averageBytesSent.supportMovingAverage()? ((LinkedMovingAverages)averageBytesSent).getRecord():null;
+  }
+
+  public LinkedMovingAverageRecordDTO getAverageBytesRead() {
+    return averageBytesRead.supportMovingAverage()? ((LinkedMovingAverages)averageBytesSent).getRecord():null;
+  }
+
+  public LinkedMovingAverageRecordDTO getAveragePacketsSent() {
+    return averagePacketsSent.supportMovingAverage()? ((LinkedMovingAverages)averageBytesSent).getRecord():null;
+  }
+
+  public LinkedMovingAverageRecordDTO getAveragePacketsRead() {
+    return averagePacketsRead.supportMovingAverage()? ((LinkedMovingAverages)averageBytesSent).getRecord():null;
+  }
+
 }
 

@@ -1,22 +1,28 @@
 /*
- * Copyright [ 2020 - 2024 ] [Matthew Buckton]
  *
- *  Licensed under the Apache License, Version 2.0 (the "License");
- *  you may not use this file except in compliance with the License.
- *  You may obtain a copy of the License at
+ *  Copyright [ 2020 - 2024 ] Matthew Buckton
+ *  Copyright [ 2024 - 2025 ] MapsMessaging B.V.
+ *
+ *  Licensed under the Apache License, Version 2.0 with the Commons Clause
+ *  (the "License"); you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at:
  *
  *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://commonsclause.com/
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
  */
 
 package io.mapsmessaging.hardware.device;
 
+import com.google.gson.Gson;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
+import com.google.gson.reflect.TypeToken;
 import io.mapsmessaging.api.*;
 import io.mapsmessaging.api.features.ClientAcknowledgement;
 import io.mapsmessaging.api.features.DestinationType;
@@ -38,9 +44,10 @@ import io.mapsmessaging.selector.operators.ParserExecutor;
 import lombok.Data;
 import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
-import org.json.JSONObject;
 
 import java.io.IOException;
+import java.lang.reflect.Type;
+import java.nio.charset.StandardCharsets;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
@@ -49,17 +56,20 @@ import static io.mapsmessaging.logging.ServerLogMessages.*;
 
 @Data
 public class DeviceSessionManagement implements Runnable, MessageListener {
+  private static final Gson gson = new Gson();
+
   private static Logger logger = LoggerFactory.getLogger(DeviceSessionManagement.class);
   private final DeviceHandler device;
   private final String topicNameTemplate;
   private final DataFilter filter;
   private final BusHandler busHandler;
   private final ParserExecutor parser;
+  private final String schemaId;
 
   private Session session;
   private Destination destination;
   private Destination config;
-  private Destination raw;
+
   private SubscribedEventManager subscribedEventManager;
   private SubscribedEventManager displayEventManager;
 
@@ -72,6 +82,7 @@ public class DeviceSessionManagement implements Runnable, MessageListener {
     this.filter = filter;
     this.busHandler = busHandler;
     previousPayload = null;
+    schemaId = device.getSchemaId().toString();
     device.getController().setRaiseExceptionOnError(true);
     ParserExecutor executor = null;
     if(selector != null && !selector.isBlank()){
@@ -88,23 +99,23 @@ public class DeviceSessionManagement implements Runnable, MessageListener {
     logger.log(DEVICE_START, device.getName() );
 
     destination = session.findDestination(device.getTopicName(topicNameTemplate+"/data"), DestinationType.TOPIC).get();
-    if(device.enableRaw()) {
-      raw = session.findDestination(device.getTopicName(topicNameTemplate+ "/raw"), DestinationType.TOPIC).get();
-    }
+    SchemaConfig schemaConfig = device.getSchema();
     try {
-      SchemaConfig schemaConfig = device.getSchema();
       if(schemaConfig != null) {
         SchemaManager manager = SchemaManager.getInstance();
-        boolean found = manager.getAll().stream()
-            .anyMatch(configured -> configured.getSource().equalsIgnoreCase(schemaConfig.getSource()));
+        boolean found = manager.getAll().stream().anyMatch(configured -> (configured.getSource() != null && configured.getSource().equalsIgnoreCase(schemaConfig.getSource())));
         if(!found) {
-          schemaConfig.setUniqueId(UuidGenerator.getInstance().generate());
-          destination.updateSchema(schemaConfig, null);
+          if (schemaConfig.getUniqueId() == null || schemaConfig.getUniqueId().isEmpty()) {
+            schemaConfig.setUniqueId(UuidGenerator.getInstance().generate());
+          }
+          MessageBuilder messageBuilder = new MessageBuilder();
+          messageBuilder.setOpaqueData(schemaConfig.pack().getBytes());
+          destination.updateSchema(schemaConfig, messageBuilder.build());
+          logger.log(DEVICE_SCHEMA_UPDATED, schemaConfig.getSource());
         }
       }
     } catch (Exception e) {
-      logger.log(DEVICE_SCHEMA_UPDATE_EXCEPTION, e);
-
+      logger.log(DEVICE_SCHEMA_UPDATE_EXCEPTION, e, schemaConfig.toString() );
     }
     if(device.enableConfig()) {
       config = session.findDestination(device.getTopicName(topicNameTemplate+ "/config"), DestinationType.TOPIC).get();
@@ -163,6 +174,7 @@ public class DeviceSessionManagement implements Runnable, MessageListener {
     meta.put("device", device.getName());
     meta.put("sessionId", session.getName());
     MessageBuilder messageBuilder = new MessageBuilder();
+    messageBuilder.setSchemaId(schemaId);
     messageBuilder.setOpaqueData(payload);
     messageBuilder.setTransformation(transformation);
     messageBuilder.setQoS(QualityOfService.AT_MOST_ONCE);
@@ -179,8 +191,9 @@ public class DeviceSessionManagement implements Runnable, MessageListener {
       boolean send = false;
       if (filter.send(previousPayload, payload)) {
         if (parser != null) {
-          JSONObject jsonObject = new JSONObject(new String(payload));
-          Map<String, Object> map = jsonObject.toMap();
+          JsonObject jsonObject = JsonParser.parseString(new String(payload, StandardCharsets.UTF_8)).getAsJsonObject();
+          Type type = new TypeToken<Map<String, Object>>() {}.getType();
+          Map<String, Object> map = gson.fromJson(jsonObject, type);
           if (parser.evaluate(map)) {
             send = true;
           }
@@ -242,5 +255,4 @@ public class DeviceSessionManagement implements Runnable, MessageListener {
       logger.log(DEVICE_PUBLISH_EXCEPTION, e);
     }
   }
-
 }

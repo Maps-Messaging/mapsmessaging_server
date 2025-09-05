@@ -1,27 +1,30 @@
 /*
- * Copyright [ 2020 - 2023 ] [Matthew Buckton]
  *
- *  Licensed under the Apache License, Version 2.0 (the "License");
- *  you may not use this file except in compliance with the License.
- *  You may obtain a copy of the License at
+ *  Copyright [ 2020 - 2024 ] Matthew Buckton
+ *  Copyright [ 2024 - 2025 ] MapsMessaging B.V.
+ *
+ *  Licensed under the Apache License, Version 2.0 with the Commons Clause
+ *  (the "License"); you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at:
  *
  *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://commonsclause.com/
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
  */
 
 package io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.state;
 
 import io.mapsmessaging.api.Session;
 import io.mapsmessaging.api.SessionContextBuilder;
+import io.mapsmessaging.config.protocol.impl.MqttSnConfig;
 import io.mapsmessaging.network.ProtocolClientConnection;
 import io.mapsmessaging.network.io.EndPoint;
-import io.mapsmessaging.network.protocol.impl.mqtt_sn.DefaultConstants;
+import io.mapsmessaging.network.protocol.ProtocolMessageTransformation;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.MQTT_SNProtocol;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.packet.*;
 import io.mapsmessaging.network.protocol.transformation.TransformationManager;
@@ -46,12 +49,13 @@ public class InitialConnectionState implements State {
     if (mqtt.getControlPacketId() == MQTT_SNPacket.CONNECT) {
       Connect connect = (Connect) mqtt;
       SessionContextBuilder scb = new SessionContextBuilder(connect.getClientId(), new ProtocolClientConnection(protocol));
-      scb.setPersistentSession(true);
       scb.setResetState(connect.clean());
-      scb.setKeepAlive(connect.getDuration());
       protocol.setKeepAlive(TimeUnit.SECONDS.toMillis(connect.getDuration()));
-      scb.setReceiveMaximum(DefaultConstants.RECEIVE_MAXIMUM);
-      scb.setSessionExpiry(endPoint.getConfig().getProperties().getIntProperty("maximumSessionExpiry", DefaultConstants.SESSION_TIME_OUT));
+      MqttSnConfig config = (MqttSnConfig)endPoint.getConfig().getProtocolConfig("mqtt-sn");
+
+      scb.setReceiveMaximum(config.getReceiveMaximum());
+      scb.setSessionExpiry(config.getMaximumSessionExpiry());
+      scb.setPersistentSession(!connect.clean());
       if (connect.will()) {
         stateEngine.setSessionContextBuilder(scb);
         WillTopicRequest topicRequest = new WillTopicRequest();
@@ -64,7 +68,14 @@ public class InitialConnectionState implements State {
           protocol.setSession(session);
           ConnAck response = new ConnAck(ReasonCodes.SUCCESS);
           response.setCallback(session::resumeState);
-          protocol.setTransformation(TransformationManager.getInstance().getTransformation(protocol.getName(), session.getSecurityContext().getUsername()));
+          ProtocolMessageTransformation transformation = TransformationManager.getInstance().getTransformation(
+              endPoint.getProtocol(),
+              endPoint.getName(),
+              "mqtt-sn",
+              session.getSecurityContext().getUsername()
+          );
+
+          protocol.setTransformation(transformation);
           try {
             session.login();
             stateEngine.setState(new ConnectedState(response));

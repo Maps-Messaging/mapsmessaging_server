@@ -1,29 +1,31 @@
 /*
- * Copyright [ 2020 - 2024 ] [Matthew Buckton]
  *
- *  Licensed under the Apache License, Version 2.0 (the "License");
- *  you may not use this file except in compliance with the License.
- *  You may obtain a copy of the License at
+ *  Copyright [ 2020 - 2024 ] Matthew Buckton
+ *  Copyright [ 2024 - 2025 ] MapsMessaging B.V.
+ *
+ *  Licensed under the Apache License, Version 2.0 with the Commons Clause
+ *  (the "License"); you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at:
  *
  *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://commonsclause.com/
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
  */
 
 package io.mapsmessaging.network.protocol.impl.mqtt_sn.v2_0.state;
 
-import io.mapsmessaging.MessageDaemon;
 import io.mapsmessaging.api.Session;
 import io.mapsmessaging.api.SessionContextBuilder;
-import io.mapsmessaging.configuration.ConfigurationProperties;
+import io.mapsmessaging.config.protocol.impl.MqttSnConfig;
+import io.mapsmessaging.dto.rest.config.auth.SaslConfigDTO;
 import io.mapsmessaging.network.ProtocolClientConnection;
 import io.mapsmessaging.network.io.EndPoint;
-import io.mapsmessaging.network.protocol.impl.mqtt_sn.DefaultConstants;
+import io.mapsmessaging.network.protocol.ProtocolMessageTransformation;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.MQTT_SNProtocol;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.packet.MQTT_SNPacket;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.packet.ReasonCodes;
@@ -61,11 +63,11 @@ public class InitialConnectionState implements State {
   public MQTT_SNPacket handleMQTTEvent(MQTT_SNPacket mqtt, Session oldSession, EndPoint endPoint, MQTT_SNProtocol protocol, StateEngine stateEngine) throws IOException {
     if (mqtt.getControlPacketId() == MQTT_SNPacket.CONNECT) {
       SaslAuthenticationMechanism saslAuthenticationMechanism = ((MQTT_SNProtocolV2)protocol).getSaslAuthenticationMechanism();
-      ConfigurationProperties props = endPoint.getConfig().getProperties();
+      SaslConfigDTO saslConfig = endPoint.getConfig().getSaslConfig();
 
       Connect connect = (Connect) mqtt;
 
-      boolean serverRequiresAuth = props.containsKey("sasl");
+      boolean serverRequiresAuth = saslConfig != null;
       boolean requiresAuth = connect.isAuthentication();
       if(serverRequiresAuth && ( !requiresAuth && saslAuthenticationMechanism == null)){
         sendErrorResponse(protocol, ReasonCodes.BAD_AUTH);
@@ -74,10 +76,11 @@ public class InitialConnectionState implements State {
 
       stateEngine.setMaxBufferSize(connect.getMaxPacketSize());
       SessionContextBuilder scb = new SessionContextBuilder(connect.getClientId(), new ProtocolClientConnection(protocol));
-      scb.setPersistentSession(true);
       scb.setResetState(connect.isCleanStart());
-      scb.setKeepAlive(connect.getKeepAlive());
-      scb.setReceiveMaximum(DefaultConstants.RECEIVE_MAXIMUM);
+      scb.setPersistentSession(!connect.isCleanStart());
+
+      int receiveMax = ((MqttSnConfig)endPoint.getConfig().getProtocolConfig("mqtt-sn")).getReceiveMaximum();
+      scb.setReceiveMaximum(receiveMax);
       scb.setSessionExpiry(connect.getSessionExpiry());
       if(saslAuthenticationMechanism != null){
         String username  = saslAuthenticationMechanism.getUsername();
@@ -95,13 +98,12 @@ public class InitialConnectionState implements State {
         return topicRequest;
       } else {
         if(requiresAuth){
-          if(props.containsKey("sasl")){
-            ConfigurationProperties saslProps = (ConfigurationProperties) props.get("sasl");
+          if(saslConfig != null){
             Map<String, String> authProps = new HashMap<>();
             authProps.put(Sasl.QOP, "auth");
             try {
-              String serverName = saslProps.getProperty("realmName", MessageDaemon.getInstance().getId());
-              saslAuthenticationMechanism = new SaslAuthenticationMechanism(saslProps.getProperty("mechanism"), serverName, "mqtt-sn", authProps, props);
+              String serverName = saslConfig.getRealmName();
+              saslAuthenticationMechanism = new SaslAuthenticationMechanism(saslConfig.getMechanism(), serverName, "mqtt-sn", authProps, endPoint.getConfig());
               stateEngine.setState(new AuthenticationState(connect, saslAuthenticationMechanism));
               ((MQTT_SNProtocolV2)protocol).setSaslAuthenticationMechanism(saslAuthenticationMechanism);
               return new Auth(ReasonCodes.CONTINUE_AUTHENTICATION, saslAuthenticationMechanism.getName(), new byte[0]);
@@ -128,7 +130,14 @@ public class InitialConnectionState implements State {
           protocol.setSession(session);
           ConnAck response = new ConnAck(ReasonCodes.SUCCESS, 0, scb.getId(), session.isRestored());
           response.setCallback(session::resumeState);
-          protocol.setTransformation(TransformationManager.getInstance().getTransformation(protocol.getName(), session.getSecurityContext().getUsername()));
+          ProtocolMessageTransformation transformation = TransformationManager.getInstance().getTransformation(
+              endPoint.getProtocol(),
+              endPoint.getName(),
+              "mqtt-sn",
+              session.getSecurityContext().getUsername()
+
+          );
+          protocol.setTransformation(transformation);
           try {
             session.login();
             stateEngine.setState(new ConnectedState(response));

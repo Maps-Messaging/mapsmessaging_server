@@ -1,277 +1,209 @@
 /*
- * Copyright [ 2020 - 2023 ] [Matthew Buckton]
  *
- *  Licensed under the Apache License, Version 2.0 (the "License");
- *  you may not use this file except in compliance with the License.
- *  You may obtain a copy of the License at
+ *  Copyright [ 2020 - 2024 ] Matthew Buckton
+ *  Copyright [ 2024 - 2025 ] MapsMessaging B.V.
+ *
+ *  Licensed under the Apache License, Version 2.0 with the Commons Clause
+ *  (the "License"); you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at:
  *
  *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://commonsclause.com/
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
  */
 
 package io.mapsmessaging.engine.destination;
 
-import io.mapsmessaging.engine.stats.Statistics;
-import io.mapsmessaging.utilities.stats.LinkedMovingAverageRecord;
-import io.mapsmessaging.utilities.stats.LinkedMovingAverages;
-import io.mapsmessaging.utilities.stats.MovingAverageFactory.ACCUMULATOR;
+import io.mapsmessaging.dto.rest.stats.LinkedMovingAverageRecordDTO;
+import io.mapsmessaging.utilities.stats.*;
 
 import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Map;
-import java.util.concurrent.atomic.LongAdder;
+import java.util.stream.Collectors;
 
 public class DestinationStats extends Statistics {
+
 
   private static final String MESSAGES = "Messages";
   private static final String MICRO_SECONDS = "μs";
 
-  //<editor-fold desc="Global Statistic fields">
-  public static List<LinkedMovingAverages> getGlobalAverages() {
-    return globalAverageStatistics.getAverageList();
-  }
-
-  private static final LinkedMovingAverages totalPublishedMessagesAverages;
-  private static final LinkedMovingAverages totalSubscribedMessagesAverages;
-  private static final LinkedMovingAverages totalNoInterestMessagesAverages;
-  private static final LinkedMovingAverages totalRetrievedMessagesAverages;
-  private static final LinkedMovingAverages totalExpiredMessagesAverages;
-  private static final LinkedMovingAverages totalDeliveredMessagesAverages;
-  private static final Statistics globalAverageStatistics;
-
-  static {
-    globalAverageStatistics = new Statistics();
-    totalPublishedMessagesAverages = globalAverageStatistics.create(ACCUMULATOR.ADD, "Published messages", MESSAGES);
-    totalSubscribedMessagesAverages = globalAverageStatistics.create(ACCUMULATOR.ADD, "Subscribed messages", MESSAGES);
-    totalNoInterestMessagesAverages = globalAverageStatistics.create(ACCUMULATOR.ADD, "No Interest", MESSAGES);
-    totalRetrievedMessagesAverages = globalAverageStatistics.create(ACCUMULATOR.ADD, "Retrieved messages", MESSAGES);
-    totalExpiredMessagesAverages = globalAverageStatistics.create(ACCUMULATOR.ADD, "Expired messages", MESSAGES);
-    totalDeliveredMessagesAverages = globalAverageStatistics.create(ACCUMULATOR.ADD, "Delivered messages", MESSAGES);
-  }
-
-  private static final LongAdder totalCurrentSubscriptions = new LongAdder();
-
-
-  private static final LongAdder totalPublishedMessages = new LongAdder();
-  private static final LongAdder totalSubscribedMessages = new LongAdder();
-  private static final LongAdder totalNoInterestMessages = new LongAdder();
-  private static final LongAdder totalRetrievedMessages = new LongAdder();
-  private static final LongAdder totalExpiredMessages = new LongAdder();
-  private static final LongAdder totalDeliveredMessages = new LongAdder();
-
-
-  public static Map<String, LinkedMovingAverageRecord> getGlobalStats(){
-    Map<String, LinkedMovingAverageRecord> map = new LinkedHashMap<>();
-    map.put(totalPublishedMessagesAverages.getName(), totalPublishedMessagesAverages.getRecord());
-    map.put(totalSubscribedMessagesAverages.getName(), totalSubscribedMessagesAverages.getRecord());
-    map.put(totalNoInterestMessagesAverages.getName(), totalNoInterestMessagesAverages.getRecord());
-    map.put(totalRetrievedMessagesAverages.getName(), totalRetrievedMessagesAverages.getRecord());
-    map.put(totalExpiredMessagesAverages.getName(), totalExpiredMessagesAverages.getRecord());
-    map.put(totalDeliveredMessagesAverages.getName(), totalDeliveredMessagesAverages.getRecord());
-    return map;
-  }
-
-  public static long getTotalPublishedMessages() {
-    return totalPublishedMessages.sum();
-  }
-
-  public static long getTotalSubscribedMessages() {
-    return totalSubscribedMessages.sum();
-  }
-
-  public static long getTotalNoInterestMessages() {
-    return totalNoInterestMessages.sum();
-  }
-
-  public static long getTotalRetrievedMessages() {
-    return totalRetrievedMessages.sum();
-  }
-
-  public static long getTotalExpiredMessages() {
-    return totalExpiredMessages.sum();
-  }
-
-  public static long getTotalDeliveredMessages() {
-    return totalDeliveredMessages.sum();
-  }
-
-  public static long getTotalCurrentSubscriptions() {
-    return totalCurrentSubscriptions.sum();
-  }
-  //</editor-fold>
-
   //<editor-fold desc="Statistic fields">
-  private final LinkedMovingAverages noInterestMessageAverages;
-  private final LinkedMovingAverages publishedMessageAverages;
-  private final LinkedMovingAverages subscribedMessageAverages;
-  private final LinkedMovingAverages retrievedMessagesAverages;
-  private final LinkedMovingAverages expiredMessagesAverages;
-  private final LinkedMovingAverages deliveredMessagesAverages;
-  private final LinkedMovingAverages subscribedClientAverages;
-  private final LinkedMovingAverages storedMessageAverages;
-  private final LinkedMovingAverages readTimeAverages;
-  private final LinkedMovingAverages writeTimeAverages;
-  private final LinkedMovingAverages deleteTimeAverages;
-  private final LinkedMovingAverages delayedPublishedMessageAverages;
-  private final LinkedMovingAverages transactedPublishedMessageAverages;
+  private final Stats noInterestMessageAverages;
+  private final Stats publishedMessageAverages;
+  private final Stats subscribedMessageAverages;
+  private final Stats retrievedMessagesAverages;
+  private final Stats expiredMessagesAverages;
+  private final Stats deliveredMessagesAverages;
+  private final Stats subscribedClientAverages;
+  private final Stats storedMessageAverages;
+  private final Stats readTimeAverages;
+  private final Stats writeTimeAverages;
+  private final Stats deleteTimeAverages;
+  private final Stats transactedPublishedMessageAverages;
+  private final Stats storedMessageCountAverages;
+  private final Stats totalRetained;
 
   //</editor-fold>
 
-  DestinationStats() {
-    noInterestMessageAverages = create(ACCUMULATOR.ADD, "No Interest", MESSAGES);
-    publishedMessageAverages = create(ACCUMULATOR.ADD, "Published messages", MESSAGES);
-    subscribedMessageAverages = create(ACCUMULATOR.ADD, "Subscribed messages", MESSAGES);
-    retrievedMessagesAverages = create(ACCUMULATOR.ADD, "Retrieved messages", MESSAGES);
-    expiredMessagesAverages = create(ACCUMULATOR.ADD, "Expired messages", MESSAGES);
-    deliveredMessagesAverages = create(ACCUMULATOR.ADD, "Delivered messages", MESSAGES);
-    subscribedClientAverages = create(ACCUMULATOR.ADD, "Subscribed clients", "Clients");
-    storedMessageAverages = create(ACCUMULATOR.ADD, "Stored messages", MESSAGES);
-    delayedPublishedMessageAverages = create(ACCUMULATOR.ADD, "Delayed Publish messages", MESSAGES);
-    transactedPublishedMessageAverages = create(ACCUMULATOR.ADD, "Transacted Publish messages", MESSAGES);
-    readTimeAverages = create(ACCUMULATOR.AVE, "Time to read messages from resource", MICRO_SECONDS);
-    writeTimeAverages = create(ACCUMULATOR.AVE, "Time to write messages to resource", MICRO_SECONDS);
-    deleteTimeAverages = create(ACCUMULATOR.AVE, "Time to delete messages from resource", MICRO_SECONDS);
-
+  public DestinationStats(StatsType type) {
+    totalRetained = create(type, MovingAverageFactory.ACCUMULATOR.ADD, "Retained messages", MESSAGES);
+    noInterestMessageAverages = create(type, MovingAverageFactory.ACCUMULATOR.ADD, "No Interest", MESSAGES);
+    publishedMessageAverages = create(type, MovingAverageFactory.ACCUMULATOR.ADD, "Published messages", MESSAGES);
+    subscribedMessageAverages = create(type, MovingAverageFactory.ACCUMULATOR.ADD, "Subscribed messages", MESSAGES);
+    retrievedMessagesAverages = create(type, MovingAverageFactory.ACCUMULATOR.ADD, "Retrieved messages", MESSAGES);
+    expiredMessagesAverages = create(type, MovingAverageFactory.ACCUMULATOR.ADD, "Expired messages", MESSAGES);
+    deliveredMessagesAverages = create(type, MovingAverageFactory.ACCUMULATOR.ADD, "Delivered messages", MESSAGES);
+    subscribedClientAverages = create(type, MovingAverageFactory.ACCUMULATOR.ADD, "Subscribed clients", "Clients");
+    storedMessageAverages = create(type, MovingAverageFactory.ACCUMULATOR.ADD, "Stored messages", MESSAGES);
+    storedMessageCountAverages= create(type, MovingAverageFactory.ACCUMULATOR.ADD, "Stored messages", MESSAGES);
+    transactedPublishedMessageAverages = create(type, MovingAverageFactory.ACCUMULATOR.ADD, "Transacted Publish messages", MESSAGES);
+    readTimeAverages = create(type, MovingAverageFactory.ACCUMULATOR.AVE, "Time to read messages from resource", MICRO_SECONDS);
+    writeTimeAverages = create(type, MovingAverageFactory.ACCUMULATOR.AVE, "Time to write messages to resource", MICRO_SECONDS);
+    deleteTimeAverages = create(type, MovingAverageFactory.ACCUMULATOR.AVE, "Time to delete messages from resource", MICRO_SECONDS);
   }
 
-  public Map<String, LinkedMovingAverageRecord> getStatistics(){
-    Map<String, LinkedMovingAverageRecord> map = new LinkedHashMap<>();
-    map.put(noInterestMessageAverages.getName(), noInterestMessageAverages.getRecord());
-    map.put(publishedMessageAverages.getName(), publishedMessageAverages.getRecord());
-    map.put(subscribedMessageAverages.getName(), subscribedMessageAverages.getRecord());
-    map.put(retrievedMessagesAverages.getName(), retrievedMessagesAverages.getRecord());
-    map.put(expiredMessagesAverages.getName(), expiredMessagesAverages.getRecord());
-    map.put(deliveredMessagesAverages.getName(), deliveredMessagesAverages.getRecord());
-    map.put(subscribedClientAverages.getName(), subscribedClientAverages.getRecord());
-    map.put(storedMessageAverages.getName(), storedMessageAverages.getRecord());
-    map.put(delayedPublishedMessageAverages.getName(), delayedPublishedMessageAverages.getRecord());
-    map.put(transactedPublishedMessageAverages.getName(), transactedPublishedMessageAverages.getRecord());
-    map.put(readTimeAverages.getName(), readTimeAverages.getRecord());
-    map.put(writeTimeAverages.getName(), writeTimeAverages.getRecord());
-    map.put(deleteTimeAverages.getName(), deleteTimeAverages.getRecord());
-    return map;
+
+  public Map<String, LinkedMovingAverageRecordDTO> getStatistics(){
+    return getAverageList()
+        .stream()
+        .filter(Stats::supportMovingAverage)
+        .collect(
+            Collectors.toMap(Stats::getName, averages -> ((LinkedMovingAverages) averages).getRecord(), (a, b) -> b, LinkedHashMap::new)
+        );
   }
 
   public void subscriptionAdded() {
-    totalCurrentSubscriptions.increment();
     subscribedClientAverages.increment();
+    DestinationImpl.getGlobalStats().subscriptionAdded();
   }
 
   public void subscriptionRemoved() {
-    totalCurrentSubscriptions.decrement();
     subscribedClientAverages.decrement();
+    DestinationImpl.getGlobalStats().subscriptionRemoved();
   }
 
   public void messagePublished() {
     publishedMessageAverages.increment();
-    totalPublishedMessages.increment();
-    totalPublishedMessagesAverages.increment();
+    DestinationImpl.getGlobalStats().messagePublished();
   }
 
   public void messageSubscribed(int counter) {
     storedMessageAverages.increment();
     subscribedMessageAverages.add(counter);
-    totalSubscribedMessages.add(counter);
-    totalSubscribedMessagesAverages.add(counter);
+    DestinationImpl.getGlobalStats().messageSubscribed(counter);
   }
 
   public void noInterest() {
     noInterestMessageAverages.increment();
-    totalNoInterestMessages.increment();
-    totalNoInterestMessagesAverages.increment();
+    DestinationImpl.getGlobalStats().noInterest();
   }
 
   public void expiredMessage() {
-    expiredMessagesAverages.add(1);
-    totalExpiredMessages.increment();
-    totalExpiredMessagesAverages.increment();
+    expiredMessagesAverages.increment();
+    DestinationImpl.getGlobalStats().expiredMessage();
   }
 
   public void retrievedMessage() {
     retrievedMessagesAverages.increment();
-    totalRetrievedMessages.increment();
-    totalRetrievedMessagesAverages.increment();
-  }
-
-  public void removedMessage() {
-    storedMessageAverages.decrement();
+    DestinationImpl.getGlobalStats().retrievedMessage();
   }
 
 
-  public void removedMessages(int count) {
-    storedMessageAverages.add(count * -1L);
+  public void storedMessages(int count) {
+    storedMessageCountAverages.add(count);
   }
+
 
   public void deliveredMessage() {
     deliveredMessagesAverages.increment();
-    totalDeliveredMessages.increment();
-    totalDeliveredMessagesAverages.increment();
+    DestinationImpl.getGlobalStats().deliveredMessage();
   }
+
 
   public void messageWriteTime(long write) {
     writeTimeAverages.add(write);
   }
 
+
   public void messageReadTime(long write) {
     readTimeAverages.add(write);
   }
 
-  public LinkedMovingAverages getDeleteTimeAverages() {
-    return deleteTimeAverages;
+
+  public long getNoInterest() {
+    return noInterestMessageAverages.getTotal();
   }
 
-  public LinkedMovingAverages getReadTimeAverages() {
-    return readTimeAverages;
+
+  public long getExpiredMessage() {
+    return expiredMessagesAverages.getTotal();
   }
 
-  public LinkedMovingAverages getWriteTimeAverages() {
-    return writeTimeAverages;
+
+  public long getRetrievedMessage() {
+    return retrievedMessagesAverages.getTotal();
   }
 
-  public LinkedMovingAverages getNoInterestMessageAverages() {
-    return noInterestMessageAverages;
+
+  public long getStoredMessages() {
+    return storedMessageAverages.getTotal();
   }
 
-  public LinkedMovingAverages getPublishedMessageAverages() {
-    return publishedMessageAverages;
+
+  public long getDeliveredMessages() {
+    return deliveredMessagesAverages.getTotal();
   }
 
-  public LinkedMovingAverages getSubscribedMessageAverages() {
-    return subscribedMessageAverages;
+
+  public long getMessagePublished() {
+    return publishedMessageAverages.getTotal();
   }
 
-  public LinkedMovingAverages getRetrievedMessagesAverages() {
-    return retrievedMessagesAverages;
+
+  public long getMessageSubscribed() {
+    return subscribedMessageAverages.getTotal();
   }
 
-  public LinkedMovingAverages getExpiredMessagesAverages() {
-    return expiredMessagesAverages;
+
+  public long getMessageWriteTime() {
+    return writeTimeAverages.getTotal();
   }
 
-  public LinkedMovingAverages getDeliveredMessagesAverages() {
-    return deliveredMessagesAverages;
+
+  public long getMessageReadTime() {
+    return readTimeAverages.getTotal();
   }
 
-  public LinkedMovingAverages getSubscribedClientAverages() {
-    return subscribedClientAverages;
+
+  public long getMessageRemovedTime() {
+    return deleteTimeAverages.getTotal();
   }
 
-  public LinkedMovingAverages getStoredMessageAverages() {
-    return storedMessageAverages;
+
+  public long getTransactionalPublished() {
+    return transactedPublishedMessageAverages.getTotal();
   }
 
-  public LinkedMovingAverages getDelayedPublishedMessageAverages() {
-    return delayedPublishedMessageAverages;
+
+  public void transactionalPublish() {
+    transactedPublishedMessageAverages.increment();
   }
 
-  public LinkedMovingAverages getTransactedPublishedMessageAverages() {
-    return transactedPublishedMessageAverages;
+
+  public void retainedMessages(int count) {
+    totalRetained.add(count);
   }
+
+
+  public void messageDeleteTime(long nano) {
+    deleteTimeAverages.add(nano);
+  }
+
+
 
 }

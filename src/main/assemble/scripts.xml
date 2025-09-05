@@ -1,18 +1,20 @@
 <!--
-  ~ Copyright [ 2020 - 2023 ] [Matthew Buckton]
   ~
-  ~  Licensed under the Apache License, Version 2.0 (the "License");
-  ~  you may not use this file except in compliance with the License.
-  ~  You may obtain a copy of the License at
+  ~  Copyright [ 2020 - 2024 ] Matthew Buckton
+  ~  Copyright [ 2024 - 2025 ] MapsMessaging B.V.
+  ~
+  ~  Licensed under the Apache License, Version 2.0 with the Commons Clause
+  ~  (the "License"); you may not use this file except in compliance with the License.
+  ~  You may obtain a copy of the License at:
   ~
   ~      http://www.apache.org/licenses/LICENSE-2.0
+  ~      https://commonsclause.com/
   ~
-  ~ Unless required by applicable law or agreed to in writing, software
-  ~ distributed under the License is distributed on an "AS IS" BASIS,
-  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-  ~ See the License for the specific language governing permissions and
-  ~ limitations under the License.
-  ~
+  ~  Unless required by applicable law or agreed to in writing, software
+  ~  distributed under the License is distributed on an "AS IS" BASIS,
+  ~  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~  See the License for the specific language governing permissions and
+  ~  limitations under the License.
   -->
 
 <assembly xmlns="http://maven.apache.org/ASSEMBLY/2.1.0"
@@ -27,19 +29,7 @@
 
   <files>
     <file>
-      <source>README.md</source>
-      <outputDirectory>/</outputDirectory>
-      <filtered>true</filtered>
-    </file>
-
-    <file>
-      <source>CommonsClause.txt</source>
-      <outputDirectory>/</outputDirectory>
-      <filtered>true</filtered>
-    </file>
-
-    <file>
-      <source>LICENSE</source>
+      <source>${project.build.directory}/bom.json</source>
       <outputDirectory>/</outputDirectory>
     </file>
   </files>
@@ -51,6 +41,28 @@
       <includes>
         <include>*.jar</include>
         <include>*.war</include>
+      </includes>
+    </fileSet>
+
+    <fileSet>
+      <directory>${project.basedir}/out/</directory>
+      <outputDirectory>www/admin</outputDirectory>
+      <includes>
+        <include>**/*</include> <!-- This includes all files and subdirectories -->
+      </includes>
+    </fileSet>
+    <fileSet>
+      <directory>${project.basedir}/src/main/html</directory>
+      <outputDirectory>www/swagger-ui</outputDirectory>
+      <includes>
+        <include>**/*</include> <!-- This includes all files and subdirectories -->
+      </includes>
+    </fileSet>
+    <fileSet>
+      <directory>${project.basedir}/packaging/etc</directory>
+      <outputDirectory>etc</outputDirectory>
+      <includes>
+        <include>*</include>
       </includes>
     </fileSet>
 
@@ -114,7 +126,7 @@
     <fileSet>
       <directory>${project.basedir}</directory>
       <includes>
-        <include>libLoRaDevice.so</include>
+        <include>libLoRaChipDevice.so</include>
       </includes>
       <outputDirectory>lib</outputDirectory>
     </fileSet>
@@ -122,7 +134,7 @@
       <directory>${project.basedir}/target/</directory>
       <outputDirectory>lib</outputDirectory>
       <includes>
-        <include>message_daemon*.jar</include>
+        <include>maps*.jar</include>
       </includes>
       <excludes>
         <exclude>*javadoc.jar</exclude>
@@ -136,14 +148,6 @@
         <include>README*</include>
         <include>LICENSE*</include>
         <include>CommonsClause.*</include>
-      </includes>
-    </fileSet>
-
-    <fileSet>
-      <directory>${project.basedir}/src/main/html</directory>
-      <outputDirectory>html</outputDirectory>
-      <includes>
-        <include>**/*</include> <!-- This includes all files and subdirectories -->
       </includes>
     </fileSet>
 

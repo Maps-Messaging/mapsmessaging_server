@@ -1,18 +1,20 @@
 /*
- * Copyright [ 2020 - 2024 ] [Matthew Buckton]
  *
- *  Licensed under the Apache License, Version 2.0 (the "License");
- *  you may not use this file except in compliance with the License.
- *  You may obtain a copy of the License at
+ *  Copyright [ 2020 - 2024 ] Matthew Buckton
+ *  Copyright [ 2024 - 2025 ] MapsMessaging B.V.
+ *
+ *  Licensed under the Apache License, Version 2.0 with the Commons Clause
+ *  (the "License"); you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at:
  *
  *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://commonsclause.com/
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
  */
 
 package io.mapsmessaging.network.protocol.impl.nmea;
@@ -20,8 +22,12 @@ package io.mapsmessaging.network.protocol.impl.nmea;
 import io.mapsmessaging.api.*;
 import io.mapsmessaging.api.features.DestinationType;
 import io.mapsmessaging.api.features.QualityOfService;
+import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.api.transformers.Transformer;
 import io.mapsmessaging.configuration.ConfigurationProperties;
+import io.mapsmessaging.dto.rest.protocol.ProtocolInformationDTO;
+import io.mapsmessaging.dto.rest.protocol.impl.NmeaProtocolInformation;
+import io.mapsmessaging.engine.destination.MessageOverrides;
 import io.mapsmessaging.location.LocationManager;
 import io.mapsmessaging.network.ProtocolClientConnection;
 import io.mapsmessaging.network.io.EndPoint;
@@ -29,17 +35,22 @@ import io.mapsmessaging.network.io.Packet;
 import io.mapsmessaging.network.io.StreamEndPoint;
 import io.mapsmessaging.network.io.impl.SelectorTask;
 import io.mapsmessaging.network.protocol.EndOfBufferException;
-import io.mapsmessaging.network.protocol.ProtocolImpl;
+import io.mapsmessaging.network.protocol.Protocol;
+import io.mapsmessaging.network.protocol.ProtocolMessageTransformation;
 import io.mapsmessaging.network.protocol.impl.nmea.sentences.Sentence;
 import io.mapsmessaging.network.protocol.impl.nmea.sentences.SentenceFactory;
 import io.mapsmessaging.network.protocol.impl.nmea.types.PositionType;
 import io.mapsmessaging.network.protocol.transformation.TransformationManager;
+import io.mapsmessaging.selector.operators.ParserExecutor;
 import io.mapsmessaging.utilities.configuration.ConfigurationManager;
+import lombok.AllArgsConstructor;
+import lombok.Data;
 import lombok.NonNull;
 import lombok.SneakyThrows;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import javax.security.auth.Subject;
 import javax.security.auth.login.LoginException;
 import java.io.IOException;
 import java.nio.channels.SelectionKey;
@@ -48,7 +59,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
-public class NMEAProtocol extends ProtocolImpl {
+public class NMEAProtocol extends Protocol {
 
   private final Session session;
   private final SelectorTask selectorTask;
@@ -61,23 +72,28 @@ public class NMEAProtocol extends ProtocolImpl {
   private final String destinationName;
 
   public NMEAProtocol(EndPoint endPoint, Packet packet) throws LoginException, IOException {
-    super(endPoint);
+    super(endPoint,  endPoint.getConfig().getProtocolConfig("NMEA-0183"));
     if (endPoint instanceof StreamEndPoint) {
       ((StreamEndPoint) endPoint).setStreamHandler(new NMEAStreamHandler());
     }
     if (packet != null) {
       packet.clear();
     }
-    SessionContextBuilder sessionContextBuilder = new SessionContextBuilder("NMEA" + endPoint.getId(), new ProtocolClientConnection(this));
+    SessionContextBuilder sessionContextBuilder = new SessionContextBuilder("NMEA-0183" + endPoint.getId(), new ProtocolClientConnection(this));
     sessionContextBuilder.setSessionExpiry(0);
-    sessionContextBuilder.setKeepAlive(0);
     sessionContextBuilder.setPersistentSession(false);
     session = SessionManager.getInstance().create(sessionContextBuilder.build(), this);
-    selectorTask = new SelectorTask(this, endPoint.getConfig().getProperties());
+    selectorTask = new SelectorTask(this, endPoint.getConfig().getEndPointConfig());
     sentenceMap = new LinkedHashMap<>();
     endPoint.register(SelectionKey.OP_READ, selectorTask.getReadTask());
-    setTransformation(TransformationManager.getInstance().getTransformation(getName(), null));
-    ConfigurationProperties configurationProperties = ConfigurationManager.getInstance().getProperties("nmea");
+    ProtocolMessageTransformation transformation = TransformationManager.getInstance().getTransformation(
+        endPoint.getProtocol(),
+        endPoint.getName(),
+        "NMEA-0183",
+        session.getSecurityContext().getUsername()
+    );
+    setTransformation(transformation);
+    ConfigurationProperties configurationProperties = ConfigurationManager.getInstance().getProperties("NMEA-0183");
     format = configurationProperties.getProperty("format", "raw");
     boolean setServerLocation = configurationProperties.getBooleanProperty("serverLocation", false);
     if (setServerLocation) {
@@ -97,7 +113,7 @@ public class NMEAProtocol extends ProtocolImpl {
   }
 
   @Override
-  public void subscribeRemote(@NonNull @NotNull String resource, @NonNull @NotNull String mappedResource, @Nullable Transformer transformer) {
+  public void subscribeRemote(@NonNull @NotNull String resource, @NonNull @NotNull String mappedResource, @Nullable ParserExecutor executor, @Nullable Transformer transformer) {
     registeredSentences.put(resource, new SentenceMapping(mappedResource, transformer));
   }
 
@@ -105,6 +121,12 @@ public class NMEAProtocol extends ProtocolImpl {
   public void sendMessage(@NotNull @NonNull MessageEvent messageEvent) {
     // This protocol is read only
   }
+
+  @Override
+  public Subject getSubject() {
+    return session.getSecurityContext().getSubject();
+  }
+
 
   @Override
   public void sendKeepAlive() {
@@ -129,7 +151,7 @@ public class NMEAProtocol extends ProtocolImpl {
     return true;
   }
 
-  private void prepareSentence(String sentence, String sentenceId, Iterator<String> gpsWords) throws IOException {
+  private void prepareSentence(String sentence, String sentenceId, Iterator<String> gpsWords) {
     if (registeredSentences.isEmpty()) {
       publishMessage(sentence, sentenceId, gpsWords, destinationName, null);
     } else {
@@ -152,7 +174,7 @@ public class NMEAProtocol extends ProtocolImpl {
   // findDestination throws an IOException, using computeIfAbsent tends to hide or swallow the exceptions
   @SneakyThrows
   @java.lang.SuppressWarnings({"java:S3824"})
-  private void publishMessage(String sentence, String sentenceId, Iterator<String> gpsWords, String destinationName, Transformer transformer) throws IOException {
+  private void publishMessage(String sentence, String sentenceId, Iterator<String> gpsWords, String destinationName, Transformer transformer) {
     String processed = parseSentence(sentence, sentenceId, gpsWords);
     if (publishRecords) {
       Destination destination = sentenceMap.get(sentenceId);
@@ -163,16 +185,13 @@ public class NMEAProtocol extends ProtocolImpl {
       if (destination != null) {
         MessageBuilder messageBuilder = new MessageBuilder();
         messageBuilder.setOpaqueData(processed.getBytes())
-            .setRetain(false)
-            .storeOffline(false)
             .setMessageExpiryInterval(8, TimeUnit.SECONDS) // Expire the event in 8 seconds
-            .setQoS(QualityOfService.AT_MOST_ONCE)
             .setTransformation(getTransformation());
-
         if (transformer != null) {
           transformer.transform(messageBuilder);
         }
-        destination.storeMessage(messageBuilder.build());
+        Message message = MessageOverrides.createMessageBuilder(protocolConfig.getMessageDefaults(), messageBuilder).build();
+        destination.storeMessage(message);
       }
     }
     receivedMessage();
@@ -181,7 +200,7 @@ public class NMEAProtocol extends ProtocolImpl {
   private String parseSentence(String raw, String sentenceId, Iterator<String> gpsWords) {
     if (format.equalsIgnoreCase("json") || serverLocationSentence != null) {
       Sentence sentence = sentenceFactory.parse(sentenceId, gpsWords);
-      if (serverLocationSentence.equalsIgnoreCase(sentenceId)) {
+      if (sentenceId.equalsIgnoreCase(serverLocationSentence)  || sentenceId.toLowerCase().endsWith(serverLocationSentence.toLowerCase())) {
         PositionType latitude = (PositionType) sentence.get("latitude");
         PositionType longitude = (PositionType) sentence.get("longitude");
         LocationManager.getInstance().setPosition(latitude.getPosition(), longitude.getPosition());
@@ -195,7 +214,7 @@ public class NMEAProtocol extends ProtocolImpl {
 
   @Override
   public String getName() {
-    return "NMEA";
+    return "NMEA-0183";
   }
 
   @Override
@@ -209,15 +228,19 @@ public class NMEAProtocol extends ProtocolImpl {
   }
 
 
+  @Data
+  @AllArgsConstructor
   private static final class SentenceMapping {
-
     private final String destination;
     private final Transformer transformer;
+  }
 
-    public SentenceMapping(String destination, Transformer transformer) {
-      this.destination = destination;
-      this.transformer = transformer;
-    }
+  @Override
+  public ProtocolInformationDTO getInformation() {
+    NmeaProtocolInformation information = new NmeaProtocolInformation();
+    updateInformation(information);
+    information.setSessionInfo(session.getSessionInformation());
+    return information;
   }
 
 }

@@ -1,18 +1,20 @@
 /*
- * Copyright [ 2020 - 2024 ] [Matthew Buckton]
  *
- *  Licensed under the Apache License, Version 2.0 (the "License");
- *  you may not use this file except in compliance with the License.
- *  You may obtain a copy of the License at
+ *  Copyright [ 2020 - 2024 ] Matthew Buckton
+ *  Copyright [ 2024 - 2025 ] MapsMessaging B.V.
+ *
+ *  Licensed under the Apache License, Version 2.0 with the Commons Clause
+ *  (the "License"); you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at:
  *
  *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://commonsclause.com/
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
  */
 
 package io.mapsmessaging.engine.system.impl.server;
@@ -20,11 +22,12 @@ package io.mapsmessaging.engine.system.impl.server;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.mapsmessaging.MessageDaemon;
 import io.mapsmessaging.api.message.Message;
+import io.mapsmessaging.dto.helpers.InterfaceStatusHelper;
+import io.mapsmessaging.dto.rest.interfaces.InterfaceStatusDTO;
 import io.mapsmessaging.engine.schema.SchemaManager;
 import io.mapsmessaging.engine.system.SystemTopic;
 import io.mapsmessaging.network.EndPointManager;
 import io.mapsmessaging.network.io.connection.EndPointConnection;
-import io.mapsmessaging.rest.data.interfaces.InterfaceStatus;
 import lombok.Data;
 
 import java.io.IOException;
@@ -71,7 +74,7 @@ public class InterfaceStatusTopic extends SystemTopic {
 
   @Data
   public static class InterfaceStatusMessage{
-    private final List<InterfaceStatus> interfaceStatusList;
+    private final List<InterfaceStatusDTO> interfaceStatusList;
 
     public InterfaceStatusMessage(){
       interfaceStatusList = new ArrayList<>();
@@ -79,11 +82,11 @@ public class InterfaceStatusTopic extends SystemTopic {
 
     public InterfaceStatusMessage(MessageDaemon messageDaemon) {
       interfaceStatusList = new ArrayList<>();
-      for (EndPointManager endPointManager : messageDaemon.getNetworkManager().getAll()) {
-        interfaceStatusList.add(new InterfaceStatus(endPointManager.getEndPointServer()));
+      for (EndPointManager endPointManager : messageDaemon.getSubSystemManager().getNetworkManager().getAll()) {
+        interfaceStatusList.add(InterfaceStatusHelper.fromServer(endPointManager.getEndPointServer()));
       }
-      for(EndPointConnection endPointConnection:messageDaemon.getNetworkConnectionManager().getEndPointConnectionList()){
-        interfaceStatusList.add(new InterfaceStatus(endPointConnection));
+      for(EndPointConnection endPointConnection:messageDaemon.getSubSystemManager().getNetworkConnectionManager().getEndPointConnectionList()){
+        interfaceStatusList.add(InterfaceStatusHelper.fromConnection(endPointConnection));
       }
     }
   }

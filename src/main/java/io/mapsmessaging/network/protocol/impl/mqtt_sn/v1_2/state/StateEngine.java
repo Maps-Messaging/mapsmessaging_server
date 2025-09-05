@@ -1,18 +1,20 @@
 /*
- * Copyright [ 2020 - 2024 ] [Matthew Buckton]
  *
- *  Licensed under the Apache License, Version 2.0 (the "License");
- *  you may not use this file except in compliance with the License.
- *  You may obtain a copy of the License at
+ *  Copyright [ 2020 - 2024 ] Matthew Buckton
+ *  Copyright [ 2024 - 2025 ] MapsMessaging B.V.
+ *
+ *  Licensed under the Apache License, Version 2.0 with the Commons Clause
+ *  (the "License"); you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at:
  *
  *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://commonsclause.com/
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
  */
 
 package io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.state;
@@ -21,6 +23,7 @@ import io.mapsmessaging.api.MessageEvent;
 import io.mapsmessaging.api.Session;
 import io.mapsmessaging.api.SessionContextBuilder;
 import io.mapsmessaging.api.SessionManager;
+import io.mapsmessaging.config.protocol.impl.MqttSnConfig;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.logging.ServerLogMessages;
@@ -43,23 +46,28 @@ import java.util.concurrent.CompletableFuture;
 public class StateEngine {
 
   private final Logger logger;
-
   private final Map<String, MQTT_SNPacket> subscribeResponseMap;
+  private final MessagePipeline pipeline;
+  private State currentState;
+
   @Getter
   private final TopicAliasManager topicAliasManager;
+
   @Getter
   @Setter
   private int maxBufferSize = 0;
-  private State currentState;
+
+  @Getter
+  @Setter
   private SessionContextBuilder sessionContextBuilder;
-  private final MessagePipeline pipeline;
 
   public StateEngine(MQTT_SNProtocol protocol, RegisteredTopicConfiguration registeredTopicConfiguration) {
     logger = LoggerFactory.getLogger(StateEngine.class);
     subscribeResponseMap = new LinkedHashMap<>();
     pipeline = new MessagePipeline(protocol, this);
     currentState = null;
-    topicAliasManager = new TopicAliasManager(registeredTopicConfiguration);
+    int maxRegisteredSize = ((MqttSnConfig)protocol.getEndPoint().getConfig().getProtocolConfig("mqtt-sn")).getMaxRegisteredSize();
+    topicAliasManager = new TopicAliasManager(registeredTopicConfiguration, maxRegisteredSize);
   }
 
   public MQTT_SNPacket handleMQTTEvent(MQTT_SNPacket mqtt, Session session, EndPoint endPoint, MQTT_SNProtocol protocol)
@@ -81,14 +89,6 @@ public class StateEngine {
 
   public void removeSubscribeResponse(String topic) {
     subscribeResponseMap.remove(topic);
-  }
-
-  public SessionContextBuilder getSessionContextBuilder() {
-    return sessionContextBuilder;
-  }
-
-  public void setSessionContextBuilder(SessionContextBuilder sessionContextBuilder) {
-    this.sessionContextBuilder = sessionContextBuilder;
   }
 
   public void setState(State state) {

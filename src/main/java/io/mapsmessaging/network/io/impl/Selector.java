@@ -1,18 +1,20 @@
 /*
- * Copyright [ 2020 - 2024 ] [Matthew Buckton]
  *
- *  Licensed under the Apache License, Version 2.0 (the "License");
- *  you may not use this file except in compliance with the License.
- *  You may obtain a copy of the License at
+ *  Copyright [ 2020 - 2024 ] Matthew Buckton
+ *  Copyright [ 2024 - 2025 ] MapsMessaging B.V.
+ *
+ *  Licensed under the Apache License, Version 2.0 with the Commons Clause
+ *  (the "License"); you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at:
  *
  *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://commonsclause.com/
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
  */
 
 package io.mapsmessaging.network.io.impl;
@@ -31,13 +33,15 @@ import java.util.Iterator;
 import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.FutureTask;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public class Selector implements SelectorInt {
 
-  protected final java.nio.channels.Selector channelSelector;
+  protected java.nio.channels.Selector channelSelector;
   private final Logger logger;
   private final AtomicBoolean isOpen;
+  private long spinStartTime = 0L;
 
   public Selector() throws IOException {
     logger = LoggerFactory.getLogger(Selector.class);
@@ -49,26 +53,71 @@ public class Selector implements SelectorInt {
   @Override
   public void run() {
     Thread.currentThread().setName("SelectorThread");
+    int emptySelectCount = 0;
+    final int SPIN_THRESHOLD = 1000;
     while (isOpen.get()) {
       try {
         int selected = channelSelector.select();
-        //
-        // Process any of the fired keys and process the attachments
-        //
-        if (selected > 0) {
+        if (selected == 0) {
+          if (emptySelectCount == 0) {
+            spinStartTime = System.nanoTime();
+          }
+          emptySelectCount++;
+          if (emptySelectCount >= SPIN_THRESHOLD) {
+            long duration = System.nanoTime() - spinStartTime;
+            if (duration < TimeUnit.MILLISECONDS.toNanos(100)) {
+              logger.log(ServerLogMessages.SELECTOR_SPIN_DETECTED, SPIN_THRESHOLD);
+              emptySelectCount = 0;
+              rebuildSelector();
+            }
+          }
+          Thread.yield();
+        } else {
           Set<SelectionKey> selectedKeys = channelSelector.selectedKeys();
+          emptySelectCount = 0;
           processSelectionList(selectedKeys);
         }
-
-        //
-        // Before we enter the select again, lets add any waiting requests
-        //
-        processRegistryQueue();
-      } catch (IOException e) {
-        logger.log(ServerLogMessages.SELECTOR_FAILED_ON_CALL);
+      }
+      catch(Throwable e) {
+        logger.log(ServerLogMessages.SELECTOR_FAILED_ON_CALL, e);
         isOpen.set(false);
       }
     }
+  }
+
+  @SuppressWarnings("java:S2095") // we are switching out the channel selector it lives beyond this function
+  private void rebuildSelector() {
+    java.nio.channels.Selector newSelector = null;
+    try {
+      newSelector = java.nio.channels.Selector.open();
+      for (SelectionKey key : channelSelector.keys()) {
+        try {
+          if (key.isValid()) {
+            key.channel().register(newSelector, key.interestOps(), key.attachment());
+          }
+        } catch (CancelledKeyException ignored) {
+          // Key may already be cancelled
+        }
+      }
+      logger.log(ServerLogMessages.SELECTOR_REBUILT);
+    } catch (Exception e) {
+      try {
+        if(newSelector != null) newSelector.close();
+      } catch (IOException ex) {
+        // ignore
+      }
+      logger.log(ServerLogMessages.SELECTOR_REBUILD_FAILED, e.getMessage());
+      return; // This becomes a no op!!!
+    }
+    java.nio.channels.Selector oldSelector = channelSelector;
+    channelSelector = newSelector;
+    oldSelector.wakeup();
+    try {
+      oldSelector.close();
+    } catch (IOException e) {
+      //
+    }
+    channelSelector.wakeup();
   }
 
   private void processSelectionList(Set<SelectionKey> selectedKeys) {
@@ -76,9 +125,10 @@ public class Selector implements SelectorInt {
     while (iter.hasNext()) {
       SelectionKey key = iter.next();
       try {
-        if (key.attachment() instanceof Selectable) {
-          logger.log(ServerLogMessages.SELECTOR_FIRED, key.interestOps());
-          Selectable selectable = ((Selectable) key.attachment());
+        if (key.attachment() instanceof Selectable selectable) {
+          if (logger.isDebugEnabled()) {
+            logger.log(ServerLogMessages.SELECTOR_FIRED, key.interestOps());
+          }
           selectable.selected(selectable, this, key.interestOps());
         }
       } catch (CancelledKeyException cancelled) {
@@ -87,16 +137,12 @@ public class Selector implements SelectorInt {
         if (logger.isDebugEnabled()) {
           logger.log(ServerLogMessages.SELECTOR_TASK_FAILED, e, key.toString());
         } else {
-          logger.log(ServerLogMessages.SELECTOR_TASK_FAILED_1, key.toString());
+          logger.log(ServerLogMessages.SELECTOR_TASK_FAILED_1, key.toString(), e);
         }
       } finally {
         iter.remove();
       }
     }
-  }
-
-  protected void processRegistryQueue() {
-    // This implementation is thread safe after JDK 11, before hand it was not
   }
 
   @Override

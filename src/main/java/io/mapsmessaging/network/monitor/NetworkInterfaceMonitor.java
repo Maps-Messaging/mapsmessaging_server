@@ -1,27 +1,30 @@
 /*
- * Copyright [ 2020 - 2024 ] [Matthew Buckton]
  *
- *  Licensed under the Apache License, Version 2.0 (the "License");
- *  you may not use this file except in compliance with the License.
- *  You may obtain a copy of the License at
+ *  Copyright [ 2020 - 2024 ] Matthew Buckton
+ *  Copyright [ 2024 - 2025 ] MapsMessaging B.V.
+ *
+ *  Licensed under the Apache License, Version 2.0 with the Commons Clause
+ *  (the "License"); you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at:
  *
  *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://commonsclause.com/
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
  */
 
 package io.mapsmessaging.network.monitor;
 
-import io.mapsmessaging.configuration.ConfigurationProperties;
+import io.mapsmessaging.config.NetworkManagerConfig;
+import io.mapsmessaging.dto.rest.system.Status;
+import io.mapsmessaging.dto.rest.system.SubSystemStatusDTO;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.utilities.Agent;
-import io.mapsmessaging.utilities.configuration.ConfigurationManager;
 import io.mapsmessaging.utilities.threads.SimpleTaskScheduler;
 import lombok.Getter;
 
@@ -51,9 +54,9 @@ public class NetworkInterfaceMonitor implements Agent {
   private Map<String, NetworkInterfaceState> lastInterfaces;
 
   private NetworkInterfaceMonitor() {
-    ConfigurationProperties properties = ConfigurationManager.getInstance().getProperties("NetworkManager");
-    enabled = properties.getBooleanProperty("scanNetworkChanges", true);
-    interval = properties.getIntProperty("scanInterval", 60000);
+    NetworkManagerConfig networkManagerConfig = NetworkManagerConfig.getInstance();
+    enabled = networkManagerConfig.isScanNetworkChanges();
+    interval = networkManagerConfig.getScanInterval();
   }
 
   @Override
@@ -211,4 +214,20 @@ public class NetworkInterfaceMonitor implements Agent {
     }
     return interfacesMap;
   }
+
+  @Override
+  public SubSystemStatusDTO getStatus() {
+    SubSystemStatusDTO status = new SubSystemStatusDTO();
+    status.setName(getName());
+    status.setComment("");
+    if(enabled){
+      status.setStatus(Status.OK);
+      status.setComment("Monitoring : "+lastInterfaces.size());
+    }
+    else{
+      status.setStatus(Status.DISABLED);
+    }
+    return status;
+  }
+
 }

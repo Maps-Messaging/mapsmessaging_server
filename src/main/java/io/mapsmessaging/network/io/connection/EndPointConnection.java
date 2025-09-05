@@ -1,36 +1,39 @@
 /*
- * Copyright [ 2020 - 2024 ] [Matthew Buckton]
  *
- *  Licensed under the Apache License, Version 2.0 (the "License");
- *  you may not use this file except in compliance with the License.
- *  You may obtain a copy of the License at
+ *  Copyright [ 2020 - 2024 ] Matthew Buckton
+ *  Copyright [ 2024 - 2025 ] MapsMessaging B.V.
+ *
+ *  Licensed under the Apache License, Version 2.0 with the Commons Clause
+ *  (the "License"); you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at:
  *
  *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://commonsclause.com/
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
  */
 
 package io.mapsmessaging.network.io.connection;
 
-import io.mapsmessaging.configuration.ConfigurationProperties;
+import io.mapsmessaging.config.network.EndPointConnectionServerConfig;
+import io.mapsmessaging.dto.rest.config.network.EndPointServerConfigDTO;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.logging.ServerLogMessages;
 import io.mapsmessaging.network.EndPointURL;
-import io.mapsmessaging.network.NetworkConfig;
 import io.mapsmessaging.network.admin.EndPointConnectionHostJMX;
 import io.mapsmessaging.network.io.EndPoint;
 import io.mapsmessaging.network.io.EndPointConnectionFactory;
 import io.mapsmessaging.network.io.EndPointServerStatus;
-import io.mapsmessaging.network.io.connection.state.Shutdown;
 import io.mapsmessaging.network.io.connection.state.*;
+import io.mapsmessaging.network.io.connection.state.Shutdown;
 import io.mapsmessaging.network.io.impl.SelectorLoadManager;
-import io.mapsmessaging.network.protocol.ProtocolImpl;
+import io.mapsmessaging.network.protocol.Protocol;
+import io.mapsmessaging.utilities.stats.StatsFactory;
 import io.mapsmessaging.utilities.threads.SimpleTaskScheduler;
 import lombok.Getter;
 import lombok.Setter;
@@ -48,18 +51,16 @@ public class EndPointConnection extends EndPointServerStatus {
   private final AtomicBoolean running;
   private final AtomicBoolean paused;
   private Future<?> futureTask;
+  private final EndPointConnectionHostJMX manager;
 
   @Getter
   private final Logger logger;
   @Getter
-  private final ConfigurationProperties properties;
-  private final EndPointConnectionHostJMX manager;
+  private final EndPointConnectionServerConfig properties;
   @Getter
   private final EndPointConnectionFactory endPointConnectionFactory;
   @Getter
   private final SelectorLoadManager selectorLoadManager;
-  @Getter
-  private final List<ConfigurationProperties> destinationMappings;
   @Getter
   private State state;
 
@@ -68,21 +69,20 @@ public class EndPointConnection extends EndPointServerStatus {
   private EndPoint endPoint;
   @Getter
   @Setter
-  private ProtocolImpl connection;
+  private Protocol connection;
 
   public EndPointConnection(
-      EndPointURL url, ConfigurationProperties properties, List<ConfigurationProperties> destinationMappings,
+      EndPointURL url, EndPointConnectionServerConfig properties,
       EndPointConnectionFactory connectionFactory, SelectorLoadManager selectorLoadManager, EndPointConnectionHostJMX manager) {
-    super(url);
+    super(url, StatsFactory.getDefaultType());
     this.properties = properties;
     this.manager = manager;
-    this.destinationMappings = destinationMappings;
     this.selectorLoadManager = selectorLoadManager;
     this.endPointConnectionFactory = connectionFactory;
 
     running = new AtomicBoolean(false);
     paused = new AtomicBoolean(false);
-    logger = LoggerFactory.getLogger("EndPointConnectionStateManager_" + url.toString() + "_" + properties.getProperty("protocol"));
+    logger = LoggerFactory.getLogger("EndPointConnectionStateManager_" + url.toString() + "_" + properties.getProtocols());
     if (manager != null) {
       manager.addConnection(this);
     }
@@ -108,12 +108,12 @@ public class EndPointConnection extends EndPointServerStatus {
   }
 
   @Override
-  public NetworkConfig getConfig() {
-    return new NetworkConfig(properties);
+  public EndPointServerConfigDTO getConfig() {
+    return properties;
   }
 
   public String getConfigName() {
-    return properties.getProperty("name", "");
+    return properties.getName();
   }
   @Override
   public void handleNewEndPoint(EndPoint endPoint) throws IOException {
@@ -135,22 +135,34 @@ public class EndPointConnection extends EndPointServerStatus {
     }
   }
 
+  public boolean isStarted(){
+    return running.get();
+  }
+
   public void start() {
-    setRunState(true, new Disconnected(this));
-    logger.log(ServerLogMessages.END_POINT_CONNECTION_STARTING);
+    if (!running.get()) {
+      setRunState(true, new Disconnected(this));
+      logger.log(ServerLogMessages.END_POINT_CONNECTION_STARTING);
+    }
   }
 
   public void stop() {
-    setRunState(false, new Shutdown(this));
-    logger.log(ServerLogMessages.END_POINT_CONNECTION_STOPPING);
+    if(running.get()){
+      setRunState(false, new Shutdown(this));
+      logger.log(ServerLogMessages.END_POINT_CONNECTION_STOPPING);
+    }
   }
 
   public void pause() {
-    paused.set(true);
+    if(paused.get()){
+      paused.set(true);
+    }
   }
 
   public void resume() {
-    paused.set(false);
+    if (paused.get()) {
+      paused.set(false);
+    }
   }
 
   public List<String> getJMXPath() {
@@ -176,7 +188,7 @@ public class EndPointConnection extends EndPointServerStatus {
       futureTask.cancel(false);
     }
     if (state != null) {
-      logger.log(ServerLogMessages.END_POINT_CONNECTION_STATE_CHANGED, url, properties.getProperty("protocol"), state.getName(), newState.getName());
+      logger.log(ServerLogMessages.END_POINT_CONNECTION_STATE_CHANGED, url, properties.getProtocols(), state.getName(), newState.getName());
     }
     setState(newState);
     futureTask = SimpleTaskScheduler.getInstance().schedule(newState, time, TimeUnit.MILLISECONDS);
@@ -184,5 +196,9 @@ public class EndPointConnection extends EndPointServerStatus {
 
   private void setState(State state) {
     this.state = state;
+  }
+
+  public boolean isPaused() {
+    return paused.get();
   }
 }

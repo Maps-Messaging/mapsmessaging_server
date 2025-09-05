@@ -1,6 +1,7 @@
 #-----------------------------------------------------------------------------
 #
-#   Copyright [ 2020 - 2023 ] [Matthew Buckton]
+# Copyright [ 2020 - 2024 ] [Matthew Buckton]
+# Copyright [ 2024 - 2025 ] [Maps Messaging B.V.]
 #
 #   Licensed under the Apache License, Version 2.0 (the "License");
 #   you may not use this file except in compliance with the License.
@@ -29,10 +30,10 @@
 ---
 AuthManager:
   authenticationEnabled: true  # connections will be authorised according to the config
-  authorizationEnabled: true   # Requestes will be authorised according to the access control list for the resource
+  authorizationEnabled: true   # Requests will be authorised according to the access control list for the resource
   config:
     identityProvider: "Encrypted-Auth"
-    passwordHander: "EncryptedPasswordCipher"
+    passwordHandler: "EncryptedPasswordCipher"
     configDirectory: "{{MAPS_DATA}}/.security"
     certificateStore:
       type: JKS # | "PKCS11", "JKS", "PKCS12", "JCEKS", "BKS", "UBER"

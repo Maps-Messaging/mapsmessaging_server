@@ -1,18 +1,20 @@
 /*
- * Copyright [ 2020 - 2024 ] [Matthew Buckton]
  *
- *  Licensed under the Apache License, Version 2.0 (the "License");
- *  you may not use this file except in compliance with the License.
- *  You may obtain a copy of the License at
+ *  Copyright [ 2020 - 2024 ] Matthew Buckton
+ *  Copyright [ 2024 - 2025 ] MapsMessaging B.V.
+ *
+ *  Licensed under the Apache License, Version 2.0 with the Commons Clause
+ *  (the "License"); you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at:
  *
  *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://commonsclause.com/
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
  */
 
 package io.mapsmessaging.network.protocol.impl.stomp;
@@ -22,7 +24,9 @@ import io.mapsmessaging.api.SubscriptionContextBuilder;
 import io.mapsmessaging.api.features.QualityOfService;
 import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.api.transformers.Transformer;
-import io.mapsmessaging.configuration.ConfigurationProperties;
+import io.mapsmessaging.dto.rest.config.protocol.impl.StompConfigDTO;
+import io.mapsmessaging.dto.rest.protocol.ProtocolInformationDTO;
+import io.mapsmessaging.dto.rest.protocol.impl.StompProtocolInformation;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.logging.ServerLogMessages;
@@ -30,44 +34,56 @@ import io.mapsmessaging.network.io.EndPoint;
 import io.mapsmessaging.network.io.Packet;
 import io.mapsmessaging.network.io.impl.SelectorTask;
 import io.mapsmessaging.network.protocol.EndOfBufferException;
-import io.mapsmessaging.network.protocol.ProtocolImpl;
+import io.mapsmessaging.network.protocol.Protocol;
 import io.mapsmessaging.network.protocol.impl.stomp.frames.Connect;
 import io.mapsmessaging.network.protocol.impl.stomp.frames.Frame;
 import io.mapsmessaging.network.protocol.impl.stomp.frames.FrameFactory;
 import io.mapsmessaging.network.protocol.impl.stomp.frames.Subscribe;
-import io.mapsmessaging.network.protocol.impl.stomp.state.StateEngine;
+import io.mapsmessaging.network.protocol.impl.stomp.state.SessionState;
+import io.mapsmessaging.selector.operators.ParserExecutor;
+import io.mapsmessaging.utilities.filtering.NamespaceFilters;
 import lombok.Getter;
 import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import javax.security.auth.Subject;
 import java.io.IOException;
 
 import static java.nio.channels.SelectionKey.OP_READ;
 
-public class StompProtocol extends ProtocolImpl {
+public class StompProtocol extends Protocol {
 
+  @Getter
   private final Logger logger;
 
   private final FrameFactory factory;
-  private final StateEngine stateEngine;
+  private final SessionState sessionState;
   private final SelectorTask selectorTask;
   private Frame activeFrame;
+
+  @Getter
+  private final int maxReceiveSize;
   @Getter
   private String version;
 
+  @Getter
+  private boolean base64Encode;
+
+
   public StompProtocol(EndPoint endPoint) {
-    super(endPoint);
+    super(endPoint, endPoint.getConfig().getProtocolConfig("stomp"));
     logger = LoggerFactory.getLogger("STOMP Protocol on " + endPoint.getName());
     logger.log(ServerLogMessages.STOMP_STARTING, endPoint.toString());
-    ConfigurationProperties properties = endPoint.getConfig().getProperties();
-    int maxBufferSize = DefaultConstants.MAXIMUM_BUFFER_SIZE;
-    maxBufferSize = properties.getIntProperty("maximumBufferSize", maxBufferSize);
+    StompConfigDTO stompConfigDTO = (StompConfigDTO)protocolConfig;
+    int maxBufferSize = stompConfigDTO.getMaxBufferSize();
+    maxReceiveSize = stompConfigDTO.getMaxReceive();
+    base64Encode = stompConfigDTO.isBase64EncodeBinary();
     version = "1.2";
-    selectorTask = new SelectorTask(this, properties);
-    factory = new FrameFactory(maxBufferSize, endPoint.isClient());
+    selectorTask = new SelectorTask(this, endPoint.getConfig().getEndPointConfig());
+    factory = new FrameFactory(maxBufferSize, endPoint.isClient(), base64Encode);
     activeFrame = null;
-    stateEngine = new StateEngine(this);
+    sessionState = new SessionState(this);
   }
 
   public StompProtocol(EndPoint endPoint, Packet packet) throws IOException {
@@ -89,6 +105,11 @@ public class StompProtocol extends ProtocolImpl {
   }
 
   @Override
+  public Subject getSubject() {
+    return sessionState.getSession().getSecurityContext().getSubject();
+  }
+
+  @Override
   public void connect(String sessionId, String username, String password) throws IOException {
     Connect connect = new Connect();
     connect.setLogin(username);
@@ -99,8 +120,8 @@ public class StompProtocol extends ProtocolImpl {
   }
 
   @Override
-  public void subscribeRemote(@NonNull @NotNull String resource, @NonNull @NotNull String mappedResource, @Nullable Transformer transformer) {
-    stateEngine.addMapping(resource, mappedResource);
+  public void subscribeRemote(@NonNull @NotNull String resource, @NonNull @NotNull String mappedResource, @Nullable ParserExecutor executor, @Nullable Transformer transformer) {
+    sessionState.addMapping(resource, mappedResource);
     if (transformer != null) {
       destinationTransformerMap.put(resource, transformer);
     }
@@ -113,21 +134,21 @@ public class StompProtocol extends ProtocolImpl {
   }
 
   @Override
-  public void subscribeLocal(@NonNull @NotNull String resource, @NonNull @NotNull String mappedResource, String selector, @Nullable Transformer transformer) throws IOException {
-    stateEngine.addMapping(resource, mappedResource);
+  public void subscribeLocal(@NonNull @NotNull String resource, @NonNull @NotNull String mappedResource, String selector, @Nullable Transformer transformer, @Nullable NamespaceFilters namespaceFilters) throws IOException {
+    sessionState.addMapping(resource, mappedResource);
     if (transformer != null) {
       destinationTransformerMap.put(resource, transformer);
     }
     SubscriptionContextBuilder scb = createSubscriptionContextBuilder(resource, selector, QualityOfService.AT_MOST_ONCE, 10240);
-    stateEngine.createSubscription(scb.build());
+    sessionState.createSubscription(scb.build());
   }
 
   @Override
   public String getSessionId() {
-    if (stateEngine.getSession() == null) {
+    if (sessionState.getSession() == null) {
       return "unknown";
     }
-    return stateEngine.getSession().getName();
+    return sessionState.getSession().getName();
   }
 
   public String getName() {
@@ -147,7 +168,7 @@ public class StompProtocol extends ProtocolImpl {
   @Override
   public void sendMessage(@NotNull @NonNull MessageEvent messageEvent) {
     Message message = processTransformer(messageEvent.getDestinationName(), messageEvent.getMessage());
-    stateEngine.sendMessage(messageEvent.getDestinationName(), messageEvent.getSubscription().getContext(), message, messageEvent.getCompletionTask());
+    sessionState.sendMessage(messageEvent.getDestinationName(), messageEvent.getSubscription().getContext(), message, messageEvent.getCompletionTask());
   }
 
   // <editor-fold desc="Read Frame functions">
@@ -177,6 +198,14 @@ public class StompProtocol extends ProtocolImpl {
     // Nothing to do, yet
   }
 
+  @Override
+  public ProtocolInformationDTO getInformation() {
+    StompProtocolInformation information = new StompProtocolInformation();
+    updateInformation(information);
+    information.setSessionInfo(sessionState.getSession().getSessionInformation());
+    return information;
+  }
+
   private boolean processEvent(Packet packet) throws IOException {
     Frame frame = activeFrame;
     activeFrame = null;
@@ -202,17 +231,13 @@ public class StompProtocol extends ProtocolImpl {
     if (activeFrame.isValid()) {
       logger.log(ServerLogMessages.RECEIVE_PACKET, activeFrame);
       selectorTask.cancel(OP_READ); // Disable read until this frame is complete
-      stateEngine.handleFrame(activeFrame, remaining == 0);
+      sessionState.handleFrame(activeFrame, remaining == 0);
     } else {
       logger.log(ServerLogMessages.STOMP_INVALID_FRAME, frame.toString());
-      throw new IOException("Invalid STOMP frame received.. Unable to process" + frame.toString());
+      throw new IOException("Invalid STOMP frame received.. Unable to process" + frame);
     }
     activeFrame = null;
     return remaining != 0;
-  }
-
-  public Logger getLogger() {
-    return logger;
   }
 
 }

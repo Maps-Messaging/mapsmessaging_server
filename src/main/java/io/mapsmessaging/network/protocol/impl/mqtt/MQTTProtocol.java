@@ -1,18 +1,20 @@
 /*
- * Copyright [ 2020 - 2023 ] [Matthew Buckton]
  *
- *  Licensed under the Apache License, Version 2.0 (the "License");
- *  you may not use this file except in compliance with the License.
- *  You may obtain a copy of the License at
+ *  Copyright [ 2020 - 2024 ] Matthew Buckton
+ *  Copyright [ 2024 - 2025 ] MapsMessaging B.V.
+ *
+ *  Licensed under the Apache License, Version 2.0 with the Commons Clause
+ *  (the "License"); you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at:
  *
  *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://commonsclause.com/
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
  */
 
 package io.mapsmessaging.network.protocol.impl.mqtt;
@@ -24,6 +26,9 @@ import io.mapsmessaging.api.SubscriptionContextBuilder;
 import io.mapsmessaging.api.features.QualityOfService;
 import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.api.transformers.Transformer;
+import io.mapsmessaging.dto.rest.config.protocol.impl.MqttConfigDTO;
+import io.mapsmessaging.dto.rest.protocol.ProtocolInformationDTO;
+import io.mapsmessaging.dto.rest.protocol.impl.MqttProtocolInformation;
 import io.mapsmessaging.engine.destination.subscription.SubscriptionContext;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
@@ -34,22 +39,25 @@ import io.mapsmessaging.network.io.Packet;
 import io.mapsmessaging.network.io.ServerPacket;
 import io.mapsmessaging.network.io.impl.SelectorTask;
 import io.mapsmessaging.network.protocol.EndOfBufferException;
-import io.mapsmessaging.network.protocol.ProtocolImpl;
+import io.mapsmessaging.network.protocol.Protocol;
 import io.mapsmessaging.network.protocol.impl.mqtt.listeners.PacketListener;
 import io.mapsmessaging.network.protocol.impl.mqtt.listeners.PacketListenerFactory;
 import io.mapsmessaging.network.protocol.impl.mqtt.packet.*;
+import io.mapsmessaging.selector.operators.ParserExecutor;
+import io.mapsmessaging.utilities.filtering.NamespaceFilters;
 import lombok.Getter;
 import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import javax.security.auth.Subject;
 import java.io.IOException;
 import java.nio.channels.SelectionKey;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 @java.lang.SuppressWarnings("DuplicatedBlocks")
-public class MQTTProtocol extends ProtocolImpl {
+public class MQTTProtocol extends Protocol {
 
   private final Logger logger;
   private final PacketFactory packetFactory;
@@ -60,7 +68,7 @@ public class MQTTProtocol extends ProtocolImpl {
   private final long maxBufferSize;
 
   @Getter
-  private final Map<String, String> topicNameMapping;
+  private final MqttConfigDTO mqttConfig;
 
   private volatile boolean closed;
   @Getter
@@ -68,15 +76,15 @@ public class MQTTProtocol extends ProtocolImpl {
 
 
   public MQTTProtocol(EndPoint endPoint) throws IOException {
-    super(endPoint);
+    super(endPoint, endPoint.getConfig().getProtocolConfig("mqtt"));
     logger = LoggerFactory.getLogger("MQTT 3.1.1 Protocol on " + endPoint.getName());
     ThreadContext.put("endpoint", endPoint.getName());
     ThreadContext.put("protocol", getName());
     ThreadContext.put("version", getVersion());
-    topicNameMapping = new ConcurrentHashMap<>();
     logger.log(ServerLogMessages.MQTT_START);
-    maxBufferSize = endPoint.getConfig().getProperties().getLongProperty("maximumBufferSize", DefaultConstants.MAXIMUM_BUFFER_SIZE);
-    selectorTask = new SelectorTask(this, endPoint.getConfig().getProperties());
+    mqttConfig = (MqttConfigDTO) protocolConfig;
+    maxBufferSize =  mqttConfig.getMaximumBufferSize();
+    selectorTask = new SelectorTask(this, endPoint.getConfig().getEndPointConfig());
     packetListenerFactory = new PacketListenerFactory();
     packetFactory = new PacketFactory(this);
     closed = false;
@@ -100,6 +108,14 @@ public class MQTTProtocol extends ProtocolImpl {
   }
 
   @Override
+  public Subject getSubject() {
+    if(session != null) {
+      return session.getSecurityContext().getSubject();
+    }
+    return new Subject();
+  }
+
+  @Override
   public void connect(@NonNull @NotNull String sessionId, String username, String password) throws IOException {
     Connect connect = new Connect();
     if (username != null) {
@@ -113,10 +129,13 @@ public class MQTTProtocol extends ProtocolImpl {
   }
 
   @Override
-  public void subscribeRemote(@NonNull @NotNull String resource, @NonNull @NotNull String mappedResource, @Nullable Transformer transformer) {
+  public void subscribeRemote(@NonNull @NotNull String resource, @NonNull @NotNull String mappedResource, @Nullable ParserExecutor parser, @Nullable Transformer transformer) {
     topicNameMapping.put(resource, mappedResource);
     if (transformer != null) {
       destinationTransformerMap.put(mappedResource, transformer);
+    }
+    if(parser != null){
+      parserLookup.put(resource, parser);
     }
     Subscribe subscribe = new Subscribe();
     subscribe.setMessageId(packetIdManager.nextPacketIdentifier());
@@ -126,7 +145,7 @@ public class MQTTProtocol extends ProtocolImpl {
   }
 
   @Override
-  public void subscribeLocal(@NonNull @NotNull String resource, @NonNull @NotNull String mappedResource, @Nullable String selector, @Nullable Transformer transformer)
+  public void subscribeLocal(@NonNull @NotNull String resource, @NonNull @NotNull String mappedResource, @Nullable String selector, @Nullable Transformer transformer, @Nullable NamespaceFilters namespaceFilters)
       throws IOException {
     topicNameMapping.put(resource, mappedResource);
     if (transformer != null) {
@@ -186,11 +205,11 @@ public class MQTTProtocol extends ProtocolImpl {
       if (logger.isInfoEnabled()) {
         logger.log(ServerLogMessages.RECEIVE_PACKET, mqtt);
       }
-      receivedMessageAverages.increment();
+      EndPoint.totalReceived.increment();
       PacketListener packetListener = packetListenerFactory.getListener(mqtt.getControlPacketId());
       MQTTPacket response = packetListener.handlePacket(mqtt, session, endPoint, this);
       if (response != null) {
-        sentMessageAverages.increment();
+        EndPoint.totalSent.increment();
         if (logger.isInfoEnabled()) {
           logger.log(ServerLogMessages.RESPONSE_PACKET, response);
         }
@@ -228,7 +247,7 @@ public class MQTTProtocol extends ProtocolImpl {
   }
 
   public String getName() {
-    return "MQTT 3.1.1";
+    return "MQTT";
   }
 
   @Override
@@ -244,7 +263,7 @@ public class MQTTProtocol extends ProtocolImpl {
 
     byte[] payload;
     if (transformation != null) {
-      payload = transformation.outgoing(message);
+      payload = transformation.outgoing(message, messageEvent.getDestinationName());
     } else {
       payload = message.getOpaqueData();
     }
@@ -279,5 +298,14 @@ public class MQTTProtocol extends ProtocolImpl {
 
   public long getMaximumBufferSize() {
     return maxBufferSize;
+  }
+
+
+  @Override
+  public ProtocolInformationDTO getInformation() {
+    MqttProtocolInformation information = new MqttProtocolInformation();
+    updateInformation(information);
+    information.setSessionInfo(session.getSessionInformation());
+    return information;
   }
 }

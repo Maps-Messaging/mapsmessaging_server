@@ -1,0 +1,9 @@
+steps:
+  - label: ":mag: Load JUnit Results"
+    command: |
+      mkdir -p results
+      cp "$RESULT_LOCATION"/*.xml results/
+      buildkite-agent artifact upload "results/*.xml"
+    plugins:
+      junit-annotate#v2.4.0:
+        artifacts: "results/*.xml"

@@ -1,0 +1,19 @@
+steps:
+  - label: ":maven: Build and release to github"
+    command:
+      - export NVD_API_KEY=$(buildkite-agent secret get nvd_api_key)
+      - wget https://github.com/Maps-Messaging/web-admin-client/releases/download/maps_web_client_1.0.1/webAdminClient.tgz
+      - tar -xvzf ./webAdminClient.tgz
+      - if [ ! -d "out" ]; then echo "'out' directory missing after extraction"; exit 1; fi
+      - chmod +x ./packaging/scripts/set_maven_version_for_ml.sh
+      - ./packaging/scripts/set_maven_version_for_ml.sh
+      - chmod +x ./packaging/scripts/prepare_build.sh
+      - ./packaging/scripts/prepare_build.sh
+      - mvn -DskipTests=true clean deploy -Pml -U
+      - chmod +x ./packaging/github_release.sh
+      - ./packaging/github_release.sh $(buildkite-agent secret get GIT_HUB_TOKEN)
+      - chmod +x ./packaging/scripts/*
+      - ./packaging/scripts/build_rpm_package.sh $(buildkite-agent secret get NEXUS_USER) $(buildkite-agent secret get NEXUS_PASSWORD) maps_yum_release
+      - ./packaging/scripts/build_deb_package.sh $(buildkite-agent secret get NEXUS_USER) $(buildkite-agent secret get NEXUS_PASSWORD) maps_apt_release
+    agents:
+      queue: "java_build_queue"

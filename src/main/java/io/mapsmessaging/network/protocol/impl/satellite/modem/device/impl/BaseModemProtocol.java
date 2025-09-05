@@ -1,0 +1,137 @@
+/*
+ *
+ *  Copyright [ 2020 - 2024 ] Matthew Buckton
+ *  Copyright [ 2024 - 2025 ] MapsMessaging B.V.
+ *
+ *  Licensed under the Apache License, Version 2.0 with the Commons Clause
+ *  (the "License"); you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at:
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://commonsclause.com/
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ */
+
+package io.mapsmessaging.network.protocol.impl.satellite.modem.device.impl;
+
+import io.mapsmessaging.network.protocol.impl.satellite.modem.device.Modem;
+import io.mapsmessaging.network.protocol.impl.satellite.modem.device.impl.data.NetworkStatus;
+import io.mapsmessaging.network.protocol.impl.satellite.modem.device.messages.IncomingMessageDetails;
+import io.mapsmessaging.network.protocol.impl.satellite.modem.device.messages.ModemSatelliteMessage;
+import io.mapsmessaging.network.protocol.impl.satellite.modem.device.messages.SendMessageState;
+import lombok.Getter;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.atomic.AtomicLong;
+
+public abstract class BaseModemProtocol {
+
+  private static final String OK = "OK";
+  private static final String ERROR = "ERROR";
+  private static final String EOL = "\r\n";
+
+  @Getter
+  protected final AtomicLong receivedBytes = new AtomicLong(0);
+  @Getter
+  protected final AtomicLong receivedPackets = new AtomicLong(0);
+  @Getter
+  protected final AtomicLong sentBytes = new AtomicLong(0);
+  @Getter
+  protected final AtomicLong sentPackets = new AtomicLong(0);
+
+  protected final Modem modem;
+  protected final boolean isOgx;
+
+  protected BaseModemProtocol(Modem modem, boolean isOgx) {
+    this.modem = modem;
+    this.isOgx = isOgx;
+  }
+
+  public abstract NetworkStatus getCurrentNetworkStatus();
+  /*
+  Handle outgoing messages
+   */
+  public abstract CompletableFuture<List<SendMessageState>> listSentMessages();
+
+  public abstract void sendMessage(ModemSatelliteMessage modemSatelliteMessage);
+
+  public abstract CompletableFuture<Boolean> deleteSentMessages(String msgName);
+
+  /*
+  Handle incoming messages
+   */
+  public abstract CompletableFuture<List<IncomingMessageDetails>> listIncomingMessages();
+
+  public abstract CompletableFuture<ModemSatelliteMessage> getMessage(IncomingMessageDetails details);
+
+  public abstract CompletableFuture<Boolean> deleteIncomingMessage(String name);
+
+  /*
+  Generic helpers
+   */
+  public abstract String getType();
+
+  protected void sendingBytes(int len){
+    sentBytes.addAndGet(len);
+    sentPackets.incrementAndGet();
+  }
+
+  protected List<SendMessageState> parseOutgoingMessageList(String resp) {
+    List<SendMessageState> states = new ArrayList<>();
+    String[] lines = resp.split("\n");
+    for (String line : lines) {
+      line = line.trim();
+      if (!line.isEmpty() &&
+          !line.equalsIgnoreCase(OK) &&
+          !line.equalsIgnoreCase(ERROR) &&
+          !line.equalsIgnoreCase("%MGRL:") &&
+          !line.equalsIgnoreCase("%MOQS:")) {
+        states.add(new SendMessageState(line, isOgx));
+      }
+    }
+    return states;
+  }
+
+  protected List<IncomingMessageDetails> parseIncomingListResponse(String resp) {
+    List<IncomingMessageDetails> response = new ArrayList<>();
+    String[] lines = resp.split(EOL);
+    for (String line : lines) {
+      line = line.trim();
+      if (!line.isEmpty() &&
+          !line.equalsIgnoreCase(OK) &&
+          !line.equalsIgnoreCase(ERROR)) {
+        if (line.toLowerCase().startsWith("%mgfn:") || line.toLowerCase().startsWith("%mtqs:")) {
+          line = line.substring(6).trim(); // same size
+        }
+        if (!line.isEmpty()) {
+          response.add(new IncomingMessageDetails(line, isOgx));
+        }
+      }
+    }
+    return response;
+  }
+
+  protected ModemSatelliteMessage parseIncomingMessageResponse(String resp) {
+    String[] lines = resp.split(EOL);
+    for (String line : lines) {
+      line = line.trim();
+      if (!line.isEmpty() &&
+          !line.equalsIgnoreCase(OK) &&
+          !line.equalsIgnoreCase(ERROR)) {
+        ModemSatelliteMessage msg = new ModemSatelliteMessage(line, isOgx);
+        this.receivedBytes.addAndGet(msg.getPayload().length);
+        this.receivedPackets.incrementAndGet();
+        return msg;
+      }
+    }
+    return null;
+  }
+
+}

@@ -1,19 +1,20 @@
 /*
- *    Copyright [ 2020 - 2022 ] [Matthew Buckton]
  *
- *    Licensed under the Apache License, Version 2.0 (the "License");
- *    you may not use this file except in compliance with the License.
- *    You may obtain a copy of the License at
+ *  Copyright [ 2020 - 2024 ] Matthew Buckton
+ *  Copyright [ 2024 - 2025 ] MapsMessaging B.V.
  *
- *        http://www.apache.org/licenses/LICENSE-2.0
+ *  Licensed under the Apache License, Version 2.0 with the Commons Clause
+ *  (the "License"); you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at:
  *
- *    Unless required by applicable law or agreed to in writing, software
- *    distributed under the License is distributed on an "AS IS" BASIS,
- *    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *    See the License for the specific language governing permissions and
- *    limitations under the License.
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://commonsclause.com/
  *
- *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
  */
 
 package io.mapsmessaging.api;
@@ -22,10 +23,12 @@ import io.mapsmessaging.api.features.ClientAcknowledgement;
 import io.mapsmessaging.api.features.DestinationType;
 import io.mapsmessaging.api.features.QualityOfService;
 import io.mapsmessaging.api.message.Message;
+import io.mapsmessaging.engine.destination.subscription.SubscriptionContext;
 import io.mapsmessaging.engine.destination.subscription.SubscriptionController;
 import io.mapsmessaging.engine.session.ProtocolMessageListener;
 import io.mapsmessaging.engine.session.SessionManagerTest;
 import io.mapsmessaging.test.WaitForState;
+import java.util.Map;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.TimeUnit;
@@ -84,7 +87,7 @@ public class SessionTest extends MessageAPITest implements ProtocolMessageListen
 
   @Test
   @DisplayName("Simple session close on duplication tests")
-  public void sessionCloseOnDuplicateTest(TestInfo testInfo) throws Exception {
+  void sessionCloseOnDuplicateTest(TestInfo testInfo) throws Exception {
     Session session1 = createSession(testInfo.getTestMethod().get().getName(), 5, 2, false, this);
     Assertions.assertTrue(hasSessions());
     Assertions.assertFalse(session1.isClosed());
@@ -97,9 +100,10 @@ public class SessionTest extends MessageAPITest implements ProtocolMessageListen
 
   @Test
   @DisplayName("Simple session expiry tests")
-  public void sessionExpiryTest(TestInfo testInfo) throws Exception {
-    Session session = createSession(testInfo.getTestMethod().get().getName(), 5, 2, true, this);
-
+  void sessionExpiryTest(TestInfo testInfo) throws Exception {
+    Session session = createSession(testInfo.getTestMethod().get().getName(), 5, 2, true, this, true);
+    close(session);
+    session = createSession(testInfo.getTestMethod().get().getName(), 5, 2, true, this);
     Assertions.assertTrue(hasSessions());
 
     SubscriptionContextBuilder subContectBuilder = new SubscriptionContextBuilder("topic1", ClientAcknowledgement.AUTO);
@@ -108,18 +112,21 @@ public class SessionTest extends MessageAPITest implements ProtocolMessageListen
 
     close(session);
     Assertions.assertFalse(hasSessions());
-    Assertions.assertTrue(SessionManagerTest.getInstance().hasIdleSessions());
+    int size = SessionManagerTest.getInstance().getIdleSessions().size();
+    Assertions.assertTrue(size>0);
     SubscriptionController subscriptionController = SessionManagerTest.getInstance().getIdleSubscriptions(testInfo.getTestMethod().get().getName());
     Assertions.assertNotNull(subscriptionController);
-    Assertions.assertEquals(subscriptionController.getSubscriptions().size(), 1);
-    Assertions.assertNotNull(subscriptionController.getSubscriptions().get("topic1"));
+    Map<String, SubscriptionContext> map = subscriptionController.getSubscriptions();
+    Assertions.assertEquals(map.size(), 1);
+    SubscriptionContext context = map.get("$normaltopic1");
+    Assertions.assertNotNull(context);
     TimeUnit.SECONDS.sleep(3);
-    Assertions.assertFalse(SessionManagerTest.getInstance().hasIdleSessions());
+    Assertions.assertTrue(SessionManagerTest.getInstance().getIdleSessions().size() < size);
   }
 
   @Test
   @DisplayName("Simple session keep alive state")
-  public void sessionKeepAlive(TestInfo testInfo) throws Exception {
+  void sessionKeepAlive(TestInfo testInfo) throws Exception {
     receivedKeepAlive.set(0);
     Session session = createSession(testInfo.getTestMethod().get().getName(), 5, 12, true, this);
     Assertions.assertTrue(hasSessions());

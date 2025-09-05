@@ -1,19 +1,20 @@
 /*
  *
- *   Copyright [ 2020 - 2022 ] [Matthew Buckton]
+ *  Copyright [ 2020 - 2024 ] Matthew Buckton
+ *  Copyright [ 2024 - 2025 ] MapsMessaging B.V.
  *
- *   Licensed under the Apache License, Version 2.0 (the "License");
- *   you may not use this file except in compliance with the License.
- *   You may obtain a copy of the License at
+ *  Licensed under the Apache License, Version 2.0 with the Commons Clause
+ *  (the "License"); you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at:
  *
- *       http://www.apache.org/licenses/LICENSE-2.0
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://commonsclause.com/
  *
- *   Unless required by applicable law or agreed to in writing, software
- *   distributed under the License is distributed on an "AS IS" BASIS,
- *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *   See the License for the specific language governing permissions and
- *   limitations under the License.
- *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
  */
 
 package io.mapsmessaging.test;
@@ -28,9 +29,12 @@ import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Random;
 import java.util.StringTokenizer;
 import java.util.concurrent.atomic.AtomicInteger;
+import lombok.Getter;
 import org.junit.jupiter.api.Assertions;
 
 public class SimpleBufferBasedTest extends BaseTestConfig {
@@ -41,22 +45,24 @@ public class SimpleBufferBasedTest extends BaseTestConfig {
   public void frameCharacter(String filename, String host, int port, int[] frameCharacter, int totalFrames) throws IOException, URISyntaxException {
     try (TestClient testClient = new TestClient(host, port, 0, frameCharacter[0])) {
       delay(1000); // Pause for a second while things start up
-      byte[] source = parseToBytes(filename);
+      List<byte[]> list = parseToBytes(filename);
       OutputStream outputStream = testClient.getOutputStream();
-      for (byte b : source) {
-        boolean end = false;
-        for (int i : frameCharacter) {
-          if (b == i) {
-            end = true;
+      for(byte[] source: list) {
+        for (byte b : source) {
+          boolean end = false;
+          for (int i : frameCharacter) {
+            if (b == i) {
+              end = true;
+            }
           }
-        }
-        if (end) {
-          outputStream.flush(); // Flush the buffer
-          delay(10); // Wait for server to process
-          outputStream.write(b); // send the frame byte
-          outputStream.flush();
-        } else {
-          outputStream.write(b);
+          if (end) {
+            outputStream.flush(); // Flush the buffer
+            delay(10); // Wait for server to process
+            outputStream.write(b); // send the frame byte
+            outputStream.flush();
+          } else {
+            outputStream.write(b);
+          }
         }
       }
       outputStream.flush();
@@ -69,7 +75,7 @@ public class SimpleBufferBasedTest extends BaseTestConfig {
   }
 
   protected void simpleByteWrite(String filename, int frameChar, int size, String host, int port, int totalFrames, byte[] endFrame) throws IOException, URISyntaxException {
-    simpleByteWrite(filename, frameChar, size, host, port, totalFrames, endFrame, false);
+    simpleByteWrite(filename, frameChar, size, host, port, totalFrames, endFrame, size == 1);
   }
 
   protected void simpleByteWrite(String filename, int frameChar, int size, String host, int port, int totalFrames, byte[] endFrame, boolean fast) throws IOException, URISyntaxException {
@@ -77,20 +83,29 @@ public class SimpleBufferBasedTest extends BaseTestConfig {
       Random rdm = new Random();
       delay(1000); // Pause for a second while things start up
       byte[] write = new byte[size];
-      byte[] source = parseToBytes(filename);
-      int idx = 0;
+      List<byte[]> list = parseToBytes(filename);
       OutputStream outputStream = testClient.getOutputStream();
-      while (idx < source.length) {
-        int x = 0;
-        while (x < write.length && idx < source.length) {
-          write[x] = source[idx];
-          idx++;
-          x++;
+      for (byte[] source: list) {
+        int idx = 0;
+        while (idx < source.length) {
+          int x = 0;
+          while (x < write.length && idx < source.length) {
+            write[x] = source[idx];
+            idx++;
+            x++;
+          }
+
+          outputStream.write(write, 0, x);
+          outputStream.flush();
+          if (!fast) {
+            long delay = Math.abs(rdm.nextInt(2));
+            delay(delay);
+          }
         }
-        outputStream.write(write, 0, x);
-        outputStream.flush();
-        if(!fast) {
-          delay(Math.abs(rdm.nextInt(5)));
+        try {
+          Thread.sleep(1000);
+        } catch (InterruptedException e) {
+          Thread.currentThread().interrupt();
         }
       }
       if(endFrame != null) {
@@ -108,21 +123,28 @@ public class SimpleBufferBasedTest extends BaseTestConfig {
   protected void slowSubscriberTest( String filename, String host, int port, int totalFrames, int frameCharacter, int delay, byte[] endFrame )throws IOException, URISyntaxException {
     try (TestClient testClient = new TestClient(host, port, delay, frameCharacter)) {
         delay(1000); // Pause for a second while things start up
-        byte[] source = parseToBytes(filename);
+        List<byte[]> list = parseToBytes(filename);
         byte[] write = new byte[1024];
-        int idx = 0;
         OutputStream outputStream = testClient.getOutputStream();
-        while (idx < source.length) {
-          int x = 0;
-          while (x < write.length && idx < source.length) {
-            write[x] = source[idx];
-            idx++;
-            x++;
+        for(byte[] source: list) {
+          int idx = 0;
+          while (idx < source.length) {
+            int x = 0;
+            while (x < write.length && idx < source.length) {
+              write[x] = source[idx];
+              idx++;
+              x++;
+            }
+            outputStream.write(write, 0, x);
+            outputStream.flush();
           }
-          outputStream.write(write, 0, x);
-          outputStream.flush();
+          try {
+            Thread.sleep(1000);
+          } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+          }
         }
-        if(endFrame != null){
+        if (endFrame != null) {
           delay(END_FRAME_DELAY);
           outputStream.write(endFrame);
           outputStream.flush();
@@ -150,28 +172,35 @@ public class SimpleBufferBasedTest extends BaseTestConfig {
     return new Socket(host, port);
   }
 
-  private byte[] parseToBytes(String filename) throws IOException, URISyntaxException {
+  private List<byte[]> parseToBytes(String filename) throws IOException, URISyntaxException {
     URI filePath = getClass().getResource(filename).toURI();
     Path path = Paths.get(filePath);
     byte[] buffer = Files.readAllBytes(path);
     String input = new String(buffer);
-    StringTokenizer st = new StringTokenizer(input, ",");
+    String[] lines = input.split("\n");
+    List<byte[]> bytes = new ArrayList<>();
+    for (String line : lines) {
+      line = line.trim();
+      StringTokenizer st = new StringTokenizer(line, ",");
 
-    ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
-    while(st.hasMoreElements()) {
-      String nextChar = st.nextElement().toString().trim();
-      if(nextChar.length()>0) {
-        int val = Integer.parseInt(nextChar, 16);
-        char tchar = (char) (val & 0xff);
-        byteArrayOutputStream.write(tchar);
+      ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+      while (st.hasMoreElements()) {
+        String nextChar = st.nextElement().toString().trim();
+        if (!nextChar.isEmpty()) {
+          int val = Integer.parseInt(nextChar, 16);
+          char tchar = (char) (val & 0xff);
+          byteArrayOutputStream.write(tchar);
+        }
       }
+      bytes.add(byteArrayOutputStream.toByteArray());
     }
-    return byteArrayOutputStream.toByteArray();
+    return bytes;
   }
 
   private class TestClient implements AutoCloseable {
     final Socket connection;
     final Thread readThread;
+    @Getter
     final OutputStream outputStream;
     final InputStream inputStream;
     final int frameCharacter;
@@ -238,11 +267,10 @@ public class SimpleBufferBasedTest extends BaseTestConfig {
         System.err.println(sb.toString());
       }
     }
-    public OutputStream getOutputStream(){
-      return outputStream;
-    }
 
     public void close() throws IOException {
+      outputStream.close();
+      inputStream.close();
       connection.close();
     }
 

@@ -1,32 +1,34 @@
 /*
- * Copyright [ 2020 - 2024 ] [Matthew Buckton]
  *
- *  Licensed under the Apache License, Version 2.0 (the "License");
- *  you may not use this file except in compliance with the License.
- *  You may obtain a copy of the License at
+ *  Copyright [ 2020 - 2024 ] Matthew Buckton
+ *  Copyright [ 2024 - 2025 ] MapsMessaging B.V.
+ *
+ *  Licensed under the Apache License, Version 2.0 with the Commons Clause
+ *  (the "License"); you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at:
  *
  *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://commonsclause.com/
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
  */
 
 package io.mapsmessaging.network.auth;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectWriter;
-import com.mashape.unirest.http.HttpResponse;
-import com.mashape.unirest.http.JsonNode;
-import com.mashape.unirest.http.Unirest;
-import com.mashape.unirest.http.exceptions.UnirestException;
-import io.mapsmessaging.configuration.ConfigurationProperties;
 import lombok.Getter;
 
 import java.io.IOException;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.util.Map;
 
 public class Auth0TokenGenerator implements TokenGenerator {
 
@@ -45,7 +47,7 @@ public class Auth0TokenGenerator implements TokenGenerator {
   }
 
   @Override
-  public TokenGenerator getInstance(ConfigurationProperties properties) {
+  public TokenGenerator getInstance(Map<String, Object> properties) {
     return new Auth0TokenGenerator(properties);
   }
 
@@ -54,38 +56,49 @@ public class Auth0TokenGenerator implements TokenGenerator {
     try {
       ObjectWriter ow = new ObjectMapper().writer().withDefaultPrettyPrinter();
       String json = ow.writeValueAsString(body);
-      HttpResponse<JsonNode> response = Unirest.post("https://" + domain + "/oauth/token")
-          .header("content-type", "application/json")
-          .body(json)
-          .asJson();
-      return response.getBody().getObject().getString("access_token");
-    } catch (UnirestException e) {
-      throw new IOException(e);
+
+      HttpResponse<String> response;
+      HttpClient client = HttpClient.newHttpClient();
+      HttpRequest request = HttpRequest.newBuilder()
+            .uri(URI.create("https://" + domain + "/oauth/token"))
+            .header("Content-Type", "application/json")
+            .POST(HttpRequest.BodyPublishers.ofString(json))
+            .build();
+
+      response = client.send(request, HttpResponse.BodyHandlers.ofString());
+
+
+      if (response.statusCode() != 200) {
+        throw new IOException("Failed to fetch token: " + response.body());
+      }
+
+      ObjectMapper objectMapper = new ObjectMapper();
+      return objectMapper.readTree(response.body()).get("access_token").asText();
+
+    } catch (InterruptedException e) {
+      Thread.currentThread().interrupt();
+      throw new IOException("Request interrupted", e);
     }
   }
 
-  private Auth0TokenGenerator(ConfigurationProperties properties) {
-    domain = properties.getProperty("domain").trim();
+  private Auth0TokenGenerator(Map<String, Object> properties) {
+    domain = ((String) properties.get("domain")).trim();
     body = new Auth0TokenBody(properties);
   }
 
+  @Getter
   private static final class Auth0TokenBody {
 
-    @Getter
     private final String clientId;
-    @Getter
     private final String clientSecret;
-    @Getter
     private final String audience;
-    @Getter
     private final String grantType;
 
-    public Auth0TokenBody(ConfigurationProperties properties) {
-      clientId = properties.getProperty("client_id").trim();
-      clientSecret = properties.getProperty("client_secret").trim();
-      audience = "https://" + properties.getProperty("domain").trim() + "/api/v2/";
-      grantType = properties.getProperty("grant_type").trim();
+    public Auth0TokenBody(Map<String, Object> properties) {
+      clientId = ((String) properties.get("client_id")).trim();
+      clientSecret = ((String) properties.get("client_secret")).trim();
+      audience = "https://" + ((String) properties.get("domain")).trim() + "/api/v2/";
+      grantType = ((String) properties.get("grant_type")).trim();
     }
   }
-
 }

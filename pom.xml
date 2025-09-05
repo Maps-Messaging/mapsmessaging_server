@@ -1,19 +1,21 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  ~ Copyright [ 2020 - 2024 ] [Matthew Buckton]
   ~
-  ~  Licensed under the Apache License, Version 2.0 (the "License");
-  ~  you may not use this file except in compliance with the License.
-  ~  You may obtain a copy of the License at
+  ~  Copyright [ 2020 - 2024 ] Matthew Buckton
+  ~  Copyright [ 2024 - 2025 ] MapsMessaging B.V.
+  ~
+  ~  Licensed under the Apache License, Version 2.0 with the Commons Clause
+  ~  (the "License"); you may not use this file except in compliance with the License.
+  ~  You may obtain a copy of the License at:
   ~
   ~      http://www.apache.org/licenses/LICENSE-2.0
+  ~      https://commonsclause.com/
   ~
-  ~ Unless required by applicable law or agreed to in writing, software
-  ~ distributed under the License is distributed on an "AS IS" BASIS,
-  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-  ~ See the License for the specific language governing permissions and
-  ~ limitations under the License.
-  ~
+  ~  Unless required by applicable law or agreed to in writing, software
+  ~  distributed under the License is distributed on an "AS IS" BASIS,
+  ~  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~  See the License for the specific language governing permissions and
+  ~  limitations under the License.
   -->
 
 <project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
@@ -21,9 +23,9 @@
   xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 
   <groupId>io.mapsmessaging</groupId>
-  <artifactId>message_daemon</artifactId>
+  <artifactId>maps</artifactId>
   <modelVersion>4.0.0</modelVersion>
-  <version>3.3.6</version>
+  <version>3.3.7-SNAPSHOT</version>
   <packaging>jar</packaging>
 
   <name>Maps Messaging Server</name>
@@ -32,33 +34,115 @@
 
   <developers>
     <developer>
-      <id>mbuckton</id>
-      <name>Matthew Buckton</name>
-      <organization>Maps Messaging</organization>
-      <organizationUrl>http://mapsmessaging.io/</organizationUrl>
+      <id>mapsmessaging</id>
+      <name>MapsMessaging B.V.</name>
+      <organization>MapsMessaging B.V.</organization>
+      <organizationUrl>https://mapsmessaging.io/</organizationUrl>
       <roles>
-        <role>founder</role>
+        <role>developer</role>
+        <role>maintainer</role>
       </roles>
-      <timezone>Australia/Sydney</timezone>
+      <timezone>Europe/Amsterdam</timezone>
+      <properties>
+        <location>Eindhoven, Netherlands</location>
+      </properties>
     </developer>
   </developers>
 
   <licenses>
     <license>
-      <name>Mozilla Public License Version 2.0</name>
-      <url>https://www.mozilla.org/en-US/MPL/2.0/</url>
+      <name>Apache License, Version 2.0 with Commons Clause</name>
+      <url>https://www.apache.org/licenses/LICENSE-2.0</url>
       <distribution>repo</distribution>
     </license>
     <license>
-      <name>CommonsClause</name>
+      <name>Commons Clause</name>
       <url>https://commonsclause.com/</url>
       <distribution>repo</distribution>
     </license>
   </licenses>
 
+  <distributionManagement>
+    <snapshotRepository>
+      <id>maps_snapshots</id>
+      <name>maps_snapshot_repository</name>
+      <url>https://repository.mapsmessaging.io/repository/maps_snapshots/</url>
+    </snapshotRepository>
+    <repository>
+      <id>ossrh</id>
+      <url>https://s01.oss.sonatype.org/service/local/staging/deploy/maven2/</url>
+    </repository>
+  </distributionManagement>
+
   <scm>
     <url>https://github.com/Maps-Messaging/mapsmessaging_server</url>
   </scm>
+
+
+  <properties>
+    <nvd.api.key>${env.NVD_API_KEY}</nvd.api.key>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+
+    <logback.version>1.5.18</logback.version>
+    <pi4j.version>2.8.0</pi4j.version>
+    <jersey.version>3.1.11</jersey.version>
+    <swagger-ui.version>3.17.0</swagger-ui.version>
+
+    <runSuite>**/*Suite.class</runSuite>
+
+    <sonar.sources>src/main</sonar.sources>
+    <sonar.test.exclusions>
+      **/*Test.*,
+      **/*IT.*,
+      **/apache_pulsar/*,
+      **.*JMH.*
+    </sonar.test.exclusions>
+
+    <sonar.exclusions>
+      **/META-INF/services/**,
+      **/html/swagger-ui/**
+    </sonar.exclusions>
+
+
+    <sonar.jacoco.reportPaths>target/jacoco.exec</sonar.jacoco.reportPaths>
+    <sonar.coverage.jacoco.xmlReportPaths>target/site/jacoco/jacoco.xml</sonar.coverage.jacoco.xmlReportPaths>
+
+    <sonar.issue.ignore.multicriteria>IgnoreVar</sonar.issue.ignore.multicriteria>
+    <sonar.issue.ignore.multicriteria.IgnoreVar.ruleKey>java:S6212</sonar.issue.ignore.multicriteria.IgnoreVar.ruleKey>
+    <sonar.issue.ignore.multicriteria.IgnoreVar.resourceKey>
+      **/*.java
+    </sonar.issue.ignore.multicriteria.IgnoreVar.resourceKey>
+
+    <sonar.java.coveragePlugin>jacoco</sonar.java.coveragePlugin>
+    <sonar.dynamicAnalysis>reuseReports</sonar.dynamicAnalysis>
+    <sonar.language>java</sonar.language>
+
+    <sonar.host.url>https://sonarcloud.io</sonar.host.url>
+    <sonar.organization>maps-messaging</sonar.organization>
+    <sonar.projectKey>Maps-Messaging_mapsmessaging_server</sonar.projectKey>
+
+    <sonar.c.file.suffixes>-</sonar.c.file.suffixes>
+    <sonar.cpp.file.suffixes>-</sonar.cpp.file.suffixes>
+    <sonar.objc.file.suffixes>-</sonar.objc.file.suffixes>
+    <sonar.branch.name>development</sonar.branch.name>
+    <branchName>development</branchName>
+    <java.version>21</java.version>
+
+    <!-- Base -->
+    <maps.logging.version>2.1.1-SNAPSHOT</maps.logging.version>
+    <maps.jms_selector.version>2.1.0-SNAPSHOT</maps.jms_selector.version>
+    <maps.nolc.version>1.2.1-SNAPSHOT</maps.nolc.version>
+
+    <!-- first level dependencies -->
+    <maps.nbts.version>2.2.1-SNAPSHOT</maps.nbts.version>
+    <maps.schema.version>2.2.1-SNAPSHOT</maps.schema.version>
+    <maps.config.version>1.1.1-SNAPSHOT</maps.config.version>
+
+    <!-- Second level dependencies -->
+    <maps.storage.version>2.5.1-SNAPSHOT</maps.storage.version>
+    <maps.device.version>2.0.1-SNAPSHOT</maps.device.version>
+    <maps.auth.version>2.0.1-SNAPSHOT</maps.auth.version>
+  </properties>
 
   <!--
   This section simply detects which OS is running and specifies the script extension
@@ -73,7 +157,7 @@
           <plugin>
             <groupId>org.graalvm.buildtools</groupId>
             <artifactId>native-maven-plugin</artifactId>
-            <version>0.10.1</version>
+            <version>0.11.0</version>
             <extensions>true</extensions>
             <executions>
               <execution>
@@ -117,6 +201,15 @@
           </plugin>
         </plugins>
       </build>
+      <dependencies>
+        <dependency>
+          <groupId>org.graalvm.buildtools</groupId>
+          <artifactId>graalvm-reachability-metadata</artifactId>
+          <version>0.11.0</version>
+          <classifier>repository</classifier>
+          <type>zip</type>
+        </dependency>
+      </dependencies>
     </profile>
     <profile>
       <id>Windows</id>
@@ -146,7 +239,7 @@
         <plugin>
         <groupId>org.codehaus.mojo</groupId>
         <artifactId>exec-maven-plugin</artifactId>
-        <version>3.1.1</version>
+        <version>3.5.1</version>
           <executions>
             <execution>
               <id>config-self-signed-certs</id>
@@ -167,150 +260,51 @@
       </plugins>
       </build>
     </profile>
+
     <profile>
-      <id>snapshot</id>
+      <id>ml</id>
       <properties>
-        <branchName>development</branchName>
+        <!-- Base -->
+        <maps.jms_selector.version>ml-2.1.0-SNAPSHOT</maps.jms_selector.version>
       </properties>
-      <dependencies>
-        <dependency>
-          <groupId>io.mapsmessaging</groupId>
-          <artifactId>authentication_library</artifactId>
-          <version>1.0.6-SNAPSHOT</version>
-        </dependency>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.codehaus.mojo</groupId>
+            <artifactId>build-helper-maven-plugin</artifactId>
+            <version>3.6.1</version>
+            <executions>
+              <execution>
+                <id>add-source</id>
+                <phase>generate-sources</phase>
+                <goals>
+                  <goal>add-source</goal>
+                </goals>
+                <configuration>
+                  <sources>
+                    <source>src/main/java-ml</source>
+                  </sources>
+                </configuration>
+              </execution>
 
-        <dependency>
-          <groupId>io.mapsmessaging</groupId>
-          <artifactId>simple_logging</artifactId>
-          <version>2.0.13-SNAPSHOT</version>
-        </dependency>
 
-        <!-- JMS Selector logic module -->
-        <dependency>
-          <groupId>io.mapsmessaging</groupId>
-          <artifactId>jms_selector_parser</artifactId>
-          <version>1.1.16-SNAPSHOT</version>
-        </dependency>
-
-        <!-- Naturally order long collection -->
-        <dependency>
-          <groupId>io.mapsmessaging</groupId>
-          <artifactId>naturally_ordered_long_collections</artifactId>
-          <version>1.1.10-SNAPSHOT</version>
-        </dependency>
-
-        <!-- Non Blocking Task Queue module -->
-        <dependency>
-          <groupId>io.mapsmessaging</groupId>
-          <artifactId>non_block_task_scheduler</artifactId>
-          <version>2.1.10-SNAPSHOT</version>
-        </dependency>
-
-        <dependency>
-          <groupId>io.mapsmessaging</groupId>
-          <artifactId>configuration_library</artifactId>
-          <version>1.0.1-SNAPSHOT</version>
-        </dependency>
-
-        <dependency>
-          <groupId>io.mapsmessaging</groupId>
-          <artifactId>dynamic_storage</artifactId>
-          <version>2.4.13-SNAPSHOT</version>
-        </dependency>
-
-        <dependency>
-          <groupId>io.mapsmessaging</groupId>
-          <artifactId>schemas</artifactId>
-          <version>2.1.5-SNAPSHOT</version>
-        </dependency>
-
-        <dependency>
-          <groupId>io.mapsmessaging</groupId>
-          <artifactId>device_library</artifactId>
-          <version>1.0.9-SNAPSHOT</version>
-        </dependency>
-        <dependency>
-          <groupId>org.graalvm.buildtools</groupId>
-          <artifactId>graalvm-reachability-metadata</artifactId>
-          <version>0.9.28</version>
-          <classifier>repository</classifier>
-          <type>zip</type>
-        </dependency>
-      </dependencies>
-      <repositories>
-        <repository>
-          <id>maps_snapshots</id>
-          <name>maps_snapshot_repository</name>
-          <url>https://repository.mapsmessaging.io:8081/repository/maps_snapshots/</url>
-          <snapshots>
-            <enabled>true</enabled>
-          </snapshots>
-        </repository>
-      </repositories>
-    </profile>
-    <profile>
-      <id>release</id>
-      <properties>
-        <branchName>main</branchName>
-      </properties>
-
-      <dependencies>
-        <dependency>
-          <groupId>io.mapsmessaging</groupId>
-          <artifactId>authentication_library</artifactId>
-          <version>1.0.5</version>
-        </dependency>
-
-        <dependency>
-          <groupId>io.mapsmessaging</groupId>
-          <artifactId>simple_logging</artifactId>
-          <version>2.0.12</version>
-        </dependency>
-
-        <!-- JMS Selector logic module -->
-        <dependency>
-          <groupId>io.mapsmessaging</groupId>
-          <artifactId>jms_selector_parser</artifactId>
-          <version>1.1.15</version>
-        </dependency>
-        <dependency>
-          <groupId>io.mapsmessaging</groupId>
-          <artifactId>configuration_library</artifactId>
-          <version>1.0.0</version>
-        </dependency>
-        <!-- Naturally order long collection -->
-        <dependency>
-          <groupId>io.mapsmessaging</groupId>
-          <artifactId>naturally_ordered_long_collections</artifactId>
-          <version>1.1.9</version>
-        </dependency>
-
-        <!-- Non Blocking Task Queue module -->
-        <dependency>
-          <groupId>io.mapsmessaging</groupId>
-          <artifactId>non_block_task_scheduler</artifactId>
-          <version>2.1.9</version>
-        </dependency>
-
-        <dependency>
-          <groupId>io.mapsmessaging</groupId>
-          <artifactId>dynamic_storage</artifactId>
-          <version>2.4.12</version>
-        </dependency>
-
-        <dependency>
-          <groupId>io.mapsmessaging</groupId>
-          <artifactId>schemas</artifactId>
-          <version>2.1.4</version>
-        </dependency>
-
-        <dependency>
-          <groupId>io.mapsmessaging</groupId>
-          <artifactId>device_library</artifactId>
-          <version>1.0.8</version>
-        </dependency>
-      </dependencies>
-
+              <execution>
+                <id>add-test-source</id>
+                <phase>generate-test-sources</phase>
+                <goals>
+                  <goal>add-test-source</goal>
+                </goals>
+                <configuration>
+                  <sources>
+                    <!-- Add the test ML-specific sources -->
+                    <source>src/test/java-ml</source>
+                  </sources>
+                </configuration>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
+      </build>
     </profile>
   </profiles>
 
@@ -320,11 +314,11 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-compiler-plugin</artifactId>
-        <version>3.12.1</version>
+        <version>3.14.0</version>
         <configuration>
           <encoding>UTF-8</encoding>
-          <source>11</source>
-          <target>11</target>
+          <source>${java.version}</source>
+          <target>${java.version}</target>
           <compilerArgs>
             <arg>-h</arg>
             <arg>src/main/cpp/</arg>
@@ -332,11 +326,26 @@
         </configuration>
       </plugin>
 
+      <!-- sBOM  generator -->
+      <plugin>
+        <groupId>org.cyclonedx</groupId>
+        <artifactId>cyclonedx-maven-plugin</artifactId>
+        <version>2.9.1</version>
+        <executions>
+          <execution>
+            <phase>package</phase>
+            <goals>
+              <goal>makeAggregateBom</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+
       <!-- Setup code coverage by jacoco for our tests -->
       <plugin>
         <groupId>org.jacoco</groupId>
         <artifactId>jacoco-maven-plugin</artifactId>
-        <version>0.8.11</version>
+        <version>0.8.13</version>
         <configuration>
           <excludes>
             <!-- test code, lets not track the testing -->
@@ -371,7 +380,7 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-surefire-plugin</artifactId>
-        <version>3.2.5</version>
+        <version>3.5.3</version>
         <configuration>
           <argLine>
             @{argLine} -DMAPS_HOME=${project.build.directory} -Dfile.encoding=UTF-8 -Dpaho.interop.directory=${basedir}/paho.mqtt.testing/interoperability -Djavax.net.ssl.trustStore=${project.basedir}/my-truststore.jks -Djavax.net.ssl.keyStore=${project.basedir}/my-keystore.jks -Djavax.net.ssl.keyStorePassword=password -Djavax.net.ssl.trustStorePassword=password
@@ -383,13 +392,14 @@
         </configuration>
       </plugin>
 
-      <!-- Now build the install gz, zip files with everything in it -->
+      <!-- pom.xml: single assembly execution for dist archives -->
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-assembly-plugin</artifactId>
-        <version>3.6.0</version>
+        <version>3.7.1</version>
         <executions>
           <execution>
+            <id>dist</id>
             <phase>install</phase>
             <goals>
               <goal>single</goal>
@@ -398,43 +408,7 @@
               <descriptors>
                 <descriptor>src/main/assemble/scripts.xml</descriptor>
               </descriptors>
-              <archive>
-                <manifest>
-                  <mainClass>
-                    io.mapsmessaging.MessageDaemon
-                  </mainClass>
-                </manifest>
-              </archive>
-              <descriptorRefs>
-                <descriptorRef>jar-with-dependencies</descriptorRef>
-              </descriptorRefs>
-            </configuration>
-          </execution>
-        </executions>
-      </plugin>
-
-      <!-- Now build a single jar with everything in it -->
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-assembly-plugin</artifactId>
-        <version>3.6.0</version>
-        <executions>
-          <execution>
-            <phase>install</phase>
-            <goals>
-              <goal>single</goal>
-            </goals>
-            <configuration>
-              <archive>
-                <manifest>
-                  <mainClass>
-                    io.mapsmessaging.MessageDaemon
-                  </mainClass>
-                </manifest>
-              </archive>
-              <descriptorRefs>
-                <descriptorRef>jar-with-dependencies</descriptorRef>
-              </descriptorRefs>
+              <finalName>${project.artifactId}-${project.version}</finalName>
             </configuration>
           </execution>
         </executions>
@@ -444,7 +418,7 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-source-plugin</artifactId>
-        <version>3.3.0</version>
+        <version>3.3.1</version>
         <executions>
           <execution>
             <id>attach-sources</id>
@@ -455,33 +429,32 @@
         </executions>
       </plugin>
 
-      <!-- JavaDoc -->
+      <!-- POM: maven-javadoc-plugin — set output to match your assembly fileSet -->
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-javadoc-plugin</artifactId>
-        <version>3.6.3</version>
+        <version>3.11.3</version>
         <executions>
           <execution>
             <id>attach-javadocs</id>
-            <goals>
-              <goal>jar</goal>
-            </goals>
+            <goals><goal>jar</goal></goals>
           </execution>
         </executions>
         <configuration>
+          <outputDirectory>${project.build.directory}/apidocs</outputDirectory>
           <javadocExecutable>${java.home}/bin/javadoc</javadocExecutable>
-          <reportOutputDirectory>${project.build.directory}/site/docs</reportOutputDirectory>
           <show>public</show>
           <encoding>UTF-8</encoding>
           <charset>UTF-8</charset>
         </configuration>
       </plugin>
 
+
       <!-- Create a directory with all the dependencies in and move it into the lib directory -->
       <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-dependency-plugin</artifactId>
-          <version>3.6.1</version>
+          <version>3.8.1</version>
           <executions>
               <execution>
                   <phase>package</phase>
@@ -502,7 +475,7 @@
       <plugin>
         <groupId>org.codehaus.mojo</groupId>
         <artifactId>exec-maven-plugin</artifactId>
-        <version>3.1.1</version>
+        <version>3.5.1</version>
         <executions>
           <execution>
             <id>self-signed-certs</id>
@@ -547,6 +520,26 @@
           </replacements>
         </configuration>
       </plugin>
+      <plugin>
+        <groupId>org.owasp</groupId>
+        <artifactId>dependency-check-maven</artifactId>
+        <version>12.1.3</version>
+        <configuration>
+          <nvdApiKey>${nvd.api.key}</nvdApiKey>
+          <failBuildOnCVSS>10</failBuildOnCVSS>
+          <failOnError>false</failOnError>
+          <skipArtifactType>test-jar</skipArtifactType>
+          <skipTestScope>true</skipTestScope>
+        </configuration>
+        <executions>
+          <execution>
+            <goals>
+              <goal>check</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+
     </plugins>
   </build>
 
@@ -554,64 +547,31 @@
     <repository>
       <id>maps_test_libs</id>
       <name>artifactory-releases</name>
-      <url>https://repository.mapsmessaging.io:8081/repository/maps_test_libs/</url>
+      <url>https://repository.mapsmessaging.io/repository/maps_test_libs/</url>
+    </repository>
+
+    <repository>
+      <id>maps_license_store</id>
+      <name>maps_license_store</name>
+      <url>https://repository.mapsmessaging.io/repository/maps_license_store/</url>
+    </repository>
+
+    <repository>
+      <id>maps_snapshots</id>
+      <name>maps_snapshot_repository</name>
+      <url>https://repository.mapsmessaging.io/repository/maps_snapshots/</url>
+      <snapshots>
+        <enabled>true</enabled>
+      </snapshots>
     </repository>
   </repositories>
-
-  <properties>
-    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-
-    <logback.version>1.4.14</logback.version>
-    <pi4j.version>2.4.0</pi4j.version>
-    <jersey.version>3.1.5</jersey.version>
-    <swagger-ui.version>3.17.0</swagger-ui.version>
-
-    <runSuite>**/*Suite.class</runSuite>
-
-    <sonar.sources>src/main</sonar.sources>
-    <sonar.test.exclusions>
-      **/*Test.*,
-      **/*IT.*,
-      **/apache_pulsar/*,
-      **.*JMH.*
-    </sonar.test.exclusions>
-
-    <sonar.exclusions>
-      **/META-INF/services/**,
-      **/html/swagger-ui/**
-    </sonar.exclusions>
-
-
-    <sonar.jacoco.reportPaths>target/jacoco.exec</sonar.jacoco.reportPaths>
-    <sonar.coverage.jacoco.xmlReportPaths>target/site/jacoco/jacoco.xml</sonar.coverage.jacoco.xmlReportPaths>
-
-    <sonar.issue.ignore.multicriteria>IgnoreVar</sonar.issue.ignore.multicriteria>
-    <sonar.issue.ignore.multicriteria.IgnoreVar.ruleKey>java:S6212</sonar.issue.ignore.multicriteria.IgnoreVar.ruleKey>
-    <sonar.issue.ignore.multicriteria.IgnoreVar.resourceKey>
-      **/*.java
-    </sonar.issue.ignore.multicriteria.IgnoreVar.resourceKey>
-
-    <sonar.java.coveragePlugin>jacoco</sonar.java.coveragePlugin>
-    <sonar.dynamicAnalysis>reuseReports</sonar.dynamicAnalysis>
-    <sonar.language>java</sonar.language>
-
-    <sonar.projectKey>Maps-Messaging_mapsmessaging_server</sonar.projectKey>
-    <sonar.organization>maps-messaging</sonar.organization>
-    <sonar.host.url>https://sonarcloud.io</sonar.host.url>
-
-    <sonar.c.file.suffixes>-</sonar.c.file.suffixes>
-    <sonar.cpp.file.suffixes>-</sonar.cpp.file.suffixes>
-    <sonar.objc.file.suffixes>-</sonar.objc.file.suffixes>
-    <sonar.branch.name>development</sonar.branch.name>
-
-  </properties>
 
   <dependencyManagement>
     <dependencies>
       <dependency>
         <groupId>software.amazon.awssdk</groupId>
         <artifactId>bom</artifactId>
-        <version>2.23.15</version>
+        <version>2.32.31</version>
         <type>pom</type>
         <scope>import</scope>
       </dependency>
@@ -627,6 +587,59 @@
 
 
   <dependencies>
+    <dependency>
+      <groupId>io.mapsmessaging</groupId>
+      <artifactId>simple_logging</artifactId>
+      <version>${maps.logging.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>io.mapsmessaging</groupId>
+      <artifactId>jms_selector_parser</artifactId>
+      <version>${maps.jms_selector.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>io.mapsmessaging</groupId>
+      <artifactId>naturally_ordered_long_collections</artifactId>
+      <version>${maps.nolc.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>io.mapsmessaging</groupId>
+      <artifactId>non_block_task_scheduler</artifactId>
+      <version>${maps.nbts.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>io.mapsmessaging</groupId>
+      <artifactId>schemas</artifactId>
+      <version>${maps.schema.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>io.mapsmessaging</groupId>
+      <artifactId>configuration_library</artifactId>
+      <version>${maps.config.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>io.mapsmessaging</groupId>
+      <artifactId>dynamic_storage</artifactId>
+      <version>${maps.storage.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>io.mapsmessaging</groupId>
+      <artifactId>device_library</artifactId>
+      <version>${maps.device.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>io.mapsmessaging</groupId>
+      <artifactId>authentication_library</artifactId>
+      <version>${maps.auth.version}</version>
+    </dependency>
+
+    <!-- Consul client API -->
+    <dependency>
+      <groupId>com.ecwid.consul</groupId>
+      <artifactId>consul-api</artifactId>
+      <version>1.4.6</version>
+    </dependency>
+
 
     <!-- https://mvnrepository.com/artifact/ch.qos.logback/logback-core -->
     <dependency>
@@ -652,20 +665,13 @@
     <dependency>
       <groupId>com.fasterxml.jackson.datatype</groupId>
       <artifactId>jackson-datatype-jsr310</artifactId>
-      <version>2.16.1</version>
-    </dependency>
-
-    <!-- https://mvnrepository.com/artifact/tanukisoft/wrapper -->
-    <dependency>
-      <groupId>tanukisoft</groupId>
-      <artifactId>wrapper</artifactId>
-      <version>3.2.3</version>
+      <version>2.20.0</version>
     </dependency>
 
     <dependency>
       <groupId>org.yaml</groupId>
       <artifactId>snakeyaml</artifactId>
-      <version>2.2</version>
+      <version>2.4</version>
     </dependency>
 
 
@@ -676,53 +682,41 @@
       <version>3.6.1</version>
     </dependency>
 
-    <!-- Consul client API -->
-    <dependency>
-      <groupId>com.ecwid.consul</groupId>
-      <artifactId>consul-api</artifactId>
-      <version>1.4.5</version>
-    </dependency>
-
-    <dependency>
-      <groupId>com.orbitz.consul</groupId>
-      <artifactId>consul-client</artifactId>
-      <version>1.5.3</version>
-    </dependency>
-
     <!-- Serial Port support -->
     <dependency>
       <groupId>com.fazecast</groupId>
       <artifactId>jSerialComm</artifactId>
-      <version>2.10.4</version>
+      <version>2.11.2</version>
     </dependency>
 
     <!-- Rest API support -->
-    <!-- https://mvnrepository.com/artifact/javax.ws.rs/javax.ws.rs-api -->
+
+    <!-- https://mvnrepository.com/artifact/jakarta.servlet/jakarta.servlet-api -->
     <dependency>
-      <groupId>javax.ws.rs</groupId>
-      <artifactId>javax.ws.rs-api</artifactId>
-      <version>2.1.1</version>
-    </dependency>
-    <!-- https://mvnrepository.com/artifact/javax.xml.bind/jaxb-api -->
-    <dependency>
-      <groupId>javax.xml.bind</groupId>
-      <artifactId>jaxb-api</artifactId>
-      <version>2.3.1</version>
+      <groupId>jakarta.servlet</groupId>
+      <artifactId>jakarta.servlet-api</artifactId>
+      <version>6.1.0</version>
     </dependency>
 
-    <!-- https://mvnrepository.com/artifact/com.sun.xml.bind/jaxb-impl -->
+    <!-- https://mvnrepository.com/artifact/jakarta.ws.rs/jakarta.ws.rs-api -->
     <dependency>
-      <groupId>com.sun.xml.bind</groupId>
-      <artifactId>jaxb-impl</artifactId>
-      <version>4.0.4</version>
+      <groupId>jakarta.ws.rs</groupId>
+      <artifactId>jakarta.ws.rs-api</artifactId>
+      <version>4.0.0</version>
     </dependency>
 
-    <!-- https://mvnrepository.com/artifact/javax.activation/activation -->
     <dependency>
-      <groupId>javax.activation</groupId>
-      <artifactId>activation</artifactId>
-      <version>1.1.1</version>
+      <groupId>jakarta.xml.bind</groupId>
+      <artifactId>jakarta.xml.bind-api</artifactId>
+      <version>4.0.2</version>
     </dependency>
+
+    <dependency>
+      <groupId>org.glassfish.jaxb</groupId>
+      <artifactId>jaxb-runtime</artifactId>
+      <version>4.0.5</version>
+    </dependency>
+
     <dependency>
       <groupId>jakarta.activation</groupId>
       <artifactId>jakarta.activation-api</artifactId>
@@ -730,15 +724,11 @@
     </dependency>
     <!-- https://mvnrepository.com/artifact/org.glassfish.jersey.media/jersey-media-json-jackson -->
     <dependency>
-      <groupId>org.glassfish.jersey.media</groupId>
-      <artifactId>jersey-media-json-jackson</artifactId>
-      <version>${jersey.version}</version>
-    </dependency>
-    <dependency>
       <groupId>org.glassfish.jersey.containers</groupId>
       <artifactId>jersey-container-grizzly2-servlet</artifactId>
       <version>${jersey.version}</version>
     </dependency>
+
 
     <dependency>
       <groupId>org.glassfish.jersey.containers</groupId>
@@ -747,15 +737,27 @@
     </dependency>
 
     <dependency>
+      <groupId>org.glassfish.jersey.media</groupId>
+      <artifactId>jersey-media-sse</artifactId>
+      <version>${jersey.version}</version>
+    </dependency>
+
+    <dependency>
+      <groupId>org.glassfish.jersey.media</groupId>
+      <artifactId>jersey-media-multipart</artifactId>
+      <version>${jersey.version}</version>
+    </dependency>
+
+    <dependency>
       <groupId>io.swagger.core.v3</groupId>
       <artifactId>swagger-jaxrs2-jakarta</artifactId>
-      <version>2.2.20</version>
+      <version>2.2.36</version>
     </dependency>
 
     <dependency>
       <groupId>io.swagger.core.v3</groupId>
       <artifactId>swagger-jaxrs2-servlet-initializer-v2-jakarta</artifactId>
-      <version>2.2.20</version>
+      <version>2.2.36</version>
     </dependency>
 
     <dependency>
@@ -767,72 +769,52 @@
     <dependency>
       <groupId>com.google.code.gson</groupId>
       <artifactId>gson</artifactId>
-      <version>2.10.1</version>
+      <version>2.13.1</version>
     </dependency>
+    <dependency>
+      <groupId>com.fasterxml.jackson.dataformat</groupId>
+      <artifactId>jackson-dataformat-xml</artifactId>
+      <version>2.20.0</version> <!-- Match your Jackson core version -->
+    </dependency>
+
     <!-- https://mvnrepository.com/artifact/com.fasterxml.jackson.core/jackson-databind -->
     <dependency>
       <groupId>com.fasterxml.jackson.core</groupId>
       <artifactId>jackson-databind</artifactId>
-      <version>2.16.1</version>
+      <version>2.20.0</version>
     </dependency>
 
     <!-- https://mvnrepository.com/artifact/com.fasterxml.jackson.core/jackson-annotations -->
     <dependency>
       <groupId>com.fasterxml.jackson.core</groupId>
       <artifactId>jackson-annotations</artifactId>
-      <version>2.16.1</version>
-    </dependency>
-
-    <dependency>
-      <groupId>com.fasterxml.jackson.jaxrs</groupId>
-      <artifactId>jackson-jaxrs-json-provider</artifactId>
-      <version>2.16.1</version>
-    </dependency>
-    <!-- https://mvnrepository.com/artifact/com.sun.jersey/jersey-json -->
-    <dependency>
-      <groupId>com.sun.jersey</groupId>
-      <artifactId>jersey-json</artifactId>
-      <version>1.19.4</version>
+      <version>2.20</version>
     </dependency>
 
     <!-- End RestAPI Support Dependencies -->
-
-    <!-- https://mvnrepository.com/artifact/org.json/json -->
-    <dependency>
-      <groupId>org.json</groupId>
-      <artifactId>json</artifactId>
-      <version>20231013</version>
-    </dependency>
-
     <dependency>
       <groupId>com.auth0</groupId>
       <artifactId>java-jwt</artifactId>
-      <version>4.4.0</version>
+      <version>4.5.0</version>
     </dependency>
     <dependency>
       <groupId>com.auth0</groupId>
       <artifactId>jwks-rsa</artifactId>
-      <version>0.22.1</version>
-    </dependency>
-
-    <!-- https://mvnrepository.com/artifact/com.mashape.unirest/unirest-java -->
-    <dependency>
-      <groupId>com.mashape.unirest</groupId>
-      <artifactId>unirest-java</artifactId>
-      <version>1.4.9</version>
+      <version>0.23.0</version>
     </dependency>
 
     <!-- Add annotations for not null -->
     <dependency>
       <groupId>org.jetbrains</groupId>
       <artifactId>annotations</artifactId>
-      <version>24.1.0</version>
+      <version>26.0.2-1</version>
     </dependency>
 
     <dependency>
       <groupId>org.projectlombok</groupId>
       <artifactId>lombok</artifactId>
-      <version>1.18.30</version>
+      <version>1.18.38</version>
+      <scope>provided</scope>
     </dependency>
     <!--JMX annotations -->
     <dependency>
@@ -853,55 +835,13 @@
     <dependency>
       <groupId>org.jmdns</groupId>
       <artifactId>jmdns</artifactId>
-      <version>3.5.9</version>
-    </dependency>
-
-    <!-- Hawtio Dependencies -->
-    <!-- https://mvnrepository.com/artifact/io.hawt/hawtio-embedded -->
-    <dependency>
-      <groupId>io.hawt</groupId>
-      <artifactId>hawtio-embedded</artifactId>
-      <version>3.0.0</version>
-      <exclusions>
-        <exclusion>
-          <groupId>org.slf4j</groupId>
-          <artifactId>slf4j-simple</artifactId>
-        </exclusion>
-      </exclusions>
-  </dependency>
-
-    <!-- https://mvnrepository.com/artifact/io.hawt/hawtio-war -->
-    <dependency>
-      <groupId>io.hawt</groupId>
-      <artifactId>hawtio-war</artifactId>
-      <version>3.0.0</version>
-      <scope>provided</scope>
-      <type>war</type>
-      <exclusions>
-        <exclusion>
-          <groupId>org.slf4j</groupId>
-          <artifactId>slf4j-simple</artifactId>
-        </exclusion>
-      </exclusions>
-    </dependency>
-
-    <!-- https://mvnrepository.com/artifact/io.hawt/hawtio-app -->
-    <dependency>
-      <groupId>io.hawt</groupId>
-      <artifactId>hawtio-app</artifactId>
-      <version>2.17.7</version>
-      <exclusions>
-        <exclusion>
-          <groupId>org.slf4j</groupId>
-          <artifactId>slf4j-simple</artifactId>
-        </exclusion>
-      </exclusions>
+      <version>3.6.1</version>
     </dependency>
 
     <dependency>
       <groupId>org.quartz-scheduler</groupId>
       <artifactId>quartz</artifactId>
-      <version>2.3.2</version> <!-- Replace with the desired version -->
+      <version>2.5.0</version>
     </dependency>
 
 
@@ -925,13 +865,13 @@
     <dependency>
       <groupId>software.amazon.awssdk</groupId>
       <artifactId>cognitoidentity</artifactId>
-      <version>2.23.16</version>
+      <version>2.32.31</version>
     </dependency>
 
     <dependency>
       <groupId>software.amazon.awssdk</groupId>
       <artifactId>cognitoidentityprovider</artifactId>
-      <version>2.25.1</version>
+      <version>2.32.31</version>
     </dependency>
 
 
@@ -939,7 +879,7 @@
     <dependency>
       <groupId>com.amazonaws</groupId>
       <artifactId>aws-java-sdk-cognitoidp</artifactId>
-      <version>1.12.649</version>
+      <version>1.12.788</version>
       <scope>test</scope>
     </dependency>
 
@@ -961,13 +901,47 @@
     <dependency>
       <groupId>com.googlecode.lanterna</groupId>
       <artifactId>lanterna</artifactId>
-      <version>3.1.2</version>
+      <version>3.1.3</version>
     </dependency>
+
+    <dependency>
+      <groupId>io.mapsmessaging</groupId>
+      <artifactId>license_manager-keymgr</artifactId>
+      <version>3.3.7</version>
+    </dependency>
+
+    <!-- https://mvnrepository.com/artifact/global.namespace.truelicense/truelicense-core -->
+    <dependency>
+      <groupId>global.namespace.truelicense</groupId>
+      <artifactId>truelicense-core</artifactId>
+      <version>4.0.3</version>
+    </dependency>
+    <!-- https://mvnrepository.com/artifact/global.namespace.truelicense/truelicense-v4 -->
+    <dependency>
+      <groupId>global.namespace.truelicense</groupId>
+      <artifactId>truelicense-v4</artifactId>
+      <version>4.0.3</version>
+    </dependency>
+    <!-- https://mvnrepository.com/artifact/global.namespace.truelicense/truelicense-spi -->
+    <dependency>
+      <groupId>global.namespace.truelicense</groupId>
+      <artifactId>truelicense-spi</artifactId>
+      <version>4.0.3</version>
+    </dependency>
+
 
 
     <!-- *********************** -->
     <!-- Test Dependency Imports -->
     <!-- *********************** -->
+
+    <!-- https://mvnrepository.com/artifact/org.apache.activemq/activemq-stomp -->
+    <dependency>
+      <groupId>org.apache.activemq</groupId>
+      <artifactId>activemq-stomp</artifactId>
+      <version>6.1.7</version>
+      <scope>test</scope>
+    </dependency>
 
 
     <!-- https://mvnrepository.com/artifact/org.projectodd.stilts/stilts-stomp-server-core -->
@@ -983,6 +957,7 @@
       <groupId>org.eclipse.paho</groupId>
       <artifactId>org.eclipse.paho.client.mqttv3</artifactId>
       <version>1.2.5</version>
+      <scope>test</scope>
     </dependency>
 
     <!-- https://mvnrepository.com/artifact/org.eclipse.paho/org.eclipse.paho.mqttv5.client -->
@@ -992,6 +967,15 @@
       <version>1.2.5</version>
       <scope>test</scope>
     </dependency>
+
+    <!-- https://mvnrepository.com/artifact/com.hivemq/hivemq-mqtt-client -->
+    <dependency>
+      <groupId>com.hivemq</groupId>
+      <artifactId>hivemq-mqtt-client</artifactId>
+      <version>1.3.8</version>
+      <scope>test</scope>
+    </dependency>
+
 
     <!-- https://mvnrepository.com/artifact/jakarta.jms/jakarta.jms-api -->
     <dependency>
@@ -1005,7 +989,7 @@
     <dependency>
       <groupId>org.apache.qpid</groupId>
       <artifactId>qpid-jms-client</artifactId>
-      <version>2.5.0</version>
+      <version>2.8.0</version>
       <scope>test</scope>
     </dependency>
 
@@ -1013,14 +997,14 @@
     <dependency>
       <groupId>org.springframework</groupId>
       <artifactId>spring-websocket</artifactId>
-      <version>6.1.3</version>
+      <version>6.2.10</version>
       <scope>test</scope>
     </dependency>
 
     <dependency>
       <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-starter-websocket</artifactId>
-      <version>3.2.1</version>
+      <version>3.5.5</version>
       <scope>test</scope>
       <exclusions>
         <exclusion>
@@ -1041,14 +1025,15 @@
     <dependency>
       <groupId>org.glassfish.tyrus.bundles</groupId>
       <artifactId>tyrus-standalone-client</artifactId>
-      <version>2.1.5</version>
+      <version>2.2.0</version>
       <scope>test</scope>
     </dependency>
 
+    <!-- https://mvnrepository.com/artifact/jakarta.websocket/jakarta.websocket-api -->
     <dependency>
-      <groupId>javax.websocket</groupId>
-      <artifactId>javax.websocket-api</artifactId>
-      <version>1.1</version>
+      <groupId>jakarta.websocket</groupId>
+      <artifactId>jakarta.websocket-api</artifactId>
+      <version>2.2.0</version>
       <scope>test</scope>
     </dependency>
 
@@ -1082,9 +1067,16 @@
     </dependency>
 
     <dependency>
+      <groupId>io.nats</groupId>
+      <artifactId>jnats</artifactId>
+      <version>2.21.5</version>
+      <scope>test</scope>
+    </dependency>
+
+    <dependency>
       <groupId>org.junit.jupiter</groupId>
       <artifactId>junit-jupiter-params</artifactId>
-      <version>5.10.1</version>
+      <version>5.13.4</version>
       <scope>test</scope>
     </dependency>
 
@@ -1092,7 +1084,7 @@
     <dependency>
       <groupId>org.junit.jupiter</groupId>
       <artifactId>junit-jupiter-engine</artifactId>
-      <version>5.10.2</version>
+      <version>5.13.4</version>
       <scope>test</scope>
     </dependency>
 
@@ -1107,16 +1099,15 @@
     <dependency>
       <groupId>org.eclipse.californium</groupId>
       <artifactId>californium-core</artifactId>
-      <version>3.10.0</version>
+      <version>3.14.0</version>
       <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>org.eclipse.californium</groupId>
       <artifactId>scandium</artifactId>
-      <version>3.10.0</version>
+      <version>3.14.0</version>
       <scope>test</scope>
     </dependency>
-
   </dependencies>
 
 </project>

@@ -1,23 +1,26 @@
 /*
- * Copyright [ 2020 - 2023 ] [Matthew Buckton]
  *
- *  Licensed under the Apache License, Version 2.0 (the "License");
- *  you may not use this file except in compliance with the License.
- *  You may obtain a copy of the License at
+ *  Copyright [ 2020 - 2024 ] Matthew Buckton
+ *  Copyright [ 2024 - 2025 ] MapsMessaging B.V.
+ *
+ *  Licensed under the Apache License, Version 2.0 with the Commons Clause
+ *  (the "License"); you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at:
  *
  *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://commonsclause.com/
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
  */
 
 package io.mapsmessaging.network.admin;
 
-import io.mapsmessaging.network.NetworkConfig;
+import io.mapsmessaging.config.Config;
+import io.mapsmessaging.dto.rest.config.network.EndPointServerConfigDTO;
 import io.mapsmessaging.utilities.admin.JMXManager;
 
 import javax.management.*;
@@ -28,7 +31,7 @@ public class NetworkConfigJMX implements DynamicMBean {
 
   protected final ObjectInstance mbean;
   protected final List<String> typePath;
-  private final NetworkConfig networkConfig;
+  private final EndPointServerConfigDTO networkConfig;
   private final MBeanInfo mBeanInfo;
 
   public NetworkConfigJMX() {
@@ -39,7 +42,7 @@ public class NetworkConfigJMX implements DynamicMBean {
   }
 
   //<editor-fold desc="Life cycle functions">
-  public NetworkConfigJMX(List<String> parent, NetworkConfig networkConfig) {
+  public NetworkConfigJMX(List<String> parent, EndPointServerConfigDTO networkConfig) {
     this.networkConfig = networkConfig;
     typePath = new ArrayList<>(parent);
     typePath.add("config=Config");
@@ -49,7 +52,7 @@ public class NetworkConfigJMX implements DynamicMBean {
     } catch (NoSuchMethodException noSuchMethodException) {
       // We know it will never be thrown so we can ignore this
     }
-    List<String> keyList = new ArrayList<>(networkConfig.getProperties().keySet());
+    List<String> keyList = new ArrayList<>(((Config)networkConfig).toConfigurationProperties().keySet());
 
     MBeanAttributeInfo[] attributeInfos = new MBeanAttributeInfo[keyList.size()];
     for (int x = 0; x < keyList.size(); x++) {
@@ -77,7 +80,7 @@ public class NetworkConfigJMX implements DynamicMBean {
     if (attribute.toLowerCase().contains("pass")) {
       return "**********";
     } else {
-      return networkConfig.getProperties().get(attribute);
+      return ((Config)networkConfig).toConfigurationProperties().get(attribute);
     }
   }
 
