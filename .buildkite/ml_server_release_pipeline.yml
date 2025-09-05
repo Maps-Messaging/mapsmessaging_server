@@ -5,7 +5,8 @@ steps:
       - wget https://github.com/Maps-Messaging/web-admin-client/releases/download/maps_web_client_1.0.1/webAdminClient.tgz
       - tar -xvzf ./webAdminClient.tgz
       - if [ ! -d "out" ]; then echo "'out' directory missing after extraction"; exit 1; fi
-      - sed -i 's#<version>\([^<]*\)</version>#<version>ml-\1</version>#' pom.xml
+      - cur=$(mvn -q -DforceStdout help:evaluate -Dexpression=project.version)
+      - if [[ "$cur" != ml-* ]]; then mvn -q versions:set -DnewVersion="ml-$cur" -DgenerateBackupPoms=false; fi
       - chmod +x ./packaging/scripts/prepare_build.sh
       - ./packaging/scripts/prepare_build.sh
       - mvn -DskipTests=true clean deploy -Pml -U
@@ -14,6 +15,5 @@ steps:
       - chmod +x ./packaging/scripts/*
       - ./packaging/scripts/build_rpm_package.sh $(buildkite-agent secret get NEXUS_USER) $(buildkite-agent secret get NEXUS_PASSWORD) maps_yum_release
       - ./packaging/scripts/build_deb_package.sh $(buildkite-agent secret get NEXUS_USER) $(buildkite-agent secret get NEXUS_PASSWORD) maps_apt_release
-
     agents:
       queue: "java_build_queue"
