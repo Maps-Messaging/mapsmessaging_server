@@ -37,8 +37,9 @@ find ./src/ -type f -exec sed -i "s|%%MAPS_VERSION%%|${POM_VERSION}|g" {} +
 
 
 if [[ $POM_VERSION == ml-* ]]; then
-   sed -i 's/<version>3.3.7-SNAPSHOT<\\/version>/<version>ml-3.3.7-SNAPSHOT<\\/version>/' pom.xml
+   sed -i 's#<version>\([^<]*\)</version>#<version>ml-\1</version>#' pom.xml
    sed -i 's/Package: maps/Package: maps-ml/' packaging/deb_package/DEBIAN/control
 fi
+
 
 echo "Replacements done."

@@ -28,6 +28,7 @@ echo "Defining environment variables"
 
 export USER=$1
 export PASSWORD=$2
+export REPO_NAME=$3
 
 # Variables
 export VERSION_NAME=$POM_VERSION
@@ -44,7 +45,6 @@ else
 fi
 
 export NEXUS_URL="https://repository.mapsmessaging.io"
-export REPO_NAME="maps_yum_snapshot"
 
 export TAR_FILE="target/${PACKAGE_NAME}-${VERSION_NAME}-install.tar.gz"
 export SOURCE_DIR="packaging/rpmbuild/SOURCES"
