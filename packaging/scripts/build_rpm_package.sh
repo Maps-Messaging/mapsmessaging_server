@@ -127,7 +127,7 @@ upload_new_package() {
    -u $USER:$PASSWORD  \
    -F "yum.asset=@${PACKAGE_FILE}" \
    -F "yum.asset.filename=${PACKAGE_FILE}" \
-       "${NEXUS_URL}/service/rest/v1/components?repository=maps_yum_snapshot"
+       "${NEXUS_URL}/service/rest/v1/components?repository=${REPO_NAME}"
   echo "Uploaded new package: ${PACKAGE_FILE}"
   cd ../../../..
   rm -rf "/var/lib/buildkite-agent/builds/rpmdb-${DATE_SUFFIX}"
