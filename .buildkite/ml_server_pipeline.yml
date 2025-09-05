@@ -5,8 +5,13 @@ steps:
       - wget https://github.com/Maps-Messaging/web-admin-client/releases/download/maps_web_client_1.0.1/webAdminClient.tgz
       - tar -xvzf ./webAdminClient.tgz
       - if [ ! -d "out" ]; then echo "'out' directory missing after extraction"; exit 1; fi
-      - cur=$(mvn -q -DforceStdout help:evaluate -Dexpression=project.version)
-      - if [[ "$cur" != ml-* ]]; then mvn -q versions:set -DnewVersion="ml-$cur" -DgenerateBackupPoms=false; fi
+      - |
+        set -euo pipefail
+        test -f pom.xml || { echo "pom.xml not found"; exit 1; }
+        cur=$(mvn -q -DforceStdout help:evaluate -Dexpression=project.version | tr -d '\r' | tail -n1)
+        echo "project.version=$cur"
+        new="ml-${cur#ml-}"
+        mvn -q versions:set -DnewVersion="$new" -DgenerateBackupPoms=false
       - chmod +x ./packaging/scripts/prepare_build.sh
       - ./packaging/scripts/prepare_build.sh
       - mvn -DskipTests=true clean deploy -Pml -U
