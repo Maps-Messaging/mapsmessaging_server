@@ -1,7 +1,6 @@
 steps:
   - label: ":maven: Build and release to github"
     command:
-      - buildkite-agent artifact download "*.so" . --build $BUILDKITE_TRIGGERED_FROM_BUILD_ID
       - export NVD_API_KEY=$(buildkite-agent secret get nvd_api_key)
       - wget https://github.com/Maps-Messaging/web-admin-client/releases/download/maps_web_client_1.0.1/webAdminClient.tgz
       - tar -xvzf ./webAdminClient.tgz
