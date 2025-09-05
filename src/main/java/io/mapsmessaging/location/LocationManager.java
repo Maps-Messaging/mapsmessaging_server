@@ -38,10 +38,12 @@ public class LocationManager {
   public synchronized void setPosition(double latitude, double longitude) {
     this.latitude = (latitude);
     this.longitude = (longitude);
+    set = true;
   }
 
   private LocationManager() {
     longitude = Double.NaN;
     latitude = Double.NaN;
+    set = false;
   }
 }
