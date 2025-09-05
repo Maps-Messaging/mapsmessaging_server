@@ -63,19 +63,23 @@
   </licenses>
 
   <distributionManagement>
+    <repository>
+      <id>maps_releases</id>
+      <name>maps_release_repository</name>
+      <url>https://repository.mapsmessaging.io/repository/maps_releases/</url>
+    </repository>
     <snapshotRepository>
       <id>maps_snapshots</id>
       <name>maps_snapshot_repository</name>
       <url>https://repository.mapsmessaging.io/repository/maps_snapshots/</url>
     </snapshotRepository>
-    <repository>
-      <id>ossrh</id>
-      <url>https://s01.oss.sonatype.org/service/local/staging/deploy/maven2/</url>
-    </repository>
   </distributionManagement>
 
   <scm>
+    <connection>scm:git:https://github.com/Maps-Messaging/mapsmessaging_server.git</connection>
+    <developerConnection>scm:git:ssh://git@github.com/Maps-Messaging/mapsmessaging_server.git</developerConnection>
     <url>https://github.com/Maps-Messaging/mapsmessaging_server</url>
+    <tag>HEAD</tag>
   </scm>
 
 
