@@ -21,7 +21,7 @@
 
 set -e
 
-VERSION="${1:-3.3.7-SNAPSHOT}"
+VERSION="${1:-4.0.1}"
 APP_NAME="${2:-MapsMessaging}"
 
 BASE_DIR="$(pwd)"

@@ -23,7 +23,7 @@ set -e
 
 USERNAME="$1"
 PASSWORD="$2"
-VERSION="3.3.7-SNAPSHOT"
+VERSION="4.0.1"
 APP_NAME="MapsMessaging"
 ZIP_REPO="maps-snapshot"
 PUSH_REPO="maps_osx_installer"

@@ -26,7 +26,7 @@ export REPO_NAME=$3
 # Extract POM version
 POM_VERSION=$(grep -m 1 "<version>.*</version>$" pom.xml | awk -F'[><]' '{print $3}')
 BASE_VERSION=${POM_VERSION#ml-}
-BASE_VERSION=${BASE_VERSION/-SNAPSHOT/}
+BASE_VERSION=${BASE_VERSION}
 
 # Set artifact name
 PACKAGE_NAME="maps"

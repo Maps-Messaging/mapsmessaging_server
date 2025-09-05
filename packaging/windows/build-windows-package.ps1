@@ -1,5 +1,5 @@
 param (
-    [string]$Version   = "3.3.7-SNAPSHOT",
+    [string]$Version   = "4.0.1",
     [string]$AppName   = "MapsMessaging"
 )
 
