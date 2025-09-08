@@ -77,6 +77,10 @@ NetworkManager:
         selectorThreadCount : 5
         auth: default
 
+      - name: "MQTT Interface"
+        url: tcp://:::1883/
+        protocol: mqtt
+        auth: default
       -
         url: udp://0.0.0.0:1884/
         name: "MQTT-SN Interface"
@@ -98,3 +102,8 @@ NetworkManager:
         maxBlockSize: 512
         idleTimePeriod: 120
 
+      - name: "NATS Interface"
+        url: "tcp://0.0.0.0:4222/"
+        protocol: nats
+        enableStreams: true
+        auth: default
