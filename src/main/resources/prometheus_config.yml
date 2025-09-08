@@ -1,0 +1,33 @@
+startDelaySeconds: 0
+ssl: false
+lowercaseOutputName: true
+lowercaseOutputLabelNames: true
+rules:
+  - pattern: io\.mapsmessaging<type=Broker,.*destinationName=([^,]+),\s*destinationType=([^,>]+).*><>(published|delivered|stored|retrieved|expired|delayed|noInterest|subscribed|subscribedClients|pendingTransaction|transacted)
+    name: maps_destination_$3
+    type: GAUGE
+    labels:
+      destination: $1
+      destination_type: $2
+  - pattern: io\.mapsmessaging<type=Broker,.*endPointManagerName=([^,>]+).*><>(Connected|Protocols|Packets
+      Read|Packets Sent|Bytes Read|Bytes Sent)
+    name: maps_endpoint_manager_$2
+    type: GAUGE
+    labels:
+      manager: $1
+  - pattern: io\.mapsmessaging<type=Broker,.*endPointManagerName=([^,]+),\s*endPointName=([^,>]+).*><>(Bytes
+      Read|Bytes(?:\s+|_)Sent|Total Underflow|Total Overflow|Last Read|Last Write)
+    name: maps_endpoint_$3
+    type: GAUGE
+    labels:
+      manager: $1
+      endpoint: $2
+  - pattern: io\.mapsmessaging<type=Broker,.*name=([^,>]+).*><>(Maximum outstanding|Total
+      Tasks Queued|Outstanding Tasks|Thread offload count)
+    name: maps_taskqueue_$2
+    type: GAUGE
+    labels:
+      queue: $1
+  - pattern: io\.mapsmessaging<type=Broker,.*service=Health.*><>(currentStatus)
+    name: maps_health_status
+    type: GAUGE
