@@ -1,8 +1,7 @@
 $Username = $args[0]
 $Password = $args[1]
-$Version = "4.1.0-SNAPSHOT"
+$Version = $args[2]
 $AppName = "MapsMessaging"
-$ZipRepo = "maps-snapshot"
 $PushRepo = "maps_windows_installer"
 
 
