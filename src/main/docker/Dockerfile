@@ -18,7 +18,7 @@ ENV LANG=en_US.UTF-8 \
 
 # Install required tools and JDK
 RUN apk add --no-cache dos2unix shadow wget && \
-    ZULU_ARCH=zulu17.46.19-ca-jdk17.0.9-linux_musl_x64.tar.gz && \
+    ZULU_ARCH=zulu21.44.17-ca-jdk21.0.8-linux_musl_x64.tar.gz && \
     INSTALL_DIR=$(dirname "$JAVA_HOME") && \
     ZULU_DIR=$(basename ${ZULU_ARCH} .tar.gz) && \
     wget -q https://cdn.azul.com/zulu/bin/${ZULU_ARCH} && \
