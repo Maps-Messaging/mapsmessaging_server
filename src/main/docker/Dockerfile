@@ -54,7 +54,7 @@ RUN apk add --no-cache dos2unix shadow wget && \
     chmod -R 755 /maps-%%MAPS_VERSION%%
 
 EXPOSE 9000/tcp 8080/tcp 8778/tcp 4222/tcp \
-       1700/udp 1884/udp 5683/udp 2442/udp
+       1884/udp 5683/udp 2442/udp
 
 VOLUME /data
 

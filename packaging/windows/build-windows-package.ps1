@@ -1,6 +1,6 @@
 param (
-    [string]$Version   = "4.0.1",
-    [string]$AppName   = "MapsMessaging"
+    [string]$Version,
+    [string]$AppName
 )
 
 $BaseDir     = Get-Location

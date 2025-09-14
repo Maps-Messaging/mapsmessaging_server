@@ -11,7 +11,7 @@ $InputDir    = Join-Path $StagingDir "maps-$Version"
 $MainJar     = "maps-$Version.jar"
 $MainClass   = "io.mapsmessaging.MessageDaemon"
 
-$SanitizedVersion = $Version -replace '', ''
+$SanitizedVersion = $Version -replace '-SNAPSHOT', ''
 $SourceDir = "maps-$Version"
 $DestDir   = Join-Path $StagingDir "maps-$SanitizedVersion"
 
@@ -31,7 +31,7 @@ $content | Set-Content "$InputDir\conf\logback.xml"
 # Run jpackage
 & "$Env:JAVA_HOME\bin\jpackage" `
   --type msi `
-  --icon "build\staging\maps-4.0.1\www\admin\favicon.ico" `
+  --icon "build\staging\maps-4.1.0\www\admin\favicon.ico" `
   --name "$AppName" `
   --app-version "$SanitizedVersion" `
   --input "$InputDir" `

@@ -69,6 +69,11 @@ You will then need to edit the buildkite maven settings /var/lib/buildkite-agent
       <username>matthew.buckton</username>
       <password>*****************</password>
     </server>
+      <server>
+          <id>maps_release</id>
+          <username>buildkite</username>
+          <password>*****************</password>
+      </server>
      <server>
       <id>maps_snapshots</id>
       <username>buildkite</username>

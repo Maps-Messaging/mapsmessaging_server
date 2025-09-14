@@ -25,7 +25,7 @@
   <groupId>io.mapsmessaging</groupId>
   <artifactId>maps</artifactId>
   <modelVersion>4.0.0</modelVersion>
-  <version>4.0.1</version>
+  <version>4.1.0-SNAPSHOT</version>
   <packaging>jar</packaging>
 
   <name>Maps Messaging Server</name>
@@ -133,19 +133,20 @@
     <java.version>21</java.version>
 
     <!-- Base -->
-    <maps.logging.version>2.1.0</maps.logging.version>
-    <maps.jms_selector.version>2.0.0</maps.jms_selector.version>
-    <maps.nolc.version>1.2.0</maps.nolc.version>
+    <maps.logging.version>2.1.1-SNAPSHOT</maps.logging.version>
+    <maps.jms_selector.version>2.1.0-SNAPSHOT</maps.jms_selector.version>
+    <maps.ml-jms_selector.version>ml-2.1.0-SNAPSHOT</maps.ml-jms_selector.version>
+    <maps.nolc.version>1.2.1-SNAPSHOT</maps.nolc.version>
 
     <!-- first level dependencies -->
-    <maps.nbts.version>2.2.0</maps.nbts.version>
-    <maps.schema.version>2.2.0</maps.schema.version>
-    <maps.config.version>1.1.0</maps.config.version>
+    <maps.nbts.version>2.2.1-SNAPSHOT</maps.nbts.version>
+    <maps.schema.version>2.2.1-SNAPSHOT</maps.schema.version>
+    <maps.config.version>1.1.1-SNAPSHOT</maps.config.version>
 
     <!-- Second level dependencies -->
-    <maps.storage.version>2.5.0</maps.storage.version>
-    <maps.device.version>2.0.0</maps.device.version>
-    <maps.auth.version>2.0.0</maps.auth.version>
+    <maps.storage.version>2.5.1-SNAPSHOT</maps.storage.version>
+    <maps.device.version>2.0.1-SNAPSHOT</maps.device.version>
+    <maps.auth.version>2.0.1-SNAPSHOT</maps.auth.version>
   </properties>
 
   <!--
@@ -675,7 +676,7 @@
     <dependency>
       <groupId>org.yaml</groupId>
       <artifactId>snakeyaml</artifactId>
-      <version>2.4</version>
+      <version>2.5</version>
     </dependency>
 
 
@@ -817,7 +818,7 @@
     <dependency>
       <groupId>org.projectlombok</groupId>
       <artifactId>lombok</artifactId>
-      <version>1.18.38</version>
+      <version>1.18.40</version>
       <scope>provided</scope>
     </dependency>
     <!--JMX annotations -->
@@ -839,7 +840,7 @@
     <dependency>
       <groupId>org.jmdns</groupId>
       <artifactId>jmdns</artifactId>
-      <version>3.6.1</version>
+      <version>3.6.2</version>
     </dependency>
 
     <dependency>
@@ -869,7 +870,7 @@
     <dependency>
       <groupId>software.amazon.awssdk</groupId>
       <artifactId>cognitoidentity</artifactId>
-      <version>2.32.31</version>
+      <version>2.33.8</version>
     </dependency>
 
     <dependency>
@@ -976,7 +977,7 @@
     <dependency>
       <groupId>com.hivemq</groupId>
       <artifactId>hivemq-mqtt-client</artifactId>
-      <version>1.3.8</version>
+      <version>1.3.9</version>
       <scope>test</scope>
     </dependency>
 
