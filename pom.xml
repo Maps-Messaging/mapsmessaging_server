@@ -25,7 +25,7 @@
   <groupId>io.mapsmessaging</groupId>
   <artifactId>maps</artifactId>
   <modelVersion>4.0.0</modelVersion>
-  <version>4.0.2</version>
+  <version>4.1.0-SNAPSHOT</version>
   <packaging>jar</packaging>
 
   <name>Maps Messaging Server</name>
@@ -133,19 +133,20 @@
     <java.version>21</java.version>
 
     <!-- Base -->
-    <maps.logging.version>2.1.0</maps.logging.version>
-    <maps.jms_selector.version>2.0.0</maps.jms_selector.version>
-    <maps.nolc.version>1.2.0</maps.nolc.version>
+    <maps.logging.version>2.1.1-SNAPSHOT</maps.logging.version>
+    <maps.jms_selector.version>2.1.0-SNAPSHOT</maps.jms_selector.version>
+    <maps.ml-jms_selector.version>ml-2.1.0-SNAPSHOT</maps.ml-jms_selector.version>
+    <maps.nolc.version>1.2.1-SNAPSHOT</maps.nolc.version>
 
     <!-- first level dependencies -->
-    <maps.nbts.version>2.2.0</maps.nbts.version>
-    <maps.schema.version>2.2.0</maps.schema.version>
-    <maps.config.version>1.1.0</maps.config.version>
+    <maps.nbts.version>2.2.1-SNAPSHOT</maps.nbts.version>
+    <maps.schema.version>2.2.1-SNAPSHOT</maps.schema.version>
+    <maps.config.version>1.1.1-SNAPSHOT</maps.config.version>
 
     <!-- Second level dependencies -->
-    <maps.storage.version>2.5.0</maps.storage.version>
-    <maps.device.version>2.0.0</maps.device.version>
-    <maps.auth.version>2.0.0</maps.auth.version>
+    <maps.storage.version>2.5.1-SNAPSHOT</maps.storage.version>
+    <maps.device.version>2.0.1-SNAPSHOT</maps.device.version>
+    <maps.auth.version>2.0.1-SNAPSHOT</maps.auth.version>
 
   </properties>
 
