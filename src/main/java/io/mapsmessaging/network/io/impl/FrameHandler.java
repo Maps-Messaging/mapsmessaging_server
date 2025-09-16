@@ -23,12 +23,12 @@ import io.mapsmessaging.logging.ServerLogMessages;
 import io.mapsmessaging.network.io.Packet;
 import io.mapsmessaging.network.io.ServerPacket;
 import io.mapsmessaging.network.io.ServerPublishPacket;
+import io.mapsmessaging.network.protocol.impl.mqtt.packet.ConnAck;
 
 import java.io.IOException;
 import java.nio.BufferOverflowException;
+import java.util.Deque;
 import java.util.LinkedList;
-import java.util.Queue;
-import java.util.concurrent.ConcurrentLinkedDeque;
 
 import static io.mapsmessaging.logging.ServerLogMessages.*;
 import static java.nio.channels.SelectionKey.OP_WRITE;
@@ -37,7 +37,7 @@ public class FrameHandler {
   private final WriteTask writeTask;
   private final Packet packet;
   private boolean isRegistered;
-  private final Queue<ServerPacket> completedFrames;
+  private final Deque<ServerPacket> completedFrames;
 
   public FrameHandler(WriteTask task, int bufferSize) {
     this.writeTask = task;
@@ -79,7 +79,7 @@ public class FrameHandler {
           writeTask.selectorCallback.getEndPoint().getEndPointStatus().incrementOverFlow();
           writeTask.setCoalesceSize( count );
           packet.position(startPos);
-          ((ConcurrentLinkedDeque)writeTask.outboundFrame).addFirst(serverPacket);
+          writeTask.outboundFrame.addFirst(serverPacket);
           serverPacket = null;
           count =  writeTask.getCoalesceSize();
         }
@@ -96,8 +96,8 @@ public class FrameHandler {
 
   private boolean processPacket(ServerPacket serverPacket){
     boolean sent = false;
-    if(serverPacket instanceof ServerPublishPacket){
-      Packet[] packets = ((ServerPublishPacket)serverPacket).packAdvancedFrame(packet);
+    if(serverPacket instanceof ServerPublishPacket serverPublishPacket){
+      Packet[] packets = serverPublishPacket.packAdvancedFrame(packet);
       packets[0].flip();
       for(Packet packetParts:packets){
         writeBuffer(packetParts);

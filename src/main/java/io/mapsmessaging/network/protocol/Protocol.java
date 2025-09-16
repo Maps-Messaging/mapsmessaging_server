@@ -32,6 +32,8 @@ import io.mapsmessaging.dto.rest.protocol.ProtocolInformationDTO;
 import io.mapsmessaging.logging.ServerLogMessages;
 import io.mapsmessaging.network.admin.ProtocolJMX;
 import io.mapsmessaging.network.io.EndPoint;
+import io.mapsmessaging.network.io.Packet;
+import io.mapsmessaging.network.io.ServerPacket;
 import io.mapsmessaging.network.io.Timeoutable;
 import io.mapsmessaging.network.io.impl.SelectorCallback;
 import io.mapsmessaging.selector.operators.ParserExecutor;
@@ -46,6 +48,7 @@ import org.jetbrains.annotations.Nullable;
 import javax.security.auth.Subject;
 import java.io.IOException;
 import java.net.SocketAddress;
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -276,4 +279,11 @@ public abstract class Protocol implements SelectorCallback, MessageListener, Tim
   }
 
 
+  public void sendFrame(ServerPacket request) throws IOException {
+    Packet packet = new Packet(ByteBuffer.allocate(100));
+    request.packFrame(packet);
+    packet.flip();
+    endPoint.sendPacket(packet);
+
+  }
 }

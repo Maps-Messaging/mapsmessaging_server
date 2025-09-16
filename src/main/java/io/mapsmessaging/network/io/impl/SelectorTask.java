@@ -65,8 +65,8 @@ public class SelectorTask implements Selectable {
     int writeBufferSize = (int) properties.getServerWriteBufferSize();
     if (isUDP) {
       long packetThreshold = 1000;
-      if(properties instanceof UdpConfig){
-        packetThreshold = ((UdpConfig)properties).getPacketReuseTimeout();
+      if(properties instanceof UdpConfig udpConfig){
+        packetThreshold = udpConfig.getPacketReuseTimeout();
       }
       readTask = new UDPReadTask(selectorCallback, readBufferSize, packetThreshold, logger);
       writeTask = new UDPWriteTask(selectorCallback, writeBufferSize, this, logger);
@@ -90,27 +90,6 @@ public class SelectorTask implements Selectable {
     isOpen = true;
     selectionOps = 0;
     logger.log(ServerLogMessages.SELECTOR_NEW_TASK);
-  }
-
-  private static String selectorOpToString(int op) {
-    StringBuilder sb = new StringBuilder();
-    if (op == 0) {
-      sb.append("NONE");
-    } else {
-      if ((op & 0x1) != 0) {
-        sb.append("READ ");
-      }
-      if ((op & 0x4) != 0) {
-        sb.append("WRITE ");
-      }
-      if ((op & 0x8) != 0) {
-        sb.append("CONNECT ");
-      }
-      if ((op & 0x10) != 0) {
-        sb.append("ACCEPT ");
-      }
-    }
-    return sb.toString().trim();
   }
 
   public synchronized void close() {
@@ -139,8 +118,8 @@ public class SelectorTask implements Selectable {
           Thread.currentThread().interrupt();
         } catch (ExecutionException e) {
           Throwable cause = e.getCause();
-          if (cause instanceof IOException) {
-            throw (IOException) cause;
+          if (cause instanceof IOException ioException) {
+            throw ioException;
           }
           Thread.currentThread().interrupt();
         }
@@ -185,4 +164,27 @@ public class SelectorTask implements Selectable {
       }
     }
   }
+
+
+  private static String selectorOpToString(int op) {
+    StringBuilder sb = new StringBuilder();
+    if (op == 0) {
+      sb.append("NONE");
+    } else {
+      if ((op & 0x1) != 0) {
+        sb.append("READ ");
+      }
+      if ((op & 0x4) != 0) {
+        sb.append("WRITE ");
+      }
+      if ((op & 0x8) != 0) {
+        sb.append("CONNECT ");
+      }
+      if ((op & 0x10) != 0) {
+        sb.append("ACCEPT ");
+      }
+    }
+    return sb.toString().trim();
+  }
+
 }

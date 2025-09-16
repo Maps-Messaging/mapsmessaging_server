@@ -129,7 +129,7 @@ public class Selector implements SelectorInt {
           if (logger.isDebugEnabled()) {
             logger.log(ServerLogMessages.SELECTOR_FIRED, key.interestOps());
           }
-          selectable.selected(selectable, this, key.interestOps());
+          selectable.selected(selectable, this, key.readyOps());
         }
       } catch (CancelledKeyException cancelled) {
         logger.log(ServerLogMessages.SELECTOR_CONNECTION_CLOSE);
