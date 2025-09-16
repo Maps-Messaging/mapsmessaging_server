@@ -17,57 +17,51 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 #
+echo "$2" | docker login --username "$1" --password-stdin
 
-docker login --username $1 --password $2
-
-POM_VERSION=$(cat pom.xml | grep -m 1 "<version>.*</version>$" | awk -F'[><]' '{print $3}')
+POM_VERSION=$(grep -m1 "<version>.*</version>$" pom.xml | awk -F'[><]' '{print $3}')
 export LOWERCASE_VERSION="${POM_VERSION,,}"
 
-# ---------------------------------------------------
-# Setup and Authenticate Docker to AWS ECR
-AWS_ECR_PASSWORD=$3
 AWS_ECR_REPOSITORY_URI="public.ecr.aws/u9e3v0s2"
-AWS_REGION="ap-southeast-2"
+AWS_REGION="us-east-1"
+aws ecr-public get-login-password --region "$AWS_REGION" \
+  | docker login --username AWS --password-stdin "$AWS_ECR_REPOSITORY_URI"
 
-aws ecr-public get-login-password --region us-east-1 | docker login --username AWS --password-stdin $AWS_ECR_REPOSITORY_URI
+# ensure a buildx builder with emulation
+docker buildx create --name mapsbuilder --driver docker-container --use >/dev/null 2>&1 || true
+docker run --privileged --rm tonistiigi/binfmt --install amd64,arm64 >/dev/null
+docker buildx inspect --bootstrap >/dev/null
 
-# ---------------------------------------------------
-
-
-# ---------------------------------------------------
-# Build the new x86 Docker image
+# -------------------------
+# x86_64 (amd64) IMAGE
+# -------------------------
 cd src/main/docker || exit
 mv Dockerfile Dockerfile.orig
-sed s/%%MAPS_VERSION%%/$POM_VERSION/g Dockerfile.orig > Dockerfile
-docker build --no-cache -t mapsmessaging/server_daemon_$LOWERCASE_VERSION --label $LOWERCASE_VERSION . --push
-#
-# Tag for AWS ECR and push
-docker tag mapsmessaging/server_daemon_$LOWERCASE_VERSION $AWS_ECR_REPOSITORY_URI/maps-messaging:server_daemon_$LOWERCASE_VERSION
-docker push $AWS_ECR_REPOSITORY_URI/maps-messaging:server_daemon_$LOWERCASE_VERSION
-#
-# ---------------------------------------------------
+sed "s/%%MAPS_VERSION%%/$POM_VERSION/g" Dockerfile.orig > Dockerfile
 
-# ---------------------------------------------------
-# Build the new arm64 Docker image
-cd arm
+docker buildx build \
+  --platform linux/amd64 \
+  --no-cache \
+  -t "mapsmessaging/server_daemon_${LOWERCASE_VERSION}" \
+  -t "${AWS_ECR_REPOSITORY_URI}/maps-messaging:server_daemon_${LOWERCASE_VERSION}" \
+  --label "version=${LOWERCASE_VERSION}" \
+  . --push
+
+# -------------------------
+# arm64 IMAGE
+# -------------------------
+cd arm || exit
 mv Dockerfile Dockerfile.orig
-sed s/%%MAPS_VERSION%%/$POM_VERSION/g Dockerfile.orig > Dockerfile
-docker buildx build --platform linux/arm64 --no-cache -t mapsmessaging/server_daemon_arm_$LOWERCASE_VERSION --label $LOWERCASE_VERSION . --load
+sed "s/%%MAPS_VERSION%%/$POM_VERSION/g" Dockerfile.orig > Dockerfile
 
-# Tag the image for AWS ECR
-docker tag mapsmessaging/server_daemon_arm_$LOWERCASE_VERSION $AWS_ECR_REPOSITORY_URI/maps-messaging:server_daemon_arm_$LOWERCASE_VERSION
+docker buildx build \
+  --platform linux/arm64 \
+  --no-cache \
+  -t "mapsmessaging/server_daemon_arm_${LOWERCASE_VERSION}" \
+  -t "${AWS_ECR_REPOSITORY_URI}/maps-messaging:server_daemon_arm_${LOWERCASE_VERSION}" \
+  --label "version=${LOWERCASE_VERSION}" \
+  . --push
 
-# Push to Docker Hub
-docker push mapsmessaging/server_daemon_arm_$LOWERCASE_VERSION
-
-# Push to AWS ECR
-docker push $AWS_ECR_REPOSITORY_URI/maps-messaging:server_daemon_arm_$LOWERCASE_VERSION
-
-#
-# ---------------------------------------------------
-
-# ---------------------------------------------------
-# Clean up so we do not waste disk space
+# cleanup
 docker image prune -af
 docker system prune -af --volumes
-# ---------------------------------------------------

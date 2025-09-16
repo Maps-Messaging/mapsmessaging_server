@@ -36,7 +36,7 @@ ENV LANG=en_US.UTF-8 \
 # Single-layer build: install Zulu JDK 21, server payload, and configure everything
 #----------------------------------------------------------------------------------------------
 RUN set -eux; \
-    ZULU_ARCH=zulu21.42.19-ca-jdk21.0.7-linux_musl_aarch64.tar.gz; \
+    ZULU_ARCH=zulu21.44.17-ca-jdk21.0.8-linux_musl_aarch64.tar.gz; \
     ZULU_DIR="${ZULU_ARCH%.tar.gz}"; \
     INSTALL_DIR="$(dirname "$JAVA_HOME")"; \
     apk add --no-cache ca-certificates wget tar gzip coreutils dos2unix; \
