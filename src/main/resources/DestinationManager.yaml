@@ -59,7 +59,7 @@ DestinationManager:
          name: root
          directory: "{{MAPS_DATA}}/destinations"
          namespace: /
-         type: Memory # could be either Partition, Memory or MemoryTier
+         type: Partition # could be either Partition, Memory or MemoryTier
          sync: disable # Enable or Disable
          itemCount: 1000 # Number of messages to be stored inside a partition
          maxPartitionSize: 1G  # 1/2 GB
