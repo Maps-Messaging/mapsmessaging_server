@@ -398,15 +398,19 @@ public class StoGiProtocol extends Protocol implements Consumer<Packet> {
           lastOutgoingMessagePollInterval = System.currentTimeMillis();
           replacement = this.pendingMessages.getAndSet(new LinkedHashMap<>());
         }
-        try {
-          buildSendList(replacement);
-        } catch (IOException e) {
-          // Log This
+        if(!replacement.isEmpty()) {
+          try {
+            buildSendList(replacement);
+          } catch (IOException e) {
+            // Log This
+          }
         }
       }
-      SatelliteMessage msg = currentList.remove(0);
-      sendMessageViaModem(currentStreamId,msg);
-      logger.log(STOGI_SENT_MESSAGE_TO_MODEM, msg.getMessage().length);
+      if(!currentList.isEmpty()){
+        SatelliteMessage msg = currentList.remove(0);
+        sendMessageViaModem(currentStreamId,msg);
+        logger.log(STOGI_SENT_MESSAGE_TO_MODEM, msg.getMessage().length);
+      }
       return currentList.isEmpty();
     } else {
       handleMsgStates(stateList);
@@ -499,7 +503,7 @@ public class StoGiProtocol extends Protocol implements Consumer<Packet> {
     sentMessage();
     endPoint.getEndPointStatus().updateWriteBytes(buffer.length);
     modem.sendMessage(2, sin, messageId, messageLifeTime,  buffer);
-    logger.log(STOGI_SEND_MESSAGE_TO_MODEM, satelliteMessage.getPacketNumber());
+    logger.log(STOGI_SEND_MESSAGE_TO_MODEM, satelliteMessage.getPacketNumber(), buffer.length);
   }
 
 
