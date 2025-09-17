@@ -126,6 +126,7 @@ NetworkManager:
         url: tcp://:::1883/
         protocol: mqtt
         auth: default
+        selectorThreadCount: "{processors}/2"
 
       - name: "MQTT SSL Interface"
         url: "ssl://0.0.0.0:1892/"

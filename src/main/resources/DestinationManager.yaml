@@ -59,12 +59,12 @@ DestinationManager:
          name: root
          directory: "{{MAPS_DATA}}/destinations"
          namespace: /
-         type: Partition # could be either Partition, Memory or MemoryTier
+         type: Memory # could be either Partition, Memory or MemoryTier
          sync: disable # Enable or Disable
-         itemCount: 100 # Number of messages to be stored inside a partition
-         maxPartitionSize: 4096  # 1/2 GB
+         itemCount: 1000 # Number of messages to be stored inside a partition
+         maxPartitionSize: 1G  # 1/2 GB
          expiredEventPoll: 20 # Time in seconds to scan for expired events
-         autoPauseTimeout: 300 # Idle time in seconds before pausing the store ( Close file descriptors and free mapped memory )
+         autoPauseTimeout: 600 # Idle time in seconds before pausing the store ( Close file descriptors and free mapped memory )
          format:
             name: json # RAW, JSON, XML
          cache:

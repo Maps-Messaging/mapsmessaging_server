@@ -77,13 +77,12 @@ public class NetworkConfigFactory {
 
     endPointConfigDTO.setProxyProtocolMode(mode);
     endPointConfigDTO.setAllowedProxyHosts(config.getProperty("allowedProxyHosts", ""));
-    endPointConfigDTO.setSelectorThreadCount(config.getIntProperty("selectorThreadCount", 2));
+    endPointConfigDTO.setSelectorThreadCount(config.getThreadCount("selectorThreadCount", 2));
     endPointConfigDTO.setDiscoverable(config.getBooleanProperty("discoverable", false));
     endPointConfigDTO.setServerReadBufferSize(ConfigHelper.parseBufferSize(config.getProperty("serverReadBufferSize", "10K")));
     endPointConfigDTO.setServerWriteBufferSize(ConfigHelper.parseBufferSize(config.getProperty("serverWriteBufferSize", "10K")));
     endPointConfigDTO.setConnectionTimeout(ConfigHelper.parseBufferSize(config.getProperty("connectionTimeout", "5000")));
-    if(endPointConfigDTO instanceof TcpConfigDTO){
-      TcpConfigDTO tcpConfigDTO = (TcpConfigDTO)endPointConfigDTO;
+    if(endPointConfigDTO instanceof TcpConfigDTO tcpConfigDTO){
       tcpConfigDTO.setReceiveBufferSize(config.getIntProperty("receiveBufferSize", 128000));
       tcpConfigDTO.setSendBufferSize (config.getIntProperty("sendBufferSize", 128000));
       tcpConfigDTO.setTimeout( config.getIntProperty("timeout", 60000));
@@ -93,8 +92,7 @@ public class NetworkConfigFactory {
       tcpConfigDTO.setFragmentationLimit( config.getIntProperty("fragmentationLimit", 5));
       tcpConfigDTO.setEnableReadDelayOnFragmentation ( config.getBooleanProperty("enableReadDelayOnFragmentation", true));
     }
-    else if(endPointConfigDTO instanceof UdpConfigDTO){
-      UdpConfigDTO udpConfigDTO = (UdpConfigDTO)endPointConfigDTO;
+    else if(endPointConfigDTO instanceof UdpConfigDTO udpConfigDTO){
       udpConfigDTO.setPacketReuseTimeout(config.getLongProperty("packetReuseTimeout", 1000L));
       udpConfigDTO.setIdleSessionTimeout(config.getLongProperty("idleSessionTimeout", 600));
       udpConfigDTO.setHmacHostLookupCacheExpiry(config.getLongProperty("HmacHostLookupCacheExpiry", 600));
