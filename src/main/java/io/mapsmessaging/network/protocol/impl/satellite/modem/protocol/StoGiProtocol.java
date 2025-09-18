@@ -158,7 +158,6 @@ public class StoGiProtocol extends Protocol implements Consumer<Packet> {
     messagePoll = modemConfig.getIncomingMessagePollInterval() * 1000;
     outgoingMessagePollInterval = modemConfig.getOutgoingMessagePollInterval() * 1000;
     completedConnection();
-    endPoint.getServer().handleNewEndPoint(endPoint);
     String statsDestination = modemConfig.getModemStatsTopic();
     if (statsDestination != null && !statsDestination.isEmpty()) {
       destination = session.findDestination(statsDestination, DestinationType.TOPIC).join();

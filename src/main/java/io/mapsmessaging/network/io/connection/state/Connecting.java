@@ -31,7 +31,8 @@ public class Connecting extends State {
 
   @Override
   public void execute() {
-    if(endPointConnection.getUrl().getProtocol().equalsIgnoreCase("udp")){
+    if(endPointConnection.getUrl().getProtocol().equalsIgnoreCase("udp")||
+       endPointConnection.getUrl().getProtocol().equalsIgnoreCase("serial")){
       // This is a UDP connection, we are connected by default
       try {
         endPointConnection.handleNewEndPoint(endPointConnection.getConnection().getEndPoint());
