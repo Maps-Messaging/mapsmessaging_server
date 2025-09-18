@@ -312,7 +312,7 @@ public class StoGiProtocol extends Protocol implements Consumer<Packet> {
     List<byte[]> list = pending.computeIfAbsent(destinationName, key -> new ArrayList<>());
     list.add(payload);
     while(list.size() > depth){
-      list.remove(0);
+      list.removeFirst();
     }
     if (messageEvent.getCompletionTask() != null) {
       messageEvent.getCompletionTask().run();
@@ -387,35 +387,39 @@ public class StoGiProtocol extends Protocol implements Consumer<Packet> {
     CompletableFuture<List<SendMessageState>> outgoing = modem.listSentMessages();
     List<SendMessageState> stateList = outgoing.join();
     boolean needToSend = (!priorityMessages.get().isEmpty() ) || (lastOutgoingMessagePollInterval + outgoingMessagePollInterval < System.currentTimeMillis());
-
     if (stateList.isEmpty() && currentList.isEmpty() && !needToSend) {
       return false;
     }
-    if (stateList.isEmpty()) {
-      if(currentList.isEmpty()){
-        Map<String, List<byte[]>> replacement = priorityMessages.getAndSet(new LinkedHashMap<>());
-        if(replacement.isEmpty()){
-          lastOutgoingMessagePollInterval = System.currentTimeMillis();
-          replacement = this.pendingMessages.getAndSet(new LinkedHashMap<>());
-        }
-        if(!replacement.isEmpty()) {
-          try {
-            buildSendList(replacement);
-          } catch (IOException e) {
-            // Log This
-          }
-        }
-      }
-      if(!currentList.isEmpty()){
-        SatelliteMessage msg = currentList.remove(0);
-        sendMessageViaModem(currentStreamId,msg);
-        logger.log(STOGI_SENT_MESSAGE_TO_MODEM, msg.getMessage().length);
-      }
-      return currentList.isEmpty();
-    } else {
+    if(stateList.isEmpty()) {
+      return packAndSendMessages();
+    }
+    else{
       handleMsgStates(stateList);
     }
     return true;
+  }
+
+  private boolean packAndSendMessages() {
+    if(currentList.isEmpty()){
+      Map<String, List<byte[]>> replacement = priorityMessages.getAndSet(new LinkedHashMap<>());
+      if(replacement.isEmpty()){
+        lastOutgoingMessagePollInterval = System.currentTimeMillis();
+        replacement = this.pendingMessages.getAndSet(new LinkedHashMap<>());
+      }
+      if(!replacement.isEmpty()) {
+        try {
+          buildSendList(replacement);
+        } catch (IOException e) {
+          // Log This
+        }
+      }
+    }
+    if(!currentList.isEmpty()){
+      SatelliteMessage msg = currentList.removeFirst();
+      sendMessageViaModem(currentStreamId,msg);
+      logger.log(STOGI_SENT_MESSAGE_TO_MODEM, msg.getMessage().length);
+    }
+    return currentList.isEmpty();
   }
 
   private void buildSendList(Map<String, List<byte[]>> replacement) throws IOException {
