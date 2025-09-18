@@ -86,8 +86,11 @@ public class ConnectListener extends BaseConnectionListener {
       } else {
         try {
           setupConnAck(session, connAck);
-          protocol.sendFrame(connAck); // can do this here since we know nothing is being sent yet
           protocol.registerRead();
+          protocol.sendFrame(connAck);
+          if(connAck.getCallback() != null) {
+            connAck.getCallback().run();
+          }
         } catch (IOException e) {
           handleSessionException(connAck, protocol);
         }
