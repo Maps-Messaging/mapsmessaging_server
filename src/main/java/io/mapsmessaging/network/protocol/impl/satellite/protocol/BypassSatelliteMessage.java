@@ -27,10 +27,6 @@ public class BypassSatelliteMessage extends SatelliteMessage {
     super(streamNumber, message, packetNumber, compressed);
   }
 
-  public BypassSatelliteMessage(int streamNumber, byte[] incomingPackedMessage) {
-    super(streamNumber, incomingPackedMessage);
-  }
-
   public byte[] packToSend() {
     ByteBuffer header = ByteBuffer.allocate(message.length);
     header.put(message);
