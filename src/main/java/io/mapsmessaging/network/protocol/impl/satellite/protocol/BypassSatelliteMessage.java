@@ -27,12 +27,14 @@ public class BypassSatelliteMessage extends SatelliteMessage {
     super(streamNumber, message, packetNumber, compressed);
   }
 
+  @Override
   public byte[] packToSend() {
     ByteBuffer header = ByteBuffer.allocate(message.length);
     header.put(message);
     return header.array();
   }
 
+  @Override
   protected void unpackFromReceived(byte[] data) {
     if (data == null) return;
     message = data;
