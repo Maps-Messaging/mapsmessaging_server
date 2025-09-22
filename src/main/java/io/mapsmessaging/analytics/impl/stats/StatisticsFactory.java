@@ -17,41 +17,40 @@
  *  limitations under the License.
  */
 
-package io.mapsmessaging.analytics;
+package io.mapsmessaging.analytics.impl.stats;
 
-import io.mapsmessaging.configuration.ConfigurationProperties;
+
 import java.util.Map;
 import java.util.ServiceLoader;
 import java.util.concurrent.ConcurrentHashMap;
 
-@SuppressWarnings("java:S6548") // yes it is a singleton
-public class AnalyserFactory {
+public class StatisticsFactory {
+
 
   private static class Holder {
-    static final AnalyserFactory INSTANCE = new AnalyserFactory();
+    static final StatisticsFactory INSTANCE = new StatisticsFactory();
   }
 
-  public static AnalyserFactory getInstance() {
-    return AnalyserFactory.Holder.INSTANCE;
+  public static StatisticsFactory getInstance() {
+    return StatisticsFactory.Holder.INSTANCE;
   }
 
 
-  private final Map<String, Analyser> analysers;
+  private final Map<String, Statistics> statistics;
 
-  private AnalyserFactory() {
-    analysers = new ConcurrentHashMap<>();
-    ServiceLoader<Analyser> serviceLoaded = ServiceLoader.load(Analyser.class);
-    for(Analyser analyser : serviceLoaded) {
-      analysers.put(analyser.getName(), analyser);
+  private StatisticsFactory() {
+    statistics = new ConcurrentHashMap<>();
+    ServiceLoader<Statistics> serviceLoaded = ServiceLoader.load(Statistics.class);
+    for(Statistics statistic : serviceLoaded) {
+      statistics.put(statistic.getName(), statistic);
     }
   }
 
-  public Analyser getAnalyser(String analyserName, ConfigurationProperties properties, AnalyserListener listener) {
-    Analyser analyser = analysers.get(analyserName);
-    if(analyser != null) {
-      return analyser.create(properties, listener);
+  public Statistics getAnalyser(String statisticsName) {
+    Statistics statistic = statistics.get(statisticsName);
+    if(statistic != null) {
+      return statistic.create();
     }
     return null;
   }
-
 }

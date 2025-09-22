@@ -1,9 +1,7 @@
 package io.mapsmessaging.analytics.impl.stats;
 
 import com.google.gson.JsonObject;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
-import lombok.ToString;
+import lombok.Getter;
 
 /**
  * Cross-series stats: online covariance/correlation with a paired series.
@@ -11,6 +9,7 @@ import lombok.ToString;
  */
 public class CrossSeriesStatistics extends AdvancedStatistics {
 
+  @Getter
   protected long pairedCount;
 
   protected double sumX;
@@ -81,4 +80,18 @@ public class CrossSeriesStatistics extends AdvancedStatistics {
     o.addProperty("correlation", getSampleCorrelation());
   }
 
+  @Override
+  public Statistics create() {
+    return new CrossSeriesStatistics();
+  }
+
+  @Override
+  public String getName() {
+    return "CrossSeries";
+  }
+
+  @Override
+  public String getDescription() {
+    return "Cross Series Statistics";
+  }
 }

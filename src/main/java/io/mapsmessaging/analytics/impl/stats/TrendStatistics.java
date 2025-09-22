@@ -72,5 +72,18 @@ public class TrendStatistics extends AdvancedStatistics {
     o.addProperty("timestampSlopePerSec", getTimestampSlopePerSecond());
     o.addProperty("timestampIntercept", getTimestampIntercept());
   }
+  @Override
+  public Statistics create() {
+    return new TrendStatistics();
+  }
 
+  @Override
+  public String getName() {
+    return "Trend";
+  }
+
+  @Override
+  public String getDescription() {
+    return "Trend Statistics";
+  }
 }

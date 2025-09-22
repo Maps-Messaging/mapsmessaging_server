@@ -73,5 +73,18 @@ public class QualityStatistics extends AdvancedStatistics {
     o.addProperty("outliers", getOutlierCount());
     o.addProperty("outlierStdDevs", outlierStdDevs);
   }
+  @Override
+  public Statistics create() {
+    return new QualityStatistics();
+  }
 
+  @Override
+  public String getName() {
+    return "Quality";
+  }
+
+  @Override
+  public String getDescription() {
+    return "Quality statistics";
+  }
 }

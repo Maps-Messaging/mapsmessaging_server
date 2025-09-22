@@ -1,7 +1,6 @@
 package io.mapsmessaging.analytics.impl.stats;
 
 import com.google.gson.JsonObject;
-import java.util.Random;
 
 public class BaseStatistics implements Statistics {
   protected double first;
@@ -24,9 +23,13 @@ public class BaseStatistics implements Statistics {
     count = 0;
   }
 
-  public void update(Number entry) {
-    update(entry.doubleValue());
+  public void update(Object entry) {
+    if(entry instanceof Number number){
+      update(number.doubleValue());
+    }
   }
+
+
 
   protected void update(double cur){
     if(count == 0){
@@ -57,8 +60,23 @@ public class BaseStatistics implements Statistics {
     return o;
   }
 
+
   protected void addSubclassJson(JsonObject o) {
     // default: nothing
   }
 
+  @Override
+  public Statistics create() {
+    return new BaseStatistics();
+  }
+
+  @Override
+  public String getName() {
+    return "Base";
+  }
+
+  @Override
+  public String getDescription() {
+    return "Base statistics";
+  }
 }

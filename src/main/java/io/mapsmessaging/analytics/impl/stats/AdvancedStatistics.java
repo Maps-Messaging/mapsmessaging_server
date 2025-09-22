@@ -12,6 +12,8 @@ public class AdvancedStatistics extends BaseStatistics {
   protected double sumTimeSquared;
   protected double sumTimeValueProduct;
 
+  public AdvancedStatistics() {}
+
   @Override
   public void reset() {
     super.reset();
@@ -81,4 +83,20 @@ public class AdvancedStatistics extends BaseStatistics {
     sumTimeSquared += time * time;
     sumTimeValueProduct += time * currentValue;
   }
+
+  @Override
+  public Statistics create() {
+    return new AdvancedStatistics();
+  }
+
+  @Override
+  public String getName() {
+    return "Advanced";
+  }
+
+  @Override
+  public String getDescription() {
+    return "Advanced Statistics";
+  }
+
 }

@@ -17,6 +17,10 @@ public class WindowedStatistics extends AdvancedStatistics {
   private double windowSum;
   private double windowSumSquares;
 
+  public WindowedStatistics() {
+    this(10); // sensible default
+  }
+
   public WindowedStatistics(int windowSize) {
     super();
     this.windowSize = Math.max(1, windowSize);
@@ -81,5 +85,18 @@ public class WindowedStatistics extends AdvancedStatistics {
     o.addProperty("windowMean", getWindowMean());
     o.addProperty("windowStdDev", getWindowStdDeviation());
   }
+  @Override
+  public Statistics create() {
+    return new CrossSeriesStatistics();
+  }
 
+  @Override
+  public String getName() {
+    return "Windowed";
+  }
+
+  @Override
+  public String getDescription() {
+    return "Windowed Statistics";
+  }
 }

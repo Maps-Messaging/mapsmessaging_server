@@ -76,4 +76,18 @@ public class MomentStatistics extends AdvancedStatistics {
     o.addProperty("kurtosisExcess", getSampleKurtosisExcess());
   }
 
+  @Override
+  public Statistics create() {
+    return new MomentStatistics();
+  }
+
+  @Override
+  public String getName() {
+    return "Moment";
+  }
+
+  @Override
+  public String getDescription() {
+    return "Moment Statistics";
+  }
 }
