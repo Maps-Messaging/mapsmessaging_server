@@ -56,7 +56,7 @@ public class Filter {
     return lookup;
   }
 
-  private IdentifierResolver getResolver(String lookup, Message message) {
+  public static IdentifierResolver getResolver(String lookup, Message message) {
     MessageFormatter formatter = SchemaManager.getInstance().getMessageFormatter(lookup);
     if (formatter != null) {
       return formatter.parse(message.getOpaqueData());
