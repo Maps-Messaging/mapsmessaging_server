@@ -26,10 +26,11 @@ import java.nio.ByteBuffer;
 
 @Getter
 public class SatelliteMessage {
-  private final int streamNumber;
-  private boolean compressed;
-  private int packetNumber;
-  private byte[] message;
+  protected final int streamNumber;
+  protected boolean compressed;
+  protected int packetNumber;
+  protected byte[] message;
+  protected boolean raw;
 
   @Setter
   private Runnable completionCallback;
@@ -55,7 +56,7 @@ public class SatelliteMessage {
     return header.array();
   }
 
-  private void unpackFromReceived(byte[] data) {
+  protected void unpackFromReceived(byte[] data) {
     if (data == null) return;
     ByteBuffer buffer = ByteBuffer.wrap(data);
     //Load the flags, currently just compressed
@@ -64,11 +65,15 @@ public class SatelliteMessage {
     int messageLength = buffer.getShort();
 
     // Simple validate here
-    if(buffer.remaining() < messageLength) return; // exceeded buffer, seems odd
-
-    // create and load buffers
-    message = new byte[messageLength];
-    buffer.get(message);
+    if(buffer.remaining() < messageLength) {
+      message = data;
+      raw = true;
+    }
+    else {
+      message = new byte[messageLength];
+      buffer.get(message);
+      raw = false;
+    }
   }
 
 }

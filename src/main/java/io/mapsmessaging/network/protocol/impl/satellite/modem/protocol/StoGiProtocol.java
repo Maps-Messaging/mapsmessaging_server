@@ -42,6 +42,7 @@ import io.mapsmessaging.network.protocol.Protocol;
 import io.mapsmessaging.network.protocol.ProtocolMessageTransformation;
 import io.mapsmessaging.network.protocol.impl.satellite.TaskManager;
 import io.mapsmessaging.network.protocol.impl.satellite.gateway.io.SatelliteEndPoint;
+import io.mapsmessaging.network.protocol.impl.satellite.gateway.model.MessageData;
 import io.mapsmessaging.network.protocol.impl.satellite.modem.device.Modem;
 import io.mapsmessaging.network.protocol.impl.satellite.modem.device.impl.BaseModemProtocol;
 import io.mapsmessaging.network.protocol.impl.satellite.modem.device.impl.data.NetworkStatus;
@@ -84,6 +85,7 @@ public class StoGiProtocol extends Protocol implements Consumer<Packet> {
   private final AtomicReference<Map<String, List<byte[]>>> priorityMessages;
   private final int messageLifeTime;
   private final CipherManager cipherManager;
+  private boolean bridgeMode;
 
   private final int maxBufferSize;
   private final int compressionThreshold;
@@ -136,6 +138,7 @@ public class StoGiProtocol extends Protocol implements Consumer<Packet> {
     setTransformation(transformation);
     StoGiConfigDTO modemConfig = (StoGiConfigDTO) getProtocolConfig();
 
+    bridgeMode = modemConfig.isBridgeMode();
     messageLifeTime = modemConfig.getMessageLifeTimeInMinutes();
     modem = new Modem(this, modemConfig.getModemResponseTimeout(), streamHandler, taskManager);
 
@@ -266,7 +269,20 @@ public class StoGiProtocol extends Protocol implements Consumer<Packet> {
     session.addSubscription(builder.build());
   }
 
+  @Override
   public void sendMessage(@NotNull @NonNull MessageEvent messageEvent) {
+    if (bridgeMode) {
+      MessageData messageData = new MessageData();
+      messageData.setPayload(messageEvent.getMessage().getOpaqueData());
+      messageData.setCompletionCallback(messageEvent.getCompletionTask());
+      SatelliteMessage satelliteMessage = new BypassSatelliteMessage(0, messageEvent.getMessage().getOpaqueData(), 0, false);
+      sendMessageViaModem(currentStreamId, satelliteMessage);
+      currentStreamId++;
+    } else {
+      preparePackedMessage(messageEvent);
+    }
+  }
+  public void preparePackedMessage(@NotNull @NonNull MessageEvent messageEvent) {
     boolean filteredOverride = false;
     int depth = 1;
     try {
@@ -352,7 +368,7 @@ public class StoGiProtocol extends Protocol implements Consumer<Packet> {
 
   @Override
   public String getVersion() {
-    return "0.1";
+    return "1.0";
   }
 
   @Override
@@ -470,17 +486,22 @@ public class StoGiProtocol extends Protocol implements Consumer<Packet> {
     for (ModemSatelliteMessage message : messages) {
       if (message != null) {
         SatelliteMessage loaded = new SatelliteMessage(message.getSin(), message.getPayload());
-        SatelliteMessage satelliteMessage = satelliteMessageRebuilder.rebuild(loaded);
-        if (satelliteMessage != null) {
-          logger.log(STOGI_PROCESSING_INBOUND_EVENT, satelliteMessage.getPacketNumber());
-          try {
-            Map<String, List<byte[]>> receivedEventMap = MessageQueueUnpacker.unpack(satelliteMessage.getMessage(), satelliteMessage.isCompressed(), cipherManager);
-            publishIncomingMap(receivedEventMap);
-          } catch (Throwable e) {
-            logger.log(STOGI_EXCEPTION_PROCESSING_PACKET, e);
+        if(loaded.isRaw()){
+          sendMessageToTopic("/incoming", loaded.getMessage());
+        }
+        else {
+          SatelliteMessage satelliteMessage = satelliteMessageRebuilder.rebuild(loaded);
+          if (satelliteMessage != null) {
+            logger.log(STOGI_PROCESSING_INBOUND_EVENT, satelliteMessage.getPacketNumber());
+            try {
+              Map<String, List<byte[]>> receivedEventMap = MessageQueueUnpacker.unpack(satelliteMessage.getMessage(), satelliteMessage.isCompressed(), cipherManager);
+              publishIncomingMap(receivedEventMap);
+            } catch (Throwable e) {
+              logger.log(STOGI_EXCEPTION_PROCESSING_PACKET, e);
+            }
+          } else {
+            logger.log(STOGI_RECEIVED_PARTIAL_MESSAGE, loaded.getPacketNumber());
           }
-        } else {
-          logger.log(STOGI_RECEIVED_PARTIAL_MESSAGE, loaded.getPacketNumber());
         }
       }
     }

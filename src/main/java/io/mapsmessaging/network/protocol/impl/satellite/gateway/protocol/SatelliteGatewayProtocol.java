@@ -62,7 +62,6 @@ public class SatelliteGatewayProtocol extends Protocol {
   private final Logger logger = LoggerFactory.getLogger(SatelliteGatewayProtocol.class);
   private final SatelliteMessageRebuilder messageRebuilder;
   private final Session session;
-  private final String namespacePath;
   private final int maxBufferSize;
   private final int compressionThreshold;
   private final AtomicReference<Map<String, List<byte[]>>> pendingMessages;
@@ -70,8 +69,10 @@ public class SatelliteGatewayProtocol extends Protocol {
   private final long outgoingPollInterval;
   private final CipherManager cipherManager;
   private final boolean sendHighPriorityEvents;
+  private final boolean bridgeMode;
 
 
+  private String namespacePath;
   private long nextOutgoingTime;
   private ScheduledFuture<?> scheduledFuture;
   private boolean closed;
@@ -94,6 +95,7 @@ public class SatelliteGatewayProtocol extends Protocol {
     else{
       cipherManager = null;
     }
+    bridgeMode = config.isBridgeMode();
     outgoingPollInterval = config.getOutgoingMessagePollInterval() * 1000;
     maxBufferSize = config.getMaxBufferSize();
     compressionThreshold = config.getCompressionCutoffSize();
@@ -111,15 +113,22 @@ public class SatelliteGatewayProtocol extends Protocol {
     setKeepAlive(millis + random.nextLong(millis));
     session = SessionManager.getInstance().create(scb.build(), this);
     session.resumeState();
-    namespacePath = config.getOutboundNamespaceRoot().trim();
-    if(!namespacePath.isEmpty()){
-      String path = namespacePath.replace("{deviceId}", primeId);
+    String outBoundNamespacePath = config.getOutboundNamespaceRoot().trim();
+    if(!outBoundNamespacePath.isEmpty()){
+      String path = outBoundNamespacePath.replace("{deviceId}", primeId);
+      path = path.replace("{mailboxId}", config.getMailboxId());
       SubscriptionContextBuilder subBuilder = new SubscriptionContextBuilder(path, ClientAcknowledgement.AUTO);
       subBuilder.setQos(QualityOfService.AT_MOST_ONCE)
           .setReceiveMaximum(config.getMaxInflightEventsPerDevice())
           .setNoLocalMessages(true);
       session.addSubscription(subBuilder.build());
     }
+    namespacePath = config.getNamespace();
+    if(namespacePath == null || namespacePath.isEmpty()){
+      namespacePath = "/incoming/{mailboxId}/{deviceId}";
+    }
+    namespacePath = namespacePath.replace("{deviceId}", primeId);
+    namespacePath = namespacePath.replace("{mailboxId}", config.getMailboxId());
 
     String bcast = config.getOutboundBroadcast();
     if(bcast != null && !bcast.isEmpty()){
@@ -185,7 +194,24 @@ public class SatelliteGatewayProtocol extends Protocol {
 
   @Override
   public void sendMessage(@NotNull @NonNull MessageEvent messageEvent) {
+    if (bridgeMode) {
+      MessageData messageData = new MessageData();
+      byte[] tmp = messageEvent.getMessage().getOpaqueData();
+      byte[] payload = new byte[tmp.length + 2];
+      int sin = (currentStreamId & 0x7f) | 0x80;
+      payload[0] = (byte)sin;
+      payload[1] = 0;
+      System.arraycopy(tmp, 0, payload, 2, tmp.length);
+      messageData.setPayload(tmp);
+      messageData.setCompletionCallback(messageEvent.getCompletionTask());
 
+      ((SatelliteEndPoint) endPoint).sendMessage(messageData);
+    } else {
+      preparePackedMessage(messageEvent);
+    }
+  }
+
+  private void preparePackedMessage(MessageEvent messageEvent) {
     boolean filteredOverride = false;
     int depth = 1;
     try {
@@ -239,7 +265,7 @@ public class SatelliteGatewayProtocol extends Protocol {
     if(!replacement.isEmpty()) {
       MessageQueuePacker.Packed packedQueue = MessageQueuePacker.pack(replacement, compressionThreshold, cipherManager);
       List<SatelliteMessage> toSend = SatelliteMessageFactory.createMessages(currentStreamId, packedQueue.data(), maxBufferSize, packedQueue.compressed());
-      int sin = (currentStreamId &0x7f) | 0x80;
+      int sin = (currentStreamId & 0x7f) | 0x80;
       int idx =0;
       for (SatelliteMessage satelliteMessage : toSend) {
         byte[] tmp = satelliteMessage.packToSend();
@@ -291,7 +317,7 @@ public class SatelliteGatewayProtocol extends Protocol {
 
   @Override
   public String getVersion() {
-    return "0.1-beta";
+    return "1.0";
   }
 
   public void handleIncomingMessage(MessageData message) throws ExecutionException, InterruptedException {
@@ -300,45 +326,53 @@ public class SatelliteGatewayProtocol extends Protocol {
     byte[] tmp = new byte[raw.length - 2];
     System.arraycopy(raw, 2, tmp, 0, tmp.length);
     SatelliteMessage satelliteMessage = new SatelliteMessage(sin, tmp);
-    satelliteMessage = messageRebuilder.rebuild(satelliteMessage);
-    if (satelliteMessage != null) {
-      try {
-        Map<String, List<byte[]>> receivedEventMap = MessageQueueUnpacker.unpack(satelliteMessage.getMessage(), satelliteMessage.isCompressed(), cipherManager);
-        for(Map.Entry<String, List<byte[]>> entry : receivedEventMap.entrySet()){
-          publishEvents(entry.getKey(), entry.getValue());
+    if(satelliteMessage.isRaw()){
+      publishMessage(satelliteMessage.getMessage(), namespacePath);
+    }
+    else {
+      satelliteMessage = messageRebuilder.rebuild(satelliteMessage);
+      if (satelliteMessage != null) {
+        try {
+          Map<String, List<byte[]>> receivedEventMap = MessageQueueUnpacker.unpack(satelliteMessage.getMessage(), satelliteMessage.isCompressed(), cipherManager);
+          for (Map.Entry<String, List<byte[]>> entry : receivedEventMap.entrySet()) {
+            publishEvents(entry.getKey(), entry.getValue());
+          }
+        } catch (IOException e) {
+          logger.log(INMARSAT_FAILED_PROCESSING_INCOMING, e);
         }
-      } catch (IOException e) {
-        logger.log(INMARSAT_FAILED_PROCESSING_INCOMING, e);
       }
     }
   }
 
   private void publishEvents(String namespace, List<byte[]> list) throws ExecutionException, InterruptedException {
     for (byte[] buffer : list) {
-      MessageBuilder messageBuilder = new MessageBuilder();
-      messageBuilder.setOpaqueData(buffer);
-      Message mapsMessage = messageBuilder.build();
-      // Transform
-
-      CompletableFuture<Destination> future = session.findDestination(namespace, DestinationType.TOPIC);
-      future.thenApply(destination -> {
-        if (destination != null) {
-          try {
-            destination.storeMessage(mapsMessage);
-          } catch (IOException e) {
-            logger.log(OGWS_FAILED_TO_SAVE_MESSAGE, e);
-            try {
-              endPoint.close();
-            } catch (IOException ioException) {
-              // ignore
-            }
-            future.completeExceptionally(e);
-          }
-        }
-        return destination;
-      });
-      future.get();
+      publishMessage(buffer, namespace);
     }
   }
 
+  private void publishMessage(byte[] buffer, String namespace) throws ExecutionException, InterruptedException {
+    MessageBuilder messageBuilder = new MessageBuilder();
+    messageBuilder.setOpaqueData(buffer);
+    Message mapsMessage = messageBuilder.build();
+    // Transform
+
+    CompletableFuture<Destination> future = session.findDestination(namespace, DestinationType.TOPIC);
+    future.thenApply(destination -> {
+      if (destination != null) {
+        try {
+          destination.storeMessage(mapsMessage);
+        } catch (IOException e) {
+          logger.log(OGWS_FAILED_TO_SAVE_MESSAGE, e);
+          try {
+            endPoint.close();
+          } catch (IOException ioException) {
+            // ignore
+          }
+          future.completeExceptionally(e);
+        }
+      }
+      return destination;
+    });
+    future.get();
+  }
 }
