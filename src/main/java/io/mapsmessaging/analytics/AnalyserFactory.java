@@ -46,10 +46,10 @@ public class AnalyserFactory {
     }
   }
 
-  public Analyser getAnalyser(String analyserName, ConfigurationProperties properties, AnalyserListener listener) {
+  public Analyser getAnalyser(String analyserName, ConfigurationProperties properties) {
     Analyser analyser = analysers.get(analyserName);
     if(analyser != null) {
-      return analyser.create(properties, listener);
+      return analyser.create(properties);
     }
     return null;
   }

@@ -12,11 +12,14 @@ public class StringStatistics implements Statistics {
   private final Map<String, Long> counts = new HashMap<>();
   @Getter
   private long totalCount = 0;
+  private int mismatched;
 
   public void reset() {
     counts.clear();
     totalCount = 0;
+    mismatched = 0;
   }
+
   public void update(Object value) {
     String comp = null;
 
@@ -51,6 +54,7 @@ public class StringStatistics implements Statistics {
         });
 
     o.add("distribution", arr);
+    o.addProperty("mismatched", mismatched);
     return o;
   }
 
@@ -61,6 +65,11 @@ public class StringStatistics implements Statistics {
   @Override
   public Statistics create() {
     return new StringStatistics();
+  }
+
+  @Override
+  public void incrementMismatch() {
+    mismatched++;
   }
 
   @Override

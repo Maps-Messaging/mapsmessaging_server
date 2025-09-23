@@ -87,7 +87,7 @@ public class WindowedStatistics extends AdvancedStatistics {
   }
   @Override
   public Statistics create() {
-    return new CrossSeriesStatistics();
+    return new WindowedStatistics(windowSize);
   }
 
   @Override

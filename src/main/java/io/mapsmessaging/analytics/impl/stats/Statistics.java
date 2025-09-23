@@ -10,5 +10,6 @@ public interface Statistics extends Service {
   JsonObject toJson();
 
   Statistics create();
+  void incrementMismatch();
 
 }

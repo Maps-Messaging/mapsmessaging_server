@@ -39,7 +39,7 @@ class StatisticsTests {
   // ---------- AdvancedStatistics ----------
   @Test
   void advanced_basicAndRegression() {
-    AdvancedStatistics stats = new AdvancedStatistics();
+    AdvancedStatistics stats =(AdvancedStatistics) StatisticsFactory.getInstance().getAnalyser("Advanced");
     feedSequential(stats, 1000);
 
     assertEquals(0.0, stats.first, 0.0);
@@ -61,7 +61,7 @@ class StatisticsTests {
   // ---------- WindowedStatistics ----------
   @Test
   void windowed_lastTen() {
-    WindowedStatistics stats = new WindowedStatistics(10);
+    WindowedStatistics stats = (WindowedStatistics) StatisticsFactory.getInstance().getAnalyser("Windowed");
     feedSequential(stats, 1000);
 
     assertEquals(10, stats.getWindowCount());

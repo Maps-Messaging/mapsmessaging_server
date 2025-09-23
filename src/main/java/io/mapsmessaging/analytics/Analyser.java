@@ -19,19 +19,22 @@
 
 package io.mapsmessaging.analytics;
 
-import io.mapsmessaging.api.MessageEvent;
+import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.configuration.ConfigurationProperties;
 import io.mapsmessaging.utilities.service.Service;
 
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 public interface Analyser extends Service {
 
-  Analyser create(@NotNull ConfigurationProperties configuration, @NotNull AnalyserListener listener);
+  Analyser create(@NotNull ConfigurationProperties configuration);
 
-  void ingest(@NotNull MessageEvent event);
+  @Nullable Message ingest(@NotNull Message event);
 
-  default void flush() { }
+  default Message flush() {
+    return null;
+  }
 
   default void close() { }
 }
