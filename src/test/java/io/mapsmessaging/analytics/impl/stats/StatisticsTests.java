@@ -28,7 +28,7 @@ import org.junit.jupiter.api.Test;
 class StatisticsTests {
 
   // ---------- Helpers ----------
-  private static void feedSequential(AdvancedStatistics s, int n) {
+  private static void feedSequential(BaseStatistics s, int n) {
     for (int i = 0; i < n; i++) s.update(i);
   }
 
@@ -56,6 +56,33 @@ class StatisticsTests {
     JsonObject json = stats.toJson();
     assertJsonHas(json, "first","last","min","max","average","count","range","delta","stdDev","slope","intercept");
     assertEquals(499.5, json.get("average").getAsDouble(), 1e-12);
+  }
+
+  // ---------- MovingAverageStatistics ----------
+  @Test
+  void movingAverage_basic() {
+    MovingAverageStatistics stats =
+        (MovingAverageStatistics) StatisticsFactory.getInstance().getAnalyser("MovingAverage");
+
+    // Feed 0..999 quickly so all points fall within the 1/5/10/15 minute windows
+    feedSequential(stats, 1000);
+
+    // Base checks still come from BaseStatistics
+    assertEquals(0.0, stats.first, 0.0);
+    assertEquals(999.0, stats.last, 0.0);
+    assertEquals(0.0, stats.min, 0.0);
+    assertEquals(999.0, stats.max, 0.0);
+    assertEquals(499.5, stats.average, 1e-12);
+    assertEquals(1000, stats.count);
+
+    // Moving averages should equal the overall average since all samples are inside each window
+    JsonObject json = stats.toJson();
+    assertJsonHas(json, "1m","5m","10m","15m");
+
+    assertEquals(499.5, json.get("1m").getAsDouble(), 1e-9);
+    assertEquals(499.5, json.get("5m").getAsDouble(), 1e-9);
+    assertEquals(499.5, json.get("10m").getAsDouble(), 1e-9);
+    assertEquals(499.5, json.get("15m").getAsDouble(), 1e-9);
   }
 
   // ---------- WindowedStatistics ----------

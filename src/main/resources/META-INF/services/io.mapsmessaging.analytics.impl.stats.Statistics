@@ -26,3 +26,4 @@ io.mapsmessaging.analytics.impl.stats.MomentStatistics
 io.mapsmessaging.analytics.impl.stats.QualityStatistics
 io.mapsmessaging.analytics.impl.stats.TrendStatistics
 io.mapsmessaging.analytics.impl.stats.WindowedStatistics
+io.mapsmessaging.analytics.impl.stats.MovingAverageStatistics

@@ -12,7 +12,9 @@ public class AdvancedStatistics extends BaseStatistics {
   protected double sumTimeSquared;
   protected double sumTimeValueProduct;
 
-  public AdvancedStatistics() {}
+  public AdvancedStatistics() {
+    //required for services
+  }
 
   @Override
   public void reset() {

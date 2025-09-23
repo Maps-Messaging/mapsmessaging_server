@@ -35,7 +35,6 @@ public class StatisticsFactory {
     return StatisticsFactory.Holder.INSTANCE;
   }
 
-
   private final Map<String, Statistics> statistics;
 
   private StatisticsFactory() {
