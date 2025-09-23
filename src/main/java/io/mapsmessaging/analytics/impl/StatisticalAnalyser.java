@@ -20,19 +20,17 @@ public class StatisticalAnalyser implements Analyser {
   private final String[] ignoreList;
   private final Map<String, Statistics> statistics;
   private final String defaultAnalyser;
+  private final List<String> entries;
 
-  private List<String> entries;
   private int counter;
-
-
   private MessageFormatter formatter;
 
 
   public StatisticalAnalyser() {
     formatter = null;
-    ignoreList = null;
+    ignoreList = new String[0];
     eventCount = 0;
-    entries = null;
+    entries = List.of();
     defaultAnalyser = null;
     statistics = new LinkedHashMap<>();
   }
@@ -140,7 +138,7 @@ public class StatisticalAnalyser implements Analyser {
 
   @Override
   public void close() {
-
+    //nothing to close here
   }
 
   @Override

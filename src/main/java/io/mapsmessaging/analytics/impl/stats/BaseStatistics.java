@@ -70,20 +70,9 @@ public class BaseStatistics implements Statistics {
     o.addProperty("max", max);
     o.addProperty("average", average);
     o.addProperty("count", count);
-    o.addProperty("range", max - min);
-    o.addProperty("delta", last - first);
     o.addProperty("mismatched", mismatched);
-
-    // time-based stats
     o.addProperty("firstUpdateMillis", firstUpdateMillis);
     o.addProperty("lastUpdateMillis", lastUpdateMillis);
-    if (firstUpdateMillis > 0 && lastUpdateMillis > firstUpdateMillis) {
-      long duration = lastUpdateMillis - firstUpdateMillis;
-      o.addProperty("durationMillis", duration);
-      double ratePerSec = (count * 1000.0) / duration;
-      o.addProperty("ratePerSec", ratePerSec);
-    }
-
     addSubclassJson(o);
     return o;
   }
