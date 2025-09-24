@@ -1,0 +1,121 @@
+/*
+ *
+ *  Copyright [ 2020 - 2024 ] Matthew Buckton
+ *  Copyright [ 2024 - 2025 ] MapsMessaging B.V.
+ *
+ *  Licensed under the Apache License, Version 2.0 with the Commons Clause
+ *  (the "License"); you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at:
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://commonsclause.com/
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ */
+
+package io.mapsmessaging.analytics.impl.stats;
+
+import com.google.gson.JsonObject;
+
+import java.util.ArrayDeque;
+import java.util.Deque;
+
+/**
+ * Rolling window stats (size-based) with O(1) updates using sum/sumSquares.
+ * Mean = sum/n; Sample variance = (sumSquares - sum*sum/n)/(n-1).
+ */
+public class WindowedStatistics extends AdvancedStatistics {
+
+  private final int windowSize;
+
+  private final Deque<Double> window;
+  private double windowSum;
+  private double windowSumSquares;
+
+  public WindowedStatistics() {
+    this(10); // sensible default
+  }
+
+  public WindowedStatistics(int windowSize) {
+    super();
+    this.windowSize = Math.max(1, windowSize);
+    this.window = new ArrayDeque<>(this.windowSize);
+    this.windowSum = 0.0;
+    this.windowSumSquares = 0.0;
+  }
+
+  @Override
+  public void reset() {
+    super.reset();
+    if (this.window != null) {
+      window.clear();
+    }
+    windowSum = 0.0;
+    windowSumSquares = 0.0;
+  }
+
+  @Override
+  protected void update(double currentValue) {
+    super.update(currentValue);
+
+    window.addLast(currentValue);
+    windowSum += currentValue;
+    windowSumSquares += currentValue * currentValue;
+
+    if (window.size() > windowSize) {
+      double removed = window.removeFirst();
+      windowSum -= removed;
+      windowSumSquares -= removed * removed;
+    }
+  }
+
+  public int getWindowCount() {
+    return window.size();
+  }
+
+  public double getWindowMean() {
+    if (window.isEmpty()) {
+      return 0.0;
+    }
+    return windowSum / window.size();
+  }
+
+  public double getWindowStdDeviation() {
+    int n = window.size();
+    if (n < 2) {
+      return 0.0;
+    }
+    double variance = (windowSumSquares - (windowSum * windowSum) / n) / (n - 1);
+    if (variance < 0.0) {
+      variance = 0.0;
+    }
+    return Math.sqrt(variance);
+  }
+
+  @Override
+  protected void addSubclassJson(JsonObject o) {
+    super.addSubclassJson(o);
+    o.addProperty("windowSize", windowSize);
+    o.addProperty("windowCount", getWindowCount());
+    o.addProperty("windowMean", getWindowMean());
+    o.addProperty("windowStdDev", getWindowStdDeviation());
+  }
+  @Override
+  public Statistics create() {
+    return new WindowedStatistics(windowSize);
+  }
+
+  @Override
+  public String getName() {
+    return "Windowed";
+  }
+
+  @Override
+  public String getDescription() {
+    return "Windowed Statistics";
+  }
+}

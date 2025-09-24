@@ -42,6 +42,12 @@ public class MessageJsonTransformation implements ProtocolMessageTransformation 
     return mapper;
   }
 
+  @Override
+  public int getId() {
+    return 5;
+  }
+
+
   private final Logger logger = LoggerFactory.getLogger(getClass());
 
   @Override

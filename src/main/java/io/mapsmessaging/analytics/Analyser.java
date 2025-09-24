@@ -17,27 +17,24 @@
  *  limitations under the License.
  */
 
-package io.mapsmessaging.network.protocol.impl.satellite.modem;
+package io.mapsmessaging.analytics;
 
-import lombok.Getter;
-import lombok.Setter;
+import io.mapsmessaging.api.message.Message;
+import io.mapsmessaging.dto.rest.analytics.StatisticsConfigDTO;
+import io.mapsmessaging.utilities.service.Service;
 
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
-@Getter
-@Setter
-public class SentMessageEntry {
-  private final String messageId;
-  private final int length;
-  private int state;              // 3→4→5
-  private int bytesAck;           // 0..length
-  private boolean completedSeen;  // true after we’ve emitted TX_COMPLETED once
+public interface Analyser extends Service {
 
-  public SentMessageEntry(String messageId, int length) {
-    this.messageId = messageId;
-    this.length = length;
-    this.bytesAck = 0;
-    this.completedSeen = false;
+  Analyser create(@NotNull StatisticsConfigDTO configuration);
+
+  @Nullable Message ingest(@NotNull Message event);
+
+  default Message flush() {
+    return null;
   }
+
+  default void close() { }
 }
-
-

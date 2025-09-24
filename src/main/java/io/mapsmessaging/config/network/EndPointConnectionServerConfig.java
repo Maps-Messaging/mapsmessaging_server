@@ -47,8 +47,8 @@ public class EndPointConnectionServerConfig extends EndPointConnectionServerConf
       for (ConfigurationProperties entry : (List<ConfigurationProperties>) obj) {
         linkConfigs.add(new LinkConfig(entry));
       }
-    } else if (obj instanceof ConfigurationProperties) {
-      linkConfigs.add(new LinkConfig((ConfigurationProperties) obj));
+    } else if (obj instanceof ConfigurationProperties config) {
+      linkConfigs.add(new LinkConfig(config));
     }
   }
 
@@ -72,8 +72,8 @@ public class EndPointConnectionServerConfig extends EndPointConnectionServerConf
   public boolean update(BaseConfigDTO update) {
     boolean hasChanged = false;
 
-    if(update instanceof EndPointServerConfigDTO) {
-      hasChanged = EndPointConfigFactory.update(this, (EndPointServerConfigDTO) update);
+    if(update instanceof EndPointServerConfigDTO endPointServerConfig) {
+      hasChanged = EndPointConfigFactory.update(this, endPointServerConfig);
 
       if (update instanceof EndPointConnectionServerConfigDTO config) {
         if ((this.linkTransformation == null && config.getLinkTransformation() != null)

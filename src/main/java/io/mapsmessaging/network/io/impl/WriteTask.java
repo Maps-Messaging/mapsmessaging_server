@@ -26,7 +26,7 @@ import io.mapsmessaging.network.io.ServerPacket;
 import lombok.Getter;
 import lombok.Setter;
 
-import java.util.Queue;
+import java.util.Deque;
 import java.util.concurrent.ConcurrentLinkedDeque;
 
 import static io.mapsmessaging.logging.ServerLogMessages.WRITE_TASK_SEND_FAILED;
@@ -36,7 +36,7 @@ public class WriteTask implements Selectable {
   protected final FrameHandler frameHandler;
   protected final Logger logger;
   protected final SelectorTask selectorTask;
-  protected final Queue<ServerPacket> outboundFrame;
+  protected final Deque<ServerPacket> outboundFrame;
   protected final SelectorCallback selectorCallback;
 
   @Getter

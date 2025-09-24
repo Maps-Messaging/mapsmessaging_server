@@ -17,27 +17,18 @@
  *  limitations under the License.
  */
 
-package io.mapsmessaging.network.protocol.impl.satellite.modem.ogx;
+package io.mapsmessaging.analytics.impl.stats;
 
-import lombok.Getter;
-import lombok.Setter;
+import com.google.gson.JsonObject;
+import io.mapsmessaging.utilities.service.Service;
 
-@Getter
-@Setter
-public class OgxEntry  {
-  final int msgId;
-  final int type;            // 1 if len <= 1024, else 2
-  final String timestamp;    // "yyyy-MM-dd HH:mm:ss" UTC
-  final int length;
-  final byte[] data;
-  int state = 5; // simple model: fixed 4 until delete
-  int closed = 0;                // 0 open, 1 final (flip to 1 when you want)
+public interface Statistics extends Service {
 
-  OgxEntry(int msgId, byte[] data) {
-    this.msgId = msgId;
-    this.length = data.length;
-    this.type = (length <= 1024) ? 1 : 2;
-    this.timestamp = OgxModemRegistation.OGX_UTC_FMT.format(java.time.Instant.now());
-    this.data = data;
-  }
+  void update(Object object);
+  void reset();
+  JsonObject toJson();
+
+  Statistics create();
+  void incrementMismatch();
+
 }

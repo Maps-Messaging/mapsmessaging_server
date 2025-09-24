@@ -87,7 +87,10 @@ public class ConnectListener extends BaseConnectionListener {
         try {
           setupConnAck(session, connAck);
           protocol.registerRead();
-          protocol.writeFrame(connAck);
+          protocol.sendFrame(connAck);
+          if(connAck.getCallback() != null) {
+            connAck.getCallback().run();
+          }
         } catch (IOException e) {
           handleSessionException(connAck, protocol);
         }

@@ -42,6 +42,11 @@ public class MessageBinaryTransformation implements ProtocolMessageTransformatio
   }
 
   @Override
+  public int getId() {
+    return 3;
+  }
+
+  @Override
   public String getDescription() {
     return "Transforms messages to an internal binary payload and vice versa";
   }

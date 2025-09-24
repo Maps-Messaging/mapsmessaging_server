@@ -19,8 +19,6 @@
 
 package io.mapsmessaging.network.protocol.impl.satellite.gateway.ogws;
 
-
-import com.amazonaws.util.Base64;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import io.mapsmessaging.dto.rest.config.protocol.impl.SatelliteConfigDTO;
@@ -41,10 +39,7 @@ import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodyHandlers;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
-import java.util.ArrayList;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Queue;
+import java.util.*;
 
 import static io.mapsmessaging.logging.ServerLogMessages.*;
 
@@ -181,7 +176,7 @@ public class OrbcommOgwsClient implements SatelliteClient {
             if(returnMessage.getPayload() == null) {
               MessageData messageData = new MessageData();
               messageData.setUniqueId(returnMessage.getMobileId());
-              messageData.setPayload(Base64.decode(returnMessage.getRawPayload()));
+              messageData.setPayload(Base64.getDecoder().decode(returnMessage.getRawPayload()));
               incomingEvents.add(messageData);
             }
           }
@@ -206,7 +201,7 @@ public class OrbcommOgwsClient implements SatelliteClient {
       reauthenticate();
       for(MessageData messageData: pendingMessages) {
         SubmitMessage submitMessage = new SubmitMessage();
-        submitMessage.setRawPayload(Base64.encodeAsString(messageData.getPayload()));
+        submitMessage.setRawPayload(Base64.getEncoder().encodeToString(messageData.getPayload()));
         submitMessage.setDestinationId(messageData.getUniqueId());
         submitMessage.setCompletionCallback(messageData.getCompletionCallback());
         pending.add(submitMessage);

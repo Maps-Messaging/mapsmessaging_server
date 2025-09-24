@@ -19,8 +19,10 @@
 
 package io.mapsmessaging.config.protocol;
 
+import io.mapsmessaging.analytics.impl.stats.Statistics;
 import io.mapsmessaging.config.Config;
 import io.mapsmessaging.config.ConfigHelper;
+import io.mapsmessaging.config.analytics.StatisticsConfig;
 import io.mapsmessaging.configuration.ConfigurationProperties;
 import io.mapsmessaging.dto.rest.config.BaseConfigDTO;
 import io.mapsmessaging.dto.rest.config.protocol.LinkConfigDTO;
@@ -39,6 +41,13 @@ public class LinkConfig extends LinkConfigDTO implements Config {
       this.transformer = ConfigHelper.buildMap(tfObj);
     }
     this.namespaceFilters = new NamespaceFilters(config);
+    Object analysticsConfig = config.get("analystics");
+    if (analysticsConfig instanceof ConfigurationProperties tfObj) {
+      statistics = new StatisticsConfig(tfObj);
+    }
+    else{
+      statistics = null;
+    }
   }
 
   @Override
@@ -54,6 +63,9 @@ public class LinkConfig extends LinkConfigDTO implements Config {
     }
     if(namespaceFilters != null) {
       config.put("namespaceFilters", namespaceFilters.toConfigurationProperties());
+    }
+    if(statistics != null) {
+      config.put("analystics", ((StatisticsConfig) statistics).toConfigurationProperties());
     }
     return config;
   }
@@ -89,6 +101,10 @@ public class LinkConfig extends LinkConfigDTO implements Config {
         this.includeSchema = newConfig.isIncludeSchema();
         hasChanged = true;
       }
+      if(statistics != null) {
+        hasChanged = ((StatisticsConfig)statistics).update(newConfig) || hasChanged;
+      }
+
 
       if (ConfigHelper.updateMap(this.transformer, newConfig.getTransformer())) {
         hasChanged = true;

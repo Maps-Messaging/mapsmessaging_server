@@ -75,12 +75,10 @@ public class Disconnected extends State implements EndPointConnectedCallback {
         TokenGenerator tokenGenerator = TokenGeneratorManager.getInstance().get(tokenGeneratorName).getInstance(properties.getAuthConfig().getTokenConfig());
         password = tokenGenerator.generate();
       }
-
-      endPointConnection.scheduleState(new Connecting(endPointConnection));
       Protocol protocolImpl = protocolImplFactory.connect(endpoint, sessionId, username, password);
-
       protocolImpl.setTransformation(transformation);
       endPointConnection.setConnection(protocolImpl);
+      endPointConnection.scheduleState(new Connecting(endPointConnection));
     } catch (IOException ioException) {
       endPointConnection.getLogger().log(ServerLogMessages.END_POINT_CONNECTION_PROTOCOL_FAILED, url, protocol, ioException);
       endPointConnection.scheduleState(new Delayed(endPointConnection), DELAYED_TIME);

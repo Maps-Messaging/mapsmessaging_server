@@ -19,6 +19,7 @@
 
 package io.mapsmessaging.network.protocol;
 
+import io.mapsmessaging.analytics.Analyser;
 import io.mapsmessaging.api.MessageBuilder;
 import io.mapsmessaging.api.MessageEvent;
 import io.mapsmessaging.api.MessageListener;
@@ -27,11 +28,14 @@ import io.mapsmessaging.api.features.ClientAcknowledgement;
 import io.mapsmessaging.api.features.QualityOfService;
 import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.api.transformers.Transformer;
+import io.mapsmessaging.dto.rest.analytics.StatisticsConfigDTO;
 import io.mapsmessaging.dto.rest.config.protocol.ProtocolConfigDTO;
 import io.mapsmessaging.dto.rest.protocol.ProtocolInformationDTO;
 import io.mapsmessaging.logging.ServerLogMessages;
 import io.mapsmessaging.network.admin.ProtocolJMX;
 import io.mapsmessaging.network.io.EndPoint;
+import io.mapsmessaging.network.io.Packet;
+import io.mapsmessaging.network.io.ServerPacket;
 import io.mapsmessaging.network.io.Timeoutable;
 import io.mapsmessaging.network.io.impl.SelectorCallback;
 import io.mapsmessaging.selector.operators.ParserExecutor;
@@ -46,6 +50,7 @@ import org.jetbrains.annotations.Nullable;
 import javax.security.auth.Subject;
 import java.io.IOException;
 import java.net.SocketAddress;
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -59,6 +64,13 @@ public abstract class Protocol implements SelectorCallback, MessageListener, Tim
   protected final Map<String, Transformer> destinationTransformerMap;
   @Getter
   protected final Map<String, String> topicNameMapping;
+
+  @Getter
+  protected final Map<String, Analyser> topicNameAnalyserMap;
+
+  @Getter
+  protected final Map<String, StatisticsConfigDTO> resourceNameAnalyserMap;
+
 
   @Getter
   @Setter
@@ -93,6 +105,8 @@ public abstract class Protocol implements SelectorCallback, MessageListener, Tim
     destinationTransformerMap = new ConcurrentHashMap<>();
     parserLookup = new ConcurrentHashMap<>();
     topicNameMapping = new ConcurrentHashMap<>();
+    topicNameAnalyserMap = new ConcurrentHashMap<>();
+    resourceNameAnalyserMap = new ConcurrentHashMap<>();
     endPoint.setBoundProtocol(this);
   }
 
@@ -110,6 +124,8 @@ public abstract class Protocol implements SelectorCallback, MessageListener, Tim
     destinationTransformerMap = new ConcurrentHashMap<>();
     parserLookup = new ConcurrentHashMap<>();
     topicNameMapping = new ConcurrentHashMap<>();
+    topicNameAnalyserMap = new ConcurrentHashMap<>();
+    resourceNameAnalyserMap = new ConcurrentHashMap<>();
     endPoint.setBoundProtocol(this);
   }
 
@@ -137,11 +153,44 @@ public abstract class Protocol implements SelectorCallback, MessageListener, Tim
   public void connect(String sessionId, String username, String password) throws IOException {
   }
 
-  public void subscribeRemote(@NonNull @NotNull String resource, @NonNull @NotNull String mappedResource, @Nullable ParserExecutor parser, @Nullable Transformer transformer) throws IOException {
+  public void subscribeRemote(
+      @NonNull @NotNull String resource,
+      @NonNull @NotNull String mappedResource,
+      @Nullable ParserExecutor parser,
+      @Nullable Transformer transformer,
+      @Nullable StatisticsConfigDTO statistics
+  ) throws IOException {
+
+    topicNameMapping.put(resource, mappedResource);
+    if (transformer != null) {
+      destinationTransformerMap.put(mappedResource, transformer);
+    }
+    if(parser != null){
+      parserLookup.put(resource, parser);
+    }
+    if(statistics != null) {
+      resourceNameAnalyserMap.put(resource, statistics);
+    }
   }
 
-  public void subscribeLocal(@NonNull @NotNull String resource, @NonNull @NotNull String mappedResource, @Nullable String selector, @Nullable Transformer transformer, @Nullable NamespaceFilters namespaceFilters)
+  public void subscribeLocal(
+      @NonNull @NotNull String resource,
+      @NonNull @NotNull String mappedResource,
+      @Nullable String selector,
+      @Nullable Transformer transformer,
+      @Nullable NamespaceFilters namespaceFilters,
+      @Nullable StatisticsConfigDTO statistics
+  )
       throws IOException {
+    this.setNamespaceFilters(namespaceFilters);
+    topicNameMapping.put(resource, mappedResource);
+    if (transformer != null) {
+      destinationTransformerMap.put(mappedResource, transformer);
+    }
+    if(statistics != null) {
+      resourceNameAnalyserMap.put(resource, statistics);
+    }
+
   }
 
   @Override
@@ -276,4 +325,11 @@ public abstract class Protocol implements SelectorCallback, MessageListener, Tim
   }
 
 
+  public void sendFrame(ServerPacket request) throws IOException {
+    Packet packet = new Packet(ByteBuffer.allocate(100));
+    request.packFrame(packet);
+    packet.flip();
+    endPoint.sendPacket(packet);
+
+  }
 }

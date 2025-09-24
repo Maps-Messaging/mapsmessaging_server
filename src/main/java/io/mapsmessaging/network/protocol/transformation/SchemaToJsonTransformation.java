@@ -66,6 +66,11 @@ public class SchemaToJsonTransformation implements ProtocolMessageTransformation
   }
 
   @Override
+  public int getId() {
+    return 4;
+  }
+
+  @Override
   public byte[] outgoing(Message message, String destinationName) {
     String schemaId = message.getSchemaId();
     if(schemaId != null && !destinationName.startsWith("$")) {

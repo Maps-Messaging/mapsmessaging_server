@@ -17,14 +17,26 @@
  *  limitations under the License.
  */
 
-package io.mapsmessaging.network.protocol.impl.satellite.modem.idp;
+package io.mapsmessaging.network.protocol.impl.satellite.protocol;
 
-public class Constants {
+import java.nio.ByteBuffer;
 
-  public static final int RX_COMPLETE = 2;
-  public static final int RX_RETRIEVED = 3;
+public class BypassSatelliteMessage extends SatelliteMessage {
 
-  public static final int TX_READY = 4;
-  public static final int TX_SENDING = 5;
-  public static final int TX_COMPLETED = 6;
+  public BypassSatelliteMessage(int streamNumber, byte[] message, int packetNumber, boolean compressed) {
+    super(streamNumber, message, packetNumber, compressed, (byte)0);
+  }
+
+  @Override
+  public byte[] packToSend() {
+    ByteBuffer header = ByteBuffer.allocate(message.length);
+    header.put(message);
+    return header.array();
+  }
+
+  @Override
+  protected void unpackFromReceived(byte[] data) {
+    if (data == null) return;
+    message = data;
+  }
 }

@@ -19,6 +19,8 @@
 
 package io.mapsmessaging.network.protocol.impl.mqtt;
 
+import io.mapsmessaging.analytics.Analyser;
+import io.mapsmessaging.analytics.AnalyserFactory;
 import io.mapsmessaging.api.MessageEvent;
 import io.mapsmessaging.api.Session;
 import io.mapsmessaging.api.SessionManager;
@@ -26,6 +28,7 @@ import io.mapsmessaging.api.SubscriptionContextBuilder;
 import io.mapsmessaging.api.features.QualityOfService;
 import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.api.transformers.Transformer;
+import io.mapsmessaging.dto.rest.analytics.StatisticsConfigDTO;
 import io.mapsmessaging.dto.rest.config.protocol.impl.MqttConfigDTO;
 import io.mapsmessaging.dto.rest.protocol.ProtocolInformationDTO;
 import io.mapsmessaging.dto.rest.protocol.impl.MqttProtocolInformation;
@@ -129,14 +132,8 @@ public class MQTTProtocol extends Protocol {
   }
 
   @Override
-  public void subscribeRemote(@NonNull @NotNull String resource, @NonNull @NotNull String mappedResource, @Nullable ParserExecutor parser, @Nullable Transformer transformer) {
-    topicNameMapping.put(resource, mappedResource);
-    if (transformer != null) {
-      destinationTransformerMap.put(mappedResource, transformer);
-    }
-    if(parser != null){
-      parserLookup.put(resource, parser);
-    }
+  public void subscribeRemote(@NonNull @NotNull String resource, @NonNull @NotNull String mappedResource, @Nullable ParserExecutor parser, @Nullable Transformer transformer, StatisticsConfigDTO statistics) throws IOException {
+    super.subscribeRemote(resource,mappedResource,parser, transformer,statistics);
     Subscribe subscribe = new Subscribe();
     subscribe.setMessageId(packetIdManager.nextPacketIdentifier());
     subscribe.getSubscriptionList().add(new SubscriptionInfo(resource, QualityOfService.AT_MOST_ONCE));
@@ -145,12 +142,9 @@ public class MQTTProtocol extends Protocol {
   }
 
   @Override
-  public void subscribeLocal(@NonNull @NotNull String resource, @NonNull @NotNull String mappedResource, @Nullable String selector, @Nullable Transformer transformer, @Nullable NamespaceFilters namespaceFilters)
+  public void subscribeLocal(@NonNull @NotNull String resource, @NonNull @NotNull String mappedResource, @Nullable String selector, @Nullable Transformer transformer, @Nullable NamespaceFilters namespaceFilters, StatisticsConfigDTO statistics)
       throws IOException {
-    topicNameMapping.put(resource, mappedResource);
-    if (transformer != null) {
-      destinationTransformerMap.put(mappedResource, transformer);
-    }
+    super.subscribeLocal(resource, mappedResource, selector, transformer, namespaceFilters, statistics);
     SubscriptionContextBuilder builder = createSubscriptionContextBuilder(resource, selector, QualityOfService.AT_MOST_ONCE, 1024);
     session.addSubscription(builder.build());
   }
@@ -255,17 +249,34 @@ public class MQTTProtocol extends Protocol {
     SubscriptionContext subInfo = messageEvent.getSubscription().getContext();
     QualityOfService qos = subInfo.getQualityOfService();
     String destinationName = messageEvent.getDestinationName();
+    Analyser analyser = topicNameAnalyserMap.get(destinationName);
+    if (analyser == null && !resourceNameAnalyserMap.isEmpty()) {
+      StatisticsConfigDTO statistics = resourceNameAnalyserMap.get(subInfo.getAlias());
+      if(statistics != null){
+        analyser = AnalyserFactory.getInstance().getAnalyser(statistics);
+      }
+    }
+    Message msg = messageEvent.getMessage();
     int packetId = 0;
     if (qos.isSendPacketId()) {
-      packetId = packetIdManager.nextPacketIdentifier(messageEvent.getSubscription(), messageEvent.getMessage().getIdentifier());
+      packetId = packetIdManager.nextPacketIdentifier(messageEvent.getSubscription(),msg.getIdentifier());
     }
-    Message message = processTransformer(destinationName, messageEvent.getMessage());
+    msg = processTransformer(destinationName, msg);
+    if(analyser != null){
+      msg = analyser.ingest(msg);
+      if(msg == null){
+        if(messageEvent.getCompletionTask() != null){
+          messageEvent.getCompletionTask().run();
+        }
+        return;
+      }
+    }
 
     byte[] payload;
     if (transformation != null) {
-      payload = transformation.outgoing(message, messageEvent.getDestinationName());
+      payload = transformation.outgoing(msg, messageEvent.getDestinationName());
     } else {
-      payload = message.getOpaqueData();
+      payload = msg.getOpaqueData();
     }
     if (topicNameMapping != null) {
       String tmp = topicNameMapping.get(destinationName);
@@ -284,7 +295,7 @@ public class MQTTProtocol extends Protocol {
         }
       }
     }
-    Publish publish = new Publish(message.isRetain(), payload, qos, packetId, destinationName);
+    Publish publish = new Publish(msg.isRetain(), payload, qos, packetId, destinationName);
     publish.setCallback(messageEvent.getCompletionTask());
     writeFrame(publish);
   }

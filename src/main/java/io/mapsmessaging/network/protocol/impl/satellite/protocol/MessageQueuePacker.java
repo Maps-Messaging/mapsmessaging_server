@@ -19,6 +19,7 @@
 
 package io.mapsmessaging.network.protocol.impl.satellite.protocol;
 
+import io.mapsmessaging.network.protocol.ProtocolMessageTransformation;
 import io.mapsmessaging.network.protocol.impl.satellite.modem.xmodem.Xmodem;
 
 import java.io.ByteArrayOutputStream;
@@ -31,9 +32,9 @@ import java.util.zip.Deflater;
 public final class MessageQueuePacker extends MessageQueue{
   private MessageQueuePacker() {}
 
-  public record Packed(byte[] data, boolean compressed) {}
+  public record Packed(byte[] data, boolean compressed, int transformerNumber) {}
 
-  public static Packed pack(Map<String, List<byte[]>> queuedMessages, int minCompressSize, CipherManager cipherManager) throws IOException {
+  public static Packed pack(Map<String, List<byte[]>> queuedMessages, int minCompressSize, CipherManager cipherManager, ProtocolMessageTransformation transformer) throws IOException {
     MessageQueuePacker packer = new MessageQueuePacker();
     byte[] buffer = packer.convertToByteArray(queuedMessages);
     byte[] resultant = compress(buffer, minCompressSize);
@@ -44,7 +45,8 @@ public final class MessageQueuePacker extends MessageQueue{
     if(cipherManager != null) {
       resultant = cipherManager.encrypt(resultant);
     }
-    return new Packed(resultant, compressed);
+    int id = transformer == null ? 0 : transformer.getId();
+    return new Packed(resultant, compressed, id);
   }
 
   private static byte[] compress(byte[] buffer, int minCompressSize) {

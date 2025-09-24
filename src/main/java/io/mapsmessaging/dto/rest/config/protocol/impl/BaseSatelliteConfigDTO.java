@@ -27,6 +27,9 @@ public class BaseSatelliteConfigDTO extends ProtocolConfigDTO {
   @Schema(description = "life time of message in minutes", example = "5", defaultValue = "10")
   protected int messageLifeTimeInMinutes;
 
+  @Schema(description = "In Bridge mode the server simply passes any event, unchanged over the satellite link, if false then the server will collect events and send in 1 packets", example="true", defaultValue = "false")
+  protected boolean bridgeMode;
+
   @Schema(description = "Shared secret for encryption", example="this is a shared secret", defaultValue = "")
   protected String sharedSecret;
 

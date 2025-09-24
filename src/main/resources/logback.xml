@@ -49,7 +49,7 @@
     <appender-ref ref="AuditFile"/>
   </appender>
 
-  <root level="info">
+  <root level="warn">
     <appender-ref ref="AsyncLogFile"/>
     <appender-ref ref="AsyncAuditFile"/>
   </root>

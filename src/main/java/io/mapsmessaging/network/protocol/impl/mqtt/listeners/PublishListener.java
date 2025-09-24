@@ -19,6 +19,8 @@
 
 package io.mapsmessaging.network.protocol.impl.mqtt.listeners;
 
+import io.mapsmessaging.analytics.Analyser;
+import io.mapsmessaging.analytics.AnalyserFactory;
 import io.mapsmessaging.api.*;
 import io.mapsmessaging.api.features.DestinationMode;
 import io.mapsmessaging.api.features.DestinationType;
@@ -27,7 +29,9 @@ import io.mapsmessaging.api.features.QualityOfService;
 import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.api.message.TypedData;
 import io.mapsmessaging.api.transformers.Transformer;
+import io.mapsmessaging.dto.rest.analytics.StatisticsConfigDTO;
 import io.mapsmessaging.engine.destination.MessageOverrides;
+import io.mapsmessaging.engine.destination.subscription.set.DestinationSet;
 import io.mapsmessaging.logging.ServerLogMessages;
 import io.mapsmessaging.network.io.EndPoint;
 import io.mapsmessaging.network.protocol.Protocol;
@@ -157,6 +161,17 @@ public class PublishListener extends PacketListener {
 
   private void processMessage(Publish publish, Protocol protocol, Session session, MQTTPacket response, Destination destination) throws IOException {
     Transformer transformer = protocol.destinationTransformationLookup(destination.getFullyQualifiedNamespace());
+    Analyser analyser = protocol.getTopicNameAnalyserMap().get(publish.getDestinationName());
+    if(analyser == null && !protocol.getResourceNameAnalyserMap().isEmpty()){
+      for(Map.Entry<String, StatisticsConfigDTO> entry:protocol.getResourceNameAnalyserMap().entrySet()){
+        if(DestinationSet.matches(entry.getKey(), publish.getDestinationName())){
+          analyser = AnalyserFactory.getInstance().getAnalyser(entry.getValue());
+          protocol.getTopicNameAnalyserMap().put(publish.getDestinationName(), analyser);
+          break;
+        }
+      }
+    }
+
     Message message = createMessage(
         publish.getPayload(),
         publish.getPriority(),
@@ -171,6 +186,14 @@ public class PublishListener extends PacketListener {
     if(parserExecutor != null && !parserExecutor.evaluate(message)){
       return;
     }
+    if(analyser != null){
+      message = analyser.ingest(message);
+      if(message == null){
+        return;
+      }
+    }
+
+
     if (response != null) {
       Transaction transaction = null;
       try {

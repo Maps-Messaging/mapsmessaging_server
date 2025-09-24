@@ -19,6 +19,7 @@
 
 package io.mapsmessaging.network.protocol.impl.satellite;
 
+import com.google.gson.Gson;
 import io.mapsmessaging.network.protocol.impl.satellite.protocol.CipherManager;
 import io.mapsmessaging.network.protocol.impl.satellite.protocol.MessageQueuePacker;
 import io.mapsmessaging.network.protocol.impl.satellite.protocol.MessageQueueUnpacker;
@@ -26,10 +27,11 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 
 class PackingPipelineTest {
-
+  private static final Gson gson = new Gson();
 
   private static Map<String, List<byte[]>> sampleBatch(int keys, int perKey, int size, byte fill) {
     Map<String, List<byte[]>> m = new LinkedHashMap<>();
@@ -43,6 +45,40 @@ class PackingPipelineTest {
       m.put("k" + k, list);
     }
     return m;
+  }
+
+  private static Map<String, List<byte[]>> sampleJsonBatch(int keys, int perKey) {
+    Map<String, List<byte[]>> m = new LinkedHashMap<>();
+    Random random = new Random();
+
+    for (int k = 0; k < keys; k++) {
+      List<byte[]> list = new ArrayList<>(perKey);
+      for (int i = 0; i < perKey; i++) {
+        Map<String, Object> obj = new LinkedHashMap<>();
+        obj.put("id", "k" + k + "-m" + i);
+        obj.put("timestamp", System.currentTimeMillis());
+        obj.put("value1", random.nextInt(1000));
+        obj.put("value2", UUID.randomUUID().toString());
+        obj.put("flag", random.nextBoolean());
+
+        // encode as JSON
+        String json = gson.toJson(obj);
+        byte[] jsonBytes = json.getBytes(StandardCharsets.UTF_8);
+        list.add(jsonBytes);
+      }
+      m.put("k" + k, list);
+    }
+    return m;
+  }
+
+  @Test
+  void compressionRate() throws IOException {
+    Map<String, List<byte[]>> batch = sampleJsonBatch(2, 40 );
+    CipherManager cm = new CipherManager("testing".getBytes());
+
+    MessageQueuePacker.Packed uncompressed = MessageQueuePacker.pack(batch, 10000000, cm);
+    MessageQueuePacker.Packed compressed = MessageQueuePacker.pack(batch, 100, cm);
+    Assertions.assertNotEquals(uncompressed.data().length, compressed.data().length);
   }
 
   /** Flip a single byte in-place at the given index. */

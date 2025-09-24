@@ -54,8 +54,7 @@ public class NetworkConnectionManagerConfig extends NetworkConnectionManagerConf
   @Override
   public boolean update(BaseConfigDTO config) {
     boolean hasChanged = false;
-    if (config instanceof NetworkConnectionManagerConfigDTO) {
-      NetworkConnectionManagerConfigDTO newConfig = (NetworkConnectionManagerConfigDTO) config;
+    if (config instanceof NetworkConnectionManagerConfigDTO newConfig) {
       if (this.endPointServerConfigList.size() != newConfig.getEndPointServerConfigList().size()) {
         this.endPointServerConfigList = newConfig.getEndPointServerConfigList();
         hasChanged = true;
