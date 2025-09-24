@@ -70,7 +70,7 @@ public class StompProtocol extends Protocol {
   private String version;
 
   @Getter
-  private boolean base64Encode;
+  private final boolean base64Encode;
 
 
   public StompProtocol(EndPoint endPoint) {
@@ -122,12 +122,9 @@ public class StompProtocol extends Protocol {
   }
 
   @Override
-  public void subscribeRemote(@NonNull @NotNull String resource, @NonNull @NotNull String mappedResource, @Nullable ParserExecutor executor, @Nullable Transformer transformer, StatisticsConfigDTO statistics) {
+  public void subscribeRemote(@NonNull @NotNull String resource, @NonNull @NotNull String mappedResource, @Nullable ParserExecutor executor, @Nullable Transformer transformer, StatisticsConfigDTO statistics) throws IOException {
+    super.subscribeRemote(resource, mappedResource, executor, transformer, statistics);
     sessionState.addMapping(resource, mappedResource);
-    if (transformer != null) {
-      destinationTransformerMap.put(resource, transformer);
-    }
-
     Subscribe subscribe = new Subscribe();
     subscribe.setDestination(resource);
     subscribe.setId(resource);
@@ -137,10 +134,9 @@ public class StompProtocol extends Protocol {
 
   @Override
   public void subscribeLocal(@NonNull @NotNull String resource, @NonNull @NotNull String mappedResource, String selector, @Nullable Transformer transformer, @Nullable NamespaceFilters namespaceFilters, StatisticsConfigDTO statistics) throws IOException {
+    super.subscribeLocal(resource, mappedResource, selector, transformer, namespaceFilters, statistics);
     sessionState.addMapping(resource, mappedResource);
-    if (transformer != null) {
-      destinationTransformerMap.put(resource, transformer);
-    }
+
     SubscriptionContextBuilder scb = createSubscriptionContextBuilder(resource, selector, QualityOfService.AT_MOST_ONCE, 10240);
     sessionState.createSubscription(scb.build());
   }

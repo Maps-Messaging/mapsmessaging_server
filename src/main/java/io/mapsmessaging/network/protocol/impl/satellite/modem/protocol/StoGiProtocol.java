@@ -263,14 +263,7 @@ public class StoGiProtocol extends Protocol implements Consumer<Packet> {
 
   @Override
   public void subscribeLocal(@NonNull @NotNull String resource, @NonNull @NotNull String mappedResource, @Nullable String selector, @Nullable Transformer transformer, NamespaceFilters namespaceFilters, StatisticsConfigDTO statistics) throws IOException {
-    this.setNamespaceFilters(namespaceFilters);
-    topicNameMapping.put(resource, mappedResource);
-    if (transformer != null) {
-      destinationTransformerMap.put(mappedResource, transformer);
-    }
-    if(statistics != null) {
-      resourceNameAnalyserMap.put(resource, statistics);
-    }
+    super.subscribeLocal(resource, mappedResource, selector, transformer, namespaceFilters, statistics);
     SubscriptionContextBuilder builder = createSubscriptionContextBuilder(resource, selector, QualityOfService.AT_MOST_ONCE, 1024);
     session.addSubscription(builder.build());
   }
@@ -466,8 +459,8 @@ public class StoGiProtocol extends Protocol implements Consumer<Packet> {
 
   private void buildSendList(Map<String, List<byte[]>> replacement) throws IOException {
     if(!replacement.isEmpty()){
-      MessageQueuePacker.Packed packedQueue = MessageQueuePacker.pack(replacement, compressionThreshold, cipherManager);
-      currentList.addAll(SatelliteMessageFactory.createMessages(currentStreamId,  packedQueue.data(), maxBufferSize, packedQueue.compressed()));
+      MessageQueuePacker.Packed packedQueue = MessageQueuePacker.pack(replacement, compressionThreshold, cipherManager, transformation);
+      currentList.addAll(SatelliteMessageFactory.createMessages(currentStreamId,  packedQueue.data(), maxBufferSize, packedQueue.compressed(), (byte)transformation.getId()));
       currentStreamId++;
     }
   }

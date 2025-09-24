@@ -132,17 +132,8 @@ public class MQTTProtocol extends Protocol {
   }
 
   @Override
-  public void subscribeRemote(@NonNull @NotNull String resource, @NonNull @NotNull String mappedResource, @Nullable ParserExecutor parser, @Nullable Transformer transformer, StatisticsConfigDTO statistics) {
-    topicNameMapping.put(resource, mappedResource);
-    if (transformer != null) {
-      destinationTransformerMap.put(mappedResource, transformer);
-    }
-    if(parser != null){
-      parserLookup.put(resource, parser);
-    }
-    if(statistics != null) {
-      resourceNameAnalyserMap.put(resource, statistics);
-    }
+  public void subscribeRemote(@NonNull @NotNull String resource, @NonNull @NotNull String mappedResource, @Nullable ParserExecutor parser, @Nullable Transformer transformer, StatisticsConfigDTO statistics) throws IOException {
+    super.subscribeRemote(resource,mappedResource,parser, transformer,statistics);
     Subscribe subscribe = new Subscribe();
     subscribe.setMessageId(packetIdManager.nextPacketIdentifier());
     subscribe.getSubscriptionList().add(new SubscriptionInfo(resource, QualityOfService.AT_MOST_ONCE));
@@ -153,13 +144,7 @@ public class MQTTProtocol extends Protocol {
   @Override
   public void subscribeLocal(@NonNull @NotNull String resource, @NonNull @NotNull String mappedResource, @Nullable String selector, @Nullable Transformer transformer, @Nullable NamespaceFilters namespaceFilters, StatisticsConfigDTO statistics)
       throws IOException {
-    topicNameMapping.put(resource, mappedResource);
-    if (transformer != null) {
-      destinationTransformerMap.put(mappedResource, transformer);
-    }
-    if(statistics != null){
-      resourceNameAnalyserMap.put(resource, statistics);
-    }
+    super.subscribeLocal(resource, mappedResource, selector, transformer, namespaceFilters, statistics);
     SubscriptionContextBuilder builder = createSubscriptionContextBuilder(resource, selector, QualityOfService.AT_MOST_ONCE, 1024);
     session.addSubscription(builder.build());
   }

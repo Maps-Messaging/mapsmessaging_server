@@ -31,6 +31,8 @@ public interface ProtocolMessageTransformation extends Service {
   @Override
   String getDescription();
 
+  int getId();
+
   default void incoming(MessageBuilder messageBuilder) {
     // nothing to do here
   }

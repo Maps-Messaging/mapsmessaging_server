@@ -31,15 +31,17 @@ public class SatelliteMessage {
   protected int packetNumber;
   protected byte[] message;
   protected boolean raw;
+  protected byte transformationId;
 
   @Setter
   private Runnable completionCallback;
 
-  public SatelliteMessage(int streamNumber, byte[] message, int packetNumber, boolean compressed) {
+  public SatelliteMessage(int streamNumber, byte[] message, int packetNumber, boolean compressed, byte transformationId) {
     this.streamNumber = streamNumber;
     this.message = message;
     this.compressed = compressed;
     this.packetNumber = packetNumber;
+    this.transformationId = transformationId;
   }
 
   public SatelliteMessage(int streamNumber, byte[] incomingPackedMessage) {
@@ -49,7 +51,9 @@ public class SatelliteMessage {
 
   public byte[] packToSend() {
     ByteBuffer header = ByteBuffer.allocate( 7 + message.length);
-    header.put(compressed ? (byte) 0x1 : (byte) 0x0);
+    byte flag =compressed ? (byte) 0x1 : (byte) 0x0;
+    flag = (byte)(( flag | (transformationId<<1))& 0xff);
+    header.put(flag);
     header.putShort((short) packetNumber);
     header.putShort((short) message.length);
     header.put(message);
@@ -60,7 +64,9 @@ public class SatelliteMessage {
     if (data == null) return;
     ByteBuffer buffer = ByteBuffer.wrap(data);
     //Load the flags, currently just compressed
-    compressed = buffer.get() != 0;
+    byte flag = buffer.get();
+    compressed = (flag & 0b1) != 0;
+    transformationId = (byte)(flag >>1);
     packetNumber = buffer.getShort();
     int messageLength = buffer.getShort();
 

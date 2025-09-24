@@ -110,6 +110,14 @@ public class TransformationManager implements ServiceManager {
     if(name == null || name.isEmpty()) return null;
     return lookupMap.get(name.toLowerCase());
   }
+
+  public ProtocolMessageTransformation getTransformation(int id) {
+    for(ProtocolMessageTransformation transformation : lookupMap.values()) {
+      if(transformation.getId() == id) return transformation;
+    }
+    return null;
+  }
+
 }
 
 

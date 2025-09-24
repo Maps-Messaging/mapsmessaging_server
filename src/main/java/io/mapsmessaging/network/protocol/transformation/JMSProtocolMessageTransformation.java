@@ -42,6 +42,11 @@ public class JMSProtocolMessageTransformation implements ProtocolMessageTransfor
   }
 
   @Override
+  public int getId() {
+    return 6;
+  }
+
+  @Override
   public String getDescription() {
     return "Implementation of JMS over AMQP messaging as per http://docs.oasis-open.org/amqp-bindmap/jms/v1.0/wd09/amqp-bindmap-jms-v1.0-wd09.html";
   }

@@ -159,8 +159,18 @@ public abstract class Protocol implements SelectorCallback, MessageListener, Tim
       @Nullable ParserExecutor parser,
       @Nullable Transformer transformer,
       @Nullable StatisticsConfigDTO statistics
-  )
-      throws IOException {
+  ) throws IOException {
+
+    topicNameMapping.put(resource, mappedResource);
+    if (transformer != null) {
+      destinationTransformerMap.put(mappedResource, transformer);
+    }
+    if(parser != null){
+      parserLookup.put(resource, parser);
+    }
+    if(statistics != null) {
+      resourceNameAnalyserMap.put(resource, statistics);
+    }
   }
 
   public void subscribeLocal(
@@ -172,6 +182,15 @@ public abstract class Protocol implements SelectorCallback, MessageListener, Tim
       @Nullable StatisticsConfigDTO statistics
   )
       throws IOException {
+    this.setNamespaceFilters(namespaceFilters);
+    topicNameMapping.put(resource, mappedResource);
+    if (transformer != null) {
+      destinationTransformerMap.put(mappedResource, transformer);
+    }
+    if(statistics != null) {
+      resourceNameAnalyserMap.put(resource, statistics);
+    }
+
   }
 
   @Override

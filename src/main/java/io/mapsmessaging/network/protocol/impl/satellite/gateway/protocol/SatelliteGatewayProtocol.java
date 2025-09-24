@@ -35,10 +35,12 @@ import io.mapsmessaging.network.ProtocolClientConnection;
 import io.mapsmessaging.network.io.EndPoint;
 import io.mapsmessaging.network.io.Packet;
 import io.mapsmessaging.network.protocol.Protocol;
+import io.mapsmessaging.network.protocol.ProtocolMessageTransformation;
 import io.mapsmessaging.network.protocol.impl.satellite.TaskManager;
 import io.mapsmessaging.network.protocol.impl.satellite.gateway.io.SatelliteEndPoint;
 import io.mapsmessaging.network.protocol.impl.satellite.gateway.model.MessageData;
 import io.mapsmessaging.network.protocol.impl.satellite.protocol.*;
+import io.mapsmessaging.network.protocol.transformation.TransformationManager;
 import io.mapsmessaging.utilities.filtering.NamespaceFilter;
 import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
@@ -263,8 +265,8 @@ public class SatelliteGatewayProtocol extends Protocol {
 
   private void packAndSend(Map<String, List<byte[]>> replacement) throws IOException {
     if(!replacement.isEmpty()) {
-      MessageQueuePacker.Packed packedQueue = MessageQueuePacker.pack(replacement, compressionThreshold, cipherManager);
-      List<SatelliteMessage> toSend = SatelliteMessageFactory.createMessages(currentStreamId, packedQueue.data(), maxBufferSize, packedQueue.compressed());
+      MessageQueuePacker.Packed packedQueue = MessageQueuePacker.pack(replacement, compressionThreshold, cipherManager, null);
+      List<SatelliteMessage> toSend = SatelliteMessageFactory.createMessages(currentStreamId, packedQueue.data(), maxBufferSize, packedQueue.compressed(), (byte) packedQueue.transformerNumber());
       int sin = (currentStreamId & 0x7f) | 0x80;
       int idx =0;
       for (SatelliteMessage satelliteMessage : toSend) {
@@ -327,15 +329,17 @@ public class SatelliteGatewayProtocol extends Protocol {
     System.arraycopy(raw, 2, tmp, 0, tmp.length);
     SatelliteMessage satelliteMessage = new SatelliteMessage(sin, tmp);
     if(satelliteMessage.isRaw()){
-      publishMessage(satelliteMessage.getMessage(), namespacePath);
+      publishMessage(satelliteMessage.getMessage(), namespacePath, null);
     }
     else {
       satelliteMessage = messageRebuilder.rebuild(satelliteMessage);
       if (satelliteMessage != null) {
+        int id = satelliteMessage.getTransformationId();
+        ProtocolMessageTransformation transformation1 = TransformationManager.getInstance().getTransformation(id);
         try {
           Map<String, List<byte[]>> receivedEventMap = MessageQueueUnpacker.unpack(satelliteMessage.getMessage(), satelliteMessage.isCompressed(), cipherManager);
           for (Map.Entry<String, List<byte[]>> entry : receivedEventMap.entrySet()) {
-            publishEvents(entry.getKey(), entry.getValue());
+            publishEvents(entry.getKey(), entry.getValue(), transformation1);
           }
         } catch (IOException e) {
           logger.log(INMARSAT_FAILED_PROCESSING_INCOMING, e);
@@ -344,17 +348,20 @@ public class SatelliteGatewayProtocol extends Protocol {
     }
   }
 
-  private void publishEvents(String namespace, List<byte[]> list) throws ExecutionException, InterruptedException {
+  private void publishEvents(String namespace, List<byte[]> list, ProtocolMessageTransformation transformation1) throws ExecutionException, InterruptedException {
     for (byte[] buffer : list) {
-      publishMessage(buffer, namespace);
+      publishMessage(buffer, namespace, transformation1);
     }
   }
 
-  private void publishMessage(byte[] buffer, String namespace) throws ExecutionException, InterruptedException {
+  private void publishMessage(byte[] buffer, String namespace, ProtocolMessageTransformation transformation1) throws ExecutionException, InterruptedException {
     MessageBuilder messageBuilder = new MessageBuilder();
     messageBuilder.setOpaqueData(buffer);
-    Message mapsMessage = messageBuilder.build();
     // Transform
+    if(transformation1 != null) {
+      transformation1.incoming(messageBuilder);
+    }
+    Message mapsMessage = messageBuilder.build();
 
     CompletableFuture<Destination> future = session.findDestination(namespace, DestinationType.TOPIC);
     future.thenApply(destination -> {

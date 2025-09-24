@@ -28,6 +28,12 @@ public class DefaultMessageTransformation implements ProtocolMessageTransformati
   }
 
   @Override
+  public int getId() {
+    return 2;
+  }
+
+
+  @Override
   public String getName() {
     return "Default";
   }

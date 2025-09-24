@@ -24,7 +24,7 @@ import java.nio.ByteBuffer;
 public class BypassSatelliteMessage extends SatelliteMessage {
 
   public BypassSatelliteMessage(int streamNumber, byte[] message, int packetNumber, boolean compressed) {
-    super(streamNumber, message, packetNumber, compressed);
+    super(streamNumber, message, packetNumber, compressed, (byte)0);
   }
 
   @Override

@@ -35,7 +35,7 @@ public class SatelliteMessageFactory {
 
   private SatelliteMessageFactory() {
   }
-  public static List<SatelliteMessage> createMessages(int streamId, byte[] payload, int maxMessageSize, boolean compressed) {
+  public static List<SatelliteMessage> createMessages(int streamId, byte[] payload, int maxMessageSize, boolean compressed, byte transformationId) {
     List<SatelliteMessage> messages = new ArrayList<>();
 
     int totalChunks = (payload.length + maxMessageSize - 1) / maxMessageSize;
@@ -48,7 +48,8 @@ public class SatelliteMessageFactory {
           streamId,
           chunk,
           totalChunks - 1 - chunkIndex, // count down to 0
-          compressed
+          compressed,
+          transformationId
       );
       messages.add(message);
     }
@@ -64,6 +65,7 @@ public class SatelliteMessageFactory {
     }
     int streamId = messages.get(0).getStreamNumber();
     boolean compressed = messages.get(0).isCompressed();
+    byte transformationId = messages.get(0).getTransformationId();
     ByteArrayOutputStream baos = new ByteArrayOutputStream();
     try {
       for (SatelliteMessage message : messages) {
@@ -73,7 +75,7 @@ public class SatelliteMessageFactory {
       // Log this, since this is weird!!!
     }
     byte[] recombined = baos.toByteArray();
-    return new SatelliteMessage(streamId, recombined, 0, compressed);
+    return new SatelliteMessage(streamId, recombined, 0, compressed,transformationId);
   }
 
 }
