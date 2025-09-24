@@ -39,7 +39,7 @@ class SatelliteMessageFactoryRebuilderTest {
   void splitAndReassemble_inOrder() {
     int streamId = 42;
     byte[] src = payload(10_000, (byte) 0x5A);
-    List<SatelliteMessage> chunks = SatelliteMessageFactory.createMessages(streamId, src, 1024, true);
+    List<SatelliteMessage> chunks = SatelliteMessageFactory.createMessages(streamId, src, 1024, true, (byte)0);
 
     // basic properties
     Assertions.assertTrue(chunks.size() >= 10);
@@ -66,7 +66,7 @@ class SatelliteMessageFactoryRebuilderTest {
     int streamId = 7;
     int chunkSize = 512;
     byte[] src = payload(chunkSize * 8, (byte) 0x33);
-    List<SatelliteMessage> chunks = SatelliteMessageFactory.createMessages(streamId, src, chunkSize, false);
+    List<SatelliteMessage> chunks = SatelliteMessageFactory.createMessages(streamId, src, chunkSize, false, (byte)0);
 
     Assertions.assertEquals(8, chunks.size());
     Assertions.assertFalse(chunks.get(0).isCompressed());
@@ -82,7 +82,7 @@ class SatelliteMessageFactoryRebuilderTest {
   void singleUncompressedFastPath() {
     int streamId = 9;
     byte[] src = payload(400, (byte) 0x01);
-    List<SatelliteMessage> msgs = SatelliteMessageFactory.createMessages(streamId, src, 1000, false);
+    List<SatelliteMessage> msgs = SatelliteMessageFactory.createMessages(streamId, src, 1000, false, (byte)0);
     Assertions.assertEquals(1, msgs.size());
     SatelliteMessageRebuilder rb = new SatelliteMessageRebuilder();
 
@@ -97,7 +97,7 @@ class SatelliteMessageFactoryRebuilderTest {
   void rebuilder_inOrderArrival() {
     int streamId = 11;
     byte[] src = payload(5_000, (byte) 0x22);
-    List<SatelliteMessage> chunks = SatelliteMessageFactory.createMessages(streamId, src, 700, true);
+    List<SatelliteMessage> chunks = SatelliteMessageFactory.createMessages(streamId, src, 700, true, (byte)0);
 
     SatelliteMessageRebuilder rb = new SatelliteMessageRebuilder();
     SatelliteMessage result = null;
@@ -115,7 +115,7 @@ class SatelliteMessageFactoryRebuilderTest {
     // Demonstrates current behavior with out-of-order arrival: last chunk first triggers premature reconstruct.
     int streamId = 15;
     byte[] src = payload(3_000, (byte) 0x6E);
-    List<SatelliteMessage> chunks = SatelliteMessageFactory.createMessages(streamId, src, 512, true);
+    List<SatelliteMessage> chunks = SatelliteMessageFactory.createMessages(streamId, src, 512, true, (byte)0);
 
     // Shuffle so that packetNumber==0 arrives first
     List<SatelliteMessage> shuffled = new ArrayList<>(chunks);
@@ -141,7 +141,7 @@ class SatelliteMessageFactoryRebuilderTest {
   void compressedFlagPreservedThroughRebuild() {
     int streamId = 20;
     byte[] src = payload(2_048, (byte) 0x13);
-    List<SatelliteMessage> chunks = SatelliteMessageFactory.createMessages(streamId, src, 600, true);
+    List<SatelliteMessage> chunks = SatelliteMessageFactory.createMessages(streamId, src, 600, true,(byte)0);
 
     SatelliteMessageRebuilder rb = new SatelliteMessageRebuilder();
     SatelliteMessage out = null;
@@ -157,7 +157,7 @@ class SatelliteMessageFactoryRebuilderTest {
   void clearResetsState() {
     int streamId = 25;
     byte[] src = payload(1_500, (byte) 0x55);
-    List<SatelliteMessage> chunks = SatelliteMessageFactory.createMessages(streamId, src, 500, true);
+    List<SatelliteMessage> chunks = SatelliteMessageFactory.createMessages(streamId, src, 500, true,(byte)0);
 
     SatelliteMessageRebuilder rb = new SatelliteMessageRebuilder();
     rb.rebuild(chunks.get(0));

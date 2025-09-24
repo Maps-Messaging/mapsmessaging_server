@@ -76,8 +76,8 @@ class PackingPipelineTest {
     Map<String, List<byte[]>> batch = sampleJsonBatch(2, 40 );
     CipherManager cm = new CipherManager("testing".getBytes());
 
-    MessageQueuePacker.Packed uncompressed = MessageQueuePacker.pack(batch, 10000000, cm);
-    MessageQueuePacker.Packed compressed = MessageQueuePacker.pack(batch, 100, cm);
+    MessageQueuePacker.Packed uncompressed = MessageQueuePacker.pack(batch, 10000000, cm, null);
+    MessageQueuePacker.Packed compressed = MessageQueuePacker.pack(batch, 100, cm, null);
     Assertions.assertNotEquals(uncompressed.data().length, compressed.data().length);
   }
 
@@ -99,7 +99,7 @@ class PackingPipelineTest {
     CipherManager cm = new CipherManager("testing".getBytes());
     int minCompressSize = 100;
 
-    MessageQueuePacker.Packed packed = MessageQueuePacker.pack(batch, minCompressSize, cm);
+    MessageQueuePacker.Packed packed = MessageQueuePacker.pack(batch, minCompressSize, cm, null);
     byte[] corrupted = flip(packed.data(), crcEndOffset()); // flip first byte after CRC
 
     Assertions.assertThrows(IOException.class, () ->
@@ -113,7 +113,7 @@ class PackingPipelineTest {
     CipherManager cmRight = new CipherManager("testing".getBytes());
     int minCompressSize = 100;
 
-    MessageQueuePacker.Packed packed = MessageQueuePacker.pack(batch, minCompressSize, cmRight);
+    MessageQueuePacker.Packed packed = MessageQueuePacker.pack(batch, minCompressSize, cmRight, null);
 
     CipherManager cmWrong = new CipherManager("wrong-key".getBytes());
     Assertions.assertThrows(IOException.class, () ->
@@ -127,7 +127,7 @@ class PackingPipelineTest {
     Map<String, List<byte[]>> batch = sampleBatch(1, 2, 4096, (byte) 0x00); // highly compressible
     int minCompressSize = 100;
 
-    MessageQueuePacker.Packed packed = MessageQueuePacker.pack(batch, minCompressSize, cmNoEnc);
+    MessageQueuePacker.Packed packed = MessageQueuePacker.pack(batch, minCompressSize, cmNoEnc, null);
     Assertions.assertTrue(packed.compressed(), "Expected body to be compressed for this input");
 
     // Corrupt a byte in the compressed body, past CRC
@@ -156,7 +156,7 @@ class PackingPipelineTest {
     CipherManager cm = new CipherManager("testing".getBytes());
     int minCompressSize = 128;
 
-    MessageQueuePacker.Packed packed = MessageQueuePacker.pack(batch, minCompressSize, cm);
+    MessageQueuePacker.Packed packed = MessageQueuePacker.pack(batch, minCompressSize, cm, null);
     Map<String, List<byte[]>> out = MessageQueueUnpacker.unpack(packed.data(), packed.compressed(), cm);
 
     // content-equal ignoring key order, enforcing list order
@@ -176,7 +176,7 @@ class PackingPipelineTest {
   void truncationFails() throws IOException {
     Map<String, List<byte[]>> batch = sampleBatch(1, 5, 200, (byte) 0x12);
     CipherManager cm = new CipherManager("testing".getBytes());
-    MessageQueuePacker.Packed packed = MessageQueuePacker.pack(batch, 100, cm);
+    MessageQueuePacker.Packed packed = MessageQueuePacker.pack(batch, 100, cm, null);
 
     byte[] truncated = Arrays.copyOf(packed.data(), Math.max(4, packed.data().length - 5));
     Assertions.assertThrows(IOException.class, () ->
@@ -188,7 +188,7 @@ class PackingPipelineTest {
   void trailingGarbageFailsStrict() throws IOException {
     Map<String, List<byte[]>> batch = sampleBatch(2, 1, 128, (byte) 0x34);
     CipherManager cm = new CipherManager("testing".getBytes());
-    MessageQueuePacker.Packed packed = MessageQueuePacker.pack(batch, 50, cm);
+    MessageQueuePacker.Packed packed = MessageQueuePacker.pack(batch, 50, cm, null);
 
     byte[] withJunk = Arrays.copyOf(packed.data(), packed.data().length + 3);
     withJunk[withJunk.length - 1] ^= 0x7F;
@@ -204,7 +204,7 @@ class PackingPipelineTest {
     batch.put("debug", List.of("we should not see plain text in the resultant pack".getBytes()));
 
     CipherManager cm = new CipherManager("testing".getBytes());
-    MessageQueuePacker.Packed packed = MessageQueuePacker.pack(batch, 1, cm);
+    MessageQueuePacker.Packed packed = MessageQueuePacker.pack(batch, 1, cm, null);
 
     String s = new String(packed.data());
     Assertions.assertFalse(s.contains("we should not see plain text in the resultant pack"));
@@ -221,7 +221,7 @@ class PackingPipelineTest {
     Map<String, List<byte[]>> batch = new LinkedHashMap<>();
     batch.put("σensors/温度", List.of(new byte[0], "x".getBytes()));
     CipherManager cm = new CipherManager("testing".getBytes());
-    MessageQueuePacker.Packed packed = MessageQueuePacker.pack(batch, 128, cm);
+    MessageQueuePacker.Packed packed = MessageQueuePacker.pack(batch, 128, cm, null);
 
     Map<String, List<byte[]>> out = MessageQueueUnpacker.unpack(packed.data(), packed.compressed(), cm);
     Assertions.assertEquals(batch.keySet(), out.keySet());
@@ -237,7 +237,7 @@ class PackingPipelineTest {
     batch.put("b", List.of("x".getBytes(), "y".getBytes()));
 
     CipherManager cm = new CipherManager("testing".getBytes());
-    MessageQueuePacker.Packed packed = MessageQueuePacker.pack(batch, 16, cm);
+    MessageQueuePacker.Packed packed = MessageQueuePacker.pack(batch, 16, cm, null);
     Map<String, List<byte[]>> out = MessageQueueUnpacker.unpack(packed.data(), packed.compressed(), cm);
 
     // reorder keys in 'out' by re-inserting into a new map to simulate arbitrary order
