@@ -54,7 +54,7 @@ class PackingTest {
 
     int minCompressSize = 100;
     CipherManager cipherManager = new CipherManager("testing".getBytes());
-    MessageQueuePacker.Packed packed = MessageQueuePacker.pack(queuedMessages, minCompressSize, cipherManager);
+    MessageQueuePacker.Packed packed = MessageQueuePacker.pack(queuedMessages, minCompressSize, cipherManager, null);
     String t = new String(packed.data());
     Assertions.assertFalse(t.contains("we should not see plain text in the resultant pack"));
     Assertions.assertFalse(t.contains("debug"));
@@ -93,7 +93,7 @@ class PackingTest {
 
     int minCompressSize = 100;
     CipherManager cipherManager = new CipherManager("testing".getBytes());
-    MessageQueuePacker.Packed packed = MessageQueuePacker.pack(queuedMessages, minCompressSize, cipherManager);
+    MessageQueuePacker.Packed packed = MessageQueuePacker.pack(queuedMessages, minCompressSize, cipherManager, null);
     String t = new String(packed.data());
     Assertions.assertFalse(t.contains("we should not see plain text in the resultant pack"));
     Assertions.assertFalse(t.contains("debug"));
@@ -131,7 +131,7 @@ class PackingTest {
 
     int minCompressSize = 100;
     CipherManager cipherManager = new CipherManager("testing".getBytes());
-    MessageQueuePacker.Packed packed = MessageQueuePacker.pack(queuedMessages, minCompressSize, cipherManager);
+    MessageQueuePacker.Packed packed = MessageQueuePacker.pack(queuedMessages, minCompressSize, cipherManager, null);
     String t = new String(packed.data());
     Assertions.assertFalse(t.contains("we should not see plain text in the resultant pack"));
     Assertions.assertFalse(t.contains("debug"));

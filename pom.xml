@@ -25,7 +25,7 @@
   <groupId>io.mapsmessaging</groupId>
   <artifactId>maps</artifactId>
   <modelVersion>4.0.0</modelVersion>
-  <version>4.1.0-SNAPSHOT</version>
+  <version>4.1.2-SNAPSHOT</version>
   <packaging>jar</packaging>
 
   <name>Maps Messaging Server</name>
@@ -140,7 +140,7 @@
 
     <!-- first level dependencies -->
     <maps.nbts.version>2.2.1-SNAPSHOT</maps.nbts.version>
-    <maps.schema.version>2.2.1-SNAPSHOT</maps.schema.version>
+    <maps.schema.version>2.2.2-SNAPSHOT</maps.schema.version>
     <maps.config.version>1.1.1-SNAPSHOT</maps.config.version>
 
     <!-- Second level dependencies -->
