@@ -168,23 +168,6 @@ class StatisticsTests {
     assertJsonHas(json, "missing","nan","infinite","outliers","outlierStdDevs");
   }
 
-  // ---------- CrossSeriesStatistics ----------
-  @Test
-  void cross_covCorr() {
-    CrossSeriesStatistics c = (CrossSeriesStatistics) StatisticsFactory.getInstance().getAnalyser("CrossSeries");
-    for (int i = 0; i < 1000; i++) {
-      double x = i;
-      double y = 2.0 * i + 5.0 + ((i & 1) == 0 ? 0.01 : -0.01);
-      c.updatePair(x, y);
-    }
-    assertEquals(1000, c.getPairedCount());
-    assertTrue(c.getSampleCovariance() > 0.0);
-    assertTrue(c.getSampleCorrelation() > 0.999);
-
-    JsonObject json = c.toJson();
-    assertJsonHas(json, "pairedCount","covariance","correlation");
-  }
-
   // ---------- StringStatistics ----------
   @Test
   void strings_sortedDistribution() {

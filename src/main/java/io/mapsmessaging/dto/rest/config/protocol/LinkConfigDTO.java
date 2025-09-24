@@ -19,6 +19,7 @@
 
 package io.mapsmessaging.dto.rest.config.protocol;
 
+import io.mapsmessaging.dto.rest.analytics.StatisticsConfigDTO;
 import io.mapsmessaging.dto.rest.config.BaseConfigDTO;
 import io.mapsmessaging.utilities.filtering.NamespaceFilter;
 import io.mapsmessaging.utilities.filtering.NamespaceFilters;
@@ -53,6 +54,9 @@ public class LinkConfigDTO extends BaseConfigDTO {
 
   @Schema(description = "Transformer configuration map")
   protected Map<String, Object> transformer;
+
+  @Schema(description = "Configure a statistic analysis of the data flowing through")
+  protected StatisticsConfigDTO statistics;
 
   @Schema(description = "Specific filtering on namespace", nullable = true)
   protected NamespaceFilters namespaceFilters;

@@ -19,9 +19,13 @@
 
 package io.mapsmessaging.network.io.connection.state;
 
+import io.mapsmessaging.analytics.Analyser;
+import io.mapsmessaging.analytics.AnalyserFactory;
 import io.mapsmessaging.api.features.DestinationMode;
 import io.mapsmessaging.api.transformers.Transformer;
+import io.mapsmessaging.config.analytics.StatisticsConfig;
 import io.mapsmessaging.configuration.ConfigurationProperties;
+import io.mapsmessaging.dto.rest.analytics.StatisticsConfigDTO;
 import io.mapsmessaging.dto.rest.config.protocol.LinkConfigDTO;
 import io.mapsmessaging.engine.transformers.TransformerManager;
 import io.mapsmessaging.logging.ServerLogMessages;
@@ -72,12 +76,12 @@ public class Connected extends State {
 
       try {
         if (direction.equalsIgnoreCase("pull")) {
-          subscribeRemote(remote, local, selector, transformer, schema);
+          subscribeRemote(remote, local, selector, transformer, schema, property.getStatistics());
         } else if (direction.equalsIgnoreCase("push")) {
           if(remote.endsWith("#")){
             remote = remote.substring(0, remote.length()-1);
           }
-          subscribeLocal(local, remote, selector, transformer, schema, filters);
+          subscribeLocal(local, remote, selector, transformer, schema, filters, property.getStatistics());
         }
         endPointConnection.getLogger().log(ServerLogMessages.END_POINT_CONNECTION_SUBSCRIPTION_ESTABLISHED, direction, local, remote);
       } catch (IOException ioException) {
@@ -88,14 +92,14 @@ public class Connected extends State {
     return success;
   }
 
-  private void subscribeLocal(String local, String remote, String selector, Transformer transformer, boolean includeSchema, NamespaceFilters filters) throws IOException {
-    endPointConnection.getConnection().subscribeLocal(local, remote, selector, transformer, filters);
+  private void subscribeLocal(String local, String remote, String selector, Transformer transformer, boolean includeSchema, NamespaceFilters filters, StatisticsConfigDTO statistics) throws IOException {
+    endPointConnection.getConnection().subscribeLocal(local, remote, selector, transformer, filters, statistics);
     if(includeSchema){
-      endPointConnection.getConnection().subscribeLocal(constructSchema(local), constructSchema(remote), selector, transformer,filters );
+      endPointConnection.getConnection().subscribeLocal(constructSchema(local), constructSchema(remote), selector, transformer,filters, null );
     }
   }
 
-  private void subscribeRemote(String remote, String local, String selector, Transformer transformer, boolean includeSchema) throws IOException {
+  private void subscribeRemote(String remote, String local, String selector, Transformer transformer, boolean includeSchema, StatisticsConfigDTO statistics) throws IOException {
     ParserExecutor parser = null;
     if(selector != null && !selector.isEmpty()){
       try {
@@ -104,9 +108,9 @@ public class Connected extends State {
         throw new IOException("Unable to parse selector", e);
       }
     }
-    endPointConnection.getConnection().subscribeRemote(remote, local, parser, transformer);
+    endPointConnection.getConnection().subscribeRemote(remote, local, parser, transformer, statistics);
     if(includeSchema){
-      endPointConnection.getConnection().subscribeRemote(constructSchema(remote), constructSchema(local), null, transformer);
+      endPointConnection.getConnection().subscribeRemote(constructSchema(remote), constructSchema(local), null, transformer, null);
     }
   }
 

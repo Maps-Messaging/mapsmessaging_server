@@ -19,6 +19,7 @@
 
 package io.mapsmessaging.network.protocol;
 
+import io.mapsmessaging.analytics.Analyser;
 import io.mapsmessaging.api.MessageBuilder;
 import io.mapsmessaging.api.MessageEvent;
 import io.mapsmessaging.api.MessageListener;
@@ -27,6 +28,7 @@ import io.mapsmessaging.api.features.ClientAcknowledgement;
 import io.mapsmessaging.api.features.QualityOfService;
 import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.api.transformers.Transformer;
+import io.mapsmessaging.dto.rest.analytics.StatisticsConfigDTO;
 import io.mapsmessaging.dto.rest.config.protocol.ProtocolConfigDTO;
 import io.mapsmessaging.dto.rest.protocol.ProtocolInformationDTO;
 import io.mapsmessaging.logging.ServerLogMessages;
@@ -64,6 +66,13 @@ public abstract class Protocol implements SelectorCallback, MessageListener, Tim
   protected final Map<String, String> topicNameMapping;
 
   @Getter
+  protected final Map<String, Analyser> topicNameAnalyserMap;
+
+  @Getter
+  protected final Map<String, StatisticsConfigDTO> resourceNameAnalyserMap;
+
+
+  @Getter
   @Setter
   private NamespaceFilters namespaceFilters;
 
@@ -96,6 +105,8 @@ public abstract class Protocol implements SelectorCallback, MessageListener, Tim
     destinationTransformerMap = new ConcurrentHashMap<>();
     parserLookup = new ConcurrentHashMap<>();
     topicNameMapping = new ConcurrentHashMap<>();
+    topicNameAnalyserMap = new ConcurrentHashMap<>();
+    resourceNameAnalyserMap = new ConcurrentHashMap<>();
     endPoint.setBoundProtocol(this);
   }
 
@@ -113,6 +124,8 @@ public abstract class Protocol implements SelectorCallback, MessageListener, Tim
     destinationTransformerMap = new ConcurrentHashMap<>();
     parserLookup = new ConcurrentHashMap<>();
     topicNameMapping = new ConcurrentHashMap<>();
+    topicNameAnalyserMap = new ConcurrentHashMap<>();
+    resourceNameAnalyserMap = new ConcurrentHashMap<>();
     endPoint.setBoundProtocol(this);
   }
 
@@ -140,10 +153,24 @@ public abstract class Protocol implements SelectorCallback, MessageListener, Tim
   public void connect(String sessionId, String username, String password) throws IOException {
   }
 
-  public void subscribeRemote(@NonNull @NotNull String resource, @NonNull @NotNull String mappedResource, @Nullable ParserExecutor parser, @Nullable Transformer transformer) throws IOException {
+  public void subscribeRemote(
+      @NonNull @NotNull String resource,
+      @NonNull @NotNull String mappedResource,
+      @Nullable ParserExecutor parser,
+      @Nullable Transformer transformer,
+      @Nullable StatisticsConfigDTO statistics
+  )
+      throws IOException {
   }
 
-  public void subscribeLocal(@NonNull @NotNull String resource, @NonNull @NotNull String mappedResource, @Nullable String selector, @Nullable Transformer transformer, @Nullable NamespaceFilters namespaceFilters)
+  public void subscribeLocal(
+      @NonNull @NotNull String resource,
+      @NonNull @NotNull String mappedResource,
+      @Nullable String selector,
+      @Nullable Transformer transformer,
+      @Nullable NamespaceFilters namespaceFilters,
+      @Nullable StatisticsConfigDTO statistics
+  )
       throws IOException {
   }
 

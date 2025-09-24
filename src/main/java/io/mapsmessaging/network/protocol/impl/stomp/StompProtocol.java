@@ -19,11 +19,13 @@
 
 package io.mapsmessaging.network.protocol.impl.stomp;
 
+import io.mapsmessaging.analytics.Analyser;
 import io.mapsmessaging.api.MessageEvent;
 import io.mapsmessaging.api.SubscriptionContextBuilder;
 import io.mapsmessaging.api.features.QualityOfService;
 import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.api.transformers.Transformer;
+import io.mapsmessaging.dto.rest.analytics.StatisticsConfigDTO;
 import io.mapsmessaging.dto.rest.config.protocol.impl.StompConfigDTO;
 import io.mapsmessaging.dto.rest.protocol.ProtocolInformationDTO;
 import io.mapsmessaging.dto.rest.protocol.impl.StompProtocolInformation;
@@ -120,7 +122,7 @@ public class StompProtocol extends Protocol {
   }
 
   @Override
-  public void subscribeRemote(@NonNull @NotNull String resource, @NonNull @NotNull String mappedResource, @Nullable ParserExecutor executor, @Nullable Transformer transformer) {
+  public void subscribeRemote(@NonNull @NotNull String resource, @NonNull @NotNull String mappedResource, @Nullable ParserExecutor executor, @Nullable Transformer transformer, StatisticsConfigDTO statistics) {
     sessionState.addMapping(resource, mappedResource);
     if (transformer != null) {
       destinationTransformerMap.put(resource, transformer);
@@ -134,7 +136,7 @@ public class StompProtocol extends Protocol {
   }
 
   @Override
-  public void subscribeLocal(@NonNull @NotNull String resource, @NonNull @NotNull String mappedResource, String selector, @Nullable Transformer transformer, @Nullable NamespaceFilters namespaceFilters) throws IOException {
+  public void subscribeLocal(@NonNull @NotNull String resource, @NonNull @NotNull String mappedResource, String selector, @Nullable Transformer transformer, @Nullable NamespaceFilters namespaceFilters, StatisticsConfigDTO statistics) throws IOException {
     sessionState.addMapping(resource, mappedResource);
     if (transformer != null) {
       destinationTransformerMap.put(resource, transformer);

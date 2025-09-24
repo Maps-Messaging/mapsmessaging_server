@@ -19,7 +19,6 @@
 
 io.mapsmessaging.analytics.impl.stats.BaseStatistics
 io.mapsmessaging.analytics.impl.stats.AdvancedStatistics
-io.mapsmessaging.analytics.impl.stats.CrossSeriesStatistics
 io.mapsmessaging.analytics.impl.stats.QuantileStatistics
 io.mapsmessaging.analytics.impl.stats.StringStatistics
 io.mapsmessaging.analytics.impl.stats.MomentStatistics

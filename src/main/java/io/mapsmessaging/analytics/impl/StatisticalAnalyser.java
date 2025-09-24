@@ -1,3 +1,22 @@
+/*
+ *
+ *  Copyright [ 2020 - 2024 ] Matthew Buckton
+ *  Copyright [ 2024 - 2025 ] MapsMessaging B.V.
+ *
+ *  Licensed under the Apache License, Version 2.0 with the Commons Clause
+ *  (the "License"); you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at:
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://commonsclause.com/
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ */
+
 package io.mapsmessaging.analytics.impl;
 
 import com.google.gson.JsonObject;
@@ -6,7 +25,7 @@ import io.mapsmessaging.analytics.impl.stats.Statistics;
 import io.mapsmessaging.analytics.impl.stats.StatisticsFactory;
 import io.mapsmessaging.api.MessageBuilder;
 import io.mapsmessaging.api.message.Message;
-import io.mapsmessaging.configuration.ConfigurationProperties;
+import io.mapsmessaging.dto.rest.analytics.StatisticsConfigDTO;
 import io.mapsmessaging.engine.schema.SchemaManager;
 import io.mapsmessaging.schemas.formatters.MessageFormatter;
 import io.mapsmessaging.selector.IdentifierResolver;
@@ -17,7 +36,7 @@ import java.util.*;
 public class StatisticalAnalyser implements Analyser {
 
   private final int eventCount;
-  private final String[] ignoreList;
+  private final List<String> ignoreList;
   private final Map<String, Statistics> statistics;
   private final String defaultAnalyser;
   private final List<String> entries;
@@ -28,14 +47,14 @@ public class StatisticalAnalyser implements Analyser {
 
   public StatisticalAnalyser() {
     formatter = null;
-    ignoreList = new String[0];
+    ignoreList = List.of();
     eventCount = 0;
     entries = List.of();
     defaultAnalyser = null;
     statistics = new LinkedHashMap<>();
   }
 
-  public StatisticalAnalyser(String defaultName, int eventCount, String[] ignoreList, List<String> entries) {
+  public StatisticalAnalyser(String defaultName, int eventCount, List<String> ignoreList, List<String> entries) {
     this.eventCount = eventCount;
     this.ignoreList = ignoreList;
     this.entries = entries;
@@ -44,25 +63,8 @@ public class StatisticalAnalyser implements Analyser {
   }
 
   @Override
-  public Analyser create(@NotNull ConfigurationProperties configuration) {
-    int count = configuration.getIntProperty("eventCount", 100);
-    if(count <= 10) {
-      count = 10;
-    }
-    if(count > 1000000){
-      count = 1000000;
-    }
-
-    String ignoreString = configuration.getProperty("ignoreList", "");
-    String[] ignore = ignoreString.split(",");
-
-    String entryString = configuration.getProperty("keyList", "");
-    String[] entryArray= new String[0];
-    if(!entryString.isEmpty()){
-      entryArray = entryString.split(",");
-    }
-    String analyserName = configuration.getProperty("defaultAnalyser", "Base");
-    return new StatisticalAnalyser(analyserName, count, ignore, List.of(entryArray));
+  public Analyser create(@NotNull StatisticsConfigDTO config) {
+    return new StatisticalAnalyser(config.getStatisticName(), config.getEventCount(), config.getIgnoreList(),config.getKeyList());
   }
 
   @Override
@@ -112,8 +114,8 @@ public class StatisticalAnalyser implements Analyser {
 
   private void loadEntries(IdentifierResolver resolver) {
     resolver.getKeys().forEach(key -> {
-      boolean ignored = ignoreList != null && ignoreList.length > 0 &&
-          Arrays.stream(ignoreList).anyMatch(s -> s.startsWith(key));
+      boolean ignored = ignoreList != null && !ignoreList.isEmpty() &&
+          ignoreList.stream().anyMatch(s -> s.startsWith(key));
 
       if (!ignored) {
         boolean inEntries = entries.isEmpty() ||

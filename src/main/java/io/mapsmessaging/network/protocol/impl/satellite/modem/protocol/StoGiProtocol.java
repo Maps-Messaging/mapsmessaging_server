@@ -19,6 +19,8 @@
 
 package io.mapsmessaging.network.protocol.impl.satellite.modem.protocol;
 
+import io.mapsmessaging.analytics.Analyser;
+import io.mapsmessaging.analytics.AnalyserFactory;
 import io.mapsmessaging.api.*;
 import io.mapsmessaging.api.features.DestinationMode;
 import io.mapsmessaging.api.features.DestinationType;
@@ -27,6 +29,7 @@ import io.mapsmessaging.api.features.QualityOfService;
 import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.api.message.TypedData;
 import io.mapsmessaging.api.transformers.Transformer;
+import io.mapsmessaging.dto.rest.analytics.StatisticsConfigDTO;
 import io.mapsmessaging.dto.rest.config.protocol.impl.StoGiConfigDTO;
 import io.mapsmessaging.dto.rest.protocol.ProtocolInformationDTO;
 import io.mapsmessaging.dto.rest.protocol.impl.SatelliteProtocolInformation;
@@ -254,16 +257,19 @@ public class StoGiProtocol extends Protocol implements Consumer<Packet> {
   }
 
   @Override
-  public void subscribeRemote(@NonNull @NotNull String resource, @NonNull @NotNull String mappedResource, @Nullable ParserExecutor executor, @Nullable Transformer transformer) {
+  public void subscribeRemote(@NonNull @NotNull String resource, @NonNull @NotNull String mappedResource, @Nullable ParserExecutor executor, @Nullable Transformer transformer, StatisticsConfigDTO statistics) {
     // Will send a subscribe event, once we have one
   }
 
   @Override
-  public void subscribeLocal(@NonNull @NotNull String resource, @NonNull @NotNull String mappedResource, @Nullable String selector, @Nullable Transformer transformer, NamespaceFilters namespaceFilters) throws IOException {
+  public void subscribeLocal(@NonNull @NotNull String resource, @NonNull @NotNull String mappedResource, @Nullable String selector, @Nullable Transformer transformer, NamespaceFilters namespaceFilters, StatisticsConfigDTO statistics) throws IOException {
     this.setNamespaceFilters(namespaceFilters);
     topicNameMapping.put(resource, mappedResource);
     if (transformer != null) {
       destinationTransformerMap.put(mappedResource, transformer);
+    }
+    if(statistics != null) {
+      resourceNameAnalyserMap.put(resource, statistics);
     }
     SubscriptionContextBuilder builder = createSubscriptionContextBuilder(resource, selector, QualityOfService.AT_MOST_ONCE, 1024);
     session.addSubscription(builder.build());
@@ -283,6 +289,7 @@ public class StoGiProtocol extends Protocol implements Consumer<Packet> {
     }
   }
   public void preparePackedMessage(@NotNull @NonNull MessageEvent messageEvent) {
+
     boolean filteredOverride = false;
     int depth = 1;
     try {
@@ -297,6 +304,26 @@ public class StoGiProtocol extends Protocol implements Consumer<Packet> {
 
     String destinationName = messageEvent.getDestinationName();
     Message message = processTransformer(destinationName, messageEvent.getMessage());
+    Analyser analyser = topicNameAnalyserMap.get(messageEvent.getDestinationName());
+    if(analyser == null && !resourceNameAnalyserMap.isEmpty()){
+      StatisticsConfigDTO config = resourceNameAnalyserMap.get(messageEvent.getSubscription().getContext().getAlias());
+      if(config != null){
+        analyser = AnalyserFactory.getInstance().getAnalyser(config);
+        topicNameAnalyserMap.put(messageEvent.getDestinationName(), analyser);
+      }
+    }
+
+    if(analyser != null) {
+      message = analyser.ingest(message);
+      if(message == null) {
+        if (messageEvent.getCompletionTask() != null) {
+          messageEvent.getCompletionTask().run();
+        }
+        return;
+      }
+    }
+
+
     byte[] payload;
     if (transformation != null) {
       payload = transformation.outgoing(message, messageEvent.getDestinationName());

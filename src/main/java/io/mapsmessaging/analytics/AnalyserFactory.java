@@ -19,7 +19,8 @@
 
 package io.mapsmessaging.analytics;
 
-import io.mapsmessaging.configuration.ConfigurationProperties;
+import io.mapsmessaging.dto.rest.analytics.StatisticsConfigDTO;
+
 import java.util.Map;
 import java.util.ServiceLoader;
 import java.util.concurrent.ConcurrentHashMap;
@@ -46,8 +47,8 @@ public class AnalyserFactory {
     }
   }
 
-  public Analyser getAnalyser(String analyserName, ConfigurationProperties properties) {
-    Analyser analyser = analysers.get(analyserName);
+  public Analyser getAnalyser(StatisticsConfigDTO properties) {
+    Analyser analyser = analysers.get("stats");
     if(analyser != null) {
       return analyser.create(properties);
     }
