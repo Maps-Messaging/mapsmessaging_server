@@ -127,7 +127,7 @@ public class SatelliteGatewayProtocol extends Protocol {
     }
     namespacePath = config.getNamespace();
     if(namespacePath == null || namespacePath.isEmpty()){
-      namespacePath = "/incoming/{mailboxId}/{deviceId}";
+      namespacePath = "/incoming/{mailboxId}/{deviceId}/{sin}";
     }
     namespacePath = namespacePath.replace("{deviceId}", primeId);
     namespacePath = namespacePath.replace("{mailboxId}", config.getMailboxId());
@@ -329,7 +329,10 @@ public class SatelliteGatewayProtocol extends Protocol {
     System.arraycopy(raw, 2, tmp, 0, tmp.length);
     SatelliteMessage satelliteMessage = new SatelliteMessage(sin, tmp);
     if(satelliteMessage.isRaw()){
-      publishMessage(satelliteMessage.getMessage(), namespacePath, null);
+      String path = namespacePath;
+      int val = sin & 0xff;
+      path = path.replace("{sin}", String.valueOf(val));
+      publishMessage(satelliteMessage.getMessage(), path, null);
     }
     else {
       satelliteMessage = messageRebuilder.rebuild(satelliteMessage);
