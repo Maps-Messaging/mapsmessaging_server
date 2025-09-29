@@ -20,7 +20,7 @@
 #
 # Configure the java command on the path
 #
-export JAVA_HOME=/usr/lib/jvm/zulu-17
+export JAVA_HOME=/usr/lib/jvm/zulu-21
 export PATH=$JAVA_HOME/bin:$PATH
 
 echo $PATH
@@ -56,7 +56,11 @@ export MAPS_CONF=$MAPS_HOME/conf
 #
 # Note::: The conf directory must be at the start else the configuration is loaded from the jars
 #
-export CLASSPATH="$MAPS_CONF":$MAPS_LIB/maps-$VERSION.jar:"$MAPS_LIB/*"
+CLASSPATH="$MAPS_CONF:$MAPS_LIB/maps-$VERSION.jar"
+for jar in "$MAPS_LIB"/*.jar; do
+  [[ "$jar" != "$MAPS_LIB/maps-$VERSION.jar" ]] && CLASSPATH="$CLASSPATH:$jar"
+done
+
 #
 # Now start the the daemon
 java -classpath $CLASSPATH $JAVA_OPTS \
