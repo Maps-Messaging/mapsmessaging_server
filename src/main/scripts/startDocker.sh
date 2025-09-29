@@ -38,7 +38,7 @@ export CONSUL_URL
 echo $CONSUL_URL
 
 if [ -z ${MAPS_HOME+x} ];
-  then export MAPS_HOME=/message_daemon-$VERSION;
+  then export MAPS_HOME=/maps-$VERSION;
 fi
 
 if [ -z ${MAPS_DATA+x} ];
