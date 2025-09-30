@@ -78,7 +78,7 @@ NetworkManager:
         auth: default
 
       - name: "MQTT Interface"
-        url: tcp://:::1883/
+        url: tcp://0.0.0.0:1883/
         protocol: mqtt
         auth: default
       -
