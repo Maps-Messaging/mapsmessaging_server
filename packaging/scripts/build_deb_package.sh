@@ -75,6 +75,13 @@ build_package(){
   chmod +x ${TARGET_DIR}/DEBIAN/prerm
   chmod +x ${TARGET_DIR}/DEBIAN/preinst
 
+# Copy tracking scripts to the package
+  mkdir -p ${INSTALL_DIR}/scripts
+  cp packaging/scripts/track_installation.sh ${INSTALL_DIR}/scripts/
+  cp packaging/scripts/posthog_config.sh ${INSTALL_DIR}/scripts/
+  chmod +x ${INSTALL_DIR}/scripts/track_installation.sh
+  chmod +x ${INSTALL_DIR}/scripts/posthog_config.sh
+
   echo "Preparation complete. You can now create the Debian package using dpkg-deb --build ${TARGET_DIR}"
 
 
