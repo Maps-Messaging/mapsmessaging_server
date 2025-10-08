@@ -49,7 +49,7 @@ public class StatsReporter {
   private ScheduledFuture<?> task;
 
   public StatsReporter() {
-    minuteInterval = 15;
+    minuteInterval = 1;
     report();
   }
 
@@ -121,6 +121,7 @@ public class StatsReporter {
         }
       }
     } catch (Exception e) {
+      e.printStackTrace();
     }
     queueTask();
   }

@@ -788,6 +788,13 @@ public enum ServerLogMessages implements LogMessage {
   STOGI_COMPRESS_MESSAGE(LEVEL.DEBUG, SERVER_CATEGORY.NETWORK, "Compressing message for from {} to {} bytes"),
   STOGI_SPLIT_MESSAGE(LEVEL.DEBUG, SERVER_CATEGORY.NETWORK, "Splitting message into {} messages"),
 
+
+  EVALUATION_START(LEVEL.TRACE, SERVER_CATEGORY.NETWORK, "Evaluating link selection"),
+  EVALUATION_RESULT(LEVEL.DEBUG, SERVER_CATEGORY.NETWORK, "Selection result: current={}({}), best={}({}), reason={}"),
+  SWITCH_SUCCESS(LEVEL.INFO, SERVER_CATEGORY.NETWORK, "Switched from {} to {} due to {}"),
+  SWITCH_REJECTED(LEVEL.WARN, SERVER_CATEGORY.NETWORK, "Switch rejected, reason={}"),
+  EXCEPTION_DURING_EVALUATION(LEVEL.ERROR, SERVER_CATEGORY.NETWORK, "Exception during link evaluation: {}"),
+
   //-------------------------------------------------------------------------------------------------------------
   LAST_LOG_MESSAGE(LEVEL.DEBUG, SERVER_CATEGORY.PROTOCOL, "Last message to make it simpler to add more");
 
