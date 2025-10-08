@@ -23,3 +23,4 @@ io.mapsmessaging.network.protocol.transformation.JMSProtocolMessageTransformatio
 io.mapsmessaging.network.protocol.transformation.MessageJsonTransformation
 io.mapsmessaging.network.protocol.transformation.MessageBinaryTransformation
 io.mapsmessaging.network.protocol.transformation.SchemaToJsonTransformation
+io.mapsmessaging.network.protocol.transformation.cloudevent.CloudEventTransformation
