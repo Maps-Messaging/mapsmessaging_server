@@ -34,6 +34,7 @@ import io.mapsmessaging.network.protocol.ProtocolFactory;
 import io.mapsmessaging.network.protocol.ProtocolImplFactory;
 import io.mapsmessaging.network.protocol.ProtocolMessageTransformation;
 import io.mapsmessaging.network.protocol.transformation.TransformationManager;
+import io.mapsmessaging.network.route.link.LinkState;
 
 import java.io.IOException;
 import java.util.List;
@@ -64,12 +65,12 @@ public class Disconnected extends State implements EndPointConnectedCallback {
       String tokenGeneratorName = properties.getAuthConfig().getTokenGenerator();
       String transformationName = properties.getLinkTransformation();
       ProtocolMessageTransformation transformation = TransformationManager.getInstance().getTransformation(transformationName);
-      if(transformation == null) {
-        transformation = TransformationManager.getInstance().getTransformation(endpoint.getProtocol(), endPointConnection.getUrl().getHost(), protocolImplFactory.getName(), username );
+      if (transformation == null) {
+        transformation = TransformationManager.getInstance().getTransformation(endpoint.getProtocol(), endPointConnection.getUrl().getHost(), protocolImplFactory.getName(), username);
       }
 
-      if(transformation != null) {
-        sessionId = sessionId+"?Transformation="+transformation.getName();
+      if (transformation != null) {
+        sessionId = sessionId + "?Transformation=" + transformation.getName();
       }
       if (tokenGeneratorName != null && !tokenGeneratorName.isEmpty()) {
         TokenGenerator tokenGenerator = TokenGeneratorManager.getInstance().get(tokenGeneratorName).getInstance(properties.getAuthConfig().getTokenConfig());
@@ -114,4 +115,8 @@ public class Disconnected extends State implements EndPointConnectedCallback {
     return "Disconnected";
   }
 
+  @Override
+  public LinkState getLinkState() {
+    return LinkState.DISCONNECTED;
+  }
 }

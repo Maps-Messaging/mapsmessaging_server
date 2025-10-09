@@ -46,7 +46,7 @@ public abstract class BaseAuthenticationFilter implements ContainerRequestFilter
   @Getter
   @Setter
   protected static int maxInactiveInterval = 600;
-  private static final String[] OPEN_PATHS = new String[] { "openapi.json" , "/health", "/api/v1/ping", "/api/v1/login"};
+  private static final String[] OPEN_PATHS = new String[] { "openapi.json" , "/health", "/api/v1/ping", "/api/v1/login", "/api/v1/server/schema/impl/*"};
   private static final String[] FULL_PATHS = new String[] { "/api/v1/server/log/sse/stream/", "/api/v1/messaging/sse/stream" };
 
   @Override
@@ -54,6 +54,12 @@ public abstract class BaseAuthenticationFilter implements ContainerRequestFilter
     for(String path : OPEN_PATHS) {
       if (containerRequest.getUriInfo().getRequestUri().getPath().endsWith(path)) {
         return;
+      }
+      if(path.endsWith("*")){
+        String p = path.substring(0,path.length()-1);
+        if(containerRequest.getUriInfo().getRequestUri().getPath().contains(p)){
+          return;
+        }
       }
     }
     for(String path : FULL_PATHS) {

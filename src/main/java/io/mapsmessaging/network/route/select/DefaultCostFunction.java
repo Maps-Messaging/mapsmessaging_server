@@ -45,7 +45,6 @@ public final class DefaultCostFunction implements CostFunction {
     int outboundQueueDepth = Math.max(0, linkMetrics.getOutboundQueueDepth());
     int cappedQueueDepth = Math.min(outboundQueueDepth, costWeights.getMaxQueueDepthForPenalty());
 
-    double pricePerMebibyte = linkMetrics.getPricePerMebibyte().orElse(0.0);
 
     Instant lastUpdated = linkMetrics.getLastUpdated();
     Duration window = linkMetrics.getWindow();
@@ -57,7 +56,6 @@ public final class DefaultCostFunction implements CostFunction {
     cost += costWeights.getWeightJitterMillis() * jitterMillis;
     cost += costWeights.getWeightErrorRate() * errorRate;
     cost += costWeights.getWeightOutboundQueuePenalty() * cappedQueueDepth;
-    cost += costWeights.getWeightPricePerMebibyte() * pricePerMebibyte;
 
     if (metricsAreStale) {
       cost += costWeights.getWeightStaleMetricsPenalty();

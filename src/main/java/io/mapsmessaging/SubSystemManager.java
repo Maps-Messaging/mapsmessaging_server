@@ -160,6 +160,14 @@ public class SubSystemManager {
     }
     return null;
   }
+  public RestApiServerManager getRestApiServerManager() {
+    AgentOrder order = agentMap.get("Rest API Manager");
+    if(order != null) {
+      return (RestApiServerManager) order.getAgent();
+    }
+    return null;
+  }
+
 
   /**
    * Creates a list of agents to start and stop in the MessageDaemon.
@@ -286,4 +294,5 @@ public class SubSystemManager {
     }
     return list;
   }
+
 }

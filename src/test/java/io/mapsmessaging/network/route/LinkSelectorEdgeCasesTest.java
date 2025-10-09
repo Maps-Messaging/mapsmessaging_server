@@ -290,17 +290,6 @@ class LinkSelectorEdgeCasesTest {
   }
 
   @Test
-  void price_weight_changes_ordering() {
-    CostWeights w = CostWeights.builder().weightPricePerMebibyte(10.0).build();
-    DefaultCostFunction cf = new DefaultCostFunction();
-
-    FakeMetrics cheap = new FakeMetrics().withLatencyMillis(100.0).withPricePerMiB(0.1);
-    FakeMetrics expensive = new FakeMetrics().withLatencyMillis(100.0).withPricePerMiB(2.0);
-
-    assertTrue(cf.compute(cheap, w) < cf.compute(expensive, w));
-  }
-
-  @Test
   void missing_optionals_use_defaults_deterministically() {
     CostWeights w = CostWeights.builder().build();
     DefaultCostFunction cf = new DefaultCostFunction();
@@ -427,7 +416,6 @@ class LinkSelectorEdgeCasesTest {
     @Override public double getErrorRate() { return errors; }
     @Override public int getOutboundQueueDepth() { return queue; }
     @Override public OptionalDouble getThroughputMibPerSecond() { return OptionalDouble.empty(); }
-    @Override public OptionalDouble getPricePerMebibyte() { return price == null ? OptionalDouble.empty() : OptionalDouble.of(price); }
     @Override public Instant getLastUpdated() { return last; }
     @Override public Duration getWindow() { return window; }
   }
@@ -435,7 +423,6 @@ class LinkSelectorEdgeCasesTest {
   private static final class FakeMetricsEmptyOptionals extends FakeMetrics {
     @Override public OptionalDouble getLatencyMillisEma() { return OptionalDouble.empty(); }
     @Override public OptionalDouble getJitterMillisEma() { return OptionalDouble.empty(); }
-    @Override public OptionalDouble getPricePerMebibyte() { return OptionalDouble.empty(); }
   }
 
   private static final class EvaluateCountingSelector extends LinkSelector {

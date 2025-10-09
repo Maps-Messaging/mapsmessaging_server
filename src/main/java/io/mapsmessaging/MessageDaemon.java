@@ -379,4 +379,8 @@ public class MessageDaemon {
       lockManager.close();
     }
   }
+
+  public String getRestServerUrl() {
+    return subSystemManager.getRestApiServerManager().getBaseUri();
+  }
 }

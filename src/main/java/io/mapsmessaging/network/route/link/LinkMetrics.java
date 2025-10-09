@@ -40,8 +40,6 @@ public interface LinkMetrics {
 
   OptionalDouble getThroughputMibPerSecond();
 
-  OptionalDouble getPricePerMebibyte();
-
   Instant getLastUpdated();
 
   Duration getWindow();

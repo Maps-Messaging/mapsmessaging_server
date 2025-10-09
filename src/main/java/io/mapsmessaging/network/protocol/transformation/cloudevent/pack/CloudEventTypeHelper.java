@@ -16,7 +16,7 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package io.mapsmessaging.network.protocol.transformation.cloudevent;
+package io.mapsmessaging.network.protocol.transformation.cloudevent.pack;
 
 import io.mapsmessaging.schemas.config.SchemaConfig;
 import org.jetbrains.annotations.NotNull;

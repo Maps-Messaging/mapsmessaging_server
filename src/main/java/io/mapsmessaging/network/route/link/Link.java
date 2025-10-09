@@ -20,6 +20,7 @@
 package io.mapsmessaging.network.route.link;
 
 import java.net.URI;
+import java.util.OptionalDouble;
 
 /**
  * Represents a single routable network link for cost-based selection.
@@ -33,6 +34,8 @@ public interface Link {
   LinkState getState();
 
   LinkMetrics getMetrics();
+
+  OptionalDouble getBaseCost();
 
   boolean isAvailable();
 

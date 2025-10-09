@@ -190,7 +190,6 @@ public abstract class Protocol implements SelectorCallback, MessageListener, Tim
     if(statistics != null) {
       resourceNameAnalyserMap.put(resource, statistics);
     }
-
   }
 
   @Override

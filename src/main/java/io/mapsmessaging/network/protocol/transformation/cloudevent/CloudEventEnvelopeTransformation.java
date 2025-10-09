@@ -17,37 +17,31 @@
  *  limitations under the License.
  */
 
-package io.mapsmessaging.network.io.connection.state;
+package io.mapsmessaging.network.protocol.transformation.cloudevent;
 
-import io.mapsmessaging.network.io.connection.EndPointConnection;
-import io.mapsmessaging.network.route.link.LinkState;
+import io.mapsmessaging.network.protocol.transformation.cloudevent.pack.EnvelopePackHelper;
 
-import java.io.IOException;
 
-public class Shutdown extends State {
+public class CloudEventEnvelopeTransformation extends CloudEventTransformation {
 
-  public Shutdown(EndPointConnection connection) {
-    super(connection);
-  }
-
-  @Override
-  public void execute() {
-    if (endPointConnection.getConnection() != null) {
-      try {
-        endPointConnection.getConnection().close();
-      } catch (IOException ioException) {
-        // We are closing, so not too fussed here
-      }
-    }
+  public CloudEventEnvelopeTransformation() {
+    super();
+    packHelper = new EnvelopePackHelper(gson);
   }
 
   @Override
   public String getName() {
-    return "Shutdown";
+    return "CloudEvent-Envelope";
   }
 
   @Override
-  public LinkState getLinkState() {
-    return LinkState.FAILED;
+  public int getId() {
+    return 7;
   }
+
+  @Override
+  public String getDescription() {
+    return "Emit a JSON object in data containing payload_base64 (and payload_mime, optional _mapsData) with datacontenttype: application/json and dataschema for the envelope schema.";
+  }
+
 }

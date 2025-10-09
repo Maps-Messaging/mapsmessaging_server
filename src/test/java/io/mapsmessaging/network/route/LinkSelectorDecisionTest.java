@@ -390,11 +390,6 @@ class LinkSelectorDecisionTest {
     }
 
     @Override
-    public OptionalDouble getPricePerMebibyte() {
-      return price == null ? OptionalDouble.empty() : OptionalDouble.of(price);
-    }
-
-    @Override
     public Instant getLastUpdated() {
       return last;
     }

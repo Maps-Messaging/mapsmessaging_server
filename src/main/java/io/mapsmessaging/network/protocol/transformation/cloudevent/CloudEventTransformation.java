@@ -21,35 +21,21 @@ package io.mapsmessaging.network.protocol.transformation.cloudevent;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import com.google.gson.JsonObject;
+import io.mapsmessaging.MessageDaemon;
 import io.mapsmessaging.api.MessageBuilder;
 import io.mapsmessaging.api.message.Message;
-import io.mapsmessaging.engine.schema.SchemaManager;
 import io.mapsmessaging.network.protocol.ProtocolMessageTransformation;
-import io.mapsmessaging.schemas.config.SchemaConfig;
+import io.mapsmessaging.network.protocol.transformation.cloudevent.pack.PackHelper;
 import lombok.NonNull;
-
 import org.jetbrains.annotations.NotNull;
 
-public class CloudEventTransformation implements ProtocolMessageTransformation {
+public abstract class CloudEventTransformation implements ProtocolMessageTransformation {
 
-  public CloudEventTransformation() {
-    // Used by the java services
-  }
+  protected Gson gson = new GsonBuilder().setPrettyPrinting().create();
+  protected PackHelper packHelper;
 
-  @Override
-  public String getName() {
-    return "CloudEvent";
-  }
+  CloudEventTransformation() {
 
-  @Override
-  public int getId() {
-    return 7;
-  }
-
-  @Override
-  public String getDescription() {
-    return "CloudEvent V1.0 support as specified in https://cloudevents.io/";
   }
 
   @Override
@@ -58,8 +44,11 @@ public class CloudEventTransformation implements ProtocolMessageTransformation {
   }
 
   @Override
-  public @NonNull byte[] outgoing(@NonNull @NotNull Message message, String destinationName) {
-    Gson gson = new GsonBuilder().setPrettyPrinting().create();
-    return CloudEventHelper.toCloudEvent(message, "", "", gson);
+  public byte[] outgoing(@NonNull @NotNull Message message, String destinationName) {
+    if(!destinationName.startsWith("/")){
+      destinationName = "/"+destinationName;
+    }
+    String sourceUri = "maps://"+ MessageDaemon.getInstance().getHostname() +destinationName;
+    return packHelper.toCloudEventBytes(message, sourceUri);
   }
 }

@@ -17,37 +17,10 @@
  *  limitations under the License.
  */
 
-package io.mapsmessaging.network.io.connection.state;
+package io.mapsmessaging.network.io.connection;
 
-import io.mapsmessaging.network.io.connection.EndPointConnection;
-import io.mapsmessaging.network.route.link.LinkState;
+import io.mapsmessaging.network.io.connection.state.State;
 
-import java.io.IOException;
-
-public class Shutdown extends State {
-
-  public Shutdown(EndPointConnection connection) {
-    super(connection);
-  }
-
-  @Override
-  public void execute() {
-    if (endPointConnection.getConnection() != null) {
-      try {
-        endPointConnection.getConnection().close();
-      } catch (IOException ioException) {
-        // We are closing, so not too fussed here
-      }
-    }
-  }
-
-  @Override
-  public String getName() {
-    return "Shutdown";
-  }
-
-  @Override
-  public LinkState getLinkState() {
-    return LinkState.FAILED;
-  }
+public interface StateChangeListener {
+  void changeState(State newState);
 }

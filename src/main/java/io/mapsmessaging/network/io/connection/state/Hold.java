@@ -19,35 +19,35 @@
 
 package io.mapsmessaging.network.io.connection.state;
 
+import io.mapsmessaging.logging.ServerLogMessages;
 import io.mapsmessaging.network.io.connection.EndPointConnection;
 import io.mapsmessaging.network.route.link.LinkState;
 
 import java.io.IOException;
 
-public class Shutdown extends State {
+public class Hold extends State {
 
-  public Shutdown(EndPointConnection connection) {
+  public Hold(EndPointConnection connection) {
     super(connection);
   }
 
   @Override
   public void execute() {
-    if (endPointConnection.getConnection() != null) {
-      try {
-        endPointConnection.getConnection().close();
-      } catch (IOException ioException) {
-        // We are closing, so not too fussed here
-      }
+    try {
+      endPointConnection.getConnection().close();
+    } catch (IOException ioException) {
+      endPointConnection.getLogger().log(ServerLogMessages.END_POINT_CONNECTION_CLOSE_EXCEPTION, ioException);
     }
+    endPointConnection.scheduleState(new Disconnected(endPointConnection));
   }
 
   @Override
   public String getName() {
-    return "Shutdown";
+    return "Hold";
   }
 
   @Override
   public LinkState getLinkState() {
-    return LinkState.FAILED;
+    return LinkState.CONNECTED;
   }
 }

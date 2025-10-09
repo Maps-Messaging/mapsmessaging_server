@@ -32,8 +32,11 @@ import io.mapsmessaging.logging.ServerLogMessages;
 import io.mapsmessaging.network.admin.EndPointConnectionHostJMX;
 import io.mapsmessaging.network.io.EndPointConnectionFactory;
 import io.mapsmessaging.network.io.connection.EndPointConnection;
+import io.mapsmessaging.network.io.connection.route.RouteList;
+import io.mapsmessaging.network.io.connection.route.RouteManager;
 import io.mapsmessaging.network.io.impl.SelectorLoadManager;
 import io.mapsmessaging.network.protocol.impl.extension.ExtensionEndPointConnectionFactory;
+import io.mapsmessaging.network.route.select.LinkRepository;
 import io.mapsmessaging.utilities.Agent;
 import io.mapsmessaging.utilities.service.Service;
 import io.mapsmessaging.utilities.service.ServiceManager;
@@ -52,10 +55,13 @@ public class NetworkConnectionManager implements ServiceManager, Agent {
   @Getter
   private final List<EndPointConnection> endPointConnectionList;
 
+  private final Map<String, RouteManager> knownRouteList;
+
   private final Logger logger = LoggerFactory.getLogger(NetworkConnectionManager.class);
   private final List<EndPointConnectionFactory> endPointConnections;
   private final Map<String, EndPointConnectionHostJMX> hostMapping;
   private final NetworkConnectionManagerConfig config;
+
 
   public NetworkConnectionManager() throws IOException {
     logger.log(ServerLogMessages.NETWORK_MANAGER_STARTUP);
@@ -71,6 +77,7 @@ public class NetworkConnectionManager implements ServiceManager, Agent {
     selectorLoadManager = new SelectorLoadManager(poolSize, "Network Interconnection" );
     endPointConnectionList = new ArrayList<>();
     hostMapping = new LinkedHashMap<>();
+    knownRouteList = new LinkedHashMap<>();
   }
 
   public void initialise() {
@@ -85,7 +92,6 @@ public class NetworkConnectionManager implements ServiceManager, Agent {
           protocols.add(localProtocolInformation);
           properties.setProtocolConfigs(protocols);
         }
-
         EndPointURL endPointURL = new EndPointURL(urlString);
         processEndPoint(endPointURL, properties);
       }
@@ -100,7 +106,7 @@ public class NetworkConnectionManager implements ServiceManager, Agent {
         hostJMXBean = hostMapping.computeIfAbsent(endPointURL.host, k -> new EndPointConnectionHostJMX(jmxList, endPointURL.host));
       }
       ExtensionEndPointConnectionFactory pluginEndPointConnectionFactory = new ExtensionEndPointConnectionFactory();
-      endPointConnectionList.add(new EndPointConnection(endPointURL, properties, pluginEndPointConnectionFactory, selectorLoadManager, hostJMXBean));
+      create(endPointURL, properties, pluginEndPointConnectionFactory, hostJMXBean);
     }
     else {
       for (EndPointConnectionFactory endPointConnectionFactory : endPointConnections) {
@@ -110,9 +116,20 @@ public class NetworkConnectionManager implements ServiceManager, Agent {
           if (!jmxList.isEmpty()) {
             hostJMXBean = hostMapping.computeIfAbsent(endPointURL.host, k -> new EndPointConnectionHostJMX(jmxList, endPointURL.host));
           }
-          endPointConnectionList.add(new EndPointConnection(endPointURL, properties, endPointConnectionFactory, selectorLoadManager, hostJMXBean));
+          create(endPointURL, properties, endPointConnectionFactory, hostJMXBean);
         }
       }
+    }
+  }
+
+  private void create(EndPointURL endPointURL, EndPointConnectionServerConfig properties,EndPointConnectionFactory endPointConnectionFactory, EndPointConnectionHostJMX hostJMXBean ){
+    EndPointConnection endPointConnection = new EndPointConnection(endPointURL, properties, endPointConnectionFactory, selectorLoadManager, hostJMXBean);
+    if(properties.getGroupName() != null && !properties.getGroupName().isEmpty()){
+      RouteManager routeManager = knownRouteList.computeIfAbsent(properties.getGroupName(), k -> new RouteManager(properties.getGroupName()));
+      routeManager.addEndPointConnection(endPointConnection);
+    }
+    else{
+      endPointConnectionList.add(endPointConnection);
     }
   }
 
@@ -122,7 +139,7 @@ public class NetworkConnectionManager implements ServiceManager, Agent {
     SubSystemStatusDTO status = new SubSystemStatusDTO();
     status.setName(getName());
     status.setComment("");
-    if(endPointConnectionList.isEmpty()){
+    if(endPointConnectionList.isEmpty() && knownRouteList.isEmpty()){
       status.setStatus(Status.OK);
       status.setComment("No connections configured");
       return status;
@@ -134,6 +151,15 @@ public class NetworkConnectionManager implements ServiceManager, Agent {
         stopped.incrementAndGet();
       }
     });
+
+    for(RouteManager routeList : knownRouteList.values()){
+      routeList.getRouteList().getAllLinks().forEach(link -> {
+        if(!link.isAvailable()){
+          stopped.incrementAndGet();
+        }
+      });
+    }
+
     if(stopped.get() != 0){
       if(stopped.get() == endPointConnectionList.size()){
         status.setStatus(Status.ERROR);
@@ -166,6 +192,9 @@ public class NetworkConnectionManager implements ServiceManager, Agent {
         endPointConnection.start();
       }
     }
+    for(RouteManager routeList : knownRouteList.values()){
+      routeList.start();
+    }
   }
 
   public void stop() {
@@ -174,6 +203,9 @@ public class NetworkConnectionManager implements ServiceManager, Agent {
         endPointConnection.stop();
       }
     }
+    for(RouteManager routeList : knownRouteList.values()){
+      routeList.stop();
+    }
   }
 
 
@@ -181,12 +213,18 @@ public class NetworkConnectionManager implements ServiceManager, Agent {
     for (EndPointConnection endPointConnection : endPointConnectionList) {
       endPointConnection.pause();
     }
+    for(RouteManager routeList : knownRouteList.values()){
+      routeList.pause();
+    }
   }
 
 
   public void resume() {
     for (EndPointConnection endPointConnection : endPointConnectionList) {
       endPointConnection.resume();
+    }
+    for(RouteManager routeList : knownRouteList.values()){
+      routeList.resume();
     }
   }
 

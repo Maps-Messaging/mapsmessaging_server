@@ -27,5 +27,7 @@ public enum LinkState {
   CONNECTING,
   CONNECTED,
   DEGRADED,
-  FAILED
+  FAILED,
+  HOLDING,
+  ESTABLISHING
 }

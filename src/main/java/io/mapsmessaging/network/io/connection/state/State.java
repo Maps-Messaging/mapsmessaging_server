@@ -21,10 +21,12 @@ package io.mapsmessaging.network.io.connection.state;
 
 import io.mapsmessaging.network.io.connection.Constants;
 import io.mapsmessaging.network.io.connection.EndPointConnection;
+import io.mapsmessaging.network.route.link.LinkState;
 
 public abstract class State implements Runnable {
 
   protected final EndPointConnection endPointConnection;
+
   private final long timeout;
 
   protected State(EndPointConnection connection) {
@@ -48,4 +50,5 @@ public abstract class State implements Runnable {
 
   public abstract String getName();
 
+  public abstract LinkState getLinkState();
 }

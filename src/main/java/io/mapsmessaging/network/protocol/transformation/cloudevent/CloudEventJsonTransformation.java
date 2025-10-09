@@ -17,37 +17,30 @@
  *  limitations under the License.
  */
 
-package io.mapsmessaging.network.io.connection.state;
+package io.mapsmessaging.network.protocol.transformation.cloudevent;
 
-import io.mapsmessaging.network.io.connection.EndPointConnection;
-import io.mapsmessaging.network.route.link.LinkState;
+import io.mapsmessaging.network.protocol.transformation.cloudevent.pack.JsonPackHelper;
 
-import java.io.IOException;
 
-public class Shutdown extends State {
+public class CloudEventJsonTransformation extends CloudEventTransformation {
 
-  public Shutdown(EndPointConnection connection) {
-    super(connection);
-  }
-
-  @Override
-  public void execute() {
-    if (endPointConnection.getConnection() != null) {
-      try {
-        endPointConnection.getConnection().close();
-      } catch (IOException ioException) {
-        // We are closing, so not too fussed here
-      }
-    }
+  public CloudEventJsonTransformation() {
+    packHelper = new JsonPackHelper(gson);
   }
 
   @Override
   public String getName() {
-    return "Shutdown";
+    return "CloudEvent-Json";
   }
 
   @Override
-  public LinkState getLinkState() {
-    return LinkState.FAILED;
+  public int getId() {
+    return 8;
   }
+
+  @Override
+  public String getDescription() {
+    return "Emit normalized JSON in data with datacontenttype: application/json and dataschema referencing the JSON schema.";
+  }
+
 }
