@@ -75,6 +75,11 @@ case "$1" in
     else
       echo "keytool not found; skipping keystore generation."
     fi
+
+    # Track installation event with PostHog
+    if [ -x /opt/maps/scripts/track_installation.sh ]; then
+      /opt/maps/scripts/track_installation.sh "deb" "$(dpkg-query -W -f='${Version}' maps 2>/dev/null || echo 'unknown')" "$(lsb_release -si 2>/dev/null || echo 'unknown')" "$(dpkg --print-architecture 2>/dev/null || echo 'unknown')" &
+    fi
   ;;
 esac
 

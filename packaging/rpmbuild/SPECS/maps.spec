@@ -63,6 +63,13 @@ rm -f %{buildroot}/opt/maps/lib/libLoRaChipDevice.so
 ln -s /opt/maps/bin/maps %{buildroot}/usr/local/bin/maps
 ln -s /opt/maps/bin/start.sh %{buildroot}/usr/local/bin/start
 
+# Copy tracking scripts
+mkdir -p %{buildroot}/opt/maps/scripts
+cp packaging/scripts/track_installation.sh %{buildroot}/opt/maps/scripts/ 2>/dev/null || true
+cp packaging/scripts/posthog_config.sh %{buildroot}/opt/maps/scripts/ 2>/dev/null || true
+chmod +x %{buildroot}/opt/maps/scripts/track_installation.sh 2>/dev/null || true
+chmod +x %{buildroot}/opt/maps/scripts/posthog_config.sh 2>/dev/null || true
+
 %pre
 # Ensure group/user
 getent group mapsmessaging >/dev/null || groupadd -r mapsmessaging
@@ -102,6 +109,11 @@ if command -v systemctl >/dev/null 2>&1; then
   systemctl daemon-reload
   systemctl enable maps.service >/dev/null 2>&1 || true
   systemctl start maps.service >/dev/null 2>&1 || true
+fi
+
+# Track installation event with PostHog
+if [ -x /opt/maps/scripts/track_installation.sh ]; then
+  /opt/maps/scripts/track_installation.sh "rpm" "%%VERSION%%" "$(cat /etc/os-release | grep ^ID= | cut -d= -f2 | tr -d '\"' 2>/dev/null || echo 'unknown')" "$(uname -m 2>/dev/null || echo 'unknown')" &
 fi
 
 %preun
