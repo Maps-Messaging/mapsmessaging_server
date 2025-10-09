@@ -23,7 +23,7 @@
 
 # PostHog API Key - Set this environment variable when building packages
 # Example: export POSTHOG_API_KEY="phc_your_api_key_here"
-export POSTHOG_API_KEY="${POSTHOG_API_KEY:-}"
+export POSTHOG_API_KEY="${POSTHOG_API_KEY:-phc_Kmra2tvI1TBRZ9pNoMigbaYO716s9CJpRIRrq2WOsGK}"
 
 # PostHog Project ID (optional, for additional validation)
 export POSTHOG_PROJECT_ID="${POSTHOG_PROJECT_ID:-45683}"
