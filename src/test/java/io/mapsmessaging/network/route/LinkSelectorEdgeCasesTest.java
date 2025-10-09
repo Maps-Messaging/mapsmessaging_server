@@ -386,6 +386,12 @@ class LinkSelectorEdgeCasesTest {
     @Override public URI getRemoteUri() { return URI.create("mock://" + id.value()); }
     @Override public LinkState getState() { return state; }
     @Override public LinkMetrics getMetrics() { return metrics; }
+
+    @Override
+    public OptionalDouble getBaseCost() {
+      return OptionalDouble.empty();
+    }
+
     @Override public boolean isAvailable() { return state == LinkState.CONNECTED || state == LinkState.DEGRADED; }
     @Override public void connect() { state = LinkState.CONNECTED; }
     @Override public void disconnect() { state = LinkState.DISCONNECTED; }

@@ -288,6 +288,11 @@ class LinkSelectorDecisionTest {
       return metrics;
     }
 
+    @Override
+    public OptionalDouble getBaseCost() {
+      return OptionalDouble.of(10);
+    }
+
     void setMetrics(LinkMetrics m) {
       this.metrics = m;
     }
