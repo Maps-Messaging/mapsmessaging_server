@@ -28,6 +28,7 @@ import io.mapsmessaging.network.route.link.Link;
 import io.mapsmessaging.network.route.select.*;
 import lombok.Getter;
 
+import java.time.Instant;
 import java.util.concurrent.atomic.AtomicReference;
 
 @Getter
@@ -37,6 +38,7 @@ public class RouteManager implements LinkSwitcher, StateChangeListener {
 
   private final RouteList routeList;
   private final LinkSelector selector;
+  private final SelectionOrchestrator orchestrator;
 
   public RouteManager(String routeName) {
     this.routeName = routeName;
@@ -49,6 +51,7 @@ public class RouteManager implements LinkSwitcher, StateChangeListener {
         .linkRepository(routeList)
         .linkSwitcher(this)
         .build();
+    orchestrator  = SelectionOrchestrator.start(selector, SelectionOrchestratorConfig.builder().build());
   }
 
   public void start() {
@@ -81,7 +84,6 @@ public class RouteManager implements LinkSwitcher, StateChangeListener {
   @Override
   public boolean switchTo(Link nextLink, String reason) {
     if(currentLink.get() != nextLink) {
-      System.err.println("Switching to " + nextLink.getLinkId().value()+" "+reason);
       EndPointLink endPointLink = (EndPointLink) nextLink;
       if(!endPointLink.getEndPointConnection().getState().getName().equals("Established")) {
         endPointLink.getEndPointConnection().scheduleState(new Establishing(endPointLink.getEndPointConnection()));
@@ -93,9 +95,11 @@ public class RouteManager implements LinkSwitcher, StateChangeListener {
   }
 
   @Override
-  public synchronized void changeState(State newState) {
-    SelectionResult result = selector.evaluateOnce();
-    System.err.println(result);
+  public synchronized void changeState(State oldState, State newState) {
+    EndPointConnection connection =  newState.getEndPointConnection();
+    Link link = routeList.getLink(connection);
+    LinkStateChangedEvent event = new LinkStateChangedEvent(link.getLinkId(), oldState.getLinkState(), newState.getLinkState(), Instant.now());
+    orchestrator.onLinkStateChanged(event);
   }
 
 }

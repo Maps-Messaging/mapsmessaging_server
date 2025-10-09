@@ -98,6 +98,15 @@ public class RouteList implements LinkRepository {
     }
   }
 
+  public Link getLink(EndPointConnection connection) {
+    for(EndPointLink link: endPointConnections.values() ) {
+      if(link.getEndPointConnection().equals(connection)) {
+        return link;
+      }
+    }
+    return null;
+  }
+
   enum COMMAND {
     START, STOP, PAUSE, RESUME
   }

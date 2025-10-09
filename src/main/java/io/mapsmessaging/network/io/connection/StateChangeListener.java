@@ -22,5 +22,5 @@ package io.mapsmessaging.network.io.connection;
 import io.mapsmessaging.network.io.connection.state.State;
 
 public interface StateChangeListener {
-  void changeState(State newState);
+  void changeState(State oldState, State newState);
 }

@@ -22,9 +22,11 @@ package io.mapsmessaging.network.io.connection.state;
 import io.mapsmessaging.network.io.connection.Constants;
 import io.mapsmessaging.network.io.connection.EndPointConnection;
 import io.mapsmessaging.network.route.link.LinkState;
+import lombok.Getter;
 
 public abstract class State implements Runnable {
 
+  @Getter
   protected final EndPointConnection endPointConnection;
 
   private final long timeout;
