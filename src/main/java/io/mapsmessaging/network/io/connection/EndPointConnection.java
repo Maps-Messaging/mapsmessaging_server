@@ -37,6 +37,7 @@ import io.mapsmessaging.utilities.stats.StatsFactory;
 import io.mapsmessaging.utilities.threads.SimpleTaskScheduler;
 import lombok.Getter;
 import lombok.Setter;
+import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -50,9 +51,7 @@ import static io.mapsmessaging.network.io.connection.Constants.SCHEDULE_TIME;
 public class EndPointConnection extends EndPointServerStatus {
   private final AtomicBoolean running;
   private final AtomicBoolean paused;
-  private Future<?> futureTask;
   private final EndPointConnectionHostJMX manager;
-
   @Getter
   private final Logger logger;
   @Getter
@@ -61,6 +60,7 @@ public class EndPointConnection extends EndPointServerStatus {
   private final EndPointConnectionFactory endPointConnectionFactory;
   @Getter
   private final SelectorLoadManager selectorLoadManager;
+  private Future<?> futureTask;
   @Getter
   private State state;
 
@@ -71,6 +71,12 @@ public class EndPointConnection extends EndPointServerStatus {
   @Setter
   private Protocol connection;
 
+  private final List<StateChangeListener> stateChangeListeners;
+
+  @Getter
+  @Setter
+  private State establishingState;
+
   public EndPointConnection(
       EndPointURL url, EndPointConnectionServerConfig properties,
       EndPointConnectionFactory connectionFactory, SelectorLoadManager selectorLoadManager, EndPointConnectionHostJMX manager) {
@@ -79,7 +85,9 @@ public class EndPointConnection extends EndPointServerStatus {
     this.manager = manager;
     this.selectorLoadManager = selectorLoadManager;
     this.endPointConnectionFactory = connectionFactory;
+    stateChangeListeners = new ArrayList<>();
 
+    establishingState = new Establishing(this);
     running = new AtomicBoolean(false);
     paused = new AtomicBoolean(false);
     logger = LoggerFactory.getLogger("EndPointConnectionStateManager_" + url.toString() + "_" + properties.getProtocols());
@@ -115,6 +123,7 @@ public class EndPointConnection extends EndPointServerStatus {
   public String getConfigName() {
     return properties.getName();
   }
+
   @Override
   public void handleNewEndPoint(EndPoint endPoint) throws IOException {
     State stateChange;
@@ -135,7 +144,15 @@ public class EndPointConnection extends EndPointServerStatus {
     }
   }
 
-  public boolean isStarted(){
+  public void addStateChangeListener(StateChangeListener listener) {
+    stateChangeListeners.add(listener);
+  }
+
+  public void removeStateChangeListener(StateChangeListener listener) {
+    stateChangeListeners.remove(listener);
+  }
+
+  public boolean isStarted() {
     return running.get();
   }
 
@@ -147,14 +164,14 @@ public class EndPointConnection extends EndPointServerStatus {
   }
 
   public void stop() {
-    if(running.get()){
+    if (running.get()) {
       setRunState(false, new Shutdown(this));
       logger.log(ServerLogMessages.END_POINT_CONNECTION_STOPPING);
     }
   }
 
   public void pause() {
-    if(paused.get()){
+    if (paused.get()) {
       paused.set(true);
     }
   }
@@ -191,7 +208,7 @@ public class EndPointConnection extends EndPointServerStatus {
       logger.log(ServerLogMessages.END_POINT_CONNECTION_STATE_CHANGED, url, properties.getProtocols(), state.getName(), newState.getName());
     }
     setState(newState);
-    futureTask = SimpleTaskScheduler.getInstance().schedule(newState, time, TimeUnit.MILLISECONDS);
+    futureTask = SimpleTaskScheduler.getInstance().schedule( commitStateChange(newState), time, TimeUnit.MILLISECONDS);
   }
 
   private void setState(State state) {
@@ -200,5 +217,16 @@ public class EndPointConnection extends EndPointServerStatus {
 
   public boolean isPaused() {
     return paused.get();
+  }
+
+  public @NotNull Runnable commitStateChange(State newState) {
+    return () -> {
+      if(newState != null) {
+        for(StateChangeListener stateChangeListener : stateChangeListeners) {
+          stateChangeListener.changeState(newState);
+        }
+        newState.execute();
+      }
+    };
   }
 }

@@ -31,10 +31,7 @@ import lombok.Getter;
 
 import java.time.Duration;
 import java.time.Instant;
-import java.util.ArrayDeque;
-import java.util.Comparator;
-import java.util.Deque;
-import java.util.Objects;
+import java.util.*;
 
 import static io.mapsmessaging.logging.ServerLogMessages.EVALUATION_RESULT;
 import static io.mapsmessaging.logging.ServerLogMessages.EXCEPTION_DURING_EVALUATION;
@@ -173,47 +170,76 @@ public class LinkSelector implements Runnable {
   }
 
 
-  private boolean isLinkEligible(Link link) {
+// Inside LinkSelector
+
+  private boolean isLinkEligible(io.mapsmessaging.network.route.link.Link link) {
     if (link == null) return false;
-    if (!link.isAvailable()) return false;
-    LinkState linkState = link.getState();
-    return linkState != LinkState.FAILED && linkState != LinkState.DISCONNECTED;
+
+    io.mapsmessaging.network.route.link.LinkState state = link.getState();
+    io.mapsmessaging.network.route.link.Link current = linkSwitcher.getCurrentLink();
+    boolean isCurrent = current != null && current.getLinkId().equals(link.getLinkId());
+
+    // Current link may be ESTABLISHING or CONNECTED; never FAILED/DISCONNECTED
+    if (isCurrent) {
+      if (state == io.mapsmessaging.network.route.link.LinkState.FAILED) return false;
+      if (state == io.mapsmessaging.network.route.link.LinkState.DISCONNECTED) return false;
+      return (state == io.mapsmessaging.network.route.link.LinkState.ESTABLISHING
+          || state == io.mapsmessaging.network.route.link.LinkState.CONNECTED);
+    }
+
+    // Candidates must be HOLDING or CONNECTED (not CONNECTING/ESTABLISHING/DISCONNECTED/FAILED)
+    return (state == io.mapsmessaging.network.route.link.LinkState.HOLDING ||
+        state == io.mapsmessaging.network.route.link.LinkState.CONNECTED);
   }
+
 
   private Candidate score(Link link) {
     if (link == null) {
       return new Candidate(NullLink.INSTANCE, Double.POSITIVE_INFINITY);
     }
     LinkMetrics linkMetrics = link.getMetrics();
-    double cost = costFunction.compute(linkMetrics, costWeights);
+    double base = link.getBaseCost().orElse(0.0);
+    double cost = costFunction.compute(linkMetrics, costWeights)+base;
     return new Candidate(link, cost);
   }
 
+// Inside LinkSelector
+
   private boolean mustFailover(Candidate currentCandidate) {
-    if (!isLinkEligible(currentCandidate.link)) return true;
+    Link currentLink = currentCandidate.link;
+    if (currentLink == null) return true;
 
-    LinkMetrics linkMetrics = currentCandidate.link.getMetrics();
-    double latencyMillis = linkMetrics.getLatencyMillisEma().orElse(Double.POSITIVE_INFINITY);
-    double lossRatio = linkMetrics.getLossRatio();
-    double errorRate = linkMetrics.getErrorRate();
+    LinkState state = currentLink.getState();
+    if (state == LinkState.FAILED || state == LinkState.DISCONNECTED) return true;
+    if (state != LinkState.ESTABLISHING && state != LinkState.CONNECTED) return true;
 
-    if (latencyMillis >= selectionPolicy.getHardMaxLatencyMillis()) return true;
-    if (lossRatio >= selectionPolicy.getHardMaxLossRatio()) return true;
-    return errorRate >= selectionPolicy.getHardMaxErrorRate();
+    LinkMetrics metrics = currentLink.getMetrics();
+    if (metrics == null) return false;
+
+    OptionalDouble latency = metrics.getLatencyMillisEma();
+    double loss = metrics.getLossRatio();
+    double err  = metrics.getErrorRate();
+
+    return (latency.isPresent() && latency.getAsDouble() >= selectionPolicy.getHardMaxLatencyMillis() ||
+            loss >= selectionPolicy.getHardMaxLossRatio() ||
+            err >= selectionPolicy.getHardMaxErrorRate());
   }
+
+
 
   private boolean allowHysteresisSwitch(Instant now, Candidate currentCandidate, Candidate bestCandidate) {
     if (bestCandidate.link.getLinkId().equals(currentCandidate.link.getLinkId())) return false;
-
     if (isInCooldown(now)) return false;
-
     if (!hasHeldLongEnough(now)) return false;
 
     double hysteresisRatio = selectionPolicy.getHysteresisRatio();
-    double improvementRequired = currentCandidate.cost * (1.0 - hysteresisRatio);
+    double epsilon = Math.max(0.0, selectionPolicy.getTieBreakEpsilon());
+
+    double improvementRequired =
+        currentCandidate.cost * (1.0 - hysteresisRatio) - Math.abs(currentCandidate.cost) * epsilon;
+
     return bestCandidate.cost < improvementRequired;
   }
-
   private boolean hasHeldLongEnough(Instant now) {
     Instant last = this.lastSwitchTime;
     if (last == null) return true;
@@ -275,6 +301,11 @@ public class LinkSelector implements Runnable {
     @Override
     public LinkMetrics getMetrics() {
       throw new UnsupportedOperationException("Null link has no metrics");
+    }
+
+    @Override
+    public OptionalDouble getBaseCost() {
+      return OptionalDouble.empty();
     }
 
     @Override

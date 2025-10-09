@@ -288,6 +288,11 @@ class LinkSelectorDecisionTest {
       return metrics;
     }
 
+    @Override
+    public OptionalDouble getBaseCost() {
+      return OptionalDouble.of(10);
+    }
+
     void setMetrics(LinkMetrics m) {
       this.metrics = m;
     }
@@ -387,11 +392,6 @@ class LinkSelectorDecisionTest {
     @Override
     public OptionalDouble getThroughputMibPerSecond() {
       return OptionalDouble.empty();
-    }
-
-    @Override
-    public OptionalDouble getPricePerMebibyte() {
-      return price == null ? OptionalDouble.empty() : OptionalDouble.of(price);
     }
 
     @Override

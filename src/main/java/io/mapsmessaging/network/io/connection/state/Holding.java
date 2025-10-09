@@ -22,32 +22,24 @@ package io.mapsmessaging.network.io.connection.state;
 import io.mapsmessaging.network.io.connection.EndPointConnection;
 import io.mapsmessaging.network.route.link.LinkState;
 
-import java.io.IOException;
+public class Holding  extends State {
 
-public class Shutdown extends State {
-
-  public Shutdown(EndPointConnection connection) {
+  public Holding(EndPointConnection connection) {
     super(connection);
   }
 
   @Override
   public void execute() {
-    if (endPointConnection.getConnection() != null) {
-      try {
-        endPointConnection.getConnection().close();
-      } catch (IOException ioException) {
-        // We are closing, so not too fussed here
-      }
-    }
+
   }
 
   @Override
   public String getName() {
-    return "Shutdown";
+    return "Holding";
   }
 
   @Override
   public LinkState getLinkState() {
-    return LinkState.FAILED;
+    return LinkState.HOLDING;
   }
 }

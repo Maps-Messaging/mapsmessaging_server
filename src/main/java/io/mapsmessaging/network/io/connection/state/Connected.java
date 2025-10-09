@@ -19,24 +19,8 @@
 
 package io.mapsmessaging.network.io.connection.state;
 
-import io.mapsmessaging.analytics.Analyser;
-import io.mapsmessaging.analytics.AnalyserFactory;
-import io.mapsmessaging.api.features.DestinationMode;
-import io.mapsmessaging.api.transformers.Transformer;
-import io.mapsmessaging.config.analytics.StatisticsConfig;
-import io.mapsmessaging.configuration.ConfigurationProperties;
-import io.mapsmessaging.dto.rest.analytics.StatisticsConfigDTO;
-import io.mapsmessaging.dto.rest.config.protocol.LinkConfigDTO;
-import io.mapsmessaging.engine.transformers.TransformerManager;
-import io.mapsmessaging.logging.ServerLogMessages;
 import io.mapsmessaging.network.io.connection.EndPointConnection;
-import io.mapsmessaging.selector.SelectorParser;
-import io.mapsmessaging.selector.operators.ParserExecutor;
-import io.mapsmessaging.utilities.filtering.NamespaceFilters;
-
-import java.io.IOException;
-import java.util.List;
-import java.util.Map;
+import io.mapsmessaging.network.route.link.LinkState;
 
 public class Connected extends State {
 
@@ -46,72 +30,7 @@ public class Connected extends State {
 
   @Override
   public void execute() {
-    if (processLinkRequests(endPointConnection.getProperties().getLinkConfigs())) {
-      endPointConnection.scheduleState(new Established(endPointConnection));
-    } else {
-      try {
-        endPointConnection.getConnection().close();
-      } catch (IOException ioException) {
-        endPointConnection.getLogger().log(ServerLogMessages.END_POINT_CONNECTION_CLOSE_EXCEPTION, ioException);
-      }
-      endPointConnection.scheduleState(new Disconnected(endPointConnection));
-    }
-  }
-
-  private boolean processLinkRequests(List<LinkConfigDTO> linkConfigs){
-    boolean success = true;
-    for (LinkConfigDTO property : linkConfigs) {
-      String direction = property.getDirection();
-      String local = property.getLocalNamespace();
-      String remote = property.getRemoteNamespace();
-      String selector = property.getSelector();
-      boolean schema = property.isIncludeSchema();
-      NamespaceFilters filters = property.getNamespaceFilters();
-
-      Transformer transformer = null;
-      Map<String, Object> obj = property.getTransformer();
-      if(obj != null && !obj.isEmpty()) {
-        transformer = TransformerManager.getInstance().get(new ConfigurationProperties(obj));
-      }
-
-      try {
-        if (direction.equalsIgnoreCase("pull")) {
-          subscribeRemote(remote, local, selector, transformer, schema, property.getStatistics());
-        } else if (direction.equalsIgnoreCase("push")) {
-          if(remote.endsWith("#")){
-            remote = remote.substring(0, remote.length()-1);
-          }
-          subscribeLocal(local, remote, selector, transformer, schema, filters, property.getStatistics());
-        }
-        endPointConnection.getLogger().log(ServerLogMessages.END_POINT_CONNECTION_SUBSCRIPTION_ESTABLISHED, direction, local, remote);
-      } catch (IOException ioException) {
-        success = false;
-        endPointConnection.getLogger().log(ServerLogMessages.END_POINT_CONNECTION_SUBSCRIPTION_FAILED, direction, local, remote, ioException);
-      }
-    }
-    return success;
-  }
-
-  private void subscribeLocal(String local, String remote, String selector, Transformer transformer, boolean includeSchema, NamespaceFilters filters, StatisticsConfigDTO statistics) throws IOException {
-    endPointConnection.getConnection().subscribeLocal(local, remote, selector, transformer, filters, statistics);
-    if(includeSchema){
-      endPointConnection.getConnection().subscribeLocal(constructSchema(local), constructSchema(remote), selector, transformer,filters, null );
-    }
-  }
-
-  private void subscribeRemote(String remote, String local, String selector, Transformer transformer, boolean includeSchema, StatisticsConfigDTO statistics) throws IOException {
-    ParserExecutor parser = null;
-    if(selector != null && !selector.isEmpty()){
-      try {
-        parser = SelectorParser.compile(selector);
-      } catch (Throwable e) {
-        throw new IOException("Unable to parse selector", e);
-      }
-    }
-    endPointConnection.getConnection().subscribeRemote(remote, local, parser, transformer, statistics);
-    if(includeSchema){
-      endPointConnection.getConnection().subscribeRemote(constructSchema(remote), constructSchema(local), null, transformer, null);
-    }
+    endPointConnection.scheduleState(endPointConnection.getEstablishingState());
   }
 
   @Override
@@ -119,11 +38,8 @@ public class Connected extends State {
     return "Connected";
   }
 
-  private String constructSchema(String namespace){
-    if(!namespace.startsWith("/")){
-      namespace = "/"+namespace;
-    }
-    return DestinationMode.SCHEMA.getNamespace() + namespace;
+  @Override
+  public LinkState getLinkState() {
+    return LinkState.CONNECTING;
   }
-
 }

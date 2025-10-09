@@ -17,37 +17,28 @@
  *  limitations under the License.
  */
 
-package io.mapsmessaging.network.io.connection.state;
+package io.mapsmessaging.network.protocol.transformation.cloudevent;
 
-import io.mapsmessaging.network.io.connection.EndPointConnection;
-import io.mapsmessaging.network.route.link.LinkState;
+import io.mapsmessaging.network.protocol.transformation.cloudevent.pack.NativePackHelper;
 
-import java.io.IOException;
+public class CloudEventNativeTransformation  extends CloudEventTransformation {
 
-public class Shutdown extends State {
-
-  public Shutdown(EndPointConnection connection) {
-    super(connection);
-  }
-
-  @Override
-  public void execute() {
-    if (endPointConnection.getConnection() != null) {
-      try {
-        endPointConnection.getConnection().close();
-      } catch (IOException ioException) {
-        // We are closing, so not too fussed here
-      }
-    }
+  public CloudEventNativeTransformation() {
+    packHelper = new NativePackHelper(gson);
   }
 
   @Override
   public String getName() {
-    return "Shutdown";
+    return "CloudEvent-Native";
   }
 
   @Override
-  public LinkState getLinkState() {
-    return LinkState.FAILED;
+  public int getId() {
+    return 9;
+  }
+
+  @Override
+  public String getDescription() {
+    return "Emit raw bytes in data_base64 with the native MIME type and dataschema referencing the native schema (no data)";
   }
 }

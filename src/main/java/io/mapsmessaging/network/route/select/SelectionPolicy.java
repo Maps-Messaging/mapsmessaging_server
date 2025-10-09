@@ -40,9 +40,13 @@ public class SelectionPolicy {
   @Builder.Default
   private final double hardMaxErrorRate = 0.20;
   @Builder.Default
-  private final int maxSwitchesPerWindow = 3;
+  private final int maxSwitchesPerWindow = 1;
   @Builder.Default
   private final Duration flapWindow = Duration.ofMinutes(5);
   @Builder.Default
   private final Duration minInterEventInterval = Duration.ofMillis(75);
+  @Builder.Default
+  private final double tieBreakEpsilon = 0.0;
+  @Builder.Default
+  private final Duration establishmentWarmup = Duration.ofSeconds(5);
 }

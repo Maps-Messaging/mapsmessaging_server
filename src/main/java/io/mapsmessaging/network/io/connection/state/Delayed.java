@@ -21,6 +21,7 @@ package io.mapsmessaging.network.io.connection.state;
 
 import io.mapsmessaging.network.io.connection.Constants;
 import io.mapsmessaging.network.io.connection.EndPointConnection;
+import io.mapsmessaging.network.route.link.LinkState;
 
 public class Delayed extends State {
 
@@ -38,4 +39,8 @@ public class Delayed extends State {
     return "Delayed";
   }
 
+  @Override
+  public LinkState getLinkState() {
+    return LinkState.FAILED;
+  }
 }

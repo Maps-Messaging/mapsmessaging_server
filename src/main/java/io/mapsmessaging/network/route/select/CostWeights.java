@@ -39,8 +39,6 @@ public class CostWeights {
   @Builder.Default
   private final double weightOutboundQueuePenalty = 0.05;
   @Builder.Default
-  private final double weightPricePerMebibyte = 0.0;
-  @Builder.Default
   private final double weightStaleMetricsPenalty = 200.0;
 
   /**

@@ -41,6 +41,7 @@ import io.mapsmessaging.rest.translation.GsonMessageBodyWriter;
 import io.mapsmessaging.utilities.Agent;
 import io.mapsmessaging.utilities.threads.SimpleTaskScheduler;
 import jakarta.servlet.Servlet;
+import lombok.Getter;
 import org.glassfish.grizzly.http.server.HttpServer;
 import org.glassfish.grizzly.http.server.StaticHttpHandler;
 import org.glassfish.grizzly.nio.transport.TCPNIOTransport;
@@ -73,6 +74,10 @@ public class RestApiServerManager implements Agent {
   private final RestApiManagerConfig config;
   private final Logger logger = LoggerFactory.getLogger(RestApiServerManager.class);
 
+  @Getter
+  private String baseUri;
+
+  @Getter
   private boolean isSecure;
   private ServiceInfo[] serviceInfos;
   private HttpServer httpServer;
@@ -112,10 +117,6 @@ public class RestApiServerManager implements Agent {
 
   public String getHost() {
     return config.getHostnames();
-  }
-
-  public boolean isSecure() {
-    return isSecure;
   }
 
   private SSLContextConfigurator setupSSL() {
@@ -228,7 +229,7 @@ public class RestApiServerManager implements Agent {
       if(isSecure){
         protocol = "https";
       }
-      String baseUri = protocol+"://" + getHost() + ":" + getPort() + "/";
+      baseUri = protocol+"://" + getHost() + ":" + getPort() + "/";
 
       httpServer = startHttpService(URI.create(baseUri), sc, sslConfig);
       httpServer.start();
@@ -238,6 +239,9 @@ public class RestApiServerManager implements Agent {
           10_000,
           TimeUnit.MILLISECONDS
       );
+      if(getHost().equals("0.0.0.0") || getHost().equals("::")){
+        baseUri = protocol+"://"+MessageDaemon.getInstance().getHostname()+":"+getPort()+"/";
+      }
     } catch (IOException e) {
       logger.log(REST_API_FAILURE, e);
     }
