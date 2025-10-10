@@ -19,11 +19,13 @@
 
 package io.mapsmessaging.network.io.connection.state;
 
+import io.mapsmessaging.dto.rest.config.protocol.LinkConfigDTO;
 import io.mapsmessaging.logging.ServerLogMessages;
 import io.mapsmessaging.network.io.connection.EndPointConnection;
 import io.mapsmessaging.network.route.link.LinkState;
 
 import java.io.IOException;
+import java.util.List;
 
 public class Hold extends State {
 
@@ -33,12 +35,8 @@ public class Hold extends State {
 
   @Override
   public void execute() {
-    try {
-      endPointConnection.getConnection().close();
-    } catch (IOException ioException) {
-      endPointConnection.getLogger().log(ServerLogMessages.END_POINT_CONNECTION_CLOSE_EXCEPTION, ioException);
-    }
-    endPointConnection.scheduleState(new Disconnected(endPointConnection));
+    processLinkRequests(endPointConnection.getProperties().getLinkConfigs());
+    endPointConnection.scheduleState(new Holding(endPointConnection));
   }
 
   @Override
@@ -50,4 +48,45 @@ public class Hold extends State {
   public LinkState getLinkState() {
     return LinkState.CONNECTED;
   }
+
+
+  private boolean processLinkRequests(List<LinkConfigDTO> linkConfigs) {
+    boolean success = true;
+    for (LinkConfigDTO property : linkConfigs) {
+      String direction = property.getDirection();
+      String local = property.getLocalNamespace();
+      String remote = property.getRemoteNamespace();
+      boolean schema = property.isIncludeSchema();
+      try {
+        if (direction.equalsIgnoreCase("pull")) {
+          unsubscribeRemote(remote, schema);
+        } else if (direction.equalsIgnoreCase("push")) {
+          if (remote.endsWith("#")) {
+            remote = remote.substring(0, remote.length() - 1);
+          }
+          unsubscribeLocal(local, schema);
+        }
+        endPointConnection.getLogger().log(ServerLogMessages.END_POINT_CONNECTION_SUBSCRIPTION_ESTABLISHED, direction, local, remote);
+      } catch (IOException ioException) {
+        success = false;
+        endPointConnection.getLogger().log(ServerLogMessages.END_POINT_CONNECTION_SUBSCRIPTION_FAILED, direction, local, remote, ioException);
+      }
+    }
+    return success;
+  }
+
+  private void unsubscribeLocal(String local, boolean includeSchema) throws IOException {
+    endPointConnection.getConnection().unsubscribeLocal(local);
+    if (includeSchema) {
+      endPointConnection.getConnection().unsubscribeLocal(constructSchema(local));
+    }
+  }
+
+  private void unsubscribeRemote(String remote, boolean includeSchema) throws IOException {
+    endPointConnection.getConnection().unsubscribeRemote(remote);
+    if (includeSchema) {
+      endPointConnection.getConnection().unsubscribeRemote(constructSchema(remote));
+    }
+  }
+
 }

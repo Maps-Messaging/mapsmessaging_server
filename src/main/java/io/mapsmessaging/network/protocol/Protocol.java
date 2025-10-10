@@ -331,4 +331,11 @@ public abstract class Protocol implements SelectorCallback, MessageListener, Tim
     endPoint.sendPacket(packet);
 
   }
+
+  public void unsubscribeLocal(String local) {
+    
+  }
+
+  public void unsubscribeRemote(String remote) {
+  }
 }

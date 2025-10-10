@@ -33,6 +33,11 @@ public class UnsubAck extends MQTTPacket {
     this.packetId = packetId;
   }
 
+  public UnsubAck(byte fixedHeader, long remainingLen, Packet packet) {
+    super(MQTTPacket.UNSUBACK);
+    this.packetId = readShort(packet);
+  }
+
   @Override
   public String toString() {
     return "MQTT UnsubAck[Packet Id:" + packetId + "]";

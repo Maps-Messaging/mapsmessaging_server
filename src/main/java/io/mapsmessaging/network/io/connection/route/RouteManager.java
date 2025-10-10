@@ -24,9 +24,10 @@ import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.network.io.connection.EndPointConnection;
 import io.mapsmessaging.network.io.connection.StateChangeListener;
 import io.mapsmessaging.network.io.connection.state.Establishing;
-import io.mapsmessaging.network.io.connection.state.Holding;
+import io.mapsmessaging.network.io.connection.state.Hold;
 import io.mapsmessaging.network.io.connection.state.State;
 import io.mapsmessaging.network.route.link.Link;
+import io.mapsmessaging.network.route.link.LinkState;
 import io.mapsmessaging.network.route.select.*;
 import lombok.Getter;
 
@@ -90,7 +91,7 @@ public class RouteManager implements LinkSwitcher, StateChangeListener {
   }
 
   public void addEndPointConnection(EndPointConnection endPointConnection) {
-    endPointConnection.setEstablishingState(new Holding(endPointConnection)); // Stops it moving to established
+    endPointConnection.setEstablishingState(new Hold(endPointConnection)); // Stops it moving to established
     endPointConnection.addStateChangeListener(this);
     routeList.addEndPointConnection(endPointConnection);
   }
@@ -108,6 +109,12 @@ public class RouteManager implements LinkSwitcher, StateChangeListener {
         logger.log(SWITCH_REQUESTED, nextLink.getLinkId(), reason);
         endPointLink.getEndPointConnection().scheduleState(new Establishing(endPointLink.getEndPointConnection()));
       }
+      if(currentLink.get() != null){
+        EndPointLink link = (EndPointLink) currentLink.get();
+        if(link.getState().equals(LinkState.CONNECTED)) {
+          link.getEndPointConnection().scheduleState(new Hold(link.getEndPointConnection()));
+        }
+      }
       currentLink.set(endPointLink);
       return true;
     }
@@ -116,6 +123,7 @@ public class RouteManager implements LinkSwitcher, StateChangeListener {
 
   @Override
   public synchronized void changeState(State oldState, State newState) {
+    if(oldState == null)oldState = newState;
     EndPointConnection connection =  newState.getEndPointConnection();
     Link link = routeList.getLink(connection);
     LinkStateChangedEvent event = new LinkStateChangedEvent(link.getLinkId(), oldState.getLinkState(), newState.getLinkState(), Instant.now());

@@ -56,8 +56,8 @@ import org.jetbrains.annotations.Nullable;
 import javax.security.auth.Subject;
 import java.io.IOException;
 import java.nio.channels.SelectionKey;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.List;
+
 
 @java.lang.SuppressWarnings("DuplicatedBlocks")
 public class MQTTProtocol extends Protocol {
@@ -142,11 +142,23 @@ public class MQTTProtocol extends Protocol {
   }
 
   @Override
+  public void unsubscribeRemote(@NonNull @NotNull String resource){
+    Unsubscribe unsubscribe = new Unsubscribe(List.of(resource));
+    unsubscribe.setMessageId(packetIdManager.nextPacketIdentifier());
+    writeFrame(unsubscribe);
+  }
+
+  @Override
   public void subscribeLocal(@NonNull @NotNull String resource, @NonNull @NotNull String mappedResource, @Nullable String selector, @Nullable Transformer transformer, @Nullable NamespaceFilters namespaceFilters, StatisticsConfigDTO statistics)
       throws IOException {
     super.subscribeLocal(resource, mappedResource, selector, transformer, namespaceFilters, statistics);
     SubscriptionContextBuilder builder = createSubscriptionContextBuilder(resource, selector, QualityOfService.AT_MOST_ONCE, 1024);
     session.addSubscription(builder.build());
+  }
+
+  @Override
+  public void unsubscribeLocal(@NonNull @NotNull String resource){
+    session.removeSubscription(resource);
   }
 
   public String getVersion() {

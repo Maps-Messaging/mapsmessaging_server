@@ -223,7 +223,7 @@ public class EndPointConnection extends EndPointServerStatus {
     return () -> {
       if(newState != null) {
         for(StateChangeListener stateChangeListener : stateChangeListeners) {
-          stateChangeListener.changeState(state, newState);
+          stateChangeListener.changeState(oldState, newState);
         }
         newState.execute();
       }

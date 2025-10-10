@@ -20,6 +20,7 @@
 package io.mapsmessaging.network.protocol.impl.mqtt.packet;
 
 import io.mapsmessaging.network.io.Packet;
+import lombok.Setter;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -30,15 +31,20 @@ import java.util.List;
 public class Unsubscribe extends MQTTPacket {
 
   private final List<String> unsubscriptionList;
-  private final int packetId;
+  @Setter
+  private int messageId;
 
+  public Unsubscribe(final List<String> unsubscriptionList) {
+    super(MQTTPacket.UNSUBSCRIBE);
+    this.unsubscriptionList = unsubscriptionList;
+  }
   public Unsubscribe(byte fixedHeader, long remainingLen, Packet packet) throws MalformedException {
     super(MQTTPacket.UNSUBSCRIBE);
     if ((fixedHeader & 0xf) != 2) {
       throw new MalformedException(
           "Unsubscribe Fixed Header bits 3,2,1,0 must be set as 0,0,1,0  as per the specification :[MQTT-3.10.1-1]");
     }
-    packetId = readShort(packet);
+    messageId = readShort(packet);
     unsubscriptionList = new ArrayList<>();
     int position = 2; // Include the short we read for the message ID
     while (position < remainingLen) {
@@ -53,7 +59,7 @@ public class Unsubscribe extends MQTTPacket {
   }
 
   public int getPacketId() {
-    return packetId;
+    return messageId;
   }
 
   public List<String> getUnsubscribeList() {
@@ -72,6 +78,17 @@ public class Unsubscribe extends MQTTPacket {
   }
 
   public int packFrame(Packet packet) {
-    return 0;
+    int position = 2;
+    for(String unsubscription : unsubscriptionList) {
+      position += unsubscription.length() + 2;
+    }
+    packControlByte(packet, 2);
+    writeVariableInt(packet, position);
+    writeShort(packet, messageId);
+    for(String unsubscription : unsubscriptionList) {
+      writeUTF8(packet, unsubscription);
+    }
+
+    return position;
   }
 }

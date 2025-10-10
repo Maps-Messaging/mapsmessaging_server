@@ -77,6 +77,8 @@ public class PacketFactory {
 
       case MQTTPacket.PUBLISH:
         return new Publish(fixedHeader, remainingLen, packet, protocolImpl.getMaximumBufferSize());
+      case MQTTPacket.UNSUBACK:
+        return new UnsubAck(fixedHeader, remainingLen, packet);
 
       default:
         throw new MalformedException("Unexpected packet received::" + packetId);

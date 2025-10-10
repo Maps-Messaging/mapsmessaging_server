@@ -117,12 +117,6 @@ public class Establishing extends State {
     return "Establishing";
   }
 
-  private String constructSchema(String namespace) {
-    if (!namespace.startsWith("/")) {
-      namespace = "/" + namespace;
-    }
-    return DestinationMode.SCHEMA.getNamespace() + namespace;
-  }
 
   @Override
   public LinkState getLinkState() {
