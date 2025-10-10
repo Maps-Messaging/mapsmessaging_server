@@ -35,9 +35,11 @@ import java.util.OptionalDouble;
 public class EndPointLink implements Link {
 
   private final EndPointConnection endPointConnection;
+  private final Metrics metrics;
 
   public EndPointLink(final EndPointConnection endPointConnection) {
     this.endPointConnection = endPointConnection;
+    this.metrics = new Metrics(endPointConnection);
   }
 
   @Override
@@ -57,47 +59,7 @@ public class EndPointLink implements Link {
 
   @Override
   public LinkMetrics getMetrics() {
-    return new LinkMetrics() {
-      @Override
-      public OptionalDouble getLatencyMillisEma() {
-        return OptionalDouble.empty();
-      }
-
-      @Override
-      public OptionalDouble getJitterMillisEma() {
-        return OptionalDouble.empty();
-      }
-
-      @Override
-      public double getLossRatio() {
-        return 0;
-      }
-
-      @Override
-      public double getErrorRate() {
-        return 0;
-      }
-
-      @Override
-      public int getOutboundQueueDepth() {
-        return 0;
-      }
-
-      @Override
-      public OptionalDouble getThroughputMibPerSecond() {
-        return OptionalDouble.empty();
-      }
-
-      @Override
-      public Instant getLastUpdated() {
-        return Instant.now();
-      }
-
-      @Override
-      public Duration getWindow() {
-        return Duration.ofSeconds(60);
-      }
-    };
+    return metrics;
   }
 
   @Override

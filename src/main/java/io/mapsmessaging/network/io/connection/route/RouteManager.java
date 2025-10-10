@@ -40,6 +40,7 @@ import static io.mapsmessaging.logging.ServerLogMessages.SWITCH_REQUESTED;
 @Getter
 public class RouteManager implements LinkSwitcher, StateChangeListener {
 
+  private java.util.concurrent.ScheduledExecutorService metricsUpdater;
   private final Logger logger = LoggerFactory.getLogger(RouteManager.class);
   private final String routeName;
   private final AtomicReference<Link> currentLink;
@@ -76,10 +77,22 @@ public class RouteManager implements LinkSwitcher, StateChangeListener {
 
   public void start() {
     routeList.start();
+    // Kick off initial selection so one link gets chosen
+    selector.evaluateOnce();
+
+    // Start a light scheduler to refresh metrics / trigger selector
+    metricsUpdater = java.util.concurrent.Executors.newSingleThreadScheduledExecutor(r ->
+        new Thread(r, "route-metrics-updater-" + routeName)
+    );
+
+    metricsUpdater.scheduleAtFixedRate(this::updateMetricsAndEvaluate, 2, 2, java.util.concurrent.TimeUnit.SECONDS);
   }
 
   public void stop() {
     routeList.stop();
+    if (metricsUpdater != null) {
+      metricsUpdater.shutdownNow();
+    }
   }
 
   public void pause() {
@@ -128,6 +141,17 @@ public class RouteManager implements LinkSwitcher, StateChangeListener {
     Link link = routeList.getLink(connection);
     LinkStateChangedEvent event = new LinkStateChangedEvent(link.getLinkId(), oldState.getLinkState(), newState.getLinkState(), Instant.now());
     orchestrator.onLinkStateChanged(event);
+  }
+
+  private void updateMetricsAndEvaluate() {
+    try {
+      for (Link link : routeList.getAllLinks()) {
+        link.getMetrics();
+      }
+      selector.evaluateOnce();
+    } catch (Exception e) {
+      e.printStackTrace();
+    }
   }
 
 }
