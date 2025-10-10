@@ -19,6 +19,8 @@
 
 package io.mapsmessaging.network.io.connection.route;
 
+import io.mapsmessaging.logging.Logger;
+import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.network.io.connection.EndPointConnection;
 import io.mapsmessaging.network.io.connection.StateChangeListener;
 import io.mapsmessaging.network.io.connection.state.Establishing;
@@ -28,13 +30,18 @@ import io.mapsmessaging.network.route.link.Link;
 import io.mapsmessaging.network.route.select.*;
 import lombok.Getter;
 
+import java.time.Duration;
 import java.time.Instant;
 import java.util.concurrent.atomic.AtomicReference;
 
+import static io.mapsmessaging.logging.ServerLogMessages.SWITCH_REQUESTED;
+
 @Getter
 public class RouteManager implements LinkSwitcher, StateChangeListener {
+
+  private final Logger logger = LoggerFactory.getLogger(RouteManager.class);
   private final String routeName;
-  private AtomicReference<Link> currentLink;
+  private final AtomicReference<Link> currentLink;
 
   private final RouteList routeList;
   private final LinkSelector selector;
@@ -44,14 +51,26 @@ public class RouteManager implements LinkSwitcher, StateChangeListener {
     this.routeName = routeName;
     currentLink = new AtomicReference<>(null);
     routeList = new RouteList(routeName);
+    SelectionPolicy policy = SelectionPolicy.builder()
+        .establishmentWarmup(java.time.Duration.ofSeconds(3))
+        .hysteresisRatio(0.15)
+        .tieBreakEpsilon(0.02)
+        .build();
+
+    SelectionOrchestratorConfig config = SelectionOrchestratorConfig.builder()
+        .enablePeriodicScan(true)
+        .periodicScanInterval(Duration.ofSeconds(2))
+        .minInterEventInterval(java.time.Duration.ofMillis(75))
+        .build();
+
     selector = LinkSelector.builder()
         .costFunction(new DefaultCostFunction())
         .costWeights(CostWeights.builder().build())
-        .selectionPolicy(SelectionPolicy.builder().build())
+        .selectionPolicy(policy)
         .linkRepository(routeList)
         .linkSwitcher(this)
         .build();
-    orchestrator  = SelectionOrchestrator.start(selector, SelectionOrchestratorConfig.builder().build());
+    orchestrator  = SelectionOrchestrator.start(selector, config);
   }
 
   public void start() {
@@ -86,6 +105,7 @@ public class RouteManager implements LinkSwitcher, StateChangeListener {
     if(currentLink.get() != nextLink) {
       EndPointLink endPointLink = (EndPointLink) nextLink;
       if(!endPointLink.getEndPointConnection().getState().getName().equals("Established")) {
+        logger.log(SWITCH_REQUESTED, nextLink.getLinkId(), reason);
         endPointLink.getEndPointConnection().scheduleState(new Establishing(endPointLink.getEndPointConnection()));
       }
       currentLink.set(endPointLink);

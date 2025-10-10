@@ -793,6 +793,7 @@ public enum ServerLogMessages implements LogMessage {
   EVALUATION_RESULT(LEVEL.DEBUG, SERVER_CATEGORY.NETWORK, "Selection result: current={}({}), best={}({}), reason={}"),
   SWITCH_SUCCESS(LEVEL.INFO, SERVER_CATEGORY.NETWORK, "Switched from {} to {} due to {}"),
   SWITCH_REJECTED(LEVEL.WARN, SERVER_CATEGORY.NETWORK, "Switch rejected, reason={}"),
+  SWITCH_REQUESTED(LEVEL.WARN, SERVER_CATEGORY.NETWORK, "Switch requested to{}, reason={}"),
   EXCEPTION_DURING_EVALUATION(LEVEL.ERROR, SERVER_CATEGORY.NETWORK, "Exception during link evaluation: {}"),
 
   //-------------------------------------------------------------------------------------------------------------

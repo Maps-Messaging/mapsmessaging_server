@@ -207,8 +207,8 @@ public class EndPointConnection extends EndPointServerStatus {
     if (state != null) {
       logger.log(ServerLogMessages.END_POINT_CONNECTION_STATE_CHANGED, url, properties.getProtocols(), state.getName(), newState.getName());
     }
+    futureTask = SimpleTaskScheduler.getInstance().schedule( commitStateChange(state, newState), time, TimeUnit.MILLISECONDS);
     setState(newState);
-    futureTask = SimpleTaskScheduler.getInstance().schedule( commitStateChange(newState), time, TimeUnit.MILLISECONDS);
   }
 
   private void setState(State state) {
@@ -219,7 +219,7 @@ public class EndPointConnection extends EndPointServerStatus {
     return paused.get();
   }
 
-  public @NotNull Runnable commitStateChange(State newState) {
+  public @NotNull Runnable commitStateChange(State oldState, State newState) {
     return () -> {
       if(newState != null) {
         for(StateChangeListener stateChangeListener : stateChangeListeners) {
