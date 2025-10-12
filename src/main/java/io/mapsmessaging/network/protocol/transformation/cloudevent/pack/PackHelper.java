@@ -74,7 +74,9 @@ public abstract class PackHelper {
     if (schemaConfig != null) {
       try {
         formatter = MessageFormatterFactory.getInstance().getFormatter(schemaConfig);
-      } catch (Exception ignore) { }
+      } catch (Exception ignore) {
+        // if we can not parse to json, we fall through and base64 it
+      }
     }
 
     String eventType = (schemaConfig != null)
@@ -217,14 +219,16 @@ public abstract class PackHelper {
             cloudEvent.add(key, parsed.getAsJsonArray());
             continue;
           }
-        } catch (Exception ignore) { }
+        } catch (Exception ignore) {
+          // if we can not parse to json, we fall through and base64 it
+        }
       }
       cloudEvent.addProperty(key, value);
     }
   }
 
   protected final @NotNull String sanitizeExtensionKey(@NotNull String key) {
-    return key.replaceAll("[^A-Za-z0-9_]", "_");
+    return key.replaceAll("\\W", "_");
   }
 
   protected static String resolveMimeType(@NotNull Message message, @Nullable SchemaConfig schemaConfig) {

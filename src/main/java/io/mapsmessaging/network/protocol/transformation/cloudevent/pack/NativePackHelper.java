@@ -85,7 +85,9 @@ public final class NativePackHelper extends PackHelper {
       if (sc >= 0) v = v.substring(0, sc).trim();
       try {
         return Charset.forName(v.replace("\"", "").trim());
-      } catch (Exception ignore) { }
+      } catch (Exception ignore) {
+        // if no charset specified, then use UTF8
+      }
     }
     return StandardCharsets.UTF_8;
   }

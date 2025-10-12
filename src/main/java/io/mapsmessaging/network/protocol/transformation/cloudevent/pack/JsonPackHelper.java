@@ -54,7 +54,9 @@ public final class JsonPackHelper extends PackHelper {
           if (normalized != null) {
             data = normalized;
           }
-        } catch (Exception ignore) { }
+        } catch (Exception ignore) {
+          // if we can not parse to json, we fall through and base64 it
+        }
       }
 
       if (data == null && message.isUTF8()) {
@@ -68,7 +70,9 @@ public final class JsonPackHelper extends PackHelper {
             wrapped.add(PAYLOAD_KEY, parsed);
             data = wrapped;
           }
-        } catch (Exception ignore) { }
+        } catch (Exception ignore) {
+          // if we can not parse to json, we fall through and base64 it
+        }
       }
 
       if (data == null) {

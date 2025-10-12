@@ -32,11 +32,9 @@ import io.mapsmessaging.logging.ServerLogMessages;
 import io.mapsmessaging.network.admin.EndPointConnectionHostJMX;
 import io.mapsmessaging.network.io.EndPointConnectionFactory;
 import io.mapsmessaging.network.io.connection.EndPointConnection;
-import io.mapsmessaging.network.io.connection.route.RouteList;
 import io.mapsmessaging.network.io.connection.route.RouteManager;
 import io.mapsmessaging.network.io.impl.SelectorLoadManager;
 import io.mapsmessaging.network.protocol.impl.extension.ExtensionEndPointConnectionFactory;
-import io.mapsmessaging.network.route.select.LinkRepository;
 import io.mapsmessaging.utilities.Agent;
 import io.mapsmessaging.utilities.service.Service;
 import io.mapsmessaging.utilities.service.ServiceManager;
@@ -71,8 +69,8 @@ public class NetworkConnectionManager implements ServiceManager, Agent {
     endPointLoad.forEach(endPointConnections::add);
     logger.log(ServerLogMessages.NETWORK_MANAGER_STARTUP_COMPLETE);
     int poolSize = 1;
-    if(!config.getEndPointServerConfigList().isEmpty() && config.getEndPointServerConfigList().get(0).getEndPointConfig() != null){
-      poolSize = config.getEndPointServerConfigList().get(0).getEndPointConfig().getSelectorThreadCount();
+    if(!config.getEndPointServerConfigList().isEmpty() && config.getEndPointServerConfigList().getFirst().getEndPointConfig() != null){
+      poolSize = config.getEndPointServerConfigList().getFirst().getEndPointConfig().getSelectorThreadCount();
     }
     selectorLoadManager = new SelectorLoadManager(poolSize, "Network Interconnection" );
     endPointConnectionList = new ArrayList<>();
