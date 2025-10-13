@@ -323,7 +323,7 @@ public class DestinationManager implements DestinationFactory, Agent {
   public long getStorageSize() {
     long count = 0;
     for(DestinationManagerPipeline pipeline:creatorPipelines){
-      pipeline.getStorageSize();
+      count += pipeline.getStorageSize();
     }
 
     return count;
