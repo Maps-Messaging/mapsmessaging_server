@@ -26,4 +26,4 @@
 transformations:
   data:
     - pattern: "*://*/*/*"
-      transformation: "CloudEvent-Native"
+      transformation: ""
