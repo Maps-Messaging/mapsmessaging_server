@@ -20,6 +20,8 @@
 package io.mapsmessaging.network.protocol.impl.mqtt5.packet;
 
 import io.mapsmessaging.network.io.Packet;
+import io.mapsmessaging.network.protocol.EndOfBufferException;
+import io.mapsmessaging.network.protocol.impl.mqtt.packet.MalformedException;
 
 /**
  * https://docs.oasis-open.org/mqtt/mqtt/v5.0/os/mqtt-v5.0-os.html#_Toc3901074
@@ -30,6 +32,38 @@ public class ConnAck5 extends StatusPacket {
 
   public ConnAck5() {
     super(CONNACK);
+  }
+
+  public ConnAck5(byte fixedHeader, long remainingLen, Packet packet) throws MalformedException, EndOfBufferException {
+    super(CONNACK);
+
+    // Validate fixed header flags (must be 0 for CONNACK)
+    if ((fixedHeader & 0x0F) != 0) {
+      throw new MalformedException("ConnAck: Reserved bits in command byte not 0");
+    }
+
+    // Acknowledge Flags
+    byte acknowledgeFlags = packet.get();
+    if ((acknowledgeFlags & 0xFE) != 0) { // only bit 0 (Session Present) allowed
+      throw new MalformedException("ConnAck: Reserved bits in acknowledge flags not 0");
+    }
+    isPresent = (acknowledgeFlags & 0x01) != 0;
+
+    // Reason Code
+    byte reason = packet.get();
+    this.statusCode = StatusCode.getInstance(reason);
+
+    // Properties
+    long propertiesBytes = loadProperties(packet); // includes the properties length varint
+
+    // Basic length validation: 1 (flags) + 1 (reason) + properties
+    long consumed = 2 + propertiesBytes;
+    if (consumed != remainingLen) {
+      // If strictness desired, throw; otherwise, tolerate minor mismatches.
+      if (consumed > remainingLen) {
+        throw new MalformedException("ConnAck: Remaining length too small");
+      }
+    }
   }
 
   @Override

@@ -69,6 +69,9 @@ public class PacketFactory5 {
       case MQTTPacket.CONNECT:
         return new Connect5(fixedHeader, remainingLen, packet);
 
+      case MQTTPacket.CONNACK:
+        return new ConnAck5(fixedHeader, remainingLen, packet);
+
       case MQTTPacket.DISCONNECT:
         return new Disconnect5(remainingLen, packet);
 
@@ -92,6 +95,12 @@ public class PacketFactory5 {
 
       case MQTTPacket.UNSUBSCRIBE:
         return new Unsubscribe5(fixedHeader, remainingLen, packet);
+
+      case MQTTPacket.UNSUBACK:
+        return new UnsubAck5(fixedHeader, remainingLen, packet);
+
+      case MQTTPacket.SUBACK:
+        return new SubAck5(fixedHeader, remainingLen, packet);
 
       default:
         throw new MalformedException("Unexpected packet received:::" + Long.toHexString(packetId));

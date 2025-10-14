@@ -20,17 +20,48 @@
 package io.mapsmessaging.network.protocol.impl.mqtt5.packet;
 
 import io.mapsmessaging.network.io.Packet;
+import io.mapsmessaging.network.protocol.EndOfBufferException;
 import io.mapsmessaging.network.protocol.impl.mqtt.packet.MQTTPacket;
+import io.mapsmessaging.network.protocol.impl.mqtt.packet.MalformedException;
+import lombok.Getter;
 
 public class SubAck5 extends MQTTPacket5 {
 
-  private final int packetId;
-  private final StatusCode[] result;
+  @Getter
+  private int packetId;
+  private StatusCode[] result;
 
   public SubAck5(int packetId, StatusCode[] result) {
     super(MQTTPacket.SUBACK);
     this.result = result;
     this.packetId = packetId;
+  }
+
+
+  public SubAck5(byte fixedHeader, long remainingLen, Packet packet) throws MalformedException, EndOfBufferException {
+    super(MQTTPacket.SUBACK);
+    if ((fixedHeader & 0x0F) != 0) {
+      throw new MalformedException("SubAck: Reserved bits in command byte not 0");
+    }
+
+    // Variable header
+    packetId = readShort(packet);
+    long propsBytes = loadProperties(packet); // includes the properties length varint itself
+
+    long payloadLen = remainingLen - 2 - propsBytes; // 2 = packetId
+    if (payloadLen <= 0) {
+      throw new MalformedException("SubAck must contain at least one reason code");
+    }
+    if (payloadLen > Integer.MAX_VALUE) {
+      throw new MalformedException("SubAck payload too large");
+    }
+
+    // Payload: list of reason codes
+    result = new StatusCode[(int) payloadLen];
+    for (int i = 0; i < result.length; i++) {
+      byte code = packet.get();
+      result[i] = StatusCode.getInstance(code); // assumes enum factory: from(byte)
+    }
   }
 
   @Override

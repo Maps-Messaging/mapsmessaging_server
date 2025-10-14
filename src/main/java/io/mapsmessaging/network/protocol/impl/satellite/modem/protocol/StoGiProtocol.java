@@ -618,7 +618,8 @@ public class StoGiProtocol extends Protocol implements Consumer<Packet> {
     return MessageOverrides.createMessageBuilder(protocol.getProtocolConfig().getMessageDefaults(), mb).build();
   }
 
-  private String parseForLookup(String lookup) {
+  @Override
+  public String parseForLookup(String lookup) {
     String exact = topicNameMapping.get(lookup);
     if (exact != null) return exact;
 

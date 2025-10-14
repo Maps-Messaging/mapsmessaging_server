@@ -25,6 +25,7 @@ import io.mapsmessaging.api.MessageEvent;
 import io.mapsmessaging.api.MessageListener;
 import io.mapsmessaging.api.SubscriptionContextBuilder;
 import io.mapsmessaging.api.features.ClientAcknowledgement;
+import io.mapsmessaging.api.features.DestinationMode;
 import io.mapsmessaging.api.features.QualityOfService;
 import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.api.transformers.Transformer;
@@ -38,6 +39,7 @@ import io.mapsmessaging.network.io.Packet;
 import io.mapsmessaging.network.io.ServerPacket;
 import io.mapsmessaging.network.io.Timeoutable;
 import io.mapsmessaging.network.io.impl.SelectorCallback;
+import io.mapsmessaging.network.protocol.impl.mqtt.packet.Publish;
 import io.mapsmessaging.selector.operators.ParserExecutor;
 import io.mapsmessaging.utilities.filtering.NamespaceFilter;
 import io.mapsmessaging.utilities.filtering.NamespaceFilters;
@@ -337,5 +339,33 @@ public abstract class Protocol implements SelectorCallback, MessageListener, Tim
   }
 
   public void unsubscribeRemote(String remote) {
+  }
+
+
+  public String parseForLookup(String destinationName) {
+    String lookup = destinationName;
+
+    Map<String, String> map = getTopicNameMapping();
+    if (map != null) {
+      lookup = map.get(destinationName);
+      if (lookup == null) {
+        lookup = destinationName;
+        for(Map.Entry<String, String> remote:map.entrySet()){
+          if(remote.getKey().endsWith("#")){
+            String check = remote.getValue();
+            String tmp = remote.getKey().substring(0, remote.getKey().length()-1);
+            if(lookup.startsWith(tmp)){
+              if (lookup.toLowerCase().startsWith(DestinationMode.SCHEMA.getNamespace())) {
+                lookup = lookup.substring(DestinationMode.SCHEMA.getNamespace().length());
+              }
+              lookup = check + lookup;
+              lookup = lookup.replace("#", "");
+              lookup = lookup.replaceAll("//", "/");
+            }
+          }
+        }
+      }
+    }
+    return lookup;
   }
 }

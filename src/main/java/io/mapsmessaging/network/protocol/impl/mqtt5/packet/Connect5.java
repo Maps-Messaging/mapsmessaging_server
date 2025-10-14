@@ -235,54 +235,98 @@ public class Connect5 extends MQTTPacket5 {
 
   @Override
   public int packFrame(Packet packet) {
-    // Write the fixed MQTT string length (2 bytes) and "MQTT" string
-    packet.putShort(mqtt.length);
-    packet.put(mqtt);
+    // ---- Variable header ----
+    // Protocol Name "MQTT"
+    int variableHeaderLength = 2 + mqtt.length;
+    // Protocol Level
+    variableHeaderLength += 1;
+    // Connect Flags
+    variableHeaderLength += 1;
+    // Keep Alive
+    variableHeaderLength += 2;
 
-    // Write the protocol level
+    int connectPropertiesLength = propertiesSize();
+    int connectPropertiesVarIntSize = lengthSize(connectPropertiesLength);
+    variableHeaderLength += connectPropertiesVarIntSize + connectPropertiesLength;
+
+    // ---- Payload length calculation ----
+    String clientIdentifier = (sessionId == null) ? "" : sessionId;
+    int payloadLength = 2 + clientIdentifier.getBytes(java.nio.charset.StandardCharsets.UTF_8).length;
+
+    int willSectionLength = 0;
+    if (willFlag) {
+      int willPropsLen = propertiesSize(willProperties);
+      int willPropsVarInt = lengthSize(willPropsLen);
+      int willTopicLen = 2 + willTopic.getBytes(java.nio.charset.StandardCharsets.UTF_8).length;
+      int willMsgLen = 2 + willMsg.length; // binary with 2-byte length
+      willSectionLength = willPropsVarInt + willPropsLen + willTopicLen + willMsgLen;
+      payloadLength += willSectionLength;
+    }
+
+    if (hasUsername()) {
+      payloadLength += 2 + username.getBytes(java.nio.charset.StandardCharsets.UTF_8).length;
+    }
+
+    if (hasPassword()) {
+      payloadLength += 2 + password.length; // binary with 2-byte length
+    }
+
+    int remainingLength = variableHeaderLength + payloadLength;
+
+    // ---- Fixed header ----
+    packControlByte(packet, 0);
+    writeVariableInt(packet, remainingLength);
+
+    // ---- Write variable header ----
+    packet.putShort((short) mqtt.length);
+    packet.put(mqtt);
     packet.put(protocolLevel);
 
-    // Construct and write the connection flags
     byte connectFlag = 0;
-    if (cleanSession) connectFlag |= 0b00000010;  // Bit 1
-    if (willFlag) {
-      connectFlag |= 0b00000100;                 // Bit 2
-      connectFlag |= (byte) ((willQOS.getLevel() << 3) & 0xff);  // Bit 3|4 for QoS
-      if (willRetain) connectFlag |= 0b00100000; // Bit 5
+    if (cleanSession) {
+      connectFlag |= 0b00000010;
     }
-    if (hasPassword()) connectFlag |= 0b01000000;   // Bit 6
-    if (hasUsername()) connectFlag |= (byte) 0b10000000;   // Bit 7
+    if (willFlag) {
+      connectFlag |= 0b00000100;
+      connectFlag |= (byte) ((willQOS.getLevel() & 0b11) << 3);
+      if (willRetain) {
+        connectFlag |= 0b00100000;
+      }
+    }
+    if (hasPassword()) {
+      connectFlag |= 0b01000000;
+    }
+    if (hasUsername()) {
+      connectFlag |= (byte) 0b10000000;
+    }
     packet.put(connectFlag);
 
-    // Write the Keep Alive field
-    packet.putShort(keepAlive);
+    packet.putShort((short) keepAlive);
 
-    // Write properties (sessionId)
-    writeUTF8(packet, sessionId);
+    packProperties(packet, connectPropertiesLength);
 
-    // Write Will topic and message if the Will flag is set
+    // ---- Write payload ----
+    writeUTF8(packet, clientIdentifier);
+
     if (willFlag) {
-      int size = propertiesSize(willProperties);
-      packProperties(packet, willProperties, size);
+      packProperties(packet, willProperties, propertiesSize(willProperties));
       writeUTF8(packet, willTopic);
-      packet.put(willMsg);
+      writeBuffer(willMsg, packet);
     }
 
-    // Write the Username if the flag is set
     if (hasUsername()) {
       writeUTF8(packet, username);
     }
 
-    // Write the Password if the flag is set
     if (hasPassword()) {
-      byte[] pswdBytes = new byte[password.length];
-      for (int i = 0; i < password.length; i++) {
-        pswdBytes[i] = (byte) password[i];
+      byte[] passwordBytes = new byte[password.length];
+      for (int index = 0; index < password.length; index++) {
+        passwordBytes[index] = (byte) password[index];
       }
-      packet.put(pswdBytes);
+      writeBuffer(passwordBytes, packet);
     }
-    // Return the number of bytes written to the packet
-    return packet.position();
+
+    return remainingLength;
   }
 
 

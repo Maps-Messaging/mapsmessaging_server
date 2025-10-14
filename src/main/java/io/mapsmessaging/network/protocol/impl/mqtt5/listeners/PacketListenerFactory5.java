@@ -37,7 +37,7 @@ public class PacketListenerFactory5 {
     }
     listeners[MQTTPacket.CONNECT] = new ConnectListener5();
     listeners[MQTTPacket.DISCONNECT] = new DisconnectListener5();
-
+    listeners[MQTTPacket.CONNACK] = new ConnAckListener5();
     listeners[MQTTPacket.PUBLISH] = new PublishListener5();
     listeners[MQTTPacket.PINGREQ] = new PingRequestListener5();
     listeners[MQTTPacket.SUBSCRIBE] = new SubscribeListener5();
@@ -47,6 +47,7 @@ public class PacketListenerFactory5 {
     listeners[MQTTPacket.PUBCOMP] = new PubCompListener5();
     listeners[MQTTPacket.UNSUBSCRIBE] = new UnsubscribeListener5();
     listeners[MQTTPacket5.AUTH] = new AuthListener5();
+    listeners[MQTTPacket5.SUBACK] = new SubAckListener5();
   }
 
   public PacketListener5 getListener(int mqttPacketId) {

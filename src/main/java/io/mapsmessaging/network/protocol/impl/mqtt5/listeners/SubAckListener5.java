@@ -22,21 +22,20 @@ package io.mapsmessaging.network.protocol.impl.mqtt5.listeners;
 import io.mapsmessaging.api.Session;
 import io.mapsmessaging.network.io.EndPoint;
 import io.mapsmessaging.network.protocol.Protocol;
+import io.mapsmessaging.network.protocol.impl.mqtt.PacketIdentifierMap;
+import io.mapsmessaging.network.protocol.impl.mqtt5.MQTT5Protocol;
 import io.mapsmessaging.network.protocol.impl.mqtt5.packet.MQTTPacket5;
-import io.mapsmessaging.network.protocol.impl.mqtt5.packet.UnsubAck5;
-import io.mapsmessaging.network.protocol.impl.mqtt5.packet.Unsubscribe5;
+import io.mapsmessaging.network.protocol.impl.mqtt5.packet.SubAck5;
 
-import java.util.List;
-
-public class UnsubscribeListener5 extends PacketListener5 {
+public class SubAckListener5 extends PacketListener5 {
 
   @Override
   public MQTTPacket5 handlePacket(MQTTPacket5 mqttPacket, Session session, EndPoint endPoint, Protocol protocol) {
-    Unsubscribe5 unsubscribe = (Unsubscribe5) mqttPacket;
-    List<String> unsubscribeList = unsubscribe.getUnsubscribeList();
-    for (String info : unsubscribeList) {
-      session.removeSubscription(info);
+    SubAck5 subAck = (SubAck5) mqttPacket;
+    PacketIdentifierMap mapping = ((MQTT5Protocol) protocol).getPacketIdManager().completePacketId(subAck.getPacketId());
+    if (mapping != null) {
+      mapping.getSubscription().ackReceived(mapping.getMessageId());
     }
-    return new UnsubAck5(unsubscribe.getMessageId());
+    return null;
   }
 }

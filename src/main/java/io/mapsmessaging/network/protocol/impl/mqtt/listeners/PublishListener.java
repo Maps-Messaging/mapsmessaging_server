@@ -80,40 +80,13 @@ public class PublishListener extends PacketListener {
     return null;
   }
 
-  private String parseForLookup(Protocol protocol, Publish publish){
-    String lookup = publish.getDestinationName();
-
-    Map<String, String> map = protocol.getTopicNameMapping();
-    if (map != null) {
-      lookup = map.get(publish.getDestinationName());
-      if (lookup == null) {
-        lookup = publish.getDestinationName();
-        for(Map.Entry<String, String> remote:map.entrySet()){
-          if(remote.getKey().endsWith("#")){
-            String check = remote.getValue();
-            String tmp = remote.getKey().substring(0, remote.getKey().length()-1);
-            if(lookup.startsWith(tmp)){
-              if (lookup.toLowerCase().startsWith(DestinationMode.SCHEMA.getNamespace())) {
-                lookup = lookup.substring(DestinationMode.SCHEMA.getNamespace().length());
-              }
-              lookup = check + lookup;
-              lookup = lookup.replace("#", "");
-              lookup = lookup.replaceAll("//", "/");
-            }
-          }
-        }
-      }
-    }
-    return lookup;
-  }
-
   @Override
   public MQTTPacket handlePacket(MQTTPacket mqttPacket, Session session, EndPoint endPoint, Protocol protocol) throws MalformedException {
     checkState(session);
 
     Publish publish = (Publish) mqttPacket;
     MQTTPacket response = getResponse(publish);
-    String lookup =parseForLookup(protocol, publish);
+    String lookup = protocol.parseForLookup(publish.getDestinationName());
 
     if (!lookup.startsWith("$") || publish.getDestinationName().toLowerCase().startsWith(DestinationMode.SCHEMA.getNamespace())) {
       try {
