@@ -45,7 +45,6 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
 public class PublishListener5 extends PacketListener5 {
@@ -185,64 +184,45 @@ public class PublishListener5 extends PacketListener5 {
       if (!duplicateReport.isEmpty()) {
         logger.log(ServerLogMessages.MQTT5_DUPLICATE_PROPERTIES_DETECTED, duplicateReport);
       }
-      String lookup = protocol.parseForLookup(publish.getDestinationName());
-      if (!lookup.startsWith("$") || publish.getDestinationName().toLowerCase().startsWith(DestinationMode.SCHEMA.getNamespace())) {
-        try {
-          return processValidDestinations(publish, session, lookup, protocol, response);
-        } catch (ExecutionException e) {
-          try {
-            protocol.close();
-          } catch (IOException ex) {
-            //
-          }
-        } catch (InterruptedException e) {
-          //ignore
-        }
-      } else {
+      String lookup = protocol.parseForLookup(destinationName);
+      if(lookup.startsWith("$") && !publish.getDestinationName().toLowerCase().startsWith("$schema")){
         return response;
       }
-      return null;
+      try {
+        Destination destination = session.findDestination(lookup, DestinationType.TOPIC).get();
+        int sent = 0;
+        if (destination != null) {
+          Message message =
+              createMessage(
+                  session.getName(),
+                  publish.getProperties().values(),
+                  publish.getPriority(),
+                  publish.isRetain(),
+                  publish.getPayload(),
+                  publish.getQos(),
+                  protocol.getTransformation(),
+                  protocol);
+          sent = processMessage(message, publish, session, response, destination);
+        }
 
-
-
+        if (response != null) {
+          if (sent == 0) {
+            response.setStatusCode(StatusCode.NO_MATCHING_SUBSCRIBERS);
+          } else if (sent < 0) {
+            response.setStatusCode(StatusCode.PACKET_IDENTIFIER_INUSE);
+          }
+        }
+      } catch (IOException e) {
+        try {
+          endPoint.close();
+        } catch (IOException ioException) {
+          // we are in the midst of a close, more on
+        }
+        throw new MalformedException("[MQTT-3.3.5-2]");
+      }
     } else {
       if (response != null) {
         response.setStatusCode(StatusCode.NOT_AUTHORISED); // Can not publish to $ topics
-      }
-    }
-    return response;
-  }
-
-  private PublishMonitorPacket5 processValidDestinations(Publish5 publish,  Session session, String lookup,  Protocol protocol, PublishMonitorPacket5 response) throws ExecutionException, InterruptedException {
-    try {
-      Destination destination = session.findDestination(lookup, DestinationType.TOPIC).get();
-      int sent = 0;
-      if (destination != null) {
-        Message message =
-            createMessage(
-                session.getName(),
-                publish.getProperties().values(),
-                publish.getPriority(),
-                publish.isRetain(),
-                publish.getPayload(),
-                publish.getQos(),
-                protocol.getTransformation(),
-                protocol);
-        sent = processMessage(message, publish, session, response, destination);
-      }
-
-      if (response != null) {
-        if (sent == 0) {
-          response.setStatusCode(StatusCode.NO_MATCHING_SUBSCRIBERS);
-        } else if (sent < 0) {
-          response.setStatusCode(StatusCode.PACKET_IDENTIFIER_INUSE);
-        }
-      }
-    } catch (IOException e) {
-      try {
-        protocol.getEndPoint().close();
-      } catch (IOException ioException) {
-        // we are in the midst of a close, more on
       }
     }
     return response;
