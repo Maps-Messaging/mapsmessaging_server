@@ -46,6 +46,11 @@ public class MQTTProtocolFactory extends ProtocolImplFactory {
     return protocol;
   }
 
+  @Override
+  public boolean matches(String protocolName){
+    return super.matches(protocolName) || "mqtt-v3".equalsIgnoreCase(protocolName);
+  }
+
   public void create(EndPoint endPoint, Packet packet) throws IOException {
     new MQTTProtocol(endPoint, packet);
   }

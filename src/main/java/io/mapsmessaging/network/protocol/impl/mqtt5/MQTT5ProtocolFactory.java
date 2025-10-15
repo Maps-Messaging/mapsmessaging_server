@@ -52,6 +52,12 @@ public class MQTT5ProtocolFactory extends ProtocolImplFactory {
   }
 
   @Override
+  public boolean matches(String protocolName){
+    return super.matches(protocolName) || "mqtt-v5".equalsIgnoreCase(protocolName);
+  }
+
+
+  @Override
   public String getTransportType() {
     return "tcp";
   }

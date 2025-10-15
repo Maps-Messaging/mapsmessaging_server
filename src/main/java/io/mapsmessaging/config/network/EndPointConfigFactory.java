@@ -169,6 +169,8 @@ public class EndPointConfigFactory {
   private static ProtocolConfigDTO createProtocolConfig(String protocol, ConfigurationProperties config) {
     String p = protocol.toLowerCase(Locale.ROOT);
     return switch (p) {
+      case "mqtt-v5" -> new MqttV5Config(config);
+      case "mqtt-v3" -> new MqttConfig(config);
       case "mqtt" -> new MqttV5Config(config);
       case "amqp" -> new AmqpConfig(config);
       case "stomp" -> new StompConfig(config);

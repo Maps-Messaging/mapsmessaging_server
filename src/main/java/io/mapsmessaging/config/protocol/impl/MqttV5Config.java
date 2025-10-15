@@ -27,7 +27,7 @@ import io.mapsmessaging.dto.rest.config.protocol.impl.MqttV5ConfigDTO;
 public class MqttV5Config extends MqttV5ConfigDTO implements Config {
 
   public MqttV5Config(ConfigurationProperties config) {
-    setType("mqtt");
+    setType(config.getProperty("protocol"));
     ProtocolConfigFactory.unpack(config, this);
 
     // Initialize MQTT V5-specific fields from config
