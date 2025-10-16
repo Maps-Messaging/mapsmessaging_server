@@ -126,4 +126,19 @@ steps:
 
 ---
 
-_MapsMessaging B.V. — Automated release documentation for MAPS Server_
+## Jira-sectioned release notes
+
+New mode:
+- `--issue-sections` : Create a section per Jira key referenced by any commit. Each section includes Jira summary, status, priority,
+  fix versions, components, FULL description, recent activity (changelog), comments, and the list of commits
+  that referenced the key.
+- Commits with NO Jira key are listed at the end under **Miscellaneous**.
+
+Usage:
+node tools/changelog/release-notes.js --branch development --since-tag --jira --issue-sections --out notes.md
+
+Notes:
+- This calls Jira to fetch issue details, comments (paginated), and changelog (paginated). It may take longer on large ranges.
+- You can limit how much activity is included with flags:
+  --max-comments <n>       (default 200, 0 = none)
+  --max-changelog <n>      (default 300, 0 = none)
