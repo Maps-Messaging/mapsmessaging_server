@@ -1,0 +1,13 @@
+{
+  "name": "maps-release-notes-tool",
+  "version": "1.1.0",
+  "private": true,
+  "type": "module",
+  "bin": {
+    "release-notes": "tools/changelog/release-notes.js"
+  },
+  "scripts": {
+    "release:notes": "node tools/changelog/release-notes.js",
+    "release:notes:jira": "node tools/changelog/release-notes.js --jira"
+  }
+}
