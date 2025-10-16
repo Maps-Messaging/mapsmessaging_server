@@ -257,14 +257,14 @@ public class StoGiProtocol extends Protocol implements Consumer<Packet> {
   }
 
   @Override
-  public void subscribeRemote(@NonNull @NotNull String resource, @NonNull @NotNull String mappedResource, @Nullable ParserExecutor executor, @Nullable Transformer transformer, StatisticsConfigDTO statistics) {
+  public void subscribeRemote(@NonNull @NotNull String resource, @NonNull @NotNull String mappedResource, @NonNull @NotNull QualityOfService qos, @Nullable ParserExecutor executor, @Nullable Transformer transformer, StatisticsConfigDTO statistics) {
     // Will send a subscribe event, once we have one
   }
 
   @Override
-  public void subscribeLocal(@NonNull @NotNull String resource, @NonNull @NotNull String mappedResource, @Nullable String selector, @Nullable Transformer transformer, NamespaceFilters namespaceFilters, StatisticsConfigDTO statistics) throws IOException {
-    super.subscribeLocal(resource, mappedResource, selector, transformer, namespaceFilters, statistics);
-    SubscriptionContextBuilder builder = createSubscriptionContextBuilder(resource, selector, QualityOfService.AT_MOST_ONCE, 1024);
+  public void subscribeLocal(@NonNull @NotNull String resource, @NonNull @NotNull String mappedResource, @NonNull @NotNull QualityOfService qos, @Nullable String selector, @Nullable Transformer transformer, NamespaceFilters namespaceFilters, StatisticsConfigDTO statistics) throws IOException {
+    super.subscribeLocal(resource, mappedResource, qos, selector, transformer, namespaceFilters, statistics);
+    SubscriptionContextBuilder builder = createSubscriptionContextBuilder(resource, selector, qos, 1024);
     session.addSubscription(builder.build());
   }
 

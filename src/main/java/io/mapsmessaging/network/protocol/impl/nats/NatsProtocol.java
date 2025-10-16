@@ -114,7 +114,7 @@ public class NatsProtocol extends Protocol {
   }
 
   @Override
-  public void subscribeRemote(@NonNull @NotNull String resource, @NonNull @NotNull String mappedResource, @Nullable ParserExecutor executor, @Nullable Transformer transformer, StatisticsConfigDTO statistics) {
+  public void subscribeRemote(@NonNull @NotNull String resource,  @NonNull @NotNull String mappedResource, @NonNull @NotNull QualityOfService qos, @Nullable ParserExecutor executor, @Nullable Transformer transformer, StatisticsConfigDTO statistics) {
     sessionState.addMapping(resource, mappedResource);
     if (transformer != null) {
       destinationTransformerMap.put(resource, transformer);
@@ -123,7 +123,7 @@ public class NatsProtocol extends Protocol {
   }
 
   @Override
-  public void subscribeLocal(@NonNull @NotNull String resource, @NonNull @NotNull String mappedResource, String selector, @Nullable Transformer transformer, @Nullable NamespaceFilters namespaceFilters, StatisticsConfigDTO statistics) throws IOException {
+  public void subscribeLocal(@NonNull @NotNull String resource, @NonNull @NotNull String mappedResource,  @NonNull @NotNull QualityOfService qos,  String selector, @Nullable Transformer transformer, @Nullable NamespaceFilters namespaceFilters, StatisticsConfigDTO statistics) throws IOException {
     sessionState.addMapping(resource, mappedResource);
     if (transformer != null) {
       destinationTransformerMap.put(resource, transformer);

@@ -115,7 +115,7 @@ public class NMEAProtocol extends Protocol {
   }
 
   @Override
-  public void subscribeRemote(@NonNull @NotNull String resource, @NonNull @NotNull String mappedResource, @Nullable ParserExecutor executor, @Nullable Transformer transformer, StatisticsConfigDTO statistics) {
+  public void subscribeRemote(@NonNull @NotNull String resource, @NonNull @NotNull String mappedResource, @NonNull @NotNull QualityOfService qos, @Nullable ParserExecutor executor, @Nullable Transformer transformer, StatisticsConfigDTO statistics) {
     registeredSentences.put(resource, new SentenceMapping(mappedResource, transformer));
   }
 

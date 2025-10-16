@@ -20,6 +20,7 @@
 package io.mapsmessaging.network.io.connection.state;
 
 import io.mapsmessaging.api.features.DestinationMode;
+import io.mapsmessaging.api.features.QualityOfService;
 import io.mapsmessaging.api.transformers.Transformer;
 import io.mapsmessaging.configuration.ConfigurationProperties;
 import io.mapsmessaging.dto.rest.analytics.StatisticsConfigDTO;
@@ -65,7 +66,7 @@ public class Establishing extends State {
       String selector = property.getSelector();
       boolean schema = property.isIncludeSchema();
       NamespaceFilters filters = property.getNamespaceFilters();
-
+      QualityOfService qos = property.getQualityOfService();
       Transformer transformer = null;
       Map<String, Object> obj = property.getTransformer();
       if (obj != null && !obj.isEmpty()) {
@@ -74,12 +75,12 @@ public class Establishing extends State {
 
       try {
         if (direction.equalsIgnoreCase("pull")) {
-          subscribeRemote(remote, local, selector, transformer, schema, property.getStatistics());
+          subscribeRemote(remote, local, qos, selector, transformer, schema, property.getStatistics());
         } else if (direction.equalsIgnoreCase("push")) {
           if (remote.endsWith("#")) {
             remote = remote.substring(0, remote.length() - 1);
           }
-          subscribeLocal(local, remote, selector, transformer, schema, filters, property.getStatistics());
+          subscribeLocal(local, remote, selector, qos, transformer, schema, filters, property.getStatistics());
         }
         endPointConnection.getLogger().log(ServerLogMessages.END_POINT_CONNECTION_SUBSCRIPTION_ESTABLISHED, direction, local, remote);
       } catch (IOException ioException) {
@@ -90,14 +91,14 @@ public class Establishing extends State {
     return success;
   }
 
-  private void subscribeLocal(String local, String remote, String selector, Transformer transformer, boolean includeSchema, NamespaceFilters filters, StatisticsConfigDTO statistics) throws IOException {
-    endPointConnection.getConnection().subscribeLocal(local, remote, selector, transformer, filters, statistics);
+  private void subscribeLocal(String local, String remote, String selector, QualityOfService qos, Transformer transformer, boolean includeSchema, NamespaceFilters filters, StatisticsConfigDTO statistics) throws IOException {
+    endPointConnection.getConnection().subscribeLocal(local, remote, qos, selector, transformer, filters, statistics);
     if (includeSchema) {
-      endPointConnection.getConnection().subscribeLocal(constructSchema(local), constructSchema(remote), selector, transformer, filters, null);
+      endPointConnection.getConnection().subscribeLocal(constructSchema(local), constructSchema(remote), qos, selector, transformer, filters, null);
     }
   }
 
-  private void subscribeRemote(String remote, String local, String selector, Transformer transformer, boolean includeSchema, StatisticsConfigDTO statistics) throws IOException {
+  private void subscribeRemote(String remote, String local,  QualityOfService qos, String selector, Transformer transformer, boolean includeSchema, StatisticsConfigDTO statistics) throws IOException {
     ParserExecutor parser = null;
     if (selector != null && !selector.isEmpty()) {
       try {
@@ -106,9 +107,9 @@ public class Establishing extends State {
         throw new IOException("Unable to parse selector", e);
       }
     }
-    endPointConnection.getConnection().subscribeRemote(remote, local, parser, transformer, statistics);
+    endPointConnection.getConnection().subscribeRemote(remote, local,  qos, parser, transformer, statistics);
     if (includeSchema) {
-      endPointConnection.getConnection().subscribeRemote(constructSchema(remote), constructSchema(local), null, transformer, null);
+      endPointConnection.getConnection().subscribeRemote(constructSchema(remote), constructSchema(local), qos, null, transformer, null);
     }
   }
 

@@ -19,7 +19,7 @@
 
 package io.mapsmessaging.config.protocol;
 
-import io.mapsmessaging.analytics.impl.stats.Statistics;
+import io.mapsmessaging.api.features.QualityOfService;
 import io.mapsmessaging.config.Config;
 import io.mapsmessaging.config.ConfigHelper;
 import io.mapsmessaging.config.analytics.StatisticsConfig;
@@ -35,6 +35,8 @@ public class LinkConfig extends LinkConfigDTO implements Config {
     this.remoteNamespace = config.getProperty("remote_namespace");
     this.localNamespace = config.getProperty("local_namespace");
     this.selector = config.getProperty("selector");
+    int qos = config.getIntProperty("qos", 0);
+    qualityOfService = QualityOfService.getInstance(qos % 3);
     this.includeSchema = config.getBooleanProperty("include_schema", false);
     Object obj = config.get("transformer");
     if (obj instanceof ConfigurationProperties tfObj) {
@@ -58,6 +60,7 @@ public class LinkConfig extends LinkConfigDTO implements Config {
     config.put("local_namespace", this.localNamespace);
     config.put("selector", this.selector);
     config.put("include_schema", this.includeSchema);
+    config.put("qos", this.qualityOfService.getLevel());
     if (transformer != null) {
       config.put("transformer", new ConfigurationProperties(this.transformer));
     }
@@ -89,6 +92,10 @@ public class LinkConfig extends LinkConfigDTO implements Config {
       if (this.localNamespace == null
           || !this.localNamespace.equals(newConfig.getLocalNamespace())) {
         this.localNamespace = newConfig.getLocalNamespace();
+        hasChanged = true;
+      }
+      if(this.qualityOfService.getLevel() != newConfig.getQualityOfService().getLevel()) {
+        this.qualityOfService = newConfig.getQualityOfService();
         hasChanged = true;
       }
 

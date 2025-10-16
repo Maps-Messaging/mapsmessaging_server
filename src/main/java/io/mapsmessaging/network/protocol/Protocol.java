@@ -158,6 +158,7 @@ public abstract class Protocol implements SelectorCallback, MessageListener, Tim
   public void subscribeRemote(
       @NonNull @NotNull String resource,
       @NonNull @NotNull String mappedResource,
+      @NonNull @NotNull QualityOfService qualityOfService,
       @Nullable ParserExecutor parser,
       @Nullable Transformer transformer,
       @Nullable StatisticsConfigDTO statistics
@@ -178,6 +179,7 @@ public abstract class Protocol implements SelectorCallback, MessageListener, Tim
   public void subscribeLocal(
       @NonNull @NotNull String resource,
       @NonNull @NotNull String mappedResource,
+      @NonNull @NotNull QualityOfService qualityOfService,
       @Nullable String selector,
       @Nullable Transformer transformer,
       @Nullable NamespaceFilters namespaceFilters,

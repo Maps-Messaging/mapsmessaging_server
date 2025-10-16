@@ -25,6 +25,7 @@ import io.mapsmessaging.api.MessageBuilder;
 import io.mapsmessaging.api.MessageEvent;
 import io.mapsmessaging.api.MessageListener;
 import io.mapsmessaging.api.features.DestinationType;
+import io.mapsmessaging.api.features.QualityOfService;
 import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.api.transformers.Transformer;
 import io.mapsmessaging.dto.rest.analytics.StatisticsConfigDTO;
@@ -105,7 +106,7 @@ public class ExtensionProtocol extends Protocol implements MessageListener, Clie
   }
 
   @Override
-  public void subscribeLocal(@NonNull @NotNull String resource, @NonNull @NotNull String mappedResource, String selector, @Nullable Transformer transformer, @org.jetbrains.annotations.Nullable NamespaceFilters namespaceFilters, StatisticsConfigDTO statistics) throws IOException {
+  public void subscribeLocal(@NonNull @NotNull String resource, @NonNull @NotNull String mappedResource,@NonNull @NotNull QualityOfService qos,  String selector, @Nullable Transformer transformer, @org.jetbrains.annotations.Nullable NamespaceFilters namespaceFilters, StatisticsConfigDTO statistics) throws IOException {
     nameMapping.put(resource, mappedResource);
     extension.registerLocalLink(mappedResource);
     if(transformer != null) {
@@ -115,7 +116,7 @@ public class ExtensionProtocol extends Protocol implements MessageListener, Clie
   }
 
   @Override
-  public void subscribeRemote(@NonNull @org.jetbrains.annotations.NotNull String resource, @NonNull @org.jetbrains.annotations.NotNull String mappedResource, @Nullable ParserExecutor parser, @Nullable Transformer transformer, StatisticsConfigDTO statistics) throws IOException {
+  public void subscribeRemote(@NonNull @org.jetbrains.annotations.NotNull String resource, @NonNull @org.jetbrains.annotations.NotNull String mappedResource, @NonNull @NotNull QualityOfService qos, @Nullable ParserExecutor parser, @Nullable Transformer transformer, StatisticsConfigDTO statistics) throws IOException {
     nameMapping.put(resource, mappedResource);
     if(!extension.supportsRemoteFiltering() && parser != null){
       parsers.put(resource, parser);

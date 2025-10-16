@@ -132,11 +132,11 @@ public class MQTTProtocol extends Protocol {
   }
 
   @Override
-  public void subscribeRemote(@NonNull @NotNull String resource, @NonNull @NotNull String mappedResource, @Nullable ParserExecutor parser, @Nullable Transformer transformer, StatisticsConfigDTO statistics) throws IOException {
-    super.subscribeRemote(resource,mappedResource,parser, transformer,statistics);
+  public void subscribeRemote(@NonNull @NotNull String resource, @NonNull @NotNull String mappedResource, @NonNull @NotNull QualityOfService qos, @Nullable ParserExecutor parser, @Nullable Transformer transformer, StatisticsConfigDTO statistics) throws IOException {
+    super.subscribeRemote(resource,mappedResource, qos, parser, transformer,statistics);
     Subscribe subscribe = new Subscribe();
     subscribe.setMessageId(packetIdManager.nextPacketIdentifier());
-    subscribe.getSubscriptionList().add(new SubscriptionInfo(resource, QualityOfService.AT_MOST_ONCE));
+    subscribe.getSubscriptionList().add(new SubscriptionInfo(resource, qos));
     writeFrame(subscribe);
     completedConnection();
   }
@@ -149,10 +149,10 @@ public class MQTTProtocol extends Protocol {
   }
 
   @Override
-  public void subscribeLocal(@NonNull @NotNull String resource, @NonNull @NotNull String mappedResource, @Nullable String selector, @Nullable Transformer transformer, @Nullable NamespaceFilters namespaceFilters, StatisticsConfigDTO statistics)
+  public void subscribeLocal(@NonNull @NotNull String resource, @NonNull @NotNull String mappedResource,@NonNull @NotNull QualityOfService qos, @Nullable String selector, @Nullable Transformer transformer, @Nullable NamespaceFilters namespaceFilters, StatisticsConfigDTO statistics)
       throws IOException {
-    super.subscribeLocal(resource, mappedResource, selector, transformer, namespaceFilters, statistics);
-    SubscriptionContextBuilder builder = createSubscriptionContextBuilder(resource, selector, QualityOfService.AT_MOST_ONCE, 1024);
+    super.subscribeLocal(resource, mappedResource, qos, selector, transformer, namespaceFilters, statistics);
+    SubscriptionContextBuilder builder = createSubscriptionContextBuilder(resource, selector, qos, 1024);
     session.addSubscription(builder.build());
   }
 
