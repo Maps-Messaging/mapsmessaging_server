@@ -32,6 +32,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 @EqualsAndHashCode(callSuper = true)
 @Data
@@ -42,30 +43,43 @@ public class SessionDetails extends PersistentObject {
   private String sessionName;
   private String uniqueId;
   private long internalUnqueId;
+  private long expiryTime;
+  private boolean needsUpdating;
+
   private List<SubscriptionContext> subscriptionContextList = new ArrayList<>();
 
   public SessionDetails() {
 
   }
 
-  public SessionDetails(String sessionName, String uniqueId, long internalUnqueId) {
+  public SessionDetails(String sessionName, String uniqueId, long internalUnqueId, long expiryTime) {
     this.sessionName = sessionName;
     this.uniqueId = uniqueId;
     this.internalUnqueId = internalUnqueId;
-    version = 2;
+    this.expiryTime = System.currentTimeMillis() + TimeUnit.SECONDS.toMillis(expiryTime);
+    version = 3;
   }
 
 
   public SessionDetails(InputStream inputStream) throws IOException {
     version = readInt(inputStream);
     boolean hasInternalUnqueId = true;
-    if(version != 2) {
-      sessionName = new String(readFullBuffer(inputStream, version));
-      hasInternalUnqueId = false;
-      version = 2;
-    }
-    else {
-      sessionName = readString(inputStream);
+    expiryTime = System.currentTimeMillis() + (60L * 60L * 1000L);
+    needsUpdating = true;
+    switch (version) {
+      case 2 -> {
+        sessionName = readString(inputStream);
+      }
+      case 3 -> {
+        sessionName = readString(inputStream);
+        expiryTime = readLong(inputStream);
+        needsUpdating = false;
+      }
+      default -> {
+        sessionName = new String(readFullBuffer(inputStream, version));
+        hasInternalUnqueId = false;
+        version = 3;
+      }
     }
     uniqueId = readString(inputStream);
     if(hasInternalUnqueId){
@@ -95,6 +109,7 @@ public class SessionDetails extends PersistentObject {
   public void save(OutputStream outputStream) throws IOException {
     writeInt(outputStream, version);
     writeString(outputStream, sessionName);
+    writeLong(outputStream, expiryTime);
     writeString(outputStream, uniqueId);
     writeLong(outputStream, internalUnqueId);
     writeInt(outputStream, subscriptionContextList.size());

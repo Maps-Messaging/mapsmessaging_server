@@ -176,6 +176,9 @@ public class SessionManagerPipeLine {
     //
     subscriptionController = sessionImpl.getSubscriptionController();
     if (expiry > 0) {
+      if(sessionImpl instanceof PersistentSession persistentSession) {
+        persistentSession.setExpiryTime(System.currentTimeMillis() + TimeUnit.SECONDS.toMillis(expiry));
+      }
       subscriptionController.hibernateAll();
       Future<?> sched = SimpleTaskScheduler.getInstance().schedule(() -> closeAndDeleteSubscriptionController(storeName, subscriptionController), expiry, TimeUnit.SECONDS);
       subscriptionController.setTimeout(sched);
@@ -186,10 +189,18 @@ public class SessionManagerPipeLine {
     connectedSessions.decrement();
   }
 
-  void addDisconnectedSession(String sessionId, String uniqueSessionId, Map<String, SubscriptionContext> map) {
-    SubscriptionController subscriptionManager = new SubscriptionController(sessionId, uniqueSessionId, destinationManager, map);
+  void addDisconnectedSession(String sessionId, String storeName, SessionDetails sessionDetails, Map<String, SubscriptionContext> map) {
+    SubscriptionController subscriptionManager = new SubscriptionController(sessionId, sessionDetails.getUniqueId(), destinationManager, map);
     subscriptionManagerFactory.put(sessionId, subscriptionManager);
     disconnectedSessions.increment();
+    long timeout =  sessionDetails.getExpiryTime() - System.currentTimeMillis();
+    if(timeout > 0) {
+      Future<?> sched = SimpleTaskScheduler.getInstance().schedule(() -> closeAndDeleteSubscriptionController(storeName, subscriptionManager), timeout, TimeUnit.MILLISECONDS);
+      subscriptionManager.setTimeout(sched);
+    }
+    else{
+      closeAndDeleteSubscriptionController(storeName, subscriptionManager);
+    }
   }
 
   void closeAndDeleteSubscriptionController(String sessionStateFile, SubscriptionController subscriptionController) {
