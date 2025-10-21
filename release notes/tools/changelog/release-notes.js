@@ -5,10 +5,35 @@ import { EOL } from "node:os";
 import https from "node:https";
 
 /**
- * Release notes: section-per-Jira-issue, misc commits at end.
- * Changes for Matthew:
- *  - Removed Jira "Activity" (changelog) entirely.
- *  - Preserve Jira comments (ADF -> markdown-ish) without escaping < or >.
+ * Release notes generator (issue-sectioned) with Jira "Release-Notes" comment support.
+ * - If a Jira comment contains a Release-Notes block, that block is used as the section body.
+ * - Blocks supported (priority order):
+ *   1) Fenced: ```release-notes ... ```
+ *   2) Tagged: <Release Notes> ... </Release Notes> (end tag optional; consumes to end if missing)
+ *   3) Header: first non-empty line equals "Release-Notes" or "Release-Notes:" then rest of comment
+ *
+ * Flags:
+ *   --branch <name>                default: development
+ *   --range  <git-range>           e.g. v1.2.3..development (auto-calculated if missing)
+ *   --since-tag                    use last tag..branch when --range not given
+ *   --out <file>                   write markdown to file
+ *   --repo <org/repo>              for optional GitHub release publish
+ *   --tag <git-tag>                for optional GitHub release publish
+ *   --title <string>               document title (default: "Release Notes for <branch>")
+ *   --jira                         enable Jira enrichment (requires env vars below)
+ *   --jira-version <name>          create Jira version with this name (optional)
+ *   --max-comments <n>             cap comment pagination (default 200)
+ *   --release-notes-preferred <bool>  default true
+ *   --release-notes-only <bool>       default true
+ *   --escape-scripts <bool>           default false (preserve <script> etc. as-is)
+ *
+ * Env:
+ *   JIRA_KEY_PREFIX   e.g. "MSG"   (default MSG)
+ *   JIRA_BASE         e.g. "https://your-domain.atlassian.net"
+ *   JIRA_USER         Jira email/user
+ *   JIRA_TOKEN        API token
+ *   GITHUB_TOKEN      token for GitHub release publish (optional)
+ *   JIRA_PROJECT_ID   required if using --jira-version
  */
 
 const args = process.argv.slice(2);
@@ -17,13 +42,18 @@ const getArg = (name, fallback = null) => {
   return i >= 0 && i + 1 < args.length ? args[i + 1] : fallback;
 };
 const hasFlag = (name) => args.includes(name);
+const getBool = (name, dflt) => {
+  const v = getArg(name, null);
+  if (v == null) return dflt;
+  return /^true$/i.test(v) || v === "1";
+};
 
 // Inputs
 const branch = getArg("--branch", "development");
 const rangeArg = getArg("--range", null);
 const sinceTag = hasFlag("--since-tag");
 const out = getArg("--out", null);
-const issueSections = true; // this file implements the issue-sectioned mode
+const issueSections = true;
 
 const jiraEnabled = hasFlag("--jira");
 const jiraPrefix = process.env.JIRA_KEY_PREFIX || "MSG";
@@ -32,10 +62,13 @@ const jiraUser = process.env.JIRA_USER || "";
 const jiraToken = process.env.JIRA_TOKEN || "";
 
 const maxComments = parseInt(getArg("--max-comments", "200"), 10);
+const preferRN = getBool("--release-notes-preferred", true);
+const onlyRN = getBool("--release-notes-only", true);
+const escapeScripts = getBool("--escape-scripts", false);
 
 const nowIso = new Date().toISOString();
 
-// Optional publishers (kept; unused unless flags provided)
+// Optional GitHub publish
 const ghToken = process.env.GITHUB_TOKEN || "";
 const ghRepo = getArg("--repo", null);
 const ghTag = getArg("--tag", null);
@@ -68,11 +101,11 @@ function getCommits(range) {
       `git log --no-merges --date=short --pretty=format:'${format}%x02' ${range}`
   );
   return raw
-      .split("\x02")
+      .split("")
       .map((s) => s.trim())
       .filter(Boolean)
       .map((line) => {
-        const [hash, short, author, date, subject, body] = line.split("\x01");
+        const [hash, short, author, date, subject, body] = line.split("");
         return { hash, short, author, date, subject, body: body || "" };
       });
 }
@@ -83,18 +116,16 @@ function parseConventional(commit) {
   const scope = m ? m[2] || null : null;
   const breaking = !!(m && m[3]);
   const summary = m ? m[4] : commit.subject;
-  const breakingFooter = /\bBREAKING CHANGE\b/i.test(commit.body);
+  const breakingFooter = /BREAKING CHANGE/i.test(commit.body);
   return { ...commit, type, scope, breaking: breaking || breakingFooter, summary };
 }
 
 function extractJiraKeys(text, prefix) {
-  const re = new RegExp(`\\b${prefix}-\\d+\\b`, "g");
+  const re = new RegExp(`\b${prefix}-\d+\b`, "g");
   const set = new Set();
   (text.match(re) || []).forEach((k) => set.add(k));
   return Array.from(set);
 }
-
-const unique = (arr) => Array.from(new Set(arr));
 
 // ---- HTTPS helpers
 function httpsReq(urlStr, opts = {}, body = null) {
@@ -140,10 +171,7 @@ async function jiraComments(k, cap = maxComments) {
   let startAt = 0,
       maxResults = 100;
   while (out.length < cap) {
-    const qs = `startAt=${startAt}&maxResults=${Math.min(
-        maxResults,
-        cap - out.length
-    )}`;
+    const qs = `startAt=${startAt}&maxResults=${Math.min(maxResults, cap - out.length)}`;
     const { status, data } = await httpsReq(
         `${jiraBase}/rest/api/3/issue/${k}/comment?${qs}`,
         { method: "GET", headers }
@@ -166,37 +194,87 @@ async function jiraComments(k, cap = maxComments) {
 // ---- ADF -> Markdown-ish (preserve raw characters, basic structure)
 function adfToMarkdown(node) {
   if (!node) return "";
-  // Text node
   if (node.type === "text") return node.text || "";
-  // Hard break
   if (node.type === "hardBreak") return "\n";
-  // Code block
   if (node.type === "codeBlock") {
     const code = (node.content || [])
         .map((n) => (n.type === "text" ? n.text || "" : ""))
         .join("");
     return "```\n" + code + "\n```\n";
   }
-  // Paragraph / heading / bulletList / orderedList / listItem / panel — render children sequentially
-  const children = (node.content || [])
-      .map((n) => adfToMarkdown(n))
-      .join("");
-  // Put paragraphs on their own line
+  const children = (node.content || []).map((n) => adfToMarkdown(n)).join("");
   if (node.type === "paragraph" || node.type === "heading") {
-    return children + "\n\n";
+    return children + "\n";
   }
-  // Fallback
   return children;
 }
 
 function renderAdfDocument(doc) {
   if (!doc) return "";
-  if (typeof doc === "string") return doc; // plain text variants
+  if (typeof doc === "string") return doc;
   try {
     return (doc.content || []).map(adfToMarkdown).join("");
   } catch {
     return "";
   }
+}
+
+// ---- Release-Notes extraction
+function detectReleaseNotesFromText(text) {
+  if (!text) return null;
+  // 1) Fenced: ```release-notes ... ``` (last match wins)
+  const fencedRe = /```(?:release[- ]?notes)\s*\n([\s\S]*?)```/gi;
+  let m, lastBlock = null;
+  while ((m = fencedRe.exec(text)) !== null) {
+    lastBlock = (m[1] || "").trim();
+  }
+  if (lastBlock && lastBlock.length) return lastBlock;
+
+  // 2a) Tagged pair: <Release Notes> ... </Release Notes>
+  const taggedPair = /<\s*release\s*notes\s*>\s*([\s\S]*?)<\s*\/\s*release\s*notes\s*>/i.exec(text);
+  if (taggedPair && taggedPair[1] && taggedPair[1].trim().length) {
+    return taggedPair[1].trim();
+  }
+  // 2b) Tagged start only: consume to end
+  const startOnly = /<\s*release\s*notes\s*>\s*([\s\S]*)$/i.exec(text);
+  if (startOnly && startOnly[1] && startOnly[1].trim().length) {
+    return startOnly[1].trim();
+  }
+
+  // 3) Header on first non-empty line: Release-Notes or Release-Notes:
+  const lines = text.split(/\r?\n/);
+  let idx = 0;
+  while (idx < lines.length && !lines[idx].trim()) idx++;
+  if (idx < lines.length) {
+    const first = lines[idx].trim();
+    if (/^release-\s*notes\s*:?$/i.test(first)) {
+      const rest = lines.slice(idx + 1).join("\n").trim();
+      if (rest.length) return rest;
+    }
+  }
+  return null;
+}
+
+function extractReleaseNotes(comments) {
+  if (!Array.isArray(comments) || comments.length === 0) return null;
+  // Find latest comment that yields a RN block
+  let chosen = null;
+  for (const c of comments) {
+    const body = (c.body || "").trim();
+    const block = detectReleaseNotesFromText(body);
+    if (block) {
+      const updated = c.updated || c.created || "";
+      if (!chosen) chosen = { body: block, author: c.author || "unknown", updated };
+      else {
+        const tNew = new Date(updated || 0).getTime();
+        const tOld = new Date(chosen.updated || 0).getTime();
+        if (isFinite(tNew) && (!isFinite(tOld) || tNew >= tOld)) {
+          chosen = { body: block, author: c.author || "unknown", updated };
+        }
+      }
+    }
+  }
+  return chosen;
 }
 
 // ---- Enrichment
@@ -210,6 +288,13 @@ async function enrichIssues(keys) {
     }
     const f = base.fields || {};
     const commentsRaw = await jiraComments(k, maxComments);
+    const comments = commentsRaw.map((c) => ({
+      author: c.author?.displayName || "unknown",
+      updated: c.updated || c.created || "",
+      body: renderAdfDocument(c.body),
+    }));
+    const rn = preferRN ? extractReleaseNotes(comments) : null;
+
     info[k] = {
       key: k,
       url: `${jiraBase}/browse/${k}`,
@@ -222,17 +307,14 @@ async function enrichIssues(keys) {
       labels: f.labels || [],
       assignee: f.assignee?.displayName || "",
       description: renderAdfDocument(f.description),
-      comments: commentsRaw.map((c) => ({
-        author: c.author?.displayName || "unknown",
-        updated: c.updated || c.created || "",
-        body: renderAdfDocument(c.body), // preserve < and >, no escaping
-      })),
+      comments,
+      releaseNotes: rn, // { body, author, updated } or null
     };
   }
   return info;
 }
 
-// ---- Formatting
+// ---- Mapping
 function mapIssuesAndMisc(commits) {
   const keyToCommits = new Map();
   const misc = [];
@@ -253,12 +335,12 @@ function mapIssuesAndMisc(commits) {
   return { keyToCommits, misc, keys };
 }
 
+// ---- Formatting
 function linesForIssueSection(k, info, commits) {
-  const i = info[k] || { key: k, url: `${jiraBase}/browse/${k}` };
+  const i = info[k] || {key: k, url: `${jiraBase}/browse/${k}`};
   const lines = [];
-  const title = i.summary
-      ? `[${k}](${i.url}) — ${i.summary}`
-      : `[${k}](${i.url})`;
+
+  const title = i.summary ? `[${k}](${i.url}) — ${i.summary}` : `[${k}](${i.url})`;
   const meta = [
     i.type ? `Type: ${i.type}` : null,
     i.status ? `Status: ${i.status}` : null,
@@ -274,13 +356,53 @@ function linesForIssueSection(k, info, commits) {
   if (meta) lines.push(`_${meta}_`);
   lines.push("");
 
+  const usedRN = preferRN && i.releaseNotes && i.releaseNotes.body && i.releaseNotes.body.trim().length;
+
+  if (usedRN) {
+    // Render Release-Notes body verbatim
+    lines.push(i.releaseNotes.body.trim());
+    lines.push("");
+
+    // Commits list always shown
+    if (commits.length) {
+      lines.push("**Commits**");
+      for (const c of commits) {
+        lines.push(`- \`${c.short}\` ${c.summary} — ${c.author} (${c.date})`);
+      }
+      lines.push("");
+    }
+
+// If onlyRN is false, we can append description/comments for extra context
+    if (!onlyRN) {
+      if (i.description) {
+        lines.push("**Description**");
+        lines.push(i.description.trim());
+        lines.push("");
+      }
+      if (i.comments && i.comments.length) {
+        lines.push("**Comments**");
+        for (const c of i.comments) {
+          const when = c.updated ? new Date(c.updated).toISOString() : "";
+          const body = (c.body || "").trim();
+          lines.push(`- ${when} — ${c.author}`);
+          const indented = body
+              .split("\n")
+              .map((ln) => (ln ? `  ${ln}` : ""))
+              .join("\n");
+          lines.push(indented);
+        }
+        lines.push("");
+      }
+    }
+    return lines;
+  }
+
+// Fallback path when no RN
   if (i.description) {
     lines.push("**Description**");
-    // description already includes its own newlines/blocks
     lines.push(i.description.trim());
     lines.push("");
   }
-
   if (commits.length) {
     lines.push("**Commits**");
     for (const c of commits) {
@@ -288,15 +410,12 @@ function linesForIssueSection(k, info, commits) {
     }
     lines.push("");
   }
-
-  if (i.comments && i.comments.length) {
+  if (!onlyRN && i.comments && i.comments.length) {
     lines.push("**Comments**");
     for (const c of i.comments) {
       const when = c.updated ? new Date(c.updated).toISOString() : "";
-      const body = (c.body || "").trim(); // keep raw, including < and >
-      // indent comment content under the bullet
+      const body = (c.body || "").trim();
       lines.push(`- ${when} — ${c.author}`);
-      // indent multi-line body with two spaces so markdown renders it under the bullet
       const indented = body
           .split("\n")
           .map((ln) => (ln ? `  ${ln}` : ""))
@@ -305,7 +424,6 @@ function linesForIssueSection(k, info, commits) {
     }
     lines.push("");
   }
-
   return lines;
 }
 
@@ -377,14 +495,8 @@ async function publishGithubRelease(tag, name, markdown, repo) {
     prerelease: false,
   };
   const resp = await httpPostJson(url, payload, headers);
-  if (resp.status >= 200 && resp.status < 300)
-    console.log("✅ GitHub release created.");
-  else
-    console.error(
-        "❌ GitHub release failed:",
-        resp.status,
-        (resp.body || "").slice(0, 300)
-    );
+  if (resp.status >= 200 && resp.status < 300) console.log("? GitHub release created.");
+  else console.error("? GitHub release failed:", resp.status, (resp.body || "").slice(0, 300));
 }
 
 async function createJiraVersionIfNeeded(name) {
@@ -400,14 +512,8 @@ async function createJiraVersionIfNeeded(name) {
   const headers = { Authorization: `Basic ${auth}` };
   const payload = { name, projectId, released: false };
   const resp = await httpPostJson(url, payload, headers);
-  if (resp.status >= 200 && resp.status < 300)
-    console.log("✅ Jira version created.");
-  else
-    console.error(
-        "❌ Jira version create failed:",
-        resp.status,
-        (resp.body || "").slice(0, 300)
-    );
+  if (resp.status >= 200 && resp.status < 300) console.log("? Jira version created.");
+  else console.error("? Jira version create failed:", resp.status, (resp.body || "").slice(0, 300));
 }
 
 // ---- Main
@@ -415,7 +521,6 @@ async function createJiraVersionIfNeeded(name) {
   const range = determineRange();
   const commits = getCommits(range).map(parseConventional);
 
-  // Map issues and split misc
   const keyToCommits = new Map();
   const misc = [];
   const keysSet = new Set();
@@ -433,7 +538,6 @@ async function createJiraVersionIfNeeded(name) {
   }
   const keys = [...keysSet].sort((a, b) => a.localeCompare(b));
 
-  // Enrich Jira for all referenced keys
   const info = jiraEnabled ? await enrichIssues(keys) : {};
   const title = getArg("--title", `Release Notes for ${branch}`);
   const md = formatDocument(title, range, info, keyToCommits, keys, misc);
