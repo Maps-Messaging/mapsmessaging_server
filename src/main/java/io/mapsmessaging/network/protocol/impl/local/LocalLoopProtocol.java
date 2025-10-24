@@ -19,7 +19,6 @@
 
 package io.mapsmessaging.network.protocol.impl.local;
 
-import io.mapsmessaging.analytics.Analyser;
 import io.mapsmessaging.api.*;
 import io.mapsmessaging.api.features.DestinationType;
 import io.mapsmessaging.api.features.QualityOfService;
@@ -44,13 +43,11 @@ import org.jetbrains.annotations.Nullable;
 import javax.security.auth.Subject;
 import javax.security.auth.login.LoginException;
 import java.io.IOException;
-import java.util.Map;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ConcurrentHashMap;
+
 
 public class LocalLoopProtocol extends Protocol {
 
-  private final Map<String, String> nameMapping;
   private final Logger logger;
   private Session session;
   private boolean closed;
@@ -61,7 +58,6 @@ public class LocalLoopProtocol extends Protocol {
     super(endPoint, new ProtocolConfigDTO());
     logger = LoggerFactory.getLogger(LocalLoopProtocol.class);
     closed = false;
-    nameMapping = new ConcurrentHashMap<>();
     logger.log(ServerLogMessages.LOOP_CREATED);
   }
 
@@ -82,14 +78,18 @@ public class LocalLoopProtocol extends Protocol {
 
   @Override
   public void sendMessage(@NotNull @NonNull MessageEvent messageEvent) {
-    String lookup = nameMapping.get(messageEvent.getDestinationName());
-    if (lookup != null) {
-      CompletableFuture<Destination> future = session.findDestination(lookup, DestinationType.TOPIC);
+    ParsedMessage parsedMessage = parseOutboundMessage(messageEvent);
+    if(parsedMessage == null) {
+      return;
+    }
+    String topicName = parsedMessage.getDestinationName();
+    MessageBuilder messageBuilder = parsedMessage.getMessageBuilder();
+    if (topicName != null) {
+      CompletableFuture<Destination> future = session.findDestination(topicName, DestinationType.TOPIC);
       future.thenApply(destination -> {
         try {
           if (destination != null) {
-            MessageBuilder messageBuilder = new MessageBuilder(messageEvent.getMessage());
-            messageBuilder = messageBuilder.setDestinationTransformer(destinationTransformationLookup(messageEvent.getDestinationName()));
+            messageBuilder.setDestinationTransformer(destinationTransformationLookup(topicName));
             destination.storeMessage(messageBuilder.build());
           }
           messageEvent.getCompletionTask().run();
@@ -116,7 +116,6 @@ public class LocalLoopProtocol extends Protocol {
       e.initCause(e);
       throw ioException;
     }
-    setConnected(true);
     this.sessionId = sessionId;
   }
 
@@ -127,10 +126,7 @@ public class LocalLoopProtocol extends Protocol {
 
   @Override
   public void subscribeLocal(@NonNull @NotNull String resource, @NonNull @NotNull String mappedResource,@NonNull @NotNull QualityOfService qos, String selector, @Nullable Transformer transformer, @Nullable NamespaceFilters namespaceFilters, StatisticsConfigDTO statistics) throws IOException {
-    if (transformer != null) {
-      destinationTransformerMap.put(resource, transformer);
-    }
-    nameMapping.put(resource, mappedResource);
+    super.subscribeLocal(resource, mappedResource, qos, selector, transformer, namespaceFilters, statistics);
     SubscriptionContextBuilder builder = createSubscriptionContextBuilder(resource, selector, QualityOfService.AT_LEAST_ONCE, 1024);
     session.addSubscription(builder.build());
     session.resumeState();

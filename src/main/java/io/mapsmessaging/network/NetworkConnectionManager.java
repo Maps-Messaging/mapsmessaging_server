@@ -82,7 +82,9 @@ public class NetworkConnectionManager implements ServiceManager, Agent {
     for (EndPointConnectionServerConfig properties : config.getEndPointServerConfigList()) {
       if (!properties.getLinkConfigs().isEmpty()) {
         String urlString = properties.getUrl();
-        if (urlString == null) {
+        if (urlString == null ||
+            urlString.toLowerCase().startsWith("loop") ||
+            urlString.toLowerCase().startsWith("noop")) {
           urlString = "noop://localhost/";
           properties.setUrl("noop://localhost/");
           LocalLoopConfig localProtocolInformation = new LocalLoopConfig();

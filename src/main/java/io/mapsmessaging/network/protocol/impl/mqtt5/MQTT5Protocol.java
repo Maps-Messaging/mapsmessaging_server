@@ -300,12 +300,18 @@ public class MQTT5Protocol extends Protocol {
 
   @Override
   public void sendMessage(@NotNull @NonNull MessageEvent messageEvent) {
+    ParsedMessage parsedMessage = parseOutboundMessage(messageEvent);
+    if(parsedMessage == null) {
+      return;
+    }
+    String topicName = parsedMessage.getDestinationName();
+    MessageBuilder messageBuilder = parsedMessage.getMessageBuilder();
     Message message = messageEvent.getMessage();
     if (maxBufferSize > 0 && message.getOpaqueData().length >= maxBufferSize) {
       messageEvent.getCompletionTask().run();
       logger.log(ServerLogMessages.MQTT5_MAX_BUFFER_EXCEEDED, maxBufferSize, message.getOpaqueData().length);
     } else {
-      sendPublishFrame(messageEvent.getDestinationName(), messageEvent.getSubscription(), message, messageEvent.getCompletionTask());
+      sendPublishFrame(topicName, messageEvent.getSubscription(), messageBuilder.build(), messageEvent.getCompletionTask());
     }
   }
 

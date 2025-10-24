@@ -20,6 +20,7 @@
 package io.mapsmessaging.network.protocol.impl.stomp;
 
 import io.mapsmessaging.analytics.Analyser;
+import io.mapsmessaging.api.MessageBuilder;
 import io.mapsmessaging.api.MessageEvent;
 import io.mapsmessaging.api.SubscriptionContextBuilder;
 import io.mapsmessaging.api.features.QualityOfService;
@@ -169,8 +170,13 @@ public class StompProtocol extends Protocol {
 
   @Override
   public void sendMessage(@NotNull @NonNull MessageEvent messageEvent) {
-    Message message = processTransformer(messageEvent.getDestinationName(), messageEvent.getMessage());
-    sessionState.sendMessage(messageEvent.getDestinationName(), messageEvent.getSubscription().getContext(), message, messageEvent.getCompletionTask());
+    ParsedMessage parsedMessage = parseOutboundMessage(messageEvent);
+    if(parsedMessage == null) {
+      return;
+    }
+    String topicName = parsedMessage.getDestinationName();
+    MessageBuilder messageBuilder = parsedMessage.getMessageBuilder();
+    sessionState.sendMessage(topicName, messageEvent.getSubscription().getContext(), messageBuilder.build(), messageEvent.getCompletionTask());
   }
 
   // <editor-fold desc="Read Frame functions">

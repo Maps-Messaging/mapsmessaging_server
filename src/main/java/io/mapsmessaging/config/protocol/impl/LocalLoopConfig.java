@@ -23,5 +23,9 @@ import io.mapsmessaging.dto.rest.config.protocol.impl.LocalLinkConfigDTO;
 
 public class LocalLoopConfig extends LocalLinkConfigDTO {
 
+  public LocalLoopConfig() {
+    super();
+    type = "loop";
+  }
 
 }
