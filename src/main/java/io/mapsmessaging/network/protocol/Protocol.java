@@ -20,6 +20,7 @@
 package io.mapsmessaging.network.protocol;
 
 import io.mapsmessaging.analytics.Analyser;
+import io.mapsmessaging.analytics.AnalyserFactory;
 import io.mapsmessaging.api.MessageBuilder;
 import io.mapsmessaging.api.MessageEvent;
 import io.mapsmessaging.api.MessageListener;
@@ -32,6 +33,7 @@ import io.mapsmessaging.api.transformers.Transformer;
 import io.mapsmessaging.dto.rest.analytics.StatisticsConfigDTO;
 import io.mapsmessaging.dto.rest.config.protocol.ProtocolConfigDTO;
 import io.mapsmessaging.dto.rest.protocol.ProtocolInformationDTO;
+import io.mapsmessaging.engine.destination.subscription.SubscriptionContext;
 import io.mapsmessaging.logging.ServerLogMessages;
 import io.mapsmessaging.network.admin.ProtocolJMX;
 import io.mapsmessaging.network.io.EndPoint;
@@ -43,6 +45,7 @@ import io.mapsmessaging.network.protocol.impl.mqtt.packet.Publish;
 import io.mapsmessaging.selector.operators.ParserExecutor;
 import io.mapsmessaging.utilities.filtering.NamespaceFilter;
 import io.mapsmessaging.utilities.filtering.NamespaceFilters;
+import lombok.Data;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.Setter;
@@ -53,10 +56,7 @@ import javax.security.auth.Subject;
 import java.io.IOException;
 import java.net.SocketAddress;
 import java.nio.ByteBuffer;
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 public abstract class Protocol implements SelectorCallback, MessageListener, Timeoutable {
@@ -215,6 +215,58 @@ public abstract class Protocol implements SelectorCallback, MessageListener, Tim
     // by default, we don't do anything. A protocol that needs to do something can override this function
   }
 
+  protected ParsedMessage parseOutboundMessage(MessageEvent messageEvent){
+    SubscriptionContext subInfo = messageEvent.getSubscription().getContext();
+    String destinationName = messageEvent.getDestinationName();
+    Analyser analyser = topicNameAnalyserMap.get(destinationName);
+    if (analyser == null && !resourceNameAnalyserMap.isEmpty()) {
+      StatisticsConfigDTO statistics = resourceNameAnalyserMap.get(subInfo.getAlias());
+      if(statistics != null){
+        analyser = AnalyserFactory.getInstance().getAnalyser(statistics);
+      }
+    }
+    Message msg = messageEvent.getMessage();
+    msg = processTransformer(destinationName, msg);
+    if(analyser != null){
+      msg = analyser.ingest(msg);
+      if(msg == null){
+        if(messageEvent.getCompletionTask() != null){
+          messageEvent.getCompletionTask().run();
+        }
+        return null;
+      }
+    }
+    MessageBuilder messageBuilder = new MessageBuilder(messageEvent.getMessage());
+
+    byte[] payload;
+    if (transformation != null) {
+      payload = transformation.outgoing(msg, messageEvent.getDestinationName());
+      messageBuilder.setOpaqueData(payload);
+    }
+    if (topicNameMapping != null) {
+      String tmp = topicNameMapping.get(destinationName);
+      if (tmp != null) {
+        destinationName = tmp;
+      }
+      else{
+        for (Iterator<String> iterator = topicNameMapping.keySet().iterator(); iterator.hasNext(); ) {
+          String key = iterator.next();
+          int index = key.indexOf("#");
+          if (index > 0) {
+            String sub = key.substring(0, index);
+            if (destinationName.startsWith(sub)) {
+              destinationName = topicNameMapping.get(key) + destinationName.substring(sub.length());
+            }
+          }
+        }
+      }
+    }
+    ParsedMessage parsedMessage = new ParsedMessage();
+    parsedMessage.messageBuilder = messageBuilder;
+    parsedMessage.destinationName = destinationName;
+    return parsedMessage;
+  }
+
   protected NamespaceFilter filterMessage(MessageEvent messageEvent) throws IOException {
     String destinationName = messageEvent.getDestinationName();
     NamespaceFilters filters = getNamespaceFilters();
@@ -369,5 +421,11 @@ public abstract class Protocol implements SelectorCallback, MessageListener, Tim
       }
     }
     return lookup;
+  }
+
+  @Data
+  public static final class ParsedMessage{
+    private String destinationName;
+    private MessageBuilder messageBuilder;
   }
 }

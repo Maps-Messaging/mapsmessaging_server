@@ -19,12 +19,7 @@
 
 package io.mapsmessaging.network.protocol.impl.mqtt;
 
-import io.mapsmessaging.analytics.Analyser;
-import io.mapsmessaging.analytics.AnalyserFactory;
-import io.mapsmessaging.api.MessageEvent;
-import io.mapsmessaging.api.Session;
-import io.mapsmessaging.api.SessionManager;
-import io.mapsmessaging.api.SubscriptionContextBuilder;
+import io.mapsmessaging.api.*;
 import io.mapsmessaging.api.features.QualityOfService;
 import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.api.transformers.Transformer;
@@ -258,56 +253,20 @@ public class MQTTProtocol extends Protocol {
 
   @Override
   public void sendMessage(@NotNull @NonNull MessageEvent messageEvent) {
+    Message msg = messageEvent.getMessage();
     SubscriptionContext subInfo = messageEvent.getSubscription().getContext();
     QualityOfService qos = subInfo.getQualityOfService();
-    String destinationName = messageEvent.getDestinationName();
-    Analyser analyser = topicNameAnalyserMap.get(destinationName);
-    if (analyser == null && !resourceNameAnalyserMap.isEmpty()) {
-      StatisticsConfigDTO statistics = resourceNameAnalyserMap.get(subInfo.getAlias());
-      if(statistics != null){
-        analyser = AnalyserFactory.getInstance().getAnalyser(statistics);
-      }
-    }
-    Message msg = messageEvent.getMessage();
     int packetId = 0;
     if (qos.isSendPacketId()) {
       packetId = packetIdManager.nextPacketIdentifier(messageEvent.getSubscription(),msg.getIdentifier());
     }
-    msg = processTransformer(destinationName, msg);
-    if(analyser != null){
-      msg = analyser.ingest(msg);
-      if(msg == null){
-        if(messageEvent.getCompletionTask() != null){
-          messageEvent.getCompletionTask().run();
-        }
-        return;
-      }
+    ParsedMessage parsedMessage = parseOutboundMessage(messageEvent);
+    if(parsedMessage == null) {
+      return;
     }
-
-    byte[] payload;
-    if (transformation != null) {
-      payload = transformation.outgoing(msg, messageEvent.getDestinationName());
-    } else {
-      payload = msg.getOpaqueData();
-    }
-    if (topicNameMapping != null) {
-      String tmp = topicNameMapping.get(destinationName);
-      if (tmp != null) {
-        destinationName = tmp;
-      }
-      else{
-        for(String key:topicNameMapping.keySet()){
-          int index = key.indexOf("#");
-          if(index > 0){
-            String sub = key.substring(0, index);
-            if(destinationName.startsWith(sub)){
-              destinationName = topicNameMapping.get(key) + destinationName.substring(sub.length());
-            }
-          }
-        }
-      }
-    }
-    Publish publish = new Publish(msg.isRetain(), payload, qos, packetId, destinationName);
+    String topicName = parsedMessage.getDestinationName();
+    MessageBuilder messageBuilder = parsedMessage.getMessageBuilder();
+    Publish publish = new Publish(msg.isRetain(), messageBuilder.getOpaqueData(), qos, packetId, topicName);
     publish.setCallback(messageEvent.getCompletionTask());
     writeFrame(publish);
   }
