@@ -19,7 +19,7 @@
 
 package io.mapsmessaging.engine.transformers;
 
-import io.mapsmessaging.api.transformers.Transformer;
+import io.mapsmessaging.api.transformers.InterServerTransformation;
 import io.mapsmessaging.configuration.ConfigurationProperties;
 import io.mapsmessaging.utilities.service.Service;
 import io.mapsmessaging.utilities.service.ServiceManager;
@@ -41,9 +41,9 @@ public class TransformerManager implements ServiceManager {
 
   private final Map<String, Service> transformerMap;
 
-  public Transformer get(ConfigurationProperties props) {
-    String transformer = props.getProperty("name");
-    Transformer t = (Transformer) transformerMap.get(transformer);
+  public InterServerTransformation get(ConfigurationProperties props) {
+    String transformer = props.getProperty("name").toLowerCase();
+    InterServerTransformation t = (InterServerTransformation) transformerMap.get(transformer);
     if(t != null){
       return  t.build(props);
     }
@@ -51,10 +51,10 @@ public class TransformerManager implements ServiceManager {
   }
 
   private TransformerManager() {
-    ServiceLoader<Transformer> transformerServiceLoader = ServiceLoader.load(Transformer.class);
+    ServiceLoader<InterServerTransformation> transformerServiceLoader = ServiceLoader.load(InterServerTransformation.class);
     transformerMap = new LinkedHashMap<>();
-    for (Transformer transformer : transformerServiceLoader) {
-      transformerMap.put(transformer.getName(), transformer);
+    for (InterServerTransformation transformer : transformerServiceLoader) {
+      transformerMap.put(transformer.getName().toLowerCase(), transformer);
     }
   }
 

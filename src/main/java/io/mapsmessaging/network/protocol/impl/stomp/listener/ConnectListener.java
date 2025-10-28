@@ -23,7 +23,7 @@ import io.mapsmessaging.api.Session;
 import io.mapsmessaging.api.SessionContextBuilder;
 import io.mapsmessaging.api.SessionManager;
 import io.mapsmessaging.network.ProtocolClientConnection;
-import io.mapsmessaging.network.protocol.ProtocolMessageTransformation;
+import io.mapsmessaging.network.protocol.transformation.ProtocolMessageTransformation;
 import io.mapsmessaging.network.protocol.impl.stomp.frames.Connect;
 import io.mapsmessaging.network.protocol.impl.stomp.frames.Connected;
 import io.mapsmessaging.network.protocol.impl.stomp.frames.Frame;
@@ -60,7 +60,7 @@ public class ConnectListener extends BaseConnectListener {
             session.getSecurityContext().getUsername()
 
         );
-        engine.getProtocol().setTransformation(transformation);
+        engine.getProtocol().setProtocolMessageTransformation(transformation);
         Connected connected = new Connected();
         connected.setServer("MESSAGING/STOMP");
         connected.setVersion("" + version);

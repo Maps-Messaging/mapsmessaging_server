@@ -23,13 +23,14 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import io.mapsmessaging.api.MessageBuilder;
 import io.mapsmessaging.configuration.ConfigurationProperties;
+import io.mapsmessaging.network.protocol.Protocol;
 import io.mapsmessaging.selector.ParseException;
 import io.mapsmessaging.selector.extensions.JsonParserExtension;
 
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 
-public class JsonToValueTransformation implements Transformer {
+public class JsonToValueTransformation implements InterServerTransformation {
 
   private final JsonParserExtension jsonParser;
 
@@ -47,7 +48,7 @@ public class JsonToValueTransformation implements Transformer {
     jsonParser = parser;
   }
 
-  public Transformer build(ConfigurationProperties properties) {
+  public InterServerTransformation build(ConfigurationProperties properties) {
     String property = properties != null ?
         properties.getProperty("key", properties.getProperty("data")) :
         null;
@@ -83,7 +84,11 @@ public class JsonToValueTransformation implements Transformer {
   }
 
   @Override
-  public void transform(MessageBuilder messageBuilder) {
-    messageBuilder.setOpaqueData(convert(messageBuilder.getOpaqueData()));
+  public Protocol.ParsedMessage transform(String source, Protocol.ParsedMessage message){
+    MessageBuilder messageBuilder = new MessageBuilder(message.getMessage());
+    messageBuilder.setOpaqueData(convert(message.getMessage().getOpaqueData()));
+    message.setMessage(messageBuilder.build());
+    return message;
   }
+
 }

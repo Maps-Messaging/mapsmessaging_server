@@ -23,7 +23,7 @@ import io.mapsmessaging.api.*;
 import io.mapsmessaging.api.features.QualityOfService;
 import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.api.message.TypedData;
-import io.mapsmessaging.api.transformers.Transformer;
+import io.mapsmessaging.api.transformers.InterServerTransformation;
 import io.mapsmessaging.config.protocol.impl.MqttV5Config;
 import io.mapsmessaging.dto.rest.analytics.StatisticsConfigDTO;
 import io.mapsmessaging.dto.rest.config.auth.SaslConfigDTO;
@@ -305,13 +305,12 @@ public class MQTT5Protocol extends Protocol {
       return;
     }
     String topicName = parsedMessage.getDestinationName();
-    MessageBuilder messageBuilder = parsedMessage.getMessageBuilder();
-    Message message = messageEvent.getMessage();
+    Message message = parsedMessage.getMessage();
     if (maxBufferSize > 0 && message.getOpaqueData().length >= maxBufferSize) {
       messageEvent.getCompletionTask().run();
       logger.log(ServerLogMessages.MQTT5_MAX_BUFFER_EXCEEDED, maxBufferSize, message.getOpaqueData().length);
     } else {
-      sendPublishFrame(topicName, messageEvent.getSubscription(), messageBuilder.build(), messageEvent.getCompletionTask());
+      sendPublishFrame(topicName, messageEvent.getSubscription(), message, messageEvent.getCompletionTask());
     }
   }
 
@@ -336,7 +335,7 @@ public class MQTT5Protocol extends Protocol {
     if (!subInfo.isRetainAsPublish()) {
       retain = false;
     }
-    Publish5 publish = new Publish5(createPayload(message, destinationName), qos, packetId, destinationName, retain);
+    Publish5 publish = new Publish5(message.getOpaqueData(), qos, packetId, destinationName, retain);
     if (alias != null) {
       publish.add(alias);
     }
@@ -350,14 +349,6 @@ public class MQTT5Protocol extends Protocol {
       return packetIdManager.nextPacketIdentifier(subscription, message.getIdentifier());
     }
     return 0;
-  }
-
-  private byte[] createPayload(Message message, String destinationName) {
-    if (transformation != null) {
-      return transformation.outgoing(message, destinationName);
-    } else {
-      return message.getOpaqueData();
-    }
   }
 
   private void addProperties(Message message, Publish5 publish, SubscribedEventManager subscription) {
@@ -403,7 +394,7 @@ public class MQTT5Protocol extends Protocol {
   }
 
   @Override
-  public void subscribeRemote(@NonNull @NotNull String resource, @NonNull @NotNull String mappedResource,@NonNull @NotNull QualityOfService qos, @Nullable ParserExecutor parser, @Nullable Transformer transformer, StatisticsConfigDTO statistics) throws IOException {
+  public void subscribeRemote(@NonNull @NotNull String resource, @NonNull @NotNull String mappedResource, @NonNull @NotNull QualityOfService qos, @Nullable ParserExecutor parser, @Nullable InterServerTransformation transformer, StatisticsConfigDTO statistics) throws IOException {
     super.subscribeRemote(resource,mappedResource, qos, parser, transformer,statistics);
     Subscribe5 subscribe = new Subscribe5();
     subscribe.setMessageId(packetIdManager.nextPacketIdentifier());
@@ -420,7 +411,7 @@ public class MQTT5Protocol extends Protocol {
   }
 
   @Override
-  public void subscribeLocal(@NonNull @NotNull String resource, @NonNull @NotNull String mappedResource, @NonNull @NotNull QualityOfService qos,@Nullable String selector, @Nullable Transformer transformer, @Nullable NamespaceFilters namespaceFilters, StatisticsConfigDTO statistics)
+  public void subscribeLocal(@NonNull @NotNull String resource, @NonNull @NotNull String mappedResource, @NonNull @NotNull QualityOfService qos, @Nullable String selector, @Nullable InterServerTransformation transformer, @Nullable NamespaceFilters namespaceFilters, StatisticsConfigDTO statistics)
       throws IOException {
     super.subscribeLocal(resource, mappedResource, qos, selector, transformer, namespaceFilters, statistics);
     SubscriptionContextBuilder builder = createSubscriptionContextBuilder(resource, selector, qos, 1024);

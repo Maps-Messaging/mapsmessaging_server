@@ -157,7 +157,12 @@ public class CoapProtocol extends Protocol {
     if (context == null) {
       return;
     }
-    endPoint.updateWriteBytes(messageEvent.getMessage().getOpaqueData().length);
+    ParsedMessage parsedMessage = parseOutboundMessage(messageEvent);
+    if(parsedMessage == null) {
+      return;
+    }
+    byte[] data = parsedMessage.getMessage().getOpaqueData();
+    endPoint.updateWriteBytes(data.length);
     endPoint.getEndPointStatus().incrementSentMessages();
     boolean doBlockwise = false;
     int blockSize = 0;
@@ -167,7 +172,7 @@ public class CoapProtocol extends Protocol {
       blockNumber = block.getNumber();
       if(block.getSizeEx() != 0b111){
         blockSize = 1<<(block.getSizeEx()+4);
-        doBlockwise = blockSize < messageEvent.getMessage().getOpaqueData().length;
+        doBlockwise = blockSize < data.length;
         logger.log(COAP_BLOCK2_REQUEST, block.getNumber(), block.getSizeEx(), block.isMore());
       }
       else{
@@ -179,7 +184,7 @@ public class CoapProtocol extends Protocol {
       response = new BlockWiseSend(response);
     }
     response.setFromAddress(context.getRequest().getFromAddress());
-    response.setPayload(messageEvent.getMessage().getOpaqueData());
+    response.setPayload(data);
     setOptions(messageEvent, context, response.getOptions());
     if(doBlockwise){
       ((BlockWiseSend)response).setBlockSize(blockSize);

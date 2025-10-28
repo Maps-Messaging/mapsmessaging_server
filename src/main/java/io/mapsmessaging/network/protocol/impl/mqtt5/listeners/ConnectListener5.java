@@ -28,7 +28,7 @@ import io.mapsmessaging.logging.ServerLogMessages;
 import io.mapsmessaging.network.ProtocolClientConnection;
 import io.mapsmessaging.network.io.EndPoint;
 import io.mapsmessaging.network.protocol.Protocol;
-import io.mapsmessaging.network.protocol.ProtocolMessageTransformation;
+import io.mapsmessaging.network.protocol.transformation.ProtocolMessageTransformation;
 import io.mapsmessaging.network.protocol.impl.mqtt.packet.MalformedException;
 import io.mapsmessaging.network.protocol.impl.mqtt5.AuthenticationContext;
 import io.mapsmessaging.network.protocol.impl.mqtt5.DefaultConstants;
@@ -105,7 +105,7 @@ public class ConnectListener5 extends PacketListener5 {
           "mqtt",
           session.getSecurityContext().getUsername()
       );
-      protocol.setTransformation(transformation);
+      protocol.setProtocolMessageTransformation(transformation);
     } catch (LoginException e) {
       logger.log(ServerLogMessages.MQTT5_FAILED_CONSTRUCTION, e, sessionId);
       try {
@@ -184,7 +184,7 @@ public class ConnectListener5 extends PacketListener5 {
               connect.isWillRetain(),
               connect.getWillMsg(),
               connect.getWillQOS(),
-              protocol.getTransformation(),
+              protocol.getProtocolMessageTransformation(),
               protocol);
       scb.setWillMessage(message).setWillTopic(connect.getWillTopic());
     }

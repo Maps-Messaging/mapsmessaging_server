@@ -19,3 +19,4 @@
 io.mapsmessaging.api.transformers.JSONToXML
 io.mapsmessaging.api.transformers.XMLToJSON
 io.mapsmessaging.api.transformers.JsonToValueTransformation
+io.mapsmessaging.api.transformers.GeoHashResolver

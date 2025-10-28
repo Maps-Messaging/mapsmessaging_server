@@ -26,7 +26,7 @@ import io.mapsmessaging.api.features.QualityOfService;
 import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.engine.destination.MessageOverrides;
 import io.mapsmessaging.network.io.EndPoint;
-import io.mapsmessaging.network.protocol.ProtocolMessageTransformation;
+import io.mapsmessaging.network.protocol.transformation.ProtocolMessageTransformation;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.MQTT_SNProtocol;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.packet.MQTT_SNPacket;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.packet.ReasonCodes;
@@ -64,7 +64,7 @@ public class InitialWillMessageState implements State {
       WillMessage willMessage = (WillMessage) mqtt;
       MessageBuilder messageBuilder = new MessageBuilder();
       messageBuilder.setOpaqueData(willMessage.getMessage())
-          .setTransformation(protocol.getTransformation())
+          .setTransformation(protocol.getProtocolMessageTransformation())
           .setQoS(qualityOfService)
           .setRetain(retain);
       SessionContextBuilder scb = stateEngine.getSessionContextBuilder();
@@ -82,7 +82,7 @@ public class InitialWillMessageState implements State {
             session.getSecurityContext().getUsername()
 
         );
-        protocol.setTransformation(transformation);
+        protocol.setProtocolMessageTransformation(transformation);
         try {
           session.login();
           stateEngine.setState(new ConnectedState(response));

@@ -17,27 +17,16 @@
  *  limitations under the License.
  */
 
-package io.mapsmessaging.network.protocol;
+package io.mapsmessaging.network.protocol.transformation;
 
-import io.mapsmessaging.api.MessageBuilder;
+
 import io.mapsmessaging.api.message.Message;
-import io.mapsmessaging.utilities.service.Service;
+import lombok.Getter;
+import lombok.Setter;
 
-public interface ProtocolMessageTransformation extends Service {
-
-  @Override
-  String getName();
-
-  @Override
-  String getDescription();
-
-  int getId();
-
-  default void incoming(MessageBuilder messageBuilder) {
-    // nothing to do here
-  }
-
-  default byte[] outgoing(Message message, String destinationName) {
-    return message.getOpaqueData();
-  }
+@Getter
+@Setter
+public class TransformationResult {
+  private String destinationName;
+  private Message message;
 }

@@ -24,7 +24,7 @@ import com.google.gson.GsonBuilder;
 import io.mapsmessaging.MessageDaemon;
 import io.mapsmessaging.api.MessageBuilder;
 import io.mapsmessaging.api.message.Message;
-import io.mapsmessaging.network.protocol.ProtocolMessageTransformation;
+import io.mapsmessaging.network.protocol.transformation.ProtocolMessageTransformation;
 import io.mapsmessaging.network.protocol.transformation.cloudevent.pack.PackHelper;
 import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
@@ -44,11 +44,13 @@ public abstract class CloudEventTransformation implements ProtocolMessageTransfo
   }
 
   @Override
-  public byte[] outgoing(@NonNull @NotNull Message message, String destinationName) {
+  public Message outgoing(@NonNull @NotNull Message message, String destinationName) {
     if(!destinationName.startsWith("/")){
       destinationName = "/"+destinationName;
     }
     String sourceUri = "maps://"+ MessageDaemon.getInstance().getHostname() +destinationName;
-    return packHelper.toCloudEventBytes(message, sourceUri);
+    MessageBuilder messageBuilder = new MessageBuilder();
+    messageBuilder.setOpaqueData(packHelper.toCloudEventBytes(message, sourceUri));
+    return messageBuilder.build();
   }
 }

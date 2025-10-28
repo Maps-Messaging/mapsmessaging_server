@@ -17,20 +17,30 @@
  *  limitations under the License.
  */
 
-package io.mapsmessaging.api.transformers;
+package io.mapsmessaging.network.protocol.transformation;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
 import io.mapsmessaging.api.MessageBuilder;
-import io.mapsmessaging.configuration.ConfigurationProperties;
+import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.utilities.service.Service;
 
-public interface Transformer extends Service {
+import java.util.List;
 
-  Gson gson = new GsonBuilder().setPrettyPrinting().create();
+public interface ProtocolMessageTransformation extends Service {
 
-  void transform(MessageBuilder messageBuilder);
+  @Override
+  String getName();
 
-  Transformer build(ConfigurationProperties properties);
+  @Override
+  String getDescription();
+
+  int getId();
+
+  default void incoming(MessageBuilder messageBuilder) {
+    // nothing to do here
+  }
+
+  default Message outgoing(Message message, String destinationName) {
+    return message;
+  }
 
 }

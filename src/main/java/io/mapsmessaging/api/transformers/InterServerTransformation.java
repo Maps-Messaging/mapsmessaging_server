@@ -17,28 +17,20 @@
  *  limitations under the License.
  */
 
-package io.mapsmessaging.network.protocol.transformation;
+package io.mapsmessaging.api.transformers;
 
-public class DefaultMessageTransformation implements ProtocolMessageTransformation {
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import io.mapsmessaging.configuration.ConfigurationProperties;
+import io.mapsmessaging.network.protocol.Protocol;
+import io.mapsmessaging.utilities.service.Service;
 
-  public DefaultMessageTransformation() {
-    // Used by the java services
-  }
+public interface InterServerTransformation extends Service {
 
-  @Override
-  public int getId() {
-    return 2;
-  }
+  Gson gson = new GsonBuilder().setPrettyPrinting().create();
 
+  Protocol.ParsedMessage transform(String source, Protocol.ParsedMessage message);
 
-  @Override
-  public String getName() {
-    return "Default";
-  }
-
-  @Override
-  public String getDescription() {
-    return "Default Transformation, does nothing to the messages";
-  }
+  InterServerTransformation build(ConfigurationProperties properties);
 
 }

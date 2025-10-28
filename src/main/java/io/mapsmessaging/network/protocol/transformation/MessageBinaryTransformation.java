@@ -24,7 +24,6 @@ import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.api.message.MessageFactory;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
-import io.mapsmessaging.network.protocol.ProtocolMessageTransformation;
 import io.mapsmessaging.network.protocol.transformation.internal.MetaRouteHandler;
 
 import java.nio.ByteBuffer;
@@ -102,11 +101,10 @@ public class MessageBinaryTransformation implements ProtocolMessageTransformatio
   }
 
   @Override
-  public byte[] outgoing(Message message, String destinationName) {
+  public Message outgoing(Message message, String destinationName) {
     if (!destinationName.startsWith("$")) {
       try {
-        ByteBuffer[] data =
-            MessageFactory.getInstance().pack(message, MetaRouteHandler.updateRoute(message.getMeta(), message.getCreation()));
+        ByteBuffer[] data = MessageFactory.getInstance().pack(message, MetaRouteHandler.updateRoute(message.getMeta(), message.getCreation()));
         ByteBuffer header = ByteBuffer.allocate(2 + (data.length)*4);
         header.put((byte)0x81);
         header.put((byte) data.length);
@@ -125,12 +123,14 @@ public class MessageBinaryTransformation implements ProtocolMessageTransformatio
           b.get(response, pos, len);
           pos += len;
         }
-        return response;
+        MessageBuilder messageBuilder = new MessageBuilder();
+        messageBuilder.setOpaqueData(response);
+        return messageBuilder.build();
       } catch (Exception e) {
         logger.log(MESSAGE_TRANSFORMATION_EXCEPTION, e);
       }
     }
-    return message.getOpaqueData();
+    return message;
   }
 
 }

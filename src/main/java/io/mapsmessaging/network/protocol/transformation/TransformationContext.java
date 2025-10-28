@@ -19,26 +19,16 @@
 
 package io.mapsmessaging.network.protocol.transformation;
 
-public class DefaultMessageTransformation implements ProtocolMessageTransformation {
+import io.mapsmessaging.api.Session;
+import io.mapsmessaging.network.protocol.Protocol;
+import lombok.Getter;
+import lombok.Setter;
+import lombok.ToString;
 
-  public DefaultMessageTransformation() {
-    // Used by the java services
-  }
-
-  @Override
-  public int getId() {
-    return 2;
-  }
-
-
-  @Override
-  public String getName() {
-    return "Default";
-  }
-
-  @Override
-  public String getDescription() {
-    return "Default Transformation, does nothing to the messages";
-  }
-
+@Getter
+@Setter
+@ToString
+public class TransformationContext {
+  private Session session;
+  private Protocol protocol;
 }

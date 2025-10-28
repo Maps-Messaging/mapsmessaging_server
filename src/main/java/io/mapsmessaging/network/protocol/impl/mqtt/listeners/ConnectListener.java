@@ -62,7 +62,7 @@ public class ConnectListener extends BaseConnectionListener {
     if(sessionId.contains("?Transformation=")){
       String transformation = sessionId.split("\\?Transformation=")[1];
       sessionId = sessionId.split("\\?Transformation=")[0];
-      protocol.setTransformation(TransformationManager.getInstance().getTransformation(transformation));
+      protocol.setProtocolMessageTransformation(TransformationManager.getInstance().getTransformation(transformation));
     }
     if ((!connect.isCleanSession() && sessionId.isEmpty()) || !clientIdAllowed(sessionId, strict)) {
       connAck.setResponseCode(ConnAck.IDENTIFIER_REJECTED);
@@ -108,7 +108,7 @@ public class ConnectListener extends BaseConnectionListener {
   private CompletableFuture<Session> constructSession(EndPoint endPoint, Protocol protocol, String sessionId, Connect connect) {
     SessionContextBuilder scb = getBuilder(protocol, sessionId, connect.isCleanSession(), connect.getKeepAlive(), connect.getUsername(), connect.getPassword());
     if (connect.isWillFlag()) {
-      Message message = PublishListener.createMessage(connect.getWillMsg(), Priority.NORMAL, connect.isWillRetain(), connect.getWillQOS(), protocol.getTransformation(), null, null, protocol);
+      Message message = PublishListener.createMessage(connect.getWillMsg(), Priority.NORMAL, connect.isWillRetain(), connect.getWillQOS(), protocol.getProtocolMessageTransformation(), protocol);
       scb.setWillMessage(message).setWillTopic(connect.getWillTopic());
     }
     protocol.setKeepAlive(connect.getKeepAlive());

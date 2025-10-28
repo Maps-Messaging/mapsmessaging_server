@@ -23,12 +23,12 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import io.mapsmessaging.api.MessageBuilder;
 import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.api.message.TypedData;
 import io.mapsmessaging.engine.schema.SchemaManager;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
-import io.mapsmessaging.network.protocol.ProtocolMessageTransformation;
 import io.mapsmessaging.rest.translation.GsonDateTimeSerialiser;
 import io.mapsmessaging.schemas.config.SchemaConfig;
 import io.mapsmessaging.schemas.formatters.MessageFormatter;
@@ -71,7 +71,7 @@ public class SchemaToJsonTransformation implements ProtocolMessageTransformation
   }
 
   @Override
-  public byte[] outgoing(Message message, String destinationName) {
+  public Message outgoing(Message message, String destinationName) {
     String schemaId = message.getSchemaId();
     if(schemaId != null && !destinationName.startsWith("$")) {
       SchemaConfig config = SchemaManager.getInstance().getSchema(schemaId);
@@ -79,14 +79,17 @@ public class SchemaToJsonTransformation implements ProtocolMessageTransformation
         try {
           MessageFormatter formatter = MessageFormatterFactory.getInstance().getFormatter(config);
           if (formatter != null && !(formatter instanceof RawFormatter)) {
-            return pack(message, config, formatter);
+            byte[] data = pack(message, config, formatter);
+            MessageBuilder messageBuilder = new MessageBuilder();
+            messageBuilder.setOpaqueData(data);
+            return messageBuilder.build();
           }
         } catch (Exception e) {
           logger.log(MESSAGE_TRANSFORMATION_EXCEPTION, e);
         }
       }
     }
-    return message.getOpaqueData();
+    return message;
   }
 
   private byte[] pack(Message message, SchemaConfig config, MessageFormatter formatter) throws IOException {

@@ -21,7 +21,6 @@ package io.mapsmessaging.network.protocol;
 
 import io.mapsmessaging.analytics.Analyser;
 import io.mapsmessaging.analytics.AnalyserFactory;
-import io.mapsmessaging.api.MessageBuilder;
 import io.mapsmessaging.api.MessageEvent;
 import io.mapsmessaging.api.MessageListener;
 import io.mapsmessaging.api.SubscriptionContextBuilder;
@@ -29,7 +28,7 @@ import io.mapsmessaging.api.features.ClientAcknowledgement;
 import io.mapsmessaging.api.features.DestinationMode;
 import io.mapsmessaging.api.features.QualityOfService;
 import io.mapsmessaging.api.message.Message;
-import io.mapsmessaging.api.transformers.Transformer;
+import io.mapsmessaging.api.transformers.InterServerTransformation;
 import io.mapsmessaging.dto.rest.analytics.StatisticsConfigDTO;
 import io.mapsmessaging.dto.rest.config.protocol.ProtocolConfigDTO;
 import io.mapsmessaging.dto.rest.protocol.ProtocolInformationDTO;
@@ -41,14 +40,11 @@ import io.mapsmessaging.network.io.Packet;
 import io.mapsmessaging.network.io.ServerPacket;
 import io.mapsmessaging.network.io.Timeoutable;
 import io.mapsmessaging.network.io.impl.SelectorCallback;
-import io.mapsmessaging.network.protocol.impl.mqtt.packet.Publish;
+import io.mapsmessaging.network.protocol.transformation.ProtocolMessageTransformation;
 import io.mapsmessaging.selector.operators.ParserExecutor;
 import io.mapsmessaging.utilities.filtering.NamespaceFilter;
 import io.mapsmessaging.utilities.filtering.NamespaceFilters;
-import lombok.Data;
-import lombok.Getter;
-import lombok.NonNull;
-import lombok.Setter;
+import lombok.*;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -63,7 +59,7 @@ public abstract class Protocol implements SelectorCallback, MessageListener, Tim
   protected final EndPoint endPoint;
 
   @Getter
-  protected final Map<String, Transformer> destinationTransformerMap;
+  protected final Map<String, InterServerTransformation> destinationTransformerMap;
   @Getter
   protected final Map<String, String> topicNameMapping;
 
@@ -91,9 +87,9 @@ public abstract class Protocol implements SelectorCallback, MessageListener, Tim
   protected long keepAlive;
   private boolean completed;
 
-  @Getter
   @Setter
-  protected ProtocolMessageTransformation transformation;
+  @Getter
+  protected ProtocolMessageTransformation protocolMessageTransformation;
 
   @Getter
   protected final ProtocolConfigDTO protocolConfig;
@@ -152,15 +148,14 @@ public abstract class Protocol implements SelectorCallback, MessageListener, Tim
     return parserLookup.get(resource);
   }
 
-  public void connect(String sessionId, String username, String password) throws IOException {
-  }
+  public void connect(String sessionId, String username, String password) throws IOException {}
 
   public void subscribeRemote(
       @NonNull @NotNull String resource,
       @NonNull @NotNull String mappedResource,
       @NonNull @NotNull QualityOfService qualityOfService,
       @Nullable ParserExecutor parser,
-      @Nullable Transformer transformer,
+      @Nullable InterServerTransformation transformer,
       @Nullable StatisticsConfigDTO statistics
   ) throws IOException {
 
@@ -181,7 +176,7 @@ public abstract class Protocol implements SelectorCallback, MessageListener, Tim
       @NonNull @NotNull String mappedResource,
       @NonNull @NotNull QualityOfService qualityOfService,
       @Nullable String selector,
-      @Nullable Transformer transformer,
+      @Nullable InterServerTransformation transformer,
       @Nullable NamespaceFilters namespaceFilters,
       @Nullable StatisticsConfigDTO statistics
   )
@@ -218,54 +213,76 @@ public abstract class Protocol implements SelectorCallback, MessageListener, Tim
   protected ParsedMessage parseOutboundMessage(MessageEvent messageEvent){
     SubscriptionContext subInfo = messageEvent.getSubscription().getContext();
     String destinationName = messageEvent.getDestinationName();
-    Analyser analyser = topicNameAnalyserMap.get(destinationName);
+    ParsedMessage parsedMessage = new ParsedMessage(destinationName, messageEvent.getMessage());
+    parsedMessage = processInterServerTransformations(messageEvent.getDestinationName(), parsedMessage );
+    parsedMessage = processMessageAnalyser(parsedMessage, subInfo);
+    if(parsedMessage == null){
+      if(messageEvent.getCompletionTask() != null){
+        messageEvent.getCompletionTask().run();
+      }
+      return null;
+    }
+    processTransformation(parsedMessage);
+    if(topicNameMapping != null){
+      processDestinationNameLookup(parsedMessage);
+    }
+    return parsedMessage;
+  }
+
+  protected ParsedMessage processInterServerTransformations(String source, ParsedMessage parsedMessage) {
+    InterServerTransformation interServerTransformation = destinationTransformerMap.get(parsedMessage.destinationName);
+    if (interServerTransformation != null) {
+      return interServerTransformation.transform(source, parsedMessage);
+    }
+    return parsedMessage;
+  }
+
+
+  private void processDestinationNameLookup(ParsedMessage parsedMessage) {
+    String destinationName = parsedMessage.getDestinationName();
+    String tmp = topicNameMapping.get(parsedMessage.getDestinationName());
+    if (tmp != null) {
+      destinationName = tmp;
+    }
+    else{
+      for (String key : topicNameMapping.keySet()) {
+        int index = key.indexOf("#");
+        if (index > 0) {
+          String sub = key.substring(0, index);
+          if (destinationName.startsWith(sub)) {
+            destinationName = topicNameMapping.get(key) + destinationName.substring(sub.length());
+          }
+        }
+      }
+    }
+    parsedMessage.setDestinationName(destinationName);
+  }
+
+  private void processTransformation(ParsedMessage parsedMessage){
+    if (protocolMessageTransformation != null) {
+      parsedMessage.setMessage(protocolMessageTransformation.outgoing(parsedMessage.getMessage(), parsedMessage.getDestinationName()));
+    }
+  }
+
+  private ParsedMessage processMessageAnalyser(ParsedMessage parsedMessage, SubscriptionContext subInfo){
+    Analyser analyser = topicNameAnalyserMap.get(parsedMessage.destinationName);
     if (analyser == null && !resourceNameAnalyserMap.isEmpty()) {
       StatisticsConfigDTO statistics = resourceNameAnalyserMap.get(subInfo.getAlias());
       if(statistics != null){
         analyser = AnalyserFactory.getInstance().getAnalyser(statistics);
       }
     }
-    Message msg = messageEvent.getMessage();
-    msg = processTransformer(destinationName, msg);
+    Message msg = parsedMessage.getMessage();
     if(analyser != null){
       msg = analyser.ingest(msg);
       if(msg == null){
-        if(messageEvent.getCompletionTask() != null){
-          messageEvent.getCompletionTask().run();
-        }
         return null;
       }
+      parsedMessage.setMessage(msg);
     }
-    MessageBuilder messageBuilder = new MessageBuilder(messageEvent.getMessage());
-
-    byte[] payload;
-    if (transformation != null) {
-      payload = transformation.outgoing(msg, messageEvent.getDestinationName());
-      messageBuilder.setOpaqueData(payload);
-    }
-    if (topicNameMapping != null) {
-      String tmp = topicNameMapping.get(destinationName);
-      if (tmp != null) {
-        destinationName = tmp;
-      }
-      else{
-        for (Iterator<String> iterator = topicNameMapping.keySet().iterator(); iterator.hasNext(); ) {
-          String key = iterator.next();
-          int index = key.indexOf("#");
-          if (index > 0) {
-            String sub = key.substring(0, index);
-            if (destinationName.startsWith(sub)) {
-              destinationName = topicNameMapping.get(key) + destinationName.substring(sub.length());
-            }
-          }
-        }
-      }
-    }
-    ParsedMessage parsedMessage = new ParsedMessage();
-    parsedMessage.messageBuilder = messageBuilder;
-    parsedMessage.destinationName = destinationName;
     return parsedMessage;
   }
+
 
   protected NamespaceFilter filterMessage(MessageEvent messageEvent) throws IOException {
     String destinationName = messageEvent.getDestinationName();
@@ -310,17 +327,7 @@ public abstract class Protocol implements SelectorCallback, MessageListener, Tim
     }
   }
 
-  protected Message processTransformer(String normalisedName, Message message) {
-    Transformer transformer = destinationTransformerMap.get(normalisedName);
-    if (transformer != null) {
-      MessageBuilder mb = new MessageBuilder(message);
-      mb = mb.setDestinationTransformer(transformer);
-      message = mb.build();
-    }
-    return message;
-  }
-
-  public Transformer destinationTransformationLookup(String name) {
+  public InterServerTransformation destinationTransformationLookup(String name) {
     return destinationTransformerMap.get(name);
   }
 
@@ -343,15 +350,15 @@ public abstract class Protocol implements SelectorCallback, MessageListener, Tim
     dto.setSessionId(getSessionId());
     dto.setTimeout(getTimeOut());
     dto.setKeepAlive(keepAlive);
-    if(transformation != null){
-      dto.setMessageTransformationName(transformation.getName());
+    if(protocolMessageTransformation != null){
+      dto.setMessageTransformationName(protocolMessageTransformation.getName());
     }
     else{
       dto.setMessageTransformationName("none");
     }
     Map<String, String> tansMap = new LinkedHashMap<>();
     if(destinationTransformerMap != null){
-      for(Map.Entry<String, Transformer > entry : destinationTransformerMap.entrySet()){
+      for(Map.Entry<String, InterServerTransformation> entry : destinationTransformerMap.entrySet()){
         tansMap.put(entry.getKey(), entry.getValue().getName());
       }
     }
@@ -424,8 +431,10 @@ public abstract class Protocol implements SelectorCallback, MessageListener, Tim
   }
 
   @Data
+  @AllArgsConstructor
+  @NoArgsConstructor
   public static final class ParsedMessage{
     private String destinationName;
-    private MessageBuilder messageBuilder;
+    private Message message;
   }
 }

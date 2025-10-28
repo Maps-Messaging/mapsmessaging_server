@@ -27,8 +27,6 @@ import io.mapsmessaging.network.route.link.LinkState;
 import lombok.Getter;
 
 import java.net.URI;
-import java.time.Duration;
-import java.time.Instant;
 import java.util.OptionalDouble;
 
 @Getter
@@ -49,7 +47,7 @@ public class EndPointLink implements Link {
 
   @Override
   public URI getRemoteUri() {
-    return URI.create(endPointConnection.getConnection().getEndPoint().getConfig().getUrl());
+    return URI.create(endPointConnection.getProtocol().getEndPoint().getConfig().getUrl());
   }
 
   @Override
