@@ -184,7 +184,7 @@ public abstract class Protocol implements SelectorCallback, MessageListener, Tim
     this.setNamespaceFilters(namespaceFilters);
     topicNameMapping.put(resource, mappedResource);
     if (transformer != null) {
-      destinationTransformerMap.put(mappedResource, transformer);
+      destinationTransformerMap.put(resource, transformer);
     }
     if(statistics != null) {
       resourceNameAnalyserMap.put(resource, statistics);
