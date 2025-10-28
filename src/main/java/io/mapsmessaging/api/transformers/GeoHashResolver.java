@@ -26,7 +26,6 @@ import io.mapsmessaging.utilities.GeoHashUtils;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 import static io.mapsmessaging.api.message.Filter.getTopicResolver;
 
@@ -115,37 +114,30 @@ public class GeoHashResolver implements InterServerTransformation {
 
   @SuppressWarnings("unchecked")
   public InterServerTransformation build(ConfigurationProperties properties){
-    String localPrefix = "";
-    String localLatKey;
-    String localLonKey;
-    int localPrecision;
-    boolean localSplitHash;
-
-    Map<String, Object> map = ((ConfigurationProperties) properties.get("parameters")).getMap();
-    localPrefix = safeString(map, "prefix", "");
-    localLatKey = safeString(map, "latKey", "latitude");
-    localLonKey = safeString(map, "lonKey", "longitude");
-    localPrecision = safeInt(map, "precision", 5);
-    localSplitHash = safeBool(map, "splitHash", true);
+    ConfigurationProperties map = ((ConfigurationProperties) properties.get("parameters"));
+    String localPrefix = map.getProperty("prefix", "");
+    String localLatKey = map.getProperty( "latKey", "latitude");
+    String localLonKey =  map.getProperty("lonKey", "longitude");
+    int localPrecision = map.getIntProperty( "precision", 5);
+    boolean localSplitHash = map.getBooleanProperty("splitHash", true);
 
     GeoHashResolver resolver = new GeoHashResolver(localPrefix, localLatKey, localLonKey, localPrecision, localSplitHash);
 
-    resolver.latKeys = safeStringList(map, "latKeys");
-    resolver.lonKeys = safeStringList(map, "lonKeys");
-    resolver.units = safeString(map, "units", "deg");
-    resolver.layout = safeString(map, "layout", "chars-per-segment");
-    resolver.onMissing = safeString(map, "onMissing", "skip");
+    resolver.latKeys = safeStringList(map.getProperty("latKeys", ""));
+    resolver.lonKeys = safeStringList(map.getProperty("lonKeys"));
+    resolver.units = map.getProperty("units", "deg");
+    resolver.layout = map.getProperty( "layout", "chars-per-segment");
+    resolver.onMissing = map.getProperty( "onMissing", "skip");
 
     // defaultTo expects "lat,lon" (e.g., "0,0")
     if ("defaultTo".equalsIgnoreCase(resolver.onMissing)) {
-      String defaultTo = safeString(map, "defaultTo", null);
+      String defaultTo = map.getProperty( "defaultTo", null);
       if (defaultTo != null) {
         double[] pair = parseLatLonPair(defaultTo);
         resolver.defaultLatitude = pair != null ? pair[0] : null;
         resolver.defaultLongitude = pair != null ? pair[1] : null;
       }
     }
-
     return resolver;
   }
 
@@ -185,12 +177,12 @@ public class GeoHashResolver implements InterServerTransformation {
   }
 
   private static Double safeToDouble(Object value) {
-    if (value instanceof Number) {
-      return ((Number) value).doubleValue();
+    if (value instanceof Number num) {
+      return num.doubleValue();
     }
-    if (value instanceof String) {
+    if (value instanceof String str) {
       try {
-        return Double.parseDouble((String) value);
+        return Double.parseDouble(str);
       } catch (NumberFormatException ignore) {
         return null;
       }
@@ -234,69 +226,15 @@ public class GeoHashResolver implements InterServerTransformation {
     return builder.toString();
   }
 
-  private static String safeString(Map<String, Object> map, String key, String def) {
-    if (map == null) {
-      return def;
-    }
-    Object value = map.get(key);
-    return value instanceof String ? (String) value : def;
-  }
-
-  private static int safeInt(Map<String, Object> map, String key, int def) {
-    if (map == null) {
-      return def;
-    }
-    Object value = map.get(key);
-    if (value instanceof Number num) {
-      return num.intValue();
-    }
-    if (value instanceof String str) {
-      try {
-        return Integer.parseInt(str);
-      } catch (NumberFormatException ignore) {
-      }
-    }
-    return def;
-  }
-
-  private static boolean safeBool(Map<String, Object> map, String key, boolean def) {
-    if (map == null) {
-      return def;
-    }
-    Object value = map.get(key);
-    if (value instanceof Boolean b) {
-      return b;
-    }
-    if (value instanceof String str) {
-      return Boolean.parseBoolean(str);
-    }
-    return def;
-  }
-
   @SuppressWarnings("unchecked")
-  private static List<String> safeStringList(Map<String, Object> map, String key) {
+  private static List<String> safeStringList( String value) {
     List<String> result = new ArrayList<>();
-    if (map == null) {
-      return result;
-    }
-    Object value = map.get(key);
-    if (value instanceof List<?>) {
-      for (Object o : (List<?>) value) {
-        if (o instanceof String str) {
-          result.add(str);
-        }
+    String[] parts = value.split(",");
+    for (String part : parts) {
+      String trimmed = part.trim();
+      if (!trimmed.isEmpty()) {
+        result.add(trimmed);
       }
-      return result;
-    }
-    if (value instanceof String text) {
-      String[] parts = text.split(",");
-      for (String part : parts) {
-        String trimmed = part.trim();
-        if (!trimmed.isEmpty()) {
-          result.add(trimmed);
-        }
-      }
-      return result;
     }
     return result;
   }
