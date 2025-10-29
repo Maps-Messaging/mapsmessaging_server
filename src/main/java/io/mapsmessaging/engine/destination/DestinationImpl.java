@@ -154,12 +154,12 @@ public class DestinationImpl implements BaseDestination {
   public DestinationImpl(@NonNull @NotNull String name, @NonNull @NotNull DestinationConfigDTO pathManager, @NonNull @NotNull UUID uuid,
                          @NonNull @NotNull DestinationType destinationType) throws IOException {
     SchemaConfig config = SchemaManager.getInstance().locateSchema(name);
-    String configuredFormat = null;
-    if(pathManager.getFormat() != null) {
-      configuredFormat = pathManager.getFormat().getName();
-    }
-    if(configuredFormat != null &&config.getFormat().equalsIgnoreCase("raw") && configuredFormat.equalsIgnoreCase("json")) {
-      config = SchemaManager.getInstance().getSchema(SchemaManager.DEFAULT_JSON_SCHEMA);
+    if(config == null || config.getFormat().equalsIgnoreCase("raw")) {
+      String configuredFormat = "raw";
+      if (pathManager.getFormat() != null && pathManager.getFormat().getName() != null) {
+        configuredFormat = pathManager.getFormat().getName();
+      }
+      config = SchemaManager.getInstance().getDefaultSchemaByName(configuredFormat);
     }
     schema = new Schema(config);
     messageOverrides = pathManager.getMessageOverride();

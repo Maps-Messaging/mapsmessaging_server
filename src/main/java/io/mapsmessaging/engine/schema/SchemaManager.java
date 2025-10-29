@@ -26,6 +26,7 @@ import io.mapsmessaging.schemas.config.impl.JsonSchemaConfig;
 import io.mapsmessaging.schemas.config.impl.NativeSchemaConfig;
 import io.mapsmessaging.schemas.config.impl.NativeSchemaConfig.TYPE;
 import io.mapsmessaging.schemas.config.impl.RawSchemaConfig;
+import io.mapsmessaging.schemas.config.impl.XmlSchemaConfig;
 import io.mapsmessaging.schemas.formatters.MessageFormatter;
 import io.mapsmessaging.schemas.formatters.MessageFormatterFactory;
 import io.mapsmessaging.schemas.repository.SchemaRepository;
@@ -41,10 +42,11 @@ public class SchemaManager implements SchemaRepository, Agent {
 
   private static final String MONITOR = "monitor";
 
-  public static final String DEFAULT_RAW_UUID = UUID.fromString("10000000-0000-1000-a000-100000000000").toString();
+  public static final String DEFAULT_RAW_UUID =              UUID.fromString("10000000-0000-1000-a000-100000000000").toString();
   public static final String DEFAULT_NUMERIC_STRING_SCHEMA = UUID.fromString("10000000-0000-1000-a000-100000000001").toString();
-  public static final String DEFAULT_STRING_SCHEMA = UUID.fromString("10000000-0000-1000-a000-100000000002").toString();
-  public static final String DEFAULT_JSON_SCHEMA = UUID.fromString("10000000-0000-1000-a000-100000000003").toString();
+  public static final String DEFAULT_STRING_SCHEMA =         UUID.fromString("10000000-0000-1000-a000-100000000002").toString();
+  public static final String DEFAULT_JSON_SCHEMA =           UUID.fromString("10000000-0000-1000-a000-100000000003").toString();
+  public static final String DEFAULT_XML_SCHEMA =            UUID.fromString("10000000-0000-1000-a000-100000000004").toString();
 
   private static class Holder {
     static final SchemaManager INSTANCE = new SchemaManager();
@@ -85,6 +87,17 @@ public class SchemaManager implements SchemaRepository, Agent {
 
   public void stop() {
 
+  }
+
+  public SchemaConfig getDefaultSchemaByName(String name){
+    switch(name.toLowerCase()) {
+      case "json": return repository.getSchema(DEFAULT_JSON_SCHEMA);
+      case "raw": return repository.getSchema(DEFAULT_RAW_UUID);
+      case "numeric": return repository.getSchema(DEFAULT_NUMERIC_STRING_SCHEMA);
+      case "string": return repository.getSchema(DEFAULT_STRING_SCHEMA);
+      case "xml": return repository.getSchema(DEFAULT_XML_SCHEMA);
+      default: return repository.getSchema(DEFAULT_RAW_UUID);
+    }
   }
 
   public MessageFormatter getMessageFormatter(String uniqueId) {
@@ -200,6 +213,13 @@ public class SchemaManager implements SchemaRepository, Agent {
     jsonSchemaConfig.setResourceType(MONITOR);
     jsonSchemaConfig.setTitle("Generic JSON");
     addSchema("$SYS", jsonSchemaConfig);
+
+    XmlSchemaConfig xmlSchemaConfig = new XmlSchemaConfig();
+    xmlSchemaConfig.setUniqueId(DEFAULT_XML_SCHEMA);
+    xmlSchemaConfig.setInterfaceDescription("xml");
+    xmlSchemaConfig.setResourceType(MONITOR);
+    xmlSchemaConfig.setTitle("Generic XML");
+    addSchema("$SYS", xmlSchemaConfig);
 
     // This ensures the factory is loaded
     MessageFormatterFactory.getInstance();
