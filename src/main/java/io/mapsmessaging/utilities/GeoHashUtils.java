@@ -18,12 +18,27 @@
  */
 
 package io.mapsmessaging.utilities;
+
 import ch.hsr.geohash.GeoHash;
 import ch.hsr.geohash.WGS84Point;
 
+import java.util.Locale;
+
 public class GeoHashUtils {
 
+  private static final String BASE32 = "0123456789bcdefghjkmnpqrstuvwxyz";
+  private static final boolean[] VALID = new boolean[128];
+
+  static {
+    for (int i = 0; i < BASE32.length(); i++) {
+      char c = BASE32.charAt(i);
+      VALID[c] = true;
+    }
+  }
+
   public static String toGeoHash(double latitude, double longitude, int precision) {
+    checkPrecision(precision);
+    checkLatLon(latitude, longitude);
     return GeoHash.withCharacterPrecision(latitude, longitude, precision).toBase32();
   }
 
@@ -37,6 +52,9 @@ public class GeoHashUtils {
   }
 
   public static String toTopicNameGeoHash(double latitude, double longitude, int precision) {
+    checkPrecision(precision);
+    checkLatLon(latitude, longitude);
+
     String[] geoHashes = toGeoHashes(latitude, longitude, precision);
     StringBuilder topic = new StringBuilder();
 
@@ -48,38 +66,81 @@ public class GeoHashUtils {
   }
 
   public static double[] fromGeoHash(String hash) {
-    WGS84Point point = GeoHash.fromGeohashString(hash).getOriginatingPoint();
-    return new double[] { point.getLatitude(), point.getLongitude() };
+    String normalized = normalizeAndValidateHash(hash);
+    WGS84Point point = GeoHash.fromGeohashString(normalized).getOriginatingPoint();
+    double latitude = point.getLatitude();
+    double longitude = point.getLongitude();
+    return new double[] { latitude, longitude };
   }
 
   public static double[] fromGeoHash(String[] hash) {
-    StringBuilder sb = new StringBuilder();
-    for (String s : hash) {
-      sb.append(s);
+    validateParts(hash);
+    StringBuilder builder = new StringBuilder(hash.length);
+    for (String part : hash) {
+      builder.append(part.toLowerCase(Locale.ROOT));
     }
-    WGS84Point point = GeoHash.fromGeohashString(sb.toString()).getOriginatingPoint();
-    return new double[] { point.getLatitude(), point.getLongitude() };
+    String normalized = normalizeAndValidateHash(builder.toString());
+    WGS84Point point = GeoHash.fromGeohashString(normalized).getOriginatingPoint();
+    double latitude = point.getLatitude();
+    double longitude = point.getLongitude();
+    return new double[] { latitude, longitude };
   }
 
-  public static void main(String[] args) {
-    double lat = -33.8688;   // Sydney
-    double lon = 151.2093;
-    int precision = 7;
+  private static void checkPrecision(int precision) {
+    if (precision < 1 || precision > 12) {
+      throw new IllegalArgumentException("precision must be between 1 and 12");
+    }
+  }
 
-    String hash = GeoHashUtils.toGeoHash(lat, lon, precision);
-    System.out.println("GeoHash: " + hash);
+  private static void checkLatLon(double latitude, double longitude) {
+    if (!Double.isFinite(latitude) || !Double.isFinite(longitude)) {
+      throw new IllegalArgumentException("latitude/longitude must be finite");
+    }
+    if (latitude < -90.0 || latitude > 90.0) {
+      throw new IllegalArgumentException("latitude out of range [-90, 90]");
+    }
+    if (longitude < -180.0 || longitude > 180.0) {
+      throw new IllegalArgumentException("longitude out of range [-180, 180]");
+    }
+  }
 
-    double[] decoded = GeoHashUtils.fromGeoHash(hash);
-    System.out.printf("Decoded: lat=%.6f, lon=%.6f%n", decoded[0], decoded[1]);
+  private static String normalizeAndValidateHash(String hash) {
+    if (hash == null) {
+      throw new IllegalArgumentException("geohash must not be null");
+    }
+    String trimmed = hash.trim();
+    if (trimmed.isEmpty()) {
+      throw new IllegalArgumentException("geohash must not be empty");
+    }
+    String lower = trimmed.toLowerCase(Locale.ROOT);
+    for (int i = 0; i < lower.length(); i++) {
+      char c = lower.charAt(i);
+      if (c >= VALID.length || !VALID[c]) {
+        throw new IllegalArgumentException("invalid geohash character: '" + c + '\'');
+      }
+    }
+    return lower;
+  }
 
-    String[] hashParts = GeoHashUtils.toGeoHashes(lat, lon, precision);
-    System.out.print("Split: ");
-    for (String s : hashParts) System.out.print(s + "/");
-    System.out.println();
-
-    double[] decodedFromParts = GeoHashUtils.fromGeoHash(hashParts);
-    System.out.printf("Decoded from parts: lat=%.6f, lon=%.6f%n", decodedFromParts[0], decodedFromParts[1]);
-
-    System.out.println("Topic name geohash: "+toTopicNameGeoHash(lat, lon, precision));
+  private static void validateParts(String[] parts) {
+    if (parts == null) {
+      throw new IllegalArgumentException("geohash parts must not be null");
+    }
+    if (parts.length == 0) {
+      throw new IllegalArgumentException("geohash parts must not be empty");
+    }
+    for (int i = 0; i < parts.length; i++) {
+      String part = parts[i];
+      if (part == null) {
+        throw new IllegalArgumentException("geohash part at index " + i + " is null");
+      }
+      if (part.length() != 1) {
+        throw new IllegalArgumentException("geohash part at index " + i + " must be a single character");
+      }
+      char c = Character.toLowerCase(part.charAt(0));
+      if (c >= VALID.length || !VALID[c]) {
+        throw new IllegalArgumentException("invalid geohash character at index " + i + ": '" + c + '\'');
+      }
+    }
   }
 }
