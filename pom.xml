@@ -780,7 +780,7 @@
     <dependency>
       <groupId>com.fasterxml.jackson.dataformat</groupId>
       <artifactId>jackson-dataformat-xml</artifactId>
-      <version>2.20.0</version> <!-- Match your Jackson core version -->
+      <version>2.20.1</version> <!-- Match your Jackson core version -->
     </dependency>
 
     <!-- https://mvnrepository.com/artifact/com.fasterxml.jackson.core/jackson-databind -->
