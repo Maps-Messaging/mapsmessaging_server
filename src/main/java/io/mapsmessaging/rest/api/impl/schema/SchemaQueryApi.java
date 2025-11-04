@@ -284,13 +284,13 @@ public class SchemaQueryApi extends BaseRestApi {
           @ApiResponse(responseCode = "404", description = "Not Found")
       }
   )
-  public Response getSchemaImplById(@PathParam("schemaId") String schemaId, @Context Request request) {
+  public Response getSchemaImplById(@PathParam("schemaId") String schemaId, @Context Request request) throws IOException {
     SchemaConfig config = SchemaManager.getInstance().getSchema(schemaId);
     if (config == null) {
       return Response.status(Response.Status.NOT_FOUND).build();
     }
 
-    byte[] body = config.getSchemaDefinition();
+    byte[] body = config.pack().getBytes();
     if (body == null) {
       return Response.status(Response.Status.NOT_FOUND).build();
     }
