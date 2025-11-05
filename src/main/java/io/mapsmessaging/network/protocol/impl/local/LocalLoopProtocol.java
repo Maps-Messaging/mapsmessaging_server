@@ -87,7 +87,10 @@ public class LocalLoopProtocol extends Protocol {
     if(transformer != null) {
       parsedMessage = transformer.transform(messageEvent.getDestinationName(), parsedMessage);
     }
-
+    if(parsedMessage.getMessage() == messageEvent.getMessage()){
+      MessageBuilder messageBuilder = new MessageBuilder(messageEvent.getMessage());
+      parsedMessage.setMessage(messageBuilder.build()); // We need to copy it since this event comes from internal
+    }
     String topicName = parsedMessage.getDestinationName();
     Message message = parsedMessage.getMessage();
     if (topicName != null) {

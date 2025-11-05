@@ -22,6 +22,7 @@ package io.mapsmessaging.network.protocol.impl.mqtt.packet;
 import io.mapsmessaging.network.io.Packet;
 import io.mapsmessaging.network.io.ServerPacket;
 import io.mapsmessaging.network.protocol.EndOfBufferException;
+import lombok.Getter;
 
 import java.net.SocketAddress;
 import java.nio.charset.StandardCharsets;
@@ -44,6 +45,7 @@ public abstract class MQTTPacket implements ServerPacket {
   public static final int PINGRESP = 13;
   public static final int DISCONNECT = 14;
 
+  @Getter
   private final int controlPacketId;
   private Runnable completionHandler;
 
@@ -121,8 +123,7 @@ public abstract class MQTTPacket implements ServerPacket {
   public static void writeUTF8(Packet packet, String string) {
     byte[] data = string.getBytes();
     int len = data.length;
-    packet.put((byte) ((len >> 8) & 0xff));
-    packet.put((byte) ((len) & 0xff));
+    writeShort(packet, len);
     packet.put(data);
   }
 
@@ -173,10 +174,6 @@ public abstract class MQTTPacket implements ServerPacket {
     byte tmp = (byte) (controlPacketId << 4);
     tmp = (byte) (tmp | (reservedBits & 0xf));
     packet.put(tmp);
-  }
-
-  public int getControlPacketId() {
-    return controlPacketId;
   }
 
   public Runnable getCallback() {
