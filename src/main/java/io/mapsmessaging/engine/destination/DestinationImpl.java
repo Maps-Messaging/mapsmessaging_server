@@ -630,6 +630,9 @@ public class DestinationImpl implements BaseDestination {
    */
   @Override
   public int storeMessage(@NonNull @NotNull Message message) throws IOException {
+    if(message.isBound()){
+      throw new IOException("Message is bound to another destination, can not loop events");
+    }
     message = MessageOverrides.setOverrides(messageOverrides, message);
     Callable<Response> task;
     if (message.getDelayed() > 0 && delayedMessageManager != null) {
