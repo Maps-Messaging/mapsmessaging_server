@@ -27,23 +27,32 @@ echo $PATH
 
 export VERSION=%%MAPS_VERSION%%
 
+current_dir=$(pwd)
+if [[ "$current_dir" == */bin ]]; then
+    parent_dir=$(dirname "$current_dir")
+else
+    parent_dir="$current_dir"
+fi
+
+if [ -z ${MAPS_HOME+x} ]; then
+    export MAPS_HOME="$parent_dir"
+fi
+
+if [ -z ${MAPS_DATA+x} ];
+  then export MAPS_DATA=$MAPS_HOME/data;
+fi
+
 # Check if FLY_CONSUL_URL is set and not empty
 if [[ -n "${FLY_CONSUL_URL}" ]]; then
   # If FLY_CONSUL_URL is set, use its value for CONSUL_URL
   CONSUL_URL="${FLY_CONSUL_URL}"
+else
+  # If FLY_CONSUL_URL is not set, use the default value
+  CONSUL_URL="${ConsulUrl:-'http://127.0.0.1/'}"
 fi
 
 # Export the CONSUL_URL so it becomes an environment variable
 export CONSUL_URL
-echo $CONSUL_URL
-
-if [ -z ${MAPS_HOME+x} ];
-  then export MAPS_HOME=/maps-$VERSION;
-fi
-
-if [ -z ${MAPS_DATA+x} ];
-  then export MAPS_DATA=/data
-fi
 
 echo "Maps Home is set to '$MAPS_HOME'"
 echo "Maps Data is set to '$MAPS_DATA'"
