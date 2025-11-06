@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Resource Admin Tests</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/mocha@10.0.0/mocha.css" rel="stylesheet">
+</head>
+<body>
+    <div class="container-fluid mt-3">
+        <div id="mocha"></div>
+    </div>
+
+    <!-- Test Framework -->
+    <script src="https://cdn.jsdelivr.net/npm/chai@4.3.7/chai.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/mocha@10.0.0/mocha.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sinon@15.0.0/pkg/sinon.js"></script>
+    
+    <!-- Application Code -->
+    <script src="resource-admin.js"></script>
+    
+    <!-- Test Suite -->
+    <script>
+        // Setup test framework
+        mocha.setup('bdd');
+        const assert = chai.assert;
+        const expect = chai.expect;
+        
+        // Mock fetch for testing
+        let fetchStub;
+        let clock;
+        
+        beforeEach(() => {
+            fetchStub = sinon.stub(global, 'fetch');
+            clock = sinon.useFakeTimers();
+        });
+        
+        afterEach(() => {
+            fetchStub.restore();
+            clock.restore();
+        });
+        
+        describe('ResourceAdmin', () => {
+            let admin;
+            
+            beforeEach(() => {
+                admin = new ResourceAdmin();
+                // Mock DOM elements that would normally exist
+                document.body.innerHTML = `
+                    <div id="resourceTitle"></div>
+                    <div id="dataTableBody"></div>
+                    <div id="pagination"></div>
+                    <div id="toastContainer"></div>
+                    <input id="searchInput">
+                    <select id="filterSelect"></select>
+                    <select id="sortBySelect"></select>
+                    <input type="checkbox" id="autoRefresh">
+                    <button id="refreshBtn"></button>
+                    <button id="createBtn"></button>
+                    <button id="bulkDeleteBtn"></button>
+                    <div id="detailDrawer">
+                        <div class="drawer-header">
+                            <h5 id="drawerTitle"></h5>
+                            <button id="closeDrawer"></button>
+                        </div>
+                        <div id="drawerBody"></div>
+                        <div class="drawer-footer">
+                            <button id="cancelEdit"></button>
+                            <button id="saveChanges"></button>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            describe('Initialization', () => {
+                it('should initialize with default values', () => {
+                    assert.equal(admin.currentResource, 'destinations');
+                    assert.equal(admin.currentPage, 1);
+                    assert.equal(admin.pageSize, 20);
+                    assert.instanceOf(admin.selectedItems, Set);
+                    assert.equal(admin.selectedItems.size, 0);
+                });
+                
+                it('should have resource configuration for all types', () => {
+                    const expectedResources = ['destinations', 'connections', 'interfaces', 'integrations', 'sessions'];
+                    expectedResources.forEach(resource => {
+                        assert.property(admin.resourceConfig, resource);
+                        assert.property(admin.resourceConfig[resource], 'title');
+                        assert.property(admin.resourceConfig[resource], 'apiEndpoint');
+                    });
+                });
+            });
+            
+            describe('Resource Loading', () => {
+                it('should load destinations successfully', async () => {
+                    const mockData = {
+                        destinations: [
+                            {
+                                name: 'test-queue',
+                                type: 'queue',
+                                storedMessages: 10,
+                                publishedMessages: 15
+                            }
+                        ]
+                    };
+                    
+                    fetchStub.resolves({
+                        ok: true,
+                        json: async () => mockData
+                    });
+                    
+                    await admin.loadResource('destinations');
+                    
+                    assert.equal(admin.currentResource, 'destinations');
+                    assert.include(fetchStub.firstCall.args[0], '/server/destinations');
+                });
+                
+                it('should handle API errors gracefully', async () => {
+                    fetchStub.rejects(new Error('Network error'));
+                    
+                    // Mock showToast to capture calls
+                    const showToastSpy = sinon.spy(admin, 'showToast');
+                    
+                    await admin.refreshData();
+                    
+                    assert(showToastSpy.calledWith('Error loading data: Network error', 'error'));
+                });
+            });
+            
+            describe('Table Rendering', () => {
+                it('should render destinations table correctly', () => {
+                    const data = {
+                        destinations: [
+                            {
+                                name: 'test-queue',
+                                type: 'queue',
+                                status: 'running',
+                                storedMessages: 10,
+                                publishedMessages: 15
+                            }
+                        ]
+                    };
+                    
+                    admin.renderTable(data);
+                    
+                    const tableBody = document.getElementById('dataTableBody');
+                    assert.include(tableBody.innerHTML, 'test-queue');
+                    assert.include(tableBody.innerHTML, 'queue');
+                    assert.include(tableBody.innerHTML, '10');
+                });
+                
+                it('should render empty state when no data', () => {
+                    const data = { destinations: [] };
+                    
+                    admin.renderTable(data);
+                    
+                    const tableBody = document.getElementById('dataTableBody');
+                    assert.include(tableBody.innerHTML, 'No destinations found');
+                });
+                
+                it('should render status badges correctly', () => {
+                    const item = { status: 'running' };
+                    const field = { name: 'status', type: 'badge' };
+                    
+                    const result = admin.renderFieldValue(item, field);
+                    assert.include(result, 'status-running');
+                    assert.include(result, 'running');
+                });
+            });
+            
+            describe('Data Formatting', () => {
+                it('should format duration correctly', () => {
+                    assert.equal(admin.formatDuration(1000), '1s');
+                    assert.equal(admin.formatDuration(60000), '1m 0s');
+                    assert.equal(admin.formatDuration(3600000), '1h 0m');
+                    assert.equal(admin.formatDuration(86400000), '1d 0h');
+                    assert.equal(admin.formatDuration(null), '-');
+                });
+                
+                it('should format numbers correctly', () => {
+                    assert.equal(admin.formatNumber(1234), '1,234');
+                    assert.equal(admin.formatNumber(0), '0');
+                    assert.equal(admin.formatNumber(null), '0');
+                });
+                
+                it('should get correct status classes', () => {
+                    assert.equal(admin.getStatusClass('running'), 'status-running');
+                    assert.equal(admin.getStatusClass('stopped'), 'status-stopped');
+                    assert.equal(admin.getStatusClass('paused'), 'status-paused');
+                    assert.equal(admin.getStatusClass('unknown'), 'status-unknown');
+                    assert.equal(admin.getStatusClass(null), 'status-unknown');
+                });
+            });
+            
+            describe('Search and Filtering', () => {
+                it('should debounce search input', async () => {
+                    const refreshSpy = sinon.spy(admin, 'refreshData');
+                    const searchInput = document.getElementById('searchInput');
+                    
+                    // Simulate rapid typing
+                    searchInput.value = 'test';
+                    searchInput.dispatchEvent(new Event('input'));
+                    
+                    searchInput.value = 'testing';
+                    searchInput.dispatchEvent(new Event('input'));
+                    
+                    // Should not have called refresh yet due to debounce
+                    assert(refreshSpy.notCalled);
+                    
+                    // Fast forward time
+                    clock.tick(300);
+                    
+                    // Should have called refresh once
+                    assert(refreshSpy.calledOnce);
+                });
+                
+                it('should include search parameters in API call', async () => {
+                    fetchStub.resolves({
+                        ok: true,
+                        json: async () => ({ destinations: [] })
+                    });
+                    
+                    document.getElementById('searchInput').value = 'test-queue';
+                    await admin.refreshData();
+                    
+                    const url = fetchStub.firstCall.args[0];
+                    assert.include(url, 'filter=');
+                });
+            });
+            
+            describe('Pagination', () => {
+                it('should update pagination controls', () => {
+                    admin.totalItems = 100;
+                    admin.updatePagination({ totalItems: 100 });
+                    
+                    const pagination = document.getElementById('pagination');
+                    assert.include(pagination.innerHTML, 'Previous');
+                    assert.include(pagination.innerHTML, 'Next');
+                });
+                
+                it('should navigate to pages correctly', () => {
+                    const refreshSpy = sinon.spy(admin, 'refreshData');
+                    
+                    admin.goToPage(2);
+                    assert.equal(admin.currentPage, 2);
+                    assert(refreshSpy.called);
+                });
+            });
+            
+            describe('Selection Management', () => {
+                it('should select all items', () => {
+                    admin.selectedItems.add('item1');
+                    admin.selectedItems.add('item2');
+                    
+                    admin.selectAll(true);
+                    
+                    assert.equal(admin.selectedItems.size, 2);
+                });
+                
+                it('should deselect all items', () => {
+                    admin.selectedItems.add('item1');
+                    admin.selectedItems.add('item2');
+                    
+                    admin.selectAll(false);
+                    
+                    assert.equal(admin.selectedItems.size, 0);
+                });
+                
+                it('should show bulk delete button when items selected', () => {
+                    admin.selectedItems.add('item1');
+                    admin.updateBulkActions();
+                    
+                    const bulkDeleteBtn = document.getElementById('bulkDeleteBtn');
+                    assert.include(bulkDeleteBtn.style.display, 'inline-block');
+                });
+            });
+            
+            describe('Action Performance', () => {
+                it('should perform close action on connections', async () => {
+                    fetchStub.resolves({ ok: true });
+                    
+                    const showToastSpy = sinon.spy(admin, 'showToast');
+                    
+                    await admin.performAction('close', '123');
+                    
+                    assert.include(fetchStub.firstCall.args[0], '/server/connection/close?connectionId=123');
+                    assert(showToastSpy.calledWith('Close operation completed successfully', 'success'));
+                });
+                
+                it('should perform terminate action on sessions', async () => {
+                    fetchStub.resolves({ ok: true });
+                    
+                    const showToastSpy = sinon.spy(admin, 'showToast');
+                    
+                    await admin.performAction('terminate', '456');
+                    
+                    assert.include(fetchStub.firstCall.args[0], '/session/456');
+                    assert(showToastSpy.calledWith('Terminate operation completed successfully', 'success'));
+                });
+            });
+            
+            describe('Drawer Management', () => {
+                it('should open drawer for details', () => {
+                    admin.openDrawer();
+                    assert.isTrue(document.getElementById('detailDrawer').classList.contains('open'));
+                });
+                
+                it('should close drawer', () => {
+                    admin.openDrawer();
+                    admin.closeDrawer();
+                    assert.isFalse(document.getElementById('detailDrawer').classList.contains('open'));
+                });
+                
+                it('should render create form', () => {
+                    admin.showCreateForm();
+                    
+                    const drawerTitle = document.getElementById('drawerTitle');
+                    assert.include(drawerTitle.textContent, 'Create New');
+                });
+            });
+            
+            describe('Toast Notifications', () => {
+                it('should show success toast', () => {
+                    admin.showToast('Test message', 'success');
+                    
+                    const toastContainer = document.getElementById('toastContainer');
+                    assert.include(toastContainer.innerHTML, 'Test message');
+                    assert.include(toastContainer.innerHTML, 'success');
+                });
+                
+                it('should show error toast', () => {
+                    admin.showToast('Error message', 'error');
+                    
+                    const toastContainer = document.getElementById('toastContainer');
+                    assert.include(toastContainer.innerHTML, 'Error message');
+                    assert.include(toastContainer.innerHTML, 'error');
+                });
+            });
+            
+            describe('Auto Refresh', () => {
+                it('should enable auto refresh', () => {
+                    admin.toggleAutoRefresh(true);
+                    assert.isNotNull(admin.autoRefreshInterval);
+                });
+                
+                it('should disable auto refresh', () => {
+                    admin.toggleAutoRefresh(true);
+                    admin.toggleAutoRefresh(false);
+                    assert.isNull(admin.autoRefreshInterval);
+                });
+                
+                it('should refresh data on interval', () => {
+                    const refreshSpy = sinon.spy(admin, 'refreshData');
+                    
+                    admin.toggleAutoRefresh(true);
+                    clock.tick(30000);
+                    
+                    assert(refreshSpy.called);
+                });
+            });
+            
+            describe('Connection Status', () => {
+                it('should show connected status', async () => {
+                    fetchStub.resolves({ ok: true });
+                    
+                    await admin.checkConnectionStatus();
+                    
+                    const statusElement = document.getElementById('connectionStatus');
+                    assert.include(statusElement.innerHTML, 'Connected');
+                    assert.include(statusElement.className, 'connected');
+                });
+                
+                it('should show disconnected status on error', async () => {
+                    fetchStub.resolves({ ok: false });
+                    
+                    await admin.checkConnectionStatus();
+                    
+                    const statusElement = document.getElementById('connectionStatus');
+                    assert.include(statusElement.innerHTML, 'Disconnected');
+                    assert.include(statusElement.className, 'disconnected');
+                });
+            });
+            
+            describe('Form Handling', () => {
+                it('should render form fields correctly', () => {
+                    const field = {
+                        name: 'testField',
+                        label: 'Test Field',
+                        type: 'text',
+                        required: true
+                    };
+                    
+                    const html = admin.renderFormField(field, 'test value', false);
+                    
+                    assert.include(html, 'Test Field');
+                    assert.include(html, 'testField');
+                    assert.include(html, 'required');
+                    assert.include(html, 'test value');
+                });
+                
+                it('should render select field', () => {
+                    const field = {
+                        name: 'type',
+                        label: 'Type',
+                        type: 'select',
+                        options: ['queue', 'topic']
+                    };
+                    
+                    const html = admin.renderFormField(field, 'queue', false);
+                    
+                    assert.include(html, '<select');
+                    assert.include(html, 'queue');
+                    assert.include(html, 'topic');
+                });
+            });
+        });
+        
+        // Run tests
+        mocha.run();
+    </script>
+</body>
+</html>

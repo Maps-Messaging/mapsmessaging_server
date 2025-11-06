@@ -36,6 +36,7 @@ import lombok.Getter;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
@@ -45,6 +46,10 @@ public class SessionTracker implements HttpSessionListener {
   private static final ConcurrentHashMap<String, HttpSession> sessions = new ConcurrentHashMap<>();
   @Getter
   private static final HttpSessionState sessionStates = new HttpSessionState();
+
+  public static Collection<HttpSession> getSessions() {
+    return sessions.values();
+  }
 
   @Override
   public void sessionCreated(HttpSessionEvent se) {
