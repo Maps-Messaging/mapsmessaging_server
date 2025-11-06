@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MAPS Messaging Server - Monitoring Dashboard</title>
+    <link rel="stylesheet" href="monitoring/dashboard.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div class="dashboard-container">
+        <header class="dashboard-header">
+            <h1><i class="fas fa-chart-line"></i> MAPS Messaging Server Monitoring</h1>
+            <div class="header-controls">
+                <button id="autoRefreshBtn" class="btn btn-primary">
+                    <i class="fas fa-sync"></i> Auto Refresh: <span id="refreshStatus">ON</span>
+                </button>
+                <button id="refreshIntervalBtn" class="btn btn-secondary">
+                    Interval: <span id="intervalDisplay">5s</span>
+                </button>
+                <button id="manualRefreshBtn" class="btn btn-secondary">
+                    <i class="fas fa-redo"></i> Refresh Now
+                </button>
+            </div>
+        </header>
+
+        <nav class="dashboard-nav">
+            <ul>
+                <li><a href="#dashboard" class="nav-link active" data-section="dashboard"><i class="fas fa-tachometer-alt"></i> Dashboard</a></li>
+                <li><a href="#metrics" class="nav-link" data-section="metrics"><i class="fas fa-chart-bar"></i> Metrics</a></li>
+                <li><a href="#logs" class="nav-link" data-section="logs"><i class="fas fa-file-alt"></i> Logs</a></li>
+                <li><a href="#subsystems" class="nav-link" data-section="subsystems"><i class="fas fa-cogs"></i> Subsystems</a></li>
+            </ul>
+        </nav>
+
+        <main class="dashboard-main">
+            <!-- Dashboard Section -->
+            <section id="dashboard-section" class="dashboard-section active">
+                <div class="status-overview">
+                    <div class="status-card" id="serverHealthCard">
+                        <div class="status-icon">
+                            <i class="fas fa-heartbeat"></i>
+                        </div>
+                        <div class="status-content">
+                            <h3>Server Health</h3>
+                            <div class="status-value" id="serverHealthStatus">Checking...</div>
+                            <div class="status-detail" id="serverHealthDetail">Loading...</div>
+                        </div>
+                    </div>
+
+                    <div class="status-card" id="uptimeCard">
+                        <div class="status-icon">
+                            <i class="fas fa-clock"></i>
+                        </div>
+                        <div class="status-content">
+                            <h3>Uptime</h3>
+                            <div class="status-value" id="uptimeValue">--</div>
+                            <div class="status-detail">Server running time</div>
+                        </div>
+                    </div>
+
+                    <div class="status-card" id="connectionsCard">
+                        <div class="status-icon">
+                            <i class="fas fa-users"></i>
+                        </div>
+                        <div class="status-content">
+                            <h3>Active Connections</h3>
+                            <div class="status-value" id="connectionsValue">--</div>
+                            <div class="status-detail" id="connectionsDetail">Total / Active</div>
+                        </div>
+                    </div>
+
+                    <div class="status-card" id="memoryCard">
+                        <div class="status-icon">
+                            <i class="fas fa-memory"></i>
+                        </div>
+                        <div class="status-content">
+                            <h3>Memory Usage</h3>
+                            <div class="status-value" id="memoryValue">--</div>
+                            <div class="status-detail" id="memoryDetail">Used / Total</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="charts-row">
+                    <div class="chart-container">
+                        <h3>Message Rates</h3>
+                        <canvas id="messageRatesChart"></canvas>
+                    </div>
+                    <div class="chart-container">
+                        <h3>CPU Usage</h3>
+                        <canvas id="cpuChart"></canvas>
+                    </div>
+                </div>
+
+                <div class="updates-banner" id="updatesBanner" style="display: none;">
+                    <i class="fas fa-info-circle"></i>
+                    <span id="updatesMessage">Updates available!</span>
+                    <button id="dismissUpdatesBtn" class="btn btn-small">Dismiss</button>
+                </div>
+            </section>
+
+            <!-- Metrics Section -->
+            <section id="metrics-section" class="dashboard-section">
+                <div class="metrics-grid">
+                    <div class="metric-card">
+                        <h3>System Information</h3>
+                        <div id="serverInfo" class="metric-content">
+                            <div class="loading">Loading server information...</div>
+                        </div>
+                    </div>
+
+                    <div class="metric-card">
+                        <h3>Performance Statistics</h3>
+                        <div id="performanceStats" class="metric-content">
+                            <div class="loading">Loading performance statistics...</div>
+                        </div>
+                    </div>
+
+                    <div class="metric-card">
+                        <h3>Cache Information</h3>
+                        <div id="cacheInfo" class="metric-content">
+                            <div class="loading">Loading cache information...</div>
+                        </div>
+                    </div>
+
+                    <div class="metric-card">
+                        <h3>Thread Distribution</h3>
+                        <canvas id="threadChart"></canvas>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Logs Section -->
+            <section id="logs-section" class="dashboard-section">
+                <div class="logs-controls">
+                    <div class="logs-filter">
+                        <input type="text" id="logFilter" placeholder="Filter logs..." class="form-input">
+                        <select id="logLevel" class="form-input">
+                            <option value="">All Levels</option>
+                            <option value="ERROR">ERROR</option>
+                            <option value="WARN">WARN</option>
+                            <option value="INFO">INFO</option>
+                            <option value="DEBUG">DEBUG</option>
+                        </select>
+                    </div>
+                    <div class="logs-actions">
+                        <button id="pauseLogsBtn" class="btn btn-secondary">
+                            <i class="fas fa-pause"></i> Pause
+                        </button>
+                        <button id="resumeLogsBtn" class="btn btn-primary" style="display: none;">
+                            <i class="fas fa-play"></i> Resume
+                        </button>
+                        <button id="downloadLogsBtn" class="btn btn-secondary">
+                            <i class="fas fa-download"></i> Download
+                        </button>
+                        <button id="clearLogsBtn" class="btn btn-secondary">
+                            <i class="fas fa-trash"></i> Clear
+                        </button>
+                    </div>
+                </div>
+                <div class="logs-container">
+                    <div id="logsList" class="logs-list">
+                        <div class="loading">Connecting to log stream...</div>
+                    </div>
+                </div>
+                <div class="logs-status" id="logsStatus">
+                    <span id="logsStatusText">Connecting...</span>
+                </div>
+            </section>
+
+            <!-- Subsystems Section -->
+            <section id="subsystems-section" class="dashboard-section">
+                <div class="subsystems-grid" id="subsystemsGrid">
+                    <div class="loading">Loading subsystem status...</div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script src="monitoring/api-client.js"></script>
+    <script src="monitoring/dashboard.js"></script>
+    <script src="monitoring/metrics.js"></script>
+    <script src="monitoring/logs.js"></script>
+    <script src="monitoring/subsystems.js"></script>
+</body>
+</html>

@@ -1,0 +1,70 @@
+{
+  "monitoring": {
+    "dashboard": {
+      "title": "MAPS Messaging Server Monitoring",
+      "refresh": {
+        "defaultInterval": 5000,
+        "intervals": [1000, 5000, 10000, 30000, 60000],
+        "autoRefresh": true
+      },
+      "charts": {
+        "maxDataPoints": 20,
+        "animation": false,
+        "responsive": true
+      },
+      "logs": {
+        "maxEntries": 1000,
+        "bufferSize": 100,
+        "reconnectAttempts": 5,
+        "reconnectDelay": 1000
+      },
+      "api": {
+        "timeout": 10000,
+        "cacheTimeout": 5000,
+        "retryAttempts": 3
+      }
+    },
+    "endpoints": {
+      "base": "",
+      "server": {
+        "status": "/api/v1/server/status",
+        "health": "/api/v1/server/health",
+        "info": "/api/v1/server/details/info",
+        "stats": "/api/v1/server/details/stats",
+        "cache": "/api/v1/server/cache"
+      },
+      "logs": {
+        "entries": "/api/v1/server/log",
+        "sseToken": "/api/v1/server/log/sse",
+        "sseStream": "/api/v1/server/log/sse/stream/{token}"
+      },
+      "updates": "/api/v1/updates"
+    },
+    "ui": {
+      "theme": {
+        "primary": "#2c3e50",
+        "secondary": "#3498db",
+        "success": "#27ae60",
+        "warning": "#f39c12",
+        "error": "#e74c3c",
+        "info": "#17a2b8"
+      },
+      "statusColors": {
+        "OK": "#27ae60",
+        "WARN": "#f39c12",
+        "ERROR": "#e74c3c",
+        "STOPPED": "#6c757d",
+        "DISABLED": "#6c757d",
+        "PAUSED": "#f39c12"
+      },
+      "statusIcons": {
+        "OK": "fas fa-check-circle",
+        "WARN": "fas fa-exclamation-triangle",
+        "ERROR": "fas fa-times-circle",
+        "STOPPED": "fas fa-stop-circle",
+        "DISABLED": "fas fa-ban",
+        "PAUSED": "fas fa-pause-circle"
+      }
+    }
+  }
+}

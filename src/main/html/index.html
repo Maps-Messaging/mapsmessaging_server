@@ -21,10 +21,111 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Welcome to Maps Messaging Server</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 2rem;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: white;
+        }
+        .container {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 3rem;
+            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+            border: 1px solid rgba(255, 255, 255, 0.18);
+        }
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+            text-align: center;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+        .subtitle {
+            text-align: center;
+            font-size: 1.2rem;
+            margin-bottom: 3rem;
+            opacity: 0.9;
+        }
+        .links {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-top: 2rem;
+        }
+        .link-card {
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 15px;
+            padding: 2rem;
+            text-align: center;
+            transition: all 0.3s ease;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            text-decoration: none;
+            color: white;
+            display: block;
+        }
+        .link-card:hover {
+            transform: translateY(-5px);
+            background: rgba(255, 255, 255, 0.3);
+            box-shadow: 0 12px 24px rgba(0,0,0,0.2);
+        }
+        .link-card h3 {
+            margin: 0 0 1rem 0;
+            font-size: 1.5rem;
+        }
+        .link-card p {
+            margin: 0;
+            opacity: 0.9;
+            font-size: 0.95rem;
+        }
+        .icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            display: block;
+        }
+        .version {
+            text-align: center;
+            margin-top: 3rem;
+            opacity: 0.7;
+            font-size: 0.9rem;
+        }
+    </style>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
-<h1>Welcome</h1>
-
+    <div class="container">
+        <h1><i class="fas fa-server"></i> Maps Messaging Server</h1>
+        <p class="subtitle">High-performance multi-protocol messaging platform</p>
+        
+        <div class="links">
+            <a href="monitoring.html" class="link-card">
+                <span class="icon"><i class="fas fa-chart-line"></i></span>
+                <h3>Monitoring Dashboard</h3>
+                <p>Real-time server monitoring, metrics visualization, and log streaming</p>
+            </a>
+            
+            <a href="swagger-ui/index.html" class="link-card">
+                <span class="icon"><i class="fas fa-code"></i></span>
+                <h3>API Documentation</h3>
+                <p>Interactive REST API documentation and testing interface</p>
+            </a>
+            
+            <a href="monitoring-tests.html" class="link-card">
+                <span class="icon"><i class="fas fa-vial"></i></span>
+                <h3>Test Suite</h3>
+                <p>Run comprehensive tests for monitoring functionality</p>
+            </a>
+        </div>
+        
+        <div class="version">
+            <p>Maps Messaging Server v4.1.1 | Built with Java 21</p>
+        </div>
+    </div>
 </body>
 </html>

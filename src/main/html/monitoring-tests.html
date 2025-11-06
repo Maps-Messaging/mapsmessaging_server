@@ -1,0 +1,715 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MAPS Monitoring Dashboard Tests</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .test-container {
+            background: white;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .test-result {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+        }
+        .test-pass {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .test-fail {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .test-info {
+            background-color: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        #results {
+            margin-top: 20px;
+        }
+        .progress {
+            width: 100%;
+            height: 20px;
+            background-color: #e9ecef;
+            border-radius: 10px;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+        .progress-bar {
+            height: 100%;
+            background-color: #007bff;
+            transition: width 0.3s ease;
+        }
+    </style>
+</head>
+<body>
+    <h1>MAPS Monitoring Dashboard Tests</h1>
+    
+    <div class="test-container">
+        <h2>Test Suite</h2>
+        <p>This test suite validates the monitoring dashboard functionality including API connectivity, SSE streaming, and UI components.</p>
+        
+        <button onclick="runAllTests()">Run All Tests</button>
+        <button onclick="runApiTests()">API Tests Only</button>
+        <button onclick="runSseTests()">SSE Tests Only</button>
+        <button onclick="runUiTests()">UI Tests Only</button>
+        <button onclick="clearResults()">Clear Results</button>
+        
+        <div class="progress">
+            <div class="progress-bar" id="progressBar" style="width: 0%"></div>
+        </div>
+        
+        <div id="testStatus"></div>
+    </div>
+
+    <div id="results"></div>
+
+    <script src="monitoring/api-client.js"></script>
+    <script>
+        // Mock API for testing when server is not available
+        class MockMapsApiClient extends MapsApiClient {
+            constructor() {
+                super();
+                this.mockMode = true;
+            }
+
+            async request(endpoint, options = {}) {
+                // Simulate network delay
+                await new Promise(resolve => setTimeout(resolve, 100 + Math.random() * 200));
+                
+                // Return mock data based on endpoint
+                if (endpoint.includes('/server/status')) {
+                    return {
+                        subsystems: [
+                            { name: 'Test Subsystem 1', status: 'OK', comment: 'Operating normally' },
+                            { name: 'Test Subsystem 2', status: 'WARN', comment: 'High memory usage' },
+                            { name: 'Test Subsystem 3', status: 'ERROR', comment: 'Connection failed' }
+                        ]
+                    };
+                }
+                
+                if (endpoint.includes('/server/health')) {
+                    return {
+                        state: 'Warning',
+                        issueCount: 1
+                    };
+                }
+                
+                if (endpoint.includes('/server/details/info')) {
+                    return {
+                        version: '4.1.1-test',
+                        buildDate: new Date().toISOString(),
+                        javaVersion: '21.0.0',
+                        uptime: 3600000, // 1 hour
+                        startTime: new Date(Date.now() - 3600000).toISOString(),
+                        osName: 'Test OS',
+                        osVersion: '1.0',
+                        osArch: 'x64',
+                        availableProcessors: 4
+                    };
+                }
+                
+                if (endpoint.includes('/server/details/stats')) {
+                    return {
+                        data: {
+                            connections: {
+                                active: 25,
+                                total: 100,
+                                peak: 150,
+                                failed: 2
+                            },
+                            memory: {
+                                used: 512 * 1024 * 1024, // 512MB
+                                total: 1024 * 1024 * 1024, // 1GB
+                                heapUsed: 256 * 1024 * 1024,
+                                heapMax: 512 * 1024 * 1024,
+                                nonHeapUsed: 64 * 1024 * 1024,
+                                directMemoryUsed: 32 * 1024 * 1024
+                            },
+                            cpu: {
+                                usage: 45.5,
+                                systemLoad: 2.1
+                            },
+                            messageRates: {
+                                publish: 150,
+                                subscribe: 75
+                            },
+                            messageStats: {
+                                totalPublished: 10000,
+                                totalConsumed: 9500
+                            },
+                            gc: {
+                                collectionCount: 25,
+                                collectionTime: 1500
+                            },
+                            threads: {
+                                states: {
+                                    RUNNABLE: 10,
+                                    BLOCKED: 2,
+                                    WAITING: 5,
+                                    TIMED_WAITING: 8,
+                                    TERMINATED: 1
+                                }
+                            }
+                        }
+                    };
+                }
+                
+                if (endpoint.includes('/server/cache')) {
+                    return {
+                        size: 150,
+                        maxSize: 1000,
+                        memoryUsed: 1024 * 1024, // 1MB
+                        hitRate: 0.85,
+                        missRate: 0.15,
+                        evictions: 10,
+                        requests: 5000,
+                        clearOperations: 2
+                    };
+                }
+                
+                if (endpoint.includes('/server/log')) {
+                    return {
+                        entries: [
+                            {
+                                timestamp: new Date().toISOString(),
+                                level: 'INFO',
+                                message: 'Test log message 1',
+                                logger: 'TestLogger',
+                                thread: 'main'
+                            },
+                            {
+                                timestamp: new Date(Date.now() - 1000).toISOString(),
+                                level: 'WARN',
+                                message: 'Test warning message',
+                                logger: 'TestLogger',
+                                thread: 'worker-1'
+                            },
+                            {
+                                timestamp: new Date(Date.now() - 2000).toISOString(),
+                                level: 'ERROR',
+                                message: 'Test error message',
+                                logger: 'TestLogger',
+                                thread: 'worker-2',
+                                exception: 'java.lang.Exception: Test exception'
+                            }
+                        ]
+                    };
+                }
+                
+                if (endpoint.includes('/server/log/sse')) {
+                    return 'test-token-' + Math.random().toString(36).substr(2, 9);
+                }
+                
+                if (endpoint.includes('/updates')) {
+                    return {
+                        schemaUpdate: Date.now(),
+                        serverUpdate: null
+                    };
+                }
+                
+                throw new Error(`Unknown endpoint: ${endpoint}`);
+            }
+
+            createSseConnection(token, filter, onMessage, onError, onClose) {
+                // Simulate SSE connection with periodic messages
+                let messageCount = 0;
+                const interval = setInterval(() => {
+                    messageCount++;
+                    onMessage({
+                        timestamp: new Date().toISOString(),
+                        level: ['INFO', 'WARN', 'ERROR'][messageCount % 3],
+                        message: `Simulated log message ${messageCount}`,
+                        logger: 'SimulatedLogger',
+                        thread: 'simulated-thread'
+                    });
+                    
+                    if (messageCount >= 10) {
+                        clearInterval(interval);
+                        onClose();
+                    }
+                }, 1000);
+                
+                return {
+                    close: () => clearInterval(interval)
+                };
+            }
+        }
+
+        let testResults = [];
+        let currentTestIndex = 0;
+        let totalTests = 0;
+
+        function addResult(testName, passed, message, details = null) {
+            testResults.push({
+                name: testName,
+                passed: passed,
+                message: message,
+                details: details,
+                timestamp: new Date().toISOString()
+            });
+            updateProgress();
+        }
+
+        function updateProgress() {
+            const progress = (testResults.length / totalTests) * 100;
+            document.getElementById('progressBar').style.width = progress + '%';
+        }
+
+        function displayResults() {
+            const resultsDiv = document.getElementById('results');
+            const passedTests = testResults.filter(r => r.passed).length;
+            const totalTestsCount = testResults.length;
+            
+            let html = `
+                <div class="test-container">
+                    <h2>Test Results Summary</h2>
+                    <div class="test-result ${passedTests === totalTestsCount ? 'test-pass' : 'test-info'}">
+                        <strong>Tests Completed:</strong> ${passedTests}/${totalTestsCount} passed
+                    </div>
+                </div>
+            `;
+
+            testResults.forEach(result => {
+                const resultClass = result.passed ? 'test-pass' : 'test-fail';
+                html += `
+                    <div class="test-container">
+                        <h3>${result.name}</h3>
+                        <div class="test-result ${resultClass}">
+                            <strong>Status:</strong> ${result.passed ? 'PASS' : 'FAIL'}<br>
+                            <strong>Message:</strong> ${result.message}
+                            ${result.details ? `<br><strong>Details:</strong> <pre>${JSON.stringify(result.details, null, 2)}</pre>` : ''}
+                        </div>
+                    </div>
+                `;
+            });
+
+            resultsDiv.innerHTML = html;
+        }
+
+        function clearResults() {
+            testResults = [];
+            document.getElementById('results').innerHTML = '';
+            document.getElementById('progressBar').style.width = '0%';
+            document.getElementById('testStatus').innerHTML = '';
+        }
+
+        async function runAllTests() {
+            clearResults();
+            await runApiTests();
+            await runSseTests();
+            await runUiTests();
+            displayResults();
+        }
+
+        async function runApiTests() {
+            const api = window.mapsApi;
+            const tests = [
+                { name: 'API Client Initialization', fn: () => testApiInitialization(api) },
+                { name: 'Server Status API', fn: () => testServerStatusApi(api) },
+                { name: 'Server Health API', fn: () => testServerHealthApi(api) },
+                { name: 'Server Info API', fn: () => testServerInfoApi(api) },
+                { name: 'Server Stats API', fn: () => testServerStatsApi(api) },
+                { name: 'Cache Info API', fn: () => testCacheInfoApi(api) },
+                { name: 'Log Entries API', fn: () => testLogEntriesApi(api) },
+                { name: 'SSE Token API', fn: () => testSseTokenApi(api) },
+                { name: 'Updates API', fn: () => testUpdatesApi(api) }
+            ];
+
+            totalTests += tests.length;
+            document.getElementById('testStatus').innerHTML = '<div class="test-info">Running API tests...</div>';
+
+            for (const test of tests) {
+                try {
+                    await test.fn();
+                } catch (error) {
+                    addResult(test.name, false, `Test failed with exception: ${error.message}`);
+                }
+            }
+        }
+
+        async function runSseTests() {
+            const api = window.mapsApi;
+            const tests = [
+                { name: 'SSE Connection', fn: () => testSseConnection(api) },
+                { name: 'SSE Message Handling', fn: () => testSseMessageHandling(api) },
+                { name: 'SSE Error Handling', fn: () => testSseErrorHandling(api) },
+                { name: 'Polling Simulation', fn: () => testPollingSimulation(api) }
+            ];
+
+            totalTests += tests.length;
+            document.getElementById('testStatus').innerHTML = '<div class="test-info">Running SSE tests...</div>';
+
+            for (const test of tests) {
+                try {
+                    await test.fn();
+                } catch (error) {
+                    addResult(test.name, false, `Test failed with exception: ${error.message}`);
+                }
+            }
+        }
+
+        async function runUiTests() {
+            const tests = [
+                { name: 'Dashboard Component Loading', fn: () => testDashboardLoading() },
+                { name: 'Navigation Functionality', fn: () => testNavigation() },
+                { name: 'Auto-refresh Controls', fn: () => testAutoRefreshControls() },
+                { name: 'Filter Functionality', fn: () => testFilterFunctionality() }
+            ];
+
+            totalTests += tests.length;
+            document.getElementById('testStatus').innerHTML = '<div class="test-info">Running UI tests...</div>';
+
+            for (const test of tests) {
+                try {
+                    await test.fn();
+                } catch (error) {
+                    addResult(test.name, false, `Test failed with exception: ${error.message}`);
+                }
+            }
+        }
+
+        // Individual test functions
+        async function testApiInitialization(api) {
+            const passed = api !== null && typeof api.request === 'function';
+            addResult('API Client Initialization', passed, 
+                passed ? 'API client initialized successfully' : 'API client initialization failed',
+                { hasRequestFunction: typeof api.request === 'function' }
+            );
+        }
+
+        async function testServerStatusApi(api) {
+            try {
+                const result = await api.getServerStatus();
+                const passed = result && (result.subsystems || Array.isArray(result));
+                addResult('Server Status API', passed,
+                    passed ? 'Server status API responded correctly' : 'Server status API response invalid',
+                    { hasSubsystems: !!(result.subsystems), isArray: Array.isArray(result) }
+                );
+            } catch (error) {
+                addResult('Server Status API', false, `API call failed: ${error.message}`);
+            }
+        }
+
+        async function testServerHealthApi(api) {
+            try {
+                const result = await api.getServerHealth();
+                const passed = result && typeof result.state === 'string';
+                addResult('Server Health API', passed,
+                    passed ? 'Server health API responded correctly' : 'Server health API response invalid',
+                    { state: result?.state }
+                );
+            } catch (error) {
+                addResult('Server Health API', false, `API call failed: ${error.message}`);
+            }
+        }
+
+        async function testServerInfoApi(api) {
+            try {
+                const result = await api.getServerInfo();
+                const passed = result && typeof result.version === 'string';
+                addResult('Server Info API', passed,
+                    passed ? 'Server info API responded correctly' : 'Server info API response invalid',
+                    { hasVersion: !!(result?.version) }
+                );
+            } catch (error) {
+                addResult('Server Info API', false, `API call failed: ${error.message}`);
+            }
+        }
+
+        async function testServerStatsApi(api) {
+            try {
+                const result = await api.getServerStats();
+                const passed = result && (result.data || result.connections);
+                addResult('Server Stats API', passed,
+                    passed ? 'Server stats API responded correctly' : 'Server stats API response invalid',
+                    { hasData: !!(result.data), hasConnections: !!(result.connections) }
+                );
+            } catch (error) {
+                addResult('Server Stats API', false, `API call failed: ${error.message}`);
+            }
+        }
+
+        async function testCacheInfoApi(api) {
+            try {
+                const result = await api.getCacheInfo();
+                const passed = result && typeof result.size === 'number';
+                addResult('Cache Info API', passed,
+                    passed ? 'Cache info API responded correctly' : 'Cache info API response invalid',
+                    { size: result?.size }
+                );
+            } catch (error) {
+                addResult('Cache Info API', false, `API call failed: ${error.message}`);
+            }
+        }
+
+        async function testLogEntriesApi(api) {
+            try {
+                const result = await api.getLogEntries();
+                const passed = result && (result.entries || Array.isArray(result));
+                addResult('Log Entries API', passed,
+                    passed ? 'Log entries API responded correctly' : 'Log entries API response invalid',
+                    { hasEntries: !!(result.entries), isArray: Array.isArray(result) }
+                );
+            } catch (error) {
+                addResult('Log Entries API', false, `API call failed: ${error.message}`);
+            }
+        }
+
+        async function testSseTokenApi(api) {
+            try {
+                const result = await api.getSseToken();
+                const passed = typeof result === 'string' && result.length > 0;
+                addResult('SSE Token API', passed,
+                    passed ? 'SSE token API responded correctly' : 'SSE token API response invalid',
+                    { tokenLength: result?.length }
+                );
+            } catch (error) {
+                addResult('SSE Token API', false, `API call failed: ${error.message}`);
+            }
+        }
+
+        async function testUpdatesApi(api) {
+            try {
+                const result = await api.getUpdates();
+                const passed = result && typeof result === 'object';
+                addResult('Updates API', passed,
+                    passed ? 'Updates API responded correctly' : 'Updates API response invalid',
+                    { hasSchemaUpdate: !!(result?.schemaUpdate) }
+                );
+            } catch (error) {
+                addResult('Updates API', false, `API call failed: ${error.message}`);
+            }
+        }
+
+        async function testSseConnection(api) {
+            return new Promise((resolve) => {
+                try {
+                    let messageReceived = false;
+                    const connection = api.createSseConnection(
+                        'test-token',
+                        '',
+                        () => { messageReceived = true; },
+                        null,
+                        () => {
+                            addResult('SSE Connection', messageReceived, 
+                                messageReceived ? 'SSE connection established and messages received' : 'SSE connection established but no messages received'
+                            );
+                            resolve();
+                        }
+                    );
+                    
+                    // Close after 3 seconds if not closed automatically
+                    setTimeout(() => {
+                        if (connection && connection.close) {
+                            connection.close();
+                        }
+                        if (!messageReceived) {
+                            addResult('SSE Connection', false, 'SSE connection timeout - no messages received');
+                        }
+                        resolve();
+                    }, 3000);
+                } catch (error) {
+                    addResult('SSE Connection', false, `SSE connection failed: ${error.message}`);
+                    resolve();
+                }
+            });
+        }
+
+        async function testSseMessageHandling(api) {
+            return new Promise((resolve) => {
+                try {
+                    let messagesReceived = 0;
+                    const connection = api.createSseConnection(
+                        'test-token',
+                        '',
+                        (message) => {
+                            messagesReceived++;
+                            if (messagesReceived >= 3) {
+                                connection.close();
+                                addResult('SSE Message Handling', true, `Successfully received ${messagesReceived} messages`);
+                                resolve();
+                            }
+                        },
+                        null,
+                        () => {
+                            if (messagesReceived > 0) {
+                                addResult('SSE Message Handling', true, `Received ${messagesReceived} messages before connection closed`);
+                            } else {
+                                addResult('SSE Message Handling', false, 'No messages received');
+                            }
+                            resolve();
+                        }
+                    );
+                    
+                    // Timeout after 5 seconds
+                    setTimeout(() => {
+                        if (connection && connection.close) {
+                            connection.close();
+                        }
+                        addResult('SSE Message Handling', messagesReceived > 0, 
+                            `Received ${messagesReceived} messages before timeout`
+                        );
+                        resolve();
+                    }, 5000);
+                } catch (error) {
+                    addResult('SSE Message Handling', false, `SSE message handling failed: ${error.message}`);
+                    resolve();
+                }
+            });
+        }
+
+        async function testSseErrorHandling(api) {
+            try {
+                // Test with invalid token
+                const connection = api.createSseConnection(
+                    'invalid-token',
+                    '',
+                    () => {},
+                    (error) => {
+                        addResult('SSE Error Handling', true, 'SSE error handling works correctly');
+                    },
+                    () => {
+                        addResult('SSE Error Handling', false, 'Expected error but connection closed normally');
+                    }
+                );
+                
+                // Close after 2 seconds
+                setTimeout(() => {
+                    if (connection && connection.close) {
+                        connection.close();
+                    }
+                    addResult('SSE Error Handling', false, 'No error received within timeout');
+                }, 2000);
+            } catch (error) {
+                addResult('SSE Error Handling', false, `SSE error handling test failed: ${error.message}`);
+            }
+        }
+
+        async function testPollingSimulation(api) {
+            try {
+                // Simulate multiple API calls to test polling behavior
+                const startTime = Date.now();
+                const promises = [];
+                
+                for (let i = 0; i < 5; i++) {
+                    promises.push(api.getServerHealth());
+                }
+                
+                await Promise.all(promises);
+                const endTime = Date.now();
+                const duration = endTime - startTime;
+                
+                const passed = duration < 2000; // Should complete within 2 seconds
+                addResult('Polling Simulation', passed,
+                    `Completed 5 concurrent API calls in ${duration}ms`,
+                    { duration, callCount: 5 }
+                );
+            } catch (error) {
+                addResult('Polling Simulation', false, `Polling simulation failed: ${error.message}`);
+            }
+        }
+
+        async function testDashboardLoading() {
+            try {
+                // Test if dashboard elements exist
+                const dashboardExists = document.querySelector('.dashboard-container') !== null;
+                const navExists = document.querySelector('.dashboard-nav') !== null;
+                const sectionsExist = document.querySelectorAll('.dashboard-section').length > 0;
+                
+                const passed = dashboardExists && navExists && sectionsExist;
+                addResult('Dashboard Component Loading', passed,
+                    passed ? 'Dashboard components loaded successfully' : 'Some dashboard components missing',
+                    { dashboardExists, navExists, sectionsExist }
+                );
+            } catch (error) {
+                addResult('Dashboard Component Loading', false, `Dashboard loading test failed: ${error.message}`);
+            }
+        }
+
+        async function testNavigation() {
+            try {
+                const navLinks = document.querySelectorAll('.nav-link');
+                const passed = navLinks.length >= 4; // Should have at least 4 navigation links
+                
+                addResult('Navigation Functionality', passed,
+                    passed ? `Found ${navLinks.length} navigation links` : 'Insufficient navigation links',
+                    { linkCount: navLinks.length }
+                );
+            } catch (error) {
+                addResult('Navigation Functionality', false, `Navigation test failed: ${error.message}`);
+            }
+        }
+
+        async function testAutoRefreshControls() {
+            try {
+                const autoRefreshBtn = document.getElementById('autoRefreshBtn');
+                const refreshIntervalBtn = document.getElementById('refreshIntervalBtn');
+                const manualRefreshBtn = document.getElementById('manualRefreshBtn');
+                
+                const passed = autoRefreshBtn && refreshIntervalBtn && manualRefreshBtn;
+                addResult('Auto-refresh Controls', passed,
+                    passed ? 'All auto-refresh controls are present' : 'Some auto-refresh controls missing',
+                    { 
+                        hasAutoRefreshBtn: !!autoRefreshBtn,
+                        hasRefreshIntervalBtn: !!refreshIntervalBtn,
+                        hasManualRefreshBtn: !!manualRefreshBtn
+                    }
+                );
+            } catch (error) {
+                addResult('Auto-refresh Controls', false, `Auto-refresh controls test failed: ${error.message}`);
+            }
+        }
+
+        async function testFilterFunctionality() {
+            try {
+                const logFilter = document.getElementById('logFilter');
+                const logLevel = document.getElementById('logLevel');
+                
+                const passed = logFilter && logLevel;
+                addResult('Filter Functionality', passed,
+                    passed ? 'Filter controls are present' : 'Filter controls missing',
+                    { 
+                        hasLogFilter: !!logFilter,
+                        hasLogLevel: !!logLevel
+                    }
+                );
+            } catch (error) {
+                addResult('Filter Functionality', false, `Filter functionality test failed: ${error.message}`);
+            }
+        }
+
+        // Initialize mock mode if running standalone
+        if (typeof window.mapsApi === 'undefined') {
+            window.mapsApi = new MockMapsApiClient();
+        }
+    </script>
+</body>
+</html>

@@ -30,6 +30,55 @@ Wire protocol standardization has promised interoperability and flexibility in I
 - **Security Domains:** Configurable security domains allow for tailored authentication and authorization on a per-adapter/protocol basis.
 - **Flexible Configuration:** Supports configuration through both Consul and file-based setups, catering to various deployment environments.
 
+## Monitoring Dashboard
+
+MAPS Messaging Server includes a comprehensive web-based monitoring dashboard that provides real-time insights into server performance, health status, and operational metrics.
+
+### Features
+
+- **Real-time Dashboard**: Live server health metrics with auto-refresh capabilities
+- **Performance Charts**: Visualizations for message rates, CPU usage, memory consumption, and thread distribution
+- **Subsystem Monitoring**: Detailed status of all server subsystems with severity indicators and drill-down capabilities
+- **Live Log Streaming**: Real-time log viewing via Server-Sent Events (SSE) with filtering and search capabilities
+- **Update Notifications**: Automatic alerts for available server and schema updates
+- **Responsive Design**: Mobile-friendly interface that works across all devices
+
+### Accessing the Dashboard
+
+Once the server is running, navigate to:
+```
+http://localhost:8080/
+```
+
+This will display the main landing page with links to:
+- **Monitoring Dashboard** - Real-time server monitoring interface
+- **API Documentation** - Interactive REST API documentation (Swagger UI)
+- **Test Suite** - Comprehensive testing for monitoring functionality
+
+### SSE Endpoints and Browser Considerations
+
+The monitoring dashboard uses Server-Sent Events (SSE) for real-time log streaming. Some browsers may have restrictions on SSE connections due to CORS policies. To ensure proper functionality:
+
+1. **Enable CORS**: Ensure your server configuration allows CORS requests from the dashboard origin
+2. **Authentication**: SSE endpoints require authentication tokens obtained via `/api/v1/server/log/sse`
+3. **Fallback**: The dashboard includes manual polling fallback when SSE is not supported
+
+#### Key SSE Endpoints:
+- `/api/v1/server/log/sse` - Obtain streaming token
+- `/api/v1/server/log/sse/stream/{token}` - Live log stream
+- `/api/v1/server/log` - Manual log snapshot (fallback)
+
+### API Endpoints Used by Dashboard
+
+The monitoring dashboard leverages the following REST API endpoints:
+
+- `/api/v1/server/status` - Subsystem status information
+- `/api/v1/server/details/info` - Server build and runtime information  
+- `/api/v1/server/details/stats` - Performance statistics and metrics
+- `/api/v1/server/health` - Overall server health summary
+- `/api/v1/server/cache` - Cache performance and usage information
+- `/api/v1/updates` - Available server and schema updates
+
 ## Getting Started: "Hello World" Example
 
 This example demonstrates a simple publish/subscribe scenario using the MQTT protocol.
