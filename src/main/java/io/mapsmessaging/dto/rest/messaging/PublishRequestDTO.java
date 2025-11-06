@@ -25,13 +25,15 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.Map;
+
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Schema(
     title = "Publish Request",
     description =
-        "Represents a request to publish a message to a specified topic with optional retention.")
+        "Represents a request to publish a message to a specified topic with optional retention, headers, and delivery options.")
 public class PublishRequestDTO {
 
   @NotNull
@@ -56,4 +58,23 @@ public class PublishRequestDTO {
       example = "false",
       defaultValue = "false")
   private boolean retain = false;
+
+  @Schema(
+      title = "Headers",
+      description = "Optional headers/properties to include with the published message.",
+      example = "{\"correlationId\": \"123\", \"source\": \"sensor1\"}")
+  private Map<String, String> headers;
+
+  @Schema(
+      title = "Delivery Options",
+      description = "Optional delivery configuration options for the message.",
+      example = "{\"timeout\": \"5000\", \"retryCount\": \"3\"}")
+  private Map<String, String> deliveryOptions;
+
+  @Schema(
+      title = "Session Name",
+      description = "Optional named session identifier for transactional publish operations.",
+      example = "session1",
+      nullable = true)
+  private String sessionName;
 }

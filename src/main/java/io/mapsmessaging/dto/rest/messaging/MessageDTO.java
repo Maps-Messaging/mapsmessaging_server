@@ -104,4 +104,24 @@ public class MessageDTO {
       example = "{\"key1\": \"value1\", \"key2\": 42}")
   private Map<String, String> metaData;
 
+  @Schema(
+      title = "Headers",
+      description = "A map of headers/properties associated with the message.",
+      example = "{\"correlationId\": \"123\", \"source\": \"sensor1\"}")
+  private Map<String, String> headers;
+
+  @Schema(
+      title = "Transaction Id",
+      description = "The transaction identifier if this message is part of a transaction.",
+      example = "txn-12345",
+      nullable = true)
+  private String transactionId;
+
+  @Schema(
+      title = "Delivery Status",
+      description = "The delivery status of the message (e.g., 'PENDING', 'DELIVERED', 'FAILED').",
+      example = "DELIVERED",
+      nullable = true)
+  private String deliveryStatus;
+
 }

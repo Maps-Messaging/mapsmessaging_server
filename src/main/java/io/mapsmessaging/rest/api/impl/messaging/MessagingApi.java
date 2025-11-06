@@ -70,7 +70,7 @@ public class MessagingApi extends BaseRestApi {
   @Produces(MediaType.APPLICATION_JSON)
   @Operation(
       summary = "Publish a message",
-      description = "Publishes a message to a specified topic",
+      description = "Publishes a message to a specified topic with support for headers, properties, and delivery options",
       responses = {
           @ApiResponse(
               responseCode = "200",
@@ -89,6 +89,13 @@ public class MessagingApi extends BaseRestApi {
     String destinationName = publishRequest.getDestinationName();
     Destination destination = session.findDestination(destinationName, DestinationType.TOPIC).join();
     MessageBuilder messageBuilder = new MessageBuilder(publishRequest.getMessage());
+    
+    if (publishRequest.getHeaders() != null && !publishRequest.getHeaders().isEmpty()) {
+      for (Map.Entry<String, String> entry : publishRequest.getHeaders().entrySet()) {
+        messageBuilder.addMetaData(entry.getKey(), entry.getValue());
+      }
+    }
+    
     destination.storeMessage(messageBuilder.build());
     return new StatusResponse("Message published successfully");
   }
