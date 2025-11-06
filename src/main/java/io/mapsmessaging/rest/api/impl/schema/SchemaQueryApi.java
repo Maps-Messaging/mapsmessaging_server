@@ -23,6 +23,7 @@ import io.mapsmessaging.dto.rest.schema.SchemaPostDTO;
 import io.mapsmessaging.engine.schema.SchemaManager;
 import io.mapsmessaging.rest.api.impl.BaseRestApi;
 import io.mapsmessaging.rest.responses.*;
+import io.mapsmessaging.rest.responses.SchemaImplementationResponse;
 import io.mapsmessaging.schemas.config.SchemaConfig;
 import io.mapsmessaging.schemas.config.SchemaConfigFactory;
 import io.mapsmessaging.selector.ParseException;
@@ -312,6 +313,56 @@ public class SchemaQueryApi extends BaseRestApi {
   public String getLinkFormat() {
     hasAccess(RESOURCE);
     return SchemaManager.getInstance().buildLinkFormatResponse();
+  }
+
+  @GET
+  @Path("/server/schema/impl/{schemaId}")
+  @Produces({MediaType.APPLICATION_JSON})
+  @Operation(
+      summary = "Get schema implementation details",
+      description = "Retrieves implementation details for a specific schema, including formatter information and capabilities.",
+      responses = {
+          @ApiResponse(
+              responseCode = "200",
+              description = "Operation was successful",
+              content = @Content(mediaType = "application/json", schema = @Schema(implementation = SchemaImplementationResponse.class))
+          ),
+          @ApiResponse(responseCode = "400", description = "Bad request"),
+          @ApiResponse(responseCode = "401", description = "Invalid credentials or unauthorized access"),
+          @ApiResponse(responseCode = "403", description = "User is not authorised to access the resource"),
+          @ApiResponse(responseCode = "404", description = "Schema not found"),
+      }
+  )
+  public SchemaImplementationResponse getSchemaImplementation(@PathParam("schemaId") String schemaId) throws IOException {
+    hasAccess(RESOURCE);
+    SchemaConfig config = SchemaManager.getInstance().getSchema(schemaId);
+    if (config != null) {
+      SchemaImplementationResponse response = new SchemaImplementationResponse();
+      response.setSchemaId(schemaId);
+      response.setSchemaType(config.getClass().getSimpleName());
+      response.setSchemaName(config.getName());
+      response.setSchemaVersion(config.getVersion());
+      response.setInterfaceDescription(config.getInterfaceDescription());
+      response.setResourceType(config.getResourceType());
+      
+      // Get formatter information if available
+      try {
+        var formatter = SchemaManager.getInstance().getMessageFormatter(schemaId);
+        if (formatter != null) {
+          response.setFormatterType(formatter.getClass().getSimpleName());
+          response.setFormatterAvailable(true);
+        } else {
+          response.setFormatterAvailable(false);
+        }
+      } catch (Exception e) {
+        response.setFormatterAvailable(false);
+        response.setFormatterError(e.getMessage());
+      }
+      
+      return response;
+    }
+    response.setStatus(HttpServletResponse.SC_NOT_FOUND);
+    return new SchemaImplementationResponse();
   }
 
   private List<String> convert(List<SchemaConfig> configs) throws IOException {

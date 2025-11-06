@@ -1,0 +1,1567 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MAPS Messaging - Configuration Tools</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background-color: #f5f5f5;
+            color: #333;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 1rem 2rem;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .header h1 {
+            font-size: 1.8rem;
+            font-weight: 600;
+        }
+
+        .nav-tabs {
+            background: white;
+            border-bottom: 1px solid #ddd;
+            padding: 0 2rem;
+            display: flex;
+            gap: 1rem;
+            overflow-x: auto;
+        }
+
+        .nav-tab {
+            padding: 1rem 1.5rem;
+            background: none;
+            border: none;
+            border-bottom: 3px solid transparent;
+            cursor: pointer;
+            font-size: 0.95rem;
+            font-weight: 500;
+            color: #666;
+            transition: all 0.3s ease;
+            white-space: nowrap;
+        }
+
+        .nav-tab:hover {
+            color: #333;
+            background-color: #f8f9fa;
+        }
+
+        .nav-tab.active {
+            color: #667eea;
+            border-bottom-color: #667eea;
+            background-color: white;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .card {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            margin-bottom: 1.5rem;
+            overflow: hidden;
+        }
+
+        .card-header {
+            padding: 1.5rem;
+            border-bottom: 1px solid #eee;
+            background: #fafafa;
+        }
+
+        .card-header h2 {
+            font-size: 1.3rem;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .card-body {
+            padding: 1.5rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+            color: #555;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 0.95rem;
+            transition: border-color 0.3s ease;
+        }
+
+        .form-control:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .btn {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 4px;
+            font-size: 0.95rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #5a6fd8;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 8px rgba(102, 126, 234, 0.3);
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: #5a6268;
+        }
+
+        .btn-success {
+            background: #28a745;
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #218838;
+        }
+
+        .btn-danger {
+            background: #dc3545;
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #c82333;
+        }
+
+        .btn-warning {
+            background: #ffc107;
+            color: #212529;
+        }
+
+        .btn-warning:hover {
+            background: #e0a800;
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+
+        .status-tile {
+            background: white;
+            border-radius: 8px;
+            padding: 1.5rem;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            margin-bottom: 1rem;
+            border-left: 4px solid #28a745;
+        }
+
+        .status-tile.warning {
+            border-left-color: #ffc107;
+        }
+
+        .status-tile.error {
+            border-left-color: #dc3545;
+        }
+
+        .status-tile h3 {
+            font-size: 1.1rem;
+            margin-bottom: 0.5rem;
+            color: #333;
+        }
+
+        .status-tile p {
+            color: #666;
+            font-size: 0.9rem;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1rem;
+        }
+
+        .table th,
+        .table td {
+            padding: 0.75rem;
+            text-align: left;
+            border-bottom: 1px solid #eee;
+        }
+
+        .table th {
+            background: #f8f9fa;
+            font-weight: 600;
+            color: #555;
+        }
+
+        .table tr:hover {
+            background: #f8f9fa;
+        }
+
+        .json-editor {
+            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+            font-size: 0.9rem;
+            line-height: 1.5;
+            min-height: 300px;
+            resize: vertical;
+        }
+
+        .diff-view {
+            background: #f8f9fa;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 1rem;
+            font-family: monospace;
+            white-space: pre-wrap;
+            overflow-x: auto;
+        }
+
+        .diff-added {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .diff-removed {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+        }
+
+        .modal-content {
+            background-color: white;
+            margin: 5% auto;
+            padding: 2rem;
+            border-radius: 8px;
+            width: 90%;
+            max-width: 600px;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .close:hover {
+            color: #000;
+        }
+
+        .alert {
+            padding: 1rem;
+            margin-bottom: 1rem;
+            border-radius: 4px;
+        }
+
+        .alert-success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .alert-error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .alert-warning {
+            background: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeaa7;
+        }
+
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .pagination {
+            display: flex;
+            justify-content: center;
+            gap: 0.5rem;
+            margin-top: 1rem;
+        }
+
+        .pagination button {
+            padding: 0.5rem 1rem;
+            border: 1px solid #ddd;
+            background: white;
+            cursor: pointer;
+            border-radius: 4px;
+        }
+
+        .pagination button:hover {
+            background: #f8f9fa;
+        }
+
+        .pagination button.active {
+            background: #667eea;
+            color: white;
+            border-color: #667eea;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 1rem;
+            }
+            
+            .grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .nav-tabs {
+                padding: 0 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <h1>MAPS Messaging Configuration Tools</h1>
+    </header>
+
+    <nav class="nav-tabs">
+        <button class="nav-tab active" onclick="switchTab('server-config')">Server Config</button>
+        <button class="nav-tab" onclick="switchTab('discovery')">Discovery</button>
+        <button class="nav-tab" onclick="switchTab('hardware')">Hardware</button>
+        <button class="nav-tab" onclick="switchTab('schemas')">Schemas</button>
+        <button class="nav-tab" onclick="switchTab('models')">Models</button>
+        <button class="nav-tab" onclick="switchTab('lora')">LoRa Devices</button>
+    </nav>
+
+    <div class="container">
+        <!-- Server Configuration Tab -->
+        <div id="server-config" class="tab-content active">
+            <div class="card">
+                <div class="card-header">
+                    <h2>Server Configuration</h2>
+                </div>
+                <div class="card-body">
+                    <div class="form-group">
+                        <button class="btn btn-primary" onclick="loadServerConfig()">
+                            <span id="config-loading" style="display:none;" class="loading"></span>
+                            Load Current Configuration
+                        </button>
+                        <button class="btn btn-secondary" onclick="downloadConfig()">Download</button>
+                        <button class="btn btn-warning" onclick="showUploadModal()">Upload</button>
+                    </div>
+                    
+                    <div id="config-editor" style="display:none;">
+                        <div class="form-group">
+                            <label for="config-format">Format:</label>
+                            <select id="config-format" class="form-control" onchange="updateConfigEditor()">
+                                <option value="json">JSON</option>
+                                <option value="yaml">YAML</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="config-content">Configuration:</label>
+                            <textarea id="config-content" class="form-control json-editor" rows="20"></textarea>
+                        </div>
+                        
+                        <div class="btn-group">
+                            <button class="btn btn-success" onclick="saveServerConfig()">Save Configuration</button>
+                            <button class="btn btn-secondary" onclick="validateConfig()">Validate</button>
+                            <button class="btn btn-warning" onclick="showDiff()">Show Diff</button>
+                        </div>
+                    </div>
+                    
+                    <div id="config-diff" style="display:none;" class="diff-view"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Discovery Tab -->
+        <div id="discovery" class="tab-content">
+            <div class="grid">
+                <div class="status-tile">
+                    <h3>Discovery Status</h3>
+                    <p id="discovery-status">Checking...</p>
+                </div>
+                <div class="status-tile">
+                    <h3>Discovered Servers</h3>
+                    <p id="discovered-count">0 servers found</p>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <h2>Discovery Controls</h2>
+                </div>
+                <div class="card-body">
+                    <div class="btn-group">
+                        <button class="btn btn-success" onclick="startDiscovery()">Start Discovery</button>
+                        <button class="btn btn-danger" onclick="stopDiscovery()">Stop Discovery</button>
+                        <button class="btn btn-primary" onclick="loadDiscoveryConfig()">Load Config</button>
+                        <button class="btn btn-secondary" onclick="refreshDiscoveredServers()">Refresh</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <h2>Discovered Servers</h2>
+                </div>
+                <div class="card-body">
+                    <div id="discovered-servers-list"></div>
+                </div>
+            </div>
+
+            <div class="card" id="discovery-config-card" style="display:none;">
+                <div class="card-header">
+                    <h2>Discovery Configuration</h2>
+                </div>
+                <div class="card-body">
+                    <div class="form-group">
+                        <label for="discovery-config">Configuration:</label>
+                        <textarea id="discovery-config" class="form-control json-editor" rows="15"></textarea>
+                    </div>
+                    <div class="btn-group">
+                        <button class="btn btn-primary" onclick="saveDiscoveryConfig()">Save Config</button>
+                        <button class="btn btn-secondary" onclick="validateDiscoveryConfig()">Validate</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Hardware Tab -->
+        <div id="hardware" class="tab-content">
+            <div class="grid">
+                <div class="status-tile">
+                    <h3>Hardware Status</h3>
+                    <p id="hardware-status">Checking...</p>
+                </div>
+                <div class="status-tile">
+                    <h3>Active Devices</h3>
+                    <p id="active-devices-count">0 devices</p>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <h2>Hardware Controls</h2>
+                </div>
+                <div class="card-body">
+                    <div class="btn-group">
+                        <button class="btn btn-primary" onclick="scanHardware()">Scan for Hardware</button>
+                        <button class="btn btn-secondary" onclick="loadHardwareConfig()">Load Config</button>
+                        <button class="btn btn-secondary" onclick="refreshHardwareDevices()">Refresh</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <h2>Active Devices</h2>
+                </div>
+                <div class="card-body">
+                    <div id="hardware-devices-list"></div>
+                </div>
+            </div>
+
+            <div class="card" id="hardware-config-card" style="display:none;">
+                <div class="card-header">
+                    <h2>Hardware Configuration</h2>
+                </div>
+                <div class="card-body">
+                    <div class="form-group">
+                        <label for="hardware-config">Configuration:</label>
+                        <textarea id="hardware-config" class="form-control json-editor" rows="15"></textarea>
+                    </div>
+                    <div class="btn-group">
+                        <button class="btn btn-primary" onclick="saveHardwareConfig()">Save Config</button>
+                        <button class="btn btn-secondary" onclick="validateHardwareConfig()">Validate</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Schemas Tab -->
+        <div id="schemas" class="tab-content">
+            <div class="card">
+                <div class="card-header">
+                    <h2>Schema Management</h2>
+                </div>
+                <div class="card-body">
+                    <div class="btn-group">
+                        <button class="btn btn-primary" onclick="loadSchemas()">Load Schemas</button>
+                        <button class="btn btn-success" onclick="showCreateSchemaModal()">Create Schema</button>
+                        <button class="btn btn-secondary" onclick="loadSchemaFormats()">Load Formats</button>
+                        <button class="btn btn-secondary" onclick="loadSchemaMap()">Load Schema Map</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <h2>Schemas</h2>
+                </div>
+                <div class="card-body">
+                    <div class="form-group">
+                        <input type="text" id="schema-filter" class="form-control" placeholder="Filter schemas..." onkeyup="filterSchemas()">
+                    </div>
+                    <div id="schemas-list"></div>
+                    <div id="schema-pagination" class="pagination"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Models Tab -->
+        <div id="models" class="tab-content">
+            <div class="card">
+                <div class="card-header">
+                    <h2>Model Management</h2>
+                </div>
+                <div class="card-body">
+                    <div class="btn-group">
+                        <button class="btn btn-primary" onclick="loadModels()">Load Models</button>
+                        <button class="btn btn-success" onclick="showUploadModelModal()">Upload Model</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <h2>Available Models</h2>
+                </div>
+                <div class="card-body">
+                    <div id="models-list"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- LoRa Tab -->
+        <div id="lora" class="tab-content">
+            <div class="card">
+                <div class="card-header">
+                    <h2>LoRa Device Management</h2>
+                </div>
+                <div class="card-body">
+                    <div class="btn-group">
+                        <button class="btn btn-primary" onclick="loadLoRaDevices()">Load Devices</button>
+                        <button class="btn btn-success" onclick="showCreateLoRaDeviceModal()">Add Device</button>
+                        <button class="btn btn-secondary" onclick="loadLoRaConfigs()">Load Configs</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <h2>LoRa Devices</h2>
+                </div>
+                <div class="card-body">
+                    <div id="lora-devices-list"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modals -->
+    <div id="upload-modal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal('upload-modal')">&times;</span>
+            <h2>Upload Configuration</h2>
+            <div class="form-group">
+                <label for="upload-file">Select File:</label>
+                <input type="file" id="upload-file" class="form-control" accept=".json,.yaml,.yml">
+            </div>
+            <div class="btn-group">
+                <button class="btn btn-primary" onclick="uploadConfig()">Upload</button>
+                <button class="btn btn-secondary" onclick="closeModal('upload-modal')">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="create-schema-modal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal('create-schema-modal')">&times;</span>
+            <h2>Create Schema</h2>
+            <div class="form-group">
+                <label for="schema-context">Context:</label>
+                <input type="text" id="schema-context" class="form-control" placeholder="e.g., /topic/path">
+            </div>
+            <div class="form-group">
+                <label for="schema-definition">Schema Definition:</label>
+                <textarea id="schema-definition" class="form-control json-editor" rows="15" placeholder="Enter JSON schema definition..."></textarea>
+            </div>
+            <div class="btn-group">
+                <button class="btn btn-primary" onclick="createSchema()">Create</button>
+                <button class="btn btn-secondary" onclick="closeModal('create-schema-modal')">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="upload-model-modal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal('upload-model-modal')">&times;</span>
+            <h2>Upload Model</h2>
+            <div class="form-group">
+                <label for="model-name">Model Name:</label>
+                <input type="text" id="model-name" class="form-control" placeholder="Enter model name">
+            </div>
+            <div class="form-group">
+                <label for="model-file">Model File:</label>
+                <input type="file" id="model-file" class="form-control">
+            </div>
+            <div class="btn-group">
+                <button class="btn btn-primary" onclick="uploadModel()">Upload</button>
+                <button class="btn btn-secondary" onclick="closeModal('upload-model-modal')">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="create-lora-device-modal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal('create-lora-device-modal')">&times;</span>
+            <h2>Add LoRa Device</h2>
+            <div class="form-group">
+                <label for="lora-device-name">Device Name:</label>
+                <input type="text" id="lora-device-name" class="form-control" placeholder="Enter device name">
+            </div>
+            <div class="form-group">
+                <label for="lora-device-config">Device Configuration:</label>
+                <textarea id="lora-device-config" class="form-control json-editor" rows="10" placeholder="Enter LoRa device configuration..."></textarea>
+            </div>
+            <div class="btn-group">
+                <button class="btn btn-primary" onclick="createLoRaDevice()">Add Device</button>
+                <button class="btn btn-secondary" onclick="closeModal('create-lora-device-modal')">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Global variables
+        let currentConfig = null;
+        let schemas = [];
+        let models = [];
+        let loraDevices = [];
+        let currentPage = 1;
+        const itemsPerPage = 10;
+
+        // API base URL
+        const API_BASE = '/api/v1';
+
+        // Tab switching
+        function switchTab(tabId) {
+            // Hide all tabs
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            
+            // Remove active class from all nav tabs
+            document.querySelectorAll('.nav-tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            
+            // Show selected tab
+            document.getElementById(tabId).classList.add('active');
+            
+            // Add active class to clicked nav tab
+            event.target.classList.add('active');
+            
+            // Load data for the selected tab
+            switch(tabId) {
+                case 'discovery':
+                    loadDiscoveryStatus();
+                    break;
+                case 'hardware':
+                    loadHardwareStatus();
+                    break;
+                case 'schemas':
+                    loadSchemas();
+                    break;
+                case 'models':
+                    loadModels();
+                    break;
+                case 'lora':
+                    loadLoRaDevices();
+                    break;
+            }
+        }
+
+        // Utility functions
+        function showAlert(message, type = 'success') {
+            const alertDiv = document.createElement('div');
+            alertDiv.className = `alert alert-${type}`;
+            alertDiv.textContent = message;
+            alertDiv.style.position = 'fixed';
+            alertDiv.style.top = '20px';
+            alertDiv.style.right = '20px';
+            alertDiv.style.zIndex = '9999';
+            document.body.appendChild(alertDiv);
+            
+            setTimeout(() => {
+                alertDiv.remove();
+            }, 3000);
+        }
+
+        function showModal(modalId) {
+            document.getElementById(modalId).style.display = 'block';
+        }
+
+        function closeModal(modalId) {
+            document.getElementById(modalId).style.display = 'none';
+        }
+
+        function formatJson(obj) {
+            return JSON.stringify(obj, null, 2);
+        }
+
+        function parseJson(str) {
+            try {
+                return JSON.parse(str);
+            } catch (e) {
+                throw new Error('Invalid JSON: ' + e.message);
+            }
+        }
+
+        async function apiCall(url, options = {}) {
+            try {
+                const response = await fetch(API_BASE + url, {
+                    headers: {
+                        'Content-Type': 'application/json',
+                        ...options.headers
+                    },
+                    ...options
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                return await response.json();
+            } catch (error) {
+                console.error('API call failed:', error);
+                throw error;
+            }
+        }
+
+        // Server Configuration Functions
+        async function loadServerConfig() {
+            const loading = document.getElementById('config-loading');
+            loading.style.display = 'inline-block';
+            
+            try {
+                const config = await apiCall('/server/config');
+                currentConfig = config;
+                document.getElementById('config-content').value = formatJson(config);
+                document.getElementById('config-editor').style.display = 'block';
+                showAlert('Configuration loaded successfully');
+            } catch (error) {
+                showAlert('Failed to load configuration: ' + error.message, 'error');
+            } finally {
+                loading.style.display = 'none';
+            }
+        }
+
+        async function saveServerConfig() {
+            try {
+                const configText = document.getElementById('config-content').value;
+                const config = parseJson(configText);
+                
+                await apiCall('/server/config', {
+                    method: 'PUT',
+                    body: configText
+                });
+                
+                currentConfig = config;
+                showAlert('Configuration saved successfully');
+            } catch (error) {
+                showAlert('Failed to save configuration: ' + error.message, 'error');
+            }
+        }
+
+        function validateConfig() {
+            try {
+                const configText = document.getElementById('config-content').value;
+                parseJson(configText);
+                showAlert('Configuration is valid');
+            } catch (error) {
+                showAlert('Configuration validation failed: ' + error.message, 'error');
+            }
+        }
+
+        function showDiff() {
+            if (!currentConfig) {
+                showAlert('Please load the current configuration first', 'warning');
+                return;
+            }
+            
+            try {
+                const newConfigText = document.getElementById('config-content').value;
+                const newConfig = parseJson(newConfigText);
+                
+                const diff = generateDiff(currentConfig, newConfig);
+                document.getElementById('config-diff').innerHTML = diff;
+                document.getElementById('config-diff').style.display = 'block';
+            } catch (error) {
+                showAlert('Failed to generate diff: ' + error.message, 'error');
+            }
+        }
+
+        function generateDiff(oldObj, newObj) {
+            // Simple diff implementation
+            const oldStr = formatJson(oldObj);
+            const newStr = formatJson(newObj);
+            
+            if (oldStr === newStr) {
+                return '<div class="alert alert-warning">No changes detected</div>';
+            }
+            
+            // For a real implementation, you'd use a proper diff library
+            return `
+                <div class="alert alert-info">Configuration changes detected:</div>
+                <div class="diff-removed">Old configuration removed/modified</div>
+                <div class="diff-added">New configuration added/modified</div>
+                <pre>${oldStr}\n\n---\n\n${newStr}</pre>
+            `;
+        }
+
+        function downloadConfig() {
+            if (!currentConfig) {
+                showAlert('Please load the configuration first', 'warning');
+                return;
+            }
+            
+            const dataStr = formatJson(currentConfig);
+            const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
+            
+            const exportFileDefaultName = 'server-config.json';
+            
+            const linkElement = document.createElement('a');
+            linkElement.setAttribute('href', dataUri);
+            linkElement.setAttribute('download', exportFileDefaultName);
+            linkElement.click();
+        }
+
+        function showUploadModal() {
+            showModal('upload-modal');
+        }
+
+        function uploadConfig() {
+            const fileInput = document.getElementById('upload-file');
+            const file = fileInput.files[0];
+            
+            if (!file) {
+                showAlert('Please select a file', 'warning');
+                return;
+            }
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const config = parseJson(e.target.result);
+                    document.getElementById('config-content').value = formatJson(config);
+                    document.getElementById('config-editor').style.display = 'block';
+                    closeModal('upload-modal');
+                    showAlert('Configuration uploaded successfully');
+                } catch (error) {
+                    showAlert('Failed to parse configuration file: ' + error.message, 'error');
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        // Discovery Functions
+        async function loadDiscoveryStatus() {
+            try {
+                // This would need to be implemented on the backend
+                document.getElementById('discovery-status').textContent = 'Discovery agent running';
+            } catch (error) {
+                document.getElementById('discovery-status').textContent = 'Status unknown';
+            }
+        }
+
+        async function startDiscovery() {
+            try {
+                await apiCall('/server/discovery/start', { method: 'PUT' });
+                showAlert('Discovery started successfully');
+                loadDiscoveryStatus();
+            } catch (error) {
+                showAlert('Failed to start discovery: ' + error.message, 'error');
+            }
+        }
+
+        async function stopDiscovery() {
+            try {
+                await apiCall('/server/discovery/stop', { method: 'PUT' });
+                showAlert('Discovery stopped successfully');
+                loadDiscoveryStatus();
+            } catch (error) {
+                showAlert('Failed to stop discovery: ' + error.message, 'error');
+            }
+        }
+
+        async function loadDiscoveryConfig() {
+            try {
+                const config = await apiCall('/server/discovery/config');
+                document.getElementById('discovery-config').value = formatJson(config);
+                document.getElementById('discovery-config-card').style.display = 'block';
+            } catch (error) {
+                showAlert('Failed to load discovery configuration: ' + error.message, 'error');
+            }
+        }
+
+        async function saveDiscoveryConfig() {
+            try {
+                const configText = document.getElementById('discovery-config').value;
+                const config = parseJson(configText);
+                
+                await apiCall('/server/discovery/config', {
+                    method: 'POST',
+                    body: configText
+                });
+                
+                showAlert('Discovery configuration saved successfully');
+            } catch (error) {
+                showAlert('Failed to save discovery configuration: ' + error.message, 'error');
+            }
+        }
+
+        function validateDiscoveryConfig() {
+            try {
+                const configText = document.getElementById('discovery-config').value;
+                parseJson(configText);
+                showAlert('Discovery configuration is valid');
+            } catch (error) {
+                showAlert('Discovery configuration validation failed: ' + error.message, 'error');
+            }
+        }
+
+        async function refreshDiscoveredServers() {
+            try {
+                const response = await apiCall('/server/discovery');
+                const servers = response.list || response;
+                displayDiscoveredServers(servers);
+                document.getElementById('discovered-count').textContent = `${servers.length} servers found`;
+            } catch (error) {
+                showAlert('Failed to refresh discovered servers: ' + error.message, 'error');
+            }
+        }
+
+        function displayDiscoveredServers(servers) {
+            const container = document.getElementById('discovered-servers-list');
+            
+            if (!servers || servers.length === 0) {
+                container.innerHTML = '<p>No servers discovered</p>';
+                return;
+            }
+            
+            const table = `
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Host</th>
+                            <th>Port</th>
+                            <th>Version</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${servers.map(server => `
+                            <tr>
+                                <td>${server.name || 'Unknown'}</td>
+                                <td>${server.hostname || server.host || 'Unknown'}</td>
+                                <td>${server.port || 'Unknown'}</td>
+                                <td>${server.version || 'Unknown'}</td>
+                                <td><span class="status-tile">${server.status || 'Unknown'}</span></td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            `;
+            
+            container.innerHTML = table;
+        }
+
+        // Hardware Functions
+        async function loadHardwareStatus() {
+            try {
+                const devices = await apiCall('/server/hardware');
+                document.getElementById('active-devices-count').textContent = `${devices.list ? devices.list.length : 0} devices`;
+                document.getElementById('hardware-status').textContent = 'Hardware subsystem operational';
+            } catch (error) {
+                document.getElementById('hardware-status').textContent = 'Status unknown';
+            }
+        }
+
+        async function scanHardware() {
+            try {
+                const response = await apiCall('/server/hardware/scan');
+                const devices = response.list || response;
+                displayScannedDevices(devices);
+                showAlert('Hardware scan completed');
+            } catch (error) {
+                showAlert('Failed to scan hardware: ' + error.message, 'error');
+            }
+        }
+
+        async function loadHardwareConfig() {
+            try {
+                const config = await apiCall('/server/hardware/config');
+                document.getElementById('hardware-config').value = formatJson(config);
+                document.getElementById('hardware-config-card').style.display = 'block';
+            } catch (error) {
+                showAlert('Failed to load hardware configuration: ' + error.message, 'error');
+            }
+        }
+
+        async function saveHardwareConfig() {
+            try {
+                const configText = document.getElementById('hardware-config').value;
+                const config = parseJson(configText);
+                
+                await apiCall('/server/hardware/config', {
+                    method: 'POST',
+                    body: configText
+                });
+                
+                showAlert('Hardware configuration saved successfully');
+            } catch (error) {
+                showAlert('Failed to save hardware configuration: ' + error.message, 'error');
+            }
+        }
+
+        function validateHardwareConfig() {
+            try {
+                const configText = document.getElementById('hardware-config').value;
+                parseJson(configText);
+                showAlert('Hardware configuration is valid');
+            } catch (error) {
+                showAlert('Hardware configuration validation failed: ' + error.message, 'error');
+            }
+        }
+
+        async function refreshHardwareDevices() {
+            try {
+                const response = await apiCall('/server/hardware');
+                const devices = response.list || response;
+                displayHardwareDevices(devices);
+                document.getElementById('active-devices-count').textContent = `${devices.length} devices`;
+            } catch (error) {
+                showAlert('Failed to refresh hardware devices: ' + error.message, 'error');
+            }
+        }
+
+        function displayScannedDevices(devices) {
+            const container = document.getElementById('hardware-devices-list');
+            
+            if (!devices || devices.length === 0) {
+                container.innerHTML = '<p>No new devices found</p>';
+                return;
+            }
+            
+            const deviceCards = devices.map(device => `
+                <div class="status-tile">
+                    <h3>${device.name || device.type || 'Unknown Device'}</h3>
+                    <p>Type: ${device.type || 'Unknown'}</p>
+                    <p>Description: ${device.description || 'No description'}</p>
+                    <p>Address: ${device.address || 'Unknown'}</p>
+                </div>
+            `).join('');
+            
+            container.innerHTML = deviceCards;
+        }
+
+        function displayHardwareDevices(devices) {
+            const container = document.getElementById('hardware-devices-list');
+            
+            if (!devices || devices.length === 0) {
+                container.innerHTML = '<p>No active devices</p>';
+                return;
+            }
+            
+            const table = `
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Type</th>
+                            <th>Description</th>
+                            <th>State</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${devices.map(device => `
+                            <tr>
+                                <td>${device.name || 'Unknown'}</td>
+                                <td>${device.type || 'Unknown'}</td>
+                                <td>${device.description || 'No description'}</td>
+                                <td>${device.state || 'Unknown'}</td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            `;
+            
+            container.innerHTML = table;
+        }
+
+        // Schema Functions
+        async function loadSchemas() {
+            try {
+                const response = await apiCall('/server/schema');
+                schemas = response.schemas || response.list || [];
+                displaySchemas();
+            } catch (error) {
+                showAlert('Failed to load schemas: ' + error.message, 'error');
+            }
+        }
+
+        function displaySchemas() {
+            const container = document.getElementById('schemas-list');
+            const filter = document.getElementById('schema-filter').value.toLowerCase();
+            
+            const filteredSchemas = schemas.filter(schema => 
+                schema.name && schema.name.toLowerCase().includes(filter)
+            );
+            
+            if (filteredSchemas.length === 0) {
+                container.innerHTML = '<p>No schemas found</p>';
+                return;
+            }
+            
+            const table = `
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Type</th>
+                            <th>Version</th>
+                            <th>Context</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${filteredSchemas.map(schema => `
+                            <tr>
+                                <td>${schema.name || schema.uniqueId || 'Unknown'}</td>
+                                <td>${schema.type || schema.schemaType || 'Unknown'}</td>
+                                <td>${schema.version || 'Unknown'}</td>
+                                <td>${schema.context || 'Unknown'}</td>
+                                <td>
+                                    <div class="btn-group">
+                                        <button class="btn btn-primary" onclick="viewSchema('${schema.uniqueId}')">View</button>
+                                        <button class="btn btn-secondary" onclick="viewSchemaImpl('${schema.uniqueId}')">Impl</button>
+                                        <button class="btn btn-danger" onclick="deleteSchema('${schema.uniqueId}')">Delete</button>
+                                    </div>
+                                </td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            `;
+            
+            container.innerHTML = table;
+        }
+
+        function filterSchemas() {
+            displaySchemas();
+        }
+
+        async function viewSchema(schemaId) {
+            try {
+                const response = await apiCall(`/server/schema/${schemaId}`);
+                showModal('schema-view-modal');
+                document.getElementById('schema-view-content').value = formatJson(response);
+            } catch (error) {
+                showAlert('Failed to load schema: ' + error.message, 'error');
+            }
+        }
+
+        async function viewSchemaImpl(schemaId) {
+            try {
+                const response = await apiCall(`/server/schema/impl/${schemaId}`);
+                alert('Schema Implementation Details:\n\n' + formatJson(response));
+            } catch (error) {
+                showAlert('Failed to load schema implementation: ' + error.message, 'error');
+            }
+        }
+
+        async function deleteSchema(schemaId) {
+            if (!confirm('Are you sure you want to delete this schema?')) {
+                return;
+            }
+            
+            try {
+                await apiCall(`/server/schema/${schemaId}`, { method: 'DELETE' });
+                showAlert('Schema deleted successfully');
+                loadSchemas();
+            } catch (error) {
+                showAlert('Failed to delete schema: ' + error.message, 'error');
+            }
+        }
+
+        function showCreateSchemaModal() {
+            showModal('create-schema-modal');
+        }
+
+        async function createSchema() {
+            try {
+                const context = document.getElementById('schema-context').value;
+                const definition = document.getElementById('schema-definition').value;
+                
+                if (!context || !definition) {
+                    showAlert('Please provide both context and schema definition', 'warning');
+                    return;
+                }
+                
+                const schemaDef = parseJson(definition);
+                
+                await apiCall('/server/schema', {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        context: context,
+                        schema: schemaDef
+                    })
+                });
+                
+                closeModal('create-schema-modal');
+                showAlert('Schema created successfully');
+                loadSchemas();
+            } catch (error) {
+                showAlert('Failed to create schema: ' + error.message, 'error');
+            }
+        }
+
+        async function loadSchemaFormats() {
+            try {
+                const response = await apiCall('/server/schema/formats');
+                alert('Supported Schema Formats:\n\n' + response.join('\n'));
+            } catch (error) {
+                showAlert('Failed to load schema formats: ' + error.message, 'error');
+            }
+        }
+
+        async function loadSchemaMap() {
+            try {
+                const response = await apiCall('/server/schema/map');
+                alert('Schema Mapping:\n\n' + formatJson(response));
+            } catch (error) {
+                showAlert('Failed to load schema map: ' + error.message, 'error');
+            }
+        }
+
+        // Model Functions
+        async function loadModels() {
+            try {
+                const response = await apiCall('/server/models');
+                models = response || [];
+                displayModels();
+            } catch (error) {
+                showAlert('Failed to load models: ' + error.message, 'error');
+            }
+        }
+
+        function displayModels() {
+            const container = document.getElementById('models-list');
+            
+            if (!models || models.length === 0) {
+                container.innerHTML = '<p>No models available</p>';
+                return;
+            }
+            
+            const table = `
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Model Name</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${models.map(model => `
+                            <tr>
+                                <td>${model}</td>
+                                <td>
+                                    <div class="btn-group">
+                                        <button class="btn btn-primary" onclick="downloadModel('${model}')">Download</button>
+                                        <button class="btn btn-danger" onclick="deleteModel('${model}')">Delete</button>
+                                    </div>
+                                </td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            `;
+            
+            container.innerHTML = table;
+        }
+
+        function showUploadModelModal() {
+            showModal('upload-model-modal');
+        }
+
+        async function uploadModel() {
+            const modelName = document.getElementById('model-name').value;
+            const fileInput = document.getElementById('model-file');
+            const file = fileInput.files[0];
+            
+            if (!modelName || !file) {
+                showAlert('Please provide both model name and file', 'warning');
+                return;
+            }
+            
+            const formData = new FormData();
+            formData.append('file', file);
+            
+            try {
+                const response = await fetch(`${API_BASE}/server/model/${modelName}`, {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                closeModal('upload-model-modal');
+                showAlert('Model uploaded successfully');
+                loadModels();
+            } catch (error) {
+                showAlert('Failed to upload model: ' + error.message, 'error');
+            }
+        }
+
+        async function downloadModel(modelName) {
+            try {
+                const response = await fetch(`${API_BASE}/server/model/${modelName}`);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const blob = await response.blob();
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = modelName;
+                document.body.appendChild(a);
+                a.click();
+                window.URL.revokeObjectURL(url);
+                document.body.removeChild(a);
+            } catch (error) {
+                showAlert('Failed to download model: ' + error.message, 'error');
+            }
+        }
+
+        async function deleteModel(modelName) {
+            if (!confirm('Are you sure you want to delete this model?')) {
+                return;
+            }
+            
+            try {
+                await apiCall(`/server/model/${modelName}`, { method: 'DELETE' });
+                showAlert('Model deleted successfully');
+                loadModels();
+            } catch (error) {
+                showAlert('Failed to delete model: ' + error.message, 'error');
+            }
+        }
+
+        // LoRa Functions
+        async function loadLoRaDevices() {
+            try {
+                const response = await apiCall('/device/lora');
+                loraDevices = response.list || response;
+                displayLoRaDevices();
+            } catch (error) {
+                showAlert('Failed to load LoRa devices: ' + error.message, 'error');
+            }
+        }
+
+        function displayLoRaDevices() {
+            const container = document.getElementById('lora-devices-list');
+            
+            if (!loraDevices || loraDevices.length === 0) {
+                container.innerHTML = '<p>No LoRa devices found</p>';
+                return;
+            }
+            
+            const deviceCards = loraDevices.map(device => `
+                <div class="card">
+                    <div class="card-header">
+                        <h3>${device.name || 'Unknown Device'}</h3>
+                    </div>
+                    <div class="card-body">
+                        <p><strong>Radio:</strong> ${device.radio || 'Unknown'}</p>
+                        <p><strong>Packets Sent:</strong> ${device.packetsSent || 0}</p>
+                        <p><strong>Packets Received:</strong> ${device.packetsReceived || 0}</p>
+                        <p><strong>Bytes Sent:</strong> ${device.bytesSent || 0}</p>
+                        <p><strong>Bytes Received:</strong> ${device.bytesReceived || 0}</p>
+                        <div class="btn-group">
+                            <button class="btn btn-primary" onclick="viewLoRaDevice('${device.name}')">View Details</button>
+                            <button class="btn btn-secondary" onclick="viewLoRaDeviceConfig('${device.name}')">Config</button>
+                            <button class="btn btn-danger" onclick="deleteLoRaDevice('${device.name}')">Delete</button>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+            
+            container.innerHTML = deviceCards;
+        }
+
+        async function viewLoRaDevice(deviceName) {
+            try {
+                const device = await apiCall(`/device/lora/${deviceName}`);
+                alert('LoRa Device Details:\n\n' + formatJson(device));
+            } catch (error) {
+                showAlert('Failed to load LoRa device: ' + error.message, 'error');
+            }
+        }
+
+        async function viewLoRaDeviceConfig(deviceName) {
+            try {
+                const config = await apiCall(`/device/lora/${deviceName}/config`);
+                alert('LoRa Device Configuration:\n\n' + formatJson(config));
+            } catch (error) {
+                showAlert('Failed to load LoRa device config: ' + error.message, 'error');
+            }
+        }
+
+        async function deleteLoRaDevice(deviceName) {
+            if (!confirm('Are you sure you want to delete this LoRa device?')) {
+                return;
+            }
+            
+            try {
+                await apiCall(`/device/lora/${deviceName}/config`, { method: 'DELETE' });
+                showAlert('LoRa device deleted successfully');
+                loadLoRaDevices();
+            } catch (error) {
+                showAlert('Failed to delete LoRa device: ' + error.message, 'error');
+            }
+        }
+
+        function showCreateLoRaDeviceModal() {
+            showModal('create-lora-device-modal');
+        }
+
+        async function createLoRaDevice() {
+            try {
+                const deviceName = document.getElementById('lora-device-name').value;
+                const configText = document.getElementById('lora-device-config').value;
+                
+                if (!deviceName || !configText) {
+                    showAlert('Please provide both device name and configuration', 'warning');
+                    return;
+                }
+                
+                const config = parseJson(configText);
+                
+                await apiCall('/device/lora/config', {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        name: deviceName,
+                        ...config
+                    })
+                });
+                
+                closeModal('create-lora-device-modal');
+                showAlert('LoRa device created successfully');
+                loadLoRaDevices();
+            } catch (error) {
+                showAlert('Failed to create LoRa device: ' + error.message, 'error');
+            }
+        }
+
+        async function loadLoRaConfigs() {
+            try {
+                const configs = await apiCall('/device/lora/config');
+                alert('LoRa Configurations:\n\n' + formatJson(configs));
+            } catch (error) {
+                showAlert('Failed to load LoRa configurations: ' + error.message, 'error');
+            }
+        }
+
+        // Initialize the application
+        document.addEventListener('DOMContentLoaded', function() {
+            // Load initial data
+            loadServerConfig();
+        });
+
+        // Close modals when clicking outside
+        window.onclick = function(event) {
+            if (event.target.classList.contains('modal')) {
+                event.target.style.display = 'none';
+            }
+        }
+    </script>
+</body>
+</html>

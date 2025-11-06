@@ -14,6 +14,7 @@ Wire protocol standardization has promised interoperability and flexibility in I
 - **Namespace Partitioning:** Distinct namespaces for users and groups to enhance security.
 - **Comprehensive Management:** JMX, JMX - RestAPI via [Jolokia](https://jolokia.org/)
 - **RestAPI Management:** Simple interface to manage connections, destinations, and schemas.
+- **Configuration Tools:** Comprehensive web-based interface for server configuration, discovery, hardware, schemas, models, and LoRa device management. [More info](docs/CONFIG_TOOLS.md)
 
 ## Advanced Features
 
