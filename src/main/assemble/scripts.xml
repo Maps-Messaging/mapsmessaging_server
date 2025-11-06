@@ -52,6 +52,14 @@
       </includes>
     </fileSet>
     <fileSet>
+      <directory>${project.basedir}/target/classes/html/admin</directory>
+      <outputDirectory>www/admin</outputDirectory>
+      <includes>
+        <include>**/*</include> <!-- This includes UI built by Maven frontend plugin -->
+      </includes>
+      <useDefaultExcludes>false</useDefaultExcludes>
+    </fileSet>
+    <fileSet>
       <directory>${project.basedir}/src/main/html</directory>
       <outputDirectory>www/swagger-ui</outputDirectory>
       <includes>

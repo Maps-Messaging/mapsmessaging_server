@@ -35,6 +35,28 @@ sed -i "s/00.00.00-SNAPSHOT/${POM_VERSION}/g" $BUILD_INFO_FILE
 # Step c: Replace %%MAPS_VERSION%% with $POM_VERSION in ./src/**
 find ./src/ -type f -exec sed -i "s|%%MAPS_VERSION%%|${POM_VERSION}|g" {} +
 
+# Step d: Check for Node.js and build UI if available
+if command -v node &> /dev/null; then
+    NODE_VERSION=$(node --version)
+    echo "Node.js $NODE_VERSION found, building UI..."
+    
+    if [ -d "ui/maps-admin-ui" ]; then
+        cd ui/maps-admin-ui
+        if [ -f "package.json" ]; then
+            echo "Building admin UI..."
+            npm ci
+            npm run build:prod
+            echo "UI build completed successfully"
+        else
+            echo "package.json not found in ui/maps-admin-ui, skipping UI build"
+        fi
+        cd ../..
+    else
+        echo "UI directory not found, skipping UI build"
+    fi
+else
+    echo "Node.js not found, skipping UI build"
+fi
 
 if [[ $POM_VERSION == ml-* ]]; then
    sed -i 's/Package: maps/Package: maps-ml/' packaging/deb_package/DEBIAN/control

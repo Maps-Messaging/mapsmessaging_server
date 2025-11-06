@@ -1,4 +1,5 @@
-#
+#!/bin/bash
+
 # Copyright [ 2020 - 2024 ] [Matthew Buckton]
 # Copyright [ 2024 - 2025 ] [Maps Messaging B.V.]
 #
@@ -14,5 +15,26 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-#
-mvn clean install
+
+# Check for UI build flag
+BUILD_UI=false
+if [[ "$1" == "--with-ui" ]] || [[ "$1" == "-ui" ]]; then
+    BUILD_UI=true
+    shift
+fi
+
+# Check if Node.js is available for UI build
+if [ "$BUILD_UI" = true ]; then
+    if command -v node &> /dev/null; then
+        NODE_VERSION=$(node --version)
+        echo "Node.js $NODE_VERSION found, building with UI support"
+        mvn clean install -Pui "$@"
+    else
+        echo "Node.js not found. Please install Node.js LTS (v20+) to build with UI support."
+        echo "Visit https://nodejs.org/ to download and install Node.js."
+        exit 1
+    fi
+else
+    echo "Building server without UI (use --with-ui to include admin UI)"
+    mvn clean install "$@"
+fi

@@ -86,6 +86,7 @@
   <properties>
     <nvd.api.key>${env.NVD_API_KEY}</nvd.api.key>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <maven.build.timestamp.format>yyyy-MM-dd'T'HH:mm:ssZ</maven.build.timestamp.format>
 
     <logback.version>1.5.18</logback.version>
     <pi4j.version>2.8.0</pi4j.version>
@@ -303,6 +304,62 @@
                     <!-- Add the test ML-specific sources -->
                     <source>src/test/java-ml</source>
                   </sources>
+                </configuration>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+
+    <profile>
+      <id>ui</id>
+      <properties>
+        <ui.build.timestamp>${maven.build.timestamp}</ui.build.timestamp>
+      </properties>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>com.github.eirslett</groupId>
+            <artifactId>frontend-maven-plugin</artifactId>
+            <version>1.15.0</version>
+            <configuration>
+              <workingDirectory>ui/maps-admin-ui</workingDirectory>
+              <installDirectory>target</installDirectory>
+            </configuration>
+            <executions>
+              <execution>
+                <id>install node and npm</id>
+                <goals>
+                  <goal>install-node-and-npm</goal>
+                </goals>
+                <configuration>
+                  <nodeVersion>v20.12.0</nodeVersion>
+                  <npmVersion>10.5.0</npmVersion>
+                </configuration>
+              </execution>
+              <execution>
+                <id>npm install</id>
+                <goals>
+                  <goal>npm</goal>
+                </goals>
+                <configuration>
+                  <arguments>ci</arguments>
+                </configuration>
+              </execution>
+              <execution>
+                <id>npm build</id>
+                <goals>
+                  <goal>npm</goal>
+                </goals>
+                <phase>prepare-package</phase>
+                <configuration>
+                  <arguments>run build:prod</arguments>
+                  <environmentVariables>
+                    <PROJECT_VERSION>${project.version}</PROJECT_VERSION>
+                    <API_BASE_URL>${api.base.url:http://localhost:8080}</API_BASE_URL>
+                    <BUILD_TIME>${ui.build.timestamp}</BUILD_TIME>
+                  </environmentVariables>
                 </configuration>
               </execution>
             </executions>

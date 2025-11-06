@@ -60,6 +60,79 @@ consumer.setMessageCallback((topic, msg) -> System.out.println(new String(msg.ge
 ```
 Replace localhost with the server's IP address if running remotely. Ensure the topic names match in both producer and consumer.
 
+## Building the Server
+
+### Prerequisites
+
+- Java 21 or later
+- Maven 3.8+
+- Node.js LTS (v20+) - Only required if building with UI support
+
+### Standard Build
+
+To build the server without the admin UI:
+
+```bash
+# Using the build script
+./build.sh
+
+# Or using Maven directly
+mvn clean install
+```
+
+### Building with Admin UI
+
+To build the server with the React-based admin UI included:
+
+```bash
+# Using the build script (recommended)
+./build.sh --with-ui
+
+# Or using Maven directly
+mvn clean install -Pui
+```
+
+The UI build requires Node.js v20+ to be installed. If Node.js is not available, the build script will provide installation instructions.
+
+### Build Profiles
+
+The server supports several Maven build profiles:
+
+- `-Pui` - Include the admin UI in the build
+- `-Pnative` - Build a GraalVM native image
+- `-Pml` - Include machine learning features
+- `-Pwindows` / `-Punix` - OS-specific configurations (auto-detected)
+
+### Build Output
+
+The build produces:
+- `target/maps-{version}.jar` - Main server JAR
+- `target/classes/html/admin/` - Admin UI (when built with UI profile)
+- `target/site/` - Documentation and dependency libraries
+
+### Manual UI Build
+
+If you prefer to build the UI separately:
+
+```bash
+cd ui/maps-admin-ui
+npm ci
+npm run build -- --mode production
+```
+
+The UI will be built to `../../../target/classes/html/admin/` for inclusion in the server JAR.
+
+For detailed UI development instructions, see [ui/README.md](ui/README.md).
+
+## OpenAPI Documentation
+
+The server provides OpenAPI documentation when running:
+
+- Swagger UI: `http://localhost:8080/api/docs`
+- OpenAPI JSON: `http://localhost:8080/api/openapi.json`
+
+The admin UI integrates with these APIs for server management functionality.
+
 ## Contributing
 We welcome contributions! Please refer to our contribution guidelines for how you can participate in making MAPS Messaging Server even better.
 
