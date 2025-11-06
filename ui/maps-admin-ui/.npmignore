@@ -1,0 +1,9 @@
+src
+.storybook
+tests
+.env*
+.eslintrc
+vite.config.js
+vitest.config.js
+scripts
+*.md
