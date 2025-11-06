@@ -10,3 +10,11 @@ buildNumber.properties
 # https://github.com/takari/maven-wrapper#usage-without-binary-jar
 .mvn/wrapper/maven-wrapper.jar
 .idea
+
+# Node.js and UI build artifacts
+node_modules/
+ui/*/dist/
+ui/*/.vite/
+ui/**/*.local
+pnpm-lock.yaml
+yarn.lock
