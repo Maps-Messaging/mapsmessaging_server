@@ -1,0 +1,115 @@
+name: Admin UI CI
+
+on:
+  push:
+    branches: [ main, develop ]
+    paths:
+      - 'ui/maps-admin-ui/**'
+  pull_request:
+    branches: [ main, develop ]
+    paths:
+      - 'ui/maps-admin-ui/**'
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    
+    strategy:
+      matrix:
+        node-version: [18.x, 20.x]
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ matrix.node-version }}
+        cache: 'npm'
+        cache-dependency-path: ui/maps-admin-ui/package-lock.json
+        
+    - name: Install dependencies
+      working-directory: ui/maps-admin-ui
+      run: npm ci
+      
+    - name: Download OpenAPI specification
+      working-directory: ui/maps-admin-ui
+      run: |
+        # Try to download the spec, but don't fail if server is unavailable
+        npm run openapi:download || echo "OpenAPI spec download failed - using cached version if available"
+        
+    - name: Generate API client (if spec available)
+      working-directory: ui/maps-admin-ui
+      run: |
+        if [ -f "openapi/openapi.json" ]; then
+          npm run openapi:generate
+        else
+          echo "No OpenAPI spec available - skipping client generation"
+          # Create a minimal mock for testing
+          mkdir -p src/api/generated
+          echo "// Mock generated API - no OpenAPI spec available" > src/api/generated/index.ts
+        fi
+        
+    - name: Run type checking
+      working-directory: ui/maps-admin-ui
+      run: npm run type-check
+      
+    - name: Run linting
+      working-directory: ui/maps-admin-ui
+      run: npm run lint
+      
+    - name: Run smoke tests
+      working-directory: ui/maps-admin-ui
+      run: npm run test:smoke
+      
+    - name: Build application
+      working-directory: ui/maps-admin-ui
+      run: npm run build
+      
+    - name: Upload build artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: admin-ui-build-${{ matrix.node-version }}
+        path: ui/maps-admin-ui/dist/
+        retention-days: 7
+
+  openapi-check:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+        
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20.x'
+        cache: 'npm'
+        cache-dependency-path: ui/maps-admin-ui/package-lock.json
+        
+    - name: Install dependencies
+      working-directory: ui/maps-admin-ui
+      run: npm ci
+      
+    - name: Check if OpenAPI spec has changed
+      working-directory: ui/maps-admin-ui
+      run: |
+        # Download the latest spec
+        npm run openapi:download
+        
+        # Generate client
+        npm run openapi:generate
+        
+        # Check if there are any changes to generated files
+        if git diff --quiet -- src/api/generated/; then
+          echo "✅ Generated API client is up to date"
+        else
+          echo "❌ Generated API client is out of date"
+          echo "Please run 'npm run openapi:ensure' and commit the generated changes"
+          git diff -- src/api/generated/
+          exit 1
+        fi

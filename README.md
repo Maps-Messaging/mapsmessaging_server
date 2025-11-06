@@ -14,6 +14,7 @@ Wire protocol standardization has promised interoperability and flexibility in I
 - **Namespace Partitioning:** Distinct namespaces for users and groups to enhance security.
 - **Comprehensive Management:** JMX, JMX - RestAPI via [Jolokia](https://jolokia.org/)
 - **RestAPI Management:** Simple interface to manage connections, destinations, and schemas.
+- **Web Admin UI:** Modern React-based admin interface with OpenAPI-driven client generation.
 
 ## Advanced Features
 
@@ -59,6 +60,76 @@ consumer.setMessageCallback((topic, msg) -> System.out.println(new String(msg.ge
 // Keep the consumer running to listen for messages
 ```
 Replace localhost with the server's IP address if running remotely. Ensure the topic names match in both producer and consumer.
+
+## Web Admin UI
+
+The Maps Messaging Server includes a modern React-based admin interface that provides a comprehensive web-based management experience.
+
+### Features
+
+- **OpenAPI-Driven Client Generation**: Automatically generated type-safe API clients from the server's OpenAPI specification
+- **TypeScript Support**: Full type safety throughout the application
+- **React Query Integration**: Optimistic updates, caching, and background refetching
+- **Real-time Updates**: Server-Sent Events (SSE) support for streaming endpoints
+- **Authentication Handling**: Built-in support for API keys and bearer tokens
+- **Error Handling**: Centralized error handling with automatic retry logic
+
+### Getting Started with the Admin UI
+
+The admin UI is located in the `ui/maps-admin-ui/` directory:
+
+```bash
+# Navigate to the UI directory
+cd ui/maps-admin-ui
+
+# Install dependencies
+npm install
+
+# Download the latest OpenAPI specification and generate the client
+npm run openapi:ensure
+
+# Start the development server
+npm run dev
+```
+
+### OpenAPI Client Generation
+
+The admin UI uses OpenAPI generator to create type-safe API clients:
+
+```bash
+# Download OpenAPI spec from the server
+npm run openapi:download
+
+# Generate TypeScript client code
+npm run openapi:generate
+
+# Run both steps together
+npm run openapi:ensure
+```
+
+### Development Workflow
+
+1. **API Changes**: When the server API changes, regenerate the client:
+   ```bash
+   npm run openapi:ensure
+   ```
+
+2. **Type Checking**: Ensure type safety:
+   ```bash
+   npm run type-check
+   ```
+
+3. **Testing**: Run smoke tests to validate generated code:
+   ```bash
+   npm run test:smoke
+   ```
+
+4. **Building**: Create production build:
+   ```bash
+   npm run build
+   ```
+
+For detailed documentation, see [ui/maps-admin-ui/README.md](ui/maps-admin-ui/README.md).
 
 ## Contributing
 We welcome contributions! Please refer to our contribution guidelines for how you can participate in making MAPS Messaging Server even better.

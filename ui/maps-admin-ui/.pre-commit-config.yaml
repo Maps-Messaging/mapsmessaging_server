@@ -1,0 +1,33 @@
+repos:
+  - repo: local
+    hooks:
+      - id: openapi-check
+        name: Check OpenAPI client is up to date
+        entry: scripts/check-openapi.sh
+        language: script
+        pass_filenames: false
+        always_run: true
+        
+      - id: type-check
+        name: TypeScript type checking
+        entry: npm run type-check
+        language: system
+        pass_filenames: false
+        always_run: true
+        
+      - id: lint
+        name: ESLint
+        entry: npm run lint
+        language: system
+        pass_filenames: false
+        always_run: true
+
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.4.0
+    hooks:
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: check-yaml
+      - id: check-added-large-files
+      - id: check-json
+      - id: check-merge-conflict
