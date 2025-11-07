@@ -8,13 +8,10 @@ Ubuntu
 ### Tools required in the build
 
 ```shell
-apt-get install vim wget httpie curl jq gh nodejs npm maven openjdk-21-jdk-headless protobuf-compiler rpm unzip
+apt-get install vim wget httpie curl jq gh maven openjdk-21-jdk-headless protobuf-compiler rpm unzip
 ```
 
-Install NPM packages
-```bash
-sudo npm install -g sonar-scanner
-```
+Install the SonarScanner CLI by following the [official installation guide](https://docs.sonarsource.com/sonarqube/latest/analyzing-source-code/scanners/sonarscanner/).
 
 ### AWS Command line
 

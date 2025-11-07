@@ -5,6 +5,8 @@
 ## Introduction
 Wire protocol standardization has promised interoperability and flexibility in IoT messaging. However, with the evolution of protocols, achieving this seamless interoperability has become challenging. MAPS Messaging Server bridges this gap by providing comprehensive support for multiple protocols and their versions, thus facilitating a unified messaging fabric.
 
+**Note:** The administrative web UI is maintained in a separate repository and is not built from this codebase.
+
 ## Features
 - **Wide Protocol Support:** For a full list, see [supported protocol versions](https://docs.mapsmessaging.io/docs/intro#supported-protocols).
 - **Inter-Server Communication:** Directly publish or subscribe to data on other messaging servers. [Learn more](https://docs.mapsmessaging.io/docs/integrations/server/overview).
