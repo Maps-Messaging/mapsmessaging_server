@@ -1,0 +1,57 @@
+# Git
+.git
+.gitignore
+.gitmodules
+
+# Build artifacts
+target/
+build/
+*.class
+*.jar
+*.war
+
+# IDE
+.idea/
+.vscode/
+*.iml
+*.ipr
+*.iws
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# Temporary files
+*.tmp
+*.temp
+.cache/
+
+# Documentation (already in image)
+docs/
+README.md
+SECURITY.md
+PROTOCOLS.md
+
+# Build scripts (not needed in container)
+build.sh
+build.bat
+buildDocker.sh
+
+# CI/CD
+.buildkite/
+.github/
+
+# Packaging
+packaging/deb_package/
+packaging/rpmbuild/
+packaging/windows/
+packaging/osx/
+
+# Test artifacts
+*.test
+test-results/
+coverage/

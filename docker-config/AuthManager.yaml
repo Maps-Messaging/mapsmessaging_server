@@ -1,0 +1,51 @@
+#-----------------------------------------------------------------------------
+#
+# Copyright [ 2020 - 2024 ] [Matthew Buckton]
+# Copyright [ 2024 - 2025 ] [Maps Messaging B.V.]
+#
+#   Licensed under the Apache License, Version 2.0 (the "License");
+#   you may not use this file except in compliance with the License.
+#   You may obtain a copy of the License at
+#
+#       http://www.apache.org/licenses/LICENSE-2.0
+#
+#   Unless required by applicable law or agreed to in writing, software
+#   distributed under the License is distributed on an "AS IS" BASIS,
+#   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#   See the License for the specific language governing permissions and
+#   limitations under the License.
+#
+#-----------------------------------------------------------------------------
+#
+# Notes:
+#
+# This configuration file is used to configure the authentication and authorization
+# for the server. The server supports multiple authentication providers and multiple
+# authorization providers. The authentication providers are used to authenticate
+# the user and the authorization providers are used to authorize the user to access
+# a specific resource.
+#
+# {data} will be replaced with the servers
+#
+# DOCKER CONFIGURATION:
+# This configuration enables authentication with local user storage and creates
+# default admin and user accounts on first boot.
+# Default credentials:
+# - Admin: admin / admin123
+# - User: user / user123
+
+---
+AuthManager:
+  authenticationEnabled: true  # connections will be authorised according to the config
+  authorizationEnabled: false   # Requests will be authorised according to the access control list for the resource
+  config:
+    identityProvider: "Encrypted-Auth"
+    passwordHandler: "EncryptedPasswordCipher"
+    configDirectory: "{{MAPS_DATA}}/.security"
+    certificateStore:
+      type: JKS
+      path: "{{MAPS_DATA}}/.security/authKeystore.jks"
+      passphrase: Password
+      alias: default
+      privateKey.name: default
+      privateKey.passphrase: Password
