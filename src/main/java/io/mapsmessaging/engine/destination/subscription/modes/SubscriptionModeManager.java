@@ -172,12 +172,22 @@ public abstract class SubscriptionModeManager {
     SubscribedEventManager subscription = null;
     ListResponse responses = new ListResponse();
     Future<Response> future;
-    for (DestinationImpl destinationImpl : destinationSet) {
-      // Lets queue the subscription requests for each destination
-      future = scheduleSubscription(controller, context, destinationImpl, counter);
-      if (!isReload) {
-        responses.addResponse(future);
+    List<DestinationImpl> interested = destinationSet.stream().toList();
+    List<DestinationImpl> diff = interested;
+    while(!diff.isEmpty()) {
+      for (DestinationImpl destinationImpl : diff) {
+        future = scheduleSubscription(controller, context, destinationImpl, counter);
+        if (!isReload) {
+          responses.addResponse(future);
+        }
       }
+      List<DestinationImpl> changedList = destinationSet.stream().toList();
+      List<DestinationImpl> test = interested;
+      diff = changedList.stream()
+          .filter(d2 -> test.stream()
+              .noneMatch(d1 -> d1 == d2))
+          .toList();
+      interested = changedList;
     }
     if (!isReload) {
       try {
