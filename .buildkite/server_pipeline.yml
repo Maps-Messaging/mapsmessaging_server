@@ -7,13 +7,23 @@ steps:
         - tar -xvzf ./webAdminClient.tgz
         - if [ ! -d "out" ]; then echo "'out' directory missing after extraction"; exit 1; fi
         - |
-          set -euo pipefail
-          git fetch --prune --tags origin main development
-          MAIN_SHA="$(git rev-parse origin/main)"
-          DEV_SHA="$(git rev-parse origin/development)"
-          [ -n "$MAIN_SHA" ] && [ -n "$DEV_SHA" ] || { echo "Failed to resolve SHAs"; exit 1; }          
-          echo "Using range: $MAIN_SHA..$DEV_SHA"
-          release-notes --range "${MAIN_SHA}..${DEV_SHA}" --jira --out release-notes.md
+            set -euo pipefail
+            
+            git fetch --prune --tags origin '+refs/heads/*:refs/remotes/origin/*'
+            
+            BASE_REF="$(git symbolic-ref -q --short refs/remotes/origin/HEAD || true)"
+            if [ -z "$BASE_REF" ]; then
+              if git rev-parse --verify --quiet origin/main >/dev/null; then BASE_REF="origin/main";
+              elif git rev-parse --verify --quiet origin/master >/dev/null; then BASE_REF="origin/master";
+              else echo "No origin/main or origin/master on remote"; git ls-remote --heads origin; exit 1; fi
+            fi
+            
+            MAIN_SHA="$(git rev-parse "$BASE_REF")"
+            DEV_SHA="$(git rev-parse origin/development)"
+            [ -n "$MAIN_SHA" ] && [ -n "$DEV_SHA" ] || { echo "Failed to resolve SHAs"; exit 1; }
+          
+            echo "Using range: $MAIN_SHA..$DEV_SHA ($BASE_REF vs origin/development)"
+            release-notes --range "${MAIN_SHA}..${DEV_SHA}" --jira --out release-notes.md
 
         - chmod +x ./packaging/scripts/prepare_build.sh
         - ./packaging/scripts/prepare_build.sh
