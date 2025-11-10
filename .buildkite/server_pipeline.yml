@@ -6,10 +6,15 @@ steps:
         - wget https://github.com/Maps-Messaging/web-admin-client/releases/download/maps_web_client_1.0.1/webAdminClient.tgz
         - tar -xvzf ./webAdminClient.tgz
         - if [ ! -d "out" ]; then echo "'out' directory missing after extraction"; exit 1; fi
-        - git fetch --prune --tags origin main development
-        - MAIN_SHA="$(git rev-parse origin/main)"
-        - DEV_SHA="$(git rev-parse origin/development)"
-        - release-notes --range "$MAIN_SHA..$DEV_SHA" --jira --out release-notes.md
+        - |
+          set -euo pipefail
+          git fetch --prune --tags origin main development
+          MAIN_SHA="$(git rev-parse origin/main)"
+          DEV_SHA="$(git rev-parse origin/development)"
+          [ -n "$MAIN_SHA" ] && [ -n "$DEV_SHA" ] || { echo "Failed to resolve SHAs"; exit 1; }          
+          echo "Using range: $MAIN_SHA..$DEV_SHA"
+          release-notes --range "${MAIN_SHA}..${DEV_SHA}" --jira --out release-notes.md
+
         - chmod +x ./packaging/scripts/prepare_build.sh
         - ./packaging/scripts/prepare_build.sh
         - mvn -DskipTests=true clean deploy -U
