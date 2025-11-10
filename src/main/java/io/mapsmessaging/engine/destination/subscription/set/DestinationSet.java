@@ -37,8 +37,7 @@ public class DestinationSet implements Set<DestinationImpl> {
 
   public DestinationSet(SubscriptionContext context, Map<String, DestinationImpl> destinationMap) {
     this.context = context;
-    matching = new LinkedHashMap<>();
-    matching.putAll(destinationMap);
+    matching = new LinkedHashMap<>(destinationMap);
   }
 
   // The wildcard loop has 3 break statements, but it is clearer to leave it here
@@ -142,8 +141,8 @@ public class DestinationSet implements Set<DestinationImpl> {
   public boolean remove(Object o) {
     if (o instanceof String) {
       return matching.remove(o) != null;
-    } else if (o instanceof DestinationImpl) {
-      return matching.remove(((DestinationImpl) o).getFullyQualifiedNamespace()) != null;
+    } else if (o instanceof DestinationImpl destination) {
+      return matching.remove(destination.getFullyQualifiedNamespace()) != null;
     }
     return false;
   }
