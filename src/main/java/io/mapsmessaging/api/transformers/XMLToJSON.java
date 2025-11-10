@@ -27,6 +27,7 @@ import io.mapsmessaging.configuration.ConfigurationProperties;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.network.protocol.Protocol;
+import io.mapsmessaging.utilities.GsonFactory;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Map;
@@ -50,8 +51,7 @@ public class XMLToJSON implements InterServerTransformation {
     try {
       XmlMapper xmlMapper = new XmlMapper();
       Map<String, Object> map = xmlMapper.readValue(messageBuilder.getOpaqueData(), new TypeReference<>() {});
-      JsonObject jsonObject = gson.toJsonTree(map).getAsJsonObject();
-      String pretty = gson.toJson(jsonObject);
+      String pretty = GsonFactory.getInstance().getSimpleGson().toJson(map);
       messageBuilder.setOpaqueData(pretty.getBytes(StandardCharsets.UTF_8));
     } catch (Exception e) {
       logger.log(FORMATTER_UNEXPECTED_OBJECT, getName());

@@ -24,6 +24,7 @@ import io.mapsmessaging.engine.schema.SchemaManager;
 import io.mapsmessaging.engine.system.SystemTopicWithAverage;
 
 import java.io.IOException;
+import java.util.UUID;
 
 public class Dropped extends SystemTopicWithAverage {
 
@@ -32,7 +33,7 @@ public class Dropped extends SystemTopicWithAverage {
   }
 
   @Override
-  public String getSchemaUUID() {
+  public UUID getSchemaUUID() {
     return SchemaManager.DEFAULT_NUMERIC_STRING_SCHEMA;
   }
 

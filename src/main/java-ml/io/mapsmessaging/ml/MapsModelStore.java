@@ -22,6 +22,7 @@ package io.mapsmessaging.ml;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import io.mapsmessaging.selector.model.ModelStore;
+import io.mapsmessaging.utilities.GsonFactory;
 
 
 import java.io.ByteArrayOutputStream;
@@ -195,7 +196,7 @@ public class MapsModelStore implements ModelStore {
       }
 
       String body = response.body();
-      Gson gson = new Gson();
+      Gson gson = GsonFactory.getInstance().getSimpleGson();
       return gson.fromJson(body, List.class); // generic List<String>
 
     } catch (InterruptedException e) {

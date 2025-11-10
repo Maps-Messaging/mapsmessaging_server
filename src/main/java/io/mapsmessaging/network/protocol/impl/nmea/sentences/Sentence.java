@@ -23,6 +23,7 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonObject;
 import io.mapsmessaging.network.protocol.impl.nmea.types.Type;
+import io.mapsmessaging.utilities.GsonFactory;
 import lombok.Getter;
 
 import java.util.List;
@@ -30,7 +31,7 @@ import java.util.Map;
 
 public class Sentence {
 
-  private static final Gson gson = new GsonBuilder().setPrettyPrinting().create();
+  private static final Gson gson = GsonFactory.getInstance().getPrettyGson();
 
   @Getter
   private final String name;

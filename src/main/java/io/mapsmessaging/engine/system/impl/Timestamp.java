@@ -25,6 +25,7 @@ import io.mapsmessaging.engine.system.SystemTopic;
 
 import java.io.IOException;
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 public class Timestamp extends SystemTopic {
 
@@ -33,7 +34,7 @@ public class Timestamp extends SystemTopic {
   }
 
   @Override
-  public String getSchemaUUID() {
+  public UUID getSchemaUUID() {
     return SchemaManager.DEFAULT_STRING_SCHEMA;
   }
 

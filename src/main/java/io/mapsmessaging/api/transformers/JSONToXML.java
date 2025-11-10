@@ -28,6 +28,7 @@ import io.mapsmessaging.configuration.ConfigurationProperties;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.network.protocol.Protocol;
+import io.mapsmessaging.utilities.GsonFactory;
 
 import java.lang.reflect.Type;
 import java.nio.charset.StandardCharsets;
@@ -71,7 +72,7 @@ public class JSONToXML implements InterServerTransformation {
 
       // Convert JsonObject to Map for XmlMapper
       Type type = new TypeToken<Map<String, Object>>() {}.getType();
-      Map<String, Object> map = gson.fromJson(jsonObject, type);
+      Map<String, Object> map =  GsonFactory.getInstance().getSimpleGson().fromJson(jsonObject, type);
 
       XmlMapper xmlMapper = new XmlMapper();
       String xml = xmlMapper.writeValueAsString(map);

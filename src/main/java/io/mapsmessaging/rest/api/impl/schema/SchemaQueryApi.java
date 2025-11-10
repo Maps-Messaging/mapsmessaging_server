@@ -26,6 +26,7 @@ import io.mapsmessaging.rest.api.impl.BaseRestApi;
 import io.mapsmessaging.rest.responses.*;
 import io.mapsmessaging.schemas.config.SchemaConfig;
 import io.mapsmessaging.schemas.config.SchemaConfigFactory;
+import io.mapsmessaging.schemas.config.SchemaResource;
 import io.mapsmessaging.selector.ParseException;
 import io.mapsmessaging.selector.SelectorParser;
 import io.mapsmessaging.selector.operators.ParserExecutor;
@@ -183,7 +184,7 @@ public class SchemaQueryApi extends BaseRestApi {
   )
   public SchemaResponse getSchemaByContext(@PathParam("context") String context) throws IOException {
     hasAccess(RESOURCE);
-    List<SchemaConfig> config = SchemaManager.getInstance().getSchemaByContext(context);
+    List<SchemaResource> config = SchemaManager.getInstance().getSchemaByContext(context);
     if (config != null) {
       return new SchemaResponse(convert(config));
     }
@@ -209,7 +210,7 @@ public class SchemaQueryApi extends BaseRestApi {
   )
   public SchemaResponse getSchemaByType(@PathParam("type") String type) throws IOException {
     hasAccess(RESOURCE);
-    List<SchemaConfig> config = SchemaManager.getInstance().getSchemas(type);
+    List<SchemaResource> config = SchemaManager.getInstance().getSchemas(type);
     if (config != null) {
       return new SchemaResponse(convert(config));
     }
@@ -290,7 +291,7 @@ public class SchemaQueryApi extends BaseRestApi {
       return Response.status(Response.Status.NOT_FOUND).build();
     }
 
-    byte[] body = config.pack().getBytes();
+    byte[] body = config.packAsBytes();
     if (body == null) {
       return Response.status(Response.Status.NOT_FOUND).build();
     }
@@ -304,7 +305,7 @@ public class SchemaQueryApi extends BaseRestApi {
     }
 
     CacheControl cc = new CacheControl();
-    if (config.getVersion() > 0) {
+    if (config.getVersion() != null && !config.getVersion().isEmpty()) {
       cc.setPrivate(false);
       cc.setMaxAge(31536000); // 1 year
     } else {
@@ -392,10 +393,10 @@ public class SchemaQueryApi extends BaseRestApi {
     return SchemaManager.getInstance().buildLinkFormatResponse();
   }
 
-  private List<String> convert(List<SchemaConfig> configs) throws IOException {
+  private List<String> convert(List<SchemaResource> configs) throws IOException {
     List<String> data = new ArrayList<>();
-    for (SchemaConfig config : configs) {
-      data.add(config.pack());
+    for (SchemaResource config : configs) {
+      data.add(config.getDefaultVersion().pack());
     }
     return data;
   }

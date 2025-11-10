@@ -171,7 +171,7 @@ public class DestinationImpl implements BaseDestination {
     subscriptionManager = new DestinationSubscriptionManager(name);
     schemaSubscriptionManager = new DestinationSubscriptionManager(name);
     resource = ResourceFactory.getInstance().create(new MessageExpiryHandler(this), name, pathManager, fullyQualifiedDirectoryRoot, uuid, destinationType, config);
-    resource.getResourceProperties().setSchema(config.toMap());
+    resource.getResourceProperties().setSchemaId(config.getUniqueId());
     retainManager = new RetainManager(isPersistent(), getPhysicalLocation());
 
     stats = new DestinationStats(StatsFactory.getDefaultType());
@@ -218,7 +218,7 @@ public class DestinationImpl implements BaseDestination {
     schema = new Schema(SchemaManager.getInstance().locateSchema(name));
     completionQueue = new EventReaperQueue();
 
-    if(resource.getResourceProperties().getSchema() == null || resource.getResourceProperties().getSchema().isEmpty()){
+    if(resource.getResourceProperties().getSchemaId() == null){
       SchemaConfig config = SchemaManager.getInstance().getSchema(SchemaManager.DEFAULT_RAW_UUID);
       updateSchema(config, null);
     }
@@ -302,17 +302,32 @@ public class DestinationImpl implements BaseDestination {
     return SimpleTaskScheduler.getInstance().scheduleAtFixedRate(new EventReaper(), 5, 5, TimeUnit.SECONDS);
   }
 
-  private void loadSchema() {
-    ConfigurationProperties props = new ConfigurationProperties(resource.getResourceProperties().getSchema());
-    if (!props.isEmpty()) {
-      SchemaConfig config;
-      try {
-        config = SchemaConfigFactory.getInstance().constructConfig(props.getMap());
-      } catch (IOException e) {
-        config = SchemaManager.getInstance().getSchema(SchemaManager.DEFAULT_RAW_UUID);
+  private void loadSchema() throws IOException {
+    String schemaId = resource.getResourceProperties().getSchemaId();
+    SchemaConfig schemaConfig = null;
+    if(resource.getResourceProperties().getSchema() != null){
+      // Old version lets update
+      ConfigurationProperties props = new ConfigurationProperties(resource.getResourceProperties().getSchema());
+      if (!props.isEmpty()) {
+        ConfigurationProperties config = (ConfigurationProperties) props.get("schema");
+        if(config != null){
+          schemaId = config.getProperty("uuid");
+          schemaConfig = SchemaManager.getInstance().convertAndCreate(getFullyQualifiedNamespace(), config);
+          resource.getResourceProperties().setSchemaId(schemaId);
+          resource.getResourceProperties().setSchema(null);
+          this.updateSchema(schemaConfig, null);
+        }
       }
-      config = SchemaManager.getInstance().addSchema(getFullyQualifiedNamespace(), config);
-      Schema newSchema = new Schema(config);
+    }
+    else{
+      schemaConfig = SchemaManager.getInstance().getSchema(schemaId);
+    }
+
+    if(schema != null){
+      if(schemaConfig == null){
+        schemaConfig = SchemaManager.getInstance().getSchema(SchemaManager.DEFAULT_RAW_UUID);
+      }
+      Schema newSchema = new Schema(schemaConfig);
       schema.update(newSchema);
     }
   }
@@ -323,7 +338,7 @@ public class DestinationImpl implements BaseDestination {
     ResourceProperties resourceProperties = resource.getResourceProperties();
 
     if (schema == null || schema.update(newSchema) && resourceProperties != null) {
-      resourceProperties.setSchema(config.toMap());
+      resourceProperties.setSchemaId(config.getUniqueId());
       resourceProperties.write(new File(fullyQualifiedDirectoryRoot));
       if (message != null && schemaSubscriptionManager.hasSubscriptions()) {
         EngineTask task = new NonDelayedStoreMessageTask(this, schemaSubscriptionManager, message);

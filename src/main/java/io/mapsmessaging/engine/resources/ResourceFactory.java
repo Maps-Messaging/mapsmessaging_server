@@ -111,7 +111,7 @@ public class ResourceFactory {
           BuildInfo.getBuildVersion()
       );
       if(config != null) {
-        properties.setSchema(config.toMap());
+        properties.setSchemaId(config.getUniqueId());
       }
       properties.write(directoryPath);
       return properties;

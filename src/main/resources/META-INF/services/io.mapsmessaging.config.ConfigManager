@@ -22,13 +22,14 @@ io.mapsmessaging.config.DestinationManagerConfig
 io.mapsmessaging.config.DeviceManagerConfig
 io.mapsmessaging.config.DiscoveryManagerConfig
 io.mapsmessaging.config.JolokiaConfig
+io.mapsmessaging.config.LicenseConfig
 io.mapsmessaging.config.LoRaDeviceManagerConfig
 io.mapsmessaging.config.MessageDaemonConfig
 io.mapsmessaging.config.NetworkConnectionManagerConfig
 io.mapsmessaging.config.NetworkManagerConfig
 io.mapsmessaging.config.RestApiManagerConfig
 io.mapsmessaging.config.RoutingManagerConfig
-io.mapsmessaging.config.TenantManagementConfig
+io.mapsmessaging.config.SchemaManagerConfig
 io.mapsmessaging.config.SecurityManagerConfig
-io.mapsmessaging.config.LicenseConfig
+io.mapsmessaging.config.TenantManagementConfig
 io.mapsmessaging.config.ml.MLModelManagerConfig

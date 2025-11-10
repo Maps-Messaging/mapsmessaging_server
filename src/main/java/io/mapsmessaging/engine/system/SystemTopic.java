@@ -32,6 +32,7 @@ import org.jetbrains.annotations.NotNull;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 public abstract class SystemTopic extends DestinationImpl implements Service {
 
@@ -67,7 +68,7 @@ public abstract class SystemTopic extends DestinationImpl implements Service {
   }
 
   public void start() {
-    String schemaId = getSchemaUUID();
+    UUID schemaId = getSchemaUUID();
     if (schemaId != null) {
       try {
         super.updateSchema(SchemaManager.getInstance().getSchema(schemaId), null);
@@ -77,7 +78,7 @@ public abstract class SystemTopic extends DestinationImpl implements Service {
     }
   }
 
-  public abstract String getSchemaUUID();
+  public abstract UUID getSchemaUUID();
 
   public void sendUpdate() throws IOException {
     super.storeMessage(generateMessage());

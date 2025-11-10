@@ -28,6 +28,7 @@ import io.mapsmessaging.engine.schema.SchemaManager;
 import io.mapsmessaging.engine.system.SystemTopic;
 
 import java.io.IOException;
+import java.util.UUID;
 
 public class ServerDetailsTopic extends SystemTopic {
 
@@ -42,7 +43,7 @@ public class ServerDetailsTopic extends SystemTopic {
 
 
   @Override
-  public String getSchemaUUID() {
+  public UUID getSchemaUUID() {
     return SchemaManager.DEFAULT_JSON_SCHEMA;
   }
 

@@ -23,6 +23,7 @@ import com.google.gson.Gson;
 import io.mapsmessaging.network.protocol.impl.satellite.protocol.CipherManager;
 import io.mapsmessaging.network.protocol.impl.satellite.protocol.MessageQueuePacker;
 import io.mapsmessaging.network.protocol.impl.satellite.protocol.MessageQueueUnpacker;
+import io.mapsmessaging.utilities.GsonFactory;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
@@ -31,7 +32,6 @@ import java.nio.charset.StandardCharsets;
 import java.util.*;
 
 class PackingPipelineTest {
-  private static final Gson gson = new Gson();
 
   private static Map<String, List<byte[]>> sampleBatch(int keys, int perKey, int size, byte fill) {
     Map<String, List<byte[]>> m = new LinkedHashMap<>();
@@ -62,7 +62,7 @@ class PackingPipelineTest {
         obj.put("flag", random.nextBoolean());
 
         // encode as JSON
-        String json = gson.toJson(obj);
+        String json = GsonFactory.getInstance().getSimpleGson().toJson(obj);
         byte[] jsonBytes = json.getBytes(StandardCharsets.UTF_8);
         list.add(jsonBytes);
       }

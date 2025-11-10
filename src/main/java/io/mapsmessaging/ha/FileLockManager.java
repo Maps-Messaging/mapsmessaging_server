@@ -3,6 +3,7 @@ package io.mapsmessaging.ha;
 import com.google.gson.Gson;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
+import io.mapsmessaging.utilities.GsonFactory;
 import lombok.Getter;
 
 import java.io.IOException;
@@ -84,7 +85,7 @@ public class FileLockManager implements AutoCloseable {
       while (!shutdown.get() && locked) {
         try {
           lockInfo.setLastHeartbeat(OffsetDateTime.now().toString());
-          String json = new Gson().toJson(lockInfo);
+          String json = GsonFactory.getInstance().getSimpleGson().toJson(lockInfo);
           Files.writeString(heartbeatFilePath, json);
         } catch (IOException ignored) {}
         try {
@@ -166,7 +167,7 @@ public class FileLockManager implements AutoCloseable {
     try {
       if (!Files.exists(heartbeatFilePath)) return true;
       String content = Files.readString(heartbeatFilePath).trim();
-      LockInfo info = new Gson().fromJson(content, LockInfo.class);
+      LockInfo info = GsonFactory.getInstance().getSimpleGson().fromJson(content, LockInfo.class);
       OffsetDateTime lastBeat = OffsetDateTime.parse(info.getLastHeartbeat());
       return OffsetDateTime.now().minus(leaseTimeoutMillis, java.time.temporal.ChronoUnit.MILLIS).isAfter(lastBeat);
     } catch (IOException | RuntimeException e) {

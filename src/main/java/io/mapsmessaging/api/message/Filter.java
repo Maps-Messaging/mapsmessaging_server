@@ -22,6 +22,7 @@ package io.mapsmessaging.api.message;
 import io.mapsmessaging.engine.destination.DestinationImpl;
 import io.mapsmessaging.engine.schema.SchemaManager;
 import io.mapsmessaging.schemas.config.SchemaConfig;
+import io.mapsmessaging.schemas.config.SchemaResource;
 import io.mapsmessaging.schemas.formatters.MessageFormatter;
 import io.mapsmessaging.selector.IdentifierResolver;
 import io.mapsmessaging.selector.operators.ParserExecutor;
@@ -60,8 +61,8 @@ public class Filter {
   }
 
   public static IdentifierResolver getTopicResolver(String topicName, Message message) {
-    List<SchemaConfig> list = SchemaManager.getInstance().getSchemaByContext(topicName);
-    return getResolver(list.stream().findFirst().get().getUniqueId(), message);
+    List<SchemaResource> list = SchemaManager.getInstance().getSchemaByContext(topicName);
+    return getResolver(list.stream().findFirst().get().getDefaultVersion().getUniqueId(), message);
   }
 
   public static IdentifierResolver getResolver(String lookup, Message message) {

@@ -33,6 +33,7 @@ import lombok.NoArgsConstructor;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 
 public class DestinationStatusTopic extends SystemTopic {
@@ -47,7 +48,7 @@ public class DestinationStatusTopic extends SystemTopic {
   }
 
   @Override
-  public String getSchemaUUID() {
+  public UUID getSchemaUUID() {
     return SchemaManager.DEFAULT_JSON_SCHEMA;
   }
 

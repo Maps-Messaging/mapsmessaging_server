@@ -35,7 +35,7 @@ public final class CloudEventTypeHelper {
         "event"
     );
 
-    String version = schemaConfig.getVersion() > 0 ? ".v" + schemaConfig.getVersion() : "";
+    String version = schemaConfig.getVersion() != null && !schemaConfig.getVersion().isEmpty() ? ".v" + schemaConfig.getVersion() : "";
 
     return base + "." + sanitize(entity) + version;
   }

@@ -19,15 +19,11 @@
 
 package io.mapsmessaging.api.transformers;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
 import io.mapsmessaging.configuration.ConfigurationProperties;
 import io.mapsmessaging.network.protocol.Protocol;
 import io.mapsmessaging.utilities.service.Service;
 
 public interface InterServerTransformation extends Service {
-
-  Gson gson = new GsonBuilder().setPrettyPrinting().create();
 
   Protocol.ParsedMessage transform(String source, Protocol.ParsedMessage message);
 

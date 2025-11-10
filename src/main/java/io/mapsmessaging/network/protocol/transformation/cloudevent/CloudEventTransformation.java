@@ -26,12 +26,13 @@ import io.mapsmessaging.api.MessageBuilder;
 import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.network.protocol.transformation.ProtocolMessageTransformation;
 import io.mapsmessaging.network.protocol.transformation.cloudevent.pack.PackHelper;
+import io.mapsmessaging.utilities.GsonFactory;
 import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
 
 public abstract class CloudEventTransformation implements ProtocolMessageTransformation {
 
-  protected Gson gson = new GsonBuilder().setPrettyPrinting().create();
+  protected Gson gson = GsonFactory.getInstance().getPrettyGson();
   protected PackHelper packHelper;
 
   CloudEventTransformation() {

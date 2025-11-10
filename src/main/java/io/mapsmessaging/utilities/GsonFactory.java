@@ -17,29 +17,31 @@
  *  limitations under the License.
  */
 
-package io.mapsmessaging.engine.system.impl;
+package io.mapsmessaging.utilities;
 
-import io.mapsmessaging.BuildInfo;
-import io.mapsmessaging.api.message.Message;
-import io.mapsmessaging.engine.schema.SchemaManager;
-import io.mapsmessaging.engine.system.SystemTopic;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import lombok.Getter;
 
-import java.io.IOException;
-import java.util.UUID;
+@SuppressWarnings("java:S6548") // yes, it is a singleton
+public class GsonFactory {
 
-public class BrokerVersion extends SystemTopic {
-
-  public BrokerVersion() throws IOException {
-    super("$SYS/broker/version");
+  private static class Holder {
+    static final GsonFactory INSTANCE = new GsonFactory();
   }
 
-  @Override
-  public UUID getSchemaUUID() {
-    return SchemaManager.DEFAULT_STRING_SCHEMA;
+  public static GsonFactory getInstance() {
+    return GsonFactory.Holder.INSTANCE;
   }
 
-  @Override
-  protected Message generateMessage() {
-    return getMessage(BuildInfo.getBuildVersion().getBytes());
+  @Getter
+  private final Gson prettyGson;
+
+  private GsonFactory() {
+    prettyGson = new GsonBuilder().setPrettyPrinting().create();
+  }
+
+  public Gson getSimpleGson() {
+    return prettyGson;
   }
 }

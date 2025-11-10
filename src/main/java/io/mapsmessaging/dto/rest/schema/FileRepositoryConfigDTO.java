@@ -17,29 +17,23 @@
  *  limitations under the License.
  */
 
-package io.mapsmessaging.engine.system.impl;
+package io.mapsmessaging.dto.rest.schema;
 
-import io.mapsmessaging.BuildInfo;
-import io.mapsmessaging.api.message.Message;
-import io.mapsmessaging.engine.schema.SchemaManager;
-import io.mapsmessaging.engine.system.SystemTopic;
+import io.swagger.v3.oas.annotations.media.Schema;
+import lombok.*;
 
-import java.io.IOException;
-import java.util.UUID;
+@NoArgsConstructor
+@AllArgsConstructor
+@Getter
+@Setter
+@Schema(
+    title = "File Repository configuration",
+    description = "Configuration details for the file-based schema repository. " +
+        "Used when repositoryType is set to 'File'.")
+public class FileRepositoryConfigDTO extends RepositoryConfigDTO {
 
-public class BrokerVersion extends SystemTopic {
-
-  public BrokerVersion() throws IOException {
-    super("$SYS/broker/version");
-  }
-
-  @Override
-  public UUID getSchemaUUID() {
-    return SchemaManager.DEFAULT_STRING_SCHEMA;
-  }
-
-  @Override
-  protected Message generateMessage() {
-    return getMessage(BuildInfo.getBuildVersion().getBytes());
-  }
+  @Schema(
+      description = "Absolute or relative directory path where schema files are stored.",
+      example = "{{MAPS_DATA}}/schemas")
+  private String directoryPath;
 }

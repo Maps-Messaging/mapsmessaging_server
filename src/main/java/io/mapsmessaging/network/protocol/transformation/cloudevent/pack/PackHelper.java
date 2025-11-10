@@ -67,7 +67,7 @@ public abstract class PackHelper {
 
     String subject = null;
     if (schemaConfig != null) {
-      subject = firstNonEmpty(schemaConfig.getName(), schemaConfig.getTitle(), schemaConfig.getMatchExpression());
+      subject = firstNonEmpty(schemaConfig.getName(), schemaConfig.getTitle());
     }
 
     MessageFormatter formatter = null;
@@ -164,8 +164,8 @@ public abstract class PackHelper {
     if (schema.getFormat() != null && !schema.getFormat().isEmpty()) {
       ce.addProperty("mapsSchemaFormat", schema.getFormat());
     }
-    if (schema.getVersion() > 0) {
-      ce.addProperty("mapsSchemaVersion", Integer.toString(schema.getVersion()));
+    if (schema.getVersion() != null && !schema.getVersion().isEmpty()) {
+      ce.addProperty("mapsSchemaVersion", schema.getVersion());
     }
     if (schema.getTitle() != null && !schema.getTitle().isEmpty()) {
       ce.addProperty("mapsSchemaTitle", schema.getTitle());

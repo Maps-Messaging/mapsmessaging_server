@@ -26,6 +26,7 @@ import io.mapsmessaging.config.LicenseConfig;
 import io.mapsmessaging.config.MessageDaemonConfig;
 import io.mapsmessaging.license.FeatureManager;
 import io.mapsmessaging.stats.data.ServerStats;
+import io.mapsmessaging.utilities.GsonFactory;
 import io.mapsmessaging.utilities.configuration.ConfigurationManager;
 import io.mapsmessaging.utilities.threads.SimpleTaskScheduler;
 import lombok.Data;
@@ -97,7 +98,7 @@ public class StatsReporter {
       connection.setRequestMethod("POST");
       connection.setDoOutput(true);
       connection.setRequestProperty("Content-Type", "application/json");  // Fix: Use JSON instead of form-data
-      Gson gson = new Gson();
+      Gson gson = GsonFactory.getInstance().getSimpleGson();
 
       // Convert ServerStats to JSON
       String jsonPayload = buildJsonPayload(gson, status);
