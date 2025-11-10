@@ -2,10 +2,13 @@ steps:
   - label: ":maven: Build and release to github"
     command:
       - export NVD_API_KEY=$(buildkite-agent secret get nvd_api_key)
-      - release-notes --jira --out release-notes.md
       - wget https://github.com/Maps-Messaging/web-admin-client/releases/download/maps_web_client_1.0.1/webAdminClient.tgz
       - tar -xvzf ./webAdminClient.tgz
       - if [ ! -d "out" ]; then echo "'out' directory missing after extraction"; exit 1; fi
+      - git fetch --prune --tags origin main development
+      - MAIN_SHA="$(git rev-parse origin/main)"
+      - DEV_SHA="$(git rev-parse origin/development)"
+      - release-notes --range "$MAIN_SHA..$DEV_SHA" --jira --out release-notes.md
       - chmod +x ./packaging/scripts/set_maven_version_for_ml.sh
       - ./packaging/scripts/set_maven_version_for_ml.sh
       - chmod +x ./packaging/scripts/prepare_build.sh
