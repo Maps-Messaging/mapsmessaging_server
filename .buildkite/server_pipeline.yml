@@ -7,23 +7,34 @@ steps:
         - tar -xvzf ./webAdminClient.tgz
         - if [ ! -d "out" ]; then echo "'out' directory missing after extraction"; exit 1; fi
         - |
-            set -euo pipefail
-            
-            git fetch --prune --tags origin '+refs/heads/*:refs/remotes/origin/*'
-            
-            BASE_REF="$(git symbolic-ref -q --short refs/remotes/origin/HEAD || true)"
-            if [ -z "$BASE_REF" ]; then
-              if git rev-parse --verify --quiet origin/main >/dev/null; then BASE_REF="origin/main";
-              elif git rev-parse --verify --quiet origin/master >/dev/null; then BASE_REF="origin/master";
-              else echo "No origin/main or origin/master on remote"; git ls-remote --heads origin; exit 1; fi
-            fi
-            
-            MAIN_SHA="$(git rev-parse "$BASE_REF")"
-            DEV_SHA="$(git rev-parse origin/development)"
-            [ -n "$MAIN_SHA" ] && [ -n "$DEV_SHA" ] || { echo "Failed to resolve SHAs"; exit 1; }
+          set -euo pipefail
           
-            echo "Using range: $MAIN_SHA..$DEV_SHA ($BASE_REF vs origin/development)"
-            release-notes --range "${MAIN_SHA}..${DEV_SHA}" --jira --out release-notes.md
+          cd "${BUILDKITE_BUILD_CHECKOUT_PATH:-.}" || { echo "No checkout path"; exit 1; }
+          git rev-parse --is-inside-work-tree >/dev/null || { echo "Not inside a git work tree"; pwd; ls -la; exit 1; }
+          
+          git fetch --prune --tags origin '+refs/heads/*:refs/remotes/origin/*'
+          
+          BASE_REF="$(git symbolic-ref -q --short refs/remotes/origin/HEAD || true)"
+          [ -n "$BASE_REF" ] || {
+            if   git rev-parse --verify --quiet origin/main   >/dev/null; then BASE_REF=origin/main;
+              elif git rev-parse --verify --quiet origin/master >/dev/null; then BASE_REF=origin/master;
+              else echo "No origin/main or origin/master on remote"; git ls-remote --heads origin; exit 1; 
+            fi
+          }
+          
+          MAIN_SHA="$(git rev-parse --verify --quiet "$BASE_REF" || true)"
+          DEV_SHA="$(git rev-parse --verify --quiet origin/development || true)"
+          
+          echo "DEBUG  base-ref=$BASE_REF"
+          echo "DEBUG  MAIN_SHA=${MAIN_SHA:-<none>}"
+          echo "DEBUG  DEV_SHA=${DEV_SHA:-<none>}"
+          
+          [ -n "$MAIN_SHA" ] && [ -n "$DEV_SHA" ] || {
+            echo "Missing SHAs; listing remote heads:"; git ls-remote --heads origin; exit 1; 
+          }
+        
+          echo "Using range: $MAIN_SHA..$DEV_SHA ($BASE_REF vs origin/development)"
+          release-notes --range "${MAIN_SHA}..${DEV_SHA}" --jira --out release-notes.md
 
         - chmod +x ./packaging/scripts/prepare_build.sh
         - ./packaging/scripts/prepare_build.sh
