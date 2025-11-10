@@ -148,6 +148,7 @@
         <include>README*</include>
         <include>LICENSE*</include>
         <include>CommonsClause.*</include>
+        <include>release-notes.md</include>
       </includes>
     </fileSet>
 

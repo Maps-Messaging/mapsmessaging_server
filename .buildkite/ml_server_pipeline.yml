@@ -2,6 +2,7 @@ steps:
   - label: ":maven: Build and release to github"
     command:
       - export NVD_API_KEY=$(buildkite-agent secret get nvd_api_key)
+      - release-notes --jira --out release-notes.md
       - wget https://github.com/Maps-Messaging/web-admin-client/releases/download/maps_web_client_1.0.1/webAdminClient.tgz
       - tar -xvzf ./webAdminClient.tgz
       - if [ ! -d "out" ]; then echo "'out' directory missing after extraction"; exit 1; fi

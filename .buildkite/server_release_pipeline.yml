@@ -2,6 +2,7 @@ steps:
   - label: ":maven: Build and release to github"
     command:
       - wget https://github.com/Maps-Messaging/web-admin-client/releases/download/maps_web_client_1.0.1/webAdminClient.tgz
+      - release-notes --jira --out release-notes.md
       - tar -xvzf ./webAdminClient.tgz
       - if [ ! -d "out" ]; then echo "'out' directory missing after extraction"; exit 1; fi
       - chmod +x ./packaging/scripts/prepare_build.sh
