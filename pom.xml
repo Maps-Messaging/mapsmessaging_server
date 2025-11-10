@@ -1001,7 +1001,7 @@
     <dependency>
       <groupId>org.springframework</groupId>
       <artifactId>spring-websocket</artifactId>
-      <version>6.2.10</version>
+      <version>6.2.12</version>
       <scope>test</scope>
     </dependency>
 
