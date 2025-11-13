@@ -67,8 +67,6 @@ RUN set -eux; \
     \
     # Static files + data dir
     mkdir -p /data; \
-    mv "/maps-%%MAPS_VERSION%%/www" "/data/www"; \
-    sed -i 's|{{MAPS_HOME}}|/data|g' maps-%%MAPS_VERSION%%/conf/RestApi.yaml && \
     \
     # Runtime user
     addgroup -S messaginggroup; \
