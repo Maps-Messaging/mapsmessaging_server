@@ -160,7 +160,7 @@ public class SchemaManager implements Agent {
   }
 
   public synchronized List<SchemaConfig> getAll() {
-    List<SchemaResource> resources = repository.search("", new LinkedHashMap<>(), 0, 0);
+    List<SchemaResource> resources = repository.getAllSchemas();
     List<SchemaConfig> schemas = new ArrayList<>();
     for(SchemaResource resource : resources){
       if(resource.getDefaultVersion() != null) {
