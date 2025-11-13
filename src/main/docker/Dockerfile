@@ -46,6 +46,7 @@ RUN apk add --no-cache dos2unix shadow wget && \
 # Setup data volume and static files
     mkdir -p /data && \
     mv maps-%%MAPS_VERSION%%/www /data/www && \
+    sed -i 's|{{MAPS_HOME}}|/data|g' maps-%%MAPS_VERSION%%/conf/RestApi.yaml && \
 \
 # Add user and permissions
     addgroup -S messaginggroup && \
