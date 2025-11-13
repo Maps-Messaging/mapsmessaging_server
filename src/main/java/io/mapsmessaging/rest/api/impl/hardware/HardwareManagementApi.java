@@ -105,7 +105,7 @@ public class HardwareManagementApi extends HardwareBaseRestApi {
     }
     List<DeviceInfoDTO> devices = new ArrayList<>();
     DeviceManager deviceManager = MessageDaemon.getInstance().getSubSystemManager().getDeviceManager();
-    if (deviceManager != null){
+    if (deviceManager != null && deviceManager.isEnabled() && deviceManager.getActiveDevices() != null) {
       List<DeviceController> activeDevices = deviceManager.getActiveDevices();
       for (DeviceController device : activeDevices) {
         DeviceInfoDTO deviceInfo = new DeviceInfoDTO();
