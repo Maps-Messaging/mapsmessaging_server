@@ -6,7 +6,7 @@ steps:
       - if [ ! -d "out" ]; then echo "'out' directory missing after extraction"; exit 1; fi
       - chmod +x ./packaging/scripts/prepare_build.sh
       - ./packaging/scripts/prepare_build.sh
-      - mvn -DskipTests=true clean deploy -U
+      #- mvn -DskipTests=true clean deploy -U
       - chmod +x ./packaging/*.sh
       #- ./packaging/github_release.sh $(buildkite-agent secret get GIT_HUB_TOKEN)
       - chmod +x ./packaging/scripts/*
