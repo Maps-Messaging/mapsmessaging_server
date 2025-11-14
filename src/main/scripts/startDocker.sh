@@ -71,5 +71,3 @@ java -classpath $CLASSPATH $JAVA_OPTS \
     -Djava.security.auth.login.config="${MAPS_CONF}/jaasAuth.config" \
     -DMAPS_HOME="${MAPS_HOME}" \
     io.mapsmessaging.MessageDaemon
-
-
