@@ -33,6 +33,7 @@ import io.mapsmessaging.engine.tasks.Response;
 import io.mapsmessaging.logging.ThreadContext;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Queue;
@@ -60,7 +61,7 @@ public class SessionSharedSubscription extends Subscription {
 
   @Override
   public void cancel() throws IOException {
-    List<OutstandingEventDetails> outstandingEvents = acknowledgementController.getOutstanding();
+    List<OutstandingEventDetails> outstandingEvents = new ArrayList<>(acknowledgementController.getOutstanding());
     for (OutstandingEventDetails outstandingEvent : outstandingEvents) {
       sharedSubscription.handleTransaction(false, outstandingEvent.getId());
     }
@@ -213,6 +214,7 @@ public class SessionSharedSubscription extends Subscription {
     if (!sharedSubscription.hasAtRestMessages()) {
       message.setLastMessage(true);
     }
+    message.setBound(true);
     sessionImpl.getMessageCallback().sendMessage(sharedSubscription.getDestinationImpl(), this, message, completionTask);
     ThreadContext.clearMap();
   }

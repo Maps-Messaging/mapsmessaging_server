@@ -17,27 +17,15 @@
  *  limitations under the License.
  */
 
-package io.mapsmessaging.network.protocol;
+package io.mapsmessaging.network.route.select;
 
-import io.mapsmessaging.api.MessageBuilder;
-import io.mapsmessaging.api.message.Message;
-import io.mapsmessaging.utilities.service.Service;
 
-public interface ProtocolMessageTransformation extends Service {
+import io.mapsmessaging.network.route.link.LinkMetrics;
 
-  @Override
-  String getName();
-
-  @Override
-  String getDescription();
-
-  int getId();
-
-  default void incoming(MessageBuilder messageBuilder) {
-    // nothing to do here
-  }
-
-  default byte[] outgoing(Message message, String destinationName) {
-    return message.getOpaqueData();
-  }
+/**
+ * Pure function: metrics -> scalar cost. Lower is better.
+ */
+@FunctionalInterface
+public interface CostFunction {
+  double compute(LinkMetrics linkMetrics, CostWeights costWeights);
 }

@@ -93,7 +93,3 @@ For full license terms, see the [LICENSE](LICENSE) file in the repository.
 
 
 [![Mutable.ai Auto Wiki](https://img.shields.io/badge/Auto_Wiki-Mutable.ai-blue)](https://wiki.mutable.ai/Maps-Messaging/mapsmessaging_server)
-
-
-
-

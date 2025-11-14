@@ -36,7 +36,7 @@ NetworkManager:
       # ---------------------------------------------------------------------------------------------------------
       serverReadBufferSize: 100K
       serverWriteBufferSize: 100K
-      selectorThreadCount: 2
+      selectorThreadCount: 10
 
       # ---------------------------------------------------------------------------------------------------------
       # MQTT Protocol configuration
@@ -140,7 +140,7 @@ NetworkManager:
         auth: default
 
       - name: "Stomp Interface with WebSocket Support"
-        url: "tcp://0.0.0.0:8674/"
+        url: "tcp://0.0.0.0:8675/"
         protocol: stomp,ws
         auth: default
 
@@ -160,7 +160,7 @@ NetworkManager:
         auth: default
 
       - name: "MQTT-SN Interface"
-        url: udp://0.0.0.0:1884/
+        url: udp://0.0.0.0:1887/
         protocol: mqtt-sn
         eventsPerTopicDuringSleep: 10
         maxTopicsInSleep: 10

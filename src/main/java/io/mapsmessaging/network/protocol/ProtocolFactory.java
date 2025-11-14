@@ -49,12 +49,19 @@ public class ProtocolFactory implements ServiceManager {
   }
 
   public ProtocolImplFactory getBoundedProtocol() {
+    List<ProtocolImplFactory> list = new ArrayList<>();
     for (ProtocolImplFactory protocol : protocolServiceList) {
-      if (protocols.equalsIgnoreCase(protocol.getName())) {
-        return protocol;
+      if(protocol.matches(protocols)) {
+        list.add(protocol);
       }
     }
-    return null;
+    if(list.isEmpty()) {
+      return null;
+    }
+    if(list.size() == 1) {
+      return list.getFirst();
+    }
+    return new VersionedProtocolImplFactory("Versions", "Supports multiple versioned protocols", list);
   }
 
   public DetectedProtocol detect(Packet packet, ProxyProtocolMode proxyProtocol) throws IOException {

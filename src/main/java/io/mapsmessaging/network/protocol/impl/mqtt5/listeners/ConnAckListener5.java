@@ -23,20 +23,17 @@ import io.mapsmessaging.BuildInfo;
 import io.mapsmessaging.api.Session;
 import io.mapsmessaging.api.SessionContextBuilder;
 import io.mapsmessaging.api.SessionManager;
-import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.config.auth.AuthConfig;
 import io.mapsmessaging.config.network.EndPointConnectionServerConfig;
 import io.mapsmessaging.logging.ServerLogMessages;
 import io.mapsmessaging.network.ProtocolClientConnection;
 import io.mapsmessaging.network.io.EndPoint;
 import io.mapsmessaging.network.protocol.Protocol;
-import io.mapsmessaging.network.protocol.ProtocolMessageTransformation;
+import io.mapsmessaging.network.protocol.transformation.ProtocolMessageTransformation;
 import io.mapsmessaging.network.protocol.impl.mqtt.packet.MalformedException;
 import io.mapsmessaging.network.protocol.impl.mqtt5.AuthenticationContext;
-import io.mapsmessaging.network.protocol.impl.mqtt5.DefaultConstants;
 import io.mapsmessaging.network.protocol.impl.mqtt5.MQTT5Protocol;
 import io.mapsmessaging.network.protocol.impl.mqtt5.packet.ConnAck5;
-import io.mapsmessaging.network.protocol.impl.mqtt5.packet.Connect5;
 import io.mapsmessaging.network.protocol.impl.mqtt5.packet.MQTTPacket5;
 import io.mapsmessaging.network.protocol.impl.mqtt5.packet.StatusCode;
 import io.mapsmessaging.network.protocol.impl.mqtt5.packet.properties.*;
@@ -59,16 +56,16 @@ public class ConnAckListener5 extends PacketListener5 {
 
     SessionContextBuilder scb = new SessionContextBuilder(sess, new ProtocolClientConnection(protocol));
     scb.setReceiveMaximum(((MQTT5Protocol) protocol).getClientReceiveMaximum());
-   // parseProperties((MQTT5Protocol) protocol, connect, scb);
-    handleSessionCreation(protocol, sess, null, connAck, scb, endPoint );
-    return connAck;
+    handleSessionCreation(protocol, sess, connAck, scb, endPoint, user, pass );
+    protocol.setConnected(true);
+    return null;
   }
 
-  private void handleSessionCreation(Protocol protocol, String sessionId, Connect5 connect, ConnAck5 connAck, SessionContextBuilder scb, EndPoint endPoint)
+  private void handleSessionCreation(Protocol protocol, String sessionId, ConnAck5 connAck, SessionContextBuilder scb, EndPoint endPoint, String user, String pass)
       throws MalformedException {
     Session session = null;
     try {
-      session = createSession((MQTT5Protocol) protocol, sessionId, connect, scb);
+      session = createSession((MQTT5Protocol) protocol, connAck, scb, user, pass);
       ((MQTT5Protocol) protocol).setSession(session);
       ProtocolMessageTransformation transformation = TransformationManager.getInstance().getTransformation(
           endPoint.getProtocol(),
@@ -76,7 +73,7 @@ public class ConnAckListener5 extends PacketListener5 {
           "mqtt",
           session.getSecurityContext().getUsername()
       );
-      protocol.setTransformation(transformation);
+      protocol.setProtocolMessageTransformation(transformation);
     } catch (LoginException e) {
       logger.log(ServerLogMessages.MQTT5_FAILED_CONSTRUCTION, e, sessionId);
       try {
@@ -119,8 +116,12 @@ public class ConnAckListener5 extends PacketListener5 {
     connAck.setCallback(session::resumeState);
   }
 
-  private Session createSession(MQTT5Protocol protocol, String sessionId, Connect5 connect, SessionContextBuilder scb) throws LoginException, IOException {
-    int keepAlive = connect.getKeepAlive();
+  private Session createSession(MQTT5Protocol protocol, ConnAck5 connect, SessionContextBuilder scb, String user, String pass) throws LoginException, IOException {
+    MessageProperty keepAliveProp = connect.getProperties().get(MessagePropertyFactory.SERVER_KEEPALIVE);
+    int keepAlive = 60;
+    if(keepAliveProp != null) {
+      keepAlive = ((ServerKeepAlive) keepAliveProp).getServerKeepAlive();
+    }
     int minKeepAlive = protocol.getMinimumKeepAlive();
     int maxKeepAlive = (int) protocol.getTimeOut() / 1000;
 
@@ -132,36 +133,16 @@ public class ConnAckListener5 extends PacketListener5 {
       keepAlive = maxKeepAlive; // Pull back to the maximum delay we accept
     }
     protocol.setKeepAlive(keepAlive * 1000L);
+    scb.setPersistentSession(false);
+    scb.setResetState(true);
 
-    scb.setPersistentSession(true)
-        .setResetState(connect.isCleanSession());
-
-    if (connect.hasPassword()) {
-      scb.setPassword(connect.getPassword());
+    if (pass != null && !pass.isEmpty()) {
+      scb.setPassword(pass.toCharArray());
     }
-    if (connect.hasUsername()) {
-      scb.setUsername(connect.getUsername());
-    }
-
-    if (connect.isWillFlag()) {
-      Message message =
-          PublishListener5.createMessage(
-              sessionId,
-              connect.getWillProperties().values(),
-              DefaultConstants.PRIORITY,
-              connect.isWillRetain(),
-              connect.getWillMsg(),
-              connect.getWillQOS(),
-              protocol.getTransformation(),
-              protocol);
-      scb.setWillMessage(message).setWillTopic(connect.getWillTopic());
+    if (user != null && !user.isEmpty()) {
+      scb.setUsername(user);
     }
 
-    for (MessageProperty property : connect.getWillProperties().values()) {
-      if (property.getId() == MessagePropertyFactory.WILL_DELAY_INTERVAL) {
-        scb.setWillDelayInterval(((WillDelayInterval) property).getWillDelayInterval());
-      }
-    }
     String duplicateReport = connect.getProperties().getDuplicateReport();
     if (!duplicateReport.isEmpty()) {
       logger.log(ServerLogMessages.MQTT5_DUPLICATE_PROPERTIES_DETECTED, duplicateReport);

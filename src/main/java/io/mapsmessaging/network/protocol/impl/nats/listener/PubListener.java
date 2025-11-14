@@ -22,7 +22,6 @@ package io.mapsmessaging.network.protocol.impl.nats.listener;
 import io.mapsmessaging.api.Destination;
 import io.mapsmessaging.api.MessageBuilder;
 import io.mapsmessaging.api.features.DestinationType;
-import io.mapsmessaging.api.features.QualityOfService;
 import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.api.message.TypedData;
 import io.mapsmessaging.engine.destination.MessageOverrides;
@@ -85,7 +84,7 @@ public class PubListener implements FrameListener {
           .setOpaqueData(msgFrame.getPayload())
           .setMeta(metaData)
           .setCorrelationData(msgFrame.getReplyTo())
-          .setTransformation(engine.getProtocol().getTransformation());
+          .setTransformation(engine.getProtocol().getProtocolMessageTransformation());
       Message message = MessageOverrides.createMessageBuilder(engine.getProtocol().getProtocolConfig().getMessageDefaults(), mb).build();
       if (msgFrame instanceof HPayloadFrame) {
         Map<String, String> headers = ((HPayloadFrame) msgFrame).getHeader();

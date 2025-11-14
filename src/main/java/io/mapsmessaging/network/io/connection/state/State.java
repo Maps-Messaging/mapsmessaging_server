@@ -19,12 +19,17 @@
 
 package io.mapsmessaging.network.io.connection.state;
 
+import io.mapsmessaging.api.features.DestinationMode;
 import io.mapsmessaging.network.io.connection.Constants;
 import io.mapsmessaging.network.io.connection.EndPointConnection;
+import io.mapsmessaging.network.route.link.LinkState;
+import lombok.Getter;
 
 public abstract class State implements Runnable {
 
+  @Getter
   protected final EndPointConnection endPointConnection;
+
   private final long timeout;
 
   protected State(EndPointConnection connection) {
@@ -44,8 +49,17 @@ public abstract class State implements Runnable {
     // No Op in most cases
   }
 
+
+  protected String constructSchema(String namespace) {
+    if (!namespace.startsWith("/")) {
+      namespace = "/" + namespace;
+    }
+    return DestinationMode.SCHEMA.getNamespace() + namespace;
+  }
+
   public abstract void execute();
 
   public abstract String getName();
 
+  public abstract LinkState getLinkState();
 }

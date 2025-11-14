@@ -20,36 +20,81 @@
 package io.mapsmessaging.engine.schema;
 
 import io.mapsmessaging.schemas.config.SchemaConfig;
+import io.mapsmessaging.schemas.config.SchemaResource;
 
-import java.time.LocalDateTime;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.time.OffsetDateTime;
+import java.util.*;
 
 public class SchemaLocationHelper {
 
-  public static SchemaConfig locateSchema(List<SchemaConfig> schemas, String destinationName) {
-    LocalDateTime now = LocalDateTime.now();
+  private SchemaLocationHelper() {}
+
+  public static int compareVersionStrings(String v1, String v2) {
+    if (v1 == null && v2 == null) return 0;
+    if (v1 == null) return -1;
+    if (v2 == null) return 1;
+
+    String s1 = v1.trim().toLowerCase(Locale.ROOT).replaceFirst("^v", "");
+    String s2 = v2.trim().toLowerCase(Locale.ROOT).replaceFirst("^v", "");
+
+    // strip build metadata (+build)
+    s1 = s1.split("\\+")[0];
+    s2 = s2.split("\\+")[0];
+
+    // try semver-ish numeric split
+    String[] p1 = s1.split("[\\.-]");
+    String[] p2 = s2.split("[\\.-]");
+    int len = Math.max(p1.length, p2.length);
+
+    for (int i = 0; i < len; i++) {
+      String a = i < p1.length ? p1[i] : "0";
+      String b = i < p2.length ? p2[i] : "0";
+
+      boolean aNum = a.matches("\\d+");
+      boolean bNum = b.matches("\\d+");
+
+      if (aNum && bNum) {
+        int diff = Integer.compare(Integer.parseInt(a), Integer.parseInt(b));
+        if (diff != 0) return diff;
+      } else if (aNum != bNum) {
+        return aNum ? 1 : -1; // numeric beats non-numeric
+      } else {
+        int diff = a.compareTo(b);
+        if (diff != 0) return diff;
+      }
+    }
+
+    // tie-breaker for prerelease (alpha/beta/rc etc)
+    List<String> order = List.of("snapshot", "dev", "alpha", "beta", "rc", "");
+    int idx1 = order.indexOf(order.stream().filter(s1::contains).findFirst().orElse(""));
+    int idx2 = order.indexOf(order.stream().filter(s2::contains).findFirst().orElse(""));
+    return Integer.compare(idx1, idx2);
+  }
+
+
+
+  public static SchemaConfig locateSchema(List<SchemaResource> resources, String destinationName) {
+    OffsetDateTime now = OffsetDateTime.now();
     Map<String, SchemaConfig> bestVersionPerId = new HashMap<>();
 
-    for (SchemaConfig schema : schemas) {
-      if (!isActive(schema, now)) continue;
-      if (!isActive(schema, now)) continue;
+    for (SchemaResource resource : resources) {
+      for (SchemaConfig schema : resource.getAll()) {
+        if (!isActive(schema, now)) continue;
 
-      boolean matches = destinationName.equals(schema.getTitle());
-      if (!matches) {
-        String expr = schema.getMatchExpression();
-        if(expr != null && !expr.isEmpty()) {
-          matches = destinationName.matches(expr);
+        boolean matches = destinationName.equals(schema.getTitle());
+        if (!matches) {
+          String expr = schema.getMatchExpression();
+          if (expr != null && !expr.isEmpty()) {
+            matches = destinationName.matches(expr);
+          }
         }
-      }
 
-      if (matches) {
-        String id = schema.getUniqueId();
-        SchemaConfig existing = bestVersionPerId.get(id);
-        if (existing == null || schema.getVersion() > existing.getVersion()) {
-          bestVersionPerId.put(id, schema);
+        if (matches) {
+          String id = schema.getUniqueId();
+          SchemaConfig existing = bestVersionPerId.get(id);
+          if (existing == null || compareVersionStrings(schema.getVersion(), existing.getVersion()) > 0) {
+            bestVersionPerId.put(id, schema);
+          }
         }
       }
     }
@@ -60,9 +105,9 @@ public class SchemaLocationHelper {
         .orElse(null);
   }
 
-  private static boolean isActive(SchemaConfig schema, LocalDateTime now) {
-    LocalDateTime start = schema.getNotBefore();
-    LocalDateTime end = schema.getExpiresAfter();
+  private static boolean isActive(SchemaConfig schema, OffsetDateTime now) {
+    OffsetDateTime start = schema.getNotBefore();
+    OffsetDateTime end = schema.getExpiresAfter();
     return (start == null || !now.isBefore(start)) && (end == null || !now.isAfter(end));
   }
 

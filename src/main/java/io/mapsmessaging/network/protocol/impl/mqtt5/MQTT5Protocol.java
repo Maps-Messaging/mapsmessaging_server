@@ -19,14 +19,13 @@
 
 package io.mapsmessaging.network.protocol.impl.mqtt5;
 
-import io.mapsmessaging.api.MessageEvent;
-import io.mapsmessaging.api.Session;
-import io.mapsmessaging.api.SessionManager;
-import io.mapsmessaging.api.SubscribedEventManager;
+import io.mapsmessaging.api.*;
 import io.mapsmessaging.api.features.QualityOfService;
 import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.api.message.TypedData;
+import io.mapsmessaging.api.transformers.InterServerTransformation;
 import io.mapsmessaging.config.protocol.impl.MqttV5Config;
+import io.mapsmessaging.dto.rest.analytics.StatisticsConfigDTO;
 import io.mapsmessaging.dto.rest.config.auth.SaslConfigDTO;
 import io.mapsmessaging.dto.rest.protocol.ProtocolInformationDTO;
 import io.mapsmessaging.dto.rest.protocol.impl.MqttV5ProtocolInformation;
@@ -42,23 +41,27 @@ import io.mapsmessaging.network.io.impl.SelectorTask;
 import io.mapsmessaging.network.protocol.EndOfBufferException;
 import io.mapsmessaging.network.protocol.Protocol;
 import io.mapsmessaging.network.protocol.impl.mqtt.PacketIdManager;
-import io.mapsmessaging.network.protocol.impl.mqtt.packet.MalformedException;
+import io.mapsmessaging.network.protocol.impl.mqtt.packet.*;
 import io.mapsmessaging.network.protocol.impl.mqtt5.listeners.PacketListenerFactory5;
 import io.mapsmessaging.network.protocol.impl.mqtt5.packet.*;
 import io.mapsmessaging.network.protocol.impl.mqtt5.packet.properties.*;
+import io.mapsmessaging.selector.operators.ParserExecutor;
 import io.mapsmessaging.utilities.collections.NaturalOrderedLongList;
 import io.mapsmessaging.utilities.collections.bitset.BitSetFactory;
 import io.mapsmessaging.utilities.collections.bitset.BitSetFactoryImpl;
+import io.mapsmessaging.utilities.filtering.NamespaceFilters;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.Setter;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import javax.security.auth.Subject;
 import java.io.IOException;
 import java.nio.BufferUnderflowException;
 import java.nio.channels.ClosedChannelException;
 import java.nio.channels.SelectionKey;
+import java.util.List;
 import java.util.Map;
 
 // Between MQTT 3/4 and 5 there is duplicate code base, yes this is by design
@@ -297,12 +300,17 @@ public class MQTT5Protocol extends Protocol {
 
   @Override
   public void sendMessage(@NotNull @NonNull MessageEvent messageEvent) {
-    Message message = messageEvent.getMessage();
+    ParsedMessage parsedMessage = parseOutboundMessage(messageEvent);
+    if(parsedMessage == null) {
+      return;
+    }
+    String topicName = parsedMessage.getDestinationName();
+    Message message = parsedMessage.getMessage();
     if (maxBufferSize > 0 && message.getOpaqueData().length >= maxBufferSize) {
       messageEvent.getCompletionTask().run();
       logger.log(ServerLogMessages.MQTT5_MAX_BUFFER_EXCEEDED, maxBufferSize, message.getOpaqueData().length);
     } else {
-      sendPublishFrame(messageEvent.getDestinationName(), messageEvent.getSubscription(), message, messageEvent.getCompletionTask());
+      sendPublishFrame(topicName, messageEvent.getSubscription(), message, messageEvent.getCompletionTask());
     }
   }
 
@@ -327,7 +335,7 @@ public class MQTT5Protocol extends Protocol {
     if (!subInfo.isRetainAsPublish()) {
       retain = false;
     }
-    Publish5 publish = new Publish5(createPayload(message, destinationName), qos, packetId, destinationName, retain);
+    Publish5 publish = new Publish5(message.getOpaqueData(), qos, packetId, destinationName, retain);
     if (alias != null) {
       publish.add(alias);
     }
@@ -341,14 +349,6 @@ public class MQTT5Protocol extends Protocol {
       return packetIdManager.nextPacketIdentifier(subscription, message.getIdentifier());
     }
     return 0;
-  }
-
-  private byte[] createPayload(Message message, String destinationName) {
-    if (transformation != null) {
-      return transformation.outgoing(message, destinationName);
-    } else {
-      return message.getOpaqueData();
-    }
   }
 
   private void addProperties(Message message, Publish5 publish, SubscribedEventManager subscription) {
@@ -392,4 +392,35 @@ public class MQTT5Protocol extends Protocol {
     information.setSessionInfo(session.getSessionInformation());
     return information;
   }
+
+  @Override
+  public void subscribeRemote(@NonNull @NotNull String resource, @NonNull @NotNull String mappedResource, @NonNull @NotNull QualityOfService qos, @Nullable ParserExecutor parser, @Nullable InterServerTransformation transformer, StatisticsConfigDTO statistics) throws IOException {
+    super.subscribeRemote(resource,mappedResource, qos, parser, transformer,statistics);
+    Subscribe5 subscribe = new Subscribe5();
+    subscribe.setMessageId(packetIdManager.nextPacketIdentifier());
+    subscribe.getSubscriptionList().add(new SubscriptionInfo(resource, qos));
+    writeFrame(subscribe);
+    completedConnection();
+  }
+
+  @Override
+  public void unsubscribeRemote(@NonNull @NotNull String resource){
+    Unsubscribe5 unsubscribe = new Unsubscribe5(List.of(resource));
+    unsubscribe.setMessageId(packetIdManager.nextPacketIdentifier());
+    writeFrame(unsubscribe);
+  }
+
+  @Override
+  public void subscribeLocal(@NonNull @NotNull String resource, @NonNull @NotNull String mappedResource, @NonNull @NotNull QualityOfService qos, @Nullable String selector, @Nullable InterServerTransformation transformer, @Nullable NamespaceFilters namespaceFilters, StatisticsConfigDTO statistics)
+      throws IOException {
+    super.subscribeLocal(resource, mappedResource, qos, selector, transformer, namespaceFilters, statistics);
+    SubscriptionContextBuilder builder = createSubscriptionContextBuilder(resource, selector, qos, 1024);
+    session.addSubscription(builder.build());
+  }
+
+  @Override
+  public void unsubscribeLocal(@NonNull @NotNull String resource){
+    session.removeSubscription(resource);
+  }
+
 }

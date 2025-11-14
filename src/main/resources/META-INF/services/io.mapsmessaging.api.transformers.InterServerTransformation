@@ -16,10 +16,7 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 #
-
-
-io.mapsmessaging.network.protocol.transformation.DefaultMessageTransformation
-io.mapsmessaging.network.protocol.transformation.JMSProtocolMessageTransformation
-io.mapsmessaging.network.protocol.transformation.MessageJsonTransformation
-io.mapsmessaging.network.protocol.transformation.MessageBinaryTransformation
-io.mapsmessaging.network.protocol.transformation.SchemaToJsonTransformation
+io.mapsmessaging.api.transformers.JSONToXML
+io.mapsmessaging.api.transformers.XMLToJSON
+io.mapsmessaging.api.transformers.JsonToValueTransformation
+io.mapsmessaging.api.transformers.GeoHashResolver

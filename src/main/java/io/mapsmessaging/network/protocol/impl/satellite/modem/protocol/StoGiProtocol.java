@@ -28,7 +28,7 @@ import io.mapsmessaging.api.features.Priority;
 import io.mapsmessaging.api.features.QualityOfService;
 import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.api.message.TypedData;
-import io.mapsmessaging.api.transformers.Transformer;
+import io.mapsmessaging.api.transformers.InterServerTransformation;
 import io.mapsmessaging.dto.rest.analytics.StatisticsConfigDTO;
 import io.mapsmessaging.dto.rest.config.protocol.impl.StoGiConfigDTO;
 import io.mapsmessaging.dto.rest.protocol.ProtocolInformationDTO;
@@ -42,7 +42,7 @@ import io.mapsmessaging.network.io.Packet;
 import io.mapsmessaging.network.io.impl.SelectorTask;
 import io.mapsmessaging.network.io.impl.serial.SerialEndPoint;
 import io.mapsmessaging.network.protocol.Protocol;
-import io.mapsmessaging.network.protocol.ProtocolMessageTransformation;
+import io.mapsmessaging.network.protocol.transformation.ProtocolMessageTransformation;
 import io.mapsmessaging.network.protocol.impl.satellite.TaskManager;
 import io.mapsmessaging.network.protocol.impl.satellite.gateway.io.SatelliteEndPoint;
 import io.mapsmessaging.network.protocol.impl.satellite.gateway.model.MessageData;
@@ -131,14 +131,14 @@ public class StoGiProtocol extends Protocol implements Consumer<Packet> {
 
     session = setupSession();
     session.resumeState();
-    transformation = TransformationManager.getInstance().getTransformation(
+    protocolMessageTransformation = TransformationManager.getInstance().getTransformation(
         endPoint.getProtocol(),
         endPoint.getName(),
         STOGI,
         session.getSecurityContext().getUsername()
     );
 
-    setTransformation(transformation);
+    setProtocolMessageTransformation(protocolMessageTransformation);
     StoGiConfigDTO modemConfig = (StoGiConfigDTO) getProtocolConfig();
 
     bridgeMode = modemConfig.isBridgeMode();
@@ -257,14 +257,14 @@ public class StoGiProtocol extends Protocol implements Consumer<Packet> {
   }
 
   @Override
-  public void subscribeRemote(@NonNull @NotNull String resource, @NonNull @NotNull String mappedResource, @Nullable ParserExecutor executor, @Nullable Transformer transformer, StatisticsConfigDTO statistics) {
+  public void subscribeRemote(@NonNull @NotNull String resource, @NonNull @NotNull String mappedResource, @NonNull @NotNull QualityOfService qos, @Nullable ParserExecutor executor, @Nullable InterServerTransformation transformer, StatisticsConfigDTO statistics) {
     // Will send a subscribe event, once we have one
   }
 
   @Override
-  public void subscribeLocal(@NonNull @NotNull String resource, @NonNull @NotNull String mappedResource, @Nullable String selector, @Nullable Transformer transformer, NamespaceFilters namespaceFilters, StatisticsConfigDTO statistics) throws IOException {
-    super.subscribeLocal(resource, mappedResource, selector, transformer, namespaceFilters, statistics);
-    SubscriptionContextBuilder builder = createSubscriptionContextBuilder(resource, selector, QualityOfService.AT_MOST_ONCE, 1024);
+  public void subscribeLocal(@NonNull @NotNull String resource, @NonNull @NotNull String mappedResource, @NonNull @NotNull QualityOfService qos, @Nullable String selector, @Nullable InterServerTransformation transformer, NamespaceFilters namespaceFilters, StatisticsConfigDTO statistics) throws IOException {
+    super.subscribeLocal(resource, mappedResource, qos, selector, transformer, namespaceFilters, statistics);
+    SubscriptionContextBuilder builder = createSubscriptionContextBuilder(resource, selector, qos, 1024);
     session.addSubscription(builder.build());
   }
 
@@ -296,8 +296,9 @@ public class StoGiProtocol extends Protocol implements Consumer<Packet> {
     }
 
     String destinationName = messageEvent.getDestinationName();
-    Message message = processTransformer(destinationName, messageEvent.getMessage());
-    Analyser analyser = topicNameAnalyserMap.get(messageEvent.getDestinationName());
+    ParsedMessage parsedMessage = new ParsedMessage(destinationName, messageEvent.getMessage());
+    parsedMessage = processInterServerTransformations(messageEvent.getDestinationName(),  parsedMessage);
+    Analyser analyser = topicNameAnalyserMap.get(parsedMessage.getDestinationName());
     if(analyser == null && !resourceNameAnalyserMap.isEmpty()){
       StatisticsConfigDTO config = resourceNameAnalyserMap.get(messageEvent.getSubscription().getContext().getAlias());
       if(config != null){
@@ -307,7 +308,7 @@ public class StoGiProtocol extends Protocol implements Consumer<Packet> {
     }
 
     if(analyser != null) {
-      message = analyser.ingest(message);
+      Message message = analyser.ingest(parsedMessage.getMessage());
       if(message == null) {
         if (messageEvent.getCompletionTask() != null) {
           messageEvent.getCompletionTask().run();
@@ -317,11 +318,9 @@ public class StoGiProtocol extends Protocol implements Consumer<Packet> {
     }
 
 
-    byte[] payload;
-    if (transformation != null) {
-      payload = transformation.outgoing(message, messageEvent.getDestinationName());
-    } else {
-      payload = message.getOpaqueData();
+    Message payload = parsedMessage.getMessage();
+    if (protocolMessageTransformation != null) {
+      payload = protocolMessageTransformation.outgoing(payload, messageEvent.getDestinationName());
     }
 
     if (topicNameMapping != null) {
@@ -337,7 +336,7 @@ public class StoGiProtocol extends Protocol implements Consumer<Packet> {
 
     Map<String, List<byte[]>> pending;
     if(sendHighPriorityEvents && (
-        message.getPriority().getValue() > Priority.TWO_BELOW_HIGHEST.getValue())||
+        payload.getPriority().getValue() > Priority.TWO_BELOW_HIGHEST.getValue())||
         filteredOverride){
       pending = priorityMessages.get();
     }
@@ -345,7 +344,7 @@ public class StoGiProtocol extends Protocol implements Consumer<Packet> {
       pending = pendingMessages.get();
     }
     List<byte[]> list = pending.computeIfAbsent(destinationName, key -> new ArrayList<>());
-    list.add(payload);
+    list.add(payload.getOpaqueData());
     while(list.size() > depth){
       list.removeFirst();
     }
@@ -459,8 +458,8 @@ public class StoGiProtocol extends Protocol implements Consumer<Packet> {
 
   private void buildSendList(Map<String, List<byte[]>> replacement) throws IOException {
     if(!replacement.isEmpty()){
-      MessageQueuePacker.Packed packedQueue = MessageQueuePacker.pack(replacement, compressionThreshold, cipherManager, transformation);
-      currentList.addAll(SatelliteMessageFactory.createMessages(currentStreamId,  packedQueue.data(), maxBufferSize, packedQueue.compressed(), (byte)transformation.getId()));
+      MessageQueuePacker.Packed packedQueue = MessageQueuePacker.pack(replacement, compressionThreshold, cipherManager, protocolMessageTransformation);
+      currentList.addAll(SatelliteMessageFactory.createMessages(currentStreamId,  packedQueue.data(), maxBufferSize, packedQueue.compressed(), (byte) protocolMessageTransformation.getId()));
       currentStreamId++;
     }
   }
@@ -552,10 +551,10 @@ public class StoGiProtocol extends Protocol implements Consumer<Packet> {
 
 
   private void sendMessageToTopic(String topic, byte[] data) {
-    Transformer transformer = destinationTransformationLookup(topic);
+    InterServerTransformation transformer = destinationTransformationLookup(topic);
     Message message = createMessage(
         data,
-        getTransformation(),
+        getProtocolMessageTransformation(),
         transformer,
         this
     );
@@ -597,7 +596,7 @@ public class StoGiProtocol extends Protocol implements Consumer<Packet> {
     future.get();
   }
 
-  private Message createMessage(byte[] msg, ProtocolMessageTransformation transformation, Transformer transformer, Protocol protocol) {
+  private Message createMessage(byte[] msg, ProtocolMessageTransformation transformation, InterServerTransformation transformer, Protocol protocol) {
     HashMap<String, String> meta = new LinkedHashMap<>();
     meta.put("protocol", "STOGI");
     meta.put("version", "1");
@@ -613,12 +612,12 @@ public class StoGiProtocol extends Protocol implements Consumer<Packet> {
         .setMeta(meta)
         .setQoS(QualityOfService.AT_MOST_ONCE)
         .storeOffline(false)
-        .setTransformation(transformation)
-        .setDestinationTransformer(transformer);
+        .setTransformation(transformation);
     return MessageOverrides.createMessageBuilder(protocol.getProtocolConfig().getMessageDefaults(), mb).build();
   }
 
-  private String parseForLookup(String lookup) {
+  @Override
+  public String parseForLookup(String lookup) {
     String exact = topicNameMapping.get(lookup);
     if (exact != null) return exact;
 

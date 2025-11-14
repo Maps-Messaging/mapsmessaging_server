@@ -37,6 +37,6 @@ public class UnsubscribeListener5 extends PacketListener5 {
     for (String info : unsubscribeList) {
       session.removeSubscription(info);
     }
-    return new UnsubAck5(unsubscribe.getPacketId());
+    return new UnsubAck5(unsubscribe.getMessageId());
   }
 }

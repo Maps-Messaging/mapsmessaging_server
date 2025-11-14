@@ -70,7 +70,7 @@ public class SemTechProtocol extends Protocol {
     selectorTask = new SelectorTask(this, endPoint.getConfig().getEndPointConfig(), endPoint.isUDP());
     selectorTask.register(SelectionKey.OP_READ);
     packetFactory = new PacketFactory();
-    transformation = TransformationManager.getInstance().getTransformation(
+    protocolMessageTransformation = TransformationManager.getInstance().getTransformation(
         endPoint.getProtocol(),
         endPoint.getName(),
         "semtech",

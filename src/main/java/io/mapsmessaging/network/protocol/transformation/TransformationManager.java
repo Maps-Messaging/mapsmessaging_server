@@ -20,7 +20,6 @@
 package io.mapsmessaging.network.protocol.transformation;
 
 import io.mapsmessaging.configuration.ConfigurationProperties;
-import io.mapsmessaging.network.protocol.ProtocolMessageTransformation;
 import io.mapsmessaging.network.protocol.transformation.lookup.TransformationTreeBuilder;
 import io.mapsmessaging.network.protocol.transformation.lookup.TreeNode;
 import io.mapsmessaging.utilities.configuration.ConfigurationManager;
@@ -54,8 +53,8 @@ public class TransformationManager implements ServiceManager {
     ConfigurationProperties properties = ConfigurationManager.getInstance().getProperties("TransformationManager");
     Object obj = properties.get("data");
     if(obj != null) {
-      if(obj instanceof ConfigurationProperties){
-        root = TransformationTreeBuilder.buildTree(Collections.singletonList((ConfigurationProperties) obj));
+      if(obj instanceof ConfigurationProperties conf){
+        root = TransformationTreeBuilder.buildTree(Collections.singletonList(conf));
       }
       else if(obj instanceof List){
         List<ConfigurationProperties> data = (List<ConfigurationProperties>) obj;

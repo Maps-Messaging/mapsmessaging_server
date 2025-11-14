@@ -24,6 +24,7 @@ import io.mapsmessaging.engine.schema.SchemaManager;
 import io.mapsmessaging.utilities.stats.MovingAverage;
 
 import java.io.IOException;
+import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 public class MovingAverageTopic extends SystemTopic {
@@ -42,7 +43,7 @@ public class MovingAverageTopic extends SystemTopic {
   }
 
   @Override
-  public String getSchemaUUID() {
+  public UUID getSchemaUUID() {
     return SchemaManager.DEFAULT_NUMERIC_STRING_SCHEMA;
   }
 

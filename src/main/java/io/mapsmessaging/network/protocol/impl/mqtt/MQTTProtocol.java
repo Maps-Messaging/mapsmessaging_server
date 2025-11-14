@@ -19,15 +19,10 @@
 
 package io.mapsmessaging.network.protocol.impl.mqtt;
 
-import io.mapsmessaging.analytics.Analyser;
-import io.mapsmessaging.analytics.AnalyserFactory;
-import io.mapsmessaging.api.MessageEvent;
-import io.mapsmessaging.api.Session;
-import io.mapsmessaging.api.SessionManager;
-import io.mapsmessaging.api.SubscriptionContextBuilder;
+import io.mapsmessaging.api.*;
 import io.mapsmessaging.api.features.QualityOfService;
 import io.mapsmessaging.api.message.Message;
-import io.mapsmessaging.api.transformers.Transformer;
+import io.mapsmessaging.api.transformers.InterServerTransformation;
 import io.mapsmessaging.dto.rest.analytics.StatisticsConfigDTO;
 import io.mapsmessaging.dto.rest.config.protocol.impl.MqttConfigDTO;
 import io.mapsmessaging.dto.rest.protocol.ProtocolInformationDTO;
@@ -56,8 +51,8 @@ import org.jetbrains.annotations.Nullable;
 import javax.security.auth.Subject;
 import java.io.IOException;
 import java.nio.channels.SelectionKey;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.List;
+
 
 @java.lang.SuppressWarnings("DuplicatedBlocks")
 public class MQTTProtocol extends Protocol {
@@ -132,21 +127,33 @@ public class MQTTProtocol extends Protocol {
   }
 
   @Override
-  public void subscribeRemote(@NonNull @NotNull String resource, @NonNull @NotNull String mappedResource, @Nullable ParserExecutor parser, @Nullable Transformer transformer, StatisticsConfigDTO statistics) throws IOException {
-    super.subscribeRemote(resource,mappedResource,parser, transformer,statistics);
+  public void subscribeRemote(@NonNull @NotNull String resource, @NonNull @NotNull String mappedResource, @NonNull @NotNull QualityOfService qos, @Nullable ParserExecutor parser, @Nullable InterServerTransformation transformer, StatisticsConfigDTO statistics) throws IOException {
+    super.subscribeRemote(resource,mappedResource, qos, parser, transformer,statistics);
     Subscribe subscribe = new Subscribe();
     subscribe.setMessageId(packetIdManager.nextPacketIdentifier());
-    subscribe.getSubscriptionList().add(new SubscriptionInfo(resource, QualityOfService.AT_MOST_ONCE));
+    subscribe.getSubscriptionList().add(new SubscriptionInfo(resource, qos));
     writeFrame(subscribe);
     completedConnection();
   }
 
   @Override
-  public void subscribeLocal(@NonNull @NotNull String resource, @NonNull @NotNull String mappedResource, @Nullable String selector, @Nullable Transformer transformer, @Nullable NamespaceFilters namespaceFilters, StatisticsConfigDTO statistics)
+  public void unsubscribeRemote(@NonNull @NotNull String resource){
+    Unsubscribe unsubscribe = new Unsubscribe(List.of(resource));
+    unsubscribe.setMessageId(packetIdManager.nextPacketIdentifier());
+    writeFrame(unsubscribe);
+  }
+
+  @Override
+  public void subscribeLocal(@NonNull @NotNull String resource, @NonNull @NotNull String mappedResource, @NonNull @NotNull QualityOfService qos, @Nullable String selector, @Nullable InterServerTransformation transformer, @Nullable NamespaceFilters namespaceFilters, StatisticsConfigDTO statistics)
       throws IOException {
-    super.subscribeLocal(resource, mappedResource, selector, transformer, namespaceFilters, statistics);
-    SubscriptionContextBuilder builder = createSubscriptionContextBuilder(resource, selector, QualityOfService.AT_MOST_ONCE, 1024);
+    super.subscribeLocal(resource, mappedResource, qos, selector, transformer, namespaceFilters, statistics);
+    SubscriptionContextBuilder builder = createSubscriptionContextBuilder(resource, selector, qos, 1024);
     session.addSubscription(builder.build());
+  }
+
+  @Override
+  public void unsubscribeLocal(@NonNull @NotNull String resource){
+    session.removeSubscription(resource);
   }
 
   public String getVersion() {
@@ -246,56 +253,19 @@ public class MQTTProtocol extends Protocol {
 
   @Override
   public void sendMessage(@NotNull @NonNull MessageEvent messageEvent) {
+    Message msg = messageEvent.getMessage();
     SubscriptionContext subInfo = messageEvent.getSubscription().getContext();
     QualityOfService qos = subInfo.getQualityOfService();
-    String destinationName = messageEvent.getDestinationName();
-    Analyser analyser = topicNameAnalyserMap.get(destinationName);
-    if (analyser == null && !resourceNameAnalyserMap.isEmpty()) {
-      StatisticsConfigDTO statistics = resourceNameAnalyserMap.get(subInfo.getAlias());
-      if(statistics != null){
-        analyser = AnalyserFactory.getInstance().getAnalyser(statistics);
-      }
-    }
-    Message msg = messageEvent.getMessage();
     int packetId = 0;
     if (qos.isSendPacketId()) {
       packetId = packetIdManager.nextPacketIdentifier(messageEvent.getSubscription(),msg.getIdentifier());
     }
-    msg = processTransformer(destinationName, msg);
-    if(analyser != null){
-      msg = analyser.ingest(msg);
-      if(msg == null){
-        if(messageEvent.getCompletionTask() != null){
-          messageEvent.getCompletionTask().run();
-        }
-        return;
-      }
+    ParsedMessage parsedMessage = parseOutboundMessage(messageEvent);
+    if(parsedMessage == null) {
+      return;
     }
-
-    byte[] payload;
-    if (transformation != null) {
-      payload = transformation.outgoing(msg, messageEvent.getDestinationName());
-    } else {
-      payload = msg.getOpaqueData();
-    }
-    if (topicNameMapping != null) {
-      String tmp = topicNameMapping.get(destinationName);
-      if (tmp != null) {
-        destinationName = tmp;
-      }
-      else{
-        for(String key:topicNameMapping.keySet()){
-          int index = key.indexOf("#");
-          if(index > 0){
-            String sub = key.substring(0, index);
-            if(destinationName.startsWith(sub)){
-              destinationName = topicNameMapping.get(key) + destinationName.substring(sub.length());
-            }
-          }
-        }
-      }
-    }
-    Publish publish = new Publish(msg.isRetain(), payload, qos, packetId, destinationName);
+    String topicName = parsedMessage.getDestinationName();
+    Publish publish = new Publish(msg.isRetain(), parsedMessage.getMessage().getOpaqueData(), qos, packetId, topicName);
     publish.setCallback(messageEvent.getCompletionTask());
     writeFrame(publish);
   }

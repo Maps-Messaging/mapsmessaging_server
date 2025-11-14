@@ -27,6 +27,8 @@ import io.mapsmessaging.api.MessageBuilder;
 import io.mapsmessaging.configuration.ConfigurationProperties;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
+import io.mapsmessaging.network.protocol.Protocol;
+import io.mapsmessaging.utilities.GsonFactory;
 
 import java.lang.reflect.Type;
 import java.nio.charset.StandardCharsets;
@@ -35,30 +37,19 @@ import java.util.Map;
 import static io.mapsmessaging.schemas.logging.SchemaLogMessages.FORMATTER_UNEXPECTED_OBJECT;
 
 @SuppressWarnings("java:S2129") // We convert a Byte[] into a String for json to parse
-public class JSONToXML implements Transformer {
+public class JSONToXML implements InterServerTransformation {
   private static final Logger logger = LoggerFactory.getLogger(JSONToXML.class);
+
   @Override
-  public void transform(MessageBuilder messageBuilder) {
-    try {
-      JsonObject jsonObject = JsonParser.parseString(
-          new String(messageBuilder.getOpaqueData(), StandardCharsets.UTF_8)
-      ).getAsJsonObject();
-
-      // Convert JsonObject to Map for XmlMapper
-      Type type = new TypeToken<Map<String, Object>>() {}.getType();
-      Map<String, Object> map = gson.fromJson(jsonObject, type);
-
-      XmlMapper xmlMapper = new XmlMapper();
-      String xml = xmlMapper.writeValueAsString(map);
-
-      messageBuilder.setOpaqueData(xml.getBytes(StandardCharsets.UTF_8));
-    } catch (Exception e) {
-      logger.log(FORMATTER_UNEXPECTED_OBJECT, getName());
-    }
+  public Protocol.ParsedMessage transform(String source, Protocol.ParsedMessage message){
+    MessageBuilder messageBuilder = new MessageBuilder(message.getMessage());
+    convert(messageBuilder);
+    message.setMessage(messageBuilder.build());
+    return message;
   }
 
   @Override
-  public Transformer build(ConfigurationProperties properties) {
+  public InterServerTransformation build(ConfigurationProperties properties) {
     return this;
   }
 
@@ -71,4 +62,25 @@ public class JSONToXML implements Transformer {
   public String getDescription() {
     return "Converts JSON to XML";
   }
+
+
+  private void convert(MessageBuilder messageBuilder) {
+    try {
+      JsonObject jsonObject = JsonParser.parseString(
+          new String(messageBuilder.getOpaqueData(), StandardCharsets.UTF_8)
+      ).getAsJsonObject();
+
+      // Convert JsonObject to Map for XmlMapper
+      Type type = new TypeToken<Map<String, Object>>() {}.getType();
+      Map<String, Object> map =  GsonFactory.getInstance().getSimpleGson().fromJson(jsonObject, type);
+
+      XmlMapper xmlMapper = new XmlMapper();
+      String xml = xmlMapper.writeValueAsString(map);
+
+      messageBuilder.setOpaqueData(xml.getBytes(StandardCharsets.UTF_8));
+    } catch (Exception e) {
+      logger.log(FORMATTER_UNEXPECTED_OBJECT, getName());
+    }
+  }
+
 }

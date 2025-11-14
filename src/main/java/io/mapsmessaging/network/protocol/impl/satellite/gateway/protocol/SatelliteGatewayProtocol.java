@@ -35,7 +35,7 @@ import io.mapsmessaging.network.ProtocolClientConnection;
 import io.mapsmessaging.network.io.EndPoint;
 import io.mapsmessaging.network.io.Packet;
 import io.mapsmessaging.network.protocol.Protocol;
-import io.mapsmessaging.network.protocol.ProtocolMessageTransformation;
+import io.mapsmessaging.network.protocol.transformation.ProtocolMessageTransformation;
 import io.mapsmessaging.network.protocol.impl.satellite.TaskManager;
 import io.mapsmessaging.network.protocol.impl.satellite.gateway.io.SatelliteEndPoint;
 import io.mapsmessaging.network.protocol.impl.satellite.gateway.model.MessageData;
@@ -227,12 +227,11 @@ public class SatelliteGatewayProtocol extends Protocol {
     }
 
     String destinationName = messageEvent.getDestinationName();
-    Message message = processTransformer(destinationName, messageEvent.getMessage());
-    byte[] payload;
-    if (transformation != null) {
-      payload = transformation.outgoing(message, messageEvent.getDestinationName());
-    } else {
-      payload = message.getOpaqueData();
+    ParsedMessage parsedMessage = new ParsedMessage(destinationName, messageEvent.getMessage());
+    parsedMessage = processInterServerTransformations (messageEvent.getDestinationName(), parsedMessage);
+    Message payload = parsedMessage.getMessage();
+    if (protocolMessageTransformation != null) {
+      payload = protocolMessageTransformation.outgoing(payload, messageEvent.getDestinationName());
     }
     if (topicNameMapping != null) {
       String tmp = topicNameMapping.get(destinationName);
@@ -245,7 +244,7 @@ public class SatelliteGatewayProtocol extends Protocol {
     destinationName = scanForName(destinationName);
     Map<String, List<byte[]>> pending;
     if( sendHighPriorityEvents &&
-        (message.getPriority().getValue() > Priority.TWO_BELOW_HIGHEST.getValue()) ||
+        (parsedMessage.getMessage().getPriority().getValue() > Priority.TWO_BELOW_HIGHEST.getValue()) ||
         filteredOverride){
       pending = priorityMessages.get();
     }
@@ -254,7 +253,7 @@ public class SatelliteGatewayProtocol extends Protocol {
     }
 
     List<byte[]> list =pending.computeIfAbsent(destinationName, key -> new ArrayList<>());
-    list.add(payload);
+    list.add(payload.getOpaqueData());
     while(list.size()> depth){
       list.remove(0);
     }

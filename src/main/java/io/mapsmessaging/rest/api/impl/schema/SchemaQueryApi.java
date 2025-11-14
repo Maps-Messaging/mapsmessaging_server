@@ -19,12 +19,14 @@
 
 package io.mapsmessaging.rest.api.impl.schema;
 
+
 import io.mapsmessaging.dto.rest.schema.SchemaPostDTO;
 import io.mapsmessaging.engine.schema.SchemaManager;
 import io.mapsmessaging.rest.api.impl.BaseRestApi;
 import io.mapsmessaging.rest.responses.*;
 import io.mapsmessaging.schemas.config.SchemaConfig;
 import io.mapsmessaging.schemas.config.SchemaConfigFactory;
+import io.mapsmessaging.schemas.config.SchemaResource;
 import io.mapsmessaging.selector.ParseException;
 import io.mapsmessaging.selector.SelectorParser;
 import io.mapsmessaging.selector.operators.ParserExecutor;
@@ -35,7 +37,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.ws.rs.*;
-import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.*;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -182,7 +184,7 @@ public class SchemaQueryApi extends BaseRestApi {
   )
   public SchemaResponse getSchemaByContext(@PathParam("context") String context) throws IOException {
     hasAccess(RESOURCE);
-    List<SchemaConfig> config = SchemaManager.getInstance().getSchemaByContext(context);
+    List<SchemaResource> config = SchemaManager.getInstance().getSchemaByContext(context);
     if (config != null) {
       return new SchemaResponse(convert(config));
     }
@@ -208,7 +210,7 @@ public class SchemaQueryApi extends BaseRestApi {
   )
   public SchemaResponse getSchemaByType(@PathParam("type") String type) throws IOException {
     hasAccess(RESOURCE);
-    List<SchemaConfig> config = SchemaManager.getInstance().getSchemas(type);
+    List<SchemaResource> config = SchemaManager.getInstance().getSchemas(type);
     if (config != null) {
       return new SchemaResponse(convert(config));
     }
@@ -271,6 +273,83 @@ public class SchemaQueryApi extends BaseRestApi {
   }
 
   @GET
+  @Path("/server/schema/impl/{schemaId}")
+  @Produces(MediaType.WILDCARD)
+  @Operation(
+      summary = "Get specific schema definition",
+      description = "Retrieves the schema artifact bytes by unique ID.",
+      responses = {
+          @ApiResponse(responseCode = "200", description = "OK", content = @Content(mediaType = "*/*")),
+          @ApiResponse(responseCode = "304", description = "Not Modified"),
+          @ApiResponse(responseCode = "403", description = "Forbidden"),
+          @ApiResponse(responseCode = "404", description = "Not Found")
+      }
+  )
+  public Response getSchemaImplById(@PathParam("schemaId") String schemaId, @Context Request request) throws IOException {
+    SchemaConfig config = SchemaManager.getInstance().getSchema(schemaId);
+    if (config == null) {
+      return Response.status(Response.Status.NOT_FOUND).build();
+    }
+
+    byte[] body = config.packAsBytes();
+    if (body == null) {
+      return Response.status(Response.Status.NOT_FOUND).build();
+    }
+
+    String mime = resolveSchemaMime(config);
+
+    EntityTag etag = new EntityTag(sha256Hex(body));
+    Response.ResponseBuilder precond = (request != null) ? request.evaluatePreconditions(etag) : null;
+    if (precond != null) {
+      return precond.tag(etag).build(); // 304
+    }
+
+    CacheControl cc = new CacheControl();
+    if (config.getVersion() != null && !config.getVersion().isEmpty()) {
+      cc.setPrivate(false);
+      cc.setMaxAge(31536000); // 1 year
+    } else {
+      cc.setNoCache(true);
+    }
+
+    return Response.ok(body, mime)
+        .tag(etag)
+        .cacheControl(cc)
+        .header("Content-Length", body.length)
+        .build();
+  }
+
+  private static String resolveSchemaMime(SchemaConfig cfg) {
+    if (cfg.getMimeType() != null && !cfg.getMimeType().isEmpty()) {
+      return cfg.getMimeType(); // explicit override
+    }
+    String f = (cfg.getFormat() == null) ? "" : cfg.getFormat().toLowerCase(java.util.Locale.ROOT);
+    return switch (f) {
+      case "json"       -> "application/schema+json";   // JSON Schema
+      case "protobuf"   -> "application/x-protobuf";    // FileDescriptorSet (binary)
+      case "avro"       -> "application/avro+json";     // AVSC JSON
+      case "xml"        -> "application/xml";           // XSD
+      case "cbor"       -> "application/cddl";          // CDDL text for CBOR
+      case "messagepack", "msgpack" -> "application/schema+json"; // JSON Schema / JTD
+      case "csv"        -> "application/schema+json";   // schema describing CSV
+      case "native", "raw" -> "application/octet-stream";
+      default           -> "application/octet-stream";
+    };
+  }
+
+
+  private static String sha256Hex(byte[] bytes) {
+    try {
+      java.security.MessageDigest md = java.security.MessageDigest.getInstance("SHA-256");
+      byte[] digest = md.digest(bytes);
+      return java.util.HexFormat.of().formatHex(digest);
+    } catch (java.security.NoSuchAlgorithmException e) {
+      throw new IllegalStateException(e);
+    }
+  }
+
+
+  @GET
   @Path("/server/schema/formats")
   @Produces({MediaType.APPLICATION_JSON})
   @Operation(
@@ -314,10 +393,10 @@ public class SchemaQueryApi extends BaseRestApi {
     return SchemaManager.getInstance().buildLinkFormatResponse();
   }
 
-  private List<String> convert(List<SchemaConfig> configs) throws IOException {
+  private List<String> convert(List<SchemaResource> configs) throws IOException {
     List<String> data = new ArrayList<>();
-    for (SchemaConfig config : configs) {
-      data.add(config.pack());
+    for (SchemaResource config : configs) {
+      data.add(config.getDefaultVersion().pack());
     }
     return data;
   }

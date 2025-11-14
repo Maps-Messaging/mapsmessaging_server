@@ -21,6 +21,7 @@ package io.mapsmessaging.network.protocol.impl.mqtt_sn.v2_0;
 
 import io.mapsmessaging.api.MessageEvent;
 import io.mapsmessaging.api.features.QualityOfService;
+import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.config.protocol.impl.MqttSnConfig;
 import io.mapsmessaging.dto.rest.protocol.ProtocolInformationDTO;
 import io.mapsmessaging.dto.rest.protocol.impl.MqttSnProtocolInformation;
@@ -96,11 +97,8 @@ public class MQTT_SNProtocolV2 extends MQTT_SNProtocol {
 
   @Override
   public MQTT_SNPacket buildPublish(short alias, int packetId, MessageEvent messageEvent, QualityOfService qos, short topicTypeId) {
-    byte[] data = messageEvent.getMessage().getOpaqueData();
-    if (transformation != null) {
-      data = transformation.outgoing(messageEvent.getMessage(), messageEvent.getDestinationName());
-    }
-    Publish publish = new Publish(alias, packetId, data);
+    Message data = messageEvent.getMessage();
+    Publish publish = new Publish(alias, packetId, data.getOpaqueData());
     publish.setQoS(qos);
     publish.setTopicIdType(topicTypeId);
     publish.setCallback(messageEvent.getCompletionTask());

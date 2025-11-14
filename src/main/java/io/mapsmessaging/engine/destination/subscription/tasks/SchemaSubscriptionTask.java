@@ -56,7 +56,7 @@ public class SchemaSubscriptionTask extends SubscriptionTask {
           subscription = controller.createSchemaSubscription(context, destination);
         }
         MessageBuilder messageBuilder = new MessageBuilder();
-        messageBuilder.setOpaqueData(config.pack().getBytes(StandardCharsets.UTF_8));
+        messageBuilder.setOpaqueData(config.packAsBytes());
         subscription.sendMessage(messageBuilder.build());
       }
     } finally {

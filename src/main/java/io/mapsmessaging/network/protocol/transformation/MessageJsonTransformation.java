@@ -25,7 +25,6 @@ import io.mapsmessaging.api.MessageBuilder;
 import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
-import io.mapsmessaging.network.protocol.ProtocolMessageTransformation;
 import io.mapsmessaging.network.protocol.transformation.internal.MessageLoader;
 import io.mapsmessaging.network.protocol.transformation.internal.MessagePacker;
 
@@ -75,15 +74,18 @@ public class MessageJsonTransformation implements ProtocolMessageTransformation 
   }
 
   @Override
-  public byte[] outgoing(Message message, String destinationName) {
+  public Message outgoing(Message message, String destinationName) {
     if (!destinationName.startsWith("$")) {
       try {
-        return objectMapper.writeValueAsBytes(new MessagePacker(message));
+        byte[] data = objectMapper.writeValueAsBytes(new MessagePacker(message));
+        MessageBuilder messageBuilder = new MessageBuilder();
+        messageBuilder.setOpaqueData(data);
+        return messageBuilder.build();
       } catch (Exception e) {
         logger.log(MESSAGE_TRANSFORMATION_EXCEPTION, e);
       }
     }
-    return message.getOpaqueData();
+    return message;
   }
 
 }

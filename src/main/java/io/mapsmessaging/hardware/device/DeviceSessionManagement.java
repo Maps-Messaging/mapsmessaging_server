@@ -35,12 +35,13 @@ import io.mapsmessaging.hardware.device.handler.BusHandler;
 import io.mapsmessaging.hardware.device.handler.DeviceHandler;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
-import io.mapsmessaging.network.protocol.ProtocolMessageTransformation;
+import io.mapsmessaging.network.protocol.transformation.ProtocolMessageTransformation;
 import io.mapsmessaging.schemas.config.SchemaConfig;
 import io.mapsmessaging.security.uuid.UuidGenerator;
 import io.mapsmessaging.selector.ParseException;
 import io.mapsmessaging.selector.SelectorParser;
 import io.mapsmessaging.selector.operators.ParserExecutor;
+import io.mapsmessaging.utilities.GsonFactory;
 import lombok.Data;
 import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
@@ -56,8 +57,6 @@ import static io.mapsmessaging.logging.ServerLogMessages.*;
 
 @Data
 public class DeviceSessionManagement implements Runnable, MessageListener {
-  private static final Gson gson = new Gson();
-
   private static Logger logger = LoggerFactory.getLogger(DeviceSessionManagement.class);
   private final DeviceHandler device;
   private final String topicNameTemplate;
@@ -109,7 +108,7 @@ public class DeviceSessionManagement implements Runnable, MessageListener {
             schemaConfig.setUniqueId(UuidGenerator.getInstance().generate());
           }
           MessageBuilder messageBuilder = new MessageBuilder();
-          messageBuilder.setOpaqueData(schemaConfig.pack().getBytes());
+          messageBuilder.setOpaqueData(schemaConfig.packAsBytes());
           destination.updateSchema(schemaConfig, messageBuilder.build());
           logger.log(DEVICE_SCHEMA_UPDATED, schemaConfig.getSource());
         }
@@ -193,7 +192,7 @@ public class DeviceSessionManagement implements Runnable, MessageListener {
         if (parser != null) {
           JsonObject jsonObject = JsonParser.parseString(new String(payload, StandardCharsets.UTF_8)).getAsJsonObject();
           Type type = new TypeToken<Map<String, Object>>() {}.getType();
-          Map<String, Object> map = gson.fromJson(jsonObject, type);
+          Map<String, Object> map = GsonFactory.getInstance().getSimpleGson().fromJson(jsonObject, type);
           if (parser.evaluate(map)) {
             send = true;
           }

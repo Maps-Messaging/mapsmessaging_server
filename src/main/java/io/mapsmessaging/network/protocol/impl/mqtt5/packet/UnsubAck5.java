@@ -20,15 +20,41 @@
 package io.mapsmessaging.network.protocol.impl.mqtt5.packet;
 
 import io.mapsmessaging.network.io.Packet;
+import io.mapsmessaging.network.protocol.EndOfBufferException;
 import io.mapsmessaging.network.protocol.impl.mqtt.packet.MQTTPacket;
+import io.mapsmessaging.network.protocol.impl.mqtt.packet.MalformedException;
 
 public class UnsubAck5 extends MQTTPacket5 {
 
-  private final int packetId;
+  private int packetId;
 
   public UnsubAck5(int packetId) {
     super(MQTTPacket.UNSUBACK);
     this.packetId = packetId;
+  }
+
+  public UnsubAck5(byte fixedHeader, long remainingLen, Packet packet) throws MalformedException, EndOfBufferException {
+    super(MQTTPacket.UNSUBACK);
+    if ((fixedHeader & 0x0F) != 0) {
+      throw new MalformedException("UnsubAck: Reserved bits in command byte not 0");
+    }
+
+    // Variable header
+    packetId = readShort(packet);
+    long propsBytes = loadProperties(packet); // includes the properties length varint itself
+
+    long payloadLen = remainingLen - 2 - propsBytes; // 2 = packetId
+    if (payloadLen < 0) {
+      throw new MalformedException("UnsubAck malformed: remaining length too small");
+    }
+
+    // Payload (optional in v5): may contain one or more reason codes
+    if (payloadLen > 0) {
+      for (int i = 0; i < payloadLen; i++) {
+        byte reason = packet.get();
+        // You can store reason codes if needed later
+      }
+    }
   }
 
   @Override

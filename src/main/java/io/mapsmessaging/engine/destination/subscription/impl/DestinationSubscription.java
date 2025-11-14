@@ -348,6 +348,7 @@ public class DestinationSubscription extends Subscription {
     }
     acknowledgementController.sent(message);
     eventStateManager.setSubscription(activeSubscription);
+    message.setBound(true);
     return message;
   }
 

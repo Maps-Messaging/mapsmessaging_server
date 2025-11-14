@@ -19,12 +19,10 @@
 
 package io.mapsmessaging.network.protocol.impl.stomp;
 
-import io.mapsmessaging.analytics.Analyser;
 import io.mapsmessaging.api.MessageEvent;
 import io.mapsmessaging.api.SubscriptionContextBuilder;
 import io.mapsmessaging.api.features.QualityOfService;
-import io.mapsmessaging.api.message.Message;
-import io.mapsmessaging.api.transformers.Transformer;
+import io.mapsmessaging.api.transformers.InterServerTransformation;
 import io.mapsmessaging.dto.rest.analytics.StatisticsConfigDTO;
 import io.mapsmessaging.dto.rest.config.protocol.impl.StompConfigDTO;
 import io.mapsmessaging.dto.rest.protocol.ProtocolInformationDTO;
@@ -122,22 +120,26 @@ public class StompProtocol extends Protocol {
   }
 
   @Override
-  public void subscribeRemote(@NonNull @NotNull String resource, @NonNull @NotNull String mappedResource, @Nullable ParserExecutor executor, @Nullable Transformer transformer, StatisticsConfigDTO statistics) throws IOException {
-    super.subscribeRemote(resource, mappedResource, executor, transformer, statistics);
+  public void subscribeRemote(@NonNull @NotNull String resource, @NonNull @NotNull String mappedResource, @NonNull @NotNull QualityOfService qos, @Nullable ParserExecutor executor, @Nullable InterServerTransformation transformer, StatisticsConfigDTO statistics) throws IOException {
+    super.subscribeRemote(resource, mappedResource, qos, executor, transformer, statistics);
     sessionState.addMapping(resource, mappedResource);
     Subscribe subscribe = new Subscribe();
     subscribe.setDestination(resource);
     subscribe.setId(resource);
-    subscribe.setAck("auto");
+    if(qos.getLevel() > 0){
+      subscribe.setAck("client-individual");
+    }
+    else {
+      subscribe.setAck("auto");
+    }
     writeFrame(subscribe);
   }
 
   @Override
-  public void subscribeLocal(@NonNull @NotNull String resource, @NonNull @NotNull String mappedResource, String selector, @Nullable Transformer transformer, @Nullable NamespaceFilters namespaceFilters, StatisticsConfigDTO statistics) throws IOException {
-    super.subscribeLocal(resource, mappedResource, selector, transformer, namespaceFilters, statistics);
+  public void subscribeLocal(@NonNull @NotNull String resource, @NonNull @NotNull String mappedResource, @NonNull @NotNull QualityOfService qos, String selector, @Nullable InterServerTransformation transformer, @Nullable NamespaceFilters namespaceFilters, StatisticsConfigDTO statistics) throws IOException {
+    super.subscribeLocal(resource, mappedResource, qos, selector, transformer, namespaceFilters, statistics);
     sessionState.addMapping(resource, mappedResource);
-
-    SubscriptionContextBuilder scb = createSubscriptionContextBuilder(resource, selector, QualityOfService.AT_MOST_ONCE, 10240);
+    SubscriptionContextBuilder scb = createSubscriptionContextBuilder(resource, selector, qos, 10240);
     sessionState.createSubscription(scb.build());
   }
 
@@ -165,8 +167,12 @@ public class StompProtocol extends Protocol {
 
   @Override
   public void sendMessage(@NotNull @NonNull MessageEvent messageEvent) {
-    Message message = processTransformer(messageEvent.getDestinationName(), messageEvent.getMessage());
-    sessionState.sendMessage(messageEvent.getDestinationName(), messageEvent.getSubscription().getContext(), message, messageEvent.getCompletionTask());
+    ParsedMessage parsedMessage = parseOutboundMessage(messageEvent);
+    if(parsedMessage == null) {
+      return;
+    }
+    String topicName = parsedMessage.getDestinationName();
+    sessionState.sendMessage(topicName, messageEvent.getSubscription().getContext(), parsedMessage.getMessage(), messageEvent.getCompletionTask());
   }
 
   // <editor-fold desc="Read Frame functions">

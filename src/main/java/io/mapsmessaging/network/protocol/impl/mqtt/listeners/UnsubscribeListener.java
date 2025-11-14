@@ -31,8 +31,7 @@ import java.util.List;
 public class UnsubscribeListener extends PacketListener {
 
   @Override
-  public MQTTPacket handlePacket(
-      MQTTPacket mqttPacket, Session session, EndPoint endPoint, Protocol protocol) {
+  public MQTTPacket handlePacket(MQTTPacket mqttPacket, Session session, EndPoint endPoint, Protocol protocol) {
     Unsubscribe unsubscribe = (Unsubscribe) mqttPacket;
     List<String> unsubscribeList = unsubscribe.getUnsubscribeList();
     for (String info : unsubscribeList) {

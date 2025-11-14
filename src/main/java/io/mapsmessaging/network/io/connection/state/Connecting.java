@@ -20,6 +20,7 @@
 package io.mapsmessaging.network.io.connection.state;
 
 import io.mapsmessaging.network.io.connection.EndPointConnection;
+import io.mapsmessaging.network.route.link.LinkState;
 
 import java.io.IOException;
 
@@ -31,14 +32,18 @@ public class Connecting extends State {
 
   @Override
   public void execute() {
-    if(endPointConnection.getUrl().getProtocol().equalsIgnoreCase("udp")||
-       endPointConnection.getUrl().getProtocol().equalsIgnoreCase("serial")){
+    String protocol = endPointConnection.getUrl().getProtocol();
+    if (protocol.equalsIgnoreCase("udp") ||
+        protocol.equalsIgnoreCase("serial")) {
       // This is a UDP connection, we are connected by default
       try {
-        endPointConnection.handleNewEndPoint(endPointConnection.getConnection().getEndPoint());
+        endPointConnection.handleNewEndPoint(endPointConnection.getProtocol().getEndPoint());
       } catch (IOException e) {
         throw new RuntimeException(e);
       }
+    }
+    if(protocol.equalsIgnoreCase("noop")) {
+      endPointConnection.getProtocol().setConnected(true);
     }
     // Need to wait for the protocol to be established before we can move on
   }
@@ -46,5 +51,10 @@ public class Connecting extends State {
   @Override
   public String getName() {
     return "Connecting";
+  }
+
+  @Override
+  public LinkState getLinkState() {
+    return LinkState.CONNECTING;
   }
 }

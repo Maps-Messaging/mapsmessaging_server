@@ -20,6 +20,7 @@
 package io.mapsmessaging.network.io.connection.state;
 
 import io.mapsmessaging.network.io.connection.EndPointConnection;
+import io.mapsmessaging.network.route.link.LinkState;
 
 public class Established extends State {
 
@@ -37,4 +38,8 @@ public class Established extends State {
     return "Established";
   }
 
+  @Override
+  public LinkState getLinkState() {
+    return LinkState.CONNECTED;
+  }
 }

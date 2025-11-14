@@ -73,3 +73,7 @@ MessageDaemon:
     #
     # Default: true
     EnableSystemTopicAverages: true
+
+    #
+    # Disable the status updates for tests
+    SendAnonymousStatusUpdates: false

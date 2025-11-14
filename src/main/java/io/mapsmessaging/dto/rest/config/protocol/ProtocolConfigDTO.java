@@ -76,6 +76,7 @@ public class ProtocolConfigDTO extends BaseConfigDTO {
       "amqp",
       "coap",
       "lora",
+      "loop",
       "mqtt",
       "mqtt-sn",
       "mqttV5", "NMEA-0183",

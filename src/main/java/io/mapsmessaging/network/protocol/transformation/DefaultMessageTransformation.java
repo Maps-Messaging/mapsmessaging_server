@@ -19,8 +19,6 @@
 
 package io.mapsmessaging.network.protocol.transformation;
 
-import io.mapsmessaging.network.protocol.ProtocolMessageTransformation;
-
 public class DefaultMessageTransformation implements ProtocolMessageTransformation {
 
   public DefaultMessageTransformation() {

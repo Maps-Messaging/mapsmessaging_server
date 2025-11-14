@@ -29,6 +29,8 @@ import io.mapsmessaging.network.protocol.impl.mqtt.packet.SubscriptionInfo;
 import io.mapsmessaging.network.protocol.impl.mqtt5.packet.properties.MessageProperty;
 import io.mapsmessaging.network.protocol.impl.mqtt5.packet.properties.MessagePropertyFactory;
 import io.mapsmessaging.network.protocol.impl.mqtt5.packet.properties.SubscriptionIdentifier;
+import lombok.Getter;
+import lombok.Setter;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -39,10 +41,18 @@ import java.util.List;
 
 // Between MQTT 3/4 and 5 there is duplicate code base, yes this is by design
 @java.lang.SuppressWarnings("common-java:DuplicatedBlocks") // MQTT 3/4 and MQTT5 share a lot in common, however, the changes don't make it easy to extend.
+@Getter
 public class Subscribe5 extends MQTTPacket5 {
 
   private final List<SubscriptionInfo> subscriptionList;
-  private final int messageId;
+  @Setter
+  private int messageId;
+
+  public Subscribe5(){
+    super(MQTTPacket.SUBSCRIBE);
+    subscriptionList = new ArrayList<>();
+    messageId = 0;
+  }
 
   public Subscribe5(byte fixedHeader, long remainingLen, Packet packet) throws MalformedException, EndOfBufferException {
     super(MQTTPacket.SUBSCRIBE);
@@ -104,7 +114,41 @@ public class Subscribe5 extends MQTTPacket5 {
     return sb.toString();
   }
 
+  @Override
   public int packFrame(Packet packet) {
-    return 0;
+    int remainingLength = 2; // Packet Identifier
+
+    // Properties (none for now): must encode a VarInt length of 0
+    remainingLength += 1;
+
+    // Payload: each subscription = UTF-8 topic (2 + bytes) + 1 options byte
+    for (SubscriptionInfo info : subscriptionList) {
+      int utf8Len = info.getTopicName().getBytes(java.nio.charset.StandardCharsets.UTF_8).length;
+      remainingLength += 2 + utf8Len + 1;
+    }
+
+    // Fixed header (control packet type + required flags 0010)
+    packControlByte(packet, 2);
+    writeVariableInt(packet, remainingLength);
+
+    // Variable header
+    writeShort(packet, messageId);
+    writeVariableInt(packet, 0); // properties length = 0
+
+    // Payload
+    for (SubscriptionInfo info : subscriptionList) {
+      writeUTF8(packet, info.getTopicName());
+
+      int qos = info.getQualityOfService().getLevel() & 0b11;
+      int noLocal = info.noLocalMessages() ? 0b100 : 0;
+      int rap = info.isRetainAsPublished() ? 0b1000 : 0;
+      int rh = (info.getRetainHandling().getHandler() & 0b11) << 4;
+
+      packet.put((byte) (qos | noLocal | rap | rh));
+    }
+
+    return remainingLength;
   }
+
+
 }

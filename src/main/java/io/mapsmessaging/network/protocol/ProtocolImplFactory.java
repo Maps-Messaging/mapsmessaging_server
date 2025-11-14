@@ -52,6 +52,10 @@ public abstract class ProtocolImplFactory implements Service {
 
   public abstract String getTransportType();
 
+  public boolean matches(String protocolName){
+    return name.equalsIgnoreCase(protocolName);
+  }
+
   public void create(EndPoint endPoint, InterfaceInformation info) throws IOException {
   }
 

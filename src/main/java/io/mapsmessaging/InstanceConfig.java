@@ -126,6 +126,7 @@ public class InstanceConfig {
     } catch (IOException e) {
       // if the first run, then lets allocate a new UUID
       uuid = UuidGenerator.getInstance().generate();
+      secureTokenSecret = PasswordGenerator.generateRandomPassword(64);
     }
   }
 

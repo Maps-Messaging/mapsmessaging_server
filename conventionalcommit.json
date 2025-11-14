@@ -1,0 +1,38 @@
+{
+  "types": {
+    "feat": { "description": "A new feature" },
+    "fix": { "description": "A bug fix" },
+    "refactor": { "description": "Code change that neither fixes a bug nor adds a feature" },
+    "perf": { "description": "Performance improvements" },
+    "test": { "description": "Adding or modifying tests" },
+    "build": { "description": "Changes that affect the build system or dependencies" },
+    "ci": { "description": "CI/CD related changes (Buildkite, GitHub Actions, etc.)" },
+    "docs": { "description": "Documentation changes only" },
+    "style": { "description": "Code style changes (formatting, semicolons, etc.)" },
+    "chore": { "description": "Miscellaneous maintenance tasks" },
+    "revert": { "description": "Reverts a previous commit" }
+  },
+  "scopes": [
+    "server",
+    "ml",
+    "engine",
+    "topics/queues",
+    "storage",
+    "scheduler",
+    "config",
+    "schema",
+    "protocol",
+    "network",
+    "rest",
+    "buildkite",
+    "docs"
+  ],
+  "footers": [
+    "BREAKING CHANGE",
+    "DEPRECATED",
+    "SECURITY",
+    "NO-ISSUE"
+  ],
+  "maxHeaderWidth": 100,
+  "maxLineWidth": 160
+}

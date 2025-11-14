@@ -19,6 +19,9 @@
 
 package io.mapsmessaging.network.protocol.impl.stomp.frames;
 
+import lombok.Getter;
+import lombok.Setter;
+
 import java.io.IOException;
 
 /**
@@ -28,9 +31,13 @@ public class Subscribe extends Frame {
 
   private String id;
   private String destination;
+  @Getter
   private String ack;
+  @Getter
+  @Setter
   private String shareName;
   private boolean isValid;
+  @Getter
   private boolean isShared;
 
   @Override
@@ -46,20 +53,8 @@ public class Subscribe extends Frame {
     return id.trim();
   }
 
-  public String getAck() {
-    return ack;
-  }
-
   public String getSelector() {
     return getHeader("selector");
-  }
-
-  public boolean isShared() {
-    return isShared;
-  }
-
-  public String getShareName() {
-    return shareName;
   }
 
   public void setId(String id) {
@@ -75,10 +70,6 @@ public class Subscribe extends Frame {
   public void setAck(String ack) {
     this.ack = ack;
     getHeader().put("ack", ack);
-  }
-
-  public void setShareName(String shareName) {
-    this.shareName = shareName;
   }
 
   @Override

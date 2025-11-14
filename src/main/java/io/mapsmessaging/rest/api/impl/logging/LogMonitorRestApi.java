@@ -30,6 +30,7 @@ import io.mapsmessaging.rest.token.TokenManager;
 import io.mapsmessaging.selector.ParseException;
 import io.mapsmessaging.selector.SelectorParser;
 import io.mapsmessaging.selector.operators.ParserExecutor;
+import io.mapsmessaging.utilities.GsonFactory;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -149,7 +150,7 @@ public class LogMonitorRestApi extends BaseRestApi {
         if (parser != null && !parser.evaluate(logEntry)) {
           continue;
         }
-        Gson gson = new GsonBuilder().setPrettyPrinting().create();
+        Gson gson = GsonFactory.getInstance().getPrettyGson();
         String json = gson.toJson(logEntry);
 
         OutboundSseEvent event = sse.newEventBuilder()
@@ -191,7 +192,7 @@ public class LogMonitorRestApi extends BaseRestApi {
           if (parser != null && !parser.evaluate(logEntry)) {
             return;
           }
-          Gson gson = new GsonBuilder().setPrettyPrinting().create();
+          Gson gson = GsonFactory.getInstance().getPrettyGson();
           String json = gson.toJson(logEntry);
           OutboundSseEvent event = sse.newEventBuilder()
               .name("logEvent")

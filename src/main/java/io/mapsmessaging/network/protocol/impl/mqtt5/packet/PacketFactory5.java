@@ -59,42 +59,22 @@ public class PacketFactory5 {
 
   protected MQTTPacket5 create(int packetId, byte fixedHeader, long remainingLen, Packet packet)
       throws MalformedException, EndOfBufferException {
-    switch (packetId) {
-      case MQTTPacket.PUBLISH:
-        return new Publish5(fixedHeader, remainingLen, packet, protocolImpl.getMaxBufferSize());
-
-      case MQTTPacket5.AUTH:
-        return new Auth5(fixedHeader, remainingLen, packet);
-
-      case MQTTPacket.CONNECT:
-        return new Connect5(fixedHeader, remainingLen, packet);
-
-      case MQTTPacket.DISCONNECT:
-        return new Disconnect5(remainingLen, packet);
-
-      case MQTTPacket.PINGREQ:
-        return new PingReq5(fixedHeader, remainingLen);
-
-      case MQTTPacket.SUBSCRIBE:
-        return new Subscribe5(fixedHeader, remainingLen, packet);
-
-      case MQTTPacket.PUBCOMP:
-        return new PubComp5(fixedHeader, remainingLen, packet);
-
-      case MQTTPacket.PUBACK:
-        return new PubAck5(fixedHeader, remainingLen, packet);
-
-      case MQTTPacket.PUBREL:
-        return new PubRel5(fixedHeader, remainingLen, packet);
-
-      case MQTTPacket.PUBREC:
-        return new PubRec5(fixedHeader, remainingLen, packet);
-
-      case MQTTPacket.UNSUBSCRIBE:
-        return new Unsubscribe5(fixedHeader, remainingLen, packet);
-
-      default:
-        throw new MalformedException("Unexpected packet received:::" + Long.toHexString(packetId));
-    }
+    return switch (packetId) {
+      case MQTTPacket.PUBLISH -> new Publish5(fixedHeader, remainingLen, packet, protocolImpl.getMaxBufferSize());
+      case MQTTPacket5.AUTH -> new Auth5(fixedHeader, remainingLen, packet);
+      case MQTTPacket.CONNECT -> new Connect5(fixedHeader, remainingLen, packet);
+      case MQTTPacket.CONNACK -> new ConnAck5(fixedHeader, remainingLen, packet);
+      case MQTTPacket.DISCONNECT -> new Disconnect5(remainingLen, packet);
+      case MQTTPacket.PINGREQ -> new PingReq5(fixedHeader, remainingLen);
+      case MQTTPacket.SUBSCRIBE -> new Subscribe5(fixedHeader, remainingLen, packet);
+      case MQTTPacket.PUBCOMP -> new PubComp5(fixedHeader, remainingLen, packet);
+      case MQTTPacket.PUBACK -> new PubAck5(fixedHeader, remainingLen, packet);
+      case MQTTPacket.PUBREL -> new PubRel5(fixedHeader, remainingLen, packet);
+      case MQTTPacket.PUBREC -> new PubRec5(fixedHeader, remainingLen, packet);
+      case MQTTPacket.UNSUBSCRIBE -> new Unsubscribe5(fixedHeader, remainingLen, packet);
+      case MQTTPacket.UNSUBACK -> new UnsubAck5(fixedHeader, remainingLen, packet);
+      case MQTTPacket.SUBACK -> new SubAck5(fixedHeader, remainingLen, packet);
+      default -> throw new MalformedException("Unexpected packet received:::" + Long.toHexString(packetId));
+    };
   }
 }

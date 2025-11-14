@@ -101,6 +101,10 @@ public class Message implements IdentifierResolver, Storable {
   private long identifier;
   // </editor-fold>
 
+  @Getter
+  @Setter
+  private transient boolean bound;
+
 
   private transient ParsedObject parsedObject;
 
@@ -161,6 +165,7 @@ public class Message implements IdentifierResolver, Storable {
     if (schemaId != null) {
       flags.set(SCHEMA_ID_PRESENT);
     }
+    bound = false;
   }
 
   Message(ByteBuffer[] packed) throws IOException {
@@ -216,6 +221,7 @@ public class Message implements IdentifierResolver, Storable {
     }
     storeOffline = true;
     lastMessage = false;
+    bound = false;
   }
 
   ByteBuffer[] pack() throws IOException {

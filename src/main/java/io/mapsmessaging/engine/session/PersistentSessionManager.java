@@ -27,6 +27,7 @@ import lombok.Getter;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.util.ArrayList;
@@ -36,8 +37,8 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.stream.Collectors;
 
-import static io.mapsmessaging.logging.ServerLogMessages.SESSION_INIT_ERROR;
-import static io.mapsmessaging.logging.ServerLogMessages.SESSION_LOAD_STATE_ERROR;
+import static io.mapsmessaging.logging.ServerLogMessages.*;
+import static io.mapsmessaging.logging.ServerLogMessages.SESSION_SAVE_STATE_ERROR;
 
 public class PersistentSessionManager {
 
@@ -67,7 +68,7 @@ public class PersistentSessionManager {
   }
 
   public SessionDetails getSessionDetails(SessionContext context){
-    return persistentMap.computeIfAbsent(context.getId(), k -> new SessionDetails(context.getId(), context.getUniqueId(), context.getInternalSessionId()));
+    return persistentMap.computeIfAbsent(context.getId(), k -> new SessionDetails(context.getId(), context.getUniqueId(), context.getInternalSessionId(), context.getExpiry()));
   }
 
   public SessionDetails getSessionDetails(String id){
@@ -99,6 +100,9 @@ public class PersistentSessionManager {
           SessionDetails details = new SessionDetails(fileInputStream);
           if(!details.getSubscriptionContextList().isEmpty()){
             persistentMap.put(details.getSessionName(), details);
+            if(details.isNeedsUpdating()){
+              updateFileToNewVersion(details, child);
+            }
           }
           else{
             delete = true;
@@ -114,6 +118,15 @@ public class PersistentSessionManager {
           }
         }
       }
+    }
+  }
+
+  private void updateFileToNewVersion( SessionDetails details, File filename){
+    try (FileOutputStream fileOutputStream = new FileOutputStream(filename)) {
+      details.save(fileOutputStream);
+      logger.log(SESSION_SAVE_STATE, details.getSessionName(), filename);
+    } catch (IOException ioException) {
+      logger.log(SESSION_SAVE_STATE_ERROR, details.getSessionName(), filename, ioException);
     }
   }
 }

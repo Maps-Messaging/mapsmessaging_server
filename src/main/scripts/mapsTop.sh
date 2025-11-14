@@ -22,8 +22,8 @@
 #
 export VERSION=%%MAPS_VERSION%%
 
-if [ -f /opt/message_daemon/etc/message_daemon.env ]; then
-    . /opt/message_daemon/etc/message_daemon.env
+if [ -f /opt/maps/etc/maps.env ]; then
+    . /opt/maps/etc/maps.env
 fi
 
 current_dir=$(pwd)
@@ -45,7 +45,7 @@ export MAPS_CONF=$MAPS_HOME/conf
 #
 # Note::: The conf directory must be at the start else the configuration is loaded from the jars
 #
-export CLASSPATH="$MAPS_CONF":$MAPS_LIB/message_daemon-$VERSION.jar:"$MAPS_LIB/*"
+export CLASSPATH="$MAPS_CONF":$MAPS_LIB/maps-$VERSION.jar:"$MAPS_LIB/*"
 #
 # Now start the the daemon
 #

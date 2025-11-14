@@ -30,7 +30,7 @@ import io.mapsmessaging.engine.destination.MessageOverrides;
 import io.mapsmessaging.logging.ServerLogMessages;
 import io.mapsmessaging.network.io.EndPoint;
 import io.mapsmessaging.network.protocol.Protocol;
-import io.mapsmessaging.network.protocol.ProtocolMessageTransformation;
+import io.mapsmessaging.network.protocol.transformation.ProtocolMessageTransformation;
 import io.mapsmessaging.network.protocol.impl.mqtt.packet.MQTTPacket;
 import io.mapsmessaging.network.protocol.impl.mqtt.packet.MalformedException;
 import io.mapsmessaging.network.protocol.impl.mqtt5.MQTT5Protocol;
@@ -184,9 +184,12 @@ public class PublishListener5 extends PacketListener5 {
       if (!duplicateReport.isEmpty()) {
         logger.log(ServerLogMessages.MQTT5_DUPLICATE_PROPERTIES_DETECTED, duplicateReport);
       }
-
+      String lookup = protocol.parseForLookup(destinationName);
+      if(lookup.startsWith("$") && !publish.getDestinationName().toLowerCase().startsWith("$schema")){
+        return response;
+      }
       try {
-        Destination destination = session.findDestination(destinationName, DestinationType.TOPIC).get();
+        Destination destination = session.findDestination(lookup, DestinationType.TOPIC).get();
         int sent = 0;
         if (destination != null) {
           Message message =
@@ -197,7 +200,7 @@ public class PublishListener5 extends PacketListener5 {
                   publish.isRetain(),
                   publish.getPayload(),
                   publish.getQos(),
-                  protocol.getTransformation(),
+                  protocol.getProtocolMessageTransformation(),
                   protocol);
           sent = processMessage(message, publish, session, response, destination);
         }

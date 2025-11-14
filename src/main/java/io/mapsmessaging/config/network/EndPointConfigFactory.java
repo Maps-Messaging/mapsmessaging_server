@@ -96,9 +96,12 @@ public class EndPointConfigFactory {
     if(config.containsKey("protocol")) {
       loadDefaultProtocols(config, server, config.getProperty("protocol"));
     }
-    else{
+    else if(config.containsKey("protocols")) {
       List<ConfigurationProperties> protocolConfig = (List<ConfigurationProperties>) config.get("protocols");
       loadSpecificProtocols(server, protocolConfig);
+    }
+    else{
+      loadDefaultProtocols(config, server,"loop");
     }
   }
 
@@ -169,6 +172,8 @@ public class EndPointConfigFactory {
   private static ProtocolConfigDTO createProtocolConfig(String protocol, ConfigurationProperties config) {
     String p = protocol.toLowerCase(Locale.ROOT);
     return switch (p) {
+      case "mqtt-v5" -> new MqttV5Config(config);
+      case "mqtt-v3" -> new MqttConfig(config);
       case "mqtt" -> new MqttV5Config(config);
       case "amqp" -> new AmqpConfig(config);
       case "stomp" -> new StompConfig(config);

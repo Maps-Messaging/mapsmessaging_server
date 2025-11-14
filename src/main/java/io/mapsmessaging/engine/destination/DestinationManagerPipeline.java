@@ -40,9 +40,7 @@ import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
-import java.util.LinkedHashMap;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
@@ -258,7 +256,8 @@ public class DestinationManagerPipeline {
 
   public long getStorageSize() {
     long size =0;
-    for (DestinationImpl destinationImpl : destinationList.values()) {
+    List<DestinationImpl> tmpList = new ArrayList<>(destinationList.values());
+    for (DestinationImpl destinationImpl : tmpList) {
       try {
         size += destinationImpl.getStoredMessages();
       } catch (IOException e) {

@@ -52,6 +52,13 @@ public class PersistentSession extends SessionImpl{
       saveState();
     }
   }
+  @Override
+  public void setExpiryTime(long expiry) {
+    super.setExpiryTime(expiry);
+    sessionDetails.setExpiryTime(expiry);
+    saveState();
+  }
+
 
   @Override
   public SubscribedEventManager addSubscription(SubscriptionContext context) throws IOException {

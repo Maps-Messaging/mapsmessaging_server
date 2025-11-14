@@ -24,6 +24,7 @@ import io.mapsmessaging.engine.schema.SchemaManager;
 import io.mapsmessaging.engine.system.SystemTopic;
 
 import java.io.IOException;
+import java.util.UUID;
 
 public class NotImplemented extends SystemTopic {
 
@@ -32,7 +33,7 @@ public class NotImplemented extends SystemTopic {
   }
 
   @Override
-  public String getSchemaUUID() {
+  public UUID getSchemaUUID() {
     return SchemaManager.DEFAULT_STRING_SCHEMA;
   }
 

@@ -20,6 +20,7 @@
 package io.mapsmessaging.network.io.connection.state;
 
 import io.mapsmessaging.network.io.connection.EndPointConnection;
+import io.mapsmessaging.network.route.link.LinkState;
 
 import java.io.IOException;
 
@@ -31,9 +32,9 @@ public class Shutdown extends State {
 
   @Override
   public void execute() {
-    if (endPointConnection.getConnection() != null) {
+    if (endPointConnection.getProtocol() != null) {
       try {
-        endPointConnection.getConnection().close();
+        endPointConnection.getProtocol().close();
       } catch (IOException ioException) {
         // We are closing, so not too fussed here
       }
@@ -45,4 +46,8 @@ public class Shutdown extends State {
     return "Shutdown";
   }
 
+  @Override
+  public LinkState getLinkState() {
+    return LinkState.FAILED;
+  }
 }

@@ -23,7 +23,7 @@ import io.mapsmessaging.api.Session;
 import io.mapsmessaging.api.SessionContextBuilder;
 import io.mapsmessaging.api.SessionManager;
 import io.mapsmessaging.network.ProtocolClientConnection;
-import io.mapsmessaging.network.protocol.ProtocolMessageTransformation;
+import io.mapsmessaging.network.protocol.transformation.ProtocolMessageTransformation;
 import io.mapsmessaging.network.protocol.impl.nats.frames.ConnectFrame;
 import io.mapsmessaging.network.protocol.impl.nats.frames.ErrFrame;
 import io.mapsmessaging.network.protocol.impl.nats.frames.NatsFrame;
@@ -55,7 +55,7 @@ public class ConnectListener implements FrameListener {
             session.getSecurityContext().getUsername()
 
         );
-        engine.getProtocol().setTransformation(transformation);
+        engine.getProtocol().setProtocolMessageTransformation(transformation);
         engine.setVerbose(connect.isVerbose());
         engine.changeState(new ConnectedState());
         engine.setEchoEvents(connect.isEcho());

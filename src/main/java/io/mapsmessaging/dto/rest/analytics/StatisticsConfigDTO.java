@@ -21,12 +21,12 @@ package io.mapsmessaging.dto.rest.analytics;
 
 import io.mapsmessaging.dto.rest.config.BaseConfigDTO;
 import io.swagger.v3.oas.annotations.media.Schema;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 import java.util.List;
-@Data
+
+@Setter
+@Getter
 @NoArgsConstructor
 @AllArgsConstructor
 @Schema(

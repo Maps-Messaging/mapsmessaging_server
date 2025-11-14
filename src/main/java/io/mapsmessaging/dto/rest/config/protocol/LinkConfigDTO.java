@@ -19,16 +19,15 @@
 
 package io.mapsmessaging.dto.rest.config.protocol;
 
+import io.mapsmessaging.api.features.QualityOfService;
 import io.mapsmessaging.dto.rest.analytics.StatisticsConfigDTO;
 import io.mapsmessaging.dto.rest.config.BaseConfigDTO;
-import io.mapsmessaging.utilities.filtering.NamespaceFilter;
 import io.mapsmessaging.utilities.filtering.NamespaceFilters;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 
-import java.util.List;
 import java.util.Map;
 
 @Data
@@ -60,4 +59,7 @@ public class LinkConfigDTO extends BaseConfigDTO {
 
   @Schema(description = "Specific filtering on namespace", nullable = true)
   protected NamespaceFilters namespaceFilters;
+
+  @Schema(description = "Quality of server QoS:0, 1 or 2, for non MQTT  1 or 2 imply transactional", nullable = true, example = "1")
+  protected QualityOfService qualityOfService;
 }

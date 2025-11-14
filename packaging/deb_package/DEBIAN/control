@@ -3,7 +3,7 @@ Version: %%PACKAGE_VERSION%%
 Section: java
 Priority: optional
 Architecture: all
-Depends: default-jre-headless (>= 2:1.21) | openjdk-21-jre-headless | java21-runtime-headless | java21-runtime
+Depends: zulu21-jdk-headless | zulu21-jre-headless | openjdk-21-jdk-headless | openjdk-21-jre-headless
 Recommends: pigpiod
 Maintainer: Maps Messaging B.V. <info@mapsmessaging.io>
 Description: A multi adapter and protocol server

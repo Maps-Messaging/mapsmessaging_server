@@ -26,23 +26,32 @@ import io.mapsmessaging.api.MessageBuilder;
 import io.mapsmessaging.configuration.ConfigurationProperties;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
+import io.mapsmessaging.network.protocol.Protocol;
+import io.mapsmessaging.utilities.GsonFactory;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Map;
 
 import static io.mapsmessaging.schemas.logging.SchemaLogMessages.FORMATTER_UNEXPECTED_OBJECT;
 
-public class XMLToJSON implements Transformer {
+public class XMLToJSON implements InterServerTransformation {
 
   private static final Logger logger = LoggerFactory.getLogger(XMLToJSON.class);
 
+
   @Override
-  public void transform(MessageBuilder messageBuilder) {
+  public Protocol.ParsedMessage transform(String source, Protocol.ParsedMessage message){
+    MessageBuilder messageBuilder = new MessageBuilder(message.getMessage());
+    convert(messageBuilder);
+    message.setMessage(messageBuilder.build());
+    return message;
+  }
+
+  private void convert(MessageBuilder messageBuilder) {
     try {
       XmlMapper xmlMapper = new XmlMapper();
       Map<String, Object> map = xmlMapper.readValue(messageBuilder.getOpaqueData(), new TypeReference<>() {});
-      JsonObject jsonObject = gson.toJsonTree(map).getAsJsonObject();
-      String pretty = gson.toJson(jsonObject);
+      String pretty = GsonFactory.getInstance().getSimpleGson().toJson(map);
       messageBuilder.setOpaqueData(pretty.getBytes(StandardCharsets.UTF_8));
     } catch (Exception e) {
       logger.log(FORMATTER_UNEXPECTED_OBJECT, getName());
@@ -50,7 +59,7 @@ public class XMLToJSON implements Transformer {
   }
 
   @Override
-  public Transformer build(ConfigurationProperties properties) {
+  public InterServerTransformation build(ConfigurationProperties properties) {
     return this;
   }
 
