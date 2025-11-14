@@ -211,7 +211,7 @@
         <dependency>
           <groupId>org.graalvm.buildtools</groupId>
           <artifactId>graalvm-reachability-metadata</artifactId>
-          <version>0.11.2</version>
+          <version>0.11.3</version>
           <classifier>repository</classifier>
           <type>zip</type>
         </dependency>
