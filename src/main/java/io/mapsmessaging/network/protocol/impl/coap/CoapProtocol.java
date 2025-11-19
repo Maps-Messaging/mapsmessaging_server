@@ -43,6 +43,7 @@ import io.mapsmessaging.network.protocol.impl.coap.subscriptions.Context;
 import io.mapsmessaging.network.protocol.impl.coap.subscriptions.SubscriptionState;
 import io.mapsmessaging.network.protocol.impl.coap.subscriptions.TransactionState;
 import io.mapsmessaging.schemas.config.SchemaConfig;
+import io.mapsmessaging.schemas.config.SchemaResource;
 import lombok.Getter;
 import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
@@ -157,7 +158,12 @@ public class CoapProtocol extends Protocol {
     if (context == null) {
       return;
     }
-    endPoint.updateWriteBytes(messageEvent.getMessage().getOpaqueData().length);
+    ParsedMessage parsedMessage = parseOutboundMessage(messageEvent);
+    if(parsedMessage == null) {
+      return;
+    }
+    byte[] data = parsedMessage.getMessage().getOpaqueData();
+    endPoint.updateWriteBytes(data.length);
     endPoint.getEndPointStatus().incrementSentMessages();
     boolean doBlockwise = false;
     int blockSize = 0;
@@ -167,7 +173,7 @@ public class CoapProtocol extends Protocol {
       blockNumber = block.getNumber();
       if(block.getSizeEx() != 0b111){
         blockSize = 1<<(block.getSizeEx()+4);
-        doBlockwise = blockSize < messageEvent.getMessage().getOpaqueData().length;
+        doBlockwise = blockSize < data.length;
         logger.log(COAP_BLOCK2_REQUEST, block.getNumber(), block.getSizeEx(), block.isMore());
       }
       else{
@@ -179,7 +185,7 @@ public class CoapProtocol extends Protocol {
       response = new BlockWiseSend(response);
     }
     response.setFromAddress(context.getRequest().getFromAddress());
-    response.setPayload(messageEvent.getMessage().getOpaqueData());
+    response.setPayload(data);
     setOptions(messageEvent, context, response.getOptions());
     if(doBlockwise){
       ((BlockWiseSend)response).setBlockSize(blockSize);
@@ -234,10 +240,10 @@ public class CoapProtocol extends Protocol {
       Observe option = new Observe((int) (context.getObserveId().incrementAndGet() & 0xffff));
       optionSet.putOption(option);
     }
-    List<SchemaConfig> schemas = SchemaManager.getInstance().getSchemaByContext(messageEvent.getDestinationName());
+    List<SchemaResource> schemas = SchemaManager.getInstance().getSchemaByContext(messageEvent.getDestinationName());
     ContentFormat contentFormat = new ContentFormat(Format.TEXT_PLAIN);
     if (!schemas.isEmpty()) {
-      String mime = schemas.get(0).getMimeType();
+      String mime = schemas.getFirst().getDefaultVersion().getMimeType();
       if (mime != null) {
         Format format = Format.stringValueOf(mime);
         contentFormat = new ContentFormat(format);

@@ -214,6 +214,7 @@ public class SessionSharedSubscription extends Subscription {
     if (!sharedSubscription.hasAtRestMessages()) {
       message.setLastMessage(true);
     }
+    message.setBound(true);
     sessionImpl.getMessageCallback().sendMessage(sharedSubscription.getDestinationImpl(), this, message, completionTask);
     ThreadContext.clearMap();
   }

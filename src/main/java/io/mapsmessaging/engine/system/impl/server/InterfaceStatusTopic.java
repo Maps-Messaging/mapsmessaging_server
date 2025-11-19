@@ -33,6 +33,7 @@ import lombok.Data;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 public class InterfaceStatusTopic extends SystemTopic {
 
@@ -46,7 +47,7 @@ public class InterfaceStatusTopic extends SystemTopic {
   }
 
   @Override
-  public String getSchemaUUID() {
+  public UUID getSchemaUUID() {
     return SchemaManager.DEFAULT_JSON_SCHEMA;
   }
 

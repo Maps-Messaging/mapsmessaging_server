@@ -95,9 +95,9 @@ public class Metrics implements LinkMetrics {
   }
 
   private EndPoint getEndPoint() {
-    if(endPointConnection.getConnection() == null){
+    if(endPointConnection.getProtocol() == null){
       return null;
     }
-    return endPointConnection.getConnection().getEndPoint();
+    return endPointConnection.getProtocol().getEndPoint();
   }
 }

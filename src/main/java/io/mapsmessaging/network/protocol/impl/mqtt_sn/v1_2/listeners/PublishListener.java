@@ -76,7 +76,7 @@ public class PublishListener extends PacketListener {
     messageBuilder.setQoS(qos)
         .setMeta(meta)
         .setRetain(publish.retain())
-        .setTransformation(protocol.getTransformation())
+        .setTransformation(protocol.getProtocolMessageTransformation())
         .setOpaqueData(publish.getMessage());
     CompletableFuture<Destination> future = session.findDestination(topicName, DestinationType.TOPIC);
     future.thenApply(destination -> {

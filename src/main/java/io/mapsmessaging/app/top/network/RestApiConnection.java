@@ -20,6 +20,7 @@
 package io.mapsmessaging.app.top.network;
 
 import com.google.gson.*;
+import io.mapsmessaging.utilities.GsonFactory;
 import jakarta.ws.rs.client.WebTarget;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
@@ -34,7 +35,7 @@ public abstract class RestApiConnection {
   protected RestApiConnection(String url, String endpoint) {
     this.url = url;
     this.endpoint = endpoint;
-    this.gson = new GsonBuilder().create();
+    this.gson = GsonFactory.getInstance().getPrettyGson();
   }
 
   public abstract Object parse(JsonElement jsonElement) throws JsonParseException;

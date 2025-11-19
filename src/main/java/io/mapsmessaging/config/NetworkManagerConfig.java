@@ -41,8 +41,6 @@ public class NetworkManagerConfig extends NetworkManagerConfigDTO implements Con
     this.scanNetworkChanges = config.getBooleanProperty("scanNetworkChanges", true);
     this.scanInterval = config.getIntProperty("scanInterval", 60000);
 
-    ConfigurationProperties globalConfig = config.getGlobal();
-
     this.endPointServerConfigList = new ArrayList<>();
     Object obj = config.get("data");
     if (obj instanceof List) {

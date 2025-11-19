@@ -25,5 +25,5 @@
 #
 transformations:
   data:
-    - pattern: "*://*/*/*"
-      transformation: ""
+    - pattern: "*://*/mqtt/*"
+      transformation: "Schema-To-Json"

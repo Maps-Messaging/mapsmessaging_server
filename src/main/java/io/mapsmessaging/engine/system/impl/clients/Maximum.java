@@ -25,6 +25,7 @@ import io.mapsmessaging.engine.system.SystemTopic;
 import io.mapsmessaging.network.io.EndPoint;
 
 import java.io.IOException;
+import java.util.UUID;
 
 public class Maximum extends SystemTopic {
 
@@ -36,7 +37,7 @@ public class Maximum extends SystemTopic {
   }
 
   @Override
-  public String getSchemaUUID() {
+  public UUID getSchemaUUID() {
     return SchemaManager.DEFAULT_NUMERIC_STRING_SCHEMA;
   }
 

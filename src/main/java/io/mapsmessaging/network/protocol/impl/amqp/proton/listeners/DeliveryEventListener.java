@@ -77,12 +77,11 @@ public class DeliveryEventListener extends BaseEventListener {
       dlv.settle();
       long id = unpackLong(dlv.getTag());
       Object context = dlv.getContext();
-      if (context instanceof SubscribedEventManager) {
-        SubscribedEventManager manager = (SubscribedEventManager) context;
+      if (context instanceof SubscribedEventManager manager) {
         manager.ackReceived(id);
       }
-    } else if (eventLink instanceof Receiver) {
-      topUp((Receiver) eventLink);
+    } else if (eventLink instanceof Receiver receiver) {
+      topUp(receiver);
     }
   }
 
@@ -140,8 +139,8 @@ public class DeliveryEventListener extends BaseEventListener {
 
     // If its a discharge it means we are completing the transaction, we either commit the transaction OR we abort it and unwind
     // all resources currently allocated for the transaction
-    else if (transactionEvent instanceof Discharge) {
-      handleDischarge((Discharge) transactionEvent, delivery, receiver);
+    else if (transactionEvent instanceof Discharge dischargeEvent) {
+      handleDischarge(dischargeEvent, delivery, receiver);
     }
     delivery.settle();
   }
@@ -222,13 +221,12 @@ public class DeliveryEventListener extends BaseEventListener {
     MessageBuilder mb = new MessageBuilder();
     MessageBuilder messageBuilder = translator.decode(mb, protonMsg);
     messageBuilder.storeOffline(true);
-    messageBuilder.setTransformation(protocol.getTransformation());
+    messageBuilder.setTransformation(protocol.getProtocolMessageTransformation());
 
     Message message = MessageOverrides.createMessageBuilder(protocol.getProtocolConfig().getMessageDefaults(), messageBuilder).build();
     DeliveryState deliveryState = delivery.getRemoteState();
     Transaction transaction = null;
-    if (deliveryState instanceof TransactionalState) {
-      TransactionalState transactionalState = (TransactionalState) deliveryState;
+    if (deliveryState instanceof TransactionalState transactionalState) {
       Binary binary = transactionalState.getTxnId();
       if (binary != null) {
         String transactionId = new String(binary.getArray());

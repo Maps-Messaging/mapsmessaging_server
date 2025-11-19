@@ -17,27 +17,7 @@
  *  limitations under the License.
  */
 
-package io.mapsmessaging.network.protocol;
+package io.mapsmessaging.dto.rest.schema;
 
-import io.mapsmessaging.api.MessageBuilder;
-import io.mapsmessaging.api.message.Message;
-import io.mapsmessaging.utilities.service.Service;
-
-public interface ProtocolMessageTransformation extends Service {
-
-  @Override
-  String getName();
-
-  @Override
-  String getDescription();
-
-  int getId();
-
-  default void incoming(MessageBuilder messageBuilder) {
-    // nothing to do here
-  }
-
-  default byte[] outgoing(Message message, String destinationName) {
-    return message.getOpaqueData();
-  }
+public class RepositoryConfigDTO {
 }

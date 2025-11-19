@@ -23,9 +23,8 @@ import io.mapsmessaging.api.features.Priority;
 import io.mapsmessaging.api.features.QualityOfService;
 import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.api.message.TypedData;
-import io.mapsmessaging.api.transformers.Transformer;
 import io.mapsmessaging.dto.rest.messaging.MessageDTO;
-import io.mapsmessaging.network.protocol.ProtocolMessageTransformation;
+import io.mapsmessaging.network.protocol.transformation.ProtocolMessageTransformation;
 import lombok.Data;
 import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
@@ -55,7 +54,6 @@ public class MessageBuilder {
   private boolean retain;
   private boolean storeOffline;
   private boolean payloadUTF8;
-  private Transformer transformer;
   private String schemaId;
 
   public MessageBuilder() {
@@ -210,11 +208,6 @@ public class MessageBuilder {
     return this;
   }
 
-  public @NonNull @NotNull MessageBuilder setDestinationTransformer(Transformer transformer) {
-    this.transformer = transformer;
-    return this;
-  }
-
   public @NonNull @NotNull MessageBuilder setSchemaId(String schemaId) {
     this.schemaId = schemaId;
     return this;
@@ -225,9 +218,6 @@ public class MessageBuilder {
       ProtocolMessageTransformation local = transformation;
       transformation = null;
       local.incoming(this);
-    }
-    if (transformer != null) {
-      transformer.transform(this);
     }
     return new Message(this);
   }

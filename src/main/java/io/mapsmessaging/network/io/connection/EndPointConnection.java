@@ -69,7 +69,7 @@ public class EndPointConnection extends EndPointServerStatus {
   private EndPoint endPoint;
   @Getter
   @Setter
-  private Protocol connection;
+  private Protocol protocol;
 
   private final List<StateChangeListener> stateChangeListeners;
 

@@ -23,6 +23,7 @@ import io.mapsmessaging.api.MessageEvent;
 import io.mapsmessaging.api.Session;
 import io.mapsmessaging.api.SessionManager;
 import io.mapsmessaging.api.features.QualityOfService;
+import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.config.protocol.impl.MqttSnConfig;
 import io.mapsmessaging.dto.rest.protocol.ProtocolInformationDTO;
 import io.mapsmessaging.dto.rest.protocol.impl.MqttSnProtocolInformation;
@@ -69,6 +70,7 @@ public class MQTT_SNProtocol extends Protocol {
   protected SocketAddress addressKey;
 
   protected volatile boolean closed;
+  @Setter
   @Getter
   protected Session session;
 
@@ -148,10 +150,6 @@ public class MQTT_SNProtocol extends Protocol {
     return "1.2";
   }
 
-  public void setSession(Session session) {
-    this.session = session;
-  }
-
   @Override
   public boolean processPacket(@NonNull @NotNull Packet packet) throws IOException {
     endPoint.updateReadBytes(packet.available());
@@ -204,11 +202,18 @@ public class MQTT_SNProtocol extends Protocol {
 
   @Override
   public void sendMessage(@NotNull @NonNull MessageEvent messageEvent) {
+    ParsedMessage parsedMessage = parseOutboundMessage(messageEvent);
+    if(parsedMessage == null) {
+      return;
+    }
+    Message message = parsedMessage.getMessage();
+
     if (stateEngine.getMaxBufferSize() > 0 &&
-        stateEngine.getMaxBufferSize() < messageEvent.getMessage().getOpaqueData().length + 9) {
+        stateEngine.getMaxBufferSize() < message.getOpaqueData().length + 9) {
       messageEvent.getCompletionTask().run();
     } else {
-      stateEngine.queueMessage(messageEvent);
+      MessageEvent evt = new MessageEvent(parsedMessage.getDestinationName(), messageEvent.getSubscription(), message, messageEvent.getCompletionTask());
+      stateEngine.queueMessage(evt);
     }
   }
 
@@ -221,11 +226,8 @@ public class MQTT_SNProtocol extends Protocol {
   }
 
   public MQTT_SNPacket buildPublish(short alias, int packetId, MessageEvent messageEvent, QualityOfService qos, short topicTypeId) {
-    byte[] data = messageEvent.getMessage().getOpaqueData();
-    if (transformation != null) {
-      data = transformation.outgoing(messageEvent.getMessage(), messageEvent.getDestinationName() );
-    }
-    Publish publish = new Publish(alias, packetId, data);
+    Message data = messageEvent.getMessage();
+    Publish publish = new Publish(alias, packetId, data.getOpaqueData());
     publish.setQoS(qos);
     publish.setCallback(messageEvent.getCompletionTask());
     publish.setTopicIdType(stateEngine.getTopicAliasManager().getTopicAliasType(messageEvent.getDestinationName()));

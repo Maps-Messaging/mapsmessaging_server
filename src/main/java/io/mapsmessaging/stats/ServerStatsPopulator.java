@@ -26,7 +26,7 @@ public class ServerStatsPopulator {
     stats.setServerName(serverName);
     stats.setServerId(serverId);
     stats.setLicenseId(licenseId);
-    stats.setTimestamp(System.currentTimeMillis() / 1000L);
+    stats.setTimestamp(System.currentTimeMillis());
 
     stats.setVersion(buildVersionInfo(serverVersion));
     stats.setMemory(buildMemoryStats());

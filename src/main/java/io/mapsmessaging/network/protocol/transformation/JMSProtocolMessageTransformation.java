@@ -21,7 +21,6 @@ package io.mapsmessaging.network.protocol.transformation;
 
 import io.mapsmessaging.api.MessageBuilder;
 import io.mapsmessaging.api.message.Message;
-import io.mapsmessaging.network.protocol.ProtocolMessageTransformation;
 import io.mapsmessaging.network.protocol.impl.amqp.proton.transformers.MessageTranslator;
 import io.mapsmessaging.network.protocol.impl.amqp.proton.transformers.MessageTranslatorFactory;
 import lombok.NonNull;
@@ -63,7 +62,7 @@ public class JMSProtocolMessageTransformation implements ProtocolMessageTransfor
   }
 
   @Override
-  public @NonNull byte[] outgoing(@NonNull @NotNull Message message, String destinationName) {
+  public @NonNull Message outgoing(@NonNull @NotNull Message message, String destinationName) {
 
     MessageTranslator translator = MessageTranslatorFactory.getMessageTranslator(message);
     org.apache.qpid.proton.message.Message protonMsg = translator.encode(message);
@@ -77,6 +76,8 @@ public class JMSProtocolMessageTransformation implements ProtocolMessageTransfor
       System.arraycopy(data, 0, tmp, 0, size);
       data = tmp;
     }
-    return data;
+    MessageBuilder messageBuilder = new MessageBuilder();
+    messageBuilder.setOpaqueData(data);
+    return messageBuilder.build();
   }
 }

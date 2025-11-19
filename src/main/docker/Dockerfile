@@ -45,7 +45,6 @@ RUN apk add --no-cache dos2unix shadow wget && \
 \
 # Setup data volume and static files
     mkdir -p /data && \
-    mv maps-%%MAPS_VERSION%%/www /data/www && \
 \
 # Add user and permissions
     addgroup -S messaginggroup && \

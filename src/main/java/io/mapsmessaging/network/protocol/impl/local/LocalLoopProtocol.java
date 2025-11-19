@@ -22,7 +22,8 @@ package io.mapsmessaging.network.protocol.impl.local;
 import io.mapsmessaging.api.*;
 import io.mapsmessaging.api.features.DestinationType;
 import io.mapsmessaging.api.features.QualityOfService;
-import io.mapsmessaging.api.transformers.Transformer;
+import io.mapsmessaging.api.message.Message;
+import io.mapsmessaging.api.transformers.InterServerTransformation;
 import io.mapsmessaging.dto.rest.analytics.StatisticsConfigDTO;
 import io.mapsmessaging.dto.rest.config.protocol.ProtocolConfigDTO;
 import io.mapsmessaging.dto.rest.protocol.ProtocolInformationDTO;
@@ -82,15 +83,22 @@ public class LocalLoopProtocol extends Protocol {
     if(parsedMessage == null) {
       return;
     }
+    InterServerTransformation transformer = destinationTransformationLookup(parsedMessage.getDestinationName());
+    if(transformer != null) {
+      parsedMessage = transformer.transform(messageEvent.getDestinationName(), parsedMessage);
+    }
+    if(parsedMessage.getMessage() == messageEvent.getMessage()){
+      MessageBuilder messageBuilder = new MessageBuilder(messageEvent.getMessage());
+      parsedMessage.setMessage(messageBuilder.build()); // We need to copy it since this event comes from internal
+    }
     String topicName = parsedMessage.getDestinationName();
-    MessageBuilder messageBuilder = parsedMessage.getMessageBuilder();
+    Message message = parsedMessage.getMessage();
     if (topicName != null) {
       CompletableFuture<Destination> future = session.findDestination(topicName, DestinationType.TOPIC);
       future.thenApply(destination -> {
         try {
           if (destination != null) {
-            messageBuilder.setDestinationTransformer(destinationTransformationLookup(topicName));
-            destination.storeMessage(messageBuilder.build());
+            destination.storeMessage(message);
           }
           messageEvent.getCompletionTask().run();
           logger.log(ServerLogMessages.LOOP_SENT_MESSAGE);
@@ -120,12 +128,12 @@ public class LocalLoopProtocol extends Protocol {
   }
 
   @Override
-  public void subscribeRemote(@NonNull @NotNull String resource, @NonNull @NotNull String mappedResource, @NonNull @NotNull QualityOfService qos, @Nullable ParserExecutor executor, @Nullable Transformer transformer, StatisticsConfigDTO statistics) throws IOException {
+  public void subscribeRemote(@NonNull @NotNull String resource, @NonNull @NotNull String mappedResource, @NonNull @NotNull QualityOfService qos, @Nullable ParserExecutor executor, @Nullable InterServerTransformation transformer, StatisticsConfigDTO statistics) throws IOException {
     subscribeLocal(resource, mappedResource, qos, null, transformer, new NamespaceFilters(null), statistics);
   }
 
   @Override
-  public void subscribeLocal(@NonNull @NotNull String resource, @NonNull @NotNull String mappedResource,@NonNull @NotNull QualityOfService qos, String selector, @Nullable Transformer transformer, @Nullable NamespaceFilters namespaceFilters, StatisticsConfigDTO statistics) throws IOException {
+  public void subscribeLocal(@NonNull @NotNull String resource, @NonNull @NotNull String mappedResource, @NonNull @NotNull QualityOfService qos, String selector, @Nullable InterServerTransformation transformer, @Nullable NamespaceFilters namespaceFilters, StatisticsConfigDTO statistics) throws IOException {
     super.subscribeLocal(resource, mappedResource, qos, selector, transformer, namespaceFilters, statistics);
     SubscriptionContextBuilder builder = createSubscriptionContextBuilder(resource, selector, QualityOfService.AT_LEAST_ONCE, 1024);
     session.addSubscription(builder.build());

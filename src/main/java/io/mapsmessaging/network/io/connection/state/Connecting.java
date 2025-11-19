@@ -37,13 +37,13 @@ public class Connecting extends State {
         protocol.equalsIgnoreCase("serial")) {
       // This is a UDP connection, we are connected by default
       try {
-        endPointConnection.handleNewEndPoint(endPointConnection.getConnection().getEndPoint());
+        endPointConnection.handleNewEndPoint(endPointConnection.getProtocol().getEndPoint());
       } catch (IOException e) {
         throw new RuntimeException(e);
       }
     }
     if(protocol.equalsIgnoreCase("noop")) {
-      endPointConnection.getConnection().setConnected(true);
+      endPointConnection.getProtocol().setConnected(true);
     }
     // Need to wait for the protocol to be established before we can move on
   }

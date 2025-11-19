@@ -20,14 +20,13 @@
 package io.mapsmessaging.network.protocol.impl.extension;
 
 import com.sun.security.auth.UserPrincipal;
-import io.mapsmessaging.analytics.Analyser;
 import io.mapsmessaging.api.MessageBuilder;
 import io.mapsmessaging.api.MessageEvent;
 import io.mapsmessaging.api.MessageListener;
 import io.mapsmessaging.api.features.DestinationType;
 import io.mapsmessaging.api.features.QualityOfService;
 import io.mapsmessaging.api.message.Message;
-import io.mapsmessaging.api.transformers.Transformer;
+import io.mapsmessaging.api.transformers.InterServerTransformation;
 import io.mapsmessaging.dto.rest.analytics.StatisticsConfigDTO;
 import io.mapsmessaging.dto.rest.config.protocol.ProtocolConfigDTO;
 import io.mapsmessaging.dto.rest.protocol.ProtocolInformationDTO;
@@ -98,15 +97,16 @@ public class ExtensionProtocol extends Protocol implements MessageListener, Clie
 
   @Override
   public void sendMessage(@org.jetbrains.annotations.NotNull @NonNull MessageEvent messageEvent) {
-    String lookup = nameMapping.get(messageEvent.getDestinationName());
-    if(lookup != null) {
-      extension.outbound(lookup, messageEvent.getMessage());
+    ParsedMessage parsedMessage = parseOutboundMessage(messageEvent);
+    if(parsedMessage == null) {
+      return;
     }
+    extension.outbound(parsedMessage.getDestinationName(), parsedMessage.getMessage());
     messageEvent.getCompletionTask().run();
   }
 
   @Override
-  public void subscribeLocal(@NonNull @NotNull String resource, @NonNull @NotNull String mappedResource,@NonNull @NotNull QualityOfService qos,  String selector, @Nullable Transformer transformer, @org.jetbrains.annotations.Nullable NamespaceFilters namespaceFilters, StatisticsConfigDTO statistics) throws IOException {
+  public void subscribeLocal(@NonNull @NotNull String resource, @NonNull @NotNull String mappedResource, @NonNull @NotNull QualityOfService qos, String selector, @Nullable InterServerTransformation transformer, @org.jetbrains.annotations.Nullable NamespaceFilters namespaceFilters, StatisticsConfigDTO statistics) throws IOException {
     nameMapping.put(resource, mappedResource);
     extension.registerLocalLink(mappedResource);
     if(transformer != null) {
@@ -116,7 +116,7 @@ public class ExtensionProtocol extends Protocol implements MessageListener, Clie
   }
 
   @Override
-  public void subscribeRemote(@NonNull @org.jetbrains.annotations.NotNull String resource, @NonNull @org.jetbrains.annotations.NotNull String mappedResource, @NonNull @NotNull QualityOfService qos, @Nullable ParserExecutor parser, @Nullable Transformer transformer, StatisticsConfigDTO statistics) throws IOException {
+  public void subscribeRemote(@NonNull @org.jetbrains.annotations.NotNull String resource, @NonNull @org.jetbrains.annotations.NotNull String mappedResource, @NonNull @NotNull QualityOfService qos, @Nullable ParserExecutor parser, @Nullable InterServerTransformation transformer, StatisticsConfigDTO statistics) throws IOException {
     nameMapping.put(resource, mappedResource);
     if(!extension.supportsRemoteFiltering() && parser != null){
       parsers.put(resource, parser);

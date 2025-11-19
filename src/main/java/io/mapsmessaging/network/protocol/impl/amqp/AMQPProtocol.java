@@ -137,7 +137,11 @@ public class AMQPProtocol extends Protocol {
 
   @Override
   public void sendMessage(@NotNull @NonNull MessageEvent messageEvent) {
-    protonEngine.sendMessage(messageEvent.getMessage(), messageEvent.getSubscription());
+    ParsedMessage parsedMessage = parseOutboundMessage(messageEvent);
+    if(parsedMessage == null) {
+      return;
+    }
+    protonEngine.sendMessage(parsedMessage.getMessage(), messageEvent.getSubscription());
     messageEvent.getCompletionTask().run();
   }
 

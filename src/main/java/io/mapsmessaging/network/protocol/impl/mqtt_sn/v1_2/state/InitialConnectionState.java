@@ -24,7 +24,7 @@ import io.mapsmessaging.api.SessionContextBuilder;
 import io.mapsmessaging.config.protocol.impl.MqttSnConfig;
 import io.mapsmessaging.network.ProtocolClientConnection;
 import io.mapsmessaging.network.io.EndPoint;
-import io.mapsmessaging.network.protocol.ProtocolMessageTransformation;
+import io.mapsmessaging.network.protocol.transformation.ProtocolMessageTransformation;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.MQTT_SNProtocol;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.packet.*;
 import io.mapsmessaging.network.protocol.transformation.TransformationManager;
@@ -75,7 +75,7 @@ public class InitialConnectionState implements State {
               session.getSecurityContext().getUsername()
           );
 
-          protocol.setTransformation(transformation);
+          protocol.setProtocolMessageTransformation(transformation);
           try {
             session.login();
             stateEngine.setState(new ConnectedState(response));

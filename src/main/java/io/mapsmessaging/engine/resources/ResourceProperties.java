@@ -44,6 +44,7 @@ public class ResourceProperties {
   private String buildDate;
   private String buildVersion;
   private Map<String, Object> schema;
+  private String schemaId;
 
   public ResourceProperties() {}
 
@@ -55,6 +56,7 @@ public class ResourceProperties {
     this.buildDate = buildDate;
     this.buildVersion = buildVersion;
     schema = new LinkedHashMap<>();
+    schemaId = "";
   }
 
   public void write(File directoryPath) throws IOException {

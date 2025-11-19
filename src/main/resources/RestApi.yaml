@@ -32,27 +32,6 @@ RestApi:
   cacheCleanup: 10000
   enableWadlEndPoint: false
 
-  tls:
-    clientCertificateRequired: false
-    clientCertificateWanted: false
-      #-----------------------------------
-      # CRL Specific
-      # crlUrl: <URL TO CRL>
-      # crlInterval: <time in seconds to reload CRL>
-    #-----------------------------------
-
-    keyStore:
-      type: JKS
-      managerFactory: SunX509
-      path: my-keystore.jks
-      passphrase: password
-
-    trustStore:
-      type: JKS
-      path: my-truststore.jks
-      passphrase: password
-      managerFactory: SunX509
-
   static:
     enabled: true
     directory: "{{MAPS_HOME}}/www"

@@ -60,9 +60,9 @@ public class IntergrationStatusApi extends IntegrationBaseRestApi {
 
     // Initialize statistics and timestamps if connection details are available
     Map<String, LinkedMovingAverageRecordDTO> stats = new LinkedHashMap<>();
-    if (connection.getConnection() != null && connection.getConnection().getEndPoint() != null) {
-      dto.setLastReadTime(connection.getConnection().getEndPoint().getLastRead());
-      dto.setLastWriteTime(connection.getConnection().getEndPoint().getLastWrite());
+    if (connection.getProtocol() != null && connection.getProtocol().getEndPoint() != null) {
+      dto.setLastReadTime(connection.getProtocol().getEndPoint().getLastRead());
+      dto.setLastWriteTime(connection.getProtocol().getEndPoint().getLastWrite());
     }
 
     // Populate statistics

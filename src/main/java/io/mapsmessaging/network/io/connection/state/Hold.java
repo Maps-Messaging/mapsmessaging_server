@@ -76,16 +76,16 @@ public class Hold extends State {
   }
 
   private void unsubscribeLocal(String local, boolean includeSchema) throws IOException {
-    endPointConnection.getConnection().unsubscribeLocal(local);
+    endPointConnection.getProtocol().unsubscribeLocal(local);
     if (includeSchema) {
-      endPointConnection.getConnection().unsubscribeLocal(constructSchema(local));
+      endPointConnection.getProtocol().unsubscribeLocal(constructSchema(local));
     }
   }
 
   private void unsubscribeRemote(String remote, boolean includeSchema) throws IOException {
-    endPointConnection.getConnection().unsubscribeRemote(remote);
+    endPointConnection.getProtocol().unsubscribeRemote(remote);
     if (includeSchema) {
-      endPointConnection.getConnection().unsubscribeRemote(constructSchema(remote));
+      endPointConnection.getProtocol().unsubscribeRemote(constructSchema(remote));
     }
   }
 

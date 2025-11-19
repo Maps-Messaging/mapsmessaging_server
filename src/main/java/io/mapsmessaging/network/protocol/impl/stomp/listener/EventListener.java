@@ -23,7 +23,6 @@ import io.mapsmessaging.api.Destination;
 import io.mapsmessaging.api.MessageBuilder;
 import io.mapsmessaging.api.Transaction;
 import io.mapsmessaging.api.features.Priority;
-import io.mapsmessaging.api.features.QualityOfService;
 import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.api.message.TypedData;
 import io.mapsmessaging.engine.destination.MessageOverrides;
@@ -55,7 +54,7 @@ public abstract class EventListener implements FrameListener {
         .setPriority(Priority.getInstance(event.getPriority()))
         .setOpaqueData(event.getData())
         .setMeta(metaData)
-        .setTransformation(engine.getProtocol().getTransformation())
+        .setTransformation(engine.getProtocol().getProtocolMessageTransformation())
         .setDelayed(event.getDelay())
         .setMessageExpiryInterval(event.getExpiry(), TimeUnit.SECONDS)
         .build();

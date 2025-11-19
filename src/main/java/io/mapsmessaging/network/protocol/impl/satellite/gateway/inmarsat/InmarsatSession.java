@@ -26,6 +26,7 @@ import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.network.protocol.impl.satellite.gateway.inmarsat.protocol.endpoints.*;
 import io.mapsmessaging.network.protocol.impl.satellite.gateway.inmarsat.protocol.model.*;
+import io.mapsmessaging.utilities.GsonFactory;
 import lombok.Getter;
 
 import java.net.URI;
@@ -40,8 +41,6 @@ import java.util.stream.Collectors;
 import static io.mapsmessaging.logging.ServerLogMessages.INMARSAT_WEB_REQUEST_STATS;
 
 public final class InmarsatSession {
-  private final Gson gson = new GsonBuilder().create();
-
   private final Logger logger = LoggerFactory.getLogger(InmarsatSession.class);
 
   @Getter
@@ -79,12 +78,13 @@ public final class InmarsatSession {
 
     this.errorCacheTtl = Duration.ofHours(24);
 
-    this.auth = new AuthClient(base.resolve("/"), http, this.gson);
-    this.messages = new MessagesClient(base, http, this.gson, auth);
-    this.commands = new CommandsClient(base, http, this.gson, auth);
-    this.devices = new DevicesClient(base, http, this.gson, auth);
-    this.mailbox = new MailboxClient(base, http, this.gson, auth);
-    this.info = new InfoClient(base, http, this.gson, auth);
+    Gson gson = GsonFactory.getInstance().getPrettyGson();
+    this.auth = new AuthClient(base.resolve("/"), http, GsonFactory.getInstance().getPrettyGson());
+    this.messages = new MessagesClient(base, http, gson, auth);
+    this.commands = new CommandsClient(base, http, gson, auth);
+    this.devices = new DevicesClient(base, http, gson, auth);
+    this.mailbox = new MailboxClient(base, http, gson, auth);
+    this.info = new InfoClient(base, http, gson, auth);
   }
 
   private String bearer() {

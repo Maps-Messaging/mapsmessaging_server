@@ -32,6 +32,7 @@ import io.mapsmessaging.license.features.Features;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.logging.ServerLogMessages;
+import io.mapsmessaging.utilities.GsonFactory;
 
 import java.io.*;
 import java.net.HttpURLConnection;
@@ -61,9 +62,7 @@ public class LicenseController {
       installLicenses(licenseDir);
       licenses.addAll(loadInstalledLicenses(licenseDir));
     }
-    Gson gson = new GsonBuilder()
-        .setPrettyPrinting()
-        .create();
+    Gson gson = GsonFactory.getInstance().getPrettyGson();
     for(FeatureDetails feature : licenses) {
       logger.log(ServerLogMessages.LICENSE_FEATURES_AVAILABLE, gson.toJson(feature.getFeature()));
     }
@@ -161,7 +160,7 @@ public class LicenseController {
     long now = System.currentTimeMillis();
     if(license != null) {
       if (license.getNotBefore().getTime() < now && license.getNotAfter().getTime() > now) {
-        Gson gson = new Gson();
+        Gson gson = GsonFactory.getInstance().getSimpleGson();
         Map<String, Object> extraData = (Map<String, Object>) license.getExtra();
         String json = gson.toJson(extraData);
         Features features = gson.fromJson(json, Features.class);

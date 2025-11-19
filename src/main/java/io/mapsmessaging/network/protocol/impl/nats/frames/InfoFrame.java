@@ -22,6 +22,7 @@ package io.mapsmessaging.network.protocol.impl.nats.frames;
 import com.google.gson.Gson;
 import io.mapsmessaging.MessageDaemon;
 import io.mapsmessaging.network.io.Packet;
+import io.mapsmessaging.utilities.GsonFactory;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
@@ -35,7 +36,6 @@ import java.util.concurrent.atomic.AtomicLong;
 public class InfoFrame extends NatsFrame {
 
   private static final AtomicLong counter = new AtomicLong();
-  private static final Gson gson = new Gson();
 
   private InfoData infoData;
 
@@ -62,7 +62,7 @@ public class InfoFrame extends NatsFrame {
 
   @Override
   protected void parseLine(String json) {
-    this.infoData = gson.fromJson(json, InfoData.class);
+    this.infoData = GsonFactory.getInstance().getSimpleGson().fromJson(json, InfoData.class);
   }
 
   @Override
@@ -70,7 +70,7 @@ public class InfoFrame extends NatsFrame {
     int start = packet.position();
     packet.put(getCommand());
     packet.put((byte) ' ');
-    String json = gson.toJson(infoData);
+    String json = GsonFactory.getInstance().getSimpleGson().toJson(infoData);
     packet.put(json.getBytes(StandardCharsets.US_ASCII));
     packet.put("\r\n".getBytes(StandardCharsets.US_ASCII));
     return packet.position() - start;

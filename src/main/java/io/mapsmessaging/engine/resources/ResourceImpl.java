@@ -59,13 +59,13 @@ public class ResourceImpl implements Resource {
   @Getter
   private  final ResourceProperties resourceProperties;
 
-  public ResourceImpl() throws IOException {
+  public ResourceImpl(){
     this(null, null, "Internal-Resource:" + INTERNAL_RESOURCE_COUNTER.incrementAndGet(), null);
   }
 
   @SneakyThrows
   public ResourceImpl(@Nullable MessageExpiryHandler messageExpiryHandler, @Nullable DestinationConfigDTO destinationConfig, @NotNull String fileName,
-                      @Nullable ResourceProperties resourceProperties) throws IOException {
+                      @Nullable ResourceProperties resourceProperties) {
     keyGen = new AtomicLong(0);
     loaded = false;
     isClosed = false;
@@ -92,10 +92,10 @@ public class ResourceImpl implements Resource {
     builder.setConfig(config)
         .setName(name)
         .setFactory(new MessageFactory());
-    if (config instanceof PartitionStorageConfig) {
-      ((PartitionStorageConfig)config).setFileName(fileName);
-    } else if (config instanceof MemoryTierConfig) {
-      ((MemoryTierConfig)config).getPartitionStorageConfig().setFileName(fileName);
+    if (config instanceof PartitionStorageConfig partitionStorageConfig) {
+      partitionStorageConfig.setFileName(fileName);
+    } else if (config instanceof MemoryTierConfig memoryConfig) {
+      memoryConfig.getPartitionStorageConfig().setFileName(fileName);
     }
 
     if (destinationConfig.getCache() != null) {

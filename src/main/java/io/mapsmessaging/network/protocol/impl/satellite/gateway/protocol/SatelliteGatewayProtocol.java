@@ -35,7 +35,7 @@ import io.mapsmessaging.network.ProtocolClientConnection;
 import io.mapsmessaging.network.io.EndPoint;
 import io.mapsmessaging.network.io.Packet;
 import io.mapsmessaging.network.protocol.Protocol;
-import io.mapsmessaging.network.protocol.ProtocolMessageTransformation;
+import io.mapsmessaging.network.protocol.transformation.ProtocolMessageTransformation;
 import io.mapsmessaging.network.protocol.impl.satellite.TaskManager;
 import io.mapsmessaging.network.protocol.impl.satellite.gateway.io.SatelliteEndPoint;
 import io.mapsmessaging.network.protocol.impl.satellite.gateway.model.MessageData;
@@ -127,7 +127,7 @@ public class SatelliteGatewayProtocol extends Protocol {
     }
     namespacePath = config.getNamespace();
     if(namespacePath == null || namespacePath.isEmpty()){
-      namespacePath = "/incoming/{mailboxId}/{deviceId}";
+      namespacePath = "/incoming/{mailboxId}/{deviceId}/{sin}";
     }
     namespacePath = namespacePath.replace("{deviceId}", primeId);
     namespacePath = namespacePath.replace("{mailboxId}", config.getMailboxId());
@@ -227,12 +227,11 @@ public class SatelliteGatewayProtocol extends Protocol {
     }
 
     String destinationName = messageEvent.getDestinationName();
-    Message message = processTransformer(destinationName, messageEvent.getMessage());
-    byte[] payload;
-    if (transformation != null) {
-      payload = transformation.outgoing(message, messageEvent.getDestinationName());
-    } else {
-      payload = message.getOpaqueData();
+    ParsedMessage parsedMessage = new ParsedMessage(destinationName, messageEvent.getMessage());
+    parsedMessage = processInterServerTransformations (messageEvent.getDestinationName(), parsedMessage);
+    Message payload = parsedMessage.getMessage();
+    if (protocolMessageTransformation != null) {
+      payload = protocolMessageTransformation.outgoing(payload, messageEvent.getDestinationName());
     }
     if (topicNameMapping != null) {
       String tmp = topicNameMapping.get(destinationName);
@@ -245,7 +244,7 @@ public class SatelliteGatewayProtocol extends Protocol {
     destinationName = scanForName(destinationName);
     Map<String, List<byte[]>> pending;
     if( sendHighPriorityEvents &&
-        (message.getPriority().getValue() > Priority.TWO_BELOW_HIGHEST.getValue()) ||
+        (parsedMessage.getMessage().getPriority().getValue() > Priority.TWO_BELOW_HIGHEST.getValue()) ||
         filteredOverride){
       pending = priorityMessages.get();
     }
@@ -254,7 +253,7 @@ public class SatelliteGatewayProtocol extends Protocol {
     }
 
     List<byte[]> list =pending.computeIfAbsent(destinationName, key -> new ArrayList<>());
-    list.add(payload);
+    list.add(payload.getOpaqueData());
     while(list.size()> depth){
       list.remove(0);
     }
@@ -329,7 +328,10 @@ public class SatelliteGatewayProtocol extends Protocol {
     System.arraycopy(raw, 2, tmp, 0, tmp.length);
     SatelliteMessage satelliteMessage = new SatelliteMessage(sin, tmp);
     if(satelliteMessage.isRaw()){
-      publishMessage(satelliteMessage.getMessage(), namespacePath, null);
+      String path = namespacePath;
+      int val = sin & 0xff;
+      path = path.replace("{sin}", String.valueOf(val));
+      publishMessage(satelliteMessage.getMessage(), path, null);
     }
     else {
       satelliteMessage = messageRebuilder.rebuild(satelliteMessage);

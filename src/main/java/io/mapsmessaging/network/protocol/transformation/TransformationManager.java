@@ -20,7 +20,6 @@
 package io.mapsmessaging.network.protocol.transformation;
 
 import io.mapsmessaging.configuration.ConfigurationProperties;
-import io.mapsmessaging.network.protocol.ProtocolMessageTransformation;
 import io.mapsmessaging.network.protocol.transformation.lookup.TransformationTreeBuilder;
 import io.mapsmessaging.network.protocol.transformation.lookup.TreeNode;
 import io.mapsmessaging.utilities.configuration.ConfigurationManager;

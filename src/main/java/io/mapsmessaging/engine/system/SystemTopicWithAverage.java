@@ -25,6 +25,7 @@ import io.mapsmessaging.engine.schema.SchemaManager;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 public abstract class SystemTopicWithAverage extends SystemTopic implements DataSource {
@@ -61,7 +62,7 @@ public abstract class SystemTopicWithAverage extends SystemTopic implements Data
   }
 
   @Override
-  public String getSchemaUUID() {
+  public UUID getSchemaUUID() {
     return SchemaManager.DEFAULT_NUMERIC_STRING_SCHEMA;
   }
 

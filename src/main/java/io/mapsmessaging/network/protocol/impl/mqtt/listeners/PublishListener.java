@@ -28,18 +28,16 @@ import io.mapsmessaging.api.features.Priority;
 import io.mapsmessaging.api.features.QualityOfService;
 import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.api.message.TypedData;
-import io.mapsmessaging.api.transformers.Transformer;
 import io.mapsmessaging.dto.rest.analytics.StatisticsConfigDTO;
 import io.mapsmessaging.engine.destination.MessageOverrides;
 import io.mapsmessaging.engine.destination.subscription.set.DestinationSet;
 import io.mapsmessaging.logging.ServerLogMessages;
 import io.mapsmessaging.network.io.EndPoint;
 import io.mapsmessaging.network.protocol.Protocol;
-import io.mapsmessaging.network.protocol.ProtocolMessageTransformation;
+import io.mapsmessaging.network.protocol.transformation.ProtocolMessageTransformation;
 import io.mapsmessaging.network.protocol.impl.mqtt.MQTTProtocol;
 import io.mapsmessaging.network.protocol.impl.mqtt.packet.*;
 import io.mapsmessaging.selector.operators.ParserExecutor;
-import lombok.SneakyThrows;
 
 import java.io.IOException;
 import java.util.HashMap;
@@ -50,7 +48,7 @@ import java.util.concurrent.ExecutionException;
 
 public class PublishListener extends PacketListener {
 
-  public static Message createMessage(byte[] msg, Priority priority, boolean retain, QualityOfService qos, ProtocolMessageTransformation transformation, Transformer transformer, String schemaId, Protocol protocol) {
+  public static Message createMessage(byte[] msg, Priority priority, boolean retain, QualityOfService qos, ProtocolMessageTransformation transformation, Protocol protocol) {
     HashMap<String, String> meta = new LinkedHashMap<>();
     meta.put("protocol", "MQTT");
     meta.put("version", "4");
@@ -66,8 +64,7 @@ public class PublishListener extends PacketListener {
         .setMeta(meta)
         .setQoS(qos)
         .storeOffline(qos.isStoreOffLine())
-        .setTransformation(transformation)
-        .setDestinationTransformer(transformer);
+        .setTransformation(transformation);
     return MessageOverrides.createMessageBuilder(protocol.getProtocolConfig().getMessageDefaults(), mb).build();
   }
 
@@ -108,11 +105,19 @@ public class PublishListener extends PacketListener {
 
   private void processValidDestinations(Publish publish, Session session, String lookup, Protocol protocol, MQTTPacket response, EndPoint endPoint)
       throws ExecutionException, InterruptedException {
+    Message message = createMessage(
+        publish.getPayload(),
+        publish.getPriority(),
+        publish.isRetain(),
+        publish.getQos(),
+        protocol.getProtocolMessageTransformation(),
+        protocol
+    );
     CompletableFuture<Destination> future = session.findDestination(lookup, DestinationType.TOPIC);
     future.thenApply(destination -> {
       if (destination != null) {
         try {
-          processMessage(publish, protocol, session, response, destination);
+          processMessage(message, publish, protocol, session, response, destination, lookup);
           if (response != null) {
             ((MQTTProtocol) protocol).writeFrame(response);
           }
@@ -132,30 +137,19 @@ public class PublishListener extends PacketListener {
   }
 
 
-  private void processMessage(Publish publish, Protocol protocol, Session session, MQTTPacket response, Destination destination) throws IOException {
-    Transformer transformer = protocol.destinationTransformationLookup(destination.getFullyQualifiedNamespace());
-    Analyser analyser = protocol.getTopicNameAnalyserMap().get(publish.getDestinationName());
+  private void processMessage(Message message, Publish publish, Protocol protocol, Session session, MQTTPacket response, Destination destination, String topicName) throws IOException {
+    Analyser analyser = protocol.getTopicNameAnalyserMap().get(topicName);
     if(analyser == null && !protocol.getResourceNameAnalyserMap().isEmpty()){
       for(Map.Entry<String, StatisticsConfigDTO> entry:protocol.getResourceNameAnalyserMap().entrySet()){
-        if(DestinationSet.matches(entry.getKey(), publish.getDestinationName())){
+        if(DestinationSet.matches(entry.getKey(), topicName)){
           analyser = AnalyserFactory.getInstance().getAnalyser(entry.getValue());
-          protocol.getTopicNameAnalyserMap().put(publish.getDestinationName(), analyser);
+          protocol.getTopicNameAnalyserMap().put(topicName, analyser);
           break;
         }
       }
     }
 
-    Message message = createMessage(
-        publish.getPayload(),
-        publish.getPriority(),
-        publish.isRetain(),
-        publish.getQos(),
-        protocol.getTransformation(),
-        transformer,
-        destination.getSchema().getUniqueId(),
-        protocol
-    );
-    ParserExecutor parserExecutor = protocol.getParser(publish.getDestinationName());
+    ParserExecutor parserExecutor = protocol.getParser(topicName);
     if(parserExecutor != null && !parserExecutor.evaluate(message)){
       return;
     }

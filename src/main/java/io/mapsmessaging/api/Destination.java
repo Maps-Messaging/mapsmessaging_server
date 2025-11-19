@@ -24,6 +24,8 @@ import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.engine.destination.BaseDestination;
 import io.mapsmessaging.engine.destination.DestinationImpl;
 import io.mapsmessaging.engine.schema.Schema;
+import io.mapsmessaging.engine.schema.SchemaLocationHelper;
+import io.mapsmessaging.engine.schema.SchemaManager;
 import io.mapsmessaging.schemas.config.SchemaConfig;
 import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
@@ -45,6 +47,13 @@ public class Destination implements BaseDestination {
   public int storeMessage(@NonNull @NotNull Message message) throws IOException {
     if(destinationImpl.getSchema() != null) {
       // Ensure the schema is applied to the incoming message
+      String schemaId = destinationImpl.getSchema().getUniqueId();
+      if (schemaId.equals(SchemaManager.DEFAULT_RAW_UUID.toString())) {
+        SchemaConfig schemaConfig = SchemaManager.getInstance().locateSchema(destinationImpl.getFullyQualifiedNamespace());
+        if(schemaConfig != null && !schemaConfig.getUniqueId().equals(SchemaManager.DEFAULT_RAW_UUID.toString())) {
+          destinationImpl.updateSchema(schemaConfig, null);
+        }
+      }
       message.setSchemaId(destinationImpl.getSchema().getUniqueId());
     }
     return destinationImpl.storeMessage(message);
