@@ -43,5 +43,6 @@ public class SaslSecurityContext extends SecurityContext {
   @Override
   public void logout() {
     isLoggedIn = false;
+    logger.log(AuditEvent.SUCCESSFUL_LOGOUT, username);
   }
 }

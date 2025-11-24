@@ -34,6 +34,8 @@ import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.security.access.Group;
 import io.mapsmessaging.security.access.Identity;
 import io.mapsmessaging.security.access.mapping.GroupIdMap;
+import io.mapsmessaging.security.authorisation.Permission;
+import io.mapsmessaging.security.authorisation.ProtectedResource;
 import io.mapsmessaging.security.identity.IdentityLookupFactory;
 import io.mapsmessaging.security.identity.principals.UniqueIdentifierPrincipal;
 import io.mapsmessaging.utilities.Agent;
@@ -168,6 +170,29 @@ public class AuthManager implements Agent {
     }
     return null;
   }
+
+
+  public boolean canAccess(Identity identity, Permission permission, ProtectedResource resource) {
+    return authenticationStorage.canAccess(identity, permission, resource);
+  }
+
+  public void grant(Identity identity, Permission permission, ProtectedResource resource) {
+    authenticationStorage.grant(identity, permission, resource);
+  }
+
+  public void grant(Group group, Permission permission, ProtectedResource resource) {
+    authenticationStorage.grant(group, permission, resource);
+  }
+
+  public void revoke(Identity identity, Permission permission, ProtectedResource resource) {
+    authenticationStorage.revoke(identity, permission, resource);
+  }
+
+  public void revoke(Group group, Permission permission, ProtectedResource resource) {
+    authenticationStorage.revoke(group, permission, resource);
+  }
+
+
 
   private AuthManager() {
     logger = LoggerFactory.getLogger(AuthManager.class);

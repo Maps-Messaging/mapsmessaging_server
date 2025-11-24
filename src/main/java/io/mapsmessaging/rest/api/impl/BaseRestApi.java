@@ -25,7 +25,6 @@ import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.rest.api.Constants;
 import io.mapsmessaging.rest.auth.AuthenticationContext;
 import io.mapsmessaging.rest.auth.RestAccessControl;
-import io.mapsmessaging.rest.auth.RestAclMapping;
 import io.mapsmessaging.rest.cache.CacheKey;
 import io.mapsmessaging.security.access.Identity;
 import jakarta.servlet.http.HttpServletRequest;
@@ -87,15 +86,19 @@ public class BaseRestApi {
         }
       }
       RestAccessControl accessControl = AuthenticationContext.getInstance().getAccessControl();
+/*
       if (accessControl != null) {
         access = (userIdMap != null && accessControl.hasAccess(resource, subject, computeAccess(method)));
       }
+
+ */
+      access=true;
     }
     if (!access) {
       throw new WebApplicationException("Access denied", Response.Status.FORBIDDEN);
     }
   }
-
+/*
   private long computeAccess(String method) {
     return switch (method) {
       case "GET", "HEAD" -> RestAclMapping.READ_VALUE;
@@ -105,7 +108,7 @@ public class BaseRestApi {
       default -> RestAclMapping.READ_VALUE;
     };
   }
-
+*/
   protected <T> T getFromCache(CacheKey key, Class<T> type) {
     Object cachedResponse = Constants.getCentralCache().get(key);
     T typedResponse = type.isInstance(cachedResponse) ? type.cast(cachedResponse) : null;

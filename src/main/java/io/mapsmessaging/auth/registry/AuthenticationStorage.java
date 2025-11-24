@@ -19,6 +19,7 @@
 
 package io.mapsmessaging.auth.registry;
 
+import io.mapsmessaging.auth.ServerPermissions;
 import io.mapsmessaging.auth.priviliges.PrivilegeSerializer;
 import io.mapsmessaging.auth.priviliges.SessionPrivileges;
 import io.mapsmessaging.auth.registry.mapping.GroupIdSerializer;
@@ -32,6 +33,8 @@ import io.mapsmessaging.security.SubjectHelper;
 import io.mapsmessaging.security.access.*;
 import io.mapsmessaging.security.access.mapping.GroupIdMap;
 import io.mapsmessaging.security.access.mapping.UserIdMap;
+import io.mapsmessaging.security.authorisation.Permission;
+import io.mapsmessaging.security.authorisation.ProtectedResource;
 import lombok.Getter;
 import org.mapdb.DB;
 import org.mapdb.DBMaker;
@@ -90,8 +93,15 @@ public class AuthenticationStorage {
     }
 
     String authProvider = config.getProperty("identityProvider", "Apache-Basic-Auth");
-    identityAccessManager = new IdentityAccessManager(authProvider, map, new IdDbStore<>(userMapSet), new IdDbStore<>(groupMapSet));
-    userPermisionManager = new UserPermisionManager(sessionPrivilegesMap);
+    try {
+      identityAccessManager = new IdentityAccessManager(authProvider, map, new IdDbStore<>(userMapSet), new IdDbStore<>(groupMapSet), ServerPermissions.values());
+      userPermisionManager = new UserPermisionManager(sessionPrivilegesMap);
+    } catch (IOException e) {
+
+      // ToDo: This is catastrophic and needs to be logged and the server stopped!, no auth(x) no server
+      e.printStackTrace();
+      throw new RuntimeException(e);
+    }
   }
 
   public boolean addUser(String username, char[] password, SessionPrivileges quotas, String[] groups) {
@@ -223,6 +233,29 @@ public class AuthenticationStorage {
   public void removeUserFromGroup(String username, String groupName) throws IOException {
     identityAccessManager.getGroupManagement().removeUserFromGroup(username, groupName);
   }
+
+
+  public boolean canAccess(Identity identity, Permission permission, ProtectedResource resource) {
+    return identityAccessManager.getAuthorizationProvider().canAccess(identity, permission, resource);
+  }
+
+  public void grant(Identity identity, Permission permission, ProtectedResource resource) {
+    identityAccessManager.getAuthorizationProvider().grant(identity, permission, resource);
+  }
+
+  public void grant(Group group, Permission permission, ProtectedResource resource) {
+    identityAccessManager.getAuthorizationProvider().grant(group, permission, resource);
+  }
+
+  public void revoke(Identity identity, Permission permission, ProtectedResource resource) {
+    identityAccessManager.getAuthorizationProvider().revoke(identity, permission, resource);
+  }
+
+  public void revoke(Group group, Permission permission, ProtectedResource resource) {
+    identityAccessManager.getAuthorizationProvider().revoke(group, permission, resource);
+  }
+
+
 
   public void close() {
     db.close();

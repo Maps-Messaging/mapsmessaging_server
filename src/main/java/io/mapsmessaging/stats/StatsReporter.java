@@ -35,7 +35,9 @@ import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
+import java.net.URI;
 import java.net.URL;
+import java.net.URLConnection;
 import java.nio.charset.StandardCharsets;
 import java.util.Map;
 import java.util.concurrent.ScheduledFuture;
@@ -89,35 +91,36 @@ public class StatsReporter {
 
   private void sendStats(ServerStats status) {
     try {
-      if (!ConfigurationManager.getInstance().
-          getConfiguration(MessageDaemonConfig.class).
-          isSendAnonymousStatusUpdates()) {
+      MessageDaemonConfig config = ConfigurationManager.getInstance().getConfiguration(MessageDaemonConfig.class);
+      if (config == null || config.isSendAnonymousStatusUpdates()) {
         return;
       }
-      HttpURLConnection connection = (HttpURLConnection) new URL(REPORTING_URL).openConnection();
-      connection.setRequestMethod("POST");
-      connection.setDoOutput(true);
-      connection.setRequestProperty("Content-Type", "application/json");  // Fix: Use JSON instead of form-data
-      Gson gson = GsonFactory.getInstance().getSimpleGson();
+      URLConnection urlConnection = URI.create(REPORTING_URL).toURL().openConnection();
+      if(urlConnection instanceof HttpURLConnection connection) {
+        connection.setRequestMethod("POST");
+        connection.setDoOutput(true);
+        connection.setRequestProperty("Content-Type", "application/json");  // Fix: Use JSON instead of form-data
+        Gson gson = GsonFactory.getInstance().getSimpleGson();
 
-      // Convert ServerStats to JSON
-      String jsonPayload = buildJsonPayload(gson, status);
+        // Convert ServerStats to JSON
+        String jsonPayload = buildJsonPayload(gson, status);
 
 
-      // Send JSON request
-      try (OutputStream os = connection.getOutputStream()) {
-        os.write(jsonPayload.getBytes(StandardCharsets.UTF_8));
-        os.flush();
-      }
+        // Send JSON request
+        try (OutputStream os = connection.getOutputStream()) {
+          os.write(jsonPayload.getBytes(StandardCharsets.UTF_8));
+          os.flush();
+        }
 
-      // Read the response
-      int responseCode = connection.getResponseCode();
-      if (responseCode == HttpURLConnection.HTTP_OK) {
-        try (BufferedReader reader = new BufferedReader(new InputStreamReader(connection.getInputStream(), StandardCharsets.UTF_8))) {
-          String response = reader.lines().collect(Collectors.joining());
-          Map<String, Object> result = gson.fromJson(response, Map.class);
-          if(result.containsKey("updateInterval")){
-            minuteInterval = ((Number) result.get("updateInterval")).intValue();
+        // Read the response
+        int responseCode = connection.getResponseCode();
+        if (responseCode == HttpURLConnection.HTTP_OK) {
+          try (BufferedReader reader = new BufferedReader(new InputStreamReader(connection.getInputStream(), StandardCharsets.UTF_8))) {
+            String response = reader.lines().collect(Collectors.joining());
+            Map<String, Object> result = gson.fromJson(response, Map.class);
+            if (result.containsKey("updateInterval")) {
+              minuteInterval = ((Number) result.get("updateInterval")).intValue();
+            }
           }
         }
       }
