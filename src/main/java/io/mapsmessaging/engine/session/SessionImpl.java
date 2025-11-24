@@ -23,6 +23,8 @@ import io.mapsmessaging.MessageDaemon;
 import io.mapsmessaging.api.Destination;
 import io.mapsmessaging.api.SubscribedEventManager;
 import io.mapsmessaging.api.features.DestinationType;
+import io.mapsmessaging.auth.AuthManager;
+import io.mapsmessaging.auth.ServerPermissions;
 import io.mapsmessaging.dto.rest.session.SessionInformationDTO;
 import io.mapsmessaging.engine.closure.ClosureTask;
 import io.mapsmessaging.engine.closure.ClosureTaskManager;
@@ -37,6 +39,7 @@ import io.mapsmessaging.engine.session.will.WillTaskManager;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.logging.ServerLogMessages;
+import io.mapsmessaging.security.authorisation.ProtectedResource;
 import io.mapsmessaging.utilities.threads.SimpleTaskScheduler;
 import lombok.Getter;
 import lombok.NonNull;
@@ -275,6 +278,10 @@ public class SessionImpl {
     if (existing != null) {
       future.complete(existing);
     } else {
+      ProtectedResource protectedResource  = new  ProtectedResource(destinationType.getName(), finalMapped, null);
+      if(!AuthManager.getInstance().canAccess(securityContext.getIdentity(), ServerPermissions.CREATE ,protectedResource)){
+        throw new IOException("Access denied");
+      }
       Callable<DestinationImpl> callable = () -> {
         DestinationImpl created = null;
         try {
@@ -309,6 +316,13 @@ public class SessionImpl {
    * @return a CompletableFuture that completes when the destination is successfully deleted
    */
   public CompletableFuture<DestinationImpl> deleteDestination(DestinationImpl destinationImpl) {
+    ProtectedResource protectedResource  = new  ProtectedResource(destinationImpl.getResourceType().getName(), destinationImpl.getFullyQualifiedNamespace(), null);
+    if(!AuthManager.getInstance().canAccess(securityContext.getIdentity(), ServerPermissions.DELETE ,protectedResource)){
+      CompletableFuture<DestinationImpl>  future = new CompletableFuture<>();
+      future.completeExceptionally(new IOException("Access denied"));
+      return future;
+    }
+
     namespaceMapping.removeByMapped(destinationImpl.getFullyQualifiedNamespace());
     return destinationManager.delete(destinationImpl);
   }
@@ -383,6 +397,10 @@ public class SessionImpl {
   public SubscribedEventManager addSubscription(SubscriptionContext context) throws IOException {
     if (isClosed) {
       throw new IOException("Session is closed");
+    }
+    ProtectedResource protectedResource  = new  ProtectedResource("topic", getClientConnection().getName(), null);
+    if(!AuthManager.getInstance().canAccess(securityContext.getIdentity(), ServerPermissions.SUBSCRIBE ,protectedResource)){
+      throw new IOException("Access denied");
     }
     String originalName = context.getDestinationName();
     String namespace = destinationManager.calculateNamespace(originalName);

@@ -145,7 +145,7 @@
     <!-- Second level dependencies -->
     <maps.storage.version>2.5.2-SNAPSHOT</maps.storage.version>
     <maps.device.version>3.0.1-SNAPSHOT</maps.device.version>
-    <maps.auth.version>2.0.2-SNAPSHOT</maps.auth.version>
+    <maps.auth.version>3.0.0-SNAPSHOT</maps.auth.version>
 
 
   </properties>
