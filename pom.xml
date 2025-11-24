@@ -211,7 +211,7 @@
         <dependency>
           <groupId>org.graalvm.buildtools</groupId>
           <artifactId>graalvm-reachability-metadata</artifactId>
-          <version>0.11.2</version>
+          <version>0.11.3</version>
           <classifier>repository</classifier>
           <type>zip</type>
         </dependency>
@@ -529,7 +529,7 @@
       <plugin>
         <groupId>org.owasp</groupId>
         <artifactId>dependency-check-maven</artifactId>
-        <version>12.1.8</version>
+        <version>12.1.9</version>
         <configuration>
           <nvdApiKey>${nvd.api.key}</nvdApiKey>
           <failBuildOnCVSS>10</failBuildOnCVSS>
@@ -577,7 +577,7 @@
       <dependency>
         <groupId>software.amazon.awssdk</groupId>
         <artifactId>bom</artifactId>
-        <version>2.38.2</version>
+        <version>2.38.6</version>
         <type>pom</type>
         <scope>import</scope>
       </dependency>
@@ -671,7 +671,7 @@
     <dependency>
       <groupId>com.fasterxml.jackson.datatype</groupId>
       <artifactId>jackson-datatype-jsr310</artifactId>
-      <version>2.20.0</version>
+      <version>2.20.1</version>
     </dependency>
 
     <dependency>
@@ -872,13 +872,13 @@
     <dependency>
       <groupId>software.amazon.awssdk</groupId>
       <artifactId>cognitoidentity</artifactId>
-      <version>2.37.5</version>
+      <version>2.38.6</version>
     </dependency>
 
     <dependency>
       <groupId>software.amazon.awssdk</groupId>
       <artifactId>cognitoidentityprovider</artifactId>
-      <version>2.38.1</version>
+      <version>2.38.6</version>
     </dependency>
 
 
@@ -1009,7 +1009,7 @@
     <dependency>
       <groupId>org.springframework</groupId>
       <artifactId>spring-websocket</artifactId>
-      <version>6.2.12</version>
+      <version>7.0.0</version>
       <scope>test</scope>
     </dependency>
 
