@@ -187,7 +187,7 @@ public class EndPointConfigFactory {
       case "stogi" -> new StoGiConfig(config);
       case "satellite" -> new SatelliteConfig(config);
       case "ws", "wss" -> new WebSocketConfig(config);
-      default -> new ExtensionConfig(config);
+      default -> new ExtensionConfig(protocol, config);
     };
   }
 

@@ -28,14 +28,18 @@ import java.util.LinkedHashMap;
 
 public class ExtensionConfig extends ExtensionConfigDTO implements Config {
 
-  public ExtensionConfig(ConfigurationProperties configuration) {
-    setType("extension");
+  public ExtensionConfig(String protocol, ConfigurationProperties configuration) {
+    setType(protocol != null ? protocol : "extension");
     ProtocolConfigFactory.unpack(configuration, this);
     Object obj =  configuration.get("config");
     if(obj instanceof ConfigurationProperties){
       config = new LinkedHashMap<>();
       config.putAll(((ConfigurationProperties)obj).getMap());
     }
+  }
+
+  public ExtensionConfig(ConfigurationProperties configuration) {
+    this("extension", configuration);
   }
 
 
