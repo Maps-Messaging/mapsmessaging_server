@@ -68,9 +68,8 @@ public class ExampleProtocol extends Extension {
    */
   @Override
   public void outbound(String destination, Message message) {
-    System.err.println("Receive event for "+destination);
-    MessageBuilder messageBuilder = new MessageBuilder(message);
     try {
+      MessageBuilder messageBuilder = new MessageBuilder(message);
       inbound(destination, messageBuilder.build());
     } catch (IOException e) {
       // Log here or do something.
