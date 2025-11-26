@@ -89,6 +89,10 @@ public class ProtocolConfigDTO extends BaseConfigDTO {
   })
   protected String type;
 
+  public String getProtocol(){
+    return type;
+  }
+
   @Schema(description = "Support Proxy Protocol on the connection")
   protected boolean proxyProtocol;
 

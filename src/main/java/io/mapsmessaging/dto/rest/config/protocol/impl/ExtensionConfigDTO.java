@@ -32,4 +32,7 @@ public class ExtensionConfigDTO extends ProtocolConfigDTO {
 
   @Schema(description = "Map of config entries")
   protected Map<String, Object> config;
+
+  @Schema(description = "name of the extension protocl")
+  protected String protocol;
 }

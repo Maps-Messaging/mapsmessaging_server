@@ -171,8 +171,15 @@ public class AuthManager implements Agent {
     return null;
   }
 
+
   public boolean canAccess(Identity identity, Permission permission, ProtectedResource resource) {
-    return authenticationStorage == null || authenticationStorage.canAccess(identity, permission, resource);
+    boolean result = authenticationStorage == null || authenticationStorage.canAccess(identity, permission, resource);
+
+    if(!result && ("server".equalsIgnoreCase(resource.getResourceType()) && permission == ServerPermissions.CONNECT)){
+      ProtectedResource wild = new ProtectedResource("server", "*", resource.getTenant());
+      result = authenticationStorage.canAccess(identity, permission, wild);
+    }
+    return result;
   }
 
   public void grant(Identity identity, Permission permission, ProtectedResource resource) {
@@ -227,38 +234,23 @@ public class AuthManager implements Agent {
   }
 
   public boolean validate(String username, char[] password) throws IOException {
-    if (authenticationStorage != null) {
-      return authenticationStorage.validateUser(username, password);
-    }
-    return false;
+    return authenticationStorage.validateUser(username, password);
   }
 
   public Identity getUserIdentity(String username) {
-    if(authenticationStorage != null) {
-      return authenticationStorage.findUser(username);
-    }
-    return null;
+    return authenticationStorage.findUser(username);
   }
 
   public Identity getUserIdentity(UUID uuid) {
-    if(authenticationStorage != null) {
-      return authenticationStorage.findUser(uuid);
-    }
-    return null;
+    return authenticationStorage.findUser(uuid);
   }
 
   public Group getGroupIdentity(String groupName){
-    if(authenticationStorage != null) {
-      return authenticationStorage.findGroup(groupName);
-    }
-    return null;
+    return authenticationStorage.findGroup(groupName);
   }
 
   public Group getGroupIdentity(UUID uuid){
-    if(authenticationStorage != null) {
-      return authenticationStorage.findGroup(uuid);
-    }
-    return null;
+    return authenticationStorage.findGroup(uuid);
   }
 
   public Subject getUserSubject(String username) {

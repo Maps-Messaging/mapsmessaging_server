@@ -80,7 +80,7 @@ public class EndPointServerConfigDTO extends BaseConfigDTO {
 
   public String getProtocols() {
     return protocolConfigs.stream()
-        .map(ProtocolConfigDTO::getType)
+        .map(ProtocolConfigDTO::getProtocol)
         .collect(Collectors.joining(", "));
   }
 
