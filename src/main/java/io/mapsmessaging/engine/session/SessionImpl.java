@@ -279,7 +279,7 @@ public class SessionImpl {
       future.complete(existing);
     } else {
       ProtectedResource protectedResource  = new  ProtectedResource(destinationType.getName(), finalMapped, null);
-      if(!AuthManager.getInstance().canAccess(securityContext.getIdentity(), ServerPermissions.CREATE ,protectedResource)){
+      if(!AuthManager.getInstance().canAccess(securityContext.getIdentity(), ServerPermissions.CREATE_DESTINATION ,protectedResource)){
         throw new IOException("Access denied");
       }
       Callable<DestinationImpl> callable = () -> {

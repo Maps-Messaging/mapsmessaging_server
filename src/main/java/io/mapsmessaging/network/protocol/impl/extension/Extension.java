@@ -70,6 +70,11 @@ public abstract class Extension {
 
   public abstract void outbound(@NonNull @NotNull String destinationName, @NonNull @NotNull Message message);
 
+  public abstract void registerRemoteLink(@NonNull @NotNull String destination, @Nullable String filter) throws IOException;
+
+  public abstract void registerLocalLink(@NonNull @NotNull String destination) throws IOException;
+
+
   protected void inbound(@NonNull @NotNull String destinationName,  @NonNull @NotNull Message message) throws IOException {
     if (extensionProtocol == null) {
       throw new IllegalStateException("ExtensionProtocol is not set");
@@ -80,10 +85,6 @@ public abstract class Extension {
       throw new IOException("Error processing inbound message", e);
     }
   }
-
-  public abstract void registerRemoteLink(@NonNull @NotNull String destination, @Nullable String filter) throws IOException;
-
-  public abstract void registerLocalLink(@NonNull @NotNull String destination) throws IOException;
 
   protected final void setExtensionProtocol(@NonNull ExtensionProtocol protocol) {
     if (this.extensionProtocol != null) {

@@ -19,6 +19,9 @@
 
 package io.mapsmessaging.engine.session;
 
+import io.mapsmessaging.MessageDaemon;
+import io.mapsmessaging.auth.AuthManager;
+import io.mapsmessaging.auth.ServerPermissions;
 import io.mapsmessaging.engine.destination.DestinationManager;
 import io.mapsmessaging.engine.destination.subscription.SubscriptionContext;
 import io.mapsmessaging.engine.destination.subscription.SubscriptionController;
@@ -30,6 +33,7 @@ import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.logging.ServerLogMessages;
 import io.mapsmessaging.logging.ThreadContext;
+import io.mapsmessaging.security.authorisation.ProtectedResource;
 import io.mapsmessaging.utilities.threads.SimpleTaskScheduler;
 import io.mapsmessaging.utilities.threads.tasks.SingleConcurrentTaskScheduler;
 
@@ -132,6 +136,11 @@ public class SessionManagerPipeLine {
     //
     // Create the session
     //
+    ProtectedResource protectedResource  = new  ProtectedResource("server", MessageDaemon.getInstance().getId(), null);
+    if(!AuthManager.getInstance().canAccess(securityContext.getIdentity(), ServerPermissions.CONNECT ,protectedResource)){
+      throw new LoginException("Access denied due to permissions");
+    }
+
     SubscriptionController subscriptionManager = loadSubscriptionManager(sessionContext);
     SessionDestinationManager sessionDestinationManager = new SessionDestinationManager(destinationManager);
     if(sessionContext.isPersistentSession()) {

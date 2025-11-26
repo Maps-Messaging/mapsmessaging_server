@@ -173,7 +173,13 @@ public class AuthManager implements Agent {
 
 
   public boolean canAccess(Identity identity, Permission permission, ProtectedResource resource) {
-    return authenticationStorage.canAccess(identity, permission, resource);
+    boolean result = authenticationStorage.canAccess(identity, permission, resource);
+
+    if(!result && ("server".equalsIgnoreCase(resource.getResourceType()) && permission == ServerPermissions.CONNECT)){
+      ProtectedResource wild = new ProtectedResource("server", "*", resource.getTenant());
+      result = authenticationStorage.canAccess(identity, permission, wild);
+    }
+    return result;
   }
 
   public void grant(Identity identity, Permission permission, ProtectedResource resource) {
