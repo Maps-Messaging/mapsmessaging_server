@@ -171,9 +171,8 @@ public class AuthManager implements Agent {
     return null;
   }
 
-
   public boolean canAccess(Identity identity, Permission permission, ProtectedResource resource) {
-    return authenticationStorage.canAccess(identity, permission, resource);
+    return authenticationStorage == null || authenticationStorage.canAccess(identity, permission, resource);
   }
 
   public void grant(Identity identity, Permission permission, ProtectedResource resource) {
@@ -228,23 +227,38 @@ public class AuthManager implements Agent {
   }
 
   public boolean validate(String username, char[] password) throws IOException {
-    return authenticationStorage.validateUser(username, password);
+    if (authenticationStorage != null) {
+      return authenticationStorage.validateUser(username, password);
+    }
+    return false;
   }
 
   public Identity getUserIdentity(String username) {
-    return authenticationStorage.findUser(username);
+    if(authenticationStorage != null) {
+      return authenticationStorage.findUser(username);
+    }
+    return null;
   }
 
   public Identity getUserIdentity(UUID uuid) {
-    return authenticationStorage.findUser(uuid);
+    if(authenticationStorage != null) {
+      return authenticationStorage.findUser(uuid);
+    }
+    return null;
   }
 
   public Group getGroupIdentity(String groupName){
-    return authenticationStorage.findGroup(groupName);
+    if(authenticationStorage != null) {
+      return authenticationStorage.findGroup(groupName);
+    }
+    return null;
   }
 
   public Group getGroupIdentity(UUID uuid){
-    return authenticationStorage.findGroup(uuid);
+    if(authenticationStorage != null) {
+      return authenticationStorage.findGroup(uuid);
+    }
+    return null;
   }
 
   public Subject getUserSubject(String username) {
