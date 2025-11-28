@@ -180,9 +180,10 @@ public class AuthManager implements Agent {
     boolean result = !authorisationEnabled || authenticationStorage.canAccess(identity, permission, resource);
     if(!result){
       logger.log(AUTHORISATION_FAILED, identity.getUsername(), permission.getName(), resource.getResourceId());
+//      System.err.println(" >>>> canAccess ("+identity+","+permission+","+resource+") = "+result);
     }
     else {
-      System.err.println("canAccess("+identity+","+permission+","+resource+") = "+result);
+  //    System.err.println("canAccess("+identity+","+permission+","+resource+") = "+result);
     }
     return result;
   }
@@ -259,7 +260,7 @@ public class AuthManager implements Agent {
 
     for(Permission permission:ServerPermissions.values()){
       int mask = Long.numberOfTrailingZeros(permission.getMask());
-      if(mask < 32) { // Server based perms
+      if(mask < 30) { // Server based perms
         authenticationStorage.grant(admin, permission, server);
       }
       else{
@@ -282,15 +283,17 @@ public class AuthManager implements Agent {
     authenticationStorage.grant(everyone, ServerPermissions.VIEW_STATS, server);
     authenticationStorage.grant(everyone, ServerPermissions.WILD_CARD_SUBSCRIBE, server);
 
-    grantList(admin, ServerPermissions.PUBLISH, destinations);
-    grantList(admin, ServerPermissions.SUBSCRIBE, destinations);
-    grantList(admin, ServerPermissions.CREATE_CHILD, destinations);
-    grantList(admin, ServerPermissions.DELETE, destinations);
-    grantList(admin, ServerPermissions.RETAIN, destinations);
-    grantList(admin, ServerPermissions.CREATE_DURABLE, destinations);
-    grantList(admin, ServerPermissions.BIND_DURABLE, destinations);
-    grantList(admin, ServerPermissions.PURGE, destinations);
-    grantList(admin, ServerPermissions.VIEW, destinations);
+
+    grantList(everyone, ServerPermissions.PUBLISH, destinations);
+    grantList(everyone, ServerPermissions.SUBSCRIBE, destinations);
+    grantList(everyone, ServerPermissions.RETAIN, destinations);
+    grantList(everyone, ServerPermissions.CREATE_DURABLE, destinations);
+    grantList(everyone, ServerPermissions.BIND_DURABLE, destinations);
+    grantList(everyone, ServerPermissions.VIEW, destinations);
+
+    ProtectedResource denyAll = new ProtectedResource("topic", "test/nosubscribe", null);
+    authenticationStorage.deny(everyone, ServerPermissions.SUBSCRIBE, denyAll);
+    authenticationStorage.deny(admin, ServerPermissions.SUBSCRIBE, denyAll);
   }
 
   private void grantList(Group group, Permission permission, List<ProtectedResource> destinations ){

@@ -410,12 +410,7 @@ public class SessionImpl {
     ProtectedResource protectedResource  = new  ProtectedResource("server", MessageDaemon.getInstance().getId(), null);
 
     List<AuthRequest> authRequests = new ArrayList<>();
-    if(context.getDestinationMode().equals(DestinationMode.NORMAL)){
-      authRequests.add(new AuthRequest(securityContext.getIdentity(), ServerPermissions.SUBSCRIBE_SERVER ,protectedResource));
-    }
-    else{
-      authRequests.add(new AuthRequest(securityContext.getIdentity(), ServerPermissions.SCHEMA_SUBSCRIBE ,protectedResource));
-    }
+    authRequests.add(new AuthRequest(securityContext.getIdentity(), ServerPermissions.SUBSCRIBE_SERVER ,protectedResource));
     if(context.containsWildcard()){
       authRequests.add(new AuthRequest(securityContext.getIdentity(), ServerPermissions.WILD_CARD_SUBSCRIBE ,protectedResource));
     }

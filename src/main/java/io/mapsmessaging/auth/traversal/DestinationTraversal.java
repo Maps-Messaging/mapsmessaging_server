@@ -46,21 +46,20 @@ public class DestinationTraversal implements ResourceTraversal {
   public void moveToParent() {
     String resourceId = current.getResourceId();
     int lastSlash = resourceId.lastIndexOf('/');
-    if (lastSlash < 0) {
-      // reached root for this type/tenant, stop walking
-      current = new ProtectedResource(
-          current.getResourceType(),
-          "",
-          current.getTenant()
-      );
+    if(lastSlash == 0 && resourceId.length() == 1){
+      resourceId = ""; // drop the /
     } else {
-      String parentId = resourceId.substring(0, lastSlash);
-      if(parentId.isEmpty())parentId = "/";
-      current = new ProtectedResource(
-          current.getResourceType(),
-          parentId,
-          current.getTenant()
-      );
+      resourceId= resourceId.substring(0, lastSlash);
+      if(resourceId.isEmpty()){
+        resourceId = "/";
+      }
     }
+
+    current = new ProtectedResource(
+        current.getResourceType(),
+        resourceId,
+        current.getTenant()
+    );
+
   }
 }

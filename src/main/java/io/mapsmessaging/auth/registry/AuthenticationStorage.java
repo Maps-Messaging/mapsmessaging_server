@@ -35,6 +35,7 @@ import io.mapsmessaging.security.access.*;
 import io.mapsmessaging.security.access.mapping.GroupIdMap;
 import io.mapsmessaging.security.access.mapping.UserIdMap;
 import io.mapsmessaging.security.authorisation.AuthRequest;
+import io.mapsmessaging.security.authorisation.Grantee;
 import io.mapsmessaging.security.authorisation.Permission;
 import io.mapsmessaging.security.authorisation.ProtectedResource;
 import lombok.Getter;
@@ -249,8 +250,16 @@ public class AuthenticationStorage {
     identityAccessManager.getAuthorizationProvider().grant(identity, permission, resource);
   }
 
+  public void deny(Identity identity, Permission permission, ProtectedResource resource) {
+    identityAccessManager.getAuthorizationProvider().denyAccess(Grantee.forIdentity(identity), permission, resource);
+  }
+
   public void grant(Group group, Permission permission, ProtectedResource resource) {
     identityAccessManager.getAuthorizationProvider().grant(group, permission, resource);
+  }
+
+  public void deny(Group group, Permission permission, ProtectedResource resource) {
+    identityAccessManager.getAuthorizationProvider().denyAccess(Grantee.forGroup(group), permission, resource);
   }
 
   public void revoke(Identity identity, Permission permission, ProtectedResource resource) {

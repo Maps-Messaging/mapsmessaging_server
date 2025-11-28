@@ -42,8 +42,8 @@ public enum ServerPermissions implements Permission {
   MANAGE_AUTHENTICATION("manage_authentication", "Allows managing authentication", 15),
   MANAGE_AUTHORIZATION("manage_authorization", "Allows managing authorisation rules", 16),
   MANAGE_LICENSE("manage_license", "Allows managing server licensing", 17),
-  SCHEMA_PUBLISH("schema_publish", "Allows publishing schema updates", 18),
-  SCHEMA_SUBSCRIBE("schema_subscribe", "Allows subscribing to schema updates", 19),
+  // 18
+  // 19
   REST_API_ACCESS("rest_api_access", "Allows access to the server REST management API", 20),
   MANAGE_INTERFACES("manage_interfaces", "Allows managing network interfaces and listeners", 21),
   MANAGE_PROTOCOLS("manage_protocols", "Allows enabling, disabling and configuring protocols", 22),
@@ -53,14 +53,15 @@ public enum ServerPermissions implements Permission {
 
   PUBLISH("publish", "Allows publishing to this destination", 32),
   SUBSCRIBE("subscribe", "Allows subscribing to this destination", 33),
-  CREATE_CHILD("create_child", "Allows creating child destinations under this node", 34),
-  DELETE("delete", "Allows deleting this destination", 35),
-  RETAIN("retain", "Allows setting retained messages here", 36),
-  CREATE_DURABLE("create_durable", "Allows creating durable resources on this destination", 37),
-  BIND_DURABLE("bind_durable", "Allows binding to existing durable resources here", 38),
-  PURGE("purge", "Allows purging messages from this destination", 39),
-  VIEW("view", "Allows viewing/browsing this destination", 40),
-  DESTINATION_MANAGE_CONFIG("manage_config_dest", "Allows modifying configuration of this destination", 41),
+  SCHEMA_PUBLISH("schema_publish", "Allows publishing schema updates", 34),
+  SCHEMA_SUBSCRIBE("schema_subscribe", "Allows subscribing to schema updates", 35),
+  DELETE("delete", "Allows deleting this destination", 36),
+  RETAIN("retain", "Allows setting retained messages here", 37),
+  CREATE_DURABLE("create_durable", "Allows creating durable resources on this destination", 38),
+  BIND_DURABLE("bind_durable", "Allows binding to existing durable resources here", 39),
+  PURGE("purge", "Allows purging messages from this destination", 40),
+  VIEW("view", "Allows viewing/browsing this destination", 41),
+  DESTINATION_MANAGE_CONFIG("manage_config_dest", "Allows modifying configuration of this destination", 42),
   ;
 
   private final String name;

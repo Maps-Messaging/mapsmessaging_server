@@ -22,7 +22,10 @@ package io.mapsmessaging.engine.destination.subscription;
 import io.mapsmessaging.admin.SubscriptionControllerJMX;
 import io.mapsmessaging.api.SubscribedEventManager;
 import io.mapsmessaging.api.features.DestinationMode;
+import io.mapsmessaging.api.features.DestinationType;
 import io.mapsmessaging.api.features.RetainHandler;
+import io.mapsmessaging.auth.AuthManager;
+import io.mapsmessaging.auth.ServerPermissions;
 import io.mapsmessaging.dto.rest.session.SubscriptionContextDTO;
 import io.mapsmessaging.dto.rest.session.SubscriptionInformationDTO;
 import io.mapsmessaging.dto.rest.session.SubscriptionStateDTO;
@@ -38,6 +41,8 @@ import io.mapsmessaging.engine.session.SessionImpl;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.logging.ServerLogMessages;
+import io.mapsmessaging.security.authorisation.Permission;
+import io.mapsmessaging.security.authorisation.ProtectedResource;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.SneakyThrows;
@@ -191,8 +196,10 @@ public class SubscriptionController implements DestinationManagerListener {
    */
   @Override
   public void created(DestinationImpl destinationImpl) {
-    for(SubscriptionModeManager managers: subscriptionModeManager.values()){
-      managers.created(this, destinationImpl, subscriptions.values());
+    if(canAccess(destinationImpl, destinationImpl.getResourceType().getName(), ServerPermissions.SUBSCRIBE)) {
+      for (SubscriptionModeManager managers : subscriptionModeManager.values()) {
+        managers.created(this, destinationImpl, subscriptions.values());
+      }
     }
   }
 
@@ -335,8 +342,21 @@ public class SubscriptionController implements DestinationManagerListener {
           future.get();
         }
       }
+
       DestinationFilter destinationFilter = name -> DestinationSet.matches(context, name);
       DestinationSet destinationSet = new DestinationSet(context, destinationManager.get(destinationFilter));
+      List<DestinationImpl> authorisedSet = new ArrayList<>();
+      Permission permission= context.getDestinationMode().equals(DestinationMode.NORMAL) ? ServerPermissions.SUBSCRIBE : ServerPermissions.SCHEMA_SUBSCRIBE;
+      if(context.isBrowser()) permission = ServerPermissions.VIEW;
+
+      for(DestinationImpl destination:destinationSet) {
+        String type = permission != ServerPermissions.SCHEMA_SUBSCRIBE ? destination.getResourceType().getName() : DestinationType.SCHEMA.getName();
+        if(canAccess(destination, type, permission)){
+          authorisedSet.add(destination);
+        }
+      }
+      destinationSet.clear();
+      destinationSet.addAll(authorisedSet);
       subscriptions.put(context.getKey(), destinationSet);
       //
       // Now compare the active subscription destinations with the ones in this new subscriptionSet
@@ -380,6 +400,11 @@ public class SubscriptionController implements DestinationManagerListener {
     }
     dto.setSubscriptionStateList(stateList);
     return dto;
+  }
+
+  private boolean canAccess(DestinationImpl destination, String type, Permission permission) {
+    ProtectedResource protectedResource = new ProtectedResource(type, destination.getFullyQualifiedNamespace(), null);
+    return AuthManager.getInstance().canAccess(sessionImpl.getSecurityContext().getIdentity(), permission, protectedResource);
   }
 
 }
