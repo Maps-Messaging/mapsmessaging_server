@@ -47,6 +47,7 @@ public enum ServerPermissions implements Permission {
   REST_API_ACCESS("rest_api_access", "Allows access to the server REST management API", 20),
   MANAGE_INTERFACES("manage_interfaces", "Allows managing network interfaces and listeners", 21),
   MANAGE_PROTOCOLS("manage_protocols", "Allows enabling, disabling and configuring protocols", 22),
+  WILD_CARD_SUBSCRIBE("wildcard_subscription", "Allows wildcard subscriptions", 23),
 
 
 
@@ -60,7 +61,6 @@ public enum ServerPermissions implements Permission {
   PURGE("purge", "Allows purging messages from this destination", 39),
   VIEW("view", "Allows viewing/browsing this destination", 40),
   DESTINATION_MANAGE_CONFIG("manage_config_dest", "Allows modifying configuration of this destination", 41),
-
   ;
 
   private final String name;

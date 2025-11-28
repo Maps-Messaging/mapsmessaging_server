@@ -31,6 +31,8 @@ public enum AuditEvent implements LogMessage {
   SUCCESSFUL_LOGOUT("{} successfully logged off", AUDIT_CATEGORY.AUTHENTICATION),
 
 
+  AUTHORISATION_FAILED("{} requested {} access to {} but was denied", AUDIT_CATEGORY.AUTHORISATION),
+
   // Destination
   DESTINATION_CREATED("Destination {} created", AUDIT_CATEGORY.CREATION),
   DESTINATION_DELETED("Destination {} deleted", AUDIT_CATEGORY.DELETION),

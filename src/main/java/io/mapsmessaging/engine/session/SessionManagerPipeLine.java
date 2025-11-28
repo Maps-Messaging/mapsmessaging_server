@@ -140,6 +140,10 @@ public class SessionManagerPipeLine {
     if(!AuthManager.getInstance().canAccess(securityContext.getIdentity(), ServerPermissions.CONNECT ,protectedResource)){
       throw new LoginException("Access denied due to permissions");
     }
+    if(sessionContext.isPersistentSession() &&
+        !AuthManager.getInstance().canAccess(securityContext.getIdentity(), ServerPermissions.PERSISTENT_SESSION ,protectedResource)) {
+      throw new LoginException("Access denied, user not permitted to request persistent sessions");
+    }
 
     SubscriptionController subscriptionManager = loadSubscriptionManager(sessionContext);
     SessionDestinationManager sessionDestinationManager = new SessionDestinationManager(destinationManager);

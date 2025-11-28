@@ -36,6 +36,7 @@ import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.security.access.Group;
 import io.mapsmessaging.security.access.Identity;
 import io.mapsmessaging.security.access.mapping.GroupIdMap;
+import io.mapsmessaging.security.authorisation.AuthRequest;
 import io.mapsmessaging.security.authorisation.Permission;
 import io.mapsmessaging.security.authorisation.ProtectedResource;
 import io.mapsmessaging.security.identity.IdentityLookupFactory;
@@ -53,6 +54,7 @@ import java.io.IOException;
 import java.security.Principal;
 import java.util.*;
 
+import static io.mapsmessaging.engine.audit.AuditEvent.AUTHORISATION_FAILED;
 import static io.mapsmessaging.logging.ServerLogMessages.*;
 
 @SuppressWarnings("java:S6548") // yes it is a singleton
@@ -176,9 +178,30 @@ public class AuthManager implements Agent {
 
   public boolean canAccess(Identity identity, Permission permission, ProtectedResource resource) {
     boolean result = !authorisationEnabled || authenticationStorage.canAccess(identity, permission, resource);
-    //System.err.println("canAccess("+identity+","+permission+","+resource+") = "+result);
+    if(!result){
+      logger.log(AUTHORISATION_FAILED, identity.getUsername(), permission.getName(), resource.getResourceId());
+    }
+    else {
+      System.err.println("canAccess("+identity+","+permission+","+resource+") = "+result);
+    }
     return result;
   }
+
+  public boolean hasAllAccess(List<AuthRequest> request) {
+    boolean result = !authorisationEnabled || authenticationStorage.hasAllAccess(request);
+    if(!result){
+      for(AuthRequest authRequest : request){
+        logger.log(AUTHORISATION_FAILED, authRequest.getIdentity().getUsername(), authRequest.getPermission().getName(), authRequest.getProtectedResource().getResourceId());
+      }
+    }
+    else {
+      for(AuthRequest authRequest : request){
+        System.err.println("canAccess("+authRequest.getIdentity().getUsername()+","+ authRequest.getPermission().getName()+","+authRequest.getProtectedResource().getResourceId()+") = "+result);
+      }
+    }
+    return result;
+  }
+
 
   public void grant(Identity identity, Permission permission, ProtectedResource resource) {
     authenticationStorage.grant(identity, permission, resource);
@@ -195,8 +218,6 @@ public class AuthManager implements Agent {
   public void revoke(Group group, Permission permission, ProtectedResource resource) {
     authenticationStorage.revoke(group, permission, resource);
   }
-
-
 
   private AuthManager() {
     logger = LoggerFactory.getLogger(AuthManager.class);
@@ -237,13 +258,16 @@ public class AuthManager implements Agent {
     }
 
     for(Permission permission:ServerPermissions.values()){
-      if(permission.getMask() < 32) { // Server based perms
+      int mask = Long.numberOfTrailingZeros(permission.getMask());
+      if(mask < 32) { // Server based perms
         authenticationStorage.grant(admin, permission, server);
       }
       else{
         grantList(admin, permission, destinations);
       }
     }
+
+
     Group everyone = authenticationStorage.findGroup(EVERYONE);
     authenticationStorage.grant(everyone, ServerPermissions.CONNECT, server);
     authenticationStorage.grant(everyone, ServerPermissions.PERSISTENT_SESSION, server);
@@ -256,6 +280,7 @@ public class AuthManager implements Agent {
     authenticationStorage.grant(everyone, ServerPermissions.PURGE_SERVER, server);
     authenticationStorage.grant(everyone, ServerPermissions.LIST_DESTINATIONS, server);
     authenticationStorage.grant(everyone, ServerPermissions.VIEW_STATS, server);
+    authenticationStorage.grant(everyone, ServerPermissions.WILD_CARD_SUBSCRIBE, server);
 
     grantList(admin, ServerPermissions.PUBLISH, destinations);
     grantList(admin, ServerPermissions.SUBSCRIBE, destinations);

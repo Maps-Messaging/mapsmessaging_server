@@ -22,6 +22,7 @@ package io.mapsmessaging.engine.session;
 import io.mapsmessaging.MessageDaemon;
 import io.mapsmessaging.api.Destination;
 import io.mapsmessaging.api.SubscribedEventManager;
+import io.mapsmessaging.api.features.DestinationMode;
 import io.mapsmessaging.api.features.DestinationType;
 import io.mapsmessaging.auth.AuthManager;
 import io.mapsmessaging.auth.ServerPermissions;
@@ -39,6 +40,7 @@ import io.mapsmessaging.engine.session.will.WillTaskManager;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.logging.ServerLogMessages;
+import io.mapsmessaging.security.authorisation.AuthRequest;
 import io.mapsmessaging.security.authorisation.ProtectedResource;
 import io.mapsmessaging.utilities.threads.SimpleTaskScheduler;
 import lombok.Getter;
@@ -48,6 +50,8 @@ import lombok.SneakyThrows;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.*;
 
 /**
@@ -398,10 +402,27 @@ public class SessionImpl {
     if (isClosed) {
       throw new IOException("Session is closed");
     }
+
     String originalName = context.getDestinationName();
     String namespace = destinationManager.calculateNamespace(originalName);
     namespaceMapping.addMapped(originalName, namespace);
     context.setDestinationName(namespace);
+    ProtectedResource protectedResource  = new  ProtectedResource("server", MessageDaemon.getInstance().getId(), null);
+
+    List<AuthRequest> authRequests = new ArrayList<>();
+    if(context.getDestinationMode().equals(DestinationMode.NORMAL)){
+      authRequests.add(new AuthRequest(securityContext.getIdentity(), ServerPermissions.SUBSCRIBE_SERVER ,protectedResource));
+    }
+    else{
+      authRequests.add(new AuthRequest(securityContext.getIdentity(), ServerPermissions.SCHEMA_SUBSCRIBE ,protectedResource));
+    }
+    if(context.containsWildcard()){
+      authRequests.add(new AuthRequest(securityContext.getIdentity(), ServerPermissions.WILD_CARD_SUBSCRIBE ,protectedResource));
+    }
+
+    if(!AuthManager.getInstance().hasAllAccess(authRequests)){
+      throw new IOException("Access denied");
+    }
     context.setAllocatedId( getContext().getInternalSessionId());
     subscriptionManager.wake(this);
     return subscriptionManager.addSubscription(context);

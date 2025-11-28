@@ -21,6 +21,7 @@ package io.mapsmessaging.api;
 
 import io.mapsmessaging.api.features.DestinationType;
 import io.mapsmessaging.api.message.Message;
+import io.mapsmessaging.auth.AuthManager;
 import io.mapsmessaging.engine.destination.BaseDestination;
 import io.mapsmessaging.engine.destination.DestinationImpl;
 import io.mapsmessaging.engine.schema.Schema;

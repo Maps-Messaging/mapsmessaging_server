@@ -34,6 +34,7 @@ import io.mapsmessaging.security.SubjectHelper;
 import io.mapsmessaging.security.access.*;
 import io.mapsmessaging.security.access.mapping.GroupIdMap;
 import io.mapsmessaging.security.access.mapping.UserIdMap;
+import io.mapsmessaging.security.authorisation.AuthRequest;
 import io.mapsmessaging.security.authorisation.Permission;
 import io.mapsmessaging.security.authorisation.ProtectedResource;
 import lombok.Getter;
@@ -238,6 +239,10 @@ public class AuthenticationStorage {
 
   public boolean canAccess(Identity identity, Permission permission, ProtectedResource resource) {
     return identityAccessManager.getAuthorizationProvider().canAccess(identity, permission, resource);
+  }
+
+  public boolean hasAllAccess(List<AuthRequest> request) {
+    return identityAccessManager.getAuthorizationProvider().hasAllAccess(request.toArray(new AuthRequest[0]));
   }
 
   public void grant(Identity identity, Permission permission, ProtectedResource resource) {
