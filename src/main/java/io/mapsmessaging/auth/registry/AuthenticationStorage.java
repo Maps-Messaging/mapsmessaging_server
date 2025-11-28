@@ -20,6 +20,7 @@
 package io.mapsmessaging.auth.registry;
 
 import io.mapsmessaging.auth.ServerPermissions;
+import io.mapsmessaging.auth.ServerTraversalFactory;
 import io.mapsmessaging.auth.priviliges.PrivilegeSerializer;
 import io.mapsmessaging.auth.priviliges.SessionPrivileges;
 import io.mapsmessaging.auth.registry.mapping.GroupIdSerializer;
@@ -94,7 +95,7 @@ public class AuthenticationStorage {
 
     String authProvider = config.getProperty("identityProvider", "Apache-Basic-Auth");
     try {
-      identityAccessManager = new IdentityAccessManager(authProvider, map, new IdDbStore<>(userMapSet), new IdDbStore<>(groupMapSet), ServerPermissions.values());
+      identityAccessManager = new IdentityAccessManager(authProvider, map, new IdDbStore<>(userMapSet), new IdDbStore<>(groupMapSet), new ServerTraversalFactory(), ServerPermissions.values());
       userPermisionManager = new UserPermisionManager(sessionPrivilegesMap);
     } catch (IOException e) {
 

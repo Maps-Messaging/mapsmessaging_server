@@ -662,10 +662,11 @@
     </dependency>
 
     <!-- https://mvnrepository.com/artifact/ch.qos.logback/logback-access -->
+    <!-- https://mvnrepository.com/artifact/ch.qos.logback.access/logback-access-common -->
     <dependency>
-      <groupId>ch.qos.logback</groupId>
-      <artifactId>logback-access</artifactId>
-      <version>${logback.version}</version>
+      <groupId>ch.qos.logback.access</groupId>
+      <artifactId>logback-access-common</artifactId>
+      <version>2.0.6</version>
     </dependency>
 
     <dependency>

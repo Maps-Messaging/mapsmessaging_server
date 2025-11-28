@@ -398,10 +398,6 @@ public class SessionImpl {
     if (isClosed) {
       throw new IOException("Session is closed");
     }
-    ProtectedResource protectedResource  = new  ProtectedResource("topic", getClientConnection().getName(), null);
-    if(!AuthManager.getInstance().canAccess(securityContext.getIdentity(), ServerPermissions.SUBSCRIBE ,protectedResource)){
-      throw new IOException("Access denied");
-    }
     String originalName = context.getDestinationName();
     String namespace = destinationManager.calculateNamespace(originalName);
     namespaceMapping.addMapped(originalName, namespace);

@@ -20,6 +20,8 @@
 package io.mapsmessaging.auth;
 
 import com.sun.security.auth.UserPrincipal;
+import io.mapsmessaging.MessageDaemon;
+import io.mapsmessaging.api.features.DestinationType;
 import io.mapsmessaging.auth.priviliges.SessionPrivileges;
 import io.mapsmessaging.auth.registry.AuthenticationStorage;
 import io.mapsmessaging.auth.registry.GroupDetails;
@@ -60,7 +62,7 @@ public class AuthManager implements Agent {
   private static final String ADMIN_USER = "admin";
   private static final String USER = "user";
 
-  private static final String ADMIN_GROUP = "admin";
+  private static final String ADMIN_GROUP = "admins";
   private static final String EVERYONE = "everyone";
 
   private static class Holder {
@@ -173,12 +175,8 @@ public class AuthManager implements Agent {
 
 
   public boolean canAccess(Identity identity, Permission permission, ProtectedResource resource) {
-    boolean result = authenticationStorage.canAccess(identity, permission, resource);
-
-    if(!result && ("server".equalsIgnoreCase(resource.getResourceType()) && permission == ServerPermissions.CONNECT)){
-      ProtectedResource wild = new ProtectedResource("server", "*", resource.getTenant());
-      result = authenticationStorage.canAccess(identity, permission, wild);
-    }
+    boolean result = !authorisationEnabled || authenticationStorage.canAccess(identity, permission, resource);
+    //System.err.println("canAccess("+identity+","+permission+","+resource+") = "+result);
     return result;
   }
 
@@ -230,6 +228,49 @@ public class AuthManager implements Agent {
     }
     if (!authenticationStorage.validateUser(USER, userpassword.toCharArray())) {
       logger.log(SECURITY_MANAGER_FAILED_TO_INITIALISE_USER, USER);
+    }
+    Group admin = authenticationStorage.findGroup(ADMIN_GROUP);
+    ProtectedResource server  = new  ProtectedResource("server", MessageDaemon.getInstance().getId(), null);
+    List<ProtectedResource> destinations = new ArrayList<>();
+    for(DestinationType type : DestinationType.values()){
+      destinations.add( new  ProtectedResource(type.getName(), "/", null));
+    }
+
+    for(Permission permission:ServerPermissions.values()){
+      if(permission.getMask() < 32) { // Server based perms
+        authenticationStorage.grant(admin, permission, server);
+      }
+      else{
+        grantList(admin, permission, destinations);
+      }
+    }
+    Group everyone = authenticationStorage.findGroup(EVERYONE);
+    authenticationStorage.grant(everyone, ServerPermissions.CONNECT, server);
+    authenticationStorage.grant(everyone, ServerPermissions.PERSISTENT_SESSION, server);
+    authenticationStorage.grant(everyone, ServerPermissions.PUBLISH_SERVER, server);
+    authenticationStorage.grant(everyone, ServerPermissions.SUBSCRIBE_SERVER, server);
+    authenticationStorage.grant(everyone, ServerPermissions.CREATE_DESTINATION, server);
+    authenticationStorage.grant(everyone, ServerPermissions.RETAIN_SERVER, server);
+    authenticationStorage.grant(everyone, ServerPermissions.CREATE_DURABLE_SERVER, server);
+    authenticationStorage.grant(everyone, ServerPermissions.BIND_DURABLE_SERVER, server);
+    authenticationStorage.grant(everyone, ServerPermissions.PURGE_SERVER, server);
+    authenticationStorage.grant(everyone, ServerPermissions.LIST_DESTINATIONS, server);
+    authenticationStorage.grant(everyone, ServerPermissions.VIEW_STATS, server);
+
+    grantList(admin, ServerPermissions.PUBLISH, destinations);
+    grantList(admin, ServerPermissions.SUBSCRIBE, destinations);
+    grantList(admin, ServerPermissions.CREATE_CHILD, destinations);
+    grantList(admin, ServerPermissions.DELETE, destinations);
+    grantList(admin, ServerPermissions.RETAIN, destinations);
+    grantList(admin, ServerPermissions.CREATE_DURABLE, destinations);
+    grantList(admin, ServerPermissions.BIND_DURABLE, destinations);
+    grantList(admin, ServerPermissions.PURGE, destinations);
+    grantList(admin, ServerPermissions.VIEW, destinations);
+  }
+
+  private void grantList(Group group, Permission permission, List<ProtectedResource> destinations ){
+    for(ProtectedResource resource:destinations){
+      authenticationStorage.grant(group, permission, resource);
     }
   }
 
