@@ -22,12 +22,15 @@ package io.mapsmessaging.api;
 import io.mapsmessaging.api.features.DestinationType;
 import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.auth.AuthManager;
+import io.mapsmessaging.auth.ServerPermissions;
 import io.mapsmessaging.engine.destination.BaseDestination;
 import io.mapsmessaging.engine.destination.DestinationImpl;
 import io.mapsmessaging.engine.schema.Schema;
 import io.mapsmessaging.engine.schema.SchemaLocationHelper;
 import io.mapsmessaging.engine.schema.SchemaManager;
+import io.mapsmessaging.engine.session.security.SecurityContext;
 import io.mapsmessaging.schemas.config.SchemaConfig;
+import io.mapsmessaging.security.authorisation.ProtectedResource;
 import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
 
@@ -39,9 +42,13 @@ import java.io.IOException;
 public class Destination implements BaseDestination {
 
   protected final DestinationImpl destinationImpl;
+  protected final SecurityContext securityContext;
+  protected final ProtectedResource protectedResource;
 
-  Destination(@NonNull @NotNull DestinationImpl impl) {
+  Destination(@NonNull @NotNull DestinationImpl impl, SecurityContext context) {
     destinationImpl = impl;
+    this.securityContext = context;
+    protectedResource = new ProtectedResource(impl.getResourceType().getName(), impl.getFullyQualifiedNamespace(), null);
   }
 
   @Override
@@ -56,6 +63,9 @@ public class Destination implements BaseDestination {
         }
       }
       message.setSchemaId(destinationImpl.getSchema().getUniqueId());
+    }
+    if(!AuthManager.getInstance().canAccess(securityContext.getIdentity(), ServerPermissions.PUBLISH, protectedResource)) {
+      throw new IOException("You don't have permission to publish to this resource");
     }
     return destinationImpl.storeMessage(message);
   }

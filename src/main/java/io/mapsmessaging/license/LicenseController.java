@@ -35,6 +35,7 @@ import io.mapsmessaging.utilities.GsonFactory;
 
 import java.io.*;
 import java.net.HttpURLConnection;
+import java.net.URI;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.time.*;
@@ -192,7 +193,9 @@ public class LicenseController {
 
       String clientSecret = licenseConfig.getClientSecret();
       String clientName = licenseConfig.getClientName();
-      HttpURLConnection connection = (HttpURLConnection) new URL(LICENSE_SERVER_URL).openConnection();
+      URI uri = URI.create(LICENSE_SERVER_URL);
+      URL url = uri.toURL();
+      HttpURLConnection connection = (HttpURLConnection) url.openConnection();
       connection.setRequestMethod("POST");
       connection.setDoOutput(true);
       connection.setRequestProperty("Content-Type", "application/json");

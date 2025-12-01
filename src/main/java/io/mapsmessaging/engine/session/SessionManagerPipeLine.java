@@ -33,7 +33,7 @@ import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.logging.ServerLogMessages;
 import io.mapsmessaging.logging.ThreadContext;
-import io.mapsmessaging.security.authorisation.ProtectedResource;
+
 import io.mapsmessaging.utilities.threads.SimpleTaskScheduler;
 import io.mapsmessaging.utilities.threads.tasks.SingleConcurrentTaskScheduler;
 
@@ -119,9 +119,7 @@ public class SessionManagerPipeLine {
 
   SessionImpl create(SessionContext sessionContext) throws LoginException {
     SessionImpl sessionImpl;
-    logger.log(ServerLogMessages.SESSION_MANAGER_CREATE_SECURITY_CONTEXT);
-    SecurityContext securityContext = securityManager.getSecurityContext(sessionContext);
-
+    SecurityContext securityContext = sessionContext.getSecurityContext();
     //
     // Force close the older session if duplicates are not allowed
     //
@@ -132,19 +130,6 @@ public class SessionManagerPipeLine {
         logger.log(ServerLogMessages.SESSION_MANAGER_FOUND_CLOSED, sessionContext.getId());
       }
     }
-
-    //
-    // Create the session
-    //
-    ProtectedResource protectedResource  = new  ProtectedResource("server", MessageDaemon.getInstance().getId(), null);
-    if(!AuthManager.getInstance().canAccess(securityContext.getIdentity(), ServerPermissions.CONNECT ,protectedResource)){
-      throw new LoginException("Access denied due to permissions");
-    }
-    if(sessionContext.isPersistentSession() &&
-        !AuthManager.getInstance().canAccess(securityContext.getIdentity(), ServerPermissions.PERSISTENT_SESSION ,protectedResource)) {
-      throw new LoginException("Access denied, user not permitted to request persistent sessions");
-    }
-
     SubscriptionController subscriptionManager = loadSubscriptionManager(sessionContext);
     SessionDestinationManager sessionDestinationManager = new SessionDestinationManager(destinationManager);
     if(sessionContext.isPersistentSession()) {
@@ -203,7 +188,7 @@ public class SessionManagerPipeLine {
   }
 
   void addDisconnectedSession(String sessionId, String storeName, SessionDetails sessionDetails, Map<String, SubscriptionContext> map) {
-    SubscriptionController subscriptionManager = new SubscriptionController(sessionId, sessionDetails.getUniqueId(), destinationManager, map);
+    SubscriptionController subscriptionManager = new SubscriptionController(sessionId, sessionDetails, destinationManager, map);
     subscriptionManagerFactory.put(sessionId, subscriptionManager);
     disconnectedSessions.increment();
     long timeout =  sessionDetails.getExpiryTime() - System.currentTimeMillis();

@@ -58,6 +58,7 @@ public class SubscribeListener extends PacketListener {
         session.addSubscription(context);
         result[x] = (byte) info.getQualityOfService().getLevel();
       } catch (IOException e) {
+        e.printStackTrace();
         result[x] = (byte) 0x80;
       }
     }

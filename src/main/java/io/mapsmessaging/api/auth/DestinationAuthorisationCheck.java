@@ -17,27 +17,12 @@
  *  limitations under the License.
  */
 
-package io.mapsmessaging.rest.auth;
+package io.mapsmessaging.api.auth;
 
+import io.mapsmessaging.api.features.DestinationType;
 
-import javax.security.auth.Subject;
-import java.util.LinkedHashMap;
-import java.util.Map;
+public interface DestinationAuthorisationCheck {
 
-public class RestAccessControl {
+  boolean check(String name, DestinationType destinationType, boolean create);
 
-  private static final String ACL_TYPE = "Permission";
-
-
-  public RestAccessControl() {
-  }
-
-  public Map<String, String> getAccess(Subject subject){
-    Map<String, String> accessMap = new LinkedHashMap<>();
-    return accessMap;
-  }
-
-  public boolean hasAccess(String resource, Subject subject, long access){
-    return true;
-  }
 }

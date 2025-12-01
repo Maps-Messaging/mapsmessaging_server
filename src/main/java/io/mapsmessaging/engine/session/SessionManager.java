@@ -31,6 +31,7 @@ import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.logging.ServerLogMessages;
 import io.mapsmessaging.utilities.Agent;
+import lombok.Getter;
 
 import javax.security.auth.login.LoginException;
 import java.util.ArrayList;
@@ -50,6 +51,7 @@ public class SessionManager implements Agent {
   private final SessionManagerJMX sessionManagerJMX;
   private final PersistentSessionManager storeLookup;
 
+  @Getter
   private SecurityManager securityManager;
 
   private final LongAdder disconnectedSessions;
@@ -132,10 +134,6 @@ public class SessionManager implements Agent {
     return Math.abs(name.hashCode() % sessionPipeLines.length); // Reduce its size before we get the ABS
   }
   //</editor-fold>
-
-  protected SecurityManager getSecurityManager() {
-    return securityManager;
-  }
 
   //<editor-fold desc="Security Manager API">
   protected void setSecurityManager(SecurityManager manager) {

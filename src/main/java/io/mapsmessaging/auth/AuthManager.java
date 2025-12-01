@@ -63,6 +63,7 @@ public class AuthManager implements Agent {
 
   private static final String ADMIN_USER = "admin";
   private static final String USER = "user";
+  private static final String ANONYMOUS = "anonymous";
 
   private static final String ADMIN_GROUP = "admins";
   private static final String EVERYONE = "everyone";
@@ -177,19 +178,21 @@ public class AuthManager implements Agent {
 
 
   public boolean canAccess(Identity identity, Permission permission, ProtectedResource resource) {
-    boolean result = !authorisationEnabled || authenticationStorage.canAccess(identity, permission, resource);
+    if(!authorisationEnabled) return true;
+    boolean result = authenticationStorage.canAccess(identity, permission, resource);
     if(!result){
       logger.log(AUTHORISATION_FAILED, identity.getUsername(), permission.getName(), resource.getResourceId());
-//      System.err.println(" >>>> canAccess ("+identity+","+permission+","+resource+") = "+result);
+   //   System.err.println(" >>>> canAccess ("+identity.getUsername()+","+permission+","+resource+") = "+result);
     }
     else {
-  //    System.err.println("canAccess("+identity+","+permission+","+resource+") = "+result);
+    //  System.err.println("canAccess("+identity.getUsername()+","+permission+","+resource+") = "+result);
     }
     return result;
   }
 
   public boolean hasAllAccess(List<AuthRequest> request) {
-    boolean result = !authorisationEnabled || authenticationStorage.hasAllAccess(request);
+    if(!authorisationEnabled) return true;
+    boolean result = authenticationStorage.hasAllAccess(request);
     if(!result){
       for(AuthRequest authRequest : request){
         logger.log(AUTHORISATION_FAILED, authRequest.getIdentity().getUsername(), authRequest.getPermission().getName(), authRequest.getProtectedResource().getResourceId());
@@ -197,7 +200,7 @@ public class AuthManager implements Agent {
     }
     else {
       for(AuthRequest authRequest : request){
-        System.err.println("canAccess("+authRequest.getIdentity().getUsername()+","+ authRequest.getPermission().getName()+","+authRequest.getProtectedResource().getResourceId()+") = "+result);
+//        System.err.println("canAccess("+authRequest.getIdentity().getUsername()+","+ authRequest.getPermission().getName()+","+authRequest.getProtectedResource().getResourceId()+") = "+result);
       }
     }
     return result;
@@ -225,7 +228,7 @@ public class AuthManager implements Agent {
     config = ConfigurationManager.getInstance().getConfiguration(AuthManagerConfig.class);
     if (config != null) {
       authenticationEnabled = config.isAuthenticationEnabled();
-      authorisationEnabled = config.isAuthorisationEnabled();
+      authorisationEnabled = config.isAuthorisationEnabled() &&  authenticationEnabled;
     }
     else{
       authenticationEnabled = false;
@@ -244,6 +247,10 @@ public class AuthManager implements Agent {
       logger.log(SECURITY_MANAGER_FAILED_TO_CREATE_USER, USER);
     }
 
+    if (!addUser(ANONYMOUS, new char[0], SessionPrivileges.create(ANONYMOUS), new String[]{EVERYONE})) {
+      logger.log(SECURITY_MANAGER_FAILED_TO_CREATE_USER, USER);
+    }
+
     saveInitialUserDetails(path, new String[][]{{ADMIN_USER, password}, {USER, userpassword}});
     if (!authenticationStorage.validateUser(ADMIN_USER, password.toCharArray())) {
       logger.log(SECURITY_MANAGER_FAILED_TO_INITIALISE_USER, USER);
@@ -251,6 +258,12 @@ public class AuthManager implements Agent {
     if (!authenticationStorage.validateUser(USER, userpassword.toCharArray())) {
       logger.log(SECURITY_MANAGER_FAILED_TO_INITIALISE_USER, USER);
     }
+    if(authorisationEnabled) {
+      setupDefaultAuthorisation();
+    }
+  }
+
+  private void setupDefaultAuthorisation(){
     Group admin = authenticationStorage.findGroup(ADMIN_GROUP);
     ProtectedResource server  = new  ProtectedResource("server", MessageDaemon.getInstance().getId(), null);
     List<ProtectedResource> destinations = new ArrayList<>();
@@ -272,10 +285,7 @@ public class AuthManager implements Agent {
     Group everyone = authenticationStorage.findGroup(EVERYONE);
     authenticationStorage.grant(everyone, ServerPermissions.CONNECT, server);
     authenticationStorage.grant(everyone, ServerPermissions.PERSISTENT_SESSION, server);
-    authenticationStorage.grant(everyone, ServerPermissions.PUBLISH_SERVER, server);
-    authenticationStorage.grant(everyone, ServerPermissions.SUBSCRIBE_SERVER, server);
     authenticationStorage.grant(everyone, ServerPermissions.CREATE_DESTINATION, server);
-    authenticationStorage.grant(everyone, ServerPermissions.RETAIN_SERVER, server);
     authenticationStorage.grant(everyone, ServerPermissions.CREATE_DURABLE_SERVER, server);
     authenticationStorage.grant(everyone, ServerPermissions.BIND_DURABLE_SERVER, server);
     authenticationStorage.grant(everyone, ServerPermissions.PURGE_SERVER, server);
@@ -291,7 +301,18 @@ public class AuthManager implements Agent {
     grantList(everyone, ServerPermissions.BIND_DURABLE, destinations);
     grantList(everyone, ServerPermissions.VIEW, destinations);
 
-    ProtectedResource denyAll = new ProtectedResource("topic", "test/nosubscribe", null);
+    Identity anony = authenticationStorage.findUser(ANONYMOUS);
+    if(anony != null) {
+      grantUserList(anony, ServerPermissions.PUBLISH, destinations);
+      grantUserList(anony, ServerPermissions.SUBSCRIBE, destinations);
+      grantUserList(anony, ServerPermissions.RETAIN, destinations);
+      grantUserList(anony, ServerPermissions.CREATE_DURABLE, destinations);
+      grantUserList(anony, ServerPermissions.BIND_DURABLE, destinations);
+      grantUserList(anony, ServerPermissions.VIEW, destinations);
+    }
+
+
+    ProtectedResource denyAll = new ProtectedResource("Topic", "test/nosubscribe", null);
     authenticationStorage.deny(everyone, ServerPermissions.SUBSCRIBE, denyAll);
     authenticationStorage.deny(admin, ServerPermissions.SUBSCRIBE, denyAll);
   }
@@ -299,6 +320,12 @@ public class AuthManager implements Agent {
   private void grantList(Group group, Permission permission, List<ProtectedResource> destinations ){
     for(ProtectedResource resource:destinations){
       authenticationStorage.grant(group, permission, resource);
+    }
+  }
+
+  private void grantUserList(Identity user, Permission permission, List<ProtectedResource> destinations ){
+    for(ProtectedResource resource:destinations){
+      authenticationStorage.grant(user, permission, resource);
     }
   }
 

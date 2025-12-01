@@ -68,7 +68,11 @@ public class PersistentSessionManager {
   }
 
   public SessionDetails getSessionDetails(SessionContext context){
-    return persistentMap.computeIfAbsent(context.getId(), k -> new SessionDetails(context.getId(), context.getUniqueId(), context.getInternalSessionId(), context.getExpiry()));
+    SessionDetails sessionDetails = persistentMap.computeIfAbsent(context.getId(), k -> new SessionDetails(context.getId(), context.getUniqueId(), context.getInternalSessionId(), context.getExpiry()));
+    if(context.getSecurityContext() != null){
+      sessionDetails.setIdentity(context.getSecurityContext().getIdentity());
+    }
+    return sessionDetails;
   }
 
   public SessionDetails getSessionDetails(String id){

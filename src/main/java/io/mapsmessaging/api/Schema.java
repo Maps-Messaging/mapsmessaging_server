@@ -22,6 +22,7 @@ package io.mapsmessaging.api;
 import io.mapsmessaging.api.features.DestinationMode;
 import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.engine.destination.DestinationImpl;
+import io.mapsmessaging.engine.session.security.SecurityContext;
 import io.mapsmessaging.schemas.config.SchemaConfig;
 import io.mapsmessaging.schemas.config.SchemaConfigFactory;
 import lombok.NonNull;
@@ -31,8 +32,8 @@ import java.io.IOException;
 
 public class Schema extends Destination {
 
-  Schema(@NonNull @NotNull DestinationImpl impl) {
-    super(impl);
+  Schema(@NonNull @NotNull DestinationImpl impl, SecurityContext context) {
+    super(impl, context);
   }
 
 

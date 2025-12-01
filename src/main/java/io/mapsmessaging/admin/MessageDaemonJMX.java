@@ -148,16 +148,6 @@ public class MessageDaemonJMX implements HealthMonitor {
     JMXManager.getInstance().unregister(mbean);
   }
 
-  @JMXBeanOperation(name = "createDestination", description = "Creates a new destination instance")
-  public boolean create(String name, boolean isTopic) throws IOException {
-    DestinationType type = DestinationType.TOPIC;
-    if (!isTopic) {
-      type = DestinationType.QUEUE;
-    }
-    daemon.getDestinationManager().create(name, type);
-    return true;
-  }
-
   @JMXBeanOperation(name = "checkHealth", description = "Returns the last total number of bytes sent from this end point")
   public HealthStatus checkHealth() {
     return new HealthStatus(daemon.getId(), LEVEL.INFO, "Seems to be running ok", mbean.getObjectName().toString());

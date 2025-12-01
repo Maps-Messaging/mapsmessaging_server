@@ -19,6 +19,7 @@
 
 package io.mapsmessaging.api;
 
+import io.mapsmessaging.api.auth.DestinationAuthorisationCheck;
 import io.mapsmessaging.api.features.DestinationMode;
 import io.mapsmessaging.api.features.DestinationType;
 import io.mapsmessaging.api.message.Message;
@@ -47,10 +48,10 @@ public class Session {
 
   private static final String SCHEMA = "$schema";
 
-  private final SessionImpl sessionImpl;
-  private final MessageListener listener;
-  private final Map<String, Destination> destinations;
-  private final Map<String, Transaction> clientTransactions;
+  protected final SessionImpl sessionImpl;
+  protected final MessageListener listener;
+  protected final Map<String, Destination> destinations;
+  protected final Map<String, Transaction> clientTransactions;
 
   Session(@NonNull @NotNull SessionImpl session, @NonNull @NotNull MessageListener listener) {
     this.sessionImpl = session;
@@ -95,6 +96,10 @@ public class Session {
   }
 
   public CompletableFuture<Destination> findDestination(@NonNull @NotNull String destinationName, @NonNull @NotNull DestinationType type) {
+    return internalFindDestination(destinationName, type, null);
+  }
+
+  protected CompletableFuture<Destination> internalFindDestination(@NonNull @NotNull String destinationName, @NonNull @NotNull DestinationType type, DestinationAuthorisationCheck authorisationCheck) {
     CompletableFuture<Destination> future = new CompletableFuture<>();
     if(destinationName.toLowerCase().startsWith(SCHEMA)){
       destinationName = SCHEMA + destinationName.substring(SCHEMA.length());
@@ -110,7 +115,7 @@ public class Session {
       String name = tmp;
       DestinationType meta = tmpMeta;
       Callable<Destination> lookupTask = () -> {
-        CompletableFuture<DestinationImpl> destinationCompletableFuture = sessionImpl.findDestination(name, type);
+        CompletableFuture<DestinationImpl> destinationCompletableFuture = sessionImpl.findDestination(name, type, authorisationCheck);
         DestinationImpl destination = destinationCompletableFuture.get();
         Destination end = buildDestination(destination, meta);
         if (end != null) {
@@ -138,16 +143,16 @@ public class Session {
     if (destination != null) {
       switch (meta) {
         case TOPIC:
-          end = new Topic(destination);
+          end = new Topic(destination, sessionImpl.getSecurityContext());
           break;
         case QUEUE:
-          end = new Queue(destination);
+          end = new Queue(destination, sessionImpl.getSecurityContext());
           break;
         case SCHEMA:
-          end = new Schema(destination);
+          end = new Schema(destination, sessionImpl.getSecurityContext());
           break;
         case METRICS:
-          end = new Metrics(destination);
+          end = new Metrics(destination, sessionImpl.getSecurityContext());
           break;
         default:
           break;
@@ -261,7 +266,7 @@ public class Session {
         @NonNull @NotNull Runnable completionTask) {
       Destination destination = destinations.get(destinationImpl.getFullyQualifiedNamespace());
       if (destination == null) {
-        destination = new Destination(destinationImpl);
+        destination = new Destination(destinationImpl, sessionImpl.getSecurityContext());
         destinations.put(destination.getFullyQualifiedNamespace(), destination);
       }
       String normalisedName = sessionImpl.absoluteToNormalised(destination);

@@ -20,6 +20,7 @@
 package io.mapsmessaging.api;
 
 import io.mapsmessaging.engine.destination.DestinationImpl;
+import io.mapsmessaging.engine.session.security.SecurityContext;
 import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
 
@@ -28,8 +29,8 @@ import org.jetbrains.annotations.NotNull;
  */
 public class Topic extends Destination {
 
-  Topic(@NonNull @NotNull DestinationImpl impl) {
-    super(impl);
+  Topic(@NonNull @NotNull DestinationImpl impl, SecurityContext context) {
+    super(impl, context);
   }
 
 }

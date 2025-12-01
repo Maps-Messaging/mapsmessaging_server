@@ -92,7 +92,7 @@ public class StatsReporter {
   private void sendStats(ServerStats status) {
     try {
       MessageDaemonConfig config = ConfigurationManager.getInstance().getConfiguration(MessageDaemonConfig.class);
-      if (config == null || config.isSendAnonymousStatusUpdates()) {
+      if (config == null || !config.isSendAnonymousStatusUpdates()) {
         return;
       }
       URLConnection urlConnection = URI.create(REPORTING_URL).toURL().openConnection();

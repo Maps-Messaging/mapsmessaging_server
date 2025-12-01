@@ -19,15 +19,21 @@
 
 package io.mapsmessaging.network;
 
+import lombok.Getter;
+
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.StringTokenizer;
 
 public class EndPointURL {
 
+  @Getter
   protected String host;
+  @Getter
   protected int port;
+  @Getter
   protected String protocol;
+  @Getter
   protected String file;
   protected Map<String, String> parameterMap;
 
@@ -35,50 +41,168 @@ public class EndPointURL {
   }
 
   public EndPointURL(String url) {
-    protocol = parseProtocol(url);
-    host = parseHost(url);
-    String tmp = protocol + "://" + host + "/";
-    port = parsePort(url.substring(tmp.length()));
-    tmp = protocol + "://" + host + ":" + port + "/";
-    if (url.length() > tmp.length()) {
-      file = url.substring(tmp.length());
-    } else {
-      file = "";
+    if (url == null || url.isEmpty()) {
+      throw new IllegalArgumentException("URL must not be null or empty");
     }
+    int hostStart = processProtocol(url);
+
+    if (hostStart >= url.length()) {
+      throw new IllegalArgumentException("URL must contain host");
+    }
+
+    int pathStart = url.indexOf('/', hostStart);
+    int hostEnd = (pathStart == -1) ? url.length() : pathStart;
+
+    String hostPort = url.substring(hostStart, hostEnd);
+    if (hostPort.isEmpty()) {
+      throw new IllegalArgumentException("URL must contain host");
+    }
+    String portPart = processHost(hostPort);
+    processPort(portPart);
+    processFile(url, pathStart);
     parseParameterMap(url);
   }
+
+  private int processProtocol(String url){
+    int schemeEnd = url.indexOf("://");
+    int hostStart;
+
+    if (schemeEnd > 0) {
+      protocol = url.substring(0, schemeEnd);
+      hostStart = schemeEnd + 3;
+    } else {
+      schemeEnd = url.indexOf(":/");
+      if (schemeEnd <= 0) {
+        throw new IllegalArgumentException("URL must contain protocol and separator");
+      }
+      protocol = url.substring(0, schemeEnd);
+      hostStart = schemeEnd + 2;
+    }
+    return hostStart;
+  }
+
+  private String processHost(String hostPort){
+
+    String hostPart;
+    String portPart = null;
+
+    // Special-case: tcp://:::443 or tcp:/:::443  => host "::", port 443
+    if (hostPort.startsWith(":::")) {
+      int lastColon = hostPort.lastIndexOf(':');
+      String possiblePort = hostPort.substring(lastColon + 1);
+      if (!possiblePort.isEmpty() && isAllDigits(possiblePort)) {
+        hostPart = "::";
+        portPart = possiblePort;
+      } else {
+        hostPart = hostPort;
+      }
+    }
+    // Bracketed IPv6: [2001:db8::1]:443, [::1], [fe80::1%eth0]:1234
+    else if (hostPort.startsWith("[")) {
+      int closingBracket = hostPort.indexOf(']');
+      if (closingBracket == -1) {
+        throw new IllegalArgumentException("Invalid IPv6 literal: missing ']'");
+      }
+      hostPart = hostPort.substring(1, closingBracket);
+      if (closingBracket + 1 < hostPort.length() && hostPort.charAt(closingBracket + 1) == ':') {
+        portPart = hostPort.substring(closingBracket + 2);
+      }
+    }
+    // Non-bracketed: decide IPv4/hostname vs IPv6-without-port
+    else {
+      int colonCount = 0;
+      for (int i = 0; i < hostPort.length(); i++) {
+        if (hostPort.charAt(i) == ':') {
+          colonCount++;
+        }
+      }
+
+      if (colonCount > 1) {
+        // Treat as pure IPv6 host literal, no port
+        hostPart = hostPort;
+      } else {
+        int colonIndex = hostPort.indexOf(':');
+        if (colonIndex >= 0) {
+          hostPart = hostPort.substring(0, colonIndex);
+          portPart = hostPort.substring(colonIndex + 1);
+        } else {
+          hostPart = hostPort;
+        }
+      }
+    }
+
+    host = hostPart;
+    return portPart;
+  }
+
+  private void processPort(String portPart){
+    if (portPart != null && !portPart.isEmpty()) {
+      try {
+        port = Integer.parseInt(portPart);
+      } catch (NumberFormatException e) {
+        port = 0;
+      }
+    } else {
+      port = 0;
+    }
+  }
+  private void processFile(String url, int pathStart){
+    if (pathStart == -1) {
+      file = "";
+    } else {
+      file = url.substring(pathStart + 1);
+      int query  = file.indexOf('?');
+      if (query >= 0) {
+        file = file.substring(0, query);
+      }
+    }
+  }
+
+
+  private boolean isAllDigits(String value) {
+    for (int i = 0; i < value.length(); i++) {
+      if (!Character.isDigit(value.charAt(i))) {
+        return false;
+      }
+    }
+    return !value.isEmpty();
+  }
+
 
   public Map<String, String> getParameters() {
     return parameterMap;
   }
 
-  public String getHost() {
-    return host;
-  }
-
-  public int getPort() {
-    return port;
-  }
-
-  public String getProtocol() {
-    return protocol;
-  }
-
-  public String getFile() {
-    return file;
-  }
-
 
   public String getJMXName() {
+    if(getPort() == 0){
+      return getProtocol() + "_" + getHost();
+    }
     return getProtocol() + "_" + getHost() + "_" + getPort();
   }
 
   @Override
   public String toString() {
-    if (file != null) {
-      return protocol + "://" + host + ":" + port + "/" + file;
+    StringBuilder builder = new StringBuilder();
+    builder.append(protocol).append("://").append(host);
+    if(port != 0){
+      builder.append(":").append(port);
     }
-    return protocol + "://" + host + ":" + port + "/";
+    if(file != null){
+      builder.append("/").append(file);
+    }
+    if(parameterMap != null && !parameterMap.isEmpty()){
+      builder.append("?");
+      boolean first = true;
+      for(Map.Entry<String, String> entry : parameterMap.entrySet()) {
+        if(!first){
+          builder.append("&");
+        }
+        first = false;
+        builder.append(entry.getKey()).append("=").append(entry.getValue());
+      }
+    }
+    return builder.toString();
   }
 
   protected String parseProtocol(String url) {
@@ -111,7 +235,7 @@ public class EndPointURL {
     if (endIdx > 0) {
       return tmp.substring(0, endIdx);
     }
-    endIdx = tmp.indexOf('/', startIdx + 1);
+    endIdx = tmp.indexOf('/');
     if (endIdx != -1) {
       return tmp.substring(0, endIdx);
     }
@@ -130,4 +254,7 @@ public class EndPointURL {
       return 0;
     }
   }
+
+
+
 }

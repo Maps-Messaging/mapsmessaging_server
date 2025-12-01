@@ -57,6 +57,7 @@ public abstract class BaseConnectionListener extends PacketListener {
             }
             return session;
           } catch (IOException ioe) {
+            ioe.printStackTrace();
             logger.log(ServerLogMessages.MQTT_CONNECT_LISTENER_SESSION_EXCEPTION, ioe, sessionId);
             future.completeExceptionally(
                 new MalformedException("Unable to construct the required Will Topic"));
