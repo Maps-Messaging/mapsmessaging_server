@@ -19,6 +19,7 @@
 
 package io.mapsmessaging.api.auth;
 
+import io.mapsmessaging.MessageDaemon;
 import io.mapsmessaging.api.features.DestinationType;
 import io.mapsmessaging.auth.AuthManager;
 import io.mapsmessaging.auth.ServerPermissions;
@@ -35,10 +36,6 @@ public class CreationAuthorisationCheck implements DestinationAuthorisationCheck
 
   @Override
   public boolean check(String name, DestinationType type, boolean create) {
-    return AuthManager.getInstance().canAccess (identity, ServerPermissions.CREATE_DESTINATION, buildResource(name, type));
-  }
-
-  private ProtectedResource buildResource(String name, DestinationType type){
-    return new ProtectedResource(type.getName(), name, null);
+    return AuthManager.getInstance().canAccess (identity, ServerPermissions.CREATE_DESTINATION, new ProtectedResource("server", MessageDaemon.getInstance().getId(), null));
   }
 }

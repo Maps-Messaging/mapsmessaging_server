@@ -35,9 +35,9 @@ AuthManager:
     identityProvider: "Encrypted-Auth"
     passwordHandler: "EncryptedPasswordCipher"
     configDirectory: "{{MAPS_DATA}}/.security"
-    authorisationProvider: "Open" # Open, Acl, openFGA
+    authorisationProvider: "Acl" # Open, Acl, openFGA
     authorisation:
-      enableCaching: false # Enabled/ Disabled
+      enableCaching: true # Enabled/ Disabled
       cachingTime: 5       # Cache timeout in seconds
     certificateStore:
       type: JKS # | "PKCS11", "JKS", "PKCS12", "JCEKS", "BKS", "UBER"

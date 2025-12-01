@@ -45,14 +45,15 @@ public class DestinationTraversal implements ResourceTraversal {
   @Override
   public void moveToParent() {
     String resourceId = current.getResourceId();
-    int lastSlash = resourceId.lastIndexOf('/');
-    if(lastSlash == 0 && resourceId.length() == 1){
-      resourceId = ""; // drop the /
-    } else {
-      resourceId= resourceId.substring(0, lastSlash);
-      if(resourceId.isEmpty()){
-        resourceId = "/";
-      }
+    int pos = resourceId.lastIndexOf('/');
+    if(pos > 0){ // Walking down
+      resourceId = resourceId.substring(0, pos);
+    }
+    else if(resourceId.length() > 1){
+      resourceId = "/";
+    }
+    else{
+      resourceId = "";
     }
 
     current = new ProtectedResource(

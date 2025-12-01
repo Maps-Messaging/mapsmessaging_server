@@ -39,6 +39,7 @@ public class AnonymousSecurityContext extends SecurityContext {
   public String getUsername() {
     return username;
   }
+
   @Override
   public void login() {
     subject = buildSubject(username, endPointPrincipal);

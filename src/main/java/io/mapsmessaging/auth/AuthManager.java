@@ -180,12 +180,13 @@ public class AuthManager implements Agent {
   public boolean canAccess(Identity identity, Permission permission, ProtectedResource resource) {
     if(!authorisationEnabled) return true;
     boolean result = authenticationStorage.canAccess(identity, permission, resource);
+
     if(!result){
       logger.log(AUTHORISATION_FAILED, identity.getUsername(), permission.getName(), resource.getResourceId());
-   //   System.err.println(" >>>> canAccess ("+identity.getUsername()+","+permission+","+resource+") = "+result);
+      System.err.println(" >>>> canAccess ("+identity.getUsername()+","+permission+","+resource+") = "+result);
     }
     else {
-    //  System.err.println("canAccess("+identity.getUsername()+","+permission+","+resource+") = "+result);
+      System.err.println("canAccess("+identity.getUsername()+","+permission+","+resource+") = "+result);
     }
     return result;
   }
@@ -193,8 +194,10 @@ public class AuthManager implements Agent {
   public boolean hasAllAccess(List<AuthRequest> request) {
     if(!authorisationEnabled) return true;
     boolean result = authenticationStorage.hasAllAccess(request);
+
     if(!result){
       for(AuthRequest authRequest : request){
+        System.err.println("canAccess("+authRequest.getIdentity().getUsername()+","+ authRequest.getPermission().getName()+","+authRequest.getProtectedResource().getResourceId()+") = "+result);
         logger.log(AUTHORISATION_FAILED, authRequest.getIdentity().getUsername(), authRequest.getPermission().getName(), authRequest.getProtectedResource().getResourceId());
       }
     }
@@ -214,6 +217,15 @@ public class AuthManager implements Agent {
   public void grant(Group group, Permission permission, ProtectedResource resource) {
     authenticationStorage.grant(group, permission, resource);
   }
+
+  public void deny(Identity identity, Permission permission, ProtectedResource resource) {
+    authenticationStorage.deny(identity, permission, resource);
+  }
+
+  public void deny(Group group, Permission permission, ProtectedResource resource) {
+    authenticationStorage.deny(group, permission, resource);
+  }
+
 
   public void revoke(Identity identity, Permission permission, ProtectedResource resource) {
     authenticationStorage.revoke(identity, permission, resource);

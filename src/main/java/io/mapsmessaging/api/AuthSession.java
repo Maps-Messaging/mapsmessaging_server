@@ -56,7 +56,6 @@ public class AuthSession extends Session {
       context.setAuthCheck(new SubscriptionAuthorisationCheck(identity, context));
       return super.addSubscription(context);
     } catch (IOException e) {
-      e.printStackTrace();
       throw e;
     }
   }

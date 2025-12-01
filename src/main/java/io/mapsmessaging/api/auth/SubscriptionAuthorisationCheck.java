@@ -19,6 +19,7 @@
 
 package io.mapsmessaging.api.auth;
 
+import io.mapsmessaging.MessageDaemon;
 import io.mapsmessaging.api.features.DestinationMode;
 import io.mapsmessaging.api.features.DestinationType;
 import io.mapsmessaging.auth.AuthManager;
@@ -49,7 +50,7 @@ public class SubscriptionAuthorisationCheck implements DestinationAuthorisationC
       }
       List<AuthRequest> authRequests = new ArrayList<>();
       if (create) {
-        authRequests.add(new AuthRequest(identity, ServerPermissions.CREATE_DESTINATION, buildResource(name, type)));
+        authRequests.add(new AuthRequest(identity, ServerPermissions.CREATE_DESTINATION, new ProtectedResource("server", MessageDaemon.getInstance().getId(), null)));
       }
       boolean isSchema = (subscriptionContext.getDestinationMode() == DestinationMode.SCHEMA);
       ProtectedResource destinationResource = buildResource(name, type);
