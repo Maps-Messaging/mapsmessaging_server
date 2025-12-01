@@ -31,7 +31,7 @@ public class AnonymousSecurityContext extends SecurityContext {
 
   private final Principal endPointPrincipal;
   public AnonymousSecurityContext(Principal endPointPrincipal) {
-    super("Anonymous");
+    super("anonymous");
     this.endPointPrincipal = endPointPrincipal;
   }
 
