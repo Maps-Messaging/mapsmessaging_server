@@ -183,10 +183,6 @@ public class AuthManager implements Agent {
 
     if(!result){
       logger.log(AUTHORISATION_FAILED, identity.getUsername(), permission.getName(), resource.getResourceId());
-      System.err.println(" >>>> canAccess ("+identity.getUsername()+","+permission+","+resource+") = "+result);
-    }
-    else {
-      System.err.println("canAccess("+identity.getUsername()+","+permission+","+resource+") = "+result);
     }
     return result;
   }
@@ -197,13 +193,7 @@ public class AuthManager implements Agent {
 
     if(!result){
       for(AuthRequest authRequest : request){
-        System.err.println("canAccess("+authRequest.getIdentity().getUsername()+","+ authRequest.getPermission().getName()+","+authRequest.getProtectedResource().getResourceId()+") = "+result);
         logger.log(AUTHORISATION_FAILED, authRequest.getIdentity().getUsername(), authRequest.getPermission().getName(), authRequest.getProtectedResource().getResourceId());
-      }
-    }
-    else {
-      for(AuthRequest authRequest : request){
-//        System.err.println("canAccess("+authRequest.getIdentity().getUsername()+","+ authRequest.getPermission().getName()+","+authRequest.getProtectedResource().getResourceId()+") = "+result);
       }
     }
     return result;
