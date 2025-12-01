@@ -23,7 +23,10 @@ package io.mapsmessaging.config;
 
 import io.mapsmessaging.configuration.ConfigurationProperties;
 import io.mapsmessaging.dto.rest.config.BaseConfigDTO;
-import io.mapsmessaging.dto.rest.schema.*;
+import io.mapsmessaging.dto.rest.schema.FileRepositoryConfigDTO;
+import io.mapsmessaging.dto.rest.schema.MapsRepositoryConfigDTO;
+import io.mapsmessaging.dto.rest.schema.RepositoryConfigDTO;
+import io.mapsmessaging.dto.rest.schema.SchemaManagerConfigDTO;
 import io.mapsmessaging.license.FeatureManager;
 import io.mapsmessaging.utilities.configuration.ConfigurationManager;
 

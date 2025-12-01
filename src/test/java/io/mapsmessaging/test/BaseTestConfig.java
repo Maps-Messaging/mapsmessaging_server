@@ -22,6 +22,7 @@ package io.mapsmessaging.test;
 import io.mapsmessaging.BaseTest;
 import io.mapsmessaging.MessageDaemon;
 import io.mapsmessaging.auth.AuthManager;
+import io.mapsmessaging.auth.priviliges.SessionPrivileges;
 import io.mapsmessaging.configuration.ConfigurationProperties;
 import io.mapsmessaging.engine.destination.DestinationImpl;
 import io.mapsmessaging.engine.destination.DestinationManagerListener;
@@ -46,6 +47,14 @@ import org.junit.jupiter.api.Timeout;
 
 @Timeout(value = 240000, unit = TimeUnit.MILLISECONDS)
 public class BaseTestConfig extends BaseTest {
+
+  private static final String[] USERNAMES = {"user1", "admin", "user2", "anonymous"};
+  private static final char[][] PASSWORDS = {"password1".toCharArray(), "admin1".toCharArray(), "password2".toCharArray(), "".toCharArray()};
+  private static final String[] GROUPS = {"everyone"};
+
+  @BeforeAll
+  static void setUp() {
+  }
 
   protected static MessageDaemon md = null;
   private static Thread th;
@@ -107,6 +116,10 @@ public class BaseTestConfig extends BaseTest {
       th.start();
       try {
         th.join();
+        for(int i = 0; i < USERNAMES.length; i++) {
+          AuthManager.getInstance().addUser(USERNAMES[i], PASSWORDS[i], SessionPrivileges.create(USERNAMES[i]), GROUPS);
+        }
+
       } catch (InterruptedException e) {
         // We don't really care, this is a test
         Thread.currentThread().interrupt();

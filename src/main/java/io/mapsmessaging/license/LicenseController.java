@@ -38,7 +38,8 @@ import java.net.HttpURLConnection;
 import java.net.URI;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
-import java.time.*;
+import java.time.Instant;
+import java.time.ZoneId;
 import java.util.*;
 
 public class LicenseController {

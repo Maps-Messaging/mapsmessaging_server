@@ -26,7 +26,6 @@ import io.mapsmessaging.auth.ServerPermissions;
 import io.mapsmessaging.engine.destination.BaseDestination;
 import io.mapsmessaging.engine.destination.DestinationImpl;
 import io.mapsmessaging.engine.schema.Schema;
-import io.mapsmessaging.engine.schema.SchemaLocationHelper;
 import io.mapsmessaging.engine.schema.SchemaManager;
 import io.mapsmessaging.engine.session.security.SecurityContext;
 import io.mapsmessaging.schemas.config.SchemaConfig;

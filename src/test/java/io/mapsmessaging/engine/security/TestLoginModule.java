@@ -19,7 +19,11 @@
 
 package io.mapsmessaging.engine.security;
 
+import io.mapsmessaging.auth.AuthManager;
+import io.mapsmessaging.auth.priviliges.SessionPrivileges;
 import io.mapsmessaging.security.jaas.AnonymousPrincipal;
+import org.junit.jupiter.api.BeforeAll;
+
 import java.io.IOException;
 import java.util.stream.IntStream;
 import javax.security.auth.callback.Callback;
@@ -30,8 +34,16 @@ import javax.security.auth.login.LoginException;
 
 public class TestLoginModule extends BaseLoginModule {
 
-  private static final String[] USERNAMES = {"user1", "admin", "user2"};
-  private static final char[][] PASSWORDS = {"password1".toCharArray(), "admin1".toCharArray(), "password2".toCharArray()};
+  private static final String[] USERNAMES = {"user1", "admin", "user2", "anonymous"};
+  private static final char[][] PASSWORDS = {"password1".toCharArray(), "admin1".toCharArray(), "password2".toCharArray(), "".toCharArray()};
+  private static final String[] GROUPS = {"everyone"};
+
+  @BeforeAll
+  static void setUp() {
+    for(int i = 0; i < USERNAMES.length; i++) {
+      AuthManager.getInstance().addUser(USERNAMES[i], PASSWORDS[i], SessionPrivileges.create(USERNAMES[i]), GROUPS);
+    }
+  }
 
   public static String[] getUsernames() {
     return USERNAMES;

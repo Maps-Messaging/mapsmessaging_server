@@ -1,6 +1,5 @@
 package io.mapsmessaging.ha;
 
-import com.google.gson.Gson;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.utilities.GsonFactory;

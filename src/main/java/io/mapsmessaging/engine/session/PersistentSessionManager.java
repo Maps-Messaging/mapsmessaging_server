@@ -38,7 +38,6 @@ import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.stream.Collectors;
 
 import static io.mapsmessaging.logging.ServerLogMessages.*;
-import static io.mapsmessaging.logging.ServerLogMessages.SESSION_SAVE_STATE_ERROR;
 
 public class PersistentSessionManager {
 

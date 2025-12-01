@@ -23,15 +23,18 @@ package io.mapsmessaging.network.route.select;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.network.route.link.Link;
+import io.mapsmessaging.network.route.link.LinkId;
 import io.mapsmessaging.network.route.link.LinkMetrics;
 import io.mapsmessaging.network.route.link.LinkState;
-import io.mapsmessaging.network.route.link.LinkId;
 import lombok.Builder;
 import lombok.Getter;
 
 import java.time.Duration;
 import java.time.Instant;
-import java.util.*;
+import java.util.ArrayDeque;
+import java.util.Deque;
+import java.util.Objects;
+import java.util.OptionalDouble;
 
 import static io.mapsmessaging.logging.ServerLogMessages.EVALUATION_RESULT;
 import static io.mapsmessaging.logging.ServerLogMessages.EXCEPTION_DURING_EVALUATION;

@@ -20,8 +20,6 @@
 package io.mapsmessaging.engine.destination;
 
 import io.mapsmessaging.api.MessageBuilder;
-import io.mapsmessaging.api.features.Priority;
-import io.mapsmessaging.api.features.QualityOfService;
 import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.api.message.TypedData;
 import io.mapsmessaging.dto.rest.config.destination.MessageOverrideDTO;

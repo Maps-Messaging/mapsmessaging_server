@@ -19,7 +19,6 @@
 
 package io.mapsmessaging.api.auth;
 
-import io.mapsmessaging.api.Destination;
 import io.mapsmessaging.api.features.DestinationMode;
 import io.mapsmessaging.api.features.DestinationType;
 import io.mapsmessaging.auth.AuthManager;

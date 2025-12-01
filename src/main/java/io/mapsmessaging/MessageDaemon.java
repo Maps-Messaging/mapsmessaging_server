@@ -60,7 +60,6 @@ import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static io.mapsmessaging.logging.ServerLogMessages.MESSAGE_DAEMON_STARTUP_BOOTSTRAP;
-import static io.mapsmessaging.logging.ServerLogMessages.MESSAGE_DAEMON_WAIT_PREVIOUS_INSTANCE;
 
 /**
  * This is the MessageDaemon class, which represents a message daemon in the system.

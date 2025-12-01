@@ -22,7 +22,6 @@ package io.mapsmessaging.api.auth;
 import io.mapsmessaging.api.features.DestinationType;
 import io.mapsmessaging.auth.AuthManager;
 import io.mapsmessaging.auth.ServerPermissions;
-
 import io.mapsmessaging.security.access.Identity;
 import io.mapsmessaging.security.authorisation.ProtectedResource;
 

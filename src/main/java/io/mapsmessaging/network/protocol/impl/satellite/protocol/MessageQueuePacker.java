@@ -19,8 +19,8 @@
 
 package io.mapsmessaging.network.protocol.impl.satellite.protocol;
 
-import io.mapsmessaging.network.protocol.transformation.ProtocolMessageTransformation;
 import io.mapsmessaging.network.protocol.impl.satellite.modem.xmodem.Xmodem;
+import io.mapsmessaging.network.protocol.transformation.ProtocolMessageTransformation;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;

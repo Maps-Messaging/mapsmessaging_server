@@ -20,7 +20,7 @@
 package io.mapsmessaging.network.protocol.impl.satellite.gateway.inmarsat.protocol.endpoints;
 
 import com.google.gson.Gson;
-import io.mapsmessaging.network.protocol.impl.satellite.gateway.inmarsat.protocol.model.*;
+import io.mapsmessaging.network.protocol.impl.satellite.gateway.inmarsat.protocol.model.Mailbox;
 
 import java.net.URI;
 import java.net.http.HttpClient;

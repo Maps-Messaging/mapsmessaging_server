@@ -21,7 +21,10 @@ package io.mapsmessaging.network.protocol.impl.satellite.gateway.inmarsat;
 
 import com.google.gson.JsonObject;
 import io.mapsmessaging.dto.rest.config.protocol.impl.SatelliteConfigDTO;
-import io.mapsmessaging.network.protocol.impl.satellite.gateway.inmarsat.protocol.model.*;
+import io.mapsmessaging.network.protocol.impl.satellite.gateway.inmarsat.protocol.model.Item;
+import io.mapsmessaging.network.protocol.impl.satellite.gateway.inmarsat.protocol.model.MobileOriginatedResponse;
+import io.mapsmessaging.network.protocol.impl.satellite.gateway.inmarsat.protocol.model.MobileTerminatedSubmitRequest;
+import io.mapsmessaging.network.protocol.impl.satellite.gateway.inmarsat.protocol.model.MuteCommand;
 import io.mapsmessaging.network.protocol.impl.satellite.gateway.io.SatelliteClient;
 import io.mapsmessaging.network.protocol.impl.satellite.gateway.io.StateManager;
 import io.mapsmessaging.network.protocol.impl.satellite.gateway.model.MessageData;

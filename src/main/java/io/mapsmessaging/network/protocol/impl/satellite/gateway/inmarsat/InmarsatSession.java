@@ -20,7 +20,6 @@
 package io.mapsmessaging.network.protocol.impl.satellite.gateway.inmarsat;
 
 import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
 import io.mapsmessaging.dto.rest.config.protocol.impl.SatelliteConfigDTO;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;

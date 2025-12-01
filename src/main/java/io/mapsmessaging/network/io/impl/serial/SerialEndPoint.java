@@ -53,7 +53,7 @@ public class SerialEndPoint extends EndPoint implements StreamEndPoint {
     super(id, server);
     this.serialPort = serialPort;
     name = serialPort.getSystemPortName();
-    configure(config);
+    configure(serialPort, config);
     serialPort.openPort();
     outputStream = serialPort.getOutputStream();
     inputStream = serialPort.getInputStream();
@@ -62,7 +62,7 @@ public class SerialEndPoint extends EndPoint implements StreamEndPoint {
     streamHandler = new SimpleStreamHandler(config.getBufferSize());
   }
 
-  private void configure(SerialConfigDTO config) {
+  public static void configure(SerialPort serialPort,  SerialConfigDTO config) {
     serialPort.setBaudRate(config.getBaudRate());
     serialPort.setComPortParameters(config.getBaudRate(), config.getDataBits(), getStopBits(config), getParity(config));
     serialPort.setFlowControl(config.getFlowControl());
@@ -136,36 +136,22 @@ public class SerialEndPoint extends EndPoint implements StreamEndPoint {
     streamHandler = handler;
   }
 
-  private int getStopBits(SerialConfigDTO config) {
-    switch (config.getStopBits().toLowerCase()) {
-      case "2":
-        return SerialPort.TWO_STOP_BITS;
-      case "1.5":
-        return SerialPort.ONE_POINT_FIVE_STOP_BITS;
-      case "1":
-      default:
-        return SerialPort.ONE_STOP_BIT;
-    }
+  public static int getStopBits(SerialConfigDTO config) {
+    return switch (config.getStopBits().toLowerCase()) {
+      case "2" -> SerialPort.TWO_STOP_BITS;
+      case "1.5" -> SerialPort.ONE_POINT_FIVE_STOP_BITS;
+      default -> SerialPort.ONE_STOP_BIT;
+    };
   }
 
-  private int getParity(SerialConfigDTO config) {
-    switch (config.getParity().toLowerCase()) {
-      case "o":
-        return SerialPort.ODD_PARITY;
-
-      case "e":
-        return SerialPort.EVEN_PARITY;
-
-      case "m":
-        return SerialPort.MARK_PARITY;
-
-      case "s":
-        return SerialPort.SPACE_PARITY;
-
-      case "n":
-      default:
-        return SerialPort.NO_PARITY;
-    }
+  public static int getParity(SerialConfigDTO config) {
+    return switch (config.getParity().toLowerCase()) {
+      case "o" -> SerialPort.ODD_PARITY;
+      case "e" -> SerialPort.EVEN_PARITY;
+      case "m" -> SerialPort.MARK_PARITY;
+      case "s" -> SerialPort.SPACE_PARITY;
+      default -> SerialPort.NO_PARITY;
+    };
   }
 
   //<editor-fold desc="Serial Reader Thread task">

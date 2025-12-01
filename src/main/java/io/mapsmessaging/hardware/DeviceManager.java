@@ -25,18 +25,21 @@ import io.mapsmessaging.devices.DeviceController;
 import io.mapsmessaging.devices.i2c.I2CBusManager;
 import io.mapsmessaging.dto.rest.config.device.I2CBusConfigDTO;
 import io.mapsmessaging.dto.rest.config.device.OneWireBusConfigDTO;
+import io.mapsmessaging.dto.rest.config.device.SerialDeviceDTO;
 import io.mapsmessaging.dto.rest.config.device.triggers.BaseTriggerConfigDTO;
 import io.mapsmessaging.dto.rest.system.Status;
 import io.mapsmessaging.dto.rest.system.SubSystemStatusDTO;
 import io.mapsmessaging.hardware.device.handler.BusHandler;
 import io.mapsmessaging.hardware.device.handler.i2c.I2CBusHandler;
 import io.mapsmessaging.hardware.device.handler.onewire.OneWireBusHandler;
+import io.mapsmessaging.hardware.device.handler.serial.SerialPortAdapter;
 import io.mapsmessaging.hardware.trigger.PeriodicTrigger;
 import io.mapsmessaging.hardware.trigger.Trigger;
 import io.mapsmessaging.license.FeatureManager;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.logging.ServerLogMessages;
+import io.mapsmessaging.network.io.impl.serial.management.SerialPortScanner;
 import io.mapsmessaging.utilities.Agent;
 import io.mapsmessaging.utilities.service.Service;
 import io.mapsmessaging.utilities.service.ServiceManager;
@@ -57,6 +60,7 @@ public class DeviceManager implements ServiceManager, Agent {
   private final boolean enableI2C;
   private final boolean enableOneWire;
   private final boolean enableSpi;
+  private final boolean enableSerial;
 
 
   private final DeviceBusManager deviceBusManager;
@@ -66,6 +70,7 @@ public class DeviceManager implements ServiceManager, Agent {
     enableSpi = featureManager.isEnabled("hardware.spi");
     enableI2C = featureManager.isEnabled("hardware.i2c");
     enableOneWire = featureManager.isEnabled("hardware.oneWire");
+    enableSerial = true;
 
     triggers = new ArrayList<>();
     configuredTriggers = new LinkedHashMap<>();
@@ -124,6 +129,9 @@ public class DeviceManager implements ServiceManager, Agent {
     if(enableSpi) {
       devices.addAll(deviceBusManager.getSpiBusManager().getActive().values());
     }
+    if(enableSerial){
+
+    }
     return devices;
   }
 
@@ -142,6 +150,16 @@ public class DeviceManager implements ServiceManager, Agent {
         OneWireBusConfigDTO oneWireBusConfig = deviceManagerConfig.getOneWireBus();
         Trigger trigger = locateNamedTrigger(oneWireBusConfig.getTrigger());
         busHandlers.add(new OneWireBusHandler(manager.getOneWireBusManager(), oneWireBusConfig, trigger));
+      }
+      if(deviceManagerConfig.getSerialDeviceBusConfig() != null && enableSerial) {
+        List<SerialDeviceDTO> list = deviceManagerConfig.getSerialDeviceBusConfig().getDevices();
+        /*
+        for(SerialDeviceDTO serialDeviceConfig: list){
+          SerialPortAdapter sa = new SerialPortAdapter(serialDeviceConfig);
+          SerialPortScanner.getInstance().add(serialDeviceConfig.getName(), sa);
+        }
+
+         */
       }
     }
   }

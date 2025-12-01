@@ -20,7 +20,6 @@
 package io.mapsmessaging.rest.api.impl.logging;
 
 import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
 import io.mapsmessaging.MessageDaemon;
 import io.mapsmessaging.logging.LogEntry;
 import io.mapsmessaging.logging.LogEntryListener;

@@ -77,6 +77,28 @@ DeviceManager:
       enabled: false  # enable / disable one wire interface
       autoScan: true
 
+    -
+      name: serial
+      enabled: true
+      topicNameTemplate: /serial/[device_name]
+      config:
+        - name: SEN0657
+          serial:
+            port: /dev/ttyAMA0
+            baudRate: 4800
+            dataBits: 8
+            stopBits: 1
+            parity: n
+            flowControl: 1
+        - name: SEN0640
+          serial:
+            port: /dev/ttyAMA1
+            baudRate: 4800
+            dataBits: 8
+            stopBits: 1
+            parity: n
+            flowControl: 1
+
 
     -
       # Note: each SPI device needs to be defined, there is no generic way to scan for SPI devices

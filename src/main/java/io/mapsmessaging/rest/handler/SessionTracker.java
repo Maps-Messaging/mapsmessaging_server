@@ -19,13 +19,11 @@
 
 package io.mapsmessaging.rest.handler;
 
-import io.mapsmessaging.api.Session;
 import io.mapsmessaging.api.SessionManager;
 import io.mapsmessaging.dto.rest.endpoint.EndPointDetailsDTO;
 import io.mapsmessaging.dto.rest.endpoint.EndPointSummaryDTO;
 import io.mapsmessaging.dto.rest.protocol.impl.RestProtocolInformation;
 import io.mapsmessaging.rest.api.impl.messaging.impl.HttpSessionState;
-import io.mapsmessaging.rest.api.impl.messaging.impl.RestMessageListener;
 import io.mapsmessaging.rest.api.impl.messaging.impl.SessionState;
 import io.mapsmessaging.rest.auth.BaseAuthenticationFilter;
 import jakarta.servlet.annotation.WebListener;

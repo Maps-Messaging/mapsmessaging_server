@@ -24,7 +24,6 @@ import com.udojava.jmx.wrapper.JMXBeanAttribute;
 import com.udojava.jmx.wrapper.JMXBeanOperation;
 import io.mapsmessaging.BuildInfo;
 import io.mapsmessaging.MessageDaemon;
-import io.mapsmessaging.api.features.DestinationType;
 import io.mapsmessaging.engine.destination.DestinationImpl;
 import io.mapsmessaging.network.io.EndPoint;
 import io.mapsmessaging.utilities.admin.HealthMonitor;
@@ -37,7 +36,6 @@ import io.mapsmessaging.utilities.stats.Stats;
 import lombok.Getter;
 
 import javax.management.ObjectInstance;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 

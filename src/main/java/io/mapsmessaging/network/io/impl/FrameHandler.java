@@ -23,7 +23,6 @@ import io.mapsmessaging.logging.ServerLogMessages;
 import io.mapsmessaging.network.io.Packet;
 import io.mapsmessaging.network.io.ServerPacket;
 import io.mapsmessaging.network.io.ServerPublishPacket;
-import io.mapsmessaging.network.protocol.impl.mqtt.packet.ConnAck;
 
 import java.io.IOException;
 import java.nio.BufferOverflowException;

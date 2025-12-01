@@ -21,6 +21,7 @@ package io.mapsmessaging.config;
 
 import io.mapsmessaging.config.device.I2CBusConfig;
 import io.mapsmessaging.config.device.OneWireBusConfig;
+import io.mapsmessaging.config.device.SerialDeviceBusConfig;
 import io.mapsmessaging.config.device.SpiDeviceBusConfig;
 import io.mapsmessaging.config.device.triggers.CronTriggerConfig;
 import io.mapsmessaging.config.device.triggers.InterruptTriggerConfig;
@@ -194,6 +195,9 @@ public class DeviceManagerConfig extends DeviceManagerConfigDTO implements Confi
         oneWireBus = new OneWireBusConfig(deviceConfig);
       } else if (deviceName.equalsIgnoreCase("spi")) {
         spiBus = new SpiDeviceBusConfig(deviceConfig);
+      }
+      else if(deviceName.equalsIgnoreCase("serial")) {
+        serialDeviceBusConfig = new SerialDeviceBusConfig(deviceConfig);
       }
     }
   }
