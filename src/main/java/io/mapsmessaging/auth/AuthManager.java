@@ -334,6 +334,7 @@ public class AuthManager implements Agent {
   }
 
   public Identity getUserIdentity(String username) {
+    if(authenticationStorage == null) return null;
     return authenticationStorage.findUser(username);
   }
 
