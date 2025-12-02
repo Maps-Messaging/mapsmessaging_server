@@ -130,7 +130,7 @@ public class DeviceManager implements ServiceManager, Agent {
       devices.addAll(deviceBusManager.getSpiBusManager().getActive().values());
     }
     if(enableSerial){
-
+      devices.addAll(deviceBusManager.getSerialBusManager().getActive().values());
     }
     return devices;
   }
@@ -153,13 +153,10 @@ public class DeviceManager implements ServiceManager, Agent {
       }
       if(deviceManagerConfig.getSerialDeviceBusConfig() != null && enableSerial) {
         List<SerialDeviceDTO> list = deviceManagerConfig.getSerialDeviceBusConfig().getDevices();
-        /*
         for(SerialDeviceDTO serialDeviceConfig: list){
-          SerialPortAdapter sa = new SerialPortAdapter(serialDeviceConfig);
+          SerialPortAdapter sa = new SerialPortAdapter(deviceBusManager, serialDeviceConfig);
           SerialPortScanner.getInstance().add(serialDeviceConfig.getName(), sa);
         }
-
-         */
       }
     }
   }

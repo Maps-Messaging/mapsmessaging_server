@@ -24,15 +24,14 @@ public class SerialPortAdapter implements SerialPortListener {
   @Override
   public void bind(SerialPort port) throws IOException {
     SerialEndPoint.configure(port, serialDeviceDTO.getSerialConfig());
-    deviceController = deviceBusManager.getSerialBusManager().getDevice(serialDeviceDTO.getName());
-    if (deviceController != null) {
-      deviceController = deviceController.mount(new Serial(port));
-    }
+    deviceController = deviceBusManager.getSerialBusManager().mount(serialDeviceDTO.getName(), new Serial(port));
   }
 
   @Override
   public void unbind(SerialPort port) throws IOException {
-
+    deviceBusManager.getSerialBusManager().unmount(deviceController);
+    deviceController.close();
+    deviceController = null;
   }
 
   @Override
