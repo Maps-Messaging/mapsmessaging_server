@@ -41,6 +41,7 @@ import io.mapsmessaging.engine.session.will.WillTaskManager;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.logging.ServerLogMessages;
+import io.mapsmessaging.security.authorisation.AuthRequest;
 import io.mapsmessaging.security.authorisation.ProtectedResource;
 import io.mapsmessaging.utilities.threads.SimpleTaskScheduler;
 import lombok.Getter;
@@ -50,6 +51,8 @@ import lombok.SneakyThrows;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.*;
 
 /**
@@ -207,6 +210,16 @@ public class SessionImpl {
    */
   public void login() throws IOException {
     securityContext.login();
+    ProtectedResource protectedResource  = new  ProtectedResource("server", MessageDaemon.getInstance().getId(), null);
+    List<AuthRequest> authRequests = new ArrayList<>();
+    authRequests.add(new AuthRequest(securityContext.getIdentity(),ServerPermissions.CONNECT ,protectedResource));
+    if(context.isPersistentSession() && !AuthManager.getInstance().canAccess(securityContext.getIdentity(), ServerPermissions.PERSISTENT_SESSION ,protectedResource)) {
+      authRequests.add(new AuthRequest(securityContext.getIdentity(),ServerPermissions.PERSISTENT_SESSION ,protectedResource));
+    }
+    if(!AuthManager.getInstance().hasAllAccess(authRequests)) {
+      throw new IOException("Access denied due to permissions");
+    }
+
     ((SessionDestinationManager) destinationManager).setSessionTenantConfig(TenantManagement.build(context.getClientConnection(), securityContext));
     // Only do this once the connection has be authenticated
     try {

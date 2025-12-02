@@ -20,7 +20,11 @@
 package io.mapsmessaging.api;
 
 import io.mapsmessaging.api.message.Message;
+import io.mapsmessaging.auth.AuthManager;
+import io.mapsmessaging.auth.ServerPermissions;
 import io.mapsmessaging.engine.TransactionManager;
+import io.mapsmessaging.security.access.Identity;
+import io.mapsmessaging.security.authorisation.ProtectedResource;
 import lombok.Getter;
 import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
@@ -74,14 +78,17 @@ public class Transaction {
    */
   private boolean complete;
 
+  private final Identity identity;
+
   /**
    * Construct the transaction so it is ready to start receiving messages
    *
    * @param id protocol specific ID
    */
-  public Transaction(@NonNull @NotNull String id) {
+  public Transaction(@NonNull @NotNull String id, Identity identity) {
     complete = false;
     transactionId = id;
+    this.identity = identity;
     internalId = TRANSACTION_GENERATOR.incrementAndGet();
     expiryTime = System.currentTimeMillis() + TransactionManager.getExpiryTime();
     list = new LinkedHashMap<>();
@@ -150,6 +157,14 @@ public class Transaction {
     if (complete) {
       throw new TransactionException(EXCEPTION_MESSAGE);
     }
+    if(AuthManager.getInstance().isAuthorisationEnabled()) {
+      ProtectedResource resource = new ProtectedResource(destination.getResourceType().getName(), destination.getResourceType().getName(), null);
+      if (!AuthManager.getInstance().canAccess(identity, ServerPermissions.PUBLISH, resource)) {
+        throw new TransactionException("You don't have permission to start transactions on this resource");
+      }
+    }
+
+
     long delayed = message.getDelayed();
     if (delayed > 0) {
       message.setDelayed(delayed - System.currentTimeMillis());

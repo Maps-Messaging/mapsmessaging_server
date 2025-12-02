@@ -84,16 +84,6 @@ public class SessionManager {
       logger.log(ServerLogMessages.SESSION_MANAGER_CREATE_SECURITY_CONTEXT);
       SecurityContext securityContext = securityManager.getSecurityContext(sessionContext);
       sessionContext.setSecurityContext(securityContext);
-
-      ProtectedResource protectedResource  = new  ProtectedResource("server", MessageDaemon.getInstance().getId(), null);
-      List<AuthRequest> authRequests = new ArrayList<>();
-      authRequests.add(new AuthRequest(securityContext.getIdentity(),ServerPermissions.CONNECT ,protectedResource));
-      if(sessionContext.isPersistentSession() && !AuthManager.getInstance().canAccess(securityContext.getIdentity(), ServerPermissions.PERSISTENT_SESSION ,protectedResource)) {
-        authRequests.add(new AuthRequest(securityContext.getIdentity(),ServerPermissions.PERSISTENT_SESSION ,protectedResource));
-      }
-      if(!AuthManager.getInstance().hasAllAccess(authRequests)) {
-        throw new LoginException("Access denied due to permissions");
-      }
     } catch (LoginException e) {
       completableFuture.completeExceptionally(e);
       return completableFuture;

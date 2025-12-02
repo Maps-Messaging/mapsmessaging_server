@@ -241,7 +241,7 @@ public class Session {
     if (clientTransactions.containsKey(transaction)) {
       throw new TransactionException("Transaction already exists");
     }
-    Transaction clientTransaction = new Transaction(transaction);
+    Transaction clientTransaction = new Transaction(transaction, sessionImpl.getSecurityContext().getIdentity());
     clientTransactions.put(clientTransaction.getTransactionId(), clientTransaction);
     return clientTransaction;
   }
