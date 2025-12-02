@@ -305,6 +305,7 @@ public class AuthManager implements Agent {
 
     Identity anony = authenticationStorage.findUser(ANONYMOUS);
     if(anony != null) {
+      grantUserList(anony, ServerPermissions.DELETE, destinations);
       grantUserList(anony, ServerPermissions.PUBLISH, destinations);
       grantUserList(anony, ServerPermissions.SUBSCRIBE, destinations);
       grantUserList(anony, ServerPermissions.RETAIN, destinations);
