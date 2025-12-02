@@ -13,14 +13,15 @@ public class SerialDeviceBusConfig extends SerialBusConfigDTO  implements Device
 
   public SerialDeviceBusConfig(ConfigurationProperties properties) {
     this.name = properties.getProperty("name");
-
-    setTopicNameTemplate(
-        properties.getProperty(
-            "topicNameTemplate",
-            "/serial/[device_name]"));
+    this.enabled =properties.getBooleanProperty("enabled", false);
+    setScanTime(properties.getIntProperty("scanTime", 120000));
     setFilter(properties.getProperty("filter", "ON_CHANGE"));
     setSelector(properties.getProperty("selector", null));
+    this.autoScan = properties.getBooleanProperty("autoScan", true);
+    this.trigger = properties.getProperty("trigger");
+    setTopicNameTemplate(properties.getProperty("topicNameTemplate", "/serial/[device_name]"));
     this.devices = new ArrayList<>();
+
     Object obj = properties.get("config");
     if (obj instanceof List) {
       List<ConfigurationProperties> configList = (List<ConfigurationProperties>) obj;
@@ -82,10 +83,5 @@ public class SerialDeviceBusConfig extends SerialBusConfigDTO  implements Device
       hasChanged = true;
     }
     return hasChanged;
-  }
-
-  @Override
-  public int getScanTime() {
-    return 0;
   }
 }

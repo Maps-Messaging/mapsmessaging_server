@@ -13,7 +13,7 @@ import java.util.List;
 @EqualsAndHashCode(callSuper=false)
 @NoArgsConstructor
 @Schema(description = "Serial Device Bus Configuration DTO")
-public class SerialBusConfigDTO extends BaseConfigDTO {
+public class SerialBusConfigDTO extends DeviceBusConfigDTO {
 
   @Schema(description = "Name of the serial bus managemnt", example = "serial")
   protected String name;
@@ -21,15 +21,7 @@ public class SerialBusConfigDTO extends BaseConfigDTO {
   @Schema(description = "List of Serial devices devices on this bus")
   protected List<SerialDeviceDTO> devices;
 
-  @Schema(description = "Indicates if the device bus is enabled")
-  protected boolean enabled;
+  @Schema(description = "Trigger mechanism for OneWire bus", example = "temperatureTrigger")
+  protected String trigger;
 
-  @Schema(description = "Template for the topic name")
-  protected String topicNameTemplate;
-
-  @Schema(description = "Filter configuration for the device bus")
-  protected String filter;
-
-  @Schema(description = "Selector configuration for the device bus")
-  protected String selector;
 }

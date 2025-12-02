@@ -39,7 +39,7 @@ import java.util.Map;
 import java.util.concurrent.*;
 
 public abstract class BusHandler implements Runnable {
-  private final Map<String, DeviceHandler> foundDevices;
+  protected final Map<String, DeviceHandler> foundDevices;
   protected final DeviceBusConfigDTO properties;
   private final int scanPeriod;
   private Future<?> scheduledFuture;

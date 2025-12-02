@@ -25,21 +25,19 @@ import io.mapsmessaging.devices.DeviceController;
 import io.mapsmessaging.devices.i2c.I2CBusManager;
 import io.mapsmessaging.dto.rest.config.device.I2CBusConfigDTO;
 import io.mapsmessaging.dto.rest.config.device.OneWireBusConfigDTO;
-import io.mapsmessaging.dto.rest.config.device.SerialDeviceDTO;
 import io.mapsmessaging.dto.rest.config.device.triggers.BaseTriggerConfigDTO;
 import io.mapsmessaging.dto.rest.system.Status;
 import io.mapsmessaging.dto.rest.system.SubSystemStatusDTO;
 import io.mapsmessaging.hardware.device.handler.BusHandler;
 import io.mapsmessaging.hardware.device.handler.i2c.I2CBusHandler;
 import io.mapsmessaging.hardware.device.handler.onewire.OneWireBusHandler;
-import io.mapsmessaging.hardware.device.handler.serial.SerialPortAdapter;
+import io.mapsmessaging.hardware.device.handler.serial.SerialDeviceBusHandler;
 import io.mapsmessaging.hardware.trigger.PeriodicTrigger;
 import io.mapsmessaging.hardware.trigger.Trigger;
 import io.mapsmessaging.license.FeatureManager;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.logging.ServerLogMessages;
-import io.mapsmessaging.network.io.impl.serial.management.SerialPortScanner;
 import io.mapsmessaging.utilities.Agent;
 import io.mapsmessaging.utilities.service.Service;
 import io.mapsmessaging.utilities.service.ServiceManager;
@@ -89,7 +87,7 @@ public class DeviceManager implements ServiceManager, Agent {
     DeviceBusManager manager = null;
     try {
       manager = DeviceBusManager.getInstance();
-      if (manager.isAvailable() ||  deviceManagerConfig.isDemoEnabled()) {
+      if (manager.isAvailable() ||  deviceManagerConfig.isDemoEnabled() || deviceManagerConfig.getSerialDeviceBusConfig() != null) {
         loadConfig(deviceManagerConfig, manager);
       }
       else{
@@ -152,11 +150,9 @@ public class DeviceManager implements ServiceManager, Agent {
         busHandlers.add(new OneWireBusHandler(manager.getOneWireBusManager(), oneWireBusConfig, trigger));
       }
       if(deviceManagerConfig.getSerialDeviceBusConfig() != null && enableSerial) {
-        List<SerialDeviceDTO> list = deviceManagerConfig.getSerialDeviceBusConfig().getDevices();
-        for(SerialDeviceDTO serialDeviceConfig: list){
-          SerialPortAdapter sa = new SerialPortAdapter(deviceBusManager, serialDeviceConfig);
-          SerialPortScanner.getInstance().add(serialDeviceConfig.getName(), sa);
-        }
+        Trigger trigger = locateNamedTrigger(deviceManagerConfig.getSerialDeviceBusConfig().getTrigger());
+        SerialDeviceBusHandler serialDeviceBusHandler = new SerialDeviceBusHandler(manager.getSerialBusManager(), deviceManagerConfig.getSerialDeviceBusConfig(), trigger);
+        busHandlers.add(serialDeviceBusHandler);
       }
     }
   }

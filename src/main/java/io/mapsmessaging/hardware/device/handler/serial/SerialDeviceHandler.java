@@ -17,17 +17,20 @@
  *  limitations under the License.
  */
 
-package io.mapsmessaging.hardware.trigger;
+package io.mapsmessaging.hardware.device.handler.serial;
 
-import org.quartz.Job;
-import org.quartz.JobExecutionContext;
-import org.quartz.JobExecutionException;
+import io.mapsmessaging.devices.DeviceController;
+import io.mapsmessaging.hardware.device.handler.DeviceHandler;
 
-public class CronJob implements Job {
-  @Override
-  public void execute(JobExecutionContext jobExecutionContext) throws JobExecutionException {
-    Trigger trigger = (Trigger) jobExecutionContext.getMergedJobDataMap().get("trigger");
+public class SerialDeviceHandler extends DeviceHandler {
 
-    trigger.runActions();
+  public SerialDeviceHandler(String key,DeviceController deviceController){
+    super(key, deviceController);
   }
+
+  @Override
+  public String getBusName() {
+    return "serial";
+  }
+
 }
