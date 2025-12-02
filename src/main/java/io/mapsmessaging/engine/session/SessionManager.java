@@ -67,7 +67,7 @@ public class SessionManager implements Agent {
     expiredSessions = new LongAdder();
     sessionPipeLines = new SessionManagerPipeLine[pipeLineSize];
     storeLookup = new PersistentSessionManager(dataPath);
-    Arrays.setAll(sessionPipeLines, x -> new SessionManagerPipeLine(destinationManager, storeLookup, security, connectedSessions, disconnectedSessions, expiredSessions));
+    Arrays.setAll(sessionPipeLines, x -> new SessionManagerPipeLine(destinationManager, storeLookup, connectedSessions, disconnectedSessions, expiredSessions));
     securityManager = security;
     willTaskManager = WillTaskManager.getInstance();
     sessionManagerJMX = new SessionManagerJMX(this);
@@ -137,9 +137,6 @@ public class SessionManager implements Agent {
 
   //<editor-fold desc="Security Manager API">
   protected void setSecurityManager(SecurityManager manager) {
-    for (SessionManagerPipeLine pipeLine : sessionPipeLines) {
-      pipeLine.setSecurityManager(manager);
-    }
     securityManager = manager;
   }
   //</editor-fold>

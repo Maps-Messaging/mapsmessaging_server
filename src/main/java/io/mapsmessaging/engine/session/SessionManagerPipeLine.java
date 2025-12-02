@@ -56,22 +56,19 @@ public class SessionManagerPipeLine {
 
   private final ExecutorService taskScheduler = new SingleConcurrentTaskScheduler("SessionManagerPipeLine");
 
-  private SecurityManager securityManager;
-
   private final LongAdder connectedSessions;
   private final LongAdder disconnectedSessions;
   private final LongAdder expiredSessions;
   private final WillTaskManager willTaskManager;
 
-  SessionManagerPipeLine(DestinationManager destinationManager, PersistentSessionManager lookup, SecurityManager security, LongAdder connected, LongAdder disconnected,
+  SessionManagerPipeLine(DestinationManager destinationManager, PersistentSessionManager lookup, LongAdder connected, LongAdder disconnected,
       LongAdder expired) {
-    subscriptionManagerFactory = new LinkedHashMap<>();
+    subscriptionManagerFactory = new ConcurrentHashMap<>();
     sessions = new ConcurrentHashMap<>();
     this.destinationManager = destinationManager;
     connectedSessions = connected;
     disconnectedSessions = disconnected;
     expiredSessions = expired;
-    securityManager = security;
     storeLookup = lookup;
     willTaskManager = WillTaskManager.getInstance();
   }
@@ -99,10 +96,6 @@ public class SessionManagerPipeLine {
 
   public Set<String> getSessionIds() {
     return subscriptionManagerFactory.keySet();
-  }
-
-  protected void setSecurityManager(SecurityManager manager) {
-    securityManager = manager;
   }
 
   @SuppressWarnings("java:S1452")
