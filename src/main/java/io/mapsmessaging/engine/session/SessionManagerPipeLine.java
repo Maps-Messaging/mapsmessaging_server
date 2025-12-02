@@ -38,10 +38,7 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.util.*;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.LongAdder;
 
 //
@@ -69,7 +66,7 @@ public class SessionManagerPipeLine {
   SessionManagerPipeLine(DestinationManager destinationManager, PersistentSessionManager lookup, SecurityManager security, LongAdder connected, LongAdder disconnected,
       LongAdder expired) {
     subscriptionManagerFactory = new LinkedHashMap<>();
-    sessions = new LinkedHashMap<>();
+    sessions = new ConcurrentHashMap<>();
     this.destinationManager = destinationManager;
     connectedSessions = connected;
     disconnectedSessions = disconnected;

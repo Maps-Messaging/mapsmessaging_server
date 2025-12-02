@@ -122,16 +122,18 @@ public class BaseTestConfig extends BaseTest {
       th.start();
       try {
         th.join();
-        Group group = AuthManager.getInstance().getGroupIdentity("everyone");
-        for(int i = 0; i < USERNAMES.length; i++) {
-          if(AuthManager.getInstance().getUserIdentity(USERNAMES[i]) == null) {
-            AuthManager.getInstance().addUser(USERNAMES[i], PASSWORDS[i], SessionPrivileges.create(USERNAMES[i]), GROUPS);
+        if(AuthManager.getInstance().isAuthorisationEnabled()) {
+          Group group = AuthManager.getInstance().getGroupIdentity("everyone");
+          for (int i = 0; i < USERNAMES.length; i++) {
+            if (AuthManager.getInstance().getUserIdentity(USERNAMES[i]) == null) {
+              AuthManager.getInstance().addUser(USERNAMES[i], PASSWORDS[i], SessionPrivileges.create(USERNAMES[i]), GROUPS);
+            }
+            AuthManager.getInstance().addUserToGroup(USERNAMES[i], group.getName());
           }
-          AuthManager.getInstance().addUserToGroup(USERNAMES[i], group.getName());
+          Identity identity = AuthManager.getInstance().getUserIdentity("anonymous");
+          ProtectedResource resource = new ProtectedResource(DestinationType.TOPIC.getName(), "test/nosubscribe", null);
+          AuthManager.getInstance().deny(identity, ServerPermissions.SUBSCRIBE, resource);
         }
-        Identity identity = AuthManager.getInstance().getUserIdentity("anonymous");
-        ProtectedResource resource = new ProtectedResource(DestinationType.TOPIC.getName(), "test/nosubscribe", null);
-        AuthManager.getInstance().deny(identity, ServerPermissions.SUBSCRIBE, resource);
 
       } catch (InterruptedException e) {
         // We don't really care, this is a test
