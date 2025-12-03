@@ -44,7 +44,7 @@ public class ResourceTypes {
 
   private ResourceTypes() {
     Set<String> tmp = new HashSet<>();
-    tmp.add("SERVER");
+    tmp.add("Server");
     for(DestinationType type : DestinationType.values()){
       tmp.add(type.name());
     }

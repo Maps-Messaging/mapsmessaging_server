@@ -36,6 +36,6 @@ public class CreationAuthorisationCheck implements DestinationAuthorisationCheck
 
   @Override
   public boolean check(String name, DestinationType type, boolean create) {
-    return AuthManager.getInstance().canAccess (identity, ServerPermissions.CREATE_DESTINATION, new ProtectedResource("server", MessageDaemon.getInstance().getId(), null));
+    return AuthManager.getInstance().canAccess (identity, ServerPermissions.CREATE_DESTINATION, new ProtectedResource("Server", MessageDaemon.getInstance().getId(), null));
   }
 }

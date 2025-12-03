@@ -50,7 +50,7 @@ public class SubscriptionAuthorisationCheck implements DestinationAuthorisationC
       }
       List<AuthRequest> authRequests = new ArrayList<>();
       if (create) {
-        authRequests.add(new AuthRequest(identity, ServerPermissions.CREATE_DESTINATION, new ProtectedResource("server", MessageDaemon.getInstance().getId(), null)));
+        authRequests.add(new AuthRequest(identity, ServerPermissions.CREATE_DESTINATION, new ProtectedResource("Server", MessageDaemon.getInstance().getId(), null)));
       }
       boolean isSchema = (subscriptionContext.getDestinationMode() == DestinationMode.SCHEMA);
       ProtectedResource destinationResource = buildResource(name, type);

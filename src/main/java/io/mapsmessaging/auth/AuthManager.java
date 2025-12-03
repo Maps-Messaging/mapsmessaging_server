@@ -270,7 +270,7 @@ public class AuthManager implements Agent {
 
   private void setupDefaultAuthorisation(){
     Group admin = authenticationStorage.findGroup(ADMIN_GROUP);
-    ProtectedResource server  = new  ProtectedResource("SERVER", MessageDaemon.getInstance().getId(), null);
+    ProtectedResource server  = new  ProtectedResource("Server", MessageDaemon.getInstance().getId(), null);
     List<ProtectedResource> destinations = new ArrayList<>();
     for(DestinationType type : DestinationType.values()){
       destinations.add( new  ProtectedResource(type.getName(), "/", null));

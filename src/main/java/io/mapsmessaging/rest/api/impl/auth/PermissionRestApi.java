@@ -69,7 +69,7 @@ public class PermissionRestApi extends BaseAuthRestApi {
       details.add(new PermissionDetailsDTO(permission));
     }
     List<ResourceTypeDetailsDTO> resourceTypes = new ArrayList<>();
-    resourceTypes.add(new ResourceTypeDetailsDTO("SERVER", true));
+    resourceTypes.add(new ResourceTypeDetailsDTO("Server", true));
     for(DestinationType type : DestinationType.values()){
       resourceTypes.add(new ResourceTypeDetailsDTO(type.getName(), false));
     }

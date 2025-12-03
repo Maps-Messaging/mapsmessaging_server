@@ -210,7 +210,7 @@ public class SessionImpl {
    */
   public void login() throws IOException {
     securityContext.login();
-    ProtectedResource protectedResource  = new  ProtectedResource("SERVER", MessageDaemon.getInstance().getId(), null);
+    ProtectedResource protectedResource  = new  ProtectedResource("Server", MessageDaemon.getInstance().getId(), null);
     List<AuthRequest> authRequests = new ArrayList<>();
     authRequests.add(new AuthRequest(securityContext.getIdentity(),ServerPermissions.CONNECT ,protectedResource));
     if(context.isPersistentSession() && !AuthManager.getInstance().canAccess(securityContext.getIdentity(), ServerPermissions.PERSISTENT_SESSION ,protectedResource)) {
