@@ -76,7 +76,7 @@ public class EndpointIntrospector implements ApplicationEventListener {
 
     for (ResourceMethod resourceMethod : resource.getResourceMethods()) {
       String httpMethod = resourceMethod.getHttpMethod();
-      if (httpMethod == null) {
+      if (httpMethod == null|| httpMethod.equalsIgnoreCase("options")) {
         continue;
       }
 
