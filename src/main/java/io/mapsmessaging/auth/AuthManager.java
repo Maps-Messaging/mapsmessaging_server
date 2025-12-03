@@ -305,6 +305,7 @@ public class AuthManager implements Agent {
     grantList(everyone, ServerPermissions.SUBSCRIBE, destinations);
     grantList(everyone, ServerPermissions.RETAIN, destinations);
     grantList(everyone, ServerPermissions.VIEW, destinations);
+    grantList(everyone, ServerPermissions.DURABLE, destinations);
 
     Identity anony = authenticationStorage.findUser(ANONYMOUS);
     if(anony != null) {
@@ -313,6 +314,7 @@ public class AuthManager implements Agent {
       grantUserList(anony, ServerPermissions.SUBSCRIBE, destinations);
       grantUserList(anony, ServerPermissions.RETAIN, destinations);
       grantUserList(anony, ServerPermissions.VIEW, destinations);
+      grantUserList(anony, ServerPermissions.DURABLE, destinations);
     }
 
 
