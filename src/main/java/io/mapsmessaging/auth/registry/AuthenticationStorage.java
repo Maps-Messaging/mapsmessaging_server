@@ -34,10 +34,7 @@ import io.mapsmessaging.security.SubjectHelper;
 import io.mapsmessaging.security.access.*;
 import io.mapsmessaging.security.access.mapping.GroupIdMap;
 import io.mapsmessaging.security.access.mapping.UserIdMap;
-import io.mapsmessaging.security.authorisation.AuthRequest;
-import io.mapsmessaging.security.authorisation.Grantee;
-import io.mapsmessaging.security.authorisation.Permission;
-import io.mapsmessaging.security.authorisation.ProtectedResource;
+import io.mapsmessaging.security.authorisation.*;
 import lombok.Getter;
 import org.mapdb.DB;
 import org.mapdb.DBMaker;
@@ -237,6 +234,9 @@ public class AuthenticationStorage {
     identityAccessManager.getGroupManagement().removeUserFromGroup(username, groupName);
   }
 
+  public AuthorizationProvider getAuthorizationProvider() {
+    return identityAccessManager.getAuthorizationProvider();
+  }
 
   public boolean canAccess(Identity identity, Permission permission, ProtectedResource resource) {
     return identityAccessManager.getAuthorizationProvider().canAccess(identity, permission, resource);

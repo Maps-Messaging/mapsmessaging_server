@@ -41,6 +41,9 @@ import static io.mapsmessaging.logging.ServerLogMessages.REST_CACHE_HIT;
 import static io.mapsmessaging.logging.ServerLogMessages.REST_CACHE_MISS;
 
 public class BaseRestApi {
+
+  public static boolean AUTH_ENABLED = true;
+
   private final Logger logger = LoggerFactory.getLogger(BaseRestApi.class);
   @Context
   protected HttpServletRequest request;
@@ -62,6 +65,7 @@ public class BaseRestApi {
   }
 
   private void checkAuthentication() {
+
     HttpSession session = getSession();
     if (session.getAttribute("uuid") == null) {
       throw new WebApplicationException(401);
@@ -70,30 +74,30 @@ public class BaseRestApi {
 
 
   protected void hasAccess(String resource) {
+    if(!AUTH_ENABLED){
+      return;
+    }
     checkAuthentication();
     String method = request.getMethod();
     Subject subject = (Subject) getSession().getAttribute("subject");
     boolean access = true;
 
-    if (AuthManager.getInstance().isAuthorisationEnabled()) {
-      HttpSession session = getSession();
-      Identity userIdMap = (Identity) session.getAttribute("userIdMap");
-      if(userIdMap == null) {
-        String username = (String) session.getAttribute("username");
-        userIdMap = AuthManager.getInstance().getUserIdentity(username);
-        if(userIdMap != null) {
-          session.setAttribute("userIdMap", userIdMap);
-        }
+    HttpSession session = getSession();
+    Identity userIdMap = (Identity) session.getAttribute("userIdMap");
+    if(userIdMap == null) {
+      String username = (String) session.getAttribute("username");
+      userIdMap = AuthManager.getInstance().getUserIdentity(username);
+      if(userIdMap != null) {
+        session.setAttribute("userIdMap", userIdMap);
       }
-      RestAccessControl accessControl = AuthenticationContext.getInstance().getAccessControl();
-/*
-      if (accessControl != null) {
-        access = (userIdMap != null && accessControl.hasAccess(resource, subject, computeAccess(method)));
-      }
-
- */
-      access=true;
     }
+    RestAccessControl accessControl = AuthenticationContext.getInstance().getAccessControl();
+/*
+    if (accessControl != null) {
+      access = (userIdMap != null && accessControl.hasAccess(resource, subject, computeAccess(method)));
+    }
+
+*/
     if (!access) {
       throw new WebApplicationException("Access denied", Response.Status.FORBIDDEN);
     }

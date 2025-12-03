@@ -20,6 +20,7 @@
 package io.mapsmessaging.rest.auth;
 
 import io.mapsmessaging.auth.AuthManager;
+import io.mapsmessaging.rest.api.impl.BaseRestApi;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
@@ -72,7 +73,7 @@ public abstract class BaseAuthenticationFilter implements ContainerRequestFilter
 
   protected void processAuthentication(ContainerRequestContext containerRequest) throws IOException {
     try {
-      if(!AuthManager.getInstance().isAuthenticationEnabled())return;
+      if(!BaseRestApi.AUTH_ENABLED)return;
       String accessToken = getAccessCookie(httpRequest);
       if (accessToken == null) {
         HttpSession session = httpRequest.getSession(false);

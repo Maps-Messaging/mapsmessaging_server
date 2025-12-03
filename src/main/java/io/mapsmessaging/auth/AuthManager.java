@@ -36,9 +36,7 @@ import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.security.access.Group;
 import io.mapsmessaging.security.access.Identity;
 import io.mapsmessaging.security.access.mapping.GroupIdMap;
-import io.mapsmessaging.security.authorisation.AuthRequest;
-import io.mapsmessaging.security.authorisation.Permission;
-import io.mapsmessaging.security.authorisation.ProtectedResource;
+import io.mapsmessaging.security.authorisation.*;
 import io.mapsmessaging.security.identity.IdentityLookupFactory;
 import io.mapsmessaging.security.identity.principals.UniqueIdentifierPrincipal;
 import io.mapsmessaging.utilities.Agent;
@@ -67,6 +65,7 @@ public class AuthManager implements Agent {
 
   private static final String ADMIN_GROUP = "admins";
   private static final String EVERYONE = "everyone";
+
 
   private static class Holder {
     static final AuthManager INSTANCE = new AuthManager();
@@ -201,6 +200,11 @@ public class AuthManager implements Agent {
     }
     return result;
   }
+
+  public AuthorizationProvider getAuthorizationProvider() {
+    return authenticationStorage.getAuthorizationProvider();
+  }
+
 
 
   public void grant(Identity identity, Permission permission, ProtectedResource resource) {

@@ -20,6 +20,7 @@
 package io.mapsmessaging.rest.responses;
 
 import io.mapsmessaging.auth.AuthManager;
+import io.mapsmessaging.rest.api.impl.BaseRestApi;
 import io.mapsmessaging.rest.auth.AuthenticationContext;
 import io.mapsmessaging.rest.auth.RestAccessControl;
 import io.mapsmessaging.security.access.Identity;
@@ -49,7 +50,7 @@ public class LoginResponse {
 
   public LoginResponse(String status, Subject subject, String username){
     this.status = status;
-    if(username != null && AuthManager.getInstance().isAuthorisationEnabled()) {
+    if(username != null && BaseRestApi.AUTH_ENABLED) {
       Identity userIdMap = AuthManager.getInstance().getUserIdentity(username);
       RestAccessControl accessControl = AuthenticationContext.getInstance().getAccessControl();
 
