@@ -37,12 +37,11 @@ import java.io.IOException;
 import static io.mapsmessaging.rest.api.Constants.URI_PATH;
 
 @Tag(name = "Discovery Management")
-@Path(URI_PATH)
+@Path(URI_PATH+"/server/discovery/config")
 public class DiscoveryConfigurationApi extends DiscoveryBaseRestApi {
 
 
   @GET
-  @Path("/server/discovery/config")
   @Produces({MediaType.APPLICATION_JSON})
   @Operation(
       summary = "Get the discovery agents configuration",
@@ -64,7 +63,6 @@ public class DiscoveryConfigurationApi extends DiscoveryBaseRestApi {
   }
 
   @POST
-  @Path("/server/discovery/config")
   @Produces({MediaType.APPLICATION_JSON})
   @Consumes({MediaType.APPLICATION_JSON})
   @Operation(

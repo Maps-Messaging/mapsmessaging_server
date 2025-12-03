@@ -291,13 +291,18 @@ public class MessageDaemon {
   /**
    * Stops the MessageDaemon by setting the 'isStarted' flag to false and stopping all agents in the 'agentMap'.
    */
-  public void stop() {
+  public void stop(){
+    stop(0);
+  }
+
+  public void stop(int exitCode) {
     statsReporter.close();
     isStarted.set(false);
     ConsulManagerFactory.getInstance().stop();
     subSystemManager.stop();
     if (mBean != null) mBean.close();
     fileLockManager.close();
+    System.exit(exitCode);
   }
 
   public boolean isStarted() {

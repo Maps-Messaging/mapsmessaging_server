@@ -26,20 +26,16 @@ import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.ws.rs.GET;
-import jakarta.ws.rs.PUT;
-import jakarta.ws.rs.Path;
-import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
 import static io.mapsmessaging.rest.api.Constants.URI_PATH;
 
 @Tag(name = "Server Config Management")
-@Path(URI_PATH)
+@Path(URI_PATH+"/server/cache")
 public class CacheManagementApi extends ServerBaseRestApi {
   @GET
-  @Path("/server/cache")
   @Produces({MediaType.APPLICATION_JSON})
   @Operation(
       summary = "Retrieve cache information",
@@ -60,8 +56,7 @@ public class CacheManagementApi extends ServerBaseRestApi {
     return Constants.getCentralCache().getCacheInfo();
   }
 
-  @PUT
-  @Path("/server/cache")
+  @DELETE
   @Produces({MediaType.APPLICATION_JSON})
   @Operation(
       summary = "Clear cache",

@@ -39,11 +39,10 @@ import java.io.IOException;
 import static io.mapsmessaging.rest.api.Constants.URI_PATH;
 
 @Tag(name = "Hardware Management")
-@Path(URI_PATH)
+@Path(URI_PATH+"/server/hardware/config")
 public class HardwareConfigurationApi extends HardwareBaseRestApi {
 
   @GET
-  @Path("/server/hardware/config")
   @Produces({MediaType.APPLICATION_JSON})
   @Operation(
       summary = "Get hardware configuration",
@@ -65,7 +64,6 @@ public class HardwareConfigurationApi extends HardwareBaseRestApi {
   }
 
   @POST
-  @Path("/server/hardware/config")
   @Produces({MediaType.APPLICATION_JSON})
   @Operation(
       summary = "Update hardware configuration",

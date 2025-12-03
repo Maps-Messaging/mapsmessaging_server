@@ -32,8 +32,8 @@ public enum ServerPermissions implements Permission {
   CONNECT("connect", "Allows the identity to open a connection", 1),
   PERSISTENT_SESSION("persistent_session", "Allows use of persistent/durable sessions", 2),
   CREATE_DESTINATION("create_destination", "Global gate: may create destinations anywhere", 3),
-  CREATE_DURABLE_SERVER("create_durable_server", "Allows creating durable subscriptions/queues", 4),
-  BIND_DURABLE_SERVER("bind_durable_server", "Allows binding to existing durable resources", 5),
+  // 4
+  // 5
   PURGE_SERVER("purge_server", "Allows purging messages globally", 6),
   LIST_DESTINATIONS("list_destinations", "Allows listing all destinations", 7),
   MANAGE_DESTINATIONS("manage_destinations", "Allows managing destination configuration globally", 8),
@@ -42,7 +42,7 @@ public enum ServerPermissions implements Permission {
   MANAGE_CONFIG("manage_config", "Allows modifying server configuration", 11),
   MANAGE_AUTHENTICATION("manage_authentication", "Allows managing authentication", 12),
   MANAGE_AUTHORIZATION("manage_authorization", "Allows managing authorisation rules", 13),
-  MANAGE_LICENSE("manage_license", "Allows managing server licensing", 14),
+// 14
   REST_API_ACCESS("rest_api_access", "Allows access to the server REST management API", 15),
   MANAGE_INTERFACES("manage_interfaces", "Allows managing network interfaces and listeners", 16),
   MANAGE_PROTOCOLS("manage_protocols", "Allows enabling, disabling and configuring protocols", 17),
@@ -58,22 +58,24 @@ public enum ServerPermissions implements Permission {
   SCHEMA_PUBLISH("schema_publish", "Allows publishing schema updates", 35),
   RETAIN("retain", "Allows setting retained messages here", 36),
   DELETE("delete", "Allows deleting this destination", 37),
-  CREATE_DURABLE("create_durable", "Allows creating durable resources on this destination", 38),
-  BIND_DURABLE("bind_durable", "Allows binding to existing durable resources here", 39),
-  PURGE("purge", "Allows purging messages from this destination", 40),
-  VIEW("view", "Allows viewing/browsing this destination", 41),
-  DESTINATION_MANAGE_CONFIG("manage_config_dest", "Allows modifying configuration of this destination", 42),
+  DURABLE("durable", "Allows subscribing to durable resources on this destination", 38),
+  PURGE("purge", "Allows purging messages from this destination", 39),
+  VIEW("view", "Allows viewing/browsing this destination", 40),
+
   ;
 
   private final String name;
   private final String description;
   private final long mask;
+  private final boolean isServer;
 
-  ServerPermissions(final String name, final String description, final long mask) {
+  ServerPermissions(final String name, final String description, final long bitPos) {
     this.name = name;
     this.description = description;
-    this.mask = 1L << mask;
+    isServer = bitPos < 32;
+    this.mask = 1L << bitPos;
   }
+
 
   public static String generateOpenFgaModel() {
     StringBuilder stringBuilder = new StringBuilder();

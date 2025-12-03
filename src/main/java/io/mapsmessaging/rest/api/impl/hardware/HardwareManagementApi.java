@@ -32,6 +32,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.ws.rs.GET;
+import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
@@ -43,11 +44,11 @@ import java.util.List;
 import static io.mapsmessaging.rest.api.Constants.URI_PATH;
 
 @Tag(name = "Hardware Management")
-@Path(URI_PATH)
+@Path(URI_PATH+"/server/hardware")
 public class HardwareManagementApi extends HardwareBaseRestApi {
 
-  @GET
-  @Path("/server/hardware/scan")
+  @POST
+  @Path("/scan")
   @Produces({MediaType.APPLICATION_JSON})
   @Operation(
       summary = "Scan for new hardware",
@@ -80,7 +81,6 @@ public class HardwareManagementApi extends HardwareBaseRestApi {
   }
 
   @GET
-  @Path("/server/hardware")
   @Produces({MediaType.APPLICATION_JSON})
   @Operation(
       summary = "Get known devices",

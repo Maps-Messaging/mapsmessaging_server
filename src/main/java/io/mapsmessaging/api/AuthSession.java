@@ -47,17 +47,13 @@ public class AuthSession extends Session {
 
   @Override
   public SubscribedEventManager addSubscription(@NonNull @NotNull SubscriptionContext context) throws IOException {
-    try {
-      // Check to see if wild card subscription is allowed IF it is a wildcard subscription
-      ProtectedResource serverResource  = new ProtectedResource("server", MessageDaemon.getInstance().getId(), null);
-      if(context.containsWildcard() && !AuthManager.getInstance().canAccess(identity, ServerPermissions.WILD_CARD_SUBSCRIBE ,serverResource)){
-        throw new IOException("Access denied");
-      }
-      context.setAuthCheck(new SubscriptionAuthorisationCheck(identity, context));
-      return super.addSubscription(context);
-    } catch (IOException e) {
-      throw e;
+    // Check to see if wild card subscription is allowed IF it is a wildcard subscription
+    ProtectedResource serverResource  = new ProtectedResource("SERVER", MessageDaemon.getInstance().getId(), null);
+    if(context.containsWildcard() && !AuthManager.getInstance().canAccess(identity, ServerPermissions.WILD_CARD_SUBSCRIBE ,serverResource)){
+      throw new IOException("Access denied");
     }
+    context.setAuthCheck(new SubscriptionAuthorisationCheck(identity, context));
+    return super.addSubscription(context);
   }
 
   @Override

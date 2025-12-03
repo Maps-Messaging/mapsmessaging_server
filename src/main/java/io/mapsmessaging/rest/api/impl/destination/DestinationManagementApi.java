@@ -47,11 +47,11 @@ import java.util.concurrent.TimeoutException;
 import static io.mapsmessaging.rest.api.Constants.URI_PATH;
 
 @Tag(name = "Destination Management")
-@Path(URI_PATH)
+@Path(URI_PATH+"/server/destination")
 public class DestinationManagementApi extends BaseDestinationApi {
 
   @GET
-  @Path("/server/destination")
+  @Path("/detail")
   @Produces({MediaType.APPLICATION_JSON})
   @Operation(
       summary = "Retrieve detailed information about a destination",
@@ -95,7 +95,6 @@ public class DestinationManagementApi extends BaseDestinationApi {
   }
 
   @GET
-  @Path("/server/destinations")
   @Produces({MediaType.APPLICATION_JSON})
   @Operation(
       summary = "Retrieve a list of all destinations with optional filtering and sorting",

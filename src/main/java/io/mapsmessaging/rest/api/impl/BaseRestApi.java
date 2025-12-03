@@ -98,17 +98,17 @@ public class BaseRestApi {
       throw new WebApplicationException("Access denied", Response.Status.FORBIDDEN);
     }
   }
-/*
+
   private long computeAccess(String method) {
     return switch (method) {
-      case "GET", "HEAD" -> RestAclMapping.READ_VALUE;
-      case "POST" -> RestAclMapping.CREATE_VALUE;
-      case "PUT" -> RestAclMapping.UPDATE_VALUE;
-      case "DELETE" -> RestAclMapping.DELETE_VALUE;
-      default -> RestAclMapping.READ_VALUE;
+      case "GET", "HEAD" -> 0;
+      case "POST" -> 1;
+      case "PUT" -> 2;
+      case "DELETE" -> 3;
+      default -> 0;
     };
   }
-*/
+
   protected <T> T getFromCache(CacheKey key, Class<T> type) {
     Object cachedResponse = Constants.getCentralCache().get(key);
     T typedResponse = type.isInstance(cachedResponse) ? type.cast(cachedResponse) : null;

@@ -179,6 +179,9 @@ public class AuthManager implements Agent {
 
   public boolean canAccess(Identity identity, Permission permission, ProtectedResource resource) {
     if(!authorisationEnabled) return true;
+    if(!ResourceTypes.getInstance().getResources().contains(resource.getResourceType())){
+      System.err.println("invalid resource type");
+    }
     boolean result = authenticationStorage.canAccess(identity, permission, resource);
 
     if(!result){
@@ -267,7 +270,7 @@ public class AuthManager implements Agent {
 
   private void setupDefaultAuthorisation(){
     Group admin = authenticationStorage.findGroup(ADMIN_GROUP);
-    ProtectedResource server  = new  ProtectedResource("server", MessageDaemon.getInstance().getId(), null);
+    ProtectedResource server  = new  ProtectedResource("SERVER", MessageDaemon.getInstance().getId(), null);
     List<ProtectedResource> destinations = new ArrayList<>();
     for(DestinationType type : DestinationType.values()){
       destinations.add( new  ProtectedResource(type.getName(), "/", null));
@@ -288,8 +291,6 @@ public class AuthManager implements Agent {
     authenticationStorage.grant(everyone, ServerPermissions.CONNECT, server);
     authenticationStorage.grant(everyone, ServerPermissions.PERSISTENT_SESSION, server);
     authenticationStorage.grant(everyone, ServerPermissions.CREATE_DESTINATION, server);
-    authenticationStorage.grant(everyone, ServerPermissions.CREATE_DURABLE_SERVER, server);
-    authenticationStorage.grant(everyone, ServerPermissions.BIND_DURABLE_SERVER, server);
     authenticationStorage.grant(everyone, ServerPermissions.PURGE_SERVER, server);
     authenticationStorage.grant(everyone, ServerPermissions.LIST_DESTINATIONS, server);
     authenticationStorage.grant(everyone, ServerPermissions.VIEW_STATS, server);
@@ -299,8 +300,6 @@ public class AuthManager implements Agent {
     grantList(everyone, ServerPermissions.PUBLISH, destinations);
     grantList(everyone, ServerPermissions.SUBSCRIBE, destinations);
     grantList(everyone, ServerPermissions.RETAIN, destinations);
-    grantList(everyone, ServerPermissions.CREATE_DURABLE, destinations);
-    grantList(everyone, ServerPermissions.BIND_DURABLE, destinations);
     grantList(everyone, ServerPermissions.VIEW, destinations);
 
     Identity anony = authenticationStorage.findUser(ANONYMOUS);
@@ -309,8 +308,6 @@ public class AuthManager implements Agent {
       grantUserList(anony, ServerPermissions.PUBLISH, destinations);
       grantUserList(anony, ServerPermissions.SUBSCRIBE, destinations);
       grantUserList(anony, ServerPermissions.RETAIN, destinations);
-      grantUserList(anony, ServerPermissions.CREATE_DURABLE, destinations);
-      grantUserList(anony, ServerPermissions.BIND_DURABLE, destinations);
       grantUserList(anony, ServerPermissions.VIEW, destinations);
     }
 

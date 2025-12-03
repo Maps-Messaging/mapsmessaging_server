@@ -60,7 +60,11 @@ public class SubscriptionAuthorisationCheck implements DestinationAuthorisationC
       } else {
         if (subscriptionContext.isBrowser()) {
           authRequests.add(new AuthRequest(identity, ServerPermissions.VIEW, destinationResource));
-        } else {
+        }
+        else if(subscriptionContext.isSharedSubscription()) {
+          authRequests.add(new AuthRequest(identity, ServerPermissions.DURABLE, destinationResource));
+        }
+        else {
           authRequests.add(new AuthRequest(identity, ServerPermissions.SUBSCRIBE, destinationResource));
         }
       }

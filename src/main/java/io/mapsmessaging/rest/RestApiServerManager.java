@@ -213,7 +213,7 @@ public class RestApiServerManager implements Agent {
       // Register Gson providers
       resourceConfig.register(GsonMessageBodyReader.class);
       resourceConfig.register(GsonMessageBodyWriter.class);
-
+      resourceConfig.register(EndpointIntrospector.class);
       if (config.isEnableAuthentication() && AuthManager.getInstance().isAuthenticationEnabled()) {
         resourceConfig.register(new AuthenticationFilter());
         AuthenticationContext.getInstance().setAccessControl(new RestAccessControl());

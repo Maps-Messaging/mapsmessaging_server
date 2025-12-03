@@ -50,11 +50,10 @@ import java.util.stream.Collectors;
 import static io.mapsmessaging.rest.api.Constants.URI_PATH;
 
 @Tag(name = "Connection Management")
-@Path(URI_PATH)
+@Path(URI_PATH+"/server/connections")
 public class ConnectionManagementApi extends BaseDestinationApi {
 
   @GET
-  @Path("/server/connections")
   @Produces({MediaType.APPLICATION_JSON})
   @Operation(
       summary = "Get all connections",
@@ -102,7 +101,7 @@ public class ConnectionManagementApi extends BaseDestinationApi {
   }
 
   @GET
-  @Path("/server/connection")
+  @Path("/{connectionId}")
   @Produces({MediaType.APPLICATION_JSON})
   @Operation(
       summary = "Get connection details for the specified id",
@@ -119,8 +118,9 @@ public class ConnectionManagementApi extends BaseDestinationApi {
           @ApiResponse(responseCode = "404", description = "Connection not found"),
       }
   )
-  public EndPointDetailsDTO getConnectionDetails(@QueryParam("connectionId") long connectionId) {
+  public EndPointDetailsDTO getConnectionDetails(@PathParam("connectionId") String stringId) {
     hasAccess(RESOURCE);
+    long connectionId = Long.parseLong(stringId);
     CacheKey key = new CacheKey(uriInfo.getPath(), ""+connectionId);
 
     // Try to retrieve from cache
@@ -147,8 +147,8 @@ public class ConnectionManagementApi extends BaseDestinationApi {
     throw new WebApplicationException("Connection not found", Response.Status.NOT_FOUND);
   }
 
-  @PUT
-  @Path("/server/connection/close")
+  @DELETE
+  @Path("/{connectionId}")
   @Produces({MediaType.APPLICATION_JSON})
   @Operation(
       summary = "Close a connection",
@@ -165,8 +165,9 @@ public class ConnectionManagementApi extends BaseDestinationApi {
           @ApiResponse(responseCode = "404", description = "Connection not found"),
       }
   )
-  public StatusResponse closeSpecificConnection(@QueryParam("connectionId") long connectionId) {
+  public StatusResponse closeSpecificConnection(@PathParam("connectionId") String stringId) {
     hasAccess(RESOURCE);
+    long connectionId = Long.parseLong(stringId);
     List<EndPointManager> endPointManagers = MessageDaemon.getInstance().getSubSystemManager().getNetworkManager().getAll();
     for (EndPointManager endPointManager : endPointManagers) {
       for (EndPoint endPoint : endPointManager.getEndPointServer().getActiveEndPoints()) {

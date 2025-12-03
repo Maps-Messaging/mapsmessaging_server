@@ -94,6 +94,7 @@ public class MessagingApi extends BaseRestApi {
   }
 
 
+  @POST
   @Path("/unsubscribe")
   @Consumes(MediaType.APPLICATION_JSON)
   @Produces(MediaType.APPLICATION_JSON)
@@ -108,7 +109,6 @@ public class MessagingApi extends BaseRestApi {
           @ApiResponse(responseCode = "401", description = "Invalid credentials or unauthorized access"),
           @ApiResponse(responseCode = "403", description = "User is not authorised to access the resource"),
       })
-  @POST
   public StatusResponse unsubscribeToTopic(@Valid SubscriptionRequestDTO subscriptionRequest) {
     hasAccess(RESOURCE);
     String destinationName = subscriptionRequest.getDestinationName();
@@ -119,6 +119,7 @@ public class MessagingApi extends BaseRestApi {
     return new StatusResponse("Successfully unsubscribed to " + destinationName);
   }
 
+  @POST
   @Path("/subscribe")
   @Consumes(MediaType.APPLICATION_JSON)
   @Produces(MediaType.APPLICATION_JSON)
@@ -133,7 +134,6 @@ public class MessagingApi extends BaseRestApi {
           @ApiResponse(responseCode = "401", description = "Invalid credentials or unauthorized access"),
           @ApiResponse(responseCode = "403", description = "User is not authorised to access the resource"),
       })
-  @POST
   public StatusResponse subscribeToTopic(@Valid SubscriptionRequestDTO subscriptionRequest) throws LoginException, IOException {
     hasAccess(RESOURCE);
     Session session = getAuthenticatedSession();

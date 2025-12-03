@@ -39,11 +39,10 @@ import java.io.IOException;
 import static io.mapsmessaging.rest.api.Constants.URI_PATH;
 
 @Tag(name = "Server Config Management")
-@Path(URI_PATH)
+@Path(URI_PATH+"/server/config")
 public class ServerConfigApi extends ServerBaseRestApi {
 
   @GET
-  @Path("/server/config")
   @Produces({MediaType.APPLICATION_JSON})
   @Operation(
       summary = "Retrieve server configuration",
@@ -72,7 +71,6 @@ public class ServerConfigApi extends ServerBaseRestApi {
   }
 
   @PUT
-  @Path("/server/config")
   @Produces({MediaType.APPLICATION_JSON})
   @Operation(
       summary = "Update server configuration",

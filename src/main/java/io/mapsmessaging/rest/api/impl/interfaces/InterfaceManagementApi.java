@@ -25,6 +25,7 @@ import io.mapsmessaging.dto.helpers.InterfaceStatusHelper;
 import io.mapsmessaging.dto.rest.interfaces.InterfaceInfoDTO;
 import io.mapsmessaging.dto.rest.interfaces.InterfaceStatusDTO;
 import io.mapsmessaging.network.EndPointManager;
+import io.mapsmessaging.network.NetworkManager;
 import io.mapsmessaging.rest.cache.CacheKey;
 import io.mapsmessaging.rest.responses.InterfaceDetailResponse;
 import io.mapsmessaging.rest.responses.InterfaceStatusResponse;
@@ -36,9 +37,12 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.ws.rs.*;
+import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 
 import java.util.List;
@@ -47,11 +51,10 @@ import java.util.stream.Collectors;
 import static io.mapsmessaging.rest.api.Constants.URI_PATH;
 
 @Tag(name = "Server Interface Management")
-@Path(URI_PATH)
+@Path(URI_PATH+"/server/interfaces")
 public class InterfaceManagementApi extends BaseInterfaceApi {
 
   @GET
-  @Path("/server/interfaces")
   @Produces({MediaType.APPLICATION_JSON})
   @Operation(
       summary = "Get all end point details",
@@ -97,11 +100,20 @@ public class InterfaceManagementApi extends BaseInterfaceApi {
     return response;
   }
 
-  @PUT
-  @Path("/server/interfaces/stopAll")
+  @PATCH
+  @Consumes(MediaType.APPLICATION_JSON)
+  @Produces(MediaType.APPLICATION_JSON)
   @Operation(
-      summary = "Stop all end points",
-      description = "Stops all running endpoints.",
+      summary = "Manages all end points",
+      description = "Manages actions on all endpoints.",
+      requestBody = @RequestBody(
+          description = "Requested action to apply to all inter-server connections",
+          required = true,
+          content = @Content(
+              mediaType = "application/json",
+              schema = @Schema(implementation = RequestedAction.class)
+          )
+      ),
       responses = {
           @ApiResponse(
               responseCode = "200",
@@ -113,80 +125,37 @@ public class InterfaceManagementApi extends BaseInterfaceApi {
           @ApiResponse(responseCode = "403", description = "User is not authorised to access the resource"),
       }
   )
-  public StatusResponse stopAllInterfaces() {
+  public StatusResponse handleInterfaceActionRequest(RequestedAction requested, @Context HttpServletResponse response) {
     hasAccess(RESOURCE);
-    MessageDaemon.getInstance().getSubSystemManager().getNetworkManager().stopAll();
-    return new StatusResponse("Success");
-  }
-
-  @PUT
-  @Path("/server/interfaces/startAll")
-  @Operation(
-      summary = "Start all end points",
-      description = "Starts all stopped endpoints.",
-      responses = {
-          @ApiResponse(
-              responseCode = "200",
-              description = "Operation was successful",
-              content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))
-          ),
-          @ApiResponse(responseCode = "400", description = "Bad request"),
-          @ApiResponse(responseCode = "401", description = "Invalid credentials or unauthorized access"),
-          @ApiResponse(responseCode = "403", description = "User is not authorised to access the resource"),
+    boolean processed = false;
+    if(requested != null && requested.getState() != null) {
+      NetworkManager networkManager = MessageDaemon.getInstance().getSubSystemManager().getNetworkManager();
+      if("stopped".equalsIgnoreCase(requested.getState())) {
+        networkManager.stopAll();
+        processed = true;
       }
-  )
-  public StatusResponse startAllInterfaces() {
-    hasAccess(RESOURCE);
-    MessageDaemon.getInstance().getSubSystemManager().getNetworkManager().startAll();
-    return new StatusResponse("Success");
-  }
-
-  @PUT
-  @Path("/server/interfaces/pauseAll")
-  @Operation(
-      summary = "Pause all end points",
-      description = "Pauses all running endpoints and stops new incoming connections.",
-      responses = {
-          @ApiResponse(
-              responseCode = "200",
-              description = "Operation was successful",
-              content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))
-          ),
-          @ApiResponse(responseCode = "400", description = "Bad request"),
-          @ApiResponse(responseCode = "401", description = "Invalid credentials or unauthorized access"),
-          @ApiResponse(responseCode = "403", description = "User is not authorised to access the resource"),
+      else if("started".equalsIgnoreCase(requested.getState())) {
+        networkManager.startAll();
+        processed = true;
       }
-  )
-  public StatusResponse pauseAllInterfaces() {
-    hasAccess(RESOURCE);
-    MessageDaemon.getInstance().getSubSystemManager().getNetworkManager().pauseAll();
-    return new StatusResponse("Success");
-  }
-
-  @PUT
-  @Path("/server/interfaces/resumeAll")
-  @Operation(
-      summary = "Resume all end points",
-      description = "Resumes all paused endpoints and allows new incoming connections.",
-      responses = {
-          @ApiResponse(
-              responseCode = "200",
-              description = "Operation was successful",
-              content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))
-          ),
-          @ApiResponse(responseCode = "400", description = "Bad request"),
-          @ApiResponse(responseCode = "401", description = "Invalid credentials or unauthorized access"),
-          @ApiResponse(responseCode = "403", description = "User is not authorised to access the resource"),
+      else if("paused".equalsIgnoreCase(requested.getState())) {
+        networkManager.pauseAll();
+        processed = true;
       }
-  )
-  public StatusResponse resumeAllInterfaces() {
-    hasAccess(RESOURCE);
-    MessageDaemon.getInstance().getSubSystemManager().getNetworkManager().resumeAll();
-    return new StatusResponse("Success");
+      else if("resumed".equalsIgnoreCase(requested.getState())) {
+        networkManager.resumeAll();
+        processed = true;
+      }
+    }
+    if(processed) {
+      return new StatusResponse("Success");
+    }
+    response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+    return new StatusResponse("Unknown action");
   }
 
   @GET
-  @Path("/server/interfaces/status")
+  @Path("/status")
   @Produces({MediaType.APPLICATION_JSON})
   @Operation(
       summary = "Get all end point status",
@@ -225,7 +194,7 @@ public class InterfaceManagementApi extends BaseInterfaceApi {
         endPointManagers.stream()
             .map(endPointManager -> InterfaceStatusHelper.fromServer(endPointManager.getEndPointServer()))
             .filter(status -> parser == null || parser.evaluate(status))
-            .collect(Collectors.toList());
+            .toList();
 
     InterfaceStatusResponse response = new InterfaceStatusResponse(list);
     putToCache(key, response);

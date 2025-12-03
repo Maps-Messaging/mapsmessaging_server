@@ -29,11 +29,14 @@ import io.mapsmessaging.engine.schema.Schema;
 import io.mapsmessaging.engine.schema.SchemaManager;
 import io.mapsmessaging.engine.session.security.SecurityContext;
 import io.mapsmessaging.schemas.config.SchemaConfig;
+import io.mapsmessaging.security.authorisation.AuthRequest;
 import io.mapsmessaging.security.authorisation.ProtectedResource;
 import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Generic destination class
@@ -68,8 +71,17 @@ public class Destination implements BaseDestination {
       }
       message.setSchemaId(destinationImpl.getSchema().getUniqueId());
     }
-    if(!AuthManager.getInstance().canAccess(securityContext.getIdentity(), ServerPermissions.PUBLISH, protectedResource)) {
-      throw new IOException("You don't have permission to publish to this resource");
+
+
+    if(message.isRetain()){
+      if (!AuthManager.getInstance().canAccess(securityContext.getIdentity(), ServerPermissions.RETAIN, protectedResource)) {
+        throw new IOException("You don't have permission to publish retain events to this resource");
+      }
+    }
+    else {
+      if (!AuthManager.getInstance().canAccess(securityContext.getIdentity(), ServerPermissions.PUBLISH, protectedResource)) {
+        throw new IOException("You don't have permission to publish to this resource");
+      }
     }
     return destinationImpl.storeMessage(message);
   }
