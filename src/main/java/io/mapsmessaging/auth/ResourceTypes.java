@@ -46,7 +46,7 @@ public class ResourceTypes {
     Set<String> tmp = new HashSet<>();
     tmp.add("Server");
     for(DestinationType type : DestinationType.values()){
-      tmp.add(type.name());
+      tmp.add(type.getName());
     }
     resources = Collections.unmodifiableSet(tmp);
   }
