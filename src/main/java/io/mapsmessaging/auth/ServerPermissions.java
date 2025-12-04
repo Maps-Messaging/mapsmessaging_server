@@ -67,12 +67,12 @@ public enum ServerPermissions implements Permission {
   private final String name;
   private final String description;
   private final long mask;
-  private final boolean isServer;
+  private final boolean server;
 
   ServerPermissions(final String name, final String description, final long bitPos) {
     this.name = name;
     this.description = description;
-    isServer = bitPos < 32;
+    server = bitPos < 32;
     this.mask = 1L << bitPos;
   }
 

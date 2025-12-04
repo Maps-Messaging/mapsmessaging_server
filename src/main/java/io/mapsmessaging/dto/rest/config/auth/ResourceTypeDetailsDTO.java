@@ -32,10 +32,10 @@ import lombok.EqualsAndHashCode;
 public class ResourceTypeDetailsDTO extends BaseConfigDTO {
 
   private final String name;
-  private final boolean isServer;
+  private final boolean server;
 
   public ResourceTypeDetailsDTO(String name, boolean isServer) {
     this.name = name;
-    this.isServer = isServer;
+    this.server = isServer;
   }
 }

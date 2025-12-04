@@ -113,12 +113,12 @@ public class Message implements IdentifierResolver, Storable {
 
     identifier = builder.getId();
     meta = builder.getMeta();
-    if (meta != null && MessageDaemon.getInstance().isTagMetaData()) {
+    if (meta != null &&  ( MessageDaemon.getInstance() == null || MessageDaemon.getInstance().isTagMetaData())) {
       meta.put("time_ms", "" + System.currentTimeMillis());
       if (LocationManager.getInstance().isSet()) {
         meta.put("longitude", "" + LocationManager.getInstance().getLongitude());
         meta.put("latitude", "" + LocationManager.getInstance().getLatitude());
-        meta.put("server", MessageDaemon.getInstance().getId());
+        meta.put("server",  MessageDaemon.getInstance() == null ? "":MessageDaemon.getInstance().getId());
       }
     }
     Map<String, TypedData> map = builder.getDataMap();
@@ -139,8 +139,8 @@ public class Message implements IdentifierResolver, Storable {
     storeOffline = builder.isStoreOffline();
     qualityOfService = builder.getQualityOfService();
     Object correlation = builder.getCorrelationData();
-    if (correlation instanceof String) {
-      correlationData = ((String) correlation).getBytes(StandardCharsets.UTF_8);
+    if (correlation instanceof String cor) {
+      correlationData = cor.getBytes(StandardCharsets.UTF_8);
     } else {
       correlationData = (byte[]) builder.getCorrelationData();
       flags.set(CORRELATION_BYTE_ARRAY_BIT); // Mark as byte[]
@@ -339,11 +339,11 @@ public class Message implements IdentifierResolver, Storable {
     if (data != null) {
       Object response = data.getData();
       if (response != null) {
-        if (response instanceof Number) {
-          if (response instanceof Double || response instanceof Float) {
-            return ((Number) response).doubleValue();
+        if (response instanceof Number num) {
+          if (num instanceof Double || num instanceof Float) {
+            return num.doubleValue();
           }
-          return ((Number) response).longValue();
+          return num.longValue();
         }
         return data.getData();
       }

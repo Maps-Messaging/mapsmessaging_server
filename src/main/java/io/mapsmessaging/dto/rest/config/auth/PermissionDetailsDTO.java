@@ -36,12 +36,12 @@ public class PermissionDetailsDTO extends BaseConfigDTO {
 
   private final String name;
   private final String description;
-  private final boolean isServer;
+  private final boolean server;
 
   public PermissionDetailsDTO(ServerPermissions permission) {
     name = permission.getName();
     description = permission.getDescription();
-    isServer = permission.isServer();
+    server = permission.isServer();
   }
 
 }

@@ -179,6 +179,14 @@ public class OrbcommOgwsClient implements SatelliteClient {
               messageData.setPayload(Base64.getDecoder().decode(returnMessage.getRawPayload()));
               incomingEvents.add(messageData);
             }
+            else {
+              String json = gson.toJson(returnMessage);
+              MessageData messageData = new MessageData();
+              messageData.setUniqueId(returnMessage.getMobileId());
+              messageData.setPayload(json.getBytes());
+              messageData.setCommon(true);
+              incomingEvents.add(messageData);
+            }
           }
           if(lastMessageUtc != null) {
             StateManager.saveLastMessageUtc(clientId, clientSecret,lastMessageUtc);
