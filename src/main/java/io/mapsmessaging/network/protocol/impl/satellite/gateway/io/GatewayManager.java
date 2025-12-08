@@ -32,12 +32,14 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Queue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static io.mapsmessaging.logging.ServerLogMessages.OGWS_FAILED_AUTHENTICATION;
+import static io.mapsmessaging.logging.ServerLogMessages.SATELLITE_SCANNING_FOR_INCOMING;
 
 public class GatewayManager {
 
@@ -134,7 +136,9 @@ public class GatewayManager {
   // timed task to read /write to the remote server
   protected void pollGateway() {
     try {
-      handler.handleIncomingMessage(satelliteClient.scanForIncoming());
+      Queue<MessageData> queue = satelliteClient.scanForIncoming();
+      logger.log(SATELLITE_SCANNING_FOR_INCOMING, queue.size());
+      handler.handleIncomingMessage(queue);
       List<MessageData> tmp;
       synchronized (pendingMessages) {
         tmp = new ArrayList<>(pendingMessages);
