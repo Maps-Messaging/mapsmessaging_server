@@ -20,7 +20,10 @@
 package io.mapsmessaging.engine.transformers;
 
 import io.mapsmessaging.api.transformers.InterServerTransformation;
+import io.mapsmessaging.api.transformers.ProtocolTransformationWrapper;
 import io.mapsmessaging.configuration.ConfigurationProperties;
+import io.mapsmessaging.network.protocol.transformation.ProtocolMessageTransformation;
+import io.mapsmessaging.network.protocol.transformation.TransformationManager;
 import io.mapsmessaging.utilities.service.Service;
 import io.mapsmessaging.utilities.service.ServiceManager;
 
@@ -46,6 +49,12 @@ public class TransformerManager implements ServiceManager {
     InterServerTransformation t = (InterServerTransformation) transformerMap.get(transformer);
     if(t != null){
       return  t.build(props);
+    }
+    else{
+      ProtocolMessageTransformation protocolMessageTransformation = TransformationManager.getInstance().getTransformation(transformer);
+      if(protocolMessageTransformation != null){
+        return new ProtocolTransformationWrapper(protocolMessageTransformation);
+      }
     }
     return null;
   }
