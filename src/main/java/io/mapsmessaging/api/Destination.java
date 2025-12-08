@@ -49,9 +49,14 @@ public class Destination implements BaseDestination {
       // Ensure the schema is applied to the incoming message
       String schemaId = destinationImpl.getSchema().getUniqueId();
       if (schemaId.equals(SchemaManager.DEFAULT_RAW_UUID.toString())) {
-        SchemaConfig schemaConfig = SchemaManager.getInstance().locateSchema(destinationImpl.getFullyQualifiedNamespace());
-        if(schemaConfig != null && !schemaConfig.getUniqueId().equals(SchemaManager.DEFAULT_RAW_UUID.toString())) {
-          destinationImpl.updateSchema(schemaConfig, null);
+        try {
+          SchemaConfig schemaConfig = SchemaManager.getInstance().locateSchema(destinationImpl.getFullyQualifiedNamespace());
+          if (schemaConfig != null && !schemaConfig.getUniqueId().equals(SchemaManager.DEFAULT_RAW_UUID.toString())) {
+            destinationImpl.updateSchema(schemaConfig, null);
+          }
+        }
+        catch(Throwable t) {
+          t.printStackTrace();
         }
       }
       message.setSchemaId(destinationImpl.getSchema().getUniqueId());

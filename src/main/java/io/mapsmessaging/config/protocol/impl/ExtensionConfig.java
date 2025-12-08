@@ -31,19 +31,18 @@ public class ExtensionConfig extends ExtensionConfigDTO implements Config {
   public ExtensionConfig(ConfigurationProperties configuration) {
     setType("extension");
     ProtocolConfigFactory.unpack(configuration, this);
+    super.protocol = configuration.getProperty("protocol");
     Object obj =  configuration.get("config");
-    if(obj instanceof ConfigurationProperties){
+    if(obj instanceof ConfigurationProperties props){
       config = new LinkedHashMap<>();
-      config.putAll(((ConfigurationProperties)obj).getMap());
+      config.putAll(props.getMap());
     }
   }
-
 
   @Override
   public boolean update(BaseConfigDTO config) {
     boolean hasChanged = false;
-    if (config instanceof ExtensionConfig) {
-      ExtensionConfig newConfig = (ExtensionConfig) config;
+    if (config instanceof ExtensionConfig newConfig) {
       if (ProtocolConfigFactory.update(this, newConfig)) {
         hasChanged = true;
       }

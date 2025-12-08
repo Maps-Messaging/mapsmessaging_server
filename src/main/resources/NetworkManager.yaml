@@ -192,44 +192,22 @@ NetworkManager:
         auth: default
 
 
-#      - name: "Inmarsat Iot nano interface"
-#        protocol: satellite
-#        auth: anon
-#        url: satellite://inmarsat:0/
-#        httpRequestTimeoutSec: 30
-#        pollInterval: 15
-#        sharedSecret: "This is a shared secret to use"
-#        maxInflightEventsPerDevice: 2
-#        outboundNamespaceRoot: "/inmarsat/{deviceId}"
-#        outboundBroadcast: "/inmarsat/broadcast"
-#        baseUrl: "https://api.inmarsat.com/iotMessaging/v1"
-#        remoteAuthConfig:
-#          username: ""
-#          password: ""
-#
-#        mailboxId: ""
-#        mailboxPassword: ""
-#        namespaceRoot: "/{mailboxId}/"
-
-
-
-#      - name: "OrbComm OGWS interface"
-#        protocol: satellite
-#        auth: anon
-#        url: satellite://orbcomm:0/
-#        httpRequestTimeoutSec: 30
-#        pollInterval: 7
-#        sharedSecret: "This is a shared secret to use"
-#        maxInflightEventsPerDevice: 2
-#        outboundNamespaceRoot: "/orbcomm/{deviceId}"
-#        outboundBroadcast: "/orbcomm/broadcast"
-#        baseUrl: "http://localhost:8081/api/v1.0"
-#        maxBufferSize: 4000
-#        compressionCutoffSize: 128
-
-#        remoteAuthConfig:
-#          username: ""
-#          password: ""
+      - name: "Inmarsat Iot nano interface"
+        protocol: satellite
+        auth: anon
+        bridgeMode: true
+        url: satellite://localhost:8500/
+        httpRequestTimeoutSec: 30
+        pollInterval: 15
+        sharedSecret: "This is a shared secret to use"
+        maxInflightEventsPerDevice: 2
+        outboundNamespaceRoot: "/inmarsat/{deviceId}"
+        outboundBroadcast: "/inmarsat/broadcast"
+        baseUrl: "http://localhost:8085/api/v1.0"
+        remoteAuthConfig:
+          username: "ogws client id"
+          password: "ogws client secret"
+        namespaceRoot: "/{deviceId}/"
 
 
 #      - name: NMEA GPS port

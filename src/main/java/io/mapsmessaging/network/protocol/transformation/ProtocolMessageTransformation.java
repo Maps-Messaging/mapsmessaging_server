@@ -23,8 +23,6 @@ import io.mapsmessaging.api.MessageBuilder;
 import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.utilities.service.Service;
 
-import java.util.List;
-
 public interface ProtocolMessageTransformation extends Service {
 
   @Override

@@ -20,10 +20,8 @@
 package io.mapsmessaging.network.protocol.impl.satellite.gateway.inmarsat.protocol.endpoints;
 
 import com.google.gson.Gson;
-import io.mapsmessaging.network.protocol.impl.satellite.gateway.inmarsat.protocol.model.ChangeModeCommand;
 import io.mapsmessaging.network.protocol.impl.satellite.gateway.inmarsat.protocol.model.MobileTerminatedSubmitResponse;
 import io.mapsmessaging.network.protocol.impl.satellite.gateway.inmarsat.protocol.model.MuteCommand;
-import io.mapsmessaging.network.protocol.impl.satellite.gateway.inmarsat.protocol.model.ResetCommand;
 
 import java.net.URI;
 import java.net.http.HttpClient;

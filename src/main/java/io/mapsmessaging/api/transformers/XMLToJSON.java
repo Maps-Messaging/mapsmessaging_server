@@ -21,7 +21,6 @@ package io.mapsmessaging.api.transformers;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.dataformat.xml.XmlMapper;
-import com.google.gson.JsonObject;
 import io.mapsmessaging.api.MessageBuilder;
 import io.mapsmessaging.configuration.ConfigurationProperties;
 import io.mapsmessaging.logging.Logger;

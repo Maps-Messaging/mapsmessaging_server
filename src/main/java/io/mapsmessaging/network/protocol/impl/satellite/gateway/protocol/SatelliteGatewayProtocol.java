@@ -204,7 +204,7 @@ public class SatelliteGatewayProtocol extends Protocol {
       payload[0] = (byte)sin;
       payload[1] = 0;
       System.arraycopy(tmp, 0, payload, 2, tmp.length);
-      messageData.setPayload(tmp);
+      messageData.setPayload(payload);
       messageData.setCompletionCallback(messageEvent.getCompletionTask());
 
       ((SatelliteEndPoint) endPoint).sendMessage(messageData);
@@ -322,29 +322,33 @@ public class SatelliteGatewayProtocol extends Protocol {
   }
 
   public void handleIncomingMessage(MessageData message) throws ExecutionException, InterruptedException {
-    byte[] raw = message.getPayload();
-    byte sin = raw[0];
-    byte[] tmp = new byte[raw.length - 2];
-    System.arraycopy(raw, 2, tmp, 0, tmp.length);
-    SatelliteMessage satelliteMessage = new SatelliteMessage(sin, tmp);
-    if(satelliteMessage.isRaw()){
-      String path = namespacePath;
-      int val = sin & 0xff;
-      path = path.replace("{sin}", String.valueOf(val));
-      publishMessage(satelliteMessage.getMessage(), path, null);
+    if(message.isCommon()){
+      publishMessage(message.getPayload(), namespacePath, null);
     }
     else {
-      satelliteMessage = messageRebuilder.rebuild(satelliteMessage);
-      if (satelliteMessage != null) {
-        int id = satelliteMessage.getTransformationId();
-        ProtocolMessageTransformation transformation1 = TransformationManager.getInstance().getTransformation(id);
-        try {
-          Map<String, List<byte[]>> receivedEventMap = MessageQueueUnpacker.unpack(satelliteMessage.getMessage(), satelliteMessage.isCompressed(), cipherManager);
-          for (Map.Entry<String, List<byte[]>> entry : receivedEventMap.entrySet()) {
-            publishEvents(entry.getKey(), entry.getValue(), transformation1);
+      byte[] raw = message.getPayload();
+      byte sin = raw[0];
+      byte[] tmp = new byte[raw.length - 2];
+      System.arraycopy(raw, 2, tmp, 0, tmp.length);
+      SatelliteMessage satelliteMessage = new SatelliteMessage(sin, tmp);
+      if (satelliteMessage.isRaw()) {
+        String path = namespacePath;
+        int val = sin & 0xff;
+        path = path.replace("{sin}", String.valueOf(val));
+        publishMessage(satelliteMessage.getMessage(), path, null);
+      } else {
+        satelliteMessage = messageRebuilder.rebuild(satelliteMessage);
+        if (satelliteMessage != null) {
+          int id = satelliteMessage.getTransformationId();
+          ProtocolMessageTransformation transformation1 = TransformationManager.getInstance().getTransformation(id);
+          try {
+            Map<String, List<byte[]>> receivedEventMap = MessageQueueUnpacker.unpack(satelliteMessage.getMessage(), satelliteMessage.isCompressed(), cipherManager);
+            for (Map.Entry<String, List<byte[]>> entry : receivedEventMap.entrySet()) {
+              publishEvents(entry.getKey(), entry.getValue(), transformation1);
+            }
+          } catch (IOException e) {
+            logger.log(INMARSAT_FAILED_PROCESSING_INCOMING, e);
           }
-        } catch (IOException e) {
-          logger.log(INMARSAT_FAILED_PROCESSING_INCOMING, e);
         }
       }
     }

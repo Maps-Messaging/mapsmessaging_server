@@ -54,3 +54,57 @@ NetworkConnectionManager:
               managerFactory: SunX509
 
     data:
+    - name: "ST2100 Modem"
+      url: serial://localhost:0/
+      protocol: stogi
+      transformation: "Message-Raw"
+      initialSetup: ""                         # optional init string sent at startup
+      incomingMessagePollInterval: 1           # seconds, minimum = 1
+      outgoingMessagePollInterval: 20          # seconds, minimum = 15 recommended
+      sharedSecret: "This is a shared secret to use"
+      sendHighPriorityMessages: false
+      modemResponseTimeout: 20000              # ms
+      locationPollInterval: 60                 # seconds, GNSS/visibility state updates
+      maxBufferSize: 4000
+      compressionCutoffSize: 128
+      modemStatsTopic: "/modem/stats"
+      bridgeMode: false                        # if true, send raw byte[] with no modifications
+
+      remote:
+        sessionId: <optional>                  # not required for this link
+        username: <optional>
+        password: <optional>
+
+      links:
+        - direction: push
+          local_namespace: "/vessel/+/engine/rpm"
+          remote_namespace: "/satellite/engine/rpm"
+          include_schema: true
+          selector: "rpm > 5000"
+
+        - direction: push
+          local_namespace: "/vessel/+/engine/vibration"
+          remote_namespace: "/satellite/engine/anomalies"
+          include_schema: true
+          namespaceFilters:
+            - namespace: /vessel/
+              depth: 5
+
+        - direction: push
+          local_namespace: "/sensors/+/temperature"
+          remote_namespace: "/satellite/anomalies"
+          include_schema: false
+          namespaceFilters:
+            - namespace: /sensors/mess/
+              selector: temperature > 30 OR temperature < 17
+              depth: 1
+            - namespace: /sensors/engineroom/
+              depth: 10
+
+      serial:
+        port: "com6"
+        baudRate: 9600
+        dataBits: 8
+        stopBits: 1
+        parity: n
+        flowControl: 0

@@ -25,6 +25,7 @@ import lombok.Data;
 public class MessageData {
   private String uniqueId;
   private byte[] payload;
+  private boolean common = false;
 
   private transient Runnable completionCallback;
 }

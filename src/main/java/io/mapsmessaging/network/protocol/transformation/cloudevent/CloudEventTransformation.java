@@ -20,7 +20,6 @@
 package io.mapsmessaging.network.protocol.transformation.cloudevent;
 
 import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
 import io.mapsmessaging.MessageDaemon;
 import io.mapsmessaging.api.MessageBuilder;
 import io.mapsmessaging.api.message.Message;

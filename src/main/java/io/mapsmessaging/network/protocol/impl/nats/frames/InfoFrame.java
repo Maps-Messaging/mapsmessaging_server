@@ -19,7 +19,6 @@
 
 package io.mapsmessaging.network.protocol.impl.nats.frames;
 
-import com.google.gson.Gson;
 import io.mapsmessaging.MessageDaemon;
 import io.mapsmessaging.network.io.Packet;
 import io.mapsmessaging.utilities.GsonFactory;
