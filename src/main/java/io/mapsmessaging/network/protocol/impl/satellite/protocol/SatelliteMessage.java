@@ -46,7 +46,13 @@ public class SatelliteMessage {
 
   public SatelliteMessage(int streamNumber, byte[] incomingPackedMessage) {
     this.streamNumber = streamNumber;
-    unpackFromReceived(incomingPackedMessage);
+    if(streamNumber<127){
+      message = incomingPackedMessage;
+      raw = true;
+    }
+    else {
+      unpackFromReceived(incomingPackedMessage);
+    }
   }
 
   public byte[] packToSend() {
