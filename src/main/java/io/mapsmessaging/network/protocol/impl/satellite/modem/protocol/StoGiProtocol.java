@@ -96,6 +96,8 @@ public class StoGiProtocol extends Protocol implements Consumer<Packet> {
   private final StatsManager statsManager;
   private final boolean sendHighPriorityEvents;
 
+  private final String rawMessageTopic;
+
   private boolean satelliteOnline;
   private int satelliteOnlineCount;
 
@@ -163,6 +165,8 @@ public class StoGiProtocol extends Protocol implements Consumer<Packet> {
 
     messagePoll = modemConfig.getIncomingMessagePollInterval() * 1000;
     outgoingMessagePollInterval = modemConfig.getOutgoingMessagePollInterval() * 1000;
+    rawMessageTopic = modemConfig.getModemRawMessages();
+
     completedConnection();
     String statsDestination = modemConfig.getModemStatsTopic();
     if (statsDestination != null && !statsDestination.isEmpty()) {
@@ -506,7 +510,10 @@ public class StoGiProtocol extends Protocol implements Consumer<Packet> {
       if (message != null) {
         SatelliteMessage loaded = new SatelliteMessage(message.getSin(), message.getPayload());
         if(loaded.isRaw()){
-          sendMessageToTopic("/incoming", loaded.getMessage());
+          String tmp = rawMessageTopic;
+          tmp = tmp.replace("{sin}", Integer.toString(loaded.getStreamNumber()));
+          tmp = tmp.replace("{min}", Integer.toString(message.getMin()));
+          sendMessageToTopic(tmp, loaded.getMessage());
         }
         else {
           SatelliteMessage satelliteMessage = satelliteMessageRebuilder.rebuild(loaded);
