@@ -773,7 +773,7 @@ public enum ServerLogMessages implements LogMessage {
   STOGI_STARTED_SESSION(LEVEL.WARN, SERVER_CATEGORY.NETWORK, "Successfully started modem session, detected modem type {}, read intervals of {} ms and write intervals of {} ms"),
   STOGI_ENCRYPTION_STATUS(LEVEL.WARN, SERVER_CATEGORY.NETWORK, "Encryption is {} for {}"),
   STOGI_POLL_FOR_ACTIONS(LEVEL.DEBUG, SERVER_CATEGORY.NETWORK, "Polled for actions took {} ms, next poll in {} ms"),
-  STOGI_POLL_RAISED_EXCEPTION(LEVEL.DEBUG, SERVER_CATEGORY.NETWORK, "Polling for action resulted in an exception"),
+  STOGI_POLL_RAISED_EXCEPTION(LEVEL.FATAL, SERVER_CATEGORY.NETWORK, "Polling for action resulted in an exception"),
   STOGI_SEND_AT_MESSAGE(LEVEL.DEBUG, SERVER_CATEGORY.NETWORK, "Sending to modem: {} "),
   STOGI_RECEIVED_AT_MESSAGE(LEVEL.DEBUG, SERVER_CATEGORY.NETWORK, "Received from modem : {}"),
   STOGI_SATELLITES_STATUS_CHANGE(LEVEL.FATAL, SERVER_CATEGORY.NETWORK, "Satellite transmission status has changed to {}"),

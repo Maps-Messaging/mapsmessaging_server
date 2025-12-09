@@ -463,7 +463,8 @@ public class StoGiProtocol extends Protocol implements Consumer<Packet> {
   private void buildSendList(Map<String, List<byte[]>> replacement) throws IOException {
     if(!replacement.isEmpty()){
       MessageQueuePacker.Packed packedQueue = MessageQueuePacker.pack(replacement, compressionThreshold, cipherManager, protocolMessageTransformation);
-      currentList.addAll(SatelliteMessageFactory.createMessages(currentStreamId,  packedQueue.data(), maxBufferSize, packedQueue.compressed(), (byte) protocolMessageTransformation.getId()));
+      int v = protocolMessageTransformation == null? 0: protocolMessageTransformation.getId();
+      currentList.addAll(SatelliteMessageFactory.createMessages(currentStreamId,  packedQueue.data(), maxBufferSize, packedQueue.compressed(), (byte)v));
       currentStreamId++;
     }
   }
