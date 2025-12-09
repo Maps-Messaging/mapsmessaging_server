@@ -36,8 +36,8 @@ public class StoGiConfig extends StoGiConfigDTO implements Config {
     outgoingMessagePollInterval = config.getLongProperty("outgoingMessagePollInterval", 60);
     modemResponseTimeout = config.getLongProperty("modemResponseTimeout", 5000);
     locationPollInterval = config.getLongProperty("locationPollInterval", 0);
-    modemStatsTopic = config.getProperty("modemStatsTopic", "");
-    maxBufferSize = config.getIntProperty("maxBufferSize", 4000);
+    modemRawMessages = config.getProperty("modemRawMessages", "/incoming/{sin}/{min}");
+    modemStatsTopic = config.getProperty("modemStatsTopic", "/modem/stats");    maxBufferSize = config.getIntProperty("maxBufferSize", 4000);
     compressionCutoffSize = config.getIntProperty("compressionCutoffSize", 128);
     messageLifeTimeInMinutes = config.getIntProperty("messageLifeTimeInMinutes", 10);
     sharedSecret = config.getProperty("sharedSecret", "");
@@ -53,6 +53,10 @@ public class StoGiConfig extends StoGiConfigDTO implements Config {
       result = ((SerialConfig)serial).update(config) || result;
       if(!modemStatsTopic.equals(orbCommConfig.getModemStatsTopic())){
         modemStatsTopic = orbCommConfig.getModemStatsTopic();
+        result = true;
+      }
+      if(!modemRawMessages.equals(orbCommConfig.getModemRawMessages())){
+        modemRawMessages = orbCommConfig.getModemRawMessages();
         result = true;
       }
       if(!initialSetup.equalsIgnoreCase(orbCommConfig.getInitialSetup())){
@@ -121,6 +125,8 @@ public class StoGiConfig extends StoGiConfigDTO implements Config {
     properties.put("sharedSecret", sharedSecret);
     properties.put("sendHighPriorityMessages", sendHighPriorityMessages);
     properties.put("bridgeMode", bridgeMode);
+    properties.put("modemStatsTopic", modemStatsTopic);
+    properties.put("modemRawMessages", modemRawMessages);
     return properties;
   }
 }
