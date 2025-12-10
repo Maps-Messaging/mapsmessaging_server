@@ -73,7 +73,7 @@ public class Message implements IdentifierResolver, Storable {
   private final byte[] correlationData;
   @Getter
   private final byte[] opaqueData;
-  @Getter
+
   private final Map<String, String> meta;
   @Getter
   private final Map<String, TypedData> dataMap;
@@ -302,6 +302,10 @@ public class Message implements IdentifierResolver, Storable {
       }
     }
     return packed;
+  }
+
+  public Map<String, String> getMeta(){
+    return meta == null ? Map.of() : meta;
   }
 
 
