@@ -273,6 +273,7 @@ public abstract class Protocol implements SelectorCallback, MessageListener, Tim
       StatisticsConfigDTO statistics = resourceNameAnalyserMap.get(subInfo.getAlias());
       if(statistics != null){
         analyser = AnalyserFactory.getInstance().getAnalyser(statistics);
+        topicNameAnalyserMap.put(parsedMessage.destinationName, analyser);
       }
     }
     Message msg = parsedMessage.getMessage();

@@ -209,14 +209,12 @@ public class DestinationImpl implements BaseDestination {
     schemaSubscriptionManager = new DestinationSubscriptionManager(name);
     this.resource = resource;
     retainManager = new RetainManager(isPersistent(), getPhysicalLocation());
-
     stats = new DestinationStats(StatsFactory.getDefaultType());
     resourceStatistics = new ResourceStatistics(resource,StatsFactory.getDefaultType());
     destinationJMXBean = new DestinationJMX(this, resourceTaskQueue, subscriptionTaskQueue);
     sharedSubscriptionRegistry = new SharedSubscriptionRegister();
-    schema = new Schema(SchemaManager.getInstance().locateSchema(name));
+    schema = new Schema(SchemaManager.getInstance().getSchema(resource.getResourceProperties().getSchemaId()));
     completionQueue = new EventReaperQueue();
-
     if(resource.getResourceProperties().getSchemaId() == null){
       SchemaConfig config = SchemaManager.getInstance().getSchema(SchemaManager.DEFAULT_RAW_UUID);
       updateSchema(config, null);
@@ -304,7 +302,7 @@ public class DestinationImpl implements BaseDestination {
   private void loadSchema() throws IOException {
     String schemaId = resource.getResourceProperties().getSchemaId();
     SchemaConfig schemaConfig = null;
-    if(resource.getResourceProperties().getSchema() != null){
+    if(resource.getResourceProperties().getSchema() != null && !resource.getResourceProperties().getSchema().isEmpty()){
       // Old version lets update
       ConfigurationProperties props = new ConfigurationProperties(resource.getResourceProperties().getSchema());
       if (!props.isEmpty()) {
