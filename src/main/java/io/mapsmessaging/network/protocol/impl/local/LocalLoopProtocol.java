@@ -135,7 +135,7 @@ public class LocalLoopProtocol extends Protocol {
   @Override
   public void subscribeLocal(@NonNull @NotNull String resource, @NonNull @NotNull String mappedResource, @NonNull @NotNull QualityOfService qos, String selector, @Nullable InterServerTransformation transformer, @Nullable NamespaceFilters namespaceFilters, StatisticsConfigDTO statistics) throws IOException {
     super.subscribeLocal(resource, mappedResource, qos, selector, transformer, namespaceFilters, statistics);
-    SubscriptionContextBuilder builder = createSubscriptionContextBuilder(resource, selector, QualityOfService.AT_LEAST_ONCE, 1024);
+    SubscriptionContextBuilder builder = createSubscriptionContextBuilder(resource, selector, QualityOfService.AT_MOST_ONCE, 1024);
     session.addSubscription(builder.build());
     session.resumeState();
     logger.log(ServerLogMessages.LOOP_SUBSCRIBED, resource, mappedResource);
