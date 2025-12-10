@@ -804,6 +804,9 @@ public enum ServerLogMessages implements LogMessage {
   SWITCH_REQUESTED(LEVEL.WARN, SERVER_CATEGORY.NETWORK, "Switch requested to{}, reason={}"),
   EXCEPTION_DURING_EVALUATION(LEVEL.ERROR, SERVER_CATEGORY.NETWORK, "Exception during link evaluation: {}"),
 
+
+  STATISTICS_UNKNOWN_NAME(LEVEL.FATAL, SERVER_CATEGORY.PROTOCOL, "Unknown statistics name found {}, defaulting to {}"),
+
   //-------------------------------------------------------------------------------------------------------------
   LAST_LOG_MESSAGE(LEVEL.DEBUG, SERVER_CATEGORY.PROTOCOL, "Last message to make it simpler to add more");
 

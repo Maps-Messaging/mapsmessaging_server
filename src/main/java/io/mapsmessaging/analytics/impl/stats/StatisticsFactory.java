@@ -20,9 +20,14 @@
 package io.mapsmessaging.analytics.impl.stats;
 
 
+import io.mapsmessaging.logging.Logger;
+import io.mapsmessaging.logging.LoggerFactory;
+
 import java.util.Map;
 import java.util.ServiceLoader;
 import java.util.concurrent.ConcurrentHashMap;
+
+import static io.mapsmessaging.logging.ServerLogMessages.STATISTICS_UNKNOWN_NAME;
 
 public class StatisticsFactory {
 
@@ -34,6 +39,9 @@ public class StatisticsFactory {
   public static StatisticsFactory getInstance() {
     return StatisticsFactory.Holder.INSTANCE;
   }
+
+
+  private final Logger logger = LoggerFactory.getLogger(StatisticsFactory.class);
 
   private final Map<String, Statistics> statistics;
 
@@ -50,6 +58,7 @@ public class StatisticsFactory {
     if(statistic != null) {
       return statistic.create();
     }
-    return null;
+    logger.log(STATISTICS_UNKNOWN_NAME, statisticsName, "Base");
+    return statistics.get("Base");
   }
 }
