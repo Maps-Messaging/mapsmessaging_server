@@ -119,7 +119,7 @@ public class SchemaManager implements Agent {
     MessageFormatter formatter = loadedFormatter.get(uniqueId);
     if(formatter == null){
       SchemaConfig schemaConfig = getSchema(uniqueId);
-      if(schemaConfig == null) {
+      if(schemaConfig != null) {
         try {
           formatter = MessageFormatterFactory.getInstance().getFormatter(schemaConfig);
           loadedFormatter.put(schemaConfig.getUniqueId(), formatter);
