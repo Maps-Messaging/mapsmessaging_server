@@ -47,6 +47,9 @@ public class StoGiConfigDTO extends BaseSatelliteConfigDTO {
   protected String modemStatsTopic;
 
   @Schema(description = "If present, then the name of the topic that will be used to send raw messages to", example = "/incoming/{sin}/{min}", defaultValue = "/incoming/{sin}/{min}")
-  protected String modemRawMessages;
+  protected String modemRawRequest;
+
+  @Schema(description = "If present, then the name of the topic that will be used monitor for response and send directly to the modem", example = "/outbound", defaultValue = "/outbound")
+  protected String modemRawResponse;
 
 }

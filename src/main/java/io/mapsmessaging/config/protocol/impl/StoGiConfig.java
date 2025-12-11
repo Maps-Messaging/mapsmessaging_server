@@ -36,7 +36,8 @@ public class StoGiConfig extends StoGiConfigDTO implements Config {
     outgoingMessagePollInterval = config.getLongProperty("outgoingMessagePollInterval", 60);
     modemResponseTimeout = config.getLongProperty("modemResponseTimeout", 5000);
     locationPollInterval = config.getLongProperty("locationPollInterval", 0);
-    modemRawMessages = config.getProperty("modemRawMessages", "/incoming/{sin}/{min}");
+    modemRawRequest = config.getProperty("modemRawRequest", "/incoming/{sin}/{min}");
+    modemRawResponse = config.getProperty("modemRawResponse", "/outgoing");
     modemStatsTopic = config.getProperty("modemStatsTopic", "/modem/stats");
     maxBufferSize = config.getIntProperty("maxBufferSize", 4000);
     compressionCutoffSize = config.getIntProperty("compressionCutoffSize", 128);
