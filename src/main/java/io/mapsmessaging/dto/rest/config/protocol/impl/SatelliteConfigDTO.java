@@ -39,6 +39,9 @@ public class SatelliteConfigDTO extends BaseSatelliteConfigDTO {
   @Schema(description = "Max number of events to be in flight per each modems")
   protected int maxInflightEventsPerDevice;
 
+  @Schema(description = "Namespace path for inbound response topic mapping for individual modems")
+  protected String inboundNamespaceRoot;
+
   @Schema(description = "Namespace path for outbound topic mapping for individual modems")
   protected String outboundNamespaceRoot;
 
@@ -51,7 +54,7 @@ public class SatelliteConfigDTO extends BaseSatelliteConfigDTO {
   @Schema(description = "Mailbox password")
   protected String mailboxPassword;
 
-  @Schema(description = "Namespace root for the mailbox")
+  @Schema(description = "Namespace root for the mailbox to override remote MAPS message names", example="/{deviceId}", defaultValue = "")
   protected String namespace;
 
   @Schema(description = "Device Info update time in minutes")
