@@ -46,8 +46,14 @@ public class CommonMessage {
   @SerializedName("MessageLifetime")
   private int messageLifetime = 24; // Hours
 
-  @SerializedName("MessageCLass")
+  @SerializedName("MessageClass")
   private int messageClass = 2; // normal
+
+  @SerializedName("SIN")
+  private int sin = 0;
+
+  @SerializedName("MIN")
+  private int min = 0;
 
   @SerializedName("Fields")
   private List<Field> fields;

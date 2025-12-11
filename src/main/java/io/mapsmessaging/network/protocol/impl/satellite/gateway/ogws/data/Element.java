@@ -24,6 +24,8 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.List;
+
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -37,4 +39,7 @@ public class Element {
 
   @SerializedName("Value")
   private String value; // actual value (string, number, base64, etc.)
+
+  @SerializedName("Fields")
+  private List<Field> fields;
 }
