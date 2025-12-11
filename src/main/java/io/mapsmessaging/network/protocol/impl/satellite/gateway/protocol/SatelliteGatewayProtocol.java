@@ -195,11 +195,12 @@ public class SatelliteGatewayProtocol extends Protocol {
 
   @Override
   public void sendMessage(@NotNull @NonNull MessageEvent messageEvent) {
-    if (bridgeMode) {
+    if (bridgeMode || messageEvent.getDestinationName().endsWith("request")) {
       MessageData messageData = new MessageData();
       byte[] tmp = messageEvent.getMessage().getOpaqueData();
       int sin = tmp[0] & 0xFF;
       int min = tmp[1] & 0xFF;
+      messageData.setPayload(tmp);
       messageData.setCompletionCallback(messageEvent.getCompletionTask());
       ((SatelliteEndPoint) endPoint).sendMessage(messageData);
       logger.log(SATELLITE_SENT_RAW_MESSAGE, Integer.toString(sin),  Integer.toString(min), tmp.length );
@@ -323,7 +324,14 @@ public class SatelliteGatewayProtocol extends Protocol {
 
   public void handleIncomingMessage(MessageData message) throws ExecutionException, InterruptedException {
     if(message.isCommon()){
-      publishMessage(message.getPayload(), namespacePath, null);
+      byte[] raw = message.getPayload();
+      int sin = message.getSin() & 0xff;
+      int min = message.getMin() & 0xff;
+      String path = namespacePath;
+      path = path.replace("{sin}", String.valueOf(sin));
+      path = path.replace("{min}", String.valueOf(min));
+      logger.log(SATELLITE_RECEIVED_RAW_MESSAGE, sin, min, raw.length, path);
+      publishMessage(message.getPayload(), path, null);
     }
     else {
       byte[] raw = message.getPayload();
