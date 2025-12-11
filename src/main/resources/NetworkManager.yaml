@@ -190,32 +190,3 @@ NetworkManager:
         maxBlockSize: 512
         ssl_SSLContext: DTLS
         auth: default
-
-
-      - name: "Inmarsat Iot nano interface"
-        protocol: satellite
-        auth: anon
-        bridgeMode: true
-        url: satellite://localhost:8500/
-        httpRequestTimeoutSec: 30
-        pollInterval: 15
-        sharedSecret: "This is a shared secret to use"
-        maxInflightEventsPerDevice: 2
-        outboundNamespaceRoot: "/inmarsat/{deviceId}"
-        outboundBroadcast: "/inmarsat/broadcast"
-        baseUrl: "http://localhost:8085/api/v1.0"
-        remoteAuthConfig:
-          username: "ogws client id"
-          password: "ogws client secret"
-        namespaceRoot: "/{deviceId}/"
-
-
-#      - name: NMEA GPS port
-#        url: serial://ttyUSB0,9600,8,N,1/
-#        port: ttyUSB0
-#        baudRate: 9600
-#        dataBits: 8
-#        stopBits: 1
-#        parity: n
-#        protocol: NMEA
-#        selectorThreadCount: 1
