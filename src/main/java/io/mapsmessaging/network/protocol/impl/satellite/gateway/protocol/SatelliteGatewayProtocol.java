@@ -74,6 +74,7 @@ public class SatelliteGatewayProtocol extends Protocol {
   private final boolean bridgeMode;
 
   private String namespacePath;
+  private String incomingNamespacePath;
   private long nextOutgoingTime;
   private ScheduledFuture<?> scheduledFuture;
   private boolean closed;
@@ -124,13 +125,8 @@ public class SatelliteGatewayProtocol extends Protocol {
           .setNoLocalMessages(true);
       session.addSubscription(subBuilder.build());
     }
-    namespacePath = config.getNamespace();
-    if(namespacePath == null || namespacePath.isEmpty()){
-      namespacePath = "/incoming/{mailboxId}/{deviceId}/{sin}";
-    }
-    namespacePath = namespacePath.replace("{deviceId}", primeId);
-    namespacePath = namespacePath.replace("{mailboxId}", config.getMailboxId());
-
+    namespacePath = parsePath(config.getNamespace(), "", primeId, config.getMailboxId());
+    incomingNamespacePath = parsePath(config.getInboundNamespaceRoot(), "/incoming/{mailboxId}/{deviceId}/{sin}", primeId, config.getMailboxId());
     String bcast = config.getOutboundBroadcast();
     if(bcast != null && !bcast.isEmpty()){
       SubscriptionContextBuilder subBuilder = new SubscriptionContextBuilder(bcast, ClientAcknowledgement.AUTO);
@@ -142,6 +138,14 @@ public class SatelliteGatewayProtocol extends Protocol {
     ((SatelliteEndPoint) endPoint).unmute();
     nextOutgoingTime = System.currentTimeMillis() + outgoingPollInterval;
     scheduledFuture = taskManager.schedule(this::processOutstandingMessages, 15, TimeUnit.SECONDS);
+  }
+
+  private String parsePath(String path, String defaultValue, String primeId, String mailboxId){
+    if(path == null || path.isEmpty()){
+      path = defaultValue;
+    }
+    path = path.replace("{deviceId}", primeId);
+    return path.replace("{mailboxId}", mailboxId);
   }
 
   @Override
@@ -323,25 +327,24 @@ public class SatelliteGatewayProtocol extends Protocol {
   }
 
   public void handleIncomingMessage(MessageData message) throws ExecutionException, InterruptedException {
+    byte[] raw = message.getPayload();
     if(message.isCommon()){
-      byte[] raw = message.getPayload();
       int sin = message.getSin() & 0xff;
       int min = message.getMin() & 0xff;
-      String path = namespacePath;
+      String path = incomingNamespacePath;
       path = path.replace("{sin}", String.valueOf(sin));
       path = path.replace("{min}", String.valueOf(min));
       logger.log(SATELLITE_RECEIVED_RAW_MESSAGE, sin, min, raw.length, path);
       publishMessage(message.getPayload(), path, null);
     }
     else {
-      byte[] raw = message.getPayload();
       int sin = raw[0] & 0xff;
       int min = raw[1] & 0xff;
       byte[] tmp = new byte[raw.length - 2];
       System.arraycopy(raw, 2, tmp, 0, tmp.length);
       SatelliteMessage satelliteMessage = new SatelliteMessage(sin, tmp);
       if (satelliteMessage.isRaw()) {
-        String path = namespacePath;
+        String path = incomingNamespacePath;
         path = path.replace("{sin}", String.valueOf(sin));
         path = path.replace("{min}", String.valueOf(min));
         logger.log(SATELLITE_RECEIVED_RAW_MESSAGE, sin, min, raw.length, path);
@@ -358,7 +361,12 @@ public class SatelliteGatewayProtocol extends Protocol {
             for (Map.Entry<String, List<byte[]>> entry : receivedEventMap.entrySet()) {
               destinationCount++;
               messageCount += entry.getValue().size();
-              publishEvents(entry.getKey(), entry.getValue(), transformation1);
+              String topic = entry.getKey();
+              if(namespacePath != null && !namespacePath.isEmpty()){
+                topic = namespacePath + "/" + topic;
+                topic = topic.replace("//", "/"); // to be sure
+              }
+              publishEvents(topic, entry.getValue(), transformation1);
             }
             logger.log(SATELLITE_RECEIVED_PACKED_MESSAGE, destinationCount, messageCount, raw.length, message.getPayload().length);
           } catch (IOException e) {

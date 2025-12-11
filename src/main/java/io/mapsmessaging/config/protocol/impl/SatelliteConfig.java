@@ -37,7 +37,9 @@ public class SatelliteConfig extends SatelliteConfigDTO implements Config {
     outgoingMessagePollInterval = config.getIntProperty("outgoingMessagePollInterval", 60);
     httpRequestTimeout = config.getIntProperty("httpRequestTimeoutSec", 30);
     maxInflightEventsPerDevice = config.getIntProperty("maxInflightEventsPerDevice", 2);
-    outboundNamespaceRoot = config.getProperty("outboundNamespaceRoot", "");
+    namespace = config.getProperty("namespaceRoot", "");
+    inboundNamespaceRoot = config.getProperty("inboundNamespaceRoot", "/incoming/{deviceId}/{sin}/{min}");
+    outboundNamespaceRoot = config.getProperty("outboundNamespaceRoot", "/outgoing/{deviceId}/#");
     outboundBroadcast = config.getProperty("outboundBroadcast", "");
     deviceInfoUpdateMinutes = config.getIntProperty("deviceInfoUpdateMinutes", 15);
     maxBufferSize = config.getIntProperty("maxBufferSize", 4000);
@@ -60,7 +62,6 @@ public class SatelliteConfig extends SatelliteConfigDTO implements Config {
     // This is optional and used for ViaSat
     mailboxId = config.getProperty("mailboxId", "");
     mailboxPassword = config.getProperty("mailboxPassword", "");
-    namespace = config.getProperty("namespaceRoot", "");
   }
 
 
