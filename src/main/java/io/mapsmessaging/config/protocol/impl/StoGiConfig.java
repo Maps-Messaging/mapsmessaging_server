@@ -44,7 +44,7 @@ public class StoGiConfig extends StoGiConfigDTO implements Config {
     messageLifeTimeInMinutes = config.getIntProperty("messageLifeTimeInMinutes", 10);
     sharedSecret = config.getProperty("sharedSecret", "");
     sendHighPriorityMessages = config.getBooleanProperty("sendHighPriorityMessages", false);
-    bridgeMode = config.getBooleanProperty("bridgeMode", false);
+    sinNumber = config.getIntProperty("sinNumber", 147);
   }
 
   @Override
@@ -57,6 +57,11 @@ public class StoGiConfig extends StoGiConfigDTO implements Config {
         modemStatsTopic = orbCommConfig.getModemStatsTopic();
         result = true;
       }
+      if(sinNumber != orbCommConfig.getSinNumber()){
+        sinNumber = orbCommConfig.getSinNumber();
+        result = true;
+      }
+
       if(!initialSetup.equalsIgnoreCase(orbCommConfig.getInitialSetup())){
         initialSetup = orbCommConfig.getInitialSetup();
         result = true;
@@ -97,10 +102,6 @@ public class StoGiConfig extends StoGiConfigDTO implements Config {
         sharedSecret = orbCommConfig.getSharedSecret();
         result = true;
       }
-      if(bridgeMode != orbCommConfig.isBridgeMode()){
-        bridgeMode = orbCommConfig.isBridgeMode();
-        result = true;
-      }
     }
     return result;
   }
@@ -122,7 +123,7 @@ public class StoGiConfig extends StoGiConfigDTO implements Config {
     properties.put("messageLifeTimeInMinutes", messageLifeTimeInMinutes);
     properties.put("sharedSecret", sharedSecret);
     properties.put("sendHighPriorityMessages", sendHighPriorityMessages);
-    properties.put("bridgeMode", bridgeMode);
+    properties.put("sinNumber", sinNumber);
     return properties;
   }
 }

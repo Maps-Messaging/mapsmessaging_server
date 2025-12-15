@@ -19,6 +19,7 @@
 
 package io.mapsmessaging.network.protocol.impl.satellite.gateway.inmarsat;
 
+import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import io.mapsmessaging.dto.rest.config.protocol.impl.SatelliteConfigDTO;
 import io.mapsmessaging.network.protocol.impl.satellite.gateway.inmarsat.protocol.model.Item;
@@ -32,6 +33,7 @@ import io.mapsmessaging.network.protocol.impl.satellite.gateway.model.RemoteDevi
 
 import java.io.IOException;
 import java.util.*;
+import java.util.stream.Collectors;
 
 public class InmarsatClient implements SatelliteClient {
 
@@ -92,16 +94,41 @@ public class InmarsatClient implements SatelliteClient {
       }
       List<JsonObject> msgs = moResponse.getMessages();
       for (JsonObject msg : msgs) {
-        if (msg.has("payloadRaw") && !msg.get("payloadRaw").isJsonNull()) {
+        MessageData data = new MessageData();
+        if(msg.has("payloadJson") && !msg.get("payloadJson").isJsonNull()) {
+          JsonObject payloadJson = msg.get("payloadJson").getAsJsonObject();
+          data.setPayload(payloadJson.toString().getBytes());
+          if(payloadJson.has("SIN")){
+            data.setSin(payloadJson.get("SIN").getAsInt());
+          }
+          if(payloadJson.has("MIN")){
+            data.setMin(payloadJson.get("MIN").getAsInt());
+          }
+          data.setCommon(true);
+        } else if (msg.has("payloadRaw") && !msg.get("payloadRaw").isJsonNull()) {
           String rawBase64 = msg.get("payloadRaw").getAsString();
           byte[] payload = Base64.getDecoder().decode(rawBase64);
-          MessageData data = new MessageData();
-          data.setPayload(payload);
-          if (msg.has("deviceId")) {
-            data.setUniqueId(msg.get("deviceId").getAsString());
+          if (payload != null && payload.length > 2) {
+            data.setSin(payload[0]);
+            data.setMin(payload[1]);
           }
-          queue.add(data);
+          data.setPayload(payload);
+          Map<String, JsonElement> map = msg.asMap();
+          map.remove("payloadRaw");
+          Map<String, String> stringMap =
+              map.entrySet()
+                  .stream()
+                  .filter(entry -> entry.getValue() != null && !entry.getValue().isJsonNull())
+                  .collect(Collectors.toMap(
+                      Map.Entry::getKey,
+                      entry -> entry.getValue().getAsString()
+                  ));
+          data.setMeta(stringMap);
         }
+        if (msg.has("deviceId")) {
+          data.setUniqueId(msg.get("deviceId").getAsString());
+        }
+        queue.add(data);
       }
     }
     return queue;

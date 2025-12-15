@@ -47,7 +47,7 @@ public class SatelliteConfig extends SatelliteConfigDTO implements Config {
     messageLifeTimeInMinutes = config.getIntProperty("messageLifeTimeInMinutes", 10);
     sharedSecret = config.getProperty("sharedSecret", "");
     sendHighPriorityMessages = config.getBooleanProperty("sendHighPriorityMessages", false);
-    bridgeMode = config.getBooleanProperty("bridgeMode", false);
+    sinNumber = config.getIntProperty("sinNumber", 147);
 
     if(incomingMessagePollInterval <10){
       incomingMessagePollInterval = 10;
@@ -134,8 +134,8 @@ public class SatelliteConfig extends SatelliteConfigDTO implements Config {
         sharedSecret = dto.getSharedSecret();
         changed = true;
       }
-      if(bridgeMode != dto.isBridgeMode()){
-        bridgeMode = dto.isBridgeMode();
+      if(sinNumber != dto.getSinNumber()){
+        sinNumber = dto.getSinNumber();
         changed = true;
       }
     }
@@ -162,7 +162,7 @@ public class SatelliteConfig extends SatelliteConfigDTO implements Config {
     properties.put("messageLifeTimeInMinutes", messageLifeTimeInMinutes);
     properties.put("sharedSecret", sharedSecret);
     properties.put("sendHighPriorityMessages", sendHighPriorityMessages);
-    properties.put("bridgeMode", bridgeMode);
+    properties.put("sinNumber", sinNumber);
     return properties;
   }
 }

@@ -103,6 +103,7 @@ public class GatewayManager {
       }
     }
     catch (RuntimeException| IOException e) {
+      // Todo log this
       // we can try again
       taskManager.schedule(this::initSession, 1, TimeUnit.MINUTES);
     } catch (InterruptedException e) {

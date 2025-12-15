@@ -82,32 +82,31 @@ public class StoGiProtocol extends Protocol implements Consumer<Packet> {
   private final SelectorTask selectorTask;
   private final Modem modem;
   private final SatelliteMessageRebuilder satelliteMessageRebuilder;
-  private final long messagePoll;
-  private final long outgoingMessagePollInterval;
   private final AtomicReference<Map<String, List<byte[]>>> pendingMessages;
   private final AtomicReference<Map<String, List<byte[]>>> priorityMessages;
-  private final int messageLifeTime;
-  private final CipherManager cipherManager;
-  private boolean bridgeMode;
-
-  private final int maxBufferSize;
-  private final int compressionThreshold;
   private final List<SatelliteMessage> currentList;
   private final StatsManager statsManager;
-  private final boolean sendHighPriorityEvents;
+  private final CipherManager cipherManager;
 
   private final String rawMessageTopic;
   private final String rawResponseTopic;
 
-  private boolean satelliteOnline;
-  private int satelliteOnlineCount;
+  private final long messagePoll;
+  private final long outgoingMessagePollInterval;
+
+  private final int sinNumber;
+  private final int maxBufferSize;
+  private final int compressionThreshold;
+  private final int messageLifeTime;
+
+  private final boolean sendHighPriorityEvents;
 
   private ScheduledFuture<?> scheduledFuture;
   private Destination destination;
   private long lastOutgoingMessagePollInterval;
-
-  private int currentStreamId;
+  private int satelliteOnlineCount;
   private int messageId;
+  private boolean satelliteOnline;
 
   public StoGiProtocol(EndPoint endPoint, Packet packet) throws LoginException, IOException {
     super(endPoint, endPoint.getConfig().getProtocolConfig(STOGI));
@@ -116,7 +115,6 @@ public class StoGiProtocol extends Protocol implements Consumer<Packet> {
     taskManager = new TaskManager();
     satelliteMessageRebuilder = new SatelliteMessageRebuilder();
     messageId = 0;
-    currentStreamId = 0;
     currentList = new ArrayList<>();
     pendingMessages = new AtomicReference<>();
     pendingMessages.set(new LinkedHashMap<>());
@@ -144,7 +142,7 @@ public class StoGiProtocol extends Protocol implements Consumer<Packet> {
     setProtocolMessageTransformation(protocolMessageTransformation);
     StoGiConfigDTO modemConfig = (StoGiConfigDTO) getProtocolConfig();
 
-    bridgeMode = modemConfig.isBridgeMode();
+    sinNumber = modemConfig.getSinNumber();
     messageLifeTime = modemConfig.getMessageLifeTimeInMinutes();
     modem = new Modem(this, modemConfig.getModemResponseTimeout(), streamHandler, taskManager);
 
@@ -264,7 +262,7 @@ public class StoGiProtocol extends Protocol implements Consumer<Packet> {
       try {
         subscribeLocal(rawResponseTopic, rawResponseTopic, QualityOfService.AT_MOST_ONCE, null, null, new NamespaceFilters(null), null);
       } catch (IOException e) {
-        e.printStackTrace();
+        // Todo log this!
       }
     }
   }
@@ -288,7 +286,7 @@ public class StoGiProtocol extends Protocol implements Consumer<Packet> {
 
   @Override
   public void sendMessage(@NotNull @NonNull MessageEvent messageEvent) {
-    if (bridgeMode || messageEvent.getDestinationName().startsWith(rawResponseTopic)) {
+    if (messageEvent.getDestinationName().startsWith(rawResponseTopic)) {
       MessageData messageData = new MessageData();
       byte[] data = messageEvent.getMessage().getOpaqueData();
       byte sin = data[0];
@@ -296,8 +294,7 @@ public class StoGiProtocol extends Protocol implements Consumer<Packet> {
       messageData.setPayload(messageEvent.getMessage().getOpaqueData());
       messageData.setCompletionCallback(messageEvent.getCompletionTask());
       SatelliteMessage satelliteMessage = new BypassSatelliteMessage(sin, messageEvent.getMessage().getOpaqueData(), min, false);
-      sendMessageViaModem(currentStreamId, satelliteMessage);
-      currentStreamId++;
+      sendMessageViaModem(sin, satelliteMessage);
     } else {
       preparePackedMessage(messageEvent);
     }
@@ -471,7 +468,7 @@ public class StoGiProtocol extends Protocol implements Consumer<Packet> {
     }
     if(!currentList.isEmpty()){
       SatelliteMessage msg = currentList.removeFirst();
-      sendMessageViaModem(currentStreamId,msg);
+      sendMessageViaModem(sinNumber,msg);
       logger.log(STOGI_SENT_MESSAGE_TO_MODEM, msg.getMessage().length);
     }
     return currentList.isEmpty();
@@ -481,8 +478,7 @@ public class StoGiProtocol extends Protocol implements Consumer<Packet> {
     if(!replacement.isEmpty()){
       MessageQueuePacker.Packed packedQueue = MessageQueuePacker.pack(replacement, compressionThreshold, cipherManager, protocolMessageTransformation);
       int v = protocolMessageTransformation == null? 0: protocolMessageTransformation.getId();
-      currentList.addAll(SatelliteMessageFactory.createMessages(currentStreamId,  packedQueue.data(), maxBufferSize, packedQueue.compressed(), (byte) v));
-      currentStreamId++;
+      currentList.addAll(SatelliteMessageFactory.createMessages(sinNumber,  packedQueue.data(), maxBufferSize, packedQueue.compressed(), (byte) v));
     }
   }
 

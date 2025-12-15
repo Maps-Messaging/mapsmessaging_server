@@ -178,11 +178,7 @@ public class AuthManager implements Agent {
 
   public boolean canAccess(Identity identity, Permission permission, ProtectedResource resource) {
     if(!authorisationEnabled) return true;
-    if(!ResourceTypes.getInstance().getResources().contains(resource.getResourceType())){
-      System.err.println("invalid resource type");
-    }
     boolean result = authenticationStorage.canAccess(identity, permission, resource);
-
     if(!result){
       logger.log(AUTHORISATION_FAILED, identity.getUsername(), permission.getName(), resource.getResourceId());
     }
@@ -237,7 +233,8 @@ public class AuthManager implements Agent {
     config = ConfigurationManager.getInstance().getConfiguration(AuthManagerConfig.class);
     if (config != null) {
       authenticationEnabled = config.isAuthenticationEnabled();
-      authorisationEnabled = config.isAuthorisationEnabled() &&  authenticationEnabled;
+      // todo renable auth
+      authorisationEnabled = false;//config.isAuthorisationEnabled() &&  authenticationEnabled;
     }
     else{
       authenticationEnabled = false;
