@@ -24,6 +24,7 @@ import lombok.Setter;
 
 import java.nio.ByteBuffer;
 
+
 @Getter
 public class SatelliteMessage {
   protected final int streamNumber;
@@ -46,7 +47,13 @@ public class SatelliteMessage {
 
   public SatelliteMessage(int streamNumber, byte[] incomingPackedMessage) {
     this.streamNumber = streamNumber;
-    unpackFromReceived(incomingPackedMessage);
+    if(streamNumber<127){
+      message = incomingPackedMessage;
+      raw = true;
+    }
+    else {
+      unpackFromReceived(incomingPackedMessage);
+    }
   }
 
   public byte[] packToSend() {
