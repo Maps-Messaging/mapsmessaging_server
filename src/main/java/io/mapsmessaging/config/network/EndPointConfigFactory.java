@@ -82,6 +82,11 @@ public class EndPointConfigFactory {
   public static void unpack(ConfigurationProperties config, EndPointServerConfigDTO server) {
     server.setName(config.getProperty("name"));
     server.setUrl(config.getProperty("url"));
+    if(server.getUrl() == null){
+      String url = config.getProperty("protocol")+"://localhost:0";
+      server.setUrl(url);
+    }
+
     server.setBacklog(config.getIntProperty("backlog", 100));
     server.setSelectorTaskWait(config.getIntProperty("taskWait", 10));
     server.setAuthenticationRealm(config.getProperty("auth", ""));
@@ -103,6 +108,8 @@ public class EndPointConfigFactory {
     else{
       loadDefaultProtocols(config, server,"loop");
     }
+
+
   }
 
   private static void loadSpecificProtocols(EndPointServerConfigDTO server, List<ConfigurationProperties> protocolConfig) {
