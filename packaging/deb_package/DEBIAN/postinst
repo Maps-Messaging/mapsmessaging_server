@@ -27,6 +27,9 @@ case "$1" in
     if ! id -u mapsmessaging >/dev/null 2>&1; then
       useradd -r -s /usr/sbin/nologin -d /opt/maps mapsmessaging
     fi
+    getent group dialout >/dev/null 2>&1 || groupadd -r dialout
+    usermod -a -G dialout mapsmessaging
+
 
     # Create dirs
     mkdir -p /etc/maps
