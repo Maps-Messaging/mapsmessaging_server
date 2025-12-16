@@ -68,8 +68,8 @@ public class SatelliteGatewayProtocol extends Protocol {
   private final AtomicReference<Map<String, List<byte[]>>> priorityMessages;
   private final CipherManager cipherManager;
 
-  private final String namespacePath;
-  private final String incomingNamespacePath;
+  private final String mapsIncomingNamespacePath;
+  private final String commonIncomingNamespacePath;
   private final long outgoingPollInterval;
 
   private final int maxBufferSize;
@@ -116,18 +116,31 @@ public class SatelliteGatewayProtocol extends Protocol {
     setKeepAlive(millis + random.nextLong(millis));
     session = SessionManager.getInstance().create(scb.build(), this);
     session.resumeState();
-    String outBoundNamespacePath = config.getOutboundNamespaceRoot().trim();
+    String outBoundNamespacePath = config.getCommonOutboundPublishRoot().trim();
     if(!outBoundNamespacePath.isEmpty()){
       String path = outBoundNamespacePath.replace("{deviceId}", primeId);
       path = path.replace("{mailboxId}", config.getMailboxId());
       SubscriptionContextBuilder subBuilder = new SubscriptionContextBuilder(path, ClientAcknowledgement.AUTO);
       subBuilder.setQos(QualityOfService.AT_MOST_ONCE)
           .setReceiveMaximum(config.getMaxInflightEventsPerDevice())
+          .setAlias("common_requests")
           .setNoLocalMessages(true);
       session.addSubscription(subBuilder.build());
     }
-    namespacePath = parsePath(config.getNamespace(), "", primeId, config.getMailboxId());
-    incomingNamespacePath = parsePath(config.getInboundNamespaceRoot(), "/{deviceId}/incoming/{sin}/{min}", primeId, config.getMailboxId());
+    String mapsOutboundNamespacePath = config.getMapsOutboundPublishRoot();
+    if(!mapsOutboundNamespacePath.isEmpty()){
+      String path = mapsOutboundNamespacePath.replace("{deviceId}", primeId);
+      path = path.replace("{mailboxId}", config.getMailboxId());
+      SubscriptionContextBuilder subBuilder = new SubscriptionContextBuilder(path, ClientAcknowledgement.AUTO);
+      subBuilder.setQos(QualityOfService.AT_MOST_ONCE)
+          .setReceiveMaximum(config.getMaxInflightEventsPerDevice())
+          .setAlias("maps_requests")
+          .setNoLocalMessages(true);
+      session.addSubscription(subBuilder.build());
+    }
+
+    mapsIncomingNamespacePath = parsePath(config.getMapsInboundPublishRoot(), "/{deviceId}/maps/in", primeId, config.getMailboxId());
+    commonIncomingNamespacePath = parsePath(config.getCommonInboundPublishRoot(), "/{deviceId}/common/in/{sin}/{min}", primeId, config.getMailboxId());
     String bcast = config.getOutboundBroadcast();
     if(bcast != null && !bcast.isEmpty()){
       SubscriptionContextBuilder subBuilder = new SubscriptionContextBuilder(bcast, ClientAcknowledgement.AUTO);
@@ -200,7 +213,8 @@ public class SatelliteGatewayProtocol extends Protocol {
 
   @Override
   public void sendMessage(@NotNull @NonNull MessageEvent messageEvent) {
-    if (messageEvent.getDestinationName().endsWith("request")) {
+    if(messageEvent.getSubscription().getContext().getAlias() != null &&
+        messageEvent.getSubscription().getContext().getAlias().equals("common_requests")){
       MessageData messageData = new MessageData();
       byte[] tmp = messageEvent.getMessage().getOpaqueData();
       int sin = tmp[0] & 0xFF;
@@ -348,7 +362,7 @@ public class SatelliteGatewayProtocol extends Protocol {
   private void handleCommonMessage(MessageData message, byte[] raw) throws ExecutionException, InterruptedException {
     int sin = message.getSin() & 0xff;
     int min = message.getMin() & 0xff;
-    String path = incomingNamespacePath;
+    String path = commonIncomingNamespacePath;
     path = path.replace("{sin}", String.valueOf(sin));
     path = path.replace("{min}", String.valueOf(min));
     logger.log(SATELLITE_RECEIVED_RAW_MESSAGE, sin, min, raw.length, path);
@@ -369,9 +383,17 @@ public class SatelliteGatewayProtocol extends Protocol {
           destinationCount++;
           messageCount += entry.getValue().size();
           String topic = entry.getKey();
-          if(namespacePath != null && !namespacePath.isEmpty()){
-            topic = namespacePath + "/" + topic;
+          boolean isSchema = false;
+          if(topic.toLowerCase().startsWith("$schema")){
+            topic = topic.substring("$schema".length());
+            isSchema = true;
+          }
+          if(mapsIncomingNamespacePath != null && !mapsIncomingNamespacePath.isEmpty()){
+            topic = mapsIncomingNamespacePath + "/" + topic;
             topic = topic.replace("//", "/"); // to be sure
+          }
+          if(isSchema){
+            topic = "$schema"+topic;
           }
           publishEvents(topic, entry.getValue(), transformation1, meta);
         }

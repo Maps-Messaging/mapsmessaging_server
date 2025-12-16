@@ -39,14 +39,44 @@ public class SatelliteConfigDTO extends BaseSatelliteConfigDTO {
   @Schema(description = "Max number of events to be in flight per each modems")
   protected int maxInflightEventsPerDevice;
 
-  @Schema(description = "Namespace path for inbound response topic mapping for individual modems")
-  protected String inboundNamespaceRoot;
 
-  @Schema(description = "Namespace path for outbound topic mapping for individual modems")
-  protected String outboundNamespaceRoot;
+  @Schema(
+      description = "Topic template for publishing decoded common (SIN < 127) inbound messages (after parsing SIN/MIN).",
+      example = "/{deviceId}/common/in/{sin}/{min}",
+      defaultValue = "/{deviceId}/common/in/{sin}/{min}"
+  )
+  protected String commonInboundPublishRoot;
 
-  @Schema(description = "Namespace path for outbound topic broadcast for all devices")
+  @Schema(
+      description = "Topic root for accepting outbound common (SIN < 127) messages to be encoded and sent to the modem. Wildcards are allowed.",
+      example = "/{deviceId}/common/out/#",
+      defaultValue = "/{deviceId}/common/out/#"
+  )
+  protected String commonOutboundPublishRoot;
+
+  @Schema(
+      description = "Topic template for publishing decoded MAPS (SIN 147) inbound messages into a namespace tree (after parsing).",
+      example = "/{deviceId}/maps/in/{namespace}/#",
+      defaultValue = "/{deviceId}/maps/in/{namespace}/#"
+  )
+  protected String mapsInboundPublishRoot;
+
+  @Schema(
+      description = "Topic template for accepting outbound MAPS (SIN 147) messages from a namespace tree to be encoded and sent to the modem.",
+      example = "/{deviceId}/maps/out/{namespace}/#",
+      defaultValue = "/{deviceId}/maps/out/{namespace}/#"
+  )
+  protected String mapsOutboundPublishRoot;
+
+  @Schema(
+      description = "Topic used to broadcast a message to all modems/clients (encoded and sent to each).",
+      example = "/inmarsat/broadcast",
+      defaultValue = "/inmarsat/broadcast"
+  )
   protected String outboundBroadcast;
+
+
+
 
   @Schema(description = "Mailbox ID")
   protected String mailboxId;
@@ -54,8 +84,7 @@ public class SatelliteConfigDTO extends BaseSatelliteConfigDTO {
   @Schema(description = "Mailbox password")
   protected String mailboxPassword;
 
-  @Schema(description = "Namespace root for the mailbox to override remote MAPS message names", example="/{deviceId}", defaultValue = "")
-  protected String namespace;
+
 
   @Schema(description = "Device Info update time in minutes")
   protected int deviceInfoUpdateMinutes;

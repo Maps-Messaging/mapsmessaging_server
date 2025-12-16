@@ -37,10 +37,13 @@ public class SatelliteConfig extends SatelliteConfigDTO implements Config {
     outgoingMessagePollInterval = config.getIntProperty("outgoingMessagePollInterval", 60);
     httpRequestTimeout = config.getIntProperty("httpRequestTimeoutSec", 30);
     maxInflightEventsPerDevice = config.getIntProperty("maxInflightEventsPerDevice", 2);
-    namespace = config.getProperty("namespaceRoot", "");
-    inboundNamespaceRoot = config.getProperty("inboundNamespaceRoot", "/incoming/{deviceId}/{sin}/{min}");
-    outboundNamespaceRoot = config.getProperty("outboundNamespaceRoot", "/outgoing/{deviceId}/#");
+
     outboundBroadcast = config.getProperty("outboundBroadcast", "");
+    commonInboundPublishRoot = config.getProperty("commonInboundPublishRoot", "/{deviceId}/common/in/{sin}/{min}");
+    commonOutboundPublishRoot = config.getProperty("commonOutboundPublishRoot", "/{deviceId}/common/out/#");
+    mapsInboundPublishRoot = config.getProperty("mapsInboundPublishRoot", "/{deviceId}/maps/in/{namespace}/#");
+    mapsOutboundPublishRoot = config.getProperty("mapsOutboundPublishRoot", "/{deviceId}/maps/out/{namespace}/#");
+
     deviceInfoUpdateMinutes = config.getIntProperty("deviceInfoUpdateMinutes", 15);
     maxBufferSize = config.getIntProperty("maxBufferSize", 4000);
     compressionCutoffSize = config.getIntProperty("compressionCutoffSize", 128);
@@ -95,10 +98,6 @@ public class SatelliteConfig extends SatelliteConfigDTO implements Config {
         maxInflightEventsPerDevice = dto.getMaxInflightEventsPerDevice();
         changed = true;
       }
-      if (!outboundNamespaceRoot.equals(dto.getOutboundNamespaceRoot())) {
-        outboundNamespaceRoot = dto.getOutboundNamespaceRoot();
-        changed = true;
-      }
       if (!outboundBroadcast.equals(dto.getOutboundBroadcast())) {
         outboundBroadcast = dto.getOutboundBroadcast();
         changed = true;
@@ -111,8 +110,23 @@ public class SatelliteConfig extends SatelliteConfigDTO implements Config {
         mailboxPassword = dto.getMailboxPassword();
         changed = true;
       }
-      if(!namespace.equals(dto.getNamespace())) {
-        namespace = dto.getNamespace();
+      if (!commonInboundPublishRoot.equals(dto.getCommonInboundPublishRoot())) {
+        commonInboundPublishRoot = dto.getCommonInboundPublishRoot();
+        changed = true;
+      }
+
+      if (!commonOutboundPublishRoot.equals(dto.getCommonOutboundPublishRoot())) {
+        commonOutboundPublishRoot = dto.getCommonOutboundPublishRoot();
+        changed = true;
+      }
+
+      if (!mapsInboundPublishRoot.equals(dto.getMapsInboundPublishRoot())) {
+        mapsInboundPublishRoot = dto.getMapsInboundPublishRoot();
+        changed = true;
+      }
+
+      if (!mapsOutboundPublishRoot.equals(dto.getMapsOutboundPublishRoot())) {
+        mapsOutboundPublishRoot = dto.getMapsOutboundPublishRoot();
         changed = true;
       }
       if(deviceInfoUpdateMinutes != dto.getDeviceInfoUpdateMinutes()) {
@@ -151,11 +165,8 @@ public class SatelliteConfig extends SatelliteConfigDTO implements Config {
     properties.put("outgoingMessagePollInterval", outgoingMessagePollInterval);
     properties.put("httpRequestTimeoutSec", httpRequestTimeout);
     properties.put("maxInflightEventsPerDevice", maxInflightEventsPerDevice);
-    properties.put("outboundNamespaceRoot", outboundNamespaceRoot);
-    properties.put("outboundBroadcast", outboundBroadcast);
     properties.put("mailboxId", mailboxId);
     properties.put("mailboxPassword", mailboxPassword);
-    properties.put("namespaceRoot", namespace);
     properties.put("deviceInfoUpdateMinutes", deviceInfoUpdateMinutes);
     properties.put("maxBufferSize", maxBufferSize);
     properties.put("compressionCutoffSize", compressionCutoffSize);
@@ -163,6 +174,11 @@ public class SatelliteConfig extends SatelliteConfigDTO implements Config {
     properties.put("sharedSecret", sharedSecret);
     properties.put("sendHighPriorityMessages", sendHighPriorityMessages);
     properties.put("sinNumber", sinNumber);
+    properties.put("outboundBroadcast", outboundBroadcast);
+    properties.put("commonInboundPublishRoot", commonInboundPublishRoot);
+    properties.put("commonOutboundPublishRoot", commonOutboundPublishRoot);
+    properties.put("mapsInboundPublishRoot", mapsInboundPublishRoot);
+    properties.put("mapsOutboundPublishRoot", mapsOutboundPublishRoot);
     return properties;
   }
 }
