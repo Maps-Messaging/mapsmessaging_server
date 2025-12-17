@@ -55,7 +55,8 @@ set "CLASSPATH=%MAPS_CONF%;%MAPS_LIB%\maps-%VERSION%.jar;%MAPS_LIB%\*"
 
 :loop
 :: Now start the daemon
-java -classpath %CLASSPATH% %JAVA_OPTS% ^
+java   -Xss256k ^
+    -classpath %CLASSPATH% %JAVA_OPTS% ^
     -DUSE_UUID=false ^
     -DConsulUrl="%CONSUL_URL%" ^
     -DConsulPath="%CONSUL_PATH%" ^

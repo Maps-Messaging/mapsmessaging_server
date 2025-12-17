@@ -17,6 +17,7 @@ Group=mapsmessaging
 LimitNOFILE=65535
 TimeoutStartSec=15s
 TimeoutStopSec=10s
+TasksMax=8192
 
 [Install]
 WantedBy=multi-user.target
