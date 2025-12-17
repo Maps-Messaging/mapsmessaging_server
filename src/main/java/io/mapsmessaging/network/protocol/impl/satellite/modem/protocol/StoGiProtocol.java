@@ -76,7 +76,6 @@ public class StoGiProtocol extends Protocol implements Consumer<Packet> {
 
   private static final String STOGI = "stogi";
 
-  private final TaskManager taskManager;
   private final Logger logger = LoggerFactory.getLogger(StoGiProtocol.class);
   private final Session session;
   private final SelectorTask selectorTask;
@@ -112,7 +111,6 @@ public class StoGiProtocol extends Protocol implements Consumer<Packet> {
     super(endPoint, endPoint.getConfig().getProtocolConfig(STOGI));
     satelliteOnline = false;
     satelliteOnlineCount = 0;
-    taskManager = new TaskManager();
     satelliteMessageRebuilder = new SatelliteMessageRebuilder();
     messageId = 0;
     currentList = new ArrayList<>();
@@ -144,7 +142,7 @@ public class StoGiProtocol extends Protocol implements Consumer<Packet> {
 
     sinNumber = modemConfig.getSinNumber();
     messageLifeTime = modemConfig.getMessageLifeTimeInMinutes();
-    modem = new Modem(this, modemConfig.getModemResponseTimeout(), streamHandler, taskManager);
+    modem = new Modem(this, modemConfig.getModemResponseTimeout(), streamHandler);
 
     if(!modemConfig.getSharedSecret().trim().isEmpty()) {
       cipherManager = new CipherManager(modemConfig.getSharedSecret().getBytes());
@@ -174,7 +172,7 @@ public class StoGiProtocol extends Protocol implements Consumer<Packet> {
     }
     lastOutgoingMessagePollInterval = System.currentTimeMillis();
     statsManager = new StatsManager(modem, locationPollInterval, destination);
-    scheduledFuture = taskManager.schedule(this::pollModemForMessages, messagePoll, TimeUnit.MILLISECONDS);
+    scheduledFuture = TaskManager.getInstance().schedule(this::pollModemForMessages, messagePoll, TimeUnit.MILLISECONDS);
     logger.log(STOGI_STARTED_SESSION, modem.getModemProtocol().getType(), messagePoll,outgoingMessagePollInterval );
   }
 
@@ -212,7 +210,7 @@ public class StoGiProtocol extends Protocol implements Consumer<Packet> {
       logger.log(STOGI_POLL_RAISED_EXCEPTION, th);
     } finally {
       poll = hasOutgoing?500:poll;
-      scheduledFuture = taskManager.schedule(this::pollModemForMessages, poll, TimeUnit.MILLISECONDS);
+      scheduledFuture = TaskManager.getInstance().schedule(this::pollModemForMessages, poll, TimeUnit.MILLISECONDS);
       startTime = System.currentTimeMillis() - startTime;
       logger.log(STOGI_POLL_FOR_ACTIONS, startTime, poll);
     }
@@ -228,7 +226,6 @@ public class StoGiProtocol extends Protocol implements Consumer<Packet> {
       modem.close();
     }
     super.close();
-    taskManager.close();
   }
 
   private Session setupSession() throws LoginException, IOException {

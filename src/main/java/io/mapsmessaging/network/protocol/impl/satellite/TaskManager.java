@@ -19,27 +19,34 @@
 
 package io.mapsmessaging.network.protocol.impl.satellite;
 
+import io.mapsmessaging.auth.AuthManager;
+
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
+
+@SuppressWarnings("java:S6548") // yes it is a singleton
 public class TaskManager {
+
+  private static class Holder {
+    static final TaskManager INSTANCE = new TaskManager();
+  }
+  public static TaskManager getInstance() {
+    return Holder.INSTANCE;
+  }
+
   private static final AtomicInteger count = new AtomicInteger(1);
 
   private final ExecutorService existingPool;
   private final ScheduledExecutorService scheduler;
 
-  public TaskManager() {
+  private TaskManager() {
     this(4);
   }
 
-  public TaskManager(int poolSize) {
+  private TaskManager(int poolSize) {
     existingPool= Executors.newFixedThreadPool(4, r -> new Thread(r, "Satellite-Executors-" + count.getAndIncrement()));
     scheduler = new ScheduledThreadPoolExecutor(poolSize, ((ThreadPoolExecutor) existingPool).getThreadFactory());
-  }
-
-  public void close(){
-    scheduler.shutdown();
-    existingPool.shutdown();
   }
 
   public ScheduledFuture<?> schedule(Runnable task, long delay, TimeUnit unit) {

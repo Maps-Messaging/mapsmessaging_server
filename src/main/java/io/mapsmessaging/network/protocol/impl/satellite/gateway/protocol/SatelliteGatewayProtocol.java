@@ -60,7 +60,6 @@ import static io.mapsmessaging.logging.ServerLogMessages.*;
 
 public class SatelliteGatewayProtocol extends Protocol {
 
-  private final TaskManager taskManager;
   private final Logger logger = LoggerFactory.getLogger(SatelliteGatewayProtocol.class);
   private final SatelliteMessageRebuilder messageRebuilder;
   private final Session session;
@@ -88,7 +87,6 @@ public class SatelliteGatewayProtocol extends Protocol {
     pendingMessages.set(new LinkedHashMap<>());
     priorityMessages = new AtomicReference<>();
     priorityMessages.set(new LinkedHashMap<>());
-    taskManager = new TaskManager();
     String primeId = ((SatelliteEndPoint) endPoint).getTerminalInfo().getUniqueId();
     SatelliteConfigDTO config = (SatelliteConfigDTO) protocolConfig;
     sendHighPriorityEvents = config.isSendHighPriorityMessages();
@@ -151,7 +149,7 @@ public class SatelliteGatewayProtocol extends Protocol {
     }
     ((SatelliteEndPoint) endPoint).unmute();
     nextOutgoingTime = System.currentTimeMillis() + outgoingPollInterval;
-    scheduledFuture = taskManager.schedule(this::processOutstandingMessages, 15, TimeUnit.SECONDS);
+    scheduledFuture = TaskManager.getInstance().schedule(this::processOutstandingMessages, 15, TimeUnit.SECONDS);
   }
 
   private String parsePath(String path, String defaultValue, String primeId, String mailboxId){
@@ -172,7 +170,6 @@ public class SatelliteGatewayProtocol extends Protocol {
       closed = true;
       SessionManager.getInstance().close(session, false);
       super.close();
-      taskManager.close();
     }
   }
 
@@ -321,7 +318,7 @@ public class SatelliteGatewayProtocol extends Protocol {
         // Log this
       }
     } finally {
-      scheduledFuture = taskManager.schedule(this::processOutstandingMessages, 15, TimeUnit.SECONDS);
+      scheduledFuture = TaskManager.getInstance().schedule(this::processOutstandingMessages, 15, TimeUnit.SECONDS);
     }
   }
 

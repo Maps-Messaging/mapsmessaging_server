@@ -51,7 +51,6 @@ public class GatewayManager {
   private final Map<String, RemoteDeviceInfo> knownTerminals;
   private final AtomicBoolean closed = new AtomicBoolean(false);
 
-  private TaskManager taskManager;
   private ScheduledFuture<?> scheduledFuture;
 
 
@@ -68,8 +67,7 @@ public class GatewayManager {
   }
 
   public void start() {
-    taskManager = new TaskManager();
-    taskManager.schedule(this::initSession, 10, TimeUnit.SECONDS);
+    TaskManager.getInstance().schedule(this::initSession, 10, TimeUnit.SECONDS);
   }
 
   public void stop(){
@@ -78,7 +76,6 @@ public class GatewayManager {
       scheduledFuture.cancel(true);
       scheduledFuture = null;
     }
-    taskManager.close();
   }
 
   protected void initSession(){
@@ -97,7 +94,7 @@ public class GatewayManager {
         for (RemoteDeviceInfo terminal : knownTerminals.values()) {
           handler.registerTerminal(terminal);
         }
-        scheduledFuture = taskManager.schedule(this::pollGateway, pollInterval, TimeUnit.SECONDS);
+        scheduledFuture = TaskManager.getInstance().schedule(this::pollGateway, pollInterval, TimeUnit.SECONDS);
       } else {
         logger.log(OGWS_FAILED_AUTHENTICATION);
       }
@@ -105,7 +102,7 @@ public class GatewayManager {
     catch (RuntimeException| IOException e) {
       // Todo log this
       // we can try again
-      taskManager.schedule(this::initSession, 1, TimeUnit.MINUTES);
+      TaskManager.getInstance().schedule(this::initSession, 1, TimeUnit.MINUTES);
     } catch (InterruptedException e) {
       Thread.currentThread().interrupt();
     } catch (LoginException e) {
@@ -150,7 +147,7 @@ public class GatewayManager {
       }
     }
     finally {
-      scheduledFuture = taskManager.schedule(this::pollGateway, pollInterval, TimeUnit.SECONDS);
+      scheduledFuture = TaskManager.getInstance().schedule(this::pollGateway, pollInterval, TimeUnit.SECONDS);
     }
   }
 
