@@ -105,7 +105,7 @@ public class StoGiProtocol extends Protocol implements Consumer<Packet> {
   private Destination destination;
   private long lastOutgoingMessagePollInterval;
   private int satelliteOnlineCount;
-  private int messageId;
+  private final int messageId;
   private boolean satelliteOnline;
 
   public StoGiProtocol(EndPoint endPoint, Packet packet) throws LoginException, IOException {
@@ -572,7 +572,6 @@ public class StoGiProtocol extends Protocol implements Consumer<Packet> {
       System.arraycopy(raw,2,buffer,0,raw.length-2);
     }
     else {
-      messageId = (messageId + 1) % 0xff;
       min = messageId;
       buffer = satelliteMessage.packToSend();
     }

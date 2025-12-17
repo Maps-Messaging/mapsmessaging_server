@@ -290,7 +290,7 @@ public class SatelliteGatewayProtocol extends Protocol {
         byte[] tmp = satelliteMessage.packToSend();
         byte[] payload = new byte[tmp.length + 2];
         payload[0] = (byte)sin;
-        payload[1] = (byte) idx++;
+        payload[1] = (byte) idx;
         System.arraycopy(tmp, 0, payload, 2, tmp.length);
         totalPayloadSize += payload.length;
         MessageData submitMessage = new MessageData();
