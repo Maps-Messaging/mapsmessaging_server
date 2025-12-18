@@ -6,13 +6,13 @@ steps:
       - if [ ! -d "out" ]; then echo "'out' directory missing after extraction"; exit 1; fi
       - chmod +x ./packaging/scripts/prepare_build.sh
       - ./packaging/scripts/prepare_build.sh
-      - mvn -DskipTests=true clean deploy -U
+      #- mvn -DskipTests=true clean deploy -U
       - chmod +x ./packaging/*.sh
-      - ./packaging/github_release.sh $(buildkite-agent secret get GIT_HUB_TOKEN)
+      #- ./packaging/github_release.sh $(buildkite-agent secret get GIT_HUB_TOKEN)
       - chmod +x ./packaging/scripts/*
-      - ./packaging/scripts/build_deb_package.sh $(buildkite-agent secret get NEXUS_USER) $(buildkite-agent secret get NEXUS_PASSWORD)  maps_apt_release
-      - ./packaging/scripts/build_rpm_package.sh $(buildkite-agent secret get NEXUS_USER) $(buildkite-agent secret get NEXUS_PASSWORD) maps_yum_release
-      - sudo ./packaging/docker_build_release.sh $(buildkite-agent secret get DOCKER_USER) $(buildkite-agent secret get docker_release_pat) $(buildkite-agent secret get AWS_ECR_PASSWORD)
+      #- ./packaging/scripts/build_deb_package.sh $(buildkite-agent secret get NEXUS_USER) $(buildkite-agent secret get NEXUS_PASSWORD)  maps_apt_release
+      #- ./packaging/scripts/build_rpm_package.sh $(buildkite-agent secret get NEXUS_USER) $(buildkite-agent secret get NEXUS_PASSWORD) maps_yum_release
+      - sudo ./packaging/docker_build_release.sh $(buildkite-agent secret get DOCKER_USER) $(buildkite-agent secret get DOCKER_PASSWORD) $(buildkite-agent secret get AWS_ECR_PASSWORD)
 
     agents:
       queue: "java_build_queue"
