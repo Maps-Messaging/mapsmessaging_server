@@ -25,6 +25,8 @@ import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.network.admin.EndPointJMX;
 import io.mapsmessaging.network.io.*;
+import io.mapsmessaging.network.io.impl.serial.threads.SerialIoExecutors;
+import io.mapsmessaging.network.io.impl.serial.threads.SerialIoPoolHandle;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -34,23 +36,30 @@ import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.FutureTask;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.LockSupport;
 
 import static com.fazecast.jSerialComm.SerialPort.TIMEOUT_READ_BLOCKING;
 
 public class SerialEndPoint extends EndPoint implements StreamEndPoint {
 
-  private final ExecutorService readExecutor = Executors.newFixedThreadPool(1);
-  private final ExecutorService writeExecutor = Executors.newFixedThreadPool(1);
+  private final ExecutorService readExecutor;
+  private final ExecutorService writeExecutor;
 
   private final SerialPort serialPort;
   private final OutputStream outputStream;
   private final InputStream inputStream;
   private final EndPointJMX mbean;
   private StreamHandler streamHandler;
+  private final AtomicBoolean closed;
 
   public SerialEndPoint(long id, EndPointServerStatus server, SerialPort serialPort, SerialConfigDTO config, List<String> jmxPath) {
     super(id, server);
+    closed = new AtomicBoolean(false);
+    SerialIoPoolHandle pool = SerialIoExecutors.getInstance().acquire(serialPort.getSystemPortName());
+    readExecutor = pool.getReadExecutor();
+    writeExecutor = pool.getWriteExecutor();
+
     this.serialPort = serialPort;
     name = serialPort.getSystemPortName();
     configure(serialPort, config);
@@ -71,6 +80,7 @@ public class SerialEndPoint extends EndPoint implements StreamEndPoint {
 
   @Override
   public void close() throws IOException {
+    closed.set(true);
     super.close();
     mbean.close();
     serialPort.closePort();
@@ -164,12 +174,25 @@ public class SerialEndPoint extends EndPoint implements StreamEndPoint {
     }
 
     public void run() {
-      while (serialPort.bytesAvailable() == 0) {
-        LockSupport.parkNanos(1000000);
+      long delayNanos = 1_000_000L; // 1 ms
+      long maxDelayNanos = 100_000_000L; // 100 ms
+
+      while (!closed.get()) {
+        int available = serialPort.bytesAvailable();
+        if (available > 0) {
+          runner.selected(runner, null, SelectionKey.OP_READ);
+          return;
+        }
+
+        LockSupport.parkNanos(delayNanos);
+
+        if (delayNanos < maxDelayNanos) {
+          delayNanos = Math.min(maxDelayNanos, delayNanos * 2);
+        }
       }
-      runner.selected(runner, null, SelectionKey.OP_READ);
     }
   }
+
   //</editor-fold>
 
   //<editor-fold desc="Serial Write Thread task">
