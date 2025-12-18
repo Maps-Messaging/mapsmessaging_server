@@ -305,7 +305,7 @@ public class Message implements IdentifierResolver, Storable {
   }
 
   public Map<String, String> getMeta(){
-    return meta == null ? Map.of() : meta;
+    return meta == null ? new LinkedHashMap<>() : meta;
   }
 
 
