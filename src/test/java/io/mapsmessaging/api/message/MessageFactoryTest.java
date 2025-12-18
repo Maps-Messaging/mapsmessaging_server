@@ -269,7 +269,7 @@ class MessageFactoryTest {
     ByteBuffer[] packed = factory.pack(message);
     Message unpacked = factory.unpack(duplicateForRead(packed));
 
-    assertNull(unpacked.getMeta());
+    assertTrue(unpacked.getMeta().isEmpty());
   }
 
   @Test

@@ -66,6 +66,7 @@ class NatsProtocolBasicsTest extends BaseTestConfig {
   @Order(3)
   void testMultipleMsgs() throws Exception {
     helper.send("SUB * 2\r\n");
+    helper.expectAllMsgs(17, 1000);
     helper.send("PUB foo 2\r\nok\r\n");
     List<String> msgs = helper.expectAllMsgs(2, 1000);
     assertEquals(2, msgs.size());
