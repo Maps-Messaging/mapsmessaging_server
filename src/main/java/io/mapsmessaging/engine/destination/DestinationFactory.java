@@ -19,6 +19,7 @@
 
 package io.mapsmessaging.engine.destination;
 
+import io.mapsmessaging.api.auth.DestinationAuthorisationCheck;
 import io.mapsmessaging.api.features.DestinationType;
 import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
@@ -37,13 +38,13 @@ public interface DestinationFactory {
     return destinationName;
   }
 
-  CompletableFuture<DestinationImpl> find(String name);
+  CompletableFuture<DestinationImpl> find(String destinationName);
 
-  CompletableFuture<DestinationImpl> findOrCreate(String name) throws IOException;
+  CompletableFuture<DestinationImpl> findOrCreate(String destinationName, DestinationAuthorisationCheck authCheck) throws IOException;
 
-  CompletableFuture<DestinationImpl> findOrCreate(String name, DestinationType destinationType) throws IOException;
+  CompletableFuture<DestinationImpl> findOrCreate(String destinationName, DestinationType destinationType, DestinationAuthorisationCheck authCheck) throws IOException;
 
-  CompletableFuture<DestinationImpl> create(@NonNull @NotNull String name, @NonNull @NotNull DestinationType destinationType) throws IOException;
+  CompletableFuture<DestinationImpl> create(@NonNull @NotNull String destinationName, @NonNull @NotNull DestinationType destinationType, DestinationAuthorisationCheck authCheck) throws IOException;
 
   CompletableFuture<DestinationImpl> delete(DestinationImpl destinationImpl);
 

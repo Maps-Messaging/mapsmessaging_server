@@ -19,6 +19,7 @@
 
 package io.mapsmessaging.engine.session;
 
+import io.mapsmessaging.api.auth.DestinationAuthorisationCheck;
 import io.mapsmessaging.api.features.DestinationType;
 import io.mapsmessaging.engine.destination.*;
 import lombok.NonNull;
@@ -111,8 +112,8 @@ public class SessionDestinationManager implements DestinationFactory {
    * @return a CompletableFuture that resolves to the created or found DestinationImpl object
    * @throws IOException if an I/O error occurs
    */
-  public CompletableFuture<DestinationImpl> findOrCreate(String name) throws IOException {
-    return manager.findOrCreate(name);
+  public CompletableFuture<DestinationImpl> findOrCreate(String name, DestinationAuthorisationCheck authCheck) throws IOException {
+    return manager.findOrCreate(name, authCheck);
   }
 
   @Override
@@ -124,8 +125,8 @@ public class SessionDestinationManager implements DestinationFactory {
    * @return                 a CompletableFuture that resolves to the created or found DestinationImpl object
    * @throws IOException     if an I/O error occurs while finding or creating the destination
    */
-  public CompletableFuture<DestinationImpl> findOrCreate(String name, DestinationType destinationType) throws IOException {
-    return manager.findOrCreate(name, destinationType);
+  public CompletableFuture<DestinationImpl> findOrCreate(String name, DestinationType destinationType, DestinationAuthorisationCheck authCheck) throws IOException {
+    return manager.findOrCreate(name, destinationType, authCheck);
   }
 
   @Override
@@ -137,8 +138,8 @@ public class SessionDestinationManager implements DestinationFactory {
    * @return A CompletableFuture that completes with the created destination.
    * @throws IOException If an I/O error occurs.
    */
-  public CompletableFuture<DestinationImpl> create(@NonNull @NotNull String name, @NonNull @NotNull DestinationType destinationType) throws IOException {
-    return manager.create(name, destinationType);
+  public CompletableFuture<DestinationImpl> create(@NonNull @NotNull String name, @NonNull @NotNull DestinationType destinationType, DestinationAuthorisationCheck authCheck) throws IOException {
+    return manager.create(name, destinationType, authCheck);
   }
 
   @Override

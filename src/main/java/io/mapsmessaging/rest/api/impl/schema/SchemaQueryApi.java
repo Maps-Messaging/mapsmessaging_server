@@ -50,13 +50,13 @@ import java.util.stream.Collectors;
 import static io.mapsmessaging.rest.api.Constants.URI_PATH;
 
 @Tag(name = "Schema Management", description = "Endpoints for managing and querying schemas in the system.")
-@Path(URI_PATH)
+@Path(URI_PATH+"/server/schemas")
 public class SchemaQueryApi extends BaseRestApi {
 
   private static final String RESOURCE = "schemas";
 
   @DELETE
-  @Path("/server/schema/{schemaId}")
+  @Path("/{schemaId}")
   @Produces({MediaType.APPLICATION_JSON})
   @Operation(
       summary = "Delete specific schema",
@@ -85,7 +85,6 @@ public class SchemaQueryApi extends BaseRestApi {
   }
 
   @DELETE
-  @Path("/server/schema")
   @Produces({MediaType.APPLICATION_JSON})
   @Operation(
       summary = "Delete all schemas",
@@ -116,7 +115,6 @@ public class SchemaQueryApi extends BaseRestApi {
   }
 
   @POST
-  @Path("/server/schema")
   @Consumes({MediaType.APPLICATION_JSON})
   @Operation(
       summary = "Add new schema",
@@ -140,7 +138,7 @@ public class SchemaQueryApi extends BaseRestApi {
   }
 
   @GET
-  @Path("/server/schema/{schemaId}")
+  @Path("/{schemaId}")
   @Produces({MediaType.APPLICATION_JSON})
   @Operation(
       summary = "Get specific schema",
@@ -166,7 +164,7 @@ public class SchemaQueryApi extends BaseRestApi {
   }
 
   @GET
-  @Path("/server/schema/context/{context}")
+  @Path("/context/{context}")
   @Produces({MediaType.APPLICATION_JSON})
   @Operation(
       summary = "Get schemas by context",
@@ -192,7 +190,7 @@ public class SchemaQueryApi extends BaseRestApi {
   }
 
   @GET
-  @Path("/server/schema/type/{type}")
+  @Path("/type/{type}")
   @Produces({MediaType.APPLICATION_JSON})
   @Operation(
       summary = "Get schemas by type",
@@ -218,7 +216,6 @@ public class SchemaQueryApi extends BaseRestApi {
   }
 
   @GET
-  @Path("/server/schema")
   @Produces({MediaType.APPLICATION_JSON})
   @Operation(
       summary = "Get all schemas",
@@ -246,7 +243,7 @@ public class SchemaQueryApi extends BaseRestApi {
   }
 
   @GET
-  @Path("/server/schema/map")
+  @Path("/map")
   @Produces({MediaType.APPLICATION_JSON})
   @Operation(
       summary = "Get schema mappings",
@@ -273,7 +270,7 @@ public class SchemaQueryApi extends BaseRestApi {
   }
 
   @GET
-  @Path("/server/schema/impl/{schemaId}")
+  @Path("/impl/{schemaId}")
   @Produces(MediaType.WILDCARD)
   @Operation(
       summary = "Get specific schema definition",
@@ -350,7 +347,7 @@ public class SchemaQueryApi extends BaseRestApi {
 
 
   @GET
-  @Path("/server/schema/formats")
+  @Path("/formats")
   @Produces({MediaType.APPLICATION_JSON})
   @Operation(
       summary = "Get supported formats",
@@ -372,7 +369,7 @@ public class SchemaQueryApi extends BaseRestApi {
   }
 
   @GET
-  @Path("/server/schema/link-format")
+  @Path("/link-format")
   @Produces({MediaType.TEXT_PLAIN})
   @Operation(
       summary = "Get link-format configuration",

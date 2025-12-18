@@ -21,6 +21,9 @@ package io.mapsmessaging.rest.api.impl.discovery;
 
 import io.mapsmessaging.MessageDaemon;
 import io.mapsmessaging.dto.rest.discovery.DiscoveredServersDTO;
+import io.mapsmessaging.network.discovery.DiscoveryManager;
+import io.mapsmessaging.network.io.connection.EndPointConnection;
+import io.mapsmessaging.rest.api.impl.interfaces.RequestedAction;
 import io.mapsmessaging.rest.cache.CacheKey;
 import io.mapsmessaging.rest.responses.StatusResponse;
 import io.mapsmessaging.selector.ParseException;
@@ -30,10 +33,13 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.ws.rs.*;
+import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -44,20 +50,26 @@ import java.util.stream.Collectors;
 import static io.mapsmessaging.rest.api.Constants.URI_PATH;
 
 @Tag(name = "Discovery Management")
-@Path(URI_PATH)
+@Path(URI_PATH+"/server/discovery")
 public class DiscoveryManagementApi extends DiscoveryBaseRestApi {
-
-  @PUT
-  @Path("/server/discovery/start")
-  @Produces({MediaType.APPLICATION_JSON})
+  @PATCH
+  @Consumes(MediaType.APPLICATION_JSON)
+  @Produces(MediaType.APPLICATION_JSON)
   @Operation(
-      summary = "Start Discovery agent",
-      description = "Starts the mDNS discovery sub-system. Requires authentication if enabled in the configuration.",
-      security = {@SecurityRequirement(name = "basicAuth")},
+      summary = "Manages the discovery manager",
+      description = "Manages the state of the discovery manager",
+      requestBody = @RequestBody(
+          description = "Requested action to apply to all inter-server connections",
+          required = true,
+          content = @Content(
+              mediaType = "application/json",
+              schema = @Schema(implementation = RequestedAction.class)
+          )
+      ),
       responses = {
           @ApiResponse(
               responseCode = "200",
-              description = "Start server discovery was successful",
+              description = "Operation was successful",
               content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))
           ),
           @ApiResponse(responseCode = "400", description = "Bad request"),
@@ -65,38 +77,32 @@ public class DiscoveryManagementApi extends DiscoveryBaseRestApi {
           @ApiResponse(responseCode = "403", description = "User is not authorised to access the resource"),
       }
   )
-  public StatusResponse startDiscovery() {
+  public StatusResponse handleDiscoveryActionRequest(@RequestBody RequestedAction requested, @Context HttpServletResponse response) {
     hasAccess(RESOURCE);
-    MessageDaemon.getInstance().getSubSystemManager().getDiscoveryManager().start();
-    return new StatusResponse("success");
+    boolean processed = false;
+    if (requested != null && requested.getState() != null) {
+      DiscoveryManager discoveryManager = MessageDaemon.getInstance().getSubSystemManager().getDiscoveryManager();
+      if (discoveryManager == null) {
+        response.setStatus(HttpServletResponse.SC_NOT_FOUND);
+        return new StatusResponse("No such connection");
+      }
+      if ("stopped".equalsIgnoreCase(requested.getState())) {
+        discoveryManager.stop();
+        processed = true;
+      } else if ("started".equalsIgnoreCase(requested.getState())) {
+        discoveryManager.start();
+        processed = true;
+      }
+    }
+    if (processed) {
+      return new StatusResponse("Success");
+    }
+    response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+    return new StatusResponse("Unknown action");
   }
 
-  @PUT
-  @Path("/server/discovery/stop")
-  @Produces({MediaType.APPLICATION_JSON})
-  @Operation(
-      summary = "Stop Discovery daemon",
-      description = "Stops the mDNS discovery sub-system. Requires authentication if enabled in the configuration.",
-      security = {@SecurityRequirement(name = "basicAuth")},
-      responses = {
-          @ApiResponse(
-              responseCode = "200",
-              description = "Stop server discovery was successful",
-              content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))
-          ),
-          @ApiResponse(responseCode = "400", description = "Bad request"),
-          @ApiResponse(responseCode = "401", description = "Invalid credentials or unauthorized access"),
-          @ApiResponse(responseCode = "403", description = "User is not authorised to access the resource"),
-      }
-  )
-  public boolean stopDiscovery() {
-    hasAccess(RESOURCE);
-    MessageDaemon.getInstance().getSubSystemManager().getDiscoveryManager().stop();
-    return true;
-  }
 
   @GET
-  @Path("/server/discovery")
   @Produces({MediaType.APPLICATION_JSON})
   @Operation(
       summary = "Get discovered servers",
@@ -144,7 +150,7 @@ public class DiscoveryManagementApi extends DiscoveryBaseRestApi {
 
   @Data
   @NoArgsConstructor
-  private static class DiscoveredServers{
+  public static class DiscoveredServers{
     private List<DiscoveredServersDTO> list;
   }
 }

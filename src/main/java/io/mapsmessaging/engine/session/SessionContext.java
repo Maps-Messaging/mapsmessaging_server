@@ -22,6 +22,7 @@ package io.mapsmessaging.engine.session;
 import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.auth.priviliges.SessionPrivileges;
 import io.mapsmessaging.dto.rest.session.SessionContextDTO;
+import io.mapsmessaging.engine.session.security.SecurityContext;
 import io.mapsmessaging.security.uuid.UuidGenerator;
 import lombok.Data;
 import lombok.ToString;
@@ -51,6 +52,8 @@ public class SessionContext {
   private boolean resetState;
   private boolean persistentSession;
   // </editor-fold>
+
+  private SecurityContext securityContext;
 
   public SessionContext(String id, ClientConnection clientConnection) {
     this.id = id;

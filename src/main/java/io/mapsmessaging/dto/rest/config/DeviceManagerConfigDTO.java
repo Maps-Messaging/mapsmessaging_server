@@ -19,6 +19,7 @@
 
 package io.mapsmessaging.dto.rest.config;
 
+import io.mapsmessaging.config.device.SerialDeviceBusConfig;
 import io.mapsmessaging.dto.rest.config.device.I2CBusConfigDTO;
 import io.mapsmessaging.dto.rest.config.device.OneWireBusConfigDTO;
 import io.mapsmessaging.dto.rest.config.device.SpiDeviceBusConfigDTO;
@@ -53,4 +54,8 @@ public class DeviceManagerConfigDTO extends BaseConfigDTO {
 
   @Schema(description = "OneWire bus configuration")
   protected OneWireBusConfigDTO oneWireBus;
+
+  @Schema(description = "Serial device configuration")
+  protected SerialDeviceBusConfig serialDeviceBusConfig;
+
 }

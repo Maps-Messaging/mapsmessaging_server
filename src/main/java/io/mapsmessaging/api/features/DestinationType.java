@@ -60,7 +60,7 @@ public enum DestinationType {
   @Getter
   private final int value;
   @Getter
-  private final String name;
+  private final String descriptiveName;
   @Getter
   private final String description;
   @Getter
@@ -72,8 +72,12 @@ public enum DestinationType {
     this.value = value;
     this.isTopic = isTopic;
     this.isTemporary = isTemporary;
-    this.name = name;
+    this.descriptiveName = name;
     this.description = description;
+  }
+
+  public String getName(){
+    return descriptiveName;
   }
 
   public boolean isQueue() {

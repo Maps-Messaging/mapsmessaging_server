@@ -773,7 +773,7 @@ public enum ServerLogMessages implements LogMessage {
   STOGI_STARTED_SESSION(LEVEL.WARN, SERVER_CATEGORY.NETWORK, "Successfully started modem session, detected modem type {}, read intervals of {} ms and write intervals of {} ms"),
   STOGI_ENCRYPTION_STATUS(LEVEL.WARN, SERVER_CATEGORY.NETWORK, "Encryption is {} for {}"),
   STOGI_POLL_FOR_ACTIONS(LEVEL.DEBUG, SERVER_CATEGORY.NETWORK, "Polled for actions took {} ms, next poll in {} ms"),
-  STOGI_POLL_RAISED_EXCEPTION(LEVEL.DEBUG, SERVER_CATEGORY.NETWORK, "Polling for action resulted in an exception"),
+  STOGI_POLL_RAISED_EXCEPTION(LEVEL.FATAL, SERVER_CATEGORY.NETWORK, "Polling for action resulted in an exception"),
   STOGI_SEND_AT_MESSAGE(LEVEL.DEBUG, SERVER_CATEGORY.NETWORK, "Sending to modem: {} "),
   STOGI_RECEIVED_AT_MESSAGE(LEVEL.DEBUG, SERVER_CATEGORY.NETWORK, "Received from modem : {}"),
   STOGI_SATELLITES_STATUS_CHANGE(LEVEL.FATAL, SERVER_CATEGORY.NETWORK, "Satellite transmission status has changed to {}"),
@@ -785,9 +785,17 @@ public enum ServerLogMessages implements LogMessage {
   STOGI_SEND_MESSAGE_TO_MODEM(LEVEL.WARN, SERVER_CATEGORY.NETWORK, "Sent message to modem, msg no: {}, {} bytes"),
   STOGI_RECEIVED_PARTIAL_MESSAGE(LEVEL.DEBUG, SERVER_CATEGORY.NETWORK, "Received from partial message msg no: {}"),
 
+
   STOGI_COMPRESS_MESSAGE(LEVEL.DEBUG, SERVER_CATEGORY.NETWORK, "Compressing message for from {} to {} bytes"),
   STOGI_SPLIT_MESSAGE(LEVEL.DEBUG, SERVER_CATEGORY.NETWORK, "Splitting message into {} messages"),
 
+  SATELLITE_SENT_RAW_MESSAGE(LEVEL.INFO, SERVER_CATEGORY.NETWORK, "Sent SIN:{} MIN:{} length {}"),
+  SATELLITE_FILTER_FAILED(LEVEL.FATAL, SERVER_CATEGORY.NETWORK, "Filter failed to process {}"),
+  SATELLITE_QUEUED_PENDING_MESSAGE(LEVEL.INFO, SERVER_CATEGORY.NETWORK, "Queued message for {}, current queue depth {}"),
+  SATELLITE_SENT_PACKED_MESSAGES(LEVEL.INFO, SERVER_CATEGORY.NETWORK, "Sent using SIN:{}, total messages:{}, with total size:{}"),
+  SATELLITE_RECEIVED_RAW_MESSAGE(LEVEL.INFO, SERVER_CATEGORY.NETWORK, "Received raw message SIN:{}, MIN:{}, size:{}, publishing to {}"),
+  SATELLITE_RECEIVED_PACKED_MESSAGE(LEVEL.INFO, SERVER_CATEGORY.NETWORK, "Received packed messages to {} destinations, for a total of {} messages, from buffer of size:{}"),
+  SATELLITE_SCANNING_FOR_INCOMING(LEVEL.INFO, SERVER_CATEGORY.NETWORK, "Scanning for incoming messages, returned {} messages"),
 
   EVALUATION_START(LEVEL.TRACE, SERVER_CATEGORY.NETWORK, "Evaluating link selection"),
   EVALUATION_RESULT(LEVEL.DEBUG, SERVER_CATEGORY.NETWORK, "Selection result: current={}({}), best={}({}), reason={}"),
@@ -795,6 +803,8 @@ public enum ServerLogMessages implements LogMessage {
   SWITCH_REJECTED(LEVEL.WARN, SERVER_CATEGORY.NETWORK, "Switch rejected, reason={}"),
   SWITCH_REQUESTED(LEVEL.WARN, SERVER_CATEGORY.NETWORK, "Switch requested to{}, reason={}"),
   EXCEPTION_DURING_EVALUATION(LEVEL.ERROR, SERVER_CATEGORY.NETWORK, "Exception during link evaluation: {}"),
+
+  STATISTICS_UNKNOWN_NAME(LEVEL.FATAL, SERVER_CATEGORY.PROTOCOL, "Unknown statistics name found {}, defaulting to {}"),
 
   //-------------------------------------------------------------------------------------------------------------
   LAST_LOG_MESSAGE(LEVEL.DEBUG, SERVER_CATEGORY.PROTOCOL, "Last message to make it simpler to add more");

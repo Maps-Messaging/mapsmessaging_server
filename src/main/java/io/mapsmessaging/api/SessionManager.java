@@ -21,16 +21,24 @@ package io.mapsmessaging.api;
 
 import io.mapsmessaging.MessageDaemon;
 import io.mapsmessaging.api.message.Message;
+import io.mapsmessaging.auth.AuthManager;
+import io.mapsmessaging.auth.ServerPermissions;
 import io.mapsmessaging.engine.session.SessionContext;
 import io.mapsmessaging.engine.session.SessionImpl;
+import io.mapsmessaging.engine.session.security.SecurityContext;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
+import io.mapsmessaging.logging.ServerLogMessages;
+import io.mapsmessaging.security.authorisation.AuthRequest;
+import io.mapsmessaging.security.authorisation.ProtectedResource;
 import lombok.NonNull;
 import lombok.SneakyThrows;
 import org.jetbrains.annotations.NotNull;
 
 import javax.security.auth.login.LoginException;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.*;
 
 import static io.mapsmessaging.logging.ServerLogMessages.SESSION_ERROR_DURING_CREATION;
@@ -68,12 +76,24 @@ public class SessionManager {
   }
 
   public @NonNull @NotNull CompletableFuture<Session> createAsync(@NonNull @NotNull SessionContext sessionContext, @NonNull @NotNull MessageListener listener) {
+
     CompletableFuture<Session> completableFuture = new CompletableFuture<>();
+    io.mapsmessaging.engine.session.SecurityManager securityManager = MessageDaemon.getInstance().getSubSystemManager().getSessionManager().getSecurityManager();
+
+    try {
+      logger.log(ServerLogMessages.SESSION_MANAGER_CREATE_SECURITY_CONTEXT);
+      SecurityContext securityContext = securityManager.getSecurityContext(sessionContext);
+      sessionContext.setSecurityContext(securityContext);
+    } catch (LoginException e) {
+      completableFuture.completeExceptionally(e);
+      return completableFuture;
+    }
     Callable<SessionImpl> task = () -> {
       SessionImpl sessionImpl = null;
       try {
         sessionImpl = MessageDaemon.getInstance().getSubSystemManager().getSessionManager().create(sessionContext);
-        completableFuture.complete(new Session(sessionImpl, listener));
+        Session session = AuthManager.getInstance().isAuthorisationEnabled()? new AuthSession(sessionImpl, listener) : new Session(sessionImpl, listener);
+        completableFuture.complete(session);
       }
       catch(Throwable t) {
         logger.log(SESSION_ERROR_DURING_CREATION, t);

@@ -1,0 +1,3 @@
+User-agent: *
+Disallow: /
+Sitemap: https://mapsmessaging.io/sitemap.xml

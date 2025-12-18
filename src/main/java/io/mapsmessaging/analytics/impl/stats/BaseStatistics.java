@@ -20,8 +20,6 @@
 package io.mapsmessaging.analytics.impl.stats;
 
 import com.google.gson.JsonObject;
-import lombok.Getter;
-import lombok.Setter;
 
 public class BaseStatistics implements Statistics {
   protected double first;

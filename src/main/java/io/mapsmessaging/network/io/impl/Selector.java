@@ -23,7 +23,6 @@ import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.logging.ServerLogMessages;
 import io.mapsmessaging.network.io.Selectable;
-import org.apache.qpid.proton.amqp.transport.Close;
 
 import java.io.IOException;
 import java.nio.channels.CancelledKeyException;
@@ -56,38 +55,33 @@ public class Selector implements SelectorInt {
     Thread.currentThread().setName("SelectorThread");
     int emptySelectCount = 0;
     final int SPIN_THRESHOLD = 1000;
-    try {
-      while (isOpen.get()) {
-        try {
-          int selected = channelSelector.select();
-          if (selected == 0) {
-            if (emptySelectCount == 0) {
-              spinStartTime = System.nanoTime();
-            }
-            emptySelectCount++;
-            if (emptySelectCount >= SPIN_THRESHOLD) {
-              long duration = System.nanoTime() - spinStartTime;
-              if (duration < TimeUnit.MILLISECONDS.toNanos(100)) {
-                logger.log(ServerLogMessages.SELECTOR_SPIN_DETECTED, SPIN_THRESHOLD);
-                emptySelectCount = 0;
-                rebuildSelector();
-              }
-            }
-            Thread.yield();
-          } else {
-            Set<SelectionKey> selectedKeys = channelSelector.selectedKeys();
-            emptySelectCount = 0;
-            processSelectionList(selectedKeys);
+    while (isOpen.get()) {
+      try {
+        int selected = channelSelector.select();
+        if (selected == 0) {
+          if (emptySelectCount == 0) {
+            spinStartTime = System.nanoTime();
           }
+          emptySelectCount++;
+          if (emptySelectCount >= SPIN_THRESHOLD) {
+            long duration = System.nanoTime() - spinStartTime;
+            if (duration < TimeUnit.MILLISECONDS.toNanos(100)) {
+              logger.log(ServerLogMessages.SELECTOR_SPIN_DETECTED, SPIN_THRESHOLD);
+              emptySelectCount = 0;
+              rebuildSelector();
+            }
+          }
+          Thread.yield();
+        } else {
+          Set<SelectionKey> selectedKeys = channelSelector.selectedKeys();
+          emptySelectCount = 0;
+          processSelectionList(selectedKeys);
         }
-        catch(Throwable e) {
-          e.printStackTrace();
-          logger.log(ServerLogMessages.SELECTOR_FAILED_ON_CALL, e);
-          isOpen.set(false);
-        }
+      } catch (Throwable e) {
+        e.printStackTrace();
+        logger.log(ServerLogMessages.SELECTOR_FAILED_ON_CALL, e);
+        isOpen.set(false);
       }
-    } finally {
-      System.err.println("Exiting SelectorThread");
     }
   }
 

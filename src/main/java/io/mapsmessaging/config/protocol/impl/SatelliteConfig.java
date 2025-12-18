@@ -37,15 +37,20 @@ public class SatelliteConfig extends SatelliteConfigDTO implements Config {
     outgoingMessagePollInterval = config.getIntProperty("outgoingMessagePollInterval", 60);
     httpRequestTimeout = config.getIntProperty("httpRequestTimeoutSec", 30);
     maxInflightEventsPerDevice = config.getIntProperty("maxInflightEventsPerDevice", 2);
-    outboundNamespaceRoot = config.getProperty("outboundNamespaceRoot", "");
+
     outboundBroadcast = config.getProperty("outboundBroadcast", "");
+    commonInboundPublishRoot = config.getProperty("commonInboundPublishRoot", "/{deviceId}/common/in/{sin}/{min}");
+    commonOutboundPublishRoot = config.getProperty("commonOutboundPublishRoot", "/{deviceId}/common/out/#");
+    mapsInboundPublishRoot = config.getProperty("mapsInboundPublishRoot", "/{deviceId}/maps/in/{namespace}/#");
+    mapsOutboundPublishRoot = config.getProperty("mapsOutboundPublishRoot", "/{deviceId}/maps/out/{namespace}/#");
+
     deviceInfoUpdateMinutes = config.getIntProperty("deviceInfoUpdateMinutes", 15);
     maxBufferSize = config.getIntProperty("maxBufferSize", 4000);
     compressionCutoffSize = config.getIntProperty("compressionCutoffSize", 128);
     messageLifeTimeInMinutes = config.getIntProperty("messageLifeTimeInMinutes", 10);
     sharedSecret = config.getProperty("sharedSecret", "");
     sendHighPriorityMessages = config.getBooleanProperty("sendHighPriorityMessages", false);
-    bridgeMode = config.getBooleanProperty("bridgeMode", false);
+    sinNumber = config.getIntProperty("sinNumber", 147);
 
     if(incomingMessagePollInterval <10){
       incomingMessagePollInterval = 10;
@@ -60,7 +65,6 @@ public class SatelliteConfig extends SatelliteConfigDTO implements Config {
     // This is optional and used for ViaSat
     mailboxId = config.getProperty("mailboxId", "");
     mailboxPassword = config.getProperty("mailboxPassword", "");
-    namespace = config.getProperty("namespaceRoot", "");
   }
 
 
@@ -94,10 +98,6 @@ public class SatelliteConfig extends SatelliteConfigDTO implements Config {
         maxInflightEventsPerDevice = dto.getMaxInflightEventsPerDevice();
         changed = true;
       }
-      if (!outboundNamespaceRoot.equals(dto.getOutboundNamespaceRoot())) {
-        outboundNamespaceRoot = dto.getOutboundNamespaceRoot();
-        changed = true;
-      }
       if (!outboundBroadcast.equals(dto.getOutboundBroadcast())) {
         outboundBroadcast = dto.getOutboundBroadcast();
         changed = true;
@@ -110,8 +110,23 @@ public class SatelliteConfig extends SatelliteConfigDTO implements Config {
         mailboxPassword = dto.getMailboxPassword();
         changed = true;
       }
-      if(!namespace.equals(dto.getNamespace())) {
-        namespace = dto.getNamespace();
+      if (!commonInboundPublishRoot.equals(dto.getCommonInboundPublishRoot())) {
+        commonInboundPublishRoot = dto.getCommonInboundPublishRoot();
+        changed = true;
+      }
+
+      if (!commonOutboundPublishRoot.equals(dto.getCommonOutboundPublishRoot())) {
+        commonOutboundPublishRoot = dto.getCommonOutboundPublishRoot();
+        changed = true;
+      }
+
+      if (!mapsInboundPublishRoot.equals(dto.getMapsInboundPublishRoot())) {
+        mapsInboundPublishRoot = dto.getMapsInboundPublishRoot();
+        changed = true;
+      }
+
+      if (!mapsOutboundPublishRoot.equals(dto.getMapsOutboundPublishRoot())) {
+        mapsOutboundPublishRoot = dto.getMapsOutboundPublishRoot();
         changed = true;
       }
       if(deviceInfoUpdateMinutes != dto.getDeviceInfoUpdateMinutes()) {
@@ -133,8 +148,8 @@ public class SatelliteConfig extends SatelliteConfigDTO implements Config {
         sharedSecret = dto.getSharedSecret();
         changed = true;
       }
-      if(bridgeMode != dto.isBridgeMode()){
-        bridgeMode = dto.isBridgeMode();
+      if(sinNumber != dto.getSinNumber()){
+        sinNumber = dto.getSinNumber();
         changed = true;
       }
     }
@@ -150,18 +165,20 @@ public class SatelliteConfig extends SatelliteConfigDTO implements Config {
     properties.put("outgoingMessagePollInterval", outgoingMessagePollInterval);
     properties.put("httpRequestTimeoutSec", httpRequestTimeout);
     properties.put("maxInflightEventsPerDevice", maxInflightEventsPerDevice);
-    properties.put("outboundNamespaceRoot", outboundNamespaceRoot);
-    properties.put("outboundBroadcast", outboundBroadcast);
     properties.put("mailboxId", mailboxId);
     properties.put("mailboxPassword", mailboxPassword);
-    properties.put("namespaceRoot", namespace);
     properties.put("deviceInfoUpdateMinutes", deviceInfoUpdateMinutes);
     properties.put("maxBufferSize", maxBufferSize);
     properties.put("compressionCutoffSize", compressionCutoffSize);
     properties.put("messageLifeTimeInMinutes", messageLifeTimeInMinutes);
     properties.put("sharedSecret", sharedSecret);
     properties.put("sendHighPriorityMessages", sendHighPriorityMessages);
-    properties.put("bridgeMode", bridgeMode);
+    properties.put("sinNumber", sinNumber);
+    properties.put("outboundBroadcast", outboundBroadcast);
+    properties.put("commonInboundPublishRoot", commonInboundPublishRoot);
+    properties.put("commonOutboundPublishRoot", commonOutboundPublishRoot);
+    properties.put("mapsInboundPublishRoot", mapsInboundPublishRoot);
+    properties.put("mapsOutboundPublishRoot", mapsOutboundPublishRoot);
     return properties;
   }
 }

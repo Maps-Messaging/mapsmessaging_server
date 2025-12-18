@@ -22,7 +22,10 @@ package io.mapsmessaging.network.io.impl.serial;
 import com.fazecast.jSerialComm.SerialPort;
 import io.mapsmessaging.dto.rest.config.network.impl.SerialConfigDTO;
 import io.mapsmessaging.network.EndPointURL;
-import io.mapsmessaging.network.io.*;
+import io.mapsmessaging.network.io.EndPoint;
+import io.mapsmessaging.network.io.EndPointConnectedCallback;
+import io.mapsmessaging.network.io.EndPointConnectionFactory;
+import io.mapsmessaging.network.io.EndPointServerStatus;
 import io.mapsmessaging.network.io.impl.SelectorLoadManager;
 import io.mapsmessaging.network.io.impl.serial.management.SerialPortScanner;
 

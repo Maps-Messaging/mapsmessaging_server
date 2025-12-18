@@ -35,7 +35,6 @@ import javax.security.auth.Subject;
 import java.io.IOException;
 import java.util.Date;
 import java.util.UUID;
-import java.util.concurrent.atomic.AtomicLong;
 
 public class SessionTokenHandler {
 

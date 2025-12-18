@@ -21,10 +21,16 @@ package io.mapsmessaging.network.protocol.impl.satellite.gateway.model;
 
 import lombok.Data;
 
+import java.util.Map;
+
 @Data
 public class MessageData {
   private String uniqueId;
   private byte[] payload;
+  private boolean common = false;
+  private int min;
+  private int sin;
+  private Map<String, String> meta;
 
   private transient Runnable completionCallback;
 }

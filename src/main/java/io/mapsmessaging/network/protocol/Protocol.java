@@ -52,7 +52,10 @@ import javax.security.auth.Subject;
 import java.io.IOException;
 import java.net.SocketAddress;
 import java.nio.ByteBuffer;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 public abstract class Protocol implements SelectorCallback, MessageListener, Timeoutable {
@@ -270,6 +273,7 @@ public abstract class Protocol implements SelectorCallback, MessageListener, Tim
       StatisticsConfigDTO statistics = resourceNameAnalyserMap.get(subInfo.getAlias());
       if(statistics != null){
         analyser = AnalyserFactory.getInstance().getAnalyser(statistics);
+        topicNameAnalyserMap.put(parsedMessage.destinationName, analyser);
       }
     }
     Message msg = parsedMessage.getMessage();

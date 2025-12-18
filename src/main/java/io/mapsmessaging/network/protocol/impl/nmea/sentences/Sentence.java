@@ -20,7 +20,6 @@
 package io.mapsmessaging.network.protocol.impl.nmea.sentences;
 
 import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
 import com.google.gson.JsonObject;
 import io.mapsmessaging.network.protocol.impl.nmea.types.Type;
 import io.mapsmessaging.utilities.GsonFactory;

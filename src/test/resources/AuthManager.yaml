@@ -35,6 +35,10 @@ AuthManager:
     identityProvider: "Encrypted-Auth"
     passwordHandler: "EncryptedPasswordCipher"
     configDirectory: "{{MAPS_DATA}}/.security"
+    authorisationProvider: "Acl" # Open, Acl, openFGA
+    authorisation:
+      enableCaching: true # Enabled/ Disabled
+      cachingTime: 5       # Cache timeout in seconds
     certificateStore:
       type: JKS # | "PKCS11", "JKS", "PKCS12", "JCEKS", "BKS", "UBER"
       # providerName: SunJSSE  # Typically not required for standard keystores

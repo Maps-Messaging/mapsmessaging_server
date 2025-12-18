@@ -69,6 +69,9 @@ public class SecurityManager implements Agent {
       context = new SaslSecurityContext(username, endPointPrincipal);
     }
     else if (defined != null) {
+      if(username == null || username.isEmpty()) {
+        username = "anonymous";
+      }
       if (AuthManager.getInstance().isAuthenticationEnabled()) {
         LoginContext loginContext = getLoginContext(defined, username, passCode, endPointPrincipal);
         context = new JaasSecurityContext(username, loginContext);

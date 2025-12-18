@@ -19,6 +19,7 @@
 
 package io.mapsmessaging.engine.destination;
 
+import io.mapsmessaging.api.auth.DestinationAuthorisationCheck;
 import io.mapsmessaging.api.features.DestinationType;
 import io.mapsmessaging.config.DestinationManagerConfig;
 import io.mapsmessaging.dto.rest.config.destination.DestinationConfigDTO;
@@ -106,25 +107,25 @@ public class DestinationManager implements DestinationFactory, Agent {
   }
 
   @Override
-  public CompletableFuture<DestinationImpl> findOrCreate(String name) {
-    return findOrCreate(name, DestinationType.TOPIC);
+  public CompletableFuture<DestinationImpl> findOrCreate(String name, DestinationAuthorisationCheck authCheck) {
+    return findOrCreate(name, DestinationType.TOPIC, authCheck);
   }
 
   @SneakyThrows
   @Override
-  public CompletableFuture<DestinationImpl> findOrCreate(String name, DestinationType destinationType) {
+  public CompletableFuture<DestinationImpl> findOrCreate(String name, DestinationType destinationType, DestinationAuthorisationCheck authCheck) {
     DestinationImpl destination = find(name).get();
     if (destination != null) {
       CompletableFuture<DestinationImpl> future = new CompletableFuture<>();
       future.complete(destination);
       return future;
     } else {
-      return create(name, destinationType);
+      return create(name, destinationType, authCheck);
     }
   }
 
   @Override
-  public CompletableFuture<DestinationImpl> create(@NonNull @NotNull String name, @NonNull @NotNull DestinationType destinationType) throws IOException {
+  public CompletableFuture<DestinationImpl> create(@NonNull @NotNull String name, @NonNull @NotNull DestinationType destinationType, DestinationAuthorisationCheck authCheck) throws IOException {
     if (name.startsWith("$SYS")) {
       // can not create these
       logger.log(ServerLogMessages.DESTINATION_MANAGER_USER_SYSTEM_TOPIC, name);
@@ -144,6 +145,9 @@ public class DestinationManager implements DestinationFactory, Agent {
     if(max > 0 && existing > max) {
       logger.log(ServerLogMessages.DESTINATION_MANAGER_EXCEEDED_LICESNSE, destinationType.getName(), existing, max);
       return null;
+    }
+    if(authCheck != null && !authCheck.check(name, destinationType, true)){
+      throw new IOException("Not authorised to create destination");
     }
     return creatorPipelines[getIndex(name)].create(name, destinationType);
   }

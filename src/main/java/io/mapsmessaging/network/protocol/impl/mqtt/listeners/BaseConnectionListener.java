@@ -26,10 +26,10 @@ import io.mapsmessaging.logging.ServerLogMessages;
 import io.mapsmessaging.network.ProtocolClientConnection;
 import io.mapsmessaging.network.io.EndPoint;
 import io.mapsmessaging.network.protocol.Protocol;
-import io.mapsmessaging.network.protocol.transformation.ProtocolMessageTransformation;
 import io.mapsmessaging.network.protocol.impl.mqtt.DefaultConstants;
 import io.mapsmessaging.network.protocol.impl.mqtt.MQTTProtocol;
 import io.mapsmessaging.network.protocol.impl.mqtt.packet.MalformedException;
+import io.mapsmessaging.network.protocol.transformation.ProtocolMessageTransformation;
 import io.mapsmessaging.network.protocol.transformation.TransformationManager;
 
 import java.io.IOException;
@@ -57,6 +57,7 @@ public abstract class BaseConnectionListener extends PacketListener {
             }
             return session;
           } catch (IOException ioe) {
+            ioe.printStackTrace();
             logger.log(ServerLogMessages.MQTT_CONNECT_LISTENER_SESSION_EXCEPTION, ioe, sessionId);
             future.completeExceptionally(
                 new MalformedException("Unable to construct the required Will Topic"));

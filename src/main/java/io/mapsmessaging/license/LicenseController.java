@@ -22,7 +22,6 @@ package io.mapsmessaging.license;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
 import global.namespace.fun.io.bios.BIOS;
 import global.namespace.truelicense.api.License;
 import global.namespace.truelicense.api.LicenseManagementException;
@@ -36,9 +35,11 @@ import io.mapsmessaging.utilities.GsonFactory;
 
 import java.io.*;
 import java.net.HttpURLConnection;
+import java.net.URI;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
-import java.time.*;
+import java.time.Instant;
+import java.time.ZoneId;
 import java.util.*;
 
 public class LicenseController {
@@ -193,7 +194,9 @@ public class LicenseController {
 
       String clientSecret = licenseConfig.getClientSecret();
       String clientName = licenseConfig.getClientName();
-      HttpURLConnection connection = (HttpURLConnection) new URL(LICENSE_SERVER_URL).openConnection();
+      URI uri = URI.create(LICENSE_SERVER_URL);
+      URL url = uri.toURL();
+      HttpURLConnection connection = (HttpURLConnection) url.openConnection();
       connection.setRequestMethod("POST");
       connection.setDoOutput(true);
       connection.setRequestProperty("Content-Type", "application/json");

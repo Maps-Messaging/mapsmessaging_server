@@ -1,10 +1,7 @@
 package io.mapsmessaging.network.io.impl.lora.serial;
 
 import io.mapsmessaging.config.network.impl.LoRaSerialDeviceConfig;
-import io.mapsmessaging.logging.Logger;
-import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.network.io.impl.lora.LoRaDevice;
-import io.mapsmessaging.network.io.impl.lora.device.LoRaChipDevice;
 import io.mapsmessaging.network.protocol.impl.loragateway.LoRaProtocol;
 import lombok.Getter;
 

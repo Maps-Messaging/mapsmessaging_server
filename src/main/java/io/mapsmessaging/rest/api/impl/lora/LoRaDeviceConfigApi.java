@@ -42,11 +42,11 @@ import java.util.stream.Collectors;
 import static io.mapsmessaging.rest.api.Constants.URI_PATH;
 
 @Tag(name = "LoRa Device Management")
-@Path(URI_PATH)
+@Path(URI_PATH+"/device/lora")
 public class LoRaDeviceConfigApi extends LoraBaseRestApi {
 
   @GET
-  @Path("/device/lora/config")
+  @Path("/config")
   @Produces({MediaType.APPLICATION_JSON})
   @Operation(
       summary = "Retrieve all LoRa device configurations",
@@ -73,7 +73,7 @@ public class LoRaDeviceConfigApi extends LoraBaseRestApi {
   }
 
   @GET
-  @Path("/device/lora/{deviceName}/config")
+  @Path("/{deviceName}/config")
   @Produces({MediaType.APPLICATION_JSON})
   @Operation(
       summary = "Retrieve a specific LoRa device configuration",
@@ -111,7 +111,7 @@ public class LoRaDeviceConfigApi extends LoraBaseRestApi {
   }
 
   @POST
-  @Path("/device/lora/config")
+  @Path("/config")
   @Consumes({MediaType.APPLICATION_JSON})
   @Produces({MediaType.APPLICATION_JSON})
   @Operation(
@@ -136,7 +136,7 @@ public class LoRaDeviceConfigApi extends LoraBaseRestApi {
   }
 
   @DELETE
-  @Path("/device/lora/{deviceName}/config")
+  @Path("/{deviceName}/config")
   @Produces({MediaType.APPLICATION_JSON})
   @Operation(
       summary = "Delete a specific LoRa device configuration",

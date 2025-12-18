@@ -42,7 +42,6 @@ import io.mapsmessaging.network.protocol.impl.coap.packet.options.*;
 import io.mapsmessaging.network.protocol.impl.coap.subscriptions.Context;
 import io.mapsmessaging.network.protocol.impl.coap.subscriptions.SubscriptionState;
 import io.mapsmessaging.network.protocol.impl.coap.subscriptions.TransactionState;
-import io.mapsmessaging.schemas.config.SchemaConfig;
 import io.mapsmessaging.schemas.config.SchemaResource;
 import lombok.Getter;
 import lombok.NonNull;

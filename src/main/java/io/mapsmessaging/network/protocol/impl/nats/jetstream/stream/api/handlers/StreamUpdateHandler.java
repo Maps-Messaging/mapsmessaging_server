@@ -117,6 +117,7 @@ public class StreamUpdateHandler extends JetStreamFrameHandler {
     } catch (TimeoutException e) {
       return new ErrFrame("Timed out waiting for destination creation");
     } catch (ExecutionException | InterruptedException e) {
+      Thread.currentThread().interrupt();
       return new ErrFrame("Failed to create one or more destinations");
     }
 

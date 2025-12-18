@@ -179,6 +179,16 @@ public class OrbcommOgwsClient implements SatelliteClient {
               messageData.setPayload(Base64.getDecoder().decode(returnMessage.getRawPayload()));
               incomingEvents.add(messageData);
             }
+            else {
+              String json = gson.toJson(returnMessage);
+              MessageData messageData = new MessageData();
+              messageData.setMin(returnMessage.getPayload().getMin());
+              messageData.setSin(returnMessage.getPayload().getSin());
+              messageData.setUniqueId(returnMessage.getMobileId());
+              messageData.setPayload(json.getBytes());
+              messageData.setCommon(true);
+              incomingEvents.add(messageData);
+            }
           }
           if(lastMessageUtc != null) {
             StateManager.saveLastMessageUtc(clientId, clientSecret,lastMessageUtc);
@@ -203,6 +213,7 @@ public class OrbcommOgwsClient implements SatelliteClient {
         SubmitMessage submitMessage = new SubmitMessage();
         submitMessage.setRawPayload(Base64.getEncoder().encodeToString(messageData.getPayload()));
         submitMessage.setDestinationId(messageData.getUniqueId());
+        submitMessage.setTransportType(0);
         submitMessage.setCompletionCallback(messageData.getCompletionCallback());
         pending.add(submitMessage);
       }

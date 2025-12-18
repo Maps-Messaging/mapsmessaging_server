@@ -22,7 +22,6 @@ package io.mapsmessaging.analytics;
 import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.dto.rest.analytics.StatisticsConfigDTO;
 import io.mapsmessaging.utilities.service.Service;
-
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 

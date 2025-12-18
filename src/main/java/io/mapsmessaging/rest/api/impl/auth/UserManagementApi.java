@@ -49,11 +49,10 @@ import java.util.stream.Collectors;
 import static io.mapsmessaging.rest.api.Constants.URI_PATH;
 
 @Tag(name = "Authentication and Authorisation Management")
-@Path(URI_PATH)
+@Path(URI_PATH+"/auth/users")
 public class UserManagementApi extends BaseAuthRestApi {
 
   @GET
-  @Path("/auth/users")
   @Produces({MediaType.APPLICATION_JSON})
   @Operation(
       summary = "Get all users",
@@ -88,7 +87,7 @@ public class UserManagementApi extends BaseAuthRestApi {
   }
 
   @GET
-  @Path("/auth/user/{username}")
+  @Path("/{username}")
   @Produces({MediaType.APPLICATION_JSON})
   @Operation(
       summary = "Get user by username",
@@ -119,7 +118,6 @@ public class UserManagementApi extends BaseAuthRestApi {
 
 
   @POST
-  @Path("/auth/users")
   @Produces({MediaType.APPLICATION_JSON})
   @Operation(
       summary = "Add a new user",
@@ -148,7 +146,7 @@ public class UserManagementApi extends BaseAuthRestApi {
   }
 
   @DELETE
-  @Path("/auth/users/{userUuid}")
+  @Path("/{userUuid}")
   @Produces({MediaType.APPLICATION_JSON})
   @Operation(
       summary = "Delete a user",

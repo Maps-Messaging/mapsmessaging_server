@@ -20,7 +20,6 @@
 package io.mapsmessaging.dto.rest.config.protocol.impl;
 
 import io.mapsmessaging.dto.rest.config.network.impl.SerialConfigDTO;
-import io.mapsmessaging.dto.rest.config.protocol.ProtocolConfigDTO;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -44,7 +43,13 @@ public class StoGiConfigDTO extends BaseSatelliteConfigDTO {
   @Schema(description ="Time in seconds between polling modem location and statistics, 0 disables it", example = "60", defaultValue = "0")
   protected long locationPollInterval;
 
-  @Schema(description = "If present, then the name of the topic to send modem statistics to")
+  @Schema(description = "If present, then the name of the topic to send modem statistics to", example="/modem/stats", defaultValue="/modem/stats")
   protected String modemStatsTopic;
+
+  @Schema(description = "If present, then the name of the topic that will be used to send raw messages to", example = "/incoming/{sin}/{min}", defaultValue = "/incoming/{sin}/{min}")
+  protected String modemRawRequest;
+
+  @Schema(description = "If present, then the name of the topic that will be used monitor for response and send directly to the modem", example = "/outbound", defaultValue = "/outbound")
+  protected String modemRawResponse;
 
 }

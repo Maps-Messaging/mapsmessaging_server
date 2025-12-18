@@ -61,7 +61,6 @@ public class Modem {
   private final Queue<Command> commandQueue = new ArrayDeque<>();
   private final StringBuilder responseBuffer = new StringBuilder();
   private final long modemTimeout;
-  private final TaskManager taskManager;
 
   @Getter
   private final ModemStreamHandler streamHandler;
@@ -78,10 +77,9 @@ public class Modem {
   @Setter
   private boolean oneShotResponse;
 
-  public Modem(Consumer<Packet> packetSender, long modemTimeout, ModemStreamHandler streamHandler, TaskManager taskManager) {
+  public Modem(Consumer<Packet> packetSender, long modemTimeout, ModemStreamHandler streamHandler) {
     this.streamHandler = streamHandler;
     this.packetSender = packetSender;
-    this.taskManager = taskManager;
     oneShotResponse = false;
     currentHandler = new TextResponseHandler(this::handleLine);
     if (modemTimeout < 10000 || modemTimeout > 120000) {
@@ -89,7 +87,7 @@ public class Modem {
     }
     this.modemTimeout = modemTimeout;
 
-    future = taskManager.schedule(this::scanTimeouts, modemTimeout, TimeUnit.MILLISECONDS);
+    future = TaskManager.getInstance().schedule(this::scanTimeouts, modemTimeout, TimeUnit.MILLISECONDS);
   }
 
   public void close() {
@@ -111,7 +109,7 @@ public class Modem {
         currentCommand.future.completeExceptionally(new IOException("Modem has been closed"));
       }
     } finally {
-      future = taskManager.schedule(this::scanTimeouts, modemTimeout, TimeUnit.MILLISECONDS);
+      future = TaskManager.getInstance().schedule(this::scanTimeouts, modemTimeout, TimeUnit.MILLISECONDS);
     }
   }
 

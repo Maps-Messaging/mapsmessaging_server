@@ -29,6 +29,7 @@ import io.mapsmessaging.dto.rest.system.SubSystemStatusDTO;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.rest.api.Constants;
+import io.mapsmessaging.rest.api.impl.BaseRestApi;
 import io.mapsmessaging.rest.api.impl.messaging.impl.RestMessageListener;
 import io.mapsmessaging.rest.auth.*;
 import io.mapsmessaging.rest.cache.impl.NoCache;
@@ -162,6 +163,8 @@ public class RestApiServerManager implements Agent {
   }
 
   public void startServer() {
+    BaseRestApi.AUTH_ENABLED = config.isEnableAuthentication() && AuthManager.getInstance().isAuthorisationEnabled();
+
     RestMessageListener.setMaxSubscribedMessages(config.getMaxEventsPerDestination());
     int inactiveTimeout = config.getInactiveTimeout();
     if(inactiveTimeout < 10000) {
@@ -213,7 +216,7 @@ public class RestApiServerManager implements Agent {
       // Register Gson providers
       resourceConfig.register(GsonMessageBodyReader.class);
       resourceConfig.register(GsonMessageBodyWriter.class);
-
+      resourceConfig.register(EndpointIntrospector.class);
       if (config.isEnableAuthentication() && AuthManager.getInstance().isAuthenticationEnabled()) {
         resourceConfig.register(new AuthenticationFilter());
         AuthenticationContext.getInstance().setAccessControl(new RestAccessControl());

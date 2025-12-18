@@ -36,10 +36,12 @@ import io.mapsmessaging.rest.responses.StatusResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.ws.rs.*;
+import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
@@ -50,11 +52,10 @@ import java.util.stream.Collectors;
 import static io.mapsmessaging.rest.api.Constants.URI_PATH;
 
 @Tag(name = "Server Interface Management")
-@Path(URI_PATH)
+@Path(URI_PATH+"/server/interfaces/{endpoint}")
 public class InterfaceInstanceApi extends BaseInterfaceApi {
 
   @GET
-  @Path("/server/interface/{endpoint}")
   @Produces({MediaType.APPLICATION_JSON})
   @Operation(
       summary = "Get end point configurations",
@@ -93,7 +94,7 @@ public class InterfaceInstanceApi extends BaseInterfaceApi {
   }
 
   @GET
-  @Path("/server/interface/{endpoint}/connections")
+  @Path("/connections")
   @Produces({MediaType.APPLICATION_JSON})
   @Operation(
       summary = "Get end point connections",
@@ -134,7 +135,6 @@ public class InterfaceInstanceApi extends BaseInterfaceApi {
   }
 
   @PUT
-  @Path("/server/interface/{endpoint}")
   @Produces({MediaType.APPLICATION_JSON})
   @Operation(
       summary = "Update end point configuration",
@@ -161,11 +161,20 @@ public class InterfaceInstanceApi extends BaseInterfaceApi {
     return new StatusResponse("Failed");
   }
 
-  @PUT
-  @Path("/server/interface/{endpoint}/stop")
+  @PATCH
+  @Consumes(MediaType.APPLICATION_JSON)
+  @Produces(MediaType.APPLICATION_JSON)
   @Operation(
-      summary = "Stop the end point",
-      description = "Stops the specified end point from accepting new connections and closes connections.",
+      summary = "Controls the specific end point",
+      description = "Applies the requested state to all configured interface endpoints.",
+      requestBody = @RequestBody(
+          description = "Requested action to apply to all inter-server connections",
+          required = true,
+          content = @Content(
+              mediaType = "application/json",
+              schema = @Schema(implementation = RequestedAction.class)
+          )
+      ),
       responses = {
           @ApiResponse(
               responseCode = "200",
@@ -177,80 +186,33 @@ public class InterfaceInstanceApi extends BaseInterfaceApi {
           @ApiResponse(responseCode = "403", description = "User is not authorised to access the resource"),
       }
   )
-  public StatusResponse stopInterface(@PathParam("endpoint") String uniqueId) {
+  public StatusResponse manageSpecificInterface(@PathParam("endpoint") String uniqueId, @RequestBody RequestedAction requested, @Context HttpServletResponse response) {
     hasAccess(RESOURCE);
-    Response response = lookup(uniqueId, STATE.STOPPED);
-    return new StatusResponse(response == null?"Failed":"Stopped");
+    STATE state = null;
+    if(requested != null && requested.getState() != null) {
+      if("stopped".equalsIgnoreCase(requested.getState())) {
+        state = STATE.STOPPED;
+      }
+      else if("started".equalsIgnoreCase(requested.getState())) {
+        state = STATE.START;
+      }
+      else if("paused".equalsIgnoreCase(requested.getState())) {
+        state = STATE.PAUSED;
+      }
+      else if("resumed".equalsIgnoreCase(requested.getState())) {
+        state = STATE.RESUME;
+      }
+    }
+    if(state != null && lookup(uniqueId, state) != null) {
+      return new StatusResponse("Success");
+    }
+    response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+    return new StatusResponse("Unknown state");
   }
 
-  @PUT
-  @Path("/server/interface/{endpoint}/start")
-  @Operation(
-      summary = "Start the end point",
-      description = "Starts the specified end point accepting new connections.",
-      responses = {
-          @ApiResponse(
-              responseCode = "200",
-              description = "Operation was successful",
-              content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))
-          ),
-          @ApiResponse(responseCode = "400", description = "Bad request"),
-          @ApiResponse(responseCode = "401", description = "Invalid credentials or unauthorized access"),
-          @ApiResponse(responseCode = "403", description = "User is not authorised to access the resource"),
-      }
-  )
-  public StatusResponse startInterface(@PathParam("endpoint") String uniqueId) {
-    hasAccess(RESOURCE);
-    Response response = lookup(uniqueId, STATE.START);
-    return new StatusResponse(response == null?"Failed":"Started");
-  }
-
-  @PUT
-  @Path("/server/interface/{endpoint}/resume")
-  @Operation(
-      summary = "Resume the end point",
-      description = "Resume the specified end point accepting new connections.",
-      responses = {
-          @ApiResponse(
-              responseCode = "200",
-              description = "Operation was successful",
-              content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))
-          ),
-          @ApiResponse(responseCode = "400", description = "Bad request"),
-          @ApiResponse(responseCode = "401", description = "Invalid credentials or unauthorized access"),
-          @ApiResponse(responseCode = "403", description = "User is not authorised to access the resource"),
-      }
-  )
-  public StatusResponse resumeInterface(@PathParam("endpoint") String uniqueId) {
-    hasAccess(RESOURCE);
-    Response response = lookup(uniqueId, STATE.RESUME);
-    return new StatusResponse(response == null?"Failed":"Resumed");
-  }
-
-  @PUT
-  @Path("/server/interface/{endpoint}/pause")
-  @Operation(
-      summary = "Pause the end point",
-      description = "Pauses the specified end point from accepting new connections.",
-      responses = {
-          @ApiResponse(
-              responseCode = "200",
-              description = "Operation was successful",
-              content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))
-          ),
-          @ApiResponse(responseCode = "400", description = "Bad request"),
-          @ApiResponse(responseCode = "401", description = "Invalid credentials or unauthorized access"),
-          @ApiResponse(responseCode = "403", description = "User is not authorised to access the resource"),
-      }
-  )
-  public StatusResponse pauseInterface(@PathParam("endpoint") String uniqueId) {
-    hasAccess(RESOURCE);
-    Response response = lookup(uniqueId, STATE.PAUSED);
-    return new StatusResponse(response == null?"Failed":"Paused");
-  }
 
   @GET
-  @Path("/server/interface/{endpoint}/status")
+  @Path("/status")
   @Produces({MediaType.APPLICATION_JSON})
   @Operation(
       summary = "Get end point status",

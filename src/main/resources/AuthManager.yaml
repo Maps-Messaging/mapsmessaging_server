@@ -34,7 +34,17 @@ AuthManager:
   config:
     identityProvider: "Encrypted-Auth"
     passwordHandler: "EncryptedPasswordCipher"
+    authorisationProvider: "Acl" # Open, Acl, openFGA
     configDirectory: "{{MAPS_DATA}}/.security"
+    authorisation:
+      enableCaching: false # Enabled/ Disabled
+      cachingTime: 5       # Cache timeout in seconds
+      openfga:
+        uris: "http://10.140.62.152:8080"  # URL for OpenFGA server
+        storeId: "01KAF6PKR6YRJZ8RXXYXAJDX1E"  # OpenFGA Store Id
+        modelId: "01KAF6SSMG4T5WZY47FS12QZ0C"  # OpenFGA Model Id
+        connectionTimeout: 10 # Connection time out in seconds
+
     certificateStore:
       type: JKS
       path: "{{MAPS_DATA}}/.security/authKeystore.jks"

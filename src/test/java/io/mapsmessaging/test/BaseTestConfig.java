@@ -21,7 +21,10 @@ package io.mapsmessaging.test;
 
 import io.mapsmessaging.BaseTest;
 import io.mapsmessaging.MessageDaemon;
+import io.mapsmessaging.api.features.DestinationType;
 import io.mapsmessaging.auth.AuthManager;
+import io.mapsmessaging.auth.ServerPermissions;
+import io.mapsmessaging.auth.priviliges.SessionPrivileges;
 import io.mapsmessaging.configuration.ConfigurationProperties;
 import io.mapsmessaging.engine.destination.DestinationImpl;
 import io.mapsmessaging.engine.destination.DestinationManagerListener;
@@ -39,6 +42,10 @@ import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
+
+import io.mapsmessaging.security.access.Group;
+import io.mapsmessaging.security.access.Identity;
+import io.mapsmessaging.security.authorisation.ProtectedResource;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
@@ -46,6 +53,14 @@ import org.junit.jupiter.api.Timeout;
 
 @Timeout(value = 240000, unit = TimeUnit.MILLISECONDS)
 public class BaseTestConfig extends BaseTest {
+
+  private static final String[] USERNAMES = {"user1", "admin", "user2", "anonymous"};
+  private static final char[][] PASSWORDS = {"password1".toCharArray(), "admin1".toCharArray(), "password2".toCharArray(), "".toCharArray()};
+  private static final String[] GROUPS = {"everyone"};
+
+  @BeforeAll
+  static void setUp() {
+  }
 
   protected static MessageDaemon md = null;
   private static Thread th;
@@ -107,6 +122,19 @@ public class BaseTestConfig extends BaseTest {
       th.start();
       try {
         th.join();
+        if(AuthManager.getInstance().isAuthorisationEnabled()) {
+          Group group = AuthManager.getInstance().getGroupIdentity("everyone");
+          for (int i = 0; i < USERNAMES.length; i++) {
+            if (AuthManager.getInstance().getUserIdentity(USERNAMES[i]) == null) {
+              AuthManager.getInstance().addUser(USERNAMES[i], PASSWORDS[i], SessionPrivileges.create(USERNAMES[i]), GROUPS);
+            }
+            AuthManager.getInstance().addUserToGroup(USERNAMES[i], group.getName());
+          }
+          Identity identity = AuthManager.getInstance().getUserIdentity("anonymous");
+          ProtectedResource resource = new ProtectedResource(DestinationType.TOPIC.getName(), "test/nosubscribe", null);
+          AuthManager.getInstance().deny(identity, ServerPermissions.SUBSCRIBE, resource);
+        }
+
       } catch (InterruptedException e) {
         // We don't really care, this is a test
         Thread.currentThread().interrupt();

@@ -27,6 +27,7 @@ public class CronJob implements Job {
   @Override
   public void execute(JobExecutionContext jobExecutionContext) throws JobExecutionException {
     Trigger trigger = (Trigger) jobExecutionContext.getMergedJobDataMap().get("trigger");
+
     trigger.runActions();
   }
 }

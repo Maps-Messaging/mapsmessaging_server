@@ -22,7 +22,6 @@ package io.mapsmessaging.network.protocol.impl.coap.listeners;
 import io.mapsmessaging.api.MessageBuilder;
 import io.mapsmessaging.api.features.QualityOfService;
 import io.mapsmessaging.api.message.Message;
-import io.mapsmessaging.engine.destination.MessageOverrides;
 import io.mapsmessaging.network.protocol.impl.coap.CoapProtocol;
 import io.mapsmessaging.network.protocol.impl.coap.packet.BasePacket;
 

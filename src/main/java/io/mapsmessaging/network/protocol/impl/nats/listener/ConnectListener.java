@@ -23,13 +23,13 @@ import io.mapsmessaging.api.Session;
 import io.mapsmessaging.api.SessionContextBuilder;
 import io.mapsmessaging.api.SessionManager;
 import io.mapsmessaging.network.ProtocolClientConnection;
-import io.mapsmessaging.network.protocol.transformation.ProtocolMessageTransformation;
 import io.mapsmessaging.network.protocol.impl.nats.frames.ConnectFrame;
 import io.mapsmessaging.network.protocol.impl.nats.frames.ErrFrame;
 import io.mapsmessaging.network.protocol.impl.nats.frames.NatsFrame;
 import io.mapsmessaging.network.protocol.impl.nats.frames.OkFrame;
 import io.mapsmessaging.network.protocol.impl.nats.state.ConnectedState;
 import io.mapsmessaging.network.protocol.impl.nats.state.SessionState;
+import io.mapsmessaging.network.protocol.transformation.ProtocolMessageTransformation;
 import io.mapsmessaging.network.protocol.transformation.TransformationManager;
 import io.mapsmessaging.security.uuid.UuidGenerator;
 

@@ -20,7 +20,9 @@
 package io.mapsmessaging.engine.session.security;
 
 import com.sun.security.auth.UserPrincipal;
+import io.mapsmessaging.auth.AuthManager;
 import io.mapsmessaging.security.SubjectHelper;
+import io.mapsmessaging.security.access.Identity;
 import io.mapsmessaging.security.access.mapping.GroupIdMap;
 import lombok.Getter;
 
@@ -35,11 +37,13 @@ public abstract class SecurityContext {
   protected boolean isLoggedIn;
   protected final String username;
   protected Subject subject;
+  protected Identity identity;
 
   private List<UUID> accessIds;
 
   protected SecurityContext(String username){
     this.username = username;
+    this.identity = AuthManager.getInstance().getUserIdentity(username);
   }
 
   public abstract void login() throws IOException;

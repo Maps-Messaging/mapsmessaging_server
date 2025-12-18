@@ -22,7 +22,11 @@ package io.mapsmessaging.engine.session;
 import io.mapsmessaging.MessageDaemon;
 import io.mapsmessaging.api.Destination;
 import io.mapsmessaging.api.SubscribedEventManager;
+import io.mapsmessaging.api.auth.CreationAuthorisationCheck;
+import io.mapsmessaging.api.auth.DestinationAuthorisationCheck;
 import io.mapsmessaging.api.features.DestinationType;
+import io.mapsmessaging.auth.AuthManager;
+import io.mapsmessaging.auth.ServerPermissions;
 import io.mapsmessaging.dto.rest.session.SessionInformationDTO;
 import io.mapsmessaging.engine.closure.ClosureTask;
 import io.mapsmessaging.engine.closure.ClosureTaskManager;
@@ -37,6 +41,8 @@ import io.mapsmessaging.engine.session.will.WillTaskManager;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.logging.ServerLogMessages;
+import io.mapsmessaging.security.authorisation.AuthRequest;
+import io.mapsmessaging.security.authorisation.ProtectedResource;
 import io.mapsmessaging.utilities.threads.SimpleTaskScheduler;
 import lombok.Getter;
 import lombok.NonNull;
@@ -45,6 +51,8 @@ import lombok.SneakyThrows;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.*;
 
 /**
@@ -202,9 +210,24 @@ public class SessionImpl {
    */
   public void login() throws IOException {
     securityContext.login();
+    ProtectedResource protectedResource  = new  ProtectedResource("Server", MessageDaemon.getInstance().getId(), null);
+    List<AuthRequest> authRequests = new ArrayList<>();
+    authRequests.add(new AuthRequest(securityContext.getIdentity(),ServerPermissions.CONNECT ,protectedResource));
+    if(context.isPersistentSession() && !AuthManager.getInstance().canAccess(securityContext.getIdentity(), ServerPermissions.PERSISTENT_SESSION ,protectedResource)) {
+      authRequests.add(new AuthRequest(securityContext.getIdentity(),ServerPermissions.PERSISTENT_SESSION ,protectedResource));
+    }
+    if(!AuthManager.getInstance().hasAllAccess(authRequests)) {
+      throw new IOException("Access denied due to permissions");
+    }
+
     ((SessionDestinationManager) destinationManager).setSessionTenantConfig(TenantManagement.build(context.getClientConnection(), securityContext));
     // Only do this once the connection has be authenticated
-    this.willTaskImpl = createWill(context);
+    try {
+      this.willTaskImpl = createWill(context).get(10, TimeUnit.SECONDS);
+    } catch (InterruptedException | ExecutionException | TimeoutException e) {
+      Thread.currentThread().interrupt();
+      throw new IOException(e);
+    }
   }
 
   //</editor-fold>
@@ -259,7 +282,7 @@ public class SessionImpl {
    * @return A CompletableFuture that completes with the found or created destination
    * @throws IOException If the session is closed
    */
-  public CompletableFuture<DestinationImpl> findDestination(@NonNull @NotNull String destinationName, @NonNull @NotNull DestinationType destinationType) throws IOException {
+  public CompletableFuture<DestinationImpl> findDestination(@NonNull @NotNull String destinationName, @NonNull @NotNull DestinationType destinationType, DestinationAuthorisationCheck authCheck) throws IOException {
     if (isClosed) {
       throw new IOException("Session is closed");
     }
@@ -268,17 +291,17 @@ public class SessionImpl {
       mapped = destinationManager.calculateNamespace(destinationName);
       namespaceMapping.addMapped(destinationName, mapped);
     }
-    String finalMapped = mapped;
-
-    CompletableFuture<DestinationImpl> future = new CompletableFuture<>();
     DestinationImpl existing = destinationManager.find(mapped).get();
+
+    String finalMapped = mapped;
+    CompletableFuture<DestinationImpl> future = new CompletableFuture<>();
     if (existing != null) {
       future.complete(existing);
     } else {
       Callable<DestinationImpl> callable = () -> {
         DestinationImpl created = null;
         try {
-          CompletableFuture<DestinationImpl> creationFuture = destinationManager.create(finalMapped, destinationType);
+          CompletableFuture<DestinationImpl> creationFuture = destinationManager.create(finalMapped, destinationType, authCheck);
           created = creationFuture.get();
           future.complete(created);
         } catch (IOException | ExecutionException e) {
@@ -309,6 +332,13 @@ public class SessionImpl {
    * @return a CompletableFuture that completes when the destination is successfully deleted
    */
   public CompletableFuture<DestinationImpl> deleteDestination(DestinationImpl destinationImpl) {
+    ProtectedResource protectedResource  = new  ProtectedResource(destinationImpl.getResourceType().getName(), destinationImpl.getFullyQualifiedNamespace(), null);
+    if(!AuthManager.getInstance().canAccess(securityContext.getIdentity(), ServerPermissions.DELETE ,protectedResource)){
+      CompletableFuture<DestinationImpl>  future = new CompletableFuture<>();
+      future.completeExceptionally(new IOException("Access denied"));
+      return future;
+    }
+
     namespaceMapping.removeByMapped(destinationImpl.getFullyQualifiedNamespace());
     return destinationManager.delete(destinationImpl);
   }
@@ -384,6 +414,7 @@ public class SessionImpl {
     if (isClosed) {
       throw new IOException("Session is closed");
     }
+
     String originalName = context.getDestinationName();
     String namespace = destinationManager.calculateNamespace(originalName);
     namespaceMapping.addMapped(originalName, namespace);
@@ -446,22 +477,38 @@ public class SessionImpl {
    * Finally, it sets the WillTaskImpl object as the willTask of the SessionImpl object and returns it.
    * If the sessionContext's willTopic is null, it returns null.
    */
-  private WillTaskImpl createWill(SessionContext sessionContext) {
+  private CompletableFuture<WillTaskImpl> createWill(SessionContext sessionContext) {
     if (sessionContext.getWillTopic() != null) {
+
       String willTopicName = destinationManager.calculateNamespace(context.getWillTopic());
-      MessageDaemon.getInstance().getDestinationManager().findOrCreate(willTopicName);
-      WillDetails willDetails =
-          new WillDetails(
-              sessionContext.getWillMessage(),
-              willTopicName,
-              sessionContext.getWillDelay(),
-              sessionContext.getId(),
-              sessionContext.getClientConnection().getName(),
-              sessionContext.getClientConnection().getVersion());
-      logger.log(ServerLogMessages.SESSION_MANAGER_WILL_TASK, sessionContext.getId(), willDetails.toString());
-      return this.setWillTask(willDetails);
+      CreationAuthorisationCheck check = new CreationAuthorisationCheck(sessionContext.getSecurityContext().getIdentity());
+
+      return MessageDaemon.getInstance()
+          .getDestinationManager()
+          .findOrCreate(willTopicName, check)
+          .thenCompose(destinationImpl -> {
+            WillDetails willDetails =
+                new WillDetails(
+                    sessionContext.getWillMessage(),
+                    willTopicName,
+                    sessionContext.getWillDelay(),
+                    sessionContext.getId(),
+                    sessionContext.getClientConnection().getName(),
+                    sessionContext.getClientConnection().getVersion());
+
+            logger.log(
+                ServerLogMessages.SESSION_MANAGER_WILL_TASK,
+                sessionContext.getId(),
+                willDetails.toString());
+
+            CompletableFuture<WillTaskImpl> willTaskFuture = new CompletableFuture<>();
+            willTaskFuture.complete(this.setWillTask(willDetails));
+            return willTaskFuture;
+          });
     }
-    return null;
+    CompletableFuture<WillTaskImpl> willTaskFuture = new CompletableFuture<>();
+    willTaskFuture.complete(null);
+    return willTaskFuture;
   }
 
   public SessionInformationDTO getSessionInformation() {

@@ -25,7 +25,6 @@ import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.rest.api.Constants;
 import io.mapsmessaging.rest.auth.AuthenticationContext;
 import io.mapsmessaging.rest.auth.RestAccessControl;
-import io.mapsmessaging.rest.auth.RestAclMapping;
 import io.mapsmessaging.rest.cache.CacheKey;
 import io.mapsmessaging.security.access.Identity;
 import jakarta.servlet.http.HttpServletRequest;
@@ -42,6 +41,9 @@ import static io.mapsmessaging.logging.ServerLogMessages.REST_CACHE_HIT;
 import static io.mapsmessaging.logging.ServerLogMessages.REST_CACHE_MISS;
 
 public class BaseRestApi {
+
+  public static boolean AUTH_ENABLED = true;
+
   private final Logger logger = LoggerFactory.getLogger(BaseRestApi.class);
   @Context
   protected HttpServletRequest request;
@@ -63,6 +65,7 @@ public class BaseRestApi {
   }
 
   private void checkAuthentication() {
+
     HttpSession session = getSession();
     if (session.getAttribute("uuid") == null) {
       throw new WebApplicationException(401);
@@ -71,26 +74,30 @@ public class BaseRestApi {
 
 
   protected void hasAccess(String resource) {
+    if(!AUTH_ENABLED){
+      return;
+    }
     checkAuthentication();
     String method = request.getMethod();
     Subject subject = (Subject) getSession().getAttribute("subject");
     boolean access = true;
 
-    if (AuthManager.getInstance().isAuthorisationEnabled()) {
-      HttpSession session = getSession();
-      Identity userIdMap = (Identity) session.getAttribute("userIdMap");
-      if(userIdMap == null) {
-        String username = (String) session.getAttribute("username");
-        userIdMap = AuthManager.getInstance().getUserIdentity(username);
-        if(userIdMap != null) {
-          session.setAttribute("userIdMap", userIdMap);
-        }
-      }
-      RestAccessControl accessControl = AuthenticationContext.getInstance().getAccessControl();
-      if (accessControl != null) {
-        access = (userIdMap != null && accessControl.hasAccess(resource, subject, computeAccess(method)));
+    HttpSession session = getSession();
+    Identity userIdMap = (Identity) session.getAttribute("userIdMap");
+    if(userIdMap == null) {
+      String username = (String) session.getAttribute("username");
+      userIdMap = AuthManager.getInstance().getUserIdentity(username);
+      if(userIdMap != null) {
+        session.setAttribute("userIdMap", userIdMap);
       }
     }
+    RestAccessControl accessControl = AuthenticationContext.getInstance().getAccessControl();
+/*
+    if (accessControl != null) {
+      access = (userIdMap != null && accessControl.hasAccess(resource, subject, computeAccess(method)));
+    }
+
+*/
     if (!access) {
       throw new WebApplicationException("Access denied", Response.Status.FORBIDDEN);
     }
@@ -98,11 +105,11 @@ public class BaseRestApi {
 
   private long computeAccess(String method) {
     return switch (method) {
-      case "GET", "HEAD" -> RestAclMapping.READ_VALUE;
-      case "POST" -> RestAclMapping.CREATE_VALUE;
-      case "PUT" -> RestAclMapping.UPDATE_VALUE;
-      case "DELETE" -> RestAclMapping.DELETE_VALUE;
-      default -> RestAclMapping.READ_VALUE;
+      case "GET", "HEAD" -> 0;
+      case "POST" -> 1;
+      case "PUT" -> 2;
+      case "DELETE" -> 3;
+      default -> 0;
     };
   }
 

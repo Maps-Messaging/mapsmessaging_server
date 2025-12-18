@@ -17,39 +17,37 @@
  *  limitations under the License.
  */
 
-package io.mapsmessaging.auth.acl;
+package io.mapsmessaging.auth.traversal;
 
-import io.mapsmessaging.security.access.AccessControlMapping;
+import io.mapsmessaging.security.authorisation.ProtectedResource;
+import io.mapsmessaging.security.authorisation.ResourceTraversal;
 
-public enum InterfaceAccessControl implements AccessControlMapping {
-  CONNECT,
-  MANAGE;
+public class ServerTraversal implements ResourceTraversal {
 
-  private final long value;
+  private ProtectedResource current;
 
-  InterfaceAccessControl() {
-    this.value = 1L << this.ordinal(); // Shift 1 left by 'ordinal' positions
+  public ServerTraversal(ProtectedResource protectedResource) {
+    this.current = protectedResource;
+
   }
 
   @Override
-  public Long getAccessValue(String accessControl) {
-    if (accessControl == null) {
-      return 0L;
-    }
-    try {
-      return valueOf(accessControl.toUpperCase()).value;
-    } catch (IllegalArgumentException e) {
-      return 0L;
-    }
+  public ProtectedResource current() {
+    return current;
   }
 
   @Override
-  public String getAccessName(long value) {
-    for (InterfaceAccessControl ac : values()) {
-      if (ac.value == value) {
-        return ac.name().toLowerCase();
-      }
+  public boolean hasMore() {
+    return current != null;
+  }
+
+  @Override
+  public void moveToParent() {
+    if(current.getResourceId().equals("*")){
+      current = null;
     }
-    return null;
+    else {
+      current = new ProtectedResource(current.getResourceType(), "*", current.getTenant());
+    }
   }
 }

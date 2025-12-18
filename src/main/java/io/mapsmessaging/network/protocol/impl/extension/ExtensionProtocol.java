@@ -126,6 +126,7 @@ public class ExtensionProtocol extends Protocol implements MessageListener, Clie
 
   protected int saveMessage(@NonNull @NotNull String destinationName, @NotNull Message message) throws ExecutionException, InterruptedException, TimeoutException, IOException {
     String lookup = nameMapping.get(destinationName);
+    if(lookup == null)lookup = destinationName;
     if(lookup != null) {
       DestinationContext destination = session.getDestination(lookup, DestinationType.TOPIC);
       if (destination != null) {

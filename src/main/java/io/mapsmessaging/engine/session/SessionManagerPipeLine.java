@@ -38,10 +38,7 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.util.*;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.LongAdder;
 
 //
@@ -59,22 +56,19 @@ public class SessionManagerPipeLine {
 
   private final ExecutorService taskScheduler = new SingleConcurrentTaskScheduler("SessionManagerPipeLine");
 
-  private SecurityManager securityManager;
-
   private final LongAdder connectedSessions;
   private final LongAdder disconnectedSessions;
   private final LongAdder expiredSessions;
   private final WillTaskManager willTaskManager;
 
-  SessionManagerPipeLine(DestinationManager destinationManager, PersistentSessionManager lookup, SecurityManager security, LongAdder connected, LongAdder disconnected,
+  SessionManagerPipeLine(DestinationManager destinationManager, PersistentSessionManager lookup, LongAdder connected, LongAdder disconnected,
       LongAdder expired) {
-    subscriptionManagerFactory = new LinkedHashMap<>();
-    sessions = new LinkedHashMap<>();
+    subscriptionManagerFactory = new ConcurrentHashMap<>();
+    sessions = new ConcurrentHashMap<>();
     this.destinationManager = destinationManager;
     connectedSessions = connected;
     disconnectedSessions = disconnected;
     expiredSessions = expired;
-    securityManager = security;
     storeLookup = lookup;
     willTaskManager = WillTaskManager.getInstance();
   }
@@ -104,10 +98,6 @@ public class SessionManagerPipeLine {
     return subscriptionManagerFactory.keySet();
   }
 
-  protected void setSecurityManager(SecurityManager manager) {
-    securityManager = manager;
-  }
-
   @SuppressWarnings("java:S1452")
   public Future<?> submit(Callable<?> task) {
     return taskScheduler.submit(task);
@@ -115,9 +105,7 @@ public class SessionManagerPipeLine {
 
   SessionImpl create(SessionContext sessionContext) throws LoginException {
     SessionImpl sessionImpl;
-    logger.log(ServerLogMessages.SESSION_MANAGER_CREATE_SECURITY_CONTEXT);
-    SecurityContext securityContext = securityManager.getSecurityContext(sessionContext);
-
+    SecurityContext securityContext = sessionContext.getSecurityContext();
     //
     // Force close the older session if duplicates are not allowed
     //
@@ -128,10 +116,6 @@ public class SessionManagerPipeLine {
         logger.log(ServerLogMessages.SESSION_MANAGER_FOUND_CLOSED, sessionContext.getId());
       }
     }
-
-    //
-    // Create the session
-    //
     SubscriptionController subscriptionManager = loadSubscriptionManager(sessionContext);
     SessionDestinationManager sessionDestinationManager = new SessionDestinationManager(destinationManager);
     if(sessionContext.isPersistentSession()) {
@@ -190,7 +174,7 @@ public class SessionManagerPipeLine {
   }
 
   void addDisconnectedSession(String sessionId, String storeName, SessionDetails sessionDetails, Map<String, SubscriptionContext> map) {
-    SubscriptionController subscriptionManager = new SubscriptionController(sessionId, sessionDetails.getUniqueId(), destinationManager, map);
+    SubscriptionController subscriptionManager = new SubscriptionController(sessionId, sessionDetails, destinationManager, map);
     subscriptionManagerFactory.put(sessionId, subscriptionManager);
     disconnectedSessions.increment();
     long timeout =  sessionDetails.getExpiryTime() - System.currentTimeMillis();

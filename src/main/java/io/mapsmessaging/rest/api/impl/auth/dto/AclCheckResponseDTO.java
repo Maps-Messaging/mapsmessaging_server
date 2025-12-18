@@ -17,18 +17,30 @@
  *  limitations under the License.
  */
 
-package io.mapsmessaging.dto.rest.config.protocol.impl;
+package io.mapsmessaging.rest.api.impl.auth.dto;
 
-import io.mapsmessaging.dto.rest.config.protocol.ProtocolConfigDTO;
+
 import io.swagger.v3.oas.annotations.media.Schema;
+import java.util.List;
+import lombok.AllArgsConstructor;
 import lombok.Data;
-import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 
 @Data
-@EqualsAndHashCode(callSuper = true)
 @NoArgsConstructor
-@Schema(description = "OrbComm OGWS Protocol Configuration DTO")
-public class OrbCommOgwsDTO  extends SatelliteConfigDTO {
+@AllArgsConstructor
+@Schema(description = "Result of an ACL check")
+public class AclCheckResponseDTO {
 
+  @Schema(description = "Decision for the requested permission", example = "ALLOW")
+  private AclDecision decision;
+
+  @Schema(description = "Permission name that was checked", example = "publish")
+  private String permission;
+
+  @Schema(description = "Human readable explanation of how this decision was reached")
+  private String reason;
+
+  @Schema(description = "Optional list of rule summaries that contributed to the decision")
+  private List<String> sources;
 }

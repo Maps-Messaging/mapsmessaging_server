@@ -21,16 +21,22 @@ package io.mapsmessaging.api;
 
 import io.mapsmessaging.api.features.DestinationType;
 import io.mapsmessaging.api.message.Message;
+import io.mapsmessaging.auth.AuthManager;
+import io.mapsmessaging.auth.ServerPermissions;
 import io.mapsmessaging.engine.destination.BaseDestination;
 import io.mapsmessaging.engine.destination.DestinationImpl;
 import io.mapsmessaging.engine.schema.Schema;
-import io.mapsmessaging.engine.schema.SchemaLocationHelper;
 import io.mapsmessaging.engine.schema.SchemaManager;
+import io.mapsmessaging.engine.session.security.SecurityContext;
 import io.mapsmessaging.schemas.config.SchemaConfig;
+import io.mapsmessaging.security.authorisation.AuthRequest;
+import io.mapsmessaging.security.authorisation.ProtectedResource;
 import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Generic destination class
@@ -38,9 +44,13 @@ import java.io.IOException;
 public class Destination implements BaseDestination {
 
   protected final DestinationImpl destinationImpl;
+  protected final SecurityContext securityContext;
+  protected final ProtectedResource protectedResource;
 
-  Destination(@NonNull @NotNull DestinationImpl impl) {
+  Destination(@NonNull @NotNull DestinationImpl impl, SecurityContext context) {
     destinationImpl = impl;
+    this.securityContext = context;
+    protectedResource = new ProtectedResource(impl.getResourceType().getName(), impl.getFullyQualifiedNamespace(), null);
   }
 
   @Override
@@ -49,12 +59,29 @@ public class Destination implements BaseDestination {
       // Ensure the schema is applied to the incoming message
       String schemaId = destinationImpl.getSchema().getUniqueId();
       if (schemaId.equals(SchemaManager.DEFAULT_RAW_UUID.toString())) {
-        SchemaConfig schemaConfig = SchemaManager.getInstance().locateSchema(destinationImpl.getFullyQualifiedNamespace());
-        if(schemaConfig != null && !schemaConfig.getUniqueId().equals(SchemaManager.DEFAULT_RAW_UUID.toString())) {
-          destinationImpl.updateSchema(schemaConfig, null);
+        try {
+          SchemaConfig schemaConfig = SchemaManager.getInstance().locateSchema(destinationImpl.getFullyQualifiedNamespace());
+          if (schemaConfig != null && !schemaConfig.getUniqueId().equals(SchemaManager.DEFAULT_RAW_UUID.toString())) {
+            destinationImpl.updateSchema(schemaConfig, null);
+          }
+        }
+        catch(Throwable t) {
+          t.printStackTrace();
         }
       }
       message.setSchemaId(destinationImpl.getSchema().getUniqueId());
+    }
+
+
+    if(message.isRetain()){
+      if (!AuthManager.getInstance().canAccess(securityContext.getIdentity(), ServerPermissions.RETAIN, protectedResource)) {
+        throw new IOException("You don't have permission to publish retain events to this resource");
+      }
+    }
+    else {
+      if (!AuthManager.getInstance().canAccess(securityContext.getIdentity(), ServerPermissions.PUBLISH, protectedResource)) {
+        throw new IOException("You don't have permission to publish to this resource");
+      }
     }
     return destinationImpl.storeMessage(message);
   }

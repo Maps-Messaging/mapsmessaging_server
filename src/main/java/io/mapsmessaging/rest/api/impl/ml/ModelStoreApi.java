@@ -35,21 +35,20 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import org.glassfish.jersey.media.multipart.FormDataParam;
 
-
 import java.io.IOException;
 import java.io.InputStream;
 
 import static io.mapsmessaging.rest.api.Constants.URI_PATH;
 
 @Tag(name = "ML Model Store")
-@Path(URI_PATH)
+@Path(URI_PATH+"/server/models")
 public class ModelStoreApi extends BaseRestApi {
 
   private static final String RESOURCE = "models";
 
 
   @POST
-  @Path("/server/model/{modelName}")
+  @Path("/{modelName}")
   @Consumes(MediaType.MULTIPART_FORM_DATA)
   @Produces(MediaType.APPLICATION_JSON)
   public StatusResponse uploadModel(
@@ -68,7 +67,7 @@ public class ModelStoreApi extends BaseRestApi {
     return new StatusResponse("Success");
   }
   @GET
-  @Path("/server/model/{modelName}")
+  @Path("/{modelName}")
   @Produces(MediaType.APPLICATION_OCTET_STREAM)
   @Operation(
       summary = "Download model",
@@ -96,7 +95,7 @@ public class ModelStoreApi extends BaseRestApi {
   }
 
   @HEAD
-  @Path("/server/model/{modelName}")
+  @Path("/{modelName}")
   @Operation(
       summary = "Check if model exists",
       description = "Checks if a model with the given name exists.",
@@ -121,7 +120,7 @@ public class ModelStoreApi extends BaseRestApi {
   }
 
   @DELETE
-  @Path("/server/model/{modelName}")
+  @Path("/{modelName}")
   @Produces(MediaType.APPLICATION_JSON)
   @Operation(
       summary = "Delete model",
@@ -149,7 +148,6 @@ public class ModelStoreApi extends BaseRestApi {
   }
 
   @GET
-  @Path("/server/models")
   @Produces(MediaType.APPLICATION_JSON)
   @Operation(
       summary = "List all models",

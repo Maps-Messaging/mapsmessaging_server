@@ -19,21 +19,21 @@
 
 package io.mapsmessaging.engine.schema;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.gson.Gson;
-import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
 import io.mapsmessaging.config.SchemaManagerConfig;
 import io.mapsmessaging.configuration.ConfigurationProperties;
-import io.mapsmessaging.dto.rest.schema.*;
+import io.mapsmessaging.dto.rest.schema.FileRepositoryConfigDTO;
+import io.mapsmessaging.dto.rest.schema.MapsRepositoryConfigDTO;
+import io.mapsmessaging.dto.rest.schema.RepositoryConfigDTO;
 import io.mapsmessaging.dto.rest.system.Status;
 import io.mapsmessaging.dto.rest.system.SubSystemStatusDTO;
 import io.mapsmessaging.schemas.config.SchemaConfig;
-import io.mapsmessaging.schemas.config.SchemaConfigFactory;
 import io.mapsmessaging.schemas.config.SchemaResource;
-import io.mapsmessaging.schemas.config.impl.*;
+import io.mapsmessaging.schemas.config.impl.JsonSchemaConfig;
+import io.mapsmessaging.schemas.config.impl.NativeSchemaConfig;
 import io.mapsmessaging.schemas.config.impl.NativeSchemaConfig.TYPE;
+import io.mapsmessaging.schemas.config.impl.RawSchemaConfig;
+import io.mapsmessaging.schemas.config.impl.XmlSchemaConfig;
 import io.mapsmessaging.schemas.formatters.MessageFormatter;
 import io.mapsmessaging.schemas.formatters.MessageFormatterFactory;
 import io.mapsmessaging.schemas.repository.SchemaRepository;
@@ -46,9 +46,6 @@ import lombok.Getter;
 
 import java.io.File;
 import java.io.IOException;
-import java.time.LocalDateTime;
-import java.time.OffsetDateTime;
-import java.time.ZoneOffset;
 import java.util.*;
 import java.util.Map.Entry;
 
@@ -116,7 +113,20 @@ public class SchemaManager implements Agent {
   }
 
   public MessageFormatter getMessageFormatter(String uniqueId) {
-    return loadedFormatter.get(uniqueId);
+    MessageFormatter formatter = loadedFormatter.get(uniqueId);
+    if(formatter == null){
+      SchemaConfig schemaConfig = getSchema(uniqueId);
+      if(schemaConfig != null) {
+        try {
+          formatter = MessageFormatterFactory.getInstance().getFormatter(schemaConfig);
+          loadedFormatter.put(schemaConfig.getUniqueId(), formatter);
+        } catch (IOException e) {
+          // log this
+        }
+
+      }
+    }
+    return formatter;
   }
 
   public List<String> getMessageFormats() {

@@ -24,7 +24,6 @@ import com.udojava.jmx.wrapper.JMXBeanAttribute;
 import com.udojava.jmx.wrapper.JMXBeanOperation;
 import io.mapsmessaging.BuildInfo;
 import io.mapsmessaging.MessageDaemon;
-import io.mapsmessaging.api.features.DestinationType;
 import io.mapsmessaging.engine.destination.DestinationImpl;
 import io.mapsmessaging.network.io.EndPoint;
 import io.mapsmessaging.utilities.admin.HealthMonitor;
@@ -37,7 +36,6 @@ import io.mapsmessaging.utilities.stats.Stats;
 import lombok.Getter;
 
 import javax.management.ObjectInstance;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -146,16 +144,6 @@ public class MessageDaemonJMX implements HealthMonitor {
     healthMonitor.close();
     entryJMX.close();
     JMXManager.getInstance().unregister(mbean);
-  }
-
-  @JMXBeanOperation(name = "createDestination", description = "Creates a new destination instance")
-  public boolean create(String name, boolean isTopic) throws IOException {
-    DestinationType type = DestinationType.TOPIC;
-    if (!isTopic) {
-      type = DestinationType.QUEUE;
-    }
-    daemon.getDestinationManager().create(name, type);
-    return true;
   }
 
   @JMXBeanOperation(name = "checkHealth", description = "Returns the last total number of bytes sent from this end point")

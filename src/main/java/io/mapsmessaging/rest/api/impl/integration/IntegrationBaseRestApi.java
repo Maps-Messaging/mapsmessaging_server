@@ -19,8 +19,48 @@
 
 package io.mapsmessaging.rest.api.impl.integration;
 
+import io.mapsmessaging.dto.rest.integration.IntegrationStatusDTO;
+import io.mapsmessaging.dto.rest.stats.LinkedMovingAverageRecordDTO;
+import io.mapsmessaging.network.io.connection.EndPointConnection;
 import io.mapsmessaging.rest.api.impl.BaseRestApi;
+
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 public class IntegrationBaseRestApi extends BaseRestApi {
   protected static final String RESOURCE = "integration";
+
+  public IntegrationStatusDTO fromConnection(EndPointConnection connection) {
+    IntegrationStatusDTO dto = new IntegrationStatusDTO();
+    dto.setState(connection.getState().getName());
+    dto.setInterfaceName(connection.getConfigName());
+    dto.setBytesSent(connection.getTotalBytesSent());
+    dto.setBytesReceived(connection.getTotalBytesRead());
+    dto.setMessagesSent(connection.getTotalPacketsSent());
+    dto.setMessagesReceived(connection.getTotalPacketsRead());
+    dto.setErrors(connection.getTotalErrors());
+
+    // Initialize statistics and timestamps if connection details are available
+    Map<String, LinkedMovingAverageRecordDTO> stats = new LinkedHashMap<>();
+    if (connection.getProtocol() != null && connection.getProtocol().getEndPoint() != null) {
+      dto.setLastReadTime(connection.getProtocol().getEndPoint().getLastRead());
+      dto.setLastWriteTime(connection.getProtocol().getEndPoint().getLastWrite());
+    }
+
+    // Populate statistics
+    addToMap(stats, connection.getAverageBytesRead());
+    addToMap(stats, connection.getAverageBytesSent());
+    addToMap(stats, connection.getAveragePacketsRead());
+    addToMap(stats, connection.getAveragePacketsSent());
+    dto.setStatistics(stats);
+
+    return dto;
+  }
+
+  private static void addToMap(
+      Map<String, LinkedMovingAverageRecordDTO> stats, LinkedMovingAverageRecordDTO average) {
+    if (average != null) {
+      stats.put(average.getName(), average);
+    }
+  }
 }

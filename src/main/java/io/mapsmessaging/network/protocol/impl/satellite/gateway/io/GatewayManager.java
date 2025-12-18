@@ -32,12 +32,14 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Queue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static io.mapsmessaging.logging.ServerLogMessages.OGWS_FAILED_AUTHENTICATION;
+import static io.mapsmessaging.logging.ServerLogMessages.SATELLITE_SCANNING_FOR_INCOMING;
 
 public class GatewayManager {
 
@@ -49,7 +51,6 @@ public class GatewayManager {
   private final Map<String, RemoteDeviceInfo> knownTerminals;
   private final AtomicBoolean closed = new AtomicBoolean(false);
 
-  private TaskManager taskManager;
   private ScheduledFuture<?> scheduledFuture;
 
 
@@ -66,8 +67,7 @@ public class GatewayManager {
   }
 
   public void start() {
-    taskManager = new TaskManager();
-    taskManager.schedule(this::initSession, 10, TimeUnit.SECONDS);
+    TaskManager.getInstance().schedule(this::initSession, 10, TimeUnit.SECONDS);
   }
 
   public void stop(){
@@ -76,7 +76,6 @@ public class GatewayManager {
       scheduledFuture.cancel(true);
       scheduledFuture = null;
     }
-    taskManager.close();
   }
 
   protected void initSession(){
@@ -95,14 +94,15 @@ public class GatewayManager {
         for (RemoteDeviceInfo terminal : knownTerminals.values()) {
           handler.registerTerminal(terminal);
         }
-        scheduledFuture = taskManager.schedule(this::pollGateway, pollInterval, TimeUnit.SECONDS);
+        scheduledFuture = TaskManager.getInstance().schedule(this::pollGateway, pollInterval, TimeUnit.SECONDS);
       } else {
         logger.log(OGWS_FAILED_AUTHENTICATION);
       }
     }
     catch (RuntimeException| IOException e) {
+      // Todo log this
       // we can try again
-      taskManager.schedule(this::initSession, 1, TimeUnit.MINUTES);
+      TaskManager.getInstance().schedule(this::initSession, 1, TimeUnit.MINUTES);
     } catch (InterruptedException e) {
       Thread.currentThread().interrupt();
     } catch (LoginException e) {
@@ -134,7 +134,9 @@ public class GatewayManager {
   // timed task to read /write to the remote server
   protected void pollGateway() {
     try {
-      handler.handleIncomingMessage(satelliteClient.scanForIncoming());
+      Queue<MessageData> queue = satelliteClient.scanForIncoming();
+      logger.log(SATELLITE_SCANNING_FOR_INCOMING, queue.size());
+      handler.handleIncomingMessage(queue);
       List<MessageData> tmp;
       synchronized (pendingMessages) {
         tmp = new ArrayList<>(pendingMessages);
@@ -145,7 +147,7 @@ public class GatewayManager {
       }
     }
     finally {
-      scheduledFuture = taskManager.schedule(this::pollGateway, pollInterval, TimeUnit.SECONDS);
+      scheduledFuture = TaskManager.getInstance().schedule(this::pollGateway, pollInterval, TimeUnit.SECONDS);
     }
   }
 

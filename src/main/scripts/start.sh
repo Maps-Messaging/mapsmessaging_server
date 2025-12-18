@@ -71,7 +71,8 @@ export LD_LIBRARY_PATH=$MAPS_LIB:$LD_LIBRARY_PATH
 # Loop to restart server on specific exit code
 #
 while true; do
-    java -classpath $CLASSPATH $JAVA_OPTS \
+    java -Xss256k \
+         -classpath $CLASSPATH $JAVA_OPTS \
         -DUSE_UUID=false \
         -DConsulUrl="${CONSUL_URL}" \
         -DConsulPath="${CONSUL_PATH}" \

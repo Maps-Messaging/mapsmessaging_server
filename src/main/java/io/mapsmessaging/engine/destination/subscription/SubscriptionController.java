@@ -21,8 +21,11 @@ package io.mapsmessaging.engine.destination.subscription;
 
 import io.mapsmessaging.admin.SubscriptionControllerJMX;
 import io.mapsmessaging.api.SubscribedEventManager;
+import io.mapsmessaging.api.auth.DestinationAuthorisationCheck;
 import io.mapsmessaging.api.features.DestinationMode;
 import io.mapsmessaging.api.features.RetainHandler;
+import io.mapsmessaging.auth.AuthManager;
+import io.mapsmessaging.auth.ServerPermissions;
 import io.mapsmessaging.dto.rest.session.SubscriptionContextDTO;
 import io.mapsmessaging.dto.rest.session.SubscriptionInformationDTO;
 import io.mapsmessaging.dto.rest.session.SubscriptionStateDTO;
@@ -35,9 +38,13 @@ import io.mapsmessaging.engine.destination.subscription.modes.SubscriptionModeMa
 import io.mapsmessaging.engine.destination.subscription.set.DestinationSet;
 import io.mapsmessaging.engine.session.SessionContext;
 import io.mapsmessaging.engine.session.SessionImpl;
+import io.mapsmessaging.engine.session.persistence.SessionDetails;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.logging.ServerLogMessages;
+import io.mapsmessaging.security.access.Identity;
+import io.mapsmessaging.security.authorisation.Permission;
+import io.mapsmessaging.security.authorisation.ProtectedResource;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.SneakyThrows;
@@ -82,6 +89,9 @@ public class SubscriptionController implements DestinationManagerListener {
   // Session represents the remote client
   //
   private SessionImpl sessionImpl;
+
+  private Identity identity;
+
   private Future<?> schedule;
 
   public SubscriptionController(SessionContext sessionContext, DestinationFactory destinationManager, Map<String, SubscriptionContext> contextMap) {
@@ -91,15 +101,16 @@ public class SubscriptionController implements DestinationManagerListener {
     uniqueSessionId = sessionContext.getUniqueId();
     subscriptions = new ConcurrentHashMap<>();
     subscriptionModeManager = constructModeManagers();
-
+    identity = sessionContext.getSecurityContext().getIdentity();
     destinationManager.addListener(this);
     isPersistent = sessionContext.isPersistentSession();
     subscriptionControllerJMX = new SubscriptionControllerJMX(this);
   }
 
-  public SubscriptionController(String sessionId, String uniqueSessionId, DestinationFactory destinationManager, Map<String, SubscriptionContext> contextMap) {
+  public SubscriptionController(String sessionId, SessionDetails sessionDetails, DestinationFactory destinationManager, Map<String, SubscriptionContext> contextMap) {
     this.sessionId = sessionId;
-    this.uniqueSessionId = uniqueSessionId;
+    this.uniqueSessionId = sessionDetails.getUniqueId();
+    this.identity = sessionDetails.getIdentity();
     this.destinationManager = destinationManager;
     this.contextMap = contextMap;
     subscriptions = new LinkedHashMap<>();
@@ -191,8 +202,10 @@ public class SubscriptionController implements DestinationManagerListener {
    */
   @Override
   public void created(DestinationImpl destinationImpl) {
-    for(SubscriptionModeManager managers: subscriptionModeManager.values()){
-      managers.created(this, destinationImpl, subscriptions.values());
+    if(canAccess(destinationImpl, destinationImpl.getResourceType().getName(), ServerPermissions.SUBSCRIBE)) {
+      for (SubscriptionModeManager managers : subscriptionModeManager.values()) {
+        managers.created(this, destinationImpl, subscriptions.values());
+      }
     }
   }
 
@@ -221,6 +234,7 @@ public class SubscriptionController implements DestinationManagerListener {
     }
     if (this.sessionImpl == null) {
       this.sessionImpl = sessionImpl;
+      identity = sessionImpl.getSecurityContext().getIdentity();
     }
   }
 
@@ -322,12 +336,9 @@ public class SubscriptionController implements DestinationManagerListener {
   private SubscribedEventManager addSubscription(SubscriptionContext context, boolean isReload) throws IOException {
     SubscribedEventManager subscription = null;
     String filter = context.getFilter();
-    if (filter.equals("test/nosubscribe")) {
-      throw new IOException("Not authorised to access topic");
-    }
     if (!subscriptions.containsKey(context.getKey())) {
       if (!context.containsWildcard()) {
-        CompletableFuture<DestinationImpl> future = destinationManager.findOrCreate(filter);
+        CompletableFuture<DestinationImpl> future = destinationManager.findOrCreate(filter, context.getAuthCheck());
         if (future == null && filter.toLowerCase().startsWith("$sys")) {
           future = destinationManager.find("$SYS/notImplemented");
         }
@@ -335,8 +346,19 @@ public class SubscriptionController implements DestinationManagerListener {
           future.get();
         }
       }
+
       DestinationFilter destinationFilter = name -> DestinationSet.matches(context, name);
       DestinationSet destinationSet = new DestinationSet(context, destinationManager.get(destinationFilter));
+      List<DestinationImpl> authorisedSet = new ArrayList<>();
+
+      for(DestinationImpl destination:destinationSet) {
+        DestinationAuthorisationCheck check = context.getAuthCheck();
+        if(check == null || check.check(destination.getFullyQualifiedNamespace(), destination.getResourceType(), false)){
+          authorisedSet.add(destination);
+        }
+      }
+      destinationSet.clear();
+      destinationSet.addAll(authorisedSet);
       subscriptions.put(context.getKey(), destinationSet);
       //
       // Now compare the active subscription destinations with the ones in this new subscriptionSet
@@ -380,6 +402,14 @@ public class SubscriptionController implements DestinationManagerListener {
     }
     dto.setSubscriptionStateList(stateList);
     return dto;
+  }
+
+  private boolean canAccess(DestinationImpl destination, String type, Permission permission) {
+    if(identity == null){
+      return true; // no auth
+    }
+    ProtectedResource protectedResource = new ProtectedResource(type, destination.getFullyQualifiedNamespace(), null);
+    return AuthManager.getInstance().canAccess(identity, permission, protectedResource);
   }
 
 }

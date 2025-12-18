@@ -21,8 +21,9 @@ package io.mapsmessaging.dto.rest.schema;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
-import lombok.Data;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 @NoArgsConstructor
 @AllArgsConstructor
@@ -30,7 +31,8 @@ import lombok.NoArgsConstructor;
     title = "Maps Repository configuration",
     description = "Configuration details for the MapsMessaging-based repository. " +
         "Used when repositoryType is set to 'Maps'.")
-@Data
+@Getter
+@Setter
 public class MapsRepositoryConfigDTO extends RepositoryConfigDTO {
 
   @Schema(

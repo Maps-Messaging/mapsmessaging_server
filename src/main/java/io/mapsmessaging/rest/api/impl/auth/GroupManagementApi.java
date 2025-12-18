@@ -100,7 +100,7 @@ public class GroupManagementApi extends BaseAuthRestApi {
   }
 
   @GET
-  @Path("/auth/groups/{groupUuid}")
+  @Path("/auth/group/{groupUuid}")
   @Produces({MediaType.APPLICATION_JSON})
   @Operation(
       summary = "Get group by UUID",
@@ -167,7 +167,7 @@ public class GroupManagementApi extends BaseAuthRestApi {
   }
 
   @POST
-  @Path("/auth/groups/{groupUuid}/{userUuid}")
+  @Path("/auth/group/{groupUuid}/{userUuid}")
   @Produces({MediaType.APPLICATION_JSON})
   @Operation(
       summary = "Add user to group",
@@ -213,7 +213,7 @@ public class GroupManagementApi extends BaseAuthRestApi {
   }
 
   @DELETE
-  @Path("/auth/groups/{groupUuid}/{userUuid}")
+  @Path("/auth/group/{groupUuid}/{userUuid}")
   @Produces({MediaType.APPLICATION_JSON})
   @Operation(
       summary = "Removes a user from group",
@@ -258,7 +258,7 @@ public class GroupManagementApi extends BaseAuthRestApi {
   }
 
   @DELETE
-  @Path("/auth/groups/{groupUuid}")
+  @Path("/auth/group/{groupUuid}")
   @Produces({MediaType.APPLICATION_JSON})
   @Operation(
       summary = "Delete a group",

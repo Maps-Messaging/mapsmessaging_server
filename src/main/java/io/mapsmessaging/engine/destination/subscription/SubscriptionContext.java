@@ -19,6 +19,7 @@
 
 package io.mapsmessaging.engine.destination.subscription;
 
+import io.mapsmessaging.api.auth.DestinationAuthorisationCheck;
 import io.mapsmessaging.api.features.*;
 import io.mapsmessaging.dto.rest.session.SubscriptionContextDTO;
 import io.mapsmessaging.utilities.PersistentObject;
@@ -26,13 +27,11 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
 
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.BitSet;
 import java.util.Objects;
-import java.util.concurrent.atomic.AtomicLong;
 
 @Getter
 @ToString
@@ -87,6 +86,9 @@ public class SubscriptionContext  extends PersistentObject implements Comparable
   @Setter
   private DestinationMode destinationMode;
 
+  @Setter
+  private DestinationAuthorisationCheck authCheck;
+
   //
   // Server Only flag
   //
@@ -110,6 +112,7 @@ public class SubscriptionContext  extends PersistentObject implements Comparable
     retainHandler = RetainHandler.SEND_ALWAYS;
     qualityOfService = QualityOfService.AT_MOST_ONCE;
     acknowledgementController = ClientAcknowledgement.AUTO;
+    authCheck = null;
     parseName();
   }
 
@@ -127,6 +130,7 @@ public class SubscriptionContext  extends PersistentObject implements Comparable
     retainHandler = rhs.retainHandler;
     qualityOfService = rhs.qualityOfService;
     flags = BitSet.valueOf(rhs.flags.toByteArray());
+    authCheck = null;
     parseName();
   }
 
@@ -148,6 +152,7 @@ public class SubscriptionContext  extends PersistentObject implements Comparable
     receiveMaximum = readInt(inputStream);
     maxAtRest = readInt(inputStream);
     flags = BitSet.valueOf(readByteArray(inputStream));
+    authCheck = null;
   }
 
 

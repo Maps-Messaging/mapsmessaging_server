@@ -31,6 +31,7 @@ import io.mapsmessaging.dto.rest.system.SubSystemStatusDTO;
 import io.mapsmessaging.hardware.device.handler.BusHandler;
 import io.mapsmessaging.hardware.device.handler.i2c.I2CBusHandler;
 import io.mapsmessaging.hardware.device.handler.onewire.OneWireBusHandler;
+import io.mapsmessaging.hardware.device.handler.serial.SerialDeviceBusHandler;
 import io.mapsmessaging.hardware.trigger.PeriodicTrigger;
 import io.mapsmessaging.hardware.trigger.Trigger;
 import io.mapsmessaging.license.FeatureManager;
@@ -57,6 +58,7 @@ public class DeviceManager implements ServiceManager, Agent {
   private final boolean enableI2C;
   private final boolean enableOneWire;
   private final boolean enableSpi;
+  private final boolean enableSerial;
 
 
   private final DeviceBusManager deviceBusManager;
@@ -66,6 +68,7 @@ public class DeviceManager implements ServiceManager, Agent {
     enableSpi = featureManager.isEnabled("hardware.spi");
     enableI2C = featureManager.isEnabled("hardware.i2c");
     enableOneWire = featureManager.isEnabled("hardware.oneWire");
+    enableSerial = true;
 
     triggers = new ArrayList<>();
     configuredTriggers = new LinkedHashMap<>();
@@ -84,7 +87,7 @@ public class DeviceManager implements ServiceManager, Agent {
     DeviceBusManager manager = null;
     try {
       manager = DeviceBusManager.getInstance();
-      if (manager.isAvailable() ||  deviceManagerConfig.isDemoEnabled()) {
+      if (manager.isAvailable() ||  deviceManagerConfig.isDemoEnabled() || deviceManagerConfig.getSerialDeviceBusConfig() != null) {
         loadConfig(deviceManagerConfig, manager);
       }
       else{
@@ -124,6 +127,9 @@ public class DeviceManager implements ServiceManager, Agent {
     if(enableSpi) {
       devices.addAll(deviceBusManager.getSpiBusManager().getActive().values());
     }
+    if(enableSerial){
+      devices.addAll(deviceBusManager.getSerialBusManager().getActive().values());
+    }
     return devices;
   }
 
@@ -142,6 +148,11 @@ public class DeviceManager implements ServiceManager, Agent {
         OneWireBusConfigDTO oneWireBusConfig = deviceManagerConfig.getOneWireBus();
         Trigger trigger = locateNamedTrigger(oneWireBusConfig.getTrigger());
         busHandlers.add(new OneWireBusHandler(manager.getOneWireBusManager(), oneWireBusConfig, trigger));
+      }
+      if(deviceManagerConfig.getSerialDeviceBusConfig() != null && enableSerial) {
+        Trigger trigger = locateNamedTrigger(deviceManagerConfig.getSerialDeviceBusConfig().getTrigger());
+        SerialDeviceBusHandler serialDeviceBusHandler = new SerialDeviceBusHandler(manager.getSerialBusManager(), deviceManagerConfig.getSerialDeviceBusConfig(), trigger);
+        busHandlers.add(serialDeviceBusHandler);
       }
     }
   }

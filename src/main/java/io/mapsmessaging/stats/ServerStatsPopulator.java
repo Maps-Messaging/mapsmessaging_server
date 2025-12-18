@@ -3,7 +3,6 @@ package io.mapsmessaging.stats;
 import io.mapsmessaging.MessageDaemon;
 import io.mapsmessaging.network.EndPointManager;
 import io.mapsmessaging.network.NetworkManager;
-import io.mapsmessaging.network.io.EndPointServer;
 import io.mapsmessaging.network.io.EndPointServerStatus;
 import io.mapsmessaging.stats.data.*;
 

@@ -152,7 +152,12 @@ public class DestinationManagerPipeline {
   public CompletableFuture<Map<String, DestinationImpl>> copy(DestinationFilter filter, Map<String, DestinationImpl> response) {
     CompletableFuture<Map<String, DestinationImpl>> future = new CompletableFuture<>();
     Callable<Void> task = () -> {
-      future.complete(copyInternal(filter, response));
+      try {
+        future.complete(copyInternal(filter, response));
+      } catch (Exception e) {
+        // todo log this
+        future.completeExceptionally(e);
+      }
       return null;
     };
     taskScheduler.submit(task);

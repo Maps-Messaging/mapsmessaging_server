@@ -20,7 +20,6 @@
 package io.mapsmessaging.rest.api.impl.logging;
 
 import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
 import io.mapsmessaging.MessageDaemon;
 import io.mapsmessaging.logging.LogEntry;
 import io.mapsmessaging.logging.LogEntryListener;
@@ -54,7 +53,7 @@ import java.util.stream.Collectors;
 import static io.mapsmessaging.rest.api.Constants.URI_PATH;
 
 @Tag(name = "Logging Monitor")
-@Path(URI_PATH)
+@Path(URI_PATH+"/server/log")
 public class LogMonitorRestApi extends BaseRestApi {
   private static final String RESOURCE = "logging";
   private final Map<SseEventSink, LogEntryListener> activeSinks = new ConcurrentHashMap<>();
@@ -62,7 +61,6 @@ public class LogMonitorRestApi extends BaseRestApi {
   private Sse sse;
 
   @GET
-  @Path("/server/log")
   @Produces({MediaType.APPLICATION_JSON})
   @Operation(
       summary = "Get last stored log entries",
@@ -90,7 +88,7 @@ public class LogMonitorRestApi extends BaseRestApi {
 
 
   @GET
-  @Path("/server/log/sse")
+  @Path("/sse")
   @Produces(MediaType.SERVER_SENT_EVENTS)
   @Operation(
       summary = "Request a temporary token to access the server side logs",
@@ -112,7 +110,7 @@ public class LogMonitorRestApi extends BaseRestApi {
   }
 
   @GET
-  @Path("/server/log/sse/stream/{token}")
+  @Path("/sse/stream/{token}")
   @Produces(MediaType.SERVER_SENT_EVENTS)
   @Operation(
       summary = "Stream live log entries",
