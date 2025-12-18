@@ -141,12 +141,12 @@
     <!-- first level dependencies -->
     <maps.nbts.version>2.2.2-SNAPSHOT</maps.nbts.version>
     <maps.schema.version>3.0.1-SNAPSHOT</maps.schema.version>
-    <maps.config.version>1.1.4-SNAPSHOT</maps.config.version>
+    <maps.config.version>1.1.5-SNAPSHOT</maps.config.version>
 
     <!-- Second level dependencies -->
     <maps.storage.version>2.5.2-SNAPSHOT</maps.storage.version>
     <maps.device.version>3.1.1-SNAPSHOT</maps.device.version>
-    <maps.auth.version>2.0.2-SNAPSHOT</maps.auth.version>
+    <maps.auth.version>3.0.2-SNAPSHOT</maps.auth.version>
 
 
   </properties>
