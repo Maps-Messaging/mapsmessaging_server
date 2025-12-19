@@ -61,25 +61,24 @@ public class ServerHealthApi extends ServerBaseRestApi {
           @ApiResponse(
               responseCode = "200",
               description = "Operation was successful",
-              content = @Content(mediaType = "application/json", schema = @Schema(implementation = SubSystemStatusList.class))
+              content = @Content(mediaType = "application/json", schema = @Schema(implementation = SubSystemStatusDTO[].class))
           ),
           @ApiResponse(responseCode = "400", description = "Bad request"),
           @ApiResponse(responseCode = "401", description = "Invalid credentials or unauthorized access"),
           @ApiResponse(responseCode = "403", description = "User is not authorised to access the resource"),
       }
   )
-  public SubSystemStatusList getServerStatus() {
+  public SubSystemStatusDTO[] getServerStatus() {
     hasAccess(RESOURCE);
     CacheKey key = new CacheKey(uriInfo.getPath(), "serverStats");
-    SubSystemStatusList cachedResponse = getFromCache(key, SubSystemStatusList.class);
+    SubSystemStatusDTO[] cachedResponse = getFromCache(key, SubSystemStatusDTO[].class);
     if (cachedResponse != null) {
       return cachedResponse;
     }
-
     // Fetch and cache response
-    SubSystemStatusList response = new SubSystemStatusList( MessageDaemon.getInstance().getSubSystemStatus());
-    putToCache(key, response);
-    return response;
+    SubSystemStatusDTO[] arr = MessageDaemon.getInstance().getSubSystemStatus().toArray(new SubSystemStatusDTO[0]);
+    putToCache(key, arr);
+    return arr;
   }
 
   @GET
@@ -144,26 +143,26 @@ public class ServerHealthApi extends ServerBaseRestApi {
           @ApiResponse(
               responseCode = "200",
               description = "Operation was successful",
-              content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))
+              content = @Content(mediaType = "application/json", schema = @Schema(implementation = String.class))
           ),
           @ApiResponse(responseCode = "400", description = "Bad request"),
           @ApiResponse(responseCode = "401", description = "Invalid credentials or unauthorized access"),
           @ApiResponse(responseCode = "403", description = "User is not authorised to access the resource"),
       }
   )
-  public StatusResponse serverAction(@RequestBody  ServerAction requested, @Context HttpServletResponse httpServletResponse) {
+  public String serverAction(@RequestBody  ServerAction requested, @Context HttpServletResponse httpServletResponse) {
     hasAccess(RESOURCE);
     if(requested != null && requested.getState() != null) {
       if (requested.getState().equalsIgnoreCase("restart")) {
         shutdown(8);
-        return new StatusResponse("Restarting");
+        return "Restarting";
       } else if (requested.getState().equalsIgnoreCase("shutdown")) {
         shutdown(0);
-        return new StatusResponse("Shutting down");
+        return "Shutting down";
       }
     }
     httpServletResponse.setStatus(400);
-    return new StatusResponse("Unknown action");
+    return "Unknown action";
   }
 
   private void shutdown(int exitCode) {

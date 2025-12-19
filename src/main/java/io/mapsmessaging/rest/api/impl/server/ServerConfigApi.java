@@ -79,19 +79,19 @@ public class ServerConfigApi extends ServerBaseRestApi {
           @ApiResponse(
               responseCode = "200",
               description = "Operation was successful",
-              content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))
+              content = @Content(mediaType = "application/json", schema = @Schema(implementation = String.class))
           ),
           @ApiResponse(responseCode = "400", description = "Bad request"),
           @ApiResponse(responseCode = "401", description = "Invalid credentials or unauthorized access"),
           @ApiResponse(responseCode = "403", description = "User is not authorised to access the resource"),
       }
   )
-  public StatusResponse updateServerConfig(MessageDaemonConfigDTO dto) throws IOException {
+  public String updateServerConfig(MessageDaemonConfigDTO dto) throws IOException {
     hasAccess(RESOURCE);
     if (MessageDaemon.getInstance().getMessageDaemonConfig().update(dto)) {
       MessageDaemon.getInstance().getMessageDaemonConfig().save();
       removeFromCache(new CacheKey(uriInfo.getPath(), "serverConfig"));
     }
-    return new StatusResponse("Success");
+    return "Success";
   }
 }

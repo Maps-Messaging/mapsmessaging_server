@@ -169,8 +169,8 @@ public class MapsRestServerApi extends BaseRestApi {
           @ApiResponse(responseCode = "400", description = "Bad request")
       }
   )
-  public StatusResponse getPing() {
-    return new StatusResponse("Success");
+  public String getPing() {
+    return "Success";
   }
 
   @GET
@@ -183,15 +183,15 @@ public class MapsRestServerApi extends BaseRestApi {
           @ApiResponse(
               responseCode = "200",
               description = "Get server name was successful",
-              content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))
+              content = @Content(mediaType = "application/json", schema = @Schema(implementation = String.class))
           ),
           @ApiResponse(responseCode = "400", description = "Bad request"),
           @ApiResponse(responseCode = "401", description = "Invalid credentials or unauthorized access"),
           @ApiResponse(responseCode = "403", description = "User is not authorised to access the resource"),
       }
   )
-  public StatusResponse getName() {
-    return new StatusResponse(MessageDaemon.getInstance().getId());
+  public String getName() {
+    return MessageDaemon.getInstance().getId();
   }
 
   @GET

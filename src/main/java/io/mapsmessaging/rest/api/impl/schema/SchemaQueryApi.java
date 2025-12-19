@@ -65,7 +65,7 @@ public class SchemaQueryApi extends BaseRestApi {
           @ApiResponse(
               responseCode = "200",
               description = "Operation was successful",
-              content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))
+              content = @Content(mediaType = "application/json", schema = @Schema(implementation = String.class))
           ),
           @ApiResponse(responseCode = "400", description = "Bad request"),
           @ApiResponse(responseCode = "401", description = "Invalid credentials or unauthorized access"),
@@ -73,15 +73,15 @@ public class SchemaQueryApi extends BaseRestApi {
           @ApiResponse(responseCode = "404", description = "Schema not found"),
       }
   )
-  public StatusResponse deleteSchemaById(@PathParam("schemaId") String schemaId) {
+  public String deleteSchemaById(@PathParam("schemaId") String schemaId) {
     hasAccess(RESOURCE);
     SchemaConfig config = SchemaManager.getInstance().getSchema(schemaId);
     if (config != null) {
       SchemaManager.getInstance().removeSchema(schemaId);
-      return new StatusResponse("Success");
+      return "Success";
     }
     response.setStatus(HttpServletResponse.SC_NOT_FOUND);
-    return new StatusResponse("Failure");
+    return "Failure";
   }
 
   @DELETE
@@ -93,25 +93,25 @@ public class SchemaQueryApi extends BaseRestApi {
           @ApiResponse(
               responseCode = "200",
               description = "Operation was successful",
-              content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))
+              content = @Content(mediaType = "application/json", schema = @Schema(implementation = String.class))
           ),
           @ApiResponse(responseCode = "400", description = "Bad request"),
           @ApiResponse(responseCode = "401", description = "Invalid credentials or unauthorized access"),
           @ApiResponse(responseCode = "403", description = "User is not authorised to access the resource"),
       }
   )
-  public StatusResponse deleteAllSchemas(@QueryParam("filter") String filter) throws ParseException {
+  public String deleteAllSchemas(@QueryParam("filter") String filter) throws ParseException {
     hasAccess(RESOURCE);
     ParserExecutor parser =
         (filter != null && !filter.isEmpty()) ? SelectorParser.compile(filter) : null;
     List<SchemaConfig> result =
         SchemaManager.getInstance().getAll().stream()
             .filter(protocol -> parser == null || parser.evaluate(protocol))
-            .collect(Collectors.toList());
+            .toList();
     for (SchemaConfig schema : result) {
       SchemaManager.getInstance().removeSchema(schema.getUniqueId());
     }
-    return new StatusResponse("Success");
+    return "Success";
   }
 
   @POST
@@ -123,18 +123,18 @@ public class SchemaQueryApi extends BaseRestApi {
           @ApiResponse(
               responseCode = "200",
               description = "Operation was successful",
-              content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))
+              content = @Content(mediaType = "application/json", schema = @Schema(implementation = String.class))
           ),
           @ApiResponse(responseCode = "400", description = "Bad request"),
           @ApiResponse(responseCode = "401", description = "Invalid credentials or unauthorized access"),
           @ApiResponse(responseCode = "403", description = "User is not authorised to access the resource"),
       }
   )
-  public StatusResponse addSchema(SchemaPostDTO jsonString) throws IOException {
+  public String addSchema(SchemaPostDTO jsonString) throws IOException {
     hasAccess(RESOURCE);
     SchemaConfig config = SchemaConfigFactory.getInstance().constructConfig(jsonString.getSchema());
     SchemaManager.getInstance().addSchema(jsonString.getContext(), config);
-    return new StatusResponse("Success");
+    return "Success";
   }
 
   @GET
@@ -147,20 +147,21 @@ public class SchemaQueryApi extends BaseRestApi {
           @ApiResponse(
               responseCode = "200",
               description = "Operation was successful",
-              content = @Content(mediaType = "application/json", schema = @Schema(implementation = SchemaResponse.class))
+              content = @Content(mediaType = "application/json", schema = @Schema(implementation = String.class))
           ),
           @ApiResponse(responseCode = "400", description = "Bad request"),
           @ApiResponse(responseCode = "401", description = "Invalid credentials or unauthorized access"),
           @ApiResponse(responseCode = "403", description = "User is not authorised to access the resource"),
       }
   )
-  public SchemaResponse getSchemaById(@PathParam("schemaId") String schemaId) throws IOException {
+  public String getSchemaById(@PathParam("schemaId") String schemaId) throws IOException {
     hasAccess(RESOURCE);
     SchemaConfig config = SchemaManager.getInstance().getSchema(schemaId);
     if (config != null) {
-      return new SchemaResponse(config.pack());
+      return config.pack();
     }
-    return new SchemaResponse(new ArrayList<>());
+    response.setStatus(HttpServletResponse.SC_NOT_FOUND);
+    return "";
   }
 
   @GET
@@ -173,20 +174,20 @@ public class SchemaQueryApi extends BaseRestApi {
           @ApiResponse(
               responseCode = "200",
               description = "Operation was successful",
-              content = @Content(mediaType = "application/json", schema = @Schema(implementation = SchemaResponse.class))
+              content = @Content(mediaType = "application/json", schema = @Schema(implementation = String[].class))
           ),
           @ApiResponse(responseCode = "400", description = "Bad request"),
           @ApiResponse(responseCode = "401", description = "Invalid credentials or unauthorized access"),
           @ApiResponse(responseCode = "403", description = "User is not authorised to access the resource"),
       }
   )
-  public SchemaResponse getSchemaByContext(@PathParam("context") String context) throws IOException {
+  public String[] getSchemaByContext(@PathParam("context") String context) throws IOException {
     hasAccess(RESOURCE);
     List<SchemaResource> config = SchemaManager.getInstance().getSchemaByContext(context);
     if (config != null) {
-      return new SchemaResponse(convert(config));
+      return convert(config).toArray(new String[0]);
     }
-    return new SchemaResponse(new ArrayList<>());
+    return new String[0];
   }
 
   @GET
@@ -199,20 +200,20 @@ public class SchemaQueryApi extends BaseRestApi {
           @ApiResponse(
               responseCode = "200",
               description = "Operation was successful",
-              content = @Content(mediaType = "application/json", schema = @Schema(implementation = SchemaResponse.class))
+              content = @Content(mediaType = "application/json", schema = @Schema(implementation = String[].class))
           ),
           @ApiResponse(responseCode = "400", description = "Bad request"),
           @ApiResponse(responseCode = "401", description = "Invalid credentials or unauthorized access"),
           @ApiResponse(responseCode = "403", description = "User is not authorised to access the resource"),
       }
   )
-  public SchemaResponse getSchemaByType(@PathParam("type") String type) throws IOException {
+  public String[] getSchemaByType(@PathParam("type") String type) throws IOException {
     hasAccess(RESOURCE);
     List<SchemaResource> config = SchemaManager.getInstance().getSchemas(type);
     if (config != null) {
-      return new SchemaResponse(convert(config));
+      return convert(config).toArray(new String[0]);
     }
-    return new SchemaResponse(new ArrayList<>());
+    return new String[0];
   }
 
   @GET
@@ -224,22 +225,22 @@ public class SchemaQueryApi extends BaseRestApi {
           @ApiResponse(
               responseCode = "200",
               description = "Operation was successful",
-              content = @Content(mediaType = "application/json", schema = @Schema(implementation = SchemaConfigResponse.class))
+              content = @Content(mediaType = "application/json", schema = @Schema(implementation = SchemaConfig[].class))
           ),
           @ApiResponse(responseCode = "400", description = "Bad request"),
           @ApiResponse(responseCode = "401", description = "Invalid credentials or unauthorized access"),
           @ApiResponse(responseCode = "403", description = "User is not authorised to access the resource"),
       }
   )
-  public SchemaConfigResponse getAllSchemas(@QueryParam("filter") String filter) throws ParseException {
+  public SchemaConfig[] getAllSchemas(@QueryParam("filter") String filter) throws ParseException {
     hasAccess(RESOURCE);
     ParserExecutor parser =
         (filter != null && !filter.isEmpty()) ? SelectorParser.compile(filter) : null;
     List<SchemaConfig> result =
         SchemaManager.getInstance().getAll().stream()
             .filter(protocol -> parser == null || parser.evaluate(protocol))
-            .collect(Collectors.toList());
-    return new SchemaConfigResponse(result);
+            .toList();
+    return result.toArray(new SchemaConfig[0]);
   }
 
   @GET

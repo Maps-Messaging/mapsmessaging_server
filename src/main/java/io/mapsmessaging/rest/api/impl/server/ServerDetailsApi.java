@@ -23,6 +23,7 @@ import io.mapsmessaging.MessageDaemon;
 import io.mapsmessaging.dto.helpers.ServerStatisticsHelper;
 import io.mapsmessaging.dto.helpers.StatusMessageHelper;
 import io.mapsmessaging.dto.rest.ServerInfoDTO;
+import io.mapsmessaging.dto.rest.ServerStatisticsDTO;
 import io.mapsmessaging.rest.cache.CacheKey;
 import io.mapsmessaging.rest.responses.ServerStatisticsResponse;
 import io.swagger.v3.oas.annotations.Operation;
@@ -82,26 +83,24 @@ public class ServerDetailsApi extends ServerBaseRestApi {
           @ApiResponse(
               responseCode = "200",
               description = "Operation was successful",
-              content = @Content(mediaType = "application/json", schema = @Schema(implementation = ServerStatisticsResponse.class))
+              content = @Content(mediaType = "application/json", schema = @Schema(implementation = ServerStatisticsDTO.class))
           ),
           @ApiResponse(responseCode = "400", description = "Bad request"),
           @ApiResponse(responseCode = "401", description = "Invalid credentials or unauthorized access"),
           @ApiResponse(responseCode = "403", description = "User is not authorised to access the resource"),
       }
   )
-  public ServerStatisticsResponse getStats() {
+  public ServerStatisticsDTO getStats() {
     hasAccess(RESOURCE);
     CacheKey key = new CacheKey(uriInfo.getPath(), "serverStats");
-    ServerStatisticsResponse cachedResponse = getFromCache(key, ServerStatisticsResponse.class);
+    ServerStatisticsDTO cachedResponse = getFromCache(key, ServerStatisticsDTO.class);
     if (cachedResponse != null) {
       return cachedResponse;
     }
-
     // Fetch and cache response
-    ServerStatisticsResponse response =
-        new ServerStatisticsResponse(ServerStatisticsHelper.create());
-    putToCache(key, response);
-    return response;
+    ServerStatisticsDTO dto = ServerStatisticsHelper.create();
+    putToCache(key, dto);
+    return dto;
   }
 
 }
