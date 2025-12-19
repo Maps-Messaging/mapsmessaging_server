@@ -21,18 +21,20 @@ package io.mapsmessaging.app.top.network;
 
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
-import jakarta.ws.rs.client.Client;
-import jakarta.ws.rs.client.ClientBuilder;
-import jakarta.ws.rs.client.Entity;
-import jakarta.ws.rs.core.MediaType;
-import jakarta.ws.rs.core.Response;
+
+
 import lombok.Getter;
 
 import java.io.IOException;
 import java.net.CookieHandler;
 import java.net.CookieManager;
 import java.net.CookiePolicy;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.Base64;
 import java.util.LinkedList;
@@ -43,7 +45,7 @@ public class RestRequestManager implements Runnable {
   private static final RestRequestManager INSTANCE = new RestRequestManager();
   private final List<Object> queue;
   @Getter
-  private final Client client;
+  private final HttpClient client;
   private final CookieManager cookieManager;
   private final String loginUrl = "/api/v1/login";
   private final String refreshUrl = "/api/v1/refreshToken";
@@ -61,7 +63,11 @@ public class RestRequestManager implements Runnable {
   private RestRequestManager() {
     this.cookieManager = new CookieManager(null, CookiePolicy.ACCEPT_ALL);
     CookieHandler.setDefault(cookieManager);
-    this.client = ClientBuilder.newClient();
+    this.client = HttpClient.newBuilder()
+        .version(HttpClient.Version.HTTP_1_1)
+        .followRedirects(HttpClient.Redirect.NORMAL)
+        .connectTimeout(Duration.ofSeconds(10))
+        .build();
     requests = new LinkedList<>();
     queue = new LinkedList<>();
   }
@@ -94,25 +100,43 @@ public class RestRequestManager implements Runnable {
     json.addProperty("username", username);
     json.addProperty("password", password);
 
-    Response response = client
-        .target(serverUrl + loginUrl)
-        .request(MediaType.APPLICATION_JSON)
-        .post(Entity.json(json.toString()));
+    HttpRequest request = HttpRequest.newBuilder()
+        .uri(URI.create(serverUrl + loginUrl))
+        .timeout(Duration.ofSeconds(15))
+        .header("Content-Type", "application/json")
+        .header("Accept", "application/json")
+        .POST(HttpRequest.BodyPublishers.ofString(json.toString(), StandardCharsets.UTF_8))
+        .build();
 
-    if (response.getStatus() != 200) {
-      throw new IOException("Login failed: " + response.getStatus());
+    HttpResponse<String> response = send(request);
+    if (response.statusCode() != 200) {
+      throw new IOException("Token refresh failed: " + response.statusCode());
     }
     connected.set(true);
   }
 
-  private void refreshToken() throws IOException {
-    Response response = client
-        .target(serverUrl + refreshUrl)
-        .request(MediaType.APPLICATION_JSON)
-        .get();
 
-    if (response.getStatus() != 200) {
-      throw new IOException("Token refresh failed: " + response.getStatus());
+  private HttpResponse<String> send(HttpRequest request) throws IOException {
+    try {
+      return client.send(request, HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
+    } catch (InterruptedException e) {
+      Thread.currentThread().interrupt();
+      throw new IOException("HTTP request interrupted", e);
+    }
+  }
+
+  private void refreshToken() throws IOException {
+    HttpRequest request = HttpRequest.newBuilder()
+        .uri(URI.create(serverUrl + refreshUrl))
+        .timeout(Duration.ofSeconds(15))
+        .header("Accept", "application/json")
+        .GET()
+        .build();
+
+    HttpResponse<String> response = send(request);
+
+    if (response.statusCode() != 200) {
+      throw new IOException("Token refresh failed: " + response.statusCode());
     }
   }
 
@@ -157,7 +181,7 @@ public class RestRequestManager implements Runnable {
   }
 
   public Object getUpdate() {
-    return queue.remove(0);
+    return queue.removeFirst();
   }
 
   public boolean isQueueEmpty() {
@@ -171,5 +195,20 @@ public class RestRequestManager implements Runnable {
   public void close() {
     running.set(false);
     connected.set(false);
+  }
+
+  public String buildCookieHeader() {
+    StringBuilder builder = new StringBuilder();
+    for (var cookie : cookieManager.getCookieStore().getCookies()) {
+      if (cookie.getName() == null || cookie.getValue() == null) {
+        continue;
+      }
+
+      if (builder.length() > 0) {
+        builder.append("; ");
+      }
+      builder.append(cookie.getName()).append("=").append(cookie.getValue());
+    }
+    return builder.toString();
   }
 }

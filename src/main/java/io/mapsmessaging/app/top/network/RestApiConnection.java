@@ -21,11 +21,13 @@ package io.mapsmessaging.app.top.network;
 
 import com.google.gson.*;
 import io.mapsmessaging.utilities.GsonFactory;
-import jakarta.ws.rs.client.WebTarget;
-import jakarta.ws.rs.core.MediaType;
-import jakarta.ws.rs.core.Response;
 
 import java.io.IOException;
+import java.net.URI;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 
 public abstract class RestApiConnection {
   protected final Gson gson;
@@ -43,28 +45,70 @@ public abstract class RestApiConnection {
   public Object getData() throws IOException {
     RestRequestManager manager = RestRequestManager.getInstance();
     manager.ensureValidSession();
+    String fullUrl = buildUrl(url, endpoint);
 
-    WebTarget target = manager.getClient().target(url).path(endpoint);
-    Response response = target.request(MediaType.APPLICATION_JSON).get();
+    String cookieHeader = manager.buildCookieHeader();
 
-    if (response.getStatus() == Response.Status.OK.getStatusCode()) {
-      String jsonString = response.readEntity(String.class);
-      JsonElement jsonElement;
+    HttpRequest request = HttpRequest.newBuilder()
+        .uri(URI.create(fullUrl))
+        .timeout(Duration.ofSeconds(15))
+        .header("Accept", "application/json")
+        .header("Cookie", cookieHeader)
+        .GET()
+        .build();
 
-      if (jsonString.trim().startsWith("[")) {
-        JsonArray jsonArray = JsonParser.parseString(jsonString).getAsJsonArray();
-        JsonObject jsonObject = new JsonObject();
-        jsonObject.add("data", jsonArray);
-        jsonElement = jsonObject;
-      } else {
-        jsonElement = JsonParser.parseString(jsonString);
-      }
+    HttpResponse<String> response = send(manager, request);
+
+    int statusCode = response.statusCode();
+    if (statusCode == 200) {
+      String jsonString = response.body();
+      JsonElement jsonElement = parseResponse(jsonString);
       return parse(jsonElement);
-    } else if (response.getStatus() == Response.Status.FORBIDDEN.getStatusCode()) {
+    }
+    if (statusCode == 403) {
       throw new IOException("Access denied");
-    } else {
-      throw new IOException("Unexpected error: " + response.getStatus());
+    }
+    throw new IOException("Unexpected error: " + statusCode);
+  }
+
+  private JsonElement parseResponse(String jsonString) {
+    if (jsonString == null) {
+      return new JsonObject();
+    }
+
+    String trimmed = jsonString.trim();
+    if (trimmed.startsWith("[")) {
+      JsonArray jsonArray = JsonParser.parseString(trimmed).getAsJsonArray();
+      JsonObject jsonObject = new JsonObject();
+      jsonObject.add("data", jsonArray);
+      return jsonObject;
+    }
+
+    if (trimmed.isEmpty()) {
+      return new JsonObject();
+    }
+
+    return JsonParser.parseString(trimmed);
+  }
+
+  private HttpResponse<String> send(RestRequestManager manager, HttpRequest request) throws IOException {
+    try {
+      return manager.getClient().send(request, HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
+    } catch (InterruptedException e) {
+      Thread.currentThread().interrupt();
+      throw new IOException("HTTP request interrupted", e);
     }
   }
+
+  private String buildUrl(String baseUrl, String path) {
+    if (baseUrl.endsWith("/") && path.startsWith("/")) {
+      return baseUrl.substring(0, baseUrl.length() - 1) + path;
+    }
+    if (!baseUrl.endsWith("/") && !path.startsWith("/")) {
+      return baseUrl + "/" + path;
+    }
+    return baseUrl + path;
+  }
+
 
 }
