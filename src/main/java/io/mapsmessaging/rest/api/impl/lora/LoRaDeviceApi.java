@@ -65,21 +65,21 @@ public class LoRaDeviceApi extends LoraBaseRestApi {
           @ApiResponse(
               responseCode = "200",
               description = "Operation was successful",
-              content = @Content(mediaType = "application/json", schema = @Schema(implementation = LoRaListResponse.class))
+              content = @Content(mediaType = "application/json", schema = @Schema(implementation = LoRaDeviceInfoDTO[].class))
           ),
           @ApiResponse(responseCode = "400", description = "Bad request"),
           @ApiResponse(responseCode = "401", description = "Invalid credentials or unauthorized access"),
           @ApiResponse(responseCode = "403", description = "User is not authorised to access the resource"),
       }
   )
-  public LoRaListResponse getAllLoRaDevices() {
+  public LoRaDeviceInfoDTO[] getAllLoRaDevices() {
     hasAccess(RESOURCE);
     LoRaDeviceManager deviceManager = LoRaDeviceManager.getInstance();
     List<LoRaDeviceInfoDTO> deviceInfos = new ArrayList<>();
     for (LoRaDevice device : deviceManager.getDevices()) {
       deviceInfos.add(createInfo(device));
     }
-    return new LoRaListResponse(deviceInfos);
+    return deviceInfos.toArray(new LoRaDeviceInfoDTO[0]);
   }
 
   @GET
@@ -127,14 +127,14 @@ public class LoRaDeviceApi extends LoraBaseRestApi {
           @ApiResponse(
               responseCode = "200",
               description = "Operation was successful",
-              content = @Content(mediaType = "application/json", schema = @Schema(implementation = LoRaConnectionStatusList.class))
+              content = @Content(mediaType = "application/json", schema = @Schema(implementation = LoRaEndPointConnectionInfoDTO[].class))
           ),
           @ApiResponse(responseCode = "400", description = "Bad request"),
           @ApiResponse(responseCode = "401", description = "Invalid credentials or unauthorized access"),
           @ApiResponse(responseCode = "403", description = "User is not authorised to access the resource"),
       }
   )
-  public LoRaConnectionStatusList getLoRaEndPointConnections(
+  public LoRaEndPointConnectionInfoDTO[] getLoRaEndPointConnections(
       @PathParam("deviceName") String deviceName, @PathParam("nodeId") String nodeId) {
     hasAccess(RESOURCE);
     LoRaDeviceManager deviceManager = LoRaDeviceManager.getInstance();
@@ -153,11 +153,11 @@ public class LoRaDeviceApi extends LoraBaseRestApi {
             infoList.add(createConnectionInfo(clientStats));
           }
         }
-        return new LoRaConnectionStatusList( infoList);
+        return infoList.toArray(new LoRaEndPointConnectionInfoDTO[0]);
       }
     }
     response.setStatus(HttpServletResponse.SC_NOT_FOUND);
-    return new LoRaConnectionStatusList(new ArrayList<>());
+    return new LoRaEndPointConnectionInfoDTO[0];
   }
 
   private LoRaDeviceInfoDTO createInfo(LoRaDevice device) {

@@ -44,6 +44,7 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -62,14 +63,14 @@ public class ConnectionManagementApi extends BaseDestinationApi {
           @ApiResponse(
               responseCode = "200",
               description = "Get all connections was successful",
-              content = @Content(mediaType = "application/json", schema = @Schema(implementation = EndPointDetailResponse.class))
+              content = @Content(mediaType = "application/json", schema = @Schema(implementation = EndPointSummaryDTO[].class))
           ),
           @ApiResponse(responseCode = "400", description = "Bad request"),
           @ApiResponse(responseCode = "401", description = "Invalid credentials or unauthorized access"),
           @ApiResponse(responseCode = "403", description = "User is not authorised to access the resource"),
       }
   )
-  public EndPointDetailResponse getAllConnections(
+  public EndPointSummaryDTO[] getAllConnections(
       @Parameter(
           description = "Optional filter string ",
           schema = @Schema(type = "String", example = "totalOverflow > 10 OR totalUnderflow > 5")
@@ -78,7 +79,7 @@ public class ConnectionManagementApi extends BaseDestinationApi {
   ) throws ParseException {
     hasAccess(RESOURCE);
     CacheKey key = new CacheKey(uriInfo.getPath(), (filter != null && !filter.isEmpty()) ? "" + filter.hashCode() : "");
-    EndPointDetailResponse cachedResponse = getFromCache(key, EndPointDetailResponse.class);
+    EndPointSummaryDTO[] cachedResponse = getFromCache(key, EndPointSummaryDTO[].class);
     if (cachedResponse != null) {
       return cachedResponse;
     }
@@ -87,17 +88,18 @@ public class ConnectionManagementApi extends BaseDestinationApi {
     ParserExecutor parser = (filter != null && !filter.isEmpty()) ? SelectorParser.compile(filter) : null;
     List<EndPointManager> endPointManagers = MessageDaemon.getInstance().getSubSystemManager().getNetworkManager().getAll();
 
+    List<EndPointSummaryDTO> total = new ArrayList<>(SessionTracker.getConnections());
     List<EndPointSummaryDTO> endPointDetails =
         endPointManagers.stream()
             .flatMap(endPointManager -> endPointManager.getEndPointServer().getActiveEndPoints().stream()
                 .map(endPoint -> EndPointHelper.buildSummaryDTO(endPointManager.getName(), endPoint))
             )
             .filter(endPointDetail -> parser == null || parser.evaluate(endPointDetail))
-            .collect(Collectors.toList());
-    endPointDetails.addAll(SessionTracker.getConnections());
-    EndPointDetailResponse response = new EndPointDetailResponse(endPointDetails);
-    putToCache(key, response);
-    return response;
+            .toList();
+    total.addAll(endPointDetails);
+    EndPointSummaryDTO[] array = total.toArray(new EndPointSummaryDTO[0]);
+    putToCache(key, array);
+    return array;
   }
 
   @GET

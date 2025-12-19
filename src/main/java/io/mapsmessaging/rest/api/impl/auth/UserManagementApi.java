@@ -61,14 +61,14 @@ public class UserManagementApi extends BaseAuthRestApi {
           @ApiResponse(
               responseCode = "200",
               description = "Get all users was successful",
-              content = @Content(mediaType = "application/json", schema = @Schema(implementation = UserListResponse.class))
+              content = @Content(mediaType = "application/json", schema = @Schema(implementation = UserDTO[].class))
           ),
           @ApiResponse(responseCode = "400", description = "Bad request"),
           @ApiResponse(responseCode = "401", description = "Invalid credentials or unauthorized access"),
           @ApiResponse(responseCode = "403", description = "User is not authorised to access the resource"),
       }
   )
-  public UserListResponse getAllUsers(
+  public UserDTO[] getAllUsers(
       @Parameter(
           description = "Optional filter string ",
           schema = @Schema(type = "String", example = "username = 'bill'")
@@ -78,12 +78,10 @@ public class UserManagementApi extends BaseAuthRestApi {
     AuthManager authManager = AuthManager.getInstance();
     List<UserDetails> users = authManager.getUsers();
     ParserExecutor parser = (filter != null && !filter.isEmpty()) ? SelectorParser.compile(filter) : null;
-    List<UserDTO> results =
-        users.stream()
-            .map(userDetails -> buildUser(userDetails, authManager))
-            .filter(user -> parser == null || parser.evaluate(user))
-            .collect(Collectors.toList());
-    return new UserListResponse(results);
+    return users.stream()
+        .map(userDetails -> buildUser(userDetails, authManager))
+        .filter(user -> parser == null || parser.evaluate(user))
+        .toList().toArray(new UserDTO[0]);
   }
 
   @GET
@@ -146,7 +144,7 @@ public class UserManagementApi extends BaseAuthRestApi {
   }
 
   @DELETE
-  @Path("/{userUuid}")
+  @Path("/{username}")
   @Produces({MediaType.APPLICATION_JSON})
   @Operation(
       summary = "Delete a user",
@@ -162,12 +160,12 @@ public class UserManagementApi extends BaseAuthRestApi {
           @ApiResponse(responseCode = "403", description = "User is not authorised to access the resource"),
       }
   )
-  public StatusResponse deleteUser(@PathParam("userUuid") String userUuid) {
+  public StatusResponse deleteUser(@PathParam("username") String username) {
     hasAccess(RESOURCE);
     AuthManager authManager = AuthManager.getInstance();
-    Identity userIdMap = authManager.getUserIdentity(UUID.fromString(userUuid));
-    if (userIdMap != null) {
-      authManager.delUser(userIdMap.getUsername());
+    Identity identity = authManager.getUserIdentity(username);
+    if(identity != null){
+      authManager.delUser(identity.getUsername());
       response.setStatus(HttpServletResponse.SC_NO_CONTENT);
       return new StatusResponse("Success");
     }

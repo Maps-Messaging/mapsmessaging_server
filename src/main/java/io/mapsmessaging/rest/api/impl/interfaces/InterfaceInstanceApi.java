@@ -103,21 +103,21 @@ public class InterfaceInstanceApi extends BaseInterfaceApi {
           @ApiResponse(
               responseCode = "200",
               description = "Operation was successful",
-              content = @Content(mediaType = "application/json", schema = @Schema(implementation = EndPointDetailResponse.class))
+              content = @Content(mediaType = "application/json", schema = @Schema(implementation = EndPointSummaryDTO[].class))
           ),
           @ApiResponse(responseCode = "400", description = "Bad request"),
           @ApiResponse(responseCode = "401", description = "Invalid credentials or unauthorized access"),
           @ApiResponse(responseCode = "403", description = "User is not authorised to access the resource"),
       }
   )
-  public EndPointDetailResponse getEndPointConnections(@PathParam("endpoint") String uniqueId) {
+  public EndPointSummaryDTO[] getEndPointConnections(@PathParam("endpoint") String uniqueId) {
     hasAccess(RESOURCE);
     CacheKey key = new CacheKey(uriInfo.getPath(), uniqueId);
-    EndPointDetailResponse cachedResponse = getFromCache(key, EndPointDetailResponse.class);
+    EndPointSummaryDTO[] cachedResponse = getFromCache(key, EndPointSummaryDTO[].class);
     if (cachedResponse != null) {
       return cachedResponse;
     }
-    List<EndPointSummaryDTO> endPointDetails = MessageDaemon.getInstance()
+    EndPointSummaryDTO[] endPointDetails = MessageDaemon.getInstance()
         .getSubSystemManager()
         .getNetworkManager()
         .getAll()
@@ -127,11 +127,12 @@ public class InterfaceInstanceApi extends BaseInterfaceApi {
             .getActiveEndPoints()
             .stream()
             .map(endPoint -> EndPointHelper.buildSummaryDTO(endPointManager.getName(), endPoint)))
-        .collect(Collectors.toList());
+        .toList()
+        .toArray(new EndPointSummaryDTO[0]);
 
-    EndPointDetailResponse response = new EndPointDetailResponse(endPointDetails);
-    putToCache(key, response);
-    return response;
+
+    putToCache(key, endPointDetails);
+    return endPointDetails;
   }
 
   @PUT

@@ -103,14 +103,14 @@ public class DestinationManagementApi extends BaseDestinationApi {
           @ApiResponse(
               responseCode = "200",
               description = "Get all destinations was successful",
-              content = @Content(mediaType = "application/json", schema = @Schema(implementation = DestinationResponse.class))
+              content = @Content(mediaType = "application/json", schema = @Schema(implementation = DestinationDTO[].class))
           ),
           @ApiResponse(responseCode = "400", description = "Bad request"),
           @ApiResponse(responseCode = "401", description = "Invalid credentials or unauthorized access"),
           @ApiResponse(responseCode = "403", description = "User is not authorised to access the resource"),
       }
   )
-  public DestinationResponse getAllDestinations(
+  public DestinationDTO[] getAllDestinations(
       @Parameter(
           description = "An optional filter string for selecting specific destinations. The filter should be a valid expression that complies with the selector syntax.",
           schema = @Schema(type = "string", example = "type = 'topic' AND storedMessages > 50")
@@ -131,7 +131,7 @@ public class DestinationManagementApi extends BaseDestinationApi {
     CacheKey key = new CacheKey(uriInfo.getPath(), ((filter != null && !filter.isEmpty()) ? "" + filter.hashCode() : "") + ":" + sortBy + ":" + size);
 
     // Try to retrieve from cache
-    DestinationResponse cachedResponse = getFromCache(key, DestinationResponse.class);
+    DestinationDTO[] cachedResponse = getFromCache(key, DestinationDTO[].class);
     if (cachedResponse != null) {
       return cachedResponse;
     }
@@ -147,15 +147,13 @@ public class DestinationManagementApi extends BaseDestinationApi {
       }
     }
     sortDestinationList(results, sortBy);
-
     // Limit the size of the returned results
     if (size > 0 && size < results.size()) {
       results = results.subList(0, size);
     }
-
-    DestinationResponse destinationResponse = new DestinationResponse(results);
-    putToCache(key, destinationResponse);
-    return destinationResponse;
+    DestinationDTO[] arr = results.toArray(new DestinationDTO[0]);
+    putToCache(key, arr);
+    return arr;
   }
 
   private void sortDestinationList(List<DestinationDTO> destinations, String sortBy) {

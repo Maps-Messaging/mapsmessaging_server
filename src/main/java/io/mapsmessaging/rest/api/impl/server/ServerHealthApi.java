@@ -180,14 +180,6 @@ public class ServerHealthApi extends ServerBaseRestApi {
     t.start();
   }
 
-
-  @GET
-  @Path("/endpoints")
-  @Produces(MediaType.APPLICATION_JSON)
-  public List<EndpointInfo> getEndpoints() {
-    return EndpointRegistry.getInstance().getEndpoints();
-  }
-
   @Data
   @NoArgsConstructor
   @AllArgsConstructor

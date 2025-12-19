@@ -60,7 +60,7 @@ public class GroupManagementApi extends BaseAuthRestApi {
           @ApiResponse(
               responseCode = "200",
               description = "Get all groups was successful",
-              content = @Content(mediaType = "application/json", schema = @Schema(implementation = GroupListResponse.class))
+              content = @Content(mediaType = "application/json", schema = @Schema(implementation = GroupDTO[].class))
           ),
           @ApiResponse(responseCode = "400", description = "Bad request"),
           @ApiResponse(responseCode = "401", description = "Invalid credentials or unauthorized access"),
@@ -68,7 +68,7 @@ public class GroupManagementApi extends BaseAuthRestApi {
 
       }
   )
-  public GroupListResponse getAllGroups(
+  public GroupDTO[] getAllGroups(
       @Parameter(
           description = "Optional filter string ",
           schema = @Schema(type = "String", example = "name = 'admin'")
@@ -77,7 +77,7 @@ public class GroupManagementApi extends BaseAuthRestApi {
     hasAccess(RESOURCE);
     ParserExecutor parser = (filter != null && !filter.isEmpty()) ? SelectorParser.compile(filter) : null;
     CacheKey key = new CacheKey(uriInfo.getPath(), (filter != null && !filter.isEmpty()) ? "" + filter.hashCode() : "");
-    GroupListResponse cachedResponse = getFromCache(key, GroupListResponse.class);
+    GroupDTO[] cachedResponse = getFromCache(key, GroupDTO[].class);
     if (cachedResponse != null) {
       return cachedResponse;
     }
@@ -87,16 +87,13 @@ public class GroupManagementApi extends BaseAuthRestApi {
     List<GroupDetails> groups = authManager.getGroups();
 
     // Transform and filter groups
-    List<GroupDTO> results =
+    GroupDTO[] results =
         groups.stream()
             .map(groupDetails -> new GroupDTO(groupDetails.getName(), groupDetails.getGroupId(), groupDetails.getUsers()))
             .filter(group -> filterGroup(parser, group))
-            .collect(Collectors.toList());
-
-    // Create response and cache it
-    GroupListResponse result = new GroupListResponse(request, results);
-    putToCache(key, result);
-    return result;
+            .toList().toArray(new GroupDTO[0]);
+    putToCache(key, results);
+    return results;
   }
 
   @GET

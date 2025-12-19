@@ -51,6 +51,14 @@ public class ModelStoreApi extends BaseRestApi {
   @Path("/{modelName}")
   @Consumes(MediaType.MULTIPART_FORM_DATA)
   @Produces(MediaType.APPLICATION_JSON)
+  @Operation(
+      summary = "ML Model upload",
+      description = "uploads a model",
+      responses = {
+          @ApiResponse(responseCode = "200", description = "Model content"),
+          @ApiResponse(responseCode = "404", description = "Model not found")
+      }
+  )
   public StatusResponse uploadModel(
       @PathParam("modelName") String modelName,
       @FormDataParam("file") InputStream fileStream) throws IOException {
@@ -66,6 +74,8 @@ public class ModelStoreApi extends BaseRestApi {
     }
     return new StatusResponse("Success");
   }
+
+
   @GET
   @Path("/{modelName}")
   @Produces(MediaType.APPLICATION_OCTET_STREAM)

@@ -57,27 +57,28 @@ public class HardwareManagementApi extends HardwareBaseRestApi {
           @ApiResponse(
               responseCode = "200",
               description = "Scan for devices was successful",
-              content = @Content(mediaType = "application/json", schema = @Schema(implementation = DeviceScanList.class))
+              content = @Content(mediaType = "application/json", schema = @Schema(implementation = String[].class))
           ),
           @ApiResponse(responseCode = "400", description = "Bad request"),
           @ApiResponse(responseCode = "401", description = "Invalid credentials or unauthorized access"),
           @ApiResponse(responseCode = "403", description = "User is not authorised to access the resource"),
       }
   )
-  public DeviceScanList scanForDevices() throws InterruptedException {
+  public String[] scanForDevices() throws InterruptedException {
     hasAccess(RESOURCE);
     CacheKey key = new CacheKey(uriInfo.getPath(), "");
-    DeviceScanList cachedResponse = getFromCache(key, DeviceScanList.class);
+    String[] cachedResponse = getFromCache(key, String[].class);
     if (cachedResponse != null) {
       return cachedResponse;
     }
     DeviceManager deviceManager = MessageDaemon.getInstance().getSubSystemManager().getDeviceManager();
     if (deviceManager != null) {
-      DeviceScanList deviceScanList = new DeviceScanList(deviceManager.scan());
-      putToCache(key, deviceScanList);
-      return deviceScanList;
+      List<String> deviceScanList = deviceManager.scan();
+      String[] arr = deviceScanList.toArray(new String[0]);
+      putToCache(key, arr);
+      return arr;
     }
-    return new DeviceScanList(new ArrayList<>());
+    return new String[0];
   }
 
   @GET
@@ -89,17 +90,17 @@ public class HardwareManagementApi extends HardwareBaseRestApi {
           @ApiResponse(
               responseCode = "200",
               description = "Get all discovered devices was successful",
-              content = @Content(mediaType = "application/json", schema = @Schema(implementation = DeviceList.class))
+              content = @Content(mediaType = "application/json", schema = @Schema(implementation = DeviceInfoDTO[].class))
           ),
           @ApiResponse(responseCode = "400", description = "Bad request"),
           @ApiResponse(responseCode = "401", description = "Invalid credentials or unauthorized access"),
           @ApiResponse(responseCode = "403", description = "User is not authorised to access the resource"),
       }
   )
-  public DeviceList getAllDiscoveredDevices() throws IOException {
+  public  DeviceInfoDTO[] getAllDiscoveredDevices() throws IOException {
     hasAccess(RESOURCE);
     CacheKey key = new CacheKey(uriInfo.getPath(), "");
-    DeviceList cachedResponse = getFromCache(key, DeviceList.class);
+    DeviceInfoDTO[] cachedResponse = getFromCache(key, DeviceInfoDTO[].class);
     if (cachedResponse != null) {
       return cachedResponse;
     }
@@ -116,9 +117,9 @@ public class HardwareManagementApi extends HardwareBaseRestApi {
         devices.add(deviceInfo);
       }
     }
-    DeviceList dl = new DeviceList(devices);
-    putToCache(key, dl);
-    return dl;
+    DeviceInfoDTO[] array = devices.toArray(new DeviceInfoDTO[0]);
+    putToCache(key, array);
+    return array;
   }
 
 }

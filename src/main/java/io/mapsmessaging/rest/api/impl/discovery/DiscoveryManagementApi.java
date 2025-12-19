@@ -22,7 +22,6 @@ package io.mapsmessaging.rest.api.impl.discovery;
 import io.mapsmessaging.MessageDaemon;
 import io.mapsmessaging.dto.rest.discovery.DiscoveredServersDTO;
 import io.mapsmessaging.network.discovery.DiscoveryManager;
-import io.mapsmessaging.network.io.connection.EndPointConnection;
 import io.mapsmessaging.rest.api.impl.interfaces.RequestedAction;
 import io.mapsmessaging.rest.cache.CacheKey;
 import io.mapsmessaging.rest.responses.StatusResponse;
@@ -31,6 +30,7 @@ import io.mapsmessaging.selector.SelectorParser;
 import io.mapsmessaging.selector.operators.ParserExecutor;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.parameters.RequestBody;
@@ -112,14 +112,17 @@ public class DiscoveryManagementApi extends DiscoveryBaseRestApi {
           @ApiResponse(
               responseCode = "200",
               description = "Update discovery configuration was successful",
-              content = @Content(mediaType = "application/json", schema = @Schema(implementation = DiscoveredServers.class))
+              content =  @Content(
+                  mediaType = "application/json",
+                  schema = @Schema(implementation = DiscoveredServersDTO[].class)
+              )
           ),
           @ApiResponse(responseCode = "400", description = "Bad request"),
           @ApiResponse(responseCode = "401", description = "Invalid credentials or unauthorized access"),
           @ApiResponse(responseCode = "403", description = "User is not authorised to access the resource"),
       }
   )
-  public DiscoveredServers getAllDiscoveredServers(
+  public DiscoveredServersDTO[] getAllDiscoveredServers(
       @Parameter(
           description = "Optional filter string ",
           schema = @Schema(type = "String", example = "schemaSupport = TRUE OR systemTopicPrefix IS NOT NULL")
@@ -129,28 +132,19 @@ public class DiscoveryManagementApi extends DiscoveryBaseRestApi {
     hasAccess(RESOURCE);
     CacheKey key = new CacheKey(uriInfo.getPath(), ((filter != null && !filter.isEmpty()) ? "" + filter.hashCode() : ""));
 
-    DiscoveredServers cachedResponse = getFromCache(key, DiscoveredServers.class);
+    DiscoveredServersDTO[] cachedResponse = getFromCache(key, DiscoveredServersDTO[].class);
     if (cachedResponse != null) {
       return cachedResponse;
     }
     ParserExecutor parser = (filter != null && !filter.isEmpty()) ? SelectorParser.compile(filter) : SelectorParser.compile("true");
-    List<DiscoveredServersDTO> result =
-        MessageDaemon.getInstance()
-            .getSubSystemManager()
-            .getServerConnectionManager()
-            .getServers()
-            .stream()
-            .filter(parser::evaluate)
-            .collect(Collectors.toList());
-    DiscoveredServers discoveredServers = new DiscoveredServers();
-    discoveredServers.setList(result);
-    putToCache(key, discoveredServers);
-    return discoveredServers;
+    DiscoveredServersDTO[] array = MessageDaemon.getInstance()
+        .getSubSystemManager()
+        .getServerConnectionManager()
+        .getServers()
+        .stream()
+        .filter(parser::evaluate).toArray(DiscoveredServersDTO[]::new);
+    putToCache(key, array);
+    return array;
   }
 
-  @Data
-  @NoArgsConstructor
-  public static class DiscoveredServers{
-    private List<DiscoveredServersDTO> list;
-  }
 }

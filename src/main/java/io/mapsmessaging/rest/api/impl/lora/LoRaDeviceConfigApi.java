@@ -55,21 +55,21 @@ public class LoRaDeviceConfigApi extends LoraBaseRestApi {
           @ApiResponse(
               responseCode = "200",
               description = "Operation was successful",
-              content = @Content(mediaType = "application/json", schema = @Schema(implementation = LoRaConfigListResponse.class))
+              content = @Content(mediaType = "application/json", schema = @Schema(implementation = LoRaDeviceConfigInfoDTO[].class))
           ),
           @ApiResponse(responseCode = "400", description = "Bad request"),
           @ApiResponse(responseCode = "401", description = "Invalid credentials or unauthorized access"),
           @ApiResponse(responseCode = "403", description = "User is not authorised to access the resource"),
       }
   )
-  public LoRaConfigListResponse getAllLoRaDeviceConfigs() {
+  public LoRaDeviceConfigInfoDTO[] getAllLoRaDeviceConfigs() {
     hasAccess(RESOURCE);
     LoRaDeviceManager deviceManager = LoRaDeviceManager.getInstance();
     List<LoRaDeviceConfigInfoDTO> deviceInfos = new ArrayList<>();
     for (LoRaDevice device : deviceManager.getDevices()) {
       deviceInfos.add(createInfo(device));
     }
-    return new LoRaConfigListResponse(deviceInfos);
+    return deviceInfos.toArray(new LoRaDeviceConfigInfoDTO[0]);
   }
 
   @GET

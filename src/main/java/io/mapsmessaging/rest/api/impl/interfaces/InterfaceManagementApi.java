@@ -63,14 +63,14 @@ public class InterfaceManagementApi extends BaseInterfaceApi {
           @ApiResponse(
               responseCode = "200",
               description = "Operation was successful",
-              content = @Content(mediaType = "application/json", schema = @Schema(implementation = InterfaceDetailResponse.class))
+              content = @Content(mediaType = "application/json", schema = @Schema(implementation = InterfaceInfoDTO[].class))
           ),
           @ApiResponse(responseCode = "400", description = "Bad request"),
           @ApiResponse(responseCode = "401", description = "Invalid credentials or unauthorized access"),
           @ApiResponse(responseCode = "403", description = "User is not authorised to access the resource"),
       }
   )
-  public InterfaceDetailResponse getAllInterfaces(
+  public InterfaceInfoDTO[] getAllInterfaces(
       @Parameter(
           description = "Optional filter string ",
           schema = @Schema(type = "String", example = "state = 'started'")
@@ -79,7 +79,7 @@ public class InterfaceManagementApi extends BaseInterfaceApi {
   ) throws ParseException {
     hasAccess(RESOURCE);
     CacheKey key = new CacheKey(uriInfo.getPath(), (filter != null && !filter.isEmpty()) ? "" + filter.hashCode() : "");
-    InterfaceDetailResponse cachedResponse = getFromCache(key, InterfaceDetailResponse.class);
+    InterfaceInfoDTO[] cachedResponse = getFromCache(key, InterfaceInfoDTO[].class);
     if (cachedResponse != null) {
       return cachedResponse;
     }
@@ -87,17 +87,14 @@ public class InterfaceManagementApi extends BaseInterfaceApi {
     List<EndPointManager> endPointManagers =
         MessageDaemon.getInstance().getSubSystemManager().getNetworkManager().getAll();
 
-    List<InterfaceInfoDTO> protocols =
+    InterfaceInfoDTO[] protocols =
         endPointManagers.stream()
             .map(InterfaceInfoHelper::fromEndPointManager)
-            .filter(protocol -> parser == null || parser.evaluate(protocol))
-            .collect(Collectors.toList());
-
-    InterfaceDetailResponse response = new InterfaceDetailResponse(protocols);
+            .filter(protocol -> parser == null || parser.evaluate(protocol)).toArray(InterfaceInfoDTO[]::new);
 
     // Cache the response
-    putToCache(key, response);
-    return response;
+    putToCache(key, protocols);
+    return protocols;
   }
 
   @PATCH
@@ -164,7 +161,7 @@ public class InterfaceManagementApi extends BaseInterfaceApi {
           @ApiResponse(
               responseCode = "200",
               description = "Operation was successful",
-              content = @Content(mediaType = "application/json", schema = @Schema(implementation = InterfaceStatusResponse.class))
+              content = @Content(mediaType = "application/json", schema = @Schema(implementation = InterfaceStatusDTO[].class))
           ),
           @ApiResponse(responseCode = "400", description = "Bad request"),
           @ApiResponse(responseCode = "401", description = "Invalid credentials or unauthorized access"),
@@ -172,7 +169,7 @@ public class InterfaceManagementApi extends BaseInterfaceApi {
       }
   )
 
-  public InterfaceStatusResponse getAllInterfaceStatus(
+  public InterfaceStatusDTO[] getAllInterfaceStatus(
       @Parameter(
           description = "Optional filter string ",
           schema = @Schema(type = "String", example = "state = 'started'")
@@ -181,7 +178,7 @@ public class InterfaceManagementApi extends BaseInterfaceApi {
   ) throws ParseException {
     hasAccess(RESOURCE);
     CacheKey key = new CacheKey(uriInfo.getPath(), (filter != null && !filter.isEmpty()) ? "" + filter.hashCode() : "");
-    InterfaceStatusResponse cachedResponse = getFromCache(key, InterfaceStatusResponse.class);
+    InterfaceStatusDTO[] cachedResponse = getFromCache(key, InterfaceStatusDTO[].class);
     if (cachedResponse != null) {
       return cachedResponse;
     }
@@ -190,14 +187,14 @@ public class InterfaceManagementApi extends BaseInterfaceApi {
     ParserExecutor parser = (filter != null && !filter.isEmpty()) ? SelectorParser.compile(filter) : null;
     List<EndPointManager> endPointManagers = MessageDaemon.getInstance().getSubSystemManager().getNetworkManager().getAll();
 
-    List<InterfaceStatusDTO> list =
+    InterfaceStatusDTO[] list =
         endPointManagers.stream()
             .map(endPointManager -> InterfaceStatusHelper.fromServer(endPointManager.getEndPointServer()))
             .filter(status -> parser == null || parser.evaluate(status))
-            .toList();
+            .toList()
+            .toArray(new InterfaceStatusDTO[0]);
 
-    InterfaceStatusResponse response = new InterfaceStatusResponse(list);
-    putToCache(key, response);
-    return response;
+    putToCache(key, list);
+    return list;
   }
 }
