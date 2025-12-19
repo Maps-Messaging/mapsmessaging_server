@@ -233,8 +233,7 @@ public class AuthManager implements Agent {
     config = ConfigurationManager.getInstance().getConfiguration(AuthManagerConfig.class);
     if (config != null) {
       authenticationEnabled = config.isAuthenticationEnabled();
-      // todo renable auth
-      authorisationEnabled = false;//config.isAuthorisationEnabled() &&  authenticationEnabled;
+      authorisationEnabled = config.isAuthorisationEnabled() &&  authenticationEnabled;
     }
     else{
       authenticationEnabled = false;
