@@ -299,7 +299,8 @@ class MessageFactoryTest {
     Message unpacked = factory.unpack(duplicateForRead(packed));
 
     assertNotNull(unpacked.getMeta());
-    assertTrue(unpacked.getMeta().size() == 1); // includes time_ms created
+
+    assertTrue(unpacked.getMeta().size() == 1 || unpacked.getMeta().size() == 4); // includes time_ms created and / or location
   }
 
   @Test
