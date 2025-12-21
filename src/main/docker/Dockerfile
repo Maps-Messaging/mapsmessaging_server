@@ -44,17 +44,18 @@ RUN apk add --no-cache dos2unix shadow wget && \
     mv maps-%%MAPS_VERSION%%/conf/NetworkManagerDocker.yaml maps-%%MAPS_VERSION%%/conf/NetworkManager.yaml && \
 \
 # Setup data volume and static files
-    mkdir -p /data && \
+    mkdir -p /opt/maps_data && \
+    mv /maps-%%MAPS_VERSION%% /opt/maps  && \
 \
 # Add user and permissions
     addgroup -S messaginggroup && \
-    adduser -S messaginguser -G messaginggroup -s /bin/sh -h /maps-%%MAPS_VERSION%% && \
-    chown -R messaginguser:messaginggroup /data /maps-%%MAPS_VERSION%% && \
-    chmod -R 755 /maps-%%MAPS_VERSION%%
+    adduser -S messaginguser -G messaginggroup -s /bin/sh -h /opt/maps && \
+    chown -R messaginguser:messaginggroup /opt/maps_data /opt/maps && \
+    chmod -R 755 /opt/maps
 
 EXPOSE 9000/tcp 8080/tcp 8778/tcp 4222/tcp  1883/tcp \
        1884/udp 5683/udp 2442/udp
 
-VOLUME /data
+VOLUME /opt/maps_data
 
-CMD su -c "ulimit -n 100000 && ./maps-%%MAPS_VERSION%%/bin/startDocker.sh" messaginguser
+CMD su -c "ulimit -n 100000 && /opt/maps/bin/startDocker.sh" messaginguser

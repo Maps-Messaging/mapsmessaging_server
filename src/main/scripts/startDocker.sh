@@ -38,11 +38,11 @@ export CONSUL_URL
 echo $CONSUL_URL
 
 if [ -z ${MAPS_HOME+x} ];
-  then export MAPS_HOME=/maps-$VERSION;
+  then export MAPS_HOME=/opt/maps;
 fi
 
 if [ -z ${MAPS_DATA+x} ];
-  then export MAPS_DATA=/data
+  then export MAPS_DATA=/opt/maps_data
 fi
 
 echo "Maps Home is set to '$MAPS_HOME'"
