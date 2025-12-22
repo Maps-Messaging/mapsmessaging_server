@@ -101,6 +101,15 @@
     </fileSet>
 
     <fileSet>
+      <directory>${project.basedir}/src/main/scripts/fail2ban</directory>
+      <outputDirectory>bin/fail2ban</outputDirectory>
+      <includes>
+        <include>*</include>
+      </includes>
+      <fileMode>0755</fileMode>
+    </fileSet>
+
+    <fileSet>
       <directory>${project.basedir}/target/apidocs</directory>
       <outputDirectory>docs</outputDirectory>
       <includes>
