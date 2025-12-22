@@ -24,18 +24,10 @@ import io.mapsmessaging.auth.ServerPermissions;
 import io.mapsmessaging.rest.api.impl.auth.dto.*;
 import io.mapsmessaging.security.access.Group;
 import io.mapsmessaging.security.access.Identity;
-import io.mapsmessaging.security.authorisation.AccessDecision;
-import io.mapsmessaging.security.authorisation.AuthorizationProvider;
-import io.mapsmessaging.security.authorisation.Grant;
-import io.mapsmessaging.security.authorisation.Grantee;
-import io.mapsmessaging.security.authorisation.Permission;
-import io.mapsmessaging.security.authorisation.ProtectedResource;
+import io.mapsmessaging.security.authorisation.*;
 import jakarta.inject.Inject;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
+
+import java.util.*;
 import java.util.stream.Collectors;
 
 public class AuthorisationRestHelper {

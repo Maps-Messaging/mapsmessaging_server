@@ -37,6 +37,7 @@ import io.mapsmessaging.security.access.AuthContext;
 import io.mapsmessaging.security.access.Group;
 import io.mapsmessaging.security.access.Identity;
 import io.mapsmessaging.security.access.mapping.GroupIdMap;
+import io.mapsmessaging.security.access.monitor.LockStatus;
 import io.mapsmessaging.security.authorisation.*;
 import io.mapsmessaging.security.identity.IdentityLookupFactory;
 import io.mapsmessaging.security.identity.principals.UniqueIdentifierPrincipal;
@@ -66,7 +67,6 @@ public class AuthManager implements Agent {
 
   private static final String ADMIN_GROUP = "admins";
   private static final String EVERYONE = "everyone";
-
 
   private static class Holder {
     static final AuthManager INSTANCE = new AuthManager();
@@ -176,6 +176,13 @@ public class AuthManager implements Agent {
     return null;
   }
 
+  public List<LockStatus> getAllLockedUsers(){
+    return authenticationStorage.getIdentityAccessManager().getUserManagement().getLockedUsers();
+  }
+
+  public void unlockUser(String username) {
+    authenticationStorage.getIdentityAccessManager().getUserManagement().clearUserLock(username);
+  }
 
   public boolean canAccess(Identity identity, Permission permission, ProtectedResource resource) {
     if(!authorisationEnabled) return true;
@@ -201,7 +208,6 @@ public class AuthManager implements Agent {
   public AuthorizationProvider getAuthorizationProvider() {
     return authenticationStorage.getAuthorizationProvider();
   }
-
 
 
   public void grant(Identity identity, Permission permission, ProtectedResource resource) {

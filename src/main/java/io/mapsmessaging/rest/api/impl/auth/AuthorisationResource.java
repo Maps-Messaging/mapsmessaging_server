@@ -26,21 +26,14 @@ import io.mapsmessaging.dto.rest.config.auth.PermissionDetailsDTO;
 import io.mapsmessaging.dto.rest.config.auth.ResourceTypeDetailsDTO;
 import io.mapsmessaging.rest.api.impl.auth.dto.*;
 import io.mapsmessaging.rest.api.impl.auth.service.AuthorisationRestHelper;
-import jakarta.ws.rs.Consumes;
-import jakarta.ws.rs.DefaultValue;
-import jakarta.ws.rs.GET;
-import jakarta.ws.rs.POST;
-import jakarta.ws.rs.PUT;
-import jakarta.ws.rs.Path;
-import jakarta.ws.rs.PathParam;
-import jakarta.ws.rs.Produces;
-import jakarta.ws.rs.QueryParam;
-import jakarta.ws.rs.core.MediaType;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import jakarta.ws.rs.*;
+import jakarta.ws.rs.core.MediaType;
+
 import java.util.ArrayList;
 import java.util.List;
 

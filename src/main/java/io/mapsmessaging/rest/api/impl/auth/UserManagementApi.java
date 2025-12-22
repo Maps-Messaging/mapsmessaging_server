@@ -25,7 +25,6 @@ import io.mapsmessaging.auth.registry.UserDetails;
 import io.mapsmessaging.dto.rest.auth.NewUserDTO;
 import io.mapsmessaging.dto.rest.auth.UserDTO;
 import io.mapsmessaging.rest.responses.StatusResponse;
-import io.mapsmessaging.rest.responses.UserListResponse;
 import io.mapsmessaging.security.access.Identity;
 import io.mapsmessaging.selector.ParseException;
 import io.mapsmessaging.selector.SelectorParser;
@@ -44,7 +43,6 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 import static io.mapsmessaging.rest.api.Constants.URI_PATH;
 
