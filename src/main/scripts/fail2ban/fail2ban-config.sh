@@ -61,12 +61,11 @@ echo "Reloading Fail2ban..."
 if systemctl is-active --quiet fail2ban; then
   systemctl restart fail2ban
 else
-  # In case someone is running it without systemd, or it is stopped.
-  # This will at least apply config if it's running.
   fail2ban-client reload || true
 fi
 
 echo "Checking jail status for 'maps-auth'..."
-fail2ban-client status maps-auth || true
+fail2ban-client status maps-auth
+
 
 echo "Done."
