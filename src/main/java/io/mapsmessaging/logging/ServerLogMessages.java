@@ -431,9 +431,9 @@ public enum ServerLogMessages implements LogMessage {
   PROTOCOL_ACCEPT_SCANNING(LEVEL.DEBUG, SERVER_CATEGORY.PROTOCOL, "Scanning packet :{}"),
   PROTOCOL_ACCEPT_COMPLETE(LEVEL.DEBUG, SERVER_CATEGORY.PROTOCOL, "Selector callback completed"),
   PROTOCOL_ACCEPT_EXCEPTION(LEVEL.DEBUG, SERVER_CATEGORY.PROTOCOL, "Exception raised during close of end point"),
-  PROTOCOL_ACCEPT_FAILED_DETECT(LEVEL.WARN, SERVER_CATEGORY.PROTOCOL, "Failed to detect protocol on End Point {}"),
+  PROTOCOL_ACCEPT_FAILED_DETECT(LEVEL.WARN, SERVER_CATEGORY.PROTOCOL, "Failed to detect protocol on End Point {}, ip={}"),
   PROTOCOL_ACCEPT_CREATED(LEVEL.WARN, SERVER_CATEGORY.PROTOCOL, "Created Protocol {}"),
-  PROTOCOL_ACCEPT_CLOSED(LEVEL.WARN, SERVER_CATEGORY.PROTOCOL, "EndPoint closed during protocol negotiation"),
+  PROTOCOL_ACCEPT_CLOSED(LEVEL.WARN, SERVER_CATEGORY.PROTOCOL, "EndPoint closed during protocol negotiation ip={}"),
   // </editor-fold>
 
   // <editor-fold desc="JMX specific log messages">

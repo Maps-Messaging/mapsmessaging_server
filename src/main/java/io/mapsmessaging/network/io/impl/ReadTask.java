@@ -25,6 +25,7 @@ import io.mapsmessaging.logging.ThreadContext;
 import io.mapsmessaging.network.io.EndPoint;
 import io.mapsmessaging.network.io.Packet;
 import io.mapsmessaging.network.io.Selectable;
+import io.mapsmessaging.utilities.IpAddressHelper;
 import io.mapsmessaging.utilities.threads.SimpleTaskScheduler;
 
 import java.io.IOException;
@@ -78,6 +79,7 @@ public class ReadTask implements Selectable {
         }
       } else {
         ThreadContext.put("endpoint", endPoint.getName());
+        ThreadContext.put("ip", IpAddressHelper.normalizeIp(endPoint.getRemoteSocketAddress()));
         ThreadContext.put("protocol", selectorCallback.getName());
         ThreadContext.put("session", selectorCallback.getSessionId());
         ThreadContext.put("version", selectorCallback.getVersion());

@@ -26,6 +26,7 @@ import io.mapsmessaging.network.io.*;
 import io.mapsmessaging.network.io.impl.Selector;
 import io.mapsmessaging.network.protocol.impl.proxy.ProxyProtocolInfo;
 import io.mapsmessaging.network.protocol.impl.proxy.ProxyProtocolMode;
+import io.mapsmessaging.utilities.IpAddressHelper;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -83,6 +84,8 @@ public class ProtocolAcceptRunner implements Selectable {
   @Override
   public void selected(Selectable selectable, Selector selector, int selection) {
     logger.log(ServerLogMessages.PROTOCOL_ACCEPT_SELECTOR_FIRED);
+    String ip = endPoint.getRemoteSocketAddress();
+    ip = IpAddressHelper.normalizeIp(ip);
     try {
       logger.log(ServerLogMessages.PROTOCOL_ACCEPT_FIRING, packet.position(), packet.limit());
       int read = endPoint.readPacket(packet);
@@ -105,19 +108,19 @@ public class ProtocolAcceptRunner implements Selectable {
           packet.limit(packet.capacity());
         }
       } else if (read < 0) {
-        logger.log(ServerLogMessages.PROTOCOL_ACCEPT_CLOSED);
+        logger.log(ServerLogMessages.PROTOCOL_ACCEPT_CLOSED, ip);
         endPoint.close();
       }
       else{
         long cutOff = System.currentTimeMillis() - timeout;
         if(cutOff > lastActive){
           EndPointServerStatus.SystemTotalFailedConnections.increment();
-          logger.log(ServerLogMessages.PROTOCOL_ACCEPT_CLOSED);
+          logger.log(ServerLogMessages.PROTOCOL_ACCEPT_CLOSED, ip);
           endPoint.close();
         }
       }
     } catch (IOException e) {
-      logger.log(ServerLogMessages.PROTOCOL_ACCEPT_FAILED_DETECT, e, endPoint.toString());
+      logger.log(ServerLogMessages.PROTOCOL_ACCEPT_FAILED_DETECT, e, endPoint.toString(), ip);
       try {
         endPoint.close();
       } catch (IOException ioException) {
