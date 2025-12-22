@@ -34,6 +34,7 @@ import io.mapsmessaging.security.SubjectHelper;
 import io.mapsmessaging.security.access.*;
 import io.mapsmessaging.security.access.mapping.GroupIdMap;
 import io.mapsmessaging.security.access.mapping.UserIdMap;
+import io.mapsmessaging.security.access.monitor.AuthenticationMonitorConfig;
 import io.mapsmessaging.security.authorisation.*;
 import lombok.Getter;
 import org.mapdb.DB;
@@ -69,7 +70,10 @@ public class AuthenticationStorage {
       }
     }
 
-    firstBoot = !(new File(securityDirectory + File.separator + ".auth.db").exists());
+    firstBoot = !(
+        new File(securityDirectory + File.separator + ".auth.db").exists() ||
+        new File(securityDirectory + File.separator + ".auth_tx.db").exists()
+    );
 
     Map<String, Object> map = new LinkedHashMap<>(config.getMap());
     map.put("configDirectory", securityDirectory);
@@ -83,7 +87,7 @@ public class AuthenticationStorage {
     String authProvider = config.getProperty("identityProvider", "Apache-Basic-Auth");
     try {
       dbStoreManager = new AuthDbStoreManager(securityDirectory);
-      identityAccessManager = new IdentityAccessManager(authProvider, map, new IdDbStore<>(dbStoreManager.getUserMapSet()), new IdDbStore<>(dbStoreManager.getGroupMapSet()), new ServerTraversalFactory(), ServerPermissions.values());
+      identityAccessManager = new IdentityAccessManager(authProvider, map, new IdDbStore<>(dbStoreManager.getUserMapSet()), new IdDbStore<>(dbStoreManager.getGroupMapSet()), new ServerTraversalFactory(), new AuthenticationMonitorConfig(), ServerPermissions.values());
       userPermisionManager = new UserPermisionManager(dbStoreManager.getSessionPrivilegesMap());
     } catch (IOException e) {
 
@@ -132,8 +136,8 @@ public class AuthenticationStorage {
   }
 
 
-  public boolean validateUser(String username, char[] password) throws IOException {
-    return identityAccessManager.validateUser(username, password);
+  public boolean validateUser(String username, char[] password, AuthContext context) throws IOException {
+    return identityAccessManager.validateUser(username, password, context);
   }
 
   public SessionPrivileges getQuota(UUID userId) {

@@ -36,4 +36,9 @@ public interface ClientConnection {
   String getAuthenticationConfig();
 
   String getUniqueName();
+
+  String getProtocolName();
+
+  String getRemoteIp();
+
 }

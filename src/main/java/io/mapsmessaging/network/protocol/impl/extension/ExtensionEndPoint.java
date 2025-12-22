@@ -87,4 +87,9 @@ public class ExtensionEndPoint extends EndPoint {
   protected Logger createLogger() {
     return LoggerFactory.getLogger(ExtensionEndPoint.class);
   }
+
+  @Override
+  public String getRemoteSocketAddress() {
+    return "";
+  }
 }

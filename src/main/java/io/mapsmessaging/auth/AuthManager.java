@@ -33,6 +33,7 @@ import io.mapsmessaging.dto.rest.system.Status;
 import io.mapsmessaging.dto.rest.system.SubSystemStatusDTO;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
+import io.mapsmessaging.security.access.AuthContext;
 import io.mapsmessaging.security.access.Group;
 import io.mapsmessaging.security.access.Identity;
 import io.mapsmessaging.security.access.mapping.GroupIdMap;
@@ -256,11 +257,12 @@ public class AuthManager implements Agent {
       logger.log(SECURITY_MANAGER_FAILED_TO_CREATE_USER, USER);
     }
 
+    AuthContext context = new AuthContext("localhost", "setup", "setup");
     saveInitialUserDetails(path, new String[][]{{ADMIN_USER, password}, {USER, userpassword}});
-    if (!authenticationStorage.validateUser(ADMIN_USER, password.toCharArray())) {
+    if (!authenticationStorage.validateUser(ADMIN_USER, password.toCharArray(), context)) {
       logger.log(SECURITY_MANAGER_FAILED_TO_INITIALISE_USER, USER);
     }
-    if (!authenticationStorage.validateUser(USER, userpassword.toCharArray())) {
+    if (!authenticationStorage.validateUser(USER, userpassword.toCharArray(), context)) {
       logger.log(SECURITY_MANAGER_FAILED_TO_INITIALISE_USER, USER);
     }
     if(authorisationEnabled) {
@@ -331,8 +333,8 @@ public class AuthManager implements Agent {
     }
   }
 
-  public boolean validate(String username, char[] password) throws IOException {
-    return authenticationStorage.validateUser(username, password);
+  public boolean validate(String username, char[] password, AuthContext context) throws IOException {
+    return authenticationStorage.validateUser(username, password, context);
   }
 
   public Identity getUserIdentity(String username) {

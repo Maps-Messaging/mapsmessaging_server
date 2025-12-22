@@ -115,6 +115,11 @@ public class DTLSEndPoint extends EndPoint implements StateChangeListener, Timeo
   }
 
   @Override
+  public String getRemoteSocketAddress() {
+    return clientId.toString();
+  }
+
+  @Override
   public void handshakeComplete() {
     try {
       manager.connectionComplete(this);

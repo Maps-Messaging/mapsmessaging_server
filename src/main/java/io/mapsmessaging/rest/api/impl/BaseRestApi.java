@@ -72,6 +72,21 @@ public class BaseRestApi {
     }
   }
 
+  public String extractClientIp() {
+
+    String forwarded = request.getHeader("X-Forwarded-For");
+    if (forwarded != null && !forwarded.isBlank()) {
+      // first IP is the client
+      return forwarded.split(",")[0].trim();
+    }
+
+    String realIp = request.getHeader("X-Real-IP");
+    if (realIp != null && !realIp.isBlank()) {
+      return realIp.trim();
+    }
+
+    return request.getRemoteAddr();
+  }
 
   protected void hasAccess(String resource) {
     if(!AUTH_ENABLED){

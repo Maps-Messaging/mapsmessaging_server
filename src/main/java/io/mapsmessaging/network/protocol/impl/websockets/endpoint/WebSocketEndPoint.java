@@ -160,4 +160,9 @@ public class WebSocketEndPoint extends EndPoint {
   protected Logger createLogger() {
     return LoggerFactory.getLogger(WebSocketEndPoint.class);
   }
+
+  @Override
+  public String getRemoteSocketAddress() {
+    return endPoint.getRemoteSocketAddress();
+  }
 }

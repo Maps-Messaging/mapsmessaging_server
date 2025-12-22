@@ -68,4 +68,14 @@ public class DeviceClientConnection implements ClientConnection {
   public String getUniqueName() {
     return deviceHandler.getName();
   }
+
+  @Override
+  public String getProtocolName() {
+    return "";
+  }
+
+  @Override
+  public String getRemoteIp() {
+    return "";
+  }
 }

@@ -69,4 +69,14 @@ public class RestClientConnection implements ClientConnection {
     return "";
   }
 
+  @Override
+  public String getProtocolName() {
+    return "RestAPI";
+  }
+
+  @Override
+  public String getRemoteIp() {
+    return "";
+  }
+
 }

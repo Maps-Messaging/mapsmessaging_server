@@ -187,4 +187,6 @@ public abstract class EndPoint implements Closeable {
 
   protected abstract Logger createLogger();
 
+  public abstract String getRemoteSocketAddress();
+
 }

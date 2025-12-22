@@ -169,7 +169,7 @@ public class TCPEndPoint extends EndPoint {
     return false;
   }
 
-  private String getRemoteSocketAddress() {
+  public String getRemoteSocketAddress() {
     if (getProxyProtocolInfo() == null) {
       return socket.getRemoteSocketAddress().toString();
     }

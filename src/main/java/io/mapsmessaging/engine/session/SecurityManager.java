@@ -32,6 +32,8 @@ import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.logging.ServerLogMessages;
 import io.mapsmessaging.security.MapsSecurityProvider;
+import io.mapsmessaging.security.access.AuthContext;
+import io.mapsmessaging.security.jaas.AuthContextCallback;
 import io.mapsmessaging.security.jaas.PrincipalCallback;
 import io.mapsmessaging.utilities.Agent;
 
@@ -73,7 +75,10 @@ public class SecurityManager implements Agent {
         username = "anonymous";
       }
       if (AuthManager.getInstance().isAuthenticationEnabled()) {
-        LoginContext loginContext = getLoginContext(defined, username, passCode, endPointPrincipal);
+        String ip = sessionContext.getClientConnection().getRemoteIp();
+        String protocol = sessionContext.getClientConnection().getProtocolName();
+        AuthContext authContext = new AuthContext(ip, protocol, "end-point");
+        LoginContext loginContext = getLoginContext(defined, username, passCode, endPointPrincipal, authContext);
         context = new JaasSecurityContext(username, loginContext);
       } else {
         context = new AnonymousSecurityContext(endPointPrincipal);
@@ -86,8 +91,8 @@ public class SecurityManager implements Agent {
     return context;
   }
 
-  public LoginContext getLoginContext(String definedAuth, String username, char[] passCode, Principal endPointPrincipal) throws LoginException {
-    return new LoginContext(definedAuth, new LocalCallbackHandler(username, passCode, endPointPrincipal));
+  public LoginContext getLoginContext(String definedAuth, String username, char[] passCode, Principal endPointPrincipal, AuthContext context) throws LoginException {
+    return new LoginContext(definedAuth, new LocalCallbackHandler(username, passCode, endPointPrincipal, context));
   }
 
   public String getAuthenticationName(ClientConnection clientConnection) {
@@ -120,21 +125,25 @@ public class SecurityManager implements Agent {
     private final String username;
     private final char[] password;
     private final Principal endPointPrincipal;
+    private final AuthContext context;
 
-    LocalCallbackHandler(String username, char[] password, Principal endPointPrincipal) {
+    LocalCallbackHandler(String username, char[] password, Principal endPointPrincipal, AuthContext context) {
       this.username = username;
       this.password = password;
       this.endPointPrincipal = endPointPrincipal;
+      this.context = context;
     }
 
     public void handle(Callback[] callbacks) {
       for (Callback callback : callbacks) {
-        if (callback instanceof NameCallback) {
-          ((NameCallback) callback).setName(username);
-        } else if (callback instanceof PasswordCallback) {
-          ((PasswordCallback) callback).setPassword(password);
-        } else if (callback instanceof PrincipalCallback) {
-          ((PrincipalCallback) callback).setPrincipal(endPointPrincipal);
+        if (callback instanceof NameCallback nameCallback) {
+          nameCallback.setName(username);
+        } else if (callback instanceof PasswordCallback passwordCallback) {
+          passwordCallback.setPassword(password);
+        } else if (callback instanceof PrincipalCallback principalCallback) {
+          principalCallback.setPrincipal(endPointPrincipal);
+        } else if( callback instanceof AuthContextCallback authContextCallback){
+          authContextCallback.setAuthContext(context);
         }
       }
     }

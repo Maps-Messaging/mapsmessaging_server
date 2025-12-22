@@ -180,6 +180,11 @@ public class LoRaEndPoint extends EndPoint {
     return LoggerFactory.getLogger(LoRaEndPoint.class);
   }
 
+  @Override
+  public String getRemoteSocketAddress() {
+    return "";
+  }
+
   public int getDatagramSize() {
     return loRaDevice.getPacketSize();
   }

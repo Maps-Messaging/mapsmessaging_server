@@ -139,6 +139,11 @@ public class UDPEndPoint extends EndPoint {
   }
 
   @Override
+  public String getRemoteSocketAddress() {
+    return "";
+  }
+
+  @Override
   public boolean isUDP() {
     return true;
   }

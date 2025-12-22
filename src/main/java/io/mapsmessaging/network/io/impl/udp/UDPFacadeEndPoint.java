@@ -104,6 +104,10 @@ public class UDPFacadeEndPoint extends EndPoint {
     return LoggerFactory.getLogger(UDPFacadeEndPoint.class);
   }
 
+  @Override
+  public String getRemoteSocketAddress() {
+    return fromAddress.toString();
+  }
 
 
   @Override

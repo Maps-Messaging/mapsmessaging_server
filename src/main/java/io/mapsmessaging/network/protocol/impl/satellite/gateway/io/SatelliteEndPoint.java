@@ -98,4 +98,9 @@ public class SatelliteEndPoint extends EndPoint {
     return LoggerFactory.getLogger(getClass());
   }
 
+  @Override
+  public String getRemoteSocketAddress() {
+    return "";
+  }
+
 }

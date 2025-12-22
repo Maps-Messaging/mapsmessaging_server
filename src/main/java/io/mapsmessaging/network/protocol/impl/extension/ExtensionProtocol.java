@@ -187,4 +187,14 @@ public class ExtensionProtocol extends Protocol implements MessageListener, Clie
     return endPointURL.toString();
   }
 
+  @Override
+  public String getProtocolName() {
+    return "extension";
+  }
+
+  @Override
+  public String getRemoteIp() {
+    return "loop";
+  }
+
 }

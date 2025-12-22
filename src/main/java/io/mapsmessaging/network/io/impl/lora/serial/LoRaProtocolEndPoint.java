@@ -90,4 +90,9 @@ public class LoRaProtocolEndPoint extends EndPoint {
     return LoggerFactory.getLogger(LoRaProtocolEndPoint.class);
   }
 
+  @Override
+  public String getRemoteSocketAddress() {
+    return physicalEndPoint.getRemoteSocketAddress();
+  }
+
 }

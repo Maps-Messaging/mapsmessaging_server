@@ -68,4 +68,20 @@ public class ProtocolClientConnection implements ClientConnection {
     }
     return "";
   }
+
+  @Override
+  public String getProtocolName() {
+    if (protocol.getEndPoint() != null) {
+      return protocol.getEndPoint().getProtocol();
+    }
+    return "";
+  }
+
+  @Override
+  public String getRemoteIp() {
+    if (protocol.getEndPoint() != null) {
+      return protocol.getEndPoint().getRemoteSocketAddress();
+    }
+    return "";
+  }
 }

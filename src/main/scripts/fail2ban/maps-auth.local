@@ -1,0 +1,14 @@
+[maps-auth]
+enabled = true
+filter = maps-auth
+
+# Point this at your MAPS log file
+logpath = /opt/maps_data/log/messaging.log
+
+# How aggressive you want it:
+findtime = 300
+maxretry = 5
+bantime  = 3600
+
+# If your host is behind a proxy and logs proxy IPs, fix logging first.
+# action defaults to banning via firewall (nftables/iptables) depending on distro.

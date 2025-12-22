@@ -137,6 +137,11 @@ public class SerialEndPoint extends EndPoint implements StreamEndPoint {
   }
 
   @Override
+  public String getRemoteSocketAddress() {
+    return serialPort.getSystemPortName();
+  }
+
+  @Override
   public StreamHandler getStreamHandler() {
     return streamHandler;
   }

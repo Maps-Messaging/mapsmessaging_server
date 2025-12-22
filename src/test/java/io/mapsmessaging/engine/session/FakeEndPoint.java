@@ -77,4 +77,9 @@ public class FakeEndPoint extends EndPoint {
   protected Logger createLogger() {
     return null;
   }
+
+  @Override
+  public String getRemoteSocketAddress() {
+    return "";
+  }
 }

@@ -25,6 +25,7 @@ import io.mapsmessaging.auth.AuthManager;
 import io.mapsmessaging.rest.responses.LoginResponse;
 import io.mapsmessaging.rest.responses.StatusResponse;
 import io.mapsmessaging.rest.responses.UpdateCheckResponse;
+import io.mapsmessaging.security.access.AuthContext;
 import io.mapsmessaging.security.identity.principals.UniqueIdentifierPrincipal;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -152,7 +153,9 @@ public class AccessRequestApi extends BaseRestApi {
     int maxAge = (AuthManager.getInstance().isAuthenticationEnabled() && loginRequest.isLongLived()) ? 7 * 24 * 60 * 60 : 15 * 60;
 
     if (AuthManager.getInstance().isAuthenticationEnabled()){
-      if (AuthManager.getInstance().validate(loginRequest.getUsername(), loginRequest.getPassword().toCharArray())) {
+      AuthContext context = new AuthContext(extractClientIp(), "RestAPI", request.getHeader("User-Agent"));
+
+      if (AuthManager.getInstance().validate(loginRequest.getUsername(), loginRequest.getPassword().toCharArray(), context)) {
         Subject subject = AuthManager.getInstance().getUserSubject(loginRequest.getUsername());
         session = setupCookieAndSession(loginRequest.getUsername(), subject, request, response, maxAge);
       }
