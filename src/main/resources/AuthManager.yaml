@@ -31,6 +31,15 @@
 AuthManager:
   authenticationEnabled: true  # connections will be authorised according to the config
   authorizationEnabled: false   # Requests will be authorised according to the access control list for the resource
+
+  maxFailuresBeforeLock: 5
+  initialLockSeconds: 30
+  maxLockSeconds: 900
+  failureDecaySeconds: 900
+  enableSoftDelay: true
+  softDelayMillisPerFailure: 200
+  maxSoftDelayMillis: 2000
+
   config:
     identityProvider: "Encrypted-Auth"
     passwordHandler: "EncryptedPasswordCipher"

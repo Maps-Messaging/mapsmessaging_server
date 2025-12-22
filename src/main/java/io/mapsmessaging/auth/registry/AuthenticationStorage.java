@@ -61,7 +61,7 @@ public class AuthenticationStorage {
 
   private final Logger logger = LoggerFactory.getLogger(AuthenticationStorage.class);
 
-  public AuthenticationStorage(ConfigurationProperties config)  {
+  public AuthenticationStorage(ConfigurationProperties config, AuthenticationMonitorConfig monitorConfig)  {
     String securityDirectory = config.getProperty("configDirectory", "./.security");
     if (securityDirectory != null) {
       File file = new File(securityDirectory);
@@ -87,7 +87,7 @@ public class AuthenticationStorage {
     String authProvider = config.getProperty("identityProvider", "Apache-Basic-Auth");
     try {
       dbStoreManager = new AuthDbStoreManager(securityDirectory);
-      identityAccessManager = new IdentityAccessManager(authProvider, map, new IdDbStore<>(dbStoreManager.getUserMapSet()), new IdDbStore<>(dbStoreManager.getGroupMapSet()), new ServerTraversalFactory(), new AuthenticationMonitorConfig(), ServerPermissions.values());
+      identityAccessManager = new IdentityAccessManager(authProvider, map, new IdDbStore<>(dbStoreManager.getUserMapSet()), new IdDbStore<>(dbStoreManager.getGroupMapSet()), new ServerTraversalFactory(), monitorConfig, ServerPermissions.values());
       userPermisionManager = new UserPermisionManager(dbStoreManager.getSessionPrivilegesMap());
     } catch (IOException e) {
 

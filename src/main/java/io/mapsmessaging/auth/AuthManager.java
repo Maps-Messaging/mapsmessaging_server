@@ -37,6 +37,7 @@ import io.mapsmessaging.security.access.AuthContext;
 import io.mapsmessaging.security.access.Group;
 import io.mapsmessaging.security.access.Identity;
 import io.mapsmessaging.security.access.mapping.GroupIdMap;
+import io.mapsmessaging.security.access.monitor.AuthenticationMonitorConfig;
 import io.mapsmessaging.security.access.monitor.LockStatus;
 import io.mapsmessaging.security.authorisation.*;
 import io.mapsmessaging.security.identity.IdentityLookupFactory;
@@ -117,7 +118,9 @@ public class AuthManager implements Agent {
         throw new NoLoginContextConfigException(msg);
       }
       try {
-        authenticationStorage = new AuthenticationStorage(new ConfigurationProperties(config.getAuthConfig()));
+
+
+        authenticationStorage = new AuthenticationStorage(new ConfigurationProperties(config.getAuthConfig()), config.buildMonitorConfig());
         if (authenticationStorage.isFirstBoot()) {
           createInitialUsers((String)config.getAuthConfig().get("configDirectory"));
         }

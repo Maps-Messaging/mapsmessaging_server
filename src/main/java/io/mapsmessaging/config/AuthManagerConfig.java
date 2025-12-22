@@ -23,6 +23,7 @@ import io.mapsmessaging.configuration.ConfigurationProperties;
 import io.mapsmessaging.dto.rest.config.AuthManagerConfigDTO;
 import io.mapsmessaging.dto.rest.config.BaseConfigDTO;
 import io.mapsmessaging.license.FeatureManager;
+import io.mapsmessaging.security.access.monitor.AuthenticationMonitorConfig;
 import io.mapsmessaging.utilities.configuration.ConfigurationManager;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
@@ -43,6 +44,26 @@ public class AuthManagerConfig extends AuthManagerConfigDTO implements ConfigMan
     authenticationEnabled = properties.getBooleanProperty("authenticationEnabled", false);
     authorisationEnabled = properties.getBooleanProperty("authorizationEnabled", false) && authenticationEnabled;
     authConfig = ConfigHelper.buildMap((ConfigurationProperties) properties.get("config"));
+
+    maxFailuresBeforeLock = properties.getIntProperty("maxFailuresBeforeLock", 5);
+    initialLockSeconds = properties.getIntProperty("initialLockSeconds", 30);
+    maxLockSeconds = properties.getIntProperty("maxLockSeconds", 900);
+    failureDecaySeconds = properties.getIntProperty("failureDecaySeconds", 900);
+    enableSoftDelay = properties.getBooleanProperty("enableSoftDelay", true);
+    softDelayMillisPerFailure = properties.getIntProperty("softDelayMillisPerFailure", 200);
+    maxSoftDelayMillis = properties.getIntProperty("maxSoftDelayMillis", 2000);
+  }
+
+  public AuthenticationMonitorConfig buildMonitorConfig(){
+    AuthenticationMonitorConfig monitorConfig = new AuthenticationMonitorConfig();
+    monitorConfig.setMaxFailuresBeforeLock(maxFailuresBeforeLock);
+    monitorConfig.setInitialLockSeconds(initialLockSeconds);
+    monitorConfig.setMaxLockSeconds(maxLockSeconds);
+    monitorConfig.setFailureDecaySeconds(failureDecaySeconds);
+    monitorConfig.setEnableSoftDelay(enableSoftDelay);
+    monitorConfig.setSoftDelayMillisPerFailure(softDelayMillisPerFailure);
+    monitorConfig.setMaxSoftDelayMillis(maxSoftDelayMillis);
+    return monitorConfig;
   }
 
   public static AuthManagerConfig getInstance() {
@@ -62,6 +83,40 @@ public class AuthManagerConfig extends AuthManagerConfigDTO implements ConfigMan
       this.authorisationEnabled = newConfig.isAuthorisationEnabled();
       hasChanged = true;
     }
+    if(maxFailuresBeforeLock != newConfig.maxFailuresBeforeLock){
+      maxFailuresBeforeLock = newConfig.maxFailuresBeforeLock;
+      hasChanged = true;
+    }
+
+    if(initialLockSeconds != newConfig.initialLockSeconds){
+      initialLockSeconds = newConfig.initialLockSeconds;
+      hasChanged = true;
+    }
+
+    if(maxLockSeconds != newConfig.maxLockSeconds){
+      maxLockSeconds = newConfig.maxLockSeconds;
+      hasChanged = true;
+    }
+
+    if(failureDecaySeconds != newConfig.failureDecaySeconds){
+      failureDecaySeconds = newConfig.failureDecaySeconds;
+      hasChanged = true;
+    }
+
+    if(enableSoftDelay != newConfig.enableSoftDelay){
+      enableSoftDelay = newConfig.enableSoftDelay;
+      hasChanged = true;
+    }
+
+    if(softDelayMillisPerFailure != newConfig.softDelayMillisPerFailure){
+      softDelayMillisPerFailure = newConfig.softDelayMillisPerFailure;
+      hasChanged = true;
+    }
+
+    if(maxSoftDelayMillis != newConfig.maxSoftDelayMillis){
+      maxSoftDelayMillis = newConfig.maxSoftDelayMillis;
+      hasChanged = true;
+    }
     return hasChanged;
   }
 
@@ -70,6 +125,13 @@ public class AuthManagerConfig extends AuthManagerConfigDTO implements ConfigMan
     properties.put("authenticationEnabled", authorisationEnabled);
     properties.put("authorisationEnabled", authorisationEnabled);
     properties.put("config", authConfig);
+    properties.put("maxFailuresBeforeLock", maxFailuresBeforeLock);
+    properties.put("initialLockSeconds", initialLockSeconds);
+    properties.put("maxLockSeconds", maxLockSeconds);
+    properties.put("failureDecaySeconds", failureDecaySeconds);
+    properties.put("enableSoftDelay", enableSoftDelay);
+    properties.put("softDelayMillisPerFailure", softDelayMillisPerFailure);
+    properties.put("maxSoftDelayMillis", maxSoftDelayMillis);
     return properties;
   }
 
