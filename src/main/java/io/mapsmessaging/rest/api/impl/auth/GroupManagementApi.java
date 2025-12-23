@@ -23,8 +23,10 @@ import io.mapsmessaging.auth.AuthManager;
 import io.mapsmessaging.auth.registry.GroupDetails;
 import io.mapsmessaging.auth.registry.UserDetails;
 import io.mapsmessaging.dto.rest.auth.GroupDTO;
+import io.mapsmessaging.dto.rest.auth.UserDTO;
 import io.mapsmessaging.rest.cache.CacheKey;
 import io.mapsmessaging.rest.responses.StatusResponse;
+import io.mapsmessaging.security.access.Identity;
 import io.mapsmessaging.selector.ParseException;
 import io.mapsmessaging.selector.SelectorParser;
 import io.mapsmessaging.selector.operators.ParserExecutor;
@@ -40,16 +42,17 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 import static io.mapsmessaging.rest.api.Constants.URI_PATH;
 
 @Tag(name = "Authentication and Authorisation Management")
-@Path(URI_PATH)
+@Path(URI_PATH+"/auth/groups")
 public class GroupManagementApi extends BaseAuthRestApi {
 
   @GET
-  @Path("/auth/groups")
   @Produces({MediaType.APPLICATION_JSON})
   @Operation(
       summary = "Get all groups",
@@ -87,7 +90,7 @@ public class GroupManagementApi extends BaseAuthRestApi {
     // Transform and filter groups
     GroupDTO[] results =
         groups.stream()
-            .map(groupDetails -> new GroupDTO(groupDetails.getName(), groupDetails.getGroupId(), groupDetails.getUsers()))
+            .map(groupDetails -> createGroupDto(groupDetails))
             .filter(group -> filterGroup(parser, group))
             .toList().toArray(new GroupDTO[0]);
     putToCache(key, results);
@@ -95,7 +98,7 @@ public class GroupManagementApi extends BaseAuthRestApi {
   }
 
   @GET
-  @Path("/auth/group/{groupUuid}")
+  @Path("/{groupUuid}")
   @Produces({MediaType.APPLICATION_JSON})
   @Operation(
       summary = "Get group by UUID",
@@ -124,7 +127,7 @@ public class GroupManagementApi extends BaseAuthRestApi {
             .orElse(null);
 
     if (groupDetails != null) {
-      return new GroupDTO(groupDetails.getName(), groupDetails.getGroupId(), groupDetails.getUsers());
+      return createGroupDto(groupDetails);
     }
 
     // Return a 404 if the group is not found
@@ -132,7 +135,6 @@ public class GroupManagementApi extends BaseAuthRestApi {
   }
 
   @POST
-  @Path("/auth/groups")
   @Produces({MediaType.APPLICATION_JSON})
   @Operation(
       summary = "Add new group",
@@ -162,7 +164,7 @@ public class GroupManagementApi extends BaseAuthRestApi {
   }
 
   @POST
-  @Path("/auth/group/{groupUuid}/{userUuid}")
+  @Path("/{groupUuid}/{userUuid}")
   @Produces({MediaType.APPLICATION_JSON})
   @Operation(
       summary = "Add user to group",
@@ -208,7 +210,7 @@ public class GroupManagementApi extends BaseAuthRestApi {
   }
 
   @DELETE
-  @Path("/auth/group/{groupUuid}/{userUuid}")
+  @Path("/{groupUuid}/{userUuid}")
   @Produces({MediaType.APPLICATION_JSON})
   @Operation(
       summary = "Removes a user from group",
@@ -253,7 +255,7 @@ public class GroupManagementApi extends BaseAuthRestApi {
   }
 
   @DELETE
-  @Path("/auth/group/{groupUuid}")
+  @Path("/{groupUuid}")
   @Produces({MediaType.APPLICATION_JSON})
   @Operation(
       summary = "Delete a group",
@@ -289,5 +291,16 @@ public class GroupManagementApi extends BaseAuthRestApi {
   // Helper methods
   private boolean filterGroup(ParserExecutor parser, GroupDTO group) {
     return parser == null || parser.evaluate(group);
+  }
+
+
+  private GroupDTO createGroupDto(GroupDetails groupDetails){
+    List<UserDTO> userList = new ArrayList<>();
+    for(UUID userId : groupDetails.getUsers()){
+      Identity identity = AuthManager.getInstance().getUserIdentity(userId);
+      UserDTO user = new UserDTO(identity.getUsername(), identity.getId(), null, null);
+      userList.add(user);
+    }
+    return new GroupDTO(groupDetails.getName(), groupDetails.getGroupId(),userList.toArray(new UserDTO[0]));
   }
 }

@@ -171,7 +171,14 @@ public class AuthorisationRestHelper {
   public IdentityAclViewDTO getIdentityAcl(String identityId) {
     UUID uuid = UUID.fromString(identityId);
     Identity identity = AuthManager.getInstance().getUserIdentity(uuid);
-    Collection<Grant> grants = provider.getGrantsForIdentity(identity);
+    Collection<Grant> grants;
+    if(identity == null){
+      Group group = AuthManager.getInstance().getGroupIdentity(uuid);
+      grants = provider.getGrantsForGroup(group);
+    }
+    else {
+      grants = provider.getGrantsForIdentity(identity);
+    }
 
     Map<ProtectedResource, Map<AclEffect, List<String>>> grouped =
         grants.stream().collect(Collectors.groupingBy(

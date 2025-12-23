@@ -154,12 +154,17 @@ public class AccessRequestApi extends BaseRestApi {
 
     if (AuthManager.getInstance().isAuthenticationEnabled()){
       AuthContext context = new AuthContext(extractClientIp(), "RestAPI", request.getHeader("User-Agent"));
-
-      if (AuthManager.getInstance().validate(loginRequest.getUsername(), loginRequest.getPassword().toCharArray(), context)) {
+      boolean success = false;
+      try{
+        success = AuthManager.getInstance().validate(loginRequest.getUsername(), loginRequest.getPassword().toCharArray(), context);
+      }
+      catch(Throwable th){
+        // ToDo: log it
+      }
+      if (success) {
         Subject subject = AuthManager.getInstance().getUserSubject(loginRequest.getUsername());
         session = setupCookieAndSession(loginRequest.getUsername(), subject, request, response, maxAge);
-      }
-      else{
+      } else {
         throw new IOException("Invalid username or password");
       }
     }

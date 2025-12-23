@@ -72,7 +72,7 @@ public class LockedUsersApi extends BaseAuthRestApi {
           @ApiResponse(
               responseCode = "200",
               description = "Unlock was successful",
-              content = @Content(mediaType = "application/json", schema = @Schema(implementation = UserDTO[].class))
+              content = @Content(mediaType = "application/json")
           ),
           @ApiResponse(responseCode = "400", description = "Bad request"),
           @ApiResponse(responseCode = "401", description = "Invalid credentials or unauthorized access"),

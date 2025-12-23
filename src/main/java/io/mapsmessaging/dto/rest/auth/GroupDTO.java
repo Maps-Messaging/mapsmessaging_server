@@ -50,10 +50,9 @@ public class GroupDTO {
 
   @Schema(
       title = "Group Members",
-      description = "A list of unique IDs representing the members of this group.",
-      type = "array",
-      example =
-          "[\"83db8741-57ca-4147-a973-49789d9150bb\",\"32708878-2eba-4dec-b5f5-94e63fb45c0d\",\"e59b1a11-73d7-4962-b3be-65715d99b172\"]",
+      description = "A list of users of this group.",
+      type = "UserDTO[]",
       nullable = true)
-  private final List<UUID> usersList;
+  private final UserDTO[] usersList;
 }
+
