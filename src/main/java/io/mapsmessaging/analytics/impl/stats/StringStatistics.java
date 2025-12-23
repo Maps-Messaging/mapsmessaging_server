@@ -78,7 +78,7 @@ public class StringStatistics implements Statistics {
   }
 
   public long getCount(String key) {
-    return counts.get(key);
+    return counts.getOrDefault(key, 0L);
   }
 
   @Override

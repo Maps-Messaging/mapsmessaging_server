@@ -52,6 +52,28 @@ public class TrendStatistics extends AdvancedStatistics {
     sumTimestampValueProduct = 0.0;
   }
 
+  @Override
+  public void update(Object entry) {
+    if (entry == null) {
+      return;
+    }
+    if (!(entry instanceof Number number)) {
+      mismatched++;
+      return;
+    }
+    double value = number.doubleValue();
+    if (!Double.isFinite(value)) {
+      mismatched++;
+      return;
+    }
+    update(System.nanoTime(), value);
+  }
+
+  @Override
+  protected void update(double currentValue) {
+    update(System.nanoTime(), currentValue);
+  }
+
   public void update(long timestampNanos, double currentValue) {
     hasTimestamps = true;
     super.update(currentValue);

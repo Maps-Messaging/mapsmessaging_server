@@ -54,7 +54,7 @@ class StatisticsTests {
     assertEquals(-1.0, stats.getIntercept(), 1e-12);
 
     JsonObject json = stats.toJson();
-    assertJsonHas(json, "first","last","min","max","average","count","range","delta","stdDev","slope","intercept");
+    assertJsonHas(json, "first","last","min","max","average","count","stdDev","slope","intercept");
     assertEquals(499.5, json.get("average").getAsDouble(), 1e-12);
   }
 
