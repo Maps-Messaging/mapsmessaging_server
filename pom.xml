@@ -139,6 +139,7 @@
     <maps.nolc.version>1.2.2-SNAPSHOT</maps.nolc.version>
 
     <!-- first level dependencies -->
+    <maps.jsonquery.version>1.0.0-SNAPSHOT</maps.jsonquery.version>
     <maps.nbts.version>2.2.2-SNAPSHOT</maps.nbts.version>
     <maps.schema.version>3.0.1-SNAPSHOT</maps.schema.version>
     <maps.config.version>1.1.5-SNAPSHOT</maps.config.version>
@@ -599,6 +600,12 @@
       <artifactId>simple_logging</artifactId>
       <version>${maps.logging.version}</version>
     </dependency>
+    <dependency>
+      <groupId>io.mapsmessaging</groupId>
+      <artifactId>JsonQuery</artifactId>
+      <version>${maps.jsonquery.version}</version>
+    </dependency>
+
     <dependency>
       <groupId>io.mapsmessaging</groupId>
       <artifactId>jms_selector_parser</artifactId>

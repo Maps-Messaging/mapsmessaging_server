@@ -113,6 +113,21 @@ public class PublishListener extends PacketListener {
         protocol.getProtocolMessageTransformation(),
         protocol
     );
+    Protocol.ParsedMessage parsed = protocol.parseInboundMessage(lookup, message);
+    if (parsed != null) {
+      lookup = parsed.getDestinationName();
+      message = parsed.getMessage();
+      sendMessage(message, lookup, session, publish, protocol, response, endPoint);
+    }
+    else{
+      if (response != null) {
+        ((MQTTProtocol) protocol).writeFrame(response);
+      }
+    }
+  }
+
+  private void sendMessage(Message message, String lookup, Session session, Publish publish, Protocol protocol, MQTTPacket response,EndPoint endPoint) throws ExecutionException, InterruptedException {
+
     CompletableFuture<Destination> future = session.findDestination(lookup, DestinationType.TOPIC);
     future.thenApply(destination -> {
       if (destination != null) {

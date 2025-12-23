@@ -189,20 +189,25 @@ public class PublishListener5 extends PacketListener5 {
         return response;
       }
       try {
-        Destination destination = session.findDestination(lookup, DestinationType.TOPIC).get();
+        Message message =
+            createMessage(
+                session.getName(),
+                publish.getProperties().values(),
+                publish.getPriority(),
+                publish.isRetain(),
+                publish.getPayload(),
+                publish.getQos(),
+                protocol.getProtocolMessageTransformation(),
+                protocol);
+        Protocol.ParsedMessage parsed = protocol.parseInboundMessage(lookup, message);
         int sent = 0;
-        if (destination != null) {
-          Message message =
-              createMessage(
-                  session.getName(),
-                  publish.getProperties().values(),
-                  publish.getPriority(),
-                  publish.isRetain(),
-                  publish.getPayload(),
-                  publish.getQos(),
-                  protocol.getProtocolMessageTransformation(),
-                  protocol);
-          sent = processMessage(message, publish, session, response, destination);
+        if(parsed != null){
+          lookup = parsed.getDestinationName();
+          message = parsed.getMessage();
+          Destination destination = session.findDestination(lookup, DestinationType.TOPIC).get();
+          if (destination != null) {
+            sent = processMessage(message, publish, session, response, destination);
+          }
         }
 
         if (response != null) {

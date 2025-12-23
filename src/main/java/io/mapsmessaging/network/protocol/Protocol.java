@@ -232,6 +232,19 @@ public abstract class Protocol implements SelectorCallback, MessageListener, Tim
     return parsedMessage;
   }
 
+  public ParsedMessage parseInboundMessage(String destinationName, Message message){
+    ParsedMessage parsedMessage = new ParsedMessage(destinationName, message);
+    parsedMessage = processInterServerTransformations(destinationName, parsedMessage );
+    if(parsedMessage == null){
+      return null;
+    }
+    processTransformation(parsedMessage);
+    if(topicNameMapping != null){
+      processDestinationNameLookup(parsedMessage);
+    }
+    return parsedMessage;
+  }
+
   protected ParsedMessage processInterServerTransformations(String source, ParsedMessage parsedMessage) {
     InterServerTransformation interServerTransformation = destinationTransformerMap.get(parsedMessage.destinationName);
     if (interServerTransformation != null) {
