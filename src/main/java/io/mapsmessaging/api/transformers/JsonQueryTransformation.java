@@ -27,7 +27,6 @@ import io.mapsmessaging.MessageDaemon;
 import io.mapsmessaging.api.MessageBuilder;
 import io.mapsmessaging.configuration.ConfigurationProperties;
 import io.mapsmessaging.engine.destination.DestinationImpl;
-import io.mapsmessaging.engine.destination.DestinationManager;
 import io.mapsmessaging.engine.schema.SchemaManager;
 import io.mapsmessaging.jsonquery.JsonQueryCompiler;
 import io.mapsmessaging.network.protocol.Protocol;
@@ -139,13 +138,7 @@ public class JsonQueryTransformation implements InterServerTransformation {
     JsonElement queryAst = JsonParser.parseString(queryText);
 
     JsonQueryCompiler compiler = JsonQueryCompiler.createDefault();
-    Function<JsonElement, JsonElement> compiled = null;
-    try {
-      compiled = compiler.compile(queryAst);
-    } catch (Throwable e) {
-      e.printStackTrace();
-    }
-
+    Function<JsonElement, JsonElement> compiled = compiler.compile(queryAst);
     return new JsonQueryTransformation(compiled);
   }
 }
