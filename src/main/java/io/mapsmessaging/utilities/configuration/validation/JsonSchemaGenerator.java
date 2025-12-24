@@ -126,7 +126,10 @@ public class JsonSchemaGenerator {
 
   private SchemaGenerator createSchemaGenerator() {
     SchemaGeneratorConfigBuilder configBuilder = new SchemaGeneratorConfigBuilder(
-        SchemaVersion.DRAFT_2020_12, OptionPreset.PLAIN_JSON);
+        SchemaVersion.DRAFT_2020_12, OptionPreset.PLAIN_JSON)
+        // Enable strict type checking
+        .with(Option.FORBIDDEN_ADDITIONAL_PROPERTIES_BY_DEFAULT)
+        .with(Option.STRICT_TYPE_INFO);
 
     // Add Jackson module to respect Jackson annotations
     configBuilder.with(new JacksonModule());

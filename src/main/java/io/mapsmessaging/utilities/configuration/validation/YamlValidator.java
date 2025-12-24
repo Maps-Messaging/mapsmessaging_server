@@ -22,10 +22,7 @@ package io.mapsmessaging.utilities.configuration.validation;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
-import com.networknt.schema.JsonSchema;
-import com.networknt.schema.JsonSchemaFactory;
-import com.networknt.schema.SpecVersion;
-import com.networknt.schema.ValidationMessage;
+import com.networknt.schema.*;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 
@@ -54,7 +51,15 @@ public class YamlValidator {
   public YamlValidator(ValidationConfig config) {
     this.config = config;
     this.schemaGenerator = new JsonSchemaGenerator(config);
-    this.schemaFactory = JsonSchemaFactory.getInstance(SpecVersion.VersionFlag.V202012);
+
+    // Configure schema factory with strict type validation
+    SchemaValidatorsConfig validatorConfig = new SchemaValidatorsConfig();
+    validatorConfig.setTypeLoose(false); // Strict type checking - don't allow type coercion
+    validatorConfig.setFailFast(false); // Collect all errors
+
+    this.schemaFactory = JsonSchemaFactory.builder(JsonSchemaFactory.getInstance(SpecVersion.VersionFlag.V202012))
+        .defaultConfig(validatorConfig)
+        .build();
   }
 
   /**
