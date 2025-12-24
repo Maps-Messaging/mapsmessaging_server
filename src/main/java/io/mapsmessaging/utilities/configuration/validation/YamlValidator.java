@@ -125,7 +125,9 @@ public class YamlValidator {
     }
 
     JsonNode yamlJson = yamlMapper.readTree(yamlFile);
-    return performValidation(yamlFile.getName(), yamlJson, configClass);
+    // Derive config name from class name (e.g., MessageDaemonConfigDTO -> MessageDaemon)
+    String configName = deriveConfigName(configClass);
+    return performValidation(configName, yamlJson, configClass);
   }
 
   private ValidationResult validateInternal(InputStream yamlInput, String configName, Class<?> configClass) throws IOException {
@@ -168,6 +170,21 @@ public class YamlValidator {
       configName = configName.substring(0, configName.lastIndexOf('.'));
     }
     return configName;
+  }
+
+  private String deriveConfigName(Class<?> configClass) {
+    String className = configClass.getSimpleName();
+
+    // Strip common suffixes: ConfigDTO, DTO, Config
+    if (className.endsWith("ConfigDTO")) {
+      return className.substring(0, className.length() - 9); // Remove "ConfigDTO"
+    } else if (className.endsWith("DTO")) {
+      return className.substring(0, className.length() - 3); // Remove "DTO"
+    } else if (className.endsWith("Config")) {
+      return className.substring(0, className.length() - 6); // Remove "Config"
+    }
+
+    return className;
   }
 
   private List<String> formatErrors(Set<ValidationMessage> errors) {
