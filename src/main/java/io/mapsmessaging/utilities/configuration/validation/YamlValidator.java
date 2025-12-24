@@ -51,15 +51,7 @@ public class YamlValidator {
   public YamlValidator(ValidationConfig config) {
     this.config = config;
     this.schemaGenerator = new JsonSchemaGenerator(config);
-
-    // Configure schema factory with strict type validation
-    SchemaValidatorsConfig validatorConfig = new SchemaValidatorsConfig();
-    validatorConfig.setTypeLoose(false); // Strict type checking - don't allow type coercion
-    validatorConfig.setFailFast(false); // Collect all errors
-
-    this.schemaFactory = JsonSchemaFactory.builder(JsonSchemaFactory.getInstance(SpecVersion.VersionFlag.V202012))
-        .defaultConfig(validatorConfig)
-        .build();
+    this.schemaFactory = JsonSchemaFactory.getInstance(SpecVersion.VersionFlag.V202012);
   }
 
   /**
@@ -144,7 +136,13 @@ public class YamlValidator {
   private ValidationResult performValidation(String configName, JsonNode yamlJson, Class<?> configClass) {
     // Generate JSON schema from POJO
     JsonNode schemaNode = schemaGenerator.generateSchema(configClass);
-    JsonSchema schema = schemaFactory.getSchema(schemaNode);
+
+    // Configure strict type validation
+    SchemaValidatorsConfig validatorConfig = new SchemaValidatorsConfig();
+    validatorConfig.setTypeLoose(false); // Strict type checking - don't allow type coercion
+    validatorConfig.setFailFast(false); // Collect all errors
+
+    JsonSchema schema = schemaFactory.getSchema(schemaNode, validatorConfig);
 
     // Extract the root configuration object
     // Most YAML files have structure: ConfigName: { properties... }
