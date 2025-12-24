@@ -125,17 +125,13 @@ public class JsonSchemaGenerator {
   }
 
   private SchemaGenerator createSchemaGenerator() {
-    // Configure ObjectMapper to use PascalCase property naming (to match YAML files)
-    ObjectMapper customMapper = new ObjectMapper();
-    customMapper.setPropertyNamingStrategy(com.fasterxml.jackson.databind.PropertyNamingStrategies.UPPER_CAMEL_CASE);
-
     SchemaGeneratorConfigBuilder configBuilder = new SchemaGeneratorConfigBuilder(
-        SchemaVersion.DRAFT_2020_12, OptionPreset.PLAIN_JSON, customMapper)
+        SchemaVersion.DRAFT_2020_12, OptionPreset.PLAIN_JSON)
         // Enable strict type checking
         .with(Option.FORBIDDEN_ADDITIONAL_PROPERTIES_BY_DEFAULT)
         .with(Option.STRICT_TYPE_INFO);
 
-    // Add Jackson module to respect Jackson annotations and property naming
+    // Add Jackson module to respect Jackson annotations
     configBuilder.with(new JacksonModule());
 
     // Add Swagger2 module to use Swagger @Schema annotations

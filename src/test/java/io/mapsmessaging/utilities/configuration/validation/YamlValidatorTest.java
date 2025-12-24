@@ -20,7 +20,11 @@
 package io.mapsmessaging.utilities.configuration.validation;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import io.mapsmessaging.dto.rest.config.MessageDaemonConfigDTO;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import io.mapsmessaging.dto.rest.auth.SecurityManagerDTO;
+import io.mapsmessaging.dto.rest.config.*;
+import io.mapsmessaging.dto.rest.config.ml.MLModelManagerDTO;
+import io.mapsmessaging.dto.rest.schema.SchemaManagerConfigDTO;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -28,6 +32,8 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -53,13 +59,59 @@ class YamlValidatorTest {
   }
 
   @Test
-  void testSchemaGeneration() {
-    // Test that we can generate a schema from a DTO class
-    JsonNode schema = schemaGenerator.generateSchema(MessageDaemonConfigDTO.class);
+  void testSchemaGeneration() throws Exception {
+    // Build map of all configuration DTOs (same as ConfigValidator)
+    Map<String, Class<?>> configClassMap = new LinkedHashMap<>();
+    configClassMap.put("MessageDaemon", MessageDaemonConfigDTO.class);
+    configClassMap.put("AuthManager", AuthManagerConfigDTO.class);
+    configClassMap.put("DestinationManager", DestinationManagerConfigDTO.class);
+    configClassMap.put("DeviceManager", DeviceManagerConfigDTO.class);
+    configClassMap.put("DiscoveryManager", DiscoveryManagerConfigDTO.class);
+    configClassMap.put("NetworkManager", NetworkManagerConfigDTO.class);
+    configClassMap.put("NetworkConnectionManager", NetworkConnectionManagerConfigDTO.class);
+    configClassMap.put("SchemaManager", SchemaManagerConfigDTO.class);
+    configClassMap.put("SecurityManager", SecurityManagerDTO.class);
+    configClassMap.put("TenantManagement", TenantManagementConfigDTO.class);
+    configClassMap.put("RestApi", RestApiManagerConfigDTO.class);
+    configClassMap.put("MLModelManager", MLModelManagerDTO.class);
+    configClassMap.put("jolokia", JolokiaConfigDTO.class);
+    configClassMap.put("routing", RoutingManagerConfigDTO.class);
+    configClassMap.put("LoRaDevice", LoRaDeviceManagerConfigDTO.class);
 
-    assertNotNull(schema, "Schema should not be null");
-    assertTrue(schema.has("$schema"), "Schema should have $schema field");
-    assertTrue(schema.has("type"), "Schema should have type field");
+    // ObjectMapper for pretty printing
+    ObjectMapper mapper = new ObjectMapper();
+
+    System.out.println("\n" + "=".repeat(80));
+    System.out.println("GENERATED JSON SCHEMAS FOR ALL CONFIGURATION DTOs");
+    System.out.println("=".repeat(80) + "\n");
+
+    // Generate and print schemas for all configuration DTOs
+    for (Map.Entry<String, Class<?>> entry : configClassMap.entrySet()) {
+      String configName = entry.getKey();
+      Class<?> dtoClass = entry.getValue();
+
+      System.out.println("\n" + "-".repeat(80));
+      System.out.println("Configuration: " + configName);
+      System.out.println("DTO Class: " + dtoClass.getName());
+      System.out.println("-".repeat(80));
+
+      // Generate schema
+      JsonNode schema = schemaGenerator.generateSchema(dtoClass);
+
+      // Validate schema has required fields
+      assertNotNull(schema, "Schema should not be null for " + configName);
+      assertTrue(schema.has("$schema"), "Schema should have $schema field for " + configName);
+      assertTrue(schema.has("type"), "Schema should have type field for " + configName);
+
+      // Pretty print the schema
+      String prettySchema = mapper.writerWithDefaultPrettyPrinter().writeValueAsString(schema);
+      System.out.println(prettySchema);
+      System.out.println();
+    }
+
+    System.out.println("=".repeat(80));
+    System.out.println("TOTAL SCHEMAS GENERATED: " + configClassMap.size());
+    System.out.println("=".repeat(80) + "\n");
   }
 
   @Test
@@ -71,7 +123,7 @@ class YamlValidatorTest {
           SessionPipeLines: 48
           TransactionExpiry: 3600000
           TransactionScan: 5000
-          CompressionName: "None"
+          CompressionName: "none"
           CompressMessageMinSize: 1024
           IncrementPriorityMethod: "maintain"
           EnableResourceStatistics: false

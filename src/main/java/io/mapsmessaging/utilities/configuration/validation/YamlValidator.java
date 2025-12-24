@@ -21,6 +21,7 @@ package io.mapsmessaging.utilities.configuration.validation;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.networknt.schema.*;
 import io.mapsmessaging.logging.Logger;
@@ -151,6 +152,9 @@ public class YamlValidator {
     String rootKey = extractRootKey(configName);
     JsonNode configData = yamlJson.has(rootKey) ? yamlJson.get(rootKey) : yamlJson;
 
+    // Convert PascalCase properties to camelCase to match DTO field names
+    configData = convertPropertyNamesToCamelCase(configData);
+
     // Validate
     Set<ValidationMessage> errors = schema.validate(configData);
 
@@ -162,6 +166,51 @@ public class YamlValidator {
     } else {
       return ValidationResult.failure(formatErrors(errors));
     }
+  }
+
+  /**
+   * Convert all property names in a JsonNode from PascalCase to camelCase.
+   * This allows YAML files with PascalCase properties to validate against DTOs with camelCase fields.
+   */
+  private JsonNode convertPropertyNamesToCamelCase(JsonNode node) {
+    if (!node.isObject()) {
+      return node;
+    }
+
+    ObjectNode result = jsonMapper.createObjectNode();
+    node.fields().forEachRemaining(entry -> {
+      String key = entry.getKey();
+      JsonNode value = entry.getValue();
+
+      // Convert PascalCase to camelCase
+      String camelCaseKey = toCamelCase(key);
+
+      // Recursively convert nested objects
+      if (value.isObject()) {
+        value = convertPropertyNamesToCamelCase(value);
+      } else if (value.isArray()) {
+        // Handle arrays of objects
+        for (int i = 0; i < value.size(); i++) {
+          if (value.get(i).isObject()) {
+            ((com.fasterxml.jackson.databind.node.ArrayNode) value).set(i, convertPropertyNamesToCamelCase(value.get(i)));
+          }
+        }
+      }
+
+      result.set(camelCaseKey, value);
+    });
+
+    return result;
+  }
+
+  /**
+   * Convert a string from PascalCase to camelCase.
+   */
+  private String toCamelCase(String pascalCase) {
+    if (pascalCase == null || pascalCase.isEmpty()) {
+      return pascalCase;
+    }
+    return Character.toLowerCase(pascalCase.charAt(0)) + pascalCase.substring(1);
   }
 
   private String extractRootKey(String configName) {
