@@ -21,9 +21,12 @@ package io.mapsmessaging.utilities.configuration.validation;
 
 import io.mapsmessaging.dto.rest.auth.SecurityManagerDTO;
 import io.mapsmessaging.dto.rest.config.*;
+import io.mapsmessaging.dto.rest.config.ml.MLModelManagerDTO;
 import io.mapsmessaging.dto.rest.schema.SchemaManagerConfigDTO;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
+
+import static io.mapsmessaging.logging.ServerLogMessages.*;
 
 import java.io.File;
 import java.io.InputStream;
@@ -76,11 +79,11 @@ public class ConfigValidator {
    */
   public boolean validateAtStartup(String resourcePath) {
     if (!config.isValidateAtStartup()) {
-      logger.log(Logger.INFO, "Startup validation is disabled");
+      logger.log(CONFIG_VALIDATION_DISABLED);
       return true;
     }
 
-    logger.log(Logger.INFO, "Starting YAML configuration validation...");
+    logger.log(CONFIG_VALIDATION_STARTING);
     Path configPath = Paths.get(resourcePath);
 
     Map<String, YamlValidator.ValidationResult> results = validator.validateAll(configPath, configClassMap);
@@ -88,10 +91,10 @@ public class ConfigValidator {
     long failureCount = results.values().stream().filter(r -> !r.isValid()).count();
 
     if (failureCount == 0) {
-      logger.log(Logger.INFO, "All " + results.size() + " configurations validated successfully");
+      logger.log(CONFIG_VALIDATION_SUCCESS, results.size());
       return true;
     } else {
-      logger.log(Logger.WARN, failureCount + " configuration(s) failed validation");
+      logger.log(CONFIG_VALIDATION_FAILURES, failureCount);
       // Exception will be thrown by validator if in FAIL_FAST mode
       return config.getValidationMode() != ValidationConfig.ValidationMode.FAIL_FAST;
     }
@@ -107,14 +110,14 @@ public class ConfigValidator {
   public boolean validateAtRuntime(String configName, InputStream yamlInput) {
     if (!config.isValidateAtRuntime()) {
       if (config.isVerboseLogging()) {
-        logger.log(Logger.DEBUG, "Runtime validation is disabled for " + configName);
+        logger.log(CONFIG_VALIDATOR_RUNTIME_DISABLED, configName);
       }
       return true;
     }
 
     Class<?> configClass = configClassMap.get(configName);
     if (configClass == null) {
-      logger.log(Logger.WARN, "No configuration class found for: " + configName);
+      logger.log(CONFIG_VALIDATOR_NO_CLASS, configName);
       return true; // Don't block unknown configs
     }
 
@@ -145,23 +148,22 @@ public class ConfigValidator {
   }
 
   private void handleRuntimeValidationFailure(String configName, YamlValidator.ValidationResult result) {
-    String errorMsg = "Runtime validation failed for " + configName + ":\n" +
-        String.join("\n", result.getErrors());
+    String errorMsg = String.join("\n", result.getErrors());
 
     switch (config.getValidationMode()) {
       case FAIL_FAST:
-        logger.log(Logger.ERROR, errorMsg);
-        throw new YamlValidator.ConfigValidationException(errorMsg, result.getErrors());
+        logger.log(CONFIG_VALIDATOR_RUNTIME_FAILURE, configName, errorMsg);
+        throw new YamlValidator.ConfigValidationException("Runtime validation failed for " + configName + ":\n" + errorMsg, result.getErrors());
 
       case WARN:
-        logger.log(Logger.WARN, errorMsg);
-        logger.log(Logger.WARN, "Update rejected, keeping existing configuration for " + configName);
+        logger.log(CONFIG_VALIDATOR_RUNTIME_FAILURE, configName, errorMsg);
+        logger.log(CONFIG_VALIDATOR_RUNTIME_WARN, configName);
         break;
 
       case SKIP:
-        logger.log(Logger.WARN, "Skipping invalid configuration update: " + configName);
+        logger.log(CONFIG_VALIDATOR_SKIP, configName);
         if (config.isVerboseLogging()) {
-          logger.log(Logger.DEBUG, errorMsg);
+          logger.log(CONFIG_VALIDATOR_RUNTIME_FAILURE, configName, errorMsg);
         }
         break;
     }
@@ -215,8 +217,7 @@ public class ConfigValidator {
     try {
       config.setValidationMode(ValidationConfig.ValidationMode.valueOf(validationMode));
     } catch (IllegalArgumentException e) {
-      LoggerFactory.getLogger(ConfigValidator.class).log(Logger.WARN,
-          "Invalid validation mode: " + validationMode + ", using FAIL_FAST");
+      LoggerFactory.getLogger(ConfigValidator.class).log(CONFIG_VALIDATION_INVALID_MODE, validationMode);
       config.setValidationMode(ValidationConfig.ValidationMode.FAIL_FAST);
     }
 

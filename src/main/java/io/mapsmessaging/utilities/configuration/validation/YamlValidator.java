@@ -29,6 +29,8 @@ import com.networknt.schema.ValidationMessage;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 
+import static io.mapsmessaging.logging.ServerLogMessages.*;
+
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -97,7 +99,7 @@ public class YamlValidator {
     Map<String, ValidationResult> results = new LinkedHashMap<>();
 
     if (!Files.exists(directory) || !Files.isDirectory(directory)) {
-      logger.log(Logger.WARN, "Directory does not exist: " + directory);
+      logger.log(CONFIG_VALIDATION_DIRECTORY_NOT_EXIST, directory);
       return results;
     }
 
@@ -112,7 +114,7 @@ public class YamlValidator {
         }
       } else {
         if (config.isVerboseLogging()) {
-          logger.log(Logger.DEBUG, "YAML file not found: " + yamlFile);
+          logger.log(YAML_FILE_NOT_FOUND, yamlFile);
         }
       }
     });
@@ -149,7 +151,7 @@ public class YamlValidator {
 
     if (errors.isEmpty()) {
       if (config.isVerboseLogging()) {
-        logger.log(Logger.INFO, "Validation successful: " + configName);
+        logger.log(CONFIG_VALIDATION_SUCCESS_FILE, configName);
       }
       return ValidationResult.success();
     } else {
@@ -178,29 +180,27 @@ public class YamlValidator {
   }
 
   private ValidationResult handleException(String configName, Exception e) {
-    String errorMsg = "Exception during validation of " + configName + ": " + e.getMessage();
-    logger.log(Logger.ERROR, errorMsg, e);
-    return ValidationResult.error(errorMsg);
+    logger.log(CONFIG_VALIDATION_EXCEPTION, configName, e.getMessage(), e);
+    return ValidationResult.error("Exception during validation of " + configName + ": " + e.getMessage());
   }
 
   private void handleValidationFailure(String configName, ValidationResult result) {
-    String errorMsg = "Validation failed for " + configName + ":\n" +
-        String.join("\n", result.getErrors());
+    String errorMsg = String.join("\n", result.getErrors());
 
     switch (config.getValidationMode()) {
       case FAIL_FAST:
-        logger.log(Logger.ERROR, errorMsg);
-        throw new ConfigValidationException(errorMsg, result.getErrors());
+        logger.log(CONFIG_VALIDATOR_RUNTIME_FAILURE, configName, errorMsg);
+        throw new ConfigValidationException("Validation failed for " + configName + ":\n" + errorMsg, result.getErrors());
 
       case WARN:
-        logger.log(Logger.WARN, errorMsg);
-        logger.log(Logger.WARN, "Continuing with default/existing values for " + configName);
+        logger.log(CONFIG_VALIDATOR_RUNTIME_FAILURE, configName, errorMsg);
+        logger.log(CONFIG_VALIDATION_CONTINUING, configName);
         break;
 
       case SKIP:
-        logger.log(Logger.WARN, "Skipping invalid configuration: " + configName);
+        logger.log(CONFIG_VALIDATION_SKIP_INVALID, configName);
         if (config.isVerboseLogging()) {
-          logger.log(Logger.DEBUG, errorMsg);
+          logger.log(CONFIG_VALIDATOR_RUNTIME_FAILURE, configName, errorMsg);
         }
         break;
     }

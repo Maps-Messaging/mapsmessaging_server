@@ -111,7 +111,7 @@ public class ConfigurationManager {
       ConfigValidator validator = ConfigValidator.getInstance();
       validator.validateAtStartup(resourcePath);
     } catch (Exception e) {
-      logger.log(Logger.ERROR, "Configuration validation failed", e);
+      logger.log(CONFIG_VALIDATION_FAILED, e);
       // Exception will already be thrown by validator if in FAIL_FAST mode
     }
   }

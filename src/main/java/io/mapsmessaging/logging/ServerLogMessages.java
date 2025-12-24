@@ -806,6 +806,40 @@ public enum ServerLogMessages implements LogMessage {
 
   STATISTICS_UNKNOWN_NAME(LEVEL.FATAL, SERVER_CATEGORY.PROTOCOL, "Unknown statistics name found {}, defaulting to {}"),
 
+  // <editor-fold desc="Configuration Validation messages">
+  CONFIG_VALIDATION_FAILED(LEVEL.ERROR, SERVER_CATEGORY.ENGINE, "Configuration validation failed"),
+  CONFIG_VALIDATION_EXCEPTION(LEVEL.ERROR, SERVER_CATEGORY.ENGINE, "Exception during validation of {}: {}"),
+  CONFIG_VALIDATOR_RUNTIME_FAILURE(LEVEL.ERROR, SERVER_CATEGORY.ENGINE, "Runtime validation failed for {}:\n{}"),
+
+  CONFIG_VALIDATION_DIRECTORY_NOT_EXIST(LEVEL.WARN, SERVER_CATEGORY.ENGINE, "Directory does not exist: {}"),
+  CONFIG_VALIDATION_FAILURES(LEVEL.WARN, SERVER_CATEGORY.ENGINE, "{} configuration(s) failed validation"),
+  CONFIG_VALIDATOR_NO_CLASS(LEVEL.WARN, SERVER_CATEGORY.ENGINE, "No configuration class found for: {}"),
+  CONFIG_VALIDATOR_RUNTIME_WARN(LEVEL.WARN, SERVER_CATEGORY.ENGINE, "Update rejected, keeping existing configuration for {}"),
+  CONFIG_VALIDATOR_SKIP(LEVEL.WARN, SERVER_CATEGORY.ENGINE, "Skipping invalid configuration update: {}"),
+  CONFIG_VALIDATION_CONTINUING(LEVEL.WARN, SERVER_CATEGORY.ENGINE, "Continuing with default/existing values for {}"),
+  CONFIG_VALIDATION_SKIP_INVALID(LEVEL.WARN, SERVER_CATEGORY.ENGINE, "Skipping invalid configuration: {}"),
+  CONFIG_VALIDATION_INVALID_MODE(LEVEL.WARN, SERVER_CATEGORY.ENGINE, "Invalid validation mode: {}, using FAIL_FAST"),
+  SCHEMA_CACHE_DELETE_FAILED(LEVEL.WARN, SERVER_CATEGORY.ENGINE, "Failed to delete cached schema: {}"),
+  SCHEMA_CACHE_CLEAR_FAILED(LEVEL.WARN, SERVER_CATEGORY.ENGINE, "Failed to clear schema cache"),
+  SCHEMA_CACHE_DIR_CREATE_FAILED(LEVEL.WARN, SERVER_CATEGORY.ENGINE, "Failed to create schema cache directory: {}"),
+  SCHEMA_LOAD_FAILED(LEVEL.WARN, SERVER_CATEGORY.ENGINE, "Failed to load cached schema: {}"),
+  SCHEMA_LOAD_FROM_DISK_FAILED(LEVEL.WARN, SERVER_CATEGORY.ENGINE, "Failed to load schema from disk: {}"),
+  SCHEMA_SAVE_TO_DISK_FAILED(LEVEL.WARN, SERVER_CATEGORY.ENGINE, "Failed to save schema to disk: {}"),
+
+  CONFIG_VALIDATION_DISABLED(LEVEL.INFO, SERVER_CATEGORY.ENGINE, "Startup validation is disabled"),
+  CONFIG_VALIDATION_STARTING(LEVEL.INFO, SERVER_CATEGORY.ENGINE, "Starting YAML configuration validation..."),
+  CONFIG_VALIDATION_SUCCESS(LEVEL.INFO, SERVER_CATEGORY.ENGINE, "All {} configurations validated successfully"),
+  CONFIG_VALIDATION_SUCCESS_FILE(LEVEL.INFO, SERVER_CATEGORY.ENGINE, "Validation successful: {}"),
+  SCHEMA_CACHE_USING(LEVEL.INFO, SERVER_CATEGORY.ENGINE, "Using cached schema for {}"),
+  SCHEMA_GENERATING(LEVEL.INFO, SERVER_CATEGORY.ENGINE, "Generating JSON schema for {}"),
+  SCHEMA_CACHE_DIR(LEVEL.INFO, SERVER_CATEGORY.ENGINE, "Schema cache directory: {}"),
+
+  CONFIG_VALIDATOR_RUNTIME_DISABLED(LEVEL.DEBUG, SERVER_CATEGORY.ENGINE, "Runtime validation is disabled for {}"),
+  YAML_FILE_NOT_FOUND(LEVEL.DEBUG, SERVER_CATEGORY.ENGINE, "YAML file not found: {}"),
+  SCHEMA_CACHED_LOADED(LEVEL.DEBUG, SERVER_CATEGORY.ENGINE, "Loaded cached schema: {}"),
+  SCHEMA_SAVED_TO_DISK(LEVEL.DEBUG, SERVER_CATEGORY.ENGINE, "Saved schema to disk: {}"),
+  // </editor-fold>
+
   //-------------------------------------------------------------------------------------------------------------
   LAST_LOG_MESSAGE(LEVEL.DEBUG, SERVER_CATEGORY.PROTOCOL, "Last message to make it simpler to add more");
 

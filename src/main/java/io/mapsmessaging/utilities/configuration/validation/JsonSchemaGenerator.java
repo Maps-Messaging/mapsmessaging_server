@@ -27,6 +27,8 @@ import com.github.victools.jsonschema.module.swagger2.Swagger2Module;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 
+import static io.mapsmessaging.logging.ServerLogMessages.*;
+
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -70,7 +72,7 @@ public class JsonSchemaGenerator {
     // Check in-memory cache first
     if (schemaCache.containsKey(clazz)) {
       if (config.isVerboseLogging()) {
-        logger.log(Logger.INFO, "Using cached schema for " + clazz.getSimpleName());
+        logger.log(SCHEMA_CACHE_USING, clazz.getSimpleName());
       }
       return schemaCache.get(clazz);
     }
@@ -86,7 +88,7 @@ public class JsonSchemaGenerator {
 
     // Generate new schema
     if (config.isVerboseLogging()) {
-      logger.log(Logger.INFO, "Generating JSON schema for " + clazz.getSimpleName());
+      logger.log(SCHEMA_GENERATING, clazz.getSimpleName());
     }
 
     JsonNode schema = generator.generateSchema(clazz);
@@ -113,11 +115,11 @@ public class JsonSchemaGenerator {
               try {
                 Files.delete(path);
               } catch (IOException e) {
-                logger.log(Logger.WARN, "Failed to delete cached schema: " + path, e);
+                logger.log(SCHEMA_CACHE_DELETE_FAILED, path, e);
               }
             });
       } catch (IOException e) {
-        logger.log(Logger.WARN, "Failed to clear schema cache", e);
+        logger.log(SCHEMA_CACHE_CLEAR_FAILED, e);
       }
     }
   }
@@ -149,10 +151,10 @@ public class JsonSchemaGenerator {
     try {
       Files.createDirectories(cachePath);
       if (config.isVerboseLogging()) {
-        logger.log(Logger.INFO, "Schema cache directory: " + cachePath.toAbsolutePath());
+        logger.log(SCHEMA_CACHE_DIR, cachePath.toAbsolutePath());
       }
     } catch (IOException e) {
-      logger.log(Logger.WARN, "Failed to create schema cache directory: " + cachePath, e);
+      logger.log(SCHEMA_CACHE_DIR_CREATE_FAILED, cachePath, e);
       return null;
     }
 
@@ -174,14 +176,14 @@ public class JsonSchemaGenerator {
               String className = path.getFileName().toString()
                   .replace(".schema.json", "");
               if (config.isVerboseLogging()) {
-                logger.log(Logger.DEBUG, "Loaded cached schema: " + className);
+                logger.log(SCHEMA_CACHED_LOADED, className);
               }
             } catch (IOException e) {
-              logger.log(Logger.WARN, "Failed to load cached schema: " + path, e);
+              logger.log(SCHEMA_LOAD_FAILED, path, e);
             }
           });
     } catch (IOException e) {
-      logger.log(Logger.WARN, "Failed to load cached schemas", e);
+      logger.log(SCHEMA_LOAD_FAILED, e);
     }
   }
 
@@ -198,7 +200,7 @@ public class JsonSchemaGenerator {
     try {
       return objectMapper.readTree(schemaFile.toFile());
     } catch (IOException e) {
-      logger.log(Logger.WARN, "Failed to load schema from disk: " + schemaFile, e);
+      logger.log(SCHEMA_LOAD_FROM_DISK_FAILED, schemaFile, e);
       return null;
     }
   }
@@ -212,10 +214,10 @@ public class JsonSchemaGenerator {
     try {
       objectMapper.writerWithDefaultPrettyPrinter().writeValue(schemaFile.toFile(), schema);
       if (config.isVerboseLogging()) {
-        logger.log(Logger.DEBUG, "Saved schema to disk: " + schemaFile);
+        logger.log(SCHEMA_SAVED_TO_DISK, schemaFile);
       }
     } catch (IOException e) {
-      logger.log(Logger.WARN, "Failed to save schema to disk: " + schemaFile, e);
+      logger.log(SCHEMA_SAVE_TO_DISK_FAILED, schemaFile, e);
     }
   }
 }
