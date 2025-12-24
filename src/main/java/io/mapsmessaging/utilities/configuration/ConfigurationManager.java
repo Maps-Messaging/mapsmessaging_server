@@ -30,6 +30,7 @@ import io.mapsmessaging.license.FeatureManager;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.logging.ServerLogMessages;
+import io.mapsmessaging.utilities.configuration.validation.ConfigValidator;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.Setter;
@@ -99,6 +100,37 @@ public class ConfigurationManager {
     catch(IOException th){
       logger.log(CONSUL_CLIENT_EXCEPTION, th);
     }
+
+    // Validate YAML configuration files at startup
+    validateConfigurationsAtStartup();
+  }
+
+  private void validateConfigurationsAtStartup() {
+    try {
+      String resourcePath = getResourcePath();
+      ConfigValidator validator = ConfigValidator.getInstance();
+      validator.validateAtStartup(resourcePath);
+    } catch (Exception e) {
+      logger.log(CONFIG_VALIDATION_FAILED, e);
+      // Exception will already be thrown by validator if in FAIL_FAST mode
+    }
+  }
+
+  private String getResourcePath() {
+    // Try to get the resource directory path
+    String mapsHome = System.getProperty("MAPS_HOME");
+    if (mapsHome != null && !mapsHome.isEmpty()) {
+      return mapsHome + "/conf";
+    }
+
+    // Fallback to classpath resources directory
+    String resourcePath = getClass().getClassLoader().getResource("").getPath();
+    if (resourcePath != null) {
+      return new File(resourcePath).getAbsolutePath();
+    }
+
+    // Last resort: current directory resources
+    return "src/main/resources";
   }
 
   public @Nullable <T extends ConfigManager> T getConfiguration(Class<T> clazz) {
