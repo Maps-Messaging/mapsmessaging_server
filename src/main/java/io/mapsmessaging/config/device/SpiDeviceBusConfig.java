@@ -39,7 +39,7 @@ public class SpiDeviceBusConfig extends SpiDeviceBusConfigDTO implements DeviceB
     this.scanTime = properties.getIntProperty("scanTime", 1000); // Default to 1000 ms
     this.filter = properties.getProperty("filter", "");
     this.selector = properties.getProperty("selector", "");
-
+    this.trigger = properties.getProperty("trigger", "");
     this.devices = new ArrayList<>();
     Object obj = properties.get("config");
     if (obj instanceof List) {
@@ -62,6 +62,7 @@ public class SpiDeviceBusConfig extends SpiDeviceBusConfigDTO implements DeviceB
     props.put("scanTime", this.scanTime);
     props.put("filter", this.filter);
     props.put("selector", this.selector);
+    props.put("trigger", trigger);
 
     List<ConfigurationProperties> deviceList = new ArrayList<>();
     for (SpiDeviceConfigDTO device : this.devices) {
