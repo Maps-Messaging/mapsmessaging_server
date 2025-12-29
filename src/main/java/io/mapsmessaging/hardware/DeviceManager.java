@@ -25,6 +25,7 @@ import io.mapsmessaging.devices.DeviceController;
 import io.mapsmessaging.devices.i2c.I2CBusManager;
 import io.mapsmessaging.dto.rest.config.device.I2CBusConfigDTO;
 import io.mapsmessaging.dto.rest.config.device.OneWireBusConfigDTO;
+import io.mapsmessaging.dto.rest.config.device.SpiDeviceBusConfigDTO;
 import io.mapsmessaging.dto.rest.config.device.triggers.BaseTriggerConfigDTO;
 import io.mapsmessaging.dto.rest.system.Status;
 import io.mapsmessaging.dto.rest.system.SubSystemStatusDTO;
@@ -32,6 +33,7 @@ import io.mapsmessaging.hardware.device.handler.BusHandler;
 import io.mapsmessaging.hardware.device.handler.i2c.I2CBusHandler;
 import io.mapsmessaging.hardware.device.handler.onewire.OneWireBusHandler;
 import io.mapsmessaging.hardware.device.handler.serial.SerialDeviceBusHandler;
+import io.mapsmessaging.hardware.device.handler.spi.SpiBusHandler;
 import io.mapsmessaging.hardware.trigger.PeriodicTrigger;
 import io.mapsmessaging.hardware.trigger.Trigger;
 import io.mapsmessaging.license.FeatureManager;
@@ -143,6 +145,13 @@ public class DeviceManager implements ServiceManager, Agent {
       logger.log(ServerLogMessages.DEVICE_MANAGER_LOAD_PROPERTIES);
       if(enableI2C) {
         loadI2CConfig(manager, deviceManagerConfig.getI2cBuses());
+      }
+      if(deviceManagerConfig.getSpiBus() != null && enableSpi){
+        SpiDeviceBusConfigDTO spiBusConfig = deviceManagerConfig.getSpiBus();
+        if(spiBusConfig.isEnabled()){
+          Trigger trigger = locateNamedTrigger(spiBusConfig.getTrigger());
+          busHandlers.add(new SpiBusHandler( manager.getSpiBusManager(), spiBusConfig, trigger));
+        }
       }
       if(deviceManagerConfig.getOneWireBus() != null && enableOneWire) {
         OneWireBusConfigDTO oneWireBusConfig = deviceManagerConfig.getOneWireBus();

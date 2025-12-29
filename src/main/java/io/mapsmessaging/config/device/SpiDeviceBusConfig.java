@@ -41,7 +41,7 @@ public class SpiDeviceBusConfig extends SpiDeviceBusConfigDTO implements DeviceB
     this.selector = properties.getProperty("selector", "");
 
     this.devices = new ArrayList<>();
-    Object obj = properties.get("devices");
+    Object obj = properties.get("config");
     if (obj instanceof List) {
       List<ConfigurationProperties> configList = (List<ConfigurationProperties>) obj;
       for (ConfigurationProperties config : configList) {

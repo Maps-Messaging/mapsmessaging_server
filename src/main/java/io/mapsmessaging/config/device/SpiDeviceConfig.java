@@ -24,6 +24,9 @@ import io.mapsmessaging.configuration.ConfigurationProperties;
 import io.mapsmessaging.dto.rest.config.BaseConfigDTO;
 import io.mapsmessaging.dto.rest.config.device.SpiDeviceConfigDTO;
 
+import java.util.LinkedHashMap;
+import java.util.Map;
+
 public class SpiDeviceConfig extends SpiDeviceConfigDTO implements Config {
 
   public SpiDeviceConfig(ConfigurationProperties props) {
@@ -33,6 +36,18 @@ public class SpiDeviceConfig extends SpiDeviceConfigDTO implements Config {
     this.spiBus = props.getIntProperty("spiBus", 0);
     this.spiMode = props.getIntProperty("spiMode", 0);
     this.spiChipSelect = props.getIntProperty("spiChipSelect", 0);
+    Map<String, String> con = new LinkedHashMap<>();
+    for(Map.Entry<String, Object> entry: props.getMap().entrySet()){
+      Object val = entry.getValue();
+      if(val instanceof Double d){
+        val = d.intValue();
+      }
+      else if(val instanceof Float f){
+        val = f.intValue();
+      }
+      con.put(entry.getKey(), ""+val);
+    }
+    this.config = con;
   }
 
   @Override

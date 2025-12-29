@@ -25,6 +25,8 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 
+import java.util.Map;
+
 @Data
 @EqualsAndHashCode(callSuper=false)
 @NoArgsConstructor
@@ -48,4 +50,7 @@ public class SpiDeviceConfigDTO extends BaseConfigDTO {
 
   @Schema(description = "Chip select line for the SPI device", example = "0")
   protected int spiChipSelect;
+
+  @Schema(description="Configuration map")
+  protected Map<String, String> config;
 }

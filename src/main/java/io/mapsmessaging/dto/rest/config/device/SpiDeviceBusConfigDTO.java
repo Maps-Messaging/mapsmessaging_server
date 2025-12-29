@@ -31,29 +31,15 @@ import java.util.List;
 @EqualsAndHashCode(callSuper=false)
 @NoArgsConstructor
 @Schema(description = "SPI Device Bus Configuration DTO")
-public class SpiDeviceBusConfigDTO extends BaseConfigDTO {
+public class SpiDeviceBusConfigDTO extends DeviceBusConfigDTO {
 
   @Schema(description = "Name of the SPI bus", example = "spiBus1")
   protected String name;
 
-  @Schema(description = "Enable or disable auto-scanning of SPI devices", example = "true")
-  protected boolean autoScan;
-
   @Schema(description = "List of SPI devices on this bus")
   protected List<SpiDeviceConfigDTO> devices;
 
-  @Schema(description = "Indicates if the device bus is enabled")
-  protected boolean enabled;
 
-  @Schema(description = "Template for the topic name")
-  protected String topicNameTemplate;
-
-  @Schema(description = "Scan time interval in milliseconds")
-  protected int scanTime;
-
-  @Schema(description = "Filter configuration for the device bus")
-  protected String filter;
-
-  @Schema(description = "Selector configuration for the device bus")
-  protected String selector;
+  @Schema(description = "Trigger mechanism for OneWire bus", example = "temperatureTrigger")
+  protected String trigger;
 }
