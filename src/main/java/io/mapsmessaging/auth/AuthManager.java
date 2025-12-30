@@ -52,6 +52,7 @@ import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.security.GeneralSecurityException;
 import java.security.Principal;
 import java.util.*;
 
@@ -212,6 +213,10 @@ public class AuthManager implements Agent {
     return authenticationStorage.getAuthorizationProvider();
   }
 
+
+  public boolean updatePassword(Identity identity, char[] password) throws GeneralSecurityException, IOException {
+    return authenticationStorage.updatePassword(identity, password);
+  }
 
   public void grant(Identity identity, Permission permission, ProtectedResource resource) {
     authenticationStorage.grant(identity, permission, resource);

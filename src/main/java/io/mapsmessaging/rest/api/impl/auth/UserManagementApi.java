@@ -22,6 +22,7 @@ package io.mapsmessaging.rest.api.impl.auth;
 import io.mapsmessaging.auth.AuthManager;
 import io.mapsmessaging.auth.priviliges.SessionPrivileges;
 import io.mapsmessaging.auth.registry.UserDetails;
+import io.mapsmessaging.dto.rest.auth.ChangePasswordDTO;
 import io.mapsmessaging.dto.rest.auth.NewUserDTO;
 import io.mapsmessaging.dto.rest.auth.UserDTO;
 import io.mapsmessaging.rest.responses.StatusResponse;
@@ -36,9 +37,13 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.validation.Valid;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
 
+import java.io.IOException;
+import java.security.GeneralSecurityException;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -172,6 +177,57 @@ public class UserManagementApi extends BaseAuthRestApi {
     response.setStatus(HttpServletResponse.SC_NOT_FOUND);
     return new StatusResponse("No such user");
   }
+
+  @PUT
+  @Path("/{userUuid}/password")
+  @Consumes({MediaType.APPLICATION_JSON})
+  @Produces({MediaType.APPLICATION_JSON})
+  @Operation(
+      summary = "Change user password",
+      description = "Change the password for a user. Admin may reset any user. A user may change their own password; currentPassword may be required depending on policy.",
+      responses = {
+          @ApiResponse(responseCode = "204", description = "Password changed"),
+          @ApiResponse(responseCode = "400", description = "Bad request"),
+          @ApiResponse(responseCode = "401", description = "Invalid credentials or unauthorized access"),
+          @ApiResponse(responseCode = "403", description = "User is not authorised to access the resource"),
+          @ApiResponse(responseCode = "404", description = "User not found")
+      }
+  )
+  public Response changeUserPassword(
+      @PathParam("userUuid") String userUuid,
+      @Valid ChangePasswordDTO request
+  ) {
+    hasAccess(RESOURCE);
+
+    UUID uuid;
+    try {
+      uuid = UUID.fromString(userUuid);
+    } catch (IllegalArgumentException e) {
+      return Response.status(Response.Status.BAD_REQUEST).build();
+    }
+
+    if(request.getNewPassword() == null || request.getNewPassword().isBlank()){
+      return Response.status(Response.Status.BAD_REQUEST).build();
+    }
+    AuthManager authManager = AuthManager.getInstance();
+    return authManager.getUsers().stream()
+        .filter(user -> user.getIdentityEntry().getId().equals(uuid))
+        .findFirst()
+        .map(user -> {
+          Identity identity = authManager.getUserIdentity(uuid);
+          if(identity != null){
+            try {
+              authManager.updatePassword(identity, request.getNewPassword().toCharArray());
+            } catch (GeneralSecurityException | IOException e) {
+              // Log this
+            }
+          }
+          return Response.noContent().build();
+        })
+        .orElseGet(() -> Response.status(Response.Status.NOT_FOUND).build());
+  }
+
+
 
   private UserDTO buildUser(UserDetails user, AuthManager authManager) {
     List<String> groupNames = new ArrayList<>();

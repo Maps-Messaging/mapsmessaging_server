@@ -61,7 +61,7 @@ public class AuthenticationStorage {
 
   private final Logger logger = LoggerFactory.getLogger(AuthenticationStorage.class);
 
-  public AuthenticationStorage(ConfigurationProperties config, AuthenticationMonitorConfig monitorConfig)  {
+  public AuthenticationStorage(ConfigurationProperties config, AuthenticationMonitorConfig monitorConfig) {
     String securityDirectory = config.getProperty("configDirectory", "./.security");
     if (securityDirectory != null) {
       File file = new File(securityDirectory);
@@ -72,7 +72,7 @@ public class AuthenticationStorage {
 
     firstBoot = !(
         new File(securityDirectory + File.separator + ".auth.db").exists() ||
-        new File(securityDirectory + File.separator + ".auth_tx.db").exists()
+            new File(securityDirectory + File.separator + ".auth_tx.db").exists()
     );
 
     Map<String, Object> map = new LinkedHashMap<>(config.getMap());
@@ -211,6 +211,10 @@ public class AuthenticationStorage {
       groups.add(details);
     }
     return groups;
+  }
+
+  public boolean updatePassword(Identity identity, char[] password) throws GeneralSecurityException, IOException {
+    return identityAccessManager.getUserManagement().updateUserPassword(identity.getUsername(), password);
   }
 
   public void delGroup(String groupName) throws IOException {

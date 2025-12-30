@@ -41,6 +41,9 @@ public class AuthManagerConfigDTO extends BaseConfigDTO {
   @Schema(description = "Configuration properties for authentication", implementation = Map.class)
   protected Map<String, Object> authConfig;
 
+  protected int minimumPasswordLength;
+  protected  int maximumPasswordLength;
+
   @Schema(
       description = "Number of consecutive authentication failures required before an account is locked.",
       example = "5",
