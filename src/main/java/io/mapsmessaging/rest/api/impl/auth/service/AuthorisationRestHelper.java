@@ -21,7 +21,7 @@ package io.mapsmessaging.rest.api.impl.auth.service;
 
 import io.mapsmessaging.auth.AuthManager;
 import io.mapsmessaging.auth.ServerPermissions;
-import io.mapsmessaging.rest.api.impl.auth.dto.*;
+import io.mapsmessaging.dto.rest.auth.*;
 import io.mapsmessaging.security.access.Group;
 import io.mapsmessaging.security.access.Identity;
 import io.mapsmessaging.security.authorisation.*;

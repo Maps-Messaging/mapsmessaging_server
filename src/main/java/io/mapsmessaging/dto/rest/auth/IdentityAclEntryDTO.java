@@ -17,7 +17,7 @@
  *  limitations under the License.
  */
 
-package io.mapsmessaging.rest.api.impl.auth.dto;
+package io.mapsmessaging.dto.rest.auth;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
@@ -32,15 +32,15 @@ import java.util.List;
 @Schema(description = "Explicit ACL entry for an identity or group, grouped by resource")
 public class IdentityAclEntryDTO {
 
-  @Schema(description = "Resource type", example = "TOPIC")
+  @Schema(description = "Resource type", example = "TOPIC", requiredMode = Schema.RequiredMode.REQUIRED)
   private String resourceType;
 
-  @Schema(description = "Resource key or identifier", example = "/sensors/room1/temp")
+  @Schema(description = "Resource key or identifier", example = "/sensors/room1/temp", requiredMode = Schema.RequiredMode.REQUIRED)
   private String resourceKey;
 
-  @Schema(description = "Effect of this ACL entry", example = "ALLOW")
+  @Schema(description = "Effect of this ACL entry", example = "ALLOW", requiredMode = Schema.RequiredMode.REQUIRED)
   private AclEffect effect;
 
-  @Schema(description = "List of permission names granted or denied")
+  @Schema(description = "List of permission names granted or denied", requiredMode = Schema.RequiredMode.REQUIRED)
   private List<String> permissions;
 }

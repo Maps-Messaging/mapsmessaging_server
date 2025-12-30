@@ -83,7 +83,7 @@ public class UserManagementApi extends BaseAuthRestApi {
   }
 
   @GET
-  @Path("/{username}")
+  @Path("/{userUuid}")
   @Produces({MediaType.APPLICATION_JSON})
   @Operation(
       summary = "Get user by username",
@@ -99,11 +99,12 @@ public class UserManagementApi extends BaseAuthRestApi {
           @ApiResponse(responseCode = "403", description = "User is not authorised to access the resource"),
       }
   )
-  public UserDTO getUser(@PathParam("username") String username) {
+  public UserDTO getUser(@PathParam("userUuid") String userUuid) {
     hasAccess(RESOURCE);
     AuthManager authManager = AuthManager.getInstance();
+    UUID uuid = UUID.fromString(userUuid);
     return authManager.getUsers().stream()
-        .filter(user -> user.getIdentityEntry().getUsername().equals(username))
+        .filter(user -> user.getIdentityEntry().getId().equals(uuid))
         .findFirst()
         .map(user -> buildUser(user, authManager))
         .orElseGet(() -> {
@@ -142,7 +143,7 @@ public class UserManagementApi extends BaseAuthRestApi {
   }
 
   @DELETE
-  @Path("/{username}")
+  @Path("/{userUuid}")
   @Produces({MediaType.APPLICATION_JSON})
   @Operation(
       summary = "Delete a user",
@@ -158,10 +159,11 @@ public class UserManagementApi extends BaseAuthRestApi {
           @ApiResponse(responseCode = "403", description = "User is not authorised to access the resource"),
       }
   )
-  public StatusResponse deleteUser(@PathParam("username") String username) {
+  public StatusResponse deleteUser(@PathParam("userUuid") String userUuid) {
     hasAccess(RESOURCE);
     AuthManager authManager = AuthManager.getInstance();
-    Identity identity = authManager.getUserIdentity(username);
+    UUID uuid = UUID.fromString(userUuid);
+    Identity identity = authManager.getUserIdentity(uuid);
     if(identity != null){
       authManager.delUser(identity.getUsername());
       response.setStatus(HttpServletResponse.SC_NO_CONTENT);

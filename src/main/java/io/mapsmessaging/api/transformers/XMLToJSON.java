@@ -37,6 +37,7 @@ public class XMLToJSON implements InterServerTransformation {
 
   private static final Logger logger = LoggerFactory.getLogger(XMLToJSON.class);
 
+  private XmlMapper xmlMapper = new XmlMapper();
 
   @Override
   public Protocol.ParsedMessage transform(String source, Protocol.ParsedMessage message){
@@ -48,7 +49,6 @@ public class XMLToJSON implements InterServerTransformation {
 
   private void convert(MessageBuilder messageBuilder) {
     try {
-      XmlMapper xmlMapper = new XmlMapper();
       Map<String, Object> map = xmlMapper.readValue(messageBuilder.getOpaqueData(), new TypeReference<>() {});
       String pretty = GsonFactory.getInstance().getSimpleGson().toJson(map);
       messageBuilder.setOpaqueData(pretty.getBytes(StandardCharsets.UTF_8));

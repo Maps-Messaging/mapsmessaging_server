@@ -23,16 +23,19 @@ package io.mapsmessaging.rest.api.impl.auth;
 
 
 import io.mapsmessaging.auth.AuthManager;
-import io.mapsmessaging.dto.rest.auth.UserDTO;
+import io.mapsmessaging.security.access.Identity;
 import io.mapsmessaging.security.access.monitor.LockStatus;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
 
+
+import java.util.UUID;
 
 import static io.mapsmessaging.rest.api.Constants.URI_PATH;
 
@@ -63,7 +66,7 @@ public class LockedUsersApi extends BaseAuthRestApi {
   }
 
   @DELETE
-  @Path("/{username}")
+  @Path("/{userUuid}")
   @Produces({MediaType.APPLICATION_JSON})
   @Operation(
       summary = "Unlocks a user that is currently locked due to invalid login attempts",
@@ -79,10 +82,16 @@ public class LockedUsersApi extends BaseAuthRestApi {
           @ApiResponse(responseCode = "403", description = "User is not authorised to access the resource"),
       }
   )
-  public void unlockUser(@PathParam("username") String username) {
+  public void unlockUser(@PathParam("userUuid") String userUuid) {
     hasAccess(RESOURCE);
     AuthManager authManager = AuthManager.getInstance();
-    authManager.unlockUser(username);
+    UUID uuid = UUID.fromString(userUuid);
+    Identity identity = authManager.getUserIdentity(uuid);
+    if(identity != null) {
+      authManager.unlockUser(identity.getUsername());
+    }
+    else{
+      response.setStatus(HttpServletResponse.SC_NOT_FOUND);
+    }
   }
-
 }

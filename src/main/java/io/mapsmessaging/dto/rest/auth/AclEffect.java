@@ -17,7 +17,7 @@
  *  limitations under the License.
  */
 
-package io.mapsmessaging.rest.api.impl.auth.dto;
+package io.mapsmessaging.dto.rest.auth;
 
 public enum AclEffect {
   ALLOW,

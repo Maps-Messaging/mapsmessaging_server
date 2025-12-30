@@ -21,10 +21,10 @@ package io.mapsmessaging.rest.api.impl.auth;
 
 import io.mapsmessaging.api.features.DestinationType;
 import io.mapsmessaging.auth.ServerPermissions;
+import io.mapsmessaging.dto.rest.auth.*;
 import io.mapsmessaging.dto.rest.config.auth.AuthorisationConfigDTO;
 import io.mapsmessaging.dto.rest.config.auth.PermissionDetailsDTO;
 import io.mapsmessaging.dto.rest.config.auth.ResourceTypeDetailsDTO;
-import io.mapsmessaging.rest.api.impl.auth.dto.*;
 import io.mapsmessaging.rest.api.impl.auth.service.AuthorisationRestHelper;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -131,7 +131,7 @@ public class AuthorisationResource extends BaseAuthRestApi {
   }
 
   @GET
-  @Path("/identities/{identityId}/acl")
+  @Path("/identities/{userUuid}/acl")
   @Produces(MediaType.APPLICATION_JSON)
   @Operation(
       summary = "Get explicit ACL entries for an identity",
@@ -147,13 +147,13 @@ public class AuthorisationResource extends BaseAuthRestApi {
           @ApiResponse(responseCode = "403", description = "User is not authorised to access the resource")
       }
   )
-  public IdentityAclViewDTO getIdentityAcl(@PathParam("identityId") String identityId) {
+  public IdentityAclViewDTO getIdentityAcl(@PathParam("userUuid") String userUuid) {
     hasAccess(RESOURCE);
-    return managementService.getIdentityAcl(identityId);
+    return managementService.getIdentityAcl(userUuid);
   }
 
   @GET
-  @Path("/groups/{groupId}/acl")
+  @Path("/groups/{groupUuid}/acl")
   @Produces(MediaType.APPLICATION_JSON)
   @Operation(
       summary = "Get explicit ACL entries for a group",
@@ -169,9 +169,9 @@ public class AuthorisationResource extends BaseAuthRestApi {
           @ApiResponse(responseCode = "403", description = "User is not authorised to access the resource")
       }
   )
-  public IdentityAclViewDTO getGroupAcl(@PathParam("groupId") String groupId) {
+  public IdentityAclViewDTO getGroupAcl(@PathParam("groupUuid") String groupUuid) {
     hasAccess(RESOURCE);
-    return managementService.getGroupAcl(groupId);
+    return managementService.getGroupAcl(groupUuid);
   }
 
   @POST

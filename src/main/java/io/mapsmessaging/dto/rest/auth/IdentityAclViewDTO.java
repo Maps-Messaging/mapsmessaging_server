@@ -17,9 +17,27 @@
  *  limitations under the License.
  */
 
-package io.mapsmessaging.rest.api.impl.auth.dto;
+package io.mapsmessaging.dto.rest.auth;
 
-public enum PrincipalType {
-  IDENTITY,
-  GROUP
+import io.swagger.v3.oas.annotations.media.Schema;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+import java.util.List;
+
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+@Schema(description = "View of explicit ACL entries for an identity or group")
+public class IdentityAclViewDTO {
+
+  @Schema(description = "Principal type", example = "IDENTITY")
+  private PrincipalType principalType;
+
+  @Schema(description = "Principal identifier", example = "admin")
+  private String principalId;
+
+  @Schema(description = "Explicit ACL entries grouped by resource")
+  private List<IdentityAclEntryDTO> entries;
 }

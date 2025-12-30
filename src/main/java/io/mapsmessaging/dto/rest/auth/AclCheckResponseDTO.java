@@ -17,7 +17,8 @@
  *  limitations under the License.
  */
 
-package io.mapsmessaging.rest.api.impl.auth.dto;
+package io.mapsmessaging.dto.rest.auth;
+
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
@@ -29,18 +30,18 @@ import java.util.List;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-@Schema(description = "Represents a single ACL entry for a principal on a resource")
-public class AclEntryDTO {
+@Schema(description = "Result of an ACL check")
+public class AclCheckResponseDTO {
 
-  @Schema(description = "Type of principal", example = "IDENTITY")
-  private PrincipalType principalType;
+  @Schema(description = "Decision for the requested permission", example = "ALLOW")
+  private AclDecision decision;
 
-  @Schema(description = "Principal identifier (user id or group id)", example = "admin")
-  private String principalId;
+  @Schema(description = "Permission name that was checked", example = "publish")
+  private String permission;
 
-  @Schema(description = "Effect of this ACL entry", example = "ALLOW")
-  private AclEffect effect;
+  @Schema(description = "Human readable explanation of how this decision was reached")
+  private String reason;
 
-  @Schema(description = "List of permission names granted or denied by this entry")
-  private List<String> permissions;
+  @Schema(description = "Optional list of rule summaries that contributed to the decision")
+  private List<String> sources;
 }

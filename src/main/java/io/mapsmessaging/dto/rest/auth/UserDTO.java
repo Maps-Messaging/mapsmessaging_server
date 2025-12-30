@@ -39,6 +39,7 @@ public class UserDTO {
       title = "Username",
       description = "The unique name assigned to the user.",
       example = "myUserName",
+      requiredMode = Schema.RequiredMode.REQUIRED,
       nullable = false)
   private final String username;
 
@@ -47,6 +48,7 @@ public class UserDTO {
       description =
           "The UUID representing this specific user, ensuring unique identification across the system.",
       example = "83db8741-57ca-4147-a973-49789d9150bb",
+      requiredMode = Schema.RequiredMode.REQUIRED,
       nullable = false)
   private final UUID uniqueId;
 

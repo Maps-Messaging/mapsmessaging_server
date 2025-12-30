@@ -117,12 +117,11 @@ public class GroupManagementApi extends BaseAuthRestApi {
   )
   public GroupDTO getGroupById(@PathParam("groupUuid") String groupUuid) {
     hasAccess(RESOURCE);
-
-    // Fetch the group by UUID
     AuthManager authManager = AuthManager.getInstance();
+    UUID uuid = UUID.fromString(groupUuid);
     GroupDetails groupDetails =
         authManager.getGroups().stream()
-            .filter(g -> g.getGroupId().toString().equals(groupUuid))
+            .filter(g -> g.getGroupId().equals(uuid))
             .findFirst()
             .orElse(null);
 
@@ -186,9 +185,11 @@ public class GroupManagementApi extends BaseAuthRestApi {
       throws IOException {
     hasAccess(RESOURCE);
     AuthManager authManager = AuthManager.getInstance();
+    UUID userId = UUID.fromString(userUuid);
+    UUID groupId = UUID.fromString(groupUuid);
     GroupDetails groupDetails =
         authManager.getGroups().stream()
-            .filter(g -> g.getGroupId().toString().equals(groupUuid))
+            .filter(g -> g.getGroupId().equals(groupId))
             .findFirst()
             .orElse(null);
     if (groupDetails == null) {
@@ -198,7 +199,7 @@ public class GroupManagementApi extends BaseAuthRestApi {
 
     UserDetails userDetails =
         authManager.getUsers().stream()
-            .filter(u -> u.getIdentityEntry().getId().toString().equals(userUuid))
+            .filter(u -> u.getIdentityEntry().getId().equals(userId))
             .findFirst()
             .orElse(null);
     if (userDetails == null) {
@@ -231,10 +232,12 @@ public class GroupManagementApi extends BaseAuthRestApi {
       @PathParam("groupUuid") String groupUuid, @PathParam("userUuid") String userUuid)
       throws IOException {
     hasAccess(RESOURCE);
+    UUID userId = UUID.fromString(userUuid);
+    UUID groupId = UUID.fromString(groupUuid);
     AuthManager authManager = AuthManager.getInstance();
     GroupDetails groupDetails =
         authManager.getGroups().stream()
-            .filter(g -> g.getGroupId().toString().equals(groupUuid))
+            .filter(g -> g.getGroupId().equals(groupId))
             .findFirst()
             .orElse(null);
     if (groupDetails == null) {
@@ -243,7 +246,7 @@ public class GroupManagementApi extends BaseAuthRestApi {
     }
     UserDetails userDetails =
         authManager.getUsers().stream()
-            .filter(u -> u.getIdentityEntry().getId().toString().equals(userUuid))
+            .filter(u -> u.getIdentityEntry().getId().equals(userId))
             .findFirst()
             .orElse(null);
     if (userDetails == null) {
@@ -275,9 +278,10 @@ public class GroupManagementApi extends BaseAuthRestApi {
   public StatusResponse deleteGroup(@PathParam("groupUuid") String groupUuid) throws IOException {
     hasAccess(RESOURCE);
     AuthManager authManager = AuthManager.getInstance();
+    UUID groupId = UUID.fromString(groupUuid);
     GroupDetails groupDetails =
         authManager.getGroups().stream()
-            .filter(g -> g.getGroupId().toString().equals(groupUuid))
+            .filter(g -> g.getGroupId().equals(groupId))
             .findFirst()
             .orElse(null);
     if (groupDetails != null) {

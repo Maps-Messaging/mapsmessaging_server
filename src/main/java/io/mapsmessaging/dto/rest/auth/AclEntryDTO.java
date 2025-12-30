@@ -17,29 +17,30 @@
  *  limitations under the License.
  */
 
-package io.mapsmessaging.rest.api.impl.auth.dto;
+package io.mapsmessaging.dto.rest.auth;
 
 import io.swagger.v3.oas.annotations.media.Schema;
+import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.List;
+
 @Data
 @NoArgsConstructor
-@Schema(description = "Request to check access for an identity to a resource with a permission")
-public class AclCheckRequestDTO {
+@AllArgsConstructor
+@Schema(description = "Represents a single ACL entry for a principal on a resource")
+public class AclEntryDTO {
 
-  @Schema(description = "Identity identifier", example = "admin")
-  private String identityId;
+  @Schema(description = "Type of principal", example = "IDENTITY", requiredMode = Schema.RequiredMode.REQUIRED)
+  private PrincipalType principalType;
 
-  @Schema(description = "Resource type", example = "TOPIC")
-  private String resourceType;
+  @Schema(description = "Principal identifier (user id or group id)", example = "admin", requiredMode = Schema.RequiredMode.REQUIRED)
+  private String principalId;
 
-  @Schema(description = "Resource key or identifier", example = "/sensors/room1/temp")
-  private String resourceKey;
+  @Schema(description = "Effect of this ACL entry", example = "ALLOW", requiredMode = Schema.RequiredMode.REQUIRED)
+  private AclEffect effect;
 
-  @Schema(description = "Permission name to check", example = "publish")
-  private String permission;
-
-  @Schema(description = "If true, the server should include human readable explanation")
-  private boolean explain;
+  @Schema(description = "List of permission names granted or denied by this entry")
+  private List<String> permissions;
 }

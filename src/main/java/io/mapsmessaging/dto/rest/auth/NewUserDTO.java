@@ -34,6 +34,7 @@ public class NewUserDTO {
       title = "Username",
       description = "The unique username for the new user account.",
       example = "myNewUserName",
+      requiredMode = Schema.RequiredMode.REQUIRED,
       nullable = false)
   private final String username;
 
@@ -42,6 +43,7 @@ public class NewUserDTO {
       description =
           "The password or passphrase for the new user, intended to provide secure access.",
       example = "My Very Unique Password",
+      requiredMode = Schema.RequiredMode.REQUIRED,
       nullable = false)
   private final String password;
 }

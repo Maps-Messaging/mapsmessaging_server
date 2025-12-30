@@ -38,6 +38,7 @@ public class GroupDTO {
       title = "Group Name",
       description = "The name of the group, such as an administrative or user-defined role.",
       example = "admin",
+      requiredMode = Schema.RequiredMode.REQUIRED,
       nullable = false)
   private final String name;
 
@@ -45,6 +46,7 @@ public class GroupDTO {
       title = "Group Unique ID",
       description = "The unique identifier for the group, generated as a UUID.",
       example = "e808afcb-1ff9-46cd-a322-3119dbf1d071",
+      requiredMode = Schema.RequiredMode.REQUIRED,
       nullable = false)
   private final UUID uniqueId;
 

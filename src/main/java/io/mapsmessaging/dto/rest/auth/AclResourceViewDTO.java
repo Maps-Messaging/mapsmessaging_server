@@ -17,9 +17,10 @@
  *  limitations under the License.
  */
 
-package io.mapsmessaging.rest.api.impl.auth.dto;
+package io.mapsmessaging.dto.rest.auth;
 
 import io.swagger.v3.oas.annotations.media.Schema;
+import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
@@ -27,15 +28,16 @@ import java.util.List;
 
 @Data
 @NoArgsConstructor
-@Schema(description = "Request to replace the ACL for a specific resource")
-public class AclResourceUpdateRequestDTO {
+@AllArgsConstructor
+@Schema(description = "Represents the ACL for a specific resource")
+public class AclResourceViewDTO {
 
-  @Schema(description = "Resource type", example = "TOPIC")
+  @Schema(description = "Resource type", example = "TOPIC", requiredMode = Schema.RequiredMode.REQUIRED)
   private String resourceType;
 
-  @Schema(description = "Resource key or identifier", example = "/sensors/room1/temp")
+  @Schema(description = "Resource key or identifier", example = "/sensors/room1/temp", requiredMode = Schema.RequiredMode.REQUIRED)
   private String resourceKey;
 
-  @Schema(description = "New set of ACL entries for this resource (explicit only)")
+  @Schema(description = "Explicit ACL entries defined directly on this resource", requiredMode = Schema.RequiredMode.REQUIRED)
   private List<AclEntryDTO> entries;
 }
