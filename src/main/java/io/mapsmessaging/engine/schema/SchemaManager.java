@@ -269,7 +269,14 @@ public class SchemaManager implements Agent {
   }
 
   private SchemaManager() {
-    SchemaManagerConfig config = ConfigurationManager.getInstance().getConfiguration(SchemaManagerConfig.class);
+    SchemaManagerConfig config;
+    try {
+      config = ConfigurationManager.getInstance().getConfiguration(SchemaManagerConfig.class);
+    }
+    catch(Exception ex){
+      ConfigurationProperties props = new ConfigurationProperties();
+      config = new SchemaManagerConfig(props);
+    }
     SchemaRepository buildTime;
     if(config != null && config.getRepositoryConfig() != null) {
       try {
@@ -296,9 +303,17 @@ public class SchemaManager implements Agent {
   }
 
    public List<SchemaResource> getSchemaByContext(String context) {
-    return repository.getAllSchemas().stream()
+     List<SchemaResource> list= repository.getAllSchemas().stream()
         .filter(s -> context.equals(s.getDefaultVersion().getTitle()))
         .toList();
+
+     if(list.isEmpty()){
+       SchemaResource resource = repository.getResource(context);
+       if(resource != null) {
+         list.add(resource);
+       }
+     }
+     return list;
   }
 
   public List<SchemaResource> getSchemas(String type) {

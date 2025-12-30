@@ -124,7 +124,7 @@ public class GeoHashResolver implements InterServerTransformation {
     GeoHashResolver resolver = new GeoHashResolver(localPrefix, localLatKey, localLonKey, localPrecision, localSplitHash);
 
     resolver.latKeys = safeStringList(map.getProperty("latKeys", ""));
-    resolver.lonKeys = safeStringList(map.getProperty("lonKeys"));
+    resolver.lonKeys = safeStringList(map.getProperty("lonKeys", ""));
     resolver.units = map.getProperty("units", "deg");
     resolver.layout = map.getProperty( "layout", "chars-per-segment");
     resolver.onMissing = map.getProperty( "onMissing", "skip");
