@@ -85,11 +85,12 @@ public class SchemaToJsonTransformation implements ProtocolMessageTransformation
             return messageBuilder.build();
           }
         } catch (Exception e) {
+          e.printStackTrace();
           logger.log(MESSAGE_TRANSFORMATION_EXCEPTION, e);
         }
       }
     }
-    return message;
+    return null;
   }
 
   private byte[] pack(Message message, SchemaConfig config, MessageFormatter formatter) throws IOException {

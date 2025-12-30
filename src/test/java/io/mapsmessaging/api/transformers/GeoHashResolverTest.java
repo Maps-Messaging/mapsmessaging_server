@@ -29,7 +29,8 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.mockito.MockedStatic;
 
-import static io.mapsmessaging.api.transformers.TransformationAssertions.*;
+import static io.mapsmessaging.api.transformers.TransformationAssertions.assertDropped;
+import static io.mapsmessaging.api.transformers.TransformationAssertions.assertNotDropped;
 import static io.mapsmessaging.api.transformers.TransformationTestSupport.*;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -37,8 +38,31 @@ import static org.mockito.Mockito.*;
 class GeoHashResolverTest extends AbstractDroppingTransformationTest {
 
   @BeforeAll
-  static void setup(){
+  static void setup() {
     SchemaManager.getInstance().addSchema(SOURCE, JSON_SCHEMA_CONFIG);
+  }
+
+  private static ConfigurationProperties config(String... kvPairs) {
+    ConfigurationProperties parameters = new ConfigurationProperties();
+    for (int i = 0; i < kvPairs.length; i += 2) {
+      parameters.put(kvPairs[i], kvPairs[i + 1]);
+    }
+    ConfigurationProperties root = new ConfigurationProperties();
+    root.put("parameters", parameters);
+    return root;
+  }
+
+  private static String twoPerSegment(String geohash) {
+    StringBuilder builder = new StringBuilder();
+    builder.append('/');
+    for (int i = 0; i < geohash.length(); i += 2) {
+      int end = Math.min(i + 2, geohash.length());
+      builder.append(geohash, i, end);
+      if (end < geohash.length()) {
+        builder.append('/');
+      }
+    }
+    return builder.toString();
   }
 
   @Override
@@ -290,28 +314,5 @@ class GeoHashResolverTest extends AbstractDroppingTransformationTest {
     assertEquals("GeoHash", created.getName());
     assertNotNull(created.getDescription());
     assertFalse(created.getDescription().isBlank());
-  }
-
-  private static ConfigurationProperties config(String... kvPairs) {
-    ConfigurationProperties parameters = new ConfigurationProperties();
-    for (int i = 0; i < kvPairs.length; i += 2) {
-      parameters.put(kvPairs[i], kvPairs[i + 1]);
-    }
-    ConfigurationProperties root = new ConfigurationProperties();
-    root.put("parameters", parameters);
-    return root;
-  }
-
-  private static String twoPerSegment(String geohash) {
-    StringBuilder builder = new StringBuilder();
-    builder.append('/');
-    for (int i = 0; i < geohash.length(); i += 2) {
-      int end = Math.min(i + 2, geohash.length());
-      builder.append(geohash, i, end);
-      if (end < geohash.length()) {
-        builder.append('/');
-      }
-    }
-    return builder.toString();
   }
 }
