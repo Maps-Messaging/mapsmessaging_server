@@ -59,7 +59,7 @@ public class UserDTO {
       type = "array",
       example = "[\"admin\", \"everyone\"]",
       nullable = true)
-  private final List<GroupDTO> groupList;
+  private final List<GroupInfoDTO> groupList;
 
   @Schema(
       title = "User Attributes",
