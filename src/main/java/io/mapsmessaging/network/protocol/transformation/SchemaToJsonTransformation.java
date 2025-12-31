@@ -85,7 +85,6 @@ public class SchemaToJsonTransformation implements ProtocolMessageTransformation
             return messageBuilder.build();
           }
         } catch (Exception e) {
-          e.printStackTrace();
           logger.log(MESSAGE_TRANSFORMATION_EXCEPTION, e);
         }
       }
