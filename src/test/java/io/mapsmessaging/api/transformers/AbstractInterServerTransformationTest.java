@@ -21,35 +21,28 @@ package io.mapsmessaging.api.transformers;
 
 import com.google.gson.JsonObject;
 import io.mapsmessaging.api.message.Message;
+import io.mapsmessaging.engine.schema.SchemaManager;
 import io.mapsmessaging.network.protocol.Protocol;
 import io.mapsmessaging.schemas.config.SchemaConfig;
 import io.mapsmessaging.schemas.config.impl.JsonSchemaConfig;
+import io.mapsmessaging.test.BaseTestConfig;
 import org.junit.jupiter.api.BeforeEach;
-
-import java.util.UUID;
 
 import static io.mapsmessaging.api.transformers.TransformationTestSupport.mockMessage;
 import static io.mapsmessaging.api.transformers.TransformationTestSupport.parsedMessage;
+import static io.mapsmessaging.engine.schema.SchemaManager.DEFAULT_JSON_SCHEMA;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
-public abstract class AbstractInterServerTransformationTest {
+public abstract class AbstractInterServerTransformationTest extends BaseTestConfig {
 
-  public static final UUID DEFAULT_JSON_SCHEMA = UUID.fromString("10000000-0000-1000-a000-100000000003");
   public static final SchemaConfig JSON_SCHEMA_CONFIG = buildSchema();
   protected static final String SOURCE = "/test/source";
   protected static final String DESTINATION = "/test/destination";
   protected InterServerTransformation transformer;
 
   private static SchemaConfig buildSchema() {
-    JsonSchemaConfig jsonSchemaConfig = new JsonSchemaConfig();
-    jsonSchemaConfig.setVersion(1);
-    jsonSchemaConfig.setUniqueId(DEFAULT_JSON_SCHEMA);
-    jsonSchemaConfig.setInterfaceDescription("json");
-    jsonSchemaConfig.setResourceType("TEST");
-    jsonSchemaConfig.setTitle("Generic JSON");
-    jsonSchemaConfig.setSchema(new JsonObject());
-    return jsonSchemaConfig;
+    return SchemaManager.getInstance().getSchema(DEFAULT_JSON_SCHEMA);
   }
 
   protected abstract InterServerTransformation createTransformer();

@@ -37,11 +37,6 @@ import static org.mockito.Mockito.*;
 
 class GeoHashResolverTest extends AbstractDroppingTransformationTest {
 
-  @BeforeAll
-  static void setup() {
-    SchemaManager.getInstance().addSchema(SOURCE, JSON_SCHEMA_CONFIG);
-  }
-
   private static ConfigurationProperties config(String... kvPairs) {
     ConfigurationProperties parameters = new ConfigurationProperties();
     for (int i = 0; i < kvPairs.length; i += 2) {

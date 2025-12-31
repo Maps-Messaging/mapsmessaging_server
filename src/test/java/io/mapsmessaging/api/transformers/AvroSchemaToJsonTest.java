@@ -26,6 +26,7 @@ import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.engine.schema.SchemaManager;
 import io.mapsmessaging.network.protocol.transformation.SchemaToJsonTransformation;
 import io.mapsmessaging.schemas.config.SchemaConfig;
+import io.mapsmessaging.test.BaseTestConfig;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -37,9 +38,11 @@ import static io.mapsmessaging.api.transformers.TestAvroSchemas.SCHEMA_JSON;
 import static io.mapsmessaging.api.transformers.TestAvroSchemas.avroSchemaConfig;
 import static org.junit.jupiter.api.Assertions.*;
 
-class AvroSchemaToJsonTest {
+class AvroSchemaToJsonTest extends BaseTestConfig {
 
   private SchemaManager schemaManager;
+
+  private UUID schemaId;
 
   @BeforeEach
   void setUp() {
@@ -48,14 +51,12 @@ class AvroSchemaToJsonTest {
 
   @AfterEach
   void tearDown() {
-    for (SchemaConfig config : schemaManager.getAll()) {
-      schemaManager.removeSchema(config.getUniqueId());
-    }
+    schemaManager.removeSchema(schemaId.toString());
   }
 
   @Test
   void avro_binaryPayload_isConvertedToJson() {
-    UUID schemaId = UUID.randomUUID();
+    schemaId = UUID.randomUUID();
 
     SchemaConfig schemaConfig = avroSchemaConfig(schemaId, SCHEMA_JSON);
     schemaManager.addSchema("/avro", schemaConfig);
@@ -79,7 +80,7 @@ class AvroSchemaToJsonTest {
 
   @Test
   void avro_missingSchema_dropsMessage() {
-    UUID schemaId = UUID.randomUUID();
+    schemaId = UUID.randomUUID();
 
     byte[] payload = TestAvroSchemas.encodeAvroPayload();
 
@@ -95,7 +96,7 @@ class AvroSchemaToJsonTest {
 
   @Test
   void avro_truncatedPayload_dropsMessage() {
-    UUID schemaId = UUID.randomUUID();
+    schemaId = UUID.randomUUID();
 
     SchemaConfig schemaConfig = avroSchemaConfig(schemaId, SCHEMA_JSON);
     schemaManager.addSchema("/avro", schemaConfig);

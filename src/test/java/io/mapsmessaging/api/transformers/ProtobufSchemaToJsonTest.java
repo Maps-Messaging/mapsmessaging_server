@@ -26,6 +26,7 @@ import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.engine.schema.SchemaManager;
 import io.mapsmessaging.network.protocol.transformation.SchemaToJsonTransformation;
 import io.mapsmessaging.schemas.config.SchemaConfig;
+import io.mapsmessaging.test.BaseTestConfig;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -35,7 +36,7 @@ import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-class ProtobufSchemaToJsonTest {
+class ProtobufSchemaToJsonTest extends BaseTestConfig {
 
   private SchemaManager schemaManager;
   private UUID schemaId;
