@@ -65,6 +65,12 @@ public enum ServerLogMessages implements LogMessage {
   MESSAGE_DAEMON_AGENT_STOPPED(LEVEL.WARN, SERVER_CATEGORY.DAEMON, "Stopped {} took {}ms"),
   // </editor-fold>
 
+  // <editor-fold desc="jsonquery">
+  JSON_QUERY_COMPILE_EXCEPTION(LEVEL.FATAL, SERVER_CATEGORY.ENGINE, "JsonQuery compilation failed for {} with error {}"),
+  JSON_QUERY_COMPILE_SUCCESS(LEVEL.INFO, SERVER_CATEGORY.ENGINE, "JsonQuery compilation success for {} produced {}"),
+  JSON_QUERY_EXECUTION_EXCEPTION(LEVEL.FATAL, SERVER_CATEGORY.ENGINE, "JsonQuery execution failed for {} with {}"),
+  // </editor-fold>
+
   // <editor-fold desc="routing manager messages">
   ROUTING_STARTUP(LEVEL.INFO, SERVER_CATEGORY.ENGINE, "Starting Event Routing Manager"),
   ROUTING_SHUTDOWN(LEVEL.INFO, SERVER_CATEGORY.ENGINE, "Stopping Event Routing Manager"),

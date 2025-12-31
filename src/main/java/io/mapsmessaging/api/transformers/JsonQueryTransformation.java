@@ -10,6 +10,9 @@ import io.mapsmessaging.engine.destination.DestinationImpl;
 import io.mapsmessaging.engine.schema.SchemaManager;
 import io.mapsmessaging.jsonquery.JsonQueryCompiler;
 import io.mapsmessaging.jsonquery.JsonQueryParser;
+import io.mapsmessaging.jsonquery.parser.JsonQueryParseException;
+import io.mapsmessaging.logging.Logger;
+import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.network.protocol.Protocol;
 import io.mapsmessaging.schemas.config.SchemaConfig;
 import io.mapsmessaging.schemas.formatters.MessageFormatter;
@@ -24,25 +27,32 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.function.Function;
 
+import static io.mapsmessaging.logging.ServerLogMessages.*;
+
 public class JsonQueryTransformation implements InterServerTransformation {
 
   private static final String QUERY_PROPERTY = "query";
 
+
+  private final Logger logger = LoggerFactory.getLogger(JsonQueryTransformation.class);
   private final Function<JsonElement, JsonElement> program;
 
   protected final Map<String, MessageFormatter> schemaMap;
+  private final String jsonQuery;
 
   public JsonQueryTransformation() {
-    this(null, new ConcurrentHashMap<>());
+    this(null, new ConcurrentHashMap<>(), "");
+
   }
 
-  public JsonQueryTransformation(Function<JsonElement, JsonElement> program) {
-    this(program, new ConcurrentHashMap<>());
+  public JsonQueryTransformation(Function<JsonElement, JsonElement> program ) {
+    this(program, new ConcurrentHashMap<>(), "");
   }
 
-  JsonQueryTransformation(Function<JsonElement, JsonElement> program, Map<String, MessageFormatter> schemaMap) {
+  JsonQueryTransformation(Function<JsonElement, JsonElement> program, Map<String, MessageFormatter> schemaMap, String jsonQuery) {
     this.program = program;
     this.schemaMap = schemaMap;
+    this.jsonQuery = jsonQuery;
   }
 
   @Override
@@ -68,7 +78,7 @@ public class JsonQueryTransformation implements InterServerTransformation {
       try {
         jsonObject = messageFormatter.parseToJson(message.getMessage().getOpaqueData());
       } catch (IOException e) {
-        // ToDo: log this
+        logger.log(JSON_QUERY_EXECUTION_EXCEPTION, jsonQuery, e.getMessage(), e);
         return message; // fail safe: don't drop on formatter failure
       }
     } else {
@@ -101,7 +111,7 @@ public class JsonQueryTransformation implements InterServerTransformation {
         } catch (InterruptedException e) {
           Thread.currentThread().interrupt();
         } catch (ExecutionException e) {
-          // ToDo Log
+          logger.log(JSON_QUERY_EXECUTION_EXCEPTION, jsonQuery, e.getMessage(), e);
         } catch (TimeoutException e) {
           // ignore
         }
@@ -115,7 +125,7 @@ public class JsonQueryTransformation implements InterServerTransformation {
             schemaMap.put(source, messageFormatter);
           }
         } catch (IOException e) {
-          // ToDo Log this
+          logger.log(JSON_QUERY_EXECUTION_EXCEPTION, jsonQuery, e.getMessage(), e);
         }
       }
     }
@@ -129,11 +139,17 @@ public class JsonQueryTransformation implements InterServerTransformation {
       return new JsonQueryTransformation(null); // true no-op, avoids re-encoding payload
     }
 
-    JsonElement queryAst = parseQueryToAst(queryText);
+    try {
+      JsonElement queryAst = parseQueryToAst(queryText);
 
-    JsonQueryCompiler compiler = JsonQueryCompiler.createDefault();
-    Function<JsonElement, JsonElement> compiled = compiler.compile(queryAst);
-    return new JsonQueryTransformation(compiled);
+      JsonQueryCompiler compiler = JsonQueryCompiler.createDefault();
+      Function<JsonElement, JsonElement> compiled = compiler.compile(queryAst);
+      return new JsonQueryTransformation(compiled, new ConcurrentHashMap<>(), queryText);
+    }
+    catch(Throwable th){
+      logger.log(JSON_QUERY_COMPILE_EXCEPTION, queryText, th.getMessage(), th);
+    }
+    return this;
   }
 
   private JsonElement parseQueryToAst(String queryText) {
@@ -147,7 +163,13 @@ public class JsonQueryTransformation implements InterServerTransformation {
       // fall through
     }
 
-    JsonElement ast = JsonQueryParser.parse(trimmed);
+    JsonElement ast = null;
+    try {
+      ast = JsonQueryParser.parse(trimmed);
+      logger.log(JSON_QUERY_COMPILE_SUCCESS, trimmed, ast.toString());
+    } catch (JsonQueryParseException e) {
+      logger.log(JSON_QUERY_COMPILE_EXCEPTION, trimmed, e.getMessage(), e);
+    }
     if (!looksLikeJsonQueryAst(ast)) {
       throw new IllegalArgumentException("Text query did not produce a JsonQuery AST: " + queryText);
     }
