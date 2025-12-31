@@ -33,6 +33,7 @@ import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
 
 import java.io.IOException;
+import java.util.HashMap;
 
 import static io.mapsmessaging.rest.api.Constants.URI_PATH;
 
@@ -60,7 +61,9 @@ public class AuthConfigurationApi extends BaseAuthRestApi {
   )
   public AuthManagerConfigDTO getAuthConfiguration() {
     hasAccess(RESOURCE);
-    return AuthManager.getInstance().getConfig();
+    AuthManagerConfigDTO config = new AuthManagerConfigDTO(AuthManager.getInstance().getConfig());
+    config.setAuthConfig(new HashMap<>()); // clear these settings
+    return config;
   }
 
   @POST

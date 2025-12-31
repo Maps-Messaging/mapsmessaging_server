@@ -23,9 +23,11 @@ import io.mapsmessaging.auth.AuthManager;
 import io.mapsmessaging.auth.priviliges.SessionPrivileges;
 import io.mapsmessaging.auth.registry.UserDetails;
 import io.mapsmessaging.dto.rest.auth.ChangePasswordDTO;
+import io.mapsmessaging.dto.rest.auth.GroupDTO;
 import io.mapsmessaging.dto.rest.auth.NewUserDTO;
 import io.mapsmessaging.dto.rest.auth.UserDTO;
 import io.mapsmessaging.rest.responses.StatusResponse;
+import io.mapsmessaging.security.access.Group;
 import io.mapsmessaging.security.access.Identity;
 import io.mapsmessaging.selector.ParseException;
 import io.mapsmessaging.selector.SelectorParser;
@@ -230,9 +232,11 @@ public class UserManagementApi extends BaseAuthRestApi {
 
 
   private UserDTO buildUser(UserDetails user, AuthManager authManager) {
-    List<String> groupNames = new ArrayList<>();
+    List<GroupDTO> groupNames = new ArrayList<>();
     for (UUID groupId : user.getGroups()) {
-      groupNames.add(authManager.getGroupIdentity(groupId).getName());
+      Group group = authManager.getGroupIdentity(groupId);
+      GroupDTO groupDTO = new GroupDTO(group.getName(), groupId, new UserDTO[0]);
+      groupNames.add(groupDTO);
     }
     return new UserDTO(
         user.getIdentityEntry().getUsername(),
