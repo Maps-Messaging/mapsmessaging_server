@@ -38,6 +38,8 @@ import static org.junit.jupiter.api.Assertions.*;
 class ProtobufSchemaToJsonTest {
 
   private SchemaManager schemaManager;
+  private UUID schemaId;
+
   @BeforeEach
   void setUp() {
     schemaManager = SchemaManager.getInstance();
@@ -45,14 +47,12 @@ class ProtobufSchemaToJsonTest {
 
   @AfterEach
   void tearDown() {
-    for (SchemaConfig config : schemaManager.getAll()) {
-      schemaManager.removeSchema(config.getUniqueId());
-    }
+    schemaManager.removeSchema(schemaId.toString());
   }
 
   @Test
   void protobuf_binaryPayload_isConvertedToJson() {
-    UUID schemaId = UUID.randomUUID();
+    schemaId = UUID.randomUUID();
 
     SchemaConfig schemaConfig = TestProtobufSchemas.protobufSchemaConfig(schemaId);
     schemaManager.addSchema("/protobuf", schemaConfig);
@@ -79,7 +79,7 @@ class ProtobufSchemaToJsonTest {
 
   @Test
   void protobuf_missingSchema_dropsMessage() {
-    UUID schemaId = UUID.randomUUID();
+    schemaId = UUID.randomUUID();
 
     byte[] payload = TestProtobufSchemas.encodeProtobufPayload();
 
@@ -95,7 +95,7 @@ class ProtobufSchemaToJsonTest {
 
   @Test
   void protobuf_truncatedPayload_dropsMessage() {
-    UUID schemaId = UUID.randomUUID();
+    schemaId = UUID.randomUUID();
 
     SchemaConfig schemaConfig = TestProtobufSchemas.protobufSchemaConfig(schemaId);
     schemaManager.addSchema("/protobuf", schemaConfig);
