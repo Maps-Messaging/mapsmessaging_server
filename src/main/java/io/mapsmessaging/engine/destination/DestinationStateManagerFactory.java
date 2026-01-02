@@ -61,21 +61,6 @@ public class DestinationStateManagerFactory {
     return new TransactionalMessageManager(factory);
   }
 
-  private static BitSetFactory createFactory(DestinationImpl destinationImpl, boolean persistent, String name) throws IOException {
-    if (persistent && destinationImpl.isPersistent()) {
-      String fullyQualifiedPath = FilePathHelper.cleanPath(destinationImpl.getPhysicalLocation());
-      fullyQualifiedPath += "state";
-      File directory = new File(fullyQualifiedPath);
-      if(!directory.exists()) {
-        Files.createDirectories(directory.toPath());
-      }
-      fullyQualifiedPath = FilePathHelper.cleanPath(fullyQualifiedPath + File.separator + name + ".bin");
-      return new FileBitSetFactoryImpl(fullyQualifiedPath, Constants.BITSET_BLOCK_SIZE);
-    } else {
-      return new BitSetFactoryImpl(Constants.BITSET_BLOCK_SIZE);
-    }
-  }
-
   public static BitSetFactory createSubscriptionFactory(DestinationImpl destinationImpl, boolean persistent, String name) throws IOException {
     if (persistent && destinationImpl.isPersistent()) {
       String fullyQualifiedPath = FilePathHelper.cleanPath(destinationImpl.getPhysicalLocation());
@@ -91,9 +76,21 @@ public class DestinationStateManagerFactory {
     }
   }
 
-  private static int bitsRequired(int maxValue) {
-    if (maxValue < 0) throw new IllegalArgumentException("maxValue must be >= 0");
-    return 32 - Integer.numberOfLeadingZeros(maxValue);
+  private static BitSetFactory createFactory(DestinationImpl destinationImpl, boolean persistent, String name) throws IOException {
+    if (persistent && destinationImpl.isPersistent()) {
+      String fullyQualifiedPath = FilePathHelper.cleanPath(destinationImpl.getPhysicalLocation());
+      fullyQualifiedPath += "state";
+      File directory = new File(fullyQualifiedPath);
+      if(!directory.exists()) {
+        Files.createDirectories(directory.toPath());
+      }
+      fullyQualifiedPath = FilePathHelper.cleanPath(fullyQualifiedPath + File.separator + name + ".bin");
+      return new FileBitSetFactoryImpl(fullyQualifiedPath, Constants.BITSET_BLOCK_SIZE);
+    } else {
+      return new BitSetFactoryImpl(Constants.BITSET_BLOCK_SIZE);
+    }
   }
+
+
   private DestinationStateManagerFactory(){}
 }
