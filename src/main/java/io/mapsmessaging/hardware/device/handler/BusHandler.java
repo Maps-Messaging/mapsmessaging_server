@@ -29,16 +29,21 @@ import io.mapsmessaging.hardware.device.DeviceClientConnection;
 import io.mapsmessaging.hardware.device.DeviceSessionManagement;
 import io.mapsmessaging.hardware.device.filter.DataFilter;
 import io.mapsmessaging.hardware.trigger.Trigger;
+import io.mapsmessaging.logging.Logger;
+import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.network.protocol.transformation.ProtocolMessageTransformation;
 import io.mapsmessaging.network.protocol.transformation.TransformationManager;
 import io.mapsmessaging.utilities.threads.SimpleTaskScheduler;
-import lombok.SneakyThrows;
 
 import java.io.IOException;
 import java.util.Map;
 import java.util.concurrent.*;
 
+import static io.mapsmessaging.logging.ServerLogMessages.DEVICE_MANAGER_MOUNT_FAILED;
+
 public abstract class BusHandler implements Runnable {
+
+  protected final Logger logger = LoggerFactory.getLogger(BusHandler.class);
   protected final Map<String, DeviceHandler> foundDevices;
   protected final DeviceBusConfigDTO properties;
   private final int scanPeriod;
@@ -129,7 +134,6 @@ public abstract class BusHandler implements Runnable {
 
   protected abstract  Map<String, DeviceController> scan();
 
-  @SneakyThrows
   @Override
   public void run() {
     Map<String, DeviceController> map = scan();
@@ -139,7 +143,13 @@ public abstract class BusHandler implements Runnable {
         DeviceHandler handler = createDeviceHander(entry.getKey(), entry.getValue());
         handler.setTrigger(trigger);
         foundDevices.put(entry.getKey(), handler);
-        deviceDetected(handler);
+        try {
+          deviceDetected(handler);
+        } catch (ExecutionException e) {
+          logger.log(DEVICE_MANAGER_MOUNT_FAILED, entry.getKey(), e);
+        } catch (InterruptedException e) {
+          Thread.currentThread().interrupt();
+        }
       }
     }
   }

@@ -703,6 +703,7 @@ public enum ServerLogMessages implements LogMessage {
   DEVICE_MANAGER_RESUME_ALL(LEVEL.DEBUG, SERVER_CATEGORY.ENGINE, "Resuming all registered devices"),
   DEVICE_MANAGER_LOAD_PROPERTIES(LEVEL.DEBUG, SERVER_CATEGORY.ENGINE, "Loading Device Manager Properties"),
   DEVICE_MANAGER_STARTUP_COMPLETE(LEVEL.DEBUG, SERVER_CATEGORY.ENGINE, "Completed startup Device Manager"),
+  DEVICE_MANAGER_MOUNT_FAILED(LEVEL.WARN, SERVER_CATEGORY.DEVICE, "Exception raised mounting device {}"),
   //</editor-fold>
 
   //<editor-fold desc="Network Interface status log messages">
