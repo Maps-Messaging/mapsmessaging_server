@@ -17,25 +17,20 @@
  *  limitations under the License.
  */
 
-package io.mapsmessaging.license.features;
+package io.mapsmessaging.dto.rest.protocol.impl;
 
+import io.mapsmessaging.dto.rest.protocol.ProtocolInformationDTO;
+import io.mapsmessaging.dto.rest.session.SessionInformationDTO;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 
 @Data
-public class Protocols {
-  private boolean mqtt;
-  private boolean amqp;
-  private boolean nats;
-  private boolean mqtt_sn;
-  private boolean coap;
-  private boolean nmea_0183;
-  private boolean semtech;
-  private boolean extensions;
-  private boolean stomp;
-  private boolean rest;
-  private boolean lora;
-  private boolean ws;
-  private boolean wss;
-  private boolean stogi;
-  private boolean mavlink;
+@EqualsAndHashCode(callSuper = false)
+public class MavlinkProtocolInformation extends ProtocolInformationDTO {
+
+  private SessionInformationDTO sessionInfo;
+
+  public MavlinkProtocolInformation() {
+    type = "mavlink";
+  }
 }

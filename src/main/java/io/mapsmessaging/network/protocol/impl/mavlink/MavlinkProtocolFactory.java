@@ -20,6 +20,8 @@
 package io.mapsmessaging.network.protocol.impl.mavlink;
 
 import io.mapsmessaging.config.protocol.impl.MqttSnConfig;
+import io.mapsmessaging.mavlink.MavlinkCodec;
+import io.mapsmessaging.mavlink.MavlinkMessageFormatLoader;
 import io.mapsmessaging.network.io.EndPoint;
 import io.mapsmessaging.network.io.InterfaceInformation;
 import io.mapsmessaging.network.io.Packet;
@@ -74,14 +76,7 @@ public class MavlinkProtocolFactory extends ProtocolImplFactory {
       endPoint.getConfig().getEndPointConfig().setServerWriteBufferSize(datagramSize * 2L);
     }
 
-    byte gatewayId;
-    String gatewayConfig = ((MqttSnConfig)endPoint.getConfig().getProtocolConfig("mqtt-sn")).getGatewayId();
-    try {
-      gatewayId = (byte) Integer.parseInt(gatewayConfig);
-    } catch (Exception ex) {
-      gatewayId = 1;
-    }
-    MavlinkInterfaceManager manager = new MavlinkInterfaceManager(info, endPoint, gatewayId);
+    MavlinkInterfaceManager manager = new MavlinkInterfaceManager(info, endPoint);
     mappedInterfaces.put(endPoint, manager);
   }
 

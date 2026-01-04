@@ -19,87 +19,59 @@
 
 package io.mapsmessaging.network.protocol.impl.mavlink;
 
+import io.mapsmessaging.config.protocol.impl.MavlinkConfig;
 import io.mapsmessaging.config.protocol.impl.MqttSnConfig;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
+import io.mapsmessaging.mavlink.MavlinkCodec;
+import io.mapsmessaging.mavlink.MavlinkFrameCodec;
+import io.mapsmessaging.mavlink.MavlinkFrameEnvelope;
+import io.mapsmessaging.mavlink.MavlinkMessageFormatLoader;
 import io.mapsmessaging.network.io.EndPoint;
 import io.mapsmessaging.network.io.InterfaceInformation;
 import io.mapsmessaging.network.io.Packet;
 import io.mapsmessaging.network.io.impl.SelectorCallback;
 import io.mapsmessaging.network.io.impl.SelectorTask;
-import io.mapsmessaging.network.io.impl.udp.session.UDPSessionManager;
+import io.mapsmessaging.network.io.impl.udp.UDPFacadeEndPoint;
 import io.mapsmessaging.network.io.impl.udp.session.UDPSessionState;
 import io.mapsmessaging.network.protocol.transformation.ProtocolMessageTransformation;
 import io.mapsmessaging.network.protocol.transformation.TransformationManager;
 
 import java.io.IOException;
-import java.net.SocketAddress;
-import java.net.SocketException;
+import java.net.InetSocketAddress;
 import java.nio.channels.SelectionKey;
+import java.util.Optional;
 
-// The protocol is Mavlink so it makes sense
-@SuppressWarnings("squid:S00101")
 public class MavlinkInterfaceManager implements SelectorCallback {
 
   private final Logger logger;
   private final SelectorTask selectorTask;
   private final EndPoint endPoint;
-  private final UDPSessionManager<MavlinkProtocol> currentSessions;
-  private final byte gatewayId;
+  private final MavLinkSessionManager<MavlinkProtocol> currentSessions;
   private final ProtocolMessageTransformation transformation;
+  private final MavlinkFrameCodec mavlinkFrameCodec;
 
-  private final boolean enablePortChanges;
-  private final boolean enableAddressChanges;
-  private final boolean advertiseGateway;
-
-  private final MqttSnConfig mqttSnConfig;
+  private final MavlinkConfig mavlinkConfig;
 
 
-  public MavlinkInterfaceManager(byte gatewayId, SelectorTask selectorTask, EndPoint endPoint) {
-    logger = LoggerFactory.getLogger("MQTT-SN Protocol on " + endPoint.getName());
-    this.gatewayId = gatewayId;
-    this.selectorTask = selectorTask;
-    this.endPoint = endPoint;
-    mqttSnConfig = (MqttSnConfig) endPoint.getConfig().getProtocolConfig("mqtt-sn");
-    long timeout = mqttSnConfig.getIdleSessionTimeout();
-    enablePortChanges = mqttSnConfig.isEnablePortChanges();
-    enableAddressChanges = mqttSnConfig.isEnableAddressChanges();
-    advertiseGateway = mqttSnConfig.isAdvertiseGateway();
-    currentSessions = new UDPSessionManager<>(timeout);
-    transformation = TransformationManager.getInstance().getTransformation(
-        endPoint.getProtocol(),
-        endPoint.getName(),
-        "mavlink",
-        "<registered>"
-    );
-  }
-
-  public MavlinkInterfaceManager(InterfaceInformation info, EndPoint endPoint, byte gatewayId) throws IOException {
+  public MavlinkInterfaceManager(InterfaceInformation info, EndPoint endPoint) throws IOException {
     logger = LoggerFactory.getLogger("Mavlink Protocol on " + endPoint.getName());
     this.endPoint = endPoint;
-    this.gatewayId = gatewayId;
-    mqttSnConfig = (MqttSnConfig) endPoint.getConfig().getProtocolConfig("mqtt-sn");
-    long timeout = mqttSnConfig.getIdleSessionTimeout();
-    enablePortChanges = mqttSnConfig.isEnablePortChanges();
-    enableAddressChanges = mqttSnConfig.isEnableAddressChanges();
-    advertiseGateway = mqttSnConfig.isAdvertiseGateway();
+    mavlinkConfig = (MavlinkConfig) endPoint.getConfig().getProtocolConfig("mavlink");
+    long timeout = mavlinkConfig.getIdleSessionTimeout();
+    MavlinkCodec  codec = MavlinkMessageFormatLoader.getInstance().getDialect("common").get();
+    mavlinkFrameCodec = new MavlinkFrameCodec(codec);
 
-    currentSessions = new UDPSessionManager<>(timeout);
+    currentSessions = new MavLinkSessionManager<>(timeout);
 
     selectorTask = new SelectorTask(this, endPoint.getConfig().getEndPointConfig(), endPoint.isUDP());
     selectorTask.register(SelectionKey.OP_READ);
-    if (startAdvertiseTask(info)) {
-    }
     transformation = TransformationManager.getInstance().getTransformation(
         endPoint.getProtocol(),
         endPoint.getName(),
         "mavlink",
         "<registered>"
     );
-  }
-
-  private boolean startAdvertiseTask(InterfaceInformation info) throws SocketException {
-    return advertiseGateway && info.getBroadcast() != null && !info.isLoopback();
   }
 
   @Override
@@ -108,27 +80,38 @@ public class MavlinkInterfaceManager implements SelectorCallback {
     if (packet.getFromAddress() == null) {
       return true; // Ignoring packet since unknown client
     }
-    UDPSessionState<MavlinkProtocol> state = currentSessions.getState(packet.getFromAddress());
-    if(state == null && enablePortChanges){
-      state = lookupByPacket(packet);
+    Optional<MavlinkFrameEnvelope>  envelope = mavlinkFrameCodec.tryUnpackHeaderAndPayload(packet.getRawBuffer());
+    if(envelope.isPresent()){
+      MavlinkDeviceKey key = buildKey(packet, envelope.get());
+      UDPSessionState<MavlinkProtocol> state = findOrCreate(key);
+      if (state != null && state.getContext() != null) {
+        MavlinkProtocol protocol = state.getContext();
+        protocol.processPacket(packet);
+      }
+      else{
+        // log this
+      }
     }
-
-    if (state != null && state.getContext() != null) {
-      MavlinkProtocol protocol = state.getContext();
-      protocol.processPacket(packet);
+    else {
+      // log this as well
     }
     selectorTask.register(SelectionKey.OP_READ);
     return true;
   }
 
-  private UDPSessionState<MavlinkProtocol> lookupByPacket(Packet packet) throws IOException {
-    byte type = packet.get(1);
-    return null;
+  private MavlinkDeviceKey buildKey(Packet packet, MavlinkFrameEnvelope envelope){
+    return new MavlinkDeviceKey(0, (InetSocketAddress) packet.getFromAddress(),  envelope.getSystemId());
   }
 
-  private void processIncomingPacket(Packet packet) throws IOException {
-    int len = packet.available();
-
+  private synchronized UDPSessionState<MavlinkProtocol> findOrCreate(MavlinkDeviceKey key){
+    UDPSessionState<MavlinkProtocol> state = currentSessions.getState(key);
+    if(state == null){
+      UDPFacadeEndPoint facade = new UDPFacadeEndPoint(endPoint, key.getRemoteAddress(),endPoint.getServer());
+      MavlinkProtocol protocol = new MavlinkProtocol(this, key, facade, this.mavlinkConfig);
+      state = new UDPSessionState<>(protocol);
+      currentSessions.addState(key, state);
+    }
+    return state;
   }
 
   @Override
@@ -156,7 +139,7 @@ public class MavlinkInterfaceManager implements SelectorCallback {
     return endPoint;
   }
 
-  public void close(SocketAddress remoteClient) {
+  public void close(MavlinkDeviceKey remoteClient) {
     currentSessions.deleteState(remoteClient);
   }
 

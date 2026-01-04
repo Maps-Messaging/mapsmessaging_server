@@ -134,6 +134,7 @@
 
     <!-- Base -->
     <maps.logging.version>2.1.2-SNAPSHOT</maps.logging.version>
+    <maps.mavlink.version>1.0.1-SNAPSHOT</maps.mavlink.version>
     <maps.jms_selector.version>2.1.1-SNAPSHOT</maps.jms_selector.version>
     <maps.ml-jms_selector.version>ml-2.1.1-SNAPSHOT</maps.ml-jms_selector.version>
     <maps.nolc.version>1.2.2-SNAPSHOT</maps.nolc.version>
@@ -599,6 +600,11 @@
       <groupId>io.mapsmessaging</groupId>
       <artifactId>simple_logging</artifactId>
       <version>${maps.logging.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>io.mapsmessaging</groupId>
+      <artifactId>mavlink</artifactId>
+      <version>${maps.mavlink.version}</version>
     </dependency>
     <dependency>
       <groupId>io.mapsmessaging</groupId>

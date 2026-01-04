@@ -26,4 +26,5 @@ public class Hardware {
   private boolean i2c;
   private boolean spi;
   private boolean oneWire;
+  private boolean serial;
 }

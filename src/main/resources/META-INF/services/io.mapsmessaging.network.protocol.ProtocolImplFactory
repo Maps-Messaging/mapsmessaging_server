@@ -51,6 +51,7 @@ io.mapsmessaging.network.protocol.impl.satellite.modem.protocol.StoGiProtocolFac
 io.mapsmessaging.network.protocol.impl.coap.CoapProtocolFactory
 io.mapsmessaging.network.protocol.impl.mqtt_sn.MQTT_SNProtocolFactory
 io.mapsmessaging.network.protocol.impl.semtech.SemTechProtocolFactory
+io.mapsmessaging.network.protocol.impl.mavlink.MavlinkProtocolFactory
 
 #
 # Layered Protocols
