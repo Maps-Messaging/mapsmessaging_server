@@ -3,10 +3,10 @@ package io.mapsmessaging.network.protocol.impl.mavlink;
 import io.mapsmessaging.api.MessageEvent;
 import io.mapsmessaging.dto.rest.config.protocol.ProtocolConfigDTO;
 import io.mapsmessaging.dto.rest.protocol.ProtocolInformationDTO;
+import io.mapsmessaging.mavlink.MavlinkFrameEnvelope;
 import io.mapsmessaging.network.io.EndPoint;
 import io.mapsmessaging.network.io.Packet;
 import io.mapsmessaging.network.protocol.Protocol;
-import io.mapsmessaging.network.protocol.impl.mqtt_sn.MQTTSNInterfaceManager;
 import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
 
@@ -61,8 +61,16 @@ public class MavlinkProtocol extends Protocol {
 
   @Override
   public boolean processPacket(@NonNull @NotNull Packet packet) throws IOException {
+    System.err.println("Packet received for "+key);
     return false;
   }
+
+  public boolean processPacket(@NonNull @NotNull MavlinkFrameEnvelope envelope, byte[] raw) throws IOException {
+    System.err.println("Packet received for "+key+" for "+envelope.getSystemId()+" msgId:"+envelope.getMessageId());
+    return true;
+  }
+
+
 
   @Override
   public String getName() {

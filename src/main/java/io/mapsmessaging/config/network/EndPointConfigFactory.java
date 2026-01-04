@@ -27,6 +27,7 @@ import io.mapsmessaging.configuration.ConfigurationProperties;
 import io.mapsmessaging.dto.rest.config.network.EndPointConfigDTO;
 import io.mapsmessaging.dto.rest.config.network.EndPointServerConfigDTO;
 import io.mapsmessaging.dto.rest.config.protocol.ProtocolConfigDTO;
+import io.mapsmessaging.dto.rest.config.protocol.impl.MavlinkConfigDTO;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -193,6 +194,7 @@ public class EndPointConfigFactory {
       case "echo" -> new EchoProtocolConfig(config);
       case "stogi" -> new StoGiConfig(config);
       case "satellite" -> new SatelliteConfig(config);
+      case "mavlink" -> new MavlinkConfig(config);
       case "ws", "wss" -> new WebSocketConfig(config);
       default -> new ExtensionConfig(config);
     };

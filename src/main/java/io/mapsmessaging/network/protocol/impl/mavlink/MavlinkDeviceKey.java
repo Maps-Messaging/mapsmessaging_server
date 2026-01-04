@@ -1,10 +1,12 @@
 package io.mapsmessaging.network.protocol.impl.mavlink;
 
 import lombok.Data;
+import lombok.ToString;
 
 import java.net.InetSocketAddress;
 
 @Data
+@ToString
 public class MavlinkDeviceKey {
   private final int localPort;
   private final InetSocketAddress remoteAddress;

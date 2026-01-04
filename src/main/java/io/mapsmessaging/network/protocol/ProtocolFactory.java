@@ -37,6 +37,7 @@ public class ProtocolFactory implements ServiceManager {
   @Getter
   @Setter
   private static List<ProtocolImplFactory> protocolServiceList;
+
   private final String protocols;
   private final List<ProxyProtocol> proxyProtocols;
 

@@ -20,7 +20,6 @@
 package io.mapsmessaging.network.protocol.impl.mavlink;
 
 import io.mapsmessaging.config.protocol.impl.MavlinkConfig;
-import io.mapsmessaging.config.protocol.impl.MqttSnConfig;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.mavlink.MavlinkCodec;
@@ -80,20 +79,26 @@ public class MavlinkInterfaceManager implements SelectorCallback {
     if (packet.getFromAddress() == null) {
       return true; // Ignoring packet since unknown client
     }
+    System.err.println("PKT RECV:"+packet.getFromAddress());
+    byte[] raw = new byte[packet.available()];
+    int pos = packet.position();
+    packet.get(raw);
+    packet.position(pos);
     Optional<MavlinkFrameEnvelope>  envelope = mavlinkFrameCodec.tryUnpackHeaderAndPayload(packet.getRawBuffer());
     if(envelope.isPresent()){
+      System.err.println("Has Envelope");
       MavlinkDeviceKey key = buildKey(packet, envelope.get());
       UDPSessionState<MavlinkProtocol> state = findOrCreate(key);
-      if (state != null && state.getContext() != null) {
+      if (state.getContext() != null) {
         MavlinkProtocol protocol = state.getContext();
-        protocol.processPacket(packet);
+        protocol.processPacket(envelope.get(), raw);
       }
       else{
-        // log this
+        System.err.println("Has NO State");
       }
     }
     else {
-      // log this as well
+      System.err.println("Has NO Envelope");
     }
     selectorTask.register(SelectionKey.OP_READ);
     return true;

@@ -77,6 +77,10 @@ public class AdapterManager {
       Map<String, String> map = new LinkedHashMap<>();
       if(stampMeta) {
         switch (lowerProtocol) {
+          case "mavlink":
+            map.put("version 1", "true");
+            map.put("version 2", "true");
+            break;
           case "mqtt":
             map.put("version 3.1", "true");
             map.put("version 3.1.1", "true");

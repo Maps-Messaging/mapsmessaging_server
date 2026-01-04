@@ -36,6 +36,7 @@ import lombok.NoArgsConstructor;
     @JsonSubTypes.Type(value = CoapConfigDTO.class, name = "coap"),
     @JsonSubTypes.Type(value = LoRaProtocolConfigDTO.class, name = "lora"),
     @JsonSubTypes.Type(value = MqttConfigDTO.class, name = "mqtt"),
+    @JsonSubTypes.Type(value = MavlinkConfigDTO.class, name = "mavlink"),
     @JsonSubTypes.Type(value = MqttSnConfigDTO.class, name = "mqtt-sn"),
     @JsonSubTypes.Type(value = MqttV5ConfigDTO.class, name = "mqttV5"),
     @JsonSubTypes.Type(value = NmeaConfigDTO.class, name = "NMEA-0183"),
@@ -55,6 +56,7 @@ import lombok.NoArgsConstructor;
         @DiscriminatorMapping(value = "coap", schema = CoapConfigDTO.class),
         @DiscriminatorMapping(value = "lora", schema = LoRaProtocolConfigDTO.class),
         @DiscriminatorMapping(value = "mqtt", schema = MqttConfigDTO.class),
+        @DiscriminatorMapping(value = "mavlink", schema = MavlinkConfigDTO.class),
         @DiscriminatorMapping(value = "mqtt-sn", schema = MqttSnConfigDTO.class),
         @DiscriminatorMapping(value = "mqttV5", schema = MqttV5ConfigDTO.class),
         @DiscriminatorMapping(value = "NMEA-0183", schema = NmeaConfigDTO.class),
@@ -85,6 +87,7 @@ public class ProtocolConfigDTO extends BaseConfigDTO {
       "semtech",
       "stomp",
       "websocket",
+      "mavlink",
       "extension"
   })
   protected String type;
