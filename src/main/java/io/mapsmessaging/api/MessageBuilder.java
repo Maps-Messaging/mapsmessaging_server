@@ -213,6 +213,12 @@ public class MessageBuilder {
     return this;
   }
 
+  public @NonNull @NotNull MessageBuilder setStoreOffline(boolean storeOffline) {
+    this.storeOffline = storeOffline;
+    return this;
+  }
+
+
   public @NonNull @NotNull Message build() {
     if (transformation != null) {
       ProtocolMessageTransformation local = transformation;

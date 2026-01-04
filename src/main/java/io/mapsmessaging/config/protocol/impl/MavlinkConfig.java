@@ -40,12 +40,17 @@ public class MavlinkConfig extends MavlinkConfigDTO implements Config {
     this.maximumSessionExpiry = config.getIntProperty("maximumSessionExpiry", maximumSessionExpiry);
     this.advertiseInterval = config.getIntProperty("advertiseInterval", advertiseInterval);
     this.maxInFlightEvents = config.getIntProperty("maxInFlightEvents", maxInFlightEvents);
+    this.topicNameTemplate = config.getProperty("topicNameTemplate", topicNameTemplate);
   }
 
   @Override
   public boolean update(BaseConfigDTO config) {
     boolean hasChanged = false;
     if (config instanceof MavlinkConfigDTO newConfig) {
+      if(!topicNameTemplate.equals(newConfig.getTopicNameTemplate())) {
+        this.topicNameTemplate = newConfig.getTopicNameTemplate();
+        hasChanged = true;
+      }
       if (this.idleSessionTimeout != newConfig.getIdleSessionTimeout()) {
         this.idleSessionTimeout = newConfig.getIdleSessionTimeout();
         hasChanged = true;
@@ -78,6 +83,7 @@ public class MavlinkConfig extends MavlinkConfigDTO implements Config {
     properties.put("maximumSessionExpiry", this.maximumSessionExpiry);
     properties.put("advertiseInterval", this.advertiseInterval);
     properties.put("maxInFlightEvents", this.maxInFlightEvents);
+    properties.put("topicNameTemplate", this.topicNameTemplate);
     return properties;
   }
 }

@@ -19,7 +19,6 @@
 
 package io.mapsmessaging.dto.rest.config.protocol.impl;
 
-import io.mapsmessaging.config.protocol.PredefinedTopics;
 import io.mapsmessaging.dto.rest.config.protocol.ProtocolConfigDTO;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
@@ -45,4 +44,8 @@ public class MavlinkConfigDTO extends ProtocolConfigDTO {
 
   @Schema(description = "Maximum in-flight events", example = "1")
   protected int maxInFlightEvents = 1;
+
+  @Schema(description = "Maximum in-flight events", example = "1")
+  protected String topicNameTemplate = "/{remoteSocket}/{systemId}/{componentId}/{messageId}";
+
 }

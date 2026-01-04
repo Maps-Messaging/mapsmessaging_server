@@ -86,7 +86,6 @@ public class MavlinkInterfaceManager implements SelectorCallback {
     packet.position(pos);
     Optional<MavlinkFrameEnvelope>  envelope = mavlinkFrameCodec.tryUnpackHeaderAndPayload(packet.getRawBuffer());
     if(envelope.isPresent()){
-      System.err.println("Has Envelope");
       MavlinkDeviceKey key = buildKey(packet, envelope.get());
       UDPSessionState<MavlinkProtocol> state = findOrCreate(key);
       if (state.getContext() != null) {
@@ -112,9 +111,15 @@ public class MavlinkInterfaceManager implements SelectorCallback {
     UDPSessionState<MavlinkProtocol> state = currentSessions.getState(key);
     if(state == null){
       UDPFacadeEndPoint facade = new UDPFacadeEndPoint(endPoint, key.getRemoteAddress(),endPoint.getServer());
-      MavlinkProtocol protocol = new MavlinkProtocol(this, key, facade, this.mavlinkConfig);
-      state = new UDPSessionState<>(protocol);
-      currentSessions.addState(key, state);
+      try {
+        MavlinkProtocol protocol = new MavlinkProtocol(this, key, facade, this.mavlinkConfig);
+        state = new UDPSessionState<>(protocol);
+        currentSessions.addState(key, state);
+      }
+      catch(IOException e){
+        e.printStackTrace();
+        // todo log this
+      }
     }
     return state;
   }
