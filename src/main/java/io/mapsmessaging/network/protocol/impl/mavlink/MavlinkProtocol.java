@@ -84,7 +84,7 @@ public class MavlinkProtocol extends Protocol {
     return false;
   }
 
-  public boolean processPacket(@NonNull @NotNull MavlinkFrameEnvelope envelope, byte[] raw) throws IOException {
+  public boolean processPacket(@NonNull @NotNull MavlinkFrameEnvelope envelope, String messageName, byte[] raw) throws IOException {
     MessageBuilder messageBuilder = new MessageBuilder();
     Map<String, String> metaData = new HashMap<>();
     metaData.put("protocol", "NATS");
@@ -101,7 +101,7 @@ public class MavlinkProtocol extends Protocol {
         .setMeta(metaData)
         .build();
 
-    String topicName = computeTopicName(envelope);
+    String topicName = computeTopicName(envelope, messageName);
 
 
     CompletableFuture<Destination> future = session.findDestination(topicName, DestinationType.TOPIC);
@@ -139,7 +139,8 @@ public class MavlinkProtocol extends Protocol {
   }
 
   private Session buildSession() throws ExecutionException, InterruptedException, TimeoutException {
-    SessionContextBuilder scb = new SessionContextBuilder(key.toString(), new ProtocolClientConnection(this));
+    String sessionid = key.getRemoteAddress().getHostName()+"_"+key.getRemotePort()+"_"+key.getSystemId();
+    SessionContextBuilder scb = new SessionContextBuilder(sessionid, new ProtocolClientConnection(this));
     scb.setResetState(true)
       .setSessionExpiry(mavlinkConfig.getMaximumSessionExpiry())
       .setPersistentSession(false)
@@ -148,12 +149,13 @@ public class MavlinkProtocol extends Protocol {
     return sessionFuture.get(5, TimeUnit.SECONDS);
   }
 
-  private String computeTopicName(MavlinkFrameEnvelope envelope) {
+  private String computeTopicName(MavlinkFrameEnvelope envelope, String messageName) {
     String template = mavlinkConfig.getTopicNameTemplate();
     template = template.replace("{remoteSocket}", key.getRemoteAddress().getHostName()+"_"+key.getRemoteAddress().getPort());
     template = template.replace("{systemId}", ""+envelope.getSystemId());
     template = template.replace("{componentId}", ""+envelope.getComponentId());
     template = template.replace("{messageId}", ""+envelope.getMessageId());
+    template = template.replace("{messageName}", messageName);
     return template;
   }
 

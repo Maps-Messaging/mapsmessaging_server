@@ -46,6 +46,9 @@ public class MavlinkConfigDTO extends ProtocolConfigDTO {
   protected int maxInFlightEvents = 1;
 
   @Schema(description = "Maximum in-flight events", example = "1")
-  protected String topicNameTemplate = "/{remoteSocket}/{systemId}/{componentId}/{messageId}";
+  protected String topicNameTemplate = "/{remoteSocket}/{systemId}/{componentId}/{messageName}";
+
+  @Schema(description = "Flag to convert incomig mavlink to json", example = "false")
+  protected boolean parseToJson = true;
 
 }

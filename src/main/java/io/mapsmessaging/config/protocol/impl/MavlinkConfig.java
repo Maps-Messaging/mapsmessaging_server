@@ -41,12 +41,17 @@ public class MavlinkConfig extends MavlinkConfigDTO implements Config {
     this.advertiseInterval = config.getIntProperty("advertiseInterval", advertiseInterval);
     this.maxInFlightEvents = config.getIntProperty("maxInFlightEvents", maxInFlightEvents);
     this.topicNameTemplate = config.getProperty("topicNameTemplate", topicNameTemplate);
+    this.parseToJson = config.getBooleanProperty("parseToJson", parseToJson);
   }
 
   @Override
   public boolean update(BaseConfigDTO config) {
     boolean hasChanged = false;
     if (config instanceof MavlinkConfigDTO newConfig) {
+      if(parseToJson != newConfig.isParseToJson()){
+        parseToJson = newConfig.isParseToJson();
+        hasChanged = true;
+      }
       if(!topicNameTemplate.equals(newConfig.getTopicNameTemplate())) {
         this.topicNameTemplate = newConfig.getTopicNameTemplate();
         hasChanged = true;
@@ -84,6 +89,7 @@ public class MavlinkConfig extends MavlinkConfigDTO implements Config {
     properties.put("advertiseInterval", this.advertiseInterval);
     properties.put("maxInFlightEvents", this.maxInFlightEvents);
     properties.put("topicNameTemplate", this.topicNameTemplate);
+    properties.put("parseToJson", this.parseToJson);
     return properties;
   }
 }

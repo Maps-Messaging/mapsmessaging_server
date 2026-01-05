@@ -19,6 +19,7 @@
 
 package io.mapsmessaging.network.protocol.impl.mavlink;
 
+import com.google.gson.JsonObject;
 import io.mapsmessaging.config.protocol.impl.MavlinkConfig;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
@@ -26,6 +27,7 @@ import io.mapsmessaging.mavlink.MavlinkCodec;
 import io.mapsmessaging.mavlink.MavlinkFrameCodec;
 import io.mapsmessaging.mavlink.MavlinkFrameEnvelope;
 import io.mapsmessaging.mavlink.MavlinkMessageFormatLoader;
+import io.mapsmessaging.mavlink.message.MavlinkCompiledMessage;
 import io.mapsmessaging.network.io.EndPoint;
 import io.mapsmessaging.network.io.InterfaceInformation;
 import io.mapsmessaging.network.io.Packet;
@@ -39,6 +41,7 @@ import io.mapsmessaging.network.protocol.transformation.TransformationManager;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.channels.SelectionKey;
+import java.util.Map;
 import java.util.Optional;
 
 public class MavlinkInterfaceManager implements SelectorCallback {
@@ -49,6 +52,7 @@ public class MavlinkInterfaceManager implements SelectorCallback {
   private final MavLinkSessionManager<MavlinkProtocol> currentSessions;
   private final ProtocolMessageTransformation transformation;
   private final MavlinkFrameCodec mavlinkFrameCodec;
+  private final MavlinkCodec mavlinkMessageCodec;
 
   private final MavlinkConfig mavlinkConfig;
 
@@ -58,9 +62,8 @@ public class MavlinkInterfaceManager implements SelectorCallback {
     this.endPoint = endPoint;
     mavlinkConfig = (MavlinkConfig) endPoint.getConfig().getProtocolConfig("mavlink");
     long timeout = mavlinkConfig.getIdleSessionTimeout();
-    MavlinkCodec  codec = MavlinkMessageFormatLoader.getInstance().getDialect("common").get();
-    mavlinkFrameCodec = new MavlinkFrameCodec(codec);
-
+    mavlinkMessageCodec  = MavlinkMessageFormatLoader.getInstance().getDialect("common").get();
+    mavlinkFrameCodec = new MavlinkFrameCodec(mavlinkMessageCodec);
     currentSessions = new MavLinkSessionManager<>(timeout);
 
     selectorTask = new SelectorTask(this, endPoint.getConfig().getEndPointConfig(), endPoint.isUDP());
@@ -79,25 +82,46 @@ public class MavlinkInterfaceManager implements SelectorCallback {
     if (packet.getFromAddress() == null) {
       return true; // Ignoring packet since unknown client
     }
-    System.err.println("PKT RECV:"+packet.getFromAddress());
     byte[] raw = new byte[packet.available()];
     int pos = packet.position();
     packet.get(raw);
     packet.position(pos);
     Optional<MavlinkFrameEnvelope>  envelope = mavlinkFrameCodec.tryUnpackHeaderAndPayload(packet.getRawBuffer());
     if(envelope.isPresent()){
-      MavlinkDeviceKey key = buildKey(packet, envelope.get());
+      MavlinkFrameEnvelope env = envelope.get();
+      MavlinkDeviceKey key = buildKey(packet, env);
       UDPSessionState<MavlinkProtocol> state = findOrCreate(key);
       if (state.getContext() != null) {
         MavlinkProtocol protocol = state.getContext();
-        protocol.processPacket(envelope.get(), raw);
+        if(mavlinkConfig.isParseToJson()){
+          Map<String, Object> parsed = mavlinkMessageCodec.parsePayload(env.getMessageId(), env.getPayload());
+          JsonObject complete  = MavlinkJsonEnvelopeBuilder.toJson(env, parsed);
+          raw = complete.toString().getBytes();
+        }
+        MavlinkCompiledMessage message = mavlinkMessageCodec.getRegistry().getCompiledMessagesById().get(env.getMessageId());
+        String messageName = "";
+        if(message != null){
+          messageName = message.getName();
+        }
+        protocol.processPacket(env, messageName, raw);
       }
       else{
         System.err.println("Has NO State");
       }
     }
     else {
-      System.err.println("Has NO Envelope");
+      StringBuilder sb = new StringBuilder();
+      for(byte b:raw){
+        String t = Long.toHexString((b & 0xff));
+        if(t.length() < 2){
+          sb.append("0x0").append(t);
+        }
+        else{
+          sb.append("0x").append(t);
+        }
+        sb.append(",");
+      }
+      System.err.println("Has NO Envelope : "+sb.toString()+" "+new String(raw));
     }
     selectorTask.register(SelectionKey.OP_READ);
     return true;
