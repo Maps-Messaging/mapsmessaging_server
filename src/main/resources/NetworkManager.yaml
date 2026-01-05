@@ -123,16 +123,79 @@ NetworkManager:
     data:
 
       - name: "Mavlink Interface"
-        url: udp://:::14550/
+        url: udp://:::14440/
         protocol: mavlink
         auth: usernamePassword
         selectorThreadCount: "{processors}/2"
 
-#      - name: "MQTT Interface"
-#        url: tcp://:::1883/
-#        protocol: mqtt
-#        auth: usernamePassword
-#        selectorThreadCount: "{processors}/2"
+      - name: "MQTT Interface"
+        url: tcp://:::1883/
+        protocol: mqtt
+        auth: usernamePassword
+        selectorThreadCount: "{processors}/2"
+
+      - name: "MQTT SSL Interface"
+        url: "ssl://0.0.0.0:1892/"
+        protocol: mqtt, ws
+        auth: default
+
+      - name: "NATS Interface"
+        url: "tcp://0.0.0.0:4222/"
+        protocol: nats
+        enableStreams: true
+        auth: default
+
+      - name: "Stomp Interface with WebSocket Support"
+        url: "tcp://0.0.0.0:8675/"
+        protocol: stomp,ws
+        auth: default
+
+      - name: "Stomp Interface - Authenticated Stomp over SSL"
+        url: "ssl://0.0.0.0:8695/"
+        protocol: stomp,wss
+        auth: default
+
+      - name: "AMQP Interface"
+        url: "tcp://0.0.0.0:5672/"
+        protocol : amqp
+        auth: default
+
+      - name: "AMQP anon ssl Interface"
+        url: "ssl://0.0.0.0:5692/"
+        protocol: amqp
+        auth: default
+
+      - name: "MQTT-SN Interface"
+        url: udp://0.0.0.0:1887/
+        protocol: mqtt-sn
+        eventsPerTopicDuringSleep: 10
+        maxTopicsInSleep: 10
+        advertiseGateway: true
+        enablePortChanges: true
+        enableAddressChanges: true
+        auth: default
+
+      - name: "DTLS MQTT-SN Interface"
+        url: dtls://0.0.0.0:1886/
+        protocol: mqtt-sn
+        eventsPerTopicDuringSleep: 10
+        maxTopicsInSleep: 10
+        advertiseGateway: true
+        auth: default
+
+      - name: "CoAP Interface"
+        url: udp://0.0.0.0:5683/
+        protocol: coap
+        maxBlockSize: 512
+        idleTimePeriod: 120
+        auth: default
+
+      - name: "DTLS CoAP Interface"
+        url: dtls://0.0.0.0:5684/
+        protocol: coap
+        maxBlockSize: 512
+        ssl_SSLContext: DTLS
+        auth: default
 
 
 #      - name: "Inmarsat Iot nano interface"
