@@ -88,6 +88,8 @@ public class ConnectListener extends BaseConnectListener {
   }
 
   private CompletableFuture<Session> createSession(SessionState engine, Connect connect, HeartBeat hb) {
+    long ka = Math.max(hb.getPreferred(), hb.getMinimum());
+    engine.getProtocol().setKeepAlive(ka);
     SessionContextBuilder scb = new SessionContextBuilder(UuidGenerator.getInstance().generate().toString(), new ProtocolClientConnection(engine.getProtocol()));
     String username = connect.getLogin();
     if (username == null) {

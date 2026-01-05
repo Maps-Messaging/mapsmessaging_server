@@ -49,6 +49,7 @@ import org.jetbrains.annotations.Nullable;
 
 import javax.security.auth.Subject;
 import java.io.IOException;
+import java.nio.ByteBuffer;
 
 import static java.nio.channels.SelectionKey.OP_READ;
 
@@ -199,7 +200,12 @@ public class StompProtocol extends Protocol {
 
   @Override
   public void sendKeepAlive() {
-    // Nothing to do, yet
+    byte[] ka = "\n".getBytes();
+    try {
+      endPoint.sendPacket(new Packet(ByteBuffer.wrap(ka)));
+    } catch (IOException e) {
+      this.close();
+    }
   }
 
   @Override
