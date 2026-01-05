@@ -86,12 +86,14 @@ public class MavlinkInterfaceManager implements SelectorCallback {
     if(urlList != null || !urlList.isBlank()){
       String[] urls = urlList.split(",");
       for(String remote:urls){
-        try {
-          URI uri = URI.create(remote);
-          forwardList.add( new InetSocketAddress(uri.getHost(), uri.getPort()));
-        } catch (Exception e) {
-          e.printStackTrace();
-          // log
+        if(!remote.isBlank()) {
+          try {
+            URI uri = URI.create(remote);
+            forwardList.add(new InetSocketAddress(uri.getHost(), uri.getPort()));
+          } catch (Exception e) {
+            e.printStackTrace();
+            // log
+          }
         }
       }
     }
