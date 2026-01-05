@@ -28,7 +28,9 @@ public class Schema {
   private String uniqueId;
 
   public Schema(SchemaConfig config) {
-    uniqueId = config.getUniqueId();
+    if(config != null) {
+      uniqueId = config.getUniqueId();
+    }
   }
 
   public boolean update(Schema rhs) {

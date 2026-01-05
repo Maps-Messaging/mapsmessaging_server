@@ -80,8 +80,10 @@ public class MavlinkProtocol extends Protocol {
 
   @Override
   public boolean processPacket(@NonNull @NotNull Packet packet) throws IOException {
-    // not actually called since the packet is parsed to extract the header information
-    return false;
+    Packet respond = new Packet(packet.getRawBuffer().duplicate());
+    respond.setFromAddress(key.getRemoteAddress());
+    endPoint.sendPacket(respond);
+    return true;
   }
 
   public boolean processPacket(@NonNull @NotNull MavlinkFrameEnvelope envelope, String messageName, byte[] raw) throws IOException {

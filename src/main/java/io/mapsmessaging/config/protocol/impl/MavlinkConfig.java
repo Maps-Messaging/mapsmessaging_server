@@ -42,12 +42,35 @@ public class MavlinkConfig extends MavlinkConfigDTO implements Config {
     this.maxInFlightEvents = config.getIntProperty("maxInFlightEvents", maxInFlightEvents);
     this.topicNameTemplate = config.getProperty("topicNameTemplate", topicNameTemplate);
     this.parseToJson = config.getBooleanProperty("parseToJson", parseToJson);
+    this.forwardUrls = config.getProperty("forwardUrls", forwardUrls );
+    this.forwardRawFrames = config.getBooleanProperty("forwardRawFrames", forwardRawFrames);
+    this.dropIfTargetEqualsSource = config.getBooleanProperty("dropIfTargetEqualsSource", dropIfTargetEqualsSource);
+    this.dedupWindowMillis = config.getIntProperty("dedupWindowMillis ", dedupWindowMillis );
   }
 
   @Override
   public boolean update(BaseConfigDTO config) {
     boolean hasChanged = false;
     if (config instanceof MavlinkConfigDTO newConfig) {
+      if(forwardRawFrames != newConfig.isForwardRawFrames()){
+        forwardRawFrames = newConfig.isForwardRawFrames();
+        hasChanged = true;
+      }
+
+      if(dedupWindowMillis != newConfig.getDedupWindowMillis()){
+        dedupWindowMillis = newConfig.getDedupWindowMillis();
+        hasChanged = true;
+      }
+
+      if(dropIfTargetEqualsSource != newConfig.isDropIfTargetEqualsSource()){
+        dropIfTargetEqualsSource = newConfig.isDropIfTargetEqualsSource();
+        hasChanged = true;
+      }
+      if(!forwardUrls.equals(newConfig.getForwardUrls())) {
+        this.forwardUrls = newConfig.getForwardUrls();
+        hasChanged = true;
+      }
+
       if(parseToJson != newConfig.isParseToJson()){
         parseToJson = newConfig.isParseToJson();
         hasChanged = true;
@@ -90,6 +113,10 @@ public class MavlinkConfig extends MavlinkConfigDTO implements Config {
     properties.put("maxInFlightEvents", this.maxInFlightEvents);
     properties.put("topicNameTemplate", this.topicNameTemplate);
     properties.put("parseToJson", this.parseToJson);
+    properties.put("forwardUrls", forwardUrls);
+    properties.put("dedupWindowMillis", dedupWindowMillis );
+    properties.put("dropIfTargetEqualsSource ", dropIfTargetEqualsSource  );
+    properties.put("forwardRawFrames ", forwardRawFrames  );
     return properties;
   }
 }

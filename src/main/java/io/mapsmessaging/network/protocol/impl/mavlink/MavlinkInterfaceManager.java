@@ -40,7 +40,12 @@ import io.mapsmessaging.network.protocol.transformation.TransformationManager;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
+import java.net.SocketAddress;
+import java.net.URI;
+import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
@@ -55,6 +60,8 @@ public class MavlinkInterfaceManager implements SelectorCallback {
   private final MavlinkCodec mavlinkMessageCodec;
 
   private final MavlinkConfig mavlinkConfig;
+  private final List<InetSocketAddress> forwardList;
+
 
 
   public MavlinkInterfaceManager(InterfaceInformation info, EndPoint endPoint) throws IOException {
@@ -74,6 +81,20 @@ public class MavlinkInterfaceManager implements SelectorCallback {
         "mavlink",
         "<registered>"
     );
+    forwardList = new ArrayList<>();
+    String urlList = mavlinkConfig.getForwardUrls();
+    if(urlList != null || !urlList.isBlank()){
+      String[] urls = urlList.split(",");
+      for(String remote:urls){
+        try {
+          URI uri = URI.create(remote);
+          forwardList.add( new InetSocketAddress(uri.getHost(), uri.getPort()));
+        } catch (Exception e) {
+          e.printStackTrace();
+          // log
+        }
+      }
+    }
   }
 
   @Override
@@ -82,16 +103,21 @@ public class MavlinkInterfaceManager implements SelectorCallback {
     if (packet.getFromAddress() == null) {
       return true; // Ignoring packet since unknown client
     }
+
     byte[] raw = new byte[packet.available()];
     int pos = packet.position();
     packet.get(raw);
+    byte[] mavlink = raw;
     packet.position(pos);
     Optional<MavlinkFrameEnvelope>  envelope = mavlinkFrameCodec.tryUnpackHeaderAndPayload(packet.getRawBuffer());
     if(envelope.isPresent()){
       MavlinkFrameEnvelope env = envelope.get();
       MavlinkDeviceKey key = buildKey(packet, env);
       UDPSessionState<MavlinkProtocol> state = findOrCreate(key);
-      if (state.getContext() != null) {
+      if(fromForward(packet)){
+        state.getContext().processPacket(packet);
+      }
+      else if (state.getContext() != null) {
         MavlinkProtocol protocol = state.getContext();
         if(mavlinkConfig.isParseToJson()){
           Map<String, Object> parsed = mavlinkMessageCodec.parsePayload(env.getMessageId(), env.getPayload());
@@ -104,24 +130,11 @@ public class MavlinkInterfaceManager implements SelectorCallback {
           messageName = message.getName();
         }
         protocol.processPacket(env, messageName, raw);
+        forwardPacket(mavlink);
       }
       else{
         System.err.println("Has NO State");
       }
-    }
-    else {
-      StringBuilder sb = new StringBuilder();
-      for(byte b:raw){
-        String t = Long.toHexString((b & 0xff));
-        if(t.length() < 2){
-          sb.append("0x0").append(t);
-        }
-        else{
-          sb.append("0x").append(t);
-        }
-        sb.append(",");
-      }
-      System.err.println("Has NO Envelope : "+sb.toString()+" "+new String(raw));
     }
     selectorTask.register(SelectionKey.OP_READ);
     return true;
@@ -142,10 +155,32 @@ public class MavlinkInterfaceManager implements SelectorCallback {
       }
       catch(IOException e){
         e.printStackTrace();
-        // todo log this
       }
     }
     return state;
+  }
+
+  private boolean fromForward(Packet packet){
+    for(SocketAddress socketAddress:forwardList){
+      if(socketAddress.equals(packet.getFromAddress())){
+        return true;
+      }
+    }
+    return false;
+  }
+
+  private void forwardPacket(byte[] raw){
+    for(SocketAddress socketAddress:forwardList){
+      ByteBuffer byteBuffer = ByteBuffer.wrap(raw);
+      Packet forward = new Packet(byteBuffer);
+      forward.setFromAddress(socketAddress);
+      try {
+        endPoint.sendPacket(forward);
+      } catch (IOException e) {
+        e.printStackTrace();
+        // To Do log
+      }
+    }
   }
 
   @Override

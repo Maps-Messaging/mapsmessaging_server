@@ -25,6 +25,7 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Data
@@ -51,4 +52,22 @@ public class MavlinkConfigDTO extends ProtocolConfigDTO {
   @Schema(description = "Flag to convert incomig mavlink to json", example = "false")
   protected boolean parseToJson = true;
 
+  @Schema(
+      description = "Comma-separated list of MAVLink-compatible UDP endpoints to forward received frames to. " +
+          "Empty or blank disables forwarding.",
+      example = "udp://192.168.1.50:14550/,udp://192.168.1.51:14550/"
+  )
+  protected String forwardUrls = "";
+
+  @Schema(description = "Forward raw MAVLink frames to forwardUrls when forwarding is enabled", example = "true")
+  protected boolean forwardRawFrames = true;
+
+  @Schema(description = "Do not forward a packet back to its source address/port if that address appears in forwardUrls",
+      example = "true")
+  protected boolean dropIfTargetEqualsSource = true;
+
+  @Schema(description = "Optional duplicate suppression window in milliseconds (0 disables). " +
+      "Useful to reduce forwarding loops in multi-router networks.",
+      example = "0")
+  protected int dedupWindowMillis = 0;
 }
