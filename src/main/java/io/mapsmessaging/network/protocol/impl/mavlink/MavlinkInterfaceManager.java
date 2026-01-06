@@ -122,9 +122,14 @@ public class MavlinkInterfaceManager implements SelectorCallback {
       else if (state.getContext() != null) {
         MavlinkProtocol protocol = state.getContext();
         if(mavlinkConfig.isParseToJson()){
-          Map<String, Object> parsed = mavlinkMessageCodec.parsePayload(env.getMessageId(), env.getPayload());
-          JsonObject complete  = MavlinkJsonEnvelopeBuilder.toJson(env, parsed);
-          raw = complete.toString().getBytes();
+          try {
+            Map<String, Object> parsed = mavlinkMessageCodec.parsePayload(env.getMessageId(), env.getPayload());
+            JsonObject complete  = MavlinkJsonEnvelopeBuilder.toJson(env, parsed);
+            raw = complete.toString().getBytes();
+          } catch (IOException e) {
+            selectorTask.register(SelectionKey.OP_READ);
+            return true;
+          }
         }
         MavlinkCompiledMessage message = mavlinkMessageCodec.getRegistry().getCompiledMessagesById().get(env.getMessageId());
         String messageName = "";
@@ -140,6 +145,26 @@ public class MavlinkInterfaceManager implements SelectorCallback {
     }
     selectorTask.register(SelectionKey.OP_READ);
     return true;
+  }
+
+  private void dumpMessage(byte[] payload){
+    StringBuilder sb = new StringBuilder("new int[]{");
+    boolean isFirst = true;
+    for(byte b: payload){
+      if(!isFirst) sb.append(", ");
+      if(isFirst){
+        isFirst= false;
+      }
+      String h = Long.toHexString(b & 0xff );
+      if(h.length()<2){
+        sb.append("0x0").append(h);
+      }
+      else{
+        sb.append("0x").append(h);
+      }
+    }
+    sb.append("},");
+    System.err.println(sb);
   }
 
   private MavlinkDeviceKey buildKey(Packet packet, MavlinkFrameEnvelope envelope){

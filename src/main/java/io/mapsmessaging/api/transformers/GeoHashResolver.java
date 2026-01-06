@@ -26,6 +26,7 @@ import io.mapsmessaging.utilities.GeoHashUtils;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import static io.mapsmessaging.api.message.Filter.getTopicResolver;
 
@@ -108,7 +109,10 @@ public class GeoHashResolver implements InterServerTransformation {
     }
 
     String effectivePrefix = prefix != null ? prefix : "";
-    message.setDestinationName(effectivePrefix + topicSuffix);
+
+    ExpandedIdentityLookup expandedIdentityLookup = new ExpandedIdentityLookup(Map.of("geohash", topicSuffix), identifierResolver);
+    String topicName = TopicNameCompiler.computeTopicName(effectivePrefix, source, expandedIdentityLookup);
+    message.setDestinationName(topicName);
     return message;
   }
 
@@ -190,9 +194,22 @@ public class GeoHashResolver implements InterServerTransformation {
     return null;
   }
 
+  private static double ensureDegress(double value){
+    if (value >= -90.0 && value <= 90.0) {
+      return value;
+    }
+
+    // Scaled MAVLink degrees (1e7)
+    double scaled = value / 1e7;
+    if (scaled >= -90.0 && scaled <= 90.0) {
+      return scaled;
+    }
+    return Double.POSITIVE_INFINITY;
+  }
+
   private static double[] normalizeUnits(double latitude, double longitude, String units) {
     if (units == null || "deg".equalsIgnoreCase(units)) {
-      return new double[]{latitude, longitude};
+      return new double[]{ensureDegress(latitude), ensureDegress(longitude)};
     }
     if ("rad".equalsIgnoreCase(units)) {
       return new double[]{Math.toDegrees(latitude), Math.toDegrees(longitude)};

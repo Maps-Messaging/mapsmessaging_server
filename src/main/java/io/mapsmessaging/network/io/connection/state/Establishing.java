@@ -20,6 +20,7 @@
 package io.mapsmessaging.network.io.connection.state;
 
 import io.mapsmessaging.api.features.QualityOfService;
+import io.mapsmessaging.api.transformers.InterServerPipelineTransformation;
 import io.mapsmessaging.api.transformers.InterServerTransformation;
 import io.mapsmessaging.configuration.ConfigurationProperties;
 import io.mapsmessaging.dto.rest.analytics.StatisticsConfigDTO;
@@ -33,6 +34,7 @@ import io.mapsmessaging.selector.operators.ParserExecutor;
 import io.mapsmessaging.utilities.filtering.NamespaceFilters;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -66,20 +68,22 @@ public class Establishing extends State {
       boolean schema = property.isIncludeSchema();
       NamespaceFilters filters = property.getNamespaceFilters();
       QualityOfService qos = property.getQualityOfService();
-      InterServerTransformation interServerTransformation = null;
-      Map<String, Object> obj = property.getTransformer();
-      if (obj != null && !obj.isEmpty()) {
-        interServerTransformation = TransformerManager.getInstance().get(new ConfigurationProperties(obj));
+      List<InterServerTransformation> interServerTransformation = new ArrayList<>();
+      List<Map<String, Object>> list = property.getTransformer();
+      if (list != null && !list.isEmpty()) {
+        for(Map<String, Object> obj: list) {
+          interServerTransformation.add(TransformerManager.getInstance().get(new ConfigurationProperties(obj)));
+        }
       }
-
+      InterServerPipelineTransformation pipeline = new InterServerPipelineTransformation(interServerTransformation);
       try {
         if (direction.equalsIgnoreCase("pull")) {
-          subscribeRemote(remote, local, qos, selector, interServerTransformation, schema, property.getStatistics());
+          subscribeRemote(remote, local, qos, selector, pipeline, schema, property.getStatistics());
         } else if (direction.equalsIgnoreCase("push")) {
           if (remote.endsWith("#")) {
             remote = remote.substring(0, remote.length() - 1);
           }
-          subscribeLocal(local, remote, selector, qos, interServerTransformation, schema, filters, property.getStatistics());
+          subscribeLocal(local, remote, selector, qos, pipeline, schema, filters, property.getStatistics());
         }
         endPointConnection.getLogger().log(ServerLogMessages.END_POINT_CONNECTION_SUBSCRIPTION_ESTABLISHED, direction, local, remote);
       } catch (IOException ioException) {

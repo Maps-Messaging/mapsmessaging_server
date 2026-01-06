@@ -21,7 +21,6 @@ package io.mapsmessaging.network.protocol.impl.mavlink;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
 import io.mapsmessaging.mavlink.MavlinkFrameEnvelope;
 
 import java.util.Base64;
@@ -29,7 +28,7 @@ import java.util.Map;
 
 public final class MavlinkJsonEnvelopeBuilder {
 
-  private static final Gson GSON = new GsonBuilder().serializeNulls().create();
+  private static final Gson GSON = GsonFactory.createStrictJsonWithSafeFloats();
 
   public static JsonObject toJson(
       MavlinkFrameEnvelope envelope,

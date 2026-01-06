@@ -28,6 +28,7 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 
+import java.util.List;
 import java.util.Map;
 
 @Data
@@ -52,7 +53,7 @@ public class LinkConfigDTO extends BaseConfigDTO {
   protected boolean includeSchema;
 
   @Schema(description = "Transformer configuration map")
-  protected Map<String, Object> transformer;
+  protected List<Map<String, Object>> transformer;
 
   @Schema(description = "Configure a statistic analysis of the data flowing through")
   protected StatisticsConfigDTO statistics;

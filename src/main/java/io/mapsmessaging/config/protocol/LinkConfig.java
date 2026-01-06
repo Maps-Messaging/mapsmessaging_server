@@ -28,6 +28,10 @@ import io.mapsmessaging.dto.rest.config.BaseConfigDTO;
 import io.mapsmessaging.dto.rest.config.protocol.LinkConfigDTO;
 import io.mapsmessaging.utilities.filtering.NamespaceFilters;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+
 public class LinkConfig extends LinkConfigDTO implements Config {
 
   public LinkConfig(ConfigurationProperties config) {
@@ -39,9 +43,20 @@ public class LinkConfig extends LinkConfigDTO implements Config {
     qualityOfService = QualityOfService.getInstance(qos % 3);
     this.includeSchema = config.getBooleanProperty("include_schema", false);
     Object obj = config.get("transformer");
-    if (obj instanceof ConfigurationProperties tfObj) {
-      this.transformer = ConfigHelper.buildMap(tfObj);
+    List<Map<String, Object>> transfomers = new ArrayList<>();
+    if(obj instanceof List confList){
+      for(Object ob: confList ){
+        if (ob instanceof ConfigurationProperties tfObj) {
+          transfomers.add(ConfigHelper.buildMap(tfObj));
+        }
+      }
     }
+    else{
+      if (obj instanceof ConfigurationProperties tfObj) {
+        transfomers.add(ConfigHelper.buildMap(tfObj));
+      }
+    }
+    this.transformer= transfomers;
     this.namespaceFilters = new NamespaceFilters(config);
     Object analysticsConfig = config.get("analystics");
     if (analysticsConfig instanceof ConfigurationProperties tfObj) {
@@ -62,7 +77,7 @@ public class LinkConfig extends LinkConfigDTO implements Config {
     config.put("include_schema", this.includeSchema);
     config.put("qos", this.qualityOfService.getLevel());
     if (transformer != null) {
-      config.put("transformer", new ConfigurationProperties(this.transformer));
+      //config.put("transformer", new ConfigurationProperties(this.transformer));
     }
     if(namespaceFilters != null) {
       config.put("namespaceFilters", namespaceFilters.toConfigurationProperties());
@@ -113,9 +128,9 @@ public class LinkConfig extends LinkConfigDTO implements Config {
       }
 
 
-      if (ConfigHelper.updateMap(this.transformer, newConfig.getTransformer())) {
-        hasChanged = true;
-      }
+     // if (ConfigHelper.updateMap(this.transformer, newConfig.getTransformer())) {
+    //    hasChanged = true;
+   //   }
     }
     return hasChanged;
   }

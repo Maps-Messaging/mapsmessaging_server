@@ -33,6 +33,7 @@ import io.mapsmessaging.dto.rest.analytics.StatisticsConfigDTO;
 import io.mapsmessaging.dto.rest.config.protocol.ProtocolConfigDTO;
 import io.mapsmessaging.dto.rest.protocol.ProtocolInformationDTO;
 import io.mapsmessaging.engine.destination.subscription.SubscriptionContext;
+import io.mapsmessaging.engine.destination.subscription.set.DestinationSet;
 import io.mapsmessaging.logging.ServerLogMessages;
 import io.mapsmessaging.network.admin.ProtocolJMX;
 import io.mapsmessaging.network.io.EndPoint;
@@ -345,7 +346,18 @@ public abstract class Protocol implements SelectorCallback, MessageListener, Tim
   }
 
   public InterServerTransformation destinationTransformationLookup(String name) {
-    return destinationTransformerMap.get(name);
+    InterServerTransformation transformation = destinationTransformerMap.get(name);
+    if(transformation == null){
+      for(Map.Entry<String, InterServerTransformation> entry:destinationTransformerMap.entrySet()){
+        if((entry.getKey().contains("+") || entry.getKey().contains("#"))
+            && DestinationSet.matches(entry.getKey(), name)){
+          transformation = entry.getValue();
+          destinationTransformerMap.put(name, transformation);
+          break;
+        }
+      }
+    }
+    return transformation;
   }
 
   protected SubscriptionContextBuilder createSubscriptionContextBuilder(String resource, String selector, QualityOfService qos, int receiveMax) {

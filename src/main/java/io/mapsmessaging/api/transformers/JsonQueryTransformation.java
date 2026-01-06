@@ -89,9 +89,7 @@ public class JsonQueryTransformation implements InterServerTransformation {
     if (program == null) {
       return message;
     }
-
     MessageFormatter messageFormatter = locateMessageFormatter(source, message);
-
     JsonObject jsonObject;
     if (messageFormatter != null) {
       try {
@@ -101,15 +99,14 @@ public class JsonQueryTransformation implements InterServerTransformation {
         return message; // fail safe: don't drop on formatter failure
       }
     } else {
-      jsonObject = JsonParser.parseString(
-          new String(message.getMessage().getOpaqueData(), StandardCharsets.UTF_8)
-      ).getAsJsonObject();
+      jsonObject = JsonParser.parseString(new String(message.getMessage().getOpaqueData(), StandardCharsets.UTF_8)).getAsJsonObject();
     }
 
     JsonElement element = program.apply(jsonObject);
     if (element != null && !element.isJsonNull()) {
       MessageBuilder messageBuilder = new MessageBuilder(message.getMessage());
       messageBuilder.setOpaqueData(element.toString().getBytes(StandardCharsets.UTF_8));
+      messageBuilder.setSchemaId(SchemaManager.DEFAULT_JSON_SCHEMA.toString());
       message.setMessage(messageBuilder.build());
       return message;
     }
@@ -153,7 +150,13 @@ public class JsonQueryTransformation implements InterServerTransformation {
 
   @Override
   public InterServerTransformation build(ConfigurationProperties properties) {
-    String queryText = properties != null ? properties.getProperty(QUERY_PROPERTY, null) : null;
+    String queryText;
+    if(properties == null) return new JsonQueryTransformation(null);
+    if(!properties.containsKey(QUERY_PROPERTY) && properties.containsKey("parameters")){
+      properties = (ConfigurationProperties) properties.get("parameters");
+
+    }
+    queryText = properties != null ? properties.getProperty(QUERY_PROPERTY, null) : null;
     if (queryText == null || queryText.isBlank()) {
       return new JsonQueryTransformation(null); // true no-op, avoids re-encoding payload
     }
