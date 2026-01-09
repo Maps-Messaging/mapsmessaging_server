@@ -44,7 +44,10 @@ public class DestinationConfigDTO extends BaseConfigDTO {
   @Schema(description = "Namespace for destination", example = "namespace")
   protected String namespace;
 
-  @Schema(description = "Type of destination", example = "type")
+  @Schema(
+      description = "Type of destination", example = "type",
+      allowableValues = {"Partition", "Memory", "MemoryTier"}
+  )
   protected String type;
 
   @Schema(description = "Format configuration")
@@ -56,7 +59,12 @@ public class DestinationConfigDTO extends BaseConfigDTO {
   @Schema(description = "Namespace mapping", example = "mappedNamespace")
   protected String namespaceMapping;
 
-  @Schema(description = "Auto-pause timeout in seconds", example = "300")
+  @Schema(
+      description = "Auto-pause timeout in seconds",
+      example = "300",
+      minimum = "0",
+      maximum = "86400"
+  )
   protected int autoPauseTimeout;
 
   @Schema(description= "" )

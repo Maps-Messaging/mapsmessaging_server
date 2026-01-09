@@ -19,6 +19,7 @@
 
 package io.mapsmessaging.dto.rest.schema;
 
+import io.mapsmessaging.dto.rest.config.BaseConfigDTO;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -30,7 +31,7 @@ import lombok.NoArgsConstructor;
     title = "Schema Manager config",
     description = "Configures the schema manager on where it can find and store schemas")
 @Data
-public class SchemaManagerConfigDTO {
+public class SchemaManagerConfigDTO extends BaseConfigDTO {
 
   @Schema(
       description = "Type of schema repository used",

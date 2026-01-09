@@ -31,7 +31,11 @@ import lombok.NoArgsConstructor;
 @Schema(description = "Cache Configuration DTO")
 public class CacheConfigDTO extends BaseConfigDTO {
 
-  @Schema(description = "Type of cache", example = "WeakReference")
+  @Schema(
+      description = "Type of cache",
+      example = "WeakReference",
+      allowableValues = {"None","WeakReference", "JCS"}
+  )
   protected String type;
 
   @Schema(description = "Whether write-through caching is enabled", example = "true")

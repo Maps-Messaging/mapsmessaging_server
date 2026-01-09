@@ -69,13 +69,29 @@ public class EndPointConfigDTO extends BaseConfigDTO {
   @Schema(description = "Whether the endpoint is discoverable", example = "false")
   protected boolean discoverable;
 
-  @Schema(description = "Number of selector threads", example = "2")
+  @Schema(
+      description = "Number of selector threads",
+      example = "2",
+      minimum = "1",
+      maximum = "10000"
+
+  )
   protected int selectorThreadCount;
 
-  @Schema(description = "Server read buffer size in bytes", example = "10240")
+  @Schema(
+      description = "Server read buffer size in bytes",
+      example = "10240",
+      minimum = "1024",
+      maximum = "104857600"
+  )
   protected long serverReadBufferSize;
 
-  @Schema(description = "Server write buffer size in bytes", example = "10240")
+  @Schema(
+      description = "Server write buffer size in bytes",
+      example = "10240",
+      minimum = "1024",
+      maximum = "104857600"
+  )
   protected long serverWriteBufferSize;
 
   @Schema(
@@ -90,6 +106,11 @@ public class EndPointConfigDTO extends BaseConfigDTO {
   )
   protected String allowedProxyHosts;
 
-  @Schema(description = "Time to wait for a client to establish the connection, in milliseconds", example = "5000")
+  @Schema(
+      description = "Time to wait for a client to establish the connection, in milliseconds",
+      example = "5000",
+      minimum = "1000",
+      maximum = "120000"
+  )
   protected long connectionTimeout;
 }

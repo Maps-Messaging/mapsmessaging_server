@@ -19,6 +19,7 @@
 
 package io.mapsmessaging.dto.rest.auth;
 
+import io.mapsmessaging.dto.rest.config.BaseConfigDTO;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -32,7 +33,7 @@ import java.util.Map;
 @Schema(
     title = "Security Manager",
     description = "Mapping between auth config and JAAS configurations")
-public class SecurityManagerDTO {
+public class SecurityManagerDTO extends BaseConfigDTO {
 
   @Schema(
       title = "Mapping",

@@ -34,6 +34,14 @@ import java.util.List;
 @Schema(description = "Serial Device Bus Configuration DTO")
 public class SerialBusConfigDTO extends DeviceBusConfigDTO {
 
+  @Schema(
+      description = "Time to scan for new serial devices",
+      example = "60000",
+      minimum = "5000",
+      maximum = "600000"
+  )
+  protected int scanTime;
+
   @Schema(description = "Name of the serial bus managemnt", example = "serial")
   protected String name;
 

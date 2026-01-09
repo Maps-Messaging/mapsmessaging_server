@@ -33,16 +33,37 @@ public class LoRaConfigDTO extends EndPointConfigDTO {
   @Schema(description = "Name of the LoRa device", example = "LoRaNode1")
   protected String name;
 
-  @Schema(description = "Power setting for the device", example = "14")
+  @Schema(
+      description = "Power setting for the device",
+      example = "14",
+      minimum = "0",
+      maximum = "16"
+  )
   protected int power;
 
-  @Schema(description = "Operating frequency of the device in MHz", example = "868.0")
+  @Schema(
+      description = "Operating frequency of the device in MHz",
+      example = "868.0",
+      allowableValues = {"863", "902", "915", "470", "923", "865", "920"},
+      minimum = "863",
+      maximum = "923"
+  )
   protected float frequency;
 
-  @Schema(description = "Base address to register for, 1-254", example = "2")
+  @Schema(
+      description = "Base address to register for, 1-254",
+      example = "2",
+      minimum = "1",
+      maximum = "254"
+  )
   protected int address;
 
-  @Schema(description = "Transmission rate to limit the number of packets/second, 0 - unlimited, else per second", example = "5")
+  @Schema(
+      description = "Transmission rate to limit the number of packets/second, 0 - unlimited, else per second",
+      example = "5",
+      minimum = "0",
+      maximum = "1024"
+  )
   protected int transmissionRate;
 
   @Schema(description = "Optional hex based 16 byte key", example = "0x0 0x0 0x0 0x0 0x0 0x0 0x0 0x0 0x0 0x0 0x0 0x0 0x0 0x0 0x0 0x0")

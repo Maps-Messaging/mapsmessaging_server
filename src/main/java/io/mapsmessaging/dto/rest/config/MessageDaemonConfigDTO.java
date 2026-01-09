@@ -30,22 +30,47 @@ import lombok.NoArgsConstructor;
 @Schema(description = "Message Daemon Configuration DTO")
 public class MessageDaemonConfigDTO extends BaseConfigDTO {
 
-  @Schema(description = "Interval for delayed publish in milliseconds", example = "1000")
+  @Schema(
+      description = "Interval for delayed publish in milliseconds",
+      example = "1000",
+      minimum = "500",
+      maximum = "60000"
+  )
   protected int delayedPublishInterval;
 
-  @Schema(description = "Number of session pipelines", example = "48")
+  @Schema(
+      description = "Number of session pipelines",
+      example = "48",
+      minimum = "1",
+      maximum = "255"
+  )
   protected int sessionPipeLines;
 
-  @Schema(description = "Transaction expiry in milliseconds", example = "3600000")
+  @Schema(
+      description = "Transaction expiry in milliseconds",
+      example = "3600000",
+      minimum = "60000",
+      maximum = "2419200000"
+  )
   protected long transactionExpiry;
 
-  @Schema(description = "Transaction scan interval in milliseconds", example = "5000")
+  @Schema(
+      description = "Transaction scan interval in milliseconds",
+      example = "5000",
+      minimum = "1000",
+      maximum = "30000"
+  )
   protected long transactionScan;
 
   @Schema(description = "Compression algorithm name", example = "None", allowableValues = {"inflator", "none"})
   protected String compressionName;
 
-  @Schema(description = "Minimum size for message compression", example = "1024")
+  @Schema(
+      description = "Minimum size for message compression",
+      example = "1024",
+      minimum = "128",
+      maximum = "4096"
+  )
   protected int compressMessageMinSize;
 
   @Schema(description = "On rollback of events if we maintain the priority or bump the priority of the event", example = "maintain", allowableValues = {"maintain", "increment"})
@@ -72,10 +97,20 @@ public class MessageDaemonConfigDTO extends BaseConfigDTO {
   @Schema(description = "Tag metadata for messages", example = "false")
   protected boolean tagMetaData;
 
-  @Schema(description = "Latitude for the daemon location", example = "0.0")
+  @Schema(
+      description = "Latitude for the daemon location",
+      example = "0.0",
+      minimum = "-90",
+      maximum = "90"
+  )
   protected double latitude;
 
-  @Schema(description = "Longitude for the daemon location", example = "0.0")
+  @Schema(
+      description = "Longitude for the daemon location",
+      example = "0.0",
+      minimum = "-180",
+      maximum = "180"
+  )
   protected double longitude;
 
   @Schema(description = "Send anonymous server usage statistics to Maps Messaging", example = "false")

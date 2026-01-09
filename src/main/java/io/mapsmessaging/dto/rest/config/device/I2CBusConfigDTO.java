@@ -32,7 +32,12 @@ import java.util.List;
 @Schema(description = "DTO for I2C Bus configuration properties")
 public class I2CBusConfigDTO extends DeviceBusConfigDTO {
 
-  @Schema(description = "Bus number for the I2C device")
+  @Schema(
+      description = "Bus number for the I2C device",
+      example = "1",
+      minimum = "0",
+      maximum = "255"
+  )
   protected int bus;
 
   @Schema(description = "Trigger configuration for the I2C bus")

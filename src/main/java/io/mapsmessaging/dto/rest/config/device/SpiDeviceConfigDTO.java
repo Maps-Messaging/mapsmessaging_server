@@ -33,22 +33,45 @@ import java.util.Map;
 @Schema(description = "SPI Device Configuration DTO")
 public class SpiDeviceConfigDTO extends BaseConfigDTO {
 
-  @Schema(description = "Device address on the SPI bus", example = "1")
+  @Schema(
+      description = "Device address on the SPI bus",
+      example = "1",
+      minimum = "0",
+      maximum = "255"
+  )
   protected int address;
 
-  @Schema(description = "Name of the SPI device", example = "TemperatureSensor")
+  @Schema(
+      description = "Name of the SPI device",
+      example = "TemperatureSensor"
+  )
   protected String name;
 
   @Schema(description = "Selector used for the device", example = "tempSelector")
   protected String selector;
 
-  @Schema(description = "SPI bus number", example = "0")
+  @Schema(
+      description = "SPI bus number",
+      example = "0",
+      minimum = "0",
+      maximum = "255"
+  )
   protected int spiBus;
 
-  @Schema(description = "SPI mode for the device", example = "1")
+  @Schema(
+      description = "SPI mode for the device",
+      example = "1",
+      minimum = "0",
+      maximum = "255"
+  )
   protected int spiMode;
 
-  @Schema(description = "Chip select line for the SPI device", example = "0")
+  @Schema(
+      description = "Chip select line for the SPI device",
+      example = "0",
+      minimum = "0",
+      maximum = "255"
+  )
   protected int spiChipSelect;
 
   @Schema(description="Configuration map")

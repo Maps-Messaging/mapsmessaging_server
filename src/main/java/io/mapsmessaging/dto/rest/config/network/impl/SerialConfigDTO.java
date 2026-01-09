@@ -36,21 +36,28 @@ public class SerialConfigDTO extends EndPointConfigDTO {
   @Schema(
       description = "Baud rate for the serial connection",
       example = "9600",
-      allowableValues = {"110", "300", "600", "1200", "2400", "4800", "9600", "14400", "19200", "28800", "38400", "57600", "115200", "230400", "460800", "921600"}
+      allowableValues = {"110", "300", "600", "1200", "2400", "4800", "9600", "14400", "19200", "28800", "38400", "57600", "115200", "230400", "460800", "921600"},
+      minimum = "300",
+      maximum ="921600"
   )
   protected int baudRate;
 
   @Schema(
       description = "Number of data bits in the serial connection",
       example = "8",
-      allowableValues = {"5", "6", "7", "8"}
+      allowableValues = {"5", "6", "7", "8"},
+      minimum = "5",
+      maximum = "8"
+
   )
   protected int dataBits;
 
   @Schema(
       description = "Number of stop bits in the serial connection",
       example = "1",
-      allowableValues = {"1", "1.5", "2"}
+      allowableValues = {"1", "1.5", "2"},
+      minimum = "1",
+      maximum = "2"
   )
   protected String stopBits;
 
@@ -64,20 +71,41 @@ public class SerialConfigDTO extends EndPointConfigDTO {
   @Schema(
       description = "Flow control setting for the serial connection",
       example = "1",
-      allowableValues = {"0", "1", "2", "3"}
+      allowableValues = {"0", "1", "2", "3"},
+      minimum = "0",
+      maximum = "3"
+
   )
   protected int flowControl;
 
-  @Schema(description = "Read timeout in milliseconds", example = "60000")
+  @Schema(
+      description = "Read timeout in milliseconds",
+      example = "60000",
+      minimum = "1000",
+      maximum = "600000"
+  )
   protected int readTimeOut;
 
-  @Schema(description = "Write timeout in milliseconds", example = "60000")
+  @Schema(
+      description = "Write timeout in milliseconds",
+      example = "60000",
+      minimum = "1000",
+      maximum = "600000"
+  )
   protected int writeTimeOut;
 
-  @Schema(description = "Buffer size in bytes", example = "262144")
+  @Schema(
+      description = "Buffer size in bytes",
+      example = "262144",
+      minimum = "1024",
+      maximum = "1048576"
+  )
   protected int bufferSize;
 
-  @Schema(description = "Serial number for the device, optional", example = "262144")
+  @Schema(description =
+      "Serial number for the device, optional",
+      example = "262144"
+  )
   protected String serialNo;
 
 }

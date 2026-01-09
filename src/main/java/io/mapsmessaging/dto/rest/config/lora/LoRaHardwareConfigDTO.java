@@ -26,15 +26,36 @@ public class LoRaHardwareConfigDTO {
   @Schema(description = "Radio type of the LoRa device", example = "SX1276")
   protected String radio;
 
-  @Schema(description = "Chip Select (CS) pin number", example = "10")
+  @Schema(
+      description = "Chip Select (CS) pin number",
+      example = "10",
+      minimum = "0",
+      maximum = "255"
+  )
   protected int cs;
 
-  @Schema(description = "IRQ pin number", example = "7")
+  @Schema(
+      description = "IRQ pin number",
+      example = "7",
+      minimum = "0",
+      maximum = "255"
+  )
   protected int irq;
 
-  @Schema(description = "Reset (RST) pin number", example = "3")
+  @Schema(
+      description = "Reset (RST) pin number",
+      example = "3",
+      minimum = "0",
+      maximum = "255"
+  )
   protected int rst;
 
-  @Schema(description = "CAD timeout setting", example = "500")
+  @Schema(
+      description = "CAD timeout setting",
+      example = "500",
+      minimum = "1",
+      maximum = "512"
+
+  )
   protected int cadTimeout;
 }

@@ -35,13 +35,29 @@ public class LoRaDeviceConfigDTO extends BaseConfigDTO {
   @Schema(description = "Name of the LoRa device", example = "LoRaNode1")
   protected String name;
 
-  @Schema(description = "Power setting for the device", example = "14")
+  @Schema(
+      description = "Power setting for the device",
+      example = "14",
+      minimum = "0",
+      maximum = "16"
+  )
   protected int power;
 
-  @Schema(description = "Operating frequency of the device in MHz", example = "868.0")
+  @Schema(
+      description = "Operating frequency of the device in MHz",
+      example = "868.0",
+      allowableValues = {"863", "902", "915", "470", "923", "865", "920"},
+      minimum = "863",
+      maximum = "923"
+  )
   protected float frequency;
 
-  @Schema(description = "Base address to register for, 1-254", example = "2")
+  @Schema(
+      description = "Base address to register for, 1-254",
+      example = "2",
+      minimum = "1",
+      maximum = "254"
+  )
   protected int address;
 
   protected LoRaHardwareConfigDTO hardware;

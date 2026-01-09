@@ -58,10 +58,20 @@ public class EndPointServerConfigDTO extends BaseConfigDTO {
   @Schema(description = "Authentication realm", example = "defaultRealm")
   protected String authenticationRealm;
 
-  @Schema(description = "Backlog for the endpoint server", example = "100")
+  @Schema(
+      description = "Backlog for the endpoint server",
+      example = "100",
+      minimum = "1",
+      maximum = "10000"
+  )
   protected int backlog;
 
-  @Schema(description = "Selector task wait time", example = "10")
+  @Schema(
+      description = "Selector task wait time",
+      example = "10",
+      minimum = "1",
+      maximum = "1000"
+  )
   protected int selectorTaskWait;
 
   public ProtocolConfigDTO getProtocolConfig(String protocol) {

@@ -31,7 +31,11 @@ import lombok.NoArgsConstructor;
 @Schema(description = "DTO for I2C Device configuration properties")
 public class I2CDeviceConfigDTO extends BaseConfigDTO {
 
-  @Schema(description = "Address of the I2C device")
+  @Schema(description = "Address of the I2C device",
+      example = "45",
+      minimum = "0",
+      maximum = "255"
+  )
   protected int address;
 
   @Schema(description = "Name of the I2C device")

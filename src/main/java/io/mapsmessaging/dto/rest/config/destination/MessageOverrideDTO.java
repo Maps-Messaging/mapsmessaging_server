@@ -35,7 +35,12 @@ import java.util.Map;
 @Schema(description = "Message override configuration DTO")
 public class MessageOverrideDTO extends BaseConfigDTO {
 
-  @Schema(description = "Override message expiry in milliseconds", example = "60000")
+  @Schema(
+      description = "Override message expiry in milliseconds",
+      example = "60000",
+      minimum = "0",        // Never
+      maximum = "604800000" // 1 Week
+  )
   protected Long expiry;
 
   @Schema(description = "Override message priority", example = "NORMAL")
@@ -47,7 +52,11 @@ public class MessageOverrideDTO extends BaseConfigDTO {
   @Schema(description = "Override response topic", example = "/default/response")
   protected String responseTopic;
 
-  @Schema(description = "Override content type", example = "application/json")
+  @Schema(
+      description = "Override content type",
+      example = "application/json",
+      format = "media-type"
+  )
   protected String contentType;
 
   @Schema(description = "Override schema ID", example = "default-schema-id")

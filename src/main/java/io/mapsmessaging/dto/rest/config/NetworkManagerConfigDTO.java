@@ -40,7 +40,12 @@ public class NetworkManagerConfigDTO extends BaseConfigDTO {
   @Schema(description = "Scan for network changes", example = "true")
   protected boolean scanNetworkChanges;
 
-  @Schema(description = "Scan interval in milliseconds", example = "60000")
+  @Schema(
+      description = "Scan for new network interfaces interval in milliseconds",
+      example = "60000",
+      minimum = "10000",
+      maximum = "600000"
+  )
   protected int scanInterval;
 
   @Schema(description = "List of endpoint server configurations")
