@@ -20,6 +20,7 @@
 package io.mapsmessaging.config;
 
 import io.mapsmessaging.configuration.ConfigurationProperties;
+import io.mapsmessaging.dto.rest.config.LicenseManagerConfigDTO;
 import io.mapsmessaging.license.FeatureManager;
 import io.mapsmessaging.utilities.configuration.ConfigurationManager;
 import lombok.Getter;
@@ -29,10 +30,7 @@ import java.io.IOException;
 
 @Getter
 @NoArgsConstructor
-public class LicenseConfig implements ConfigManager {
-
-  private String clientName;
-  private String clientSecret;
+public class LicenseConfig extends LicenseManagerConfigDTO implements ConfigManager {
 
   public static LicenseConfig getInstance() {
     return ConfigurationManager.getInstance().getConfiguration(LicenseConfig.class);

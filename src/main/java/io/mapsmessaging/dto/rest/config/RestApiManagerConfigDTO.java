@@ -21,6 +21,8 @@ package io.mapsmessaging.dto.rest.config;
 
 import io.mapsmessaging.config.network.impl.TlsConfig;
 import io.mapsmessaging.config.rest.StaticConfig;
+import io.mapsmessaging.dto.rest.config.network.impl.TlsConfigDTO;
+import io.mapsmessaging.dto.rest.config.rest.StaticConfigDTO;
 import io.mapsmessaging.rest.handler.CorsHeaders;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
@@ -42,34 +44,88 @@ public class RestApiManagerConfigDTO extends BaseConfigDTO {
   @Schema(description = "Hostnames for binding", example = "0.0.0.0")
   protected String hostnames;
 
-  @Schema(description = "Port for the REST API", example = "8080")
+  @Schema(
+      description = "Port for the REST API",
+      example = "8080",
+      defaultValue = "8080",
+      minimum = "1000",
+      maximum = "65536"
+  )
   protected int port;
 
   @Schema(description = "Enable Caching of rest responses", example = "true")
   protected boolean enableCache;
 
-  @Schema(description = "Minimum number of network threads", example = "10")
+  @Schema(
+      description = "Minimum number of network threads",
+      example = "10",
+      defaultValue = "2",
+      minimum = "1",
+      maximum = "1000"
+  )
   protected int minThreads;
 
-  @Schema(description = "Maximum number of network threads", example = "50")
+  @Schema(
+      description = "Maximum number of network threads",
+      example = "5",
+      defaultValue = "5",
+      minimum = "1",
+      maximum = "1000"
+  )
   protected int maxThreads;
 
-  @Schema(description = "Thread queue limit", example = "100")
+  @Schema(
+      description = "Thread queue limit",
+      example = "100",
+      minimum = "10",
+      maximum = "1000",
+      defaultValue = "100"
+  )
   protected int threadQueueLimit;
 
-  @Schema(description = "Selector threads", example = "2")
+  @Schema(
+      description = "Selector threads",
+      example = "2",
+      minimum = "1",
+      maximum = "1000",
+      defaultValue = "2"
+  )
   protected int selectorThreads;
 
-  @Schema(description = "Max outstanding events per destination", example="10")
+  @Schema(
+      description = "Max outstanding events per destination",
+      example="10",
+      minimum = "1",
+      maximum = "1000",
+      defaultValue = "10"
+  )
   protected int maxEventsPerDestination;
 
-  @Schema(description = "Cache element life time in ms", example = "10000")
+  @Schema(
+      description = "Cache element life time in ms",
+      example = "10000",
+      minimum = "1000",
+      maximum = "600000",
+      defaultValue = "60000"
+  )
   protected long cacheLifetime;
 
-  @Schema(description = "Cache element cleanup time in ms", example = "5000")
+  @Schema(
+      description = "Cache element cleanup time in ms",
+      example = "5000",
+      defaultValue = "5000",
+      maximum = "600000",
+      minimum = "1000"
+  )
   protected long cacheCleanup;
 
-  @Schema(description = "Session inactive timeout in ms", example = "180000")
+  @Schema(
+      description = "Session inactive timeout in ms",
+      example = "180000",
+      minimum = "60000",
+      maximum = "600000",
+      defaultValue = "180000"
+  )
   protected int inactiveTimeout;
 
   @Schema(description = "If set, enables the /application.wadl end point", example = "false")
@@ -94,10 +150,10 @@ public class RestApiManagerConfigDTO extends BaseConfigDTO {
   protected boolean enableDestinationManagement;
 
   @Schema(description = "TLS configuration", implementation = TlsConfig.class)
-  protected TlsConfig tlsConfig;
+  protected TlsConfigDTO tlsConfig;
 
   @Schema(description = "Static configuration", implementation = StaticConfig.class)
-  protected StaticConfig staticConfig;
+  protected StaticConfigDTO staticConfig;
 
   @Schema(description = "CORS headers", implementation = CorsHeaders.class)
   protected CorsHeaders corsHeaders;

@@ -42,7 +42,12 @@ public class DeviceBusConfigDTO extends BaseConfigDTO {
   @Schema(description = "Specifies if auto-scan is enabled")
   protected boolean autoScan;
 
-  @Schema(description = "Scan time interval in milliseconds")
+  @Schema(
+      description = "1-wire bus Scan time interval in milliseconds",
+      example = "30000",
+      minimum = "1000",
+      maximum = "600000"
+  )
   protected int scanTime;
 
   @Schema(description = "Filter configuration for the device bus")

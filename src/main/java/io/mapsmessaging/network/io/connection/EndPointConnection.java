@@ -20,6 +20,7 @@
 package io.mapsmessaging.network.io.connection;
 
 import io.mapsmessaging.config.network.EndPointConnectionServerConfig;
+import io.mapsmessaging.dto.rest.config.network.EndPointConnectionServerConfigDTO;
 import io.mapsmessaging.dto.rest.config.network.EndPointServerConfigDTO;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
@@ -55,7 +56,7 @@ public class EndPointConnection extends EndPointServerStatus {
   @Getter
   private final Logger logger;
   @Getter
-  private final EndPointConnectionServerConfig properties;
+  private final EndPointConnectionServerConfigDTO properties;
   @Getter
   private final EndPointConnectionFactory endPointConnectionFactory;
   @Getter
@@ -78,7 +79,7 @@ public class EndPointConnection extends EndPointServerStatus {
   private State establishingState;
 
   public EndPointConnection(
-      EndPointURL url, EndPointConnectionServerConfig properties,
+      EndPointURL url, EndPointConnectionServerConfigDTO properties,
       EndPointConnectionFactory connectionFactory, SelectorLoadManager selectorLoadManager, EndPointConnectionHostJMX manager) {
     super(url, StatsFactory.getDefaultType());
     this.properties = properties;

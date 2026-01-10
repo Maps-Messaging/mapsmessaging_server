@@ -34,7 +34,11 @@ public class KeyStoreConfigDTO extends BaseConfigDTO {
   @Schema(description = "Alias used in the key store", example = "myKeyAlias")
   protected String alias;
 
-  @Schema(description = "Type of the key store", example = "JKS")
+  @Schema(
+      description = "Type of the key store",
+      example = "JKS",
+      allowableValues = {"JKS", "PKCS11", "PKCS12", "JCEKS", "BKS", "UBER", "BCFKS"}
+  )
   protected String type;
 
   @Schema(description = "Name of the security provider", example = "SunJSSE")

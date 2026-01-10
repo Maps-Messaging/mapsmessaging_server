@@ -36,10 +36,22 @@ public class MLModelManagerDTO extends BaseConfigDTO {
   @Schema(description = "Enable in-memory caching of models")
   protected boolean enableCaching;
 
-  @Schema(description = "Maximum number of models to cache")
+  @Schema(
+      description = "Maximum number of models to cache",
+      defaultValue = "10000",
+      example = "10000",
+      minimum = "1",
+      maximum = "1000000"
+  )
   protected int cacheSize;
 
-  @Schema(description = "Model cache expiry time in minutes")
+  @Schema(
+      description = "Model cache expiry time in minutes",
+      defaultValue = "2",
+      minimum = "1",
+      maximum = "60",
+      example = "2"
+  )
   protected int cacheExpiryMinutes;
 
   @Schema(description = "Models to preload at startup")

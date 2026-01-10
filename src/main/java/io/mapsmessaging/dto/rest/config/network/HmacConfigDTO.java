@@ -34,7 +34,12 @@ public class HmacConfigDTO extends BaseConfigDTO {
   @Schema(description = "The host for the HMAC configuration", example = "example.com")
   protected String host;
 
-  @Schema(description = "The port used for HMAC communication", example = "8080")
+  @Schema(
+      description = "The port used for HMAC communication",
+      example = "8080",
+      minimum = "1000",
+      maximum = "65536"
+  )
   protected int port;
 
   @Schema(description = "The secret key for HMAC operations", example = "mySecretKey")

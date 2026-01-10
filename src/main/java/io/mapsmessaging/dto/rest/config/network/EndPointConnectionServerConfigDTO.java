@@ -20,6 +20,7 @@
 package io.mapsmessaging.dto.rest.config.network;
 
 import io.mapsmessaging.config.auth.AuthConfig;
+import io.mapsmessaging.dto.rest.config.auth.AuthConfigDTO;
 import io.mapsmessaging.dto.rest.config.protocol.LinkConfigDTO;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
@@ -35,9 +36,13 @@ import java.util.List;
 public class EndPointConnectionServerConfigDTO extends EndPointServerConfigDTO {
 
   @Schema(description = "Authentication configuration for endpoint connection")
-  protected AuthConfig authConfig;
+  protected AuthConfigDTO authConfig;
 
-  @Schema(description = "Link transformation for the endpoint connection", example = "transformationType")
+  @Schema(
+      description = "Link transformation for the endpoint connection",
+      example = "transformationType",
+      allowableValues = {"$SERVICE:LinkTransformation"}
+  )
   protected String linkTransformation;
 
   @Schema(description = "List of link configurations")
@@ -46,7 +51,13 @@ public class EndPointConnectionServerConfigDTO extends EndPointServerConfigDTO {
   @Schema(description = "Is this a 3rd party plugin connection")
   protected boolean pluginConnection;
 
-  @Schema(description = "An arbitrary cost associated with using this connection", defaultValue = "10", example = "0")
+  @Schema(
+      description = "An arbitrary cost associated with using this connection",
+      defaultValue = "10",
+      example = "10",
+      minimum = "1",
+      maximum = "1000"
+  )
   protected int cost;
 
   @Schema(description = "Optional name of the group that the connection belongs to", defaultValue = "", example="Main data uplink")

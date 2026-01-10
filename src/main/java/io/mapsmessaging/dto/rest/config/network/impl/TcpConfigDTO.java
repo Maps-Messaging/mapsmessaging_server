@@ -31,25 +31,60 @@ import lombok.NoArgsConstructor;
 @Schema(description = "TCP Configuration DTO")
 public class TcpConfigDTO extends EndPointConfigDTO {
 
-  @Schema(description = "Size of the receive buffer", example = "128000")
+  @Schema(
+      description = "Size of the receive buffer",
+      example = "128000",
+      minimum = "1024",
+      maximum = "104857600"
+  )
   protected int receiveBufferSize;
 
-  @Schema(description = "Size of the send buffer", example = "128000")
+  @Schema(
+      description = "Size of the send buffer",
+      example = "128000",
+      minimum = "1024",
+      maximum = "104857600"
+  )
   protected int sendBufferSize;
 
-  @Schema(description = "Connection timeout in milliseconds", example = "60000")
+  @Schema(
+      description = "Connection timeout in milliseconds",
+      example = "60000",
+      minimum = "1024",
+      maximum = "104857600"
+  )
   protected int timeout;
 
-  @Schema(description = "Backlog for TCP connections", example = "100")
+  @Schema(
+      description = "Backlog for TCP connections",
+      example = "100",
+      minimum = "10",
+      maximum = "10000"
+  )
   protected int backlog;
 
-  @Schema(description = "SO linger delay in seconds", example = "10")
+  @Schema(
+      description = "SO linger delay in seconds",
+      example = "10",
+      minimum = "0",
+      maximum = "60"
+  )
   protected int soLingerDelaySec;
 
-  @Schema(description = "Read delay on fragmentation", example = "100")
+  @Schema(
+      description = "Read delay on fragmentation",
+      example = "100",
+      minimum = "1",
+      maximum = "1000"
+  )
   protected int readDelayOnFragmentation;
 
-  @Schema(description = "Fragmentation limit for the connection", example = "5")
+  @Schema(
+      description = "Fragmentation limit for the connection",
+      example = "5",
+      minimum = "2",
+      maximum = "100"
+  )
   protected int fragmentationLimit;
 
   @Schema(description = "Enable read delay on fragmentation", example = "true")

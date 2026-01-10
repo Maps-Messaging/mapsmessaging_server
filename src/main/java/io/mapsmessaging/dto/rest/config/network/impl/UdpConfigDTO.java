@@ -34,13 +34,28 @@ import java.util.List;
 @Schema(description = "UDP Configuration DTO")
 public class UdpConfigDTO extends EndPointConfigDTO {
 
-  @Schema(description = "Timeout for reusing packets, in milliseconds", example = "1000")
+  @Schema(
+      description = "Timeout for reusing packets, in milliseconds",
+      example = "1000",
+      minimum = "10",
+      maximum = "60000"
+  )
   private long packetReuseTimeout;
 
-  @Schema(description = "Idle session timeout duration, in seconds", example = "600")
+  @Schema(
+      description = "Idle session timeout duration, in seconds",
+      example = "600",
+      minimum = "60",
+      maximum = "1200"
+  )
   private long idleSessionTimeout;
 
-  @Schema(description = "Expiry time for HMAC host lookup cache, in seconds", example = "600")
+  @Schema(
+      description = "Expiry time for HMAC host lookup cache, in seconds",
+      example = "600",
+      minimum = "10",
+      maximum = "1200"
+  )
   private long hmacHostLookupCacheExpiry;
 
   @Schema(description = "List of HMAC configurations for nodes")

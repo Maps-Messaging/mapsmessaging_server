@@ -47,6 +47,8 @@ public class StatisticsConfigDTO extends BaseConfigDTO {
       title = "Number of events",
       description = "The number of events to process before emitting an event containing the data",
       example = "100",
+      minimum = "10",
+      maximum = "1000000",
       nullable = false)
   protected int eventCount;
 

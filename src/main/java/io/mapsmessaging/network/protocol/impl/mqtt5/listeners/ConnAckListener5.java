@@ -25,6 +25,7 @@ import io.mapsmessaging.api.SessionContextBuilder;
 import io.mapsmessaging.api.SessionManager;
 import io.mapsmessaging.config.auth.AuthConfig;
 import io.mapsmessaging.config.network.EndPointConnectionServerConfig;
+import io.mapsmessaging.dto.rest.config.auth.AuthConfigDTO;
 import io.mapsmessaging.logging.ServerLogMessages;
 import io.mapsmessaging.network.ProtocolClientConnection;
 import io.mapsmessaging.network.io.EndPoint;
@@ -46,7 +47,7 @@ public class ConnAckListener5 extends PacketListener5 {
 
   @Override
   public MQTTPacket5 handlePacket(MQTTPacket5 mqttPacket, Session session, EndPoint endPoint, Protocol protocol) throws MalformedException {
-    AuthConfig config =  ((EndPointConnectionServerConfig)endPoint.getConfig()).getAuthConfig();
+    AuthConfigDTO config =  ((EndPointConnectionServerConfig)endPoint.getConfig()).getAuthConfig();
 
     String sess = config.getSessionId();
     String user = config.getUsername();

@@ -83,7 +83,7 @@ public class EndPointConnectionServerConfig extends EndPointConnectionServerConf
           hasChanged = true;
         }
 
-        if (!this.authConfig.update(config.getAuthConfig())) {
+        if (!((AuthConfig) this.authConfig).update(config.getAuthConfig())) {
           hasChanged = true;
         }
 

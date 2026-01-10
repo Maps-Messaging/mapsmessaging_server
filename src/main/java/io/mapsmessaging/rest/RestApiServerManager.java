@@ -24,6 +24,8 @@ import io.mapsmessaging.auth.AuthManager;
 import io.mapsmessaging.config.RestApiManagerConfig;
 import io.mapsmessaging.config.network.impl.TlsConfig;
 import io.mapsmessaging.config.rest.StaticConfig;
+import io.mapsmessaging.dto.rest.config.network.impl.TlsConfigDTO;
+import io.mapsmessaging.dto.rest.config.rest.StaticConfigDTO;
 import io.mapsmessaging.dto.rest.system.Status;
 import io.mapsmessaging.dto.rest.system.SubSystemStatusDTO;
 import io.mapsmessaging.logging.Logger;
@@ -121,7 +123,7 @@ public class RestApiServerManager implements Agent {
   }
 
   private SSLContextConfigurator setupSSL() {
-    TlsConfig sslConfig = config.getTlsConfig();
+    TlsConfigDTO sslConfig = config.getTlsConfig();
     if (sslConfig != null) {
       isSecure = true;
       SSLContextConfigurator sslCon = new SSLContextConfigurator();
@@ -135,7 +137,7 @@ public class RestApiServerManager implements Agent {
   }
 
   private boolean isClientCertRequired() {
-    TlsConfig sslConfig = config.getTlsConfig();
+    TlsConfigDTO sslConfig = config.getTlsConfig();
     if (sslConfig != null) {
       return sslConfig.getSslConfig().isClientCertificateRequired();
     }
@@ -143,7 +145,7 @@ public class RestApiServerManager implements Agent {
   }
 
   private boolean isClientCertWanted() {
-    TlsConfig sslConfig = config.getTlsConfig();
+    TlsConfigDTO sslConfig = config.getTlsConfig();
     if (sslConfig != null) {
       return sslConfig.getSslConfig().isClientCertificateWanted();
     }
@@ -286,7 +288,7 @@ public class RestApiServerManager implements Agent {
 
   private void loadStatic(HttpServer server){
     if (config.getStaticConfig() != null){
-      StaticConfig staticConfig = config.getStaticConfig();
+      StaticConfigDTO staticConfig = config.getStaticConfig();
       if(staticConfig.isEnabled()){
         String path = staticConfig.getDirectory();
         if (!path.endsWith(File.separator)) {

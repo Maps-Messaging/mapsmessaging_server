@@ -42,10 +42,22 @@ public class MLEventStreamDTO {
   @Schema(description = "Where to publish outliers")
   private String outlierTopic;
 
-  @Schema(description = "Max number of events to train the model")
+  @Schema(
+      description = "Max number of events to train the model",
+      example = "1000",
+      minimum = "100",
+      maximum = "1000000",
+      defaultValue = "1000"
+  )
   private int maxTrainEvents;
 
-  @Schema(description = "Max time in seconds to train the model, 0 disables")
+  @Schema(
+      description = "Max time in seconds to train the model, 0 disables",
+      defaultValue = "2400",
+      minimum = "0",
+      maximum = "86400",
+      example = "600"
+  )
   private int maxTrainTimeSeconds;
 
   @Schema(description = "Outlier rate threshold to trigger retraining")

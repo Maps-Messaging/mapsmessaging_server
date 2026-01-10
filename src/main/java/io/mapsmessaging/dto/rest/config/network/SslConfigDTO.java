@@ -40,7 +40,12 @@ public class SslConfigDTO extends BaseConfigDTO {
   @Schema(description = "URL for Certificate Revocation List", example = "http://example.com/crl")
   protected String crlUrl;
 
-  @Schema(description = "Interval in milliseconds for CRL refresh", example = "3600000")
+  @Schema(
+      description = "Interval in milliseconds for CRL refresh",
+      example = "3600000",
+      minimum = "60000",
+      maximum = "2419200000"
+  )
   protected long crlInterval;
 
   @Schema(description = "SSL context identifier", example = "TLSv3")

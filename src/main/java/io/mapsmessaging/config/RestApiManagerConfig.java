@@ -173,11 +173,11 @@ public class RestApiManagerConfig extends RestApiManagerConfigDTO implements Con
     properties.put("maxEventsPerDestination", this.maxEventsPerDestination);
 
     if (this.tlsConfig != null) {
-      properties.put("tls", this.tlsConfig.toConfigurationProperties());
+      properties.put("tls", ((TlsConfig) this.tlsConfig).toConfigurationProperties());
     }
 
     if (this.staticConfig != null) {
-      properties.put("static", this.staticConfig.toConfigurationProperties());
+      properties.put("static", ((StaticConfig) this.staticConfig).toConfigurationProperties());
     }
     Map<String, Object> corsHeadersProp = new HashMap<>(CorsHeaderManager.getInstance().getCorsHeaders().getHeaders());
     properties.put("corsHeaders", corsHeadersProp);

@@ -61,6 +61,10 @@ public class LinkConfigDTO extends BaseConfigDTO {
   @Schema(description = "Specific filtering on namespace", nullable = true)
   protected NamespaceFilters namespaceFilters;
 
-  @Schema(description = "Quality of server QoS:0, 1 or 2, for non MQTT  1 or 2 imply transactional", nullable = true, example = "1")
+  @Schema(
+      description = "Quality of server QoS:0, 1 or 2, for non MQTT  1 or 2 imply transactional",
+      nullable = true,
+      example = "1"
+  )
   protected QualityOfService qualityOfService;
 }

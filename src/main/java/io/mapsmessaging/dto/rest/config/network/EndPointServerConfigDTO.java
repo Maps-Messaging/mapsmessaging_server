@@ -46,7 +46,8 @@ public class EndPointServerConfigDTO extends BaseConfigDTO {
 
   @Schema(
       description = "Endpoint-specific configuration",
-      implementation = EndPointConfigDTO.class)
+      implementation = EndPointConfigDTO.class
+  )
   protected EndPointConfigDTO endPointConfig;
 
   @Schema(description = "SASL configuration", implementation = SaslConfigDTO.class)
