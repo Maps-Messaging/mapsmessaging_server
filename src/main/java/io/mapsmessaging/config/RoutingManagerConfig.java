@@ -23,6 +23,7 @@ import io.mapsmessaging.config.routing.PredefinedServerConfig;
 import io.mapsmessaging.configuration.ConfigurationProperties;
 import io.mapsmessaging.dto.rest.config.BaseConfigDTO;
 import io.mapsmessaging.dto.rest.config.RoutingManagerConfigDTO;
+import io.mapsmessaging.dto.rest.config.routing.PredefinedServerConfigDTO;
 import io.mapsmessaging.license.FeatureManager;
 import io.mapsmessaging.utilities.configuration.ConfigurationManager;
 import lombok.NoArgsConstructor;
@@ -92,8 +93,8 @@ public class RoutingManagerConfig extends RoutingManagerConfigDTO implements Con
     properties.put("autoDiscovery", this.autoDiscovery);
 
     List<ConfigurationProperties> serverPropertiesList = new ArrayList<>();
-    for (PredefinedServerConfig server : this.predefinedServers) {
-      serverPropertiesList.add(server.toConfigurationProperties());
+    for (PredefinedServerConfigDTO server : this.predefinedServers) {
+      serverPropertiesList.add(((PredefinedServerConfig) server).toConfigurationProperties());
     }
     properties.put("predefinedServers", serverPropertiesList);
 

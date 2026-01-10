@@ -32,7 +32,11 @@ import java.util.List;
 @NoArgsConstructor
 @Schema(description = "Tenant Management Configuration DTO")
 public class TenantManagementConfigDTO extends BaseConfigDTO {
-
-  @Schema(description = "List of tenant configurations")
+  @Schema(
+      description = "List of tenant configurations",
+      requiredMode = Schema.RequiredMode.NOT_REQUIRED,
+      nullable = false,
+      defaultValue = "[]"
+  )
   protected List<TenantConfigDTO> tenantConfigList;
 }

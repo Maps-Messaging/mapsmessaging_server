@@ -32,12 +32,28 @@ import lombok.NoArgsConstructor;
 @Schema(description = "Tenant Configuration DTO")
 public class TenantConfigDTO extends BaseConfigDTO {
 
-  @Schema(description = "Name of the tenant", example = "TenantA")
+  @Schema(
+      description = "Name of the tenant",
+      example = "TenantA",
+      requiredMode = Schema.RequiredMode.REQUIRED,
+      nullable = false
+  )
   protected String name;
 
-  @Schema(description = "Root namespace for the tenant", example = "com.tenant.namespace")
+  @Schema(
+      description = "Root namespace for the tenant",
+      example = "com.tenant.namespace",
+      requiredMode = Schema.RequiredMode.REQUIRED,
+      nullable = false
+  )
   protected String namespaceRoot;
 
-  @Schema(description = "Scope of the tenant", example = "global")
-  protected String scope;
+  @Schema(
+      description = "Scope of the tenant",
+      example = "global",
+      defaultValue = "global",
+      requiredMode = Schema.RequiredMode.NOT_REQUIRED,
+      nullable = false
+  )
+  protected String scope = "global";
 }

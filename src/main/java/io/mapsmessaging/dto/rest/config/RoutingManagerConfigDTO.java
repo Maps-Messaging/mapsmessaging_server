@@ -20,6 +20,7 @@
 package io.mapsmessaging.dto.rest.config;
 
 import io.mapsmessaging.config.routing.PredefinedServerConfig;
+import io.mapsmessaging.dto.rest.config.routing.PredefinedServerConfigDTO;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -33,12 +34,29 @@ import java.util.List;
 @Schema(description = "Routing Manager Configuration DTO")
 public class RoutingManagerConfigDTO extends BaseConfigDTO {
 
-  @Schema(description = "Enables routing management", example = "true")
-  protected boolean enabled;
+  @Schema(
+      description = "Enables routing management",
+      example = "true",
+      defaultValue = "false",
+      requiredMode = Schema.RequiredMode.NOT_REQUIRED,
+      nullable = false
+  )
+  protected boolean enabled = false;
 
-  @Schema(description = "Enables auto-discovery of servers", example = "true")
-  protected boolean autoDiscovery;
+  @Schema(
+      description = "Enables auto-discovery of servers",
+      example = "true",
+      defaultValue = "false",
+      requiredMode = Schema.RequiredMode.NOT_REQUIRED,
+      nullable = false
+  )
+  protected boolean autoDiscovery = false;
 
-  @Schema(description = "List of predefined server configurations")
-  protected List<PredefinedServerConfig> predefinedServers;
+  @Schema(
+      description = "List of predefined server configurations",
+      requiredMode = Schema.RequiredMode.NOT_REQUIRED,
+      nullable = false,
+      defaultValue = "[]"
+  )
+  protected List<PredefinedServerConfigDTO> predefinedServers = List.of();
 }

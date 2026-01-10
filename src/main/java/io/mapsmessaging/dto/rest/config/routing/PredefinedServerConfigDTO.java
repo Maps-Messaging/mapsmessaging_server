@@ -31,9 +31,20 @@ import lombok.NoArgsConstructor;
 @Schema(description = "Predefined Server Configuration DTO")
 public class PredefinedServerConfigDTO extends BaseConfigDTO {
 
-  @Schema(description = "Name of the predefined server", example = "Server1")
+  @Schema(
+      description = "Name of the predefined server",
+      example = "Server1",
+      requiredMode = Schema.RequiredMode.REQUIRED,
+      nullable = false
+  )
   protected String name;
 
-  @Schema(description = "URL of the predefined server", example = "tcp://server1:1883/")
+  @Schema(
+      description = "URL of the predefined server",
+      example = "tcp://server1:1883/",
+      requiredMode = Schema.RequiredMode.REQUIRED,
+      nullable = false,
+      format = "uri"
+  )
   protected String url;
 }

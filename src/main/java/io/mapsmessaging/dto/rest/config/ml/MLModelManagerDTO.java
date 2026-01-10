@@ -27,45 +27,78 @@ import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 
 import java.util.List;
-
 @EqualsAndHashCode(callSuper = true)
 @Data
 @NoArgsConstructor
+@Schema(description = "Machine Learning Model Manager configuration")
 public class MLModelManagerDTO extends BaseConfigDTO {
 
-  @Schema(description = "Enable in-memory caching of models")
-  protected boolean enableCaching;
+  @Schema(
+      description = "Enable in-memory caching of models",
+      example = "true",
+      defaultValue = "false",
+      requiredMode = Schema.RequiredMode.NOT_REQUIRED,
+      nullable = false
+  )
+  protected boolean enableCaching = false;
 
   @Schema(
       description = "Maximum number of models to cache",
       defaultValue = "10000",
       example = "10000",
       minimum = "1",
-      maximum = "1000000"
+      maximum = "1000000",
+      requiredMode = Schema.RequiredMode.NOT_REQUIRED,
+      nullable = false
   )
-  protected int cacheSize;
+  protected int cacheSize = 10000;
 
   @Schema(
       description = "Model cache expiry time in minutes",
       defaultValue = "2",
       minimum = "1",
       maximum = "60",
-      example = "2"
+      example = "2",
+      requiredMode = Schema.RequiredMode.NOT_REQUIRED,
+      nullable = false
   )
-  protected int cacheExpiryMinutes;
+  protected int cacheExpiryMinutes = 2;
 
-  @Schema(description = "Models to preload at startup")
-  protected List<String> preloadModels;
+  @Schema(
+      description = "Models to preload at startup",
+      requiredMode = Schema.RequiredMode.NOT_REQUIRED,
+      nullable = false,
+      defaultValue = "[]"
+  )
+  protected List<String> preloadModels = List.of();
 
-  @Schema(description = "Auto-refresh configuration")
+  @Schema(
+      description = "Auto-refresh configuration",
+      requiredMode = Schema.RequiredMode.NOT_REQUIRED,
+      nullable = true
+  )
   protected AutoRefreshConfig autoRefresh;
 
-  @Schema(description = "LLM access configuration")
+  @Schema(
+      description = "LLM access configuration",
+      requiredMode = Schema.RequiredMode.NOT_REQUIRED,
+      nullable = true
+  )
   protected LlmConfigDTO llmConfig;
 
-  @Schema(description = "Model store configuration")
-  protected ModelStoreConfig modelStore;
+  @Schema(
+      description = "Model store configuration",
+      requiredMode = Schema.RequiredMode.NOT_REQUIRED,
+      nullable = true
+  )
+  protected ModelStoreConfigDTO modelStore;
 
-  @Schema(description = "List of configured model event streams")
-  protected List<MLEventStreamDTO> eventStreams;
+  @Schema(
+      description = "List of configured model event streams",
+      requiredMode = Schema.RequiredMode.NOT_REQUIRED,
+      nullable = false,
+      defaultValue = "[]"
+  )
+  protected List<MLEventStreamDTO> eventStreams = List.of();
 }
+

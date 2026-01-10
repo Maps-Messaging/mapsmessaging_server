@@ -37,9 +37,9 @@ import java.util.List;
 public class MLModelManagerConfig extends MLModelManagerDTO implements Config, ConfigManager {
 
   private MLModelManagerConfig(ConfigurationProperties config) {
-    this.enableCaching = config.getBooleanProperty("enableCaching", true);
-    this.cacheSize = config.getIntProperty("cacheSize", 100);
-    this.cacheExpiryMinutes = config.getIntProperty("cacheExpiryMinutes", 60);
+    this.enableCaching = config.getBooleanProperty("enableCaching", enableCaching);
+    this.cacheSize = config.getIntProperty("cacheSize", cacheSize);
+    this.cacheExpiryMinutes = config.getIntProperty("cacheExpiryMinutes", cacheExpiryMinutes);
     this.preloadModels = convertToList(config.getProperty("preloadModels", ""));
 
     if (config.get("autoRefresh") != null) {
@@ -50,9 +50,9 @@ public class MLModelManagerConfig extends MLModelManagerDTO implements Config, C
     }
 
     ConfigurationProperties modelStoreConfig = (ConfigurationProperties) config.get("modelStore");
-    this.modelStore = new ModelStoreConfig();
+    this.modelStore = new ModelStoreConfigDTO();
     this.modelStore.setType(modelStoreConfig.getProperty("type", null));
-    ModelStoreConfigBlock block = new ModelStoreConfigBlock();
+    ModelStoreConfigBlockDTO block = new ModelStoreConfigBlockDTO();
     ConfigurationProperties storeConfig = (ConfigurationProperties) modelStoreConfig.get("config");
 
     switch (modelStoreConfig.getProperty("type", "s3")) {
@@ -186,7 +186,7 @@ public class MLModelManagerConfig extends MLModelManagerDTO implements Config, C
       ConfigurationProperties storeProps = new ConfigurationProperties();
       storeProps.put("type", this.modelStore.getType());
 
-      ModelStoreConfigBlock cfg = this.modelStore.getConfig();
+      ModelStoreConfigBlockDTO cfg = this.modelStore.getConfig();
       ConfigurationProperties storeConfig = new ConfigurationProperties();
 
       switch (this.modelStore.getType()) {

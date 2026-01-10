@@ -16,23 +16,37 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-
 package io.mapsmessaging.dto.rest.config.ml;
 
+import io.mapsmessaging.dto.rest.config.BaseConfigDTO;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 
+import java.util.Map;
+
+@EqualsAndHashCode(callSuper = true)
 @Data
 @NoArgsConstructor
-public  class ModelStoreConfig {
+@Schema(description = "Model store configuration")
+public class ModelStoreConfigDTO extends BaseConfigDTO {
+
   @Schema(
       description = "Type of model store",
       example = "s3",
-      allowableValues = { "s3", "file", "nexus", "maps" }
+      allowableValues = { "s3", "file", "nexus", "maps" },
+      defaultValue = "file",
+      requiredMode = Schema.RequiredMode.NOT_REQUIRED,
+      nullable = false
   )
-  private String type; // s3 | file | nexus | maps
+  private String type = "file";
 
-  @Schema(description = "Store-specific configuration block")
-  private ModelStoreConfigBlock config;
+  @Schema(
+      description = "Store-specific configuration block (type-dependent)",
+      requiredMode = Schema.RequiredMode.NOT_REQUIRED,
+      nullable = false,
+      defaultValue = "{}"
+  )
+  private ModelStoreConfigBlockDTO config = new ModelStoreConfigBlockDTO();
 }

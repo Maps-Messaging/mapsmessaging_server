@@ -25,7 +25,7 @@ import lombok.NoArgsConstructor;
 
 @Data
 @NoArgsConstructor
-public class ModelStoreConfigBlock {
+public class ModelStoreConfigBlockDTO {
 
   @Schema(description = "S3 configuration for the model store")
   private S3Config s3;

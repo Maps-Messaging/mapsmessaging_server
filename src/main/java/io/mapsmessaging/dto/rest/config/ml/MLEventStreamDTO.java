@@ -19,27 +19,57 @@
 
 package io.mapsmessaging.dto.rest.config.ml;
 
+import io.mapsmessaging.dto.rest.config.BaseConfigDTO;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 
+@EqualsAndHashCode(callSuper = true)
 @Data
 @NoArgsConstructor
-public class MLEventStreamDTO {
+@Schema(description = "Model event stream configuration")
+public class MLEventStreamDTO extends BaseConfigDTO {
 
-  @Schema(description = "Unique ID for the model stream")
+  @Schema(
+      description = "Unique ID for the model stream",
+      example = "weather-outliers",
+      requiredMode = Schema.RequiredMode.REQUIRED,
+      nullable = false
+  )
   private String id;
 
-  @Schema(description = "Topic filter to match incoming events")
+  @Schema(
+      description = "Topic filter to match incoming events",
+      example = "/weather/#",
+      requiredMode = Schema.RequiredMode.REQUIRED,
+      nullable = false
+  )
   private String topicFilter;
 
-  @Schema(description = "Schema ID that the event must match")
+  @Schema(
+      description = "Schema ID that the event must match",
+      example = "weather.v1",
+      requiredMode = Schema.RequiredMode.REQUIRED,
+      nullable = false
+  )
   private String schemaId;
 
-  @Schema(description = "Selector used to evaluate events")
-  private String selector;
+  @Schema(
+      description = "Selector used to evaluate events",
+      example = "temperature > 35",
+      defaultValue = "",
+      requiredMode = Schema.RequiredMode.NOT_REQUIRED,
+      nullable = true
+  )
+  private String selector = "";
 
-  @Schema(description = "Where to publish outliers")
+  @Schema(
+      description = "Where to publish outliers",
+      example = "/ml/outliers/weather",
+      requiredMode = Schema.RequiredMode.REQUIRED,
+      nullable = false
+  )
   private String outlierTopic;
 
   @Schema(
@@ -47,19 +77,31 @@ public class MLEventStreamDTO {
       example = "1000",
       minimum = "100",
       maximum = "1000000",
-      defaultValue = "1000"
+      defaultValue = "1000",
+      requiredMode = Schema.RequiredMode.NOT_REQUIRED,
+      nullable = true
   )
-  private int maxTrainEvents;
+  private int maxTrainEvents = 1000;
 
   @Schema(
       description = "Max time in seconds to train the model, 0 disables",
       defaultValue = "2400",
       minimum = "0",
       maximum = "86400",
-      example = "600"
+      example = "600",
+      requiredMode = Schema.RequiredMode.NOT_REQUIRED,
+      nullable = true
   )
-  private int maxTrainTimeSeconds;
+  private int maxTrainTimeSeconds = 2400;
 
-  @Schema(description = "Outlier rate threshold to trigger retraining")
-  private double retrainThreshold;
+  @Schema(
+      description = "Outlier rate threshold to trigger retraining (0.0 to 1.0)",
+      example = "0.05",
+      minimum = "0",
+      maximum = "1",
+      defaultValue = "0.05",
+      requiredMode = Schema.RequiredMode.NOT_REQUIRED,
+      nullable = true
+  )
+  private double retrainThreshold = 0.05;
 }
