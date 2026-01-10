@@ -34,13 +34,14 @@ public class DestinationConfig extends DestinationConfigDTO implements Config {
   }
 
   public DestinationConfig(ConfigurationProperties properties, FeatureManager featureManager) {
-    this.directory = properties.getProperty("directory", "");
-    this.namespace = properties.getProperty("namespace", "");
+    this.directory = properties.getProperty("directory", directory);
+    this.namespace = properties.getProperty("namespace", namespace);
     this.type = properties.getProperty("type", "");
-    if(!featureManager.isEnabled("storage.fileSupport") && type.equalsIgnoreCase("file")) {
+    if(!featureManager.isEnabled("storage.fileSupport")
+        && type.equalsIgnoreCase("file")) {
       type = "memory"; // File is not supported
     }
-    this.autoPauseTimeout = properties.getIntProperty("autoPauseTimeout", 300);
+    this.autoPauseTimeout = properties.getIntProperty("autoPauseTimeout", autoPauseTimeout);
 
     storageConfig = ConfigHelper.buildConfig(type, properties);
 

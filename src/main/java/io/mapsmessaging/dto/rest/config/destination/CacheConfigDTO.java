@@ -26,7 +26,7 @@ import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 
 @Data
-@EqualsAndHashCode(callSuper=false)
+@EqualsAndHashCode(callSuper = false)
 @NoArgsConstructor
 @Schema(description = "Cache Configuration DTO")
 public class CacheConfigDTO extends BaseConfigDTO {
@@ -34,10 +34,19 @@ public class CacheConfigDTO extends BaseConfigDTO {
   @Schema(
       description = "Type of cache",
       example = "WeakReference",
-      allowableValues = {"None","WeakReference", "JCS"}
+      allowableValues = {"None", "WeakReference", "JCS"},
+      requiredMode = Schema.RequiredMode.NOT_REQUIRED,
+      defaultValue = "None",
+      nullable = true
   )
-  protected String type;
+  protected String type = "None";
 
-  @Schema(description = "Whether write-through caching is enabled", example = "true")
-  protected boolean writeThrough;
+  @Schema(
+      description = "Whether write-through caching is enabled",
+      example = "true",
+      requiredMode = Schema.RequiredMode.NOT_REQUIRED,
+      defaultValue = "true",
+      nullable = true
+  )
+  protected boolean writeThrough = true;
 }

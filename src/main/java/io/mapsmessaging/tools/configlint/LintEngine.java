@@ -202,11 +202,14 @@ public class LintEngine {
         }
       }
 
+
+
       boolean isOptional = schema.requiredMode() == Schema.RequiredMode.NOT_REQUIRED;
-      boolean isNullable = schema.nullable();
-      boolean hasExplicitDefault = schema.defaultValue() != null; // always true, but keep for clarity
-      boolean requiresDefault = isOptional && !isNullable;
-      boolean defaultMissing = requiresDefault && schema.defaultValue().isEmpty();
+      Class<?> fieldType = field.getType();
+      boolean isPrimitive = fieldType.isPrimitive();
+      boolean requiresDefault = isOptional && isPrimitive;
+      String defaultValue = schema.defaultValue();
+      boolean defaultMissing = requiresDefault && defaultValue.isBlank();
       boolean required = schema.requiredMode() == Schema.RequiredMode.REQUIRED;
 
       boolean hasDefault = schema.defaultValue() != null
@@ -411,9 +414,16 @@ public class LintEngine {
     }
 
     boolean required = schema.requiredMode() == Schema.RequiredMode.REQUIRED;
-    boolean hasDefault = schema.defaultValue() != null && !schema.defaultValue().isBlank();
 
-    if (!required && !hasDefault) {
+    Class<?> fieldType = field.getType();
+    boolean isPrimitiveBoolean = fieldType == boolean.class;
+
+    String defaultValue = schema.defaultValue(); // never null
+    boolean hasDefault = !defaultValue.isBlank();
+
+    boolean shouldWarn = !required && isPrimitiveBoolean && !hasDefault;
+
+    if (shouldWarn) {
       issues.add(issue(
           LintSeverity.WARN,
           configName,

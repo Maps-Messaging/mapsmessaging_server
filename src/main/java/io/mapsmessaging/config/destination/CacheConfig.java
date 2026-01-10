@@ -27,7 +27,7 @@ import io.mapsmessaging.dto.rest.config.destination.CacheConfigDTO;
 public class CacheConfig extends CacheConfigDTO implements Config {
 
   public CacheConfig(ConfigurationProperties properties) {
-    this.type = properties.getProperty("type", "WeakReference");
+    this.type = properties.getProperty("type", type);
     this.writeThrough =
         properties.getProperty("writeThrough", "disable").equalsIgnoreCase("enable");
   }

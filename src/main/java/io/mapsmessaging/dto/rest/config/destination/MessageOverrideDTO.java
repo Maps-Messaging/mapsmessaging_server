@@ -39,35 +39,74 @@ public class MessageOverrideDTO extends BaseConfigDTO {
       description = "Override message expiry in milliseconds",
       example = "60000",
       minimum = "0",        // Never
-      maximum = "604800000" // 1 Week
+      maximum = "604800000", // 1 Week
+      requiredMode = Schema.RequiredMode.NOT_REQUIRED,
+      nullable = true
   )
   protected Long expiry;
 
-  @Schema(description = "Override message priority", example = "NORMAL")
+  @Schema(
+      description = "Override message priority",
+      example = "NORMAL",
+      requiredMode = Schema.RequiredMode.NOT_REQUIRED,
+      nullable = true
+  )
   protected Priority priority;
 
-  @Schema(description = "Override message quality of service", example = "AT_LEAST_ONCE")
+  @Schema(
+      description = "Override message quality of service",
+      example = "AT_LEAST_ONCE",
+      requiredMode = Schema.RequiredMode.NOT_REQUIRED,
+      nullable = true
+  )
   protected QualityOfService qualityOfService;
 
-  @Schema(description = "Override response topic", example = "/default/response")
+  @Schema(
+      description = "Override response topic",
+      example = "/default/response",
+      requiredMode = Schema.RequiredMode.NOT_REQUIRED,
+      nullable = true
+  )
   protected String responseTopic;
 
   @Schema(
       description = "Override content type",
       example = "application/json",
-      format = "media-type"
+      format = "media-type",
+      requiredMode = Schema.RequiredMode.NOT_REQUIRED,
+      nullable = true
   )
   protected String contentType;
 
-  @Schema(description = "Override schema ID", example = "default-schema-id")
+  @Schema(
+      description = "Override schema ID",
+      example = "default-schema-id",
+      requiredMode = Schema.RequiredMode.NOT_REQUIRED,
+      nullable = true
+  )
   protected String schemaId;
 
-  @Schema(description = "Override retain message flag", example = "true")
+  @Schema(
+      description = "Override retain message flag",
+      requiredMode = Schema.RequiredMode.NOT_REQUIRED,
+      example = "true",
+      nullable = true
+  )
   protected Boolean retain;
 
-  @Schema(description = "Metadata to inject if not present in the message")
+  @Schema(
+      description = "Metadata to inject if not present in the message",
+      requiredMode = Schema.RequiredMode.NOT_REQUIRED,
+      example = "true",
+      nullable = true
+  )
   protected Map<String, String> meta;
 
-  @Schema(description = "Data map to inject if keys are not present in the message")
+  @Schema(
+      description = "Data map to inject if keys are not present in the message",
+      requiredMode = Schema.RequiredMode.NOT_REQUIRED,
+      nullable = true
+  )
   protected Map<String, Object> dataMap;
 }
+

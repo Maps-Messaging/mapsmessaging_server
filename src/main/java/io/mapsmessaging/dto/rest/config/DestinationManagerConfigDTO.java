@@ -34,6 +34,10 @@ import java.util.List;
 @Schema(description = "Destination Manager Configuration DTO")
 public class DestinationManagerConfigDTO extends BaseConfigDTO {
 
-  @Schema(description = "List of destination configurations")
+  @Schema(
+      description = "List of destination configurations",
+      minimum = "1",
+      requiredMode = Schema.RequiredMode.REQUIRED
+  )
   protected List<DestinationConfigDTO> data;
 }
