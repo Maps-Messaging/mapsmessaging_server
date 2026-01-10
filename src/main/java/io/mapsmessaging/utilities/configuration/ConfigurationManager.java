@@ -19,6 +19,7 @@
 
 package io.mapsmessaging.utilities.configuration;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.mapsmessaging.config.ConfigManager;
 import io.mapsmessaging.configuration.ConfigurationProperties;
 import io.mapsmessaging.configuration.PropertyManager;
@@ -30,11 +31,17 @@ import io.mapsmessaging.license.FeatureManager;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.logging.ServerLogMessages;
+import io.mapsmessaging.tools.configschema.RuntimeJsonSchemaGenerator;
+import io.mapsmessaging.tools.configschema.RuntimeJsonSchemaService;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.Setter;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import com.networknt.schema.Error;
+import com.networknt.schema.Schema;
+import com.networknt.schema.SchemaRegistry;
+import com.networknt.schema.dialect.Dialects;
 
 import java.io.File;
 import java.io.IOException;
@@ -42,6 +49,7 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 import static io.mapsmessaging.logging.ServerLogMessages.*;
+
 
 @SuppressWarnings("java:S6548") // yes it is a singleton
 public class ConfigurationManager {
@@ -59,6 +67,8 @@ public class ConfigurationManager {
 
   private final List<PropertyManager> propertyManagers;
   private final Map<String, ConfigManager> managerMap;
+  private final Map<String, String> configSchemas;
+
   private PropertyManager authoritative;
   @Setter
   @Getter
@@ -69,6 +79,7 @@ public class ConfigurationManager {
     propertyManagers = new ArrayList<>();
     authoritative = null;
     managerMap = new ConcurrentHashMap<>();
+    configSchemas = new ConcurrentHashMap<>();
   }
 
   public void register(){
@@ -123,8 +134,18 @@ public class ConfigurationManager {
 
     for (PropertyManager manager : propertyManagers) {
       if ( manager.contains(name)) {
+        ConfigurationProperties props = manager.getProperties(name);
+        String string = configSchemas.get(name);
+        Map<String, Object> raw = props.getMap();
+
+        List<String> errors = validate(string, raw);
+        if(!errors.isEmpty()){
+          for(String error:errors){
+            logger.log(PROPERTY_MANAGER_ENTRY_SCHEMA_ERROR, name, error);
+          }
+        }
         logger.log(PROPERTY_MANAGER_LOOKUP, name, "Backup");
-        return manager.getProperties(name);
+        return props;
       }
     }
     logger.log(PROPERTY_MANAGER_LOOKUP_FAILED, name);
@@ -172,10 +193,30 @@ public class ConfigurationManager {
   }
 
   private void loadAll(){
+    RuntimeJsonSchemaGenerator generator = new RuntimeJsonSchemaGenerator();
+    RuntimeJsonSchemaService service = new RuntimeJsonSchemaService(generator);
+    configSchemas.putAll(service.generateAllSchemas());
     ServiceLoader<ConfigManager> configManagers = ServiceLoader.load(ConfigManager.class);
     for(ConfigManager manager : configManagers){
       ConfigManager loaded = manager.load(featureManager);
       managerMap.put(loaded.getClass().getSimpleName(), loaded);
+    }
+  }
+
+  private List<String> validate(String jsonSchema, Map<String, Object> data) {
+    try {
+      SchemaRegistry schemaRegistry = SchemaRegistry.withDialect(Dialects.getDraft202012());
+      Schema schema = schemaRegistry.getSchema(jsonSchema);
+
+      ObjectMapper objectMapper = new ObjectMapper();
+      List<Error> errorList = schema.validate(objectMapper.valueToTree(data));
+      List<String> response = new ArrayList<>();
+      for(Error error:errorList){
+        response.add(error.toString());
+      }
+      return response;
+    } catch (Exception e) {
+      return List.of("Schema validation failed: " + e.getMessage());
     }
   }
 }

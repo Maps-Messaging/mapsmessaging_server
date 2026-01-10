@@ -548,6 +548,24 @@
           </execution>
         </executions>
       </plugin>
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>exec-maven-plugin</artifactId>
+        <version>3.5.0</version>
+        <executions>
+          <execution>
+            <id>config-lint</id>
+            <phase>verify</phase>
+            <goals>
+              <goal>java</goal>
+            </goals>
+            <configuration>
+              <mainClass>io.mapsmessaging.tools.configlint.ConfigLintMain</mainClass>
+              <classpathScope>compile</classpathScope>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
 
     </plugins>
   </build>
@@ -895,7 +913,12 @@
       <artifactId>cognitoidentityprovider</artifactId>
       <version>2.38.6</version>
     </dependency>
-
+    <!-- https://mvnrepository.com/artifact/com.networknt/json-schema-validator -->
+    <dependency>
+      <groupId>com.networknt</groupId>
+      <artifactId>json-schema-validator</artifactId>
+      <version>2.0.0</version>
+    </dependency>
 
     <!-- https://mvnrepository.com/artifact/com.amazonaws/aws-java-sdk-cognitoidp -->
     <dependency>

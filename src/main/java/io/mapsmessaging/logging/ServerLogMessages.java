@@ -461,6 +461,7 @@ public enum ServerLogMessages implements LogMessage {
   PROPERTY_MANAGER_LOAD_FAILED(LEVEL.WARN, SERVER_CATEGORY.ENGINE, "Failed to load property {}"),
   PROPERTY_MANAGER_ENTRY_LOOKUP(LEVEL.DEBUG, SERVER_CATEGORY.ENGINE, "Lookup for {} found {} in {}"),
   PROPERTY_MANAGER_ENTRY_LOOKUP_FAILED(LEVEL.DEBUG, SERVER_CATEGORY.ENGINE, "Lookup for {} not found, returning default {}"),
+  PROPERTY_MANAGER_ENTRY_SCHEMA_ERROR(LEVEL.WARN, SERVER_CATEGORY.ENGINE, "Configuration for {} failed schema validation at {}"),
   // </editor-fold>
 
   //<editor-fold desc="Destination Manager log messages">
