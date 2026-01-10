@@ -39,11 +39,15 @@ public class ConfigLintRunner {
     this.textReportPath = textReportPath;
   }
 
-  boolean showInfo = Boolean.parseBoolean(
-      System.getProperty("maps.configlint.showInfo", "false")
-  );
-
   public ConfigLintReport run() throws Exception {
+    boolean strict = Boolean.parseBoolean(
+        System.getProperty("maps.configlint.strict", "false")
+    );
+
+    boolean showInfo = Boolean.parseBoolean(
+        System.getProperty("maps.configlint.showInfo", "false")
+    );
+
     ServiceLoader<ConfigManager> loader = ServiceLoader.load(ConfigManager.class);
 
     List<ConfigLintConfigResult> configs = new ArrayList<>();
@@ -67,7 +71,7 @@ public class ConfigLintRunner {
         continue;
       }
 
-      LintEngine engine = new LintEngine();
+      LintEngine engine = new LintEngine(strict);
       DtoWalker walker = new DtoWalker(engine);
 
       List<LintIssue> issuesForConfig = walker.lint(configName, rootDtoClass);
