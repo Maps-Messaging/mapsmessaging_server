@@ -17,28 +17,36 @@
  *  limitations under the License.
  */
 
-package io.mapsmessaging.tools.configlint;
+package io.mapsmessaging.tools.config.lint;
 
-import io.mapsmessaging.dto.rest.config.BaseConfigDTO;
+import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
+import java.util.ArrayList;
+import java.util.List;
 
-public final class RootDtoResolver {
+public final class ReflectionFields {
 
-  private RootDtoResolver() {
+  private ReflectionFields() {
   }
 
-  @SuppressWarnings("unchecked")
-  public static Class<? extends BaseConfigDTO> resolveRootDto(Class<?> managerClass) {
-    Class<?> current = managerClass;
+  public static List<Field> getAllInstanceFields(Class<?> clazz) {
+    List<Field> fields = new ArrayList<>();
 
+    Class<?> current = clazz;
     while (current != null && current != Object.class) {
-      if (BaseConfigDTO.class.isAssignableFrom(current)) {
-        if (current != BaseConfigDTO.class) {
-          return (Class<? extends BaseConfigDTO>) current;
+      for (Field field : current.getDeclaredFields()) {
+        if (Modifier.isStatic(field.getModifiers())) {
+          continue;
         }
+        if (Modifier.isTransient(field.getModifiers())) {
+          continue;
+        }
+        field.setAccessible(true);
+        fields.add(field);
       }
       current = current.getSuperclass();
     }
-    return null;
-  }
 
+    return fields;
+  }
 }

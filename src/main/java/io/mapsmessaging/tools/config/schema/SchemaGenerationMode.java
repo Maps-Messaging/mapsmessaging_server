@@ -1,4 +1,4 @@
-package io.mapsmessaging.tools.configschema;
+package io.mapsmessaging.tools.config.schema;
 
 public enum SchemaGenerationMode {
   STRICT,   // default: current behaviour

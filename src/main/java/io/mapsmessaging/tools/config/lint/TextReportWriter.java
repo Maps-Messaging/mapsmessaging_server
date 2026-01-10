@@ -17,7 +17,7 @@
  *  limitations under the License.
  */
 
-package io.mapsmessaging.tools.configlint;
+package io.mapsmessaging.tools.config.lint;
 
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;

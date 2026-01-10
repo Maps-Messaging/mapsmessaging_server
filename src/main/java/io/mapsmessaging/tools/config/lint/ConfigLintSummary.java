@@ -17,15 +17,35 @@
  *  limitations under the License.
  */
 
-package io.mapsmessaging.tools.configlint;
+package io.mapsmessaging.tools.config.lint;
 
 import java.util.List;
 import lombok.Value;
 
 @Value
-public class ConfigLintReport {
+public class ConfigLintSummary {
 
-  String generatedAt;
-  List<ConfigLintConfigResult> configs;
-  ConfigLintSummary summary;
+  int infoCount;
+  int warnCount;
+  int errorCount;
+
+  public static ConfigLintSummary from(List<LintIssue> issues) {
+    int infos = 0;
+    int warns = 0;
+    int errors = 0;
+
+    for (LintIssue issue : issues) {
+      if (issue.getSeverity() == LintSeverity.INFO) {
+        infos++;
+      }
+      else if (issue.getSeverity() == LintSeverity.WARN) {
+        warns++;
+      }
+      else if (issue.getSeverity() == LintSeverity.ERROR) {
+        errors++;
+      }
+    }
+
+    return new ConfigLintSummary(infos, warns, errors);
+  }
 }

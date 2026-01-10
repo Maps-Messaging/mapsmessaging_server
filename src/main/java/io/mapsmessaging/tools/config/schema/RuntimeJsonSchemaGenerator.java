@@ -1,10 +1,10 @@
-package io.mapsmessaging.tools.configschema;
+package io.mapsmessaging.tools.config.schema;
 
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import io.mapsmessaging.dto.rest.config.BaseConfigDTO;
-import io.mapsmessaging.tools.configlint.ReflectionFields;
-import io.mapsmessaging.tools.configlint.ReflectionTypes;
+import io.mapsmessaging.tools.config.lint.ReflectionFields;
+import io.mapsmessaging.tools.config.lint.ReflectionTypes;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 import java.lang.reflect.Field;

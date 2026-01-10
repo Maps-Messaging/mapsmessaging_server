@@ -1,4 +1,4 @@
-package io.mapsmessaging.tools.configschema;
+package io.mapsmessaging.tools.config.schema;
 
 import java.util.Map;
 

@@ -17,15 +17,15 @@
  *  limitations under the License.
  */
 
-package io.mapsmessaging.tools.configlint;
+package io.mapsmessaging.tools.config.lint;
 
 import java.util.List;
 import lombok.Value;
 
 @Value
-public class ConfigLintConfigResult {
+public class ConfigLintReport {
 
-  String configName;
-  String rootDtoClass;
-  List<LintIssue> issues;
+  String generatedAt;
+  List<ConfigLintConfigResult> configs;
+  ConfigLintSummary summary;
 }

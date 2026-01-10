@@ -1,8 +1,8 @@
-package io.mapsmessaging.tools.configschema;
+package io.mapsmessaging.tools.config.schema;
 
 import io.mapsmessaging.config.ConfigManager;
 import io.mapsmessaging.dto.rest.config.BaseConfigDTO;
-import io.mapsmessaging.tools.configlint.RootDtoResolver;
+import io.mapsmessaging.tools.config.lint.RootDtoResolver;
 
 import java.util.Comparator;
 import java.util.LinkedHashMap;

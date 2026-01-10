@@ -560,7 +560,7 @@
               <goal>java</goal>
             </goals>
             <configuration>
-              <mainClass>io.mapsmessaging.tools.configlint.ConfigLintMain</mainClass>
+              <mainClass>io.mapsmessaging.tools.config.lint.ConfigLintMain</mainClass>
               <classpathScope>compile</classpathScope>
             </configuration>
           </execution>

@@ -17,15 +17,12 @@
  *  limitations under the License.
  */
 
-package io.mapsmessaging.tools.configlint;
+package io.mapsmessaging.tools.config.lint;
 
 import io.mapsmessaging.dto.rest.config.BaseConfigDTO;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.lang.reflect.Field;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Locale;
-import java.util.Set;
+import java.util.*;
 
 public class LintEngine {
 
@@ -96,7 +93,8 @@ public class LintEngine {
 
     Class<?> fieldType = field.getType();
 
-    boolean isCollection = List.class.isAssignableFrom(fieldType) || java.util.Map.class.isAssignableFrom(fieldType);
+    boolean isMap = Map.class.isAssignableFrom(fieldType);
+    boolean isCollection = List.class.isAssignableFrom(fieldType) || isMap;
     boolean isNestedDto = BaseConfigDTO.class.isAssignableFrom(fieldType);
 
     Schema schema = field.getAnnotation(Schema.class);
@@ -109,11 +107,13 @@ public class LintEngine {
           "SCHEMA_FIELD_MISSING",
           "Missing @Schema on field " + declaringClass.getName() + "." + field.getName()
       ));
-      // Still run type-based checks that can emit more accurate guidance even without schema.
     }
     else {
       issues.addAll(lintSchemaBasics(configName, rootDtoName, field, path, schema, isCollection, isNestedDto));
     }
+
+    // New: discourage Map fields (prefer DTOs)
+    issues.addAll(lintMapFields(configName, rootDtoName, field, path, schema, isMap));
 
     if (fieldType == String.class) {
       issues.addAll(lintStructuredString(configName, rootDtoName, field, path, schema));
@@ -149,8 +149,53 @@ public class LintEngine {
         ));
       }
     }
+
     return issues;
   }
+
+  private List<LintIssue> lintMapFields(
+      String configName,
+      String rootDtoName,
+      Field field,
+      String path,
+      Schema schema,
+      boolean isMap
+  ) {
+    List<LintIssue> issues = new ArrayList<>();
+
+    if (!isMap) {
+      return issues;
+    }
+
+    if (isIgnored(field, "MAP_FIELD_DISCOURAGED")) {
+      return issues;
+    }
+
+    // Allow explicit freeform maps via @Schema(additionalProperties = TRUE)
+    if (schema != null && schema.additionalProperties() == Schema.AdditionalPropertiesValue.TRUE) {
+      issues.add(LintIssue.info(
+          configName,
+          rootDtoName,
+          path,
+          "MAP_FIELD_ALLOWED",
+          "Map field marked as freeform via additionalProperties=true"
+      ));
+      return issues;
+    }
+
+    issues.add(issue(
+        LintSeverity.WARN,
+        configName,
+        rootDtoName,
+        path,
+        "MAP_FIELD_DISCOURAGED",
+        "Map fields should usually be represented by a DTO; if intentionally freeform, set @Schema(additionalProperties=TRUE) or @ConfigLintIgnore(\"MAP_FIELD_DISCOURAGED\")"
+    ));
+
+    return issues;
+  }
+
+
 
   private List<LintIssue> lintSchemaBasics(
       String configName,

@@ -17,11 +17,15 @@
  *  limitations under the License.
  */
 
-package io.mapsmessaging.tools.configlint;
+package io.mapsmessaging.tools.config.lint;
 
+import java.util.List;
+import lombok.Value;
 
-public enum LintSeverity {
-  INFO,
-  WARN,
-  ERROR
+@Value
+public class ConfigLintConfigResult {
+
+  String configName;
+  String rootDtoClass;
+  List<LintIssue> issues;
 }

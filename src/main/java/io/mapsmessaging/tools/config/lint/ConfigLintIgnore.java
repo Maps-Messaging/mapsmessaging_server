@@ -1,4 +1,4 @@
-package io.mapsmessaging.tools.configlint;
+package io.mapsmessaging.tools.config.lint;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
