@@ -20,8 +20,6 @@
 package io.mapsmessaging.tools.configlint;
 
 import io.mapsmessaging.dto.rest.config.BaseConfigDTO;
-import io.mapsmessaging.dto.rest.config.meta.Nullability;
-import io.mapsmessaging.dto.rest.config.meta.NullabilityIntent;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
@@ -151,8 +149,6 @@ public class LintEngine {
         ));
       }
     }
-    issues.addAll(lintNullabilityIntent(configName, rootDtoName, field, path, schema));
-
     return issues;
   }
 
@@ -206,10 +202,18 @@ public class LintEngine {
         }
       }
 
+      boolean isOptional = schema.requiredMode() == Schema.RequiredMode.NOT_REQUIRED;
+      boolean isNullable = schema.nullable();
+      boolean hasExplicitDefault = schema.defaultValue() != null; // always true, but keep for clarity
+      boolean requiresDefault = isOptional && !isNullable;
+      boolean defaultMissing = requiresDefault && schema.defaultValue().isEmpty();
       boolean required = schema.requiredMode() == Schema.RequiredMode.REQUIRED;
-      boolean hasDefault = schema.defaultValue() != null && !schema.defaultValue().isBlank();
 
-      if (!required && !hasDefault) {
+      boolean hasDefault = schema.defaultValue() != null
+          && !schema.defaultValue().isBlank()
+          && schema.nullable();
+
+      if (defaultMissing) {
         issues.add(issue(
             LintSeverity.WARN,
             configName,
@@ -476,71 +480,6 @@ public class LintEngine {
     }
 
     return false;
-  }
-
-  private List<LintIssue> lintNullabilityIntent(
-      String configName,
-      String rootDtoName,
-      Field field,
-      String path,
-      Schema schema
-  ) {
-    List<LintIssue> issues = new ArrayList<>();
-
-    if (isIgnored(field, "NULLABILITY_INTENT_MISSING")) {
-      return issues;
-    }
-
-    if (isIgnored(field, "NULLABLE_PRIMITIVE_INVALID")) {
-      return issues;
-    }
-
-    Class<?> fieldType = field.getType();
-    NullabilityIntent intent = field.getAnnotation(NullabilityIntent.class);
-
-    if (fieldType.isPrimitive()) {
-      if (intent != null && intent.value() == Nullability.NULLABLE) {
-        issues.add(issue(
-            LintSeverity.WARN,
-            configName,
-            rootDtoName,
-            path,
-            "NULLABLE_PRIMITIVE_INVALID",
-            "Primitive field cannot be NULLABLE"
-        ));
-      }
-      return issues;
-    }
-
-    if (intent == null) {
-      issues.add(issue(
-          LintSeverity.WARN,
-          configName,
-          rootDtoName,
-          path,
-          "NULLABILITY_INTENT_MISSING",
-          "Reference field must declare @NullabilityIntent(NON_NULL|NULLABLE)"
-      ));
-      return issues;
-    }
-
-    if (schema != null) {
-      boolean swaggerNullable = schema.nullable();
-      boolean intentNullable = intent.value() == Nullability.NULLABLE;
-
-      if (swaggerNullable != intentNullable) {
-        issues.add(issue(
-            LintSeverity.WARN,
-            configName,
-            rootDtoName,
-            path,
-            "NULLABILITY_MISMATCH",
-            "@Schema(nullable=" + swaggerNullable + ") does not match @NullabilityIntent(" + intent.value() + ")"
-        ));
-      }
-    }
-
-    return issues;
   }
 
   private LintIssue issue(

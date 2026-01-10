@@ -119,8 +119,6 @@ public class AuthManager implements Agent {
         throw new NoLoginContextConfigException(msg);
       }
       try {
-
-
         authenticationStorage = new AuthenticationStorage(new ConfigurationProperties(config.getAuthConfig()), config.buildMonitorConfig());
         if (authenticationStorage.isFirstBoot()) {
           createInitialUsers((String)config.getAuthConfig().get("configDirectory"));

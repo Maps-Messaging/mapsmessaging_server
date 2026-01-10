@@ -21,11 +21,8 @@ package io.mapsmessaging.auth.registry;
 
 import io.mapsmessaging.auth.ServerPermissions;
 import io.mapsmessaging.auth.ServerTraversalFactory;
-import io.mapsmessaging.auth.priviliges.PrivilegeSerializer;
 import io.mapsmessaging.auth.priviliges.SessionPrivileges;
-import io.mapsmessaging.auth.registry.mapping.GroupIdSerializer;
 import io.mapsmessaging.auth.registry.mapping.IdDbStore;
-import io.mapsmessaging.auth.registry.mapping.UserIdSerializer;
 import io.mapsmessaging.auth.registry.principal.SessionPrivilegePrincipal;
 import io.mapsmessaging.configuration.ConfigurationProperties;
 import io.mapsmessaging.logging.Logger;
@@ -37,8 +34,6 @@ import io.mapsmessaging.security.access.mapping.UserIdMap;
 import io.mapsmessaging.security.access.monitor.AuthenticationMonitorConfig;
 import io.mapsmessaging.security.authorisation.*;
 import lombok.Getter;
-import org.mapdb.DB;
-import org.mapdb.DBMaker;
 
 import javax.security.auth.Subject;
 import java.io.File;
@@ -90,8 +85,6 @@ public class AuthenticationStorage {
       identityAccessManager = new IdentityAccessManager(authProvider, map, new IdDbStore<>(dbStoreManager.getUserMapSet()), new IdDbStore<>(dbStoreManager.getGroupMapSet()), new ServerTraversalFactory(), monitorConfig, ServerPermissions.values());
       userPermisionManager = new UserPermisionManager(dbStoreManager.getSessionPrivilegesMap());
     } catch (IOException e) {
-
-      // ToDo: This is catastrophic and needs to be logged and the server stopped!, no auth(x) no server
       e.printStackTrace();
       throw new RuntimeException(e);
     }
