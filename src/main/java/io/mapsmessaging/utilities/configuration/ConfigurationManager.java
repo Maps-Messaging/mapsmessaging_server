@@ -196,6 +196,9 @@ public class ConfigurationManager {
     RuntimeJsonSchemaGenerator generator = new RuntimeJsonSchemaGenerator();
     RuntimeJsonSchemaService service = new RuntimeJsonSchemaService(generator);
     configSchemas.putAll(service.generateAllSchemas());
+    for(String schema: configSchemas.values()){
+      System.err.println(schema);
+    }
     ServiceLoader<ConfigManager> configManagers = ServiceLoader.load(ConfigManager.class);
     for(ConfigManager manager : configManagers){
       ConfigManager loaded = manager.load(featureManager);

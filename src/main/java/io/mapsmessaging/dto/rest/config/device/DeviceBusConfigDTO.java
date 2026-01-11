@@ -20,6 +20,8 @@
 package io.mapsmessaging.dto.rest.config.device;
 
 import io.mapsmessaging.dto.rest.config.BaseConfigDTO;
+import io.mapsmessaging.hardware.device.filter.AlwaysSend;
+import io.mapsmessaging.hardware.device.filter.OnChangeFilter;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -33,26 +35,60 @@ import lombok.ToString;
 @Schema(description = "DTO for DeviceBus configuration properties")
 public class DeviceBusConfigDTO extends BaseConfigDTO {
 
-  @Schema(description = "Indicates if the device bus is enabled")
-  protected boolean enabled;
+  @Schema(
+      description = "Indicates if the device bus is enabled",
+      example = "true",
+      requiredMode = Schema.RequiredMode.REQUIRED,
+      defaultValue = "false",
+      nullable = false
+  )
+  protected boolean enabled = false;
 
-  @Schema(description = "Template for the topic name")
+  @Schema(
+      description = "Template for the topic name",
+      requiredMode = Schema.RequiredMode.REQUIRED,
+      pattern = "^/(?:[^/+#]+|\\+)(?:/(?:[^/+#]+|\\+))*?(?:/#)?$\n",
+      example = "/folder/+/folder/topic",
+      nullable = false
+  )
   protected String topicNameTemplate;
 
-  @Schema(description = "Specifies if auto-scan is enabled")
-  protected boolean autoScan;
+  @Schema(
+      description = "Specifies if auto-scan is enabled",
+      requiredMode = Schema.RequiredMode.NOT_REQUIRED,
+      defaultValue = "false",
+      example = "false",
+      nullable = true
+  )
+  protected boolean autoScan = false;
 
   @Schema(
       description = "1-wire bus Scan time interval in milliseconds",
       example = "30000",
       minimum = "1000",
-      maximum = "600000"
+      maximum = "600000",
+      defaultValue = "60000",
+      requiredMode = Schema.RequiredMode.NOT_REQUIRED,
+      nullable = true
   )
-  protected int scanTime;
+  protected int scanTime = 60000;
 
-  @Schema(description = "Filter configuration for the device bus")
+  @Schema(
+      description = "Filters raw value, depending on filter type will only send IF there is a change or every trigger",
+      requiredMode = Schema.RequiredMode.NOT_REQUIRED,
+      allowableValues = {"ALWAYS_SEND"," ON_CHANGE"},
+      defaultValue = "ON_CHANGE",
+      example = "ON_CHANGE",
+      nullable = true
+  )
   protected String filter;
 
-  @Schema(description = "Selector configuration for the device bus")
+  @Schema(
+      description = "JMS selector configuration for the device bus",
+      requiredMode = Schema.RequiredMode.NOT_REQUIRED,
+      defaultValue = "",
+      example = "temperature > 45 AND humidity > 30",
+      nullable = true
+  )
   protected String selector;
 }

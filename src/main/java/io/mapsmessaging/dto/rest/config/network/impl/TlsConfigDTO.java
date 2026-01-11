@@ -31,7 +31,11 @@ import lombok.NoArgsConstructor;
 @Schema(description = "TLS Configuration DTO")
 public class TlsConfigDTO extends TcpConfigDTO {
 
-  @Schema(description = "SSL Engine Configuration")
+  @Schema(
+      description = "SSL Engine Configuration",
+      requiredMode = Schema.RequiredMode.REQUIRED,
+      nullable = false
+  )
   protected SslConfigDTO sslConfig;
 
 

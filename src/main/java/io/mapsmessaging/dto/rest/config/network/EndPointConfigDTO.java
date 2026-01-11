@@ -66,25 +66,34 @@ public class EndPointConfigDTO extends BaseConfigDTO {
   )
   protected String type;
 
-  @Schema(description = "Whether the endpoint is discoverable", example = "false")
-  protected boolean discoverable;
+  @Schema(
+      description = "Whether the endpoint is discoverable",
+      example = "false",
+      requiredMode = Schema.RequiredMode.NOT_REQUIRED,
+      defaultValue = "false",
+      nullable = false
+  )
+  protected boolean discoverable = false;
 
   @Schema(
       description = "Number of selector threads",
+      requiredMode = Schema.RequiredMode.NOT_REQUIRED,
       example = "2",
       minimum = "1",
-      maximum = "10000"
-
+      maximum = "10000",
+      defaultValue = "2",
+      nullable = true
   )
-  protected int selectorThreadCount;
+  protected int selectorThreadCount = 2;
 
   @Schema(
       description = "Server read buffer size in bytes",
       example = "10240",
       minimum = "1024",
-      maximum = "104857600"
+      maximum = "104857600",
+      defaultValue = "10240"
   )
-  protected long serverReadBufferSize;
+  protected long serverReadBufferSize = 10240;
 
   @Schema(
       description = "Server write buffer size in bytes",
@@ -92,7 +101,7 @@ public class EndPointConfigDTO extends BaseConfigDTO {
       minimum = "1024",
       maximum = "104857600"
   )
-  protected long serverWriteBufferSize;
+  protected long serverWriteBufferSize = 10240;
 
   @Schema(
       description = "Proxy Protocol support mode. 'ENABLED' allows but doesn't require it, 'REQUIRED' enforces it, 'DISABLED' will NOT check for incoming PROXY requests.",
@@ -102,7 +111,11 @@ public class EndPointConfigDTO extends BaseConfigDTO {
 
   @Schema(
       description = "Comma-separated list of allowed proxy source addresses. Supports hostnames, IPv4/IPv6 addresses, and CIDR blocks (e.g., 192.168.0.0/24, ::1, example.com).",
-      example = "192.168.1.0/24,10.0.0.1,example.com,::1"
+      requiredMode = Schema.RequiredMode.NOT_REQUIRED,
+      pattern = "^\\s*[^,\\s][^,]*\\s*(?:,\\s*[^,\\s][^,]*\\s*)*$",
+      example = "example.com, localhost, 192.168.1.10, [2001:db8::1]",
+      defaultValue = "",
+      nullable = true
   )
   protected String allowedProxyHosts;
 
@@ -112,5 +125,5 @@ public class EndPointConfigDTO extends BaseConfigDTO {
       minimum = "1000",
       maximum = "120000"
   )
-  protected long connectionTimeout;
+  protected long connectionTimeout = 5000;
 }

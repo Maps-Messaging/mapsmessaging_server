@@ -24,36 +24,71 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
-
 @Data
-@EqualsAndHashCode(callSuper=false)
+@EqualsAndHashCode(callSuper = false)
 @NoArgsConstructor
 @Schema(description = "Key Store Configuration DTO")
 public class KeyStoreConfigDTO extends BaseConfigDTO {
 
-  @Schema(description = "Alias used in the key store", example = "myKeyAlias")
+  @Schema(
+      description = "Alias used in the key store. If not set, the first suitable key entry may be used.",
+      example = "myKeyAlias",
+      requiredMode = Schema.RequiredMode.NOT_REQUIRED,
+      nullable = true
+  )
   protected String alias;
 
   @Schema(
       description = "Type of the key store",
-      example = "JKS",
-      allowableValues = {"JKS", "PKCS11", "PKCS12", "JCEKS", "BKS", "UBER", "BCFKS"}
+      example = "PKCS12",
+      defaultValue = "PKCS12",
+      allowableValues = {"JKS", "PKCS11", "PKCS12", "JCEKS", "BKS", "UBER", "BCFKS"},
+      requiredMode = Schema.RequiredMode.REQUIRED,
+      nullable = false
   )
-  protected String type;
+  protected String type = "PKCS12";
 
-  @Schema(description = "Name of the security provider", example = "SunJSSE")
+  @Schema(
+      description = "Security provider name used for KeyStore/SSL operations (optional). " +
+          "Examples: SunJSSE, SUN, SunRsaSign, BC (BouncyCastle).",
+      example = "SunJSSE",
+      requiredMode = Schema.RequiredMode.NOT_REQUIRED,
+      nullable = true
+  )
   protected String providerName;
 
-  @Schema(description = "Key manager factory algorithm", example = "SunX509")
-  protected String managerFactory;
+  @Schema(
+      description = "KeyManagerFactory algorithm (optional). Common values: SunX509, NewSunX509, PKIX.",
+      example = "SunX509",
+      defaultValue = "SunX509",
+      requiredMode = Schema.RequiredMode.NOT_REQUIRED,
+      nullable = true
+  )
+  protected String managerFactory = "SunX509";
 
-  @Schema(description = "Path to the key store file", example = "/path/to/keystore.jks")
+  @Schema(
+      description = "Path to the key store file. Not required for PKCS11 (which is typically configured via provider settings).",
+      example = "/path/to/keystore.p12",
+      minLength = 1,
+      requiredMode = Schema.RequiredMode.NOT_REQUIRED,
+      nullable = true
+  )
   protected String path;
 
-  @Schema(description = "Passphrase for the key store", example = "changeit")
+  @Schema(
+      description = "Passphrase for the key store. Optional depending on key store type and provider.",
+      example = "changeit",
+      requiredMode = Schema.RequiredMode.NOT_REQUIRED,
+      nullable = true
+  )
   protected String passphrase;
 
-  @Schema(description = "Provider name for the key store", example = "SunJSSE")
+  @Schema(
+      description = "Provider identifier used to load the KeyStore (optional). " +
+          "If both providerName and provider are set, providerName typically takes precedence.",
+      example = "SunJSSE",
+      requiredMode = Schema.RequiredMode.NOT_REQUIRED,
+      nullable = true
+  )
   protected String provider;
-
 }

@@ -24,6 +24,7 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 
+
 @Data
 @EqualsAndHashCode(callSuper = true)
 @NoArgsConstructor
@@ -33,87 +34,133 @@ public class MessageDaemonConfigDTO extends BaseConfigDTO {
   @Schema(
       description = "Interval for delayed publish in milliseconds",
       example = "1000",
+      defaultValue = "1000",
       minimum = "500",
       maximum = "60000"
   )
-  protected int delayedPublishInterval;
+  protected int delayedPublishInterval = 1000;
 
   @Schema(
       description = "Number of session pipelines",
       example = "48",
+      defaultValue = "48",
       minimum = "1",
       maximum = "255"
   )
-  protected int sessionPipeLines;
+  protected int sessionPipeLines = 48;
 
   @Schema(
       description = "Transaction expiry in milliseconds",
       example = "3600000",
+      defaultValue = "3600000",
       minimum = "60000",
       maximum = "2419200000"
   )
-  protected long transactionExpiry;
+  protected long transactionExpiry = 3600000L;
 
   @Schema(
       description = "Transaction scan interval in milliseconds",
       example = "5000",
+      defaultValue = "5000",
       minimum = "1000",
       maximum = "30000"
   )
-  protected long transactionScan;
+  protected long transactionScan = 5000L;
 
-  @Schema(description = "Compression algorithm name", example = "None", allowableValues = {"inflator", "none"})
-  protected String compressionName;
+  @Schema(
+      description = "Compression algorithm name",
+      example = "None",
+      defaultValue = "None"
+  )
+  protected String compressionName = "None";
 
   @Schema(
       description = "Minimum size for message compression",
       example = "1024",
+      defaultValue = "1024",
       minimum = "128",
       maximum = "4096"
   )
-  protected int compressMessageMinSize;
+  protected int compressMessageMinSize = 1024;
 
-  @Schema(description = "On rollback of events if we maintain the priority or bump the priority of the event", example = "maintain", allowableValues = {"maintain", "increment"})
-  protected String incrementPriorityMethod;
+  @Schema(
+      description = "On rollback of events, whether to maintain the priority or increment it",
+      example = "maintain",
+      defaultValue = "maintain"
+  )
+  protected String incrementPriorityMethod = "maintain";
 
-  @Schema(description = "Enable resource statistics", example = "false")
-  protected boolean enableResourceStatistics;
+  @Schema(
+      description = "Enable resource statistics",
+      example = "false",
+      defaultValue = "false"
+  )
+  protected boolean enableResourceStatistics = false;
 
-  @Schema(description = "Enable system topics", example = "true")
-  protected boolean enableSystemTopics;
+  @Schema(
+      description = "Enable system topics",
+      example = "true",
+      defaultValue = "true"
+  )
+  protected boolean enableSystemTopics = true;
 
-  @Schema(description = "Enable system status topics", example = "true")
-  protected boolean enableSystemStatusTopics;
+  @Schema(
+      description = "Enable system status topics",
+      example = "true",
+      defaultValue = "true"
+  )
+  protected boolean enableSystemStatusTopics = true;
 
-  @Schema(description = "Enable system topic averages", example = "false")
-  protected boolean enableSystemTopicAverages;
+  @Schema(
+      description = "Enable system topic averages",
+      example = "false",
+      defaultValue = "false"
+  )
+  protected boolean enableSystemTopicAverages = false;
 
-  @Schema(description = "Enable JMX monitoring", example = "false")
-  protected boolean enableJMX;
+  @Schema(
+      description = "Enable JMX monitoring",
+      example = "false",
+      defaultValue = "false"
+  )
+  protected boolean enableJMX = false;
 
-  @Schema(description = "Enable JMX statistics", example = "false")
-  protected boolean enableJMXStatistics;
+  @Schema(
+      description = "Enable JMX statistics",
+      example = "false",
+      defaultValue = "false"
+  )
+  protected boolean enableJMXStatistics = false;
 
-  @Schema(description = "Tag metadata for messages", example = "false")
-  protected boolean tagMetaData;
+  @Schema(
+      description = "Tag metadata for messages",
+      example = "false",
+      defaultValue = "false"
+  )
+  protected boolean tagMetaData = false;
 
   @Schema(
       description = "Latitude for the daemon location",
       example = "0.0",
-      minimum = "-90",
-      maximum = "90"
+      defaultValue = "0.0",
+      minimum = "-90.0",
+      maximum = "90.0"
   )
-  protected double latitude;
+  protected double latitude = 0.0;
 
   @Schema(
       description = "Longitude for the daemon location",
       example = "0.0",
-      minimum = "-180",
-      maximum = "180"
+      defaultValue = "0.0",
+      minimum = "-180.0",
+      maximum = "180.0"
   )
-  protected double longitude;
+  protected double longitude = 0.0;
 
-  @Schema(description = "Send anonymous server usage statistics to Maps Messaging", example = "false")
-  protected boolean sendAnonymousStatusUpdates;
-
+  @Schema(
+      description = "Send anonymous server usage statistics to Maps Messaging",
+      example = "true",
+      defaultValue = "true"
+  )
+  protected boolean sendAnonymousStatusUpdates = true;
 }

@@ -27,27 +27,46 @@ import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 
 import java.util.List;
-
 @Data
 @EqualsAndHashCode(callSuper = true)
 @NoArgsConstructor
 @Schema(description = "Network Manager Configuration DTO")
 public class NetworkManagerConfigDTO extends BaseConfigDTO {
 
-  @Schema(description = "Prefer IPv6 addresses", example = "true")
-  protected boolean preferIpV6Addresses;
-
-  @Schema(description = "Scan for network changes", example = "true")
-  protected boolean scanNetworkChanges;
+  @Schema(
+      description = "Prefer IPv6 addresses when both IPv4 and IPv6 are available",
+      example = "true",
+      defaultValue = "true",
+      requiredMode = Schema.RequiredMode.REQUIRED,
+      nullable = false
+  )
+  protected boolean preferIpV6Addresses = true;
 
   @Schema(
-      description = "Scan for new network interfaces interval in milliseconds",
-      example = "60000",
-      minimum = "10000",
-      maximum = "600000"
+      description = "Scan for network changes (interface up/down, address changes, etc.)",
+      example = "true",
+      defaultValue = "true",
+      requiredMode = Schema.RequiredMode.REQUIRED,
+      nullable = false
   )
-  protected int scanInterval;
+  protected boolean scanNetworkChanges = true;
 
-  @Schema(description = "List of endpoint server configurations")
+  @Schema(
+      description = "Interval in milliseconds to scan for new/changed network interfaces",
+      example = "60000",
+      defaultValue = "60000",
+      minimum = "10000",
+      maximum = "600000",
+      requiredMode = Schema.RequiredMode.REQUIRED,
+      nullable = false
+  )
+  protected int scanInterval = 60000;
+
+  @Schema(
+      description = "List of endpoint server configurations",
+      requiredMode = Schema.RequiredMode.NOT_REQUIRED,
+      nullable = true,
+      example = "[{\"type\":\"mqtt\",\"enabled\":true,\"hostnames\":\"0.0.0.0\",\"port\":1883}]"
+  )
   protected List<EndPointServerConfigDTO> endPointServerConfigList;
 }

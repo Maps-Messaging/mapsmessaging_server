@@ -35,31 +35,59 @@ import java.util.List;
 @Schema(description = "Endpoint Connection Server Configuration DTO")
 public class EndPointConnectionServerConfigDTO extends EndPointServerConfigDTO {
 
-  @Schema(description = "Authentication configuration for endpoint connection")
+  @Schema(
+      description = "Authentication configuration for the endpoint connection",
+      requiredMode = Schema.RequiredMode.NOT_REQUIRED,
+      nullable = true
+  )
   protected AuthConfigDTO authConfig;
 
   @Schema(
-      description = "Link transformation for the endpoint connection",
-      example = "transformationType",
-      allowableValues = {"$SERVICE:LinkTransformation"}
+      description = "Link transformation identifier. " +
+          "May reference a built-in or plugin-provided transformation (for example \"$SERVICE:<Name>\").",
+      example = "$SERVICE:LinkTransformation",
+      defaultValue = "",
+      requiredMode = Schema.RequiredMode.NOT_REQUIRED,
+      nullable = true,
+      minLength = 0
   )
   protected String linkTransformation;
 
-  @Schema(description = "List of link configurations")
+  @Schema(
+      description = "List of link configurations for this endpoint connection",
+      requiredMode = Schema.RequiredMode.NOT_REQUIRED,
+      nullable = true,
+      example = "[{\"direction\":\"pull\",\"remote_namespace\":\"/+/1/1/GPS_RAW_INT\",\"local_namespace\":\"/\"}]"
+  )
   protected List<LinkConfigDTO> linkConfigs;
 
-  @Schema(description = "Is this a 3rd party plugin connection")
-  protected boolean pluginConnection;
+  @Schema(
+      description = "True if this is a third-party plugin connection",
+      example = "false",
+      defaultValue = "false",
+      requiredMode = Schema.RequiredMode.REQUIRED,
+      nullable = false
+  )
+  protected boolean pluginConnection = false;
 
   @Schema(
-      description = "An arbitrary cost associated with using this connection",
-      defaultValue = "10",
+      description = "An arbitrary cost associated with using this connection (lower is preferred)",
       example = "10",
+      defaultValue = "10",
       minimum = "1",
-      maximum = "1000"
+      maximum = "1000",
+      requiredMode = Schema.RequiredMode.REQUIRED,
+      nullable = false
   )
-  protected int cost;
+  protected int cost = 10;
 
-  @Schema(description = "Optional name of the group that the connection belongs to", defaultValue = "", example="Main data uplink")
+  @Schema(
+      description = "Optional group name for this connection",
+      example = "Main data uplink",
+      defaultValue = "",
+      requiredMode = Schema.RequiredMode.NOT_REQUIRED,
+      nullable = true
+  )
   protected String groupName;
 }
+

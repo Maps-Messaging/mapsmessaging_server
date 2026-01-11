@@ -34,13 +34,26 @@ public class I2CDeviceConfigDTO extends BaseConfigDTO {
   @Schema(description = "Address of the I2C device",
       example = "45",
       minimum = "0",
-      maximum = "255"
+      maximum = "255",
+      requiredMode = Schema.RequiredMode.REQUIRED,
+      nullable = false
   )
   protected int address;
 
-  @Schema(description = "Name of the I2C device")
+  @Schema(
+      description = "Name of the I2C device",
+      requiredMode = Schema.RequiredMode.REQUIRED,
+      nullable = false,
+      example = "BME688 sensor"
+  )
   protected String name;
 
-  @Schema(description = "Selector configuration for the I2C device")
+  @Schema(
+      description = "Selector configuration for the I2C device",
+      requiredMode = Schema.RequiredMode.NOT_REQUIRED,
+      example = "temperature  > 30",
+      nullable = true,
+      defaultValue = ""
+  )
   protected String selector;
 }

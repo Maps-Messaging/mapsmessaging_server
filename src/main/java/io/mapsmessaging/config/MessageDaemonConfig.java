@@ -32,23 +32,23 @@ import java.io.IOException;
 public class MessageDaemonConfig extends MessageDaemonConfigDTO implements Config, ConfigManager {
 
   private MessageDaemonConfig(ConfigurationProperties config) {
-    this.delayedPublishInterval = config.getIntProperty("DelayedPublishInterval", 1000);
-    this.sessionPipeLines = config.getIntProperty("SessionPipeLines", 48);
-    this.transactionExpiry = config.getIntProperty("TransactionExpiry", 3600000);
-    this.transactionScan = config.getLongProperty("TransactionScan", 5000);
-    this.compressionName = config.getProperty("CompressionName", "None");
-    this.compressMessageMinSize = config.getIntProperty("CompressMessageMinSize", 1024);
-    this.incrementPriorityMethod = config.getProperty("IncrementPriorityMethod", "maintain");
-    this.enableResourceStatistics = config.getBooleanProperty("EnableResourceStatistics", false);
-    this.enableSystemTopics = config.getBooleanProperty("EnableSystemTopics", true);
-    this.enableSystemStatusTopics = config.getBooleanProperty("EnableSystemStatusTopics", true);
-    this.enableSystemTopicAverages = config.getBooleanProperty("EnableSystemTopicAverages", false);
-    this.enableJMX = config.getBooleanProperty("EnableJMX", false);
-    this.enableJMXStatistics = config.getBooleanProperty("EnableJMXStatistics", false);
-    this.tagMetaData = config.getBooleanProperty("tagMetaData", false);
-    this.latitude = config.getDoubleProperty("latitude", 0.0);
-    this.longitude = config.getDoubleProperty("longitude", 0.0);
-    this.sendAnonymousStatusUpdates = config.getBooleanProperty("SendAnonymousStatusUpdates", true);
+    this.delayedPublishInterval = config.getIntProperty("DelayedPublishInterval", delayedPublishInterval);
+    this.sessionPipeLines = config.getIntProperty("SessionPipeLines", sessionPipeLines);
+    this.transactionExpiry = config.getLongProperty("TransactionExpiry", transactionExpiry);
+    this.transactionScan = config.getLongProperty("TransactionScan", transactionScan);
+    this.compressionName = config.getProperty("CompressionName", compressionName);
+    this.compressMessageMinSize = config.getIntProperty("CompressMessageMinSize", compressMessageMinSize);
+    this.incrementPriorityMethod = config.getProperty("IncrementPriorityMethod", incrementPriorityMethod);
+    this.enableResourceStatistics = config.getBooleanProperty("EnableResourceStatistics", enableResourceStatistics);
+    this.enableSystemTopics = config.getBooleanProperty("EnableSystemTopics", enableSystemTopics);
+    this.enableSystemStatusTopics = config.getBooleanProperty("EnableSystemStatusTopics", enableSystemStatusTopics);
+    this.enableSystemTopicAverages = config.getBooleanProperty("EnableSystemTopicAverages", enableSystemTopicAverages);
+    this.enableJMX = config.getBooleanProperty("EnableJMX", enableJMX);
+    this.enableJMXStatistics = config.getBooleanProperty("EnableJMXStatistics", enableJMXStatistics);
+    this.tagMetaData = config.getBooleanProperty("tagMetaData", tagMetaData);
+    this.latitude = config.getDoubleProperty("latitude", latitude);
+    this.longitude = config.getDoubleProperty("longitude", longitude);
+    this.sendAnonymousStatusUpdates = config.getBooleanProperty("SendAnonymousStatusUpdates", sendAnonymousStatusUpdates);
   }
 
   public static MessageDaemonConfig getInstance() {

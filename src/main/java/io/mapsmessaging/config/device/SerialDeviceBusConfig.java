@@ -32,11 +32,11 @@ public class SerialDeviceBusConfig extends SerialBusConfigDTO  implements Device
 
   public SerialDeviceBusConfig(ConfigurationProperties properties) {
     this.name = properties.getProperty("name");
-    this.enabled =properties.getBooleanProperty("enabled", false);
-    setScanTime(properties.getIntProperty("scanTime", 120000));
+    this.enabled =properties.getBooleanProperty("enabled", enabled);
+    setScanTime(properties.getIntProperty("scanTime", scanTime));
     setFilter(properties.getProperty("filter", "ON_CHANGE"));
     setSelector(properties.getProperty("selector", null));
-    this.autoScan = properties.getBooleanProperty("autoScan", true);
+    this.autoScan = properties.getBooleanProperty("autoScan", autoScan);
     this.trigger = properties.getProperty("trigger");
     setTopicNameTemplate(properties.getProperty("topicNameTemplate", "/serial/[device_name]"));
     this.devices = new ArrayList<>();

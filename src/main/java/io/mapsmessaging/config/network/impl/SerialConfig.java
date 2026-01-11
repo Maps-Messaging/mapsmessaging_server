@@ -44,8 +44,8 @@ public class SerialConfig extends SerialConfigDTO implements Config {
       this.setSerialNo(serial.getProperty("serialNo"));
     }
 
-    this.setReadTimeOut(config.getIntProperty("readTimeOut", 60000));
-    this.setWriteTimeOut(config.getIntProperty("writeTimeOut", 60000));
+    this.setReadTimeOut(config.getIntProperty("readTimeOut", readTimeOut));
+    this.setWriteTimeOut(config.getIntProperty("writeTimeOut", writeTimeOut));
     this.setBufferSize(config.getIntProperty("bufferSize", 256 * 1024));
     setType("serial");
   }

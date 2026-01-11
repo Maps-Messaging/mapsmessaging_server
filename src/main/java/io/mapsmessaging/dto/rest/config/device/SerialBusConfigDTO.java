@@ -19,7 +19,6 @@
 
 package io.mapsmessaging.dto.rest.config.device;
 
-import io.mapsmessaging.dto.rest.config.BaseConfigDTO;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -38,17 +37,34 @@ public class SerialBusConfigDTO extends DeviceBusConfigDTO {
       description = "Time to scan for new serial devices",
       example = "60000",
       minimum = "5000",
-      maximum = "600000"
+      maximum = "600000",
+      defaultValue = "60000",
+      nullable = true,
+      requiredMode = Schema.RequiredMode.NOT_REQUIRED
   )
   protected int scanTime;
 
-  @Schema(description = "Name of the serial bus managemnt", example = "serial")
+  @Schema(
+      description = "Name of the block configuation",
+      example = "USB-485-to-232-unit-A",
+      requiredMode = Schema.RequiredMode.REQUIRED,
+      nullable = false
+  )
   protected String name;
 
-  @Schema(description = "List of Serial devices devices on this bus")
+  @Schema(
+      description = "List of Serial devices devices on this bus",
+      requiredMode = Schema.RequiredMode.REQUIRED,
+      nullable = false
+  )
   protected List<SerialDeviceDTO> devices;
 
-  @Schema(description = "Trigger mechanism for OneWire bus", example = "temperatureTrigger")
+  @Schema(
+      description = "Trigger mechanism for OneWire bus",
+      example = "temperatureTrigger",
+      requiredMode = Schema.RequiredMode.REQUIRED,
+      nullable = false
+  )
   protected String trigger;
 
 }

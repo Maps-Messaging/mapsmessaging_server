@@ -50,12 +50,19 @@ public class BaseTriggerConfigDTO extends BaseConfigDTO{
 
   @Schema(description = "Type of the trigger",
       example = "cron",
-      allowableValues = {"cron", "interrupt", "periodic"}
+      allowableValues = {"cron", "interrupt", "periodic"},
+      requiredMode = Schema.RequiredMode.REQUIRED,
+      nullable = false
   )
   protected String type;
 
 
-  @Schema(description = "Name of the trigger", example = "dailyTrigger")
+  @Schema(
+      description = "Name of the trigger",
+      example = "dailyTrigger",
+      requiredMode = Schema.RequiredMode.REQUIRED,
+      nullable = false
+  )
   protected String name;
 
 }

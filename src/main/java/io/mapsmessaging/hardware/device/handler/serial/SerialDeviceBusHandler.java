@@ -24,6 +24,7 @@ import io.mapsmessaging.config.device.SerialDeviceBusConfig;
 import io.mapsmessaging.devices.DeviceController;
 import io.mapsmessaging.devices.serial.SerialBusManager;
 import io.mapsmessaging.devices.serial.SerialDeviceController;
+import io.mapsmessaging.dto.rest.config.device.SerialBusConfigDTO;
 import io.mapsmessaging.dto.rest.config.device.SerialDeviceDTO;
 import io.mapsmessaging.hardware.device.handler.BusHandler;
 import io.mapsmessaging.hardware.device.handler.DeviceHandler;
@@ -40,7 +41,7 @@ public class SerialDeviceBusHandler extends BusHandler {
 
   private final SerialBusManager serialBusManager;
 
-  public SerialDeviceBusHandler(SerialBusManager serialBusManager, SerialDeviceBusConfig serialDeviceDTO, Trigger trigger) {
+  public SerialDeviceBusHandler(SerialBusManager serialBusManager, SerialBusConfigDTO serialDeviceDTO, Trigger trigger) {
     super(serialDeviceDTO, trigger);
     this.serialBusManager = serialBusManager;
   }

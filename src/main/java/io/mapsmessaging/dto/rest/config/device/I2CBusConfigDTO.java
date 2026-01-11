@@ -36,11 +36,18 @@ public class I2CBusConfigDTO extends DeviceBusConfigDTO {
       description = "Bus number for the I2C device",
       example = "1",
       minimum = "0",
-      maximum = "255"
+      maximum = "255",
+      requiredMode = Schema.RequiredMode.REQUIRED,
+      nullable = false
   )
   protected int bus;
 
-  @Schema(description = "Trigger configuration for the I2C bus")
+  @Schema(
+      description = "Trigger configuration for the I2C bus",
+      requiredMode = Schema.RequiredMode.REQUIRED,
+      example = "trigger name",
+      nullable = false
+  )
   protected String trigger;
 
   @Schema(description = "List of I2C devices on this bus")

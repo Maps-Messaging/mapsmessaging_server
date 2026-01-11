@@ -24,16 +24,26 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
-
 @Data
 @EqualsAndHashCode(callSuper = true)
 @NoArgsConstructor
 @Schema(description = "Jolokia Configuration DTO")
 public class JolokiaConfigDTO extends BaseConfigDTO {
 
-  @Schema(description = "Enable or disable Jolokia monitoring", example = "false")
+  @Schema(
+      description = "Enable or disable Jolokia monitoring",
+      example = "false",
+      requiredMode = Schema.RequiredMode.REQUIRED,
+      nullable = false
+  )
   private boolean enable;
 
-  @Schema(description = "Mapping configuration for Jolokia")
+  @Schema(
+      description = "Mapping configuration for Jolokia (free-form object structure consumed by Jolokia integration).",
+      requiredMode = Schema.RequiredMode.NOT_REQUIRED,
+      nullable = true,
+      type = "object",
+      example = "{ \"rules\": [ { \"mbean\": \"java.lang:type=Memory\", \"attributes\": [\"HeapMemoryUsage\"] } ] }"
+  )
   private ConfigurationProperties jolokiaMapping;
 }

@@ -57,14 +57,18 @@ public class SerialConfigDTO extends EndPointConfigDTO {
       example = "1",
       allowableValues = {"1", "1.5", "2"},
       minimum = "1",
-      maximum = "2"
+      maximum = "2",
+      requiredMode = Schema.RequiredMode.REQUIRED,
+      nullable = true
   )
   protected String stopBits;
 
   @Schema(
       description = "Parity setting for the serial connection",
       example = "n",
-      allowableValues = {"n", "o", "e", "m", "s"}
+      allowableValues = {"n", "o", "e", "m", "s"},
+      requiredMode = Schema.RequiredMode.REQUIRED,
+      nullable = true
   )
   protected String parity;
 
@@ -73,8 +77,9 @@ public class SerialConfigDTO extends EndPointConfigDTO {
       example = "1",
       allowableValues = {"0", "1", "2", "3"},
       minimum = "0",
-      maximum = "3"
-
+      maximum = "3",
+      requiredMode = Schema.RequiredMode.REQUIRED,
+      nullable = true
   )
   protected int flowControl;
 
@@ -82,29 +87,39 @@ public class SerialConfigDTO extends EndPointConfigDTO {
       description = "Read timeout in milliseconds",
       example = "60000",
       minimum = "1000",
-      maximum = "600000"
+      maximum = "600000",
+      requiredMode = Schema.RequiredMode.REQUIRED,
+      nullable = true
   )
-  protected int readTimeOut;
+  protected int readTimeOut = 60000;
 
   @Schema(
       description = "Write timeout in milliseconds",
       example = "60000",
       minimum = "1000",
-      maximum = "600000"
+      maximum = "600000",
+      defaultValue = "60000",
+      requiredMode = Schema.RequiredMode.NOT_REQUIRED,
+      nullable = true
   )
-  protected int writeTimeOut;
+  protected int writeTimeOut = 60000;
 
   @Schema(
       description = "Buffer size in bytes",
       example = "262144",
       minimum = "1024",
-      maximum = "1048576"
+      maximum = "1048576",
+      requiredMode = Schema.RequiredMode.NOT_REQUIRED,
+      defaultValue = "102400",
+      nullable = true
   )
-  protected int bufferSize;
+  protected int bufferSize = 102400;
 
   @Schema(description =
       "Serial number for the device, optional",
-      example = "262144"
+      example = "262144",
+      requiredMode = Schema.RequiredMode.NOT_REQUIRED,
+      nullable = true
   )
   protected String serialNo;
 

@@ -31,10 +31,19 @@ import lombok.NoArgsConstructor;
 @Schema(description = "Serial Bus Configuration DTO")
 public class SerialDeviceDTO extends DeviceBusConfigDTO {
 
-  @Schema(description = "Name of the Serial Device", example = "SEN0640")
+  @Schema(
+      description = "Name of the Serial Device",
+      example = "SEN0640",
+      requiredMode = Schema.RequiredMode.REQUIRED,
+      nullable = false
+  )
   protected String name;
 
-  @Schema(description = "Serial port configuration")
+  @Schema(
+      description = "Serial port configuration",
+      requiredMode = Schema.RequiredMode.REQUIRED,
+      nullable = false
+  )
   protected SerialConfigDTO serialConfig;
 
 }

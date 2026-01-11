@@ -26,25 +26,28 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.util.Map;
-
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Schema(
     title = "Security Manager",
-    description = "Mapping between auth config and JAAS configurations")
+    description = "Mapping between auth config names and JAAS configuration names"
+)
 public class SecurityManagerDTO extends BaseConfigDTO {
 
   @Schema(
       title = "Mapping",
-      description = "The auth name as key and the JAAS implementation name as value map",
-      example = "Default:PublicAuthConfig",
-      nullable = false)
+      description = "Map of auth configuration name (key) to JAAS configuration name (value). " +
+          "If authName is blank, the value for key \"default\" is used.",
+      type = "object",
+      additionalPropertiesSchema = String.class,
+      example = "{\"default\":\"PublicAuthConfig\",\"Default\":\"PublicAuthConfig\"}",
+      nullable = false,
+      requiredMode = Schema.RequiredMode.REQUIRED
+  )
   protected Map<String, String> map;
 
-
-
-  public String getAuthName(String authName){
+  public String getAuthName(String authName) {
     if (authName != null && !authName.isEmpty()) {
       return map.get(authName);
     } else {

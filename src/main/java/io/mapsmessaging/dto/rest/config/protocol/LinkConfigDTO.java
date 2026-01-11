@@ -30,39 +30,83 @@ import lombok.NoArgsConstructor;
 
 import java.util.List;
 import java.util.Map;
-
 @Data
 @EqualsAndHashCode(callSuper = true)
 @NoArgsConstructor
 @Schema(description = "Link Configuration DTO")
 public class LinkConfigDTO extends BaseConfigDTO {
 
-  @Schema(description = "Direction of the link", example = "inbound")
+  @Schema(
+      description = "Direction of the link",
+      example = "pull",
+      allowableValues = {"pull", "push"},
+      requiredMode = Schema.RequiredMode.REQUIRED,
+      nullable = false
+  )
   protected String direction;
 
-  @Schema(description = "Remote namespace", example = "remote_ns")
+  @Schema(
+      description = "Remote namespace (source). Typically a topic/namespace filter. " +
+          "For MQTT-style namespaces, + and # may be used as wildcards.",
+      example = "/+/1/1/GPS_RAW_INT",
+      minLength = 1,
+      requiredMode = Schema.RequiredMode.REQUIRED,
+      nullable = false
+  )
   protected String remoteNamespace;
 
-  @Schema(description = "Local namespace", example = "local_ns")
+  @Schema(
+      description = "Local namespace (destination). Typically a topic/namespace.",
+      example = "/",
+      minLength = 1,
+      requiredMode = Schema.RequiredMode.REQUIRED,
+      nullable = false
+  )
   protected String localNamespace;
 
-  @Schema(description = "Message selector", example = "selector_criteria")
+  @Schema(
+      description = "Message selector expression (JMS selector syntax). If not set, all messages match.",
+      example = "temperature > 30 AND humidityPercent < 70",
+      requiredMode = Schema.RequiredMode.NOT_REQUIRED,
+      nullable = true
+  )
   protected String selector;
 
-  @Schema(description = "Include schema flag", example = "true")
-  protected boolean includeSchema;
+  @Schema(
+      description = "If true, include schema information when forwarding messages (where supported)",
+      example = "true",
+      defaultValue = "false",
+      requiredMode = Schema.RequiredMode.REQUIRED,
+      nullable = false
+  )
+  protected boolean includeSchema = false;
 
-  @Schema(description = "Transformer configuration map")
+  @Schema(
+      description = "Transformer chain configuration (array of objects). Each entry specifies transformer name and parameters.",
+      type = "array",
+      requiredMode = Schema.RequiredMode.NOT_REQUIRED,
+      nullable = true,
+      example = "[{\"name\":\"JsonQuery\",\"parameters\":{\"query\":\"[\\\"object\\\",{\\\"latitude\\\":[\\\"divide\\\",[\\\"get\\\",\\\"payload\\\",\\\"decoded\\\",\\\"lat\\\"],10000000]}]\"}}]"
+  )
   protected List<Map<String, Object>> transformer;
 
-  @Schema(description = "Configure a statistic analysis of the data flowing through")
+  @Schema(
+      description = "Configure statistical analysis of data flowing through the link",
+      requiredMode = Schema.RequiredMode.NOT_REQUIRED,
+      nullable = true
+  )
   protected StatisticsConfigDTO statistics;
 
-  @Schema(description = "Specific filtering on namespace", nullable = true)
+  @Schema(
+      description = "Specific filtering applied to namespaces",
+      requiredMode = Schema.RequiredMode.NOT_REQUIRED,
+      nullable = true
+  )
   protected NamespaceFilters namespaceFilters;
 
   @Schema(
-      description = "Quality of server QoS:0, 1 or 2, for non MQTT  1 or 2 imply transactional",
+      description = "Requested QoS for the link (0, 1, or 2). For non-MQTT links, 1 or 2 may imply transactional handling.",
+      requiredMode = Schema.RequiredMode.NOT_REQUIRED,
       nullable = true,
       example = "1"
   )

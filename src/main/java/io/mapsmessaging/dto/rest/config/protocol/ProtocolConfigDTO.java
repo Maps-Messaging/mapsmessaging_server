@@ -69,39 +69,63 @@ import lombok.NoArgsConstructor;
     },
     requiredProperties = {"type"}
 )
+
 @Data
-@EqualsAndHashCode(callSuper=false)
+@EqualsAndHashCode(callSuper = false)
 @NoArgsConstructor
 public class ProtocolConfigDTO extends BaseConfigDTO {
 
-  @Schema(description = "Type of the protocol configuration", allowableValues = {
-      "amqp",
-      "coap",
-      "lora",
-      "loop",
-      "mqtt",
-      "mqtt-sn",
-      "mqttV5", "NMEA-0183",
-      "orbcomm",
-      "satellite",
-      "semtech",
-      "stomp",
-      "websocket",
-      "mavlink",
-      "extension"
-  })
+  @Schema(
+      description = "Type of the protocol configuration",
+      example = "mqtt",
+      allowableValues = {
+          "amqp",
+          "coap",
+          "lora",
+          "loop",
+          "mqtt",
+          "mqtt-sn",
+          "mqttV5",
+          "NMEA-0183",
+          "orbcomm",
+          "satellite",
+          "semtech",
+          "stomp",
+          "websocket",
+          "mavlink",
+          "extension"
+      },
+      requiredMode = Schema.RequiredMode.REQUIRED,
+      nullable = false
+  )
   protected String type;
 
-  public String getProtocol(){
+  public String getProtocol() {
     return type;
   }
 
-  @Schema(description = "Support Proxy Protocol on the connection")
-  protected boolean proxyProtocol;
+  @Schema(
+      description = "Enable support for the PROXY protocol (v1/v2) on incoming connections",
+      example = "false",
+      defaultValue = "false",
+      requiredMode = Schema.RequiredMode.REQUIRED,
+      nullable = false
+  )
+  protected boolean proxyProtocol = false;
 
-  @Schema(description = "Remote authentication configuration for the protocol")
+  @Schema(
+      description = "Remote authentication configuration for this protocol. " +
+          "Used when the protocol establishes outbound or proxied connections.",
+      requiredMode = Schema.RequiredMode.NOT_REQUIRED,
+      nullable = true
+  )
   protected ConnectionAuthConfigDTO remoteAuthConfig;
 
-  @Schema(description = "Specify the message defaults for this protocol")
+  @Schema(
+      description = "Message default overrides applied to messages handled by this protocol",
+      requiredMode = Schema.RequiredMode.NOT_REQUIRED,
+      nullable = true
+  )
   protected MessageOverrideDTO messageDefaults;
 }
+

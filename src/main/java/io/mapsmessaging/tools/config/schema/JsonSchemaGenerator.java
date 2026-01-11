@@ -15,12 +15,11 @@ public class JsonSchemaGenerator {
   public String generate(String configName, Class<? extends BaseConfigDTO> rootDtoClass) {
     SchemaContext context = new SchemaContext(configName);
 
-    SchemaObject rootRef = schemaForDto(rootDtoClass, context);
-
     SchemaDocument doc = new SchemaDocument();
     doc.put("$schema", "https://json-schema.org/draft/2020-12/schema");
     doc.put("$id", "urn:mapsmessaging:config-schema:" + configName);
     doc.put("title", configName);
+    doc.put("unevaluatedProperties", false);
 
     Schema rootSchemaAnn = rootDtoClass.getAnnotation(Schema.class);
     if (rootSchemaAnn != null && !rootSchemaAnn.description().isBlank()) {
