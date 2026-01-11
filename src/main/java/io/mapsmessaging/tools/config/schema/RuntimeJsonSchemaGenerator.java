@@ -47,6 +47,8 @@ public class RuntimeJsonSchemaGenerator {
     doc.put("$schema", "https://json-schema.org/draft/2020-12/schema");
     doc.put("$id", "urn:mapsmessaging:config-schema:" + configName);
     doc.put("title", configName);
+    doc.put("additionalProperties", false);
+    doc.put("unevaluatedProperties", false);
 
     Schema rootSchemaAnn = rootDtoClass.getAnnotation(Schema.class);
     if (rootSchemaAnn != null && !rootSchemaAnn.description().isBlank()) {
@@ -156,7 +158,7 @@ public class RuntimeJsonSchemaGenerator {
           String name = field.getName();
           SchemaObject propertySchema = schemaForField(field, context);
 
-          applySwaggerSchema(propertySchema, fieldSchemaAnn, field.getType());
+          applySwaggerSchema(propertySchema, fieldSchemaAnn, field.getType(), context);
 
           if (fieldSchemaAnn.requiredMode() == Schema.RequiredMode.REQUIRED) {
             required.add(name);
@@ -170,7 +172,10 @@ public class RuntimeJsonSchemaGenerator {
           }
           context.warn("RELAXED: " + e.getMessage());
           String name = field.getName();
-          properties.put(name, unsupportedPlaceholder("Field schema failed", field.getGenericType().getTypeName()).toJsonValue());
+          properties.put(
+              name,
+              unsupportedPlaceholder("Field schema failed", field.getGenericType().getTypeName()).toJsonValue()
+          );
         }
         finally {
           context.exitField();
@@ -330,7 +335,12 @@ public class RuntimeJsonSchemaGenerator {
     return unsupportedOrThrow("Unsupported field type (no guessing): " + clazz.getName(), context);
   }
 
-  private void applySwaggerSchema(SchemaObject propertySchema, Schema schemaAnn, Class<?> javaType) {
+  private void applySwaggerSchema(
+      SchemaObject propertySchema,
+      Schema schemaAnn,
+      Class<?> javaType,
+      SchemaContext context
+  ) {
     if (!schemaAnn.description().isBlank()) {
       propertySchema.put("description", schemaAnn.description());
     }
@@ -343,31 +353,49 @@ public class RuntimeJsonSchemaGenerator {
       propertySchema.put("default", coerceExample(schemaAnn.defaultValue(), javaType));
     }
 
-    if (!schemaAnn.minimum().isBlank()) {
-      propertySchema.put("minimum", coerceNumber(schemaAnn.minimum(), javaType, "minimum"));
+    List<String> enumValues = sanitizeAllowableValues(schemaAnn.allowableValues());
+    if (!enumValues.isEmpty()) {
+      propertySchema.put("enum", enumValues);
     }
 
-    if (!schemaAnn.maximum().isBlank()) {
-      propertySchema.put("maximum", coerceNumber(schemaAnn.maximum(), javaType, "maximum"));
-    }
+    boolean numeric = isInteger(javaType) || isNumber(javaType);
+    if (numeric) {
+      if (!schemaAnn.minimum().isBlank()) {
+        propertySchema.put("minimum", coerceNumber(schemaAnn.minimum(), javaType, "minimum"));
+      }
 
-    double multipleOf = schemaAnn.multipleOf();
-    if (multipleOf > 0.0d) {
-      propertySchema.put("multipleOf", multipleOf);
-    }
+      if (!schemaAnn.maximum().isBlank()) {
+        propertySchema.put("maximum", coerceNumber(schemaAnn.maximum(), javaType, "maximum"));
+      }
 
-    String[] allowable = schemaAnn.allowableValues();
-    if (allowable != null && allowable.length > 0) {
-      List<String> vals = new ArrayList<>();
-      for (String v : allowable) {
-        if (v != null && !v.isBlank()) {
-          vals.add(v);
+      double multipleOf = schemaAnn.multipleOf();
+      if (multipleOf > 0.0d) {
+        propertySchema.put("multipleOf", multipleOf);
+      }
+    }
+    else {
+      // Ignore numeric constraints on non-numeric types (strings, enums, objects, etc.)
+      // In RELAXED mode we can optionally warn when annotations are nonsense.
+      if (mode == SchemaGenerationMode.RELAXED) {
+        if (!schemaAnn.minimum().isBlank() || !schemaAnn.maximum().isBlank() || schemaAnn.multipleOf() > 0.0d) {
+          context.warn("Ignored numeric constraints on non-numeric field type " + javaType.getName());
         }
       }
-      if (!vals.isEmpty()) {
-        propertySchema.put("enum", vals);
+    }
+  }
+
+  private List<String> sanitizeAllowableValues(String[] allowable) {
+    if (allowable == null || allowable.length == 0) {
+      return List.of();
+    }
+
+    List<String> vals = new ArrayList<>();
+    for (String v : allowable) {
+      if (v != null && !v.isBlank()) {
+        vals.add(v);
       }
     }
+    return vals;
   }
 
   private Object coerceExample(String raw, Class<?> javaType) {
@@ -452,3 +480,4 @@ public class RuntimeJsonSchemaGenerator {
     return list;
   }
 }
+

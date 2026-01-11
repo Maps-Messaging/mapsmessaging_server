@@ -22,8 +22,6 @@ package io.mapsmessaging.rest;
 import io.mapsmessaging.MessageDaemon;
 import io.mapsmessaging.auth.AuthManager;
 import io.mapsmessaging.config.RestApiManagerConfig;
-import io.mapsmessaging.config.network.impl.TlsConfig;
-import io.mapsmessaging.config.rest.StaticConfig;
 import io.mapsmessaging.dto.rest.config.network.impl.TlsConfigDTO;
 import io.mapsmessaging.dto.rest.config.rest.StaticConfigDTO;
 import io.mapsmessaging.dto.rest.system.Status;
@@ -210,6 +208,8 @@ public class RestApiServerManager implements Agent {
     endpoints.add("io.mapsmessaging.rest.api.impl.server");
     endpoints.add("io.mapsmessaging.rest.api.impl.logging");
     endpoints.add("io.mapsmessaging.rest.api.impl.ml");
+    endpoints.add("io.mapsmessaging.rest.api.impl.config");
+
     try {
       final ResourceConfig resourceConfig = new ResourceConfig();
       resourceConfig.packages(false, endpoints.toArray(new String[0]));

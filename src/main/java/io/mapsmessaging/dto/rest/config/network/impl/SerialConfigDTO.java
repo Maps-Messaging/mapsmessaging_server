@@ -37,8 +37,7 @@ public class SerialConfigDTO extends EndPointConfigDTO {
       description = "Baud rate for the serial connection",
       example = "9600",
       allowableValues = {"110", "300", "600", "1200", "2400", "4800", "9600", "14400", "19200", "28800", "38400", "57600", "115200", "230400", "460800", "921600"},
-      minimum = "300",
-      maximum ="921600"
+      requiredMode = Schema.RequiredMode.REQUIRED
   )
   protected int baudRate;
 
@@ -46,9 +45,7 @@ public class SerialConfigDTO extends EndPointConfigDTO {
       description = "Number of data bits in the serial connection",
       example = "8",
       allowableValues = {"5", "6", "7", "8"},
-      minimum = "5",
-      maximum = "8"
-
+      requiredMode = Schema.RequiredMode.REQUIRED
   )
   protected int dataBits;
 
@@ -56,10 +53,7 @@ public class SerialConfigDTO extends EndPointConfigDTO {
       description = "Number of stop bits in the serial connection",
       example = "1",
       allowableValues = {"1", "1.5", "2"},
-      minimum = "1",
-      maximum = "2",
-      requiredMode = Schema.RequiredMode.REQUIRED,
-      nullable = true
+      requiredMode = Schema.RequiredMode.REQUIRED
   )
   protected String stopBits;
 
@@ -67,8 +61,7 @@ public class SerialConfigDTO extends EndPointConfigDTO {
       description = "Parity setting for the serial connection",
       example = "n",
       allowableValues = {"n", "o", "e", "m", "s"},
-      requiredMode = Schema.RequiredMode.REQUIRED,
-      nullable = true
+      requiredMode = Schema.RequiredMode.REQUIRED
   )
   protected String parity;
 
@@ -76,10 +69,7 @@ public class SerialConfigDTO extends EndPointConfigDTO {
       description = "Flow control setting for the serial connection",
       example = "1",
       allowableValues = {"0", "1", "2", "3"},
-      minimum = "0",
-      maximum = "3",
-      requiredMode = Schema.RequiredMode.REQUIRED,
-      nullable = true
+      requiredMode = Schema.RequiredMode.REQUIRED
   )
   protected int flowControl;
 
@@ -88,8 +78,7 @@ public class SerialConfigDTO extends EndPointConfigDTO {
       example = "60000",
       minimum = "1000",
       maximum = "600000",
-      requiredMode = Schema.RequiredMode.REQUIRED,
-      nullable = true
+      requiredMode = Schema.RequiredMode.REQUIRED
   )
   protected int readTimeOut = 60000;
 
@@ -99,8 +88,7 @@ public class SerialConfigDTO extends EndPointConfigDTO {
       minimum = "1000",
       maximum = "600000",
       defaultValue = "60000",
-      requiredMode = Schema.RequiredMode.NOT_REQUIRED,
-      nullable = true
+      requiredMode = Schema.RequiredMode.NOT_REQUIRED
   )
   protected int writeTimeOut = 60000;
 
@@ -110,16 +98,14 @@ public class SerialConfigDTO extends EndPointConfigDTO {
       minimum = "1024",
       maximum = "1048576",
       requiredMode = Schema.RequiredMode.NOT_REQUIRED,
-      defaultValue = "102400",
-      nullable = true
+      defaultValue = "102400"
   )
   protected int bufferSize = 102400;
 
   @Schema(description =
       "Serial number for the device, optional",
       example = "262144",
-      requiredMode = Schema.RequiredMode.NOT_REQUIRED,
-      nullable = true
+      requiredMode = Schema.RequiredMode.NOT_REQUIRED
   )
   protected String serialNo;
 

@@ -54,7 +54,6 @@ import static io.mapsmessaging.logging.ServerLogMessages.*;
 @SuppressWarnings("java:S6548") // yes it is a singleton
 public class ConfigurationManager {
 
-
   private static class Holder {
     static final ConfigurationManager INSTANCE = new ConfigurationManager();
   }
@@ -84,6 +83,18 @@ public class ConfigurationManager {
 
   public void register(){
     // nothing to do here
+  }
+
+  public String[] getKnownManagers(){
+    return managerMap.keySet().toArray(new String[0]);
+  }
+
+  public ConfigManager getManager(String name){
+    return managerMap.get(name);
+  }
+
+  public String getSchema(String name) {
+    return configSchemas.get(name);
   }
 
   public void initialise(@NonNull @NotNull String serverId) {
@@ -196,9 +207,6 @@ public class ConfigurationManager {
     RuntimeJsonSchemaGenerator generator = new RuntimeJsonSchemaGenerator();
     RuntimeJsonSchemaService service = new RuntimeJsonSchemaService(generator);
     configSchemas.putAll(service.generateAllSchemas());
-    for(String schema: configSchemas.values()){
-      System.err.println(schema);
-    }
     ServiceLoader<ConfigManager> configManagers = ServiceLoader.load(ConfigManager.class);
     for(ConfigManager manager : configManagers){
       ConfigManager loaded = manager.load(featureManager);

@@ -33,6 +33,7 @@ import java.lang.reflect.Type;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.Locale;
 
 @Provider
 @Consumes(MediaType.APPLICATION_JSON)
@@ -50,7 +51,10 @@ public class GsonMessageBodyReader implements MessageBodyReader<Object> {
 
   @Override
   public boolean isReadable(Class<?> type, Type genericType, Annotation[] annotations, jakarta.ws.rs.core.MediaType mediaType) {
-    return mediaType.equals(MediaType.APPLICATION_JSON_TYPE);
+    return mediaType != null
+        && (MediaType.APPLICATION_JSON_TYPE.isCompatible(mediaType)
+        || "json".equalsIgnoreCase(mediaType.getSubtype())
+        || (mediaType.getSubtype() != null && mediaType.getSubtype().toLowerCase(Locale.ROOT).endsWith("+json")));
   }
 
   @Override

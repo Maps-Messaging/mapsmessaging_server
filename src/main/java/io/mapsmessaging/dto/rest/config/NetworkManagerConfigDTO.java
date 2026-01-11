@@ -65,8 +65,7 @@ public class NetworkManagerConfigDTO extends BaseConfigDTO {
   @Schema(
       description = "List of endpoint server configurations",
       requiredMode = Schema.RequiredMode.NOT_REQUIRED,
-      nullable = true,
-      example = "[{\"type\":\"mqtt\",\"enabled\":true,\"hostnames\":\"0.0.0.0\",\"port\":1883}]"
+      nullable = true
   )
   protected List<EndPointServerConfigDTO> endPointServerConfigList;
 }

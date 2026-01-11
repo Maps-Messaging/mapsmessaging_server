@@ -57,7 +57,6 @@ public class UserDTO {
       description =
           "A list of group names to which the user belongs, providing role-based access and permissions.",
       type = "array",
-      example = "[\"admin\", \"everyone\"]",
       nullable = true)
   private final List<GroupInfoDTO> groupList;
 
@@ -65,7 +64,6 @@ public class UserDTO {
       title = "User Attributes",
       description =
           "A map of user-specific attributes, such as home directory or other key-value pairs for configuration.",
-      example = "{\"homeDir\": \"/home/user1\", \"shell\": \"/bin/bash\"}",
       nullable = true)
   private final Map<String, String> attributes;
 }

@@ -84,8 +84,7 @@ public class SslConfigDTO extends BaseConfigDTO {
   @Schema(
       description = "Key store configuration containing the server certificate and private key",
       requiredMode = Schema.RequiredMode.NOT_REQUIRED,
-      nullable = true,
-      example = "{\"type\":\"PKCS12\",\"path\":\"/etc/maps/server.p12\",\"passphrase\":\"changeit\",\"alias\":\"server\"}"
+      nullable = true
   )
   protected KeyStoreConfigDTO keyStore;
 

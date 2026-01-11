@@ -61,7 +61,7 @@ import lombok.NoArgsConstructor;
 public class EndPointConfigDTO extends BaseConfigDTO {
 
   @Schema(description = "Type of the endpoint",
-      example = "tcp, ssl, udp, dtls, loraSerial, loraDevice, serial",
+      example = "tcp",
       allowableValues = {"tcp", "ssl", "udp", "dtls", "loraDevice", "loraSerial", "serial"}
   )
   protected String type;

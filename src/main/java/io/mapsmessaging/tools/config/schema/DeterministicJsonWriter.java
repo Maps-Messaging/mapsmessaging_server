@@ -1,7 +1,9 @@
 package io.mapsmessaging.tools.config.schema;
 
 import java.math.BigDecimal;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 
 final class DeterministicJsonWriter {
 
@@ -17,19 +19,29 @@ final class DeterministicJsonWriter {
 
   static String write(Object jsonObject) {
     StringBuilder sb = new StringBuilder(16_384);
-    writeValue(sb, jsonObject, 0);
+    writeValue(sb, jsonObject, 0, null);
     return sb.toString();
   }
 
   @SuppressWarnings("unchecked")
-  private static void writeValue(StringBuilder sb, Object v, int indent) {
+  private static void writeValue(StringBuilder sb, Object v, int indent, String contextKey) {
     if (v == null) {
       sb.append("null");
       return;
     }
 
     if (v instanceof String) {
-      writeString(sb, (String) v);
+      String s = (String) v;
+
+      if (shouldCoerceStringNumber(contextKey)) {
+        BigDecimal coerced = tryParseNumber(s);
+        if (coerced != null) {
+          sb.append(coerced.toPlainString());
+          return;
+        }
+      }
+
+      writeString(sb, s);
       return;
     }
 
@@ -59,7 +71,7 @@ final class DeterministicJsonWriter {
     }
 
     if (v instanceof List) {
-      writeArray(sb, (List<?>) v, indent);
+      writeArray(sb, (List<?>) v, indent, contextKey);
       return;
     }
 
@@ -73,6 +85,8 @@ final class DeterministicJsonWriter {
     keys.sort(DeterministicJsonWriter::compareKeys);
 
     boolean first = true;
+    boolean wroteAny = false;
+
     for (String key : keys) {
       Object value = map.get(key);
       if (value == null) {
@@ -83,30 +97,43 @@ final class DeterministicJsonWriter {
         sb.append(",");
       }
       first = false;
+      wroteAny = true;
 
       newline(sb, indent + 2);
       writeString(sb, key);
       sb.append(": ");
-      writeValue(sb, value, indent + 2);
+      writeValue(sb, value, indent + 2, key);
     }
 
-    if (!keys.isEmpty()) {
+    if (wroteAny) {
       newline(sb, indent);
     }
     sb.append("}");
   }
 
-  private static void writeArray(StringBuilder sb, List<?> list, int indent) {
+  private static void writeArray(StringBuilder sb, List<?> list, int indent, String contextKey) {
     sb.append("[");
     boolean first = true;
+
     for (Object item : list) {
       if (!first) {
         sb.append(",");
       }
       first = false;
+
       newline(sb, indent + 2);
-      writeValue(sb, item, indent + 2);
+
+      if (item instanceof String && "enum".equals(contextKey)) {
+        BigDecimal coerced = tryParseNumber((String) item);
+        if (coerced != null) {
+          sb.append(coerced.toPlainString());
+          continue;
+        }
+      }
+
+      writeValue(sb, item, indent + 2, contextKey);
     }
+
     if (!list.isEmpty()) {
       newline(sb, indent);
     }
@@ -165,5 +192,71 @@ final class DeterministicJsonWriter {
     for (int i = 0; i < indent; i++) {
       sb.append(' ');
     }
+  }
+
+  private static boolean shouldCoerceStringNumber(String contextKey) {
+    if (contextKey == null) {
+      return false;
+    }
+    return "default".equals(contextKey)
+        || "minimum".equals(contextKey)
+        || "maximum".equals(contextKey)
+        || "multipleOf".equals(contextKey)
+        || "enum".equals(contextKey);
+  }
+
+  private static BigDecimal tryParseNumber(String s) {
+    if (s == null) {
+      return null;
+    }
+    String trimmed = s.trim();
+    if (trimmed.isEmpty()) {
+      return null;
+    }
+
+    // JSON numbers do not allow leading '+'
+    if (trimmed.charAt(0) == '+') {
+      return null;
+    }
+
+    // Quick reject: must contain only plausible numeric characters
+    for (int i = 0; i < trimmed.length(); i++) {
+      char c = trimmed.charAt(i);
+      if (!(c == '-' || c == '.' || c == 'e' || c == 'E' || (c >= '0' && c <= '9'))) {
+        return null;
+      }
+    }
+
+    try {
+      BigDecimal bd = new BigDecimal(trimmed);
+
+      // Preserve integers as integers: avoid "9600.0" if input was "9600"
+      if (isIntegerLexeme(trimmed)) {
+        return bd.stripTrailingZeros();
+      }
+
+      return bd.stripTrailingZeros();
+    }
+    catch (NumberFormatException e) {
+      return null;
+    }
+  }
+
+  private static boolean isIntegerLexeme(String s) {
+    // Integer if it has no '.' and no exponent
+    for (int i = 0; i < s.length(); i++) {
+      char c = s.charAt(i);
+      if (c == '.' || c == 'e' || c == 'E') {
+        return false;
+      }
+    }
+    // Must contain at least one digit
+    for (int i = 0; i < s.length(); i++) {
+      char c = s.charAt(i);
+      if (c >= '0' && c <= '9') {
+        return true;
+      }
+    }
+    return false;
   }
 }
