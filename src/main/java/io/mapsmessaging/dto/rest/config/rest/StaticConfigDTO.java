@@ -49,5 +49,5 @@ public class StaticConfigDTO extends BaseConfigDTO {
       requiredMode = Schema.RequiredMode.NOT_REQUIRED,
       nullable = true
   )
-  protected String directory;
+  protected String directory = "{{MAPS_HOME}}/www";
 }

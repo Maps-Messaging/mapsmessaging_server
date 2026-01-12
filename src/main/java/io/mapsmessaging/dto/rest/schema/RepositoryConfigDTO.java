@@ -19,5 +19,23 @@
 
 package io.mapsmessaging.dto.rest.schema;
 
-public class RepositoryConfigDTO {
+import io.mapsmessaging.dto.rest.config.BaseConfigDTO;
+import io.swagger.v3.oas.annotations.media.Schema;
+
+public abstract class RepositoryConfigDTO extends BaseConfigDTO {
+
+
+  protected RepositoryConfigDTO(String type) {
+    this.type = type;
+  }
+
+  @Schema(
+      description = "Repository type discriminator",
+      requiredMode = Schema.RequiredMode.REQUIRED,
+      allowableValues = {"Simple", "File", "Maps"},
+      example = "File"
+  )
+  protected String type;
+
+
 }

@@ -36,17 +36,36 @@ import java.util.Map;
         "Represents the configuration for SASL authentication used for REST communication.")
 public class SaslConfigDTO extends BaseConfigDTO {
 
-  @Schema(description = "The realm name used for SASL authentication", example = "example-realm")
+  @Schema(
+      description = "The realm name used for SASL authentication",
+      example = "example-realm",
+      requiredMode = Schema.RequiredMode.REQUIRED,
+      nullable = false
+  )
   protected String realmName;
 
-  @Schema(description = "The SASL mechanism, such as PLAIN or SCRAM-SHA-256", example = "PLAIN")
+  @Schema(
+      description = "The SASL mechanism, such as PLAIN or SCRAM-SHA-256",
+      example = "PLAIN",
+      requiredMode = Schema.RequiredMode.REQUIRED,
+      nullable = false
+
+  )
   protected String mechanism;
 
-  @Schema(description = "The identity provider for SASL", example = "authProvider123")
+  @Schema(
+      description = "The identity provider for SASL",
+      example = "authProvider123",
+      requiredMode = Schema.RequiredMode.REQUIRED,
+      nullable = false
+  )
   protected String identityProvider;
 
   @Schema(
       description = "Additional SASL entries as key-value pairs",
-      example = "{\"entry1\": \"value1\"}")
+      example = "{\"entry1\": \"value1\"}",
+      requiredMode = Schema.RequiredMode.NOT_REQUIRED,
+      nullable = true
+  )
   protected Map<String, Object> saslEntries;
 }

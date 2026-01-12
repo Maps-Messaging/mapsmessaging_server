@@ -3,6 +3,7 @@ package io.mapsmessaging.tools.config.schema;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.NullNode;
+
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;

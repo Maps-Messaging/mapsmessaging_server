@@ -19,6 +19,7 @@
 
 package io.mapsmessaging.dto.rest.config.ml;
 
+import io.mapsmessaging.dto.rest.config.BaseConfigDTO;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -26,7 +27,7 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor
 
-public class FileConfig {
+public class FileConfig extends BaseConfigDTO {
   @Schema(description = "Path to the local directory where models are stored", example = "/var/models")
   private String path;
 }

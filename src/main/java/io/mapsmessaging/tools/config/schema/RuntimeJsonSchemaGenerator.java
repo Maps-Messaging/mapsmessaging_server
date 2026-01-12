@@ -1,3 +1,22 @@
+/*
+ *
+ *  Copyright [ 2020 - 2024 ] Matthew Buckton
+ *  Copyright [ 2024 - 2026 ] MapsMessaging B.V.
+ *
+ *  Licensed under the Apache License, Version 2.0 with the Commons Clause
+ *  (the "License"); you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at:
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://commonsclause.com/
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ */
+
 package io.mapsmessaging.tools.config.schema;
 
 import com.fasterxml.jackson.annotation.JsonSubTypes;
@@ -5,6 +24,7 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import io.mapsmessaging.dto.rest.config.BaseConfigDTO;
 import io.mapsmessaging.tools.config.lint.ReflectionFields;
 import io.mapsmessaging.tools.config.lint.ReflectionTypes;
+import io.swagger.v3.oas.annotations.media.DiscriminatorMapping;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 import java.lang.reflect.Field;
@@ -14,6 +34,8 @@ import java.math.BigDecimal;
 import java.util.*;
 
 public class RuntimeJsonSchemaGenerator {
+
+  private static final String TYPE_FIELD_NAME = "type";
 
   private final SchemaGenerationMode mode;
   private final boolean emitWarningsInSchema;
@@ -30,14 +52,16 @@ public class RuntimeJsonSchemaGenerator {
   public String generateSchema(String configName, Class<? extends BaseConfigDTO> rootDtoClass) {
     SchemaContext context = new SchemaContext(configName);
 
-    Set<Class<?>> dtoClosure = discoverDtoClosure(rootDtoClass);
+    DiscoveryResult discoveryResult = discoverDtoClosureAndDiscriminators(rootDtoClass);
+    Set<Class<?>> dtoClosure = discoveryResult.dtoClosure;
+    Map<Class<?>, String> discriminatorConstByClass = discoveryResult.discriminatorConstByClass;
 
     for (Class<?> dtoClass : sortClasses(dtoClosure)) {
       context.ensureDefName(dtoClass);
     }
 
     for (Class<?> dtoClass : sortClasses(dtoClosure)) {
-      SchemaObject defSchema = buildDtoDefinition(dtoClass, context);
+      SchemaObject defSchema = buildDtoDefinition(dtoClass, context, discriminatorConstByClass);
       context.putDef(dtoClass, defSchema);
     }
 
@@ -47,7 +71,10 @@ public class RuntimeJsonSchemaGenerator {
     doc.put("$schema", "https://json-schema.org/draft/2020-12/schema");
     doc.put("$id", "urn:mapsmessaging:config-schema:" + configName);
     doc.put("title", configName);
-    doc.put("additionalProperties", false);
+
+    // IMPORTANT:
+    // Do NOT set additionalProperties:false on the wrapper document when $ref is used.
+    // Put object-closure rules on the referenced object schemas instead.
     doc.put("unevaluatedProperties", false);
 
     Schema rootSchemaAnn = rootDtoClass.getAnnotation(Schema.class);
@@ -65,18 +92,70 @@ public class RuntimeJsonSchemaGenerator {
     return DeterministicJsonWriter.write(doc.toJsonValue());
   }
 
-  private Set<Class<?>> discoverDtoClosure(Class<? extends BaseConfigDTO> rootDto) {
+  private static final class DiscoveryResult {
+
+    private final Set<Class<?>> dtoClosure;
+    private final Map<Class<?>, String> discriminatorConstByClass;
+
+    private DiscoveryResult(Set<Class<?>> dtoClosure, Map<Class<?>, String> discriminatorConstByClass) {
+      this.dtoClosure = dtoClosure;
+      this.discriminatorConstByClass = discriminatorConstByClass;
+    }
+  }
+
+  private DiscoveryResult discoverDtoClosureAndDiscriminators(Class<?> rootDto) {
     Set<Class<?>> visited = new HashSet<>();
     Deque<Class<?>> stack = new ArrayDeque<>();
+
+    Map<Class<?>, String> discriminatorConstByClass = new HashMap<>();
+
     stack.push(rootDto);
 
     while (!stack.isEmpty()) {
       Class<?> clazz = stack.pop();
+      if (clazz == null || clazz == Void.class) {
+        continue;
+      }
       if (!visited.add(clazz)) {
         continue;
       }
 
       for (Field field : ReflectionFields.getAllInstanceFields(clazz)) {
+
+        Schema fieldSchemaAnn = field.getAnnotation(Schema.class);
+        if (fieldSchemaAnn != null && !fieldSchemaAnn.hidden()) {
+
+          Class<?>[] oneOf = fieldSchemaAnn.oneOf();
+          if (oneOf != null && oneOf.length > 0) {
+            for (Class<?> c : oneOf) {
+              if (c != null && c != Void.class) {
+                stack.push(c);
+              }
+            }
+          }
+
+          DiscriminatorMapping[] discriminatorMappings = fieldSchemaAnn.discriminatorMapping();
+          if (discriminatorMappings != null && discriminatorMappings.length > 0) {
+            for (DiscriminatorMapping dm : discriminatorMappings) {
+              if (dm == null) {
+                continue;
+              }
+              Class<?> schemaClass = dm.schema();
+              if (schemaClass == null || schemaClass == Void.class) {
+                continue;
+              }
+
+              String value = dm.value();
+              if (value != null && !value.isBlank()) {
+                // Invert mapping: subtype class -> discriminator value
+                discriminatorConstByClass.put(schemaClass, value);
+              }
+
+              stack.push(schemaClass);
+            }
+          }
+        }
+
         Class<?> rawType = field.getType();
 
         if (isCollection(rawType)) {
@@ -85,8 +164,8 @@ public class RuntimeJsonSchemaGenerator {
             continue;
           }
 
-          ParameterizedType pt = (ParameterizedType) genericType;
-          Type[] args = pt.getActualTypeArguments();
+          ParameterizedType parameterizedType = (ParameterizedType) genericType;
+          Type[] args = parameterizedType.getActualTypeArguments();
 
           if (List.class.isAssignableFrom(rawType)) {
             if (args.length == 1) {
@@ -118,26 +197,33 @@ public class RuntimeJsonSchemaGenerator {
       if (typeInfo != null && subTypes != null) {
         for (JsonSubTypes.Type subtype : subTypes.value()) {
           Class<?> subtypeClass = subtype.value();
-          if (subtypeClass != null && BaseConfigDTO.class.isAssignableFrom(subtypeClass)) {
+          if (subtypeClass != null && subtypeClass != Void.class) {
             stack.push(subtypeClass);
           }
         }
       }
     }
 
-    return visited;
+    return new DiscoveryResult(visited, discriminatorConstByClass);
   }
 
-  private SchemaObject buildDtoDefinition(Class<?> dtoClass, SchemaContext context) {
+  private SchemaObject buildDtoDefinition(
+      Class<?> dtoClass,
+      SchemaContext context,
+      Map<Class<?>, String> discriminatorConstByClass
+  ) {
     context.enterDto(dtoClass);
     try {
-      SchemaObject poly = buildPolymorphicDefinitionIfNeeded(dtoClass, context);
+      SchemaObject poly = buildJacksonPolymorphicDefinitionIfNeeded(dtoClass, context);
       if (poly != null) {
         return poly;
       }
 
       SchemaObject schema = new SchemaObject();
       schema.put("type", "object");
+
+      // Close every DTO object. This is where additionalProperties belongs.
+      schema.put("additionalProperties", false);
 
       Schema classSchema = dtoClass.getAnnotation(Schema.class);
       if (classSchema != null && !classSchema.description().isBlank()) {
@@ -159,6 +245,15 @@ public class RuntimeJsonSchemaGenerator {
           SchemaObject propertySchema = schemaForField(field, context);
 
           applySwaggerSchema(propertySchema, fieldSchemaAnn, field.getType(), context);
+
+          // If this DTO is a discriminator-mapped subtype, force its "type" field to a const.
+          if (TYPE_FIELD_NAME.equals(name)) {
+            String discriminatorValue = discriminatorConstByClass.get(dtoClass);
+            if (discriminatorValue != null && !discriminatorValue.isBlank()) {
+              propertySchema.put("const", discriminatorValue);
+              propertySchema.put("enum", List.of(discriminatorValue));
+            }
+          }
 
           if (fieldSchemaAnn.requiredMode() == Schema.RequiredMode.REQUIRED) {
             required.add(name);
@@ -194,7 +289,7 @@ public class RuntimeJsonSchemaGenerator {
     }
   }
 
-  private SchemaObject buildPolymorphicDefinitionIfNeeded(Class<?> dtoClass, SchemaContext context) {
+  private SchemaObject buildJacksonPolymorphicDefinitionIfNeeded(Class<?> dtoClass, SchemaContext context) {
     JsonTypeInfo typeInfo = dtoClass.getAnnotation(JsonTypeInfo.class);
     JsonSubTypes subTypes = dtoClass.getAnnotation(JsonSubTypes.class);
     if (typeInfo == null || subTypes == null) {
@@ -241,6 +336,12 @@ public class RuntimeJsonSchemaGenerator {
   }
 
   private SchemaObject schemaForField(Field field, SchemaContext context) {
+    Schema fieldSchemaAnn = field.getAnnotation(Schema.class);
+    SchemaObject swaggerPoly = buildSwaggerPolymorphicFieldSchemaIfPresent(fieldSchemaAnn, context);
+    if (swaggerPoly != null) {
+      return swaggerPoly;
+    }
+
     Class<?> rawType = field.getType();
 
     if (List.class.isAssignableFrom(rawType)) {
@@ -283,6 +384,72 @@ public class RuntimeJsonSchemaGenerator {
     }
 
     return schemaForType(field.getGenericType(), context);
+  }
+
+  private SchemaObject buildSwaggerPolymorphicFieldSchemaIfPresent(Schema schemaAnn, SchemaContext context) {
+    if (schemaAnn == null) {
+      return null;
+    }
+
+    Class<?>[] oneOfClasses = schemaAnn.oneOf();
+    String discriminatorProperty = schemaAnn.discriminatorProperty();
+    DiscriminatorMapping[] discriminatorMappings = schemaAnn.discriminatorMapping();
+
+    boolean hasOneOf = oneOfClasses != null && oneOfClasses.length > 0;
+    boolean hasDiscriminator = discriminatorProperty != null && !discriminatorProperty.isBlank();
+
+    if (!hasOneOf && !hasDiscriminator) {
+      return null;
+    }
+
+    SchemaObject out = new SchemaObject();
+
+    if (hasOneOf) {
+      List<Class<?>> classes = new ArrayList<>();
+      for (Class<?> c : oneOfClasses) {
+        if (c != null && c != Void.class) {
+          classes.add(c);
+        }
+      }
+      classes.sort(Comparator.comparing(Class::getName));
+
+      List<Object> oneOf = new ArrayList<>();
+      for (Class<?> c : classes) {
+        String ref = "#/$defs/" + context.defName(c);
+        oneOf.add(SchemaObject.ref(ref).toJsonValue());
+      }
+      out.put("oneOf", oneOf);
+    }
+
+    if (hasDiscriminator) {
+      Map<String, Object> disc = new LinkedHashMap<>();
+      disc.put("propertyName", discriminatorProperty);
+
+      if (discriminatorMappings != null && discriminatorMappings.length > 0) {
+        List<DiscriminatorMapping> dmList = new ArrayList<>(Arrays.asList(discriminatorMappings));
+        dmList.sort(Comparator.comparing(DiscriminatorMapping::value));
+
+        Map<String, Object> mapping = new LinkedHashMap<>();
+        for (DiscriminatorMapping dm : dmList) {
+          if (dm == null) {
+            continue;
+          }
+          Class<?> schemaClass = dm.schema();
+          if (schemaClass == null || schemaClass == Void.class) {
+            continue;
+          }
+          mapping.put(dm.value(), "#/$defs/" + context.defName(schemaClass));
+        }
+
+        if (!mapping.isEmpty()) {
+          disc.put("mapping", mapping);
+        }
+      }
+
+      out.put("discriminator", disc);
+    }
+
+    return out;
   }
 
   private SchemaObject schemaForType(Type type, SchemaContext context) {
@@ -341,16 +508,25 @@ public class RuntimeJsonSchemaGenerator {
       Class<?> javaType,
       SchemaContext context
   ) {
+    Map<?, ?> current = (Map<?, ?>) propertySchema.toJsonValue();
+    boolean isPolymorphic = current.containsKey("oneOf") || current.containsKey("discriminator");
+
     if (!schemaAnn.description().isBlank()) {
       propertySchema.put("description", schemaAnn.description());
     }
 
-    if (!schemaAnn.example().isBlank()) {
+    // Skip string examples for polymorphic objects (prevents nonsense like "File" on an object schema).
+    if (!isPolymorphic && !schemaAnn.example().isBlank()) {
       propertySchema.put("examples", List.of(coerceExample(schemaAnn.example(), javaType)));
     }
 
     if (!schemaAnn.defaultValue().isBlank()) {
       propertySchema.put("default", coerceExample(schemaAnn.defaultValue(), javaType));
+    }
+
+    if (!schemaAnn._const().isBlank()) {
+      propertySchema.put("const", coerceExample(schemaAnn._const(), javaType));
+      propertySchema.put("enum", List.of(schemaAnn._const()));
     }
 
     List<String> enumValues = sanitizeAllowableValues(schemaAnn.allowableValues());
@@ -374,8 +550,6 @@ public class RuntimeJsonSchemaGenerator {
       }
     }
     else {
-      // Ignore numeric constraints on non-numeric types (strings, enums, objects, etc.)
-      // In RELAXED mode we can optionally warn when annotations are nonsense.
       if (mode == SchemaGenerationMode.RELAXED) {
         if (!schemaAnn.minimum().isBlank() || !schemaAnn.maximum().isBlank() || schemaAnn.multipleOf() > 0.0d) {
           context.warn("Ignored numeric constraints on non-numeric field type " + javaType.getName());
@@ -480,4 +654,3 @@ public class RuntimeJsonSchemaGenerator {
     return list;
   }
 }
-

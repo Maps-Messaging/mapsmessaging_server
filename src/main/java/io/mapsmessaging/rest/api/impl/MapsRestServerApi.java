@@ -22,7 +22,6 @@ package io.mapsmessaging.rest.api.impl;
 import io.mapsmessaging.BuildInfo;
 import io.mapsmessaging.MessageDaemon;
 import io.mapsmessaging.engine.schema.SchemaManager;
-import io.mapsmessaging.rest.responses.StatusResponse;
 import io.mapsmessaging.rest.responses.UpdateCheckResponse;
 import io.swagger.v3.oas.annotations.ExternalDocumentation;
 import io.swagger.v3.oas.annotations.OpenAPIDefinition;

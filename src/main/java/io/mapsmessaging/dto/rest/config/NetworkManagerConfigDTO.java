@@ -27,6 +27,7 @@ import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 
 import java.util.List;
+
 @Data
 @EqualsAndHashCode(callSuper = true)
 @NoArgsConstructor
@@ -37,8 +38,8 @@ public class NetworkManagerConfigDTO extends BaseConfigDTO {
       description = "Prefer IPv6 addresses when both IPv4 and IPv6 are available",
       example = "true",
       defaultValue = "true",
-      requiredMode = Schema.RequiredMode.REQUIRED,
-      nullable = false
+      requiredMode = Schema.RequiredMode.NOT_REQUIRED,
+      nullable = true
   )
   protected boolean preferIpV6Addresses = true;
 
@@ -46,8 +47,8 @@ public class NetworkManagerConfigDTO extends BaseConfigDTO {
       description = "Scan for network changes (interface up/down, address changes, etc.)",
       example = "true",
       defaultValue = "true",
-      requiredMode = Schema.RequiredMode.REQUIRED,
-      nullable = false
+      requiredMode = Schema.RequiredMode.NOT_REQUIRED,
+      nullable = true
   )
   protected boolean scanNetworkChanges = true;
 
@@ -57,15 +58,16 @@ public class NetworkManagerConfigDTO extends BaseConfigDTO {
       defaultValue = "60000",
       minimum = "10000",
       maximum = "600000",
-      requiredMode = Schema.RequiredMode.REQUIRED,
-      nullable = false
+      requiredMode = Schema.RequiredMode.NOT_REQUIRED,
+      nullable = true
   )
   protected int scanInterval = 60000;
 
   @Schema(
       description = "List of endpoint server configurations",
-      requiredMode = Schema.RequiredMode.NOT_REQUIRED,
-      nullable = true
+      requiredMode = Schema.RequiredMode.REQUIRED,
+      minLength = 1,
+      nullable = false
   )
   protected List<EndPointServerConfigDTO> endPointServerConfigList;
 }

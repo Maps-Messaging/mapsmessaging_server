@@ -21,6 +21,7 @@ package io.mapsmessaging.tools.config.lint;
 
 import io.mapsmessaging.config.ConfigManager;
 import io.mapsmessaging.dto.rest.config.BaseConfigDTO;
+
 import java.lang.reflect.Method;
 import java.nio.file.Files;
 import java.nio.file.Path;

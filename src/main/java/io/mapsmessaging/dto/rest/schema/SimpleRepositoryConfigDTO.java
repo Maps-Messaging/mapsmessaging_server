@@ -19,31 +19,22 @@
 
 package io.mapsmessaging.dto.rest.schema;
 
+
 import io.swagger.v3.oas.annotations.media.Schema;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.Getter;
+import lombok.Setter;
 
-@Data
-@NoArgsConstructor
-@AllArgsConstructor
+@Getter
+@Setter
 @Schema(
-    title = "Schema Post Data",
-    description =
-        "Represents the data required to post a new schema, including the JSON-encoded schema object and its context.")
-public class SchemaPostDTO {
+    title = "Simple Repository configuration",
+    description = "Provides a simple Map<> instance to manage schemas, these do not survive server restarts, only useful for debug"
+)
+public class SimpleRepositoryConfigDTO extends RepositoryConfigDTO {
 
-  @Schema(
-      title = "Schema",
-      description = "A JSON-encoded string representing the schema object to be posted.",
-      example =
-          "{\"type\": \"record\", \"name\": \"User\", \"fields\": [{\"name\": \"id\", \"type\": \"string\"}]}")
-  private String schema;
+  public SimpleRepositoryConfigDTO(){
+    super("Simple");
+  }
 
-  @Schema(
-      title = "Context",
-      description =
-          "The name or context of the schema, identifying the scope or purpose for which it is used.",
-      example = "UserProfile")
-  private String context;
+
 }

@@ -19,8 +19,6 @@
 
 package io.mapsmessaging.network.protocol.impl.satellite;
 
-import io.mapsmessaging.auth.AuthManager;
-
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 

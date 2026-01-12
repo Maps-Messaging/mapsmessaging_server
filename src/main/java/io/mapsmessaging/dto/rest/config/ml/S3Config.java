@@ -19,13 +19,14 @@
 
 package io.mapsmessaging.dto.rest.config.ml;
 
+import io.mapsmessaging.dto.rest.config.BaseConfigDTO;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
 @Data
 @NoArgsConstructor
-public class S3Config {
+public class S3Config extends BaseConfigDTO {
 
   @Schema(description = "AWS region or compatible region name", example = "ap-southeast-2")
   private String region;

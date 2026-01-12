@@ -21,8 +21,6 @@ package io.mapsmessaging.app.top.network;
 
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
-
-
 import lombok.Getter;
 
 import java.io.IOException;

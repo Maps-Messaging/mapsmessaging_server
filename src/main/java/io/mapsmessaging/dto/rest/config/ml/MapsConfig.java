@@ -19,13 +19,14 @@
 
 package io.mapsmessaging.dto.rest.config.ml;
 
+import io.mapsmessaging.dto.rest.config.BaseConfigDTO;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
 @Data
 @NoArgsConstructor
-public class MapsConfig {
+public class MapsConfig extends BaseConfigDTO {
 
   @Schema(description = "Maps Server RestAPI URL", example = "https://mapsserver001:8080/")
   private String url;

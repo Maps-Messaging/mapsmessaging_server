@@ -34,17 +34,6 @@ import java.util.List;
 public class SerialBusConfigDTO extends DeviceBusConfigDTO {
 
   @Schema(
-      description = "Time to scan for new serial devices",
-      example = "60000",
-      minimum = "5000",
-      maximum = "600000",
-      defaultValue = "60000",
-      nullable = true,
-      requiredMode = Schema.RequiredMode.NOT_REQUIRED
-  )
-  protected int scanTime;
-
-  @Schema(
       description = "Name of the block configuation",
       example = "USB-485-to-232-unit-A",
       requiredMode = Schema.RequiredMode.REQUIRED,

@@ -31,15 +31,37 @@ import lombok.NoArgsConstructor;
 @Schema(description = "Connection Authentication Configuration DTO")
 public class ConnectionAuthConfigDTO extends BaseConfigDTO {
 
-  @Schema(description = "Username for authentication", example = "user123")
+  @Schema(
+      description = "Username for authentication",
+      example = "user123",
+      requiredMode = Schema.RequiredMode.REQUIRED,
+      nullable = false
+
+  )
   protected String username;
 
-  @Schema(description = "Password for authentication", example = "pass123")
+  @Schema(
+      description = "Password for authentication",
+      example = "pass123",
+      requiredMode = Schema.RequiredMode.REQUIRED,
+      nullable = false
+
+  )
   protected String password;
 
-  @Schema(description = "Client ID for the connection", example = "client123")
+  @Schema(
+      description = "Client ID for the connection",
+      example = "client123",
+      requiredMode = Schema.RequiredMode.REQUIRED,
+      nullable = false
+  )
   protected String clientId;
 
-  @Schema(description = "Token generator type", example = "JWT")
+  @Schema(
+      description = "Token generator type",
+      example = "JWT",
+      requiredMode = Schema.RequiredMode.NOT_REQUIRED,
+      nullable = true
+  )
   protected String tokenGenerator;
 }

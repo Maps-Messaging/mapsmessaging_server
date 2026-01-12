@@ -24,6 +24,9 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
+
+import java.util.Map;
+
 @Data
 @EqualsAndHashCode(callSuper = true)
 @NoArgsConstructor
@@ -45,5 +48,5 @@ public class JolokiaConfigDTO extends BaseConfigDTO {
       type = "object",
       example = "{ \"rules\": [ { \"mbean\": \"java.lang:type=Memory\", \"attributes\": [\"HeapMemoryUsage\"] } ] }"
   )
-  private ConfigurationProperties jolokiaMapping;
+  private Map<String, Object> jolokiaMapping;
 }

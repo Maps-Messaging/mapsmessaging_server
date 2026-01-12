@@ -27,8 +27,6 @@ import io.mapsmessaging.dto.rest.interfaces.InterfaceStatusDTO;
 import io.mapsmessaging.network.EndPointManager;
 import io.mapsmessaging.network.NetworkManager;
 import io.mapsmessaging.rest.cache.CacheKey;
-import io.mapsmessaging.rest.responses.InterfaceDetailResponse;
-import io.mapsmessaging.rest.responses.InterfaceStatusResponse;
 import io.mapsmessaging.rest.responses.StatusResponse;
 import io.mapsmessaging.selector.ParseException;
 import io.mapsmessaging.selector.SelectorParser;
@@ -46,7 +44,6 @@ import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 import static io.mapsmessaging.rest.api.Constants.URI_PATH;
 

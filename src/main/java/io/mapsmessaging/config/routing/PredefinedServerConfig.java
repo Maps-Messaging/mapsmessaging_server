@@ -28,8 +28,8 @@ public class PredefinedServerConfig extends PredefinedServerConfigDTO implements
 
   public PredefinedServerConfig(ConfigurationProperties properties) {
     super();
-    this.name = properties.getProperty("name", "");
-    this.url = properties.getProperty("url", "");
+    this.name = properties.getProperty("name");
+    this.url = properties.getProperty("url");
   }
 
   @Override

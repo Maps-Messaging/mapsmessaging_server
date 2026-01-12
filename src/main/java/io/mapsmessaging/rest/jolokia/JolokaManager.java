@@ -33,6 +33,7 @@ import org.jolokia.jvmagent.JolokiaServerConfig;
 
 import java.io.IOException;
 import java.util.HashMap;
+import java.util.Map;
 import java.util.Map.Entry;
 
 public class JolokaManager implements Agent {
@@ -97,7 +98,7 @@ public class JolokaManager implements Agent {
 
     public void run() {
       HashMap<String, String> map = new HashMap<>();
-      ConfigurationProperties properties = config.getJolokiaMapping();
+      Map<String, Object> properties = config.getJolokiaMapping();
       for (Entry<String, Object> entry : properties.entrySet()) {
         String val = entry.getValue().toString();
         if(val.endsWith(".0")){

@@ -27,7 +27,6 @@ import io.mapsmessaging.configuration.ConfigurationProperties;
 import io.mapsmessaging.dto.rest.config.network.EndPointConfigDTO;
 import io.mapsmessaging.dto.rest.config.network.EndPointServerConfigDTO;
 import io.mapsmessaging.dto.rest.config.protocol.ProtocolConfigDTO;
-import io.mapsmessaging.dto.rest.config.protocol.impl.MavlinkConfigDTO;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -88,8 +87,8 @@ public class EndPointConfigFactory {
       server.setUrl(url);
     }
 
-    server.setBacklog(config.getIntProperty("backlog", 100));
-    server.setSelectorTaskWait(config.getIntProperty("taskWait", 10));
+    server.setBacklog(config.getIntProperty("backlog", server.getBacklog()));
+    server.setSelectorTaskWait(config.getIntProperty("taskWait", server.getSelectorTaskWait()));
     server.setAuthenticationRealm(config.getProperty("auth", ""));
 
     server.setEndPointConfig( server.getUrl() != null ? createEndPointConfig(server.getUrl(), config) : null);

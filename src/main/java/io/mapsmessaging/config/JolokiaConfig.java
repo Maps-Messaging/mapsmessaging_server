@@ -34,7 +34,12 @@ public class JolokiaConfig extends JolokiaConfigDTO implements Config, ConfigMan
 
   private JolokiaConfig(ConfigurationProperties properties) {
     setEnable(properties.getBooleanProperty("enable", false));
-    setJolokiaMapping((ConfigurationProperties) properties.get("config"));
+    if(properties.containsKey("jolokiaMapping")){
+      setJolokiaMapping(((ConfigurationProperties) properties.get("jolokiaMapping")).getMap());
+    }
+    else {
+      setJolokiaMapping(((ConfigurationProperties) properties.get("config")).getMap());
+    }
   }
 
   public static JolokiaConfig getInstance() {

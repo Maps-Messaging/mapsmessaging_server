@@ -21,13 +21,9 @@ package io.mapsmessaging.rest.api.impl.server;
 
 import io.mapsmessaging.MessageDaemon;
 import io.mapsmessaging.dto.rest.system.SubSystemStatusDTO;
-import io.mapsmessaging.rest.EndpointInfo;
-import io.mapsmessaging.rest.EndpointRegistry;
 import io.mapsmessaging.rest.api.impl.interfaces.RequestedAction;
 import io.mapsmessaging.rest.cache.CacheKey;
 import io.mapsmessaging.rest.responses.ServerHealthStateResponse;
-import io.mapsmessaging.rest.responses.StatusResponse;
-import io.mapsmessaging.rest.responses.SubSystemStatusList;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -41,9 +37,6 @@ import jakarta.ws.rs.core.MediaType;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import lombok.SneakyThrows;
-
-import java.util.List;
 
 import static io.mapsmessaging.rest.api.Constants.URI_PATH;
 

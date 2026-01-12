@@ -25,7 +25,6 @@ import io.mapsmessaging.dto.helpers.StatusMessageHelper;
 import io.mapsmessaging.dto.rest.ServerInfoDTO;
 import io.mapsmessaging.dto.rest.ServerStatisticsDTO;
 import io.mapsmessaging.rest.cache.CacheKey;
-import io.mapsmessaging.rest.responses.ServerStatisticsResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;

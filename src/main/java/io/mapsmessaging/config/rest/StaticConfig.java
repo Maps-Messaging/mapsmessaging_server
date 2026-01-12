@@ -28,8 +28,8 @@ public class StaticConfig extends StaticConfigDTO implements Config {
 
   public StaticConfig(ConfigurationProperties properties) {
     super();
-    this.enabled = properties.getBooleanProperty("enabled", true);
-    this.directory = properties.getProperty("directory", "{{MAPS_HOME}}/www");
+    this.enabled = properties.getBooleanProperty("enabled", enabled);
+    this.directory = properties.getProperty("directory", directory);
   }
 
   @Override

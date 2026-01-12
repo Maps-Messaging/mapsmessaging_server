@@ -40,8 +40,8 @@ public class RoutingManagerConfig extends RoutingManagerConfigDTO implements Con
   }
 
   private RoutingManagerConfig(ConfigurationProperties properties) {
-    this.enabled = properties.getBooleanProperty("enabled", false);
-    this.autoDiscovery = properties.getBooleanProperty("autoDiscovery", true);
+    this.enabled = properties.getBooleanProperty("enabled", enabled);
+    this.autoDiscovery = properties.getBooleanProperty("autoDiscovery", autoDiscovery);
     this.predefinedServers = new ArrayList<>();
 
     Object servers = properties.get("predefinedServers");

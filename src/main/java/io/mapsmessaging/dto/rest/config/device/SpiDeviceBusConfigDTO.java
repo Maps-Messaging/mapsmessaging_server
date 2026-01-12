@@ -19,7 +19,6 @@
 
 package io.mapsmessaging.dto.rest.config.device;
 
-import io.mapsmessaging.dto.rest.config.BaseConfigDTO;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import lombok.EqualsAndHashCode;

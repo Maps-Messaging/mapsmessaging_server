@@ -44,7 +44,7 @@ public class MLModelManagerConfig extends MLModelManagerDTO implements Config, C
 
     if (config.get("autoRefresh") != null) {
       ConfigurationProperties autoRefresh = (ConfigurationProperties) config.get("autoRefresh");
-      this.autoRefresh = new AutoRefreshConfig();
+      this.autoRefresh = new AutoRefreshConfigDTO();
       this.autoRefresh.setEnabled(autoRefresh.getBooleanProperty("enabled", false));
       this.autoRefresh.setIntervalMinutes(autoRefresh.getIntProperty("intervalMinutes", 10));
     }

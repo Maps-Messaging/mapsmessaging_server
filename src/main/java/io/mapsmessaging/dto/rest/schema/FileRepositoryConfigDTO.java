@@ -22,11 +22,8 @@ package io.mapsmessaging.dto.rest.schema;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
-import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-@NoArgsConstructor
-@AllArgsConstructor
 @Getter
 @Setter
 @Schema(
@@ -34,6 +31,10 @@ import lombok.Setter;
     description = "Configuration details for the file-based schema repository. " +
         "Used when repositoryType is set to 'File'.")
 public class FileRepositoryConfigDTO extends RepositoryConfigDTO {
+
+  public FileRepositoryConfigDTO(){
+    super("File");
+  }
 
   @Schema(
       description = "Absolute or relative directory path where schema files are stored.",

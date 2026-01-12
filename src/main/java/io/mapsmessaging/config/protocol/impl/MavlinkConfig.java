@@ -20,15 +20,9 @@
 package io.mapsmessaging.config.protocol.impl;
 
 import io.mapsmessaging.config.Config;
-import io.mapsmessaging.config.protocol.PredefinedTopics;
 import io.mapsmessaging.configuration.ConfigurationProperties;
 import io.mapsmessaging.dto.rest.config.BaseConfigDTO;
-import io.mapsmessaging.dto.rest.config.protocol.ProtocolConfigDTO;
 import io.mapsmessaging.dto.rest.config.protocol.impl.MavlinkConfigDTO;
-import io.mapsmessaging.dto.rest.config.protocol.impl.MqttSnConfigDTO;
-
-import java.util.ArrayList;
-import java.util.List;
 
 public class MavlinkConfig extends MavlinkConfigDTO implements Config {
 

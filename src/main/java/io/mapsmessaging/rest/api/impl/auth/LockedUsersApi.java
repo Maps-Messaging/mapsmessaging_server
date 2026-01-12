@@ -20,8 +20,6 @@
 package io.mapsmessaging.rest.api.impl.auth;
 
 
-
-
 import io.mapsmessaging.auth.AuthManager;
 import io.mapsmessaging.security.access.Identity;
 import io.mapsmessaging.security.access.monitor.LockStatus;
@@ -33,7 +31,6 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
-
 
 import java.util.UUID;
 

@@ -20,13 +20,14 @@
 package io.mapsmessaging.dto.rest.config.ml;
 
 
+import io.mapsmessaging.dto.rest.config.BaseConfigDTO;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
 @Data
 @NoArgsConstructor
-public class NexusConfig {
+public class NexusConfig extends BaseConfigDTO {
 
   @Schema(description = "Nexus repository URL", example = "https://nexus.local/repository/maps_ml_store/")
   private String url;

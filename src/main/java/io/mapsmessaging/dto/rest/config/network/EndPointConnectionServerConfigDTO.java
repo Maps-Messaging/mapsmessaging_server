@@ -19,7 +19,6 @@
 
 package io.mapsmessaging.dto.rest.config.network;
 
-import io.mapsmessaging.config.auth.AuthConfig;
 import io.mapsmessaging.dto.rest.config.auth.AuthConfigDTO;
 import io.mapsmessaging.dto.rest.config.protocol.LinkConfigDTO;
 import io.swagger.v3.oas.annotations.media.Schema;

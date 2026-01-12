@@ -19,7 +19,6 @@
 
 package io.mapsmessaging.network.io.connection;
 
-import io.mapsmessaging.config.network.EndPointConnectionServerConfig;
 import io.mapsmessaging.dto.rest.config.network.EndPointConnectionServerConfigDTO;
 import io.mapsmessaging.dto.rest.config.network.EndPointServerConfigDTO;
 import io.mapsmessaging.logging.Logger;

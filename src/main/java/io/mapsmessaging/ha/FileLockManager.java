@@ -19,7 +19,6 @@
 
 package io.mapsmessaging.ha;
 
-import io.mapsmessaging.MessageDaemon;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.utilities.GsonFactory;

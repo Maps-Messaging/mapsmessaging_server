@@ -21,7 +21,6 @@ package io.mapsmessaging.network;
 
 import io.mapsmessaging.MessageDaemon;
 import io.mapsmessaging.config.NetworkConnectionManagerConfig;
-import io.mapsmessaging.config.network.EndPointConnectionServerConfig;
 import io.mapsmessaging.config.protocol.impl.LocalLoopConfig;
 import io.mapsmessaging.dto.rest.config.network.EndPointConnectionServerConfigDTO;
 import io.mapsmessaging.dto.rest.config.protocol.ProtocolConfigDTO;

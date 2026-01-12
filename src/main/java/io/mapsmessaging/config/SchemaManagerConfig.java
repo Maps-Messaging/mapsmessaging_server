@@ -23,10 +23,7 @@ package io.mapsmessaging.config;
 
 import io.mapsmessaging.configuration.ConfigurationProperties;
 import io.mapsmessaging.dto.rest.config.BaseConfigDTO;
-import io.mapsmessaging.dto.rest.schema.FileRepositoryConfigDTO;
-import io.mapsmessaging.dto.rest.schema.MapsRepositoryConfigDTO;
-import io.mapsmessaging.dto.rest.schema.RepositoryConfigDTO;
-import io.mapsmessaging.dto.rest.schema.SchemaManagerConfigDTO;
+import io.mapsmessaging.dto.rest.schema.*;
 import io.mapsmessaging.license.FeatureManager;
 import io.mapsmessaging.utilities.configuration.ConfigurationManager;
 
@@ -41,10 +38,10 @@ public class SchemaManagerConfig extends SchemaManagerConfigDTO implements Confi
     RepositoryType repositoryType = RepositoryType.valueOf(type);
     super.setRepositoryType(repositoryType);
     switch (repositoryType) {
-      case Simple -> super.setRepositoryConfig(new RepositoryConfigDTO());
+      case Simple -> super.setRepositoryConfig(new SimpleRepositoryConfigDTO());
       case File -> super.setRepositoryConfig(configureFile( (ConfigurationProperties) configurationProperties.get("config")));
       case Maps -> super.setRepositoryConfig(configureMaps( (ConfigurationProperties) configurationProperties.get("config")));
-      default -> super.setRepositoryConfig(new RepositoryConfigDTO());
+      default -> super.setRepositoryConfig(new SimpleRepositoryConfigDTO());
     }
   }
 

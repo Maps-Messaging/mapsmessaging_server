@@ -23,7 +23,6 @@ import io.mapsmessaging.BuildInfo;
 import io.mapsmessaging.api.Session;
 import io.mapsmessaging.api.SessionContextBuilder;
 import io.mapsmessaging.api.SessionManager;
-import io.mapsmessaging.config.auth.AuthConfig;
 import io.mapsmessaging.config.network.EndPointConnectionServerConfig;
 import io.mapsmessaging.dto.rest.config.auth.AuthConfigDTO;
 import io.mapsmessaging.logging.ServerLogMessages;

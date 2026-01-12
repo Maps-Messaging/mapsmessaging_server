@@ -20,9 +20,7 @@
 package io.mapsmessaging.rest;
 
 
-import java.lang.reflect.Method;
-import java.util.ArrayList;
-import java.util.List;
+import org.glassfish.jersey.server.model.Invocable;
 import org.glassfish.jersey.server.model.Resource;
 import org.glassfish.jersey.server.model.ResourceMethod;
 import org.glassfish.jersey.server.model.ResourceModel;
@@ -30,7 +28,10 @@ import org.glassfish.jersey.server.monitoring.ApplicationEvent;
 import org.glassfish.jersey.server.monitoring.ApplicationEventListener;
 import org.glassfish.jersey.server.monitoring.RequestEvent;
 import org.glassfish.jersey.server.monitoring.RequestEventListener;
-import org.glassfish.jersey.server.model.Invocable;
+
+import java.lang.reflect.Method;
+import java.util.ArrayList;
+import java.util.List;
 
 public class EndpointIntrospector implements ApplicationEventListener {
 

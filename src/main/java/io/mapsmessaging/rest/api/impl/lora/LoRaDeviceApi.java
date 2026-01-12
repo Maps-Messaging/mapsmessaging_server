@@ -33,8 +33,6 @@ import io.mapsmessaging.network.io.impl.lora.device.LoRaChipDevice;
 import io.mapsmessaging.network.io.impl.lora.serial.LoRaSerialDevice;
 import io.mapsmessaging.network.io.impl.lora.stats.LoRaClientStats;
 import io.mapsmessaging.network.protocol.impl.loragateway.LoRaProtocol;
-import io.mapsmessaging.rest.responses.LoRaConnectionStatusList;
-import io.mapsmessaging.rest.responses.LoRaListResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;

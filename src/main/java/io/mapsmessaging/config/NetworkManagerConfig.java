@@ -37,9 +37,9 @@ import java.util.Map;
 public class NetworkManagerConfig extends NetworkManagerConfigDTO implements Config, ConfigManager {
 
   private NetworkManagerConfig(ConfigurationProperties config) {
-    this.preferIpV6Addresses = config.getBooleanProperty("preferIPv6Addresses", true);
-    this.scanNetworkChanges = config.getBooleanProperty("scanNetworkChanges", true);
-    this.scanInterval = config.getIntProperty("scanInterval", 60000);
+    this.preferIpV6Addresses = config.getBooleanProperty("preferIPv6Addresses", preferIpV6Addresses);
+    this.scanNetworkChanges = config.getBooleanProperty("scanNetworkChanges", scanNetworkChanges);
+    this.scanInterval = config.getIntProperty("scanInterval", scanInterval);
 
     this.endPointServerConfigList = new ArrayList<>();
     Object obj = config.get("data");
@@ -47,8 +47,8 @@ public class NetworkManagerConfig extends NetworkManagerConfigDTO implements Con
       for (ConfigurationProperties entry : (List<ConfigurationProperties>) obj) {
         this.endPointServerConfigList.add(new EndPointServerConfig(entry));
       }
-    } else if (obj instanceof ConfigurationProperties) {
-      this.endPointServerConfigList.add(new EndPointServerConfig((ConfigurationProperties) obj));
+    } else if (obj instanceof ConfigurationProperties configurationProperties) {
+      this.endPointServerConfigList.add(new EndPointServerConfig(configurationProperties));
     }
   }
 
@@ -58,18 +58,14 @@ public class NetworkManagerConfig extends NetworkManagerConfigDTO implements Con
 
   @Override
   public boolean update(BaseConfigDTO config) {
-    if(config instanceof EndPointServerConfigDTO) {
-      return updateEndPointServerConfig((EndPointServerConfigDTO) config);
+    if(config instanceof EndPointServerConfigDTO dto)  {
+      return updateEndPointServerConfig(dto);
     }
 
-    if (!(config instanceof NetworkManagerConfigDTO)) {
+    if (!(config instanceof NetworkManagerConfigDTO newConfig)) {
       return false;
     }
-
-
-    NetworkManagerConfigDTO newConfig = (NetworkManagerConfigDTO) config;
     boolean hasChanged = false;
-
     if (this.preferIpV6Addresses != newConfig.isPreferIpV6Addresses()) {
       this.preferIpV6Addresses = newConfig.isPreferIpV6Addresses();
       hasChanged = true;

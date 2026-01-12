@@ -19,7 +19,6 @@
 
 package io.mapsmessaging.dto.rest.config;
 
-import io.mapsmessaging.config.network.EndPointConnectionServerConfig;
 import io.mapsmessaging.dto.rest.config.network.EndPointConnectionServerConfigDTO;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;

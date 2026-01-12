@@ -19,7 +19,6 @@
 
 package io.mapsmessaging.rest.auth;
 
-import io.mapsmessaging.auth.AuthManager;
 import io.mapsmessaging.rest.api.impl.BaseRestApi;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;

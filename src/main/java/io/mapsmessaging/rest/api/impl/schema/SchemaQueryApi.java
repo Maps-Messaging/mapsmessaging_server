@@ -20,10 +20,11 @@
 package io.mapsmessaging.rest.api.impl.schema;
 
 
-import io.mapsmessaging.dto.rest.schema.SchemaPostDTO;
 import io.mapsmessaging.engine.schema.SchemaManager;
 import io.mapsmessaging.rest.api.impl.BaseRestApi;
-import io.mapsmessaging.rest.responses.*;
+import io.mapsmessaging.rest.responses.SchemaMapResponse;
+import io.mapsmessaging.rest.responses.SchemaPostDTO;
+import io.mapsmessaging.rest.responses.StringListResponse;
 import io.mapsmessaging.schemas.config.SchemaConfig;
 import io.mapsmessaging.schemas.config.SchemaConfigFactory;
 import io.mapsmessaging.schemas.config.SchemaResource;
@@ -45,7 +46,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.stream.Collectors;
 
 import static io.mapsmessaging.rest.api.Constants.URI_PATH;
 

@@ -77,7 +77,7 @@ public class MLModelManagerDTO extends BaseConfigDTO {
       requiredMode = Schema.RequiredMode.NOT_REQUIRED,
       nullable = true
   )
-  protected AutoRefreshConfig autoRefresh;
+  protected AutoRefreshConfigDTO autoRefresh;
 
   @Schema(
       description = "LLM access configuration",

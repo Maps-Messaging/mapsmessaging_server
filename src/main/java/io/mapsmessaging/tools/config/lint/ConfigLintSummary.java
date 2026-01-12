@@ -19,8 +19,9 @@
 
 package io.mapsmessaging.tools.config.lint;
 
-import java.util.List;
 import lombok.Value;
+
+import java.util.List;
 
 @Value
 public class ConfigLintSummary {

@@ -19,7 +19,14 @@
 
 package io.mapsmessaging.utilities.configuration;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
+import com.networknt.schema.Error;
+import com.networknt.schema.Schema;
+import com.networknt.schema.SchemaRegistry;
+import com.networknt.schema.dialect.Dialects;
 import io.mapsmessaging.config.ConfigManager;
 import io.mapsmessaging.configuration.ConfigurationProperties;
 import io.mapsmessaging.configuration.PropertyManager;
@@ -33,17 +40,16 @@ import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.logging.ServerLogMessages;
 import io.mapsmessaging.tools.config.schema.RuntimeJsonSchemaGenerator;
 import io.mapsmessaging.tools.config.schema.RuntimeJsonSchemaService;
+import io.mapsmessaging.tools.config.yaml.RenderMode;
+import io.mapsmessaging.tools.config.yaml.YamlWriter;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.Setter;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import com.networknt.schema.Error;
-import com.networknt.schema.Schema;
-import com.networknt.schema.SchemaRegistry;
-import com.networknt.schema.dialect.Dialects;
 
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -135,8 +141,7 @@ public class ConfigurationManager {
     }
     return null;
   }
-
-
+  
   public @NonNull @NotNull ConfigurationProperties getProperties(String name) {
     if (authoritative != null && authoritative.contains(name)) {
       logger.log(PROPERTY_MANAGER_LOOKUP, name, "Main");
@@ -149,7 +154,7 @@ public class ConfigurationManager {
         String string = configSchemas.get(name);
         Map<String, Object> raw = props.getMap();
 
-        List<String> errors = validate(string, raw);
+        List<String> errors = validate(name, string, raw);
         if(!errors.isEmpty()){
           for(String error:errors){
             logger.log(PROPERTY_MANAGER_ENTRY_SCHEMA_ERROR, name, error);
@@ -210,17 +215,35 @@ public class ConfigurationManager {
     ServiceLoader<ConfigManager> configManagers = ServiceLoader.load(ConfigManager.class);
     for(ConfigManager manager : configManagers){
       ConfigManager loaded = manager.load(featureManager);
+      try {
+        try(FileOutputStream fileOutputStream = new FileOutputStream(loaded.getName()+".yaml")) {
+          String schemaString = this.getSchema(loaded.getName());
+          JsonObject schemaObject = JsonParser.parseString(schemaString).getAsJsonObject();
+          fileOutputStream.write(YamlWriter.toYaml(loaded, schemaObject, RenderMode.FULL).getBytes());
+        }
+      } catch (Exception e) {
+        e.printStackTrace();
+      }
       managerMap.put(loaded.getClass().getSimpleName(), loaded);
     }
   }
 
-  private List<String> validate(String jsonSchema, Map<String, Object> data) {
+  private List<String> validate(String name, String jsonSchema, Map<String, Object> data) {
     try {
+      int loadingVersion = 0;
+      if(data.containsKey("schemaLoadingVersion")){
+        loadingVersion = (int)Float.parseFloat(data.get("schemaLoadingVersion").toString());
+      }
+
+      if(loadingVersion == 0){
+        return new ArrayList<>();
+      }
+
       SchemaRegistry schemaRegistry = SchemaRegistry.withDialect(Dialects.getDraft202012());
       Schema schema = schemaRegistry.getSchema(jsonSchema);
-
       ObjectMapper objectMapper = new ObjectMapper();
-      List<Error> errorList = schema.validate(objectMapper.valueToTree(data));
+      JsonNode jsonObject = objectMapper.valueToTree(data);
+      List<Error> errorList = schema.validate(jsonObject);
       List<String> response = new ArrayList<>();
       for(Error error:errorList){
         response.add(error.toString());

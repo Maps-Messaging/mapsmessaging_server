@@ -38,42 +38,74 @@ import java.util.stream.Collectors;
     description = "Represents configuration settings for an endpoint server.")
 public class EndPointServerConfigDTO extends BaseConfigDTO {
 
-  @Schema(description = "Name of the endpoint server", example = "MainServer")
+  @Schema(
+      description = "Name of the endpoint server",
+      example = "MainServer",
+      requiredMode = Schema.RequiredMode.REQUIRED,
+      nullable = false
+  )
   protected String name;
 
-  @Schema(description = "URL for the endpoint server", example = "tcp://localhost:1883")
+  @Schema(
+      description = "URL for the endpoint server",
+      example = "tcp://localhost:1883",
+      nullable = false,
+      requiredMode = Schema.RequiredMode.REQUIRED
+  )
   protected String url;
 
   @Schema(
       description = "Endpoint-specific configuration",
+      requiredMode = Schema.RequiredMode.REQUIRED,
+      nullable = false,
       implementation = EndPointConfigDTO.class
   )
   protected EndPointConfigDTO endPointConfig;
 
-  @Schema(description = "SASL configuration", implementation = SaslConfigDTO.class)
+  @Schema(
+      description = "SASL configuration",
+      requiredMode = Schema.RequiredMode.NOT_REQUIRED,
+      nullable = true,
+      implementation = SaslConfigDTO.class
+  )
   protected SaslConfigDTO saslConfig;
 
-  @Schema(description = "List of protocol configurations for the endpoint")
+  @Schema(
+      description = "List of protocol configurations for the endpoint",
+      requiredMode = Schema.RequiredMode.REQUIRED,
+      minLength = 1,
+      nullable = false
+  )
   protected List<ProtocolConfigDTO> protocolConfigs;
 
-  @Schema(description = "Authentication realm", example = "defaultRealm")
+  @Schema(
+      description = "Authentication realm",
+      example = "defaultRealm",
+      requiredMode = Schema.RequiredMode.REQUIRED,
+      nullable = false
+  )
   protected String authenticationRealm;
 
   @Schema(
       description = "Backlog for the endpoint server",
       example = "100",
+      defaultValue = "100",
       minimum = "1",
-      maximum = "10000"
+      maximum = "10000",
+      requiredMode = Schema.RequiredMode.NOT_REQUIRED,
+      nullable = true
   )
-  protected int backlog;
+  protected int backlog = 100;
 
   @Schema(
       description = "Selector task wait time",
       example = "10",
       minimum = "1",
-      maximum = "1000"
+      maximum = "1000",
+      requiredMode = Schema.RequiredMode.NOT_REQUIRED,
+      nullable = true
   )
-  protected int selectorTaskWait;
+  protected int selectorTaskWait = 10;
 
   public ProtocolConfigDTO getProtocolConfig(String protocol) {
     ProtocolConfigDTO config = protocolConfigs.stream()

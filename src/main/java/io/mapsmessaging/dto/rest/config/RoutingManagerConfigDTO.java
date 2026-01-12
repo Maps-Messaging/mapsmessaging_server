@@ -19,7 +19,6 @@
 
 package io.mapsmessaging.dto.rest.config;
 
-import io.mapsmessaging.config.routing.PredefinedServerConfig;
 import io.mapsmessaging.dto.rest.config.routing.PredefinedServerConfigDTO;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
@@ -50,7 +49,7 @@ public class RoutingManagerConfigDTO extends BaseConfigDTO {
       requiredMode = Schema.RequiredMode.NOT_REQUIRED,
       nullable = false
   )
-  protected boolean autoDiscovery = false;
+  protected boolean autoDiscovery = true;
 
   @Schema(
       description = "List of predefined server configurations",

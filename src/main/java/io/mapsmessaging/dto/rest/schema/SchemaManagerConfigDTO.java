@@ -20,13 +20,12 @@
 package io.mapsmessaging.dto.rest.schema;
 
 import io.mapsmessaging.dto.rest.config.BaseConfigDTO;
+import io.swagger.v3.oas.annotations.media.DiscriminatorMapping;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-@NoArgsConstructor
-@AllArgsConstructor
 @Schema(
     title = "Schema Manager config",
     description = "Configures the schema manager on where it can find and store schemas")
@@ -36,13 +35,33 @@ public class SchemaManagerConfigDTO extends BaseConfigDTO {
   @Schema(
       description = "Type of schema repository used",
       example = "XRegistry",
-      allowableValues = {"Simple", "File", "Maps"})
+      allowableValues = {"Simple", "File", "Maps"},
+      requiredMode = Schema.RequiredMode.REQUIRED,
+      nullable = false
+  )
+
   private RepositoryType repositoryType;
+
 
   @Schema(
       description = "Repository-specific configuration object. " +
-          "For example: RepositoryConfigDTO, FileRepositoryConfigDTO or MapsRepositoryConfigDTO " +
-          "depending on the repositoryType.")
+          "For example: SimpleRepositoryConfigDTO, FileRepositoryConfigDTO or MapsRepositoryConfigDTO " +
+          "depending on the repositoryType.",
+      requiredMode = Schema.RequiredMode.REQUIRED,
+      nullable = false,
+      example = "File",
+      oneOf = {
+          SimpleRepositoryConfigDTO.class,
+          FileRepositoryConfigDTO.class,
+          MapsRepositoryConfigDTO.class
+      },
+      discriminatorProperty = "type",
+      discriminatorMapping = {
+          @DiscriminatorMapping(value = "Simple", schema = SimpleRepositoryConfigDTO.class),
+          @DiscriminatorMapping(value = "File", schema = FileRepositoryConfigDTO.class),
+          @DiscriminatorMapping(value = "Maps", schema = MapsRepositoryConfigDTO.class)
+      }
+  )
   private RepositoryConfigDTO repositoryConfig;
 
   public enum RepositoryType {

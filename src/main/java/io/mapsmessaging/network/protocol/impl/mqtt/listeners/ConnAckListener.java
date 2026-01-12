@@ -21,7 +21,6 @@ package io.mapsmessaging.network.protocol.impl.mqtt.listeners;
 
 import io.mapsmessaging.api.Session;
 import io.mapsmessaging.api.SessionContextBuilder;
-import io.mapsmessaging.config.auth.AuthConfig;
 import io.mapsmessaging.config.network.EndPointConnectionServerConfig;
 import io.mapsmessaging.dto.rest.config.auth.AuthConfigDTO;
 import io.mapsmessaging.network.io.EndPoint;

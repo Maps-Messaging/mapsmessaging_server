@@ -20,12 +20,17 @@
 package io.mapsmessaging.dto.rest.config;
 
 import io.swagger.v3.oas.annotations.media.Schema;
-import lombok.Data;
 
-@Data
 @Schema(
     title = "Base Configuration DTO",
     description = "Base configuration for common REST API fields.")
 public class BaseConfigDTO {
-
+  @Schema(
+      description = "Configuration schema version. 0 = legacy format, 1 = current format.",
+      requiredMode = Schema.RequiredMode.REQUIRED,
+      example = "1",
+      defaultValue = "1",
+      nullable = false
+  )
+  protected int schemaLoadingVersion = 1;
 }

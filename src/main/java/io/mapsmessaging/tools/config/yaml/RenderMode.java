@@ -17,18 +17,9 @@
  *  limitations under the License.
  */
 
-package io.mapsmessaging.dto.rest.config.ml;
+package io.mapsmessaging.tools.config.yaml;
 
-import io.swagger.v3.oas.annotations.media.Schema;
-import lombok.Data;
-import lombok.NoArgsConstructor;
-
-@Data
-@NoArgsConstructor
-public class AutoRefreshConfig {
-  @Schema(description = "Enable auto-refresh of model sources")
-  private boolean enabled;
-
-  @Schema(description = "Interval in minutes between refreshes")
-  private int intervalMinutes;
+public enum RenderMode {
+  FULL,
+  MINIMAL
 }

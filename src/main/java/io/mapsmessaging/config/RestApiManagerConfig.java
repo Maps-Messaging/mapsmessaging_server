@@ -41,29 +41,28 @@ public class RestApiManagerConfig extends RestApiManagerConfigDTO implements Con
   }
 
   private RestApiManagerConfig(ConfigurationProperties properties) {
-    this.enabled = properties.getBooleanProperty("enabled", true);
-    this.enableAuthentication = properties.getBooleanProperty("enableAuthentication", true);
-    this.hostnames = properties.getProperty("hostnames", "0.0.0.0");
-    this.port = properties.getIntProperty("port", 8080);
-    this.enableSwagger = properties.getBooleanProperty("enableSwagger", true);
-    this.enableSwaggerUI = properties.getBooleanProperty("enableSwaggerUI", true);
-    this.enableUserManagement = properties.getBooleanProperty("enableUserManagement", true);
-    this.enableSchemaManagement = properties.getBooleanProperty("enableSchemaManagement", true);
-    this.enableInterfaceManagement = properties.getBooleanProperty("enableInterfaceManagement", true);
-    this.enableDestinationManagement = properties.getBooleanProperty("enableDestinationManagement", true);
+    this.enabled = properties.getBooleanProperty("enabled", enabled);
+    this.enableAuthentication = properties.getBooleanProperty("enableAuthentication", enableAuthentication);
+    this.hostnames = properties.getProperty("hostnames", hostnames);
+    this.port = properties.getIntProperty("port", port);
+    this.enableSwagger = properties.getBooleanProperty("enableSwagger", enableSwagger);
+    this.enableSwaggerUI = properties.getBooleanProperty("enableSwaggerUI", enableSwaggerUI);
+    this.enableUserManagement = properties.getBooleanProperty("enableUserManagement", enableUserManagement);
+    this.enableSchemaManagement = properties.getBooleanProperty("enableSchemaManagement", enableSchemaManagement);
+    this.enableInterfaceManagement = properties.getBooleanProperty("enableInterfaceManagement", enableInterfaceManagement);
+    this.enableDestinationManagement = properties.getBooleanProperty("enableDestinationManagement", enableDestinationManagement);
 
-    this.maxEventsPerDestination = properties.getIntProperty("maxEventsPerDestination", 10);
-    this.maxThreads = properties.getIntProperty("maxThreads",10);
-    this.minThreads = properties.getIntProperty("minThreads",5);
-    this.threadQueueLimit  = properties.getIntProperty("threadQueueLimit ",100);
-    this.selectorThreads = properties.getIntProperty("selectorThreads ",2);
+    this.maxEventsPerDestination = properties.getIntProperty("maxEventsPerDestination", maxEventsPerDestination);
+    this.maxThreads = properties.getIntProperty("maxThreads",maxThreads);
+    this.minThreads = properties.getIntProperty("minThreads",minThreads);
+    this.threadQueueLimit  = properties.getIntProperty("threadQueueLimit ",threadQueueLimit);
+    this.selectorThreads = properties.getIntProperty("selectorThreads ",selectorThreads);
 
-    this.enableCache = properties.getBooleanProperty("enableCache", true);
-    this.cacheLifetime = properties.getLongProperty("cacheLifetime", 10000L);
-    this.cacheCleanup = properties.getLongProperty("cacheCleanup", 5000L);
-    this.enableDestinationManagement = properties.getBooleanProperty("enableDestinationManagement", true);
-    this.enableWadlEndPoint = properties.getBooleanProperty("enableWadlEndPoint", false);
-    this.inactiveTimeout = properties.getIntProperty("inactiveTimeout", 180000);
+    this.enableCache = properties.getBooleanProperty("enableCache", enableCache);
+    this.cacheLifetime = properties.getLongProperty("cacheLifetime", cacheLifetime);
+    this.cacheCleanup = properties.getLongProperty("cacheCleanup", cacheCleanup);
+    this.enableWadlEndPoint = properties.getBooleanProperty("enableWadlEndPoint", enableWadlEndPoint);
+    this.inactiveTimeout = properties.getIntProperty("inactiveTimeout", inactiveTimeout);
 
     if (properties.containsKey("tls")) {
       this.tlsConfig = new TlsConfig((ConfigurationProperties) properties.get("tls"));

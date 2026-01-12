@@ -19,16 +19,12 @@
 
 package io.mapsmessaging.network.protocol.impl.mavlink;
 
-import io.mapsmessaging.config.protocol.impl.MqttSnConfig;
-import io.mapsmessaging.mavlink.MavlinkCodec;
-import io.mapsmessaging.mavlink.MavlinkMessageFormatLoader;
 import io.mapsmessaging.network.io.EndPoint;
 import io.mapsmessaging.network.io.InterfaceInformation;
 import io.mapsmessaging.network.io.Packet;
 import io.mapsmessaging.network.io.impl.NetworkInfoHelper;
 import io.mapsmessaging.network.protocol.Protocol;
 import io.mapsmessaging.network.protocol.ProtocolImplFactory;
-import io.mapsmessaging.network.protocol.impl.mqtt_sn.MQTTSNInterfaceManager;
 
 import java.io.IOException;
 import java.util.Map;

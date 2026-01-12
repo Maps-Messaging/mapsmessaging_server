@@ -24,8 +24,6 @@ import io.mapsmessaging.devices.DeviceController;
 import io.mapsmessaging.dto.rest.devices.DeviceInfoDTO;
 import io.mapsmessaging.hardware.DeviceManager;
 import io.mapsmessaging.rest.cache.CacheKey;
-import io.mapsmessaging.rest.responses.DeviceList;
-import io.mapsmessaging.rest.responses.DeviceScanList;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;

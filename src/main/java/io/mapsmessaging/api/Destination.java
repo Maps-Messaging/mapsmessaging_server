@@ -29,14 +29,11 @@ import io.mapsmessaging.engine.schema.Schema;
 import io.mapsmessaging.engine.schema.SchemaManager;
 import io.mapsmessaging.engine.session.security.SecurityContext;
 import io.mapsmessaging.schemas.config.SchemaConfig;
-import io.mapsmessaging.security.authorisation.AuthRequest;
 import io.mapsmessaging.security.authorisation.ProtectedResource;
 import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  * Generic destination class
