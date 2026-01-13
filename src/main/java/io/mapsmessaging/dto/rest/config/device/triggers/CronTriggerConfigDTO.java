@@ -26,9 +26,12 @@ import lombok.NoArgsConstructor;
 
 @Data
 @EqualsAndHashCode(callSuper=false)
-@NoArgsConstructor
 @Schema(description = "Cron Trigger Configuration DTO")
 public class CronTriggerConfigDTO extends BaseTriggerConfigDTO {
+
+  public CronTriggerConfigDTO(){
+    super("cron");
+  }
 
   @Schema(description = "Cron expression for the trigger", example = "0 0 * * *")
   protected String cron;

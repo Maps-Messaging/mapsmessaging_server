@@ -20,7 +20,6 @@
 package io.mapsmessaging.dto.rest.schema;
 
 import io.swagger.v3.oas.annotations.media.Schema;
-import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -28,16 +27,16 @@ import lombok.Setter;
 @Setter
 @Schema(
     title = "File Repository configuration",
-    description = "Configuration details for the file-based schema repository. " +
-        "Used when repositoryType is set to 'File'.")
+    description = "Configuration details for the file-based schema repository. Used when repositoryType is set to 'File'.")
 public class FileRepositoryConfigDTO extends RepositoryConfigDTO {
 
   public FileRepositoryConfigDTO(){
-    super("File");
+    super("file");
   }
 
   @Schema(
       description = "Absolute or relative directory path where schema files are stored.",
-      example = "{{MAPS_DATA}}/schemas")
+      example = "{{MAPS_DATA}}/schemas"
+  )
   private String directoryPath;
 }

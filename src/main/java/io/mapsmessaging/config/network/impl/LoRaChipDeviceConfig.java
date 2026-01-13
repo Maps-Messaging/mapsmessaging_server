@@ -26,10 +26,8 @@ import io.mapsmessaging.dto.rest.config.network.impl.LoRaChipConfigDTO;
 
 public class LoRaChipDeviceConfig extends LoRaChipConfigDTO implements Config {
 
-
   public LoRaChipDeviceConfig(ConfigurationProperties properties) {
     super();
-    setType("loraDevice");
     this.name = properties.getProperty("name");
     this.address = properties.getIntProperty("address", 1);
     this.power = properties.getIntProperty("power", 14);

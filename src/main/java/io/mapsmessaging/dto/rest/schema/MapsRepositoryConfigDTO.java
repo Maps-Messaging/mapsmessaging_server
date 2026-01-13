@@ -33,7 +33,7 @@ import lombok.Setter;
 public class MapsRepositoryConfigDTO extends RepositoryConfigDTO {
 
   public MapsRepositoryConfigDTO(){
-    super("Maps");
+    super("maps");
   }
 
 

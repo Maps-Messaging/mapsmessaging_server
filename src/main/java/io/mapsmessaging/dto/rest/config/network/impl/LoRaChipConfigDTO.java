@@ -27,6 +27,10 @@ import lombok.EqualsAndHashCode;
 @Data
 public class LoRaChipConfigDTO extends LoRaConfigDTO {
 
+  public LoRaChipConfigDTO(){
+    super("loraDevice");
+  }
+
   @Schema(description = "Radio type of the LoRa device", example = "SX1276")
   protected String radio;
 

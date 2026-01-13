@@ -26,7 +26,6 @@ import io.mapsmessaging.dto.rest.config.device.triggers.CronTriggerConfigDTO;
 public class CronTriggerConfig extends CronTriggerConfigDTO implements TriggerConfig {
 
   public CronTriggerConfig(ConfigurationProperties config) {
-    this.type = "cron";
     this.cron = config.getProperty("cron", "");
     this.name = config.getProperty("name", "");
   }
@@ -47,10 +46,6 @@ public class CronTriggerConfig extends CronTriggerConfigDTO implements TriggerCo
       CronTriggerConfigDTO newConfig = (CronTriggerConfigDTO) config;
       if (this.cron == null || !this.cron.equals(newConfig.getCron())) {
         this.cron = newConfig.getCron();
-        hasChanged = true;
-      }
-      if (this.type == null || !this.type.equals(newConfig.getType())) {
-        this.type = newConfig.getType();
         hasChanged = true;
       }
       if (this.name == null || !this.name.equals(newConfig.getName())) {

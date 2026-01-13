@@ -33,23 +33,12 @@ import lombok.NoArgsConstructor;
 public class SchemaManagerConfigDTO extends BaseConfigDTO {
 
   @Schema(
-      description = "Type of schema repository used",
-      example = "XRegistry",
-      allowableValues = {"Simple", "File", "Maps"},
-      requiredMode = Schema.RequiredMode.REQUIRED,
-      nullable = false
-  )
-
-  private RepositoryType repositoryType;
-
-
-  @Schema(
       description = "Repository-specific configuration object. " +
           "For example: SimpleRepositoryConfigDTO, FileRepositoryConfigDTO or MapsRepositoryConfigDTO " +
           "depending on the repositoryType.",
       requiredMode = Schema.RequiredMode.REQUIRED,
       nullable = false,
-      example = "File",
+      example = "file",
       oneOf = {
           SimpleRepositoryConfigDTO.class,
           FileRepositoryConfigDTO.class,
@@ -64,9 +53,4 @@ public class SchemaManagerConfigDTO extends BaseConfigDTO {
   )
   private RepositoryConfigDTO repositoryConfig;
 
-  public enum RepositoryType {
-    Simple,
-    File,
-    Maps
-  }
 }

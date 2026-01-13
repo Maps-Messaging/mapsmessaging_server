@@ -27,9 +27,12 @@ import lombok.NoArgsConstructor;
 
 @Data
 @EqualsAndHashCode(callSuper=false)
-@NoArgsConstructor
 @Schema(description = "Periodic Trigger Configuration DTO")
 public class PeriodicTriggerConfigDTO extends BaseTriggerConfigDTO {
+
+  public PeriodicTriggerConfigDTO(){
+    super("periodic");
+  }
 
   @Schema(description = "Interval for the periodic trigger in milliseconds", example = "5000")
   protected int interval;

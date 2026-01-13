@@ -26,9 +26,12 @@ import lombok.NoArgsConstructor;
 
 @Data
 @EqualsAndHashCode(callSuper=false)
-@NoArgsConstructor
 @Schema(description = "Interrupt Trigger Configuration DTO")
 public class InterruptTriggerConfigDTO extends BaseTriggerConfigDTO {
+
+  public InterruptTriggerConfigDTO(){
+    super("interrupt");
+  }
 
   @Schema(description = "Address of the interrupt trigger", example = "1")
   protected int address;

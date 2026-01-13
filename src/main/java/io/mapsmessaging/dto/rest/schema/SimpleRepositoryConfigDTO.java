@@ -33,7 +33,7 @@ import lombok.Setter;
 public class SimpleRepositoryConfigDTO extends RepositoryConfigDTO {
 
   public SimpleRepositoryConfigDTO(){
-    super("Simple");
+    super("simple");
   }
 
 

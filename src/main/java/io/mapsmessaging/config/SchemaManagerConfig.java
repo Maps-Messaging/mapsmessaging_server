@@ -34,13 +34,11 @@ public class SchemaManagerConfig extends SchemaManagerConfigDTO implements Confi
   public SchemaManagerConfig() {}
 
   public SchemaManagerConfig(ConfigurationProperties configurationProperties) {
-    String type = configurationProperties.getProperty("repositoryType", "Simple");
-    RepositoryType repositoryType = RepositoryType.valueOf(type);
-    super.setRepositoryType(repositoryType);
-    switch (repositoryType) {
-      case Simple -> super.setRepositoryConfig(new SimpleRepositoryConfigDTO());
-      case File -> super.setRepositoryConfig(configureFile( (ConfigurationProperties) configurationProperties.get("config")));
-      case Maps -> super.setRepositoryConfig(configureMaps( (ConfigurationProperties) configurationProperties.get("config")));
+    String type = configurationProperties.getProperty("type", "simple");
+    switch (type) {
+      case "simple" -> super.setRepositoryConfig(new SimpleRepositoryConfigDTO());
+      case "file" -> super.setRepositoryConfig(configureFile( (ConfigurationProperties) configurationProperties.get("config")));
+      case "maps" -> super.setRepositoryConfig(configureMaps( (ConfigurationProperties) configurationProperties.get("config")));
       default -> super.setRepositoryConfig(new SimpleRepositoryConfigDTO());
     }
   }

@@ -46,7 +46,11 @@ import lombok.NoArgsConstructor;
 @Data
 @EqualsAndHashCode(callSuper = false)
 @NoArgsConstructor
-public class BaseTriggerConfigDTO extends BaseConfigDTO{
+public abstract class BaseTriggerConfigDTO extends BaseConfigDTO{
+
+  protected BaseTriggerConfigDTO(String type){
+    this.type = type;
+  }
 
   @Schema(description = "Type of the trigger",
       example = "cron",

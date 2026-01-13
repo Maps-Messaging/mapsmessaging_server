@@ -51,7 +51,7 @@ import lombok.NoArgsConstructor;
         @DiscriminatorMapping(value = "serial", schema = SerialConfigDTO.class),
         @DiscriminatorMapping(value = "tcp", schema = TcpConfigDTO.class),
         @DiscriminatorMapping(value = "ssl", schema = TlsConfigDTO.class),
-        @DiscriminatorMapping(value = "udp", schema = UdpConfigDTO.class),
+        @DiscriminatorMapping(value = "udp", schema = UdpConfigDTO.class)
     })
 
 @Data
@@ -59,6 +59,10 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @SuppressWarnings("java:S1313") // the IP address is used in an example and it exposes no private info
 public class EndPointConfigDTO extends BaseConfigDTO {
+
+  protected EndPointConfigDTO(String type){
+    this.type = type;
+  }
 
   @Schema(description = "Type of the endpoint",
       example = "tcp",

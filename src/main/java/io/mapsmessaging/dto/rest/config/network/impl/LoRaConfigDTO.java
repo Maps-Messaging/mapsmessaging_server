@@ -30,14 +30,26 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class LoRaConfigDTO extends EndPointConfigDTO {
 
-  @Schema(description = "Name of the LoRa device", example = "LoRaNode1")
+  public LoRaConfigDTO(String type){
+    super(type);
+  }
+
+  @Schema(
+      description = "Name of the LoRa device",
+      example = "LoRaNode1",
+      requiredMode = Schema.RequiredMode.REQUIRED,
+      nullable = false
+  )
   protected String name;
 
   @Schema(
       description = "Power setting for the device",
       example = "14",
       minimum = "0",
-      maximum = "16"
+      maximum = "16",
+      requiredMode = Schema.RequiredMode.REQUIRED,
+      nullable = false
+
   )
   protected int power;
 
@@ -46,7 +58,9 @@ public class LoRaConfigDTO extends EndPointConfigDTO {
       example = "868.0",
       allowableValues = {"863", "902", "915", "470", "923", "865", "920"},
       minimum = "863",
-      maximum = "923"
+      maximum = "923",
+      requiredMode = Schema.RequiredMode.REQUIRED,
+      nullable = false
   )
   protected float frequency;
 
@@ -54,7 +68,9 @@ public class LoRaConfigDTO extends EndPointConfigDTO {
       description = "Base address to register for, 1-254",
       example = "2",
       minimum = "1",
-      maximum = "254"
+      maximum = "254",
+      requiredMode = Schema.RequiredMode.REQUIRED,
+      nullable = false
   )
   protected int address;
 
@@ -62,11 +78,19 @@ public class LoRaConfigDTO extends EndPointConfigDTO {
       description = "Transmission rate to limit the number of packets/second, 0 - unlimited, else per second",
       example = "5",
       minimum = "0",
-      maximum = "1024"
+      maximum = "1024",
+      requiredMode = Schema.RequiredMode.REQUIRED,
+      nullable = false
   )
   protected int transmissionRate;
 
-  @Schema(description = "Optional hex based 16 byte key", example = "0x0 0x0 0x0 0x0 0x0 0x0 0x0 0x0 0x0 0x0 0x0 0x0 0x0 0x0 0x0 0x0")
+  @Schema(
+      description = "Optional hex based 16 byte key",
+      example = "0x0 0x0 0x0 0x0 0x0 0x0 0x0 0x0 0x0 0x0 0x0 0x0 0x0 0x0 0x0 0x0",
+      requiredMode = Schema.RequiredMode.NOT_REQUIRED,
+      nullable = true
+  )
+
   protected String hexKey;
 
 }

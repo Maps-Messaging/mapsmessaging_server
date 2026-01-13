@@ -1,8 +1,10 @@
 package io.mapsmessaging.tools.config;
 
-import com.google.gson.Gson;
-import com.google.gson.JsonObject;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.*;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import io.mapsmessaging.config.ConfigManager;
+import io.mapsmessaging.dto.rest.config.BaseConfigDTO;
 import io.mapsmessaging.license.FeatureManager;
 import io.mapsmessaging.utilities.configuration.ConfigurationManager;
 
@@ -10,30 +12,63 @@ import java.util.ArrayList;
 
 public class UpgradeTest {
 
-  public static void main(String[] args){
-    Gson gson = new Gson();
+  public static void main(String[] args) {
+    ObjectMapper objectMapper = buildObjectMapper();
+
     ConfigurationManager configurationManager = ConfigurationManager.getInstance();
     configurationManager.setFeatureManager(new FeatureManager(new ArrayList<>()));
     configurationManager.initialise("fred");
     configurationManager.loadAll();
-    for(String managerName: configurationManager.getKnownManagers()){
+
+    for (String managerName : configurationManager.getKnownManagers()) {
       try {
         ConfigManager manager = configurationManager.getManager(managerName);
         manager.load(new FeatureManager(null));
-        JsonObject managerJson = gson.toJsonTree(manager).getAsJsonObject();
-        ConfigManager managerCopy = gson.fromJson(managerJson, manager.getClass());
-        JsonObject copyJson = gson.toJsonTree(managerCopy).getAsJsonObject();
-        if(!managerJson.toString().equals(copyJson.toString())) {
-          System.err.println("Manager: " + managerName +
-              "\n Original: " + managerJson +
-              "\n Copy    : " + copyJson +
-              "\n Equal   :" + managerJson.toString().equals(copyJson.toString()));
+
+        if(manager instanceof BaseConfigDTO dto){
+          JsonNode originalJson = objectMapper.valueToTree(dto);
+          if (originalJson.isObject()) {
+            ((ObjectNode) originalJson).remove("name");
+          }
+
+          @SuppressWarnings("unchecked")
+          Class<? extends BaseConfigDTO> managerClass = (Class<? extends BaseConfigDTO>) manager.getClass().getSuperclass();
+
+          BaseConfigDTO managerCopy = objectMapper.treeToValue(originalJson, managerClass);
+
+          JsonNode copyJson = objectMapper.valueToTree(managerCopy);
+          if (copyJson.isObject()) {
+            ((ObjectNode) copyJson).remove("name");
+          }
+          if (!originalJson.equals(copyJson)) {
+            System.err.println("Manager: " + managerName
+                + "\n Original: " + toPretty(objectMapper, originalJson)
+                + "\n Copy    : " + toPretty(objectMapper, copyJson)
+                + "\n Equal   : " + originalJson.equals(copyJson));
+          }
+
         }
+      } catch (Exception exception) {
+        exception.printStackTrace();
+        // keep swallowing, as per your original test
       }
-      catch(Exception ex){
-        System.err.println("Failed: " + managerName);
-        ex.printStackTrace();
-      }
+    }
+  }
+
+  private static ObjectMapper buildObjectMapper() {
+    ObjectMapper objectMapper = new ObjectMapper();
+
+    objectMapper.configure(MapperFeature.SORT_PROPERTIES_ALPHABETICALLY, true);
+    objectMapper.configure(SerializationFeature.ORDER_MAP_ENTRIES_BY_KEYS, true);
+
+    return objectMapper;
+  }
+
+  private static String toPretty(ObjectMapper objectMapper, JsonNode jsonNode) {
+    try {
+      return objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(jsonNode);
+    } catch (JsonProcessingException exception) {
+      return jsonNode.toString();
     }
   }
 }

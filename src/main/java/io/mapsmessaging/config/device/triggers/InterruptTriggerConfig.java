@@ -26,7 +26,6 @@ import io.mapsmessaging.dto.rest.config.device.triggers.InterruptTriggerConfigDT
 public class InterruptTriggerConfig extends InterruptTriggerConfigDTO implements TriggerConfig {
 
   public InterruptTriggerConfig(ConfigurationProperties config) {
-    this.type = "interrupt";
     this.address = config.getIntProperty("address", 0);
     this.pullDirection = config.getProperty("pull", "UP");
     this.id = config.getProperty("id", "");
