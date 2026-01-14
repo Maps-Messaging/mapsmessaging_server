@@ -51,8 +51,8 @@ public class SerialEndPointConnectionFactory implements EndPointConnectionFactor
   }
 
   public SerialPort getSerialPort(SerialConfigDTO serialConfig) {
-    String serialNo = serialConfig.getSerialNo();
-    String port = serialConfig.getPort();
+    String serialNo = serialConfig.getSerialDevice().getSerialNo();
+    String port = serialConfig.getSerialDevice().getPort();
 
     if (serialNo != null && !serialNo.isEmpty()) {
       return SerialPortScanner.getInstance().allocatePortBySerial(serialNo);

@@ -72,12 +72,12 @@ public class DeviceBusConfigDTO extends BaseConfigDTO {
   protected int scanTime = 60000;
 
   @Schema(
-      description = "Filters raw value, depending on filter type will only send IF there is a change or every trigger",
+      description = "Filters raw value; depending on filter type will only send if there is a change or every trigger",
       requiredMode = Schema.RequiredMode.NOT_REQUIRED,
-      allowableValues = {"ALWAYS_SEND"," ON_CHANGE"},
+      allowableValues = {"ALWAYS_SEND", "ON_CHANGE"},
       defaultValue = "ON_CHANGE",
       example = "ON_CHANGE",
-      nullable = true
+      nullable = false
   )
   protected String filter;
 

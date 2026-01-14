@@ -46,7 +46,7 @@ public class SerialBusConfigDTO extends DeviceBusConfigDTO {
       requiredMode = Schema.RequiredMode.REQUIRED,
       nullable = false
   )
-  protected List<SerialDeviceDTO> devices;
+  protected List<SerialBusDeviceDTO> devices;
 
   @Schema(
       description = "Trigger mechanism for OneWire bus",

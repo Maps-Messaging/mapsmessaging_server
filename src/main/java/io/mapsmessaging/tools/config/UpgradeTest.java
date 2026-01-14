@@ -23,7 +23,7 @@ public class UpgradeTest {
     for (String managerName : configurationManager.getKnownManagers()) {
       try {
         ConfigManager manager = configurationManager.getManager(managerName);
-        manager.load(new FeatureManager(null));
+        manager.load(new FeatureManager(new ArrayList<>()));
 
         if(manager instanceof BaseConfigDTO dto){
           JsonNode originalJson = objectMapper.valueToTree(dto);
@@ -46,9 +46,13 @@ public class UpgradeTest {
                 + "\n Copy    : " + toPretty(objectMapper, copyJson)
                 + "\n Equal   : " + originalJson.equals(copyJson));
           }
-
+          else{
+            System.err.println("Manager: " + managerName + " is OK");
+          }
         }
+
       } catch (Exception exception) {
+        System.err.println("Error processing manager: " + managerName);
         exception.printStackTrace();
         // keep swallowing, as per your original test
       }

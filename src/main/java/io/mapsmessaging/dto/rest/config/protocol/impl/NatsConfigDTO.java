@@ -27,10 +27,12 @@ import lombok.NoArgsConstructor;
 
 @Data
 @EqualsAndHashCode(callSuper = true)
-@NoArgsConstructor
 @Schema(description = "NATS Protocol Configuration DTO")
 public class NatsConfigDTO extends ProtocolConfigDTO {
 
+  public NatsConfigDTO() {
+    super("nats");
+  }
   @Schema(description = "Maximum buffer size for NATS", example = "65535")
   protected int maxBufferSize = 65535;
 

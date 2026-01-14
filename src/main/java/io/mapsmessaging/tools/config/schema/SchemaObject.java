@@ -7,6 +7,10 @@ public final class SchemaObject {
 
   private final Map<String, Object> values = new LinkedHashMap<>();
 
+  public Object get(String name) {
+    return values.get(name);
+  }
+
   public void put(String key, Object value) {
     if (value != null) {
       values.put(key, value);

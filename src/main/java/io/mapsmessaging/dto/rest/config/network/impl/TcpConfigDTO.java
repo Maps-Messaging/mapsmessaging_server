@@ -27,9 +27,16 @@ import lombok.NoArgsConstructor;
 
 @Data
 @EqualsAndHashCode(callSuper = true)
-@NoArgsConstructor
 @Schema(description = "TCP Configuration DTO")
 public class TcpConfigDTO extends EndPointConfigDTO {
+
+  public TcpConfigDTO() {
+    this("tcp");
+  }
+
+  protected TcpConfigDTO(String type) {
+    super(type);
+  }
 
   @Schema(
       description = "Size of the receive buffer (bytes)",

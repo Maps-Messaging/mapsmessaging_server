@@ -19,6 +19,7 @@
 
 package io.mapsmessaging.dto.rest.config.network;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import io.mapsmessaging.dto.rest.config.BaseConfigDTO;
 import io.mapsmessaging.dto.rest.config.auth.SaslConfigDTO;
 import io.mapsmessaging.dto.rest.config.protocol.ProtocolConfigDTO;
@@ -49,10 +50,14 @@ public class EndPointServerConfigDTO extends BaseConfigDTO {
   @Schema(
       description = "URL for the endpoint server",
       example = "tcp://localhost:1883",
+      requiredMode = Schema.RequiredMode.REQUIRED,
       nullable = false,
-      requiredMode = Schema.RequiredMode.REQUIRED
+      minLength = 1,
+      maxLength = 2048,
+      pattern = "^(tcp|ssl|udp|dtls|ws|wss)://[^\\s]+$"
   )
   protected String url;
+
 
   @Schema(
       description = "Endpoint-specific configuration",
@@ -102,6 +107,7 @@ public class EndPointServerConfigDTO extends BaseConfigDTO {
       example = "10",
       minimum = "1",
       maximum = "1000",
+      defaultValue = "10",
       requiredMode = Schema.RequiredMode.NOT_REQUIRED,
       nullable = true
   )
@@ -121,9 +127,10 @@ public class EndPointServerConfigDTO extends BaseConfigDTO {
     return config;
   }
 
+  @JsonIgnore
   public String getProtocols() {
     return protocolConfigs.stream()
-        .map(ProtocolConfigDTO::getProtocol)
+        .map(ProtocolConfigDTO::getType)
         .collect(Collectors.joining(", "));
   }
 

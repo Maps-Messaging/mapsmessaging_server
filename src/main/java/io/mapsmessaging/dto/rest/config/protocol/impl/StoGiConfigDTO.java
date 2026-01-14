@@ -27,9 +27,12 @@ import lombok.NoArgsConstructor;
 
 @Data
 @EqualsAndHashCode(callSuper = true)
-@NoArgsConstructor
 @Schema(description = "OrbComm ST and OGi Modem Protocol Configuration DTO")
 public class StoGiConfigDTO extends BaseSatelliteConfigDTO {
+
+  public StoGiConfigDTO(){
+    super("orbcomm");
+  }
 
   @Schema(description = "Serial port configuration")
   protected SerialConfigDTO serial;

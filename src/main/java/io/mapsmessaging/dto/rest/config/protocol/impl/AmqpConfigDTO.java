@@ -27,9 +27,12 @@ import lombok.NoArgsConstructor;
 
 @Data
 @EqualsAndHashCode(callSuper = true)
-@NoArgsConstructor
 @Schema(description = "AMQP Protocol Configuration DTO")
 public class AmqpConfigDTO extends ProtocolConfigDTO {
+
+  public AmqpConfigDTO() {
+    super("amqp");
+  }
 
   @Schema(description = "Idle timeout in milliseconds", example = "30000")
   protected int idleTimeout = 30000;

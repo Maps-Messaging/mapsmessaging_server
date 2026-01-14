@@ -31,7 +31,7 @@ import java.util.List;
 @EqualsAndHashCode(callSuper = true)
 @NoArgsConstructor
 @Schema(description = "Tenant Management Configuration DTO")
-public class TenantManagementConfigDTO extends BaseConfigDTO {
+public class TenantManagementConfigDTO extends BaseConfigDTO implements ConfigurationManagerDTO {
   @Schema(
       description = "List of tenant configurations",
       requiredMode = Schema.RequiredMode.NOT_REQUIRED,

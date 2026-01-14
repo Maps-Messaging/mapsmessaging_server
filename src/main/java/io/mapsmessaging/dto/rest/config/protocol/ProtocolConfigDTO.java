@@ -36,9 +36,10 @@ import lombok.NoArgsConstructor;
     @JsonSubTypes.Type(value = CoapConfigDTO.class, name = "coap"),
     @JsonSubTypes.Type(value = LoRaProtocolConfigDTO.class, name = "lora"),
     @JsonSubTypes.Type(value = MqttConfigDTO.class, name = "mqtt"),
+    @JsonSubTypes.Type(value = MqttConfigDTO.class, name = "mqtt-v3"),
     @JsonSubTypes.Type(value = MavlinkConfigDTO.class, name = "mavlink"),
     @JsonSubTypes.Type(value = MqttSnConfigDTO.class, name = "mqtt-sn"),
-    @JsonSubTypes.Type(value = MqttV5ConfigDTO.class, name = "mqttV5"),
+    @JsonSubTypes.Type(value = MqttConfigDTO.class, name = "mqttV5"),
     @JsonSubTypes.Type(value = NmeaConfigDTO.class, name = "NMEA-0183"),
     @JsonSubTypes.Type(value = SatelliteConfigDTO.class, name = "satellite"),
     @JsonSubTypes.Type(value = StoGiConfigDTO.class, name = "orbcomm"),
@@ -46,7 +47,7 @@ import lombok.NoArgsConstructor;
     @JsonSubTypes.Type(value = StompConfigDTO.class, name = "stomp"),
     @JsonSubTypes.Type(value = WebSocketConfigDTO.class, name = "websocket"),
     @JsonSubTypes.Type(value = ExtensionConfigDTO.class, name = "extension"),
-
+    @JsonSubTypes.Type(value = NatsConfigDTO.class, name = "nats"),
 })
 @Schema(
     description = "Abstract base class for all protocol configurations",
@@ -56,16 +57,19 @@ import lombok.NoArgsConstructor;
         @DiscriminatorMapping(value = "coap", schema = CoapConfigDTO.class),
         @DiscriminatorMapping(value = "lora", schema = LoRaProtocolConfigDTO.class),
         @DiscriminatorMapping(value = "mqtt", schema = MqttConfigDTO.class),
+        @DiscriminatorMapping(value = "mqtt-v3", schema = MqttConfigDTO.class),
         @DiscriminatorMapping(value = "mavlink", schema = MavlinkConfigDTO.class),
         @DiscriminatorMapping(value = "mqtt-sn", schema = MqttSnConfigDTO.class),
-        @DiscriminatorMapping(value = "mqttV5", schema = MqttV5ConfigDTO.class),
+        @DiscriminatorMapping(value = "mqttV5", schema = MqttConfigDTO.class),
         @DiscriminatorMapping(value = "NMEA-0183", schema = NmeaConfigDTO.class),
         @DiscriminatorMapping(value = "satellite", schema = SatelliteConfigDTO.class),
         @DiscriminatorMapping(value = "orbcomm", schema = StoGiConfigDTO.class),
         @DiscriminatorMapping(value = "semtech", schema = SemtechConfigDTO.class),
         @DiscriminatorMapping(value = "stomp", schema = StompConfigDTO.class),
         @DiscriminatorMapping(value = "websocket", schema = WebSocketConfigDTO.class),
+        @DiscriminatorMapping(value = "nats", schema = NatsConfigDTO.class),
         @DiscriminatorMapping(value = "extension", schema = ExtensionConfigDTO.class),
+
     },
     requiredProperties = {"type"}
 )
@@ -74,6 +78,10 @@ import lombok.NoArgsConstructor;
 @EqualsAndHashCode(callSuper = false)
 @NoArgsConstructor
 public class ProtocolConfigDTO extends BaseConfigDTO {
+
+  public ProtocolConfigDTO(String type) {
+    this.type = type;
+  }
 
   @Schema(
       description = "Type of the protocol configuration",
@@ -84,8 +92,11 @@ public class ProtocolConfigDTO extends BaseConfigDTO {
           "lora",
           "loop",
           "mqtt",
+          "mqtt-v3",
+          "mqtt-v5",
           "mqtt-sn",
           "mqttV5",
+          "nats",
           "NMEA-0183",
           "orbcomm",
           "satellite",
@@ -100,16 +111,12 @@ public class ProtocolConfigDTO extends BaseConfigDTO {
   )
   protected String type;
 
-  public String getProtocol() {
-    return type;
-  }
-
   @Schema(
       description = "Enable support for the PROXY protocol (v1/v2) on incoming connections",
       example = "false",
       defaultValue = "false",
-      requiredMode = Schema.RequiredMode.REQUIRED,
-      nullable = false
+      requiredMode = Schema.RequiredMode.NOT_REQUIRED,
+      nullable = true
   )
   protected boolean proxyProtocol = false;
 

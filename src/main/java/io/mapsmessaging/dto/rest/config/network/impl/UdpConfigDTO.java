@@ -30,9 +30,16 @@ import java.util.List;
 
 @Data
 @EqualsAndHashCode(callSuper=true)
-@NoArgsConstructor
 @Schema(description = "UDP Configuration DTO")
 public class UdpConfigDTO extends EndPointConfigDTO {
+
+  public UdpConfigDTO() {
+    this("udp");
+  }
+
+  protected UdpConfigDTO(String type){
+    super(type);
+  }
 
   @Schema(
       description = "Timeout for reusing packets, in milliseconds",

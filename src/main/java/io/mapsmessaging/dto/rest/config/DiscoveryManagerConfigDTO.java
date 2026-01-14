@@ -29,7 +29,7 @@ import lombok.NoArgsConstructor;
 @Schema(
     description = "Discovery Manager (mDNS) configuration"
 )
-public class DiscoveryManagerConfigDTO extends BaseConfigDTO {
+public class DiscoveryManagerConfigDTO extends BaseConfigDTO implements ConfigurationManagerDTO {
 
   @Schema(
       description = "Indicates if the discovery manager is enabled",

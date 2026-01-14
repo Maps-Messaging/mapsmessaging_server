@@ -1,7 +1,6 @@
 package io.mapsmessaging.dto.rest.config.destination;
 
 import io.mapsmessaging.dto.rest.config.BaseConfigDTO;
-import io.mapsmessaging.storage.StorageConfig;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -98,7 +97,7 @@ public class DestinationConfigDTO extends BaseConfigDTO {
       requiredMode = Schema.RequiredMode.NOT_REQUIRED,
       nullable = true
   )
-  protected StorageConfig storageConfig;
+  protected StorageConfigDTO storageConfig;
 
   @Schema(
       description = "Cache configuration",

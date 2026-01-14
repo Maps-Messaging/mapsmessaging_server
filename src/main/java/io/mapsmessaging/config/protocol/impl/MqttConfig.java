@@ -27,8 +27,9 @@ import io.mapsmessaging.dto.rest.config.protocol.impl.MqttConfigDTO;
 public class MqttConfig extends MqttConfigDTO implements Config {
 
   public MqttConfig(ConfigurationProperties config) {
-    setType("mqtt-v3");
     ProtocolConfigFactory.unpack(config, this);
+    this.minServerKeepAlive = config.getIntProperty("minServerKeepAlive", minServerKeepAlive);
+    this.maxServerKeepAlive = config.getIntProperty("maxServerKeepAlive", maxServerKeepAlive);
   }
 
 

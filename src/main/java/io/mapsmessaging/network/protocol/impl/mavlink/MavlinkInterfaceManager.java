@@ -139,32 +139,9 @@ public class MavlinkInterfaceManager implements SelectorCallback {
         protocol.processPacket(env, messageName, raw);
         forwardPacket(mavlink);
       }
-      else{
-        System.err.println("Has NO State");
-      }
     }
     selectorTask.register(SelectionKey.OP_READ);
     return true;
-  }
-
-  private void dumpMessage(byte[] payload){
-    StringBuilder sb = new StringBuilder("new int[]{");
-    boolean isFirst = true;
-    for(byte b: payload){
-      if(!isFirst) sb.append(", ");
-      if(isFirst){
-        isFirst= false;
-      }
-      String h = Long.toHexString(b & 0xff );
-      if(h.length()<2){
-        sb.append("0x0").append(h);
-      }
-      else{
-        sb.append("0x").append(h);
-      }
-    }
-    sb.append("},");
-    System.err.println(sb);
   }
 
   private MavlinkDeviceKey buildKey(Packet packet, MavlinkFrameEnvelope envelope){

@@ -23,7 +23,7 @@ import io.mapsmessaging.configuration.ConfigurationProperties;
 import io.mapsmessaging.dto.rest.config.BaseConfigDTO;
 import io.mapsmessaging.dto.rest.config.device.OneWireBusConfigDTO;
 import io.mapsmessaging.dto.rest.config.device.SerialBusConfigDTO;
-import io.mapsmessaging.dto.rest.config.device.SerialDeviceDTO;
+import io.mapsmessaging.dto.rest.config.device.SerialBusDeviceDTO;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -61,7 +61,7 @@ public class SerialDeviceBusConfig extends SerialBusConfigDTO  implements Device
     if (getFilter() != null) props.put("filter", getFilter());
     if (getSelector() != null) props.put("selector", getSelector());
     List<ConfigurationProperties> deviceList = new ArrayList<>();
-    for (SerialDeviceDTO device : this.devices) {
+    for (SerialBusDeviceDTO device : this.devices) {
       if (device instanceof SerialDeviceConfig serialDeviceConfig) {
         deviceList.add(serialDeviceConfig.toConfigurationProperties());
       }

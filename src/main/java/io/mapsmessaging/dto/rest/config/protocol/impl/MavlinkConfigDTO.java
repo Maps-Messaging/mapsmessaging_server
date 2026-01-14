@@ -24,47 +24,124 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
-
 @Data
 @EqualsAndHashCode(callSuper = true)
-@NoArgsConstructor
-@Schema(description = "Mavlink Protocol Configuration DTO")
+@Schema(
+    description = "MAVLink protocol configuration. Controls session handling, topic mapping, JSON conversion, and optional frame forwarding."
+)
 public class MavlinkConfigDTO extends ProtocolConfigDTO {
 
-  @Schema(description = "Idle session timeout in seconds", example = "600")
+  public MavlinkConfigDTO() {
+    super("mavlink");
+  }
+
+  @Schema(
+      description = "Idle session timeout in seconds. Session is closed if no MAVLink traffic is received within this period.",
+      example = "600",
+      minimum = "1",
+      maximum = "86400",
+      defaultValue = "600",
+      requiredMode = Schema.RequiredMode.NOT_REQUIRED,
+      nullable = true
+  )
   protected long idleSessionTimeout = 600;
 
-  @Schema(description = "Maximum session expiry time in seconds", example = "86400")
+  @Schema(
+      description = "Maximum allowed session lifetime in seconds, regardless of activity.",
+      example = "86400",
+      minimum = "60",
+      maximum = "604800",
+      defaultValue = "86400",
+      requiredMode = Schema.RequiredMode.NOT_REQUIRED,
+      nullable = true
+  )
   protected int maximumSessionExpiry = 86400;
 
-  @Schema(description = "Advertise interval in seconds", example = "30")
+  @Schema(
+      description = "Interval in seconds at which MAVLink heartbeat or advertise messages are emitted.",
+      example = "30",
+      minimum = "1",
+      maximum = "3600",
+      defaultValue = "30",
+      requiredMode = Schema.RequiredMode.NOT_REQUIRED,
+      nullable = true
+  )
   protected int advertiseInterval = 30;
 
-  @Schema(description = "Maximum in-flight events", example = "1")
+  @Schema(
+      description = "Maximum number of in-flight MAVLink events per session. Limits back-pressure and memory usage.",
+      example = "1",
+      minimum = "1",
+      maximum = "1024",
+      defaultValue = "1",
+      requiredMode = Schema.RequiredMode.NOT_REQUIRED,
+      nullable = true
+  )
   protected int maxInFlightEvents = 1;
 
-  @Schema(description = "Maximum in-flight events", example = "1")
+  @Schema(
+      description =
+          "Topic name template used when publishing decoded MAVLink messages. "
+              + "Supported placeholders: {remoteSocket}, {systemId}, {componentId}, {messageName}.",
+      example = "/{remoteSocket}/{systemId}/{componentId}/{messageName}",
+      defaultValue = "/{remoteSocket}/{systemId}/{componentId}/{messageName}",
+      requiredMode = Schema.RequiredMode.REQUIRED
+  )
   protected String topicNameTemplate = "/{remoteSocket}/{systemId}/{componentId}/{messageName}";
 
-  @Schema(description = "Flag to convert incomig mavlink to json", example = "false")
+  @Schema(
+      description =
+          "Convert incoming MAVLink frames into JSON using the registered MAVLink message definitions. "
+              + "If false, raw binary frames are published.",
+      example = "true",
+      defaultValue = "true",
+      requiredMode = Schema.RequiredMode.NOT_REQUIRED,
+      nullable = true
+  )
   protected boolean parseToJson = true;
 
   @Schema(
-      description = "Comma-separated list of MAVLink-compatible UDP endpoints to forward received frames to. " +
-          "Empty or blank disables forwarding.",
-      example = "udp://192.168.1.50:14550/,udp://192.168.1.51:14550/"
+      description =
+          "Comma-separated list of MAVLink-compatible UDP endpoints to forward received frames to. "
+              + "Each entry must be a valid udp://host:port/ URI. Blank disables forwarding.",
+      example = "udp://192.168.1.50:14550/,udp://192.168.1.51:14550/",
+      defaultValue = "",
+      requiredMode = Schema.RequiredMode.NOT_REQUIRED
   )
   protected String forwardUrls = "";
 
-  @Schema(description = "Forward raw MAVLink frames to forwardUrls when forwarding is enabled", example = "true")
+  @Schema(
+      description =
+          "When forwarding is enabled, forward raw MAVLink frames instead of decoded messages.",
+      example = "true",
+      defaultValue = "true",
+      requiredMode = Schema.RequiredMode.NOT_REQUIRED,
+      nullable = true
+  )
   protected boolean forwardRawFrames = true;
 
-  @Schema(description = "Do not forward a packet back to its source address/port if that address appears in forwardUrls",
-      example = "true")
+  @Schema(
+      description =
+          "Prevent forwarding a MAVLink packet back to its source address and port "
+              + "if that address is present in forwardUrls.",
+      example = "true",
+      defaultValue = "true",
+      requiredMode = Schema.RequiredMode.NOT_REQUIRED,
+      nullable = true
+  )
   protected boolean dropIfTargetEqualsSource = true;
 
-  @Schema(description = "Optional duplicate suppression window in milliseconds (0 disables). " +
-      "Useful to reduce forwarding loops in multi-router networks.",
-      example = "0")
+  @Schema(
+      description =
+          "Duplicate suppression window in milliseconds. "
+              + "Packets received with identical content within this window are dropped. "
+              + "Set to 0 to disable duplicate detection.",
+      example = "0",
+      minimum = "0",
+      maximum = "60000",
+      defaultValue = "0",
+      requiredMode = Schema.RequiredMode.NOT_REQUIRED,
+      nullable = true
+  )
   protected int dedupWindowMillis = 0;
 }

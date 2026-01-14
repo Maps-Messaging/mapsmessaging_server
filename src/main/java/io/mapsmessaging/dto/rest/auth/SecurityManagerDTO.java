@@ -20,6 +20,7 @@
 package io.mapsmessaging.dto.rest.auth;
 
 import io.mapsmessaging.dto.rest.config.BaseConfigDTO;
+import io.mapsmessaging.dto.rest.config.ConfigurationManagerDTO;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -33,7 +34,7 @@ import java.util.Map;
     title = "Security Manager",
     description = "Mapping between auth config names and JAAS configuration names"
 )
-public class SecurityManagerDTO extends BaseConfigDTO {
+public class SecurityManagerDTO extends BaseConfigDTO implements ConfigurationManagerDTO {
 
   @Schema(
       title = "Mapping",
@@ -43,7 +44,8 @@ public class SecurityManagerDTO extends BaseConfigDTO {
       additionalPropertiesSchema = String.class,
       example = "{\"default\":\"PublicAuthConfig\",\"Default\":\"PublicAuthConfig\"}",
       nullable = false,
-      requiredMode = Schema.RequiredMode.REQUIRED
+      requiredMode = Schema.RequiredMode.REQUIRED,
+      additionalProperties = Schema.AdditionalPropertiesValue.TRUE
   )
   protected Map<String, String> map;
 

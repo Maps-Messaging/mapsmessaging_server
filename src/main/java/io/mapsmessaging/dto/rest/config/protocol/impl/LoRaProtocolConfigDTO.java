@@ -27,9 +27,12 @@ import lombok.NoArgsConstructor;
 
 @Data
 @EqualsAndHashCode(callSuper = true)
-@NoArgsConstructor
 @Schema(description = "LoRa Protocol Configuration DTO")
 public class LoRaProtocolConfigDTO extends ProtocolConfigDTO {
+
+  public LoRaProtocolConfigDTO() {
+    super("lora");
+  }
 
   @Schema(description = "Maximum retransmission rate for LoRa", example = "10")
   protected int retransmit = 10;

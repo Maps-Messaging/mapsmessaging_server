@@ -27,9 +27,18 @@ import lombok.NoArgsConstructor;
 
 @Data
 @EqualsAndHashCode(callSuper = true)
-@NoArgsConstructor
 @Schema(description = "MQTT Protocol Configuration DTO")
 public class MqttConfigDTO extends ProtocolConfigDTO {
+
+  public MqttConfigDTO() {
+    super("mqtt");
+  }
+
+  @Schema(description = "Minimum server keep-alive interval in seconds", example = "0")
+  protected int minServerKeepAlive = 0;
+
+  @Schema(description = "Maximum server keep-alive interval in seconds", example = "60")
+  protected int maxServerKeepAlive = 60;
 
   @Schema(description = "Maximum session expiry for MQTT", example = "86400")
   protected long maximumSessionExpiry = 86400;

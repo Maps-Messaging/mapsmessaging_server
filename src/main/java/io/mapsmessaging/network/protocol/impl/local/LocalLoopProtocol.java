@@ -56,7 +56,7 @@ public class LocalLoopProtocol extends Protocol {
 
 
   public LocalLoopProtocol(@NonNull @NotNull EndPoint endPoint) {
-    super(endPoint, new ProtocolConfigDTO());
+    super(endPoint, new ProtocolConfigDTO("loop"));
     logger = LoggerFactory.getLogger(LocalLoopProtocol.class);
     closed = false;
     logger.log(ServerLogMessages.LOOP_CREATED);

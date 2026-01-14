@@ -84,8 +84,8 @@ public class LoRaEndPointServer extends EndPointServer implements SerialPortList
     if (loRaDevice instanceof LoRaSerialDevice) {
       LoRaSerialDeviceConfig serialDeviceConfig = (LoRaSerialDeviceConfig) loRaDevice.getConfig();
       serialConfig = serialDeviceConfig.getSerialConfig();
-      String portName = serialConfig.getPort();
-      String serialNumber = serialConfig.getSerialNo();
+      String portName = serialConfig.getSerialDevice().getPort();
+      String serialNumber = serialConfig.getSerialDevice().getSerialNo();
       SerialPort port;
       if (serialNumber != null && !serialNumber.trim().isEmpty()) {
         port = SerialPortScanner.getInstance().addBySerial(serialNumber, this);

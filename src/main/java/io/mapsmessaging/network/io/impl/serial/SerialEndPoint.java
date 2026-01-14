@@ -20,6 +20,7 @@
 package io.mapsmessaging.network.io.impl.serial;
 
 import com.fazecast.jSerialComm.SerialPort;
+import io.mapsmessaging.dto.rest.config.network.SerialDeviceDTO;
 import io.mapsmessaging.dto.rest.config.network.impl.SerialConfigDTO;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
@@ -61,19 +62,17 @@ public class SerialEndPoint extends EndPoint implements StreamEndPoint {
 
     this.serialPort = serialPort;
     name = serialPort.getSystemPortName();
-    configure(serialPort, config);
+    configure(serialPort, config.getSerialDevice());
     serialPort.openPort();
     outputStream = serialPort.getOutputStream();
     inputStream = serialPort.getInputStream();
     mbean = new EndPointJMX(jmxPath, this);
     jmxParentPath = mbean.getTypePath();
-    streamHandler = new SimpleStreamHandler(config.getBufferSize());
+    streamHandler = new SimpleStreamHandler(config.getSerialDevice().getBufferSize());
   }
 
-  public static void configure(SerialPort serialPort,  SerialConfigDTO config) {
-    serialPort.setBaudRate(config.getBaudRate());
-    serialPort.setComPortParameters(config.getBaudRate(), config.getDataBits(), getStopBits(config), getParity(config));
-    serialPort.setFlowControl(config.getFlowControl());
+  public static void configure(SerialPort serialPort, SerialDeviceDTO config) {
+    setupCommPort(serialPort, config);
     serialPort.setComPortTimeouts(TIMEOUT_READ_BLOCKING, config.getReadTimeOut(), config.getWriteTimeOut());
   }
 
@@ -150,7 +149,14 @@ public class SerialEndPoint extends EndPoint implements StreamEndPoint {
     streamHandler = handler;
   }
 
-  public static int getStopBits(SerialConfigDTO config) {
+  public static void setupCommPort(SerialPort serialPort, SerialDeviceDTO config) {
+    serialPort.setBaudRate(config.getBaudRate());
+    serialPort.setComPortParameters(config.getBaudRate(), config.getDataBits(), getStopBits(config), getParity(config));
+    serialPort.setFlowControl(config.getFlowControl());
+  }
+
+
+  public static int getStopBits(SerialDeviceDTO config) {
     return switch (config.getStopBits().toLowerCase()) {
       case "2" -> SerialPort.TWO_STOP_BITS;
       case "1.5" -> SerialPort.ONE_POINT_FIVE_STOP_BITS;
@@ -158,7 +164,7 @@ public class SerialEndPoint extends EndPoint implements StreamEndPoint {
     };
   }
 
-  public static int getParity(SerialConfigDTO config) {
+  public static int getParity(SerialDeviceDTO config) {
     return switch (config.getParity().toLowerCase()) {
       case "o" -> SerialPort.ODD_PARITY;
       case "e" -> SerialPort.EVEN_PARITY;

@@ -21,6 +21,8 @@ package io.mapsmessaging.tools.config.schema;
 
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.mapsmessaging.dto.rest.config.BaseConfigDTO;
 import io.mapsmessaging.tools.config.lint.ReflectionFields;
 import io.mapsmessaging.tools.config.lint.ReflectionTypes;
@@ -34,7 +36,7 @@ import java.math.BigDecimal;
 import java.util.*;
 
 public class RuntimeJsonSchemaGenerator {
-
+  private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
   private static final String TYPE_FIELD_NAME = "type";
 
   private final SchemaGenerationMode mode;
@@ -515,25 +517,46 @@ public class RuntimeJsonSchemaGenerator {
       propertySchema.put("description", schemaAnn.description());
     }
 
+    // examples
     // Skip string examples for polymorphic objects (prevents nonsense like "File" on an object schema).
     if (!isPolymorphic && !schemaAnn.example().isBlank()) {
-      propertySchema.put("examples", List.of(coerceExample(schemaAnn.example(), javaType)));
+      Object exampleValue = coerceSwaggerValue(propertySchema, schemaAnn.example(), javaType);
+      if (exampleValue != null) {
+        propertySchema.put("examples", List.of(exampleValue));
+      }
     }
 
+    // default
     if (!schemaAnn.defaultValue().isBlank()) {
-      propertySchema.put("default", coerceExample(schemaAnn.defaultValue(), javaType));
+      Object defaultValue = coerceSwaggerValue(propertySchema, schemaAnn.defaultValue(), javaType);
+      if (defaultValue != null) {
+        propertySchema.put("default", defaultValue);
+      }
+      else if (mode == SchemaGenerationMode.RELAXED) {
+        context.warn("Ignored defaultValue that could not be coerced for " + javaType.getName());
+      }
     }
 
+    // const
     if (!schemaAnn._const().isBlank()) {
-      propertySchema.put("const", coerceExample(schemaAnn._const(), javaType));
-      propertySchema.put("enum", List.of(schemaAnn._const()));
+      Object constValue = coerceSwaggerValue(propertySchema, schemaAnn._const(), javaType);
+      if (constValue != null) {
+        propertySchema.put("const", constValue);
+        // JSON Schema enum must match the const value type, not the raw annotation string.
+        propertySchema.put("enum", List.of(constValue));
+      }
+      else if (mode == SchemaGenerationMode.RELAXED) {
+        context.warn("Ignored const that could not be coerced for " + javaType.getName());
+      }
     }
 
+    // allowableValues
     List<String> enumValues = sanitizeAllowableValues(schemaAnn.allowableValues());
     if (!enumValues.isEmpty()) {
       propertySchema.put("enum", enumValues);
     }
 
+    // numeric constraints
     boolean numeric = isInteger(javaType) || isNumber(javaType);
     if (numeric) {
       if (!schemaAnn.minimum().isBlank()) {
@@ -549,14 +572,13 @@ public class RuntimeJsonSchemaGenerator {
         propertySchema.put("multipleOf", multipleOf);
       }
     }
-    else {
-      if (mode == SchemaGenerationMode.RELAXED) {
-        if (!schemaAnn.minimum().isBlank() || !schemaAnn.maximum().isBlank() || schemaAnn.multipleOf() > 0.0d) {
-          context.warn("Ignored numeric constraints on non-numeric field type " + javaType.getName());
-        }
+    else if (mode == SchemaGenerationMode.RELAXED) {
+      if (!schemaAnn.minimum().isBlank() || !schemaAnn.maximum().isBlank() || schemaAnn.multipleOf() > 0.0d) {
+        context.warn("Ignored numeric constraints on non-numeric field type " + javaType.getName());
       }
     }
   }
+
 
   private List<String> sanitizeAllowableValues(String[] allowable) {
     if (allowable == null || allowable.length == 0) {
@@ -652,5 +674,57 @@ public class RuntimeJsonSchemaGenerator {
     List<Class<?>> list = new ArrayList<>(classes);
     list.sort(Comparator.comparing(Class::getName));
     return list;
+  }
+
+  private Object coerceSwaggerValue(SchemaObject propertySchema, String rawValue, Class<?> javaType) {
+    if (rawValue == null || rawValue.isBlank()) {
+      return null;
+    }
+
+    String trimmed = rawValue.trim();
+
+    Map<?, ?> current = (Map<?, ?>) propertySchema.toJsonValue();
+    Object typeObj = current.get("type");
+
+    if (typeObj instanceof String) {
+      String schemaType = ((String) typeObj).toLowerCase(Locale.ROOT);
+
+      if ("array".equals(schemaType)) {
+        if (trimmed.startsWith("[")) {
+          try {
+            Object parsed = OBJECT_MAPPER.readValue(trimmed, new TypeReference<Object>() {});
+            if (parsed instanceof List) {
+              return parsed;
+            }
+          }
+          catch (Exception ignored) {
+            // fall through to null
+          }
+        }
+        return null;
+      }
+
+      if ("object".equals(schemaType)) {
+        if (trimmed.startsWith("{")) {
+          try {
+            Object parsed = OBJECT_MAPPER.readValue(trimmed, new TypeReference<Object>() {});
+            if (parsed instanceof Map) {
+              return parsed;
+            }
+          }
+          catch (Exception ignored) {
+            // fall through to null
+          }
+        }
+        return null;
+      }
+
+      // Scalars: keep your existing behavior
+      return coerceExample(rawValue, javaType);
+    }
+
+    // If you later emit `type: ["string","null"]`, handle it here.
+    // For now, safest is: don't emit a default/example/const we can't type-check.
+    return null;
   }
 }

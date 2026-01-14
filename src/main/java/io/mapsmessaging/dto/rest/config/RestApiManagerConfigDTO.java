@@ -32,7 +32,7 @@ import lombok.NoArgsConstructor;
 @EqualsAndHashCode(callSuper = true)
 @NoArgsConstructor
 @Schema(description = "Rest API Configuration DTO")
-public class RestApiManagerConfigDTO extends BaseConfigDTO {
+public class RestApiManagerConfigDTO extends BaseConfigDTO implements ConfigurationManagerDTO {
 
   @Schema(
       description = "Indicates if REST API is enabled",

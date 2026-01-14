@@ -17,9 +17,8 @@
  *  limitations under the License.
  */
 
-package io.mapsmessaging.dto.rest.config.ml;
+package io.mapsmessaging.dto.rest.config;
 
-import io.mapsmessaging.dto.rest.config.BaseConfigDTO;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -45,4 +44,10 @@ public class S3Config extends BaseConfigDTO {
 
   @Schema(description = "Optional custom endpoint for S3-compatible services like MinIO", example = "https://minio.local:9000")
   private String endpoint;
+
+  @Schema(
+      description = "Enable S3 compression for uploaded data",
+      defaultValue = "false"
+  )
+  private boolean compression;
 }

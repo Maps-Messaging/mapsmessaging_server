@@ -30,9 +30,12 @@ import java.util.List;
 
 @Data
 @EqualsAndHashCode(callSuper = true)
-@NoArgsConstructor
 @Schema(description = "MQTT-SN Protocol Configuration DTO")
 public class MqttSnConfigDTO extends ProtocolConfigDTO {
+
+  public MqttSnConfigDTO() {
+    super("mqtt-sn");
+  }
 
   @Schema(description = "Gateway ID for MQTT-SN", example = "1")
   protected String gatewayId = "1";

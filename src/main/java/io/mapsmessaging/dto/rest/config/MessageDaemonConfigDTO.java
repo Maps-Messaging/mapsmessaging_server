@@ -29,7 +29,7 @@ import lombok.NoArgsConstructor;
 @EqualsAndHashCode(callSuper = true)
 @NoArgsConstructor
 @Schema(description = "Message Daemon Configuration DTO")
-public class MessageDaemonConfigDTO extends BaseConfigDTO {
+public class MessageDaemonConfigDTO extends BaseConfigDTO implements ConfigurationManagerDTO {
 
   @Schema(
       description = "Interval for delayed publish in milliseconds",

@@ -20,6 +20,7 @@
 package io.mapsmessaging.tools.config.lint;
 
 import io.mapsmessaging.dto.rest.config.BaseConfigDTO;
+import io.mapsmessaging.tools.config.schema.ProtocolTransformationNameRegistry;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 import java.lang.reflect.Field;
@@ -355,8 +356,45 @@ public class LintEngine {
       return issues;
     }
 
-    String fieldNameLower = field.getName().toLowerCase(Locale.ROOT);
+    // ---- Dynamic enum fields (generator-injected enums) ----
+    if (isProtocolTransformationField(field, path)) {
+      List<String> allowed = ProtocolTransformationNameRegistry.getAllowedNames(true);
 
+      if (schema != null) {
+        validateSchemaExampleAndDefaultAgainstList(
+            issues,
+            configName,
+            rootDtoName,
+            path,
+            schema,
+            allowed
+        );
+
+        // Optional sanity: empty default + nullable true is ambiguous
+        if ("".equals(schema.defaultValue()) && schema.nullable()) {
+          issues.add(issue(
+              LintSeverity.WARN,
+              configName,
+              rootDtoName,
+              path,
+              "DYNAMIC_ENUM_NULLABLE_AMBIGUOUS",
+              "Field uses defaultValue=\"\" but is nullable=true. Prefer nullable=false when \"\" is the 'none' value."
+          ));
+        }
+      }
+
+      issues.add(LintIssue.info(
+          configName,
+          rootDtoName,
+          path,
+          "STRING_ENUM_DYNAMIC_OK",
+          "String enum is dynamically generated (ServiceLoader) and injected into schema"
+      ));
+      return issues;
+    }
+
+    // ---- Existing heuristic logic ----
+    String fieldNameLower = field.getName().toLowerCase(Locale.ROOT);
     boolean openVocab = field.isAnnotationPresent(OpenVocab.class) || OPEN_VOCAB_FIELD_NAMES.contains(fieldNameLower);
 
     boolean looksLikeEnum = StringEnumHeuristics.looksLikeEnum(field.getName());
@@ -386,8 +424,7 @@ public class LintEngine {
           "STRING_ENUM_ALLOWABLE_VALUES_MISSING",
           "String field looks like an enum but @Schema(allowableValues=...) is missing/empty"
       ));
-    }
-    else {
+    } else {
       issues.add(LintIssue.info(
           configName,
           rootDtoName,
@@ -399,6 +436,59 @@ public class LintEngine {
 
     return issues;
   }
+
+  private boolean isProtocolTransformationField(Field field, String path) {
+    if (!String.class.equals(field.getType())) {
+      return false;
+    }
+    // Robust enough for now: either name or full path match
+    if ("linkTransformation".equals(field.getName())) {
+      return true;
+    }
+    return path != null && path.endsWith(".linkTransformation");
+  }
+
+  private void validateSchemaExampleAndDefaultAgainstList(
+      List<LintIssue> issues,
+      String configName,
+      String rootDtoName,
+      String path,
+      Schema schema,
+      List<String> allowed
+  ) {
+    Object example = schema.example();
+    if (example != null) {
+      String exampleString = String.valueOf(example).trim();
+      if (!exampleString.isEmpty() && !allowed.contains(exampleString)) {
+        issues.add(issue(
+            LintSeverity.WARN,
+            configName,
+            rootDtoName,
+            path,
+            "DYNAMIC_ENUM_EXAMPLE_INVALID",
+            "Schema example is not a valid transformation name: " + exampleString
+        ));
+      }
+    }
+
+    String defaultValue = schema.defaultValue();
+    if (defaultValue != null) {
+      String defaultTrimmed = defaultValue.trim();
+
+      // If default is intentionally blank, accept it (matches includeEmpty=true)
+      if (!defaultTrimmed.isEmpty() && !allowed.contains(defaultTrimmed)) {
+        issues.add(issue(
+            LintSeverity.WARN,
+            configName,
+            rootDtoName,
+            path,
+            "DYNAMIC_ENUM_DEFAULT_INVALID",
+            "Schema defaultValue is not a valid transformation name: " + defaultTrimmed
+        ));
+      }
+    }
+  }
+
 
   private List<LintIssue> lintNumericConstraints(
       String configName,

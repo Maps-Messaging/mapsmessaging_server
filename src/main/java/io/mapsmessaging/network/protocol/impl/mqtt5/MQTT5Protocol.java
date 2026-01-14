@@ -24,7 +24,7 @@ import io.mapsmessaging.api.features.QualityOfService;
 import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.api.message.TypedData;
 import io.mapsmessaging.api.transformers.InterServerTransformation;
-import io.mapsmessaging.config.protocol.impl.MqttV5Config;
+import io.mapsmessaging.config.protocol.impl.MqttConfig;
 import io.mapsmessaging.dto.rest.analytics.StatisticsConfigDTO;
 import io.mapsmessaging.dto.rest.config.auth.SaslConfigDTO;
 import io.mapsmessaging.dto.rest.protocol.ProtocolInformationDTO;
@@ -109,7 +109,7 @@ public class MQTT5Protocol extends Protocol {
   @Setter
   private boolean sendProblemInformation;
   @Getter
-  private final MqttV5Config mqttConfig;
+  private final MqttConfig mqttConfig;
 
   public MQTT5Protocol(EndPoint endPoint) throws IOException {
     super(endPoint, endPoint.getConfig().getProtocolConfig("mqtt"));
@@ -123,7 +123,7 @@ public class MQTT5Protocol extends Protocol {
     logger.log(ServerLogMessages.MQTT5_INITIALISATION);
     clientTopicAliasMapping = new TopicAliasMapping("Client");
     serverTopicAliasMapping = new TopicAliasMapping("Server");
-    mqttConfig = (MqttV5Config)protocolConfig;
+    mqttConfig = (MqttConfig)protocolConfig;
     maxBufferSize = mqttConfig.getMaximumBufferSize();
     serverReceiveMaximum = mqttConfig.getServerReceiveMaximum();
     clientReceiveMaximum = mqttConfig.getClientReceiveMaximum();

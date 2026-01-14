@@ -65,7 +65,8 @@ public class SaslConfigDTO extends BaseConfigDTO {
       description = "Additional SASL entries as key-value pairs",
       example = "{\"entry1\": \"value1\"}",
       requiredMode = Schema.RequiredMode.NOT_REQUIRED,
-      nullable = true
+      nullable = true,
+      additionalProperties = Schema.AdditionalPropertiesValue.TRUE
   )
   protected Map<String, Object> saslEntries;
 }

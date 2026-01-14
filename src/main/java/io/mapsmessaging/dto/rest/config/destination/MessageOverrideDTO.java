@@ -98,14 +98,16 @@ public class MessageOverrideDTO extends BaseConfigDTO {
       description = "Metadata to inject if not present in the message",
       requiredMode = Schema.RequiredMode.NOT_REQUIRED,
       example = "true",
-      nullable = true
+      nullable = true,
+      additionalProperties = Schema.AdditionalPropertiesValue.TRUE
   )
   protected Map<String, String> meta;
 
   @Schema(
       description = "Data map to inject if keys are not present in the message",
       requiredMode = Schema.RequiredMode.NOT_REQUIRED,
-      nullable = true
+      nullable = true,
+      additionalProperties = Schema.AdditionalPropertiesValue.TRUE
   )
   protected Map<String, Object> dataMap;
 }

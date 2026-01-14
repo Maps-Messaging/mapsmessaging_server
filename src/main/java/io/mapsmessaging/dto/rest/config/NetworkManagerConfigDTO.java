@@ -32,7 +32,7 @@ import java.util.List;
 @EqualsAndHashCode(callSuper = true)
 @NoArgsConstructor
 @Schema(description = "Network Manager Configuration DTO")
-public class NetworkManagerConfigDTO extends BaseConfigDTO {
+public class NetworkManagerConfigDTO extends BaseConfigDTO implements ConfigurationManagerDTO {
 
   @Schema(
       description = "Prefer IPv6 addresses when both IPv4 and IPv6 are available",

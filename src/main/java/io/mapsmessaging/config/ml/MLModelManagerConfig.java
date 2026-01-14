@@ -23,6 +23,8 @@ import io.mapsmessaging.config.Config;
 import io.mapsmessaging.config.ConfigManager;
 import io.mapsmessaging.configuration.ConfigurationProperties;
 import io.mapsmessaging.dto.rest.config.BaseConfigDTO;
+import io.mapsmessaging.dto.rest.config.ConfigurationManagerDTO;
+import io.mapsmessaging.dto.rest.config.S3Config;
 import io.mapsmessaging.dto.rest.config.ml.*;
 import io.mapsmessaging.license.FeatureManager;
 import io.mapsmessaging.utilities.configuration.ConfigurationManager;
@@ -34,7 +36,7 @@ import java.util.Arrays;
 import java.util.List;
 
 @NoArgsConstructor
-public class MLModelManagerConfig extends MLModelManagerDTO implements Config, ConfigManager {
+public class MLModelManagerConfig extends MLModelManagerDTO implements Config, ConfigManager, ConfigurationManagerDTO {
 
   private MLModelManagerConfig(ConfigurationProperties config) {
     this.enableCaching = config.getBooleanProperty("enableCaching", enableCaching);

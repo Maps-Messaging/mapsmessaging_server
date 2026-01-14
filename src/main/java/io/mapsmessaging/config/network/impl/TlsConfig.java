@@ -37,7 +37,6 @@ import lombok.ToString;
 public class TlsConfig extends TlsConfigDTO implements Config {
 
   public TlsConfig(ConfigurationProperties config) {
-    setType("tls");
     NetworkConfigFactory.unpack(config, this);
     sslConfig = new SslConfig(config);
     if(sslConfig.getContext() == null || sslConfig.getContext().isEmpty()) {

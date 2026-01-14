@@ -26,9 +26,12 @@ import lombok.NoArgsConstructor;
 
 @Data
 @EqualsAndHashCode(callSuper = true)
-@NoArgsConstructor
 @Schema(description = "Base Satellite Configuration DTO")
 public class SatelliteConfigDTO extends BaseSatelliteConfigDTO {
+
+  public SatelliteConfigDTO(){
+    super("satellite");
+  }
 
   @Schema(description = "URL of the server")
   protected String baseUrl;

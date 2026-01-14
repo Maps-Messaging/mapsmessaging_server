@@ -28,9 +28,12 @@ import lombok.NoArgsConstructor;
 
 @Data
 @EqualsAndHashCode(callSuper = true)
-@NoArgsConstructor
 @Schema(description = "NMEA Protocol Configuration DTO")
 public class NmeaConfigDTO extends ProtocolConfigDTO {
+
+  public NmeaConfigDTO() {
+    super("NMEA-0183");
+  }
 
   @Schema(description = "Serial port configuration")
   protected SerialConfigDTO serial;

@@ -31,7 +31,7 @@ import java.util.List;
 @EqualsAndHashCode(callSuper = true)
 @NoArgsConstructor
 @Schema(description = "Routing Manager Configuration DTO")
-public class RoutingManagerConfigDTO extends BaseConfigDTO {
+public class RoutingManagerConfigDTO extends BaseConfigDTO implements ConfigurationManagerDTO {
 
   @Schema(
       description = "Enables routing management",

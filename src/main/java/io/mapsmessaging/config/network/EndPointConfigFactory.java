@@ -172,16 +172,16 @@ public class EndPointConfigFactory {
     if (u.startsWith("udp") || u.startsWith("hmac") || u.startsWith("lora")) return new UdpConfig(properties);
     if (u.startsWith("dtls")) return new DtlsConfig(properties);
     if (u.startsWith("serial")) return new SerialConfig(properties);
-    if (u.startsWith("satellite")) return new EndPointConfigDTO(); // placeholder
+    if (u.startsWith("satellite")) return new EndPointConfigDTO("satellite"); // placeholder
     return null;
   }
 
   private static ProtocolConfigDTO createProtocolConfig(String protocol, ConfigurationProperties config) {
     String p = protocol.toLowerCase(Locale.ROOT);
     return switch (p) {
-      case "mqtt-v5" -> new MqttV5Config(config);
+      case "mqtt-v5" -> new MqttConfig(config);
       case "mqtt-v3" -> new MqttConfig(config);
-      case "mqtt" -> new MqttV5Config(config);
+      case "mqtt" -> new MqttConfig(config);
       case "amqp" -> new AmqpConfig(config);
       case "stomp" -> new StompConfig(config);
       case "nats" -> new NatsConfig(config);

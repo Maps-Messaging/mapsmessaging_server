@@ -40,6 +40,7 @@ import lombok.NoArgsConstructor;
     @JsonSubTypes.Type(value = TcpConfigDTO.class, name = "tcp"),
     @JsonSubTypes.Type(value = TlsConfigDTO.class, name = "ssl"),
     @JsonSubTypes.Type(value = UdpConfigDTO.class, name = "udp"),
+    @JsonSubTypes.Type(value = SatelliteEndPointDTO.class, name = "satellite"),
 })
 @Schema(
     description = "Abstract base class for all schema configurations",
@@ -51,16 +52,16 @@ import lombok.NoArgsConstructor;
         @DiscriminatorMapping(value = "serial", schema = SerialConfigDTO.class),
         @DiscriminatorMapping(value = "tcp", schema = TcpConfigDTO.class),
         @DiscriminatorMapping(value = "ssl", schema = TlsConfigDTO.class),
-        @DiscriminatorMapping(value = "udp", schema = UdpConfigDTO.class)
+        @DiscriminatorMapping(value = "udp", schema = UdpConfigDTO.class),
+        @DiscriminatorMapping(value = "satellite", schema = SatelliteEndPointDTO.class),
     })
 
 @Data
 @EqualsAndHashCode(callSuper = false)
-@NoArgsConstructor
 @SuppressWarnings("java:S1313") // the IP address is used in an example and it exposes no private info
 public class EndPointConfigDTO extends BaseConfigDTO {
 
-  protected EndPointConfigDTO(String type){
+  public EndPointConfigDTO(String type){
     this.type = type;
   }
 

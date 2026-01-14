@@ -27,9 +27,13 @@ import lombok.NoArgsConstructor;
 
 @Data
 @EqualsAndHashCode(callSuper = true)
-@NoArgsConstructor
+
 @Schema(description = "Common Satellite Configuration DTO")
 public class BaseSatelliteConfigDTO extends ProtocolConfigDTO {
+
+  public BaseSatelliteConfigDTO(String type){
+    super(type);
+  }
 
   @Schema(description = "Time in seconds to poll the modem for incoming messages", example = "15", defaultValue = "10")
   protected long incomingMessagePollInterval;

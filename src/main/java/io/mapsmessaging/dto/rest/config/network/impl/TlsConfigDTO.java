@@ -27,9 +27,12 @@ import lombok.NoArgsConstructor;
 
 @Data
 @EqualsAndHashCode(callSuper=true)
-@NoArgsConstructor
 @Schema(description = "TLS Configuration DTO")
 public class TlsConfigDTO extends TcpConfigDTO {
+
+  public TlsConfigDTO() {
+    super("ssl");
+  }
 
   @Schema(
       description = "SSL Engine Configuration",

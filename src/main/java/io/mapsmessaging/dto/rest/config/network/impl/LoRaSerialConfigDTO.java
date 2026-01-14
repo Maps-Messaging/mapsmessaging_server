@@ -28,7 +28,7 @@ import lombok.EqualsAndHashCode;
 public class LoRaSerialConfigDTO extends LoRaConfigDTO {
 
   public LoRaSerialConfigDTO(){
-    super("serial");
+    super("loraSerial");
   }
 
   @Schema(description = "Serial Device Configuration")

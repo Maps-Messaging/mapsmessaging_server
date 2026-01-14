@@ -25,17 +25,15 @@ import io.mapsmessaging.dto.rest.config.device.SerialBusConfigDTO;
 import io.mapsmessaging.dto.rest.config.device.SpiDeviceBusConfigDTO;
 import io.mapsmessaging.dto.rest.config.device.triggers.BaseTriggerConfigDTO;
 import io.swagger.v3.oas.annotations.media.Schema;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 import java.util.List;
 
-@Data
-@EqualsAndHashCode(callSuper = true)
 @NoArgsConstructor
 @Schema(description = "Device Manager Configuration DTO")
-public class DeviceManagerConfigDTO extends BaseConfigDTO {
+@Getter
+@Setter
+public class DeviceManagerConfigDTO extends BaseConfigDTO implements ConfigurationManagerDTO {
 
   @Schema(
       description = "Indicates if the device manager is enabled",

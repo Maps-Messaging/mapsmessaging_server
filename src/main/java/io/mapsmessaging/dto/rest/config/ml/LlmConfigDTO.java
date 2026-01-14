@@ -20,6 +20,7 @@
 package io.mapsmessaging.dto.rest.config.ml;
 
 import io.mapsmessaging.dto.rest.config.BaseConfigDTO;
+import io.mapsmessaging.tools.config.lint.OpenVocab;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -30,13 +31,20 @@ public class LlmConfigDTO extends BaseConfigDTO {
 
   @Schema(
       description = "API token used to authenticate with the LLM provider",
-      example = "sk-proj-abc123..."
+      example = "sk-proj-abc123...",
+      minLength = 1
   )
   private String apiToken;
 
+  @OpenVocab
   @Schema(
-      description = "Model name to use (e.g., gpt-4.1, gpt-4o, gpt-3.5-turbo)",
-      example = "gpt-4.1"
+      description =
+          "Model name to use (provider-specific). "
+              + "This is an open vocabulary and must match a model supported by the configured LLM provider.",
+      example = "gpt-4.1",
+      minLength = 1,
+      maxLength = 128,
+      pattern = "^[A-Za-z0-9._:-]+$"
   )
   private String model;
 }

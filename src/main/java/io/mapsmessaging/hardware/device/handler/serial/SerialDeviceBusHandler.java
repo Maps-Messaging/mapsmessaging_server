@@ -25,7 +25,7 @@ import io.mapsmessaging.devices.DeviceController;
 import io.mapsmessaging.devices.serial.SerialBusManager;
 import io.mapsmessaging.devices.serial.SerialDeviceController;
 import io.mapsmessaging.dto.rest.config.device.SerialBusConfigDTO;
-import io.mapsmessaging.dto.rest.config.device.SerialDeviceDTO;
+import io.mapsmessaging.dto.rest.config.device.SerialBusDeviceDTO;
 import io.mapsmessaging.hardware.device.handler.BusHandler;
 import io.mapsmessaging.hardware.device.handler.DeviceHandler;
 import io.mapsmessaging.hardware.trigger.Trigger;
@@ -49,8 +49,8 @@ public class SerialDeviceBusHandler extends BusHandler {
   @Override
   protected Map<String, DeviceController> scan() {
     Map<String, DeviceController> map = new HashMap<>();
-    List<SerialDeviceDTO> list = ((SerialDeviceBusConfig)properties ).getDevices();
-    for(SerialDeviceDTO serialDeviceConfig: list){
+    List<SerialBusDeviceDTO> list = ((SerialDeviceBusConfig)properties ).getDevices();
+    for(SerialBusDeviceDTO serialDeviceConfig: list){
       String portName = serialDeviceConfig.getSerialConfig().getPort();
       if(!foundDevices.containsKey(portName)){
         SerialPort port = SerialPortScanner.getInstance().allocatePort(portName);

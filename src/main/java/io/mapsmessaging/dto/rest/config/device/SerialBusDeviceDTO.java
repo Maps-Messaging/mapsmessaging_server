@@ -19,7 +19,7 @@
 
 package io.mapsmessaging.dto.rest.config.device;
 
-import io.mapsmessaging.dto.rest.config.network.impl.SerialConfigDTO;
+import io.mapsmessaging.dto.rest.config.network.SerialDeviceDTO;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -29,7 +29,7 @@ import lombok.NoArgsConstructor;
 @EqualsAndHashCode(callSuper=false)
 @NoArgsConstructor
 @Schema(description = "Serial Bus Configuration DTO")
-public class SerialDeviceDTO extends DeviceBusConfigDTO {
+public class SerialBusDeviceDTO extends DeviceBusConfigDTO {
 
   @Schema(
       description = "Name of the Serial Device",
@@ -44,6 +44,26 @@ public class SerialDeviceDTO extends DeviceBusConfigDTO {
       requiredMode = Schema.RequiredMode.REQUIRED,
       nullable = false
   )
-  protected SerialConfigDTO serialConfig;
+  protected SerialDeviceDTO serialConfig;
 
+
+
+  @Schema(
+      description = "Read timeout in milliseconds",
+      example = "60000",
+      minimum = "1000",
+      maximum = "600000",
+      requiredMode = Schema.RequiredMode.REQUIRED
+  )
+  protected int readTimeOut = 60000;
+
+  @Schema(
+      description = "Write timeout in milliseconds",
+      example = "60000",
+      minimum = "1000",
+      maximum = "600000",
+      defaultValue = "60000",
+      requiredMode = Schema.RequiredMode.NOT_REQUIRED
+  )
+  protected int writeTimeOut = 60000;
 }

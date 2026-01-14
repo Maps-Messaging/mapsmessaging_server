@@ -42,13 +42,13 @@ public class EndPointConnectionServerConfigDTO extends EndPointServerConfigDTO {
   protected AuthConfigDTO authConfig;
 
   @Schema(
-      description = "Link transformation identifier. " +
-          "May reference a built-in or plugin-provided transformation (for example \"$SERVICE:<Name>\").",
-      example = "$SERVICE:LinkTransformation",
+      description =
+          "Link transformation identifier. Must match the name of a registered "
+              + "ProtocolMessageTransformation discovered via ServiceLoader.",
+      example = "Schema-To-Json",
       defaultValue = "",
       requiredMode = Schema.RequiredMode.NOT_REQUIRED,
-      nullable = true,
-      minLength = 0
+      nullable = false
   )
   protected String linkTransformation;
 

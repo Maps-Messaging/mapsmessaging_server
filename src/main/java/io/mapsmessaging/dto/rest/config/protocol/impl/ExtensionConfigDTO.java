@@ -30,6 +30,10 @@ import java.util.Map;
 @EqualsAndHashCode(callSuper=false)
 public class ExtensionConfigDTO extends ProtocolConfigDTO {
 
+  public ExtensionConfigDTO() {
+    super("extension");
+  }
+
   @Schema(description = "Map of config entries")
   protected Map<String, Object> config;
 

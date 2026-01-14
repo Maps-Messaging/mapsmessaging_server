@@ -27,9 +27,23 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor
 public class AutoRefreshConfigDTO extends BaseConfigDTO {
-  @Schema(description = "Enable auto-refresh of model sources")
-  private boolean enabled;
 
-  @Schema(description = "Interval in minutes between refreshes")
-  private int intervalMinutes;
+  @Schema(
+      description = "Enable automatic refresh of model sources",
+      requiredMode = Schema.RequiredMode.NOT_REQUIRED,
+      defaultValue = "false",
+      example = "false"
+  )
+  private boolean enabled=false;
+
+  @Schema(
+      description = "Interval in minutes between refreshes",
+      requiredMode = Schema.RequiredMode.NOT_REQUIRED,
+      defaultValue = "60",
+      minimum = "1",
+      maximum = "1440",
+      example = "60"
+
+  )
+  private int intervalMinutes = 60;
 }

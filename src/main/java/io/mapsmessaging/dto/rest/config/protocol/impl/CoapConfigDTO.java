@@ -26,10 +26,13 @@ import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 
 @Data
-@NoArgsConstructor
 @EqualsAndHashCode(callSuper = true)
 @Schema(description = "CoAP Protocol Configuration DTO")
 public class CoapConfigDTO extends ProtocolConfigDTO {
+
+  public CoapConfigDTO() {
+    super("coap");
+  }
 
   @Schema(description = "Maximum block size for CoAP", example = "128")
   protected int maxBlockSize = 128;

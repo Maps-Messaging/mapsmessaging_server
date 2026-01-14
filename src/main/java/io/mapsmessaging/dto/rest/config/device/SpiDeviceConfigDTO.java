@@ -74,6 +74,9 @@ public class SpiDeviceConfigDTO extends BaseConfigDTO {
   )
   protected int spiChipSelect;
 
-  @Schema(description="Configuration map")
+  @Schema(
+      description="Configuration map",
+      additionalProperties = Schema.AdditionalPropertiesValue.TRUE
+  )
   protected Map<String, String> config;
 }

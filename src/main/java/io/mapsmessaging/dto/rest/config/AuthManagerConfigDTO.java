@@ -30,7 +30,7 @@ import java.util.Map;
 @EqualsAndHashCode(callSuper = true)
 @NoArgsConstructor
 @Schema(description = "Auth Manager Configuration DTO")
-public class AuthManagerConfigDTO extends BaseConfigDTO {
+public class AuthManagerConfigDTO extends BaseConfigDTO implements ConfigurationManagerDTO  {
 
   @Schema(
       description = "Indicates if authentication is enabled",
@@ -54,6 +54,7 @@ public class AuthManagerConfigDTO extends BaseConfigDTO {
       description = "Configuration properties for authentication",
       implementation = Map.class,
       requiredMode = Schema.RequiredMode.NOT_REQUIRED,
+      additionalProperties = Schema.AdditionalPropertiesValue.TRUE,
       nullable = false
   )
   protected Map<String, Object> authConfig;

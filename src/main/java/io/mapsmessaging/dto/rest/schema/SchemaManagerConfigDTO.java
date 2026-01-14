@@ -20,6 +20,7 @@
 package io.mapsmessaging.dto.rest.schema;
 
 import io.mapsmessaging.dto.rest.config.BaseConfigDTO;
+import io.mapsmessaging.dto.rest.config.ConfigurationManagerDTO;
 import io.swagger.v3.oas.annotations.media.DiscriminatorMapping;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
@@ -30,7 +31,7 @@ import lombok.NoArgsConstructor;
     title = "Schema Manager config",
     description = "Configures the schema manager on where it can find and store schemas")
 @Data
-public class SchemaManagerConfigDTO extends BaseConfigDTO {
+public class SchemaManagerConfigDTO extends BaseConfigDTO implements ConfigurationManagerDTO {
 
   @Schema(
       description = "Repository-specific configuration object. " +

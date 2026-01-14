@@ -32,7 +32,7 @@ import java.util.List;
 @EqualsAndHashCode(callSuper = true)
 @NoArgsConstructor
 @Schema(description = "Destination Manager Configuration DTO")
-public class DestinationManagerConfigDTO extends BaseConfigDTO {
+public class DestinationManagerConfigDTO extends BaseConfigDTO implements ConfigurationManagerDTO {
 
   @Schema(
       description = "List of destination configurations",

@@ -27,7 +27,6 @@ import io.mapsmessaging.dto.rest.config.protocol.impl.NatsConfigDTO;
 public class NatsConfig extends NatsConfigDTO implements Config {
 
   public NatsConfig(ConfigurationProperties config) {
-    setType("nats");
     ProtocolConfigFactory.unpack(config, this);
 
     // Initialize Stomp-specific fields from config

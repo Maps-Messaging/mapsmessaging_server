@@ -27,9 +27,12 @@ import lombok.NoArgsConstructor;
 
 @Data
 @EqualsAndHashCode(callSuper = true)
-@NoArgsConstructor
 @Schema(description = "Semtech Protocol Configuration DTO")
 public class SemtechConfigDTO extends ProtocolConfigDTO {
+
+  public SemtechConfigDTO() {
+    super("semtech");
+  }
 
   @Schema(description = "Maximum queue size for Semtech", example = "10")
   protected int maxQueued = 10;

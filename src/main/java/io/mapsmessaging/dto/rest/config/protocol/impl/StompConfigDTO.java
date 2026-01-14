@@ -27,9 +27,12 @@ import lombok.NoArgsConstructor;
 
 @Data
 @EqualsAndHashCode(callSuper = true)
-@NoArgsConstructor
 @Schema(description = "STOMP Protocol Configuration DTO")
 public class StompConfigDTO extends ProtocolConfigDTO {
+
+  public StompConfigDTO() {
+    super("stomp");
+  }
 
   @Schema(description = "Maximum buffer size for STOMP", example = "65535")
   protected int maxBufferSize = 65535;

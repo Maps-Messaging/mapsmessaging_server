@@ -27,9 +27,11 @@ import lombok.NoArgsConstructor;
 
 @Data
 @EqualsAndHashCode(callSuper = true)
-@NoArgsConstructor
 @Schema(description = "WebSocket Protocol Configuration DTO")
 public class WebSocketConfigDTO extends ProtocolConfigDTO {
 
+  public WebSocketConfigDTO() {
+    super("websocket");
+  }
 
 }

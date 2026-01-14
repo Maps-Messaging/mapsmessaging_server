@@ -31,7 +31,7 @@ import java.util.Map;
 @EqualsAndHashCode(callSuper = true)
 @NoArgsConstructor
 @Schema(description = "Jolokia Configuration DTO")
-public class JolokiaConfigDTO extends BaseConfigDTO {
+public class JolokiaConfigDTO extends BaseConfigDTO implements ConfigurationManagerDTO {
 
   @Schema(
       description = "Enable or disable Jolokia monitoring",
@@ -45,7 +45,7 @@ public class JolokiaConfigDTO extends BaseConfigDTO {
       description = "Mapping configuration for Jolokia (free-form object structure consumed by Jolokia integration).",
       requiredMode = Schema.RequiredMode.NOT_REQUIRED,
       nullable = true,
-      type = "object",
+      additionalProperties = Schema.AdditionalPropertiesValue.TRUE,
       example = "{ \"rules\": [ { \"mbean\": \"java.lang:type=Memory\", \"attributes\": [\"HeapMemoryUsage\"] } ] }"
   )
   private Map<String, Object> jolokiaMapping;

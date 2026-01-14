@@ -27,7 +27,6 @@ import lombok.NoArgsConstructor;
 
 @Data
 @EqualsAndHashCode(callSuper=false)
-@NoArgsConstructor
 public class LoRaConfigDTO extends EndPointConfigDTO {
 
   public LoRaConfigDTO(String type){

@@ -19,6 +19,8 @@
 
 package io.mapsmessaging.rest.api.impl.config;
 
+import com.google.common.reflect.TypeToken;
+import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import io.mapsmessaging.config.ConfigManager;
@@ -36,6 +38,7 @@ import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
+import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeoutException;
 
@@ -97,10 +100,7 @@ public class ConfigManagementApi extends BaseRestApi {
           @ApiResponse(responseCode = "500", description = "Server configuration error")
       }
   )
-  public ConfigurationSchemaDTO getConfigSection(
-      @PathParam("name") String name
-  ) throws ExecutionException, InterruptedException, TimeoutException {
-
+  public ConfigurationSchemaDTO getConfigSection(@PathParam("name") String name) {
     hasAccess(RESOURCE);
 
     if (name == null || name.isBlank()) {
@@ -132,9 +132,9 @@ public class ConfigManagementApi extends BaseRestApi {
     if (schema == null || schema.isBlank()) {
       throw new WebApplicationException("Schema not found for: " + name, Response.Status.NOT_FOUND);
     }
-    System.err.println("Schema for " + name + ": " + schema);
     JsonObject jsonObject = JsonParser.parseString(schema).getAsJsonObject();
-    ConfigurationSchemaDTO response = new ConfigurationSchemaDTO(dto, jsonObject);
+    ConfigurationSchemaDTO response = new ConfigurationSchemaDTO(dto,
+        new Gson().fromJson(jsonObject, new TypeToken<Map<String, Object>>() {}.getType()));
     putToCache(key, response);
     return response;
   }
