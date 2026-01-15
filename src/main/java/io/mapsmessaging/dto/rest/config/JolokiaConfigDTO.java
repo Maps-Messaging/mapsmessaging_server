@@ -46,6 +46,7 @@ public class JolokiaConfigDTO extends BaseConfigDTO implements ConfigurationMana
       requiredMode = Schema.RequiredMode.NOT_REQUIRED,
       nullable = true,
       additionalProperties = Schema.AdditionalPropertiesValue.TRUE,
+      additionalPropertiesSchema = Object.class,
       example = "{ \"rules\": [ { \"mbean\": \"java.lang:type=Memory\", \"attributes\": [\"HeapMemoryUsage\"] } ] }"
   )
   private Map<String, Object> jolokiaMapping;

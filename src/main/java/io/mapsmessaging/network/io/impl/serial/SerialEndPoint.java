@@ -20,6 +20,7 @@
 package io.mapsmessaging.network.io.impl.serial;
 
 import com.fazecast.jSerialComm.SerialPort;
+import io.mapsmessaging.devices.serial.devices.sensors.SerialDevice;
 import io.mapsmessaging.dto.rest.config.network.SerialDeviceDTO;
 import io.mapsmessaging.dto.rest.config.network.impl.SerialConfigDTO;
 import io.mapsmessaging.logging.Logger;
@@ -155,13 +156,19 @@ public class SerialEndPoint extends EndPoint implements StreamEndPoint {
     serialPort.setFlowControl(config.getFlowControl());
   }
 
-
   public static int getStopBits(SerialDeviceDTO config) {
-    return switch (config.getStopBits().toLowerCase()) {
-      case "2" -> SerialPort.TWO_STOP_BITS;
-      case "1.5" -> SerialPort.ONE_POINT_FIVE_STOP_BITS;
-      default -> SerialPort.ONE_STOP_BIT;
-    };
+    double stopBits = config.getStopBits();
+
+    if (Double.compare(stopBits, 1.0) == 0) {
+      return SerialPort.ONE_STOP_BIT;
+    }
+    if (Double.compare(stopBits, 2.0) == 0) {
+      return SerialPort.TWO_STOP_BITS;
+    }
+    if (Double.compare(stopBits, 1.5) == 0) {
+      return SerialPort.ONE_POINT_FIVE_STOP_BITS;
+    }
+    return SerialPort.ONE_STOP_BIT;
   }
 
   public static int getParity(SerialDeviceDTO config) {

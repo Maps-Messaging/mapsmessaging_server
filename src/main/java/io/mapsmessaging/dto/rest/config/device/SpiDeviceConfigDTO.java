@@ -76,7 +76,8 @@ public class SpiDeviceConfigDTO extends BaseConfigDTO {
 
   @Schema(
       description="Configuration map",
-      additionalProperties = Schema.AdditionalPropertiesValue.TRUE
+      additionalProperties = Schema.AdditionalPropertiesValue.TRUE,
+      additionalPropertiesSchema = String.class
   )
   protected Map<String, String> config;
 }

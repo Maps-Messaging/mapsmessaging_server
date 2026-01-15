@@ -15,7 +15,7 @@ public class SerialDeviceHelper {
     serialDeviceDTO.setPort(serial.getProperty("port"));
     serialDeviceDTO.setBaudRate(serial.getIntProperty("baudRate", serialDeviceDTO.getBaudRate()));
     serialDeviceDTO.setDataBits(serial.getIntProperty("dataBits", serialDeviceDTO.getDataBits()));
-    serialDeviceDTO.setStopBits(serial.getProperty("stopBits", serialDeviceDTO.getStopBits()));
+    serialDeviceDTO.setStopBits(serial.getFloatProperty("stopBits", serialDeviceDTO.getStopBits()));
     serialDeviceDTO.setParity(serial.getProperty("parity", serialDeviceDTO.getParity()));
     serialDeviceDTO.setFlowControl(serial.getIntProperty("flowControl", serialDeviceDTO.getFlowControl()));
     serialDeviceDTO.setSerialNo(serial.getProperty("serialNo"));

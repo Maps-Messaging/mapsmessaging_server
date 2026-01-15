@@ -53,6 +53,7 @@ public class AuthConfigDTO extends BaseConfigDTO {
       description = "Configuration settings for the token generator",
       example = "{\"expiry\": 3600}",
       additionalProperties = Schema.AdditionalPropertiesValue.TRUE,
+      additionalPropertiesSchema = Object.class,
       requiredMode = Schema.RequiredMode.NOT_REQUIRED,
       nullable = false)
   protected Map<String, Object> tokenConfig;

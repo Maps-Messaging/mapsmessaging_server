@@ -45,7 +45,7 @@ public class SerialDeviceDTO extends BaseConfigDTO {
       requiredMode = Schema.RequiredMode.REQUIRED,
       nullable = false
   )
-  protected String stopBits;
+  protected float stopBits;
 
   @Schema(
       description = "Parity setting for the serial connection",

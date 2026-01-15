@@ -54,7 +54,7 @@ public class LoRaConfigDTO extends EndPointConfigDTO {
 
   @Schema(
       description = "Operating frequency of the device in MHz",
-      example = "868.0",
+      example = "868",
       allowableValues = {"863", "902", "915", "470", "923", "865", "920"},
       minimum = "863",
       maximum = "923",

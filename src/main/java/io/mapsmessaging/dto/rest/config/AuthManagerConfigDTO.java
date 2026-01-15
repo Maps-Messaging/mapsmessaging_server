@@ -55,6 +55,7 @@ public class AuthManagerConfigDTO extends BaseConfigDTO implements Configuration
       implementation = Map.class,
       requiredMode = Schema.RequiredMode.NOT_REQUIRED,
       additionalProperties = Schema.AdditionalPropertiesValue.TRUE,
+      additionalPropertiesSchema = Object.class,
       nullable = false
   )
   protected Map<String, Object> authConfig;
