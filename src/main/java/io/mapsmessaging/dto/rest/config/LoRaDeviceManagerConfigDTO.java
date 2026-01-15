@@ -19,7 +19,7 @@
 
 package io.mapsmessaging.dto.rest.config;
 
-import io.mapsmessaging.dto.rest.config.network.impl.LoRaConfigDTO;
+import io.mapsmessaging.dto.rest.config.lora.LoRaDeviceConfigDTO;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -33,6 +33,10 @@ import java.util.List;
 @Schema(description = "LoRa Device Management Configuration DTO")
 public class LoRaDeviceManagerConfigDTO extends BaseConfigDTO implements ConfigurationManagerDTO {
 
-  @Schema(description = "List of LoRa device configurations")
-  protected List<LoRaConfigDTO> deviceConfigList;
+  @Schema(
+      description = "List of LoRa device configurations",
+      requiredMode = Schema.RequiredMode.NOT_REQUIRED,
+      nullable = true
+  )
+  protected List<LoRaDeviceConfigDTO> deviceConfigList;
 }

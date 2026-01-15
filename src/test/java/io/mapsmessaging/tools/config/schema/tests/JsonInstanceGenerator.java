@@ -73,39 +73,107 @@ public class JsonInstanceGenerator {
     }
 
     ObjectNode mutated = ((ObjectNode) validInstance).deepCopy();
+
     JsonNode properties = rootSchema.get("properties");
     if (properties == null || !properties.isObject()) {
       return mutated;
     }
 
     Iterator<String> fieldNames = properties.fieldNames();
-    if (!fieldNames.hasNext()) {
+    while (fieldNames.hasNext()) {
+      String field = fieldNames.next();
+      JsonNode fieldSchema = resolveRef(schemaRoot, properties.get(field));
+
+      Set<String> allowedTypes = collectAllowedTypes(schemaRoot, fieldSchema);
+      if (allowedTypes.isEmpty()) {
+        continue;
+      }
+
+      JsonNode wrongTypeValue = makeValueOfTypeNotAllowed(allowedTypes);
+      if (wrongTypeValue == null) {
+        continue;
+      }
+
+      mutated.set(field, wrongTypeValue);
       return mutated;
     }
 
-    String field = fieldNames.next();
-    JsonNode fieldSchema = resolveRef(schemaRoot, properties.get(field));
-
-    String type = singleType(fieldSchema);
-    if ("string".equals(type)) {
-      mutated.set(field, IntNode.valueOf(123));
-      return mutated;
-    }
-
-    if ("integer".equals(type) || "number".equals(type)) {
-      mutated.set(field, TextNode.valueOf("not-a-" + type));
-      return mutated;
-    }
-
-    if ("boolean".equals(type)) {
-      mutated.set(field, TextNode.valueOf("not-a-boolean"));
-      return mutated;
-    }
-
-    // object/array: still wrong type
-    mutated.set(field, TextNode.valueOf("not-a-" + type));
     return mutated;
   }
+
+  private Set<String> collectAllowedTypes(JsonNode schemaRoot, JsonNode schema) {
+    Set<String> types = new LinkedHashSet<>();
+    collectAllowedTypesInto(schemaRoot, schema, types, 0);
+    return types;
+  }
+
+  private void collectAllowedTypesInto(JsonNode schemaRoot, JsonNode schema, Set<String> out, int depth) {
+    if (schema == null || schema.isMissingNode() || depth > 20) {
+      return;
+    }
+
+    JsonNode resolved = resolveRef(schemaRoot, schema);
+
+    JsonNode typeNode = resolved.get("type");
+    if (typeNode != null) {
+      if (typeNode.isTextual()) {
+        out.add(typeNode.asText());
+      } else if (typeNode.isArray()) {
+        for (JsonNode t : typeNode) {
+          if (t.isTextual()) {
+            out.add(t.asText());
+          }
+        }
+      }
+    }
+
+    JsonNode anyOf = resolved.get("anyOf");
+    if (anyOf != null && anyOf.isArray()) {
+      for (JsonNode branch : anyOf) {
+        collectAllowedTypesInto(schemaRoot, branch, out, depth + 1);
+      }
+    }
+
+    JsonNode oneOf = resolved.get("oneOf");
+    if (oneOf != null && oneOf.isArray()) {
+      for (JsonNode branch : oneOf) {
+        collectAllowedTypesInto(schemaRoot, branch, out, depth + 1);
+      }
+    }
+  }
+
+  private JsonNode makeValueOfTypeNotAllowed(Set<String> allowed) {
+    // Pick a JSON type that is NOT allowed, in a stable preference order.
+    if (!allowed.contains("object")) {
+      ObjectNode obj = JsonNodeFactory.instance.objectNode();
+      obj.put("wrong", true);
+      return obj;
+    }
+    if (!allowed.contains("array")) {
+      ArrayNode arr = JsonNodeFactory.instance.arrayNode();
+      arr.add(1);
+      return arr;
+    }
+    if (!allowed.contains("string")) {
+      return TextNode.valueOf("wrong-type");
+    }
+    if (!allowed.contains("integer")) {
+      return IntNode.valueOf(123);
+    }
+    if (!allowed.contains("number")) {
+      return DoubleNode.valueOf(1.23);
+    }
+    if (!allowed.contains("boolean")) {
+      return BooleanNode.TRUE;
+    }
+    if (!allowed.contains("null")) {
+      return NullNode.getInstance();
+    }
+
+    // Everything allowed? Then you can't create a "wrong type" for this field.
+    return null;
+  }
+
 
   public JsonNode makeInvalidOutOfRangeOrEnum(JsonNode schemaRoot, JsonNode validInstance) {
     JsonNode rootSchema = resolveRootSchema(schemaRoot);

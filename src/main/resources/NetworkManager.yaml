@@ -245,3 +245,11 @@ NetworkManager:
         parity: n
         protocol: NMEA
         selectorThreadCount: 1
+
+
+      - name: "LoRa device configuration"
+        url: lora://loraDevice1:2/
+        protocol: mqtt-sn
+        auth: anon
+        selectorThreadCount: 1
+        registered: "*,2,/sensors/tank2:*,12,/sensors/weather/indoor:*,11,/sensors/weather/outdoor:*,8,/sensors/water/garden:*,9,/sensors/water/house"

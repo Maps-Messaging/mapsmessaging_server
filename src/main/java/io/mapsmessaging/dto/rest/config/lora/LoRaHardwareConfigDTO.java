@@ -19,9 +19,18 @@
 
 package io.mapsmessaging.dto.rest.config.lora;
 
+import io.mapsmessaging.dto.rest.config.BaseConfigDTO;
 import io.swagger.v3.oas.annotations.media.Schema;
+import lombok.Data;
+import lombok.EqualsAndHashCode;
 
-public class LoRaHardwareConfigDTO {
+
+@EqualsAndHashCode(callSuper = true)
+@Schema(
+    description = "configures the LoRa device"
+)
+@Data
+public class LoRaHardwareConfigDTO extends BaseConfigDTO {
 
   @Schema(description = "Radio type of the LoRa device", example = "SX1276")
   protected String radio;
@@ -30,7 +39,9 @@ public class LoRaHardwareConfigDTO {
       description = "Chip Select (CS) pin number",
       example = "10",
       minimum = "0",
-      maximum = "255"
+      maximum = "255",
+      requiredMode = Schema.RequiredMode.REQUIRED,
+      nullable = false
   )
   protected int cs;
 
@@ -38,7 +49,9 @@ public class LoRaHardwareConfigDTO {
       description = "IRQ pin number",
       example = "7",
       minimum = "0",
-      maximum = "255"
+      maximum = "255",
+      requiredMode = Schema.RequiredMode.REQUIRED,
+      nullable = false
   )
   protected int irq;
 
@@ -46,7 +59,9 @@ public class LoRaHardwareConfigDTO {
       description = "Reset (RST) pin number",
       example = "3",
       minimum = "0",
-      maximum = "255"
+      maximum = "255",
+      requiredMode = Schema.RequiredMode.REQUIRED,
+      nullable = false
   )
   protected int rst;
 
@@ -54,8 +69,9 @@ public class LoRaHardwareConfigDTO {
       description = "CAD timeout setting",
       example = "500",
       minimum = "1",
-      maximum = "512"
-
+      maximum = "512",
+      requiredMode = Schema.RequiredMode.REQUIRED,
+      nullable = false
   )
   protected int cadTimeout;
 }

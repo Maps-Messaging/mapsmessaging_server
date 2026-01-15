@@ -33,6 +33,10 @@ import java.util.List;
 @Schema(description = "Network Connection Manager Configuration DTO")
 public class NetworkConnectionManagerConfigDTO extends BaseConfigDTO implements ConfigurationManagerDTO {
 
-  @Schema(description = "List of endpoint connection server configurations")
+  @Schema(
+      description = "List of endpoint connection server configurations",
+      requiredMode = Schema.RequiredMode.NOT_REQUIRED,
+      nullable = true
+  )
   protected List<EndPointConnectionServerConfigDTO> endPointServerConfigList;
 }

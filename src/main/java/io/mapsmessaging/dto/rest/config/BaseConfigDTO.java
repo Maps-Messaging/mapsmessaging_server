@@ -34,6 +34,8 @@ public class BaseConfigDTO {
       requiredMode = Schema.RequiredMode.REQUIRED,
       example = "1",
       defaultValue = "1",
+      minimum = "0",
+      maximum = "10",
       nullable = false
   )
   protected int schemaLoadingVersion = 1;

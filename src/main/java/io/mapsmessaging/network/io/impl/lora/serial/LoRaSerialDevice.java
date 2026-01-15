@@ -19,7 +19,7 @@
 
 package io.mapsmessaging.network.io.impl.lora.serial;
 
-import io.mapsmessaging.config.network.impl.LoRaSerialDeviceConfig;
+import io.mapsmessaging.dto.rest.config.network.impl.LoRaSerialConfigDTO;
 import io.mapsmessaging.network.io.impl.lora.LoRaDevice;
 import io.mapsmessaging.network.protocol.impl.loragateway.LoRaProtocol;
 import lombok.Getter;
@@ -28,7 +28,7 @@ public class LoRaSerialDevice extends LoRaDevice {
   @Getter
   private LoRaProtocol activeProtocol;
 
-  public LoRaSerialDevice(LoRaSerialDeviceConfig config) {
+  public LoRaSerialDevice(LoRaSerialConfigDTO config) {
     super(config);
     activeProtocol = null;
     isInitialised = false;

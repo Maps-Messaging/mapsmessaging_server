@@ -22,6 +22,8 @@ package io.mapsmessaging.network.io.impl.lora;
 import com.fazecast.jSerialComm.SerialPort;
 import io.mapsmessaging.config.network.impl.LoRaSerialDeviceConfig;
 import io.mapsmessaging.dto.rest.config.network.EndPointServerConfigDTO;
+import io.mapsmessaging.dto.rest.config.network.impl.LoRaConfigDTO;
+import io.mapsmessaging.dto.rest.config.network.impl.LoRaSerialConfigDTO;
 import io.mapsmessaging.dto.rest.config.network.impl.SerialConfigDTO;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
@@ -82,7 +84,7 @@ public class LoRaEndPointServer extends EndPointServer implements SerialPortList
       protocolImplFactory.create(endPoint, interfaceInformation);
     }
     if (loRaDevice instanceof LoRaSerialDevice) {
-      LoRaSerialDeviceConfig serialDeviceConfig = (LoRaSerialDeviceConfig) loRaDevice.getConfig();
+      LoRaSerialConfigDTO serialDeviceConfig = (LoRaSerialConfigDTO) loRaDevice.getConfig();
       serialConfig = serialDeviceConfig.getSerialConfig();
       String portName = serialConfig.getSerialDevice().getPort();
       String serialNumber = serialConfig.getSerialDevice().getSerialNo();

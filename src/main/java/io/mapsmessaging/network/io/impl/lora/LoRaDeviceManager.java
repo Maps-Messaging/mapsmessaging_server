@@ -22,7 +22,11 @@ package io.mapsmessaging.network.io.impl.lora;
 import io.mapsmessaging.config.LoRaDeviceManagerConfig;
 import io.mapsmessaging.config.network.impl.LoRaChipDeviceConfig;
 import io.mapsmessaging.config.network.impl.LoRaSerialDeviceConfig;
+import io.mapsmessaging.dto.rest.config.lora.LoRaDeviceConfigDTO;
+import io.mapsmessaging.dto.rest.config.network.impl.LoRaChipConfigDTO;
 import io.mapsmessaging.dto.rest.config.network.impl.LoRaConfigDTO;
+import io.mapsmessaging.dto.rest.config.network.impl.LoRaSerialConfigDTO;
+import io.mapsmessaging.dto.rest.config.network.impl.SerialConfigDTO;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.logging.ServerLogMessages;
@@ -65,12 +69,25 @@ public class LoRaDeviceManager {
         Logger logger = LoggerFactory.getLogger(LoRaDeviceManager.class);
         logger.log(ServerLogMessages.LORA_DEVICE_LIBRARY_NOT_LOADED, e.getMessage());
       }
-      for (LoRaConfigDTO config : deviceConfig.getDeviceConfigList()) {
+      for (LoRaDeviceConfigDTO config : deviceConfig.getDeviceConfigList()) {
         LoRaDevice device = null;
-        if (config instanceof LoRaChipDeviceConfig && libLoaded) {
-          device = new LoRaChipDevice((LoRaChipDeviceConfig) config);
-        } else if (config instanceof LoRaSerialDeviceConfig) {
-          device = new LoRaSerialDevice((LoRaSerialDeviceConfig) config);
+        if(config.getSerialDevice() != null) {
+          LoRaSerialConfigDTO serialDeviceConfig = new LoRaSerialConfigDTO();
+          SerialConfigDTO serialConfigDTO = new SerialConfigDTO();
+          serialConfigDTO.setSerialDevice(config.getSerialDevice());
+          serialDeviceConfig.setSerialConfig(serialConfigDTO);
+          serialDeviceConfig.setName(config.getName());
+          serialDeviceConfig.setPower(config.getPower());
+          serialDeviceConfig.setFrequency(config.getFrequency());
+          device = new LoRaSerialDevice(serialDeviceConfig);
+        }
+        else if(libLoaded && config.getHardware() != null) {
+          LoRaChipConfigDTO chipConfigDTO = new  LoRaChipConfigDTO();
+          chipConfigDTO.setHardware(config.getHardware());
+          chipConfigDTO.setName(config.getName());
+          chipConfigDTO.setPower(config.getPower());
+          chipConfigDTO.setFrequency(config.getFrequency());
+          device = new LoRaChipDevice(chipConfigDTO);
         }
         if (device != null) {
           physicalDevices.add(device);

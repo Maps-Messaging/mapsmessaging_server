@@ -35,10 +35,6 @@ public class LoRaChipDeviceConfig extends LoRaChipConfigDTO implements Config {
     this.transmissionRate = properties.getIntProperty("transmissionRate", 2);
     this.hexKey = properties.getProperty("hexKey", "0x00000000000000000000000000000000");
     this.radio = properties.getProperty("radio");
-    this.cs = properties.getIntProperty("cs", -1);
-    this.irq = properties.getIntProperty("irq", -1);
-    this.rst = properties.getIntProperty("rst", -1);
-    this.cadTimeout = properties.getIntProperty("CADTimeout", 0);
   }
 
   @Override
@@ -51,10 +47,6 @@ public class LoRaChipDeviceConfig extends LoRaChipConfigDTO implements Config {
     properties.put("transmissionRate", this.transmissionRate);
     properties.put("radio", this.radio);
     properties.put("hexKey", this.hexKey);
-    properties.put("cs", this.cs);
-    properties.put("irq", this.irq);
-    properties.put("rst", this.rst);
-    properties.put("cadTimeout", this.cadTimeout);
     return properties;
 
   }
@@ -96,23 +88,6 @@ public class LoRaChipDeviceConfig extends LoRaChipConfigDTO implements Config {
       this.radio = newConfig.getRadio();
       hasChanged = true;
     }
-    if (this.cs != newConfig.getCs()) {
-      this.cs = newConfig.getCs();
-      hasChanged = true;
-    }
-    if (this.irq != newConfig.getIrq()) {
-      this.irq = newConfig.getIrq();
-      hasChanged = true;
-    }
-    if (this.rst != newConfig.getRst()) {
-      this.rst = newConfig.getRst();
-      hasChanged = true;
-    }
-    if (this.cadTimeout != newConfig.getCadTimeout()) {
-      this.cadTimeout = newConfig.getCadTimeout();
-      hasChanged = true;
-    }
-
     return hasChanged;
   }
 }

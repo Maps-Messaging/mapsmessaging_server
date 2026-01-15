@@ -67,7 +67,7 @@ public class EndPointConfigDTO extends BaseConfigDTO {
 
   @Schema(description = "Type of the endpoint",
       example = "tcp",
-      allowableValues = {"tcp", "ssl", "udp", "dtls", "loraDevice", "loraSerial", "serial"}
+      allowableValues = {"tcp", "ssl", "udp", "dtls", "loraDevice", "loraSerial", "serial", "satellite"}
   )
   protected String type;
 
@@ -110,9 +110,12 @@ public class EndPointConfigDTO extends BaseConfigDTO {
 
   @Schema(
       description = "Proxy Protocol support mode. 'ENABLED' allows but doesn't require it, 'REQUIRED' enforces it, 'DISABLED' will NOT check for incoming PROXY requests.",
-      example = "REQUIRED"
+      defaultValue = "DISABLED",
+      example = "REQUIRED",
+      requiredMode = Schema.RequiredMode.NOT_REQUIRED,
+      nullable = true
   )
-  protected ProxyProtocolMode proxyProtocolMode;
+  protected ProxyProtocolMode proxyProtocolMode = ProxyProtocolMode.DISABLED;
 
   @Schema(
       description = "Comma-separated list of allowed proxy source addresses. Supports hostnames, IPv4/IPv6 addresses, and CIDR blocks (e.g., 192.168.0.0/24, ::1, example.com).",

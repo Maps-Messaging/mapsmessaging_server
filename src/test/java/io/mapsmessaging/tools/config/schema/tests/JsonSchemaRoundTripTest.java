@@ -98,7 +98,7 @@ class JsonSchemaRoundTripTest {
     map.put("DeviceManager", DeviceManagerConfigDTO.class);
     map.put("DiscoveryManager", DiscoveryManagerConfigDTO.class);
     map.put("License", LicenseManagerConfigDTO.class);
-    map.put("LoRaDevice",  LoRaDeviceConfigDTO.class);
+    map.put("LoRaDevice",  LoRaDeviceManagerConfigDTO.class);
     map.put("MLModelManager", MLModelManagerDTO.class);
     map.put("MessageDaemon", MessageDaemonConfigDTO.class);
     map.put("NetworkConnectionManager", NetworkConnectionManagerConfigDTO.class);
@@ -185,7 +185,6 @@ class JsonSchemaRoundTripTest {
 
     JsonInstanceGenerator generator = new JsonInstanceGenerator(seed);
     JsonNode valid = generator.generateValidInstance(schemaNode);
-
     JsonNode invalid = generator.makeInvalidWrongType(schemaNode, valid);
     if(!invalid.equals(valid)) {
       List<String> errors = validator.validate(schemaNode, invalid);

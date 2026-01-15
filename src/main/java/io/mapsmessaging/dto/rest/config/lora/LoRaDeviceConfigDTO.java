@@ -20,7 +20,9 @@
 package io.mapsmessaging.dto.rest.config.lora;
 
 import io.mapsmessaging.dto.rest.config.BaseConfigDTO;
-import io.mapsmessaging.dto.rest.config.network.impl.SerialConfigDTO;
+import io.mapsmessaging.dto.rest.config.network.SerialDeviceDTO;
+import io.swagger.v3.oas.annotations.extensions.Extension;
+import io.swagger.v3.oas.annotations.extensions.ExtensionProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -29,39 +31,59 @@ import lombok.NoArgsConstructor;
 @Data
 @EqualsAndHashCode(callSuper=false)
 @NoArgsConstructor
-@Schema(description = "LoRa Device Configuration DTO")
+
+@Schema(
+    description = "LoRa Device Configuration DTO",
+    extensions = {
+        @Extension(
+            name = "x-maps-oneOfRequired",
+            properties = {
+                @ExtensionProperty(name = "fields", value = "hardware,serialDevice")
+            }
+        )
+    }
+)
 public class LoRaDeviceConfigDTO extends BaseConfigDTO {
 
-  @Schema(description = "Name of the LoRa device", example = "LoRaNode1")
+  @Schema(
+      description = "Name of the LoRa device",
+      example = "LoRaNode1",
+      nullable = false,
+      requiredMode = Schema.RequiredMode.REQUIRED
+  )
   protected String name;
 
   @Schema(
       description = "Power setting for the device",
       example = "14",
+      defaultValue = "1",
       minimum = "0",
       maximum = "16"
   )
-  protected int power;
+  protected int power =1;
 
   @Schema(
       description = "Operating frequency of the device in MHz",
       example = "868.0",
       allowableValues = {"863", "902", "915", "470", "923", "865", "920"},
       minimum = "863",
-      maximum = "923"
+      maximum = "923",
+      requiredMode = Schema.RequiredMode.REQUIRED,
+      nullable = false
   )
   protected float frequency;
 
   @Schema(
-      description = "Base address to register for, 1-254",
-      example = "2",
-      minimum = "1",
-      maximum = "254"
+      description = "LoRa hardware configuration",
+      requiredMode = Schema.RequiredMode.NOT_REQUIRED,
+      nullable = true
   )
-  protected int address;
-
   protected LoRaHardwareConfigDTO hardware;
 
-  protected SerialConfigDTO serial;
-
+  @Schema(
+      description = "Serial device configuration",
+      requiredMode = Schema.RequiredMode.NOT_REQUIRED,
+      nullable = true
+  )
+  protected SerialDeviceDTO serialDevice;
 }

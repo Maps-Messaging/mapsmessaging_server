@@ -24,4 +24,6 @@ public class SerialDeviceHelper {
     serialDeviceDTO.setBufferSize(config.getIntProperty("bufferSize", serialDeviceDTO.getBufferSize()));
     return serialDeviceDTO;
   }
+
+  private SerialDeviceHelper(){}
 }
