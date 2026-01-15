@@ -66,7 +66,7 @@ public class AuthManagerConfigDTO extends BaseConfigDTO implements Configuration
       minimum = "1",
       defaultValue = "12",
       requiredMode = Schema.RequiredMode.NOT_REQUIRED,
-      nullable = true
+      nullable = false
   )
   protected int minimumPasswordLength = 12;
 
@@ -75,7 +75,7 @@ public class AuthManagerConfigDTO extends BaseConfigDTO implements Configuration
       minimum = "6",
       defaultValue = "128",
       requiredMode = Schema.RequiredMode.NOT_REQUIRED,
-      nullable = true
+      nullable = false
   )
   protected int maximumPasswordLength = 128;
 
@@ -175,30 +175,40 @@ public class AuthManagerConfigDTO extends BaseConfigDTO implements Configuration
   protected int passwordHistoryCount = 0;
 
   @Schema(description = "Maximum password age in days before forcing a reset. Use 0 to disable.",
-      example = "90", minimum = "0",
-      defaultValue = "0", requiredMode = Schema.RequiredMode.NOT_REQUIRED,
+      example = "90",
+      minimum = "0",
+      defaultValue = "0",
+      requiredMode = Schema.RequiredMode.NOT_REQUIRED,
       nullable = true
   )
   protected int passwordMaxAgeDays = 0;
 
-  @Schema(description = "Number of consecutive authentication failures required before an account is locked.",
-      example = "5", minimum = "1",
-      defaultValue = "5", requiredMode = Schema.RequiredMode.NOT_REQUIRED,
-      nullable = true
+  @Schema(
+      description = "Number of consecutive authentication failures required before an account is locked.",
+      example = "5",
+      minimum = "1",
+      defaultValue = "5",
+      requiredMode = Schema.RequiredMode.NOT_REQUIRED,
+      nullable = false
   )
   protected int maxFailuresBeforeLock = 5;
 
-  @Schema(description = "Initial lock duration in seconds once the failure threshold is exceeded. Subsequent locks may increase up to the configured maximum.",
-      example = "30", minimum = "1",
-      defaultValue = "30", requiredMode = Schema.RequiredMode.NOT_REQUIRED,
-      nullable = true
+  @Schema(
+      description = "Initial lock duration in seconds once the failure threshold is exceeded. Subsequent locks may increase up to the configured maximum.",
+      example = "30",
+      minimum = "1",
+      defaultValue = "30",
+      requiredMode = Schema.RequiredMode.NOT_REQUIRED,
+      nullable = false
   )
   protected int initialLockSeconds = 30;
 
   @Schema(description = "Maximum lock duration in seconds. Lock times will not grow beyond this value regardless of repeated failures.",
-      example = "900", minimum = "1",
-      defaultValue = "900", requiredMode = Schema.RequiredMode.NOT_REQUIRED,
-      nullable = true
+      example = "900",
+      minimum = "1",
+      defaultValue = "900",
+      requiredMode = Schema.RequiredMode.NOT_REQUIRED,
+      nullable = false
   )
   protected int maxLockSeconds = 900;
 
@@ -208,20 +218,24 @@ public class AuthManagerConfigDTO extends BaseConfigDTO implements Configuration
       maximum = "3600",
       defaultValue = "900",
       requiredMode = Schema.RequiredMode.NOT_REQUIRED,
-      nullable = true
+      nullable = false
   )
   protected int failureDecaySeconds = 900;
 
   @Schema(description = "Enable progressive response delays before lockout is triggered.",
-      example = "true", defaultValue = "true", requiredMode = Schema.RequiredMode.NOT_REQUIRED,
-      nullable = true
+      example = "true",
+      defaultValue = "true",
+      requiredMode = Schema.RequiredMode.NOT_REQUIRED,
+      nullable = false
   )
   protected boolean enableSoftDelay = true;
 
   @Schema(description = "Additional delay in milliseconds applied per authentication failure when soft delay is enabled.",
-      example = "200", minimum = "0",
-      defaultValue = "200", requiredMode = Schema.RequiredMode.NOT_REQUIRED,
-      nullable = true
+      example = "200",
+      minimum = "0",
+      defaultValue = "200",
+      requiredMode = Schema.RequiredMode.NOT_REQUIRED,
+      nullable = false
   )
   protected int softDelayMillisPerFailure = 200;
 
