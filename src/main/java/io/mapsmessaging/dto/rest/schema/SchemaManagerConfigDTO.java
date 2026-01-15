@@ -25,12 +25,14 @@ import io.swagger.v3.oas.annotations.media.DiscriminatorMapping;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 
 @Schema(
     title = "Schema Manager config",
     description = "Configures the schema manager on where it can find and store schemas")
 @Data
+@EqualsAndHashCode(callSuper = true)
 public class SchemaManagerConfigDTO extends BaseConfigDTO implements ConfigurationManagerDTO {
 
   @Schema(

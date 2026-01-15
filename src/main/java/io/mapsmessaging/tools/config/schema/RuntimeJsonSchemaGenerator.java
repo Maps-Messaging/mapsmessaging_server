@@ -77,7 +77,7 @@ public class RuntimeJsonSchemaGenerator {
     // IMPORTANT:
     // Do NOT set additionalProperties:false on the wrapper document when $ref is used.
     // Put object-closure rules on the referenced object schemas instead.
-    doc.put("unevaluatedProperties", false);
+    //doc.put("unevaluatedProperties", false);
 
     Schema rootSchemaAnn = rootDtoClass.getAnnotation(Schema.class);
     if (rootSchemaAnn != null && !rootSchemaAnn.description().isBlank()) {
@@ -201,6 +201,10 @@ public class RuntimeJsonSchemaGenerator {
           Class<?> subtypeClass = subtype.value();
           if (subtypeClass != null && subtypeClass != Void.class) {
             stack.push(subtypeClass);
+            String subtypeName = subtype.name();
+            if (subtypeName != null && !subtypeName.isBlank()) {
+              discriminatorConstByClass.put(subtypeClass, subtypeName);
+            }
           }
         }
       }
@@ -245,8 +249,8 @@ public class RuntimeJsonSchemaGenerator {
 
           String name = field.getName();
           SchemaObject propertySchema = schemaForField(field, context);
-
           applySwaggerSchema(propertySchema, fieldSchemaAnn, field.getType(), context);
+          propertySchema = wrapNullableIfNeeded(propertySchema, fieldSchemaAnn);
 
           // If this DTO is a discriminator-mapped subtype, force its "type" field to a const.
           if (TYPE_FIELD_NAME.equals(name)) {
@@ -289,6 +293,19 @@ public class RuntimeJsonSchemaGenerator {
     finally {
       context.exitDto();
     }
+  }
+
+  private static SchemaObject wrapNullableIfNeeded(SchemaObject propertySchema, Schema schemaAnn) {
+    if (schemaAnn == null || !schemaAnn.nullable()) {
+      return propertySchema;
+    }
+
+    SchemaObject nullSchema = new SchemaObject();
+    nullSchema.put("type", "null");
+
+    SchemaObject out = new SchemaObject();
+    out.put("anyOf", List.of(propertySchema.toJsonValue(), nullSchema.toJsonValue()));
+    return out;
   }
 
   private SchemaObject buildJacksonPolymorphicDefinitionIfNeeded(Class<?> dtoClass, SchemaContext context) {

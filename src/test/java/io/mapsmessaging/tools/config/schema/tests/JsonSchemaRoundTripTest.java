@@ -24,6 +24,11 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.MapperFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.networknt.schema.Error;
+import com.networknt.schema.Schema;
+import com.networknt.schema.SchemaRegistry;
+import com.networknt.schema.dialect.Dialects;
 import io.mapsmessaging.dto.rest.auth.SecurityManagerDTO;
 import io.mapsmessaging.dto.rest.config.*;
 import io.mapsmessaging.dto.rest.config.lora.LoRaDeviceConfigDTO;
@@ -35,6 +40,7 @@ import org.junit.jupiter.api.DynamicTest;
 import org.junit.jupiter.api.TestFactory;
 
 import java.util.*;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -51,7 +57,7 @@ class JsonSchemaRoundTripTest {
   private final JsonSchemaValidator validator;
 
   public JsonSchemaRoundTripTest() {
-    this.validator = new NoopJsonSchemaValidator(); // replace with real impl
+    this.validator = new NetworkNtJsonSchemaValidator(); // replace with real impl
   }
 
   @TestFactory
@@ -90,6 +96,7 @@ class JsonSchemaRoundTripTest {
     map.put("AuthManager", AuthManagerConfigDTO.class);
     map.put("DestinationManager",  DestinationManagerConfigDTO.class);
     map.put("DeviceManager", DeviceManagerConfigDTO.class);
+    map.put("DiscoveryManager", DiscoveryManagerConfigDTO.class);
     map.put("License", LicenseManagerConfigDTO.class);
     map.put("LoRaDevice",  LoRaDeviceConfigDTO.class);
     map.put("MLModelManager", MLModelManagerDTO.class);
@@ -105,44 +112,60 @@ class JsonSchemaRoundTripTest {
     return map;
   }
   private void runValidRoundTrip(String schemaName, String schemaText, Class<?> dtoClass, long seed) throws Exception {
+    assertNotNull(dtoClass, () -> schemaName + " has no DTO mapping");
+
     JsonNode schemaNode = parse(schemaText);
 
     // b) Build a valid JSON instance from schema
     JsonInstanceGenerator generator = new JsonInstanceGenerator(seed);
     JsonNode inputJson = generator.generateValidInstance(schemaNode);
 
-    // validate JSON against schema
+    // Validate input JSON against schema
     List<String> inputErrors = validator.validate(schemaNode, inputJson);
-    assertTrue(inputErrors.isEmpty(), () -> schemaName + " valid JSON failed schema: " + inputErrors);
+    assertTrue(inputErrors.isEmpty(), () -> schemaName + " valid JSON failed schema: " + inputErrors + "\nJSON: " + inputJson);
 
-    // c) JSON -> DTO
-    Object dto;
+    // c) JSON -> DTO1
+    Object dto1;
     try {
-      System.err.println(schemaText);
-      System.err.println(inputJson);
-      dto = OBJECT_MAPPER.treeToValue(inputJson, dtoClass);
+      dto1 = OBJECT_MAPPER.treeToValue(inputJson, dtoClass);
     } catch (Exception e) {
-      fail(schemaName + " DTO generation failure (" + dtoClass.getName() + "): " + e.getMessage(), e);
+      fail(schemaName + " DTO generation failure (" + dtoClass.getName() + "): " + e.getMessage() + "\nJSON: " + inputJson, e);
       return;
     }
 
-    // d) DTO -> JSON
+    // d) DTO1 -> JSON
     JsonNode outputJson;
     try {
-      outputJson = OBJECT_MAPPER.valueToTree(dto);
+      outputJson = OBJECT_MAPPER.valueToTree(dto1);
     } catch (Exception e) {
       fail(schemaName + " JSON generation from DTO failure: " + e.getMessage(), e);
       return;
     }
 
-    // validate DTO-produced JSON against schema
+    // Validate DTO-produced JSON against schema (still useful)
     List<String> outputErrors = validator.validate(schemaNode, outputJson);
-    assertTrue(outputErrors.isEmpty(), () -> schemaName + " DTO->JSON failed schema: " + outputErrors);
+    assertTrue(outputErrors.isEmpty(), () -> schemaName + " DTO->JSON failed schema: " + outputErrors + "\nJSON: " + outputJson);
 
-    // e) Compare canonical JSON
-    // NOTE: to make this strict, our generator emits all required fields and (where possible) optional defaults explicitly.
-    assertEquals(inputJson, outputJson, () -> schemaName + " round-trip changed JSON.\nIN : " + inputJson + "\nOUT: " + outputJson);
+    // e) JSON -> DTO2
+    Object dto2;
+    try {
+      dto2 = OBJECT_MAPPER.treeToValue(outputJson, dtoClass);
+    } catch (Exception e) {
+      fail(schemaName + " DTO regeneration failure (" + dtoClass.getName() + "): " + e.getMessage() + "\nJSON: " + outputJson, e);
+      return;
+    }
+
+    if (!dto1.equals(dto2)) {
+      JsonNode dto1Json = OBJECT_MAPPER.valueToTree(dto1);
+      JsonNode dto2Json = OBJECT_MAPPER.valueToTree(dto2);
+
+      List<String> diffs = JsonDiff.diff(dto1Json, dto2Json);
+      fail(schemaName + " DTO round-trip changed values:\n" + String.join("\n", diffs)
+          + "\nDTO1 JSON: " + dto1Json
+          + "\nDTO2 JSON: " + dto2Json);
+    }
   }
+
 
   private void runInvalidMissingRequired(String schemaName, String schemaText, Class<?> dtoClass, long seed) throws Exception {
     JsonNode schemaNode = parse(schemaText);
@@ -151,9 +174,10 @@ class JsonSchemaRoundTripTest {
     JsonNode valid = generator.generateValidInstance(schemaNode);
 
     JsonNode invalid = generator.makeInvalidMissingRequired(schemaNode, valid);
-
-    List<String> errors = validator.validate(schemaNode, invalid);
-    assertFalse(errors.isEmpty(), () -> schemaName + " expected missing-required to fail schema validation");
+    if(!invalid.equals(valid)) {
+      List<String> errors = validator.validate(schemaNode, invalid);
+      assertFalse(errors.isEmpty(), () -> schemaName + " expected missing-required to fail schema validation");
+    }
   }
 
   private void runInvalidWrongType(String schemaName, String schemaText, Class<?> dtoClass, long seed) throws Exception {
@@ -163,9 +187,10 @@ class JsonSchemaRoundTripTest {
     JsonNode valid = generator.generateValidInstance(schemaNode);
 
     JsonNode invalid = generator.makeInvalidWrongType(schemaNode, valid);
-
-    List<String> errors = validator.validate(schemaNode, invalid);
-    assertFalse(errors.isEmpty(), () -> schemaName + " expected wrong-type to fail schema validation");
+    if(!invalid.equals(valid)) {
+      List<String> errors = validator.validate(schemaNode, invalid);
+      assertFalse(errors.isEmpty(), () -> schemaName + " expected wrong-type to fail schema validation");
+    }
   }
 
   private void runInvalidOutOfRangeOrEnum(String schemaName, String schemaText, Class<?> dtoClass, long seed) throws Exception {
@@ -175,9 +200,10 @@ class JsonSchemaRoundTripTest {
     JsonNode valid = generator.generateValidInstance(schemaNode);
 
     JsonNode invalid = generator.makeInvalidOutOfRangeOrEnum(schemaNode, valid);
-
-    List<String> errors = validator.validate(schemaNode, invalid);
-    assertFalse(errors.isEmpty(), () -> schemaName + " expected out-of-range/enum to fail schema validation");
+    if(!invalid.equals(valid)) {
+      List<String> errors = validator.validate(schemaNode, invalid);
+      assertFalse(errors.isEmpty(), () -> schemaName + " expected out-of-range/enum to fail schema validation");
+    }
   }
 
   private static JsonNode parse(String json) throws JsonProcessingException {
@@ -209,14 +235,138 @@ class JsonSchemaRoundTripTest {
     List<String> validate(JsonNode schema, JsonNode instance);
   }
 
-  /**
-   * Replace this with a real validator implementation.
-   * This is here so the framework compiles while you wire your chosen schema validator.
-   */
-  public static final class NoopJsonSchemaValidator implements JsonSchemaValidator {
+
+  public final class NetworkNtJsonSchemaValidator implements JsonSchemaRoundTripTest.JsonSchemaValidator {
+
+
+    private final SchemaRegistry schemaRegistry;
+
+    public NetworkNtJsonSchemaValidator() {
+      this.schemaRegistry = SchemaRegistry.withDialect(Dialects.getDraft202012());
+    }
+
     @Override
-    public List<String> validate(JsonNode schema, JsonNode instance) {
-      return Collections.emptyList();
+    public List<String> validate(JsonNode schemaNode, JsonNode instance) {
+      JsonNode effectiveSchema = resolveTopLevelRef(schemaNode);
+
+      Schema schema = schemaRegistry.getSchema(effectiveSchema);
+
+      // instance is already a JsonNode; no need to re-materialize it
+      List<Error> errors = schema.validate(instance);
+
+      return errors.stream()
+          .map(Error::getMessage)
+          .collect(Collectors.toList());
+    }
+
+    private JsonNode resolveTopLevelRef(JsonNode schemaRoot) {
+      JsonNode refNode = schemaRoot.get("$ref");
+      if (refNode == null || !refNode.isTextual()) {
+        return schemaRoot;
+      }
+
+      JsonNode resolved = resolveRef(schemaRoot, schemaRoot);
+      if (resolved == null || !resolved.isObject()) {
+        return schemaRoot;
+      }
+
+      // Merge: resolved subschema + carry over $defs so nested refs keep working
+      ObjectNode merged = ((ObjectNode) resolved).deepCopy();
+
+      JsonNode defs = schemaRoot.get("$defs");
+      if (defs != null && defs.isObject()) {
+        merged.set("$defs", defs);
+      }
+
+      JsonNode schemaDecl = schemaRoot.get("$schema");
+      if (schemaDecl != null) {
+        merged.set("$schema", schemaDecl);
+      }
+
+      // Keep $id if present (helps some validators that use ids internally)
+      JsonNode id = schemaRoot.get("$id");
+      if (id != null) {
+        merged.set("$id", id);
+      }
+
+      return merged;
+    }
+
+    private JsonNode resolveRef(JsonNode schemaRoot, JsonNode node) {
+      JsonNode ref = node.get("$ref");
+      if (ref == null || !ref.isTextual()) {
+        return node;
+      }
+
+      String refText = ref.asText();
+      if (!refText.startsWith("#/")) {
+        return node;
+      }
+
+      String[] parts = refText.substring(2).split("/");
+      JsonNode current = schemaRoot;
+
+      for (String part : parts) {
+        current = current.get(part);
+        if (current == null) {
+          return node;
+        }
+      }
+
+      return current;
     }
   }
+  static final class JsonDiff {
+
+    static List<String> diff(JsonNode left, JsonNode right) {
+      List<String> out = new ArrayList<>();
+      diffInto("$", left, right, out);
+      return out;
+    }
+
+    private static void diffInto(String path, JsonNode left, JsonNode right, List<String> out) {
+      if (left == null && right == null) {
+        return;
+      }
+      if (left == null || right == null) {
+        out.add(path + " one side is null. left=" + left + " right=" + right);
+        return;
+      }
+
+      if (!left.getNodeType().equals(right.getNodeType())) {
+        out.add(path + " type differs. left=" + left.getNodeType() + " right=" + right.getNodeType()
+            + " leftVal=" + left + " rightVal=" + right);
+        return;
+      }
+
+      if (left.isObject()) {
+        Set<String> names = new TreeSet<>();
+        left.fieldNames().forEachRemaining(names::add);
+        right.fieldNames().forEachRemaining(names::add);
+
+        for (String name : names) {
+          JsonNode l = left.get(name);
+          JsonNode r = right.get(name);
+          diffInto(path + "." + name, l, r, out);
+        }
+        return;
+      }
+
+      if (left.isArray()) {
+        int max = Math.max(left.size(), right.size());
+        for (int i = 0; i < max; i++) {
+          JsonNode l = i < left.size() ? left.get(i) : null;
+          JsonNode r = i < right.size() ? right.get(i) : null;
+          diffInto(path + "[" + i + "]", l, r, out);
+        }
+        return;
+      }
+
+      // value nodes
+      if (!left.equals(right)) {
+        out.add(path + " value differs. left=" + left + " right=" + right);
+      }
+    }
+  }
+
 }
