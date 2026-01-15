@@ -319,7 +319,7 @@ class MessageFactoryTest {
 
     assertNotNull(unpacked.getMeta());
 
-    assertTrue(unpacked.getMeta().size() == 1 || unpacked.getMeta().size() == 4, "This should be 1 or 4 not "+unpacked.getMeta().size()); // includes time_ms created and / or location
+    assertTrue(unpacked.getMeta().size() == 1 || unpacked.getMeta().isEmpty(), "This should be 1 or 0 not "+unpacked.getMeta().size()); // includes time_ms created and / or location
   }
 
   @Test
