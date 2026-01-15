@@ -30,6 +30,7 @@ import lombok.*;
 import java.util.List;
 
 @NoArgsConstructor
+@EqualsAndHashCode(callSuper = true)
 @Schema(description = "Device Manager Configuration DTO")
 @Getter
 @Setter

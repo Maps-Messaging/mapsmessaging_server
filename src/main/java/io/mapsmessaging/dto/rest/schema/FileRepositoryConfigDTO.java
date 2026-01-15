@@ -36,7 +36,9 @@ public class FileRepositoryConfigDTO extends RepositoryConfigDTO {
 
   @Schema(
       description = "Absolute or relative directory path where schema files are stored.",
-      example = "{{MAPS_DATA}}/schemas"
+      example = "{{MAPS_DATA}}/schemas",
+      requiredMode = Schema.RequiredMode.REQUIRED,
+      nullable = false
   )
   private String directoryPath;
 }

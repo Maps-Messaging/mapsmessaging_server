@@ -203,8 +203,11 @@ public class AuthManagerConfigDTO extends BaseConfigDTO implements Configuration
   protected int maxLockSeconds = 900;
 
   @Schema(description = "Time in seconds after which recorded authentication failures decay if no new failures occur.",
-      example = "900", minimum = "1",
-      defaultValue = "900", requiredMode = Schema.RequiredMode.NOT_REQUIRED,
+      example = "900",
+      minimum = "1",
+      maximum = "3600",
+      defaultValue = "900",
+      requiredMode = Schema.RequiredMode.NOT_REQUIRED,
       nullable = true
   )
   protected int failureDecaySeconds = 900;

@@ -21,6 +21,7 @@ package io.mapsmessaging.utilities.configuration;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.networknt.schema.Error;
@@ -53,6 +54,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
 
 import static io.mapsmessaging.logging.ServerLogMessages.*;
 
@@ -68,6 +70,7 @@ public class ConfigurationManager {
     return Holder.INSTANCE;
   }
 
+  private final SchemaRegistry schemaRegistry = SchemaRegistry.withDialect(Dialects.getDraft202012());
   private final Logger logger = LoggerFactory.getLogger(ConfigurationManager.class);
 
   private final List<PropertyManager> propertyManagers;
@@ -151,10 +154,10 @@ public class ConfigurationManager {
     for (PropertyManager manager : propertyManagers) {
       if ( manager.contains(name)) {
         ConfigurationProperties props = manager.getProperties(name);
-        String string = configSchemas.get(name);
+        String schema = configSchemas.get(name);
         Map<String, Object> raw = props.getMap();
 
-        List<String> errors = validate(name, string, raw);
+        List<String> errors = validate(schema, raw);
         if(!errors.isEmpty()){
           for(String error:errors){
             logger.log(PROPERTY_MANAGER_ENTRY_SCHEMA_ERROR, name, error);
@@ -228,29 +231,75 @@ public class ConfigurationManager {
     }
   }
 
-  private List<String> validate(String name, String jsonSchema, Map<String, Object> data) {
-    try {
-      int loadingVersion = 0;
-      if(data.containsKey("schemaLoadingVersion")){
-        loadingVersion = (int)Float.parseFloat(data.get("schemaLoadingVersion").toString());
-      }
+  private List<String> validate(String stringSchema, Map<String, Object> raw) {
+    ObjectMapper mapper = new ObjectMapper();
+    JsonNode instance = mapper.valueToTree(raw);
+    JsonNode jsonSchema = mapper.valueToTree(instance);
 
-      if(loadingVersion == 0){
-        return new ArrayList<>();
-      }
+    JsonNode effectiveSchema = resolveTopLevelRef(jsonSchema);
 
-      SchemaRegistry schemaRegistry = SchemaRegistry.withDialect(Dialects.getDraft202012());
-      Schema schema = schemaRegistry.getSchema(jsonSchema);
-      ObjectMapper objectMapper = new ObjectMapper();
-      JsonNode jsonObject = objectMapper.valueToTree(data);
-      List<Error> errorList = schema.validate(jsonObject);
-      List<String> response = new ArrayList<>();
-      for(Error error:errorList){
-        response.add(error.toString());
-      }
-      return response;
-    } catch (Exception e) {
-      return List.of("Schema validation failed: " + e.getMessage());
-    }
+    Schema schema = schemaRegistry.getSchema(effectiveSchema);
+
+    List<Error> errors = schema.validate(instance);
+
+    return errors.stream()
+        .map(Error::getMessage)
+        .collect(Collectors.toList());
   }
+
+  private JsonNode resolveTopLevelRef(JsonNode schemaRoot) {
+    JsonNode refNode = schemaRoot.get("$ref");
+    if (refNode == null || !refNode.isTextual()) {
+      return schemaRoot;
+    }
+
+    JsonNode resolved = resolveRef(schemaRoot, schemaRoot);
+    if (resolved == null || !resolved.isObject()) {
+      return schemaRoot;
+    }
+
+    ObjectNode merged = ((ObjectNode) resolved).deepCopy();
+
+    JsonNode defs = schemaRoot.get("$defs");
+    if (defs != null && defs.isObject()) {
+      merged.set("$defs", defs);
+    }
+
+    JsonNode schemaDecl = schemaRoot.get("$schema");
+    if (schemaDecl != null) {
+      merged.set("$schema", schemaDecl);
+    }
+
+    JsonNode id = schemaRoot.get("$id");
+    if (id != null) {
+      merged.set("$id", id);
+    }
+
+    return merged;
+  }
+
+  private JsonNode resolveRef(JsonNode schemaRoot, JsonNode node) {
+    JsonNode ref = node.get("$ref");
+    if (ref == null || !ref.isTextual()) {
+      return node;
+    }
+
+    String refText = ref.asText();
+    if (!refText.startsWith("#/")) {
+      return node;
+    }
+
+    String[] parts = refText.substring(2).split("/");
+    JsonNode current = schemaRoot;
+
+    for (String part : parts) {
+      current = current.get(part);
+      if (current == null) {
+        return node;
+      }
+    }
+
+    return current;
+  }
+
 }
