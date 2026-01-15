@@ -23,7 +23,6 @@ import io.mapsmessaging.dto.rest.config.protocol.ProtocolConfigDTO;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
-import lombok.NoArgsConstructor;
 
 @Data
 @EqualsAndHashCode(callSuper = true)
@@ -31,7 +30,7 @@ import lombok.NoArgsConstructor;
 public class WebSocketConfigDTO extends ProtocolConfigDTO {
 
   public WebSocketConfigDTO() {
-    super("websocket");
+    super("ws");
   }
 
 }

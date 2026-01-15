@@ -45,7 +45,7 @@ import lombok.NoArgsConstructor;
     @JsonSubTypes.Type(value = StoGiConfigDTO.class, name = "orbcomm"),
     @JsonSubTypes.Type(value = SemtechConfigDTO.class, name = "semtech"),
     @JsonSubTypes.Type(value = StompConfigDTO.class, name = "stomp"),
-    @JsonSubTypes.Type(value = WebSocketConfigDTO.class, name = "websocket"),
+    @JsonSubTypes.Type(value = WebSocketConfigDTO.class, name = "ws"),
     @JsonSubTypes.Type(value = ExtensionConfigDTO.class, name = "extension"),
     @JsonSubTypes.Type(value = NatsConfigDTO.class, name = "nats"),
 })
@@ -66,7 +66,7 @@ import lombok.NoArgsConstructor;
         @DiscriminatorMapping(value = "orbcomm", schema = StoGiConfigDTO.class),
         @DiscriminatorMapping(value = "semtech", schema = SemtechConfigDTO.class),
         @DiscriminatorMapping(value = "stomp", schema = StompConfigDTO.class),
-        @DiscriminatorMapping(value = "websocket", schema = WebSocketConfigDTO.class),
+        @DiscriminatorMapping(value = "ws", schema = WebSocketConfigDTO.class),
         @DiscriminatorMapping(value = "nats", schema = NatsConfigDTO.class),
         @DiscriminatorMapping(value = "extension", schema = ExtensionConfigDTO.class),
 
@@ -102,7 +102,7 @@ public class ProtocolConfigDTO extends BaseConfigDTO {
           "satellite",
           "semtech",
           "stomp",
-          "websocket",
+          "ws",
           "mavlink",
           "extension"
       },
