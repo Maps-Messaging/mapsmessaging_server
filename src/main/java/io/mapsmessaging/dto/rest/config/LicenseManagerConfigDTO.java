@@ -12,12 +12,17 @@ import lombok.NoArgsConstructor;
 public class LicenseManagerConfigDTO extends BaseConfigDTO implements ConfigurationManagerDTO {
   @Schema(
       description = "MAPS registered client name",
-      example = "Company B.V."
+      example = "Company B.V.",
+      requiredMode = Schema.RequiredMode.NOT_REQUIRED,
+      nullable = true
   )
   protected String clientName;
+
   @Schema(
       description = "MAPS license secret retrived from Maps support",
-      example = "license string"
+      example = "license string",
+      requiredMode = Schema.RequiredMode.NOT_REQUIRED,
+      nullable = true
   )
   protected String clientSecret;
 }
