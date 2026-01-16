@@ -234,7 +234,7 @@ public class ConfigurationManager {
   private List<String> validate(String stringSchema, Map<String, Object> raw) {
     ObjectMapper mapper = new ObjectMapper();
     JsonNode instance = mapper.valueToTree(raw);
-    JsonNode jsonSchema = mapper.valueToTree(instance);
+    JsonNode jsonSchema = mapper.valueToTree(stringSchema);
 
     JsonNode effectiveSchema = resolveTopLevelRef(jsonSchema);
 

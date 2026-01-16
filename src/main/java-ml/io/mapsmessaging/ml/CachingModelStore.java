@@ -20,16 +20,14 @@
 package io.mapsmessaging.ml;
 
 import io.mapsmessaging.config.ml.MLModelManagerConfig;
-import io.mapsmessaging.dto.rest.config.ml.AutoRefreshConfig;
 
-
+import io.mapsmessaging.dto.rest.config.ml.AutoRefreshConfigDTO;
 import io.mapsmessaging.selector.model.ModelStore;
 import io.mapsmessaging.utilities.threads.SimpleTaskScheduler;
 import lombok.Getter;
 
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
@@ -60,7 +58,7 @@ public class CachingModelStore implements ModelStore {
     else{
       this.trimTask = null;
     }
-    AutoRefreshConfig autoRefreshConfig = modelStoreConfig.getAutoRefresh();
+    AutoRefreshConfigDTO autoRefreshConfig = modelStoreConfig.getAutoRefresh();
     if(autoRefreshConfig != null && autoRefreshConfig.isEnabled()) {
       this.autofetchTask = SimpleTaskScheduler.getInstance().schedule(this::processAutoRefresh, autoRefreshConfig.getIntervalMinutes(), TimeUnit.MINUTES);
     }
