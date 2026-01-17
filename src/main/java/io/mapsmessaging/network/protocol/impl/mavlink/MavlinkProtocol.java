@@ -27,7 +27,7 @@ import io.mapsmessaging.api.message.TypedData;
 import io.mapsmessaging.dto.rest.config.protocol.ProtocolConfigDTO;
 import io.mapsmessaging.dto.rest.config.protocol.impl.MavlinkConfigDTO;
 import io.mapsmessaging.dto.rest.protocol.ProtocolInformationDTO;
-import io.mapsmessaging.mavlink.MavlinkFrameEnvelope;
+import io.mapsmessaging.mavlink.message.Frame;
 import io.mapsmessaging.network.ProtocolClientConnection;
 import io.mapsmessaging.network.io.EndPoint;
 import io.mapsmessaging.network.io.Packet;
@@ -105,7 +105,7 @@ public class MavlinkProtocol extends Protocol {
     return true;
   }
 
-  public boolean processPacket(@NonNull @NotNull MavlinkFrameEnvelope envelope, String messageName, byte[] raw) throws IOException {
+  public boolean processPacket(@NonNull @NotNull Frame envelope, String messageName, byte[] raw) throws IOException {
     MessageBuilder messageBuilder = new MessageBuilder();
     Map<String, String> metaData = new HashMap<>();
     metaData.put("protocol", "NATS");
@@ -170,7 +170,7 @@ public class MavlinkProtocol extends Protocol {
     return sessionFuture.get(5, TimeUnit.SECONDS);
   }
 
-  private String computeTopicName(MavlinkFrameEnvelope envelope, String messageName) {
+  private String computeTopicName(Frame envelope, String messageName) {
     String template = mavlinkConfig.getTopicNameTemplate();
     template = template.replace("{remoteSocket}", key.getRemoteAddress().getHostName()+"_"+key.getRemoteAddress().getPort());
     template = template.replace("{systemId}", ""+envelope.getSystemId());
@@ -180,7 +180,7 @@ public class MavlinkProtocol extends Protocol {
     return template;
   }
 
-  private Map<String, TypedData> convertToMap(MavlinkFrameEnvelope envelope) {
+  private Map<String, TypedData> convertToMap(Frame envelope) {
     Map<String, TypedData> map = new LinkedHashMap<>();
     map.put("version", new TypedData(envelope.getVersion().toString()));
     map.put("systemId", new TypedData(envelope.getSystemId()));

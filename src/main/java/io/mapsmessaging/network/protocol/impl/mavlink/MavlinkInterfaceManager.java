@@ -19,15 +19,16 @@
 
 package io.mapsmessaging.network.protocol.impl.mavlink;
 
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import io.mapsmessaging.config.protocol.impl.MavlinkConfig;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
-import io.mapsmessaging.mavlink.MavlinkCodec;
-import io.mapsmessaging.mavlink.MavlinkFrameCodec;
-import io.mapsmessaging.mavlink.MavlinkFrameEnvelope;
-import io.mapsmessaging.mavlink.MavlinkMessageFormatLoader;
-import io.mapsmessaging.mavlink.message.MavlinkCompiledMessage;
+import io.mapsmessaging.mavlink.MavlinkEventFactory;
+import io.mapsmessaging.mavlink.ProcessedFrame;
+import io.mapsmessaging.mavlink.context.Detection;
 import io.mapsmessaging.network.io.EndPoint;
 import io.mapsmessaging.network.io.InterfaceInformation;
 import io.mapsmessaging.network.io.Packet;
@@ -56,9 +57,9 @@ public class MavlinkInterfaceManager implements SelectorCallback {
   private final EndPoint endPoint;
   private final MavLinkSessionManager<MavlinkProtocol> currentSessions;
   private final ProtocolMessageTransformation transformation;
-  private final MavlinkFrameCodec mavlinkFrameCodec;
-  private final MavlinkCodec mavlinkMessageCodec;
+  private final MavlinkEventFactory mavlinkEventFactory;
 
+  private final Gson gson;
   private final MavlinkConfig mavlinkConfig;
   private final List<InetSocketAddress> forwardList;
 
@@ -69,10 +70,11 @@ public class MavlinkInterfaceManager implements SelectorCallback {
     this.endPoint = endPoint;
     mavlinkConfig = (MavlinkConfig) endPoint.getConfig().getProtocolConfig("mavlink");
     long timeout = mavlinkConfig.getIdleSessionTimeout();
-    mavlinkMessageCodec  = MavlinkMessageFormatLoader.getInstance().getDialect("common").get();
-    mavlinkFrameCodec = new MavlinkFrameCodec(mavlinkMessageCodec);
+    mavlinkEventFactory  = new MavlinkEventFactory();
     currentSessions = new MavLinkSessionManager<>(timeout);
-
+    gson = new GsonBuilder()
+        .setPrettyPrinting()
+        .create();
     selectorTask = new SelectorTask(this, endPoint.getConfig().getEndPointConfig(), endPoint.isUDP());
     selectorTask.register(SelectionKey.OP_READ);
     transformation = TransformationManager.getInstance().getTransformation(
@@ -83,7 +85,7 @@ public class MavlinkInterfaceManager implements SelectorCallback {
     );
     forwardList = new ArrayList<>();
     String urlList = mavlinkConfig.getForwardUrls();
-    if(urlList != null || !urlList.isBlank()){
+    if(urlList != null && !urlList.isBlank()){
       String[] urls = urlList.split(",");
       for(String remote:urls){
         if(!remote.isBlank()) {
@@ -111,10 +113,10 @@ public class MavlinkInterfaceManager implements SelectorCallback {
     packet.get(raw);
     byte[] mavlink = raw;
     packet.position(pos);
-    Optional<MavlinkFrameEnvelope>  envelope = mavlinkFrameCodec.tryUnpackHeaderAndPayload(packet.getRawBuffer());
-    if(envelope.isPresent()){
-      MavlinkFrameEnvelope env = envelope.get();
-      MavlinkDeviceKey key = buildKey(packet, env);
+    Optional<ProcessedFrame> potentialFrame = mavlinkEventFactory.unpack(endPoint.getName(), packet.getRawBuffer());
+    if(potentialFrame.isPresent()){
+      ProcessedFrame env = potentialFrame.get();
+      MavlinkDeviceKey key = buildKey(packet, env.getFrame().getSystemId());
       UDPSessionState<MavlinkProtocol> state = findOrCreate(key);
       if(fromForward(packet)){
         state.getContext().processPacket(packet);
@@ -122,21 +124,16 @@ public class MavlinkInterfaceManager implements SelectorCallback {
       else if (state.getContext() != null) {
         MavlinkProtocol protocol = state.getContext();
         if(mavlinkConfig.isParseToJson()){
-          try {
-            Map<String, Object> parsed = mavlinkMessageCodec.parsePayload(env.getMessageId(), env.getPayload());
-            JsonObject complete  = MavlinkJsonEnvelopeBuilder.toJson(env, parsed);
-            raw = complete.toString().getBytes();
-          } catch (IOException e) {
-            selectorTask.register(SelectionKey.OP_READ);
-            return true;
+          Map<String, Object> parsed = env.getFields();
+          JsonObject complete  = MavlinkJsonEnvelopeBuilder.toJson(env.getFrame(), parsed);
+          JsonObject envelope = new JsonObject();
+          envelope.add("mavlink", complete);
+          if (env.getDetections() != null && !env.getDetections().isEmpty()) {
+            envelope.add("detections", gson.toJsonTree(env.getDetections()).getAsJsonArray());
           }
+          raw = envelope.toString().getBytes();
         }
-        MavlinkCompiledMessage message = mavlinkMessageCodec.getRegistry().getCompiledMessagesById().get(env.getMessageId());
-        String messageName = "";
-        if(message != null){
-          messageName = message.getName();
-        }
-        protocol.processPacket(env, messageName, raw);
+        protocol.processPacket(env.getFrame(), env.getMessageName(), raw);
         forwardPacket(mavlink);
       }
     }
@@ -144,8 +141,8 @@ public class MavlinkInterfaceManager implements SelectorCallback {
     return true;
   }
 
-  private MavlinkDeviceKey buildKey(Packet packet, MavlinkFrameEnvelope envelope){
-    return new MavlinkDeviceKey(0, (InetSocketAddress) packet.getFromAddress(),  envelope.getSystemId());
+  private MavlinkDeviceKey buildKey(Packet packet, int systemId){
+    return new MavlinkDeviceKey(0, (InetSocketAddress) packet.getFromAddress(),  systemId);
   }
 
   private synchronized UDPSessionState<MavlinkProtocol> findOrCreate(MavlinkDeviceKey key){

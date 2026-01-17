@@ -23,6 +23,7 @@ import com.google.gson.Gson;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import io.mapsmessaging.mavlink.MavlinkFrameEnvelope;
+import io.mapsmessaging.mavlink.message.Frame;
 
 import java.util.Base64;
 import java.util.Map;
@@ -32,7 +33,7 @@ public final class MavlinkJsonEnvelopeBuilder {
   private static final Gson GSON = GsonFactory.createStrictJsonWithSafeFloats();
 
   public static JsonObject toJson(
-      MavlinkFrameEnvelope envelope,
+      Frame envelope,
       Map<String, Object> decodedPayload
   ) {
 
@@ -48,10 +49,7 @@ public final class MavlinkJsonEnvelopeBuilder {
 
     JsonObject payload = new JsonObject();
 
-    payload.addProperty(
-        "rawBase64",
-        Base64.getEncoder().encodeToString(envelope.getPayload())
-    );
+    payload.addProperty("rawBase64", Base64.getEncoder().encodeToString(envelope.getPayload()));
 
     JsonElement humanReadable = GSON.toJsonTree(decodedPayload);
     payload.add("decoded", humanReadable);
