@@ -19,10 +19,15 @@
 
 package io.mapsmessaging.network.io.connection.state;
 
+import io.mapsmessaging.api.Session;
+import io.mapsmessaging.api.SessionContextBuilder;
+import io.mapsmessaging.api.SessionManager;
 import io.mapsmessaging.config.network.EndPointConnectionServerConfig;
+import io.mapsmessaging.engine.session.SessionContext;
 import io.mapsmessaging.logging.ServerLogMessages;
 import io.mapsmessaging.logging.ThreadContext;
 import io.mapsmessaging.network.EndPointURL;
+import io.mapsmessaging.network.ProtocolClientConnection;
 import io.mapsmessaging.network.auth.TokenGenerator;
 import io.mapsmessaging.network.auth.TokenGeneratorManager;
 import io.mapsmessaging.network.io.EndPoint;
@@ -36,6 +41,7 @@ import io.mapsmessaging.network.protocol.transformation.ProtocolMessageTransform
 import io.mapsmessaging.network.protocol.transformation.TransformationManager;
 import io.mapsmessaging.network.route.link.LinkState;
 
+import javax.security.auth.login.LoginException;
 import java.io.IOException;
 import java.util.List;
 
@@ -77,10 +83,11 @@ public class Disconnected extends State implements EndPointConnectedCallback {
         password = tokenGenerator.generate();
       }
       Protocol protocolImpl = protocolImplFactory.connect(endpoint, sessionId, username, password);
+      protocolImpl.setSession(createSession(sessionId, protocolImpl));
       protocolImpl.setProtocolMessageTransformation(transformation);
       endPointConnection.setProtocol(protocolImpl);
       endPointConnection.scheduleState(new Connecting(endPointConnection));
-    } catch (IOException ioException) {
+    } catch (IOException|LoginException ioException) {
       endPointConnection.getLogger().log(ServerLogMessages.END_POINT_CONNECTION_PROTOCOL_FAILED, url, protocol, ioException);
       endPointConnection.scheduleState(new Delayed(endPointConnection), DELAYED_TIME);
     }
@@ -118,5 +125,15 @@ public class Disconnected extends State implements EndPointConnectedCallback {
   @Override
   public LinkState getLinkState() {
     return LinkState.DISCONNECTED;
+  }
+
+  private Session createSession(String sessionId, Protocol protocol) throws LoginException, IOException {
+    SessionContext sessionContext = new SessionContextBuilder("Internal-"+sessionId, new ProtocolClientConnection(protocol))
+        .setPersistentSession(true)
+        .setUsername("admin")
+        .setResetState(true)
+        .isAuthorized(true)
+        .build();
+    return SessionManager.getInstance().create(sessionContext, protocol);
   }
 }
