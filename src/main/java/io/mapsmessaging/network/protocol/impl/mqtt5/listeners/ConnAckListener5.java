@@ -23,8 +23,8 @@ import io.mapsmessaging.BuildInfo;
 import io.mapsmessaging.api.Session;
 import io.mapsmessaging.api.SessionContextBuilder;
 import io.mapsmessaging.api.SessionManager;
-import io.mapsmessaging.config.network.EndPointConnectionServerConfig;
 import io.mapsmessaging.dto.rest.config.auth.AuthConfigDTO;
+import io.mapsmessaging.dto.rest.config.network.EndPointConnectionServerConfigDTO;
 import io.mapsmessaging.logging.ServerLogMessages;
 import io.mapsmessaging.network.ProtocolClientConnection;
 import io.mapsmessaging.network.io.EndPoint;
@@ -46,7 +46,12 @@ public class ConnAckListener5 extends PacketListener5 {
 
   @Override
   public MQTTPacket5 handlePacket(MQTTPacket5 mqttPacket, Session session, EndPoint endPoint, Protocol protocol) throws MalformedException {
-    AuthConfigDTO config =  ((EndPointConnectionServerConfig)endPoint.getConfig()).getAuthConfig();
+    MQTT5Protocol mqtt5Protocol = (MQTT5Protocol)protocol;
+    if(mqtt5Protocol.getSession() != null){
+      return null; // already connected
+    }
+
+    AuthConfigDTO config =  ((EndPointConnectionServerConfigDTO)endPoint.getConfig()).getAuthConfig();
 
     String sess = config.getSessionId();
     String user = config.getUsername();
@@ -55,7 +60,7 @@ public class ConnAckListener5 extends PacketListener5 {
     ConnAck5 connAck = (ConnAck5) mqttPacket;
 
     SessionContextBuilder scb = new SessionContextBuilder(sess, new ProtocolClientConnection(protocol));
-    scb.setReceiveMaximum(((MQTT5Protocol) protocol).getClientReceiveMaximum());
+    scb.setReceiveMaximum(mqtt5Protocol.getClientReceiveMaximum());
     handleSessionCreation(protocol, sess, connAck, scb, endPoint, user, pass );
     protocol.setConnected(true);
     return null;

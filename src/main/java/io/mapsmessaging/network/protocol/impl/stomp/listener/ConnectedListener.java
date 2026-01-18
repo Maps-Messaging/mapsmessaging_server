@@ -46,7 +46,7 @@ public class ConnectedListener extends BaseConnectListener {
     if (Float.isNaN(version)) {
       return; // Unable to process the versioning
     }
-
+    if(engine.getSession() != null) return; // already have a session, no need to create one
     CompletableFuture<Session> future = createSession(engine).thenApply(session -> {
       try {
         session.login();

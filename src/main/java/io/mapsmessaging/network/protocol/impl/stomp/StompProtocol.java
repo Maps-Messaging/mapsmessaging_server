@@ -20,6 +20,7 @@
 package io.mapsmessaging.network.protocol.impl.stomp;
 
 import io.mapsmessaging.api.MessageEvent;
+import io.mapsmessaging.api.Session;
 import io.mapsmessaging.api.SubscriptionContextBuilder;
 import io.mapsmessaging.api.features.QualityOfService;
 import io.mapsmessaging.api.transformers.InterServerTransformation;
@@ -108,6 +109,15 @@ public class StompProtocol extends Protocol {
   @Override
   public Subject getSubject() {
     return sessionState.getSession().getSecurityContext().getSubject();
+  }
+
+  @Override
+  public void setSession(Session session) {
+    try {
+      sessionState.setSession(session);
+    } catch (StompProtocolException e) {
+      // log this
+    }
   }
 
   @Override

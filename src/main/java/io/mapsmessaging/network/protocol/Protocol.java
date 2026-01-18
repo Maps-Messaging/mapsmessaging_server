@@ -23,6 +23,7 @@ import io.mapsmessaging.analytics.Analyser;
 import io.mapsmessaging.analytics.AnalyserFactory;
 import io.mapsmessaging.api.MessageEvent;
 import io.mapsmessaging.api.MessageListener;
+import io.mapsmessaging.api.Session;
 import io.mapsmessaging.api.SubscriptionContextBuilder;
 import io.mapsmessaging.api.features.ClientAcknowledgement;
 import io.mapsmessaging.api.features.DestinationMode;
@@ -132,6 +133,10 @@ public abstract class Protocol implements SelectorCallback, MessageListener, Tim
   }
 
   public abstract Subject getSubject();
+
+  public void setSession(Session session){
+    throw new RuntimeException("Not implemented");
+  }
 
   public void completedConnection() {
     if (!completed) {
