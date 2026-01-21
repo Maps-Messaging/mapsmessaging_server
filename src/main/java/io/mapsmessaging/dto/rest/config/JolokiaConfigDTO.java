@@ -49,5 +49,5 @@ public class JolokiaConfigDTO extends BaseConfigDTO implements ConfigurationMana
       additionalPropertiesSchema = Object.class,
       example = "{ \"rules\": [ { \"mbean\": \"java.lang:type=Memory\", \"attributes\": [\"HeapMemoryUsage\"] } ] }"
   )
-  private Map<String, Object> jolokiaMapping;
+  private Map<String, Object> config;
 }

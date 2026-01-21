@@ -19,6 +19,7 @@
 
 package io.mapsmessaging.utilities.configuration;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
@@ -54,7 +55,6 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.stream.Collectors;
 
 import static io.mapsmessaging.logging.ServerLogMessages.*;
 
@@ -82,12 +82,16 @@ public class ConfigurationManager {
   @Getter
   private FeatureManager featureManager;
 
+  @Getter
+  private boolean hasErrors;
+
   private ConfigurationManager() {
     logger.log(ServerLogMessages.PROPERTY_MANAGER_START);
     propertyManagers = new ArrayList<>();
     authoritative = null;
     managerMap = new ConcurrentHashMap<>();
     configSchemas = new ConcurrentHashMap<>();
+    hasErrors = false;
   }
 
   public void register(){
@@ -159,6 +163,7 @@ public class ConfigurationManager {
 
         List<String> errors = validate(schema, raw);
         if(!errors.isEmpty()){
+          hasErrors = true;
           for(String error:errors){
             logger.log(PROPERTY_MANAGER_ENTRY_SCHEMA_ERROR, name, error);
           }
@@ -234,7 +239,17 @@ public class ConfigurationManager {
   private List<String> validate(String stringSchema, Map<String, Object> raw) {
     ObjectMapper mapper = new ObjectMapper();
     JsonNode instance = mapper.valueToTree(raw);
-    JsonNode jsonSchema = mapper.valueToTree(stringSchema);
+    if (instance.isObject()) {
+      ((ObjectNode) instance).remove("loaded");
+    }
+
+    JsonNode jsonSchema;
+    try {
+      jsonSchema = mapper.readTree(stringSchema);
+    } catch (Throwable e) {
+      logger.log(PROPERTY_MANAGER_LOOKUP_FAILED, e.getMessage());
+      return List.of("Invalid schema loaded:"+e.getMessage());
+    }
 
     JsonNode effectiveSchema = resolveTopLevelRef(jsonSchema);
 
@@ -244,7 +259,7 @@ public class ConfigurationManager {
 
     return errors.stream()
         .map(Error::getMessage)
-        .collect(Collectors.toList());
+        .toList();
   }
 
   private JsonNode resolveTopLevelRef(JsonNode schemaRoot) {
@@ -254,7 +269,7 @@ public class ConfigurationManager {
     }
 
     JsonNode resolved = resolveRef(schemaRoot, schemaRoot);
-    if (resolved == null || !resolved.isObject()) {
+    if (!resolved.isObject()) {
       return schemaRoot;
     }
 

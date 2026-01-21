@@ -88,8 +88,8 @@ public class RestApiManagerConfigDTO extends BaseConfigDTO implements Configurat
       defaultValue = "2",
       minimum = "1",
       maximum = "1000",
-      requiredMode = Schema.RequiredMode.REQUIRED,
-      nullable = false
+      requiredMode = Schema.RequiredMode.NOT_REQUIRED,
+      nullable = true
   )
   protected int minThreads = 2;
 
@@ -99,8 +99,8 @@ public class RestApiManagerConfigDTO extends BaseConfigDTO implements Configurat
       defaultValue = "5",
       minimum = "1",
       maximum = "1000",
-      requiredMode = Schema.RequiredMode.REQUIRED,
-      nullable = false
+      requiredMode = Schema.RequiredMode.NOT_REQUIRED,
+      nullable = true
   )
   protected int maxThreads = 5;
 
@@ -110,8 +110,8 @@ public class RestApiManagerConfigDTO extends BaseConfigDTO implements Configurat
       defaultValue = "100",
       minimum = "10",
       maximum = "1000",
-      requiredMode = Schema.RequiredMode.REQUIRED,
-      nullable = false
+      requiredMode = Schema.RequiredMode.NOT_REQUIRED,
+      nullable = true
   )
   protected int threadQueueLimit = 100;
 
@@ -121,8 +121,8 @@ public class RestApiManagerConfigDTO extends BaseConfigDTO implements Configurat
       defaultValue = "2",
       minimum = "1",
       maximum = "1000",
-      requiredMode = Schema.RequiredMode.REQUIRED,
-      nullable = false
+      requiredMode = Schema.RequiredMode.NOT_REQUIRED,
+      nullable = true
   )
   protected int selectorThreads = 2;
 
@@ -132,8 +132,8 @@ public class RestApiManagerConfigDTO extends BaseConfigDTO implements Configurat
       defaultValue = "10",
       minimum = "1",
       maximum = "1000",
-      requiredMode = Schema.RequiredMode.REQUIRED,
-      nullable = false
+      requiredMode = Schema.RequiredMode.NOT_REQUIRED,
+      nullable = true
   )
   protected int maxEventsPerDestination = 10;
 
@@ -165,8 +165,8 @@ public class RestApiManagerConfigDTO extends BaseConfigDTO implements Configurat
       defaultValue = "180000",
       minimum = "60000",
       maximum = "600000",
-      requiredMode = Schema.RequiredMode.REQUIRED,
-      nullable = false
+      requiredMode = Schema.RequiredMode.NOT_REQUIRED,
+      nullable = true
   )
   protected int inactiveTimeout = 180000;
 

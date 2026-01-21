@@ -113,3 +113,9 @@ MessageDaemon:
     #
     # Default : None
     longitude: 0.0
+
+
+    #
+    # If errors detected in configuration then exit
+    #
+    exitOnConfigError: false

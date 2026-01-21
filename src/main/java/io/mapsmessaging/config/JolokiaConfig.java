@@ -35,10 +35,10 @@ public class JolokiaConfig extends JolokiaConfigDTO implements Config, ConfigMan
   private JolokiaConfig(ConfigurationProperties properties) {
     setEnable(properties.getBooleanProperty("enable", false));
     if(properties.containsKey("jolokiaMapping")){
-      setJolokiaMapping(((ConfigurationProperties) properties.get("jolokiaMapping")).getMap());
+      setConfig(((ConfigurationProperties) properties.get("jolokiaMapping")).getMap());
     }
     else {
-      setJolokiaMapping(((ConfigurationProperties) properties.get("config")).getMap());
+      setConfig(((ConfigurationProperties) properties.get("config")).getMap());
     }
   }
 
@@ -56,8 +56,8 @@ public class JolokiaConfig extends JolokiaConfigDTO implements Config, ConfigMan
         this.setEnable(newConfig.isEnable());
         hasChanged = true;
       }
-      if (!this.getJolokiaMapping().equals(newConfig.getJolokiaMapping())) {
-        this.setJolokiaMapping(newConfig.getJolokiaMapping());
+      if (!this.getConfig().equals(newConfig.getConfig())) {
+        this.setConfig(newConfig.getConfig());
         hasChanged = true;
       }
     }
@@ -68,7 +68,7 @@ public class JolokiaConfig extends JolokiaConfigDTO implements Config, ConfigMan
   public ConfigurationProperties toConfigurationProperties() {
     ConfigurationProperties properties = new ConfigurationProperties();
     properties.put("enable", isEnable());
-    properties.put("config", getJolokiaMapping());
+    properties.put("config", getConfig());
     return properties;
   }
 

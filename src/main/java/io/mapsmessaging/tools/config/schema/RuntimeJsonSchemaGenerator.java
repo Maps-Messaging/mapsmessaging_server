@@ -477,6 +477,13 @@ public class RuntimeJsonSchemaGenerator {
       return unsupportedOrThrow("Unsupported type: " + type.getTypeName(), context);
     }
 
+    // java.lang.Object is a legitimate, common type (especially for Map<String, Object> bags).
+    // In JSON Schema, an empty schema means "anything is allowed".
+    // If we treat Object as "unsupported" we accidentally require every map value to be an object.
+    if (clazz == Object.class) {
+      return new SchemaObject();
+    }
+
     if (BaseConfigDTO.class.isAssignableFrom(clazz)) {
       return SchemaObject.ref("#/$defs/" + context.defName(clazz));
     }

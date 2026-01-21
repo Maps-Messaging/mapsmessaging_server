@@ -49,6 +49,7 @@ public class MessageDaemonConfig extends MessageDaemonConfigDTO implements Confi
     this.latitude = config.getDoubleProperty("latitude", latitude);
     this.longitude = config.getDoubleProperty("longitude", longitude);
     this.sendAnonymousStatusUpdates = config.getBooleanProperty("SendAnonymousStatusUpdates", sendAnonymousStatusUpdates);
+    this.exitOnConfigError = config.getBooleanProperty("exitOnConfigError", exitOnConfigError);
   }
 
   public static MessageDaemonConfig getInstance() {

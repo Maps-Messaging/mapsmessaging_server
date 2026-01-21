@@ -98,7 +98,7 @@ public class JolokaManager implements Agent {
 
     public void run() {
       HashMap<String, String> map = new HashMap<>();
-      Map<String, Object> properties = config.getJolokiaMapping();
+      Map<String, Object> properties = config.getConfig();
       for (Entry<String, Object> entry : properties.entrySet()) {
         String val = entry.getValue().toString();
         if(val.endsWith(".0")){

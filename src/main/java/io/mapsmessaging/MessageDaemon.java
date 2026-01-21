@@ -259,7 +259,10 @@ public class MessageDaemon {
     logMonitor.register();
     isStarted.set(true);
     loadConstants();
-
+    if(ConfigurationManager.getInstance().isHasErrors() && messageDaemonConfig.isExitOnConfigError()){
+      System.err.println("Exiting on startup due to configuration errors, please see the log file and correct");
+      System.exit(1);
+    }
 
     subSystemManager = new SubSystemManager(uniqueId, enableSystemTopics, enableDeviceIntegration, messageDaemonConfig.getSessionPipeLines(), featureManager);
     subSystemManager.start();

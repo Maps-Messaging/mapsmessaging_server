@@ -163,4 +163,15 @@ public class MessageDaemonConfigDTO extends BaseConfigDTO implements Configurati
       defaultValue = "true"
   )
   protected boolean sendAnonymousStatusUpdates = true;
+
+
+  @Schema(
+      description = "Exit server startup if invalid configuration detected",
+      example = "true",
+      defaultValue = "false",
+      requiredMode = Schema.RequiredMode.NOT_REQUIRED,
+      nullable = true
+  )
+  protected boolean exitOnConfigError = false;
+
 }

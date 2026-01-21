@@ -43,8 +43,8 @@ public class AuthManagerConfig extends AuthManagerConfigDTO implements ConfigMan
 
   private AuthManagerConfig(ConfigurationProperties properties) {
     authenticationEnabled = properties.getBooleanProperty("authenticationEnabled", authenticationEnabled);
-    authorisationEnabled = properties.getBooleanProperty("authorizationEnabled", authorisationEnabled) && authenticationEnabled;
-    authConfig = ConfigHelper.buildMap((ConfigurationProperties) properties.get("config"));
+    authorisationEnabled = properties.getBooleanProperty("authorisationEnabled", authorisationEnabled) && authenticationEnabled;
+    authConfig = ConfigHelper.buildMap((ConfigurationProperties) properties.get("authConfig"));
     minimumPasswordLength = properties.getIntProperty("minimumPasswordLength", minimumPasswordLength);
     maximumPasswordLength = properties.getIntProperty("maximumPasswordLength", maximumPasswordLength);
     minimumLowercase = properties.getIntProperty("minimumLowercase", minimumLowercase);

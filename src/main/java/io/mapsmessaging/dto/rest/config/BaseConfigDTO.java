@@ -31,12 +31,12 @@ import lombok.EqualsAndHashCode;
 public class BaseConfigDTO {
   @Schema(
       description = "Configuration schema version. 0 = legacy format, 1 = current format.",
-      requiredMode = Schema.RequiredMode.REQUIRED,
+      requiredMode = Schema.RequiredMode.NOT_REQUIRED,
       example = "1",
       defaultValue = "1",
       minimum = "0",
       maximum = "10",
-      nullable = false
+      nullable = true
   )
-  protected int schemaLoadingVersion = 1;
+  protected int schemaLoadingVersion = 0;
 }
