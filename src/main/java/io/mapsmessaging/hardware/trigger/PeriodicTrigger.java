@@ -25,12 +25,14 @@ import io.mapsmessaging.dto.rest.config.device.triggers.PeriodicTriggerConfigDTO
 import java.io.IOException;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
 public class PeriodicTrigger extends Trigger {
 
   private final ScheduledExecutorService executorService;
   private final long periodInMilliseconds;
+  private  ScheduledFuture<?> scheduledFuture;
 
   public PeriodicTrigger(){
     executorService = null;
@@ -50,11 +52,35 @@ public class PeriodicTrigger extends Trigger {
 
 
   public void start() {
-    executorService.scheduleAtFixedRate(this::runActions, 0, periodInMilliseconds, TimeUnit.MILLISECONDS);
+    scheduledFuture = executorService.scheduleAtFixedRate(this::runActions, 0, periodInMilliseconds, TimeUnit.MILLISECONDS);
+  }
+
+
+  @Override
+  public void addTask(Runnable runnable){
+    super.addTask(new PeriodicRunner(runnable));
+  }
+
+  @Override
+  public void removeTask(Runnable runnable){
+    for(Runnable r : actions){
+      if(r instanceof PeriodicRunner periodicRunner && periodicRunner.getTask() == runnable){
+        super.removeTask(periodicRunner);
+        break;
+      }
+    }
   }
 
   public void stop() {
+    if(scheduledFuture != null){
+      scheduledFuture.cancel(true);
+    }
     executorService.shutdown();
+    for(Runnable r : actions) {
+      if (r instanceof PeriodicRunner periodicRunner) {
+        periodicRunner.close();
+      }
+    }
   }
 
   @Override

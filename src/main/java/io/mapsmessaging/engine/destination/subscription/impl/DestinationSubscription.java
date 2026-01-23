@@ -319,21 +319,19 @@ public class DestinationSubscription extends Subscription {
   }
 
   protected Message retrieveNextMessage() throws IOException {
-    while(messageStateManager.hasAtRestMessages()) {
+    for (;;) {
       long nextMessageId = messageStateManager.nextMessageId();
-      if (nextMessageId >= 0) {
-        Message message = destinationImpl.getMessage(nextMessageId);
-        if (message != null) {
-          messageStateManager.allocate(message);
-          messagesSent++;
-          return message;
-        } else {
-          messageStateManager.expired(nextMessageId);
-          messagesExpired++;
-        }
+      if (nextMessageId < 0) {
+        break;
       }
-      else{
-        break; // we have no events
+      Message message = destinationImpl.getMessage(nextMessageId);
+      if (message != null) {
+        messageStateManager.allocate(message);
+        messagesSent++;
+        return message;
+      } else {
+        messageStateManager.expired(nextMessageId);
+        messagesExpired++;
       }
     }
     return null;
