@@ -168,7 +168,7 @@ public class RestApiManagerConfigDTO extends BaseConfigDTO implements Configurat
       requiredMode = Schema.RequiredMode.NOT_REQUIRED,
       nullable = true
   )
-  protected int inactiveTimeout = 180000;
+  protected Integer inactiveTimeout = 180000;
 
   @Schema(
       description = "If set, enables the /application.wadl endpoint",
