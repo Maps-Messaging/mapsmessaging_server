@@ -43,23 +43,19 @@ public class SatelliteMessage {
     this.compressed = compressed;
     this.packetNumber = packetNumber;
     this.transformationId = transformationId;
+    raw = false;
   }
 
   public SatelliteMessage(int streamNumber, byte[] incomingPackedMessage) {
     this.streamNumber = streamNumber;
-    if(streamNumber<127){
-      message = incomingPackedMessage;
-      raw = true;
-    }
-    else {
-      unpackFromReceived(incomingPackedMessage);
-    }
+    unpackFromReceived(incomingPackedMessage);
   }
 
   public byte[] packToSend() {
     ByteBuffer header = ByteBuffer.allocate( 7 + message.length);
-    byte flag =compressed ? (byte) 0x1 : (byte) 0x0;
-    flag = (byte)(( flag | (transformationId<<1))& 0xff);
+    byte flag = compressed ? (byte) 0x1 : (byte) 0x0;
+    byte transformed = (byte) (transformationId << 1);
+    flag = (byte) (flag | transformed);
     header.put(flag);
     header.putShort((short) packetNumber);
     header.putShort((short) message.length);
@@ -68,25 +64,34 @@ public class SatelliteMessage {
   }
 
   protected void unpackFromReceived(byte[] data) {
-    if (data == null) return;
+    if (data == null) {
+      return;
+    }
+    if(data.length < 5) {
+      message = data;
+      raw = true;
+      return;
+    }
+
     ByteBuffer buffer = ByteBuffer.wrap(data);
-    //Load the flags, currently just compressed
+
     byte flag = buffer.get();
     compressed = (flag & 0b1) != 0;
-    transformationId = (byte)(flag >>1);
+    transformationId = (byte) (flag >> 1);
+
     packetNumber = buffer.getShort();
     int messageLength = buffer.getShort();
 
-    // Simple validate here
-    if(buffer.remaining() < messageLength) {
+    if (buffer.remaining() < messageLength) {
       message = data;
       raw = true;
+      return;
     }
-    else {
-      message = new byte[messageLength];
-      buffer.get(message);
-      raw = false;
-    }
+
+    message = new byte[messageLength];
+    buffer.get(message);
+    raw = false;
   }
+
 
 }

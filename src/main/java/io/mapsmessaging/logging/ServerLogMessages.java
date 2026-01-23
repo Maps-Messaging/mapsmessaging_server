@@ -687,6 +687,9 @@ public enum ServerLogMessages implements LogMessage {
   DEVICE_PUBLISH_EXCEPTION(LEVEL.INFO, SERVER_CATEGORY.DEVICE, "Event publish failed {}"),
   DEVICE_START(LEVEL.INFO, SERVER_CATEGORY.DEVICE, "Starting device {}"),
   DEVICE_STOP(LEVEL.INFO, SERVER_CATEGORY.DEVICE, "Stopping device {}"),
+  DEVICE_SCHEDULE_TASK_FAILED(LEVEL.WARN, SERVER_CATEGORY.DEVICE, "Scheduled task for device failed"),
+  DEVICE_SCHEDULE_TASK_EXCCEDED_TIME(LEVEL.INFO, SERVER_CATEGORY.DEVICE, "Scheduled task exceeded time limit, took {}ms"),
+
 
   DEVICE_MANAGER_STARTUP(LEVEL.DEBUG, SERVER_CATEGORY.ENGINE, "Starting Device Manager"),
   DEVICE_MANAGER_STARTUP_FAILED(LEVEL.WARN, SERVER_CATEGORY.ENGINE, "Device Manager failed to start"),

@@ -28,7 +28,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 
 public abstract class Trigger implements Service {
 
-  private final List<Runnable> actions;
+  protected final List<Runnable> actions;
 
   protected Trigger(){
     actions = new CopyOnWriteArrayList<>();

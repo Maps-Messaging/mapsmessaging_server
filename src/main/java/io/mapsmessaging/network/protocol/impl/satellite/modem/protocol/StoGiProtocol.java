@@ -519,12 +519,18 @@ public class StoGiProtocol extends Protocol implements Consumer<Packet> {
   private void processMessages(List<ModemSatelliteMessage> messages) {
     for (ModemSatelliteMessage message : messages) {
       if (message != null) {
-        SatelliteMessage loaded = new SatelliteMessage(message.getSin(), message.getPayload());
-        if(loaded.isRaw()){
+        boolean isMaps = message.getSin() != sinNumber;
+        SatelliteMessage loaded = null;
+        if(isMaps){
+          loaded = new SatelliteMessage(message.getSin(), message.getPayload());
+          isMaps = loaded.isRaw();
+        }
+
+        if(!isMaps){
           String tmp = rawMessageTopic;
-          tmp = tmp.replace("{sin}", Integer.toString(loaded.getStreamNumber()));
+          tmp = tmp.replace("{sin}", Integer.toString(message.getSin()));
           tmp = tmp.replace("{min}", Integer.toString(message.getMin()));
-          sendMessageToTopic(tmp, loaded.getMessage());
+          sendMessageToTopic(tmp, message.getPayload());
         }
         else {
           SatelliteMessage satelliteMessage = satelliteMessageRebuilder.rebuild(loaded);
