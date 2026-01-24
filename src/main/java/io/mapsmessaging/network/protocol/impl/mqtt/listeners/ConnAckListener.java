@@ -39,6 +39,8 @@ public class ConnAckListener extends BaseConnectionListener {
 
     MQTTProtocol  mqttProtocol = (MQTTProtocol)protocol;
     if(mqttProtocol.getSession() != null){
+      mqttProtocol.getSession().resumeState();
+      protocol.setConnected(true);
       return null; // already connected
     }
     AuthConfigDTO config =  ((EndPointConnectionServerConfig)endPoint.getConfig()).getAuthConfig();

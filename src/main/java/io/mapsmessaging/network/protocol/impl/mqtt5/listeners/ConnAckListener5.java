@@ -48,6 +48,8 @@ public class ConnAckListener5 extends PacketListener5 {
   public MQTTPacket5 handlePacket(MQTTPacket5 mqttPacket, Session session, EndPoint endPoint, Protocol protocol) throws MalformedException {
     MQTT5Protocol mqtt5Protocol = (MQTT5Protocol)protocol;
     if(mqtt5Protocol.getSession() != null){
+      mqtt5Protocol.getSession().resumeState();
+      protocol.setConnected(true);
       return null; // already connected
     }
 
