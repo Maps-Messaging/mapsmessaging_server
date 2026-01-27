@@ -19,6 +19,9 @@
 
 package io.mapsmessaging.network.protocol.impl.mavlink;
 
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.google.gson.JsonObject;
 import io.mapsmessaging.api.*;
 import io.mapsmessaging.api.features.DestinationType;
 import io.mapsmessaging.api.features.QualityOfService;
@@ -27,6 +30,7 @@ import io.mapsmessaging.api.message.TypedData;
 import io.mapsmessaging.dto.rest.config.protocol.ProtocolConfigDTO;
 import io.mapsmessaging.dto.rest.config.protocol.impl.MavlinkConfigDTO;
 import io.mapsmessaging.dto.rest.protocol.ProtocolInformationDTO;
+import io.mapsmessaging.mavlink.ProcessedFrame;
 import io.mapsmessaging.mavlink.message.Frame;
 import io.mapsmessaging.network.ProtocolClientConnection;
 import io.mapsmessaging.network.io.EndPoint;
@@ -46,13 +50,15 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 public class MavlinkProtocol extends Protocol {
-  private final MavlinkInterfaceManager factory;
+
+  private final Gson gson;
+  private final MavlinkConnectionManager factory;
   private final MavlinkDeviceKey key;
   private final MavlinkConfigDTO mavlinkConfig;
   protected Session session;
 
 
-  protected MavlinkProtocol(@NonNull @NotNull MavlinkInterfaceManager factory,
+  protected MavlinkProtocol(@NonNull @NotNull MavlinkConnectionManager factory,
                             @NonNull @NotNull MavlinkDeviceKey key,
                             @NonNull @NotNull EndPoint endPoint,
                             @NotNull @NonNull ProtocolConfigDTO protocolConfig) throws IOException {
@@ -60,6 +66,9 @@ public class MavlinkProtocol extends Protocol {
     this.factory = factory;
     this.key = key;
     this.mavlinkConfig = (MavlinkConfigDTO)protocolConfig;
+    gson = new GsonBuilder()
+        .setPrettyPrinting()
+        .create();
     try {
       session = buildSession();
     } catch (ExecutionException|TimeoutException e) {
@@ -99,10 +108,23 @@ public class MavlinkProtocol extends Protocol {
 
   @Override
   public boolean processPacket(@NonNull @NotNull Packet packet) throws IOException {
-    Packet respond = new Packet(packet.getRawBuffer().duplicate());
-    respond.setFromAddress(key.getRemoteAddress());
-    endPoint.sendPacket(respond);
     return true;
+  }
+
+
+  public void processRawFrame(ProcessedFrame env, byte[] raw) throws IOException {
+
+    if(mavlinkConfig.isParseToJson()){
+      Map<String, Object> parsed = env.getFields();
+      JsonObject complete  = MavlinkJsonEnvelopeBuilder.toJson(env.getFrame(), parsed);
+      JsonObject envelope = new JsonObject();
+      envelope.add("mavlink", complete);
+      if (env.getDetections() != null && !env.getDetections().isEmpty()) {
+        envelope.add("detections", gson.toJsonTree(env.getDetections()).getAsJsonArray());
+      }
+      raw = envelope.toString().getBytes();
+    }
+    processPacket(env.getFrame(), env.getMessageName(), raw);
   }
 
   public boolean processPacket(@NonNull @NotNull Frame envelope, String messageName, byte[] raw) throws IOException {

@@ -23,10 +23,12 @@ import io.mapsmessaging.network.io.EndPoint;
 import io.mapsmessaging.network.io.InterfaceInformation;
 import io.mapsmessaging.network.io.Packet;
 import io.mapsmessaging.network.io.impl.NetworkInfoHelper;
+import io.mapsmessaging.network.io.impl.serial.SerialEndPoint;
 import io.mapsmessaging.network.protocol.Protocol;
 import io.mapsmessaging.network.protocol.ProtocolImplFactory;
 
 import java.io.IOException;
+import java.net.InetSocketAddress;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -53,7 +55,12 @@ public class MavlinkProtocolFactory extends ProtocolImplFactory {
 
   @Override
   public void create(EndPoint endPoint, Packet packet) {
-    // This protocol is not constructed by a packet, rather it is bound to an EndPoint
+    try {
+      MavlinkProtocol protocol = new MavlinkSerialProtocol(endPoint, endPoint.getConfig().getProtocolConfig("mavlink"));
+
+    } catch (IOException e) {
+      e.printStackTrace();
+    }
   }
 
   @Override

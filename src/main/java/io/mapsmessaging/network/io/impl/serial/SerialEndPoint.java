@@ -20,7 +20,6 @@
 package io.mapsmessaging.network.io.impl.serial;
 
 import com.fazecast.jSerialComm.SerialPort;
-import io.mapsmessaging.devices.serial.devices.sensors.SerialDevice;
 import io.mapsmessaging.dto.rest.config.network.SerialDeviceDTO;
 import io.mapsmessaging.dto.rest.config.network.impl.SerialConfigDTO;
 import io.mapsmessaging.logging.Logger;
@@ -41,6 +40,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.LockSupport;
 
 import static com.fazecast.jSerialComm.SerialPort.TIMEOUT_READ_BLOCKING;
+import static com.fazecast.jSerialComm.SerialPort.TIMEOUT_WRITE_BLOCKING;
 
 public class SerialEndPoint extends EndPoint implements StreamEndPoint {
 
@@ -74,7 +74,7 @@ public class SerialEndPoint extends EndPoint implements StreamEndPoint {
 
   public static void configure(SerialPort serialPort, SerialDeviceDTO config) {
     setupCommPort(serialPort, config);
-    serialPort.setComPortTimeouts(TIMEOUT_READ_BLOCKING, config.getReadTimeOut(), config.getWriteTimeOut());
+    serialPort.setComPortTimeouts(TIMEOUT_READ_BLOCKING | TIMEOUT_WRITE_BLOCKING, config.getReadTimeOut(), config.getWriteTimeOut());
   }
 
   @Override

@@ -54,7 +54,7 @@ public class EndPointServerConfigDTO extends BaseConfigDTO {
       nullable = false,
       minLength = 1,
       maxLength = 2048,
-      pattern = "^(tcp|ssl|udp|dtls|ws|wss)://[^\\s]+$"
+      pattern = "^(tcp|ssl|udp|dtls|ws|wss|serial)://[^\\s]+$"
   )
   protected String url;
 

@@ -21,14 +21,11 @@ package io.mapsmessaging.network.protocol.impl.mavlink;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import com.google.gson.JsonArray;
-import com.google.gson.JsonObject;
 import io.mapsmessaging.config.protocol.impl.MavlinkConfig;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.mavlink.MavlinkEventFactory;
 import io.mapsmessaging.mavlink.ProcessedFrame;
-import io.mapsmessaging.mavlink.context.Detection;
 import io.mapsmessaging.network.io.EndPoint;
 import io.mapsmessaging.network.io.InterfaceInformation;
 import io.mapsmessaging.network.io.Packet;
@@ -50,7 +47,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-public class MavlinkInterfaceManager implements SelectorCallback {
+public class MavlinkInterfaceManager implements SelectorCallback, MavlinkConnectionManager  {
 
   private final Logger logger;
   private final SelectorTask selectorTask;
@@ -59,11 +56,9 @@ public class MavlinkInterfaceManager implements SelectorCallback {
   private final ProtocolMessageTransformation transformation;
   private final MavlinkEventFactory mavlinkEventFactory;
 
-  private final Gson gson;
+
   private final MavlinkConfig mavlinkConfig;
   private final List<InetSocketAddress> forwardList;
-
-
 
   public MavlinkInterfaceManager(InterfaceInformation info, EndPoint endPoint) throws IOException {
     logger = LoggerFactory.getLogger("Mavlink Protocol on " + endPoint.getName());
@@ -72,9 +67,7 @@ public class MavlinkInterfaceManager implements SelectorCallback {
     long timeout = mavlinkConfig.getIdleSessionTimeout();
     mavlinkEventFactory  = new MavlinkEventFactory();
     currentSessions = new MavLinkSessionManager<>(timeout);
-    gson = new GsonBuilder()
-        .setPrettyPrinting()
-        .create();
+
     selectorTask = new SelectorTask(this, endPoint.getConfig().getEndPointConfig(), endPoint.isUDP());
     selectorTask.register(SelectionKey.OP_READ);
     transformation = TransformationManager.getInstance().getTransformation(
@@ -123,17 +116,7 @@ public class MavlinkInterfaceManager implements SelectorCallback {
       }
       else if (state.getContext() != null) {
         MavlinkProtocol protocol = state.getContext();
-        if(mavlinkConfig.isParseToJson()){
-          Map<String, Object> parsed = env.getFields();
-          JsonObject complete  = MavlinkJsonEnvelopeBuilder.toJson(env.getFrame(), parsed);
-          JsonObject envelope = new JsonObject();
-          envelope.add("mavlink", complete);
-          if (env.getDetections() != null && !env.getDetections().isEmpty()) {
-            envelope.add("detections", gson.toJsonTree(env.getDetections()).getAsJsonArray());
-          }
-          raw = envelope.toString().getBytes();
-        }
-        protocol.processPacket(env.getFrame(), env.getMessageName(), raw);
+        protocol.processRawFrame(env, raw);
         forwardPacket(mavlink);
       }
     }
