@@ -54,7 +54,7 @@ public class MavlinkProtocol extends Protocol {
   private final Gson gson;
   private final MavlinkConnectionManager factory;
   private final MavlinkDeviceKey key;
-  private final MavlinkConfigDTO mavlinkConfig;
+  protected final MavlinkConfigDTO mavlinkConfig;
   protected Session session;
 
 
@@ -192,15 +192,20 @@ public class MavlinkProtocol extends Protocol {
     return sessionFuture.get(5, TimeUnit.SECONDS);
   }
 
-  private String computeTopicName(Frame envelope, String messageName) {
+  protected String computeTopicName(Frame envelope, String messageName) {
     String template = mavlinkConfig.getTopicNameTemplate();
-    template = template.replace("{remoteSocket}", key.getRemoteAddress().getHostName()+"_"+key.getRemoteAddress().getPort());
+    template = template.replace("{remoteSocket}", getRemoteSocket());
     template = template.replace("{systemId}", ""+envelope.getSystemId());
     template = template.replace("{componentId}", ""+envelope.getComponentId());
     template = template.replace("{messageId}", ""+envelope.getMessageId());
     template = template.replace("{messageName}", messageName);
     return template;
   }
+
+  protected String getRemoteSocket(){
+    return key.getRemoteAddress().getHostName()+"_"+key.getRemoteAddress().getPort();
+  }
+
 
   private Map<String, TypedData> convertToMap(Frame envelope) {
     Map<String, TypedData> map = new LinkedHashMap<>();

@@ -66,4 +66,9 @@ public class MavlinkSerialProtocol extends MavlinkProtocol {
     endPoint.register(SelectionKey.OP_READ, selectorTask.getReadTask());
     return true;
   }
+
+  protected String getRemoteSocket(){
+    return endPoint.getName();
+  }
+
 }
