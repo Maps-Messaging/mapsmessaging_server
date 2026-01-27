@@ -40,6 +40,8 @@ import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
+import lombok.AllArgsConstructor;
+import lombok.Data;
 
 import static io.mapsmessaging.rest.api.Constants.URI_PATH;
 
@@ -189,8 +191,8 @@ public class MapsRestServerApi extends BaseRestApi {
           @ApiResponse(responseCode = "403", description = "User is not authorised to access the resource"),
       }
   )
-  public String getName() {
-    return MessageDaemon.getInstance().getId();
+  public ServerName getName() {
+    return new ServerName(MessageDaemon.getInstance().getId());
   }
 
   @GET
@@ -216,4 +218,10 @@ public class MapsRestServerApi extends BaseRestApi {
     return new UpdateCheckResponse(schema, 0, 0);
   }
 
+
+  @Data
+  @AllArgsConstructor
+  public static final class ServerName{
+    String name;
+  }
 }
