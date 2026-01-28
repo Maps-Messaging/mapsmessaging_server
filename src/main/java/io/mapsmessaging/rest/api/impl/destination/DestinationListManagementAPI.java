@@ -19,6 +19,7 @@
 
 package io.mapsmessaging.rest.api.impl.destination;
 
+import io.mapsmessaging.api.DestinationInfo;
 import io.mapsmessaging.api.Session;
 import io.mapsmessaging.rest.api.impl.destination.context.Entry;
 import io.mapsmessaging.rest.api.impl.destination.context.NamespaceNode;
@@ -69,8 +70,10 @@ public class DestinationListManagementAPI extends BaseDestinationApi {
 
     String prefix = request.getPrefix();
     if(prefix == null) prefix="";
+    if(prefix.startsWith("\"")) prefix = prefix.substring(1);
+    if(prefix.endsWith("\"")) prefix = prefix.substring(0, prefix.length()-1);
     int pageSize = request.getPageSize();
-    if(pageSize <= 10) pageSize = 10;
+    if(pageSize < 10) pageSize = 10;
     if(pageSize > 1000) pageSize = 1000;
 
     CacheKey key = new CacheKey(uriInfo.getPath(), request.toString());
@@ -104,6 +107,7 @@ public class DestinationListManagementAPI extends BaseDestinationApi {
     List<Entry> page =  node.pageEntries(request.getPageNumber(), pageSize);
     dto.setEntries(page.toArray(new Entry[0]));
     dto.setTotalPages((node.getEntryCount() / pageSize)+1);
+    dto.setPageNo(request.getPageNumber());
     putToCache(key, dto);
     response.setHeader("ETag", etag);
     return dto;

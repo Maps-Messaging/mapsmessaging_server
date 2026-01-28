@@ -27,12 +27,6 @@ public class NamespaceNormalizer {
   private NamespaceNormalizer() {
   }
 
-  /**
-   * Normalizes per your server rules:
-   * - Preserves leading '/' distinction
-   * - Collapses multiple '/' anywhere to a single '/'
-   * - Removes trailing '/' (except when the whole path is "/")
-   */
   public static String normalize(String path) {
     if (path == null) {
       return "";
@@ -43,74 +37,71 @@ public class NamespaceNormalizer {
       return "";
     }
 
-    boolean hasLeadingSlash = trimmed.charAt(0) == '/';
+    // Keep leading "/" if present (absolute marker), but collapse repeated slashes everywhere.
+    StringBuilder normalized = new StringBuilder(trimmed.length());
 
-    StringBuilder stringBuilder = new StringBuilder(trimmed.length());
     boolean lastWasSlash = false;
-
     for (int i = 0; i < trimmed.length(); i++) {
       char c = trimmed.charAt(i);
       if (c == '/') {
         if (!lastWasSlash) {
-          stringBuilder.append('/');
+          normalized.append('/');
           lastWasSlash = true;
         }
-        continue;
+      } else {
+        normalized.append(c);
+        lastWasSlash = false;
       }
-      stringBuilder.append(c);
-      lastWasSlash = false;
     }
 
-    String collapsed = stringBuilder.toString();
-
-    if (!hasLeadingSlash && collapsed.startsWith("/")) {
-      collapsed = collapsed.substring(1);
+    // Remove trailing "/" (but do not remove the single "/" root marker)
+    int length = normalized.length();
+    while (length > 1 && normalized.charAt(length - 1) == '/') {
+      normalized.setLength(length - 1);
+      length = normalized.length();
     }
 
-    if (collapsed.length() > 1 && collapsed.endsWith("/")) {
-      collapsed = collapsed.substring(0, collapsed.length() - 1);
-    }
-
-    if (collapsed.equals("/")) {
+    // Special-case: "/" should remain "/" (represents absolute root marker)
+    if (normalized.length() == 1 && normalized.charAt(0) == '/') {
       return "/";
     }
 
-    if (collapsed.isEmpty()) {
-      return "";
-    }
-
-    return collapsed;
+    return normalized.toString();
   }
 
-  /**
-   * Split a *normalized* path into segments.
-   * For absolute paths (leading '/'), first segment is "" to preserve MQTT distinction.
-   */
   public static String[] splitNormalized(String normalizedPath) {
+    if (normalizedPath == null || normalizedPath.isEmpty()) {
+      return new String[0];
+    }
+
+    // "/" means "absolute root marker node"
     if (normalizedPath.equals("/")) {
       return new String[]{""};
     }
 
-    boolean absolute = normalizedPath.startsWith("/");
-    String working = absolute ? normalizedPath.substring(1) : normalizedPath;
+    boolean absolute = normalizedPath.charAt(0) == '/';
 
-    if (working.isEmpty()) {
-      return absolute ? new String[]{""} : new String[0];
-    }
-
+    int startIndex = absolute ? 1 : 0;
     List<String> segments = new ArrayList<>();
+
+    // Absolute marker segment must be preserved as the first segment
     if (absolute) {
       segments.add("");
     }
 
-    int startIndex = 0;
-    for (int i = 0; i < working.length(); i++) {
-      if (working.charAt(i) == '/') {
-        segments.add(working.substring(startIndex, i));
-        startIndex = i + 1;
+    int i = startIndex;
+    int segmentStart = startIndex;
+
+    while (i <= normalizedPath.length()) {
+      boolean atEnd = i == normalizedPath.length();
+      if (atEnd || normalizedPath.charAt(i) == '/') {
+        if (i > segmentStart) {
+          segments.add(normalizedPath.substring(segmentStart, i));
+        }
+        segmentStart = i + 1;
       }
+      i++;
     }
-    segments.add(working.substring(startIndex));
 
     return segments.toArray(new String[0]);
   }

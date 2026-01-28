@@ -51,6 +51,7 @@ public class NamespaceTree {
     }
 
     for (DestinationInfo path : paths) {
+      System.err.println("Adding path: " + path.getName());
       tree.addPath(path);
     }
 
