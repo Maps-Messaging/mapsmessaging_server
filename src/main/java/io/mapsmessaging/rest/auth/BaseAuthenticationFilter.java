@@ -72,7 +72,10 @@ public abstract class BaseAuthenticationFilter implements ContainerRequestFilter
 
   protected void processAuthentication(ContainerRequestContext containerRequest) throws IOException {
     try {
-      if(!BaseRestApi.AUTH_ENABLED)return;
+      if(!BaseRestApi.AUTH_ENABLED){
+        httpRequest.getSession(true);
+        return;
+      }
       String accessToken = getAccessCookie(httpRequest);
       if (accessToken == null) {
         HttpSession session = httpRequest.getSession(false);

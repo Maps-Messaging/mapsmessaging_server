@@ -325,42 +325,6 @@ public class MessagingApi extends BaseRestApi {
     }
   }
 
-  private Session getAuthenticatedSession() throws LoginException, IOException {
-    HttpSession httpSession = getSession();
-    SessionState state = SessionTracker.getSessionStates().getSessionState(getSession().getId());
-    if(state == null) {
-      boolean persistentSession = false;
-      Object obj = httpSession.getAttribute("persistentSession");
-      if (obj instanceof Boolean bool) {
-        persistentSession = bool;
-      }
-      RestClientConnection restClientConnection = new RestClientConnection(httpSession);
-
-      Object id = httpSession.getAttribute("sessionId");
-      String sessionId = id == null ? restClientConnection.getName() : id.toString();
-      String username = (String) httpSession.getAttribute("username");
-      if (username == null) {
-        username = httpSession.getId();
-        httpSession.setAttribute("username", username);
-      }
-      SessionContextBuilder sessionContextBuilder = new SessionContextBuilder(sessionId, restClientConnection)
-          .setPersistentSession(persistentSession)
-          .isAuthorized(true)
-          .setUsername(username);
-
-      SessionContext sessionContext = sessionContextBuilder.build();
-      RestMessageListener restMessageListener = new RestMessageListener();
-      Session session = SessionManager.getInstance().create(sessionContext, restMessageListener);
-      SessionState sessionState = new SessionState(session, restMessageListener);
-      SessionTracker.getSessionStates().setSessionState(getSession().getId(), sessionState);
-      return session;
-    }
-    if(state.getSession() != null){
-      return state.getSession();
-    }
-    throw new WebApplicationException("Access denied", Response.Status.FORBIDDEN);
-  }
-
   private SubscribedEventManager subscribeToTopic(Session session, SubscriptionRequestDTO subscriptionRequest) throws IOException {
     return session.addSubscription(buildContext(subscriptionRequest).build());
   }

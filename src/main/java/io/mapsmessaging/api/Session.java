@@ -26,6 +26,7 @@ import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.dto.rest.session.SessionInformationDTO;
 import io.mapsmessaging.engine.closure.TemporaryDestinationDeletionTask;
 import io.mapsmessaging.engine.destination.DestinationImpl;
+import io.mapsmessaging.engine.destination.DestinationManager;
 import io.mapsmessaging.engine.destination.TemporaryDestination;
 import io.mapsmessaging.engine.destination.subscription.SubscriptionContext;
 import io.mapsmessaging.engine.session.MessageCallback;
@@ -38,6 +39,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.io.IOException;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CompletableFuture;
@@ -71,6 +73,10 @@ public class Session {
 
   @NonNull @NotNull SessionImpl getSession() {
     return sessionImpl;
+  }
+
+  public List<DestinationInfo> getAllDestinationNames() {
+    return sessionImpl.getAllDestinations();
   }
 
   void close() throws IOException {

@@ -21,6 +21,7 @@ package io.mapsmessaging.engine.session;
 
 import io.mapsmessaging.MessageDaemon;
 import io.mapsmessaging.api.Destination;
+import io.mapsmessaging.api.DestinationInfo;
 import io.mapsmessaging.api.SubscribedEventManager;
 import io.mapsmessaging.api.auth.CreationAuthorisationCheck;
 import io.mapsmessaging.api.auth.DestinationAuthorisationCheck;
@@ -341,6 +342,10 @@ public class SessionImpl {
 
     namespaceMapping.removeByMapped(destinationImpl.getFullyQualifiedNamespace());
     return destinationManager.delete(destinationImpl);
+  }
+
+  public List<DestinationInfo> getAllDestinations(){
+    return ((SessionDestinationManager) destinationManager).getAllDestinations();
   }
   //</editor-fold>
 

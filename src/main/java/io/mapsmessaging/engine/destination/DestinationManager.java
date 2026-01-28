@@ -19,6 +19,7 @@
 
 package io.mapsmessaging.engine.destination;
 
+import io.mapsmessaging.api.DestinationInfo;
 import io.mapsmessaging.api.auth.DestinationAuthorisationCheck;
 import io.mapsmessaging.api.features.DestinationType;
 import io.mapsmessaging.config.DestinationManagerConfig;
@@ -322,6 +323,28 @@ public class DestinationManager implements DestinationFactory, Agent {
       pipeline.copy(name -> true, response);
     }
     return new ArrayList<>(response.keySet());
+  }
+
+  public List<DestinationInfo> getAllInfo() {
+    Map<String, DestinationImpl> destinations = new LinkedHashMap<>();
+
+    for (DestinationManagerPipeline pipeline : creatorPipelines) {
+      pipeline.copy(name -> true, destinations);
+    }
+
+    List<DestinationInfo> result = new ArrayList<>(destinations.size());
+    for (DestinationImpl destination : destinations.values()) {
+      if(!destination.getFullyQualifiedNamespace().startsWith("$")) {
+        result.add(
+            new DestinationInfo(
+                destination.getFullyQualifiedNamespace(),
+                destination.getResourceType()
+            )
+        );
+      }
+    }
+
+    return result;
   }
 
   public long getStorageSize() {

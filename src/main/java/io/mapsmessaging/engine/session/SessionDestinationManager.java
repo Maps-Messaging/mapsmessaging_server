@@ -19,6 +19,7 @@
 
 package io.mapsmessaging.engine.session;
 
+import io.mapsmessaging.api.DestinationInfo;
 import io.mapsmessaging.api.auth.DestinationAuthorisationCheck;
 import io.mapsmessaging.api.features.DestinationType;
 import io.mapsmessaging.engine.destination.*;
@@ -26,6 +27,7 @@ import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
@@ -182,6 +184,11 @@ public class SessionDestinationManager implements DestinationFactory {
    */
   public boolean removeListener(DestinationManagerListener listener) {
     return manager.removeListener(listener);
+  }
+
+
+  public List<DestinationInfo> getAllDestinations(){
+    return manager.getAllInfo();
   }
 
 }

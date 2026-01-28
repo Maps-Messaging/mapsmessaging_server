@@ -19,13 +19,21 @@
 
 package io.mapsmessaging.rest.api.impl;
 
+import io.mapsmessaging.api.Session;
+import io.mapsmessaging.api.SessionContextBuilder;
+import io.mapsmessaging.api.SessionManager;
 import io.mapsmessaging.auth.AuthManager;
+import io.mapsmessaging.engine.session.SessionContext;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.rest.api.Constants;
+import io.mapsmessaging.rest.api.impl.messaging.impl.RestClientConnection;
+import io.mapsmessaging.rest.api.impl.messaging.impl.RestMessageListener;
+import io.mapsmessaging.rest.api.impl.messaging.impl.SessionState;
 import io.mapsmessaging.rest.auth.AuthenticationContext;
 import io.mapsmessaging.rest.auth.RestAccessControl;
 import io.mapsmessaging.rest.cache.CacheKey;
+import io.mapsmessaging.rest.handler.SessionTracker;
 import io.mapsmessaging.security.access.Identity;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -36,6 +44,9 @@ import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.UriInfo;
 
 import javax.security.auth.Subject;
+import javax.security.auth.login.LoginException;
+
+import java.io.IOException;
 
 import static io.mapsmessaging.logging.ServerLogMessages.REST_CACHE_HIT;
 import static io.mapsmessaging.logging.ServerLogMessages.REST_CACHE_MISS;
@@ -86,6 +97,43 @@ public class BaseRestApi {
     }
 
     return request.getRemoteAddr();
+  }
+
+
+  protected Session getAuthenticatedSession() throws LoginException, IOException {
+    HttpSession httpSession = getSession();
+    SessionState state = SessionTracker.getSessionStates().getSessionState(getSession().getId());
+    if(state == null) {
+      boolean persistentSession = false;
+      Object obj = httpSession.getAttribute("persistentSession");
+      if (obj instanceof Boolean bool) {
+        persistentSession = bool;
+      }
+      RestClientConnection restClientConnection = new RestClientConnection(httpSession);
+
+      Object id = httpSession.getAttribute("sessionId");
+      String sessionId = id == null ? restClientConnection.getName() : id.toString();
+      String username = (String) httpSession.getAttribute("username");
+      if (username == null) {
+        username = httpSession.getId();
+        httpSession.setAttribute("username", username);
+      }
+      SessionContextBuilder sessionContextBuilder = new SessionContextBuilder(sessionId, restClientConnection)
+          .setPersistentSession(persistentSession)
+          .isAuthorized(true)
+          .setUsername(username);
+
+      SessionContext sessionContext = sessionContextBuilder.build();
+      RestMessageListener restMessageListener = new RestMessageListener();
+      Session session = SessionManager.getInstance().create(sessionContext, restMessageListener);
+      SessionState sessionState = new SessionState(session, restMessageListener);
+      SessionTracker.getSessionStates().setSessionState(getSession().getId(), sessionState);
+      return session;
+    }
+    if(state.getSession() != null){
+      return state.getSession();
+    }
+    throw new WebApplicationException("Access denied", Response.Status.FORBIDDEN);
   }
 
   protected void hasAccess(String resource) {
