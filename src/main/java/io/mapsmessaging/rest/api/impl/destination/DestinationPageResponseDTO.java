@@ -20,6 +20,7 @@
 package io.mapsmessaging.rest.api.impl.destination;
 
 import io.mapsmessaging.rest.api.impl.destination.context.Entry;
+import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -37,27 +38,33 @@ public class DestinationPageResponseDTO {
   @Schema(
       description = "Total number of entries available for this prefix (folders + destinations).",
       example = "237",
-      minimum = "0"
+      minimum = "0",
+      requiredMode = Schema.RequiredMode.REQUIRED
   )
   private int totalEntries;
 
   @Schema(
       description = "Total pages available for this prefix given the requested pageSize. Zero if totalEntries is 0.",
       example = "5",
-      minimum = "0"
+      minimum = "0",
+      requiredMode = Schema.RequiredMode.REQUIRED
   )
   private int totalPages;
 
   @Schema(
       description = "Zero-based page number returned.",
       example = "0",
-      minimum = "0"
+      minimum = "0",
+      requiredMode = Schema.RequiredMode.REQUIRED
   )
   private int pageNo;
 
-  @Schema(
-      description = "Entries returned for this page.",
-      implementation = Entry.class
+  @ArraySchema(
+      arraySchema = @Schema(
+          description = "Entries returned for this page. May be empty but is never null.",
+          requiredMode = Schema.RequiredMode.REQUIRED
+      ),
+      schema = @Schema(implementation = Entry.class)
   )
   private Entry[] entries;
 }
