@@ -66,9 +66,7 @@ public class MavlinkProtocol extends Protocol {
     this.factory = factory;
     this.key = key;
     this.mavlinkConfig = (MavlinkConfigDTO)protocolConfig;
-    gson = new GsonBuilder()
-        .setPrettyPrinting()
-        .create();
+    gson = GsonFactory.createStrictJsonWithSafeFloats();
     try {
       session = buildSession();
     } catch (ExecutionException|TimeoutException e) {

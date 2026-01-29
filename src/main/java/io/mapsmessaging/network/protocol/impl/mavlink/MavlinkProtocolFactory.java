@@ -19,6 +19,8 @@
 
 package io.mapsmessaging.network.protocol.impl.mavlink;
 
+import io.mapsmessaging.logging.Logger;
+import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.network.io.EndPoint;
 import io.mapsmessaging.network.io.InterfaceInformation;
 import io.mapsmessaging.network.io.Packet;
@@ -32,10 +34,13 @@ import java.net.InetSocketAddress;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+import static io.mapsmessaging.logging.ServerLogMessages.MAVLINK_FAILED_SETTING_UP_SESSION;
+
 // The protocol is Mavlink so it makes sense
 @SuppressWarnings("squid:S00101")
 public class MavlinkProtocolFactory extends ProtocolImplFactory {
 
+  private final Logger logger = LoggerFactory.getLogger(MavlinkProtocolFactory.class);
   private final Map<EndPoint, MavlinkInterfaceManager> mappedInterfaces;
 
   public MavlinkProtocolFactory() {
@@ -59,7 +64,7 @@ public class MavlinkProtocolFactory extends ProtocolImplFactory {
       MavlinkProtocol protocol = new MavlinkSerialProtocol(endPoint, endPoint.getConfig().getProtocolConfig("mavlink"));
 
     } catch (IOException e) {
-      e.printStackTrace();
+      logger.log(MAVLINK_FAILED_SETTING_UP_SESSION, endPoint.getName(), e);
     }
   }
 
