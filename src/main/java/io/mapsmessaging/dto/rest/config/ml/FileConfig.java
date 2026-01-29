@@ -22,8 +22,10 @@ package io.mapsmessaging.dto.rest.config.ml;
 import io.mapsmessaging.dto.rest.config.BaseConfigDTO;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 
+@EqualsAndHashCode(callSuper = true)
 @Data
 @NoArgsConstructor
 

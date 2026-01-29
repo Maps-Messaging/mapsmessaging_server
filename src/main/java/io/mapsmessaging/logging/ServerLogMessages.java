@@ -372,6 +372,16 @@ public enum ServerLogMessages implements LogMessage {
   NATS_INVALID_FRAME(LEVEL.WARN, SERVER_CATEGORY.PROTOCOL, "Invalid NATS frame received.. Unable to process::{}"),
   NATS_FRAME_HANDLE_EXCEPTION(LEVEL.WARN, SERVER_CATEGORY.PROTOCOL, "Exception raised during frame {} processing"),
   // </editor-fold>
+  // <editor-fold desc="Mavlink log messages">
+  MAVLINK_FAILED_SETTING_UP_SESSION(LEVEL.WARN, SERVER_CATEGORY.PROTOCOL, "Failed to setup Mavlink session for {}"),
+  MAVLINK_SESSION_CREATED(LEVEL.INFO, SERVER_CATEGORY.PROTOCOL, "New Mavlink session setup for {}"),
+  MAVLINK_FAILED_FORWARD_PACKET(LEVEL.WARN, SERVER_CATEGORY.PROTOCOL, "Failed to forward mavlink packet to {}"),
+
+  MAVLINK_SUCCESSFUL_FORWARD_PACKET(LEVEL.DEBUG, SERVER_CATEGORY.PROTOCOL, "Forward mavlink packet to {}"),
+  MAVLINK_DETECTED_PACKET(LEVEL.DEBUG, SERVER_CATEGORY.PROTOCOL, "Detected mavlink packet from {} as {}"),
+  MAVLINK_FAILED_PARSING_FORWARD_LIST(LEVEL.WARN, SERVER_CATEGORY.PROTOCOL, "Failed to parse {} as a valid address"),
+
+  // </editor-fold>
 
 
   // <editor-fold desc="MQTT 3.1.1 log messages">

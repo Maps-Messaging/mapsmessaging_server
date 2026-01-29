@@ -4,7 +4,9 @@ import io.mapsmessaging.dto.rest.config.BaseConfigDTO;
 import io.mapsmessaging.dto.rest.config.S3Config;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 
+@EqualsAndHashCode(callSuper = true)
 @Data
 @Schema( description = "Configuration for deferred partition handling, including archive strategies, migration settings, and checksum algorithms.")
 public class DeferredConfigDTO extends BaseConfigDTO {

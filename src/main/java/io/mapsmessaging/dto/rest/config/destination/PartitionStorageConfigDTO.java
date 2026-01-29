@@ -2,7 +2,9 @@ package io.mapsmessaging.dto.rest.config.destination;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 
+@EqualsAndHashCode(callSuper = true)
 @Data
 public class PartitionStorageConfigDTO extends StorageConfigDTO {
 

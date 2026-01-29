@@ -79,7 +79,7 @@ public class MavlinkProtocolFactory extends ProtocolImplFactory {
       endPoint.getConfig().getEndPointConfig().setServerWriteBufferSize(datagramSize * 2L);
     }
 
-    MavlinkInterfaceManager manager = new MavlinkInterfaceManager(info, endPoint);
+    MavlinkInterfaceManager manager = new MavlinkInterfaceManager(endPoint);
     mappedInterfaces.put(endPoint, manager);
   }
 

@@ -7,6 +7,7 @@ import io.mapsmessaging.dto.rest.config.BaseConfigDTO;
 import io.swagger.v3.oas.annotations.media.DiscriminatorMapping;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 
 @JsonTypeInfo(
     use = JsonTypeInfo.Id.NAME,
@@ -39,6 +40,7 @@ import lombok.Data;
     )}
 )
 
+@EqualsAndHashCode(callSuper = true)
 @Data
 public abstract class StorageConfigDTO extends BaseConfigDTO {
 
@@ -46,7 +48,6 @@ public abstract class StorageConfigDTO extends BaseConfigDTO {
       description = "Type of storage configuration",
       requiredMode = Schema.RequiredMode.REQUIRED,
       example = "memory",
-      required = true,
       allowableValues = {"memory", "partition", "tieredMemory"}
   )
   protected String type;

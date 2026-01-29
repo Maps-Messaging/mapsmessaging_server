@@ -3,7 +3,9 @@ package io.mapsmessaging.dto.rest.config.network;
 import io.mapsmessaging.dto.rest.config.BaseConfigDTO;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 
+@EqualsAndHashCode(callSuper = true)
 @Data
 public class SerialDeviceDTO extends BaseConfigDTO {
 

@@ -47,20 +47,21 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import static io.mapsmessaging.logging.ServerLogMessages.*;
+
 public class MavlinkInterfaceManager implements SelectorCallback, MavlinkConnectionManager  {
 
   private final Logger logger;
   private final SelectorTask selectorTask;
   private final EndPoint endPoint;
   private final MavLinkSessionManager<MavlinkProtocol> currentSessions;
-  private final ProtocolMessageTransformation transformation;
   private final MavlinkEventFactory mavlinkEventFactory;
 
 
   private final MavlinkConfig mavlinkConfig;
   private final List<InetSocketAddress> forwardList;
 
-  public MavlinkInterfaceManager(InterfaceInformation info, EndPoint endPoint) throws IOException {
+  public MavlinkInterfaceManager(EndPoint endPoint) throws IOException {
     logger = LoggerFactory.getLogger("Mavlink Protocol on " + endPoint.getName());
     this.endPoint = endPoint;
     mavlinkConfig = (MavlinkConfig) endPoint.getConfig().getProtocolConfig("mavlink");
@@ -70,12 +71,7 @@ public class MavlinkInterfaceManager implements SelectorCallback, MavlinkConnect
 
     selectorTask = new SelectorTask(this, endPoint.getConfig().getEndPointConfig(), endPoint.isUDP());
     selectorTask.register(SelectionKey.OP_READ);
-    transformation = TransformationManager.getInstance().getTransformation(
-        endPoint.getProtocol(),
-        endPoint.getName(),
-        "mavlink",
-        "<registered>"
-    );
+
     forwardList = new ArrayList<>();
     String urlList = mavlinkConfig.getForwardUrls();
     if(urlList != null && !urlList.isBlank()){
@@ -86,8 +82,7 @@ public class MavlinkInterfaceManager implements SelectorCallback, MavlinkConnect
             URI uri = URI.create(remote);
             forwardList.add(new InetSocketAddress(uri.getHost(), uri.getPort()));
           } catch (Exception e) {
-            e.printStackTrace();
-            // log
+            logger.log(MAVLINK_FAILED_PARSING_FORWARD_LIST, remote, e);
           }
         }
       }
@@ -104,11 +99,11 @@ public class MavlinkInterfaceManager implements SelectorCallback, MavlinkConnect
     byte[] raw = new byte[packet.available()];
     int pos = packet.position();
     packet.get(raw);
-    byte[] mavlink = raw;
     packet.position(pos);
     Optional<ProcessedFrame> potentialFrame = mavlinkEventFactory.unpack(endPoint.getName(), packet.getRawBuffer());
     if(potentialFrame.isPresent()){
       ProcessedFrame env = potentialFrame.get();
+      logger.log(MAVLINK_DETECTED_PACKET, endPoint.getName(), env.getMessageName());
       MavlinkDeviceKey key = buildKey(packet, env.getFrame().getSystemId());
       UDPSessionState<MavlinkProtocol> state = findOrCreate(key);
       if(fromForward(packet)){
@@ -117,7 +112,7 @@ public class MavlinkInterfaceManager implements SelectorCallback, MavlinkConnect
       else if (state.getContext() != null) {
         MavlinkProtocol protocol = state.getContext();
         protocol.processRawFrame(env, raw);
-        forwardPacket(mavlink);
+        forwardPacket(raw);
       }
     }
     selectorTask.register(SelectionKey.OP_READ);
@@ -136,9 +131,10 @@ public class MavlinkInterfaceManager implements SelectorCallback, MavlinkConnect
         MavlinkProtocol protocol = new MavlinkProtocol(this, key, facade, this.mavlinkConfig);
         state = new UDPSessionState<>(protocol);
         currentSessions.addState(key, state);
+        logger.log(MAVLINK_SESSION_CREATED, key.toString());
       }
       catch(IOException e){
-        e.printStackTrace();
+        logger.log(MAVLINK_FAILED_SETTING_UP_SESSION, key.toString(), e);
       }
     }
     return state;
@@ -160,9 +156,9 @@ public class MavlinkInterfaceManager implements SelectorCallback, MavlinkConnect
       forward.setFromAddress(socketAddress);
       try {
         endPoint.sendPacket(forward);
+        logger.log(MAVLINK_SUCCESSFUL_FORWARD_PACKET, socketAddress.toString());
       } catch (IOException e) {
-        e.printStackTrace();
-        // To Do log
+        logger.log(MAVLINK_FAILED_FORWARD_PACKET, socketAddress.toString(), e);
       }
     }
   }
