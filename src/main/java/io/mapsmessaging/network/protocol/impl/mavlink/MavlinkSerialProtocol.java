@@ -67,6 +67,7 @@ public class MavlinkSerialProtocol extends MavlinkProtocol {
     return true;
   }
 
+  @Override
   protected String getRemoteSocket(){
     return endPoint.getName();
   }

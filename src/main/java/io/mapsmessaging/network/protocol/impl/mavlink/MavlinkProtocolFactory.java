@@ -61,7 +61,7 @@ public class MavlinkProtocolFactory extends ProtocolImplFactory {
   @Override
   public void create(EndPoint endPoint, Packet packet) {
     try {
-      MavlinkProtocol protocol = new MavlinkSerialProtocol(endPoint, endPoint.getConfig().getProtocolConfig("mavlink"));
+      new MavlinkSerialProtocol(endPoint, endPoint.getConfig().getProtocolConfig("mavlink"));
 
     } catch (IOException e) {
       logger.log(MAVLINK_FAILED_SETTING_UP_SESSION, endPoint.getName(), e);

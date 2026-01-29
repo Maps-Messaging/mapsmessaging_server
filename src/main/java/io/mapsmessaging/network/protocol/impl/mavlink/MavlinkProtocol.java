@@ -101,7 +101,7 @@ public class MavlinkProtocol extends Protocol {
 
   @Override
   public void sendMessage(@NotNull @NonNull MessageEvent messageEvent) {
-
+    // we do not send mavlink messages here
   }
 
   @Override

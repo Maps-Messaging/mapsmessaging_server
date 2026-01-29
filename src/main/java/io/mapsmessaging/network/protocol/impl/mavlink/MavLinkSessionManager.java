@@ -76,28 +76,6 @@ public class MavLinkSessionManager <T extends Timeoutable> {
     return response;
   }
 
-  public UDPSessionState<T> findAndUpdate(String clientId, MavlinkDeviceKey key, boolean enableAddressChange){
-    InetSocketAddress updatedAddress = key.getRemoteAddress();
-    for(Map.Entry<MavlinkDeviceKey, UDPSessionState<T>> entry:sessionStateMap.entrySet()){
-      String lookupId = entry.getValue().getClientIdentifier();
-      if(lookupId != null && lookupId.equals(clientId)){
-        // We have found a matching client ID, but lets see if the address changes and we allow this
-        MavlinkDeviceKey entryKey = entry.getKey();
-        boolean allowChange = false;
-
-        InetSocketAddress socketAddress = entryKey.getRemoteAddress();
-        allowChange = enableAddressChange || socketAddress.getHostName().equals(updatedAddress.getHostName());
-        if(allowChange) {
-          sessionStateMap.remove(entry.getKey());
-          sessionStateMap.put(key, entry.getValue());
-          return entry.getValue();
-        }
-        break;
-      }
-    }
-    return null;
-  }
-
   public void deleteState(@NotNull @NonNull MavlinkDeviceKey key) {
     sessionStateMap.remove(key);
   }

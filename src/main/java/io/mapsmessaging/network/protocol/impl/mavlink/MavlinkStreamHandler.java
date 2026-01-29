@@ -29,6 +29,9 @@ import java.nio.ByteBuffer;
 
 public class MavlinkStreamHandler implements StreamHandler {
 
+  private static final int DEFAULT_READ_TIMEOUT_MILLIS = 5000;
+  private static final int ZERO_READ_BACKOFF_MILLIS = 1;
+
   private static final int MAVLINK_V1_MAGIC = 0xFE;
   private static final int MAVLINK_V2_MAGIC = 0xFD;
 
@@ -41,12 +44,22 @@ public class MavlinkStreamHandler implements StreamHandler {
   private static final int MAVLINK_V2_INCOMPAT_FLAG_SIGNED = 0x01;
 
   private final byte[] smallBuffer;
+  private final int readTimeoutMillis;
+
   private volatile boolean closed;
 
   public MavlinkStreamHandler() {
+    this(DEFAULT_READ_TIMEOUT_MILLIS);
+  }
+  public MavlinkStreamHandler(int readTimeoutMillis) {
     this.smallBuffer = new byte[32];
     this.closed = false;
+    if (readTimeoutMillis <= 0) {
+      throw new IllegalArgumentException("readTimeoutMillis must be > 0");
+    }
+    this.readTimeoutMillis = readTimeoutMillis;
   }
+
 
   @Override
   public void close() {
@@ -184,14 +197,32 @@ public class MavlinkStreamHandler implements StreamHandler {
 
   private void readFully(InputStream input, byte[] buffer, int offset, int length) throws IOException {
     int readTotal = 0;
+    long deadlineNanos = System.nanoTime() + (readTimeoutMillis * 1_000_000L);
+
     while (readTotal < length) {
       if (closed) {
         throw new IOException("StreamHandler closed");
       }
+
       int read = input.read(buffer, offset + readTotal, length - readTotal);
+
       if (read < 0) {
         throw new IOException("Unexpected end of stream");
       }
+
+      if (read == 0) {
+        if (System.nanoTime() >= deadlineNanos) {
+          throw new IOException("Read timed out waiting for " + (length - readTotal) + " bytes");
+        }
+        try {
+          Thread.sleep(ZERO_READ_BACKOFF_MILLIS);
+        } catch (InterruptedException e) {
+          Thread.currentThread().interrupt();
+          throw new IOException("Interrupted while waiting for stream data", e);
+        }
+        continue;
+      }
+
       readTotal += read;
     }
   }
