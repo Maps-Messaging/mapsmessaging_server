@@ -28,6 +28,7 @@ import lombok.Setter;
 
 import java.io.IOException;
 import java.net.UnknownHostException;
+import java.nio.BufferUnderflowException;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -69,7 +70,20 @@ public class ProtocolFactory implements ServiceManager {
     int potential = 0;
     int failed = 0;
     StringBuilder sb = new StringBuilder();
-    ProxyProtocolInfo proxyProtocolInfo = (proxyProtocol != ProxyProtocolMode.DISABLED) ? detectProxy(packet) : null;
+    int pos = packet.position();
+    ProxyProtocolInfo proxyProtocolInfo = null;
+    try {
+      proxyProtocolInfo = (proxyProtocol != ProxyProtocolMode.DISABLED) ? detectProxy(packet) : null;
+    }
+    catch(BufferUnderflowException e) {
+      if(proxyProtocol == ProxyProtocolMode.REQUIRED) {
+        packet.position(pos);
+        return null;
+      }
+    }
+    catch(ProxyProtocolParseException e) {
+      throw new IOException("Failed to parse proxy protocol", e);
+    }
     if(proxyProtocolInfo == null && proxyProtocol == ProxyProtocolMode.REQUIRED) {
       throw new IOException("PROXY header not detected in incoming packet but end point is configured to require it");
     }
@@ -97,7 +111,7 @@ public class ProtocolFactory implements ServiceManager {
     return null;
   }
 
-  private ProxyProtocolInfo detectProxy(Packet packet) throws UnknownHostException {
+  private ProxyProtocolInfo detectProxy(Packet packet) throws UnknownHostException, ProxyProtocolParseException {
     for (ProxyProtocol proxyProtocol : proxyProtocols) {
       if (proxyProtocol.matches(packet)) {
         return proxyProtocol.parse(packet);

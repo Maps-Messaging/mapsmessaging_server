@@ -19,12 +19,13 @@
 
 package io.mapsmessaging.network.protocol.impl.proxy;
 
-import io.mapsmessaging.network.io.Packet;
+public class ProxyProtocolParseException extends Exception {
 
-import java.net.UnknownHostException;
+  public ProxyProtocolParseException(String message) {
+    super(message);
+  }
 
-public abstract class ProxyProtocol {
-  public abstract boolean matches(Packet packet);
-
-  public abstract ProxyProtocolInfo parse(Packet packet) throws UnknownHostException, ProxyProtocolParseException;
+  public ProxyProtocolParseException(String message, Throwable cause) {
+    super(message, cause);
+  }
 }
