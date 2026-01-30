@@ -396,6 +396,7 @@
           </argLine>
           <includes>
             <include>**/*Test.java</include>
+            <include>**/*Tests.java</include>
             <include>**/*IT.java</include>
           </includes>
         </configuration>
