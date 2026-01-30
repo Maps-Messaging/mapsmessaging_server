@@ -47,13 +47,19 @@ class PacketIntegrityVerificationTests {
 
     TestContext context = createContext(algorithm, stamper);
 
+    int packetLengthBeforeVerify = context.secured.limit();
+    int signatureSize = context.integrity.size();
+
     VerificationResult result = context.integrity.verify(context.secured);
 
     Assertions.assertTrue(result.isValid());
     Assertions.assertEquals(FailureReason.OK, result.getReason());
     Assertions.assertEquals(algorithm, result.getAlgorithm());
-    Assertions.assertEquals(context.secured.limit(), result.getPacketLength());
-    Assertions.assertEquals(context.integrity.size(), result.getSignatureSize());
+    Assertions.assertEquals(packetLengthBeforeVerify, result.getPacketLength());
+    Assertions.assertEquals(signatureSize, result.getSignatureSize());
+
+    // Optional but actually useful: confirm unwrap happened
+    Assertions.assertEquals(packetLengthBeforeVerify - signatureSize, context.secured.limit());
   }
 
   @ParameterizedTest

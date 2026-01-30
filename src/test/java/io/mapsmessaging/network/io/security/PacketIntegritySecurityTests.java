@@ -61,9 +61,13 @@ class PacketIntegritySecurityTests {
     byte[] wrongKey = new byte[context.key.length];
     new Random(9999L).nextBytes(wrongKey);
 
-    PacketIntegrity wrongIntegrity = PacketIntegrityFactory.getInstance().getPacketIntegrity(algorithm, stamper, wrongKey);
+    PacketIntegrity wrongIntegrity = PacketIntegrityFactory.getInstance()
+        .getPacketIntegrity(algorithm, stamper, wrongKey);
 
-    boolean verifiesWithWrongKey = wrongIntegrity.isSecure(context.secured);
+    // verify() / isSecure() may UNWRAP on success, so never verify against the shared context packet
+    Packet securedForVerification = clonePacket(context.secured);
+
+    boolean verifiesWithWrongKey = wrongIntegrity.isSecure(securedForVerification);
     if (!verifiesWithWrongKey) {
       return;
     }
@@ -76,12 +80,14 @@ class PacketIntegritySecurityTests {
 
     Packet securedWithWrongKey = wrongIntegrity.secure(clonePacket(context.payload));
 
+    // Compare against a non-mutated secured packet
     Assertions.assertTrue(
         packetsEqual(context.secured, securedWithWrongKey),
         () -> "Algorithm '" + algorithm + "' verified with wrong key but produced a different secured packet. " +
             "That suggests verification might not be checking the signature correctly."
     );
   }
+
 
   @ParameterizedTest
   @MethodSource

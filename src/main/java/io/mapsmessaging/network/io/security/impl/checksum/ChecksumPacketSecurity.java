@@ -66,22 +66,33 @@ public abstract class ChecksumPacketSecurity implements PacketIntegrity {
     }
 
     int packetLength = packet.limit();
-    if (packetLength < size()) {
-      return VerificationResult.fail(FailureReason.PACKET_TOO_SHORT, getName(), size(), packetLength, 0, packetLength);
+    int signatureSize = size();
+
+    if (packetLength < signatureSize) {
+      return VerificationResult.fail(FailureReason.PACKET_TOO_SHORT, getName(), signatureSize, packetLength, 0, packetLength);
     }
 
     try {
       Checksum checksum = getChecksum();
-      ByteBuffer dataBuffer = stamper.getData(packet, size()).getRawBuffer();
+
+      ByteBuffer dataBuffer = stamper.getData(packet, signatureSize).getRawBuffer();
       checksum.update(dataBuffer);
+
       boolean ok = validatePacket(checksum, packet);
-      return ok
-          ? VerificationResult.ok(getName(), size(), packetLength, 0, packetLength)
-          : VerificationResult.fail(FailureReason.SIGNATURE_MISMATCH, getName(), size(), packetLength, 0, packetLength);
+      if (!ok) {
+        return VerificationResult.fail(FailureReason.SIGNATURE_MISMATCH, getName(), signatureSize, packetLength, 0, packetLength);
+      }
+
+      // ONION UNWRAP: strip CRC/signature from the end (old behavior)
+      int newLimit = packetLength - signatureSize;
+      packet.limit(newLimit);
+      packet.position(newLimit);
+
+      return VerificationResult.ok(getName(), signatureSize, packetLength, 0, packetLength);
     } catch (IndexOutOfBoundsException e) {
-      return VerificationResult.fail(FailureReason.SIGNATURE_MISSING, getName(), size(), packetLength, 0, packetLength);
+      return VerificationResult.fail(FailureReason.SIGNATURE_MISSING, getName(), signatureSize, packetLength, 0, packetLength);
     } catch (RuntimeException e) {
-      return VerificationResult.error(getName(), size(), packetLength, 0, packetLength, e);
+      return VerificationResult.error(getName(), signatureSize, packetLength, 0, packetLength, e);
     }
   }
 

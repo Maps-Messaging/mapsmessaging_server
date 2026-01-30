@@ -72,6 +72,7 @@ public abstract class HmacPacketSecurity implements PacketIntegrity {
     }
 
     try {
+      // Hash payload-only (exclude trailing signature)
       mac.update(stamper.getData(packet, signatureSize).getRawBuffer());
       byte[] computed = mac.doFinal();
       reset();
@@ -80,9 +81,16 @@ public abstract class HmacPacketSecurity implements PacketIntegrity {
       signature = stamper.getSignature(packet, signature);
 
       boolean ok = constantTimeEquals(signature, computed);
-      return ok
-          ? VerificationResult.ok(getName(), signatureSize, packetLength, 0, packetLength)
-          : VerificationResult.fail(FailureReason.SIGNATURE_MISMATCH, getName(), signatureSize, packetLength, 0, packetLength);
+      if (!ok) {
+        return VerificationResult.fail(FailureReason.SIGNATURE_MISMATCH, getName(), signatureSize, packetLength, 0, packetLength);
+      }
+
+      // ONION UNWRAP: strip signature from packet (old behavior)
+      int newLimit = packetLength - computed.length;
+      packet.limit(newLimit);
+      packet.position(newLimit);
+
+      return VerificationResult.ok(getName(), signatureSize, packetLength, 0, packetLength);
     } catch (IndexOutOfBoundsException e) {
       reset();
       return VerificationResult.fail(FailureReason.SIGNATURE_MISSING, getName(), signatureSize, packetLength, 0, packetLength);
@@ -91,6 +99,7 @@ public abstract class HmacPacketSecurity implements PacketIntegrity {
       return VerificationResult.error(getName(), signatureSize, packetLength, 0, packetLength, e);
     }
   }
+
 
 
   @Override
