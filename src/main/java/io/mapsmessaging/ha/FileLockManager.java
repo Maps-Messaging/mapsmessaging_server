@@ -28,6 +28,7 @@ import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.nio.channels.FileChannel;
 import java.nio.channels.FileLock;
+import java.nio.channels.OverlappingFileLockException;
 import java.nio.file.*;
 import java.time.OffsetDateTime;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -35,6 +36,9 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import static io.mapsmessaging.logging.ServerLogMessages.*;
 
 public class FileLockManager implements AutoCloseable {
+
+  private static final long DEFAULT_RETRY_SLEEP_MILLIS = 1000;
+
   private final Logger logger = LoggerFactory.getLogger(this.getClass());
   private final Path lockFilePath;
   private final Path heartbeatFilePath;
@@ -51,8 +55,14 @@ public class FileLockManager implements AutoCloseable {
   private FileLock lock;
   private Thread heartbeatThread;
   private Thread watchThread;
+  private final ExitHandler exitHandler;
 
   public FileLockManager(Path lockFilePath, long leaseTimeoutMillis) {
+    this(lockFilePath, leaseTimeoutMillis, new SystemExitHandler());
+  }
+
+  public FileLockManager(Path lockFilePath, long leaseTimeoutMillis, ExitHandler exitHandler) {
+    this.exitHandler = exitHandler;
     this.lockFilePath = lockFilePath.toAbsolutePath();
     this.heartbeatFilePath = Path.of(lockFilePath + ".heartbeat");
     this.stopSignalFilePath = Path.of(lockFilePath + ".stop");
@@ -62,13 +72,27 @@ public class FileLockManager implements AutoCloseable {
 
   @SuppressWarnings("java:S2095")
   public boolean tryAcquireLockWithTakeover() {
+    boolean acquired = false;
     try {
       channel = new RandomAccessFile(lockFilePath.toFile(), "rw").getChannel();
+
       while (!shutdown.get()) {
-        lock = channel.tryLock();
-        if (lock != null) {
+        FileLock attemptedLock = null;
+        try {
+          attemptedLock = channel.tryLock();
+        } catch (OverlappingFileLockException ignored) {
+          // Same JVM already holds an overlapping lock. Treat as "lock unavailable".
+          attemptedLock = null;
+        } catch (IOException ignored) {
+          attemptedLock = null;
+        }
+
+        if (attemptedLock != null) {
+          lock = attemptedLock;
           locked = true;
-          Files.deleteIfExists(stopSignalFilePath); // clean up stale stop file
+          acquired = true;
+
+          Files.deleteIfExists(stopSignalFilePath);
           writeLockMetadata();
           startHeartbeat();
           startWatchService();
@@ -80,22 +104,52 @@ public class FileLockManager implements AutoCloseable {
           try {
             Files.deleteIfExists(heartbeatFilePath);
           } catch (IOException ignored) {
-            // Ignore
+            // ignore
           }
         }
-        Thread.sleep(1000);
+
+        try {
+          Thread.sleep(DEFAULT_RETRY_SLEEP_MILLIS);
+        } catch (InterruptedException e) {
+          Thread.currentThread().interrupt();
+          break;
+        }
       }
-    } catch (IOException eox) {
+    } catch (IOException ignored) {
       // ignore
-    } catch (InterruptedException e) {
-      Thread.currentThread().interrupt();
+    } finally {
+      if (!acquired) {
+        // If we did not acquire, make sure we don't leak a handle.
+        try {
+          if (lock != null && lock.isValid()) {
+            lock.release();
+          }
+        } catch (IOException ignored) {
+        } finally {
+          lock = null;
+        }
+
+        try {
+          if (channel != null && channel.isOpen()) {
+            channel.close();
+          }
+        } catch (IOException ignored) {
+        } finally {
+          channel = null;
+        }
+
+        locked = false;
+      }
     }
     return false;
   }
+
   private void writeLockMetadata() {
     try {
-      Files.writeString(lockFilePath,  ""+ProcessHandle.current().pid(), StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
-    } catch (IOException ignored) {}
+      Files.writeString(lockFilePath, "" + ProcessHandle.current().pid(),
+          StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
+    } catch (IOException ignored) {
+    }
   }
 
   private void startHeartbeat() {
@@ -105,7 +159,9 @@ public class FileLockManager implements AutoCloseable {
           lockInfo.setLastHeartbeat(OffsetDateTime.now().toString());
           String json = GsonFactory.getInstance().getSimpleGson().toJson(lockInfo);
           Files.writeString(heartbeatFilePath, json);
-        } catch (IOException ignored) {}
+        } catch (IOException ignored) {
+        }
+
         try {
           Thread.sleep(leaseTimeoutMillis / 3);
         } catch (InterruptedException ignored) {
@@ -135,12 +191,18 @@ public class FileLockManager implements AutoCloseable {
   private void runWatchLoop() {
     try (WatchService watchService = FileSystems.getDefault().newWatchService()) {
       Path dir = lockFilePath.getParent();
+      if (dir == null) {
+        return;
+      }
+
       dir.register(watchService, StandardWatchEventKinds.ENTRY_DELETE, StandardWatchEventKinds.ENTRY_CREATE);
 
       while (!shutdown.get()) {
         WatchKey key = watchService.take();
         processWatchEvents(key);
-        if (!key.reset()) break;
+        if (!key.reset()) {
+          break;
+        }
       }
     } catch (IOException | InterruptedException e) {
       Thread.currentThread().interrupt();
@@ -151,7 +213,9 @@ public class FileLockManager implements AutoCloseable {
   private void processWatchEvents(WatchKey key) {
     for (WatchEvent<?> event : key.pollEvents()) {
       Path name = ((WatchEvent<Path>) event).context();
-      if (name == null) continue;
+      if (name == null) {
+        continue;
+      }
 
       if (event.kind() == StandardWatchEventKinds.ENTRY_DELETE &&
           name.equals(lockFilePath.getFileName())) {
@@ -178,16 +242,20 @@ public class FileLockManager implements AutoCloseable {
     if (onShutdownCallback != null) {
       onShutdownCallback.run();
     }
-    System.exit(1);
+    exitHandler.accept(1);
   }
 
   private boolean isHeartbeatStale() {
     try {
-      if (!Files.exists(heartbeatFilePath)) return true;
+      if (!Files.exists(heartbeatFilePath)) {
+        return true;
+      }
       String content = Files.readString(heartbeatFilePath).trim();
       LockInfo info = GsonFactory.getInstance().getSimpleGson().fromJson(content, LockInfo.class);
       OffsetDateTime lastBeat = OffsetDateTime.parse(info.getLastHeartbeat());
-      return OffsetDateTime.now().minus(leaseTimeoutMillis, java.time.temporal.ChronoUnit.MILLIS).isAfter(lastBeat);
+      return OffsetDateTime.now()
+          .minus(leaseTimeoutMillis, java.time.temporal.ChronoUnit.MILLIS)
+          .isAfter(lastBeat);
     } catch (IOException | RuntimeException e) {
       return true;
     }
@@ -226,6 +294,8 @@ public class FileLockManager implements AutoCloseable {
       Files.deleteIfExists(stopSignalFilePath);
     } catch (IOException ignored) {
     } finally {
+      lock = null;
+      channel = null;
       locked = false;
     }
   }
