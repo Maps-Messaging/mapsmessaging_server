@@ -109,6 +109,7 @@ public class ServerConnectionManager implements ServiceListener, Agent {
     discoveryManager.registerListener("_mqtt._tcp.local.", this);
     discoveryManager.registerListener("_amqp._tcp.local.", this);
     discoveryManager.registerListener("_stomp._tcp.local.", this);
+    discoveryManager.registerListener("_nats._tcp.local.", this);
     discoveryManager.registerListener("_coap._udp.local.", this);
     discoveryManager.registerListener("_mqtt-sn._udp.local.", this);
   }

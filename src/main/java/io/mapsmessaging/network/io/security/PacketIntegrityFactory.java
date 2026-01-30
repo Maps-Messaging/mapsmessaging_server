@@ -20,29 +20,62 @@
 package io.mapsmessaging.network.io.security;
 
 import io.mapsmessaging.dto.rest.config.network.HmacConfigDTO;
+import io.mapsmessaging.logging.Logger;
+import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.network.io.security.impl.signature.AppenderSignatureManager;
 import io.mapsmessaging.network.io.security.impl.signature.PrependerSignatureManager;
 
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.ServiceLoader;
 
+import static io.mapsmessaging.logging.ServerLogMessages.PACKET_SECURITY_INTERNAL_ERROR;
+
+@SuppressWarnings("java:S6548") // yes it is a singleton
 public class PacketIntegrityFactory {
 
-  private static final PacketIntegrityFactory instance = new PacketIntegrityFactory();
+  private static class Holder {
+    static final PacketIntegrityFactory INSTANCE = new PacketIntegrityFactory();
+  }
 
   public static PacketIntegrityFactory getInstance() {
-    return instance;
+    return Holder.INSTANCE;
   }
 
-  public List<String> getAlgorithms() {
-    return new ArrayList<>(implementations.keySet());
-  }
+  private final Logger logger = LoggerFactory.getLogger(PacketIntegrityFactory.class);
 
   private final Map<String, PacketIntegrity> implementations;
 
-  public PacketIntegrity getPacketIntegrity(String algoritm, SignatureManager stamper, byte[] key) throws NoSuchAlgorithmException, InvalidKeyException {
-    return implementations.get(algoritm).initialise(stamper, key);
+  public List<String> getAlgorithms() {
+    List<String> names = new ArrayList<>(implementations.keySet());
+    Collections.sort(names);
+    return names;
+  }
+
+  public PacketIntegrity getPacketIntegrity(String algorithm, SignatureManager stamper, byte[] key)
+      throws NoSuchAlgorithmException, InvalidKeyException {
+
+    if (algorithm == null || algorithm.isBlank()) {
+      throw new NoSuchAlgorithmException("Algorithm is null/blank");
+    }
+    if (stamper == null) {
+      throw new IllegalArgumentException("SignatureManager is null");
+    }
+    if (key == null) {
+      throw new InvalidKeyException("Key is null");
+    }
+
+    PacketIntegrity prototype = implementations.get(algorithm);
+    if (prototype == null) {
+      throw new NoSuchAlgorithmException("Unsupported algorithm: " + algorithm);
+    }
+
+    return prototype.initialise(stamper, key);
   }
 
   public PacketIntegrity createPacketIntegrity(HmacConfigDTO node) {
@@ -50,17 +83,18 @@ public class PacketIntegrityFactory {
     if (hmacAlgorithm != null) {
       String managerName = node.getHmacManager();
       SignatureManager manager;
-      if (managerName.equalsIgnoreCase("appender")) {
+      if (managerName != null && managerName.equalsIgnoreCase("appender")) {
         manager = new AppenderSignatureManager();
       } else {
         manager = new PrependerSignatureManager();
       }
+
       String keyStr = node.getHmacSharedKey();
       byte[] key = SharedKeyHelper.convertKey(keyStr);
       try {
         return PacketIntegrityFactory.getInstance().getPacketIntegrity(hmacAlgorithm, manager, key);
       } catch (NoSuchAlgorithmException | InvalidKeyException e) {
-        // ToDo: Log Message Here
+        logger.log(PACKET_SECURITY_INTERNAL_ERROR, hmacAlgorithm, e.getMessage());
       }
     }
     return null;

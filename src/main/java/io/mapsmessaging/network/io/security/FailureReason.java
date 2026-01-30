@@ -19,30 +19,18 @@
 
 package io.mapsmessaging.network.io.security;
 
-import io.mapsmessaging.network.io.Packet;
-import io.mapsmessaging.network.io.Timeoutable;
+public enum FailureReason {
+  OK,
 
-import java.security.InvalidKeyException;
-import java.security.NoSuchAlgorithmException;
+  PACKET_NULL,
+  PACKET_TOO_SHORT,
+  RANGE_INVALID,
 
-public interface PacketIntegrity extends Timeoutable {
+  SIGNATURE_MISSING,
+  SIGNATURE_MISMATCH,
 
-  PacketIntegrity initialise(SignatureManager stamper, byte[] key) throws NoSuchAlgorithmException, InvalidKeyException;
+  NOT_INITIALISED,
+  KEY_INVALID,
 
-  String getName();
-
-  VerificationResult verify(Packet packet);
-
-  boolean isSecure(Packet packet);
-
-  Packet secure(Packet packet);
-
-  int size();
-
-  void reset();
-
-  @Override
-  default void close() {
-  }
-
+  INTERNAL_ERROR
 }

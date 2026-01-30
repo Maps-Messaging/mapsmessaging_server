@@ -29,12 +29,15 @@ import io.mapsmessaging.network.io.impl.udp.session.UDPSessionManager;
 import io.mapsmessaging.network.io.impl.udp.session.UDPSessionState;
 import io.mapsmessaging.network.io.security.NodeSecurity;
 import io.mapsmessaging.network.io.security.PacketIntegrity;
+import io.mapsmessaging.network.io.security.VerificationResult;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+
+import static io.mapsmessaging.logging.ServerLogMessages.PACKET_SECURITY_VERIFICATION_FAILED;
 
 public class HmacUDPEndPoint extends UDPEndPoint {
 
@@ -82,10 +85,15 @@ public class HmacUDPEndPoint extends UDPEndPoint {
       packet.clear();
       res = 0;
     } else {
-      if (packet.hasRemaining() && !packetIntegrity.isSecure(packet)) {
-        packet.clear();
-        return 0;
+      if (packet.hasRemaining()) {
+        VerificationResult result = packetIntegrity.verify(packet);
+        if (!result.isValid()) {
+          logger.log(PACKET_SECURITY_VERIFICATION_FAILED, ((InetSocketAddress) packet.getFromAddress()).getAddress().getHostAddress(), result.getAlgorithm(), result.getReason(), result.getPacketLength(), result.getSignatureSize());
+          packet.clear();
+          res =0;
+        }
       }
+
     }
     return res;
   }

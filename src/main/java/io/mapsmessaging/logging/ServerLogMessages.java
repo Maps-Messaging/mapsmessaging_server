@@ -244,6 +244,13 @@ public enum ServerLogMessages implements LogMessage {
 
   // </editor-fold>
 
+  // <editor-fold desc="Packet Security">
+  PACKET_SECURITY_VERIFICATION_FAILED(LEVEL.WARN, SERVER_CATEGORY.NETWORK, "Packet integrity verification failed: ip={}, algorithm={}, reason={}, packetLength={}, signatureSize={}"),
+  PACKET_SECURITY_NOT_INITIALISED(LEVEL.ERROR, SERVER_CATEGORY.NETWORK, "Packet integrity not initialised: algorithm={}"),
+  PACKET_SECURITY_INTERNAL_ERROR(LEVEL.ERROR, SERVER_CATEGORY.NETWORK, "Packet integrity internal error: algorithm={}, error={}"),
+  // </editor-fold>
+
+
   // <editor-fold desc="Security Manager based log messages">
   SECURITY_MANAGER_STARTUP(LEVEL.DEBUG, SERVER_CATEGORY.ENGINE, "Starting Security Manager"),
   SECURITY_MANAGER_FAILED_LOG_IN(LEVEL.WARN, SERVER_CATEGORY.ENGINE, "User {} failed to logged in, {}"),
