@@ -257,6 +257,51 @@ class MessageStateManagerImplTest {
     Assertions.assertTrue(seen.contains(1001L));
   }
 
+  @Test
+  void register_allPriorities_fromLowestToHighest_nextMessageId_returnsHighestFirst_andAllPresent() {
+    MessageStateManagerImpl manager = createManager();
+
+    // Register one message per priority value (0..10)
+    for (int priorityValue = 0; priorityValue <= io.mapsmessaging.api.features.Priority.HIGHEST.getValue(); priorityValue++) {
+      long messageId = 1000L + priorityValue;
+      Message message = createMessage(messageId, priorityValue);
+      manager.register(message);
+    }
+
+    int expectedCount = io.mapsmessaging.api.features.Priority.HIGHEST.getValue() + 1;
+
+    Assertions.assertEquals(expectedCount, manager.pending());
+    Assertions.assertEquals(expectedCount, manager.size());
+    Assertions.assertTrue(manager.hasAtRestMessages());
+    Assertions.assertFalse(manager.hasMessagesInFlight());
+
+    for (int priorityValue = 0; priorityValue <= io.mapsmessaging.api.features.Priority.HIGHEST.getValue(); priorityValue++) {
+      long messageId = 1000L + priorityValue;
+      Assertions.assertTrue(manager.hasMessage(messageId));
+    }
+
+    // Expect highest priority to be delivered first.
+    // If your PriorityQueue uses the opposite ordering, flip the loop.
+    for (int priorityValue = io.mapsmessaging.api.features.Priority.HIGHEST.getValue(); priorityValue >= 0; priorityValue--) {
+      long expectedNextId = 1000L + priorityValue;
+      long actualNextId = manager.nextMessageId();
+      Assertions.assertEquals(expectedNextId, actualNextId);
+
+      Message message = createMessage(expectedNextId, priorityValue);
+      manager.allocate(message);
+
+      Assertions.assertTrue(manager.hasMessage(expectedNextId));
+      Assertions.assertTrue(manager.hasMessagesInFlight() || manager.pending() > 0);
+    }
+
+    Assertions.assertEquals(0, manager.pending());
+    Assertions.assertEquals(expectedCount, manager.size());
+    Assertions.assertTrue(manager.hasMessagesInFlight());
+    Assertions.assertFalse(manager.hasAtRestMessages());
+    Assertions.assertEquals(-1L, manager.nextMessageId());
+  }
+
+
   private MessageStateManagerImpl createManager() {
     BitSetFactory bitSetFactory = new BitSetFactoryImpl(Constants.BITSET_BLOCK_SIZE);
     return new MessageStateManagerImpl(MANAGER_NAME, UNIQUE_SESSION_ID, bitSetFactory);
