@@ -138,7 +138,7 @@ public class MavlinkProtocol extends Protocol {
         .setDataMap(convertToMap(envelope))
         .setQoS(QualityOfService.AT_MOST_ONCE)
         .setRetain(false)
-        .setStoreOffline(false)
+        .storeOffline(false)
         .setMeta(metaData)
         .build();
 

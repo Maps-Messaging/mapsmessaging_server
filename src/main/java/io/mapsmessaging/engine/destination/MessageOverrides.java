@@ -46,7 +46,7 @@ public class MessageOverrides {
 
   private static MessageBuilder applyOverrides(MessageBuilder messageBuilder, MessageOverrideDTO messageOverride) {
     if(messageOverride.getQualityOfService() != null){
-      messageBuilder.setQualityOfService(messageOverride.getQualityOfService());
+      messageBuilder.setQoS(messageOverride.getQualityOfService());
     }
     if(messageOverride.getPriority() != null){
       messageBuilder.setPriority(messageOverride.getPriority());

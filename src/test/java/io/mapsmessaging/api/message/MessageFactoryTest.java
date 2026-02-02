@@ -48,8 +48,8 @@ class MessageFactoryTest {
     messageBuilder.setOpaqueData(opaquePayload);
 
     messageBuilder.setPriority(Priority.HIGHEST);
-    messageBuilder.setQualityOfService(QualityOfService.AT_LEAST_ONCE);
-    messageBuilder.setStoreOffline(true);
+    messageBuilder.setQoS(QualityOfService.AT_LEAST_ONCE);
+    messageBuilder.storeOffline(true);
 
     messageBuilder.setCorrelationData("corr-id-123");
     messageBuilder.setContentType("text/plain");
@@ -191,21 +191,21 @@ class MessageFactoryTest {
     messageBuilder.setOpaqueData(opaquePayload);
 
     messageBuilder.setPriority(Priority.LOWEST);
-    messageBuilder.setQualityOfService(QualityOfService.AT_MOST_ONCE);
+    messageBuilder.setQoS(QualityOfService.AT_MOST_ONCE);
 
-    messageBuilder.setStoreOffline(false);
+    messageBuilder.storeOffline(false);
 
     byte[] correlationBytes = "corr-binary".getBytes(StandardCharsets.UTF_8);
     messageBuilder.setCorrelationData(correlationBytes);
 
-    messageBuilder.setContentType("application/octet-stream");
-    messageBuilder.setDelayed(0L);
-    messageBuilder.setExpiry(0L);
-    messageBuilder.setCreation(1728000000001L);
-    messageBuilder.setResponseTopic("binary/reply");
-    messageBuilder.setRetain(false);
-    messageBuilder.setPayloadUTF8(false);
-    messageBuilder.setSchemaId(null);
+    messageBuilder.setContentType("application/octet-stream")
+      .setDelayed(0L)
+      .setExpiry(0L)
+      .setCreation(1728000000001L)
+      .setResponseTopic("binary/reply")
+      .setRetain(false)
+      .setPayloadUTF8(false)
+      .setSchemaId(null);
 
     Message originalMessage = new Message(messageBuilder);
 
@@ -238,8 +238,8 @@ class MessageFactoryTest {
     messageBuilder.setOpaqueData(null);
 
     messageBuilder.setPriority(Priority.NORMAL);
-    messageBuilder.setQualityOfService(QualityOfService.EXACTLY_ONCE);
-    messageBuilder.setStoreOffline(true);
+    messageBuilder.setQoS(QualityOfService.EXACTLY_ONCE);
+    messageBuilder.storeOffline(true);
     messageBuilder.setCorrelationData("no-payload");
     messageBuilder.setContentType("text/plain");
     messageBuilder.setDelayed(0L);
@@ -270,8 +270,8 @@ class MessageFactoryTest {
     messageBuilder.setMeta(null);
     messageBuilder.setOpaqueData("x".getBytes(StandardCharsets.UTF_8));
     messageBuilder.setPriority(Priority.NORMAL);
-    messageBuilder.setQualityOfService(QualityOfService.AT_MOST_ONCE);
-    messageBuilder.setStoreOffline(true);
+    messageBuilder.setQoS(QualityOfService.AT_MOST_ONCE);
+    messageBuilder.storeOffline(true);
     messageBuilder.setCorrelationData("c");
     messageBuilder.setContentType("text/plain");
     messageBuilder.setDelayed(0L);
@@ -299,8 +299,8 @@ class MessageFactoryTest {
     messageBuilder.setMeta(new LinkedHashMap<>()); // empty but non-null
     messageBuilder.setOpaqueData("y".getBytes(StandardCharsets.UTF_8));
     messageBuilder.setPriority(Priority.NORMAL);
-    messageBuilder.setQualityOfService(QualityOfService.AT_MOST_ONCE);
-    messageBuilder.setStoreOffline(true);
+    messageBuilder.setQoS(QualityOfService.AT_MOST_ONCE);
+    messageBuilder.storeOffline(true);
     messageBuilder.setCorrelationData("c2");
     messageBuilder.setContentType("text/plain");
     messageBuilder.setDelayed(0L);
@@ -332,8 +332,8 @@ class MessageFactoryTest {
     messageBuilder.setMeta(map);
     messageBuilder.setOpaqueData("z".getBytes(StandardCharsets.UTF_8));
     messageBuilder.setPriority(Priority.NORMAL);
-    messageBuilder.setQualityOfService(QualityOfService.AT_MOST_ONCE);
-    messageBuilder.setStoreOffline(false); // explicitly false
+    messageBuilder.setQoS(QualityOfService.AT_MOST_ONCE);
+    messageBuilder.storeOffline(false); // explicitly false
     messageBuilder.setCorrelationData("c3");
     messageBuilder.setContentType("text/plain");
     messageBuilder.setDelayed(0L);
