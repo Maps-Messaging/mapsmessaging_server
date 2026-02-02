@@ -55,8 +55,8 @@ public class DelayedMessageManager extends MessageManager {
         long next = bucketList.get(index);
         index++;
         DelayedBucket delayedBucket = treeList.get(next);
-        if (delayedBucket.delayedMessageState.remove(messageIdentifier)) {
-          if (delayedBucket.delayedMessageState.isEmpty()) {
+        if (delayedBucket.remove(messageIdentifier)) {
+          if (delayedBucket.isEmpty()) {
             treeList.remove(next);
             bucketList.remove(0);
           }

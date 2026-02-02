@@ -54,7 +54,7 @@ public abstract class SubscriptionBuilder {
     this.parserExecutor = compileParser(combineSelectors(selector, parentSelector));
   }
 
-  private String combineSelectors(String lhs, String rhs) {
+  protected String combineSelectors(String lhs, String rhs) {
     StringBuilder sb = new StringBuilder();
     boolean hasLhs = false;
     if (lhs != null && !lhs.isEmpty()) {
@@ -64,7 +64,7 @@ public abstract class SubscriptionBuilder {
 
     if (rhs != null && !rhs.isEmpty()) {
       if (hasLhs) {
-        sb.append(" and ");
+        sb.append("and ");
       }
       sb.append(rhs);
     }

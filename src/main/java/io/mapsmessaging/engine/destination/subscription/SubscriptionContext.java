@@ -176,7 +176,7 @@ public class SubscriptionContext  extends PersistentObject implements Comparable
   }
 
   public void setDestinationName(String destinationName) {
-    if (alias.equals(destinationName)) {
+    if (alias.equals(this.destinationName)) {
       alias = destinationName;
     }
     this.destinationName = destinationName;

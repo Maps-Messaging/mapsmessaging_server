@@ -20,11 +20,9 @@
 package io.mapsmessaging.engine.destination.delayed;
 
 import io.mapsmessaging.api.message.Message;
-import io.mapsmessaging.utilities.collections.NaturalOrderedLongQueue;
 import io.mapsmessaging.utilities.collections.bitset.BitSetFactory;
 import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
-import software.amazon.awssdk.services.s3.model.Bucket;
 
 import java.io.IOException;
 import java.util.*;
@@ -53,7 +51,7 @@ public class MessageManager {
     List<Long> ids = factory.getUniqueIds();
     for (Long bucketId : ids) {
       bucketList.add(bucketId);
-      DelayedBucket bucket = new DelayedBucket(bucketId);
+      DelayedBucket bucket = new DelayedBucket(bucketId, factory);
       treeList.put(bucketId, bucket);
       counter.getAndAdd(bucket.size());
     }
@@ -91,7 +89,7 @@ public class MessageManager {
       if (bucketList.size() > 1) {
         Collections.sort(bucketList);
       }
-      return new DelayedBucket(bucketId);
+      return new DelayedBucket(bucketId, factory);
     });
     if (bucket.register(message.getIdentifier())) {
       counter.incrementAndGet();
@@ -108,9 +106,9 @@ public class MessageManager {
   public synchronized boolean remove(long bucketId, long messageIdentifier) {
     if (!bucketList.isEmpty()) {
       DelayedBucket bucket = treeList.get(bucketId);
-      if (bucket != null && bucket.delayedMessageState.remove(messageIdentifier)) {
+      if (bucket != null && bucket.remove(messageIdentifier)) {
         counter.decrementAndGet();
-        if(bucket.delayedMessageState.isEmpty()) {
+        if(bucket.isEmpty()) {
           removeFromStructure(bucketId);
         }
         return true;
@@ -129,7 +127,7 @@ public class MessageManager {
     DelayedBucket delayedBucket = treeList.remove(bucketId);
     if (delayedBucket != null) {
       removeFromStructure(bucketId);
-      counter.getAndAdd(-delayedBucket.delayedMessageState.size());
+      counter.getAndAdd(-delayedBucket.size());
       return true;
     }
     return false;
@@ -151,11 +149,11 @@ public class MessageManager {
     }
 
     // The bucket is empty so lets remove the index and the bucket and try again
-    if (delayedBucket.delayedMessageState.isEmpty()) {
+    if (delayedBucket.isEmpty()) {
       removeFromStructure(bucketId);
       return -1;
     }
-    return delayedBucket.delayedMessageState.peek();
+    return delayedBucket.peek();
   }
 
   /**
@@ -187,7 +185,7 @@ public class MessageManager {
   public synchronized @NonNull @NotNull Queue<Long> removeBucket(long bucketId) {
     DelayedBucket bucket = treeList.remove(bucketId);
     if (bucket != null) {
-      return bucket.delayedMessageState;
+      return bucket.getQueue();
     }
     return new ArrayDeque<>();
   }
@@ -197,33 +195,4 @@ public class MessageManager {
     bucketList.remove(bucketId);
   }
 
-  /**
-   * Structure bucket containing message identifiers.
-   *
-   * Please note.. The structure containing the message identifiers has a Int (32 bit) value to uniquely identify them, however, time in milliseconds are longs (64 bits) this may
-   * cause a single bucket containing delay values that span a roughly 24 day period ( Java uses 32 signed bits, so only 2^31 can be used )
-   *
-   * What this means is that when we process the bucket we need to confirm each events delay time and only if it has passed do we process it, else we simply pass over it
-   */
-  protected class DelayedBucket {
-
-    protected final NaturalOrderedLongQueue delayedMessageState;
-
-    public DelayedBucket(long delayTime) {
-      delayedMessageState = new NaturalOrderedLongQueue((int) delayTime, factory);
-    }
-
-    public boolean register(long identifier) {
-      return delayedMessageState.offer(identifier);
-    }
-
-    @Override
-    public String toString() {
-      return delayedMessageState.toString();
-    }
-
-    public long size() {
-      return delayedMessageState.size();
-    }
-  }
 }
