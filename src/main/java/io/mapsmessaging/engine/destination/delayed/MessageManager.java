@@ -24,6 +24,7 @@ import io.mapsmessaging.utilities.collections.NaturalOrderedLongQueue;
 import io.mapsmessaging.utilities.collections.bitset.BitSetFactory;
 import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
+import software.amazon.awssdk.services.s3.model.Bucket;
 
 import java.io.IOException;
 import java.util.*;
@@ -38,6 +39,7 @@ public class MessageManager {
 
   protected final Map<Long, DelayedBucket> treeList;
   protected final List<Long> bucketList;
+
   private final BitSetFactory factory;
 
   protected AtomicLong counter;
@@ -108,6 +110,9 @@ public class MessageManager {
       DelayedBucket bucket = treeList.get(bucketId);
       if (bucket != null && bucket.delayedMessageState.remove(messageIdentifier)) {
         counter.decrementAndGet();
+        if(bucket.delayedMessageState.isEmpty()) {
+          removeFromStructure(bucketId);
+        }
         return true;
       }
     }
@@ -123,6 +128,7 @@ public class MessageManager {
   public synchronized boolean delete(long bucketId) {
     DelayedBucket delayedBucket = treeList.remove(bucketId);
     if (delayedBucket != null) {
+      removeFromStructure(bucketId);
       counter.getAndAdd(-delayedBucket.delayedMessageState.size());
       return true;
     }
@@ -140,14 +146,13 @@ public class MessageManager {
 
     // The bucket is NOT in the tree so clean up the index and try again
     if (delayedBucket == null) {
-      bucketList.remove(bucketId);
+      removeFromStructure(bucketId);
       return -1;
     }
 
     // The bucket is empty so lets remove the index and the bucket and try again
     if (delayedBucket.delayedMessageState.isEmpty()) {
-      treeList.remove(bucketId);
-      bucketList.remove(0);
+      removeFromStructure(bucketId);
       return -1;
     }
     return delayedBucket.delayedMessageState.peek();
@@ -185,6 +190,11 @@ public class MessageManager {
       return bucket.delayedMessageState;
     }
     return new ArrayDeque<>();
+  }
+
+  private void removeFromStructure(long bucketId) {
+    treeList.remove(bucketId);
+    bucketList.remove(bucketId);
   }
 
   /**

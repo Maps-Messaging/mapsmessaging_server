@@ -61,6 +61,9 @@ public class RetainManager {
   }
 
   public long replace(long newRetainId) {
+    if (newRetainId < -1) {
+      throw new IllegalArgumentException("Retain id must be >= 0 or -1 to clear");
+    }
     Long old = retainIndex.poll();
     if (newRetainId != -1) {
       retainId.set(newRetainId);

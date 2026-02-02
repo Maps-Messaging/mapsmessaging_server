@@ -21,6 +21,7 @@
 package io.mapsmessaging.engine.destination.subscription;
 
 import io.mapsmessaging.api.message.Message;
+import io.mapsmessaging.dto.rest.session.SubscriptionStateDTO;
 
 import java.io.Closeable;
 import java.util.Queue;
@@ -50,4 +51,7 @@ public interface Subscribable extends Closeable {
 
   void resume();
 
+  SubscriptionStateDTO getState();
+
+  String getSessionId();
 }

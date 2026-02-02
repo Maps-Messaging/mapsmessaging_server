@@ -67,7 +67,7 @@ public class DestinationSubscriptionManager implements Subscribable {
     return removedQueue;
   }
 
-  public void put(String name, Subscription subscription) {
+  public void put(String name, Subscribable subscription) {
     subscriptions.computeIfAbsent(name, k -> {
       logger.log(ServerLogMessages.DESTINATION_SUBSCRIPTION_PUT, subscription.getSessionId(), name, subscription.getName());
       return subscription;
@@ -172,6 +172,16 @@ public class DestinationSubscriptionManager implements Subscribable {
   }
 
   @Override
+  public SubscriptionStateDTO getState() {
+    return null;
+  }
+
+  @Override
+  public String getSessionId() {
+    return "";
+  }
+
+  @Override
   public int register(long messageId) {
     return 0;
   }
@@ -183,8 +193,9 @@ public class DestinationSubscriptionManager implements Subscribable {
   public List<SubscriptionStateDTO> getSubscriptionStates() {
     List<SubscriptionStateDTO> states = new ArrayList<>();
     for (Subscribable subscribable : subscriptions.values()) {
-      if (subscribable instanceof Subscription){
-        states.add( ((Subscription)subscribable).getState());
+      SubscriptionStateDTO state = subscribable.getState();
+      if(state != null) {
+        states.add(state);
       }
     }
     return states;
