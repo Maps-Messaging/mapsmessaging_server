@@ -128,7 +128,7 @@ public class MavlinkProtocol extends Protocol {
   public boolean processPacket(@NonNull @NotNull Frame envelope, String messageName, byte[] raw) throws IOException {
     MessageBuilder messageBuilder = new MessageBuilder();
     Map<String, String> metaData = new HashMap<>();
-    metaData.put("protocol", "NATS");
+    metaData.put("protocol", "MavLink");
     metaData.put("version", ""+envelope.getVersion());
     metaData.put("sessionId", session.getName());
     metaData.put("time_ms", "" + System.currentTimeMillis());

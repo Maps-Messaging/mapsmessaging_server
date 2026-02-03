@@ -30,6 +30,7 @@ public class MavlinkConfig extends MavlinkConfigDTO implements Config {
     setType("mavlink");
     ProtocolConfigFactory.unpack(config, this);
 
+    this.fullyQualifiedPathToDialectXml = config.getProperty("fullyQualifiedPathToDialectXml", fullyQualifiedPathToDialectXml);
     this.idleSessionTimeout = config.getLongProperty("idleSessionTimeout", idleSessionTimeout);
     this.maximumSessionExpiry = config.getIntProperty("maximumSessionExpiry", maximumSessionExpiry);
     this.advertiseInterval = config.getIntProperty("advertiseInterval", advertiseInterval);

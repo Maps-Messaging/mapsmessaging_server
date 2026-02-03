@@ -19,29 +19,28 @@
 
 package io.mapsmessaging.network.protocol.impl.mavlink;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
+
 import io.mapsmessaging.config.protocol.impl.MavlinkConfig;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.mavlink.MavlinkEventFactory;
 import io.mapsmessaging.mavlink.ProcessedFrame;
 import io.mapsmessaging.network.io.EndPoint;
-import io.mapsmessaging.network.io.InterfaceInformation;
 import io.mapsmessaging.network.io.Packet;
 import io.mapsmessaging.network.io.impl.SelectorCallback;
 import io.mapsmessaging.network.io.impl.SelectorTask;
 import io.mapsmessaging.network.io.impl.udp.UDPFacadeEndPoint;
 import io.mapsmessaging.network.io.impl.udp.session.UDPSessionState;
-import io.mapsmessaging.network.protocol.transformation.ProtocolMessageTransformation;
-import io.mapsmessaging.network.protocol.transformation.TransformationManager;
+import org.xml.sax.SAXException;
 
+import javax.xml.parsers.ParserConfigurationException;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.net.URI;
 import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -62,11 +61,20 @@ public class MavlinkInterfaceManager implements SelectorCallback, MavlinkConnect
   private final List<InetSocketAddress> forwardList;
 
   public MavlinkInterfaceManager(EndPoint endPoint) throws IOException {
-    logger = LoggerFactory.getLogger("Mavlink Protocol on " + endPoint.getName());
+    logger = LoggerFactory.getLogger(MavlinkInterfaceManager.class);
     this.endPoint = endPoint;
     mavlinkConfig = (MavlinkConfig) endPoint.getConfig().getProtocolConfig("mavlink");
     long timeout = mavlinkConfig.getIdleSessionTimeout();
-    mavlinkEventFactory  = new MavlinkEventFactory();
+    String path = mavlinkConfig.getFullyQualifiedPathToDialectXml();
+    Path dialectPath = null;
+    if(path != null && !path.isBlank()){
+      dialectPath = Path.of(path);
+      if(!dialectPath.toFile().exists()){
+        logger.log(MAVLINK_DIALECT_FAILED_TO_LOAD, path);
+        dialectPath = null;
+      }
+    }
+    mavlinkEventFactory  = loadDialect(dialectPath);
     currentSessions = new MavLinkSessionManager<>(timeout);
 
     selectorTask = new SelectorTask(this, endPoint.getConfig().getEndPointConfig(), endPoint.isUDP());
@@ -87,6 +95,18 @@ public class MavlinkInterfaceManager implements SelectorCallback, MavlinkConnect
         }
       }
     }
+  }
+
+  private MavlinkEventFactory loadDialect(Path dialectPath) throws IOException {
+
+    if(dialectPath != null){
+      try {
+        return new MavlinkEventFactory(dialectPath);
+      } catch (ParserConfigurationException |SAXException e) {
+        logger.log(MAVLINK_DIALECT_FORMAT_FAILURES, dialectPath.toString(), e);
+      }
+    }
+    return new MavlinkEventFactory();
   }
 
   @Override

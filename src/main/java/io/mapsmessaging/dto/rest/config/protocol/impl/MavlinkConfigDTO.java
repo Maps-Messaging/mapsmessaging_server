@@ -36,6 +36,17 @@ public class MavlinkConfigDTO extends ProtocolConfigDTO {
   }
 
   @Schema(
+      description =
+          "Fully qualified path to the MAVLink dialect XML. "
+              + "If not provided, the common dialect is used.",
+      example = "C:/path/to/dialects/common.xml",
+      defaultValue = "",
+      requiredMode = Schema.RequiredMode.NOT_REQUIRED,
+      nullable = true
+  )
+  protected String fullyQualifiedPathToDialectXml = "";
+
+  @Schema(
       description = "Idle session timeout in seconds. Session is closed if no MAVLink traffic is received within this period.",
       example = "600",
       minimum = "1",

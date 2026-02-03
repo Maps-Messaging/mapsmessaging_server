@@ -383,6 +383,9 @@ public enum ServerLogMessages implements LogMessage {
   MAVLINK_FAILED_SETTING_UP_SESSION(LEVEL.WARN, SERVER_CATEGORY.PROTOCOL, "Failed to setup Mavlink session for {}"),
   MAVLINK_SESSION_CREATED(LEVEL.INFO, SERVER_CATEGORY.PROTOCOL, "New Mavlink session setup for {}"),
   MAVLINK_FAILED_FORWARD_PACKET(LEVEL.WARN, SERVER_CATEGORY.PROTOCOL, "Failed to forward mavlink packet to {}"),
+  MAVLINK_DIALECT_FAILED_TO_LOAD(LEVEL.WARN, SERVER_CATEGORY.PROTOCOL, "Failed to load the mavlink dialect specifed at {}"),
+  MAVLINK_DIALECT_FORMAT_FAILURES(LEVEL.WARN, SERVER_CATEGORY.PROTOCOL, "Failed to parse  the mavlink dialect specifed at {}, falling back to default dialect"),
+
 
   MAVLINK_SUCCESSFUL_FORWARD_PACKET(LEVEL.DEBUG, SERVER_CATEGORY.PROTOCOL, "Forward mavlink packet to {}"),
   MAVLINK_DETECTED_PACKET(LEVEL.DEBUG, SERVER_CATEGORY.PROTOCOL, "Detected mavlink packet from {} as {}"),
