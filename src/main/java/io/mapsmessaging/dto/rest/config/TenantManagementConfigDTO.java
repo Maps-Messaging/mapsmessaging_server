@@ -19,7 +19,9 @@
 
 package io.mapsmessaging.dto.rest.config;
 
+import io.mapsmessaging.dto.rest.config.routing.PredefinedServerConfigDTO;
 import io.mapsmessaging.dto.rest.config.tenant.TenantConfigDTO;
+import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -32,11 +34,15 @@ import java.util.List;
 @NoArgsConstructor
 @Schema(description = "Tenant Management Configuration DTO")
 public class TenantManagementConfigDTO extends BaseConfigDTO implements ConfigurationManagerDTO {
+  @ArraySchema(
+      schema = @Schema(implementation = TenantConfigDTO.class),
+      minItems = 0
+  )
   @Schema(
       description = "List of tenant configurations",
       requiredMode = Schema.RequiredMode.NOT_REQUIRED,
       nullable = false,
-      defaultValue = "[]"
+      example = "[]"
   )
   protected List<TenantConfigDTO> tenantConfigList;
 }

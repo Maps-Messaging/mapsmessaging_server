@@ -19,7 +19,9 @@
 
 package io.mapsmessaging.dto.rest.config;
 
+import io.mapsmessaging.dto.rest.config.device.triggers.BaseTriggerConfigDTO;
 import io.mapsmessaging.dto.rest.config.routing.PredefinedServerConfigDTO;
+import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -51,11 +53,15 @@ public class RoutingManagerConfigDTO extends BaseConfigDTO implements Configurat
   )
   protected boolean autoDiscovery = true;
 
+  @ArraySchema(
+      schema = @Schema(implementation = PredefinedServerConfigDTO.class),
+      minItems = 0
+  )
   @Schema(
       description = "List of predefined server configurations",
       requiredMode = Schema.RequiredMode.NOT_REQUIRED,
       nullable = false,
-      defaultValue = "[]"
+      example  = "[]"
   )
   protected List<PredefinedServerConfigDTO> predefinedServers = List.of();
 }

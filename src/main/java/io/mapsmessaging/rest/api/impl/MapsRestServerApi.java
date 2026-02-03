@@ -166,12 +166,19 @@ public class MapsRestServerApi extends BaseRestApi {
       description = "A simple endpoint to verify that the server is operational and responsive.",
       security = {}, // Overrides global security to make this endpoint accessible without authentication
       responses = {
-          @ApiResponse(responseCode = "200", description = "Server is operational"),
+          @ApiResponse(
+              responseCode = "200",
+              description = "Server is operational",
+              content = @Content(
+                  mediaType = "application/json",
+                  schema = @Schema(implementation = PingResponse.class)
+              )
+          ),
           @ApiResponse(responseCode = "400", description = "Bad request")
       }
   )
-  public String getPing() {
-    return "Success";
+  public PingResponse getPing() {
+    return new PingResponse("ok");
   }
 
   @GET
@@ -223,5 +230,14 @@ public class MapsRestServerApi extends BaseRestApi {
   @AllArgsConstructor
   public static final class ServerName{
     String name;
+  }
+
+
+  @Data
+  @AllArgsConstructor
+  public final class PingResponse {
+
+    @Schema(description = "Ping status", example = "ok")
+    private String status;
   }
 }

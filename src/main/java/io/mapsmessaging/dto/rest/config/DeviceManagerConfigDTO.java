@@ -24,6 +24,7 @@ import io.mapsmessaging.dto.rest.config.device.OneWireBusConfigDTO;
 import io.mapsmessaging.dto.rest.config.device.SerialBusConfigDTO;
 import io.mapsmessaging.dto.rest.config.device.SpiDeviceBusConfigDTO;
 import io.mapsmessaging.dto.rest.config.device.triggers.BaseTriggerConfigDTO;
+import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
 
@@ -54,11 +55,15 @@ public class DeviceManagerConfigDTO extends BaseConfigDTO implements Configurati
   )
   protected boolean demoEnabled;
 
+  @ArraySchema(
+      schema = @Schema(implementation = BaseTriggerConfigDTO.class),
+      minItems = 0
+  )
   @Schema(
       description = "List of trigger configurations",
       requiredMode = Schema.RequiredMode.NOT_REQUIRED,
-      defaultValue = "[]",
-      nullable = true
+      nullable = true,
+      example = "[]"
   )
   protected List<BaseTriggerConfigDTO> triggers;
 

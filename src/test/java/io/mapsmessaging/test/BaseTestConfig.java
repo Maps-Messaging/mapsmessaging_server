@@ -213,7 +213,7 @@ public class BaseTestConfig extends BaseTest {
     }
   }
 
-  public String getPassword(String user) throws IOException {
+  public static String getPassword(String user) throws IOException {
     if (usernamePasswordMap == null) {
       if (md != null && md.isStarted() && AuthManager.getInstance().isAuthenticationEnabled()) {
         ConfigurationProperties properties = new ConfigurationProperties(AuthManager.getInstance().getConfig().getAuthConfig());

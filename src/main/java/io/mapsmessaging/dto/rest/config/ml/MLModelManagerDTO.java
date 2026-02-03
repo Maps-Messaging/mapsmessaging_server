@@ -21,6 +21,8 @@ package io.mapsmessaging.dto.rest.config.ml;
 
 
 import io.mapsmessaging.dto.rest.config.BaseConfigDTO;
+import io.mapsmessaging.dto.rest.config.device.triggers.BaseTriggerConfigDTO;
+import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -93,11 +95,15 @@ public class MLModelManagerDTO extends BaseConfigDTO {
   )
   protected ModelStoreConfigDTO modelStore;
 
+  @ArraySchema(
+      schema = @Schema(implementation = MLEventStreamDTO.class),
+      minItems = 0
+  )
   @Schema(
       description = "List of configured model event streams",
       requiredMode = Schema.RequiredMode.NOT_REQUIRED,
       nullable = false,
-      defaultValue = "[]"
+      example  = "[]"
   )
   protected List<MLEventStreamDTO> eventStreams = List.of();
 }
