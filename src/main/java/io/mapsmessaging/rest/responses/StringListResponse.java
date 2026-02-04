@@ -20,13 +20,15 @@
 package io.mapsmessaging.rest.responses;
 
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 import java.util.List;
 
+@NoArgsConstructor
 public class StringListResponse extends BaseResponse {
 
   @Getter
-  private final List<String> data;
+  private List<String> data;
 
   public StringListResponse(List<String> data) {
     this.data = data;

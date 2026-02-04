@@ -20,14 +20,16 @@
 package io.mapsmessaging.rest.responses;
 
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 import java.util.List;
 import java.util.Map;
 
+@NoArgsConstructor
 public class SchemaMapResponse extends BaseResponse {
 
   @Getter
-  private final Map<String, List<String>> data;
+  private Map<String, List<String>> data;
 
 
   public SchemaMapResponse( Map<String, List<String>> data) {
