@@ -25,11 +25,10 @@ import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 @Data
 @EqualsAndHashCode(callSuper = true)
-@NoArgsConstructor
 @Schema(
     description = "Discovery Manager (mDNS) configuration"
 )
-public class DiscoveryManagerConfigDTO extends BaseConfigDTO implements ConfigurationManagerDTO {
+public class DiscoveryManagerConfigDTO extends BaseManagerConfigDTO {
 
   @Schema(
       description = "Indicates if the discovery manager is enabled",
@@ -61,4 +60,8 @@ public class DiscoveryManagerConfigDTO extends BaseConfigDTO implements Configur
       requiredMode = Schema.RequiredMode.REQUIRED
   )
   protected String domainName;
+
+  public DiscoveryManagerConfigDTO() {
+    super("DiscoveryManagerConfigDTO");
+  }
 }

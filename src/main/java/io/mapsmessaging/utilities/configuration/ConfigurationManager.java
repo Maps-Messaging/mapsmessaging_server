@@ -99,7 +99,9 @@ public class ConfigurationManager {
   }
 
   public String[] getKnownManagers(){
-    return managerMap.keySet().toArray(new String[0]);
+    List<String> managerNames = new ArrayList<>(managerMap.keySet());
+    managerNames.sort(Comparator.naturalOrder());
+    return managerNames.toArray(new String[0]);
   }
 
   public ConfigManager getManager(String name){

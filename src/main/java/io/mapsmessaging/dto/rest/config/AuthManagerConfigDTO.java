@@ -22,15 +22,13 @@ package io.mapsmessaging.dto.rest.config;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
-import lombok.NoArgsConstructor;
 
 import java.util.Map;
 
 @Data
 @EqualsAndHashCode(callSuper = true)
-@NoArgsConstructor
 @Schema(description = "Auth Manager Configuration DTO")
-public class AuthManagerConfigDTO extends BaseConfigDTO implements ConfigurationManagerDTO  {
+public class AuthManagerConfigDTO extends BaseManagerConfigDTO {
 
   @Schema(
       description = "Indicates if authentication is enabled",
@@ -52,7 +50,6 @@ public class AuthManagerConfigDTO extends BaseConfigDTO implements Configuration
 
   @Schema(
       description = "Configuration properties for authentication",
-      implementation = Map.class,
       requiredMode = Schema.RequiredMode.NOT_REQUIRED,
       additionalProperties = Schema.AdditionalPropertiesValue.TRUE,
       additionalPropertiesSchema = Object.class,
@@ -246,7 +243,12 @@ public class AuthManagerConfigDTO extends BaseConfigDTO implements Configuration
   )
   protected int maxSoftDelayMillis = 2000;
 
+  public AuthManagerConfigDTO() {
+    super("AuthManagerConfigDTO");
+  }
+
   public AuthManagerConfigDTO(AuthManagerConfigDTO source) {
+    super("AuthManagerConfigDTO");
     this.authenticationEnabled = source.authenticationEnabled;
     this.authorisationEnabled = source.authorisationEnabled;
     this.authConfig = source.authConfig == null ? null : Map.copyOf(source.authConfig);

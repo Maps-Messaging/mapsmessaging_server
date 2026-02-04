@@ -30,9 +30,8 @@ import java.util.List;
 
 @Data
 @EqualsAndHashCode(callSuper = true)
-@NoArgsConstructor
 @Schema(description = "Destination Manager Configuration DTO")
-public class DestinationManagerConfigDTO extends BaseConfigDTO implements ConfigurationManagerDTO {
+public class DestinationManagerConfigDTO extends BaseManagerConfigDTO {
 
   @Schema(
       description = "List of destination configurations",
@@ -40,4 +39,8 @@ public class DestinationManagerConfigDTO extends BaseConfigDTO implements Config
       requiredMode = Schema.RequiredMode.REQUIRED
   )
   protected List<DestinationConfigDTO> data;
+
+  public DestinationManagerConfigDTO() {
+    super("DestinationManagerConfigDTO");
+  }
 }

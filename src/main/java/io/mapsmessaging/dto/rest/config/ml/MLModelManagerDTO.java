@@ -21,6 +21,7 @@ package io.mapsmessaging.dto.rest.config.ml;
 
 
 import io.mapsmessaging.dto.rest.config.BaseConfigDTO;
+import io.mapsmessaging.dto.rest.config.BaseManagerConfigDTO;
 import io.mapsmessaging.dto.rest.config.device.triggers.BaseTriggerConfigDTO;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -31,9 +32,8 @@ import lombok.NoArgsConstructor;
 import java.util.List;
 @EqualsAndHashCode(callSuper = true)
 @Data
-@NoArgsConstructor
 @Schema(description = "Machine Learning Model Manager configuration")
-public class MLModelManagerDTO extends BaseConfigDTO {
+public class MLModelManagerDTO extends BaseManagerConfigDTO {
 
   @Schema(
       description = "Enable in-memory caching of models",
@@ -106,5 +106,9 @@ public class MLModelManagerDTO extends BaseConfigDTO {
       example  = "[]"
   )
   protected List<MLEventStreamDTO> eventStreams = List.of();
+
+  public MLModelManagerDTO(){
+    super("MLModelManagerConfigDTO");
+  }
 }
 

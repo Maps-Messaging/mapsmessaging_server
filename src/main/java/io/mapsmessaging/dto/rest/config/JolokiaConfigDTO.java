@@ -19,19 +19,16 @@
 
 package io.mapsmessaging.dto.rest.config;
 
-import io.mapsmessaging.configuration.ConfigurationProperties;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
-import lombok.NoArgsConstructor;
 
 import java.util.Map;
 
 @Data
 @EqualsAndHashCode(callSuper = true)
-@NoArgsConstructor
 @Schema(description = "Jolokia Configuration DTO")
-public class JolokiaConfigDTO extends BaseConfigDTO implements ConfigurationManagerDTO {
+public class JolokiaConfigDTO extends BaseManagerConfigDTO {
 
   @Schema(
       description = "Enable or disable Jolokia monitoring",
@@ -50,4 +47,8 @@ public class JolokiaConfigDTO extends BaseConfigDTO implements ConfigurationMana
       example = "{ \"rules\": [ { \"mbean\": \"java.lang:type=Memory\", \"attributes\": [\"HeapMemoryUsage\"] } ] }"
   )
   private Map<String, Object> config;
+
+  public JolokiaConfigDTO() {
+    super("JolokiaConfigDTO");
+  }
 }

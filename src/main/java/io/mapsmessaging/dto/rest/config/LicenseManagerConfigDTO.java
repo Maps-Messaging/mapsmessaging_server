@@ -6,10 +6,9 @@ import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 
 @Data
-@NoArgsConstructor
 @EqualsAndHashCode(callSuper = true)
 @Schema(description = "License Management Configuration DTO")
-public class LicenseManagerConfigDTO extends BaseConfigDTO implements ConfigurationManagerDTO {
+public class LicenseManagerConfigDTO extends BaseManagerConfigDTO {
   @Schema(
       description = "MAPS registered client name",
       example = "Company B.V.",
@@ -25,4 +24,8 @@ public class LicenseManagerConfigDTO extends BaseConfigDTO implements Configurat
       nullable = true
   )
   protected String clientSecret;
+
+  public LicenseManagerConfigDTO() {
+    super("LicenseManagerConfigDTO");
+  }
 }

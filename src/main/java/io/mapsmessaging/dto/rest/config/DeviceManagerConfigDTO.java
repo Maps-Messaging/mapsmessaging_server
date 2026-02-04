@@ -30,12 +30,12 @@ import lombok.*;
 
 import java.util.List;
 
-@NoArgsConstructor
+
 @EqualsAndHashCode(callSuper = true)
 @Schema(description = "Device Manager Configuration DTO")
 @Getter
 @Setter
-public class DeviceManagerConfigDTO extends BaseConfigDTO implements ConfigurationManagerDTO {
+public class DeviceManagerConfigDTO extends BaseManagerConfigDTO {
 
   @Schema(
       description = "Indicates if the device manager is enabled",
@@ -94,5 +94,9 @@ public class DeviceManagerConfigDTO extends BaseConfigDTO implements Configurati
       nullable = true
   )
   protected SerialBusConfigDTO serialDeviceBusConfig;
+
+  public DeviceManagerConfigDTO(){
+    super("DeviceManagerConfigDTO");
+  }
 
 }

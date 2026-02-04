@@ -29,9 +29,8 @@ import java.util.List;
 
 @Data
 @EqualsAndHashCode(callSuper = true)
-@NoArgsConstructor
 @Schema(description = "Network Connection Manager Configuration DTO")
-public class NetworkConnectionManagerConfigDTO extends BaseConfigDTO implements ConfigurationManagerDTO {
+public class NetworkConnectionManagerConfigDTO extends BaseManagerConfigDTO {
 
   @Schema(
       description = "List of endpoint connection server configurations",
@@ -39,4 +38,8 @@ public class NetworkConnectionManagerConfigDTO extends BaseConfigDTO implements 
       nullable = true
   )
   protected List<EndPointConnectionServerConfigDTO> endPointServerConfigList;
+
+  public NetworkConnectionManagerConfigDTO(){
+    super("NetworkConnectionManagerConfigDTO");
+  }
 }

@@ -31,9 +31,8 @@ import java.util.List;
 
 @Data
 @EqualsAndHashCode(callSuper = true)
-@NoArgsConstructor
 @Schema(description = "Routing Manager Configuration DTO")
-public class RoutingManagerConfigDTO extends BaseConfigDTO implements ConfigurationManagerDTO {
+public class RoutingManagerConfigDTO extends BaseManagerConfigDTO {
 
   @Schema(
       description = "Enables routing management",
@@ -64,4 +63,8 @@ public class RoutingManagerConfigDTO extends BaseConfigDTO implements Configurat
       example  = "[]"
   )
   protected List<PredefinedServerConfigDTO> predefinedServers = List.of();
+
+  public RoutingManagerConfigDTO(){
+    super("RoutingManagerConfigDTO");
+  }
 }

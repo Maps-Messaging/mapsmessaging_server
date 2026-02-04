@@ -67,7 +67,8 @@ public class EndPointConfigDTO extends BaseConfigDTO {
 
   @Schema(description = "Type of the endpoint",
       example = "tcp",
-      allowableValues = {"tcp", "ssl", "udp", "dtls", "loraDevice", "loraSerial", "serial", "satellite"}
+      allowableValues = {"tcp", "ssl", "udp", "dtls", "loraDevice", "loraSerial", "serial", "satellite"},
+      requiredMode = Schema.RequiredMode.REQUIRED
   )
   protected String type;
 

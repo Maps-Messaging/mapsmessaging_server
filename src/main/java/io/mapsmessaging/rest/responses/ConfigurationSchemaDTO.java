@@ -1,7 +1,6 @@
 package io.mapsmessaging.rest.responses;
 
-import io.mapsmessaging.dto.rest.config.BaseConfigDTO;
-import io.mapsmessaging.dto.rest.config.ConfigurationManagerDTO;
+import io.mapsmessaging.dto.rest.config.BaseManagerConfigDTO;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -19,9 +18,9 @@ public class ConfigurationSchemaDTO {
   @Schema(
       description = "Configuration object. The concrete shape is selected by the discriminator field 'type'.",
       requiredMode = Schema.RequiredMode.REQUIRED,
-      implementation = ConfigurationManagerDTO.class
+      implementation = BaseManagerConfigDTO.class
   )
-  private BaseConfigDTO config;
+  private BaseManagerConfigDTO config;
 
   @Schema(
       description = "JSON Schema describing the configuration object.",

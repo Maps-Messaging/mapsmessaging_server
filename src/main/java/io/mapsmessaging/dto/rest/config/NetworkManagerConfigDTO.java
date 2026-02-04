@@ -30,9 +30,8 @@ import java.util.List;
 
 @Data
 @EqualsAndHashCode(callSuper = true)
-@NoArgsConstructor
 @Schema(description = "Network Manager Configuration DTO")
-public class NetworkManagerConfigDTO extends BaseConfigDTO implements ConfigurationManagerDTO {
+public class NetworkManagerConfigDTO extends BaseManagerConfigDTO {
 
   @Schema(
       description = "Prefer IPv6 addresses when both IPv4 and IPv6 are available",
@@ -70,4 +69,8 @@ public class NetworkManagerConfigDTO extends BaseConfigDTO implements Configurat
       nullable = false
   )
   protected List<EndPointServerConfigDTO> endPointServerConfigList;
+
+  public NetworkManagerConfigDTO(){
+    super("NetworkManagerConfigDTO");
+  }
 }

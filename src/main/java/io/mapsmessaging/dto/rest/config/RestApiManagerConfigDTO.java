@@ -30,9 +30,8 @@ import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 @Data
 @EqualsAndHashCode(callSuper = true)
-@NoArgsConstructor
 @Schema(description = "Rest API Configuration DTO")
-public class RestApiManagerConfigDTO extends BaseConfigDTO implements ConfigurationManagerDTO {
+public class RestApiManagerConfigDTO extends BaseManagerConfigDTO {
 
   @Schema(
       description = "Indicates if REST API is enabled",
@@ -256,4 +255,8 @@ public class RestApiManagerConfigDTO extends BaseConfigDTO implements Configurat
       nullable = true
   )
   protected CorsHeaders corsHeaders;
+
+  public RestApiManagerConfigDTO() {
+    super("RestApiManagerConfigDTO");
+  }
 }

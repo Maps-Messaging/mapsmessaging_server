@@ -29,9 +29,8 @@ import java.util.List;
 
 @Data
 @EqualsAndHashCode(callSuper = true)
-@NoArgsConstructor
 @Schema(description = "LoRa Device Management Configuration DTO")
-public class LoRaDeviceManagerConfigDTO extends BaseConfigDTO implements ConfigurationManagerDTO {
+public class LoRaDeviceManagerConfigDTO extends BaseManagerConfigDTO {
 
   @Schema(
       description = "List of LoRa device configurations",
@@ -39,4 +38,8 @@ public class LoRaDeviceManagerConfigDTO extends BaseConfigDTO implements Configu
       nullable = true
   )
   protected List<LoRaDeviceConfigDTO> deviceConfigList;
+
+  public LoRaDeviceManagerConfigDTO(){
+    super("LoRaDeviceManagerConfigDTO");
+  }
 }

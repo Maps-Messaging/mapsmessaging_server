@@ -31,9 +31,8 @@ import java.util.List;
 
 @Data
 @EqualsAndHashCode(callSuper = true)
-@NoArgsConstructor
 @Schema(description = "Tenant Management Configuration DTO")
-public class TenantManagementConfigDTO extends BaseConfigDTO implements ConfigurationManagerDTO {
+public class TenantManagementConfigDTO extends BaseManagerConfigDTO {
   @ArraySchema(
       schema = @Schema(implementation = TenantConfigDTO.class),
       minItems = 0
@@ -45,4 +44,8 @@ public class TenantManagementConfigDTO extends BaseConfigDTO implements Configur
       example = "[]"
   )
   protected List<TenantConfigDTO> tenantConfigList;
+
+  public TenantManagementConfigDTO(){
+    super("TenantManagementConfigDTO");
+  }
 }
