@@ -34,6 +34,7 @@ import io.mapsmessaging.rest.auth.AuthenticationContext;
 import io.mapsmessaging.rest.auth.RestAccessControl;
 import io.mapsmessaging.rest.cache.CacheKey;
 import io.mapsmessaging.rest.handler.SessionTracker;
+import io.mapsmessaging.rest.responses.StatusResponse;
 import io.mapsmessaging.security.access.Identity;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -47,6 +48,8 @@ import javax.security.auth.Subject;
 import javax.security.auth.login.LoginException;
 
 import java.io.IOException;
+import java.util.UUID;
+import java.util.function.Supplier;
 
 import static io.mapsmessaging.logging.ServerLogMessages.REST_CACHE_HIT;
 import static io.mapsmessaging.logging.ServerLogMessages.REST_CACHE_MISS;
@@ -194,4 +197,81 @@ public class BaseRestApi {
   protected void removeFromCache(CacheKey key) {
     Constants.getCentralCache().remove(key);
   }
+
+  protected void removeUriFromCache(String path){
+    Constants.getCentralCache().removePath(path);
+  }
+
+  protected Response ok(Object entity) {
+    return Response.ok(entity).build();
+  }
+
+  protected Response created(StatusResponse statusResponse) {
+    return Response.status(Response.Status.CREATED)
+        .entity(statusResponse)
+        .build();
+  }
+
+  protected Response noContent() {
+    return Response.noContent().build();
+  }
+
+  protected Response badRequest() {
+    return Response.status(Response.Status.BAD_REQUEST).build();
+  }
+
+  protected Response badRequest(String message) {
+    return Response.status(Response.Status.BAD_REQUEST)
+        .entity(new StatusResponse(message))
+        .build();
+  }
+
+  protected Response notFound() {
+    return Response.status(Response.Status.NOT_FOUND).build();
+  }
+
+  protected Response notFound(String message) {
+    return Response.status(Response.Status.NOT_FOUND)
+        .entity(new StatusResponse(message))
+        .build();
+  }
+
+  protected Response conflict(String message) {
+    return Response.status(Response.Status.CONFLICT)
+        .entity(new StatusResponse(message))
+        .build();
+  }
+
+  protected Response internalServerError(String message) {
+    return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+        .entity(new StatusResponse(message))
+        .build();
+  }
+
+  protected UUID parseUuidOrNull(String value) {
+    if (value == null || value.isBlank()) {
+      return null;
+    }
+    try {
+      return UUID.fromString(value);
+    } catch (IllegalArgumentException ex) {
+      return null;
+    }
+  }
+
+  protected Response withUuidOrBadRequest(String uuidString, java.util.function.Function<UUID, Response> handler) {
+    UUID uuid = parseUuidOrNull(uuidString);
+    if (uuid == null) {
+      return badRequest("Invalid UUID");
+    }
+    return handler.apply(uuid);
+  }
+
+  protected <T> Response requireNonNull(T value, String message, Supplier<Response> handler) {
+    if (value == null) {
+      return badRequest(message);
+    }
+    return handler.get();
+  }
+
 }

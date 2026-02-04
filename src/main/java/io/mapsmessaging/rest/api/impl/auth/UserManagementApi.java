@@ -36,11 +36,19 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
-import jakarta.ws.rs.*;
+import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.DELETE;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.POST;
+import jakarta.ws.rs.PUT;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.PathParam;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
@@ -54,11 +62,11 @@ import java.util.UUID;
 import static io.mapsmessaging.rest.api.Constants.URI_PATH;
 
 @Tag(name = "Authentication and Authorisation Management")
-@Path(URI_PATH+"/auth/users")
+@Path(URI_PATH + "/auth/users")
 public class UserManagementApi extends BaseAuthRestApi {
 
   @GET
-  @Produces({MediaType.APPLICATION_JSON})
+  @Produces(MediaType.APPLICATION_JSON)
   @Operation(
       summary = "Get all users",
       description = "Retrieves all currently known users filtered by the optional filter string, SQL like syntax. Requires authentication if enabled in the configuration.",
@@ -68,168 +76,321 @@ public class UserManagementApi extends BaseAuthRestApi {
               description = "Get all users was successful",
               content = @Content(mediaType = "application/json", schema = @Schema(implementation = UserDTO[].class))
           ),
-          @ApiResponse(responseCode = "400", description = "Bad request"),
+          @ApiResponse(
+              responseCode = "400",
+              description = "Bad request",
+              content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))
+          ),
           @ApiResponse(responseCode = "401", description = "Invalid credentials or unauthorized access"),
           @ApiResponse(responseCode = "403", description = "User is not authorised to access the resource"),
       }
   )
-  public UserDTO[] getAllUsers(
+  public Response getAllUsers(
       @Parameter(
-          description = "Optional filter string ",
-          schema = @Schema(type = "String", example = "username = 'bill'")
+          description = "Optional filter string",
+          schema = @Schema(type = "string", example = "username = 'bill'")
       )
-      @QueryParam("filter") String filter) throws ParseException {
+      @QueryParam("filter") String filter) {
+
     hasAccess(RESOURCE);
+
+    ParserExecutor parserExecutor;
+    try {
+      parserExecutor = (filter != null && !filter.isBlank()) ? SelectorParser.compile(filter) : null;
+    } catch (ParseException ex) {
+      return Response.status(Response.Status.BAD_REQUEST)
+          .entity(new StatusResponse("Invalid filter expression"))
+          .type(MediaType.APPLICATION_JSON)
+          .build();
+    }
+
     AuthManager authManager = AuthManager.getInstance();
     List<UserDetails> users = authManager.getUsers();
-    ParserExecutor parser = (filter != null && !filter.isEmpty()) ? SelectorParser.compile(filter) : null;
-    return users.stream()
+
+    UserDTO[] result = users.stream()
         .map(userDetails -> buildUser(userDetails, authManager))
-        .filter(user -> parser == null || parser.evaluate(user))
-        .toList().toArray(new UserDTO[0]);
+        .filter(userDto -> parserExecutor == null || parserExecutor.evaluate(userDto))
+        .toList()
+        .toArray(new UserDTO[0]);
+
+    return Response.ok(result).type(MediaType.APPLICATION_JSON).build();
   }
 
   @GET
   @Path("/{userUuid}")
-  @Produces({MediaType.APPLICATION_JSON})
+  @Produces(MediaType.APPLICATION_JSON)
   @Operation(
-      summary = "Get user by username",
-      description = "Retrieve the user by username. Requires authentication if enabled in the configuration.",
+      summary = "Get user by uuid",
+      description = "Retrieve the user by uuid. Requires authentication if enabled in the configuration.",
       responses = {
           @ApiResponse(
               responseCode = "200",
               description = "Get user was successful",
               content = @Content(mediaType = "application/json", schema = @Schema(implementation = UserDTO.class))
           ),
-          @ApiResponse(responseCode = "400", description = "Bad request"),
+          @ApiResponse(
+              responseCode = "400",
+              description = "Bad request",
+              content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))
+          ),
           @ApiResponse(responseCode = "401", description = "Invalid credentials or unauthorized access"),
           @ApiResponse(responseCode = "403", description = "User is not authorised to access the resource"),
+          @ApiResponse(
+              responseCode = "404",
+              description = "User not found",
+              content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))
+          ),
       }
   )
-  public UserDTO getUser(@PathParam("userUuid") String userUuid) {
+  public Response getUser(
+      @Parameter(
+          required = true,
+          description = "User unique identifier",
+          schema = @Schema(type = "string", format = "uuid")
+      )
+      @PathParam("userUuid") String userUuid) {
+
     hasAccess(RESOURCE);
+
+    UUID uuid;
+    try {
+      uuid = UUID.fromString(userUuid);
+    } catch (IllegalArgumentException ex) {
+      return Response.status(Response.Status.BAD_REQUEST)
+          .entity(new StatusResponse("Invalid UUID"))
+          .type(MediaType.APPLICATION_JSON)
+          .build();
+    }
+
     AuthManager authManager = AuthManager.getInstance();
-    UUID uuid = UUID.fromString(userUuid);
+
     return authManager.getUsers().stream()
         .filter(user -> user.getIdentityEntry().getId().equals(uuid))
         .findFirst()
         .map(user -> buildUser(user, authManager))
-        .orElseGet(() -> {
-          response.setStatus(HttpServletResponse.SC_NOT_FOUND);
-          return null;
-        });
+        .map(userDto -> Response.ok(userDto).type(MediaType.APPLICATION_JSON).build())
+        .orElseGet(() -> Response.status(Response.Status.NOT_FOUND)
+            .entity(new StatusResponse("User not found"))
+            .type(MediaType.APPLICATION_JSON)
+            .build());
   }
 
-
   @POST
-  @Produces({MediaType.APPLICATION_JSON})
+  @Consumes(MediaType.APPLICATION_JSON)
+  @Produces(MediaType.APPLICATION_JSON)
   @Operation(
       summary = "Add a new user",
       description = "Adds a new user to the system. Requires authentication if enabled in the configuration.",
+      requestBody = @RequestBody(
+          required = true,
+          content = @Content(mediaType = "application/json", schema = @Schema(implementation = NewUserDTO.class))
+      ),
       responses = {
           @ApiResponse(
-              responseCode = "200",
-              description = "Add user was successful",
+              responseCode = "201",
+              description = "User created",
               content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))
           ),
-          @ApiResponse(responseCode = "400", description = "Bad request"),
+          @ApiResponse(
+              responseCode = "400",
+              description = "Bad request",
+              content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))
+          ),
           @ApiResponse(responseCode = "401", description = "Invalid credentials or unauthorized access"),
           @ApiResponse(responseCode = "403", description = "User is not authorised to access the resource"),
+          @ApiResponse(
+              responseCode = "409",
+              description = "Username already exists",
+              content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))
+          ),
       }
   )
-  public StatusResponse addUser(NewUserDTO newUser) {
+  public Response addUser(@Valid NewUserDTO newUser) {
+
     hasAccess(RESOURCE);
+
+    if (newUser == null) {
+      return Response.status(Response.Status.BAD_REQUEST)
+          .entity(new StatusResponse("Request body is required"))
+          .type(MediaType.APPLICATION_JSON)
+          .build();
+    }
+    if (newUser.getUsername() == null || newUser.getUsername().isBlank()) {
+      return Response.status(Response.Status.BAD_REQUEST)
+          .entity(new StatusResponse("Username is required"))
+          .type(MediaType.APPLICATION_JSON)
+          .build();
+    }
+    if (newUser.getPassword() == null) {
+      return Response.status(Response.Status.BAD_REQUEST)
+          .entity(new StatusResponse("Password is required"))
+          .type(MediaType.APPLICATION_JSON)
+          .build();
+    }
+
     AuthManager authManager = AuthManager.getInstance();
     SessionPrivileges sessionPrivileges = new SessionPrivileges(newUser.getUsername());
-    if (authManager.addUser(newUser.getUsername(), newUser.getPassword().toCharArray(), sessionPrivileges, new String[0])) {
-      response.setStatus(HttpServletResponse.SC_CREATED);
-      return new StatusResponse("User added successfully");
+
+    boolean created = authManager.addUser(
+        newUser.getUsername(),
+        newUser.getPassword().toCharArray(),
+        sessionPrivileges,
+        new String[0]
+    );
+
+    if (!created) {
+      return Response.status(Response.Status.CONFLICT)
+          .entity(new StatusResponse("Username already exists"))
+          .type(MediaType.APPLICATION_JSON)
+          .build();
     }
-    response.setStatus(HttpServletResponse.SC_CONFLICT);
-    return new StatusResponse("Username already exists");
+    removeUriFromCache(URI_PATH + "/auth/users");
+
+    return Response.status(Response.Status.CREATED)
+        .entity(new StatusResponse("User added successfully"))
+        .type(MediaType.APPLICATION_JSON)
+        .build();
   }
 
   @DELETE
   @Path("/{userUuid}")
-  @Produces({MediaType.APPLICATION_JSON})
+  @Produces(MediaType.APPLICATION_JSON)
   @Operation(
       summary = "Delete a user",
       description = "Deletes a user from the system. Requires authentication if enabled in the configuration.",
       responses = {
+          @ApiResponse(responseCode = "204", description = "User deleted"),
           @ApiResponse(
-              responseCode = "200",
-              description = "Delete user was successful",
+              responseCode = "400",
+              description = "Bad request",
               content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))
           ),
-          @ApiResponse(responseCode = "400", description = "Bad request"),
           @ApiResponse(responseCode = "401", description = "Invalid credentials or unauthorized access"),
           @ApiResponse(responseCode = "403", description = "User is not authorised to access the resource"),
+          @ApiResponse(
+              responseCode = "404",
+              description = "User not found",
+              content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))
+          ),
       }
   )
-  public StatusResponse deleteUser(@PathParam("userUuid") String userUuid) {
+  public Response deleteUser(
+      @Parameter(
+          required = true,
+          description = "User unique identifier",
+          schema = @Schema(type = "string", format = "uuid")
+      )
+      @PathParam("userUuid") String userUuid) {
+
     hasAccess(RESOURCE);
-    AuthManager authManager = AuthManager.getInstance();
-    UUID uuid = UUID.fromString(userUuid);
-    Identity identity = authManager.getUserIdentity(uuid);
-    if(identity != null){
-      authManager.delUser(identity.getUsername());
-      response.setStatus(HttpServletResponse.SC_NO_CONTENT);
-      return new StatusResponse("Success");
+
+    UUID uuid;
+    try {
+      uuid = UUID.fromString(userUuid);
+    } catch (IllegalArgumentException ex) {
+      return Response.status(Response.Status.BAD_REQUEST)
+          .entity(new StatusResponse("Invalid UUID"))
+          .type(MediaType.APPLICATION_JSON)
+          .build();
     }
-    response.setStatus(HttpServletResponse.SC_NOT_FOUND);
-    return new StatusResponse("No such user");
+
+    AuthManager authManager = AuthManager.getInstance();
+    Identity identity = authManager.getUserIdentity(uuid);
+
+    if (identity == null) {
+      return Response.status(Response.Status.NOT_FOUND)
+          .entity(new StatusResponse("User not found"))
+          .type(MediaType.APPLICATION_JSON)
+          .build();
+    }
+
+    authManager.delUser(identity.getUsername());
+    removeUriFromCache(URI_PATH + "/auth/users");
+    return Response.noContent().build();
   }
 
   @PUT
   @Path("/{userUuid}/password")
-  @Consumes({MediaType.APPLICATION_JSON})
-  @Produces({MediaType.APPLICATION_JSON})
+  @Consumes(MediaType.APPLICATION_JSON)
+  @Produces(MediaType.APPLICATION_JSON)
   @Operation(
       summary = "Change user password",
       description = "Change the password for a user. Admin may reset any user. A user may change their own password; currentPassword may be required depending on policy.",
+      requestBody = @RequestBody(
+          required = true,
+          content = @Content(mediaType = "application/json", schema = @Schema(implementation = ChangePasswordDTO.class))
+      ),
       responses = {
           @ApiResponse(responseCode = "204", description = "Password changed"),
-          @ApiResponse(responseCode = "400", description = "Bad request"),
+          @ApiResponse(
+              responseCode = "400",
+              description = "Bad request",
+              content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))
+          ),
           @ApiResponse(responseCode = "401", description = "Invalid credentials or unauthorized access"),
           @ApiResponse(responseCode = "403", description = "User is not authorised to access the resource"),
-          @ApiResponse(responseCode = "404", description = "User not found")
+          @ApiResponse(
+              responseCode = "404",
+              description = "User not found",
+              content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))
+          ),
+          @ApiResponse(
+              responseCode = "500",
+              description = "Password update failed",
+              content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))
+          ),
       }
   )
   public Response changeUserPassword(
+      @Parameter(
+          required = true,
+          description = "User unique identifier",
+          schema = @Schema(type = "string", format = "uuid")
+      )
       @PathParam("userUuid") String userUuid,
       @Valid ChangePasswordDTO request
   ) {
+
     hasAccess(RESOURCE);
 
     UUID uuid;
     try {
       uuid = UUID.fromString(userUuid);
     } catch (IllegalArgumentException e) {
-      return Response.status(Response.Status.BAD_REQUEST).build();
+      return Response.status(Response.Status.BAD_REQUEST)
+          .entity(new StatusResponse("Invalid UUID"))
+          .type(MediaType.APPLICATION_JSON)
+          .build();
     }
 
-    if(request.getNewPassword() == null || request.getNewPassword().isBlank()){
-      return Response.status(Response.Status.BAD_REQUEST).build();
+    if (request == null || request.getNewPassword() == null || request.getNewPassword().isBlank()) {
+      return Response.status(Response.Status.BAD_REQUEST)
+          .entity(new StatusResponse("New password is required"))
+          .type(MediaType.APPLICATION_JSON)
+          .build();
     }
+
     AuthManager authManager = AuthManager.getInstance();
-    return authManager.getUsers().stream()
-        .filter(user -> user.getIdentityEntry().getId().equals(uuid))
-        .findFirst()
-        .map(user -> {
-          Identity identity = authManager.getUserIdentity(uuid);
-          if(identity != null){
-            try {
-              authManager.updatePassword(identity, request.getNewPassword().toCharArray());
-            } catch (GeneralSecurityException | IOException e) {
-              // Log this
-            }
-          }
-          return Response.noContent().build();
-        })
-        .orElseGet(() -> Response.status(Response.Status.NOT_FOUND).build());
+    Identity identity = authManager.getUserIdentity(uuid);
+
+    if (identity == null) {
+      return Response.status(Response.Status.NOT_FOUND)
+          .entity(new StatusResponse("User not found"))
+          .type(MediaType.APPLICATION_JSON)
+          .build();
+    }
+
+    try {
+      authManager.updatePassword(identity, request.getNewPassword().toCharArray());
+      removeUriFromCache(URI_PATH + "/auth/users");
+      return Response.noContent().build();
+    } catch (GeneralSecurityException | IOException ex) {
+      return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+          .entity(new StatusResponse("Password update failed"))
+          .type(MediaType.APPLICATION_JSON)
+          .build();
+    }
   }
-
-
 
   private UserDTO buildUser(UserDetails user, AuthManager authManager) {
     List<GroupInfoDTO> groupNames = new ArrayList<>();
@@ -242,6 +403,7 @@ public class UserManagementApi extends BaseAuthRestApi {
         user.getIdentityEntry().getUsername(),
         user.getIdentityEntry().getId(),
         groupNames,
-        new LinkedHashMap<>(user.getIdentityEntry().getAttributes()));
+        new LinkedHashMap<>(user.getIdentityEntry().getAttributes())
+    );
   }
 }

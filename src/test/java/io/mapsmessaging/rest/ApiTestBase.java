@@ -24,6 +24,7 @@ import com.atlassian.oai.validator.restassured.OpenApiValidationFilter;
 import io.mapsmessaging.test.BaseTestConfig;
 import io.restassured.RestAssured;
 import io.restassured.http.Cookies;
+import io.restassured.specification.RequestSpecification;
 import org.junit.jupiter.api.BeforeAll;
 
 import java.io.IOException;
@@ -62,6 +63,12 @@ public abstract class ApiTestBase extends BaseTestConfig {
         .baseUri(baseUrl)
         .cookies(authCookies)
         .filter(openApi);
+  }
+
+  protected RequestSpecification givenAuthenticatedNoValidation() {
+    return RestAssured.given()
+        .baseUri(baseUrl)
+        .cookies(authCookies);
   }
 
   private static void waitUntilHealthy(Duration timeout) {

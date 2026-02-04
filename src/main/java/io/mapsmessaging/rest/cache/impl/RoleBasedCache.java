@@ -23,6 +23,8 @@ import io.mapsmessaging.dto.rest.cache.CacheInfo;
 import io.mapsmessaging.rest.cache.Cache;
 import io.mapsmessaging.rest.cache.CacheKey;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.LongAdder;
@@ -94,6 +96,14 @@ public class RoleBasedCache<V> implements Cache<CacheKey, V> {
   @Override
   public CacheInfo getCacheInfo() {
     return new CacheInfo(true, expiryDuration, cleanupInterval, cache.size(), cacheHits.sum(), cacheMisses.sum());
+  }
+
+  @Override
+  public void removePath(String path) {
+    String lookup = path.startsWith("/") ? path.substring(1) : path;
+    cache.entrySet().removeIf(entry ->
+        entry.getKey().getEndpoint().startsWith(lookup)
+    );
   }
 
   private void cleanup() {

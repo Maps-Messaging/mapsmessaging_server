@@ -28,5 +28,6 @@ public interface Cache<K, V> {
   void clear();
   long size();
   CacheInfo getCacheInfo();
+  void removePath(String path);
 }
 

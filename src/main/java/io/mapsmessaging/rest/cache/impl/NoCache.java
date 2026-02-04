@@ -54,4 +54,9 @@ public class NoCache <V> implements Cache<CacheKey, V> {
   public CacheInfo getCacheInfo() {
     return new CacheInfo(false, 0, 0, 0, 0, 0);
   }
+
+  @Override
+  public void removePath(String path) {
+
+  }
 }

@@ -43,6 +43,7 @@ import io.mapsmessaging.utilities.Agent;
 import io.mapsmessaging.utilities.threads.SimpleTaskScheduler;
 import jakarta.servlet.Servlet;
 import lombok.Getter;
+import org.glassfish.grizzly.http.server.ErrorPageGenerator;
 import org.glassfish.grizzly.http.server.HttpServer;
 import org.glassfish.grizzly.http.server.StaticHttpHandler;
 import org.glassfish.grizzly.nio.transport.TCPNIOTransport;
@@ -279,6 +280,9 @@ public class RestApiServerManager implements Agent {
     transport.setSelectorRunnersCount(config.getSelectorThreads());
     transport.setWorkerThreadPoolConfig(threadPoolConfig);
     transport.setKernelThreadPoolConfig(threadPoolConfig);
+    server.getServerConfiguration().setDefaultErrorPageGenerator(
+        (request, response, status, description, exception) -> null
+    );
 
     context.deploy(server);
     loadStatic(server);

@@ -19,9 +19,13 @@
 
 package io.mapsmessaging.rest.cache;
 
+import lombok.Getter;
+
 import java.util.Objects;
 
+@Getter
 public class CacheKey {
+
   private final String endpoint;
   private final String role;
 
