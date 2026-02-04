@@ -48,7 +48,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class JsonSchemaRoundTripTest {
 
-  private static Map<String, Class<?>> dtoMap = buildMap();
+  private static final Map<String, Class<?>> dtoMap = buildMap();
 
   private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper()
       .configure(SerializationFeature.ORDER_MAP_ENTRIES_BY_KEYS, true)
