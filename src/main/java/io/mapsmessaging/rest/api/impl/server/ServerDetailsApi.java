@@ -38,12 +38,12 @@ import jakarta.ws.rs.core.MediaType;
 import static io.mapsmessaging.rest.api.Constants.URI_PATH;
 
 @Tag(name = "Server Management")
-@Path(URI_PATH+"/server/details")
+@Path(URI_PATH + "/server/details")
 public class ServerDetailsApi extends ServerBaseRestApi {
 
   @GET
   @Path("/info")
-  @Produces({MediaType.APPLICATION_JSON})
+  @Produces(MediaType.APPLICATION_JSON)
   @Operation(
       summary = "Get server build information",
       description = "Retrieves detailed information about the server build, such as version and configuration details. Uses caching for improved performance.",
@@ -53,28 +53,27 @@ public class ServerDetailsApi extends ServerBaseRestApi {
               description = "Operation was successful",
               content = @Content(mediaType = "application/json", schema = @Schema(implementation = ServerInfoDTO.class))
           ),
-          @ApiResponse(responseCode = "400", description = "Bad request"),
           @ApiResponse(responseCode = "401", description = "Invalid credentials or unauthorized access"),
-          @ApiResponse(responseCode = "403", description = "User is not authorised to access the resource"),
+          @ApiResponse(responseCode = "403", description = "User is not authorised to access the resource")
       }
   )
   public ServerInfoDTO getBuildInfo() {
     hasAccess(RESOURCE);
-    CacheKey key = new CacheKey(uriInfo.getPath(), "buildInfo");
-    ServerInfoDTO cachedResponse = getFromCache(key, ServerInfoDTO.class);
+
+    CacheKey cacheKey = new CacheKey(uriInfo.getPath(), "buildInfo");
+    ServerInfoDTO cachedResponse = getFromCache(cacheKey, ServerInfoDTO.class);
     if (cachedResponse != null) {
       return cachedResponse;
     }
 
-    // Fetch and cache response
-    ServerInfoDTO response = StatusMessageHelper.fromMessageDaemon(MessageDaemon.getInstance());
-    putToCache(key, response);
-    return response;
+    ServerInfoDTO responseBody = StatusMessageHelper.fromMessageDaemon(MessageDaemon.getInstance());
+    putToCache(cacheKey, responseBody);
+    return responseBody;
   }
 
   @GET
   @Path("/stats")
-  @Produces({MediaType.APPLICATION_JSON})
+  @Produces(MediaType.APPLICATION_JSON)
   @Operation(
       summary = "Get server statistics",
       description = "Retrieves server usage statistics, including metrics such as CPU usage, memory usage, and active connections. Uses caching for improved performance.",
@@ -84,22 +83,21 @@ public class ServerDetailsApi extends ServerBaseRestApi {
               description = "Operation was successful",
               content = @Content(mediaType = "application/json", schema = @Schema(implementation = ServerStatisticsDTO.class))
           ),
-          @ApiResponse(responseCode = "400", description = "Bad request"),
           @ApiResponse(responseCode = "401", description = "Invalid credentials or unauthorized access"),
-          @ApiResponse(responseCode = "403", description = "User is not authorised to access the resource"),
+          @ApiResponse(responseCode = "403", description = "User is not authorised to access the resource")
       }
   )
   public ServerStatisticsDTO getStats() {
     hasAccess(RESOURCE);
-    CacheKey key = new CacheKey(uriInfo.getPath(), "serverStats");
-    ServerStatisticsDTO cachedResponse = getFromCache(key, ServerStatisticsDTO.class);
+
+    CacheKey cacheKey = new CacheKey(uriInfo.getPath(), "serverStats");
+    ServerStatisticsDTO cachedResponse = getFromCache(cacheKey, ServerStatisticsDTO.class);
     if (cachedResponse != null) {
       return cachedResponse;
     }
-    // Fetch and cache response
-    ServerStatisticsDTO dto = ServerStatisticsHelper.create();
-    putToCache(key, dto);
-    return dto;
-  }
 
+    ServerStatisticsDTO responseBody = ServerStatisticsHelper.create();
+    putToCache(cacheKey, responseBody);
+    return responseBody;
+  }
 }

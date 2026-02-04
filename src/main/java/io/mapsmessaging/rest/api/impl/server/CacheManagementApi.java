@@ -36,10 +36,11 @@ import jakarta.ws.rs.core.Response;
 import static io.mapsmessaging.rest.api.Constants.URI_PATH;
 
 @Tag(name = "Server Config Management")
-@Path(URI_PATH+"/server/cache")
+@Path(URI_PATH + "/server/cache")
 public class CacheManagementApi extends ServerBaseRestApi {
+
   @GET
-  @Produces({MediaType.APPLICATION_JSON})
+  @Produces(MediaType.APPLICATION_JSON)
   @Operation(
       summary = "Retrieve cache information",
       description = "Fetches detailed information about the server's central cache, including size, usage statistics, and entries.",
@@ -49,9 +50,8 @@ public class CacheManagementApi extends ServerBaseRestApi {
               description = "Operation was successful",
               content = @Content(mediaType = "application/json", schema = @Schema(implementation = CacheInfo.class))
           ),
-          @ApiResponse(responseCode = "400", description = "Bad request"),
           @ApiResponse(responseCode = "401", description = "Invalid credentials or unauthorized access"),
-          @ApiResponse(responseCode = "403", description = "User is not authorised to access the resource"),
+          @ApiResponse(responseCode = "403", description = "User is not authorised to access the resource")
       }
   )
   public CacheInfo getCacheInformation() {
@@ -60,7 +60,6 @@ public class CacheManagementApi extends ServerBaseRestApi {
   }
 
   @DELETE
-  @Produces({MediaType.APPLICATION_JSON})
   @Operation(
       summary = "Clear cache",
       description = "Clears all entries in the server's central cache to free up memory and ensure data consistency.",
@@ -69,14 +68,13 @@ public class CacheManagementApi extends ServerBaseRestApi {
               responseCode = "204",
               description = "Cache cleared successfully (no content)"
           ),
-          @ApiResponse(responseCode = "400", description = "Bad request"),
           @ApiResponse(responseCode = "401", description = "Invalid credentials or unauthorized access"),
           @ApiResponse(responseCode = "403", description = "User is not authorised to access the resource")
       }
   )
-  public void clearCacheInformation() {
+  public Response clearCacheInformation() {
     hasAccess(RESOURCE);
     Constants.getCentralCache().clear();
-    response.setStatus(Response.Status.NO_CONTENT.getStatusCode());
+    return Response.noContent().build();
   }
 }
