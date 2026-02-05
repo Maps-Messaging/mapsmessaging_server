@@ -19,6 +19,7 @@
 
 package io.mapsmessaging.config.network;
 
+import io.javalin.config.HttpConfig;
 import io.mapsmessaging.config.Config;
 import io.mapsmessaging.config.auth.SaslConfig;
 import io.mapsmessaging.config.network.impl.*;
@@ -172,6 +173,7 @@ public class EndPointConfigFactory {
     if (u.startsWith("udp") || u.startsWith("hmac") || u.startsWith("lora")) return new UdpConfig(properties);
     if (u.startsWith("dtls")) return new DtlsConfig(properties);
     if (u.startsWith("serial")) return new SerialConfig(properties);
+    if(u.startsWith("canbus")) return new CanbusConfig(properties);
     if (u.startsWith("satellite")) return new EndPointConfigDTO("satellite"); // placeholder
     return null;
   }
@@ -194,6 +196,7 @@ public class EndPointConfigFactory {
       case "stogi" -> new StoGiConfig(config);
       case "satellite" -> new SatelliteConfig(config);
       case "mavlink" -> new MavlinkConfig(config);
+      case "n2k" -> new N2kProtocolConfig(config);
       case "ws", "wss" -> new WebSocketConfig(config);
       default -> new ExtensionConfig(config);
     };

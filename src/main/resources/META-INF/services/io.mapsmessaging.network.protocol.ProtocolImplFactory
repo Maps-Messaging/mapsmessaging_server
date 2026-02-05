@@ -64,6 +64,11 @@ io.mapsmessaging.network.protocol.impl.websockets.WebSocketProtocolFactory
 io.mapsmessaging.network.protocol.impl.rest.RestProtocolFactory
 
 #
+# CANBUS based protocols
+#
+io.mapsmessaging.network.protocol.impl.n2k.N2kProtocolFactory
+
+#
 # Known Plugins
 #
 io.mapsmessaging.network.protocol.impl.apache_pulsar.PulsarProtocolFactory

@@ -28,94 +28,32 @@ import java.util.concurrent.locks.LockSupport;
 import static com.fazecast.jSerialComm.SerialPort.TIMEOUT_READ_BLOCKING;
 import static com.fazecast.jSerialComm.SerialPort.TIMEOUT_WRITE_BLOCKING;
 
-public class CanbusEndPoint extends EndPoint {
+public class CanbusEndPoint  {
 
-  private final EndPointJMX mbean;
   private final AtomicBoolean closed;
   private final SocketCanDevice canDevice;
-  private final String canbusDeviceName;
-  private final ReadCanbusThread readCanbusThread;
 
-  public CanbusEndPoint(long id, EndPointServerStatus server, CanbusConfigDTO config, List<String> jmxPath) throws IOException {
-    super(id, server);
+  public CanbusEndPoint(CanbusConfigDTO config) throws IOException {
     closed = new AtomicBoolean(false);
-    mbean = new EndPointJMX(jmxPath, this);
-    jmxParentPath = mbean.getTypePath();
-    canbusDeviceName = config.getDeviceName();
     canDevice = new SocketCanDevice(config.getDeviceName());
-    readCanbusThread = new ReadCanbusThread();
   }
 
-  @Override
   public void close() throws IOException {
     closed.set(true);
-    super.close();
-    mbean.close();
     canDevice.close();
-    server.handleCloseEndPoint(this);
   }
 
-  @Override
-  public String getProtocol() {
-    return "canbus";
-  }
-
-  @Override
-  public int sendPacket(Packet packet) throws IOException {
-    return 0;
-  }
-
-  @Override
-  public int readPacket(Packet packet) throws IOException {
-    return 0;
-  }
-
-  @Override
-  public FutureTask<SelectionKey> register(int selectionKey, Selectable runner) {
-    return null;
-  }
-
-  @Override
-  public FutureTask<SelectionKey> deregister(int selectionKey) {
-    return null;
-  }
-
-  @Override
-  public String getAuthenticationConfig() {
-    return getConfig().getAuthenticationRealm();
-  }
-
-  @Override
-  protected Logger createLogger() {
-    return LoggerFactory.getLogger(SerialEndPoint.class);
-  }
-
-  @Override
-  public String getRemoteSocketAddress() {
-    return canbusDeviceName;
-  }
-
-
-  private final class ReadCanbusThread extends Thread {
-
-    public ReadCanbusThread(){
-      setDaemon(true);
-      start();
+  public CanFrame readFrame() throws IOException {
+    if( closed.get()){
+      throw new IOException("CanbusEndPoint is closed");
     }
+    return  canDevice.readFrame();
+  }
 
-    @Override
-    public void run() {
-      while(!closed.get()){
-        try {
-          CanFrame frame = canDevice.readFrame();
-
-
-        } catch (IOException e) {
-          // log closed
-          closed.set(true);
-        }
-      }
+  public void writeFrame(CanFrame frame) throws IOException {
+    if( closed.get()){
+      throw new IOException("CanbusEndPoint is closed");
     }
-
+    canDevice.writeFrame(frame);
   }
 }

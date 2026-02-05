@@ -19,11 +19,11 @@ public class CanbusEndPointServer extends EndPointServer {
   private CanbusEndPoint canbusEndPoint;
   private final CanbusConfigDTO canbusConfig;
 
-  public CanbusEndPointServer(AcceptHandler acceptHandler, EndPointURL url, EndPointServerConfigDTO config, EndPointManagerJMX managerMBean) {
+  public CanbusEndPointServer(AcceptHandler acceptHandler, EndPointURL url, EndPointServerConfigDTO config) {
     super(acceptHandler, url, config);
     canbusConfig = (CanbusConfigDTO)config.getEndPointConfig();
     try {
-      canbusEndPoint = new CanbusEndPoint(generateID(), this, canbusConfig, managerMBean.getTypePath());
+      canbusEndPoint = new CanbusEndPoint(canbusConfig);
     } catch (IOException e) {
       // log this
     }

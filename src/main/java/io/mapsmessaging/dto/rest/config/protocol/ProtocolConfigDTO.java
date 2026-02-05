@@ -46,6 +46,7 @@ import lombok.NoArgsConstructor;
     @JsonSubTypes.Type(value = WebSocketConfigDTO.class, name = "ws"),
     @JsonSubTypes.Type(value = ExtensionConfigDTO.class, name = "extension"),
     @JsonSubTypes.Type(value = NatsConfigDTO.class, name = "nats"),
+    @JsonSubTypes.Type(value = N2KConfigDTO.class, name = "n2k"),
 })
 @Schema(
     description = "Abstract base class for all protocol configurations",
@@ -68,6 +69,7 @@ import lombok.NoArgsConstructor;
         @DiscriminatorMapping(value = "ws", schema = WebSocketConfigDTO.class),
         @DiscriminatorMapping(value = "nats", schema = NatsConfigDTO.class),
         @DiscriminatorMapping(value = "extension", schema = ExtensionConfigDTO.class),
+        @DiscriminatorMapping(value = "n2k", schema = N2KConfigDTO.class),
 
     },
     requiredProperties = {"type"}
@@ -100,7 +102,8 @@ public class ProtocolConfigDTO extends BaseConfigDTO {
           "stomp",
           "ws",
           "mavlink",
-          "extension"
+          "extension",
+          "n2k"
       },
       requiredMode = Schema.RequiredMode.REQUIRED,
       nullable = false
