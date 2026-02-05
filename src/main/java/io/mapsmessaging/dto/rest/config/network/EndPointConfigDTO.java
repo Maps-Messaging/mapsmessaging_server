@@ -41,6 +41,7 @@ import lombok.NoArgsConstructor;
     @JsonSubTypes.Type(value = TlsConfigDTO.class, name = "ssl"),
     @JsonSubTypes.Type(value = UdpConfigDTO.class, name = "udp"),
     @JsonSubTypes.Type(value = SatelliteEndPointDTO.class, name = "satellite"),
+    @JsonSubTypes.Type(value = CanbusConfigDTO.class, name = "canbus"),
 })
 @Schema(
     description = "Abstract base class for all schema configurations",
@@ -54,6 +55,7 @@ import lombok.NoArgsConstructor;
         @DiscriminatorMapping(value = "ssl", schema = TlsConfigDTO.class),
         @DiscriminatorMapping(value = "udp", schema = UdpConfigDTO.class),
         @DiscriminatorMapping(value = "satellite", schema = SatelliteEndPointDTO.class),
+        @DiscriminatorMapping(value = "canbus", schema = CanbusConfigDTO.class),
     })
 
 @Data
@@ -67,7 +69,7 @@ public class EndPointConfigDTO extends BaseConfigDTO {
 
   @Schema(description = "Type of the endpoint",
       example = "tcp",
-      allowableValues = {"tcp", "ssl", "udp", "dtls", "loraDevice", "loraSerial", "serial", "satellite"},
+      allowableValues = {"tcp", "ssl", "udp", "dtls", "loraDevice", "loraSerial", "serial", "satellite", "canbus"},
       requiredMode = Schema.RequiredMode.REQUIRED
   )
   protected String type;

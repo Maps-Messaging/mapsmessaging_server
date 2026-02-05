@@ -30,6 +30,8 @@ Wire protocol standardization has promised interoperability and flexibility in I
 - **Security Domains:** Configurable security domains allow for tailored authentication and authorization on a per-adapter/protocol basis.
 - **Flexible Configuration:** Supports configuration through both Consul and file-based setups, catering to various deployment environments.
 
+Want to go deeper? [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/Maps-Messaging/mapsmessaging_server)
+
 ## Getting Started: "Hello World" Example
 
 This example demonstrates a simple publish/subscribe scenario using the MQTT protocol.

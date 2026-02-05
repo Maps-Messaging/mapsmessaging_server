@@ -53,7 +53,7 @@ public class AuthManagerConfigDTO extends BaseManagerConfigDTO {
       requiredMode = Schema.RequiredMode.NOT_REQUIRED,
       additionalProperties = Schema.AdditionalPropertiesValue.TRUE,
       additionalPropertiesSchema = Object.class,
-      nullable = false
+      nullable = true
   )
   protected Map<String, Object> authConfig;
 

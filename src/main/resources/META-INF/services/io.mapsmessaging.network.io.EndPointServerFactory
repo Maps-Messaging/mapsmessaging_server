@@ -31,6 +31,7 @@ io.mapsmessaging.network.io.impl.serial.SerialEndPointServerFactory
 # Hardware based end points
 #
 io.mapsmessaging.network.io.impl.lora.LoRaEndPointServerFactory
+io.mapsmessaging.network.io.impl.canbus.CanbusEndPointServerFactory
 
 #
 # TCP based end points
