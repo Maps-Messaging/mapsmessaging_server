@@ -192,10 +192,8 @@ public class MapsRestServerApi extends BaseRestApi {
           @ApiResponse(
               responseCode = "200",
               description = "Get server name was successful",
-              content = @Content(mediaType = "application/json", schema = @Schema(implementation = String.class))
+              content = @Content(mediaType = "application/json", schema = @Schema(implementation = ServerName.class))
           ),
-          @ApiResponse(responseCode = "400", description = "Bad request",
-              content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))),
           @ApiResponse(responseCode = "401", description = "Invalid credentials or unauthorized access",
               content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))),
           @ApiResponse(responseCode = "403", description = "User is not authorised to access the resource",
