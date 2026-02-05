@@ -39,7 +39,9 @@ public class SubSystemStatusDTO {
   @Schema(
       title = "Comment",
       description = "A comment or additional information about the subsystem's status.",
-      example = "System is operating normally.")
+      example = "System is operating normally.",
+      requiredMode = Schema.RequiredMode.NOT_REQUIRED,
+      nullable = true)
   private String comment;
 
   @Schema(
