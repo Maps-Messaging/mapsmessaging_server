@@ -28,6 +28,13 @@ import io.restassured.specification.RequestSpecification;
 import org.junit.jupiter.api.BeforeAll;
 
 import java.io.IOException;
+import java.io.InputStream;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.time.Duration;
 import java.time.Instant;
 
@@ -37,16 +44,17 @@ public abstract class ApiTestBase extends BaseTestConfig {
   protected static Cookies authCookies;
   protected static OpenApiValidationFilter openApi;
 
+  protected static boolean LOADED_OPENAPI = false;
+  private static final Path OPENAPI_PATH =
+      Path.of("src", "test", "resources", "openapi.json");
+
   @BeforeAll
   static void initClient() throws IOException {
     baseUrl = System.getProperty("BASE_URL", System.getenv().getOrDefault("BASE_URL", "http://localhost:8080"));
-
-    openApi = new OpenApiValidationFilter("src/test/resources/openapi.json");
-
     RestAssured.enableLoggingOfRequestAndResponseIfValidationFails();
-
     waitUntilHealthy(Duration.ofSeconds(30));
-
+    fetchOpenApiSpec();
+    openApi = new OpenApiValidationFilter(OPENAPI_PATH.toString());
     authCookies = CookieAuth.login(baseUrl, "admin", getPassword("admin"));
   }
 
@@ -69,6 +77,35 @@ public abstract class ApiTestBase extends BaseTestConfig {
     return RestAssured.given()
         .baseUri(baseUrl)
         .cookies(authCookies);
+  }
+
+  private static void fetchOpenApiSpec() throws IOException {
+    if(LOADED_OPENAPI) return;
+    try(HttpClient client = HttpClient.newHttpClient() ){
+
+      HttpRequest request = HttpRequest.newBuilder()
+          .uri(URI.create(baseUrl + "/openapi.json"))
+          .timeout(Duration.ofSeconds(60))
+          .GET()
+          .build();
+
+      try {
+        HttpResponse<InputStream> response = client.send(request, HttpResponse.BodyHandlers.ofInputStream());
+        if (response.statusCode() != 200) {
+          throw new IOException("Failed to fetch OpenAPI spec. HTTP " + response.statusCode());
+        }
+
+        Files.createDirectories(OPENAPI_PATH.getParent());
+
+        try (InputStream body = response.body()) {
+          Files.copy(body, OPENAPI_PATH, java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+        }
+        LOADED_OPENAPI = true;
+      } catch (InterruptedException e) {
+        Thread.currentThread().interrupt();
+        throw new IOException("Interrupted while fetching OpenAPI spec", e);
+      }
+    }
   }
 
   private static void waitUntilHealthy(Duration timeout) {
