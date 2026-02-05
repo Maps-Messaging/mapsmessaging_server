@@ -50,9 +50,9 @@ public class SchemaManagerConfigDTO extends BaseManagerConfigDTO {
       },
       discriminatorProperty = "type",
       discriminatorMapping = {
-          @DiscriminatorMapping(value = "Simple", schema = SimpleRepositoryConfigDTO.class),
-          @DiscriminatorMapping(value = "File", schema = FileRepositoryConfigDTO.class),
-          @DiscriminatorMapping(value = "Maps", schema = MapsRepositoryConfigDTO.class)
+          @DiscriminatorMapping(value = "simple", schema = SimpleRepositoryConfigDTO.class),
+          @DiscriminatorMapping(value = "file", schema = FileRepositoryConfigDTO.class),
+          @DiscriminatorMapping(value = "maps", schema = MapsRepositoryConfigDTO.class)
       }
   )
   private RepositoryConfigDTO repositoryConfig;
