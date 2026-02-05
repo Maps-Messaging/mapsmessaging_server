@@ -40,8 +40,8 @@ public class TenantManagementConfigDTO extends BaseManagerConfigDTO {
   @Schema(
       description = "List of tenant configurations",
       requiredMode = Schema.RequiredMode.NOT_REQUIRED,
-      nullable = false,
-      example = "[]"
+      implementation = TenantConfigDTO.class,
+      nullable = true
   )
   protected List<TenantConfigDTO> tenantConfigList;
 
