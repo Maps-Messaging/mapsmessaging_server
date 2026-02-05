@@ -35,7 +35,12 @@ public class CanbusEndPoint  {
 
   public CanbusEndPoint(CanbusConfigDTO config) throws IOException {
     closed = new AtomicBoolean(false);
-    canDevice = new SocketCanDevice(config.getDeviceName());
+    try {
+      canDevice = new SocketCanDevice(config.getDeviceName());
+    }
+    catch(Throwable th){
+      throw new IOException(th);
+    }
   }
 
   public void close() throws IOException {
