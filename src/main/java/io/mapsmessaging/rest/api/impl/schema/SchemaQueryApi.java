@@ -531,7 +531,7 @@ public class SchemaQueryApi extends BaseRestApi {
           @ApiResponse(responseCode = "404", description = "Not Found")
       }
   )
-  public Response getSchemaImplById(@PathParam("schemaId") String schemaId, Request request) {
+  public Response getSchemaImplById(@PathParam("schemaId") String schemaId) {
     hasAccess(RESOURCE);
 
     if (schemaId == null || schemaId.trim().isEmpty()) {
@@ -557,7 +557,7 @@ public class SchemaQueryApi extends BaseRestApi {
     String mime = resolveSchemaMime(config);
 
     EntityTag entityTag = new EntityTag(sha256Hex(body));
-    Response.ResponseBuilder preconditions = (request != null) ? request.evaluatePreconditions(entityTag) : null;
+    Response.ResponseBuilder preconditions = (baseRequest != null) ? baseRequest.evaluatePreconditions(entityTag) : null;
     if (preconditions != null) {
       return preconditions.tag(entityTag).build();
     }

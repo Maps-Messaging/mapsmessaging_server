@@ -41,6 +41,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.Context;
+import jakarta.ws.rs.core.Request;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.UriInfo;
 
@@ -65,6 +66,9 @@ public class BaseRestApi {
   protected HttpServletResponse response;
   @Context
   protected UriInfo uriInfo;
+
+  @Context
+  protected Request baseRequest;
 
   protected HttpSession getSession() {
     HttpSession session = request.getSession(false);
