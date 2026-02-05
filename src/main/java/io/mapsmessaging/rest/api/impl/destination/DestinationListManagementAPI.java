@@ -72,11 +72,13 @@ public class DestinationListManagementAPI extends BaseDestinationApi {
           ),
           @ApiResponse(
               responseCode = "401",
-              description = "Invalid credentials or unauthorized access"
+              description = "Invalid credentials or unauthorized access",
+              content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))
           ),
           @ApiResponse(
               responseCode = "403",
-              description = "User is not authorised to access the resource"
+              description = "User is not authorised to access the resource",
+              content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))
           ),
           @ApiResponse(
               responseCode = "404",
@@ -171,12 +173,7 @@ public class DestinationListManagementAPI extends BaseDestinationApi {
           .type(MediaType.APPLICATION_JSON)
           .entity(new StatusResponse("Failed to build destination list: " + exception.getMessage()))
           .build();
-    } catch (IOException exception) {
-      return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
-          .type(MediaType.APPLICATION_JSON)
-          .entity(new StatusResponse("Failed to build destination list: " + exception.getMessage()))
-          .build();
-    } catch (RuntimeException exception) {
+    } catch (IOException | RuntimeException exception) {
       return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
           .type(MediaType.APPLICATION_JSON)
           .entity(new StatusResponse("Failed to build destination list: " + exception.getMessage()))

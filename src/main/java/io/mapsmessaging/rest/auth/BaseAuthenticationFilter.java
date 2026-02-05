@@ -1,6 +1,7 @@
 package io.mapsmessaging.rest.auth;
 
 import io.mapsmessaging.rest.api.impl.BaseRestApi;
+import io.mapsmessaging.rest.responses.StatusResponse;
 import jakarta.annotation.Priority;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
@@ -9,6 +10,7 @@ import jakarta.ws.rs.container.ContainerRequestContext;
 import jakarta.ws.rs.container.ContainerRequestFilter;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.HttpHeaders;
+import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import lombok.Getter;
 import lombok.Setter;
@@ -100,6 +102,8 @@ public abstract class BaseAuthenticationFilter implements ContainerRequestFilter
             .header(HttpHeaders.CACHE_CONTROL, "no-store")
             .header("Pragma", "no-cache")
             .header(HttpHeaders.CONTENT_LENGTH, "0")
+            .type(MediaType.APPLICATION_JSON)
+            .entity(new StatusResponse("User not authenticated"))
             .build();
 
     containerRequest.abortWith(response);

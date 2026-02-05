@@ -33,6 +33,7 @@ import io.mapsmessaging.network.io.impl.lora.device.LoRaChipDevice;
 import io.mapsmessaging.network.io.impl.lora.serial.LoRaSerialDevice;
 import io.mapsmessaging.network.io.impl.lora.stats.LoRaClientStats;
 import io.mapsmessaging.network.protocol.impl.loragateway.LoRaProtocol;
+import io.mapsmessaging.rest.responses.StatusResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -44,6 +45,7 @@ import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -65,9 +67,12 @@ public class LoRaDeviceApi extends LoraBaseRestApi {
               description = "Operation was successful",
               content = @Content(mediaType = "application/json", schema = @Schema(implementation = LoRaDeviceInfoDTO[].class))
           ),
-          @ApiResponse(responseCode = "400", description = "Bad request"),
-          @ApiResponse(responseCode = "401", description = "Invalid credentials or unauthorized access"),
-          @ApiResponse(responseCode = "403", description = "User is not authorised to access the resource"),
+          @ApiResponse(responseCode = "400", description = "Bad request",
+              content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))),
+          @ApiResponse(responseCode = "401", description = "Invalid credentials or unauthorized access",
+              content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))),
+          @ApiResponse(responseCode = "403", description = "User is not authorised to access the resource",
+              content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))),
       }
   )
   public LoRaDeviceInfoDTO[] getAllLoRaDevices() {
@@ -92,13 +97,17 @@ public class LoRaDeviceApi extends LoraBaseRestApi {
               description = "Operation was successful",
               content = @Content(mediaType = "application/json", schema = @Schema(implementation = LoRaDeviceInfoDTO.class))
           ),
-          @ApiResponse(responseCode = "400", description = "Bad request"),
-          @ApiResponse(responseCode = "401", description = "Invalid credentials or unauthorized access"),
-          @ApiResponse(responseCode = "403", description = "User is not authorised to access the resource"),
-          @ApiResponse(responseCode = "404", description = "LoRa device not found"),
+          @ApiResponse(responseCode = "400", description = "Bad request",
+              content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))),
+          @ApiResponse(responseCode = "401", description = "Invalid credentials or unauthorized access",
+              content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))),
+          @ApiResponse(responseCode = "403", description = "User is not authorised to access the resource",
+              content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))),
+          @ApiResponse(responseCode = "404", description = "LoRa device not found",
+              content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class)))
       }
   )
-  public LoRaDeviceInfoDTO getLoRaDevice(@PathParam("deviceName") String deviceName) {
+  public Response getLoRaDevice(@PathParam("deviceName") String deviceName) {
     hasAccess(RESOURCE);
     LoRaDeviceManager deviceManager = LoRaDeviceManager.getInstance();
     LoRaDeviceInfoDTO deviceInfo = new LoRaDeviceInfoDTO();
@@ -108,11 +117,13 @@ public class LoRaDeviceApi extends LoraBaseRestApi {
               .filter(device -> deviceName.equals(device.getName()))
               .toList();
       if (!lookup.isEmpty()) {
-        return createInfo(lookup.getFirst());
+        return Response.ok().entity(createInfo(lookup.getFirst())).build();
       }
     }
-    response.setStatus(HttpServletResponse.SC_NOT_FOUND);
-    return deviceInfo;
+    return Response.status(Response.Status.BAD_REQUEST)
+        .entity(new StatusResponse("Invalid filter expression"))
+        .type(MediaType.APPLICATION_JSON)
+        .build();
   }
 
   @GET
@@ -127,9 +138,12 @@ public class LoRaDeviceApi extends LoraBaseRestApi {
               description = "Operation was successful",
               content = @Content(mediaType = "application/json", schema = @Schema(implementation = LoRaEndPointConnectionInfoDTO[].class))
           ),
-          @ApiResponse(responseCode = "400", description = "Bad request"),
-          @ApiResponse(responseCode = "401", description = "Invalid credentials or unauthorized access"),
-          @ApiResponse(responseCode = "403", description = "User is not authorised to access the resource"),
+          @ApiResponse(responseCode = "400", description = "Bad request",
+              content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))),
+          @ApiResponse(responseCode = "401", description = "Invalid credentials or unauthorized access",
+              content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))),
+          @ApiResponse(responseCode = "403", description = "User is not authorised to access the resource",
+              content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))),
       }
   )
   public LoRaEndPointConnectionInfoDTO[] getLoRaEndPointConnections(

@@ -98,7 +98,8 @@ public class AccessRequestApi extends BaseRestApi {
               description = "Refresh was successful or not required",
               content = @Content(mediaType = "application/json", schema = @Schema(implementation = LoginResponse.class))
           ),
-          @ApiResponse(responseCode = "400", description = "Bad request"),
+          @ApiResponse(responseCode = "400", description = "Bad request",
+              content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))),
           @ApiResponse(responseCode = "401", description = "Invalid credentials or unauthorized access")
       }
   )
@@ -138,7 +139,8 @@ public class AccessRequestApi extends BaseRestApi {
               description = "Login successful or not required",
               content = @Content(mediaType = "application/json", schema = @Schema(implementation = LoginResponse.class))
           ),
-          @ApiResponse(responseCode = "400", description = "Bad request"),
+          @ApiResponse(responseCode = "400", description = "Bad request",
+              content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))),
           @ApiResponse(responseCode = "401", description = "Invalid credentials or unauthorized access")
       }
   )

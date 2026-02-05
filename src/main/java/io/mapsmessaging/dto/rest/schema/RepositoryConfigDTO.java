@@ -19,41 +19,28 @@
 
 package io.mapsmessaging.dto.rest.schema;
 
-import com.fasterxml.jackson.annotation.JsonSubTypes;
-import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import io.mapsmessaging.dto.rest.config.BaseConfigDTO;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
 import lombok.Setter;
 
-
-@JsonSubTypes({
-    @JsonSubTypes.Type(value = SimpleRepositoryConfigDTO.class, name = "simple"),
-    @JsonSubTypes.Type(value = FileRepositoryConfigDTO.class, name = "file"),
-    @JsonSubTypes.Type(value = MapsRepositoryConfigDTO.class, name = "maps")
-})
-
-@JsonTypeInfo(
-    use = JsonTypeInfo.Id.NAME,
-    include = JsonTypeInfo.As.EXISTING_PROPERTY,
-    property = "type",
-    visible = true
-)
 @Getter
 @Setter
+@Schema(
+    description = "Repository-specific configuration object. Concrete schema is selected by the 'type' discriminator."
+)
 public abstract class RepositoryConfigDTO extends BaseConfigDTO {
-
-  protected RepositoryConfigDTO(String type) {
-    this.type = type;
-  }
 
   @Schema(
       description = "Repository type discriminator",
       requiredMode = Schema.RequiredMode.REQUIRED,
       allowableValues = {"simple", "file", "maps"},
-      example = "file"
+      example = "file",
+      nullable = false
   )
   protected String type;
 
-
+  protected RepositoryConfigDTO(String type) {
+    this.type = type;
+  }
 }
