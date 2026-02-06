@@ -48,12 +48,12 @@ public class N2kProtocolFactory extends ProtocolImplFactory {
 
   @Override
   public void create(EndPoint endPoint, Packet packet) {
-    System.out.println("N2K Packet received");
+    // nothing to do here
   }
 
   @Override
   public void closed(EndPoint endPoint) {
-    System.out.println("N2K Interface closed");
+    // nothing to do here
   }
 
   @Override
@@ -64,6 +64,6 @@ public class N2kProtocolFactory extends ProtocolImplFactory {
   }
 
   public void close() {
-    System.out.println("N2K Interface closed");
+
   }
 }

@@ -19,7 +19,6 @@
 
 package io.mapsmessaging.network.protocol.impl.n2k;
 
-import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import io.mapsmessaging.api.Destination;
 import io.mapsmessaging.api.MessageBuilder;
@@ -35,11 +34,14 @@ import io.mapsmessaging.canbus.j1939.n2k.N2kParserFactory;
 import io.mapsmessaging.canbus.j1939.n2k.codec.N2kMessageParser;
 import io.mapsmessaging.canbus.j1939.n2k.compile.N2kCompiledMessage;
 import io.mapsmessaging.canbus.j1939.n2k.compile.N2kCompiledRegistry;
-import io.mapsmessaging.config.protocol.impl.N2kProtocolConfig;
+import io.mapsmessaging.canbus.j1939.n2k.compile.N2kCompiler;
+import io.mapsmessaging.canbus.j1939.n2k.parser.N2kXmlDialectParser;
 import io.mapsmessaging.dto.rest.config.protocol.ProtocolConfigDTO;
 import io.mapsmessaging.dto.rest.config.protocol.impl.N2KConfigDTO;
 import io.mapsmessaging.dto.rest.protocol.ProtocolInformationDTO;
 import io.mapsmessaging.dto.rest.protocol.impl.N2kProtocolInformation;
+import io.mapsmessaging.logging.Logger;
+import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.network.io.Packet;
 import io.mapsmessaging.network.io.impl.canbus.CanbusEndPoint;
 import io.mapsmessaging.network.protocol.Protocol;
@@ -49,6 +51,7 @@ import org.jetbrains.annotations.NotNull;
 
 import javax.security.auth.Subject;
 import java.io.IOException;
+import java.nio.file.Path;
 import java.util.Base64;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -57,11 +60,11 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeoutException;
 
-public class N2kProtocol extends Protocol {
+import static io.mapsmessaging.logging.ServerLogMessages.*;
 
-  private final N2kCompiledRegistry registry;
+public class N2kProtocol extends Protocol {
+  private final Logger logger = LoggerFactory.getLogger(N2kProtocol.class);
   private final N2kMessageParser parser;
-  private final CanbusEndPoint endPoint;
   private final Session session;
   private final InboundProcessor inboundProcessor;
   private final String topicTemplate;
@@ -69,10 +72,19 @@ public class N2kProtocol extends Protocol {
 
   public N2kProtocol(CanbusEndPoint endPoint, @NotNull @NonNull ProtocolConfigDTO protocolConfig) throws IOException {
     super(endPoint, protocolConfig );
-    this.endPoint = endPoint;
+    N2kCompiledRegistry registry;
     try {
-      registry = N2kParserFactory.getN2kParser();
+      String databasePath = ((N2KConfigDTO)protocolConfig).getDatabasePath();
+      if(databasePath != null && !databasePath.isEmpty()) {
+        logger.log(N2K_LOADING_DATABASE_FROM_FILE, databasePath);
+        registry = N2kCompiler.compile(N2kXmlDialectParser.parseFromFile(Path.of(databasePath)));
+      }
+      else {
+        logger.log(N2K_LOADING_DATABASE_FROM_FILE, databasePath);
+        registry = N2kParserFactory.getN2kParser();
+      }
     } catch (Exception e) {
+      logger.log(N2K_LOADING_FAILED, e);
       throw new IOException(e);
     }
     topicTemplate = ((N2KConfigDTO)protocolConfig).getTopicNameTemplate();
@@ -89,17 +101,19 @@ public class N2kProtocol extends Protocol {
     inboundProcessor  = new InboundProcessor(this);
     Thread t = new Thread(inboundProcessor);
     t.start();
+    logger.log(N2K_PROTOCOL_CREATED_AND_BOUND,endPoint.getName());
   }
 
   public void close() throws IOException {
     super.close();
     inboundProcessor.close();
     endPoint.close();
+    logger.log(N2K_PROTOCOL_CLOSING, endPoint.getName());
   }
 
   @Override
   public Subject getSubject() {
-    return null;
+    return session.getSecurityContext().getSubject();
   }
 
   @Override
@@ -117,17 +131,26 @@ public class N2kProtocol extends Protocol {
 
   @Override
   public boolean processPacket(@NonNull @NotNull Packet packet) throws IOException {
-    CanFrame frame = endPoint.readFrame();
+    CanFrame frame = ((CanbusEndPoint) endPoint).readFrame();
+    if(logger.isDebugEnabled() && frame != null){
+      logger.log(N2K_PROTOCOL_PARSING_PACKET, packetToString(frame));
+    }
     if(frame != null) {
       int id = frame.getCanIdentifier();
       CanId canId = CanId.parse(id);
       N2kCompiledMessage compiledMessage = parser.getRegistry().getMessagesByPgn().get(canId.getPgn());
       if(compiledMessage != null) {
+        if(logger.isDebugEnabled()){
+          logger.log(N2K_PROTOCOL_PARSED_KNOWN_PACKET, canId.getPgn());
+        }
         JsonObject json = parser.decodeToJson(canId.getPgn(), frame.getData());
         json = buildEnvelope(json, canId, frame);
         processPacket(compiledMessage.getId(), canId, json.toString().getBytes());
       }
       else{
+        if(logger.isDebugEnabled()){
+          logger.log(N2K_PROTOCOL_PARSED_UNKNOWN_PACKET, canId.getPgn());
+        }
         processRawPacket(frame);
       }
     }
@@ -246,4 +269,12 @@ public class N2kProtocol extends Protocol {
   public String getVersion() {
     return "1.0";
   }
+
+  private String packetToString(CanFrame frame) {
+    StringBuilder sb = new StringBuilder();
+    sb.append("CanId: ").append(frame.getCanIdentifier()).append(" ");
+    sb.append("Data: ").append(Base64.getEncoder().encodeToString(frame.getData()));
+    return sb.toString();
+  }
+
 }

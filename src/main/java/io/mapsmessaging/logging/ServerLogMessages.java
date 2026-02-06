@@ -440,6 +440,21 @@ public enum ServerLogMessages implements LogMessage {
   MQTT5_TOPIC_ALIAS_ALREADY_EXISTS(LEVEL.ERROR, SERVER_CATEGORY.PROTOCOL, "Alias already exists for {}"),
   // </editor-fold>
 
+  // <editor-fold desc="N2K Log messages">
+  N2K_LOADING_DATABASE_FROM_FILE(LEVEL.INFO, SERVER_CATEGORY.PROTOCOL, "Loading N2K database from file {}"),
+  N2K_LOADING_DEFAULT_DATABASE(LEVEL.INFO, SERVER_CATEGORY.PROTOCOL, "Loading default N2K database"),
+  N2K_LOADING_FAILED(LEVEL.ERROR, SERVER_CATEGORY.PROTOCOL, "Loading N2K database failed {}"),
+  N2K_PROTOCOL_CREATED_AND_BOUND(LEVEL.INFO, SERVER_CATEGORY.PROTOCOL, "loaded and bound to {} device"),
+  N2K_PROTOCOL_CLOSING(LEVEL.INFO, SERVER_CATEGORY.PROTOCOL, "Bound to {} device is closing"),
+  N2K_PROTOCOL_PARSING_PACKET(LEVEL.DEBUG, SERVER_CATEGORY.PROTOCOL, "Parsing inbound packet {}"),
+  N2K_PROTOCOL_PARSED_KNOWN_PACKET(LEVEL.DEBUG, SERVER_CATEGORY.PROTOCOL, "Parsed to known data pgn:{}"),
+  N2K_PROTOCOL_PARSED_UNKNOWN_PACKET(LEVEL.DEBUG, SERVER_CATEGORY.PROTOCOL, "Parsed unknown data pgn:{}"),
+  N2K_PROTOCOL_INBOUND_HANDLER_ERROR(LEVEL.ERROR, SERVER_CATEGORY.PROTOCOL, "Exception raised during inbound handler {}"),
+
+
+  // </editor-fold>
+
+
   // <editor-fold desc="Loop connection log messages">
   LOOP_CREATED(LEVEL.DEBUG, SERVER_CATEGORY.PROTOCOL, "loop protocol connection created"),
   LOOP_CLOSED(LEVEL.DEBUG, SERVER_CATEGORY.PROTOCOL, "loop protocol connection closed"),

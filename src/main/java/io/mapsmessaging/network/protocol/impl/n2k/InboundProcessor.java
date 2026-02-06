@@ -19,14 +19,18 @@
 
 package io.mapsmessaging.network.protocol.impl.n2k;
 
+import io.mapsmessaging.logging.Logger;
+import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.network.io.Packet;
 
 import java.io.IOException;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import static io.mapsmessaging.logging.ServerLogMessages.N2K_PROTOCOL_INBOUND_HANDLER_ERROR;
+
 public class InboundProcessor implements Runnable {
 
-
+  private final Logger logger = LoggerFactory.getLogger(InboundProcessor.class);
   private final AtomicBoolean running = new AtomicBoolean(true);
   private final N2kProtocol protocol;
 
@@ -44,12 +48,12 @@ public class InboundProcessor implements Runnable {
       try {
         protocol.processPacket(packet);
       } catch (IOException e) {
+        logger.log(N2K_PROTOCOL_INBOUND_HANDLER_ERROR, e.getMessage(), e);
         try {
-          protocol.close();
-        } catch (IOException ex) {
-          ex.printStackTrace();
+          Thread.sleep(1000);
+        } catch (InterruptedException ex) {
+          Thread.currentThread().interrupt();
         }
-        this.close();
       }
     }
 
