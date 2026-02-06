@@ -67,13 +67,13 @@ public class N2KConfigDTO extends ProtocolConfigDTO {
 
   @Schema(
       description =
-          "Optional topic to which raw CAN/NMEA 2000 frames are published when the PGN or message type is unknown. "
-              + "If not set, unknown packets are silently ignored.",
-      requiredMode = Schema.RequiredMode.NOT_REQUIRED,
-      nullable = true,
-      example = "/canbus/unknown"
+          "Topic to which raw CAN/NMEA 2000 frames are published when the PGN or message type is unknown. ",
+      requiredMode = Schema.RequiredMode.REQUIRED,
+      nullable = false,
+      defaultValue = "/{candevice}/",
+      example = "/{candevice}/unknown"
   )
-  protected String unknownPacketTopic;
+  protected String unknownPacketTopic = "/{candevice}/unknown";;
 
 
 }

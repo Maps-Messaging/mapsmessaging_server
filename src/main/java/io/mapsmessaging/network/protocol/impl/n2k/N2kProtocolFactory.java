@@ -22,6 +22,7 @@ package io.mapsmessaging.network.protocol.impl.n2k;
 import io.mapsmessaging.network.io.EndPoint;
 import io.mapsmessaging.network.io.InterfaceInformation;
 import io.mapsmessaging.network.io.Packet;
+import io.mapsmessaging.network.io.impl.canbus.CanbusEndPoint;
 import io.mapsmessaging.network.protocol.Protocol;
 import io.mapsmessaging.network.protocol.ProtocolImplFactory;
 
@@ -32,8 +33,7 @@ import java.io.IOException;
 public class N2kProtocolFactory extends ProtocolImplFactory {
 
   public N2kProtocolFactory() {
-    super("N2K", "NMEA200 Protocol", null);
-
+    super("n2k", "NMEA200 Protocol", null);
   }
 
   @Override
@@ -48,20 +48,22 @@ public class N2kProtocolFactory extends ProtocolImplFactory {
 
   @Override
   public void create(EndPoint endPoint, Packet packet) {
-
+    System.out.println("N2K Packet received");
   }
 
   @Override
   public void closed(EndPoint endPoint) {
-
+    System.out.println("N2K Interface closed");
   }
 
   @Override
   public void create(EndPoint endPoint, InterfaceInformation info) throws IOException {
-
+    if(endPoint instanceof CanbusEndPoint canbusEndPoint) {
+      new N2kProtocol(canbusEndPoint, endPoint.getConfig().getProtocolConfig("n2k"));
+    }
   }
 
   public void close() {
-
+    System.out.println("N2K Interface closed");
   }
 }

@@ -18,7 +18,7 @@ public class CanbusEndPointServerFactory implements EndPointServerFactory {
       AcceptHandler acceptHandler,
       EndPointServerConfigDTO endPointServerConfig,
       EndPointManagerJMX managerMBean) {
-    return new CanbusEndPointServer(acceptHandler, url, endPointServerConfig);
+    return new CanbusEndPointServer(acceptHandler, url, endPointServerConfig, managerMBean);
   }
 
   @Override

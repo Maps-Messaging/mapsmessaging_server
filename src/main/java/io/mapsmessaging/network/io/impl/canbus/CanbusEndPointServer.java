@@ -10,20 +10,22 @@ import io.mapsmessaging.network.io.*;
 import io.mapsmessaging.network.io.impl.Selector;
 import io.mapsmessaging.network.io.impl.serial.SerialEndPointServer;
 
+import io.mapsmessaging.network.protocol.Protocol;
 import io.mapsmessaging.network.protocol.ProtocolFactory;
+import io.mapsmessaging.network.protocol.ProtocolImplFactory;
 
 import java.io.IOException;
 
 public class CanbusEndPointServer extends EndPointServer {
-
-  private CanbusEndPoint canbusEndPoint;
+  private final EndPointManagerJMX managerMBean;
   private final CanbusConfigDTO canbusConfig;
 
-  public CanbusEndPointServer(AcceptHandler acceptHandler, EndPointURL url, EndPointServerConfigDTO config) {
+  public CanbusEndPointServer(AcceptHandler acceptHandler, EndPointURL url, EndPointServerConfigDTO config, EndPointManagerJMX managerMBean) {
     super(acceptHandler, url, config);
+    this.managerMBean = managerMBean;
     canbusConfig = (CanbusConfigDTO)config.getEndPointConfig();
     try {
-      canbusEndPoint = new CanbusEndPoint(canbusConfig);
+      handleNewEndPoint(new CanbusEndPoint(canbusConfig, this, managerMBean.getTypePath()));
     } catch (IOException e) {
       // log this
     }
@@ -31,7 +33,17 @@ public class CanbusEndPointServer extends EndPointServer {
 
   @Override
   public void handleNewEndPoint(EndPoint endPoint) throws IOException {
-    // not required
+    ProtocolImplFactory boundProtocolFactory = null;
+    String protocols= getConfig().getProtocols();
+    for(ProtocolImplFactory protocol: ProtocolFactory.getProtocolServiceList()){
+      if(protocol.matches(protocols)){
+        boundProtocolFactory = protocol;
+        break;
+      }
+    }
+    if(boundProtocolFactory != null){
+      boundProtocolFactory.create(endPoint, ((CanbusEndPoint)endPoint).getInterfaceInformation());
+    }
   }
 
   @Override
@@ -66,11 +78,7 @@ public class CanbusEndPointServer extends EndPointServer {
 
   @Override
   public void close() {
-    try {
-      canbusEndPoint.close();
-    } catch (IOException e) {
-      // log this
-    }
+
   }
 
   @Override

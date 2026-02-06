@@ -21,10 +21,7 @@ package io.mapsmessaging.network.protocol;
 
 import io.mapsmessaging.analytics.Analyser;
 import io.mapsmessaging.analytics.AnalyserFactory;
-import io.mapsmessaging.api.MessageEvent;
-import io.mapsmessaging.api.MessageListener;
-import io.mapsmessaging.api.Session;
-import io.mapsmessaging.api.SubscriptionContextBuilder;
+import io.mapsmessaging.api.*;
 import io.mapsmessaging.api.features.ClientAcknowledgement;
 import io.mapsmessaging.api.features.DestinationMode;
 import io.mapsmessaging.api.features.QualityOfService;
@@ -36,6 +33,7 @@ import io.mapsmessaging.dto.rest.protocol.ProtocolInformationDTO;
 import io.mapsmessaging.engine.destination.subscription.SubscriptionContext;
 import io.mapsmessaging.engine.destination.subscription.set.DestinationSet;
 import io.mapsmessaging.logging.ServerLogMessages;
+import io.mapsmessaging.network.ProtocolClientConnection;
 import io.mapsmessaging.network.admin.ProtocolJMX;
 import io.mapsmessaging.network.io.EndPoint;
 import io.mapsmessaging.network.io.Packet;
@@ -58,7 +56,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.*;
 
 public abstract class Protocol implements SelectorCallback, MessageListener, Timeoutable {
   protected final EndPoint endPoint;
@@ -463,6 +461,17 @@ public abstract class Protocol implements SelectorCallback, MessageListener, Tim
     }
     return lookup;
   }
+
+  protected Session buildSession(String sessionId, int expiry) throws ExecutionException, InterruptedException, TimeoutException {
+    SessionContextBuilder scb = new SessionContextBuilder(sessionId, new ProtocolClientConnection(this));
+    scb.setResetState(true)
+        .setSessionExpiry(expiry)
+        .setPersistentSession(false)
+        .setReceiveMaximum(10);
+    CompletableFuture<Session> sessionFuture = SessionManager.getInstance().createAsync(scb.build(), this);
+    return sessionFuture.get(5, TimeUnit.SECONDS);
+  }
+
 
   @Data
   @AllArgsConstructor
