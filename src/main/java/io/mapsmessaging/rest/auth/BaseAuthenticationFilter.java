@@ -101,7 +101,6 @@ public abstract class BaseAuthenticationFilter implements ContainerRequestFilter
             .header(HttpHeaders.WWW_AUTHENTICATE, buildWwwAuthenticateHeader(error))
             .header(HttpHeaders.CACHE_CONTROL, "no-store")
             .header("Pragma", "no-cache")
-            .header(HttpHeaders.CONTENT_LENGTH, "0")
             .type(MediaType.APPLICATION_JSON)
             .entity(new StatusResponse("User not authenticated"))
             .build();
