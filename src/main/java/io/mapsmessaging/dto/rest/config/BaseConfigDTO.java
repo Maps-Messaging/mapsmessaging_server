@@ -25,18 +25,21 @@ import lombok.EqualsAndHashCode;
 
 @Schema(
     title = "Base Configuration DTO",
-    description = "Base configuration for common REST API fields.")
+    description = "Base configuration for common REST API fields.",
+    additionalProperties = Schema.AdditionalPropertiesValue.TRUE,
+    additionalPropertiesSchema = Object.class
+)
 @Data
 @EqualsAndHashCode
 public class BaseConfigDTO {
   @Schema(
       description = "Configuration schema version. 0 = legacy format, 1 = current format.",
-      requiredMode = Schema.RequiredMode.NOT_REQUIRED,
+      requiredMode = Schema.RequiredMode.REQUIRED,
       example = "1",
       defaultValue = "1",
       minimum = "0",
       maximum = "10",
-      nullable = true
+      nullable = false
   )
   protected int schemaLoadingVersion = 0;
 }

@@ -23,23 +23,28 @@ public class CanbusEndPoint extends EndPoint {
   private final EndPointJMX mbean;
 
 
-  public CanbusEndPoint(CanbusConfigDTO config, EndPointServer server,  List<String> jmxPath) throws IOException {
+  public CanbusEndPoint(CanbusConfigDTO config, EndPointServer server, List<String> jmxPath) throws IOException {
     super(1, server);
-    name = config.getDeviceName();
-    closed = new AtomicBoolean(false);
+    this.name = config.getDeviceName();
+    this.closed = new AtomicBoolean(false);
+
     try {
-      canDevice = new SocketCanDevice(config.getDeviceName());
+      this.canDevice = createDevice(config);
     }
-    catch(Throwable th){
+    catch (Throwable th) {
       throw new IOException(th);
     }
-    mbean = new EndPointJMX(jmxPath, this);
+
+    this.mbean = new EndPointJMX(jmxPath, this);
+  }
+
+  private SocketCanDevice createDevice(CanbusConfigDTO config) throws IOException {
+    return new SocketCanDevice(config.getDeviceName());
   }
 
   public InterfaceInformation getInterfaceInformation() {
     return new CanbusInterfaceInfo(canDevice.getCanCapabilities());
   }
-
 
   public void close() throws IOException {
     mbean.close();

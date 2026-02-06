@@ -73,7 +73,7 @@ public class N2KConfigDTO extends ProtocolConfigDTO {
       defaultValue = "/{candevice}/",
       example = "/{candevice}/unknown"
   )
-  protected String unknownPacketTopic = "/{candevice}/unknown";;
+  protected String unknownPacketTopic = "/{candevice}/unknown";
 
 
 }

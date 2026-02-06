@@ -123,9 +123,8 @@ public class EndPointConfigDTO extends BaseConfigDTO {
   @Schema(
       description = "Comma-separated list of allowed proxy source addresses. Supports hostnames, IPv4/IPv6 addresses, and CIDR blocks (e.g., 192.168.0.0/24, ::1, example.com).",
       requiredMode = Schema.RequiredMode.NOT_REQUIRED,
-      pattern = "^\\s*[^,\\s][^,]*\\s*(?:,\\s*[^,\\s][^,]*\\s*)*$",
+      pattern = "^(?:\\s*[^,\\s][^,]*\\s*(?:,\\s*[^,\\s][^,]*\\s*)*)?$",
       example = "example.com, localhost, 192.168.1.10, [2001:db8::1]",
-      defaultValue = "",
       nullable = true
   )
   protected String allowedProxyHosts;

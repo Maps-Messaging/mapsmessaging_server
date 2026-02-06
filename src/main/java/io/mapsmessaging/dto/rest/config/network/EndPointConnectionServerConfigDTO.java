@@ -73,7 +73,7 @@ public class EndPointConnectionServerConfigDTO extends EndPointServerConfigDTO {
       description = "An arbitrary cost associated with using this connection (lower is preferred)",
       example = "10",
       defaultValue = "10",
-      minimum = "1",
+      minimum = "0",
       maximum = "1000",
       requiredMode = Schema.RequiredMode.REQUIRED,
       nullable = false

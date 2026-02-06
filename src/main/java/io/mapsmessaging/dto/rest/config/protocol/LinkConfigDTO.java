@@ -102,13 +102,20 @@ public class LinkConfigDTO extends BaseConfigDTO {
       requiredMode = Schema.RequiredMode.NOT_REQUIRED,
       nullable = true
   )
-  protected NamespaceFilters namespaceFilters;
+  protected List<NamespaceFilterDTO> namespaceFilters;
 
   @Schema(
-      description = "Requested QoS for the link (0, 1, or 2). For non-MQTT links, 1 or 2 may imply transactional handling.",
+      description = "Requested QoS for the link.",
       requiredMode = Schema.RequiredMode.NOT_REQUIRED,
       nullable = true,
-      example = "1"
+      type = "string",
+      allowableValues = {
+          "AT_MOST_ONCE",
+          "AT_LEAST_ONCE",
+          "EXACTLY_ONCE",
+          "MQTT_SN_REGISTERED"
+      },
+      example = "AT_LEAST_ONCE"
   )
   protected QualityOfService qualityOfService;
 }

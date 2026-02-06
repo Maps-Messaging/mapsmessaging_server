@@ -106,7 +106,8 @@ public class ProtocolConfigDTO extends BaseConfigDTO {
           "n2k"
       },
       requiredMode = Schema.RequiredMode.REQUIRED,
-      nullable = false
+      nullable = false,
+      type = "string"
   )
   protected String type;
 
@@ -114,8 +115,8 @@ public class ProtocolConfigDTO extends BaseConfigDTO {
       description = "Enable support for the PROXY protocol (v1/v2) on incoming connections",
       example = "false",
       defaultValue = "false",
-      requiredMode = Schema.RequiredMode.NOT_REQUIRED,
-      nullable = true
+      requiredMode = Schema.RequiredMode.REQUIRED,
+      nullable = false
   )
   protected boolean proxyProtocol = false;
 
