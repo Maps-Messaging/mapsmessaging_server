@@ -30,6 +30,7 @@ import io.mapsmessaging.api.message.TypedData;
 import io.mapsmessaging.dto.rest.config.protocol.ProtocolConfigDTO;
 import io.mapsmessaging.dto.rest.config.protocol.impl.MavlinkConfigDTO;
 import io.mapsmessaging.dto.rest.protocol.ProtocolInformationDTO;
+import io.mapsmessaging.dto.rest.protocol.impl.MavlinkProtocolInformation;
 import io.mapsmessaging.mavlink.ProcessedFrame;
 import io.mapsmessaging.mavlink.message.Frame;
 import io.mapsmessaging.network.ProtocolClientConnection;
@@ -68,7 +69,7 @@ public class MavlinkProtocol extends Protocol {
     this.mavlinkConfig = (MavlinkConfigDTO)protocolConfig;
     gson = GsonFactory.createStrictJsonWithSafeFloats();
     try {
-      session = buildSession();
+      session = buildSession(key.getRemoteAddress().getHostName()+"_"+key.getRemotePort()+"_"+key.getSystemId(), mavlinkConfig.getMaximumSessionExpiry());
     } catch (ExecutionException|TimeoutException e) {
       throw new IOException(e);
     } catch (InterruptedException e) {
@@ -96,7 +97,10 @@ public class MavlinkProtocol extends Protocol {
 
   @Override
   public ProtocolInformationDTO getInformation() {
-    return null;
+    MavlinkProtocolInformation information = new MavlinkProtocolInformation();
+    updateInformation(information);
+    information.setSessionInfo(session.getSessionInformation());
+    return information;
   }
 
   @Override
@@ -179,16 +183,6 @@ public class MavlinkProtocol extends Protocol {
     return "1.0";
   }
 
-  private Session buildSession() throws ExecutionException, InterruptedException, TimeoutException {
-    String sessionid = key.getRemoteAddress().getHostName()+"_"+key.getRemotePort()+"_"+key.getSystemId();
-    SessionContextBuilder scb = new SessionContextBuilder(sessionid, new ProtocolClientConnection(this));
-    scb.setResetState(true)
-      .setSessionExpiry(mavlinkConfig.getMaximumSessionExpiry())
-      .setPersistentSession(false)
-      .setReceiveMaximum(10);
-    CompletableFuture<Session> sessionFuture = SessionManager.getInstance().createAsync(scb.build(), this);
-    return sessionFuture.get(5, TimeUnit.SECONDS);
-  }
 
   protected String computeTopicName(Frame envelope, String messageName) {
     String template = mavlinkConfig.getTopicNameTemplate();
