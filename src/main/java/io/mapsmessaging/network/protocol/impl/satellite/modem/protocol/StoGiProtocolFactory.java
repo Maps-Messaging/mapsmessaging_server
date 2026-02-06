@@ -32,7 +32,7 @@ import java.nio.ByteBuffer;
 public class StoGiProtocolFactory extends ProtocolImplFactory {
 
   public StoGiProtocolFactory() {
-    super("stogi", "OrbComm OGWS protocol", new NoOpDetection());
+    super("orbcomm", "OrbComm OGWS protocol", new NoOpDetection());
   }
 
   @Override

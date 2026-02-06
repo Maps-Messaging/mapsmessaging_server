@@ -303,8 +303,8 @@ public class StoGiProtocol extends Protocol implements Consumer<Packet> {
     try {
       NamespaceFilter namespaceFilter= filterMessage(messageEvent);
       if(namespaceFilter != null) {
-        depth = namespaceFilter.getDepth();
-        filteredOverride = namespaceFilter.isForcePriority();
+        depth = namespaceFilter.getConfig().getDepth();
+        filteredOverride = namespaceFilter.getConfig().isForcePriority();
       }
     } catch (IOException e) {
       return; // failed filtering
