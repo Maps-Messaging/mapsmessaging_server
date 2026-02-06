@@ -29,15 +29,23 @@ import io.mapsmessaging.network.io.connection.EndPointConnection;
 import io.mapsmessaging.rest.api.impl.interfaces.RequestedAction;
 import io.mapsmessaging.rest.cache.CacheKey;
 import io.mapsmessaging.rest.responses.StatusResponse;
+import io.mapsmessaging.selector.ParseException;
+import io.mapsmessaging.selector.SelectorParser;
+import io.mapsmessaging.selector.operators.ParserExecutor;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.servlet.http.HttpServletResponse;
-import jakarta.ws.rs.*;
-import jakarta.ws.rs.core.Context;
+import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.PATCH;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.PathParam;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
@@ -46,10 +54,11 @@ import java.util.List;
 import static io.mapsmessaging.rest.api.Constants.URI_PATH;
 
 @Tag(name = "Server Integration Management")
-@Path(URI_PATH+"/server/integration/{name}")
+@Path(URI_PATH + "/server/integration/{name}")
 public class IntegrationInstanceManagementApi extends IntegrationBaseRestApi {
+
   @GET
-  @Produces({MediaType.APPLICATION_JSON})
+  @Produces(MediaType.APPLICATION_JSON)
   @Operation(
       summary = "Get integration by name",
       description = "Retrieves the configuration on the inter-server integration connection. Requires authentication if enabled in the configuration.",
@@ -57,76 +66,172 @@ public class IntegrationInstanceManagementApi extends IntegrationBaseRestApi {
           @ApiResponse(
               responseCode = "200",
               description = "Operation was successful",
-              content = @Content(mediaType = "application/json", schema = @Schema(implementation = IntegrationInfoDTO.class))
+              content = @Content(
+                  mediaType = "application/json",
+                  schema = @Schema(implementation = IntegrationInfoDTO.class)
+              )
           ),
-          @ApiResponse(responseCode = "400", description = "Bad request",
-              content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))),
-          @ApiResponse(responseCode = "401", description = "Invalid credentials or unauthorized access",
-              content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))),
-          @ApiResponse(responseCode = "403", description = "User is not authorised to access the resource",
-              content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))),
-          @ApiResponse(responseCode = "404", description = "Integration name was not found"),
+          @ApiResponse(
+              responseCode = "400",
+              description = "Bad request",
+              content = @Content(
+                  mediaType = "application/json",
+                  schema = @Schema(implementation = StatusResponse.class)
+              )
+          ),
+          @ApiResponse(
+              responseCode = "401",
+              description = "Invalid credentials or unauthorized access",
+              content = @Content(
+                  mediaType = "application/json",
+                  schema = @Schema(implementation = StatusResponse.class)
+              )
+          ),
+          @ApiResponse(
+              responseCode = "403",
+              description = "User is not authorised to access the resource",
+              content = @Content(
+                  mediaType = "application/json",
+                  schema = @Schema(implementation = StatusResponse.class)
+              )
+          ),
+          @ApiResponse(
+              responseCode = "404",
+              description = "Integration name was not found",
+              content = @Content(
+                  mediaType = "application/json",
+                  schema = @Schema(implementation = StatusResponse.class)
+              )
+          ),
+          @ApiResponse(
+              responseCode = "500",
+              description = "Internal server error",
+              content = @Content(
+                  mediaType = "application/json",
+                  schema = @Schema(implementation = StatusResponse.class)
+              )
+          )
       }
   )
-  public IntegrationInfoDTO getByNameIntegration(@PathParam("name") String name) {
+  public Response getByNameIntegration(@PathParam("name") String name) {
     hasAccess(RESOURCE);
-    CacheKey key = new CacheKey(uriInfo.getPath(), name);
-    IntegrationInfoDTO cachedResponse = getFromCache(key, IntegrationInfoDTO.class);
-    if (cachedResponse != null) {
-      return cachedResponse;
+
+    if (name == null || name.isBlank()) {
+      return badRequest("Name is required");
     }
 
-    // Fetch and cache response
+    CacheKey cacheKey = new CacheKey(uriInfo.getPath(), name);
+
+    IntegrationInfoDTO cachedResponse = getFromCache(cacheKey, IntegrationInfoDTO.class);
+    if (cachedResponse != null) {
+      return ok(cachedResponse);
+    }
+
     EndPointConnection endPointConnection = locateInstance(name);
     if (endPointConnection == null) {
-      throw new WebApplicationException("Integration not found", Response.Status.NOT_FOUND);
+      return notFound("Integration not found");
     }
 
-    IntegrationInfoDTO response = IntegrationInfoHelper.fromEndPointConnection(endPointConnection);
-    putToCache(key, response);
-    return response;
+    IntegrationInfoDTO response;
+    try {
+      response = IntegrationInfoHelper.fromEndPointConnection(endPointConnection);
+    } catch (RuntimeException ex) {
+      return internalServerError("Failed to build integration info");
+    }
+
+    putToCache(cacheKey, response);
+    return ok(response);
   }
 
   @GET
   @Path("/connection")
-  @Produces({MediaType.APPLICATION_JSON})
+  @Produces(MediaType.APPLICATION_JSON)
   @Operation(
-      summary = "Get integration status by name",
-      description = "Retrieves the current status on the inter-server integration connection. Requires authentication if enabled in the configuration.",
+      summary = "Get integration connection status by name",
+      description = "Retrieves the current connection summary for the inter-server integration connection. Requires authentication if enabled in the configuration.",
       responses = {
           @ApiResponse(
               responseCode = "200",
               description = "Operation was successful",
-              content = @Content(mediaType = "application/json", schema = @Schema(implementation = EndPointSummaryDTO.class))
+              content = @Content(
+                  mediaType = "application/json",
+                  schema = @Schema(implementation = EndPointSummaryDTO.class)
+              )
           ),
-          @ApiResponse(responseCode = "400", description = "Bad request",
-              content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))),
-          @ApiResponse(responseCode = "401", description = "Invalid credentials or unauthorized access",
-              content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))),
-          @ApiResponse(responseCode = "403", description = "User is not authorised to access the resource",
-              content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))),
-          @ApiResponse(responseCode = "404", description = "Integration name was not found")
+          @ApiResponse(
+              responseCode = "400",
+              description = "Bad request",
+              content = @Content(
+                  mediaType = "application/json",
+                  schema = @Schema(implementation = StatusResponse.class)
+              )
+          ),
+          @ApiResponse(
+              responseCode = "401",
+              description = "Invalid credentials or unauthorized access",
+              content = @Content(
+                  mediaType = "application/json",
+                  schema = @Schema(implementation = StatusResponse.class)
+              )
+          ),
+          @ApiResponse(
+              responseCode = "403",
+              description = "User is not authorised to access the resource",
+              content = @Content(
+                  mediaType = "application/json",
+                  schema = @Schema(implementation = StatusResponse.class)
+              )
+          ),
+          @ApiResponse(
+              responseCode = "404",
+              description = "Integration name was not found",
+              content = @Content(
+                  mediaType = "application/json",
+                  schema = @Schema(implementation = StatusResponse.class)
+              )
+          ),
+          @ApiResponse(
+              responseCode = "500",
+              description = "Internal server error",
+              content = @Content(
+                  mediaType = "application/json",
+                  schema = @Schema(implementation = StatusResponse.class)
+              )
+          )
       }
   )
-  public EndPointSummaryDTO getIntegrationConnection(@PathParam("name") String name) {
+  public Response getIntegrationConnection(@PathParam("name") String name) {
     hasAccess(RESOURCE);
-    CacheKey key = new CacheKey(uriInfo.getPath(), name);
-    EndPointSummaryDTO cachedResponse = getFromCache(key, EndPointSummaryDTO.class);
-    if (cachedResponse != null) {
-      return cachedResponse;
+
+    if (name == null || name.isBlank()) {
+      return badRequest("Name is required");
     }
+
+    CacheKey cacheKey = new CacheKey(uriInfo.getPath(), name);
+
+    EndPointSummaryDTO cachedResponse = getFromCache(cacheKey, EndPointSummaryDTO.class);
+    if (cachedResponse != null) {
+      return ok(cachedResponse);
+    }
+
     EndPointConnection endPointConnection = locateInstance(name);
     if (endPointConnection == null) {
-      throw new WebApplicationException("Integration not found", Response.Status.NOT_FOUND);
+      return notFound("Integration not found");
     }
 
-    EndPointSummaryDTO response =
-        (endPointConnection.getEndPoint() != null)
-            ? EndPointHelper.buildSummaryDTO(name, endPointConnection.getEndPoint())
-            : new EndPointSummaryDTO();
+    EndPointSummaryDTO response;
+    try {
+      if (endPointConnection.getEndPoint() != null) {
+        response = EndPointHelper.buildSummaryDTO(name, endPointConnection.getEndPoint());
+      } else {
+        response = new EndPointSummaryDTO();
+      }
+    } catch (RuntimeException ex) {
+      return internalServerError("Failed to build endpoint summary");
+    }
 
-    putToCache(key, response);
-    return response;
+    putToCache(cacheKey, response);
+    return ok(response);
   }
 
   @PATCH
@@ -147,49 +252,107 @@ public class IntegrationInstanceManagementApi extends IntegrationBaseRestApi {
           @ApiResponse(
               responseCode = "200",
               description = "Operation was successful",
-              content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))
+              content = @Content(
+                  mediaType = "application/json",
+                  schema = @Schema(implementation = StatusResponse.class)
+              )
           ),
-          @ApiResponse(responseCode = "400", description = "Bad request",
-              content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))),
-          @ApiResponse(responseCode = "401", description = "Invalid credentials or unauthorized access",
-              content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))),
-          @ApiResponse(responseCode = "403", description = "User is not authorised to access the resource",
-              content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))),
+          @ApiResponse(
+              responseCode = "400",
+              description = "Bad request",
+              content = @Content(
+                  mediaType = "application/json",
+                  schema = @Schema(implementation = StatusResponse.class)
+              )
+          ),
+          @ApiResponse(
+              responseCode = "401",
+              description = "Invalid credentials or unauthorized access",
+              content = @Content(
+                  mediaType = "application/json",
+                  schema = @Schema(implementation = StatusResponse.class)
+              )
+          ),
+          @ApiResponse(
+              responseCode = "403",
+              description = "User is not authorised to access the resource",
+              content = @Content(
+                  mediaType = "application/json",
+                  schema = @Schema(implementation = StatusResponse.class)
+              )
+          ),
+          @ApiResponse(
+              responseCode = "404",
+              description = "Integration name was not found",
+              content = @Content(
+                  mediaType = "application/json",
+                  schema = @Schema(implementation = StatusResponse.class)
+              )
+          ),
+          @ApiResponse(
+              responseCode = "500",
+              description = "Internal server error",
+              content = @Content(
+                  mediaType = "application/json",
+                  schema = @Schema(implementation = StatusResponse.class)
+              )
+          )
       }
   )
-  public StatusResponse handleIntegrationActionRequest(@PathParam("name") String name, @RequestBody RequestedAction requested, @Context HttpServletResponse response) {
+  public Response handleIntegrationActionRequest(
+      @PathParam("name") String name,
+      RequestedAction requestedAction
+  ) {
     hasAccess(RESOURCE);
+
+    if (name == null || name.isBlank()) {
+      return badRequest("Name is required");
+    }
+
+    if (requestedAction == null) {
+      return badRequest("Request body is required");
+    }
+
+    String requestedState = requestedAction.getState();
+    if (requestedState == null || requestedState.isBlank()) {
+      return badRequest("State is required");
+    }
+
+    EndPointConnection endPointConnection = locateInstance(name);
+    if (endPointConnection == null) {
+      return notFound("Integration not found");
+    }
+
     boolean processed = false;
-    if (requested != null && requested.getState() != null) {
-      EndPointConnection endPointConnection = locateInstance(name);
-      if (endPointConnection == null) {
-        response.setStatus(HttpServletResponse.SC_NOT_FOUND);
-        return new StatusResponse("No such connection");
-      }
-      if ("stopped".equalsIgnoreCase(requested.getState())) {
+
+    try {
+      if ("stopped".equalsIgnoreCase(requestedState)) {
         endPointConnection.stop();
         processed = true;
-      } else if ("started".equalsIgnoreCase(requested.getState())) {
+      } else if ("started".equalsIgnoreCase(requestedState)) {
         endPointConnection.start();
         processed = true;
-      } else if ("paused".equalsIgnoreCase(requested.getState())) {
+      } else if ("paused".equalsIgnoreCase(requestedState)) {
         endPointConnection.pause();
         processed = true;
-      } else if ("resumed".equalsIgnoreCase(requested.getState())) {
+      } else if ("resumed".equalsIgnoreCase(requestedState)) {
         endPointConnection.resume();
         processed = true;
       }
+    } catch (RuntimeException ex) {
+      return internalServerError("Failed to apply requested action");
     }
+
     if (processed) {
-      return new StatusResponse("Success");
+      return ok(new StatusResponse("Success"));
     }
-    response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
-    return new StatusResponse("Unknown action");
+
+    return badRequest("Unknown action");
   }
 
   @GET
   @Path("/status")
-  @Produces({MediaType.APPLICATION_JSON})
+  @Produces(MediaType.APPLICATION_JSON)
   @Operation(
       summary = "Get inter-server status",
       description = "Retrieve the current status for the inter-server specified by name. Requires authentication if enabled in the configuration.",
@@ -197,44 +360,104 @@ public class IntegrationInstanceManagementApi extends IntegrationBaseRestApi {
           @ApiResponse(
               responseCode = "200",
               description = "Operation was successful",
-              content = @Content(mediaType = "application/json", schema = @Schema(implementation = IntegrationStatusDTO.class))
+              content = @Content(
+                  mediaType = "application/json",
+                  schema = @Schema(implementation = IntegrationStatusDTO.class)
+              )
           ),
-          @ApiResponse(responseCode = "400", description = "Bad request",
-              content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))),
-          @ApiResponse(responseCode = "401", description = "Invalid credentials or unauthorized access",
-              content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))),
-          @ApiResponse(responseCode = "403", description = "User is not authorised to access the resource",
-              content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))),
+          @ApiResponse(
+              responseCode = "400",
+              description = "Bad request",
+              content = @Content(
+                  mediaType = "application/json",
+                  schema = @Schema(implementation = StatusResponse.class)
+              )
+          ),
+          @ApiResponse(
+              responseCode = "401",
+              description = "Invalid credentials or unauthorized access",
+              content = @Content(
+                  mediaType = "application/json",
+                  schema = @Schema(implementation = StatusResponse.class)
+              )
+          ),
+          @ApiResponse(
+              responseCode = "403",
+              description = "User is not authorised to access the resource",
+              content = @Content(
+                  mediaType = "application/json",
+                  schema = @Schema(implementation = StatusResponse.class)
+              )
+          ),
+          @ApiResponse(
+              responseCode = "404",
+              description = "Integration name was not found",
+              content = @Content(
+                  mediaType = "application/json",
+                  schema = @Schema(implementation = StatusResponse.class)
+              )
+          ),
+          @ApiResponse(
+              responseCode = "500",
+              description = "Internal server error",
+              content = @Content(
+                  mediaType = "application/json",
+                  schema = @Schema(implementation = StatusResponse.class)
+              )
+          )
       }
   )
-  public IntegrationStatusDTO getIntegrationStatus(@PathParam("name") String endpointName) {
+  public Response getIntegrationStatus(@PathParam("name") String name) {
     hasAccess(RESOURCE);
-    CacheKey key = new CacheKey(uriInfo.getPath(), endpointName);
-    IntegrationStatusDTO cachedResponse = getFromCache(key, IntegrationStatusDTO.class);
+
+    if (name == null || name.isBlank()) {
+      return badRequest("Name is required");
+    }
+
+    CacheKey cacheKey = new CacheKey(uriInfo.getPath(), name);
+
+    IntegrationStatusDTO cachedResponse = getFromCache(cacheKey, IntegrationStatusDTO.class);
     if (cachedResponse != null) {
-      return cachedResponse;
+      return ok(cachedResponse);
     }
-    IntegrationStatusDTO response = null;
-    EndPointConnection endPointConnection = locateInstance(endpointName);
-    if(endPointConnection != null) {
+
+    EndPointConnection endPointConnection = locateInstance(name);
+    if (endPointConnection == null) {
+      return notFound("Integration not found");
+    }
+
+    IntegrationStatusDTO response;
+    try {
       response = fromConnection(endPointConnection);
-      putToCache(key, response);
+    } catch (RuntimeException ex) {
+      return internalServerError("Failed to build integration status");
     }
-    return response;
+
+    putToCache(cacheKey, response);
+    return ok(response);
   }
 
-
   private EndPointConnection locateInstance(String name) {
-    List<EndPointConnection> list =
+    List<EndPointConnection> endPointConnections =
         MessageDaemon.getInstance()
             .getSubSystemManager()
             .getNetworkConnectionManager()
             .getEndPointConnectionList();
-    for (EndPointConnection endPointConnection : list) {
-      if (endPointConnection.getConfigName().equalsIgnoreCase(name)) {
+
+    if (endPointConnections == null) {
+      return null;
+    }
+
+    for (EndPointConnection endPointConnection : endPointConnections) {
+      if (endPointConnection == null) {
+        continue;
+      }
+      String configName = endPointConnection.getConfigName();
+      if (configName != null && configName.equalsIgnoreCase(name)) {
         return endPointConnection;
       }
     }
+
     return null;
   }
 }

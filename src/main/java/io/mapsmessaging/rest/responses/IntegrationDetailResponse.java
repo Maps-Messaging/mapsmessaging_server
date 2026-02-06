@@ -32,19 +32,9 @@ public class IntegrationDetailResponse extends BaseResponse {
 //  @ApiModelProperty(value="List of interfaces")
   private final List<IntegrationInfoDTO> data;
 
-  @Getter
-  //@ApiModelProperty(value="Default values for all interfaces used unless overridden by the specific config")
-  private final Map<String, Object> globalConfig;
-
 
   public IntegrationDetailResponse( List<IntegrationInfoDTO> list, ConfigurationProperties map) {
     data = list;
-    if(map != null) {
-      globalConfig = map.getMap();
-    }
-    else{
-      globalConfig = null;
-    }
   }
 
 }
