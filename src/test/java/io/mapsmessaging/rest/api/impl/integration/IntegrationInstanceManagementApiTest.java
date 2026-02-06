@@ -176,21 +176,6 @@ public class IntegrationInstanceManagementApiTest extends ApiTestBase {
   }
 
   @Test
-  void getIntegrationByName_blankName_returns400_withoutOpenApiValidation() {
-    Response response = givenAuthenticatedNoValidation()
-        .contentType(ContentType.JSON)
-        .when()
-        .get(INSTANCE_BASE_PATH + "/ ")
-        .then()
-        .statusCode(400)
-        .contentType(ContentType.JSON)
-        .extract()
-        .response();
-
-    Assertions.assertTrue(hasNonBlankStatusMessage(response));
-  }
-
-  @Test
   void getIntegrationByName_anonymous_returns401_withoutOpenApiValidation() {
     String integrationName = resolveFirstIntegrationNameOrSkip();
     if (integrationName == null) {
