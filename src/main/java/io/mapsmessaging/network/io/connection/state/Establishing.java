@@ -25,6 +25,7 @@ import io.mapsmessaging.api.transformers.InterServerTransformation;
 import io.mapsmessaging.configuration.ConfigurationProperties;
 import io.mapsmessaging.dto.rest.analytics.StatisticsConfigDTO;
 import io.mapsmessaging.dto.rest.config.protocol.LinkConfigDTO;
+import io.mapsmessaging.dto.rest.config.protocol.NamespaceFilterDTO;
 import io.mapsmessaging.engine.transformers.TransformerManager;
 import io.mapsmessaging.logging.ServerLogMessages;
 import io.mapsmessaging.network.io.connection.EndPointConnection;
@@ -66,7 +67,11 @@ public class Establishing extends State {
       String remote = property.getRemoteNamespace();
       String selector = property.getSelector();
       boolean schema = property.isIncludeSchema();
-      NamespaceFilters filters = property.getNamespaceFilters();
+      List<NamespaceFilterDTO> filters = property.getNamespaceFilters();
+      NamespaceFilters namespaceFilters = null;
+      if(filters !=null && !filters.isEmpty()) {
+        namespaceFilters  = new NamespaceFilters(filters);
+      }
       QualityOfService qos = property.getQualityOfService();
       List<InterServerTransformation> interServerTransformation = new ArrayList<>();
       List<Map<String, Object>> list = property.getTransformer();
@@ -83,7 +88,7 @@ public class Establishing extends State {
           if (remote.endsWith("#")) {
             remote = remote.substring(0, remote.length() - 1);
           }
-          subscribeLocal(local, remote, selector, qos, pipeline, schema, filters, property.getStatistics());
+          subscribeLocal(local, remote, selector, qos, pipeline, schema, namespaceFilters, property.getStatistics());
         }
         endPointConnection.getLogger().log(ServerLogMessages.END_POINT_CONNECTION_SUBSCRIPTION_ESTABLISHED, direction, local, remote);
       } catch (IOException ioException) {

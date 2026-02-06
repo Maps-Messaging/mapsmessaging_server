@@ -19,7 +19,7 @@
 
 package io.mapsmessaging.utilities.filtering;
 
-import io.mapsmessaging.configuration.ConfigurationProperties;
+import io.mapsmessaging.dto.rest.config.protocol.NamespaceFilterDTO;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -30,28 +30,10 @@ import java.util.Map;
 public class NamespaceFilters {
   private final TrieNode root = new TrieNode();
 
-  public NamespaceFilters(ConfigurationProperties props) {
-    if(props != null) {
-      Object obj = props.get("namespaceFilters");
-      if (obj instanceof List) {
-        List<ConfigurationProperties> list = (List<ConfigurationProperties>) obj;
-        for (ConfigurationProperties prop : list) {
-          addFilter(prop);
-        }
-      } else if (obj instanceof ConfigurationProperties prop) {
-        addFilter(prop);
-      }
+  public NamespaceFilters(List<NamespaceFilterDTO> props) {
+    for(NamespaceFilterDTO filter: props){
+      addFilter(filter);
     }
-  }
-
-  public ConfigurationProperties toConfigurationProperties() {
-    ConfigurationProperties props = new ConfigurationProperties();
-    List<ConfigurationProperties> list = new ArrayList();
-    for(NamespaceFilter filter:getAllFilters()){
-      list.add(filter.toConfigurationProperties());
-    }
-    props.put("namespaceFilters", list);
-    return props;
   }
 
   public List<NamespaceFilter> getAllFilters() {
@@ -69,7 +51,7 @@ public class NamespaceFilters {
     }
   }
 
-  private void addFilter(ConfigurationProperties prop) {
+  private void addFilter(NamespaceFilterDTO prop) {
     try {
       NamespaceFilter filter = new NamespaceFilter(prop);
       addToTrie(filter);
@@ -79,7 +61,7 @@ public class NamespaceFilters {
   }
 
   private void addToTrie(NamespaceFilter filter) {
-    String[] parts = normalize(filter.getNamespace()).split("/");
+    String[] parts = normalize(filter.getConfig().getNamespace()).split("/");
     TrieNode node = root;
     for (String part : parts) {
       if (part.isEmpty()) continue; // skip root

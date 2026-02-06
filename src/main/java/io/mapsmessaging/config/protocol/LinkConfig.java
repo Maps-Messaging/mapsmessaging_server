@@ -26,7 +26,7 @@ import io.mapsmessaging.config.analytics.StatisticsConfig;
 import io.mapsmessaging.configuration.ConfigurationProperties;
 import io.mapsmessaging.dto.rest.config.BaseConfigDTO;
 import io.mapsmessaging.dto.rest.config.protocol.LinkConfigDTO;
-import io.mapsmessaging.utilities.filtering.NamespaceFilters;
+import io.mapsmessaging.dto.rest.config.protocol.NamespaceFilterDTO;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -57,7 +57,16 @@ public class LinkConfig extends LinkConfigDTO implements Config {
       }
     }
     this.transformer= transfomers;
-    this.namespaceFilters = new NamespaceFilters(config);
+    this.namespaceFilters = new ArrayList<>();
+    Object obj1 = config.get("namespaceFilters");
+    if (obj1 instanceof List) {
+      List<ConfigurationProperties> list = (List<ConfigurationProperties>) obj;
+      for (ConfigurationProperties prop : list) {
+        namespaceFilters.add(new NamespaceFilter(prop));
+      }
+    } else if (obj instanceof ConfigurationProperties prop) {
+      namespaceFilters.add(new NamespaceFilter(prop));
+    }
     Object analysticsConfig = config.get("analystics");
     if (analysticsConfig instanceof ConfigurationProperties tfObj) {
       statistics = new StatisticsConfig(tfObj);
@@ -80,7 +89,11 @@ public class LinkConfig extends LinkConfigDTO implements Config {
       //config.put("transformer", new ConfigurationProperties(this.transformer));
     }
     if(namespaceFilters != null) {
-      config.put("namespaceFilters", namespaceFilters.toConfigurationProperties());
+      List<ConfigurationProperties> configList = new ArrayList<>();
+      for(NamespaceFilterDTO filter: namespaceFilters){
+        configList.add(((NamespaceFilter) filter).toConfigurationProperties());
+      }
+      config.put("namespaceFilters", configList);
     }
     if(statistics != null) {
       config.put("analystics", ((StatisticsConfig) statistics).toConfigurationProperties());

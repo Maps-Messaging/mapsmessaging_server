@@ -19,43 +19,33 @@
 
 package io.mapsmessaging.utilities.filtering;
 
-import io.mapsmessaging.configuration.ConfigurationProperties;
+import io.mapsmessaging.dto.rest.config.protocol.NamespaceFilterDTO;
 import io.mapsmessaging.selector.ParseException;
 import io.mapsmessaging.selector.SelectorParser;
 import io.mapsmessaging.selector.operators.ParserExecutor;
-import lombok.Data;
+import lombok.Getter;
 
 import java.io.IOException;
 
-@Data
+
+@Getter
 public class NamespaceFilter {
-  private String namespace;
-  private int depth;
-  private String selector;
-  private boolean forcePriority;
+
+  private final NamespaceFilterDTO config;
   private ParserExecutor executor;
 
 
-  public NamespaceFilter(ConfigurationProperties props) throws IOException {
-    namespace = props.getProperty("namespace");
-    selector = props.getProperty("filter", "");
-    depth = props.getIntProperty("depth", 1);
-    forcePriority = props.getBooleanProperty("forcePriority", false);
-    if(selector != null && !selector.isEmpty()){
+  public NamespaceFilter(NamespaceFilterDTO props) throws IOException {
+    config = props;
+
+    if(config.getSelector() != null && !config.getSelector().isEmpty()){
       try {
-        executor = SelectorParser.compile(selector);
+        executor = SelectorParser.compile(config.getSelector());
       } catch (ParseException e) {
         throw new IOException(e);
       }
     }
   }
 
-  public ConfigurationProperties toConfigurationProperties(){
-    ConfigurationProperties props = new ConfigurationProperties();
-    props.put("namespace", namespace);
-    props.put("filter", selector);
-    props.put("depth", depth);
-    props.put("forcePriority", forcePriority);
-    return props;
-  }
+
 }
