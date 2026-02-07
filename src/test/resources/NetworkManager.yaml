@@ -276,6 +276,7 @@ NetworkManager:
         auth: anon
 
       -
+        name: "SSL Echo Server"
         url: ssl://0.0.0.0:8444/
         protocol: echo
         auth: anon
