@@ -44,8 +44,7 @@ public class N2KConfigDTO extends ProtocolConfigDTO {
   )
   protected String databasePath;
 
-
-
+  
   @Schema(
       description = "Optional XML definition to use encoded as base64",
       requiredMode = Schema.RequiredMode.NOT_REQUIRED,

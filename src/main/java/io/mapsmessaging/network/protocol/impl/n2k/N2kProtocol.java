@@ -67,6 +67,7 @@ public class N2kProtocol extends Protocol {
   private final InboundProcessor inboundProcessor;
   private final String topicTemplate;
   private final String rawTopicTemplate;
+  private final boolean parseToJson;
   private final SchemaConfig defaultSchemaConfig = SchemaManager.getInstance().getSchema(DEFAULT_JSON_SCHEMA);
 
   public N2kProtocol(CanbusEndPoint endPoint, @NotNull @NonNull ProtocolConfigDTO protocolConfig) throws IOException {
@@ -92,7 +93,8 @@ public class N2kProtocol extends Protocol {
       throw new IOException(e);
     }
     topicTemplate = ((N2KConfigDTO)protocolConfig).getTopicNameTemplate();
-    rawTopicTemplate =  ((N2KConfigDTO)protocolConfig).getUnknownPacketTopic();
+    rawTopicTemplate =  ((N2KConfigDTO)protocolConfig).getUnknownPacketTopic().replace("{candevice}",endPoint.getName());
+    parseToJson =((N2KConfigDTO)protocolConfig).isParseToJson();
     formatter = (CanbusFormatter) MessageFormatterFactory.getInstance().getFormatter(canbusSchema);
     try {
       session = buildSession(endPoint.getName(), 10000);
@@ -141,7 +143,26 @@ public class N2kProtocol extends Protocol {
       logger.log(N2K_PROTOCOL_PARSING_PACKET, packetToString(frame));
     }
     if(frame != null) {
-      processPacket(formatter.parseToJson(frame.getRawData()));
+      if(parseToJson) {
+        processPacket(formatter.parseToJson(frame.getRawData()));
+      }
+      else{
+        Map<String, String> metaData = new HashMap<>();
+        metaData.put("protocol", "n2k");
+        metaData.put("version", getVersion());
+        metaData.put("sessionId", session.getName());
+        metaData.put("time_ms", "" + System.currentTimeMillis());
+        byte[] data = frame.getRawData();
+        MessageBuilder messageBuilder = new MessageBuilder();
+        messageBuilder.setOpaqueData(data)
+            .setQoS(QualityOfService.AT_MOST_ONCE)
+            .setMeta(metaData)
+            .setRetain(false)
+            .setContentType("canbus");
+
+        Message message = messageBuilder.build();
+        publishMessage(rawTopicTemplate, message);
+      }
     }
     return true;
   }
@@ -177,35 +198,14 @@ public class N2kProtocol extends Protocol {
         .setMeta(metaData)
         .setSchemaId(defaultSchemaConfig.getUniqueId())
         .build();
-
     String topicName = computeTopicName(pgn, name);
-
-
-    CompletableFuture<Destination> future = session.findDestination(topicName, DestinationType.TOPIC);
-    if (future != null) {
-      future.thenApply(destination -> {
-        try {
-          if(destination != null){
-            if(destination.getSchema() == null || destination.getSchema().getUniqueId().equals(SchemaManager.DEFAULT_RAW_UUID.toString())){
-              // set the schema here
-              destination.updateSchema(defaultSchemaConfig, null );
-            } else {
-              destination.getSchema();
-            }
-            destination.storeMessage(message);
-          }
-        } catch (IOException e) {
-          future.completeExceptionally(e);
-        }
-        return destination;
-      });
-    }
+    publishMessage(topicName, message);
     return true;
   }
 //"/{candevice}/{pgn}/{messageName}",
   protected String computeTopicName(int pgn, String messageName) {
     if(messageName == null) {
-      return rawTopicTemplate.replace("{candevice}",endPoint.getName());
+      return rawTopicTemplate;
     }
     String template = topicTemplate;
     template = template.replace("{candevice}",endPoint.getName());
@@ -236,4 +236,25 @@ public class N2kProtocol extends Protocol {
     return sb.toString();
   }
 
+  private void publishMessage(String topicName, Message message) {
+    CompletableFuture<Destination> future = session.findDestination(topicName, DestinationType.TOPIC);
+    if (future != null) {
+      future.thenApply(destination -> {
+        try {
+          if(destination != null){
+            if(destination.getSchema() == null || destination.getSchema().getUniqueId().equals(SchemaManager.DEFAULT_RAW_UUID.toString())){
+              // set the schema here
+              destination.updateSchema(defaultSchemaConfig, null );
+            } else {
+              destination.getSchema();
+            }
+            destination.storeMessage(message);
+          }
+        } catch (IOException e) {
+          future.completeExceptionally(e);
+        }
+        return destination;
+      });
+    }
+  }
 }
