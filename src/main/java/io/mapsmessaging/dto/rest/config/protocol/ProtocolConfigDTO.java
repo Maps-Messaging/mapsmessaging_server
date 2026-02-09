@@ -72,7 +72,10 @@ import lombok.NoArgsConstructor;
         @DiscriminatorMapping(value = "n2k", schema = N2KConfigDTO.class),
 
     },
-    requiredProperties = {"type"}
+    requiredProperties = {"type"},
+    additionalProperties = Schema.AdditionalPropertiesValue.TRUE,
+    additionalPropertiesSchema = Object.class,
+    schemaResolution = Schema.SchemaResolution.INLINE
 )
 
 @Data

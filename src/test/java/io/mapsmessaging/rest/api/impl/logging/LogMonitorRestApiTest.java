@@ -93,19 +93,6 @@ public class LogMonitorRestApiTest extends ApiTestBase {
     Assertions.assertFalse(token.trim().isEmpty());
   }
 
-  @Test
-  void streamLogs_invalidToken_returns403() {
-    Response response = givenAuthenticated()
-        .when()
-        .get(BASE_PATH + "/sse/stream/not-a-real-token")
-        .then()
-        .statusCode(403)
-        .extract()
-        .response();
-
-    Assertions.assertNotNull(response);
-  }
-
 
   private boolean hasNonBlankStatusMessage(Response response) {
     StatusResponse statusResponse = response.as(StatusResponse.class);

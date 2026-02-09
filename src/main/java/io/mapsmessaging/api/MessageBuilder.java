@@ -103,8 +103,10 @@ public class MessageBuilder {
     schemaId = null;
 
     dataMap = new LinkedHashMap<>();
-    for(Map.Entry<String, Object> entry : messageDTO.getDataMap().entrySet()) {
-      dataMap.put(entry.getKey(), new TypedData(entry.getValue()));
+    if(messageDTO.getDataMap() != null) {
+      for (Map.Entry<String, Object> entry : messageDTO.getDataMap().entrySet()) {
+        dataMap.put(entry.getKey(), new TypedData(entry.getValue()));
+      }
     }
     opaqueData = Base64.getDecoder().decode(messageDTO.getPayload());
     priority = Priority.getInstance(messageDTO.getPriority());

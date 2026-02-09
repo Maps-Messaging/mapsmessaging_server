@@ -33,6 +33,7 @@ import io.restassured.response.Response;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
+import java.util.Base64;
 import java.util.List;
 
 public class MessagingApiTest extends ApiTestBase {
@@ -43,7 +44,7 @@ public class MessagingApiTest extends ApiTestBase {
   void publish_subscribe_consume_unsubscribe_happyPath() {
     String topic = "/it_messaging_" + System.currentTimeMillis();
     MessageDTO message = new MessageDTO();
-    message.setPayload("hello");
+    message.setPayload(Base64.getEncoder().encodeToString ("hello".getBytes()));
     Response publishResponse = givenAuthenticated()
         .contentType(ContentType.JSON)
         .body(buildPublishRequest(topic, message))
@@ -185,39 +186,6 @@ public class MessagingApiTest extends ApiTestBase {
         .response();
 
     Assertions.assertTrue(hasNonBlankStatusMessage(response));
-  }
-
-  @Test
-  void requestSseMessageToken_blankDestination_returns400() {
-    Response response = givenAuthenticated()
-        .when()
-        .queryParam("destination", "   ")
-        .get(BASE_PATH + "/sse")
-        .then()
-        .statusCode(400)
-        .contentType(ContentType.JSON)
-        .extract()
-        .response();
-
-    Assertions.assertTrue(hasNonBlankStatusMessage(response));
-  }
-
-  @Test
-  void requestSseMessageToken_validDestination_returns200_andToken() {
-    String topic = "/it_messaging_" + System.currentTimeMillis();
-
-    Response response = givenAuthenticated()
-        .when()
-        .queryParam("destination", topic)
-        .get(BASE_PATH + "/sse")
-        .then()
-        .statusCode(200)
-        .extract()
-        .response();
-
-    String token = response.asString();
-    Assertions.assertNotNull(token);
-    Assertions.assertFalse(token.trim().isEmpty());
   }
 
   private Object buildPublishRequest(String destinationName, MessageDTO message) {

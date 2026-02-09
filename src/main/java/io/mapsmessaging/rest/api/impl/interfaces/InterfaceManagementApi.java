@@ -42,6 +42,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -100,7 +101,7 @@ public class InterfaceManagementApi extends BaseInterfaceApi {
           )
       }
   )
-  public InterfaceInfoDTO[] getAllInterfaces(
+  public Response getAllInterfaces(
       @Parameter(
           description = "Optional filter string",
           schema = @Schema(
@@ -111,14 +112,20 @@ public class InterfaceManagementApi extends BaseInterfaceApi {
           required = false
       )
       @QueryParam("filter") String filter
-  ) throws ParseException {
+  ) {
     hasAccess(RESOURCE);
     CacheKey key = new CacheKey(uriInfo.getPath(), (filter != null && !filter.isEmpty()) ? "" + filter.hashCode() : "");
     InterfaceInfoDTO[] cachedResponse = getFromCache(key, InterfaceInfoDTO[].class);
     if (cachedResponse != null) {
-      return cachedResponse;
+      return Response.ok().entity(cachedResponse).build();
     }
-    ParserExecutor parser = (filter != null && !filter.isEmpty()) ? SelectorParser.compile(filter) : null;
+    ParserExecutor parser = null;
+    try {
+      parser = (filter != null && !filter.isEmpty()) ? SelectorParser.compile(filter) : null;
+    }
+    catch (ParseException ex) {
+      return Response.status(Response.Status.BAD_REQUEST).entity(new StatusResponse("Invalid filter expression")).build();
+    }
     List<EndPointManager> endPointManagers = MessageDaemon.getInstance().getSubSystemManager().getNetworkManager().getAll();
     List<EndPointManager> filteredManagers = new ArrayList<>();
     for(EndPointManager endPointManager : endPointManagers) {
@@ -126,15 +133,15 @@ public class InterfaceManagementApi extends BaseInterfaceApi {
         filteredManagers.add(endPointManager);
       }
     }
-
+    ParserExecutor parser2 = parser;
     InterfaceInfoDTO[] protocols =
         filteredManagers.stream()
             .map(InterfaceInfoHelper::fromEndPointManager)
-            .filter(protocol -> parser == null || parser.evaluate(protocol)).toArray(InterfaceInfoDTO[]::new);
+            .filter(protocol -> parser2 == null || parser2.evaluate(protocol)).toArray(InterfaceInfoDTO[]::new);
 
     // Cache the response
     putToCache(key, protocols);
-    return protocols;
+    return Response.ok().entity(protocols).build();
   }
 
 
@@ -195,7 +202,7 @@ public class InterfaceManagementApi extends BaseInterfaceApi {
           )
       }
   )
-  public StatusResponse handleInterfaceActionRequest(RequestedAction requested, @Context HttpServletResponse response) {
+  public Response handleInterfaceActionRequest(RequestedAction requested) {
     hasAccess(RESOURCE);
     boolean processed = false;
     if (requested != null && requested.getState() != null) {
@@ -215,10 +222,9 @@ public class InterfaceManagementApi extends BaseInterfaceApi {
       }
     }
     if (processed) {
-      return new StatusResponse("Success");
+      return Response.ok(new StatusResponse("Success")).build();
     }
-    response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
-    return new StatusResponse("Unknown action");
+    return Response.status(Response.Status.BAD_REQUEST).entity(new StatusResponse("Unknown action")).build();
   }
 
   @GET
@@ -270,13 +276,12 @@ public class InterfaceManagementApi extends BaseInterfaceApi {
           )
       }
   )
-  public InterfaceStatusDTO[] getAllInterfaceStatus(
+  public Response getAllInterfaceStatus(
       @Parameter(
           description = "Optional filter string",
           schema = @Schema(
               type = "String",
-              example = "state = 'started'",
-              minLength = 1
+              example = "state = 'started'"
           ),
           required = false
       )
@@ -286,11 +291,17 @@ public class InterfaceManagementApi extends BaseInterfaceApi {
     CacheKey key = new CacheKey(uriInfo.getPath(), (filter != null && !filter.isEmpty()) ? "" + filter.hashCode() : "");
     InterfaceStatusDTO[] cachedResponse = getFromCache(key, InterfaceStatusDTO[].class);
     if (cachedResponse != null) {
-      return cachedResponse;
+      return Response.ok().entity(cachedResponse).build();
     }
 
     // Fetch and cache response
-    ParserExecutor parser = (filter != null && !filter.isEmpty()) ? SelectorParser.compile(filter) : null;
+    ParserExecutor parser = null;
+    try{
+      parser= (filter != null && !filter.isEmpty()) ? SelectorParser.compile(filter) : null;
+    }
+    catch(ParseException ex){
+      return Response.status(Response.Status.BAD_REQUEST).entity(new StatusResponse("Invalid filter expression")).build();
+    }
     List<EndPointManager> endPointManagers = MessageDaemon.getInstance().getSubSystemManager().getNetworkManager().getAll();
     List<EndPointManager> filteredManagers = new ArrayList<>();
     for(EndPointManager endPointManager : endPointManagers) {
@@ -298,14 +309,15 @@ public class InterfaceManagementApi extends BaseInterfaceApi {
         filteredManagers.add(endPointManager);
       }
     }
+    ParserExecutor parser2 = parser;
     InterfaceStatusDTO[] list =
         filteredManagers.stream()
             .map(endPointManager -> InterfaceStatusHelper.fromServer(endPointManager.getEndPointServer()))
-            .filter(status -> parser == null || parser.evaluate(status))
+            .filter(status -> parser2 == null || parser2.evaluate(status))
             .toList()
             .toArray(new InterfaceStatusDTO[0]);
 
     putToCache(key, list);
-    return list;
+    return Response.ok().entity(list).build();
   }
 }

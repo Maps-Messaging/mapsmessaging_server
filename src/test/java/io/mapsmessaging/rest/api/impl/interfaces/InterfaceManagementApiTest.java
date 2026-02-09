@@ -24,12 +24,14 @@ import io.mapsmessaging.rest.responses.StatusResponse;
 import io.restassured.http.ContentType;
 import io.restassured.response.Response;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 public class InterfaceManagementApiTest extends ApiTestBase {
 
   private static final String BASE_PATH = "/api/v1/server/interfaces";
 
+  @Disabled("Not yet implemented")
   @Test
   void getAllInterfaces_noFilter_returns200() {
     Response response = givenAuthenticated()

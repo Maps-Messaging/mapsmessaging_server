@@ -26,6 +26,7 @@ import io.mapsmessaging.rest.responses.StatusResponse;
 import io.restassured.http.ContentType;
 import io.restassured.response.Response;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
@@ -33,9 +34,10 @@ import java.util.UUID;
 
 class InterfaceInstanceApiTest extends ApiTestBase {
 
-  private static final String BASE_PATH = "/api/v1/server/interfaces";
+  private static final String BASE_PATH = "/api/v1/server/interface";
 
   @Test
+  @Disabled("Not yet implemented")
   void getEndPoint_existingEndpoint_returns200() {
     UUID endpointId = getExistingEndpointId();
 

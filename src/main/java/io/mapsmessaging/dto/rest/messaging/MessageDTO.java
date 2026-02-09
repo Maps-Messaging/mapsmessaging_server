@@ -47,20 +47,28 @@ public class MessageDTO {
   @Schema(
       title = "Payload",
       description = "The main payload content of the message, represented as a byte64 string.",
-      example = "VGhpcyBpcyBhIGV4YW1wbGUgZGF0YS4="
-      )
+      example = "VGhpcyBpcyBhIGV4YW1wbGUgZGF0YS4=",
+      requiredMode = Schema.RequiredMode.REQUIRED,
+      nullable = false
+  )
   private String payload;
 
   @Schema(
       title = "Content Type",
       description = "The MIME type of the message payload, indicating its format.",
-      example = "application/json")
+      example = "application/json",
+      requiredMode = Schema.RequiredMode.NOT_REQUIRED,
+      nullable = true
+  )
   private String contentType;
 
   @Schema(
       title = "Correlation Data",
       description = "Additional data used for correlating messages, provided as a byte array.",
-      example = "[1, 2, 3, 4]")
+      example = "[1, 2, 3, 4]",
+      requiredMode = Schema.RequiredMode.NOT_REQUIRED,
+      nullable = true
+  )
   private byte[] correlationData;
 
   @Schema(
@@ -89,19 +97,27 @@ public class MessageDTO {
 
   @Schema(
       title = "Creation Date/Time",
-      description = "The time the server received this event")
+      description = "The time the server received this event",
+      requiredMode = Schema.RequiredMode.NOT_REQUIRED,
+      nullable = true
+  )
   private LocalDateTime creation;
 
   @Schema(
       title = "Message Parameters",
       description = "A map containing optional key-value pairs associated with the message.",
-      example = "{\"key1\": \"value1\", \"key2\": 42}")
+      example = "{\"key1\": \"value1\", \"key2\": 42}",
+      requiredMode = Schema.RequiredMode.NOT_REQUIRED,
+      nullable = true
+  )
   private Map<String, Object> dataMap;
 
   @Schema(
       title = "Event Meta Data",
       description = "A map of string, string values that the server has added to the event as it was processed",
-      example = "{\"key1\": \"value1\", \"key2\": 42}")
+      example = "{\"key1\": \"value1\", \"key2\": 42}",
+      requiredMode = Schema.RequiredMode.NOT_REQUIRED,
+      nullable = true)
   private Map<String, String> metaData;
 
 }

@@ -152,22 +152,26 @@ public class RestMessageListener implements MessageListener {
     sessionSubscriptionsMap.remove(namespacePath);
   }
 
-  public void ackReceived(String destination, List<Long> messageId) {
+  public boolean ackReceived(String destination, List<Long> messageId) {
     SessionSubscriptionMap subscribedEventManager = sessionSubscriptionsMap.get(destination);
     if (subscribedEventManager != null) {
       for (long id : messageId) {
         subscribedEventManager.getSubscribedEventManager().ackReceived(id);
+        return true;
       }
     }
+    return false;
   }
 
-  public void nakReceived(String destination, List<Long> messageId) {
+  public boolean nakReceived(String destination, List<Long> messageId) {
     SessionSubscriptionMap subscribedEventManager = sessionSubscriptionsMap.get(destination);
     if (subscribedEventManager != null) {
       for (long id : messageId) {
         subscribedEventManager.getSubscribedEventManager().rollbackReceived(id);
+        return true;
       }
     }
+    return false;
   }
 
   public int subscriptionDepth(String namespacePath) {
@@ -197,7 +201,7 @@ public class RestMessageListener implements MessageListener {
     Map<String, List<MessageDTO>> response = new LinkedHashMap<>();
 
     boolean hasEvents = true;
-    while (hasEvents && count != 0) {
+    while (hasEvents && count != 0 && destinationMessages != null) {
       hasEvents = false;
       for (Map.Entry<String, List<MessageEvent>> entry : destinationMessages.entrySet()) {
         if (!entry.getValue().isEmpty()) {
@@ -245,6 +249,10 @@ public class RestMessageListener implements MessageListener {
       }
     }
 
+    messageDTO.setCreation(LocalDateTime.ofInstant(
+        Instant.ofEpochMilli(msg.getCreation()),
+        ZoneId.systemDefault()
+    ));
     messageDTO.setPayload(Base64.getEncoder().encodeToString(payload));
     messageDTO.setExpiry(msg.getExpiry());
     messageDTO.setCorrelationData(msg.getCorrelationData());

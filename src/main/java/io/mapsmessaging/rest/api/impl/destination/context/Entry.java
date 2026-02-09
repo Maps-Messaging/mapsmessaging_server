@@ -29,32 +29,41 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @Schema(
     name = "DestinationEntry",
-    description = "A single immediate child under a prefix. Can represent a folder or a destination."
+    description = "A single immediate child under a prefix. Can represent a folder or a destination.",
+    requiredMode = Schema.RequiredMode.REQUIRED,
+    nullable = false
 )
 public class Entry {
 
   @Schema(
       description = "Child name (single segment).",
-      example = "fred"
+      example = "fred",
+      requiredMode = Schema.RequiredMode.REQUIRED,
+      nullable = false
+
   )
   private String name;
 
   @Schema(
       description = "Fully qualified path for this entry.",
-      example = "/a/b/fred"
+      example = "/a/b/fred",
+      requiredMode = Schema.RequiredMode.REQUIRED,
+      nullable = false
   )
   private String fullPath;
 
   @Schema(
       description = "Destination type when kind is DESTINATION; null when kind is FOLDER.",
       example = "TOPIC",
+      requiredMode = Schema.RequiredMode.NOT_REQUIRED,
       nullable = true
   )
   private Type destinationType;
 
   @Schema(
       description = "For folders: The number of children within, for destinations will always be 0",
-      example = "1"
+      example = "1",
+      requiredMode = Schema.RequiredMode.REQUIRED
   )
   private int childCount;
 

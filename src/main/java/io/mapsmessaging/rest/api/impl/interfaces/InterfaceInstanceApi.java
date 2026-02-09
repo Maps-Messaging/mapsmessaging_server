@@ -55,7 +55,7 @@ import java.util.UUID;
 import static io.mapsmessaging.rest.api.Constants.URI_PATH;
 
 @Tag(name = "Server Interface Management")
-@Path(URI_PATH + "/server/interfaces/{endpoint}")
+@Path(URI_PATH + "/server/interface/{endpoint}")
 public class InterfaceInstanceApi extends BaseInterfaceApi {
 
   @GET

@@ -23,6 +23,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import io.mapsmessaging.dto.rest.config.BaseConfigDTO;
 import io.mapsmessaging.dto.rest.config.auth.SaslConfigDTO;
 import io.mapsmessaging.dto.rest.config.protocol.ProtocolConfigDTO;
+import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -61,8 +62,7 @@ public class EndPointServerConfigDTO extends BaseConfigDTO {
   @Schema(
       description = "Endpoint-specific configuration",
       requiredMode = Schema.RequiredMode.REQUIRED,
-      nullable = false,
-      implementation = EndPointConfigDTO.class
+      nullable = false
   )
   protected EndPointConfigDTO endPointConfig;
 
@@ -74,10 +74,13 @@ public class EndPointServerConfigDTO extends BaseConfigDTO {
   )
   protected SaslConfigDTO saslConfig;
 
+  @ArraySchema(
+      schema = @Schema(implementation = ProtocolConfigDTO.class),
+      minItems = 1
+  )
   @Schema(
       description = "List of protocol configurations for the endpoint",
       requiredMode = Schema.RequiredMode.REQUIRED,
-      minLength = 1,
       nullable = false
   )
   protected List<ProtocolConfigDTO> protocolConfigs;

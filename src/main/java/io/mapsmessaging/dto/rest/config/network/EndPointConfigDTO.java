@@ -44,7 +44,7 @@ import lombok.NoArgsConstructor;
     @JsonSubTypes.Type(value = CanbusConfigDTO.class, name = "canbus"),
 })
 @Schema(
-    description = "Abstract base class for all schema configurations",
+    description = "Abstract base class for all endpoint configurations",
     discriminatorProperty = "type",
     discriminatorMapping = {
         @DiscriminatorMapping(value = "dtls", schema = DtlsConfigDTO.class),
@@ -55,9 +55,12 @@ import lombok.NoArgsConstructor;
         @DiscriminatorMapping(value = "ssl", schema = TlsConfigDTO.class),
         @DiscriminatorMapping(value = "udp", schema = UdpConfigDTO.class),
         @DiscriminatorMapping(value = "satellite", schema = SatelliteEndPointDTO.class),
-        @DiscriminatorMapping(value = "canbus", schema = CanbusConfigDTO.class),
-    })
-
+        @DiscriminatorMapping(value = "canbus", schema = CanbusConfigDTO.class)
+    },
+    additionalProperties = Schema.AdditionalPropertiesValue.TRUE,
+    additionalPropertiesSchema = Object.class,
+    requiredProperties = {"type"}
+)
 @Data
 @EqualsAndHashCode(callSuper = false)
 @SuppressWarnings("java:S1313") // the IP address is used in an example and it exposes no private info

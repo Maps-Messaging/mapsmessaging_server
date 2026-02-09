@@ -27,7 +27,11 @@ import lombok.NoArgsConstructor;
 
 @Data
 @EqualsAndHashCode(callSuper = true)
-@Schema(description = "NATS Protocol Configuration DTO")
+@Schema(
+    description = "NATS Protocol Configuration DTO",
+    additionalProperties = Schema.AdditionalPropertiesValue.TRUE,
+    additionalPropertiesSchema = Object.class
+)
 public class NatsConfigDTO extends ProtocolConfigDTO {
 
   public NatsConfigDTO() {

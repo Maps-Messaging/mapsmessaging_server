@@ -77,23 +77,35 @@ public class MessagingApi extends BaseRestApi {
               description = "Operation was successful",
               content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))
           ),
-          @ApiResponse(responseCode = "400", description = "Bad request",
-              content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))),
-          @ApiResponse(responseCode = "401", description = "Invalid credentials or unauthorized access",
-              content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))),
-          @ApiResponse(responseCode = "403", description = "User is not authorised to access the resource",
-              content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))),
+          @ApiResponse(
+              responseCode = "400",
+              description = "Bad request",
+              content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))
+          ),
+          @ApiResponse(
+              responseCode = "401",
+              description = "Invalid credentials or unauthorized access",
+              content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))
+          ),
+          @ApiResponse(
+              responseCode = "403",
+              description = "User is not authorised to access the resource",
+              content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))
+          ),
       }
   )
   @POST
-  public StatusResponse publishMessage(@Valid PublishRequestDTO publishRequest) throws LoginException, IOException {
+  public Response publishMessage(@Valid PublishRequestDTO publishRequest) throws LoginException, IOException {
     hasAccess(RESOURCE);
     Session session = getAuthenticatedSession();
-    String destinationName = publishRequest.getDestinationName();
+    String destinationName = publishRequest.getDestinationName().trim();
+    if( destinationName.isBlank()){
+      return Response.status(Response.Status.BAD_REQUEST).entity(new StatusResponse("Topic name must be valid and not blank")).build();
+    }
     Destination destination = session.findDestination(destinationName, DestinationType.TOPIC).join();
     MessageBuilder messageBuilder = new MessageBuilder(publishRequest.getMessage());
     destination.storeMessage(messageBuilder.build());
-    return new StatusResponse("Message published successfully");
+    return Response.ok().entity(new StatusResponse("Message published successfully")).build();
   }
 
 
@@ -143,15 +155,19 @@ public class MessagingApi extends BaseRestApi {
           @ApiResponse(responseCode = "403", description = "User is not authorised to access the resource",
               content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))),
       })
-  public StatusResponse subscribeToTopic(@Valid SubscriptionRequestDTO subscriptionRequest) throws LoginException, IOException {
+  public Response subscribeToTopic(@Valid SubscriptionRequestDTO subscriptionRequest) throws LoginException, IOException {
     hasAccess(RESOURCE);
     Session session = getAuthenticatedSession();
     HttpSession httpSession = getSession();
+    String destinationName = subscriptionRequest.getDestinationName().trim();
+    if( destinationName.isBlank()){
+      return Response.status(Response.Status.BAD_REQUEST).entity(new StatusResponse("Topic name must be valid and not blank")).build();
+    }
     SubscribedEventManager eventManager = subscribeToTopic(session, subscriptionRequest);
     SessionState state = SessionTracker.getSessionStates().getSessionState(httpSession.getId());
     RestMessageListener restMessageListener = state.getRestMessageListener();
     restMessageListener.registerEventManager(subscriptionRequest.getDestinationName(), session, eventManager);
-    return new StatusResponse("Successfully subscribed to " + subscriptionRequest.getDestinationName());
+    return Response.ok().entity(new StatusResponse("Successfully subscribed to " + subscriptionRequest.getDestinationName())).build();
   }
 
   @GET
@@ -239,11 +255,14 @@ public class MessagingApi extends BaseRestApi {
       }
   )
   @POST
-  public StatusResponse commitMessages(@Valid TransactionData transactionData) {
+  public Response commitMessages(@Valid TransactionData transactionData) {
     hasAccess(RESOURCE);
     SessionState state = SessionTracker.getSessionStates().getSessionState(getSession().getId());
-    state.getRestMessageListener().ackReceived(transactionData.getDestinationName(), transactionData.getEventIds());
-    return new StatusResponse("Successfully committed messages");
+    if(!state.getRestMessageListener().ackReceived(transactionData.getDestinationName(), transactionData.getEventIds())){
+      return Response.status(Response.Status.BAD_REQUEST).entity(new StatusResponse("No such transaction")).build();
+    }
+    return Response.ok().entity(new StatusResponse("Successfully committed messages")).build();
+
   }
 
   @Path("/abort")
@@ -267,11 +286,15 @@ public class MessagingApi extends BaseRestApi {
       }
   )
   @POST
-  public StatusResponse abortMessages(@Valid TransactionData transactionData) {
+  public Response abortMessages(@Valid TransactionData transactionData) {
     hasAccess(RESOURCE);
     SessionState state = SessionTracker.getSessionStates().getSessionState(getSession().getId());
-    state.getRestMessageListener().nakReceived(transactionData.getDestinationName(), transactionData.getEventIds());
-    return new StatusResponse("Successfully aborted messages");
+
+    if(!state.getRestMessageListener().nakReceived(transactionData.getDestinationName(), transactionData.getEventIds())){
+      return Response.status(Response.Status.BAD_REQUEST).entity(new StatusResponse("No such transaction")).build();
+
+    }
+    return Response.ok().entity(new StatusResponse("Successfully aborted messages")).build();
   }
 
   @Path("/consume")

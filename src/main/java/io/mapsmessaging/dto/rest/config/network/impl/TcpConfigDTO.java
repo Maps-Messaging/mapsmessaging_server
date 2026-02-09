@@ -27,7 +27,11 @@ import lombok.NoArgsConstructor;
 
 @Data
 @EqualsAndHashCode(callSuper = true)
-@Schema(description = "TCP Configuration DTO")
+@Schema(
+    description = "TCP Configuration DTO",
+    additionalProperties = Schema.AdditionalPropertiesValue.TRUE,
+    additionalPropertiesSchema = Object.class
+)
 public class TcpConfigDTO extends EndPointConfigDTO {
 
   public TcpConfigDTO() {
