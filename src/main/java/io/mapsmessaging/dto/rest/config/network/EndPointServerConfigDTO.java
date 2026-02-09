@@ -58,7 +58,6 @@ public class EndPointServerConfigDTO extends BaseConfigDTO {
   )
   protected String url;
 
-
   @Schema(
       description = "Endpoint-specific configuration",
       requiredMode = Schema.RequiredMode.REQUIRED,
@@ -86,8 +85,8 @@ public class EndPointServerConfigDTO extends BaseConfigDTO {
   @Schema(
       description = "Authentication realm",
       example = "defaultRealm",
-      requiredMode = Schema.RequiredMode.REQUIRED,
-      nullable = false
+      requiredMode = Schema.RequiredMode.NOT_REQUIRED,
+      nullable = true
   )
   protected String authenticationRealm;
 

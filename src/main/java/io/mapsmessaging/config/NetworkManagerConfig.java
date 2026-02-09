@@ -95,7 +95,12 @@ public class NetworkManagerConfig extends NetworkManagerConfigDTO implements Con
 
   private boolean updateEndPointServerConfig(EndPointServerConfigDTO endPointServerConfig) {
     for(EndPointServerConfigDTO endPointServerConfigDTO : this.endPointServerConfigList) {
-      if(endPointServerConfigDTO.getName().equals(endPointServerConfig.getName()) && endPointServerConfigDTO instanceof EndPointServerConfig) {
+      String name = endPointServerConfigDTO.getName();
+      if(name == null) {
+        name = endPointServerConfigDTO.getUrl();
+      }
+      if(name.equals(endPointServerConfig.getName())
+          && endPointServerConfigDTO instanceof EndPointServerConfig) {
         return ((EndPointServerConfig) endPointServerConfig).update(endPointServerConfigDTO);
       }
     }

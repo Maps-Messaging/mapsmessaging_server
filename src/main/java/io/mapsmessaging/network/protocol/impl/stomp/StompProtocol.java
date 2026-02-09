@@ -108,6 +108,9 @@ public class StompProtocol extends Protocol {
 
   @Override
   public Subject getSubject() {
+    if(sessionState.getSession() == null){
+      return new Subject();
+    }
     return sessionState.getSession().getSecurityContext().getSubject();
   }
 
