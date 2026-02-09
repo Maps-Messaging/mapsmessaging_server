@@ -157,14 +157,14 @@ public class N2kProtocol extends Protocol {
         byte[] data = formatter.parseFromJson(element);
         frame = CanFrame.fromBytes(data);
       } catch (IOException e) {
-        e.printStackTrace();
+        logger.log(N2K_PROTOCOL_CANBUS_BUILD_ERROR, e);
       }
     }
     if(frame != null) {
       try {
         ((CanbusEndPoint) endPoint).writeFrame(frame);
       } catch (IOException e) {
-        e.printStackTrace();
+        logger.log(N2K_PROTOCOL_CANBUS_BUILD_ERROR, e);
       }
     }
   }
@@ -264,10 +264,7 @@ public class N2kProtocol extends Protocol {
   }
 
   private String packetToString(CanFrame frame) {
-    StringBuilder sb = new StringBuilder();
-    sb.append("CanId: ").append(frame.canIdentifier()).append(" ");
-    sb.append("Data: ").append(Base64.getEncoder().encodeToString(frame.data()));
-    return sb.toString();
+    return "CanId: " + frame.canIdentifier() + " " + "Data: " + Base64.getEncoder().encodeToString(frame.data());
   }
 
   private void publishMessage(String topicName, Message message) {

@@ -451,6 +451,7 @@ public enum ServerLogMessages implements LogMessage {
   N2K_PROTOCOL_PARSED_KNOWN_PACKET(LEVEL.DEBUG, SERVER_CATEGORY.PROTOCOL, "Parsed to known data pgn:{}"),
   N2K_PROTOCOL_PARSED_UNKNOWN_PACKET(LEVEL.DEBUG, SERVER_CATEGORY.PROTOCOL, "Parsed unknown data pgn:{}"),
   N2K_PROTOCOL_INBOUND_HANDLER_ERROR(LEVEL.ERROR, SERVER_CATEGORY.PROTOCOL, "Exception raised during inbound handler {}"),
+  N2K_PROTOCOL_CANBUS_BUILD_ERROR(LEVEL.ERROR, SERVER_CATEGORY.PROTOCOL, "Exception raised attempting to build canbus frame {}"),
 
 
   // </editor-fold>
