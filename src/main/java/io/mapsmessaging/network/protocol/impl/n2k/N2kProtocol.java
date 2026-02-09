@@ -20,10 +20,9 @@
 package io.mapsmessaging.network.protocol.impl.n2k;
 
 import com.google.gson.JsonObject;
-import io.mapsmessaging.api.Destination;
-import io.mapsmessaging.api.MessageBuilder;
-import io.mapsmessaging.api.MessageEvent;
-import io.mapsmessaging.api.Session;
+import com.google.gson.JsonParser;
+import io.mapsmessaging.api.*;
+import io.mapsmessaging.api.features.ClientAcknowledgement;
 import io.mapsmessaging.api.features.DestinationType;
 import io.mapsmessaging.api.features.QualityOfService;
 import io.mapsmessaging.api.message.Message;
@@ -33,6 +32,7 @@ import io.mapsmessaging.dto.rest.config.protocol.ProtocolConfigDTO;
 import io.mapsmessaging.dto.rest.config.protocol.impl.N2KConfigDTO;
 import io.mapsmessaging.dto.rest.protocol.ProtocolInformationDTO;
 import io.mapsmessaging.dto.rest.protocol.impl.N2kProtocolInformation;
+import io.mapsmessaging.engine.destination.subscription.SubscriptionContext;
 import io.mapsmessaging.engine.schema.SchemaManager;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
@@ -95,6 +95,7 @@ public class N2kProtocol extends Protocol {
     topicTemplate = ((N2KConfigDTO)protocolConfig).getTopicNameTemplate();
     rawTopicTemplate =  ((N2KConfigDTO)protocolConfig).getUnknownPacketTopic().replace("{candevice}",endPoint.getName());
     parseToJson =((N2KConfigDTO)protocolConfig).isParseToJson();
+    String inboundTopicName =((N2KConfigDTO)protocolConfig).getInboundTopicName();
     formatter = (CanbusFormatter) MessageFormatterFactory.getInstance().getFormatter(canbusSchema);
     try {
       session = buildSession(endPoint.getName(), 10000);
@@ -104,7 +105,14 @@ public class N2kProtocol extends Protocol {
       Thread.currentThread().interrupt();
       throw new IOException(e);
     }
-
+    if(inboundTopicName != null && !inboundTopicName.isEmpty()){
+      SubscriptionContextBuilder scb = new SubscriptionContextBuilder(inboundTopicName, ClientAcknowledgement.AUTO);
+      SubscriptionContext context = scb.setQos(QualityOfService.AT_MOST_ONCE)
+          .setReceiveMaximum(10)
+          .setNoLocalMessages(true)
+          .build();
+      session.addSubscription(context);
+    }
     inboundProcessor  = new InboundProcessor(this);
     Thread t = new Thread(inboundProcessor);
     t.start();
@@ -133,7 +141,32 @@ public class N2kProtocol extends Protocol {
 
   @Override
   public void sendMessage(@NotNull @NonNull MessageEvent messageEvent) {
+    Message msg = messageEvent.getMessage();
+    byte[] payload = msg.getOpaqueData();
+    CanFrame frame = null;
+    // Let's try raw
+    if(payload != null && payload.length == 13) {
+      frame = CanFrame.fromBytes(payload);
+    }
 
+    // Lets try json
+    if(frame == null && payload != null) {
+      String json = new String(payload);
+      JsonObject element = JsonParser.parseString(json).getAsJsonObject();
+      try {
+        byte[] data = formatter.parseFromJson(element);
+        frame = CanFrame.fromBytes(data);
+      } catch (IOException e) {
+        e.printStackTrace();
+      }
+    }
+    if(frame != null) {
+      try {
+        ((CanbusEndPoint) endPoint).writeFrame(frame);
+      } catch (IOException e) {
+        e.printStackTrace();
+      }
+    }
   }
 
   @Override
@@ -195,6 +228,7 @@ public class N2kProtocol extends Protocol {
         .setQoS(QualityOfService.AT_MOST_ONCE)
         .setRetain(false)
         .storeOffline(false)
+        .setContentType("canbus")
         .setMeta(metaData)
         .setSchemaId(defaultSchemaConfig.getUniqueId())
         .build();

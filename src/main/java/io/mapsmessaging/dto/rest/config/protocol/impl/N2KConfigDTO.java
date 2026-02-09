@@ -65,17 +65,6 @@ public class N2KConfigDTO extends ProtocolConfigDTO {
 
   @Schema(
       description =
-          "Convert incoming CANBUS frames into JSON using the registered N2K message definitions. "
-              + "If false, raw binary frames are published.",
-      example = "true",
-      defaultValue = "true",
-      requiredMode = Schema.RequiredMode.NOT_REQUIRED,
-      nullable = true
-  )
-  protected boolean parseToJson = true;
-
-  @Schema(
-      description =
           "Topic to which raw CAN/NMEA 2000 frames are published when the PGN or message type is unknown. ",
       requiredMode = Schema.RequiredMode.REQUIRED,
       nullable = false,
@@ -84,5 +73,24 @@ public class N2KConfigDTO extends ProtocolConfigDTO {
   )
   protected String unknownPacketTopic = "/{candevice}/unknown";
 
+  @Schema(
+      description =
+          "Topic to which raw CAN/NMEA 2000 frames are published when the PGN or message type is unknown. ",
+      requiredMode = Schema.RequiredMode.NOT_REQUIRED,
+      nullable = true,
+      example = "/can1/#"
+  )
+  protected String inboundTopicName ;
+
+  @Schema(
+      description =
+          "Convert incoming CANBUS frames into JSON using the registered N2K message definitions. "
+              + "If false, raw binary frames are published.",
+      example = "true",
+      defaultValue = "true",
+      requiredMode = Schema.RequiredMode.NOT_REQUIRED,
+      nullable = true
+  )
+  protected boolean parseToJson = true;
 
 }
