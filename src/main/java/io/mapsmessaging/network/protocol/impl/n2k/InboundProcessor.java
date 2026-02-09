@@ -47,7 +47,7 @@ public class InboundProcessor implements Runnable {
     while(running.get()){
       try {
         protocol.processPacket(packet);
-      } catch (IOException e) {
+      } catch (Throwable e) {
         logger.log(N2K_PROTOCOL_INBOUND_HANDLER_ERROR, e.getMessage(), e);
         try {
           Thread.sleep(1000);

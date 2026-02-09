@@ -29,29 +29,26 @@ import io.mapsmessaging.api.features.QualityOfService;
 import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.api.message.TypedData;
 import io.mapsmessaging.canbus.device.frames.CanFrame;
-import io.mapsmessaging.canbus.j1939.CanId;
-import io.mapsmessaging.canbus.j1939.n2k.N2kParserFactory;
-import io.mapsmessaging.canbus.j1939.n2k.codec.N2kMessageParser;
-import io.mapsmessaging.canbus.j1939.n2k.compile.N2kCompiledMessage;
-import io.mapsmessaging.canbus.j1939.n2k.compile.N2kCompiledRegistry;
-import io.mapsmessaging.canbus.j1939.n2k.compile.N2kCompiler;
-import io.mapsmessaging.canbus.j1939.n2k.parser.N2kXmlDialectParser;
 import io.mapsmessaging.dto.rest.config.protocol.ProtocolConfigDTO;
 import io.mapsmessaging.dto.rest.config.protocol.impl.N2KConfigDTO;
 import io.mapsmessaging.dto.rest.protocol.ProtocolInformationDTO;
 import io.mapsmessaging.dto.rest.protocol.impl.N2kProtocolInformation;
+import io.mapsmessaging.engine.schema.SchemaManager;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.network.io.Packet;
 import io.mapsmessaging.network.io.impl.canbus.CanbusEndPoint;
 import io.mapsmessaging.network.protocol.Protocol;
 
+import io.mapsmessaging.schemas.config.SchemaConfig;
+import io.mapsmessaging.schemas.config.impl.CanbusSchemaConfig;
+import io.mapsmessaging.schemas.formatters.MessageFormatterFactory;
+import io.mapsmessaging.schemas.formatters.impl.CanbusFormatter;
 import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
 
 import javax.security.auth.Subject;
 import java.io.IOException;
-import java.nio.file.Path;
 import java.util.Base64;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -60,28 +57,35 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeoutException;
 
+import static io.mapsmessaging.engine.schema.SchemaManager.DEFAULT_JSON_SCHEMA;
 import static io.mapsmessaging.logging.ServerLogMessages.*;
 
 public class N2kProtocol extends Protocol {
   private final Logger logger = LoggerFactory.getLogger(N2kProtocol.class);
-  private final N2kMessageParser parser;
+  private final CanbusFormatter formatter;
   private final Session session;
   private final InboundProcessor inboundProcessor;
   private final String topicTemplate;
   private final String rawTopicTemplate;
+  private final SchemaConfig defaultSchemaConfig = SchemaManager.getInstance().getSchema(DEFAULT_JSON_SCHEMA);
 
   public N2kProtocol(CanbusEndPoint endPoint, @NotNull @NonNull ProtocolConfigDTO protocolConfig) throws IOException {
     super(endPoint, protocolConfig );
-    N2kCompiledRegistry registry;
+    CanbusSchemaConfig canbusSchema = new CanbusSchemaConfig();
     try {
+
       String databasePath = ((N2KConfigDTO)protocolConfig).getDatabasePath();
+      String encodedDatabase = ((N2KConfigDTO)protocolConfig).getBase64EncodedDatabase();
       if(databasePath != null && !databasePath.isEmpty()) {
         logger.log(N2K_LOADING_DATABASE_FROM_FILE, databasePath);
-        registry = N2kCompiler.compile(N2kXmlDialectParser.parseFromFile(Path.of(databasePath)));
+        canbusSchema.setXmlPath(databasePath);
+      }
+      else if(encodedDatabase != null && !encodedDatabase.isEmpty()) {
+        logger.log(N2K_LOADING_DATABASE_FROM_XML_DEFINITION);
+        canbusSchema.setXmlBase64(Base64.getDecoder().decode(encodedDatabase));
       }
       else {
-        logger.log(N2K_LOADING_DATABASE_FROM_FILE, databasePath);
-        registry = N2kParserFactory.getN2kParser();
+        logger.log(N2K_LOADING_DEFAULT_DATABASE, databasePath);
       }
     } catch (Exception e) {
       logger.log(N2K_LOADING_FAILED, e);
@@ -89,7 +93,7 @@ public class N2kProtocol extends Protocol {
     }
     topicTemplate = ((N2KConfigDTO)protocolConfig).getTopicNameTemplate();
     rawTopicTemplate =  ((N2KConfigDTO)protocolConfig).getUnknownPacketTopic();
-    parser = new N2kMessageParser(registry);
+    formatter = (CanbusFormatter) MessageFormatterFactory.getInstance().getFormatter(canbusSchema);
     try {
       session = buildSession(endPoint.getName(), 10000);
     } catch (ExecutionException | TimeoutException e) {
@@ -98,6 +102,7 @@ public class N2kProtocol extends Protocol {
       Thread.currentThread().interrupt();
       throw new IOException(e);
     }
+
     inboundProcessor  = new InboundProcessor(this);
     Thread t = new Thread(inboundProcessor);
     t.start();
@@ -136,108 +141,59 @@ public class N2kProtocol extends Protocol {
       logger.log(N2K_PROTOCOL_PARSING_PACKET, packetToString(frame));
     }
     if(frame != null) {
-      int id = frame.getCanIdentifier();
-      CanId canId = CanId.parse(id);
-      N2kCompiledMessage compiledMessage = parser.getRegistry().getMessagesByPgn().get(canId.getPgn());
-      if(compiledMessage != null) {
-        if(logger.isDebugEnabled()){
-          logger.log(N2K_PROTOCOL_PARSED_KNOWN_PACKET, canId.getPgn());
-        }
-        JsonObject json = parser.decodeToJson(canId.getPgn(), frame.getData());
-        json = buildEnvelope(json, canId, frame);
-        processPacket(compiledMessage.getId(), canId, json.toString().getBytes());
-      }
-      else{
-        if(logger.isDebugEnabled()){
-          logger.log(N2K_PROTOCOL_PARSED_UNKNOWN_PACKET, canId.getPgn());
-        }
-        processRawPacket(frame);
-      }
+      processPacket(formatter.parseToJson(frame.getRawData()));
     }
     return true;
   }
 
-  private JsonObject buildEnvelope(JsonObject n2kJson, CanId canId, CanFrame frame) {
-    JsonObject envelope = new JsonObject();
-    envelope.addProperty("timestamp", System.currentTimeMillis());
-    JsonObject j1939 = new JsonObject();
-    j1939.addProperty("source", canId.getSourceAddress());
-    if (canId.isPdu1()) {
-      j1939.addProperty("destination", canId.getDestinationAddress());
-    }
-    j1939.addProperty("priority", canId.getPriority());
-    j1939.addProperty("raw", Base64.getEncoder().encodeToString(frame.getData()));
-    j1939.add("n2k",n2kJson);
-    envelope.addProperty("protocol", getName());
-    envelope.add("j1939", j1939);
-    return envelope;
-  }
-
-  public boolean processRawPacket(CanFrame frame)  {
+  public boolean processPacket(JsonObject json) {
     MessageBuilder messageBuilder = new MessageBuilder();
     Map<String, String> metaData = new HashMap<>();
     metaData.put("protocol", "n2k");
     metaData.put("version", getVersion());
     metaData.put("sessionId", session.getName());
     metaData.put("time_ms", "" + System.currentTimeMillis());
-
     Map<String, TypedData> map = new LinkedHashMap<>();
-    map.put("CanId", new TypedData(frame.getCanIdentifier() + ""));
 
-    Message message = messageBuilder.setContentType("n2k")
-        .setOpaqueData(frame.getData())
-        .setDataMap(map)
-        .setQoS(QualityOfService.AT_MOST_ONCE)
-        .setRetain(false)
-        .storeOffline(false)
-        .setMeta(metaData)
-        .build();
-    String topicName = rawTopicTemplate.replace("{candevice}",endPoint.getName());
-
-    CompletableFuture<Destination> future = session.findDestination(topicName, DestinationType.TOPIC);
-    if (future != null) {
-      future.thenApply(destination -> {
-        try {
-          destination.storeMessage(message);
-        } catch (IOException e) {
-          future.completeExceptionally(e);
-        }
-        return destination;
-      });
+    int pgn = 0;
+    String name = null;
+    if(json.has("j1939")) {
+      JsonObject j1939 = json.getAsJsonObject("j1939");
+      pgn = j1939.get("pgn").getAsInt();
+      map.put("pgn", new TypedData(pgn));
+      if(j1939.has("n2k")){
+        JsonObject n2k = j1939.getAsJsonObject("n2k");
+        name = n2k.get("name").getAsString();
+        map.put("name", new TypedData(name));
+      }
     }
-    return true;
-
-  }
-
-  public boolean processPacket(String name,  CanId canId, byte[] raw) {
-    MessageBuilder messageBuilder = new MessageBuilder();
-    Map<String, String> metaData = new HashMap<>();
-    metaData.put("protocol", "n2k");
-    metaData.put("version", getVersion());
-    metaData.put("sessionId", session.getName());
-    metaData.put("time_ms", "" + System.currentTimeMillis());
-
-    Map<String, TypedData> map = new LinkedHashMap<>();
-    map.put("name", new TypedData(name));
-    map.put("pgn", new TypedData(canId.getPgn()));
 
     Message message = messageBuilder.setContentType("n2k")
-        .setOpaqueData(raw)
+        .setOpaqueData(json.toString().getBytes())
         .setDataMap(map)
         .setQoS(QualityOfService.AT_MOST_ONCE)
         .setRetain(false)
         .storeOffline(false)
         .setMeta(metaData)
+        .setSchemaId(defaultSchemaConfig.getUniqueId())
         .build();
 
-    String topicName = computeTopicName(canId.getPgn(), name);
+    String topicName = computeTopicName(pgn, name);
 
 
     CompletableFuture<Destination> future = session.findDestination(topicName, DestinationType.TOPIC);
     if (future != null) {
       future.thenApply(destination -> {
         try {
-          destination.storeMessage(message);
+          if(destination != null){
+            if(destination.getSchema() == null || destination.getSchema().getUniqueId().equals(SchemaManager.DEFAULT_RAW_UUID.toString())){
+              // set the schema here
+              destination.updateSchema(defaultSchemaConfig, null );
+            } else {
+              destination.getSchema();
+            }
+            destination.storeMessage(message);
+          }
         } catch (IOException e) {
           future.completeExceptionally(e);
         }
@@ -248,6 +204,9 @@ public class N2kProtocol extends Protocol {
   }
 //"/{candevice}/{pgn}/{messageName}",
   protected String computeTopicName(int pgn, String messageName) {
+    if(messageName == null) {
+      return rawTopicTemplate.replace("{candevice}",endPoint.getName());
+    }
     String template = topicTemplate;
     template = template.replace("{candevice}",endPoint.getName());
     template = template.replace("{pgn}", ""+pgn);
@@ -272,8 +231,8 @@ public class N2kProtocol extends Protocol {
 
   private String packetToString(CanFrame frame) {
     StringBuilder sb = new StringBuilder();
-    sb.append("CanId: ").append(frame.getCanIdentifier()).append(" ");
-    sb.append("Data: ").append(Base64.getEncoder().encodeToString(frame.getData()));
+    sb.append("CanId: ").append(frame.canIdentifier()).append(" ");
+    sb.append("Data: ").append(Base64.getEncoder().encodeToString(frame.data()));
     return sb.toString();
   }
 

@@ -443,6 +443,7 @@ public enum ServerLogMessages implements LogMessage {
   // <editor-fold desc="N2K Log messages">
   N2K_LOADING_DATABASE_FROM_FILE(LEVEL.INFO, SERVER_CATEGORY.PROTOCOL, "Loading N2K database from file {}"),
   N2K_LOADING_DEFAULT_DATABASE(LEVEL.INFO, SERVER_CATEGORY.PROTOCOL, "Loading default N2K database"),
+  N2K_LOADING_DATABASE_FROM_XML_DEFINITION(LEVEL.INFO, SERVER_CATEGORY.PROTOCOL, "Loading N2K from XML definition"),
   N2K_LOADING_FAILED(LEVEL.ERROR, SERVER_CATEGORY.PROTOCOL, "Loading N2K database failed {}"),
   N2K_PROTOCOL_CREATED_AND_BOUND(LEVEL.INFO, SERVER_CATEGORY.PROTOCOL, "loaded and bound to {} device"),
   N2K_PROTOCOL_CLOSING(LEVEL.INFO, SERVER_CATEGORY.PROTOCOL, "Bound to {} device is closing"),

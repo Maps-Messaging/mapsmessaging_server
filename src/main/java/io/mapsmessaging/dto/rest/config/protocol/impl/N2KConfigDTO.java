@@ -44,6 +44,16 @@ public class N2KConfigDTO extends ProtocolConfigDTO {
   )
   protected String databasePath;
 
+
+
+  @Schema(
+      description = "Optional XML definition to use encoded as base64",
+      requiredMode = Schema.RequiredMode.NOT_REQUIRED,
+      nullable = true,
+      minLength = 1
+  )
+  protected String base64EncodedDatabase;
+
   @Schema(
       description =
           "Topic name template used when publishing decoded NMEA 2000 (N2K) messages. "
