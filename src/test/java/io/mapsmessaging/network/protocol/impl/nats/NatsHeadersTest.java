@@ -48,6 +48,7 @@ class NatsHeadersTest extends BaseTestConfig {
   @AfterEach
   void teardown() throws Exception {
     if (connection != null) {
+      connection.drain(Duration.ofSeconds(2));
       connection.close();
     }
   }
@@ -60,18 +61,27 @@ class NatsHeadersTest extends BaseTestConfig {
     String val = "hval";
 
     CompletableFuture<Message> future = new CompletableFuture<>();
-    Dispatcher dispatcher = connection.createDispatcher(future::complete);
-    dispatcher.subscribe(subject);
 
-    Headers headers = new Headers();
-    headers.add(key, val);
-    connection.publish(subject, null, headers, "HeaderTest".getBytes());
-    connection.flush(Duration.ofSeconds(2));
+    Dispatcher dispatcher = null;
+    try {
+      dispatcher = connection.createDispatcher(future::complete);
+      dispatcher.subscribe(subject);
 
-    Message msg = future.get(3, TimeUnit.SECONDS);
-    assertEquals("HeaderTest", new String(msg.getData()));
-    assertTrue(msg.hasHeaders());
-    assertEquals(val, msg.getHeaders().getFirst(key));
+      Headers headers = new Headers();
+      headers.add(key, val);
+      connection.publish(subject, null, headers, "HeaderTest".getBytes());
+      connection.flush(Duration.ofSeconds(2));
+
+      Message msg = future.get(3, TimeUnit.SECONDS);
+      assertEquals("HeaderTest", new String(msg.getData()));
+      assertTrue(msg.hasHeaders());
+      assertEquals(val, msg.getHeaders().getFirst(key));
+    }
+    finally {
+      if (dispatcher != null && connection != null) {
+        connection.closeDispatcher(dispatcher);
+      }
+    }
   }
 
   @Test
@@ -84,16 +94,25 @@ class NatsHeadersTest extends BaseTestConfig {
     headers.add("beta", "2");
 
     CompletableFuture<Message> future = new CompletableFuture<>();
-    Dispatcher dispatcher = connection.createDispatcher(future::complete);
-    dispatcher.subscribe(subject);
 
-    connection.publish(subject, null, headers, "MultiHeader".getBytes());
-    connection.flush(Duration.ofSeconds(2));
+    Dispatcher dispatcher = null;
+    try {
+      dispatcher = connection.createDispatcher(future::complete);
+      dispatcher.subscribe(subject);
 
-    Message msg = future.get(3, TimeUnit.SECONDS);
-    assertTrue(msg.hasHeaders());
-    assertEquals("1", msg.getHeaders().getFirst("alpha"));
-    assertEquals("2", msg.getHeaders().getFirst("beta"));
+      connection.publish(subject, null, headers, "MultiHeader".getBytes());
+      connection.flush(Duration.ofSeconds(2));
+
+      Message msg = future.get(3, TimeUnit.SECONDS);
+      assertTrue(msg.hasHeaders());
+      assertEquals("1", msg.getHeaders().getFirst("alpha"));
+      assertEquals("2", msg.getHeaders().getFirst("beta"));
+    }
+    finally {
+      if (dispatcher != null && connection != null) {
+        connection.closeDispatcher(dispatcher);
+      }
+    }
   }
 
   @Test
@@ -104,16 +123,25 @@ class NatsHeadersTest extends BaseTestConfig {
     headers.add("flag", "true");
 
     CompletableFuture<Message> future = new CompletableFuture<>();
-    Dispatcher dispatcher = connection.createDispatcher(future::complete);
-    dispatcher.subscribe(subject);
 
-    connection.publish(subject, null, headers, new byte[0]);
-    connection.flush(Duration.ofSeconds(2));
+    Dispatcher dispatcher = null;
+    try {
+      dispatcher = connection.createDispatcher(future::complete);
+      dispatcher.subscribe(subject);
 
-    Message msg = future.get(3, TimeUnit.SECONDS);
-    assertTrue(msg.hasHeaders());
-    assertEquals("true", msg.getHeaders().getFirst("flag"));
-    assertEquals(0, msg.getData().length);
+      connection.publish(subject, null, headers, new byte[0]);
+      connection.flush(Duration.ofSeconds(2));
+
+      Message msg = future.get(3, TimeUnit.SECONDS);
+      assertTrue(msg.hasHeaders());
+      assertEquals("true", msg.getHeaders().getFirst("flag"));
+      assertEquals(0, msg.getData().length);
+    }
+    finally {
+      if (dispatcher != null && connection != null) {
+        connection.closeDispatcher(dispatcher);
+      }
+    }
   }
 
   @Test
@@ -127,14 +155,23 @@ class NatsHeadersTest extends BaseTestConfig {
     headers.add(key, val);
 
     CompletableFuture<Message> future = new CompletableFuture<>();
-    Dispatcher dispatcher = connection.createDispatcher(future::complete);
-    dispatcher.subscribe(subject);
 
-    connection.publish(subject, null, headers, "Encoding Test".getBytes());
-    connection.flush(Duration.ofSeconds(2));
+    Dispatcher dispatcher = null;
+    try {
+      dispatcher = connection.createDispatcher(future::complete);
+      dispatcher.subscribe(subject);
 
-    Message msg = future.get(3, TimeUnit.SECONDS);
-    assertEquals("Encoding Test", new String(msg.getData()));
-    assertEquals(val, msg.getHeaders().getFirst(key));
+      connection.publish(subject, null, headers, "Encoding Test".getBytes());
+      connection.flush(Duration.ofSeconds(2));
+
+      Message msg = future.get(3, TimeUnit.SECONDS);
+      assertEquals("Encoding Test", new String(msg.getData()));
+      assertEquals(val, msg.getHeaders().getFirst(key));
+    }
+    finally {
+      if (dispatcher != null && connection != null) {
+        connection.closeDispatcher(dispatcher);
+      }
+    }
   }
 }

@@ -47,6 +47,7 @@ class NatsPubSubTest extends BaseTestConfig {
   @AfterEach
   void teardown() throws Exception {
     if (connection != null) {
+      connection.drain(Duration.ofSeconds(2));
       connection.close();
     }
   }
@@ -57,16 +58,22 @@ class NatsPubSubTest extends BaseTestConfig {
     String subject = "pubsub.basic";
     CompletableFuture<String> future = new CompletableFuture<>();
 
-    Dispatcher dispatcher = connection.createDispatcher(msg -> {
-      future.complete(new String(msg.getData()));
-    });
-    dispatcher.subscribe(subject);
+    Dispatcher dispatcher = null;
+    try {
+      dispatcher = connection.createDispatcher(msg -> future.complete(new String(msg.getData())));
+      dispatcher.subscribe(subject);
 
-    connection.publish(subject, "Basic Test".getBytes());
-    connection.flush(Duration.ofSeconds(2));
+      connection.publish(subject, "Basic Test".getBytes());
+      connection.flush(Duration.ofSeconds(2));
 
-    String received = future.get(3, TimeUnit.SECONDS);
-    assertEquals("Basic Test", received);
+      String received = future.get(3, TimeUnit.SECONDS);
+      assertEquals("Basic Test", received);
+    }
+    finally {
+      if (dispatcher != null && connection != null) {
+        connection.closeDispatcher(dispatcher);
+      }
+    }
   }
 
   @Test
@@ -75,16 +82,22 @@ class NatsPubSubTest extends BaseTestConfig {
     String subject = "pubsub.test.foo";
     CompletableFuture<String> future = new CompletableFuture<>();
 
-    Dispatcher dispatcher = connection.createDispatcher(msg -> {
-      future.complete(msg.getSubject());
-    });
-    dispatcher.subscribe("pubsub.test.*");
+    Dispatcher dispatcher = null;
+    try {
+      dispatcher = connection.createDispatcher(msg -> future.complete(msg.getSubject()));
+      dispatcher.subscribe("pubsub.test.*");
 
-    connection.publish(subject, "match".getBytes());
-    connection.flush(Duration.ofSeconds(2));
+      connection.publish(subject, "match".getBytes());
+      connection.flush(Duration.ofSeconds(2));
 
-    String receivedSubject = future.get(3, TimeUnit.SECONDS);
-    assertEquals(subject, receivedSubject);
+      String receivedSubject = future.get(3, TimeUnit.SECONDS);
+      assertEquals(subject, receivedSubject);
+    }
+    finally {
+      if (dispatcher != null && connection != null) {
+        connection.closeDispatcher(dispatcher);
+      }
+    }
   }
 
   @Test
@@ -94,17 +107,29 @@ class NatsPubSubTest extends BaseTestConfig {
     CompletableFuture<String> future1 = new CompletableFuture<>();
     CompletableFuture<String> future2 = new CompletableFuture<>();
 
-    Dispatcher d1 = connection.createDispatcher(msg -> future1.complete("worker1"));
-    Dispatcher d2 = connection.createDispatcher(msg -> future2.complete("worker2"));
+    Dispatcher dispatcherOne = null;
+    Dispatcher dispatcherTwo = null;
+    try {
+      dispatcherOne = connection.createDispatcher(msg -> future1.complete("worker1"));
+      dispatcherTwo = connection.createDispatcher(msg -> future2.complete("worker2"));
 
-    d1.subscribe(subject, "group1");
-    d2.subscribe(subject, "group1");
+      dispatcherOne.subscribe(subject, "group1");
+      dispatcherTwo.subscribe(subject, "group1");
 
-    connection.publish(subject, "Queued".getBytes());
-    connection.flush(Duration.ofSeconds(2));
+      connection.publish(subject, "Queued".getBytes());
+      connection.flush(Duration.ofSeconds(2));
 
-    String winner = CompletableFuture.anyOf(future1, future2).get(3, TimeUnit.SECONDS).toString();
-    assertTrue(winner.equals("worker1") || winner.equals("worker2"));
+      String winner = CompletableFuture.anyOf(future1, future2).get(3, TimeUnit.SECONDS).toString();
+      assertTrue(winner.equals("worker1") || winner.equals("worker2"));
+    }
+    finally {
+      if (dispatcherOne != null && connection != null) {
+        connection.closeDispatcher(dispatcherOne);
+      }
+      if (dispatcherTwo != null && connection != null) {
+        connection.closeDispatcher(dispatcherTwo);
+      }
+    }
   }
 
   @Test
@@ -113,13 +138,21 @@ class NatsPubSubTest extends BaseTestConfig {
     String subject = "pubsub.unsub";
     CompletableFuture<String> future = new CompletableFuture<>();
 
-    Dispatcher dispatcher = connection.createDispatcher(msg -> future.complete("FAIL"));
-    dispatcher.subscribe(subject);
-    dispatcher.unsubscribe(subject);
+    Dispatcher dispatcher = null;
+    try {
+      dispatcher = connection.createDispatcher(msg -> future.complete("FAIL"));
+      dispatcher.subscribe(subject);
+      dispatcher.unsubscribe(subject);
 
-    connection.publish(subject, "No listener".getBytes());
-    connection.flush(Duration.ofSeconds(2));
+      connection.publish(subject, "No listener".getBytes());
+      connection.flush(Duration.ofSeconds(2));
 
-    assertThrows(Exception.class, () -> future.get(1, TimeUnit.SECONDS));
+      assertThrows(Exception.class, () -> future.get(1, TimeUnit.SECONDS));
+    }
+    finally {
+      if (dispatcher != null && connection != null) {
+        connection.closeDispatcher(dispatcher);
+      }
+    }
   }
 }

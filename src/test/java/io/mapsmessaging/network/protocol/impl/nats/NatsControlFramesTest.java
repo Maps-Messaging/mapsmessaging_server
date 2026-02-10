@@ -47,9 +47,11 @@ class NatsControlFramesTest extends BaseTestConfig {
   @AfterEach
   void teardown() throws Exception {
     if (connection != null) {
+      connection.drain(Duration.ofSeconds(2));
       connection.close();
     }
   }
+
 
   @Test
   @Order(1)
@@ -87,14 +89,20 @@ class NatsControlFramesTest extends BaseTestConfig {
   void testConnectFlags() throws Exception {
     Options options = new Options.Builder()
         .server("nats://localhost:4222")
-        .noEcho()          // disable echo
-        .verbose()         // request +OK
-        .pedantic()        // enable strict checking
+        .noEcho()
+        .verbose()
+        .pedantic()
         .connectionTimeout(Duration.ofSeconds(5))
         .build();
 
-    try (Connection customConn = Nats.connect(options)) {
+    Connection customConn = Nats.connect(options);
+    try {
       assertEquals(Connection.Status.CONNECTED, customConn.getStatus());
     }
+    finally {
+      customConn.drain(Duration.ofSeconds(2));
+      customConn.close();
+    }
   }
+
 }

@@ -48,6 +48,7 @@ class NatsJetStreamLikeTest extends BaseTestConfig {
   @AfterEach
   void teardown() throws Exception {
     if (connection != null) {
+      connection.drain(Duration.ofSeconds(2));
       connection.close();
     }
   }
@@ -58,22 +59,28 @@ class NatsJetStreamLikeTest extends BaseTestConfig {
     String subject = "js.manual.ack";
     CompletableFuture<String> acked = new CompletableFuture<>();
 
-    Dispatcher dispatcher = connection.createDispatcher(msg -> {
-      // Simulate manual ack by replying to reply-to (e.g., _INBOX.abc)
-      if (msg.getReplyTo() != null) {
-        connection.publish(msg.getReplyTo(), "+ACK".getBytes());
-        acked.complete("acked");
+    Dispatcher dispatcher = null;
+    try {
+      dispatcher = connection.createDispatcher(msg -> {
+        if (msg.getReplyTo() != null) {
+          connection.publish(msg.getReplyTo(), "+ACK".getBytes());
+          acked.complete("acked");
+        }
+      });
+      dispatcher.subscribe(subject);
+
+      String inbox = "_INBOX." + UUID.randomUUID();
+      connection.publish(subject, inbox, "Need ACK".getBytes());
+      connection.flush(Duration.ofSeconds(2));
+
+      String result = acked.get(3, TimeUnit.SECONDS);
+      assertEquals("acked", result);
+    }
+    finally {
+      if (dispatcher != null && connection != null) {
+        connection.closeDispatcher(dispatcher);
       }
-    });
-    dispatcher.subscribe(subject);
-
-    // Publish with a reply-to inbox (manual ack trigger)
-    String inbox = "_INBOX." + UUID.randomUUID();
-    connection.publish(subject, inbox, "Need ACK".getBytes());
-    connection.flush(Duration.ofSeconds(2));
-
-    String result = acked.get(3, TimeUnit.SECONDS);
-    assertEquals("acked", result);
+    }
   }
 
   @Test
@@ -83,26 +90,39 @@ class NatsJetStreamLikeTest extends BaseTestConfig {
     String message = "Replay test";
 
     CompletableFuture<String> firstReceive = new CompletableFuture<>();
-    Dispatcher dispatcher = connection.createDispatcher(msg -> firstReceive.complete(new String(msg.getData())));
-    dispatcher.subscribe(subject);
-
-    connection.publish(subject, message.getBytes());
-    connection.flush(Duration.ofSeconds(1));
-
-    String received = firstReceive.get(2, TimeUnit.SECONDS);
-    assertEquals(message, received);
-
-    // Simulate replay (manual resend)
     CompletableFuture<String> secondReceive = new CompletableFuture<>();
-    dispatcher.unsubscribe(subject);
-    Dispatcher newDispatcher = connection.createDispatcher(msg -> secondReceive.complete(new String(msg.getData())));
-    newDispatcher.subscribe(subject);
 
-    connection.publish(subject, message.getBytes()); // Replay event
-    connection.flush(Duration.ofSeconds(1));
+    Dispatcher dispatcher = null;
+    Dispatcher newDispatcher = null;
+    try {
+      dispatcher = connection.createDispatcher(msg -> firstReceive.complete(new String(msg.getData())));
+      dispatcher.subscribe(subject);
 
-    String replayed = secondReceive.get(2, TimeUnit.SECONDS);
-    assertEquals(message, replayed);
+      connection.publish(subject, message.getBytes());
+      connection.flush(Duration.ofSeconds(1));
+
+      String received = firstReceive.get(2, TimeUnit.SECONDS);
+      assertEquals(message, received);
+
+      dispatcher.unsubscribe(subject);
+
+      newDispatcher = connection.createDispatcher(msg -> secondReceive.complete(new String(msg.getData())));
+      newDispatcher.subscribe(subject);
+
+      connection.publish(subject, message.getBytes());
+      connection.flush(Duration.ofSeconds(1));
+
+      String replayed = secondReceive.get(2, TimeUnit.SECONDS);
+      assertEquals(message, replayed);
+    }
+    finally {
+      if (dispatcher != null && connection != null) {
+        connection.closeDispatcher(dispatcher);
+      }
+      if (newDispatcher != null && connection != null) {
+        connection.closeDispatcher(newDispatcher);
+      }
+    }
   }
 
   @Test
@@ -113,20 +133,24 @@ class NatsJetStreamLikeTest extends BaseTestConfig {
 
     CompletableFuture<String> inboxResponder = new CompletableFuture<>();
 
-    // Listen on the replyTo
-    Dispatcher responder = connection.createDispatcher(msg -> {
-      inboxResponder.complete(new String(msg.getData()));
-    });
-    responder.subscribe(replyTo);
+    Dispatcher responder = null;
+    try {
+      responder = connection.createDispatcher(msg -> inboxResponder.complete(new String(msg.getData())));
+      responder.subscribe(replyTo);
 
-    connection.publish(subject, replyTo, "Send me a reply".getBytes());
-    connection.flush(Duration.ofSeconds(2));
+      connection.publish(subject, replyTo, "Send me a reply".getBytes());
+      connection.flush(Duration.ofSeconds(2));
 
-    // Simulate reply
-    connection.publish(replyTo, "Replying back".getBytes());
-    connection.flush(Duration.ofSeconds(2));
+      connection.publish(replyTo, "Replying back".getBytes());
+      connection.flush(Duration.ofSeconds(2));
 
-    String reply = inboxResponder.get(3, TimeUnit.SECONDS);
-    assertEquals("Replying back", reply);
+      String reply = inboxResponder.get(3, TimeUnit.SECONDS);
+      assertEquals("Replying back", reply);
+    }
+    finally {
+      if (responder != null && connection != null) {
+        connection.closeDispatcher(responder);
+      }
+    }
   }
 }
