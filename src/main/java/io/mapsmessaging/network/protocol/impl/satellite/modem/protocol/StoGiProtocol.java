@@ -74,10 +74,10 @@ import static io.mapsmessaging.logging.ServerLogMessages.*;
 
 public class StoGiProtocol extends Protocol implements Consumer<Packet> {
 
-  private static final String STOGI = "stogi";
+  private static final String STOGI = "orbcomm";
 
   private final Logger logger = LoggerFactory.getLogger(StoGiProtocol.class);
-  private final Session session;
+  private Session session;
   private final SelectorTask selectorTask;
   private final Modem modem;
   private final SatelliteMessageRebuilder satelliteMessageRebuilder;
@@ -176,6 +176,7 @@ public class StoGiProtocol extends Protocol implements Consumer<Packet> {
     logger.log(STOGI_STARTED_SESSION, modem.getModemProtocol().getType(), messagePoll,outgoingMessagePollInterval );
   }
 
+
   // Main function loop, handles modem message flow
   private void pollModemForMessages() {
     long startTime = System.currentTimeMillis();
@@ -257,7 +258,14 @@ public class StoGiProtocol extends Protocol implements Consumer<Packet> {
     super.completedConnection();
     if(rawResponseTopic != null && !rawResponseTopic.isEmpty()){
       try {
-        subscribeLocal(rawResponseTopic, rawResponseTopic, QualityOfService.AT_MOST_ONCE, null, null, new NamespaceFilters(null), null);
+        subscribeLocal(
+            rawResponseTopic,
+            rawResponseTopic,
+            QualityOfService.AT_MOST_ONCE,
+            null,
+            null,
+            new NamespaceFilters(new ArrayList<>()),
+            null);
       } catch (IOException e) {
         // Todo log this!
       }
@@ -299,7 +307,7 @@ public class StoGiProtocol extends Protocol implements Consumer<Packet> {
   public void preparePackedMessage(@NotNull @NonNull MessageEvent messageEvent) {
 
     boolean filteredOverride = false;
-    int depth = 1;
+    int depth = 6;
     try {
       NamespaceFilter namespaceFilter= filterMessage(messageEvent);
       if(namespaceFilter != null) {

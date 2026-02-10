@@ -39,10 +39,10 @@ public class SatelliteConfig extends SatelliteConfigDTO implements Config {
     maxInflightEventsPerDevice = config.getIntProperty("maxInflightEventsPerDevice", 2);
 
     outboundBroadcast = config.getProperty("outboundBroadcast", "");
-    commonInboundPublishRoot = config.getProperty("commonInboundPublishRoot", "/{deviceId}/common/in/{sin}/{min}");
-    commonOutboundPublishRoot = config.getProperty("commonOutboundPublishRoot", "/{deviceId}/common/out/#");
-    mapsInboundPublishRoot = config.getProperty("mapsInboundPublishRoot", "/{deviceId}/maps/in/{namespace}/#");
-    mapsOutboundPublishRoot = config.getProperty("mapsOutboundPublishRoot", "/{deviceId}/maps/out/{namespace}/#");
+    commonInboundPublishRoot = config.getProperty("commonInboundPublishRoot", commonInboundPublishRoot);
+    commonOutboundPublishRoot = config.getProperty("commonOutboundPublishRoot", commonOutboundPublishRoot);
+    mapsInboundPublishRoot = config.getProperty("mapsInboundPublishRoot", mapsInboundPublishRoot);
+    mapsOutboundPublishRoot = config.getProperty("mapsOutboundPublishRoot", mapsOutboundPublishRoot);
 
     deviceInfoUpdateMinutes = config.getIntProperty("deviceInfoUpdateMinutes", 15);
     maxBufferSize = config.getIntProperty("maxBufferSize", 4000);

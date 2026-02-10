@@ -48,35 +48,35 @@ public class SatelliteConfigDTO extends BaseSatelliteConfigDTO {
       example = "/{deviceId}/common/in/{sin}/{min}",
       defaultValue = "/{deviceId}/common/in/{sin}/{min}"
   )
-  protected String commonInboundPublishRoot;
+  protected String commonInboundPublishRoot = "/{deviceId}/common/in/{sin}/{min}";
 
   @Schema(
       description = "Topic root for accepting outbound common (SIN < 127) messages to be encoded and sent to the modem. Wildcards are allowed.",
       example = "/{deviceId}/common/out/#",
       defaultValue = "/{deviceId}/common/out/#"
   )
-  protected String commonOutboundPublishRoot;
+  protected String commonOutboundPublishRoot = "/{deviceId}/common/out/#";
 
   @Schema(
       description = "Topic template for publishing decoded MAPS (SIN 147) inbound messages into a namespace tree (after parsing).",
-      example = "/{deviceId}/maps/in/{namespace}/#",
-      defaultValue = "/{deviceId}/maps/in/{namespace}/#"
+      example = "/{deviceId}/maps/in",
+      defaultValue = "/{deviceId}/maps/in"
   )
-  protected String mapsInboundPublishRoot;
+  protected String mapsInboundPublishRoot = "/{deviceId}/maps/in";
 
   @Schema(
       description = "Topic template for accepting outbound MAPS (SIN 147) messages from a namespace tree to be encoded and sent to the modem.",
-      example = "/{deviceId}/maps/out/{namespace}/#",
-      defaultValue = "/{deviceId}/maps/out/{namespace}/#"
+      example = "/{deviceId}/maps/out",
+      defaultValue = "/{deviceId}/maps/out"
   )
-  protected String mapsOutboundPublishRoot;
+  protected String mapsOutboundPublishRoot = "/{deviceId}/maps/out";
 
   @Schema(
       description = "Topic used to broadcast a message to all modems/clients (encoded and sent to each).",
       example = "/inmarsat/broadcast",
       defaultValue = "/inmarsat/broadcast"
   )
-  protected String outboundBroadcast;
+  protected String outboundBroadcast = "/inmarsat/broadcast";
 
 
 
