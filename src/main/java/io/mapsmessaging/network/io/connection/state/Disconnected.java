@@ -37,6 +37,7 @@ import io.mapsmessaging.network.io.impl.SelectorLoadManager;
 import io.mapsmessaging.network.protocol.Protocol;
 import io.mapsmessaging.network.protocol.ProtocolFactory;
 import io.mapsmessaging.network.protocol.ProtocolImplFactory;
+import io.mapsmessaging.network.protocol.impl.satellite.modem.protocol.StoGiProtocol;
 import io.mapsmessaging.network.protocol.transformation.ProtocolMessageTransformation;
 import io.mapsmessaging.network.protocol.transformation.TransformationManager;
 import io.mapsmessaging.network.route.link.LinkState;
@@ -83,7 +84,10 @@ public class Disconnected extends State implements EndPointConnectedCallback {
         password = tokenGenerator.generate();
       }
       Protocol protocolImpl = protocolImplFactory.connect(endpoint, sessionId, username, password);
-      protocolImpl.setSession(createSession(sessionId, protocolImpl));
+      if (!(protocolImpl instanceof StoGiProtocol)) {
+        protocolImpl.setSession(createSession(sessionId, protocolImpl));
+      }
+
       protocolImpl.setProtocolMessageTransformation(transformation);
       endPointConnection.setProtocol(protocolImpl);
       endPointConnection.scheduleState(new Connecting(endPointConnection));
