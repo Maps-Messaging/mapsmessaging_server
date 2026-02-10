@@ -66,7 +66,7 @@ NetworkConnectionManager:
             include_schema: false
 
         serial:
-          port: /dev/ttyV1
+          port: ttyv1
           baudRate: 9600
           dataBits: 8
           stopBits: 1
