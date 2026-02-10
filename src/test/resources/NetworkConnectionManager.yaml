@@ -42,7 +42,7 @@ NetworkConnectionManager:
       - name: "ST2100 Modem"
         url: serial://localhost:0/
         transformation: "Message-Raw"
-        protocol: orbcomm
+        protocol: stogi
         initialSetup: ""
         incomingMessagePollInterval: 1
         outgoingMessagePollInterval: 30
