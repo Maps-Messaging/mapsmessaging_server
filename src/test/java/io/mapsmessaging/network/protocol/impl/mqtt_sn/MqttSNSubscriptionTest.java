@@ -235,9 +235,9 @@ class MqttSNSubscriptionTest extends BaseMqttSnConfig {
     }
     Assertions.assertTrue(received.await(TIMEOUT, TimeUnit.MILLISECONDS));
 
-    //client.unsubscribe("predefined/topic");
+    client.unsubscribe("predefined/topic");
 
-    //client.disconnect();
+    client.disconnect();
   }
 
 

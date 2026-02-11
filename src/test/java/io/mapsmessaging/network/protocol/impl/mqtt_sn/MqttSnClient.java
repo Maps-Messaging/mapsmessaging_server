@@ -64,8 +64,7 @@ public class MqttSnClient {
         withPort(0);
 
     MqttsnOptions options = new MqttsnClientOptions().
-        withNetworkAddressEntry("localhost",
-            NetworkAddress.localhost(port)).
+        withNetworkAddressEntry("localhost", NetworkAddress.localhost(port)).
         withContextId(""+ThreadLocalRandom.current().nextLong()).
         withMaxMessagesInflight(1).
         withMaxWait(60000).
@@ -135,7 +134,7 @@ public class MqttSnClient {
 
 
   public void disconnect() throws MqttsnException {
-    client.disconnect();
+    client.close();
   }
 
   public void setWillData(WillDataImpl details) throws MqttsnException {

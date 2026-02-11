@@ -35,8 +35,8 @@ public class BaseMqttSnConfig extends BaseTestConfig {
   public static Stream<Arguments> createQoSVersionStream() {
     List<Arguments> args = new ArrayList<>();
     for (int qos : QOS_LIST) {
-      for (int verion : VERSIONS) {
-        args.add(arguments(qos, verion));
+      for (int version : VERSIONS) {
+        args.add(arguments(qos, version));
       }
     }
     return args.stream();
@@ -44,8 +44,8 @@ public class BaseMqttSnConfig extends BaseTestConfig {
 
   public static Stream<Arguments> createVersionStream() {
     List<Arguments> args = new ArrayList<>();
-    for (int verion : VERSIONS) {
-      args.add(arguments(verion));
+    for (int version : VERSIONS) {
+      args.add(arguments(version));
     }
     return args.stream();
   }
