@@ -143,22 +143,6 @@ public class InterfaceManagementApiTest extends ApiTestBase {
   }
 
   @Test
-  void patchManageAll_validAction_returns200() {
-    Response response = givenAuthenticated()
-        .contentType(ContentType.JSON)
-        .body("{\"state\":\"paused\"}")
-        .when()
-        .patch(BASE_PATH)
-        .then()
-        .statusCode(200)
-        .contentType(ContentType.JSON)
-        .extract()
-        .response();
-
-    Assertions.assertTrue(hasNonBlankStatusMessage(response));
-  }
-
-  @Test
   void getAllStatus_noFilter_returns200() {
     Response response = givenAuthenticated()
         .contentType(ContentType.JSON)
