@@ -36,7 +36,6 @@ import java.util.List;
 public class NetworkConnectionManagerConfig extends NetworkConnectionManagerConfigDTO implements Config, ConfigManager {
 
   private NetworkConnectionManagerConfig(ConfigurationProperties config) {
-    ConfigurationProperties globalConfig = config.getGlobal();
     endPointServerConfigList = new ArrayList<>();
     Object obj = config.get("data");
     if (obj instanceof List) {
