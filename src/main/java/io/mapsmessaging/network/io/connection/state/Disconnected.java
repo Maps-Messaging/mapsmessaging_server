@@ -37,6 +37,7 @@ import io.mapsmessaging.network.io.impl.SelectorLoadManager;
 import io.mapsmessaging.network.protocol.Protocol;
 import io.mapsmessaging.network.protocol.ProtocolFactory;
 import io.mapsmessaging.network.protocol.ProtocolImplFactory;
+import io.mapsmessaging.network.protocol.impl.extension.ExtensionProtocol;
 import io.mapsmessaging.network.protocol.impl.satellite.modem.protocol.StoGiProtocol;
 import io.mapsmessaging.network.protocol.transformation.ProtocolMessageTransformation;
 import io.mapsmessaging.network.protocol.transformation.TransformationManager;
@@ -73,7 +74,13 @@ public class Disconnected extends State implements EndPointConnectedCallback {
       String transformationName = properties.getLinkTransformation();
       ProtocolMessageTransformation transformation = TransformationManager.getInstance().getTransformation(transformationName);
       if (transformation == null) {
-        transformation = TransformationManager.getInstance().getTransformation(endpoint.getProtocol(), endPointConnection.getUrl().getHost(), protocolImplFactory.getName(), username);
+        String protocolImplName = null;
+        if(protocolImplFactory != null){
+          protocolImplName = protocolImplFactory.getName();
+        }
+        if(username != null && protocolImplName != null) {
+          transformation = TransformationManager.getInstance().getTransformation(endpoint.getProtocol(), endPointConnection.getUrl().getHost(), protocolImplName, username);
+        }
       }
 
       if (transformation != null) {
@@ -84,7 +91,7 @@ public class Disconnected extends State implements EndPointConnectedCallback {
         password = tokenGenerator.generate();
       }
       Protocol protocolImpl = protocolImplFactory.connect(endpoint, sessionId, username, password);
-      if (!(protocolImpl instanceof StoGiProtocol)) {
+      if (!(protocolImpl instanceof StoGiProtocol) && !( protocolImpl instanceof ExtensionProtocol)) {
         protocolImpl.setSession(createSession(sessionId, protocolImpl));
       }
 
@@ -105,6 +112,7 @@ public class Disconnected extends State implements EndPointConnectedCallback {
       List<String> jmxPath = endPointConnection.getJMXPath();
       activeEndPoint = endPointConnection.getEndPointConnectionFactory().connect(url, selectorLoadManager, this, endPointConnection, jmxPath);
     } catch (Exception ioException) {
+      ioException.printStackTrace();
       endPointConnection.getLogger().log(ServerLogMessages.END_POINT_CONNECTION_FAILED, url, ioException);
       endPointConnection.scheduleState(new Delayed(endPointConnection), DELAYED_TIME);
     }

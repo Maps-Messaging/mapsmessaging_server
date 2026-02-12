@@ -23,6 +23,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import io.mapsmessaging.dto.rest.config.BaseConfigDTO;
 import io.mapsmessaging.dto.rest.config.auth.SaslConfigDTO;
 import io.mapsmessaging.dto.rest.config.protocol.ProtocolConfigDTO;
+import io.mapsmessaging.dto.rest.config.protocol.impl.ExtensionConfigDTO;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
@@ -132,8 +133,15 @@ public class EndPointServerConfigDTO extends BaseConfigDTO {
   @JsonIgnore
   public String getProtocols() {
     return protocolConfigs.stream()
-        .map(ProtocolConfigDTO::getType)
+        .map(this::computeProtocol)
         .collect(Collectors.joining(", "));
+  }
+
+  private String computeProtocol(ProtocolConfigDTO protocolConfig) {
+    if (protocolConfig instanceof ExtensionConfigDTO extensionConfig) {
+      return extensionConfig.getProtocol();
+    }
+    return protocolConfig.getType();
   }
 
 }
