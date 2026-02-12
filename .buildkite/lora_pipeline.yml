@@ -17,5 +17,5 @@ steps:
   - trigger: "090-server-ml-snapshot-build"
 
   - wait
-  - trigger: "100-Server 3rd party extensions snapshot"
+  - trigger: "100-server-3rd-party-extensions-snapshot"
   - trigger: "200-build-windows-installer"
