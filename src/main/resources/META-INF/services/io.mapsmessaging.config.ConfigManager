@@ -17,6 +17,7 @@
 #  limitations under the License.
 #
 
+io.mapsmessaging.config.AggregatorManagerConfig
 io.mapsmessaging.config.AuthManagerConfig
 io.mapsmessaging.config.DestinationManagerConfig
 io.mapsmessaging.config.DeviceManagerConfig
