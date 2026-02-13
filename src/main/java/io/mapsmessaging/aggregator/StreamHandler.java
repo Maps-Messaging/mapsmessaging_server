@@ -35,55 +35,44 @@ public class StreamHandler {
 
   private final AggregatorInputConfigDTO config;
   private SubscribedEventManager subscriptionManager;
-  private Message message;
-
-
 
   public StreamHandler(AggregatorInputConfigDTO config) {
     this.config = config;
   }
 
-  public String getTopicName(){
+  public String getTopicName() {
     return config.getTopicName();
   }
 
+  public AggregatorContributionMode getContributionMode() {
+    return config.getContributionMode();
+  }
+
   public void start(Session session) throws IOException {
-    if(config.getTransformer() != null){
-      // Build the transformer
+    if (config.getTransformer() != null) {
+      // TODO build transformer chain
     }
     addSubscription(session);
-
   }
 
-  public void stop(Session session){
-    if(subscriptionManager != null){
+  public void stop(Session session) {
+    if (subscriptionManager != null) {
       session.removeSubscription(subscriptionManager.getContext().getKey());
     }
-    // No Op for now
   }
 
-  public void handle(MessageEvent event){
-    if(message != null || config.getContributionMode() == AggregatorContributionMode.LAST){
-      message = event.getMessage();
-    }
-    if(event.getCompletionTask() != null) {
-      event.getCompletionTask().run();
-    }
-  }
-
-  public boolean hasMessage(){
-    return message != null;
-  }
-
-  public Message getAndResetMessage(){
-    Message msg = this.message;
-    this.message = null;
-    return msg;
+  /**
+   * Called from the single-consumer worker thread.
+   * Returns null to indicate the event was dropped (e.g. transformer filtered it out).
+   */
+  public Message process(MessageEvent event) {
+    // TODO apply transformer chain; if it drops -> return null
+    return event.getMessage();
   }
 
   private void addSubscription(Session session) throws IOException {
     SubscriptionContextBuilder builder = new SubscriptionContextBuilder(config.getTopicName(), ClientAcknowledgement.AUTO);
-    if(config.getSelector() != null) {
+    if (config.getSelector() != null) {
       builder.setSelector(config.getSelector());
     }
     SubscriptionContext context = builder.build();

@@ -19,7 +19,15 @@
 
 package io.mapsmessaging.aggregator;
 
-import io.mapsmessaging.api.*;
+import io.mapsmessaging.aggregator.mailbox.AggregatorMailbox;
+import io.mapsmessaging.aggregator.mailbox.BackpressureMode;
+import io.mapsmessaging.aggregator.mailbox.OfferOutcome;
+import io.mapsmessaging.aggregator.mailbox.QueueBackedMpscMailbox;
+import io.mapsmessaging.api.MessageEvent;
+import io.mapsmessaging.api.MessageListener;
+import io.mapsmessaging.api.Session;
+import io.mapsmessaging.api.SessionContextBuilder;
+import io.mapsmessaging.api.SessionManager;
 import io.mapsmessaging.dto.rest.config.aggregator.AggregatorConfigDTO;
 import io.mapsmessaging.dto.rest.config.aggregator.AggregatorInputConfigDTO;
 import io.mapsmessaging.engine.session.ClientConnection;
@@ -31,30 +39,61 @@ import java.security.Principal;
 import java.util.Map;
 import java.util.concurrent.*;
 
-public class Aggregator  implements ClientConnection, MessageListener {
+public class Aggregator implements ClientConnection, MessageListener {
 
   private final AggregatorConfigDTO configDTO;
+
+  private final StreamHandler[] handlers;
+  private final Map<String, Integer> topicIndexMap;
+
   private Session session;
-  private Map<String, StreamHandler> streamHandlerMap;
+
+  private AggregatorMailbox<AggregatorEnvelope> mailbox;
+  private AggregatorWorker worker;
+  private Thread workerThread;
 
   public Aggregator(AggregatorConfigDTO configDTO) {
     this.configDTO = configDTO;
-    streamHandlerMap = new ConcurrentHashMap<>();
-    for(AggregatorInputConfigDTO input: configDTO.getInputs()){
-      streamHandlerMap.put(input.getTopicName(), new StreamHandler(input));
+
+    this.handlers = new StreamHandler[configDTO.getInputs().size()];
+    this.topicIndexMap = new ConcurrentHashMap<>();
+
+    int index = 0;
+    for (AggregatorInputConfigDTO input : configDTO.getInputs()) {
+      this.handlers[index] = new StreamHandler(input);
+      this.topicIndexMap.put(input.getTopicName(), index);
+      index++;
     }
   }
 
   public void start() throws ExecutionException, IOException, InterruptedException, TimeoutException {
     session = createSession();
-    for(StreamHandler handler: streamHandlerMap.values()){
+
+    for (StreamHandler handler : handlers) {
       handler.start(session);
     }
 
+    this.mailbox = new QueueBackedMpscMailbox<>(8192, BackpressureMode.DROP_NEWEST);
+
+    this.worker = new AggregatorWorker(mailbox, handlers, getTimeOut());
+    this.workerThread = new Thread(worker, "AggregatorWorker-" + configDTO.getName());
+    this.workerThread.setDaemon(true);
+    this.workerThread.start();
   }
 
   public void stop() throws IOException {
-    for(StreamHandler handler: streamHandlerMap.values()){
+    if (worker != null) {
+      worker.shutdown();
+    }
+    if (workerThread != null) {
+      try {
+        workerThread.join(2000);
+      } catch (InterruptedException ignored) {
+        Thread.currentThread().interrupt();
+      }
+    }
+
+    for (StreamHandler handler : handlers) {
       handler.stop(session);
     }
     SessionManager.getInstance().close(session, true);
@@ -66,35 +105,37 @@ public class Aggregator  implements ClientConnection, MessageListener {
         .setSessionExpiry(0)
         .setPersistentSession(false)
         .setReceiveMaximum(100);
+
     CompletableFuture<Session> sessionFuture = SessionManager.getInstance().createAsync(scb.build(), this);
     return sessionFuture.get(5, TimeUnit.SECONDS);
   }
 
   @Override
   public void sendMessage(@NotNull @NonNull MessageEvent messageEvent) {
-    StreamHandler handler = streamHandlerMap.get(messageEvent.getDestinationName());
-    if(handler != null){
-      handler.handle(messageEvent);
-      boolean complete = true;
-      for(StreamHandler streamHandler: streamHandlerMap.values()){
-        if(!streamHandler.hasMessage()){
-          complete = false;
-          break;
-        }
-      }
-      if(complete){
-        // Combine and publish to the aggregated output
-      }
+    Integer inputIndex = topicIndexMap.get(messageEvent.getDestinationName());
+    if (inputIndex == null) {
+      runCompletion(messageEvent);
+      return;
     }
-    else{
-      if(messageEvent.getCompletionTask() != null) {
-        messageEvent.getCompletionTask().run();
-      }
+
+    AggregatorEnvelope envelope = new AggregatorEnvelope(inputIndex, messageEvent);
+
+    OfferOutcome outcome = mailbox.offer(envelope, () -> runCompletion(messageEvent));
+    if (outcome == OfferOutcome.DROPPED) {
+      // TODO metrics for dropped mailbox items
     }
   }
 
-
-
+  private void runCompletion(MessageEvent event) {
+    Runnable completionTask = event.getCompletionTask();
+    if (completionTask != null) {
+      try {
+        completionTask.run();
+      } catch (Throwable ignored) {
+        // Never throw from ingress.
+      }
+    }
+  }
 
   @Override
   public long getTimeOut() {
@@ -103,7 +144,7 @@ public class Aggregator  implements ClientConnection, MessageListener {
 
   @Override
   public String getName() {
-    return "Aggregator-"+configDTO.getName();
+    return "Aggregator-" + configDTO.getName();
   }
 
   @Override
@@ -113,7 +154,7 @@ public class Aggregator  implements ClientConnection, MessageListener {
 
   @Override
   public void sendKeepAlive() {
-    // No Op - Nothing to send
+    // No Op
   }
 
   @Override
