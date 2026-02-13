@@ -10,6 +10,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
     discriminatorProperty = "type",
     requiredProperties = {"type"},
     oneOf = {
+        AggregatorManagerConfigDTO.class,
         NetworkConnectionManagerConfigDTO.class,
         RestApiManagerConfigDTO.class,
         RoutingManagerConfigDTO.class,

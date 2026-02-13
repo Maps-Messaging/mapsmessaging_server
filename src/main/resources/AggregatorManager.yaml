@@ -16,39 +16,3 @@
 
 AggregatorManager:
   data:
-    -
-      name: "Aggregator1"
-      enabled: true
-      outputTopic: "aggregatedTopic2"
-      windowDurationMs: 10000
-      timeoutMs: 10000
-      maxEventsPerTopic: 1
-
-      inputs:
-        -
-          topicName: "topic1"
-
-        -
-          topicName: "topic2"
-
-        -
-          topicName: "topic3"
-
-    -
-      name: "Aggregator2"
-      enabled: true
-      outputTopic: "aggregatedTopic2"
-      windowDurationMs: 10000
-      timeoutMs: 10000
-      maxEventsPerTopic: 1
-
-      inputs:
-        -
-          topicName: "topic4"
-
-        -
-          topicName: "topic5"
-
-        -
-          topicName: "topic6"
-

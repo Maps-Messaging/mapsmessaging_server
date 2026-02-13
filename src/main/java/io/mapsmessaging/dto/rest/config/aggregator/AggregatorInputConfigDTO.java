@@ -65,4 +65,16 @@ public class AggregatorInputConfigDTO extends BaseConfigDTO {
       example = "[{\"name\":\"JsonQuery\",\"parameters\":{\"query\":\"[\\\"object\\\",{\\\"latitude\\\":[\\\"divide\\\",[\\\"get\\\",\\\"payload\\\",\\\"decoded\\\",\\\"lat\\\"],10000000]}]\"}}]"
   )
   protected List<Map<String, Object>> transformer;
+
+
+  @Schema(
+      description = "Contribution policy for this input within a window",
+      example = "FIRST",
+      allowableValues = {"FIRST", "LAST"},
+      defaultValue = "FIRST",
+      requiredMode = Schema.RequiredMode.NOT_REQUIRED,
+      nullable = true
+  )
+  protected AggregatorContributionMode contributionMode = AggregatorContributionMode.LAST;
+
 }
