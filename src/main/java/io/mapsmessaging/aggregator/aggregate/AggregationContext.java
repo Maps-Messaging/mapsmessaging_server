@@ -19,7 +19,6 @@
 
 package io.mapsmessaging.aggregator.aggregate;
 
-import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.dto.rest.config.aggregator.AggregatorInputConfigDTO;
 import lombok.Getter;
 import lombok.NonNull;

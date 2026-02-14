@@ -23,7 +23,6 @@ import io.mapsmessaging.aggregator.AggregatorEnvelope;
 import io.mapsmessaging.aggregator.StreamHandler;
 import io.mapsmessaging.aggregator.mailbox.AggregatorMailbox;
 import io.mapsmessaging.api.MessageEvent;
-import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.dto.rest.config.aggregator.AggregatorContributionMode;
 
 import java.util.concurrent.atomic.AtomicBoolean;

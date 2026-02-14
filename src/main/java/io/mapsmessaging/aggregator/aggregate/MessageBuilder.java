@@ -20,6 +20,7 @@
 package io.mapsmessaging.aggregator.aggregate;
 
 import io.mapsmessaging.api.message.Message;
+
 import java.util.Map;
 
 public interface MessageBuilder {
