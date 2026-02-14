@@ -36,11 +36,10 @@ public class AggregatorWorker implements AggregatorWorkItem {
 
   private final long timeoutMillis;
 
-  private final Message[] contributions;
+  private final MessageEvent[] contributions;
   private final boolean[] seen;
 
   private long deadlineMillis;
-  private long windowStartMillis;
 
   public AggregatorWorker(
       String name,
@@ -54,11 +53,10 @@ public class AggregatorWorker implements AggregatorWorkItem {
     this.timeoutMillis = timeoutMillis;
     this.scheduled = new AtomicBoolean(false);
 
-    this.contributions = new Message[handlers.length];
+    this.contributions = new MessageEvent[handlers.length];
     this.seen = new boolean[handlers.length];
 
     this.deadlineMillis = -1;
-    this.windowStartMillis = -1;
   }
 
   @Override
@@ -94,21 +92,19 @@ public class AggregatorWorker implements AggregatorWorkItem {
         publishAndReset(false);
       }
       deadlineMillis = -1;
-      windowStartMillis = -1;
     }
   }
 
   private void processEnvelope(AggregatorEnvelope envelope) {
     long now = System.currentTimeMillis();
     if (deadlineMillis < 0) {
-      windowStartMillis = now;
       deadlineMillis = now + timeoutMillis;
     }
 
     int index = envelope.getInputIndex();
     MessageEvent event = envelope.getEvent();
 
-    Message processed = handlers[index].process(event);
+    MessageEvent processed = handlers[index].process(event);
     if (processed != null) {
       applyContribution(index, processed, handlers[index].getContributionMode());
     }
@@ -118,11 +114,10 @@ public class AggregatorWorker implements AggregatorWorkItem {
     if (allSeen()) {
       publishAndReset(true);
       deadlineMillis = -1;
-      windowStartMillis = -1;
     }
   }
 
-  private void applyContribution(int index, Message message, AggregatorContributionMode mode) {
+  private void applyContribution(int index, MessageEvent message, AggregatorContributionMode mode) {
     if (mode == AggregatorContributionMode.FIRST) {
       if (!seen[index]) {
         contributions[index] = message;

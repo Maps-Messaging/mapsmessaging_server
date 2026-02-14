@@ -24,7 +24,6 @@ import io.mapsmessaging.api.Session;
 import io.mapsmessaging.api.SubscribedEventManager;
 import io.mapsmessaging.api.SubscriptionContextBuilder;
 import io.mapsmessaging.api.features.ClientAcknowledgement;
-import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.dto.rest.config.aggregator.AggregatorContributionMode;
 import io.mapsmessaging.dto.rest.config.aggregator.AggregatorInputConfigDTO;
 import io.mapsmessaging.engine.destination.subscription.SubscriptionContext;
@@ -65,9 +64,9 @@ public class StreamHandler {
    * Called from the single-consumer worker thread.
    * Returns null to indicate the event was dropped (e.g. transformer filtered it out).
    */
-  public Message process(MessageEvent event) {
+  public MessageEvent process(MessageEvent event) {
     // TODO apply transformer chain; if it drops -> return null
-    return event.getMessage();
+    return event;
   }
 
   private void addSubscription(Session session) throws IOException {
