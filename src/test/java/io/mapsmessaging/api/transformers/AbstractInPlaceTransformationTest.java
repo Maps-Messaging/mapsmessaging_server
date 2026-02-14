@@ -31,13 +31,13 @@ public abstract class AbstractInPlaceTransformationTest extends AbstractInterSer
 
   @Test
   void transform_validInput_doesNotDrop() {
-    Protocol.ParsedMessage result = transform(validInputBytes());
+    ParsedMessage result = transform(validInputBytes());
     assertNotDropped(result);
   }
 
   @Test
   void transform_invalidInput_doesNotThrow() {
-    Protocol.ParsedMessage result = transform(utf8Bytes(TransformationTestVectors.NON_JSON_TEXT));
+    ParsedMessage result = transform(utf8Bytes(TransformationTestVectors.NON_JSON_TEXT));
     // may or may not change payload, but must not crash
     // For in-place transformers, we expect not dropped.
     assertNotDropped(result);

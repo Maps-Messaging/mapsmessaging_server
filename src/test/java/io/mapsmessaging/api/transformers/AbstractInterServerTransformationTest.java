@@ -53,20 +53,20 @@ public abstract class AbstractInterServerTransformationTest extends BaseTestConf
     assertNotNull(transformer, "createTransformer() must not return null");
   }
 
-  protected Protocol.ParsedMessage transform(byte[] opaqueData) {
+  protected ParsedMessage transform(byte[] opaqueData) {
     Message message = mockMessage(opaqueData, DEFAULT_JSON_SCHEMA.toString());
-    Protocol.ParsedMessage parsedMessage = parsedMessage(DESTINATION, message);
+    ParsedMessage parsedMessage = parsedMessage(DESTINATION, message);
     return assertDoesNotThrow(() -> transformer.transform(SOURCE, parsedMessage));
   }
 
-  protected Protocol.ParsedMessage transform(byte[] opaqueData, String schemaId) {
+  protected ParsedMessage transform(byte[] opaqueData, String schemaId) {
     Message message = mockMessage(opaqueData, schemaId);
     message.setSchemaId(DEFAULT_JSON_SCHEMA.toString());
-    Protocol.ParsedMessage parsedMessage = parsedMessage(DESTINATION, message);
+    ParsedMessage parsedMessage = parsedMessage(DESTINATION, message);
     return assertDoesNotThrow(() -> transformer.transform(SOURCE, parsedMessage));
   }
 
-  protected Protocol.ParsedMessage transformWithParsed(Protocol.ParsedMessage parsedMessage) {
+  protected ParsedMessage transformWithParsed(ParsedMessage parsedMessage) {
     return assertDoesNotThrow(() -> transformer.transform(SOURCE, parsedMessage));
   }
 }

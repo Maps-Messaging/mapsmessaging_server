@@ -33,7 +33,7 @@ public class InterServerPipelineTransformation implements InterServerTransformat
   }
 
   @Override
-  public Protocol.ParsedMessage transform(String source, Protocol.ParsedMessage message) {
+  public ParsedMessage transform(String source, ParsedMessage message) {
     long processingTime = System.nanoTime();
     String init = source;
     for(InterServerTransformation transform: pipeline){

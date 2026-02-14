@@ -73,13 +73,7 @@ public class Establishing extends State {
         namespaceFilters  = new NamespaceFilters(filters);
       }
       QualityOfService qos = property.getQualityOfService();
-      List<InterServerTransformation> interServerTransformation = new ArrayList<>();
-      List<Map<String, Object>> list = property.getTransformer();
-      if (list != null && !list.isEmpty()) {
-        for(Map<String, Object> obj: list) {
-          interServerTransformation.add(TransformerManager.getInstance().get(new ConfigurationProperties(obj)));
-        }
-      }
+      List<InterServerTransformation> interServerTransformation = TransformerManager.getInstance().buildList(property.getTransformer());
       InterServerPipelineTransformation pipeline = new InterServerPipelineTransformation(interServerTransformation);
       try {
         if (direction.equalsIgnoreCase("pull")) {

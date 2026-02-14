@@ -27,6 +27,7 @@ import io.mapsmessaging.api.features.DestinationMode;
 import io.mapsmessaging.api.features.QualityOfService;
 import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.api.transformers.InterServerTransformation;
+import io.mapsmessaging.api.transformers.ParsedMessage;
 import io.mapsmessaging.dto.rest.analytics.StatisticsConfigDTO;
 import io.mapsmessaging.dto.rest.config.protocol.ProtocolConfigDTO;
 import io.mapsmessaging.dto.rest.protocol.ProtocolInformationDTO;
@@ -250,7 +251,7 @@ public abstract class Protocol implements SelectorCallback, MessageListener, Tim
   }
 
   protected ParsedMessage processInterServerTransformations(String source, ParsedMessage parsedMessage) {
-    InterServerTransformation interServerTransformation = destinationTransformerMap.get(parsedMessage.destinationName);
+    InterServerTransformation interServerTransformation = destinationTransformerMap.get(parsedMessage.getDestinationName());
     if (interServerTransformation != null) {
       return interServerTransformation.transform(source, parsedMessage);
     }
@@ -285,12 +286,12 @@ public abstract class Protocol implements SelectorCallback, MessageListener, Tim
   }
 
   private ParsedMessage processMessageAnalyser(ParsedMessage parsedMessage, SubscriptionContext subInfo){
-    Analyser analyser = topicNameAnalyserMap.get(parsedMessage.destinationName);
+    Analyser analyser = topicNameAnalyserMap.get(parsedMessage.getDestinationName());
     if (analyser == null && !resourceNameAnalyserMap.isEmpty()) {
       StatisticsConfigDTO statistics = resourceNameAnalyserMap.get(subInfo.getAlias());
       if(statistics != null){
         analyser = AnalyserFactory.getInstance().getAnalyser(statistics);
-        topicNameAnalyserMap.put(parsedMessage.destinationName, analyser);
+        topicNameAnalyserMap.put(parsedMessage.getDestinationName(), analyser);
       }
     }
     Message msg = parsedMessage.getMessage();
@@ -470,14 +471,5 @@ public abstract class Protocol implements SelectorCallback, MessageListener, Tim
         .setReceiveMaximum(10);
     CompletableFuture<Session> sessionFuture = SessionManager.getInstance().createAsync(scb.build(), this);
     return sessionFuture.get(5, TimeUnit.SECONDS);
-  }
-
-
-  @Data
-  @AllArgsConstructor
-  @NoArgsConstructor
-  public static final class ParsedMessage{
-    private String destinationName;
-    private Message message;
   }
 }

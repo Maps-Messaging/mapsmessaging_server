@@ -33,7 +33,7 @@ public class ProtocolTransformationWrapper implements InterServerTransformation 
   }
 
   @Override
-  public Protocol.ParsedMessage transform(String source, Protocol.ParsedMessage message) {
+  public ParsedMessage transform(String source, ParsedMessage message) {
     message.setMessage(protocolMessageTransformation.outgoing(message.getMessage(), source));
     return message;
   }

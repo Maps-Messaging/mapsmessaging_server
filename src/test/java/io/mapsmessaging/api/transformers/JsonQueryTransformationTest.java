@@ -62,7 +62,7 @@ class JsonQueryTransformationTest extends AbstractDroppingTransformationTest {
     InterServerTransformation transformer = new JsonQueryTransformation().build(props);
     setMessageFormatter(transformer);
 
-    Protocol.ParsedMessage result = transformWith(transformer, utf8Bytes("{\"a\":1,\"b\":\"x\"}"));
+    ParsedMessage result = transformWith(transformer, utf8Bytes("{\"a\":1,\"b\":\"x\"}"));
 
     assertNotDropped(result);
     assertOpaqueDataEqualsUtf8(result, "1");
@@ -76,7 +76,7 @@ class JsonQueryTransformationTest extends AbstractDroppingTransformationTest {
 
     InterServerTransformation transformer = new JsonQueryTransformation().build(props);
     setMessageFormatter(transformer);
-    Protocol.ParsedMessage result = transformWith(transformer, utf8Bytes("{\"a\":1,\"b\":\"x\"}"));
+    ParsedMessage result = transformWith(transformer, utf8Bytes("{\"a\":1,\"b\":\"x\"}"));
 
     assertNotDropped(result);
     assertOpaqueDataEqualsUtf8(result, "1");
@@ -91,7 +91,7 @@ class JsonQueryTransformationTest extends AbstractDroppingTransformationTest {
     setMessageFormatter(transformer);
 
     byte[] before = utf8Bytes("{\"a\":1,\"b\":\"x\"}");
-    Protocol.ParsedMessage result = transformWith(transformer, before);
+    ParsedMessage result = transformWith(transformer, before);
 
     assertNotDropped(result);
     assertOpaqueDataUnchanged(before, result);
@@ -101,7 +101,7 @@ class JsonQueryTransformationTest extends AbstractDroppingTransformationTest {
   void defaultInstance_programNull_isNoOp() {
     byte[] before = utf8Bytes("{\"a\":1,\"b\":\"x\"}");
 
-    Protocol.ParsedMessage result = transform(before);
+    ParsedMessage result = transform(before);
 
     assertNotDropped(result);
     assertOpaqueDataUnchanged(before, result);
@@ -115,7 +115,7 @@ class JsonQueryTransformationTest extends AbstractDroppingTransformationTest {
     assertFalse(created.getDescription().isBlank());
   }
 
-  private Protocol.ParsedMessage transformWith(InterServerTransformation transformer, byte[] opaqueData) {
+  private ParsedMessage transformWith(InterServerTransformation transformer, byte[] opaqueData) {
     // Force this test instance to run using the built transformer
     this.transformer = transformer;
     return transform(opaqueData);

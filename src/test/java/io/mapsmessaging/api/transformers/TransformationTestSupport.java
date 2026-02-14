@@ -32,8 +32,8 @@ public final class TransformationTestSupport {
   private TransformationTestSupport() {
   }
 
-  public static Protocol.ParsedMessage parsedMessage(String destinationName, Message message) {
-    Protocol.ParsedMessage parsedMessage = new Protocol.ParsedMessage();
+  public static ParsedMessage parsedMessage(String destinationName, Message message) {
+    ParsedMessage parsedMessage = new ParsedMessage();
     parsedMessage.setDestinationName(destinationName);
     parsedMessage.setMessage(message);
     return parsedMessage;

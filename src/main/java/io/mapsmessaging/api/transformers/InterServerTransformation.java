@@ -25,7 +25,7 @@ import io.mapsmessaging.utilities.service.Service;
 
 public interface InterServerTransformation extends Service {
 
-  Protocol.ParsedMessage transform(String source, Protocol.ParsedMessage message);
+  ParsedMessage transform(String source, ParsedMessage message);
 
   InterServerTransformation build(ConfigurationProperties properties);
 

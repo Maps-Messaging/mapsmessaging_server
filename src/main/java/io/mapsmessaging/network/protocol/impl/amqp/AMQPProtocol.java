@@ -21,6 +21,7 @@ package io.mapsmessaging.network.protocol.impl.amqp;
 
 import io.mapsmessaging.api.MessageEvent;
 import io.mapsmessaging.api.Session;
+import io.mapsmessaging.api.transformers.ParsedMessage;
 import io.mapsmessaging.dto.rest.protocol.ProtocolInformationDTO;
 import io.mapsmessaging.dto.rest.protocol.impl.AmqpProtocolInformation;
 import io.mapsmessaging.dto.rest.session.SessionInformationDTO;

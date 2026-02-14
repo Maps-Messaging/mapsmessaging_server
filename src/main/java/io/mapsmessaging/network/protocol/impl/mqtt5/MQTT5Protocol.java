@@ -24,6 +24,7 @@ import io.mapsmessaging.api.features.QualityOfService;
 import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.api.message.TypedData;
 import io.mapsmessaging.api.transformers.InterServerTransformation;
+import io.mapsmessaging.api.transformers.ParsedMessage;
 import io.mapsmessaging.config.protocol.impl.MqttConfig;
 import io.mapsmessaging.dto.rest.analytics.StatisticsConfigDTO;
 import io.mapsmessaging.dto.rest.config.auth.SaslConfigDTO;

@@ -44,7 +44,7 @@ class JsonToValueTransformationTest extends AbstractInPlaceTransformationTest {
   void transform_defaultInstance_passesThroughUnchanged() {
     byte[] before = utf8Bytes("{\"a\":1,\"b\":\"x\"}");
 
-    Protocol.ParsedMessage result = transform(before);
+    ParsedMessage result = transform(before);
 
     assertNotDropped(result);
     assertOpaqueDataUnchanged(before, result);
@@ -57,7 +57,7 @@ class JsonToValueTransformationTest extends AbstractInPlaceTransformationTest {
 
     InterServerTransformation built = new JsonToValueTransformation().build(props);
 
-    Protocol.ParsedMessage result = transformWith(built, utf8Bytes("{\"a\":1,\"b\":\"x\"}"));
+    ParsedMessage result = transformWith(built, utf8Bytes("{\"a\":1,\"b\":\"x\"}"));
 
     assertNotDropped(result);
     assertOpaqueDataEqualsUtf8(result, "x");
@@ -70,7 +70,7 @@ class JsonToValueTransformationTest extends AbstractInPlaceTransformationTest {
 
     InterServerTransformation built = new JsonToValueTransformation().build(props);
 
-    Protocol.ParsedMessage result = transformWith(built, utf8Bytes("{\"a\":1,\"b\":\"x\"}"));
+    ParsedMessage result = transformWith(built, utf8Bytes("{\"a\":1,\"b\":\"x\"}"));
 
     assertNotDropped(result);
     assertOpaqueDataEqualsUtf8(result, "1");
@@ -84,7 +84,7 @@ class JsonToValueTransformationTest extends AbstractInPlaceTransformationTest {
     InterServerTransformation built = new JsonToValueTransformation().build(props);
 
     byte[] before = utf8Bytes("{\"a\":1,\"b\":\"x\"}");
-    Protocol.ParsedMessage result = transformWith(built, before);
+    ParsedMessage result = transformWith(built, before);
 
     assertNotDropped(result);
     assertOpaqueDataUnchanged(before, result);
@@ -98,7 +98,7 @@ class JsonToValueTransformationTest extends AbstractInPlaceTransformationTest {
     InterServerTransformation built = new JsonToValueTransformation().build(props);
 
     byte[] before = utf8Bytes(TransformationTestVectors.INVALID_JSON);
-    Protocol.ParsedMessage result = transformWith(built, before);
+    ParsedMessage result = transformWith(built, before);
 
     assertNotDropped(result);
     assertOpaqueDataUnchanged(before, result);
@@ -112,7 +112,7 @@ class JsonToValueTransformationTest extends AbstractInPlaceTransformationTest {
     assertFalse(created.getDescription().isBlank());
   }
 
-  private Protocol.ParsedMessage transformWith(InterServerTransformation transformer, byte[] opaqueData) {
+  private ParsedMessage transformWith(InterServerTransformation transformer, byte[] opaqueData) {
     // minimal local helper to avoid depending on base's transformer field
     // and to test build() products cleanly.
     this.transformer = transformer;

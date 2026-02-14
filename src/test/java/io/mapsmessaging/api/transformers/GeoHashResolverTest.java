@@ -90,12 +90,12 @@ class GeoHashResolverTest extends AbstractDroppingTransformationTest {
     when(id.get("latitude")).thenReturn(-33.8688);
     when(id.get("longitude")).thenReturn(151.2093);
 
-    Protocol.ParsedMessage parsed = parsedMessage("/dst", mockMessage(utf8Bytes("{}")));
+    ParsedMessage parsed = parsedMessage("/dst", mockMessage(utf8Bytes("{}")));
 
     try (MockedStatic<Filter> filter = mockStatic(Filter.class)) {
       filter.when(() -> Filter.getTopicResolver(anyString(), any())).thenReturn(id);
 
-      Protocol.ParsedMessage result = resolver.transform("/src/topic", parsed);
+      ParsedMessage result = resolver.transform("/src/topic", parsed);
 
       assertNotDropped(result);
 
@@ -118,12 +118,12 @@ class GeoHashResolverTest extends AbstractDroppingTransformationTest {
     when(id.get("latitude")).thenReturn(-33.8688);
     when(id.get("longitude")).thenReturn(151.2093);
 
-    Protocol.ParsedMessage parsed = parsedMessage("/dst", mockMessage(utf8Bytes("{}")));
+    ParsedMessage parsed = parsedMessage("/dst", mockMessage(utf8Bytes("{}")));
 
     try (MockedStatic<Filter> filter = mockStatic(Filter.class)) {
       filter.when(() -> Filter.getTopicResolver(anyString(), any())).thenReturn(id);
 
-      Protocol.ParsedMessage result = resolver.transform("/src/topic", parsed);
+      ParsedMessage result = resolver.transform("/src/topic", parsed);
 
       assertNotDropped(result);
 
@@ -146,12 +146,12 @@ class GeoHashResolverTest extends AbstractDroppingTransformationTest {
     when(id.get("latitude")).thenReturn(-33.8688);
     when(id.get("longitude")).thenReturn(151.2093);
 
-    Protocol.ParsedMessage parsed = parsedMessage("/dst", mockMessage(utf8Bytes("{}")));
+    ParsedMessage parsed = parsedMessage("/dst", mockMessage(utf8Bytes("{}")));
 
     try (MockedStatic<Filter> filter = mockStatic(Filter.class)) {
       filter.when(() -> Filter.getTopicResolver(anyString(), any())).thenReturn(id);
 
-      Protocol.ParsedMessage result = resolver.transform("/src/topic", parsed);
+      ParsedMessage result = resolver.transform("/src/topic", parsed);
 
       assertNotDropped(result);
 
@@ -178,12 +178,12 @@ class GeoHashResolverTest extends AbstractDroppingTransformationTest {
     when(id.get("latitude")).thenReturn(latRad);
     when(id.get("longitude")).thenReturn(lonRad);
 
-    Protocol.ParsedMessage parsed = parsedMessage("/dst", mockMessage(utf8Bytes("{}")));
+    ParsedMessage parsed = parsedMessage("/dst", mockMessage(utf8Bytes("{}")));
 
     try (MockedStatic<Filter> filter = mockStatic(Filter.class)) {
       filter.when(() -> Filter.getTopicResolver(anyString(), any())).thenReturn(id);
 
-      Protocol.ParsedMessage result = resolver.transform("/src/topic", parsed);
+      ParsedMessage result = resolver.transform("/src/topic", parsed);
 
       assertNotDropped(result);
 
@@ -206,12 +206,12 @@ class GeoHashResolverTest extends AbstractDroppingTransformationTest {
     when(id.get("latitude")).thenReturn(null);
     when(id.get("longitude")).thenReturn(null);
 
-    Protocol.ParsedMessage parsed = parsedMessage("/dst", mockMessage(utf8Bytes("{}")));
+    ParsedMessage parsed = parsedMessage("/dst", mockMessage(utf8Bytes("{}")));
 
     try (MockedStatic<Filter> filter = mockStatic(Filter.class)) {
       filter.when(() -> Filter.getTopicResolver(anyString(), any())).thenReturn(id);
 
-      Protocol.ParsedMessage result = resolver.transform("/src/topic", parsed);
+      ParsedMessage result = resolver.transform("/src/topic", parsed);
 
       assertNotDropped(result);
       assertEquals("/dst", result.getDestinationName());
@@ -232,12 +232,12 @@ class GeoHashResolverTest extends AbstractDroppingTransformationTest {
     when(id.get("latitude")).thenReturn(null);
     when(id.get("longitude")).thenReturn(null);
 
-    Protocol.ParsedMessage parsed = parsedMessage("/dst", mockMessage(utf8Bytes("{}")));
+    ParsedMessage parsed = parsedMessage("/dst", mockMessage(utf8Bytes("{}")));
 
     try (MockedStatic<Filter> filter = mockStatic(Filter.class)) {
       filter.when(() -> Filter.getTopicResolver(anyString(), any())).thenReturn(id);
 
-      Protocol.ParsedMessage result = resolver.transform("/src/topic", parsed);
+      ParsedMessage result = resolver.transform("/src/topic", parsed);
 
       assertDropped(result);
     }
@@ -258,12 +258,12 @@ class GeoHashResolverTest extends AbstractDroppingTransformationTest {
     when(id.get("latitude")).thenReturn(null);
     when(id.get("longitude")).thenReturn(null);
 
-    Protocol.ParsedMessage parsed = parsedMessage("/dst", mockMessage(utf8Bytes("{}")));
+    ParsedMessage parsed = parsedMessage("/dst", mockMessage(utf8Bytes("{}")));
 
     try (MockedStatic<Filter> filter = mockStatic(Filter.class)) {
       filter.when(() -> Filter.getTopicResolver(anyString(), any())).thenReturn(id);
 
-      Protocol.ParsedMessage result = resolver.transform("/src/topic", parsed);
+      ParsedMessage result = resolver.transform("/src/topic", parsed);
 
       assertNotDropped(result);
 
@@ -289,12 +289,12 @@ class GeoHashResolverTest extends AbstractDroppingTransformationTest {
     when(id.get("lat")).thenReturn(-33.8688);
     when(id.get("lon")).thenReturn(151.2093);
 
-    Protocol.ParsedMessage parsed = parsedMessage("/dst", mockMessage(utf8Bytes("{}")));
+    ParsedMessage parsed = parsedMessage("/dst", mockMessage(utf8Bytes("{}")));
 
     try (MockedStatic<Filter> filter = mockStatic(Filter.class)) {
       filter.when(() -> Filter.getTopicResolver(anyString(), any())).thenReturn(id);
 
-      Protocol.ParsedMessage result = resolver.transform("/src/topic", parsed);
+      ParsedMessage result = resolver.transform("/src/topic", parsed);
 
       assertNotDropped(result);
 

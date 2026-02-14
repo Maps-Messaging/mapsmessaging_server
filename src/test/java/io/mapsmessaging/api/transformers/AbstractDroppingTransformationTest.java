@@ -32,7 +32,7 @@ public abstract class AbstractDroppingTransformationTest extends AbstractInterSe
 
   @Test
   void transform_validInput_doesNotThrow() {
-    Protocol.ParsedMessage result = transform(validInputBytes());
+    ParsedMessage result = transform(validInputBytes());
     // drop is allowed, but valid inputs should generally not drop unless the transformer is a filter
     // If a concrete transformer is truly a filter, it can override and assertDropped instead.
     assertNotNull(result, "Valid input unexpectedly dropped; override test if this is intentional filter behavior");
@@ -40,7 +40,7 @@ public abstract class AbstractDroppingTransformationTest extends AbstractInterSe
 
   @Test
   void transform_invalidInput_doesNotThrow() {
-    Protocol.ParsedMessage result = transform(utf8Bytes(TransformationTestVectors.NON_JSON_TEXT));
+    ParsedMessage result = transform(utf8Bytes(TransformationTestVectors.NON_JSON_TEXT));
     // drop or pass-through is allowed; crash is not.
     // No assertion here except "it didn't throw".
     // If you want consistent behaviour, override in the specific transformer test.

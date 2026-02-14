@@ -66,7 +66,7 @@ public class GeoHashResolver implements InterServerTransformation {
     this.defaultLongitude = null;
   }
 
-  public Protocol.ParsedMessage transform(String source, Protocol.ParsedMessage message) {
+  public ParsedMessage transform(String source, ParsedMessage message) {
     IdentifierResolver identifierResolver = getTopicResolver(source, message.getMessage());
     if (identifierResolver == null) {
       return handleMissing(message);
@@ -145,7 +145,7 @@ public class GeoHashResolver implements InterServerTransformation {
     return resolver;
   }
 
-  private Protocol.ParsedMessage handleMissing(Protocol.ParsedMessage message) {
+  private ParsedMessage handleMissing(ParsedMessage message) {
     if ("drop".equalsIgnoreCase(onMissing)) {
       return null; // convention: null indicates drop
     }

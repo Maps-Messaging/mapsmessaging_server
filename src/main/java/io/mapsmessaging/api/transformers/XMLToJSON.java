@@ -40,7 +40,7 @@ public class XMLToJSON implements InterServerTransformation {
   private XmlMapper xmlMapper = new XmlMapper();
 
   @Override
-  public Protocol.ParsedMessage transform(String source, Protocol.ParsedMessage message){
+  public ParsedMessage transform(String source, ParsedMessage message){
     MessageBuilder messageBuilder = new MessageBuilder(message.getMessage());
     convert(messageBuilder);
     message.setMessage(messageBuilder.build());

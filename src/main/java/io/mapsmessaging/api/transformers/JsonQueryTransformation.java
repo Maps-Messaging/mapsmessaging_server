@@ -85,7 +85,7 @@ public class JsonQueryTransformation implements InterServerTransformation {
   }
 
   @Override
-  public Protocol.ParsedMessage transform(String source, Protocol.ParsedMessage message) {
+  public ParsedMessage transform(String source, ParsedMessage message) {
     if (program == null) {
       return message;
     }
@@ -113,7 +113,7 @@ public class JsonQueryTransformation implements InterServerTransformation {
     return null; // drop
   }
 
-  private MessageFormatter locateMessageFormatter(String source, Protocol.ParsedMessage message) {
+  private MessageFormatter locateMessageFormatter(String source, ParsedMessage message) {
     MessageFormatter messageFormatter = schemaMap.get(source);
     if (messageFormatter == null) {
       String schemaId = message.getMessage().getSchemaId();

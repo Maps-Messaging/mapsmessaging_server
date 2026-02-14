@@ -29,6 +29,7 @@ import io.mapsmessaging.api.features.QualityOfService;
 import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.api.message.TypedData;
 import io.mapsmessaging.api.transformers.InterServerTransformation;
+import io.mapsmessaging.api.transformers.ParsedMessage;
 import io.mapsmessaging.dto.rest.analytics.StatisticsConfigDTO;
 import io.mapsmessaging.dto.rest.config.protocol.impl.StoGiConfigDTO;
 import io.mapsmessaging.dto.rest.protocol.ProtocolInformationDTO;

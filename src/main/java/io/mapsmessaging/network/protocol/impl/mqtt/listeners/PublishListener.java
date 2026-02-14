@@ -28,6 +28,7 @@ import io.mapsmessaging.api.features.Priority;
 import io.mapsmessaging.api.features.QualityOfService;
 import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.api.message.TypedData;
+import io.mapsmessaging.api.transformers.ParsedMessage;
 import io.mapsmessaging.dto.rest.analytics.StatisticsConfigDTO;
 import io.mapsmessaging.engine.destination.MessageOverrides;
 import io.mapsmessaging.engine.destination.subscription.set.DestinationSet;
@@ -113,7 +114,7 @@ public class PublishListener extends PacketListener {
         protocol.getProtocolMessageTransformation(),
         protocol
     );
-    Protocol.ParsedMessage parsed = protocol.parseInboundMessage(lookup, message);
+    ParsedMessage parsed = protocol.parseInboundMessage(lookup, message);
     if (parsed != null) {
       lookup = parsed.getDestinationName();
       message = parsed.getMessage();

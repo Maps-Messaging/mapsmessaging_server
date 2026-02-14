@@ -27,10 +27,7 @@ import io.mapsmessaging.network.protocol.transformation.TransformationManager;
 import io.mapsmessaging.utilities.service.Service;
 import io.mapsmessaging.utilities.service.ServiceManager;
 
-import java.util.Iterator;
-import java.util.LinkedHashMap;
-import java.util.Map;
-import java.util.ServiceLoader;
+import java.util.*;
 
 @SuppressWarnings("java:S6548") // yes it is a singleton
 public class TransformerManager implements ServiceManager {
@@ -57,6 +54,16 @@ public class TransformerManager implements ServiceManager {
       }
     }
     return null;
+  }
+
+  public List<InterServerTransformation> buildList(List<Map<String, Object>> list) {
+    List<InterServerTransformation> interServerTransformation = new ArrayList<>();
+    if (list != null && !list.isEmpty()) {
+      for(Map<String, Object> obj: list) {
+        interServerTransformation.add(TransformerManager.getInstance().get(new ConfigurationProperties(obj)));
+      }
+    }
+    return interServerTransformation;
   }
 
   private TransformerManager() {

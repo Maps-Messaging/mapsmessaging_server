@@ -43,7 +43,7 @@ class XMLToJSONTest extends AbstractInPlaceTransformationTest {
   void transform_validXml_producesJsonObject() {
     byte[] before = validInputBytes();
 
-    Protocol.ParsedMessage result = transform(before);
+    ParsedMessage result = transform(before);
 
     assertNotDropped(result);
     assertOpaqueDataChanged(before, result);
@@ -54,7 +54,7 @@ class XMLToJSONTest extends AbstractInPlaceTransformationTest {
   void transform_invalidXml_doesNotDrop_andLeavesPayloadUnchanged() {
     byte[] before = utf8Bytes(TransformationTestVectors.INVALID_XML);
 
-    Protocol.ParsedMessage result = transform(before);
+    ParsedMessage result = transform(before);
 
     assertNotDropped(result);
     assertOpaqueDataUnchanged(before, result);

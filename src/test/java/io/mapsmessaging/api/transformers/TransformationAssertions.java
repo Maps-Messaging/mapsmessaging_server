@@ -36,16 +36,16 @@ public final class TransformationAssertions {
   private TransformationAssertions() {
   }
 
-  public static void assertNotDropped(Protocol.ParsedMessage result) {
+  public static void assertNotDropped(ParsedMessage result) {
     assertNotNull(result, "Expected message to NOT be dropped (null indicates filtered-out event)");
     assertNotNull(result.getMessage(), "Result ParsedMessage.message must not be null");
   }
 
-  public static void assertDropped(Protocol.ParsedMessage result) {
+  public static void assertDropped(ParsedMessage result) {
     assertNull(result, "Expected message to be dropped (null)");
   }
 
-  public static void assertOpaqueDataEqualsUtf8(Protocol.ParsedMessage result, String expected) {
+  public static void assertOpaqueDataEqualsUtf8(ParsedMessage result, String expected) {
     assertNotDropped(result);
     Message message = result.getMessage();
     byte[] actualBytes = message.getOpaqueData();
@@ -53,21 +53,21 @@ public final class TransformationAssertions {
     assertEquals(expected, new String(actualBytes, StandardCharsets.UTF_8));
   }
 
-  public static void assertOpaqueDataChanged(byte[] before, Protocol.ParsedMessage result) {
+  public static void assertOpaqueDataChanged(byte[] before, ParsedMessage result) {
     assertNotDropped(result);
     byte[] after = result.getMessage().getOpaqueData();
     assertNotNull(after, "opaqueData must not be null");
     assertNotEquals(utf8String(before), utf8String(after), "Expected opaqueData content to change");
   }
 
-  public static void assertOpaqueDataUnchanged(byte[] before, Protocol.ParsedMessage result) {
+  public static void assertOpaqueDataUnchanged(byte[] before, ParsedMessage result) {
     assertNotDropped(result);
     byte[] after = result.getMessage().getOpaqueData();
     assertNotNull(after, "opaqueData must not be null");
     assertArrayEquals(before, after, "Expected opaqueData bytes to remain unchanged");
   }
 
-  public static JsonElement assertOpaqueDataIsJson(Protocol.ParsedMessage result) {
+  public static JsonElement assertOpaqueDataIsJson(ParsedMessage result) {
     assertNotDropped(result);
     byte[] bytes = result.getMessage().getOpaqueData();
     assertNotNull(bytes, "opaqueData must not be null");
@@ -75,12 +75,12 @@ public final class TransformationAssertions {
     return JsonParser.parseString(new String(bytes, StandardCharsets.UTF_8));
   }
 
-  public static void assertOpaqueDataIsJsonObject(Protocol.ParsedMessage result) {
+  public static void assertOpaqueDataIsJsonObject(ParsedMessage result) {
     JsonElement element = assertOpaqueDataIsJson(result);
     assertTrue(element.isJsonObject(), "Expected JSON object");
   }
 
-  public static void assertOpaqueDataIsXml(Protocol.ParsedMessage result) {
+  public static void assertOpaqueDataIsXml(ParsedMessage result) {
     assertNotDropped(result);
     byte[] bytes = result.getMessage().getOpaqueData();
     assertNotNull(bytes, "opaqueData must not be null");

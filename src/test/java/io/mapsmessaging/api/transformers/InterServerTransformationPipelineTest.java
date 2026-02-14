@@ -31,12 +31,12 @@ import static org.mockito.Mockito.*;
 
 public class InterServerTransformationPipelineTest {
 
-  private static Protocol.ParsedMessage applyPipeline(
+  private static ParsedMessage applyPipeline(
       String source,
-      Protocol.ParsedMessage message,
+      ParsedMessage message,
       List<InterServerTransformation> transformers
   ) {
-    Protocol.ParsedMessage current = message;
+    ParsedMessage current = message;
     for (InterServerTransformation transformer : transformers) {
       if (current == null) {
         return null;
@@ -53,12 +53,12 @@ public class InterServerTransformationPipelineTest {
     InterServerTransformation neverCalled = mock(InterServerTransformation.class);
 
     Message message = mockMessage(utf8Bytes("{\"a\":1}"));
-    Protocol.ParsedMessage parsedMessage = parsedMessage("/dst", message);
+    ParsedMessage parsedMessage = parsedMessage("/dst", message);
 
     when(pass.transform(anyString(), any())).thenAnswer(inv -> inv.getArgument(1));
     when(drop.transform(anyString(), any())).thenReturn(null);
 
-    Protocol.ParsedMessage result = applyPipeline(
+    ParsedMessage result = applyPipeline(
         "/src",
         parsedMessage,
         List.of(pass, drop, neverCalled)

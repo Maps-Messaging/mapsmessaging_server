@@ -23,6 +23,7 @@ import io.mapsmessaging.api.MessageEvent;
 import io.mapsmessaging.api.Session;
 import io.mapsmessaging.api.SessionManager;
 import io.mapsmessaging.api.message.TypedData;
+import io.mapsmessaging.api.transformers.ParsedMessage;
 import io.mapsmessaging.config.protocol.impl.CoapConfig;
 import io.mapsmessaging.dto.rest.protocol.ProtocolInformationDTO;
 import io.mapsmessaging.dto.rest.protocol.impl.CoapProtocolInformation;

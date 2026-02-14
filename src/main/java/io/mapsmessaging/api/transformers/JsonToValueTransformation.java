@@ -84,7 +84,7 @@ public class JsonToValueTransformation implements InterServerTransformation {
   }
 
   @Override
-  public Protocol.ParsedMessage transform(String source, Protocol.ParsedMessage message){
+  public ParsedMessage transform(String source, ParsedMessage message){
     MessageBuilder messageBuilder = new MessageBuilder(message.getMessage());
     messageBuilder.setOpaqueData(convert(message.getMessage().getOpaqueData()));
     message.setMessage(messageBuilder.build());

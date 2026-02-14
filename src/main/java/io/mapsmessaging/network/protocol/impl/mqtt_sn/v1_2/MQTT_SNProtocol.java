@@ -24,6 +24,7 @@ import io.mapsmessaging.api.Session;
 import io.mapsmessaging.api.SessionManager;
 import io.mapsmessaging.api.features.QualityOfService;
 import io.mapsmessaging.api.message.Message;
+import io.mapsmessaging.api.transformers.ParsedMessage;
 import io.mapsmessaging.config.protocol.impl.MqttSnConfig;
 import io.mapsmessaging.dto.rest.protocol.ProtocolInformationDTO;
 import io.mapsmessaging.dto.rest.protocol.impl.MqttSnProtocolInformation;
