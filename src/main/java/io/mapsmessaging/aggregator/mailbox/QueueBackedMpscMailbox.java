@@ -46,11 +46,6 @@ public class QueueBackedMpscMailbox<T> implements AggregatorMailbox<T> {
   }
 
   @Override
-  public T poll() {
-    return this.queue.poll();
-  }
-
-  @Override
   public int drainTo(Consumer<T> consumer, int maxItems) {
     Objects.requireNonNull(consumer, "consumer must not be null");
     if (maxItems <= 0) {

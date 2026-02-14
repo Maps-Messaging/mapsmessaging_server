@@ -25,8 +25,6 @@ public interface AggregatorMailbox<T> {
 
   boolean offer(T item);
 
-  T poll();
-
   int drainTo(Consumer<T> consumer, int maxItems);
 
   int size();
