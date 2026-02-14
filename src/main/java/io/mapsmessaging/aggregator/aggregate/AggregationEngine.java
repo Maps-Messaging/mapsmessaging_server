@@ -37,11 +37,11 @@ public class AggregationEngine {
     strategyMap.put(strategy.getName(), strategy);
   }
 
-  public Message aggregate(@NonNull String strategyName, @NonNull AggregationContext context, @NonNull Message[] contributions) {
+  public Message aggregate(@NonNull String strategyName, String[] topics, @NonNull Message[] contributions) {
     AggregationStrategy strategy = strategyMap.get(strategyName);
     if (strategy == null) {
       throw new IllegalArgumentException("Unknown aggregation strategy: " + strategyName);
     }
-    return strategy.aggregate(context, contributions);
+    return strategy.aggregate(topics, contributions);
   }
 }

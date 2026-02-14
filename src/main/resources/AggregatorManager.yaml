@@ -30,11 +30,11 @@ AggregatorManager:
         timeoutMs: 5000
         maxEventsPerTopic: 1
         inputs:
-          - topicName: topic1
+          - topicName: /device/sensor/i2c/1/0x74/SEN0465/data
             contributionMode: LAST
-          - topicName: topic2
+          - topicName: /device/sensor/i2c/1/0x76/SEN0466/data
             contributionMode: LAST
-          - topicName: topic3
+          - topicName: /device/sensor/i2c/1/0x6b/SEN6x/data
             contributionMode: LAST
 
       - name: aggregator-2
@@ -44,19 +44,10 @@ AggregatorManager:
         timeoutMs: 5000
         maxEventsPerTopic: 1
         inputs:
-          - topicName: topic4
+          - topicName: /device/sensor/i2c/1/0x12/PMSA003I/data
             contributionMode: LAST
-          - topicName: topic5
+          - topicName: /serial/SEN0642/data
             contributionMode: LAST
-          - topicName: topic6
+          - topicName: /serial/SEN0657/data
             contributionMode: LAST
 
-      - name: aggregator-2
-        enabled: true
-        outputTopic: out3
-        windowDurationMs: 4000
-        timeoutMs: 5000
-        maxEventsPerTopic: 1
-        inputs:
-          - topicName: topic7
-            contributionMode: LAST

@@ -19,11 +19,15 @@
 
 package io.mapsmessaging.aggregator;
 
+import io.mapsmessaging.aggregator.aggregate.AggregationStrategy;
+import io.mapsmessaging.aggregator.aggregate.EnvelopeAggregationStrategy;
 import io.mapsmessaging.aggregator.mailbox.AggregatorMailbox;
 import io.mapsmessaging.aggregator.mailbox.QueueBackedMpscMailbox;
 import io.mapsmessaging.aggregator.worker.AggregatorWorkScheduler;
 import io.mapsmessaging.aggregator.worker.AggregatorWorker;
 import io.mapsmessaging.api.*;
+import io.mapsmessaging.api.features.DestinationType;
+import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.dto.rest.config.aggregator.AggregatorConfigDTO;
 import io.mapsmessaging.dto.rest.config.aggregator.AggregatorInputConfigDTO;
 import io.mapsmessaging.engine.session.ClientConnection;
@@ -35,15 +39,17 @@ import java.security.Principal;
 import java.util.Map;
 import java.util.concurrent.*;
 
-public class Aggregator implements ClientConnection, MessageListener {
+public class Aggregator implements ClientConnection, MessageListener, ProcessedHandler {
 
   private final AggregatorConfigDTO configDTO;
 
   private final AggregatorWorkScheduler aggregatorWorkScheduler;
   private final StreamHandler[] handlers;
   private final Map<String, Integer> topicIndexMap;
+  private final AggregationStrategy strategy;
 
   private Session session;
+  private Destination outboundDestination;
 
   private AggregatorMailbox<AggregatorEnvelope> mailbox;
   private AggregatorWorker worker;
@@ -54,7 +60,7 @@ public class Aggregator implements ClientConnection, MessageListener {
 
     this.handlers = new StreamHandler[configDTO.getInputs().size()];
     this.topicIndexMap = new ConcurrentHashMap<>();
-
+    this.strategy = new EnvelopeAggregationStrategy();
     int index = 0;
     for (AggregatorInputConfigDTO input : configDTO.getInputs()) {
       this.handlers[index] = new StreamHandler(input);
@@ -65,16 +71,14 @@ public class Aggregator implements ClientConnection, MessageListener {
 
   public void start() {
     try {
-      this.mailbox = new QueueBackedMpscMailbox<>(8192);
-
-      this.session = createSession();
+      mailbox = new QueueBackedMpscMailbox<>(8192);
+      session = createSession();
+      outboundDestination = session.findDestination(configDTO.getOutputTopic(), DestinationType.TOPIC).get();
       for (StreamHandler handler : handlers) {
         handler.start(session);
       }
-
-      this.worker = new AggregatorWorker(getName(), mailbox, handlers, getTimeOut());
-      this.aggregatorWorkScheduler.register(worker);
-
+      worker = new AggregatorWorker(getName(), mailbox, handlers, getTimeOut(), this);
+      aggregatorWorkScheduler.register(worker);
     } catch (ExecutionException | InterruptedException | TimeoutException | IOException e) {
       // log this with config rich details
       e.printStackTrace();
@@ -112,15 +116,22 @@ public class Aggregator implements ClientConnection, MessageListener {
     }
   }
 
-  private Session createSession() throws ExecutionException, InterruptedException, TimeoutException {
-    SessionContextBuilder scb = new SessionContextBuilder(configDTO.getName(), this);
-    scb.setResetState(true)
-        .setSessionExpiry(0)
-        .setPersistentSession(false)
-        .setReceiveMaximum(100);
-
-    CompletableFuture<Session> sessionFuture = SessionManager.getInstance().createAsync(scb.build(), this);
-    return sessionFuture.get(5, TimeUnit.SECONDS);
+  @Override
+  public void completed(MessageEvent[] contributions) {
+    Message[] events = new Message[contributions.length];
+    String[] topics = new String[contributions.length];
+    for (int i = 0; i < events.length; i++) {
+      if (contributions[i] != null) {
+        events[i] = handlers[i].process(contributions[i]).getMessage();
+      }
+      topics[i] = handlers[i].getTopicName();
+    }
+    Message message = strategy.aggregate (topics, events);
+    try {
+      outboundDestination.storeMessage(message);
+    } catch (IOException e) {
+      e.printStackTrace();
+    }
   }
 
   @Override
@@ -195,4 +206,17 @@ public class Aggregator implements ClientConnection, MessageListener {
   public String getRemoteIp() {
     return "loop";
   }
+
+  private Session createSession() throws ExecutionException, InterruptedException, TimeoutException {
+    SessionContextBuilder scb = new SessionContextBuilder(configDTO.getName(), this);
+    scb.setResetState(true)
+        .setSessionExpiry(0)
+        .setPersistentSession(false)
+        .setReceiveMaximum(100);
+
+    CompletableFuture<Session> sessionFuture = SessionManager.getInstance().createAsync(scb.build(), this);
+    return sessionFuture.get(5, TimeUnit.SECONDS);
+  }
+
+
 }

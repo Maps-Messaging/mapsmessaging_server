@@ -59,6 +59,7 @@ public class AggregatorStripeWorker implements Runnable {
         try {
           drained = workItem.drainOnce(maxBatchPerWorkItem);
         } catch (Throwable ignored) {
+          ignored.printStackTrace();
           // log if you want; keep stripe alive
         }
 
@@ -79,6 +80,7 @@ public class AggregatorStripeWorker implements Runnable {
           try {
             item.checkTimeout();
           } catch (Throwable ignored) {
+            ignored.printStackTrace();
             // log if you want
           }
         }

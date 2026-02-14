@@ -83,7 +83,6 @@ public class StreamHandler {
           return null; // dropped
         }
       }
-
       event = new MessageEvent(
           parsedMessage.getDestinationName(),
           event.getSubscription(),

@@ -19,13 +19,19 @@
 
 package io.mapsmessaging.aggregator.aggregate;
 
+import com.google.common.reflect.TypeToken;
+import com.google.gson.Gson;
+import io.mapsmessaging.api.MessageBuilder;
 import io.mapsmessaging.api.message.Message;
-import io.mapsmessaging.dto.rest.config.aggregator.AggregatorInputConfigDTO;
 
+import java.lang.reflect.Type;
+import java.util.Base64;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
 public class EnvelopeAggregationStrategy implements AggregationStrategy {
+
+  private final Gson gson = new Gson();
 
   @Override
   public String getName() {
@@ -33,53 +39,34 @@ public class EnvelopeAggregationStrategy implements AggregationStrategy {
   }
 
   @Override
-  public Message aggregate(AggregationContext context, Message[] contributions) {
+  public Message aggregate(String[] topics, Message[] contributions) {
     Map<String, Object> root = new LinkedHashMap<>();
-    root.put("meta", buildMeta(context));
-
     Map<String, Object> inputs = new LinkedHashMap<>();
-    AggregatorInputConfigDTO[] inputConfigs = context.getInputConfigs();
-
     for (int index = 0; index < contributions.length; index++) {
       Message message = contributions[index];
       if (message == null) {
         continue;
       }
-
-      String topicName = inputConfigs[index].getTopicName();
-      inputs.put(topicName, buildEnvelopeEntry(context, message));
+      inputs.put(topics[index], buildEnvelopeEntry(message));
     }
-
     root.put("inputs", inputs);
+    String json = gson.toJson(root);
 
-    return context.getMessageBuilder().buildJsonMessage(root);
+    MessageBuilder messageBuilder = new MessageBuilder();
+    messageBuilder.setContentType("application/json");
+    messageBuilder.setOpaqueData(json.getBytes());
+    return messageBuilder.build();
   }
 
-  private Map<String, Object> buildMeta(AggregationContext context) {
-    Map<String, Object> meta = new LinkedHashMap<>();
-    meta.put("aggregator", context.getAggregatorName());
-    meta.put("outputTopic", context.getOutputTopic());
-    meta.put("windowStartMillis", context.getWindowStartMillis());
-    meta.put("windowEndMillis", context.getWindowEndMillis());
-    meta.put("closedByAllInputs", context.isClosedByAllInputs());
-    meta.put("durationMillis", context.getWindowEndMillis() - context.getWindowStartMillis());
-    return meta;
-  }
-
-  private Map<String, Object> buildEnvelopeEntry(AggregationContext context, Message message) {
+  private Map<String, Object> buildEnvelopeEntry(Message message) {
     Map<String, Object> entry = new LinkedHashMap<>();
-    MessageCodec messageCodec = context.getMessageCodec();
-
-    String contentType = messageCodec.getContentType(message);
-    entry.put("contentType", contentType);
-
-    Map<String, Object> decoded = messageCodec.tryDecodeToJsonObject(message);
-    if (decoded != null) {
-      entry.put("payload", decoded);
+    if(message.getContentType() != null && message.getContentType().equals("application/json")) {
+      Type type = new TypeToken<Map<String, Object>>() {}.getType();
+      Map<String, Object> map = gson.fromJson(new String(message.getOpaqueData()), type);
+      entry.put("payload", map);
     } else {
-      entry.put("payloadBase64", messageCodec.encodeToBase64(message));
+      entry.put("payloadBase64", Base64.getEncoder().encodeToString(message.getOpaqueData()));
     }
-
     return entry;
   }
 }

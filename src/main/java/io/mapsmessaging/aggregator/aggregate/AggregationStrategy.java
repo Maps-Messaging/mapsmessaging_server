@@ -25,5 +25,5 @@ public interface AggregationStrategy {
 
   String getName();
 
-  Message aggregate(AggregationContext context, Message[] contributions);
+  Message aggregate(String[] topics, Message[] contributions);
 }

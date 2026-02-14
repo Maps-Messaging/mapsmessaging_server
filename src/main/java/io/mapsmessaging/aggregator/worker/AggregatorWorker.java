@@ -20,6 +20,7 @@
 package io.mapsmessaging.aggregator.worker;
 
 import io.mapsmessaging.aggregator.AggregatorEnvelope;
+import io.mapsmessaging.aggregator.ProcessedHandler;
 import io.mapsmessaging.aggregator.StreamHandler;
 import io.mapsmessaging.aggregator.mailbox.AggregatorMailbox;
 import io.mapsmessaging.api.MessageEvent;
@@ -32,7 +33,7 @@ public class AggregatorWorker implements AggregatorWorkItem {
   private final String name;
   private final AggregatorMailbox<AggregatorEnvelope> mailbox;
   private final StreamHandler[] handlers;
-
+  private final ProcessedHandler handler;
   private final long timeoutMillis;
 
   private final MessageEvent[] contributions;
@@ -44,14 +45,15 @@ public class AggregatorWorker implements AggregatorWorkItem {
       String name,
       AggregatorMailbox<AggregatorEnvelope> mailbox,
       StreamHandler[] handlers,
-      long timeoutMillis
+      long timeoutMillis,
+      ProcessedHandler handler
   ) {
     this.name = name;
     this.mailbox = mailbox;
     this.handlers = handlers;
     this.timeoutMillis = timeoutMillis;
     this.scheduled = new AtomicBoolean(false);
-
+    this.handler = handler;
     this.contributions = new MessageEvent[handlers.length];
     this.seen = new boolean[handlers.length];
 
@@ -99,14 +101,9 @@ public class AggregatorWorker implements AggregatorWorkItem {
     if (deadlineMillis < 0) {
       deadlineMillis = now + timeoutMillis;
     }
-
     int index = envelope.getInputIndex();
     MessageEvent event = envelope.getEvent();
-
-    MessageEvent processed = handlers[index].process(event);
-    if (processed != null ) {
-      applyContribution(index, processed, handlers[index].getContributionMode());
-    }
+    applyContribution(index, event, handlers[index].getContributionMode());
     runCompletion(event);
     if (allSeen()) {
       publishAndReset(true);
@@ -146,8 +143,7 @@ public class AggregatorWorker implements AggregatorWorkItem {
   }
 
   private void publishAndReset(boolean closedByAllInputs) {
-    // TODO Phase 1: build output message using contributions[] and publish
-    // 'closedByAllInputs' indicates ALL_INPUTS vs TIMEOUT.
+    handler.completed(contributions);
     for (int i = 0; i < contributions.length; i++) {
       contributions[i] = null;
       seen[i] = false;

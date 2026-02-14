@@ -54,4 +54,16 @@ NetworkConnectionManager:
               managerFactory: SunX509
 
     data:
-      -
+
+      - name: "main_server"
+        url: tcp://10.140.62.183:1883/
+        protocol: mqtt
+        remote:
+          sessionId: "AggregatorManager"                  # not required for this link
+          username: "admin"
+          password: ""
+        links:
+          -
+            direction: pull
+            local_namespace: "/"
+            remote_namespace: "/#"
