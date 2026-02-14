@@ -28,11 +28,61 @@ import java.util.List;
 
 @Data
 @EqualsAndHashCode(callSuper = true)
-@Schema(description = "Event Joiner Manager Configuration DTO (Stage 1)")
+@Schema(description = "Aggregator Manager Configuration DTO (Stage 1)")
 public class AggregatorManagerConfigDTO extends BaseManagerConfigDTO {
 
   @Schema(
-      description = "List of event aggregator instance configurations",
+      description = "Number of worker stripes (threads) used to run aggregators. 0 means auto (CPU heuristic).",
+      example = "0",
+      defaultValue = "0",
+      minimum = "0",
+      maximum = "128",
+      requiredMode = Schema.RequiredMode.NOT_REQUIRED
+  )
+  protected int stripeCount = 0;
+
+  @Schema(
+      description = "Maximum number of events to drain per aggregator per scheduler pass (fairness limit).",
+      example = "128",
+      defaultValue = "128",
+      minimum = "1",
+      maximum = "8192",
+      requiredMode = Schema.RequiredMode.NOT_REQUIRED
+  )
+  protected int maxBatchPerAggregator = 128;
+
+  @Schema(
+      description = "Scheduler idle sleep in milliseconds when no work is detected.",
+      example = "1",
+      defaultValue = "1",
+      minimum = "0",
+      maximum = "1000",
+      requiredMode = Schema.RequiredMode.NOT_REQUIRED
+  )
+  protected int idleSleepMs = 1;
+
+  @Schema(
+      description = "Default mailbox capacity for each aggregator (bounded safety buffer).",
+      example = "8192",
+      defaultValue = "8192",
+      minimum = "1",
+      maximum = "1048576",
+      requiredMode = Schema.RequiredMode.NOT_REQUIRED
+  )
+  protected int mailboxCapacity = 8192;
+
+  @Schema(
+      description = "Maximum number of aggregators allowed to be loaded (safety guardrail). 0 means unlimited.",
+      example = "0",
+      defaultValue = "0",
+      minimum = "0",
+      maximum = "1000000",
+      requiredMode = Schema.RequiredMode.NOT_REQUIRED
+  )
+  protected int maxAggregators = 0;
+
+  @Schema(
+      description = "List of aggregator instance configurations",
       requiredMode = Schema.RequiredMode.REQUIRED,
       minLength = 1
   )

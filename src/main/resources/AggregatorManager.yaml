@@ -16,3 +16,47 @@
 
 AggregatorManager:
   data:
+    stripeCount: 0
+    maxBatchPerAggregator: 128
+    idleSleepMs: 1
+    mailboxCapacity: 8192
+    maxAggregators: 0
+
+    aggregatorConfigList:
+      - name: aggregator-1
+        enabled: true
+        outputTopic: out1
+        windowDurationMs: 1000
+        timeoutMs: 5000
+        maxEventsPerTopic: 1
+        inputs:
+          - topicName: topic1
+            contributionMode: LAST
+          - topicName: topic2
+            contributionMode: LAST
+          - topicName: topic3
+            contributionMode: LAST
+
+      - name: aggregator-2
+        enabled: true
+        outputTopic: out2
+        windowDurationMs: 1000
+        timeoutMs: 5000
+        maxEventsPerTopic: 1
+        inputs:
+          - topicName: topic4
+            contributionMode: LAST
+          - topicName: topic5
+            contributionMode: LAST
+          - topicName: topic6
+            contributionMode: LAST
+
+      - name: aggregator-2
+        enabled: true
+        outputTopic: out3
+        windowDurationMs: 4000
+        timeoutMs: 5000
+        maxEventsPerTopic: 1
+        inputs:
+          - topicName: topic7
+            contributionMode: LAST

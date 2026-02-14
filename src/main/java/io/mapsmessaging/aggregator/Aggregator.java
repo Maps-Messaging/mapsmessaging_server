@@ -20,9 +20,10 @@
 package io.mapsmessaging.aggregator;
 
 import io.mapsmessaging.aggregator.mailbox.AggregatorMailbox;
-import io.mapsmessaging.aggregator.mailbox.BackpressureMode;
-import io.mapsmessaging.aggregator.mailbox.OfferOutcome;
 import io.mapsmessaging.aggregator.mailbox.QueueBackedMpscMailbox;
+import io.mapsmessaging.aggregator.worker.AggregatorWorkScheduler;
+import io.mapsmessaging.aggregator.worker.AggregatorWorker;
+import io.mapsmessaging.aggregator.worker.SchedulableWorkItem;
 import io.mapsmessaging.api.MessageEvent;
 import io.mapsmessaging.api.MessageListener;
 import io.mapsmessaging.api.Session;
@@ -43,6 +44,7 @@ public class Aggregator implements ClientConnection, MessageListener {
 
   private final AggregatorConfigDTO configDTO;
 
+  private final AggregatorWorkScheduler aggregatorWorkScheduler;
   private final StreamHandler[] handlers;
   private final Map<String, Integer> topicIndexMap;
 
@@ -50,10 +52,10 @@ public class Aggregator implements ClientConnection, MessageListener {
 
   private AggregatorMailbox<AggregatorEnvelope> mailbox;
   private AggregatorWorker worker;
-  private Thread workerThread;
 
-  public Aggregator(AggregatorConfigDTO configDTO) {
+  public Aggregator(AggregatorWorkScheduler aggregatorWorkScheduler, AggregatorConfigDTO configDTO) {
     this.configDTO = configDTO;
+    this.aggregatorWorkScheduler = aggregatorWorkScheduler;
 
     this.handlers = new StreamHandler[configDTO.getInputs().size()];
     this.topicIndexMap = new ConcurrentHashMap<>();
@@ -66,37 +68,53 @@ public class Aggregator implements ClientConnection, MessageListener {
     }
   }
 
-  public void start() throws ExecutionException, IOException, InterruptedException, TimeoutException {
-    session = createSession();
+  public void start() {
+    try {
+      this.mailbox = new QueueBackedMpscMailbox<>(8192);
 
-    for (StreamHandler handler : handlers) {
-      handler.start(session);
+      this.session = createSession();
+      for (StreamHandler handler : handlers) {
+        handler.start(session);
+      }
+
+      this.worker = new AggregatorWorker(getName(), mailbox, handlers, getTimeOut());
+      this.aggregatorWorkScheduler.register(worker);
+
+    } catch (ExecutionException | InterruptedException | TimeoutException | IOException e) {
+      // log this with config rich details
+
+      Thread.currentThread().interrupt();
+      stop();
     }
-
-    this.mailbox = new QueueBackedMpscMailbox<>(8192, BackpressureMode.DROP_NEWEST);
-
-    this.worker = new AggregatorWorker(mailbox, handlers, getTimeOut());
-    this.workerThread = new Thread(worker, "AggregatorWorker-" + configDTO.getName());
-    this.workerThread.setDaemon(true);
-    this.workerThread.start();
   }
 
-  public void stop() throws IOException {
+  public void stop() {
     if (worker != null) {
-      worker.shutdown();
-    }
-    if (workerThread != null) {
       try {
-        workerThread.join(2000);
-      } catch (InterruptedException ignored) {
-        Thread.currentThread().interrupt();
+        aggregatorWorkScheduler.unregister(worker);
+      } catch (Throwable ignored) {
+        // log if you care
+      }
+      worker = null;
+    }
+
+    for (StreamHandler handler : handlers) {
+      try {
+        handler.stop(session);
+      } catch (Throwable ignored) {
+        // log if you care
       }
     }
 
-    for (StreamHandler handler : handlers) {
-      handler.stop(session);
+    if (session != null) {
+      try {
+        SessionManager.getInstance().close(session, true);
+      } catch (IOException ignored) {
+        // log this with config rich details
+      } finally {
+        session = null;
+      }
     }
-    SessionManager.getInstance().close(session, true);
   }
 
   private Session createSession() throws ExecutionException, InterruptedException, TimeoutException {
@@ -118,12 +136,22 @@ public class Aggregator implements ClientConnection, MessageListener {
       return;
     }
 
-    AggregatorEnvelope envelope = new AggregatorEnvelope(inputIndex, messageEvent);
-
-    OfferOutcome outcome = mailbox.offer(envelope, () -> runCompletion(messageEvent));
-    if (outcome == OfferOutcome.DROPPED) {
-      // TODO metrics for dropped mailbox items
+    SchedulableWorkItem localWorker = worker;
+    if (localWorker == null) {
+      runCompletion(messageEvent);
+      return;
     }
+
+    AggregatorEnvelope envelope = new AggregatorEnvelope(inputIndex, messageEvent);
+    boolean accepted = mailbox.offer(envelope);
+    if (!accepted) {
+      // Should not happen if sized correctly; treat as misconfig/bug.
+      runCompletion(messageEvent);
+      // TODO metric + rate-limited log
+      return;
+    }
+
+    aggregatorWorkScheduler.signal(worker);
   }
 
   private void runCompletion(MessageEvent event) {

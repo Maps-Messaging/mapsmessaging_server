@@ -19,6 +19,7 @@
 
 package io.mapsmessaging.aggregator;
 
+import io.mapsmessaging.aggregator.worker.AggregatorWorkScheduler;
 import io.mapsmessaging.config.AggregatorManagerConfig;
 import io.mapsmessaging.dto.rest.config.AggregatorManagerConfigDTO;
 import io.mapsmessaging.dto.rest.config.aggregator.AggregatorConfigDTO;
@@ -35,15 +36,23 @@ import java.util.concurrent.TimeoutException;
 
 public class AggregatorManager implements Agent {
 
-  private final List<Aggregator> aggregators = new ArrayList<>();
+  private final List<Aggregator> aggregators;
 
   private final AggregatorManagerConfigDTO config;
-
+  private AggregatorWorkScheduler aggregatorWorkScheduler;
 
   public AggregatorManager(){
     config = ConfigurationManager.getInstance().getConfiguration(AggregatorManagerConfig.class);
-    for(AggregatorConfigDTO aggregatorConfig : config.getAggregatorConfigList() ) {
-      aggregators.add(new Aggregator(aggregatorConfig));
+    aggregators = new ArrayList<>();
+    if(config != null) {
+      aggregatorWorkScheduler = new AggregatorWorkScheduler(
+          config.getStripeCount(),
+          config.getMaxBatchPerAggregator(),
+          config.getIdleSleepMs()
+          );
+      for (AggregatorConfigDTO aggregatorConfig : config.getAggregatorConfigList()) {
+        aggregators.add(new Aggregator(aggregatorWorkScheduler, aggregatorConfig));
+      }
     }
   }
 
@@ -59,22 +68,20 @@ public class AggregatorManager implements Agent {
 
   @Override
   public void start() {
-    for(Aggregator aggregator :aggregators ) {
-      try {
+    if(aggregatorWorkScheduler != null) {
+      aggregatorWorkScheduler.start();
+      for (Aggregator aggregator : aggregators) {
         aggregator.start();
-      } catch (ExecutionException|InterruptedException | TimeoutException | IOException e) {
-        e.printStackTrace();
       }
     }
   }
 
   @Override
   public void stop() {
-    for(Aggregator aggregator :aggregators ) {
-      try {
+    if(aggregatorWorkScheduler != null) {
+      aggregatorWorkScheduler.stop();
+      for (Aggregator aggregator : aggregators) {
         aggregator.stop();
-      } catch (IOException e) {
-        e.printStackTrace();
       }
     }
   }

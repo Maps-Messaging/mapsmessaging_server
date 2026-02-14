@@ -17,8 +17,13 @@
  *  limitations under the License.
  */
 
-package io.mapsmessaging.aggregator.mailbox;
+package io.mapsmessaging.aggregator.worker;
 
-public enum BackpressureMode {
-  DROP_NEWEST
+public interface AggregatorWorkItem {
+
+  String getName();
+
+  int drainOnce(int maxBatch);
+
+  void checkTimeout();
 }

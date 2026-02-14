@@ -17,70 +17,91 @@
  *  limitations under the License.
  */
 
-package io.mapsmessaging.aggregator;
+package io.mapsmessaging.aggregator.worker;
 
+import io.mapsmessaging.aggregator.AggregatorEnvelope;
+import io.mapsmessaging.aggregator.StreamHandler;
 import io.mapsmessaging.aggregator.mailbox.AggregatorMailbox;
 import io.mapsmessaging.api.MessageEvent;
 import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.dto.rest.config.aggregator.AggregatorContributionMode;
 
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.locks.LockSupport;
+import java.util.concurrent.atomic.AtomicBoolean;
 
-public class AggregatorWorker implements Runnable {
-
+public class AggregatorWorker implements AggregatorWorkItem {
+  private final AtomicBoolean scheduled;
+  private final String name;
   private final AggregatorMailbox<AggregatorEnvelope> mailbox;
   private final StreamHandler[] handlers;
+
   private final long timeoutMillis;
 
   private final Message[] contributions;
   private final boolean[] seen;
 
-  private volatile boolean running;
   private long deadlineMillis;
+  private long windowStartMillis;
 
   public AggregatorWorker(
+      String name,
       AggregatorMailbox<AggregatorEnvelope> mailbox,
       StreamHandler[] handlers,
       long timeoutMillis
   ) {
+    this.name = name;
     this.mailbox = mailbox;
     this.handlers = handlers;
     this.timeoutMillis = timeoutMillis;
+    this.scheduled = new AtomicBoolean(false);
 
     this.contributions = new Message[handlers.length];
     this.seen = new boolean[handlers.length];
 
-    this.running = true;
     this.deadlineMillis = -1;
-  }
-
-  public void shutdown() {
-    this.running = false;
+    this.windowStartMillis = -1;
   }
 
   @Override
-  public void run() {
-    while (running) {
-      int drained = mailbox.drainTo(this::processEnvelope, 1024);
+  public String getName() {
+    return name;
+  }
 
-      long now = System.currentTimeMillis();
-      if (deadlineMillis > 0 && now >= deadlineMillis) {
-        if (hasAnyContribution()) {
-          publishAndReset();
-        }
-        deadlineMillis = -1;
-      }
+  @Override
+  public int drainOnce(int maxBatch) {
+    return mailbox.drainTo(this::processEnvelope, maxBatch);
+  }
 
-      if (drained == 0) {
-        LockSupport.parkNanos(TimeUnit.MILLISECONDS.toNanos(1));
+  @Override
+  public boolean tryMarkScheduled() {
+    return scheduled.compareAndSet(false, true);
+  }
+
+  @Override
+  public void clearScheduled() {
+    scheduled.set(false);
+  }
+
+  @Override
+  public void checkTimeout() {
+    if (deadlineMillis < 0) {
+      return;
+    }
+
+    long now = System.currentTimeMillis();
+    if (now >= deadlineMillis) {
+      if (hasAnyContribution()) {
+        publishAndReset(false);
       }
+      deadlineMillis = -1;
+      windowStartMillis = -1;
     }
   }
 
   private void processEnvelope(AggregatorEnvelope envelope) {
+    long now = System.currentTimeMillis();
     if (deadlineMillis < 0) {
-      deadlineMillis = System.currentTimeMillis() + timeoutMillis;
+      windowStartMillis = now;
+      deadlineMillis = now + timeoutMillis;
     }
 
     int index = envelope.getInputIndex();
@@ -94,8 +115,9 @@ public class AggregatorWorker implements Runnable {
     runCompletion(event);
 
     if (allSeen()) {
-      publishAndReset();
+      publishAndReset(true);
       deadlineMillis = -1;
+      windowStartMillis = -1;
     }
   }
 
@@ -130,10 +152,9 @@ public class AggregatorWorker implements Runnable {
     return false;
   }
 
-  private void publishAndReset() {
-
-    // TODO aggregate contributions[] and publish to output topic.
-    // Snapshot first if publish can re-enter or async.
+  private void publishAndReset(boolean closedByAllInputs) {
+    // TODO Phase 1: build output message using contributions[] and publish
+    // 'closedByAllInputs' indicates ALL_INPUTS vs TIMEOUT.
     for (int i = 0; i < contributions.length; i++) {
       contributions[i] = null;
       seen[i] = false;
@@ -146,7 +167,7 @@ public class AggregatorWorker implements Runnable {
       try {
         completionTask.run();
       } catch (Throwable ignored) {
-        // Completion must not stop the worker.
+        // Completion must not stop progress.
       }
     }
   }

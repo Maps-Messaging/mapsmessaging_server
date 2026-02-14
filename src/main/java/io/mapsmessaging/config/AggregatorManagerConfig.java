@@ -21,8 +21,8 @@ package io.mapsmessaging.config;
 
 import io.mapsmessaging.config.aggregator.AggregatorConfig;
 import io.mapsmessaging.configuration.ConfigurationProperties;
-import io.mapsmessaging.dto.rest.config.BaseConfigDTO;
 import io.mapsmessaging.dto.rest.config.AggregatorManagerConfigDTO;
+import io.mapsmessaging.dto.rest.config.BaseConfigDTO;
 import io.mapsmessaging.dto.rest.config.aggregator.AggregatorConfigDTO;
 import io.mapsmessaging.license.FeatureManager;
 import io.mapsmessaging.utilities.configuration.ConfigurationManager;
@@ -36,6 +36,12 @@ import java.util.List;
 public class AggregatorManagerConfig extends AggregatorManagerConfigDTO implements Config, ConfigManager {
 
   private AggregatorManagerConfig(ConfigurationProperties config) {
+    stripeCount = readInt(config, "stripeCount", stripeCount);
+    maxBatchPerAggregator = readInt(config, "maxBatchPerAggregator", maxBatchPerAggregator);
+    idleSleepMs = readInt(config, "idleSleepMs", idleSleepMs);
+    mailboxCapacity = readInt(config, "mailboxCapacity", mailboxCapacity);
+    maxAggregators = readInt(config, "maxAggregators", maxAggregators);
+
     aggregatorConfigList = new ArrayList<>();
     Object dataObject = config.get("data");
     if (dataObject instanceof List) {
@@ -56,6 +62,32 @@ public class AggregatorManagerConfig extends AggregatorManagerConfigDTO implemen
     boolean hasChanged = false;
 
     if (config instanceof AggregatorManagerConfigDTO newConfig) {
+
+      if (this.stripeCount != newConfig.getStripeCount()) {
+        this.stripeCount = newConfig.getStripeCount();
+        hasChanged = true;
+      }
+
+      if (this.maxBatchPerAggregator != newConfig.getMaxBatchPerAggregator()) {
+        this.maxBatchPerAggregator = newConfig.getMaxBatchPerAggregator();
+        hasChanged = true;
+      }
+
+      if (this.idleSleepMs != newConfig.getIdleSleepMs()) {
+        this.idleSleepMs = newConfig.getIdleSleepMs();
+        hasChanged = true;
+      }
+
+      if (this.mailboxCapacity != newConfig.getMailboxCapacity()) {
+        this.mailboxCapacity = newConfig.getMailboxCapacity();
+        hasChanged = true;
+      }
+
+      if (this.maxAggregators != newConfig.getMaxAggregators()) {
+        this.maxAggregators = newConfig.getMaxAggregators();
+        hasChanged = true;
+      }
+
       if (this.aggregatorConfigList.size() != newConfig.getAggregatorConfigList().size()) {
         this.aggregatorConfigList = newConfig.getAggregatorConfigList();
         hasChanged = true;
@@ -76,6 +108,12 @@ public class AggregatorManagerConfig extends AggregatorManagerConfigDTO implemen
   public ConfigurationProperties toConfigurationProperties() {
     ConfigurationProperties configurationProperties = new ConfigurationProperties();
     List<ConfigurationProperties> dataList = new ArrayList<>();
+
+    configurationProperties.put("stripeCount", stripeCount);
+    configurationProperties.put("maxBatchPerAggregator", maxBatchPerAggregator);
+    configurationProperties.put("idleSleepMs", idleSleepMs);
+    configurationProperties.put("mailboxCapacity", mailboxCapacity);
+    configurationProperties.put("maxAggregators", maxAggregators);
 
     for (AggregatorConfigDTO aggregatorConfigDTO : aggregatorConfigList) {
       dataList.add(((AggregatorConfig) aggregatorConfigDTO).toConfigurationProperties());
@@ -98,5 +136,23 @@ public class AggregatorManagerConfig extends AggregatorManagerConfigDTO implemen
   @Override
   public String getName() {
     return "AggregatorManager";
+  }
+
+  private int readInt(ConfigurationProperties config, String key, int defaultValue) {
+    Object value = config.get(key);
+    if (value == null) {
+      return defaultValue;
+    }
+    if (value instanceof Number number) {
+      return number.intValue();
+    }
+    if (value instanceof String str) {
+      try {
+        return Integer.parseInt(str.trim());
+      } catch (NumberFormatException ignored) {
+        return defaultValue;
+      }
+    }
+    return defaultValue;
   }
 }

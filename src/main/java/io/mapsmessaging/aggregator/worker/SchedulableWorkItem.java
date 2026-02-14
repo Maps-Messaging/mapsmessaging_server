@@ -17,9 +17,11 @@
  *  limitations under the License.
  */
 
-package io.mapsmessaging.aggregator.mailbox;
+package io.mapsmessaging.aggregator.worker;
 
-public enum OfferOutcome {
-  ACCEPTED,
-  DROPPED
+public interface SchedulableWorkItem extends AggregatorWorkItem {
+
+  boolean tryMarkScheduled();
+
+  void clearScheduled();
 }

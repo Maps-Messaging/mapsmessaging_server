@@ -23,7 +23,7 @@ import java.util.function.Consumer;
 
 public interface AggregatorMailbox<T> {
 
-  OfferOutcome offer(T item, Runnable onDrop);
+  boolean offer(T item, Runnable onDrop);
 
   T poll();
 
@@ -35,5 +35,4 @@ public interface AggregatorMailbox<T> {
 
   long getOfferedCount();
 
-  long getDroppedCount();
 }

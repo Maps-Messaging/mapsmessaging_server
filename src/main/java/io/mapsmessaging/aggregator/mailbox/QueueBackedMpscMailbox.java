@@ -27,46 +27,22 @@ import java.util.function.Consumer;
 public class QueueBackedMpscMailbox<T> implements AggregatorMailbox<T> {
 
   private final ArrayBlockingQueue<T> queue;
-  private final BackpressureMode backpressureMode;
 
   private final AtomicLong offeredCount;
-  private final AtomicLong droppedCount;
 
-  public QueueBackedMpscMailbox(int capacity, BackpressureMode backpressureMode) {
+  public QueueBackedMpscMailbox(int capacity) {
     if (capacity <= 0) {
       throw new IllegalArgumentException("capacity must be > 0");
     }
     this.queue = new ArrayBlockingQueue<>(capacity);
-    this.backpressureMode = Objects.requireNonNull(backpressureMode, "backpressureMode must not be null");
-
     this.offeredCount = new AtomicLong();
-    this.droppedCount = new AtomicLong();
   }
 
   @Override
-  public OfferOutcome offer(T item, Runnable onDrop) {
+  public boolean offer(T item, Runnable onDrop) {
     Objects.requireNonNull(item, "item must not be null");
-
     this.offeredCount.incrementAndGet();
-
-    boolean accepted = this.queue.offer(item);
-    if (accepted) {
-      return OfferOutcome.ACCEPTED;
-    }
-
-    this.droppedCount.incrementAndGet();
-
-    if (this.backpressureMode == BackpressureMode.DROP_NEWEST) {
-      if (onDrop != null) {
-        safeRun(onDrop);
-      }
-      return OfferOutcome.DROPPED;
-    }
-
-    if (onDrop != null) {
-      safeRun(onDrop);
-    }
-    return OfferOutcome.DROPPED;
+    return this.queue.offer(item);
   }
 
   @Override
@@ -106,18 +82,5 @@ public class QueueBackedMpscMailbox<T> implements AggregatorMailbox<T> {
   @Override
   public long getOfferedCount() {
     return this.offeredCount.get();
-  }
-
-  @Override
-  public long getDroppedCount() {
-    return this.droppedCount.get();
-  }
-
-  private void safeRun(Runnable runnable) {
-    try {
-      runnable.run();
-    } catch (Throwable ignored) {
-      // Drop callback must never take down ingress.
-    }
   }
 }
