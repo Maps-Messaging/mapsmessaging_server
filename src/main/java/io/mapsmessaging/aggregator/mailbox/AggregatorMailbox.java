@@ -23,7 +23,7 @@ import java.util.function.Consumer;
 
 public interface AggregatorMailbox<T> {
 
-  boolean offer(T item, Runnable onDrop);
+  boolean offer(T item);
 
   T poll();
 

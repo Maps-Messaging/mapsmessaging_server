@@ -26,4 +26,8 @@ public interface AggregatorWorkItem {
   int drainOnce(int maxBatch);
 
   void checkTimeout();
+
+  boolean tryMarkScheduled();
+
+  void clearScheduled();
 }

@@ -24,21 +24,26 @@ import java.util.concurrent.locks.LockSupport;
 
 public class AggregatorStripeWorker implements Runnable {
 
+  private static final int TIMEOUT_TICK_MS = 50;
+
   private final AggregatorStripe stripe;
   private final int maxBatchPerWorkItem;
   private final int idleSleepMs;
 
   private volatile boolean running;
 
+  private long lastTimeoutTickMillis;
+
   public AggregatorStripeWorker(AggregatorStripe stripe, int maxBatchPerWorkItem, int idleSleepMs) {
     this.stripe = stripe;
     this.maxBatchPerWorkItem = maxBatchPerWorkItem;
     this.idleSleepMs = idleSleepMs;
     this.running = true;
+    this.lastTimeoutTickMillis = System.currentTimeMillis();
   }
 
   public void shutdown() {
-    this.running = false;
+    running = false;
   }
 
   @Override
@@ -46,23 +51,38 @@ public class AggregatorStripeWorker implements Runnable {
     while (running) {
       boolean didWork = false;
 
-      SchedulableWorkItem workItem = stripe.pollReady();
+      AggregatorWorkItem workItem = stripe.pollReady();
       while (workItem != null) {
         workItem.clearScheduled();
 
-        int drained = workItem.drainOnce(maxBatchPerWorkItem);
-        workItem.checkTimeout();
+        int drained = 0;
+        try {
+          drained = workItem.drainOnce(maxBatchPerWorkItem);
+        } catch (Throwable ignored) {
+          // log if you want; keep stripe alive
+        }
 
         if (drained > 0) {
           didWork = true;
 
-          // If there is still more work queued, re-signal to be fair but keep progress.
           if (drained == maxBatchPerWorkItem) {
             stripe.signal(workItem);
           }
         }
 
         workItem = stripe.pollReady();
+      }
+
+      long now = System.currentTimeMillis();
+      if (now - lastTimeoutTickMillis >= TIMEOUT_TICK_MS) {
+        for (AggregatorWorkItem item : stripe.getRegistered()) {
+          try {
+            item.checkTimeout();
+          } catch (Throwable ignored) {
+            // log if you want
+          }
+        }
+        lastTimeoutTickMillis = now;
       }
 
       if (!didWork) {

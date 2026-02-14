@@ -24,30 +24,34 @@ import java.util.concurrent.CopyOnWriteArrayList;
 
 public class AggregatorStripe {
 
-  private final CopyOnWriteArrayList<SchedulableWorkItem> workItems;
-  private final ConcurrentLinkedQueue<SchedulableWorkItem> readyQueue;
+  private final CopyOnWriteArrayList<AggregatorWorkItem> registered;
+  private final ConcurrentLinkedQueue<AggregatorWorkItem> readyQueue;
 
   public AggregatorStripe() {
-    this.workItems = new CopyOnWriteArrayList<>();
+    this.registered = new CopyOnWriteArrayList<>();
     this.readyQueue = new ConcurrentLinkedQueue<>();
   }
 
-  public void add(SchedulableWorkItem workItem) {
-    workItems.add(workItem);
+  public void add(AggregatorWorkItem workItem) {
+    registered.add(workItem);
   }
 
-  public void remove(SchedulableWorkItem workItem) {
-    workItems.remove(workItem);
-    // no attempt to purge from readyQueue; scheduled flag prevents harm
+  public void remove(AggregatorWorkItem workItem) {
+    registered.remove(workItem);
+    // No purge from readyQueue. scheduled flag makes stale entries harmless.
   }
 
-  public void signal(SchedulableWorkItem workItem) {
+  public Iterable<AggregatorWorkItem> getRegistered() {
+    return registered;
+  }
+
+  public void signal(AggregatorWorkItem workItem) {
     if (workItem.tryMarkScheduled()) {
       readyQueue.offer(workItem);
     }
   }
 
-  public SchedulableWorkItem pollReady() {
+  public AggregatorWorkItem pollReady() {
     return readyQueue.poll();
   }
 }

@@ -39,7 +39,7 @@ public class QueueBackedMpscMailbox<T> implements AggregatorMailbox<T> {
   }
 
   @Override
-  public boolean offer(T item, Runnable onDrop) {
+  public boolean offer(T item) {
     Objects.requireNonNull(item, "item must not be null");
     this.offeredCount.incrementAndGet();
     return this.queue.offer(item);

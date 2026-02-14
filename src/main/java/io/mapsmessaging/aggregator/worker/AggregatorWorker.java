@@ -81,6 +81,7 @@ public class AggregatorWorker implements AggregatorWorkItem {
     scheduled.set(false);
   }
 
+
   @Override
   public void checkTimeout() {
     if (deadlineMillis < 0) {

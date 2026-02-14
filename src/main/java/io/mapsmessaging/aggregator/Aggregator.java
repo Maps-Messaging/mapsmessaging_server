@@ -23,7 +23,6 @@ import io.mapsmessaging.aggregator.mailbox.AggregatorMailbox;
 import io.mapsmessaging.aggregator.mailbox.QueueBackedMpscMailbox;
 import io.mapsmessaging.aggregator.worker.AggregatorWorkScheduler;
 import io.mapsmessaging.aggregator.worker.AggregatorWorker;
-import io.mapsmessaging.aggregator.worker.SchedulableWorkItem;
 import io.mapsmessaging.api.MessageEvent;
 import io.mapsmessaging.api.MessageListener;
 import io.mapsmessaging.api.Session;
@@ -82,7 +81,7 @@ public class Aggregator implements ClientConnection, MessageListener {
 
     } catch (ExecutionException | InterruptedException | TimeoutException | IOException e) {
       // log this with config rich details
-
+      e.printStackTrace();
       Thread.currentThread().interrupt();
       stop();
     }
@@ -136,21 +135,12 @@ public class Aggregator implements ClientConnection, MessageListener {
       return;
     }
 
-    SchedulableWorkItem localWorker = worker;
-    if (localWorker == null) {
-      runCompletion(messageEvent);
-      return;
-    }
-
     AggregatorEnvelope envelope = new AggregatorEnvelope(inputIndex, messageEvent);
     boolean accepted = mailbox.offer(envelope);
     if (!accepted) {
-      // Should not happen if sized correctly; treat as misconfig/bug.
       runCompletion(messageEvent);
-      // TODO metric + rate-limited log
       return;
     }
-
     aggregatorWorkScheduler.signal(worker);
   }
 

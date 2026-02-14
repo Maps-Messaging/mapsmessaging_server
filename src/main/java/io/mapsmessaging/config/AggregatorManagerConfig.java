@@ -35,7 +35,8 @@ import java.util.List;
 @NoArgsConstructor
 public class AggregatorManagerConfig extends AggregatorManagerConfigDTO implements Config, ConfigManager {
 
-  private AggregatorManagerConfig(ConfigurationProperties config) {
+  private AggregatorManagerConfig(ConfigurationProperties fullConfig) {
+    ConfigurationProperties config = (ConfigurationProperties) fullConfig.get("data");
     stripeCount = readInt(config, "stripeCount", stripeCount);
     maxBatchPerAggregator = readInt(config, "maxBatchPerAggregator", maxBatchPerAggregator);
     idleSleepMs = readInt(config, "idleSleepMs", idleSleepMs);
@@ -43,7 +44,7 @@ public class AggregatorManagerConfig extends AggregatorManagerConfigDTO implemen
     maxAggregators = readInt(config, "maxAggregators", maxAggregators);
 
     aggregatorConfigList = new ArrayList<>();
-    Object dataObject = config.get("data");
+    Object dataObject = config.get("aggregatorConfigList");
     if (dataObject instanceof List) {
       for (ConfigurationProperties entry : (List<ConfigurationProperties>) dataObject) {
         aggregatorConfigList.add(new AggregatorConfig(entry));

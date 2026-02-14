@@ -28,15 +28,13 @@ public class AggregatorWorkScheduler {
   private final Thread[] threads;
 
   public AggregatorWorkScheduler(int stripeCount, int maxBatchPerWorkItem, int idleSleepMs) {
-    if (stripeCount <= 0) {
-      throw new IllegalArgumentException("stripeCount must be > 0");
-    }
+    int resolvedStripeCount = resolveStripeCount(stripeCount);
 
-    this.stripes = new AggregatorStripe[stripeCount];
-    this.workers = new AggregatorStripeWorker[stripeCount];
-    this.threads = new Thread[stripeCount];
+    this.stripes = new AggregatorStripe[resolvedStripeCount];
+    this.workers = new AggregatorStripeWorker[resolvedStripeCount];
+    this.threads = new Thread[resolvedStripeCount];
 
-    for (int index = 0; index < stripeCount; index++) {
+    for (int index = 0; index < resolvedStripeCount; index++) {
       AggregatorStripe stripe = new AggregatorStripe();
       stripes[index] = stripe;
 
@@ -68,27 +66,34 @@ public class AggregatorWorkScheduler {
     }
   }
 
-  public void register(SchedulableWorkItem workItem) {
+  public void register(AggregatorWorkItem workItem) {
     Objects.requireNonNull(workItem, "workItem must not be null");
-    AggregatorStripe stripe = stripes[computeStripe(workItem.getName())];
-    stripe.add(workItem);
+    stripes[computeStripe(workItem.getName())].add(workItem);
   }
 
-  public void unregister(SchedulableWorkItem workItem) {
+  public void unregister(AggregatorWorkItem workItem) {
     Objects.requireNonNull(workItem, "workItem must not be null");
-    AggregatorStripe stripe = stripes[computeStripe(workItem.getName())];
-    stripe.remove(workItem);
+    stripes[computeStripe(workItem.getName())].remove(workItem);
   }
 
-  public void signal(SchedulableWorkItem workItem) {
+  public void signal(AggregatorWorkItem workItem) {
     Objects.requireNonNull(workItem, "workItem must not be null");
-    AggregatorStripe stripe = stripes[computeStripe(workItem.getName())];
-    stripe.signal(workItem);
+    stripes[computeStripe(workItem.getName())].signal(workItem);
   }
 
   private int computeStripe(String name) {
     int hash = name.hashCode();
     int positive = hash & 0x7fffffff;
     return positive % stripes.length;
+  }
+
+  private int resolveStripeCount(int stripeCount) {
+    if (stripeCount > 0) {
+      return stripeCount;
+    }
+
+    int cpu = Runtime.getRuntime().availableProcessors();
+    int resolved = Math.max(1, cpu / 2);
+    return resolved;
   }
 }

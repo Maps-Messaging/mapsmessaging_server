@@ -49,7 +49,7 @@ public class AggregatorManager implements Agent {
           config.getStripeCount(),
           config.getMaxBatchPerAggregator(),
           config.getIdleSleepMs()
-          );
+      );
       for (AggregatorConfigDTO aggregatorConfig : config.getAggregatorConfigList()) {
         aggregators.add(new Aggregator(aggregatorWorkScheduler, aggregatorConfig));
       }
