@@ -105,12 +105,10 @@ public class AggregatorWorker implements AggregatorWorkItem {
     MessageEvent event = envelope.getEvent();
 
     MessageEvent processed = handlers[index].process(event);
-    if (processed != null) {
+    if (processed != null ) {
       applyContribution(index, processed, handlers[index].getContributionMode());
     }
-
     runCompletion(event);
-
     if (allSeen()) {
       publishAndReset(true);
       deadlineMillis = -1;

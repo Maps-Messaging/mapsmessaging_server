@@ -24,16 +24,21 @@ import io.mapsmessaging.api.Session;
 import io.mapsmessaging.api.SubscribedEventManager;
 import io.mapsmessaging.api.SubscriptionContextBuilder;
 import io.mapsmessaging.api.features.ClientAcknowledgement;
+import io.mapsmessaging.api.transformers.InterServerTransformation;
+import io.mapsmessaging.api.transformers.ParsedMessage;
 import io.mapsmessaging.dto.rest.config.aggregator.AggregatorContributionMode;
 import io.mapsmessaging.dto.rest.config.aggregator.AggregatorInputConfigDTO;
 import io.mapsmessaging.engine.destination.subscription.SubscriptionContext;
+import io.mapsmessaging.engine.transformers.TransformerManager;
 
 import java.io.IOException;
+import java.util.List;
 
 public class StreamHandler {
 
   private final AggregatorInputConfigDTO config;
   private SubscribedEventManager subscriptionManager;
+  private List<InterServerTransformation> transformation;
 
   public StreamHandler(AggregatorInputConfigDTO config) {
     this.config = config;
@@ -49,7 +54,7 @@ public class StreamHandler {
 
   public void start(Session session) throws IOException {
     if (config.getTransformer() != null) {
-      // TODO build transformer chain
+      transformation = TransformerManager.getInstance().buildList(config.getTransformer());
     }
     addSubscription(session);
   }
@@ -65,7 +70,27 @@ public class StreamHandler {
    * Returns null to indicate the event was dropped (e.g. transformer filtered it out).
    */
   public MessageEvent process(MessageEvent event) {
-    // TODO apply transformer chain; if it drops -> return null
+    if(transformation != null) {
+      ParsedMessage parsedMessage = new ParsedMessage();
+      parsedMessage.setMessage(event.getMessage());
+      parsedMessage.setDestinationName(event.getDestinationName());
+
+      for (InterServerTransformation transformation : transformation) {
+        parsedMessage = transformation.transform(event.getDestinationName(), parsedMessage);
+        if( parsedMessage == null ||
+            parsedMessage.getDestinationName() == null ||
+            parsedMessage.getMessage() == null) {
+          return null; // dropped
+        }
+      }
+
+      event = new MessageEvent(
+          parsedMessage.getDestinationName(),
+          event.getSubscription(),
+          parsedMessage.getMessage(),
+          event.getCompletionTask()
+      );
+    }
     return event;
   }
 
