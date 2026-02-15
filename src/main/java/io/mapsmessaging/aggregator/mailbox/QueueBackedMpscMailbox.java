@@ -40,6 +40,7 @@ public class QueueBackedMpscMailbox<T> implements AggregatorMailbox<T> {
 
   @Override
   public boolean offer(T item) {
+    System.err.println("QueueBackedMpscMailbox offer called for item "+item);
     Objects.requireNonNull(item, "item must not be null");
     this.offeredCount.incrementAndGet();
     return this.queue.offer(item);
@@ -47,6 +48,7 @@ public class QueueBackedMpscMailbox<T> implements AggregatorMailbox<T> {
 
   @Override
   public int drainTo(Consumer<T> consumer, int maxItems) {
+    System.err.println("QueueBackedMpscMailbox drainTo called for items");
     Objects.requireNonNull(consumer, "consumer must not be null");
     if (maxItems <= 0) {
       return 0;

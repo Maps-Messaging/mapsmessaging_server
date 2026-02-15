@@ -79,6 +79,7 @@ public class Aggregator implements ClientConnection, MessageListener, ProcessedH
       }
       worker = new AggregatorWorker(getName(), mailbox, handlers, getTimeOut(), this);
       aggregatorWorkScheduler.register(worker);
+      System.err.println("Aggregator started with "+configDTO.getInputs().size()+" handlers");
     } catch (ExecutionException | InterruptedException | TimeoutException | IOException e) {
       // log this with config rich details
       e.printStackTrace();
@@ -114,10 +115,12 @@ public class Aggregator implements ClientConnection, MessageListener, ProcessedH
         session = null;
       }
     }
+    System.err.println("Aggregator stopped "+configDTO.getInputs().size()+" handlers");
   }
 
   @Override
   public void completed(MessageEvent[] contributions) {
+    System.err.println("Aggregator completed "+configDTO.getInputs().size()+" handlers");
     Message[] events = new Message[contributions.length];
     String[] topics = new String[contributions.length];
     for (int i = 0; i < events.length; i++) {
@@ -136,6 +139,7 @@ public class Aggregator implements ClientConnection, MessageListener, ProcessedH
 
   @Override
   public void sendMessage(@NotNull @NonNull MessageEvent messageEvent) {
+    System.err.println("Aggregator sendMessage received event for "+messageEvent.getDestinationName());
     Integer inputIndex = topicIndexMap.get(messageEvent.getDestinationName());
     if (inputIndex == null) {
       runCompletion(messageEvent);
@@ -146,6 +150,7 @@ public class Aggregator implements ClientConnection, MessageListener, ProcessedH
     boolean accepted = mailbox.offer(envelope);
     if (!accepted) {
       runCompletion(messageEvent);
+      System.err.println("Aggregator sendMessage failed to offer envelope for "+messageEvent.getDestinationName());
       return;
     }
     aggregatorWorkScheduler.signal(worker);

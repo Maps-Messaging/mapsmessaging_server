@@ -100,5 +100,6 @@ public class StreamHandler {
     }
     SubscriptionContext context = builder.build();
     subscriptionManager = session.addSubscription(context);
+    System.err.println("StreamHandler added subscription for topic "+config.getTopicName());
   }
 }

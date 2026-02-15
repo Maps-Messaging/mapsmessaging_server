@@ -41,7 +41,7 @@ public class AggregatorManager implements Agent {
   public AggregatorManager(){
     config = ConfigurationManager.getInstance().getConfiguration(AggregatorManagerConfig.class);
     aggregators = new ArrayList<>();
-    if(config != null) {
+    if(config != null && config.getAggregatorConfigList() != null && !config.getAggregatorConfigList().isEmpty()) {
       aggregatorWorkScheduler = new AggregatorWorkScheduler(
           config.getStripeCount(),
           config.getMaxBatchPerAggregator(),
@@ -50,6 +50,10 @@ public class AggregatorManager implements Agent {
       for (AggregatorConfigDTO aggregatorConfig : config.getAggregatorConfigList()) {
         aggregators.add(new Aggregator(aggregatorWorkScheduler, aggregatorConfig));
       }
+      System.err.println("Constructed "+config.getAggregatorConfigList().size()+" aggregators");
+    }
+    else{
+      System.err.println("AggregatorManagerConfig is empty, no aggregators will be created.");
     }
   }
 
@@ -70,6 +74,7 @@ public class AggregatorManager implements Agent {
       for (Aggregator aggregator : aggregators) {
         aggregator.start();
       }
+      System.err.println("AggregatorManager started "+aggregators.size()+" aggregators");
     }
   }
 
@@ -80,6 +85,7 @@ public class AggregatorManager implements Agent {
       for (Aggregator aggregator : aggregators) {
         aggregator.stop();
       }
+      System.err.println("AggregatorManager stopped "+aggregators.size()+" aggregators");
     }
   }
 
