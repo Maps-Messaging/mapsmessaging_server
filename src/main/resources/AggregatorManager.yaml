@@ -29,6 +29,11 @@ AggregatorManager:
         windowDurationMs: 1000
         timeoutMs: 5000
         maxEventsPerTopic: 1
+
+        outputTransformers:
+          - type: json-query
+            query: "[\"object\",{\"window\":[\"get\",\"windowId\"],\"payload\":[\"get\",\"payload\"]}]"
+
         inputs:
           - topicName: /device/sensor/i2c/1/0x74/SEN0465/data
             contributionMode: LAST

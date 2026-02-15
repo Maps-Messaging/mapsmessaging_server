@@ -20,6 +20,7 @@
 package io.mapsmessaging.config.aggregator;
 
 import io.mapsmessaging.config.Config;
+import io.mapsmessaging.config.transformer.TransformationConfigFactory;
 import io.mapsmessaging.configuration.ConfigurationProperties;
 import io.mapsmessaging.dto.rest.config.BaseConfigDTO;
 import io.mapsmessaging.dto.rest.config.aggregator.AggregatorConfigDTO;
@@ -42,7 +43,7 @@ public class AggregatorConfig extends AggregatorConfigDTO implements Config {
     this.maxEventsPerTopic = props.getIntProperty("maxEventsPerTopic", 1);
 
     this.inputs = unpackInputs(props);
-    this.outputTransformer = unpackTransformerChain(props, "outputTransformer");
+    this.outputTransformers = TransformationConfigFactory.loadChain(props.get("outputTransformers"));
   }
 
   private List<AggregatorInputConfigDTO> unpackInputs(ConfigurationProperties props) {
@@ -66,15 +67,6 @@ public class AggregatorConfig extends AggregatorConfigDTO implements Config {
     return inputList;
   }
 
-  @SuppressWarnings("unchecked")
-  private List<Map<String, Object>> unpackTransformerChain(ConfigurationProperties props, String key) {
-    Object transformerObject = props.get(key);
-    if (transformerObject instanceof List) {
-      return (List<Map<String, Object>>) transformerObject;
-    }
-    return null;
-  }
-
   @Override
   public ConfigurationProperties toConfigurationProperties() {
     ConfigurationProperties configurationProperties = new ConfigurationProperties();
@@ -94,8 +86,8 @@ public class AggregatorConfig extends AggregatorConfigDTO implements Config {
     }
     configurationProperties.put("inputs", inputsList);
 
-    if (outputTransformer != null) {
-      configurationProperties.put("outputTransformer", outputTransformer);
+    if (outputTransformers != null) {
+      configurationProperties.put("outputTransformer", outputTransformers);
     }
 
     return configurationProperties;
@@ -136,10 +128,6 @@ public class AggregatorConfig extends AggregatorConfigDTO implements Config {
         hasChanged = true;
       }
 
-      if (!safeEqualsListMap(this.outputTransformer, config.getOutputTransformer())) {
-        this.outputTransformer = config.getOutputTransformer();
-        hasChanged = true;
-      }
 
       if (this.inputs.size() != config.getInputs().size()) {
         this.inputs = config.getInputs();

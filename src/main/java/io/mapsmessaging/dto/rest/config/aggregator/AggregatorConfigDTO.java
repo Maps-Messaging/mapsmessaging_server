@@ -20,6 +20,7 @@
 package io.mapsmessaging.dto.rest.config.aggregator;
 
 import io.mapsmessaging.dto.rest.config.BaseConfigDTO;
+import io.mapsmessaging.dto.rest.config.transformer.TransformationConfigDTO;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -107,12 +108,11 @@ public class AggregatorConfigDTO extends BaseConfigDTO {
   protected int maxEventsPerTopic = 1;
 
   @Schema(
-      description = "Output transformer chain configuration (array of objects). Applied to the aggregated envelope before publish.",
-      type = "array",
+      description = "Output transformer chain configuration. Applied to the aggregated envelope before publish.",
       requiredMode = Schema.RequiredMode.NOT_REQUIRED,
       nullable = true,
-      example = "[{\"name\":\"JsonQuery\",\"parameters\":{\"query\":\"[\\\"object\\\",{\\\"window\\\":[\\\"get\\\",\\\"windowId\\\"],\\\"payload\\\":[\\\"get\\\",\\\"payload\\\"]}]\"}}]"
+      implementation = io.mapsmessaging.dto.rest.config.transformer.TransformationConfigDTO.class
   )
-  protected List<Map<String, Object>> outputTransformer;
+  protected List<TransformationConfigDTO> outputTransformers;
 
 }
