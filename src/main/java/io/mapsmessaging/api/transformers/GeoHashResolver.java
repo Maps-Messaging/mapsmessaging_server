@@ -19,7 +19,10 @@
 
 package io.mapsmessaging.api.transformers;
 
+import io.mapsmessaging.config.transformer.GeoHashResolverTransformationConfig;
 import io.mapsmessaging.configuration.ConfigurationProperties;
+import io.mapsmessaging.dto.rest.config.transformer.TransformationConfigDTO;
+import io.mapsmessaging.dto.rest.config.transformer.impl.GeoHashResolverTransformationDTO;
 import io.mapsmessaging.network.protocol.Protocol;
 import io.mapsmessaging.selector.IdentifierResolver;
 import io.mapsmessaging.utilities.GeoHashUtils;
@@ -116,31 +119,28 @@ public class GeoHashResolver implements InterServerTransformation {
     return message;
   }
 
-  @SuppressWarnings("unchecked")
-  public InterServerTransformation build(ConfigurationProperties properties){
-    ConfigurationProperties map = ((ConfigurationProperties) properties.get("parameters"));
-    String localPrefix = map.getProperty("prefix", "");
-    String localLatKey = map.getProperty( "latKey", "latitude");
-    String localLonKey =  map.getProperty("lonKey", "longitude");
-    int localPrecision = map.getIntProperty( "precision", 5);
-    boolean localSplitHash = map.getBooleanProperty("splitHash", true);
-
+  @Override
+  public InterServerTransformation build(TransformationConfigDTO base) {
+    if(!(base instanceof GeoHashResolverTransformationConfig config )) {
+      return null;
+    }
+    String localPrefix = config.getPrefix();
+    String localLatKey = config.getLatKey();
+    String localLonKey =  config.getLonKey();
+    int localPrecision = config.getPrecision();
+    boolean localSplitHash = config.getSplitHash();
     GeoHashResolver resolver = new GeoHashResolver(localPrefix, localLatKey, localLonKey, localPrecision, localSplitHash);
 
-    resolver.latKeys = safeStringList(map.getProperty("latKeys", ""));
-    resolver.lonKeys = safeStringList(map.getProperty("lonKeys", ""));
-    resolver.units = map.getProperty("units", "deg");
-    resolver.layout = map.getProperty( "layout", "chars-per-segment");
-    resolver.onMissing = map.getProperty( "onMissing", "skip");
+    resolver.latKeys = config.getLatKeys();
+    resolver.lonKeys = config.getLonKeys();
+    resolver.units = config.getUnits().getWireName();
+    resolver.layout = config.getLayout().getWireName();
+    resolver.onMissing = config.getOnMissing().getWireName();
 
     // defaultTo expects "lat,lon" (e.g., "0,0")
     if ("defaultTo".equalsIgnoreCase(resolver.onMissing)) {
-      String defaultTo = map.getProperty( "defaultTo", null);
-      if (defaultTo != null) {
-        double[] pair = parseLatLonPair(defaultTo);
-        resolver.defaultLatitude = pair != null ? pair[0] : null;
-        resolver.defaultLongitude = pair != null ? pair[1] : null;
-      }
+        resolver.defaultLatitude = config.getDefaultLatitude() != null ? config.getDefaultLatitude() : null;
+        resolver.defaultLongitude = config.getDefaultLongitude() != null ? config.getDefaultLongitude(): null;
     }
     return resolver;
   }

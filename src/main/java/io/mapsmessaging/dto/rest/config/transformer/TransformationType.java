@@ -1,7 +1,9 @@
 package io.mapsmessaging.dto.rest.config.transformer;
 
 import com.google.gson.annotations.SerializedName;
+import lombok.Getter;
 
+@Getter
 public enum TransformationType {
 
   @SerializedName("json-to-xml")
@@ -31,9 +33,6 @@ public enum TransformationType {
     this.wireName = wireName;
   }
 
-  public String getWireName() {
-    return wireName;
-  }
 
   public static TransformationType fromWireName(String value) {
     if (value == null) {

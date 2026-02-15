@@ -19,14 +19,13 @@
 
 package io.mapsmessaging.api.transformers;
 
-import io.mapsmessaging.configuration.ConfigurationProperties;
-import io.mapsmessaging.network.protocol.Protocol;
+import io.mapsmessaging.dto.rest.config.transformer.TransformationConfigDTO;
 import io.mapsmessaging.utilities.service.Service;
 
 public interface InterServerTransformation extends Service {
 
   ParsedMessage transform(String source, ParsedMessage message);
 
-  InterServerTransformation build(ConfigurationProperties properties);
+  InterServerTransformation build(TransformationConfigDTO base);
 
 }

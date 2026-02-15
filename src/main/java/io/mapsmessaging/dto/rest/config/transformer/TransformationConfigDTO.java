@@ -21,11 +21,7 @@ package io.mapsmessaging.dto.rest.config.transformer;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import io.mapsmessaging.dto.rest.config.BaseConfigDTO;
-import io.mapsmessaging.dto.rest.config.transformer.impl.GeoHashResolverTransformationDTO;
-import io.mapsmessaging.dto.rest.config.transformer.impl.JsonQueryTransformationDTO;
-import io.mapsmessaging.dto.rest.config.transformer.impl.JsonToValueTransformationDTO;
-import io.mapsmessaging.dto.rest.config.transformer.impl.JsonToXmlTransformationDTO;
-import io.mapsmessaging.dto.rest.config.transformer.impl.XmlToJsonTransformationDTO;
+import io.mapsmessaging.dto.rest.config.transformer.impl.*;
 import io.swagger.v3.oas.annotations.media.DiscriminatorMapping;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
@@ -39,6 +35,8 @@ import lombok.NoArgsConstructor;
     @JsonSubTypes.Type(value = JsonToValueTransformationDTO.class, name = "json-to-value"),
     @JsonSubTypes.Type(value = JsonQueryTransformationDTO.class, name = "json-query"),
     @JsonSubTypes.Type(value = GeoHashResolverTransformationDTO.class, name = "geohash"),
+    @JsonSubTypes.Type(value = JsonMutateTransformationDTO.class, name = "json-mutate"),
+
 })
 @Schema(
     description = "Abstract base class for all transformation configurations",
@@ -49,6 +47,7 @@ import lombok.NoArgsConstructor;
         @DiscriminatorMapping(value = "json-to-value", schema = JsonToValueTransformationDTO.class),
         @DiscriminatorMapping(value = "json-query", schema = JsonQueryTransformationDTO.class),
         @DiscriminatorMapping(value = "geohash", schema = GeoHashResolverTransformationDTO.class),
+        @DiscriminatorMapping(value = "json-mutate", schema = JsonMutateTransformationDTO.class),
     },
     requiredProperties = {"type"},
     additionalProperties = Schema.AdditionalPropertiesValue.TRUE,

@@ -151,4 +151,14 @@ public class GeoHashResolverTransformationDTO extends TransformationConfigDTO {
       maximum = "180"
   )
   protected Double defaultLongitude;
+
+  @Schema(
+      description = "Legacy flag: when true, geo-hash is split into topic segments. " +
+          "Deprecated in favour of 'layout'. If 'layout' is set, it takes precedence.",
+      example = "true",
+      requiredMode = Schema.RequiredMode.NOT_REQUIRED,
+      nullable = true,
+      deprecated = true
+  )
+  protected Boolean splitHash;
 }
