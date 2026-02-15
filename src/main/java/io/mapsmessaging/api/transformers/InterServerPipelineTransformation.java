@@ -8,7 +8,6 @@
  *  You may obtain a copy of the License at:
  *
  *      http://www.apache.org/licenses/LICENSE-2.0
- *      https://commonsclause.com/
  *
  *  Unless required by applicable law or agreed to in writing, software
  *  distributed under the License is distributed on an "AS IS" BASIS,
@@ -20,7 +19,6 @@
 package io.mapsmessaging.api.transformers;
 
 import io.mapsmessaging.configuration.ConfigurationProperties;
-import io.mapsmessaging.network.protocol.Protocol;
 
 import java.util.List;
 
@@ -28,22 +26,30 @@ public class InterServerPipelineTransformation implements InterServerTransformat
 
   private final List<InterServerTransformation> pipeline;
 
-  public InterServerPipelineTransformation(List<InterServerTransformation> pipeline){
+  public InterServerPipelineTransformation(List<InterServerTransformation> pipeline) {
     this.pipeline = pipeline;
   }
 
   @Override
   public ParsedMessage transform(String source, ParsedMessage message) {
     long processingTime = System.nanoTime();
-    String init = source;
-    for(InterServerTransformation transform: pipeline){
-      message = transform.transform(init, message);
-      init = message.getDestinationName();
+    String currentDestination = source;
+
+    for (InterServerTransformation transform : pipeline) {
+      if (message == null) {
+        break;
+      }
+      message = transform.transform(currentDestination, message);
+      if (message == null) {
+        break;
+      }
+      currentDestination = message.getDestinationName();
     }
+
     processingTime = System.nanoTime() - processingTime;
-    float ms = processingTime/1000000f;
-    if(ms > 1.0f ){
-    //  System.err.println("Transformers taking too long "+ms);
+    float elapsedMilliseconds = processingTime / 1_000_000f;
+    if (elapsedMilliseconds > 1.0f) {
+      // Optional: log if required
     }
     return message;
   }
