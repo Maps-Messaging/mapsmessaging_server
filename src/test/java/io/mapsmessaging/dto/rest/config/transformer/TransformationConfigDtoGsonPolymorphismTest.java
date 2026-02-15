@@ -154,4 +154,68 @@ class TransformationConfigDtoGsonPolymorphismTest {
     assertEquals(TransformationType.JSON_TO_XML, a.getType());
     assertEquals(TransformationType.XML_TO_JSON, b.getType());
   }
+
+  @Test
+  void invalidEnumValueResultsInNull() {
+    Gson gson = buildGson();
+
+    String json = """
+    {"type":"geohash","units":"bananas"}
+    """;
+
+    TransformationConfigDTO dto = gson.fromJson(json, TransformationConfigDTO.class);
+
+    assertTrue(dto instanceof GeoHashResolverTransformationDTO);
+    GeoHashResolverTransformationDTO geohash =
+        (GeoHashResolverTransformationDTO) dto;
+
+    assertNull(geohash.getUnits());
+  }
+
+  @Test
+  void defaultsAppliedWhenFieldsMissing() {
+    Gson gson = buildGson();
+
+    String json = """
+      {"type":"geohash"}
+      """;
+
+    TransformationConfigDTO dto = gson.fromJson(json, TransformationConfigDTO.class);
+
+    assertNotNull(dto);
+    assertTrue(dto instanceof GeoHashResolverTransformationDTO);
+
+    GeoHashResolverTransformationDTO geohash = (GeoHashResolverTransformationDTO) dto;
+    assertEquals(TransformationType.GEOHASH, geohash.getType());
+    assertEquals(GeoHashUnits.DEG, geohash.getUnits());
+    assertEquals(GeoHashLayout.CHARS_PER_SEGMENT, geohash.getLayout());
+    assertEquals(GeoHashOnMissingPolicy.SKIP, geohash.getOnMissing());
+  }
+
+  @Test
+  void roundTripSerializationKeepsTypeAndConcreteClass() {
+    Gson gson = buildGson();
+
+    GeoHashResolverTransformationDTO original = new GeoHashResolverTransformationDTO();
+    original.setPrecision(6);
+    original.setUnits(GeoHashUnits.DEG);
+    original.setLayout(GeoHashLayout.RAW);
+    original.setOnMissing(GeoHashOnMissingPolicy.SKIP);
+
+    String json = gson.toJson(original);
+    assertTrue(json.contains("\"type\""));
+
+    TransformationConfigDTO parsed = gson.fromJson(json, TransformationConfigDTO.class);
+    assertNotNull(parsed);
+    assertTrue(parsed instanceof GeoHashResolverTransformationDTO);
+
+    GeoHashResolverTransformationDTO geohash = (GeoHashResolverTransformationDTO) parsed;
+    assertEquals(TransformationType.GEOHASH, geohash.getType());
+    assertEquals(6, geohash.getPrecision());
+    assertEquals(GeoHashUnits.DEG, geohash.getUnits());
+    assertEquals(GeoHashLayout.RAW, geohash.getLayout());
+    assertEquals(GeoHashOnMissingPolicy.SKIP, geohash.getOnMissing());
+  }
+
+
 }

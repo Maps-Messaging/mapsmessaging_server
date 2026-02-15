@@ -17,7 +17,10 @@ public enum TransformationType {
   JSON_QUERY("json-query"),
 
   @SerializedName("geohash")
-  GEOHASH("geohash");
+  GEOHASH("geohash"),
+
+  @SerializedName("schema-to-json")
+  SCHEMA_TO_JSON("schema-to-json");
 
   private final String wireName;
 

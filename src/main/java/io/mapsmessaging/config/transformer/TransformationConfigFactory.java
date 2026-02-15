@@ -3,6 +3,7 @@ package io.mapsmessaging.config.transformer;
 import io.mapsmessaging.configuration.ConfigurationProperties;
 import io.mapsmessaging.dto.rest.config.transformer.TransformationConfigDTO;
 import io.mapsmessaging.dto.rest.config.transformer.TransformationType;
+import io.mapsmessaging.dto.rest.config.transformer.impl.SchemaToJsonTransformationDTO;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -39,6 +40,7 @@ public class TransformationConfigFactory {
       case JSON_TO_VALUE -> new JsonToValueTransformationConfig(props);
       case JSON_QUERY -> new JsonQueryTransformationConfig(props);
       case GEOHASH -> new GeoHashResolverTransformationConfig(props);
+      case SCHEMA_TO_JSON -> new SchemaToJsonTransformationDTO();
     };
   }
 
