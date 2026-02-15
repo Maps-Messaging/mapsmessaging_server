@@ -23,11 +23,7 @@ import com.google.gson.GsonBuilder;
 import com.google.gson.JsonParseException;
 import com.google.gson.reflect.TypeToken;
 import io.mapsmessaging.dto.rest.config.transformer.gson.TransformationConfigDtoTypeAdapterFactory;
-import io.mapsmessaging.dto.rest.config.transformer.impl.GeoHashResolverTransformationDTO;
-import io.mapsmessaging.dto.rest.config.transformer.impl.JsonQueryTransformationDTO;
-import io.mapsmessaging.dto.rest.config.transformer.impl.JsonToValueTransformationDTO;
-import io.mapsmessaging.dto.rest.config.transformer.impl.JsonToXmlTransformationDTO;
-import io.mapsmessaging.dto.rest.config.transformer.impl.XmlToJsonTransformationDTO;
+import io.mapsmessaging.dto.rest.config.transformer.impl.*;
 import io.mapsmessaging.dto.rest.config.transformer.impl.geohash.GeoHashLayout;
 import io.mapsmessaging.dto.rest.config.transformer.impl.geohash.GeoHashOnMissingPolicy;
 import io.mapsmessaging.dto.rest.config.transformer.impl.geohash.GeoHashUnits;
@@ -44,6 +40,40 @@ class TransformationConfigDtoGsonPolymorphismTest {
     return new GsonBuilder()
         .registerTypeAdapterFactory(new TransformationConfigDtoTypeAdapterFactory())
         .create();
+  }
+
+  @Test
+  void jsonMutateDeserializes() {
+    Gson gson = buildGson();
+
+    String json = """
+        {"type":"json-mutate"}
+        """;
+
+    TransformationConfigDTO dto = gson.fromJson(json, TransformationConfigDTO.class);
+
+    assertNotNull(dto);
+    assertTrue(dto instanceof JsonMutateTransformationDTO);
+
+    JsonMutateTransformationDTO mutate = (JsonMutateTransformationDTO) dto;
+    assertEquals(TransformationType.JSON_MUTATE, mutate.getType());
+  }
+
+  @Test
+  void jsonMutateDiscriminatorIsCaseInsensitive() {
+    Gson gson = buildGson();
+
+    String json = """
+        {"type":"JsOn-MuTaTe"}
+        """;
+
+    TransformationConfigDTO dto = gson.fromJson(json, TransformationConfigDTO.class);
+
+    assertNotNull(dto);
+    assertTrue(dto instanceof JsonMutateTransformationDTO);
+
+    JsonMutateTransformationDTO mutate = (JsonMutateTransformationDTO) dto;
+    assertEquals(TransformationType.JSON_MUTATE, mutate.getType());
   }
 
   @Test

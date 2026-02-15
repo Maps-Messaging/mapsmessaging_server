@@ -41,6 +41,7 @@ public class TransformationConfigFactory {
       case JSON_QUERY -> new JsonQueryTransformationConfig(props);
       case GEOHASH -> new GeoHashResolverTransformationConfig(props);
       case SCHEMA_TO_JSON -> new SchemaToJsonTransformationDTO();
+      case JSON_MUTATE -> new JsonMutateTransformationConfig();
     };
   }
 

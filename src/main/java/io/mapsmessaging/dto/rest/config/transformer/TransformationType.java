@@ -20,7 +20,10 @@ public enum TransformationType {
   GEOHASH("geohash"),
 
   @SerializedName("schema-to-json")
-  SCHEMA_TO_JSON("schema-to-json");
+  SCHEMA_TO_JSON("schema-to-json"),
+
+  @SerializedName("json-mutate")
+  JSON_MUTATE("json-mutate");
 
   private final String wireName;
 
@@ -36,12 +39,15 @@ public enum TransformationType {
     if (value == null) {
       throw new IllegalArgumentException("Transformation type is null");
     }
+
     String normalized = value.trim().toLowerCase();
+
     for (TransformationType type : values()) {
       if (type.wireName.equals(normalized)) {
         return type;
       }
     }
+
     throw new IllegalArgumentException("Unknown transformation type: " + value);
   }
 }
