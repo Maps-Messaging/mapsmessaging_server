@@ -47,8 +47,8 @@ public class TransformerManager implements ServiceManager {
 
     String transformer = props.getProperty("name").toLowerCase();
     TransformationConfigDTO dto = TransformationConfigFactory.loadSingle(props);
-    InterServerTransformation t = (InterServerTransformation) transformerMap.get(transformer);
-    if(t != null){
+    if(dto != null){
+      InterServerTransformation t = (InterServerTransformation) transformerMap.get(transformer);
       return  t.build(dto);
     }
     else{

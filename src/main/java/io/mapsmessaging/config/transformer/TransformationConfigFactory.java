@@ -22,7 +22,11 @@ public class TransformationConfigFactory {
       }
       return results;
     }
-    return List.of(loadSingle(value));
+    TransformationConfigDTO dto = loadSingle(value);
+    if(dto == null) {
+      return List.of();
+    }
+    return List.of(dto);
   }
 
   public static TransformationConfigDTO loadSingle(Object value) {
@@ -33,7 +37,9 @@ public class TransformationConfigFactory {
     ConfigurationProperties props = coerceToConfigurationProperties(value);
     String rawType = readTypeToken(props);
     TransformationType type = TransformationType.fromWireName(rawType);
-
+    if(type == null) {
+      return null;
+    }
     return switch (type) {
       case JSON_TO_XML -> new JsonToXmlTransformationConfig(props);
       case XML_TO_JSON -> new XmlToJsonTransformationConfig(props);

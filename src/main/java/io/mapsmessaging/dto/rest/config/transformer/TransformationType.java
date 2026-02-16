@@ -44,6 +44,6 @@ public enum TransformationType {
       }
     }
 
-    throw new IllegalArgumentException("Unknown transformation type: " + value);
+    return null;
   }
 }
