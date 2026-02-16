@@ -25,16 +25,20 @@ import io.mapsmessaging.dto.rest.config.AggregatorManagerConfigDTO;
 import io.mapsmessaging.dto.rest.config.aggregator.AggregatorConfigDTO;
 import io.mapsmessaging.dto.rest.system.Status;
 import io.mapsmessaging.dto.rest.system.SubSystemStatusDTO;
+import io.mapsmessaging.logging.Logger;
+import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.utilities.Agent;
 import io.mapsmessaging.utilities.configuration.ConfigurationManager;
 
 import java.util.ArrayList;
 import java.util.List;
 
+import static io.mapsmessaging.logging.ServerLogMessages.*;
+
 public class AggregatorManager implements Agent {
 
   private final List<Aggregator> aggregators;
-
+  private final Logger logger = LoggerFactory.getLogger(AggregatorManager.class);
   private final AggregatorManagerConfigDTO config;
   private AggregatorWorkScheduler aggregatorWorkScheduler;
 
@@ -50,10 +54,10 @@ public class AggregatorManager implements Agent {
       for (AggregatorConfigDTO aggregatorConfig : config.getAggregatorConfigList()) {
         aggregators.add(new Aggregator(aggregatorWorkScheduler, aggregatorConfig));
       }
-      System.err.println("Constructed "+config.getAggregatorConfigList().size()+" aggregators");
+      logger.log(AGGREGATOR_MANAGER_TASK_CREATED, config.getAggregatorConfigList().size());
     }
     else{
-      System.err.println("AggregatorManagerConfig is empty, no aggregators will be created.");
+      logger.log(AGGREGATOR_MANAGER_TASK_CREATED);
     }
   }
 
@@ -74,7 +78,7 @@ public class AggregatorManager implements Agent {
       for (Aggregator aggregator : aggregators) {
         aggregator.start();
       }
-      System.err.println("AggregatorManager started "+aggregators.size()+" aggregators");
+      logger.log(AGGREGATOR_MANAGER_TASK_STARTED, aggregators.size());
     }
   }
 
@@ -85,7 +89,7 @@ public class AggregatorManager implements Agent {
       for (Aggregator aggregator : aggregators) {
         aggregator.stop();
       }
-      System.err.println("AggregatorManager stopped "+aggregators.size()+" aggregators");
+      logger.log(AGGREGATOR_MANAGER_TASK_STOPPED, aggregators.size());
     }
   }
 

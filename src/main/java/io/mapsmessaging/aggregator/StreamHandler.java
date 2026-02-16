@@ -30,12 +30,17 @@ import io.mapsmessaging.dto.rest.config.aggregator.AggregatorContributionMode;
 import io.mapsmessaging.dto.rest.config.aggregator.AggregatorInputConfigDTO;
 import io.mapsmessaging.engine.destination.subscription.SubscriptionContext;
 import io.mapsmessaging.engine.transformers.TransformerManager;
+import io.mapsmessaging.logging.Logger;
+import io.mapsmessaging.logging.LoggerFactory;
 
 import java.io.IOException;
 import java.util.List;
 
+import static io.mapsmessaging.logging.ServerLogMessages.AGGREGATOR_SUBSCRIPTION_ADDED;
+
 public class StreamHandler {
 
+  private final Logger logger = LoggerFactory.getLogger(this.getClass());
   private final AggregatorInputConfigDTO config;
   private SubscribedEventManager subscriptionManager;
   private List<InterServerTransformation> transformation;
@@ -100,6 +105,6 @@ public class StreamHandler {
     }
     SubscriptionContext context = builder.build();
     subscriptionManager = session.addSubscription(context);
-    System.err.println("StreamHandler added subscription for topic "+config.getTopicName());
+    logger.log(AGGREGATOR_SUBSCRIPTION_ADDED, config.getTopicName());
   }
 }

@@ -452,10 +452,25 @@ public enum ServerLogMessages implements LogMessage {
   N2K_PROTOCOL_PARSED_UNKNOWN_PACKET(LEVEL.DEBUG, SERVER_CATEGORY.PROTOCOL, "Parsed unknown data pgn:{}"),
   N2K_PROTOCOL_INBOUND_HANDLER_ERROR(LEVEL.ERROR, SERVER_CATEGORY.PROTOCOL, "Exception raised during inbound handler {}"),
   N2K_PROTOCOL_CANBUS_BUILD_ERROR(LEVEL.ERROR, SERVER_CATEGORY.PROTOCOL, "Exception raised attempting to build canbus frame {}"),
-
-
   // </editor-fold>
 
+  // <editor-fold desc="Write Task log messages">
+  AGGREGATOR_MANAGER_TASK_CREATED(LEVEL.INFO, SERVER_CATEGORY.ENGINE, "Aggregator Manager created with {} aggregators"),
+  AGGREGATOR_MANAGER_TASK_CREATED_NO_CONFIG(LEVEL.INFO, SERVER_CATEGORY.ENGINE, "Aggregator Manager created with no aggregators"),
+  AGGREGATOR_MANAGER_TASK_STARTED(LEVEL.INFO, SERVER_CATEGORY.ENGINE, "Aggregator Manager started {} aggregators"),
+  AGGREGATOR_MANAGER_TASK_STOPPED(LEVEL.INFO, SERVER_CATEGORY.ENGINE, "Aggregator Manager stopped {} aggregators"),
+  AGGREGATOR_STARTED_(LEVEL.INFO, SERVER_CATEGORY.ENGINE, "Aggregator started with {} handlers"),
+  AGGREGATOR_EXCEPTION_(LEVEL.ERROR, SERVER_CATEGORY.ENGINE, "Aggregator {} failed to started, raised exception"),
+  AGGREGATOR_STOPPED_(LEVEL.INFO, SERVER_CATEGORY.ENGINE, "Aggregator stopped with {} handlers"),
+  AGGREGATOR_COMPLETED_(LEVEL.INFO, SERVER_CATEGORY.ENGINE, "Aggregator {}, completed with {} events"),
+  AGGREGATOR_COMPLETION_EXCEPTION(LEVEL.ERROR, SERVER_CATEGORY.ENGINE, "Aggregator {} completion task failed to complete, raised exception"),
+  AGGREGATOR_EVENT_RECEIVED(LEVEL.INFO, SERVER_CATEGORY.ENGINE, "Aggregator {} received event from {}"),
+  AGGREGATOR_EVENT_DROPPED(LEVEL.WARN, SERVER_CATEGORY.ENGINE, "Aggregator {} dropped event from {}"),
+  AGGREGATOR_QUEUE_OFFER(LEVEL.DEBUG, SERVER_CATEGORY.ENGINE, "Mailbox queue offered envelope for {}"),
+  AGGREGATOR_QUEUE_DRAIN(LEVEL.DEBUG, SERVER_CATEGORY.ENGINE, "Mailbox queue drained {} items"),
+  AGGREGATOR_SUBSCRIPTION_ADDED(LEVEL.DEBUG, SERVER_CATEGORY.ENGINE, "Adding subscription to {}"),
+
+  // </editor-fold>
 
   // <editor-fold desc="Loop connection log messages">
   LOOP_CREATED(LEVEL.DEBUG, SERVER_CATEGORY.PROTOCOL, "loop protocol connection created"),

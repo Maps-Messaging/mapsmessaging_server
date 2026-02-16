@@ -19,13 +19,20 @@
 
 package io.mapsmessaging.aggregator.mailbox;
 
+import io.mapsmessaging.logging.Logger;
+import io.mapsmessaging.logging.LoggerFactory;
+
 import java.util.Objects;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
 
+import static io.mapsmessaging.logging.ServerLogMessages.AGGREGATOR_QUEUE_DRAIN;
+import static io.mapsmessaging.logging.ServerLogMessages.AGGREGATOR_QUEUE_OFFER;
+
 public class QueueBackedMpscMailbox<T> implements AggregatorMailbox<T> {
 
+  private final Logger logger = LoggerFactory.getLogger(this.getClass());
   private final ArrayBlockingQueue<T> queue;
 
   private final AtomicLong offeredCount;
@@ -40,16 +47,16 @@ public class QueueBackedMpscMailbox<T> implements AggregatorMailbox<T> {
 
   @Override
   public boolean offer(T item) {
-    System.err.println("QueueBackedMpscMailbox offer called for item "+item);
     Objects.requireNonNull(item, "item must not be null");
+    logger.log(AGGREGATOR_QUEUE_OFFER, item);
     this.offeredCount.incrementAndGet();
     return this.queue.offer(item);
   }
 
   @Override
   public int drainTo(Consumer<T> consumer, int maxItems) {
-    System.err.println("QueueBackedMpscMailbox drainTo called for items");
     Objects.requireNonNull(consumer, "consumer must not be null");
+    logger.log(AGGREGATOR_QUEUE_DRAIN, maxItems);
     if (maxItems <= 0) {
       return 0;
     }

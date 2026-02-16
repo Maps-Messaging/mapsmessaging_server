@@ -31,6 +31,8 @@ import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.dto.rest.config.aggregator.AggregatorConfigDTO;
 import io.mapsmessaging.dto.rest.config.aggregator.AggregatorInputConfigDTO;
 import io.mapsmessaging.engine.session.ClientConnection;
+import io.mapsmessaging.logging.Logger;
+import io.mapsmessaging.logging.LoggerFactory;
 import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
 
@@ -39,10 +41,13 @@ import java.security.Principal;
 import java.util.Map;
 import java.util.concurrent.*;
 
+import static io.mapsmessaging.logging.ServerLogMessages.*;
+
 public class Aggregator implements ClientConnection, MessageListener, ProcessedHandler {
 
   private final AggregatorConfigDTO configDTO;
 
+  private final Logger logger = LoggerFactory.getLogger(Aggregator.class);
   private final AggregatorWorkScheduler aggregatorWorkScheduler;
   private final StreamHandler[] handlers;
   private final Map<String, Integer> topicIndexMap;
@@ -79,10 +84,9 @@ public class Aggregator implements ClientConnection, MessageListener, ProcessedH
       }
       worker = new AggregatorWorker(getName(), mailbox, handlers, getTimeOut(), this);
       aggregatorWorkScheduler.register(worker);
-      System.err.println("Aggregator started with "+configDTO.getInputs().size()+" handlers");
+      logger.log(AGGREGATOR_STARTED_, configDTO.getInputs().size());
     } catch (ExecutionException | InterruptedException | TimeoutException | IOException e) {
-      // log this with config rich details
-      e.printStackTrace();
+      logger.log(AGGREGATOR_EXCEPTION_, configDTO.getName(), e);
       Thread.currentThread().interrupt();
       stop();
     }
@@ -115,12 +119,12 @@ public class Aggregator implements ClientConnection, MessageListener, ProcessedH
         session = null;
       }
     }
-    System.err.println("Aggregator stopped "+configDTO.getInputs().size()+" handlers");
+    logger.log(AGGREGATOR_STOPPED_, configDTO.getInputs().size());
   }
 
   @Override
   public void completed(MessageEvent[] contributions) {
-    System.err.println("Aggregator completed "+configDTO.getInputs().size()+" handlers");
+    logger.log(AGGREGATOR_COMPLETED_, configDTO.getName(), configDTO.getInputs().size());
     Message[] events = new Message[contributions.length];
     String[] topics = new String[contributions.length];
     for (int i = 0; i < events.length; i++) {
@@ -133,13 +137,13 @@ public class Aggregator implements ClientConnection, MessageListener, ProcessedH
     try {
       outboundDestination.storeMessage(message);
     } catch (IOException e) {
-      e.printStackTrace();
+      logger.log(AGGREGATOR_COMPLETION_EXCEPTION, configDTO.getName(), e);
     }
   }
 
   @Override
   public void sendMessage(@NotNull @NonNull MessageEvent messageEvent) {
-    System.err.println("Aggregator sendMessage received event for "+messageEvent.getDestinationName());
+    logger.log(AGGREGATOR_EVENT_RECEIVED, configDTO.getName(), messageEvent.getDestinationName());
     Integer inputIndex = topicIndexMap.get(messageEvent.getDestinationName());
     if (inputIndex == null) {
       runCompletion(messageEvent);
@@ -150,7 +154,7 @@ public class Aggregator implements ClientConnection, MessageListener, ProcessedH
     boolean accepted = mailbox.offer(envelope);
     if (!accepted) {
       runCompletion(messageEvent);
-      System.err.println("Aggregator sendMessage failed to offer envelope for "+messageEvent.getDestinationName());
+      logger.log(AGGREGATOR_EVENT_DROPPED, configDTO.getName(), messageEvent.getDestinationName());
       return;
     }
     aggregatorWorkScheduler.signal(worker);
