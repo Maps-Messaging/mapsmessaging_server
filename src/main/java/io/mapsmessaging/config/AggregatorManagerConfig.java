@@ -44,13 +44,15 @@ public class AggregatorManagerConfig extends AggregatorManagerConfigDTO implemen
     maxAggregators = readInt(config, "maxAggregators", maxAggregators);
 
     aggregatorConfigList = new ArrayList<>();
-    Object dataObject = config.get("aggregatorConfigList");
-    if (dataObject instanceof List) {
-      for (ConfigurationProperties entry : (List<ConfigurationProperties>) dataObject) {
-        aggregatorConfigList.add(new AggregatorConfig(entry));
+    if(config != null) {
+      Object dataObject = config.get("aggregatorConfigList");
+      if (dataObject instanceof List) {
+        for (ConfigurationProperties entry : (List<ConfigurationProperties>) dataObject) {
+          aggregatorConfigList.add(new AggregatorConfig(entry));
+        }
+      } else if (dataObject instanceof ConfigurationProperties configurationProperties) {
+        aggregatorConfigList.add(new AggregatorConfig(configurationProperties));
       }
-    } else if (dataObject instanceof ConfigurationProperties configurationProperties) {
-      aggregatorConfigList.add(new AggregatorConfig(configurationProperties));
     }
   }
 
@@ -140,6 +142,9 @@ public class AggregatorManagerConfig extends AggregatorManagerConfigDTO implemen
   }
 
   private int readInt(ConfigurationProperties config, String key, int defaultValue) {
+    if (config == null) {
+      return defaultValue;
+    }
     Object value = config.get(key);
     if (value == null) {
       return defaultValue;
