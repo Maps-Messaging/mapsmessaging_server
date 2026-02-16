@@ -50,7 +50,7 @@ public abstract class ApiTestBase extends BaseTestConfig {
 
   @BeforeAll
   static void initClient() throws IOException {
-    baseUrl = System.getProperty("BASE_URL", System.getenv().getOrDefault("BASE_URL", "http://localhost:8080"));
+    baseUrl = System.getProperty("BASE_URL", System.getenv().getOrDefault("BASE_URL", "http://localhost:8085"));
     RestAssured.enableLoggingOfRequestAndResponseIfValidationFails();
     waitUntilHealthy(Duration.ofSeconds(30));
     fetchOpenApiSpec();
