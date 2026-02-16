@@ -46,7 +46,7 @@ public class AuthManagerConfigDTO extends BaseManagerConfigDTO {
       requiredMode = Schema.RequiredMode.NOT_REQUIRED,
       nullable = true
   )
-  protected boolean authorisationEnabled = true;
+  protected boolean authorisationEnabled = false;
 
   @Schema(
       description = "Configuration properties for authentication",

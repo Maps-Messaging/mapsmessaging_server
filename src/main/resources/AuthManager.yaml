@@ -30,7 +30,7 @@
 ---
 AuthManager:
   authenticationEnabled: true  # connections will be authorised according to the config
-  authorizationEnabled: false   # Requests will be authorised according to the access control list for the resource
+  authorisationEnabled: false   # Requests will be authorised according to the access control list for the resource
 
   maxFailuresBeforeLock: 5
   initialLockSeconds: 30
