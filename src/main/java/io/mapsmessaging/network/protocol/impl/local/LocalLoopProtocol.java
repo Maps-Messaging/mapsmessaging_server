@@ -116,6 +116,7 @@ public class LocalLoopProtocol extends Protocol {
     SessionContextBuilder scb = new SessionContextBuilder(sessionId, new ProtocolClientConnection(this));
     scb.setUsername(username);
     scb.setPassword(password.toCharArray());
+    scb.isInternal(true);
     scb.setPersistentSession(false);
     try {
       session = SessionManager.getInstance().create(scb.build(), this);
