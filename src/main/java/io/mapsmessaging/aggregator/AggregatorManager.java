@@ -92,11 +92,14 @@ public class AggregatorManager implements Agent {
   @Override
   public SubSystemStatusDTO getStatus() {
     SubSystemStatusDTO status = new SubSystemStatusDTO();
+    status.setName(getName());
     if(config == null || config.getAggregatorConfigList() == null || config.getAggregatorConfigList().isEmpty()) {
       status.setStatus(Status.DISABLED);
+      status.setComment("No configured aggregators");
     }
     else{
       status.setStatus(Status.OK);
+      status.setComment("Running Aggregators:"+config.getAggregatorConfigList().size());
     }
     return status;
   }
