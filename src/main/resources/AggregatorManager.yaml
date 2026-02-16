@@ -16,43 +16,5 @@
 
 AggregatorManager:
   data:
-    stripeCount: 0
-    maxBatchPerAggregator: 128
-    idleSleepMs: 1
-    mailboxCapacity: 8192
-    maxAggregators: 0
 
-    aggregatorConfigList:
-      - name: aggregator-1
-        enabled: true
-        outputTopic: out1
-        windowDurationMs: 1000
-        timeoutMs: 5000
-        maxEventsPerTopic: 1
-
-        outputTransformers:
-          - type: json-query
-            query: "[\"object\",{\"window\":[\"get\",\"windowId\"],\"payload\":[\"get\",\"payload\"]}]"
-
-        inputs:
-          - topicName: /device/sensor/i2c/1/0x74/SEN0465/data
-            contributionMode: LAST
-          - topicName: /device/sensor/i2c/1/0x76/SEN0466/data
-            contributionMode: LAST
-          - topicName: /device/sensor/i2c/1/0x6b/SEN6x/data
-            contributionMode: LAST
-
-      - name: aggregator-2
-        enabled: true
-        outputTopic: out2
-        windowDurationMs: 1000
-        timeoutMs: 5000
-        maxEventsPerTopic: 1
-        inputs:
-          - topicName: /device/sensor/i2c/1/0x12/PMSA003I/data
-            contributionMode: LAST
-          - topicName: /serial/SEN0642/data
-            contributionMode: LAST
-          - topicName: /serial/SEN0657/data
-            contributionMode: LAST
 
