@@ -27,7 +27,6 @@ import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
-import lombok.NoArgsConstructor;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -153,12 +152,12 @@ public class GeoHashResolverTransformationDTO extends TransformationConfigDTO {
   protected Double defaultLongitude;
 
   @Schema(
-      description = "Legacy flag: when true, geo-hash is split into topic segments. " +
+      description = "When true, geo-hash is split into topic segments. " +
           "Deprecated in favour of 'layout'. If 'layout' is set, it takes precedence.",
       example = "true",
       requiredMode = Schema.RequiredMode.NOT_REQUIRED,
       nullable = true,
       deprecated = true
   )
-  protected Boolean splitHash;
+  protected Boolean splitHash = true;
 }

@@ -20,7 +20,7 @@
 package io.mapsmessaging.api.transformers;
 
 import io.mapsmessaging.configuration.ConfigurationProperties;
-import io.mapsmessaging.network.protocol.Protocol;
+import io.mapsmessaging.engine.transformers.TransformerManager;
 import io.mapsmessaging.schemas.formatters.MessageFormatter;
 import io.mapsmessaging.schemas.formatters.MessageFormatterFactory;
 import org.junit.jupiter.api.Test;
@@ -31,17 +31,32 @@ import static io.mapsmessaging.api.transformers.TransformationAssertions.*;
 import static io.mapsmessaging.api.transformers.TransformationTestSupport.utf8Bytes;
 import static org.junit.jupiter.api.Assertions.*;
 
-
 class JsonQueryTransformationTest extends AbstractDroppingTransformationTest {
+
+  private static ConfigurationProperties config(String transformerName, String... kvPairs) {
+    ConfigurationProperties parameters = new ConfigurationProperties();
+    for (int i = 0; i < kvPairs.length; i += 2) {
+      parameters.put(kvPairs[i], kvPairs[i + 1]);
+    }
+
+    ConfigurationProperties root = new ConfigurationProperties();
+    root.put("name", transformerName);
+    root.put("parameters", parameters);
+    return root;
+  }
 
   @Override
   protected InterServerTransformation createTransformer() {
-    return new JsonQueryTransformation();
+    return TransformerManager.getInstance().get(config(
+        "JsonQuery",
+        "query", "   "
+    ));
   }
 
   private void setMessageFormatter(InterServerTransformation transformation) {
     try {
-      MessageFormatter messageFormatter = MessageFormatterFactory.getInstance().getFormatter(AbstractInterServerTransformationTest.JSON_SCHEMA_CONFIG);
+      MessageFormatter messageFormatter =
+          MessageFormatterFactory.getInstance().getFormatter(AbstractInterServerTransformationTest.JSON_SCHEMA_CONFIG);
       ((JsonQueryTransformation) transformation).schemaMap.put(AbstractInterServerTransformationTest.SOURCE, messageFormatter);
     } catch (IOException e) {
       throw new RuntimeException(e);
@@ -55,11 +70,10 @@ class JsonQueryTransformationTest extends AbstractDroppingTransformationTest {
 
   @Test
   void build_withJsonFormatQuery_extractsValue() {
-    ConfigurationProperties props = new ConfigurationProperties();
-    // JSON-format query (array form)
-    props.put("query", "[\"get\",\"a\"]");
-
-    InterServerTransformation transformer = new JsonQueryTransformation().build(props);
+    InterServerTransformation transformer = TransformerManager.getInstance().get(config(
+        "JsonQuery",
+        "query", "[\"get\",\"a\"]"
+    ));
     setMessageFormatter(transformer);
 
     ParsedMessage result = transformWith(transformer, utf8Bytes("{\"a\":1,\"b\":\"x\"}"));
@@ -70,12 +84,12 @@ class JsonQueryTransformationTest extends AbstractDroppingTransformationTest {
 
   @Test
   void build_withTextFormatQuery_extractsValue() {
-    ConfigurationProperties props = new ConfigurationProperties();
-    // Text-format query (jsonquerylang text syntax)
-    props.put("query", ".a");
-
-    InterServerTransformation transformer = new JsonQueryTransformation().build(props);
+    InterServerTransformation transformer = TransformerManager.getInstance().get(config(
+        "JsonQuery",
+        "query", ".a"
+    ));
     setMessageFormatter(transformer);
+
     ParsedMessage result = transformWith(transformer, utf8Bytes("{\"a\":1,\"b\":\"x\"}"));
 
     assertNotDropped(result);
@@ -84,10 +98,10 @@ class JsonQueryTransformationTest extends AbstractDroppingTransformationTest {
 
   @Test
   void build_withBlankQuery_isTrueNoOp() {
-    ConfigurationProperties props = new ConfigurationProperties();
-    props.put("query", "   ");
-
-    InterServerTransformation transformer = new JsonQueryTransformation().build(props);
+    InterServerTransformation transformer = TransformerManager.getInstance().get(config(
+        "JsonQuery",
+        "query", "   "
+    ));
     setMessageFormatter(transformer);
 
     byte[] before = utf8Bytes("{\"a\":1,\"b\":\"x\"}");
@@ -116,7 +130,6 @@ class JsonQueryTransformationTest extends AbstractDroppingTransformationTest {
   }
 
   private ParsedMessage transformWith(InterServerTransformation transformer, byte[] opaqueData) {
-    // Force this test instance to run using the built transformer
     this.transformer = transformer;
     return transform(opaqueData);
   }

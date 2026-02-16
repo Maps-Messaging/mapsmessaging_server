@@ -76,7 +76,7 @@ public class GeoHashResolverTransformationDtoDefaultsTest {
           "type":"geohash",
           "units":"e7",
           "layout":"two-per-segment",
-          "onMissing":"default-to",
+          "onMissing":"defaultTo",
           "defaultLatitude":0.0,
           "defaultLongitude":0.0
         }

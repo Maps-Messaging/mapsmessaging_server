@@ -45,7 +45,7 @@ public class MessageSchemaToJsonBuilder {
         }
       }
     }
-    return message;
+    return null;
   }
 
   private byte[] pack(Message message, SchemaConfig config, MessageFormatter formatter) throws IOException {

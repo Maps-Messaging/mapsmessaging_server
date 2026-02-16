@@ -19,6 +19,7 @@
 package io.mapsmessaging.api.transformers;
 
 import io.mapsmessaging.configuration.ConfigurationProperties;
+import io.mapsmessaging.dto.rest.config.transformer.TransformationConfigDTO;
 
 import java.util.List;
 
@@ -55,7 +56,7 @@ public class InterServerPipelineTransformation implements InterServerTransformat
   }
 
   @Override
-  public InterServerTransformation build(ConfigurationProperties properties) {
+  public InterServerTransformation build(TransformationConfigDTO properties) {
     return null;
   }
 

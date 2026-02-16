@@ -23,6 +23,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.dataformat.xml.XmlMapper;
 import io.mapsmessaging.api.MessageBuilder;
 import io.mapsmessaging.configuration.ConfigurationProperties;
+import io.mapsmessaging.dto.rest.config.transformer.TransformationConfigDTO;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.network.protocol.Protocol;
@@ -58,7 +59,7 @@ public class XMLToJSON implements InterServerTransformation {
   }
 
   @Override
-  public InterServerTransformation build(ConfigurationProperties properties) {
+  public InterServerTransformation build(TransformationConfigDTO properties) {
     return this;
   }
 

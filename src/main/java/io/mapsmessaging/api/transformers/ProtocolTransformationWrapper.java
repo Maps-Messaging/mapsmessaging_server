@@ -20,6 +20,7 @@
 package io.mapsmessaging.api.transformers;
 
 import io.mapsmessaging.configuration.ConfigurationProperties;
+import io.mapsmessaging.dto.rest.config.transformer.TransformationConfigDTO;
 import io.mapsmessaging.network.protocol.Protocol;
 import io.mapsmessaging.network.protocol.transformation.ProtocolMessageTransformation;
 
@@ -39,7 +40,7 @@ public class ProtocolTransformationWrapper implements InterServerTransformation 
   }
 
   @Override
-  public InterServerTransformation build(ConfigurationProperties properties) {
+  public InterServerTransformation build(TransformationConfigDTO properties) {
     return this;
   }
 

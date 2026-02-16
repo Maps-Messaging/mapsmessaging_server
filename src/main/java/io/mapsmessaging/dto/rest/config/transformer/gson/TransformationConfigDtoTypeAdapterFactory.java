@@ -29,11 +29,7 @@ import com.google.gson.stream.JsonReader;
 import com.google.gson.stream.JsonWriter;
 import io.mapsmessaging.dto.rest.config.transformer.TransformationConfigDTO;
 import io.mapsmessaging.dto.rest.config.transformer.TransformationType;
-import io.mapsmessaging.dto.rest.config.transformer.impl.GeoHashResolverTransformationDTO;
-import io.mapsmessaging.dto.rest.config.transformer.impl.JsonQueryTransformationDTO;
-import io.mapsmessaging.dto.rest.config.transformer.impl.JsonToValueTransformationDTO;
-import io.mapsmessaging.dto.rest.config.transformer.impl.JsonToXmlTransformationDTO;
-import io.mapsmessaging.dto.rest.config.transformer.impl.XmlToJsonTransformationDTO;
+import io.mapsmessaging.dto.rest.config.transformer.impl.*;
 
 import java.io.IOException;
 import java.util.HashMap;
@@ -47,11 +43,13 @@ public class TransformationConfigDtoTypeAdapterFactory implements TypeAdapterFac
 
   public TransformationConfigDtoTypeAdapterFactory() {
     Map<String, Class<? extends TransformationConfigDTO>> mapping = new HashMap<>();
-    mapping.put(TransformationType.JSON_TO_XML.getWireName(), JsonToXmlTransformationDTO.class);
-    mapping.put(TransformationType.XML_TO_JSON.getWireName(), XmlToJsonTransformationDTO.class);
-    mapping.put(TransformationType.JSON_TO_VALUE.getWireName(), JsonToValueTransformationDTO.class);
-    mapping.put(TransformationType.JSON_QUERY.getWireName(), JsonQueryTransformationDTO.class);
-    mapping.put(TransformationType.GEOHASH.getWireName(), GeoHashResolverTransformationDTO.class);
+    mapping.put(TransformationType.JSON_TO_XML.getWireName().toLowerCase(), JsonToXmlTransformationDTO.class);
+    mapping.put(TransformationType.XML_TO_JSON.getWireName().toLowerCase(), XmlToJsonTransformationDTO.class);
+    mapping.put(TransformationType.JSON_TO_VALUE.getWireName().toLowerCase(), JsonToValueTransformationDTO.class);
+    mapping.put(TransformationType.JSON_QUERY.getWireName().toLowerCase(), JsonQueryTransformationDTO.class);
+    mapping.put(TransformationType.GEOHASH.getWireName().toLowerCase(), GeoHashResolverTransformationDTO.class);
+    mapping.put(TransformationType.JSON_MUTATE.getWireName().toLowerCase(), JsonMutateTransformationDTO.class);
+    mapping.put(TransformationType.SCHEMA_TO_JSON.getWireName().toLowerCase(), SchemaToJsonTransformationDTO.class);
     this.discriminatorMap = Map.copyOf(mapping);
   }
 

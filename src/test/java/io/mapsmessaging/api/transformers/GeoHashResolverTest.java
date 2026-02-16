@@ -21,11 +21,9 @@ package io.mapsmessaging.api.transformers;
 
 import io.mapsmessaging.api.message.Filter;
 import io.mapsmessaging.configuration.ConfigurationProperties;
-import io.mapsmessaging.engine.schema.SchemaManager;
-import io.mapsmessaging.network.protocol.Protocol;
+import io.mapsmessaging.engine.transformers.TransformerManager;
 import io.mapsmessaging.selector.IdentifierResolver;
 import io.mapsmessaging.utilities.GeoHashUtils;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.mockito.MockedStatic;
 
@@ -37,12 +35,14 @@ import static org.mockito.Mockito.*;
 
 class GeoHashResolverTest extends AbstractDroppingTransformationTest {
 
-  private static ConfigurationProperties config(String... kvPairs) {
+  private static ConfigurationProperties config(String transformerName, String... kvPairs) {
     ConfigurationProperties parameters = new ConfigurationProperties();
     for (int i = 0; i < kvPairs.length; i += 2) {
       parameters.put(kvPairs[i], kvPairs[i + 1]);
     }
+
     ConfigurationProperties root = new ConfigurationProperties();
+    root.put("name", transformerName);
     root.put("parameters", parameters);
     return root;
   }
@@ -62,7 +62,8 @@ class GeoHashResolverTest extends AbstractDroppingTransformationTest {
 
   @Override
   protected InterServerTransformation createTransformer() {
-    return new GeoHashResolver().build(config(
+    return TransformerManager.getInstance().get(config(
+        "GeoHash",
         "prefix", "",
         "latKey", "latitude",
         "lonKey", "longitude",
@@ -78,7 +79,8 @@ class GeoHashResolverTest extends AbstractDroppingTransformationTest {
 
   @Test
   void transform_withLatLon_setsDestination_usingDefaultLayout() {
-    GeoHashResolver resolver = (GeoHashResolver) new GeoHashResolver().build(config(
+    GeoHashResolver resolver = (GeoHashResolver) TransformerManager.getInstance().get(config(
+        "GeoHash",
         "prefix", "/geo/{geohash}",
         "latKey", "latitude",
         "lonKey", "longitude",
@@ -106,7 +108,8 @@ class GeoHashResolverTest extends AbstractDroppingTransformationTest {
 
   @Test
   void transform_layoutRaw_usesRawGeohashPath() {
-    GeoHashResolver resolver = (GeoHashResolver) new GeoHashResolver().build(config(
+    GeoHashResolver resolver = (GeoHashResolver) TransformerManager.getInstance().get(config(
+        "GeoHash",
         "prefix", "/{geohash}",
         "latKey", "latitude",
         "lonKey", "longitude",
@@ -134,7 +137,8 @@ class GeoHashResolverTest extends AbstractDroppingTransformationTest {
 
   @Test
   void transform_layoutTwoPerSegment_splitsEveryTwoChars() {
-    GeoHashResolver resolver = (GeoHashResolver) new GeoHashResolver().build(config(
+    GeoHashResolver resolver = (GeoHashResolver) TransformerManager.getInstance().get(config(
+        "GeoHash",
         "prefix", "/geo/{geohash}",
         "latKey", "latitude",
         "lonKey", "longitude",
@@ -163,7 +167,8 @@ class GeoHashResolverTest extends AbstractDroppingTransformationTest {
 
   @Test
   void transform_unitsRad_convertsRadiansToDegrees() {
-    GeoHashResolver resolver = (GeoHashResolver) new GeoHashResolver().build(config(
+    GeoHashResolver resolver = (GeoHashResolver) TransformerManager.getInstance().get(config(
+        "GeoHash",
         "prefix", "/geo/{geohash}",
         "latKey", "latitude",
         "lonKey", "longitude",
@@ -194,7 +199,8 @@ class GeoHashResolverTest extends AbstractDroppingTransformationTest {
 
   @Test
   void transform_missingKeys_onMissingSkip_leavesDestinationUnchanged() {
-    GeoHashResolver resolver = (GeoHashResolver) new GeoHashResolver().build(config(
+    GeoHashResolver resolver = (GeoHashResolver) TransformerManager.getInstance().get(config(
+        "GeoHash",
         "prefix", "/geo/{geohash}",
         "latKey", "latitude",
         "lonKey", "longitude",
@@ -220,7 +226,8 @@ class GeoHashResolverTest extends AbstractDroppingTransformationTest {
 
   @Test
   void transform_missingKeys_onMissingDrop_returnsNull() {
-    GeoHashResolver resolver = (GeoHashResolver) new GeoHashResolver().build(config(
+    GeoHashResolver resolver = (GeoHashResolver) TransformerManager.getInstance().get(config(
+        "GeoHash",
         "prefix", "/geo/{geohash}",
         "latKey", "latitude",
         "lonKey", "longitude",
@@ -245,7 +252,8 @@ class GeoHashResolverTest extends AbstractDroppingTransformationTest {
 
   @Test
   void transform_missingKeys_onMissingDefaultTo_setsDestinationFromDefault() {
-    GeoHashResolver resolver = (GeoHashResolver) new GeoHashResolver().build(config(
+    GeoHashResolver resolver = (GeoHashResolver) TransformerManager.getInstance().get(config(
+        "GeoHash",
         "prefix", "/geo",
         "latKey", "latitude",
         "lonKey", "longitude",
@@ -274,7 +282,8 @@ class GeoHashResolverTest extends AbstractDroppingTransformationTest {
 
   @Test
   void transform_usesAlternateKeys_whenPrimaryMissing() {
-    GeoHashResolver resolver = (GeoHashResolver) new GeoHashResolver().build(config(
+    GeoHashResolver resolver = (GeoHashResolver) TransformerManager.getInstance().get(config(
+        "GeoHash",
         "prefix", "/geo/{geohash}",
         "latKey", "latitude",
         "lonKey", "longitude",

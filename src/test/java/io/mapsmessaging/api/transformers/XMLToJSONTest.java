@@ -19,6 +19,7 @@
 
 package io.mapsmessaging.api.transformers;
 
+import io.mapsmessaging.dto.rest.config.transformer.impl.XmlToJsonTransformationDTO;
 import io.mapsmessaging.network.protocol.Protocol;
 import org.junit.jupiter.api.Test;
 
@@ -63,7 +64,7 @@ class XMLToJSONTest extends AbstractInPlaceTransformationTest {
   @Test
   void build_returnsSameInstance() {
     InterServerTransformation created = createTransformer();
-    InterServerTransformation built = created.build(TransformationTestSupport.emptyProperties());
+    InterServerTransformation built = created.build(new XmlToJsonTransformationDTO());
     assertSame(created, built);
   }
 

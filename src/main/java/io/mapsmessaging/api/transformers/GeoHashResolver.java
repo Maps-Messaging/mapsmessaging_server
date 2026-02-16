@@ -122,7 +122,7 @@ public class GeoHashResolver implements InterServerTransformation {
   @Override
   public InterServerTransformation build(TransformationConfigDTO base) {
     if(!(base instanceof GeoHashResolverTransformationConfig config )) {
-      return null;
+      return new GeoHashResolver();
     }
     String localPrefix = config.getPrefix();
     String localLatKey = config.getLatKey();

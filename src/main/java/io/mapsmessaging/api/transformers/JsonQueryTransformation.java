@@ -24,7 +24,8 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import io.mapsmessaging.MessageDaemon;
 import io.mapsmessaging.api.MessageBuilder;
-import io.mapsmessaging.configuration.ConfigurationProperties;
+import io.mapsmessaging.dto.rest.config.transformer.TransformationConfigDTO;
+import io.mapsmessaging.dto.rest.config.transformer.impl.JsonQueryTransformationDTO;
 import io.mapsmessaging.engine.destination.DestinationImpl;
 import io.mapsmessaging.engine.schema.SchemaManager;
 import io.mapsmessaging.jsonquery.JsonQueryCompiler;
@@ -32,7 +33,6 @@ import io.mapsmessaging.jsonquery.JsonQueryParser;
 import io.mapsmessaging.jsonquery.parser.JsonQueryParseException;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
-import io.mapsmessaging.network.protocol.Protocol;
 import io.mapsmessaging.schemas.config.SchemaConfig;
 import io.mapsmessaging.schemas.formatters.MessageFormatter;
 import io.mapsmessaging.schemas.formatters.MessageFormatterFactory;
@@ -49,8 +49,6 @@ import java.util.function.Function;
 import static io.mapsmessaging.logging.ServerLogMessages.*;
 
 public class JsonQueryTransformation implements InterServerTransformation {
-
-  private static final String QUERY_PROPERTY = "query";
 
 
   private final Logger logger = LoggerFactory.getLogger(JsonQueryTransformation.class);
@@ -149,21 +147,18 @@ public class JsonQueryTransformation implements InterServerTransformation {
   }
 
   @Override
-  public InterServerTransformation build(ConfigurationProperties properties) {
-    String queryText;
-    if(properties == null) return new JsonQueryTransformation(null);
-    if(!properties.containsKey(QUERY_PROPERTY) && properties.containsKey("parameters")){
-      properties = (ConfigurationProperties) properties.get("parameters");
-
+  public InterServerTransformation build(TransformationConfigDTO config) {
+    if( !( config instanceof JsonQueryTransformationDTO jsonQueryTransformationDTO)){
+      return new JsonQueryTransformation(null);
     }
-    queryText = properties != null ? properties.getProperty(QUERY_PROPERTY, null) : null;
+
+    String queryText = jsonQueryTransformationDTO.getQuery();
     if (queryText == null || queryText.isBlank()) {
       return new JsonQueryTransformation(null); // true no-op, avoids re-encoding payload
     }
 
     try {
       JsonElement queryAst = parseQueryToAst(queryText);
-
       JsonQueryCompiler compiler = JsonQueryCompiler.createDefault();
       Function<JsonElement, JsonElement> compiled = compiler.compile(queryAst);
       return new JsonQueryTransformation(compiled, new ConcurrentHashMap<>(), queryText);

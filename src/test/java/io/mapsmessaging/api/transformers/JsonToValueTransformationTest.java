@@ -20,7 +20,7 @@
 package io.mapsmessaging.api.transformers;
 
 import io.mapsmessaging.configuration.ConfigurationProperties;
-import io.mapsmessaging.network.protocol.Protocol;
+import io.mapsmessaging.engine.transformers.TransformerManager;
 import org.junit.jupiter.api.Test;
 
 import static io.mapsmessaging.api.transformers.TransformationAssertions.*;
@@ -28,6 +28,18 @@ import static io.mapsmessaging.api.transformers.TransformationTestSupport.utf8By
 import static org.junit.jupiter.api.Assertions.*;
 
 class JsonToValueTransformationTest extends AbstractInPlaceTransformationTest {
+
+  private static ConfigurationProperties config(String transformerName, String... kvPairs) {
+    ConfigurationProperties parameters = new ConfigurationProperties();
+    for (int i = 0; i < kvPairs.length; i += 2) {
+      parameters.put(kvPairs[i], kvPairs[i + 1]);
+    }
+
+    ConfigurationProperties root = new ConfigurationProperties();
+    root.put("name", transformerName);
+    root.put("parameters", parameters);
+    return root;
+  }
 
   @Override
   protected InterServerTransformation createTransformer() {
@@ -52,10 +64,10 @@ class JsonToValueTransformationTest extends AbstractInPlaceTransformationTest {
 
   @Test
   void build_withKey_extractsValue() {
-    ConfigurationProperties props = new ConfigurationProperties();
-    props.put("key", "b");
-
-    InterServerTransformation built = new JsonToValueTransformation().build(props);
+    InterServerTransformation built = TransformerManager.getInstance().get(config(
+        "JsonToValue",
+        "key", "b"
+    ));
 
     ParsedMessage result = transformWith(built, utf8Bytes("{\"a\":1,\"b\":\"x\"}"));
 
@@ -65,10 +77,10 @@ class JsonToValueTransformationTest extends AbstractInPlaceTransformationTest {
 
   @Test
   void build_withData_fallback_extractsValue() {
-    ConfigurationProperties props = new ConfigurationProperties();
-    props.put("data", "a");
-
-    InterServerTransformation built = new JsonToValueTransformation().build(props);
+    InterServerTransformation built = TransformerManager.getInstance().get(config(
+        "JsonToValue",
+        "data", "a"
+    ));
 
     ParsedMessage result = transformWith(built, utf8Bytes("{\"a\":1,\"b\":\"x\"}"));
 
@@ -78,10 +90,10 @@ class JsonToValueTransformationTest extends AbstractInPlaceTransformationTest {
 
   @Test
   void configuredKey_missingValue_passesThroughUnchanged() {
-    ConfigurationProperties props = new ConfigurationProperties();
-    props.put("key", "nope");
-
-    InterServerTransformation built = new JsonToValueTransformation().build(props);
+    InterServerTransformation built = TransformerManager.getInstance().get(config(
+        "JsonToValue",
+        "key", "nope"
+    ));
 
     byte[] before = utf8Bytes("{\"a\":1,\"b\":\"x\"}");
     ParsedMessage result = transformWith(built, before);
@@ -92,10 +104,10 @@ class JsonToValueTransformationTest extends AbstractInPlaceTransformationTest {
 
   @Test
   void invalidJson_passesThroughUnchanged() {
-    ConfigurationProperties props = new ConfigurationProperties();
-    props.put("key", "a");
-
-    InterServerTransformation built = new JsonToValueTransformation().build(props);
+    InterServerTransformation built = TransformerManager.getInstance().get(config(
+        "JsonToValue",
+        "key", "a"
+    ));
 
     byte[] before = utf8Bytes(TransformationTestVectors.INVALID_JSON);
     ParsedMessage result = transformWith(built, before);
@@ -113,8 +125,6 @@ class JsonToValueTransformationTest extends AbstractInPlaceTransformationTest {
   }
 
   private ParsedMessage transformWith(InterServerTransformation transformer, byte[] opaqueData) {
-    // minimal local helper to avoid depending on base's transformer field
-    // and to test build() products cleanly.
     this.transformer = transformer;
     return transform(opaqueData);
   }

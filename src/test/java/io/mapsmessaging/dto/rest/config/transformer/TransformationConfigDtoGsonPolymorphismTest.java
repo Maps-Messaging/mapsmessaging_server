@@ -47,7 +47,7 @@ class TransformationConfigDtoGsonPolymorphismTest {
     Gson gson = buildGson();
 
     String json = """
-        {"type":"json-mutate"}
+        {"type":"jsonmutate"}
         """;
 
     TransformationConfigDTO dto = gson.fromJson(json, TransformationConfigDTO.class);
@@ -60,11 +60,26 @@ class TransformationConfigDtoGsonPolymorphismTest {
   }
 
   @Test
+  void jsonGeneralDeserializes() {
+    Gson gson = buildGson();
+    for(TransformationType type : TransformationType.values()){
+      String json = """
+      {"type":"%s"}
+      """.formatted(type.getWireName().toLowerCase());
+
+      TransformationConfigDTO dto = gson.fromJson(json, TransformationConfigDTO.class);
+      assertNotNull(dto);
+      assertEquals(type, dto.getType());
+    }
+  }
+
+
+  @Test
   void jsonMutateDiscriminatorIsCaseInsensitive() {
     Gson gson = buildGson();
 
     String json = """
-        {"type":"JsOn-MuTaTe"}
+        {"type":"JsOnMuTaTe"}
         """;
 
     TransformationConfigDTO dto = gson.fromJson(json, TransformationConfigDTO.class);
@@ -83,10 +98,10 @@ class TransformationConfigDtoGsonPolymorphismTest {
 
     String json = """
         [
-          {"type":"json-to-xml"},
-          {"type":"xml-to-json"},
-          {"type":"json-to-value","key":"data.temperature"},
-          {"type":"json-query","query":"."},
+          {"type":"jsontoxml"},
+          {"type":"xmltojson"},
+          {"type":"jsontovalue","key":"data.temperature"},
+          {"type":"jsonquery","query":"."},
           {
             "type":"geohash",
             "prefix":"maps/location",
@@ -175,8 +190,8 @@ class TransformationConfigDtoGsonPolymorphismTest {
   void trivialTransformersDeserialize() {
     Gson gson = buildGson();
 
-    TransformationConfigDTO a = gson.fromJson("{\"type\":\"json-to-xml\"}", TransformationConfigDTO.class);
-    TransformationConfigDTO b = gson.fromJson("{\"type\":\"xml-to-json\"}", TransformationConfigDTO.class);
+    TransformationConfigDTO a = gson.fromJson("{\"type\":\"jsontoxml\"}", TransformationConfigDTO.class);
+    TransformationConfigDTO b = gson.fromJson("{\"type\":\"xmltojson\"}", TransformationConfigDTO.class);
 
     assertTrue(a instanceof JsonToXmlTransformationDTO);
     assertTrue(b instanceof XmlToJsonTransformationDTO);

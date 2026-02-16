@@ -24,12 +24,17 @@ import com.google.gson.JsonParser;
 import io.mapsmessaging.api.MessageBuilder;
 import io.mapsmessaging.api.transformers.jsonmutate.JsonMutator;
 import io.mapsmessaging.configuration.ConfigurationProperties;
+import io.mapsmessaging.dto.rest.config.transformer.TransformationConfigDTO;
 import io.mapsmessaging.dto.rest.config.transformer.impl.JsonMutateTransformationDTO;
 import java.nio.charset.StandardCharsets;
 
 public class JsonMutateTransformation implements InterServerTransformation {
 
   private final JsonMutator mutator;
+
+  public JsonMutateTransformation() {
+    mutator = null;
+  }
 
   public JsonMutateTransformation(JsonMutator mutator) {
     this.mutator = mutator;
@@ -60,15 +65,14 @@ public class JsonMutateTransformation implements InterServerTransformation {
   }
 
   @Override
-  public InterServerTransformation build(ConfigurationProperties properties) {
-    return null;
-  }
-
-  public static JsonMutateTransformation fromDto(JsonMutateTransformationDTO dto) {
-    if (dto == null || dto.getOperations() == null || dto.getOperations().isEmpty()) {
+  public InterServerTransformation build(TransformationConfigDTO dto) {
+    if( !(dto instanceof JsonMutateTransformationDTO jsonMutateTransformationDTO)){
+      return null;
+    }
+    if (jsonMutateTransformationDTO.getOperations() == null || jsonMutateTransformationDTO.getOperations().isEmpty()) {
       return new JsonMutateTransformation(null);
     }
-    return new JsonMutateTransformation(new JsonMutator(dto.getOperations()));
+    return new JsonMutateTransformation(new JsonMutator(jsonMutateTransformationDTO.getOperations()));
   }
 
   @Override

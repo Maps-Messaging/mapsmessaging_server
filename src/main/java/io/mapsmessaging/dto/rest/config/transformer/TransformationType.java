@@ -6,26 +6,26 @@ import lombok.Getter;
 @Getter
 public enum TransformationType {
 
-  @SerializedName("json-to-xml")
-  JSON_TO_XML("json-to-xml"),
+  @SerializedName("jsontoxml")
+  JSON_TO_XML("jsontoxml"),
 
-  @SerializedName("xml-to-json")
-  XML_TO_JSON("xml-to-json"),
+  @SerializedName("xmltojson")
+  XML_TO_JSON("xmltojson"),
 
-  @SerializedName("json-to-value")
-  JSON_TO_VALUE("json-to-value"),
+  @SerializedName("jsontovalue")
+  JSON_TO_VALUE("jsontovalue"),
 
-  @SerializedName("json-query")
-  JSON_QUERY("json-query"),
+  @SerializedName("jsonquery")
+  JSON_QUERY("jsonquery"),
 
   @SerializedName("geohash")
   GEOHASH("geohash"),
 
-  @SerializedName("schema-to-json")
-  SCHEMA_TO_JSON("schema-to-json"),
+  @SerializedName("schematojson")
+  SCHEMA_TO_JSON("schematojson"),
 
-  @SerializedName("json-mutate")
-  JSON_MUTATE("json-mutate");
+  @SerializedName("jsonmutate")
+  JSON_MUTATE("jsonmutate");
 
   private final String wireName;
 
@@ -38,11 +38,8 @@ public enum TransformationType {
     if (value == null) {
       throw new IllegalArgumentException("Transformation type is null");
     }
-
-    String normalized = value.trim().toLowerCase();
-
     for (TransformationType type : values()) {
-      if (type.wireName.equals(normalized)) {
+      if (type.wireName.equalsIgnoreCase(value)) {
         return type;
       }
     }

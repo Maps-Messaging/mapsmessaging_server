@@ -2,6 +2,7 @@ package io.mapsmessaging.api.transformers;
 
 import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.configuration.ConfigurationProperties;
+import io.mapsmessaging.dto.rest.config.transformer.TransformationConfigDTO;
 import io.mapsmessaging.engine.schema.MessageSchemaToJsonBuilder;
 
 public class MessageSchemaToJsonTransformation implements InterServerTransformation {
@@ -14,7 +15,6 @@ public class MessageSchemaToJsonTransformation implements InterServerTransformat
 
   @Override
   public ParsedMessage transform(String source, ParsedMessage message) {
-
     try {
       Message results = messageSchemaToJsonBuilder.parse(message.getMessage(), source);
       return new ParsedMessage(source, results);
@@ -25,8 +25,8 @@ public class MessageSchemaToJsonTransformation implements InterServerTransformat
   }
 
   @Override
-  public InterServerTransformation build(ConfigurationProperties properties) {
-    return null;
+  public InterServerTransformation build(TransformationConfigDTO properties) {
+    return new MessageSchemaToJsonTransformation();
   }
 
   @Override

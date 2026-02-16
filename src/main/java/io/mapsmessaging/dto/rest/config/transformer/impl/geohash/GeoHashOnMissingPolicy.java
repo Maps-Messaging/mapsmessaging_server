@@ -28,8 +28,8 @@ public enum GeoHashOnMissingPolicy {
   @SerializedName("skip")
   SKIP("skip"),
 
-  @SerializedName("default-to")
-  DEFAULT_TO("default-to");
+  @SerializedName("defaultTo")
+  DEFAULT_TO("defaultTo");
 
   private final String wireName;
 
