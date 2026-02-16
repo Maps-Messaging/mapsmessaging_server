@@ -48,6 +48,7 @@ public class SessionContextBuilder {
   private long sessionExpiry;
   private int receiveMaximum;
   private boolean authorized;
+  private boolean internal = false;
 
   public SessionContextBuilder(@NonNull @NotNull String id, @NonNull @NotNull ClientConnection clientConnection) {
     this.id = id;
@@ -120,6 +121,12 @@ public class SessionContextBuilder {
     return this;
   }
 
+
+  public @NonNull @NotNull SessionContextBuilder isInternal(boolean internal) {
+    this.internal = internal;
+    return this;
+  }
+
   public SessionContext build() {
     SessionContext sc = new SessionContext(id, clientConnection);
     sc.setUsername(username);
@@ -132,6 +139,7 @@ public class SessionContextBuilder {
     sc.setExpiry(sessionExpiry);
     sc.setReceiveMaximum(receiveMaximum);
     sc.setAuthorized(authorized);
+    sc.setInternal(internal);
     return sc;
   }
 

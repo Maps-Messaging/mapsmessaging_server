@@ -39,6 +39,7 @@ public class SessionContext {
   private Message willMessage;
   private long willDelay;
   private long expiry;
+  private boolean internal;
   // </editor-fold>
 
   // <editor-fold desc="These are volatile fields and must not be persisted since they change at run

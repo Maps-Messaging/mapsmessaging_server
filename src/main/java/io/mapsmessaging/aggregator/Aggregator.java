@@ -216,6 +216,7 @@ public class Aggregator implements ClientConnection, MessageListener, ProcessedH
     SessionContextBuilder scb = new SessionContextBuilder(configDTO.getName(), this);
     scb.setResetState(true)
         .setSessionExpiry(0)
+        .isInternal(true)
         .setPersistentSession(false)
         .setReceiveMaximum(100);
 

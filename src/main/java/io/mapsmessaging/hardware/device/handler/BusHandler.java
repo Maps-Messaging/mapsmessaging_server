@@ -82,6 +82,7 @@ public abstract class BusHandler implements Runnable {
     .setResetState(true)
     .setUsername("anonymous")
     .setPassword(new char[0])
+    .isInternal(true)
     .setReceiveMaximum(10);
     return builder.build();
   }

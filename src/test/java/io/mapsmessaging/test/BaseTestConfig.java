@@ -154,9 +154,11 @@ public class BaseTestConfig extends BaseTest {
       SessionManager manager = md.getSubSystemManager().getSessionManager();
       List<SessionImpl> sessionImpls = manager.getSessions();
       for (SessionImpl sessionImpl : sessionImpls) {
-        System.err.println("Session still active::" + sessionImpl.getName());
-        sessionImpl.setExpiryTime(1);
-        manager.close(sessionImpl, false);
+        if(!sessionImpl.getContext().isInternal()) {
+          System.err.println("Session still active::" + sessionImpl.getName());
+          sessionImpl.setExpiryTime(1);
+          manager.close(sessionImpl, false);
+        }
       }
       int counter =0;
       while(!sessionImpls.isEmpty() && counter < 20) {
@@ -178,9 +180,11 @@ public class BaseTestConfig extends BaseTest {
       }
       if(md.getSubSystemManager().getSessionManager().hasSessions()){
         for (SessionImpl sessionImpl : md.getSubSystemManager().getSessionManager().getSessions()) {
-          System.err.println("Session still active::" + sessionImpl.getName());
-          sessionImpl.setExpiryTime(1);
-          manager.close(sessionImpl, false);
+          if(!sessionImpl.getContext().isInternal()) {
+            System.err.println("Session still active::" + sessionImpl.getName());
+            sessionImpl.setExpiryTime(1);
+            manager.close(sessionImpl, false);
+          }
         }
       }
       Assertions.assertFalse(md.getSubSystemManager().getSessionManager().hasSessions());
