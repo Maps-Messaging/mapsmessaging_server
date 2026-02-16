@@ -85,7 +85,7 @@ public class LocalLoopProtocol extends Protocol {
       return;
     }
     InterServerTransformation transformer = destinationTransformationLookup(parsedMessage.getDestinationName());
-    if(transformer != null) {
+    if(transformer != null && !messageEvent.getDestinationName().startsWith("$schema")) {
       parsedMessage = transformer.transform(messageEvent.getDestinationName(), parsedMessage);
     }
     if(parsedMessage.getMessage() == messageEvent.getMessage()){

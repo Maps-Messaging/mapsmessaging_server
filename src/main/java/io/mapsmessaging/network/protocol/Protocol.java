@@ -222,6 +222,10 @@ public abstract class Protocol implements SelectorCallback, MessageListener, Tim
     SubscriptionContext subInfo = messageEvent.getSubscription().getContext();
     String destinationName = messageEvent.getDestinationName();
     ParsedMessage parsedMessage = new ParsedMessage(destinationName, messageEvent.getMessage());
+    if(messageEvent.getDestinationName().startsWith("$schema")){
+      return parsedMessage;
+    }
+
     parsedMessage = processInterServerTransformations(messageEvent.getDestinationName(), parsedMessage );
     parsedMessage = processMessageAnalyser(parsedMessage, subInfo);
     if(parsedMessage == null){
