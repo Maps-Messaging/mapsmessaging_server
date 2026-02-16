@@ -143,6 +143,7 @@ public class Disconnected extends State implements EndPointConnectedCallback {
     SessionContext sessionContext = new SessionContextBuilder("Internal-"+sessionId, new ProtocolClientConnection(protocol))
         .setPersistentSession(true)
         .setUsername("admin")
+        .isInternal(true)
         .setResetState(true)
         .isAuthorized(true)
         .build();
