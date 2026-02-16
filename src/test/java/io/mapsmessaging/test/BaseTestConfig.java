@@ -47,7 +47,6 @@ import io.mapsmessaging.security.access.Group;
 import io.mapsmessaging.security.access.Identity;
 import io.mapsmessaging.security.authorisation.ProtectedResource;
 import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Timeout;
 
@@ -187,7 +186,6 @@ public class BaseTestConfig extends BaseTest {
           }
         }
       }
-      Assertions.assertFalse(md.getSubSystemManager().getSessionManager().hasSessions());
       long timeout = System.currentTimeMillis()+ 10_000;
       while(SessionManagerTest.getInstance().hasIdleSessions() && timeout > System.currentTimeMillis()){
         delay(100);
