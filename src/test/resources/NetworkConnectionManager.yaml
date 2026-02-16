@@ -39,40 +39,6 @@ NetworkConnectionManager:
         selectorThreadCount  : 1
 
     data:
-      - name: "ST2100 Modem"
-        url: serial://localhost:0/
-        transformation: "Message-Raw"
-        protocol: stogi
-        initialSetup: ""
-        incomingMessagePollInterval: 1
-        outgoingMessagePollInterval: 30
-        sharedSecret: "This is a shared secret to use"
-        sendHighPriorityMessages: false
-        modemResponseTimeout: 20000
-        locationPollInterval: 60
-        maxBufferSize: 4000
-        compressionCutoffSize: 128
-
-        modemStatsTopic: "/modem/stats"
-
-        remote:
-          sessionId: <not required>
-          username: <not required>
-          password: <not required>
-
-        links:
-          - direction: push
-            local_namespace: "/input/#"
-            remote_namespace: "/satellite/#"
-            include_schema: false
-
-        serial:
-          port: ttyv1
-          baudRate: 9600
-          dataBits: 8
-          stopBits: 1
-          parity: n
-          flowControl: 0
 
 
 
