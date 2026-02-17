@@ -95,20 +95,34 @@ public class LocalLoopProtocol extends Protocol {
     String topicName = parsedMessage.getDestinationName();
     Message message = parsedMessage.getMessage();
     if (topicName != null) {
-      CompletableFuture<Destination> future = session.findDestination(topicName, DestinationType.TOPIC);
-      future.thenApply(destination -> {
-        try {
-          if (destination != null) {
-            destination.storeMessage(message);
-          }
-          messageEvent.getCompletionTask().run();
-          logger.log(ServerLogMessages.LOOP_SENT_MESSAGE);
-        } catch (IOException ioException) {
-          logger.log(ServerLogMessages.LOOP_SEND_MESSAGE_FAILED, ioException);
-        }
-        return destination;
-      });
+
+      if(topicName.startsWith("$schema")) {
+        Thread t = new Thread(() -> {
+          findAndSendMessage(topicName, message, messageEvent);
+        });
+        t.start();
+      }
+      else{
+        findAndSendMessage(topicName, message, messageEvent);
+      }
+
     }
+  }
+
+  private void findAndSendMessage(String topicName, Message message, MessageEvent messageEvent) {
+    CompletableFuture<Destination> future = session.findDestination(topicName, DestinationType.TOPIC);
+    future.thenApply(destination -> {
+      try {
+        if (destination != null) {
+          destination.storeMessage(message);
+        }
+        messageEvent.getCompletionTask().run();
+        logger.log(ServerLogMessages.LOOP_SENT_MESSAGE);
+      } catch (IOException ioException) {
+        logger.log(ServerLogMessages.LOOP_SEND_MESSAGE_FAILED, ioException);
+      }
+      return destination;
+    });
   }
 
   @Override
