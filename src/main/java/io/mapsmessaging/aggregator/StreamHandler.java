@@ -80,8 +80,8 @@ public class StreamHandler {
       parsedMessage.setMessage(event.getMessage());
       parsedMessage.setDestinationName(event.getDestinationName());
 
-      for (InterServerTransformation transformation : transformation) {
-        parsedMessage = transformation.transform(event.getDestinationName(), parsedMessage);
+      for (InterServerTransformation trans : transformation) {
+        parsedMessage = trans.transform(event.getDestinationName(), parsedMessage);
         if( parsedMessage == null ||
             parsedMessage.getDestinationName() == null ||
             parsedMessage.getMessage() == null) {
