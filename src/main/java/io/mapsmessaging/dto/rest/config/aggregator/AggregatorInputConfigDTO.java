@@ -19,7 +19,9 @@
 
 package io.mapsmessaging.dto.rest.config.aggregator;
 
+import io.mapsmessaging.api.transformers.InterServerTransformation;
 import io.mapsmessaging.dto.rest.config.BaseConfigDTO;
+import io.mapsmessaging.dto.rest.config.transformer.TransformationConfigDTO;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -64,7 +66,7 @@ public class AggregatorInputConfigDTO extends BaseConfigDTO {
       nullable = true,
       example = "[{\"name\":\"JsonQuery\",\"parameters\":{\"query\":\"[\\\"object\\\",{\\\"latitude\\\":[\\\"divide\\\",[\\\"get\\\",\\\"payload\\\",\\\"decoded\\\",\\\"lat\\\"],10000000]}]\"}}]"
   )
-  protected List<Map<String, Object>> transformer;
+  protected List<TransformationConfigDTO> transformer;
 
 
   @Schema(

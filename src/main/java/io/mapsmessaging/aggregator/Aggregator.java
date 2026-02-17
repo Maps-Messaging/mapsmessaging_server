@@ -28,16 +28,23 @@ import io.mapsmessaging.aggregator.worker.AggregatorWorker;
 import io.mapsmessaging.api.*;
 import io.mapsmessaging.api.features.DestinationType;
 import io.mapsmessaging.api.message.Message;
+import io.mapsmessaging.api.transformers.InterServerTransformation;
+import io.mapsmessaging.api.transformers.ParsedMessage;
 import io.mapsmessaging.dto.rest.config.aggregator.AggregatorConfigDTO;
 import io.mapsmessaging.dto.rest.config.aggregator.AggregatorInputConfigDTO;
+import io.mapsmessaging.dto.rest.config.transformer.TransformationConfigDTO;
 import io.mapsmessaging.engine.session.ClientConnection;
+import io.mapsmessaging.engine.transformers.TransformerManager;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
+import io.mapsmessaging.network.protocol.transformation.TransformationManager;
 import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
 import java.security.Principal;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.*;
 
@@ -52,6 +59,7 @@ public class Aggregator implements ClientConnection, MessageListener, ProcessedH
   private final StreamHandler[] handlers;
   private final Map<String, Integer> topicIndexMap;
   private final AggregationStrategy strategy;
+  private final List<InterServerTransformation> transformation;
 
   private Session session;
   private Destination outboundDestination;
@@ -72,10 +80,20 @@ public class Aggregator implements ClientConnection, MessageListener, ProcessedH
       this.topicIndexMap.put(input.getTopicName(), index);
       index++;
     }
+    transformation = new ArrayList<>();
+
   }
 
   public void start() {
     try {
+      if(configDTO.getOutputTransformers() != null && !configDTO.getOutputTransformers().isEmpty()){
+        for(TransformationConfigDTO dto : configDTO.getOutputTransformers()){
+          InterServerTransformation t = TransformerManager.getInstance().get(dto);
+          if(t != null){
+            transformation.add(t);
+          }
+        }
+      }
       mailbox = new QueueBackedMpscMailbox<>(8192);
       session = createSession();
       outboundDestination = session.findDestination(configDTO.getOutputTopic(), DestinationType.TOPIC).get();
@@ -93,6 +111,7 @@ public class Aggregator implements ClientConnection, MessageListener, ProcessedH
   }
 
   public void stop() {
+    transformation.clear();
     if (worker != null) {
       try {
         aggregatorWorkScheduler.unregister(worker);
@@ -134,8 +153,25 @@ public class Aggregator implements ClientConnection, MessageListener, ProcessedH
       topics[i] = handlers[i].getTopicName();
     }
     Message message = strategy.aggregate (topics, events);
+    if(!transformation.isEmpty()) {
+      ParsedMessage parsedMessage = new ParsedMessage(configDTO.getOutputTopic(), message);
+      for (InterServerTransformation t : transformation) {
+        ParsedMessage p =  t.transform(configDTO.getOutputTopic(), parsedMessage);
+        if(p != null) {
+          parsedMessage = p;
+        }
+        else{
+          break;
+        }
+      }
+      if(parsedMessage != null){
+        message = parsedMessage.getMessage();
+      }
+    }
     try {
-      outboundDestination.storeMessage(message);
+      if(message != null) {
+        outboundDestination.storeMessage(message);
+      }
     } catch (IOException e) {
       logger.log(AGGREGATOR_COMPLETION_EXCEPTION, configDTO.getName(), e);
     }
@@ -149,7 +185,6 @@ public class Aggregator implements ClientConnection, MessageListener, ProcessedH
       runCompletion(messageEvent);
       return;
     }
-
     AggregatorEnvelope envelope = new AggregatorEnvelope(inputIndex, messageEvent);
     boolean accepted = mailbox.offer(envelope);
     if (!accepted) {

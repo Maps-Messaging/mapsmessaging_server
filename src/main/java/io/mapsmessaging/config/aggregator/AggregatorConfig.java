@@ -43,7 +43,7 @@ public class AggregatorConfig extends AggregatorConfigDTO implements Config {
     this.maxEventsPerTopic = props.getIntProperty("maxEventsPerTopic", 1);
 
     this.inputs = unpackInputs(props);
-    this.outputTransformers = TransformationConfigFactory.loadChain(props.get("outputTransformers"));
+    this.outputTransformers = TransformationConfigFactory.loadChain(props.get("transformer"));
   }
 
   private List<AggregatorInputConfigDTO> unpackInputs(ConfigurationProperties props) {

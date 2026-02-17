@@ -23,36 +23,5 @@ AggregatorManager:
     maxAggregators: 0
 
     aggregatorConfigList:
-      - name: aggregator-1
-        enabled: true
-        outputTopic: /test/out1
-        windowDurationMs: 1000
-        timeoutMs: 5000
-        maxEventsPerTopic: 1
 
-        outputTransformers:
-          - type: jsonquery
-            query: "[\"object\",{\"window\":[\"get\",\"windowId\"],\"payload\":[\"get\",\"payload\"]}]"
-
-        inputs:
-          - topicName: /test1/in1
-            contributionMode: LAST
-          - topicName: /test1/in2
-            contributionMode: LAST
-          - topicName: /test1/in3
-            contributionMode: LAST
-
-      - name: aggregator-2
-        enabled: true
-        outputTopic: /test/out2
-        windowDurationMs: 1000
-        timeoutMs: 5000
-        maxEventsPerTopic: 1
-        inputs:
-          - topicName: /test2/in1
-            contributionMode: LAST
-          - topicName: /test2/in2
-            contributionMode: LAST
-          - topicName: /test2/in3
-            contributionMode: LAST
 

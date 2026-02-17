@@ -20,10 +20,14 @@
 package io.mapsmessaging.config.aggregator;
 
 import io.mapsmessaging.config.Config;
+import io.mapsmessaging.config.transformer.TransformationConfigFactory;
 import io.mapsmessaging.configuration.ConfigurationProperties;
 import io.mapsmessaging.dto.rest.config.BaseConfigDTO;
 import io.mapsmessaging.dto.rest.config.aggregator.AggregatorInputConfigDTO;
+import io.mapsmessaging.engine.transformers.TransformerManager;
+import io.mapsmessaging.network.protocol.transformation.TransformationManager;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -34,14 +38,9 @@ public class AggregatorInputConfig extends AggregatorInputConfigDTO implements C
     this.selector = props.getProperty("selector", "");
 
     Object transformerObject = props.get("transformer");
-    if (transformerObject instanceof List) {
-      this.transformer = castTransformerChain(transformerObject);
+    if (transformerObject != null) {
+      this.transformer = TransformationConfigFactory.loadChain(transformerObject);
     }
-  }
-
-  @SuppressWarnings("unchecked")
-  private List<Map<String, Object>> castTransformerChain(Object transformerObject) {
-    return (List<Map<String, Object>>) transformerObject;
   }
 
   @Override
@@ -76,10 +75,6 @@ public class AggregatorInputConfig extends AggregatorInputConfigDTO implements C
         hasChanged = true;
       }
 
-      if (!safeEqualsListMap(this.transformer, config.getTransformer())) {
-        this.transformer = config.getTransformer();
-        hasChanged = true;
-      }
     }
 
     return hasChanged;
