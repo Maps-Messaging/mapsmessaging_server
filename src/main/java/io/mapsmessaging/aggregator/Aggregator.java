@@ -82,7 +82,7 @@ public class Aggregator implements ClientConnection, MessageListener, ProcessedH
       for (StreamHandler handler : handlers) {
         handler.start(session);
       }
-      worker = new AggregatorWorker(getName(), mailbox, handlers, getTimeOut(), this);
+      worker = new AggregatorWorker(getName(), mailbox, handlers, configDTO.getTimeoutMs(), this);
       aggregatorWorkScheduler.register(worker);
       logger.log(AGGREGATOR_STARTED_, configDTO.getInputs().size());
     } catch (ExecutionException | InterruptedException | TimeoutException | IOException e) {
