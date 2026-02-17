@@ -44,18 +44,25 @@ public class TransformerManager implements ServiceManager {
   private final Map<String, Service> transformerMap;
 
   public InterServerTransformation get(ConfigurationProperties props) {
-
+    if(props == null || !props.containsKey("name")) return null;
     String transformer = props.getProperty("name").toLowerCase();
     TransformationConfigDTO dto = TransformationConfigFactory.loadSingle(props);
     if(dto != null){
-      InterServerTransformation t = (InterServerTransformation) transformerMap.get(transformer);
-      return  t.build(dto);
+      return  get(dto);
     }
     else{
       ProtocolMessageTransformation protocolMessageTransformation = TransformationManager.getInstance().getTransformation(transformer);
       if(protocolMessageTransformation != null){
         return new ProtocolTransformationWrapper(protocolMessageTransformation);
       }
+    }
+    return null;
+  }
+
+  public InterServerTransformation get(TransformationConfigDTO dto) {
+    if(dto != null){
+      InterServerTransformation t = (InterServerTransformation) transformerMap.get(dto.getType().getWireName());
+      return  t.build(dto);
     }
     return null;
   }

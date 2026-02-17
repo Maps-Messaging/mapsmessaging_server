@@ -30,24 +30,24 @@ import lombok.NoArgsConstructor;
 
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.PROPERTY, property = "type")
 @JsonSubTypes({
-    @JsonSubTypes.Type(value = JsonToXmlTransformationDTO.class, name = "json-to-xml"),
-    @JsonSubTypes.Type(value = XmlToJsonTransformationDTO.class, name = "xml-to-json"),
-    @JsonSubTypes.Type(value = JsonToValueTransformationDTO.class, name = "json-to-value"),
-    @JsonSubTypes.Type(value = JsonQueryTransformationDTO.class, name = "json-query"),
+    @JsonSubTypes.Type(value = JsonToXmlTransformationDTO.class, name = "jsontoxml"),
+    @JsonSubTypes.Type(value = XmlToJsonTransformationDTO.class, name = "xmltojson"),
+    @JsonSubTypes.Type(value = JsonToValueTransformationDTO.class, name = "jsontovalue"),
+    @JsonSubTypes.Type(value = JsonQueryTransformationDTO.class, name = "jsonquery"),
     @JsonSubTypes.Type(value = GeoHashResolverTransformationDTO.class, name = "geohash"),
-    @JsonSubTypes.Type(value = JsonMutateTransformationDTO.class, name = "json-mutate"),
+    @JsonSubTypes.Type(value = JsonMutateTransformationDTO.class, name = "jsonmutate"),
 
 })
 @Schema(
     description = "Abstract base class for all transformation configurations",
     discriminatorProperty = "type",
     discriminatorMapping = {
-        @DiscriminatorMapping(value = "json-to-xml", schema = JsonToXmlTransformationDTO.class),
-        @DiscriminatorMapping(value = "xml-to-json", schema = XmlToJsonTransformationDTO.class),
-        @DiscriminatorMapping(value = "json-to-value", schema = JsonToValueTransformationDTO.class),
-        @DiscriminatorMapping(value = "json-query", schema = JsonQueryTransformationDTO.class),
+        @DiscriminatorMapping(value = "jsontoxml", schema = JsonToXmlTransformationDTO.class),
+        @DiscriminatorMapping(value = "xmltojson", schema = XmlToJsonTransformationDTO.class),
+        @DiscriminatorMapping(value = "jsontovalue", schema = JsonToValueTransformationDTO.class),
+        @DiscriminatorMapping(value = "jsonquery", schema = JsonQueryTransformationDTO.class),
         @DiscriminatorMapping(value = "geohash", schema = GeoHashResolverTransformationDTO.class),
-        @DiscriminatorMapping(value = "json-mutate", schema = JsonMutateTransformationDTO.class),
+        @DiscriminatorMapping(value = "jsonmutate", schema = JsonMutateTransformationDTO.class),
     },
     requiredProperties = {"type"},
     additionalProperties = Schema.AdditionalPropertiesValue.TRUE,
@@ -65,7 +65,7 @@ public class TransformationConfigDTO extends BaseConfigDTO {
 
   @Schema(
       description = "Type of transformation configuration. All values are lower-case and hyphen-separated.",
-      example = "json-to-xml",
+      example = "jsontoxml",
       requiredMode = Schema.RequiredMode.REQUIRED,
       nullable = false,
       implementation = TransformationType.class

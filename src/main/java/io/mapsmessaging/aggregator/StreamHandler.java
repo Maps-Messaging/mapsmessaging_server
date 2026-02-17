@@ -28,12 +28,14 @@ import io.mapsmessaging.api.transformers.InterServerTransformation;
 import io.mapsmessaging.api.transformers.ParsedMessage;
 import io.mapsmessaging.dto.rest.config.aggregator.AggregatorContributionMode;
 import io.mapsmessaging.dto.rest.config.aggregator.AggregatorInputConfigDTO;
+import io.mapsmessaging.dto.rest.config.transformer.TransformationConfigDTO;
 import io.mapsmessaging.engine.destination.subscription.SubscriptionContext;
 import io.mapsmessaging.engine.transformers.TransformerManager;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 
 import static io.mapsmessaging.logging.ServerLogMessages.AGGREGATOR_SUBSCRIPTION_ADDED;
@@ -43,10 +45,11 @@ public class StreamHandler {
   private final Logger logger = LoggerFactory.getLogger(this.getClass());
   private final AggregatorInputConfigDTO config;
   private SubscribedEventManager subscriptionManager;
-  private List<InterServerTransformation> transformation;
+  private final List<InterServerTransformation> transformation;
 
   public StreamHandler(AggregatorInputConfigDTO config) {
     this.config = config;
+    transformation = new ArrayList<>();
   }
 
   public String getTopicName() {
@@ -58,13 +61,20 @@ public class StreamHandler {
   }
 
   public void start(Session session) throws IOException {
-    if (config.getTransformer() != null) {
-      transformation = TransformerManager.getInstance().buildList(config.getTransformer());
+
+    if(config.getTransformer() != null && !config.getTransformer().isEmpty()){
+      for(TransformationConfigDTO dto : config.getTransformer()){
+        InterServerTransformation t = TransformerManager.getInstance().get(dto);
+        if(t != null){
+          transformation.add(t);
+        }
+      }
     }
     addSubscription(session);
   }
 
   public void stop(Session session) {
+    transformation.clear();
     if (subscriptionManager != null) {
       session.removeSubscription(subscriptionManager.getContext().getKey());
     }

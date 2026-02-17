@@ -60,6 +60,10 @@ public class JsonMutator {
     if (path == null || path.isBlank() || value == null) {
       return;
     }
+    if(value.getAsString().startsWith("$.")){
+      String key = value.getAsString().substring(2);
+      value = JsonPath.get(root, key);
+    }
     JsonPath.set(root, path, value);
   }
 

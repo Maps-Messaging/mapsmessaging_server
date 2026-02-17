@@ -23,7 +23,6 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import io.mapsmessaging.api.MessageBuilder;
 import io.mapsmessaging.api.transformers.jsonmutate.JsonMutator;
-import io.mapsmessaging.configuration.ConfigurationProperties;
 import io.mapsmessaging.dto.rest.config.transformer.TransformationConfigDTO;
 import io.mapsmessaging.dto.rest.config.transformer.impl.JsonMutateTransformationDTO;
 import java.nio.charset.StandardCharsets;
@@ -77,7 +76,7 @@ public class JsonMutateTransformation implements InterServerTransformation {
 
   @Override
   public String getName() {
-    return "json-mutate";
+    return "jsonmutate";
   }
 
   @Override
