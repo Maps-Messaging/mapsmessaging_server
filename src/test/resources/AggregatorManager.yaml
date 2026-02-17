@@ -23,5 +23,114 @@ AggregatorManager:
     maxAggregators: 0
 
     aggregatorConfigList:
+      - name: aggregator-1
+        enabled: true
+        outputTopic: /aggregator1/out1
+        windowDurationMs: 1000
+        timeoutMs: 5000
+        maxEventsPerTopic: 1
 
+        inputs:
+          - topicName: /aggregator1/in1
+            contributionMode: LAST
+          - topicName: /aggregator1/in2
+            contributionMode: LAST
+          - topicName: /aggregator1/in3
+            contributionMode: LAST
 
+      - name: aggregator-2
+        enabled: true
+        outputTopic: /aggregator2/out1
+        windowDurationMs: 1000
+        timeoutMs: 5000
+        maxEventsPerTopic: 1
+        inputs:
+          - topicName: /aggregator2/in1
+            contributionMode: LAST
+            transformer:
+              name: jsonmutate
+              operations:
+                - op: SET
+                  path: temp
+                  value: "$.reading.temperatureC"
+                - op: REMOVE
+                  path: deviceId
+                - op: REMOVE
+                  path: deviceName
+                - op: REMOVE
+                  path: time
+                - op: REMOVE
+                  path: location
+                - op: REMOVE
+                  path: battery
+                - op: REMOVE
+                  path: reading
+          - topicName: /aggregator2/in2
+            contributionMode: LAST
+            transformer:
+              -
+                name : jsonmutate
+                operations:
+                    - op: SET
+                      value: "$.reading.humidityPct"
+                      path: humidity
+                    - op: REMOVE
+                      path: reading
+                    - op: REMOVE
+                      path: deviceId
+                    - op: REMOVE
+                      path: deviceName
+                    - op: REMOVE
+                      path: time
+                    - op: REMOVE
+                      path: location
+                    - op: REMOVE
+                      path: battery
+
+          - topicName: /aggregator2/in3
+            contributionMode: LAST
+
+            transformer:
+              -
+                name : jsonmutate
+                operations:
+                  - op: SET
+                    value: "$.reading.pressureHpa"
+                    path: pressure
+                  - op: REMOVE
+                    path: reading
+                  - op: REMOVE
+                    path: deviceId
+                  - op: REMOVE
+                    path: deviceName
+                  - op: REMOVE
+                    path: time
+                  - op: REMOVE
+                    path: location
+                  - op: REMOVE
+                    path: battery
+
+      - name: aggregator-3
+        enabled: true
+        outputTopic: /aggregator3/out1
+
+        windowDurationMs: 1000
+        timeoutMs: 5000
+        maxEventsPerTopic: 1
+
+        inputs:
+          - topicName: /aggregator3/in1
+            contributionMode: LAST
+          - topicName: /aggregator3/in2
+            contributionMode: LAST
+          - topicName: /aggregator3/in3
+            contributionMode: LAST
+        transformer:
+          name: jsonquery
+          query: |
+                {
+                  runId: .inputs."/aggregator3/in1".payload.runId,
+                  temp: .inputs."/aggregator3/in1".payload.temp,
+                  humidity: .inputs."/aggregator3/in2".payload.humidity,
+                  pressure: .inputs."/aggregator3/in3".payload.pressure
+                }
