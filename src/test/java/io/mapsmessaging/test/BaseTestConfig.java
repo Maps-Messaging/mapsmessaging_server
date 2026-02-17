@@ -21,6 +21,9 @@ package io.mapsmessaging.test;
 
 import io.mapsmessaging.BaseTest;
 import io.mapsmessaging.MessageDaemon;
+import io.mapsmessaging.api.MessageListener;
+import io.mapsmessaging.api.Session;
+import io.mapsmessaging.api.SessionContextBuilder;
 import io.mapsmessaging.api.features.DestinationType;
 import io.mapsmessaging.auth.AuthManager;
 import io.mapsmessaging.auth.ServerPermissions;
@@ -29,6 +32,7 @@ import io.mapsmessaging.configuration.ConfigurationProperties;
 import io.mapsmessaging.engine.destination.DestinationImpl;
 import io.mapsmessaging.engine.destination.DestinationManagerListener;
 import io.mapsmessaging.engine.destination.subscription.SubscriptionController;
+import io.mapsmessaging.engine.session.FakeProtocol;
 import io.mapsmessaging.engine.session.SessionImpl;
 import io.mapsmessaging.engine.session.SessionManager;
 import io.mapsmessaging.engine.session.SessionManagerTest;
@@ -43,12 +47,16 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
+import io.mapsmessaging.network.ProtocolClientConnection;
+import io.mapsmessaging.network.protocol.Protocol;
 import io.mapsmessaging.security.access.Group;
 import io.mapsmessaging.security.access.Identity;
 import io.mapsmessaging.security.authorisation.ProtectedResource;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Timeout;
+
+import javax.security.auth.login.LoginException;
 
 @Timeout(value = 240000, unit = TimeUnit.MILLISECONDS)
 public class BaseTestConfig extends BaseTest {
@@ -75,7 +83,8 @@ public class BaseTestConfig extends BaseTest {
     Map<String, DestinationImpl> destinations = md.getDestinationManager().get(null);
     List<DestinationImpl> toDelete = new ArrayList<>();
     for(DestinationImpl destination:destinations.values()){
-      if(!destination.getFullyQualifiedNamespace().startsWith("$")){
+      if(!destination.getFullyQualifiedNamespace().startsWith("$")&&
+          !(destination.getFullyQualifiedNamespace().startsWith("/aggregator") )) {
         toDelete.add(destination);
       }
     }
@@ -141,6 +150,35 @@ public class BaseTestConfig extends BaseTest {
     }
   }
 
+
+  public Session createSession(String name, int keepAlive, int expiry, boolean persistent, MessageListener listener) throws LoginException, IOException {
+    return createSession(name, keepAlive, expiry, persistent, listener, false);
+  }
+
+  public Session createSession(String name, int keepAlive, int expiry, boolean persistent, MessageListener listener, boolean resetState) throws LoginException, IOException {
+    Protocol fakeProtocol = new FakeProtocol(listener);
+    SessionContextBuilder scb = new SessionContextBuilder(name, new ProtocolClientConnection(fakeProtocol));
+    scb.setPersistentSession(true)
+        .setPersistentSession(persistent)
+        .setResetState(resetState)
+        .setReceiveMaximum(100)
+        .setSessionExpiry(expiry);
+    return createSession(scb, fakeProtocol);
+  }
+
+  public Session createSession(SessionContextBuilder scb, MessageListener listener) throws LoginException, IOException {
+    Session session = io.mapsmessaging.api.SessionManager.getInstance().create(scb.build(), listener);
+    session.login();
+    session.resumeState();
+    //Assertions.assertTrue(session.isRestored());
+    return session;
+  }
+
+  public void close(Session session) throws IOException {
+    io.mapsmessaging.api.SessionManager.getInstance().close(session, false);
+  }
+
+
   private static void setIfNot(String key, String value){
     if(System.getProperty(key) == null){
       System.setProperty(key, value);
@@ -173,7 +211,8 @@ public class BaseTestConfig extends BaseTest {
 
       Map<String, DestinationImpl> destinationImpls = md.getDestinationManager().get(null);
       for (DestinationImpl destinationImpl : destinationImpls.values()) {
-        if (!destinationImpl.getFullyQualifiedNamespace().startsWith("$")) {
+        if (!destinationImpl.getFullyQualifiedNamespace().startsWith("$") &&
+            !(destinationImpl.getFullyQualifiedNamespace().startsWith("/aggregator") )) {
           md.getDestinationManager().delete(destinationImpl);
         }
       }
