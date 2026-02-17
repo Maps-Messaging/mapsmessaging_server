@@ -5,7 +5,7 @@
  *
  *  Licensed under the Apache License, Version 2.0 with the Commons Clause
  *  (the "License"); you may not use this file except in compliance with the License.
- *  You may obtain a copy of the License at:
+ *  You may obtain a copy of the License for the License at:
  *
  *      http://www.apache.org/licenses/LICENSE-2.0
  *      https://commonsclause.com/
@@ -23,13 +23,19 @@ import com.google.common.reflect.TypeToken;
 import com.google.gson.Gson;
 import io.mapsmessaging.api.MessageBuilder;
 import io.mapsmessaging.api.message.Message;
+import io.mapsmessaging.api.message.TypedData;
 
 import java.lang.reflect.Type;
+import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 import java.util.Base64;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Objects;
 
 public class EnvelopeAggregationStrategy implements AggregationStrategy {
+
+  private static final String JSON_CONTENT_TYPE = "application/json";
 
   private final Gson gson = new Gson();
 
@@ -42,6 +48,7 @@ public class EnvelopeAggregationStrategy implements AggregationStrategy {
   public Message aggregate(String[] topics, Message[] contributions) {
     Map<String, Object> root = new LinkedHashMap<>();
     Map<String, Object> inputs = new LinkedHashMap<>();
+
     for (int index = 0; index < contributions.length; index++) {
       Message message = contributions[index];
       if (message == null) {
@@ -49,24 +56,163 @@ public class EnvelopeAggregationStrategy implements AggregationStrategy {
       }
       inputs.put(topics[index], buildEnvelopeEntry(message));
     }
+
     root.put("inputs", inputs);
     String json = gson.toJson(root);
 
     MessageBuilder messageBuilder = new MessageBuilder();
-    messageBuilder.setContentType("application/json");
-    messageBuilder.setOpaqueData(json.getBytes());
+    messageBuilder.setContentType(JSON_CONTENT_TYPE);
+    messageBuilder.setOpaqueData(json.getBytes(StandardCharsets.UTF_8));
+
+    byte[] commonCorrelationData = computeCommonCorrelationData(contributions);
+    if (commonCorrelationData != null) {
+      messageBuilder.setCorrelationData(commonCorrelationData);
+    }
+
+    Map<String, TypedData> commonDataMap = computeCommonDataMap(contributions);
+    if (commonDataMap != null && !commonDataMap.isEmpty()) {
+      messageBuilder.setDataMap(commonDataMap);
+    }
+
     return messageBuilder.build();
   }
 
   private Map<String, Object> buildEnvelopeEntry(Message message) {
     Map<String, Object> entry = new LinkedHashMap<>();
-    if(message.getContentType() != null && message.getContentType().equals("application/json")) {
+
+    byte[] opaqueData = message.getOpaqueData();
+    if (opaqueData == null) {
+      entry.put("payloadBase64", null);
+      return entry;
+    }
+
+    String contentType = message.getContentType();
+    if (contentType != null && contentType.equals(JSON_CONTENT_TYPE)) {
       Type type = new TypeToken<Map<String, Object>>() {}.getType();
-      Map<String, Object> map = gson.fromJson(new String(message.getOpaqueData()), type);
+      Map<String, Object> map = gson.fromJson(new String(opaqueData, StandardCharsets.UTF_8), type);
       entry.put("payload", map);
     } else {
-      entry.put("payloadBase64", Base64.getEncoder().encodeToString(message.getOpaqueData()));
+      entry.put("payloadBase64", Base64.getEncoder().encodeToString(opaqueData));
     }
+
     return entry;
+  }
+
+  private static byte[] computeCommonCorrelationData(Message[] contributions) {
+    byte[] candidate = null;
+
+    for (Message message : contributions) {
+      if (message == null) {
+        continue;
+      }
+
+      byte[] correlationData = message.getCorrelationData();
+      if (correlationData == null) {
+        return null;
+      }
+
+      if (candidate == null) {
+        candidate = correlationData;
+        continue;
+      }
+
+      if (!Arrays.equals(candidate, correlationData)) {
+        return null;
+      }
+    }
+
+    return candidate;
+  }
+
+  private static Map<String, TypedData> computeCommonDataMap(Message[] contributions) {
+    Message firstMessage = firstNonNull(contributions);
+    if (firstMessage == null) {
+      return null;
+    }
+
+    Map<String, TypedData> firstDataMap = firstMessage.getDataMap();
+    if (firstDataMap == null || firstDataMap.isEmpty()) {
+      return null;
+    }
+
+    Map<String, TypedData> intersection = new LinkedHashMap<>();
+
+    for (Map.Entry<String, TypedData> entry : firstDataMap.entrySet()) {
+      String key = entry.getKey();
+      TypedData candidate = entry.getValue();
+      if (candidate == null) {
+        continue;
+      }
+
+      boolean matchesAll = true;
+
+      for (Message message : contributions) {
+        if (message == null) {
+          continue;
+        }
+
+        Map<String, TypedData> dataMap = message.getDataMap();
+        if (dataMap == null) {
+          matchesAll = false;
+          break;
+        }
+
+        TypedData other = dataMap.get(key);
+        if (!typedDataEquals(candidate, other)) {
+          matchesAll = false;
+          break;
+        }
+      }
+
+      if (matchesAll) {
+        intersection.put(key, candidate);
+      }
+    }
+
+    return intersection;
+  }
+
+  private static Message firstNonNull(Message[] contributions) {
+    for (Message message : contributions) {
+      if (message != null) {
+        return message;
+      }
+    }
+    return null;
+  }
+
+  private static boolean typedDataEquals(TypedData left, TypedData right) {
+    if (left == right) {
+      return true;
+    }
+    if (left == null || right == null) {
+      return false;
+    }
+    if (left.getType() != right.getType()) {
+      return false;
+    }
+
+    Object leftData = left.getData();
+    Object rightData = right.getData();
+
+    if (leftData == rightData) {
+      return true;
+    }
+    if (leftData == null || rightData == null) {
+      return false;
+    }
+
+    return switch (left.getType()) {
+      case BYTE_ARRAY -> Arrays.equals((byte[]) leftData, (byte[]) rightData);
+      case SHORT_ARRAY -> Arrays.equals((short[]) leftData, (short[]) rightData);
+      case INT_ARRAY -> Arrays.equals((int[]) leftData, (int[]) rightData);
+      case LONG_ARRAY -> Arrays.equals((long[]) leftData, (long[]) rightData);
+      case FLOAT_ARRAY -> Arrays.equals((float[]) leftData, (float[]) rightData);
+      case DOUBLE_ARRAY -> Arrays.equals((double[]) leftData, (double[]) rightData);
+      case STRING_ARRAY -> Arrays.equals((String[]) leftData, (String[]) rightData);
+      case CHAR_ARRAY -> Arrays.equals((char[]) leftData, (char[]) rightData);
+      case TYPED_MAP -> Objects.equals(leftData, rightData);
+      default -> Objects.equals(leftData, rightData);
+    };
   }
 }
