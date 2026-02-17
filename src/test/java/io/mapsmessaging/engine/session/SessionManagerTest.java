@@ -50,6 +50,10 @@ public class SessionManagerTest {
     return manager.hasIdleSessions();
   }
 
+  public int sessionCount(){
+    return manager.getSessions().size();
+  }
+
   public boolean hasSessions() {
     return manager.hasSessions();
   }
