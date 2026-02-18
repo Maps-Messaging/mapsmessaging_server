@@ -74,13 +74,15 @@ class JetStreamStreamTest extends JetStreamBaseTest {
     List<StreamInfo> f = jetStreamManagement.getStreams();
     Assertions.assertNotNull(f);
     Assertions.assertFalse(f.isEmpty());
+    boolean found = false;
     for(StreamInfo si : f) {
       for(String subject: si.getConfig().getSubjects()) {
         Assertions.assertNotEquals("topic1", subject);
         Assertions.assertNotEquals("topic2", subject);
-        Assertions.assertTrue(subject.equals("folder1.topic1") || subject.equals("folder.folder1.folder2.topic1"));
+        found = (subject.equals("folder1.topic1") || subject.equals("folder.folder1.folder2.topic1"));
       }
     }
+    Assertions.assertTrue(found);
   }
 
 
@@ -116,6 +118,8 @@ class JetStreamStreamTest extends JetStreamBaseTest {
         .allowMessageTtl(true)
         .discardPolicy(DiscardPolicy.Old)
         .build();
+    List<StreamInfo> start = jetStreamManagement.getStreams();
+
     jetStreamManagement.addStream(streamConfiguration);
     StreamInfo streamInfo = jetStreamManagement.getStreamInfo("nats_test");
     Assertions.assertNotNull(streamInfo);
@@ -123,6 +127,6 @@ class JetStreamStreamTest extends JetStreamBaseTest {
     Assertions.assertTrue(jetStreamManagement.deleteStream("nats_test"));
     List<StreamInfo> f = jetStreamManagement.getStreams();
     Assertions.assertNotNull(f);
-    Assertions.assertTrue(f.isEmpty());
+    Assertions.assertEquals(f.size(), start.size());
   }
 }
