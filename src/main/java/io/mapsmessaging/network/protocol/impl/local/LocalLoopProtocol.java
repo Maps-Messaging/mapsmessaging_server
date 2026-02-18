@@ -80,50 +80,65 @@ public class LocalLoopProtocol extends Protocol {
 
   @Override
   public void sendMessage(@NotNull @NonNull MessageEvent messageEvent) {
+
     ParsedMessage parsedMessage = parseOutboundMessage(messageEvent);
-    if(parsedMessage == null) {
+    if (parsedMessage == null) {
       return;
     }
     InterServerTransformation transformer = destinationTransformationLookup(parsedMessage.getDestinationName());
-    if(transformer != null && !messageEvent.getDestinationName().startsWith("$schema")) {
+
+    if (transformer != null && !messageEvent.getDestinationName().startsWith("$schema")) {
       parsedMessage = transformer.transform(messageEvent.getDestinationName(), parsedMessage);
     }
-    if(parsedMessage.getMessage() == messageEvent.getMessage()){
+
+    if (parsedMessage.getMessage() == messageEvent.getMessage()) {
       MessageBuilder messageBuilder = new MessageBuilder(messageEvent.getMessage());
-      parsedMessage.setMessage(messageBuilder.build()); // We need to copy it since this event comes from internal
+      parsedMessage.setMessage(messageBuilder.build());
     }
+
     String topicName = parsedMessage.getDestinationName();
     Message message = parsedMessage.getMessage();
-    if (topicName != null) {
 
-      if(topicName.startsWith("$schema")) {
-        Thread t = new Thread(() -> {
-          findAndSendMessage(topicName, message, messageEvent);
-        });
-        t.start();
-      }
-      else{
-        findAndSendMessage(topicName, message, messageEvent);
-      }
+    if (topicName == null || topicName.startsWith("$schema")) {
+      return;
+    }
 
+    boolean accepted = LoopbackEngineExecutor.getInstance().submit(() -> findAndSendMessage(topicName, message, messageEvent));
+    if (!accepted) {
+      logger.log(ServerLogMessages.LOOP_SEND_MESSAGE_FAILED);
     }
   }
 
-  private void findAndSendMessage(String topicName, Message message, MessageEvent messageEvent) {
+  private void findAndSendMessage(String topicName,
+                                  Message message,
+                                  MessageEvent messageEvent) {
+
     CompletableFuture<Destination> future = session.findDestination(topicName, DestinationType.TOPIC);
-    future.thenApply(destination -> {
+
+    future.whenCompleteAsync((destination, throwable) -> {
       try {
+
+        if (throwable != null) {
+          logger.log(ServerLogMessages.LOOP_SEND_MESSAGE_FAILED, throwable);
+          return;
+        }
+
         if (destination != null) {
           destination.storeMessage(message);
         }
-        messageEvent.getCompletionTask().run();
+
         logger.log(ServerLogMessages.LOOP_SENT_MESSAGE);
+
       } catch (IOException ioException) {
         logger.log(ServerLogMessages.LOOP_SEND_MESSAGE_FAILED, ioException);
+      } finally {
+        messageEvent.getCompletionTask().run();
       }
-      return destination;
-    });
-  }
+
+    }, LoopbackEngineExecutor.getInstance().asExecutor());
+
+}
+
 
   @Override
   public void connect(String sessionId, String username, String password) throws IOException {
