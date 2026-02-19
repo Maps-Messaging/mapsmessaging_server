@@ -57,7 +57,7 @@ public class TakExtension extends Extension {
     this.url = new EndPointURL(endPoint.getConfig().getUrl());
     this.config = TakExtensionConfig.from(extensionConfig);
     this.payloadCodec = TakExtensionConfig.PAYLOAD_TAK_PROTO_V1.equalsIgnoreCase(config.getPayload())
-        ? new TakProtobufCodec()
+        ? new TakProtobufCodec(new CotXmlCodec(), config.getMaxPayloadBytes())
         : new CotXmlCodec();
     this.streamFramer = new TakStreamFramer(config.getFramingMode(), config.getMaxPayloadBytes());
     this.connectionManager = new TakConnectionManager(new TakServerConnection(url, Duration.ofSeconds(30)));
