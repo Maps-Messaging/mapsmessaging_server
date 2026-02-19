@@ -30,12 +30,14 @@ import io.mapsmessaging.network.protocol.impl.tak.codec.TakProtobufCodec;
 import io.mapsmessaging.network.protocol.impl.tak.framing.TakFrameReader;
 import io.mapsmessaging.network.protocol.impl.tak.framing.TakStreamFramer;
 import io.mapsmessaging.network.protocol.impl.tak.transport.TakConnectionManager;
+import io.mapsmessaging.network.protocol.impl.tak.transport.TakMulticastTransport;
 import io.mapsmessaging.network.protocol.impl.tak.transport.TakServerConnection;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.IOException;
 import java.time.Duration;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -47,11 +49,13 @@ public class TakExtension extends Extension {
   private final TakPayloadCodec payloadCodec;
   private final TakStreamFramer streamFramer;
   private final TakConnectionManager connectionManager;
+  private final TakMulticastTransport multicastTransport;
   private final TakFrameReader frameReader;
   private final Set<String> remoteLinks;
   private final Set<String> localLinks;
   private final AtomicBoolean running;
   private volatile Thread readerThread;
+  private volatile Thread multicastReaderThread;
 
   public TakExtension(EndPoint endPoint, @Nullable ExtensionConfigDTO extensionConfig) {
     this.url = new EndPointURL(endPoint.getConfig().getUrl());
@@ -61,6 +65,7 @@ public class TakExtension extends Extension {
         : new CotXmlCodec();
     this.streamFramer = new TakStreamFramer(config.getFramingMode(), config.getMaxPayloadBytes());
     this.connectionManager = new TakConnectionManager(new TakServerConnection(url, Duration.ofSeconds(30)));
+    this.multicastTransport = config.isMulticastEnabled() ? new TakMulticastTransport(config) : null;
     this.frameReader = new TakFrameReader(streamFramer, config.getReadBufferBytes());
     this.remoteLinks = ConcurrentHashMap.newKeySet();
     this.localLinks = ConcurrentHashMap.newKeySet();
@@ -70,10 +75,18 @@ public class TakExtension extends Extension {
   @Override
   public void initialise() throws IOException {
     connectionManager.connect();
+    if (multicastTransport != null) {
+      multicastTransport.start();
+    }
     running.set(true);
     readerThread = new Thread(this::readerLoop, "tak-reader-" + url.getHost() + "-" + url.getPort());
     readerThread.setDaemon(true);
     readerThread.start();
+    if (multicastTransport != null && config.isMulticastIngressEnabled()) {
+      multicastReaderThread = new Thread(this::multicastReaderLoop, "tak-mcast-reader-" + config.getMulticastGroup() + "-" + config.getMulticastPort());
+      multicastReaderThread.setDaemon(true);
+      multicastReaderThread.start();
+    }
   }
 
   @Override
@@ -87,6 +100,18 @@ public class TakExtension extends Extension {
       } catch (InterruptedException e) {
         Thread.currentThread().interrupt();
       }
+    }
+    Thread multicastThread = multicastReaderThread;
+    if (multicastThread != null) {
+      multicastThread.interrupt();
+      try {
+        multicastThread.join(1000);
+      } catch (InterruptedException e) {
+        Thread.currentThread().interrupt();
+      }
+    }
+    if (multicastTransport != null) {
+      multicastTransport.close();
     }
     connectionManager.close();
   }
@@ -115,6 +140,9 @@ public class TakExtension extends Extension {
       byte[] payload = payloadCodec.encode(message);
       byte[] framed = streamFramer.frame(payload);
       connectionManager.write(framed);
+      if (multicastTransport != null && config.isMulticastEgressEnabled()) {
+        multicastTransport.send(payload);
+      }
     } catch (IOException ignored) {
       // Connection failures are handled by reader loop reconnect logic.
     }
@@ -159,6 +187,24 @@ public class TakExtension extends Extension {
         return;
       } catch (IOException ignored) {
         // Keep trying while running.
+      }
+    }
+  }
+
+  private void multicastReaderLoop() {
+    while (running.get()) {
+      try {
+        Optional<byte[]> frame = multicastTransport.read();
+        if (frame.isEmpty()) {
+          continue;
+        }
+        Message message = payloadCodec.decode(frame.get());
+        String destination = resolveInboundDestination(message);
+        inbound(destination, message);
+      } catch (IOException ex) {
+        if (!running.get()) {
+          break;
+        }
       }
     }
   }

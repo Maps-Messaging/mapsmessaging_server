@@ -28,6 +28,8 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class TakExtensionTest {
 
@@ -40,6 +42,14 @@ class TakExtensionTest {
     config.put("max_payload_bytes", 2048);
     config.put("reconnect_delay_ms", 1500);
     config.put("read_buffer_bytes", 4096);
+    config.put("multicast_enabled", true);
+    config.put("multicast_ingress_enabled", true);
+    config.put("multicast_egress_enabled", false);
+    config.put("multicast_group", "239.88.77.66");
+    config.put("multicast_port", 7171);
+    config.put("multicast_interface", "lo0");
+    config.put("multicast_ttl", 3);
+    config.put("multicast_read_buffer_bytes", 2048);
     setField(dto, "config", config);
 
     TakExtensionConfig parsed = TakExtensionConfig.from(dto);
@@ -49,6 +59,14 @@ class TakExtensionTest {
     assertEquals(2048, parsed.getMaxPayloadBytes());
     assertEquals(1500, parsed.getReconnectDelayMs());
     assertEquals(4096, parsed.getReadBufferBytes());
+    assertTrue(parsed.isMulticastEnabled());
+    assertTrue(parsed.isMulticastIngressEnabled());
+    assertFalse(parsed.isMulticastEgressEnabled());
+    assertEquals("239.88.77.66", parsed.getMulticastGroup());
+    assertEquals(7171, parsed.getMulticastPort());
+    assertEquals("lo0", parsed.getMulticastInterface());
+    assertEquals(3, parsed.getMulticastTtl());
+    assertEquals(2048, parsed.getMulticastReadBufferBytes());
   }
 
   @Test
@@ -57,6 +75,9 @@ class TakExtensionTest {
     assertEquals("cot_xml", parsed.getPayload());
     assertEquals(TakStreamFramer.Mode.XML_STREAM, parsed.getFramingMode());
     assertEquals(1024 * 1024, parsed.getMaxPayloadBytes());
+    assertFalse(parsed.isMulticastEnabled());
+    assertEquals("239.2.3.1", parsed.getMulticastGroup());
+    assertEquals(6969, parsed.getMulticastPort());
   }
 
   private static void setField(Object target, String fieldName, Object value) throws Exception {
