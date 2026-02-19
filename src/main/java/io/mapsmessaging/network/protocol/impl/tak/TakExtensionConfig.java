@@ -31,6 +31,9 @@ public class TakExtensionConfig {
   public static final String PAYLOAD_TAK_PROTO_V1 = "tak_proto_v1";
   private static final int DEFAULT_MAX_PAYLOAD = 1024 * 1024;
   private static final int DEFAULT_RECONNECT_MS = 2000;
+  private static final int DEFAULT_RECONNECT_MAX_MS = 30000;
+  private static final double DEFAULT_RECONNECT_MULTIPLIER = 2.0d;
+  private static final int DEFAULT_RECONNECT_JITTER_MS = 250;
   private static final int DEFAULT_READ_BUFFER = 8192;
   private static final String DEFAULT_MULTICAST_GROUP = "239.2.3.1";
   private static final int DEFAULT_MULTICAST_PORT = 6969;
@@ -40,6 +43,9 @@ public class TakExtensionConfig {
   private final TakStreamFramer.Mode framingMode;
   private final int maxPayloadBytes;
   private final int reconnectDelayMs;
+  private final int reconnectMaxDelayMs;
+  private final double reconnectBackoffMultiplier;
+  private final int reconnectJitterMs;
   private final int readBufferBytes;
   private final boolean multicastEnabled;
   private final boolean multicastIngressEnabled;
@@ -50,13 +56,17 @@ public class TakExtensionConfig {
   private final int multicastTtl;
   private final int multicastReadBufferBytes;
 
-  private TakExtensionConfig(String payload, TakStreamFramer.Mode framingMode, int maxPayloadBytes, int reconnectDelayMs, int readBufferBytes,
+  private TakExtensionConfig(String payload, TakStreamFramer.Mode framingMode, int maxPayloadBytes, int reconnectDelayMs,
+                             int reconnectMaxDelayMs, double reconnectBackoffMultiplier, int reconnectJitterMs, int readBufferBytes,
                              boolean multicastEnabled, boolean multicastIngressEnabled, boolean multicastEgressEnabled,
                              String multicastGroup, int multicastPort, String multicastInterface, int multicastTtl, int multicastReadBufferBytes) {
     this.payload = payload;
     this.framingMode = framingMode;
     this.maxPayloadBytes = maxPayloadBytes;
     this.reconnectDelayMs = reconnectDelayMs;
+    this.reconnectMaxDelayMs = reconnectMaxDelayMs;
+    this.reconnectBackoffMultiplier = reconnectBackoffMultiplier;
+    this.reconnectJitterMs = reconnectJitterMs;
     this.readBufferBytes = readBufferBytes;
     this.multicastEnabled = multicastEnabled;
     this.multicastIngressEnabled = multicastIngressEnabled;
@@ -75,6 +85,9 @@ public class TakExtensionConfig {
     TakStreamFramer.Mode mode = "proto_stream".equals(framing) ? TakStreamFramer.Mode.PROTO_STREAM : TakStreamFramer.Mode.XML_STREAM;
     int maxPayload = asInt(config, "max_payload_bytes", DEFAULT_MAX_PAYLOAD);
     int reconnectMs = asInt(config, "reconnect_delay_ms", DEFAULT_RECONNECT_MS);
+    int reconnectMaxMs = asInt(config, "reconnect_max_delay_ms", DEFAULT_RECONNECT_MAX_MS);
+    double reconnectMultiplier = asDouble(config, "reconnect_backoff_multiplier", DEFAULT_RECONNECT_MULTIPLIER);
+    int reconnectJitter = asInt(config, "reconnect_jitter_ms", DEFAULT_RECONNECT_JITTER_MS);
     int readBuffer = asInt(config, "read_buffer_bytes", DEFAULT_READ_BUFFER);
     boolean multicastEnabled = asBoolean(config, "multicast_enabled", false);
     boolean multicastIngressEnabled = asBoolean(config, "multicast_ingress_enabled", multicastEnabled);
@@ -84,7 +97,10 @@ public class TakExtensionConfig {
     String multicastInterface = asString(config, "multicast_interface", "").trim();
     int multicastTtl = asInt(config, "multicast_ttl", DEFAULT_MULTICAST_TTL);
     int multicastReadBuffer = asInt(config, "multicast_read_buffer_bytes", DEFAULT_READ_BUFFER);
-    return new TakExtensionConfig(payload, mode, Math.max(1024, maxPayload), Math.max(100, reconnectMs), Math.max(512, readBuffer),
+    int reconnectBase = Math.max(100, reconnectMs);
+    int reconnectMax = Math.max(reconnectBase, reconnectMaxMs);
+    return new TakExtensionConfig(payload, mode, Math.max(1024, maxPayload), reconnectBase,
+        reconnectMax, clampMultiplier(reconnectMultiplier), Math.max(0, reconnectJitter), Math.max(512, readBuffer),
         multicastEnabled, multicastIngressEnabled, multicastEgressEnabled,
         multicastGroup.isEmpty() ? DEFAULT_MULTICAST_GROUP : multicastGroup,
         Math.max(1, multicastPort),
@@ -107,6 +123,18 @@ public class TakExtensionConfig {
 
   public int getReconnectDelayMs() {
     return reconnectDelayMs;
+  }
+
+  public int getReconnectMaxDelayMs() {
+    return reconnectMaxDelayMs;
+  }
+
+  public double getReconnectBackoffMultiplier() {
+    return reconnectBackoffMultiplier;
+  }
+
+  public int getReconnectJitterMs() {
+    return reconnectJitterMs;
   }
 
   public int getReadBufferBytes() {
@@ -169,6 +197,31 @@ public class TakExtensionConfig {
     } catch (NumberFormatException ignored) {
       return def;
     }
+  }
+
+  private static double asDouble(Map<String, Object> config, String key, double def) {
+    if (config == null) {
+      return def;
+    }
+    Object val = config.get(key);
+    if (val == null) {
+      return def;
+    }
+    if (val instanceof Number number) {
+      return number.doubleValue();
+    }
+    try {
+      return Double.parseDouble(val.toString());
+    } catch (NumberFormatException ignored) {
+      return def;
+    }
+  }
+
+  private static double clampMultiplier(double multiplier) {
+    if (Double.isNaN(multiplier) || Double.isInfinite(multiplier)) {
+      return DEFAULT_RECONNECT_MULTIPLIER;
+    }
+    return Math.max(1.0d, Math.min(10.0d, multiplier));
   }
 
   private static boolean asBoolean(Map<String, Object> config, String key, boolean def) {

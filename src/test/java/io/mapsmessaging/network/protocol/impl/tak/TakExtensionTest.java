@@ -41,6 +41,9 @@ class TakExtensionTest {
     config.put("framing", "proto_stream");
     config.put("max_payload_bytes", 2048);
     config.put("reconnect_delay_ms", 1500);
+    config.put("reconnect_max_delay_ms", 6000);
+    config.put("reconnect_backoff_multiplier", 1.5);
+    config.put("reconnect_jitter_ms", 100);
     config.put("read_buffer_bytes", 4096);
     config.put("multicast_enabled", true);
     config.put("multicast_ingress_enabled", true);
@@ -58,6 +61,9 @@ class TakExtensionTest {
     assertEquals(TakStreamFramer.Mode.PROTO_STREAM, parsed.getFramingMode());
     assertEquals(2048, parsed.getMaxPayloadBytes());
     assertEquals(1500, parsed.getReconnectDelayMs());
+    assertEquals(6000, parsed.getReconnectMaxDelayMs());
+    assertEquals(1.5d, parsed.getReconnectBackoffMultiplier());
+    assertEquals(100, parsed.getReconnectJitterMs());
     assertEquals(4096, parsed.getReadBufferBytes());
     assertTrue(parsed.isMulticastEnabled());
     assertTrue(parsed.isMulticastIngressEnabled());
@@ -75,9 +81,31 @@ class TakExtensionTest {
     assertEquals("cot_xml", parsed.getPayload());
     assertEquals(TakStreamFramer.Mode.XML_STREAM, parsed.getFramingMode());
     assertEquals(1024 * 1024, parsed.getMaxPayloadBytes());
+    assertEquals(2000, parsed.getReconnectDelayMs());
+    assertEquals(30000, parsed.getReconnectMaxDelayMs());
+    assertEquals(2.0d, parsed.getReconnectBackoffMultiplier());
+    assertEquals(250, parsed.getReconnectJitterMs());
     assertFalse(parsed.isMulticastEnabled());
     assertEquals("239.2.3.1", parsed.getMulticastGroup());
     assertEquals(6969, parsed.getMulticastPort());
+  }
+
+  @Test
+  void clampsReconnectHardeningValues() throws Exception {
+    ExtensionConfigDTO dto = new ExtensionConfigDTO();
+    Map<String, Object> config = new LinkedHashMap<>();
+    config.put("reconnect_delay_ms", 50);
+    config.put("reconnect_max_delay_ms", 10);
+    config.put("reconnect_backoff_multiplier", 0.1d);
+    config.put("reconnect_jitter_ms", -1);
+    setField(dto, "config", config);
+
+    TakExtensionConfig parsed = TakExtensionConfig.from(dto);
+
+    assertEquals(100, parsed.getReconnectDelayMs());
+    assertEquals(100, parsed.getReconnectMaxDelayMs());
+    assertEquals(1.0d, parsed.getReconnectBackoffMultiplier());
+    assertEquals(0, parsed.getReconnectJitterMs());
   }
 
   private static void setField(Object target, String fieldName, Object value) throws Exception {

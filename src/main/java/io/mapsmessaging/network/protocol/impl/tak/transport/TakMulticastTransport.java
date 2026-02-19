@@ -67,6 +67,9 @@ public class TakMulticastTransport {
     DatagramPacket packet = new DatagramPacket(buffer, buffer.length);
     try {
       current.receive(packet);
+      if (packet.getLength() > config.getMaxPayloadBytes()) {
+        return Optional.empty();
+      }
       byte[] copy = new byte[packet.getLength()];
       System.arraycopy(packet.getData(), packet.getOffset(), copy, 0, packet.getLength());
       return Optional.of(copy);

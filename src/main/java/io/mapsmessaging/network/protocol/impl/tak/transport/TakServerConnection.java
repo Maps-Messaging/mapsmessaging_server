@@ -22,10 +22,13 @@ package io.mapsmessaging.network.protocol.impl.tak.transport;
 import io.mapsmessaging.network.EndPointURL;
 
 import javax.net.SocketFactory;
+import javax.net.ssl.SSLException;
+import javax.net.ssl.SSLSocket;
 import javax.net.ssl.SSLSocketFactory;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.time.Duration;
 
@@ -46,8 +49,18 @@ public class TakServerConnection {
   public synchronized void connect() throws IOException {
     close();
     SocketFactory socketFactory = isSecure() ? SSLSocketFactory.getDefault() : SocketFactory.getDefault();
-    socket = socketFactory.createSocket(url.getHost(), url.getPort());
+    socket = socketFactory.createSocket();
+    socket.connect(new InetSocketAddress(url.getHost(), url.getPort()), timeoutMs);
+    socket.setKeepAlive(true);
+    socket.setTcpNoDelay(true);
     socket.setSoTimeout(timeoutMs);
+    if (isSecure() && socket instanceof SSLSocket sslSocket) {
+      try {
+        sslSocket.startHandshake();
+      } catch (SSLException sslException) {
+        throw new IOException("TAK TLS handshake failed. Verify trustStore/keyStore and server certificate validity", sslException);
+      }
+    }
     inputStream = socket.getInputStream();
     outputStream = socket.getOutputStream();
   }

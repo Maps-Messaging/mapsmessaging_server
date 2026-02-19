@@ -36,6 +36,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.io.IOException;
 import java.time.Duration;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -138,10 +139,18 @@ public class TakExtension extends Extension {
     }
     try {
       byte[] payload = payloadCodec.encode(message);
-      byte[] framed = streamFramer.frame(payload);
-      connectionManager.write(framed);
+      try {
+        byte[] framed = streamFramer.frame(payload);
+        connectionManager.write(framed);
+      } catch (IOException ignored) {
+        // Stream path is best-effort; multicast egress may still succeed.
+      }
       if (multicastTransport != null && config.isMulticastEgressEnabled()) {
-        multicastTransport.send(payload);
+        try {
+          multicastTransport.send(payload);
+        } catch (IOException ignored) {
+          // Best-effort multicast path.
+        }
       }
     } catch (IOException ignored) {
       // Connection failures are handled by reader loop reconnect logic.
@@ -177,18 +186,32 @@ public class TakExtension extends Extension {
   }
 
   private void reconnectWithDelay() {
+    long delayMs = config.getReconnectDelayMs();
     while (running.get()) {
       try {
-        Thread.sleep(config.getReconnectDelayMs());
+        Thread.sleep(applyJitter(delayMs, config.getReconnectJitterMs()));
         connectionManager.reconnect();
         return;
       } catch (InterruptedException e) {
         Thread.currentThread().interrupt();
         return;
       } catch (IOException ignored) {
-        // Keep trying while running.
+        delayMs = nextDelay(delayMs);
       }
     }
+  }
+
+  private long nextDelay(long currentDelayMs) {
+    long multiplied = (long) Math.ceil(currentDelayMs * config.getReconnectBackoffMultiplier());
+    return Math.min(config.getReconnectMaxDelayMs(), Math.max(config.getReconnectDelayMs(), multiplied));
+  }
+
+  private long applyJitter(long delayMs, int jitterMs) {
+    if (jitterMs <= 0) {
+      return delayMs;
+    }
+    int jitter = ThreadLocalRandom.current().nextInt(jitterMs + 1);
+    return delayMs + jitter;
   }
 
   private void multicastReaderLoop() {
