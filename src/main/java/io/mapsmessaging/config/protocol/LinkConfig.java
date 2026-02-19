@@ -21,8 +21,8 @@ package io.mapsmessaging.config.protocol;
 
 import io.mapsmessaging.api.features.QualityOfService;
 import io.mapsmessaging.config.Config;
-import io.mapsmessaging.config.ConfigHelper;
 import io.mapsmessaging.config.analytics.StatisticsConfig;
+import io.mapsmessaging.config.transformer.TransformationConfigFactory;
 import io.mapsmessaging.configuration.ConfigurationProperties;
 import io.mapsmessaging.dto.rest.config.BaseConfigDTO;
 import io.mapsmessaging.dto.rest.config.protocol.LinkConfigDTO;
@@ -30,7 +30,7 @@ import io.mapsmessaging.dto.rest.config.protocol.NamespaceFilterDTO;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
+
 
 public class LinkConfig extends LinkConfigDTO implements Config {
 
@@ -43,20 +43,9 @@ public class LinkConfig extends LinkConfigDTO implements Config {
     qualityOfService = QualityOfService.getInstance(qos % 3);
     this.includeSchema = config.getBooleanProperty("include_schema", false);
     Object obj = config.get("transformer");
-    List<Map<String, Object>> transfomers = new ArrayList<>();
-    if(obj instanceof List confList){
-      for(Object ob: confList ){
-        if (ob instanceof ConfigurationProperties tfObj) {
-          transfomers.add(ConfigHelper.buildMap(tfObj));
-        }
-      }
+    if (obj != null) {
+      transformer = TransformationConfigFactory.loadChain(obj);
     }
-    else{
-      if (obj instanceof ConfigurationProperties tfObj) {
-        transfomers.add(ConfigHelper.buildMap(tfObj));
-      }
-    }
-    this.transformer= transfomers;
     this.namespaceFilters = new ArrayList<>();
     Object obj1 = config.get("namespaceFilters");
     if (obj1 instanceof List) {

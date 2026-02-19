@@ -20,12 +20,9 @@
 package io.mapsmessaging.engine.transformers;
 
 import io.mapsmessaging.api.transformers.InterServerTransformation;
-import io.mapsmessaging.api.transformers.ProtocolTransformationWrapper;
 import io.mapsmessaging.config.transformer.TransformationConfigFactory;
 import io.mapsmessaging.configuration.ConfigurationProperties;
 import io.mapsmessaging.dto.rest.config.transformer.TransformationConfigDTO;
-import io.mapsmessaging.network.protocol.transformation.ProtocolMessageTransformation;
-import io.mapsmessaging.network.protocol.transformation.TransformationManager;
 import io.mapsmessaging.utilities.service.Service;
 import io.mapsmessaging.utilities.service.ServiceManager;
 
@@ -45,16 +42,9 @@ public class TransformerManager implements ServiceManager {
 
   public InterServerTransformation get(ConfigurationProperties props) {
     if(props == null || !props.containsKey("name")) return null;
-    String transformer = props.getProperty("name").toLowerCase();
     TransformationConfigDTO dto = TransformationConfigFactory.loadSingle(props);
     if(dto != null){
       return  get(dto);
-    }
-    else{
-      ProtocolMessageTransformation protocolMessageTransformation = TransformationManager.getInstance().getTransformation(transformer);
-      if(protocolMessageTransformation != null){
-        return new ProtocolTransformationWrapper(protocolMessageTransformation);
-      }
     }
     return null;
   }
@@ -65,16 +55,6 @@ public class TransformerManager implements ServiceManager {
       return  t.build(dto);
     }
     return null;
-  }
-
-  public List<InterServerTransformation> buildList(List<Map<String, Object>> list) {
-    List<InterServerTransformation> interServerTransformation = new ArrayList<>();
-    if (list != null && !list.isEmpty()) {
-      for(Map<String, Object> obj: list) {
-        interServerTransformation.add(TransformerManager.getInstance().get(new ConfigurationProperties(obj)));
-      }
-    }
-    return interServerTransformation;
   }
 
   private TransformerManager() {

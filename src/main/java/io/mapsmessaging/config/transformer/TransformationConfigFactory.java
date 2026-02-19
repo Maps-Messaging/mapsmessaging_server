@@ -48,6 +48,9 @@ public class TransformationConfigFactory {
       case GEOHASH -> new GeoHashResolverTransformationConfig(props);
       case SCHEMA_TO_JSON -> new SchemaToJsonTransformationDTO();
       case JSON_MUTATE -> new JsonMutateTransformationConfig(props);
+      case CLOUD_EVENT_NATIVE -> new CloudEventNativeTransformationConfig(props);
+      case CLOUD_EVENT_JSON -> new CloudEventJsonTransformationConfig(props);
+      case CLOUD_EVENT_ENVELOPE -> new CloudEventEnvelopeTransformationConfig(props);
     };
   }
 
@@ -71,5 +74,8 @@ public class TransformationConfigFactory {
       return new ConfigurationProperties((Map<String, Object>) map);
     }
     throw new IllegalArgumentException("Unsupported transformer entry type: " + value.getClass().getName());
+  }
+
+  private TransformationConfigFactory() {
   }
 }

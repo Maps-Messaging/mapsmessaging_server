@@ -19,38 +19,27 @@
 
 package io.mapsmessaging.api.transformers;
 
-import io.mapsmessaging.configuration.ConfigurationProperties;
 import io.mapsmessaging.dto.rest.config.transformer.TransformationConfigDTO;
-import io.mapsmessaging.network.protocol.Protocol;
-import io.mapsmessaging.network.protocol.transformation.ProtocolMessageTransformation;
+import io.mapsmessaging.network.protocol.transformation.cloudevent.CloudEventEnvelopeTransformation;
 
-public class ProtocolTransformationWrapper implements InterServerTransformation {
+public class CloudEventEnvelopeWrapperTransformation extends BaseCloudEventTransformation {
 
-
-  private final ProtocolMessageTransformation  protocolMessageTransformation;
-
-  public ProtocolTransformationWrapper(ProtocolMessageTransformation protocolMessageTransformation) {
-    this.protocolMessageTransformation = protocolMessageTransformation;
+  public CloudEventEnvelopeWrapperTransformation() {
+    super(new CloudEventEnvelopeTransformation());
   }
 
   @Override
-  public ParsedMessage transform(String source, ParsedMessage message) {
-    message.setMessage(protocolMessageTransformation.outgoing(message.getMessage(), source));
-    return message;
-  }
-
-  @Override
-  public InterServerTransformation build(TransformationConfigDTO properties) {
-    return this;
+  public InterServerTransformation build(TransformationConfigDTO base) {
+    return new CloudEventEnvelopeWrapperTransformation();
   }
 
   @Override
   public String getName() {
-    return protocolMessageTransformation.getName();
+    return "CloudEvent-Envelope";
   }
 
   @Override
   public String getDescription() {
-    return protocolMessageTransformation.getDescription();
+    return "Wraps incoming CloudEvent in an envelope";
   }
 }

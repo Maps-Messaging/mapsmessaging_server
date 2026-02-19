@@ -22,6 +22,7 @@ package io.mapsmessaging.dto.rest.config.protocol;
 import io.mapsmessaging.api.features.QualityOfService;
 import io.mapsmessaging.dto.rest.analytics.StatisticsConfigDTO;
 import io.mapsmessaging.dto.rest.config.BaseConfigDTO;
+import io.mapsmessaging.dto.rest.config.transformer.TransformationConfigDTO;
 import io.mapsmessaging.utilities.filtering.NamespaceFilters;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
@@ -88,7 +89,7 @@ public class LinkConfigDTO extends BaseConfigDTO {
       nullable = true,
       example = "[{\"name\":\"JsonQuery\",\"parameters\":{\"query\":\"[\\\"object\\\",{\\\"latitude\\\":[\\\"divide\\\",[\\\"get\\\",\\\"payload\\\",\\\"decoded\\\",\\\"lat\\\"],10000000]}]\"}}]"
   )
-  protected List<Map<String, Object>> transformer;
+  protected List<TransformationConfigDTO> transformer;
 
   @Schema(
       description = "Configure statistical analysis of data flowing through the link",

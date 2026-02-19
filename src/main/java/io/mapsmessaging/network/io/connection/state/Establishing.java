@@ -26,6 +26,7 @@ import io.mapsmessaging.configuration.ConfigurationProperties;
 import io.mapsmessaging.dto.rest.analytics.StatisticsConfigDTO;
 import io.mapsmessaging.dto.rest.config.protocol.LinkConfigDTO;
 import io.mapsmessaging.dto.rest.config.protocol.NamespaceFilterDTO;
+import io.mapsmessaging.dto.rest.config.transformer.TransformationConfigDTO;
 import io.mapsmessaging.engine.transformers.TransformerManager;
 import io.mapsmessaging.logging.ServerLogMessages;
 import io.mapsmessaging.network.io.connection.EndPointConnection;
@@ -73,7 +74,17 @@ public class Establishing extends State {
         namespaceFilters  = new NamespaceFilters(filters);
       }
       QualityOfService qos = property.getQualityOfService();
-      List<InterServerTransformation> interServerTransformation = TransformerManager.getInstance().buildList(property.getTransformer());
+
+      List<InterServerTransformation> interServerTransformation = new ArrayList<>();
+      if(property.getTransformer() != null && !property.getTransformer().isEmpty()){
+        for(TransformationConfigDTO dto : property.getTransformer()){
+          InterServerTransformation t = TransformerManager.getInstance().get(dto);
+          if(t != null){
+            interServerTransformation.add(t);
+          }
+        }
+      }
+
       InterServerPipelineTransformation pipeline = new InterServerPipelineTransformation(interServerTransformation);
       try {
         if (direction.equalsIgnoreCase("pull")) {

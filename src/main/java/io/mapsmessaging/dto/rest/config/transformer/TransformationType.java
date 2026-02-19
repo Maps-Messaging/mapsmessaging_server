@@ -6,6 +6,15 @@ import lombok.Getter;
 @Getter
 public enum TransformationType {
 
+  @SerializedName("cloudevent-json")
+  CLOUD_EVENT_JSON("cloudevent-json"),
+
+  @SerializedName("cloudevent-native")
+  CLOUD_EVENT_NATIVE("cloudevent-native"),
+
+  @SerializedName("cloudevent-envelope")
+  CLOUD_EVENT_ENVELOPE("cloudevent-envelope"),
+
   @SerializedName("jsontoxml")
   JSON_TO_XML("jsontoxml"),
 
@@ -32,7 +41,6 @@ public enum TransformationType {
   TransformationType(String wireName) {
     this.wireName = wireName;
   }
-
 
   public static TransformationType fromWireName(String value) {
     if (value == null) {

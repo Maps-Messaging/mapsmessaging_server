@@ -36,6 +36,9 @@ import lombok.NoArgsConstructor;
     @JsonSubTypes.Type(value = JsonQueryTransformationDTO.class, name = "jsonquery"),
     @JsonSubTypes.Type(value = GeoHashResolverTransformationDTO.class, name = "geohash"),
     @JsonSubTypes.Type(value = JsonMutateTransformationDTO.class, name = "jsonmutate"),
+    @JsonSubTypes.Type(value = CloudEventEnvelopeTransformationDTO.class, name = "cloudevent-envelope"),
+    @JsonSubTypes.Type(value = CloudEventJsonTransformationDTO.class, name = "cloudevent-json"),
+    @JsonSubTypes.Type(value = CloudEventNativeTransformationDTO.class, name = "cloudevent-native"),
 
 })
 @Schema(
@@ -48,6 +51,10 @@ import lombok.NoArgsConstructor;
         @DiscriminatorMapping(value = "jsonquery", schema = JsonQueryTransformationDTO.class),
         @DiscriminatorMapping(value = "geohash", schema = GeoHashResolverTransformationDTO.class),
         @DiscriminatorMapping(value = "jsonmutate", schema = JsonMutateTransformationDTO.class),
+        @DiscriminatorMapping(value = "cloudevent-envelope", schema = CloudEventEnvelopeTransformationDTO.class),
+        @DiscriminatorMapping(value = "cloudevent-json", schema = CloudEventJsonTransformationDTO.class),
+        @DiscriminatorMapping(value = "cloudevent-native", schema = CloudEventNativeTransformationDTO.class),
+
     },
     requiredProperties = {"type"},
     additionalProperties = Schema.AdditionalPropertiesValue.TRUE,

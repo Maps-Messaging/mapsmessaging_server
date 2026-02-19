@@ -22,3 +22,7 @@ io.mapsmessaging.api.transformers.JsonQueryTransformation
 io.mapsmessaging.api.transformers.JsonToValueTransformation
 io.mapsmessaging.api.transformers.JSONToXML
 io.mapsmessaging.api.transformers.XMLToJSON
+io.mapsmessaging.api.transformers.CloudEventEnvelopeWrapperTransformation
+io.mapsmessaging.api.transformers.CloudEventJsonWrapperTransformation
+io.mapsmessaging.api.transformers.CloudEventNativeWrapperTransformation
+io.mapsmessaging.api.transformers.MessageSchemaToJsonTransformation
