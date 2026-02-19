@@ -54,6 +54,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static io.mapsmessaging.logging.ServerLogMessages.*;
@@ -64,8 +65,8 @@ public class SatelliteGatewayProtocol extends Protocol {
   private final Logger logger = LoggerFactory.getLogger(SatelliteGatewayProtocol.class);
   private final SatelliteMessageRebuilder messageRebuilder;
   private final Session session;
-  private final AtomicReference<Map<String, List<byte[]>>> pendingMessages;
-  private final AtomicReference<Map<String, List<byte[]>>> priorityMessages;
+  private final Map<String, List<byte[]>> pendingMessages;
+  private final Map<String, List<byte[]>> priorityMessages;
   private final CipherManager cipherManager;
 
   private final String mapsIncomingNamespacePath;
@@ -77,17 +78,17 @@ public class SatelliteGatewayProtocol extends Protocol {
   private final int sinNumber;
   private final boolean sendHighPriorityEvents;
 
+  private final Object outboundLock = new Object();
+
   private ScheduledFuture<?> scheduledFuture;
   private long nextOutgoingTime;
-  private boolean closed;
+  private AtomicBoolean closed;
 
   @SuppressWarnings("java:S2245") // we use random here for polling, this is not a security based issue
   public SatelliteGatewayProtocol(@NonNull @NotNull EndPoint endPoint, @NotNull @NonNull ProtocolConfigDTO protocolConfig) throws LoginException, IOException {
     super(endPoint, protocolConfig);
-    pendingMessages = new AtomicReference<>();
-    pendingMessages.set(new LinkedHashMap<>());
-    priorityMessages = new AtomicReference<>();
-    priorityMessages.set(new LinkedHashMap<>());
+    pendingMessages = new LinkedHashMap<>();
+    priorityMessages = new LinkedHashMap<>();
     String primeId = ((SatelliteEndPoint) endPoint).getTerminalInfo().getUniqueId();
     SatelliteConfigDTO config = (SatelliteConfigDTO) protocolConfig;
     sendHighPriorityEvents = config.isSendHighPriorityMessages();
@@ -101,7 +102,7 @@ public class SatelliteGatewayProtocol extends Protocol {
     outgoingPollInterval = config.getOutgoingMessagePollInterval() * 1000;
     maxBufferSize = config.getMaxBufferSize();
     compressionThreshold = config.getCompressionCutoffSize();
-    closed = false;
+    closed = new AtomicBoolean(false);
     messageRebuilder = new SatelliteMessageRebuilder();
     SessionContextBuilder scb = new SessionContextBuilder(primeId, new ProtocolClientConnection(this));
     scb.setPersistentSession(false)
@@ -163,12 +164,11 @@ public class SatelliteGatewayProtocol extends Protocol {
 
   @Override
   public void close() throws IOException {
-    if (!closed) {
+    if (!closed.getAndSet(true)) {
       ((SatelliteEndPoint) endPoint).mute();
       if(scheduledFuture != null){
         scheduledFuture.cancel(true);
       }
-      closed = true;
       SessionManager.getInstance().close(session, false);
       super.close();
     }
@@ -256,25 +256,31 @@ public class SatelliteGatewayProtocol extends Protocol {
       }
     }
     destinationName = scanForName(destinationName);
-    Map<String, List<byte[]>> pending;
-    if( sendHighPriorityEvents &&
-        (parsedMessage.getMessage().getPriority().getValue() > Priority.TWO_BELOW_HIGHEST.getValue()) ||
-        filteredOverride){
-      pending = priorityMessages.get();
-    }
-    else {
-      pending = pendingMessages.get();
+
+    boolean isHighPriority = parsedMessage.getMessage().getPriority().getValue() > Priority.TWO_BELOW_HIGHEST.getValue();
+    Map<String, List<byte[]>> pendingRef;
+    if (sendHighPriorityEvents && (isHighPriority || filteredOverride)) {
+      pendingRef = priorityMessages;
+    } else {
+      pendingRef = pendingMessages;
     }
 
-    List<byte[]> list =pending.computeIfAbsent(destinationName, key -> new ArrayList<>());
-    list.add(payload.getOpaqueData());
-    while(list.size()> depth){
-      list.removeFirst();
+    Runnable completionTask = messageEvent.getCompletionTask();
+
+    int listSize =0;
+    synchronized (outboundLock) {
+      List<byte[]> list = pendingRef.computeIfAbsent(destinationName, key -> new ArrayList<>());
+      list.add(payload.getOpaqueData());
+      while (list.size() > depth) {
+        list.removeFirst();
+      }
+      listSize = list.size();
     }
-    if(messageEvent.getCompletionTask() != null) {
-      messageEvent.getCompletionTask().run();
+
+    if (completionTask != null) {
+      completionTask.run();
     }
-    logger.log(SATELLITE_QUEUED_PENDING_MESSAGE, destinationName, list.size());
+    logger.log(SATELLITE_QUEUED_PENDING_MESSAGE, destinationName, listSize);
   }
 
   private void packAndSend(Map<String, List<byte[]>> replacement) throws IOException {
@@ -282,13 +288,12 @@ public class SatelliteGatewayProtocol extends Protocol {
       MessageQueuePacker.Packed packedQueue = MessageQueuePacker.pack(replacement, compressionThreshold, cipherManager, null);
       List<SatelliteMessage> toSend = SatelliteMessageFactory.createMessages(sinNumber, packedQueue.data(), maxBufferSize, packedQueue.compressed(), (byte) packedQueue.transformerNumber());
       int sin = (sinNumber & 0x7f) | 0x80;
-      int idx =0;
       long totalPayloadSize = 0;
       for (SatelliteMessage satelliteMessage : toSend) {
         byte[] tmp = satelliteMessage.packToSend();
         byte[] payload = new byte[tmp.length + 2];
         payload[0] = (byte)sin;
-        payload[1] = (byte) idx;
+        payload[1] = (byte) 0;
         System.arraycopy(tmp, 0, payload, 2, tmp.length);
         totalPayloadSize += payload.length;
         MessageData submitMessage = new MessageData();
@@ -305,11 +310,17 @@ public class SatelliteGatewayProtocol extends Protocol {
       Map<String, List<byte[]>> replacement;
       try {
         if (System.currentTimeMillis() > nextOutgoingTime) {
-          replacement = pendingMessages.getAndSet(new LinkedHashMap<>());
+          synchronized (outboundLock) {
+            replacement = new LinkedHashMap<>(pendingMessages);
+            pendingMessages.clear();
+          }
           packAndSend(replacement);
           nextOutgoingTime = System.currentTimeMillis() + outgoingPollInterval;
         } else {
-          replacement = priorityMessages.getAndSet(new LinkedHashMap<>());
+          synchronized (outboundLock) {
+            replacement = new LinkedHashMap<>(priorityMessages);
+            priorityMessages.clear();
+          }
           if (!replacement.isEmpty()) {
             packAndSend(replacement);
           }
@@ -319,7 +330,9 @@ public class SatelliteGatewayProtocol extends Protocol {
         // Log this
       }
     } finally {
-      scheduledFuture = TaskManager.getInstance().schedule(this::processOutstandingMessages, 15, TimeUnit.SECONDS);
+      if(!closed.get()) {
+        scheduledFuture = TaskManager.getInstance().schedule(this::processOutstandingMessages, 15, TimeUnit.SECONDS);
+      }
     }
   }
 
@@ -421,23 +434,25 @@ public class SatelliteGatewayProtocol extends Protocol {
     }
     Message mapsMessage = messageBuilder.build();
 
-    CompletableFuture<Destination> future = session.findDestination(namespace, DestinationType.TOPIC);
-    future.thenApply(destination -> {
-      if (destination != null) {
-        try {
-          destination.storeMessage(mapsMessage);
-        } catch (IOException e) {
-          logger.log(OGWS_FAILED_TO_SAVE_MESSAGE, e);
+    session.findDestination(namespace, DestinationType.TOPIC)
+        .thenAccept(destination -> {
+          if (destination != null) {
+            try {
+              destination.storeMessage(mapsMessage);
+            } catch (IOException e) {
+              logger.log(OGWS_FAILED_TO_SAVE_MESSAGE, e);
+              try {
+                endPoint.close();
+              } catch (IOException ignored) {}
+            }
+          }
+        })
+        .exceptionally(ex -> {
+          logger.log(OGWS_FAILED_TO_SAVE_MESSAGE, ex);
           try {
             endPoint.close();
-          } catch (IOException ioException) {
-            // ignore
-          }
-          future.completeExceptionally(e);
-        }
-      }
-      return destination;
-    });
-    future.get();
+          } catch (IOException ignored) {}
+          return null;
+        });
   }
 }

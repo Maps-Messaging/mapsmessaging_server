@@ -19,40 +19,75 @@
 
 package io.mapsmessaging.network.protocol.impl.satellite.protocol;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class SatelliteMessageRebuilder {
 
-  private final Map<Integer, List<SatelliteMessage>> fragments;
+  private static final long TTL_MILLIS = 60_000; // adjust if needed
 
+  private final Map<Integer, FragmentBuffer> buffers = new HashMap<>();
 
-  public SatelliteMessageRebuilder() {
-    fragments = new HashMap<>();
+  public synchronized void clear() {
+    buffers.clear();
   }
 
-  public void clear() {
-    fragments.clear();
-  }
+  public synchronized SatelliteMessage rebuild(SatelliteMessage message) {
 
-  public SatelliteMessage rebuild(SatelliteMessage message) {
-    if(!fragments.containsKey(message.getStreamNumber()) && !message.isCompressed() && message.getPacketNumber() == 0) {
+    if (message.isRaw()) {
       return message;
     }
 
-    fragments
-        .computeIfAbsent(message.getStreamNumber(), k -> new ArrayList<>())
-        .add(message);
-
-    if (message.getPacketNumber() == 0) {
-      List<SatelliteMessage> list = fragments.remove(message.getStreamNumber());
-      if (list != null) {
-        return SatelliteMessageFactory.reconstructMessage(list);
-      }
+    if (message.getTotalPackets() <= 1) {
+      return message;
     }
+
+    if (message.getPacketNumber() < 0 ||
+        message.getPacketNumber() >= message.getTotalPackets()) {
+      return null; // invalid fragment
+    }
+
+    purgeExpired();
+
+    FragmentBuffer buffer = buffers.computeIfAbsent(
+        message.getStreamNumber(),
+        k -> new FragmentBuffer(message.getTotalPackets())
+    );
+
+    // sanity check: totalPackets mismatch means protocol corruption
+    if (buffer.totalPackets != message.getTotalPackets()) {
+      buffers.remove(message.getStreamNumber());
+      return null;
+    }
+
+    // ignore duplicates
+    buffer.fragments.putIfAbsent(message.getPacketNumber(), message);
+
+    if (buffer.fragments.size() == buffer.totalPackets) {
+      buffers.remove(message.getStreamNumber());
+      return SatelliteMessageFactory.reconstructMessage(
+          new ArrayList<>(buffer.fragments.values())
+      );
+    }
+
     return null;
   }
 
+  private void purgeExpired() {
+    long now = System.currentTimeMillis();
+    buffers.entrySet().removeIf(e ->
+        now - e.getValue().created > TTL_MILLIS
+    );
+  }
+
+  private static class FragmentBuffer {
+    final int totalPackets;
+    final Map<Integer, SatelliteMessage> fragments = new HashMap<>();
+    final long created = System.currentTimeMillis();
+
+    FragmentBuffer(int totalPackets) {
+      this.totalPackets = totalPackets;
+    }
+  }
 }
+
+

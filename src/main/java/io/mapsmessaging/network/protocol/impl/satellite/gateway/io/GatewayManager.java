@@ -50,18 +50,15 @@ public class GatewayManager {
   private final List<MessageData> pendingMessages;
   private final Map<String, RemoteDeviceInfo> knownTerminals;
   private final AtomicBoolean closed = new AtomicBoolean(false);
+  private final AtomicBoolean authenticated = new AtomicBoolean(false);
 
   private ScheduledFuture<?> scheduledFuture;
 
-
-  @Getter
-  private boolean authenticated;
 
   public GatewayManager(SatelliteConfigDTO satelliteConfigDTO, IncomingMessageHandler handler) {
     this.satelliteClient = ClientFactory.createSatelliteClient(satelliteConfigDTO);
     this.pollInterval = (int)satelliteConfigDTO.getIncomingMessagePollInterval();
     this.handler = handler;
-    authenticated = false;
     knownTerminals = new ConcurrentHashMap<>();
     pendingMessages = new ArrayList<>();
   }
@@ -78,38 +75,47 @@ public class GatewayManager {
     }
   }
 
-  protected void initSession(){
-    if(closed.get()){
+  protected void initSession() {
+    if (closed.get()) {
       return;
     }
-    try {
-      authenticated = satelliteClient.authenticate();
-      if (authenticated) {
-        List<RemoteDeviceInfo> response = satelliteClient.getTerminals(null);
-        for (RemoteDeviceInfo terminal : response) {
-          if (DeviceIdUtil.isValidDeviceId(terminal.getUniqueId())) {
-            knownTerminals.put(terminal.getUniqueId(), terminal);
-          }
-        }
-        for (RemoteDeviceInfo terminal : knownTerminals.values()) {
-          handler.registerTerminal(terminal);
-        }
-        scheduledFuture = TaskManager.getInstance().schedule(this::pollGateway, pollInterval, TimeUnit.SECONDS);
-      } else {
-        logger.log(OGWS_FAILED_AUTHENTICATION);
-      }
+
+    // Already authenticated and running — nothing to do
+    if (authenticated.get()) {
+      return;
     }
-    catch (RuntimeException| IOException e) {
-      // Todo log this
-      // we can try again
+
+    try {
+      boolean success = satelliteClient.authenticate();
+      if (!success) {
+        logger.log(OGWS_FAILED_AUTHENTICATION);
+        TaskManager.getInstance().schedule(this::initSession, 1, TimeUnit.MINUTES);
+        return;
+      }
+      List<RemoteDeviceInfo> response = satelliteClient.getTerminals(null);
+      for (RemoteDeviceInfo terminal : response) {
+        if (DeviceIdUtil.isValidDeviceId(terminal.getUniqueId())) {
+          knownTerminals.put(terminal.getUniqueId(), terminal);
+        }
+      }
+      for (RemoteDeviceInfo terminal : knownTerminals.values()) {
+        handler.registerTerminal(terminal);
+      }
+      if(scheduledFuture == null) {
+        scheduledFuture = TaskManager.getInstance().schedule(this::pollGateway, pollInterval, TimeUnit.SECONDS);
+        authenticated.set(true);
+      }
+
+
+    } catch (RuntimeException | IOException e) {
       TaskManager.getInstance().schedule(this::initSession, 1, TimeUnit.MINUTES);
     } catch (InterruptedException e) {
       Thread.currentThread().interrupt();
     } catch (LoginException e) {
-      // We need to log the fact that this session is not allowed
+      // log appropriately
     }
-
   }
+
 
   public void muteClient(String id){
     satelliteClient.mute(id);
@@ -147,7 +153,9 @@ public class GatewayManager {
       }
     }
     finally {
-      scheduledFuture = TaskManager.getInstance().schedule(this::pollGateway, pollInterval, TimeUnit.SECONDS);
+      if(!closed.get()){
+        scheduledFuture = TaskManager.getInstance().schedule(this::pollGateway, pollInterval, TimeUnit.SECONDS);
+      }
     }
   }
 

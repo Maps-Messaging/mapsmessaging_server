@@ -35,37 +35,51 @@ public class SatelliteMessageFactory {
 
   private SatelliteMessageFactory() {
   }
-  public static List<SatelliteMessage> createMessages(int streamId, byte[] payload, int maxMessageSize, boolean compressed, byte transformationId) {
+  public static List<SatelliteMessage> createMessages(
+      int streamId,
+      byte[] payload,
+      int maxMessageSize,
+      boolean compressed,
+      byte transformationId
+  ) {
     List<SatelliteMessage> messages = new ArrayList<>();
 
     int totalChunks = (payload.length + maxMessageSize - 1) / maxMessageSize;
 
     for (int offset = 0, chunkIndex = 0; offset < payload.length; offset += maxMessageSize, chunkIndex++) {
+
       int len = Math.min(maxMessageSize, payload.length - offset);
       byte[] chunk = new byte[len];
       System.arraycopy(payload, offset, chunk, 0, len);
+
       SatelliteMessage message = new SatelliteMessage(
           streamId,
           chunk,
-          totalChunks - 1 - chunkIndex, // count down to 0
+          chunkIndex,
+          totalChunks,
           compressed,
           transformationId
       );
+
       messages.add(message);
     }
+
     if (messages.size() > 1) {
-      logger.log(STOGI_SPLIT_MESSAGE,  messages.size());
+      logger.log(STOGI_SPLIT_MESSAGE, messages.size());
     }
+
     return messages;
   }
+
 
   public static SatelliteMessage reconstructMessage(List<SatelliteMessage> messages) {
     if(messages.size() == 1 && !messages.get(0).isCompressed()) {
       return messages.get(0);
     }
-    int streamId = messages.get(0).getStreamNumber();
-    boolean compressed = messages.get(0).isCompressed();
-    byte transformationId = messages.get(0).getTransformationId();
+    SatelliteMessage msg0 = messages.get(0);
+    int streamId = msg0.getStreamNumber();
+    boolean compressed = msg0.isCompressed();
+    byte transformationId = msg0.getTransformationId();
     ByteArrayOutputStream baos = new ByteArrayOutputStream();
     try {
       for (SatelliteMessage message : messages) {
@@ -75,7 +89,7 @@ public class SatelliteMessageFactory {
       // Log this, since this is weird!!!
     }
     byte[] recombined = baos.toByteArray();
-    return new SatelliteMessage(streamId, recombined, 0, compressed,transformationId);
+    return new SatelliteMessage(streamId, recombined, 0, 0, compressed,transformationId);
   }
 
 }

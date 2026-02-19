@@ -30,6 +30,7 @@ public class SatelliteMessage {
   protected final int streamNumber;
   protected boolean compressed;
   protected int packetNumber;
+  protected int totalPackets;
   protected byte[] message;
   protected boolean raw;
   protected byte transformationId;
@@ -37,11 +38,12 @@ public class SatelliteMessage {
   @Setter
   private Runnable completionCallback;
 
-  public SatelliteMessage(int streamNumber, byte[] message, int packetNumber, boolean compressed, byte transformationId) {
+  public SatelliteMessage(int streamNumber, byte[] message, int packetNumber, int totalPackets, boolean compressed, byte transformationId) {
     this.streamNumber = streamNumber;
     this.message = message;
     this.compressed = compressed;
     this.packetNumber = packetNumber;
+    this.totalPackets = totalPackets;
     this.transformationId = transformationId;
     raw = false;
   }
@@ -58,6 +60,7 @@ public class SatelliteMessage {
     flag = (byte) (flag | transformed);
     header.put(flag);
     header.putShort((short) packetNumber);
+    header.putShort((short) totalPackets);
     header.putShort((short) message.length);
     header.put(message);
     return header.array();
@@ -80,6 +83,7 @@ public class SatelliteMessage {
     transformationId = (byte) (flag >> 1);
 
     packetNumber = buffer.getShort();
+    totalPackets = buffer.getShort();
     int messageLength = buffer.getShort();
 
     if (buffer.remaining() < messageLength) {
