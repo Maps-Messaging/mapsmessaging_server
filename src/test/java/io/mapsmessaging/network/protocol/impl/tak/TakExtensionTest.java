@@ -53,6 +53,8 @@ class TakExtensionTest {
     config.put("multicast_interface", "lo0");
     config.put("multicast_ttl", 3);
     config.put("multicast_read_buffer_bytes", 2048);
+    config.put("protobuf_descriptor_base64", "AQID");
+    config.put("protobuf_message_name", "TakMessage");
     setField(dto, "config", config);
 
     TakExtensionConfig parsed = TakExtensionConfig.from(dto);
@@ -73,6 +75,8 @@ class TakExtensionTest {
     assertEquals("lo0", parsed.getMulticastInterface());
     assertEquals(3, parsed.getMulticastTtl());
     assertEquals(2048, parsed.getMulticastReadBufferBytes());
+    assertEquals("AQID", parsed.getProtobufDescriptorBase64());
+    assertEquals("TakMessage", parsed.getProtobufMessageName());
   }
 
   @Test
@@ -88,6 +92,8 @@ class TakExtensionTest {
     assertFalse(parsed.isMulticastEnabled());
     assertEquals("239.2.3.1", parsed.getMulticastGroup());
     assertEquals(6969, parsed.getMulticastPort());
+    assertEquals("", parsed.getProtobufDescriptorBase64());
+    assertEquals("", parsed.getProtobufMessageName());
   }
 
   @Test

@@ -19,14 +19,18 @@
 
 package io.mapsmessaging.network.protocol.impl.tak.codec;
 
+import io.mapsmessaging.api.transformers.TestProtobufSchemas;
 import io.mapsmessaging.api.MessageBuilder;
 import io.mapsmessaging.api.message.Message;
+import io.mapsmessaging.schemas.config.impl.ProtoBufSchemaConfig;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.util.Base64;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -89,5 +93,18 @@ class TakProtobufCodecTest {
 
     assertEquals("u-200", decoded.getMeta().get("tak.uid"));
     assertEquals("a-f-G-U-C", decoded.getMeta().get("tak.type"));
+  }
+
+  @Test
+  void decodesUsingMapsProtobufFormatterWhenConfigured() throws IOException {
+    ProtoBufSchemaConfig schema = (ProtoBufSchemaConfig) TestProtobufSchemas.protobufSchemaConfig(UUID.randomUUID());
+    String descriptorBase64 = Base64.getEncoder().encodeToString(schema.getProtobufConfig().getDescriptorValue());
+    String messageName = schema.getProtobufConfig().getMessageName();
+    TakProtobufCodec codec = TakProtobufCodec.withSchemaFormatter(new CotXmlCodec(), 1024 * 1024, descriptorBase64, messageName);
+
+    byte[] payload = TestProtobufSchemas.encodeProtobufPayload();
+    Message decoded = codec.decode(payload);
+
+    assertEquals("true", decoded.getMeta().get("tak.protobuf_parsed"));
   }
 }

@@ -21,6 +21,9 @@ package io.mapsmessaging.network.protocol.impl.tak;
 
 import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.dto.rest.config.protocol.impl.ExtensionConfigDTO;
+import io.mapsmessaging.logging.Logger;
+import io.mapsmessaging.logging.LoggerFactory;
+import io.mapsmessaging.logging.ServerLogMessages;
 import io.mapsmessaging.network.EndPointURL;
 import io.mapsmessaging.network.io.EndPoint;
 import io.mapsmessaging.network.protocol.impl.extension.Extension;
@@ -46,6 +49,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public class TakExtension extends Extension {
 
   private final EndPointURL url;
+  private final Logger logger;
   private final TakExtensionConfig config;
   private final TakPayloadCodec payloadCodec;
   private final TakStreamFramer streamFramer;
@@ -60,9 +64,14 @@ public class TakExtension extends Extension {
 
   public TakExtension(EndPoint endPoint, @Nullable ExtensionConfigDTO extensionConfig) {
     this.url = new EndPointURL(endPoint.getConfig().getUrl());
+    this.logger = LoggerFactory.getLogger(TakExtension.class);
     this.config = TakExtensionConfig.from(extensionConfig);
     this.payloadCodec = TakExtensionConfig.PAYLOAD_TAK_PROTO_V1.equalsIgnoreCase(config.getPayload())
-        ? new TakProtobufCodec(new CotXmlCodec(), config.getMaxPayloadBytes())
+        ? TakProtobufCodec.withSchemaFormatter(
+            new CotXmlCodec(),
+            config.getMaxPayloadBytes(),
+            config.getProtobufDescriptorBase64(),
+            config.getProtobufMessageName())
         : new CotXmlCodec();
     this.streamFramer = new TakStreamFramer(config.getFramingMode(), config.getMaxPayloadBytes());
     this.connectionManager = new TakConnectionManager(new TakServerConnection(url, Duration.ofSeconds(30)));
@@ -79,6 +88,7 @@ public class TakExtension extends Extension {
     if (multicastTransport != null) {
       multicastTransport.start();
     }
+    logger.log(ServerLogMessages.TAK_EXTENSION_INITIALISED, url.toString());
     running.set(true);
     readerThread = new Thread(this::readerLoop, "tak-reader-" + url.getHost() + "-" + url.getPort());
     readerThread.setDaemon(true);
@@ -115,6 +125,7 @@ public class TakExtension extends Extension {
       multicastTransport.close();
     }
     connectionManager.close();
+    logger.log(ServerLogMessages.TAK_EXTENSION_CLOSED, url.toString());
   }
 
   @Override
@@ -149,11 +160,11 @@ public class TakExtension extends Extension {
         try {
           multicastTransport.send(payload);
         } catch (IOException ignored) {
-          // Best-effort multicast path.
+          logger.log(ServerLogMessages.TAK_MULTICAST_IO_FAILED, config.getMulticastGroup(), config.getMulticastPort());
         }
       }
     } catch (IOException ignored) {
-      // Connection failures are handled by reader loop reconnect logic.
+      logger.log(ServerLogMessages.TAK_EXTENSION_OUTBOUND_FAILED, destinationName);
     }
   }
 
@@ -172,9 +183,13 @@ public class TakExtension extends Extension {
       try {
         List<byte[]> frames = frameReader.read(connectionManager.input());
         for (byte[] frame : frames) {
-          Message message = payloadCodec.decode(frame);
-          String destination = resolveInboundDestination(message);
-          inbound(destination, message);
+          try {
+            Message message = payloadCodec.decode(frame);
+            String destination = resolveInboundDestination(message);
+            inbound(destination, message);
+          } catch (IOException decodeFailure) {
+            logger.log(ServerLogMessages.TAK_EXTENSION_DECODE_FAILED, "stream");
+          }
         }
       } catch (IOException ex) {
         if (!running.get()) {
@@ -189,13 +204,17 @@ public class TakExtension extends Extension {
     long delayMs = config.getReconnectDelayMs();
     while (running.get()) {
       try {
-        Thread.sleep(applyJitter(delayMs, config.getReconnectJitterMs()));
+        long sleepFor = applyJitter(delayMs, config.getReconnectJitterMs());
+        logger.log(ServerLogMessages.TAK_EXTENSION_RECONNECT_ATTEMPT, sleepFor, url.toString());
+        Thread.sleep(sleepFor);
         connectionManager.reconnect();
+        logger.log(ServerLogMessages.TAK_EXTENSION_RECONNECT_SUCCESS, url.toString());
         return;
       } catch (InterruptedException e) {
         Thread.currentThread().interrupt();
         return;
       } catch (IOException ignored) {
+        logger.log(ServerLogMessages.TAK_EXTENSION_RECONNECT_FAILED, url.toString());
         delayMs = nextDelay(delayMs);
       }
     }
@@ -221,13 +240,18 @@ public class TakExtension extends Extension {
         if (frame.isEmpty()) {
           continue;
         }
-        Message message = payloadCodec.decode(frame.get());
-        String destination = resolveInboundDestination(message);
-        inbound(destination, message);
+        try {
+          Message message = payloadCodec.decode(frame.get());
+          String destination = resolveInboundDestination(message);
+          inbound(destination, message);
+        } catch (IOException decodeFailure) {
+          logger.log(ServerLogMessages.TAK_EXTENSION_DECODE_FAILED, "multicast");
+        }
       } catch (IOException ex) {
         if (!running.get()) {
           break;
         }
+        logger.log(ServerLogMessages.TAK_MULTICAST_IO_FAILED, config.getMulticastGroup(), config.getMulticastPort());
       }
     }
   }

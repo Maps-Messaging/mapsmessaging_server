@@ -38,6 +38,8 @@ public class TakExtensionConfig {
   private static final String DEFAULT_MULTICAST_GROUP = "239.2.3.1";
   private static final int DEFAULT_MULTICAST_PORT = 6969;
   private static final int DEFAULT_MULTICAST_TTL = 1;
+  private static final String DEFAULT_PROTOBUF_DESCRIPTOR_BASE64 = "";
+  private static final String DEFAULT_PROTOBUF_MESSAGE_NAME = "";
 
   private final String payload;
   private final TakStreamFramer.Mode framingMode;
@@ -55,11 +57,14 @@ public class TakExtensionConfig {
   private final String multicastInterface;
   private final int multicastTtl;
   private final int multicastReadBufferBytes;
+  private final String protobufDescriptorBase64;
+  private final String protobufMessageName;
 
   private TakExtensionConfig(String payload, TakStreamFramer.Mode framingMode, int maxPayloadBytes, int reconnectDelayMs,
                              int reconnectMaxDelayMs, double reconnectBackoffMultiplier, int reconnectJitterMs, int readBufferBytes,
                              boolean multicastEnabled, boolean multicastIngressEnabled, boolean multicastEgressEnabled,
-                             String multicastGroup, int multicastPort, String multicastInterface, int multicastTtl, int multicastReadBufferBytes) {
+                             String multicastGroup, int multicastPort, String multicastInterface, int multicastTtl, int multicastReadBufferBytes,
+                             String protobufDescriptorBase64, String protobufMessageName) {
     this.payload = payload;
     this.framingMode = framingMode;
     this.maxPayloadBytes = maxPayloadBytes;
@@ -76,6 +81,8 @@ public class TakExtensionConfig {
     this.multicastInterface = multicastInterface;
     this.multicastTtl = multicastTtl;
     this.multicastReadBufferBytes = multicastReadBufferBytes;
+    this.protobufDescriptorBase64 = protobufDescriptorBase64;
+    this.protobufMessageName = protobufMessageName;
   }
 
   public static TakExtensionConfig from(ExtensionConfigDTO extensionConfig) {
@@ -97,6 +104,8 @@ public class TakExtensionConfig {
     String multicastInterface = asString(config, "multicast_interface", "").trim();
     int multicastTtl = asInt(config, "multicast_ttl", DEFAULT_MULTICAST_TTL);
     int multicastReadBuffer = asInt(config, "multicast_read_buffer_bytes", DEFAULT_READ_BUFFER);
+    String protobufDescriptorBase64 = asString(config, "protobuf_descriptor_base64", DEFAULT_PROTOBUF_DESCRIPTOR_BASE64).trim();
+    String protobufMessageName = asString(config, "protobuf_message_name", DEFAULT_PROTOBUF_MESSAGE_NAME).trim();
     int reconnectBase = Math.max(100, reconnectMs);
     int reconnectMax = Math.max(reconnectBase, reconnectMaxMs);
     return new TakExtensionConfig(payload, mode, Math.max(1024, maxPayload), reconnectBase,
@@ -106,7 +115,9 @@ public class TakExtensionConfig {
         Math.max(1, multicastPort),
         multicastInterface,
         Math.max(1, Math.min(255, multicastTtl)),
-        Math.max(512, multicastReadBuffer));
+        Math.max(512, multicastReadBuffer),
+        protobufDescriptorBase64,
+        protobufMessageName);
   }
 
   public String getPayload() {
@@ -171,6 +182,14 @@ public class TakExtensionConfig {
 
   public int getMulticastReadBufferBytes() {
     return multicastReadBufferBytes;
+  }
+
+  public String getProtobufDescriptorBase64() {
+    return protobufDescriptorBase64;
+  }
+
+  public String getProtobufMessageName() {
+    return protobufMessageName;
   }
 
   private static String asString(Map<String, Object> config, String key, String def) {

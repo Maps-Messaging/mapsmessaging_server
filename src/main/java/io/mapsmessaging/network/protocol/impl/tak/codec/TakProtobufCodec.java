@@ -24,10 +24,15 @@ import com.google.protobuf.CodedOutputStream;
 import com.google.protobuf.WireFormat;
 import io.mapsmessaging.api.MessageBuilder;
 import io.mapsmessaging.api.message.Message;
+import io.mapsmessaging.schemas.config.impl.ProtoBufSchemaConfig;
+import io.mapsmessaging.schemas.formatters.MessageFormatter;
+import io.mapsmessaging.schemas.formatters.MessageFormatterFactory;
+import io.mapsmessaging.selector.IdentifierResolver;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.util.Base64;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
@@ -36,14 +41,25 @@ public class TakProtobufCodec implements TakPayloadCodec {
   private static final int DEFAULT_MAX_PAYLOAD_BYTES = 1024 * 1024;
   private final CotXmlCodec cotXmlCodec;
   private final int maxPayloadBytes;
+  private final MessageFormatter protobufFormatter;
 
   public TakProtobufCodec() {
-    this(new CotXmlCodec(), DEFAULT_MAX_PAYLOAD_BYTES);
+    this(new CotXmlCodec(), DEFAULT_MAX_PAYLOAD_BYTES, null);
   }
 
   public TakProtobufCodec(CotXmlCodec cotXmlCodec, int maxPayloadBytes) {
+    this(cotXmlCodec, maxPayloadBytes, null);
+  }
+
+  public TakProtobufCodec(CotXmlCodec cotXmlCodec, int maxPayloadBytes, MessageFormatter protobufFormatter) {
     this.cotXmlCodec = cotXmlCodec;
     this.maxPayloadBytes = Math.max(1024, maxPayloadBytes);
+    this.protobufFormatter = protobufFormatter;
+  }
+
+  public static TakProtobufCodec withSchemaFormatter(CotXmlCodec cotXmlCodec, int maxPayloadBytes,
+                                                     String descriptorBase64, String messageName) {
+    return new TakProtobufCodec(cotXmlCodec, maxPayloadBytes, createFormatter(descriptorBase64, messageName));
   }
 
   @Override
@@ -72,6 +88,8 @@ public class TakProtobufCodec implements TakPayloadCodec {
       } catch (IOException ignored) {
         // Keep protobuf metadata only when embedded CoT is malformed.
       }
+    } else if (protobufFormatter != null) {
+      mergeSchemaParsedMeta(meta, payload);
     }
 
     return new MessageBuilder()
@@ -132,5 +150,46 @@ public class TakProtobufCodec implements TakPayloadCodec {
       }
     }
     return null;
+  }
+
+  private void mergeSchemaParsedMeta(Map<String, String> meta, byte[] payload) {
+    try {
+      IdentifierResolver parsed = protobufFormatter.parse(payload);
+      if (parsed == null) {
+        return;
+      }
+      promote(parsed, meta, "uid", "tak.uid");
+      promote(parsed, meta, "type", "tak.type");
+      promote(parsed, meta, "time", "tak.time");
+      promote(parsed, meta, "start", "tak.start");
+      promote(parsed, meta, "stale", "tak.stale");
+      promote(parsed, meta, "how", "tak.how");
+      meta.put("tak.protobuf_parsed", "true");
+    } catch (Exception ignored) {
+      // keep base protobuf metadata when schema parsing fails
+    }
+  }
+
+  private static void promote(IdentifierResolver parsed, Map<String, String> meta, String fromKey, String toKey) {
+    Object val = parsed.get(fromKey);
+    if (val != null) {
+      meta.put(toKey, val.toString());
+    }
+  }
+
+  private static MessageFormatter createFormatter(String descriptorBase64, String messageName) {
+    if (descriptorBase64 == null || descriptorBase64.isBlank() || messageName == null || messageName.isBlank()) {
+      return null;
+    }
+    try {
+      ProtoBufSchemaConfig schemaConfig = new ProtoBufSchemaConfig();
+      ProtoBufSchemaConfig.ProtobufConfig protobufConfig = new ProtoBufSchemaConfig.ProtobufConfig();
+      protobufConfig.setDescriptorValue(Base64.getDecoder().decode(descriptorBase64));
+      protobufConfig.setMessageName(messageName);
+      schemaConfig.setProtobufConfig(protobufConfig);
+      return MessageFormatterFactory.getInstance().getFormatter(schemaConfig);
+    } catch (Exception ignored) {
+      return null;
+    }
   }
 }

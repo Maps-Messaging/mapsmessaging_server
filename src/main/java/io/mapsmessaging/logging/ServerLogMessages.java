@@ -244,6 +244,17 @@ public enum ServerLogMessages implements LogMessage {
 
   // </editor-fold>
 
+  // <editor-fold desc="TAK protocol log messages">
+  TAK_EXTENSION_INITIALISED(LEVEL.INFO, SERVER_CATEGORY.PROTOCOL, "TAK extension initialised for {}"),
+  TAK_EXTENSION_CLOSED(LEVEL.INFO, SERVER_CATEGORY.PROTOCOL, "TAK extension closed for {}"),
+  TAK_EXTENSION_OUTBOUND_FAILED(LEVEL.WARN, SERVER_CATEGORY.PROTOCOL, "TAK outbound failed for destination {}"),
+  TAK_EXTENSION_DECODE_FAILED(LEVEL.WARN, SERVER_CATEGORY.PROTOCOL, "TAK decode failed for transport {}"),
+  TAK_EXTENSION_RECONNECT_ATTEMPT(LEVEL.INFO, SERVER_CATEGORY.NETWORK, "TAK reconnect attempt in {}ms for {}"),
+  TAK_EXTENSION_RECONNECT_SUCCESS(LEVEL.INFO, SERVER_CATEGORY.NETWORK, "TAK reconnect succeeded for {}"),
+  TAK_EXTENSION_RECONNECT_FAILED(LEVEL.WARN, SERVER_CATEGORY.NETWORK, "TAK reconnect failed for {}"),
+  TAK_MULTICAST_IO_FAILED(LEVEL.WARN, SERVER_CATEGORY.NETWORK, "TAK multicast IO failed for {}:{}"),
+  // </editor-fold>
+
   // <editor-fold desc="Packet Security">
   PACKET_SECURITY_VERIFICATION_FAILED(LEVEL.WARN, SERVER_CATEGORY.NETWORK, "Packet integrity verification failed: ip={}, algorithm={}, reason={}, packetLength={}, signatureSize={}"),
   PACKET_SECURITY_NOT_INITIALISED(LEVEL.ERROR, SERVER_CATEGORY.NETWORK, "Packet integrity not initialised: algorithm={}"),
