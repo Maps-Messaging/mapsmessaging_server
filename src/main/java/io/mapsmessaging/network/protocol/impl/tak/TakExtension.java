@@ -26,7 +26,9 @@ import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.logging.ServerLogMessages;
 import io.mapsmessaging.network.EndPointURL;
 import io.mapsmessaging.network.io.EndPoint;
+import io.mapsmessaging.network.io.Packet;
 import io.mapsmessaging.network.protocol.impl.extension.Extension;
+import io.mapsmessaging.network.protocol.impl.extension.ExtensionEndPoint;
 import io.mapsmessaging.network.protocol.impl.tak.codec.CotXmlCodec;
 import io.mapsmessaging.network.protocol.impl.tak.codec.TakPayloadCodec;
 import io.mapsmessaging.network.protocol.impl.tak.codec.TakProtobufCodec;
@@ -38,6 +40,7 @@ import io.mapsmessaging.network.protocol.impl.tak.transport.TakServerConnection;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.time.Duration;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.List;
@@ -50,7 +53,9 @@ public class TakExtension extends Extension {
 
   private final EndPointURL url;
   private final Logger logger;
+  private final EndPoint endPoint;
   private final TakExtensionConfig config;
+  private final boolean mapsManagedTransport;
   private final TakPayloadCodec payloadCodec;
   private final TakStreamFramer streamFramer;
   private final TakConnectionManager connectionManager;
@@ -63,9 +68,11 @@ public class TakExtension extends Extension {
   private volatile Thread multicastReaderThread;
 
   public TakExtension(EndPoint endPoint, @Nullable ExtensionConfigDTO extensionConfig) {
+    this.endPoint = endPoint;
     this.url = new EndPointURL(endPoint.getConfig().getUrl());
     this.logger = LoggerFactory.getLogger(TakExtension.class);
     this.config = TakExtensionConfig.from(extensionConfig);
+    this.mapsManagedTransport = config.isUseMapsTransport() && !(endPoint instanceof ExtensionEndPoint);
     this.payloadCodec = TakExtensionConfig.PAYLOAD_TAK_PROTO_V1.equalsIgnoreCase(config.getPayload())
         ? TakProtobufCodec.withSchemaFormatter(
             new CotXmlCodec(),
@@ -84,15 +91,19 @@ public class TakExtension extends Extension {
 
   @Override
   public void initialise() throws IOException {
-    connectionManager.connect();
+    if (!mapsManagedTransport) {
+      connectionManager.connect();
+    }
     if (multicastTransport != null) {
       multicastTransport.start();
     }
     logger.log(ServerLogMessages.TAK_EXTENSION_INITIALISED, url.toString());
     running.set(true);
-    readerThread = new Thread(this::readerLoop, "tak-reader-" + url.getHost() + "-" + url.getPort());
-    readerThread.setDaemon(true);
-    readerThread.start();
+    if (!mapsManagedTransport) {
+      readerThread = new Thread(this::readerLoop, "tak-reader-" + url.getHost() + "-" + url.getPort());
+      readerThread.setDaemon(true);
+      readerThread.start();
+    }
     if (multicastTransport != null && config.isMulticastIngressEnabled()) {
       multicastReaderThread = new Thread(this::multicastReaderLoop, "tak-mcast-reader-" + config.getMulticastGroup() + "-" + config.getMulticastPort());
       multicastReaderThread.setDaemon(true);
@@ -124,7 +135,9 @@ public class TakExtension extends Extension {
     if (multicastTransport != null) {
       multicastTransport.close();
     }
-    connectionManager.close();
+    if (!mapsManagedTransport) {
+      connectionManager.close();
+    }
     logger.log(ServerLogMessages.TAK_EXTENSION_CLOSED, url.toString());
   }
 
@@ -152,7 +165,11 @@ public class TakExtension extends Extension {
       byte[] payload = payloadCodec.encode(message);
       try {
         byte[] framed = streamFramer.frame(payload);
-        connectionManager.write(framed);
+        if (mapsManagedTransport) {
+          endPoint.sendPacket(new Packet(ByteBuffer.wrap(framed)));
+        } else {
+          connectionManager.write(framed);
+        }
       } catch (IOException ignored) {
         // Stream path is best-effort; multicast egress may still succeed.
       }
@@ -218,6 +235,29 @@ public class TakExtension extends Extension {
         delayMs = nextDelay(delayMs);
       }
     }
+  }
+
+  @Override
+  public boolean processPacket(@org.jetbrains.annotations.NotNull Packet packet) throws IOException {
+    if (!mapsManagedTransport || !running.get()) {
+      return false;
+    }
+    ByteBuffer raw = packet.getRawBuffer();
+    if (raw == null || raw.remaining() <= 0) {
+      return false;
+    }
+    List<byte[]> frames = frameReader.read(raw);
+    for (byte[] frame : frames) {
+      try {
+        Message message = payloadCodec.decode(frame);
+        String destination = resolveInboundDestination(message);
+        inbound(destination, message);
+      } catch (IOException decodeFailure) {
+        logger.log(ServerLogMessages.TAK_EXTENSION_DECODE_FAILED, "stream");
+      }
+    }
+    packet.position(packet.limit());
+    return true;
   }
 
   private long nextDelay(long currentDelayMs) {

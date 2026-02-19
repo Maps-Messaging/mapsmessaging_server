@@ -111,6 +111,7 @@ class TakExtensionReconnectIntegrationTest {
     config.put("reconnect_max_delay_ms", 400);
     config.put("reconnect_backoff_multiplier", 1.5d);
     config.put("reconnect_jitter_ms", 0);
+    config.put("use_maps_transport", false);
     setField(dto, "config", config);
     return dto;
   }

@@ -155,7 +155,7 @@ public class ExtensionProtocol extends Protocol implements MessageListener, Clie
 
   @Override
   public boolean processPacket(@NonNull @NotNull Packet packet) throws IOException {
-    return false;
+    return extension.processPacket(packet);
   }
 
   @Override

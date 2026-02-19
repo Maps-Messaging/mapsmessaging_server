@@ -20,6 +20,7 @@
 package io.mapsmessaging.network.protocol.impl.extension;
 
 import io.mapsmessaging.api.message.Message;
+import io.mapsmessaging.network.io.Packet;
 import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.NonNull;
@@ -73,6 +74,10 @@ public abstract class Extension {
   public abstract void registerRemoteLink(@NonNull @NotNull String destination, @Nullable String filter) throws IOException;
 
   public abstract void registerLocalLink(@NonNull @NotNull String destination) throws IOException;
+
+  public boolean processPacket(@NonNull @NotNull Packet packet) throws IOException {
+    return false;
+  }
 
 
   protected void inbound(@NonNull @NotNull String destinationName,  @NonNull @NotNull Message message) throws IOException {
