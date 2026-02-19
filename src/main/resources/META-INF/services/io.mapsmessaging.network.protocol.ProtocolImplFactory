@@ -76,3 +76,4 @@ io.mapsmessaging.network.protocol.impl.ibm_mq.MqProtocolFactory
 io.mapsmessaging.network.protocol.impl.aws_sns.SnsProtocolFactory
 io.mapsmessaging.network.protocol.impl.v2x_step.V2xStepProtocolFactory
 io.mapsmessaging.network.protocol.impl.extension.impl.example.ExampleProtocolFactory
+io.mapsmessaging.network.protocol.impl.tak.TakProtocolFactory

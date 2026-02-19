@@ -67,3 +67,28 @@ NetworkConnectionManager:
             direction: pull
             local_namespace: "/"
             remote_namespace: "/#"
+
+      # Example TAK bridge (CoT XML stream over TLS)
+      # - name: "TAK Server Connection"
+      #   url: ssl://tak.example.local:8089/
+      #   protocol: tak
+      #   plugin: true
+      #
+      #   config:
+      #     payload: cot_xml
+      #     framing: xml_stream
+      #     max_payload_bytes: 1048576
+      #     reconnect_delay_ms: 2000
+      #
+      #   links:
+      #     - direction: pull
+      #       remote_namespace: "tak/cot/#"
+      #       local_namespace: "tak/cot/"
+      #       selector: ""
+      #       qos: 0
+      #
+      #     - direction: push
+      #       remote_namespace: "tak/cot/out/#"
+      #       local_namespace: "ops/cot/out/"
+      #       selector: "tak.type LIKE 'a-%'"
+      #       qos: 0
