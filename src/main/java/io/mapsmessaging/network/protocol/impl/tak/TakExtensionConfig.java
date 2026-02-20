@@ -21,10 +21,12 @@ package io.mapsmessaging.network.protocol.impl.tak;
 
 import io.mapsmessaging.dto.rest.config.protocol.impl.ExtensionConfigDTO;
 import io.mapsmessaging.network.protocol.impl.tak.framing.TakStreamFramer;
+import lombok.Getter;
 
 import java.util.Locale;
 import java.util.Map;
 
+@Getter
 public class TakExtensionConfig {
 
   public static final String PAYLOAD_COT_XML = "cot_xml";
@@ -40,7 +42,6 @@ public class TakExtensionConfig {
   private static final int DEFAULT_MULTICAST_TTL = 1;
   private static final String DEFAULT_PROTOBUF_DESCRIPTOR_BASE64 = "";
   private static final String DEFAULT_PROTOBUF_MESSAGE_NAME = "";
-  private static final boolean DEFAULT_USE_MAPS_TRANSPORT = true;
 
   private final String payload;
   private final TakStreamFramer.Mode framingMode;
@@ -60,13 +61,12 @@ public class TakExtensionConfig {
   private final int multicastReadBufferBytes;
   private final String protobufDescriptorBase64;
   private final String protobufMessageName;
-  private final boolean useMapsTransport;
 
   private TakExtensionConfig(String payload, TakStreamFramer.Mode framingMode, int maxPayloadBytes, int reconnectDelayMs,
                              int reconnectMaxDelayMs, double reconnectBackoffMultiplier, int reconnectJitterMs, int readBufferBytes,
                              boolean multicastEnabled, boolean multicastIngressEnabled, boolean multicastEgressEnabled,
                              String multicastGroup, int multicastPort, String multicastInterface, int multicastTtl, int multicastReadBufferBytes,
-                             String protobufDescriptorBase64, String protobufMessageName, boolean useMapsTransport) {
+                             String protobufDescriptorBase64, String protobufMessageName) {
     this.payload = payload;
     this.framingMode = framingMode;
     this.maxPayloadBytes = maxPayloadBytes;
@@ -85,7 +85,6 @@ public class TakExtensionConfig {
     this.multicastReadBufferBytes = multicastReadBufferBytes;
     this.protobufDescriptorBase64 = protobufDescriptorBase64;
     this.protobufMessageName = protobufMessageName;
-    this.useMapsTransport = useMapsTransport;
   }
 
   public static TakExtensionConfig from(ExtensionConfigDTO extensionConfig) {
@@ -109,7 +108,6 @@ public class TakExtensionConfig {
     int multicastReadBuffer = asInt(config, "multicast_read_buffer_bytes", DEFAULT_READ_BUFFER);
     String protobufDescriptorBase64 = asString(config, "protobuf_descriptor_base64", DEFAULT_PROTOBUF_DESCRIPTOR_BASE64).trim();
     String protobufMessageName = asString(config, "protobuf_message_name", DEFAULT_PROTOBUF_MESSAGE_NAME).trim();
-    boolean useMapsTransport = asBoolean(config, "use_maps_transport", DEFAULT_USE_MAPS_TRANSPORT);
     int reconnectBase = Math.max(100, reconnectMs);
     int reconnectMax = Math.max(reconnectBase, reconnectMaxMs);
     return new TakExtensionConfig(payload, mode, Math.max(1024, maxPayload), reconnectBase,
@@ -121,84 +119,7 @@ public class TakExtensionConfig {
         Math.max(1, Math.min(255, multicastTtl)),
         Math.max(512, multicastReadBuffer),
         protobufDescriptorBase64,
-        protobufMessageName,
-        useMapsTransport);
-  }
-
-  public String getPayload() {
-    return payload;
-  }
-
-  public TakStreamFramer.Mode getFramingMode() {
-    return framingMode;
-  }
-
-  public int getMaxPayloadBytes() {
-    return maxPayloadBytes;
-  }
-
-  public int getReconnectDelayMs() {
-    return reconnectDelayMs;
-  }
-
-  public int getReconnectMaxDelayMs() {
-    return reconnectMaxDelayMs;
-  }
-
-  public double getReconnectBackoffMultiplier() {
-    return reconnectBackoffMultiplier;
-  }
-
-  public int getReconnectJitterMs() {
-    return reconnectJitterMs;
-  }
-
-  public int getReadBufferBytes() {
-    return readBufferBytes;
-  }
-
-  public boolean isMulticastEnabled() {
-    return multicastEnabled;
-  }
-
-  public boolean isMulticastIngressEnabled() {
-    return multicastIngressEnabled;
-  }
-
-  public boolean isMulticastEgressEnabled() {
-    return multicastEgressEnabled;
-  }
-
-  public String getMulticastGroup() {
-    return multicastGroup;
-  }
-
-  public int getMulticastPort() {
-    return multicastPort;
-  }
-
-  public String getMulticastInterface() {
-    return multicastInterface;
-  }
-
-  public int getMulticastTtl() {
-    return multicastTtl;
-  }
-
-  public int getMulticastReadBufferBytes() {
-    return multicastReadBufferBytes;
-  }
-
-  public String getProtobufDescriptorBase64() {
-    return protobufDescriptorBase64;
-  }
-
-  public String getProtobufMessageName() {
-    return protobufMessageName;
-  }
-
-  public boolean isUseMapsTransport() {
-    return useMapsTransport;
+        protobufMessageName);
   }
 
   private static String asString(Map<String, Object> config, String key, String def) {
