@@ -55,7 +55,6 @@ class TakExtensionTest {
     config.put("multicast_read_buffer_bytes", 2048);
     config.put("protobuf_descriptor_base64", "AQID");
     config.put("protobuf_message_name", "TakMessage");
-    config.put("use_maps_transport", false);
     setField(dto, "config", config);
 
     TakExtensionConfig parsed = TakExtensionConfig.from(dto);
@@ -78,7 +77,6 @@ class TakExtensionTest {
     assertEquals(2048, parsed.getMulticastReadBufferBytes());
     assertEquals("AQID", parsed.getProtobufDescriptorBase64());
     assertEquals("TakMessage", parsed.getProtobufMessageName());
-    assertFalse(parsed.isUseMapsTransport());
   }
 
   @Test
@@ -96,7 +94,6 @@ class TakExtensionTest {
     assertEquals(6969, parsed.getMulticastPort());
     assertEquals("", parsed.getProtobufDescriptorBase64());
     assertEquals("", parsed.getProtobufMessageName());
-    assertTrue(parsed.isUseMapsTransport());
   }
 
   @Test
