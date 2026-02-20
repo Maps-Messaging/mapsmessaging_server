@@ -43,7 +43,7 @@ public class InmarsatClient implements SatelliteClient {
 
   public InmarsatClient(SatelliteConfigDTO satelliteConfigDTO) {
     inmarsatSession = new InmarsatSession(satelliteConfigDTO);
-    lastMoTimeUTC  = StateManager.loadLastMessageUtc(inmarsatSession.getClientId(), inmarsatSession.getClientSecret());
+    lastMoTimeUTC  = StateManager.loadLastMessageUtc(inmarsatSession.getClientId());
     if(lastMoTimeUTC == null) {
       lastMoTimeUTC = java.time.ZonedDateTime.now()
           .withZoneSameInstant(java.time.ZoneOffset.UTC)
@@ -90,7 +90,7 @@ public class InmarsatClient implements SatelliteClient {
     if(moResponse != null){
       if(moResponse.getNextStartTime() != null){
         lastMoTimeUTC = moResponse.getNextStartTime();
-        StateManager.saveLastMessageUtc(inmarsatSession.getClientId(), inmarsatSession.getClientSecret(), lastMoTimeUTC);
+        StateManager.saveLastMessageUtc(inmarsatSession.getClientId(), lastMoTimeUTC);
       }
       List<JsonObject> msgs = moResponse.getMessages();
       for (JsonObject msg : msgs) {

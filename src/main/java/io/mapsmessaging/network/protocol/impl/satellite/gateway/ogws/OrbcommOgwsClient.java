@@ -71,7 +71,7 @@ public class OrbcommOgwsClient implements SatelliteClient {
     this.httpClient = HttpClient.newBuilder()
         .connectTimeout(Duration.ofSeconds(config.getHttpRequestTimeout()))
         .build();
-    lastMessageUtc = StateManager.loadLastMessageUtc(clientId, clientSecret);
+    lastMessageUtc = StateManager.loadLastMessageUtc(clientId);
   }
 
 
@@ -191,7 +191,7 @@ public class OrbcommOgwsClient implements SatelliteClient {
             }
           }
           if(lastMessageUtc != null) {
-            StateManager.saveLastMessageUtc(clientId, clientSecret,lastMessageUtc);
+            StateManager.saveLastMessageUtc(clientId, lastMessageUtc);
           }
         }
       } else {

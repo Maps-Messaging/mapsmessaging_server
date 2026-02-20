@@ -26,6 +26,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicLong;
 
 import static io.mapsmessaging.logging.ServerLogMessages.STOGI_SPLIT_MESSAGE;
 
@@ -33,10 +34,11 @@ public class SatelliteMessageFactory {
 
   private static final Logger logger = LoggerFactory.getLogger(SatelliteMessageFactory.class);
 
+  private static final AtomicLong STREAM_ID = new AtomicLong(0);
+
   private SatelliteMessageFactory() {
   }
   public static List<SatelliteMessage> createMessages(
-      int streamId,
       byte[] payload,
       int maxMessageSize,
       boolean compressed,
@@ -45,7 +47,7 @@ public class SatelliteMessageFactory {
     List<SatelliteMessage> messages = new ArrayList<>();
 
     int totalChunks = (payload.length + maxMessageSize - 1) / maxMessageSize;
-
+    int streamId = (int) (STREAM_ID.getAndIncrement() & 0xff);
     for (int offset = 0, chunkIndex = 0; offset < payload.length; offset += maxMessageSize, chunkIndex++) {
 
       int len = Math.min(maxMessageSize, payload.length - offset);

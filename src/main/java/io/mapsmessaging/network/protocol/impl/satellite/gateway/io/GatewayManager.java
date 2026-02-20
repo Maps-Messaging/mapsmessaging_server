@@ -108,6 +108,7 @@ public class GatewayManager {
 
 
     } catch (RuntimeException | IOException e) {
+      e.printStackTrace();
       TaskManager.getInstance().schedule(this::initSession, 1, TimeUnit.MINUTES);
     } catch (InterruptedException e) {
       Thread.currentThread().interrupt();

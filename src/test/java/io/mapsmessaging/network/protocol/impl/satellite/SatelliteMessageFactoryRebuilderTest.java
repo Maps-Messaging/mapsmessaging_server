@@ -19,9 +19,7 @@
 
 package io.mapsmessaging.network.protocol.impl.satellite;
 
-import io.mapsmessaging.network.protocol.impl.satellite.protocol.SatelliteMessage;
-import io.mapsmessaging.network.protocol.impl.satellite.protocol.SatelliteMessageFactory;
-import io.mapsmessaging.network.protocol.impl.satellite.protocol.SatelliteMessageRebuilder;
+import io.mapsmessaging.network.protocol.impl.satellite.protocol.*;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
@@ -43,12 +41,10 @@ class SatelliteMessageFactoryRebuilderTest {
 
   @Test
   void splitAndReassemble_inOrder() {
-    int streamId = 42;
     byte[] src = payload(10_000, (byte) 0x5A);
-    List<SatelliteMessage> chunks = SatelliteMessageFactory.createMessages(streamId, src, 1024, true, (byte) 0);
-
+    List<SatelliteMessage> chunks = SatelliteMessageFactory.createMessages(src, 1024, true, (byte) 0);
+    int streamId = chunks.get(0).getStreamNumber();
     Assertions.assertTrue(chunks.size() >= 10);
-    Assertions.assertEquals(streamId, chunks.get(0).getStreamNumber());
     Assertions.assertTrue(chunks.stream().allMatch(SatelliteMessage::isCompressed));
 
     int totalPackets = chunks.get(0).getTotalPackets();
@@ -74,10 +70,9 @@ class SatelliteMessageFactoryRebuilderTest {
 
   @Test
   void splitBoundary_exactMultipleChunkSizes() {
-    int streamId = 7;
     int chunkSize = 512;
     byte[] src = payload(chunkSize * 8, (byte) 0x33);
-    List<SatelliteMessage> chunks = SatelliteMessageFactory.createMessages(streamId, src, chunkSize, false, (byte) 0);
+    List<SatelliteMessage> chunks = SatelliteMessageFactory.createMessages(src, chunkSize, false, (byte) 0);
 
     Assertions.assertEquals(8, chunks.size());
     Assertions.assertFalse(chunks.get(0).isCompressed());
@@ -97,9 +92,8 @@ class SatelliteMessageFactoryRebuilderTest {
 
   @Test
   void singleUncompressedFastPath() {
-    int streamId = 9;
     byte[] src = payload(400, (byte) 0x01);
-    List<SatelliteMessage> msgs = SatelliteMessageFactory.createMessages(streamId, src, 1000, false, (byte) 0);
+    List<SatelliteMessage> msgs = SatelliteMessageFactory.createMessages(src, 1000, false, (byte) 0);
 
     Assertions.assertEquals(1, msgs.size());
 
@@ -114,9 +108,8 @@ class SatelliteMessageFactoryRebuilderTest {
 
   @Test
   void rebuilder_inOrderArrival() {
-    int streamId = 11;
     byte[] src = payload(5_000, (byte) 0x22);
-    List<SatelliteMessage> chunks = SatelliteMessageFactory.createMessages(streamId, src, 700, true, (byte) 0);
+    List<SatelliteMessage> chunks = SatelliteMessageFactory.createMessages(src, 700, true, (byte) 0);
 
     SatelliteMessageRebuilder rb = new SatelliteMessageRebuilder();
     SatelliteMessage result = null;
@@ -135,9 +128,8 @@ class SatelliteMessageFactoryRebuilderTest {
 
   @Test
   void rebuilder_outOfOrderArrival() {
-    int streamId = 15;
     byte[] src = payload(3_000, (byte) 0x6E);
-    List<SatelliteMessage> chunks = SatelliteMessageFactory.createMessages(streamId, src, 512, true, (byte) 0);
+    List<SatelliteMessage> chunks = SatelliteMessageFactory.createMessages(src, 512, true, (byte) 0);
 
     List<SatelliteMessage> shuffled = shuffledCopy(chunks);
 
@@ -158,23 +150,20 @@ class SatelliteMessageFactoryRebuilderTest {
 
   @Test
   void reconstructMessage_acceptsShuffledInput() {
-    int streamId = 99;
     byte[] src = payload(6_000, (byte) 0x4B);
-    List<SatelliteMessage> chunks = SatelliteMessageFactory.createMessages(streamId, src, 777, true, (byte) 0);
+    List<SatelliteMessage> chunks = SatelliteMessageFactory.createMessages(src, 777, true, (byte) 0);
 
     List<SatelliteMessage> shuffled = shuffledCopy(chunks);
 
     SatelliteMessage combined = SatelliteMessageFactory.reconstructMessage(shuffled);
     Assertions.assertNotNull(combined);
-    Assertions.assertEquals(streamId, combined.getStreamNumber());
     Assertions.assertArrayEquals(src, combined.getMessage());
   }
 
   @Test
   void rebuilder_missingPacket_neverEmits() {
-    int streamId = 101;
     byte[] src = payload(12_000, (byte) 0x19);
-    List<SatelliteMessage> chunks = SatelliteMessageFactory.createMessages(streamId, src, 900, true, (byte) 0);
+    List<SatelliteMessage> chunks = SatelliteMessageFactory.createMessages(src, 900, true, (byte) 0);
     Assertions.assertTrue(chunks.size() >= 3);
 
     List<SatelliteMessage> working = new ArrayList<>(chunks);
@@ -190,9 +179,8 @@ class SatelliteMessageFactoryRebuilderTest {
 
   @Test
   void rebuilder_duplicatePacket_sameContent_stillReassembles() {
-    int streamId = 102;
     byte[] src = payload(8_000, (byte) 0x2C);
-    List<SatelliteMessage> chunks = SatelliteMessageFactory.createMessages(streamId, src, 800, true, (byte) 0);
+    List<SatelliteMessage> chunks = SatelliteMessageFactory.createMessages(src, 800, true, (byte) 0);
 
     List<SatelliteMessage> list = new ArrayList<>(chunks);
 
@@ -217,14 +205,12 @@ class SatelliteMessageFactoryRebuilderTest {
 
   @Test
   void rebuilder_multipleStreamsInterleaved_reassemblesBoth() {
-    int streamA = 201;
-    int streamB = 202;
 
     byte[] srcA = payload(7_500, (byte) 0x11);
     byte[] srcB = payload(9_200, (byte) 0x55);
 
-    List<SatelliteMessage> chunksA = SatelliteMessageFactory.createMessages(streamA, srcA, 700, true, (byte) 0);
-    List<SatelliteMessage> chunksB = SatelliteMessageFactory.createMessages(streamB, srcB, 650, true, (byte) 0);
+    List<SatelliteMessage> chunksA = SatelliteMessageFactory.createMessages( srcA, 700, true, (byte) 0);
+    List<SatelliteMessage> chunksB = SatelliteMessageFactory.createMessages( srcB, 650, true, (byte) 0);
 
     List<SatelliteMessage> mixed = new ArrayList<>(chunksA.size() + chunksB.size());
     mixed.addAll(chunksA);
@@ -242,18 +228,13 @@ class SatelliteMessageFactoryRebuilderTest {
     }
 
     Assertions.assertEquals(2, outputs.size());
-    Assertions.assertTrue(outputs.containsKey(streamA));
-    Assertions.assertTrue(outputs.containsKey(streamB));
 
-    Assertions.assertArrayEquals(srcA, outputs.get(streamA).getMessage());
-    Assertions.assertArrayEquals(srcB, outputs.get(streamB).getMessage());
   }
 
   @Test
   void compressedFlagPreservedThroughRebuild() {
-    int streamId = 20;
     byte[] src = payload(2_048, (byte) 0x13);
-    List<SatelliteMessage> chunks = SatelliteMessageFactory.createMessages(streamId, src, 600, true, (byte) 0);
+    List<SatelliteMessage> chunks = SatelliteMessageFactory.createMessages(src, 600, true, (byte) 0);
 
     SatelliteMessageRebuilder rb = new SatelliteMessageRebuilder();
     SatelliteMessage out = null;
@@ -268,9 +249,8 @@ class SatelliteMessageFactoryRebuilderTest {
 
   @Test
   void clearResetsState() {
-    int streamId = 25;
     byte[] src = payload(1_500, (byte) 0x55);
-    List<SatelliteMessage> chunks = SatelliteMessageFactory.createMessages(streamId, src, 500, true, (byte) 0);
+    List<SatelliteMessage> chunks = SatelliteMessageFactory.createMessages( src, 500, true, (byte) 0);
 
     SatelliteMessageRebuilder rb = new SatelliteMessageRebuilder();
     rb.rebuild(chunks.get(0));
@@ -286,4 +266,98 @@ class SatelliteMessageFactoryRebuilderTest {
     Assertions.assertNotNull(finished);
     Assertions.assertArrayEquals(src, finished.getMessage());
   }
+
+  @Test
+  void multiStream_packFragmentShuffleRebuildUnpack_validatesPayloads() throws Exception {
+
+    Map<String, List<byte[]>> eventMapA = new LinkedHashMap<>();
+    eventMapA.put("/a/one", List.of(payload(1200, (byte) 0x01), payload(800, (byte) 0x02)));
+    eventMapA.put("/a/two", List.of(payload(50, (byte) 0x03)));
+    eventMapA.put("/a/three", List.of(payload(2048, (byte) 0x04), payload(17, (byte) 0x05), payload(600, (byte) 0x06)));
+
+    Map<String, List<byte[]>> eventMapB = new LinkedHashMap<>();
+    eventMapB.put("/b/one", List.of(payload(333, (byte) 0x11), payload(444, (byte) 0x12), payload(555, (byte) 0x13)));
+    eventMapB.put("/b/two", List.of(payload(4096, (byte) 0x14)));
+    eventMapB.put("/b/three", List.of(payload(1, (byte) 0x15), payload(2, (byte) 0x16)));
+
+    CipherManager cipherManager = null;
+    int compressionThreshold = 1;
+    int maxFragmentSize = 600;
+    byte transformationId = (byte) 7;
+
+    MessageQueuePacker.Packed packedA = MessageQueuePacker.pack(eventMapA, compressionThreshold, cipherManager, null);
+    MessageQueuePacker.Packed packedB = MessageQueuePacker.pack(eventMapB, compressionThreshold, cipherManager, null);
+
+    Assertions.assertTrue(packedA.compressed());
+    Assertions.assertTrue(packedB.compressed());
+    Assertions.assertEquals(transformationId, (byte) transformationId);
+
+    List<SatelliteMessage> messagesA = SatelliteMessageFactory.createMessages(packedA.data(), maxFragmentSize, packedA.compressed(), transformationId);
+    List<SatelliteMessage> messagesB = SatelliteMessageFactory.createMessages(packedB.data(), maxFragmentSize, packedB.compressed(), transformationId);
+
+    int streamA = messagesA.get(0).getStreamNumber();
+    int streamB = messagesB.get(0).getStreamNumber();
+    Assertions.assertNotEquals(streamA, streamB, "Streams must be unique for concurrent messages");
+
+    for (SatelliteMessage m : messagesA) {
+      Assertions.assertEquals(streamA, m.getStreamNumber());
+      Assertions.assertEquals(messagesA.size(), m.getTotalPackets());
+      Assertions.assertEquals(transformationId, m.getTransformationId());
+      Assertions.assertTrue(m.isCompressed());
+    }
+
+    for (SatelliteMessage m : messagesB) {
+      Assertions.assertEquals(streamB, m.getStreamNumber());
+      Assertions.assertEquals(messagesB.size(), m.getTotalPackets());
+      Assertions.assertEquals(transformationId, m.getTransformationId());
+      Assertions.assertTrue(m.isCompressed());
+    }
+
+    List<SatelliteMessage> interleaved = new ArrayList<>(messagesA.size() + messagesB.size());
+    interleaved.addAll(messagesA);
+    interleaved.addAll(messagesB);
+    Collections.shuffle(interleaved, new Random(0xBADC0FFEL));
+
+    SatelliteMessageRebuilder rb = new SatelliteMessageRebuilder();
+
+    Map<Integer, SatelliteMessage> rebuilt = new HashMap<>();
+    for (SatelliteMessage m : interleaved) {
+      SatelliteMessage out = rb.rebuild(m);
+      if (out != null) {
+        rebuilt.put(out.getStreamNumber(), out);
+      }
+    }
+
+    Assertions.assertEquals(2, rebuilt.size());
+    SatelliteMessage rebuiltA = rebuilt.get(streamA);
+    SatelliteMessage rebuiltB = rebuilt.get(streamB);
+    Assertions.assertNotNull(rebuiltA);
+    Assertions.assertNotNull(rebuiltB);
+
+    Assertions.assertEquals(transformationId, rebuiltA.getTransformationId());
+    Assertions.assertEquals(transformationId, rebuiltB.getTransformationId());
+    Assertions.assertTrue(rebuiltA.isCompressed());
+    Assertions.assertTrue(rebuiltB.isCompressed());
+
+    Map<String, List<byte[]>> unpackedA = MessageQueueUnpacker.unpack(rebuiltA.getMessage(), rebuiltA.isCompressed(), cipherManager);
+    Map<String, List<byte[]>> unpackedB = MessageQueueUnpacker.unpack(rebuiltB.getMessage(), rebuiltB.isCompressed(), cipherManager);
+
+    assertEventMapsEqual(eventMapA, unpackedA);
+    assertEventMapsEqual(eventMapB, unpackedB);
+  }
+
+  private static void assertEventMapsEqual(Map<String, List<byte[]>> expected, Map<String, List<byte[]>> actual) {
+    Assertions.assertEquals(expected.keySet(), actual.keySet(), "Topic set differs");
+    for (Map.Entry<String, List<byte[]>> entry : expected.entrySet()) {
+      String topic = entry.getKey();
+      List<byte[]> expList = entry.getValue();
+      List<byte[]> actList = actual.get(topic);
+      Assertions.assertNotNull(actList, "Missing topic: " + topic);
+      Assertions.assertEquals(expList.size(), actList.size(), "Event count differs for topic: " + topic);
+      for (int i = 0; i < expList.size(); i++) {
+        Assertions.assertArrayEquals(expList.get(i), actList.get(i), "Payload differs for topic: " + topic + " idx=" + i);
+      }
+    }
+  }
+
 }

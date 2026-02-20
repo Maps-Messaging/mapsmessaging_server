@@ -26,8 +26,11 @@ import java.nio.ByteBuffer;
 
 
 @Getter
+@Setter
 public class SatelliteMessage {
-  protected final int streamNumber;
+  private static final int HEADER_SIZE = 8;
+
+  protected int streamNumber;
   protected boolean compressed;
   protected int packetNumber;
   protected int totalPackets;
@@ -37,6 +40,9 @@ public class SatelliteMessage {
 
   @Setter
   private Runnable completionCallback;
+
+  protected SatelliteMessage() {}
+
 
   public SatelliteMessage(int streamNumber, byte[] message, int packetNumber, int totalPackets, boolean compressed, byte transformationId) {
     this.streamNumber = streamNumber;
@@ -48,17 +54,17 @@ public class SatelliteMessage {
     raw = false;
   }
 
-  public SatelliteMessage(int streamNumber, byte[] incomingPackedMessage) {
-    this.streamNumber = streamNumber;
+  public SatelliteMessage(byte[] incomingPackedMessage) {
     unpackFromReceived(incomingPackedMessage);
   }
 
   public byte[] packToSend() {
-    ByteBuffer header = ByteBuffer.allocate( 7 + message.length);
+    ByteBuffer header = ByteBuffer.allocate( HEADER_SIZE + message.length);
     byte flag = compressed ? (byte) 0x1 : (byte) 0x0;
     byte transformed = (byte) (transformationId << 1);
     flag = (byte) (flag | transformed);
     header.put(flag);
+    header.put((byte) (streamNumber & 0xff));
     header.putShort((short) packetNumber);
     header.putShort((short) totalPackets);
     header.putShort((short) message.length);
@@ -70,7 +76,7 @@ public class SatelliteMessage {
     if (data == null) {
       return;
     }
-    if(data.length < 5) {
+    if(data.length < HEADER_SIZE) {
       message = data;
       raw = true;
       return;
@@ -80,11 +86,11 @@ public class SatelliteMessage {
 
     byte flag = buffer.get();
     compressed = (flag & 0b1) != 0;
-    transformationId = (byte) (flag >> 1);
-
-    packetNumber = buffer.getShort();
-    totalPackets = buffer.getShort();
-    int messageLength = buffer.getShort();
+    transformationId = (byte)((flag & 0xFE) >>> 1);
+    streamNumber =  Byte.toUnsignedInt(buffer.get());
+    packetNumber = Short.toUnsignedInt(buffer.getShort());
+    totalPackets = Short.toUnsignedInt(buffer.getShort());
+    int messageLength = Short.toUnsignedInt(buffer.getShort());
 
     if (buffer.remaining() < messageLength) {
       message = data;

@@ -87,7 +87,7 @@ public final class MessageQueuePacker extends MessageQueue{
       frameBuffer.put(namespaceStream);
     }
     byte[] frame = frameBuffer.array();
-    int crc= (int)(Xmodem.crc32Mpeg2(frame, frame.length-4) & 0xFFFFFFFF);
+    int crc= (int)(Xmodem.crc32Mpeg2(frame, frame.length - 4));
     frameBuffer.putInt(crc);
     return frameBuffer.array();
   }

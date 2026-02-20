@@ -31,12 +31,18 @@ import java.security.NoSuchAlgorithmException;
 
 public class StateManager {
 
-  public static String loadLastMessageUtc(String username, String password) {
-    String fileName = generate(username, password);
+  public static String loadLastMessageUtc(String username) {
+    String fileName = generate(username);
     Path path = Path.of(fileName);
     if (Files.exists(path)) {
       try {
-        return Files.readString(path, StandardCharsets.UTF_8).trim();
+        String val = Files.readString(path, StandardCharsets.UTF_8).trim();
+        if( val.trim().isBlank()){
+          return null;
+        }
+        if(val.endsWith("\n")){
+          return val.substring(0, val.length()-1);
+        }
       } catch (IOException e) {
         throw new RuntimeException("Failed to read file", e);
       }
@@ -44,21 +50,21 @@ public class StateManager {
     return null; // no state yet
   }
 
-  public static void saveLastMessageUtc(String username, String password, String utc) {
-    String fileName = generate(username, password);
+  public static void saveLastMessageUtc(String username, String utc) {
+    String fileName = generate(username);
     Path path = Path.of(fileName);
     try {
       Files.createDirectories(path.getParent());
-      Files.writeString(path, utc, StandardCharsets.UTF_8);
+      Files.writeString(path, utc+"\n", StandardCharsets.UTF_8);
     } catch (IOException e) {
       throw new RuntimeException("Failed to write file", e);
     }
   }
 
-  private static String generate(String username, String password) {
+  private static String generate(String username) {
 
     try {
-      String input = username + ":" + password;
+      String input = username;
       MessageDigest digest = MessageDigest.getInstance("SHA-256");
       byte[] hash = digest.digest(input.getBytes(StandardCharsets.UTF_8));
       StringBuilder hex = new StringBuilder();

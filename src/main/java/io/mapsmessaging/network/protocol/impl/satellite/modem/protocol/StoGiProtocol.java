@@ -21,7 +21,13 @@ package io.mapsmessaging.network.protocol.impl.satellite.modem.protocol;
 
 import io.mapsmessaging.analytics.Analyser;
 import io.mapsmessaging.analytics.AnalyserFactory;
-import io.mapsmessaging.api.*;
+import io.mapsmessaging.api.Destination;
+import io.mapsmessaging.api.MessageBuilder;
+import io.mapsmessaging.api.MessageEvent;
+import io.mapsmessaging.api.Session;
+import io.mapsmessaging.api.SessionContextBuilder;
+import io.mapsmessaging.api.SessionManager;
+import io.mapsmessaging.api.SubscriptionContextBuilder;
 import io.mapsmessaging.api.features.DestinationMode;
 import io.mapsmessaging.api.features.DestinationType;
 import io.mapsmessaging.api.features.Priority;
@@ -45,14 +51,19 @@ import io.mapsmessaging.network.io.impl.serial.SerialEndPoint;
 import io.mapsmessaging.network.protocol.Protocol;
 import io.mapsmessaging.network.protocol.impl.satellite.TaskManager;
 import io.mapsmessaging.network.protocol.impl.satellite.gateway.io.SatelliteEndPoint;
-import io.mapsmessaging.network.protocol.impl.satellite.gateway.model.MessageData;
 import io.mapsmessaging.network.protocol.impl.satellite.modem.device.Modem;
 import io.mapsmessaging.network.protocol.impl.satellite.modem.device.impl.BaseModemProtocol;
 import io.mapsmessaging.network.protocol.impl.satellite.modem.device.impl.data.NetworkStatus;
 import io.mapsmessaging.network.protocol.impl.satellite.modem.device.messages.IncomingMessageDetails;
 import io.mapsmessaging.network.protocol.impl.satellite.modem.device.messages.ModemSatelliteMessage;
 import io.mapsmessaging.network.protocol.impl.satellite.modem.device.messages.SendMessageState;
-import io.mapsmessaging.network.protocol.impl.satellite.protocol.*;
+import io.mapsmessaging.network.protocol.impl.satellite.protocol.BypassSatelliteMessage;
+import io.mapsmessaging.network.protocol.impl.satellite.protocol.CipherManager;
+import io.mapsmessaging.network.protocol.impl.satellite.protocol.MessageQueuePacker;
+import io.mapsmessaging.network.protocol.impl.satellite.protocol.MessageQueueUnpacker;
+import io.mapsmessaging.network.protocol.impl.satellite.protocol.SatelliteMessage;
+import io.mapsmessaging.network.protocol.impl.satellite.protocol.SatelliteMessageFactory;
+import io.mapsmessaging.network.protocol.impl.satellite.protocol.SatelliteMessageRebuilder;
 import io.mapsmessaging.network.protocol.transformation.ProtocolMessageTransformation;
 import io.mapsmessaging.network.protocol.transformation.TransformationManager;
 import io.mapsmessaging.selector.operators.ParserExecutor;
@@ -66,9 +77,17 @@ import javax.security.auth.Subject;
 import javax.security.auth.login.LoginException;
 import java.io.IOException;
 import java.nio.channels.SelectionKey;
-import java.util.*;
-import java.util.concurrent.*;
-import java.util.concurrent.atomic.AtomicReference;
+import java.util.ArrayDeque;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 
 import static io.mapsmessaging.logging.ServerLogMessages.*;
@@ -78,13 +97,11 @@ public class StoGiProtocol extends Protocol implements Consumer<Packet> {
   private static final String STOGI = "orbcomm";
 
   private final Logger logger = LoggerFactory.getLogger(StoGiProtocol.class);
-  private Session session;
+
+  private final Session session;
   private final SelectorTask selectorTask;
   private final Modem modem;
   private final SatelliteMessageRebuilder satelliteMessageRebuilder;
-  private final AtomicReference<Map<String, List<byte[]>>> pendingMessages;
-  private final AtomicReference<Map<String, List<byte[]>>> priorityMessages;
-  private final List<SatelliteMessage> currentList;
   private final StatsManager statsManager;
   private final CipherManager cipherManager;
 
@@ -101,24 +118,37 @@ public class StoGiProtocol extends Protocol implements Consumer<Packet> {
 
   private final boolean sendHighPriorityEvents;
 
+  // --- Outbound state: single lock, no calls outside this class while held.
+  private final Object outboundLock = new Object();
+  private final Map<String, List<byte[]>> pendingMessages;
+  private final Map<String, List<byte[]>> priorityMessages;
+  private final ArrayDeque<SatelliteMessage> currentList;
+
+  // 2:1 inbound:outbound fairness. If inbound keeps arriving and outbound is pending,
+  // we force an outbound cycle every 3rd loop (2 inbound cycles, then 1 outbound).
+  private int inboundCyclesSinceOutbound;
+
+  private final AtomicBoolean closed;
+
   private ScheduledFuture<?> scheduledFuture;
   private Destination destination;
   private long lastOutgoingMessagePollInterval;
   private int satelliteOnlineCount;
-  private final int messageId;
   private boolean satelliteOnline;
 
   public StoGiProtocol(EndPoint endPoint, Packet packet) throws LoginException, IOException {
     super(endPoint, endPoint.getConfig().getProtocolConfig(STOGI));
+
+    closed = new AtomicBoolean(false);
     satelliteOnline = false;
     satelliteOnlineCount = 0;
+
     satelliteMessageRebuilder = new SatelliteMessageRebuilder();
-    messageId = 0;
-    currentList = new ArrayList<>();
-    pendingMessages = new AtomicReference<>();
-    pendingMessages.set(new LinkedHashMap<>());
-    priorityMessages = new AtomicReference<>();
-    priorityMessages.set(new LinkedHashMap<>());
+
+    currentList = new ArrayDeque<>();
+    pendingMessages = new LinkedHashMap<>();
+    priorityMessages = new LinkedHashMap<>();
+    inboundCyclesSinceOutbound = 0;
 
     if (packet != null) {
       packet.clear();
@@ -131,34 +161,37 @@ public class StoGiProtocol extends Protocol implements Consumer<Packet> {
 
     session = setupSession();
     session.resumeState();
+
     protocolMessageTransformation = TransformationManager.getInstance().getTransformation(
         endPoint.getProtocol(),
         endPoint.getName(),
         STOGI,
         session.getSecurityContext().getUsername()
     );
-
     setProtocolMessageTransformation(protocolMessageTransformation);
+
     StoGiConfigDTO modemConfig = (StoGiConfigDTO) getProtocolConfig();
 
     sinNumber = modemConfig.getSinNumber();
     messageLifeTime = modemConfig.getMessageLifeTimeInMinutes();
     modem = new Modem(this, modemConfig.getModemResponseTimeout(), streamHandler);
 
-    if(!modemConfig.getSharedSecret().trim().isEmpty()) {
+    if (!modemConfig.getSharedSecret().trim().isEmpty()) {
       cipherManager = new CipherManager(modemConfig.getSharedSecret().getBytes());
       logger.log(STOGI_ENCRYPTION_STATUS, "enabled");
-    }
-    else{
+    } else {
       cipherManager = null;
       logger.log(STOGI_ENCRYPTION_STATUS, "disabled");
     }
+
     long locationPollInterval = modemConfig.getLocationPollInterval() * 1000;
     maxBufferSize = modemConfig.getMaxBufferSize();
     compressionThreshold = modemConfig.getCompressionCutoffSize();
     sendHighPriorityEvents = modemConfig.isSendHighPriorityMessages();
+
     selectorTask = new SelectorTask(this, endPoint.getConfig().getEndPointConfig());
     endPoint.register(SelectionKey.OP_READ, selectorTask.getReadTask());
+
     initialiseModem(modemConfig.getModemResponseTimeout());
 
     messagePoll = modemConfig.getIncomingMessagePollInterval() * 1000;
@@ -167,81 +200,142 @@ public class StoGiProtocol extends Protocol implements Consumer<Packet> {
     rawResponseTopic = modemConfig.getModemRawResponse();
 
     completedConnection();
+
     String statsDestination = modemConfig.getModemStatsTopic();
     if (statsDestination != null && !statsDestination.isEmpty()) {
       destination = session.findDestination(statsDestination, DestinationType.TOPIC).join();
     }
+
     lastOutgoingMessagePollInterval = System.currentTimeMillis();
     statsManager = new StatsManager(modem, locationPollInterval, destination);
+
     scheduledFuture = TaskManager.getInstance().schedule(this::pollModemForMessages, messagePoll, TimeUnit.MILLISECONDS);
-    logger.log(STOGI_STARTED_SESSION, modem.getModemProtocol().getType(), messagePoll,outgoingMessagePollInterval );
+    logger.log(STOGI_STARTED_SESSION, modem.getModemProtocol().getType(), messagePoll, outgoingMessagePollInterval);
   }
 
-
-  // Main function loop, handles modem message flow
   private void pollModemForMessages() {
     long startTime = System.currentTimeMillis();
-    boolean hasOutgoing = false;
     long poll = messagePoll;
+
     try {
       NetworkStatus networkStatus = modem.getNetworkStatus();
-      if(!networkStatus.canSend()) {
-        poll = 1000; // check every second while not connected
-        if(satelliteOnline) {
+      if (!networkStatus.canSend()) {
+        poll = 1000;
+        if (satelliteOnline) {
           satelliteOnlineCount = 0;
           satelliteOnline = false;
-          logger.log(STOGI_SATELLITES_STATUS_CHANGE, "Offline - "+networkStatus.noSendReason());
+          logger.log(STOGI_SATELLITES_STATUS_CHANGE, "Offline - " + networkStatus.noSendReason());
         }
-      }
-      else{
-        if(!satelliteOnline){
+      } else {
+        if (!satelliteOnline) {
           satelliteOnlineCount++;
-          if(satelliteOnlineCount > 10){
+          if (satelliteOnlineCount > 10) {
             logger.log(STOGI_SATELLITES_STATUS_CHANGE, "Online");
             satelliteOnline = true;
             satelliteOnlineCount = 0;
           }
         }
       }
-      hasOutgoing = processOutboundMessages();
-      if(!hasOutgoing) {
-        processInboundMessages();
+
+      boolean outboundPending = isOutboundPending();
+      boolean shouldTryOutboundNow = shouldTryOutbound(outboundPending);
+
+      boolean didOutboundWork = false;
+      boolean didInboundWork = false;
+
+      if (shouldTryOutboundNow) {
+        didOutboundWork = processOutboundMessages();
+      }
+
+      if (!didOutboundWork) {
+        didInboundWork = processInboundMessages();
         statsManager.processLocationRequest(networkStatus);
       }
+
+      updateFairnessCounters(didOutboundWork, didInboundWork);
+      poll = (didOutboundWork ? 500 : poll);
+
     } catch (Throwable th) {
       logger.log(STOGI_POLL_RAISED_EXCEPTION, th);
     } finally {
-      poll = hasOutgoing?500:poll;
-      scheduledFuture = TaskManager.getInstance().schedule(this::pollModemForMessages, poll, TimeUnit.MILLISECONDS);
-      startTime = System.currentTimeMillis() - startTime;
-      logger.log(STOGI_POLL_FOR_ACTIONS, startTime, poll);
+      if (!closed.get()) {
+        scheduledFuture = TaskManager.getInstance().schedule(this::pollModemForMessages, poll, TimeUnit.MILLISECONDS);
+      }
+      long duration = System.currentTimeMillis() - startTime;
+      logger.log(STOGI_POLL_FOR_ACTIONS, duration, poll);
+    }
+  }
+
+  private boolean isOutboundPending() {
+    synchronized (outboundLock) {
+      if (!currentList.isEmpty()) {
+        return true;
+      }
+      if (!priorityMessages.isEmpty()) {
+        return true;
+      }
+      if (!pendingMessages.isEmpty()) {
+        return true;
+      }
+      return (lastOutgoingMessagePollInterval + outgoingMessagePollInterval) < System.currentTimeMillis();
+    }
+  }
+
+  private boolean shouldTryOutbound(boolean outboundPending) {
+    if (!satelliteOnline) {
+      return false;
+    }
+    if (!outboundPending) {
+      return false;
+    }
+    synchronized (outboundLock) {
+      if (inboundCyclesSinceOutbound >= 2) {
+        return true;
+      }
+
+      return !pendingMessages.isEmpty()|| !priorityMessages.isEmpty();
+    }
+  }
+
+  private void updateFairnessCounters(boolean didOutboundWork, boolean didInboundWork) {
+    synchronized (outboundLock) {
+      if (didOutboundWork) {
+        inboundCyclesSinceOutbound = 0;
+      } else if (didInboundWork) {
+        inboundCyclesSinceOutbound++;
+        if (inboundCyclesSinceOutbound > 1_000_000) {
+          inboundCyclesSinceOutbound = 10; // keep it bounded without changing behaviour
+        }
+      }
     }
   }
 
   @Override
   public void close() throws IOException {
-    if (scheduledFuture != null) {
-      scheduledFuture.cancel(true);
-    }
-    if (session != null) {
-      SessionManager.getInstance().close(session, false);
+    if (!closed.getAndSet(true)) {
+      if (scheduledFuture != null) {
+        scheduledFuture.cancel(true);
+      }
+      if (session != null) {
+        SessionManager.getInstance().close(session, false);
+      }
       modem.close();
+      super.close();
     }
-    super.close();
   }
 
   private Session setupSession() throws LoginException, IOException {
-    SessionContextBuilder sessionContextBuilder = new SessionContextBuilder(STOGI + endPoint.getId(), new ProtocolClientConnection(this));
+    SessionContextBuilder sessionContextBuilder =
+        new SessionContextBuilder(STOGI + endPoint.getId(), new ProtocolClientConnection(this));
     sessionContextBuilder.setSessionExpiry(0);
     sessionContextBuilder.setPersistentSession(false);
     return SessionManager.getInstance().create(sessionContextBuilder.build(), this);
   }
 
-
   private void initialiseModem(long modemResponseTimeout) throws IOException {
     try {
       BaseModemProtocol init = modem.initializeModem().get(modemResponseTimeout, TimeUnit.MILLISECONDS);
-      if(init == null){
+      if (init == null) {
         throw new IOException("Unable to detect modem version");
       }
       modem.queryModemInfo().get(modemResponseTimeout, TimeUnit.MILLISECONDS);
@@ -255,9 +349,9 @@ public class StoGiProtocol extends Protocol implements Consumer<Packet> {
   }
 
   @Override
-  public void completedConnection(){
+  public void completedConnection() {
     super.completedConnection();
-    if(rawResponseTopic != null && !rawResponseTopic.isEmpty()){
+    if (rawResponseTopic != null && !rawResponseTopic.isEmpty()) {
       try {
         subscribeLocal(
             rawResponseTopic,
@@ -266,9 +360,10 @@ public class StoGiProtocol extends Protocol implements Consumer<Packet> {
             null,
             null,
             new NamespaceFilters(new ArrayList<>()),
-            null);
+            null
+        );
       } catch (IOException e) {
-        // Todo log this!
+        // TODO log
       }
     }
   }
@@ -279,12 +374,27 @@ public class StoGiProtocol extends Protocol implements Consumer<Packet> {
   }
 
   @Override
-  public void subscribeRemote(@NonNull @NotNull String resource, @NonNull @NotNull String mappedResource, @NonNull @NotNull QualityOfService qos, @Nullable ParserExecutor executor, @Nullable InterServerTransformation transformer, StatisticsConfigDTO statistics) {
+  public void subscribeRemote(
+      @NonNull @NotNull String resource,
+      @NonNull @NotNull String mappedResource,
+      @NonNull @NotNull QualityOfService qos,
+      @Nullable ParserExecutor executor,
+      @Nullable InterServerTransformation transformer,
+      StatisticsConfigDTO statistics
+  ) {
     // Will send a subscribe event, once we have one
   }
 
   @Override
-  public void subscribeLocal(@NonNull @NotNull String resource, @NonNull @NotNull String mappedResource, @NonNull @NotNull QualityOfService qos, @Nullable String selector, @Nullable InterServerTransformation transformer, NamespaceFilters namespaceFilters, StatisticsConfigDTO statistics) throws IOException {
+  public void subscribeLocal(
+      @NonNull @NotNull String resource,
+      @NonNull @NotNull String mappedResource,
+      @NonNull @NotNull QualityOfService qos,
+      @Nullable String selector,
+      @Nullable InterServerTransformation transformer,
+      NamespaceFilters namespaceFilters,
+      StatisticsConfigDTO statistics
+  ) throws IOException {
     super.subscribeLocal(resource, mappedResource, qos, selector, transformer, namespaceFilters, statistics);
     SubscriptionContextBuilder builder = createSubscriptionContextBuilder(resource, selector, qos, 1024);
     session.addSubscription(builder.build());
@@ -292,48 +402,65 @@ public class StoGiProtocol extends Protocol implements Consumer<Packet> {
 
   @Override
   public void sendMessage(@NotNull @NonNull MessageEvent messageEvent) {
-    if (messageEvent.getDestinationName().startsWith(rawResponseTopic)) {
-      MessageData messageData = new MessageData();
+    if (rawResponseTopic != null && !rawResponseTopic.isEmpty()
+        && messageEvent.getDestinationName().startsWith(rawResponseTopic)) {
+
       byte[] data = messageEvent.getMessage().getOpaqueData();
+      if (data == null || data.length < 2) {
+        if (messageEvent.getCompletionTask() != null) {
+          messageEvent.getCompletionTask().run();
+        }
+        return;
+      }
+
       byte sin = data[0];
       byte min = data[1];
-      messageData.setPayload(messageEvent.getMessage().getOpaqueData());
-      messageData.setCompletionCallback(messageEvent.getCompletionTask());
-      SatelliteMessage satelliteMessage = new BypassSatelliteMessage(sin, messageEvent.getMessage().getOpaqueData(), min, false);
-      sendMessageViaModem(sin, satelliteMessage);
-    } else {
-      preparePackedMessage(messageEvent);
-    }
-  }
-  public void preparePackedMessage(@NotNull @NonNull MessageEvent messageEvent) {
 
+      SatelliteMessage satelliteMessage = new BypassSatelliteMessage(sin, data, min, false);
+      sendMessageViaModem(sin, satelliteMessage);
+
+      if (messageEvent.getCompletionTask() != null) {
+        messageEvent.getCompletionTask().run();
+      }
+      return;
+    }
+
+    preparePackedMessage(messageEvent);
+  }
+
+  public void preparePackedMessage(@NotNull @NonNull MessageEvent messageEvent) {
     boolean filteredOverride = false;
     int depth = 6;
+
     try {
-      NamespaceFilter namespaceFilter= filterMessage(messageEvent);
-      if(namespaceFilter != null) {
+      NamespaceFilter namespaceFilter = filterMessage(messageEvent);
+      if (namespaceFilter != null) {
         depth = namespaceFilter.getConfig().getDepth();
         filteredOverride = namespaceFilter.getConfig().isForcePriority();
       }
     } catch (IOException e) {
-      return; // failed filtering
+      if (messageEvent.getCompletionTask() != null) {
+        messageEvent.getCompletionTask().run();
+      }
+      return;
     }
 
     String destinationName = messageEvent.getDestinationName();
     ParsedMessage parsedMessage = new ParsedMessage(destinationName, messageEvent.getMessage());
-    parsedMessage = processInterServerTransformations(messageEvent.getDestinationName(),  parsedMessage);
+    parsedMessage = processInterServerTransformations(messageEvent.getDestinationName(), parsedMessage);
+
     Analyser analyser = topicNameAnalyserMap.get(parsedMessage.getDestinationName());
-    if(analyser == null && !resourceNameAnalyserMap.isEmpty()){
+    if (analyser == null && !resourceNameAnalyserMap.isEmpty()) {
       StatisticsConfigDTO config = resourceNameAnalyserMap.get(messageEvent.getSubscription().getContext().getAlias());
-      if(config != null){
+      if (config != null) {
         analyser = AnalyserFactory.getInstance().getAnalyser(config);
         topicNameAnalyserMap.put(messageEvent.getDestinationName(), analyser);
       }
     }
 
-    if(analyser != null) {
-      Message message = analyser.ingest(parsedMessage.getMessage());
-      if(message == null) {
+    if (analyser != null) {
+      Message analysed = analyser.ingest(parsedMessage.getMessage());
+      if (analysed == null) {
         if (messageEvent.getCompletionTask() != null) {
           messageEvent.getCompletionTask().run();
         }
@@ -341,48 +468,43 @@ public class StoGiProtocol extends Protocol implements Consumer<Packet> {
       }
     }
 
-
     Message payload = parsedMessage.getMessage();
     if (protocolMessageTransformation != null) {
       payload = protocolMessageTransformation.outgoing(payload, messageEvent.getDestinationName());
     }
 
     if (topicNameMapping != null) {
-      String tmp = topicNameMapping.get(destinationName);
-      if (tmp != null) {
-        destinationName = tmp;
+      String mapped = topicNameMapping.get(destinationName);
+      if (mapped != null) {
+        destinationName = mapped;
       } else {
         scanForName(destinationName);
       }
     }
-
     destinationName = scanForName(destinationName);
 
-    Map<String, List<byte[]>> pending;
-    if(sendHighPriorityEvents && (
-        payload.getPriority().getValue() > Priority.TWO_BELOW_HIGHEST.getValue())||
-        filteredOverride){
-      pending = priorityMessages.get();
+    boolean highPriority =
+        payload.getPriority().getValue() > Priority.TWO_BELOW_HIGHEST.getValue();
+
+    synchronized (outboundLock) {
+      Map<String, List<byte[]>> pending = (sendHighPriorityEvents && (highPriority || filteredOverride)) ? priorityMessages : pendingMessages;
+
+      List<byte[]> list = pending.computeIfAbsent(destinationName, key -> new ArrayList<>());
+      list.add(payload.getOpaqueData());
+      while (list.size() > depth) {
+        list.removeFirst();
+      }
     }
-    else {
-      pending = pendingMessages.get();
-    }
-    List<byte[]> list = pending.computeIfAbsent(destinationName, key -> new ArrayList<>());
-    list.add(payload.getOpaqueData());
-    while(list.size() > depth){
-      list.removeFirst();
-    }
+
     if (messageEvent.getCompletionTask() != null) {
       messageEvent.getCompletionTask().run();
     }
   }
 
-
   @Override
   public Subject getSubject() {
     return session.getSecurityContext().getSubject();
   }
-
 
   @Override
   public void sendKeepAlive() {
@@ -397,7 +519,6 @@ public class StoGiProtocol extends Protocol implements Consumer<Packet> {
     endPoint.register(SelectionKey.OP_READ, selectorTask.getReadTask());
     return true;
   }
-
 
   @Override
   public String getName() {
@@ -436,127 +557,170 @@ public class StoGiProtocol extends Protocol implements Consumer<Packet> {
     return information;
   }
 
-
   private boolean processOutboundMessages() {
-    if(!satelliteOnline) {
+    if (!satelliteOnline) {
       return false;
     }
 
-    CompletableFuture<List<SendMessageState>> outgoing = modem.listSentMessages();
-    List<SendMessageState> stateList = outgoing.join();
-    boolean needToSend = (!priorityMessages.get().isEmpty() ) || (lastOutgoingMessagePollInterval + outgoingMessagePollInterval < System.currentTimeMillis());
-    if (stateList.isEmpty() && currentList.isEmpty() && !needToSend) {
-      return false;
-    }
-    if(stateList.isEmpty()) {
-      return packAndSendMessages();
-    }
-    else{
+    List<SendMessageState> stateList = modem.listSentMessages().join();
+    if (!stateList.isEmpty()) {
       handleMsgStates(stateList);
+      return true;
     }
-    return true;
+
+    return packAndSendMessages();
   }
 
   private boolean packAndSendMessages() {
-    if(currentList.isEmpty()){
-      Map<String, List<byte[]>> replacement = priorityMessages.getAndSet(new LinkedHashMap<>());
-      if(replacement.isEmpty()){
-        lastOutgoingMessagePollInterval = System.currentTimeMillis();
-        replacement = this.pendingMessages.getAndSet(new LinkedHashMap<>());
-      }
-      if(!replacement.isEmpty()) {
-        try {
-          buildSendList(replacement);
-        } catch (IOException e) {
-          // Log This
+    Map<String, List<byte[]>> replacement = null;
+    boolean needsBuild = false;
+
+    synchronized (outboundLock) {
+      if (currentList.isEmpty()) {
+        if (!priorityMessages.isEmpty()) {
+          replacement = new LinkedHashMap<>(priorityMessages);
+          priorityMessages.clear();
+          needsBuild = !replacement.isEmpty();
+        } else {
+          boolean timeToSend = (lastOutgoingMessagePollInterval + outgoingMessagePollInterval) < System.currentTimeMillis();
+          if (timeToSend || !pendingMessages.isEmpty()) {
+            lastOutgoingMessagePollInterval = System.currentTimeMillis();
+            replacement = new LinkedHashMap<>(pendingMessages);
+            pendingMessages.clear();
+            needsBuild = !replacement.isEmpty();
+          }
         }
       }
     }
-    if(!currentList.isEmpty()){
-      SatelliteMessage msg = currentList.removeFirst();
-      sendMessageViaModem(sinNumber,msg);
-      logger.log(STOGI_SENT_MESSAGE_TO_MODEM, msg.getMessage().length);
+
+    if (needsBuild) {
+      List<SatelliteMessage> built = null;
+      try {
+        built = buildSendList(replacement);
+      } catch (IOException e) {
+        // TODO log
+      }
+
+      if (built != null && !built.isEmpty()) {
+        synchronized (outboundLock) {
+          currentList.addAll(built);
+        }
+      }
     }
-    return currentList.isEmpty();
+
+    SatelliteMessage toSend = null;
+    synchronized (outboundLock) {
+      if (!currentList.isEmpty()) {
+        toSend = currentList.removeFirst();
+      }
+    }
+
+    if (toSend != null) {
+      sendMessageViaModem(sinNumber, toSend);
+      logger.log(STOGI_SENT_MESSAGE_TO_MODEM, toSend.getMessage().length);
+      return true;
+    }
+
+    return false;
   }
 
-  private void buildSendList(Map<String, List<byte[]>> replacement) throws IOException {
-    if(!replacement.isEmpty()){
-      MessageQueuePacker.Packed packedQueue = MessageQueuePacker.pack(replacement, compressionThreshold, cipherManager, protocolMessageTransformation);
-      int v = protocolMessageTransformation == null? 0: protocolMessageTransformation.getId();
-      currentList.addAll(SatelliteMessageFactory.createMessages(sinNumber,  packedQueue.data(), maxBufferSize, packedQueue.compressed(), (byte) v));
+  private List<SatelliteMessage> buildSendList(Map<String, List<byte[]>> replacement) throws IOException {
+    if (replacement == null || replacement.isEmpty()) {
+      return List.of();
     }
+
+    MessageQueuePacker.Packed packedQueue =
+        MessageQueuePacker.pack(replacement, compressionThreshold, cipherManager, protocolMessageTransformation);
+
+    int transformerId = protocolMessageTransformation == null ? 0 : protocolMessageTransformation.getId();
+
+    return SatelliteMessageFactory.createMessages(
+        packedQueue.data(),
+        maxBufferSize,
+        packedQueue.compressed(),
+        (byte) transformerId
+    );
   }
 
   private void handleMsgStates(List<SendMessageState> stateList) {
     for (SendMessageState state : stateList) {
-      if (state.getState().equals(SendMessageState.State.TX_FAILED) ||
-          state.getState().equals(SendMessageState.State.TX_COMPLETED)) {
+      if (state.getState().equals(SendMessageState.State.TX_FAILED)
+          || state.getState().equals(SendMessageState.State.TX_COMPLETED)) {
         modem.deleteSentMessages(state.getMessageName());
       }
     }
   }
 
-  private void processInboundMessages() {
+  private boolean processInboundMessages() {
     List<IncomingMessageDetails> incoming = modem.listIncomingMessages().join();
-    if (!incoming.isEmpty()) {
-      List<ModemSatelliteMessage> messages = retrieveIncomingList(incoming);
-      processMessages(messages);
+    if (incoming.isEmpty()) {
+      return false;
     }
+    List<ModemSatelliteMessage> messages = retrieveIncomingList(incoming);
+    processMessages(messages);
+    return !messages.isEmpty();
   }
 
   private List<ModemSatelliteMessage> retrieveIncomingList(List<IncomingMessageDetails> incoming) {
     List<ModemSatelliteMessage> modemSatelliteMessages = new ArrayList<>();
+
     for (IncomingMessageDetails details : incoming) {
-      ModemSatelliteMessage satelliteMessage;
-      satelliteMessage = modem.getMessage(details).join();
+      ModemSatelliteMessage satelliteMessage = modem.getMessage(details).join();
       if (satelliteMessage != null) {
         receivedMessage();
         endPoint.getEndPointStatus().updateReadBytes(satelliteMessage.getPayload().length);
         modemSatelliteMessages.add(satelliteMessage);
         logger.log(STOGI_RECEIVED_MESSAGE_TO_MODEM, satelliteMessage.getPayload().length);
       }
+
       try {
-        Thread.sleep(500); // Required to allow modem to return to normal mode
+        Thread.sleep(500);
       } catch (InterruptedException e) {
         Thread.currentThread().interrupt();
       }
     }
+
     return modemSatelliteMessages;
   }
 
   private void processMessages(List<ModemSatelliteMessage> messages) {
     for (ModemSatelliteMessage message : messages) {
-      if (message != null) {
-        boolean isMaps = message.getSin() != sinNumber;
-        SatelliteMessage loaded = null;
-        if(isMaps){
-          loaded = new SatelliteMessage(message.getSin(), message.getPayload());
-          isMaps = loaded.isRaw();
-        }
+      if (message == null) {
+        continue;
+      }
 
-        if(!isMaps){
-          String tmp = rawMessageTopic;
-          tmp = tmp.replace("{sin}", Integer.toString(message.getSin()));
-          tmp = tmp.replace("{min}", Integer.toString(message.getMin()));
-          sendMessageToTopic(tmp, message.getPayload());
-        }
-        else {
-          SatelliteMessage satelliteMessage = satelliteMessageRebuilder.rebuild(loaded);
-          if (satelliteMessage != null) {
-            logger.log(STOGI_PROCESSING_INBOUND_EVENT, satelliteMessage.getPacketNumber());
-            try {
-              Map<String, List<byte[]>> receivedEventMap = MessageQueueUnpacker.unpack(satelliteMessage.getMessage(), satelliteMessage.isCompressed(), cipherManager);
-              publishIncomingMap(receivedEventMap);
-            } catch (Throwable e) {
-              logger.log(STOGI_EXCEPTION_PROCESSING_PACKET, e);
-            }
-          } else {
-            logger.log(STOGI_RECEIVED_PARTIAL_MESSAGE, loaded.getPacketNumber());
-          }
-        }
+      boolean isMapsSin = message.getSin() == sinNumber;
+      SatelliteMessage loaded = null;
+      boolean isMaps = false;
+      if (isMapsSin) {
+        loaded = new SatelliteMessage(message.getPayload());
+        isMaps = !loaded.isRaw();
+      }
+
+      if (!isMaps) {
+        String tmp = rawMessageTopic;
+        tmp = tmp.replace("{sin}", Integer.toString(message.getSin()));
+        tmp = tmp.replace("{min}", Integer.toString(message.getMin()));
+        sendMessageToTopic(tmp, message.getPayload());
+        continue;
+      }
+
+      SatelliteMessage rebuilt = satelliteMessageRebuilder.rebuild(loaded);
+      if (rebuilt == null) {
+        logger.log(STOGI_RECEIVED_PARTIAL_MESSAGE, loaded.getPacketNumber());
+        continue;
+      }
+
+      logger.log(STOGI_PROCESSING_INBOUND_EVENT, rebuilt.getPacketNumber());
+      try {
+        Map<String, List<byte[]>> receivedEventMap =
+            MessageQueueUnpacker.unpack(rebuilt.getMessage(), rebuilt.isCompressed(), cipherManager);
+        publishIncomingMap(receivedEventMap);
+      } catch (Throwable e) {
+        logger.log(STOGI_EXCEPTION_PROCESSING_PACKET, e);
       }
     }
+
     modem.waitForModemActivity();
 
     for (ModemSatelliteMessage message : messages) {
@@ -565,8 +729,8 @@ public class StoGiProtocol extends Protocol implements Consumer<Packet> {
   }
 
   private void publishIncomingMap(Map<String, List<byte[]>> incomingMap) {
-    for(Map.Entry<String, List<byte[]>> entry : incomingMap.entrySet()) {
-      for(byte[] bytes : entry.getValue()) {
+    for (Map.Entry<String, List<byte[]>> entry : incomingMap.entrySet()) {
+      for (byte[] bytes : entry.getValue()) {
         sendMessageToTopic(entry.getKey(), bytes);
       }
     }
@@ -576,71 +740,77 @@ public class StoGiProtocol extends Protocol implements Consumer<Packet> {
     int sin = (streamNumber & 0x7F) | 0x80;
     int min;
     byte[] buffer;
-    if(satelliteMessage instanceof BypassSatelliteMessage bypassSatelliteMessage) {
+
+    if (satelliteMessage instanceof BypassSatelliteMessage bypassSatelliteMessage) {
       sin = bypassSatelliteMessage.getStreamNumber();
       min = bypassSatelliteMessage.getPacketNumber();
       byte[] raw = bypassSatelliteMessage.packToSend();
-      buffer = new byte[raw.length-2];
-      System.arraycopy(raw,2,buffer,0,raw.length-2);
-    }
-    else {
-      min = messageId;
+      buffer = new byte[raw.length - 2];
+      System.arraycopy(raw, 2, buffer, 0, raw.length - 2);
+    } else {
+      min = 0;
       buffer = satelliteMessage.packToSend();
     }
+
     sentMessage();
     endPoint.getEndPointStatus().updateWriteBytes(buffer.length);
-    modem.sendMessage(2, sin, min, messageLifeTime,  buffer);
+    modem.sendMessage(2, sin, min, messageLifeTime, buffer);
     logger.log(STOGI_SEND_MESSAGE_TO_MODEM, satelliteMessage.getPacketNumber(), buffer.length);
   }
 
-
   private void sendMessageToTopic(String topic, byte[] data) {
     InterServerTransformation transformer = destinationTransformationLookup(topic);
+
     Message message = createMessage(
         data,
         getProtocolMessageTransformation(),
         transformer,
         this
     );
+
     ParserExecutor parserExecutor = getParser(topic);
     if (parserExecutor != null && !parserExecutor.evaluate(message)) {
       return;
     }
+
     String destinationName = parseForLookup(topic);
-    try {
-      processValidDestinations(destinationName, message);
-    } catch (ExecutionException e) {
-      logger.log(STOGI_EXCEPTION_PROCESSING_PACKET, e);
-    } catch (InterruptedException e) {
-      Thread.currentThread().interrupt();
-    }
+    storeToDestination(destinationName, message);
   }
 
+  private void storeToDestination(String topicName, Message message) {
+    if (topicName == null || topicName.isEmpty()) {
+      return;
+    }
 
-  private void processValidDestinations(String topicName, Message message)
-      throws ExecutionException, InterruptedException {
-    if (topicName == null || topicName.isEmpty()) return;
-    CompletableFuture<Destination> future = session.findDestination(topicName, DestinationType.TOPIC);
-    future.thenApply(topic -> {
-      if (topic != null) {
-        try {
-          topic.storeMessage(message);
-        } catch (IOException e) {
-          // log this!
+    session.findDestination(topicName, DestinationType.TOPIC)
+        .thenAccept(topic -> {
+          if (topic == null) {
+            return;
+          }
+          try {
+            topic.storeMessage(message);
+          } catch (IOException e) {
+            logger.log(STOGI_STORE_EVENT_EXCEPTION, e);
+            try {
+              endPoint.close();
+            } catch (IOException ignored) { }
+          }
+        })
+        .exceptionally(ex -> {
+          logger.log(STOGI_STORE_EVENT_EXCEPTION, ex);
           try {
             endPoint.close();
-          } catch (IOException ioException) {
-            logger.log(STOGI_STORE_EVENT_EXCEPTION, ioException);
-          }
-          future.completeExceptionally(e);
-        }
-      }
-      return destination;
-    });
-    future.get();
+          } catch (IOException ignored) { }
+          return null;
+        });
   }
 
-  private Message createMessage(byte[] msg, ProtocolMessageTransformation transformation, InterServerTransformation transformer, Protocol protocol) {
+  private Message createMessage(
+      byte[] msg,
+      ProtocolMessageTransformation transformation,
+      InterServerTransformation transformer,
+      Protocol protocol
+  ) {
     HashMap<String, String> meta = new LinkedHashMap<>();
     meta.put("protocol", "STOGI");
     meta.put("version", "1");
@@ -657,36 +827,39 @@ public class StoGiProtocol extends Protocol implements Consumer<Packet> {
         .setQoS(QualityOfService.AT_MOST_ONCE)
         .storeOffline(false)
         .setTransformation(transformation);
+
     return MessageOverrides.createMessageBuilder(protocol.getProtocolConfig().getMessageDefaults(), mb).build();
   }
 
   @Override
   public String parseForLookup(String lookup) {
     String exact = topicNameMapping.get(lookup);
-    if (exact != null) return exact;
+    if (exact != null) {
+      return exact;
+    }
 
     String ns = DestinationMode.SCHEMA.getNamespace();
     String nsLower = ns.toLowerCase();
 
-    // Longest-prefix wildcard match (key ends with '#')
-    String bestKey = null;
     String bestVal = null;
     int bestLen = -1;
 
     for (Map.Entry<String, String> e : topicNameMapping.entrySet()) {
       String k = e.getKey();
-      if (!k.endsWith("#")) continue;
+      if (!k.endsWith("#")) {
+        continue;
+      }
       String prefix = k.substring(0, k.length() - 1);
       if (lookup.startsWith(prefix) && prefix.length() > bestLen) {
         bestLen = prefix.length();
-        bestKey = k;
         bestVal = e.getValue();
       }
     }
 
-    if (bestKey == null) return lookup;
+    if (bestVal == null) {
+      return lookup;
+    }
 
-    // Strip schema namespace prefix (case-insensitive)
     String normLookup = lookup;
     if (normLookup.toLowerCase().startsWith(nsLower)) {
       normLookup = normLookup.substring(ns.length());
@@ -696,6 +869,4 @@ public class StoGiProtocol extends Protocol implements Consumer<Packet> {
     result = result.replace("#", "").replaceAll("/{2,}", "/");
     return result;
   }
-
-
 }

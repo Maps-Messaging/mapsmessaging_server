@@ -164,15 +164,24 @@ public class SatelliteGatewayProtocol extends Protocol {
 
   @Override
   public void close() throws IOException {
-    if (!closed.getAndSet(true)) {
+    if (closed.compareAndSet(false, true)) {
       ((SatelliteEndPoint) endPoint).mute();
-      if(scheduledFuture != null){
+      if (scheduledFuture != null) {
         scheduledFuture.cancel(true);
       }
       SessionManager.getInstance().close(session, false);
       super.close();
     }
   }
+
+  private void requestClose() {
+    try {
+      endPoint.close();
+    } catch (IOException ignored) {
+    }
+  }
+
+
 
   public Subject getSubject() {
     if (session != null) {
@@ -286,7 +295,7 @@ public class SatelliteGatewayProtocol extends Protocol {
   private void packAndSend(Map<String, List<byte[]>> replacement) throws IOException {
     if(!replacement.isEmpty()) {
       MessageQueuePacker.Packed packedQueue = MessageQueuePacker.pack(replacement, compressionThreshold, cipherManager, null);
-      List<SatelliteMessage> toSend = SatelliteMessageFactory.createMessages(sinNumber, packedQueue.data(), maxBufferSize, packedQueue.compressed(), (byte) packedQueue.transformerNumber());
+      List<SatelliteMessage> toSend = SatelliteMessageFactory.createMessages(packedQueue.data(), maxBufferSize, packedQueue.compressed(), (byte) packedQueue.transformerNumber());
       int sin = (sinNumber & 0x7f) | 0x80;
       long totalPayloadSize = 0;
       for (SatelliteMessage satelliteMessage : toSend) {
@@ -357,10 +366,9 @@ public class SatelliteGatewayProtocol extends Protocol {
       handleCommonMessage(message, raw);
     }
     else {
-      int sin = raw[0] & 0xff;
       byte[] tmp = new byte[raw.length - 2];
       System.arraycopy(raw, 2, tmp, 0, tmp.length);
-      SatelliteMessage satelliteMessage = new SatelliteMessage(sin, tmp);
+      SatelliteMessage satelliteMessage = new SatelliteMessage(tmp);
       Map<String, String> meta = message.getMeta();
       if (satelliteMessage.isRaw()) {
         handleCommonMessage(message, raw);
@@ -409,22 +417,19 @@ public class SatelliteGatewayProtocol extends Protocol {
           publishEvents(topic, entry.getValue(), transformation1, meta);
         }
         logger.log(SATELLITE_RECEIVED_PACKED_MESSAGE, destinationCount, messageCount,  satelliteMessage.getMessage().length, raw.length);
-      } catch (IOException | ExecutionException e) {
+      } catch (IOException  e) {
         logger.log(INMARSAT_FAILED_PROCESSING_INCOMING, e);
-      }
-      catch (InterruptedException e) {
-        Thread.currentThread().interrupt();
       }
     }
   }
 
-  private void publishEvents(String namespace, List<byte[]> list, ProtocolMessageTransformation transformation1, Map<String, String> meta) throws ExecutionException, InterruptedException {
+  private void publishEvents(String namespace, List<byte[]> list, ProtocolMessageTransformation transformation1, Map<String, String> meta) {
     for (byte[] buffer : list) {
       publishMessage(buffer, namespace, transformation1, meta);
     }
   }
 
-  private void publishMessage(byte[] buffer, String namespace, ProtocolMessageTransformation transformation1, Map<String, String> meta) throws ExecutionException, InterruptedException {
+  private void publishMessage(byte[] buffer, String namespace, ProtocolMessageTransformation transformation1, Map<String, String> meta)  {
     MessageBuilder messageBuilder = new MessageBuilder();
     messageBuilder.setOpaqueData(buffer);
     messageBuilder.setMeta(meta);
@@ -436,22 +441,19 @@ public class SatelliteGatewayProtocol extends Protocol {
 
     session.findDestination(namespace, DestinationType.TOPIC)
         .thenAccept(destination -> {
-          if (destination != null) {
-            try {
-              destination.storeMessage(mapsMessage);
-            } catch (IOException e) {
-              logger.log(OGWS_FAILED_TO_SAVE_MESSAGE, e);
-              try {
-                endPoint.close();
-              } catch (IOException ignored) {}
-            }
+          if(destination == null){
+            return;
+          }
+          try {
+            destination.storeMessage(mapsMessage);
+          } catch (IOException e) {
+            logger.log(OGWS_FAILED_TO_SAVE_MESSAGE, e);
+            requestClose();
           }
         })
         .exceptionally(ex -> {
           logger.log(OGWS_FAILED_TO_SAVE_MESSAGE, ex);
-          try {
-            endPoint.close();
-          } catch (IOException ignored) {}
+          requestClose();
           return null;
         });
   }

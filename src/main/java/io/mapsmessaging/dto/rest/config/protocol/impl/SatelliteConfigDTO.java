@@ -69,7 +69,7 @@ public class SatelliteConfigDTO extends BaseSatelliteConfigDTO {
       example = "/{deviceId}/maps/out",
       defaultValue = "/{deviceId}/maps/out"
   )
-  protected String mapsOutboundPublishRoot = "/{deviceId}/maps/out";
+  protected String mapsOutboundPublishRoot = "/{deviceId}/maps/out/#";
 
   @Schema(
       description = "Topic used to broadcast a message to all modems/clients (encoded and sent to each).",

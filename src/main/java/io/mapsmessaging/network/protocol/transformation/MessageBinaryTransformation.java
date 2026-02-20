@@ -54,47 +54,46 @@ public class MessageBinaryTransformation implements ProtocolMessageTransformatio
   public void incoming(MessageBuilder messageBuilder) {
     try {
       byte[] opaqueData = messageBuilder.getOpaqueData();
-      if (opaqueData != null) {
-        ByteBuffer buffer = ByteBuffer.wrap(opaqueData);
-        int test = buffer.get() & 0xff;
-        if (test != 0x81) {
-          return; // not known
-        }
-        int bufferCount = buffer.get();
-        ByteBuffer[] buffers = new ByteBuffer[bufferCount];
-        int[] bufferSizes = new int[bufferCount];
-        for (int x = 0; x < bufferCount; ++x) {
-          bufferSizes[x] = buffer.getInt();
-        }
-        for (int x = 0; x < bufferCount; ++x) {
-          buffer.limit(buffer.position() + bufferSizes[x]); // Set limit to the end of the slice
-          buffers[x] = ByteBuffer.allocate(bufferSizes[x]);
-          buffers[x].put(buffer);
-          buffers[x].flip();
-        }
-
-
-        Message message = MessageFactory.getInstance().unpack(buffers);
-
-        Map<String, String> current = messageBuilder.getMeta();
-        if (current != null && message.getMeta() != null) {
-          current.putAll(message.getMeta());
-        } else {
-          current = message.getMeta();
-        }
-
-        messageBuilder
-            .setMeta(current)
-            .setDataMap(message.getDataMap())
-            .setOpaqueData(message.getOpaqueData())
-            .setContentType(message.getContentType())
-            .setResponseTopic(message.getResponseTopic())
-            .setPriority(message.getPriority())
-            .setRetain(message.isRetain())
-            .setTransformation(null)
-            .setDelayed(message.getDelayed())
-            .setSchemaId(message.getSchemaId());
+      if(opaqueData == null || opaqueData.length == 0) return;
+      ByteBuffer buffer = ByteBuffer.wrap(opaqueData);
+      int test = buffer.get() & 0xff;
+      if (test != 0x81) {
+        return; // not known
       }
+      int bufferCount = buffer.get();
+      ByteBuffer[] buffers = new ByteBuffer[bufferCount];
+      int[] bufferSizes = new int[bufferCount];
+      for (int x = 0; x < bufferCount; ++x) {
+        bufferSizes[x] = buffer.getInt();
+      }
+      for (int x = 0; x < bufferCount; ++x) {
+        buffer.limit(buffer.position() + bufferSizes[x]); // Set limit to the end of the slice
+        buffers[x] = ByteBuffer.allocate(bufferSizes[x]);
+        buffers[x].put(buffer);
+        buffers[x].flip();
+      }
+
+
+      Message message = MessageFactory.getInstance().unpack(buffers);
+
+      Map<String, String> current = messageBuilder.getMeta();
+      if (current != null && message.getMeta() != null) {
+        current.putAll(message.getMeta());
+      } else {
+        current = message.getMeta();
+      }
+
+      messageBuilder
+          .setMeta(current)
+          .setDataMap(message.getDataMap())
+          .setOpaqueData(message.getOpaqueData())
+          .setContentType(message.getContentType())
+          .setResponseTopic(message.getResponseTopic())
+          .setPriority(message.getPriority())
+          .setRetain(message.isRetain())
+          .setTransformation(null)
+          .setDelayed(message.getDelayed())
+          .setSchemaId(message.getSchemaId());
     } catch (Exception e) {
       logger.log(MESSAGE_TRANSFORMATION_EXCEPTION, e);
     }
