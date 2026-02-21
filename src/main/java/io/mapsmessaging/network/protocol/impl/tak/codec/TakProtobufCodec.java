@@ -42,24 +42,35 @@ public class TakProtobufCodec implements TakPayloadCodec {
   private final CotXmlCodec cotXmlCodec;
   private final int maxPayloadBytes;
   private final MessageFormatter protobufFormatter;
+  private final String protobufSchemaId;
 
   public TakProtobufCodec() {
-    this(new CotXmlCodec(), DEFAULT_MAX_PAYLOAD_BYTES, null);
+    this(new CotXmlCodec(), DEFAULT_MAX_PAYLOAD_BYTES, null, null);
   }
 
   public TakProtobufCodec(CotXmlCodec cotXmlCodec, int maxPayloadBytes) {
-    this(cotXmlCodec, maxPayloadBytes, null);
+    this(cotXmlCodec, maxPayloadBytes, null, null);
   }
 
   public TakProtobufCodec(CotXmlCodec cotXmlCodec, int maxPayloadBytes, MessageFormatter protobufFormatter) {
+    this(cotXmlCodec, maxPayloadBytes, protobufFormatter, null);
+  }
+
+  public TakProtobufCodec(CotXmlCodec cotXmlCodec, int maxPayloadBytes, MessageFormatter protobufFormatter, String protobufSchemaId) {
     this.cotXmlCodec = cotXmlCodec;
     this.maxPayloadBytes = Math.max(1024, maxPayloadBytes);
     this.protobufFormatter = protobufFormatter;
+    this.protobufSchemaId = protobufSchemaId;
   }
 
   public static TakProtobufCodec withSchemaFormatter(CotXmlCodec cotXmlCodec, int maxPayloadBytes,
                                                      String descriptorBase64, String messageName) {
-    return new TakProtobufCodec(cotXmlCodec, maxPayloadBytes, createFormatter(descriptorBase64, messageName));
+    return withSchemaFormatter(cotXmlCodec, maxPayloadBytes, descriptorBase64, messageName, null);
+  }
+
+  public static TakProtobufCodec withSchemaFormatter(CotXmlCodec cotXmlCodec, int maxPayloadBytes,
+                                                     String descriptorBase64, String messageName, String protobufSchemaId) {
+    return new TakProtobufCodec(cotXmlCodec, maxPayloadBytes, createFormatter(descriptorBase64, messageName), protobufSchemaId);
   }
 
   @Override
@@ -76,11 +87,15 @@ public class TakProtobufCodec implements TakPayloadCodec {
     meta.put("tak.transport", "stream");
 
     byte[] embeddedCot = extractEmbeddedCotXml(payload);
+    String schemaId = protobufSchemaId;
     if (embeddedCot != null) {
       try {
         Message cotMessage = cotXmlCodec.decode(embeddedCot);
         if (cotMessage.getMeta() != null) {
           meta.putAll(cotMessage.getMeta());
+        }
+        if (cotMessage.getSchemaId() != null && !cotMessage.getSchemaId().isBlank()) {
+          schemaId = cotMessage.getSchemaId();
         }
         meta.put("tak.format", "protobuf");
         meta.put("tak.transport", "stream");
@@ -91,17 +106,25 @@ public class TakProtobufCodec implements TakPayloadCodec {
     } else if (protobufFormatter != null) {
       mergeSchemaParsedMeta(meta, payload);
     }
+    addSelectorAliases(meta);
 
-    return new MessageBuilder()
+    MessageBuilder builder = new MessageBuilder()
         .setOpaqueData(payload)
         .setContentType("application/x-protobuf")
-        .setMeta(meta)
-        .build();
+        .setMeta(meta);
+    if (schemaId != null && !schemaId.isBlank()) {
+      builder.setSchemaId(schemaId);
+    }
+    return builder.build();
   }
 
   @Override
   public byte[] encode(Message message) throws IOException {
     byte[] opaque = message.getOpaqueData();
+    byte[] cloudEventPayload = TakCloudEventPayloadExtractor.tryExtractPayload(opaque);
+    if (cloudEventPayload != null) {
+      opaque = cloudEventPayload;
+    }
     if (opaque != null && opaque.length > 0 && !looksLikeCotXml(opaque)) {
       if (opaque.length > maxPayloadBytes) {
         throw new IOException("TAK protobuf payload exceeds max size");
@@ -158,22 +181,48 @@ public class TakProtobufCodec implements TakPayloadCodec {
       if (parsed == null) {
         return;
       }
-      promote(parsed, meta, "uid", "tak.uid");
-      promote(parsed, meta, "type", "tak.type");
-      promote(parsed, meta, "time", "tak.time");
-      promote(parsed, meta, "start", "tak.start");
-      promote(parsed, meta, "stale", "tak.stale");
-      promote(parsed, meta, "how", "tak.how");
+      promoteAny(parsed, meta, "tak.uid", "uid", "event.uid");
+      promoteAny(parsed, meta, "tak.type", "type", "event.type");
+      promoteAny(parsed, meta, "tak.time", "time", "event.time");
+      promoteAny(parsed, meta, "tak.start", "start", "event.start");
+      promoteAny(parsed, meta, "tak.stale", "stale", "event.stale");
+      promoteAny(parsed, meta, "tak.how", "how", "event.how");
       meta.put("tak.protobuf_parsed", "true");
     } catch (Exception ignored) {
       // keep base protobuf metadata when schema parsing fails
     }
   }
 
-  private static void promote(IdentifierResolver parsed, Map<String, String> meta, String fromKey, String toKey) {
-    Object val = parsed.get(fromKey);
-    if (val != null) {
-      meta.put(toKey, val.toString());
+  private static void promoteAny(IdentifierResolver parsed, Map<String, String> meta, String toKey, String... fromKeys) {
+    for (String fromKey : fromKeys) {
+      Object val = parsed.get(fromKey);
+      if (val != null) {
+        meta.put(toKey, val.toString());
+        return;
+      }
+    }
+  }
+
+  private static void addSelectorAliases(Map<String, String> meta) {
+    alias(meta, "tak.uid", "tak_uid");
+    alias(meta, "tak.type", "tak_type");
+    alias(meta, "tak.time", "tak_time");
+    alias(meta, "tak.start", "tak_start");
+    alias(meta, "tak.stale", "tak_stale");
+    alias(meta, "tak.how", "tak_how");
+    alias(meta, "tak.lat", "tak_lat");
+    alias(meta, "tak.lon", "tak_lon");
+    alias(meta, "tak.hae", "tak_hae");
+    alias(meta, "tak.ce", "tak_ce");
+    alias(meta, "tak.le", "tak_le");
+    alias(meta, "tak.format", "tak_format");
+    alias(meta, "tak.transport", "tak_transport");
+  }
+
+  private static void alias(Map<String, String> meta, String sourceKey, String aliasKey) {
+    String value = meta.get(sourceKey);
+    if (value != null && !value.isBlank()) {
+      meta.put(aliasKey, value);
     }
   }
 

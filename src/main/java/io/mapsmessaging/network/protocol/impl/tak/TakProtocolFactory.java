@@ -26,6 +26,7 @@ import io.mapsmessaging.network.io.Packet;
 import io.mapsmessaging.network.protocol.Protocol;
 import io.mapsmessaging.network.protocol.ProtocolImplFactory;
 import io.mapsmessaging.network.protocol.detection.NoOpDetection;
+import io.mapsmessaging.network.protocol.impl.extension.ExtensionEndPoint;
 import io.mapsmessaging.network.protocol.impl.extension.ExtensionProtocol;
 
 import java.io.IOException;
@@ -38,17 +39,22 @@ public class TakProtocolFactory extends ProtocolImplFactory {
 
   @Override
   public Protocol connect(EndPoint endPoint, String sessionId, String username, String password) throws IOException {
-    ExtensionConfigDTO extensionConfig = null;
-    if (endPoint.getConfig() != null && endPoint.getConfig().getProtocolConfigs() != null) {
-      for (ProtocolConfigDTO protocolConfig : endPoint.getConfig().getProtocolConfigs()) {
-        if (protocolConfig instanceof ExtensionConfigDTO config && getName().equalsIgnoreCase(config.getProtocol())) {
-          extensionConfig = config;
-          break;
+    ExtensionConfigDTO extensionConfig;
+    if (endPoint instanceof ExtensionEndPoint extensionEndPoint && extensionEndPoint.config() instanceof ExtensionConfigDTO config) {
+      extensionConfig = config;
+    } else {
+      extensionConfig = null;
+      if (endPoint.getConfig() != null && endPoint.getConfig().getProtocolConfigs() != null) {
+        for (ProtocolConfigDTO protocolConfig : endPoint.getConfig().getProtocolConfigs()) {
+          if (protocolConfig instanceof ExtensionConfigDTO config && getName().equalsIgnoreCase(config.getProtocol())) {
+            extensionConfig = config;
+            break;
+          }
         }
       }
-    }
-    if (extensionConfig == null) {
-      throw new IOException("TAK extension configuration not found");
+      if (extensionConfig == null) {
+        throw new IOException("TAK extension configuration not found");
+      }
     }
 
     Protocol protocol = new ExtensionProtocol(endPoint, new TakExtension(endPoint, extensionConfig));

@@ -70,13 +70,20 @@ public class TakExtension extends Extension {
     this.url = new EndPointURL(endPoint.getConfig().getUrl());
     this.logger = LoggerFactory.getLogger(TakExtension.class);
     this.config = TakExtensionConfig.from(extensionConfig);
+    CotXmlCodec cotXmlCodec = CotXmlCodec.withSchemaFormatter(
+        config.isXmlNamespaceAware(),
+        config.isXmlCoalescing(),
+        config.isXmlValidating(),
+        config.getXmlRootEntry(),
+        config.getXmlSchemaId());
     this.payloadCodec = TakExtensionConfig.PAYLOAD_TAK_PROTO_V1.equalsIgnoreCase(config.getPayload())
         ? TakProtobufCodec.withSchemaFormatter(
-            new CotXmlCodec(),
+            cotXmlCodec,
             config.getMaxPayloadBytes(),
             config.getProtobufDescriptorBase64(),
-            config.getProtobufMessageName())
-        : new CotXmlCodec();
+            config.getProtobufMessageName(),
+            config.getProtobufSchemaId())
+        : cotXmlCodec;
     this.streamFramer = new TakStreamFramer(config.getFramingMode(), config.getMaxPayloadBytes());
     this.multicastTransport = config.isMulticastEnabled() ? new TakMulticastTransport(config) : null;
     this.frameReader = new TakFrameReader(streamFramer, config.getReadBufferBytes());
@@ -147,6 +154,7 @@ public class TakExtension extends Extension {
       if (multicastTransport != null && config.isMulticastEgressEnabled()) {
         try {
           multicastTransport.send(payload);
+          endPoint.updateWriteBytes(payload.length);
         } catch (IOException ignored) {
           logger.log(ServerLogMessages.TAK_MULTICAST_IO_FAILED, config.getMulticastGroup(), config.getMulticastPort());
         }
@@ -189,6 +197,7 @@ public class TakExtension extends Extension {
         if (frame.isEmpty()) {
           continue;
         }
+        endPoint.updateReadBytes(frame.get().length);
         processInboundFrame(frame.get(), "multicast");
       } catch (IOException ex) {
         if (!running.get()) {
@@ -203,6 +212,9 @@ public class TakExtension extends Extension {
     String eventType = null;
     if (message.getMeta() != null) {
       eventType = message.getMeta().get("tak.type");
+      if (eventType == null || eventType.isBlank()) {
+        eventType = message.getMeta().get("tak_type");
+      }
     }
     if (eventType == null || eventType.isBlank()) {
       eventType = DEFAULT_EVENT_TYPE;
