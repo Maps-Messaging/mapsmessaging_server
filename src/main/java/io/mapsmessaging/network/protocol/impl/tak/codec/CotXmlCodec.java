@@ -19,9 +19,16 @@
 
 package io.mapsmessaging.network.protocol.impl.tak.codec;
 
+import com.google.protobuf.CodedInputStream;
+import com.google.protobuf.WireFormat;
 import io.mapsmessaging.api.MessageBuilder;
 import io.mapsmessaging.api.features.QualityOfService;
 import io.mapsmessaging.api.message.Message;
+import io.mapsmessaging.engine.schema.SchemaManager;
+import io.mapsmessaging.schemas.config.impl.XmlSchemaConfig;
+import io.mapsmessaging.schemas.formatters.MessageFormatter;
+import io.mapsmessaging.schemas.formatters.MessageFormatterFactory;
+import io.mapsmessaging.selector.IdentifierResolver;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
@@ -41,6 +48,30 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 public class CotXmlCodec implements TakPayloadCodec {
+
+  private final MessageFormatter xmlFormatter;
+  private final String schemaId;
+
+  public CotXmlCodec() {
+    this(null, SchemaManager.DEFAULT_XML_SCHEMA.toString());
+  }
+
+  public CotXmlCodec(MessageFormatter xmlFormatter) {
+    this(xmlFormatter, SchemaManager.DEFAULT_XML_SCHEMA.toString());
+  }
+
+  public CotXmlCodec(MessageFormatter xmlFormatter, String schemaId) {
+    this.xmlFormatter = xmlFormatter;
+    this.schemaId = schemaId;
+  }
+
+  public static CotXmlCodec withSchemaFormatter(boolean namespaceAware, boolean coalescing, boolean validating, String rootEntry) {
+    return withSchemaFormatter(namespaceAware, coalescing, validating, rootEntry, SchemaManager.DEFAULT_XML_SCHEMA.toString());
+  }
+
+  public static CotXmlCodec withSchemaFormatter(boolean namespaceAware, boolean coalescing, boolean validating, String rootEntry, String schemaId) {
+    return new CotXmlCodec(createFormatter(namespaceAware, coalescing, validating, rootEntry), schemaId);
+  }
 
   @Override
   public Message decode(byte[] payload) throws IOException {
@@ -71,22 +102,35 @@ public class CotXmlCodec implements TakPayloadCodec {
     putIfPresent(meta, "tak.le", point.getAttribute("le"));
     meta.put("tak.format", "xml");
     meta.put("tak.transport", "stream");
+    mergeSchemaParsedMeta(meta, payload);
+    addSelectorAliases(meta);
 
-    return new MessageBuilder()
+    MessageBuilder builder = new MessageBuilder()
         .setOpaqueData(payload)
         .setMeta(meta)
         .setContentType("application/cot+xml")
-        .setQoS(QualityOfService.AT_MOST_ONCE)
-        .build();
+        .setQoS(QualityOfService.AT_MOST_ONCE);
+    if (schemaId != null && !schemaId.isBlank()) {
+      builder.setSchemaId(schemaId);
+    }
+    return builder.build();
   }
 
   @Override
   public byte[] encode(Message message) throws IOException {
     byte[] opaque = message.getOpaqueData();
+    byte[] cloudEventPayload = TakCloudEventPayloadExtractor.tryExtractPayload(opaque);
+    if (cloudEventPayload != null) {
+      opaque = cloudEventPayload;
+    }
     if (opaque != null && opaque.length > 0) {
       String candidate = new String(opaque, StandardCharsets.UTF_8).trim();
       if (candidate.startsWith("<event")) {
         return opaque;
+      }
+      byte[] embeddedCot = tryExtractEmbeddedCotFromProtobuf(opaque);
+      if (embeddedCot != null) {
+        return embeddedCot;
       }
     }
     Map<String, String> meta = message.getMeta() != null ? message.getMeta() : new LinkedHashMap<>();
@@ -110,6 +154,33 @@ public class CotXmlCodec implements TakPayloadCodec {
         + "<point lat=\"" + esc(lat) + "\" lon=\"" + esc(lon) + "\" hae=\"" + esc(hae) + "\" ce=\"" + esc(ce) + "\" le=\"" + esc(le) + "\"/>"
         + "</event>";
     return xml.getBytes(StandardCharsets.UTF_8);
+  }
+
+  private static byte[] tryExtractEmbeddedCotFromProtobuf(byte[] payload) {
+    try {
+      CodedInputStream input = CodedInputStream.newInstance(payload);
+      while (!input.isAtEnd()) {
+        int tag = input.readTag();
+        if (tag == 0) {
+          break;
+        }
+        int wireType = WireFormat.getTagWireType(tag);
+        if (wireType == WireFormat.WIRETYPE_LENGTH_DELIMITED) {
+          byte[] candidate = input.readByteArray();
+          if (candidate.length > 0) {
+            String xmlCandidate = new String(candidate, StandardCharsets.UTF_8).trim();
+            if (xmlCandidate.startsWith("<event")) {
+              return candidate;
+            }
+          }
+        } else if (!input.skipField(tag)) {
+          break;
+        }
+      }
+    } catch (Exception ignored) {
+      // non-protobuf payload; fall through to metadata-based reconstruction
+    }
+    return null;
   }
 
   private static String getOrDefault(Map<String, String> meta, String key, String def) {
@@ -173,5 +244,79 @@ public class CotXmlCodec implements TakPayloadCodec {
         .replace("\"", "&quot;")
         .replace("<", "&lt;")
         .replace(">", "&gt;");
+  }
+
+  private void mergeSchemaParsedMeta(Map<String, String> meta, byte[] payload) {
+    if (xmlFormatter == null) {
+      return;
+    }
+    try {
+      IdentifierResolver parsed = xmlFormatter.parse(payload);
+      if (parsed == null) {
+        return;
+      }
+      promoteAny(parsed, meta, "tak.uid", "uid", "event.uid");
+      promoteAny(parsed, meta, "tak.type", "type", "event.type");
+      promoteAny(parsed, meta, "tak.time", "time", "event.time");
+      promoteAny(parsed, meta, "tak.start", "start", "event.start");
+      promoteAny(parsed, meta, "tak.stale", "stale", "event.stale");
+      promoteAny(parsed, meta, "tak.how", "how", "event.how");
+      promoteAny(parsed, meta, "tak.lat", "point.lat", "event.point.lat");
+      promoteAny(parsed, meta, "tak.lon", "point.lon", "event.point.lon");
+      promoteAny(parsed, meta, "tak.hae", "point.hae", "event.point.hae");
+      promoteAny(parsed, meta, "tak.ce", "point.ce", "event.point.ce");
+      promoteAny(parsed, meta, "tak.le", "point.le", "event.point.le");
+      meta.put("tak.xml_schema_parsed", "true");
+    } catch (Exception ignored) {
+      // Preserve default CoT metadata extraction if formatter parsing fails.
+    }
+  }
+
+  private static void promoteAny(IdentifierResolver parsed, Map<String, String> meta, String toKey, String... fromKeys) {
+    for (String fromKey : fromKeys) {
+      Object val = parsed.get(fromKey);
+      if (val != null) {
+        meta.put(toKey, val.toString());
+        return;
+      }
+    }
+  }
+
+  private static void addSelectorAliases(Map<String, String> meta) {
+    alias(meta, "tak.uid", "tak_uid");
+    alias(meta, "tak.type", "tak_type");
+    alias(meta, "tak.time", "tak_time");
+    alias(meta, "tak.start", "tak_start");
+    alias(meta, "tak.stale", "tak_stale");
+    alias(meta, "tak.how", "tak_how");
+    alias(meta, "tak.lat", "tak_lat");
+    alias(meta, "tak.lon", "tak_lon");
+    alias(meta, "tak.hae", "tak_hae");
+    alias(meta, "tak.ce", "tak_ce");
+    alias(meta, "tak.le", "tak_le");
+    alias(meta, "tak.format", "tak_format");
+    alias(meta, "tak.transport", "tak_transport");
+  }
+
+  private static void alias(Map<String, String> meta, String sourceKey, String aliasKey) {
+    String value = meta.get(sourceKey);
+    if (value != null && !value.isBlank()) {
+      meta.put(aliasKey, value);
+    }
+  }
+
+  private static MessageFormatter createFormatter(boolean namespaceAware, boolean coalescing, boolean validating, String rootEntry) {
+    try {
+      XmlSchemaConfig schemaConfig = new XmlSchemaConfig();
+      XmlSchemaConfig.XmlConfig xmlConfig = new XmlSchemaConfig.XmlConfig();
+      xmlConfig.setNamespaceAware(namespaceAware);
+      xmlConfig.setCoalescing(coalescing);
+      xmlConfig.setValidating(validating);
+      xmlConfig.setRootEntry(rootEntry == null || rootEntry.isBlank() ? "event" : rootEntry);
+      schemaConfig.setConfig(xmlConfig);
+      return MessageFormatterFactory.getInstance().getFormatter(schemaConfig);
+    } catch (Exception ignored) {
+      return null;
+    }
   }
 }

@@ -42,6 +42,12 @@ public class TakExtensionConfig {
   private static final int DEFAULT_MULTICAST_TTL = 1;
   private static final String DEFAULT_PROTOBUF_DESCRIPTOR_BASE64 = "";
   private static final String DEFAULT_PROTOBUF_MESSAGE_NAME = "";
+  private static final String DEFAULT_XML_SCHEMA_ID = "";
+  private static final String DEFAULT_PROTOBUF_SCHEMA_ID = "";
+  private static final boolean DEFAULT_XML_NAMESPACE_AWARE = true;
+  private static final boolean DEFAULT_XML_COALESCING = true;
+  private static final boolean DEFAULT_XML_VALIDATING = false;
+  private static final String DEFAULT_XML_ROOT_ENTRY = "event";
 
   private final String payload;
   private final TakStreamFramer.Mode framingMode;
@@ -61,12 +67,20 @@ public class TakExtensionConfig {
   private final int multicastReadBufferBytes;
   private final String protobufDescriptorBase64;
   private final String protobufMessageName;
+  private final String xmlSchemaId;
+  private final String protobufSchemaId;
+  private final boolean xmlNamespaceAware;
+  private final boolean xmlCoalescing;
+  private final boolean xmlValidating;
+  private final String xmlRootEntry;
 
   private TakExtensionConfig(String payload, TakStreamFramer.Mode framingMode, int maxPayloadBytes, int reconnectDelayMs,
                              int reconnectMaxDelayMs, double reconnectBackoffMultiplier, int reconnectJitterMs, int readBufferBytes,
                              boolean multicastEnabled, boolean multicastIngressEnabled, boolean multicastEgressEnabled,
                              String multicastGroup, int multicastPort, String multicastInterface, int multicastTtl, int multicastReadBufferBytes,
-                             String protobufDescriptorBase64, String protobufMessageName) {
+                             String protobufDescriptorBase64, String protobufMessageName,
+                             String xmlSchemaId, String protobufSchemaId,
+                             boolean xmlNamespaceAware, boolean xmlCoalescing, boolean xmlValidating, String xmlRootEntry) {
     this.payload = payload;
     this.framingMode = framingMode;
     this.maxPayloadBytes = maxPayloadBytes;
@@ -85,6 +99,12 @@ public class TakExtensionConfig {
     this.multicastReadBufferBytes = multicastReadBufferBytes;
     this.protobufDescriptorBase64 = protobufDescriptorBase64;
     this.protobufMessageName = protobufMessageName;
+    this.xmlSchemaId = xmlSchemaId;
+    this.protobufSchemaId = protobufSchemaId;
+    this.xmlNamespaceAware = xmlNamespaceAware;
+    this.xmlCoalescing = xmlCoalescing;
+    this.xmlValidating = xmlValidating;
+    this.xmlRootEntry = xmlRootEntry;
   }
 
   public static TakExtensionConfig from(ExtensionConfigDTO extensionConfig) {
@@ -108,6 +128,12 @@ public class TakExtensionConfig {
     int multicastReadBuffer = asInt(config, "multicast_read_buffer_bytes", DEFAULT_READ_BUFFER);
     String protobufDescriptorBase64 = asString(config, "protobuf_descriptor_base64", DEFAULT_PROTOBUF_DESCRIPTOR_BASE64).trim();
     String protobufMessageName = asString(config, "protobuf_message_name", DEFAULT_PROTOBUF_MESSAGE_NAME).trim();
+    String xmlSchemaId = asString(config, "xml_schema_id", DEFAULT_XML_SCHEMA_ID).trim();
+    String protobufSchemaId = asString(config, "protobuf_schema_id", DEFAULT_PROTOBUF_SCHEMA_ID).trim();
+    boolean xmlNamespaceAware = asBoolean(config, "xml_namespace_aware", DEFAULT_XML_NAMESPACE_AWARE);
+    boolean xmlCoalescing = asBoolean(config, "xml_coalescing", DEFAULT_XML_COALESCING);
+    boolean xmlValidating = asBoolean(config, "xml_validating", DEFAULT_XML_VALIDATING);
+    String xmlRootEntry = asString(config, "xml_root_entry", DEFAULT_XML_ROOT_ENTRY).trim();
     int reconnectBase = Math.max(100, reconnectMs);
     int reconnectMax = Math.max(reconnectBase, reconnectMaxMs);
     return new TakExtensionConfig(payload, mode, Math.max(1024, maxPayload), reconnectBase,
@@ -119,7 +145,13 @@ public class TakExtensionConfig {
         Math.max(1, Math.min(255, multicastTtl)),
         Math.max(512, multicastReadBuffer),
         protobufDescriptorBase64,
-        protobufMessageName);
+        protobufMessageName,
+        xmlSchemaId,
+        protobufSchemaId,
+        xmlNamespaceAware,
+        xmlCoalescing,
+        xmlValidating,
+        xmlRootEntry.isEmpty() ? DEFAULT_XML_ROOT_ENTRY : xmlRootEntry);
   }
 
   private static String asString(Map<String, Object> config, String key, String def) {

@@ -79,6 +79,18 @@ NetworkConnectionManager:
       #     framing: xml_stream
       #     max_payload_bytes: 1048576
       #     reconnect_delay_ms: 2000
+      #     reconnect_max_delay_ms: 30000
+      #     reconnect_backoff_multiplier: 2.0
+      #     reconnect_jitter_ms: 250
+      #     read_buffer_bytes: 8192
+      #     xml_schema_id: "10000000-0000-1000-a000-100000000004" # default XML schema
+      #
+      #     # Optional protobuf mode:
+      #     # payload: tak_proto_v1
+      #     # framing: proto_stream
+      #     # protobuf_descriptor_base64: "<base64 file descriptor set>"
+      #     # protobuf_message_name: "TakMessage"
+      #     # protobuf_schema_id: "<registered protobuf schema uuid>"
       #
       #   links:
       #     - direction: pull
@@ -90,5 +102,5 @@ NetworkConnectionManager:
       #     - direction: push
       #       remote_namespace: "tak/cot/out/#"
       #       local_namespace: "ops/cot/out/"
-      #       selector: "tak.type LIKE 'a-%'"
+      #       selector: "tak_type LIKE 'a-%'"
       #       qos: 0

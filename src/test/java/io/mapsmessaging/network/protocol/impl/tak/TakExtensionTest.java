@@ -55,6 +55,12 @@ class TakExtensionTest {
     config.put("multicast_read_buffer_bytes", 2048);
     config.put("protobuf_descriptor_base64", "AQID");
     config.put("protobuf_message_name", "TakMessage");
+    config.put("xml_schema_id", "10000000-0000-1000-a000-100000000004");
+    config.put("protobuf_schema_id", "f4f6f837-89ce-4cca-b74d-aa14513c501f");
+    config.put("xml_namespace_aware", false);
+    config.put("xml_coalescing", false);
+    config.put("xml_validating", true);
+    config.put("xml_root_entry", "cotEvent");
     setField(dto, "config", config);
 
     TakExtensionConfig parsed = TakExtensionConfig.from(dto);
@@ -77,6 +83,12 @@ class TakExtensionTest {
     assertEquals(2048, parsed.getMulticastReadBufferBytes());
     assertEquals("AQID", parsed.getProtobufDescriptorBase64());
     assertEquals("TakMessage", parsed.getProtobufMessageName());
+    assertEquals("10000000-0000-1000-a000-100000000004", parsed.getXmlSchemaId());
+    assertEquals("f4f6f837-89ce-4cca-b74d-aa14513c501f", parsed.getProtobufSchemaId());
+    assertFalse(parsed.isXmlNamespaceAware());
+    assertFalse(parsed.isXmlCoalescing());
+    assertTrue(parsed.isXmlValidating());
+    assertEquals("cotEvent", parsed.getXmlRootEntry());
   }
 
   @Test
@@ -94,6 +106,12 @@ class TakExtensionTest {
     assertEquals(6969, parsed.getMulticastPort());
     assertEquals("", parsed.getProtobufDescriptorBase64());
     assertEquals("", parsed.getProtobufMessageName());
+    assertEquals("", parsed.getXmlSchemaId());
+    assertEquals("", parsed.getProtobufSchemaId());
+    assertTrue(parsed.isXmlNamespaceAware());
+    assertTrue(parsed.isXmlCoalescing());
+    assertFalse(parsed.isXmlValidating());
+    assertEquals("event", parsed.getXmlRootEntry());
   }
 
   @Test
