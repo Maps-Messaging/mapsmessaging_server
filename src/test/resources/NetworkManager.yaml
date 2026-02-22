@@ -295,8 +295,7 @@ NetworkManager:
         auth: public
         ssl_keyStorePassphrase: invalidPassword
 
-      -
-        name: "Inmarsat Iot nano interface"
+      - name: "Inmarsat Iot nano interface"
         protocol: satellite
         auth: anon
         url: satellite://inmarsat:0/
@@ -306,7 +305,7 @@ NetworkManager:
         maxInflightEventsPerDevice: 2
         outboundNamespaceRoot: "/inmarsat/{deviceId}"
         outboundBroadcast: "/inmarsat/broadcast"
-        baseUrl: "http://localhost:8085/v1"
+        baseUrl: "http://localhost:8085/iotMessaging/v1"
         remoteAuthConfig:
           username: "this is not real"
           password: "this is just a junk password since we are in local mock test"
