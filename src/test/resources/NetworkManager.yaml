@@ -100,6 +100,25 @@ NetworkManager:
 
     data:
 
+
+      -
+        url: udp://0.0.0.0:14550/
+        name: "mavLink Test"
+        protocols:
+          type: mavlink
+          dialect: common
+          idleSessionTimeout: 300
+          maximumSessionExpiry: 86400
+          advertiseInterval: 15
+          maxInFlightEvents: 8
+          topicNameTemplate: "/mavlink/{remoteSocket}/{systemId}/{componentId}/{messageName}"
+          parseToJson: true
+
+      - name: "Canbus Interface"
+        url: canbus://::/
+        deviceName: vcan0
+        protocol: n2k
+
       - name: "NATS TCP Test anon Interface for raw buffer writes"
         url: "tcp://0.0.0.0:4222/"
         protocol: nats

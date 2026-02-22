@@ -103,8 +103,15 @@ public class EndPointConfigFactory {
       loadDefaultProtocols(config, server, config.getProperty("protocol"));
     }
     else if(config.containsKey("protocols")) {
-      List<ConfigurationProperties> protocolConfig = (List<ConfigurationProperties>) config.get("protocols");
-      loadSpecificProtocols(server, protocolConfig);
+      Object obj =  config.get("protocols");
+      if(obj instanceof List){
+        List<ConfigurationProperties> protocolConfig = (List<ConfigurationProperties>) config.get("protocols");
+        loadSpecificProtocols(server, protocolConfig);
+      }
+      else{
+        List<ConfigurationProperties> protocolConfig = List.of((ConfigurationProperties) obj);
+        loadSpecificProtocols(server, protocolConfig);
+      }
     }
     else{
       loadDefaultProtocols(config, server,"loop");
