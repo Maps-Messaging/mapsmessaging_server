@@ -295,7 +295,8 @@ NetworkManager:
         auth: public
         ssl_keyStorePassphrase: invalidPassword
 
-      - name: "Inmarsat Iot nano interface"
+      -
+        name: "Inmarsat Iot nano interface"
         protocol: satellite
         auth: anon
         url: satellite://inmarsat:0/
