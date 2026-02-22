@@ -190,13 +190,6 @@ public class BaseTestConfig extends BaseTest {
     try {
       SessionManager manager = md.getSubSystemManager().getSessionManager();
       List<SessionImpl> sessionImpls = manager.getSessions();
-      for (SessionImpl sessionImpl : sessionImpls) {
-        if(!sessionImpl.getContext().isInternal()) {
-          System.err.println("Session still active::" + sessionImpl.getName());
-          sessionImpl.setExpiryTime(1);
-          manager.close(sessionImpl, false);
-        }
-      }
       int counter =0;
       while(!sessionImpls.isEmpty() && counter < 20) {
         TimeUnit.MILLISECONDS.sleep(100);
@@ -216,15 +209,6 @@ public class BaseTestConfig extends BaseTest {
           md.getDestinationManager().delete(destinationImpl);
         }
       }
-      if(md.getSubSystemManager().getSessionManager().hasSessions()){
-        for (SessionImpl sessionImpl : md.getSubSystemManager().getSessionManager().getSessions()) {
-          if(!sessionImpl.getContext().isInternal()) {
-            System.err.println("Session still active::" + sessionImpl.getName());
-            sessionImpl.setExpiryTime(1);
-            manager.close(sessionImpl, false);
-          }
-        }
-      }
       long timeout = System.currentTimeMillis()+ 10_000;
       while(SessionManagerTest.getInstance().hasIdleSessions() && timeout > System.currentTimeMillis()){
         delay(100);
@@ -235,9 +219,6 @@ public class BaseTestConfig extends BaseTest {
           System.err.println("has listener " + listener);
         }
       }
-
-//      Assertions.assertFalse(SessionManagerTest.getInstance().hasIdleSessions());
-
       List<DestinationManagerListener> listeners = md.getDestinationManager().getListeners();
       for (DestinationManagerListener listener : listeners) {
         if(listener instanceof SubscriptionController){
