@@ -85,7 +85,8 @@ public class BaseTestConfig extends BaseTest {
     for(DestinationImpl destination:destinations.values()){
       if(!destination.getFullyQualifiedNamespace().startsWith("$") &&
           !(destination.getFullyQualifiedNamespace().startsWith("/aggregator")) &&
-          !(destination.getFullyQualifiedNamespace().startsWith("/vcan0") )) {
+          !(destination.getFullyQualifiedNamespace().startsWith("/vcan0")) &&
+          !(destination.getFullyQualifiedNamespace().startsWith("/mavlink")) ) {
         toDelete.add(destination);
       }
     }
@@ -207,8 +208,9 @@ public class BaseTestConfig extends BaseTest {
       for (DestinationImpl destinationImpl : destinationImpls.values()) {
         if (!destinationImpl.getFullyQualifiedNamespace().startsWith("$") &&
             !(destinationImpl.getFullyQualifiedNamespace().startsWith("/aggregator")) &&
-                !(destinationImpl.getFullyQualifiedNamespace().startsWith("/vcan0") )) {
-          md.getDestinationManager().delete(destinationImpl);
+                !(destinationImpl.getFullyQualifiedNamespace().startsWith("/vcan0" )) &&
+            !(destinationImpl.getFullyQualifiedNamespace().startsWith("/mavlink")) ){
+        md.getDestinationManager().delete(destinationImpl);
         }
       }
       long timeout = System.currentTimeMillis()+ 10_000;
