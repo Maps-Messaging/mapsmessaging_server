@@ -83,8 +83,9 @@ public class BaseTestConfig extends BaseTest {
     Map<String, DestinationImpl> destinations = md.getDestinationManager().get(null);
     List<DestinationImpl> toDelete = new ArrayList<>();
     for(DestinationImpl destination:destinations.values()){
-      if(!destination.getFullyQualifiedNamespace().startsWith("$")&&
-          !(destination.getFullyQualifiedNamespace().startsWith("/aggregator") )) {
+      if(!destination.getFullyQualifiedNamespace().startsWith("$") &&
+          !(destination.getFullyQualifiedNamespace().startsWith("/aggregator")) &&
+          !(destination.getFullyQualifiedNamespace().startsWith("/vcan0") )) {
         toDelete.add(destination);
       }
     }
@@ -205,7 +206,8 @@ public class BaseTestConfig extends BaseTest {
       Map<String, DestinationImpl> destinationImpls = md.getDestinationManager().get(null);
       for (DestinationImpl destinationImpl : destinationImpls.values()) {
         if (!destinationImpl.getFullyQualifiedNamespace().startsWith("$") &&
-            !(destinationImpl.getFullyQualifiedNamespace().startsWith("/aggregator") )) {
+            !(destinationImpl.getFullyQualifiedNamespace().startsWith("/aggregator")) &&
+                !(destinationImpl.getFullyQualifiedNamespace().startsWith("/vcan0") )) {
           md.getDestinationManager().delete(destinationImpl);
         }
       }

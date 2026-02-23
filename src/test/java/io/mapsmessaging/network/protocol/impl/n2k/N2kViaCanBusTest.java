@@ -1,8 +1,11 @@
 package io.mapsmessaging.network.protocol.impl.n2k;
 
-import io.mapsmessaging.api.MessageEvent;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 import io.mapsmessaging.api.MessageListener;
 import io.mapsmessaging.api.Session;
+import io.mapsmessaging.api.SubscribedEventManager;
 import io.mapsmessaging.api.SubscriptionContextBuilder;
 import io.mapsmessaging.api.features.ClientAcknowledgement;
 import io.mapsmessaging.api.features.QualityOfService;
@@ -11,16 +14,15 @@ import io.mapsmessaging.canbus.device.SocketCanDevice;
 import io.mapsmessaging.canbus.device.frames.CanFrame;
 import io.mapsmessaging.engine.destination.subscription.SubscriptionContext;
 import io.mapsmessaging.test.BaseTestConfig;
-import lombok.NonNull;
-import org.jetbrains.annotations.NotNull;
+import net.bytebuddy.implementation.bytecode.Throw;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import javax.security.auth.login.LoginException;
 import java.io.IOException;
-import java.util.ArrayList;
+import java.nio.charset.StandardCharsets;
+import java.util.Base64;
 import java.util.List;
-import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -155,7 +157,7 @@ class N2kViaCanBusTest extends BaseTestConfig {
       messageEvent.getCompletionTask().run();
     };
 
-    Session session = createSession("n2kSimpleTest", 60, 60, false, listener);
+    Session session = createSession("n2kSimpleTest"+System.nanoTime(), 60, 60, false, listener);
     Assertions.assertNotNull(session);
 
     try {
@@ -168,18 +170,278 @@ class N2kViaCanBusTest extends BaseTestConfig {
           .build();
 
       session.addSubscription(context);
-
       injectCandumpFramesIntoVcan("vcan0", CANDUMP_LINES);
 
       boolean received = firstMessageLatch.await(5, TimeUnit.SECONDS);
       Assertions.assertTrue(received, "No N2K messages were published to /vcan0/# after CAN injection");
       Assertions.assertTrue(receivedCount.get() > 0, "Expected at least one message after injection");
 
+      int attempts = 0;
+      do {
+        delay(100);
+        attempts++;
+      } while (CANDUMP_LINES.length != messages.size() && attempts < 20);
+      session.removeSubscription(context.getKey());
 
+      Assertions.assertEquals(CANDUMP_LINES.length, messages.size(), "Expected message count to match injected CAN frames");
+
+      for (Message message : messages) {
+        validatePayload(message);
+      }
     } finally {
       close(session);
     }
   }
+
+  @Test
+  void testRandomNonN2kFramesAreHandled() throws LoginException, IOException, InterruptedException {
+    AtomicInteger receivedCount = new AtomicInteger(0);
+    CountDownLatch lastMessageLatch = new CountDownLatch(3);
+    List<Message> messages = new CopyOnWriteArrayList<>();
+
+    MessageListener listener = messageEvent -> {
+      receivedCount.incrementAndGet();
+      messages.add(messageEvent.getMessage());
+      lastMessageLatch.countDown();
+      messageEvent.getCompletionTask().run();
+    };
+
+    Session session = createSession("n2kRandomFramesTest"+System.nanoTime(), 60, 60, false, listener);
+    Assertions.assertNotNull(session);
+
+    try {
+      SubscriptionContextBuilder subscriptionContextBuilder = new SubscriptionContextBuilder("/vcan0/#", ClientAcknowledgement.AUTO);
+      SubscriptionContext context = subscriptionContextBuilder
+          .setQos(QualityOfService.AT_MOST_ONCE)
+          .setReceiveMaximum(100)
+          .build();
+
+      SubscribedEventManager manager = session.addSubscription(context);
+
+      int sourceAddress = 99;
+      int destinationAddress = 255;
+      int priority = 4;
+
+      int unknownPgnA = 0x01FF10;
+      int unknownPgnB = 0x00EA99;
+      int unknownPgnC = 0x00ABCD;
+
+      int canIdA = buildJ1939CanId(priority, unknownPgnA, destinationAddress, sourceAddress);
+      int canIdB = buildJ1939CanId(priority, unknownPgnB, destinationAddress, sourceAddress);
+      int canIdC = buildJ1939CanId(priority, unknownPgnC, destinationAddress, sourceAddress);
+      byte[] expectedA = hexToBytes("DEADBEEFDEADBEEF");
+      byte[] expectedB = hexToBytes("0001020304050607");
+      byte[] expectedC = hexToBytes("FFFFFFFFFFFFFFFF");
+
+      delay(100);
+      injectRawCanFramesIntoVcan("vcan0", new RawFrame[]{
+          new RawFrame(canIdA, true, "DEADBEEFDEADBEEF"),
+          new RawFrame(canIdB, true, "0001020304050607"),
+          new RawFrame(canIdC, true, "FFFFFFFFFFFFFFFF")
+      });
+      boolean received = lastMessageLatch.await(5, TimeUnit.SECONDS);
+      Assertions.assertTrue(received, "No messages were published after injecting random frames");
+      Assertions.assertEquals(3, receivedCount.get(), "Expected one published message per injected CAN frame");
+      session.removeSubscription(context.getKey());
+
+      int attempts = 0;
+      do {
+        delay(100);
+        attempts++;
+      } while (messages.size() != 3 && attempts < 20);
+
+      Assertions.assertEquals(3, messages.size(), "Expected three messages in total");
+
+      validateUnknownPayload(messages.get(0),  expectedA);
+      validateUnknownPayload(messages.get(1),   expectedB);
+      validateUnknownPayload(messages.get(2),   expectedC);
+
+      List<Message> after = new CopyOnWriteArrayList<>();
+      CountDownLatch validLatch = new CountDownLatch(1);
+
+      MessageListener validListener = messageEvent -> {
+        after.add(messageEvent.getMessage());
+        validLatch.countDown();
+        messageEvent.getCompletionTask().run();
+      };
+
+      close(session);
+
+      Session session2 = createSession("n2kRandomFramesTestPhase2", 60, 60, false, validListener);
+      try {
+        SubscriptionContextBuilder builder2 =
+            new SubscriptionContextBuilder("/vcan0/#", ClientAcknowledgement.AUTO);
+
+        SubscriptionContext context2 = builder2
+            .setQos(QualityOfService.AT_MOST_ONCE)
+            .setReceiveMaximum(100)
+            .build();
+
+        session2.addSubscription(context2);
+
+        injectCandumpFramesIntoVcan("vcan0", new String[]{CANDUMP_LINES[0]});
+
+        boolean ok = validLatch.await(5, TimeUnit.SECONDS);
+        Assertions.assertTrue(ok, "Server did not continue to process valid frames after random frame injection");
+        Assertions.assertEquals(1, after.size(), "Expected exactly one message after valid injection");
+        validatePayload(after.get(0));
+      } finally {
+        close(session2);
+      }
+    } finally {
+      close(session);
+    }
+  }
+
+  private void validateUnknownPayload(Message message, byte[] expectedPayloadBytes) {
+    Assertions.assertNotNull(message, "Message must not be null");
+
+    byte[] payloadBytes = message.getOpaqueData();
+    Assertions.assertNotNull(payloadBytes, "Message payload must not be null");
+    Assertions.assertTrue(payloadBytes.length > 0, "Message payload must not be empty");
+
+    String payload = new String(payloadBytes, StandardCharsets.UTF_8).trim();
+    Assertions.assertFalse(payload.isEmpty(), "Message payload must not be blank");
+
+    JsonElement root = JsonParser.parseString(payload);
+    Assertions.assertTrue(root.isJsonObject(), "Payload must be a JSON object. Payload: " + payload);
+    JsonObject object = root.getAsJsonObject();
+
+    assertFieldPresent(object, "canId");
+    assertFieldPresent(object, "dlc");
+    assertFieldPresent(object, "extended");
+    assertFieldPresent(object, "data");
+
+    int dlc = object.get("dlc").getAsInt();
+    Assertions.assertTrue(dlc >= 0 && dlc <= 8, "dlc must be in [0..8]. Payload: " + payload);
+
+    String data = object.get("data").getAsString();
+    byte[] decoded;
+    try {
+      decoded = Base64.getDecoder().decode(data);
+    } catch (IllegalArgumentException e) {
+      Assertions.fail("data is not valid Base64. Payload: " + payload, e);
+      return;
+    }
+    Assertions.assertEquals(dlc, decoded.length, "Decoded data length must match dlc. Payload: " + payload);
+
+    Assertions.assertFalse(object.has("j1939"), "Unknown payload must not include j1939. Payload: " + payload);
+    Assertions.assertFalse(object.has("n2k"), "Unknown payload must not include n2k. Payload: " + payload);
+    Assertions.assertArrayEquals(
+        expectedPayloadBytes,
+        decoded,
+        "Decoded CAN payload does not match injected payload. Payload: " + payload
+    );
+
+  }
+
+  private void validatePayload(Message message) {
+    Assertions.assertNotNull(message, "Message must not be null");
+    byte[] payloadBytes = message.getOpaqueData();
+    Assertions.assertNotNull(payloadBytes, "Message payload must not be null");
+    Assertions.assertTrue(payloadBytes.length > 0, "Message payload must not be empty");
+
+    String payload = new String(payloadBytes, StandardCharsets.UTF_8).trim();
+    Assertions.assertFalse(payload.isEmpty(), "Message payload must not be blank");
+
+    JsonElement root;
+    try {
+      root = JsonParser.parseString(payload);
+    } catch (Exception e) {
+      Assertions.fail("Payload is not valid JSON. Payload: " + payload, e);
+      return;
+    }
+
+    Assertions.assertTrue(root.isJsonObject(), "Payload must be a JSON object. Payload: " + payload);
+    JsonObject object = root.getAsJsonObject();
+
+    assertFieldPresent(object, "canId");
+    assertFieldPresent(object, "dlc");
+    assertFieldPresent(object, "extended");
+    assertFieldPresent(object, "data");
+
+    long canId = object.get("canId").getAsLong();
+    int dlc = object.get("dlc").getAsInt();
+    boolean extended = object.get("extended").getAsBoolean();
+    String data = object.get("data").getAsString();
+
+    Assertions.assertTrue(canId >= 0, "canId must be >= 0. Payload: " + payload);
+    Assertions.assertTrue(dlc >= 0 && dlc <= 8, "dlc must be in [0..8]. dlc=" + dlc + " Payload: " + payload);
+    Assertions.assertFalse(data.isBlank(), "data must not be blank. Payload: " + payload);
+
+    byte[] decoded;
+    try {
+      decoded = Base64.getDecoder().decode(data);
+    } catch (IllegalArgumentException e) {
+      Assertions.fail("data is not valid Base64. data=" + data + " Payload: " + payload, e);
+      return;
+    }
+
+    Assertions.assertEquals(dlc, decoded.length, "Base64 decoded data length must match dlc. dlc=" + dlc
+        + " decoded=" + decoded.length + " Payload: " + payload);
+
+    boolean inferredExtended = canId > 0x7FF;
+    Assertions.assertEquals(inferredExtended, extended, "extended flag mismatch. canId=" + canId
+        + " inferredExtended=" + inferredExtended + " Payload: " + payload);
+
+    if (object.has("j1939") && !object.get("j1939").isJsonNull()) {
+      Assertions.assertTrue(object.get("j1939").isJsonObject(), "j1939 must be an object if present. Payload: " + payload);
+      JsonObject j1939 = object.getAsJsonObject("j1939");
+
+      assertFieldPresent(j1939, "pgn");
+      int pgn = j1939.get("pgn").getAsInt();
+      Assertions.assertTrue(pgn >= 0 && pgn <= 262143, "pgn must be in [0..262143]. pgn=" + pgn + " Payload: " + payload);
+    }
+  }
+
+  private int buildJ1939CanId(int priority, int pgn, int destination, int source) {
+    Assertions.assertTrue(priority >= 0 && priority <= 7, "priority must be [0..7]");
+    Assertions.assertTrue(pgn >= 0 && pgn <= 262143, "pgn must be [0..262143]");
+    Assertions.assertTrue(destination >= 0 && destination <= 255, "destination must be [0..255]");
+    Assertions.assertTrue(source >= 0 && source <= 255, "source must be [0..255]");
+
+    int dp = (pgn >> 16) & 0x01;
+    int pf = (pgn >> 8) & 0xFF;
+    int ps;
+
+    if (pf < 240) {
+      ps = destination & 0xFF;
+    } else {
+      ps = pgn & 0xFF;
+    }
+
+    int canId = 0;
+    canId |= (priority & 0x7) << 26;
+    canId |= (dp & 0x1) << 24;
+    canId |= (pf & 0xFF) << 16;
+    canId |= (ps & 0xFF) << 8;
+    canId |= (source & 0xFF);
+
+    return canId;
+  }
+
+  private void assertFieldPresent(JsonObject object, String fieldName) {
+    Assertions.assertTrue(object.has(fieldName), "Missing field '" + fieldName + "'. Object: " + object);
+    Assertions.assertFalse(object.get(fieldName).isJsonNull(), "Field '" + fieldName + "' must not be null. Object: " + object);
+  }
+
+
+  private void injectRawCanFramesIntoVcan(String interfaceName, RawFrame[] frames) throws IOException {
+    try (SocketCanDevice socketCanDevice = new SocketCanDevice(interfaceName)) {
+      for (RawFrame rawFrame : frames) {
+        byte[] payload = hexToBytes(rawFrame.dataHex);
+        Assertions.assertTrue(payload.length <= 8, "Raw frame payload must be <= 8 bytes");
+
+        CanFrame frame = new CanFrame(rawFrame.canId, rawFrame.extended, payload.length, payload);
+        socketCanDevice.writeFrame(frame);
+        delay(50);
+      }
+    }
+    catch(Throwable t) {
+      t.printStackTrace();
+    }
+  }
+
 
   private void injectCandumpFramesIntoVcan(String interfaceName, String[] candumpLines) throws IOException {
     try (SocketCanDevice socketCanDevice = new SocketCanDevice(interfaceName)) {
@@ -244,4 +506,16 @@ class N2kViaCanBusTest extends BaseTestConfig {
       this.dataLength = dataLength;
     }
   }
+  private static final class RawFrame {
+    private final int canId;
+    private final boolean extended;
+    private final String dataHex;
+
+    private RawFrame(int canId, boolean extended, String dataHex) {
+      this.canId = canId;
+      this.extended = extended;
+      this.dataHex = dataHex;
+    }
+  }
+
 }
