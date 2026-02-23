@@ -1,0 +1,32 @@
+[Unit]
+Description=Maps Viasat Harness
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+
+WorkingDirectory=/opt/maps
+
+ExecStart=/usr/bin/java -jar /opt/maps/maps_viasat_harness-1.0.0-shaded.jar ttyV0 8085
+
+Restart=on-failure
+RestartSec=2
+
+# Logging
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=maps-viasat-harness
+
+# Hardening (safe defaults; adjust if it breaks something)
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/opt/maps
+
+# If you need access to serial devices, you usually want this group:
+# SupplementaryGroups=dialout
+
+[Install]
+WantedBy=multi-user.target
