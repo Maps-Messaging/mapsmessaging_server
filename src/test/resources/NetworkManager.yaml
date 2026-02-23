@@ -320,7 +320,7 @@ NetworkManager:
         auth: anon
         url: satellite://inmarsat:0/
         httpRequestTimeoutSec: 30
-        pollInterval: 15
+        pollInterval: 5
         sharedSecret: "This is a shared secret to use"
         maxInflightEventsPerDevice: 2
         outboundNamespaceRoot: "/inmarsat/{deviceId}"

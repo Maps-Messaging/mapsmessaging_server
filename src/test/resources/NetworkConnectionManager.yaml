@@ -44,8 +44,8 @@ NetworkConnectionManager:
         protocol: stogi
         transformation: "Message-Raw"
         initialSetup: ""
-        incomingMessagePollInterval: 1  # 1 seconds
-        outgoingMessagePollInterval: 20
+        incomingMessagePollInterval: 1
+        outgoingMessagePollInterval: 5
         sharedSecret: "This is a shared secret to use"
         sendHighPriorityMessages: false
         modemResponseTimeout: 20000
