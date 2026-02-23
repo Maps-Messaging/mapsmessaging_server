@@ -713,8 +713,7 @@ public class StoGiProtocol extends Protocol implements Consumer<Packet> {
 
       logger.log(STOGI_PROCESSING_INBOUND_EVENT, rebuilt.getPacketNumber());
       try {
-        Map<String, List<byte[]>> receivedEventMap =
-            MessageQueueUnpacker.unpack(rebuilt.getMessage(), rebuilt.isCompressed(), cipherManager);
+        Map<String, List<byte[]>> receivedEventMap = MessageQueueUnpacker.unpack(rebuilt.getMessage(), rebuilt.isCompressed(), cipherManager);
         publishIncomingMap(receivedEventMap);
       } catch (Throwable e) {
         logger.log(STOGI_EXCEPTION_PROCESSING_PACKET, e);
@@ -760,7 +759,6 @@ public class StoGiProtocol extends Protocol implements Consumer<Packet> {
 
   private void sendMessageToTopic(String topic, byte[] data) {
     InterServerTransformation transformer = destinationTransformationLookup(topic);
-
     Message message = createMessage(
         data,
         getProtocolMessageTransformation(),

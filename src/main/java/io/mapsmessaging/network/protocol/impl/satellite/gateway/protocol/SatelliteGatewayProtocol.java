@@ -69,6 +69,8 @@ public class SatelliteGatewayProtocol extends Protocol {
   private final Map<String, List<byte[]>> priorityMessages;
   private final CipherManager cipherManager;
 
+  private final String mapsOutboundNamespacePath;
+
   private final String mapsIncomingNamespacePath;
   private final String commonIncomingNamespacePath;
   private final long outgoingPollInterval;
@@ -127,9 +129,9 @@ public class SatelliteGatewayProtocol extends Protocol {
           .setNoLocalMessages(true);
       session.addSubscription(subBuilder.build());
     }
-    String mapsOutboundNamespacePath = config.getMapsOutboundPublishRoot();
-    if(!mapsOutboundNamespacePath.isEmpty()){
-      String path = mapsOutboundNamespacePath.replace("{deviceId}", primeId);
+    String outboundNameSpace = config.getMapsOutboundPublishRoot();
+    if(!outboundNameSpace.isEmpty()){
+      String path = outboundNameSpace.replace("{deviceId}", primeId);
       path = path.replace("{mailboxId}", config.getMailboxId());
       SubscriptionContextBuilder subBuilder = new SubscriptionContextBuilder(path, ClientAcknowledgement.AUTO);
       subBuilder.setQos(QualityOfService.AT_MOST_ONCE)
@@ -137,10 +139,22 @@ public class SatelliteGatewayProtocol extends Protocol {
           .setAlias("maps_requests")
           .setNoLocalMessages(true);
       session.addSubscription(subBuilder.build());
-    }
+      if(path.indexOf('+' ) != -1){
+        path = path.substring(0, path.indexOf('+' ));
+      }
+      if(path.indexOf('#' ) != -1){
+        path = path.substring(0, path.indexOf('#' ));
+      }
+      mapsOutboundNamespacePath = path;
 
+    }
+    else{
+      mapsOutboundNamespacePath = null;
+    }
     mapsIncomingNamespacePath = parsePath(config.getMapsInboundPublishRoot(), "/{deviceId}/maps/in", primeId, config.getMailboxId());
     commonIncomingNamespacePath = parsePath(config.getCommonInboundPublishRoot(), "/{deviceId}/common/in/{sin}/{min}", primeId, config.getMailboxId());
+
+
     String bcast = config.getOutboundBroadcast();
     if(bcast != null && !bcast.isEmpty()){
       SubscriptionContextBuilder subBuilder = new SubscriptionContextBuilder(bcast, ClientAcknowledgement.AUTO);
@@ -250,6 +264,12 @@ public class SatelliteGatewayProtocol extends Protocol {
     }
 
     String destinationName = messageEvent.getDestinationName();
+    if(mapsOutboundNamespacePath != null && destinationName.startsWith(mapsOutboundNamespacePath)){
+      destinationName = destinationName.substring(mapsOutboundNamespacePath.length());
+      if(!(destinationName.startsWith("/"))){
+        destinationName = "/" + destinationName;
+      }
+    }
     ParsedMessage parsedMessage = new ParsedMessage(destinationName, messageEvent.getMessage());
     parsedMessage = processInterServerTransformations (messageEvent.getDestinationName(), parsedMessage);
     Message payload = parsedMessage.getMessage();
@@ -378,7 +398,7 @@ public class SatelliteGatewayProtocol extends Protocol {
     }
   }
 
-  private void handleCommonMessage(MessageData message, byte[] raw) throws ExecutionException, InterruptedException {
+  private void handleCommonMessage(MessageData message, byte[] raw) {
     int sin = message.getSin() & 0xff;
     int min = message.getMin() & 0xff;
     String path = commonIncomingNamespacePath;
