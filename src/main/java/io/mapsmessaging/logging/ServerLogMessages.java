@@ -855,6 +855,7 @@ public enum ServerLogMessages implements LogMessage {
   SATELLITE_SENT_RAW_MESSAGE(LEVEL.INFO, SERVER_CATEGORY.NETWORK, "Sent SIN:{} MIN:{} length {}"),
   SATELLITE_FILTER_FAILED(LEVEL.FATAL, SERVER_CATEGORY.NETWORK, "Filter failed to process {}"),
   SATELLITE_QUEUED_PENDING_MESSAGE(LEVEL.INFO, SERVER_CATEGORY.NETWORK, "Queued message for {}, current queue depth {}"),
+  SATELLITE_SUBSCRIBE_TO(LEVEL.INFO, SERVER_CATEGORY.NETWORK, "Subscribing to {} for {}"),
   SATELLITE_SENT_PACKED_MESSAGES(LEVEL.INFO, SERVER_CATEGORY.NETWORK, "Sent using SIN:{}, total messages:{}, with total size:{}"),
   SATELLITE_RECEIVED_RAW_MESSAGE(LEVEL.INFO, SERVER_CATEGORY.NETWORK, "Received raw message SIN:{}, MIN:{}, size:{}, publishing to {}"),
   SATELLITE_RECEIVED_PACKED_MESSAGE(LEVEL.INFO, SERVER_CATEGORY.NETWORK, "Received packed messages to {} destinations, for a total of {} messages, from buffer of size:{}"),

@@ -38,21 +38,21 @@ public class StoGiConfigDTO extends BaseSatelliteConfigDTO {
   protected SerialConfigDTO serial;
 
   @Schema(description = "Time in milliseconds to wait for a modem response")
-  protected long modemResponseTimeout;
+  protected long modemResponseTimeout = 50000;
 
   @Schema(description = "Initial modem setup string")
   protected String initialSetup;
 
   @Schema(description ="Time in seconds between polling modem location and statistics, 0 disables it", example = "60", defaultValue = "0")
-  protected long locationPollInterval;
+  protected long locationPollInterval = 0;
 
   @Schema(description = "If present, then the name of the topic to send modem statistics to", example="/modem/stats", defaultValue="/modem/stats")
-  protected String modemStatsTopic;
+  protected String modemStatsTopic = "/modem/stats";
 
   @Schema(description = "If present, then the name of the topic that will be used to send raw messages to", example = "/incoming/{sin}/{min}", defaultValue = "/incoming/{sin}/{min}")
-  protected String modemRawRequest;
+  protected String modemRawRequest = "/incoming/{sin}/{min}";
 
   @Schema(description = "If present, then the name of the topic that will be used monitor for response and send directly to the modem", example = "/outbound", defaultValue = "/outbound")
-  protected String modemRawResponse;
+  protected String modemRawResponse = "/outbound";
 
 }

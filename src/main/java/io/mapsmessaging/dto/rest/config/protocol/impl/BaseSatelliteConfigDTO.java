@@ -23,11 +23,9 @@ import io.mapsmessaging.dto.rest.config.protocol.ProtocolConfigDTO;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
-import lombok.NoArgsConstructor;
 
 @Data
 @EqualsAndHashCode(callSuper = true)
-
 @Schema(description = "Common Satellite Configuration DTO")
 public class BaseSatelliteConfigDTO extends ProtocolConfigDTO {
 
@@ -36,27 +34,27 @@ public class BaseSatelliteConfigDTO extends ProtocolConfigDTO {
   }
 
   @Schema(description = "Time in seconds to poll the modem for incoming messages", example = "15", defaultValue = "10")
-  protected long incomingMessagePollInterval;
+  protected int incomingMessagePollInterval = 10;
 
   @Schema(description = "Time in seconds to poll for outgoing messages", example = "60", defaultValue = "60")
-  protected long outgoingMessagePollInterval;
+  protected int outgoingMessagePollInterval = 60;
 
   @Schema(description = "maximum buffer size allowed by the satellite communications", example = "4000", defaultValue = "4000")
-  protected int maxBufferSize;
+  protected int maxBufferSize = 4000;
 
-  @Schema(description = "minimum sized buffer that will be compressed", example = "512", defaultValue = "256")
-  protected int compressionCutoffSize;
+  @Schema(description = "minimum sized buffer that will be compressed", example = "512", defaultValue = "128")
+  protected int compressionCutoffSize = 128;
 
   @Schema(description = "life time of message in minutes", example = "5", defaultValue = "10")
-  protected int messageLifeTimeInMinutes;
+  protected int messageLifeTimeInMinutes = 10;
 
   @Schema(description = "Shared secret for encryption", example="this is a shared secret", defaultValue = "")
   protected String sharedSecret;
 
   @Schema(description = "If set, then high priority messages will NOT be queued, will incur additional charges", defaultValue = "false", example = "false")
-  protected boolean sendHighPriorityMessages;
+  protected boolean sendHighPriorityMessages = false;
 
   @Schema(description = "The SIN number that maps should use, must be greater then 128", defaultValue = "147", example = "147")
-  protected int sinNumber;
+  protected int sinNumber = 147;
 
 }

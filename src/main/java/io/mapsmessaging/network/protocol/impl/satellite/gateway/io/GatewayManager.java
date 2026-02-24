@@ -64,7 +64,7 @@ public class GatewayManager {
   }
 
   public void start() {
-    TaskManager.getInstance().schedule(this::initSession, 10, TimeUnit.SECONDS);
+    TaskManager.getInstance().schedule(this::initSession, 2, TimeUnit.SECONDS);
   }
 
   public void stop(){

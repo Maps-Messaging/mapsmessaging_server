@@ -107,6 +107,7 @@ public class StoGiProtocol extends Protocol implements Consumer<Packet> {
 
   private final String rawMessageTopic;
   private final String rawResponseTopic;
+  private final String rawResponsePrepend;
 
   private final long messagePoll;
   private final long outgoingMessagePollInterval;
@@ -194,11 +195,20 @@ public class StoGiProtocol extends Protocol implements Consumer<Packet> {
 
     initialiseModem(modemConfig.getModemResponseTimeout());
 
-    messagePoll = modemConfig.getIncomingMessagePollInterval() * 1000;
-    outgoingMessagePollInterval = modemConfig.getOutgoingMessagePollInterval() * 1000;
+    messagePoll = modemConfig.getIncomingMessagePollInterval() * 1000L;
+    outgoingMessagePollInterval = modemConfig.getOutgoingMessagePollInterval() * 1000L;
     rawMessageTopic = modemConfig.getModemRawRequest();
     rawResponseTopic = modemConfig.getModemRawResponse();
-
+    String raw = rawResponseTopic;
+    if(raw != null && !raw.isEmpty()) {
+      if(raw.indexOf('+') != -1){
+        raw = raw.substring(0, raw.indexOf('+'));
+      }
+      if(raw.indexOf('#') != -1){
+        raw = raw.substring(0, raw.indexOf('#'));
+      }
+    }
+    rawResponsePrepend = raw;
     completedConnection();
 
     String statsDestination = modemConfig.getModemStatsTopic();
@@ -402,8 +412,8 @@ public class StoGiProtocol extends Protocol implements Consumer<Packet> {
 
   @Override
   public void sendMessage(@NotNull @NonNull MessageEvent messageEvent) {
-    if (rawResponseTopic != null && !rawResponseTopic.isEmpty()
-        && messageEvent.getDestinationName().startsWith(rawResponseTopic)) {
+    if (rawResponsePrepend != null && !rawResponsePrepend.isEmpty()
+        && messageEvent.getDestinationName().startsWith(rawResponsePrepend)) {
 
       byte[] data = messageEvent.getMessage().getOpaqueData();
       if (data == null || data.length < 2) {
@@ -430,7 +440,7 @@ public class StoGiProtocol extends Protocol implements Consumer<Packet> {
 
   public void preparePackedMessage(@NotNull @NonNull MessageEvent messageEvent) {
     boolean filteredOverride = false;
-    int depth = 6;
+    int depth = 1;
 
     try {
       NamespaceFilter namespaceFilter = filterMessage(messageEvent);
@@ -483,8 +493,7 @@ public class StoGiProtocol extends Protocol implements Consumer<Packet> {
     }
     destinationName = scanForName(destinationName);
 
-    boolean highPriority =
-        payload.getPriority().getValue() > Priority.TWO_BELOW_HIGHEST.getValue();
+    boolean highPriority = payload.getPriority().getValue() > Priority.TWO_BELOW_HIGHEST.getValue();
 
     synchronized (outboundLock) {
       Map<String, List<byte[]>> pending = (sendHighPriorityEvents && (highPriority || filteredOverride)) ? priorityMessages : pendingMessages;

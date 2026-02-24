@@ -101,7 +101,7 @@ public class SatelliteGatewayProtocol extends Protocol {
       cipherManager = null;
     }
     sinNumber = config.getSinNumber();
-    outgoingPollInterval = config.getOutgoingMessagePollInterval() * 1000;
+    outgoingPollInterval = config.getOutgoingMessagePollInterval() * 1000L;
     maxBufferSize = config.getMaxBufferSize();
     compressionThreshold = config.getCompressionCutoffSize();
     closed = new AtomicBoolean(false);
@@ -122,6 +122,7 @@ public class SatelliteGatewayProtocol extends Protocol {
     if(!outBoundNamespacePath.isEmpty()){
       String path = outBoundNamespacePath.replace("{deviceId}", primeId);
       path = path.replace("{mailboxId}", config.getMailboxId());
+      logger.log(SATELLITE_SUBSCRIBE_TO, path, "common requests");
       SubscriptionContextBuilder subBuilder = new SubscriptionContextBuilder(path, ClientAcknowledgement.AUTO);
       subBuilder.setQos(QualityOfService.AT_MOST_ONCE)
           .setReceiveMaximum(config.getMaxInflightEventsPerDevice())
@@ -133,6 +134,7 @@ public class SatelliteGatewayProtocol extends Protocol {
     if(!outboundNameSpace.isEmpty()){
       String path = outboundNameSpace.replace("{deviceId}", primeId);
       path = path.replace("{mailboxId}", config.getMailboxId());
+      logger.log(SATELLITE_SUBSCRIBE_TO, path, "mapped requests");
       SubscriptionContextBuilder subBuilder = new SubscriptionContextBuilder(path, ClientAcknowledgement.AUTO);
       subBuilder.setQos(QualityOfService.AT_MOST_ONCE)
           .setReceiveMaximum(config.getMaxInflightEventsPerDevice())

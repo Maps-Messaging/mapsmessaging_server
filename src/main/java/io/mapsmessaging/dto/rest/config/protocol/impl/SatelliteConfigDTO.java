@@ -37,10 +37,10 @@ public class SatelliteConfigDTO extends BaseSatelliteConfigDTO {
   protected String baseUrl;
 
   @Schema(description = "HTTP Request time out in seconds")
-  protected int httpRequestTimeout;
+  protected int httpRequestTimeout = 30;
 
   @Schema(description = "Max number of events to be in flight per each modems")
-  protected int maxInflightEventsPerDevice;
+  protected int maxInflightEventsPerDevice =2;
 
 
   @Schema(
