@@ -1,0 +1,4 @@
+interface:
+  display_name: "MAPS Deployment Packager"
+  short_description: "Package MAPS configs for deployment targets"
+  default_prompt: "Use $maps-deployment-packager to turn MAPS manager configs into deployable local, Docker, or Kubernetes packaging artifacts with apply and validation steps."

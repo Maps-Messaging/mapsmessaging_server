@@ -1,0 +1,4 @@
+interface:
+  display_name: "MAPS Satellite Gateway Config"
+  short_description: "Configure MAPS satellite gateway pipelines"
+  default_prompt: "Use $maps-satellite-gateway-config to build deployable MAPS satellite gateway configuration with verification commands."

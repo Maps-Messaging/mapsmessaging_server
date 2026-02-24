@@ -1,0 +1,4 @@
+interface:
+  display_name: "MAPS Protocol Bridge Tester"
+  short_description: "Test MAPS protocol bridging end-to-end"
+  default_prompt: "Use $maps-protocol-bridge-tester to generate and run a protocol bridge test plan with producer/consumer commands and pass/fail criteria."

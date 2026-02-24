@@ -1,0 +1,4 @@
+interface:
+  display_name: "MAPS Artifact Execution Smoke"
+  short_description: "Run executable artifact smoke gates"
+  default_prompt: "Use $maps-artifact-execution-smoke-harness to execute generated MAPS artifacts end-to-end and return startup, listener, and traffic smoke evidence."

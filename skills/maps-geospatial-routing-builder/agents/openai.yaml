@@ -1,0 +1,4 @@
+interface:
+  display_name: "MAPS Geospatial Routing Builder"
+  short_description: "Build geohash and distance routing"
+  default_prompt: "Use $maps-geospatial-routing-builder to build MAPS geohash and GPS distance-based routing with deployable config and known-coordinate verification."

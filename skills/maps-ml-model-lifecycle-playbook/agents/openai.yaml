@@ -1,0 +1,4 @@
+interface:
+  display_name: "MAPS ML Lifecycle Playbook"
+  short_description: "Model lifecycle from stream to inference"
+  default_prompt: "Use $maps-ml-model-lifecycle-playbook to produce MAPS-native guidance for stream-trained models and externally trained model ingestion with staged verification."

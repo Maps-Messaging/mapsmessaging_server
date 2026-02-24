@@ -1,0 +1,4 @@
+interface:
+  display_name: "MAPS ML Stream Configurator"
+  short_description: "Design MAPS ML stream and selector pipelines"
+  default_prompt: "Use $maps-ml-stream-configurator to build a deployable MAPS ML stream pipeline with simple and advanced multi-pass model options plus verification commands."

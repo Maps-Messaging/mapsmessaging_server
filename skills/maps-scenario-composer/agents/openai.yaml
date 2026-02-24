@@ -1,0 +1,4 @@
+interface:
+  display_name: "MAPS Scenario Composer"
+  short_description: "Compose multi-skill deliverables"
+  default_prompt: "Use $maps-scenario-composer to combine scenarios from multiple MAPS skills into one merged deployable with unified apply and verification steps."

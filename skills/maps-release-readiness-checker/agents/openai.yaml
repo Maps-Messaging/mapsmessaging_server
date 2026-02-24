@@ -1,0 +1,4 @@
+interface:
+  display_name: "MAPS Release Readiness Checker"
+  short_description: "Gate MAPS releases with operational checks"
+  default_prompt: "Use $maps-release-readiness-checker to assess MAPS release readiness and return pass-fail findings with remediation and rerun checks."
