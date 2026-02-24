@@ -70,7 +70,7 @@ NetworkConnectionManager:
 
 
         serial:
-          port: com7
+          port: ttyV1
           baudRate: 9600
           dataBits: 8
           stopBits: 1
