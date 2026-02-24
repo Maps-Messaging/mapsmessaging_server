@@ -80,19 +80,7 @@ public class BaseTestConfig extends BaseTest {
 
   @AfterEach
   void clear(){
-    Map<String, DestinationImpl> destinations = md.getDestinationManager().get(null);
-    List<DestinationImpl> toDelete = new ArrayList<>();
-    for(DestinationImpl destination:destinations.values()){
-      if(!destination.getFullyQualifiedNamespace().startsWith("$") &&
-          !(destination.getFullyQualifiedNamespace().startsWith("/aggregator")) &&
-          !(destination.getFullyQualifiedNamespace().startsWith("/vcan0")) &&
-          !(destination.getFullyQualifiedNamespace().startsWith("/mavlink")) ) {
-        toDelete.add(destination);
-      }
-    }
-    for(DestinationImpl destination:toDelete){
-      md.getDestinationManager().delete(destination);
-    }
+    deleteUnknownDestinations();
   }
 
   @BeforeAll
@@ -172,7 +160,6 @@ public class BaseTestConfig extends BaseTest {
     Session session = io.mapsmessaging.api.SessionManager.getInstance().create(scb.build(), listener);
     session.login();
     session.resumeState();
-    //Assertions.assertTrue(session.isRestored());
     return session;
   }
 
@@ -188,51 +175,9 @@ public class BaseTestConfig extends BaseTest {
   }
 
   @AfterEach
-  public void checkSessionState()  {
+  void checkSessionState()  {
     try {
-      SessionManager manager = md.getSubSystemManager().getSessionManager();
-      List<SessionImpl> sessionImpls = manager.getSessions();
-      int counter =0;
-      while(!sessionImpls.isEmpty() && counter < 20) {
-        TimeUnit.MILLISECONDS.sleep(100);
-        counter++;
-      }
-
-      List<String> idleSessions = SessionManagerTest.getInstance().getIdleSessions();
-      for (String idleSession : idleSessions) {
-        System.err.println("Idle Session still active::" + idleSession);
-        SessionManagerTest.getInstance().closeIdleSession(idleSession);
-      }
-
-      Map<String, DestinationImpl> destinationImpls = md.getDestinationManager().get(null);
-      for (DestinationImpl destinationImpl : destinationImpls.values()) {
-        if (!destinationImpl.getFullyQualifiedNamespace().startsWith("$") &&
-            !(destinationImpl.getFullyQualifiedNamespace().startsWith("/aggregator")) &&
-                !(destinationImpl.getFullyQualifiedNamespace().startsWith("/vcan0" )) &&
-            !(destinationImpl.getFullyQualifiedNamespace().startsWith("/mavlink")) ){
-        md.getDestinationManager().delete(destinationImpl);
-        }
-      }
-      long timeout = System.currentTimeMillis()+ 10_000;
-      while(SessionManagerTest.getInstance().hasIdleSessions() && timeout > System.currentTimeMillis()){
-        delay(100);
-      }
-      if(SessionManagerTest.getInstance().hasIdleSessions()){
-        List<String> listeners = md.getDestinationManager().getAll();
-        for (String listener : listeners) {
-          System.err.println("has listener " + listener);
-        }
-      }
-      List<DestinationManagerListener> listeners = md.getDestinationManager().getListeners();
-      for (DestinationManagerListener listener : listeners) {
-        if(listener instanceof SubscriptionController){
-          SubscriptionController subscriptionController = (SubscriptionController) listener;
-          System.err.println("has listener " + subscriptionController.getSessionId());
-        }
-        else {
-          System.err.println("has listener " + listener.getClass().toString());
-        }
-      }
+      deleteUnknownDestinations();
     }
     catch (Exception ex){
       ex.printStackTrace();
@@ -266,6 +211,22 @@ public class BaseTestConfig extends BaseTest {
       } catch (InterruptedException e) {
         Thread.currentThread().interrupt();
       }
+    }
+  }
+
+  private void deleteUnknownDestinations(){
+    Map<String, DestinationImpl> destinations = md.getDestinationManager().get(null);
+    List<DestinationImpl> toDelete = new ArrayList<>();
+    for(DestinationImpl destination:destinations.values()){
+      if(!destination.getFullyQualifiedNamespace().startsWith("$") &&
+          !(destination.getFullyQualifiedNamespace().startsWith("/aggregator")) &&
+          !(destination.getFullyQualifiedNamespace().startsWith("/vcan0")) &&
+          !(destination.getFullyQualifiedNamespace().startsWith("/mavlink")) ) {
+        toDelete.add(destination);
+      }
+    }
+    for(DestinationImpl destination:toDelete){
+      md.getDestinationManager().delete(destination);
     }
   }
 
