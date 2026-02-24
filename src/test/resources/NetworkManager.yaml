@@ -325,6 +325,8 @@ NetworkManager:
         maxInflightEventsPerDevice: 2
         outboundNamespaceRoot: "/inmarsat/{deviceId}"
         outboundBroadcast: "/inmarsat/broadcast"
+        outgoingMessagePollInterval: 5
+        incomingMessagePollInterval: 4
         baseUrl: "http://localhost:8085/iotMessaging/v1"
         remoteAuthConfig:
           username: "this is not real"

@@ -44,7 +44,7 @@ NetworkConnectionManager:
         protocol: stogi
         transformation: "Message-Raw"
         initialSetup: ""
-        incomingMessagePollInterval: 1
+        incomingMessagePollInterval: 1  # 1 seconds
         outgoingMessagePollInterval: 5
         sharedSecret: "This is a shared secret to use"
         sendHighPriorityMessages: false
@@ -52,6 +52,7 @@ NetworkConnectionManager:
         locationPollInterval: 60
         maxBufferSize: 4000
         compressionCutoffSize: 128
+        modemRawResponse: "/outbound/#"
 
         modemStatsTopic: "/modem/stats"
 
@@ -69,7 +70,7 @@ NetworkConnectionManager:
 
 
         serial:
-          port: ttyV1
+          port: com7
           baudRate: 9600
           dataBits: 8
           stopBits: 1
