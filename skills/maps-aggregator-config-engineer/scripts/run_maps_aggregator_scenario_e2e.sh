@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-ROOT="/Users/krital/dev/starsense/mapsmessaging_server"
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
 IMAGE="${IMAGE:-}"
 PLATFORM="${PLATFORM:-}"
 IMAGE_CHANNEL="${IMAGE_CHANNEL:-auto}"

@@ -34,11 +34,11 @@
 Skill smoke gate:
 
 ```bash
-bash /Users/krital/dev/starsense/mapsmessaging_server/skills/maps-selector-rule-engineer/scripts/run_selector_skill_smoke.sh
+bash skills/maps-selector-rule-engineer/scripts/run_selector_skill_smoke.sh
 ```
 
 Runtime selector smoke (subscribe before publish):
 
 ```bash
-bash /Users/krital/dev/starsense/mapsmessaging_server/skills/maps-selector-rule-engineer/scripts/run_selector_mqtt_smoke.sh --source-topic /selector/in --match-topic /selector/match --nonmatch-topic /selector/nonmatch
+bash skills/maps-selector-rule-engineer/scripts/run_selector_mqtt_smoke.sh --source-topic /selector/in --match-topic /selector/match --nonmatch-topic /selector/nonmatch
 ```

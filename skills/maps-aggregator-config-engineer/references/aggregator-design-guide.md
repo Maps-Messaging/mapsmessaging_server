@@ -3,7 +3,7 @@
 ## Core Config Surface
 
 Primary file:
-- `/Users/krital/dev/starsense/mapsmessaging_server/AggregatorManager.yaml`
+- `AggregatorManager.yaml`
 
 Important root controls:
 - `maxAggregators`

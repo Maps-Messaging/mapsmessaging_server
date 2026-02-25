@@ -33,9 +33,9 @@ mergedArtifacts:
 - per-slice failure map with merged rollback steps.
 
 ## Traceability Map
-- merged section -> `/Users/krital/dev/starsense/mapsmessaging_server/skills/maps-deployment-packager/SKILL.md`
-- merged section -> `/Users/krital/dev/starsense/mapsmessaging_server/skills/maps-selector-rule-engineer/SKILL.md`
-- merged section -> `/Users/krital/dev/starsense/mapsmessaging_server/skills/maps-geospatial-routing-builder/SKILL.md`
+- merged section -> `skills/maps-deployment-packager/SKILL.md`
+- merged section -> `skills/maps-selector-rule-engineer/SKILL.md`
+- merged section -> `skills/maps-geospatial-routing-builder/SKILL.md`
 
 ## Scenario Metrics and Dashboard
 - combined metrics and cross-scenario health pane.

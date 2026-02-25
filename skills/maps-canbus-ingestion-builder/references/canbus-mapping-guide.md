@@ -2,7 +2,7 @@
 
 ## Primary Config Surface
 
-- `/Users/krital/dev/starsense/mapsmessaging_server/NetworkManager.yaml`
+- `NetworkManager.yaml`
   - `endPointConfig.type: canbus`
   - `endPointConfig.deviceName`
   - `protocolConfigs[].type: n2k` for decoded N2K workflows
@@ -36,8 +36,8 @@
 ## Validation Commands
 
 ```bash
-rg -n "type: canbus|type: n2k|deviceName|topicNameTemplate|unknownPacketTopic|parseToJson" /Users/krital/dev/starsense/mapsmessaging_server/NetworkManager.yaml
-rg -n "N2K_PROTOCOL_CREATED_AND_BOUND|N2K_PROTOCOL_PARSING_PACKET|N2K_PROTOCOL_PARSED" /Users/krital/dev/starsense/mapsmessaging_server/src/main/java/io/mapsmessaging/logging/ServerLogMessages.java
+rg -n "type: canbus|type: n2k|deviceName|topicNameTemplate|unknownPacketTopic|parseToJson" NetworkManager.yaml
+rg -n "N2K_PROTOCOL_CREATED_AND_BOUND|N2K_PROTOCOL_PARSING_PACKET|N2K_PROTOCOL_PARSED" src/main/java/io/mapsmessaging/logging/ServerLogMessages.java
 ```
 
 ## Verification Skeleton

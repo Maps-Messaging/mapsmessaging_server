@@ -15,10 +15,10 @@ Build production-grade MAPS configuration output from requirements. Convert narr
 - Default safely when unspecified: `authenticationRealm: anon`, no payload overrides, `proxyProtocol: false`.
 
 2. Map contract to config surfaces.
-- Read `/Users/krital/dev/starsense/mapsmessaging_server/skills/mapsmessaging-config-builder/references/protocol-and-routing-map.md`.
-- Map listeners/adapters to `/Users/krital/dev/starsense/mapsmessaging_server/NetworkManager.yaml`.
-- Map namespace storage and message overrides to `/Users/krital/dev/starsense/mapsmessaging_server/DestinationManager.yaml`.
-- Map federation/topology to `/Users/krital/dev/starsense/mapsmessaging_server/routing.yaml`.
+- Read `skills/mapsmessaging-config-builder/references/protocol-and-routing-map.md`.
+- Map listeners/adapters to `NetworkManager.yaml`.
+- Map namespace storage and message overrides to `DestinationManager.yaml`.
+- Map federation/topology to `routing.yaml`.
 - If request includes aggregator, ML, or schema behavior, target corresponding manager YAML files in this repo and keep changes minimal.
 
 3. Build deployable entities.
@@ -30,16 +30,16 @@ Build production-grade MAPS configuration output from requirements. Convert narr
 - Re-open touched YAML files and match existing key casing and style.
 - Run targeted checks:
 ```bash
-rg -n "type: (mqtt|mqtt-sn|amqp|stomp|coap|ws|nats|satellite|canbus)" /Users/krital/dev/starsense/mapsmessaging_server/NetworkManager.yaml
-rg -n "namespace: |namespaceMapping: |contentType:|schemaId:" /Users/krital/dev/starsense/mapsmessaging_server/DestinationManager.yaml
-rg -n "predefinedServers|autoDiscovery|enabled" /Users/krital/dev/starsense/mapsmessaging_server/routing.yaml
+rg -n "type: (mqtt|mqtt-sn|amqp|stomp|coap|ws|nats|satellite|canbus)" NetworkManager.yaml
+rg -n "namespace: |namespaceMapping: |contentType:|schemaId:" DestinationManager.yaml
+rg -n "predefinedServers|autoDiscovery|enabled" routing.yaml
 ```
 - For runtime checks, include startup diagnostics first, then protocol smoke checks.
 - For executable runtime smoke, use:
-  - `/Users/krital/dev/starsense/mapsmessaging_server/skills/mapsmessaging-config-builder/scripts/run_mapsmessaging_config_builder_runtime_smoke.sh`
+  - `skills/mapsmessaging-config-builder/scripts/run_mapsmessaging_config_builder_runtime_smoke.sh`
 
 5. Return output using the output contract.
-- Follow `/Users/krital/dev/starsense/mapsmessaging_server/skills/mapsmessaging-config-builder/references/output-contract.md`.
+- Follow `skills/mapsmessaging-config-builder/references/output-contract.md`.
 - Always include assumptions, file-by-file deployable content, apply steps, startup diagnostics, and protocol verification commands.
 
 ## Platform Rules
@@ -75,5 +75,5 @@ rg -n "predefinedServers|autoDiscovery|enabled" /Users/krital/dev/starsense/maps
 ## Reference Loading
 
 Load only what is needed for the task:
-- Protocol/link mapping: `/Users/krital/dev/starsense/mapsmessaging_server/skills/mapsmessaging-config-builder/references/protocol-and-routing-map.md`
-- Final response shape: `/Users/krital/dev/starsense/mapsmessaging_server/skills/mapsmessaging-config-builder/references/output-contract.md`
+- Protocol/link mapping: `skills/mapsmessaging-config-builder/references/protocol-and-routing-map.md`
+- Final response shape: `skills/mapsmessaging-config-builder/references/output-contract.md`

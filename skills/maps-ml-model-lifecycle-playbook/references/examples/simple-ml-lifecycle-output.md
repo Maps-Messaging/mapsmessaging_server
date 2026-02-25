@@ -4,8 +4,8 @@
 - Stream-trained baseline with one selector stage and one output destination.
 - Optional external model artifact load for warm start.
 - File targets:
-  - `/Users/krital/dev/starsense/mapsmessaging_server/MLModelManager.yaml`
-  - `/Users/krital/dev/starsense/mapsmessaging_server/DestinationManager.yaml`
+  - `MLModelManager.yaml`
+  - `DestinationManager.yaml`
 
 ## Lifecycle Shape
 - Simple baseline:
@@ -20,7 +20,7 @@
 - Artifact format: portable json/csv.
 - Smile 4.3.0 compatibility assumptions are explicitly required.
 - External model ingestion allowed from:
-  - `/Users/krital/dev/starsense/mapsmessaging_server/skills/maps-ml-model-lifecycle-playbook/references/examples/model-artifact-sample.json`
+  - `skills/maps-ml-model-lifecycle-playbook/references/examples/model-artifact-sample.json`
 
 ## Deployable Config Entity
 ```yaml
@@ -28,7 +28,7 @@ MLModelManager:
   type: MLModelManagerConfigDTO
   modelStore:
     type: file
-    path: /Users/krital/dev/starsense/mapsmessaging_server/models
+    path: models
   eventStreams:
     - id: ml-simple-stage1
       topicFilter: /ml/in
@@ -44,7 +44,7 @@ MLModelManager:
 
 ## Apply Steps
 ```bash
-cp /Users/krital/dev/starsense/mapsmessaging_server/MLModelManager.yaml /Users/krital/dev/starsense/mapsmessaging_server/MLModelManager.yaml.bak
+cp MLModelManager.yaml MLModelManager.yaml.bak
 # apply lifecycle patch and restart runtime
 ```
 
@@ -54,8 +54,8 @@ cp /Users/krital/dev/starsense/mapsmessaging_server/MLModelManager.yaml /Users/k
 - External-model compatibility verification:
   - validate artifact metadata and portable format.
 ```bash
-bash /Users/krital/dev/starsense/mapsmessaging_server/skills/maps-ml-model-lifecycle-playbook/scripts/run_ml_lifecycle_skill_smoke.sh
-bash /Users/krital/dev/starsense/mapsmessaging_server/skills/maps-ml-model-lifecycle-playbook/scripts/run_ml_lifecycle_mqtt_smoke.sh --source-topic /ml/in --stage1-topic /ml/stage1 --final-topic /ml/final --outlier-topic /ml/outlier
+bash skills/maps-ml-model-lifecycle-playbook/scripts/run_ml_lifecycle_skill_smoke.sh
+bash skills/maps-ml-model-lifecycle-playbook/scripts/run_ml_lifecycle_mqtt_smoke.sh --source-topic /ml/in --stage1-topic /ml/stage1 --final-topic /ml/final --outlier-topic /ml/outlier
 ```
 
 ## Risk and Operational Notes

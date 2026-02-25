@@ -5,7 +5,7 @@ import re
 import sys
 from pathlib import Path
 
-ROOT = Path('/Users/krital/dev/starsense/mapsmessaging_server/skills/maps-selector-rule-engineer')
+ROOT = Path(__file__).resolve().parents[1]
 CONTRACT = ROOT / 'references' / 'output-contract.md'
 EXAMPLES = [
     ROOT / 'references' / 'examples' / 'simple-selector-output.md',
@@ -55,8 +55,8 @@ def main() -> int:
             errors.append(f'{ex.name}: missing bash command block')
         if '```mermaid' not in txt:
             errors.append(f'{ex.name}: missing mermaid diagram block')
-        if '/Users/krital/dev/starsense/mapsmessaging_server' not in txt:
-            errors.append(f'{ex.name}: missing absolute path reference')
+        if 'skills/' not in txt:
+            errors.append(f'{ex.name}: missing repo-relative reference')
 
     if errors:
         print('selector artifact validation failed:')

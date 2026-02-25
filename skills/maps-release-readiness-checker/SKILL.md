@@ -26,8 +26,8 @@ Run a structured release gate review and return a defensible release decision wi
 - Check startup abort blockers (license, Consul/config gating, provider availability).
 - Check listener binds and core protocol availability.
 - Prefer bundled scripts for repeatable validation:
-  - `/Users/krital/dev/starsense/mapsmessaging_server/skills/maps-release-readiness-checker/scripts/run_maps_release_readiness_checker_skill_smoke.sh`
-  - `/Users/krital/dev/starsense/mapsmessaging_server/skills/maps-release-readiness-checker/scripts/run_maps_release_readiness_checker_runtime_smoke.sh`
+  - `skills/maps-release-readiness-checker/scripts/run_maps_release_readiness_checker_skill_smoke.sh`
+  - `skills/maps-release-readiness-checker/scripts/run_maps_release_readiness_checker_runtime_smoke.sh`
 
 5. Execute feature-specific operational gates.
 - Run checks for configured unique features (aggregator, satellite, schema/transform, CAN, etc.) based on release scope.
@@ -38,7 +38,7 @@ Run a structured release gate review and return a defensible release decision wi
 - Confirm rollback procedure is present and minimal.
 
 7. Return readiness decision.
-- Follow `/Users/krital/dev/starsense/mapsmessaging_server/skills/maps-release-readiness-checker/references/output-contract.md`.
+- Follow `skills/maps-release-readiness-checker/references/output-contract.md`.
 - Provide PASS, CONDITIONAL PASS, or FAIL with blocking/non-blocking findings.
 
 ## Rules
@@ -72,5 +72,5 @@ Run a structured release gate review and return a defensible release decision wi
 ## Reference Loading
 
 Load only what is needed:
-- Gate catalog and commands: `/Users/krital/dev/starsense/mapsmessaging_server/skills/maps-release-readiness-checker/references/release-gate-catalog.md`
-- Final response format: `/Users/krital/dev/starsense/mapsmessaging_server/skills/maps-release-readiness-checker/references/output-contract.md`
+- Gate catalog and commands: `skills/maps-release-readiness-checker/references/release-gate-catalog.md`
+- Final response format: `skills/maps-release-readiness-checker/references/output-contract.md`

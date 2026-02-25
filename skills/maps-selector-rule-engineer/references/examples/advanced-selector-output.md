@@ -4,9 +4,9 @@
 - Stage 1 route by `vehicleType` to intermediate topics.
 - Stage 2 subscriber selectors split high-priority alerts and normal events.
 - File targets:
-  - `/Users/krital/dev/starsense/mapsmessaging_server/NetworkManager.yaml`
-  - `/Users/krital/dev/starsense/mapsmessaging_server/DestinationManager.yaml`
-  - `/Users/krital/dev/starsense/mapsmessaging_server/routing.yaml`
+  - `NetworkManager.yaml`
+  - `DestinationManager.yaml`
+  - `routing.yaml`
 
 ## Selector Evaluation Model
 - Routing selector order:
@@ -39,7 +39,7 @@ routes:
 
 ## Apply Steps
 ```bash
-cp /Users/krital/dev/starsense/mapsmessaging_server/routing.yaml /Users/krital/dev/starsense/mapsmessaging_server/routing.yaml.bak
+cp routing.yaml routing.yaml.bak
 # apply staged selector patch and restart runtime
 ```
 
@@ -51,7 +51,7 @@ cp /Users/krital/dev/starsense/mapsmessaging_server/routing.yaml /Users/krital/d
   - `{ "vehicleType":"other", "priority":9 }` should not appear in emergency-only subscriber stream.
   - `{ "vehicleType":"public", "priority":2 }` should not appear in high-priority stream.
 ```bash
-bash /Users/krital/dev/starsense/mapsmessaging_server/skills/maps-selector-rule-engineer/scripts/run_selector_mqtt_smoke.sh --source-topic /selector/in --match-topic /selector/final/high --nonmatch-topic /selector/final/normal
+bash skills/maps-selector-rule-engineer/scripts/run_selector_mqtt_smoke.sh --source-topic /selector/in --match-topic /selector/final/high --nonmatch-topic /selector/final/normal
 ```
 
 ## Performance and Risk Notes

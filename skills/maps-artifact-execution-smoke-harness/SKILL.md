@@ -15,14 +15,14 @@ Run executable smoke gates against generated artifacts, not only document-level 
 - Identify expected listeners, namespaces, routes, and success markers.
 
 2. Build execution plan.
-- Read `/Users/krital/dev/starsense/mapsmessaging_server/skills/maps-artifact-execution-smoke-harness/references/execution-catalog.md`.
+- Read `skills/maps-artifact-execution-smoke-harness/references/execution-catalog.md`.
 - Define phases: setup, apply, startup, listener verification, traffic verification, teardown.
 - Require explicit timeout and fail-fast conditions per phase.
 - Prefer bundled scripts when direct execution is requested:
-  - `/Users/krital/dev/starsense/mapsmessaging_server/skills/maps-artifact-execution-smoke-harness/scripts/run_artifact_smoke.sh`
-  - `/Users/krital/dev/starsense/mapsmessaging_server/skills/maps-artifact-execution-smoke-harness/scripts/run_matrix.sh`
-  - `/Users/krital/dev/starsense/mapsmessaging_server/skills/maps-artifact-execution-smoke-harness/scripts/run_maps_artifact_execution_smoke_harness_skill_smoke.sh`
-  - `/Users/krital/dev/starsense/mapsmessaging_server/skills/maps-artifact-execution-smoke-harness/scripts/run_maps_artifact_execution_smoke_harness_runtime_smoke.sh`
+  - `skills/maps-artifact-execution-smoke-harness/scripts/run_artifact_smoke.sh`
+  - `skills/maps-artifact-execution-smoke-harness/scripts/run_matrix.sh`
+  - `skills/maps-artifact-execution-smoke-harness/scripts/run_maps_artifact_execution_smoke_harness_skill_smoke.sh`
+  - `skills/maps-artifact-execution-smoke-harness/scripts/run_maps_artifact_execution_smoke_harness_runtime_smoke.sh`
 
 3. Execute smoke phases.
 - Setup: ensure ports are free and prior containers/processes are cleaned up safely.
@@ -37,7 +37,7 @@ Run executable smoke gates against generated artifacts, not only document-level 
 - Separate environment issues from artifact defects.
 
 5. Return using output contract.
-- Follow `/Users/krital/dev/starsense/mapsmessaging_server/skills/maps-artifact-execution-smoke-harness/references/output-contract.md`.
+- Follow `skills/maps-artifact-execution-smoke-harness/references/output-contract.md`.
 - Include exact commands, observed outcomes, and minimal rerun command set.
 
 ## Rules
@@ -70,5 +70,5 @@ Run executable smoke gates against generated artifacts, not only document-level 
 ## Reference Loading
 
 Load only what is needed:
-- Execution phases and commands: `/Users/krital/dev/starsense/mapsmessaging_server/skills/maps-artifact-execution-smoke-harness/references/execution-catalog.md`
-- Final response format: `/Users/krital/dev/starsense/mapsmessaging_server/skills/maps-artifact-execution-smoke-harness/references/output-contract.md`
+- Execution phases and commands: `skills/maps-artifact-execution-smoke-harness/references/execution-catalog.md`
+- Final response format: `skills/maps-artifact-execution-smoke-harness/references/output-contract.md`

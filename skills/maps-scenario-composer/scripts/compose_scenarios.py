@@ -9,7 +9,7 @@ from typing import Any
 
 import yaml
 
-ROOT = Path('/Users/krital/dev/starsense/mapsmessaging_server')
+ROOT = Path(__file__).resolve().parents[3]
 SKILLS_ROOT = ROOT / 'skills'
 
 MANAGER_FILE_MAP = {

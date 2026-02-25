@@ -14,7 +14,7 @@ Translate location-aware requirements into deployable MAPS routing and transform
 - Identify whether routing is geohash-bucketed, distance-driven, or both.
 
 2. Design geospatial routing model.
-- Read `/Users/krital/dev/starsense/mapsmessaging_server/skills/maps-geospatial-routing-builder/references/geospatial-patterns.md`.
+- Read `skills/maps-geospatial-routing-builder/references/geospatial-patterns.md`.
 - Define coordinate normalization and unit assumptions.
 - Define precision strategy (coarse vs fine geohash) and route fan-out behavior.
 
@@ -27,13 +27,13 @@ Translate location-aware requirements into deployable MAPS routing and transform
 - Validate geohash output paths and distance threshold transitions.
 - Verify destination evidence for in-range and out-of-range cases.
 - Prefer bundled scripts for repeatable validation:
-  - `/Users/krital/dev/starsense/mapsmessaging_server/skills/maps-geospatial-routing-builder/scripts/run_geospatial_skill_smoke.sh`
-  - `/Users/krital/dev/starsense/mapsmessaging_server/skills/maps-geospatial-routing-builder/scripts/run_maps_geospatial_routing_builder_runtime_smoke.sh`
-  - `/Users/krital/dev/starsense/mapsmessaging_server/skills/maps-geospatial-routing-builder/scripts/run_geospatial_vectors.py`
-  - `/Users/krital/dev/starsense/mapsmessaging_server/skills/maps-geospatial-routing-builder/scripts/run_geospatial_mqtt_smoke.sh`
+  - `skills/maps-geospatial-routing-builder/scripts/run_geospatial_skill_smoke.sh`
+  - `skills/maps-geospatial-routing-builder/scripts/run_maps_geospatial_routing_builder_runtime_smoke.sh`
+  - `skills/maps-geospatial-routing-builder/scripts/run_geospatial_vectors.py`
+  - `skills/maps-geospatial-routing-builder/scripts/run_geospatial_mqtt_smoke.sh`
 
 5. Return using output contract.
-- Follow `/Users/krital/dev/starsense/mapsmessaging_server/skills/maps-geospatial-routing-builder/references/output-contract.md`.
+- Follow `skills/maps-geospatial-routing-builder/references/output-contract.md`.
 - Include deployable config, apply steps, and geospatial verification commands.
 
 ## Rules
@@ -65,8 +65,8 @@ Translate location-aware requirements into deployable MAPS routing and transform
 ## Reference Loading
 
 Load only what is needed:
-- Geospatial patterns: `/Users/krital/dev/starsense/mapsmessaging_server/skills/maps-geospatial-routing-builder/references/geospatial-patterns.md`
-- Final response format: `/Users/krital/dev/starsense/mapsmessaging_server/skills/maps-geospatial-routing-builder/references/output-contract.md`
+- Geospatial patterns: `skills/maps-geospatial-routing-builder/references/geospatial-patterns.md`
+- Final response format: `skills/maps-geospatial-routing-builder/references/output-contract.md`
 - Example artifacts:
-  - `/Users/krital/dev/starsense/mapsmessaging_server/skills/maps-geospatial-routing-builder/references/examples/simple-geospatial-output.md`
-  - `/Users/krital/dev/starsense/mapsmessaging_server/skills/maps-geospatial-routing-builder/references/examples/advanced-geospatial-output.md`
+  - `skills/maps-geospatial-routing-builder/references/examples/simple-geospatial-output.md`
+  - `skills/maps-geospatial-routing-builder/references/examples/advanced-geospatial-output.md`

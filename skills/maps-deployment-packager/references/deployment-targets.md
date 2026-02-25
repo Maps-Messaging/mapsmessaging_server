@@ -20,8 +20,8 @@ Inputs:
 - explicit auth/storage/config-source selections
 
 Execution references:
-- `/Users/krital/dev/starsense/mapsmessaging_server/src/main/scripts/start.sh`
-- `/Users/krital/dev/starsense/mapsmessaging_server/src/main/scripts/start.bat`
+- `src/main/scripts/start.sh`
+- `src/main/scripts/start.bat`
 
 Output expectations:
 - complete file set for conf directory
@@ -31,9 +31,9 @@ Output expectations:
 ## Docker Packaging
 
 Execution references:
-- `/Users/krital/dev/starsense/mapsmessaging_server/buildDocker.sh`
-- `/Users/krital/dev/starsense/mapsmessaging_server/src/main/scripts/startDocker.sh`
-- `/Users/krital/dev/starsense/mapsmessaging_server/src/main/scripts/docker_run.sh`
+- `buildDocker.sh`
+- `src/main/scripts/startDocker.sh`
+- `src/main/scripts/docker_run.sh`
 
 Output expectations:
 - image tag and run command
@@ -123,9 +123,9 @@ Generate:
 ## Validation Checklist
 
 ```bash
-rg -n "MAPS_HOME|MAPS_CONF|MAPS_DATA|java.security.auth.login.config|Consul" /Users/krital/dev/starsense/mapsmessaging_server/src/main/scripts/start.sh /Users/krital/dev/starsense/mapsmessaging_server/src/main/scripts/startDocker.sh
-rg -n "NetworkManager|DestinationManager|routing|AggregatorManager|AuthManager" /Users/krital/dev/starsense/mapsmessaging_server/*.yaml
-rg -n "directory:|storageConfig:|type: File|type: Memory|autoPauseTimeout" /Users/krital/dev/starsense/mapsmessaging_server/DestinationManager.yaml
+rg -n "MAPS_HOME|MAPS_CONF|MAPS_DATA|java.security.auth.login.config|Consul" src/main/scripts/start.sh src/main/scripts/startDocker.sh
+rg -n "NetworkManager|DestinationManager|routing|AggregatorManager|AuthManager" *.yaml
+rg -n "directory:|storageConfig:|type: File|type: Memory|autoPauseTimeout" DestinationManager.yaml
 ```
 
 ## Failure Classes

@@ -11,8 +11,8 @@ docker exec <container> sh -lc '(ss -lnt 2>/dev/null || netstat -lnt 2>/dev/null
 
 2. Namespace mapping and routing present in config.
 ```bash
-rg -n "namespace: |namespaceMapping:" /Users/krital/dev/starsense/mapsmessaging_server/DestinationManager.yaml
-rg -n "predefinedServers|enabled|autoDiscovery" /Users/krital/dev/starsense/mapsmessaging_server/routing.yaml
+rg -n "namespace: |namespaceMapping:" DestinationManager.yaml
+rg -n "predefinedServers|enabled|autoDiscovery" routing.yaml
 ```
 
 ## Core Test Patterns

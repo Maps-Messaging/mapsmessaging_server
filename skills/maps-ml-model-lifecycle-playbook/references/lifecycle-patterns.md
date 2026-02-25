@@ -34,17 +34,17 @@
 Skill smoke gate:
 
 ```bash
-bash /Users/krital/dev/starsense/mapsmessaging_server/skills/maps-ml-model-lifecycle-playbook/scripts/run_ml_lifecycle_skill_smoke.sh
+bash skills/maps-ml-model-lifecycle-playbook/scripts/run_ml_lifecycle_skill_smoke.sh
 ```
 
 Vector checks (portable format + serialization constraints):
 
 ```bash
-python3 /Users/krital/dev/starsense/mapsmessaging_server/skills/maps-ml-model-lifecycle-playbook/scripts/run_ml_lifecycle_vectors.py
+python3 skills/maps-ml-model-lifecycle-playbook/scripts/run_ml_lifecycle_vectors.py
 ```
 
 Runtime staged ML smoke:
 
 ```bash
-bash /Users/krital/dev/starsense/mapsmessaging_server/skills/maps-ml-model-lifecycle-playbook/scripts/run_ml_lifecycle_mqtt_smoke.sh --source-topic /ml/in --stage1-topic /ml/stage1 --final-topic /ml/final --outlier-topic /ml/outlier
+bash skills/maps-ml-model-lifecycle-playbook/scripts/run_ml_lifecycle_mqtt_smoke.sh --source-topic /ml/in --stage1-topic /ml/stage1 --final-topic /ml/final --outlier-topic /ml/outlier
 ```

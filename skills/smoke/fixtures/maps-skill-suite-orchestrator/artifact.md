@@ -20,7 +20,7 @@ Use <skill-name> in Advanced Combination Matrix mode.
 - maps-ml-stream-configurator
 
 ## Absolute Path Example
-`/Users/krital/dev/starsense/mapsmessaging_server/skills/maps-skill-suite-orchestrator/SKILL.md`
+`skills/maps-skill-suite-orchestrator/SKILL.md`
 
 ```bash
 echo smoke-check

@@ -17,12 +17,12 @@ Provide clear, executable guidance for both model creation from streaming data a
   - hybrid lifecycle
 
 2. Design lifecycle blueprint.
-- Read `/Users/krital/dev/starsense/mapsmessaging_server/skills/maps-ml-model-lifecycle-playbook/references/lifecycle-patterns.md`.
+- Read `skills/maps-ml-model-lifecycle-playbook/references/lifecycle-patterns.md`.
 - Build simple baseline first, then advanced staged variant when requested.
 - Keep model-store type explicit (`file`, `nexus`, `s3`, `maps`).
 
 3. Map to deployable config.
-- Primary ML stream config in `/Users/krital/dev/starsense/mapsmessaging_server/MLModelManager.yaml`.
+- Primary ML stream config in `MLModelManager.yaml`.
 - Include destination/schema/routing changes when staged inference or quarantine flows are required.
 - Include external model artifact ingest mapping for portable formats only.
 
@@ -32,13 +32,13 @@ Provide clear, executable guidance for both model creation from streaming data a
 - Validate retrain threshold semantics and rollback behavior.
 - Include stage-by-stage runtime verification commands.
 - Prefer bundled scripts for repeatable validation:
-  - `/Users/krital/dev/starsense/mapsmessaging_server/skills/maps-ml-model-lifecycle-playbook/scripts/run_ml_lifecycle_skill_smoke.sh`
-  - `/Users/krital/dev/starsense/mapsmessaging_server/skills/maps-ml-model-lifecycle-playbook/scripts/run_ml_lifecycle_runtime_smoke.sh`
-  - `/Users/krital/dev/starsense/mapsmessaging_server/skills/maps-ml-model-lifecycle-playbook/scripts/run_ml_lifecycle_vectors.py`
-  - `/Users/krital/dev/starsense/mapsmessaging_server/skills/maps-ml-model-lifecycle-playbook/scripts/run_ml_lifecycle_mqtt_smoke.sh`
+  - `skills/maps-ml-model-lifecycle-playbook/scripts/run_ml_lifecycle_skill_smoke.sh`
+  - `skills/maps-ml-model-lifecycle-playbook/scripts/run_ml_lifecycle_runtime_smoke.sh`
+  - `skills/maps-ml-model-lifecycle-playbook/scripts/run_ml_lifecycle_vectors.py`
+  - `skills/maps-ml-model-lifecycle-playbook/scripts/run_ml_lifecycle_mqtt_smoke.sh`
 
 5. Return using output contract.
-- Follow `/Users/krital/dev/starsense/mapsmessaging_server/skills/maps-ml-model-lifecycle-playbook/references/output-contract.md`.
+- Follow `skills/maps-ml-model-lifecycle-playbook/references/output-contract.md`.
 - Include simple baseline and advanced option(s) when requested.
 
 ## ML Lifecycle Rules
@@ -72,8 +72,8 @@ Provide clear, executable guidance for both model creation from streaming data a
 ## Reference Loading
 
 Load only what is needed:
-- Lifecycle patterns and constraints: `/Users/krital/dev/starsense/mapsmessaging_server/skills/maps-ml-model-lifecycle-playbook/references/lifecycle-patterns.md`
-- Final response format: `/Users/krital/dev/starsense/mapsmessaging_server/skills/maps-ml-model-lifecycle-playbook/references/output-contract.md`
+- Lifecycle patterns and constraints: `skills/maps-ml-model-lifecycle-playbook/references/lifecycle-patterns.md`
+- Final response format: `skills/maps-ml-model-lifecycle-playbook/references/output-contract.md`
 - Example artifacts:
-  - `/Users/krital/dev/starsense/mapsmessaging_server/skills/maps-ml-model-lifecycle-playbook/references/examples/simple-ml-lifecycle-output.md`
-  - `/Users/krital/dev/starsense/mapsmessaging_server/skills/maps-ml-model-lifecycle-playbook/references/examples/advanced-ml-lifecycle-output.md`
+  - `skills/maps-ml-model-lifecycle-playbook/references/examples/simple-ml-lifecycle-output.md`
+  - `skills/maps-ml-model-lifecycle-playbook/references/examples/advanced-ml-lifecycle-output.md`

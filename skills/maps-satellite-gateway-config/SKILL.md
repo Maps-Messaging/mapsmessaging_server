@@ -15,14 +15,14 @@ Generate Iridium-like pub-sub service patterns using MAPS satellite capabilities
 - Capture encoding mode. If encoding is CBC, enable SIN/MIN hierarchy routing policy.
 
 2. Build protocol option matrix.
-- Read `/Users/krital/dev/starsense/mapsmessaging_server/skills/maps-satellite-gateway-config/references/satellite-pubsub-patterns.md`.
+- Read `skills/maps-satellite-gateway-config/references/satellite-pubsub-patterns.md`.
 - Produce at least 2 viable pattern variants when user asks for "more choices".
 - For each variant, specify source and destination protocol path, mapping namespace, and operational tradeoffs.
 
 3. Map selected variant to MAPS config surfaces.
-- Read `/Users/krital/dev/starsense/mapsmessaging_server/skills/maps-satellite-gateway-config/references/satellite-config-map.md`.
-- Update `/Users/krital/dev/starsense/mapsmessaging_server/NetworkManager.yaml` satellite endpoint and protocol blocks.
-- Update `/Users/krital/dev/starsense/mapsmessaging_server/DestinationManager.yaml` and `/Users/krital/dev/starsense/mapsmessaging_server/routing.yaml` only when required by chosen pattern.
+- Read `skills/maps-satellite-gateway-config/references/satellite-config-map.md`.
+- Update `NetworkManager.yaml` satellite endpoint and protocol blocks.
+- Update `DestinationManager.yaml` and `routing.yaml` only when required by chosen pattern.
 
 4. Build deployable entities.
 - Prefer minimal diffs.
@@ -32,16 +32,16 @@ Generate Iridium-like pub-sub service patterns using MAPS satellite capabilities
 5. Validate before finalizing.
 - Confirm provider-profile assumptions, poll cadence bounds, and protocol listener compatibility.
 - Prefer bundled scripts for repeatable validation:
-  - `/Users/krital/dev/starsense/mapsmessaging_server/skills/maps-satellite-gateway-config/scripts/run_maps_satellite_gateway_config_skill_smoke.sh`
-  - `/Users/krital/dev/starsense/mapsmessaging_server/skills/maps-satellite-gateway-config/scripts/run_maps_satellite_gateway_config_runtime_smoke.sh`
+  - `skills/maps-satellite-gateway-config/scripts/run_maps_satellite_gateway_config_skill_smoke.sh`
+  - `skills/maps-satellite-gateway-config/scripts/run_maps_satellite_gateway_config_runtime_smoke.sh`
 - Include startup/provider checks:
 ```bash
-rg -n "type: satellite|satellite://|Inmarsat|Orbcomm|Viasat" /Users/krital/dev/starsense/mapsmessaging_server/NetworkManager.yaml
+rg -n "type: satellite|satellite://|Inmarsat|Orbcomm|Viasat" NetworkManager.yaml
 docker logs <container> 2>&1 | rg -n "satellite|OGWS|Inmarsat|Viasat|Protocol not available|Startup aborted"
 ```
 
 6. Return with output contract.
-- Follow `/Users/krital/dev/starsense/mapsmessaging_server/skills/maps-satellite-gateway-config/references/output-contract.md`.
+- Follow `skills/maps-satellite-gateway-config/references/output-contract.md`.
 - Include pattern matrix, selected profile, deployable YAML, diagnostics, and verification.
 
 ## Satellite-Specific Rules
@@ -79,6 +79,6 @@ docker logs <container> 2>&1 | rg -n "satellite|OGWS|Inmarsat|Viasat|Protocol no
 ## Reference Loading
 
 Load only what is needed:
-- Service-pattern variants: `/Users/krital/dev/starsense/mapsmessaging_server/skills/maps-satellite-gateway-config/references/satellite-pubsub-patterns.md`
-- Config mapping and diagnostics: `/Users/krital/dev/starsense/mapsmessaging_server/skills/maps-satellite-gateway-config/references/satellite-config-map.md`
-- Output format: `/Users/krital/dev/starsense/mapsmessaging_server/skills/maps-satellite-gateway-config/references/output-contract.md`
+- Service-pattern variants: `skills/maps-satellite-gateway-config/references/satellite-pubsub-patterns.md`
+- Config mapping and diagnostics: `skills/maps-satellite-gateway-config/references/satellite-config-map.md`
+- Output format: `skills/maps-satellite-gateway-config/references/output-contract.md`

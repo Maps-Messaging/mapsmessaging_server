@@ -39,8 +39,8 @@ Guidance:
 ## Validation Checklist
 
 ```bash
-rg -n "eventStreams|selector|topicFilter|outlierTopic|schemaId|retrainThreshold" /Users/krital/dev/starsense/mapsmessaging_server/MLModelManager.yaml
-rg -n "namespace: |namespaceMapping:" /Users/krital/dev/starsense/mapsmessaging_server/DestinationManager.yaml
+rg -n "eventStreams|selector|topicFilter|outlierTopic|schemaId|retrainThreshold" MLModelManager.yaml
+rg -n "namespace: |namespaceMapping:" DestinationManager.yaml
 ```
 
 ## Failure Classes

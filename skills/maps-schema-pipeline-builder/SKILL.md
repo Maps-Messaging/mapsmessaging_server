@@ -14,11 +14,11 @@ Translate schema and format requirements into deployable MAPS configuration enti
 - Resolve missing details only when schema behavior would change.
 
 2. Map contract to configuration surfaces.
-- Read `/Users/krital/dev/starsense/mapsmessaging_server/skills/maps-schema-pipeline-builder/references/schema-mapping-guide.md`.
+- Read `skills/maps-schema-pipeline-builder/references/schema-mapping-guide.md`.
 - Map schema-aware message behavior to:
-  - `/Users/krital/dev/starsense/mapsmessaging_server/SchemaManager.yaml`
-  - `/Users/krital/dev/starsense/mapsmessaging_server/DestinationManager.yaml`
-  - `/Users/krital/dev/starsense/mapsmessaging_server/NetworkManager.yaml`
+  - `SchemaManager.yaml`
+  - `DestinationManager.yaml`
+  - `NetworkManager.yaml`
 - If required, include relevant transformation manager config paths.
 
 3. Build deployable entities.
@@ -30,13 +30,13 @@ Translate schema and format requirements into deployable MAPS configuration enti
 - Check key fields and linkage consistency (`schemaId`, `contentType`, namespace mapping).
 - Run targeted checks:
 ```bash
-rg -n "schemaId|contentType|messageOverride|qualityOfService" /Users/krital/dev/starsense/mapsmessaging_server/DestinationManager.yaml
-rg -n "SchemaManager|schema|type:" /Users/krital/dev/starsense/mapsmessaging_server/SchemaManager.yaml
-rg -n "protocolConfigs|messageDefaults|contentType" /Users/krital/dev/starsense/mapsmessaging_server/NetworkManager.yaml
+rg -n "schemaId|contentType|messageOverride|qualityOfService" DestinationManager.yaml
+rg -n "SchemaManager|schema|type:" SchemaManager.yaml
+rg -n "protocolConfigs|messageDefaults|contentType" NetworkManager.yaml
 ```
 
 5. Return output using output contract.
-- Follow `/Users/krital/dev/starsense/mapsmessaging_server/skills/maps-schema-pipeline-builder/references/output-contract.md`.
+- Follow `skills/maps-schema-pipeline-builder/references/output-contract.md`.
 - Always include assumptions, deployable YAML, apply steps, and validation commands.
 
 ## Rules
@@ -70,5 +70,5 @@ rg -n "protocolConfigs|messageDefaults|contentType" /Users/krital/dev/starsense/
 ## Reference Loading
 
 Load only what is needed:
-- Schema mapping details: `/Users/krital/dev/starsense/mapsmessaging_server/skills/maps-schema-pipeline-builder/references/schema-mapping-guide.md`
-- Response format: `/Users/krital/dev/starsense/mapsmessaging_server/skills/maps-schema-pipeline-builder/references/output-contract.md`
+- Schema mapping details: `skills/maps-schema-pipeline-builder/references/schema-mapping-guide.md`
+- Response format: `skills/maps-schema-pipeline-builder/references/output-contract.md`

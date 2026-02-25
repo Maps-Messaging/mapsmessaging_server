@@ -4,7 +4,7 @@ from __future__ import annotations
 import re
 from pathlib import Path
 
-ROOT = Path('/Users/krital/dev/starsense/mapsmessaging_server/skills/maps-geospatial-routing-builder')
+ROOT = Path(__file__).resolve().parents[1]
 CONTRACT = ROOT / 'references' / 'output-contract.md'
 EXAMPLES = [
     ROOT / 'references' / 'examples' / 'simple-geospatial-output.md',
@@ -54,8 +54,8 @@ def main() -> int:
             errors.append(f'{ex.name}: missing bash command block')
         if '```mermaid' not in txt:
             errors.append(f'{ex.name}: missing mermaid diagram block')
-        if '/Users/krital/dev/starsense/mapsmessaging_server' not in txt:
-            errors.append(f'{ex.name}: missing absolute path reference')
+        if 'skills/' not in txt:
+            errors.append(f'{ex.name}: missing repo-relative reference')
 
     if errors:
         print('geospatial artifact validation failed:')

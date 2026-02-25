@@ -15,7 +15,7 @@ Compose multi-skill scenario outputs into one deployable, testable, and conflict
 - Identify conflicts (port reuse, topic collisions, incompatible auth/storage assumptions, duplicate routes).
 
 2. Build composition plan.
-- Read `/Users/krital/dev/starsense/mapsmessaging_server/skills/maps-scenario-composer/references/composition-patterns.md`.
+- Read `skills/maps-scenario-composer/references/composition-patterns.md`.
 - Define per-skill scenario slices and merge strategy.
 - Decide composition mode:
   - additive (independent scenarios merged)
@@ -39,11 +39,11 @@ Compose multi-skill scenario outputs into one deployable, testable, and conflict
 - One integrated startup/listener verification sequence.
 - One integrated runtime smoke and cross-scenario verification sequence.
 - Prefer bundled scripts for repeatable validation:
-  - `/Users/krital/dev/starsense/mapsmessaging_server/skills/maps-scenario-composer/scripts/run_scenario_composer_skill_smoke.sh`
-  - `/Users/krital/dev/starsense/mapsmessaging_server/skills/maps-scenario-composer/scripts/run_maps_scenario_composer_runtime_smoke.sh`
+  - `skills/maps-scenario-composer/scripts/run_scenario_composer_skill_smoke.sh`
+  - `skills/maps-scenario-composer/scripts/run_maps_scenario_composer_runtime_smoke.sh`
 
 5. Return using output contract.
-- Follow `/Users/krital/dev/starsense/mapsmessaging_server/skills/maps-scenario-composer/references/output-contract.md`.
+- Follow `skills/maps-scenario-composer/references/output-contract.md`.
 - Include composition matrix, merged deployable entity, and consolidated verification.
 
 ## Rules
@@ -76,6 +76,6 @@ Compose multi-skill scenario outputs into one deployable, testable, and conflict
 ## Reference Loading
 
 Load only what is needed:
-- Composition design patterns: `/Users/krital/dev/starsense/mapsmessaging_server/skills/maps-scenario-composer/references/composition-patterns.md`
-- Final response structure: `/Users/krital/dev/starsense/mapsmessaging_server/skills/maps-scenario-composer/references/output-contract.md`
-- Optional generator script: `/Users/krital/dev/starsense/mapsmessaging_server/skills/maps-scenario-composer/scripts/compose_scenarios.py`
+- Composition design patterns: `skills/maps-scenario-composer/references/composition-patterns.md`
+- Final response structure: `skills/maps-scenario-composer/references/output-contract.md`
+- Optional generator script: `skills/maps-scenario-composer/scripts/compose_scenarios.py`

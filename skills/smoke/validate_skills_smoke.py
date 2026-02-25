@@ -15,7 +15,7 @@ REPO_ROOT = Path(__file__).resolve().parents[2]
 SKILLS_DIR = REPO_ROOT / "skills"
 FIXTURES_DIR = SKILLS_DIR / "smoke" / "fixtures"
 DEFAULT_QUICK_VALIDATE = Path(
-    "/Users/krital/.codex/skills/.system/skill-creator/scripts/quick_validate.py"
+    "$CODEX_HOME/skills/.system/skill-creator/scripts/quick_validate.py"
 )
 
 

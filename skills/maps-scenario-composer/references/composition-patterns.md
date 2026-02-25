@@ -45,11 +45,11 @@ Resolve in this order:
 Generate a unified deliverable with concrete merged YAML:
 
 ```bash
-python3 /Users/krital/dev/starsense/mapsmessaging_server/skills/maps-scenario-composer/scripts/compose_scenarios.py \
+python3 skills/maps-scenario-composer/scripts/compose_scenarios.py \
   --skills maps-deployment-packager,maps-selector-rule-engineer,maps-geospatial-routing-builder \
   --mode hybrid \
   --conflict-policy override \
-  --artifact maps-selector-rule-engineer=/Users/krital/dev/starsense/mapsmessaging_server/skills/maps-selector-rule-engineer/references/examples/simple-selector-output.md \
-  --artifact maps-geospatial-routing-builder=/Users/krital/dev/starsense/mapsmessaging_server/skills/maps-geospatial-routing-builder/references/examples/simple-geospatial-output.md \
+  --artifact maps-selector-rule-engineer=skills/maps-selector-rule-engineer/references/examples/simple-selector-output.md \
+  --artifact maps-geospatial-routing-builder=skills/maps-geospatial-routing-builder/references/examples/simple-geospatial-output.md \
   --out-dir /tmp/maps-composed
 ```

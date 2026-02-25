@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-ROOT="/Users/krital/dev/starsense/mapsmessaging_server"
-HARNESS="/Users/krital/dev/starsense/mapsmessaging_server/skills/maps-artifact-execution-smoke-harness/scripts/run_artifact_smoke.sh"
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
+HARNESS="${ROOT}/skills/maps-artifact-execution-smoke-harness/scripts/run_artifact_smoke.sh"
 IMAGE="${IMAGE:-}"
 PLATFORM="${PLATFORM:-}"
 MQTT_PORT="${MQTT_PORT:-1883}"

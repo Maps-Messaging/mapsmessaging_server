@@ -14,11 +14,11 @@ Supported payload families in MAPS context:
 
 ## Configuration Surfaces
 
-- `/Users/krital/dev/starsense/mapsmessaging_server/SchemaManager.yaml`
+- `SchemaManager.yaml`
   - schema catalog and registration behavior.
-- `/Users/krital/dev/starsense/mapsmessaging_server/DestinationManager.yaml`
+- `DestinationManager.yaml`
   - namespace-level message overrides (`schemaId`, `contentType`, QoS, retain).
-- `/Users/krital/dev/starsense/mapsmessaging_server/NetworkManager.yaml`
+- `NetworkManager.yaml`
   - protocol-level message defaults and content-type baselines.
 
 ## Mapping Patterns
@@ -42,9 +42,9 @@ Supported payload families in MAPS context:
 ## Validation Checklist
 
 ```bash
-rg -n "schemaId:" /Users/krital/dev/starsense/mapsmessaging_server/DestinationManager.yaml
-rg -n "contentType:" /Users/krital/dev/starsense/mapsmessaging_server/DestinationManager.yaml /Users/krital/dev/starsense/mapsmessaging_server/NetworkManager.yaml
-rg -n "schema|Schema" /Users/krital/dev/starsense/mapsmessaging_server/SchemaManager.yaml
+rg -n "schemaId:" DestinationManager.yaml
+rg -n "contentType:" DestinationManager.yaml NetworkManager.yaml
+rg -n "schema|Schema" SchemaManager.yaml
 ```
 
 ## Common Failure Classes

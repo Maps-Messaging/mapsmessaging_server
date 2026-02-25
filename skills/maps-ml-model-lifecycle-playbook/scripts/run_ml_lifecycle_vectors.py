@@ -5,7 +5,7 @@ from pathlib import Path
 
 ALLOWED_EXTS = {'.json', '.csv'}
 BANNED_EXTS = {'.ser', '.bin', '.obj'}
-ROOT = Path('/Users/krital/dev/starsense/mapsmessaging_server')
+ROOT = Path(__file__).resolve().parents[3]
 
 
 def check_portable_extensions() -> list[str]:

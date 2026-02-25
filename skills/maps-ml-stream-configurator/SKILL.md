@@ -16,10 +16,10 @@ Design ML-enabled MAPS stream pipelines that stay understandable: one simple bas
 2. Build pipeline shape in two layers.
 - Layer A (simple): one model selector on one stream, one output topic.
 - Layer B (advanced): staged passes using intermediate MAPS destinations with one model per pass.
-- Read `/Users/krital/dev/starsense/mapsmessaging_server/skills/maps-ml-stream-configurator/references/ml-pipeline-patterns.md`.
+- Read `skills/maps-ml-stream-configurator/references/ml-pipeline-patterns.md`.
 
 3. Map to deployable config.
-- Primary file: `/Users/krital/dev/starsense/mapsmessaging_server/MLModelManager.yaml`.
+- Primary file: `MLModelManager.yaml`.
 - Link to destination/schema config when intermediate stages or schema checks are required.
 - Keep model-store type explicit (`file`, `nexus`, `s3`, `maps`) and include required config block details.
 
@@ -27,15 +27,15 @@ Design ML-enabled MAPS stream pipelines that stay understandable: one simple bas
 - Ensure each event stream has `id`, `topicFilter`, `schemaId`, `selector`, and output topic.
 - Validate multi-pass chains have clear stage boundaries and deterministic topic handoff.
 - Prefer bundled scripts for repeatable validation:
-  - `/Users/krital/dev/starsense/mapsmessaging_server/skills/maps-ml-stream-configurator/scripts/run_maps_ml_stream_configurator_skill_smoke.sh`
-  - `/Users/krital/dev/starsense/mapsmessaging_server/skills/maps-ml-stream-configurator/scripts/run_maps_ml_stream_configurator_runtime_smoke.sh`
+  - `skills/maps-ml-stream-configurator/scripts/run_maps_ml_stream_configurator_skill_smoke.sh`
+  - `skills/maps-ml-stream-configurator/scripts/run_maps_ml_stream_configurator_runtime_smoke.sh`
 - Include static checks:
 ```bash
-rg -n "MLModelManager|eventStreams|selector|topicFilter|schemaId|outlierTopic|maxTrainEvents|retrainThreshold|modelStore" /Users/krital/dev/starsense/mapsmessaging_server/MLModelManager.yaml
+rg -n "MLModelManager|eventStreams|selector|topicFilter|schemaId|outlierTopic|maxTrainEvents|retrainThreshold|modelStore" MLModelManager.yaml
 ```
 
 5. Return with output contract.
-- Follow `/Users/krital/dev/starsense/mapsmessaging_server/skills/maps-ml-stream-configurator/references/output-contract.md`.
+- Follow `skills/maps-ml-stream-configurator/references/output-contract.md`.
 - Include simple baseline and advanced option when requested.
 
 ## ML-Specific Rules
@@ -71,5 +71,5 @@ rg -n "MLModelManager|eventStreams|selector|topicFilter|schemaId|outlierTopic|ma
 ## Reference Loading
 
 Load only what is needed:
-- Pipeline patterns and simplification guidance: `/Users/krital/dev/starsense/mapsmessaging_server/skills/maps-ml-stream-configurator/references/ml-pipeline-patterns.md`
-- Final response structure: `/Users/krital/dev/starsense/mapsmessaging_server/skills/maps-ml-stream-configurator/references/output-contract.md`
+- Pipeline patterns and simplification guidance: `skills/maps-ml-stream-configurator/references/ml-pipeline-patterns.md`
+- Final response structure: `skills/maps-ml-stream-configurator/references/output-contract.md`

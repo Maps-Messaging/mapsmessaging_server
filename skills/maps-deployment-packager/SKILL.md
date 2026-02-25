@@ -25,7 +25,7 @@ Convert MAPS manager YAML and runtime settings into deployable packaging outputs
     - S3-compatible object storage (including Cloudflare R2)
 
 2. Build environment packaging plan.
-- Read `/Users/krital/dev/starsense/mapsmessaging_server/skills/maps-deployment-packager/references/deployment-targets.md`.
+- Read `skills/maps-deployment-packager/references/deployment-targets.md`.
 - Generate artifact set for the selected target with minimal duplication.
 - Keep config and runtime command paths explicit.
 
@@ -51,8 +51,8 @@ Convert MAPS manager YAML and runtime settings into deployable packaging outputs
 - Check config mount paths and runtime env coherence (`MAPS_HOME`, `MAPS_CONF`, `MAPS_DATA`).
 - Include startup diagnostics and listener checks.
 - Prefer bundled scripts for repeatable validation:
-  - `/Users/krital/dev/starsense/mapsmessaging_server/skills/maps-deployment-packager/scripts/run_maps_deployment_packager_skill_smoke.sh`
-  - `/Users/krital/dev/starsense/mapsmessaging_server/skills/maps-deployment-packager/scripts/run_maps_deployment_packager_runtime_smoke.sh`
+  - `skills/maps-deployment-packager/scripts/run_maps_deployment_packager_skill_smoke.sh`
+  - `skills/maps-deployment-packager/scripts/run_maps_deployment_packager_runtime_smoke.sh`
 - Validate store-and-forward readiness (persistent destination paths, queue/backlog expectations, and recovery behavior after reconnect).
 - Validate auth, storage, and config-source alignment:
   - auth manager configuration matches selected authentication mode
@@ -63,7 +63,7 @@ Convert MAPS manager YAML and runtime settings into deployable packaging outputs
   - when object storage is selected, provider, endpoint, bucket, and credentials mapping are explicit
 
 5. Return using output contract.
-- Follow `/Users/krital/dev/starsense/mapsmessaging_server/skills/maps-deployment-packager/references/output-contract.md`.
+- Follow `skills/maps-deployment-packager/references/output-contract.md`.
 - Include artifacts, apply commands, validation, and rollback hints.
 
 ## Rules
@@ -104,5 +104,5 @@ Convert MAPS manager YAML and runtime settings into deployable packaging outputs
 ## Reference Loading
 
 Load only what is needed:
-- Target packaging patterns: `/Users/krital/dev/starsense/mapsmessaging_server/skills/maps-deployment-packager/references/deployment-targets.md`
-- Final response structure: `/Users/krital/dev/starsense/mapsmessaging_server/skills/maps-deployment-packager/references/output-contract.md`
+- Target packaging patterns: `skills/maps-deployment-packager/references/deployment-targets.md`
+- Final response structure: `skills/maps-deployment-packager/references/output-contract.md`

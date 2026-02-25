@@ -38,8 +38,8 @@ If user mandates a different order, evaluate compatibility and flag impossible h
 ## Validation Commands
 
 ```bash
-rg -n "contentType|schemaId|messageDefaults|messageOverride" /Users/krital/dev/starsense/mapsmessaging_server/NetworkManager.yaml /Users/krital/dev/starsense/mapsmessaging_server/DestinationManager.yaml
-rg -n "transform|Transformation|CloudEvent|JSONToXML|XMLToJSON" /Users/krital/dev/starsense/mapsmessaging_server/src/main/java
+rg -n "contentType|schemaId|messageDefaults|messageOverride" NetworkManager.yaml DestinationManager.yaml
+rg -n "transform|Transformation|CloudEvent|JSONToXML|XMLToJSON" src/main/java
 ```
 
 ## Failure Patterns

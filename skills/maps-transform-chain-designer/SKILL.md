@@ -14,7 +14,7 @@ Translate transformation requirements into ordered, deterministic MAPS configura
 - Resolve ambiguity only when ordering or output format would differ.
 
 2. Design ordered chain.
-- Read `/Users/krital/dev/starsense/mapsmessaging_server/skills/maps-transform-chain-designer/references/transform-chain-patterns.md`.
+- Read `skills/maps-transform-chain-designer/references/transform-chain-patterns.md`.
 - Produce explicit stage order with input/output contentType at each step.
 - Enforce deterministic, non-throwing behavior.
 
@@ -28,7 +28,7 @@ Translate transformation requirements into ordered, deterministic MAPS configura
 - Include static checks and runtime smoke checks.
 
 5. Return using output contract.
-- Follow `/Users/krital/dev/starsense/mapsmessaging_server/skills/maps-transform-chain-designer/references/output-contract.md`.
+- Follow `skills/maps-transform-chain-designer/references/output-contract.md`.
 - Include ordered stages, deployable config, apply steps, and test commands.
 
 ## Rules
@@ -62,5 +62,5 @@ Translate transformation requirements into ordered, deterministic MAPS configura
 ## Reference Loading
 
 Load only what is needed:
-- Chain patterns and checks: `/Users/krital/dev/starsense/mapsmessaging_server/skills/maps-transform-chain-designer/references/transform-chain-patterns.md`
-- Final response format: `/Users/krital/dev/starsense/mapsmessaging_server/skills/maps-transform-chain-designer/references/output-contract.md`
+- Chain patterns and checks: `skills/maps-transform-chain-designer/references/transform-chain-patterns.md`
+- Final response format: `skills/maps-transform-chain-designer/references/output-contract.md`

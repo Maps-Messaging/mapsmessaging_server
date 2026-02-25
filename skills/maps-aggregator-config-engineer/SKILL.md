@@ -14,8 +14,8 @@ Convert aggregation requirements into deployable `AggregatorManager.yaml` entiti
 - Capture throughput constraints that drive `maxEventsPerTopic`, `maxBatchPerAggregator`, `mailboxCapacity`, and `stripeCount`.
 
 2. Map to concrete AggregatorManager fields.
-- Read `/Users/krital/dev/starsense/mapsmessaging_server/skills/maps-aggregator-config-engineer/references/aggregator-design-guide.md`.
-- Update `/Users/krital/dev/starsense/mapsmessaging_server/AggregatorManager.yaml` as primary source.
+- Read `skills/maps-aggregator-config-engineer/references/aggregator-design-guide.md`.
+- Update `AggregatorManager.yaml` as primary source.
 - Include related destination/schema/transform config only when aggregation output requires it.
 
 3. Build deployable config.
@@ -28,16 +28,16 @@ Convert aggregation requirements into deployable `AggregatorManager.yaml` entiti
 - Check timing consistency: `timeoutMs >= windowDurationMs` unless explicitly justified.
 - Check resource and fairness guardrails: `maxEventsPerTopic`, `maxBatchPerAggregator`, `mailboxCapacity`, `stripeCount`.
 - Prefer bundled scripts for repeatable validation:
-  - `/Users/krital/dev/starsense/mapsmessaging_server/skills/maps-aggregator-config-engineer/scripts/run_maps_aggregator_config_engineer_skill_smoke.sh`
-  - `/Users/krital/dev/starsense/mapsmessaging_server/skills/maps-aggregator-config-engineer/scripts/run_maps_aggregator_config_engineer_runtime_smoke.sh`
-  - `/Users/krital/dev/starsense/mapsmessaging_server/skills/maps-aggregator-config-engineer/scripts/run_maps_aggregator_scenario_e2e.sh`
+  - `skills/maps-aggregator-config-engineer/scripts/run_maps_aggregator_config_engineer_skill_smoke.sh`
+  - `skills/maps-aggregator-config-engineer/scripts/run_maps_aggregator_config_engineer_runtime_smoke.sh`
+  - `skills/maps-aggregator-config-engineer/scripts/run_maps_aggregator_scenario_e2e.sh`
 - Run checks:
 ```bash
-rg -n "aggregatorConfigList|windowDurationMs|timeoutMs|maxEventsPerTopic|contributionMode|outputTopic" /Users/krital/dev/starsense/mapsmessaging_server/AggregatorManager.yaml
+rg -n "aggregatorConfigList|windowDurationMs|timeoutMs|maxEventsPerTopic|contributionMode|outputTopic" AggregatorManager.yaml
 ```
 
 5. Return output using contract.
-- Follow `/Users/krital/dev/starsense/mapsmessaging_server/skills/maps-aggregator-config-engineer/references/output-contract.md`.
+- Follow `skills/maps-aggregator-config-engineer/references/output-contract.md`.
 - Always include assumptions, deployable YAML, apply steps, and verification with pass/fail criteria.
 
 ## Aggregator-Specific Rules
@@ -72,5 +72,5 @@ rg -n "aggregatorConfigList|windowDurationMs|timeoutMs|maxEventsPerTopic|contrib
 ## Reference Loading
 
 Load only what is needed:
-- Aggregator semantics and patterns: `/Users/krital/dev/starsense/mapsmessaging_server/skills/maps-aggregator-config-engineer/references/aggregator-design-guide.md`
-- Final response contract: `/Users/krital/dev/starsense/mapsmessaging_server/skills/maps-aggregator-config-engineer/references/output-contract.md`
+- Aggregator semantics and patterns: `skills/maps-aggregator-config-engineer/references/aggregator-design-guide.md`
+- Final response contract: `skills/maps-aggregator-config-engineer/references/output-contract.md`

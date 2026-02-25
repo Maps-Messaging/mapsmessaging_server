@@ -6,9 +6,9 @@
   - stream-based retrain thresholds
   - staged inference pass-1 and pass-2 with intermediate destination
 - File targets:
-  - `/Users/krital/dev/starsense/mapsmessaging_server/MLModelManager.yaml`
-  - `/Users/krital/dev/starsense/mapsmessaging_server/DestinationManager.yaml`
-  - `/Users/krital/dev/starsense/mapsmessaging_server/routing.yaml`
+  - `MLModelManager.yaml`
+  - `DestinationManager.yaml`
+  - `routing.yaml`
 
 ## Lifecycle Shape
 - Simple baseline retained.
@@ -49,7 +49,7 @@ MLModelManager:
 
 ## Apply Steps
 ```bash
-cp /Users/krital/dev/starsense/mapsmessaging_server/MLModelManager.yaml /Users/krital/dev/starsense/mapsmessaging_server/MLModelManager.yaml.bak
+cp MLModelManager.yaml MLModelManager.yaml.bak
 # apply advanced lifecycle patch and restart runtime
 ```
 
@@ -61,8 +61,8 @@ cp /Users/krital/dev/starsense/mapsmessaging_server/MLModelManager.yaml /Users/k
 - External-model negative check:
   - incompatible artifact should fail validation and fallback.
 ```bash
-bash /Users/krital/dev/starsense/mapsmessaging_server/skills/maps-ml-model-lifecycle-playbook/scripts/run_ml_lifecycle_skill_smoke.sh
-bash /Users/krital/dev/starsense/mapsmessaging_server/skills/maps-ml-model-lifecycle-playbook/scripts/run_ml_lifecycle_mqtt_smoke.sh --source-topic /ml/in --stage1-topic /ml/intermediate --final-topic /ml/final --outlier-topic /ml/outlier
+bash skills/maps-ml-model-lifecycle-playbook/scripts/run_ml_lifecycle_skill_smoke.sh
+bash skills/maps-ml-model-lifecycle-playbook/scripts/run_ml_lifecycle_mqtt_smoke.sh --source-topic /ml/in --stage1-topic /ml/intermediate --final-topic /ml/final --outlier-topic /ml/outlier
 ```
 
 ## Risk and Operational Notes

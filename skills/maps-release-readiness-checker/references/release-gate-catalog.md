@@ -4,7 +4,7 @@
 
 Core checks:
 ```bash
-cd /Users/krital/dev/starsense/mapsmessaging_server
+cd <repo-root>
 ./build.sh
 ```
 

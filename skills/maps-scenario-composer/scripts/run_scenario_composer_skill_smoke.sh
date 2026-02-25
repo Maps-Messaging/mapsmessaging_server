@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-ROOT="/Users/krital/dev/starsense/mapsmessaging_server/skills/maps-scenario-composer"
-VALIDATOR="/Users/krital/.codex/skills/.system/skill-creator/scripts/quick_validate.py"
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+CODEX_HOME_DEFAULT="${CODEX_HOME:-$HOME/.codex}"
+VALIDATOR="${VALIDATOR:-${CODEX_HOME_DEFAULT}/skills/.system/skill-creator/scripts/quick_validate.py}"
 OUT="/tmp/maps-scenario-composer.out"
 MERGED_DIR="/tmp/maps-scenario-composer-merged"
 TMP_A="/tmp/maps-scenario-composer-a.yaml"
@@ -14,9 +15,9 @@ python3 "${VALIDATOR}" "${ROOT}"
 python3 "${ROOT}/scripts/compose_scenarios.py" \
   --skills maps-deployment-packager,maps-selector-rule-engineer,maps-geospatial-routing-builder \
   --mode hybrid \
-  --artifact maps-deployment-packager=/Users/krital/dev/starsense/mapsmessaging_server/skills/maps-deployment-packager/references/output-contract.md \
-  --artifact maps-selector-rule-engineer=/Users/krital/dev/starsense/mapsmessaging_server/skills/maps-selector-rule-engineer/references/examples/simple-selector-output.md \
-  --artifact maps-geospatial-routing-builder=/Users/krital/dev/starsense/mapsmessaging_server/skills/maps-geospatial-routing-builder/references/examples/simple-geospatial-output.md \
+  --artifact maps-deployment-packager=skills/maps-deployment-packager/references/output-contract.md \
+  --artifact maps-selector-rule-engineer=skills/maps-selector-rule-engineer/references/examples/simple-selector-output.md \
+  --artifact maps-geospatial-routing-builder=skills/maps-geospatial-routing-builder/references/examples/simple-geospatial-output.md \
   --conflict-policy override \
   --out-dir "${MERGED_DIR}" >"${OUT}"
 rg -n "Composition Matrix|Unified Assumptions|Merged Deployable Entity|Unified Apply Sequence|Integrated Verification|Traceability Map|Conflict Resolution Log|Scenario Metrics and Dashboard|C4 Architecture Diagram" "${OUT}" >/dev/null

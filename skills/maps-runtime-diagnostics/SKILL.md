@@ -15,7 +15,7 @@ Diagnose MAPS instance health from startup to protocol smoke tests. Produce acti
 - Record the precise failing operation and timestamp.
 
 2. Run startup-gate checks first.
-- Follow `/Users/krital/dev/starsense/mapsmessaging_server/skills/maps-runtime-diagnostics/references/startup-gates-and-bind-checks.md`.
+- Follow `skills/maps-runtime-diagnostics/references/startup-gates-and-bind-checks.md`.
 - Detect hard blockers: license validation, Consul bootstrap abort, missing protocol providers, malformed YAML.
 - Detect bind blockers: address in use, unsupported endpoint transport, invalid URL scheme.
 
@@ -28,11 +28,11 @@ Diagnose MAPS instance health from startup to protocol smoke tests. Produce acti
 - Run producer/consumer checks only after startup gates are clean.
 - For cross-protocol paths, test ingress and egress independently before end-to-end routing.
 - Prefer bundled scripts for repeatable validation:
-  - `/Users/krital/dev/starsense/mapsmessaging_server/skills/maps-runtime-diagnostics/scripts/run_maps_runtime_diagnostics_skill_smoke.sh`
-  - `/Users/krital/dev/starsense/mapsmessaging_server/skills/maps-runtime-diagnostics/scripts/run_maps_runtime_diagnostics_runtime_smoke.sh`
+  - `skills/maps-runtime-diagnostics/scripts/run_maps_runtime_diagnostics_skill_smoke.sh`
+  - `skills/maps-runtime-diagnostics/scripts/run_maps_runtime_diagnostics_runtime_smoke.sh`
 
 5. Return diagnostics using output contract.
-- Follow `/Users/krital/dev/starsense/mapsmessaging_server/skills/maps-runtime-diagnostics/references/output-contract.md`.
+- Follow `skills/maps-runtime-diagnostics/references/output-contract.md`.
 - Include root cause, evidence commands, exact remediation, and post-fix verification.
 
 ## Diagnostic Rules
@@ -67,5 +67,5 @@ Diagnose MAPS instance health from startup to protocol smoke tests. Produce acti
 ## Reference Loading
 
 Load only what is needed:
-- Startup and bind triage: `/Users/krital/dev/starsense/mapsmessaging_server/skills/maps-runtime-diagnostics/references/startup-gates-and-bind-checks.md`
-- Final response shape: `/Users/krital/dev/starsense/mapsmessaging_server/skills/maps-runtime-diagnostics/references/output-contract.md`
+- Startup and bind triage: `skills/maps-runtime-diagnostics/references/startup-gates-and-bind-checks.md`
+- Final response shape: `skills/maps-runtime-diagnostics/references/output-contract.md`

@@ -1,7 +1,7 @@
 Requirement Mapping
-- "Expose AMQP over TCP on 5672" -> `/Users/krital/dev/starsense/mapsmessaging_server/NetworkManager.yaml`: `url`, `endPointConfig.type=tcp`, `protocolConfigs[].type=amqp`
-- "Set XML default payload" -> `/Users/krital/dev/starsense/mapsmessaging_server/NetworkManager.yaml`: `protocolConfigs[].messageDefaults.contentType=application/xml`
-- "Enable server routing to core-hub" -> `/Users/krital/dev/starsense/mapsmessaging_server/routing.yaml`: `routing.enabled=true`, `predefinedServers[]`
+- "Expose AMQP over TCP on 5672" -> `NetworkManager.yaml`: `url`, `endPointConfig.type=tcp`, `protocolConfigs[].type=amqp`
+- "Set XML default payload" -> `NetworkManager.yaml`: `protocolConfigs[].messageDefaults.contentType=application/xml`
+- "Enable server routing to core-hub" -> `routing.yaml`: `routing.enabled=true`, `predefinedServers[]`
 
 Assumptions
 - Realm uses `anon`.
@@ -9,7 +9,7 @@ Assumptions
 
 Deployable Config Entity
 ```diff
-*** /Users/krital/dev/starsense/mapsmessaging_server/NetworkManager.yaml
+*** NetworkManager.yaml
 +    -
 +      authenticationRealm: anon
 +      name: amqp-tcp-ingress-5672
@@ -22,7 +22,7 @@ Deployable Config Entity
 +            contentType: application/xml
 +      url: tcp://0.0.0.0:5672/
 
-*** /Users/krital/dev/starsense/mapsmessaging_server/routing.yaml
+*** routing.yaml
 +  enabled: true
 +  predefinedServers:
 +    -
@@ -32,13 +32,13 @@ Deployable Config Entity
 
 Apply Steps
 ```bash
-rg -n "type: amqp|contentType: application/xml|tcp://0.0.0.0:5672/" /Users/krital/dev/starsense/mapsmessaging_server/NetworkManager.yaml
-rg -n "enabled: true|name: core-hub|url: https://core-hub:8080/" /Users/krital/dev/starsense/mapsmessaging_server/routing.yaml
+rg -n "type: amqp|contentType: application/xml|tcp://0.0.0.0:5672/" NetworkManager.yaml
+rg -n "enabled: true|name: core-hub|url: https://core-hub:8080/" routing.yaml
 ```
 
 Verification
 ```bash
 # AMQP smoke checks are environment-specific; verify listener then route entry
-rg -n "amqp-tcp-ingress-5672|type: amqp" /Users/krital/dev/starsense/mapsmessaging_server/NetworkManager.yaml
-rg -n "core-hub" /Users/krital/dev/starsense/mapsmessaging_server/routing.yaml
+rg -n "amqp-tcp-ingress-5672|type: amqp" NetworkManager.yaml
+rg -n "core-hub" routing.yaml
 ```

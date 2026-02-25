@@ -15,21 +15,21 @@ Create deterministic bridge tests for MAPS protocol flows and verify end-to-end 
 
 2. Validate runtime readiness first.
 - Confirm listener binds and provider availability before generating traffic.
-- Use `/Users/krital/dev/starsense/mapsmessaging_server/skills/maps-protocol-bridge-tester/references/bridge-test-catalog.md` startup checks.
+- Use `skills/maps-protocol-bridge-tester/references/bridge-test-catalog.md` startup checks.
 
 3. Execute layered tests.
 - Layer 1: source ingress test (producer -> source listener).
 - Layer 2: destination egress visibility test (consumer on destination side).
 - Layer 3: full bridge test with correlation marker in payload.
 - For executable runtime smoke, use:
-  - `/Users/krital/dev/starsense/mapsmessaging_server/skills/maps-protocol-bridge-tester/scripts/run_maps_protocol_bridge_tester_runtime_smoke.sh`
+  - `skills/maps-protocol-bridge-tester/scripts/run_maps_protocol_bridge_tester_runtime_smoke.sh`
 
 4. Evaluate with strict pass/fail markers.
 - Pass only when destination receives expected payload on mapped namespace within timeout.
 - Separate failures into ingress, routing, transform, or egress categories.
 
 5. Return using output contract.
-- Follow `/Users/krital/dev/starsense/mapsmessaging_server/skills/maps-protocol-bridge-tester/references/output-contract.md`.
+- Follow `skills/maps-protocol-bridge-tester/references/output-contract.md`.
 - Include exact commands, expected outputs, and remediation path for each failed layer.
 
 ## Rules
@@ -63,5 +63,5 @@ Create deterministic bridge tests for MAPS protocol flows and verify end-to-end 
 ## Reference Loading
 
 Load only what is needed:
-- Test patterns and commands: `/Users/krital/dev/starsense/mapsmessaging_server/skills/maps-protocol-bridge-tester/references/bridge-test-catalog.md`
-- Final response format: `/Users/krital/dev/starsense/mapsmessaging_server/skills/maps-protocol-bridge-tester/references/output-contract.md`
+- Test patterns and commands: `skills/maps-protocol-bridge-tester/references/bridge-test-catalog.md`
+- Final response format: `skills/maps-protocol-bridge-tester/references/output-contract.md`

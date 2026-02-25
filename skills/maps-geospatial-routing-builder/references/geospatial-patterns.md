@@ -32,17 +32,17 @@
 Skill smoke gate:
 
 ```bash
-bash /Users/krital/dev/starsense/mapsmessaging_server/skills/maps-geospatial-routing-builder/scripts/run_geospatial_skill_smoke.sh
+bash skills/maps-geospatial-routing-builder/scripts/run_geospatial_skill_smoke.sh
 ```
 
 Deterministic vector checks:
 
 ```bash
-python3 /Users/krital/dev/starsense/mapsmessaging_server/skills/maps-geospatial-routing-builder/scripts/run_geospatial_vectors.py
+python3 skills/maps-geospatial-routing-builder/scripts/run_geospatial_vectors.py
 ```
 
 Runtime geospatial route smoke:
 
 ```bash
-bash /Users/krital/dev/starsense/mapsmessaging_server/skills/maps-geospatial-routing-builder/scripts/run_geospatial_mqtt_smoke.sh --source-topic /geo/in --near-topic /geo/out/near --far-topic /geo/out/far --invalid-topic /geo/out/invalid
+bash skills/maps-geospatial-routing-builder/scripts/run_geospatial_mqtt_smoke.sh --source-topic /geo/in --near-topic /geo/out/near --far-topic /geo/out/far --invalid-topic /geo/out/invalid
 ```

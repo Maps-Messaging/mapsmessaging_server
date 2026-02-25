@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-ROOT="/Users/krital/dev/starsense/mapsmessaging_server/skills/maps-ml-model-lifecycle-playbook"
-VALIDATOR="/Users/krital/.codex/skills/.system/skill-creator/scripts/quick_validate.py"
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+CODEX_HOME_DEFAULT="${CODEX_HOME:-$HOME/.codex}"
+VALIDATOR="${VALIDATOR:-${CODEX_HOME_DEFAULT}/skills/.system/skill-creator/scripts/quick_validate.py}"
 
 python3 "${VALIDATOR}" "${ROOT}"
 python3 "${ROOT}/scripts/validate_ml_lifecycle_artifacts.py"

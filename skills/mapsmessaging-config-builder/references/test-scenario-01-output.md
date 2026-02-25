@@ -1,8 +1,8 @@
 Requirement Mapping
-- "Expose MQTT over TCP on 1883" -> `/Users/krital/dev/starsense/mapsmessaging_server/NetworkManager.yaml` fields: `endPointServerConfigList[].url`, `endPointConfig.type=tcp`, `protocolConfigs[].type=mqtt`
-- "Default JSON payload" -> `/Users/krital/dev/starsense/mapsmessaging_server/NetworkManager.yaml` field: `protocolConfigs[].messageDefaults.contentType=application/json`
-- "Map /telemetry namespace" -> `/Users/krital/dev/starsense/mapsmessaging_server/DestinationManager.yaml` fields: `namespace`, `namespaceMapping`
-- "Add route server edge-a" -> `/Users/krital/dev/starsense/mapsmessaging_server/routing.yaml` fields: `routing.predefinedServers[]`, `routing.enabled=true`
+- "Expose MQTT over TCP on 1883" -> `NetworkManager.yaml` fields: `endPointServerConfigList[].url`, `endPointConfig.type=tcp`, `protocolConfigs[].type=mqtt`
+- "Default JSON payload" -> `NetworkManager.yaml` field: `protocolConfigs[].messageDefaults.contentType=application/json`
+- "Map /telemetry namespace" -> `DestinationManager.yaml` fields: `namespace`, `namespaceMapping`
+- "Add route server edge-a" -> `routing.yaml` fields: `routing.predefinedServers[]`, `routing.enabled=true`
 
 Assumptions
 - `authenticationRealm` defaults to `anon`.
@@ -11,7 +11,7 @@ Assumptions
 
 Deployable Config Entity
 ```diff
-*** /Users/krital/dev/starsense/mapsmessaging_server/NetworkManager.yaml
+*** NetworkManager.yaml
 +    -
 +      authenticationRealm: anon
 +      name: mqtt-tcp-ingress-1883
@@ -24,13 +24,13 @@ Deployable Config Entity
 +            contentType: application/json
 +      url: tcp://0.0.0.0:1883/
 
-*** /Users/krital/dev/starsense/mapsmessaging_server/DestinationManager.yaml
+*** DestinationManager.yaml
 +    -
 +      type: Memory
 +      namespace: /telemetry/
 +      namespaceMapping: /telemetry/
 +
-*** /Users/krital/dev/starsense/mapsmessaging_server/routing.yaml
+*** routing.yaml
 +  enabled: true
 +  predefinedServers:
 +    -
@@ -42,9 +42,9 @@ Apply Steps
 ```bash
 # apply edits in working tree
 # then verify keys exist
-rg -n "type: mqtt|contentType: application/json|tcp://0.0.0.0:1883/" /Users/krital/dev/starsense/mapsmessaging_server/NetworkManager.yaml
-rg -n "namespace: /telemetry/|namespaceMapping: /telemetry/" /Users/krital/dev/starsense/mapsmessaging_server/DestinationManager.yaml
-rg -n "enabled: true|name: edge-a|url: https://edge-a:8080/" /Users/krital/dev/starsense/mapsmessaging_server/routing.yaml
+rg -n "type: mqtt|contentType: application/json|tcp://0.0.0.0:1883/" NetworkManager.yaml
+rg -n "namespace: /telemetry/|namespaceMapping: /telemetry/" DestinationManager.yaml
+rg -n "enabled: true|name: edge-a|url: https://edge-a:8080/" routing.yaml
 ```
 
 Verification

@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-ROOT="/Users/krital/dev/starsense/mapsmessaging_server/skills/maps-skill-suite-orchestrator"
-VALIDATOR="/Users/krital/.codex/skills/.system/skill-creator/scripts/quick_validate.py"
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+CODEX_HOME_DEFAULT="${CODEX_HOME:-$HOME/.codex}"
+VALIDATOR="${VALIDATOR:-${CODEX_HOME_DEFAULT}/skills/.system/skill-creator/scripts/quick_validate.py}"
 
 python3 "${VALIDATOR}" "${ROOT}"
 rg -n "maps-scenario-composer|Quick Start Template|Advanced Template|Multi-Skill Unified Deliverable" "${ROOT}/SKILL.md" >/dev/null

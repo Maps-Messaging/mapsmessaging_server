@@ -2,13 +2,13 @@
 
 ## Primary Surface
 
-- `/Users/krital/dev/starsense/mapsmessaging_server/NetworkManager.yaml`
+- `NetworkManager.yaml`
   - satellite endpoint entries under `endPointServerConfigList[]`
   - protocol block `protocolConfigs[].type: satellite`
 
 Secondary surfaces for pub-sub pattern realization:
-- `/Users/krital/dev/starsense/mapsmessaging_server/DestinationManager.yaml`
-- `/Users/krital/dev/starsense/mapsmessaging_server/routing.yaml`
+- `DestinationManager.yaml`
+- `routing.yaml`
 
 ## Provider Profiles
 
@@ -51,10 +51,10 @@ For non-CBC or unsupported payload encodings:
 ## Validation Commands
 
 ```bash
-rg -n "type: satellite|satellite://|Orbcomm|Viasat|Inmarsat" /Users/krital/dev/starsense/mapsmessaging_server/NetworkManager.yaml
-rg -n "type: mqtt|type: mqtt-sn|type: amqp|type: stomp|type: nats|type: coap|type: ws" /Users/krital/dev/starsense/mapsmessaging_server/NetworkManager.yaml
-rg -n "namespace: |namespaceMapping:" /Users/krital/dev/starsense/mapsmessaging_server/DestinationManager.yaml
-rg -n "\\{sin\\}|\\{min\\}|common/in" /Users/krital/dev/starsense/mapsmessaging_server/src/main/java/io/mapsmessaging/network/protocol/impl/satellite
+rg -n "type: satellite|satellite://|Orbcomm|Viasat|Inmarsat" NetworkManager.yaml
+rg -n "type: mqtt|type: mqtt-sn|type: amqp|type: stomp|type: nats|type: coap|type: ws" NetworkManager.yaml
+rg -n "namespace: |namespaceMapping:" DestinationManager.yaml
+rg -n "\\{sin\\}|\\{min\\}|common/in" src/main/java/io/mapsmessaging/network/protocol/impl/satellite
 ```
 
 ## Failure Classes

@@ -14,7 +14,7 @@ Build clear, testable selector configurations for routing and subscriptions, fro
 - Identify whether selectors apply at routing layer, subscription layer, or both.
 
 2. Build selector design.
-- Read `/Users/krital/dev/starsense/mapsmessaging_server/skills/maps-selector-rule-engineer/references/selector-patterns.md`.
+- Read `skills/maps-selector-rule-engineer/references/selector-patterns.md`.
 - Create explicit selector evaluation order.
 - Define conflict policy (first-match, priority-based, or layered pass).
 
@@ -27,12 +27,12 @@ Build clear, testable selector configurations for routing and subscriptions, fro
 - Verify no contradictory selector overlap unless intentionally prioritized.
 - Include runtime verification commands with correlation payload markers.
 - Prefer bundled scripts for repeatable validation:
-  - `/Users/krital/dev/starsense/mapsmessaging_server/skills/maps-selector-rule-engineer/scripts/run_selector_skill_smoke.sh`
-  - `/Users/krital/dev/starsense/mapsmessaging_server/skills/maps-selector-rule-engineer/scripts/run_maps_selector_rule_engineer_runtime_smoke.sh`
-  - `/Users/krital/dev/starsense/mapsmessaging_server/skills/maps-selector-rule-engineer/scripts/run_selector_mqtt_smoke.sh`
+  - `skills/maps-selector-rule-engineer/scripts/run_selector_skill_smoke.sh`
+  - `skills/maps-selector-rule-engineer/scripts/run_maps_selector_rule_engineer_runtime_smoke.sh`
+  - `skills/maps-selector-rule-engineer/scripts/run_selector_mqtt_smoke.sh`
 
 5. Return using output contract.
-- Follow `/Users/krital/dev/starsense/mapsmessaging_server/skills/maps-selector-rule-engineer/references/output-contract.md`.
+- Follow `skills/maps-selector-rule-engineer/references/output-contract.md`.
 - Include selector matrix, deployable config, apply steps, and verification.
 
 ## Rules
@@ -64,8 +64,8 @@ Build clear, testable selector configurations for routing and subscriptions, fro
 ## Reference Loading
 
 Load only what is needed:
-- Selector design patterns: `/Users/krital/dev/starsense/mapsmessaging_server/skills/maps-selector-rule-engineer/references/selector-patterns.md`
-- Final response format: `/Users/krital/dev/starsense/mapsmessaging_server/skills/maps-selector-rule-engineer/references/output-contract.md`
+- Selector design patterns: `skills/maps-selector-rule-engineer/references/selector-patterns.md`
+- Final response format: `skills/maps-selector-rule-engineer/references/output-contract.md`
 - Example artifacts:
-  - `/Users/krital/dev/starsense/mapsmessaging_server/skills/maps-selector-rule-engineer/references/examples/simple-selector-output.md`
-  - `/Users/krital/dev/starsense/mapsmessaging_server/skills/maps-selector-rule-engineer/references/examples/advanced-selector-output.md`
+  - `skills/maps-selector-rule-engineer/references/examples/simple-selector-output.md`
+  - `skills/maps-selector-rule-engineer/references/examples/advanced-selector-output.md`

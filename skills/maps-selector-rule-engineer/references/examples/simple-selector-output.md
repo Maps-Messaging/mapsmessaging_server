@@ -3,9 +3,9 @@
 ## Selector Requirement Mapping
 - Route `priority >= 5` messages to `/selector/match` and others to `/selector/nonmatch`.
 - File targets:
-  - `/Users/krital/dev/starsense/mapsmessaging_server/NetworkManager.yaml`
-  - `/Users/krital/dev/starsense/mapsmessaging_server/DestinationManager.yaml`
-  - `/Users/krital/dev/starsense/mapsmessaging_server/routing.yaml`
+  - `NetworkManager.yaml`
+  - `DestinationManager.yaml`
+  - `routing.yaml`
 
 ## Selector Evaluation Model
 - Routing selector order:
@@ -34,7 +34,7 @@ routes:
 
 ## Apply Steps
 ```bash
-cp /Users/krital/dev/starsense/mapsmessaging_server/routing.yaml /Users/krital/dev/starsense/mapsmessaging_server/routing.yaml.bak
+cp routing.yaml routing.yaml.bak
 # apply selector route patch
 ```
 
@@ -44,7 +44,7 @@ cp /Users/krital/dev/starsense/mapsmessaging_server/routing.yaml /Users/krital/d
 - Negative vector:
   - payload: `{ "priority": 1 }` should route to `/selector/nonmatch`.
 ```bash
-bash /Users/krital/dev/starsense/mapsmessaging_server/skills/maps-selector-rule-engineer/scripts/run_selector_mqtt_smoke.sh --source-topic /selector/in --match-topic /selector/match --nonmatch-topic /selector/nonmatch
+bash skills/maps-selector-rule-engineer/scripts/run_selector_mqtt_smoke.sh --source-topic /selector/in --match-topic /selector/match --nonmatch-topic /selector/nonmatch
 ```
 
 ## Performance and Risk Notes

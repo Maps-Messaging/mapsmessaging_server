@@ -13,8 +13,8 @@ Convert CAN ingestion requirements into deployable MAPS configs with determinist
 - Extract interface mode (vcan or native), device name (`can0`, `vcan0`, etc.), protocol behavior (`n2k` decode vs raw canbus), topic naming requirements, parse-to-JSON expectations, and schema/database source.
 
 2. Map to config surfaces.
-- Read `/Users/krital/dev/starsense/mapsmessaging_server/skills/maps-canbus-ingestion-builder/references/canbus-mapping-guide.md`.
-- Update `/Users/krital/dev/starsense/mapsmessaging_server/NetworkManager.yaml` for endpoint and protocol binding.
+- Read `skills/maps-canbus-ingestion-builder/references/canbus-mapping-guide.md`.
+- Update `NetworkManager.yaml` for endpoint and protocol binding.
 - Update destination/schema mappings only when requested by pipeline behavior.
 
 3. Build deployable entities.
@@ -25,16 +25,16 @@ Convert CAN ingestion requirements into deployable MAPS configs with determinist
 4. Validate before finalizing.
 - Verify endpoint/protocol consistency and topic templates.
 - Prefer bundled scripts for repeatable validation:
-  - `/Users/krital/dev/starsense/mapsmessaging_server/skills/maps-canbus-ingestion-builder/scripts/run_maps_canbus_ingestion_builder_skill_smoke.sh`
-  - `/Users/krital/dev/starsense/mapsmessaging_server/skills/maps-canbus-ingestion-builder/scripts/run_maps_canbus_ingestion_builder_runtime_smoke.sh`
+  - `skills/maps-canbus-ingestion-builder/scripts/run_maps_canbus_ingestion_builder_skill_smoke.sh`
+  - `skills/maps-canbus-ingestion-builder/scripts/run_maps_canbus_ingestion_builder_runtime_smoke.sh`
 - Include runtime checks:
 ```bash
-rg -n "type: canbus|type: n2k|deviceName|topicNameTemplate|parseToJson" /Users/krital/dev/starsense/mapsmessaging_server/NetworkManager.yaml
-rg -n "N2K_PROTOCOL|canbus" /Users/krital/dev/starsense/mapsmessaging_server/src/main/java/io/mapsmessaging/network/protocol/impl/n2k /Users/krital/dev/starsense/mapsmessaging_server/src/main/java/io/mapsmessaging/network/io/impl/canbus
+rg -n "type: canbus|type: n2k|deviceName|topicNameTemplate|parseToJson" NetworkManager.yaml
+rg -n "N2K_PROTOCOL|canbus" src/main/java/io/mapsmessaging/network/protocol/impl/n2k src/main/java/io/mapsmessaging/network/io/impl/canbus
 ```
 
 5. Return using output contract.
-- Follow `/Users/krital/dev/starsense/mapsmessaging_server/skills/maps-canbus-ingestion-builder/references/output-contract.md`.
+- Follow `skills/maps-canbus-ingestion-builder/references/output-contract.md`.
 - Include assumptions, deployable YAML, apply steps, and vcan/native verification.
 
 ## CAN-Specific Rules
@@ -69,5 +69,5 @@ rg -n "N2K_PROTOCOL|canbus" /Users/krital/dev/starsense/mapsmessaging_server/src
 ## Reference Loading
 
 Load only what is needed:
-- Mapping and runtime checks: `/Users/krital/dev/starsense/mapsmessaging_server/skills/maps-canbus-ingestion-builder/references/canbus-mapping-guide.md`
-- Response format: `/Users/krital/dev/starsense/mapsmessaging_server/skills/maps-canbus-ingestion-builder/references/output-contract.md`
+- Mapping and runtime checks: `skills/maps-canbus-ingestion-builder/references/canbus-mapping-guide.md`
+- Response format: `skills/maps-canbus-ingestion-builder/references/output-contract.md`

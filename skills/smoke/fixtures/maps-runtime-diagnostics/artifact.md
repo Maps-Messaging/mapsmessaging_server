@@ -31,7 +31,7 @@ Smoke placeholder for `Scenario Metrics and Dashboard`.
 Smoke placeholder for `C4 Architecture Diagram`.
 
 ## Absolute Path Example
-`/Users/krital/dev/starsense/mapsmessaging_server/NetworkManager.yaml`
+`NetworkManager.yaml`
 
 ## Mermaid C4 Placeholder
 ```mermaid

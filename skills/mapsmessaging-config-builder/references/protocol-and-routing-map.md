@@ -2,9 +2,9 @@
 
 ## Config Surfaces
 
-- `/Users/krital/dev/starsense/mapsmessaging_server/NetworkManager.yaml`: listener URLs, transport (`tcp`/`udp`/`ssl`/`dtls`/`hmac`/`satellite`), protocol adapters, auth realms, protocol defaults.
-- `/Users/krital/dev/starsense/mapsmessaging_server/DestinationManager.yaml`: namespace storage layout, message override defaults (`contentType`, QoS, retain, `schemaId`).
-- `/Users/krital/dev/starsense/mapsmessaging_server/routing.yaml`: inter-server topology and predefined peers.
+- `NetworkManager.yaml`: listener URLs, transport (`tcp`/`udp`/`ssl`/`dtls`/`hmac`/`satellite`), protocol adapters, auth realms, protocol defaults.
+- `DestinationManager.yaml`: namespace storage layout, message override defaults (`contentType`, QoS, retain, `schemaId`).
+- `routing.yaml`: inter-server topology and predefined peers.
 - Other manager files (`AggregatorManager.yaml`, `MLModelManager.yaml`, `SchemaManager.yaml`) when request explicitly includes those capabilities.
 
 ## Supported Protocol Targets
@@ -79,8 +79,8 @@ docker exec <container> sh -lc '(ss -lnt 2>/dev/null || netstat -lnt 2>/dev/null
 ## Practical Search Patterns
 
 ```bash
-rg -n "endPointServerConfigList|protocolConfigs|messageDefaults|url:" /Users/krital/dev/starsense/mapsmessaging_server/NetworkManager.yaml
-rg -n "namespace: |namespaceMapping: |messageOverride|schemaId" /Users/krital/dev/starsense/mapsmessaging_server/DestinationManager.yaml
-rg -n "routing:|predefinedServers|autoDiscovery|enabled" /Users/krital/dev/starsense/mapsmessaging_server/routing.yaml
-rg -n "window|timeout|maxEventsPerTopic|contribution" /Users/krital/dev/starsense/mapsmessaging_server/AggregatorManager.yaml
+rg -n "endPointServerConfigList|protocolConfigs|messageDefaults|url:" NetworkManager.yaml
+rg -n "namespace: |namespaceMapping: |messageOverride|schemaId" DestinationManager.yaml
+rg -n "routing:|predefinedServers|autoDiscovery|enabled" routing.yaml
+rg -n "window|timeout|maxEventsPerTopic|contribution" AggregatorManager.yaml
 ```
