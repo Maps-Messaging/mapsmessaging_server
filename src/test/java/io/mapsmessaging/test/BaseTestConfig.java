@@ -70,12 +70,6 @@ public class BaseTestConfig extends BaseTest {
   static void setUp() {
   }
 
-  @AfterAll
-  static void tearDown() {
-    if(md != null){
-      md.stop(99);
-    }
-  }
 
   protected static MessageDaemon md = null;
   private static Thread th;
