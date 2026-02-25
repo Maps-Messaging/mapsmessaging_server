@@ -11,6 +11,12 @@ Examples:
 - `skills/maps-runtime-diagnostics`
 - `skills/maps-aggregator-config-engineer`
 
+To generate one zip per skill folder:
+
+```bash
+python3 skills/package-skills.py
+```
+
 ## Install into Codex
 
 Codex reads skills from `$CODEX_HOME/skills` (often `~/.codex/skills`).
