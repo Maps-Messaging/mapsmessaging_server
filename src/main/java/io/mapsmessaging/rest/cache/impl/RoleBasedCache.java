@@ -22,17 +22,19 @@ package io.mapsmessaging.rest.cache.impl;
 import io.mapsmessaging.dto.rest.cache.CacheInfo;
 import io.mapsmessaging.rest.cache.Cache;
 import io.mapsmessaging.rest.cache.CacheKey;
+import io.mapsmessaging.utilities.threads.SimpleTaskScheduler;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.LongAdder;
 
 public class RoleBasedCache<V> implements Cache<CacheKey, V> {
   private final Map<CacheKey, CacheEntry<V>> cache = new ConcurrentHashMap<>();
   private final long expiryDuration;
   private final long cleanupInterval;
+  private final ScheduledFuture<?> scheduled;
   private LongAdder cacheHits;
   private LongAdder cacheMisses;
 
@@ -41,18 +43,11 @@ public class RoleBasedCache<V> implements Cache<CacheKey, V> {
     this.cleanupInterval = cleanupInterval;
     cacheHits = new LongAdder();
     cacheMisses = new LongAdder();
-    // Schedule periodic cleanup if needed
-    new Thread(() -> {
-      while (true) {
-        try {
-          Thread.sleep(cleanupInterval);
-          cleanup();
-        } catch (InterruptedException e) {
-          Thread.currentThread().interrupt();
-          break;
-        }
-      }
-    }).start();
+    scheduled = SimpleTaskScheduler.getInstance().scheduleAtFixedRate(this::cleanup, cleanupInterval, cleanupInterval, TimeUnit.MILLISECONDS);
+  }
+
+  public void close(){
+    scheduled.cancel(false);
   }
 
   @Override
@@ -64,7 +59,6 @@ public class RoleBasedCache<V> implements Cache<CacheKey, V> {
       put(key, value); // Recursively add the new entry
     }
   }
-
 
   @Override
   public V get(CacheKey key) {
