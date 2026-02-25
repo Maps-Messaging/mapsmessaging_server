@@ -107,3 +107,4 @@ Set these environment variables on the pipeline/build:
 
 Usage reference:
 - `.buildkite/skills_combo_usage.md`
+- `docs/skills-install.md`
