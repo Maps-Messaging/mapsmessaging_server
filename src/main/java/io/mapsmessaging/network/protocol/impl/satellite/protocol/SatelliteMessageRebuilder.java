@@ -33,17 +33,16 @@ public class SatelliteMessageRebuilder {
 
   public synchronized SatelliteMessage rebuild(SatelliteMessage message) {
 
-    if (message.isRaw()) {
-      return message;
-    }
-
-    if (message.getTotalPackets() <= 1) {
-      return message;
-    }
-
-    if (message.getPacketNumber() < 0 ||
-        message.getPacketNumber() >= message.getTotalPackets()) {
+    if(message == null ||
+        message.getTotalPackets() == 0 ||
+        message.getPacketNumber() < 0 ||
+        message.getPacketNumber() >= message.getTotalPackets())
+    {
       return null; // invalid fragment
+    }
+
+    if (message.isRaw() || message.getTotalPackets() <= 1) {
+      return message;
     }
 
     purgeExpired();
@@ -64,9 +63,7 @@ public class SatelliteMessageRebuilder {
 
     if (buffer.fragments.size() == buffer.totalPackets) {
       buffers.remove(message.getStreamNumber());
-      return SatelliteMessageFactory.reconstructMessage(
-          new ArrayList<>(buffer.fragments.values())
-      );
+      return SatelliteMessageFactory.reconstructMessage(new ArrayList<>(buffer.fragments.values()));
     }
 
     return null;
