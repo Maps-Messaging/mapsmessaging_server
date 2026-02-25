@@ -50,12 +50,8 @@ import javax.security.auth.Subject;
 import javax.security.auth.login.LoginException;
 import java.io.IOException;
 import java.util.*;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ScheduledFuture;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicReference;
 
 import static io.mapsmessaging.logging.ServerLogMessages.*;
 
@@ -446,8 +442,39 @@ public class SatelliteGatewayProtocol extends Protocol {
   }
 
   private void publishEvents(String namespace, List<byte[]> list, ProtocolMessageTransformation transformation1, Map<String, String> meta) {
-    for (byte[] buffer : list) {
-      publishMessage(buffer, namespace, transformation1, meta);
+    try {
+      Transaction tx = session.startTransaction(namespace+"-"+System.nanoTime());
+      session.findDestination(namespace, DestinationType.TOPIC)
+          .thenAccept(destination -> {
+            if(destination == null){
+              return;
+            }
+            try {
+              for (byte[] buffer : list) {
+                MessageBuilder messageBuilder = new MessageBuilder();
+                messageBuilder.setOpaqueData(buffer);
+                messageBuilder.setMeta(meta);
+                // Transform
+                if (transformation1 != null) {
+                  transformation1.incoming(messageBuilder);
+                }
+                Message mapsMessage = messageBuilder.build();
+                tx.add(destination, mapsMessage);
+              }
+              tx.commit();
+            } catch (IOException e) {
+              logger.log(OGWS_FAILED_TO_SAVE_MESSAGE, e);
+              requestClose();
+            }
+          })
+          .exceptionally(ex -> {
+            logger.log(OGWS_FAILED_TO_SAVE_MESSAGE, ex);
+            requestClose();
+            return null;
+          });
+
+    } catch (IOException e) {
+
     }
   }
 
@@ -461,22 +488,31 @@ public class SatelliteGatewayProtocol extends Protocol {
     }
     Message mapsMessage = messageBuilder.build();
 
-    session.findDestination(namespace, DestinationType.TOPIC)
-        .thenAccept(destination -> {
-          if(destination == null){
-            return;
-          }
-          try {
-            destination.storeMessage(mapsMessage);
-          } catch (IOException e) {
-            logger.log(OGWS_FAILED_TO_SAVE_MESSAGE, e);
+    try {
+      session.findDestination(namespace, DestinationType.TOPIC)
+          .thenAccept(destination -> {
+            if(destination == null){
+              return;
+            }
+            try {
+
+              destination.storeMessage(mapsMessage);
+            } catch (IOException e) {
+              logger.log(OGWS_FAILED_TO_SAVE_MESSAGE, e);
+              requestClose();
+            }
+          })
+          .exceptionally(ex -> {
+            logger.log(OGWS_FAILED_TO_SAVE_MESSAGE, ex);
             requestClose();
-          }
-        })
-        .exceptionally(ex -> {
-          logger.log(OGWS_FAILED_TO_SAVE_MESSAGE, ex);
-          requestClose();
-          return null;
-        });
+            return null;
+          }).get(1, TimeUnit.SECONDS);
+    } catch (InterruptedException e) {
+      throw new RuntimeException(e);
+    } catch (ExecutionException e) {
+      throw new RuntimeException(e);
+    } catch (TimeoutException e) {
+      throw new RuntimeException(e);
+    }
   }
 }

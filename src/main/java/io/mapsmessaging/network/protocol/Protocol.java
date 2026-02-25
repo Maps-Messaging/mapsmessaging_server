@@ -189,7 +189,14 @@ public abstract class Protocol implements SelectorCallback, MessageListener, Tim
       @Nullable StatisticsConfigDTO statistics
   )
       throws IOException {
-    this.setNamespaceFilters(namespaceFilters);
+    if(namespaceFilters != null) {
+      if (this.namespaceFilters == null) {
+        this.namespaceFilters = namespaceFilters;
+      }
+      else{
+        this.namespaceFilters.addAll(namespaceFilters.getAllFilters());
+      }
+    }
     topicNameMapping.put(resource, mappedResource);
     if (transformer != null) {
       destinationTransformerMap.put(resource, transformer);

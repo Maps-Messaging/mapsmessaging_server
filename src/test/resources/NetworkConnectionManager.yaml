@@ -42,7 +42,6 @@ NetworkConnectionManager:
       - name: "ST2100 Modem"
         url: serial://localhost:0/
         protocol: stogi
-        transformation: "Message-Raw"
         initialSetup: ""
         incomingMessagePollInterval: 1  # 1 seconds
         outgoingMessagePollInterval: 5
@@ -67,6 +66,22 @@ NetworkConnectionManager:
             remote_namespace: "/satellite/#"
             include_schema: false
 
+          - direction: push
+            local_namespace: "/compute/#"
+            remote_namespace: "/remote/compute/#"
+            include_schema: false
+            namespaceFilters:
+              namespace: "/compute/"
+              depth: 6
+
+          - direction: push
+            local_namespace: "/stats/#"
+            remote_namespace: "/remote/stats/#"
+            include_schema: false
+            analystics:
+              eventCount: 100
+              keyList: "value1, value2"
+              defaultAnalyser: "Advanced"
 
 
         serial:

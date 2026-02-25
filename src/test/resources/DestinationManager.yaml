@@ -9,6 +9,8 @@ DestinationManager:
       itemCount: 20000
       maxPartitionSize: 536870912  # 1/2 GB
       expiredEventPoll: 1
+      format:
+        name: json
       cache:
         type: WeakReference
         writeThrough: enable

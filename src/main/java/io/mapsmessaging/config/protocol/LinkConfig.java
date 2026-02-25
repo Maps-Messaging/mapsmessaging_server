@@ -53,7 +53,7 @@ public class LinkConfig extends LinkConfigDTO implements Config {
       for (ConfigurationProperties prop : list) {
         namespaceFilters.add(new NamespaceFilter(prop));
       }
-    } else if (obj instanceof ConfigurationProperties prop) {
+    } else if (obj1 instanceof ConfigurationProperties prop) {
       namespaceFilters.add(new NamespaceFilter(prop));
     }
     Object analysticsConfig = config.get("analystics");

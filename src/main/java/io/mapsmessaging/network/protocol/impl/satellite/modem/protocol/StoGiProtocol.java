@@ -21,13 +21,7 @@ package io.mapsmessaging.network.protocol.impl.satellite.modem.protocol;
 
 import io.mapsmessaging.analytics.Analyser;
 import io.mapsmessaging.analytics.AnalyserFactory;
-import io.mapsmessaging.api.Destination;
-import io.mapsmessaging.api.MessageBuilder;
-import io.mapsmessaging.api.MessageEvent;
-import io.mapsmessaging.api.Session;
-import io.mapsmessaging.api.SessionContextBuilder;
-import io.mapsmessaging.api.SessionManager;
-import io.mapsmessaging.api.SubscriptionContextBuilder;
+import io.mapsmessaging.api.*;
 import io.mapsmessaging.api.features.DestinationMode;
 import io.mapsmessaging.api.features.DestinationType;
 import io.mapsmessaging.api.features.Priority;
@@ -476,6 +470,9 @@ public class StoGiProtocol extends Protocol implements Consumer<Packet> {
         }
         return;
       }
+      else{
+        parsedMessage.setMessage(analysed);
+      }
     }
 
     Message payload = parsedMessage.getMessage();
@@ -638,8 +635,7 @@ public class StoGiProtocol extends Protocol implements Consumer<Packet> {
       return List.of();
     }
 
-    MessageQueuePacker.Packed packedQueue =
-        MessageQueuePacker.pack(replacement, compressionThreshold, cipherManager, protocolMessageTransformation);
+    MessageQueuePacker.Packed packedQueue = MessageQueuePacker.pack(replacement, compressionThreshold, cipherManager, protocolMessageTransformation);
 
     int transformerId = protocolMessageTransformation == null ? 0 : protocolMessageTransformation.getId();
 
@@ -710,7 +706,7 @@ public class StoGiProtocol extends Protocol implements Consumer<Packet> {
         String tmp = rawMessageTopic;
         tmp = tmp.replace("{sin}", Integer.toString(message.getSin()));
         tmp = tmp.replace("{min}", Integer.toString(message.getMin()));
-        sendMessageToTopic(tmp, message.getPayload());
+        storeToDestination(tmp, message.getPayload());
         continue;
       }
 
@@ -738,9 +734,7 @@ public class StoGiProtocol extends Protocol implements Consumer<Packet> {
 
   private void publishIncomingMap(Map<String, List<byte[]>> incomingMap) {
     for (Map.Entry<String, List<byte[]>> entry : incomingMap.entrySet()) {
-      for (byte[] bytes : entry.getValue()) {
-        sendMessageToTopic(entry.getKey(), bytes);
-      }
+      sendMessageToTopic(entry.getKey(), entry.getValue());
     }
   }
 
@@ -766,28 +760,61 @@ public class StoGiProtocol extends Protocol implements Consumer<Packet> {
     logger.log(STOGI_SEND_MESSAGE_TO_MODEM, satelliteMessage.getPacketNumber(), buffer.length);
   }
 
-  private void sendMessageToTopic(String topic, byte[] data) {
+  private void sendMessageToTopic(String topic, List<byte[]> list) {
     InterServerTransformation transformer = destinationTransformationLookup(topic);
-    Message message = createMessage(
-        data,
-        getProtocolMessageTransformation(),
-        transformer,
-        this
-    );
-
-    ParserExecutor parserExecutor = getParser(topic);
-    if (parserExecutor != null && !parserExecutor.evaluate(message)) {
+    String destinationName = parseForLookup(topic);
+    if (destinationName == null || destinationName.isEmpty()) {
       return;
     }
+    ParserExecutor parserExecutor = getParser(topic);
 
-    String destinationName = parseForLookup(topic);
-    storeToDestination(destinationName, message);
+    try {
+      Transaction tx = session.startTransaction(topic+"-"+System.nanoTime());
+      session.findDestination(destinationName, DestinationType.TOPIC)
+          .thenAccept(destination -> {
+            if (topic == null) {
+              return;
+            }
+            try {
+              for(byte[] data : list) {
+                Message message = createMessage(
+                    data,
+                    getProtocolMessageTransformation(),
+                    transformer,
+                    this
+                );
+                if (parserExecutor == null || parserExecutor.evaluate(message)) {
+                  tx.add(destination, message);
+                }
+              }
+              tx.commit();
+            } catch (IOException e) {
+              logger.log(STOGI_STORE_EVENT_EXCEPTION, e);
+              try {
+                endPoint.close();
+              } catch (IOException ignored) { }
+            }
+          })
+          .exceptionally(ex -> {
+            logger.log(STOGI_STORE_EVENT_EXCEPTION, ex);
+            try {
+              endPoint.close();
+            } catch (IOException ignored) { }
+            return null;
+          });
+    } catch (TransactionException e) {
+      throw new RuntimeException(e);
+    }
+
+
   }
 
-  private void storeToDestination(String topicName, Message message) {
+  private void storeToDestination(String topicName, byte[] data) {
     if (topicName == null || topicName.isEmpty()) {
       return;
     }
+    InterServerTransformation transformer = destinationTransformationLookup(topicName);
+    Message message = createMessage(data, getProtocolMessageTransformation(), transformer, this);
 
     session.findDestination(topicName, DestinationType.TOPIC)
         .thenAccept(topic -> {

@@ -18,6 +18,9 @@
  */
 package io.mapsmessaging.network.protocol.impl.satellite;
 
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 import io.mapsmessaging.api.MessageBuilder;
 import io.mapsmessaging.api.MessageListener;
 import io.mapsmessaging.api.Session;
@@ -30,6 +33,7 @@ import io.mapsmessaging.engine.destination.subscription.SubscriptionContext;
 import io.mapsmessaging.test.BaseTestConfig;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import javax.security.auth.login.LoginException;
@@ -171,6 +175,245 @@ public class SatelliteReplicationTests extends BaseTestConfig {
 
     enterpriseSideSession.removeSubscription(subscription.getKey());
   }
+  @Test
+  void computeNamespaceQueueDepthSixDeliversSixEventsPerTopic() throws Exception {
+    MultiReceiver enterpriseReceiver = new MultiReceiver();
+    TestReceiver modemReceiver = new TestReceiver();
+
+    modemSideSession = createModemSideSession(modemReceiver.listener());
+    enterpriseSideSession = createEnterpriseSideSession(enterpriseReceiver.listener());
+
+    String modemPublishTopic = modemComputeTopic(0);
+    String enterpriseReceiveTopic = enterpriseComputeMappedTopic(0);
+
+    int queueDepth = 6;
+
+    SubscriptionContext subscription = enterpriseReceiver.subscribeExpecting(enterpriseSideSession, enterpriseReceiveTopic, queueDepth);
+
+    for (int index = 0; index < queueDepth; index++) {
+      publishText(modemSideSession, modemPublishTopic, "c-" + index);
+    }
+
+    boolean receivedSix = enterpriseReceiver.await(enterpriseReceiveTopic, WAIT);
+    Assertions.assertTrue(receivedSix, "Expected " + queueDepth + " replicated events within " + WAIT);
+
+    Assertions.assertEquals(queueDepth, enterpriseReceiver.getCount(enterpriseReceiveTopic), "Expected exactly " + queueDepth + " events");
+
+    for (int index = 0; index < queueDepth; index++) {
+      Assertions.assertEquals("c-" + index, enterpriseReceiver.getText(enterpriseReceiveTopic, index), "Event order mismatch at index " + index);
+    }
+
+    enterpriseSideSession.removeSubscription(subscription.getKey());
+  }
+
+  @Test
+  void computeNamespaceQueueDepthSixDropsBeyondSixEventsPerTopic() throws Exception {
+    MultiReceiver enterpriseReceiver = new MultiReceiver();
+    TestReceiver modemReceiver = new TestReceiver();
+
+    modemSideSession = createModemSideSession(modemReceiver.listener());
+    enterpriseSideSession = createEnterpriseSideSession(enterpriseReceiver.listener());
+
+    String modemPublishTopic = modemComputeTopic(1);
+    String enterpriseReceiveTopic = enterpriseComputeMappedTopic(1);
+
+    int queueDepth = 6;
+    int publishCount = 10;
+
+    SubscriptionContext subscription = enterpriseReceiver.subscribeExpecting(enterpriseSideSession, enterpriseReceiveTopic, queueDepth);
+
+    for (int index = 0; index < publishCount; index++) {
+      publishText(modemSideSession, modemPublishTopic, "c-" + index);
+    }
+
+    boolean receivedSix = enterpriseReceiver.await(enterpriseReceiveTopic, WAIT);
+    Assertions.assertTrue(receivedSix, "Expected " + queueDepth + " replicated events within " + WAIT);
+
+    int observed = enterpriseReceiver.getCount(enterpriseReceiveTopic);
+    Assertions.assertEquals(queueDepth, observed, "Expected queue depth cap of " + queueDepth + " events, observed=" + observed);
+
+    enterpriseSideSession.removeSubscription(subscription.getKey());
+  }
+
+
+  @Test
+  void statsAnalyticsEmitsAggregatedAdvancedStatsAfter100Events() throws Exception {
+    TestReceiver enterpriseReceiver = new TestReceiver();
+    TestReceiver modemReceiver = new TestReceiver();
+
+    modemSideSession = createModemSideSession(modemReceiver.listener());
+    enterpriseSideSession = createEnterpriseSideSession(enterpriseReceiver.listener());
+
+    String modemStatsTopic = modemStatsTopic(0);
+    String enterpriseAggregatedTopic = enterpriseStatsMappedTopic(0);
+
+    SubscriptionContext subscription = enterpriseReceiver.subscribe(enterpriseSideSession, enterpriseAggregatedTopic);
+
+    int eventCount = 100;
+    for (int index = 0; index < eventCount; index++) {
+      double value1 = index;
+      double value2 = index * 2.0;
+
+      JsonObject event = new JsonObject();
+      event.addProperty("value1", value1);
+      event.addProperty("value2", value2);
+
+      publishText(modemSideSession, modemStatsTopic, event.toString());
+    }
+
+    boolean received = enterpriseReceiver.await(enterpriseAggregatedTopic, WAIT);
+    Assertions.assertTrue(received, "Expected aggregated stats event within " + WAIT);
+
+    String payload = enterpriseReceiver.getLastText(enterpriseAggregatedTopic);
+
+    JsonElement root = JsonParser.parseString(payload);
+    Assertions.assertTrue(root.isJsonObject(), "Aggregated payload must be JSON object: " + payload);
+
+    JsonObject aggregated = root.getAsJsonObject();
+
+    JsonObject stats1 = getObject(aggregated, "value1", payload);
+    JsonObject stats2 = getObject(aggregated, "value2", payload);
+
+    assertAdvancedStats(stats1, 0.0, 99.0, 0.0, 99.0, 49.5, 100, 1.0, -1.0, payload);
+    assertAdvancedStats(stats2, 0.0, 198.0, 0.0, 198.0, 99.0, 100, 2.0, -2.0, payload);
+
+    enterpriseSideSession.removeSubscription(subscription.getKey());
+  }
+
+  private static JsonObject getObject(JsonObject root, String name, String payload) {
+    Assertions.assertTrue(root.has(name), "Missing '" + name + "' in payload: " + payload);
+    JsonElement element = root.get(name);
+    Assertions.assertTrue(element.isJsonObject(), "'" + name + "' must be an object. Payload: " + payload);
+    return element.getAsJsonObject();
+  }
+
+  private static void assertAdvancedStats(
+      JsonObject stats,
+      double expectedFirst,
+      double expectedLast,
+      double expectedMin,
+      double expectedMax,
+      double expectedAverage,
+      int expectedCount,
+      double expectedSlope,
+      double expectedIntercept,
+      String payload
+  ) {
+    assertNumberNear(stats, "first", expectedFirst, 0.000001, payload);
+    assertNumberNear(stats, "last", expectedLast, 0.000001, payload);
+    assertNumberNear(stats, "min", expectedMin, 0.000001, payload);
+    assertNumberNear(stats, "max", expectedMax, 0.000001, payload);
+    assertNumberNear(stats, "average", expectedAverage, 0.000001, payload);
+
+    Assertions.assertTrue(stats.has("count"), "Missing 'count'. Payload: " + payload);
+    Assertions.assertEquals(expectedCount, stats.get("count").getAsInt(), "count mismatch. Payload: " + payload);
+
+    Assertions.assertTrue(stats.has("mismatched"), "Missing 'mismatched'. Payload: " + payload);
+    Assertions.assertEquals(0, stats.get("mismatched").getAsInt(), "mismatched must be 0. Payload: " + payload);
+
+    Assertions.assertTrue(stats.has("stdDev"), "Missing 'stdDev' (AdvancedStatistics). Payload: " + payload);
+    Assertions.assertTrue(stats.get("stdDev").getAsDouble() > 0.0, "stdDev must be > 0. Payload: " + payload);
+
+    assertNumberNear(stats, "slope", expectedSlope, 0.000001, payload);
+    assertNumberNear(stats, "intercept", expectedIntercept, 0.000001, payload);
+
+    Assertions.assertTrue(stats.has("firstUpdateMillis"), "Missing 'firstUpdateMillis'. Payload: " + payload);
+    Assertions.assertTrue(stats.has("lastUpdateMillis"), "Missing 'lastUpdateMillis'. Payload: " + payload);
+    Assertions.assertTrue(stats.get("firstUpdateMillis").getAsLong() > 0L, "firstUpdateMillis must be set. Payload: " + payload);
+    Assertions.assertTrue(stats.get("lastUpdateMillis").getAsLong() > 0L, "lastUpdateMillis must be set. Payload: " + payload);
+  }
+
+  private static void assertNumberNear(JsonObject o, String field, double expected, double delta, String payload) {
+    Assertions.assertTrue(o.has(field), "Missing '" + field + "'. Payload: " + payload);
+    Assertions.assertEquals(expected, o.get(field).getAsDouble(), delta, "Mismatch for '" + field + "'. Payload: " + payload);
+  }
+
+  private String modemComputeTopic(int topicIndex) {
+    return  "/compute/" + runId + "/t/" + topicIndex;
+  }
+
+  private String modemStatsTopic(int topicIndex) {
+    return "/stats/" + runId + "/t/" + topicIndex;
+  }
+
+  private String enterpriseComputeMappedTopic(int topicIndex) {
+    return ENTERPRISE_BASE+"/remote/compute/" + runId + "/t/" + topicIndex;
+  }
+
+  private static class MultiReceiver {
+
+    private final Map<String, java.util.List<Message>> messagesByTopic;
+    private final Map<String, CountDownLatch> latchByTopic;
+
+    private MultiReceiver() {
+      this.messagesByTopic = new ConcurrentHashMap<>();
+      this.latchByTopic = new ConcurrentHashMap<>();
+    }
+
+    private MessageListener listener() {
+      return messageEvent -> {
+        String destination = messageEvent.getDestinationName();
+        Message message = messageEvent.getMessage();
+        if (destination != null && message != null) {
+          messagesByTopic.computeIfAbsent(destination, key -> java.util.Collections.synchronizedList(new java.util.ArrayList<>()))
+              .add(message);
+
+          CountDownLatch latch = latchByTopic.get(destination);
+          if (latch != null) {
+            latch.countDown();
+          }
+        }
+
+        messageEvent.getCompletionTask().run();
+      };
+    }
+
+    private SubscriptionContext subscribeExpecting(Session session, String topic, int expectedCount) throws Exception {
+      latchByTopic.put(topic, new CountDownLatch(expectedCount));
+
+      SubscriptionContextBuilder builder = new SubscriptionContextBuilder(topic, ClientAcknowledgement.AUTO);
+      SubscriptionContext context = builder
+          .setQos(QualityOfService.AT_MOST_ONCE)
+          .setReceiveMaximum(100)
+          .build();
+
+      session.addSubscription(context);
+      return context;
+    }
+
+    private boolean await(String topic, Duration timeout) throws InterruptedException {
+      CountDownLatch latch = latchByTopic.get(topic);
+      if (latch == null) {
+        throw new IllegalStateException("No latch registered for topic " + topic);
+      }
+      return latch.await(timeout.toMillis(), TimeUnit.MILLISECONDS);
+    }
+
+    private int getCount(String topic) {
+      java.util.List<Message> list = messagesByTopic.get(topic);
+      if (list == null) {
+        return 0;
+      }
+      return list.size();
+    }
+
+    private String getText(String topic, int index) {
+      java.util.List<Message> list = messagesByTopic.get(topic);
+      Assertions.assertNotNull(list, "No messages recorded for topic " + topic);
+      Assertions.assertTrue(index >= 0 && index < list.size(), "Index out of bounds. topic=" + topic + " index=" + index + " size=" + list.size());
+
+      Message message = list.get(index);
+      byte[] bytes = message.getOpaqueData();
+      Assertions.assertNotNull(bytes, "Message has null payload for " + topic);
+
+      return new String(bytes, StandardCharsets.UTF_8);
+    }
+  }
+
+  private String enterpriseStatsMappedTopic(int topicIndex) {
+    return ENTERPRISE_BASE+"/remote/stats/" + runId + "/t/" + topicIndex;
+  }
+
 
   private Session createModemSideSession(MessageListener listener) throws LoginException, IOException {
     return createSession("SatelliteModemSide" + System.nanoTime(), 60, 60, false, listener);

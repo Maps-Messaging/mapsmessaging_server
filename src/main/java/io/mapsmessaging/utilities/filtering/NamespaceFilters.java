@@ -30,6 +30,10 @@ import java.util.Map;
 public class NamespaceFilters {
   private final TrieNode root = new TrieNode();
 
+
+  public NamespaceFilters() {
+  }
+
   public NamespaceFilters(List<NamespaceFilterDTO> props) {
     for(NamespaceFilterDTO filter: props){
       addFilter(filter);
@@ -42,6 +46,12 @@ public class NamespaceFilters {
     return result;
   }
 
+  public void addAll(List<NamespaceFilter> allFilters) {
+    for(NamespaceFilter filter: allFilters){
+      addToTrie(filter);
+    }
+  }
+
   private void collectFilters(TrieNode node, List<NamespaceFilter> out) {
     if (node.filter != null) {
       out.add(node.filter);
@@ -51,7 +61,7 @@ public class NamespaceFilters {
     }
   }
 
-  private void addFilter(NamespaceFilterDTO prop) {
+  public void addFilter(NamespaceFilterDTO prop) {
     try {
       NamespaceFilter filter = new NamespaceFilter(prop);
       addToTrie(filter);
@@ -99,6 +109,8 @@ public class NamespaceFilters {
     }
     return result;
   }
+
+
 
   private static class TrieNode {
     Map<String, TrieNode> children = new LinkedHashMap<>();

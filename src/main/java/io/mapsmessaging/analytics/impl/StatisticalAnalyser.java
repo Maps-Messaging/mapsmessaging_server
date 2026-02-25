@@ -117,12 +117,10 @@ public class StatisticalAnalyser implements Analyser {
   private void loadEntries(IdentifierResolver resolver) {
     resolver.getKeys().forEach(key -> {
       boolean ignored = ignoreList != null && !ignoreList.isEmpty() &&
-          ignoreList.stream().anyMatch(s -> s.startsWith(key));
+          ignoreList.stream().anyMatch(s -> s.equals(key));
 
       if (!ignored) {
-        boolean inEntries = entries.isEmpty() ||
-            entries.stream().anyMatch(s -> s.startsWith(key));
-
+        boolean inEntries = entries.isEmpty() || entries.stream().anyMatch(s -> s.equals(key));
         if (inEntries) {
           Object value = resolver.get(key);
           if (value instanceof String) {

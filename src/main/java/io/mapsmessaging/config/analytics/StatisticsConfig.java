@@ -24,6 +24,7 @@ import io.mapsmessaging.configuration.ConfigurationProperties;
 import io.mapsmessaging.dto.rest.analytics.StatisticsConfigDTO;
 import io.mapsmessaging.dto.rest.config.BaseConfigDTO;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
@@ -49,7 +50,11 @@ public class StatisticsConfig extends StatisticsConfigDTO implements Config {
 
     String entryString = config.getProperty("keyList", "");
     if(!entryString.isEmpty()){
-      keyList = Arrays.asList(entryString.split(","));
+      String[] tmp = entryString.split(",");
+      keyList = new ArrayList<>();
+      for(String entry : tmp){
+        keyList.add(entry.trim());
+      }
     }
     else {
       keyList = List.of();
