@@ -35,6 +35,10 @@ Convert MAPS manager YAML and runtime settings into deployable packaging outputs
 - Kubernetes-style: ConfigMap-ready YAML payload blocks and container args/env.
 - Cloud-target packaging:
   - Fly.io deployment bundle and service config, including optional Fly KV mapping profile when selected
+  - for Fly.io Docker builds:
+    - Dockerfile path must be relative to the selected working directory for `fly deploy`
+    - Dockerfile `COPY` sources must be relative to Docker build context (avoid repo-root-prefixed paths when deploying from a subdirectory)
+    - include explicit image architecture selection when required by available artifacts (for example force `amd64` when only x86 MAPS base images are available)
   - AWS deployment bundle (container/task/service profile)
   - Google Cloud deployment bundle (container/service profile)
   - Microsoft Azure deployment bundle (container/app service profile)
@@ -61,6 +65,8 @@ Convert MAPS manager YAML and runtime settings into deployable packaging outputs
   - when Fly.io is selected with KV mode, no Consul cluster dependency is required
   - when Consul mode is selected, deployment specifies dedicated Consul topology (HCP or self-managed)
   - when object storage is selected, provider, endpoint, bucket, and credentials mapping are explicit
+  - when Fly.io is selected, validate Dockerfile resolution and build-context-relative `COPY` statements
+  - when Fly.io is selected and image architecture availability is constrained, validate explicit architecture selection in build args or deploy command
 
 5. Return using output contract.
 - Follow `skills/maps-deployment-packager/references/output-contract.md`.
@@ -77,6 +83,8 @@ Convert MAPS manager YAML and runtime settings into deployable packaging outputs
 - Always include at least one simple local deployment profile and one advanced cloud profile in matrix mode.
 - Always include auth mode, storage mode, and config source mode in generated deployment profiles.
 - Always include backend option details when relevant: Fly KV usage, Consul topology choice, and object storage provider choice.
+- For Fly.io profiles, always state the effective build context directory and ensure Dockerfile path is valid from that directory.
+- For Fly.io profiles, always state architecture behavior (`amd64`/`arm64`) and the reason when forcing one architecture.
 
 ## Scenario Modes
 

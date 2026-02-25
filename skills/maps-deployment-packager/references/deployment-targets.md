@@ -48,6 +48,13 @@ Output expectations:
 - Generate app and service deployment bundle with mapped ports, env, volumes, and config source mode.
 - Offer Fly.io KV profile as a first-class default for lightweight state/config needs without running a Consul cluster.
 - If Consul-based mode is selected, treat it as an explicit override and include dedicated Consul topology choice.
+- Make Fly build context explicit:
+  - if deploying from the Fly bundle directory, use `dockerfile = "Dockerfile"` in `fly.toml`
+  - if deploying from repo root, use a repo-root-relative Dockerfile path
+  - Dockerfile `COPY` lines must be relative to the chosen build context
+- Make architecture selection explicit:
+  - include `TARGETARCH` behavior in Fly build args
+  - when only x86 MAPS images are available, force `TARGETARCH=amd64` even when the operator runs on Apple Silicon/arm64
 
 ### AWS
 - Generate container deployment profile (task/service style) including volume/storage class and auth/config parameters.
@@ -139,5 +146,8 @@ rg -n "directory:|storageConfig:|type: File|type: Memory|autoPauseTimeout" Desti
 - Authentication profile declared but not wired in deployment env/config.
 - File vs Consul mode mismatch between deployment commands and runtime flags/env.
 - Fly KV mode selected but deployment still depends on unavailable Consul endpoint.
+- Fly Dockerfile path resolved relative to wrong working directory (for example duplicated subpath segments).
+- Fly Docker build context mismatch causes `COPY` source file not found at build time.
+- Fly build auto-selects unsupported architecture image tag when only x86 artifacts are available.
 - Consul mode selected without explicit topology (HCP vs self-managed) and connection details.
 - Object storage selected without provider endpoint and credential mapping details.

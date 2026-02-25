@@ -45,10 +45,15 @@ Always return in this order.
 
 9. `Deployable Entity`
 - Full files, patch blocks, command scripts, or ConfigMap YAML blocks.
+- For Fly.io targets, include:
+  - the intended `fly deploy` working directory
+  - Dockerfile path as resolved from that working directory
+  - explicit architecture selection behavior (`TARGETARCH` and/or deploy flags)
 
 10. `Apply Steps`
 - Exact commands to apply/deploy artifacts.
 - For air-gapped bundles, include offline image/artifact load steps.
+- For Fly.io targets, commands must be coherent with the declared working directory and Dockerfile path.
 
 11. `Startup Diagnostics`
 - Commands to confirm process/container startup and config load.
@@ -83,6 +88,8 @@ Always return in this order.
 - Never omit storage and volume mapping.
 - Never omit file-vs-Consul config source declaration.
 - Never omit backend choice declaration (Fly KV vs dedicated Consul vs none).
+- Never omit Fly working directory plus Dockerfile path resolution details when Fly.io is selected.
+- Never omit explicit Fly architecture selection behavior when image availability is architecture-constrained.
 - Never omit Consul topology details when Consul mode is selected.
 - Never omit object storage provider/endpoint/credential mapping when object storage is selected.
 - Never omit scenario-specific metrics and at least one testable dashboard output.
