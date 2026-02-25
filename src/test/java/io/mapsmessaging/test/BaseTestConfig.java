@@ -52,6 +52,7 @@ import io.mapsmessaging.network.protocol.Protocol;
 import io.mapsmessaging.security.access.Group;
 import io.mapsmessaging.security.access.Identity;
 import io.mapsmessaging.security.authorisation.ProtectedResource;
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Timeout;
@@ -67,6 +68,13 @@ public class BaseTestConfig extends BaseTest {
 
   @BeforeAll
   static void setUp() {
+  }
+
+  @AfterAll
+  static void tearDown() {
+    if(md != null){
+      md.stop(99);
+    }
   }
 
   protected static MessageDaemon md = null;

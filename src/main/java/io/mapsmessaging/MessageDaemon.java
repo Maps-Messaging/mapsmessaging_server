@@ -305,7 +305,9 @@ public class MessageDaemon {
     subSystemManager.stop();
     if (mBean != null) mBean.close();
     fileLockManager.close();
-    System.exit(exitCode);
+    if(exitCode != 99) {
+      System.exit(exitCode);
+    }
   }
 
   public boolean isStarted() {
