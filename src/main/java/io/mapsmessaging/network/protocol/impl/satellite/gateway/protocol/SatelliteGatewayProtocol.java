@@ -474,7 +474,7 @@ public class SatelliteGatewayProtocol extends Protocol {
           });
 
     } catch (IOException e) {
-
+      logger.log(OGWS_FAILED_TO_SAVE_MESSAGE, e);
     }
   }
 

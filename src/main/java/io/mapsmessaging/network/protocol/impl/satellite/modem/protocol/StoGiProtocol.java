@@ -803,10 +803,8 @@ public class StoGiProtocol extends Protocol implements Consumer<Packet> {
             return null;
           });
     } catch (TransactionException e) {
-      throw new RuntimeException(e);
+      logger.log(STOGI_STORE_EVENT_EXCEPTION, e);
     }
-
-
   }
 
   private void storeToDestination(String topicName, byte[] data) {
