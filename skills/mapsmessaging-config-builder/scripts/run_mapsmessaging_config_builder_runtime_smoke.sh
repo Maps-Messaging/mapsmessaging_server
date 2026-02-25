@@ -3,7 +3,7 @@ set -euo pipefail
 
 ROOT="/Users/krital/dev/starsense/mapsmessaging_server"
 HARNESS="/Users/krital/dev/starsense/mapsmessaging_server/skills/maps-artifact-execution-smoke-harness/scripts/run_artifact_smoke.sh"
-IMAGE="${IMAGE:-mapsmessaging/server_daemon:latest}"
+IMAGE="${IMAGE:-}"
 PLATFORM="${PLATFORM:-}"
 MQTT_PORT="${MQTT_PORT:-1883}"
 HTTP_PORT="${HTTP_PORT:-8080}"
@@ -55,7 +55,6 @@ if [[ "${REQUIRE_MQTT_RUNTIME}" == "1" ]]; then
 fi
 
 CMD=(bash "${HARNESS}"
-  --image "${IMAGE}"
   --container-name "${CONTAINER_NAME}"
   --artifact-dir "${TMP_DIR}"
   --mqtt-port "${MQTT_PORT}"

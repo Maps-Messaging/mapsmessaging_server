@@ -30,6 +30,7 @@ Convert aggregation requirements into deployable `AggregatorManager.yaml` entiti
 - Prefer bundled scripts for repeatable validation:
   - `/Users/krital/dev/starsense/mapsmessaging_server/skills/maps-aggregator-config-engineer/scripts/run_maps_aggregator_config_engineer_skill_smoke.sh`
   - `/Users/krital/dev/starsense/mapsmessaging_server/skills/maps-aggregator-config-engineer/scripts/run_maps_aggregator_config_engineer_runtime_smoke.sh`
+  - `/Users/krital/dev/starsense/mapsmessaging_server/skills/maps-aggregator-config-engineer/scripts/run_maps_aggregator_scenario_e2e.sh`
 - Run checks:
 ```bash
 rg -n "aggregatorConfigList|windowDurationMs|timeoutMs|maxEventsPerTopic|contributionMode|outputTopic" /Users/krital/dev/starsense/mapsmessaging_server/AggregatorManager.yaml

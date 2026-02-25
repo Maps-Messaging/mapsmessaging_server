@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-IMAGE="mapsmessaging/server_daemon:latest"
+IMAGE="${IMAGE:-}"
 CONTAINER_NAME="maps-artifact-smoke"
 ARTIFACT_DIR=""
 HOST_MQTT_PORT="1883"
@@ -14,13 +14,40 @@ TARGET_PLATFORM=""
 MQTT_USERNAME=""
 MQTT_PASSWORD=""
 REQUIRED_LISTENERS=""
+IMAGE_CHANNEL="${IMAGE_CHANNEL:-auto}"
+IMAGE_VERSION="${IMAGE_VERSION:-4.3.1-snapshot}"
+ARCH="${ARCH:-auto}"
+
+detect_arch() {
+  local machine
+  machine="$(uname -m || true)"
+  case "${machine}" in
+    arm64|aarch64) echo "arm64" ;;
+    x86_64|amd64) echo "amd64" ;;
+    *) echo "amd64" ;;
+  esac
+}
+
+resolve_image() {
+  local selected_arch="$1"
+  local selected_channel="$2"
+  if [[ "${selected_channel}" == "snapshot" ]]; then
+    if [[ "${selected_arch}" == "arm64" ]]; then
+      echo "mapsmessaging/server_daemon_arm_${IMAGE_VERSION}:latest"
+    else
+      echo "mapsmessaging/server_daemon_${IMAGE_VERSION}:latest"
+    fi
+    return
+  fi
+  echo "mapsmessaging/server_daemon:latest"
+}
 
 usage() {
   cat <<USAGE
 Usage: $(basename "$0") [options]
 
 Options:
-  --image <image>              Docker image (default: ${IMAGE})
+  --image <image>              Docker image (default: auto-selected by arch/channel unless set)
   --container-name <name>      Container name (default: ${CONTAINER_NAME})
   --artifact-dir <dir>         Directory containing MAPS manager YAML artifacts to mount
   --mqtt-port <port>           Host MQTT port (default: ${HOST_MQTT_PORT})
@@ -73,6 +100,24 @@ while [[ $# -gt 0 ]]; do
       exit 2 ;;
   esac
 done
+
+if [[ "${ARCH}" == "auto" ]]; then
+  ARCH="$(detect_arch)"
+fi
+if [[ -z "${IMAGE}" ]]; then
+  EFFECTIVE_CHANNEL="${IMAGE_CHANNEL}"
+  if [[ "${EFFECTIVE_CHANNEL}" == "auto" ]]; then
+    if [[ "${ARCH}" == "arm64" ]]; then
+      EFFECTIVE_CHANNEL="snapshot"
+    else
+      EFFECTIVE_CHANNEL="release"
+    fi
+  fi
+  IMAGE="$(resolve_image "${ARCH}" "${EFFECTIVE_CHANNEL}")"
+fi
+if [[ -z "${TARGET_PLATFORM}" ]]; then
+  TARGET_PLATFORM="linux/${ARCH}"
+fi
 
 require_cmd() {
   if ! command -v "$1" >/dev/null 2>&1; then
@@ -172,10 +217,15 @@ if [[ "$(docker inspect -f '{{.State.Running}}' "${CONTAINER_NAME}")" != "true" 
 fi
 
 echo "Checking startup logs for hard blockers"
-if docker logs "${CONTAINER_NAME}" 2>&1 | rg -n "Address already in use|BindException|Failed to bind|Protocol not available|Cannot assign requested address" >/tmp/${CONTAINER_NAME}-errors.log; then
+if docker logs "${CONTAINER_NAME}" 2>&1 | rg -n "Address already in use|BindException|Failed to bind|Cannot assign requested address" >/tmp/${CONTAINER_NAME}-errors.log; then
   echo "Startup blockers detected:" >&2
   sed -n '1,120p' /tmp/${CONTAINER_NAME}-errors.log >&2
   exit 1
+fi
+
+if docker logs "${CONTAINER_NAME}" 2>&1 | rg -n "Protocol not available" >/tmp/${CONTAINER_NAME}-protocol.warn; then
+  echo "Non-blocking warning: optional protocols unavailable in selected image."
+  sed -n '1,80p' /tmp/${CONTAINER_NAME}-protocol.warn
 fi
 
 if docker logs "${CONTAINER_NAME}" 2>&1 | rg -n "ConsulManagerFactory|Consol Server is not responding" >/tmp/${CONTAINER_NAME}-consul.warn; then
