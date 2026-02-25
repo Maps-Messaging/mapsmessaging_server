@@ -61,6 +61,9 @@ Output expectations:
 - Include machine/JVM sizing defaults for Fly profiles:
   - specify `[vm]` memory in `fly.toml`
   - bound JVM memory through `JAVA_OPTS` or equivalent env to match selected machine size
+- Include logging profile compatibility for Fly:
+  - if runtime logs are expected via Fly logs, ensure selected logback/logging config writes to stdout/stderr
+  - declare any logging config override file copied into the image
 
 ### AWS
 - Generate container deployment profile (task/service style) including volume/storage class and auth/config parameters.
@@ -157,5 +160,6 @@ rg -n "directory:|storageConfig:|type: File|type: Memory|autoPauseTimeout" Desti
 - Fly build auto-selects unsupported architecture image tag when only x86 artifacts are available.
 - Fly volume write failures because `MAPS_DATA` remains root-owned while daemon runs as non-root.
 - Fly machine memory and JVM heap defaults are mismatched, causing startup OOM/restart loops.
+- Fly logging configuration remains file-only/non-console, reducing observability through `fly logs`.
 - Consul mode selected without explicit topology (HCP vs self-managed) and connection details.
 - Object storage selected without provider endpoint and credential mapping details.

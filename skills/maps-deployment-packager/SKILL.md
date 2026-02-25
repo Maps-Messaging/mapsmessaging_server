@@ -41,6 +41,7 @@ Convert MAPS manager YAML and runtime settings into deployable packaging outputs
     - include explicit image architecture selection when required by available artifacts (for example force `amd64` when only x86 MAPS base images are available)
     - when MAPS container runs as non-root and Fly volume mounts as root-owned, include startup ownership fix before process drop (for example `chown` of `MAPS_DATA` path)
     - include runtime sizing defaults for constrained Fly machines (`[vm]` memory and JVM heap/metaspace flags)
+    - include Fly-compatible logging profile mapping (for example logback override to stdout/stderr) and state the selected logging file path
   - AWS deployment bundle (container/task/service profile)
   - Google Cloud deployment bundle (container/service profile)
   - Microsoft Azure deployment bundle (container/app service profile)

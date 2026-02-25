@@ -59,6 +59,7 @@ Always return in this order.
 11. `Startup Diagnostics`
 - Commands to confirm process/container startup and config load.
 - For Fly.io, include one command that verifies write access in `MAPS_DATA` with the effective runtime user.
+- For Fly.io, include one command that confirms runtime logs are visible through `fly logs` (or equivalent) with selected logging config.
 
 12. `Listener Verification`
 - Commands proving expected protocol listeners are bound.
@@ -94,6 +95,7 @@ Always return in this order.
 - Never omit explicit Fly architecture selection behavior when image availability is architecture-constrained.
 - Never omit Fly volume ownership/write-access strategy when persistent storage and non-root runtime are both used.
 - Never omit Fly memory/JVM sizing assumptions when Fly profile includes constrained machine sizes.
+- Never omit Fly logging profile mapping when Fly deployment relies on platform log collection.
 - Never omit Consul topology details when Consul mode is selected.
 - Never omit object storage provider/endpoint/credential mapping when object storage is selected.
 - Never omit scenario-specific metrics and at least one testable dashboard output.
