@@ -39,6 +39,8 @@ Convert MAPS manager YAML and runtime settings into deployable packaging outputs
     - Dockerfile path must be relative to the selected working directory for `fly deploy`
     - Dockerfile `COPY` sources must be relative to Docker build context (avoid repo-root-prefixed paths when deploying from a subdirectory)
     - include explicit image architecture selection when required by available artifacts (for example force `amd64` when only x86 MAPS base images are available)
+    - when MAPS container runs as non-root and Fly volume mounts as root-owned, include startup ownership fix before process drop (for example `chown` of `MAPS_DATA` path)
+    - include runtime sizing defaults for constrained Fly machines (`[vm]` memory and JVM heap/metaspace flags)
   - AWS deployment bundle (container/task/service profile)
   - Google Cloud deployment bundle (container/service profile)
   - Microsoft Azure deployment bundle (container/app service profile)
@@ -67,6 +69,8 @@ Convert MAPS manager YAML and runtime settings into deployable packaging outputs
   - when object storage is selected, provider, endpoint, bucket, and credentials mapping are explicit
   - when Fly.io is selected, validate Dockerfile resolution and build-context-relative `COPY` statements
   - when Fly.io is selected and image architecture availability is constrained, validate explicit architecture selection in build args or deploy command
+  - when Fly.io persistent volume is selected, validate runtime write access to `MAPS_DATA` for effective service user
+  - when Fly.io machine size is small, validate JVM options are bounded to avoid OOM/restart loops
 
 5. Return using output contract.
 - Follow `skills/maps-deployment-packager/references/output-contract.md`.

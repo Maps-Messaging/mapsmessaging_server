@@ -55,6 +55,12 @@ Output expectations:
 - Make architecture selection explicit:
   - include `TARGETARCH` behavior in Fly build args
   - when only x86 MAPS images are available, force `TARGETARCH=amd64` even when the operator runs on Apple Silicon/arm64
+- Handle Fly mounted volume ownership explicitly:
+  - Fly volumes commonly mount root-owned paths; if MAPS starts as non-root user, include startup ownership remediation for `MAPS_DATA` (for example pre-start `chown`)
+  - include an access check in diagnostics to confirm MAPS can write under `MAPS_DATA`
+- Include machine/JVM sizing defaults for Fly profiles:
+  - specify `[vm]` memory in `fly.toml`
+  - bound JVM memory through `JAVA_OPTS` or equivalent env to match selected machine size
 
 ### AWS
 - Generate container deployment profile (task/service style) including volume/storage class and auth/config parameters.
@@ -149,5 +155,7 @@ rg -n "directory:|storageConfig:|type: File|type: Memory|autoPauseTimeout" Desti
 - Fly Dockerfile path resolved relative to wrong working directory (for example duplicated subpath segments).
 - Fly Docker build context mismatch causes `COPY` source file not found at build time.
 - Fly build auto-selects unsupported architecture image tag when only x86 artifacts are available.
+- Fly volume write failures because `MAPS_DATA` remains root-owned while daemon runs as non-root.
+- Fly machine memory and JVM heap defaults are mismatched, causing startup OOM/restart loops.
 - Consul mode selected without explicit topology (HCP vs self-managed) and connection details.
 - Object storage selected without provider endpoint and credential mapping details.

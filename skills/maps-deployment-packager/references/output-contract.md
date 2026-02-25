@@ -14,6 +14,7 @@ Always return in this order.
 3. `Storage and Volume Profile`
 - Selected storage mode (ephemeral/persistent) and destination/storage type expectations.
 - Include exact volume/mount mappings per target.
+- For Fly.io with persistent volumes and non-root runtime, include ownership/access strategy for `MAPS_DATA`.
 
 4. `Configuration Source Mode`
 - File-based or Consul-based configuration mode.
@@ -57,6 +58,7 @@ Always return in this order.
 
 11. `Startup Diagnostics`
 - Commands to confirm process/container startup and config load.
+- For Fly.io, include one command that verifies write access in `MAPS_DATA` with the effective runtime user.
 
 12. `Listener Verification`
 - Commands proving expected protocol listeners are bound.
@@ -90,6 +92,8 @@ Always return in this order.
 - Never omit backend choice declaration (Fly KV vs dedicated Consul vs none).
 - Never omit Fly working directory plus Dockerfile path resolution details when Fly.io is selected.
 - Never omit explicit Fly architecture selection behavior when image availability is architecture-constrained.
+- Never omit Fly volume ownership/write-access strategy when persistent storage and non-root runtime are both used.
+- Never omit Fly memory/JVM sizing assumptions when Fly profile includes constrained machine sizes.
 - Never omit Consul topology details when Consul mode is selected.
 - Never omit object storage provider/endpoint/credential mapping when object storage is selected.
 - Never omit scenario-specific metrics and at least one testable dashboard output.
