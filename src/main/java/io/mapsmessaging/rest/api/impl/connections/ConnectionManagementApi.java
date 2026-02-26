@@ -78,6 +78,8 @@ public class ConnectionManagementApi extends BaseDestinationApi {
               content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))),
           @ApiResponse(responseCode = "403", description = "User is not authorised to access the resource",
               content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))),
+          @ApiResponse(responseCode = "500", description = "Internal server error",
+              content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))),
       }
   )
   public EndPointSummaryDTO[] getAllConnections(
@@ -109,23 +111,25 @@ public class ConnectionManagementApi extends BaseDestinationApi {
       }
     }
 
-    List<EndPointManager> endPointManagers = MessageDaemon.getInstance().getSubSystemManager().getNetworkManager().getAll();
-
     List<EndPointSummaryDTO> total = new ArrayList<>(SessionTracker.getConnections());
-    ParserExecutor finalParserExecutor = parserExecutor;
-
-    List<EndPointSummaryDTO> endPointDetails =
-        endPointManagers.stream()
-            .flatMap(endPointManager -> endPointManager.getEndPointServer().getActiveEndPoints().stream()
-                .map(endPoint -> EndPointHelper.buildSummaryDTO(endPointManager.getName(), endPoint))
-            )
-            .filter(endPointDetail -> finalParserExecutor == null || finalParserExecutor.evaluate(endPointDetail))
-            .toList();
-
+    List<EndPointSummaryDTO> endPointDetails = generateList(parserExecutor, MessageDaemon.getInstance().getSubSystemManager().getNetworkManager().getAll());
     total.addAll(endPointDetails);
     EndPointSummaryDTO[] array = total.toArray(new EndPointSummaryDTO[0]);
     putToCache(key, array);
     return array;
+  }
+
+  private List<EndPointSummaryDTO> generateList(ParserExecutor finalParserExecutor, List<EndPointManager> endPointManagers){
+    List<EndPointSummaryDTO> endPointDetails = new ArrayList<>();
+    for(EndPointManager endPointManager : endPointManagers){
+      for(EndPoint endPoint : endPointManager.getEndPointServer().getActiveEndPoints()) {
+        EndPointSummaryDTO summaryDTO = EndPointHelper.buildSummaryDTO(endPointManager.getName(), endPoint);
+        if(finalParserExecutor == null || finalParserExecutor.evaluate(summaryDTO)) {
+          endPointDetails.add(summaryDTO);
+        }
+      }
+    }
+    return endPointDetails;
   }
 
   @GET

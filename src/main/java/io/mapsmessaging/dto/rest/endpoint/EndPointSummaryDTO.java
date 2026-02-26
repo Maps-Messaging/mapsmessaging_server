@@ -94,7 +94,7 @@ public class EndPointSummaryDTO {
       nullable = true,
       requiredMode = Schema.RequiredMode.NOT_REQUIRED,
       example = "203.0.113.10:3128",
-      minLength = 1,
+      minLength = 0,
       maxLength = 255
   )
   private String proxyAddress;

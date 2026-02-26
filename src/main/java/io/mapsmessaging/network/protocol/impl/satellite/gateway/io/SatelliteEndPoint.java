@@ -39,6 +39,11 @@ public class SatelliteEndPoint extends EndPoint {
   @Getter
   private RemoteDeviceInfo terminalInfo;
 
+  @Override
+  public String getName(){
+    return terminalInfo.getUniqueId();
+  }
+
   protected SatelliteEndPoint(long id, EndPointServerStatus server, RemoteDeviceInfo terminal) {
     super(id, server);
     this.terminalInfo = terminal;
