@@ -24,7 +24,6 @@ import io.mapsmessaging.network.protocol.impl.semtech.GatewayManager;
 import io.mapsmessaging.network.protocol.impl.semtech.SemTechProtocol;
 import io.mapsmessaging.network.protocol.impl.semtech.packet.PullAck;
 import io.mapsmessaging.network.protocol.impl.semtech.packet.PullData;
-import io.mapsmessaging.network.protocol.impl.semtech.packet.PushAck;
 import io.mapsmessaging.network.protocol.impl.semtech.packet.SemTechPacket;
 import io.mapsmessaging.network.protocol.impl.semtech.status.SemtechStatusEvent;
 import io.mapsmessaging.network.protocol.impl.semtech.status.SemtechStatusEventFactory;
@@ -42,7 +41,7 @@ public class PullDataHandler extends Handler {
     GatewayInfo info = protocol.getGatewayManager().getInfo(GatewayManager.dumpIdentifier(pullData.getGatewayIdentifier()));
     if(info == null){
       try {
-        info = protocol.getGatewayManager().getInfo(pullData.getGatewayIdentifier());
+        info = protocol.getGatewayManager().getInfo(pullData.getGatewayIdentifier(), packet);
       } catch (IOException e) {
         // log this
         return;
@@ -50,12 +49,6 @@ public class PullDataHandler extends Handler {
     }
     protocol.sendPacket(new PullAck(pullData.getToken(), packet.getFromAddress()));
     sendMessage(protocol, info, packet.getFromAddress());
-    SemtechStatusEvent event = SemtechStatusEventFactory.getInstance().createGatewayEvent(info.getName(), SemtechStatusState.GATEWAY_POLL);
-    try {
-      info.getStatus().storeMessage(SemtechStatusEventFactory.getInstance().toMessage(event));
-    } catch (IOException e) {
-      // log this
-    }
   }
 
 }

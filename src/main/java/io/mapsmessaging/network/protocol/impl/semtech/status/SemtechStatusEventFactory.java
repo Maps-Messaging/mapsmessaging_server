@@ -61,12 +61,6 @@ public class SemtechStatusEventFactory {
     return createBaseEvent(gatewayId, SemtechStatusType.GATEWAY, state);
   }
 
-  public SemtechStatusEvent createGatewayEvent(String gatewayId, SemtechStatusState state, SocketAddress remoteAddress) {
-    SemtechStatusEvent event = createGatewayEvent(gatewayId, state);
-    event.setRemoteAddress(toRemoteAddressString(remoteAddress));
-    return event;
-  }
-
   public SemtechStatusEvent createDownlinkEvent(String gatewayId, SemtechStatusState state) {
     validateDownlinkState(state);
     return createBaseEvent(gatewayId, SemtechStatusType.DOWNLINK, state);
@@ -111,7 +105,7 @@ public class SemtechStatusEventFactory {
     Objects.requireNonNull(state, "state must not be null");
     switch (state) {
       case GATEWAY_REGISTERED:
-      case GATEWAY_POLL:
+      case GATEWAY_PULL:
       case GATEWAY_EXPIRED:
       case GATEWAY_ADDRESS_CHANGED:
         return;

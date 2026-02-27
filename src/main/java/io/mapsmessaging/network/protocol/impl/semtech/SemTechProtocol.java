@@ -23,6 +23,7 @@ import io.mapsmessaging.api.MessageEvent;
 import io.mapsmessaging.api.Session;
 import io.mapsmessaging.api.SessionManager;
 import io.mapsmessaging.dto.rest.config.protocol.impl.SemtechConfigDTO;
+import io.mapsmessaging.dto.rest.config.protocol.impl.SemtechTransmitDefaultsDTO;
 import io.mapsmessaging.dto.rest.protocol.ProtocolInformationDTO;
 import io.mapsmessaging.dto.rest.protocol.impl.SemtechProtocolInformation;
 import io.mapsmessaging.engine.session.SessionContext;
@@ -57,8 +58,6 @@ public class SemTechProtocol extends Protocol {
   private final SelectorTask selectorTask;
   private final PacketFactory packetFactory;
   private final Session session;
-  private final boolean isClient;
-  private final byte[] gatewayId;
 
   @Getter
   private final GatewayManager gatewayManager;
@@ -92,20 +91,13 @@ public class SemTechProtocol extends Protocol {
       String outboundTopicName = semtechConfig.getOutboundTopicName();
       String statusTopicName = semtechConfig.getStatusTopicName();
       String telemetryTopicName = semtechConfig.getTelemetryTopicName();
-      gatewayManager = new GatewayManager(session, inboundTopicName, statusTopicName, outboundTopicName, telemetryTopicName, maxQueued);
+      gatewayManager = new GatewayManager(session, inboundTopicName, statusTopicName, outboundTopicName, telemetryTopicName, maxQueued, semtechConfig.getTransmitDefaults());
     } catch (InterruptedException | ExecutionException e) {
       if (Thread.currentThread().isInterrupted()) {
         endPoint.close();
         Thread.currentThread().interrupt();
       }
       throw new IOException(e.getMessage());
-    }
-    isClient = (sessionId == null);
-    if(isClient){
-      gatewayId = null;
-    }
-    else{
-      gatewayId = sessionId.getBytes();
     }
   }
 
@@ -135,12 +127,6 @@ public class SemTechProtocol extends Protocol {
     String alias = messageEvent.getSubscription().getContext().getAlias();
     GatewayInfo info = gatewayManager.getInfo(alias);
     info.getWaitingMessages().offer(messageEvent);
-    SemtechStatusEvent event = SemtechStatusEventFactory.getInstance().createGatewayEvent(info.getName(), SemtechStatusState.DOWNLINK_QUEUED);
-    try {
-      info.getStatus().storeMessage(SemtechStatusEventFactory.getInstance().toMessage(event));
-    } catch (IOException e) {
-      // log this
-    }
   }
 
   @Override

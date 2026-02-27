@@ -23,7 +23,6 @@ import io.mapsmessaging.dto.rest.config.protocol.ProtocolConfigDTO;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
-import lombok.NoArgsConstructor;
 
 @Data
 @EqualsAndHashCode(callSuper = true)
@@ -34,7 +33,7 @@ public class SemtechConfigDTO extends ProtocolConfigDTO {
     super("semtech");
   }
 
-  @Schema(description = "Maximum queue size for Semtech", example = "10")
+  @Schema(description = "Maximum queue size for Semtech outbound messages per gateway", example = "10")
   protected int maxQueued = 10;
 
   @Schema(description = "Inbound topic name for Semtech messages", example = "/semtech/inbound/{gatewayId}")
@@ -43,9 +42,12 @@ public class SemtechConfigDTO extends ProtocolConfigDTO {
   @Schema(description = "Outbound topic name for Semtech messages", example = "/semtech/outbound/{gatewayId}")
   protected String outboundTopicName = "/semtech/outbound/{gatewayId}";
 
-  @Schema(description = "Telemetry data from the gateway", example = "/semtech/telemetry/{gatewayId}")
+  @Schema(description = "Telemetry data from the gateway (Semtech stat packet)", example = "/semtech/telemetry/{gatewayId}")
   protected String telemetryTopicName = "/semtech/telemetry/{gatewayId}";
 
-  @Schema(description = "Link status for the gateway", example = "/semtech/status/{gatewayId}")
+  @Schema(description = "Link status for the gateway (Maps internal state changes only)", example = "/semtech/status/{gatewayId}")
   protected String statusTopicName = "/semtech/status/{gatewayId}";
+
+  @Schema(description = "Default transmit (txpk) parameters used when outbound payload is not already Semtech JSON")
+  protected SemtechTransmitDefaultsDTO transmitDefaults = new SemtechTransmitDefaultsDTO();
 }

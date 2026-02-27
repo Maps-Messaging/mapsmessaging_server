@@ -23,7 +23,8 @@ public enum SemtechStatusState {
 
   // Gateway lifecycle
   GATEWAY_REGISTERED,
-  GATEWAY_POLL,
+  GATEWAY_PULL,
+  GATEWAY_PUSH,
   GATEWAY_EXPIRED,
   GATEWAY_ADDRESS_CHANGED,
 
