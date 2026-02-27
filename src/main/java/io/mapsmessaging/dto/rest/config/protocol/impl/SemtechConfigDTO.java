@@ -37,12 +37,15 @@ public class SemtechConfigDTO extends ProtocolConfigDTO {
   @Schema(description = "Maximum queue size for Semtech", example = "10")
   protected int maxQueued = 10;
 
-  @Schema(description = "Inbound topic name for Semtech messages", example = "/semtech/inbound")
-  protected String inboundTopicName = "/semtech/inbound";
+  @Schema(description = "Inbound topic name for Semtech messages", example = "/semtech/inbound/{gatewayId}")
+  protected String inboundTopicName = "/semtech/inbound/{gatewayId}";
 
-  @Schema(description = "Outbound topic name for Semtech messages", example = "/semtech/outbound")
-  protected String outboundTopicName = "/semtech/outbound";
+  @Schema(description = "Outbound topic name for Semtech messages", example = "/semtech/outbound/{gatewayId}")
+  protected String outboundTopicName = "/semtech/outbound/{gatewayId}";
 
-  @Schema(description = "Status topic name for Semtech", example = "/semtech/status")
-  protected String statusTopicName = "/semtech/status";
+  @Schema(description = "Telemetry data from the gateway", example = "/semtech/telemetry/{gatewayId}")
+  protected String telemetryTopicName = "/semtech/telemetry/{gatewayId}";
+
+  @Schema(description = "Link status for the gateway", example = "/semtech/status/{gatewayId}")
+  protected String statusTopicName = "/semtech/status/{gatewayId}";
 }

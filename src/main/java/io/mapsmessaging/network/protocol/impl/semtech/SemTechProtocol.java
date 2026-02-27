@@ -37,6 +37,9 @@ import io.mapsmessaging.network.protocol.Protocol;
 import io.mapsmessaging.network.protocol.impl.semtech.handlers.PacketHandler;
 import io.mapsmessaging.network.protocol.impl.semtech.packet.PacketFactory;
 import io.mapsmessaging.network.protocol.impl.semtech.packet.SemTechPacket;
+import io.mapsmessaging.network.protocol.impl.semtech.status.SemtechStatusEvent;
+import io.mapsmessaging.network.protocol.impl.semtech.status.SemtechStatusEventFactory;
+import io.mapsmessaging.network.protocol.impl.semtech.status.SemtechStatusState;
 import io.mapsmessaging.network.protocol.transformation.TransformationManager;
 import lombok.Getter;
 import lombok.NonNull;
@@ -88,7 +91,8 @@ public class SemTechProtocol extends Protocol {
       String inboundTopicName = semtechConfig.getInboundTopicName();
       String outboundTopicName = semtechConfig.getOutboundTopicName();
       String statusTopicName = semtechConfig.getStatusTopicName();
-      gatewayManager = new GatewayManager(session, inboundTopicName, statusTopicName, outboundTopicName, maxQueued);
+      String telemetryTopicName = semtechConfig.getTelemetryTopicName();
+      gatewayManager = new GatewayManager(session, inboundTopicName, statusTopicName, outboundTopicName, telemetryTopicName, maxQueued);
     } catch (InterruptedException | ExecutionException e) {
       if (Thread.currentThread().isInterrupted()) {
         endPoint.close();
@@ -131,6 +135,12 @@ public class SemTechProtocol extends Protocol {
     String alias = messageEvent.getSubscription().getContext().getAlias();
     GatewayInfo info = gatewayManager.getInfo(alias);
     info.getWaitingMessages().offer(messageEvent);
+    SemtechStatusEvent event = SemtechStatusEventFactory.getInstance().createGatewayEvent(info.getName(), SemtechStatusState.DOWNLINK_QUEUED);
+    try {
+      info.getStatus().storeMessage(SemtechStatusEventFactory.getInstance().toMessage(event));
+    } catch (IOException e) {
+      // log this
+    }
   }
 
   @Override

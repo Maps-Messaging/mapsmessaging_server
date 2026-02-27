@@ -30,6 +30,9 @@ import io.mapsmessaging.network.protocol.impl.semtech.SemTechProtocol;
 import io.mapsmessaging.network.protocol.impl.semtech.packet.PushAck;
 import io.mapsmessaging.network.protocol.impl.semtech.packet.PushData;
 import io.mapsmessaging.network.protocol.impl.semtech.packet.SemTechPacket;
+import io.mapsmessaging.network.protocol.impl.semtech.status.SemtechStatusEvent;
+import io.mapsmessaging.network.protocol.impl.semtech.status.SemtechStatusEventFactory;
+import io.mapsmessaging.network.protocol.impl.semtech.status.SemtechStatusState;
 import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
 
@@ -65,13 +68,19 @@ public class PushDataHandler extends Handler {
           GatewayInfo info = protocol.getGatewayManager().getInfo(pushData.getGatewayIdentifier());
           if (info != null) {
             if (status) {
-              info.getStatus().storeMessage(message);
+              info.getTelemetry().storeMessage(message);
             } else {
               info.getInbound().storeMessage(message);
             }
+            SemtechStatusEvent event = SemtechStatusEventFactory.getInstance().createGatewayEvent(info.getName(), SemtechStatusState.DOWNLINK_RECEIVED);
+            try {
+              info.getStatus().storeMessage(SemtechStatusEventFactory.getInstance().toMessage(event));
+            } catch (IOException e) {
+              // log this
+            }
           }
         } catch (JsonParseException | IOException e) {
-
+          // log this
         }
       }
     }

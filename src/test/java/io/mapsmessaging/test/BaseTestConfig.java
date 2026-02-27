@@ -62,6 +62,7 @@ import javax.security.auth.login.LoginException;
 @Timeout(value = 240000, unit = TimeUnit.MILLISECONDS)
 public class BaseTestConfig extends BaseTest {
 
+  private static final String[] EXCLUDE_LIST = {"/aggregator", "/vcan0", "/mavlink","/semtech"};
   private static final String[] USERNAMES = {"user1", "admin", "user2", "anonymous"};
   private static final char[][] PASSWORDS = {"password1".toCharArray(), "admin1".toCharArray(), "password2".toCharArray(), "".toCharArray()};
   private static final String[] GROUPS = {"everyone"};
@@ -220,10 +221,13 @@ public class BaseTestConfig extends BaseTest {
     Map<String, DestinationImpl> destinations = md.getDestinationManager().get(null);
     List<DestinationImpl> toDelete = new ArrayList<>();
     for(DestinationImpl destination:destinations.values()){
-      if(!destination.getFullyQualifiedNamespace().startsWith("$") &&
-          !(destination.getFullyQualifiedNamespace().startsWith("/aggregator")) &&
-          !(destination.getFullyQualifiedNamespace().startsWith("/vcan0")) &&
-          !(destination.getFullyQualifiedNamespace().startsWith("/mavlink")) ) {
+      boolean allow = true;
+      for(String exclude:EXCLUDE_LIST){
+        if(destination.getFullyQualifiedNamespace().startsWith(exclude)){
+          allow = false;
+        }
+      }
+      if(allow){
         toDelete.add(destination);
       }
     }

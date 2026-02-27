@@ -307,6 +307,12 @@ NetworkManager:
         maxBlockSize: 512
         idleTimePeriod: 120
 
+      - url: udp://0.0.0.0:1700/
+        name: "SemTech Interface"
+        protocol: semtech
+        maxBlockSize: 1024
+        idleTimePeriod: 120
+
       -
         url: ssl://0.0.0.0:9999/
         name: "bad SSL interface to test"

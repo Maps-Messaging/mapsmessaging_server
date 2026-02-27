@@ -43,20 +43,21 @@ public class PacketFactory {
     int token = packet.getShort();
     int identifier = (packet.get() & 0xff);
     switch (identifier) {
-      case PUSH_DATA:
+      case PUSH_DATA -> {
         return new PushData(token, packet);
-
-      case PULL_DATA:
+      }
+      case PULL_DATA -> {
         return new PullData(token, packet);
-
-      case PULL_ACK:
+      }
+      case PULL_ACK -> {
         return new PullAck(token, packet.getFromAddress());
-
-      case TX_ACK:
+      }
+      case TX_ACK -> {
         return new TxAcknowledge(token, packet);
-
-      default:
+      }
+      default -> {
         return null;
+      }
     }
   }
 

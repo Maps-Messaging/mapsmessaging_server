@@ -35,6 +35,8 @@ public class GatewayInfo {
 
   private final Destination inbound;
   private final Destination status;
+  private final Destination telemetry;
+
   private final SubscribedEventManager outbound;
   private final byte[] rawIdentifier;
   private final String name;
@@ -42,12 +44,13 @@ public class GatewayInfo {
 
   private long lastAccess;
 
-  public GatewayInfo(byte[] raw_identifier, String name, Destination inbound, Destination status, SubscribedEventManager outbound) {
+  public GatewayInfo(byte[] raw_identifier, String name, Destination inbound, Destination telemetry, Destination status,  SubscribedEventManager outbound) {
     this.rawIdentifier = raw_identifier;
     this.name = name;
     this.inbound = inbound;
     this.status = status;
     this.outbound = outbound;
+    this.telemetry = telemetry;
     waitingMessages = new ConcurrentLinkedQueue<>();
     lastAccess = System.currentTimeMillis();
   }

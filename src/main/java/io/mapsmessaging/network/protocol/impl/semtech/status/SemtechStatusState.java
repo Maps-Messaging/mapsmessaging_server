@@ -17,17 +17,22 @@
  *  limitations under the License.
  */
 
-package io.mapsmessaging.network.protocol.impl.semtech.json;
+package io.mapsmessaging.network.protocol.impl.semtech.status;
 
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
-import lombok.ToString;
+public enum SemtechStatusState {
 
-@Data
-@NoArgsConstructor
-@AllArgsConstructor
-public class PushDataJSON {
-  private ReceivePacket[] rxpk;
-  private StatPacket stat;
+  // Gateway lifecycle
+  GATEWAY_REGISTERED,
+  GATEWAY_POLL,
+  GATEWAY_EXPIRED,
+  GATEWAY_ADDRESS_CHANGED,
+
+  // Downlink lifecycle
+  DOWNLINK_RECEIVED,
+  DOWNLINK_QUEUED,
+  DOWNLINK_SENT,
+  DOWNLINK_ACK_OK,
+  DOWNLINK_ACK_ERROR,
+  DOWNLINK_NO_ROUTE,
+  DOWNLINK_DROPPED
 }

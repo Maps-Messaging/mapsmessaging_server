@@ -17,17 +17,9 @@
  *  limitations under the License.
  */
 
-package io.mapsmessaging.network.protocol.impl.semtech.json;
+package io.mapsmessaging.network.protocol.impl.semtech.status;
 
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
-import lombok.ToString;
-
-@Data
-@NoArgsConstructor
-@AllArgsConstructor
-public class PushDataJSON {
-  private ReceivePacket[] rxpk;
-  private StatPacket stat;
+public enum SemtechStatusType {
+  GATEWAY,
+  DOWNLINK
 }

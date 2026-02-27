@@ -34,15 +34,14 @@ public class SemtechConfig extends SemtechConfigDTO implements Config {
     this.maxQueued = config.getIntProperty("MaxQueueSize", maxQueued);
     this.inboundTopicName = config.getProperty("inbound", inboundTopicName);
     this.outboundTopicName = config.getProperty("outbound", outboundTopicName);
-    this.statusTopicName = config.getProperty("status", inboundTopicName);
+    this.statusTopicName = config.getProperty("status", statusTopicName);
+    this.telemetryTopicName = config.getProperty("telemetry", telemetryTopicName);
   }
 
   @Override
   public boolean update(BaseConfigDTO config) {
     boolean hasChanged = false;
-    if (config instanceof SemtechConfigDTO) {
-      SemtechConfigDTO newConfig = (SemtechConfigDTO) config;
-
+    if (config instanceof SemtechConfigDTO newConfig) {
       // Check each field and update if necessary
       if (this.maxQueued != newConfig.getMaxQueued()) {
         this.maxQueued = newConfig.getMaxQueued();

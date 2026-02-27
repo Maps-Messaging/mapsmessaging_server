@@ -100,7 +100,7 @@ public enum ServerLogMessages implements LogMessage {
   END_POINT_MANAGER_PAUSE(LEVEL.DEBUG, SERVER_CATEGORY.ENGINE, "Pause called on {}"),
   END_POINT_MANAGER_RESUME(LEVEL.DEBUG, SERVER_CATEGORY.ENGINE, "Resume called on {}"),
   END_POINT_MANAGER_CLOSE_SERVER(LEVEL.DEBUG, SERVER_CATEGORY.ENGINE, "Closing end point on closed server"),
-  END_POINT_MANAGER_NEW_SELECTOR(LEVEL.INFO, SERVER_CATEGORY.ENGINE, "Created thread safe selector implementation due to the JDK support on interface"),
+  END_POINT_MANAGER_NEW_SELECTOR(LEVEL.DEBUG, SERVER_CATEGORY.ENGINE, "Created thread safe selector implementation due to the JDK support on interface"),
   END_POINT_MANAGER_ACCEPT_EXCEPTION(LEVEL.WARN, SERVER_CATEGORY.ENGINE, "Exception raised during accept handling of the new connection"),
   END_POINT_MANAGER_CLOSE_EXCEPTION(LEVEL.WARN, SERVER_CATEGORY.ENGINE, "Closing end point on accept server raised exception"),
   END_POINT_MANAGER_CLOSE_EXCEPTION_1(LEVEL.WARN, SERVER_CATEGORY.ENGINE, "Closing end point on closed server raised exception"),

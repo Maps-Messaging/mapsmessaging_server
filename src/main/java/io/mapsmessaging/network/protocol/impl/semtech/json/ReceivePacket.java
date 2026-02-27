@@ -37,8 +37,7 @@ public class ReceivePacket {
   private long rfch;
   private long stat;
   private String modu;
-  private String datr_s;
-  private long datr;
+  private String datr;
   private String codr;
   private long rssi;
   private double lsnr;
