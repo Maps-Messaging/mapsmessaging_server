@@ -18,6 +18,7 @@ import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.SocketTimeoutException;
 import java.nio.charset.StandardCharsets;
+import java.util.Base64;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
@@ -56,12 +57,9 @@ class SemtechDownlinkViaUdpTest extends BaseTestConfig {
       pullRespJson.add("txpk", expectedTxpk);
 
       publishDownlinkRequestToMaps(gatewayId, pullRespJson.toString());
-      // 3) Second pull triggers the server to actually send queued downlink
       registerGatewayWithPullData(gatewaySocket, gatewayEui);
 
-      // 4) Now we should receive PULL_RESP
       byte[] pullRespFrame = receiveUdp(gatewaySocket, 4096);
-
 
       SemtechFrame parsed = parseSemtechFrame(pullRespFrame);
       Assertions.assertEquals(PULL_RESP, parsed.identifier, "Expected PULL_RESP (0x03)");
@@ -98,20 +96,115 @@ class SemtechDownlinkViaUdpTest extends BaseTestConfig {
     try (DatagramSocket gatewaySocket = new DatagramSocket()) {
       gatewaySocket.setSoTimeout(1500);
 
-      // Register ONLY the first gateway (learn address + mark known)
       registerGatewayWithPullData(gatewaySocket, registeredGatewayEui);
 
-      // Publish downlink to an unregistered gateway topic
       JsonObject expectedTxpk = buildTxpk();
       JsonObject pullRespJson = new JsonObject();
       pullRespJson.add("txpk", expectedTxpk);
 
       publishDownlinkRequestToMaps(unregisteredGatewayId, pullRespJson.toString());
 
-      // We must NOT receive a PULL_RESP on the registered gateway socket,
-      // because the outbound target gateway is unknown/unregistered.
       Assertions.assertThrows(SocketTimeoutException.class, () -> receiveUdp(gatewaySocket, 4096),
           "Expected no UDP downlink for unregistered gatewayId=" + unregisteredGatewayId);
+    }
+  }
+
+  @Test
+  void testDownlinkOpaqueBytesAreEncodedToTxpkUsingDefaults()
+      throws LoginException, IOException, InterruptedException, ExecutionException, TimeoutException {
+
+    String gatewayId = "0102030405060708";
+    byte[] gatewayEui = hexToBytes(gatewayId);
+
+    byte[] opaquePayload = new byte[] { 0x01, 0x02, 0x03, 0x04 };
+
+    try (DatagramSocket gatewaySocket = new DatagramSocket()) {
+      gatewaySocket.setSoTimeout(3000);
+
+      registerGatewayWithPullData(gatewaySocket, gatewayEui);
+
+      publishDownlinkRequestToMaps(gatewayId, opaquePayload);
+
+      registerGatewayWithPullData(gatewaySocket, gatewayEui);
+
+      byte[] pullRespFrame = receiveUdp(gatewaySocket, 4096);
+      SemtechFrame parsed = parseSemtechFrame(pullRespFrame);
+      Assertions.assertEquals(PULL_RESP, parsed.identifier, "Expected PULL_RESP (0x03)");
+
+      JsonObject actualJson = parseJsonObject(new String(parsed.jsonBytes, StandardCharsets.UTF_8));
+      Assertions.assertTrue(actualJson.has("txpk"), "PULL_RESP JSON must contain txpk. JSON: " + actualJson);
+
+      JsonObject txpk = actualJson.getAsJsonObject("txpk");
+
+      // Verify defaults exist (these must match SemtechConfig tx.* defaults)
+      assertJsonBoolean(txpk, "imme", true);
+      assertJsonDouble(txpk, "freq", 866.349812, 0.000001);
+      assertJsonLong(txpk, "rfch", 0);
+      assertJsonLong(txpk, "powe", 14);
+      assertJsonString(txpk, "modu", "LORA");
+      assertJsonString(txpk, "datr", "SF7BW125");
+      assertJsonString(txpk, "codr", "4/5");
+      assertJsonBoolean(txpk, "ipol", true);
+
+      // Verify base64 + size computed from opaque bytes
+      String expectedBase64 = Base64.getEncoder().encodeToString(opaquePayload);
+      assertJsonString(txpk, "data", expectedBase64);
+      assertJsonLong(txpk, "size", opaquePayload.length);
+
+      // Verify decoding matches original bytes
+      byte[] decoded = Base64.getDecoder().decode(txpk.get("data").getAsString());
+      Assertions.assertArrayEquals(opaquePayload, decoded, "Decoded txpk.data must match original opaque payload");
+    }
+  }
+
+  @Test
+  void testDownlinkNonSemtechJsonIsEncodedToTxpkUsingDefaults()
+      throws LoginException, IOException, InterruptedException, ExecutionException, TimeoutException {
+
+    String gatewayId = "0102030405060708";
+    byte[] gatewayEui = hexToBytes(gatewayId);
+
+    JsonObject nonSemtechJson = new JsonObject();
+    nonSemtechJson.addProperty("hello", "world");
+    nonSemtechJson.addProperty("n", 123);
+
+    byte[] jsonBytes = nonSemtechJson.toString().getBytes(StandardCharsets.UTF_8);
+
+    try (DatagramSocket gatewaySocket = new DatagramSocket()) {
+      gatewaySocket.setSoTimeout(3000);
+
+      registerGatewayWithPullData(gatewaySocket, gatewayEui);
+
+      publishDownlinkRequestToMaps(gatewayId, nonSemtechJson.toString());
+
+      registerGatewayWithPullData(gatewaySocket, gatewayEui);
+
+      byte[] pullRespFrame = receiveUdp(gatewaySocket, 4096);
+      SemtechFrame parsed = parseSemtechFrame(pullRespFrame);
+      Assertions.assertEquals(PULL_RESP, parsed.identifier, "Expected PULL_RESP (0x03)");
+
+      JsonObject actualJson = parseJsonObject(new String(parsed.jsonBytes, StandardCharsets.UTF_8));
+      Assertions.assertTrue(actualJson.has("txpk"), "PULL_RESP JSON must contain txpk. JSON: " + actualJson);
+
+      JsonObject txpk = actualJson.getAsJsonObject("txpk");
+
+      // Defaults
+      assertJsonBoolean(txpk, "imme", true);
+      assertJsonDouble(txpk, "freq", 866.349812, 0.000001);
+      assertJsonLong(txpk, "rfch", 0);
+      assertJsonLong(txpk, "powe", 14);
+      assertJsonString(txpk, "modu", "LORA");
+      assertJsonString(txpk, "datr", "SF7BW125");
+      assertJsonString(txpk, "codr", "4/5");
+      assertJsonBoolean(txpk, "ipol", true);
+
+      // Encoded payload must be the literal JSON bytes (not parsed/rewritten)
+      String expectedBase64 = Base64.getEncoder().encodeToString(jsonBytes);
+      assertJsonString(txpk, "data", expectedBase64);
+      assertJsonLong(txpk, "size", jsonBytes.length);
+
+      byte[] decoded = Base64.getDecoder().decode(txpk.get("data").getAsString());
+      Assertions.assertArrayEquals(jsonBytes, decoded, "Decoded txpk.data must match original JSON bytes");
     }
   }
 
@@ -130,6 +223,12 @@ class SemtechDownlinkViaUdpTest extends BaseTestConfig {
   private void publishDownlinkRequestToMaps(String gatewayId, String jsonPayload)
       throws LoginException, IOException, ExecutionException, InterruptedException, TimeoutException {
 
+    publishDownlinkRequestToMaps(gatewayId, jsonPayload.getBytes(StandardCharsets.UTF_8));
+  }
+
+  private void publishDownlinkRequestToMaps(String gatewayId, byte[] payloadBytes)
+      throws LoginException, IOException, ExecutionException, InterruptedException, TimeoutException {
+
     String topic = OUTBOUND_ROOT + "/" + gatewayId;
 
     Session session = createSession("semtechDownlinkPublisher" + System.nanoTime(), 60, 60, false, null);
@@ -137,7 +236,7 @@ class SemtechDownlinkViaUdpTest extends BaseTestConfig {
 
     try {
       MessageBuilder messageBuilder = new MessageBuilder();
-      messageBuilder.setOpaqueData(jsonPayload.getBytes(StandardCharsets.UTF_8));
+      messageBuilder.setOpaqueData(payloadBytes);
       Message message = messageBuilder.build();
 
       session.findDestination(topic, DestinationType.TOPIC)

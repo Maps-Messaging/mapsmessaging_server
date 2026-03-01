@@ -22,11 +22,15 @@ package io.mapsmessaging.network.protocol.impl.semtech;
 import io.mapsmessaging.api.Destination;
 import io.mapsmessaging.api.Session;
 import io.mapsmessaging.api.features.*;
+import io.mapsmessaging.dto.rest.config.protocol.impl.SemtechTransmitDefaultsDTO;
 import io.mapsmessaging.engine.destination.subscription.SubscriptionContext;
+import io.mapsmessaging.network.protocol.impl.semtech.packet.SemTechPacket;
 import io.mapsmessaging.network.protocol.impl.semtech.status.SemtechStatusEvent;
 import io.mapsmessaging.network.protocol.impl.semtech.status.SemtechStatusEventFactory;
 import io.mapsmessaging.network.protocol.impl.semtech.status.SemtechStatusState;
 import io.mapsmessaging.utilities.threads.SimpleTaskScheduler;
+import lombok.NonNull;
+import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -47,8 +51,17 @@ public class GatewayManager {
   private final String telemetry;
   private final int maxQueued;
   private final Future<?> scheduledTask;
+  private final SemtechTransmitDefaultsDTO transmitDefaults;
 
-  public GatewayManager(Session session, String inbound, String status, String outbound, String telemtry, int maxQueued) {
+  public GatewayManager(
+      Session session,
+      String inbound,
+      String status,
+      String outbound,
+      String telemtry,
+      int maxQueued,
+      SemtechTransmitDefaultsDTO transmitDefaults
+      ) {
     gatewayMap = new ConcurrentHashMap<>();
     this.session = session;
     this.inbound = inbound;
@@ -56,6 +69,7 @@ public class GatewayManager {
     this.telemetry = telemtry;
     this.outbound = outbound;
     this.maxQueued = maxQueued;
+    this.transmitDefaults = transmitDefaults;
     scheduledTask = SimpleTaskScheduler.getInstance().scheduleAtFixedRate(new TimeoutManager(), 30, 30, TimeUnit.SECONDS);
   }
 
@@ -63,10 +77,10 @@ public class GatewayManager {
     scheduledTask.cancel(true);
   }
 
-  public GatewayInfo getInfo(byte[] gatewayIdentifier) throws IOException {
+  public GatewayInfo getInfo(byte[] gatewayIdentifier, @NotNull @NonNull SemTechPacket packet) throws IOException {
     GatewayInfo info = gatewayMap.get(dumpIdentifier(gatewayIdentifier));
     if (info == null) {
-      info = createInfo(gatewayIdentifier);
+      info = createInfo(gatewayIdentifier, packet);
     }
     info.setLastAccess(System.currentTimeMillis());
     return info;
@@ -80,7 +94,7 @@ public class GatewayManager {
     return info;
   }
 
-  private GatewayInfo createInfo(byte[] gatewayIdentifier) throws IOException {
+  private GatewayInfo createInfo(byte[] gatewayIdentifier, @NotNull @NonNull SemTechPacket packet) throws IOException {
     String name = dumpIdentifier(gatewayIdentifier);
     String inTopic = inbound.replace("{gatewayId}", name);
     String statusTopic = status.replace("{gatewayId}", name);
@@ -99,9 +113,18 @@ public class GatewayManager {
       subscriptionContext.setRetainHandler(RetainHandler.SEND_ALWAYS);
       subscriptionContext.setAcknowledgementController(ClientAcknowledgement.AUTO);
       subscriptionContext.setReceiveMaximum(maxQueued);
-      GatewayInfo info = new GatewayInfo(gatewayIdentifier, name, in, telemtry, stat, session.addSubscription(subscriptionContext));
+      GatewayInfo info = new GatewayInfo(
+          gatewayIdentifier,
+          name,
+          in,
+          telemtry,
+          stat,
+          session.addSubscription(subscriptionContext),
+          transmitDefaults
+          );
       gatewayMap.put(name, info);
       SemtechStatusEvent event = SemtechStatusEventFactory.getInstance().createGatewayEvent(name, SemtechStatusState.GATEWAY_REGISTERED);
+      event.setRemoteAddress(packet.getFromAddress().toString());
       stat.storeMessage(SemtechStatusEventFactory.getInstance().toMessage(event));
       return info;
     } catch (InterruptedException e) {

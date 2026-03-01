@@ -33,6 +33,7 @@ import io.mapsmessaging.network.protocol.impl.semtech.packet.SemTechPacket;
 import io.mapsmessaging.network.protocol.impl.semtech.status.SemtechStatusEvent;
 import io.mapsmessaging.network.protocol.impl.semtech.status.SemtechStatusEventFactory;
 import io.mapsmessaging.network.protocol.impl.semtech.status.SemtechStatusState;
+import io.mapsmessaging.network.protocol.impl.semtech.status.SemtechStatusType;
 import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
 
@@ -54,6 +55,7 @@ public class PushDataHandler extends Handler {
         try {
           JsonObject jsonObject = JsonParser.parseString(pushData.getJsonObject()).getAsJsonObject();
           boolean status = jsonObject.has("stat");
+          boolean hasData = jsonObject.has("rxpk");
 
           Map<String, String> meta = new LinkedHashMap<>();
           meta.put("protocol", "SemTech");
@@ -63,20 +65,21 @@ public class PushDataHandler extends Handler {
           MessageBuilder builder = new MessageBuilder();
           builder.setOpaqueData(pushData.getJsonObject().getBytes(StandardCharsets.UTF_8));
           builder.setMeta(meta);
-          Message message = MessageOverrides.createMessageBuilder(protocol.getProtocolConfig().getMessageDefaults(), builder).build();
-
-          GatewayInfo info = protocol.getGatewayManager().getInfo(pushData.getGatewayIdentifier());
+          GatewayInfo info = protocol.getGatewayManager().getInfo(pushData.getGatewayIdentifier(), packet);
           if (info != null) {
             if (status) {
-              info.getTelemetry().storeMessage(message);
-            } else {
-              info.getInbound().storeMessage(message);
+              JsonObject statusJson = jsonObject.getAsJsonObject("stat");
+              MessageBuilder statusBuilder = new MessageBuilder();
+              statusBuilder.setOpaqueData(statusJson.toString().getBytes(StandardCharsets.UTF_8));
+              statusBuilder.setMeta(meta);
+              info.getTelemetry().storeMessage(statusBuilder.build());
+              jsonObject.remove("stat");
             }
-            SemtechStatusEvent event = SemtechStatusEventFactory.getInstance().createGatewayEvent(info.getName(), SemtechStatusState.DOWNLINK_RECEIVED);
-            try {
-              info.getStatus().storeMessage(SemtechStatusEventFactory.getInstance().toMessage(event));
-            } catch (IOException e) {
-              // log this
+            if(hasData && !jsonObject.getAsJsonArray("rxpk").isEmpty()){
+              MessageBuilder dataBuilder = new MessageBuilder();
+              dataBuilder.setOpaqueData(jsonObject.toString().getBytes(StandardCharsets.UTF_8));
+              dataBuilder.setMeta(meta);
+              info.getInbound().storeMessage(dataBuilder.build());
             }
           }
         } catch (JsonParseException | IOException e) {

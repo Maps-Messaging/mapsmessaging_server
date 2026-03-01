@@ -70,4 +70,5 @@ public class SemtechStatusEvent {
    * Optional: payload size for downlink.
    */
   private Integer size;
+
 }
