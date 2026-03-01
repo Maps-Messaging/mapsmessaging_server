@@ -73,7 +73,7 @@ public class AggregatorInputConfigDTO extends BaseConfigDTO {
       description = "Contribution policy for this input within a window",
       example = "FIRST",
       allowableValues = {"FIRST", "LAST"},
-      defaultValue = "FIRST",
+      defaultValue = "LAST",
       requiredMode = Schema.RequiredMode.NOT_REQUIRED,
       nullable = true
   )

@@ -37,7 +37,7 @@ public class AggregatorInputConfig extends AggregatorInputConfigDTO implements C
     this.topicName = props.getProperty("topicName", "");
     this.selector = props.getProperty("selector", "");
 
-    Object transformerObject = props.get("transformer");
+    Object transformerObject = props.get("outputTransformers");
     if (transformerObject != null) {
       this.transformer = TransformationConfigFactory.loadChain(transformerObject);
     }

@@ -47,7 +47,7 @@ AggregatorManager:
         inputs:
           - topicName: /aggregator2/in1
             contributionMode: LAST
-            transformer:
+            outputTransformers:
               name: jsonmutate
               operations:
                 - op: SET
@@ -67,7 +67,7 @@ AggregatorManager:
                   path: reading
           - topicName: /aggregator2/in2
             contributionMode: LAST
-            transformer:
+            outputTransformers:
               -
                 name : jsonmutate
                 operations:
@@ -90,7 +90,7 @@ AggregatorManager:
           - topicName: /aggregator2/in3
             contributionMode: LAST
 
-            transformer:
+            outputTransformers:
               -
                 name : jsonmutate
                 operations:
@@ -125,7 +125,7 @@ AggregatorManager:
             contributionMode: LAST
           - topicName: /aggregator3/in3
             contributionMode: LAST
-        transformer:
+        outputTransformers:
           name: jsonquery
           query: |
                 {
