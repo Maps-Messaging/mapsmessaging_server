@@ -6,8 +6,8 @@ After=network.target
 Type=oneshot
 RemainAfterExit=yes
 
-User=jenkins
-Group=jenkins
+User=root
+Group=root
 
 CapabilityBoundingSet=CAP_NET_ADMIN
 AmbientCapabilities=CAP_NET_ADMIN
