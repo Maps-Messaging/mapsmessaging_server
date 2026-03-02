@@ -76,10 +76,12 @@ class JetStreamStreamTest extends JetStreamBaseTest {
     Assertions.assertFalse(f.isEmpty());
     boolean found = false;
     for(StreamInfo si : f) {
-      for(String subject: si.getConfig().getSubjects()) {
-        Assertions.assertNotEquals("topic1", subject);
-        Assertions.assertNotEquals("topic2", subject);
-        found = (subject.equals("folder1.topic1") || subject.equals("folder.folder1.folder2.topic1"));
+      if(si.getConfig().getName().equals(streamInfo.getConfig().getName())) {
+        for(String subject: si.getConfig().getSubjects()) {
+          Assertions.assertNotEquals("topic1", subject);
+          Assertions.assertNotEquals("topic2", subject);
+          found = (subject.equals("folder1.topic1") || subject.equals("folder.folder1.folder2.topic1"));
+        }
       }
     }
     Assertions.assertTrue(found);
