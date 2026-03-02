@@ -181,14 +181,14 @@ Automate cleanup of snapshot artifacts per retention policy to avoid storage cre
 ---
 
 ## 9. Branch Lifecycle Summary
-
 | Branch Type     | Direct Push | PR Required | Frozen After Release | Linear History |
 |-----------------|------------|------------|----------------------|----------------|
 | main            | No         | Yes        | No                   | Yes            |
 | development     | No         | Yes        | No                   | Yes            |
 | release-X.Y.Z   | No         | Yes        | Yes                  | Yes            |
-| feature/*       | Yes        | Yes        | Deleted After Merge  | N/A            |
-
+| feature/*       | Yes        | No         | Deleted After Merge  | N/A            |
+| bugfix/*        | Yes        | No         | Deleted After Merge  | N/A            |
+| hotfix/*        | Yes        | No         | Deleted After Merge  | N/A            |
 ---
 
 ## 10. Deletion Policy
