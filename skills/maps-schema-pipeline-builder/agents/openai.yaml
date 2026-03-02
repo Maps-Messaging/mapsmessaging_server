@@ -1,0 +1,4 @@
+interface:
+  display_name: "MAPS Schema Pipeline Builder"
+  short_description: "Build schema-aware MAPS message pipelines"
+  default_prompt: "Use $maps-schema-pipeline-builder to convert schema and transformation requirements into deployable MAPS configuration and verification steps."

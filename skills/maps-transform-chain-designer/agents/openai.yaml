@@ -1,0 +1,4 @@
+interface:
+  display_name: "MAPS Transform Chain Designer"
+  short_description: "Design deterministic MAPS transform chains"
+  default_prompt: "Use $maps-transform-chain-designer to convert transformation requirements into ordered deployable MAPS config and verification commands."

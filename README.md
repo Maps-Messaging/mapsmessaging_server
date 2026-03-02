@@ -95,3 +95,16 @@ For full license terms, see the [LICENSE](LICENSE) file in the repository.
 
 
 [![Mutable.ai Auto Wiki](https://img.shields.io/badge/Auto_Wiki-Mutable.ai-blue)](https://wiki.mutable.ai/Maps-Messaging/mapsmessaging_server)
+
+## Buildkite Skill Combo Smoke
+
+This repository includes an optional Buildkite combo smoke step (`:test_tube: Skill Combo Smoke (Optional)`) that can run any combination of skills.
+
+Set these environment variables on the pipeline/build:
+- `SKILL_COMBO` (required to activate): comma-separated skill names
+- `SKILL_COMBO_DEEP` (optional): `1` to run deep per-skill smoke scripts
+- `SKILL_COMBO_BOOTSTRAP` (optional): `1` to regenerate fixtures before combo smoke
+
+Usage reference:
+- `.buildkite/skills_combo_usage.md`
+- `docs/skills-install.md`

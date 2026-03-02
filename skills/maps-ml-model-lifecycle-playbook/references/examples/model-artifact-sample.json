@@ -1,0 +1,7 @@
+{
+  "modelType": "DecisionTree",
+  "format": "portable-json",
+  "smileVersion": "4.3.0",
+  "features": ["featureA", "featureB"],
+  "target": "label"
+}

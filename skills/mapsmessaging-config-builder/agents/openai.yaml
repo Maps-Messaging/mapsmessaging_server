@@ -1,0 +1,4 @@
+interface:
+  display_name: "MAPS Config Builder"
+  short_description: "Build deployable MAPS messaging configs"
+  default_prompt: "Use $mapsmessaging-config-builder to convert this protocol and routing requirement into deployable MAPS configuration changes."

@@ -1,0 +1,4 @@
+interface:
+  display_name: "MAPS Skill Suite Orchestrator"
+  short_description: "Index and orchestrate MAPS skills"
+  default_prompt: "Use $maps-skill-suite-orchestrator to select the right MAPS skill and produce a quick-start or advanced prompt for the scenario."

@@ -1,0 +1,4 @@
+interface:
+  display_name: "MAPS Runtime Diagnostics"
+  short_description: "Diagnose MAPS startup and listener failures"
+  default_prompt: "Use $maps-runtime-diagnostics to diagnose why this MAPS instance did not start listeners and provide exact fixes and verification commands."

@@ -1,0 +1,4 @@
+interface:
+  display_name: "MAPS Selector Rule Engineer"
+  short_description: "Design routing and subscriber selectors"
+  default_prompt: "Use $maps-selector-rule-engineer to design MAPS routing and subscriber selectors with deployable config and positive/negative verification vectors."

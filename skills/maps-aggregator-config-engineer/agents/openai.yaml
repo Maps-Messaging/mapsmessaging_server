@@ -1,0 +1,4 @@
+interface:
+  display_name: "MAPS Aggregator Config Engineer"
+  short_description: "Design and validate MAPS aggregator configs"
+  default_prompt: "Use $maps-aggregator-config-engineer to build deployable AggregatorManager configuration with windowing, contribution modes, and verification commands."

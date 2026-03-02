@@ -1,0 +1,4 @@
+interface:
+  display_name: "MAPS CAN Bus Ingestion Builder"
+  short_description: "Build MAPS CAN/J1939/N2K ingestion configs"
+  default_prompt: "Use $maps-canbus-ingestion-builder to convert CAN/J1939/N2K ingestion requirements into deployable MAPS configuration and verification commands."

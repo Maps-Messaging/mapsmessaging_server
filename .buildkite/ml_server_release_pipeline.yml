@@ -1,4 +1,46 @@
 steps:
+  - label: ":test_tube: Skills Smoke"
+    command:
+      - bash ./skills/smoke/run.sh
+    agents:
+      queue: "java_build_queue"
+
+  - label: ":mag: Selector Skill Smoke"
+    command:
+      - bash ./skills/maps-selector-rule-engineer/scripts/run_selector_skill_smoke.sh
+    agents:
+      queue: "java_build_queue"
+
+  - label: ":round_pushpin: Geospatial Skill Smoke"
+    command:
+      - bash ./skills/maps-geospatial-routing-builder/scripts/run_geospatial_skill_smoke.sh
+    agents:
+      queue: "java_build_queue"
+
+  - label: ":robot_face: ML Lifecycle Skill Smoke"
+    command:
+      - bash ./skills/maps-ml-model-lifecycle-playbook/scripts/run_ml_lifecycle_skill_smoke.sh
+    agents:
+      queue: "java_build_queue"
+
+  - label: ":test_tube: Skill Combo Smoke (Optional)"
+    command:
+      - |
+        if [ -n "${SKILL_COMBO:-}" ]; then
+          cmd=(bash ./skills/smoke/run_skill_combination.sh --skills "${SKILL_COMBO}")
+          if [ "${SKILL_COMBO_DEEP:-0}" = "1" ]; then
+            cmd+=(--deep)
+          fi
+          if [ "${SKILL_COMBO_BOOTSTRAP:-0}" = "1" ]; then
+            cmd+=(--bootstrap-fixtures)
+          fi
+          "${cmd[@]}"
+        else
+          echo "SKILL_COMBO not set, skipping optional combo smoke."
+        fi
+    agents:
+      queue: "java_build_queue"
+
   - label: ":maven: Build and release to github"
     command:
       - export NVD_API_KEY=$(buildkite-agent secret get nvd_api_key)
