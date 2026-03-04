@@ -14,7 +14,6 @@ import io.mapsmessaging.canbus.device.SocketCanDevice;
 import io.mapsmessaging.canbus.device.frames.CanFrame;
 import io.mapsmessaging.engine.destination.subscription.SubscriptionContext;
 import io.mapsmessaging.test.BaseTestConfig;
-import net.bytebuddy.implementation.bytecode.Throw;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
