@@ -19,8 +19,6 @@
 
 package io.mapsmessaging.license;
 
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.gson.Gson;
 import global.namespace.fun.io.bios.BIOS;
 import global.namespace.truelicense.api.License;
@@ -33,20 +31,18 @@ import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.logging.ServerLogMessages;
 import io.mapsmessaging.utilities.GsonFactory;
 
-import java.io.*;
-import java.net.HttpURLConnection;
-import java.net.URI;
-import java.net.URL;
-import java.nio.charset.StandardCharsets;
+import java.io.File;
 import java.time.Instant;
 import java.time.ZoneId;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 
 public class LicenseController {
 
-  private static final String LICENSE_SERVER_URL = "https://license.mapsmessaging.io/api/v1/license";
-
-  private static final String LICENSE_KEY="license_";
+  private static final String LICENSE_KEY = "license_";
 
   private final List<FeatureDetails> licenses;
   private final Logger logger = LoggerFactory.getLogger(LicenseController.class);
@@ -56,15 +52,23 @@ public class LicenseController {
     if (!licenseDir.exists() || !licenseDir.isDirectory()) {
       throw new IllegalArgumentException("Invalid license path: " + licensePath);
     }
+
     installLicenses(licenseDir);
     licenses = loadInstalledLicenses(licenseDir);
-    if(licenses.isEmpty()) {
-      fetchLicenseFromServer(licenseDir, uniqueId, serverUUID);
+
+    if (licenses.isEmpty()) {
+      boolean fetched = fetchLicenseFromServer(licenseDir, uniqueId, serverUUID);
+      if (!fetched) {
+        LicenseFileStore licenseFileStore = new LicenseFileStore(logger);
+        licenseFileStore.ensureFallbackLicensePresent(licenseDir);
+      }
+
       installLicenses(licenseDir);
       licenses.addAll(loadInstalledLicenses(licenseDir));
     }
+
     Gson gson = GsonFactory.getInstance().getPrettyGson();
-    for(FeatureDetails feature : licenses) {
+    for (FeatureDetails feature : licenses) {
       logger.log(ServerLogMessages.LICENSE_FEATURES_AVAILABLE, gson.toJson(feature.getFeature()));
     }
   }
@@ -73,11 +77,6 @@ public class LicenseController {
     return new FeatureManager(licenses);
   }
 
-  /**
-   * Installs any licenses that have not yet been installed.
-   *
-   * @param licenseDir Directory containing license files.
-   */
   private void installLicenses(File licenseDir) {
     File[] files = licenseDir.listFiles((dir, name) -> name.startsWith(LICENSE_KEY) && name.endsWith(".lic"));
     if (files == null) {
@@ -94,18 +93,16 @@ public class LicenseController {
     }
   }
 
-
-  private void processLicenseFile(File licenseFile, String edition,  File installedFile) {
+  private void processLicenseFile(File licenseFile, String edition, File installedFile) {
     try {
       LicenseManager manager = getLicenseManager(edition);
-      if(manager != null) {
+      if (manager != null) {
         logger.log(ServerLogMessages.LICENSE_INSTALLING, edition);
         manager.install(manager.parameters().encryption().source(BIOS.file(licenseFile)));
-        if(!licenseFile.renameTo(installedFile)){
+        if (!licenseFile.renameTo(installedFile)) {
           logger.log(ServerLogMessages.LICENSE_FILE_RENAME_FAILED, licenseFile.getAbsolutePath(), installedFile.getAbsolutePath());
         }
-      }
-      else{
+      } else {
         logger.log(ServerLogMessages.LICENSE_MANAGER_NOT_FOUND, edition);
       }
     } catch (IllegalArgumentException | LicenseManagementException e) {
@@ -114,22 +111,19 @@ public class LicenseController {
   }
 
   private LicenseManager getLicenseManager(String edition) {
-    for(LicenseManager manager : LicenseManager.values()) {
-      if(edition.equalsIgnoreCase(manager.name())) {
+    for (LicenseManager manager : LicenseManager.values()) {
+      if (edition.equalsIgnoreCase(manager.name())) {
         return manager;
       }
     }
     return null;
   }
 
-  /**
-   * Scans installed licenses and loads them.
-   *
-   * @param licenseDir Directory containing installed license files.
-   */
-  private  List<FeatureDetails> loadInstalledLicenses(File licenseDir) {
+  private List<FeatureDetails> loadInstalledLicenses(File licenseDir) {
     File[] files = licenseDir.listFiles((dir, name) -> name.startsWith(LICENSE_KEY) && name.endsWith(".lic_installed"));
-    if (files == null) return new ArrayList<>();
+    if (files == null) {
+      return new ArrayList<>();
+    }
 
     List<FeatureDetails> licenseList = new ArrayList<>();
 
@@ -137,17 +131,16 @@ public class LicenseController {
       String edition = extractEdition(installedFile.getName());
       try {
         LicenseManager manager = getLicenseManager(edition.toUpperCase());
-        if(manager != null) {
+        if (manager != null) {
           logger.log(ServerLogMessages.LICENSE_LOADING, edition);
-          if(!processLicense( manager.load(), licenseList)){
+          if (!processLicense(manager.load(), licenseList)) {
             logger.log(ServerLogMessages.LICENSE_UNINSTALLING, edition);
-            if(!installedFile.delete()){
+            if (!installedFile.delete()) {
               logger.log(ServerLogMessages.LICENSE_FAILED_DELETE_FILE, installedFile.getAbsolutePath());
             }
             manager.uninstall();
           }
-        }
-        else{
+        } else {
           logger.log(ServerLogMessages.LICENSE_MANAGER_NOT_FOUND, edition);
         }
       } catch (IllegalArgumentException | LicenseManagementException e) {
@@ -157,127 +150,70 @@ public class LicenseController {
     return licenseList;
   }
 
-  private boolean processLicense(License license,List<FeatureDetails> licenseList) {
+  @SuppressWarnings("unchecked")
+  private boolean processLicense(License license, List<FeatureDetails> licenseList) {
     long now = System.currentTimeMillis();
-    if(license != null) {
+    if (license != null) {
       if (license.getNotBefore().getTime() < now && license.getNotAfter().getTime() > now) {
         Gson gson = GsonFactory.getInstance().getSimpleGson();
         Map<String, Object> extraData = (Map<String, Object>) license.getExtra();
         String json = gson.toJson(extraData);
         Features features = gson.fromJson(json, Features.class);
+
         Date after = license.getNotAfter();
         Date before = license.getNotBefore();
         Date issued = license.getIssued();
         String info = license.getInfo();
         String who = license.getIssuer().getName();
+
         FeatureDetails featureDetails = new FeatureDetails();
         featureDetails.setFeature(features);
         featureDetails.setExpiry(Instant.ofEpochMilli(after.getTime()).atZone(ZoneId.systemDefault()).toLocalDateTime());
         featureDetails.setInfo(info);
         licenseList.add(featureDetails);
 
-
-        logger.log(ServerLogMessages.LICENSE_LOADED, info, who, issued, after, before,  gson.toJson(extraData));
+        logger.log(ServerLogMessages.LICENSE_LOADED, info, who, issued, after, before, gson.toJson(extraData));
         return true;
       } else {
         logger.log(ServerLogMessages.LICENSE_EXPIRED, license.getInfo(), license.getNotBefore(), license.getNotAfter());
-        return (license.getNotAfter().getTime() > now); // Do NOT delete the license if it is still valid but can not yet be used
+        return (license.getNotAfter().getTime() > now);
       }
     }
     return false;
   }
 
-  private void fetchLicenseFromServer(File licenseDir, String uniqueId, UUID serverUUID) {
+  private boolean fetchLicenseFromServer(File licenseDir, String uniqueId, UUID serverUUID) {
     try {
       LicenseConfig licenseConfig = new LicenseConfig();
       licenseConfig = (LicenseConfig) licenseConfig.load(null);
 
       String clientSecret = licenseConfig.getClientSecret();
       String clientName = licenseConfig.getClientName();
-      URI uri = URI.create(LICENSE_SERVER_URL);
-      URL url = uri.toURL();
-      HttpURLConnection connection = (HttpURLConnection) url.openConnection();
-      connection.setRequestMethod("POST");
-      connection.setDoOutput(true);
-      connection.setRequestProperty("Content-Type", "application/json");
 
-// Build JSON request body
-      String jsonBody = String.format(
-          "{\"clientName\":\"%s\",\"clientSecret\":\"%s\",\"uniqueServerId\":\"%s\",\"serverUUID\":\"%s\"}",
-          clientName, clientSecret, uniqueId, serverUUID.toString()
-      );
-      logger.log(ServerLogMessages.LICENSE_CONTACTING_SERVER, clientName);
-      try (OutputStream os = connection.getOutputStream()) {
-        os.write(jsonBody.getBytes(StandardCharsets.UTF_8));
+      LicenseServerClient licenseServerClient = new LicenseServerClient(logger);
+      List<LicenseServerResponse> serverLicenses =
+          licenseServerClient.fetchLicenses(clientName, clientSecret, uniqueId, serverUUID);
+
+      if (serverLicenses.isEmpty()) {
+        return false;
       }
 
-      // Read response
-      int responseCode = connection.getResponseCode();
-      if (responseCode == 200) {
-        try (InputStream is = connection.getInputStream();
-             BufferedReader reader = new BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8))) {
+      LicenseFileStore licenseFileStore = new LicenseFileStore(logger);
+      boolean savedAny = false;
 
-          StringBuilder response = new StringBuilder();
-          String line;
-          while ((line = reader.readLine()) != null) {
-            response.append(line);
-          }
-          // Parse response
-          List<Map<String, String>> mapList = parseLicenseResponse(response.toString());
-          for (Map<String, String> licenseData : mapList) {
-            String type = licenseData.get("type");
-            Base64.Decoder decoder = Base64.getDecoder();
-            byte[] license = decoder.decode (licenseData.get("license"));
-            if (type != null && license != null) {
-              saveLicenseFile(licenseDir, type, license);
-            }
-          }
-        }
-      } else {
-        logger.log(ServerLogMessages.LICENSE_ERROR_CONTACTING_SERVER, responseCode);
+      for (LicenseServerResponse response : serverLicenses) {
+        boolean saved = licenseFileStore.saveLicenseFile(licenseDir, response.getType(), response.getLicenseContent());
+        savedAny = savedAny || saved;
       }
-    } catch (IOException e) {
-      logger.log(ServerLogMessages.LICENSE_FAILED_CONTACTING_SERVER, e);
-    }
-  }
 
-  /**
-   * Parses the JSON response from the license server.
-   *
-   * @param response JSON response string.
-   * @return A list of license details (type and license string).
-   */
-  private List<Map<String, String>> parseLicenseResponse(String response) {
-    try {
-      ObjectMapper objectMapper = new ObjectMapper();
-      return objectMapper.readValue(response, new TypeReference<List<Map<String, String>>>() {});
+      return savedAny;
     } catch (Exception e) {
-      return List.of();
+      logger.log(ServerLogMessages.LICENSE_FAILED_CONTACTING_SERVER, e);
+      return false;
     }
   }
 
-  /**
-   * Saves the retrieved license file to disk.
-   */
-  private void saveLicenseFile(File licenseDir, String edition, byte[] licenseContent) {
-    File licenseFile = new File(licenseDir, LICENSE_KEY + edition + ".lic");
-    try (FileOutputStream fos = new FileOutputStream(licenseFile)) {
-      fos.write(licenseContent);
-      logger.log(ServerLogMessages.LICENSE_SAVED_TO_FILE, licenseFile.getAbsolutePath());
-    } catch (IOException e) {
-      logger.log(ServerLogMessages.LICENSE_FAILED_SAVED_TO_FILE, licenseFile.getAbsolutePath(), e);
-    }
-  }
-
-  /**
-   * Extracts the edition name from a license file name.
-   * Example: "license_enterprise.lic" -> "enterprise"
-   *
-   * @param filename License file name.
-   * @return Extracted edition.
-   */
   private String extractEdition(String filename) {
     return filename.replace(LICENSE_KEY, "").replace(".lic", "").replace("_installed", "");
   }
-
 }
