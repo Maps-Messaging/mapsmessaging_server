@@ -82,6 +82,13 @@
       </includes>
     </fileSet>
 
+    <fileSet>
+      <directory>${project.basedir}/target/license/</directory>
+      <outputDirectory>conf</outputDirectory>
+      <includes>
+        <include>*.lic</include>
+      </includes>
+    </fileSet>
 
     <fileSet>
       <directory>${project.basedir}/src/main/resources/</directory>

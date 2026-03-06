@@ -150,6 +150,8 @@
     <maps.device.version>3.1.1-SNAPSHOT</maps.device.version>
     <maps.auth.version>3.0.2-SNAPSHOT</maps.auth.version>
 
+    <license.fetch.skip>false</license.fetch.skip>
+    <license.fetch.dir>${project.build.directory}/license</license.fetch.dir>
 
   </properties>
 
@@ -319,6 +321,28 @@
 
   <build>
     <plugins>
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>exec-maven-plugin</artifactId>
+        <version>3.6.2</version>
+        <executions>
+          <execution>
+            <id>fetch-community-license</id>
+            <phase>prepare-package</phase>
+            <goals>
+              <goal>java</goal>
+            </goals>
+            <configuration>
+              <skip>${license.fetch.skip}</skip>
+              <mainClass>io.mapsmessaging.license.tools.LicenseFetcher</mainClass>
+              <classpathScope>compile</classpathScope>
+              <arguments>
+                <argument>${license.fetch.dir}</argument>
+              </arguments>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
       <!-- Allow JDKs greater than 1.8 to be used by maven -->
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
@@ -1192,6 +1216,18 @@
       <groupId>io.rest-assured</groupId>
       <artifactId>rest-assured</artifactId>
       <version>5.5.7</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.java-websocket</groupId>
+      <artifactId>Java-WebSocket</artifactId>
+      <version>1.5.3</version>
+    </dependency>
+
+    <dependency>
+      <groupId>com.squareup.okhttp3</groupId>
+      <artifactId>mockwebserver</artifactId>
+      <version>4.12.0</version>
       <scope>test</scope>
     </dependency>
 
