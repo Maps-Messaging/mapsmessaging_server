@@ -29,6 +29,9 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 
+import java.util.ArrayList;
+import java.util.List;
+
 @Schema(
     title = "Schema Manager config",
     description = "Configures the schema manager on where it can find and store schemas")
@@ -56,6 +59,25 @@ public class SchemaManagerConfigDTO extends BaseManagerConfigDTO {
       }
   )
   private RepositoryConfigDTO repositoryConfig;
+
+
+  @Schema(
+      description = "Optional path to the protoc compiler executable. " +
+          "If not supplied the system PATH will be used.",
+      requiredMode = Schema.RequiredMode.NOT_REQUIRED,
+      nullable = true,
+      example = "/usr/local/bin/protoc"
+  )
+  private String protocPath;
+
+  @Schema(
+      description = "List of directories that are scanned for schema source files such as protobuf or JSON schemas. " +
+          "These schemas are loaded and exposed as built-in or well-known schemas.",
+      requiredMode = Schema.RequiredMode.NOT_REQUIRED,
+      nullable = true
+  )
+  private List<SchemaImportLocationDTO> importLocations = new ArrayList<>();
+
 
   public SchemaManagerConfigDTO() {
     super("SchemaManagerConfigDTO");

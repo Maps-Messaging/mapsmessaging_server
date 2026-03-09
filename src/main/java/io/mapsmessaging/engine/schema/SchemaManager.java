@@ -25,31 +25,35 @@ import io.mapsmessaging.configuration.ConfigurationProperties;
 import io.mapsmessaging.dto.rest.schema.FileRepositoryConfigDTO;
 import io.mapsmessaging.dto.rest.schema.MapsRepositoryConfigDTO;
 import io.mapsmessaging.dto.rest.schema.RepositoryConfigDTO;
+import io.mapsmessaging.dto.rest.schema.SchemaImportLocationDTO;
 import io.mapsmessaging.dto.rest.system.Status;
 import io.mapsmessaging.dto.rest.system.SubSystemStatusDTO;
+import io.mapsmessaging.logging.Logger;
+import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.schemas.config.SchemaConfig;
 import io.mapsmessaging.schemas.config.SchemaResource;
-import io.mapsmessaging.schemas.config.impl.JsonSchemaConfig;
-import io.mapsmessaging.schemas.config.impl.NativeSchemaConfig;
+import io.mapsmessaging.schemas.config.impl.*;
 import io.mapsmessaging.schemas.config.impl.NativeSchemaConfig.TYPE;
-import io.mapsmessaging.schemas.config.impl.RawSchemaConfig;
-import io.mapsmessaging.schemas.config.impl.XmlSchemaConfig;
 import io.mapsmessaging.schemas.formatters.MessageFormatter;
 import io.mapsmessaging.schemas.formatters.MessageFormatterFactory;
 import io.mapsmessaging.schemas.repository.SchemaRepository;
 import io.mapsmessaging.schemas.repository.impl.FileSchemaRepository;
 import io.mapsmessaging.schemas.repository.impl.RestSchemaRepository;
 import io.mapsmessaging.schemas.repository.impl.SimpleSchemaRepository;
+import io.mapsmessaging.schemas.tools.protobuf.ProtobufSchemaGenerator;
 import io.mapsmessaging.utilities.Agent;
 import io.mapsmessaging.utilities.configuration.ConfigurationManager;
 import lombok.Getter;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Path;
 import java.util.*;
 import java.util.Map.Entry;
 
-@SuppressWarnings("java:S6548") // yes it is a singleton
+import static io.mapsmessaging.logging.ServerLogMessages.*;
+
+@SuppressWarnings("java:S6548") // yes, it is a singleton
 public class SchemaManager implements Agent {
   private static final String MONITOR = "monitor";
 
@@ -67,9 +71,12 @@ public class SchemaManager implements Agent {
     return Holder.INSTANCE;
   }
 
+  private final Logger logger = LoggerFactory.getLogger(getClass());
   private final SchemaRepository repository;
   private final Map<String, MessageFormatter> loadedFormatter;
   private final Map<String, List<SchemaConfig>> pathMap;
+  private final List<SchemaImportLocationDTO> importLocations = new ArrayList<>();
+  private final String protocPath;
 
   @Getter
   private long updateCount = 0;
@@ -218,6 +225,7 @@ public class SchemaManager implements Agent {
   }
 
   public void start() {
+    logger.log(SCHEMA_MANAGER_STARTUP);
     SchemaConfig rawConfig = new RawSchemaConfig();
     rawConfig.setUniqueId(DEFAULT_RAW_UUID);
     rawConfig.setVersion(1);
@@ -264,6 +272,31 @@ public class SchemaManager implements Agent {
     xmlSchemaConfig.setSchema(new JsonObject());
     addSchema("$SYS", xmlSchemaConfig);
 
+    Path protoExec = protocPath == null? null: Path.of(protocPath);
+
+    for(SchemaImportLocationDTO location: importLocations){
+      if(location.getFormat().equalsIgnoreCase("json")){
+        try {
+          JsonSchemaConfig jsonSchemaConfig1 = new JsonSchemaConfig(Path.of(location.getPath()));
+          addSchema(location.getPath(), jsonSchemaConfig1);
+          logger.log(SCHEMA_MANAGER_LOADED_CONFIG,jsonSchemaConfig1.getName(), jsonSchemaConfig1.getUniqueId(), jsonSchemaConfig1.getFormat());
+        } catch (IOException e) {
+          logger.log(SCHEMA_MANAGER_LOADED_CONFIG_FAILED, location.getPath(), location.getFormat(), e);
+        }
+      }
+      else if(location.getFormat().equalsIgnoreCase("protobuf")){
+        try {
+          List<ProtoBufSchemaConfig> schemaList = ProtobufSchemaGenerator.loadSchemas(Path.of(location.getPath()), protoExec);
+          for(ProtoBufSchemaConfig schema: schemaList){
+            addSchema(schema.getName(), schema);
+            logger.log(SCHEMA_MANAGER_LOADED_CONFIG,schema.getName(), schema.getUniqueId(), schema.getFormat());
+          }
+        } catch (IOException e) {
+          logger.log(SCHEMA_MANAGER_LOADED_CONFIG_FAILED, location.getPath(), location.getFormat(), e);
+        }
+      }
+    }
+
     // This ensures the factory is loaded
     MessageFormatterFactory.getInstance();
   }
@@ -288,9 +321,13 @@ public class SchemaManager implements Agent {
     else{
       buildTime = new SimpleSchemaRepository();
     }
+    protocPath = config.getProtocPath();
     repository = buildTime;
     loadedFormatter = new LinkedHashMap<>();
     pathMap = new LinkedHashMap<>();
+    if(config != null && config.getImportLocations() != null) {
+      importLocations.addAll(config.getImportLocations());
+    }
   }
 
   @Override

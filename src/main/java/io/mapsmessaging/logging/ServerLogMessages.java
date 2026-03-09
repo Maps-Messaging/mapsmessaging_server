@@ -738,6 +738,13 @@ public enum ServerLogMessages implements LogMessage {
   COAP_BLOCK2_REQUEST(LEVEL.TRACE, SERVER_CATEGORY.PROTOCOL, "Block2 packet received, Message No: {}, Block Size: {}, has more:{}"),
   //</editor-fold>
 
+  //<editor-fold desc="Schema Manager, log messages">
+  SCHEMA_MANAGER_STARTUP(LEVEL.INFO, SERVER_CATEGORY.ENGINE, "Schema Manager starting up"),
+  SCHEMA_MANAGER_LOADED_CONFIG(LEVEL.WARN, SERVER_CATEGORY.ENGINE, "Loaded configuration from file name:{} UUID:{} type:{}"),
+  SCHEMA_MANAGER_LOADED_CONFIG_FAILED(LEVEL.WARN, SERVER_CATEGORY.ENGINE, "Failed to loaded configuration from file {} of type:{}"),
+  //</editor-fold>
+
+
   //<editor-fold desc="Device Integration, log messages">
   DEVICE_SELECTOR_PARSER_EXCEPTION(LEVEL.INFO, SERVER_CATEGORY.DEVICE, "Selection {}, failed to parse with the following exception {}"),
   DEVICE_SCHEMA_UPDATED(LEVEL.WARN, SERVER_CATEGORY.DEVICE, "Device {} schema configuration updated"),
@@ -748,8 +755,6 @@ public enum ServerLogMessages implements LogMessage {
   DEVICE_STOP(LEVEL.INFO, SERVER_CATEGORY.DEVICE, "Stopping device {}"),
   DEVICE_SCHEDULE_TASK_FAILED(LEVEL.WARN, SERVER_CATEGORY.DEVICE, "Scheduled task for device failed"),
   DEVICE_SCHEDULE_TASK_EXCCEDED_TIME(LEVEL.INFO, SERVER_CATEGORY.DEVICE, "Scheduled task exceeded time limit, took {}ms"),
-
-
   DEVICE_MANAGER_STARTUP(LEVEL.DEBUG, SERVER_CATEGORY.ENGINE, "Starting Device Manager"),
   DEVICE_MANAGER_STARTUP_FAILED(LEVEL.WARN, SERVER_CATEGORY.ENGINE, "Device Manager failed to start"),
   DEVICE_MANAGER_FAILED_TO_REGISTER(LEVEL.INFO, SERVER_CATEGORY.DEVICE, "Failed to register device"),
