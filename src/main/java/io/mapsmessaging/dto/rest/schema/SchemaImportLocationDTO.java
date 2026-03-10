@@ -32,6 +32,15 @@ import lombok.NoArgsConstructor;
 public class SchemaImportLocationDTO {
 
   @Schema(
+      description = "Name to apply to the schema when loaded",
+      requiredMode = Schema.RequiredMode.REQUIRED,
+      nullable = false,
+      example = "protobuf_schema_1"
+  )
+  private String name;
+
+
+  @Schema(
       description = "Directory path containing schema files",
       requiredMode = Schema.RequiredMode.REQUIRED,
       nullable = false,

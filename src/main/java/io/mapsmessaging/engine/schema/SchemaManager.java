@@ -278,8 +278,8 @@ public class SchemaManager implements Agent {
       if(location.getFormat().equalsIgnoreCase("json")){
         try {
           JsonSchemaConfig jsonSchemaConfig1 = new JsonSchemaConfig(Path.of(location.getPath()));
-          addSchema(location.getPath(), jsonSchemaConfig1);
-          logger.log(SCHEMA_MANAGER_LOADED_CONFIG,jsonSchemaConfig1.getName(), jsonSchemaConfig1.getUniqueId(), jsonSchemaConfig1.getFormat());
+          addSchema(location.getName(), jsonSchemaConfig1);
+          logger.log(SCHEMA_MANAGER_LOADED_CONFIG,location.getName(), jsonSchemaConfig1.getUniqueId(), jsonSchemaConfig1.getFormat());
         } catch (IOException e) {
           logger.log(SCHEMA_MANAGER_LOADED_CONFIG_FAILED, location.getPath(), location.getFormat(), e);
         }
@@ -288,8 +288,8 @@ public class SchemaManager implements Agent {
         try {
           List<ProtoBufSchemaConfig> schemaList = ProtobufSchemaGenerator.loadSchemas(Path.of(location.getPath()), protoExec);
           for(ProtoBufSchemaConfig schema: schemaList){
-            addSchema(schema.getName(), schema);
-            logger.log(SCHEMA_MANAGER_LOADED_CONFIG,schema.getName(), schema.getUniqueId(), schema.getFormat());
+            addSchema(location.getName(), schema);
+            logger.log(SCHEMA_MANAGER_LOADED_CONFIG,location.getName(), schema.getUniqueId(), schema.getFormat());
           }
         } catch (IOException e) {
           logger.log(SCHEMA_MANAGER_LOADED_CONFIG_FAILED, location.getPath(), location.getFormat(), e);

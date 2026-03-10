@@ -57,10 +57,11 @@ public class SchemaManagerConfig extends SchemaManagerConfigDTO implements Confi
   }
 
   private void loadLocations(ConfigurationProperties props){
-    if(props.containsKey("path") && props.containsKey("format")){
+    if(props.containsKey("path") && props.containsKey("format") && props.containsKey("name")){
       SchemaImportLocationDTO locationDTO = new SchemaImportLocationDTO();
       locationDTO.setPath(props.getProperty("path"));
       locationDTO.setFormat(props.getProperty("format"));
+      locationDTO.setName(props.getProperty("name"));
       super.getImportLocations().add(locationDTO);
     }
   }
