@@ -1,0 +1,63 @@
+/*
+ *
+ *  Copyright [ 2020 - 2024 ] Matthew Buckton
+ *  Copyright [ 2024 - 2026 ] MapsMessaging B.V.
+ *
+ *  Licensed under the Apache License, Version 2.0 with the Commons Clause
+ *  (the "License"); you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at:
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://commonsclause.com/
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ */
+
+package io.mapsmessaging.dto.rest.config.protocol.impl;
+
+import io.mapsmessaging.dto.rest.config.protocol.ProtocolConfigDTO;
+import io.mapsmessaging.network.protocol.impl.stream.StreamAssemblyType;
+import io.mapsmessaging.network.protocol.impl.stream.assemblers.LengthEndian;
+import io.swagger.v3.oas.annotations.media.Schema;
+import lombok.Data;
+import lombok.EqualsAndHashCode;
+
+@Data
+@EqualsAndHashCode(callSuper = true)
+@Schema(description = "Stream Protocol Configuration DTO")
+public class StreamConfigDTO extends ProtocolConfigDTO {
+
+  public StreamConfigDTO() {
+    super("stream");
+  }
+
+  @Schema(description = "Maximum buffer size for stream", example = "65535")
+  protected int maxBufferSize = 65535;
+
+  @Schema(description = "Maximum receive limit for stream", example = "1000")
+  protected int maxReceive = 1000;
+
+  @Schema(
+      description = "Schema name registered with the SchemaManager used to decode the payload",
+      example = "known_schema"
+  )
+  protected String schemaName;
+
+  @Schema(description = "Assembly mode used to build packets from the incoming stream")
+  protected StreamAssemblyType assemblyType = StreamAssemblyType.NOOP;
+
+  @Schema(
+      description = "Length field size in bytes for LENGTH_PREFIX assembly mode",
+      example = "4"
+  )
+  protected int lengthFieldSize = 4;
+
+  @Schema(
+      description = "Byte order used when decoding the length field (only used when assemblyType = LENGTH_PREFIX)"
+  )
+  protected LengthEndian endianness = LengthEndian.BIG;
+}

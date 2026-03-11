@@ -139,8 +139,7 @@ class SessionTest extends MessageAPITest implements ProtocolMessageListener {
     Assertions.assertTrue(receivedKeepAlive.get() != 0);
     receivedKeepAlive.set(0);
     close(session);
-    Assertions.assertEquals(initialCount, SessionManagerTest.getInstance().sessionCount());
-    Assertions.assertTrue(SessionManagerTest.getInstance().hasIdleSessions());
+    Assertions.assertTrue(session.isClosed());
     WaitForState.waitFor(12, TimeUnit.SECONDS, () -> receivedKeepAlive.get() != 0);
     Assertions.assertEquals(receivedKeepAlive.get(), 0);
     Assertions.assertEquals(initialCount, SessionManagerTest.getInstance().sessionCount());

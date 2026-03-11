@@ -102,7 +102,11 @@ public class SchemaManager implements Agent, SchemaResolver {
 
   }
 
-  public SchemaConfig getDefaultSchemaByName(String name){
+  public SchemaConfig getDefaultSchemaByName(String name) {
+    SchemaConfig config = getSchemaByName(name);
+    if(config != null){
+      return config;
+    }
     return switch (name.toLowerCase()) {
       case "json" -> repository.getResource(DEFAULT_JSON_SCHEMA.toString()).getDefaultVersion();
       case "raw" -> repository.getResource(DEFAULT_RAW_UUID.toString()).getDefaultVersion();

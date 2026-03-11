@@ -205,6 +205,7 @@ public class EndPointConfigFactory {
       case "mavlink" -> new MavlinkConfig(config);
       case "n2k" -> new N2kProtocolConfig(config);
       case "ws", "wss" -> new WebSocketConfig(config);
+      case "stream" -> new StreamConfig(config);
       default -> new ExtensionConfig(config);
     };
   }

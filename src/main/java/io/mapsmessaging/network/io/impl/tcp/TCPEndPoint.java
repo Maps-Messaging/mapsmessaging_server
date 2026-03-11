@@ -130,6 +130,7 @@ public class TCPEndPoint extends EndPoint {
     }
   }
 
+  @Override
   public void setProxyProtocolInfo(ProxyProtocolInfo proxyProtocolInfo){
     super.setProxyProtocolInfo(proxyProtocolInfo);
     name = getProtocol() + "_" + getRemoteSocketAddress();
@@ -144,6 +145,7 @@ public class TCPEndPoint extends EndPoint {
     return(actualRemote.equals(proxySource));
   }
 
+  @Override
   public boolean isProxyAllowed() {
     String allowedProxyHosts = getConfig().getEndPointConfig().getAllowedProxyHosts();
     if (!isValidProxySource()) return false;

@@ -36,11 +36,6 @@ io.mapsmessaging.network.protocol.impl.stomp.StompProtocolFactory
 io.mapsmessaging.network.protocol.impl.nats.NatsProtocolFactory
 
 #
-# TCP/Serial based protocols
-#
-io.mapsmessaging.network.protocol.impl.nmea.NMEAProtocolFactory
-
-#
 # OrbComm based protocols to support Satellite communications
 #
 io.mapsmessaging.network.protocol.impl.satellite.modem.protocol.StoGiProtocolFactory
@@ -51,7 +46,14 @@ io.mapsmessaging.network.protocol.impl.satellite.modem.protocol.StoGiProtocolFac
 io.mapsmessaging.network.protocol.impl.coap.CoapProtocolFactory
 io.mapsmessaging.network.protocol.impl.mqtt_sn.MQTT_SNProtocolFactory
 io.mapsmessaging.network.protocol.impl.semtech.SemTechProtocolFactory
+
+#
+# Generic protocols using any end point
+#
+io.mapsmessaging.network.protocol.impl.nmea.NMEAProtocolFactory
+io.mapsmessaging.network.protocol.impl.stream.StreamProtocolFactory
 io.mapsmessaging.network.protocol.impl.mavlink.MavlinkProtocolFactory
+
 
 #
 # Layered Protocols
