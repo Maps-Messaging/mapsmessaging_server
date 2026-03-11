@@ -76,7 +76,7 @@ public abstract class PackHelper {
     MessageFormatter formatter = null;
     if (schemaConfig != null) {
       try {
-        formatter = MessageFormatterFactory.getInstance().getFormatter(schemaConfig);
+        formatter = SchemaManager.getInstance().getMessageFormatter(schemaConfig);
       } catch (Exception ignore) {
         // if we can not parse to json, we fall through and base64 it
       }

@@ -28,7 +28,6 @@ import io.mapsmessaging.engine.schema.SchemaManager;
 import io.mapsmessaging.location.LocationManager;
 import io.mapsmessaging.schemas.config.SchemaConfig;
 import io.mapsmessaging.schemas.formatters.MessageFormatter;
-import io.mapsmessaging.schemas.formatters.MessageFormatterFactory;
 import io.mapsmessaging.schemas.formatters.ParsedObject;
 import io.mapsmessaging.selector.IdentifierResolver;
 import io.mapsmessaging.storage.Storable;
@@ -360,7 +359,7 @@ public class Message implements IdentifierResolver, Storable {
       SchemaConfig config = SchemaManager.getInstance().getSchema(schemaId);
       if(config != null){
         try {
-          MessageFormatter formatter = MessageFormatterFactory.getInstance().getFormatter(config);
+          MessageFormatter formatter = SchemaManager.getInstance().getMessageFormatter(config);
           parsedObject = formatter.parse(getOpaqueData());
         } catch (IOException e) {
           parsedObject = null;

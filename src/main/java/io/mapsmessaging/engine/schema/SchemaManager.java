@@ -37,6 +37,7 @@ import io.mapsmessaging.schemas.config.impl.NativeSchemaConfig.TYPE;
 import io.mapsmessaging.schemas.formatters.MessageFormatter;
 import io.mapsmessaging.schemas.formatters.MessageFormatterFactory;
 import io.mapsmessaging.schemas.repository.SchemaRepository;
+import io.mapsmessaging.schemas.repository.SchemaResolver;
 import io.mapsmessaging.schemas.repository.impl.FileSchemaRepository;
 import io.mapsmessaging.schemas.repository.impl.RestSchemaRepository;
 import io.mapsmessaging.schemas.repository.impl.SimpleSchemaRepository;
@@ -54,7 +55,7 @@ import java.util.Map.Entry;
 import static io.mapsmessaging.logging.ServerLogMessages.*;
 
 @SuppressWarnings("java:S6548") // yes, it is a singleton
-public class SchemaManager implements Agent {
+public class SchemaManager implements Agent, SchemaResolver {
   private static final String MONITOR = "monitor";
 
   public static final UUID DEFAULT_RAW_UUID =              UUID.fromString("10000000-0000-1000-a000-100000000000");
@@ -76,6 +77,7 @@ public class SchemaManager implements Agent {
   private final Map<String, MessageFormatter> loadedFormatter;
   private final Map<String, List<SchemaConfig>> pathMap;
   private final List<SchemaImportLocationDTO> importLocations = new ArrayList<>();
+  private final Map<String, SchemaConfig> preLoadedSchemas = new HashMap<>();
   private final String protocPath;
 
   @Getter
@@ -92,14 +94,6 @@ public class SchemaManager implements Agent {
     }
     List<SchemaConfig> list = pathMap.computeIfAbsent(path, k -> new ArrayList<>());
     list.add(schemaConfig);
-    try {
-      if (!loadedFormatter.containsKey(schemaConfig.getUniqueId())) {
-        MessageFormatter messageFormatter = MessageFormatterFactory.getInstance().getFormatter(schemaConfig);
-        loadedFormatter.put(schemaConfig.getUniqueId(), messageFormatter);
-      }
-    } catch (Exception e) {
-      // Unable to load the formatter
-    }
     updateCount++;
     return resource.getDefaultVersion();
   }
@@ -119,18 +113,17 @@ public class SchemaManager implements Agent {
     };
   }
 
-  public MessageFormatter getMessageFormatter(String uniqueId) {
+  public MessageFormatter getMessageFormatter(SchemaConfig config) throws IOException{
+    return getMessageFormatter(config.getUniqueId());
+  }
+
+  public MessageFormatter getMessageFormatter(String uniqueId) throws IOException {
     MessageFormatter formatter = loadedFormatter.get(uniqueId);
     if(formatter == null){
       SchemaConfig schemaConfig = getSchema(uniqueId);
       if(schemaConfig != null) {
-        try {
-          formatter = MessageFormatterFactory.getInstance().getFormatter(schemaConfig);
-          loadedFormatter.put(schemaConfig.getUniqueId(), formatter);
-        } catch (IOException e) {
-          // log this
-        }
-
+        formatter = MessageFormatterFactory.getInstance().getFormatter(schemaConfig, this);
+        loadedFormatter.put(schemaConfig.getUniqueId(), formatter);
       }
     }
     return formatter;
@@ -139,7 +132,6 @@ public class SchemaManager implements Agent {
   public List<String> getMessageFormats() {
     return MessageFormatterFactory.getInstance().getFormatters();
   }
-
 
   public synchronized SchemaConfig getSchema(UUID uniqueId) {
     return getSchema(uniqueId.toString());
@@ -151,6 +143,11 @@ public class SchemaManager implements Agent {
       return resource.getDefaultVersion();
     }
     return null;
+  }
+
+
+  public synchronized SchemaConfig getSchemaByName(String name) {
+    return preLoadedSchemas.get(name);
   }
 
   public synchronized SchemaConfig locateSchema(String destinationName) {
@@ -279,6 +276,8 @@ public class SchemaManager implements Agent {
         try {
           JsonSchemaConfig jsonSchemaConfig1 = new JsonSchemaConfig(Path.of(location.getPath()));
           addSchema(location.getName(), jsonSchemaConfig1);
+          loadBundle(jsonSchemaConfig1);
+          preLoadedSchemas.put(location.getName(), jsonSchemaConfig1);
           logger.log(SCHEMA_MANAGER_LOADED_CONFIG,location.getName(), jsonSchemaConfig1.getUniqueId(), jsonSchemaConfig1.getFormat());
         } catch (IOException e) {
           logger.log(SCHEMA_MANAGER_LOADED_CONFIG_FAILED, location.getPath(), location.getFormat(), e);
@@ -289,6 +288,8 @@ public class SchemaManager implements Agent {
           List<ProtoBufSchemaConfig> schemaList = ProtobufSchemaGenerator.loadSchemas(Path.of(location.getPath()), protoExec);
           for(ProtoBufSchemaConfig schema: schemaList){
             addSchema(location.getName(), schema);
+            loadBundle(schema);
+            preLoadedSchemas.put(location.getName(), schema);
             logger.log(SCHEMA_MANAGER_LOADED_CONFIG,location.getName(), schema.getUniqueId(), schema.getFormat());
           }
         } catch (IOException e) {
@@ -296,12 +297,34 @@ public class SchemaManager implements Agent {
         }
       }
     }
-
     // This ensures the factory is loaded
     MessageFormatterFactory.getInstance();
   }
 
+  @Override
+  public SchemaConfig resolveParent(SchemaConfig schemaConfig) {
+    SchemaResource resource = repository.getResource(schemaConfig.getUniqueId());
+    if(resource != null){
+      return resource.getDefaultVersion();
+    }
+    return null;
+  }
+
+
+  private void loadBundle(SchemaConfig schema){
+    if(schema.isBundle()){
+      for (SchemaConfig config : schema.getBundledSchemas()) {
+        logger.log(SCHEMA_MANAGER_LOADED_BUNDLED, config.getName(), schema.getName(), schema.getUniqueId(), schema.getFormat());
+        repository.addVersion(config.getUniqueId(), config);
+      }
+    }
+  }
+
+
   private SchemaManager() {
+    loadedFormatter = new LinkedHashMap<>();
+    pathMap = new LinkedHashMap<>();
+
     SchemaManagerConfig config;
     try {
       config = ConfigurationManager.getInstance().getConfiguration(SchemaManagerConfig.class);
@@ -321,12 +344,16 @@ public class SchemaManager implements Agent {
     else{
       buildTime = new SimpleSchemaRepository();
     }
-    protocPath = config.getProtocPath();
     repository = buildTime;
-    loadedFormatter = new LinkedHashMap<>();
-    pathMap = new LinkedHashMap<>();
-    if(config != null && config.getImportLocations() != null) {
-      importLocations.addAll(config.getImportLocations());
+
+    if(config != null){
+      protocPath = config.getProtocPath();
+      if(config.getImportLocations() != null) {
+        importLocations.addAll(config.getImportLocations());
+      }
+    }
+    else{
+      protocPath = null;
     }
   }
 
