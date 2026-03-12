@@ -24,6 +24,7 @@ import io.mapsmessaging.engine.schema.SchemaManager;
 import io.mapsmessaging.schemas.config.SchemaConfig;
 import io.mapsmessaging.schemas.config.SchemaResource;
 import io.mapsmessaging.schemas.formatters.MessageFormatter;
+import io.mapsmessaging.schemas.formatters.ParseMode;
 import io.mapsmessaging.selector.IdentifierResolver;
 import io.mapsmessaging.selector.operators.ParserExecutor;
 
@@ -79,7 +80,7 @@ public class Filter {
     try {
       MessageFormatter formatter = SchemaManager.getInstance().getMessageFormatter(lookup);
       if (formatter != null) {
-        return formatter.parse(message.getOpaqueData());
+        return formatter.parse(message.getOpaqueData(), ParseMode.STRICT);
       }
     } catch (IOException e) {
       // log

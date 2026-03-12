@@ -35,6 +35,7 @@ import io.mapsmessaging.rest.translation.GsonDateTimeSerialiser;
 import io.mapsmessaging.schemas.config.SchemaConfig;
 import io.mapsmessaging.schemas.formatters.MessageFormatter;
 import io.mapsmessaging.schemas.formatters.MessageFormatterFactory;
+import io.mapsmessaging.schemas.formatters.ParseMode;
 import io.mapsmessaging.schemas.formatters.impl.RawFormatter;
 import jakarta.ws.rs.sse.OutboundSseEvent;
 import jakarta.ws.rs.sse.Sse;
@@ -238,7 +239,7 @@ public class RestMessageListener implements MessageListener {
       try {
         MessageFormatter formatter = SchemaManager.getInstance().getMessageFormatter(config);
         if (formatter != null && !(formatter instanceof RawFormatter)) {
-          JsonObject jsonObject = formatter.parseToJson(payload);
+          JsonObject jsonObject = formatter.parseToJson(payload, ParseMode.STRICT);
           JsonObject wrapper = new JsonObject();
           wrapper.add("payload", jsonObject);
           wrapper.addProperty("schemaId", message.getMessage().getSchemaId());
