@@ -23,9 +23,9 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import io.mapsmessaging.api.message.Message;
+import io.mapsmessaging.engine.schema.SchemaManager;
 import io.mapsmessaging.schemas.config.SchemaConfig;
 import io.mapsmessaging.schemas.formatters.MessageFormatter;
-import io.mapsmessaging.schemas.formatters.ParseMode;
 import org.jetbrains.annotations.Nullable;
 
 import java.nio.charset.StandardCharsets;
@@ -51,7 +51,7 @@ public final class JsonPackHelper extends PackHelper {
     if (bytes != null && bytes.length > 0) {
       if (formatter != null) {
         try {
-          JsonObject normalized = formatter.parseToJson(bytes, ParseMode.STRICT);
+          JsonObject normalized = formatter.parseToJson(bytes, SchemaManager.getInstance().getDefaultParseMode());
           if (normalized != null) {
             data = normalized;
           }

@@ -10,8 +10,6 @@ import io.mapsmessaging.api.message.TypedData;
 import io.mapsmessaging.rest.translation.GsonDateTimeSerialiser;
 import io.mapsmessaging.schemas.config.SchemaConfig;
 import io.mapsmessaging.schemas.formatters.MessageFormatter;
-import io.mapsmessaging.schemas.formatters.MessageFormatterFactory;
-import io.mapsmessaging.schemas.formatters.ParseMode;
 import io.mapsmessaging.schemas.formatters.impl.RawFormatter;
 
 import java.io.IOException;
@@ -51,7 +49,7 @@ public class MessageSchemaToJsonBuilder {
 
   private byte[] pack(Message message, SchemaConfig config, MessageFormatter formatter) throws IOException {
     byte[] payload = message.getOpaqueData();
-    JsonObject jsonObject = formatter.parseToJson(payload, ParseMode.STRICT);
+    JsonObject jsonObject = formatter.parseToJson(payload, SchemaManager.getInstance().getDefaultParseMode());
     JsonObject wrapper = new JsonObject();
     wrapper.add("payload", jsonObject);
     wrapper.addProperty("schemaId", config.getUniqueId());

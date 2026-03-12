@@ -23,7 +23,6 @@ import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.network.io.Packet;
 
-import java.io.IOException;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static io.mapsmessaging.logging.ServerLogMessages.N2K_PROTOCOL_INBOUND_HANDLER_ERROR;

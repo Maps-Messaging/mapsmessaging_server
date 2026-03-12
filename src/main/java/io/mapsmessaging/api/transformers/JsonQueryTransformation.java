@@ -35,8 +35,6 @@ import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.schemas.config.SchemaConfig;
 import io.mapsmessaging.schemas.formatters.MessageFormatter;
-import io.mapsmessaging.schemas.formatters.MessageFormatterFactory;
-import io.mapsmessaging.schemas.formatters.ParseMode;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -92,7 +90,7 @@ public class JsonQueryTransformation implements InterServerTransformation {
     JsonObject jsonObject;
     if (messageFormatter != null) {
       try {
-        jsonObject = messageFormatter.parseToJson(message.getMessage().getOpaqueData(), ParseMode.STRICT);
+        jsonObject = messageFormatter.parseToJson(message.getMessage().getOpaqueData(), SchemaManager.getInstance().getDefaultParseMode());
       } catch (IOException e) {
         logger.log(JSON_QUERY_EXECUTION_EXCEPTION, jsonQuery, e.getMessage(), e);
         return message; // fail safe: don't drop on formatter failure

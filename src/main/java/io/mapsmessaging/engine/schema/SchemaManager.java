@@ -36,6 +36,7 @@ import io.mapsmessaging.schemas.config.impl.*;
 import io.mapsmessaging.schemas.config.impl.NativeSchemaConfig.TYPE;
 import io.mapsmessaging.schemas.formatters.MessageFormatter;
 import io.mapsmessaging.schemas.formatters.MessageFormatterFactory;
+import io.mapsmessaging.schemas.formatters.ParseMode;
 import io.mapsmessaging.schemas.repository.SchemaRepository;
 import io.mapsmessaging.schemas.repository.SchemaResolver;
 import io.mapsmessaging.schemas.repository.impl.FileSchemaRepository;
@@ -79,6 +80,9 @@ public class SchemaManager implements Agent, SchemaResolver {
   private final List<SchemaImportLocationDTO> importLocations = new ArrayList<>();
   private final Map<String, SchemaConfig> preLoadedSchemas = new HashMap<>();
   private final String protocPath;
+
+  @Getter
+  private final ParseMode defaultParseMode;
 
   @Getter
   private long updateCount = 0;
@@ -351,9 +355,11 @@ public class SchemaManager implements Agent, SchemaResolver {
       if(config.getImportLocations() != null) {
         importLocations.addAll(config.getImportLocations());
       }
+      defaultParseMode = config.getParseMode();
     }
     else{
       protocPath = null;
+      defaultParseMode = ParseMode.IGNORE;
     }
   }
 

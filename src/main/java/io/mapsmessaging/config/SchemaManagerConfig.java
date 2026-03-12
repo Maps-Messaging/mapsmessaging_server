@@ -25,6 +25,7 @@ import io.mapsmessaging.configuration.ConfigurationProperties;
 import io.mapsmessaging.dto.rest.config.BaseConfigDTO;
 import io.mapsmessaging.dto.rest.schema.*;
 import io.mapsmessaging.license.FeatureManager;
+import io.mapsmessaging.schemas.formatters.ParseMode;
 import io.mapsmessaging.utilities.configuration.ConfigurationManager;
 
 import java.io.IOException;
@@ -54,6 +55,8 @@ public class SchemaManagerConfig extends SchemaManagerConfigDTO implements Confi
       loadLocations(props);
     }
     setProtocPath(configurationProperties.getProperty("protocPath", null));
+    String parseModeString = configurationProperties.getProperty("parseMode", "IGNORE");
+    setParseMode(ParseMode.valueOf(parseModeString));
   }
 
   private void loadLocations(ConfigurationProperties props){

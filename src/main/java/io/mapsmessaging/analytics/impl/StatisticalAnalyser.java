@@ -29,7 +29,6 @@ import io.mapsmessaging.dto.rest.analytics.StatisticsConfigDTO;
 import io.mapsmessaging.engine.schema.SchemaManager;
 import io.mapsmessaging.schemas.formatters.MessageFormatter;
 import io.mapsmessaging.schemas.formatters.ParseException;
-import io.mapsmessaging.schemas.formatters.ParseMode;
 import io.mapsmessaging.selector.IdentifierResolver;
 import org.jetbrains.annotations.NotNull;
 
@@ -84,7 +83,7 @@ public class StatisticalAnalyser implements Analyser {
     }
     if(formatter != null) {
       try {
-        IdentifierResolver resolver = formatter.parse(event.getOpaqueData(), ParseMode.IGNORE);
+        IdentifierResolver resolver = formatter.parse(event.getOpaqueData(), SchemaManager.getInstance().getDefaultParseMode());
         if(statistics.isEmpty()) {
           loadEntries(resolver);
         }

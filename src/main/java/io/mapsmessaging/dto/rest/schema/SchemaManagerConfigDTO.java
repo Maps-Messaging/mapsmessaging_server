@@ -22,6 +22,7 @@ package io.mapsmessaging.dto.rest.schema;
 import io.mapsmessaging.dto.rest.config.BaseConfigDTO;
 import io.mapsmessaging.dto.rest.config.BaseManagerConfigDTO;
 import io.mapsmessaging.dto.rest.config.ConfigurationManagerDTO;
+import io.mapsmessaging.schemas.formatters.ParseMode;
 import io.swagger.v3.oas.annotations.media.DiscriminatorMapping;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
@@ -77,6 +78,15 @@ public class SchemaManagerConfigDTO extends BaseManagerConfigDTO {
       nullable = true
   )
   private List<SchemaImportLocationDTO> importLocations = new ArrayList<>();
+
+  @Schema(
+      description = "Defines how schema parsing errors are handled. IGNORE keeps current behaviour and suppresses parse errors, STRICT throws an error.",
+      requiredMode = Schema.RequiredMode.NOT_REQUIRED,
+      nullable = false,
+      example = "IGNORE",
+      defaultValue = "IGNORE"
+  )
+  private ParseMode parseMode = ParseMode.IGNORE;
 
 
   public SchemaManagerConfigDTO() {

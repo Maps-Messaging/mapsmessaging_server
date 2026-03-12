@@ -39,11 +39,8 @@ import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.network.io.Packet;
 import io.mapsmessaging.network.io.impl.canbus.CanbusEndPoint;
 import io.mapsmessaging.network.protocol.Protocol;
-
 import io.mapsmessaging.schemas.config.SchemaConfig;
 import io.mapsmessaging.schemas.config.impl.CanbusSchemaConfig;
-import io.mapsmessaging.schemas.formatters.MessageFormatterFactory;
-import io.mapsmessaging.schemas.formatters.ParseMode;
 import io.mapsmessaging.schemas.formatters.impl.CanbusFormatter;
 import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
@@ -178,7 +175,7 @@ public class N2kProtocol extends Protocol {
     }
     if(frame != null) {
       if(parseToJson) {
-        processPacket(formatter.parseToJson(frame.getRawData(), ParseMode.STRICT));
+        processPacket(formatter.parseToJson(frame.getRawData(), SchemaManager.getInstance().getDefaultParseMode()));
       }
       else{
         Map<String, String> metaData = new HashMap<>();
