@@ -236,7 +236,7 @@ public class RestMessageListener implements MessageListener {
     if(message.getMessage().getSchemaId() != null) {
       SchemaConfig config = SchemaManager.getInstance().getSchema(message.getMessage().getSchemaId());
       try {
-        MessageFormatter formatter = MessageFormatterFactory.getInstance().getFormatter(config);
+        MessageFormatter formatter = SchemaManager.getInstance().getMessageFormatter(config);
         if (formatter != null && !(formatter instanceof RawFormatter)) {
           JsonObject jsonObject = formatter.parseToJson(payload);
           JsonObject wrapper = new JsonObject();

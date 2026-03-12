@@ -28,6 +28,7 @@ import io.mapsmessaging.license.FeatureManager;
 import io.mapsmessaging.utilities.configuration.ConfigurationManager;
 
 import java.io.IOException;
+import java.util.List;
 
 public class SchemaManagerConfig extends SchemaManagerConfigDTO implements Config, ConfigManager {
 
@@ -40,6 +41,28 @@ public class SchemaManagerConfig extends SchemaManagerConfigDTO implements Confi
       case "file" -> super.setRepositoryConfig(configureFile( (ConfigurationProperties) configurationProperties.get("config")));
       case "maps" -> super.setRepositoryConfig(configureMaps( (ConfigurationProperties) configurationProperties.get("config")));
       default -> super.setRepositoryConfig(new SimpleRepositoryConfigDTO());
+    }
+    Object locations = configurationProperties.get("importLocations");
+    if(locations instanceof List list){
+      for(Object location : list){
+        if(location instanceof ConfigurationProperties props){
+          loadLocations(props);
+        }
+      }
+    }
+    else if(locations instanceof ConfigurationProperties props){
+      loadLocations(props);
+    }
+    setProtocPath(configurationProperties.getProperty("protocPath", null));
+  }
+
+  private void loadLocations(ConfigurationProperties props){
+    if(props.containsKey("path") && props.containsKey("format") && props.containsKey("name")){
+      SchemaImportLocationDTO locationDTO = new SchemaImportLocationDTO();
+      locationDTO.setPath(props.getProperty("path"));
+      locationDTO.setFormat(props.getProperty("format"));
+      locationDTO.setName(props.getProperty("name"));
+      super.getImportLocations().add(locationDTO);
     }
   }
 

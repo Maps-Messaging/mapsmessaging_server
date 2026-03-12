@@ -31,6 +31,7 @@ import io.mapsmessaging.schemas.formatters.MessageFormatter;
 import io.mapsmessaging.selector.IdentifierResolver;
 import org.jetbrains.annotations.NotNull;
 
+import java.io.IOException;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -73,7 +74,11 @@ public class StatisticalAnalyser implements Analyser {
   public Message ingest(@NotNull Message event) {
     if(formatter == null) {
       String schemaId = event.getSchemaId();
-      formatter = SchemaManager.getInstance().getMessageFormatter(schemaId);
+      try {
+        formatter = SchemaManager.getInstance().getMessageFormatter(schemaId);
+      } catch (IOException e) {
+        // log
+      }
     }
     if(formatter != null) {
       IdentifierResolver resolver = formatter.parse(event.getOpaqueData());

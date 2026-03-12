@@ -96,7 +96,7 @@ public class N2kProtocol extends Protocol {
     rawTopicTemplate =  ((N2KConfigDTO)protocolConfig).getUnknownPacketTopic().replace("{candevice}",endPoint.getName());
     parseToJson =((N2KConfigDTO)protocolConfig).isParseToJson();
     String inboundTopicName =((N2KConfigDTO)protocolConfig).getInboundTopicName();
-    formatter = (CanbusFormatter) MessageFormatterFactory.getInstance().getFormatter(canbusSchema);
+    formatter = (CanbusFormatter) SchemaManager.getInstance().getMessageFormatter(canbusSchema);
     try {
       session = buildSession(endPoint.getName(), 10000);
     } catch (ExecutionException | TimeoutException e) {

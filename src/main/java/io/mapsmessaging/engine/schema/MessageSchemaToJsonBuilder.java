@@ -36,7 +36,7 @@ public class MessageSchemaToJsonBuilder {
     if(schemaId != null && !destinationName.startsWith("$")) {
       SchemaConfig config = SchemaManager.getInstance().getSchema(schemaId);
       if(config != null) {
-        MessageFormatter formatter = MessageFormatterFactory.getInstance().getFormatter(config);
+        MessageFormatter formatter = SchemaManager.getInstance().getMessageFormatter(config);
         if (formatter != null && !(formatter instanceof RawFormatter)) {
           byte[] data = pack(message, config, formatter);
           MessageBuilder messageBuilder = new MessageBuilder();

@@ -134,7 +134,7 @@ public class JsonQueryTransformation implements InterServerTransformation {
       if (schemaId != null) {
         SchemaConfig config = SchemaManager.getInstance().getSchema(schemaId);
         try {
-          messageFormatter = MessageFormatterFactory.getInstance().getFormatter(config);
+          messageFormatter = SchemaManager.getInstance().getMessageFormatter(config);
           if (messageFormatter != null) {
             schemaMap.put(source, messageFormatter);
           }

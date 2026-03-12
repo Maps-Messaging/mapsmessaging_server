@@ -20,6 +20,7 @@
 package io.mapsmessaging.api.transformers;
 
 import io.mapsmessaging.configuration.ConfigurationProperties;
+import io.mapsmessaging.engine.schema.SchemaManager;
 import io.mapsmessaging.engine.transformers.TransformerManager;
 import io.mapsmessaging.schemas.formatters.MessageFormatter;
 import io.mapsmessaging.schemas.formatters.MessageFormatterFactory;
@@ -56,7 +57,7 @@ class JsonQueryTransformationTest extends AbstractDroppingTransformationTest {
   private void setMessageFormatter(InterServerTransformation transformation) {
     try {
       MessageFormatter messageFormatter =
-          MessageFormatterFactory.getInstance().getFormatter(AbstractInterServerTransformationTest.JSON_SCHEMA_CONFIG);
+          SchemaManager.getInstance().getMessageFormatter(AbstractInterServerTransformationTest.JSON_SCHEMA_CONFIG);
       ((JsonQueryTransformation) transformation).schemaMap.put(AbstractInterServerTransformationTest.SOURCE, messageFormatter);
     } catch (IOException e) {
       throw new RuntimeException(e);

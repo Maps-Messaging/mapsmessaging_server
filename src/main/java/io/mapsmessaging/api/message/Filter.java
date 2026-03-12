@@ -27,6 +27,7 @@ import io.mapsmessaging.schemas.formatters.MessageFormatter;
 import io.mapsmessaging.selector.IdentifierResolver;
 import io.mapsmessaging.selector.operators.ParserExecutor;
 
+import java.io.IOException;
 import java.util.List;
 
 @SuppressWarnings("java:S6548") // yes it is a singleton
@@ -75,9 +76,13 @@ public class Filter {
   }
 
   public static IdentifierResolver getResolver(String lookup, Message message) {
-    MessageFormatter formatter = SchemaManager.getInstance().getMessageFormatter(lookup);
-    if (formatter != null) {
-      return formatter.parse(message.getOpaqueData());
+    try {
+      MessageFormatter formatter = SchemaManager.getInstance().getMessageFormatter(lookup);
+      if (formatter != null) {
+        return formatter.parse(message.getOpaqueData());
+      }
+    } catch (IOException e) {
+      // log
     }
     return null;
   }
