@@ -125,13 +125,22 @@ public class MavlinkInterfaceManager implements SelectorCallback, MavlinkConnect
       ProcessedFrame env = potentialFrame.get();
       logger.log(MAVLINK_DETECTED_PACKET, endPoint.getName(), env.getMessageName());
       MavlinkDeviceKey key = buildKey(packet, env.getFrame().getSystemId());
-      UDPSessionState<MavlinkProtocol> state = findOrCreate(key);
-      if(fromForward(packet)){
-        state.getContext().processPacket(packet);
+      boolean allowed = mavlinkConfig.getKnownSources() == null ||
+          mavlinkConfig.getKnownSources().isEmpty() ||
+          mavlinkConfig.getKnownSources().stream().anyMatch(knownSource -> knownSource.getSystemId() == key.getSystemId());
+
+      if(allowed) {
+        UDPSessionState<MavlinkProtocol> state = findOrCreate(key);
+        if (fromForward(packet)) {
+          state.getContext().processPacket(packet);
+        } else if (state.getContext() != null) {
+          MavlinkProtocol protocol = state.getContext();
+          protocol.processRawFrame(env, raw);
+          forwardPacket(raw);
+        }
       }
-      else if (state.getContext() != null) {
-        MavlinkProtocol protocol = state.getContext();
-        protocol.processRawFrame(env, raw);
+      else{
+        System.out.println("Ignoring packet from unknown source "+key.getSystemId());
         forwardPacket(raw);
       }
     }

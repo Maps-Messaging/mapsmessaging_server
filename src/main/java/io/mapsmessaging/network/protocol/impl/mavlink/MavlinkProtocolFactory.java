@@ -25,12 +25,10 @@ import io.mapsmessaging.network.io.EndPoint;
 import io.mapsmessaging.network.io.InterfaceInformation;
 import io.mapsmessaging.network.io.Packet;
 import io.mapsmessaging.network.io.impl.NetworkInfoHelper;
-import io.mapsmessaging.network.io.impl.serial.SerialEndPoint;
 import io.mapsmessaging.network.protocol.Protocol;
 import io.mapsmessaging.network.protocol.ProtocolImplFactory;
 
 import java.io.IOException;
-import java.net.InetSocketAddress;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 

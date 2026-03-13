@@ -20,7 +20,6 @@
 package io.mapsmessaging.network.protocol.impl.mavlink;
 
 import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
 import com.google.gson.JsonObject;
 import io.mapsmessaging.api.*;
 import io.mapsmessaging.api.features.DestinationType;
@@ -29,25 +28,28 @@ import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.api.message.TypedData;
 import io.mapsmessaging.dto.rest.config.protocol.ProtocolConfigDTO;
 import io.mapsmessaging.dto.rest.config.protocol.impl.MavlinkConfigDTO;
+import io.mapsmessaging.dto.rest.config.protocol.impl.MavlinkKnownSourceDTO;
 import io.mapsmessaging.dto.rest.protocol.ProtocolInformationDTO;
 import io.mapsmessaging.dto.rest.protocol.impl.MavlinkProtocolInformation;
 import io.mapsmessaging.mavlink.ProcessedFrame;
 import io.mapsmessaging.mavlink.message.Frame;
-import io.mapsmessaging.network.ProtocolClientConnection;
 import io.mapsmessaging.network.io.EndPoint;
 import io.mapsmessaging.network.io.Packet;
 import io.mapsmessaging.network.protocol.Protocol;
+import io.mapsmessaging.network.protocol.impl.mavlink.monitor.SequenceResult;
+import io.mapsmessaging.network.protocol.impl.mavlink.monitor.SequenceTracker;
 import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
 
 import javax.security.auth.Subject;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.util.Base64;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 public class MavlinkProtocol extends Protocol {
@@ -57,7 +59,8 @@ public class MavlinkProtocol extends Protocol {
   private final MavlinkDeviceKey key;
   protected final MavlinkConfigDTO mavlinkConfig;
   protected Session session;
-
+  private final Map<Integer, MavlinkKnownSourceDTO> acceptedComponents;
+  private final SequenceTracker tracker;
 
   protected MavlinkProtocol(@NonNull @NotNull MavlinkConnectionManager factory,
                             @NonNull @NotNull MavlinkDeviceKey key,
@@ -66,7 +69,19 @@ public class MavlinkProtocol extends Protocol {
     super(endPoint, protocolConfig);
     this.factory = factory;
     this.key = key;
+    tracker = new SequenceTracker();
     this.mavlinkConfig = (MavlinkConfigDTO)protocolConfig;
+    if(mavlinkConfig.getKnownSources() != null){
+       acceptedComponents = new LinkedHashMap<>();
+      for(MavlinkKnownSourceDTO knownSourceDTO: mavlinkConfig.getKnownSources()){
+        if(knownSourceDTO.getSystemId() == key.getSystemId()) {
+          acceptedComponents.put(knownSourceDTO.getComponentId(), knownSourceDTO);
+        }
+      }
+    }
+    else{
+      acceptedComponents = null;
+    }
     gson = GsonFactory.createStrictJsonWithSafeFloats();
     try {
       session = buildSession(key.getRemoteAddress().getHostName()+"_"+key.getRemotePort()+"_"+key.getSystemId(), mavlinkConfig.getMaximumSessionExpiry());
@@ -115,18 +130,51 @@ public class MavlinkProtocol extends Protocol {
 
 
   public void processRawFrame(ProcessedFrame env, byte[] raw) throws IOException {
-
-    if(mavlinkConfig.isParseToJson()){
-      Map<String, Object> parsed = env.getFields();
-      JsonObject complete  = MavlinkJsonEnvelopeBuilder.toJson(env.getFrame(), parsed);
-      JsonObject envelope = new JsonObject();
-      envelope.add("mavlink", complete);
-      if (env.getDetections() != null && !env.getDetections().isEmpty()) {
-        envelope.add("detections", gson.toJsonTree(env.getDetections()).getAsJsonArray());
+    if(mavlinkConfig.getStatusTopicNameTemplate() != null && !mavlinkConfig.getStatusTopicNameTemplate().isEmpty() ) {
+      SequenceResult results = tracker.accept(env.getFrame().getSequence());
+      if (results.isStatusChanged()) {
+        String statusTopic = computeTopicName(mavlinkConfig.getStatusTopicNameTemplate(), env.getFrame(), env.getMessageName());
+        JsonObject resultsJson = gson.toJsonTree(results).getAsJsonObject();
+        sendMessage(statusTopic, new MessageBuilder().setContentType("application/json").setOpaqueData(resultsJson.toString().getBytes(StandardCharsets.UTF_8)).build());
       }
-      raw = envelope.toString().getBytes();
     }
-    processPacket(env.getFrame(), env.getMessageName(), raw);
+
+    boolean allow = acceptedComponents == null || acceptedComponents.containsKey(env.getFrame().getComponentId());
+    if(allow && allowMessageId(env.getFrame().getComponentId(), env.getFrame().getMessageId())) {
+      if (mavlinkConfig.isParseToJson()) {
+        Map<String, Object> parsed = env.getFields();
+        JsonObject complete = MavlinkJsonEnvelopeBuilder.toJson(env.getFrame(), parsed);
+        JsonObject envelope = new JsonObject();
+        envelope.add("mavlink", complete);
+        if (env.getDetections() != null && !env.getDetections().isEmpty()) {
+          envelope.add("detections", gson.toJsonTree(env.getDetections()).getAsJsonArray());
+        }
+        raw = envelope.toString().getBytes();
+      }
+      processPacket(env.getFrame(), env.getMessageName(), raw);
+    }
+    else{
+      if(mavlinkConfig.getRejectedFrameNamespace() != null && !mavlinkConfig.getRejectedFrameNamespace().isEmpty()){
+        MessageBuilder messageBuilder = new MessageBuilder();
+        if(mavlinkConfig.isIncludeRejectedFrameMetadata()){
+          JsonObject metadata = new JsonObject();
+          metadata.addProperty("messageName", env.getMessageName());
+          metadata.addProperty("messageId", env.getFrame().getMessageId());
+          metadata.addProperty("systemId", env.getFrame().getSystemId());
+          metadata.addProperty("componentId", env.getFrame().getComponentId());
+          metadata.addProperty("payload", Base64.getEncoder().encodeToString(env.getFrame().getPayload()));
+          metadata.addProperty("sequence", env.getFrame().getSequence());
+          metadata.addProperty("signed", env.getFrame().isSigned());
+          metadata.addProperty("time_ms", System.currentTimeMillis());
+          messageBuilder.setOpaqueData(metadata.toString().getBytes(StandardCharsets.UTF_8));
+        }
+        else{
+          messageBuilder.setOpaqueData(raw);
+        }
+        String topicName = computeTopicName(mavlinkConfig.getRejectedFrameNamespace(), env.getFrame(), env.getMessageName());
+        sendMessage(topicName, messageBuilder.build());
+      }
+    }
   }
 
   public boolean processPacket(@NonNull @NotNull Frame envelope, String messageName, byte[] raw) throws IOException {
@@ -146,9 +194,12 @@ public class MavlinkProtocol extends Protocol {
         .setMeta(metaData)
         .build();
 
-    String topicName = computeTopicName(envelope, messageName);
+    String topicName = computeTopicName(mavlinkConfig.getTopicNameTemplate(), envelope, messageName);
+    sendMessage(topicName, message);
+    return true;
+  }
 
-
+  private void sendMessage(String topicName, Message message) {
     CompletableFuture<Destination> future = session.findDestination(topicName, DestinationType.TOPIC);
     if (future != null) {
       future.thenApply(destination -> {
@@ -160,7 +211,6 @@ public class MavlinkProtocol extends Protocol {
         return destination;
       });
     }
-    return true;
   }
 
 
@@ -184,13 +234,20 @@ public class MavlinkProtocol extends Protocol {
   }
 
 
-  protected String computeTopicName(Frame envelope, String messageName) {
-    String template = mavlinkConfig.getTopicNameTemplate();
+  protected String computeTopicName(String template, Frame envelope, String messageName) {
     template = template.replace("{remoteSocket}", getRemoteSocket());
     template = template.replace("{systemId}", ""+envelope.getSystemId());
     template = template.replace("{componentId}", ""+envelope.getComponentId());
     template = template.replace("{messageId}", ""+envelope.getMessageId());
     template = template.replace("{messageName}", messageName);
+
+    if(this.acceptedComponents != null){
+      MavlinkKnownSourceDTO knownSourceDTO = acceptedComponents.get(envelope.getComponentId());
+      if(knownSourceDTO != null){
+        template = template.replace("{systemName}", knownSourceDTO.getName());
+      }
+
+    }
     return template;
   }
 
@@ -208,6 +265,16 @@ public class MavlinkProtocol extends Protocol {
     map.put("payload", new TypedData(envelope.getPayload()));
     map.put("signed", new TypedData(envelope.isSigned()));
     return map;
+  }
+
+  public boolean allowMessageId(int componentId, int messageId){
+    if(acceptedComponents == null) return true;
+    MavlinkKnownSourceDTO knownSource = acceptedComponents.get(componentId);
+    if(knownSource == null) return false;
+    if(knownSource.getAcceptedMessageIds().isEmpty()){
+      return mavlinkConfig.getAcceptedMessageIds().isEmpty() || mavlinkConfig.getAcceptedMessageIds().contains(messageId);
+    }
+    return knownSource.getAcceptedMessageIds().contains(messageId);
   }
 }
 
