@@ -24,7 +24,6 @@ import io.mapsmessaging.dto.rest.config.network.SerialDeviceDTO;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
-import lombok.NoArgsConstructor;
 
 @Data
 @EqualsAndHashCode(callSuper=false)

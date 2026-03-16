@@ -22,10 +22,8 @@ package io.mapsmessaging.api.transformers;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import io.mapsmessaging.api.MessageBuilder;
-import io.mapsmessaging.configuration.ConfigurationProperties;
 import io.mapsmessaging.dto.rest.config.transformer.TransformationConfigDTO;
 import io.mapsmessaging.dto.rest.config.transformer.impl.JsonToValueTransformationDTO;
-import io.mapsmessaging.network.protocol.Protocol;
 import io.mapsmessaging.selector.ParseException;
 import io.mapsmessaging.selector.extensions.JsonParserExtension;
 

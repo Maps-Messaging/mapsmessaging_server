@@ -17,28 +17,28 @@
  *  limitations under the License.
  */
 
-package io.mapsmessaging.dto.rest.config;
+package io.mapsmessaging.dto.rest.config.aggregator;
 
-import io.mapsmessaging.dto.rest.config.network.EndPointConnectionServerConfigDTO;
 import io.swagger.v3.oas.annotations.media.Schema;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
 
-import java.util.List;
-
-@Data
-@EqualsAndHashCode(callSuper = true)
-@Schema(description = "Network Connection Manager Configuration DTO")
-public class NetworkConnectionManagerConfigDTO extends BaseManagerConfigDTO {
+@Schema(
+    title = "Aggregator Window Close Mode",
+    description = "Defines how an aggregation window is closed."
+)
+public enum WindowCloseMode {
 
   @Schema(
-      description = "List of endpoint connection server configurations",
-      requiredMode = Schema.RequiredMode.NOT_REQUIRED,
-      nullable = true
+      description = "Close the aggregation window only when all configured inputs have received at least one event."
   )
-  protected List<EndPointConnectionServerConfigDTO> endPointServerConfigList;
+  ALL_INPUTS,
 
-  public NetworkConnectionManagerConfigDTO(){
-    super("NetworkConnectionManagerConfigDTO");
-  }
+  @Schema(
+      description = "Close the aggregation window only when the configured timeout expires, regardless of which inputs have arrived."
+  )
+  TIMEOUT_ONLY,
+
+  @Schema(
+      description = "Close the aggregation window when all configured inputs have arrived, or when the timeout expires, whichever happens first."
+  )
+  ALL_INPUTS_OR_TIMEOUT
 }

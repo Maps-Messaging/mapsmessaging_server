@@ -1,7 +1,6 @@
 package io.mapsmessaging.api.transformers;
 
 import io.mapsmessaging.api.message.Message;
-import io.mapsmessaging.configuration.ConfigurationProperties;
 import io.mapsmessaging.dto.rest.config.transformer.TransformationConfigDTO;
 import io.mapsmessaging.engine.schema.MessageSchemaToJsonBuilder;
 

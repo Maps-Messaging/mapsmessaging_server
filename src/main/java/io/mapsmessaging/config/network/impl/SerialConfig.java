@@ -23,7 +23,6 @@ import io.mapsmessaging.config.Config;
 import io.mapsmessaging.config.network.SerialDeviceHelper;
 import io.mapsmessaging.configuration.ConfigurationProperties;
 import io.mapsmessaging.dto.rest.config.BaseConfigDTO;
-import io.mapsmessaging.dto.rest.config.network.SerialDeviceDTO;
 import io.mapsmessaging.dto.rest.config.network.impl.SerialConfigDTO;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;

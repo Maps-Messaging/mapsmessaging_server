@@ -48,7 +48,7 @@ import static org.junit.jupiter.api.Assertions.*;
  * This test class uses runId embedded in JSON payload for filtering, so it remains stable even if
  * correlation propagation / dataMap propagation changes.
  */
-class AggregatorSystemTest extends BaseAggreagtorTest {
+class StaticAggregatorSystemTest extends BaseAggreagtorTest {
 
   private static final long COMPLETE_PUBLISH_DEADLINE_MS = 500;
   private static final long TIMEOUT_MS = 5000;

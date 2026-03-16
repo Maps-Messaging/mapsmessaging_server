@@ -22,7 +22,6 @@ package io.mapsmessaging.network.protocol.impl.semtech.json;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import lombok.ToString;
 
 @Data
 @NoArgsConstructor

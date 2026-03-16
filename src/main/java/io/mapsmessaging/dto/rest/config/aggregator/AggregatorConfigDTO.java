@@ -27,7 +27,6 @@ import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 
 import java.util.List;
-import java.util.Map;
 
 @Data
 @EqualsAndHashCode(callSuper = true)
@@ -75,6 +74,17 @@ public class AggregatorConfigDTO extends BaseConfigDTO {
       maxLength = 2048
   )
   protected String outputTopic;
+
+  @Schema(
+      description = "Defines how the aggregation window is closed. ALL_INPUTS waits for at least one event from every configured input. TIMEOUT_ONLY always waits for the timeout to expire. ALL_INPUTS_OR_TIMEOUT closes on whichever happens first.",
+      example = "ALL_INPUTS_OR_TIMEOUT",
+      defaultValue = "ALL_INPUTS_OR_TIMEOUT",
+      requiredMode = Schema.RequiredMode.NOT_REQUIRED,
+      nullable = false,
+      implementation = WindowCloseMode.class
+  )
+  protected WindowCloseMode windowCloseMode = WindowCloseMode.ALL_INPUTS_OR_TIMEOUT;
+
 
   @Schema(
       description = "Time bucket duration in milliseconds (arrival-time based)",

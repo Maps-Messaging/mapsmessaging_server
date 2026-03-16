@@ -22,7 +22,6 @@ package io.mapsmessaging.network.io.connection.state;
 import io.mapsmessaging.api.features.QualityOfService;
 import io.mapsmessaging.api.transformers.InterServerPipelineTransformation;
 import io.mapsmessaging.api.transformers.InterServerTransformation;
-import io.mapsmessaging.configuration.ConfigurationProperties;
 import io.mapsmessaging.dto.rest.analytics.StatisticsConfigDTO;
 import io.mapsmessaging.dto.rest.config.protocol.LinkConfigDTO;
 import io.mapsmessaging.dto.rest.config.protocol.NamespaceFilterDTO;
@@ -38,7 +37,6 @@ import io.mapsmessaging.utilities.filtering.NamespaceFilters;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 public class Establishing extends State {
 

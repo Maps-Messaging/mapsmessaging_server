@@ -38,7 +38,8 @@ public class TransformationConfigFactory {
     String rawType = readTypeToken(props);
     TransformationType type = TransformationType.fromWireName(rawType);
     if(type == null) {
-      return null;
+      //ToDo: Log this
+      throw new IllegalArgumentException("Transformer config entry is null");
     }
     return switch (type) {
       case JSON_TO_XML -> new JsonToXmlTransformationConfig(props);

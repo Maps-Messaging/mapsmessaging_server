@@ -25,9 +25,6 @@ import io.mapsmessaging.network.protocol.impl.semtech.SemTechProtocol;
 import io.mapsmessaging.network.protocol.impl.semtech.packet.PullAck;
 import io.mapsmessaging.network.protocol.impl.semtech.packet.PullData;
 import io.mapsmessaging.network.protocol.impl.semtech.packet.SemTechPacket;
-import io.mapsmessaging.network.protocol.impl.semtech.status.SemtechStatusEvent;
-import io.mapsmessaging.network.protocol.impl.semtech.status.SemtechStatusEventFactory;
-import io.mapsmessaging.network.protocol.impl.semtech.status.SemtechStatusState;
 import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
 

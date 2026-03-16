@@ -53,7 +53,7 @@ import static org.junit.jupiter.api.Assertions.*;
  *
  * The test is expected to FAIL until transformers are configured. That is intentional.
  */
-class AggregatorTransformationSystemTest extends BaseAggreagtorTest {
+class StaticAggregatorTransformationSystemTest extends BaseAggreagtorTest {
 
   private static final long COMPLETE_PUBLISH_DEADLINE_MS = 500;
   private static final String JSON_CONTENT_TYPE = "application/json";

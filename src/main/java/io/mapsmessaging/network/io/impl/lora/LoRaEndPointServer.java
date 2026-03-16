@@ -20,9 +20,7 @@
 package io.mapsmessaging.network.io.impl.lora;
 
 import com.fazecast.jSerialComm.SerialPort;
-import io.mapsmessaging.config.network.impl.LoRaSerialDeviceConfig;
 import io.mapsmessaging.dto.rest.config.network.EndPointServerConfigDTO;
-import io.mapsmessaging.dto.rest.config.network.impl.LoRaConfigDTO;
 import io.mapsmessaging.dto.rest.config.network.impl.LoRaSerialConfigDTO;
 import io.mapsmessaging.dto.rest.config.network.impl.SerialConfigDTO;
 import io.mapsmessaging.logging.Logger;

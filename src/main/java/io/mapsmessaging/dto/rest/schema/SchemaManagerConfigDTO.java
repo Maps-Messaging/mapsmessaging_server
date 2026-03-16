@@ -19,16 +19,12 @@
 
 package io.mapsmessaging.dto.rest.schema;
 
-import io.mapsmessaging.dto.rest.config.BaseConfigDTO;
 import io.mapsmessaging.dto.rest.config.BaseManagerConfigDTO;
-import io.mapsmessaging.dto.rest.config.ConfigurationManagerDTO;
 import io.mapsmessaging.schemas.formatters.ParseMode;
 import io.swagger.v3.oas.annotations.media.DiscriminatorMapping;
 import io.swagger.v3.oas.annotations.media.Schema;
-import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
-import lombok.NoArgsConstructor;
 
 import java.util.ArrayList;
 import java.util.List;

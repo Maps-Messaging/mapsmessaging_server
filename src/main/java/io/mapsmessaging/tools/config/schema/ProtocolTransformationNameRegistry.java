@@ -2,12 +2,7 @@ package io.mapsmessaging.tools.config.schema;
 
 import io.mapsmessaging.network.protocol.transformation.ProtocolMessageTransformation;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.ServiceLoader;
-import java.util.Set;
+import java.util.*;
 
 public final class ProtocolTransformationNameRegistry {
 

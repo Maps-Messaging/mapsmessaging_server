@@ -22,9 +22,10 @@ import io.mapsmessaging.dto.rest.config.transformer.TransformationConfigDTO;
 import io.mapsmessaging.dto.rest.config.transformer.jsonmutate.JsonMutateOpDTO;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Schema;
-import java.util.List;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+
+import java.util.List;
 
 import static io.mapsmessaging.dto.rest.config.transformer.TransformationType.JSON_MUTATE;
 

@@ -6,11 +6,12 @@ import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.network.EndPointURL;
 import io.mapsmessaging.network.admin.EndPointManagerJMX;
-import io.mapsmessaging.network.io.*;
+import io.mapsmessaging.network.io.AcceptHandler;
+import io.mapsmessaging.network.io.EndPoint;
+import io.mapsmessaging.network.io.EndPointServer;
+import io.mapsmessaging.network.io.Selectable;
 import io.mapsmessaging.network.io.impl.Selector;
 import io.mapsmessaging.network.io.impl.serial.SerialEndPointServer;
-
-import io.mapsmessaging.network.protocol.Protocol;
 import io.mapsmessaging.network.protocol.ProtocolFactory;
 import io.mapsmessaging.network.protocol.ProtocolImplFactory;
 

@@ -20,7 +20,6 @@
 package io.mapsmessaging.config.device;
 
 import io.mapsmessaging.config.network.SerialDeviceHelper;
-import io.mapsmessaging.config.network.impl.SerialConfig;
 import io.mapsmessaging.configuration.ConfigurationProperties;
 import io.mapsmessaging.dto.rest.config.BaseConfigDTO;
 import io.mapsmessaging.dto.rest.config.device.SerialBusDeviceDTO;

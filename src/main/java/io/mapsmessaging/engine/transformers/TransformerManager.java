@@ -26,7 +26,10 @@ import io.mapsmessaging.dto.rest.config.transformer.TransformationConfigDTO;
 import io.mapsmessaging.utilities.service.Service;
 import io.mapsmessaging.utilities.service.ServiceManager;
 
-import java.util.*;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.ServiceLoader;
 
 @SuppressWarnings("java:S6548") // yes it is a singleton
 public class TransformerManager implements ServiceManager {

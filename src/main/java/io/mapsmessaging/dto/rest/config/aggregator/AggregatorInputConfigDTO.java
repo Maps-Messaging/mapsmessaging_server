@@ -19,7 +19,6 @@
 
 package io.mapsmessaging.dto.rest.config.aggregator;
 
-import io.mapsmessaging.api.transformers.InterServerTransformation;
 import io.mapsmessaging.dto.rest.config.BaseConfigDTO;
 import io.mapsmessaging.dto.rest.config.transformer.TransformationConfigDTO;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -28,7 +27,6 @@ import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 
 import java.util.List;
-import java.util.Map;
 
 @Data
 @EqualsAndHashCode(callSuper=false)
@@ -79,4 +77,11 @@ public class AggregatorInputConfigDTO extends BaseConfigDTO {
   )
   protected AggregatorContributionMode contributionMode = AggregatorContributionMode.LAST;
 
+
+  public AggregatorInputConfigDTO(AggregatorInputConfigDTO copy){
+    this.topicName = copy.getTopicName();
+    this.selector = copy.getSelector();
+    this.transformer = copy.getTransformer();
+    this.contributionMode = copy.getContributionMode();
+  }
 }

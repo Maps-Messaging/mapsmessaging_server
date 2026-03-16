@@ -20,7 +20,6 @@
 package io.mapsmessaging.config.protocol;
 
 import io.mapsmessaging.config.Config;
-
 import io.mapsmessaging.configuration.ConfigurationProperties;
 import io.mapsmessaging.dto.rest.config.BaseConfigDTO;
 import io.mapsmessaging.dto.rest.config.protocol.NamespaceFilterDTO;

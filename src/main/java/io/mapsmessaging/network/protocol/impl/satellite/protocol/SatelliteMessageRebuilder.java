@@ -19,7 +19,9 @@
 
 package io.mapsmessaging.network.protocol.impl.satellite.protocol;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
 
 public class SatelliteMessageRebuilder {
 

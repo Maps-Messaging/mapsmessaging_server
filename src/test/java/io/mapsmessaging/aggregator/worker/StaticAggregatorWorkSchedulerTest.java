@@ -28,7 +28,7 @@ import java.util.concurrent.atomic.AtomicLong;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-class AggregatorWorkSchedulerTest {
+class StaticAggregatorWorkSchedulerTest {
 
   @Test
   void stripeCountZeroResolvesToPositive() {

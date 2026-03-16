@@ -22,7 +22,6 @@ package io.mapsmessaging.network.protocol.impl.mavlink;
 import com.google.gson.Gson;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
-import io.mapsmessaging.mavlink.MavlinkFrameEnvelope;
 import io.mapsmessaging.mavlink.message.Frame;
 
 import java.util.Base64;

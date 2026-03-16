@@ -44,8 +44,9 @@ public class StreamHandler {
 
   private final Logger logger = LoggerFactory.getLogger(this.getClass());
   private final AggregatorInputConfigDTO config;
-  private SubscribedEventManager subscriptionManager;
   private final List<InterServerTransformation> transformation;
+
+  private SubscribedEventManager subscriptionManager;
 
   public StreamHandler(AggregatorInputConfigDTO config) {
     this.config = config;
@@ -61,7 +62,6 @@ public class StreamHandler {
   }
 
   public void start(Session session) throws IOException {
-
     if(config.getTransformer() != null && !config.getTransformer().isEmpty()){
       for(TransformationConfigDTO dto : config.getTransformer()){
         InterServerTransformation t = TransformerManager.getInstance().get(dto);
@@ -85,26 +85,24 @@ public class StreamHandler {
    * Returns null to indicate the event was dropped (e.g. transformer filtered it out).
    */
   public MessageEvent process(MessageEvent event) {
-    if(transformation != null) {
-      ParsedMessage parsedMessage = new ParsedMessage();
-      parsedMessage.setMessage(event.getMessage());
-      parsedMessage.setDestinationName(event.getDestinationName());
+    ParsedMessage parsedMessage = new ParsedMessage();
+    parsedMessage.setMessage(event.getMessage());
+    parsedMessage.setDestinationName(event.getDestinationName());
 
-      for (InterServerTransformation trans : transformation) {
-        parsedMessage = trans.transform(event.getDestinationName(), parsedMessage);
-        if( parsedMessage == null ||
-            parsedMessage.getDestinationName() == null ||
-            parsedMessage.getMessage() == null) {
-          return null; // dropped
-        }
+    for (InterServerTransformation trans : transformation) {
+      parsedMessage = trans.transform(event.getDestinationName(), parsedMessage);
+      if( parsedMessage == null ||
+          parsedMessage.getDestinationName() == null ||
+          parsedMessage.getMessage() == null) {
+        return null; // dropped
       }
-      event = new MessageEvent(
-          parsedMessage.getDestinationName(),
-          event.getSubscription(),
-          parsedMessage.getMessage(),
-          event.getCompletionTask()
-      );
     }
+    event = new MessageEvent(
+        parsedMessage.getDestinationName(),
+        event.getSubscription(),
+        parsedMessage.getMessage(),
+        event.getCompletionTask()
+    );
     return event;
   }
 

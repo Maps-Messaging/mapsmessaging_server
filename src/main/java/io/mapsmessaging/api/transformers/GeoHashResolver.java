@@ -20,10 +20,7 @@
 package io.mapsmessaging.api.transformers;
 
 import io.mapsmessaging.config.transformer.GeoHashResolverTransformationConfig;
-import io.mapsmessaging.configuration.ConfigurationProperties;
 import io.mapsmessaging.dto.rest.config.transformer.TransformationConfigDTO;
-import io.mapsmessaging.dto.rest.config.transformer.impl.GeoHashResolverTransformationDTO;
-import io.mapsmessaging.network.protocol.Protocol;
 import io.mapsmessaging.selector.IdentifierResolver;
 import io.mapsmessaging.utilities.GeoHashUtils;
 

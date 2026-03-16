@@ -19,7 +19,6 @@
 
 package io.mapsmessaging.config.network;
 
-import io.javalin.config.HttpConfig;
 import io.mapsmessaging.config.Config;
 import io.mapsmessaging.config.auth.SaslConfig;
 import io.mapsmessaging.config.network.impl.*;

@@ -25,6 +25,7 @@ import io.mapsmessaging.aggregator.StreamHandler;
 import io.mapsmessaging.aggregator.mailbox.AggregatorMailbox;
 import io.mapsmessaging.api.MessageEvent;
 import io.mapsmessaging.dto.rest.config.aggregator.AggregatorContributionMode;
+import io.mapsmessaging.dto.rest.config.aggregator.WindowCloseMode;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -35,7 +36,7 @@ public class AggregatorWorker implements AggregatorWorkItem {
   private final StreamHandler[] handlers;
   private final ProcessedHandler handler;
   private final long timeoutMillis;
-
+  private final WindowCloseMode windowCloseMode;
   private final MessageEvent[] contributions;
   private final boolean[] seen;
 
@@ -46,7 +47,8 @@ public class AggregatorWorker implements AggregatorWorkItem {
       AggregatorMailbox<AggregatorEnvelope> mailbox,
       StreamHandler[] handlers,
       long timeoutMillis,
-      ProcessedHandler handler
+      ProcessedHandler handler,
+      WindowCloseMode windowCloseMode
   ) {
     this.name = name;
     this.mailbox = mailbox;
@@ -56,7 +58,7 @@ public class AggregatorWorker implements AggregatorWorkItem {
     this.handler = handler;
     this.contributions = new MessageEvent[handlers.length];
     this.seen = new boolean[handlers.length];
-
+    this.windowCloseMode = windowCloseMode;
     this.deadlineMillis = -1;
   }
 
@@ -105,7 +107,9 @@ public class AggregatorWorker implements AggregatorWorkItem {
     MessageEvent event = envelope.getEvent();
     applyContribution(index, event, handlers[index].getContributionMode());
     runCompletion(event);
-    if (allSeen()) {
+    if ((windowCloseMode == WindowCloseMode.ALL_INPUTS ||
+         windowCloseMode == WindowCloseMode.ALL_INPUTS_OR_TIMEOUT) &&
+        allSeen()) {
       publishAndReset(true);
       deadlineMillis = -1;
     }

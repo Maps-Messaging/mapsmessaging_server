@@ -26,7 +26,6 @@ import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.dto.rest.session.SessionInformationDTO;
 import io.mapsmessaging.engine.closure.TemporaryDestinationDeletionTask;
 import io.mapsmessaging.engine.destination.DestinationImpl;
-import io.mapsmessaging.engine.destination.DestinationManager;
 import io.mapsmessaging.engine.destination.TemporaryDestination;
 import io.mapsmessaging.engine.destination.subscription.SubscriptionContext;
 import io.mapsmessaging.engine.session.MessageCallback;

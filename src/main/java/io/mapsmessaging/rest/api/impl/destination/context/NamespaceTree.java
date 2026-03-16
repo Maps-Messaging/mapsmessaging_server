@@ -22,7 +22,6 @@ package io.mapsmessaging.rest.api.impl.destination.context;
 import io.mapsmessaging.api.DestinationInfo;
 import io.mapsmessaging.api.features.DestinationType;
 import lombok.Getter;
-import lombok.Value;
 
 import java.time.Clock;
 import java.util.Collections;

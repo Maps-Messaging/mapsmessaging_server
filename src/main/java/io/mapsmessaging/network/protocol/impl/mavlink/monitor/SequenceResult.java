@@ -45,4 +45,5 @@ public class SequenceResult {
   private boolean statusChanged;
 
   private SequenceStatus status;
+
 }

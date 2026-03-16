@@ -87,25 +87,29 @@ public class JsonQueryTransformation implements InterServerTransformation {
       return message;
     }
     MessageFormatter messageFormatter = locateMessageFormatter(source, message);
-    JsonObject jsonObject;
+    JsonElement jsonElement;
     if (messageFormatter != null) {
       try {
-        jsonObject = messageFormatter.parseToJson(message.getMessage().getOpaqueData(), SchemaManager.getInstance().getDefaultParseMode());
-      } catch (IOException e) {
+        jsonElement = messageFormatter.parseToJson(message.getMessage().getOpaqueData(), SchemaManager.getInstance().getDefaultParseMode());
+      } catch (Exception e) {
         logger.log(JSON_QUERY_EXECUTION_EXCEPTION, jsonQuery, e.getMessage(), e);
-        return message; // fail safe: don't drop on formatter failure
+        return null; // fail safe: don't drop on formatter failure
       }
     } else {
-      jsonObject = JsonParser.parseString(new String(message.getMessage().getOpaqueData(), StandardCharsets.UTF_8)).getAsJsonObject();
+      jsonElement = JsonParser.parseString(new String(message.getMessage().getOpaqueData(), StandardCharsets.UTF_8));
     }
 
-    JsonElement element = program.apply(jsonObject);
-    if (element != null && !element.isJsonNull()) {
-      MessageBuilder messageBuilder = new MessageBuilder(message.getMessage());
-      messageBuilder.setOpaqueData(element.toString().getBytes(StandardCharsets.UTF_8));
-      messageBuilder.setSchemaId(SchemaManager.DEFAULT_JSON_SCHEMA.toString());
-      message.setMessage(messageBuilder.build());
-      return message;
+    try {
+      JsonElement element = program.apply(jsonElement);
+      if (element != null && !element.isJsonNull()) {
+        MessageBuilder messageBuilder = new MessageBuilder(message.getMessage());
+        messageBuilder.setOpaqueData(element.toString().getBytes(StandardCharsets.UTF_8));
+        messageBuilder.setSchemaId(SchemaManager.DEFAULT_JSON_SCHEMA.toString());
+        message.setMessage(messageBuilder.build());
+        return message;
+      }
+    } catch (Throwable e) {
+// log this
     }
     return null; // drop
   }

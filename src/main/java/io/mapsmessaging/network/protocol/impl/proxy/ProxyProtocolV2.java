@@ -26,7 +26,6 @@ import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
 import java.nio.BufferUnderflowException;
 import java.nio.ByteBuffer;
-import java.util.Arrays;
 
 public class ProxyProtocolV2 extends ProxyProtocol {
 

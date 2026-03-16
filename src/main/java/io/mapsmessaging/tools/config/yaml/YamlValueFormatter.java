@@ -19,8 +19,8 @@
 
 package io.mapsmessaging.tools.config.yaml;
 
-import java.util.Locale;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 public final class YamlValueFormatter {

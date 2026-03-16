@@ -21,17 +21,18 @@ package io.mapsmessaging.aggregator.aggregate;
 
 import com.google.common.reflect.TypeToken;
 import com.google.gson.Gson;
+import com.google.gson.JsonObject;
 import io.mapsmessaging.api.MessageBuilder;
 import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.api.message.TypedData;
+import io.mapsmessaging.engine.schema.SchemaManager;
+import io.mapsmessaging.schemas.formatters.MessageFormatter;
+import io.mapsmessaging.schemas.formatters.ParseMode;
 
+import java.io.IOException;
 import java.lang.reflect.Type;
 import java.nio.charset.StandardCharsets;
-import java.util.Arrays;
-import java.util.Base64;
-import java.util.LinkedHashMap;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 
 public class EnvelopeAggregationStrategy implements AggregationStrategy {
 
@@ -47,17 +48,17 @@ public class EnvelopeAggregationStrategy implements AggregationStrategy {
   @Override
   public Message aggregate(String[] topics, Message[] contributions) {
     Map<String, Object> root = new LinkedHashMap<>();
-    Map<String, Object> inputs = new LinkedHashMap<>();
-
+    List<Map<String, Object>> envelopes = new ArrayList<>();
     for (int index = 0; index < contributions.length; index++) {
       Message message = contributions[index];
       if (message == null) {
         continue;
       }
-      inputs.put(topics[index], buildEnvelopeEntry(message));
+      Map<String, Object> topicEntry = buildEnvelopeEntry(message);
+      topicEntry.put("topic", topics[index]);
+      envelopes.add(topicEntry);
     }
-
-    root.put("inputs", inputs);
+    root.put("envelopes", envelopes);
     String json = gson.toJson(root);
 
     MessageBuilder messageBuilder = new MessageBuilder();
@@ -92,9 +93,22 @@ public class EnvelopeAggregationStrategy implements AggregationStrategy {
       Map<String, Object> map = gson.fromJson(new String(opaqueData, StandardCharsets.UTF_8), type);
       entry.put("payload", map);
     } else {
-      entry.put("payloadBase64", Base64.getEncoder().encodeToString(opaqueData));
+      if(message.getSchemaId() != null){
+        try {
+          MessageFormatter messageFormatter =  SchemaManager.getInstance().getMessageFormatter(message.getSchemaId());
+          JsonObject json = messageFormatter.parseToJson(message.getOpaqueData(), ParseMode.STRICT);
+          Type type = new TypeToken<Map<String, Object>>() {}.getType();
+          Map<String, Object> map = gson.fromJson(json, type);
+          entry.put("payload", map);
+        } catch (IOException e) {
+          entry.put("payloadBase64", Base64.getEncoder().encodeToString(opaqueData));
+          // log it
+        }
+      }
+      else {
+        entry.put("payloadBase64", Base64.getEncoder().encodeToString(opaqueData));
+      }
     }
-
     return entry;
   }
 

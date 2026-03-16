@@ -18,7 +18,6 @@
 
 package io.mapsmessaging.api.transformers;
 
-import io.mapsmessaging.configuration.ConfigurationProperties;
 import io.mapsmessaging.dto.rest.config.transformer.TransformationConfigDTO;
 
 import java.util.List;

@@ -19,10 +19,10 @@
 
 package io.mapsmessaging.rest.api.impl.destination;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.ws.rs.QueryParam;
 import lombok.AllArgsConstructor;
 import lombok.Data;
-import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
 

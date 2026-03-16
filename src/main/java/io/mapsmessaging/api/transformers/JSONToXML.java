@@ -24,11 +24,9 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.google.gson.reflect.TypeToken;
 import io.mapsmessaging.api.MessageBuilder;
-import io.mapsmessaging.configuration.ConfigurationProperties;
 import io.mapsmessaging.dto.rest.config.transformer.TransformationConfigDTO;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
-import io.mapsmessaging.network.protocol.Protocol;
 import io.mapsmessaging.utilities.GsonFactory;
 
 import java.lang.reflect.Type;

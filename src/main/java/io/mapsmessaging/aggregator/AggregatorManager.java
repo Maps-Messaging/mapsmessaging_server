@@ -23,6 +23,7 @@ import io.mapsmessaging.aggregator.worker.AggregatorWorkScheduler;
 import io.mapsmessaging.config.AggregatorManagerConfig;
 import io.mapsmessaging.dto.rest.config.AggregatorManagerConfigDTO;
 import io.mapsmessaging.dto.rest.config.aggregator.AggregatorConfigDTO;
+import io.mapsmessaging.dto.rest.config.aggregator.AggregatorInputConfigDTO;
 import io.mapsmessaging.dto.rest.system.Status;
 import io.mapsmessaging.dto.rest.system.SubSystemStatusDTO;
 import io.mapsmessaging.logging.Logger;
@@ -52,7 +53,12 @@ public class AggregatorManager implements Agent {
           config.getIdleSleepMs()
       );
       for (AggregatorConfigDTO aggregatorConfig : config.getAggregatorConfigList()) {
-        aggregators.add(new Aggregator(aggregatorWorkScheduler, aggregatorConfig));
+        if(containsWildcard(aggregatorConfig)){
+          aggregators.add(new DynamicAggregatorManager(aggregatorWorkScheduler, aggregatorConfig));
+        }
+        else {
+          aggregators.add(new StaticAggregator(aggregatorWorkScheduler, aggregatorConfig));
+        }
       }
       logger.log(AGGREGATOR_MANAGER_TASK_CREATED, config.getAggregatorConfigList().size());
     }
@@ -75,8 +81,8 @@ public class AggregatorManager implements Agent {
   public void start() {
     if(aggregatorWorkScheduler != null) {
       aggregatorWorkScheduler.start();
-      for (Aggregator aggregator : aggregators) {
-        aggregator.start();
+      for (Aggregator staticAggregator : aggregators) {
+        staticAggregator.start();
       }
       logger.log(AGGREGATOR_MANAGER_TASK_STARTED, aggregators.size());
     }
@@ -86,8 +92,8 @@ public class AggregatorManager implements Agent {
   public void stop() {
     if(aggregatorWorkScheduler != null) {
       aggregatorWorkScheduler.stop();
-      for (Aggregator aggregator : aggregators) {
-        aggregator.stop();
+      for (Aggregator staticAggregator : aggregators) {
+        staticAggregator.stop();
       }
       logger.log(AGGREGATOR_MANAGER_TASK_STOPPED, aggregators.size());
     }
@@ -106,5 +112,15 @@ public class AggregatorManager implements Agent {
       status.setComment("Running Aggregators:"+config.getAggregatorConfigList().size());
     }
     return status;
+  }
+
+  private boolean containsWildcard(AggregatorConfigDTO config) {
+    for (AggregatorInputConfigDTO input : config.getInputs()) {
+      String topic = input.getTopicName();
+      if (topic.contains("+") || topic.contains("#")) {
+        return true;
+      }
+    }
+    return false;
   }
 }

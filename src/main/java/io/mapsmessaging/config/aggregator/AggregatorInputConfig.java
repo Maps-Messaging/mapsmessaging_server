@@ -24,10 +24,7 @@ import io.mapsmessaging.config.transformer.TransformationConfigFactory;
 import io.mapsmessaging.configuration.ConfigurationProperties;
 import io.mapsmessaging.dto.rest.config.BaseConfigDTO;
 import io.mapsmessaging.dto.rest.config.aggregator.AggregatorInputConfigDTO;
-import io.mapsmessaging.engine.transformers.TransformerManager;
-import io.mapsmessaging.network.protocol.transformation.TransformationManager;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 

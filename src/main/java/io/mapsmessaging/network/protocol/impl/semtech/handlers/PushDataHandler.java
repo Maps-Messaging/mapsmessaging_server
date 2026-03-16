@@ -23,17 +23,11 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParseException;
 import com.google.gson.JsonParser;
 import io.mapsmessaging.api.MessageBuilder;
-import io.mapsmessaging.api.message.Message;
-import io.mapsmessaging.engine.destination.MessageOverrides;
 import io.mapsmessaging.network.protocol.impl.semtech.GatewayInfo;
 import io.mapsmessaging.network.protocol.impl.semtech.SemTechProtocol;
 import io.mapsmessaging.network.protocol.impl.semtech.packet.PushAck;
 import io.mapsmessaging.network.protocol.impl.semtech.packet.PushData;
 import io.mapsmessaging.network.protocol.impl.semtech.packet.SemTechPacket;
-import io.mapsmessaging.network.protocol.impl.semtech.status.SemtechStatusEvent;
-import io.mapsmessaging.network.protocol.impl.semtech.status.SemtechStatusEventFactory;
-import io.mapsmessaging.network.protocol.impl.semtech.status.SemtechStatusState;
-import io.mapsmessaging.network.protocol.impl.semtech.status.SemtechStatusType;
 import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
 

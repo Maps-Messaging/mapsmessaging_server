@@ -20,11 +20,8 @@
 package io.mapsmessaging.network.io.impl.lora;
 
 import io.mapsmessaging.config.LoRaDeviceManagerConfig;
-import io.mapsmessaging.config.network.impl.LoRaChipDeviceConfig;
-import io.mapsmessaging.config.network.impl.LoRaSerialDeviceConfig;
 import io.mapsmessaging.dto.rest.config.lora.LoRaDeviceConfigDTO;
 import io.mapsmessaging.dto.rest.config.network.impl.LoRaChipConfigDTO;
-import io.mapsmessaging.dto.rest.config.network.impl.LoRaConfigDTO;
 import io.mapsmessaging.dto.rest.config.network.impl.LoRaSerialConfigDTO;
 import io.mapsmessaging.dto.rest.config.network.impl.SerialConfigDTO;
 import io.mapsmessaging.logging.Logger;

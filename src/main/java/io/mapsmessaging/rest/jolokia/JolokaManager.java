@@ -21,7 +21,6 @@ package io.mapsmessaging.rest.jolokia;
 
 import io.mapsmessaging.MessageDaemon;
 import io.mapsmessaging.config.JolokiaConfig;
-import io.mapsmessaging.configuration.ConfigurationProperties;
 import io.mapsmessaging.dto.rest.system.Status;
 import io.mapsmessaging.dto.rest.system.SubSystemStatusDTO;
 import io.mapsmessaging.logging.Logger;
