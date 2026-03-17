@@ -151,7 +151,36 @@ public class SchemaManager implements Agent, SchemaResolver {
 
 
   public synchronized SchemaConfig getSchemaByName(String name) {
-    return preLoadedSchemas.get(name);
+    SchemaConfig config = preLoadedSchemas.get(name);
+    if(config == null){
+      for(SchemaConfig schemaConfig: getAll()){
+        if(schemaConfig.getName().equalsIgnoreCase(name) ||
+           schemaConfig.getUniqueId().equalsIgnoreCase(name) ||
+           schemaConfig.getName().endsWith(name))
+        {
+          config = schemaConfig;
+          break;
+        }
+      }
+    }
+    return config;
+  }
+
+  public synchronized SchemaConfig getSchemaByNameAndType(String name, String type) {
+    SchemaConfig config = preLoadedSchemas.get(name);
+    if(config == null){
+      for(SchemaConfig schemaConfig: getAll()){
+        if( (schemaConfig.getName().equalsIgnoreCase(name) ||
+             schemaConfig.getUniqueId().equalsIgnoreCase(name) ||
+             schemaConfig.getName().endsWith(name)) &&
+           schemaConfig.getFormat().equalsIgnoreCase(type))
+        {
+          config = schemaConfig;
+          break;
+        }
+      }
+    }
+    return config;
   }
 
   public synchronized SchemaConfig locateSchema(String destinationName) {

@@ -10,6 +10,8 @@ public class JsonToSchemaTransformation extends JsonToSchemaTransformationDTO {
     setType(TransformationType.JSON_TO_SCHEMA);
     ConfigurationProperties parameters = unwrapParameters(props);
     schemaName = parameters.getProperty("schema", null);
+    format = parameters.getProperty("format", null);
+    messageName = parameters.getProperty("messageName", null);
   }
 
   private ConfigurationProperties unwrapParameters(ConfigurationProperties props) {
