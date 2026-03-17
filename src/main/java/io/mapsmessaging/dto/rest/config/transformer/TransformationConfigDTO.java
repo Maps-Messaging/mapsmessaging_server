@@ -32,6 +32,7 @@ import lombok.NoArgsConstructor;
 @JsonSubTypes({
     @JsonSubTypes.Type(value = JsonToXmlTransformationDTO.class, name = "jsontoxml"),
     @JsonSubTypes.Type(value = XmlToJsonTransformationDTO.class, name = "xmltojson"),
+    @JsonSubTypes.Type(value = JsonToSchemaTransformationDTO.class, name = "jsontoschema"),
     @JsonSubTypes.Type(value = JsonToValueTransformationDTO.class, name = "jsontovalue"),
     @JsonSubTypes.Type(value = JsonQueryTransformationDTO.class, name = "jsonquery"),
     @JsonSubTypes.Type(value = GeoHashResolverTransformationDTO.class, name = "geohash"),
@@ -47,6 +48,7 @@ import lombok.NoArgsConstructor;
     discriminatorMapping = {
         @DiscriminatorMapping(value = "jsontoxml", schema = JsonToXmlTransformationDTO.class),
         @DiscriminatorMapping(value = "xmltojson", schema = XmlToJsonTransformationDTO.class),
+        @DiscriminatorMapping(value = "jsontoschema", schema = JsonToSchemaTransformationDTO.class),
         @DiscriminatorMapping(value = "jsontovalue", schema = JsonToValueTransformationDTO.class),
         @DiscriminatorMapping(value = "jsonquery", schema = JsonQueryTransformationDTO.class),
         @DiscriminatorMapping(value = "geohash", schema = GeoHashResolverTransformationDTO.class),

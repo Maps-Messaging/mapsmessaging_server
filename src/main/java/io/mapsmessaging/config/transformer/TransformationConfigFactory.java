@@ -22,11 +22,7 @@ public class TransformationConfigFactory {
       }
       return results;
     }
-    TransformationConfigDTO dto = loadSingle(value);
-    if(dto == null) {
-      return List.of();
-    }
-    return List.of(dto);
+    return List.of(loadSingle(value));
   }
 
   public static TransformationConfigDTO loadSingle(Object value) {
@@ -52,6 +48,7 @@ public class TransformationConfigFactory {
       case CLOUD_EVENT_NATIVE -> new CloudEventNativeTransformationConfig(props);
       case CLOUD_EVENT_JSON -> new CloudEventJsonTransformationConfig(props);
       case CLOUD_EVENT_ENVELOPE -> new CloudEventEnvelopeTransformationConfig(props);
+      case JSON_TO_SCHEMA -> new JsonToSchemaTransformation(props);
     };
   }
 

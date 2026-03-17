@@ -34,7 +34,10 @@ public enum TransformationType {
   SCHEMA_TO_JSON("schematojson"),
 
   @SerializedName("jsonmutate")
-  JSON_MUTATE("jsonmutate");
+  JSON_MUTATE("jsonmutate"),
+
+  @SerializedName("jsontoschema")
+  JSON_TO_SCHEMA("jsontoschema");
 
   private final String wireName;
 
