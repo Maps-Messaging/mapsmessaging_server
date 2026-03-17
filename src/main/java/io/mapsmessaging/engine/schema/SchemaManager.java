@@ -307,7 +307,7 @@ public class SchemaManager implements Agent, SchemaResolver {
 
   @Override
   public SchemaConfig resolveParent(SchemaConfig schemaConfig) {
-    SchemaResource resource = repository.getResource(schemaConfig.getUniqueId());
+    SchemaResource resource = repository.getResource(schemaConfig.getParentUuid());
     if(resource != null){
       return resource.getDefaultVersion();
     }
