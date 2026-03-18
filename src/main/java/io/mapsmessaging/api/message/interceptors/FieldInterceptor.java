@@ -48,6 +48,8 @@ public class FieldInterceptor {
     mapLookup.put("JMSExpiration", new JMSExpirationInterceptor());
     mapLookup.put("JMSPriority", new JMSPriorityInterceptor());
     mapLookup.put("MapsMsgPayload", new OpaqueDataInterceptor());
+    mapLookup.put("utcTimeIso", new UtcTimeIsoInterceptor());
+    mapLookup.put("utcExpiryTimeIso", new UtcExpiryTimeIsoInterceptor());
   }
 
 
