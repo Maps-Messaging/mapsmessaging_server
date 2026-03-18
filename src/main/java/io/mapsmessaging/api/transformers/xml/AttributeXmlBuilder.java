@@ -68,7 +68,14 @@ public final class AttributeXmlBuilder {
       if ("text".equals(fieldName) && value.isJsonPrimitive()) {
         element.setTextContent(asString(value.getAsJsonPrimitive()));
       } else if (value.isJsonPrimitive()) {
-        element.setAttribute(fieldName, asString(value.getAsJsonPrimitive()));
+        if (fieldName.startsWith("@")) {
+          String attributeName = fieldName.substring(1);
+          element.setAttribute(attributeName, asString(value.getAsJsonPrimitive()));
+        } else {
+          Element childElement = document.createElement(fieldName);
+          childElement.setTextContent(asString(value.getAsJsonPrimitive()));
+          element.appendChild(childElement);
+        }
       } else if (value.isJsonObject()) {
         Element childElement = buildElement(document, fieldName, value.getAsJsonObject());
         element.appendChild(childElement);
