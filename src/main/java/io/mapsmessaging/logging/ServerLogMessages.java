@@ -743,6 +743,9 @@ public enum ServerLogMessages implements LogMessage {
   SCHEMA_MANAGER_LOADED_CONFIG(LEVEL.INFO, SERVER_CATEGORY.ENGINE, "Loaded configuration from file name:{} UUID:{} type:{}"),
   SCHEMA_MANAGER_LOADED_BUNDLED(LEVEL.INFO, SERVER_CATEGORY.ENGINE, "Loaded bundled schema {} from name:{} UUID:{} type:{} "),
   SCHEMA_MANAGER_LOADED_CONFIG_FAILED(LEVEL.WARN, SERVER_CATEGORY.ENGINE, "Failed to loaded configuration from file {} of type:{}"),
+
+  SCHEMA_MESSAGE_FORMAT(LEVEL.INFO, SERVER_CATEGORY.ENGINE, "Message format for {} is {}"),
+  SCHEMA_MESSAGE_DROP(LEVEL.INFO, SERVER_CATEGORY.ENGINE, "Message is dropped for {}"),
   //</editor-fold>
 
 
