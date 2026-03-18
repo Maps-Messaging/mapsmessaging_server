@@ -19,16 +19,19 @@
 
 package io.mapsmessaging.api.transformers;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.dataformat.xml.XmlMapper;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.google.gson.reflect.TypeToken;
 import io.mapsmessaging.api.MessageBuilder;
+import io.mapsmessaging.api.transformers.xml.AttributeXmlBuilder;
 import io.mapsmessaging.dto.rest.config.transformer.TransformationConfigDTO;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.utilities.GsonFactory;
 
+import java.io.IOException;
 import java.lang.reflect.Type;
 import java.nio.charset.StandardCharsets;
 import java.util.Map;
@@ -62,24 +65,24 @@ public class JSONToXML implements InterServerTransformation {
     return "Converts JSON to XML";
   }
 
-
   private void convert(MessageBuilder messageBuilder) {
     try {
-      JsonObject jsonObject = JsonParser.parseString(
-          new String(messageBuilder.getOpaqueData(), StandardCharsets.UTF_8)
-      ).getAsJsonObject();
-
-      // Convert JsonObject to Map for XmlMapper
-      Type type = new TypeToken<Map<String, Object>>() {}.getType();
-      Map<String, Object> map =  GsonFactory.getInstance().getSimpleGson().fromJson(jsonObject, type);
-
-      XmlMapper xmlMapper = new XmlMapper();
-      String xml = xmlMapper.writeValueAsString(map);
-
-      messageBuilder.setOpaqueData(xml.getBytes(StandardCharsets.UTF_8));
+      JsonObject jsonObject = JsonParser.parseString(new String(messageBuilder.getOpaqueData(), StandardCharsets.UTF_8)).getAsJsonObject();
+      byte[] xml = convertUsingAttributes(jsonObject);
+      messageBuilder.setOpaqueData(xml);
     } catch (Exception e) {
       logger.log(FORMATTER_UNEXPECTED_OBJECT, getName());
     }
   }
 
+  private byte[] convertToXml(JsonObject jsonObject) throws JsonProcessingException {
+    Type type = new TypeToken<Map<String, Object>>() {}.getType();
+    Map<String, Object> map =  GsonFactory.getInstance().getSimpleGson().fromJson(jsonObject, type);
+    XmlMapper xmlMapper = new XmlMapper();
+    return xmlMapper.writeValueAsString(map).getBytes();
+  }
+
+  private byte[] convertUsingAttributes(JsonObject jsonObject) throws IOException {
+    return AttributeXmlBuilder.buildXml(jsonObject);
+  }
 }
