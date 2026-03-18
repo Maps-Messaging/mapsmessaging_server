@@ -98,7 +98,13 @@ public class JsonQueryTransformation implements InterServerTransformation {
     } else {
       jsonElement = JsonParser.parseString(new String(message.getMessage().getOpaqueData(), StandardCharsets.UTF_8));
     }
-
+    if(jsonElement != null && jsonElement.isJsonObject()){
+      JsonObject jsonObject = jsonElement.getAsJsonObject();
+      JsonObject meta = new JsonObject();
+      meta.addProperty("utcTimeIso", message.getMessage().getDataMap().get("utcTimeIso").getData().toString());
+      meta.addProperty("utcExpiryTimeIso", message.getMessage().getDataMap().get("utcExpiryTimeIso").getData().toString());
+      jsonObject.add("meta", meta);
+    }
     try {
       JsonElement element = program.apply(jsonElement);
       if (element != null && !element.isJsonNull()) {
