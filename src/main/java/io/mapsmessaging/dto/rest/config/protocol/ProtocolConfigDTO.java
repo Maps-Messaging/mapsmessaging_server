@@ -47,6 +47,7 @@ import lombok.NoArgsConstructor;
     @JsonSubTypes.Type(value = ExtensionConfigDTO.class, name = "extension"),
     @JsonSubTypes.Type(value = NatsConfigDTO.class, name = "nats"),
     @JsonSubTypes.Type(value = N2KConfigDTO.class, name = "n2k"),
+    @JsonSubTypes.Type(value = CanAerospaceConfigDTO.class, name = "canaerospace"),
 })
 @Schema(
     description = "Abstract base class for all protocol configurations",
@@ -70,6 +71,7 @@ import lombok.NoArgsConstructor;
         @DiscriminatorMapping(value = "nats", schema = NatsConfigDTO.class),
         @DiscriminatorMapping(value = "extension", schema = ExtensionConfigDTO.class),
         @DiscriminatorMapping(value = "n2k", schema = N2KConfigDTO.class),
+        @DiscriminatorMapping(value = "canaerospace", schema = CanAerospaceConfigDTO.class),
 
     },
     requiredProperties = {"type"},
@@ -106,7 +108,8 @@ public class ProtocolConfigDTO extends BaseConfigDTO {
           "ws",
           "mavlink",
           "extension",
-          "n2k"
+          "n2k",
+          "canaerospace"
       },
       requiredMode = Schema.RequiredMode.REQUIRED,
       nullable = false,

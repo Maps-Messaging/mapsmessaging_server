@@ -203,6 +203,7 @@ public class EndPointConfigFactory {
       case "satellite" -> new SatelliteConfig(config);
       case "mavlink" -> new MavlinkConfig(config);
       case "n2k" -> new N2kProtocolConfig(config);
+      case "canaerospace" -> new CanAerospaceProtocolConfig(config);
       case "ws", "wss" -> new WebSocketConfig(config);
       default -> new ExtensionConfig(config);
     };

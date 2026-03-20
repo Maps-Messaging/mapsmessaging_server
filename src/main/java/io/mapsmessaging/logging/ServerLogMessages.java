@@ -454,6 +454,20 @@ public enum ServerLogMessages implements LogMessage {
   N2K_PROTOCOL_CANBUS_BUILD_ERROR(LEVEL.ERROR, SERVER_CATEGORY.PROTOCOL, "Exception raised attempting to build canbus frame {}"),
   // </editor-fold>
 
+  // <editor-fold desc="CanAerospace Log messages">
+  CANAEROSPACE_LOADING_DATABASE_FROM_FILE(LEVEL.INFO, SERVER_CATEGORY.PROTOCOL, "Loading CanAerospace database from file {}"),
+  CANAEROSPACE_LOADING_DEFAULT_DATABASE(LEVEL.INFO, SERVER_CATEGORY.PROTOCOL, "Loading default CanAerospace database"),
+  CANAEROSPACE_LOADING_DATABASE_FROM_XML_DEFINITION(LEVEL.INFO, SERVER_CATEGORY.PROTOCOL, "Loading CanAerospace from XML definition"),
+  CANAEROSPACE_LOADING_FAILED(LEVEL.ERROR, SERVER_CATEGORY.PROTOCOL, "Loading CanAerospace database failed {}"),
+  CANAEROSPACE_PROTOCOL_CREATED_AND_BOUND(LEVEL.INFO, SERVER_CATEGORY.PROTOCOL, "loaded and bound to {} device"),
+  CANAEROSPACE_PROTOCOL_CLOSING(LEVEL.INFO, SERVER_CATEGORY.PROTOCOL, "Bound to {} device is closing"),
+  CANAEROSPACE_PROTOCOL_PARSING_PACKET(LEVEL.DEBUG, SERVER_CATEGORY.PROTOCOL, "Parsing inbound packet {}"),
+  CANAEROSPACE_PROTOCOL_PARSED_KNOWN_PACKET(LEVEL.DEBUG, SERVER_CATEGORY.PROTOCOL, "Parsed to known data pgn:{}"),
+  CANAEROSPACE_PROTOCOL_PARSED_UNKNOWN_PACKET(LEVEL.DEBUG, SERVER_CATEGORY.PROTOCOL, "Parsed unknown data pgn:{}"),
+  CANAEROSPACE_PROTOCOL_INBOUND_HANDLER_ERROR(LEVEL.ERROR, SERVER_CATEGORY.PROTOCOL, "Exception raised during inbound handler {}"),
+  CANAEROSPACE_PROTOCOL_CANBUS_BUILD_ERROR(LEVEL.ERROR, SERVER_CATEGORY.PROTOCOL, "Exception raised attempting to build canbus frame {}"),
+  // </editor-fold>
+
   // <editor-fold desc="Write Task log messages">
   AGGREGATOR_MANAGER_TASK_CREATED(LEVEL.INFO, SERVER_CATEGORY.ENGINE, "Aggregator Manager created with {} aggregators"),
   AGGREGATOR_MANAGER_TASK_CREATED_NO_CONFIG(LEVEL.INFO, SERVER_CATEGORY.ENGINE, "Aggregator Manager created with no aggregators"),
