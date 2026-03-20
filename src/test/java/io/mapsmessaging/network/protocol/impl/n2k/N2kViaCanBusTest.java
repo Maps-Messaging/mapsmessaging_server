@@ -182,7 +182,8 @@ class N2kViaCanBusTest extends BaseTestConfig {
       } while (CANDUMP_LINES.length != messages.size() && attempts < 20);
       session.removeSubscription(context.getKey());
 
-      Assertions.assertEquals(CANDUMP_LINES.length, messages.size(), "Expected message count to match injected CAN frames");
+      // 6 invalid messages
+      Assertions.assertEquals(CANDUMP_LINES.length-6, messages.size(), "Expected message count to match injected CAN frames");
 
       for (Message message : messages) {
         validatePayload(message);

@@ -67,6 +67,7 @@ io.mapsmessaging.network.protocol.impl.rest.RestProtocolFactory
 # CANBUS based protocols
 #
 io.mapsmessaging.network.protocol.impl.n2k.N2kProtocolFactory
+io.mapsmessaging.network.protocol.impl.canaerospace.CanaerospaceProtocolFactory
 
 #
 # Known Plugins

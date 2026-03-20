@@ -41,6 +41,8 @@ import io.mapsmessaging.network.io.impl.canbus.CanbusEndPoint;
 import io.mapsmessaging.network.protocol.Protocol;
 import io.mapsmessaging.schemas.config.SchemaConfig;
 import io.mapsmessaging.schemas.config.impl.CanbusSchemaConfig;
+import io.mapsmessaging.schemas.formatters.MessageFormatter;
+import io.mapsmessaging.schemas.formatters.MessageFormatterFactory;
 import io.mapsmessaging.schemas.formatters.impl.CanbusFormatter;
 import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
@@ -60,7 +62,7 @@ import static io.mapsmessaging.logging.ServerLogMessages.*;
 
 public class N2kProtocol extends Protocol {
   private final Logger logger = LoggerFactory.getLogger(N2kProtocol.class);
-  private final CanbusFormatter formatter;
+  private final MessageFormatter formatter;
   private final Session session;
   private final InboundProcessor inboundProcessor;
   private final String topicTemplate;
@@ -94,7 +96,7 @@ public class N2kProtocol extends Protocol {
     rawTopicTemplate =  ((N2KConfigDTO)protocolConfig).getUnknownPacketTopic().replace("{candevice}",endPoint.getName());
     parseToJson =((N2KConfigDTO)protocolConfig).isParseToJson();
     String inboundTopicName =((N2KConfigDTO)protocolConfig).getInboundTopicName();
-    formatter = (CanbusFormatter) SchemaManager.getInstance().getMessageFormatter(canbusSchema);
+    formatter = MessageFormatterFactory.getInstance().getFormatter(canbusSchema);
     try {
       session = buildSession(endPoint.getName(), 10000);
     } catch (ExecutionException | TimeoutException e) {

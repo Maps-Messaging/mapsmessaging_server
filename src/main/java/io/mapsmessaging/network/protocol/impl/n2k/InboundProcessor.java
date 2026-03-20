@@ -49,7 +49,7 @@ public class InboundProcessor implements Runnable {
       } catch (Throwable e) {
         logger.log(N2K_PROTOCOL_INBOUND_HANDLER_ERROR, e.getMessage(), e);
         try {
-          Thread.sleep(1000);
+          Thread.sleep(10);
         } catch (InterruptedException ex) {
           Thread.currentThread().interrupt();
         }

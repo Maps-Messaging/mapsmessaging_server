@@ -46,6 +46,8 @@ import io.mapsmessaging.network.io.impl.canbus.CanbusEndPoint;
 import io.mapsmessaging.network.protocol.Protocol;
 import io.mapsmessaging.schemas.config.SchemaConfig;
 import io.mapsmessaging.schemas.config.impl.CanAerospaceSchemaConfig;
+import io.mapsmessaging.schemas.formatters.MessageFormatter;
+import io.mapsmessaging.schemas.formatters.MessageFormatterFactory;
 import io.mapsmessaging.schemas.formatters.ParseMode;
 import io.mapsmessaging.schemas.formatters.impl.CanAerospaceFormatter;
 import lombok.NonNull;
@@ -75,7 +77,7 @@ public class CanaerospaceProtocol extends Protocol {
 
   private final Logger logger = LoggerFactory.getLogger(CanaerospaceProtocol.class);
 
-  private final CanAerospaceFormatter formatter;
+  private final MessageFormatter formatter;
   private final Session session;
   private final InboundProcessor inboundProcessor;
   private final String topicTemplate;
@@ -109,7 +111,7 @@ public class CanaerospaceProtocol extends Protocol {
     parseToJson = canAerospaceConfig.isParseToJson();
     defaultSchemaConfig = SchemaManager.getInstance().getSchema(DEFAULT_JSON_SCHEMA);
 
-    formatter = (CanAerospaceFormatter) SchemaManager.getInstance().getMessageFormatter(canAerospaceSchemaConfig);
+    formatter = MessageFormatterFactory.getInstance().getFormatter(canAerospaceSchemaConfig);
 
     try {
       session = buildSession(endPoint.getName(), 10000);
