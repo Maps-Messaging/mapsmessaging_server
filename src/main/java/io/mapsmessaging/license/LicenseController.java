@@ -156,19 +156,19 @@ public class LicenseController {
         String json = gson.toJson(extraData);
         Features features = gson.fromJson(json, Features.class);
 
-        Date after = license.getNotAfter();
-        Date before = license.getNotBefore();
+        Date end = license.getNotAfter();
+        Date start = license.getNotBefore();
         Date issued = license.getIssued();
         String info = license.getInfo();
         String who = license.getIssuer().getName();
 
         FeatureDetails featureDetails = new FeatureDetails();
         featureDetails.setFeature(features);
-        featureDetails.setExpiry(Instant.ofEpochMilli(after.getTime()).atZone(ZoneId.systemDefault()).toLocalDateTime());
+        featureDetails.setExpiry(Instant.ofEpochMilli(end.getTime()).atZone(ZoneId.systemDefault()).toLocalDateTime());
         featureDetails.setInfo(info);
         licenseList.add(featureDetails);
 
-        logger.log(ServerLogMessages.LICENSE_LOADED, info, who, issued, after, before, gson.toJson(extraData));
+        logger.log(ServerLogMessages.LICENSE_LOADED, info, who, issued, start, end, gson.toJson(extraData));
         return true;
       } else {
         logger.log(ServerLogMessages.LICENSE_EXPIRED, license.getInfo(), license.getNotBefore(), license.getNotAfter());
