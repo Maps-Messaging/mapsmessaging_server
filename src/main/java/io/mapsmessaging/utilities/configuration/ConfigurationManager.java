@@ -224,15 +224,6 @@ public class ConfigurationManager {
     ServiceLoader<ConfigManager> configManagers = ServiceLoader.load(ConfigManager.class);
     for(ConfigManager manager : configManagers){
       ConfigManager loaded = manager.load(featureManager);
-      try {
-        try(FileOutputStream fileOutputStream = new FileOutputStream(loaded.getName()+".yaml")) {
-          String schemaString = this.getSchema(loaded.getName());
-          JsonObject schemaObject = JsonParser.parseString(schemaString).getAsJsonObject();
-          fileOutputStream.write(YamlWriter.toYaml(loaded, schemaObject, RenderMode.FULL).getBytes());
-        }
-      } catch (Exception e) {
-        e.printStackTrace();
-      }
       managerMap.put(loaded.getClass().getSimpleName(), loaded);
     }
   }
