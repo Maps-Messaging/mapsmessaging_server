@@ -49,7 +49,6 @@ import io.mapsmessaging.schemas.config.impl.CanAerospaceSchemaConfig;
 import io.mapsmessaging.schemas.formatters.MessageFormatter;
 import io.mapsmessaging.schemas.formatters.MessageFormatterFactory;
 import io.mapsmessaging.schemas.formatters.ParseMode;
-import io.mapsmessaging.schemas.formatters.impl.CanAerospaceFormatter;
 import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
 
@@ -61,6 +60,7 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeoutException;
 
@@ -84,10 +84,13 @@ public class CanaerospaceProtocol extends Protocol {
   private final String rawTopicTemplate;
   private final boolean parseToJson;
   private final SchemaConfig defaultSchemaConfig;
+  private final ParseMode parseMode;
+  private final Map<Integer, String> mapCanIdToName;
 
   public CanaerospaceProtocol(CanbusEndPoint endPoint, @NotNull @NonNull ProtocolConfigDTO protocolConfig) throws IOException {
     super(endPoint, protocolConfig);
-
+    parseMode = SchemaManager.getInstance().getDefaultParseMode();
+    mapCanIdToName = new ConcurrentHashMap<>();
     CanAerospaceConfigDTO canAerospaceConfig = (CanAerospaceConfigDTO) protocolConfig;
     CanAerospaceSchemaConfig canAerospaceSchemaConfig = new CanAerospaceSchemaConfig();
 
@@ -185,26 +188,29 @@ public class CanaerospaceProtocol extends Protocol {
     CanFrame frame = ((CanbusEndPoint) endPoint).readFrame();
 
     if (frame == null) {
-      return true;
+      throw new IOException("No frame received from CAN bus");
     }
 
     if (logger.isDebugEnabled()) {
       logger.log(CANAEROSPACE_PROTOCOL_PARSING_PACKET, packetToString(frame));
     }
-
     if (parseToJson) {
-      ParseMode parseMode = SchemaManager.getInstance().getDefaultParseMode();
       JsonObject json = formatter.parseToJson(frame.getRawData(), parseMode);
-      processPacket(json);
+      processPacket(frame, json);
     }
     else {
       publishRawFrame(frame);
     }
-
     return true;
   }
 
-  public boolean processPacket(JsonObject json) {
+  public boolean processPacket(CanFrame frame, JsonObject json) {
+    String messageName = mapCanIdToName.get(frame.canIdentifier());
+    if (messageName == null) {
+      messageName = extractMessageName(json);
+      mapCanIdToName.put(frame.canIdentifier(), messageName);
+    }
+
     MessageBuilder messageBuilder = new MessageBuilder();
     Map<String, String> metadata = new HashMap<>();
     metadata.put("protocol", "canaerospace");
@@ -213,7 +219,6 @@ public class CanaerospaceProtocol extends Protocol {
     metadata.put("time_ms", Long.toString(System.currentTimeMillis()));
 
     Map<String, TypedData> dataMap = new LinkedHashMap<>();
-    String messageName = extractMessageName(json);
 
     Message message = messageBuilder
         .setOpaqueData(json.toString().getBytes(StandardCharsets.UTF_8))
