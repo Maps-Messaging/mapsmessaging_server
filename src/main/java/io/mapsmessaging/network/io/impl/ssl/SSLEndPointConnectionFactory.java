@@ -50,6 +50,7 @@ public class SSLEndPointConnectionFactory implements EndPointConnectionFactory {
     TlsConfig securityProps = (TlsConfig) endPointServerStatus.getConfig().getEndPointConfig();
     SSLContext context = SslHelper.createContext(securityProps.getSslConfig().getContext(),((Config) securityProps.getSslConfig()).toConfigurationProperties(), logger);
     SSLEngine engine = SslHelper.createSSLEngine(context, ((Config)securityProps.getSslConfig()).toConfigurationProperties());
+    engine.setUseClientMode(true);
     SocketChannel channel = SocketChannel.open();
     InetSocketAddress address = new InetSocketAddress(url.getHost(), url.getPort());
     channel.configureBlocking(true);
