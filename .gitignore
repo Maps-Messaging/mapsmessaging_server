@@ -37,3 +37,4 @@ buildNumber.properties
 # OS
 .DS_Store
 Thumbs.db
+.gitnexus

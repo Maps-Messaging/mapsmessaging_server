@@ -80,6 +80,10 @@ public class EnvelopeAggregationStrategy implements AggregationStrategy {
 
   private Map<String, Object> buildEnvelopeEntry(Message message) {
     Map<String, Object> entry = new LinkedHashMap<>();
+    Map<String, String> meta = message.getMeta();
+    if (meta != null && !meta.isEmpty()) {
+      entry.put("meta", new LinkedHashMap<>(meta));
+    }
 
     byte[] opaqueData = message.getOpaqueData();
     if (opaqueData == null) {
