@@ -29,6 +29,8 @@ import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 
 import java.util.List;
+import java.util.Map;
+
 @Data
 @EqualsAndHashCode(callSuper = true)
 @NoArgsConstructor
@@ -117,4 +119,19 @@ public class LinkConfigDTO extends BaseConfigDTO {
       example = "AT_LEAST_ONCE"
   )
   protected QualityOfService qualityOfService;
+
+  @Schema(
+      description =
+          "Link-specific properties for this individual namespace binding. " +
+              "These values are loaded from YAML and are intentionally untyped so protocol or handler specific " +
+              "settings can be supplied on a per-link basis. " +
+              "This map applies only to this link and may be used for remote or local subscription behaviour, " +
+              "topic-level handling, or protocol-specific options such as ROS2, IBM MQ, or Pulsar.",
+      requiredMode = Schema.RequiredMode.NOT_REQUIRED,
+      nullable = true,
+      additionalProperties = Schema.AdditionalPropertiesValue.TRUE,
+      additionalPropertiesSchema = Object.class,
+      example = "{\"url\":\"pulsar://localhost:6650\",\"tenant\":\"public\",\"namespace\":\"default\"}"
+  )
+  protected Map<String, Object> linkProperties;
 }

@@ -353,8 +353,8 @@ public class StoGiProtocol extends Protocol implements Consumer<Packet> {
             null,
             null,
             new NamespaceFilters(new ArrayList<>()),
-            null
-        );
+            null,
+            null);
       } catch (IOException e) {
         // TODO log
       }
@@ -373,8 +373,8 @@ public class StoGiProtocol extends Protocol implements Consumer<Packet> {
       @NonNull @NotNull QualityOfService qos,
       @Nullable ParserExecutor executor,
       @Nullable InterServerTransformation transformer,
-      StatisticsConfigDTO statistics
-  ) {
+      StatisticsConfigDTO statistics,
+      Map<String, Object> linkProperties) {
     // Will send a subscribe event, once we have one
   }
 
@@ -386,9 +386,9 @@ public class StoGiProtocol extends Protocol implements Consumer<Packet> {
       @Nullable String selector,
       @Nullable InterServerTransformation transformer,
       NamespaceFilters namespaceFilters,
-      StatisticsConfigDTO statistics
-  ) throws IOException {
-    super.subscribeLocal(resource, mappedResource, qos, selector, transformer, namespaceFilters, statistics);
+      StatisticsConfigDTO statistics,
+      Map<String, Object> linkProperties) throws IOException {
+    super.subscribeLocal(resource, mappedResource, qos, selector, transformer, namespaceFilters, statistics, linkProperties);
     SubscriptionContextBuilder builder = createSubscriptionContextBuilder(resource, selector, qos, 1024);
     session.addSubscription(builder.build());
   }

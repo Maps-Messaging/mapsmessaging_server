@@ -26,6 +26,7 @@ import io.mapsmessaging.network.io.EndPoint;
 import io.mapsmessaging.network.protocol.impl.extension.Extension;
 
 import java.io.IOException;
+import java.util.Map;
 
 public class ExampleProtocol extends Extension {
 
@@ -77,12 +78,12 @@ public class ExampleProtocol extends Extension {
   }
 
   @Override
-  public void registerRemoteLink(String destination, String filter) throws IOException {
+  public void registerRemoteLink(String destination, String filter, Map<String, Object> linkProperties) throws IOException {
     // This is for information, it tells you what remote destination/filter has been configured to use
   }
 
   @Override
-  public void registerLocalLink(String destination) throws IOException {
+  public void registerLocalLink(String destination,  Map<String, Object> linkProperties) throws IOException {
     // This is for information, it tells you what local destination/filter has been configured to use
   }
 }

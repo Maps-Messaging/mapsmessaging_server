@@ -107,9 +107,9 @@ public class ExtensionProtocol extends Protocol implements MessageListener, Clie
   }
 
   @Override
-  public void subscribeLocal(@NonNull @NotNull String resource, @NonNull @NotNull String mappedResource, @NonNull @NotNull QualityOfService qos, String selector, @Nullable InterServerTransformation transformer, @org.jetbrains.annotations.Nullable NamespaceFilters namespaceFilters, StatisticsConfigDTO statistics) throws IOException {
+  public void subscribeLocal(@NonNull @NotNull String resource, @NonNull @NotNull String mappedResource, @NonNull @NotNull QualityOfService qos, String selector, @Nullable InterServerTransformation transformer, @org.jetbrains.annotations.Nullable NamespaceFilters namespaceFilters, StatisticsConfigDTO statistics, Map<String, Object> linkProperties) throws IOException {
     nameMapping.put(resource, mappedResource);
-    extension.registerLocalLink(mappedResource);
+    extension.registerLocalLink(mappedResource, linkProperties);
     if(transformer != null) {
       destinationTransformerMap.put(resource, transformer);
     }
@@ -117,12 +117,12 @@ public class ExtensionProtocol extends Protocol implements MessageListener, Clie
   }
 
   @Override
-  public void subscribeRemote(@NonNull @org.jetbrains.annotations.NotNull String resource, @NonNull @org.jetbrains.annotations.NotNull String mappedResource, @NonNull @NotNull QualityOfService qos, @Nullable ParserExecutor parser, @Nullable InterServerTransformation transformer, StatisticsConfigDTO statistics) throws IOException {
+  public void subscribeRemote(@NonNull @org.jetbrains.annotations.NotNull String resource, @NonNull @org.jetbrains.annotations.NotNull String mappedResource, @NonNull @NotNull QualityOfService qos, @Nullable ParserExecutor parser, @Nullable InterServerTransformation transformer, StatisticsConfigDTO statistics, Map<String, Object> linkProperties) throws IOException {
     nameMapping.put(resource, mappedResource);
     if(!extension.supportsRemoteFiltering() && parser != null){
       parsers.put(resource, parser);
     }
-    extension.registerRemoteLink(resource, extension.supportsRemoteFiltering()? parser.toString(): null );
+    extension.registerRemoteLink(resource, extension.supportsRemoteFiltering()? parser.toString(): null, linkProperties );
   }
 
   protected int saveMessage(@NonNull @NotNull String destinationName, @NotNull Message message) throws ExecutionException, InterruptedException, TimeoutException, IOException {

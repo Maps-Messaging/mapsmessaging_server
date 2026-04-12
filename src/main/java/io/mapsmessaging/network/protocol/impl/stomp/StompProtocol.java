@@ -52,6 +52,7 @@ import org.jetbrains.annotations.Nullable;
 import javax.security.auth.Subject;
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.util.Map;
 
 import static java.nio.channels.SelectionKey.OP_READ;
 
@@ -135,8 +136,8 @@ public class StompProtocol extends Protocol {
   }
 
   @Override
-  public void subscribeRemote(@NonNull @NotNull String resource, @NonNull @NotNull String mappedResource, @NonNull @NotNull QualityOfService qos, @Nullable ParserExecutor executor, @Nullable InterServerTransformation transformer, StatisticsConfigDTO statistics) throws IOException {
-    super.subscribeRemote(resource, mappedResource, qos, executor, transformer, statistics);
+  public void subscribeRemote(@NonNull @NotNull String resource, @NonNull @NotNull String mappedResource, @NonNull @NotNull QualityOfService qos, @Nullable ParserExecutor executor, @Nullable InterServerTransformation transformer, StatisticsConfigDTO statistics, Map<String, Object> linkProperties) throws IOException {
+    super.subscribeRemote(resource, mappedResource, qos, executor, transformer, statistics, linkProperties);
     sessionState.addMapping(resource, mappedResource);
     Subscribe subscribe = new Subscribe();
     subscribe.setDestination(resource);
@@ -151,8 +152,8 @@ public class StompProtocol extends Protocol {
   }
 
   @Override
-  public void subscribeLocal(@NonNull @NotNull String resource, @NonNull @NotNull String mappedResource, @NonNull @NotNull QualityOfService qos, String selector, @Nullable InterServerTransformation transformer, @Nullable NamespaceFilters namespaceFilters, StatisticsConfigDTO statistics) throws IOException {
-    super.subscribeLocal(resource, mappedResource, qos, selector, transformer, namespaceFilters, statistics);
+  public void subscribeLocal(@NonNull @NotNull String resource, @NonNull @NotNull String mappedResource, @NonNull @NotNull QualityOfService qos, String selector, @Nullable InterServerTransformation transformer, @Nullable NamespaceFilters namespaceFilters, StatisticsConfigDTO statistics, Map<String, Object> linkProperties) throws IOException {
+    super.subscribeLocal(resource, mappedResource, qos, selector, transformer, namespaceFilters, statistics, linkProperties);
     sessionState.addMapping(resource, mappedResource);
     SubscriptionContextBuilder scb = createSubscriptionContextBuilder(resource, selector, qos, 10240);
     sessionState.createSubscription(scb.build());

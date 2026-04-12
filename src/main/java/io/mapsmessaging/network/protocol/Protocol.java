@@ -166,8 +166,8 @@ public abstract class Protocol implements SelectorCallback, MessageListener, Tim
       @NonNull @NotNull QualityOfService qualityOfService,
       @Nullable ParserExecutor parser,
       @Nullable InterServerTransformation transformer,
-      @Nullable StatisticsConfigDTO statistics
-  ) throws IOException {
+      @Nullable StatisticsConfigDTO statistics,
+      @Nullable Map<String, Object> linkProperties) throws IOException {
 
     topicNameMapping.put(resource, mappedResource);
     if (transformer != null) {
@@ -188,8 +188,8 @@ public abstract class Protocol implements SelectorCallback, MessageListener, Tim
       @Nullable String selector,
       @Nullable InterServerTransformation transformer,
       @Nullable NamespaceFilters namespaceFilters,
-      @Nullable StatisticsConfigDTO statistics
-  )
+      @Nullable StatisticsConfigDTO statistics,
+      @Nullable Map<String, Object> linkProperties)
       throws IOException {
     if(namespaceFilters != null) {
       if (this.namespaceFilters == null) {

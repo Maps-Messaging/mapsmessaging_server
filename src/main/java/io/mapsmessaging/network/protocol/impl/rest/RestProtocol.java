@@ -30,6 +30,7 @@ import lombok.NonNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.IOException;
+import java.util.Map;
 
 public class RestProtocol extends Extension {
 
@@ -80,7 +81,7 @@ public class RestProtocol extends Extension {
    * @throws IOException
    */
   @Override
-  public void registerRemoteLink(@NotNull @NotNull String destination, @Nullable String filter) throws IOException {
+  public void registerRemoteLink(@NotNull @NotNull String destination, @Nullable String filter, @Nullable Map<String, Object> linkProperties) throws IOException {
 
   }
 
@@ -93,7 +94,7 @@ public class RestProtocol extends Extension {
    * @throws IOException
    */
   @Override
-  public void registerLocalLink(@NonNull @NotNull String destination) throws IOException {
+  public void registerLocalLink(@NonNull @NotNull String destination, @Nullable Map<String, Object> linkProperties) throws IOException {
 
   }
 

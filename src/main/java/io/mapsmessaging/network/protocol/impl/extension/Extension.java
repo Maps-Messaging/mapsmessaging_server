@@ -26,6 +26,7 @@ import lombok.NonNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.IOException;
+import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeoutException;
 
@@ -70,10 +71,9 @@ public abstract class Extension {
 
   public abstract void outbound(@NonNull @NotNull String destinationName, @NonNull @NotNull Message message);
 
-  public abstract void registerRemoteLink(@NonNull @NotNull String destination, @Nullable String filter) throws IOException;
+  public abstract void registerRemoteLink(@NonNull @NotNull String destination, @Nullable String filter, @Nullable Map<String, Object> linkProperties) throws IOException;
 
-  public abstract void registerLocalLink(@NonNull @NotNull String destination) throws IOException;
-
+  public abstract void registerLocalLink(@NonNull @NotNull String destination, @Nullable Map<String, Object> linkProperties) throws IOException;
 
   protected void inbound(@NonNull @NotNull String destinationName,  @NonNull @NotNull Message message) throws IOException {
     if (extensionProtocol == null) {
