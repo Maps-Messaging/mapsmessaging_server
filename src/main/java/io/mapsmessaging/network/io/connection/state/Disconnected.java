@@ -47,6 +47,7 @@ import io.mapsmessaging.network.route.link.LinkState;
 import javax.security.auth.login.LoginException;
 import java.io.IOException;
 import java.util.List;
+import java.util.UUID;
 
 import static io.mapsmessaging.network.io.connection.Constants.DELAYED_TIME;
 
@@ -73,6 +74,9 @@ public class Disconnected extends State implements EndPointConnectedCallback {
       String password = properties.getAuthConfig().getPassword();
       String tokenGeneratorName = properties.getAuthConfig().getTokenGenerator();
       String transformationName = properties.getLinkTransformation();
+
+      if(username == null) {username = "anonymous";}
+      if(sessionId == null) {sessionId = UUID.randomUUID().toString();}
       ProtocolMessageTransformation transformation = TransformationManager.getInstance().getTransformation(transformationName);
       if (transformation == null) {
         String protocolImplName = null;
