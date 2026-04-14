@@ -121,16 +121,43 @@ public class SSLEndPoint extends TCPEndPoint {
 
   @Override
   protected int sendBuffer(ByteBuffer applicationOutBuffer) throws IOException {
-    int len = 0;
+    int len = flushEncryptedOut();
+
+    if (encryptedOut.position() != 0) {
+      logger.log(ServerLogMessages.SSL_SEND_ENCRYPTED, len);
+      return len;
+    }
+
     SSLEngineResult result;
     do {
       result = handleSSLEngineResult(sslEngine.wrap(applicationOutBuffer, encryptedOut));
-      encryptedOut.flip();
-      len += super.sendBuffer(encryptedOut);
-      encryptedOut.clear(); // Will need to deal with limited writes
+      len += flushEncryptedOut();
+      if (encryptedOut.position() != 0) {
+        break;
+      }
+
     } while (result.getStatus() == Status.BUFFER_OVERFLOW);
     logger.log(ServerLogMessages.SSL_SEND_ENCRYPTED, len);
 
+    return len;
+  }
+  private int flushEncryptedOut() throws IOException {
+    int len = 0;
+    if (encryptedOut.position() != 0) {
+      encryptedOut.flip();
+      while (encryptedOut.hasRemaining()) {
+        int sent = super.sendBuffer(encryptedOut);
+        if (sent <= 0) {
+          break;
+        }
+        len += sent;
+      }
+      if (encryptedOut.hasRemaining()) {
+        encryptedOut.compact();
+      } else {
+        encryptedOut.clear();
+      }
+    }
     return len;
   }
 
@@ -144,15 +171,30 @@ public class SSLEndPoint extends TCPEndPoint {
         response = encryptedIn.limit();
       }
       logger.log(ServerLogMessages.SSL_READ_ENCRYPTED, response, encryptedIn.position(), encryptedIn.limit());
+      SSLEngineResult result;
       do {
-        SSLEngineResult result = sslEngine.unwrap(encryptedIn, applicationIn);
+        int beforeIn = encryptedIn.position();
+        int beforeOut = applicationIn.position();
+
+        result = sslEngine.unwrap(encryptedIn, applicationIn);
         handleSSLEngineResult(result);
 
         if (result.getStatus() == Status.BUFFER_UNDERFLOW) {
           encryptedIn.compact();
           return response;
         }
-      } while (encryptedIn.hasRemaining() && applicationIn.remaining() != 0);
+
+        SSLEngineResult.HandshakeStatus hs = result.getHandshakeStatus();
+        if (hs == SSLEngineResult.HandshakeStatus.NEED_TASK
+            || hs == SSLEngineResult.HandshakeStatus.NEED_WRAP) {
+          break; // let handshake manager drive next step
+        }
+
+        boolean noProgress = encryptedIn.position() == beforeIn && applicationIn.position() == beforeOut;
+        if (noProgress) {
+          break; // avoid spin
+        }
+      } while (encryptedIn.hasRemaining() && applicationIn.hasRemaining());
 
       if (encryptedIn.position() == encryptedIn.limit()) {
         encryptedIn.clear();
