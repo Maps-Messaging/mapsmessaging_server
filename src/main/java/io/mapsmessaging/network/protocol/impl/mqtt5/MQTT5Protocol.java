@@ -280,13 +280,20 @@ public class MQTT5Protocol extends Protocol {
     ThreadContext.put("endpoint", endPoint.getName());
     ThreadContext.put("version", getVersion());
     logger.log(ServerLogMessages.MQTT5_KEEP_ALIVE_CHECK, keepAlive);
-    long timeout = System.currentTimeMillis() - (keepAlive);
-    if (endPoint.getLastRead() < timeout && endPoint.getLastWrite() < timeout) {
-      logger.log(ServerLogMessages.MQTT5_KEEP_ALIVE_DISCONNECT);
+    long timeout = System.currentTimeMillis() - (keepAlive + 1000);
+    if (endPoint.isClient()) {
+      writeFrame(new PingReq5());
+      timeout = System.currentTimeMillis() - (keepAlive * 2);
+
+    }
+    boolean readTimeOut = endPoint.getLastRead() < timeout;
+    boolean writeTimeOut = endPoint.getLastWrite() < timeout;
+    if (readTimeOut && writeTimeOut) {
+      logger.log(ServerLogMessages.MQTT_DISCONNECT_TIMEOUT);
       try {
         close();
       } catch (IOException e) {
-        logger.log(ServerLogMessages.END_POINT_CLOSE_EXCEPTION, e);
+        // Ignore this, we are closing
       }
     }
     ThreadContext.clearMap();

@@ -74,6 +74,7 @@ public class PacketFactory5 {
       case MQTTPacket.UNSUBSCRIBE -> new Unsubscribe5(fixedHeader, remainingLen, packet);
       case MQTTPacket.UNSUBACK -> new UnsubAck5(fixedHeader, remainingLen, packet);
       case MQTTPacket.SUBACK -> new SubAck5(fixedHeader, remainingLen, packet);
+      case MQTTPacket.PINGRESP -> new PingResp5();
       default -> throw new MalformedException("Unexpected packet received:::" + Long.toHexString(packetId));
     };
   }

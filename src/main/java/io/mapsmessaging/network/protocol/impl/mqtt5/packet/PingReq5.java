@@ -30,6 +30,11 @@ import io.mapsmessaging.network.protocol.impl.mqtt.packet.MalformedException;
 @java.lang.SuppressWarnings("common-java:DuplicatedBlocks")
 public class PingReq5 extends MQTTPacket5 {
 
+  public PingReq5() {
+    super(PINGREQ);
+  }
+
+
   public PingReq5(byte fixedHeader, long remainingLen) throws MalformedException {
     super(MQTTPacket.PINGREQ);
     if ((fixedHeader & 0xf) != 0) {
