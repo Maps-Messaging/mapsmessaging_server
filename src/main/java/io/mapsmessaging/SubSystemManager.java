@@ -41,11 +41,15 @@ import io.mapsmessaging.network.discovery.ServerConnectionManager;
 import io.mapsmessaging.network.monitor.NetworkInterfaceMonitor;
 import io.mapsmessaging.network.protocol.ProtocolFactory;
 import io.mapsmessaging.network.protocol.ProtocolImplFactory;
+import io.mapsmessaging.network.protocol.impl.satellite.gateway.io.StateManager;
 import io.mapsmessaging.network.protocol.transformation.TransformationManager;
 import io.mapsmessaging.rest.RestApiServerManager;
 import io.mapsmessaging.rest.jolokia.JolokaManager;
 import io.mapsmessaging.routing.RoutingManager;
 import io.mapsmessaging.selector.model.ModelStore;
+import io.mapsmessaging.state.drone.StateListener;
+import io.mapsmessaging.state.drone.StateManagerAgent;
+import io.mapsmessaging.state.drone.core.TwinManager;
 import io.mapsmessaging.utilities.Agent;
 import io.mapsmessaging.utilities.AgentOrder;
 import io.mapsmessaging.utilities.service.Service;
@@ -154,6 +158,10 @@ public class SubSystemManager {
     return (SessionManager) agentMap.get("Session Manager").getAgent();
   }
 
+  public TwinManager getTwinManager() {
+    return ((StateManagerAgent) agentMap.get("State Manager").getAgent()).getTwinManager();
+  }
+
   public DeviceManager getDeviceManager() {
     AgentOrder order = agentMap.get("Device Manager");
     if(order != null) {
@@ -209,6 +217,7 @@ public class SubSystemManager {
     addToMap(300, 11, new DiscoveryManager(uniqueId));
     addToMap(400, 1200, securityManager);
     addToMap(500, 950, destinationManager);
+    addToMap(550, 960, new StateManagerAgent());
     addToMap(600, 300, new SessionManager(securityManager, destinationManager, EnvironmentConfig.getInstance().getPathLookups().get("MAPS_DATA"),sessionPipeLines));
     addToMap(700, 150, new NetworkManager(featureManager));
     addToMap(900, 200, new NetworkConnectionManager());
@@ -239,6 +248,7 @@ public class SubSystemManager {
       addToMap(2200, 70, new DeviceManager(featureManager));
     }
     addOptionalML();
+    new StateListener();
   }
 
   private void addOptionalML(){
