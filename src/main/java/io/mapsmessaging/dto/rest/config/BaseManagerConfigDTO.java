@@ -26,7 +26,8 @@ import io.swagger.v3.oas.annotations.media.Schema;
         LicenseManagerConfigDTO.class,
         SecurityManagerDTO.class,
         NetworkManagerConfigDTO.class,
-        DeviceManagerConfigDTO.class
+        DeviceManagerConfigDTO.class,
+        TwinManagerConfigDTO.class
     }
 )
 public class BaseManagerConfigDTO extends BaseConfigDTO {

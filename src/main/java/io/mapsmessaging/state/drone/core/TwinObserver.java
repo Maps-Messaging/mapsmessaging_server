@@ -35,8 +35,8 @@ public interface TwinObserver {
     onTwinUpdated(twinId, previous, current, context);
   }
 
-  default void onTwinUpdated(String twinId, EntityTwin previous, EntityTwin current, TwinUpdateContext context){
-
+  default void onTwinUpdated(String twinId, EntityTwin previous, EntityTwin current, TwinUpdateContext context) {
+    // no-op by default
   }
 
   default void onTwinRemoved(EntityTwin removed, TwinUpdateContext context) {
@@ -47,4 +47,11 @@ public interface TwinObserver {
     // no-op by default
   }
 
+  default void onTwinStatusChanged(String twinId,
+                                   TwinLifecycleStatus previousStatus,
+                                   TwinLifecycleStatus currentStatus,
+                                   EntityTwin twin,
+                                   TwinUpdateContext context) {
+    // no-op by default
+  }
 }

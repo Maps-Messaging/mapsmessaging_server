@@ -40,6 +40,7 @@ import java.util.concurrent.ConcurrentHashMap;
 public abstract class EntityTwin {
 
   private String twinId;
+  private String twinPath;
   private String twinType;
   private String displayName;
 
@@ -50,7 +51,7 @@ public abstract class EntityTwin {
   private FixInfo fixInfo;
   private BatteryState batteryState;
   private LinkState linkState;
-
+  private TwinLifecycleStatus lifecycleStatus = TwinLifecycleStatus.ACTIVE;
   /**
    * Relationship edges owned by this twin.
    */
@@ -73,4 +74,5 @@ public abstract class EntityTwin {
   private Instant powerUpdatedAt;
   private Instant connectivityUpdatedAt;
   private Instant relationshipsUpdatedAt;
+
 }

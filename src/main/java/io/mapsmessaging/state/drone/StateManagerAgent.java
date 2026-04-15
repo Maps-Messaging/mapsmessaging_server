@@ -21,14 +21,26 @@ package io.mapsmessaging.state.drone;
 
 import io.mapsmessaging.dto.rest.system.Status;
 import io.mapsmessaging.dto.rest.system.SubSystemStatusDTO;
+import io.mapsmessaging.state.drone.core.TwinLifecycleStatus;
 import io.mapsmessaging.state.drone.core.TwinManager;
 import io.mapsmessaging.utilities.Agent;
 import lombok.Getter;
 
+import java.time.Instant;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.TimeUnit;
+
 public class StateManagerAgent implements Agent {
+
+  private static final long SCAN_INTERVAL_MILLIS = 1000L;
+  private static final long PURGE_INTERVAL_MILLIS = 30000L;
 
   @Getter
   private final TwinManager twinManager;
+
+  private ScheduledExecutorService scheduler;
 
   public StateManagerAgent() {
     twinManager = new TwinManager();
@@ -45,20 +57,54 @@ public class StateManagerAgent implements Agent {
   }
 
   @Override
-  public void start() {
-    // nothing to do here
+  public synchronized void start() {
+    if (scheduler != null && !scheduler.isShutdown()) {
+      return;
+    }
+
+    scheduler = Executors.newSingleThreadScheduledExecutor(runnable -> {
+      Thread thread = new Thread(runnable, "StateManagerAgent");
+      thread.setDaemon(true);
+      return thread;
+    });
+
+    scheduler.scheduleAtFixedRate(() -> {
+      try {
+        twinManager.scanTwinStates(Instant.now());
+      } catch (Exception e) {
+        // swallow to keep scheduler alive
+      }
+    }, SCAN_INTERVAL_MILLIS, SCAN_INTERVAL_MILLIS, TimeUnit.MILLISECONDS);
+
+    scheduler.scheduleAtFixedRate(() -> {
+      try {
+        twinManager.purgeExpiredTwins(Instant.now());
+      } catch (Exception e) {
+        // swallow to keep scheduler alive
+      }
+    }, PURGE_INTERVAL_MILLIS, PURGE_INTERVAL_MILLIS, TimeUnit.MILLISECONDS);
   }
 
   @Override
-  public void stop() {
-    // nothing to do here
+  public synchronized void stop() {
+    if (scheduler == null) {
+      return;
+    }
+
+    scheduler.shutdownNow();
+    scheduler = null;
   }
 
   @Override
   public SubSystemStatusDTO getStatus() {
     SubSystemStatusDTO status = new SubSystemStatusDTO();
     status.setName(getName());
-    status.setComment("Current objects :"+twinManager.getTwinCount());
+    status.setComment(
+        "Current objects: " + twinManager.getTwinCount()
+            + ", active: " + twinManager.getTwinCountByStatus(TwinLifecycleStatus.ACTIVE)
+            + ", disconnected: " + twinManager.getTwinCountByStatus(TwinLifecycleStatus.DISCONNECTED)
+            + ", stale: " + twinManager.getTwinCountByStatus(TwinLifecycleStatus.STALE)
+    );
     status.setStatus(Status.OK);
     return status;
   }

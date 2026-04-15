@@ -32,5 +32,6 @@ io.mapsmessaging.config.RestApiManagerConfig
 io.mapsmessaging.config.RoutingManagerConfig
 io.mapsmessaging.config.SchemaManagerConfig
 io.mapsmessaging.config.SecurityManagerConfig
+io.mapsmessaging.config.TwinManagerConfig
 io.mapsmessaging.config.TenantManagementConfig
 io.mapsmessaging.config.ml.MLModelManagerConfig
