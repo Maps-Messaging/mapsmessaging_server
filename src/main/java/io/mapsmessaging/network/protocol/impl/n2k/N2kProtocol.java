@@ -21,6 +21,7 @@ package io.mapsmessaging.network.protocol.impl.n2k;
 
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+import io.mapsmessaging.MessageDaemon;
 import io.mapsmessaging.api.*;
 import io.mapsmessaging.api.features.ClientAcknowledgement;
 import io.mapsmessaging.api.features.DestinationType;
@@ -28,6 +29,9 @@ import io.mapsmessaging.api.features.QualityOfService;
 import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.api.message.TypedData;
 import io.mapsmessaging.canbus.device.frames.CanFrame;
+import io.mapsmessaging.canbus.j1939.n2k.N2kParserFactory;
+import io.mapsmessaging.canbus.j1939.n2k.codec.N2kMessageParser;
+import io.mapsmessaging.canbus.j1939.n2k.compile.N2kCompiledRegistry;
 import io.mapsmessaging.dto.rest.config.protocol.ProtocolConfigDTO;
 import io.mapsmessaging.dto.rest.config.protocol.impl.N2KConfigDTO;
 import io.mapsmessaging.dto.rest.protocol.ProtocolInformationDTO;
@@ -69,6 +73,7 @@ public class N2kProtocol extends Protocol {
   private final String rawTopicTemplate;
   private final boolean parseToJson;
   private final SchemaConfig defaultSchemaConfig = SchemaManager.getInstance().getSchema(DEFAULT_JSON_SCHEMA);
+  private final DroneMonitor droneMonitor;
 
   public N2kProtocol(CanbusEndPoint endPoint, @NotNull @NonNull ProtocolConfigDTO protocolConfig) throws IOException {
     super(endPoint, protocolConfig );
@@ -117,6 +122,13 @@ public class N2kProtocol extends Protocol {
     Thread t = new Thread(inboundProcessor);
     t.start();
     logger.log(N2K_PROTOCOL_CREATED_AND_BOUND,endPoint.getName());
+    if(((N2KConfigDTO)protocolConfig).isPublishMavlinkDrones()){
+      droneMonitor = new DroneMonitor(this, ((CanbusFormatter)formatter).getParser());
+      MessageDaemon.getInstance().getSubSystemManager().getTwinManager().addObserver(droneMonitor);
+    }
+    else{
+      droneMonitor = null;
+    }
   }
 
   public void close() throws IOException {
@@ -124,6 +136,7 @@ public class N2kProtocol extends Protocol {
     inboundProcessor.close();
     endPoint.close();
     logger.log(N2K_PROTOCOL_CLOSING, endPoint.getName());
+    droneMonitor.close();
   }
 
   @Override

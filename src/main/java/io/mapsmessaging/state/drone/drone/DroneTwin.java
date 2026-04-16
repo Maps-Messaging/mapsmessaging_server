@@ -30,6 +30,8 @@ import lombok.ToString;
 
 import java.time.Instant;
 
+import static io.mapsmessaging.state.drone.util.SyntheticMmsiGenerator.generateSyntheticMmsi;
+
 /**
  * Twin representing an unmanned aircraft or vehicle.
  */
@@ -42,6 +44,7 @@ public class DroneTwin extends EntityTwin {
   // --- Identity / correlation ---
   private Integer systemId;
   private Integer componentId;
+  private Long mmsi;
 
   private String vehicleClass;
   private String registrationId;
@@ -79,5 +82,6 @@ public class DroneTwin extends EntityTwin {
   public DroneTwin(String twinId) {
     setTwinId(twinId);
     setTwinType("DRONE");
+    setMmsi(generateSyntheticMmsi(twinId));
   }
 }

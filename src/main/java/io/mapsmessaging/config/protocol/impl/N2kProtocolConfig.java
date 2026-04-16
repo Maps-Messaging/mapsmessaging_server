@@ -35,6 +35,7 @@ public class N2kProtocolConfig extends N2KConfigDTO implements Config {
     this.parseToJson = config.getBooleanProperty("parseToJson", parseToJson);
     this.databasePath= config.getProperty("databasePath", databasePath);
     this.unknownPacketTopic = config.getProperty("unknownPacketTopic", unknownPacketTopic);
+    this.publishMavlinkDrones = config.getBooleanProperty("publishMavlinkDrones", publishMavlinkDrones);
   }
 
   @Override
@@ -66,7 +67,7 @@ public class N2kProtocolConfig extends N2KConfigDTO implements Config {
     properties.put("parseToJson", this.parseToJson);
     properties.put("databasePath", this.databasePath);
     properties.put("unknownPacketTopic", this.unknownPacketTopic);
-
+    properties.put("publishMavlinkDrones", this.publishMavlinkDrones);
     return properties;
   }
 }

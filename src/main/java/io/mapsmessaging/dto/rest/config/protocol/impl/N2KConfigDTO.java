@@ -93,4 +93,14 @@ public class N2KConfigDTO extends ProtocolConfigDTO {
   )
   protected boolean parseToJson = true;
 
+
+  @Schema(
+      description = "Monitors and publishes the mavlink drone position and details as AIS N2K events",
+      example = "true",
+      defaultValue = "true",
+      requiredMode = Schema.RequiredMode.NOT_REQUIRED,
+      nullable = true
+  )
+  protected boolean publishMavlinkDrones = true;
+
 }
