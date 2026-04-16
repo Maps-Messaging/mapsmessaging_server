@@ -28,10 +28,6 @@ public class StateListener implements TwinObserver {
   public StateListener() {
     Thread t = new Thread(() -> {
       while (true) {
-        System.out.println("StateListener: " + MessageDaemon.getInstance().getSubSystemManager().getTwinManager().getTwinCount());
-        for(EntityTwin twin: MessageDaemon.getInstance().getSubSystemManager().getTwinManager().listTwins()){
-          System.out.println("Twin: " + twin);
-        }
         try {
           Thread.sleep(1000);
         } catch (InterruptedException e) {
