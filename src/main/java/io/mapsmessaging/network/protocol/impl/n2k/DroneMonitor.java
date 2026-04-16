@@ -57,6 +57,7 @@ public class DroneMonitor implements TwinObserver{
     handlers.add(new Ais129040Handler(parser, config));
     handlers.add(new Ais129809Handler(parser, config));
     handlers.add(new Ais129810Handler(parser, config));
+    handlers.add(new Iso60928Handler(parser));
   }
 
   public void close() {

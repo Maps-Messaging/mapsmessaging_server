@@ -115,6 +115,9 @@ public final class AisMappingSupport {
     if (value == null) {
       return null;
     }
+    value = value.replaceAll("[^A-Za-z0-9 ]", " ")
+        .trim()
+        .replaceAll(" +", " ");
     if (value.length() <= maxLength) {
       return value;
     }
