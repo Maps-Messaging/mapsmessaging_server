@@ -23,7 +23,7 @@ import io.mapsmessaging.network.protocol.impl.mqtt5.packet.properties.types.Inte
 
 public class WillDelayInterval extends IntegerMessageProperty {
 
-  WillDelayInterval() {
+  public WillDelayInterval() {
     super(MessagePropertyFactory.WILL_DELAY_INTERVAL, "WillDelayInterval");
   }
 

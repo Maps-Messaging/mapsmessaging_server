@@ -176,12 +176,23 @@ public class MQTT5Protocol extends Protocol {
 
   @Override
   public void connect(@NonNull @NotNull String sessionId, String username, String password) throws IOException {
+    connect(sessionId, username, password, null);
+  }
+
+  public void connect(@NonNull @NotNull String sessionId, String username, String password, Publish5 willMsg) throws IOException {
     Connect5 connect = new Connect5();
     if (username != null) {
       connect.setUsername(username);
       connect.setPassword(password.trim().toCharArray());
     }
-
+    if(willMsg != null){
+      connect.setWillFlag(true);
+      connect.setWillTopic(willMsg.getDestinationName());
+      connect.setWillMsg(willMsg.getPayload());
+      connect.setWillQOS(willMsg.getQos());
+      connect.setWillRetain(willMsg.isRetain());
+      connect.setWillProperties(willMsg.getProperties());
+    }
     connect.setSessionId(sessionId);
     writeFrame(connect);
     registerRead();

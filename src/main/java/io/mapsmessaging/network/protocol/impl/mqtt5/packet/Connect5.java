@@ -43,17 +43,24 @@ public class Connect5 extends MQTTPacket5 {
   // Will fields
   //
   @Getter
-  private final MessageProperties willProperties;
+  @Setter
+  private MessageProperties willProperties;
+
   @Getter
-  private final boolean willFlag;
+  @Setter
+  private boolean willFlag;
   @Getter
-  private final QualityOfService willQOS;
+  @Setter
+  private QualityOfService willQOS;
   @Getter
-  private final boolean willRetain;
+  @Setter
+  private boolean willRetain;
   @Getter
-  private final String willTopic;
+  @Setter
+  private String willTopic;
   @Getter
-  private final byte[] willMsg;
+  @Setter
+  private byte[] willMsg;
 
   //
   // Username / Password fields

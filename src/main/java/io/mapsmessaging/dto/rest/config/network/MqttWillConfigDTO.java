@@ -85,7 +85,7 @@ public class MqttWillConfigDTO extends BaseConfigDTO {
       requiredMode = Schema.RequiredMode.NOT_REQUIRED,
       nullable = false
   )
-  protected long delayInterval = 0;
+  protected int delayInterval = 0;
 
   @Schema(
       description = "MQTT v5 Message Expiry Interval in seconds",

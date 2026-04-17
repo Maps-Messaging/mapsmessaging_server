@@ -112,4 +112,8 @@ public abstract class MQTTPacket5 extends MQTTPacket {
   public String toString() {
     return properties.toString();
   }
+
+  public void setProperties(MessageProperties properties) {
+    this.properties = properties;
+  }
 }

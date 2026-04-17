@@ -38,7 +38,7 @@ public class MqttWillConfig extends MqttWillConfigDTO implements Config {
     this.payloadEncoding = properties.getProperty("payloadEncoding", payloadEncoding);
     this.qos = properties.getIntProperty("qos", qos);
     this.retain = properties.getBooleanProperty("retain", retain);
-    this.delayInterval = properties.getLongProperty("delayInterval", delayInterval);
+    this.delayInterval = properties.getIntProperty("delayInterval", delayInterval);
     this.messageExpiryInterval = properties.getLongProperty("messageExpiryInterval", messageExpiryInterval);
     this.contentType = properties.getProperty("contentType", contentType);
     this.payloadFormatIndicator = properties.getIntProperty("payloadFormatIndicator", payloadFormatIndicator);
