@@ -40,40 +40,18 @@ NetworkConnectionManager:
         security:
           tls:
             context: TLSv1.3
-            clientCertificateRequired: true
-            clientCertificateWanted: true
+            clientCertificateRequired: false
+            clientCertificateWanted: false
             keyStore:
-              type: PKCS12
-              alias: bedrooms
+              type: JKS
               managerFactory: SunX509
-              path: C:\Users\matthew\Downloads\bedrooms-keystore.p12
+              path: D:\certs\certs\loragateway01\loragateway01.jks
               passphrase: changeit
             trustStore:
-              type: PKCS12
-              path: C:\Users\matthew\Downloads\mosquitto-truststore.p12
+              type: JKS
+              path: D:\certs\ca\truststore.jks
               passphrase: changeit
               managerFactory: SunX509
 
     data:
 
-      -
-        name: mosquitto-bridge
-        url: "ssl://ros02.syd.mapsmessaging.io:8883"
-        protocol: mqtt
-        plugin: false
-        remote:
-          sessionId: "mosquitto-bridge"
-        maxServerKeepAlive: 10
-        serverMaximumTopicAlias: 100
-        clientMaximumTopicAlias: 100
-        links:
-          -
-            direction: pull
-            remote_namespace: "test"
-            local_namespace: "test"
-            include_schema: false
-          -
-            direction: push
-            remote_namespace: "/large/folder/test/to/see/if/it/works"
-            local_namespace: "/mosquitto-bridge/test"
-            include_schema: false
