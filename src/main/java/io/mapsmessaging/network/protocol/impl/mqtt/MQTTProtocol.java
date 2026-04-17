@@ -119,13 +119,24 @@ public class MQTTProtocol extends Protocol {
   }
 
   @Override
-  public void connect(@NonNull @NotNull String sessionId, String username, String password) throws IOException {
+  public void connect(@NonNull @NotNull String sessionId, String username, String password ) throws IOException {
+    connect(sessionId, username, password, null);
+  }
+
+  public void connect(@NonNull @NotNull String sessionId, String username, String password, Publish willMsg ) throws IOException {
     Connect connect = new Connect();
     if (username != null) {
       connect.setUsername(username);
       connect.setPassword(password.trim().toCharArray());
     }
     connect.setSessionId(sessionId);
+    if(willMsg != null) {
+      connect.setWillMsg(willMsg.getPayload());
+      connect.setWillRetain(willMsg.isRetain());
+      connect.setWillQOS(willMsg.getQos());
+      connect.setWillFlag(true);
+      connect.setWillTopic(willMsg.getDestinationName());
+    }
     writeFrame(connect);
     registerRead();
     completedConnection();
