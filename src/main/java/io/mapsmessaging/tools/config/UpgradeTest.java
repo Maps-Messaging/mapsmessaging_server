@@ -8,6 +8,7 @@ import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import io.mapsmessaging.config.ConfigManager;
 import io.mapsmessaging.dto.rest.config.BaseConfigDTO;
+import io.mapsmessaging.dto.rest.config.ConfigNamingDTO;
 import io.mapsmessaging.license.FeatureManager;
 import io.mapsmessaging.utilities.configuration.ConfigurationManager;
 
@@ -23,9 +24,9 @@ public class UpgradeTest {
     configurationManager.initialise("fred");
     configurationManager.loadAll();
 
-    for (String managerName : configurationManager.getKnownManagers()) {
+    for (ConfigNamingDTO managerName : configurationManager.getKnownManagers()) {
       try {
-        ConfigManager manager = configurationManager.getManager(managerName);
+        ConfigManager manager = configurationManager.getManager(managerName.getConfigName());
         manager.load(new FeatureManager(new ArrayList<>()));
 
         if(manager instanceof BaseConfigDTO dto){

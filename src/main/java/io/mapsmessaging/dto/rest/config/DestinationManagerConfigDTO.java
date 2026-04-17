@@ -42,4 +42,9 @@ public class DestinationManagerConfigDTO extends BaseManagerConfigDTO {
   public DestinationManagerConfigDTO() {
     super("DestinationManagerConfigDTO");
   }
+
+  @Override
+  public String getName() {
+    return "Destinations";
+  }
 }

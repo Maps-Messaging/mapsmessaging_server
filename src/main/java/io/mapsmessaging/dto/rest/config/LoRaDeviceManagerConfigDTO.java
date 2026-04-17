@@ -41,4 +41,9 @@ public class LoRaDeviceManagerConfigDTO extends BaseManagerConfigDTO {
   public LoRaDeviceManagerConfigDTO(){
     super("LoRaDeviceManagerConfigDTO");
   }
+
+  @Override
+  public String getName() {
+    return "LoRa";
+  }
 }

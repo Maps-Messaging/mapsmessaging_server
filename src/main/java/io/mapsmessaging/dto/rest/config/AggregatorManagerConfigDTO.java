@@ -91,4 +91,9 @@ public class AggregatorManagerConfigDTO extends BaseManagerConfigDTO {
   public AggregatorManagerConfigDTO() {
     super("AggreagtorManagerConfigDTO");
   }
+
+  @Override
+  public String getName() {
+    return "Aggregations";
+  }
 }

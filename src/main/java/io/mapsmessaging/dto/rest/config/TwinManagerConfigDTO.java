@@ -77,4 +77,9 @@ public class TwinManagerConfigDTO extends BaseManagerConfigDTO {
   public TwinManagerConfigDTO() {
     super("TwinManagerConfigDTO");
   }
+
+  @Override
+  public String getName() {
+    return "State Cache";
+  }
 }

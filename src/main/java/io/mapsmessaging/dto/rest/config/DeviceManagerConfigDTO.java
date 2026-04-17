@@ -101,4 +101,9 @@ public class DeviceManagerConfigDTO extends BaseManagerConfigDTO {
     super("DeviceManagerConfigDTO");
   }
 
+  @Override
+  public String getName() {
+    return "Devices";
+  }
+
 }

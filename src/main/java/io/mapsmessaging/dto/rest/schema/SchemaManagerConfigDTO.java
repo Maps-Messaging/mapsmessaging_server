@@ -89,4 +89,9 @@ public class SchemaManagerConfigDTO extends BaseManagerConfigDTO {
     super("SchemaManagerConfigDTO");
   }
 
+  @Override
+  public String getName() {
+    return "Schemas";
+  }
+
 }

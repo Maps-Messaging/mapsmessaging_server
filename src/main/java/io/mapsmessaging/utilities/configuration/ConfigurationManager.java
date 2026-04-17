@@ -35,6 +35,7 @@ import io.mapsmessaging.configuration.consul.ConsulManagerFactory;
 import io.mapsmessaging.configuration.consul.ConsulPropertyManager;
 import io.mapsmessaging.configuration.file.FileYamlPropertyManager;
 import io.mapsmessaging.configuration.yaml.YamlPropertyManager;
+import io.mapsmessaging.dto.rest.config.ConfigNamingDTO;
 import io.mapsmessaging.license.FeatureManager;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
@@ -97,10 +98,17 @@ public class ConfigurationManager {
     // nothing to do here
   }
 
-  public String[] getKnownManagers(){
+  public ConfigNamingDTO[] getKnownManagers(){
     List<String> managerNames = new ArrayList<>(managerMap.keySet());
     managerNames.sort(Comparator.naturalOrder());
-    return managerNames.toArray(new String[0]);
+    List<ConfigNamingDTO> summary = new ArrayList<>();
+    for(String configName : managerNames){
+      ConfigNamingDTO dto = new ConfigNamingDTO();
+      dto.setName(managerMap.get(configName).getName());
+      dto.setConfigName(configName);
+      summary.add(dto);
+    }
+    return summary.toArray(new ConfigNamingDTO[0]);
   }
 
   public ConfigManager getManager(String name){

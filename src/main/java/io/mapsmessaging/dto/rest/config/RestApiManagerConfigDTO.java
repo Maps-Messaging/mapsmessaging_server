@@ -258,4 +258,9 @@ public class RestApiManagerConfigDTO extends BaseManagerConfigDTO {
   public RestApiManagerConfigDTO() {
     super("RestApiManagerConfigDTO");
   }
+
+  @Override
+  public String getName() {
+    return "Rest API";
+  }
 }

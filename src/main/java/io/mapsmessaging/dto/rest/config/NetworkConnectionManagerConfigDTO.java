@@ -41,4 +41,9 @@ public class NetworkConnectionManagerConfigDTO extends BaseManagerConfigDTO {
   public NetworkConnectionManagerConfigDTO(){
     super("NetworkConnectionManagerConfigDTO");
   }
+
+  @Override
+  public String getName() {
+    return "Connections";
+  }
 }

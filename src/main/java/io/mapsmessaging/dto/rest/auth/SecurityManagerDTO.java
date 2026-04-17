@@ -59,4 +59,9 @@ public class SecurityManagerDTO extends BaseManagerConfigDTO {
   public SecurityManagerDTO(){
     super("SecurityManagerConfigDTO");
   }
+
+  @Override
+  public String getName() {
+    return "Security";
+  }
 }

@@ -72,4 +72,9 @@ public class NetworkManagerConfigDTO extends BaseManagerConfigDTO {
   public NetworkManagerConfigDTO(){
     super("NetworkManagerConfigDTO");
   }
+
+  @Override
+  public String getName() {
+    return "Networks";
+  }
 }

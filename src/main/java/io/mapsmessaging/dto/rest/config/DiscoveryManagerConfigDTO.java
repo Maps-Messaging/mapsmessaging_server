@@ -63,4 +63,9 @@ public class DiscoveryManagerConfigDTO extends BaseManagerConfigDTO {
   public DiscoveryManagerConfigDTO() {
     super("DiscoveryManagerConfigDTO");
   }
+
+  @Override
+  public String getName() {
+    return "Discovery";
+  }
 }

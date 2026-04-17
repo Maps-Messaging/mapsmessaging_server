@@ -275,4 +275,9 @@ public class AuthManagerConfigDTO extends BaseManagerConfigDTO {
     this.softDelayMillisPerFailure = source.softDelayMillisPerFailure;
     this.maxSoftDelayMillis = source.maxSoftDelayMillis;
   }
+
+  @Override
+  public String getName() {
+    return "Auth";
+  }
 }

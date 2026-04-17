@@ -107,5 +107,10 @@ public class MLModelManagerDTO extends BaseManagerConfigDTO {
   public MLModelManagerDTO(){
     super("MLModelManagerConfigDTO");
   }
+
+  @Override
+  public String getName() {
+    return "ML Models";
+  }
 }
 

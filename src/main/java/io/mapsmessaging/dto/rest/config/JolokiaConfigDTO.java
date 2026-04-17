@@ -51,4 +51,9 @@ public class JolokiaConfigDTO extends BaseManagerConfigDTO {
   public JolokiaConfigDTO() {
     super("JolokiaConfigDTO");
   }
+
+  @Override
+  public String getName() {
+    return "Jolokia";
+  }
 }

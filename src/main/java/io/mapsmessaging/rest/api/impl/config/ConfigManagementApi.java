@@ -25,6 +25,7 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import io.mapsmessaging.config.ConfigManager;
 import io.mapsmessaging.dto.rest.config.BaseManagerConfigDTO;
+import io.mapsmessaging.dto.rest.config.ConfigNamingDTO;
 import io.mapsmessaging.rest.api.impl.BaseRestApi;
 import io.mapsmessaging.rest.cache.CacheKey;
 import io.mapsmessaging.rest.responses.ConfigurationSchemaDTO;
@@ -38,6 +39,8 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+import lombok.Getter;
+import lombok.Setter;
 
 import java.util.Map;
 
@@ -58,7 +61,7 @@ public class ConfigManagementApi extends BaseRestApi {
           @ApiResponse(
               responseCode = "200",
               description = "List of configuration sections returned",
-              content = @Content(mediaType = "application/json", schema = @Schema(implementation = String[].class))
+              content = @Content(mediaType = "application/json", schema = @Schema(implementation = ConfigNamingDTO[].class))
           ),
           @ApiResponse(
               responseCode = "401",
@@ -82,11 +85,11 @@ public class ConfigManagementApi extends BaseRestApi {
       hasAccess(RESOURCE);
 
       CacheKey key = new CacheKey(uriInfo.getPath(), "knownManagers");
-      String[] managers = getFromCache(key, String[].class);
+      ConfigNamingDTO[] managers = getFromCache(key, ConfigNamingDTO[].class);
       if (managers != null) {
         return ok(managers);
       }
-      String[] knownManagers = ConfigurationManager.getInstance().getKnownManagers();
+      ConfigNamingDTO[] knownManagers = ConfigurationManager.getInstance().getKnownManagers();
       putToCache(key, knownManagers);
       return ok(knownManagers);
     } catch (WebApplicationException ex) {
@@ -198,4 +201,5 @@ public class ConfigManagementApi extends BaseRestApi {
     }
     throw exception;
   }
+
 }

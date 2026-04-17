@@ -30,7 +30,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
         TwinManagerConfigDTO.class
     }
 )
-public class BaseManagerConfigDTO extends BaseConfigDTO {
+public abstract class BaseManagerConfigDTO extends BaseConfigDTO {
 
   @Schema(
       description = "Discriminator for the concrete configuration manager DTO.",
@@ -54,4 +54,7 @@ public class BaseManagerConfigDTO extends BaseConfigDTO {
   protected void setType(String type) {
     this.type = type;
   }
+
+  public abstract String getName();
+
 }

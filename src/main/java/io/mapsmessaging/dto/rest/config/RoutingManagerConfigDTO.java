@@ -65,4 +65,9 @@ public class RoutingManagerConfigDTO extends BaseManagerConfigDTO {
   public RoutingManagerConfigDTO(){
     super("RoutingManagerConfigDTO");
   }
+
+  @Override
+  public String getName() {
+    return "Routing";
+  }
 }

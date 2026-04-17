@@ -27,4 +27,9 @@ public class LicenseManagerConfigDTO extends BaseManagerConfigDTO {
   public LicenseManagerConfigDTO() {
     super("LicenseManagerConfigDTO");
   }
+
+  @Override
+  public String getName() {
+    return "License";
+  }
 }

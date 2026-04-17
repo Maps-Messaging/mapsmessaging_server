@@ -176,4 +176,9 @@ public class MessageDaemonConfigDTO extends BaseManagerConfigDTO {
   protected MessageDaemonConfigDTO() {
     super("MessageDaemonConfigDTO");
   }
+
+  @Override
+  public String getName() {
+    return "Server";
+  }
 }
