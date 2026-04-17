@@ -309,6 +309,7 @@ public abstract class Protocol implements SelectorCallback, MessageListener, Tim
     }
     Message msg = parsedMessage.getMessage();
     if(analyser != null){
+      msg.setDestinationName(parsedMessage.getDestinationName());
       msg = analyser.ingest(msg);
       if(msg == null){
         return null;
