@@ -40,7 +40,10 @@ public class EndPointConnectionServerConfig extends EndPointConnectionServerConf
     this.pluginConnection = props.getBooleanProperty("plugin", false);
     this.cost = props.getIntProperty("cost", 0);
     this.groupName = props.getProperty("groupName", "");
-
+    Object willObject = props.get("will");
+    if (willObject instanceof ConfigurationProperties willProperties) {
+      this.willConfig = new MqttWillConfig(willProperties);
+    }
     linkConfigs = new ArrayList<>();
     Object obj = props.get("links");
     if (obj instanceof List) {
@@ -60,6 +63,9 @@ public class EndPointConnectionServerConfig extends EndPointConnectionServerConf
     config.put("plugin", pluginConnection);
     config.put("cost", cost);
     config.put("groupName", groupName);
+    if (willConfig != null) {
+      config.put("will", ((MqttWillConfig) willConfig).toConfigurationProperties());
+    }
     List<ConfigurationProperties> linkProperties = new ArrayList<>();
     for (LinkConfigDTO linkConfig : linkConfigs) {
       linkProperties.add(((Config)linkConfig).toConfigurationProperties());
@@ -93,6 +99,18 @@ public class EndPointConnectionServerConfig extends EndPointConnectionServerConf
         }
         if(!groupName.equals(config.getGroupName())) {
           groupName = config.getGroupName();
+          hasChanged = true;
+        }
+        if (this.willConfig == null && config.getWillConfig() != null) {
+          this.willConfig = config.getWillConfig();
+          hasChanged = true;
+        }
+        else if(this.willConfig != null && config.getWillConfig() == null) {
+          this.willConfig = null;
+          hasChanged = true;
+        }
+        else if (this.willConfig != null ) {
+          ((MqttWillConfig) willConfig).update(willConfig);
           hasChanged = true;
         }
 

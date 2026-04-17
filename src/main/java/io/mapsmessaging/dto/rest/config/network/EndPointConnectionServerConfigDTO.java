@@ -88,5 +88,12 @@ public class EndPointConnectionServerConfigDTO extends EndPointServerConfigDTO {
       nullable = true
   )
   protected String groupName;
+
+  @Schema(
+      description = "MQTT Last Will and Testament configuration, only relevant for MQTT connections",
+      requiredMode = Schema.RequiredMode.NOT_REQUIRED,
+      nullable = true
+  )
+  protected MqttWillConfigDTO willConfig;
 }
 
