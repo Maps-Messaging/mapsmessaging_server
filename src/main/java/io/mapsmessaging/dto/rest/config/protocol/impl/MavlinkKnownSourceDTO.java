@@ -25,11 +25,16 @@ public class MavlinkKnownSourceDTO {
   )
   protected String description = "";
 
-  @Schema(description = "MAVLink system ID.", example = "1")
+  @Schema(description = "MAVLink system ID.", example = "1", minimum = "1", maximum = "255")
   protected int systemId;
 
-  @Schema(description = "MAVLink component ID.", example = "1")
+  @Schema(description = "MAVLink component ID.", example = "1", minimum = "0", maximum = "255")
   protected int componentId;
+
+  @Schema(
+      description = "Vehicle class (UAV=air, USV=surface, UGV=ground, UUV=underwater, GCS=control)."
+  )
+  protected VehicleClass vehicleClass;
 
   @ArraySchema(
       schema = @Schema(description = "Per-source allow-list of message IDs.")

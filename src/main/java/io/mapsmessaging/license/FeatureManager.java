@@ -36,6 +36,11 @@ public class FeatureManager {
     this.featuresList = featuresList;
   }
 
+  // to do
+  public FeatureDetails loadLicense() {
+    return featuresList.get(0);
+  }
+
   public boolean isEnabled(String featurePath) {
     for (FeatureDetails featureDetails : featuresList) {
       Features feature = featureDetails.getFeature();

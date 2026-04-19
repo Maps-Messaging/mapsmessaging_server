@@ -90,7 +90,7 @@ public class SchemaManagerConfigDTO extends BaseManagerConfigDTO {
   }
 
   @Override
-  public String getName() {
+  public String getSimpleName() {
     return "Schemas";
   }
 

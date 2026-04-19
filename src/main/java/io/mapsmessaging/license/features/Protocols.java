@@ -18,24 +18,58 @@
  */
 
 package io.mapsmessaging.license.features;
-
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
 @Data
+@Schema(description = "Protocol feature configuration for the license. All fields are required.")
 public class Protocols {
+
+  @Schema(description = "Enable MQTT protocol support.", example = "true", requiredMode = Schema.RequiredMode.REQUIRED)
   private boolean mqtt;
+
+  @Schema(description = "Enable AMQP protocol support.", example = "true", requiredMode = Schema.RequiredMode.REQUIRED)
   private boolean amqp;
+
+  @Schema(description = "Enable NATS protocol support.", example = "true", requiredMode = Schema.RequiredMode.REQUIRED)
   private boolean nats;
+
+  @Schema(description = "Enable MQTT-SN protocol support.", example = "false", requiredMode = Schema.RequiredMode.REQUIRED)
   private boolean mqtt_sn;
+
+  @Schema(description = "Enable CoAP protocol support.", example = "false", requiredMode = Schema.RequiredMode.REQUIRED)
   private boolean coap;
+
+  @Schema(description = "Enable NMEA 0183 protocol support.", example = "false", requiredMode = Schema.RequiredMode.REQUIRED)
   private boolean nmea_0183;
+
+  @Schema(description = "Enable Semtech LoRa protocol support.", example = "false", requiredMode = Schema.RequiredMode.REQUIRED)
   private boolean semtech;
+
+  @Schema(description = "Enable custom protocol extensions.", example = "true", requiredMode = Schema.RequiredMode.REQUIRED)
   private boolean extensions;
+
+  @Schema(description = "Enable STOMP protocol support.", example = "false", requiredMode = Schema.RequiredMode.REQUIRED)
   private boolean stomp;
+
+  @Schema(description = "Enable REST protocol support.", example = "true", requiredMode = Schema.RequiredMode.REQUIRED)
   private boolean rest;
+
+  @Schema(description = "Enable LoRa protocol support.", example = "false", requiredMode = Schema.RequiredMode.REQUIRED)
   private boolean lora;
+
+  @Schema(description = "Enable WebSocket (WS) protocol support.", example = "true", requiredMode = Schema.RequiredMode.REQUIRED)
   private boolean ws;
+
+  @Schema(description = "Enable secure WebSocket (WSS) protocol support.", example = "true", requiredMode = Schema.RequiredMode.REQUIRED)
   private boolean wss;
+
+  @Schema(description = "Enable ST OGi protocol support.", example = "false", requiredMode = Schema.RequiredMode.REQUIRED)
   private boolean stogi;
+
+  @Schema(description = "Enable MAVLink protocol support.", example = "true", requiredMode = Schema.RequiredMode.REQUIRED)
   private boolean mavlink;
+
+  @Schema(description = "Enable NMEA 2000 (N2K) protocol support.", example = "false", requiredMode = Schema.RequiredMode.REQUIRED)
+  private boolean n2k;
 }

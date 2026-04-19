@@ -260,7 +260,7 @@ public class RestApiManagerConfigDTO extends BaseManagerConfigDTO {
   }
 
   @Override
-  public String getName() {
+  public String getSimpleName() {
     return "Rest API";
   }
 }

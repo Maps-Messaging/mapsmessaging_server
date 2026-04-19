@@ -48,7 +48,7 @@ public class TenantManagementConfigDTO extends BaseManagerConfigDTO {
   }
 
   @Override
-  public String getName() {
+  public String getSimpleName() {
     return "Tenants";
   }
 }

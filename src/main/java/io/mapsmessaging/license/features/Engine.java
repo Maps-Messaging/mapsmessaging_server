@@ -19,17 +19,73 @@
 
 package io.mapsmessaging.license.features;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
 @Data
+@Schema(description = "Core messaging engine feature configuration for the license. All fields are required.")
 public class Engine {
+
+  @Schema(
+      description = "Enable queue support.",
+      example = "true",
+      requiredMode = Schema.RequiredMode.REQUIRED
+  )
   private boolean queueSupport;
+
+  @Schema(
+      description = "Enable topic (pub/sub) support.",
+      example = "true",
+      requiredMode = Schema.RequiredMode.REQUIRED
+  )
   private boolean topicSupport;
+
+  @Schema(
+      description = "Enable temporary queue support.",
+      example = "true",
+      requiredMode = Schema.RequiredMode.REQUIRED
+  )
   private boolean tempQueueSupport;
+
+  @Schema(
+      description = "Enable temporary topic support.",
+      example = "true",
+      requiredMode = Schema.RequiredMode.REQUIRED
+  )
   private boolean tempTopicSupport;
+
+  @Schema(
+      description = "Enable named subscription support.",
+      example = "true",
+      requiredMode = Schema.RequiredMode.REQUIRED
+  )
   private boolean namedSubscriptionSupport;
+
+  @Schema(
+      description = "Enable message filtering support.",
+      example = "true",
+      requiredMode = Schema.RequiredMode.REQUIRED
+  )
   private boolean filteringSupport;
+
+  @Schema(
+      description = "Enable schema-based validation and routing.",
+      example = "true",
+      requiredMode = Schema.RequiredMode.REQUIRED
+  )
   private boolean schemaSupport;
+
+  @Schema(
+      description = "Maximum number of topics allowed.",
+      example = "1000000",
+      requiredMode = Schema.RequiredMode.REQUIRED
+  )
   private int maxTopics;
+
+  @Schema(
+      description = "Maximum number of queues allowed.",
+      example = "100000",
+      requiredMode = Schema.RequiredMode.REQUIRED
+  )
   private int maxQueues;
 }

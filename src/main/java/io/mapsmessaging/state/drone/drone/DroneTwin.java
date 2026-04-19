@@ -19,6 +19,7 @@
 
 package io.mapsmessaging.state.drone.drone;
 
+import io.mapsmessaging.dto.rest.config.protocol.impl.VehicleClass;
 import io.mapsmessaging.state.drone.core.EntityTwin;
 import io.mapsmessaging.state.drone.model.EnvironmentalState;
 import io.mapsmessaging.state.drone.model.SystemState;
@@ -48,6 +49,8 @@ public class DroneTwin extends EntityTwin {
 
   private String vehicleClass;
   private String registrationId;
+  private String description;
+  private VehicleClass vehicleClassType;
 
   // --- Operational state ---
   private Boolean armed;

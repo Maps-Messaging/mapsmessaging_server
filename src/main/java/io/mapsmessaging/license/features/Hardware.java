@@ -21,10 +21,38 @@ package io.mapsmessaging.license.features;
 
 import lombok.Data;
 
+import io.swagger.v3.oas.annotations.media.Schema;
+import lombok.Data;
+
 @Data
+@Schema(description = "Hardware feature configuration for the license. All fields are required.")
 public class Hardware {
+
+  @Schema(
+      description = "Enable I2C device support.",
+      example = "true",
+      requiredMode = Schema.RequiredMode.REQUIRED
+  )
   private boolean i2c;
+
+  @Schema(
+      description = "Enable SPI device support.",
+      example = "true",
+      requiredMode = Schema.RequiredMode.REQUIRED
+  )
   private boolean spi;
+
+  @Schema(
+      description = "Enable OneWire device support.",
+      example = "false",
+      requiredMode = Schema.RequiredMode.REQUIRED
+  )
   private boolean oneWire;
+
+  @Schema(
+      description = "Enable serial hardware support.",
+      example = "true",
+      requiredMode = Schema.RequiredMode.REQUIRED
+  )
   private boolean serial;
 }

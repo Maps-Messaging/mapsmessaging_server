@@ -30,6 +30,7 @@ import io.mapsmessaging.api.message.TypedData;
 import io.mapsmessaging.dto.rest.config.protocol.ProtocolConfigDTO;
 import io.mapsmessaging.dto.rest.config.protocol.impl.MavlinkConfigDTO;
 import io.mapsmessaging.dto.rest.config.protocol.impl.MavlinkKnownSourceDTO;
+import io.mapsmessaging.dto.rest.config.protocol.impl.VehicleClass;
 import io.mapsmessaging.dto.rest.protocol.ProtocolInformationDTO;
 import io.mapsmessaging.dto.rest.protocol.impl.MavlinkProtocolInformation;
 import io.mapsmessaging.mavlink.ProcessedFrame;
@@ -169,15 +170,24 @@ public class MavlinkProtocol extends Protocol {
       MavlinkPacket packet = MavlinkPacketFactory.create(env);
       if (packet != null) {
         TwinUpdateContext context = buildUpdateContext(env);
-        twinManager.registerTwin(new DroneTwin(twinId), context);
-        twinManager.updateTwin(twinId, twin -> {
-          if (twin instanceof DroneTwin drone) {
-            drone.setSystemId(env.getFrame().getSystemId());
-            drone.setComponentId(env.getFrame().getComponentId());
+        MavlinkKnownSourceDTO known = acceptedComponents != null ? acceptedComponents.get(env.getFrame().getComponentId()) : null;
+        DroneTwin twin1 = new DroneTwin(twinId);
+        boolean isGcs = known != null && known.getVehicleClass() == VehicleClass.GCS;
+        if(!isGcs) {
+          if (known != null) {
+            twin1.setVehicleClassType(known.getVehicleClass());
+            twin1.setDescription(known.getDescription());
+            twin1.setDisplayName(known.getName());
           }
-        }, context);
-
-        listenerManager.handle(env.getFrame().getMessageId(), twinId, packet, context);
+          twinManager.registerTwin(twin1, context);
+          twinManager.updateTwin(twinId, twin -> {
+            if (twin instanceof DroneTwin drone) {
+              drone.setSystemId(env.getFrame().getSystemId());
+              drone.setComponentId(env.getFrame().getComponentId());
+            }
+          }, context);
+          listenerManager.handle(env.getFrame().getMessageId(), twinId, packet, context);
+        }
       }
 
       processPacket(env.getFrame(), env.getMessageName(), raw);

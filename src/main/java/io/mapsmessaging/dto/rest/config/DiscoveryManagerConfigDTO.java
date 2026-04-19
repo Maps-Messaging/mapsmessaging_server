@@ -65,7 +65,7 @@ public class DiscoveryManagerConfigDTO extends BaseManagerConfigDTO {
   }
 
   @Override
-  public String getName() {
+  public String getSimpleName() {
     return "Discovery";
   }
 }

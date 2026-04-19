@@ -79,7 +79,7 @@ public class TwinManagerConfigDTO extends BaseManagerConfigDTO {
   }
 
   @Override
-  public String getName() {
+  public String getSimpleName() {
     return "State Cache";
   }
 }

@@ -109,7 +109,7 @@ public class MLModelManagerDTO extends BaseManagerConfigDTO {
   }
 
   @Override
-  public String getName() {
+  public String getSimpleName() {
     return "ML Models";
   }
 }

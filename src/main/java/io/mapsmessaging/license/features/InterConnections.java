@@ -21,9 +21,31 @@ package io.mapsmessaging.license.features;
 
 import lombok.Data;
 
+import io.swagger.v3.oas.annotations.media.Schema;
+import lombok.Data;
+
 @Data
+@Schema(description = "Interconnection feature configuration for the license. All fields are required.")
 public class InterConnections {
+
+  @Schema(
+      description = "Enable push-based interconnection support.",
+      example = "true",
+      requiredMode = Schema.RequiredMode.REQUIRED
+  )
   private boolean pushSupport;
+
+  @Schema(
+      description = "Enable pull-based interconnection support.",
+      example = "true",
+      requiredMode = Schema.RequiredMode.REQUIRED
+  )
   private boolean pullSupport;
+
+  @Schema(
+      description = "Enable filtering capabilities on interconnections.",
+      example = "true",
+      requiredMode = Schema.RequiredMode.REQUIRED
+  )
   private boolean filteringSupport;
 }

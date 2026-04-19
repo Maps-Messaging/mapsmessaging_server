@@ -152,7 +152,7 @@ public class ConfigManagementApi extends BaseRestApi {
         return ok(cached);
       }
 
-      ConfigManager manager = ConfigurationManager.getInstance().getManager(name);
+      ConfigManager manager = ConfigurationManager.getInstance().getByName(name);
       if (manager == null) {
         return notFound("Unknown configuration section: " + name);
       }

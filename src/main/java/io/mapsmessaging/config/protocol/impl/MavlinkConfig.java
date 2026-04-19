@@ -5,6 +5,7 @@ import io.mapsmessaging.configuration.ConfigurationProperties;
 import io.mapsmessaging.dto.rest.config.BaseConfigDTO;
 import io.mapsmessaging.dto.rest.config.protocol.impl.MavlinkConfigDTO;
 import io.mapsmessaging.dto.rest.config.protocol.impl.MavlinkKnownSourceDTO;
+import io.mapsmessaging.dto.rest.config.protocol.impl.VehicleClass;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -212,6 +213,7 @@ public class MavlinkConfig extends MavlinkConfigDTO implements Config {
       source.setComponentId(properties.getIntProperty("componentId", 0));
       source.setAcceptedMessageIds(readIntegerList(properties.get("acceptedMessageIds")));
       source.setRejectedMessageIds(readIntegerList(properties.get("rejectedMessageIds")));
+      source.setVehicleClass(VehicleClass.valueOf(properties.getProperty("vehicleClass", VehicleClass.UAV.name())));
       return source;
     }
     if (raw instanceof Map<?, ?> map) {
@@ -222,6 +224,7 @@ public class MavlinkConfig extends MavlinkConfigDTO implements Config {
       source.setComponentId(defaultInteger(map.get("componentId")));
       source.setAcceptedMessageIds(readIntegerList(map.get("acceptedMessageIds")));
       source.setRejectedMessageIds(readIntegerList(map.get("rejectedMessageIds")));
+      source.setVehicleClass(VehicleClass.valueOf((String)map.get("vehicleClass")));
       return source;
     }
     return null;

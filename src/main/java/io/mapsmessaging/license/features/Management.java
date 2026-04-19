@@ -19,12 +19,22 @@
 
 package io.mapsmessaging.license.features;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
 @Data
+@Schema(description = "Management feature configuration for the license. All fields are required.")
 public class Management {
+
+  @Schema(description = "Enable Jolokia (JMX over HTTP) support.", example = "false", requiredMode = Schema.RequiredMode.REQUIRED)
   private boolean jolokia;
+
+  @Schema(description = "Enable REST API management interface.", example = "true", requiredMode = Schema.RequiredMode.REQUIRED)
   private boolean restApi;
+
+  @Schema(description = "Enable JMX management interface.", example = "true", requiredMode = Schema.RequiredMode.REQUIRED)
   private boolean jmx;
+
+  @Schema(description = "Enable system topics for internal monitoring and control.", example = "true", requiredMode = Schema.RequiredMode.REQUIRED)
   private boolean sysTopics;
 }

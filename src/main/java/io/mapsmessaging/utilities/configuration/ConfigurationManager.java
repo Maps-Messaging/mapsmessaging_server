@@ -35,6 +35,7 @@ import io.mapsmessaging.configuration.consul.ConsulManagerFactory;
 import io.mapsmessaging.configuration.consul.ConsulPropertyManager;
 import io.mapsmessaging.configuration.file.FileYamlPropertyManager;
 import io.mapsmessaging.configuration.yaml.YamlPropertyManager;
+import io.mapsmessaging.dto.rest.config.BaseManagerConfigDTO;
 import io.mapsmessaging.dto.rest.config.ConfigNamingDTO;
 import io.mapsmessaging.license.FeatureManager;
 import io.mapsmessaging.logging.Logger;
@@ -104,7 +105,7 @@ public class ConfigurationManager {
     List<ConfigNamingDTO> summary = new ArrayList<>();
     for(String configName : managerNames){
       ConfigNamingDTO dto = new ConfigNamingDTO();
-      dto.setName(managerMap.get(configName).getName());
+      dto.setName( ((BaseManagerConfigDTO)managerMap.get(configName)).getSimpleName());
       dto.setConfigName(configName);
       summary.add(dto);
     }
@@ -114,6 +115,16 @@ public class ConfigurationManager {
   public ConfigManager getManager(String name){
     return managerMap.get(name);
   }
+
+  public ConfigManager getByName(String name){
+    for(ConfigManager manager : managerMap.values()){
+      if( ((BaseManagerConfigDTO)manager).getSimpleName().equals(name)){
+        return manager;
+      }
+    }
+    return managerMap.get(name);
+  }
+
 
   public String getSchema(String name) {
     return configSchemas.get(name);

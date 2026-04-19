@@ -29,7 +29,7 @@ public class LicenseManagerConfigDTO extends BaseManagerConfigDTO {
   }
 
   @Override
-  public String getName() {
+  public String getSimpleName() {
     return "License";
   }
 }

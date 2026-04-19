@@ -18,21 +18,50 @@
  */
 
 package io.mapsmessaging.license.features;
-
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
 @Data
+@Schema(description = "Network feature configuration for the license. All fields are required.")
 public class Network {
+
+  @Schema(description = "Enable UDP transport.", example = "true", requiredMode = Schema.RequiredMode.REQUIRED)
   private boolean udp;
+
+  @Schema(description = "Enable HMAC authentication.", example = "true", requiredMode = Schema.RequiredMode.REQUIRED)
   private boolean hmac;
+
+  @Schema(description = "Enable TCP transport.", example = "true", requiredMode = Schema.RequiredMode.REQUIRED)
   private boolean tcp;
+
+  @Schema(description = "Enable SSL/TLS transport.", example = "true", requiredMode = Schema.RequiredMode.REQUIRED)
   private boolean ssl;
+
+  @Schema(description = "Enable DTLS transport.", example = "false", requiredMode = Schema.RequiredMode.REQUIRED)
   private boolean dtls;
+
+  @Schema(description = "Enable LoRa communication.", example = "false", requiredMode = Schema.RequiredMode.REQUIRED)
   private boolean lora;
+
+  @Schema(description = "Enable serial communication.", example = "false", requiredMode = Schema.RequiredMode.REQUIRED)
   private boolean serial;
+
+  @Schema(description = "Enable CAN bus communication.", example = "true", requiredMode = Schema.RequiredMode.REQUIRED)
+  private boolean canbus;
+
+  @Schema(description = "Enable ORBCOMM OGWS integration.", example = "false", requiredMode = Schema.RequiredMode.REQUIRED)
   private boolean ogws;
+
+  @Schema(description = "Enable ST OGi modem support.", example = "false", requiredMode = Schema.RequiredMode.REQUIRED)
   private boolean stogi;
+
+  @Schema(description = "Enable satellite communication features.", example = "false", requiredMode = Schema.RequiredMode.REQUIRED)
   private boolean satellite;
 
+  @Schema(
+      description = "Maximum number of concurrent network connections allowed.",
+      example = "1000",
+      requiredMode = Schema.RequiredMode.REQUIRED
+  )
   private int maxConnections;
 }

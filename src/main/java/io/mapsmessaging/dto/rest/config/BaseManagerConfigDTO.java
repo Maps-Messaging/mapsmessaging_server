@@ -55,6 +55,6 @@ public abstract class BaseManagerConfigDTO extends BaseConfigDTO {
     this.type = type;
   }
 
-  public abstract String getName();
+  public abstract String getSimpleName();
 
 }
