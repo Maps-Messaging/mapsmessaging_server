@@ -1,8 +1,6 @@
 package io.mapsmessaging.state.drone.core;
 
-import io.mapsmessaging.config.ConfigManager;
 import io.mapsmessaging.config.TwinManagerConfig;
-import io.mapsmessaging.configuration.ConfigurationProperties;
 import io.mapsmessaging.dto.rest.config.TwinManagerConfigDTO;
 import io.mapsmessaging.state.drone.model.LinkState;
 import io.mapsmessaging.utilities.configuration.ConfigurationManager;

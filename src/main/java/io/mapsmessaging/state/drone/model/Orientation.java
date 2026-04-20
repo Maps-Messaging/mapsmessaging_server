@@ -19,6 +19,7 @@
 
 package io.mapsmessaging.state.drone.model;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -32,9 +33,29 @@ import lombok.ToString;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
+@Schema(description = "Body orientation expressed as roll, pitch, and yaw in degrees.")
 public class Orientation {
 
+  @Schema(
+      description = "Roll angle in degrees (rotation around the longitudinal axis).",
+      example = "2.5",
+      nullable = true
+  )
   private Double rollDegrees;
+
+  @Schema(
+      description = "Pitch angle in degrees (rotation around the lateral axis).",
+      example = "-1.2",
+      nullable = true
+  )
   private Double pitchDegrees;
+
+  @Schema(
+      description = "Yaw angle in degrees (rotation around the vertical axis).",
+      example = "180.0",
+      minimum = "0.0",
+      maximum = "360.0",
+      nullable = true
+  )
   private Double yawDegrees;
 }

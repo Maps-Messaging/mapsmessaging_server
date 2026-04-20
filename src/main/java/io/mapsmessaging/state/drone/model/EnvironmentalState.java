@@ -19,6 +19,7 @@
 
 package io.mapsmessaging.state.drone.model;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
@@ -26,7 +27,20 @@ import lombok.ToString;
 @ToString(callSuper = true)
 @Getter
 @Setter
+@Schema(description = "Environmental conditions affecting the drone or vehicle.")
 public class EnvironmentalState {
+
+  @Schema(
+      description = "Wind speed in meters per second.",
+      example = "8.3",
+      nullable = true
+  )
   private Double windSpeedMetersPerSecond;
+
+  @Schema(
+      description = "Wind direction in degrees.",
+      example = "135.0",
+      nullable = true
+  )
   private Double windDirectionDegrees;
 }

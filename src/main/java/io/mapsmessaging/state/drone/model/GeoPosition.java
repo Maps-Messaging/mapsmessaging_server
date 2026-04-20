@@ -19,6 +19,7 @@
 
 package io.mapsmessaging.state.drone.model;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -31,14 +32,38 @@ import lombok.ToString;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
+@Schema(description = "Geodetic position of the entity expressed in latitude, longitude and altitude.")
 public class GeoPosition {
 
+  @Schema(
+      description = "Latitude in decimal degrees.",
+      example = "-33.8688",
+      minimum = "-90",
+      maximum = "90",
+      nullable = true
+  )
   private Double latitude;
+
+  @Schema(
+      description = "Longitude in decimal degrees.",
+      example = "151.2093",
+      minimum = "-180",
+      maximum = "180",
+      nullable = true
+  )
   private Double longitude;
 
-  /** Mean sea level altitude (meters). */
+  @Schema(
+      description = "Altitude above mean sea level in meters.",
+      example = "120.5",
+      nullable = true
+  )
   private Double altitudeMslMeters;
 
-  /** Above-ground-level altitude (meters). */
+  @Schema(
+      description = "Altitude above ground level in meters.",
+      example = "35.2",
+      nullable = true
+  )
   private Double altitudeAglMeters;
 }

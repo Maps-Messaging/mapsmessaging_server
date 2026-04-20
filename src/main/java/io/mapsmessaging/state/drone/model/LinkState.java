@@ -19,6 +19,7 @@
 
 package io.mapsmessaging.state.drone.model;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -31,17 +32,59 @@ import lombok.ToString;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
+@Schema(description = "Communication link quality and connectivity state.")
 public class LinkState {
 
-  /** Example values: DISCONNECTED, CONNECTING, CONNECTED, DEGRADED. */
+  @Schema(
+      description = "High-level link state (e.g. CONNECTED, DEGRADED, LOST).",
+      example = "CONNECTED",
+      nullable = true
+  )
   private String state;
 
+  @Schema(
+      description = "Indicates whether the link is currently connected.",
+      example = "true",
+      nullable = true
+  )
   private Boolean connected;
+
+  @Schema(
+      description = "Received Signal Strength Indicator in dBm.",
+      example = "-67",
+      nullable = true
+  )
   private Integer rssiDbm;
+
+  @Schema(
+      description = "Signal-to-noise ratio in decibels.",
+      example = "25.4",
+      nullable = true
+  )
   private Double snrDb;
+
+  @Schema(
+      description = "Estimated round-trip latency in milliseconds.",
+      example = "42.5",
+      nullable = true
+  )
   private Double latencyMs;
 
-  /** Fraction 0..1 if available. */
+  @Schema(
+      description = "Receive error rate as a ratio (0.0 to 1.0).",
+      example = "0.01",
+      minimum = "0.0",
+      maximum = "1.0",
+      nullable = true
+  )
   private Double rxErrorRate;
+
+  @Schema(
+      description = "Transmit error rate as a ratio (0.0 to 1.0).",
+      example = "0.005",
+      minimum = "0.0",
+      maximum = "1.0",
+      nullable = true
+  )
   private Double txErrorRate;
 }

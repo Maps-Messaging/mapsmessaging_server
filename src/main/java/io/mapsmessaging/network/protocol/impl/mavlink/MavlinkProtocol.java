@@ -44,9 +44,11 @@ import io.mapsmessaging.network.protocol.impl.mavlink.monitor.SequenceTracker;
 import io.mapsmessaging.network.protocol.impl.mavlink.packet.MavlinkPacket;
 import io.mapsmessaging.network.protocol.impl.mavlink.packet.MavlinkPacketFactory;
 import io.mapsmessaging.network.protocol.impl.satellite.gateway.io.StateManager;
+import io.mapsmessaging.state.drone.core.EntityTwin;
 import io.mapsmessaging.state.drone.core.TwinManager;
 import io.mapsmessaging.state.drone.core.TwinUpdateContext;
 import io.mapsmessaging.state.drone.drone.DroneTwin;
+import io.mapsmessaging.state.drone.drone.GroundStationTwin;
 import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
 
@@ -54,10 +56,7 @@ import javax.security.auth.Subject;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
-import java.util.Base64;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeoutException;
@@ -84,7 +83,7 @@ public class MavlinkProtocol extends Protocol {
     this.key = key;
     twinManager = MessageDaemon.getInstance().getSubSystemManager().getTwinManager();
     listenerManager = new ListenerManager(twinManager);
-    twinId = "mavlink:"+endPoint.getName()+":"+key.getSystemId();
+    twinId = "mavlink:"+endPoint.getConfig().getName()+":"+key.getSystemId();
     tracker = new SequenceTracker();
     this.mavlinkConfig = (MavlinkConfigDTO)protocolConfig;
     if(mavlinkConfig.getKnownSources() != null){
@@ -170,18 +169,27 @@ public class MavlinkProtocol extends Protocol {
       MavlinkPacket packet = MavlinkPacketFactory.create(env);
       if (packet != null) {
         TwinUpdateContext context = buildUpdateContext(env);
-        MavlinkKnownSourceDTO known = acceptedComponents != null ? acceptedComponents.get(env.getFrame().getComponentId()) : null;
-        DroneTwin twin1 = new DroneTwin(twinId);
-        boolean isGcs = known != null && known.getVehicleClass() == VehicleClass.GCS;
-        if(!isGcs) {
-          if (known != null) {
-            twin1.setVehicleClassType(known.getVehicleClass());
-            twin1.setDescription(known.getDescription());
-            twin1.setDisplayName(known.getName());
+        EntityTwin twin = twinManager.getTwin(twinId).orElse(null);
+        if(twin == null) {
+          MavlinkKnownSourceDTO known = acceptedComponents != null ? acceptedComponents.get(env.getFrame().getComponentId()) : null;
+          boolean isGcs = known != null && known.getVehicleClass() == VehicleClass.GCS;
+          if (!isGcs) {
+            twin = new DroneTwin(twinId);
+            if (known != null) {
+              ((DroneTwin) twin).setVehicleClassType(known.getVehicleClass());
+              ((DroneTwin) twin).setDescription(known.getDescription());
+              twin.setDisplayName(known.getName());
+            } else {
+              ((DroneTwin) twin).setVehicleClassType(VehicleClass.UAV);
+              twin.setDisplayName(known.getName());
+            }
+            twinManager.registerTwin(twin, context);
           }
-          twinManager.registerTwin(twin1, context);
-          twinManager.updateTwin(twinId, twin -> {
-            if (twin instanceof DroneTwin drone) {
+
+        }
+        if(twin != null) {
+          twinManager.updateTwin(twinId, twin2 -> {
+            if (twin2 instanceof DroneTwin drone) {
               drone.setSystemId(env.getFrame().getSystemId());
               drone.setComponentId(env.getFrame().getComponentId());
             }
@@ -189,7 +197,6 @@ public class MavlinkProtocol extends Protocol {
           listenerManager.handle(env.getFrame().getMessageId(), twinId, packet, context);
         }
       }
-
       processPacket(env.getFrame(), env.getMessageName(), raw);
     }
     else{

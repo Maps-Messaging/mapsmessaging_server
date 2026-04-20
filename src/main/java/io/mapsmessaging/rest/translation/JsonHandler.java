@@ -34,6 +34,7 @@ import java.io.*;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Type;
 import java.nio.charset.StandardCharsets;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
@@ -49,6 +50,7 @@ public class JsonHandler implements MessageBodyReader<Object>, MessageBodyWriter
       .registerTypeAdapter(LocalDateTime.class, new GsonDateTimeDeserialiser())
       .registerTypeAdapter(LocalDate.class, new GsonDateTimeSerialiser())
       .registerTypeAdapter(LocalDate.class, new GsonDateTimeDeserialiser())
+      .registerTypeAdapter(Instant.class, new InstantTypeAdapter())
       .create();
 
   @Override

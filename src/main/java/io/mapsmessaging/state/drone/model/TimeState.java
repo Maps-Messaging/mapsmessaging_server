@@ -19,6 +19,7 @@
 
 package io.mapsmessaging.state.drone.model;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
@@ -26,10 +27,34 @@ import lombok.ToString;
 @ToString(callSuper = true)
 @Getter
 @Setter
+@Schema(description = "Time synchronization and reference state for the drone or vehicle.")
 public class TimeState {
+
+  @Schema(
+      description = "GPS time expressed as epoch milliseconds.",
+      example = "1713590400000",
+      nullable = true
+  )
   private Long gpsTimeEpochMillis;
+
+  @Schema(
+      description = "System time expressed as epoch milliseconds.",
+      example = "1713590400100",
+      nullable = true
+  )
   private Long systemTimeEpochMillis;
 
+  @Schema(
+      description = "Indicates whether the GPS time is valid.",
+      example = "true",
+      nullable = true
+  )
   private Boolean gpsTimeValid;
+
+  @Schema(
+      description = "Difference between system time and GPS time in milliseconds.",
+      example = "-100.0",
+      nullable = true
+  )
   private Double timeOffsetMillis;
 }

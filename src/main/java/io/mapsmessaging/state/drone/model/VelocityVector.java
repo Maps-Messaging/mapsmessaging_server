@@ -19,6 +19,7 @@
 
 package io.mapsmessaging.state.drone.model;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -32,8 +33,27 @@ import lombok.ToString;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
+@Schema(description = "Velocity vector using North-East-Down (NED) coordinate system in meters per second.")
 public class VelocityVector {
+
+  @Schema(
+      description = "Velocity component toward geographic north in meters per second.",
+      example = "5.2",
+      nullable = true
+  )
   private Double northMetersPerSecond;
+
+  @Schema(
+      description = "Velocity component toward geographic east in meters per second.",
+      example = "-1.3",
+      nullable = true
+  )
   private Double eastMetersPerSecond;
+
+  @Schema(
+      description = "Velocity component toward Earth center (down) in meters per second. Positive values indicate descent.",
+      example = "0.8",
+      nullable = true
+  )
   private Double downMetersPerSecond;
 }

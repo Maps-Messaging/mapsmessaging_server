@@ -19,11 +19,46 @@
 
 package io.mapsmessaging.state.drone.model;
 
+import io.swagger.v3.oas.annotations.media.Schema;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+import lombok.ToString;
+
+/**
+ * Mission execution state for the drone or vehicle.
+ */
+@ToString(callSuper = true)
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+@Schema(description = "Mission execution state for the drone or vehicle.")
 public class MissionState {
 
+  @Schema(
+      description = "Unique identifier of the mission.",
+      example = "mission-001",
+      nullable = true
+  )
   private String missionId;
+
+  @Schema(
+      description = "Index of the current waypoint being executed.",
+      example = "5",
+      nullable = true
+  )
   private Integer currentWaypointIndex;
+
+  @Schema(
+      description = "Total number of waypoints in the mission.",
+      example = "20",
+      nullable = true
+  )
   private Integer totalWaypoints;
 
+  @Schema(
+      description = "Target position of the current or next waypoint.",
+      nullable = true
+  )
   private GeoPosition targetPosition;
 }

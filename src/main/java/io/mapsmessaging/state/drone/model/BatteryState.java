@@ -19,6 +19,7 @@
 
 package io.mapsmessaging.state.drone.model;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -31,35 +32,48 @@ import lombok.ToString;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
+@Schema(description = "Battery and power state for the drone or vehicle.")
 public class BatteryState {
 
-  /**
-   * Remaining charge percentage in the range 0..100.
-   */
+  @Schema(
+      description = "Remaining battery percentage.",
+      example = "78.5",
+      nullable = true
+  )
   private Double percentage;
 
-  /**
-   * Battery voltage in volts.
-   */
+  @Schema(
+      description = "Battery voltage in volts.",
+      example = "22.4",
+      nullable = true
+  )
   private Double voltageVolts;
 
-  /**
-   * Battery current in amps.
-   */
+  @Schema(
+      description = "Battery current draw in amps.",
+      example = "12.7",
+      nullable = true
+  )
   private Double currentAmps;
 
-  /**
-   * Remaining capacity in milliamp-hours.
-   */
+  @Schema(
+      description = "Estimated remaining battery capacity in milliamp-hours.",
+      example = "4200",
+      nullable = true
+  )
   private Double remainingMilliampHours;
 
-  /**
-   * Battery temperature in Celsius.
-   */
+  @Schema(
+      description = "Battery temperature in degrees Celsius.",
+      example = "34.2",
+      nullable = true
+  )
   private Double temperatureCelsius;
 
-  /**
-   * True when the battery is currently charging.
-   */
+  @Schema(
+      description = "Indicates whether the battery is currently charging.",
+      example = "false",
+      nullable = true
+  )
   private Boolean charging;
 }

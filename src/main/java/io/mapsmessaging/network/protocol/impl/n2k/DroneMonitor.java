@@ -20,17 +20,13 @@
 package io.mapsmessaging.network.protocol.impl.n2k;
 
 import io.mapsmessaging.MessageDaemon;
-import io.mapsmessaging.canbus.device.frames.CanFrame;
-import io.mapsmessaging.canbus.j1939.CanIdBuilder;
 import io.mapsmessaging.canbus.j1939.n2k.codec.N2kMessageParser;
-import io.mapsmessaging.network.io.impl.canbus.CanbusEndPoint;
 import io.mapsmessaging.network.protocol.impl.n2k.handler.*;
 import io.mapsmessaging.network.protocol.impl.n2k.msg.AisClassBEmitterConfig;
 import io.mapsmessaging.state.drone.core.EntityTwin;
 import io.mapsmessaging.state.drone.core.TwinObserver;
 import io.mapsmessaging.state.drone.core.TwinUpdateContext;
 import io.mapsmessaging.state.drone.drone.DroneTwin;
-import io.mapsmessaging.canbus.j1939.n2k.framing.FramePacker;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -41,7 +37,6 @@ import java.util.concurrent.ConcurrentHashMap;
 public class DroneMonitor implements TwinObserver{
 
   private final N2kProtocol n2kProtocol;
-  private final FramePacker framePacker;
 
   private final List<AbstractDronePgnHandler> handlers;
   private final Map<String, DroneEmissionState> droneStateMap;
@@ -49,7 +44,6 @@ public class DroneMonitor implements TwinObserver{
   public DroneMonitor(N2kProtocol n2kProtocol, N2kMessageParser parser) {
     this.n2kProtocol = n2kProtocol;
     this.droneStateMap = new ConcurrentHashMap<>();
-    this.framePacker = new FramePacker(parser);
 
     AisClassBEmitterConfig config = AisClassBEmitterConfig.getDefaults();
     handlers = new ArrayList<>();
@@ -57,7 +51,6 @@ public class DroneMonitor implements TwinObserver{
     handlers.add(new Ais129040Handler(parser, config));
     handlers.add(new Ais129809Handler(parser, config));
     handlers.add(new Ais129810Handler(parser, config));
-    handlers.add(new Iso60928Handler(parser));
   }
 
   public void close() {
@@ -67,6 +60,7 @@ public class DroneMonitor implements TwinObserver{
   /**
    * Rename this method to match the actual TwinObserver callback in your codebase.
    */
+  @Override
   public void onTwinUpdated(String twinId, EntityTwin previous, EntityTwin current, TwinUpdateContext context) {
     if (!(current instanceof DroneTwin droneTwin)) {
       return;
@@ -115,10 +109,6 @@ public class DroneMonitor implements TwinObserver{
     if (pgnEmission == null || pgnEmission.getPayload() == null || pgnEmission.getPayload().length == 0) {
       return;
     }
-    int canId = CanIdBuilder.build(pgnEmission.getPgn(), 6, 0x7B, 0);
-    List<CanFrame> frames = framePacker.packFastPacket(pgnEmission.getPgn(), canId, 0x7B, 0, pgnEmission.getPayload());
-    for(CanFrame frame : frames) {
-      ((CanbusEndPoint) n2kProtocol.getEndPoint()).writeFrame(frame);
-    }
+    n2kProtocol.writePgn(pgnEmission.getPgn(), 0xff, pgnEmission.getPayload());
   }
 }

@@ -54,6 +54,17 @@ public class N2KConfigDTO extends ProtocolConfigDTO {
   protected String base64EncodedDatabase;
 
   @Schema(
+      description = "CAN bus source address used by the N2K node when transmitting frames and responding to requests.",
+      example = "123",
+      defaultValue = "123",
+      minimum = "0",
+      maximum = "255",
+      requiredMode = Schema.RequiredMode.NOT_REQUIRED,
+      nullable = true
+  )
+  protected int canBusAddress = 0x7B;
+
+  @Schema(
       description =
           "Topic name template used when publishing decoded NMEA 2000 (N2K) messages. "
               + "Supported placeholders: {candevice}, {pgn}, {messageName}.",

@@ -19,6 +19,7 @@
 
 package io.mapsmessaging.state.drone.model;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -31,19 +32,48 @@ import lombok.ToString;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
+@Schema(description = "GNSS fix quality and positional accuracy information.")
 public class FixInfo {
 
-  /**
-   * Example values:
-   * NO_FIX, 2D, 3D, RTK_FLOAT, RTK_FIXED
-   */
+  @Schema(
+      description = "Type of GNSS fix (e.g. NO_FIX, 2D, 3D, RTK).",
+      example = "3D",
+      nullable = true
+  )
   private String fixType;
 
+  @Schema(
+      description = "Number of satellites used in the fix.",
+      example = "12",
+      nullable = true
+  )
   private Integer satelliteCount;
 
+  @Schema(
+      description = "Horizontal dilution of precision.",
+      example = "0.8",
+      nullable = true
+  )
   private Double hdop;
+
+  @Schema(
+      description = "Vertical dilution of precision.",
+      example = "1.2",
+      nullable = true
+  )
   private Double vdop;
 
+  @Schema(
+      description = "Estimated horizontal position accuracy in meters.",
+      example = "1.5",
+      nullable = true
+  )
   private Double horizontalAccuracyMeters;
+
+  @Schema(
+      description = "Estimated vertical position accuracy in meters.",
+      example = "2.3",
+      nullable = true
+  )
   private Double verticalAccuracyMeters;
 }

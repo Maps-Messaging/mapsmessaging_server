@@ -21,35 +21,24 @@ package io.mapsmessaging.network.protocol.impl.n2k.msg.source;
 
 public class IsoAddressClaimFieldValueSource extends AbstractAisFieldValueSource {
 
+  public static final int PGN = 60928;
+
   private static final long UNIQUE_NUMBER_MASK = 0x1FFFFFL;
   private static final long DEFAULT_IDENTITY_NUMBER = 1L;
 
   public IsoAddressClaimFieldValueSource(String name) {
-    putLong("name", buildName(name));
-  }
-
-  private long buildName(String name) {
-    long arbitraryAddressCapable = 1L;
-    long industryGroup = 4L;
-    long vehicleSystemInstance = 0L;
-    long systemInstance = 0L;
-    long function = 130L;
-    long functionInstance = 0L;
-    long ecuInstance = 0L;
-    long manufacturerCode = 2047L;
     long identityNumber = resolveIdentityNumber(name);
 
-    long value = 0L;
-    value |= (identityNumber & UNIQUE_NUMBER_MASK);
-    value |= (manufacturerCode & 0x7FFL) << 21;
-    value |= (ecuInstance & 0x7L) << 32;
-    value |= (functionInstance & 0x1FL) << 35;
-    value |= (function & 0xFFL) << 40;
-    value |= (vehicleSystemInstance & 0x0FL) << 49;
-    value |= (systemInstance & 0x0FL) << 53;
-    value |= (industryGroup & 0x07L) << 60;
-    value |= (arbitraryAddressCapable & 0x01L) << 63;
-    return value;
+    putLong("uniqueNumber", identityNumber);
+    putLong("manufacturerCode", 2047L);
+    putLong("deviceInstanceLower", 0L);
+    putLong("deviceInstanceUpper", 0L);
+    putLong("deviceFunction", 130L);
+    putLong("reserved", 0L);
+    putLong("deviceClass", 25L);
+    putLong("systemInstance", 0L);
+    putLong("industryGroup", 4L);
+    putLong("arbitraryAddressCapable", 1L);
   }
 
   private long resolveIdentityNumber(String name) {

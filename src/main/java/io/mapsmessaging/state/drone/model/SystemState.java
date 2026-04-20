@@ -19,11 +19,49 @@
 
 package io.mapsmessaging.state.drone.model;
 
+import io.swagger.v3.oas.annotations.media.Schema;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+import lombok.ToString;
+
+/**
+ * System-level health and performance state.
+ */
+@ToString(callSuper = true)
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+@Schema(description = "System-level health and performance metrics for the drone or vehicle.")
 public class SystemState {
 
+  @Schema(
+      description = "CPU load as a percentage (0.0 to 100.0).",
+      example = "42.5",
+      minimum = "0.0",
+      maximum = "100.0",
+      nullable = true
+  )
   private Double cpuLoadPercent;
+
+  @Schema(
+      description = "System temperature in degrees Celsius.",
+      example = "65.3",
+      nullable = true
+  )
   private Double systemTemperatureCelsius;
 
+  @Schema(
+      description = "Indicates whether the system is considered healthy.",
+      example = "true",
+      nullable = true
+  )
   private Boolean healthy;
+
+  @Schema(
+      description = "Human-readable system status message.",
+      example = "All systems nominal",
+      nullable = true
+  )
   private String statusMessage;
 }

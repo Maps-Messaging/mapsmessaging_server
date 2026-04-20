@@ -36,6 +36,7 @@ public class N2kProtocolConfig extends N2KConfigDTO implements Config {
     this.databasePath= config.getProperty("databasePath", databasePath);
     this.unknownPacketTopic = config.getProperty("unknownPacketTopic", unknownPacketTopic);
     this.publishMavlinkDrones = config.getBooleanProperty("publishMavlinkDrones", publishMavlinkDrones);
+    this.canBusAddress = config.getIntProperty("canBusAddress", canBusAddress);
   }
 
   @Override
@@ -55,6 +56,10 @@ public class N2kProtocolConfig extends N2KConfigDTO implements Config {
       if (ProtocolConfigFactory.update(this, newConfig)) {
         hasChanged = true;
       }
+      if(this.canBusAddress != canBusAddress){
+        this.canBusAddress = canBusAddress;
+        hasChanged = true;
+      }
     }
     return hasChanged;
   }
@@ -68,6 +73,7 @@ public class N2kProtocolConfig extends N2KConfigDTO implements Config {
     properties.put("databasePath", this.databasePath);
     properties.put("unknownPacketTopic", this.unknownPacketTopic);
     properties.put("publishMavlinkDrones", this.publishMavlinkDrones);
+    properties.put("canBusAddress", this.canBusAddress);
     return properties;
   }
 }
