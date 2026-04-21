@@ -66,11 +66,11 @@ public class DroneTwin extends EntityTwin {
   private Long mmsi;
 
   @Schema(
-      description = "Vehicle class as a string value.",
+      description = "Vehicle class (UAV=air, USV=surface, UGV=ground, UUV=underwater, GCS=control).",
       example = "UAV",
       nullable = true
   )
-  private String vehicleClass;
+  private VehicleClass vehicleClass;
 
   @Schema(
       description = "Registration or tail identifier of the vehicle.",
@@ -85,6 +85,13 @@ public class DroneTwin extends EntityTwin {
       nullable = true
   )
   private String description;
+
+  @Schema(
+      description = "Short 7 char string used for the call sign of the vessel.",
+      example = "drone01",
+      nullable = true
+  )
+  private String callSign;
 
   @Schema(
       description = "Vehicle class as a typed enum.",

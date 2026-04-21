@@ -19,6 +19,7 @@
 
 package io.mapsmessaging.network.protocol.impl.mavlink.listener;
 
+import io.mapsmessaging.dto.rest.config.protocol.impl.VehicleClass;
 import io.mapsmessaging.network.protocol.impl.mavlink.packet.HeartbeatPacket;
 import io.mapsmessaging.network.protocol.impl.mavlink.packet.MavlinkPacket;
 import io.mapsmessaging.state.drone.core.TwinManager;
@@ -63,7 +64,7 @@ public class HeartbeatListener implements Listener {
     twinManager.updateTwin(twinId, twin -> {
       DroneTwin drone = (DroneTwin) twin;
 
-      drone.setVehicleClass(packet.getVehicleClass());
+      drone.setVehicleClass(VehicleClass.fromMavType(packet.getVehicleClass()));
       drone.setArmed(packet.isArmed());
       drone.setFlightMode(packet.getFlightMode());
 

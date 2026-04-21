@@ -64,8 +64,8 @@ public class HeartbeatPacket implements MavlinkPacket {
     return Long.toUnsignedString(customMode);
   }
 
-  public String getVehicleClass() {
-    return Integer.toString(type);
+  public int getVehicleClass() {
+    return type;
   }
 
   private int getInt(Map<String, Object> fields, String key) {

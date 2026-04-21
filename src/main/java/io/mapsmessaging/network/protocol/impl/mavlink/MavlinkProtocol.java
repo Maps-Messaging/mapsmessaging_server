@@ -43,12 +43,10 @@ import io.mapsmessaging.network.protocol.impl.mavlink.monitor.SequenceResult;
 import io.mapsmessaging.network.protocol.impl.mavlink.monitor.SequenceTracker;
 import io.mapsmessaging.network.protocol.impl.mavlink.packet.MavlinkPacket;
 import io.mapsmessaging.network.protocol.impl.mavlink.packet.MavlinkPacketFactory;
-import io.mapsmessaging.network.protocol.impl.satellite.gateway.io.StateManager;
+import io.mapsmessaging.state.drone.drone.DroneTwin;
 import io.mapsmessaging.state.drone.core.EntityTwin;
 import io.mapsmessaging.state.drone.core.TwinManager;
 import io.mapsmessaging.state.drone.core.TwinUpdateContext;
-import io.mapsmessaging.state.drone.drone.DroneTwin;
-import io.mapsmessaging.state.drone.drone.GroundStationTwin;
 import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
 
