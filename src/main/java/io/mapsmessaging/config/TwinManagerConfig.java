@@ -22,6 +22,7 @@ package io.mapsmessaging.config;
 import io.mapsmessaging.configuration.ConfigurationProperties;
 import io.mapsmessaging.dto.rest.config.BaseConfigDTO;
 import io.mapsmessaging.dto.rest.config.TwinManagerConfigDTO;
+import io.mapsmessaging.dto.rest.config.protocol.impl.TakProtocolDTO;
 import io.mapsmessaging.license.FeatureManager;
 import io.mapsmessaging.utilities.configuration.ConfigurationManager;
 import lombok.NoArgsConstructor;
@@ -37,6 +38,13 @@ public class TwinManagerConfig extends TwinManagerConfigDTO implements Config, C
     this.retentionTimeoutMillis = properties.getLongProperty("retentionTimeoutMillis", retentionTimeoutMillis);
     this.removeExpiredTwins = properties.getBooleanProperty("removeExpiredTwins", removeExpiredTwins);
     this.defaultRootPath = properties.getProperty("defaultRootPath", defaultRootPath);
+    if(properties.containsKey("tak")){
+      ConfigurationProperties takProps = (ConfigurationProperties) properties.get("tak");
+      TakProtocolDTO takProtocolDTO = new TakProtocolDTO();
+      takProtocolDTO.setHostname(takProps.getProperty("hostname"));
+      takProtocolDTO.setPort(takProps.getIntProperty("port", 8088));
+      this.tak = takProtocolDTO;
+    }
   }
 
   public static TwinManagerConfig getInstance() {

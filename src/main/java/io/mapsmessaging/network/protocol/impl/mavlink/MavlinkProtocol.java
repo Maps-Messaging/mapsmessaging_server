@@ -164,6 +164,8 @@ public class MavlinkProtocol extends Protocol {
         }
         raw = envelope.toString().getBytes();
       }
+      processPacket(env.getFrame(), env.getMessageName(), raw);
+
       MavlinkPacket packet = MavlinkPacketFactory.create(env);
       if (packet != null) {
         TwinUpdateContext context = buildUpdateContext(env);
@@ -175,12 +177,12 @@ public class MavlinkProtocol extends Protocol {
             twin = new DroneTwin(twinId);
             if (known != null) {
               DroneTwin drone = (DroneTwin) twin;
-              drone.setVehicleClassType(known.getVehicleClass());
+              drone.setVehicleClass(known.getVehicleClass());
               drone.setDescription(known.getDescription());
               drone.setCallSign(known.getName());
               drone.setDisplayName(known.getDescription());
             } else {
-              ((DroneTwin) twin).setVehicleClassType(VehicleClass.UAV);
+              ((DroneTwin) twin).setVehicleClass(VehicleClass.UAV);
               twin.setDisplayName(known.getName());
               if(twinId.length() > 7) {
                 String t = twinId.substring(twinId.length() - 7);
@@ -205,7 +207,6 @@ public class MavlinkProtocol extends Protocol {
           listenerManager.handle(env.getFrame().getMessageId(), twinId, packet, context);
         }
       }
-      processPacket(env.getFrame(), env.getMessageName(), raw);
     }
     else{
       if(mavlinkConfig.getRejectedFrameNamespace() != null && !mavlinkConfig.getRejectedFrameNamespace().isEmpty()){

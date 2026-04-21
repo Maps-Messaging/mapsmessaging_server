@@ -41,13 +41,11 @@ import io.mapsmessaging.network.discovery.ServerConnectionManager;
 import io.mapsmessaging.network.monitor.NetworkInterfaceMonitor;
 import io.mapsmessaging.network.protocol.ProtocolFactory;
 import io.mapsmessaging.network.protocol.ProtocolImplFactory;
-import io.mapsmessaging.network.protocol.impl.satellite.gateway.io.StateManager;
 import io.mapsmessaging.network.protocol.transformation.TransformationManager;
 import io.mapsmessaging.rest.RestApiServerManager;
 import io.mapsmessaging.rest.jolokia.JolokaManager;
 import io.mapsmessaging.routing.RoutingManager;
 import io.mapsmessaging.selector.model.ModelStore;
-import io.mapsmessaging.state.drone.StateListener;
 import io.mapsmessaging.state.drone.StateManagerAgent;
 import io.mapsmessaging.state.drone.core.TwinManager;
 import io.mapsmessaging.utilities.Agent;
@@ -248,7 +246,6 @@ public class SubSystemManager {
       addToMap(2200, 70, new DeviceManager(featureManager));
     }
     addOptionalML();
-    new StateListener();
   }
 
   private void addOptionalML(){

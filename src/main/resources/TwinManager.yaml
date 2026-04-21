@@ -24,3 +24,6 @@ TwinManager:
 
   removeExpiredTwins: false
   defaultRootPath: "/"
+  tak:
+    hostname: "opentak.syd.mapsmessaging.io"
+    port: 8088

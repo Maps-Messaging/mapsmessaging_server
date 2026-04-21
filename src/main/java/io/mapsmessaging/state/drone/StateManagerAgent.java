@@ -23,13 +23,13 @@ import io.mapsmessaging.dto.rest.system.Status;
 import io.mapsmessaging.dto.rest.system.SubSystemStatusDTO;
 import io.mapsmessaging.state.drone.core.TwinLifecycleStatus;
 import io.mapsmessaging.state.drone.core.TwinManager;
+import io.mapsmessaging.state.drone.tak.TakTwinObserver;
 import io.mapsmessaging.utilities.Agent;
 import lombok.Getter;
 
 import java.time.Instant;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 
 public class StateManagerAgent implements Agent {
@@ -39,6 +39,7 @@ public class StateManagerAgent implements Agent {
 
   @Getter
   private final TwinManager twinManager;
+  private TakTwinObserver takManager;
 
   private ScheduledExecutorService scheduler;
 
@@ -83,6 +84,9 @@ public class StateManagerAgent implements Agent {
         // swallow to keep scheduler alive
       }
     }, PURGE_INTERVAL_MILLIS, PURGE_INTERVAL_MILLIS, TimeUnit.MILLISECONDS);
+
+
+    takManager = new TakTwinObserver(twinManager);
   }
 
   @Override
@@ -93,6 +97,7 @@ public class StateManagerAgent implements Agent {
 
     scheduler.shutdownNow();
     scheduler = null;
+    takManager.shutdown();
   }
 
   @Override

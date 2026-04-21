@@ -19,6 +19,7 @@
  */
 package io.mapsmessaging.dto.rest.config;
 
+import io.mapsmessaging.dto.rest.config.protocol.impl.TakProtocolDTO;
 import lombok.Data;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.EqualsAndHashCode;
@@ -73,6 +74,13 @@ public class TwinManagerConfigDTO extends BaseManagerConfigDTO {
       requiredMode = Schema.RequiredMode.NOT_REQUIRED
   )
   protected String defaultRootPath = "/";
+
+  @Schema(
+      description = "Optional TAK protocol configuration used to publish twin updates to a TAK server.",
+      requiredMode = Schema.RequiredMode.NOT_REQUIRED,
+      nullable = true
+  )
+  protected TakProtocolDTO tak;
 
   public TwinManagerConfigDTO() {
     super("TwinManagerConfigDTO");

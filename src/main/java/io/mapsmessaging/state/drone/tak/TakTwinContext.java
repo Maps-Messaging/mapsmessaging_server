@@ -17,25 +17,19 @@
  *  limitations under the License.
  */
 
-package io.mapsmessaging.state.drone;
+package io.mapsmessaging.state.drone.tak;
 
-import io.mapsmessaging.MessageDaemon;
-import io.mapsmessaging.state.drone.core.EntityTwin;
-import io.mapsmessaging.state.drone.core.TwinObserver;
+import lombok.Getter;
+import lombok.Setter;
 
-public class StateListener implements TwinObserver {
+@Getter
+@Setter
+public class TakTwinContext {
+  private long lastUpdate;
+  private TakSocketConnection socketConnection;
 
-  public StateListener() {
-    Thread t = new Thread(() -> {
-      while (true) {
-        try {
-          Thread.sleep(1000);
-        } catch (InterruptedException e) {
-          e.printStackTrace();
-        }
-      }
-    });
-    t.start();
+  public TakTwinContext(){
+    lastUpdate = 0;
+    socketConnection = null;
   }
-
 }

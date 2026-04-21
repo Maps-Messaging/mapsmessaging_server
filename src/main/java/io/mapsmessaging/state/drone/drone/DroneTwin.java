@@ -93,11 +93,6 @@ public class DroneTwin extends EntityTwin {
   )
   private String callSign;
 
-  @Schema(
-      description = "Vehicle class as a typed enum.",
-      nullable = true
-  )
-  private VehicleClass vehicleClassType;
 
   @Schema(
       description = "Indicates whether the vehicle is armed.",
