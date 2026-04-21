@@ -96,17 +96,15 @@ public final class AisMappingSupport {
   }
 
   public static String resolveCallsign(DroneTwin droneTwin, String configuredCallsign) {
-    if (configuredCallsign != null && !configuredCallsign.isBlank()) {
-      return truncate(configuredCallsign.toUpperCase(Locale.ROOT), 7);
-    }
+
     if (droneTwin == null) {
+      if (configuredCallsign != null && !configuredCallsign.isBlank()) {
+        return truncate(configuredCallsign.toUpperCase(Locale.ROOT), 7);
+      }
       return null;
     }
-    if (droneTwin.getRegistrationId() != null && !droneTwin.getRegistrationId().isBlank()) {
-      String compact = droneTwin.getRegistrationId().replaceAll("[^A-Za-z0-9]", "");
-      if (!compact.isBlank()) {
-        return truncate(compact.toUpperCase(Locale.ROOT), 7);
-      }
+    if (droneTwin.getCallSign() != null && !droneTwin.getCallSign().isBlank()) {
+      return truncate(droneTwin.getCallSign(), 7);
     }
     return null;
   }

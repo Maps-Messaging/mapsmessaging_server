@@ -174,12 +174,22 @@ public class MavlinkProtocol extends Protocol {
           if (!isGcs) {
             twin = new DroneTwin(twinId);
             if (known != null) {
-              ((DroneTwin) twin).setVehicleClassType(known.getVehicleClass());
-              ((DroneTwin) twin).setDescription(known.getDescription());
-              twin.setDisplayName(known.getName());
+              DroneTwin drone = (DroneTwin) twin;
+              drone.setVehicleClassType(known.getVehicleClass());
+              drone.setDescription(known.getDescription());
+              drone.setCallSign(known.getName());
+              drone.setDisplayName(known.getDescription());
             } else {
               ((DroneTwin) twin).setVehicleClassType(VehicleClass.UAV);
               twin.setDisplayName(known.getName());
+              if(twinId.length() > 7) {
+                String t = twinId.substring(twinId.length() - 7);
+                ((DroneTwin) twin).setCallSign(t);
+              }
+              else{
+                ((DroneTwin) twin).setCallSign(twinId);
+
+              }
             }
             twinManager.registerTwin(twin, context);
           }
