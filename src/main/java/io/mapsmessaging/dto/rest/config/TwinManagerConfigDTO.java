@@ -57,7 +57,7 @@ public class TwinManagerConfigDTO extends BaseManagerConfigDTO {
       maximum = "86400000",
       requiredMode = Schema.RequiredMode.NOT_REQUIRED
   )
-  protected long retentionTimeoutMillis = 300000L;
+  protected long retentionTimeoutMillis = 120000L;
 
   @Schema(
       description = "If true, twins that exceed the retention timeout will be removed from memory.",
@@ -65,7 +65,7 @@ public class TwinManagerConfigDTO extends BaseManagerConfigDTO {
       defaultValue = "false",
       requiredMode = Schema.RequiredMode.NOT_REQUIRED
   )
-  protected boolean removeExpiredTwins = false;
+  protected boolean removeExpiredTwins = true;
 
   @Schema(
       description = "Default root path used when constructing twin hierarchical paths.",

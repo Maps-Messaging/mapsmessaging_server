@@ -42,7 +42,8 @@ public class TwinManagerConfig extends TwinManagerConfigDTO implements Config, C
       ConfigurationProperties takProps = (ConfigurationProperties) properties.get("tak");
       TakProtocolDTO takProtocolDTO = new TakProtocolDTO();
       takProtocolDTO.setHostname(takProps.getProperty("hostname"));
-      takProtocolDTO.setPort(takProps.getIntProperty("port", 8088));
+      takProtocolDTO.setPort(takProps.getIntProperty("port", takProtocolDTO.getPort()));
+      takProtocolDTO.setSharedConnection(takProps.getBooleanProperty("sharedConnection", takProtocolDTO.isSharedConnection()));
       this.tak = takProtocolDTO;
     }
   }

@@ -54,7 +54,8 @@ public class LinkState {
       example = "-67",
       nullable = true
   )
-  private Integer rssiDbm;
+  private Integer
+      rssiDbm;
 
   @Schema(
       description = "Signal-to-noise ratio in decibels.",

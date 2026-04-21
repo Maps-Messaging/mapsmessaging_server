@@ -20,9 +20,9 @@ TwinManager:
 
   heartbeatTimeoutMillis: 5000
   staleTimeoutMillis: 10000
-  retentionTimeoutMillis: 300000
+  retentionTimeoutMillis: 120000
 
-  removeExpiredTwins: false
+  removeExpiredTwins: true
   defaultRootPath: "/"
   tak:
     hostname: "opentak.syd.mapsmessaging.io"

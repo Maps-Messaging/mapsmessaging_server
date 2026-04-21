@@ -45,7 +45,15 @@ public class TakProtocolDTO extends ProtocolConfigDTO {
       requiredMode = Schema.RequiredMode.REQUIRED,
       nullable = false
   )
-  private int port;
+  private int port = 8088;
+
+  @Schema(
+      description = "If true, all twins share a single TAK socket connection. If false, each twin uses its own socket.",
+      example = "false",
+      requiredMode = Schema.RequiredMode.NOT_REQUIRED,
+      defaultValue = "false"
+  )
+  private boolean sharedConnection = false;
 
   public TakProtocolDTO() {
     super("tak");
