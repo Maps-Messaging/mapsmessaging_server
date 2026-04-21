@@ -31,22 +31,22 @@ public class AisClassBExtendedPositionFieldValueSource extends AbstractAisFieldV
     putDouble("longitude", report.getLongitude());
     putDouble("latitude", report.getLatitude());
     putLong("positionAccuracy", report.getPositionAccuracy());
-    putLong("raim", report.getRaim());
+    putLong("raimflag", report.getRaim());
     putLong("timeStamp", report.getTimeStamp());
     putDouble("cog", report.getCog());
     putDouble("sog", report.getSog());
     putLong("regionalApplication", report.getRegionalApplication());
     putLong("regionalApplicationB", report.getRegionalApplicationB());
-    putLong("typeOfShip", report.getTypeOfShip());
+    putLong("shipcargoType", report.getTypeOfShip());
     putDouble("trueHeading", report.getTrueHeading());
     putLong("gnssType", report.getGnssType());
-    putDouble("length", report.getLength());
-    putDouble("beam", report.getBeam());
-    putDouble("positionReferenceFromStarboard", report.getPositionReferenceFromStarboard());
-    putDouble("positionReferenceFromBow", report.getPositionReferenceFromBow());
+    putDouble("shipLength", report.getLength());
+    putDouble("shipBeam", report.getBeam());
+    putDouble("positionReferencePointFromStarboard", report.getPositionReferenceFromStarboard());
+    putDouble("positionReferencePointAftOfShipsBow", report.getPositionReferenceFromBow());
     putString("name", report.getName());
-    putLong("dte", report.getDte());
-    putLong("aisMode", report.getAisMode());
+    putLong("dataTerminalEquipmentDte", report.getDte());
+    putLong("modeFlag", report.getAisMode());
     putLong("aisTransceiverInformation", report.getAisTransceiverInformation());
   }
 }
