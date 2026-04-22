@@ -31,9 +31,11 @@ import io.mapsmessaging.state.drone.core.TwinUpdateContext;
 import io.mapsmessaging.state.drone.tak.model.TakEvent;
 import io.mapsmessaging.utilities.configuration.ConfigurationManager;
 
+import java.io.IOException;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
+
 
 /**
  * Twin observer that maps twin state into TAK CoT XML and publishes it to a topic.
@@ -49,6 +51,7 @@ public class TakTwinObserver implements TwinObserver {
   private final TakEventMapper takEventMapper;
   private final TakXmlSerialiser takXmlSerialiser;
   private final TakSocketConnection globalSocketConnection;
+  private final EventPublisher eventPublisher;
 
   public TakTwinObserver(TwinManager twinManager) {
     this.twinManager = Objects.requireNonNull(twinManager, "twinManager cannot be null");
@@ -56,15 +59,29 @@ public class TakTwinObserver implements TwinObserver {
     this.takEventMapper = new TakEventMapper();
     this.takXmlSerialiser = new TakXmlSerialiser();
 
+
     TwinManagerConfigDTO config = ConfigurationManager.getInstance().getConfiguration(TwinManagerConfig.class);
     if (config != null && config.getTak() != null) {
       this.takHost = config.getTak().getHostname();
       this.takPort = config.getTak().getPort();
-      if(config.getTak().isSharedConnection()){
+      if(config.getTak().isSharedConnection() && takHost != null && !takHost.isBlank() && takPort > 0){
         globalSocketConnection = new TakSocketConnection(takHost, takPort);
       }
       else{
         globalSocketConnection = null;
+      }
+      if(config.getTak().getTopic() != null && !config.getTak().getTopic().isBlank()){
+        EventPublisher e = null;
+        try {
+          e = new EventPublisher(config.getTak().getTopic());
+        } catch (Throwable ex) {
+          e = null;
+          ex.printStackTrace();
+        }
+        eventPublisher = e;
+      }
+      else{
+        eventPublisher = null;
       }
       twinManager.addObserver(this);
     }
@@ -72,6 +89,7 @@ public class TakTwinObserver implements TwinObserver {
       this.takHost = null;
       this.takPort = 0;
       globalSocketConnection = null;
+      eventPublisher = null;
     }
   }
 
@@ -158,12 +176,22 @@ public class TakTwinObserver implements TwinObserver {
     if (takEvent == null) {
       return;
     }
+    String xml = takXmlSerialiser.toXml(takEvent);
 
-    if (twinContext.getSocketConnection() == null) {
-      twinContext.setSocketConnection(Objects.requireNonNullElseGet(globalSocketConnection, () -> new TakSocketConnection(takHost, takPort)));
+    if(takHost != null) {
+      if (twinContext.getSocketConnection() == null) {
+        twinContext.setSocketConnection(Objects.requireNonNullElseGet(globalSocketConnection, () -> new TakSocketConnection(takHost, takPort)));
+      }
+      twinContext.getSocketConnection().accept(xml);
+    }
+    if(eventPublisher != null) {
+      try {
+        eventPublisher.publish(xml);
+      } catch (IOException e) {
+        e.printStackTrace();
+      }
     }
 
-    twinContext.getSocketConnection().accept(takXmlSerialiser.toXml(takEvent));
   }
 
   private void publishRemoval(EntityTwin twin, TwinUpdateContext context, TakTwinContext twinContext) {

@@ -55,6 +55,15 @@ public class TakProtocolDTO extends ProtocolConfigDTO {
   )
   private boolean sharedConnection = false;
 
+  @Schema(
+      description = "Topic to publish TAK CoT XML messages to.",
+      example = "tak/events",
+      requiredMode = Schema.RequiredMode.NOT_REQUIRED,
+      nullable = true
+  )
+  private String topic =null;
+
+
   public TakProtocolDTO() {
     super("tak");
   }
