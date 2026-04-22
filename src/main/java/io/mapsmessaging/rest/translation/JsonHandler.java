@@ -43,7 +43,7 @@ import java.time.LocalDateTime;
 @Produces(MediaType.APPLICATION_JSON)
 public class JsonHandler implements MessageBodyReader<Object>, MessageBodyWriter<Object> {
 
-  private static final Gson gson = new GsonBuilder()
+  public static final Gson gson = new GsonBuilder()
       .serializeNulls()
       .setPrettyPrinting()
       .registerTypeAdapter(LocalDateTime.class, new GsonDateTimeSerialiser())

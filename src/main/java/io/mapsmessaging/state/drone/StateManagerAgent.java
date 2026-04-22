@@ -19,18 +19,21 @@
 
 package io.mapsmessaging.state.drone;
 
+import io.mapsmessaging.config.TwinManagerConfig;
+import io.mapsmessaging.dto.rest.config.TwinManagerConfigDTO;
 import io.mapsmessaging.dto.rest.system.Status;
 import io.mapsmessaging.dto.rest.system.SubSystemStatusDTO;
 import io.mapsmessaging.state.drone.core.TwinLifecycleStatus;
 import io.mapsmessaging.state.drone.core.TwinManager;
+import io.mapsmessaging.state.drone.publisher.TwinJsonPublisher;
 import io.mapsmessaging.state.drone.tak.TakTwinObserver;
 import io.mapsmessaging.utilities.Agent;
+import io.mapsmessaging.utilities.configuration.ConfigurationManager;
 import lombok.Getter;
 
+import java.io.IOException;
 import java.time.Instant;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 
 public class StateManagerAgent implements Agent {
 
@@ -40,6 +43,7 @@ public class StateManagerAgent implements Agent {
   @Getter
   private final TwinManager twinManager;
   private TakTwinObserver takManager;
+  private TwinJsonPublisher twinJsonPublisher;
 
   private ScheduledExecutorService scheduler;
 
@@ -86,7 +90,25 @@ public class StateManagerAgent implements Agent {
     }, PURGE_INTERVAL_MILLIS, PURGE_INTERVAL_MILLIS, TimeUnit.MILLISECONDS);
 
 
-    takManager = new TakTwinObserver(twinManager);
+    TwinManagerConfigDTO config = ConfigurationManager.getInstance().getConfiguration(TwinManagerConfig.class);
+    if(config != null){
+      if(config.getTak() != null) {
+        takManager = new TakTwinObserver(twinManager);
+      }
+      if(config.getPublish() != null){
+        try {
+          twinJsonPublisher = new TwinJsonPublisher(twinManager, config.getPublish().getTopicTemplate());
+        } catch (Throwable e) {
+          e.printStackTrace();
+        }
+      }
+    }
+    else{
+      takManager = null;
+      twinJsonPublisher = null;
+    }
+
+
   }
 
   @Override
@@ -97,7 +119,16 @@ public class StateManagerAgent implements Agent {
 
     scheduler.shutdownNow();
     scheduler = null;
-    takManager.shutdown();
+    if(takManager != null) {
+      takManager.shutdown();
+    }
+    if(twinJsonPublisher != null) {
+      try {
+        twinJsonPublisher.close();
+      } catch (IOException e) {
+
+      }
+    }
   }
 
   @Override

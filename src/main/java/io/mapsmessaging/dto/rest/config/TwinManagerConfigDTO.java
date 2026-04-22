@@ -82,6 +82,13 @@ public class TwinManagerConfigDTO extends BaseManagerConfigDTO {
   )
   protected TakProtocolDTO tak;
 
+  @Schema(
+      description = "Optional configuration for publishing twin updates to messaging topics.",
+      requiredMode = Schema.RequiredMode.NOT_REQUIRED,
+      nullable = true
+  )
+  protected TwinPublishConfigDTO publish;
+
   public TwinManagerConfigDTO() {
     super("TwinManagerConfigDTO");
   }

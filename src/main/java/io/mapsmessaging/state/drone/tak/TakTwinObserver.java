@@ -58,8 +58,6 @@ public class TakTwinObserver implements TwinObserver {
     this.takContexts = new ConcurrentHashMap<>();
     this.takEventMapper = new TakEventMapper();
     this.takXmlSerialiser = new TakXmlSerialiser();
-
-
     TwinManagerConfigDTO config = ConfigurationManager.getInstance().getConfiguration(TwinManagerConfig.class);
     if (config != null && config.getTak() != null) {
       this.takHost = config.getTak().getHostname();
@@ -106,6 +104,13 @@ public class TakTwinObserver implements TwinObserver {
       }
     }
     takContexts.clear();
+    if(eventPublisher != null){
+      try {
+        eventPublisher.close();
+      } catch (IOException e) {
+
+      }
+    }
   }
 
   @Override

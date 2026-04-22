@@ -17,36 +17,19 @@
  *  limitations under the License.
  */
 
-package io.mapsmessaging.utilities;
+package io.mapsmessaging.dto.rest.config.transformer.jsonmapper;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import io.mapsmessaging.rest.translation.JsonHandler;
-import lombok.Getter;
+import io.swagger.v3.oas.annotations.media.Schema;
 
-@SuppressWarnings("java:S6548") // yes, it is a singleton
-public class GsonFactory {
-
-  private static class Holder {
-    static final GsonFactory INSTANCE = new GsonFactory();
-  }
-
-  public static GsonFactory getInstance() {
-    return GsonFactory.Holder.INSTANCE;
-  }
-
-  @Getter
-  private final Gson prettyGson;
-
-  private GsonFactory() {
-    prettyGson = new GsonBuilder().setPrettyPrinting().create();
-  }
-
-  public Gson getSimpleGson() {
-    return prettyGson;
-  }
-
-  public Gson getTimeSafeGson(){
-    return JsonHandler.gson;
-  }
+@Schema(description = "Transform function applied to a mapped JSON value.")
+public enum JsonMapFunction {
+  NONE,
+  TO_STRING,
+  TO_INT,
+  TO_LONG,
+  TO_FLOAT,
+  TO_DOUBLE,
+  TO_BOOLEAN,
+  BASE64_ENCODE,
+  BASE64_DECODE
 }

@@ -22,6 +22,7 @@ package io.mapsmessaging.config;
 import io.mapsmessaging.configuration.ConfigurationProperties;
 import io.mapsmessaging.dto.rest.config.BaseConfigDTO;
 import io.mapsmessaging.dto.rest.config.TwinManagerConfigDTO;
+import io.mapsmessaging.dto.rest.config.TwinPublishConfigDTO;
 import io.mapsmessaging.dto.rest.config.protocol.impl.TakProtocolDTO;
 import io.mapsmessaging.license.FeatureManager;
 import io.mapsmessaging.utilities.configuration.ConfigurationManager;
@@ -46,6 +47,13 @@ public class TwinManagerConfig extends TwinManagerConfigDTO implements Config, C
       takProtocolDTO.setSharedConnection(takProps.getBooleanProperty("sharedConnection", takProtocolDTO.isSharedConnection()));
       takProtocolDTO.setTopic(takProps.getProperty("topic", null));
       this.tak = takProtocolDTO;
+    }
+    if(properties.containsKey("publish")){
+      ConfigurationProperties publishProps = (ConfigurationProperties) properties.get("publish");
+      TwinPublishConfigDTO publishConfig = new TwinPublishConfigDTO();
+      publishConfig.setEnabled(publishProps.getBooleanProperty("enabled", publishConfig.isEnabled()));
+      publishConfig.setTopicTemplate(publishProps.getProperty("topicTemplate", publishConfig.getTopicTemplate()));
+      this.publish = publishConfig;
     }
   }
 
