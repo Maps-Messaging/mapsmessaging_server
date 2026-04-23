@@ -21,6 +21,7 @@ package io.mapsmessaging.state.drone.drone;
 
 import io.mapsmessaging.dto.rest.config.protocol.impl.VehicleClass;
 import io.mapsmessaging.state.drone.core.EntityTwin;
+import io.mapsmessaging.state.drone.core.TwinType;
 import io.mapsmessaging.state.drone.model.EnvironmentalState;
 import io.mapsmessaging.state.drone.model.SystemState;
 import io.mapsmessaging.state.drone.model.TimeState;
@@ -30,7 +31,9 @@ import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
 
+import java.security.NoSuchAlgorithmException;
 import java.time.Instant;
+import java.util.UUID;
 
 import static io.mapsmessaging.state.drone.util.SyntheticMmsiGenerator.generateSyntheticMmsi;
 
@@ -64,13 +67,6 @@ public class DroneTwin extends EntityTwin {
       nullable = true
   )
   private Long mmsi;
-
-  @Schema(
-      description = "Vehicle class (UAV=air, USV=surface, UGV=ground, UUV=underwater, GCS=control).",
-      example = "UAV",
-      nullable = true
-  )
-  private VehicleClass vehicleClass;
 
   @Schema(
       description = "Registration or tail identifier of the vehicle.",
@@ -224,9 +220,20 @@ public class DroneTwin extends EntityTwin {
   )
   private Instant operationalUpdatedAt;
 
+  public String getProtocolSourceId() {
+    if (systemId == null || componentId == null) {
+      return null;
+    }
+    return "mavlink:" + systemId + ":" + componentId;
+  }
+
+  public Long getOperationalUpdatedAtSeconds() {
+    return operationalUpdatedAt != null ? operationalUpdatedAt.getEpochSecond() : null;
+  }
+
   public DroneTwin(String twinId) {
-    setTwinId(twinId);
-    setTwinType("DRONE");
+    super(twinId);
+    setTwinType(TwinType.DRONE);
     setMmsi(generateSyntheticMmsi(twinId));
   }
 }

@@ -19,6 +19,9 @@
 
 package io.mapsmessaging.state.drone.core;
 
+import io.mapsmessaging.dto.rest.config.protocol.impl.VehicleClass;
+import io.mapsmessaging.security.uuid.NamedVersions;
+import io.mapsmessaging.security.uuid.UuidGenerator;
 import io.mapsmessaging.state.drone.model.BatteryState;
 import io.mapsmessaging.state.drone.model.FixInfo;
 import io.mapsmessaging.state.drone.model.GeoPosition;
@@ -30,10 +33,12 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.security.NoSuchAlgorithmException;
 import java.time.Instant;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -65,7 +70,13 @@ public abstract class EntityTwin {
       example = "DRONE",
       nullable = true
   )
-  private String twinType;
+  private TwinType twinType;
+
+  @Schema(
+      description = "UUID of twin.",
+      nullable = false
+  )
+  private UUID uuid;
 
   @Schema(
       description = "Human-readable display name for the twin.",
@@ -184,10 +195,64 @@ public abstract class EntityTwin {
   private Instant connectivityUpdatedAt;
 
   @Schema(
+      description = "Vehicle class (UAV=air, USV=surface, UGV=ground, UUV=underwater, GCS=control).",
+      example = "UAV",
+      nullable = true
+  )
+  private VehicleClass vehicleClass;
+
+  @Schema(
       description = "Timestamp when relationship data was last updated.",
       example = "2026-04-20T06:32:00Z",
       nullable = true
   )
   private Instant relationshipsUpdatedAt;
 
+
+  public Long getCreatedAtSeconds() {
+    return createdAt != null ? createdAt.getEpochSecond() : null;
+  }
+
+  public Long getLastSeenAtSeconds() {
+    return lastSeenAt != null ? lastSeenAt.getEpochSecond() : null;
+  }
+
+  public Long getIdentityUpdatedAtSeconds() {
+    return identityUpdatedAt != null ? identityUpdatedAt.getEpochSecond() : null;
+  }
+
+  public Long getNavigationUpdatedAtSeconds() {
+    return navigationUpdatedAt != null ? navigationUpdatedAt.getEpochSecond() : null;
+  }
+
+  public Long getMotionUpdatedAtSeconds() {
+    return motionUpdatedAt != null ? motionUpdatedAt.getEpochSecond() : null;
+  }
+
+  public Long getPowerUpdatedAtSeconds() {
+    return powerUpdatedAt != null ? powerUpdatedAt.getEpochSecond() : null;
+  }
+
+  public Long getConnectivityUpdatedAtSeconds() {
+    return connectivityUpdatedAt != null ? connectivityUpdatedAt.getEpochSecond() : null;
+  }
+
+  public Long getRelationshipsUpdatedAtSeconds() {
+    return relationshipsUpdatedAt != null ? relationshipsUpdatedAt.getEpochSecond() : null;
+  }
+
+
+  protected EntityTwin(String twinId) {
+    setTwinId(twinId);
+    try {
+      setUuid(UuidGenerator.getInstance().generate(NamedVersions.SHA1, null, twinId));
+    } catch (NoSuchAlgorithmException e) {
+      try {
+        setUuid(UuidGenerator.getInstance().generate(NamedVersions.MD5, null, twinId));
+      } catch (NoSuchAlgorithmException ex) {
+        setUuid(UUID.nameUUIDFromBytes(twinId.getBytes()));
+      }
+    }
+
+  }
 }

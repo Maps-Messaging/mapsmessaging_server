@@ -5,5 +5,6 @@ public enum VehicleDomain {
   SURFACE,
   GROUND,
   UNDERWATER,
-  CONTROL
+  CONTROL,
+  UNKNOWN;
 }

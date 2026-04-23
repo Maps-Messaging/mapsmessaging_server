@@ -28,14 +28,7 @@ public interface TwinObserver {
     // no-op by default
   }
 
-  default void onTwinUpdated(EntityTwin previous, EntityTwin current, TwinUpdateContext context) {
-    String twinId = current != null ? current.getTwinId() :
-        previous != null ? previous.getTwinId() : null;
-
-    onTwinUpdated(twinId, previous, current, context);
-  }
-
-  default void onTwinUpdated(String twinId, EntityTwin previous, EntityTwin current, TwinUpdateContext context) {
+  default void onTwinUpdated(String twinId, EntityTwin current, TwinUpdateContext context) {
     // no-op by default
   }
 
@@ -54,4 +47,9 @@ public interface TwinObserver {
                                    TwinUpdateContext context) {
     // no-op by default
   }
+
+  default void onRelationshipRemoved(String twinId, TwinRelationship relationship, TwinUpdateContext context) {
+    // no-op by default
+  }
+
 }

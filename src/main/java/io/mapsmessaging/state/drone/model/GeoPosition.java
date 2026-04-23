@@ -66,4 +66,21 @@ public class GeoPosition {
       nullable = true
   )
   private Double altitudeAglMeters;
+
+  public Double getPreferredAltitudeMeters() {
+    if (altitudeMslMeters != null) {
+      return altitudeMslMeters;
+    }
+    return altitudeAglMeters;
+  }
+
+  public String getPreferredAltitudeType() {
+    if (altitudeMslMeters != null) {
+      return "MSL";
+    }
+    if (altitudeAglMeters != null) {
+      return "AGL";
+    }
+    return null;
+  }
 }

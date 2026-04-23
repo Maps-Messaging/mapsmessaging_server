@@ -51,6 +51,10 @@ public class TwinRelationship {
         Objects.equals(relationshipType, that.relationshipType);
   }
 
+  public boolean isActive(){
+    return bidirectional;
+  }
+
   @Override
   public int hashCode() {
     return Objects.hash(sourceTwinId, targetTwinId, relationshipType);

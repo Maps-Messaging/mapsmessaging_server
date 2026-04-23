@@ -1,9 +1,10 @@
 package io.mapsmessaging.state.drone.core;
 
-import io.mapsmessaging.config.TwinManagerConfig;
-import io.mapsmessaging.dto.rest.config.TwinManagerConfigDTO;
+
 import io.mapsmessaging.state.drone.model.LinkState;
-import io.mapsmessaging.utilities.configuration.ConfigurationManager;
+
+import io.mapsmessaging.logging.Logger;
+import io.mapsmessaging.logging.LoggerFactory;
 
 import java.time.Instant;
 import java.util.ArrayList;
@@ -16,14 +17,27 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.Consumer;
 
+import static io.mapsmessaging.logging.ServerLogMessages.*;
+
 public class TwinManager {
 
   private final ConcurrentHashMap<String, EntityTwin> twins = new ConcurrentHashMap<>();
   private final CopyOnWriteArrayList<TwinObserver> observers = new CopyOnWriteArrayList<>();
-  private final TwinManagerConfigDTO config;
+  private final Logger logger = LoggerFactory.getLogger(TwinManager.class);
+  private final boolean removeExpiredTwins;
+  private final long staleTimeoutMillis;
+  private final long heartbeatTimeoutMillis;
+  private final long retentionTimeoutMillis;
 
   public TwinManager() {
-    this.config = ConfigurationManager.getInstance().getConfiguration(TwinManagerConfig.class);
+    this(true, 10000L, 5000L, 120000L);
+  }
+
+  public TwinManager(boolean removeExpiredTwins, long staleTimeoutMillis, long heartbeatTimeoutMillis, long retentionTimeoutMillis) {
+    this.removeExpiredTwins = removeExpiredTwins;
+    this.staleTimeoutMillis = staleTimeoutMillis;
+    this.heartbeatTimeoutMillis = heartbeatTimeoutMillis;
+    this.retentionTimeoutMillis = retentionTimeoutMillis;
   }
 
   public int getTwinCount() {
@@ -51,21 +65,28 @@ public class TwinManager {
   public EntityTwin registerTwin(EntityTwin twin, TwinUpdateContext context) {
     Objects.requireNonNull(twin, "twin must not be null");
     Objects.requireNonNull(twin.getTwinId(), "twin.twinId must not be null");
-
+    logger.log(TWIN_REGISTERED, twin.getTwinId(), twin.getTwinType().name());
     Instant now = resolveNow(context);
-
-    twin.setCreatedAt(now);
-    twin.setLastSeenAt(now);
-
-    if (twin.getLifecycleStatus() == null) {
-      twin.setLifecycleStatus(TwinLifecycleStatus.ACTIVE);
-    }
 
     EntityTwin existing = twins.putIfAbsent(twin.getTwinId(), twin);
     if (existing == null) {
-      ensureLinkConnected(twin);
+      synchronized (twin) {
+        if (twin.getCreatedAt() == null) {
+          twin.setCreatedAt(now);
+        }
+        twin.setLastSeenAt(now);
+
+        if (twin.getLifecycleStatus() == null) {
+          twin.setLifecycleStatus(TwinLifecycleStatus.ACTIVE);
+        }
+
+        ensureLinkConnected(twin);
+      }
       notifyAdded(twin, context);
       return twin;
+    }
+    else{
+      logger.log(TWIN_REGISTER_EXISTING, twin.getTwinId());
     }
 
     synchronized (existing) {
@@ -73,13 +94,17 @@ public class TwinManager {
       transitionStatus(existing, TwinLifecycleStatus.ACTIVE, context);
       ensureLinkConnected(existing);
     }
+
     return existing;
   }
 
   public Optional<EntityTwin> removeTwin(String twinId, TwinUpdateContext context) {
+    Objects.requireNonNull(twinId, "twinId must not be null");
+
     EntityTwin removed = twins.remove(twinId);
     if (removed != null) {
       notifyRemoved(removed, context);
+      logger.log(TWIN_REMOVED, twinId);
     }
     return Optional.ofNullable(removed);
   }
@@ -98,16 +123,15 @@ public class TwinManager {
 
     Instant now = resolveNow(context);
 
-    EntityTwin previous;
     synchronized (twin) {
-      previous = shallowCopy(twin);
       updater.accept(twin);
       twin.setLastSeenAt(now);
       transitionStatus(twin, TwinLifecycleStatus.ACTIVE, context);
       ensureLinkConnected(twin);
     }
 
-    notifyUpdated(previous, twin, context);
+    notifyUpdated(twin, context);
+    logger.log(TWIN_UPDATED, twinId);
     return Optional.of(twin);
   }
 
@@ -139,12 +163,52 @@ public class TwinManager {
       twin.getRelationships().add(relationship);
       twin.setRelationshipsUpdatedAt(now);
       twin.setLastSeenAt(now);
+      transitionStatus(twin, TwinLifecycleStatus.ACTIVE, context);
+      ensureLinkConnected(twin);
+      logger.log(TWIN_RELATIONSHIP_UPSERTED, twinId, relationship.getSourceTwinId(), relationship.getTargetTwinId(), relationship.getRelationshipType());
     }
 
-    for (TwinObserver observer : observers) {
-      observer.onRelationshipUpdated(twinId, relationship, context);
+    notifyRelationshipUpdated(twinId, relationship, context);
+    return Optional.of(twin);
+  }
+
+  public Optional<EntityTwin> removeRelationship(String twinId,
+                                                 String sourceTwinId,
+                                                 String targetTwinId,
+                                                 String relationshipType,
+                                                 TwinUpdateContext context) {
+
+    Objects.requireNonNull(twinId, "twinId must not be null");
+
+    EntityTwin twin = twins.get(twinId);
+    if (twin == null) {
+      return Optional.empty();
     }
 
+    Instant now = resolveNow(context);
+    TwinRelationship removedRelationship = null;
+
+    synchronized (twin) {
+      for (TwinRelationship existing : twin.getRelationships()) {
+        if (Objects.equals(existing.getSourceTwinId(), sourceTwinId) &&
+            Objects.equals(existing.getTargetTwinId(), targetTwinId) &&
+            Objects.equals(existing.getRelationshipType(), relationshipType)) {
+          removedRelationship = existing;
+          break;
+        }
+      }
+
+      if (removedRelationship != null) {
+        twin.getRelationships().remove(removedRelationship);
+        twin.setRelationshipsUpdatedAt(now);
+        twin.setLastSeenAt(now);
+      }
+    }
+
+    if (removedRelationship != null) {
+      notifyRelationshipRemoved(twinId, removedRelationship, context);
+    }
+    logger.log(TWIN_RELATIONSHIP_REMOVED, twinId, sourceTwinId, targetTwinId, relationshipType);
     return Optional.of(twin);
   }
 
@@ -158,30 +222,6 @@ public class TwinManager {
     return count;
   }
 
-  public Optional<EntityTwin> removeRelationship(String twinId,
-                                                 String sourceTwinId,
-                                                 String targetTwinId,
-                                                 String relationshipType,
-                                                 TwinUpdateContext context) {
-
-    EntityTwin twin = twins.get(twinId);
-    if (twin == null) {
-      return Optional.empty();
-    }
-
-    synchronized (twin) {
-      twin.getRelationships().removeIf(existing ->
-          Objects.equals(existing.getSourceTwinId(), sourceTwinId) &&
-              Objects.equals(existing.getTargetTwinId(), targetTwinId) &&
-              Objects.equals(existing.getRelationshipType(), relationshipType)
-      );
-      twin.setRelationshipsUpdatedAt(resolveNow(context));
-      twin.setLastSeenAt(resolveNow(context));
-    }
-
-    return Optional.of(twin);
-  }
-
   public void scanTwinStates(Instant now) {
     Instant effectiveNow = now != null ? now : Instant.now();
 
@@ -189,10 +229,10 @@ public class TwinManager {
       synchronized (twin) {
         long ageMillis = ageMillis(effectiveNow, twin.getLastSeenAt());
 
-        if (ageMillis >= config.getStaleTimeoutMillis()) {
+        if (ageMillis >= staleTimeoutMillis) {
           transitionStatus(twin, TwinLifecycleStatus.STALE, null);
           ensureLinkDisconnected(twin, "STALE");
-        } else if (ageMillis >= config.getHeartbeatTimeoutMillis()) {
+        } else if (ageMillis >= heartbeatTimeoutMillis) {
           transitionStatus(twin, TwinLifecycleStatus.DISCONNECTED, null);
           ensureLinkDisconnected(twin, "DISCONNECTED");
         } else {
@@ -204,7 +244,7 @@ public class TwinManager {
   }
 
   public int purgeExpiredTwins(Instant now) {
-    if (!config.isRemoveExpiredTwins()) {
+    if (!removeExpiredTwins) {
       return 0;
     }
 
@@ -213,7 +253,7 @@ public class TwinManager {
 
     for (EntityTwin twin : twins.values()) {
       long ageMillis = ageMillis(effectiveNow, twin.getLastSeenAt());
-      if (ageMillis >= config.getRetentionTimeoutMillis()) {
+      if (ageMillis >= retentionTimeoutMillis) {
         expiredIds.add(twin.getTwinId());
       }
     }
@@ -222,10 +262,10 @@ public class TwinManager {
     for (String twinId : expiredIds) {
       Optional<EntityTwin> removed = removeTwin(twinId, null);
       if (removed.isPresent()) {
+        logger.log(TWIN_PURGED, twinId);
         removedCount++;
       }
     }
-
     return removedCount;
   }
 
@@ -246,15 +286,19 @@ public class TwinManager {
     }
 
     twin.setLifecycleStatus(newStatus);
-
+    logger.log(TWIN_STATUS_CHANGED, twin.getTwinId(), previousStatus.name(), newStatus.name());
     for (TwinObserver observer : observers) {
-      observer.onTwinStatusChanged(
-          twin.getTwinId(),
-          previousStatus,
-          newStatus,
-          twin,
-          context
-      );
+      try {
+        observer.onTwinStatusChanged(
+            twin.getTwinId(),
+            previousStatus,
+            newStatus,
+            twin,
+            context
+        );
+      } catch (Exception ignore) {
+        logger.log(TWIN_OBSERVER_CALLBACK_FAILED, ignore);
+      }
     }
   }
 
@@ -285,57 +329,57 @@ public class TwinManager {
     return Instant.now();
   }
 
-  private EntityTwin shallowCopy(EntityTwin twin) {
-    EntityTwin copy;
-    try {
-      copy = twin.getClass().getDeclaredConstructor().newInstance();
-    } catch (Exception e) {
-      throw new IllegalStateException("Failed to copy twin", e);
-    }
-
-    copy.setTwinId(twin.getTwinId());
-    copy.setTwinType(twin.getTwinType());
-    copy.setDisplayName(twin.getDisplayName());
-    copy.setTwinPath(twin.getTwinPath());
-
-    copy.setGeoPosition(twin.getGeoPosition());
-    copy.setHomePosition(twin.getHomePosition());
-    copy.setVelocityVector(twin.getVelocityVector());
-    copy.setOrientation(twin.getOrientation());
-    copy.setFixInfo(twin.getFixInfo());
-    copy.setBatteryState(twin.getBatteryState());
-    copy.setLinkState(twin.getLinkState());
-
-    copy.setCreatedAt(twin.getCreatedAt());
-    copy.setLastSeenAt(twin.getLastSeenAt());
-
-    copy.setIdentityUpdatedAt(twin.getIdentityUpdatedAt());
-    copy.setNavigationUpdatedAt(twin.getNavigationUpdatedAt());
-    copy.setMotionUpdatedAt(twin.getMotionUpdatedAt());
-    copy.setPowerUpdatedAt(twin.getPowerUpdatedAt());
-    copy.setConnectivityUpdatedAt(twin.getConnectivityUpdatedAt());
-    copy.setRelationshipsUpdatedAt(twin.getRelationshipsUpdatedAt());
-
-    copy.setLifecycleStatus(twin.getLifecycleStatus());
-
-    return copy;
-  }
-
   private void notifyAdded(EntityTwin twin, TwinUpdateContext context) {
     for (TwinObserver observer : observers) {
-      observer.onTwinAdded(twin, context);
+      try {
+        observer.onTwinAdded(twin, context);
+      } catch (Exception ignore) {
+        logger.log(TWIN_OBSERVER_CALLBACK_FAILED, ignore);
+      }
     }
   }
 
-  private void notifyUpdated(EntityTwin previous, EntityTwin current, TwinUpdateContext context) {
+  private void notifyUpdated(EntityTwin twin, TwinUpdateContext context) {
     for (TwinObserver observer : observers) {
-      observer.onTwinUpdated(previous, current, context);
+      try {
+        observer.onTwinUpdated(twin.getTwinId(), twin, context);
+      } catch (Exception ignore) {
+        logger.log(TWIN_OBSERVER_CALLBACK_FAILED, ignore);
+      }
     }
   }
 
   private void notifyRemoved(EntityTwin removed, TwinUpdateContext context) {
     for (TwinObserver observer : observers) {
-      observer.onTwinRemoved(removed, context);
+      try {
+        observer.onTwinRemoved(removed, context);
+      } catch (Exception ignore) {
+        logger.log(TWIN_OBSERVER_CALLBACK_FAILED, ignore);
+      }
+    }
+  }
+
+  private void notifyRelationshipUpdated(String twinId,
+                                         TwinRelationship relationship,
+                                         TwinUpdateContext context) {
+    for (TwinObserver observer : observers) {
+      try {
+        observer.onRelationshipUpdated(twinId, relationship, context);
+      } catch (Exception ignore) {
+        logger.log(TWIN_OBSERVER_CALLBACK_FAILED, ignore);
+      }
+    }
+  }
+
+  private void notifyRelationshipRemoved(String twinId,
+                                         TwinRelationship relationship,
+                                         TwinUpdateContext context) {
+    for (TwinObserver observer : observers) {
+      try {
+        observer.onRelationshipRemoved(twinId, relationship, context);
+      } catch (Exception ignore) {
+        logger.log(TWIN_OBSERVER_CALLBACK_FAILED, ignore);
+      }
     }
   }
 }

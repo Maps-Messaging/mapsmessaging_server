@@ -23,6 +23,8 @@ import io.mapsmessaging.config.TwinManagerConfig;
 import io.mapsmessaging.dto.rest.config.TwinManagerConfigDTO;
 import io.mapsmessaging.dto.rest.system.Status;
 import io.mapsmessaging.dto.rest.system.SubSystemStatusDTO;
+import io.mapsmessaging.logging.Logger;
+import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.state.drone.core.TwinLifecycleStatus;
 import io.mapsmessaging.state.drone.core.TwinManager;
 import io.mapsmessaging.state.drone.publisher.TwinJsonPublisher;
@@ -35,20 +37,29 @@ import java.io.IOException;
 import java.time.Instant;
 import java.util.concurrent.*;
 
+import static io.mapsmessaging.logging.ServerLogMessages.*;
+
 public class StateManagerAgent implements Agent {
 
   private static final long SCAN_INTERVAL_MILLIS = 1000L;
   private static final long PURGE_INTERVAL_MILLIS = 30000L;
+  private final Logger logger = LoggerFactory.getLogger(StateManagerAgent.class);
 
   @Getter
   private final TwinManager twinManager;
   private TakTwinObserver takManager;
   private TwinJsonPublisher twinJsonPublisher;
-
+  private final  TwinManagerConfigDTO config;
   private ScheduledExecutorService scheduler;
 
   public StateManagerAgent() {
-    twinManager = new TwinManager();
+    config = ConfigurationManager.getInstance().getConfiguration(TwinManagerConfig.class);
+    if(config == null){
+      twinManager = new TwinManager();
+    }
+    else {
+      twinManager = new TwinManager(config.isRemoveExpiredTwins(), config.getStaleTimeoutMillis(), config.getHeartbeatTimeoutMillis(), config.getRetentionTimeoutMillis());
+    }
   }
 
   @Override
@@ -63,71 +74,79 @@ public class StateManagerAgent implements Agent {
 
   @Override
   public synchronized void start() {
-    if (scheduler != null && !scheduler.isShutdown()) {
-      return;
-    }
-
-    scheduler = Executors.newSingleThreadScheduledExecutor(runnable -> {
-      Thread thread = new Thread(runnable, "StateManagerAgent");
-      thread.setDaemon(true);
-      return thread;
-    });
-
-    scheduler.scheduleAtFixedRate(() -> {
-      try {
-        twinManager.scanTwinStates(Instant.now());
-      } catch (Exception e) {
-        // swallow to keep scheduler alive
+    try {
+      logger.log(STATE_MANAGER_START);
+      if (scheduler != null && !scheduler.isShutdown()) {
+        return;
       }
-    }, SCAN_INTERVAL_MILLIS, SCAN_INTERVAL_MILLIS, TimeUnit.MILLISECONDS);
 
-    scheduler.scheduleAtFixedRate(() -> {
-      try {
-        twinManager.purgeExpiredTwins(Instant.now());
-      } catch (Exception e) {
-        // swallow to keep scheduler alive
-      }
-    }, PURGE_INTERVAL_MILLIS, PURGE_INTERVAL_MILLIS, TimeUnit.MILLISECONDS);
+      scheduler = Executors.newSingleThreadScheduledExecutor(runnable -> {
+        Thread thread = new Thread(runnable, "StateManagerAgent");
+        thread.setDaemon(true);
+        return thread;
+      });
 
-
-    TwinManagerConfigDTO config = ConfigurationManager.getInstance().getConfiguration(TwinManagerConfig.class);
-    if(config != null){
-      if(config.getTak() != null) {
-        takManager = new TakTwinObserver(twinManager);
-      }
-      if(config.getPublish() != null){
+      scheduler.scheduleAtFixedRate(() -> {
         try {
-          twinJsonPublisher = new TwinJsonPublisher(twinManager, config.getPublish().getTopicTemplate());
-        } catch (Throwable e) {
-          e.printStackTrace();
+          twinManager.scanTwinStates(Instant.now());
+        } catch (Exception e) {
+          logger.log(STATE_MANAGER_SCHEDULER_ERROR, e);
         }
+      }, SCAN_INTERVAL_MILLIS, SCAN_INTERVAL_MILLIS, TimeUnit.MILLISECONDS);
+
+      scheduler.scheduleAtFixedRate(() -> {
+        try {
+          twinManager.purgeExpiredTwins(Instant.now());
+        } catch (Exception e) {
+          logger.log(STATE_MANAGER_SCHEDULER_ERROR, e);
+        }
+      }, PURGE_INTERVAL_MILLIS, PURGE_INTERVAL_MILLIS, TimeUnit.MILLISECONDS);
+
+
+      if (config != null) {
+        if (config.getTak() != null) {
+          takManager = new TakTwinObserver(twinManager);
+          logger.log(STATE_MANAGER_TAK_ENABLED);
+        }
+        if (config.getPublish() != null) {
+          try {
+            twinJsonPublisher = new TwinJsonPublisher(twinManager, config.getPublish().getTopicTemplate());
+            logger.log(STATE_MANAGER_PUBLISH_ENABLED, config.getPublish().getTopicTemplate());
+          } catch (Throwable e) {
+            logger.log(STATE_MANAGER_PUBLISH_FAILED, e);
+          }
+        }
+      } else {
+        takManager = null;
+        twinJsonPublisher = null;
       }
+    } finally {
+      logger.log(STATE_MANAGER_STARTED);
     }
-    else{
-      takManager = null;
-      twinJsonPublisher = null;
-    }
-
-
   }
 
   @Override
   public synchronized void stop() {
-    if (scheduler == null) {
-      return;
-    }
-
-    scheduler.shutdownNow();
-    scheduler = null;
-    if(takManager != null) {
-      takManager.shutdown();
-    }
-    if(twinJsonPublisher != null) {
-      try {
-        twinJsonPublisher.close();
-      } catch (IOException e) {
-
+    logger.log(STATE_MANAGER_STOP);
+    try {
+      if (scheduler == null) {
+        return;
       }
+
+      scheduler.shutdownNow();
+      scheduler = null;
+      if(takManager != null) {
+        takManager.shutdown();
+      }
+      if(twinJsonPublisher != null) {
+        try {
+          twinJsonPublisher.close();
+        } catch (IOException e) {
+          logger.log(STATE_MANAGER_PUBLISH_FAILED, e);
+        }
+      }
+    } finally {
+      logger.log(STATE_MANAGER_STOPPED);
     }
   }
 

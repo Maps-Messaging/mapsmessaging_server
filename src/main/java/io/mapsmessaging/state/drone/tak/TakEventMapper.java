@@ -22,6 +22,7 @@ package io.mapsmessaging.state.drone.tak;
 import io.mapsmessaging.dto.rest.config.protocol.impl.VehicleClass;
 import io.mapsmessaging.state.drone.core.EntityTwin;
 import io.mapsmessaging.state.drone.core.TwinRelationship;
+import io.mapsmessaging.state.drone.core.TwinType;
 import io.mapsmessaging.state.drone.core.TwinUpdateContext;
 import io.mapsmessaging.state.drone.drone.DroneTwin;
 import io.mapsmessaging.state.drone.model.FixInfo;
@@ -224,12 +225,13 @@ public class TakEventMapper {
           case UGV -> "a-f-G-E-V";
           case UUV -> "a-f-U-X-M";
           case GCS -> "a-f-G-U-C";
+          case UNKNOWN -> null;
         };
       }
     }
 
-    String twinType = twin.getTwinType();
-    if ("DRONE".equalsIgnoreCase(twinType)) {
+    TwinType twinType = twin.getTwinType();
+    if (TwinType.DRONE.equals(twinType)) {
       return "a-f-A-M-F-U";
     }
     return "a-f-G-U-C";

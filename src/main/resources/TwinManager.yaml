@@ -24,6 +24,12 @@ TwinManager:
 
   removeExpiredTwins: true
   defaultRootPath: "/"
+
+
   tak:
     hostname: "opentak.syd.mapsmessaging.io"
     port: 8088
+    topic: "/tak/cot"
+  publish:
+    enabled: true
+    topicTemplate: "/state/twins/drones"

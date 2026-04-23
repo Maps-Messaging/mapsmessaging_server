@@ -8,7 +8,8 @@ public enum VehicleClass {
   USV,
   UGV,
   UUV,
-  GCS;
+  GCS,
+  UNKNOWN;
 
   public VehicleDomain getDomain() {
     return switch (this) {
@@ -17,29 +18,41 @@ public enum VehicleClass {
       case UGV -> VehicleDomain.GROUND;
       case UUV -> VehicleDomain.UNDERWATER;
       case GCS -> VehicleDomain.CONTROL;
+      case UNKNOWN -> VehicleDomain.UNKNOWN;
+    };
+  }
+
+  public String getSymbolSet() {
+    return switch (this) {
+      case UAV -> "SymbolSetEnum_AIR";
+      case USV -> "SymbolSetEnum_SEA_SURFACE";
+      case UGV -> "SymbolSetEnum_LAND_UNIT";
+      case UUV -> "SymbolSetEnum_SUBSURFACE";
+      case GCS -> "SymbolSetEnum_CONTROL";
+      case UNKNOWN -> "SymbolSetEnum_UNKNOWN";
     };
   }
 
   public static VehicleClass fromMavType(int mavType) {
     return switch (mavType) {
 
-      case 6 -> VehicleClass.GCS;
+      case 6 -> GCS;
 
-      case 10 -> VehicleClass.UGV;
+      case 10 -> UGV;
 
-      case 11 -> VehicleClass.USV;
+      case 11 -> USV;
 
-      case 12 -> VehicleClass.UUV;
+      case 12 -> UUV;
 
-      // everything that flies (and things pretending to)
-      case 1, 2, 3, 4, 7, 8, 9 -> VehicleClass.UAV;
+      // flying things (fixed wing, quad, heli, etc)
+      case 1, 2, 3, 4, 7, 8, 9 -> UAV;
 
-      // ambiguous / annoying ones
-      case 5 -> VehicleClass.UGV; // antenna tracker (ground-based)
+      // antenna tracker → ground
+      case 5 -> UGV;
 
-      case 0 -> null; // GENERIC → unknown, your call
+      case 0 -> UNKNOWN;
 
-      default -> VehicleClass.UAV; // future-proof fallback
+      default -> UNKNOWN;
     };
   }
 }

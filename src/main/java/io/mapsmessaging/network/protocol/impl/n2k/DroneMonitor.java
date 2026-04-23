@@ -61,7 +61,7 @@ public class DroneMonitor implements TwinObserver{
    * Rename this method to match the actual TwinObserver callback in your codebase.
    */
   @Override
-  public void onTwinUpdated(String twinId, EntityTwin previous, EntityTwin current, TwinUpdateContext context) {
+  public void onTwinUpdated(String twinId, EntityTwin current, TwinUpdateContext context) {
     if (!(current instanceof DroneTwin droneTwin)) {
       return;
     }

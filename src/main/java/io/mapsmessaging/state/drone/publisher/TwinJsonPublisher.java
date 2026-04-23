@@ -73,7 +73,7 @@ public class TwinJsonPublisher implements TwinObserver, ClientConnection, Messag
   }
 
   @Override
-  public void onTwinUpdated(String twinId, EntityTwin previous, EntityTwin current, TwinUpdateContext context) {
+  public void onTwinUpdated(String twinId, EntityTwin current, TwinUpdateContext context) {
     if (twinId == null || twinId.isBlank() || current == null) {
       return;
     }
@@ -90,8 +90,10 @@ public class TwinJsonPublisher implements TwinObserver, ClientConnection, Messag
     String topic = resolveTopic(twinId, twin);
     Destination destination = resolveDestination(topic);
     try {
-      String json = gson.toJson(twin);
-
+      String json;
+      synchronized (twin) {
+        json = gson.toJson(twin);
+      }
       MessageBuilder messageBuilder = new MessageBuilder();
       messageBuilder.setOpaqueData(json.getBytes(StandardCharsets.UTF_8))
           .setQoS(QualityOfService.AT_MOST_ONCE)

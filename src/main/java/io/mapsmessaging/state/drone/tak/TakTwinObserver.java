@@ -120,7 +120,7 @@ public class TakTwinObserver implements TwinObserver {
   }
 
   @Override
-  public void onTwinUpdated(String twinId, EntityTwin previous, EntityTwin current, TwinUpdateContext context) {
+  public void onTwinUpdated(String twinId, EntityTwin current, TwinUpdateContext context) {
     if (current == null) {
       return;
     }
