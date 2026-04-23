@@ -45,6 +45,7 @@ public class TransformationConfigFactory {
       case GEOHASH -> new GeoHashResolverTransformationConfig(props);
       case SCHEMA_TO_JSON -> new SchemaToJsonTransformationDTO();
       case JSON_MUTATE -> new JsonMutateTransformationConfig(props);
+      case JSON_MAPPER -> new JsonMapperTransformationConfig(props);
       case CLOUD_EVENT_NATIVE -> new CloudEventNativeTransformationConfig(props);
       case CLOUD_EVENT_JSON -> new CloudEventJsonTransformationConfig(props);
       case CLOUD_EVENT_ENVELOPE -> new CloudEventEnvelopeTransformationConfig(props);

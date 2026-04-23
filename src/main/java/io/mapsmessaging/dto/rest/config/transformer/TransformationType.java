@@ -36,6 +36,9 @@ public enum TransformationType {
   @SerializedName("jsonmutate")
   JSON_MUTATE("jsonmutate"),
 
+  @SerializedName("jsonmapper")
+  JSON_MAPPER("jsonmapper"),
+
   @SerializedName("jsontoschema")
   JSON_TO_SCHEMA("jsontoschema");
 

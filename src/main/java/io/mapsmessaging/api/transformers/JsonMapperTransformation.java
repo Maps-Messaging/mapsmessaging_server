@@ -24,9 +24,9 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import io.mapsmessaging.api.MessageBuilder;
 import io.mapsmessaging.api.transformers.jsonmapper.JsonMapper;
-import io.mapsmessaging.api.transformers.jsonmutate.JsonMutator;
 import io.mapsmessaging.dto.rest.config.transformer.TransformationConfigDTO;
-import io.mapsmessaging.dto.rest.config.transformer.impl.JsonMutateTransformationDTO;
+import io.mapsmessaging.dto.rest.config.transformer.impl.JsonMapperTransformationDTO;
+
 
 import java.nio.charset.StandardCharsets;
 
@@ -54,8 +54,9 @@ public class JsonMapperTransformation implements InterServerTransformation {
       if (!element.isJsonObject()) {
         return message;
       }
-
-      JsonObject mutated = mapper.apply(element.getAsJsonObject());
+      JsonObject base = element.getAsJsonObject();
+      JsonObject payload  = base.getAsJsonArray("envelopes").get(0).getAsJsonObject().getAsJsonObject("payload");
+      JsonObject mutated = mapper.apply(payload.getAsJsonObject());
 
       MessageBuilder messageBuilder = new MessageBuilder(message.getMessage());
       messageBuilder.setOpaqueData(mutated.toString().getBytes(StandardCharsets.UTF_8));
@@ -68,13 +69,13 @@ public class JsonMapperTransformation implements InterServerTransformation {
 
   @Override
   public InterServerTransformation build(TransformationConfigDTO dto) {
-    if( !(dto instanceof JsonMutateTransformationDTO jsonMutateTransformationDTO)){
+    if( !(dto instanceof JsonMapperTransformationDTO jsonMapperTransformationDTO)){
       return null;
     }
-    if (jsonMutateTransformationDTO.getOperations() == null || jsonMutateTransformationDTO.getOperations().isEmpty()) {
-      return new JsonMutateTransformation(null);
+    if (jsonMapperTransformationDTO.getOperations() == null || jsonMapperTransformationDTO.getOperations().isEmpty()) {
+      return new JsonMapperTransformation(null);
     }
-    return new JsonMutateTransformation(new JsonMutator(jsonMutateTransformationDTO.getOperations()));
+    return new JsonMapperTransformation(new JsonMapper(jsonMapperTransformationDTO.getOperations()));
   }
 
   @Override

@@ -31,5 +31,20 @@ public enum JsonMapFunction {
   TO_DOUBLE,
   TO_BOOLEAN,
   BASE64_ENCODE,
-  BASE64_DECODE
+  BASE64_DECODE;
+
+
+  public static JsonMapFunction fromString(String value) {
+    if (value == null || value.isBlank()) {
+      return NONE;
+    }
+
+    for (JsonMapFunction function : values()) {
+      if (function.name().equalsIgnoreCase(value.trim())) {
+        return function;
+      }
+    }
+
+    return NONE;
+  }
 }

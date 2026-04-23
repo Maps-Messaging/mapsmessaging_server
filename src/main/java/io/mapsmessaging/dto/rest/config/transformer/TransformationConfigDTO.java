@@ -22,6 +22,7 @@ import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import io.mapsmessaging.dto.rest.config.BaseConfigDTO;
 import io.mapsmessaging.dto.rest.config.transformer.impl.*;
+import io.mapsmessaging.dto.rest.config.transformer.jsonmapper.JsonMapOpDTO;
 import io.swagger.v3.oas.annotations.media.DiscriminatorMapping;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
@@ -37,6 +38,7 @@ import lombok.NoArgsConstructor;
     @JsonSubTypes.Type(value = JsonQueryTransformationDTO.class, name = "jsonquery"),
     @JsonSubTypes.Type(value = GeoHashResolverTransformationDTO.class, name = "geohash"),
     @JsonSubTypes.Type(value = JsonMutateTransformationDTO.class, name = "jsonmutate"),
+    @JsonSubTypes.Type(value = JsonMapOpDTO.class, name = "jsonmapper"),
     @JsonSubTypes.Type(value = CloudEventEnvelopeTransformationDTO.class, name = "cloudevent-envelope"),
     @JsonSubTypes.Type(value = CloudEventJsonTransformationDTO.class, name = "cloudevent-json"),
     @JsonSubTypes.Type(value = CloudEventNativeTransformationDTO.class, name = "cloudevent-native"),
@@ -53,6 +55,7 @@ import lombok.NoArgsConstructor;
         @DiscriminatorMapping(value = "jsonquery", schema = JsonQueryTransformationDTO.class),
         @DiscriminatorMapping(value = "geohash", schema = GeoHashResolverTransformationDTO.class),
         @DiscriminatorMapping(value = "jsonmutate", schema = JsonMutateTransformationDTO.class),
+        @DiscriminatorMapping(value = "jsonmapper", schema = JsonMapOpDTO.class),
         @DiscriminatorMapping(value = "cloudevent-envelope", schema = CloudEventEnvelopeTransformationDTO.class),
         @DiscriminatorMapping(value = "cloudevent-json", schema = CloudEventJsonTransformationDTO.class),
         @DiscriminatorMapping(value = "cloudevent-native", schema = CloudEventNativeTransformationDTO.class),
