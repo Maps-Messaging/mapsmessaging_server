@@ -28,7 +28,7 @@ import java.util.Map;
 import static io.mapsmessaging.network.protocol.impl.mavlink.packet.MavlinkMessageIds.GPS_RAW_INT;
 
 @Getter
-public class GpsRawIntPacket implements MavlinkPacket {
+public class GpsRawIntPacket extends MavlinkPacket {
 
   private final int fixType;
   private final int satellitesVisible;
@@ -67,27 +67,5 @@ public class GpsRawIntPacket implements MavlinkPacket {
       case 8 -> "PPP";
       default -> "UNKNOWN";
     };
-  }
-
-  private int getInt(Map<String, Object> fields, String key) {
-    Object value = fields.get(key);
-    if (value == null) {
-      return -1;
-    }
-    return ((Number) value).intValue();
-  }
-
-  private double getDilution(Map<String, Object> fields, String key) {
-    Object value = fields.get(key);
-    if (value == null) {
-      return Double.NaN;
-    }
-
-    double raw = ((Number) value).doubleValue();
-    if (raw == 65535) {
-      return Double.NaN;
-    }
-
-    return raw / 100.0;
   }
 }

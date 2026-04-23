@@ -37,7 +37,9 @@ public class MavlinkPacketFactory {
       case MavlinkMessageIds.ALTITUDE -> new AltitudePacket(frame);
       case MavlinkMessageIds.EXTENDED_SYS_STATE -> new ExtendedSysStatePacket(frame);
       case MavlinkMessageIds.MISSION_CURRENT -> new MissionCurrentPacket(frame);
-      default -> null; // or UnknownPacket if you feel fancy
+      case MavlinkMessageIds.AUTOPILOT_VERSION -> new AutopilotVersionPacket(frame);
+      case MavlinkMessageIds.HOME_POSITION -> new HomePositionPacket(frame);
+      default -> null;
     };
   }
 }

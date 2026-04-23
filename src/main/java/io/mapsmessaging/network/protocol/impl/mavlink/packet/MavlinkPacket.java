@@ -19,5 +19,77 @@
 
 package io.mapsmessaging.network.protocol.impl.mavlink.packet;
 
-public interface MavlinkPacket {
+import java.util.Map;
+
+public abstract class MavlinkPacket {
+
+  protected int getInt(Map<String, Object> fields, String key) {
+    Object value = fields.get(key);
+    if (value == null) {
+      return -1;
+    }
+    return ((Number) value).intValue();
+  }
+
+  protected double getDouble(Map<String, Object> fields, String key) {
+    Object value = fields.get(key);
+    if (value == null) {
+      return Double.NaN;
+    }
+    return ((Number) value).doubleValue();
+  }
+
+  protected double getDilution(Map<String, Object> fields, String key) {
+    Object value = fields.get(key);
+    if (value == null) {
+      return Double.NaN;
+    }
+
+    double raw = ((Number) value).doubleValue();
+    if (raw == 65535) {
+      return Double.NaN;
+    }
+
+    return raw / 100.0;
+  }
+
+
+  protected long getLong(Map<String, Object> fields, String key) {
+    Object value = fields.get(key);
+    if (value == null) {
+      return -1L;
+    }
+    return ((Number) value).longValue();
+  }
+
+  protected String getString(Map<String, Object> fields, String key) {
+    Object value = fields.get(key);
+    if (value == null) {
+      return null;
+    }
+
+    if (value instanceof byte[] data) {
+      StringBuilder stringBuilder = new StringBuilder();
+      for (byte datum : data) {
+        if (datum == 0) {
+          break;
+        }
+        stringBuilder.append((char) (datum & 0xFF));
+      }
+      return stringBuilder.toString();
+    }
+
+    if (value instanceof int[] data) {
+      StringBuilder stringBuilder = new StringBuilder();
+      for (int datum : data) {
+        if (datum == 0) {
+          break;
+        }
+        stringBuilder.append((char) (datum & 0xFF));
+      }
+      return stringBuilder.toString();
+    }
+
+    return String.valueOf(value);
+  }
 }

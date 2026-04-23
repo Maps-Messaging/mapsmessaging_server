@@ -28,16 +28,17 @@ import java.util.Map;
 import static io.mapsmessaging.network.protocol.impl.mavlink.packet.MavlinkMessageIds.HEARTBEAT;
 
 @Getter
-public class HeartbeatPacket implements MavlinkPacket {
+public class HeartbeatPacket extends MavlinkPacket {
 
   private static final int MAV_MODE_FLAG_SAFETY_ARMED = 128;
 
   private final int type;
   private final int autopilot;
-  private final long baseMode;
+  private final int baseMode;
   private final long customMode;
   private final int systemStatus;
   private final boolean mavlinkVersionPresent;
+  private final int mavlinkVersion;
   private final boolean valid;
 
   public HeartbeatPacket(ProcessedFrame frame) {
@@ -45,10 +46,11 @@ public class HeartbeatPacket implements MavlinkPacket {
 
     this.type = getInt(fields, "type");
     this.autopilot = getInt(fields, "autopilot");
-    this.baseMode = getLong(fields, "base_mode");
+    this.baseMode = getInt(fields, "base_mode");
     this.customMode = getLong(fields, "custom_mode");
     this.systemStatus = getInt(fields, "system_status");
     this.mavlinkVersionPresent = fields.containsKey("mavlink_version");
+    this.mavlinkVersion = getInt(fields, "mavlink_version");
     this.valid = frame.isValid();
   }
 
@@ -66,21 +68,5 @@ public class HeartbeatPacket implements MavlinkPacket {
 
   public int getVehicleClass() {
     return type;
-  }
-
-  private int getInt(Map<String, Object> fields, String key) {
-    Object value = fields.get(key);
-    if (value == null) {
-      return -1;
-    }
-    return ((Number) value).intValue();
-  }
-
-  private long getLong(Map<String, Object> fields, String key) {
-    Object value = fields.get(key);
-    if (value == null) {
-      return -1L;
-    }
-    return ((Number) value).longValue();
   }
 }

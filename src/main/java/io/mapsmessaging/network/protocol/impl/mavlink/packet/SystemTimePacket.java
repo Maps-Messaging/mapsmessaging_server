@@ -28,7 +28,7 @@ import java.util.Map;
 import static io.mapsmessaging.network.protocol.impl.mavlink.packet.MavlinkMessageIds.SYSTEM_TIME;
 
 @Getter
-public class SystemTimePacket implements MavlinkPacket {
+public class SystemTimePacket extends MavlinkPacket {
 
   private final long unixTimeEpochMillis;
   private final long bootTimeMillis;
@@ -52,14 +52,6 @@ public class SystemTimePacket implements MavlinkPacket {
 
   public boolean hasValidBootTime() {
     return bootTimeMillis >= 0;
-  }
-
-  private long getLong(Map<String, Object> fields, String key) {
-    Object value = fields.get(key);
-    if (value == null) {
-      return -1L;
-    }
-    return ((Number) value).longValue();
   }
 
   private long getUnixTimeMillis(Map<String, Object> fields, String key) {

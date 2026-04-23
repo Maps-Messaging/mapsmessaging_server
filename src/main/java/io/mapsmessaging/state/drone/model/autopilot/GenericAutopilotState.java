@@ -17,37 +17,26 @@
  *  limitations under the License.
  */
 
-package io.mapsmessaging.network.protocol.impl.mavlink.packet;
+package io.mapsmessaging.state.drone.model.autopilot;
 
+import io.swagger.v3.oas.annotations.media.Schema;
+import lombok.EqualsAndHashCode;
+import lombok.NoArgsConstructor;
 
-import io.mapsmessaging.mavlink.ProcessedFrame;
+@NoArgsConstructor
+@EqualsAndHashCode(callSuper = true)
+@Schema(description = "Fallback autopilot state used when the autopilot type is unknown or not specifically decoded.")
+public class GenericAutopilotState extends AutopilotState {
 
-import java.util.Map;
+  @Schema(
+      description = "Decoded human-readable flight mode derived from the autopilot-specific mode fields.",
+      example = "AUTO",
+      nullable = true
+  )
+  private String flightMode;
 
-import static io.mapsmessaging.network.protocol.impl.mavlink.packet.MavlinkMessageIds.MISSION_CURRENT;
-
-public class MissionCurrentPacket extends MavlinkPacket {
-
-  private final int sequence;
-  private final boolean valid;
-
-  public MissionCurrentPacket(ProcessedFrame frame) {
-    Map<String, Object> fields = frame.getFields();
-
-    this.sequence = getInt(fields, "seq");
-    this.valid = frame.isValid();
+  @Override
+  public String getFlightMode() {
+    return flightMode;
   }
-
-  public int getMessageId() {
-    return MISSION_CURRENT;
-  }
-
-  public boolean isValid() {
-    return valid;
-  }
-
-  public int getSequence() {
-    return sequence;
-  }
-
 }

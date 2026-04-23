@@ -29,7 +29,7 @@ import java.util.Map;
  * MAVLink GLOBAL_POSITION_INT mapped to a typed packet.
  */
 @Getter
-public final class GlobalPositionPacket implements MavlinkPacket {
+public final class GlobalPositionPacket extends MavlinkPacket {
 
   private final double latitude;
   private final double longitude;
@@ -58,14 +58,6 @@ public final class GlobalPositionPacket implements MavlinkPacket {
     this.headingDegrees = getDouble(fields, "hdg") / 100.0;
 
     this.valid = frame.isValid();
-  }
-
-  private double getDouble(Map<String, Object> fields, String key) {
-    Object value = fields.get(key);
-    if (value == null) {
-      return Double.NaN;
-    }
-    return ((Number) value).doubleValue();
   }
 
 }

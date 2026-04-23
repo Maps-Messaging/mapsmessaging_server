@@ -29,6 +29,8 @@ public class MavlinkMessageIds {
   public static final int GLOBAL_POSITION_INT = 33;
   public static final int MISSION_CURRENT = 42;
   public static final int ALTITUDE = 141;
+  public static final int AUTOPILOT_VERSION = 148;
+  public static final int HOME_POSITION = 242;
   public static final int EXTENDED_SYS_STATE = 245;
 
   private MavlinkMessageIds() {

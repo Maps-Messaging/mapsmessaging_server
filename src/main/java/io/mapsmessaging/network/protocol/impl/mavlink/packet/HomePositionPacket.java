@@ -19,35 +19,52 @@
 
 package io.mapsmessaging.network.protocol.impl.mavlink.packet;
 
-
 import io.mapsmessaging.mavlink.ProcessedFrame;
+import lombok.Getter;
 
 import java.util.Map;
 
-import static io.mapsmessaging.network.protocol.impl.mavlink.packet.MavlinkMessageIds.MISSION_CURRENT;
+import static io.mapsmessaging.network.protocol.impl.mavlink.packet.MavlinkMessageIds.HOME_POSITION;
 
-public class MissionCurrentPacket extends MavlinkPacket {
+@Getter
+public class HomePositionPacket extends MavlinkPacket {
 
-  private final int sequence;
+  private final int latitudeRaw;
+  private final int longitudeRaw;
+  private final int altitudeRaw;
   private final boolean valid;
 
-  public MissionCurrentPacket(ProcessedFrame frame) {
+  public HomePositionPacket(ProcessedFrame frame) {
     Map<String, Object> fields = frame.getFields();
 
-    this.sequence = getInt(fields, "seq");
+    this.latitudeRaw = getInt(fields, "latitude");
+    this.longitudeRaw = getInt(fields, "longitude");
+    this.altitudeRaw = getInt(fields, "altitude");
     this.valid = frame.isValid();
   }
 
   public int getMessageId() {
-    return MISSION_CURRENT;
+    return HOME_POSITION;
   }
 
-  public boolean isValid() {
-    return valid;
+  public double getLatitude() {
+    if (latitudeRaw == Integer.MIN_VALUE || latitudeRaw == -1) {
+      return Double.NaN;
+    }
+    return latitudeRaw / 10_000_000.0;
   }
 
-  public int getSequence() {
-    return sequence;
+  public double getLongitude() {
+    if (longitudeRaw == Integer.MIN_VALUE || longitudeRaw == -1) {
+      return Double.NaN;
+    }
+    return longitudeRaw / 10_000_000.0;
   }
 
+  public double getAltitudeMeters() {
+    if (altitudeRaw == Integer.MIN_VALUE || altitudeRaw == -1) {
+      return Double.NaN;
+    }
+    return altitudeRaw / 1000.0;
+  }
 }

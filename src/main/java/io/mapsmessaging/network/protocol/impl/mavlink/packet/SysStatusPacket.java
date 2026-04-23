@@ -28,7 +28,7 @@ import java.util.Map;
 import static io.mapsmessaging.network.protocol.impl.mavlink.packet.MavlinkMessageIds.SYS_STATUS;
 
 @Getter
-public class SysStatusPacket implements MavlinkPacket {
+public class SysStatusPacket extends MavlinkPacket {
 
   private final double voltageVolts;
   private final double currentAmps;
@@ -46,14 +46,6 @@ public class SysStatusPacket implements MavlinkPacket {
 
   public int getMessageId() {
     return SYS_STATUS;
-  }
-
-  private double getDouble(Map<String, Object> fields, String key) {
-    Object value = fields.get(key);
-    if (value == null) {
-      return Double.NaN;
-    }
-    return ((Number) value).doubleValue();
   }
 
   private double getCurrent(Map<String, Object> fields) {

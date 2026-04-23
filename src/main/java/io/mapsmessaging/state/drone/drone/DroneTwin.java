@@ -19,9 +19,9 @@
 
 package io.mapsmessaging.state.drone.drone;
 
-import io.mapsmessaging.dto.rest.config.protocol.impl.VehicleClass;
 import io.mapsmessaging.state.drone.core.EntityTwin;
 import io.mapsmessaging.state.drone.core.TwinType;
+import io.mapsmessaging.state.drone.model.autopilot.AutopilotState;
 import io.mapsmessaging.state.drone.model.EnvironmentalState;
 import io.mapsmessaging.state.drone.model.SystemState;
 import io.mapsmessaging.state.drone.model.TimeState;
@@ -31,9 +31,7 @@ import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
 
-import java.security.NoSuchAlgorithmException;
 import java.time.Instant;
-import java.util.UUID;
 
 import static io.mapsmessaging.state.drone.util.SyntheticMmsiGenerator.generateSyntheticMmsi;
 
@@ -88,6 +86,13 @@ public class DroneTwin extends EntityTwin {
       nullable = true
   )
   private String callSign;
+
+
+  @Schema(
+      description = "Decoded autopilot information for the vehicle.",
+      nullable = true
+  )
+  private AutopilotState autopilotState;
 
 
   @Schema(

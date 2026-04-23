@@ -26,6 +26,7 @@ import io.mapsmessaging.state.drone.core.TwinManager;
 import io.mapsmessaging.state.drone.core.TwinUpdateContext;
 import io.mapsmessaging.state.drone.drone.DroneTwin;
 import io.mapsmessaging.state.drone.model.LinkState;
+import io.mapsmessaging.state.drone.model.autopilot.AutopilotState;
 
 import java.time.Instant;
 
@@ -62,13 +63,30 @@ public class HeartbeatListener implements Listener {
         : Instant.now();
 
     twinManager.updateTwin(twinId, twin -> {
-      DroneTwin drone = (DroneTwin) twin;
+      DroneTwin droneTwin = (DroneTwin) twin;
 
-      drone.setVehicleClass(VehicleClass.fromMavType(packet.getVehicleClass()));
-      drone.setArmed(packet.isArmed());
-      drone.setFlightMode(packet.getFlightMode());
+      droneTwin.setVehicleClass(VehicleClass.fromMavType(packet.getVehicleClass()));
+      droneTwin.setArmed(packet.isArmed());
+      droneTwin.setFlightMode(packet.getFlightMode());
 
-      LinkState linkState = drone.getLinkState();
+      AutopilotState autopilotState = MavlinkAutopilotSupport.resolveAutopilotState(
+          droneTwin.getAutopilotState(),
+          packet.getAutopilot()
+      );
+
+      MavlinkAutopilotSupport.populateHeartbeatFields(
+          autopilotState,
+          packet.getAutopilot(),
+          packet.getBaseMode(),
+          packet.getCustomMode(),
+          packet.getSystemStatus(),
+          packet.getMavlinkVersion()
+      );
+
+      droneTwin.setAutopilotState(autopilotState);
+      droneTwin.setFlightMode(autopilotState.getFlightMode());
+
+      LinkState linkState = droneTwin.getLinkState();
       if (linkState == null) {
         linkState = new LinkState();
       }
@@ -76,9 +94,9 @@ public class HeartbeatListener implements Listener {
       linkState.setConnected(true);
       linkState.setState("CONNECTED");
 
-      drone.setLinkState(linkState);
-      drone.setConnectivityUpdatedAt(now);
-      drone.setOperationalUpdatedAt(now);
+      droneTwin.setLinkState(linkState);
+      droneTwin.setConnectivityUpdatedAt(now);
+      droneTwin.setOperationalUpdatedAt(now);
 
     }, context);
   }

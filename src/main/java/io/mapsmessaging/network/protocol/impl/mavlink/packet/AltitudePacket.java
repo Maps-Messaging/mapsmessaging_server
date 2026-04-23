@@ -28,7 +28,7 @@ import java.util.Map;
 import static io.mapsmessaging.network.protocol.impl.mavlink.packet.MavlinkMessageIds.ALTITUDE;
 
 @Getter
-public class AltitudePacket implements MavlinkPacket {
+public class AltitudePacket extends MavlinkPacket {
 
   private final double altitudeAmslMeters;
   private final double altitudeRelativeMeters;
@@ -46,11 +46,5 @@ public class AltitudePacket implements MavlinkPacket {
     return ALTITUDE;
   }
 
-  private double getDouble(Map<String, Object> fields, String key) {
-    Object value = fields.get(key);
-    if (value == null) {
-      return Double.NaN;
-    }
-    return ((Number) value).doubleValue();
-  }
+
 }

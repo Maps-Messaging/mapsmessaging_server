@@ -19,6 +19,7 @@
 
 package io.mapsmessaging.network.protocol.impl.mavlink.listener;
 
+import io.mapsmessaging.network.protocol.impl.mavlink.packet.AutopilotVersionPacket;
 import io.mapsmessaging.network.protocol.impl.mavlink.packet.MavlinkPacket;
 
 import io.mapsmessaging.state.drone.core.TwinManager;
@@ -37,11 +38,13 @@ public class ListenerManager {
     listeners.put(GpsRawIntListener.LISTENER_ID, new GpsRawIntListener(twinManager));
     listeners.put(GlobalPositionListener.LISTENER_ID, new GlobalPositionListener(twinManager));
     listeners.put(AttitudeListener.LISTENER_ID, new AttitudeListener(twinManager));
+    listeners.put(AutopilotVersionListener.LISTENER_ID, new AutopilotVersionListener(twinManager));
     listeners.put(HeartbeatListener.LISTENER_ID, new HeartbeatListener(twinManager));
     listeners.put(SystemTimeListener.LISTENER_ID, new SystemTimeListener(twinManager));
     listeners.put(AltitudeListener.LISTENER_ID, new AltitudeListener(twinManager));
     listeners.put(ExtendedSysStateListener.LISTENER_ID, new ExtendedSysStateListener(twinManager));
     listeners.put(MissionCurrentListener.LISTENER_ID, new MissionCurrentListener(twinManager));
+    listeners.put(HomePositionListener.LISTENER_ID, new HomePositionListener(twinManager));
   }
 
   public boolean handle(int messageId, String twinId, MavlinkPacket pkt, TwinUpdateContext context) {

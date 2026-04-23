@@ -75,7 +75,6 @@ public class Disconnected extends State implements EndPointConnectedCallback {
       String tokenGeneratorName = properties.getAuthConfig().getTokenGenerator();
       String transformationName = properties.getLinkTransformation();
 
-      if(username == null) {username = "anonymous";}
       if(sessionId == null) {sessionId = UUID.randomUUID().toString();}
       ProtocolMessageTransformation transformation = TransformationManager.getInstance().getTransformation(transformationName);
       if (transformation == null) {
@@ -120,6 +119,7 @@ public class Disconnected extends State implements EndPointConnectedCallback {
       List<String> jmxPath = endPointConnection.getJMXPath();
       activeEndPoint = endPointConnection.getEndPointConnectionFactory().connect(url, selectorLoadManager, this, endPointConnection, jmxPath);
     } catch (Exception ioException) {
+      ioException.printStackTrace();
       endPointConnection.getLogger().log(ServerLogMessages.END_POINT_CONNECTION_FAILED, url, ioException);
       endPointConnection.scheduleState(new Delayed(endPointConnection), DELAYED_TIME);
     }

@@ -26,7 +26,7 @@ import lombok.Getter;
 import java.util.Map;
 
 @Getter
-public class AttitudePacket implements MavlinkPacket {
+public class AttitudePacket extends MavlinkPacket {
 
   private final double rollDegrees;
   private final double pitchDegrees;
@@ -42,11 +42,4 @@ public class AttitudePacket implements MavlinkPacket {
     this.valid = frame.isValid();
   }
 
-  private double getDouble(Map<String, Object> fields, String key) {
-    Object value = fields.get(key);
-    if (value == null) {
-      return Double.NaN;
-    }
-    return ((Number) value).doubleValue();
-  }
 }

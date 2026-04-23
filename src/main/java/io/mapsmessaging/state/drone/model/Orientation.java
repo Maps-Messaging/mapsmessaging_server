@@ -58,4 +58,16 @@ public class Orientation {
       nullable = true
   )
   private Double yawDegrees;
+
+
+  public Double getHeadingFromYaw() {
+    if (yawDegrees == null) {
+      return null;
+    }
+    double heading = yawDegrees % 360.0;
+    if (heading < 0) {
+      heading += 360.0;
+    }
+    return heading;
+  }
 }

@@ -46,7 +46,7 @@ import java.util.Map;
 import static io.mapsmessaging.network.protocol.impl.mavlink.packet.MavlinkMessageIds.EXTENDED_SYS_STATE;
 
 @Getter
-public class ExtendedSysStatePacket implements MavlinkPacket {
+public class ExtendedSysStatePacket extends MavlinkPacket {
 
   private final int landedState;
   private final int vtolState;
@@ -83,13 +83,5 @@ public class ExtendedSysStatePacket implements MavlinkPacket {
       case 5 -> "FW";
       default -> "UNDEFINED";
     };
-  }
-
-  private int getInt(Map<String, Object> fields, String key) {
-    Object value = fields.get(key);
-    if (value == null) {
-      return -1;
-    }
-    return ((Number) value).intValue();
   }
 }
