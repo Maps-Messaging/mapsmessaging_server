@@ -55,14 +55,16 @@ public class JsonMapperTransformation implements InterServerTransformation {
         return message;
       }
       JsonObject base = element.getAsJsonObject();
-      JsonObject payload  = base.getAsJsonArray("envelopes").get(0).getAsJsonObject().getAsJsonObject("payload");
-      JsonObject mutated = mapper.apply(payload.getAsJsonObject());
-
+      if(base.has("envelopes") && base.getAsJsonArray("envelopes").size() > 0){
+        base =  base.getAsJsonArray("envelopes").get(0).getAsJsonObject().getAsJsonObject("payload");
+      }
+      JsonObject mutated = mapper.apply(base);
       MessageBuilder messageBuilder = new MessageBuilder(message.getMessage());
       messageBuilder.setOpaqueData(mutated.toString().getBytes(StandardCharsets.UTF_8));
       message.setMessage(messageBuilder.build());
       return message;
     } catch (Exception ignored) {
+      ignored.printStackTrace();
       return message;
     }
   }

@@ -118,6 +118,15 @@ public class AggregatorConfigDTO extends BaseConfigDTO {
   protected int maxEventsPerTopic = 1;
 
   @Schema(
+      description = "If true, the first event seen for each input topic is emitted immediately before normal aggregation rules are applied. Useful for discovery so consumers receive an initial state without waiting for the first aggregation window.",
+      example = "true",
+      defaultValue = "false",
+      requiredMode = Schema.RequiredMode.NOT_REQUIRED,
+      nullable = false
+  )
+  protected boolean emitFirstEventImmediately = false;
+
+  @Schema(
       description = "Output transformer chain configuration. Applied to the aggregated envelope before publish.",
       requiredMode = Schema.RequiredMode.NOT_REQUIRED,
       nullable = true,

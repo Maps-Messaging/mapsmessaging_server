@@ -26,6 +26,7 @@ import io.mapsmessaging.dto.rest.config.transformer.jsonmapper.JsonMapFunction;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
+import java.time.Instant;
 
 public class JsonMapFunctions {
 
@@ -48,6 +49,8 @@ public class JsonMapFunctions {
       case TO_FLOAT -> new JsonPrimitive(asFloat(value));
       case TO_DOUBLE -> new JsonPrimitive(asDouble(value));
       case TO_BOOLEAN -> new JsonPrimitive(asBoolean(value));
+      case TO_EPOCH_SECONDS -> new JsonPrimitive(asLong(value) / 1000);
+      case DATE_TO_EPOCH_SECONDS -> new JsonPrimitive(Instant.parse(asString(value)).getEpochSecond());
       case BASE64_ENCODE -> new JsonPrimitive(
           Base64.getEncoder().encodeToString(asString(value).getBytes(StandardCharsets.UTF_8))
       );

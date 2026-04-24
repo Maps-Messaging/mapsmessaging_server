@@ -8,18 +8,39 @@ import lombok.Data;
 @Schema(description = "Maps a value from one JSON path to another, with an optional transformation.")
 public class JsonMapOpDTO {
 
-  @Schema(description = "Source JSON path.", example = "position.latitude")
+  @Schema(
+      description = "Source JSON path.",
+      requiredMode = Schema.RequiredMode.NOT_REQUIRED,
+      nullable = true,
+      example = "position.latitude"
+  )
   private String from;
 
-  @Schema(description = "Target JSON path.", example = "stanag.location.lat")
+  @Schema(
+      description = "Target JSON path.",
+      requiredMode = Schema.RequiredMode.REQUIRED,
+      nullable = false,
+      defaultValue = "",
+      example = "stanag.location.lat")
   private String to;
 
-  @Schema(description = "Optional transform function.")
+  @Schema(
+      description = "Optional transform function.",
+      requiredMode = Schema.RequiredMode.NOT_REQUIRED
+  )
   private JsonMapFunction function = JsonMapFunction.NONE;
 
-  @Schema(description = "Default value used when the source path is missing.")
+  @Schema(
+      description = "Default value used when the source path is missing.",
+      requiredMode = Schema.RequiredMode.NOT_REQUIRED,
+      defaultValue = "null"
+  )
   private JsonElement defaultValue;
 
-  @Schema(description = "If true, silently skip the mapping when the source value is missing.")
+  @Schema(
+      description = "If true, silently skip the mapping when the source value is missing.",
+      requiredMode = Schema.RequiredMode.NOT_REQUIRED,
+      defaultValue = "true"
+  )
   private boolean ignoreMissing = true;
 }

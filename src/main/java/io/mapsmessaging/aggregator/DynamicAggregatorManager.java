@@ -216,6 +216,7 @@ public class DynamicAggregatorManager implements Aggregator, ClientConnection, M
     resolved.setWindowCloseMode(templateConfig.getWindowCloseMode());
     resolved.setWindowDurationMs(templateConfig.getWindowDurationMs());
     resolved.setTimeoutMs(templateConfig.getTimeoutMs());
+    resolved.setEmitFirstEventImmediately(templateConfig.isEmitFirstEventImmediately());
     resolved.setMaxEventsPerTopic(templateConfig.getMaxEventsPerTopic());
     resolved.setOutputTransformers(templateConfig.getOutputTransformers());
 

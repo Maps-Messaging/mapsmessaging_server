@@ -62,6 +62,7 @@ public class StaticAggregator implements Aggregator, ClientConnection, MessageLi
   private final List<InterServerTransformation> transformation;
   private final WindowCloseMode windowCloseMode;
   private final boolean subscribeToInputs;
+  private final boolean emitFirstEventImmediately;
 
   private Session session;
   private Destination outboundDestination;
@@ -75,10 +76,12 @@ public class StaticAggregator implements Aggregator, ClientConnection, MessageLi
 
   public StaticAggregator(AggregatorWorkScheduler aggregatorWorkScheduler, AggregatorConfigDTO configDTO, boolean subscribeToInputs) {
     this.configDTO = configDTO;
-    this.aggregatorWorkScheduler = aggregatorWorkScheduler;
+    this.emitFirstEventImmediately = configDTO.isEmitFirstEventImmediately();
     this.windowCloseMode = configDTO.getWindowCloseMode();
-    this.subscribeToInputs = subscribeToInputs;
     this.handlers = new StreamHandler[configDTO.getInputs().size()];
+
+    this.aggregatorWorkScheduler = aggregatorWorkScheduler;
+    this.subscribeToInputs = subscribeToInputs;
     this.topicIndexMap = new ConcurrentHashMap<>();
     this.strategy = new EnvelopeAggregationStrategy();
 
@@ -119,7 +122,8 @@ public class StaticAggregator implements Aggregator, ClientConnection, MessageLi
           handlers,
           configDTO.getTimeoutMs(),
           this,
-          windowCloseMode
+          windowCloseMode,
+          emitFirstEventImmediately
       );
       aggregatorWorkScheduler.register(worker);
       logger.log(AGGREGATOR_STARTED_, configDTO.getInputs().size());

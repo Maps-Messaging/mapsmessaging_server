@@ -24,7 +24,6 @@ import com.google.gson.JsonObject;
 import io.mapsmessaging.api.transformers.jsonmutate.JsonPath;
 import io.mapsmessaging.dto.rest.config.transformer.jsonmapper.JsonMapOpDTO;
 
-
 import java.util.List;
 
 public class JsonMapper {
@@ -52,36 +51,32 @@ public class JsonMapper {
     }
 
     for (JsonMapOpDTO operation : operations) {
-      if (operation == null) {
-        continue;
-      }
-      if (operation.getFrom() == null || operation.getFrom().isBlank()) {
-        continue;
-      }
-      if (operation.getTo() == null || operation.getTo().isBlank()) {
-        continue;
-      }
-
-      JsonElement value = JsonPath.get(source, operation.getFrom());
-
-      if (value == null || value.isJsonNull()) {
-        value = operation.getDefaultValue();
-      }
-
-      if ((value == null || value.isJsonNull()) && operation.isIgnoreMissing()) {
-        continue;
-      }
-
-      value = JsonMapFunctions.apply(
-          operation.getFunction(),
-          value
-      );
-
-      if (value != null) {
-        JsonPath.set(target, operation.getTo(), value);
-      }
+      processField(operation, source, target);
     }
 
     return target;
+  }
+  private void processField(JsonMapOpDTO operation, JsonObject source, JsonObject target){
+    if ((operation == null)  ||(operation.getTo() == null || operation.getTo().isBlank()) ) {
+      return;
+    }
+
+    JsonElement value = null;
+
+    if (operation.getFrom() != null && !operation.getFrom().isBlank()) {
+      value = JsonPath.get(source, operation.getFrom());
+    }
+
+    if (value == null || value.isJsonNull()) {
+      value = operation.getDefaultValue();
+    }
+
+    if ((value == null || value.isJsonNull()) && operation.isIgnoreMissing()) {
+      return;
+    }
+    value = JsonMapFunctions.apply(operation.getFunction(), value);
+    if (value != null && !value.isJsonNull()) {
+      JsonPath.set(target, operation.getTo(), value);
+    }
   }
 }

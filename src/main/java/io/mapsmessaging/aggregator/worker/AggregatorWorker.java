@@ -39,6 +39,8 @@ public class AggregatorWorker implements AggregatorWorkItem {
   private final WindowCloseMode windowCloseMode;
   private final MessageEvent[] contributions;
   private final boolean[] seen;
+  private final boolean emitFirstEventImmediately;
+  private long currentTimeout;
 
   private long deadlineMillis;
 
@@ -48,7 +50,8 @@ public class AggregatorWorker implements AggregatorWorkItem {
       StreamHandler[] handlers,
       long timeoutMillis,
       ProcessedHandler handler,
-      WindowCloseMode windowCloseMode
+      WindowCloseMode windowCloseMode,
+      boolean emitFirstEventImmediately
   ) {
     this.name = name;
     this.mailbox = mailbox;
@@ -60,6 +63,8 @@ public class AggregatorWorker implements AggregatorWorkItem {
     this.seen = new boolean[handlers.length];
     this.windowCloseMode = windowCloseMode;
     this.deadlineMillis = -1;
+    this.emitFirstEventImmediately = emitFirstEventImmediately;
+    currentTimeout = emitFirstEventImmediately ? 100 : timeoutMillis;
   }
 
   @Override
@@ -101,7 +106,7 @@ public class AggregatorWorker implements AggregatorWorkItem {
   private void processEnvelope(AggregatorEnvelope envelope) {
     long now = System.currentTimeMillis();
     if (deadlineMillis < 0) {
-      deadlineMillis = now + timeoutMillis;
+      deadlineMillis = now + currentTimeout;
     }
     int index = envelope.getInputIndex();
     MessageEvent event = envelope.getEvent();
@@ -152,6 +157,7 @@ public class AggregatorWorker implements AggregatorWorkItem {
       contributions[i] = null;
       seen[i] = false;
     }
+    currentTimeout = timeoutMillis;
   }
 
   private void runCompletion(MessageEvent event) {

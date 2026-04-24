@@ -36,16 +36,13 @@ public class AggregatorConfig extends AggregatorConfigDTO implements Config {
 
   public AggregatorConfig(ConfigurationProperties props) {
     this.name = props.getProperty("name", "");
-    this.enabled = props.getBooleanProperty("enabled", true);
+    this.enabled = props.getBooleanProperty("enabled", enabled);
     this.outputTopic = props.getProperty("outputTopic", "");
-
     this.windowCloseMode = loadWindowCloseMode(props);
-
-    this.windowDurationMs = props.getLongProperty("windowDurationMs", 0L);
-    this.timeoutMs = props.getLongProperty("timeoutMs", 0L);
-
-    this.maxEventsPerTopic = props.getIntProperty("maxEventsPerTopic", 1);
-
+    this.emitFirstEventImmediately = props.getBooleanProperty("emitFirstEventImmediately", emitFirstEventImmediately);
+    this.windowDurationMs = props.getLongProperty("windowDurationMs", windowDurationMs);
+    this.timeoutMs = props.getLongProperty("timeoutMs", timeoutMs);
+    this.maxEventsPerTopic = props.getIntProperty("maxEventsPerTopic", maxEventsPerTopic);
     this.inputs = unpackInputs(props);
     this.outputTransformers = TransformationConfigFactory.loadChain(props.get("outputTransformers"));
   }

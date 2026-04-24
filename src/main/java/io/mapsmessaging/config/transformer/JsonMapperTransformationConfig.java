@@ -19,12 +19,12 @@
 
 package io.mapsmessaging.config.transformer;
 
-import com.google.gson.JsonParser;
 import io.mapsmessaging.configuration.ConfigurationProperties;
 import io.mapsmessaging.dto.rest.config.transformer.TransformationType;
 import io.mapsmessaging.dto.rest.config.transformer.impl.JsonMapperTransformationDTO;
 import io.mapsmessaging.dto.rest.config.transformer.jsonmapper.JsonMapFunction;
 import io.mapsmessaging.dto.rest.config.transformer.jsonmapper.JsonMapOpDTO;
+import io.mapsmessaging.utilities.GsonFactory;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -51,21 +51,26 @@ public class JsonMapperTransformationConfig extends JsonMapperTransformationDTO 
   }
 
   private void buildOperation(ConfigurationProperties props) {
-    if (!props.containsKey("from") || !props.containsKey("to")) {
+    String from = props.getProperty("from");
+    String to = props.getProperty("to");
+    String defaultValue = props.getProperty("defaultValue");
+    String function = props.getProperty("function", "NONE");
+
+    if (to == null) {
       return;
     }
 
-    String from = props.getProperty("from");
-    String to = props.getProperty("to");
-    if (from == null || to == null) {
+    if (from == null && defaultValue == null && function == null) {
       return;
     }
 
     JsonMapOpDTO operation = new JsonMapOpDTO();
     operation.setFrom(from);
     operation.setTo(to);
-    operation.setFunction(JsonMapFunction.fromString(props.getProperty("function", "NONE")));
-    operation.setDefaultValue(operation.getDefaultValue());
+    operation.setFunction(JsonMapFunction.fromString(function));
+    if(defaultValue != null) {
+      operation.setDefaultValue(GsonFactory.getInstance().getSimpleGson().toJsonTree(defaultValue));
+    }
     operations.add(operation);
   }
 
