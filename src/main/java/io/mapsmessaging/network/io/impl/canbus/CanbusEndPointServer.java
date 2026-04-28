@@ -14,8 +14,10 @@ import io.mapsmessaging.network.io.impl.Selector;
 import io.mapsmessaging.network.io.impl.serial.SerialEndPointServer;
 import io.mapsmessaging.network.protocol.ProtocolFactory;
 import io.mapsmessaging.network.protocol.ProtocolImplFactory;
+import io.mapsmessaging.utilities.threads.SimpleTaskScheduler;
 
 import java.io.IOException;
+import java.util.concurrent.TimeUnit;
 
 public class CanbusEndPointServer extends EndPointServer {
   private final EndPointManagerJMX managerMBean;
@@ -25,11 +27,7 @@ public class CanbusEndPointServer extends EndPointServer {
     super(acceptHandler, url, config);
     this.managerMBean = managerMBean;
     canbusConfig = (CanbusConfigDTO)config.getEndPointConfig();
-    try {
-      handleNewEndPoint(new CanbusEndPoint(canbusConfig, this, managerMBean.getTypePath()));
-    } catch (IOException e) {
-      // log this
-    }
+    SimpleTaskScheduler.getInstance().schedule(this::createEndPoint, 1, TimeUnit.SECONDS);
   }
 
   @Override
@@ -86,5 +84,14 @@ public class CanbusEndPointServer extends EndPointServer {
   public void selected(Selectable selectable, Selector selector, int selection) {
     // not required
   }
+
+  public void createEndPoint(){
+    try {
+      handleNewEndPoint(new CanbusEndPoint(canbusConfig, this, managerMBean.getTypePath()));
+    } catch (IOException e) {
+      // log this
+    }
+  }
+
 
 }

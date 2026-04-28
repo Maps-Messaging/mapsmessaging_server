@@ -6,9 +6,8 @@ import io.mapsmessaging.canbus.device.SerialCanDevice;
 import io.mapsmessaging.canbus.device.SocketCanDevice;
 import io.mapsmessaging.canbus.device.codec.impl.WaveshareUsbCanAStreamCodec;
 import io.mapsmessaging.canbus.device.frames.CanFrame;
-import io.mapsmessaging.config.network.SerialDeviceHelper;
-import io.mapsmessaging.devices.serial.SerialBusManager;
 import io.mapsmessaging.dto.rest.config.network.impl.CanbusConfigDTO;
+import io.mapsmessaging.dto.rest.config.network.impl.SerialConfigDTO;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.network.admin.EndPointJMX;
@@ -23,22 +22,27 @@ import java.nio.channels.SelectionKey;
 import java.util.List;
 import java.util.concurrent.FutureTask;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicLong;
 
 
-public class CanbusEndPoint extends EndPoint {
+public class CanbusEndPoint extends EndPoint implements SerialPortListener{
 
+  private static final AtomicLong idGenerator = new AtomicLong(0);
   private final AtomicBoolean closed;
-  private final CanDevice canDevice;
   private final EndPointJMX mbean;
+  private final CanbusConfigDTO config;
+
+  private final AtomicBoolean isBound = new AtomicBoolean(false);
+  private CanDevice canDevice;
 
 
   public CanbusEndPoint(CanbusConfigDTO config, EndPointServer server, List<String> jmxPath) throws IOException {
-    super(1, server);
+    super(idGenerator.incrementAndGet(), server);
     this.name = config.getDeviceName();
     this.closed = new AtomicBoolean(false);
-
+    this.config = config;
     try {
-      this.canDevice = createDevice(config);
+      this.canDevice = createDevice();
     }
     catch (Throwable th) {
       throw new IOException(th);
@@ -47,25 +51,22 @@ public class CanbusEndPoint extends EndPoint {
     this.mbean = new EndPointJMX(jmxPath, this);
   }
 
-  private CanDevice createDevice(CanbusConfigDTO config) throws IOException {
+  private CanDevice createDevice() throws IOException {
     if(config.getSerialConfig() != null && config.getSerialConfig().getSerialDevice() != null){
       SerialPort port = null;
-      int count = 0;
-      while(port == null && count < 100) {
-        port = SerialPortScanner.getInstance().allocatePort(config.getSerialConfig().getSerialDevice().getPort());
-        if(port == null) {
-          try {
-            Thread.sleep(100);
-          } catch (InterruptedException e) {
-
-          }
-        }
-        count++;
+      SerialConfigDTO serialConfig = config.getSerialConfig();
+      String serialNo = serialConfig.getSerialDevice().getSerialNo();
+      if(serialNo != null && !serialNo.isEmpty()){
+        port = SerialPortScanner.getInstance().addBySerial(serialNo, this);
       }
-      if(port == null) throw new IOException("Failed to allocate serial port after multiple attempts");
-      SerialEndPoint.configure(port, config.getSerialConfig().getSerialDevice());
-      port.openPort();
-      return new SerialCanDevice(port.getSystemPortName(), port.getInputStream(), port.getOutputStream(), new WaveshareUsbCanAStreamCodec());
+      else if(serialConfig.getSerialDevice().getPort() != null && !serialConfig.getSerialDevice().getPort().isEmpty()){
+        port = SerialPortScanner.getInstance().add(serialConfig.getSerialDevice().getPort(), this);
+      }
+      if (port != null) {
+        bind(port);
+        return canDevice;
+      }
+      return null;
     }
     else {
       return new SocketCanDevice(config.getDeviceName());
@@ -128,13 +129,55 @@ public class CanbusEndPoint extends EndPoint {
     if( closed.get()){
       throw new IOException("CanbusEndPoint is closed");
     }
-    return  canDevice.readFrame();
+    CanDevice device = null;
+    synchronized (isBound) {
+      if(isBound.get()){
+        device = canDevice;
+      }
+    }
+    if(device != null){
+      return  device.readFrame();
+    }
+    try {
+      Thread.sleep(100);
+    } catch (InterruptedException e) {
+      Thread.currentThread().interrupt();
+      throw new IOException(e);
+    }
+    return null;
   }
 
   public void writeFrame(CanFrame frame) throws IOException {
     if( closed.get()){
       throw new IOException("CanbusEndPoint is closed");
     }
-    canDevice.writeFrame(frame);
+    CanDevice device = null;
+
+    synchronized (isBound) {
+      if(isBound.get()){
+        device = canDevice;
+      }
+    }
+    if(device != null){
+      device.writeFrame(frame);
+    }
+  }
+
+  @Override
+  public void bind(SerialPort port) throws IOException {
+    SerialEndPoint.configure(port,config.getSerialConfig().getSerialDevice());
+    port.openPort();
+    synchronized (isBound) {
+      canDevice = new SerialCanDevice(port.getSystemPortName(), port.getInputStream(), port.getOutputStream(), new WaveshareUsbCanAStreamCodec());
+      isBound.set(true);
+    }
+  }
+
+  @Override
+  public void unbind(SerialPort port) throws IOException {
+    synchronized (isBound) {
+      isBound.set(false);
+      canDevice = null;
+    }
   }
 }
