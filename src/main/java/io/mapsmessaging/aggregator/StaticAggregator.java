@@ -126,9 +126,9 @@ public class StaticAggregator implements Aggregator, ClientConnection, MessageLi
           emitFirstEventImmediately
       );
       aggregatorWorkScheduler.register(worker);
-      logger.log(AGGREGATOR_STARTED_, configDTO.getInputs().size());
+      logger.log(AGGREGATOR_STARTED, configDTO.getInputs().size());
     } catch (ExecutionException | InterruptedException | TimeoutException | IOException e) {
-      logger.log(AGGREGATOR_EXCEPTION_, configDTO.getName(), e);
+      logger.log(AGGREGATOR_EXCEPTION, configDTO.getName(), e);
       Thread.currentThread().interrupt();
       stop();
     }
@@ -163,12 +163,12 @@ public class StaticAggregator implements Aggregator, ClientConnection, MessageLi
         session = null;
       }
     }
-    logger.log(AGGREGATOR_STOPPED_, configDTO.getInputs().size());
+    logger.log(AGGREGATOR_STOPPED, configDTO.getInputs().size());
   }
 
   @Override
   public void completed(MessageEvent[] contributions) {
-    logger.log(AGGREGATOR_COMPLETED_, configDTO.getName(), configDTO.getInputs().size());
+    logger.log(AGGREGATOR_COMPLETED, configDTO.getName(), configDTO.getInputs().size());
 
     Message[] events = new Message[contributions.length];
     String[] topics = new String[contributions.length];

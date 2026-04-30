@@ -40,7 +40,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.*;
 
-import static io.mapsmessaging.logging.ServerLogMessages.AGGREGATOR_EXCEPTION_;
+import static io.mapsmessaging.logging.ServerLogMessages.AGGREGATOR_EXCEPTION;
 
 public class DynamicAggregatorManager implements Aggregator, ClientConnection, MessageListener {
 
@@ -93,7 +93,7 @@ public class DynamicAggregatorManager implements Aggregator, ClientConnection, M
           TimeUnit.MILLISECONDS
       );
     } catch (ExecutionException | InterruptedException | TimeoutException |IOException e) {
-      logger.log(AGGREGATOR_EXCEPTION_, templateConfig.getName(), e);
+      logger.log(AGGREGATOR_EXCEPTION, templateConfig.getName(), e);
       Thread.currentThread().interrupt();
       stop();
     }
