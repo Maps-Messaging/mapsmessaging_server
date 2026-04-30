@@ -23,14 +23,17 @@ import io.mapsmessaging.config.Config;
 import io.mapsmessaging.configuration.ConfigurationProperties;
 import io.mapsmessaging.dto.rest.config.BaseConfigDTO;
 import io.mapsmessaging.dto.rest.config.network.impl.CanbusConfigDTO;
-import io.mapsmessaging.dto.rest.config.network.impl.LoRaSerialConfigDTO;
-import io.mapsmessaging.dto.rest.config.network.impl.SerialConfigDTO;
 
 public class CanbusConfig extends CanbusConfigDTO implements Config {
 
   public CanbusConfig(ConfigurationProperties config) {
     this.deviceName = config.getProperty("deviceName");
-    this.serialConfig = new SerialConfig(config);
+    if(config.containsKey("serial")) {
+      this.serialConfig = new SerialConfig(config);
+    }
+    else{
+      this.serialConfig = null;
+    }
     setType("canbus");
   }
 

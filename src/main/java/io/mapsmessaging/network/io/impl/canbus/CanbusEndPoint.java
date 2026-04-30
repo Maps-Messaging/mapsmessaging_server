@@ -69,6 +69,7 @@ public class CanbusEndPoint extends EndPoint implements SerialPortListener{
       return null;
     }
     else {
+      isBound.set(true);
       return new SocketCanDevice(config.getDeviceName());
     }
   }
