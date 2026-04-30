@@ -205,7 +205,7 @@ public class N2kProtocol extends Protocol {
         try {
           processPacket(formatter.parseToJson(frame.getRawData(), SchemaManager.getInstance().getDefaultParseMode()));
         } catch (ParseException e) {
-          e.printStackTrace();
+          logger.log(N2K_PROTOCOL_CANBUS_BUILD_ERROR, e);
         }
       }
       else{
@@ -234,7 +234,8 @@ public class N2kProtocol extends Protocol {
     int id = frame.canIdentifier();
     CanId canId = CanId.parse(id);
     int pgn = canId.getPgn();
-    if(pgn == 59904){
+    int dest = canId.getDestinationAddress();
+    if(pgn == 59904  && ( dest == 0xff || dest == canbusAddress) ){
       byte[] payload = frame.data();
       int requestedPgn = (payload[0] & 0xFF) | ((payload[1] & 0xFF) << 8) | ((payload[2] & 0xFF) << 16);
       AbstractAisFieldValueSource response = switch (requestedPgn) {
@@ -246,9 +247,6 @@ public class N2kProtocol extends Protocol {
       if(response != null){
         byte[] data = ((CanbusFormatter)formatter).getParser().encodeFromSource(requestedPgn, response);
         writePgn(requestedPgn, canId.getSourceAddress(), data);
-      }
-      else{
-        System.err.println("Unknown PGN: " + requestedPgn);
       }
     }
   }
