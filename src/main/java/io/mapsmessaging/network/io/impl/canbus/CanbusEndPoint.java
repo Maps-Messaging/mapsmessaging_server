@@ -11,7 +11,11 @@ import io.mapsmessaging.dto.rest.config.network.impl.SerialConfigDTO;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.network.admin.EndPointJMX;
-import io.mapsmessaging.network.io.*;
+import io.mapsmessaging.network.io.EndPoint;
+import io.mapsmessaging.network.io.EndPointServer;
+import io.mapsmessaging.network.io.InterfaceInformation;
+import io.mapsmessaging.network.io.Packet;
+import io.mapsmessaging.network.io.Selectable;
 import io.mapsmessaging.network.io.impl.serial.SerialEndPoint;
 import io.mapsmessaging.network.io.impl.serial.management.SerialPortListener;
 import io.mapsmessaging.network.io.impl.serial.management.SerialPortScanner;
@@ -24,65 +28,101 @@ import java.util.concurrent.FutureTask;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 
-
-public class CanbusEndPoint extends EndPoint implements SerialPortListener{
+public class CanbusEndPoint extends EndPoint implements SerialPortListener {
 
   private static final AtomicLong idGenerator = new AtomicLong(0);
+
   private final AtomicBoolean closed;
   private final EndPointJMX mbean;
   private final CanbusConfigDTO config;
+  private final Object deviceLock;
 
-  private final AtomicBoolean isBound = new AtomicBoolean(false);
-  private CanDevice canDevice;
-
+  private volatile CanDevice canDevice;
+  private SerialPort activeSerialPort;
+  private String activeSerialPortName;
 
   public CanbusEndPoint(CanbusConfigDTO config, EndPointServer server, List<String> jmxPath) throws IOException {
     super(idGenerator.incrementAndGet(), server);
     this.name = config.getDeviceName();
     this.closed = new AtomicBoolean(false);
     this.config = config;
-    try {
-      this.canDevice = createDevice();
+    this.deviceLock = new Object();
+
+    createDevice();
+
+    CanDevice currentDevice = canDevice;
+    if (currentDevice != null) {
+      name = currentDevice.getClass().getName();
     }
-    catch (Throwable th) {
-      throw new IOException(th);
-    }
-    name = canDevice.getClass().getName();
+
     this.mbean = new EndPointJMX(jmxPath, this);
   }
 
-  private CanDevice createDevice() throws IOException {
-    if(config.getSerialConfig() != null && config.getSerialConfig().getSerialDevice() != null){
-      SerialPort port = null;
-      SerialConfigDTO serialConfig = config.getSerialConfig();
-      String serialNo = serialConfig.getSerialDevice().getSerialNo();
-      if(serialNo != null && !serialNo.isEmpty()){
-        port = SerialPortScanner.getInstance().addBySerial(serialNo, this);
-      }
-      else if(serialConfig.getSerialDevice().getPort() != null && !serialConfig.getSerialDevice().getPort().isEmpty()){
-        port = SerialPortScanner.getInstance().add(serialConfig.getSerialDevice().getPort(), this);
-      }
-      if (port != null) {
-        bind(port);
-        return canDevice;
-      }
-      return null;
+  private void createDevice() throws IOException {
+    if (isSerialCanDevice()) {
+      registerSerialDevice();
+      return;
     }
-    else {
-      isBound.set(true);
-      return new SocketCanDevice(config.getDeviceName());
+
+    synchronized (deviceLock) {
+      canDevice = new SocketCanDevice(config.getDeviceName());
+    }
+  }
+
+  private boolean isSerialCanDevice() {
+    return config.getSerialConfig() != null
+        && config.getSerialConfig().getSerialDevice() != null;
+  }
+
+  private void registerSerialDevice() {
+    SerialConfigDTO serialConfig = config.getSerialConfig();
+
+    String serialNumber = serialConfig.getSerialDevice().getSerialNo();
+    if (serialNumber != null && !serialNumber.isEmpty()) {
+      SerialPortScanner.getInstance().addBySerial(serialNumber, this);
+      return;
+    }
+
+    String portName = serialConfig.getSerialDevice().getPort();
+    if (portName != null && !portName.isEmpty()) {
+      SerialPortScanner.getInstance().add(portName, this);
     }
   }
 
   public InterfaceInformation getInterfaceInformation() {
-    return new CanbusInterfaceInfo(canDevice.getCanCapabilities());
+    CanDevice currentDevice = canDevice;
+    if (currentDevice == null) {
+      throw new IllegalStateException("CAN bus device is not currently bound");
+    }
+    return new CanbusInterfaceInfo(currentDevice.getCanCapabilities());
   }
 
   @Override
   public void close() throws IOException {
+    if (!closed.compareAndSet(false, true)) {
+      return;
+    }
+
     mbean.close();
-    closed.set(true);
-    canDevice.close();
+
+    CanDevice deviceToClose;
+    SerialPort portToClose;
+
+    synchronized (deviceLock) {
+      deviceToClose = canDevice;
+      portToClose = activeSerialPort;
+
+      canDevice = null;
+      activeSerialPort = null;
+      activeSerialPortName = null;
+    }
+
+    IOException exception = closeDevice(deviceToClose);
+    closePort(portToClose);
+
+    if (exception != null) {
+      throw exception;
+    }
   }
 
   @Override
@@ -115,7 +155,6 @@ public class CanbusEndPoint extends EndPoint implements SerialPortListener{
     return getConfig().getAuthenticationRealm();
   }
 
-
   @Override
   protected Logger createLogger() {
     return LoggerFactory.getLogger(CanbusEndPoint.class);
@@ -127,58 +166,138 @@ public class CanbusEndPoint extends EndPoint implements SerialPortListener{
   }
 
   public CanFrame readFrame() throws IOException {
-    if( closed.get()){
+    if (closed.get()) {
       throw new IOException("CanbusEndPoint is closed");
     }
-    CanDevice device = null;
-    synchronized (isBound) {
-      if(isBound.get()){
-        device = canDevice;
-      }
+
+    CanDevice currentDevice = canDevice;
+    if (currentDevice != null) {
+      return currentDevice.readFrame();
     }
-    if(device != null){
-      return  device.readFrame();
-    }
+
     try {
       Thread.sleep(100);
-    } catch (InterruptedException e) {
+    } catch (InterruptedException exception) {
       Thread.currentThread().interrupt();
-      throw new IOException(e);
+      throw new IOException(exception);
     }
+
     return null;
   }
 
   public void writeFrame(CanFrame frame) throws IOException {
-    if( closed.get()){
+    if (closed.get()) {
       throw new IOException("CanbusEndPoint is closed");
     }
-    CanDevice device = null;
 
-    synchronized (isBound) {
-      if(isBound.get()){
-        device = canDevice;
-      }
-    }
-    if(device != null){
-      device.writeFrame(frame);
+    CanDevice currentDevice = canDevice;
+    if (currentDevice != null) {
+      currentDevice.writeFrame(frame);
     }
   }
 
   @Override
   public void bind(SerialPort port) throws IOException {
-    SerialEndPoint.configure(port,config.getSerialConfig().getSerialDevice());
-    port.openPort();
-    synchronized (isBound) {
-      canDevice = new SerialCanDevice(port.getSystemPortName(), port.getInputStream(), port.getOutputStream(), new WaveshareUsbCanAStreamCodec());
-      isBound.set(true);
+    if (closed.get()) {
+      closePort(port);
+      return;
+    }
+
+    SerialEndPoint.configure(port, config.getSerialConfig().getSerialDevice());
+
+    if (!port.isOpen() && !port.openPort()) {
+      throw new IOException("Failed to open serial CAN port: " + port.getSystemPortName());
+    }
+
+    SerialCanDevice newDevice = new SerialCanDevice(
+        port.getSystemPortName(),
+        port.getInputStream(),
+        port.getOutputStream(),
+        new WaveshareUsbCanAStreamCodec()
+    );
+
+    CanDevice oldDevice;
+    SerialPort oldPort;
+
+    synchronized (deviceLock) {
+      if (closed.get()) {
+        oldDevice = newDevice;
+        oldPort = port;
+      } else {
+        oldDevice = canDevice;
+        oldPort = activeSerialPort;
+
+        canDevice = newDevice;
+        activeSerialPort = port;
+        activeSerialPortName = port.getSystemPortName();
+        name = newDevice.getClass().getName();
+      }
+    }
+
+    closeDeviceQuietly(oldDevice);
+
+    if (oldPort != null && oldPort != port) {
+      closePort(oldPort);
+    }
+
+    if (closed.get()) {
+      closePort(oldPort);
     }
   }
 
   @Override
   public void unbind(SerialPort port) throws IOException {
-    synchronized (isBound) {
-      isBound.set(false);
+    CanDevice deviceToClose = null;
+    SerialPort portToClose = null;
+
+    synchronized (deviceLock) {
+      String portName = port.getSystemPortName();
+
+      if (activeSerialPortName == null || !activeSerialPortName.equals(portName)) {
+        return;
+      }
+
+      deviceToClose = canDevice;
+      portToClose = activeSerialPort;
+
       canDevice = null;
+      activeSerialPort = null;
+      activeSerialPortName = null;
+      name = config.getDeviceName();
+    }
+
+    IOException exception = closeDevice(deviceToClose);
+    closePort(portToClose);
+
+    if (exception != null) {
+      throw exception;
+    }
+  }
+
+  private IOException closeDevice(CanDevice device) {
+    if (device == null) {
+      return null;
+    }
+
+    try {
+      device.close();
+      return null;
+    } catch (IOException exception) {
+      return exception;
+    }
+  }
+
+  private void closeDeviceQuietly(CanDevice device) {
+    try {
+      closeDevice(device);
+    } catch (Exception ignored) {
+      // ignored deliberately during hotplug replacement
+    }
+  }
+
+  private void closePort(SerialPort port) {
+    if (port != null && port.isOpen()) {
+      port.closePort();
     }
   }
 }
