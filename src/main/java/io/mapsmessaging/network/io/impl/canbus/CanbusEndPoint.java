@@ -20,6 +20,7 @@ import io.mapsmessaging.network.io.impl.serial.SerialEndPoint;
 import io.mapsmessaging.network.io.impl.serial.management.SerialPortListener;
 import io.mapsmessaging.network.io.impl.serial.management.SerialPortScanner;
 
+import java.io.EOFException;
 import java.io.IOException;
 import java.nio.channels.ClosedChannelException;
 import java.nio.channels.SelectionKey;
@@ -74,7 +75,7 @@ public class CanbusEndPoint extends EndPoint implements SerialPortListener {
         && config.getSerialConfig().getSerialDevice() != null;
   }
 
-  private void registerSerialDevice() {
+  private void registerSerialDevice() throws IOException {
     SerialConfigDTO serialConfig = config.getSerialConfig();
 
     String serialNumber = serialConfig.getSerialDevice().getSerialNo();
@@ -85,7 +86,10 @@ public class CanbusEndPoint extends EndPoint implements SerialPortListener {
 
     String portName = serialConfig.getSerialDevice().getPort();
     if (portName != null && !portName.isEmpty()) {
-      SerialPortScanner.getInstance().add(portName, this);
+      SerialPort port = SerialPortScanner.getInstance().add(portName, this);
+      if(port != null){
+        bind(port);
+      }
     }
   }
 
@@ -172,7 +176,13 @@ public class CanbusEndPoint extends EndPoint implements SerialPortListener {
 
     CanDevice currentDevice = canDevice;
     if (currentDevice != null) {
-      return currentDevice.readFrame();
+      try {
+        return currentDevice.readFrame();
+      } catch (EOFException e) {
+        if(currentDevice instanceof SerialCanDevice){
+          unbind(activeSerialPort);
+        }
+      }
     }
 
     try {
