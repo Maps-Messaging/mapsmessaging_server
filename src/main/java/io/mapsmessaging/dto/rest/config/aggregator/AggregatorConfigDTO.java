@@ -127,10 +127,10 @@ public class AggregatorConfigDTO extends BaseConfigDTO {
   protected boolean emitFirstEventImmediately = false;
 
   @Schema(
-      description = "Output transformer chain configuration. Applied to the aggregated envelope before publish.",
+      description = "Transformer chain configuration. Each entry defines a transformation applied in order.",
+      type = "array",
       requiredMode = Schema.RequiredMode.NOT_REQUIRED,
-      nullable = true,
-      implementation = io.mapsmessaging.dto.rest.config.transformer.TransformationConfigDTO.class
+      nullable = true
   )
   protected List<TransformationConfigDTO> outputTransformers;
 

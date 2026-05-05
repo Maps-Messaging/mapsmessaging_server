@@ -52,7 +52,6 @@ public class AggregatorInputConfigDTO extends BaseConfigDTO {
       example = "speed > 10 AND region = 'AU'",
       requiredMode = Schema.RequiredMode.NOT_REQUIRED,
       nullable = true,
-      minLength = 1,
       maxLength = 8192
   )
   protected String selector;
@@ -70,7 +69,6 @@ public class AggregatorInputConfigDTO extends BaseConfigDTO {
   @Schema(
       description = "Contribution policy for this input within a window",
       example = "FIRST",
-      allowableValues = {"FIRST", "LAST"},
       defaultValue = "LAST",
       requiredMode = Schema.RequiredMode.NOT_REQUIRED,
       nullable = true

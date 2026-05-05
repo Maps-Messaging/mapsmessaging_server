@@ -19,6 +19,7 @@
 package io.mapsmessaging.dto.rest.config.transformer.impl;
 
 import io.mapsmessaging.dto.rest.config.transformer.TransformationConfigDTO;
+import io.mapsmessaging.dto.rest.config.transformer.TransformationType;
 import io.mapsmessaging.dto.rest.config.transformer.jsonmutate.JsonMutateOpDTO;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -33,7 +34,8 @@ import static io.mapsmessaging.dto.rest.config.transformer.TransformationType.JS
 @EqualsAndHashCode(callSuper = true)
 @Schema(
     title = "JSON Mutate Transformation DTO",
-    description = "Applies a small set of JSON mutations: set/remove/rename using dot paths."
+    description = "Applies a small set of JSON mutations: set/remove/rename using dot paths.",
+    additionalProperties = Schema.AdditionalPropertiesValue.TRUE
 )
 public class JsonMutateTransformationDTO extends TransformationConfigDTO {
 

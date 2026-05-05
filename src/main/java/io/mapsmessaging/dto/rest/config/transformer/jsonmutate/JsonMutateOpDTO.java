@@ -18,7 +18,6 @@
 
 package io.mapsmessaging.dto.rest.config.transformer.jsonmutate;
 
-import com.google.gson.JsonElement;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -66,7 +65,13 @@ public class JsonMutateOpDTO {
   @Schema(
       description = "Value for set. Stored as JSON element so it can be number/string/object/array.",
       requiredMode = Schema.RequiredMode.NOT_REQUIRED,
-      nullable = true
+      nullable = true,
+      oneOf = {
+          Object.class,
+          String.class,
+          Number.class,
+          Boolean.class
+      }
   )
-  protected JsonElement value;
+  protected Object  value;
 }

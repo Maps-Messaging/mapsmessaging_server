@@ -22,6 +22,7 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import io.mapsmessaging.dto.rest.config.transformer.jsonmutate.JsonMutateOpDTO;
 import io.mapsmessaging.dto.rest.config.transformer.jsonmutate.JsonMutateOperation;
+import io.mapsmessaging.utilities.GsonFactory;
 
 import java.util.List;
 
@@ -45,7 +46,8 @@ public class JsonMutator {
 
       JsonMutateOperation op = operation.getOp();
       if (op == JsonMutateOperation.SET) {
-        applySet(input, operation.getPath(), operation.getValue());
+        JsonElement value =  GsonFactory.getInstance().getSimpleGson().toJsonTree(operation.getValue());
+        applySet(input, operation.getPath(), value);
       } else if (op == JsonMutateOperation.REMOVE) {
         applyRemove(input, operation.getPath());
       } else if (op == JsonMutateOperation.RENAME) {

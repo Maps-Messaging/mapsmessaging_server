@@ -89,7 +89,7 @@ public class AggregatorManagerConfigDTO extends BaseManagerConfigDTO {
   protected List<AggregatorConfigDTO> aggregatorConfigList;
 
   public AggregatorManagerConfigDTO() {
-    super("AggreagtorManagerConfigDTO");
+    super("AggregatorManagerConfigDTO");
   }
 
   @Override

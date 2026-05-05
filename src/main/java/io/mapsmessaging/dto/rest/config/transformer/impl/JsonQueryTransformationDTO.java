@@ -27,7 +27,11 @@ import lombok.EqualsAndHashCode;
 
 @Data
 @EqualsAndHashCode(callSuper = true)
-@Schema(description = "Transformation DTO that runs JsonQuery over incoming messages.")
+@Schema(
+    description = "Transformation DTO that runs JsonQuery over incoming messages.",
+    additionalProperties = Schema.AdditionalPropertiesValue.TRUE
+)
+
 public class JsonQueryTransformationDTO extends TransformationConfigDTO {
 
   public JsonQueryTransformationDTO() {
