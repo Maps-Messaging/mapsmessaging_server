@@ -42,6 +42,7 @@ public enum TransformationType {
   @SerializedName("jsontoschema")
   JSON_TO_SCHEMA("jsontoschema");
 
+
   private final String wireName;
 
   TransformationType(String wireName) {

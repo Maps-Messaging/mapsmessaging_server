@@ -51,6 +51,7 @@ import lombok.NoArgsConstructor;
         @DiscriminatorMapping(value = "jsontoxml", schema = JsonToXmlTransformationDTO.class),
         @DiscriminatorMapping(value = "xmltojson", schema = XmlToJsonTransformationDTO.class),
         @DiscriminatorMapping(value = "jsontoschema", schema = JsonToSchemaTransformationDTO.class),
+        @DiscriminatorMapping(value = "schematojson", schema = SchemaToJsonTransformationDTO.class),
         @DiscriminatorMapping(value = "jsontovalue", schema = JsonToValueTransformationDTO.class),
         @DiscriminatorMapping(value = "jsonquery", schema = JsonQueryTransformationDTO.class),
         @DiscriminatorMapping(value = "geohash", schema = GeoHashResolverTransformationDTO.class),
@@ -58,29 +59,40 @@ import lombok.NoArgsConstructor;
         @DiscriminatorMapping(value = "jsonmapper", schema = JsonMapOpDTO.class),
         @DiscriminatorMapping(value = "cloudevent-envelope", schema = CloudEventEnvelopeTransformationDTO.class),
         @DiscriminatorMapping(value = "cloudevent-json", schema = CloudEventJsonTransformationDTO.class),
-        @DiscriminatorMapping(value = "cloudevent-native", schema = CloudEventNativeTransformationDTO.class),
-
+        @DiscriminatorMapping(value = "cloudevent-native", schema = CloudEventNativeTransformationDTO.class)
     },
     requiredProperties = {"type"},
     additionalProperties = Schema.AdditionalPropertiesValue.TRUE,
-    additionalPropertiesSchema = Object.class,
-    schemaResolution = Schema.SchemaResolution.INLINE
+    additionalPropertiesSchema = Object.class
 )
 @Data
 @EqualsAndHashCode(callSuper = false)
 @NoArgsConstructor
-public class TransformationConfigDTO extends BaseConfigDTO {
+public class TransformationConfigDTO {
 
   public TransformationConfigDTO(TransformationType type) {
     this.type = type;
   }
 
   @Schema(
-      description = "Type of transformation configuration. All values are lower-case and hyphen-separated.",
+      description = "Type of transformation configuration.",
+      allowableValues = {
+          "cloudevent-json",
+          "cloudevent-native",
+          "cloudevent-envelope",
+          "jsontoxml",
+          "xmltojson",
+          "jsontovalue",
+          "jsonquery",
+          "geohash",
+          "schematojson",
+          "jsonmutate",
+          "jsonmapper",
+          "jsontoschema"
+      },
       example = "jsontoxml",
       requiredMode = Schema.RequiredMode.REQUIRED,
-      nullable = false,
-      implementation = TransformationType.class
+      nullable = false
   )
   protected TransformationType type;
 }

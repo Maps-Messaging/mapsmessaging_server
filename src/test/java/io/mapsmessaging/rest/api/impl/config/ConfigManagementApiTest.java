@@ -51,7 +51,7 @@ import java.time.Instant;
 
 import static io.mapsmessaging.rest.api.Constants.URI_PATH;
 
-public class ConfigManagementApiTest extends ApiTestBase {
+class ConfigManagementApiTest extends ApiTestBase {
 
   private static final String BASE_PATH = URI_PATH + "/server/config";
 
@@ -67,7 +67,7 @@ public class ConfigManagementApiTest extends ApiTestBase {
         .extract()
         .response();
 
-    String firstSectionName = getFirstStringFromArray(response);
+    String firstSectionName = getAuthSectionNameFromArray(response);
     Assertions.assertNotNull(firstSectionName);
     Assertions.assertFalse(firstSectionName.isBlank());
   }
@@ -84,7 +84,7 @@ public class ConfigManagementApiTest extends ApiTestBase {
         .extract()
         .response();
 
-    String sectionName = getFirstStringFromArray(listResponse);
+    String sectionName = getAuthSectionNameFromArray(listResponse);
     Assertions.assertNotNull(sectionName);
     Assertions.assertFalse(sectionName.isBlank());
 
@@ -139,28 +139,42 @@ public class ConfigManagementApiTest extends ApiTestBase {
     Assertions.assertTrue(hasNonBlankStatusMessage(response));
   }
 
-  private String getFirstStringFromArray(Response response) {
+  private String getAuthSectionNameFromArray(Response response) {
     JsonPath jsonPath = response.jsonPath();
     Object raw = jsonPath.get("$");
-    if (raw == null) {
-      return null;
-    }
-    if (raw instanceof java.util.List<?> list) {
-      for (Object item : list) {
-        if (item instanceof String value && !value.isBlank()) {
-          return value;
-        }
+    switch (raw) {
+      case null -> {
+        return null;
       }
-      return null;
-    }
-    if (raw instanceof String[] values) {
-      for (String value : values) {
-        if (value != null && !value.isBlank()) {
-          return value;
+      case java.util.List<?> list -> {
+        for (Object item : list) {
+          if (item instanceof String value && !value.isBlank()) {
+            return value;
+          }
+
+          if (item instanceof java.util.Map<?, ?> map) {
+            Object name = map.get("name");
+            if (name instanceof String value && !value.isBlank() && value.equalsIgnoreCase("auth")) {
+              return value;
+            }
+          }
         }
+
+        return null;
       }
-      return null;
+      case String[] values -> {
+        for (String value : values) {
+          if (value != null && !value.isBlank()) {
+            return value;
+          }
+        }
+
+        return null;
+      }
+      default -> {
+      }
     }
+
     return null;
   }
 
