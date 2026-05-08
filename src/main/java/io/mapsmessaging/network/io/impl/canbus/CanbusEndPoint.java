@@ -2,6 +2,7 @@ package io.mapsmessaging.network.io.impl.canbus;
 
 import com.fazecast.jSerialComm.SerialPort;
 import io.mapsmessaging.canbus.device.CanDevice;
+import io.mapsmessaging.canbus.device.QueuedCanDevice;
 import io.mapsmessaging.canbus.device.SerialCanDevice;
 import io.mapsmessaging.canbus.device.SocketCanDevice;
 import io.mapsmessaging.canbus.device.codec.impl.WaveshareUsbCanAStreamCodec;
@@ -50,10 +51,8 @@ public class CanbusEndPoint extends EndPoint implements SerialPortListener {
     this.deviceLock = new Object();
 
     createDevice();
-
-    CanDevice currentDevice = canDevice;
-    if (currentDevice != null) {
-      name = currentDevice.getClass().getName();
+    if (canDevice != null) {
+      name = canDevice.getClass().getName();
     }
 
     this.mbean = new EndPointJMX(jmxPath, this);
@@ -66,7 +65,8 @@ public class CanbusEndPoint extends EndPoint implements SerialPortListener {
     }
 
     synchronized (deviceLock) {
-      canDevice = new SocketCanDevice(config.getDeviceName());
+      CanDevice physical = new SocketCanDevice(config.getDeviceName());
+      canDevice = new QueuedCanDevice(physical);
     }
   }
 
