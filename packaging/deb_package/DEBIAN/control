@@ -4,7 +4,7 @@ Section: java
 Priority: optional
 Architecture: all
 Depends: zulu21-jdk-headless | zulu21-jre-headless | openjdk-21-jdk-headless | openjdk-21-jre-headless
-Recommends: pigpiod
+Recommends: pigpiod, protobuf-compiler
 Maintainer: Maps Messaging B.V. <info@mapsmessaging.io>
 Description: A multi adapter and protocol server
  A multi adapter and protocol server for handling messaging protocols.
