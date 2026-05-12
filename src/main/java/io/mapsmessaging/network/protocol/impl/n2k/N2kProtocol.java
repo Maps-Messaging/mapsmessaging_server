@@ -80,6 +80,8 @@ public class N2kProtocol extends Protocol {
   private final SchemaConfig defaultSchemaConfig = SchemaManager.getInstance().getSchema(DEFAULT_JSON_SCHEMA);
   private final DroneMonitor droneMonitor;
   private final int canbusAddress;
+  private final String modelId;
+  private final String modelSerialCode;
 
   public N2kProtocol(CanbusEndPoint endPoint, @NotNull @NonNull ProtocolConfigDTO protocolConfig) throws IOException {
     super(endPoint, protocolConfig );
@@ -108,6 +110,8 @@ public class N2kProtocol extends Protocol {
     rawTopicTemplate =  n2kConfig.getUnknownPacketTopic().replace("{candevice}",endPoint.getName());
     parseToJson =n2kConfig.isParseToJson();
     canbusAddress = n2kConfig.getCanBusAddress();
+    modelId = n2kConfig.getModelId();
+    modelSerialCode = n2kConfig.getModelSerialCode();
     String inboundTopicName =n2kConfig.getInboundTopicName();
 
     formatter = MessageFormatterFactory.getInstance().getFormatter(canbusSchema);
@@ -239,7 +243,7 @@ public class N2kProtocol extends Protocol {
       byte[] payload = frame.data();
       int requestedPgn = (payload[0] & 0xFF) | ((payload[1] & 0xFF) << 8) | ((payload[2] & 0xFF) << 16);
       AbstractAisFieldValueSource response = switch (requestedPgn) {
-        case 126996 -> new ProductInformationFieldValueSource("Maps Messaging Server", BuildInfo.getBuildVersion(), null, null);
+        case 126996 -> new ProductInformationFieldValueSource(modelId, BuildInfo.getBuildVersion(), null, modelSerialCode);
         case 126998 -> new ConfigurationInformationFieldValueSource();
         case 60928 -> new IsoAddressClaimFieldValueSource(MessageDaemon.getInstance().getUuid().toString());
         default -> null;

@@ -114,4 +114,24 @@ public class N2KConfigDTO extends ProtocolConfigDTO {
   )
   protected boolean publishMavlinkDrones = true;
 
+  @Schema(
+      description = "NMEA 2000 model ID reported in PGN 126996 Product Information. "
+          + "Shown on connected chartplotters and MFDs as the device name.",
+      example = "Maps Messaging Server",
+      defaultValue = "Maps Messaging Server",
+      requiredMode = Schema.RequiredMode.NOT_REQUIRED,
+      nullable = true
+  )
+  protected String modelId;
+
+  @Schema(
+      description = "NMEA 2000 serial number reported in PGN 126996 Product Information. "
+          + "Shown on connected chartplotters and MFDs as the device serial number.",
+      example = "MAPS-CMRE-001",
+      defaultValue = "unknown",
+      requiredMode = Schema.RequiredMode.NOT_REQUIRED,
+      nullable = true
+  )
+  protected String modelSerialCode;
+
 }

@@ -37,6 +37,8 @@ public class N2kProtocolConfig extends N2KConfigDTO implements Config {
     this.unknownPacketTopic = config.getProperty("unknownPacketTopic", unknownPacketTopic);
     this.publishMavlinkDrones = config.getBooleanProperty("publishMavlinkDrones", publishMavlinkDrones);
     this.canBusAddress = config.getIntProperty("canBusAddress", canBusAddress);
+    this.modelId = config.getProperty("modelId", "Maps Messaging Server");
+    this.modelSerialCode = config.getProperty("modelSerialCode", "unknown");
   }
 
   @Override
@@ -74,6 +76,8 @@ public class N2kProtocolConfig extends N2KConfigDTO implements Config {
     properties.put("unknownPacketTopic", this.unknownPacketTopic);
     properties.put("publishMavlinkDrones", this.publishMavlinkDrones);
     properties.put("canBusAddress", this.canBusAddress);
+    properties.put("modelId", this.modelId);
+    properties.put("modelSerialCode", this.modelSerialCode);
     return properties;
   }
 }
