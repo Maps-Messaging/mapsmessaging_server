@@ -239,7 +239,7 @@ public class N2kProtocol extends Protocol {
       byte[] payload = frame.data();
       int requestedPgn = (payload[0] & 0xFF) | ((payload[1] & 0xFF) << 8) | ((payload[2] & 0xFF) << 16);
       AbstractAisFieldValueSource response = switch (requestedPgn) {
-        case 126996 -> new ProductInformationFieldValueSource("Maps Messaging Server", BuildInfo.getBuildVersion(), null, null);
+        case 126996 -> new ProductInformationFieldValueSource("Maps Messaging Server", BuildInfo.getBuildVersion(), "1.0", "1234567");
         case 126998 -> new ConfigurationInformationFieldValueSource();
         case 60928 -> new IsoAddressClaimFieldValueSource(MessageDaemon.getInstance().getUuid().toString());
         default -> null;
@@ -258,7 +258,7 @@ public class N2kProtocol extends Protocol {
 
   public void writePgn(int pgn, int destinationAddress, byte[] data) throws IOException {
     int canId1 = CanIdBuilder.build(pgn, 6, canbusAddress, destinationAddress);
-    List<CanFrame> frames = framePacker.packFastPacket(pgn, canId1, canbusAddress, 0, data);
+    List<CanFrame> frames = framePacker.packFastPacket(pgn, canId1, canbusAddress, destinationAddress, data);
     ((CanbusEndPoint) getEndPoint()).writeFrames(frames);
   }
 
