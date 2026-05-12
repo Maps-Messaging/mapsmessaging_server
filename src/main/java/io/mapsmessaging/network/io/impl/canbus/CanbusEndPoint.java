@@ -325,14 +325,18 @@ public class CanbusEndPoint extends EndPoint implements SerialPortListener {
   }
   private CanDevice wrapDevice(CanDevice device){
     if (config.isQueuedWritesEnabled()) {
-      return new QueuedCanDevice(
-          canDevice,
-          config.getQueueDepth(),
-          config.getBitrateBitsPerSecond(),
-          config.getMaxBusUsagePercent(),
-          config.getQueueFullPolicy(),
-          config.getWriteFailureBackoffMilliseconds()
-      );
+      try {
+        return new QueuedCanDevice(
+            device,
+            config.getQueueDepth(),
+            config.getBitrateBitsPerSecond(),
+            config.getMaxBusUsagePercent(),
+            config.getQueueFullPolicy(),
+            config.getWriteFailureBackoffMilliseconds()
+        );
+      } catch (IllegalArgumentException e) {
+        // log this but continue
+      }
     }
     return device;
   }
