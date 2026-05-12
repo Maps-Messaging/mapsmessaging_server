@@ -34,7 +34,7 @@ import java.util.Optional;
 public class Ais129809Handler extends AbstractDronePgnHandler {
 
   private static final int PGN = 129809;
-  private static final long HEARTBEAT_INTERVAL_MILLIS = 60_000L;
+  private static final long HEARTBEAT_INTERVAL_MILLIS = 600_000L;
 
   private final AisClassBStaticDataPartAMapper mapper;
 

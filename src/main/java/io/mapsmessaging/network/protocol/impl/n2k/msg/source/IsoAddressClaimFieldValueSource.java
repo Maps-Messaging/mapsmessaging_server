@@ -30,7 +30,7 @@ public class IsoAddressClaimFieldValueSource extends AbstractAisFieldValueSource
     long identityNumber = resolveIdentityNumber(name);
 
     putLong("uniqueNumber", identityNumber);
-    putLong("manufacturerCode", 2047L);
+    putLong("manufacturerCode", 1850L);
     putLong("deviceInstanceLower", 0L);
     putLong("deviceInstanceUpper", 0L);
     putLong("deviceFunction", 130L);

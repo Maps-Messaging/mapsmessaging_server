@@ -73,15 +73,12 @@ public class DroneMonitor implements TwinObserver{
     DroneEmissionState droneEmissionState = droneStateMap.computeIfAbsent(twinId, ignored -> new DroneEmissionState());
 
     long now = System.currentTimeMillis();
-
     for (AbstractDronePgnHandler handler : handlers) {
       try {
-        handler.emit(droneTwin, droneEmissionState, now)
-            .ifPresent(this::safeSendMessage);
+        handler.emit(droneTwin, droneEmissionState, now).ifPresent(this::safeSendMessage);
       }
       catch (Exception exception) {
-        // Replace with your logger if you have one on N2kProtocol or MessageDaemon.
-        exception.printStackTrace();
+        // Log this
       }
     }
   }
@@ -100,8 +97,7 @@ public class DroneMonitor implements TwinObserver{
       sendMessage(pgnEmission);
     }
     catch (IOException ioException) {
-      // Replace with your logger if you have one on N2kProtocol or MessageDaemon.
-      ioException.printStackTrace();
+      // Log this
     }
   }
 
