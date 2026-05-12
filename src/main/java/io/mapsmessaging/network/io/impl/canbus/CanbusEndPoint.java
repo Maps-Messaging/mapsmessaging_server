@@ -66,7 +66,7 @@ public class CanbusEndPoint extends EndPoint implements SerialPortListener {
 
     synchronized (deviceLock) {
       CanDevice physical = new SocketCanDevice(config.getDeviceName());
-      canDevice = new QueuedCanDevice(physical);
+      canDevice =wrapDevice(physical);
     }
   }
 
@@ -231,12 +231,13 @@ public class CanbusEndPoint extends EndPoint implements SerialPortListener {
       throw new IOException("Failed to open serial CAN port: " + port.getSystemPortName());
     }
 
-    SerialCanDevice newDevice = new SerialCanDevice(
+    CanDevice newDevice = new SerialCanDevice(
         port.getSystemPortName(),
         port.getInputStream(),
         port.getOutputStream(),
         new WaveshareUsbCanAStreamCodec()
     );
+    newDevice = wrapDevice(newDevice);
 
     CanDevice oldDevice;
     SerialPort oldPort;
@@ -321,5 +322,18 @@ public class CanbusEndPoint extends EndPoint implements SerialPortListener {
     if (port != null && port.isOpen()) {
       port.closePort();
     }
+  }
+  private CanDevice wrapDevice(CanDevice device){
+    if (config.isQueuedWritesEnabled()) {
+      return new QueuedCanDevice(
+          canDevice,
+          config.getQueueDepth(),
+          config.getBitrateBitsPerSecond(),
+          config.getMaxBusUsagePercent(),
+          config.getQueueFullPolicy(),
+          config.getWriteFailureBackoffMilliseconds()
+      );
+    }
+    return device;
   }
 }
