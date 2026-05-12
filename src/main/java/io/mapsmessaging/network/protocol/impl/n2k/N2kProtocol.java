@@ -259,9 +259,7 @@ public class N2kProtocol extends Protocol {
   public void writePgn(int pgn, int destinationAddress, byte[] data) throws IOException {
     int canId1 = CanIdBuilder.build(pgn, 6, canbusAddress, destinationAddress);
     List<CanFrame> frames = framePacker.packFastPacket(pgn, canId1, canbusAddress, 0, data);
-    for(CanFrame frame1 : frames) {
-      ((CanbusEndPoint) getEndPoint()).writeFrame(frame1);
-    }
+    ((CanbusEndPoint) getEndPoint()).writeFrames(frames);
   }
 
   public boolean processPacket(JsonObject json) {

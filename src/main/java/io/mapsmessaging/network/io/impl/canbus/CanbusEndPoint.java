@@ -206,6 +206,18 @@ public class CanbusEndPoint extends EndPoint implements SerialPortListener {
     }
   }
 
+
+  public void writeFrames(List<CanFrame> frames) throws IOException {
+    if (closed.get()) {
+      throw new IOException("CanbusEndPoint is closed");
+    }
+
+    CanDevice currentDevice = canDevice;
+    if (currentDevice != null) {
+      currentDevice.writeFrames(frames);
+    }
+  }
+
   @Override
   public void bind(SerialPort port) throws IOException {
     if (closed.get()) {
