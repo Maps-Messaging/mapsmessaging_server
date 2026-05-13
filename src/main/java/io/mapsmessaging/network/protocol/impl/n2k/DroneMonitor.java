@@ -48,15 +48,16 @@ public class DroneMonitor implements TwinObserver{
 
     AisClassBEmitterConfig config = AisClassBEmitterConfig.getDefaults();
     handlers = new ArrayList<>();
-    if(aisConfig == null){
+    if (aisConfig == null) {
       aisConfig = new N2KAisConfigDTO();
     }
-    if(aisConfig.getPgn129039().isEnabled())handlers.add(new Ais129039Handler(parser, config, aisConfig.getPgn129039().getIntervalMilliseconds()));
-    if(aisConfig.getPgn129040().isEnabled())handlers.add(new Ais129040Handler(parser, config, aisConfig.getPgn129040().getIntervalMilliseconds()));
-    if(aisConfig.getPgn129809().isEnabled())handlers.add(new Ais129809Handler(parser, config, aisConfig.getPgn129809().getIntervalMilliseconds()));
-    if(aisConfig.getPgn129810().isEnabled())handlers.add(new Ais129810Handler(parser, config, aisConfig.getPgn129810().getIntervalMilliseconds()));
+    if (aisConfig.isEnabled()) {
+      if (aisConfig.getPgn129039().isEnabled()) handlers.add(new Ais129039Handler(parser, config, aisConfig.getPgn129039().getIntervalMilliseconds()));
+      if (aisConfig.getPgn129040().isEnabled()) handlers.add(new Ais129040Handler(parser, config, aisConfig.getPgn129040().getIntervalMilliseconds()));
+      if (aisConfig.getPgn129809().isEnabled()) handlers.add(new Ais129809Handler(parser, config, aisConfig.getPgn129809().getIntervalMilliseconds()));
+      if (aisConfig.getPgn129810().isEnabled()) handlers.add(new Ais129810Handler(parser, config, aisConfig.getPgn129810().getIntervalMilliseconds()));
+    }
   }
-
   public void close() {
     MessageDaemon.getInstance().getSubSystemManager().getTwinManager().removeObserver(this);
   }
