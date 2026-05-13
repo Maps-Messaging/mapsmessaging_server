@@ -20,6 +20,7 @@
 package io.mapsmessaging.dto.rest.config.protocol.impl;
 
 import io.mapsmessaging.dto.rest.config.protocol.ProtocolConfigDTO;
+import io.mapsmessaging.dto.rest.config.protocol.impl.n2k.N2KAisConfigDTO;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -27,9 +28,15 @@ import lombok.EqualsAndHashCode;
 @Data
 @EqualsAndHashCode(callSuper = true)
 @Schema(
-    description = "N2K protocol configuration. Controls session handling, topic mapping, JSON conversion, and optional frame forwarding."
+    description = "N2K protocol configuration. Controls session handling, topic mapping, JSON conversion, optional frame forwarding, and AIS publishing."
 )
 public class N2KConfigDTO extends ProtocolConfigDTO {
+
+  public static final int DEFAULT_CAN_BUS_ADDRESS = 0x7B;
+  public static final String DEFAULT_TOPIC_NAME_TEMPLATE = "/{candevice}/{pgn}/{messageName}";
+  public static final String DEFAULT_UNKNOWN_PACKET_TOPIC = "/{candevice}/unknown";
+  public static final boolean DEFAULT_PARSE_TO_JSON = true;
+  public static final boolean DEFAULT_PUBLISH_MAVLINK_DRONES = true;
 
   public N2KConfigDTO() {
     super("n2k");
@@ -44,9 +51,8 @@ public class N2KConfigDTO extends ProtocolConfigDTO {
   )
   protected String databasePath;
 
-  
   @Schema(
-      description = "Optional XML definition to use encoded as base64",
+      description = "Optional XML definition to use encoded as base64.",
       requiredMode = Schema.RequiredMode.NOT_REQUIRED,
       nullable = true,
       minLength = 1
@@ -59,10 +65,9 @@ public class N2KConfigDTO extends ProtocolConfigDTO {
       defaultValue = "123",
       minimum = "0",
       maximum = "255",
-      requiredMode = Schema.RequiredMode.NOT_REQUIRED,
-      nullable = true
+      requiredMode = Schema.RequiredMode.NOT_REQUIRED
   )
-  protected int canBusAddress = 0x7B;
+  protected int canBusAddress = DEFAULT_CAN_BUS_ADDRESS;
 
   @Schema(
       description =
@@ -72,26 +77,24 @@ public class N2KConfigDTO extends ProtocolConfigDTO {
       defaultValue = "/{candevice}/{pgn}/{messageName}",
       requiredMode = Schema.RequiredMode.REQUIRED
   )
-  protected String topicNameTemplate = "/{candevice}/{pgn}/{messageName}";
+  protected String topicNameTemplate = DEFAULT_TOPIC_NAME_TEMPLATE;
 
   @Schema(
-      description =
-          "Topic to which raw CAN/NMEA 2000 frames are published when the PGN or message type is unknown. ",
+      description = "Topic to which raw CAN/NMEA 2000 frames are published when the PGN or message type is unknown.",
       requiredMode = Schema.RequiredMode.REQUIRED,
       nullable = false,
-      defaultValue = "/{candevice}/",
+      defaultValue = "/{candevice}/unknown",
       example = "/{candevice}/unknown"
   )
-  protected String unknownPacketTopic = "/{candevice}/unknown";
+  protected String unknownPacketTopic = DEFAULT_UNKNOWN_PACKET_TOPIC;
 
   @Schema(
-      description =
-          "Topic to which raw CAN/NMEA 2000 frames are published when the PGN or message type is unknown. ",
+      description = "Optional inbound topic name filter used when accepting N2K frames from the messaging layer.",
       requiredMode = Schema.RequiredMode.NOT_REQUIRED,
       nullable = true,
       example = "/can1/#"
   )
-  protected String inboundTopicName ;
+  protected String inboundTopicName;
 
   @Schema(
       description =
@@ -99,19 +102,24 @@ public class N2KConfigDTO extends ProtocolConfigDTO {
               + "If false, raw binary frames are published.",
       example = "true",
       defaultValue = "true",
-      requiredMode = Schema.RequiredMode.NOT_REQUIRED,
-      nullable = true
+      requiredMode = Schema.RequiredMode.NOT_REQUIRED
   )
-  protected boolean parseToJson = true;
-
+  protected boolean parseToJson = DEFAULT_PARSE_TO_JSON;
 
   @Schema(
-      description = "Monitors and publishes the mavlink drone position and details as AIS N2K events",
+      description = "Monitors and publishes MAVLink drone position and details as AIS N2K events.",
       example = "true",
       defaultValue = "true",
-      requiredMode = Schema.RequiredMode.NOT_REQUIRED,
-      nullable = true
+      requiredMode = Schema.RequiredMode.NOT_REQUIRED
   )
-  protected boolean publishMavlinkDrones = true;
+  protected boolean publishMavlinkDrones = DEFAULT_PUBLISH_MAVLINK_DRONES;
 
+  @Schema(
+      description =
+          "AIS publishing configuration used when MAVLink drones or other tracked entities are projected "
+              + "onto NMEA 2000 AIS PGNs.",
+      requiredMode = Schema.RequiredMode.NOT_REQUIRED,
+      nullable = false
+  )
+  protected N2KAisConfigDTO ais = new N2KAisConfigDTO();
 }

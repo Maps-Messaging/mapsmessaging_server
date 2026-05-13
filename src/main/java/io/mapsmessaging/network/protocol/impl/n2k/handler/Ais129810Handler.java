@@ -34,12 +34,13 @@ import java.util.Optional;
 public class Ais129810Handler extends AbstractDronePgnHandler {
 
   private static final int PGN = 129810;
-  private static final long HEARTBEAT_INTERVAL_MILLIS = 600_000L;
+  private final long intervalMillis;
 
   private final AisClassBStaticDataPartBMapper mapper;
 
-  public Ais129810Handler(N2kMessageParser n2kMessageParser, AisClassBEmitterConfig config) {
+  public Ais129810Handler(N2kMessageParser n2kMessageParser, AisClassBEmitterConfig config, long intervalMillis) {
     super(PGN, n2kMessageParser);
+    this.intervalMillis = intervalMillis;
     this.mapper = new AisClassBStaticDataPartBMapper(config);
   }
 
@@ -88,7 +89,7 @@ public class Ais129810Handler extends AbstractDronePgnHandler {
       return true;
     }
 
-    return (now - pgnEmissionState.getLastEmitAt()) >= HEARTBEAT_INTERVAL_MILLIS;
+    return (now - pgnEmissionState.getLastEmitAt()) >= intervalMillis;
   }
 
   private String buildSignature(AisClassBStaticDataPartBReport report) {

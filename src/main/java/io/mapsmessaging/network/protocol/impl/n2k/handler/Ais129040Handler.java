@@ -33,13 +33,13 @@ import java.util.Optional;
 public class Ais129040Handler extends AbstractDronePgnHandler {
 
   private static final int PGN = 129040;
-  private static final long MIN_INTERVAL_MILLIS = 1200_000L;
-  private static final long HEARTBEAT_INTERVAL_MILLIS = 10_000L;
+  private final long intervalMillis;
 
   private final AisClassBExtendedPositionMapper mapper;
 
-  public Ais129040Handler(N2kMessageParser n2kMessageParser, AisClassBEmitterConfig config) {
+  public Ais129040Handler(N2kMessageParser n2kMessageParser, AisClassBEmitterConfig config, long intervalMillis) {
     super(PGN, n2kMessageParser);
+    this.intervalMillis = intervalMillis;
     this.mapper = new AisClassBExtendedPositionMapper(config);
   }
 
@@ -84,14 +84,9 @@ public class Ais129040Handler extends AbstractDronePgnHandler {
     }
 
     long elapsed = now - pgnEmissionState.getLastEmitAt();
-    if (elapsed >= HEARTBEAT_INTERVAL_MILLIS) {
+    if (elapsed >= intervalMillis) {
       return true;
     }
-
-    if (elapsed < MIN_INTERVAL_MILLIS) {
-      return false;
-    }
-
     return hasMaterialMotionChange(droneTwin, pgnEmissionState);
   }
 

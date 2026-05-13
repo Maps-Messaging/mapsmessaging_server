@@ -134,7 +134,7 @@ public class N2kProtocol extends Protocol {
     logger.log(N2K_PROTOCOL_CREATED_AND_BOUND,endPoint.getName());
     if(((N2KConfigDTO)protocolConfig).isPublishMavlinkDrones()){
       formatAndSend(IsoAddressClaimFieldValueSource.PGN, 0xff, new IsoAddressClaimFieldValueSource(MessageDaemon.getInstance().getUuid().toString()));
-      droneMonitor = new DroneMonitor(this, ((CanbusFormatter)formatter).getParser());
+      droneMonitor = new DroneMonitor(this, ((CanbusFormatter)formatter).getParser(), n2kConfig.getAis());
       MessageDaemon.getInstance().getSubSystemManager().getTwinManager().addObserver(droneMonitor);
     }
     else{

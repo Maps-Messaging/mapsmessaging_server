@@ -21,6 +21,7 @@ package io.mapsmessaging.network.protocol.impl.n2k;
 
 import io.mapsmessaging.MessageDaemon;
 import io.mapsmessaging.canbus.j1939.n2k.codec.N2kMessageParser;
+import io.mapsmessaging.dto.rest.config.protocol.impl.n2k.N2KAisConfigDTO;
 import io.mapsmessaging.network.protocol.impl.n2k.handler.*;
 import io.mapsmessaging.network.protocol.impl.n2k.msg.AisClassBEmitterConfig;
 import io.mapsmessaging.state.drone.core.EntityTwin;
@@ -41,16 +42,19 @@ public class DroneMonitor implements TwinObserver{
   private final List<AbstractDronePgnHandler> handlers;
   private final Map<String, DroneEmissionState> droneStateMap;
 
-  public DroneMonitor(N2kProtocol n2kProtocol, N2kMessageParser parser) {
+  public DroneMonitor(N2kProtocol n2kProtocol, N2kMessageParser parser, N2KAisConfigDTO aisConfig) {
     this.n2kProtocol = n2kProtocol;
     this.droneStateMap = new ConcurrentHashMap<>();
 
     AisClassBEmitterConfig config = AisClassBEmitterConfig.getDefaults();
     handlers = new ArrayList<>();
-    handlers.add(new Ais129039Handler(parser, config));
-    handlers.add(new Ais129040Handler(parser, config));
-    handlers.add(new Ais129809Handler(parser, config));
-    handlers.add(new Ais129810Handler(parser, config));
+    if(aisConfig == null){
+      aisConfig = new N2KAisConfigDTO();
+    }
+    if(aisConfig.getPgn129039().isEnabled())handlers.add(new Ais129039Handler(parser, config, aisConfig.getPgn129039().getIntervalMilliseconds()));
+    if(aisConfig.getPgn129040().isEnabled())handlers.add(new Ais129040Handler(parser, config, aisConfig.getPgn129040().getIntervalMilliseconds()));
+    if(aisConfig.getPgn129809().isEnabled())handlers.add(new Ais129809Handler(parser, config, aisConfig.getPgn129809().getIntervalMilliseconds()));
+    if(aisConfig.getPgn129810().isEnabled())handlers.add(new Ais129810Handler(parser, config, aisConfig.getPgn129810().getIntervalMilliseconds()));
   }
 
   public void close() {
