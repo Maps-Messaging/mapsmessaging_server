@@ -81,7 +81,9 @@ public class MavlinkPayloadResolver {
       }
 
       JsonObject mavlink = json.getAsJsonObject("mavlink");
-
+      JsonObject decoded = mavlink.getAsJsonObject("payload").getAsJsonObject().getAsJsonObject("decoded");
+      mavlink.remove("payload");
+      mavlink.add("payload", decoded);
       return mavlinkFormatter.parseFromJson(mavlink);
     } catch (RuntimeException | IOException exception) {
       logger.log(MAVLINK_STATE_JSON_PARSE_FAILED, sourceName);
