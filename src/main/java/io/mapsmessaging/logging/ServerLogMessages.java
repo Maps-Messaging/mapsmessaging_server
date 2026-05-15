@@ -385,8 +385,6 @@ public enum ServerLogMessages implements LogMessage {
   MAVLINK_FAILED_FORWARD_PACKET(LEVEL.WARN, SERVER_CATEGORY.PROTOCOL, "Failed to forward mavlink packet to {}"),
   MAVLINK_DIALECT_FAILED_TO_LOAD(LEVEL.WARN, SERVER_CATEGORY.PROTOCOL, "Failed to load the mavlink dialect specifed at {}"),
   MAVLINK_DIALECT_FORMAT_FAILURES(LEVEL.WARN, SERVER_CATEGORY.PROTOCOL, "Failed to parse  the mavlink dialect specifed at {}, falling back to default dialect"),
-
-
   MAVLINK_SUCCESSFUL_FORWARD_PACKET(LEVEL.DEBUG, SERVER_CATEGORY.PROTOCOL, "Forward mavlink packet to {}"),
   MAVLINK_DETECTED_PACKET(LEVEL.DEBUG, SERVER_CATEGORY.PROTOCOL, "Detected mavlink packet from {} as {}"),
   MAVLINK_FAILED_PARSING_FORWARD_LIST(LEVEL.WARN, SERVER_CATEGORY.PROTOCOL, "Failed to parse {} as a valid address"),
@@ -904,6 +902,18 @@ public enum ServerLogMessages implements LogMessage {
   TWIN_RELATIONSHIP_REMOVED(LEVEL.DEBUG, SERVER_CATEGORY.STATE, "Removed relationship {} -> {} type {} for twin {}"),
   TWIN_PURGED(LEVEL.INFO, SERVER_CATEGORY.STATE, "Purged expired twin {}"),
   TWIN_OBSERVER_CALLBACK_FAILED(LEVEL.ERROR, SERVER_CATEGORY.STATE, "Twin observer callback failed for twin {} during {}"),
+
+  MAVLINK_STATE_DIALECT_DEFAULTED(LEVEL.DEBUG, SERVER_CATEGORY.PROTOCOL, "No MAVLink dialect specified for state subscriber, using default dialect {}"),
+  MAVLINK_STATE_DIALECT_LOADED(LEVEL.DEBUG, SERVER_CATEGORY.PROTOCOL, "Loaded MAVLink dialect {} for state subscriber"),
+  MAVLINK_STATE_DIALECT_LOAD_FAILED(LEVEL.WARN, SERVER_CATEGORY.PROTOCOL, "Failed to load MAVLink dialect {}, falling back to default dialect {}"),
+  MAVLINK_STATE_RAW_PACKET_DETECTED(LEVEL.DEBUG, SERVER_CATEGORY.PROTOCOL, "Detected raw MAVLink packet from {}"),
+  MAVLINK_STATE_JSON_PACKET_DETECTED(LEVEL.DEBUG, SERVER_CATEGORY.PROTOCOL, "Detected JSON MAVLink packet from {}"),
+  MAVLINK_STATE_UNKNOWN_PACKET_IGNORED(LEVEL.DEBUG, SERVER_CATEGORY.PROTOCOL, "Ignoring unknown MAVLink state packet from {}"),
+  MAVLINK_STATE_JSON_PARSE_FAILED(LEVEL.DEBUG, SERVER_CATEGORY.PROTOCOL, "Failed to parse JSON MAVLink state packet from {}"),
+  MAVLINK_STATE_PACKET_UNPACK_FAILED(LEVEL.DEBUG, SERVER_CATEGORY.PROTOCOL, "Failed to unpack MAVLink state packet from {}"),
+  MAVLINK_STATE_PACKET_UNPACK_EMPTY(LEVEL.DEBUG, SERVER_CATEGORY.PROTOCOL, "MAVLink state packet from {} did not produce a processed frame"),
+  MAVLINK_STATE_UNSUPPORTED_PACKET_IGNORED(LEVEL.DEBUG, SERVER_CATEGORY.PROTOCOL, "Ignoring unsupported MAVLink message {} from {}"),
+  MAVLINK_STATE_TWIN_CREATED(LEVEL.DEBUG, SERVER_CATEGORY.PROTOCOL, "Created MAVLink twin {} for system {} component {}"),
   // </editor-fold>
 
 

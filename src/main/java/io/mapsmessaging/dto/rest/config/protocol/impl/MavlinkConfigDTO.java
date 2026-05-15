@@ -3,16 +3,15 @@ package io.mapsmessaging.dto.rest.config.protocol.impl;
 import io.mapsmessaging.dto.rest.config.protocol.ProtocolConfigDTO;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Schema;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
-
 import java.util.ArrayList;
 import java.util.List;
+import lombok.Data;
+import lombok.EqualsAndHashCode;
 
 @Data
 @EqualsAndHashCode(callSuper = true)
 @Schema(
-    description = "MAVLink protocol configuration. Controls session handling, topic mapping, JSON conversion, source filtering, message filtering, raw frame forwarding, and rejected frame DLQ publishing."
+    description = "MAVLink protocol configuration. Controls session handling, topic mapping, JSON conversion, source filtering, message filtering, frame forwarding, duplicate suppression, and rejected frame publishing."
 )
 public class MavlinkConfigDTO extends ProtocolConfigDTO {
 
@@ -22,17 +21,18 @@ public class MavlinkConfigDTO extends ProtocolConfigDTO {
 
   @Schema(
       description =
-          "Fully qualified path to the MAVLink dialect XML. "
-              + "If not provided, the common dialect is used.",
-      example = "C:/path/to/dialects/common.xml",
+          "MAVLink dialect name or fully qualified path to a MAVLink dialect XML file. "
+              + "If blank, the default MAVLink dialect is used. If the value resolves to an existing file, "
+              + "it is loaded as a dialect XML path; otherwise it is treated as a dialect name.",
+      example = "common",
       defaultValue = "",
       requiredMode = Schema.RequiredMode.NOT_REQUIRED,
       nullable = true
   )
-  protected String fullyQualifiedPathToDialectXml = "";
+  protected String dialectName = "";
 
   @Schema(
-      description = "Idle session timeout in seconds. Session is closed if no MAVLink traffic is received within this period.",
+      description = "Idle session timeout in seconds. The session is closed if no MAVLink traffic is received within this period.",
       example = "600",
       minimum = "1",
       maximum = "86400",
@@ -65,7 +65,7 @@ public class MavlinkConfigDTO extends ProtocolConfigDTO {
   protected int advertiseInterval = 30;
 
   @Schema(
-      description = "Maximum number of in-flight MAVLink events per session. Limits back-pressure and memory usage.",
+      description = "Maximum number of in-flight MAVLink events per session. This limits back-pressure and memory usage.",
       example = "1",
       minimum = "1",
       maximum = "1024",
@@ -77,20 +77,21 @@ public class MavlinkConfigDTO extends ProtocolConfigDTO {
 
   @Schema(
       description =
-          "Topic name template used when publishing decoded MAVLink messages. "
-              + "Supported placeholders: {remoteSocket}, {systemId}, {systemName}, {componentId}, {messageName}.",
+          "Topic name template used when publishing accepted MAVLink messages. "
+              + "Supported placeholders: {remoteSocket}, {systemId}, {systemName}, {componentId}, {messageId}, {messageName}. "
+              + "{systemName} is populated from acceptedSources.name when a matching source entry exists.",
       example = "/{remoteSocket}/{systemId}/{componentId}/{messageName}",
       defaultValue = "/{remoteSocket}/{systemId}/{componentId}/{messageName}",
       requiredMode = Schema.RequiredMode.REQUIRED
   )
   protected String topicNameTemplate = "/{remoteSocket}/{systemId}/{componentId}/{messageName}";
 
-
   @Schema(
       description =
-          "Topic name template used when publishing MAVLink session state changes induced when sequence number monitor detects issues. "
-              + "Supported placeholders: {remoteSocket}, {systemId}, {systemName}, {componentId}, {messageName}.",
-      example = "/{remoteSocket}/{systemId}/{componentId}/{messageName}",
+          "Topic name template used when publishing MAVLink sequence monitor status changes. "
+              + "Supported placeholders: {remoteSocket}, {systemId}, {systemName}, {componentId}, {messageId}, {messageName}. "
+              + "{systemName} is populated from acceptedSources.name when a matching source entry exists.",
+      example = "/{remoteSocket}/{systemId}/{componentId}/{messageName}/status",
       defaultValue = "/{remoteSocket}/{systemId}/{componentId}/{messageName}/status",
       requiredMode = Schema.RequiredMode.REQUIRED
   )
@@ -98,8 +99,8 @@ public class MavlinkConfigDTO extends ProtocolConfigDTO {
 
   @Schema(
       description =
-          "Convert incoming MAVLink frames into JSON using the registered MAVLink message definitions. "
-              + "If false, raw binary frames are published.",
+          "Convert accepted MAVLink frames into a JSON MAVLink envelope before publishing. "
+              + "If false, the raw MAVLink frame bytes are published.",
       example = "true",
       defaultValue = "true",
       requiredMode = Schema.RequiredMode.NOT_REQUIRED,
@@ -118,8 +119,7 @@ public class MavlinkConfigDTO extends ProtocolConfigDTO {
   protected String forwardUrls = "";
 
   @Schema(
-      description =
-          "When forwarding is enabled, forward raw MAVLink frames instead of decoded messages.",
+      description = "When forwarding is enabled, forward raw MAVLink frames rather than transformed or decoded messages.",
       example = "true",
       defaultValue = "true",
       requiredMode = Schema.RequiredMode.NOT_REQUIRED,
@@ -129,10 +129,9 @@ public class MavlinkConfigDTO extends ProtocolConfigDTO {
 
   @Schema(
       description =
-          "If true, frames rejected by source or message filtering are forwarded "
-              + "as raw MAVLink frames to the configured forwardUrls. "
-              + "This allows other MAVLink systems to receive frames even when "
-              + "this server chooses not to parse or publish them locally.",
+          "If true, frames rejected by source or message filtering are still forwarded as raw MAVLink frames "
+              + "to the configured forwardUrls. This only affects forwarding; rejected frames are still not "
+              + "published to the normal accepted message topic.",
       example = "false",
       defaultValue = "false",
       requiredMode = Schema.RequiredMode.NOT_REQUIRED,
@@ -142,8 +141,7 @@ public class MavlinkConfigDTO extends ProtocolConfigDTO {
 
   @Schema(
       description =
-          "Prevent forwarding a MAVLink packet back to its source address and port "
-              + "if that address is present in forwardUrls.",
+          "Prevent forwarding a MAVLink packet back to its source address and port if that address is present in forwardUrls.",
       example = "true",
       defaultValue = "true",
       requiredMode = Schema.RequiredMode.NOT_REQUIRED,
@@ -153,8 +151,7 @@ public class MavlinkConfigDTO extends ProtocolConfigDTO {
 
   @Schema(
       description =
-          "Duplicate suppression window in milliseconds. "
-              + "Packets received with identical content within this window are dropped. "
+          "Duplicate suppression window in milliseconds. Packets received with identical content within this window are dropped. "
               + "Set to 0 to disable duplicate detection.",
       example = "0",
       minimum = "0",
@@ -168,9 +165,8 @@ public class MavlinkConfigDTO extends ProtocolConfigDTO {
   @ArraySchema(
       schema = @Schema(
           description =
-              "Global allow-list of MAVLink message IDs. "
-                  + "If empty, all MAVLink message IDs are accepted unless explicitly rejected "
-                  + "by rejectedMessageIds. If populated, only message IDs in this list are accepted."
+              "Global allow-list of MAVLink message IDs. If empty, all MAVLink message IDs are accepted unless rejected by rejectedMessageIds. "
+                  + "Per-source acceptedMessageIds in acceptedSources override this list for that source."
       )
   )
   protected List<Integer> acceptedMessageIds = new ArrayList<>();
@@ -178,29 +174,28 @@ public class MavlinkConfigDTO extends ProtocolConfigDTO {
   @ArraySchema(
       schema = @Schema(
           description =
-              "Global reject-list of MAVLink message IDs. "
-                  + "Applied after acceptedMessageIds. If empty, no message IDs are explicitly rejected."
+              "Global reject-list of MAVLink message IDs. Applied after acceptedMessageIds and per-source filtering. "
+                  + "If empty, no message IDs are explicitly rejected."
       )
   )
   protected List<Integer> rejectedMessageIds = new ArrayList<>();
 
   @ArraySchema(
       schema = @Schema(
-          implementation = MavlinkKnownSourceDTO.class,
+          implementation = MavlinkAcceptedSourceDTO.class,
           description =
-              "Registry of known MAVLink sources identified by systemId and componentId. "
-                  + "Entries may provide metadata such as a friendly name and optional "
-                  + "per-source message filtering overrides."
+              "Protocol-level MAVLink source filter entries. Each entry identifies a source by systemId and componentId, "
+                  + "optionally provides a name for topic template expansion, and may define per-source accepted message IDs. "
+                  + "This is not twin enrichment metadata; vehicle class and descriptions belong in twin configuration."
       )
   )
-  protected List<MavlinkKnownSourceDTO> knownSources = new ArrayList<>();
+  protected List<MavlinkAcceptedSourceDTO> acceptedSources = new ArrayList<>();
 
   @Schema(
       description =
-          "If true, only MAVLink sources listed in knownSources are accepted. "
+          "If true, only MAVLink sources listed in acceptedSources are accepted. "
               + "Frames from unknown systemId/componentId pairs are rejected. "
-              + "If false, unknown sources are accepted and knownSources entries "
-              + "are used only for metadata and filtering overrides.",
+              + "If false, unknown sources are accepted and acceptedSources entries are used only for naming and per-source message filtering.",
       example = "false",
       defaultValue = "false",
       requiredMode = Schema.RequiredMode.NOT_REQUIRED,
@@ -210,9 +205,8 @@ public class MavlinkConfigDTO extends ProtocolConfigDTO {
 
   @Schema(
       description =
-          "Namespace used when publishing rejected MAVLink frames. "
-              + "The rejection reason may be appended as a child topic "
-              + "(for example: /protocol/mavlink/dlq/message-id-not-accepted).",
+          "Namespace used when publishing rejected MAVLink frames. Rejected frames are frames that fail source or message filtering. "
+              + "The rejection reason may be appended as a child topic, for example /protocol/mavlink/dlq/message-id-not-accepted.",
       example = "/protocol/mavlink/dlq",
       defaultValue = "/protocol/mavlink/dlq",
       requiredMode = Schema.RequiredMode.NOT_REQUIRED
@@ -221,9 +215,8 @@ public class MavlinkConfigDTO extends ProtocolConfigDTO {
 
   @Schema(
       description =
-          "If true, rejected frame events include metadata such as source address, "
-              + "systemId, componentId, messageId, and rejection reason in addition "
-              + "to the raw MAVLink frame payload.",
+          "If true, rejected frame events include metadata such as systemId, componentId, messageId, sequence, signed flag, "
+              + "and payload. If false, the rejected frame event contains the original raw frame bytes.",
       example = "true",
       defaultValue = "true",
       requiredMode = Schema.RequiredMode.NOT_REQUIRED,

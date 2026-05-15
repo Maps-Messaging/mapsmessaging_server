@@ -20,9 +20,14 @@
 package io.mapsmessaging.dto.rest.config;
 
 import io.mapsmessaging.dto.rest.config.protocol.impl.TakProtocolDTO;
+import io.mapsmessaging.dto.rest.config.twin.MavlinkTwinConfigDTO;
+import io.mapsmessaging.dto.rest.config.twin.TwinPublishConfigDTO;
 import lombok.Data;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.EqualsAndHashCode;
+
+import java.util.ArrayList;
+import java.util.List;
 
 @Data
 @EqualsAndHashCode(callSuper = true)
@@ -88,6 +93,11 @@ public class TwinManagerConfigDTO extends BaseManagerConfigDTO {
       nullable = true
   )
   protected TwinPublishConfigDTO publish;
+
+  @Schema(
+      description = "MAVLink topic sources processed into twin state. If no entries are present, no MAVLink twin state subscribers are started."
+  )
+  protected List<MavlinkTwinConfigDTO> mavlink = new ArrayList<>();
 
   public TwinManagerConfigDTO() {
     super("TwinManagerConfigDTO");
