@@ -944,7 +944,7 @@
     <dependency>
       <groupId>org.jolokia</groupId>
       <artifactId>jolokia-core</artifactId>
-      <version>1.7.2</version>
+      <version>2.6.0</version>
     </dependency>
 
     <!-- Authentication via Amazon Cognito -->
