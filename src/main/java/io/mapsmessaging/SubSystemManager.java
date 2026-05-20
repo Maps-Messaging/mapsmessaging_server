@@ -91,7 +91,12 @@ public class SubSystemManager {
     for (AgentOrder agent : startList) {
       long start = System.currentTimeMillis();
       logger.log(MESSAGE_DAEMON_AGENT_STARTING, agent.getAgent().getName());
-      agent.getAgent().start();
+      try {
+        agent.getAgent().start();
+      } catch (Throwable e) {
+        logger.log(MESSAGE_DAEMON_AGENT_FAILED, agent.getAgent().getName(),e);
+        System.exit(2);
+      }
       logger.log(MESSAGE_DAEMON_AGENT_STARTED, agent.getAgent().getName(), (System.currentTimeMillis() - start));
     }
     logServiceManagers();
