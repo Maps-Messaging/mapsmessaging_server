@@ -1101,7 +1101,7 @@
     <dependency>
       <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-starter-websocket</artifactId>
-      <version>3.5.7</version>
+      <version>4.0.6</version>
       <scope>test</scope>
       <exclusions>
         <exclusion>
