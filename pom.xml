@@ -646,7 +646,11 @@
       <artifactId>canbus-core</artifactId>
       <version>${maps.canbus.version}</version>
     </dependency>
-
+    <dependency>
+      <groupId>io.mapsmessaging</groupId>
+      <artifactId>canbus-events</artifactId>
+      <version>${maps.canbus.version}</version>
+    </dependency>
     <dependency>
       <groupId>io.mapsmessaging</groupId>
       <artifactId>canbus-J1939</artifactId>
@@ -1093,7 +1097,7 @@
     <dependency>
       <groupId>org.springframework</groupId>
       <artifactId>spring-websocket</artifactId>
-      <version>7.0.7</version>
+      <version>6.2.14</version>
       <scope>test</scope>
     </dependency>
 
@@ -1101,7 +1105,7 @@
     <dependency>
       <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-starter-websocket</artifactId>
-      <version>4.0.6</version>
+      <version>3.5.7</version>
       <scope>test</scope>
       <exclusions>
         <exclusion>
