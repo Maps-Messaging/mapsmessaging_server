@@ -57,4 +57,6 @@ public final class MavlinkJsonEnvelopeBuilder {
 
     return root;
   }
+
+  private MavlinkJsonEnvelopeBuilder(){}
 }

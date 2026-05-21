@@ -20,11 +20,11 @@
 package io.mapsmessaging.network.protocol.impl.mavlink;
 
 import io.mapsmessaging.mavlink.ProcessedFrame;
-import io.mapsmessaging.network.protocol.impl.mavlink.listener.*;
-import io.mapsmessaging.network.protocol.impl.mavlink.packet.*;
 import io.mapsmessaging.state.drone.core.TwinManager;
 import io.mapsmessaging.state.drone.core.TwinUpdateContext;
 import io.mapsmessaging.state.drone.drone.DroneTwin;
+import io.mapsmessaging.state.mavlink.listener.*;
+import io.mapsmessaging.state.mavlink.packet.*;
 import org.junit.jupiter.api.Test;
 
 import java.time.Instant;
