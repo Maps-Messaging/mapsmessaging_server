@@ -27,11 +27,6 @@ export LOWERCASE_VERSION="${POM_VERSION,,}"
 
 DOCKER_HUB_REPOSITORY="mapsmessaging/server_daemon"
 
-AWS_ECR_REPOSITORY_URI="public.ecr.aws/u9e3v0s2"
-AWS_REGION="us-east-1"
-aws ecr-public get-login-password --region "$AWS_REGION" \
-  | docker login --username AWS --password-stdin "$AWS_ECR_REPOSITORY_URI"
-
 # ensure a buildx builder with emulation
 docker buildx create --name mapsbuilder --driver docker-container --use >/dev/null 2>&1 || true
 docker run --privileged --rm tonistiigi/binfmt --install amd64,arm64 >/dev/null
@@ -48,7 +43,6 @@ docker buildx build \
   --platform linux/amd64 \
   --no-cache \
   -t "${DOCKER_HUB_REPOSITORY}:${LOWERCASE_VERSION}-amd64" \
-  -t "${AWS_ECR_REPOSITORY_URI}/maps-messaging:server_daemon_${LOWERCASE_VERSION}" \
   --label "version=${LOWERCASE_VERSION}" \
   . --push
 
@@ -63,7 +57,6 @@ docker buildx build \
   --platform linux/arm64 \
   --no-cache \
   -t "${DOCKER_HUB_REPOSITORY}:${LOWERCASE_VERSION}-arm64" \
-  -t "${AWS_ECR_REPOSITORY_URI}/maps-messaging:server_daemon_arm_${LOWERCASE_VERSION}" \
   --label "version=${LOWERCASE_VERSION}" \
   . --push
 
