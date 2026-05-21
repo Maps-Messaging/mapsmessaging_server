@@ -10,6 +10,14 @@ steps:
       - chmod +x ./packaging/*.sh
       - ./packaging/github_release.sh $(buildkite-agent secret get GIT_HUB_TOKEN)
       - chmod +x ./packaging/scripts/*
+      - DOCKER_USER="$(buildkite-agent secret get DOCKER_USER)"
+      - DOCKER_PASSWORD="$(buildkite-agent secret get DOCKER_PASSWORD)"
+
+      - echo "Docker user: ${DOCKER_USER}"
+      - echo "Docker token length: ${#DOCKER_PASSWORD}"
+      - echo "Docker token prefix: ${DOCKER_PASSWORD:0:4}"
+
+      - echo "${DOCKER_PASSWORD}" | sudo docker login --username "${DOCKER_USER}" --password-stdin
       - sudo ./packaging/docker_build_release.sh "$(buildkite-agent secret get DOCKER_USER)" "$(buildkite-agent secret get DOCKER_PASSWORD)" "$(buildkite-agent secret get AWS_ECR_PASSWORD)"
 
     agents:
