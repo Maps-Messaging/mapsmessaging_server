@@ -17,10 +17,15 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 #
+
+set -e
+
 echo "$2" | docker login --username "$1" --password-stdin
 
 POM_VERSION=$(grep -m1 "<version>.*</version>$" pom.xml | awk -F'[><]' '{print $3}')
 export LOWERCASE_VERSION="${POM_VERSION,,}"
+
+DOCKER_HUB_REPOSITORY="mapsmessaging/server_daemon"
 
 AWS_ECR_REPOSITORY_URI="public.ecr.aws/u9e3v0s2"
 AWS_REGION="us-east-1"
@@ -42,7 +47,7 @@ sed "s/%%MAPS_VERSION%%/$POM_VERSION/g" Dockerfile.orig > Dockerfile
 docker buildx build \
   --platform linux/amd64 \
   --no-cache \
-  -t "mapsmessaging/server_daemon_${LOWERCASE_VERSION}" \
+  -t "${DOCKER_HUB_REPOSITORY}:${LOWERCASE_VERSION}-amd64" \
   -t "${AWS_ECR_REPOSITORY_URI}/maps-messaging:server_daemon_${LOWERCASE_VERSION}" \
   --label "version=${LOWERCASE_VERSION}" \
   . --push
@@ -57,7 +62,7 @@ sed "s/%%MAPS_VERSION%%/$POM_VERSION/g" Dockerfile.orig > Dockerfile
 docker buildx build \
   --platform linux/arm64 \
   --no-cache \
-  -t "mapsmessaging/server_daemon_arm_${LOWERCASE_VERSION}" \
+  -t "${DOCKER_HUB_REPOSITORY}:${LOWERCASE_VERSION}-arm64" \
   -t "${AWS_ECR_REPOSITORY_URI}/maps-messaging:server_daemon_arm_${LOWERCASE_VERSION}" \
   --label "version=${LOWERCASE_VERSION}" \
   . --push
