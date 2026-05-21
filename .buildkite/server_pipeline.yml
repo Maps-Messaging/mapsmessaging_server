@@ -14,7 +14,7 @@ steps:
       - chmod +x ./packaging/scripts/*
       - ./packaging/scripts/build_deb_package.sh $(buildkite-agent secret get NEXUS_USER) $(buildkite-agent secret get NEXUS_PASSWORD)  maps_apt_daily
       - ./packaging/scripts/build_rpm_package.sh $(buildkite-agent secret get NEXUS_USER) $(buildkite-agent secret get NEXUS_PASSWORD) maps_yum_snapshot
-      - sudo ./packaging/docker_build_release.sh $(buildkite-agent secret get DOCKER_USER) $(buildkite-agent secret get DOCKER_PASSWORD) $(buildkite-agent secret get AWS_ECR_PASSWORD)
+      - sudo ./packaging/docker_build_release.sh $(buildkite-agent secret get DOCKER_RELEASE_USERNAME) $(buildkite-agent secret get DOCKER_RELEASE_PASSWORD) $(buildkite-agent secret get AWS_ECR_PASSWORD)
 
     env:
       SONAR_TOKEN: "${SONAR_TOKEN}"
