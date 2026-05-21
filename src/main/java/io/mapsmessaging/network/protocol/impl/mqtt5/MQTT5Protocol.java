@@ -1,7 +1,7 @@
 /*
  *
  *  Copyright [ 2020 - 2024 ] Matthew Buckton
- *  Copyright [ 2024 - 2025 ] MapsMessaging B.V.
+ *  Copyright [ 2024 - 2026 ] MapsMessaging B.V.
  *
  *  Licensed under the Apache License, Version 2.0 with the Commons Clause
  *  (the "License"); you may not use this file except in compliance with the License.
@@ -24,7 +24,8 @@ import io.mapsmessaging.api.features.QualityOfService;
 import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.api.message.TypedData;
 import io.mapsmessaging.api.transformers.InterServerTransformation;
-import io.mapsmessaging.config.protocol.impl.MqttV5Config;
+import io.mapsmessaging.api.transformers.ParsedMessage;
+import io.mapsmessaging.config.protocol.impl.MqttConfig;
 import io.mapsmessaging.dto.rest.analytics.StatisticsConfigDTO;
 import io.mapsmessaging.dto.rest.config.auth.SaslConfigDTO;
 import io.mapsmessaging.dto.rest.protocol.ProtocolInformationDTO;
@@ -109,7 +110,7 @@ public class MQTT5Protocol extends Protocol {
   @Setter
   private boolean sendProblemInformation;
   @Getter
-  private final MqttV5Config mqttConfig;
+  private final MqttConfig mqttConfig;
 
   public MQTT5Protocol(EndPoint endPoint) throws IOException {
     super(endPoint, endPoint.getConfig().getProtocolConfig("mqtt"));
@@ -123,7 +124,7 @@ public class MQTT5Protocol extends Protocol {
     logger.log(ServerLogMessages.MQTT5_INITIALISATION);
     clientTopicAliasMapping = new TopicAliasMapping("Client");
     serverTopicAliasMapping = new TopicAliasMapping("Server");
-    mqttConfig = (MqttV5Config)protocolConfig;
+    mqttConfig = (MqttConfig)protocolConfig;
     maxBufferSize = mqttConfig.getMaximumBufferSize();
     serverReceiveMaximum = mqttConfig.getServerReceiveMaximum();
     clientReceiveMaximum = mqttConfig.getClientReceiveMaximum();
@@ -175,12 +176,23 @@ public class MQTT5Protocol extends Protocol {
 
   @Override
   public void connect(@NonNull @NotNull String sessionId, String username, String password) throws IOException {
+    connect(sessionId, username, password, null);
+  }
+
+  public void connect(@NonNull @NotNull String sessionId, String username, String password, Publish5 willMsg) throws IOException {
     Connect5 connect = new Connect5();
     if (username != null) {
       connect.setUsername(username);
       connect.setPassword(password.trim().toCharArray());
     }
-
+    if(willMsg != null){
+      connect.setWillFlag(true);
+      connect.setWillTopic(willMsg.getDestinationName());
+      connect.setWillMsg(willMsg.getPayload());
+      connect.setWillQOS(willMsg.getQos());
+      connect.setWillRetain(willMsg.isRetain());
+      connect.setWillProperties(willMsg.getProperties());
+    }
     connect.setSessionId(sessionId);
     writeFrame(connect);
     registerRead();
@@ -279,13 +291,20 @@ public class MQTT5Protocol extends Protocol {
     ThreadContext.put("endpoint", endPoint.getName());
     ThreadContext.put("version", getVersion());
     logger.log(ServerLogMessages.MQTT5_KEEP_ALIVE_CHECK, keepAlive);
-    long timeout = System.currentTimeMillis() - (keepAlive);
-    if (endPoint.getLastRead() < timeout && endPoint.getLastWrite() < timeout) {
-      logger.log(ServerLogMessages.MQTT5_KEEP_ALIVE_DISCONNECT);
+    long timeout = System.currentTimeMillis() - (keepAlive + 1000);
+    if (endPoint.isClient()) {
+      writeFrame(new PingReq5());
+      timeout = System.currentTimeMillis() - (keepAlive * 2);
+
+    }
+    boolean readTimeOut = endPoint.getLastRead() < timeout;
+    boolean writeTimeOut = endPoint.getLastWrite() < timeout;
+    if (readTimeOut && writeTimeOut) {
+      logger.log(ServerLogMessages.MQTT_DISCONNECT_TIMEOUT);
       try {
         close();
       } catch (IOException e) {
-        logger.log(ServerLogMessages.END_POINT_CLOSE_EXCEPTION, e);
+        // Ignore this, we are closing
       }
     }
     ThreadContext.clearMap();
@@ -395,8 +414,8 @@ public class MQTT5Protocol extends Protocol {
   }
 
   @Override
-  public void subscribeRemote(@NonNull @NotNull String resource, @NonNull @NotNull String mappedResource, @NonNull @NotNull QualityOfService qos, @Nullable ParserExecutor parser, @Nullable InterServerTransformation transformer, StatisticsConfigDTO statistics) throws IOException {
-    super.subscribeRemote(resource,mappedResource, qos, parser, transformer,statistics);
+  public void subscribeRemote(@NonNull @NotNull String resource, @NonNull @NotNull String mappedResource, @NonNull @NotNull QualityOfService qos, @Nullable ParserExecutor parser, @Nullable InterServerTransformation transformer, StatisticsConfigDTO statistics, Map<String, Object> linkProperties) throws IOException {
+    super.subscribeRemote(resource,mappedResource, qos, parser, transformer,statistics, linkProperties);
     Subscribe5 subscribe = new Subscribe5();
     subscribe.setMessageId(packetIdManager.nextPacketIdentifier());
     subscribe.getSubscriptionList().add(new SubscriptionInfo(resource, qos));
@@ -412,9 +431,9 @@ public class MQTT5Protocol extends Protocol {
   }
 
   @Override
-  public void subscribeLocal(@NonNull @NotNull String resource, @NonNull @NotNull String mappedResource, @NonNull @NotNull QualityOfService qos, @Nullable String selector, @Nullable InterServerTransformation transformer, @Nullable NamespaceFilters namespaceFilters, StatisticsConfigDTO statistics)
+  public void subscribeLocal(@NonNull @NotNull String resource, @NonNull @NotNull String mappedResource, @NonNull @NotNull QualityOfService qos, @Nullable String selector, @Nullable InterServerTransformation transformer, @Nullable NamespaceFilters namespaceFilters, StatisticsConfigDTO statistics, Map<String, Object> linkProperties)
       throws IOException {
-    super.subscribeLocal(resource, mappedResource, qos, selector, transformer, namespaceFilters, statistics);
+    super.subscribeLocal(resource, mappedResource, qos, selector, transformer, namespaceFilters, statistics, linkProperties);
     SubscriptionContextBuilder builder = createSubscriptionContextBuilder(resource, selector, qos, 1024);
     session.addSubscription(builder.build());
   }

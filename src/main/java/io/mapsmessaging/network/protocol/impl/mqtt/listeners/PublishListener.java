@@ -1,7 +1,7 @@
 /*
  *
  *  Copyright [ 2020 - 2024 ] Matthew Buckton
- *  Copyright [ 2024 - 2025 ] MapsMessaging B.V.
+ *  Copyright [ 2024 - 2026 ] MapsMessaging B.V.
  *
  *  Licensed under the Apache License, Version 2.0 with the Commons Clause
  *  (the "License"); you may not use this file except in compliance with the License.
@@ -28,6 +28,7 @@ import io.mapsmessaging.api.features.Priority;
 import io.mapsmessaging.api.features.QualityOfService;
 import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.api.message.TypedData;
+import io.mapsmessaging.api.transformers.ParsedMessage;
 import io.mapsmessaging.dto.rest.analytics.StatisticsConfigDTO;
 import io.mapsmessaging.engine.destination.MessageOverrides;
 import io.mapsmessaging.engine.destination.subscription.set.DestinationSet;
@@ -113,6 +114,21 @@ public class PublishListener extends PacketListener {
         protocol.getProtocolMessageTransformation(),
         protocol
     );
+    ParsedMessage parsed = protocol.parseInboundMessage(lookup, message);
+    if (parsed != null) {
+      lookup = parsed.getDestinationName();
+      message = parsed.getMessage();
+      sendMessage(message, lookup, session, publish, protocol, response, endPoint);
+    }
+    else{
+      if (response != null) {
+        ((MQTTProtocol) protocol).writeFrame(response);
+      }
+    }
+  }
+
+  private void sendMessage(Message message, String lookup, Session session, Publish publish, Protocol protocol, MQTTPacket response,EndPoint endPoint) throws ExecutionException, InterruptedException {
+
     CompletableFuture<Destination> future = session.findDestination(lookup, DestinationType.TOPIC);
     future.thenApply(destination -> {
       if (destination != null) {

@@ -1,7 +1,7 @@
 /*
  *
  *  Copyright [ 2020 - 2024 ] Matthew Buckton
- *  Copyright [ 2024 - 2025 ] MapsMessaging B.V.
+ *  Copyright [ 2024 - 2026 ] MapsMessaging B.V.
  *
  *  Licensed under the Apache License, Version 2.0 with the Commons Clause
  *  (the "License"); you may not use this file except in compliance with the License.
@@ -50,6 +50,28 @@ public class TrendStatistics extends AdvancedStatistics {
     sumTimestamp = 0.0;
     sumTimestampSquared = 0.0;
     sumTimestampValueProduct = 0.0;
+  }
+
+  @Override
+  public void update(Object entry) {
+    if (entry == null) {
+      return;
+    }
+    if (!(entry instanceof Number number)) {
+      mismatched++;
+      return;
+    }
+    double value = number.doubleValue();
+    if (!Double.isFinite(value)) {
+      mismatched++;
+      return;
+    }
+    update(System.nanoTime(), value);
+  }
+
+  @Override
+  protected void update(double currentValue) {
+    update(System.nanoTime(), currentValue);
   }
 
   public void update(long timestampNanos, double currentValue) {

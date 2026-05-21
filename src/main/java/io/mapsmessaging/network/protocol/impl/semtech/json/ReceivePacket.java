@@ -1,7 +1,7 @@
 /*
  *
  *  Copyright [ 2020 - 2024 ] Matthew Buckton
- *  Copyright [ 2024 - 2025 ] MapsMessaging B.V.
+ *  Copyright [ 2024 - 2026 ] MapsMessaging B.V.
  *
  *  Licensed under the Apache License, Version 2.0 with the Commons Clause
  *  (the "License"); you may not use this file except in compliance with the License.
@@ -37,8 +37,7 @@ public class ReceivePacket {
   private long rfch;
   private long stat;
   private String modu;
-  private String datr_s;
-  private long datr;
+  private String datr;
   private String codr;
   private long rssi;
   private double lsnr;

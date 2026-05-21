@@ -1,7 +1,7 @@
 /*
  *
  *  Copyright [ 2020 - 2024 ] Matthew Buckton
- *  Copyright [ 2024 - 2025 ] MapsMessaging B.V.
+ *  Copyright [ 2024 - 2026 ] MapsMessaging B.V.
  *
  *  Licensed under the Apache License, Version 2.0 with the Commons Clause
  *  (the "License"); you may not use this file except in compliance with the License.
@@ -20,13 +20,15 @@
 package io.mapsmessaging.rest.responses;
 
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 import java.util.List;
 
+@NoArgsConstructor
 public class StringListResponse extends BaseResponse {
 
   @Getter
-  private final List<String> data;
+  private List<String> data;
 
   public StringListResponse(List<String> data) {
     this.data = data;

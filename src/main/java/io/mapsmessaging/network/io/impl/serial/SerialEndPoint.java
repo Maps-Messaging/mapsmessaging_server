@@ -1,7 +1,7 @@
 /*
  *
  *  Copyright [ 2020 - 2024 ] Matthew Buckton
- *  Copyright [ 2024 - 2025 ] MapsMessaging B.V.
+ *  Copyright [ 2024 - 2026 ] MapsMessaging B.V.
  *
  *  Licensed under the Apache License, Version 2.0 with the Commons Clause
  *  (the "License"); you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@
 package io.mapsmessaging.network.io.impl.serial;
 
 import com.fazecast.jSerialComm.SerialPort;
+import io.mapsmessaging.dto.rest.config.network.SerialDeviceDTO;
 import io.mapsmessaging.dto.rest.config.network.impl.SerialConfigDTO;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
@@ -34,12 +35,12 @@ import java.io.OutputStream;
 import java.nio.channels.SelectionKey;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.FutureTask;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.LockSupport;
 
 import static com.fazecast.jSerialComm.SerialPort.TIMEOUT_READ_BLOCKING;
+import static com.fazecast.jSerialComm.SerialPort.TIMEOUT_WRITE_BLOCKING;
 
 public class SerialEndPoint extends EndPoint implements StreamEndPoint {
 
@@ -62,20 +63,18 @@ public class SerialEndPoint extends EndPoint implements StreamEndPoint {
 
     this.serialPort = serialPort;
     name = serialPort.getSystemPortName();
-    configure(serialPort, config);
+    configure(serialPort, config.getSerialDevice());
     serialPort.openPort();
     outputStream = serialPort.getOutputStream();
     inputStream = serialPort.getInputStream();
     mbean = new EndPointJMX(jmxPath, this);
     jmxParentPath = mbean.getTypePath();
-    streamHandler = new SimpleStreamHandler(config.getBufferSize());
+    streamHandler = new SimpleStreamHandler(config.getSerialDevice().getBufferSize());
   }
 
-  public static void configure(SerialPort serialPort,  SerialConfigDTO config) {
-    serialPort.setBaudRate(config.getBaudRate());
-    serialPort.setComPortParameters(config.getBaudRate(), config.getDataBits(), getStopBits(config), getParity(config));
-    serialPort.setFlowControl(config.getFlowControl());
-    serialPort.setComPortTimeouts(TIMEOUT_READ_BLOCKING, config.getReadTimeOut(), config.getWriteTimeOut());
+  public static void configure(SerialPort serialPort, SerialDeviceDTO config) {
+    setupCommPort(serialPort, config);
+    serialPort.setComPortTimeouts(TIMEOUT_READ_BLOCKING | TIMEOUT_WRITE_BLOCKING, config.getReadTimeOut(), config.getWriteTimeOut());
   }
 
   @Override
@@ -137,6 +136,11 @@ public class SerialEndPoint extends EndPoint implements StreamEndPoint {
   }
 
   @Override
+  public String getRemoteSocketAddress() {
+    return serialPort.getSystemPortName();
+  }
+
+  @Override
   public StreamHandler getStreamHandler() {
     return streamHandler;
   }
@@ -146,15 +150,28 @@ public class SerialEndPoint extends EndPoint implements StreamEndPoint {
     streamHandler = handler;
   }
 
-  public static int getStopBits(SerialConfigDTO config) {
-    return switch (config.getStopBits().toLowerCase()) {
-      case "2" -> SerialPort.TWO_STOP_BITS;
-      case "1.5" -> SerialPort.ONE_POINT_FIVE_STOP_BITS;
-      default -> SerialPort.ONE_STOP_BIT;
-    };
+  public static void setupCommPort(SerialPort serialPort, SerialDeviceDTO config) {
+    serialPort.setBaudRate(config.getBaudRate());
+    serialPort.setComPortParameters(config.getBaudRate(), config.getDataBits(), getStopBits(config), getParity(config));
+    serialPort.setFlowControl(config.getFlowControl());
   }
 
-  public static int getParity(SerialConfigDTO config) {
+  public static int getStopBits(SerialDeviceDTO config) {
+    double stopBits = config.getStopBits();
+
+    if (Double.compare(stopBits, 1.0) == 0) {
+      return SerialPort.ONE_STOP_BIT;
+    }
+    if (Double.compare(stopBits, 2.0) == 0) {
+      return SerialPort.TWO_STOP_BITS;
+    }
+    if (Double.compare(stopBits, 1.5) == 0) {
+      return SerialPort.ONE_POINT_FIVE_STOP_BITS;
+    }
+    return SerialPort.ONE_STOP_BIT;
+  }
+
+  public static int getParity(SerialDeviceDTO config) {
     return switch (config.getParity().toLowerCase()) {
       case "o" -> SerialPort.ODD_PARITY;
       case "e" -> SerialPort.EVEN_PARITY;

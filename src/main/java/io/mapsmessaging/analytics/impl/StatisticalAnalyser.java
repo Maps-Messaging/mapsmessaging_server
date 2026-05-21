@@ -1,7 +1,7 @@
 /*
  *
  *  Copyright [ 2020 - 2024 ] Matthew Buckton
- *  Copyright [ 2024 - 2025 ] MapsMessaging B.V.
+ *  Copyright [ 2024 - 2026 ] MapsMessaging B.V.
  *
  *  Licensed under the Apache License, Version 2.0 with the Commons Clause
  *  (the "License"); you may not use this file except in compliance with the License.
@@ -28,9 +28,11 @@ import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.dto.rest.analytics.StatisticsConfigDTO;
 import io.mapsmessaging.engine.schema.SchemaManager;
 import io.mapsmessaging.schemas.formatters.MessageFormatter;
+import io.mapsmessaging.schemas.formatters.ParseException;
 import io.mapsmessaging.selector.IdentifierResolver;
 import org.jetbrains.annotations.NotNull;
 
+import java.io.IOException;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -73,21 +75,29 @@ public class StatisticalAnalyser implements Analyser {
   public Message ingest(@NotNull Message event) {
     if(formatter == null) {
       String schemaId = event.getSchemaId();
-      formatter = SchemaManager.getInstance().getMessageFormatter(schemaId);
+      try {
+        formatter = SchemaManager.getInstance().getMessageFormatter(schemaId);
+      } catch (IOException e) {
+        // log
+      }
     }
     if(formatter != null) {
-      IdentifierResolver resolver = formatter.parse(event.getOpaqueData());
-      if(statistics.isEmpty()) {
-        loadEntries(resolver);
-      }
-      for(Map.Entry<String, Statistics> entry : statistics.entrySet()) {
-        Object val = resolver.get(entry.getKey());
-        if(val != null) {
-          entry.getValue().update(val);
+      try {
+        IdentifierResolver resolver = formatter.parse(event.getOpaqueData(), SchemaManager.getInstance().getDefaultParseMode());
+        if(statistics.isEmpty()) {
+          loadEntries(resolver);
         }
-        else{
-          entry.getValue().incrementMismatch();
+        for(Map.Entry<String, Statistics> entry : statistics.entrySet()) {
+          Object val = resolver.get(entry.getKey());
+          if(val != null) {
+            entry.getValue().update(val);
+          }
+          else{
+            entry.getValue().incrementMismatch();
+          }
         }
+      } catch (ParseException e) {
+        // log this
       }
 
       counter++;
@@ -117,12 +127,10 @@ public class StatisticalAnalyser implements Analyser {
   private void loadEntries(IdentifierResolver resolver) {
     resolver.getKeys().forEach(key -> {
       boolean ignored = ignoreList != null && !ignoreList.isEmpty() &&
-          ignoreList.stream().anyMatch(s -> s.startsWith(key));
+          ignoreList.stream().anyMatch(s -> s.equals(key));
 
       if (!ignored) {
-        boolean inEntries = entries.isEmpty() ||
-            entries.stream().anyMatch(s -> s.startsWith(key));
-
+        boolean inEntries = entries.isEmpty() || entries.stream().anyMatch(s -> s.equals(key));
         if (inEntries) {
           Object value = resolver.get(key);
           if (value instanceof String) {

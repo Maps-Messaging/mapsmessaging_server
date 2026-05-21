@@ -1,7 +1,7 @@
 /*
  *
  *  Copyright [ 2020 - 2024 ] Matthew Buckton
- *  Copyright [ 2024 - 2025 ] MapsMessaging B.V.
+ *  Copyright [ 2024 - 2026 ] MapsMessaging B.V.
  *
  *  Licensed under the Apache License, Version 2.0 with the Commons Clause
  *  (the "License"); you may not use this file except in compliance with the License.
@@ -34,6 +34,7 @@ import java.io.*;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Type;
 import java.nio.charset.StandardCharsets;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
@@ -42,13 +43,14 @@ import java.time.LocalDateTime;
 @Produces(MediaType.APPLICATION_JSON)
 public class JsonHandler implements MessageBodyReader<Object>, MessageBodyWriter<Object> {
 
-  private static final Gson gson = new GsonBuilder()
+  public static final Gson gson = new GsonBuilder()
       .serializeNulls()
       .setPrettyPrinting()
       .registerTypeAdapter(LocalDateTime.class, new GsonDateTimeSerialiser())
       .registerTypeAdapter(LocalDateTime.class, new GsonDateTimeDeserialiser())
       .registerTypeAdapter(LocalDate.class, new GsonDateTimeSerialiser())
       .registerTypeAdapter(LocalDate.class, new GsonDateTimeDeserialiser())
+      .registerTypeAdapter(Instant.class, new InstantTypeAdapter())
       .create();
 
   @Override

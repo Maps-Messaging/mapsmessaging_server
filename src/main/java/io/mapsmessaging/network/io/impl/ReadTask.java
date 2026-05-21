@@ -1,7 +1,7 @@
 /*
  *
  *  Copyright [ 2020 - 2024 ] Matthew Buckton
- *  Copyright [ 2024 - 2025 ] MapsMessaging B.V.
+ *  Copyright [ 2024 - 2026 ] MapsMessaging B.V.
  *
  *  Licensed under the Apache License, Version 2.0 with the Commons Clause
  *  (the "License"); you may not use this file except in compliance with the License.
@@ -25,6 +25,7 @@ import io.mapsmessaging.logging.ThreadContext;
 import io.mapsmessaging.network.io.EndPoint;
 import io.mapsmessaging.network.io.Packet;
 import io.mapsmessaging.network.io.Selectable;
+import io.mapsmessaging.utilities.IpAddressHelper;
 import io.mapsmessaging.utilities.threads.SimpleTaskScheduler;
 
 import java.io.IOException;
@@ -78,6 +79,7 @@ public class ReadTask implements Selectable {
         }
       } else {
         ThreadContext.put("endpoint", endPoint.getName());
+        ThreadContext.put("ip", IpAddressHelper.normalizeIp(endPoint.getRemoteSocketAddress()));
         ThreadContext.put("protocol", selectorCallback.getName());
         ThreadContext.put("session", selectorCallback.getSessionId());
         ThreadContext.put("version", selectorCallback.getVersion());

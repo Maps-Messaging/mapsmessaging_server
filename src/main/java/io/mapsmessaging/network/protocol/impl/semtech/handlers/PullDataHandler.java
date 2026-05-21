@@ -1,7 +1,7 @@
 /*
  *
  *  Copyright [ 2020 - 2024 ] Matthew Buckton
- *  Copyright [ 2024 - 2025 ] MapsMessaging B.V.
+ *  Copyright [ 2024 - 2026 ] MapsMessaging B.V.
  *
  *  Licensed under the Apache License, Version 2.0 with the Commons Clause
  *  (the "License"); you may not use this file except in compliance with the License.
@@ -28,16 +28,24 @@ import io.mapsmessaging.network.protocol.impl.semtech.packet.SemTechPacket;
 import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
 
+import java.io.IOException;
+
 public class PullDataHandler extends Handler {
 
   @Override
   public void process(@NotNull @NonNull SemTechProtocol protocol, @NotNull @NonNull SemTechPacket packet) {
     PullData pullData = (PullData) packet;
-    protocol.sendPacket(new PullAck(pullData.getToken(), packet.getFromAddress()));
     GatewayInfo info = protocol.getGatewayManager().getInfo(GatewayManager.dumpIdentifier(pullData.getGatewayIdentifier()));
-    if (info != null) {
-      sendMessage(protocol, info, packet.getFromAddress());
+    if(info == null){
+      try {
+        info = protocol.getGatewayManager().getInfo(pullData.getGatewayIdentifier(), packet);
+      } catch (IOException e) {
+        // log this
+        return;
+      }
     }
+    protocol.sendPacket(new PullAck(pullData.getToken(), packet.getFromAddress()));
+    sendMessage(protocol, info, packet.getFromAddress());
   }
 
 }

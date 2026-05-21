@@ -1,7 +1,7 @@
 /*
  *
  *  Copyright [ 2020 - 2024 ] Matthew Buckton
- *  Copyright [ 2024 - 2025 ] MapsMessaging B.V.
+ *  Copyright [ 2024 - 2026 ] MapsMessaging B.V.
  *
  *  Licensed under the Apache License, Version 2.0 with the Commons Clause
  *  (the "License"); you may not use this file except in compliance with the License.
@@ -22,11 +22,12 @@ package io.mapsmessaging.engine.resources;
 import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.api.message.MessageFactory;
 import io.mapsmessaging.config.destination.DestinationConfig;
-import io.mapsmessaging.dto.rest.config.destination.CacheConfigDTO;
-import io.mapsmessaging.dto.rest.config.destination.DestinationConfigDTO;
+import io.mapsmessaging.dto.rest.config.destination.*;
 import io.mapsmessaging.engine.destination.DestinationImpl;
 import io.mapsmessaging.storage.*;
+import io.mapsmessaging.storage.impl.file.config.DeferredConfig;
 import io.mapsmessaging.storage.impl.file.config.PartitionStorageConfig;
+import io.mapsmessaging.storage.impl.file.config.S3Config;
 import io.mapsmessaging.storage.impl.memory.MemoryStorageConfig;
 import io.mapsmessaging.storage.impl.tier.memory.MemoryTierConfig;
 import io.mapsmessaging.utilities.threads.tasks.ThreadLocalContext;
@@ -47,6 +48,7 @@ public class ResourceImpl implements Resource {
 
   @Getter
   private final String name;
+
   @Getter
   private final boolean persistent;
 
@@ -75,26 +77,27 @@ public class ResourceImpl implements Resource {
     if (destinationConfig == null) {
       destinationConfig = new DestinationConfig();
       destinationConfig.setType("Memory");
-      MemoryStorageConfig memoryStorageConfig = new MemoryStorageConfig();
+      MemoryStorageConfigDTO memoryStorageConfig = new MemoryStorageConfigDTO();
       memoryStorageConfig.setCapacity(2);
       memoryStorageConfig.setExpiredEventPoll(-1);
       destinationConfig.setStorageConfig(memoryStorageConfig);
     }
 
     // Convert to storage configs
-    StorageConfig config = destinationConfig.getStorageConfig();
-    if (config == null) {
+    StorageConfigDTO config = destinationConfig.getStorageConfig();
+    StorageConfig storageConfig = convert(config);
+    if (storageConfig == null) {
       throw new IOException("Cannot build config");
     }
-    config = config.getCopy();
 
     StorageBuilder<Message> builder = new StorageBuilder<>();
-    builder.setConfig(config)
+    builder.setConfig(storageConfig)
         .setName(name)
         .setFactory(new MessageFactory());
-    if (config instanceof PartitionStorageConfig partitionStorageConfig) {
+
+    if (config instanceof PartitionStorageConfigDTO partitionStorageConfig) {
       partitionStorageConfig.setFileName(fileName);
-    } else if (config instanceof MemoryTierConfig memoryConfig) {
+    } else if (config instanceof MemoryTierConfigDTO memoryConfig) {
       memoryConfig.getPartitionStorageConfig().setFileName(fileName);
     }
 
@@ -109,7 +112,7 @@ public class ResourceImpl implements Resource {
     }
 
     Storage<Message> s = builder.build();
-    persistent = config instanceof MemoryStorageConfig;
+    persistent = config instanceof MemoryStorageConfigDTO;
     store = new AsyncStorage<>(s);
     if (destinationConfig.getAutoPauseTimeout() > 0) {
       store.enableAutoPause(TimeUnit.SECONDS.toMillis(destinationConfig.getAutoPauseTimeout()));  // Convert to milliseconds
@@ -122,6 +125,68 @@ public class ResourceImpl implements Resource {
       isClosed = true;
       store.close();
     }
+  }
+
+  private StorageConfig convert(StorageConfigDTO config) {
+    if(config instanceof MemoryStorageConfigDTO memoryConfigDTO) {
+      MemoryStorageConfig memoryStorageConfig = new MemoryStorageConfig();
+      memoryStorageConfig.setCapacity(memoryConfigDTO.getCapacity());
+      memoryStorageConfig.setExpiredEventPoll(memoryConfigDTO.getExpiredEventPoll());
+      memoryStorageConfig.setType(memoryConfigDTO.getType());
+      memoryStorageConfig.setDebug(config.isDebug());
+      memoryStorageConfig.setType("Memory");
+      return memoryStorageConfig;
+
+    }
+    else if(config instanceof PartitionStorageConfigDTO partitionStorageConfigDTO) {
+      PartitionStorageConfig partitionStorageConfig = new PartitionStorageConfig();
+      partitionStorageConfig.setType(partitionStorageConfigDTO.getType());
+      partitionStorageConfig.setDebug(config.isDebug());
+      partitionStorageConfig.setCapacity(partitionStorageConfigDTO.getCapacity());
+      partitionStorageConfig.setExpiredEventPoll(partitionStorageConfigDTO.getExpiredEventPoll());
+      partitionStorageConfig.setMaxPartitionSize(partitionStorageConfigDTO.getMaxPartitionSize());
+      partitionStorageConfig.setItemCount(partitionStorageConfigDTO.getItemCount());
+      partitionStorageConfig.setDeferredConfig(convert(partitionStorageConfigDTO.getDeferredConfig()));
+      partitionStorageConfig.setSync(partitionStorageConfigDTO.isSync());
+      partitionStorageConfig.setType("Partition");
+      return partitionStorageConfig;
+    }
+    else if(config instanceof MemoryTierConfigDTO memoryTierConfigDTO) {
+      MemoryTierConfig memoryTierConfig = new MemoryTierConfig();
+      memoryTierConfig.setDebug(config.isDebug());
+      memoryTierConfig.setType(memoryTierConfigDTO.getType());
+      memoryTierConfig.setMaximumCount(memoryTierConfigDTO.getMaximumCount());
+      memoryTierConfig.setMigrationTime(memoryTierConfigDTO.getMigrationTime());
+      memoryTierConfig.setScanInterval(memoryTierConfigDTO.getScanInterval());
+      memoryTierConfig.setMemoryStorageConfig((MemoryStorageConfig) convert(memoryTierConfigDTO.getMemoryStorageConfig()));
+      memoryTierConfig.setPartitionStorageConfig((PartitionStorageConfig) convert(memoryTierConfigDTO.getPartitionStorageConfig()));
+      memoryTierConfig.setType("MemoryTier");
+      return memoryTierConfig;
+    }
+    return null;
+  }
+
+
+  private DeferredConfig convert(DeferredConfigDTO config) {
+    DeferredConfig deferredConfig = new DeferredConfig();
+    deferredConfig.setDeferredName(config.getDeferredName());
+    deferredConfig.setDigestName(config.getDigestName());
+    deferredConfig.setIdleTime(config.getIdleTime());
+    deferredConfig.setMigrationDestination(config.getMigrationDestination());
+    if(config.getS3Config() != null) {
+      deferredConfig.setS3Config(convert(config.getS3Config()));
+    }
+    return deferredConfig;
+  }
+
+  private S3Config convert(io.mapsmessaging.dto.rest.config.S3Config config) {
+    S3Config s3Config = new S3Config();
+    s3Config.setBucketName(config.getBucket());
+    s3Config.setRegionName(config.getRegion());
+    s3Config.setAccessKeyId(config.getAccessKey());
+    s3Config.setSecretAccessKey(config.getSecretKey());
+    s3Config.setCompression(config.isCompression());
+    return s3Config;
   }
 
   @Override

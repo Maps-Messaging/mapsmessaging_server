@@ -277,3 +277,49 @@ NMEA-0183:
       BDZDA:
         description: BeiDou Time and date
         aliasOf: GPZDA
+
+      AIVDM:
+        description: AIS VHF Data-link Message (received AIS data)
+        syntax:
+          1:
+            name: totalFragments
+            type: long
+          2:
+            name: fragmentNumber
+            type: long
+          3:
+            name: sequentialMessageId
+            type: String
+          4:
+            name: radioChannel
+            type: char
+            param: '[{"A":"AIS channel A"},{"B":"AIS channel B"}]'
+          5:
+            name: payload
+            type: String
+          6:
+            name: fillBits
+            type: long
+
+      AIVDO:
+        description: AIS VHF Data-link Message (own-vessel AIS data)
+        syntax:
+          1:
+            name: totalFragments
+            type: long
+          2:
+            name: fragmentNumber
+            type: long
+          3:
+            name: sequentialMessageId
+            type: String
+          4:
+            name: radioChannel
+            type: char
+            param: '[{"A":"AIS channel A"},{"B":"AIS channel B"}]'
+          5:
+            name: payload
+            type: String
+          6:
+            name: fillBits
+            type: long

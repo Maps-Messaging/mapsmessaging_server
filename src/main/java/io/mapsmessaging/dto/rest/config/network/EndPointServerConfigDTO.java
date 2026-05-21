@@ -1,7 +1,7 @@
 /*
  *
  *  Copyright [ 2020 - 2024 ] Matthew Buckton
- *  Copyright [ 2024 - 2025 ] MapsMessaging B.V.
+ *  Copyright [ 2024 - 2026 ] MapsMessaging B.V.
  *
  *  Licensed under the Apache License, Version 2.0 with the Commons Clause
  *  (the "License"); you may not use this file except in compliance with the License.
@@ -19,9 +19,12 @@
 
 package io.mapsmessaging.dto.rest.config.network;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import io.mapsmessaging.dto.rest.config.BaseConfigDTO;
 import io.mapsmessaging.dto.rest.config.auth.SaslConfigDTO;
 import io.mapsmessaging.dto.rest.config.protocol.ProtocolConfigDTO;
+import io.mapsmessaging.dto.rest.config.protocol.impl.ExtensionConfigDTO;
+import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -38,31 +41,80 @@ import java.util.stream.Collectors;
     description = "Represents configuration settings for an endpoint server.")
 public class EndPointServerConfigDTO extends BaseConfigDTO {
 
-  @Schema(description = "Name of the endpoint server", example = "MainServer")
+  @Schema(
+      description = "Name of the endpoint server",
+      example = "MainServer",
+      requiredMode = Schema.RequiredMode.REQUIRED,
+      nullable = false
+  )
   protected String name;
 
-  @Schema(description = "URL for the endpoint server", example = "tcp://localhost:1883")
+  @Schema(
+      description = "URL for the endpoint server",
+      example = "tcp://localhost:1883",
+      requiredMode = Schema.RequiredMode.REQUIRED,
+      nullable = false,
+      minLength = 1,
+      maxLength = 2048,
+      pattern = "^(tcp|ssl|udp|dtls|ws|wss|serial)://[^\\s]+$"
+  )
   protected String url;
 
   @Schema(
       description = "Endpoint-specific configuration",
-      implementation = EndPointConfigDTO.class)
+      requiredMode = Schema.RequiredMode.REQUIRED,
+      nullable = false
+  )
   protected EndPointConfigDTO endPointConfig;
 
-  @Schema(description = "SASL configuration", implementation = SaslConfigDTO.class)
+  @Schema(
+      description = "SASL configuration",
+      requiredMode = Schema.RequiredMode.NOT_REQUIRED,
+      nullable = true,
+      implementation = SaslConfigDTO.class
+  )
   protected SaslConfigDTO saslConfig;
 
-  @Schema(description = "List of protocol configurations for the endpoint")
+  @ArraySchema(
+      schema = @Schema(implementation = ProtocolConfigDTO.class),
+      minItems = 1
+  )
+  @Schema(
+      description = "List of protocol configurations for the endpoint",
+      requiredMode = Schema.RequiredMode.REQUIRED,
+      nullable = false
+  )
   protected List<ProtocolConfigDTO> protocolConfigs;
 
-  @Schema(description = "Authentication realm", example = "defaultRealm")
+  @Schema(
+      description = "Authentication realm",
+      example = "defaultRealm",
+      requiredMode = Schema.RequiredMode.NOT_REQUIRED,
+      nullable = true
+  )
   protected String authenticationRealm;
 
-  @Schema(description = "Backlog for the endpoint server", example = "100")
-  protected int backlog;
+  @Schema(
+      description = "Backlog for the endpoint server",
+      example = "100",
+      defaultValue = "100",
+      minimum = "1",
+      maximum = "10000",
+      requiredMode = Schema.RequiredMode.NOT_REQUIRED,
+      nullable = true
+  )
+  protected int backlog = 100;
 
-  @Schema(description = "Selector task wait time", example = "10")
-  protected int selectorTaskWait;
+  @Schema(
+      description = "Selector task wait time",
+      example = "10",
+      minimum = "1",
+      maximum = "1000",
+      defaultValue = "10",
+      requiredMode = Schema.RequiredMode.NOT_REQUIRED,
+      nullable = true
+  )
+  protected int selectorTaskWait = 10;
 
   public ProtocolConfigDTO getProtocolConfig(String protocol) {
     ProtocolConfigDTO config = protocolConfigs.stream()
@@ -78,10 +130,18 @@ public class EndPointServerConfigDTO extends BaseConfigDTO {
     return config;
   }
 
+  @JsonIgnore
   public String getProtocols() {
     return protocolConfigs.stream()
-        .map(ProtocolConfigDTO::getProtocol)
+        .map(this::computeProtocol)
         .collect(Collectors.joining(", "));
+  }
+
+  private String computeProtocol(ProtocolConfigDTO protocolConfig) {
+    if (protocolConfig instanceof ExtensionConfigDTO extensionConfig) {
+      return extensionConfig.getProtocol();
+    }
+    return protocolConfig.getType();
   }
 
 }

@@ -1,4 +1,10 @@
+# Build outputs
 target/
+*.class
+*.jar
+!**/src/**/lib/*.jar
+
+# Maven
 pom.xml.tag
 pom.xml.releaseBackup
 pom.xml.versionsBackup
@@ -9,4 +15,26 @@ buildNumber.properties
 .mvn/timing.properties
 # https://github.com/takari/maven-wrapper#usage-without-binary-jar
 .mvn/wrapper/maven-wrapper.jar
-.idea
+.m2_local
+
+# IDE / editor
+.idea/
+.vscode/
+*.iml
+*.ipr
+*.iws
+
+# Local / machine-specific
+.claude/settings.local.json
+
+# Logs and temp
+*.log
+*.log.gz
+*.tmp
+*.bak
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+.gitnexus

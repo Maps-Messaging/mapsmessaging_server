@@ -1,7 +1,7 @@
 /*
  *
  *  Copyright [ 2020 - 2024 ] Matthew Buckton
- *  Copyright [ 2024 - 2025 ] MapsMessaging B.V.
+ *  Copyright [ 2024 - 2026 ] MapsMessaging B.V.
  *
  *  Licensed under the Apache License, Version 2.0 with the Commons Clause
  *  (the "License"); you may not use this file except in compliance with the License.
@@ -64,8 +64,7 @@ public class MqttSnClient {
         withPort(0);
 
     MqttsnOptions options = new MqttsnClientOptions().
-        withNetworkAddressEntry("localhost",
-            NetworkAddress.localhost(port)).
+        withNetworkAddressEntry("localhost", NetworkAddress.localhost(port)).
         withContextId(""+ThreadLocalRandom.current().nextLong()).
         withMaxMessagesInflight(1).
         withMaxWait(60000).
@@ -135,7 +134,7 @@ public class MqttSnClient {
 
 
   public void disconnect() throws MqttsnException {
-    client.disconnect();
+    client.close();
   }
 
   public void setWillData(WillDataImpl details) throws MqttsnException {

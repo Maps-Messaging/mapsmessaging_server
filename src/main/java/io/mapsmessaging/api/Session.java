@@ -1,7 +1,7 @@
 /*
  *
  *  Copyright [ 2020 - 2024 ] Matthew Buckton
- *  Copyright [ 2024 - 2025 ] MapsMessaging B.V.
+ *  Copyright [ 2024 - 2026 ] MapsMessaging B.V.
  *
  *  Licensed under the Apache License, Version 2.0 with the Commons Clause
  *  (the "License"); you may not use this file except in compliance with the License.
@@ -38,6 +38,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.io.IOException;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CompletableFuture;
@@ -71,6 +72,10 @@ public class Session {
 
   @NonNull @NotNull SessionImpl getSession() {
     return sessionImpl;
+  }
+
+  public List<DestinationInfo> getAllDestinationNames() {
+    return sessionImpl.getAllDestinations();
   }
 
   void close() throws IOException {

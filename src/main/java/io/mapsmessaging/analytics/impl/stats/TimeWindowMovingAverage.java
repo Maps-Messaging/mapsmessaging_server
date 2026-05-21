@@ -1,7 +1,7 @@
 /*
  *
  *  Copyright [ 2020 - 2024 ] Matthew Buckton
- *  Copyright [ 2024 - 2025 ] MapsMessaging B.V.
+ *  Copyright [ 2024 - 2026 ] MapsMessaging B.V.
  *
  *  Licensed under the Apache License, Version 2.0 with the Commons Clause
  *  (the "License"); you may not use this file except in compliance with the License.
@@ -34,48 +34,49 @@ public class TimeWindowMovingAverage {
   private final Deque<DataPoint> dataPoints;
 
   private double runningSum;
-  private int runningCount;
 
   public TimeWindowMovingAverage(int time, TimeUnit unit) {
     this.name = time + "_" + unit;
     this.windowNanos = unit.toNanos(time);
     this.dataPoints = new ArrayDeque<>();
     this.runningSum = 0.0;
-    this.runningCount = 0;
   }
 
-  public void add(Number value) {
+  public synchronized void add(Number value) {
+    if (value == null) {
+      return;
+    }
+    double v = value.doubleValue();
+    if (!Double.isFinite(v)) {
+      return;
+    }
     long now = System.nanoTime();
     purgeExpired(now);
-    double v = value.doubleValue();
     dataPoints.addLast(new DataPoint(v, now + windowNanos));
     runningSum += v;
-    runningCount += 1;
   }
 
-  public void update() {
+  public synchronized void update() {
     purgeExpired(System.nanoTime());
   }
 
-  public double getAverage() {
+  public synchronized double getAverage() {
     purgeExpired(System.nanoTime());
-    if (runningCount == 0) {
+    if (dataPoints.isEmpty()) {
       return 0.0;
     }
-    return runningSum / runningCount;
+    return runningSum / dataPoints.size();
   }
 
-  public void reset() {
+  public synchronized void reset() {
     dataPoints.clear();
     runningSum = 0.0;
-    runningCount = 0;
   }
 
-  private void purgeExpired(long now) {
+  private  void purgeExpired(long now) {
     while (!dataPoints.isEmpty() && dataPoints.peekFirst().expiryNanos <= now) {
       DataPoint expired = dataPoints.removeFirst();
       runningSum -= expired.value;
-      runningCount -= 1;
     }
   }
 

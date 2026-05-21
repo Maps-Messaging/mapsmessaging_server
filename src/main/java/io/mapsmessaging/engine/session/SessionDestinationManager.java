@@ -1,7 +1,7 @@
 /*
  *
  *  Copyright [ 2020 - 2024 ] Matthew Buckton
- *  Copyright [ 2024 - 2025 ] MapsMessaging B.V.
+ *  Copyright [ 2024 - 2026 ] MapsMessaging B.V.
  *
  *  Licensed under the Apache License, Version 2.0 with the Commons Clause
  *  (the "License"); you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@
 
 package io.mapsmessaging.engine.session;
 
+import io.mapsmessaging.api.DestinationInfo;
 import io.mapsmessaging.api.auth.DestinationAuthorisationCheck;
 import io.mapsmessaging.api.features.DestinationType;
 import io.mapsmessaging.engine.destination.*;
@@ -26,6 +27,7 @@ import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
@@ -182,6 +184,11 @@ public class SessionDestinationManager implements DestinationFactory {
    */
   public boolean removeListener(DestinationManagerListener listener) {
     return manager.removeListener(listener);
+  }
+
+
+  public List<DestinationInfo> getAllDestinations(){
+    return manager.getAllInfo();
   }
 
 }

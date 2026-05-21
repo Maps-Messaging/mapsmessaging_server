@@ -1,13 +1,9 @@
 #!/bin/bash
 
-# This script downloads Smile ML libraries (GPL-3.0 licensed) from Maven Central.
-# You are responsible for complying with the Smile license (https://github.com/haifengl/smile).
-# MapsMessaging does not distribute Smile or bundle it directly.
-
 #
 #
 #  Copyright [ 2020 - 2024 ] Matthew Buckton
-#  Copyright [ 2024 - 2025 ] MapsMessaging B.V.
+#  Copyright [ 2024 - 2026 ] MapsMessaging B.V.
 #
 #  Licensed under the Apache License, Version 2.0 with the Commons Clause
 #  (the "License"); you may not use this file except in compliance with the License.
@@ -22,6 +18,12 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 #
+
+# This script downloads Smile ML libraries (GPL-3.0 licensed) from Maven Central.
+# You are responsible for complying with the Smile license (https://github.com/haifengl/smile).
+# MapsMessaging does not distribute Smile or bundle it directly.
+
+
 
 current_dir=$(pwd)
 if [[ "$current_dir" == */bin ]]; then

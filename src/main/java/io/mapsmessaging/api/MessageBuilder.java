@@ -1,7 +1,7 @@
 /*
  *
  *  Copyright [ 2020 - 2024 ] Matthew Buckton
- *  Copyright [ 2024 - 2025 ] MapsMessaging B.V.
+ *  Copyright [ 2024 - 2026 ] MapsMessaging B.V.
  *
  *  Licensed under the Apache License, Version 2.0 with the Commons Clause
  *  (the "License"); you may not use this file except in compliance with the License.
@@ -25,7 +25,7 @@ import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.api.message.TypedData;
 import io.mapsmessaging.dto.rest.messaging.MessageDTO;
 import io.mapsmessaging.network.protocol.transformation.ProtocolMessageTransformation;
-import lombok.Data;
+import lombok.Getter;
 import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -35,7 +35,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
-@Data
+@Getter
 public class MessageBuilder {
 
   private java.util.Map<String, String> meta;
@@ -83,11 +83,11 @@ public class MessageBuilder {
     retain = previousMessage.isRetain();
     storeOffline = previousMessage.isStoreOffline();
     payloadUTF8 = previousMessage.isUTF8();
-    expiry = previousMessage.getExpiry();
+    expiry = (previousMessage.getExpiry() - System.currentTimeMillis());
     contentType = previousMessage.getContentType();
     correlationData = previousMessage.getCorrelationData();
     qualityOfService = previousMessage.getQualityOfService();
-    delayed = previousMessage.getDelayed();
+    delayed = (previousMessage.getDelayed() - System.currentTimeMillis() );
   }
 
 
@@ -102,8 +102,10 @@ public class MessageBuilder {
     schemaId = null;
 
     dataMap = new LinkedHashMap<>();
-    for(Map.Entry<String, Object> entry : messageDTO.getDataMap().entrySet()) {
-      dataMap.put(entry.getKey(), new TypedData(entry.getValue()));
+    if(messageDTO.getDataMap() != null) {
+      for (Map.Entry<String, Object> entry : messageDTO.getDataMap().entrySet()) {
+        dataMap.put(entry.getKey(), new TypedData(entry.getValue()));
+      }
     }
     opaqueData = Base64.getDecoder().decode(messageDTO.getPayload());
     priority = Priority.getInstance(messageDTO.getPriority());
@@ -208,10 +210,22 @@ public class MessageBuilder {
     return this;
   }
 
+  public @NonNull @NotNull MessageBuilder setExpiry(long expiry) {
+    this.expiry = expiry;
+    return this;
+  }
+
   public @NonNull @NotNull MessageBuilder setSchemaId(String schemaId) {
     this.schemaId = schemaId;
     return this;
   }
+
+  public @NonNull @NotNull MessageBuilder setPayloadUTF8(boolean payloadUTF8) {
+    this.payloadUTF8 = payloadUTF8;
+    return this;
+  }
+
+
 
   public @NonNull @NotNull Message build() {
     if (transformation != null) {

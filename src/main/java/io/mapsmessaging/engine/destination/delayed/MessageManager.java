@@ -1,7 +1,7 @@
 /*
  *
  *  Copyright [ 2020 - 2024 ] Matthew Buckton
- *  Copyright [ 2024 - 2025 ] MapsMessaging B.V.
+ *  Copyright [ 2024 - 2026 ] MapsMessaging B.V.
  *
  *  Licensed under the Apache License, Version 2.0 with the Commons Clause
  *  (the "License"); you may not use this file except in compliance with the License.
@@ -20,7 +20,6 @@
 package io.mapsmessaging.engine.destination.delayed;
 
 import io.mapsmessaging.api.message.Message;
-import io.mapsmessaging.utilities.collections.NaturalOrderedLongQueue;
 import io.mapsmessaging.utilities.collections.bitset.BitSetFactory;
 import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
@@ -38,6 +37,7 @@ public class MessageManager {
 
   protected final Map<Long, DelayedBucket> treeList;
   protected final List<Long> bucketList;
+
   private final BitSetFactory factory;
 
   protected AtomicLong counter;
@@ -51,7 +51,7 @@ public class MessageManager {
     List<Long> ids = factory.getUniqueIds();
     for (Long bucketId : ids) {
       bucketList.add(bucketId);
-      DelayedBucket bucket = new DelayedBucket(bucketId);
+      DelayedBucket bucket = new DelayedBucket(bucketId, factory);
       treeList.put(bucketId, bucket);
       counter.getAndAdd(bucket.size());
     }
@@ -89,7 +89,7 @@ public class MessageManager {
       if (bucketList.size() > 1) {
         Collections.sort(bucketList);
       }
-      return new DelayedBucket(bucketId);
+      return new DelayedBucket(bucketId, factory);
     });
     if (bucket.register(message.getIdentifier())) {
       counter.incrementAndGet();
@@ -106,8 +106,11 @@ public class MessageManager {
   public synchronized boolean remove(long bucketId, long messageIdentifier) {
     if (!bucketList.isEmpty()) {
       DelayedBucket bucket = treeList.get(bucketId);
-      if (bucket != null && bucket.delayedMessageState.remove(messageIdentifier)) {
+      if (bucket != null && bucket.remove(messageIdentifier)) {
         counter.decrementAndGet();
+        if(bucket.isEmpty()) {
+          removeFromStructure(bucketId);
+        }
         return true;
       }
     }
@@ -123,7 +126,8 @@ public class MessageManager {
   public synchronized boolean delete(long bucketId) {
     DelayedBucket delayedBucket = treeList.remove(bucketId);
     if (delayedBucket != null) {
-      counter.getAndAdd(-delayedBucket.delayedMessageState.size());
+      removeFromStructure(bucketId);
+      counter.getAndAdd(-delayedBucket.size());
       return true;
     }
     return false;
@@ -140,17 +144,16 @@ public class MessageManager {
 
     // The bucket is NOT in the tree so clean up the index and try again
     if (delayedBucket == null) {
-      bucketList.remove(bucketId);
+      removeFromStructure(bucketId);
       return -1;
     }
 
     // The bucket is empty so lets remove the index and the bucket and try again
-    if (delayedBucket.delayedMessageState.isEmpty()) {
-      treeList.remove(bucketId);
-      bucketList.remove(0);
+    if (delayedBucket.isEmpty()) {
+      removeFromStructure(bucketId);
       return -1;
     }
-    return delayedBucket.delayedMessageState.peek();
+    return delayedBucket.peek();
   }
 
   /**
@@ -182,38 +185,14 @@ public class MessageManager {
   public synchronized @NonNull @NotNull Queue<Long> removeBucket(long bucketId) {
     DelayedBucket bucket = treeList.remove(bucketId);
     if (bucket != null) {
-      return bucket.delayedMessageState;
+      return bucket.getQueue();
     }
     return new ArrayDeque<>();
   }
 
-  /**
-   * Structure bucket containing message identifiers.
-   *
-   * Please note.. The structure containing the message identifiers has a Int (32 bit) value to uniquely identify them, however, time in milliseconds are longs (64 bits) this may
-   * cause a single bucket containing delay values that span a roughly 24 day period ( Java uses 32 signed bits, so only 2^31 can be used )
-   *
-   * What this means is that when we process the bucket we need to confirm each events delay time and only if it has passed do we process it, else we simply pass over it
-   */
-  protected class DelayedBucket {
-
-    protected final NaturalOrderedLongQueue delayedMessageState;
-
-    public DelayedBucket(long delayTime) {
-      delayedMessageState = new NaturalOrderedLongQueue((int) delayTime, factory);
-    }
-
-    public boolean register(long identifier) {
-      return delayedMessageState.offer(identifier);
-    }
-
-    @Override
-    public String toString() {
-      return delayedMessageState.toString();
-    }
-
-    public long size() {
-      return delayedMessageState.size();
-    }
+  private void removeFromStructure(long bucketId) {
+    treeList.remove(bucketId);
+    bucketList.remove(bucketId);
   }
+
 }

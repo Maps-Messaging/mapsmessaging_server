@@ -1,7 +1,7 @@
 /*
  *
  *  Copyright [ 2020 - 2024 ] Matthew Buckton
- *  Copyright [ 2024 - 2025 ] MapsMessaging B.V.
+ *  Copyright [ 2024 - 2026 ] MapsMessaging B.V.
  *
  *  Licensed under the Apache License, Version 2.0 with the Commons Clause
  *  (the "License"); you may not use this file except in compliance with the License.
@@ -33,10 +33,15 @@ import io.mapsmessaging.dto.rest.system.Status;
 import io.mapsmessaging.dto.rest.system.SubSystemStatusDTO;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
+import io.mapsmessaging.security.access.AuthContext;
 import io.mapsmessaging.security.access.Group;
 import io.mapsmessaging.security.access.Identity;
 import io.mapsmessaging.security.access.mapping.GroupIdMap;
-import io.mapsmessaging.security.authorisation.*;
+import io.mapsmessaging.security.access.monitor.LockStatus;
+import io.mapsmessaging.security.authorisation.AuthRequest;
+import io.mapsmessaging.security.authorisation.AuthorizationProvider;
+import io.mapsmessaging.security.authorisation.Permission;
+import io.mapsmessaging.security.authorisation.ProtectedResource;
 import io.mapsmessaging.security.identity.IdentityLookupFactory;
 import io.mapsmessaging.security.identity.principals.UniqueIdentifierPrincipal;
 import io.mapsmessaging.utilities.Agent;
@@ -49,6 +54,7 @@ import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.security.GeneralSecurityException;
 import java.security.Principal;
 import java.util.*;
 
@@ -65,7 +71,6 @@ public class AuthManager implements Agent {
 
   private static final String ADMIN_GROUP = "admins";
   private static final String EVERYONE = "everyone";
-
 
   private static class Holder {
     static final AuthManager INSTANCE = new AuthManager();
@@ -116,7 +121,7 @@ public class AuthManager implements Agent {
         throw new NoLoginContextConfigException(msg);
       }
       try {
-        authenticationStorage = new AuthenticationStorage(new ConfigurationProperties(config.getAuthConfig()));
+        authenticationStorage = new AuthenticationStorage(new ConfigurationProperties(config.getAuthConfig()), config.buildMonitorConfig());
         if (authenticationStorage.isFirstBoot()) {
           createInitialUsers((String)config.getAuthConfig().get("configDirectory"));
         }
@@ -175,6 +180,13 @@ public class AuthManager implements Agent {
     return null;
   }
 
+  public List<LockStatus> getAllLockedUsers(){
+    return authenticationStorage.getIdentityAccessManager().getUserManagement().getLockedUsers();
+  }
+
+  public void unlockUser(String username) {
+    authenticationStorage.getIdentityAccessManager().getUserManagement().clearUserLock(username);
+  }
 
   public boolean canAccess(Identity identity, Permission permission, ProtectedResource resource) {
     if(!authorisationEnabled) return true;
@@ -202,6 +214,9 @@ public class AuthManager implements Agent {
   }
 
 
+  public boolean updatePassword(Identity identity, char[] password) throws GeneralSecurityException, IOException {
+    return authenticationStorage.updatePassword(identity, password);
+  }
 
   public void grant(Identity identity, Permission permission, ProtectedResource resource) {
     authenticationStorage.grant(identity, permission, resource);
@@ -233,8 +248,7 @@ public class AuthManager implements Agent {
     config = ConfigurationManager.getInstance().getConfiguration(AuthManagerConfig.class);
     if (config != null) {
       authenticationEnabled = config.isAuthenticationEnabled();
-      // todo renable auth
-      authorisationEnabled = false;//config.isAuthorisationEnabled() &&  authenticationEnabled;
+      authorisationEnabled = config.isAuthorisationEnabled() &&  authenticationEnabled;
     }
     else{
       authenticationEnabled = false;
@@ -257,11 +271,12 @@ public class AuthManager implements Agent {
       logger.log(SECURITY_MANAGER_FAILED_TO_CREATE_USER, USER);
     }
 
+    AuthContext context = new AuthContext("localhost", "setup", "setup");
     saveInitialUserDetails(path, new String[][]{{ADMIN_USER, password}, {USER, userpassword}});
-    if (!authenticationStorage.validateUser(ADMIN_USER, password.toCharArray())) {
+    if (!authenticationStorage.validateUser(ADMIN_USER, password.toCharArray(), context)) {
       logger.log(SECURITY_MANAGER_FAILED_TO_INITIALISE_USER, USER);
     }
-    if (!authenticationStorage.validateUser(USER, userpassword.toCharArray())) {
+    if (!authenticationStorage.validateUser(USER, userpassword.toCharArray(), context)) {
       logger.log(SECURITY_MANAGER_FAILED_TO_INITIALISE_USER, USER);
     }
     if(authorisationEnabled) {
@@ -332,8 +347,8 @@ public class AuthManager implements Agent {
     }
   }
 
-  public boolean validate(String username, char[] password) throws IOException {
-    return authenticationStorage.validateUser(username, password);
+  public boolean validate(String username, char[] password, AuthContext context) throws IOException {
+    return authenticationStorage.validateUser(username, password, context);
   }
 
   public Identity getUserIdentity(String username) {

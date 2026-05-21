@@ -1,7 +1,7 @@
 /*
  *
  *  Copyright [ 2020 - 2024 ] Matthew Buckton
- *  Copyright [ 2024 - 2025 ] MapsMessaging B.V.
+ *  Copyright [ 2024 - 2026 ] MapsMessaging B.V.
  *
  *  Licensed under the Apache License, Version 2.0 with the Commons Clause
  *  (the "License"); you may not use this file except in compliance with the License.
@@ -34,7 +34,12 @@ public class JolokiaConfig extends JolokiaConfigDTO implements Config, ConfigMan
 
   private JolokiaConfig(ConfigurationProperties properties) {
     setEnable(properties.getBooleanProperty("enable", false));
-    setJolokiaMapping((ConfigurationProperties) properties.get("config"));
+    if(properties.containsKey("jolokiaMapping")){
+      setConfig(((ConfigurationProperties) properties.get("jolokiaMapping")).getMap());
+    }
+    else {
+      setConfig(((ConfigurationProperties) properties.get("config")).getMap());
+    }
   }
 
   public static JolokiaConfig getInstance() {
@@ -51,8 +56,8 @@ public class JolokiaConfig extends JolokiaConfigDTO implements Config, ConfigMan
         this.setEnable(newConfig.isEnable());
         hasChanged = true;
       }
-      if (!this.getJolokiaMapping().equals(newConfig.getJolokiaMapping())) {
-        this.setJolokiaMapping(newConfig.getJolokiaMapping());
+      if (!this.getConfig().equals(newConfig.getConfig())) {
+        this.setConfig(newConfig.getConfig());
         hasChanged = true;
       }
     }
@@ -63,7 +68,7 @@ public class JolokiaConfig extends JolokiaConfigDTO implements Config, ConfigMan
   public ConfigurationProperties toConfigurationProperties() {
     ConfigurationProperties properties = new ConfigurationProperties();
     properties.put("enable", isEnable());
-    properties.put("config", getJolokiaMapping());
+    properties.put("config", getConfig());
     return properties;
   }
 

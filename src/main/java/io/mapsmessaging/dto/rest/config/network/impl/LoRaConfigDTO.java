@@ -1,7 +1,7 @@
 /*
  *
  *  Copyright [ 2020 - 2024 ] Matthew Buckton
- *  Copyright [ 2024 - 2025 ] MapsMessaging B.V.
+ *  Copyright [ 2024 - 2026 ] MapsMessaging B.V.
  *
  *  Licensed under the Apache License, Version 2.0 with the Commons Clause
  *  (the "License"); you may not use this file except in compliance with the License.
@@ -23,29 +23,72 @@ import io.mapsmessaging.dto.rest.config.network.EndPointConfigDTO;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
-import lombok.NoArgsConstructor;
 
 @Data
 @EqualsAndHashCode(callSuper=false)
-@NoArgsConstructor
 public class LoRaConfigDTO extends EndPointConfigDTO {
 
-  @Schema(description = "Name of the LoRa device", example = "LoRaNode1")
+  public LoRaConfigDTO(String type){
+    super(type);
+  }
+
+  @Schema(
+      description = "Name of the LoRa device",
+      example = "LoRaNode1",
+      requiredMode = Schema.RequiredMode.REQUIRED,
+      nullable = false
+  )
   protected String name;
 
-  @Schema(description = "Power setting for the device", example = "14")
+  @Schema(
+      description = "Power setting for the device",
+      example = "14",
+      minimum = "0",
+      maximum = "16",
+      requiredMode = Schema.RequiredMode.REQUIRED,
+      nullable = false
+
+  )
   protected int power;
 
-  @Schema(description = "Operating frequency of the device in MHz", example = "868.0")
+  @Schema(
+      description = "Operating frequency of the device in MHz",
+      example = "868",
+      allowableValues = {"863", "902", "915", "470", "923", "865", "920"},
+      minimum = "863",
+      maximum = "923",
+      requiredMode = Schema.RequiredMode.REQUIRED,
+      nullable = false
+  )
   protected float frequency;
 
-  @Schema(description = "Base address to register for, 1-254", example = "2")
+  @Schema(
+      description = "Base address to register for, 1-254",
+      example = "2",
+      minimum = "1",
+      maximum = "254",
+      requiredMode = Schema.RequiredMode.REQUIRED,
+      nullable = false
+  )
   protected int address;
 
-  @Schema(description = "Transmission rate to limit the number of packets/second, 0 - unlimited, else per second", example = "5")
+  @Schema(
+      description = "Transmission rate to limit the number of packets/second, 0 - unlimited, else per second",
+      example = "5",
+      minimum = "0",
+      maximum = "1024",
+      requiredMode = Schema.RequiredMode.REQUIRED,
+      nullable = false
+  )
   protected int transmissionRate;
 
-  @Schema(description = "Optional hex based 16 byte key", example = "0x0 0x0 0x0 0x0 0x0 0x0 0x0 0x0 0x0 0x0 0x0 0x0 0x0 0x0 0x0 0x0")
+  @Schema(
+      description = "Optional hex based 16 byte key",
+      example = "0x0 0x0 0x0 0x0 0x0 0x0 0x0 0x0 0x0 0x0 0x0 0x0 0x0 0x0 0x0 0x0",
+      requiredMode = Schema.RequiredMode.NOT_REQUIRED,
+      nullable = true
+  )
+
   protected String hexKey;
 
 }

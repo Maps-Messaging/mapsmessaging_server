@@ -1,7 +1,7 @@
 /*
  *
  *  Copyright [ 2020 - 2024 ] Matthew Buckton
- *  Copyright [ 2024 - 2025 ] MapsMessaging B.V.
+ *  Copyright [ 2024 - 2026 ] MapsMessaging B.V.
  *
  *  Licensed under the Apache License, Version 2.0 with the Commons Clause
  *  (the "License"); you may not use this file except in compliance with the License.
@@ -29,6 +29,11 @@ import io.mapsmessaging.network.protocol.impl.mqtt.packet.MalformedException;
 // Between MQTT 3/4 and 5 there is duplicate code base, yes this is by design
 @java.lang.SuppressWarnings("common-java:DuplicatedBlocks")
 public class PingReq5 extends MQTTPacket5 {
+
+  public PingReq5() {
+    super(PINGREQ);
+  }
+
 
   public PingReq5(byte fixedHeader, long remainingLen) throws MalformedException {
     super(MQTTPacket.PINGREQ);

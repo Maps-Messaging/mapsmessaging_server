@@ -1,7 +1,7 @@
 /*
  *
  *  Copyright [ 2020 - 2024 ] Matthew Buckton
- *  Copyright [ 2024 - 2025 ] MapsMessaging B.V.
+ *  Copyright [ 2024 - 2026 ] MapsMessaging B.V.
  *
  *  Licensed under the Apache License, Version 2.0 with the Commons Clause
  *  (the "License"); you may not use this file except in compliance with the License.
@@ -80,7 +80,7 @@ public class SerialEndPointServer extends EndPointServer implements SerialPortLi
 
   @Override
   public String getName() {
-    return "serial_" + serialConfig.getPort();
+    return "serial_" + serialConfig.getSerialDevice().getPort();
   }
 
   @Override
@@ -97,18 +97,19 @@ public class SerialEndPointServer extends EndPointServer implements SerialPortLi
   public void handleCloseEndPoint(EndPoint endPoint) {
     super.handleCloseEndPoint(endPoint);
     serialEndPoint = null;
-    SerialPortScanner.getInstance().del(serialConfig.getPort());
+    SerialPortScanner.getInstance().del(serialConfig.getSerialDevice().getPort());
     SimpleTaskScheduler.getInstance().schedule(this::close, 5, TimeUnit.SECONDS);
   }
 
   @Override
   public void start() throws IOException {
     SerialPort port = null;
-    if(serialConfig.getSerialNo() != null && !serialConfig.getSerialNo().isEmpty()){
-      port = SerialPortScanner.getInstance().addBySerial(serialConfig.getSerialNo(), this);
+    String serialNo = serialConfig.getSerialDevice().getSerialNo();
+    if(serialNo != null && !serialNo.isEmpty()){
+      port = SerialPortScanner.getInstance().addBySerial(serialNo, this);
     }
-    else if(serialConfig.getPort() != null && !serialConfig.getPort().isEmpty()){
-      port = SerialPortScanner.getInstance().add(serialConfig.getPort(), this);
+    else if(serialConfig.getSerialDevice().getPort() != null && !serialConfig.getSerialDevice().getPort().isEmpty()){
+      port = SerialPortScanner.getInstance().add(serialConfig.getSerialDevice().getPort(), this);
     }
     if (port != null) {
       bind(port);
@@ -122,7 +123,7 @@ public class SerialEndPointServer extends EndPointServer implements SerialPortLi
 
   @Override
   public void close() {
-    SerialPortScanner.getInstance().del(serialConfig.getPort());
+    SerialPortScanner.getInstance().del(serialConfig.getSerialDevice().getPort());
     if (serialEndPoint != null) {
       try {
         serialEndPoint.close();

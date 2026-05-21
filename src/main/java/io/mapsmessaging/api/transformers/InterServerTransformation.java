@@ -1,7 +1,7 @@
 /*
  *
  *  Copyright [ 2020 - 2024 ] Matthew Buckton
- *  Copyright [ 2024 - 2025 ] MapsMessaging B.V.
+ *  Copyright [ 2024 - 2026 ] MapsMessaging B.V.
  *
  *  Licensed under the Apache License, Version 2.0 with the Commons Clause
  *  (the "License"); you may not use this file except in compliance with the License.
@@ -19,14 +19,13 @@
 
 package io.mapsmessaging.api.transformers;
 
-import io.mapsmessaging.configuration.ConfigurationProperties;
-import io.mapsmessaging.network.protocol.Protocol;
+import io.mapsmessaging.dto.rest.config.transformer.TransformationConfigDTO;
 import io.mapsmessaging.utilities.service.Service;
 
 public interface InterServerTransformation extends Service {
 
-  Protocol.ParsedMessage transform(String source, Protocol.ParsedMessage message);
+  ParsedMessage transform(String source, ParsedMessage message);
 
-  InterServerTransformation build(ConfigurationProperties properties);
+  InterServerTransformation build(TransformationConfigDTO base);
 
 }

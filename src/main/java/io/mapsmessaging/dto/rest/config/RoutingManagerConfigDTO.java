@@ -1,7 +1,7 @@
 /*
  *
  *  Copyright [ 2020 - 2024 ] Matthew Buckton
- *  Copyright [ 2024 - 2025 ] MapsMessaging B.V.
+ *  Copyright [ 2024 - 2026 ] MapsMessaging B.V.
  *
  *  Licensed under the Apache License, Version 2.0 with the Commons Clause
  *  (the "License"); you may not use this file except in compliance with the License.
@@ -19,26 +19,55 @@
 
 package io.mapsmessaging.dto.rest.config;
 
-import io.mapsmessaging.config.routing.PredefinedServerConfig;
+import io.mapsmessaging.dto.rest.config.routing.PredefinedServerConfigDTO;
+import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
-import lombok.NoArgsConstructor;
 
 import java.util.List;
 
 @Data
 @EqualsAndHashCode(callSuper = true)
-@NoArgsConstructor
 @Schema(description = "Routing Manager Configuration DTO")
-public class RoutingManagerConfigDTO extends BaseConfigDTO {
+public class RoutingManagerConfigDTO extends BaseManagerConfigDTO {
 
-  @Schema(description = "Enables routing management", example = "true")
-  protected boolean enabled;
+  @Schema(
+      description = "Enables routing management",
+      example = "true",
+      defaultValue = "false",
+      requiredMode = Schema.RequiredMode.NOT_REQUIRED,
+      nullable = false
+  )
+  protected boolean enabled = false;
 
-  @Schema(description = "Enables auto-discovery of servers", example = "true")
-  protected boolean autoDiscovery;
+  @Schema(
+      description = "Enables auto-discovery of servers",
+      example = "true",
+      defaultValue = "false",
+      requiredMode = Schema.RequiredMode.NOT_REQUIRED,
+      nullable = false
+  )
+  protected boolean autoDiscovery = true;
 
-  @Schema(description = "List of predefined server configurations")
-  protected List<PredefinedServerConfig> predefinedServers;
+  @ArraySchema(
+      schema = @Schema(implementation = PredefinedServerConfigDTO.class),
+      minItems = 0
+  )
+  @Schema(
+      description = "List of predefined server configurations",
+      requiredMode = Schema.RequiredMode.NOT_REQUIRED,
+      nullable = false,
+      example  = "[]"
+  )
+  protected List<PredefinedServerConfigDTO> predefinedServers = List.of();
+
+  public RoutingManagerConfigDTO(){
+    super("RoutingManagerConfigDTO");
+  }
+
+  @Override
+  public String getSimpleName() {
+    return "Routing";
+  }
 }

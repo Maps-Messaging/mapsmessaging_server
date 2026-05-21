@@ -1,7 +1,7 @@
 /*
  *
  *  Copyright [ 2020 - 2024 ] Matthew Buckton
- *  Copyright [ 2024 - 2025 ] MapsMessaging B.V.
+ *  Copyright [ 2024 - 2026 ] MapsMessaging B.V.
  *
  *  Licensed under the Apache License, Version 2.0 with the Commons Clause
  *  (the "License"); you may not use this file except in compliance with the License.
@@ -21,10 +21,11 @@ package io.mapsmessaging.network.protocol.impl.mqtt.listeners;
 
 import io.mapsmessaging.api.Session;
 import io.mapsmessaging.api.SessionContextBuilder;
-import io.mapsmessaging.config.auth.AuthConfig;
 import io.mapsmessaging.config.network.EndPointConnectionServerConfig;
+import io.mapsmessaging.dto.rest.config.auth.AuthConfigDTO;
 import io.mapsmessaging.network.io.EndPoint;
 import io.mapsmessaging.network.protocol.Protocol;
+import io.mapsmessaging.network.protocol.impl.mqtt.MQTTProtocol;
 import io.mapsmessaging.network.protocol.impl.mqtt.packet.MQTTPacket;
 import io.mapsmessaging.network.protocol.impl.mqtt.packet.MalformedException;
 
@@ -36,7 +37,13 @@ public class ConnAckListener extends BaseConnectionListener {
   @Override
   public MQTTPacket handlePacket(MQTTPacket mqttPacket, Session session, EndPoint endPoint, Protocol protocol) throws MalformedException {
 
-    AuthConfig config =  ((EndPointConnectionServerConfig)endPoint.getConfig()).getAuthConfig();
+    MQTTProtocol  mqttProtocol = (MQTTProtocol)protocol;
+    if(mqttProtocol.getSession() != null){
+      mqttProtocol.getSession().resumeState();
+      protocol.setConnected(true);
+      return null; // already connected
+    }
+    AuthConfigDTO config =  ((EndPointConnectionServerConfig)endPoint.getConfig()).getAuthConfig();
 
     String sess = config.getSessionId();
     String user = config.getUsername();

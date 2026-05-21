@@ -1,7 +1,7 @@
 /*
  *
  *  Copyright [ 2020 - 2024 ] Matthew Buckton
- *  Copyright [ 2024 - 2025 ] MapsMessaging B.V.
+ *  Copyright [ 2024 - 2026 ] MapsMessaging B.V.
  *
  *  Licensed under the Apache License, Version 2.0 with the Commons Clause
  *  (the "License"); you may not use this file except in compliance with the License.
@@ -33,24 +33,24 @@ public class SatelliteConfig extends SatelliteConfigDTO implements Config {
     ProtocolConfigFactory.unpack(config, this);
 
     baseUrl = config.getProperty("baseUrl", "");
-    incomingMessagePollInterval = config.getIntProperty("incomingMessagePollInterval", 15);
-    outgoingMessagePollInterval = config.getIntProperty("outgoingMessagePollInterval", 60);
-    httpRequestTimeout = config.getIntProperty("httpRequestTimeoutSec", 30);
-    maxInflightEventsPerDevice = config.getIntProperty("maxInflightEventsPerDevice", 2);
+    incomingMessagePollInterval = config.getIntProperty("incomingMessagePollInterval", incomingMessagePollInterval);
+    outgoingMessagePollInterval = config.getIntProperty("outgoingMessagePollInterval", outgoingMessagePollInterval);
+    httpRequestTimeout = config.getIntProperty("httpRequestTimeoutSec", httpRequestTimeout);
+    maxInflightEventsPerDevice = config.getIntProperty("maxInflightEventsPerDevice", maxInflightEventsPerDevice);
 
     outboundBroadcast = config.getProperty("outboundBroadcast", "");
-    commonInboundPublishRoot = config.getProperty("commonInboundPublishRoot", "/{deviceId}/common/in/{sin}/{min}");
-    commonOutboundPublishRoot = config.getProperty("commonOutboundPublishRoot", "/{deviceId}/common/out/#");
-    mapsInboundPublishRoot = config.getProperty("mapsInboundPublishRoot", "/{deviceId}/maps/in/{namespace}/#");
-    mapsOutboundPublishRoot = config.getProperty("mapsOutboundPublishRoot", "/{deviceId}/maps/out/{namespace}/#");
+    commonInboundPublishRoot = config.getProperty("commonInboundPublishRoot", commonInboundPublishRoot);
+    commonOutboundPublishRoot = config.getProperty("commonOutboundPublishRoot", commonOutboundPublishRoot);
+    mapsInboundPublishRoot = config.getProperty("mapsInboundPublishRoot", mapsInboundPublishRoot);
+    mapsOutboundPublishRoot = config.getProperty("mapsOutboundPublishRoot", mapsOutboundPublishRoot);
 
-    deviceInfoUpdateMinutes = config.getIntProperty("deviceInfoUpdateMinutes", 15);
-    maxBufferSize = config.getIntProperty("maxBufferSize", 4000);
-    compressionCutoffSize = config.getIntProperty("compressionCutoffSize", 128);
-    messageLifeTimeInMinutes = config.getIntProperty("messageLifeTimeInMinutes", 10);
+    deviceInfoUpdateMinutes = config.getIntProperty("deviceInfoUpdateMinutes", deviceInfoUpdateMinutes);
+    maxBufferSize = config.getIntProperty("maxBufferSize", maxBufferSize);
+    compressionCutoffSize = config.getIntProperty("compressionCutoffSize", compressionCutoffSize);
+    messageLifeTimeInMinutes = config.getIntProperty("messageLifeTimeInMinutes", messageLifeTimeInMinutes);
     sharedSecret = config.getProperty("sharedSecret", "");
-    sendHighPriorityMessages = config.getBooleanProperty("sendHighPriorityMessages", false);
-    sinNumber = config.getIntProperty("sinNumber", 147);
+    sendHighPriorityMessages = config.getBooleanProperty("sendHighPriorityMessages", sendHighPriorityMessages);
+    sinNumber = config.getIntProperty("sinNumber", sinNumber);
 
     if(incomingMessagePollInterval <10){
       incomingMessagePollInterval = 10;

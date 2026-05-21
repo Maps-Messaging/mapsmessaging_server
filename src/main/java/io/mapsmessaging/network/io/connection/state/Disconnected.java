@@ -1,7 +1,7 @@
 /*
  *
  *  Copyright [ 2020 - 2024 ] Matthew Buckton
- *  Copyright [ 2024 - 2025 ] MapsMessaging B.V.
+ *  Copyright [ 2024 - 2026 ] MapsMessaging B.V.
  *
  *  Licensed under the Apache License, Version 2.0 with the Commons Clause
  *  (the "License"); you may not use this file except in compliance with the License.
@@ -19,10 +19,15 @@
 
 package io.mapsmessaging.network.io.connection.state;
 
+import io.mapsmessaging.api.Session;
+import io.mapsmessaging.api.SessionContextBuilder;
+import io.mapsmessaging.api.SessionManager;
 import io.mapsmessaging.config.network.EndPointConnectionServerConfig;
+import io.mapsmessaging.engine.session.SessionContext;
 import io.mapsmessaging.logging.ServerLogMessages;
 import io.mapsmessaging.logging.ThreadContext;
 import io.mapsmessaging.network.EndPointURL;
+import io.mapsmessaging.network.ProtocolClientConnection;
 import io.mapsmessaging.network.auth.TokenGenerator;
 import io.mapsmessaging.network.auth.TokenGeneratorManager;
 import io.mapsmessaging.network.io.EndPoint;
@@ -32,12 +37,17 @@ import io.mapsmessaging.network.io.impl.SelectorLoadManager;
 import io.mapsmessaging.network.protocol.Protocol;
 import io.mapsmessaging.network.protocol.ProtocolFactory;
 import io.mapsmessaging.network.protocol.ProtocolImplFactory;
+import io.mapsmessaging.network.protocol.impl.extension.ExtensionProtocol;
+import io.mapsmessaging.network.protocol.impl.local.LocalLoopProtocol;
+import io.mapsmessaging.network.protocol.impl.satellite.modem.protocol.StoGiProtocol;
 import io.mapsmessaging.network.protocol.transformation.ProtocolMessageTransformation;
 import io.mapsmessaging.network.protocol.transformation.TransformationManager;
 import io.mapsmessaging.network.route.link.LinkState;
 
+import javax.security.auth.login.LoginException;
 import java.io.IOException;
 import java.util.List;
+import java.util.UUID;
 
 import static io.mapsmessaging.network.io.connection.Constants.DELAYED_TIME;
 
@@ -64,9 +74,17 @@ public class Disconnected extends State implements EndPointConnectedCallback {
       String password = properties.getAuthConfig().getPassword();
       String tokenGeneratorName = properties.getAuthConfig().getTokenGenerator();
       String transformationName = properties.getLinkTransformation();
+
+      if(sessionId == null) {sessionId = UUID.randomUUID().toString();}
       ProtocolMessageTransformation transformation = TransformationManager.getInstance().getTransformation(transformationName);
       if (transformation == null) {
-        transformation = TransformationManager.getInstance().getTransformation(endpoint.getProtocol(), endPointConnection.getUrl().getHost(), protocolImplFactory.getName(), username);
+        String protocolImplName = null;
+        if(protocolImplFactory != null){
+          protocolImplName = protocolImplFactory.getName();
+        }
+        if(username != null && protocolImplName != null) {
+          transformation = TransformationManager.getInstance().getTransformation(endpoint.getProtocol(), endPointConnection.getUrl().getHost(), protocolImplName, username);
+        }
       }
 
       if (transformation != null) {
@@ -77,10 +95,17 @@ public class Disconnected extends State implements EndPointConnectedCallback {
         password = tokenGenerator.generate();
       }
       Protocol protocolImpl = protocolImplFactory.connect(endpoint, sessionId, username, password);
+      if (!(protocolImpl instanceof StoGiProtocol) &&
+          !( protocolImpl instanceof ExtensionProtocol) &&
+          !(protocolImpl instanceof LocalLoopProtocol)
+      ) {
+        protocolImpl.setSession(createSession(sessionId, protocolImpl));
+      }
+
       protocolImpl.setProtocolMessageTransformation(transformation);
       endPointConnection.setProtocol(protocolImpl);
       endPointConnection.scheduleState(new Connecting(endPointConnection));
-    } catch (IOException ioException) {
+    } catch (IOException|LoginException ioException) {
       endPointConnection.getLogger().log(ServerLogMessages.END_POINT_CONNECTION_PROTOCOL_FAILED, url, protocol, ioException);
       endPointConnection.scheduleState(new Delayed(endPointConnection), DELAYED_TIME);
     }
@@ -118,5 +143,16 @@ public class Disconnected extends State implements EndPointConnectedCallback {
   @Override
   public LinkState getLinkState() {
     return LinkState.DISCONNECTED;
+  }
+
+  private Session createSession(String sessionId, Protocol protocol) throws LoginException, IOException {
+    SessionContext sessionContext = new SessionContextBuilder("Internal-"+sessionId, new ProtocolClientConnection(protocol))
+        .setPersistentSession(true)
+        .setUsername("admin")
+        .isInternal(true)
+        .setResetState(true)
+        .isAuthorized(true)
+        .build();
+    return SessionManager.getInstance().create(sessionContext, protocol);
   }
 }

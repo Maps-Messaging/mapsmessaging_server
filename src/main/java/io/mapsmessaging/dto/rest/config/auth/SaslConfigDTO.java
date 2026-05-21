@@ -1,7 +1,7 @@
 /*
  *
  *  Copyright [ 2020 - 2024 ] Matthew Buckton
- *  Copyright [ 2024 - 2025 ] MapsMessaging B.V.
+ *  Copyright [ 2024 - 2026 ] MapsMessaging B.V.
  *
  *  Licensed under the Apache License, Version 2.0 with the Commons Clause
  *  (the "License"); you may not use this file except in compliance with the License.
@@ -36,17 +36,37 @@ import java.util.Map;
         "Represents the configuration for SASL authentication used for REST communication.")
 public class SaslConfigDTO extends BaseConfigDTO {
 
-  @Schema(description = "The realm name used for SASL authentication", example = "example-realm")
+  @Schema(
+      description = "The realm name used for SASL authentication",
+      example = "example-realm",
+      requiredMode = Schema.RequiredMode.REQUIRED,
+      nullable = false
+  )
   protected String realmName;
 
-  @Schema(description = "The SASL mechanism, such as PLAIN or SCRAM-SHA-256", example = "PLAIN")
+  @Schema(
+      description = "The SASL mechanism, such as PLAIN or SCRAM-SHA-256",
+      example = "PLAIN",
+      requiredMode = Schema.RequiredMode.REQUIRED,
+      nullable = false
+
+  )
   protected String mechanism;
 
-  @Schema(description = "The identity provider for SASL", example = "authProvider123")
+  @Schema(
+      description = "The identity provider for SASL",
+      example = "authProvider123",
+      requiredMode = Schema.RequiredMode.REQUIRED,
+      nullable = false
+  )
   protected String identityProvider;
 
   @Schema(
       description = "Additional SASL entries as key-value pairs",
-      example = "{\"entry1\": \"value1\"}")
+      example = "{\"entry1\": \"value1\"}",
+      requiredMode = Schema.RequiredMode.NOT_REQUIRED,
+      nullable = true,
+      additionalProperties = Schema.AdditionalPropertiesValue.TRUE
+  )
   protected Map<String, Object> saslEntries;
 }

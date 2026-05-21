@@ -1,7 +1,7 @@
 /*
  *
  *  Copyright [ 2020 - 2024 ] Matthew Buckton
- *  Copyright [ 2024 - 2025 ] MapsMessaging B.V.
+ *  Copyright [ 2024 - 2026 ] MapsMessaging B.V.
  *
  *  Licensed under the Apache License, Version 2.0 with the Commons Clause
  *  (the "License"); you may not use this file except in compliance with the License.
@@ -54,8 +54,6 @@ public class SemTechProtocol extends Protocol {
   private final SelectorTask selectorTask;
   private final PacketFactory packetFactory;
   private final Session session;
-  private final boolean isClient;
-  private final byte[] gatewayId;
 
   @Getter
   private final GatewayManager gatewayManager;
@@ -88,20 +86,14 @@ public class SemTechProtocol extends Protocol {
       String inboundTopicName = semtechConfig.getInboundTopicName();
       String outboundTopicName = semtechConfig.getOutboundTopicName();
       String statusTopicName = semtechConfig.getStatusTopicName();
-      gatewayManager = new GatewayManager(session, inboundTopicName, statusTopicName, outboundTopicName, maxQueued);
+      String telemetryTopicName = semtechConfig.getTelemetryTopicName();
+      gatewayManager = new GatewayManager(session, inboundTopicName, statusTopicName, outboundTopicName, telemetryTopicName, maxQueued, semtechConfig.getTransmitDefaults());
     } catch (InterruptedException | ExecutionException e) {
       if (Thread.currentThread().isInterrupted()) {
         endPoint.close();
         Thread.currentThread().interrupt();
       }
       throw new IOException(e.getMessage());
-    }
-    isClient = (sessionId == null);
-    if(isClient){
-      gatewayId = null;
-    }
-    else{
-      gatewayId = sessionId.getBytes();
     }
   }
 

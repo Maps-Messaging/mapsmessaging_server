@@ -1,7 +1,7 @@
 /*
  *
  *  Copyright [ 2020 - 2024 ] Matthew Buckton
- *  Copyright [ 2024 - 2025 ] MapsMessaging B.V.
+ *  Copyright [ 2024 - 2026 ] MapsMessaging B.V.
  *
  *  Licensed under the Apache License, Version 2.0 with the Commons Clause
  *  (the "License"); you may not use this file except in compliance with the License.
@@ -36,16 +36,18 @@ import lombok.NoArgsConstructor;
     @JsonSubTypes.Type(value = CoapConfigDTO.class, name = "coap"),
     @JsonSubTypes.Type(value = LoRaProtocolConfigDTO.class, name = "lora"),
     @JsonSubTypes.Type(value = MqttConfigDTO.class, name = "mqtt"),
+    @JsonSubTypes.Type(value = MavlinkConfigDTO.class, name = "mavlink"),
     @JsonSubTypes.Type(value = MqttSnConfigDTO.class, name = "mqtt-sn"),
-    @JsonSubTypes.Type(value = MqttV5ConfigDTO.class, name = "mqttV5"),
     @JsonSubTypes.Type(value = NmeaConfigDTO.class, name = "NMEA-0183"),
     @JsonSubTypes.Type(value = SatelliteConfigDTO.class, name = "satellite"),
     @JsonSubTypes.Type(value = StoGiConfigDTO.class, name = "orbcomm"),
     @JsonSubTypes.Type(value = SemtechConfigDTO.class, name = "semtech"),
     @JsonSubTypes.Type(value = StompConfigDTO.class, name = "stomp"),
-    @JsonSubTypes.Type(value = WebSocketConfigDTO.class, name = "websocket"),
+    @JsonSubTypes.Type(value = WebSocketConfigDTO.class, name = "ws"),
     @JsonSubTypes.Type(value = ExtensionConfigDTO.class, name = "extension"),
-
+    @JsonSubTypes.Type(value = NatsConfigDTO.class, name = "nats"),
+    @JsonSubTypes.Type(value = N2KConfigDTO.class, name = "n2k"),
+    @JsonSubTypes.Type(value = CanAerospaceConfigDTO.class, name = "canaerospace"),
 })
 @Schema(
     description = "Abstract base class for all protocol configurations",
@@ -55,50 +57,88 @@ import lombok.NoArgsConstructor;
         @DiscriminatorMapping(value = "coap", schema = CoapConfigDTO.class),
         @DiscriminatorMapping(value = "lora", schema = LoRaProtocolConfigDTO.class),
         @DiscriminatorMapping(value = "mqtt", schema = MqttConfigDTO.class),
+        @DiscriminatorMapping(value = "mqtt-v3", schema = MqttConfigDTO.class),
+        @DiscriminatorMapping(value = "mqtt-v5", schema = MqttConfigDTO.class),
+        @DiscriminatorMapping(value = "mavlink", schema = MavlinkConfigDTO.class),
         @DiscriminatorMapping(value = "mqtt-sn", schema = MqttSnConfigDTO.class),
-        @DiscriminatorMapping(value = "mqttV5", schema = MqttV5ConfigDTO.class),
+        @DiscriminatorMapping(value = "mqttV5", schema = MqttConfigDTO.class),
         @DiscriminatorMapping(value = "NMEA-0183", schema = NmeaConfigDTO.class),
         @DiscriminatorMapping(value = "satellite", schema = SatelliteConfigDTO.class),
         @DiscriminatorMapping(value = "orbcomm", schema = StoGiConfigDTO.class),
         @DiscriminatorMapping(value = "semtech", schema = SemtechConfigDTO.class),
         @DiscriminatorMapping(value = "stomp", schema = StompConfigDTO.class),
-        @DiscriminatorMapping(value = "websocket", schema = WebSocketConfigDTO.class),
+        @DiscriminatorMapping(value = "ws", schema = WebSocketConfigDTO.class),
+        @DiscriminatorMapping(value = "nats", schema = NatsConfigDTO.class),
         @DiscriminatorMapping(value = "extension", schema = ExtensionConfigDTO.class),
+        @DiscriminatorMapping(value = "n2k", schema = N2KConfigDTO.class),
+        @DiscriminatorMapping(value = "canaerospace", schema = CanAerospaceConfigDTO.class),
+
     },
-    requiredProperties = {"type"}
+    requiredProperties = {"type"},
+    additionalProperties = Schema.AdditionalPropertiesValue.TRUE,
+    additionalPropertiesSchema = Object.class,
+    schemaResolution = Schema.SchemaResolution.INLINE
 )
+
 @Data
-@EqualsAndHashCode(callSuper=false)
+@EqualsAndHashCode(callSuper = false)
 @NoArgsConstructor
 public class ProtocolConfigDTO extends BaseConfigDTO {
 
-  @Schema(description = "Type of the protocol configuration", allowableValues = {
-      "amqp",
-      "coap",
-      "lora",
-      "loop",
-      "mqtt",
-      "mqtt-sn",
-      "mqttV5", "NMEA-0183",
-      "orbcomm",
-      "satellite",
-      "semtech",
-      "stomp",
-      "websocket",
-      "extension"
-  })
-  protected String type;
-
-  public String getProtocol(){
-    return type;
+  public ProtocolConfigDTO(String type) {
+    this.type = type;
   }
 
-  @Schema(description = "Support Proxy Protocol on the connection")
-  protected boolean proxyProtocol;
+  @Schema(
+      description = "Type of the protocol configuration",
+      example = "mqtt",
+      allowableValues = {
+          "amqp",
+          "coap",
+          "lora",
+          "loop",
+          "mqtt",
+          "mqtt-sn",
+          "nats",
+          "NMEA-0183",
+          "orbcomm",
+          "satellite",
+          "semtech",
+          "stomp",
+          "ws",
+          "mavlink",
+          "extension",
+          "n2k",
+          "canaerospace"
+      },
+      requiredMode = Schema.RequiredMode.REQUIRED,
+      nullable = false,
+      type = "string"
+  )
+  protected String type;
 
-  @Schema(description = "Remote authentication configuration for the protocol")
+  @Schema(
+      description = "Enable support for the PROXY protocol (v1/v2) on incoming connections",
+      example = "false",
+      defaultValue = "false",
+      requiredMode = Schema.RequiredMode.REQUIRED,
+      nullable = false
+  )
+  protected boolean proxyProtocol = false;
+
+  @Schema(
+      description = "Remote authentication configuration for this protocol. " +
+          "Used when the protocol establishes outbound or proxied connections.",
+      requiredMode = Schema.RequiredMode.NOT_REQUIRED,
+      nullable = true
+  )
   protected ConnectionAuthConfigDTO remoteAuthConfig;
 
-  @Schema(description = "Specify the message defaults for this protocol")
+  @Schema(
+      description = "Message default overrides applied to messages handled by this protocol",
+      requiredMode = Schema.RequiredMode.NOT_REQUIRED,
+      nullable = true
+  )
   protected MessageOverrideDTO messageDefaults;
 }
+

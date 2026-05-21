@@ -1,7 +1,7 @@
 #
 #
 #  Copyright [ 2020 - 2024 ] Matthew Buckton
-#  Copyright [ 2024 - 2025 ] MapsMessaging B.V.
+#  Copyright [ 2024 - 2026 ] MapsMessaging B.V.
 #
 #  Licensed under the Apache License, Version 2.0 with the Commons Clause
 #  (the "License"); you may not use this file except in compliance with the License.
@@ -38,11 +38,11 @@ export CONSUL_URL
 echo $CONSUL_URL
 
 if [ -z ${MAPS_HOME+x} ];
-  then export MAPS_HOME=/maps-$VERSION;
+  then export MAPS_HOME=/opt/maps;
 fi
 
 if [ -z ${MAPS_DATA+x} ];
-  then export MAPS_DATA=/data
+  then export MAPS_DATA=/opt/maps_data
 fi
 
 echo "Maps Home is set to '$MAPS_HOME'"

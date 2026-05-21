@@ -1,7 +1,7 @@
 /*
  *
  *  Copyright [ 2020 - 2024 ] Matthew Buckton
- *  Copyright [ 2024 - 2025 ] MapsMessaging B.V.
+ *  Copyright [ 2024 - 2026 ] MapsMessaging B.V.
  *
  *  Licensed under the Apache License, Version 2.0 with the Commons Clause
  *  (the "License"); you may not use this file except in compliance with the License.
@@ -74,6 +74,7 @@ public class PacketFactory5 {
       case MQTTPacket.UNSUBSCRIBE -> new Unsubscribe5(fixedHeader, remainingLen, packet);
       case MQTTPacket.UNSUBACK -> new UnsubAck5(fixedHeader, remainingLen, packet);
       case MQTTPacket.SUBACK -> new SubAck5(fixedHeader, remainingLen, packet);
+      case MQTTPacket.PINGRESP -> new PingResp5();
       default -> throw new MalformedException("Unexpected packet received:::" + Long.toHexString(packetId));
     };
   }

@@ -1,7 +1,7 @@
 /*
  *
  *  Copyright [ 2020 - 2024 ] Matthew Buckton
- *  Copyright [ 2024 - 2025 ] MapsMessaging B.V.
+ *  Copyright [ 2024 - 2026 ] MapsMessaging B.V.
  *
  *  Licensed under the Apache License, Version 2.0 with the Commons Clause
  *  (the "License"); you may not use this file except in compliance with the License.
@@ -19,37 +19,19 @@
 
 package io.mapsmessaging.engine.destination.subscription;
 
+import lombok.Getter;
+import lombok.ToString;
+
+@Getter
+@ToString
 public class OutstandingEventDetails {
 
   private final long id;
   private final int priority;
-  private final long time;
+  private final long time = System.currentTimeMillis();
 
   public OutstandingEventDetails(long id, int priority) {
     this.id = id;
     this.priority = priority;
-    time = System.currentTimeMillis();
-  }
-
-  public long getId() {
-    return id;
-  }
-
-  public int getPriority() {
-    return priority;
-  }
-
-  public long getTime() {
-    return time;
-  }
-
-  public String toString() {
-    return "ID:"
-        + id
-        + " Priority:"
-        + priority
-        + " Age:"
-        + (System.currentTimeMillis() - time)
-        + "ms";
   }
 }

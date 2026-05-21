@@ -1,7 +1,7 @@
 /*
  *
  *  Copyright [ 2020 - 2024 ] Matthew Buckton
- *  Copyright [ 2024 - 2025 ] MapsMessaging B.V.
+ *  Copyright [ 2024 - 2026 ] MapsMessaging B.V.
  *
  *  Licensed under the Apache License, Version 2.0 with the Commons Clause
  *  (the "License"); you may not use this file except in compliance with the License.
@@ -23,6 +23,7 @@ import io.mapsmessaging.config.routing.PredefinedServerConfig;
 import io.mapsmessaging.configuration.ConfigurationProperties;
 import io.mapsmessaging.dto.rest.config.BaseConfigDTO;
 import io.mapsmessaging.dto.rest.config.RoutingManagerConfigDTO;
+import io.mapsmessaging.dto.rest.config.routing.PredefinedServerConfigDTO;
 import io.mapsmessaging.license.FeatureManager;
 import io.mapsmessaging.utilities.configuration.ConfigurationManager;
 import lombok.NoArgsConstructor;
@@ -39,8 +40,8 @@ public class RoutingManagerConfig extends RoutingManagerConfigDTO implements Con
   }
 
   private RoutingManagerConfig(ConfigurationProperties properties) {
-    this.enabled = properties.getBooleanProperty("enabled", false);
-    this.autoDiscovery = properties.getBooleanProperty("autoDiscovery", true);
+    this.enabled = properties.getBooleanProperty("enabled", enabled);
+    this.autoDiscovery = properties.getBooleanProperty("autoDiscovery", autoDiscovery);
     this.predefinedServers = new ArrayList<>();
 
     Object servers = properties.get("predefinedServers");
@@ -92,8 +93,8 @@ public class RoutingManagerConfig extends RoutingManagerConfigDTO implements Con
     properties.put("autoDiscovery", this.autoDiscovery);
 
     List<ConfigurationProperties> serverPropertiesList = new ArrayList<>();
-    for (PredefinedServerConfig server : this.predefinedServers) {
-      serverPropertiesList.add(server.toConfigurationProperties());
+    for (PredefinedServerConfigDTO server : this.predefinedServers) {
+      serverPropertiesList.add(((PredefinedServerConfig) server).toConfigurationProperties());
     }
     properties.put("predefinedServers", serverPropertiesList);
 

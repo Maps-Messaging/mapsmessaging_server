@@ -1,7 +1,7 @@
 /*
  *
  *  Copyright [ 2020 - 2024 ] Matthew Buckton
- *  Copyright [ 2024 - 2025 ] MapsMessaging B.V.
+ *  Copyright [ 2024 - 2026 ] MapsMessaging B.V.
  *
  *  Licensed under the Apache License, Version 2.0 with the Commons Clause
  *  (the "License"); you may not use this file except in compliance with the License.
@@ -19,13 +19,14 @@
 
 package io.mapsmessaging.api.transformers;
 
-import io.mapsmessaging.configuration.ConfigurationProperties;
-import io.mapsmessaging.network.protocol.Protocol;
+import io.mapsmessaging.config.transformer.GeoHashResolverTransformationConfig;
+import io.mapsmessaging.dto.rest.config.transformer.TransformationConfigDTO;
 import io.mapsmessaging.selector.IdentifierResolver;
 import io.mapsmessaging.utilities.GeoHashUtils;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import static io.mapsmessaging.api.message.Filter.getTopicResolver;
 
@@ -65,7 +66,7 @@ public class GeoHashResolver implements InterServerTransformation {
     this.defaultLongitude = null;
   }
 
-  public Protocol.ParsedMessage transform(String source, Protocol.ParsedMessage message) {
+  public ParsedMessage transform(String source, ParsedMessage message) {
     IdentifierResolver identifierResolver = getTopicResolver(source, message.getMessage());
     if (identifierResolver == null) {
       return handleMissing(message);
@@ -108,40 +109,40 @@ public class GeoHashResolver implements InterServerTransformation {
     }
 
     String effectivePrefix = prefix != null ? prefix : "";
-    message.setDestinationName(effectivePrefix + topicSuffix);
+
+    ExpandedIdentityLookup expandedIdentityLookup = new ExpandedIdentityLookup(Map.of("geohash", topicSuffix), identifierResolver);
+    String topicName = TopicNameCompiler.computeTopicName(effectivePrefix, source, expandedIdentityLookup);
+    message.setDestinationName(topicName);
     return message;
   }
 
-  @SuppressWarnings("unchecked")
-  public InterServerTransformation build(ConfigurationProperties properties){
-    ConfigurationProperties map = ((ConfigurationProperties) properties.get("parameters"));
-    String localPrefix = map.getProperty("prefix", "");
-    String localLatKey = map.getProperty( "latKey", "latitude");
-    String localLonKey =  map.getProperty("lonKey", "longitude");
-    int localPrecision = map.getIntProperty( "precision", 5);
-    boolean localSplitHash = map.getBooleanProperty("splitHash", true);
-
+  @Override
+  public InterServerTransformation build(TransformationConfigDTO base) {
+    if(!(base instanceof GeoHashResolverTransformationConfig config )) {
+      return new GeoHashResolver();
+    }
+    String localPrefix = config.getPrefix();
+    String localLatKey = config.getLatKey();
+    String localLonKey =  config.getLonKey();
+    int localPrecision = config.getPrecision();
+    boolean localSplitHash = config.getSplitHash();
     GeoHashResolver resolver = new GeoHashResolver(localPrefix, localLatKey, localLonKey, localPrecision, localSplitHash);
 
-    resolver.latKeys = safeStringList(map.getProperty("latKeys", ""));
-    resolver.lonKeys = safeStringList(map.getProperty("lonKeys"));
-    resolver.units = map.getProperty("units", "deg");
-    resolver.layout = map.getProperty( "layout", "chars-per-segment");
-    resolver.onMissing = map.getProperty( "onMissing", "skip");
+    resolver.latKeys = config.getLatKeys();
+    resolver.lonKeys = config.getLonKeys();
+    resolver.units = config.getUnits().getWireName();
+    resolver.layout = config.getLayout().getWireName();
+    resolver.onMissing = config.getOnMissing().getWireName();
 
     // defaultTo expects "lat,lon" (e.g., "0,0")
     if ("defaultTo".equalsIgnoreCase(resolver.onMissing)) {
-      String defaultTo = map.getProperty( "defaultTo", null);
-      if (defaultTo != null) {
-        double[] pair = parseLatLonPair(defaultTo);
-        resolver.defaultLatitude = pair != null ? pair[0] : null;
-        resolver.defaultLongitude = pair != null ? pair[1] : null;
-      }
+        resolver.defaultLatitude = config.getDefaultLatitude() != null ? config.getDefaultLatitude() : null;
+        resolver.defaultLongitude = config.getDefaultLongitude() != null ? config.getDefaultLongitude(): null;
     }
     return resolver;
   }
 
-  private Protocol.ParsedMessage handleMissing(Protocol.ParsedMessage message) {
+  private ParsedMessage handleMissing(ParsedMessage message) {
     if ("drop".equalsIgnoreCase(onMissing)) {
       return null; // convention: null indicates drop
     }
@@ -190,9 +191,35 @@ public class GeoHashResolver implements InterServerTransformation {
     return null;
   }
 
+  private static double ensureLatitudeDegress(double value){
+    if (value >= -90.0 && value <= 90.0) {
+      return value;
+    }
+
+    // Scaled MAVLink degrees (1e7)
+    double scaled = value / 1e7;
+    if (scaled >= -90.0 && scaled <= 90.0) {
+      return scaled;
+    }
+    return Double.POSITIVE_INFINITY;
+  }
+
+  private static double ensureLongitudeDegress(double value){
+    if (value >= -180.0 && value <= 180.0) {
+      return value;
+    }
+
+    // Scaled MAVLink degrees (1e7)
+    double scaled = value / 1e7;
+    if (scaled >= -180.0 && scaled <= 180.0) {
+      return scaled;
+    }
+    return Double.POSITIVE_INFINITY;
+  }
+
   private static double[] normalizeUnits(double latitude, double longitude, String units) {
     if (units == null || "deg".equalsIgnoreCase(units)) {
-      return new double[]{latitude, longitude};
+      return new double[]{ensureLatitudeDegress(latitude), ensureLongitudeDegress(longitude)};
     }
     if ("rad".equalsIgnoreCase(units)) {
       return new double[]{Math.toDegrees(latitude), Math.toDegrees(longitude)};

@@ -1,7 +1,7 @@
 /*
  *
  *  Copyright [ 2020 - 2024 ] Matthew Buckton
- *  Copyright [ 2024 - 2025 ] MapsMessaging B.V.
+ *  Copyright [ 2024 - 2026 ] MapsMessaging B.V.
  *
  *  Licensed under the Apache License, Version 2.0 with the Commons Clause
  *  (the "License"); you may not use this file except in compliance with the License.
@@ -32,12 +32,28 @@ import lombok.NoArgsConstructor;
 @Schema(description = "Tenant Configuration DTO")
 public class TenantConfigDTO extends BaseConfigDTO {
 
-  @Schema(description = "Name of the tenant", example = "TenantA")
+  @Schema(
+      description = "Name of the tenant",
+      example = "TenantA",
+      requiredMode = Schema.RequiredMode.REQUIRED,
+      nullable = false
+  )
   protected String name;
 
-  @Schema(description = "Root namespace for the tenant", example = "com.tenant.namespace")
+  @Schema(
+      description = "Root namespace for the tenant",
+      example = "com.tenant.namespace",
+      requiredMode = Schema.RequiredMode.REQUIRED,
+      nullable = false
+  )
   protected String namespaceRoot;
 
-  @Schema(description = "Scope of the tenant", example = "global")
-  protected String scope;
+  @Schema(
+      description = "Scope of the tenant",
+      example = "global",
+      defaultValue = "global",
+      requiredMode = Schema.RequiredMode.NOT_REQUIRED,
+      nullable = false
+  )
+  protected String scope = "global";
 }

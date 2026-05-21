@@ -25,7 +25,7 @@
   <groupId>io.mapsmessaging</groupId>
   <artifactId>maps</artifactId>
   <modelVersion>4.0.0</modelVersion>
-  <version>4.3.0</version>
+  <version>4.4.0</version>
   <packaging>jar</packaging>
 
   <name>Maps Messaging Server</name>
@@ -87,9 +87,9 @@
     <nvd.api.key>${env.NVD_API_KEY}</nvd.api.key>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 
-    <logback.version>1.5.21</logback.version>
+    <logback.version>1.5.32</logback.version>
     <pi4j.version>2.8.0</pi4j.version>
-    <jersey.version>4.0.0</jersey.version>
+    <jersey.version>4.0.2</jersey.version>
     <swagger-ui.version>3.17.0</swagger-ui.version>
 
     <runSuite>**/*Suite.class</runSuite>
@@ -133,10 +133,13 @@
     <java.version>21</java.version>
 
     <!-- Base -->
-    <maps.logging.version>2.1.1</maps.logging.version>
-    <maps.jms_selector.version>2.1.0</maps.jms_selector.version>
-    <maps.ml-jms_selector.version>ml-2.1.0</maps.ml-jms_selector.version>
-    <maps.nolc.version>1.2.1</maps.nolc.version>
+    <maps.canbus.version>1.0.0</maps.canbus.version>
+    <maps.logging.version>2.1.2</maps.logging.version>
+    <maps.jms_selector.version>2.1.1</maps.jms_selector.version>
+    <maps.ml-jms_selector.version>ml-2.1.1</maps.ml-jms_selector.version>
+    <maps.nolc.version>1.2.2</maps.nolc.version>
+    <maps.mavlink.version>2.0.0</maps.mavlink.version>
+    <maps.jsonquery.version>1.1.0</maps.jsonquery.version>
 
     <!-- first level dependencies -->
     <maps.nbts.version>2.2.1</maps.nbts.version>
@@ -148,6 +151,9 @@
     <maps.device.version>3.1.0</maps.device.version>
     <maps.auth.version>3.0.1</maps.auth.version>
 
+
+    <license.fetch.skip>false</license.fetch.skip>
+    <license.fetch.dir>${project.build.directory}/license</license.fetch.dir>
 
   </properties>
 
@@ -164,7 +170,7 @@
           <plugin>
             <groupId>org.graalvm.buildtools</groupId>
             <artifactId>native-maven-plugin</artifactId>
-            <version>0.11.1</version>
+            <version>1.1.0</version>
             <extensions>true</extensions>
             <executions>
               <execution>
@@ -212,7 +218,7 @@
         <dependency>
           <groupId>org.graalvm.buildtools</groupId>
           <artifactId>graalvm-reachability-metadata</artifactId>
-          <version>0.11.3</version>
+          <version>1.1.0</version>
           <classifier>repository</classifier>
           <type>zip</type>
         </dependency>
@@ -246,7 +252,7 @@
         <plugin>
         <groupId>org.codehaus.mojo</groupId>
         <artifactId>exec-maven-plugin</artifactId>
-        <version>3.6.2</version>
+        <version>3.6.3</version>
           <executions>
             <execution>
               <id>config-self-signed-certs</id>
@@ -317,11 +323,33 @@
 
   <build>
     <plugins>
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>exec-maven-plugin</artifactId>
+        <version>3.6.3</version>
+        <executions>
+          <execution>
+            <id>fetch-community-license</id>
+            <phase>prepare-package</phase>
+            <goals>
+              <goal>java</goal>
+            </goals>
+            <configuration>
+              <skip>${license.fetch.skip}</skip>
+              <mainClass>io.mapsmessaging.license.tools.LicenseFetcher</mainClass>
+              <classpathScope>compile</classpathScope>
+              <arguments>
+                <argument>${license.fetch.dir}</argument>
+              </arguments>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
       <!-- Allow JDKs greater than 1.8 to be used by maven -->
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-compiler-plugin</artifactId>
-        <version>3.14.1</version>
+        <version>3.15.0</version>
         <configuration>
           <encoding>UTF-8</encoding>
           <source>${java.version}</source>
@@ -387,13 +415,14 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-surefire-plugin</artifactId>
-        <version>3.5.4</version>
+        <version>3.5.5</version>
         <configuration>
           <argLine>
             @{argLine} -DMAPS_HOME=${project.build.directory} -Dfile.encoding=UTF-8 -Dpaho.interop.directory=${basedir}/paho.mqtt.testing/interoperability -Djavax.net.ssl.trustStore=${project.basedir}/my-truststore.jks -Djavax.net.ssl.keyStore=${project.basedir}/my-keystore.jks -Djavax.net.ssl.keyStorePassword=password -Djavax.net.ssl.trustStorePassword=password
           </argLine>
           <includes>
             <include>**/*Test.java</include>
+            <include>**/*Tests.java</include>
             <include>**/*IT.java</include>
           </includes>
         </configuration>
@@ -403,7 +432,7 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-assembly-plugin</artifactId>
-        <version>3.7.1</version>
+        <version>3.8.0</version>
         <executions>
           <execution>
             <id>dist</id>
@@ -425,7 +454,7 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-source-plugin</artifactId>
-        <version>3.3.1</version>
+        <version>3.4.0</version>
         <executions>
           <execution>
             <id>attach-sources</id>
@@ -461,7 +490,7 @@
       <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-dependency-plugin</artifactId>
-          <version>3.9.0</version>
+          <version>3.10.0</version>
           <executions>
               <execution>
                   <phase>package</phase>
@@ -482,7 +511,7 @@
       <plugin>
         <groupId>org.codehaus.mojo</groupId>
         <artifactId>exec-maven-plugin</artifactId>
-        <version>3.6.2</version>
+        <version>3.6.3</version>
         <executions>
           <execution>
             <id>self-signed-certs</id>
@@ -530,8 +559,9 @@
       <plugin>
         <groupId>org.owasp</groupId>
         <artifactId>dependency-check-maven</artifactId>
-        <version>12.1.9</version>
+        <version>12.2.2</version>
         <configuration>
+          <skip>true</skip>
           <nvdApiKey>${nvd.api.key}</nvdApiKey>
           <failBuildOnCVSS>10</failBuildOnCVSS>
           <failOnError>false</failOnError>
@@ -543,6 +573,24 @@
             <goals>
               <goal>check</goal>
             </goals>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>exec-maven-plugin</artifactId>
+        <version>3.6.3</version>
+        <executions>
+          <execution>
+            <id>config-lint</id>
+            <phase>verify</phase>
+            <goals>
+              <goal>java</goal>
+            </goals>
+            <configuration>
+              <mainClass>io.mapsmessaging.tools.config.lint.ConfigLintMain</mainClass>
+              <classpathScope>compile</classpathScope>
+            </configuration>
           </execution>
         </executions>
       </plugin>
@@ -578,7 +626,7 @@
       <dependency>
         <groupId>software.amazon.awssdk</groupId>
         <artifactId>bom</artifactId>
-        <version>2.38.6</version>
+        <version>2.44.9</version>
         <type>pom</type>
         <scope>import</scope>
       </dependency>
@@ -596,9 +644,50 @@
   <dependencies>
     <dependency>
       <groupId>io.mapsmessaging</groupId>
+      <artifactId>canbus-core</artifactId>
+      <version>${maps.canbus.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>io.mapsmessaging</groupId>
+      <artifactId>canbus-events</artifactId>
+      <version>${maps.canbus.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>io.mapsmessaging</groupId>
+      <artifactId>canbus-J1939</artifactId>
+      <version>${maps.canbus.version}</version>
+    </dependency>
+
+    <dependency>
+      <groupId>io.mapsmessaging</groupId>
+      <artifactId>canbus-nmea2000</artifactId>
+      <version>${maps.canbus.version}</version>
+    </dependency>
+
+
+    <dependency>
+      <groupId>io.mapsmessaging</groupId>
       <artifactId>simple_logging</artifactId>
       <version>${maps.logging.version}</version>
     </dependency>
+    <dependency>
+      <groupId>io.mapsmessaging</groupId>
+      <artifactId>mavlink</artifactId>
+      <version>${maps.mavlink.version}</version>
+      <exclusions>
+        <exclusion>
+          <groupId>io.swagger.core.v3</groupId>
+          <artifactId>swagger-annotations</artifactId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+
+    <dependency>
+      <groupId>io.mapsmessaging</groupId>
+      <artifactId>JsonQuery</artifactId>
+      <version>${maps.jsonquery.version}</version>
+    </dependency>
+
     <dependency>
       <groupId>io.mapsmessaging</groupId>
       <artifactId>jms_selector_parser</artifactId>
@@ -667,19 +756,19 @@
     <dependency>
       <groupId>ch.qos.logback.access</groupId>
       <artifactId>logback-access-common</artifactId>
-      <version>2.0.6</version>
+      <version>2.0.12</version>
     </dependency>
 
     <dependency>
       <groupId>com.fasterxml.jackson.datatype</groupId>
       <artifactId>jackson-datatype-jsr310</artifactId>
-      <version>2.20.1</version>
+      <version>2.21.3</version>
     </dependency>
 
     <dependency>
       <groupId>org.yaml</groupId>
       <artifactId>snakeyaml</artifactId>
-      <version>2.5</version>
+      <version>2.6</version>
     </dependency>
 
 
@@ -717,13 +806,13 @@
     <dependency>
       <groupId>jakarta.xml.bind</groupId>
       <artifactId>jakarta.xml.bind-api</artifactId>
-      <version>4.0.4</version>
+      <version>4.0.5</version>
     </dependency>
 
     <dependency>
       <groupId>org.glassfish.jaxb</groupId>
       <artifactId>jaxb-runtime</artifactId>
-      <version>4.0.6</version>
+      <version>4.0.8</version>
     </dependency>
 
     <dependency>
@@ -760,13 +849,13 @@
     <dependency>
       <groupId>io.swagger.core.v3</groupId>
       <artifactId>swagger-jaxrs2-jakarta</artifactId>
-      <version>2.2.40</version>
+      <version>2.2.42</version>
     </dependency>
 
     <dependency>
       <groupId>io.swagger.core.v3</groupId>
       <artifactId>swagger-jaxrs2-servlet-initializer-v2-jakarta</artifactId>
-      <version>2.2.40</version>
+      <version>2.2.42</version>
     </dependency>
 
     <dependency>
@@ -778,51 +867,51 @@
     <dependency>
       <groupId>com.google.code.gson</groupId>
       <artifactId>gson</artifactId>
-      <version>2.13.2</version>
+      <version>2.14.0</version>
     </dependency>
     <dependency>
       <groupId>com.fasterxml.jackson.dataformat</groupId>
       <artifactId>jackson-dataformat-xml</artifactId>
-      <version>2.20.1</version> <!-- Match your Jackson core version -->
+      <version>2.21.3</version> <!-- Match your Jackson core version -->
     </dependency>
 
     <!-- https://mvnrepository.com/artifact/com.fasterxml.jackson.core/jackson-databind -->
     <dependency>
       <groupId>com.fasterxml.jackson.core</groupId>
       <artifactId>jackson-databind</artifactId>
-      <version>2.20.1</version>
+      <version>2.21.3</version>
     </dependency>
 
     <!-- https://mvnrepository.com/artifact/com.fasterxml.jackson.core/jackson-annotations -->
     <dependency>
       <groupId>com.fasterxml.jackson.core</groupId>
       <artifactId>jackson-annotations</artifactId>
-      <version>2.20</version>
+      <version>2.21</version>
     </dependency>
 
     <!-- End RestAPI Support Dependencies -->
     <dependency>
       <groupId>com.auth0</groupId>
       <artifactId>java-jwt</artifactId>
-      <version>4.5.0</version>
+      <version>4.5.2</version>
     </dependency>
     <dependency>
       <groupId>com.auth0</groupId>
       <artifactId>jwks-rsa</artifactId>
-      <version>0.23.0</version>
+      <version>0.24.1</version>
     </dependency>
 
     <!-- Add annotations for not null -->
     <dependency>
       <groupId>org.jetbrains</groupId>
       <artifactId>annotations</artifactId>
-      <version>26.0.2-1</version>
+      <version>26.1.0</version>
     </dependency>
 
     <dependency>
       <groupId>org.projectlombok</groupId>
       <artifactId>lombok</artifactId>
-      <version>1.18.42</version>
+      <version>1.18.46</version>
       <scope>provided</scope>
     </dependency>
     <!--JMX annotations -->
@@ -844,13 +933,13 @@
     <dependency>
       <groupId>org.jmdns</groupId>
       <artifactId>jmdns</artifactId>
-      <version>3.6.2</version>
+      <version>3.6.3</version>
     </dependency>
 
     <dependency>
       <groupId>org.quartz-scheduler</groupId>
       <artifactId>quartz</artifactId>
-      <version>2.5.1</version>
+      <version>2.5.2</version>
     </dependency>
 
 
@@ -867,28 +956,33 @@
     <dependency>
       <groupId>org.jolokia</groupId>
       <artifactId>jolokia-core</artifactId>
-      <version>1.7.2</version>
+      <version>2.6.0</version>
     </dependency>
 
     <!-- Authentication via Amazon Cognito -->
     <dependency>
       <groupId>software.amazon.awssdk</groupId>
       <artifactId>cognitoidentity</artifactId>
-      <version>2.38.6</version>
+      <version>2.44.9</version>
     </dependency>
 
     <dependency>
       <groupId>software.amazon.awssdk</groupId>
       <artifactId>cognitoidentityprovider</artifactId>
-      <version>2.38.6</version>
+      <version>2.44.9</version>
     </dependency>
-
+    <!-- https://mvnrepository.com/artifact/com.networknt/json-schema-validator -->
+    <dependency>
+      <groupId>com.networknt</groupId>
+      <artifactId>json-schema-validator</artifactId>
+      <version>2.0.0</version>
+    </dependency>
 
     <!-- https://mvnrepository.com/artifact/com.amazonaws/aws-java-sdk-cognitoidp -->
     <dependency>
       <groupId>com.amazonaws</groupId>
       <artifactId>aws-java-sdk-cognitoidp</artifactId>
-      <version>1.12.793</version>
+      <version>1.12.797</version>
       <scope>test</scope>
     </dependency>
 
@@ -910,7 +1004,7 @@
     <dependency>
       <groupId>com.googlecode.lanterna</groupId>
       <artifactId>lanterna</artifactId>
-      <version>3.1.3</version>
+      <version>3.1.5</version>
     </dependency>
 
     <dependency>
@@ -953,7 +1047,7 @@
     <dependency>
       <groupId>org.apache.activemq</groupId>
       <artifactId>activemq-stomp</artifactId>
-      <version>6.1.7</version>
+      <version>6.2.5</version>
       <scope>test</scope>
     </dependency>
 
@@ -986,7 +1080,7 @@
     <dependency>
       <groupId>com.hivemq</groupId>
       <artifactId>hivemq-mqtt-client</artifactId>
-      <version>1.3.10</version>
+      <version>1.3.14</version>
       <scope>test</scope>
     </dependency>
 
@@ -1003,7 +1097,7 @@
     <dependency>
       <groupId>org.apache.qpid</groupId>
       <artifactId>qpid-jms-client</artifactId>
-      <version>2.9.0</version>
+      <version>2.10.0</version>
       <scope>test</scope>
     </dependency>
 
@@ -1040,7 +1134,7 @@
     <dependency>
       <groupId>org.glassfish.tyrus.bundles</groupId>
       <artifactId>tyrus-standalone-client</artifactId>
-      <version>2.2.1</version>
+      <version>2.2.2</version>
       <scope>test</scope>
     </dependency>
 
@@ -1084,14 +1178,14 @@
     <dependency>
       <groupId>io.nats</groupId>
       <artifactId>jnats</artifactId>
-      <version>2.24.0</version>
+      <version>2.25.3</version>
       <scope>test</scope>
     </dependency>
 
     <dependency>
       <groupId>org.junit.jupiter</groupId>
       <artifactId>junit-jupiter-params</artifactId>
-      <version>6.0.1</version>
+      <version>6.1.0</version>
       <scope>test</scope>
     </dependency>
 
@@ -1099,7 +1193,7 @@
     <dependency>
       <groupId>org.junit.jupiter</groupId>
       <artifactId>junit-jupiter-engine</artifactId>
-      <version>6.0.1</version>
+      <version>6.1.0</version>
       <scope>test</scope>
     </dependency>
 
@@ -1117,12 +1211,48 @@
       <version>3.14.0</version>
       <scope>test</scope>
     </dependency>
+    <!-- https://mvnrepository.com/artifact/org.mockito/mockito-junit-jupiter -->
+    <dependency>
+      <groupId>org.mockito</groupId>
+      <artifactId>mockito-junit-jupiter</artifactId>
+      <version>5.23.0</version>
+      <scope>test</scope>
+    </dependency>
     <dependency>
       <groupId>org.eclipse.californium</groupId>
       <artifactId>scandium</artifactId>
       <version>3.14.0</version>
       <scope>test</scope>
     </dependency>
+
+    <!-- REST Assured -->
+    <dependency>
+      <groupId>io.rest-assured</groupId>
+      <artifactId>rest-assured</artifactId>
+      <version>5.5.7</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.java-websocket</groupId>
+      <artifactId>Java-WebSocket</artifactId>
+      <version>1.6.0</version>
+    </dependency>
+
+    <dependency>
+      <groupId>com.squareup.okhttp3</groupId>
+      <artifactId>mockwebserver</artifactId>
+      <version>4.12.0</version>
+      <scope>test</scope>
+    </dependency>
+
+    <!-- OpenAPI validation filter for REST Assured -->
+    <dependency>
+      <groupId>com.atlassian.oai</groupId>
+      <artifactId>swagger-request-validator-restassured</artifactId>
+      <version>2.46.1</version>
+      <scope>test</scope>
+    </dependency>
+
   </dependencies>
 
 </project>

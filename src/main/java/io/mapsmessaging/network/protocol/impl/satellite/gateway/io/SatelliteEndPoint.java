@@ -1,7 +1,7 @@
 /*
  *
  *  Copyright [ 2020 - 2024 ] Matthew Buckton
- *  Copyright [ 2024 - 2025 ] MapsMessaging B.V.
+ *  Copyright [ 2024 - 2026 ] MapsMessaging B.V.
  *
  *  Licensed under the Apache License, Version 2.0 with the Commons Clause
  *  (the "License"); you may not use this file except in compliance with the License.
@@ -38,6 +38,11 @@ public class SatelliteEndPoint extends EndPoint {
 
   @Getter
   private RemoteDeviceInfo terminalInfo;
+
+  @Override
+  public String getName(){
+    return terminalInfo.getUniqueId();
+  }
 
   protected SatelliteEndPoint(long id, EndPointServerStatus server, RemoteDeviceInfo terminal) {
     super(id, server);
@@ -96,6 +101,11 @@ public class SatelliteEndPoint extends EndPoint {
   @Override
   protected Logger createLogger() {
     return LoggerFactory.getLogger(getClass());
+  }
+
+  @Override
+  public String getRemoteSocketAddress() {
+    return "";
   }
 
 }

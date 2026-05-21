@@ -1,7 +1,7 @@
 /*
  *
  *  Copyright [ 2020 - 2024 ] Matthew Buckton
- *  Copyright [ 2024 - 2025 ] MapsMessaging B.V.
+ *  Copyright [ 2024 - 2026 ] MapsMessaging B.V.
  *
  *  Licensed under the Apache License, Version 2.0 with the Commons Clause
  *  (the "License"); you may not use this file except in compliance with the License.
@@ -21,6 +21,9 @@ package io.mapsmessaging.test;
 
 import io.mapsmessaging.BaseTest;
 import io.mapsmessaging.MessageDaemon;
+import io.mapsmessaging.api.MessageListener;
+import io.mapsmessaging.api.Session;
+import io.mapsmessaging.api.SessionContextBuilder;
 import io.mapsmessaging.api.features.DestinationType;
 import io.mapsmessaging.auth.AuthManager;
 import io.mapsmessaging.auth.ServerPermissions;
@@ -29,6 +32,7 @@ import io.mapsmessaging.configuration.ConfigurationProperties;
 import io.mapsmessaging.engine.destination.DestinationImpl;
 import io.mapsmessaging.engine.destination.DestinationManagerListener;
 import io.mapsmessaging.engine.destination.subscription.SubscriptionController;
+import io.mapsmessaging.engine.session.FakeProtocol;
 import io.mapsmessaging.engine.session.SessionImpl;
 import io.mapsmessaging.engine.session.SessionManager;
 import io.mapsmessaging.engine.session.SessionManagerTest;
@@ -43,17 +47,22 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
+import io.mapsmessaging.network.ProtocolClientConnection;
+import io.mapsmessaging.network.protocol.Protocol;
 import io.mapsmessaging.security.access.Group;
 import io.mapsmessaging.security.access.Identity;
 import io.mapsmessaging.security.authorisation.ProtectedResource;
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Timeout;
+
+import javax.security.auth.login.LoginException;
 
 @Timeout(value = 240000, unit = TimeUnit.MILLISECONDS)
 public class BaseTestConfig extends BaseTest {
 
+  private static final String[] EXCLUDE_LIST = {"/aggregator", "/vcan0", "/mavlink","/semtech"};
   private static final String[] USERNAMES = {"user1", "admin", "user2", "anonymous"};
   private static final char[][] PASSWORDS = {"password1".toCharArray(), "admin1".toCharArray(), "password2".toCharArray(), "".toCharArray()};
   private static final String[] GROUPS = {"everyone"};
@@ -61,6 +70,7 @@ public class BaseTestConfig extends BaseTest {
   @BeforeAll
   static void setUp() {
   }
+
 
   protected static MessageDaemon md = null;
   private static Thread th;
@@ -73,16 +83,7 @@ public class BaseTestConfig extends BaseTest {
 
   @AfterEach
   void clear(){
-    Map<String, DestinationImpl> destinations = md.getDestinationManager().get(null);
-    List<DestinationImpl> toDelete = new ArrayList<>();
-    for(DestinationImpl destination:destinations.values()){
-      if(!destination.getFullyQualifiedNamespace().startsWith("$")){
-        toDelete.add(destination);
-      }
-    }
-    for(DestinationImpl destination:toDelete){
-      md.getDestinationManager().delete(destination);
-    }
+    deleteUnknownDestinations();
   }
 
   @BeforeAll
@@ -142,6 +143,34 @@ public class BaseTestConfig extends BaseTest {
     }
   }
 
+
+  public Session createSession(String name, int keepAlive, int expiry, boolean persistent, MessageListener listener) throws LoginException, IOException {
+    return createSession(name, keepAlive, expiry, persistent, listener, false);
+  }
+
+  public Session createSession(String name, int keepAlive, int expiry, boolean persistent, MessageListener listener, boolean resetState) throws LoginException, IOException {
+    Protocol fakeProtocol = new FakeProtocol(listener);
+    SessionContextBuilder scb = new SessionContextBuilder(name, new ProtocolClientConnection(fakeProtocol));
+    scb.setPersistentSession(true)
+        .setPersistentSession(persistent)
+        .setResetState(resetState)
+        .setReceiveMaximum(100)
+        .setSessionExpiry(expiry);
+    return createSession(scb, fakeProtocol);
+  }
+
+  public Session createSession(SessionContextBuilder scb, MessageListener listener) throws LoginException, IOException {
+    Session session = io.mapsmessaging.api.SessionManager.getInstance().create(scb.build(), listener);
+    session.login();
+    session.resumeState();
+    return session;
+  }
+
+  public void close(Session session) throws IOException {
+    io.mapsmessaging.api.SessionManager.getInstance().close(session, false);
+  }
+
+
   private static void setIfNot(String key, String value){
     if(System.getProperty(key) == null){
       System.setProperty(key, value);
@@ -149,71 +178,16 @@ public class BaseTestConfig extends BaseTest {
   }
 
   @AfterEach
-  public void checkSessionState()  {
+  void checkSessionState()  {
     try {
-      SessionManager manager = md.getSubSystemManager().getSessionManager();
-      List<SessionImpl> sessionImpls = manager.getSessions();
-      for (SessionImpl sessionImpl : sessionImpls) {
-        System.err.println("Session still active::" + sessionImpl.getName());
-        sessionImpl.setExpiryTime(1);
-        manager.close(sessionImpl, false);
-      }
-      int counter =0;
-      while(!sessionImpls.isEmpty() && counter < 20) {
-        TimeUnit.MILLISECONDS.sleep(100);
-        counter++;
-      }
-
-      List<String> idleSessions = SessionManagerTest.getInstance().getIdleSessions();
-      for (String idleSession : idleSessions) {
-        System.err.println("Idle Session still active::" + idleSession);
-        SessionManagerTest.getInstance().closeIdleSession(idleSession);
-      }
-
-      Map<String, DestinationImpl> destinationImpls = md.getDestinationManager().get(null);
-      for (DestinationImpl destinationImpl : destinationImpls.values()) {
-        if (!destinationImpl.getFullyQualifiedNamespace().startsWith("$")) {
-          md.getDestinationManager().delete(destinationImpl);
-        }
-      }
-      if(md.getSubSystemManager().getSessionManager().hasSessions()){
-        for (SessionImpl sessionImpl : md.getSubSystemManager().getSessionManager().getSessions()) {
-          System.err.println("Session still active::" + sessionImpl.getName());
-          sessionImpl.setExpiryTime(1);
-          manager.close(sessionImpl, false);
-        }
-      }
-      Assertions.assertFalse(md.getSubSystemManager().getSessionManager().hasSessions());
-      long timeout = System.currentTimeMillis()+ 10_000;
-      while(SessionManagerTest.getInstance().hasIdleSessions() && timeout > System.currentTimeMillis()){
-        delay(100);
-      }
-      if(SessionManagerTest.getInstance().hasIdleSessions()){
-        List<String> listeners = md.getDestinationManager().getAll();
-        for (String listener : listeners) {
-          System.err.println("has listener " + listener);
-        }
-      }
-
-//      Assertions.assertFalse(SessionManagerTest.getInstance().hasIdleSessions());
-
-      List<DestinationManagerListener> listeners = md.getDestinationManager().getListeners();
-      for (DestinationManagerListener listener : listeners) {
-        if(listener instanceof SubscriptionController){
-          SubscriptionController subscriptionController = (SubscriptionController) listener;
-          System.err.println("has listener " + subscriptionController.getSessionId());
-        }
-        else {
-          System.err.println("has listener " + listener.getClass().toString());
-        }
-      }
+      deleteUnknownDestinations();
     }
     catch (Exception ex){
       ex.printStackTrace();
     }
   }
 
-  public String getPassword(String user) throws IOException {
+  public static String getPassword(String user) throws IOException {
     if (usernamePasswordMap == null) {
       if (md != null && md.isStarted() && AuthManager.getInstance().isAuthenticationEnabled()) {
         ConfigurationProperties properties = new ConfigurationProperties(AuthManager.getInstance().getConfig().getAuthConfig());
@@ -240,6 +214,25 @@ public class BaseTestConfig extends BaseTest {
       } catch (InterruptedException e) {
         Thread.currentThread().interrupt();
       }
+    }
+  }
+
+  private void deleteUnknownDestinations(){
+    Map<String, DestinationImpl> destinations = md.getDestinationManager().get(null);
+    List<DestinationImpl> toDelete = new ArrayList<>();
+    for(DestinationImpl destination:destinations.values()){
+      boolean allow = true;
+      for(String exclude:EXCLUDE_LIST){
+        if(destination.getFullyQualifiedNamespace().startsWith(exclude)){
+          allow = false;
+        }
+      }
+      if(allow){
+        toDelete.add(destination);
+      }
+    }
+    for(DestinationImpl destination:toDelete){
+      md.getDestinationManager().delete(destination);
     }
   }
 

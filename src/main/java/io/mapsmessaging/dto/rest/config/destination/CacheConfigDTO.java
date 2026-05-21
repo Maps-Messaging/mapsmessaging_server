@@ -1,7 +1,7 @@
 /*
  *
  *  Copyright [ 2020 - 2024 ] Matthew Buckton
- *  Copyright [ 2024 - 2025 ] MapsMessaging B.V.
+ *  Copyright [ 2024 - 2026 ] MapsMessaging B.V.
  *
  *  Licensed under the Apache License, Version 2.0 with the Commons Clause
  *  (the "License"); you may not use this file except in compliance with the License.
@@ -26,14 +26,27 @@ import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 
 @Data
-@EqualsAndHashCode(callSuper=false)
+@EqualsAndHashCode(callSuper = false)
 @NoArgsConstructor
 @Schema(description = "Cache Configuration DTO")
 public class CacheConfigDTO extends BaseConfigDTO {
 
-  @Schema(description = "Type of cache", example = "WeakReference")
-  protected String type;
+  @Schema(
+      description = "Type of cache",
+      example = "WeakReference",
+      allowableValues = {"None", "WeakReference", "JCS"},
+      requiredMode = Schema.RequiredMode.NOT_REQUIRED,
+      defaultValue = "None",
+      nullable = true
+  )
+  protected String type = "None";
 
-  @Schema(description = "Whether write-through caching is enabled", example = "true")
-  protected boolean writeThrough;
+  @Schema(
+      description = "Whether write-through caching is enabled",
+      example = "true",
+      requiredMode = Schema.RequiredMode.NOT_REQUIRED,
+      defaultValue = "true",
+      nullable = true
+  )
+  protected boolean writeThrough = true;
 }

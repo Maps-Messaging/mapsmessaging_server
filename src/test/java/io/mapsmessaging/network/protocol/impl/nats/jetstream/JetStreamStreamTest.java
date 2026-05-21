@@ -1,7 +1,7 @@
 /*
  *
  *  Copyright [ 2020 - 2024 ] Matthew Buckton
- *  Copyright [ 2024 - 2025 ] MapsMessaging B.V.
+ *  Copyright [ 2024 - 2026 ] MapsMessaging B.V.
  *
  *  Licensed under the Apache License, Version 2.0 with the Commons Clause
  *  (the "License"); you may not use this file except in compliance with the License.
@@ -74,13 +74,17 @@ class JetStreamStreamTest extends JetStreamBaseTest {
     List<StreamInfo> f = jetStreamManagement.getStreams();
     Assertions.assertNotNull(f);
     Assertions.assertFalse(f.isEmpty());
+    boolean found = false;
     for(StreamInfo si : f) {
-      for(String subject: si.getConfig().getSubjects()) {
-        Assertions.assertNotEquals("topic1", subject);
-        Assertions.assertNotEquals("topic2", subject);
-        Assertions.assertTrue(subject.equals("folder1.topic1") || subject.equals("folder.folder1.folder2.topic1"));
+      if(si.getConfig().getName().equals(streamInfo.getConfig().getName())) {
+        for(String subject: si.getConfig().getSubjects()) {
+          Assertions.assertNotEquals("topic1", subject);
+          Assertions.assertNotEquals("topic2", subject);
+          found = (subject.equals("folder1.topic1") || subject.equals("folder.folder1.folder2.topic1"));
+        }
       }
     }
+    Assertions.assertTrue(found);
   }
 
 
@@ -116,6 +120,8 @@ class JetStreamStreamTest extends JetStreamBaseTest {
         .allowMessageTtl(true)
         .discardPolicy(DiscardPolicy.Old)
         .build();
+    List<StreamInfo> start = jetStreamManagement.getStreams();
+
     jetStreamManagement.addStream(streamConfiguration);
     StreamInfo streamInfo = jetStreamManagement.getStreamInfo("nats_test");
     Assertions.assertNotNull(streamInfo);
@@ -123,6 +129,6 @@ class JetStreamStreamTest extends JetStreamBaseTest {
     Assertions.assertTrue(jetStreamManagement.deleteStream("nats_test"));
     List<StreamInfo> f = jetStreamManagement.getStreams();
     Assertions.assertNotNull(f);
-    Assertions.assertTrue(f.isEmpty());
+    Assertions.assertEquals(f.size(), start.size());
   }
 }

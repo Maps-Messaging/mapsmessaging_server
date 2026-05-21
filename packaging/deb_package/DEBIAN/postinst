@@ -21,56 +21,260 @@
 
 set -e
 
+#
+# This script runs after dpkg has unpacked the new package payload.
+#
+# The package currently installs default configuration and service files under
+# /opt/maps. Some of those files may also be the active locally modified files,
+# because /etc paths are symlinked back into /opt/maps.
+#
+# Upgrade behaviour:
+#
+#   1. preinst backs up the active local files before unpacking.
+#   2. dpkg unpacks the new package files.
+#   3. postinst moves the freshly unpacked package files to .dist files.
+#   4. postinst restores the backed-up local files.
+#
+# Result:
+#
+#   /opt/maps/conf                 active local config
+#   /opt/maps/conf.dist            new package default config
+#
+#   /opt/maps/etc/maps.service      active local service file
+#   /opt/maps/etc/maps.service.dist new package service template
+#
+#   /opt/maps/etc/maps.env          active local environment file
+#   /opt/maps/etc/maps.env.dist     new package environment template
+#
+# This keeps production configuration intact while still making the latest
+# package defaults available for manual comparison.
+#
+
+MAPS_USER="mapsmessaging"
+MAPS_GROUP="mapsmessaging"
+MAPS_HOME="/opt/maps"
+
+MAPS_CONFIG_DIRECTORY="${MAPS_HOME}/conf"
+MAPS_CONFIG_DIST_DIRECTORY="${MAPS_HOME}/conf.dist"
+
+MAPS_ETC_DIRECTORY="${MAPS_HOME}/etc"
+MAPS_SERVICE_FILE="${MAPS_ETC_DIRECTORY}/maps.service"
+MAPS_SERVICE_DIST_FILE="${MAPS_ETC_DIRECTORY}/maps.service.dist"
+MAPS_ENV_FILE="${MAPS_ETC_DIRECTORY}/maps.env"
+MAPS_ENV_DIST_FILE="${MAPS_ETC_DIRECTORY}/maps.env.dist"
+
+SYSTEMD_SERVICE_LINK="/etc/systemd/system/maps.service"
+MAPS_ENV_LINK="/etc/maps/maps.env"
+
+PACKAGE_BACKUP_DIRECTORY="/var/lib/mapsmessaging/package-backup"
+CONFIG_BACKUP_DIRECTORY="${PACKAGE_BACKUP_DIRECTORY}/conf"
+SERVICE_BACKUP_FILE="${PACKAGE_BACKUP_DIRECTORY}/maps.service"
+ENV_BACKUP_FILE="${PACKAGE_BACKUP_DIRECTORY}/maps.env"
+
 case "$1" in
   configure)
-    # Ensure service user
-    if ! id -u mapsmessaging >/dev/null 2>&1; then
-      useradd -r -s /usr/sbin/nologin -d /opt/maps mapsmessaging
+    #
+    # Ensure the service group exists.
+    #
+    # This duplicates preinst intentionally. Maintainer scripts can be invoked
+    # in repair or partial-install situations, and being defensive here is less
+    # annoying than debugging a broken install because a system account vanished.
+    #
+    if ! getent group "${MAPS_GROUP}" >/dev/null; then
+      addgroup --system "${MAPS_GROUP}"
     fi
-    getent group dialout >/dev/null 2>&1 || groupadd -r dialout
-    usermod -a -G dialout mapsmessaging
 
+    #
+    # Ensure the service user exists.
+    #
+    # The Maps daemon runs as this system user, with /opt/maps as its home and
+    # no login shell.
+    #
+    if ! getent passwd "${MAPS_USER}" >/dev/null; then
+      adduser \
+        --system \
+        --ingroup "${MAPS_GROUP}" \
+        --home "${MAPS_HOME}" \
+        --shell /usr/sbin/nologin \
+        --disabled-login \
+        --gecos "Maps Messaging Server User" \
+        "${MAPS_USER}"
+    fi
 
-    # Create dirs
+    #
+    # Ensure the dialout group exists and add the service user to it.
+    #
+    # This allows Maps to access serial devices such as USB serial adapters,
+    # CAN adapters, modem devices, and other hardware exposed through tty nodes.
+    #
+    if ! getent group dialout >/dev/null; then
+      addgroup --system dialout
+    fi
+
+    if ! id -nG "${MAPS_USER}" | grep -qw dialout; then
+      usermod -a -G dialout "${MAPS_USER}"
+    fi
+
+    #
+    # Create required directories.
+    #
+    # /etc/maps exists for admin-facing links and future config.
+    # /opt/maps is the application install directory.
+    # /opt/maps_data is runtime data.
+    # /var/log/maps is the logging directory.
+    #
     mkdir -p /etc/maps
-    mkdir -p /opt/maps
+    mkdir -p "${MAPS_HOME}"
+    mkdir -p "${MAPS_ETC_DIRECTORY}"
     mkdir -p /opt/maps_data
     mkdir -p /var/log/maps
 
-    # Permissions
-    chown -R mapsmessaging:mapsmessaging /opt/maps
-    chown -R mapsmessaging:mapsmessaging /opt/maps_data
-    [ -d /opt/maps/bin ] && chmod -R 755 /opt/maps/bin
-    chown mapsmessaging:mapsmessaging /var/log/maps
+    #
+    # Restore the local configuration directory, if preinst backed one up.
+    #
+    # At this point dpkg has already unpacked the new package version of
+    # /opt/maps/conf. That newly installed version is moved aside to
+    # /opt/maps/conf.dist, then the previous active configuration is restored.
+    #
+    if [ -d "${CONFIG_BACKUP_DIRECTORY}" ]; then
+      if [ -d "${MAPS_CONFIG_DIRECTORY}" ]; then
+        rm -rf "${MAPS_CONFIG_DIST_DIRECTORY}"
+        mv "${MAPS_CONFIG_DIRECTORY}" "${MAPS_CONFIG_DIST_DIRECTORY}"
+      fi
+
+      rm -rf "${MAPS_CONFIG_DIRECTORY}"
+      cp -a "${CONFIG_BACKUP_DIRECTORY}" "${MAPS_CONFIG_DIRECTORY}"
+      rm -rf "${CONFIG_BACKUP_DIRECTORY}"
+    fi
+
+    #
+    # Restore the local systemd service file, if preinst backed one up.
+    #
+    # The freshly unpacked service file is kept as maps.service.dist. The
+    # previously active service file is restored as maps.service.
+    #
+    # This preserves local changes made through the /etc/systemd/system symlink.
+    #
+    if [ -f "${SERVICE_BACKUP_FILE}" ] || [ -L "${SERVICE_BACKUP_FILE}" ]; then
+      if [ -f "${MAPS_SERVICE_FILE}" ] || [ -L "${MAPS_SERVICE_FILE}" ]; then
+        rm -f "${MAPS_SERVICE_DIST_FILE}"
+        mv "${MAPS_SERVICE_FILE}" "${MAPS_SERVICE_DIST_FILE}"
+      fi
+
+      rm -f "${MAPS_SERVICE_FILE}"
+      cp -a "${SERVICE_BACKUP_FILE}" "${MAPS_SERVICE_FILE}"
+      rm -f "${SERVICE_BACKUP_FILE}"
+    fi
+
+    #
+    # Restore the local environment file, if preinst backed one up.
+    #
+    # The freshly unpacked environment file is kept as maps.env.dist. The
+    # previously active environment file is restored as maps.env.
+    #
+    # This preserves local changes made through /etc/maps/maps.env.
+    #
+    if [ -f "${ENV_BACKUP_FILE}" ] || [ -L "${ENV_BACKUP_FILE}" ]; then
+      if [ -f "${MAPS_ENV_FILE}" ] || [ -L "${MAPS_ENV_FILE}" ]; then
+        rm -f "${MAPS_ENV_DIST_FILE}"
+        mv "${MAPS_ENV_FILE}" "${MAPS_ENV_DIST_FILE}"
+      fi
+
+      rm -f "${MAPS_ENV_FILE}"
+      cp -a "${ENV_BACKUP_FILE}" "${MAPS_ENV_FILE}"
+      rm -f "${ENV_BACKUP_FILE}"
+    fi
+
+    #
+    # Recreate the admin-facing links.
+    #
+    # These links point to the active preserved files under /opt/maps/etc.
+    #
+    # This matches the current package layout. Longer term, the cleaner Debian
+    # layout would be package-owned service files under /lib/systemd/system or
+    # /usr/lib/systemd/system, with local overrides under /etc/systemd/system.
+    #
+    ln -sf "${MAPS_SERVICE_FILE}" "${SYSTEMD_SERVICE_LINK}"
+    ln -sf "${MAPS_ENV_FILE}" "${MAPS_ENV_LINK}"
+
+    #
+    # Remove the backup directories if they are empty.
+    #
+    # These are only temporary staging locations used between preinst and
+    # postinst during an install or upgrade.
+    #
+    rmdir "${PACKAGE_BACKUP_DIRECTORY}" 2>/dev/null || true
+    rmdir /var/lib/mapsmessaging 2>/dev/null || true
+
+    #
+    # Apply ownership to the application and runtime directories.
+    #
+    # This preserves the existing behaviour of allowing the mapsmessaging user
+    # to own /opt/maps. A future package layout may choose to make only runtime
+    # directories writable by the service user.
+    #
+    chown -R "${MAPS_USER}:${MAPS_GROUP}" "${MAPS_HOME}"
+    chown -R "${MAPS_USER}:${MAPS_GROUP}" /opt/maps_data
+
+    #
+    # Ensure executable scripts under /opt/maps/bin can be run.
+    #
+    if [ -d "${MAPS_HOME}/bin" ]; then
+      chmod -R 755 "${MAPS_HOME}/bin"
+    fi
+
+    #
+    # Create and secure the log directory and initial log file.
+    #
+    chown "${MAPS_USER}:${MAPS_GROUP}" /var/log/maps
+
     if [ ! -f /var/log/maps/maps.log ]; then
       touch /var/log/maps/maps.log
-      chown mapsmessaging:mapsmessaging /var/log/maps/maps.log
+      chown "${MAPS_USER}:${MAPS_GROUP}" /var/log/maps/maps.log
       chmod 640 /var/log/maps/maps.log
     fi
 
-    # Env + unit
-    ln -sf /opt/maps/etc/maps.env /etc/maps/maps.env
-    ln -sf /opt/maps/etc/maps.service /lib/systemd/system/maps.service
+    #
+    # Create CLI symlinks.
+    #
+    # These are convenience commands for interactive use.
+    #
+    ln -sf "${MAPS_HOME}/bin/maps" /usr/local/bin/maps
+    ln -sf "${MAPS_HOME}/bin/mapsTop.sh" /usr/local/bin/mapsTop
 
-    # CLI symlinks
-    ln -sf /opt/maps/bin/maps /usr/local/bin/maps
-    ln -sf /opt/maps/bin/mapsTop.sh /usr/local/bin/mapsTop
-    [ -x /opt/maps/bin/generate.sh ] || chmod +x /opt/maps/bin/generate.sh
+    #
+    # Ensure the keystore generation script is executable if present.
+    #
+    if [ -f "${MAPS_HOME}/bin/generate.sh" ]; then
+      chmod +x "${MAPS_HOME}/bin/generate.sh"
+    fi
 
-    # Systemd (guard if unavailable)
+    #
+    # Reload systemd and enable the Maps service.
+    #
+    # The systemctl guard allows this script to run in containers or minimal
+    # environments where systemd is not available.
+    #
     if command -v systemctl >/dev/null 2>&1; then
       systemctl daemon-reload
       systemctl enable maps.service || true
     fi
 
-    # Generate self-signed keystores (idempotent, run as service user)
+    #
+    # Generate default self-signed keystores if they do not already exist.
+    #
+    # This is intentionally idempotent. Existing keystores are not replaced,
+    # because replacing TLS material on upgrade is the sort of surprise nobody
+    # asks for twice.
+    #
     if command -v keytool >/dev/null 2>&1; then
       umask 027
-      export MAPS_HOME="${MAPS_HOME:-/opt/maps}"
+      export MAPS_HOME="${MAPS_HOME}"
+
       if [ ! -r "${MAPS_HOME}/my-keystore.jks" ] || [ ! -r "${MAPS_HOME}/my-truststore.jks" ]; then
         echo "Generating keystores in ${MAPS_HOME}..."
-        runuser -u mapsmessaging -- bash -lc 'cd "${MAPS_HOME:-/opt/maps}" && ./bin/generate.sh'
-        chown mapsmessaging:mapsmessaging "${MAPS_HOME}/"*.jks || true
+        runuser -u "${MAPS_USER}" -- bash -lc 'cd "${MAPS_HOME:-/opt/maps}" && ./bin/generate.sh'
+        chown "${MAPS_USER}:${MAPS_GROUP}" "${MAPS_HOME}/"*.jks || true
         chmod 640 "${MAPS_HOME}/"*.jks || true
       else
         echo "Keystores already present; skipping generation."
@@ -79,9 +283,18 @@ case "$1" in
       echo "keytool not found; skipping keystore generation."
     fi
 
-    # Track installation event with PostHog
-    if [ -x /opt/maps/scripts/track_installation.sh ]; then
-      /opt/maps/scripts/track_installation.sh "deb" "$(dpkg-query -W -f='${Version}' maps 2>/dev/null || echo 'unknown')" "$(lsb_release -si 2>/dev/null || echo 'unknown')" "$(dpkg --print-architecture 2>/dev/null || echo 'unknown')" &
+    #
+    # Track installation event.
+    #
+    # This is run in the background so package installation is not blocked by
+    # telemetry delivery.
+    #
+    if [ -x "${MAPS_HOME}/scripts/track_installation.sh" ]; then
+      "${MAPS_HOME}/scripts/track_installation.sh" \
+        "deb" \
+        "$(dpkg-query -W -f='${Version}' maps 2>/dev/null || echo 'unknown')" \
+        "$(lsb_release -si 2>/dev/null || echo 'unknown')" \
+        "$(dpkg --print-architecture 2>/dev/null || echo 'unknown')" &
     fi
   ;;
 esac

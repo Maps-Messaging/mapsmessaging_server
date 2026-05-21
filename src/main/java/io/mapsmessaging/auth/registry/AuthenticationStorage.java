@@ -1,7 +1,7 @@
 /*
  *
  *  Copyright [ 2020 - 2024 ] Matthew Buckton
- *  Copyright [ 2024 - 2025 ] MapsMessaging B.V.
+ *  Copyright [ 2024 - 2026 ] MapsMessaging B.V.
  *
  *  Licensed under the Apache License, Version 2.0 with the Commons Clause
  *  (the "License"); you may not use this file except in compliance with the License.
@@ -21,11 +21,8 @@ package io.mapsmessaging.auth.registry;
 
 import io.mapsmessaging.auth.ServerPermissions;
 import io.mapsmessaging.auth.ServerTraversalFactory;
-import io.mapsmessaging.auth.priviliges.PrivilegeSerializer;
 import io.mapsmessaging.auth.priviliges.SessionPrivileges;
-import io.mapsmessaging.auth.registry.mapping.GroupIdSerializer;
 import io.mapsmessaging.auth.registry.mapping.IdDbStore;
-import io.mapsmessaging.auth.registry.mapping.UserIdSerializer;
 import io.mapsmessaging.auth.registry.principal.SessionPrivilegePrincipal;
 import io.mapsmessaging.configuration.ConfigurationProperties;
 import io.mapsmessaging.logging.Logger;
@@ -34,10 +31,9 @@ import io.mapsmessaging.security.SubjectHelper;
 import io.mapsmessaging.security.access.*;
 import io.mapsmessaging.security.access.mapping.GroupIdMap;
 import io.mapsmessaging.security.access.mapping.UserIdMap;
+import io.mapsmessaging.security.access.monitor.AuthenticationMonitorConfig;
 import io.mapsmessaging.security.authorisation.*;
 import lombok.Getter;
-import org.mapdb.DB;
-import org.mapdb.DBMaker;
 
 import javax.security.auth.Subject;
 import java.io.File;
@@ -54,13 +50,13 @@ public class AuthenticationStorage {
   @Getter
   private final IdentityAccessManager identityAccessManager;
   private final UserPermisionManager userPermisionManager;
-  private final DB db;
+  private final AuthDbStoreManager dbStoreManager;
   @Getter
   private final boolean firstBoot;
 
   private final Logger logger = LoggerFactory.getLogger(AuthenticationStorage.class);
 
-  public AuthenticationStorage(ConfigurationProperties config)  {
+  public AuthenticationStorage(ConfigurationProperties config, AuthenticationMonitorConfig monitorConfig) {
     String securityDirectory = config.getProperty("configDirectory", "./.security");
     if (securityDirectory != null) {
       File file = new File(securityDirectory);
@@ -69,19 +65,10 @@ public class AuthenticationStorage {
       }
     }
 
-    firstBoot = !(new File(securityDirectory + File.separator + ".auth.db").exists());
-    db = DBMaker.fileDB(securityDirectory + File.separator + ".auth.db")
-        .checksumStoreEnable()
-        .cleanerHackEnable()
-        .fileChannelEnable()
-        .fileMmapEnableIfSupported()
-        .fileMmapPreclearDisable()
-        .closeOnJvmShutdown()
-        .make();
-    db.getStore().fileLoad();
-    Map<UUID, UserIdMap> userMapSet = db.hashMap("userIdMap", new UUIDSerializer(), new UserIdSerializer()).createOrOpen();
-    Map<UUID, GroupIdMap> groupMapSet = db.hashMap("groupIdMap", new UUIDSerializer(), new GroupIdSerializer()).createOrOpen();
-    Map<UUID, SessionPrivileges> sessionPrivilegesMap = db.hashMap(UserPermisionManager.class.getName(), new UUIDSerializer(), new PrivilegeSerializer()).createOrOpen();
+    firstBoot = !(
+        new File(securityDirectory + File.separator + ".auth.db").exists() ||
+            new File(securityDirectory + File.separator + ".auth_tx.db").exists()
+    );
 
     Map<String, Object> map = new LinkedHashMap<>(config.getMap());
     map.put("configDirectory", securityDirectory);
@@ -94,11 +81,10 @@ public class AuthenticationStorage {
 
     String authProvider = config.getProperty("identityProvider", "Apache-Basic-Auth");
     try {
-      identityAccessManager = new IdentityAccessManager(authProvider, map, new IdDbStore<>(userMapSet), new IdDbStore<>(groupMapSet), new ServerTraversalFactory(), ServerPermissions.values());
-      userPermisionManager = new UserPermisionManager(sessionPrivilegesMap);
+      dbStoreManager = new AuthDbStoreManager(securityDirectory);
+      identityAccessManager = new IdentityAccessManager(authProvider, map, new IdDbStore<>(dbStoreManager.getUserMapSet()), new IdDbStore<>(dbStoreManager.getGroupMapSet()), new ServerTraversalFactory(), monitorConfig, ServerPermissions.values());
+      userPermisionManager = new UserPermisionManager(dbStoreManager.getSessionPrivilegesMap());
     } catch (IOException e) {
-
-      // ToDo: This is catastrophic and needs to be logged and the server stopped!, no auth(x) no server
       e.printStackTrace();
       throw new RuntimeException(e);
     }
@@ -118,6 +104,7 @@ public class AuthenticationStorage {
       }
       quotas.setUniqueId(uuid);
       userPermisionManager.add(quotas);
+      dbStoreManager.commit();
       return true;
     } catch (IOException | GeneralSecurityException e) {
       logger.log(AUTH_STORAGE_FAILED_TO_LOAD, e);
@@ -133,6 +120,7 @@ public class AuthenticationStorage {
         userManagement.deleteUser(username);
         userPermisionManager.delete(userIdMap.getId());
       }
+      dbStoreManager.commit();
       return true;
     } catch (IOException e) {
       logger.log(AUTH_STORAGE_FAILED_ON_UPDATE, e);
@@ -141,8 +129,8 @@ public class AuthenticationStorage {
   }
 
 
-  public boolean validateUser(String username, char[] password) throws IOException {
-    return identityAccessManager.validateUser(username, password);
+  public boolean validateUser(String username, char[] password, AuthContext context) throws IOException {
+    return identityAccessManager.validateUser(username, password, context);
   }
 
   public SessionPrivileges getQuota(UUID userId) {
@@ -218,20 +206,29 @@ public class AuthenticationStorage {
     return groups;
   }
 
+  public boolean updatePassword(Identity identity, char[] password) throws GeneralSecurityException, IOException {
+    return identityAccessManager.getUserManagement().updateUserPassword(identity.getUsername(), password);
+  }
+
   public void delGroup(String groupName) throws IOException {
     identityAccessManager.getGroupManagement().deleteGroup(groupName);
+    dbStoreManager.commit();
   }
 
   public GroupIdMap addGroup(String groupName) throws IOException {
-    return identityAccessManager.getGroupManagement().createGroup(groupName);
+    GroupIdMap id = identityAccessManager.getGroupManagement().createGroup(groupName);
+    dbStoreManager.commit();
+    return id;
   }
 
   public void addUserToGroup(String user, String group) throws IOException {
     identityAccessManager.getGroupManagement().addUserToGroup(user, group);
+    dbStoreManager.commit();
   }
 
   public void removeUserFromGroup(String username, String groupName) throws IOException {
     identityAccessManager.getGroupManagement().removeUserFromGroup(username, groupName);
+    dbStoreManager.commit();
   }
 
   public AuthorizationProvider getAuthorizationProvider() {
@@ -273,6 +270,6 @@ public class AuthenticationStorage {
 
 
   public void close() {
-    db.close();
+    dbStoreManager.close();
   }
 }

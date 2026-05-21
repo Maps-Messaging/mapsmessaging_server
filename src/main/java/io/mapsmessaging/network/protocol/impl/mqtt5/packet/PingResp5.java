@@ -1,7 +1,7 @@
 /*
  *
  *  Copyright [ 2020 - 2024 ] Matthew Buckton
- *  Copyright [ 2024 - 2025 ] MapsMessaging B.V.
+ *  Copyright [ 2024 - 2026 ] MapsMessaging B.V.
  *
  *  Licensed under the Apache License, Version 2.0 with the Commons Clause
  *  (the "License"); you may not use this file except in compliance with the License.
@@ -20,6 +20,8 @@
 package io.mapsmessaging.network.protocol.impl.mqtt5.packet;
 
 import io.mapsmessaging.network.io.Packet;
+import io.mapsmessaging.network.protocol.impl.mqtt.packet.MQTTPacket;
+import io.mapsmessaging.network.protocol.impl.mqtt.packet.MalformedException;
 
 /**
  * http://docs.oasis-open.org/mqtt/mqtt/v3.1.1/os/mqtt-v3.1.1-os.html#_Toc398718086
@@ -29,6 +31,17 @@ public class PingResp5 extends MQTTPacket5 {
   public PingResp5() {
     super(PINGRESP);
   }
+
+  public PingResp5(byte fixedHeader, long remainingLen) throws MalformedException {
+    super(MQTTPacket.PINGRESP);
+    if ((fixedHeader & 0xf) != 0) {
+      throw new MalformedException("PingResp: Reserved bits in command byte not 0");
+    }
+    if (remainingLen != 0) {
+      throw new MalformedException("PingResp: remaining length not 0");
+    }
+  }
+
 
   @Override
   public String toString() {

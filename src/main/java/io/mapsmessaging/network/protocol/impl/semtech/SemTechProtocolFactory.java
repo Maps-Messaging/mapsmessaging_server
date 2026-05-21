@@ -1,7 +1,7 @@
 /*
  *
  *  Copyright [ 2020 - 2024 ] Matthew Buckton
- *  Copyright [ 2024 - 2025 ] MapsMessaging B.V.
+ *  Copyright [ 2024 - 2026 ] MapsMessaging B.V.
  *
  *  Licensed under the Apache License, Version 2.0 with the Commons Clause
  *  (the "License"); you may not use this file except in compliance with the License.
@@ -29,23 +29,17 @@ import java.io.IOException;
 
 public class SemTechProtocolFactory extends ProtocolImplFactory {
 
-//  private final Map<EndPoint, SemTechProtocol> mappedInterfaces;
-
   public SemTechProtocolFactory() {
     super("semtech", "SemTech UDP protocol", null);
-  //  mappedInterfaces = new ConcurrentHashMap<>();
   }
 
   @Override
   public void closed(EndPoint endPoint) {
-  //  mappedInterfaces.remove(endPoint);
   }
 
   @Override
   public Protocol connect(EndPoint endPoint, String sessionId, String username, String password) throws IOException {
-    SemTechProtocol protocol = new SemTechProtocol(endPoint, sessionId);
- //   mappedInterfaces.put(endPoint, protocol);
-    return protocol;
+    return new SemTechProtocol(endPoint, sessionId);
   }
 
   @Override
@@ -61,6 +55,5 @@ public class SemTechProtocolFactory extends ProtocolImplFactory {
   @Override
   public void create(EndPoint endPoint, InterfaceInformation info) throws IOException {
     new SemTechProtocol(endPoint);
-   // mappedInterfaces.put(endPoint, protocol);
   }
 }

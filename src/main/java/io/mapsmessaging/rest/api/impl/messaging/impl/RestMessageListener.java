@@ -1,7 +1,7 @@
 /*
  *
  *  Copyright [ 2020 - 2024 ] Matthew Buckton
- *  Copyright [ 2024 - 2025 ] MapsMessaging B.V.
+ *  Copyright [ 2024 - 2026 ] MapsMessaging B.V.
  *
  *  Licensed under the Apache License, Version 2.0 with the Commons Clause
  *  (the "License"); you may not use this file except in compliance with the License.
@@ -34,7 +34,6 @@ import io.mapsmessaging.engine.schema.SchemaManager;
 import io.mapsmessaging.rest.translation.GsonDateTimeSerialiser;
 import io.mapsmessaging.schemas.config.SchemaConfig;
 import io.mapsmessaging.schemas.formatters.MessageFormatter;
-import io.mapsmessaging.schemas.formatters.MessageFormatterFactory;
 import io.mapsmessaging.schemas.formatters.impl.RawFormatter;
 import jakarta.ws.rs.sse.OutboundSseEvent;
 import jakarta.ws.rs.sse.Sse;
@@ -152,22 +151,26 @@ public class RestMessageListener implements MessageListener {
     sessionSubscriptionsMap.remove(namespacePath);
   }
 
-  public void ackReceived(String destination, List<Long> messageId) {
+  public boolean ackReceived(String destination, List<Long> messageId) {
     SessionSubscriptionMap subscribedEventManager = sessionSubscriptionsMap.get(destination);
     if (subscribedEventManager != null) {
       for (long id : messageId) {
         subscribedEventManager.getSubscribedEventManager().ackReceived(id);
+        return true;
       }
     }
+    return false;
   }
 
-  public void nakReceived(String destination, List<Long> messageId) {
+  public boolean nakReceived(String destination, List<Long> messageId) {
     SessionSubscriptionMap subscribedEventManager = sessionSubscriptionsMap.get(destination);
     if (subscribedEventManager != null) {
       for (long id : messageId) {
         subscribedEventManager.getSubscribedEventManager().rollbackReceived(id);
+        return true;
       }
     }
+    return false;
   }
 
   public int subscriptionDepth(String namespacePath) {
@@ -197,7 +200,7 @@ public class RestMessageListener implements MessageListener {
     Map<String, List<MessageDTO>> response = new LinkedHashMap<>();
 
     boolean hasEvents = true;
-    while (hasEvents && count != 0) {
+    while (hasEvents && count != 0 && destinationMessages != null) {
       hasEvents = false;
       for (Map.Entry<String, List<MessageEvent>> entry : destinationMessages.entrySet()) {
         if (!entry.getValue().isEmpty()) {
@@ -232,9 +235,9 @@ public class RestMessageListener implements MessageListener {
     if(message.getMessage().getSchemaId() != null) {
       SchemaConfig config = SchemaManager.getInstance().getSchema(message.getMessage().getSchemaId());
       try {
-        MessageFormatter formatter = MessageFormatterFactory.getInstance().getFormatter(config);
+        MessageFormatter formatter = SchemaManager.getInstance().getMessageFormatter(config);
         if (formatter != null && !(formatter instanceof RawFormatter)) {
-          JsonObject jsonObject = formatter.parseToJson(payload);
+          JsonObject jsonObject = formatter.parseToJson(payload, SchemaManager.getInstance().getDefaultParseMode());
           JsonObject wrapper = new JsonObject();
           wrapper.add("payload", jsonObject);
           wrapper.addProperty("schemaId", message.getMessage().getSchemaId());
@@ -245,6 +248,10 @@ public class RestMessageListener implements MessageListener {
       }
     }
 
+    messageDTO.setCreation(LocalDateTime.ofInstant(
+        Instant.ofEpochMilli(msg.getCreation()),
+        ZoneId.systemDefault()
+    ));
     messageDTO.setPayload(Base64.getEncoder().encodeToString(payload));
     messageDTO.setExpiry(msg.getExpiry());
     messageDTO.setCorrelationData(msg.getCorrelationData());

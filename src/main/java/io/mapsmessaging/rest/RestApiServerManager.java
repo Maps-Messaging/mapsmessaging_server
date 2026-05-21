@@ -1,7 +1,7 @@
 /*
  *
  *  Copyright [ 2020 - 2024 ] Matthew Buckton
- *  Copyright [ 2024 - 2025 ] MapsMessaging B.V.
+ *  Copyright [ 2024 - 2026 ] MapsMessaging B.V.
  *
  *  Licensed under the Apache License, Version 2.0 with the Commons Clause
  *  (the "License"); you may not use this file except in compliance with the License.
@@ -22,8 +22,8 @@ package io.mapsmessaging.rest;
 import io.mapsmessaging.MessageDaemon;
 import io.mapsmessaging.auth.AuthManager;
 import io.mapsmessaging.config.RestApiManagerConfig;
-import io.mapsmessaging.config.network.impl.TlsConfig;
-import io.mapsmessaging.config.rest.StaticConfig;
+import io.mapsmessaging.dto.rest.config.network.impl.TlsConfigDTO;
+import io.mapsmessaging.dto.rest.config.rest.StaticConfigDTO;
 import io.mapsmessaging.dto.rest.system.Status;
 import io.mapsmessaging.dto.rest.system.SubSystemStatusDTO;
 import io.mapsmessaging.logging.Logger;
@@ -121,7 +121,7 @@ public class RestApiServerManager implements Agent {
   }
 
   private SSLContextConfigurator setupSSL() {
-    TlsConfig sslConfig = config.getTlsConfig();
+    TlsConfigDTO sslConfig = config.getTlsConfig();
     if (sslConfig != null) {
       isSecure = true;
       SSLContextConfigurator sslCon = new SSLContextConfigurator();
@@ -135,7 +135,7 @@ public class RestApiServerManager implements Agent {
   }
 
   private boolean isClientCertRequired() {
-    TlsConfig sslConfig = config.getTlsConfig();
+    TlsConfigDTO sslConfig = config.getTlsConfig();
     if (sslConfig != null) {
       return sslConfig.getSslConfig().isClientCertificateRequired();
     }
@@ -143,7 +143,7 @@ public class RestApiServerManager implements Agent {
   }
 
   private boolean isClientCertWanted() {
-    TlsConfig sslConfig = config.getTlsConfig();
+    TlsConfigDTO sslConfig = config.getTlsConfig();
     if (sslConfig != null) {
       return sslConfig.getSslConfig().isClientCertificateWanted();
     }
@@ -208,6 +208,9 @@ public class RestApiServerManager implements Agent {
     endpoints.add("io.mapsmessaging.rest.api.impl.server");
     endpoints.add("io.mapsmessaging.rest.api.impl.logging");
     endpoints.add("io.mapsmessaging.rest.api.impl.ml");
+    endpoints.add("io.mapsmessaging.rest.api.impl.config");
+    endpoints.add("io.mapsmessaging.rest.api.impl.twins");
+
     try {
       final ResourceConfig resourceConfig = new ResourceConfig();
       resourceConfig.packages(false, endpoints.toArray(new String[0]));
@@ -277,6 +280,9 @@ public class RestApiServerManager implements Agent {
     transport.setSelectorRunnersCount(config.getSelectorThreads());
     transport.setWorkerThreadPoolConfig(threadPoolConfig);
     transport.setKernelThreadPoolConfig(threadPoolConfig);
+    server.getServerConfiguration().setDefaultErrorPageGenerator(
+        (request, response, status, description, exception) -> null
+    );
 
     context.deploy(server);
     loadStatic(server);
@@ -286,7 +292,7 @@ public class RestApiServerManager implements Agent {
 
   private void loadStatic(HttpServer server){
     if (config.getStaticConfig() != null){
-      StaticConfig staticConfig = config.getStaticConfig();
+      StaticConfigDTO staticConfig = config.getStaticConfig();
       if(staticConfig.isEnabled()){
         String path = staticConfig.getDirectory();
         if (!path.endsWith(File.separator)) {

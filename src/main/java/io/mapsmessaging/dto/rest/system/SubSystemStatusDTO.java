@@ -1,7 +1,7 @@
 /*
  *
  *  Copyright [ 2020 - 2024 ] Matthew Buckton
- *  Copyright [ 2024 - 2025 ] MapsMessaging B.V.
+ *  Copyright [ 2024 - 2026 ] MapsMessaging B.V.
  *
  *  Licensed under the Apache License, Version 2.0 with the Commons Clause
  *  (the "License"); you may not use this file except in compliance with the License.
@@ -39,7 +39,9 @@ public class SubSystemStatusDTO {
   @Schema(
       title = "Comment",
       description = "A comment or additional information about the subsystem's status.",
-      example = "System is operating normally.")
+      example = "System is operating normally.",
+      requiredMode = Schema.RequiredMode.NOT_REQUIRED,
+      nullable = true)
   private String comment;
 
   @Schema(

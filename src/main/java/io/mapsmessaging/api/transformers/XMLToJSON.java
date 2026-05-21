@@ -1,7 +1,7 @@
 /*
  *
  *  Copyright [ 2020 - 2024 ] Matthew Buckton
- *  Copyright [ 2024 - 2025 ] MapsMessaging B.V.
+ *  Copyright [ 2024 - 2026 ] MapsMessaging B.V.
  *
  *  Licensed under the Apache License, Version 2.0 with the Commons Clause
  *  (the "License"); you may not use this file except in compliance with the License.
@@ -22,10 +22,9 @@ package io.mapsmessaging.api.transformers;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.dataformat.xml.XmlMapper;
 import io.mapsmessaging.api.MessageBuilder;
-import io.mapsmessaging.configuration.ConfigurationProperties;
+import io.mapsmessaging.dto.rest.config.transformer.TransformationConfigDTO;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
-import io.mapsmessaging.network.protocol.Protocol;
 import io.mapsmessaging.utilities.GsonFactory;
 
 import java.nio.charset.StandardCharsets;
@@ -37,9 +36,10 @@ public class XMLToJSON implements InterServerTransformation {
 
   private static final Logger logger = LoggerFactory.getLogger(XMLToJSON.class);
 
+  private XmlMapper xmlMapper = new XmlMapper();
 
   @Override
-  public Protocol.ParsedMessage transform(String source, Protocol.ParsedMessage message){
+  public ParsedMessage transform(String source, ParsedMessage message){
     MessageBuilder messageBuilder = new MessageBuilder(message.getMessage());
     convert(messageBuilder);
     message.setMessage(messageBuilder.build());
@@ -48,7 +48,6 @@ public class XMLToJSON implements InterServerTransformation {
 
   private void convert(MessageBuilder messageBuilder) {
     try {
-      XmlMapper xmlMapper = new XmlMapper();
       Map<String, Object> map = xmlMapper.readValue(messageBuilder.getOpaqueData(), new TypeReference<>() {});
       String pretty = GsonFactory.getInstance().getSimpleGson().toJson(map);
       messageBuilder.setOpaqueData(pretty.getBytes(StandardCharsets.UTF_8));
@@ -58,7 +57,7 @@ public class XMLToJSON implements InterServerTransformation {
   }
 
   @Override
-  public InterServerTransformation build(ConfigurationProperties properties) {
+  public InterServerTransformation build(TransformationConfigDTO properties) {
     return this;
   }
 

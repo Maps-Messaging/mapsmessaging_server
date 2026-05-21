@@ -1,7 +1,7 @@
 /*
  *
  *  Copyright [ 2020 - 2024 ] Matthew Buckton
- *  Copyright [ 2024 - 2025 ] MapsMessaging B.V.
+ *  Copyright [ 2024 - 2026 ] MapsMessaging B.V.
  *
  *  Licensed under the Apache License, Version 2.0 with the Commons Clause
  *  (the "License"); you may not use this file except in compliance with the License.
@@ -21,8 +21,8 @@ package io.mapsmessaging.network;
 
 import io.mapsmessaging.MessageDaemon;
 import io.mapsmessaging.config.NetworkConnectionManagerConfig;
-import io.mapsmessaging.config.network.EndPointConnectionServerConfig;
 import io.mapsmessaging.config.protocol.impl.LocalLoopConfig;
+import io.mapsmessaging.dto.rest.config.network.EndPointConnectionServerConfigDTO;
 import io.mapsmessaging.dto.rest.config.protocol.ProtocolConfigDTO;
 import io.mapsmessaging.dto.rest.system.Status;
 import io.mapsmessaging.dto.rest.system.SubSystemStatusDTO;
@@ -79,7 +79,7 @@ public class NetworkConnectionManager implements ServiceManager, Agent {
   }
 
   public void initialise() {
-    for (EndPointConnectionServerConfig properties : config.getEndPointServerConfigList()) {
+    for (EndPointConnectionServerConfigDTO properties : config.getEndPointServerConfigList()) {
       if (!properties.getLinkConfigs().isEmpty()) {
         String urlString = properties.getUrl();
         if (urlString == null ||
@@ -98,7 +98,7 @@ public class NetworkConnectionManager implements ServiceManager, Agent {
     }
   }
 
-  private void processEndPoint(EndPointURL endPointURL, EndPointConnectionServerConfig properties){
+  private void processEndPoint(EndPointURL endPointURL, EndPointConnectionServerConfigDTO properties){
     if(properties.isPluginConnection()){
       EndPointConnectionHostJMX hostJMXBean = null;
       List<String> jmxList = MessageDaemon.getInstance().getTypePath();
@@ -122,7 +122,7 @@ public class NetworkConnectionManager implements ServiceManager, Agent {
     }
   }
 
-  private void create(EndPointURL endPointURL, EndPointConnectionServerConfig properties,EndPointConnectionFactory endPointConnectionFactory, EndPointConnectionHostJMX hostJMXBean ){
+  private void create(EndPointURL endPointURL, EndPointConnectionServerConfigDTO properties,EndPointConnectionFactory endPointConnectionFactory, EndPointConnectionHostJMX hostJMXBean ){
     EndPointConnection endPointConnection = new EndPointConnection(endPointURL, properties, endPointConnectionFactory, selectorLoadManager, hostJMXBean);
     if(properties.getGroupName() != null && !properties.getGroupName().isEmpty()){
       RouteManager routeManager = knownRouteList.computeIfAbsent(properties.getGroupName(), k -> new RouteManager(properties.getGroupName()));

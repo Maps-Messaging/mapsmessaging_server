@@ -1,7 +1,7 @@
 /*
  *
  *  Copyright [ 2020 - 2024 ] Matthew Buckton
- *  Copyright [ 2024 - 2025 ] MapsMessaging B.V.
+ *  Copyright [ 2024 - 2026 ] MapsMessaging B.V.
  *
  *  Licensed under the Apache License, Version 2.0 with the Commons Clause
  *  (the "License"); you may not use this file except in compliance with the License.
@@ -319,21 +319,19 @@ public class DestinationSubscription extends Subscription {
   }
 
   protected Message retrieveNextMessage() throws IOException {
-    while(messageStateManager.hasAtRestMessages()) {
+    for (;;) {
       long nextMessageId = messageStateManager.nextMessageId();
-      if (nextMessageId >= 0) {
-        Message message = destinationImpl.getMessage(nextMessageId);
-        if (message != null) {
-          messageStateManager.allocate(message);
-          messagesSent++;
-          return message;
-        } else {
-          messageStateManager.expired(nextMessageId);
-          messagesExpired++;
-        }
+      if (nextMessageId < 0) {
+        break;
       }
-      else{
-        break; // we have no events
+      Message message = destinationImpl.getMessage(nextMessageId);
+      if (message != null) {
+        messageStateManager.allocate(message);
+        messagesSent++;
+        return message;
+      } else {
+        messageStateManager.expired(nextMessageId);
+        messagesExpired++;
       }
     }
     return null;

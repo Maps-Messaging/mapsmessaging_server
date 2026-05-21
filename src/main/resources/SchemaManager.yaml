@@ -17,6 +17,7 @@
 
 ---
 SchemaManager:
-  repositoryType: "File" # Simple, File, Maps are allowed
+  parseMode: "STRICT"   #IGNORE or STRICT
+  type: "file" # Simple, File, Maps are allowed
   config:
     directoryPath: "{{MAPS_DATA}}/schemas"

@@ -1,7 +1,7 @@
 /*
  *
  *  Copyright [ 2020 - 2024 ] Matthew Buckton
- *  Copyright [ 2024 - 2025 ] MapsMessaging B.V.
+ *  Copyright [ 2024 - 2026 ] MapsMessaging B.V.
  *
  *  Licensed under the Apache License, Version 2.0 with the Commons Clause
  *  (the "License"); you may not use this file except in compliance with the License.
@@ -26,6 +26,7 @@ import lombok.NonNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.IOException;
+import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeoutException;
 
@@ -70,10 +71,9 @@ public abstract class Extension {
 
   public abstract void outbound(@NonNull @NotNull String destinationName, @NonNull @NotNull Message message);
 
-  public abstract void registerRemoteLink(@NonNull @NotNull String destination, @Nullable String filter) throws IOException;
+  public abstract void registerRemoteLink(@NonNull @NotNull String destination, @Nullable String filter, @Nullable Map<String, Object> linkProperties) throws IOException;
 
-  public abstract void registerLocalLink(@NonNull @NotNull String destination) throws IOException;
-
+  public abstract void registerLocalLink(@NonNull @NotNull String destination, @Nullable Map<String, Object> linkProperties) throws IOException;
 
   protected void inbound(@NonNull @NotNull String destinationName,  @NonNull @NotNull Message message) throws IOException {
     if (extensionProtocol == null) {

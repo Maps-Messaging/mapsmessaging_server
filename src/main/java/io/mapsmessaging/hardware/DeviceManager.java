@@ -1,7 +1,7 @@
 /*
  *
  *  Copyright [ 2020 - 2024 ] Matthew Buckton
- *  Copyright [ 2024 - 2025 ] MapsMessaging B.V.
+ *  Copyright [ 2024 - 2026 ] MapsMessaging B.V.
  *
  *  Licensed under the Apache License, Version 2.0 with the Commons Clause
  *  (the "License"); you may not use this file except in compliance with the License.
@@ -25,6 +25,7 @@ import io.mapsmessaging.devices.DeviceController;
 import io.mapsmessaging.devices.i2c.I2CBusManager;
 import io.mapsmessaging.dto.rest.config.device.I2CBusConfigDTO;
 import io.mapsmessaging.dto.rest.config.device.OneWireBusConfigDTO;
+import io.mapsmessaging.dto.rest.config.device.SpiDeviceBusConfigDTO;
 import io.mapsmessaging.dto.rest.config.device.triggers.BaseTriggerConfigDTO;
 import io.mapsmessaging.dto.rest.system.Status;
 import io.mapsmessaging.dto.rest.system.SubSystemStatusDTO;
@@ -32,6 +33,7 @@ import io.mapsmessaging.hardware.device.handler.BusHandler;
 import io.mapsmessaging.hardware.device.handler.i2c.I2CBusHandler;
 import io.mapsmessaging.hardware.device.handler.onewire.OneWireBusHandler;
 import io.mapsmessaging.hardware.device.handler.serial.SerialDeviceBusHandler;
+import io.mapsmessaging.hardware.device.handler.spi.SpiBusHandler;
 import io.mapsmessaging.hardware.trigger.PeriodicTrigger;
 import io.mapsmessaging.hardware.trigger.Trigger;
 import io.mapsmessaging.license.FeatureManager;
@@ -104,7 +106,7 @@ public class DeviceManager implements ServiceManager, Agent {
 
   public  List<String> scan() throws InterruptedException {
     List<String> scanResults = new ArrayList<>();
-
+    if(deviceBusManager == null) return scanResults;
     for(I2CBusManager i2CBusManager:deviceBusManager.getI2cBusManager()){
       List<Integer> list = i2CBusManager.findDevicesOnBus(0);
       scanResults.addAll(i2CBusManager.listDetected(list));
@@ -143,6 +145,13 @@ public class DeviceManager implements ServiceManager, Agent {
       logger.log(ServerLogMessages.DEVICE_MANAGER_LOAD_PROPERTIES);
       if(enableI2C) {
         loadI2CConfig(manager, deviceManagerConfig.getI2cBuses());
+      }
+      if(deviceManagerConfig.getSpiBus() != null && enableSpi){
+        SpiDeviceBusConfigDTO spiBusConfig = deviceManagerConfig.getSpiBus();
+        if(spiBusConfig.isEnabled()){
+          Trigger trigger = locateNamedTrigger(spiBusConfig.getTrigger());
+          busHandlers.add(new SpiBusHandler( manager.getSpiBusManager(), spiBusConfig, trigger));
+        }
       }
       if(deviceManagerConfig.getOneWireBus() != null && enableOneWire) {
         OneWireBusConfigDTO oneWireBusConfig = deviceManagerConfig.getOneWireBus();

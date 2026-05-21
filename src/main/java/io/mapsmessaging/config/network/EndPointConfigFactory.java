@@ -1,7 +1,7 @@
 /*
  *
  *  Copyright [ 2020 - 2024 ] Matthew Buckton
- *  Copyright [ 2024 - 2025 ] MapsMessaging B.V.
+ *  Copyright [ 2024 - 2026 ] MapsMessaging B.V.
  *
  *  Licensed under the Apache License, Version 2.0 with the Commons Clause
  *  (the "License"); you may not use this file except in compliance with the License.
@@ -87,8 +87,8 @@ public class EndPointConfigFactory {
       server.setUrl(url);
     }
 
-    server.setBacklog(config.getIntProperty("backlog", 100));
-    server.setSelectorTaskWait(config.getIntProperty("taskWait", 10));
+    server.setBacklog(config.getIntProperty("backlog", server.getBacklog()));
+    server.setSelectorTaskWait(config.getIntProperty("taskWait", server.getSelectorTaskWait()));
     server.setAuthenticationRealm(config.getProperty("auth", ""));
 
     server.setEndPointConfig( server.getUrl() != null ? createEndPointConfig(server.getUrl(), config) : null);
@@ -102,8 +102,15 @@ public class EndPointConfigFactory {
       loadDefaultProtocols(config, server, config.getProperty("protocol"));
     }
     else if(config.containsKey("protocols")) {
-      List<ConfigurationProperties> protocolConfig = (List<ConfigurationProperties>) config.get("protocols");
-      loadSpecificProtocols(server, protocolConfig);
+      Object obj =  config.get("protocols");
+      if(obj instanceof List){
+        List<ConfigurationProperties> protocolConfig = (List<ConfigurationProperties>) config.get("protocols");
+        loadSpecificProtocols(server, protocolConfig);
+      }
+      else{
+        List<ConfigurationProperties> protocolConfig = List.of((ConfigurationProperties) obj);
+        loadSpecificProtocols(server, protocolConfig);
+      }
     }
     else{
       loadDefaultProtocols(config, server,"loop");
@@ -172,16 +179,17 @@ public class EndPointConfigFactory {
     if (u.startsWith("udp") || u.startsWith("hmac") || u.startsWith("lora")) return new UdpConfig(properties);
     if (u.startsWith("dtls")) return new DtlsConfig(properties);
     if (u.startsWith("serial")) return new SerialConfig(properties);
-    if (u.startsWith("satellite")) return new EndPointConfigDTO(); // placeholder
+    if(u.startsWith("canbus")) return new CanbusConfig(properties);
+    if (u.startsWith("satellite")) return new EndPointConfigDTO("satellite"); // placeholder
     return null;
   }
 
   private static ProtocolConfigDTO createProtocolConfig(String protocol, ConfigurationProperties config) {
     String p = protocol.toLowerCase(Locale.ROOT);
     return switch (p) {
-      case "mqtt-v5" -> new MqttV5Config(config);
+      case "mqtt-v5" -> new MqttConfig(config);
       case "mqtt-v3" -> new MqttConfig(config);
-      case "mqtt" -> new MqttV5Config(config);
+      case "mqtt" -> new MqttConfig(config);
       case "amqp" -> new AmqpConfig(config);
       case "stomp" -> new StompConfig(config);
       case "nats" -> new NatsConfig(config);
@@ -193,6 +201,9 @@ public class EndPointConfigFactory {
       case "echo" -> new EchoProtocolConfig(config);
       case "stogi" -> new StoGiConfig(config);
       case "satellite" -> new SatelliteConfig(config);
+      case "mavlink" -> new MavlinkConfig(config);
+      case "n2k" -> new N2kProtocolConfig(config);
+      case "canaerospace" -> new CanAerospaceProtocolConfig(config);
       case "ws", "wss" -> new WebSocketConfig(config);
       default -> new ExtensionConfig(config);
     };

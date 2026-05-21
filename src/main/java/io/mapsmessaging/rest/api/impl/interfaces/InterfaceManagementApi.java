@@ -1,7 +1,7 @@
 /*
  *
  *  Copyright [ 2020 - 2024 ] Matthew Buckton
- *  Copyright [ 2024 - 2025 ] MapsMessaging B.V.
+ *  Copyright [ 2024 - 2026 ] MapsMessaging B.V.
  *
  *  Licensed under the Apache License, Version 2.0 with the Commons Clause
  *  (the "License"); you may not use this file except in compliance with the License.
@@ -27,8 +27,6 @@ import io.mapsmessaging.dto.rest.interfaces.InterfaceStatusDTO;
 import io.mapsmessaging.network.EndPointManager;
 import io.mapsmessaging.network.NetworkManager;
 import io.mapsmessaging.rest.cache.CacheKey;
-import io.mapsmessaging.rest.responses.InterfaceDetailResponse;
-import io.mapsmessaging.rest.responses.InterfaceStatusResponse;
 import io.mapsmessaging.rest.responses.StatusResponse;
 import io.mapsmessaging.selector.ParseException;
 import io.mapsmessaging.selector.SelectorParser;
@@ -40,18 +38,17 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.servlet.http.HttpServletResponse;
 import jakarta.ws.rs.*;
-import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
 
+import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
 
 import static io.mapsmessaging.rest.api.Constants.URI_PATH;
 
 @Tag(name = "Server Interface Management")
-@Path(URI_PATH+"/server/interfaces")
+@Path(URI_PATH + "/server/interfaces")
 public class InterfaceManagementApi extends BaseInterfaceApi {
 
   @GET
@@ -63,42 +60,88 @@ public class InterfaceManagementApi extends BaseInterfaceApi {
           @ApiResponse(
               responseCode = "200",
               description = "Operation was successful",
-              content = @Content(mediaType = "application/json", schema = @Schema(implementation = InterfaceDetailResponse.class))
+              content = @Content(
+                  mediaType = "application/json",
+                  schema = @Schema(implementation = InterfaceInfoDTO[].class)
+              )
           ),
-          @ApiResponse(responseCode = "400", description = "Bad request"),
-          @ApiResponse(responseCode = "401", description = "Invalid credentials or unauthorized access"),
-          @ApiResponse(responseCode = "403", description = "User is not authorised to access the resource"),
+          @ApiResponse(
+              responseCode = "400",
+              description = "Bad request",
+              content = @Content(
+                  mediaType = "application/json",
+                  schema = @Schema(implementation = StatusResponse.class)
+              )
+          ),
+          @ApiResponse(
+              responseCode = "401",
+              description = "Invalid credentials or unauthorized access",
+              content = @Content(
+                  mediaType = "application/json",
+                  schema = @Schema(implementation = StatusResponse.class)
+              )
+          ),
+          @ApiResponse(
+              responseCode = "403",
+              description = "User is not authorised to access the resource",
+              content = @Content(
+                  mediaType = "application/json",
+                  schema = @Schema(implementation = StatusResponse.class)
+              )
+          ),
+          @ApiResponse(
+              responseCode = "500",
+              description = "Internal server error",
+              content = @Content(
+                  mediaType = "application/json",
+                  schema = @Schema(implementation = StatusResponse.class)
+              )
+          )
       }
   )
-  public InterfaceDetailResponse getAllInterfaces(
+  public Response getAllInterfaces(
       @Parameter(
-          description = "Optional filter string ",
-          schema = @Schema(type = "String", example = "state = 'started'")
+          description = "Optional filter string",
+          schema = @Schema(
+              type = "String",
+              example = "state = 'started'",
+              minLength = 1
+          ),
+          required = false
       )
       @QueryParam("filter") String filter
-  ) throws ParseException {
+  ) {
     hasAccess(RESOURCE);
     CacheKey key = new CacheKey(uriInfo.getPath(), (filter != null && !filter.isEmpty()) ? "" + filter.hashCode() : "");
-    InterfaceDetailResponse cachedResponse = getFromCache(key, InterfaceDetailResponse.class);
+    InterfaceInfoDTO[] cachedResponse = getFromCache(key, InterfaceInfoDTO[].class);
     if (cachedResponse != null) {
-      return cachedResponse;
+      return Response.ok().entity(cachedResponse).build();
     }
-    ParserExecutor parser = (filter != null && !filter.isEmpty()) ? SelectorParser.compile(filter) : null;
-    List<EndPointManager> endPointManagers =
-        MessageDaemon.getInstance().getSubSystemManager().getNetworkManager().getAll();
-
-    List<InterfaceInfoDTO> protocols =
-        endPointManagers.stream()
+    ParserExecutor parser = null;
+    try {
+      parser = (filter != null && !filter.isEmpty()) ? SelectorParser.compile(filter) : null;
+    }
+    catch (ParseException ex) {
+      return Response.status(Response.Status.BAD_REQUEST).entity(new StatusResponse("Invalid filter expression")).build();
+    }
+    List<EndPointManager> endPointManagers = MessageDaemon.getInstance().getSubSystemManager().getNetworkManager().getAll();
+    List<EndPointManager> filteredManagers = new ArrayList<>();
+    for(EndPointManager endPointManager : endPointManagers) {
+      if(!endPointManager.getProtocols().toLowerCase().contains("echo")) {
+        filteredManagers.add(endPointManager);
+      }
+    }
+    ParserExecutor parser2 = parser;
+    InterfaceInfoDTO[] protocols =
+        filteredManagers.stream()
             .map(InterfaceInfoHelper::fromEndPointManager)
-            .filter(protocol -> parser == null || parser.evaluate(protocol))
-            .collect(Collectors.toList());
-
-    InterfaceDetailResponse response = new InterfaceDetailResponse(protocols);
+            .filter(protocol -> parser2 == null || parser2.evaluate(protocol)).toArray(InterfaceInfoDTO[]::new);
 
     // Cache the response
-    putToCache(key, response);
-    return response;
+    putToCache(key, protocols);
+    return Response.ok().entity(protocols).build();
   }
+
 
   @PATCH
   @Consumes(MediaType.APPLICATION_JSON)
@@ -118,40 +161,68 @@ public class InterfaceManagementApi extends BaseInterfaceApi {
           @ApiResponse(
               responseCode = "200",
               description = "Operation was successful",
-              content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))
+              content = @Content(
+                  mediaType = "application/json",
+                  schema = @Schema(implementation = StatusResponse.class)
+              )
           ),
-          @ApiResponse(responseCode = "400", description = "Bad request"),
-          @ApiResponse(responseCode = "401", description = "Invalid credentials or unauthorized access"),
-          @ApiResponse(responseCode = "403", description = "User is not authorised to access the resource"),
+          @ApiResponse(
+              responseCode = "400",
+              description = "Bad request",
+              content = @Content(
+                  mediaType = "application/json",
+                  schema = @Schema(implementation = StatusResponse.class)
+              )
+          ),
+          @ApiResponse(
+              responseCode = "401",
+              description = "Invalid credentials or unauthorized access",
+              content = @Content(
+                  mediaType = "application/json",
+                  schema = @Schema(implementation = StatusResponse.class)
+              )
+          ),
+          @ApiResponse(
+              responseCode = "403",
+              description = "User is not authorised to access the resource",
+              content = @Content(
+                  mediaType = "application/json",
+                  schema = @Schema(implementation = StatusResponse.class)
+              )
+          ),
+          @ApiResponse(
+              responseCode = "500",
+              description = "Internal server error",
+              content = @Content(
+                  mediaType = "application/json",
+                  schema = @Schema(implementation = StatusResponse.class)
+              )
+          )
       }
   )
-  public StatusResponse handleInterfaceActionRequest(RequestedAction requested, @Context HttpServletResponse response) {
+  public Response handleInterfaceActionRequest(RequestedAction requested) {
     hasAccess(RESOURCE);
     boolean processed = false;
-    if(requested != null && requested.getState() != null) {
+    if (requested != null && requested.getState() != null) {
       NetworkManager networkManager = MessageDaemon.getInstance().getSubSystemManager().getNetworkManager();
-      if("stopped".equalsIgnoreCase(requested.getState())) {
+      if ("stopped".equalsIgnoreCase(requested.getState())) {
         networkManager.stopAll();
         processed = true;
-      }
-      else if("started".equalsIgnoreCase(requested.getState())) {
+      } else if ("started".equalsIgnoreCase(requested.getState())) {
         networkManager.startAll();
         processed = true;
-      }
-      else if("paused".equalsIgnoreCase(requested.getState())) {
+      } else if ("paused".equalsIgnoreCase(requested.getState())) {
         networkManager.pauseAll();
         processed = true;
-      }
-      else if("resumed".equalsIgnoreCase(requested.getState())) {
+      } else if ("resumed".equalsIgnoreCase(requested.getState())) {
         networkManager.resumeAll();
         processed = true;
       }
     }
-    if(processed) {
-      return new StatusResponse("Success");
+    if (processed) {
+      return Response.ok(new StatusResponse("Success")).build();
     }
-    response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
-    return new StatusResponse("Unknown action");
+    return Response.status(Response.Status.BAD_REQUEST).entity(new StatusResponse("Unknown action")).build();
   }
 
   @GET
@@ -164,40 +235,87 @@ public class InterfaceManagementApi extends BaseInterfaceApi {
           @ApiResponse(
               responseCode = "200",
               description = "Operation was successful",
-              content = @Content(mediaType = "application/json", schema = @Schema(implementation = InterfaceStatusResponse.class))
+              content = @Content(
+                  mediaType = "application/json",
+                  schema = @Schema(implementation = InterfaceStatusDTO[].class)
+              )
           ),
-          @ApiResponse(responseCode = "400", description = "Bad request"),
-          @ApiResponse(responseCode = "401", description = "Invalid credentials or unauthorized access"),
-          @ApiResponse(responseCode = "403", description = "User is not authorised to access the resource"),
+          @ApiResponse(
+              responseCode = "400",
+              description = "Bad request",
+              content = @Content(
+                  mediaType = "application/json",
+                  schema = @Schema(implementation = StatusResponse.class)
+              )
+          ),
+          @ApiResponse(
+              responseCode = "401",
+              description = "Invalid credentials or unauthorized access",
+              content = @Content(
+                  mediaType = "application/json",
+                  schema = @Schema(implementation = StatusResponse.class)
+              )
+          ),
+          @ApiResponse(
+              responseCode = "403",
+              description = "User is not authorised to access the resource",
+              content = @Content(
+                  mediaType = "application/json",
+                  schema = @Schema(implementation = StatusResponse.class)
+              )
+          ),
+          @ApiResponse(
+              responseCode = "500",
+              description = "Internal server error",
+              content = @Content(
+                  mediaType = "application/json",
+                  schema = @Schema(implementation = StatusResponse.class)
+              )
+          )
       }
   )
-
-  public InterfaceStatusResponse getAllInterfaceStatus(
+  public Response getAllInterfaceStatus(
       @Parameter(
-          description = "Optional filter string ",
-          schema = @Schema(type = "String", example = "state = 'started'")
+          description = "Optional filter string",
+          schema = @Schema(
+              type = "String",
+              example = "state = 'started'"
+          ),
+          required = false
       )
       @QueryParam("filter") String filter
   ) throws ParseException {
     hasAccess(RESOURCE);
     CacheKey key = new CacheKey(uriInfo.getPath(), (filter != null && !filter.isEmpty()) ? "" + filter.hashCode() : "");
-    InterfaceStatusResponse cachedResponse = getFromCache(key, InterfaceStatusResponse.class);
+    InterfaceStatusDTO[] cachedResponse = getFromCache(key, InterfaceStatusDTO[].class);
     if (cachedResponse != null) {
-      return cachedResponse;
+      return Response.ok().entity(cachedResponse).build();
     }
 
     // Fetch and cache response
-    ParserExecutor parser = (filter != null && !filter.isEmpty()) ? SelectorParser.compile(filter) : null;
+    ParserExecutor parser = null;
+    try{
+      parser= (filter != null && !filter.isEmpty()) ? SelectorParser.compile(filter) : null;
+    }
+    catch(ParseException ex){
+      return Response.status(Response.Status.BAD_REQUEST).entity(new StatusResponse("Invalid filter expression")).build();
+    }
     List<EndPointManager> endPointManagers = MessageDaemon.getInstance().getSubSystemManager().getNetworkManager().getAll();
-
-    List<InterfaceStatusDTO> list =
-        endPointManagers.stream()
+    List<EndPointManager> filteredManagers = new ArrayList<>();
+    for(EndPointManager endPointManager : endPointManagers) {
+      if(!endPointManager.getProtocols().toLowerCase().contains("echo")) {
+        filteredManagers.add(endPointManager);
+      }
+    }
+    ParserExecutor parser2 = parser;
+    InterfaceStatusDTO[] list =
+        filteredManagers.stream()
             .map(endPointManager -> InterfaceStatusHelper.fromServer(endPointManager.getEndPointServer()))
-            .filter(status -> parser == null || parser.evaluate(status))
-            .toList();
+            .filter(status -> parser2 == null || parser2.evaluate(status))
+            .toList()
+            .toArray(new InterfaceStatusDTO[0]);
 
-    InterfaceStatusResponse response = new InterfaceStatusResponse(list);
-    putToCache(key, response);
-    return response;
+    putToCache(key, list);
+    return Response.ok().entity(list).build();
   }
 }

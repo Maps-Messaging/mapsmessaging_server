@@ -1,7 +1,7 @@
 /*
  *
  *  Copyright [ 2020 - 2024 ] Matthew Buckton
- *  Copyright [ 2024 - 2025 ] MapsMessaging B.V.
+ *  Copyright [ 2024 - 2026 ] MapsMessaging B.V.
  *
  *  Licensed under the Apache License, Version 2.0 with the Commons Clause
  *  (the "License"); you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@
 
 package io.mapsmessaging;
 
+import io.mapsmessaging.aggregator.AggregatorManager;
 import io.mapsmessaging.auth.AuthManager;
 import io.mapsmessaging.configuration.EnvironmentConfig;
 import io.mapsmessaging.dto.rest.system.SubSystemStatusDTO;
@@ -45,6 +46,8 @@ import io.mapsmessaging.rest.RestApiServerManager;
 import io.mapsmessaging.rest.jolokia.JolokaManager;
 import io.mapsmessaging.routing.RoutingManager;
 import io.mapsmessaging.selector.model.ModelStore;
+import io.mapsmessaging.state.drone.StateManagerAgent;
+import io.mapsmessaging.state.drone.core.TwinManager;
 import io.mapsmessaging.utilities.Agent;
 import io.mapsmessaging.utilities.AgentOrder;
 import io.mapsmessaging.utilities.service.Service;
@@ -88,7 +91,12 @@ public class SubSystemManager {
     for (AgentOrder agent : startList) {
       long start = System.currentTimeMillis();
       logger.log(MESSAGE_DAEMON_AGENT_STARTING, agent.getAgent().getName());
-      agent.getAgent().start();
+      try {
+        agent.getAgent().start();
+      } catch (Throwable e) {
+        logger.log(MESSAGE_DAEMON_AGENT_FAILED, agent.getAgent().getName(),e);
+        System.exit(2);
+      }
       logger.log(MESSAGE_DAEMON_AGENT_STARTED, agent.getAgent().getName(), (System.currentTimeMillis() - start));
     }
     logServiceManagers();
@@ -153,6 +161,10 @@ public class SubSystemManager {
     return (SessionManager) agentMap.get("Session Manager").getAgent();
   }
 
+  public TwinManager getTwinManager() {
+    return ((StateManagerAgent) agentMap.get("State Manager").getAgent()).getTwinManager();
+  }
+
   public DeviceManager getDeviceManager() {
     AgentOrder order = agentMap.get("Device Manager");
     if(order != null) {
@@ -174,6 +186,7 @@ public class SubSystemManager {
    * The method initializes and adds various agents to the agentMap, which is used to manage the start and stop order of the agents.
    * The agents added to the agentMap include:
    * - AuthManager
+   * - AggregatorManager
    * - SchemaManager
    * - NetworkInterfaceMonitor
    * - TransactionManager
@@ -207,9 +220,12 @@ public class SubSystemManager {
     addToMap(300, 11, new DiscoveryManager(uniqueId));
     addToMap(400, 1200, securityManager);
     addToMap(500, 950, destinationManager);
+    addToMap(550, 960, new StateManagerAgent());
     addToMap(600, 300, new SessionManager(securityManager, destinationManager, EnvironmentConfig.getInstance().getPathLookups().get("MAPS_DATA"),sessionPipeLines));
     addToMap(700, 150, new NetworkManager(featureManager));
     addToMap(900, 200, new NetworkConnectionManager());
+    addToMap(750, 750, new AggregatorManager());
+
     if(featureManager.isEnabled("management.restApi")) {
       addToMap(1200, 400, new RestApiServerManager());
     }

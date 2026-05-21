@@ -1,7 +1,7 @@
 /*
  *
  *  Copyright [ 2020 - 2024 ] Matthew Buckton
- *  Copyright [ 2024 - 2025 ] MapsMessaging B.V.
+ *  Copyright [ 2024 - 2026 ] MapsMessaging B.V.
  *
  *  Licensed under the Apache License, Version 2.0 with the Commons Clause
  *  (the "License"); you may not use this file except in compliance with the License.
@@ -23,7 +23,6 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 
-import java.util.List;
 import java.util.UUID;
 
 @Data
@@ -38,6 +37,7 @@ public class GroupDTO {
       title = "Group Name",
       description = "The name of the group, such as an administrative or user-defined role.",
       example = "admin",
+      requiredMode = Schema.RequiredMode.REQUIRED,
       nullable = false)
   private final String name;
 
@@ -45,15 +45,15 @@ public class GroupDTO {
       title = "Group Unique ID",
       description = "The unique identifier for the group, generated as a UUID.",
       example = "e808afcb-1ff9-46cd-a322-3119dbf1d071",
+      requiredMode = Schema.RequiredMode.REQUIRED,
       nullable = false)
   private final UUID uniqueId;
 
   @Schema(
       title = "Group Members",
-      description = "A list of unique IDs representing the members of this group.",
-      type = "array",
-      example =
-          "[\"83db8741-57ca-4147-a973-49789d9150bb\",\"32708878-2eba-4dec-b5f5-94e63fb45c0d\",\"e59b1a11-73d7-4962-b3be-65715d99b172\"]",
+      description = "A list of users of this group.",
+      type = "UserDTO[]",
       nullable = true)
-  private final List<UUID> usersList;
+  private final UserDTO[] usersList;
 }
+

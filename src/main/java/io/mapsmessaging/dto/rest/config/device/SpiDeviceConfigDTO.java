@@ -1,7 +1,7 @@
 /*
  *
  *  Copyright [ 2020 - 2024 ] Matthew Buckton
- *  Copyright [ 2024 - 2025 ] MapsMessaging B.V.
+ *  Copyright [ 2024 - 2026 ] MapsMessaging B.V.
  *
  *  Licensed under the Apache License, Version 2.0 with the Commons Clause
  *  (the "License"); you may not use this file except in compliance with the License.
@@ -25,27 +25,59 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 
+import java.util.Map;
+
 @Data
 @EqualsAndHashCode(callSuper=false)
 @NoArgsConstructor
 @Schema(description = "SPI Device Configuration DTO")
 public class SpiDeviceConfigDTO extends BaseConfigDTO {
 
-  @Schema(description = "Device address on the SPI bus", example = "1")
+  @Schema(
+      description = "Device address on the SPI bus",
+      example = "1",
+      minimum = "0",
+      maximum = "255"
+  )
   protected int address;
 
-  @Schema(description = "Name of the SPI device", example = "TemperatureSensor")
+  @Schema(
+      description = "Name of the SPI device",
+      example = "TemperatureSensor"
+  )
   protected String name;
 
   @Schema(description = "Selector used for the device", example = "tempSelector")
   protected String selector;
 
-  @Schema(description = "SPI bus number", example = "0")
+  @Schema(
+      description = "SPI bus number",
+      example = "0",
+      minimum = "0",
+      maximum = "255"
+  )
   protected int spiBus;
 
-  @Schema(description = "SPI mode for the device", example = "1")
+  @Schema(
+      description = "SPI mode for the device",
+      example = "1",
+      minimum = "0",
+      maximum = "255"
+  )
   protected int spiMode;
 
-  @Schema(description = "Chip select line for the SPI device", example = "0")
+  @Schema(
+      description = "Chip select line for the SPI device",
+      example = "0",
+      minimum = "0",
+      maximum = "255"
+  )
   protected int spiChipSelect;
+
+  @Schema(
+      description="Configuration map",
+      additionalProperties = Schema.AdditionalPropertiesValue.TRUE,
+      additionalPropertiesSchema = String.class
+  )
+  protected Map<String, String> config;
 }

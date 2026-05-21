@@ -49,14 +49,15 @@ RUN set -eux; \
     mv "maps-%%MAPS_VERSION%%/conf/NetworkManager.yaml" "maps-%%MAPS_VERSION%%/conf/NetworkManager.yaml_orig"; \
     mv "maps-%%MAPS_VERSION%%/conf/NetworkManagerDocker.yaml" "maps-%%MAPS_VERSION%%/conf/NetworkManager.yaml"; \
     \
+    mv /maps-%%MAPS_VERSION%% /opt/maps;  \
     # Static files + data dir
-    mkdir -p /data; \
+    mkdir -p /opt/maps_data; \
     \
     # Runtime user
     addgroup -S messaginggroup; \
-    adduser -S messaginguser -G messaginggroup -s /bin/sh -h "/maps-%%MAPS_VERSION%%"; \
-    chown -R messaginguser:messaginggroup /data "/maps-%%MAPS_VERSION%%"; \
-    chmod -R 755 "/maps-%%MAPS_VERSION%%"
+    adduser -S messaginguser -G messaginggroup -s /bin/sh -h /opt/maps; \
+    chown -R messaginguser:messaginggroup /opt/maps_data /opt/maps; \
+    chmod -R 755 /opt/maps
 
 #----------------------------------------------------------------------------------------------
 # Ports
@@ -66,6 +67,6 @@ EXPOSE 9000/tcp 8080/tcp 8778/tcp 4222/tcp  1883/tcp \
 #----------------------------------------------------------------------------------------------
 # Data volume
 #----------------------------------------------------------------------------------------------
-VOLUME /data
+VOLUME /opt/maps_data
 
-CMD su -c "ulimit -n 100000 && ./maps-%%MAPS_VERSION%%/bin/startDocker.sh" messaginguser
+CMD su -c "ulimit -n 100000 && /opt/maps/bin/startDocker.sh" messaginguser

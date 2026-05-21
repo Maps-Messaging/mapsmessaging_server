@@ -21,6 +21,7 @@ package io.mapsmessaging.ml;
 
 import io.mapsmessaging.MessageDaemon;
 import io.mapsmessaging.config.ml.MLModelManagerConfig;
+import io.mapsmessaging.dto.rest.config.S3Config;
 import io.mapsmessaging.dto.rest.config.ml.*;
 import io.mapsmessaging.dto.rest.system.SubSystemStatusDTO;
 
@@ -58,7 +59,7 @@ public class MLModelManager implements Agent {
   @Override
   public void start() {
     MLModelManagerConfig mlModelManagerConfig = MLModelManagerConfig.getInstance();
-    ModelStoreConfig modelStoreConfig = mlModelManagerConfig.getModelStore();
+    ModelStoreConfigDTO modelStoreConfig = mlModelManagerConfig.getModelStore();
     if(modelStoreConfig != null) {
       ModelStore store = buildModelStore(modelStoreConfig);
       modelStore = new CachingModelStore(store, mlModelManagerConfig);
@@ -80,7 +81,7 @@ public class MLModelManager implements Agent {
     return null;
   }
 
-  private ModelStore buildModelStore(ModelStoreConfig config) {
+  private ModelStore buildModelStore(ModelStoreConfigDTO config) {
     if(config.getType().equalsIgnoreCase("s3")) {
       S3Config s3Config = config.getConfig().getS3();
       return new S3ModelStore(

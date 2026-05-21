@@ -1,7 +1,7 @@
 /*
  *
  *  Copyright [ 2020 - 2024 ] Matthew Buckton
- *  Copyright [ 2024 - 2025 ] MapsMessaging B.V.
+ *  Copyright [ 2024 - 2026 ] MapsMessaging B.V.
  *
  *  Licensed under the Apache License, Version 2.0 with the Commons Clause
  *  (the "License"); you may not use this file except in compliance with the License.
@@ -34,6 +34,7 @@ public class NewUserDTO {
       title = "Username",
       description = "The unique username for the new user account.",
       example = "myNewUserName",
+      requiredMode = Schema.RequiredMode.REQUIRED,
       nullable = false)
   private final String username;
 
@@ -42,6 +43,7 @@ public class NewUserDTO {
       description =
           "The password or passphrase for the new user, intended to provide secure access.",
       example = "My Very Unique Password",
+      requiredMode = Schema.RequiredMode.REQUIRED,
       nullable = false)
   private final String password;
 }

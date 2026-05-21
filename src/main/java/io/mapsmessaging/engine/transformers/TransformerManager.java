@@ -1,7 +1,7 @@
 /*
  *
  *  Copyright [ 2020 - 2024 ] Matthew Buckton
- *  Copyright [ 2024 - 2025 ] MapsMessaging B.V.
+ *  Copyright [ 2024 - 2026 ] MapsMessaging B.V.
  *
  *  Licensed under the Apache License, Version 2.0 with the Commons Clause
  *  (the "License"); you may not use this file except in compliance with the License.
@@ -20,10 +20,9 @@
 package io.mapsmessaging.engine.transformers;
 
 import io.mapsmessaging.api.transformers.InterServerTransformation;
-import io.mapsmessaging.api.transformers.ProtocolTransformationWrapper;
+import io.mapsmessaging.config.transformer.TransformationConfigFactory;
 import io.mapsmessaging.configuration.ConfigurationProperties;
-import io.mapsmessaging.network.protocol.transformation.ProtocolMessageTransformation;
-import io.mapsmessaging.network.protocol.transformation.TransformationManager;
+import io.mapsmessaging.dto.rest.config.transformer.TransformationConfigDTO;
 import io.mapsmessaging.utilities.service.Service;
 import io.mapsmessaging.utilities.service.ServiceManager;
 
@@ -45,16 +44,18 @@ public class TransformerManager implements ServiceManager {
   private final Map<String, Service> transformerMap;
 
   public InterServerTransformation get(ConfigurationProperties props) {
-    String transformer = props.getProperty("name").toLowerCase();
-    InterServerTransformation t = (InterServerTransformation) transformerMap.get(transformer);
-    if(t != null){
-      return  t.build(props);
+    if(props == null || !props.containsKey("name")) return null;
+    TransformationConfigDTO dto = TransformationConfigFactory.loadSingle(props);
+    if(dto != null){
+      return  get(dto);
     }
-    else{
-      ProtocolMessageTransformation protocolMessageTransformation = TransformationManager.getInstance().getTransformation(transformer);
-      if(protocolMessageTransformation != null){
-        return new ProtocolTransformationWrapper(protocolMessageTransformation);
-      }
+    return null;
+  }
+
+  public InterServerTransformation get(TransformationConfigDTO dto) {
+    if(dto != null){
+      InterServerTransformation t = (InterServerTransformation) transformerMap.get(dto.getType().getWireName());
+      return  t.build(dto);
     }
     return null;
   }

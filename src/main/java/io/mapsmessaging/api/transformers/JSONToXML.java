@@ -1,7 +1,7 @@
 /*
  *
  *  Copyright [ 2020 - 2024 ] Matthew Buckton
- *  Copyright [ 2024 - 2025 ] MapsMessaging B.V.
+ *  Copyright [ 2024 - 2026 ] MapsMessaging B.V.
  *
  *  Licensed under the Apache License, Version 2.0 with the Commons Clause
  *  (the "License"); you may not use this file except in compliance with the License.
@@ -19,17 +19,19 @@
 
 package io.mapsmessaging.api.transformers;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.dataformat.xml.XmlMapper;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.google.gson.reflect.TypeToken;
 import io.mapsmessaging.api.MessageBuilder;
-import io.mapsmessaging.configuration.ConfigurationProperties;
+import io.mapsmessaging.api.transformers.xml.AttributeXmlBuilder;
+import io.mapsmessaging.dto.rest.config.transformer.TransformationConfigDTO;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
-import io.mapsmessaging.network.protocol.Protocol;
 import io.mapsmessaging.utilities.GsonFactory;
 
+import java.io.IOException;
 import java.lang.reflect.Type;
 import java.nio.charset.StandardCharsets;
 import java.util.Map;
@@ -41,7 +43,7 @@ public class JSONToXML implements InterServerTransformation {
   private static final Logger logger = LoggerFactory.getLogger(JSONToXML.class);
 
   @Override
-  public Protocol.ParsedMessage transform(String source, Protocol.ParsedMessage message){
+  public ParsedMessage transform(String source, ParsedMessage message){
     MessageBuilder messageBuilder = new MessageBuilder(message.getMessage());
     convert(messageBuilder);
     message.setMessage(messageBuilder.build());
@@ -49,7 +51,7 @@ public class JSONToXML implements InterServerTransformation {
   }
 
   @Override
-  public InterServerTransformation build(ConfigurationProperties properties) {
+  public InterServerTransformation build(TransformationConfigDTO dto) {
     return this;
   }
 
@@ -63,24 +65,24 @@ public class JSONToXML implements InterServerTransformation {
     return "Converts JSON to XML";
   }
 
-
   private void convert(MessageBuilder messageBuilder) {
     try {
-      JsonObject jsonObject = JsonParser.parseString(
-          new String(messageBuilder.getOpaqueData(), StandardCharsets.UTF_8)
-      ).getAsJsonObject();
-
-      // Convert JsonObject to Map for XmlMapper
-      Type type = new TypeToken<Map<String, Object>>() {}.getType();
-      Map<String, Object> map =  GsonFactory.getInstance().getSimpleGson().fromJson(jsonObject, type);
-
-      XmlMapper xmlMapper = new XmlMapper();
-      String xml = xmlMapper.writeValueAsString(map);
-
-      messageBuilder.setOpaqueData(xml.getBytes(StandardCharsets.UTF_8));
+      JsonObject jsonObject = JsonParser.parseString(new String(messageBuilder.getOpaqueData(), StandardCharsets.UTF_8)).getAsJsonObject();
+      byte[] xml = convertUsingAttributes(jsonObject);
+      messageBuilder.setOpaqueData(xml);
     } catch (Exception e) {
       logger.log(FORMATTER_UNEXPECTED_OBJECT, getName());
     }
   }
 
+  private byte[] convertToXml(JsonObject jsonObject) throws JsonProcessingException {
+    Type type = new TypeToken<Map<String, Object>>() {}.getType();
+    Map<String, Object> map =  GsonFactory.getInstance().getSimpleGson().fromJson(jsonObject, type);
+    XmlMapper xmlMapper = new XmlMapper();
+    return xmlMapper.writeValueAsString(map).getBytes();
+  }
+
+  private byte[] convertUsingAttributes(JsonObject jsonObject) throws IOException {
+    return AttributeXmlBuilder.buildXml(jsonObject);
+  }
 }

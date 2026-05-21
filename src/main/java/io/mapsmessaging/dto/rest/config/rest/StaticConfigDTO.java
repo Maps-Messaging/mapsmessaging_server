@@ -1,7 +1,7 @@
 /*
  *
  *  Copyright [ 2020 - 2024 ] Matthew Buckton
- *  Copyright [ 2024 - 2025 ] MapsMessaging B.V.
+ *  Copyright [ 2024 - 2026 ] MapsMessaging B.V.
  *
  *  Licensed under the Apache License, Version 2.0 with the Commons Clause
  *  (the "License"); you may not use this file except in compliance with the License.
@@ -26,14 +26,28 @@ import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 
 @Data
-@EqualsAndHashCode(callSuper=false)
+@EqualsAndHashCode(callSuper = false)
 @NoArgsConstructor
 @Schema(description = "Static Configuration DTO")
 public class StaticConfigDTO extends BaseConfigDTO {
 
-  @Schema(description = "Enable or disable static content serving", example = "true")
-  protected boolean enabled;
+  @Schema(
+      description = "Enable or disable static content serving",
+      example = "true",
+      defaultValue = "true",
+      requiredMode = Schema.RequiredMode.REQUIRED,
+      nullable = false
+  )
+  protected boolean enabled = true;
 
-  @Schema(description = "Directory for static content", example = "{{MAPS_HOME}}/www")
-  protected String directory;
+  @Schema(
+      description = "Directory used to serve static content. " +
+          "May include environment or Maps variables such as {{MAPS_HOME}}. " +
+          "Required when static content serving is enabled.",
+      example = "{{MAPS_HOME}}/www",
+      minLength = 1,
+      requiredMode = Schema.RequiredMode.NOT_REQUIRED,
+      nullable = true
+  )
+  protected String directory = "{{MAPS_HOME}}/www";
 }

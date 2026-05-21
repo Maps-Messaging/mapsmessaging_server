@@ -1,7 +1,7 @@
 /*
  *
  *  Copyright [ 2020 - 2024 ] Matthew Buckton
- *  Copyright [ 2024 - 2025 ] MapsMessaging B.V.
+ *  Copyright [ 2024 - 2026 ] MapsMessaging B.V.
  *
  *  Licensed under the Apache License, Version 2.0 with the Commons Clause
  *  (the "License"); you may not use this file except in compliance with the License.
@@ -28,7 +28,6 @@ import io.mapsmessaging.network.io.EndPoint;
 import io.mapsmessaging.rest.api.impl.destination.BaseDestinationApi;
 import io.mapsmessaging.rest.cache.CacheKey;
 import io.mapsmessaging.rest.handler.SessionTracker;
-import io.mapsmessaging.rest.responses.EndPointDetailResponse;
 import io.mapsmessaging.rest.responses.StatusResponse;
 import io.mapsmessaging.selector.ParseException;
 import io.mapsmessaging.selector.SelectorParser;
@@ -44,13 +43,13 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
 
 import static io.mapsmessaging.rest.api.Constants.URI_PATH;
 
 @Tag(name = "Connection Management")
-@Path(URI_PATH+"/server/connections")
+@Path(URI_PATH + "/server/connections")
 public class ConnectionManagementApi extends BaseDestinationApi {
 
   @GET
@@ -62,42 +61,69 @@ public class ConnectionManagementApi extends BaseDestinationApi {
           @ApiResponse(
               responseCode = "200",
               description = "Get all connections was successful",
-              content = @Content(mediaType = "application/json", schema = @Schema(implementation = EndPointDetailResponse.class))
+              content = @Content(mediaType = "application/json", schema = @Schema(implementation = EndPointSummaryDTO[].class))
           ),
-          @ApiResponse(responseCode = "400", description = "Bad request"),
-          @ApiResponse(responseCode = "401", description = "Invalid credentials or unauthorized access"),
-          @ApiResponse(responseCode = "403", description = "User is not authorised to access the resource"),
+          @ApiResponse(
+              responseCode = "400",
+              description = "Bad request",
+              content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))
+          ),
+          @ApiResponse(responseCode = "401", description = "Invalid credentials or unauthorized access",
+              content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))),
+          @ApiResponse(responseCode = "403", description = "User is not authorised to access the resource",
+              content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))),
+          @ApiResponse(responseCode = "500", description = "Internal server error",
+              content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))),
       }
   )
-  public EndPointDetailResponse getAllConnections(
+  public EndPointSummaryDTO[] getAllConnections(
       @Parameter(
-          description = "Optional filter string ",
+          description = "Optional filter string",
           schema = @Schema(type = "String", example = "totalOverflow > 10 OR totalUnderflow > 5")
       )
       @QueryParam("filter") String filter
-  ) throws ParseException {
+  ) {
     hasAccess(RESOURCE);
-    CacheKey key = new CacheKey(uriInfo.getPath(), (filter != null && !filter.isEmpty()) ? "" + filter.hashCode() : "");
-    EndPointDetailResponse cachedResponse = getFromCache(key, EndPointDetailResponse.class);
+
+    CacheKey key = new CacheKey(uriInfo.getPath(), (filter != null && !filter.isBlank()) ? "" + filter.hashCode() : "");
+    EndPointSummaryDTO[] cachedResponse = getFromCache(key, EndPointSummaryDTO[].class);
     if (cachedResponse != null) {
       return cachedResponse;
     }
 
-    // Fetch and cache response
-    ParserExecutor parser = (filter != null && !filter.isEmpty()) ? SelectorParser.compile(filter) : null;
-    List<EndPointManager> endPointManagers = MessageDaemon.getInstance().getSubSystemManager().getNetworkManager().getAll();
+    ParserExecutor parserExecutor = null;
+    if (filter != null && !filter.isBlank()) {
+      try {
+        parserExecutor = SelectorParser.compile(filter);
+      } catch (ParseException parseException) {
+        throw new WebApplicationException(
+            Response.status(Response.Status.BAD_REQUEST)
+                .type(MediaType.APPLICATION_JSON)
+                .entity(new StatusResponse("Invalid filter: " + parseException.getMessage()))
+                .build()
+        );
+      }
+    }
 
-    List<EndPointSummaryDTO> endPointDetails =
-        endPointManagers.stream()
-            .flatMap(endPointManager -> endPointManager.getEndPointServer().getActiveEndPoints().stream()
-                .map(endPoint -> EndPointHelper.buildSummaryDTO(endPointManager.getName(), endPoint))
-            )
-            .filter(endPointDetail -> parser == null || parser.evaluate(endPointDetail))
-            .collect(Collectors.toList());
-    endPointDetails.addAll(SessionTracker.getConnections());
-    EndPointDetailResponse response = new EndPointDetailResponse(endPointDetails);
-    putToCache(key, response);
-    return response;
+    List<EndPointSummaryDTO> total = new ArrayList<>(SessionTracker.getConnections());
+    List<EndPointSummaryDTO> endPointDetails = generateList(parserExecutor, MessageDaemon.getInstance().getSubSystemManager().getNetworkManager().getAll());
+    total.addAll(endPointDetails);
+    EndPointSummaryDTO[] array = total.toArray(new EndPointSummaryDTO[0]);
+    putToCache(key, array);
+    return array;
+  }
+
+  private List<EndPointSummaryDTO> generateList(ParserExecutor finalParserExecutor, List<EndPointManager> endPointManagers){
+    List<EndPointSummaryDTO> endPointDetails = new ArrayList<>();
+    for(EndPointManager endPointManager : endPointManagers){
+      for(EndPoint endPoint : endPointManager.getEndPointServer().getActiveEndPoints()) {
+        EndPointSummaryDTO summaryDTO = EndPointHelper.buildSummaryDTO(endPointManager.getName(), endPoint);
+        if(finalParserExecutor == null || finalParserExecutor.evaluate(summaryDTO)) {
+          endPointDetails.add(summaryDTO);
+        }
+      }
+    }
+    return endPointDetails;
   }
 
   @GET
@@ -112,18 +138,28 @@ public class ConnectionManagementApi extends BaseDestinationApi {
               description = "Get specific connection details was successful",
               content = @Content(mediaType = "application/json", schema = @Schema(implementation = EndPointDetailsDTO.class))
           ),
-          @ApiResponse(responseCode = "400", description = "Bad request"),
-          @ApiResponse(responseCode = "401", description = "Invalid credentials or unauthorized access"),
-          @ApiResponse(responseCode = "403", description = "User is not authorised to access the resource"),
-          @ApiResponse(responseCode = "404", description = "Connection not found"),
+          @ApiResponse(
+              responseCode = "400",
+              description = "Bad request",
+              content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))
+          ),
+          @ApiResponse(responseCode = "401", description = "Invalid credentials or unauthorized access",
+              content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))),
+          @ApiResponse(responseCode = "403", description = "User is not authorised to access the resource",
+              content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))),
+          @ApiResponse(
+              responseCode = "404",
+              description = "Connection not found",
+              content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))
+          ),
       }
   )
   public EndPointDetailsDTO getConnectionDetails(@PathParam("connectionId") String stringId) {
     hasAccess(RESOURCE);
-    long connectionId = Long.parseLong(stringId);
-    CacheKey key = new CacheKey(uriInfo.getPath(), ""+connectionId);
 
-    // Try to retrieve from cache
+    long connectionId = parseConnectionId(stringId);
+    CacheKey key = new CacheKey(uriInfo.getPath(), "" + connectionId);
+
     EndPointDetailsDTO cachedResponse = getFromCache(key, EndPointDetailsDTO.class);
     if (cachedResponse != null) {
       return cachedResponse;
@@ -139,12 +175,19 @@ public class ConnectionManagementApi extends BaseDestinationApi {
         }
       }
     }
+
     EndPointDetailsDTO dto = SessionTracker.getConnection(connectionId);
     if (dto != null) {
       putToCache(key, dto);
       return dto;
     }
-    throw new WebApplicationException("Connection not found", Response.Status.NOT_FOUND);
+
+    throw new WebApplicationException(
+        Response.status(Response.Status.NOT_FOUND)
+            .type(MediaType.APPLICATION_JSON)
+            .entity(new StatusResponse("Connection not found"))
+            .build()
+    );
   }
 
   @DELETE
@@ -156,18 +199,30 @@ public class ConnectionManagementApi extends BaseDestinationApi {
       responses = {
           @ApiResponse(
               responseCode = "200",
-              description = "Close connection  was successful",
+              description = "Close connection was successful",
               content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))
           ),
-          @ApiResponse(responseCode = "400", description = "Bad request"),
-          @ApiResponse(responseCode = "401", description = "Invalid credentials or unauthorized access"),
-          @ApiResponse(responseCode = "403", description = "User is not authorised to access the resource"),
-          @ApiResponse(responseCode = "404", description = "Connection not found"),
+          @ApiResponse(
+              responseCode = "400",
+              description = "Bad request",
+              content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))
+          ),
+          @ApiResponse(responseCode = "401", description = "Invalid credentials or unauthorized access",
+              content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))),
+          @ApiResponse(responseCode = "403", description = "User is not authorised to access the resource",
+              content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))),
+          @ApiResponse(
+              responseCode = "404",
+              description = "Connection not found",
+              content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))
+          ),
       }
   )
   public StatusResponse closeSpecificConnection(@PathParam("connectionId") String stringId) {
     hasAccess(RESOURCE);
-    long connectionId = Long.parseLong(stringId);
+
+    long connectionId = parseConnectionId(stringId);
+
     List<EndPointManager> endPointManagers = MessageDaemon.getInstance().getSubSystemManager().getNetworkManager().getAll();
     for (EndPointManager endPointManager : endPointManagers) {
       for (EndPoint endPoint : endPointManager.getEndPointServer().getActiveEndPoints()) {
@@ -175,13 +230,45 @@ public class ConnectionManagementApi extends BaseDestinationApi {
           try {
             endPoint.close();
             return new StatusResponse("success");
-          } catch (IOException e) {
-            throw new WebApplicationException("Connection close issue:" + e.getMessage(), Response.Status.BAD_REQUEST);
+          } catch (IOException exception) {
+            throw new WebApplicationException(
+                Response.status(Response.Status.BAD_REQUEST)
+                    .type(MediaType.APPLICATION_JSON)
+                    .entity(new StatusResponse("Connection close issue: " + exception.getMessage()))
+                    .build()
+            );
           }
         }
       }
     }
-    throw new WebApplicationException("Connection not found", Response.Status.NOT_FOUND);
+
+    throw new WebApplicationException(
+        Response.status(Response.Status.NOT_FOUND)
+            .type(MediaType.APPLICATION_JSON)
+            .entity(new StatusResponse("Connection not found"))
+            .build()
+    );
+  }
+
+  private long parseConnectionId(String stringId) {
+    if (stringId == null || stringId.isBlank()) {
+      throw new WebApplicationException(
+          Response.status(Response.Status.BAD_REQUEST)
+              .type(MediaType.APPLICATION_JSON)
+              .entity(new StatusResponse("connectionId is required"))
+              .build()
+      );
+    }
+    try {
+      return Long.parseLong(stringId);
+    } catch (NumberFormatException exception) {
+      throw new WebApplicationException(
+          Response.status(Response.Status.BAD_REQUEST)
+              .type(MediaType.APPLICATION_JSON)
+              .entity(new StatusResponse("Invalid connectionId"))
+              .build()
+      );
+    }
   }
 
   private EndPointDetailsDTO buildConnectionDetails(String adapterName, EndPoint endPoint) {

@@ -1,7 +1,7 @@
 /*
  *
  *  Copyright [ 2020 - 2024 ] Matthew Buckton
- *  Copyright [ 2024 - 2025 ] MapsMessaging B.V.
+ *  Copyright [ 2024 - 2026 ] MapsMessaging B.V.
  *
  *  Licensed under the Apache License, Version 2.0 with the Commons Clause
  *  (the "License"); you may not use this file except in compliance with the License.
@@ -23,13 +23,21 @@ import io.mapsmessaging.dto.rest.config.protocol.ProtocolConfigDTO;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
-import lombok.NoArgsConstructor;
 
 @Data
 @EqualsAndHashCode(callSuper = true)
-@NoArgsConstructor
 @Schema(description = "MQTT Protocol Configuration DTO")
 public class MqttConfigDTO extends ProtocolConfigDTO {
+
+  public MqttConfigDTO() {
+    super("mqtt");
+  }
+
+  @Schema(description = "Minimum server keep-alive interval in seconds", example = "0")
+  protected int minServerKeepAlive = 0;
+
+  @Schema(description = "Maximum server keep-alive interval in seconds", example = "60")
+  protected int maxServerKeepAlive = 60;
 
   @Schema(description = "Maximum session expiry for MQTT", example = "86400")
   protected long maximumSessionExpiry = 86400;

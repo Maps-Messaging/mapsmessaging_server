@@ -1,7 +1,7 @@
 /*
  *
  *  Copyright [ 2020 - 2024 ] Matthew Buckton
- *  Copyright [ 2024 - 2025 ] MapsMessaging B.V.
+ *  Copyright [ 2024 - 2026 ] MapsMessaging B.V.
  *
  *  Licensed under the Apache License, Version 2.0 with the Commons Clause
  *  (the "License"); you may not use this file except in compliance with the License.
@@ -19,7 +19,7 @@
 
 package io.mapsmessaging.network.io.connection;
 
-import io.mapsmessaging.config.network.EndPointConnectionServerConfig;
+import io.mapsmessaging.dto.rest.config.network.EndPointConnectionServerConfigDTO;
 import io.mapsmessaging.dto.rest.config.network.EndPointServerConfigDTO;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
@@ -55,7 +55,7 @@ public class EndPointConnection extends EndPointServerStatus {
   @Getter
   private final Logger logger;
   @Getter
-  private final EndPointConnectionServerConfig properties;
+  private final EndPointConnectionServerConfigDTO properties;
   @Getter
   private final EndPointConnectionFactory endPointConnectionFactory;
   @Getter
@@ -78,7 +78,7 @@ public class EndPointConnection extends EndPointServerStatus {
   private State establishingState;
 
   public EndPointConnection(
-      EndPointURL url, EndPointConnectionServerConfig properties,
+      EndPointURL url, EndPointConnectionServerConfigDTO properties,
       EndPointConnectionFactory connectionFactory, SelectorLoadManager selectorLoadManager, EndPointConnectionHostJMX manager) {
     super(url, StatsFactory.getDefaultType());
     this.properties = properties;

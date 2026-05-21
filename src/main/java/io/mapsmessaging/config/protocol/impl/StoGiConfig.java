@@ -1,7 +1,7 @@
 /*
  *
  *  Copyright [ 2020 - 2024 ] Matthew Buckton
- *  Copyright [ 2024 - 2025 ] MapsMessaging B.V.
+ *  Copyright [ 2024 - 2026 ] MapsMessaging B.V.
  *
  *  Licensed under the Apache License, Version 2.0 with the Commons Clause
  *  (the "License"); you may not use this file except in compliance with the License.
@@ -28,23 +28,23 @@ import io.mapsmessaging.dto.rest.config.protocol.impl.StoGiConfigDTO;
 public class StoGiConfig extends StoGiConfigDTO implements Config {
 
   public StoGiConfig(ConfigurationProperties config) {
-    setType("stogi");
+    setType("orbcomm");
     ProtocolConfigFactory.unpack(config, this);
     serial = new SerialConfig(config);
     initialSetup = config.getProperty("initialSetup", "");
-    incomingMessagePollInterval = config.getLongProperty("incomingMessagePollInterval", 10);
-    outgoingMessagePollInterval = config.getLongProperty("outgoingMessagePollInterval", 60);
-    modemResponseTimeout = config.getLongProperty("modemResponseTimeout", 5000);
-    locationPollInterval = config.getLongProperty("locationPollInterval", 0);
-    modemRawRequest = config.getProperty("modemRawRequest", "/incoming/{sin}/{min}");
-    modemRawResponse = config.getProperty("modemRawResponse", "/outgoing");
-    modemStatsTopic = config.getProperty("modemStatsTopic", "/modem/stats");
-    maxBufferSize = config.getIntProperty("maxBufferSize", 4000);
-    compressionCutoffSize = config.getIntProperty("compressionCutoffSize", 128);
-    messageLifeTimeInMinutes = config.getIntProperty("messageLifeTimeInMinutes", 10);
+    incomingMessagePollInterval = config.getIntProperty("incomingMessagePollInterval", incomingMessagePollInterval);
+    outgoingMessagePollInterval = config.getIntProperty("outgoingMessagePollInterval", outgoingMessagePollInterval);
+    modemResponseTimeout = config.getLongProperty("modemResponseTimeout", modemResponseTimeout);
+    locationPollInterval = config.getLongProperty("locationPollInterval", locationPollInterval);
+    modemRawRequest = config.getProperty("modemRawRequest", modemRawRequest);
+    modemRawResponse = config.getProperty("modemRawResponse", modemRawResponse);
+    modemStatsTopic = config.getProperty("modemStatsTopic", modemStatsTopic);
+    maxBufferSize = config.getIntProperty("maxBufferSize", maxBufferSize);
+    compressionCutoffSize = config.getIntProperty("compressionCutoffSize", compressionCutoffSize);
+    messageLifeTimeInMinutes = config.getIntProperty("messageLifeTimeInMinutes", messageLifeTimeInMinutes);
     sharedSecret = config.getProperty("sharedSecret", "");
-    sendHighPriorityMessages = config.getBooleanProperty("sendHighPriorityMessages", false);
-    sinNumber = config.getIntProperty("sinNumber", 147);
+    sendHighPriorityMessages = config.getBooleanProperty("sendHighPriorityMessages", sendHighPriorityMessages);
+    sinNumber = config.getIntProperty("sinNumber", sinNumber);
   }
 
   @Override

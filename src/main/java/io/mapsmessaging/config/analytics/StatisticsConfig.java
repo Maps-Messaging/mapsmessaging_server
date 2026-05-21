@@ -1,7 +1,7 @@
 /*
  *
  *  Copyright [ 2020 - 2024 ] Matthew Buckton
- *  Copyright [ 2024 - 2025 ] MapsMessaging B.V.
+ *  Copyright [ 2024 - 2026 ] MapsMessaging B.V.
  *
  *  Licensed under the Apache License, Version 2.0 with the Commons Clause
  *  (the "License"); you may not use this file except in compliance with the License.
@@ -24,6 +24,7 @@ import io.mapsmessaging.configuration.ConfigurationProperties;
 import io.mapsmessaging.dto.rest.analytics.StatisticsConfigDTO;
 import io.mapsmessaging.dto.rest.config.BaseConfigDTO;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
@@ -49,7 +50,11 @@ public class StatisticsConfig extends StatisticsConfigDTO implements Config {
 
     String entryString = config.getProperty("keyList", "");
     if(!entryString.isEmpty()){
-      keyList = Arrays.asList(entryString.split(","));
+      String[] tmp = entryString.split(",");
+      keyList = new ArrayList<>();
+      for(String entry : tmp){
+        keyList.add(entry.trim());
+      }
     }
     else {
       keyList = List.of();

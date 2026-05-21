@@ -1,7 +1,7 @@
 /*
  *
  *  Copyright [ 2020 - 2024 ] Matthew Buckton
- *  Copyright [ 2024 - 2025 ] MapsMessaging B.V.
+ *  Copyright [ 2024 - 2026 ] MapsMessaging B.V.
  *
  *  Licensed under the Apache License, Version 2.0 with the Commons Clause
  *  (the "License"); you may not use this file except in compliance with the License.
@@ -43,7 +43,7 @@ public class BaseStatistics implements Statistics {
     first = Double.NaN;
     last = Double.NaN;
     min = Double.MAX_VALUE;
-    max = Double.MIN_VALUE;
+    max = Double.NEGATIVE_INFINITY;
     average = 0.0;
     count = 0;
     mismatched = 0;
@@ -56,12 +56,29 @@ public class BaseStatistics implements Statistics {
   }
 
   public void update(Object entry) {
-    if (entry instanceof Number number) {
-      update(number.doubleValue());
+    if (entry == null) {
+      return;
     }
+
+    if (!(entry instanceof Number number)) {
+      mismatched++;
+      return;
+    }
+
+    double value = number.doubleValue();
+    if (!Double.isFinite(value)) {
+      mismatched++;
+      return;
+    }
+
+    update(value);
   }
 
   protected void update(double cur) {
+    if (!Double.isFinite(cur)) {
+      mismatched++;
+      return;
+    }
     long now = System.currentTimeMillis();
     if (count == 0) {
       first = cur;
@@ -70,7 +87,7 @@ public class BaseStatistics implements Statistics {
     if (min > cur) {
       min = cur;
     }
-    if (max < cur || max == Double.MIN_VALUE) {
+    if (max < cur) {
       max = cur;
     }
     count++;

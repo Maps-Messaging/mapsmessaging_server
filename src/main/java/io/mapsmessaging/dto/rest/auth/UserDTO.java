@@ -1,7 +1,7 @@
 /*
  *
  *  Copyright [ 2020 - 2024 ] Matthew Buckton
- *  Copyright [ 2024 - 2025 ] MapsMessaging B.V.
+ *  Copyright [ 2024 - 2026 ] MapsMessaging B.V.
  *
  *  Licensed under the Apache License, Version 2.0 with the Commons Clause
  *  (the "License"); you may not use this file except in compliance with the License.
@@ -39,6 +39,7 @@ public class UserDTO {
       title = "Username",
       description = "The unique name assigned to the user.",
       example = "myUserName",
+      requiredMode = Schema.RequiredMode.REQUIRED,
       nullable = false)
   private final String username;
 
@@ -47,6 +48,7 @@ public class UserDTO {
       description =
           "The UUID representing this specific user, ensuring unique identification across the system.",
       example = "83db8741-57ca-4147-a973-49789d9150bb",
+      requiredMode = Schema.RequiredMode.REQUIRED,
       nullable = false)
   private final UUID uniqueId;
 
@@ -55,15 +57,13 @@ public class UserDTO {
       description =
           "A list of group names to which the user belongs, providing role-based access and permissions.",
       type = "array",
-      example = "[\"admin\", \"everyone\"]",
       nullable = true)
-  private final List<String> groupList;
+  private final List<GroupInfoDTO> groupList;
 
   @Schema(
       title = "User Attributes",
       description =
           "A map of user-specific attributes, such as home directory or other key-value pairs for configuration.",
-      example = "{\"homeDir\": \"/home/user1\", \"shell\": \"/bin/bash\"}",
       nullable = true)
   private final Map<String, String> attributes;
 }

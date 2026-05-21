@@ -1,7 +1,7 @@
 /*
  *
  *  Copyright [ 2020 - 2024 ] Matthew Buckton
- *  Copyright [ 2024 - 2025 ] MapsMessaging B.V.
+ *  Copyright [ 2024 - 2026 ] MapsMessaging B.V.
  *
  *  Licensed under the Apache License, Version 2.0 with the Commons Clause
  *  (the "License"); you may not use this file except in compliance with the License.
@@ -19,7 +19,7 @@
 
 package io.mapsmessaging.dto.rest.config.network;
 
-import io.mapsmessaging.config.auth.AuthConfig;
+import io.mapsmessaging.dto.rest.config.auth.AuthConfigDTO;
 import io.mapsmessaging.dto.rest.config.protocol.LinkConfigDTO;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
@@ -34,21 +34,66 @@ import java.util.List;
 @Schema(description = "Endpoint Connection Server Configuration DTO")
 public class EndPointConnectionServerConfigDTO extends EndPointServerConfigDTO {
 
-  @Schema(description = "Authentication configuration for endpoint connection")
-  protected AuthConfig authConfig;
+  @Schema(
+      description = "Authentication configuration for the endpoint connection",
+      requiredMode = Schema.RequiredMode.NOT_REQUIRED,
+      nullable = true
+  )
+  protected AuthConfigDTO authConfig;
 
-  @Schema(description = "Link transformation for the endpoint connection", example = "transformationType")
+  @Schema(
+      description =
+          "Link transformation identifier. Must match the name of a registered "
+              + "ProtocolMessageTransformation discovered via ServiceLoader.",
+      example = "Schema-To-Json",
+      defaultValue = "",
+      requiredMode = Schema.RequiredMode.NOT_REQUIRED,
+      nullable = false
+  )
   protected String linkTransformation;
 
-  @Schema(description = "List of link configurations")
+  @Schema(
+      description = "List of link configurations for this endpoint connection",
+      requiredMode = Schema.RequiredMode.NOT_REQUIRED,
+      nullable = true,
+      example = "[{\"direction\":\"pull\",\"remote_namespace\":\"/+/1/1/GPS_RAW_INT\",\"local_namespace\":\"/\"}]"
+  )
   protected List<LinkConfigDTO> linkConfigs;
 
-  @Schema(description = "Is this a 3rd party plugin connection")
-  protected boolean pluginConnection;
+  @Schema(
+      description = "True if this is a third-party plugin connection",
+      example = "false",
+      defaultValue = "false",
+      requiredMode = Schema.RequiredMode.REQUIRED,
+      nullable = false
+  )
+  protected boolean pluginConnection = false;
 
-  @Schema(description = "An arbitrary cost associated with using this connection", defaultValue = "10", example = "0")
-  protected int cost;
+  @Schema(
+      description = "An arbitrary cost associated with using this connection (lower is preferred)",
+      example = "10",
+      defaultValue = "10",
+      minimum = "0",
+      maximum = "1000",
+      requiredMode = Schema.RequiredMode.REQUIRED,
+      nullable = false
+  )
+  protected int cost = 10;
 
-  @Schema(description = "Optional name of the group that the connection belongs to", defaultValue = "", example="Main data uplink")
+  @Schema(
+      description = "Optional group name for this connection",
+      example = "Main data uplink",
+      defaultValue = "",
+      requiredMode = Schema.RequiredMode.NOT_REQUIRED,
+      nullable = true
+  )
   protected String groupName;
+
+  @Schema(
+      description = "MQTT Last Will and Testament configuration, only relevant for MQTT connections",
+      requiredMode = Schema.RequiredMode.NOT_REQUIRED,
+      nullable = true
+  )
+  protected MqttWillConfigDTO willConfig;
 }
+

@@ -1,7 +1,7 @@
 /*
  *
  *  Copyright [ 2020 - 2024 ] Matthew Buckton
- *  Copyright [ 2024 - 2025 ] MapsMessaging B.V.
+ *  Copyright [ 2024 - 2026 ] MapsMessaging B.V.
  *
  *  Licensed under the Apache License, Version 2.0 with the Commons Clause
  *  (the "License"); you may not use this file except in compliance with the License.
@@ -41,29 +41,28 @@ public class RestApiManagerConfig extends RestApiManagerConfigDTO implements Con
   }
 
   private RestApiManagerConfig(ConfigurationProperties properties) {
-    this.enabled = properties.getBooleanProperty("enabled", true);
-    this.enableAuthentication = properties.getBooleanProperty("enableAuthentication", true);
-    this.hostnames = properties.getProperty("hostnames", "0.0.0.0");
-    this.port = properties.getIntProperty("port", 8080);
-    this.enableSwagger = properties.getBooleanProperty("enableSwagger", true);
-    this.enableSwaggerUI = properties.getBooleanProperty("enableSwaggerUI", true);
-    this.enableUserManagement = properties.getBooleanProperty("enableUserManagement", true);
-    this.enableSchemaManagement = properties.getBooleanProperty("enableSchemaManagement", true);
-    this.enableInterfaceManagement = properties.getBooleanProperty("enableInterfaceManagement", true);
-    this.enableDestinationManagement = properties.getBooleanProperty("enableDestinationManagement", true);
+    this.enabled = properties.getBooleanProperty("enabled", enabled);
+    this.enableAuthentication = properties.getBooleanProperty("enableAuthentication", enableAuthentication);
+    this.hostnames = properties.getProperty("hostnames", hostnames);
+    this.port = properties.getIntProperty("port", port);
+    this.enableSwagger = properties.getBooleanProperty("enableSwagger", enableSwagger);
+    this.enableSwaggerUI = properties.getBooleanProperty("enableSwaggerUI", enableSwaggerUI);
+    this.enableUserManagement = properties.getBooleanProperty("enableUserManagement", enableUserManagement);
+    this.enableSchemaManagement = properties.getBooleanProperty("enableSchemaManagement", enableSchemaManagement);
+    this.enableInterfaceManagement = properties.getBooleanProperty("enableInterfaceManagement", enableInterfaceManagement);
+    this.enableDestinationManagement = properties.getBooleanProperty("enableDestinationManagement", enableDestinationManagement);
 
-    this.maxEventsPerDestination = properties.getIntProperty("maxEventsPerDestination", 10);
-    this.maxThreads = properties.getIntProperty("maxThreads",10);
-    this.minThreads = properties.getIntProperty("minThreads",5);
-    this.threadQueueLimit  = properties.getIntProperty("threadQueueLimit ",100);
-    this.selectorThreads = properties.getIntProperty("selectorThreads ",2);
+    this.maxEventsPerDestination = properties.getIntProperty("maxEventsPerDestination", maxEventsPerDestination);
+    this.maxThreads = properties.getIntProperty("maxThreads",maxThreads);
+    this.minThreads = properties.getIntProperty("minThreads",minThreads);
+    this.threadQueueLimit  = properties.getIntProperty("threadQueueLimit ",threadQueueLimit);
+    this.selectorThreads = properties.getIntProperty("selectorThreads ",selectorThreads);
 
-    this.enableCache = properties.getBooleanProperty("enableCache", true);
-    this.cacheLifetime = properties.getLongProperty("cacheLifetime", 10000L);
-    this.cacheCleanup = properties.getLongProperty("cacheCleanup", 5000L);
-    this.enableDestinationManagement = properties.getBooleanProperty("enableDestinationManagement", true);
-    this.enableWadlEndPoint = properties.getBooleanProperty("enableWadlEndPoint", false);
-    this.inactiveTimeout = properties.getIntProperty("inactiveTimeout", 180000);
+    this.enableCache = properties.getBooleanProperty("enableCache", enableCache);
+    this.cacheLifetime = properties.getLongProperty("cacheLifetime", cacheLifetime);
+    this.cacheCleanup = properties.getLongProperty("cacheCleanup", cacheCleanup);
+    this.enableWadlEndPoint = properties.getBooleanProperty("enableWadlEndPoint", enableWadlEndPoint);
+    this.inactiveTimeout = properties.getIntProperty("inactiveTimeout", inactiveTimeout);
 
     if (properties.containsKey("tls")) {
       this.tlsConfig = new TlsConfig((ConfigurationProperties) properties.get("tls"));
@@ -173,11 +172,11 @@ public class RestApiManagerConfig extends RestApiManagerConfigDTO implements Con
     properties.put("maxEventsPerDestination", this.maxEventsPerDestination);
 
     if (this.tlsConfig != null) {
-      properties.put("tls", this.tlsConfig.toConfigurationProperties());
+      properties.put("tls", ((TlsConfig) this.tlsConfig).toConfigurationProperties());
     }
 
     if (this.staticConfig != null) {
-      properties.put("static", this.staticConfig.toConfigurationProperties());
+      properties.put("static", ((StaticConfig) this.staticConfig).toConfigurationProperties());
     }
     Map<String, Object> corsHeadersProp = new HashMap<>(CorsHeaderManager.getInstance().getCorsHeaders().getHeaders());
     properties.put("corsHeaders", corsHeadersProp);

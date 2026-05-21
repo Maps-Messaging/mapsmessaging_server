@@ -1,7 +1,7 @@
 /*
  *
  *  Copyright [ 2020 - 2024 ] Matthew Buckton
- *  Copyright [ 2024 - 2025 ] MapsMessaging B.V.
+ *  Copyright [ 2024 - 2026 ] MapsMessaging B.V.
  *
  *  Licensed under the Apache License, Version 2.0 with the Commons Clause
  *  (the "License"); you may not use this file except in compliance with the License.
@@ -259,7 +259,10 @@ public class MessageDaemon {
     logMonitor.register();
     isStarted.set(true);
     loadConstants();
-
+    if(ConfigurationManager.getInstance().isHasErrors() && messageDaemonConfig.isExitOnConfigError()){
+      System.err.println("Exiting on startup due to configuration errors, please see the log file and correct");
+      System.exit(1);
+    }
 
     subSystemManager = new SubSystemManager(uniqueId, enableSystemTopics, enableDeviceIntegration, messageDaemonConfig.getSessionPipeLines(), featureManager);
     subSystemManager.start();
@@ -302,7 +305,9 @@ public class MessageDaemon {
     subSystemManager.stop();
     if (mBean != null) mBean.close();
     fileLockManager.close();
-    System.exit(exitCode);
+    if(exitCode != 99) {
+      System.exit(exitCode);
+    }
   }
 
   public boolean isStarted() {

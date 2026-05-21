@@ -1,7 +1,7 @@
 /*
  *
  *  Copyright [ 2020 - 2024 ] Matthew Buckton
- *  Copyright [ 2024 - 2025 ] MapsMessaging B.V.
+ *  Copyright [ 2024 - 2026 ] MapsMessaging B.V.
  *
  *  Licensed under the Apache License, Version 2.0 with the Commons Clause
  *  (the "License"); you may not use this file except in compliance with the License.
@@ -20,10 +20,11 @@
 package io.mapsmessaging.network.io.connection.state;
 
 import io.mapsmessaging.api.features.QualityOfService;
+import io.mapsmessaging.api.transformers.InterServerPipelineTransformation;
 import io.mapsmessaging.api.transformers.InterServerTransformation;
-import io.mapsmessaging.configuration.ConfigurationProperties;
-import io.mapsmessaging.dto.rest.analytics.StatisticsConfigDTO;
 import io.mapsmessaging.dto.rest.config.protocol.LinkConfigDTO;
+import io.mapsmessaging.dto.rest.config.protocol.NamespaceFilterDTO;
+import io.mapsmessaging.dto.rest.config.transformer.TransformationConfigDTO;
 import io.mapsmessaging.engine.transformers.TransformerManager;
 import io.mapsmessaging.logging.ServerLogMessages;
 import io.mapsmessaging.network.io.connection.EndPointConnection;
@@ -33,6 +34,7 @@ import io.mapsmessaging.selector.operators.ParserExecutor;
 import io.mapsmessaging.utilities.filtering.NamespaceFilters;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -60,44 +62,53 @@ public class Establishing extends State {
     boolean success = true;
     for (LinkConfigDTO property : linkConfigs) {
       String direction = property.getDirection();
-      String local = property.getLocalNamespace();
       String remote = property.getRemoteNamespace();
-      String selector = property.getSelector();
-      boolean schema = property.isIncludeSchema();
-      NamespaceFilters filters = property.getNamespaceFilters();
-      QualityOfService qos = property.getQualityOfService();
-      InterServerTransformation interServerTransformation = null;
-      Map<String, Object> obj = property.getTransformer();
-      if (obj != null && !obj.isEmpty()) {
-        interServerTransformation = TransformerManager.getInstance().get(new ConfigurationProperties(obj));
-      }
-
       try {
         if (direction.equalsIgnoreCase("pull")) {
-          subscribeRemote(remote, local, qos, selector, interServerTransformation, schema, property.getStatistics());
+          subscribeRemote(property);
         } else if (direction.equalsIgnoreCase("push")) {
           if (remote.endsWith("#")) {
             remote = remote.substring(0, remote.length() - 1);
           }
-          subscribeLocal(local, remote, selector, qos, interServerTransformation, schema, filters, property.getStatistics());
+          subscribeLocal( property, remote);
         }
-        endPointConnection.getLogger().log(ServerLogMessages.END_POINT_CONNECTION_SUBSCRIPTION_ESTABLISHED, direction, local, remote);
+        endPointConnection.getLogger().log(ServerLogMessages.END_POINT_CONNECTION_SUBSCRIPTION_ESTABLISHED, direction, property.getLocalNamespace(), remote);
       } catch (IOException ioException) {
         success = false;
-        endPointConnection.getLogger().log(ServerLogMessages.END_POINT_CONNECTION_SUBSCRIPTION_FAILED, direction, local, remote, ioException);
+        endPointConnection.getLogger().log(ServerLogMessages.END_POINT_CONNECTION_SUBSCRIPTION_FAILED, direction, property.getLocalNamespace(), remote, ioException);
       }
     }
     return success;
   }
 
-  private void subscribeLocal(String local, String remote, String selector, QualityOfService qos, InterServerTransformation interServerTransformation, boolean includeSchema, NamespaceFilters filters, StatisticsConfigDTO statistics) throws IOException {
-    endPointConnection.getProtocol().subscribeLocal(local, remote, qos, selector, interServerTransformation, filters, statistics);
-    if (includeSchema) {
-      endPointConnection.getProtocol().subscribeLocal(constructSchema(local), constructSchema(remote), qos, selector, interServerTransformation, filters, null);
+  private void subscribeLocal( LinkConfigDTO property, String remote) throws IOException {
+    InterServerTransformation interServerTransformation = buildPipeLine(property);
+    String local = property.getLocalNamespace();
+    String selector = property.getSelector();
+    boolean schema = property.isIncludeSchema();
+    List<NamespaceFilterDTO> filters = property.getNamespaceFilters();
+    NamespaceFilters namespaceFilters = null;
+    if(filters !=null && !filters.isEmpty()) {
+      namespaceFilters  = new NamespaceFilters(filters);
+    }
+    QualityOfService qos = property.getQualityOfService();
+
+    Map<String, Object> linkProperties = property.getLinkProperties();
+    endPointConnection.getProtocol().subscribeLocal(local, remote, qos, selector, interServerTransformation, namespaceFilters, property.getStatistics(), linkProperties);
+    if (schema) {
+      endPointConnection.getProtocol().subscribeLocal(constructSchema(local), constructSchema(remote), qos, selector, interServerTransformation, namespaceFilters, null, linkProperties);
     }
   }
 
-  private void subscribeRemote(String remote, String local, QualityOfService qos, String selector, InterServerTransformation interServerTransformation, boolean includeSchema, StatisticsConfigDTO statistics) throws IOException {
+  private void subscribeRemote(LinkConfigDTO property) throws IOException {
+    String remote = property.getRemoteNamespace();
+    String local = property.getLocalNamespace();
+    String selector = property.getSelector();
+    boolean schema = property.isIncludeSchema();
+
+    InterServerTransformation interServerTransformation = buildPipeLine(property);
+    QualityOfService qos = property.getQualityOfService();
+
     ParserExecutor parser = null;
     if (selector != null && !selector.isEmpty()) {
       try {
@@ -106,9 +117,10 @@ public class Establishing extends State {
         throw new IOException("Unable to parse selector", e);
       }
     }
-    endPointConnection.getProtocol().subscribeRemote(remote, local,  qos, parser, interServerTransformation, statistics);
-    if (includeSchema) {
-      endPointConnection.getProtocol().subscribeRemote(constructSchema(remote), constructSchema(local), qos, null, interServerTransformation, null);
+    Map<String, Object> linkProperties = property.getLinkProperties();
+    endPointConnection.getProtocol().subscribeRemote(remote, local,  qos, parser, interServerTransformation, property.getStatistics(), linkProperties);
+    if (schema) {
+      endPointConnection.getProtocol().subscribeRemote(constructSchema(remote), constructSchema(local), qos, null, interServerTransformation, null, linkProperties);
     }
   }
 
@@ -121,5 +133,18 @@ public class Establishing extends State {
   @Override
   public LinkState getLinkState() {
     return LinkState.CONNECTED;
+  }
+
+  private InterServerPipelineTransformation buildPipeLine(LinkConfigDTO property){
+    List<InterServerTransformation> interServerTransformation = new ArrayList<>();
+    if(property.getTransformer() != null && !property.getTransformer().isEmpty()){
+      for(TransformationConfigDTO dto : property.getTransformer()){
+        InterServerTransformation t = TransformerManager.getInstance().get(dto);
+        if(t != null){
+          interServerTransformation.add(t);
+        }
+      }
+    }
+    return new InterServerPipelineTransformation(interServerTransformation);
   }
 }

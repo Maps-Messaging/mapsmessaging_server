@@ -1,7 +1,7 @@
 /*
  *
  *  Copyright [ 2020 - 2024 ] Matthew Buckton
- *  Copyright [ 2024 - 2025 ] MapsMessaging B.V.
+ *  Copyright [ 2024 - 2026 ] MapsMessaging B.V.
  *
  *  Licensed under the Apache License, Version 2.0 with the Commons Clause
  *  (the "License"); you may not use this file except in compliance with the License.
@@ -31,15 +31,37 @@ import lombok.NoArgsConstructor;
 @Schema(description = "Connection Authentication Configuration DTO")
 public class ConnectionAuthConfigDTO extends BaseConfigDTO {
 
-  @Schema(description = "Username for authentication", example = "user123")
+  @Schema(
+      description = "Username for authentication",
+      example = "user123",
+      requiredMode = Schema.RequiredMode.REQUIRED,
+      nullable = false
+
+  )
   protected String username;
 
-  @Schema(description = "Password for authentication", example = "pass123")
+  @Schema(
+      description = "Password for authentication",
+      example = "pass123",
+      requiredMode = Schema.RequiredMode.REQUIRED,
+      nullable = false
+
+  )
   protected String password;
 
-  @Schema(description = "Client ID for the connection", example = "client123")
+  @Schema(
+      description = "Client ID for the connection",
+      example = "client123",
+      requiredMode = Schema.RequiredMode.REQUIRED,
+      nullable = false
+  )
   protected String clientId;
 
-  @Schema(description = "Token generator type", example = "JWT")
+  @Schema(
+      description = "Token generator type",
+      example = "JWT",
+      requiredMode = Schema.RequiredMode.NOT_REQUIRED,
+      nullable = true
+  )
   protected String tokenGenerator;
 }

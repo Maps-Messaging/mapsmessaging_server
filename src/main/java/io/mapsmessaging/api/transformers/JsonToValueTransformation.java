@@ -1,7 +1,7 @@
 /*
  *
  *  Copyright [ 2020 - 2024 ] Matthew Buckton
- *  Copyright [ 2024 - 2025 ] MapsMessaging B.V.
+ *  Copyright [ 2024 - 2026 ] MapsMessaging B.V.
  *
  *  Licensed under the Apache License, Version 2.0 with the Commons Clause
  *  (the "License"); you may not use this file except in compliance with the License.
@@ -22,8 +22,8 @@ package io.mapsmessaging.api.transformers;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import io.mapsmessaging.api.MessageBuilder;
-import io.mapsmessaging.configuration.ConfigurationProperties;
-import io.mapsmessaging.network.protocol.Protocol;
+import io.mapsmessaging.dto.rest.config.transformer.TransformationConfigDTO;
+import io.mapsmessaging.dto.rest.config.transformer.impl.JsonToValueTransformationDTO;
 import io.mapsmessaging.selector.ParseException;
 import io.mapsmessaging.selector.extensions.JsonParserExtension;
 
@@ -48,11 +48,11 @@ public class JsonToValueTransformation implements InterServerTransformation {
     jsonParser = parser;
   }
 
-  public InterServerTransformation build(ConfigurationProperties properties) {
-    String property = properties != null ?
-        properties.getProperty("key", properties.getProperty("data")) :
-        null;
-    return property != null ? new JsonToValueTransformation(property) : new JsonToValueTransformation();
+  public InterServerTransformation build(TransformationConfigDTO properties) {
+    if( !(properties instanceof JsonToValueTransformationDTO dto)){
+      return new JsonToValueTransformation();
+    }
+    return new JsonToValueTransformation(dto.getKey());
   }
 
   @Override
@@ -84,7 +84,7 @@ public class JsonToValueTransformation implements InterServerTransformation {
   }
 
   @Override
-  public Protocol.ParsedMessage transform(String source, Protocol.ParsedMessage message){
+  public ParsedMessage transform(String source, ParsedMessage message){
     MessageBuilder messageBuilder = new MessageBuilder(message.getMessage());
     messageBuilder.setOpaqueData(convert(message.getMessage().getOpaqueData()));
     message.setMessage(messageBuilder.build());

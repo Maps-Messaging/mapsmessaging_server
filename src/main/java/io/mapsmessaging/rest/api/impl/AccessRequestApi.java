@@ -1,7 +1,7 @@
 /*
  *
  *  Copyright [ 2020 - 2024 ] Matthew Buckton
- *  Copyright [ 2024 - 2025 ] MapsMessaging B.V.
+ *  Copyright [ 2024 - 2026 ] MapsMessaging B.V.
  *
  *  Licensed under the Apache License, Version 2.0 with the Commons Clause
  *  (the "License"); you may not use this file except in compliance with the License.
@@ -25,6 +25,7 @@ import io.mapsmessaging.auth.AuthManager;
 import io.mapsmessaging.rest.responses.LoginResponse;
 import io.mapsmessaging.rest.responses.StatusResponse;
 import io.mapsmessaging.rest.responses.UpdateCheckResponse;
+import io.mapsmessaging.security.access.AuthContext;
 import io.mapsmessaging.security.identity.principals.UniqueIdentifierPrincipal;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -97,7 +98,8 @@ public class AccessRequestApi extends BaseRestApi {
               description = "Refresh was successful or not required",
               content = @Content(mediaType = "application/json", schema = @Schema(implementation = LoginResponse.class))
           ),
-          @ApiResponse(responseCode = "400", description = "Bad request"),
+          @ApiResponse(responseCode = "400", description = "Bad request",
+              content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))),
           @ApiResponse(responseCode = "401", description = "Invalid credentials or unauthorized access")
       }
   )
@@ -137,7 +139,8 @@ public class AccessRequestApi extends BaseRestApi {
               description = "Login successful or not required",
               content = @Content(mediaType = "application/json", schema = @Schema(implementation = LoginResponse.class))
           ),
-          @ApiResponse(responseCode = "400", description = "Bad request"),
+          @ApiResponse(responseCode = "400", description = "Bad request",
+              content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))),
           @ApiResponse(responseCode = "401", description = "Invalid credentials or unauthorized access")
       }
   )
@@ -152,11 +155,18 @@ public class AccessRequestApi extends BaseRestApi {
     int maxAge = (AuthManager.getInstance().isAuthenticationEnabled() && loginRequest.isLongLived()) ? 7 * 24 * 60 * 60 : 15 * 60;
 
     if (AuthManager.getInstance().isAuthenticationEnabled()){
-      if (AuthManager.getInstance().validate(loginRequest.getUsername(), loginRequest.getPassword().toCharArray())) {
+      AuthContext context = new AuthContext(extractClientIp(), "RestAPI", request.getHeader("User-Agent"));
+      boolean success = false;
+      try{
+        success = AuthManager.getInstance().validate(loginRequest.getUsername(), loginRequest.getPassword().toCharArray(), context);
+      }
+      catch(Throwable th){
+        // ToDo: log it
+      }
+      if (success) {
         Subject subject = AuthManager.getInstance().getUserSubject(loginRequest.getUsername());
         session = setupCookieAndSession(loginRequest.getUsername(), subject, request, response, maxAge);
-      }
-      else{
+      } else {
         throw new IOException("Invalid username or password");
       }
     }

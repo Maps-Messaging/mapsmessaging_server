@@ -1,7 +1,7 @@
 /*
  *
  *  Copyright [ 2020 - 2024 ] Matthew Buckton
- *  Copyright [ 2024 - 2025 ] MapsMessaging B.V.
+ *  Copyright [ 2024 - 2026 ] MapsMessaging B.V.
  *
  *  Licensed under the Apache License, Version 2.0 with the Commons Clause
  *  (the "License"); you may not use this file except in compliance with the License.
@@ -23,33 +23,35 @@ import io.mapsmessaging.dto.rest.config.network.impl.SerialConfigDTO;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
-import lombok.NoArgsConstructor;
 
 @Data
 @EqualsAndHashCode(callSuper = true)
-@NoArgsConstructor
 @Schema(description = "OrbComm ST and OGi Modem Protocol Configuration DTO")
 public class StoGiConfigDTO extends BaseSatelliteConfigDTO {
+
+  public StoGiConfigDTO(){
+    super("orbcomm");
+  }
 
   @Schema(description = "Serial port configuration")
   protected SerialConfigDTO serial;
 
   @Schema(description = "Time in milliseconds to wait for a modem response")
-  protected long modemResponseTimeout;
+  protected long modemResponseTimeout = 50000;
 
   @Schema(description = "Initial modem setup string")
   protected String initialSetup;
 
   @Schema(description ="Time in seconds between polling modem location and statistics, 0 disables it", example = "60", defaultValue = "0")
-  protected long locationPollInterval;
+  protected long locationPollInterval = 0;
 
   @Schema(description = "If present, then the name of the topic to send modem statistics to", example="/modem/stats", defaultValue="/modem/stats")
-  protected String modemStatsTopic;
+  protected String modemStatsTopic = "/modem/stats";
 
   @Schema(description = "If present, then the name of the topic that will be used to send raw messages to", example = "/incoming/{sin}/{min}", defaultValue = "/incoming/{sin}/{min}")
-  protected String modemRawRequest;
+  protected String modemRawRequest = "/incoming/{sin}/{min}";
 
   @Schema(description = "If present, then the name of the topic that will be used monitor for response and send directly to the modem", example = "/outbound", defaultValue = "/outbound")
-  protected String modemRawResponse;
+  protected String modemRawResponse = "/outbound";
 
 }

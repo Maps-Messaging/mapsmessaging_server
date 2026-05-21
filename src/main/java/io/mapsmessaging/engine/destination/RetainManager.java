@@ -1,7 +1,7 @@
 /*
  *
  *  Copyright [ 2020 - 2024 ] Matthew Buckton
- *  Copyright [ 2024 - 2025 ] MapsMessaging B.V.
+ *  Copyright [ 2024 - 2026 ] MapsMessaging B.V.
  *
  *  Licensed under the Apache License, Version 2.0 with the Commons Clause
  *  (the "License"); you may not use this file except in compliance with the License.
@@ -61,6 +61,9 @@ public class RetainManager {
   }
 
   public long replace(long newRetainId) {
+    if (newRetainId < -1) {
+      throw new IllegalArgumentException("Retain id must be >= 0 or -1 to clear");
+    }
     Long old = retainIndex.poll();
     if (newRetainId != -1) {
       retainId.set(newRetainId);

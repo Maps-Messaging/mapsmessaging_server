@@ -1,7 +1,7 @@
 /*
  *
  *  Copyright [ 2020 - 2024 ] Matthew Buckton
- *  Copyright [ 2024 - 2025 ] MapsMessaging B.V.
+ *  Copyright [ 2024 - 2026 ] MapsMessaging B.V.
  *
  *  Licensed under the Apache License, Version 2.0 with the Commons Clause
  *  (the "License"); you may not use this file except in compliance with the License.
@@ -27,8 +27,9 @@ import io.mapsmessaging.dto.rest.config.protocol.impl.MqttConfigDTO;
 public class MqttConfig extends MqttConfigDTO implements Config {
 
   public MqttConfig(ConfigurationProperties config) {
-    setType("mqtt-v3");
     ProtocolConfigFactory.unpack(config, this);
+    this.minServerKeepAlive = config.getIntProperty("minServerKeepAlive", minServerKeepAlive);
+    this.maxServerKeepAlive = config.getIntProperty("maxServerKeepAlive", maxServerKeepAlive);
   }
 
 

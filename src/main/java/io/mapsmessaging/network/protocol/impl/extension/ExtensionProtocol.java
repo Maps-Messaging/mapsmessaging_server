@@ -1,7 +1,7 @@
 /*
  *
  *  Copyright [ 2020 - 2024 ] Matthew Buckton
- *  Copyright [ 2024 - 2025 ] MapsMessaging B.V.
+ *  Copyright [ 2024 - 2026 ] MapsMessaging B.V.
  *
  *  Licensed under the Apache License, Version 2.0 with the Commons Clause
  *  (the "License"); you may not use this file except in compliance with the License.
@@ -27,6 +27,7 @@ import io.mapsmessaging.api.features.DestinationType;
 import io.mapsmessaging.api.features.QualityOfService;
 import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.api.transformers.InterServerTransformation;
+import io.mapsmessaging.api.transformers.ParsedMessage;
 import io.mapsmessaging.dto.rest.analytics.StatisticsConfigDTO;
 import io.mapsmessaging.dto.rest.config.protocol.ProtocolConfigDTO;
 import io.mapsmessaging.dto.rest.protocol.ProtocolInformationDTO;
@@ -76,8 +77,8 @@ public class ExtensionProtocol extends Protocol implements MessageListener, Clie
   }
 
   public void connect(String sessionId, String username, String password) throws IOException {
-    principal = new UserPrincipal(username);
     session = serverApi.createSession(this, sessionId, username, password);
+    principal = new UserPrincipal(username);
     this.sessionId = sessionId;
     extension.initializeExtension();
   }
@@ -106,9 +107,9 @@ public class ExtensionProtocol extends Protocol implements MessageListener, Clie
   }
 
   @Override
-  public void subscribeLocal(@NonNull @NotNull String resource, @NonNull @NotNull String mappedResource, @NonNull @NotNull QualityOfService qos, String selector, @Nullable InterServerTransformation transformer, @org.jetbrains.annotations.Nullable NamespaceFilters namespaceFilters, StatisticsConfigDTO statistics) throws IOException {
+  public void subscribeLocal(@NonNull @NotNull String resource, @NonNull @NotNull String mappedResource, @NonNull @NotNull QualityOfService qos, String selector, @Nullable InterServerTransformation transformer, @org.jetbrains.annotations.Nullable NamespaceFilters namespaceFilters, StatisticsConfigDTO statistics, Map<String, Object> linkProperties) throws IOException {
     nameMapping.put(resource, mappedResource);
-    extension.registerLocalLink(mappedResource);
+    extension.registerLocalLink(mappedResource, linkProperties);
     if(transformer != null) {
       destinationTransformerMap.put(resource, transformer);
     }
@@ -116,12 +117,12 @@ public class ExtensionProtocol extends Protocol implements MessageListener, Clie
   }
 
   @Override
-  public void subscribeRemote(@NonNull @org.jetbrains.annotations.NotNull String resource, @NonNull @org.jetbrains.annotations.NotNull String mappedResource, @NonNull @NotNull QualityOfService qos, @Nullable ParserExecutor parser, @Nullable InterServerTransformation transformer, StatisticsConfigDTO statistics) throws IOException {
+  public void subscribeRemote(@NonNull @org.jetbrains.annotations.NotNull String resource, @NonNull @org.jetbrains.annotations.NotNull String mappedResource, @NonNull @NotNull QualityOfService qos, @Nullable ParserExecutor parser, @Nullable InterServerTransformation transformer, StatisticsConfigDTO statistics, Map<String, Object> linkProperties) throws IOException {
     nameMapping.put(resource, mappedResource);
     if(!extension.supportsRemoteFiltering() && parser != null){
       parsers.put(resource, parser);
     }
-    extension.registerRemoteLink(resource, extension.supportsRemoteFiltering()? parser.toString(): null );
+    extension.registerRemoteLink(resource, extension.supportsRemoteFiltering()? parser.toString(): null, linkProperties );
   }
 
   protected int saveMessage(@NonNull @NotNull String destinationName, @NotNull Message message) throws ExecutionException, InterruptedException, TimeoutException, IOException {
@@ -185,6 +186,16 @@ public class ExtensionProtocol extends Protocol implements MessageListener, Clie
   @Override
   public String getUniqueName() {
     return endPointURL.toString();
+  }
+
+  @Override
+  public String getProtocolName() {
+    return "extension";
+  }
+
+  @Override
+  public String getRemoteIp() {
+    return "loop";
   }
 
 }

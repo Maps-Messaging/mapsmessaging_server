@@ -1,7 +1,7 @@
 /*
  *
  *  Copyright [ 2020 - 2024 ] Matthew Buckton
- *  Copyright [ 2024 - 2025 ] MapsMessaging B.V.
+ *  Copyright [ 2024 - 2026 ] MapsMessaging B.V.
  *
  *  Licensed under the Apache License, Version 2.0 with the Commons Clause
  *  (the "License"); you may not use this file except in compliance with the License.
@@ -65,6 +65,22 @@ public class ProtocolClientConnection implements ClientConnection {
   public String getUniqueName() {
     if (protocol.getEndPoint() != null) {
       return protocol.getEndPoint().getName();
+    }
+    return "";
+  }
+
+  @Override
+  public String getProtocolName() {
+    if (protocol.getEndPoint() != null) {
+      return protocol.getEndPoint().getProtocol();
+    }
+    return "";
+  }
+
+  @Override
+  public String getRemoteIp() {
+    if (protocol.getEndPoint() != null) {
+      return protocol.getEndPoint().getRemoteSocketAddress();
     }
     return "";
   }

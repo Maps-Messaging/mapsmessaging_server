@@ -1,7 +1,7 @@
 /*
  *
  *  Copyright [ 2020 - 2024 ] Matthew Buckton
- *  Copyright [ 2024 - 2025 ] MapsMessaging B.V.
+ *  Copyright [ 2024 - 2026 ] MapsMessaging B.V.
  *
  *  Licensed under the Apache License, Version 2.0 with the Commons Clause
  *  (the "License"); you may not use this file except in compliance with the License.
@@ -21,11 +21,25 @@ package io.mapsmessaging.dto.rest.config;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 
-@Data
 @Schema(
     title = "Base Configuration DTO",
-    description = "Base configuration for common REST API fields.")
+    description = "Base configuration for common REST API fields.",
+    additionalProperties = Schema.AdditionalPropertiesValue.TRUE,
+    additionalPropertiesSchema = Object.class
+)
+@Data
+@EqualsAndHashCode
 public class BaseConfigDTO {
-
+  @Schema(
+      description = "Configuration schema version. 0 = legacy format, 1 = current format.",
+      requiredMode = Schema.RequiredMode.REQUIRED,
+      example = "1",
+      defaultValue = "1",
+      minimum = "0",
+      maximum = "10",
+      nullable = false
+  )
+  protected int schemaLoadingVersion = 0;
 }

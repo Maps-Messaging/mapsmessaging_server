@@ -1,7 +1,7 @@
 /*
  *
  *  Copyright [ 2020 - 2024 ] Matthew Buckton
- *  Copyright [ 2024 - 2025 ] MapsMessaging B.V.
+ *  Copyright [ 2024 - 2026 ] MapsMessaging B.V.
  *
  *  Licensed under the Apache License, Version 2.0 with the Commons Clause
  *  (the "License"); you may not use this file except in compliance with the License.
@@ -23,6 +23,8 @@ import io.mapsmessaging.config.Config;
 import io.mapsmessaging.config.ConfigManager;
 import io.mapsmessaging.configuration.ConfigurationProperties;
 import io.mapsmessaging.dto.rest.config.BaseConfigDTO;
+import io.mapsmessaging.dto.rest.config.ConfigurationManagerDTO;
+import io.mapsmessaging.dto.rest.config.S3Config;
 import io.mapsmessaging.dto.rest.config.ml.*;
 import io.mapsmessaging.license.FeatureManager;
 import io.mapsmessaging.utilities.configuration.ConfigurationManager;
@@ -34,25 +36,25 @@ import java.util.Arrays;
 import java.util.List;
 
 @NoArgsConstructor
-public class MLModelManagerConfig extends MLModelManagerDTO implements Config, ConfigManager {
+public class MLModelManagerConfig extends MLModelManagerDTO implements Config, ConfigManager, ConfigurationManagerDTO {
 
   private MLModelManagerConfig(ConfigurationProperties config) {
-    this.enableCaching = config.getBooleanProperty("enableCaching", true);
-    this.cacheSize = config.getIntProperty("cacheSize", 100);
-    this.cacheExpiryMinutes = config.getIntProperty("cacheExpiryMinutes", 60);
+    this.enableCaching = config.getBooleanProperty("enableCaching", enableCaching);
+    this.cacheSize = config.getIntProperty("cacheSize", cacheSize);
+    this.cacheExpiryMinutes = config.getIntProperty("cacheExpiryMinutes", cacheExpiryMinutes);
     this.preloadModels = convertToList(config.getProperty("preloadModels", ""));
 
     if (config.get("autoRefresh") != null) {
       ConfigurationProperties autoRefresh = (ConfigurationProperties) config.get("autoRefresh");
-      this.autoRefresh = new AutoRefreshConfig();
+      this.autoRefresh = new AutoRefreshConfigDTO();
       this.autoRefresh.setEnabled(autoRefresh.getBooleanProperty("enabled", false));
       this.autoRefresh.setIntervalMinutes(autoRefresh.getIntProperty("intervalMinutes", 10));
     }
 
     ConfigurationProperties modelStoreConfig = (ConfigurationProperties) config.get("modelStore");
-    this.modelStore = new ModelStoreConfig();
+    this.modelStore = new ModelStoreConfigDTO();
     this.modelStore.setType(modelStoreConfig.getProperty("type", null));
-    ModelStoreConfigBlock block = new ModelStoreConfigBlock();
+    ModelStoreConfigBlockDTO block = new ModelStoreConfigBlockDTO();
     ConfigurationProperties storeConfig = (ConfigurationProperties) modelStoreConfig.get("config");
 
     switch (modelStoreConfig.getProperty("type", "s3")) {
@@ -186,7 +188,7 @@ public class MLModelManagerConfig extends MLModelManagerDTO implements Config, C
       ConfigurationProperties storeProps = new ConfigurationProperties();
       storeProps.put("type", this.modelStore.getType());
 
-      ModelStoreConfigBlock cfg = this.modelStore.getConfig();
+      ModelStoreConfigBlockDTO cfg = this.modelStore.getConfig();
       ConfigurationProperties storeConfig = new ConfigurationProperties();
 
       switch (this.modelStore.getType()) {

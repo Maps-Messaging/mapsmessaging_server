@@ -1,7 +1,7 @@
 #
 #
 #  Copyright [ 2020 - 2024 ] Matthew Buckton
-#  Copyright [ 2024 - 2025 ] MapsMessaging B.V.
+#  Copyright [ 2024 - 2026 ] MapsMessaging B.V.
 #
 #  Licensed under the Apache License, Version 2.0 with the Commons Clause
 #  (the "License"); you may not use this file except in compliance with the License.
@@ -16,7 +16,15 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 #
+io.mapsmessaging.api.transformers.GeoHashResolver
+io.mapsmessaging.api.transformers.JsonMutateTransformation
+io.mapsmessaging.api.transformers.JsonQueryTransformation
+io.mapsmessaging.api.transformers.JsonToSchema
+io.mapsmessaging.api.transformers.JsonToValueTransformation
 io.mapsmessaging.api.transformers.JSONToXML
 io.mapsmessaging.api.transformers.XMLToJSON
-io.mapsmessaging.api.transformers.JsonToValueTransformation
-io.mapsmessaging.api.transformers.GeoHashResolver
+io.mapsmessaging.api.transformers.CloudEventEnvelopeWrapperTransformation
+io.mapsmessaging.api.transformers.CloudEventJsonWrapperTransformation
+io.mapsmessaging.api.transformers.CloudEventNativeWrapperTransformation
+io.mapsmessaging.api.transformers.MessageSchemaToJsonTransformation
+io.mapsmessaging.api.transformers.JsonMapperTransformation

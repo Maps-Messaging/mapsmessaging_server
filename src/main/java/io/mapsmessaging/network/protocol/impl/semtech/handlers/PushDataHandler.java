@@ -1,7 +1,7 @@
 /*
  *
  *  Copyright [ 2020 - 2024 ] Matthew Buckton
- *  Copyright [ 2024 - 2025 ] MapsMessaging B.V.
+ *  Copyright [ 2024 - 2026 ] MapsMessaging B.V.
  *
  *  Licensed under the Apache License, Version 2.0 with the Commons Clause
  *  (the "License"); you may not use this file except in compliance with the License.
@@ -23,8 +23,6 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParseException;
 import com.google.gson.JsonParser;
 import io.mapsmessaging.api.MessageBuilder;
-import io.mapsmessaging.api.message.Message;
-import io.mapsmessaging.engine.destination.MessageOverrides;
 import io.mapsmessaging.network.protocol.impl.semtech.GatewayInfo;
 import io.mapsmessaging.network.protocol.impl.semtech.SemTechProtocol;
 import io.mapsmessaging.network.protocol.impl.semtech.packet.PushAck;
@@ -51,6 +49,7 @@ public class PushDataHandler extends Handler {
         try {
           JsonObject jsonObject = JsonParser.parseString(pushData.getJsonObject()).getAsJsonObject();
           boolean status = jsonObject.has("stat");
+          boolean hasData = jsonObject.has("rxpk");
 
           Map<String, String> meta = new LinkedHashMap<>();
           meta.put("protocol", "SemTech");
@@ -60,18 +59,25 @@ public class PushDataHandler extends Handler {
           MessageBuilder builder = new MessageBuilder();
           builder.setOpaqueData(pushData.getJsonObject().getBytes(StandardCharsets.UTF_8));
           builder.setMeta(meta);
-          Message message = MessageOverrides.createMessageBuilder(protocol.getProtocolConfig().getMessageDefaults(), builder).build();
-
-          GatewayInfo info = protocol.getGatewayManager().getInfo(pushData.getGatewayIdentifier());
+          GatewayInfo info = protocol.getGatewayManager().getInfo(pushData.getGatewayIdentifier(), packet);
           if (info != null) {
             if (status) {
-              info.getStatus().storeMessage(message);
-            } else {
-              info.getInbound().storeMessage(message);
+              JsonObject statusJson = jsonObject.getAsJsonObject("stat");
+              MessageBuilder statusBuilder = new MessageBuilder();
+              statusBuilder.setOpaqueData(statusJson.toString().getBytes(StandardCharsets.UTF_8));
+              statusBuilder.setMeta(meta);
+              info.getTelemetry().storeMessage(statusBuilder.build());
+              jsonObject.remove("stat");
+            }
+            if(hasData && !jsonObject.getAsJsonArray("rxpk").isEmpty()){
+              MessageBuilder dataBuilder = new MessageBuilder();
+              dataBuilder.setOpaqueData(jsonObject.toString().getBytes(StandardCharsets.UTF_8));
+              dataBuilder.setMeta(meta);
+              info.getInbound().storeMessage(dataBuilder.build());
             }
           }
         } catch (JsonParseException | IOException e) {
-
+          // log this
         }
       }
     }

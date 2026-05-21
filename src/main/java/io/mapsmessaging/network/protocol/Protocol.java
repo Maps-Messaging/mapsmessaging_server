@@ -1,7 +1,7 @@
 /*
  *
  *  Copyright [ 2020 - 2024 ] Matthew Buckton
- *  Copyright [ 2024 - 2025 ] MapsMessaging B.V.
+ *  Copyright [ 2024 - 2026 ] MapsMessaging B.V.
  *
  *  Licensed under the Apache License, Version 2.0 with the Commons Clause
  *  (the "License"); you may not use this file except in compliance with the License.
@@ -21,19 +21,20 @@ package io.mapsmessaging.network.protocol;
 
 import io.mapsmessaging.analytics.Analyser;
 import io.mapsmessaging.analytics.AnalyserFactory;
-import io.mapsmessaging.api.MessageEvent;
-import io.mapsmessaging.api.MessageListener;
-import io.mapsmessaging.api.SubscriptionContextBuilder;
+import io.mapsmessaging.api.*;
 import io.mapsmessaging.api.features.ClientAcknowledgement;
 import io.mapsmessaging.api.features.DestinationMode;
 import io.mapsmessaging.api.features.QualityOfService;
 import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.api.transformers.InterServerTransformation;
+import io.mapsmessaging.api.transformers.ParsedMessage;
 import io.mapsmessaging.dto.rest.analytics.StatisticsConfigDTO;
 import io.mapsmessaging.dto.rest.config.protocol.ProtocolConfigDTO;
 import io.mapsmessaging.dto.rest.protocol.ProtocolInformationDTO;
 import io.mapsmessaging.engine.destination.subscription.SubscriptionContext;
+import io.mapsmessaging.engine.destination.subscription.set.DestinationSet;
 import io.mapsmessaging.logging.ServerLogMessages;
+import io.mapsmessaging.network.ProtocolClientConnection;
 import io.mapsmessaging.network.admin.ProtocolJMX;
 import io.mapsmessaging.network.io.EndPoint;
 import io.mapsmessaging.network.io.Packet;
@@ -44,7 +45,9 @@ import io.mapsmessaging.network.protocol.transformation.ProtocolMessageTransform
 import io.mapsmessaging.selector.operators.ParserExecutor;
 import io.mapsmessaging.utilities.filtering.NamespaceFilter;
 import io.mapsmessaging.utilities.filtering.NamespaceFilters;
-import lombok.*;
+import lombok.Getter;
+import lombok.NonNull;
+import lombok.Setter;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -56,7 +59,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.*;
 
 public abstract class Protocol implements SelectorCallback, MessageListener, Timeoutable {
   protected final EndPoint endPoint;
@@ -132,6 +135,10 @@ public abstract class Protocol implements SelectorCallback, MessageListener, Tim
 
   public abstract Subject getSubject();
 
+  public void setSession(Session session){
+    throw new RuntimeException("Not implemented");
+  }
+
   public void completedConnection() {
     if (!completed) {
       completed = true;
@@ -159,8 +166,8 @@ public abstract class Protocol implements SelectorCallback, MessageListener, Tim
       @NonNull @NotNull QualityOfService qualityOfService,
       @Nullable ParserExecutor parser,
       @Nullable InterServerTransformation transformer,
-      @Nullable StatisticsConfigDTO statistics
-  ) throws IOException {
+      @Nullable StatisticsConfigDTO statistics,
+      @Nullable Map<String, Object> linkProperties) throws IOException {
 
     topicNameMapping.put(resource, mappedResource);
     if (transformer != null) {
@@ -181,10 +188,17 @@ public abstract class Protocol implements SelectorCallback, MessageListener, Tim
       @Nullable String selector,
       @Nullable InterServerTransformation transformer,
       @Nullable NamespaceFilters namespaceFilters,
-      @Nullable StatisticsConfigDTO statistics
-  )
+      @Nullable StatisticsConfigDTO statistics,
+      @Nullable Map<String, Object> linkProperties)
       throws IOException {
-    this.setNamespaceFilters(namespaceFilters);
+    if(namespaceFilters != null) {
+      if (this.namespaceFilters == null) {
+        this.namespaceFilters = namespaceFilters;
+      }
+      else{
+        this.namespaceFilters.addAll(namespaceFilters.getAllFilters());
+      }
+    }
     topicNameMapping.put(resource, mappedResource);
     if (transformer != null) {
       destinationTransformerMap.put(resource, transformer);
@@ -217,6 +231,10 @@ public abstract class Protocol implements SelectorCallback, MessageListener, Tim
     SubscriptionContext subInfo = messageEvent.getSubscription().getContext();
     String destinationName = messageEvent.getDestinationName();
     ParsedMessage parsedMessage = new ParsedMessage(destinationName, messageEvent.getMessage());
+    if(messageEvent.getDestinationName().startsWith("$schema")){
+      return parsedMessage;
+    }
+
     parsedMessage = processInterServerTransformations(messageEvent.getDestinationName(), parsedMessage );
     parsedMessage = processMessageAnalyser(parsedMessage, subInfo);
     if(parsedMessage == null){
@@ -232,8 +250,21 @@ public abstract class Protocol implements SelectorCallback, MessageListener, Tim
     return parsedMessage;
   }
 
+  public ParsedMessage parseInboundMessage(String destinationName, Message message){
+    ParsedMessage parsedMessage = new ParsedMessage(destinationName, message);
+    parsedMessage = processInterServerTransformations(destinationName, parsedMessage );
+    if(parsedMessage == null){
+      return null;
+    }
+    processTransformation(parsedMessage);
+    if(topicNameMapping != null){
+      processDestinationNameLookup(parsedMessage);
+    }
+    return parsedMessage;
+  }
+
   protected ParsedMessage processInterServerTransformations(String source, ParsedMessage parsedMessage) {
-    InterServerTransformation interServerTransformation = destinationTransformerMap.get(parsedMessage.destinationName);
+    InterServerTransformation interServerTransformation = destinationTransformerMap.get(parsedMessage.getDestinationName());
     if (interServerTransformation != null) {
       return interServerTransformation.transform(source, parsedMessage);
     }
@@ -268,12 +299,12 @@ public abstract class Protocol implements SelectorCallback, MessageListener, Tim
   }
 
   private ParsedMessage processMessageAnalyser(ParsedMessage parsedMessage, SubscriptionContext subInfo){
-    Analyser analyser = topicNameAnalyserMap.get(parsedMessage.destinationName);
+    Analyser analyser = topicNameAnalyserMap.get(parsedMessage.getDestinationName());
     if (analyser == null && !resourceNameAnalyserMap.isEmpty()) {
       StatisticsConfigDTO statistics = resourceNameAnalyserMap.get(subInfo.getAlias());
       if(statistics != null){
         analyser = AnalyserFactory.getInstance().getAnalyser(statistics);
-        topicNameAnalyserMap.put(parsedMessage.destinationName, analyser);
+        topicNameAnalyserMap.put(parsedMessage.getDestinationName(), analyser);
       }
     }
     Message msg = parsedMessage.getMessage();
@@ -332,7 +363,18 @@ public abstract class Protocol implements SelectorCallback, MessageListener, Tim
   }
 
   public InterServerTransformation destinationTransformationLookup(String name) {
-    return destinationTransformerMap.get(name);
+    InterServerTransformation transformation = destinationTransformerMap.get(name);
+    if(transformation == null){
+      for(Map.Entry<String, InterServerTransformation> entry:destinationTransformerMap.entrySet()){
+        if((entry.getKey().contains("+") || entry.getKey().contains("#"))
+            && DestinationSet.matches(entry.getKey(), name)){
+          transformation = entry.getValue();
+          destinationTransformerMap.put(name, transformation);
+          break;
+        }
+      }
+    }
+    return transformation;
   }
 
   protected SubscriptionContextBuilder createSubscriptionContextBuilder(String resource, String selector, QualityOfService qos, int receiveMax) {
@@ -434,11 +476,13 @@ public abstract class Protocol implements SelectorCallback, MessageListener, Tim
     return lookup;
   }
 
-  @Data
-  @AllArgsConstructor
-  @NoArgsConstructor
-  public static final class ParsedMessage{
-    private String destinationName;
-    private Message message;
+  protected Session buildSession(String sessionId, int expiry) throws ExecutionException, InterruptedException, TimeoutException {
+    SessionContextBuilder scb = new SessionContextBuilder(sessionId, new ProtocolClientConnection(this));
+    scb.setResetState(true)
+        .setSessionExpiry(expiry)
+        .setPersistentSession(false)
+        .setReceiveMaximum(10);
+    CompletableFuture<Session> sessionFuture = SessionManager.getInstance().createAsync(scb.build(), this);
+    return sessionFuture.get(5, TimeUnit.SECONDS);
   }
 }

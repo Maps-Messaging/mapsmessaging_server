@@ -1,7 +1,7 @@
 /*
  *
  *  Copyright [ 2020 - 2024 ] Matthew Buckton
- *  Copyright [ 2024 - 2025 ] MapsMessaging B.V.
+ *  Copyright [ 2024 - 2026 ] MapsMessaging B.V.
  *
  *  Licensed under the Apache License, Version 2.0 with the Commons Clause
  *  (the "License"); you may not use this file except in compliance with the License.
@@ -19,12 +19,12 @@
 
 package io.mapsmessaging.config;
 
-import io.mapsmessaging.config.network.impl.LoRaChipDeviceConfig;
-import io.mapsmessaging.config.network.impl.LoRaSerialDeviceConfig;
+import io.mapsmessaging.config.network.SerialDeviceHelper;
 import io.mapsmessaging.configuration.ConfigurationProperties;
 import io.mapsmessaging.dto.rest.config.BaseConfigDTO;
 import io.mapsmessaging.dto.rest.config.LoRaDeviceManagerConfigDTO;
-import io.mapsmessaging.dto.rest.config.network.impl.LoRaConfigDTO;
+import io.mapsmessaging.dto.rest.config.lora.LoRaDeviceConfigDTO;
+import io.mapsmessaging.dto.rest.config.lora.LoRaHardwareConfigDTO;
 import io.mapsmessaging.license.FeatureManager;
 import io.mapsmessaging.utilities.configuration.ConfigurationManager;
 import lombok.NoArgsConstructor;
@@ -53,22 +53,31 @@ public class LoRaDeviceManagerConfig extends LoRaDeviceManagerConfigDTO implemen
   }
 
   private void parseConfig(ConfigurationProperties properties) {
-    LoRaConfigDTO loraDeviceConfig = null;
+    LoRaDeviceConfigDTO  loRaDeviceConfigDTO = new LoRaDeviceConfigDTO();
     if (properties.containsKey("device")) {
-      loraDeviceConfig = new LoRaChipDeviceConfig(properties);
+      ConfigurationProperties deviceProps  = (ConfigurationProperties) properties.get("device");
+      LoRaHardwareConfigDTO hardwareConfigDTO = new LoRaHardwareConfigDTO();
+      hardwareConfigDTO.setCs(deviceProps.getIntProperty("cs", 0));
+      hardwareConfigDTO.setIrq(deviceProps.getIntProperty("irq", 0));
+      hardwareConfigDTO.setRst(deviceProps.getIntProperty("rst", 0));
+      hardwareConfigDTO.setRadio(deviceProps.getProperty("radio"));
+      hardwareConfigDTO.setCadTimeout(deviceProps.getIntProperty("CADTimeout", 0));
+      loRaDeviceConfigDTO.setHardware(hardwareConfigDTO);
+      deviceConfigList.add(loRaDeviceConfigDTO);
     } else if (properties.containsKey("serial")) {
-      loraDeviceConfig = new LoRaSerialDeviceConfig(properties);
+      ConfigurationProperties serialProps = (ConfigurationProperties) properties.get("serial");
+      loRaDeviceConfigDTO.setSerialDevice(SerialDeviceHelper.getSerialDeviceDTO(serialProps));
+      deviceConfigList.add(loRaDeviceConfigDTO);
     }
-    if (loraDeviceConfig != null) {
-      deviceConfigList.add(loraDeviceConfig);
-    }
+    loRaDeviceConfigDTO.setPower(properties.getIntProperty("power", 0));
+    loRaDeviceConfigDTO.setFrequency(properties.getIntProperty("frequency", 0));
+    loRaDeviceConfigDTO.setName(properties.getProperty("name"));
   }
 
   @Override
   public boolean update(BaseConfigDTO config) {
     boolean hasChanged = false;
-    if (config instanceof LoRaDeviceManagerConfigDTO) {
-      LoRaDeviceManagerConfigDTO newConfig = (LoRaDeviceManagerConfigDTO) config;
+    if (config instanceof LoRaDeviceManagerConfigDTO newConfig) {
       if (this.deviceConfigList.size() != newConfig.getDeviceConfigList().size()) {
         this.deviceConfigList = newConfig.getDeviceConfigList();
         hasChanged = true;
@@ -86,14 +95,7 @@ public class LoRaDeviceManagerConfig extends LoRaDeviceManagerConfigDTO implemen
 
   @Override
   public ConfigurationProperties toConfigurationProperties() {
-    List<ConfigurationProperties> configList = new ArrayList<>();
-    for (LoRaConfigDTO config : deviceConfigList) {
-      if (config instanceof Config) {
-        configList.add(((Config) config).toConfigurationProperties());
-      }
-    }
     ConfigurationProperties properties = new ConfigurationProperties();
-    properties.put("data", configList);
     return properties;
   }
 

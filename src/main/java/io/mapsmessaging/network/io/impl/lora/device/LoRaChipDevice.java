@@ -1,7 +1,7 @@
 /*
  *
  *  Copyright [ 2020 - 2024 ] Matthew Buckton
- *  Copyright [ 2024 - 2025 ] MapsMessaging B.V.
+ *  Copyright [ 2024 - 2026 ] MapsMessaging B.V.
  *
  *  Licensed under the Apache License, Version 2.0 with the Commons Clause
  *  (the "License"); you may not use this file except in compliance with the License.
@@ -19,7 +19,8 @@
 
 package io.mapsmessaging.network.io.impl.lora.device;
 
-import io.mapsmessaging.config.network.impl.LoRaChipDeviceConfig;
+import io.mapsmessaging.dto.rest.config.lora.LoRaHardwareConfigDTO;
+import io.mapsmessaging.dto.rest.config.network.impl.LoRaChipConfigDTO;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.logging.ServerLogMessages;
@@ -36,7 +37,7 @@ import java.util.Map;
 public class LoRaChipDevice extends LoRaDevice {
 
   @Getter
-  private final LoRaChipDeviceConfig config;
+  private final LoRaChipConfigDTO config;
 
   final Logger logger;
   private int radioHandle;
@@ -44,7 +45,7 @@ public class LoRaChipDevice extends LoRaDevice {
   private final Map<Integer, LoRaEndPoint> registeredEndPoint;
   private PacketReader packetReader;
 
-  public LoRaChipDevice(LoRaChipDeviceConfig config) {
+  public LoRaChipDevice(LoRaChipConfigDTO config) {
     super(config);
     logger = LoggerFactory.getLogger(LoRaChipDevice.class);
     this.config = config;
@@ -73,11 +74,12 @@ public class LoRaChipDevice extends LoRaDevice {
 
   private boolean init(int addr) throws IOException {
     isInitialised = true;
-    int result = init(addr, config.getFrequency(), config.getCs(), config.getIrq(), config.getRst());
+    LoRaHardwareConfigDTO deviceConfigDTO = config.getHardware();
+    int result = init(addr, config.getFrequency(), deviceConfigDTO.getCs(), deviceConfigDTO.getIrq(), deviceConfigDTO.getRst());
     if (result >= 0) {
       setPower(result, config.getPower(), false);
-      if (config.getCadTimeout() > 0) {
-        setCADTimeout(result, config.getCadTimeout());
+      if (deviceConfigDTO.getCadTimeout() > 0) {
+        setCADTimeout(result, deviceConfigDTO.getCadTimeout());
       }
       setPromiscuous(radioHandle, true);
       packetReader = new PacketReader(this);

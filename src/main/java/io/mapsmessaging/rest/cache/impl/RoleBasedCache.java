@@ -1,7 +1,7 @@
 /*
  *
  *  Copyright [ 2020 - 2024 ] Matthew Buckton
- *  Copyright [ 2024 - 2025 ] MapsMessaging B.V.
+ *  Copyright [ 2024 - 2026 ] MapsMessaging B.V.
  *
  *  Licensed under the Apache License, Version 2.0 with the Commons Clause
  *  (the "License"); you may not use this file except in compliance with the License.
@@ -22,15 +22,19 @@ package io.mapsmessaging.rest.cache.impl;
 import io.mapsmessaging.dto.rest.cache.CacheInfo;
 import io.mapsmessaging.rest.cache.Cache;
 import io.mapsmessaging.rest.cache.CacheKey;
+import io.mapsmessaging.utilities.threads.SimpleTaskScheduler;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.LongAdder;
 
 public class RoleBasedCache<V> implements Cache<CacheKey, V> {
   private final Map<CacheKey, CacheEntry<V>> cache = new ConcurrentHashMap<>();
   private final long expiryDuration;
   private final long cleanupInterval;
+  private final ScheduledFuture<?> scheduled;
   private LongAdder cacheHits;
   private LongAdder cacheMisses;
 
@@ -39,18 +43,11 @@ public class RoleBasedCache<V> implements Cache<CacheKey, V> {
     this.cleanupInterval = cleanupInterval;
     cacheHits = new LongAdder();
     cacheMisses = new LongAdder();
-    // Schedule periodic cleanup if needed
-    new Thread(() -> {
-      while (true) {
-        try {
-          Thread.sleep(cleanupInterval);
-          cleanup();
-        } catch (InterruptedException e) {
-          Thread.currentThread().interrupt();
-          break;
-        }
-      }
-    }).start();
+    scheduled = SimpleTaskScheduler.getInstance().scheduleAtFixedRate(this::cleanup, cleanupInterval, cleanupInterval, TimeUnit.MILLISECONDS);
+  }
+
+  public void close(){
+    scheduled.cancel(false);
   }
 
   @Override
@@ -62,7 +59,6 @@ public class RoleBasedCache<V> implements Cache<CacheKey, V> {
       put(key, value); // Recursively add the new entry
     }
   }
-
 
   @Override
   public V get(CacheKey key) {
@@ -94,6 +90,14 @@ public class RoleBasedCache<V> implements Cache<CacheKey, V> {
   @Override
   public CacheInfo getCacheInfo() {
     return new CacheInfo(true, expiryDuration, cleanupInterval, cache.size(), cacheHits.sum(), cacheMisses.sum());
+  }
+
+  @Override
+  public void removePath(String path) {
+    String lookup = path.startsWith("/") ? path.substring(1) : path;
+    cache.entrySet().removeIf(entry ->
+        entry.getKey().getEndpoint().startsWith(lookup)
+    );
   }
 
   private void cleanup() {

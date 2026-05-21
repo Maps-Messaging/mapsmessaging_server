@@ -1,7 +1,7 @@
 /*
  *
  *  Copyright [ 2020 - 2024 ] Matthew Buckton
- *  Copyright [ 2024 - 2025 ] MapsMessaging B.V.
+ *  Copyright [ 2024 - 2026 ] MapsMessaging B.V.
  *
  *  Licensed under the Apache License, Version 2.0 with the Commons Clause
  *  (the "License"); you may not use this file except in compliance with the License.
@@ -21,11 +21,13 @@ package io.mapsmessaging.api.message;
 
 import io.mapsmessaging.engine.destination.DestinationImpl;
 import io.mapsmessaging.engine.schema.SchemaManager;
+import io.mapsmessaging.schemas.config.SchemaConfig;
 import io.mapsmessaging.schemas.config.SchemaResource;
 import io.mapsmessaging.schemas.formatters.MessageFormatter;
 import io.mapsmessaging.selector.IdentifierResolver;
 import io.mapsmessaging.selector.operators.ParserExecutor;
 
+import java.io.IOException;
 import java.util.List;
 
 @SuppressWarnings("java:S6548") // yes it is a singleton
@@ -60,14 +62,27 @@ public class Filter {
   }
 
   public static IdentifierResolver getTopicResolver(String topicName, Message message) {
+    if(message.getSchemaId() != null){
+      SchemaConfig config = SchemaManager.getInstance().getSchema(message.getSchemaId());
+      if(config != null){
+        return getResolver(config.getUniqueId(), message);
+      }
+    }
     List<SchemaResource> list = SchemaManager.getInstance().getSchemaByContext(topicName);
-    return getResolver(list.stream().findFirst().get().getDefaultVersion().getUniqueId(), message);
+    if(!list.isEmpty()){
+      return getResolver(list.stream().findFirst().get().getDefaultVersion().getUniqueId(), message);
+    }
+    return null;
   }
 
   public static IdentifierResolver getResolver(String lookup, Message message) {
-    MessageFormatter formatter = SchemaManager.getInstance().getMessageFormatter(lookup);
-    if (formatter != null) {
-      return formatter.parse(message.getOpaqueData());
+    try {
+      MessageFormatter formatter = SchemaManager.getInstance().getMessageFormatter(lookup);
+      if (formatter != null) {
+        return formatter.parse(message.getOpaqueData(), SchemaManager.getInstance().getDefaultParseMode());
+      }
+    } catch (IOException e) {
+      // log
     }
     return null;
   }

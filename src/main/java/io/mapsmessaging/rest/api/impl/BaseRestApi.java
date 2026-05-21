@@ -1,7 +1,7 @@
 /*
  *
  *  Copyright [ 2020 - 2024 ] Matthew Buckton
- *  Copyright [ 2024 - 2025 ] MapsMessaging B.V.
+ *  Copyright [ 2024 - 2026 ] MapsMessaging B.V.
  *
  *  Licensed under the Apache License, Version 2.0 with the Commons Clause
  *  (the "License"); you may not use this file except in compliance with the License.
@@ -19,23 +19,37 @@
 
 package io.mapsmessaging.rest.api.impl;
 
+import io.mapsmessaging.api.Session;
+import io.mapsmessaging.api.SessionContextBuilder;
+import io.mapsmessaging.api.SessionManager;
 import io.mapsmessaging.auth.AuthManager;
+import io.mapsmessaging.engine.session.SessionContext;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.rest.api.Constants;
+import io.mapsmessaging.rest.api.impl.messaging.impl.RestClientConnection;
+import io.mapsmessaging.rest.api.impl.messaging.impl.RestMessageListener;
+import io.mapsmessaging.rest.api.impl.messaging.impl.SessionState;
 import io.mapsmessaging.rest.auth.AuthenticationContext;
 import io.mapsmessaging.rest.auth.RestAccessControl;
 import io.mapsmessaging.rest.cache.CacheKey;
+import io.mapsmessaging.rest.handler.SessionTracker;
+import io.mapsmessaging.rest.responses.StatusResponse;
 import io.mapsmessaging.security.access.Identity;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.Context;
+import jakarta.ws.rs.core.Request;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.UriInfo;
 
 import javax.security.auth.Subject;
+import javax.security.auth.login.LoginException;
+import java.io.IOException;
+import java.util.UUID;
+import java.util.function.Supplier;
 
 import static io.mapsmessaging.logging.ServerLogMessages.REST_CACHE_HIT;
 import static io.mapsmessaging.logging.ServerLogMessages.REST_CACHE_MISS;
@@ -51,6 +65,9 @@ public class BaseRestApi {
   protected HttpServletResponse response;
   @Context
   protected UriInfo uriInfo;
+
+  @Context
+  protected Request baseRequest;
 
   protected HttpSession getSession() {
     HttpSession session = request.getSession(false);
@@ -72,6 +89,58 @@ public class BaseRestApi {
     }
   }
 
+  public String extractClientIp() {
+
+    String forwarded = request.getHeader("X-Forwarded-For");
+    if (forwarded != null && !forwarded.isBlank()) {
+      // first IP is the client
+      return forwarded.split(",")[0].trim();
+    }
+
+    String realIp = request.getHeader("X-Real-IP");
+    if (realIp != null && !realIp.isBlank()) {
+      return realIp.trim();
+    }
+
+    return request.getRemoteAddr();
+  }
+
+
+  protected Session getAuthenticatedSession() throws LoginException, IOException {
+    HttpSession httpSession = getSession();
+    SessionState state = SessionTracker.getSessionStates().getSessionState(getSession().getId());
+    if(state == null) {
+      boolean persistentSession = false;
+      Object obj = httpSession.getAttribute("persistentSession");
+      if (obj instanceof Boolean bool) {
+        persistentSession = bool;
+      }
+      RestClientConnection restClientConnection = new RestClientConnection(httpSession);
+
+      Object id = httpSession.getAttribute("sessionId");
+      String sessionId = id == null ? restClientConnection.getName() : id.toString();
+      String username = (String) httpSession.getAttribute("username");
+      if (username == null) {
+        username = httpSession.getId();
+        httpSession.setAttribute("username", username);
+      }
+      SessionContextBuilder sessionContextBuilder = new SessionContextBuilder(sessionId, restClientConnection)
+          .setPersistentSession(persistentSession)
+          .isAuthorized(true)
+          .setUsername(username);
+
+      SessionContext sessionContext = sessionContextBuilder.build();
+      RestMessageListener restMessageListener = new RestMessageListener();
+      Session session = SessionManager.getInstance().create(sessionContext, restMessageListener);
+      SessionState sessionState = new SessionState(session, restMessageListener);
+      SessionTracker.getSessionStates().setSessionState(getSession().getId(), sessionState);
+      return session;
+    }
+    if(state.getSession() != null){
+      return state.getSession();
+    }
+    throw new WebApplicationException("Access denied", Response.Status.FORBIDDEN);
+  }
 
   protected void hasAccess(String resource) {
     if(!AUTH_ENABLED){
@@ -131,4 +200,81 @@ public class BaseRestApi {
   protected void removeFromCache(CacheKey key) {
     Constants.getCentralCache().remove(key);
   }
+
+  protected void removeUriFromCache(String path){
+    Constants.getCentralCache().removePath(path);
+  }
+
+  protected Response ok(Object entity) {
+    return Response.ok(entity).build();
+  }
+
+  protected Response created(StatusResponse statusResponse) {
+    return Response.status(Response.Status.CREATED)
+        .entity(statusResponse)
+        .build();
+  }
+
+  protected Response noContent() {
+    return Response.noContent().build();
+  }
+
+  protected Response badRequest() {
+    return Response.status(Response.Status.BAD_REQUEST).build();
+  }
+
+  protected Response badRequest(String message) {
+    return Response.status(Response.Status.BAD_REQUEST)
+        .entity(new StatusResponse(message))
+        .build();
+  }
+
+  protected Response notFound() {
+    return Response.status(Response.Status.NOT_FOUND).build();
+  }
+
+  protected Response notFound(String message) {
+    return Response.status(Response.Status.NOT_FOUND)
+        .entity(new StatusResponse(message))
+        .build();
+  }
+
+  protected Response conflict(String message) {
+    return Response.status(Response.Status.CONFLICT)
+        .entity(new StatusResponse(message))
+        .build();
+  }
+
+  protected Response internalServerError(String message) {
+    return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+        .entity(new StatusResponse(message))
+        .build();
+  }
+
+  protected UUID parseUuidOrNull(String value) {
+    if (value == null || value.isBlank()) {
+      return null;
+    }
+    try {
+      return UUID.fromString(value);
+    } catch (IllegalArgumentException ex) {
+      return null;
+    }
+  }
+
+  protected Response withUuidOrBadRequest(String uuidString, java.util.function.Function<UUID, Response> handler) {
+    UUID uuid = parseUuidOrNull(uuidString);
+    if (uuid == null) {
+      return badRequest("Invalid UUID");
+    }
+    return handler.apply(uuid);
+  }
+
+  protected <T> Response requireNonNull(T value, String message, Supplier<Response> handler) {
+    if (value == null) {
+      return badRequest(message);
+    }
+    return handler.get();
+  }
+
 }

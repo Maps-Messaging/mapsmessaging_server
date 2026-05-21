@@ -1,7 +1,7 @@
 /*
  *
  *  Copyright [ 2020 - 2024 ] Matthew Buckton
- *  Copyright [ 2024 - 2025 ] MapsMessaging B.V.
+ *  Copyright [ 2024 - 2026 ] MapsMessaging B.V.
  *
  *  Licensed under the Apache License, Version 2.0 with the Commons Clause
  *  (the "License"); you may not use this file except in compliance with the License.
@@ -46,16 +46,27 @@ import lombok.NoArgsConstructor;
 @Data
 @EqualsAndHashCode(callSuper = false)
 @NoArgsConstructor
-public class BaseTriggerConfigDTO extends BaseConfigDTO{
+public abstract class BaseTriggerConfigDTO extends BaseConfigDTO{
+
+  protected BaseTriggerConfigDTO(String type){
+    this.type = type;
+  }
 
   @Schema(description = "Type of the trigger",
       example = "cron",
-      allowableValues = {"cron", "interrupt", "periodic"}
+      allowableValues = {"cron", "interrupt", "periodic"},
+      requiredMode = Schema.RequiredMode.REQUIRED,
+      nullable = false
   )
   protected String type;
 
 
-  @Schema(description = "Name of the trigger", example = "dailyTrigger")
+  @Schema(
+      description = "Name of the trigger",
+      example = "dailyTrigger",
+      requiredMode = Schema.RequiredMode.REQUIRED,
+      nullable = false
+  )
   protected String name;
 
 }

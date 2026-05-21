@@ -1,7 +1,7 @@
 /*
  *
  *  Copyright [ 2020 - 2024 ] Matthew Buckton
- *  Copyright [ 2024 - 2025 ] MapsMessaging B.V.
+ *  Copyright [ 2024 - 2026 ] MapsMessaging B.V.
  *
  *  Licensed under the Apache License, Version 2.0 with the Commons Clause
  *  (the "License"); you may not use this file except in compliance with the License.
@@ -21,7 +21,6 @@ package io.mapsmessaging.rest.jolokia;
 
 import io.mapsmessaging.MessageDaemon;
 import io.mapsmessaging.config.JolokiaConfig;
-import io.mapsmessaging.configuration.ConfigurationProperties;
 import io.mapsmessaging.dto.rest.system.Status;
 import io.mapsmessaging.dto.rest.system.SubSystemStatusDTO;
 import io.mapsmessaging.logging.Logger;
@@ -33,6 +32,7 @@ import org.jolokia.jvmagent.JolokiaServerConfig;
 
 import java.io.IOException;
 import java.util.HashMap;
+import java.util.Map;
 import java.util.Map.Entry;
 
 public class JolokaManager implements Agent {
@@ -97,7 +97,7 @@ public class JolokaManager implements Agent {
 
     public void run() {
       HashMap<String, String> map = new HashMap<>();
-      ConfigurationProperties properties = config.getJolokiaMapping();
+      Map<String, Object> properties = config.getConfig();
       for (Entry<String, Object> entry : properties.entrySet()) {
         String val = entry.getValue().toString();
         if(val.endsWith(".0")){

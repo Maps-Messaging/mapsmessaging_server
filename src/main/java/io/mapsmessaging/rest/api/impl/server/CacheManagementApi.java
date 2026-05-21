@@ -1,7 +1,7 @@
 /*
  *
  *  Copyright [ 2020 - 2024 ] Matthew Buckton
- *  Copyright [ 2024 - 2025 ] MapsMessaging B.V.
+ *  Copyright [ 2024 - 2026 ] MapsMessaging B.V.
  *
  *  Licensed under the Apache License, Version 2.0 with the Commons Clause
  *  (the "License"); you may not use this file except in compliance with the License.
@@ -21,22 +21,27 @@ package io.mapsmessaging.rest.api.impl.server;
 
 import io.mapsmessaging.dto.rest.cache.CacheInfo;
 import io.mapsmessaging.rest.api.Constants;
+import io.mapsmessaging.rest.responses.StatusResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.ws.rs.*;
+import jakarta.ws.rs.DELETE;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
 import static io.mapsmessaging.rest.api.Constants.URI_PATH;
 
 @Tag(name = "Server Config Management")
-@Path(URI_PATH+"/server/cache")
+@Path(URI_PATH + "/server/cache")
 public class CacheManagementApi extends ServerBaseRestApi {
+
   @GET
-  @Produces({MediaType.APPLICATION_JSON})
+  @Produces(MediaType.APPLICATION_JSON)
   @Operation(
       summary = "Retrieve cache information",
       description = "Fetches detailed information about the server's central cache, including size, usage statistics, and entries.",
@@ -46,9 +51,10 @@ public class CacheManagementApi extends ServerBaseRestApi {
               description = "Operation was successful",
               content = @Content(mediaType = "application/json", schema = @Schema(implementation = CacheInfo.class))
           ),
-          @ApiResponse(responseCode = "400", description = "Bad request"),
-          @ApiResponse(responseCode = "401", description = "Invalid credentials or unauthorized access"),
-          @ApiResponse(responseCode = "403", description = "User is not authorised to access the resource"),
+          @ApiResponse(responseCode = "401", description = "Invalid credentials or unauthorized access",
+              content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))),
+          @ApiResponse(responseCode = "403", description = "User is not authorised to access the resource",
+              content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class)))
       }
   )
   public CacheInfo getCacheInformation() {
@@ -57,7 +63,6 @@ public class CacheManagementApi extends ServerBaseRestApi {
   }
 
   @DELETE
-  @Produces({MediaType.APPLICATION_JSON})
   @Operation(
       summary = "Clear cache",
       description = "Clears all entries in the server's central cache to free up memory and ensure data consistency.",
@@ -66,14 +71,15 @@ public class CacheManagementApi extends ServerBaseRestApi {
               responseCode = "204",
               description = "Cache cleared successfully (no content)"
           ),
-          @ApiResponse(responseCode = "400", description = "Bad request"),
-          @ApiResponse(responseCode = "401", description = "Invalid credentials or unauthorized access"),
-          @ApiResponse(responseCode = "403", description = "User is not authorised to access the resource")
+          @ApiResponse(responseCode = "401", description = "Invalid credentials or unauthorized access",
+              content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))),
+          @ApiResponse(responseCode = "403", description = "User is not authorised to access the resource",
+              content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class)))
       }
   )
-  public void clearCacheInformation() {
+  public Response clearCacheInformation() {
     hasAccess(RESOURCE);
     Constants.getCentralCache().clear();
-    response.setStatus(Response.Status.NO_CONTENT.getStatusCode());
+    return Response.noContent().build();
   }
 }

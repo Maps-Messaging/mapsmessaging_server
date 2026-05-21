@@ -1,7 +1,7 @@
 /*
  *
  *  Copyright [ 2020 - 2024 ] Matthew Buckton
- *  Copyright [ 2024 - 2025 ] MapsMessaging B.V.
+ *  Copyright [ 2024 - 2026 ] MapsMessaging B.V.
  *
  *  Licensed under the Apache License, Version 2.0 with the Commons Clause
  *  (the "License"); you may not use this file except in compliance with the License.
@@ -19,13 +19,20 @@
 
 package io.mapsmessaging.network.protocol.impl.mqtt;
 
+import io.mapsmessaging.api.features.QualityOfService;
+import io.mapsmessaging.dto.rest.config.network.EndPointConnectionServerConfigDTO;
+import io.mapsmessaging.dto.rest.config.network.EndPointServerConfigDTO;
+import io.mapsmessaging.dto.rest.config.network.MqttWillConfigDTO;
 import io.mapsmessaging.network.io.EndPoint;
 import io.mapsmessaging.network.io.Packet;
 import io.mapsmessaging.network.protocol.Protocol;
 import io.mapsmessaging.network.protocol.ProtocolImplFactory;
 import io.mapsmessaging.network.protocol.detection.MultiByteArrayDetection;
+import io.mapsmessaging.network.protocol.impl.mqtt.packet.Publish;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.util.Base64;
 
 public class MQTTProtocolFactory extends ProtocolImplFactory {
 
@@ -42,7 +49,29 @@ public class MQTTProtocolFactory extends ProtocolImplFactory {
   @Override
   public Protocol connect(EndPoint endPoint, String sessionId, String username, String password) throws IOException {
     MQTTProtocol protocol = new MQTTProtocol(endPoint);
-    protocol.connect(sessionId, username, password);
+    EndPointServerConfigDTO dto = endPoint.getServer().getConfig();
+    Publish willMsg = null;
+    if(dto instanceof EndPointConnectionServerConfigDTO connectionServerConfigDTO) {
+      if(connectionServerConfigDTO.getWillConfig() != null) {
+        MqttWillConfigDTO will =  connectionServerConfigDTO.getWillConfig();
+        QualityOfService qos = QualityOfService.getInstance(will.getQos());
+        byte[] payload;
+        if(will.getPayloadEncoding().equals("base64")) {
+          payload = Base64.getDecoder().decode(will.getPayload());
+        }
+        else{
+          payload = will.getPayload().getBytes(StandardCharsets.UTF_8);
+        }
+        willMsg = new Publish(
+            will.isRetain(),
+            payload,
+            qos,
+            0,
+            will.getTopic()
+        );
+      }
+    }
+    protocol.connect(sessionId, username, password, willMsg);
     return protocol;
   }
 

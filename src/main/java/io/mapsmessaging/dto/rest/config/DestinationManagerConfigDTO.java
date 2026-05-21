@@ -1,7 +1,7 @@
 /*
  *
  *  Copyright [ 2020 - 2024 ] Matthew Buckton
- *  Copyright [ 2024 - 2025 ] MapsMessaging B.V.
+ *  Copyright [ 2024 - 2026 ] MapsMessaging B.V.
  *
  *  Licensed under the Apache License, Version 2.0 with the Commons Clause
  *  (the "License"); you may not use this file except in compliance with the License.
@@ -24,16 +24,27 @@ import io.mapsmessaging.dto.rest.config.destination.DestinationConfigDTO;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
-import lombok.NoArgsConstructor;
 
 import java.util.List;
 
 @Data
 @EqualsAndHashCode(callSuper = true)
-@NoArgsConstructor
 @Schema(description = "Destination Manager Configuration DTO")
-public class DestinationManagerConfigDTO extends BaseConfigDTO {
+public class DestinationManagerConfigDTO extends BaseManagerConfigDTO {
 
-  @Schema(description = "List of destination configurations")
+  @Schema(
+      description = "List of destination configurations",
+      minimum = "1",
+      requiredMode = Schema.RequiredMode.REQUIRED
+  )
   protected List<DestinationConfigDTO> data;
+
+  public DestinationManagerConfigDTO() {
+    super("DestinationManagerConfigDTO");
+  }
+
+  @Override
+  public String getSimpleName() {
+    return "Destinations";
+  }
 }

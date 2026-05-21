@@ -1,7 +1,7 @@
 /*
  *
  *  Copyright [ 2020 - 2024 ] Matthew Buckton
- *  Copyright [ 2024 - 2025 ] MapsMessaging B.V.
+ *  Copyright [ 2024 - 2026 ] MapsMessaging B.V.
  *
  *  Licensed under the Apache License, Version 2.0 with the Commons Clause
  *  (the "License"); you may not use this file except in compliance with the License.
@@ -23,8 +23,9 @@ import io.mapsmessaging.MessageDaemon;
 import io.mapsmessaging.dto.helpers.ServerStatisticsHelper;
 import io.mapsmessaging.dto.helpers.StatusMessageHelper;
 import io.mapsmessaging.dto.rest.ServerInfoDTO;
+import io.mapsmessaging.dto.rest.ServerStatisticsDTO;
 import io.mapsmessaging.rest.cache.CacheKey;
-import io.mapsmessaging.rest.responses.ServerStatisticsResponse;
+import io.mapsmessaging.rest.responses.StatusResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -38,12 +39,12 @@ import jakarta.ws.rs.core.MediaType;
 import static io.mapsmessaging.rest.api.Constants.URI_PATH;
 
 @Tag(name = "Server Management")
-@Path(URI_PATH+"/server/details")
+@Path(URI_PATH + "/server/details")
 public class ServerDetailsApi extends ServerBaseRestApi {
 
   @GET
   @Path("/info")
-  @Produces({MediaType.APPLICATION_JSON})
+  @Produces(MediaType.APPLICATION_JSON)
   @Operation(
       summary = "Get server build information",
       description = "Retrieves detailed information about the server build, such as version and configuration details. Uses caching for improved performance.",
@@ -53,28 +54,29 @@ public class ServerDetailsApi extends ServerBaseRestApi {
               description = "Operation was successful",
               content = @Content(mediaType = "application/json", schema = @Schema(implementation = ServerInfoDTO.class))
           ),
-          @ApiResponse(responseCode = "400", description = "Bad request"),
-          @ApiResponse(responseCode = "401", description = "Invalid credentials or unauthorized access"),
-          @ApiResponse(responseCode = "403", description = "User is not authorised to access the resource"),
+          @ApiResponse(responseCode = "401", description = "Invalid credentials or unauthorized access",
+              content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))),
+          @ApiResponse(responseCode = "403", description = "User is not authorised to access the resource",
+              content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class)))
       }
   )
   public ServerInfoDTO getBuildInfo() {
     hasAccess(RESOURCE);
-    CacheKey key = new CacheKey(uriInfo.getPath(), "buildInfo");
-    ServerInfoDTO cachedResponse = getFromCache(key, ServerInfoDTO.class);
+
+    CacheKey cacheKey = new CacheKey(uriInfo.getPath(), "buildInfo");
+    ServerInfoDTO cachedResponse = getFromCache(cacheKey, ServerInfoDTO.class);
     if (cachedResponse != null) {
       return cachedResponse;
     }
 
-    // Fetch and cache response
-    ServerInfoDTO response = StatusMessageHelper.fromMessageDaemon(MessageDaemon.getInstance());
-    putToCache(key, response);
-    return response;
+    ServerInfoDTO responseBody = StatusMessageHelper.fromMessageDaemon(MessageDaemon.getInstance());
+    putToCache(cacheKey, responseBody);
+    return responseBody;
   }
 
   @GET
   @Path("/stats")
-  @Produces({MediaType.APPLICATION_JSON})
+  @Produces(MediaType.APPLICATION_JSON)
   @Operation(
       summary = "Get server statistics",
       description = "Retrieves server usage statistics, including metrics such as CPU usage, memory usage, and active connections. Uses caching for improved performance.",
@@ -82,26 +84,25 @@ public class ServerDetailsApi extends ServerBaseRestApi {
           @ApiResponse(
               responseCode = "200",
               description = "Operation was successful",
-              content = @Content(mediaType = "application/json", schema = @Schema(implementation = ServerStatisticsResponse.class))
+              content = @Content(mediaType = "application/json", schema = @Schema(implementation = ServerStatisticsDTO.class))
           ),
-          @ApiResponse(responseCode = "400", description = "Bad request"),
-          @ApiResponse(responseCode = "401", description = "Invalid credentials or unauthorized access"),
-          @ApiResponse(responseCode = "403", description = "User is not authorised to access the resource"),
+          @ApiResponse(responseCode = "401", description = "Invalid credentials or unauthorized access",
+              content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))),
+          @ApiResponse(responseCode = "403", description = "User is not authorised to access the resource",
+              content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class)))
       }
   )
-  public ServerStatisticsResponse getStats() {
+  public ServerStatisticsDTO getStats() {
     hasAccess(RESOURCE);
-    CacheKey key = new CacheKey(uriInfo.getPath(), "serverStats");
-    ServerStatisticsResponse cachedResponse = getFromCache(key, ServerStatisticsResponse.class);
+
+    CacheKey cacheKey = new CacheKey(uriInfo.getPath(), "serverStats");
+    ServerStatisticsDTO cachedResponse = getFromCache(cacheKey, ServerStatisticsDTO.class);
     if (cachedResponse != null) {
       return cachedResponse;
     }
 
-    // Fetch and cache response
-    ServerStatisticsResponse response =
-        new ServerStatisticsResponse(ServerStatisticsHelper.create());
-    putToCache(key, response);
-    return response;
+    ServerStatisticsDTO responseBody = ServerStatisticsHelper.create();
+    putToCache(cacheKey, responseBody);
+    return responseBody;
   }
-
 }

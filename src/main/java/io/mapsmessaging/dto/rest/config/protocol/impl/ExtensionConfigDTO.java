@@ -1,7 +1,7 @@
 /*
  *
  *  Copyright [ 2020 - 2024 ] Matthew Buckton
- *  Copyright [ 2024 - 2025 ] MapsMessaging B.V.
+ *  Copyright [ 2024 - 2026 ] MapsMessaging B.V.
  *
  *  Licensed under the Apache License, Version 2.0 with the Commons Clause
  *  (the "License"); you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-
 package io.mapsmessaging.dto.rest.config.protocol.impl;
 
 import io.mapsmessaging.dto.rest.config.protocol.ProtocolConfigDTO;
@@ -27,12 +26,38 @@ import lombok.Getter;
 import java.util.Map;
 
 @Getter
-@EqualsAndHashCode(callSuper=false)
+@EqualsAndHashCode(callSuper = true)
+@Schema(
+    title = "Extension Protocol Configuration DTO",
+    description =
+        "Generic protocol configuration for third-party integrations (e.g., IBM MQ, Pulsar, ROS). "
+            + "The 'config' object is intentionally untyped and may contain any JSON object structure.",
+    additionalProperties = Schema.AdditionalPropertiesValue.TRUE,
+    additionalPropertiesSchema = Object.class
+)
+
 public class ExtensionConfigDTO extends ProtocolConfigDTO {
 
-  @Schema(description = "Map of config entries")
-  protected Map<String, Object> config;
+  public ExtensionConfigDTO() {
+    super("extension");
+  }
 
-  @Schema(description = "name of the extension protocl")
+  @Schema(
+      description = "Name of the extension protocol implementation (e.g., ibmmq, pulsar, ros).",
+      example = "pulsar",
+      requiredMode = Schema.RequiredMode.REQUIRED,
+      nullable = false
+  )
   protected String protocol;
+
+  @Schema(
+      description =
+          "Protocol-specific configuration object. This is intentionally untyped and may contain any JSON object structure.",
+      requiredMode = Schema.RequiredMode.NOT_REQUIRED,
+      nullable = true,
+      additionalProperties = Schema.AdditionalPropertiesValue.TRUE,
+      additionalPropertiesSchema = Object.class,
+      example = "{\"url\":\"pulsar://localhost:6650\",\"tenant\":\"public\",\"namespace\":\"default\"}"
+  )
+  protected Map<String, Object> config;
 }

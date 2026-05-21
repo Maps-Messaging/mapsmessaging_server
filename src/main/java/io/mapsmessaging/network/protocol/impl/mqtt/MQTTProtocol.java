@@ -1,7 +1,7 @@
 /*
  *
  *  Copyright [ 2020 - 2024 ] Matthew Buckton
- *  Copyright [ 2024 - 2025 ] MapsMessaging B.V.
+ *  Copyright [ 2024 - 2026 ] MapsMessaging B.V.
  *
  *  Licensed under the Apache License, Version 2.0 with the Commons Clause
  *  (the "License"); you may not use this file except in compliance with the License.
@@ -26,6 +26,7 @@ import io.mapsmessaging.api.SubscriptionContextBuilder;
 import io.mapsmessaging.api.features.QualityOfService;
 import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.api.transformers.InterServerTransformation;
+import io.mapsmessaging.api.transformers.ParsedMessage;
 import io.mapsmessaging.dto.rest.analytics.StatisticsConfigDTO;
 import io.mapsmessaging.dto.rest.config.protocol.impl.MqttConfigDTO;
 import io.mapsmessaging.dto.rest.protocol.ProtocolInformationDTO;
@@ -55,6 +56,7 @@ import javax.security.auth.Subject;
 import java.io.IOException;
 import java.nio.channels.SelectionKey;
 import java.util.List;
+import java.util.Map;
 
 
 @java.lang.SuppressWarnings("DuplicatedBlocks")
@@ -117,21 +119,32 @@ public class MQTTProtocol extends Protocol {
   }
 
   @Override
-  public void connect(@NonNull @NotNull String sessionId, String username, String password) throws IOException {
+  public void connect(@NonNull @NotNull String sessionId, String username, String password ) throws IOException {
+    connect(sessionId, username, password, null);
+  }
+
+  public void connect(@NonNull @NotNull String sessionId, String username, String password, Publish willMsg ) throws IOException {
     Connect connect = new Connect();
     if (username != null) {
       connect.setUsername(username);
       connect.setPassword(password.trim().toCharArray());
     }
     connect.setSessionId(sessionId);
+    if(willMsg != null) {
+      connect.setWillMsg(willMsg.getPayload());
+      connect.setWillRetain(willMsg.isRetain());
+      connect.setWillQOS(willMsg.getQos());
+      connect.setWillFlag(true);
+      connect.setWillTopic(willMsg.getDestinationName());
+    }
     writeFrame(connect);
     registerRead();
     completedConnection();
   }
 
   @Override
-  public void subscribeRemote(@NonNull @NotNull String resource, @NonNull @NotNull String mappedResource, @NonNull @NotNull QualityOfService qos, @Nullable ParserExecutor parser, @Nullable InterServerTransformation transformer, StatisticsConfigDTO statistics) throws IOException {
-    super.subscribeRemote(resource,mappedResource, qos, parser, transformer,statistics);
+  public void subscribeRemote(@NonNull @NotNull String resource, @NonNull @NotNull String mappedResource, @NonNull @NotNull QualityOfService qos, @Nullable ParserExecutor parser, @Nullable InterServerTransformation transformer, StatisticsConfigDTO statistics, Map<String, Object> linkProperties) throws IOException {
+    super.subscribeRemote(resource,mappedResource, qos, parser, transformer,statistics, linkProperties);
     Subscribe subscribe = new Subscribe();
     subscribe.setMessageId(packetIdManager.nextPacketIdentifier());
     subscribe.getSubscriptionList().add(new SubscriptionInfo(resource, qos));
@@ -147,9 +160,9 @@ public class MQTTProtocol extends Protocol {
   }
 
   @Override
-  public void subscribeLocal(@NonNull @NotNull String resource, @NonNull @NotNull String mappedResource, @NonNull @NotNull QualityOfService qos, @Nullable String selector, @Nullable InterServerTransformation transformer, @Nullable NamespaceFilters namespaceFilters, StatisticsConfigDTO statistics)
+  public void subscribeLocal(@NonNull @NotNull String resource, @NonNull @NotNull String mappedResource, @NonNull @NotNull QualityOfService qos, @Nullable String selector, @Nullable InterServerTransformation transformer, @Nullable NamespaceFilters namespaceFilters, StatisticsConfigDTO statistics, Map<String, Object> linkProperties)
       throws IOException {
-    super.subscribeLocal(resource, mappedResource, qos, selector, transformer, namespaceFilters, statistics);
+    super.subscribeLocal(resource, mappedResource, qos, selector, transformer, namespaceFilters, statistics, linkProperties);
     SubscriptionContextBuilder builder = createSubscriptionContextBuilder(resource, selector, qos, 1024);
     session.addSubscription(builder.build());
   }

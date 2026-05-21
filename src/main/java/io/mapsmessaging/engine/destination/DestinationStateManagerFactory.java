@@ -1,7 +1,7 @@
 /*
  *
  *  Copyright [ 2020 - 2024 ] Matthew Buckton
- *  Copyright [ 2024 - 2025 ] MapsMessaging B.V.
+ *  Copyright [ 2024 - 2026 ] MapsMessaging B.V.
  *
  *  Licensed under the Apache License, Version 2.0 with the Commons Clause
  *  (the "License"); you may not use this file except in compliance with the License.
@@ -61,21 +61,6 @@ public class DestinationStateManagerFactory {
     return new TransactionalMessageManager(factory);
   }
 
-  private static BitSetFactory createFactory(DestinationImpl destinationImpl, boolean persistent, String name) throws IOException {
-    if (persistent && destinationImpl.isPersistent()) {
-      String fullyQualifiedPath = FilePathHelper.cleanPath(destinationImpl.getPhysicalLocation());
-      fullyQualifiedPath += "state";
-      File directory = new File(fullyQualifiedPath);
-      if(!directory.exists()) {
-        Files.createDirectories(directory.toPath());
-      }
-      fullyQualifiedPath = FilePathHelper.cleanPath(fullyQualifiedPath + File.separator + name + ".bin");
-      return new FileBitSetFactoryImpl(fullyQualifiedPath, Constants.BITSET_BLOCK_SIZE);
-    } else {
-      return new BitSetFactoryImpl(Constants.BITSET_BLOCK_SIZE);
-    }
-  }
-
   public static BitSetFactory createSubscriptionFactory(DestinationImpl destinationImpl, boolean persistent, String name) throws IOException {
     if (persistent && destinationImpl.isPersistent()) {
       String fullyQualifiedPath = FilePathHelper.cleanPath(destinationImpl.getPhysicalLocation());
@@ -91,9 +76,21 @@ public class DestinationStateManagerFactory {
     }
   }
 
-  private static int bitsRequired(int maxValue) {
-    if (maxValue < 0) throw new IllegalArgumentException("maxValue must be >= 0");
-    return 32 - Integer.numberOfLeadingZeros(maxValue);
+  private static BitSetFactory createFactory(DestinationImpl destinationImpl, boolean persistent, String name) throws IOException {
+    if (persistent && destinationImpl.isPersistent()) {
+      String fullyQualifiedPath = FilePathHelper.cleanPath(destinationImpl.getPhysicalLocation());
+      fullyQualifiedPath += "state";
+      File directory = new File(fullyQualifiedPath);
+      if(!directory.exists()) {
+        Files.createDirectories(directory.toPath());
+      }
+      fullyQualifiedPath = FilePathHelper.cleanPath(fullyQualifiedPath + File.separator + name + ".bin");
+      return new FileBitSetFactoryImpl(fullyQualifiedPath, Constants.BITSET_BLOCK_SIZE);
+    } else {
+      return new BitSetFactoryImpl(Constants.BITSET_BLOCK_SIZE);
+    }
   }
+
+
   private DestinationStateManagerFactory(){}
 }

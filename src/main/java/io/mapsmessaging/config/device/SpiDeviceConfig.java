@@ -1,7 +1,7 @@
 /*
  *
  *  Copyright [ 2020 - 2024 ] Matthew Buckton
- *  Copyright [ 2024 - 2025 ] MapsMessaging B.V.
+ *  Copyright [ 2024 - 2026 ] MapsMessaging B.V.
  *
  *  Licensed under the Apache License, Version 2.0 with the Commons Clause
  *  (the "License"); you may not use this file except in compliance with the License.
@@ -24,6 +24,9 @@ import io.mapsmessaging.configuration.ConfigurationProperties;
 import io.mapsmessaging.dto.rest.config.BaseConfigDTO;
 import io.mapsmessaging.dto.rest.config.device.SpiDeviceConfigDTO;
 
+import java.util.LinkedHashMap;
+import java.util.Map;
+
 public class SpiDeviceConfig extends SpiDeviceConfigDTO implements Config {
 
   public SpiDeviceConfig(ConfigurationProperties props) {
@@ -33,6 +36,18 @@ public class SpiDeviceConfig extends SpiDeviceConfigDTO implements Config {
     this.spiBus = props.getIntProperty("spiBus", 0);
     this.spiMode = props.getIntProperty("spiMode", 0);
     this.spiChipSelect = props.getIntProperty("spiChipSelect", 0);
+    Map<String, String> con = new LinkedHashMap<>();
+    for(Map.Entry<String, Object> entry: props.getMap().entrySet()){
+      Object val = entry.getValue();
+      if(val instanceof Double d){
+        val = d.intValue();
+      }
+      else if(val instanceof Float f){
+        val = f.intValue();
+      }
+      con.put(entry.getKey(), ""+val);
+    }
+    this.config = con;
   }
 
   @Override

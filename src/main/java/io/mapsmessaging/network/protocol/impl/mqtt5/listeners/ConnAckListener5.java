@@ -1,7 +1,7 @@
 /*
  *
  *  Copyright [ 2020 - 2024 ] Matthew Buckton
- *  Copyright [ 2024 - 2025 ] MapsMessaging B.V.
+ *  Copyright [ 2024 - 2026 ] MapsMessaging B.V.
  *
  *  Licensed under the Apache License, Version 2.0 with the Commons Clause
  *  (the "License"); you may not use this file except in compliance with the License.
@@ -23,8 +23,8 @@ import io.mapsmessaging.BuildInfo;
 import io.mapsmessaging.api.Session;
 import io.mapsmessaging.api.SessionContextBuilder;
 import io.mapsmessaging.api.SessionManager;
-import io.mapsmessaging.config.auth.AuthConfig;
-import io.mapsmessaging.config.network.EndPointConnectionServerConfig;
+import io.mapsmessaging.dto.rest.config.auth.AuthConfigDTO;
+import io.mapsmessaging.dto.rest.config.network.EndPointConnectionServerConfigDTO;
 import io.mapsmessaging.logging.ServerLogMessages;
 import io.mapsmessaging.network.ProtocolClientConnection;
 import io.mapsmessaging.network.io.EndPoint;
@@ -46,7 +46,14 @@ public class ConnAckListener5 extends PacketListener5 {
 
   @Override
   public MQTTPacket5 handlePacket(MQTTPacket5 mqttPacket, Session session, EndPoint endPoint, Protocol protocol) throws MalformedException {
-    AuthConfig config =  ((EndPointConnectionServerConfig)endPoint.getConfig()).getAuthConfig();
+    MQTT5Protocol mqtt5Protocol = (MQTT5Protocol)protocol;
+    if(mqtt5Protocol.getSession() != null){
+      mqtt5Protocol.getSession().resumeState();
+      protocol.setConnected(true);
+      return null; // already connected
+    }
+
+    AuthConfigDTO config =  ((EndPointConnectionServerConfigDTO)endPoint.getConfig()).getAuthConfig();
 
     String sess = config.getSessionId();
     String user = config.getUsername();
@@ -55,7 +62,7 @@ public class ConnAckListener5 extends PacketListener5 {
     ConnAck5 connAck = (ConnAck5) mqttPacket;
 
     SessionContextBuilder scb = new SessionContextBuilder(sess, new ProtocolClientConnection(protocol));
-    scb.setReceiveMaximum(((MQTT5Protocol) protocol).getClientReceiveMaximum());
+    scb.setReceiveMaximum(mqtt5Protocol.getClientReceiveMaximum());
     handleSessionCreation(protocol, sess, connAck, scb, endPoint, user, pass );
     protocol.setConnected(true);
     return null;

@@ -1,7 +1,7 @@
 /*
  *
  *  Copyright [ 2020 - 2024 ] Matthew Buckton
- *  Copyright [ 2024 - 2025 ] MapsMessaging B.V.
+ *  Copyright [ 2024 - 2026 ] MapsMessaging B.V.
  *
  *  Licensed under the Apache License, Version 2.0 with the Commons Clause
  *  (the "License"); you may not use this file except in compliance with the License.
@@ -22,12 +22,13 @@ package io.mapsmessaging.dto.rest.config.protocol;
 import io.mapsmessaging.api.features.QualityOfService;
 import io.mapsmessaging.dto.rest.analytics.StatisticsConfigDTO;
 import io.mapsmessaging.dto.rest.config.BaseConfigDTO;
-import io.mapsmessaging.utilities.filtering.NamespaceFilters;
+import io.mapsmessaging.dto.rest.config.transformer.TransformationConfigDTO;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 
+import java.util.List;
 import java.util.Map;
 
 @Data
@@ -36,30 +37,101 @@ import java.util.Map;
 @Schema(description = "Link Configuration DTO")
 public class LinkConfigDTO extends BaseConfigDTO {
 
-  @Schema(description = "Direction of the link", example = "inbound")
+  @Schema(
+      description = "Direction of the link",
+      example = "pull",
+      allowableValues = {"pull", "push"},
+      requiredMode = Schema.RequiredMode.REQUIRED,
+      nullable = false
+  )
   protected String direction;
 
-  @Schema(description = "Remote namespace", example = "remote_ns")
+  @Schema(
+      description = "Remote namespace (source). Typically a topic/namespace filter. " +
+          "For MQTT-style namespaces, + and # may be used as wildcards.",
+      example = "/+/1/1/GPS_RAW_INT",
+      minLength = 1,
+      requiredMode = Schema.RequiredMode.REQUIRED,
+      nullable = false
+  )
   protected String remoteNamespace;
 
-  @Schema(description = "Local namespace", example = "local_ns")
+  @Schema(
+      description = "Local namespace (destination). Typically a topic/namespace.",
+      example = "/",
+      minLength = 1,
+      requiredMode = Schema.RequiredMode.REQUIRED,
+      nullable = false
+  )
   protected String localNamespace;
 
-  @Schema(description = "Message selector", example = "selector_criteria")
+  @Schema(
+      description = "Message selector expression (JMS selector syntax). If not set, all messages match.",
+      example = "temperature > 30 AND humidityPercent < 70",
+      requiredMode = Schema.RequiredMode.NOT_REQUIRED,
+      nullable = true
+  )
   protected String selector;
 
-  @Schema(description = "Include schema flag", example = "true")
-  protected boolean includeSchema;
+  @Schema(
+      description = "If true, include schema information when forwarding messages (where supported)",
+      example = "true",
+      defaultValue = "false",
+      requiredMode = Schema.RequiredMode.REQUIRED,
+      nullable = false
+  )
+  protected boolean includeSchema = false;
 
-  @Schema(description = "Transformer configuration map")
-  protected Map<String, Object> transformer;
+  @Schema(
+      description = "Transformer chain configuration (array of objects). Each entry specifies transformer name and parameters.",
+      type = "array",
+      requiredMode = Schema.RequiredMode.NOT_REQUIRED,
+      nullable = true,
+      example = "[{\"name\":\"JsonQuery\",\"parameters\":{\"query\":\"[\\\"object\\\",{\\\"latitude\\\":[\\\"divide\\\",[\\\"get\\\",\\\"payload\\\",\\\"decoded\\\",\\\"lat\\\"],10000000]}]\"}}]"
+  )
+  protected List<TransformationConfigDTO> transformer;
 
-  @Schema(description = "Configure a statistic analysis of the data flowing through")
+  @Schema(
+      description = "Configure statistical analysis of data flowing through the link",
+      requiredMode = Schema.RequiredMode.NOT_REQUIRED,
+      nullable = true
+  )
   protected StatisticsConfigDTO statistics;
 
-  @Schema(description = "Specific filtering on namespace", nullable = true)
-  protected NamespaceFilters namespaceFilters;
+  @Schema(
+      description = "Specific filtering applied to namespaces",
+      requiredMode = Schema.RequiredMode.NOT_REQUIRED,
+      nullable = true
+  )
+  protected List<NamespaceFilterDTO> namespaceFilters;
 
-  @Schema(description = "Quality of server QoS:0, 1 or 2, for non MQTT  1 or 2 imply transactional", nullable = true, example = "1")
+  @Schema(
+      description = "Requested QoS for the link.",
+      requiredMode = Schema.RequiredMode.NOT_REQUIRED,
+      nullable = true,
+      type = "string",
+      allowableValues = {
+          "AT_MOST_ONCE",
+          "AT_LEAST_ONCE",
+          "EXACTLY_ONCE",
+          "MQTT_SN_REGISTERED"
+      },
+      example = "AT_LEAST_ONCE"
+  )
   protected QualityOfService qualityOfService;
+
+  @Schema(
+      description =
+          "Link-specific properties for this individual namespace binding. " +
+              "These values are loaded from YAML and are intentionally untyped so protocol or handler specific " +
+              "settings can be supplied on a per-link basis. " +
+              "This map applies only to this link and may be used for remote or local subscription behaviour, " +
+              "topic-level handling, or protocol-specific options such as ROS2, IBM MQ, or Pulsar.",
+      requiredMode = Schema.RequiredMode.NOT_REQUIRED,
+      nullable = true,
+      additionalProperties = Schema.AdditionalPropertiesValue.TRUE,
+      additionalPropertiesSchema = Object.class,
+      example = "{\"url\":\"pulsar://localhost:6650\",\"tenant\":\"public\",\"namespace\":\"default\"}"
+  )
+  protected Map<String, Object> linkProperties;
 }

@@ -1,7 +1,7 @@
 /*
  *
  *  Copyright [ 2020 - 2024 ] Matthew Buckton
- *  Copyright [ 2024 - 2025 ] MapsMessaging B.V.
+ *  Copyright [ 2024 - 2026 ] MapsMessaging B.V.
  *
  *  Licensed under the Apache License, Version 2.0 with the Commons Clause
  *  (the "License"); you may not use this file except in compliance with the License.
@@ -22,22 +22,24 @@ package io.mapsmessaging.dto.rest.config.protocol.impl;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
-import lombok.NoArgsConstructor;
 
 @Data
 @EqualsAndHashCode(callSuper = true)
-@NoArgsConstructor
 @Schema(description = "Base Satellite Configuration DTO")
 public class SatelliteConfigDTO extends BaseSatelliteConfigDTO {
+
+  public SatelliteConfigDTO(){
+    super("satellite");
+  }
 
   @Schema(description = "URL of the server")
   protected String baseUrl;
 
   @Schema(description = "HTTP Request time out in seconds")
-  protected int httpRequestTimeout;
+  protected int httpRequestTimeout = 30;
 
   @Schema(description = "Max number of events to be in flight per each modems")
-  protected int maxInflightEventsPerDevice;
+  protected int maxInflightEventsPerDevice =2;
 
 
   @Schema(
@@ -45,35 +47,35 @@ public class SatelliteConfigDTO extends BaseSatelliteConfigDTO {
       example = "/{deviceId}/common/in/{sin}/{min}",
       defaultValue = "/{deviceId}/common/in/{sin}/{min}"
   )
-  protected String commonInboundPublishRoot;
+  protected String commonInboundPublishRoot = "/{deviceId}/common/in/{sin}/{min}";
 
   @Schema(
       description = "Topic root for accepting outbound common (SIN < 127) messages to be encoded and sent to the modem. Wildcards are allowed.",
       example = "/{deviceId}/common/out/#",
       defaultValue = "/{deviceId}/common/out/#"
   )
-  protected String commonOutboundPublishRoot;
+  protected String commonOutboundPublishRoot = "/{deviceId}/common/out/#";
 
   @Schema(
       description = "Topic template for publishing decoded MAPS (SIN 147) inbound messages into a namespace tree (after parsing).",
-      example = "/{deviceId}/maps/in/{namespace}/#",
-      defaultValue = "/{deviceId}/maps/in/{namespace}/#"
+      example = "/{deviceId}/maps/in",
+      defaultValue = "/{deviceId}/maps/in"
   )
-  protected String mapsInboundPublishRoot;
+  protected String mapsInboundPublishRoot = "/{deviceId}/maps/in";
 
   @Schema(
       description = "Topic template for accepting outbound MAPS (SIN 147) messages from a namespace tree to be encoded and sent to the modem.",
-      example = "/{deviceId}/maps/out/{namespace}/#",
-      defaultValue = "/{deviceId}/maps/out/{namespace}/#"
+      example = "/{deviceId}/maps/out",
+      defaultValue = "/{deviceId}/maps/out"
   )
-  protected String mapsOutboundPublishRoot;
+  protected String mapsOutboundPublishRoot = "/{deviceId}/maps/out/#";
 
   @Schema(
       description = "Topic used to broadcast a message to all modems/clients (encoded and sent to each).",
       example = "/inmarsat/broadcast",
       defaultValue = "/inmarsat/broadcast"
   )
-  protected String outboundBroadcast;
+  protected String outboundBroadcast = "/inmarsat/broadcast";
 
 
 

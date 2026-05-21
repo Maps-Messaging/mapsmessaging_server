@@ -1,7 +1,7 @@
 /*
  *
  *  Copyright [ 2020 - 2024 ] Matthew Buckton
- *  Copyright [ 2024 - 2025 ] MapsMessaging B.V.
+ *  Copyright [ 2024 - 2026 ] MapsMessaging B.V.
  *
  *  Licensed under the Apache License, Version 2.0 with the Commons Clause
  *  (the "License"); you may not use this file except in compliance with the License.
@@ -19,7 +19,6 @@
 
 package io.mapsmessaging.rest.api.impl.ml;
 
-
 import io.mapsmessaging.MessageDaemon;
 import io.mapsmessaging.rest.api.impl.BaseRestApi;
 import io.mapsmessaging.rest.responses.StatusResponse;
@@ -27,6 +26,7 @@ import io.mapsmessaging.selector.model.ModelStore;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletResponse;
@@ -41,31 +41,95 @@ import java.io.InputStream;
 import static io.mapsmessaging.rest.api.Constants.URI_PATH;
 
 @Tag(name = "ML Model Store")
-@Path(URI_PATH+"/server/models")
+@Path(URI_PATH + "/server/models")
 public class ModelStoreApi extends BaseRestApi {
 
   private static final String RESOURCE = "models";
-
 
   @POST
   @Path("/{modelName}")
   @Consumes(MediaType.MULTIPART_FORM_DATA)
   @Produces(MediaType.APPLICATION_JSON)
-  public StatusResponse uploadModel(
+  @Operation(
+      summary = "ML Model upload",
+      description = "Uploads a model.",
+      requestBody = @RequestBody(
+          required = true,
+          content = @Content(
+              mediaType = MediaType.MULTIPART_FORM_DATA,
+              schema = @Schema(
+                  type = "object",
+                  description = "Multipart form containing the model file.",
+                  requiredProperties = {"file"}
+              )
+          )
+      ),
+      responses = {
+          @ApiResponse(
+              responseCode = "200",
+              description = "Upload succeeded",
+              content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))
+          ),
+          @ApiResponse(
+              responseCode = "400",
+              description = "Bad request",
+              content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))
+          ),
+          @ApiResponse(
+              responseCode = "401",
+              description = "Invalid credentials or unauthorized access",
+              content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))
+          ),
+          @ApiResponse(
+              responseCode = "403",
+              description = "User is not authorised to access the resource",
+              content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))
+          ),
+          @ApiResponse(
+              responseCode = "406",
+              description = "ML not supported",
+              content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))
+          )
+      }
+  )
+  public Response uploadModel(
       @PathParam("modelName") String modelName,
       @FormDataParam("file") InputStream fileStream) throws IOException {
+
     hasAccess(RESOURCE);
-    byte[] bytes = fileStream.readAllBytes();
+
+    if (modelName == null || modelName.trim().isEmpty()) {
+      return Response.status(Response.Status.BAD_REQUEST)
+          .type(MediaType.APPLICATION_JSON)
+          .entity(new StatusResponse("Model name must not be blank"))
+          .build();
+    }
+
+    if (fileStream == null) {
+      return Response.status(Response.Status.BAD_REQUEST)
+          .type(MediaType.APPLICATION_JSON)
+          .entity(new StatusResponse("File must be provided"))
+          .build();
+    }
+
     ModelStore modelStore = MessageDaemon.getInstance().getSubSystemManager().getModelStore();
-    if(modelStore == null) {
-       response.setStatus(HttpServletResponse.SC_NOT_ACCEPTABLE);
-      return new StatusResponse("Failure, ML not supported");
+    if (modelStore == null) {
+      response.setStatus(HttpServletResponse.SC_NOT_ACCEPTABLE);
+      return Response.status(HttpServletResponse.SC_NOT_ACCEPTABLE)
+          .type(MediaType.APPLICATION_JSON)
+          .entity(new StatusResponse("Failure, ML not supported"))
+          .build();
     }
-    else {
-      modelStore.saveModel(modelName, bytes);
-    }
-    return new StatusResponse("Success");
+
+    byte[] bytes = fileStream.readAllBytes();
+    modelStore.saveModel(modelName, bytes);
+
+    return Response.ok()
+        .type(MediaType.APPLICATION_JSON)
+        .entity(new StatusResponse("Success"))
+        .build();
   }
+
   @GET
   @Path("/{modelName}")
   @Produces(MediaType.APPLICATION_OCTET_STREAM)
@@ -73,23 +137,69 @@ public class ModelStoreApi extends BaseRestApi {
       summary = "Download model",
       description = "Downloads a model by name.",
       responses = {
-          @ApiResponse(responseCode = "200", description = "Model content"),
-          @ApiResponse(responseCode = "404", description = "Model not found")
+          @ApiResponse(
+              responseCode = "200",
+              description = "Model content",
+              content = @Content(mediaType = MediaType.APPLICATION_OCTET_STREAM)
+          ),
+          @ApiResponse(
+              responseCode = "400",
+              description = "Bad request",
+              content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))
+          ),
+          @ApiResponse(
+              responseCode = "401",
+              description = "Invalid credentials or unauthorized access",
+              content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))
+          ),
+          @ApiResponse(
+              responseCode = "403",
+              description = "User is not authorised to access the resource",
+              content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))
+          ),
+          @ApiResponse(
+              responseCode = "404",
+              description = "Model not found",
+              content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))
+          ),
+          @ApiResponse(
+              responseCode = "406",
+              description = "ML not supported",
+              content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))
+          )
       }
   )
   public Response getModel(@PathParam("modelName") String modelName) throws IOException {
+
     hasAccess(RESOURCE);
-    ModelStore modelStore = MessageDaemon.getInstance().getSubSystemManager().getModelStore();
-    if(modelStore == null) {
-      response.setStatus(HttpServletResponse.SC_NOT_ACCEPTABLE);
-      return Response.status(HttpServletResponse.SC_NOT_ACCEPTABLE).build();
+
+    if (modelName == null || modelName.trim().isEmpty()) {
+      return Response.status(Response.Status.BAD_REQUEST)
+          .type(MediaType.APPLICATION_JSON)
+          .entity(new StatusResponse("Model name must not be blank"))
+          .build();
     }
+
+    ModelStore modelStore = MessageDaemon.getInstance().getSubSystemManager().getModelStore();
+    if (modelStore == null) {
+      response.setStatus(HttpServletResponse.SC_NOT_ACCEPTABLE);
+      return Response.status(HttpServletResponse.SC_NOT_ACCEPTABLE)
+          .type(MediaType.APPLICATION_JSON)
+          .entity(new StatusResponse("Failure, ML not supported"))
+          .build();
+    }
+
     if (!modelStore.modelExists(modelName)) {
       response.setStatus(HttpServletResponse.SC_NOT_FOUND);
-      return Response.status(Response.Status.NOT_FOUND).build();
+      return Response.status(Response.Status.NOT_FOUND)
+          .type(MediaType.APPLICATION_JSON)
+          .entity(new StatusResponse("Model not found"))
+          .build();
     }
+
     byte[] data = modelStore.loadModel(modelName);
     return Response.ok(data)
+        .type(MediaType.APPLICATION_OCTET_STREAM)
         .header("Content-Disposition", "attachment; filename=\"" + modelName + "\"")
         .build();
   }
@@ -101,22 +211,47 @@ public class ModelStoreApi extends BaseRestApi {
       description = "Checks if a model with the given name exists.",
       responses = {
           @ApiResponse(responseCode = "200", description = "Model exists"),
-          @ApiResponse(responseCode = "404", description = "Model not found")
+          @ApiResponse(
+              responseCode = "400",
+              description = "Bad request",
+              content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))
+          ),
+          @ApiResponse(
+              responseCode = "401",
+              description = "Invalid credentials or unauthorized access",
+              content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))
+          ),
+          @ApiResponse(
+              responseCode = "403",
+              description = "User is not authorised to access the resource",
+              content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))
+          ),
+          @ApiResponse(responseCode = "404", description = "Model not found"),
+          @ApiResponse(responseCode = "406", description = "ML not supported")
       }
   )
   public Response modelExists(@PathParam("modelName") String modelName) throws IOException {
+
     hasAccess(RESOURCE);
+
+    if (modelName == null || modelName.trim().isEmpty()) {
+      return Response.status(Response.Status.BAD_REQUEST)
+          .type(MediaType.APPLICATION_JSON)
+          .entity(new StatusResponse("Model name must not be blank"))
+          .build();
+    }
+
     ModelStore modelStore = MessageDaemon.getInstance().getSubSystemManager().getModelStore();
-    if(modelStore == null) {
+    if (modelStore == null) {
       response.setStatus(HttpServletResponse.SC_NOT_ACCEPTABLE);
       return Response.status(HttpServletResponse.SC_NOT_ACCEPTABLE).build();
     }
 
     if (modelStore.modelExists(modelName)) {
       return Response.ok().build();
-    } else {
-      return Response.status(Response.Status.NOT_FOUND).build();
     }
+
+    return Response.status(Response.Status.NOT_FOUND).build();
   }
 
   @DELETE
@@ -125,26 +260,72 @@ public class ModelStoreApi extends BaseRestApi {
   @Operation(
       summary = "Delete model",
       description = "Deletes the model by name.",
-      responses = @ApiResponse(
-          responseCode = "200",
-          description = "Model deleted successfully",
-          content = @Content(schema = @Schema(implementation = StatusResponse.class))
-      )
+      responses = {
+          @ApiResponse(
+              responseCode = "200",
+              description = "Model deleted successfully",
+              content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))
+          ),
+          @ApiResponse(
+              responseCode = "400",
+              description = "Bad request",
+              content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))
+          ),
+          @ApiResponse(
+              responseCode = "401",
+              description = "Invalid credentials or unauthorized access",
+              content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))
+          ),
+          @ApiResponse(
+              responseCode = "403",
+              description = "User is not authorised to access the resource",
+              content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))
+          ),
+          @ApiResponse(
+              responseCode = "404",
+              description = "Model not found",
+              content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))
+          ),
+          @ApiResponse(
+              responseCode = "406",
+              description = "ML not supported",
+              content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))
+          )
+      }
   )
-  public StatusResponse deleteModel(@PathParam("modelName") String modelName) throws IOException {
+  public Response deleteModel(@PathParam("modelName") String modelName) throws IOException {
+
     hasAccess(RESOURCE);
+
+    if (modelName == null || modelName.trim().isEmpty()) {
+      return Response.status(Response.Status.BAD_REQUEST)
+          .type(MediaType.APPLICATION_JSON)
+          .entity(new StatusResponse("Model name must not be blank"))
+          .build();
+    }
+
     ModelStore modelStore = MessageDaemon.getInstance().getSubSystemManager().getModelStore();
-    if(modelStore == null) {
+    if (modelStore == null) {
       response.setStatus(HttpServletResponse.SC_NOT_ACCEPTABLE);
-      return new StatusResponse("Failure, ML not supported");
+      return Response.status(HttpServletResponse.SC_NOT_ACCEPTABLE)
+          .type(MediaType.APPLICATION_JSON)
+          .entity(new StatusResponse("Failure, ML not supported"))
+          .build();
     }
 
     if (modelStore.modelExists(modelName)) {
       modelStore.deleteModel(modelName);
-      return new StatusResponse("Success");
+      return Response.ok()
+          .type(MediaType.APPLICATION_JSON)
+          .entity(new StatusResponse("Success"))
+          .build();
     }
+
     response.setStatus(HttpServletResponse.SC_NOT_FOUND);
-    return new StatusResponse("Failure");
+    return Response.status(Response.Status.NOT_FOUND)
+        .type(MediaType.APPLICATION_JSON)
+        .entity(new StatusResponse("Model not found"))
+        .build();
   }
 
   @GET
@@ -156,20 +337,41 @@ public class ModelStoreApi extends BaseRestApi {
           @ApiResponse(
               responseCode = "200",
               description = "List of model names",
-              content = @Content(schema = @Schema(implementation = String[].class))
+              content = @Content(mediaType = "application/json", schema = @Schema(implementation = String[].class))
           ),
-          @ApiResponse(responseCode = "406", description = "ML not supported")
+          @ApiResponse(
+              responseCode = "401",
+              description = "Invalid credentials or unauthorized access",
+              content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))
+          ),
+          @ApiResponse(
+              responseCode = "403",
+              description = "User is not authorised to access the resource",
+              content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))
+          ),
+          @ApiResponse(
+              responseCode = "406",
+              description = "ML not supported",
+              content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))
+          )
       }
   )
   public Response listModels() throws IOException {
+
     hasAccess(RESOURCE);
+
     ModelStore modelStore = MessageDaemon.getInstance().getSubSystemManager().getModelStore();
     if (modelStore == null) {
       response.setStatus(HttpServletResponse.SC_NOT_ACCEPTABLE);
-      return Response.status(HttpServletResponse.SC_NOT_ACCEPTABLE).build();
+      return Response.status(HttpServletResponse.SC_NOT_ACCEPTABLE)
+          .type(MediaType.APPLICATION_JSON)
+          .entity(new StatusResponse("Failure, ML not supported"))
+          .build();
     }
 
-    return Response.ok(modelStore.listModels()).build();
+    return Response.ok()
+        .type(MediaType.APPLICATION_JSON)
+        .entity(modelStore.listModels())
+        .build();
   }
-
 }

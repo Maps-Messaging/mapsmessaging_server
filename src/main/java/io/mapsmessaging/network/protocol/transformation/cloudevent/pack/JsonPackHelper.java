@@ -1,7 +1,7 @@
 /*
  *
  *  Copyright [ 2020 - 2024 ] Matthew Buckton
- *  Copyright [ 2024 - 2025 ] MapsMessaging B.V.
+ *  Copyright [ 2024 - 2026 ] MapsMessaging B.V.
  *
  *  Licensed under the Apache License, Version 2.0 with the Commons Clause
  *  (the "License"); you may not use this file except in compliance with the License.
@@ -23,6 +23,7 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import io.mapsmessaging.api.message.Message;
+import io.mapsmessaging.engine.schema.SchemaManager;
 import io.mapsmessaging.schemas.config.SchemaConfig;
 import io.mapsmessaging.schemas.formatters.MessageFormatter;
 import org.jetbrains.annotations.Nullable;
@@ -50,7 +51,7 @@ public final class JsonPackHelper extends PackHelper {
     if (bytes != null && bytes.length > 0) {
       if (formatter != null) {
         try {
-          JsonObject normalized = formatter.parseToJson(bytes);
+          JsonObject normalized = formatter.parseToJson(bytes, SchemaManager.getInstance().getDefaultParseMode());
           if (normalized != null) {
             data = normalized;
           }

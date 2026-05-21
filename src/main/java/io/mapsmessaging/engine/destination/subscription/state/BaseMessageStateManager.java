@@ -1,7 +1,7 @@
 /*
  *
  *  Copyright [ 2020 - 2024 ] Matthew Buckton
- *  Copyright [ 2024 - 2025 ] MapsMessaging B.V.
+ *  Copyright [ 2024 - 2026 ] MapsMessaging B.V.
  *
  *  Licensed under the Apache License, Version 2.0 with the Commons Clause
  *  (the "License"); you may not use this file except in compliance with the License.
@@ -46,14 +46,14 @@ public abstract class BaseMessageStateManager implements MessageStateManager {
   protected BaseMessageStateManager(String name, long uniqueSessionId, BitSetFactory priorityBitSetFactory, BitSetFactory inflightBitSetFactory) {
     this.name = name;
     logger = LoggerFactory.getLogger(MessageStateManagerImpl.class);
-    NaturalOrderedLongQueue[] priorityLists = new NaturalOrderedLongQueue[Priority.HIGHEST.getValue()];
+    NaturalOrderedLongQueue[] priorityLists = new NaturalOrderedLongQueue[Priority.HIGHEST.getValue()+1];
     for (int x = 0; x < priorityLists.length; x++) {
       long priorityId = UniqueIdHelper.compute(uniqueSessionId, x);
       priorityLists[x] = new ConcurrentNaturalOrderedLongQueue(priorityId, priorityBitSetFactory);
     }
     messagesAtRest = new PriorityQueue<>(priorityLists, null);
 
-    priorityLists = new NaturalOrderedLongQueue[Priority.HIGHEST.getValue()];
+    priorityLists = new NaturalOrderedLongQueue[Priority.HIGHEST.getValue()+1];
     for (int x = 0; x < priorityLists.length; x++) {
       priorityLists[x] = new ConcurrentNaturalOrderedLongQueue(x, inflightBitSetFactory);
     }
@@ -63,6 +63,10 @@ public abstract class BaseMessageStateManager implements MessageStateManager {
   public void close() throws IOException {
     messagesAtRest.clear();
     messagesInFlight.clear();
+  }
+
+  public boolean isEmpty() {
+    return messagesAtRest.isEmpty() && messagesInFlight.isEmpty();
   }
 
   @Override

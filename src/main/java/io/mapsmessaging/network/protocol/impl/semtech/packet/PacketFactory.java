@@ -1,7 +1,7 @@
 /*
  *
  *  Copyright [ 2020 - 2024 ] Matthew Buckton
- *  Copyright [ 2024 - 2025 ] MapsMessaging B.V.
+ *  Copyright [ 2024 - 2026 ] MapsMessaging B.V.
  *
  *  Licensed under the Apache License, Version 2.0 with the Commons Clause
  *  (the "License"); you may not use this file except in compliance with the License.
@@ -43,20 +43,21 @@ public class PacketFactory {
     int token = packet.getShort();
     int identifier = (packet.get() & 0xff);
     switch (identifier) {
-      case PUSH_DATA:
+      case PUSH_DATA -> {
         return new PushData(token, packet);
-
-      case PULL_DATA:
+      }
+      case PULL_DATA -> {
         return new PullData(token, packet);
-
-      case PULL_ACK:
+      }
+      case PULL_ACK -> {
         return new PullAck(token, packet.getFromAddress());
-
-      case TX_ACK:
+      }
+      case TX_ACK -> {
         return new TxAcknowledge(token, packet);
-
-      default:
+      }
+      default -> {
         return null;
+      }
     }
   }
 

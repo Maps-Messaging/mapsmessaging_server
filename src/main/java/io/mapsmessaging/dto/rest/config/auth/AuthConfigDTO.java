@@ -1,7 +1,7 @@
 /*
  *
  *  Copyright [ 2020 - 2024 ] Matthew Buckton
- *  Copyright [ 2024 - 2025 ] MapsMessaging B.V.
+ *  Copyright [ 2024 - 2026 ] MapsMessaging B.V.
  *
  *  Licensed under the Apache License, Version 2.0 with the Commons Clause
  *  (the "License"); you may not use this file except in compliance with the License.
@@ -37,20 +37,44 @@ import java.util.Map;
     description = "Represents authentication configuration settings for REST communication.")
 public class AuthConfigDTO extends BaseConfigDTO {
 
-  @Schema(description = "Username for authentication", example = "user123")
+  @Schema(
+      description = "Username for authentication",
+      example = "user123",
+      requiredMode = Schema.RequiredMode.REQUIRED,
+      nullable = false,
+      minLength = 1
+  )
   protected String username;
 
-  @Schema(description = "Password for authentication", example = "password")
+  @Schema(
+      description = "Password for authentication",
+      example = "password",
+      requiredMode = Schema.RequiredMode.NOT_REQUIRED,
+      nullable = true
+  )
   protected String password;
 
-  @Schema(description = "Session ID for the authentication session", example = "session-xyz")
+  @Schema(
+      description = "Session ID for the authentication session",
+      example = "session-xyz",
+      requiredMode = Schema.RequiredMode.NOT_REQUIRED,
+      nullable = true
+  )
   protected String sessionId;
-
-  @Schema(description = "Token generator type", example = "JWT")
+  @Schema(
+      description = "Token generator type",
+      example = "JWT",
+      requiredMode = Schema.RequiredMode.NOT_REQUIRED,
+      nullable = true
+  )
   protected String tokenGenerator;
 
   @Schema(
       description = "Configuration settings for the token generator",
-      example = "{\"expiry\": 3600}")
+      example = "{\"expiry\": 3600}",
+      additionalProperties = Schema.AdditionalPropertiesValue.TRUE,
+      additionalPropertiesSchema = Object.class,
+      requiredMode = Schema.RequiredMode.NOT_REQUIRED,
+      nullable = true)
   protected Map<String, Object> tokenConfig;
 }

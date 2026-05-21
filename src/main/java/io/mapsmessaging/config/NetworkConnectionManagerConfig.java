@@ -1,7 +1,7 @@
 /*
  *
  *  Copyright [ 2020 - 2024 ] Matthew Buckton
- *  Copyright [ 2024 - 2025 ] MapsMessaging B.V.
+ *  Copyright [ 2024 - 2026 ] MapsMessaging B.V.
  *
  *  Licensed under the Apache License, Version 2.0 with the Commons Clause
  *  (the "License"); you may not use this file except in compliance with the License.
@@ -23,6 +23,7 @@ import io.mapsmessaging.config.network.EndPointConnectionServerConfig;
 import io.mapsmessaging.configuration.ConfigurationProperties;
 import io.mapsmessaging.dto.rest.config.BaseConfigDTO;
 import io.mapsmessaging.dto.rest.config.NetworkConnectionManagerConfigDTO;
+import io.mapsmessaging.dto.rest.config.network.EndPointConnectionServerConfigDTO;
 import io.mapsmessaging.license.FeatureManager;
 import io.mapsmessaging.utilities.configuration.ConfigurationManager;
 import lombok.NoArgsConstructor;
@@ -35,7 +36,6 @@ import java.util.List;
 public class NetworkConnectionManagerConfig extends NetworkConnectionManagerConfigDTO implements Config, ConfigManager {
 
   private NetworkConnectionManagerConfig(ConfigurationProperties config) {
-    ConfigurationProperties globalConfig = config.getGlobal();
     endPointServerConfigList = new ArrayList<>();
     Object obj = config.get("data");
     if (obj instanceof List) {
@@ -74,8 +74,8 @@ public class NetworkConnectionManagerConfig extends NetworkConnectionManagerConf
   public ConfigurationProperties toConfigurationProperties() {
     ConfigurationProperties config = new ConfigurationProperties();
     List<ConfigurationProperties> data = new ArrayList<>();
-    for (EndPointConnectionServerConfig endPointServerConfig : endPointServerConfigList) {
-      data.add(endPointServerConfig.toConfigurationProperties());
+    for (EndPointConnectionServerConfigDTO endPointServerConfig : endPointServerConfigList) {
+      data.add(((EndPointConnectionServerConfig) endPointServerConfig).toConfigurationProperties());
     }
     config.put("data", data);
     return config;

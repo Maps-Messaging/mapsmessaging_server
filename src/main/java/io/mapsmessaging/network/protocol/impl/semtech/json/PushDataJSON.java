@@ -1,7 +1,7 @@
 /*
  *
  *  Copyright [ 2020 - 2024 ] Matthew Buckton
- *  Copyright [ 2024 - 2025 ] MapsMessaging B.V.
+ *  Copyright [ 2024 - 2026 ] MapsMessaging B.V.
  *
  *  Licensed under the Apache License, Version 2.0 with the Commons Clause
  *  (the "License"); you may not use this file except in compliance with the License.
@@ -22,13 +22,11 @@ package io.mapsmessaging.network.protocol.impl.semtech.json;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import lombok.ToString;
 
 @Data
-@ToString
 @NoArgsConstructor
 @AllArgsConstructor
 public class PushDataJSON {
   private ReceivePacket[] rxpk;
-  private StatPacket stats;
+  private StatPacket stat;
 }

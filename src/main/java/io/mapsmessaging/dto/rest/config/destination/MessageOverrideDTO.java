@@ -1,7 +1,7 @@
 /*
  *
  *  Copyright [ 2020 - 2024 ] Matthew Buckton
- *  Copyright [ 2024 - 2025 ] MapsMessaging B.V.
+ *  Copyright [ 2024 - 2026 ] MapsMessaging B.V.
  *
  *  Licensed under the Apache License, Version 2.0 with the Commons Clause
  *  (the "License"); you may not use this file except in compliance with the License.
@@ -35,30 +35,80 @@ import java.util.Map;
 @Schema(description = "Message override configuration DTO")
 public class MessageOverrideDTO extends BaseConfigDTO {
 
-  @Schema(description = "Override message expiry in milliseconds", example = "60000")
+  @Schema(
+      description = "Override message expiry in milliseconds",
+      example = "60000",
+      minimum = "0",        // Never
+      maximum = "604800000", // 1 Week
+      requiredMode = Schema.RequiredMode.NOT_REQUIRED,
+      nullable = true
+  )
   protected Long expiry;
 
-  @Schema(description = "Override message priority", example = "NORMAL")
+  @Schema(
+      description = "Override message priority",
+      example = "NORMAL",
+      requiredMode = Schema.RequiredMode.NOT_REQUIRED,
+      nullable = true
+  )
   protected Priority priority;
 
-  @Schema(description = "Override message quality of service", example = "AT_LEAST_ONCE")
+  @Schema(
+      description = "Override message quality of service",
+      example = "AT_LEAST_ONCE",
+      requiredMode = Schema.RequiredMode.NOT_REQUIRED,
+      nullable = true
+  )
   protected QualityOfService qualityOfService;
 
-  @Schema(description = "Override response topic", example = "/default/response")
+  @Schema(
+      description = "Override response topic",
+      example = "/default/response",
+      requiredMode = Schema.RequiredMode.NOT_REQUIRED,
+      nullable = true
+  )
   protected String responseTopic;
 
-  @Schema(description = "Override content type", example = "application/json")
+  @Schema(
+      description = "Override content type",
+      example = "application/json",
+      format = "media-type",
+      requiredMode = Schema.RequiredMode.NOT_REQUIRED,
+      nullable = true
+  )
   protected String contentType;
 
-  @Schema(description = "Override schema ID", example = "default-schema-id")
+  @Schema(
+      description = "Override schema ID",
+      example = "default-schema-id",
+      requiredMode = Schema.RequiredMode.NOT_REQUIRED,
+      nullable = true
+  )
   protected String schemaId;
 
-  @Schema(description = "Override retain message flag", example = "true")
+  @Schema(
+      description = "Override retain message flag",
+      requiredMode = Schema.RequiredMode.NOT_REQUIRED,
+      example = "true",
+      nullable = true
+  )
   protected Boolean retain;
 
-  @Schema(description = "Metadata to inject if not present in the message")
+  @Schema(
+      description = "Metadata to inject if not present in the message",
+      requiredMode = Schema.RequiredMode.NOT_REQUIRED,
+      example = "true",
+      nullable = true,
+      additionalProperties = Schema.AdditionalPropertiesValue.TRUE
+  )
   protected Map<String, String> meta;
 
-  @Schema(description = "Data map to inject if keys are not present in the message")
+  @Schema(
+      description = "Data map to inject if keys are not present in the message",
+      requiredMode = Schema.RequiredMode.NOT_REQUIRED,
+      nullable = true,
+      additionalProperties = Schema.AdditionalPropertiesValue.TRUE
+  )
   protected Map<String, Object> dataMap;
 }
+

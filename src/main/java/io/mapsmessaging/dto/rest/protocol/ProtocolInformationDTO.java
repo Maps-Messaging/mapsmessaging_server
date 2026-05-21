@@ -1,7 +1,7 @@
 /*
  *
  *  Copyright [ 2020 - 2024 ] Matthew Buckton
- *  Copyright [ 2024 - 2025 ] MapsMessaging B.V.
+ *  Copyright [ 2024 - 2026 ] MapsMessaging B.V.
  *
  *  Licensed under the Apache License, Version 2.0 with the Commons Clause
  *  (the "License"); you may not use this file except in compliance with the License.
@@ -45,6 +45,7 @@ import java.util.Map;
     @JsonSubTypes.Type(value = ExtensionProtocolInformation.class, name = "extension"),
     @JsonSubTypes.Type(value = SatelliteProtocolInformation.class, name = "orbcomm"),
     @JsonSubTypes.Type(value = SatelliteDeviceProtocolInformation.class, name = "satellite"),
+    @JsonSubTypes.Type(value = N2kProtocolInformation.class, name = "n2k"),
 })
 @Schema(
     title = "Protocol Information",
@@ -64,6 +65,7 @@ import java.util.Map;
         @DiscriminatorMapping(value = "extension", schema = ExtensionProtocolInformation.class),
         @DiscriminatorMapping(value = "orbcomm", schema = SatelliteProtocolInformation.class),
         @DiscriminatorMapping(value = "satellite", schema = SatelliteDeviceProtocolInformation.class),
+        @DiscriminatorMapping(value = "n2k", schema = N2kProtocolInformation.class),
 
     },
     requiredProperties = {"type"}
@@ -74,7 +76,7 @@ import java.util.Map;
 public class ProtocolInformationDTO {
 
   @Schema(description = "Type of the protocol", allowableValues = {
-      "amqp", "coap", "lora", "mqtt", "mqtt-sn", "mqttV5", "NMEA-0183", "semtech", "stomp", "rest", "extension", "orbcomm", "satellite"
+      "amqp", "coap", "lora", "mqtt", "mqtt-sn", "mqttV5", "NMEA-0183", "semtech", "stomp", "rest", "extension", "orbcomm","mavlink", "n2k", "satellite"
   })
   protected String type;
 

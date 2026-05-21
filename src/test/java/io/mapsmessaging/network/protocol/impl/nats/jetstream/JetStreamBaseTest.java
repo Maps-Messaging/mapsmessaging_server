@@ -1,7 +1,7 @@
 /*
  *
  *  Copyright [ 2020 - 2024 ] Matthew Buckton
- *  Copyright [ 2024 - 2025 ] MapsMessaging B.V.
+ *  Copyright [ 2024 - 2026 ] MapsMessaging B.V.
  *
  *  Licensed under the Apache License, Version 2.0 with the Commons Clause
  *  (the "License"); you may not use this file except in compliance with the License.
@@ -60,17 +60,26 @@ class JetStreamBaseTest extends BaseTestConfig {
 
   @AfterEach
   void teardownJetStream() throws Exception {
-    if (natsConnection != null && natsConnection.getStatus() != Connection.Status.CLOSED) {
+    if (natsConnection == null) {
+      return;
+    }
+    if (natsConnection.getStatus() == Connection.Status.CLOSED) {
+      return;
+    }
+    try {
+      natsConnection.drain(Duration.ofSeconds(2));
+    }
+    finally {
       natsConnection.close();
     }
   }
 
-
   protected JsonObject requestJetStreamInfo() throws Exception {
     natsConnection.flush(Duration.ofSeconds(1));
     Message msg = natsConnection.request("$JS.API.INFO", null, Duration.ofSeconds(4));
-    if (msg == null || msg.getData() == null) return null;
+    if (msg == null || msg.getData() == null) {
+      return null;
+    }
     return JsonParser.parseString(new String(msg.getData(), StandardCharsets.UTF_8)).getAsJsonObject();
   }
-
 }

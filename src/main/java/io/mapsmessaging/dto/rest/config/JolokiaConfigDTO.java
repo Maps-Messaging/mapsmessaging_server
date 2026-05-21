@@ -1,7 +1,7 @@
 /*
  *
  *  Copyright [ 2020 - 2024 ] Matthew Buckton
- *  Copyright [ 2024 - 2025 ] MapsMessaging B.V.
+ *  Copyright [ 2024 - 2026 ] MapsMessaging B.V.
  *
  *  Licensed under the Apache License, Version 2.0 with the Commons Clause
  *  (the "License"); you may not use this file except in compliance with the License.
@@ -19,21 +19,41 @@
 
 package io.mapsmessaging.dto.rest.config;
 
-import io.mapsmessaging.configuration.ConfigurationProperties;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
-import lombok.NoArgsConstructor;
+
+import java.util.Map;
 
 @Data
 @EqualsAndHashCode(callSuper = true)
-@NoArgsConstructor
 @Schema(description = "Jolokia Configuration DTO")
-public class JolokiaConfigDTO extends BaseConfigDTO {
+public class JolokiaConfigDTO extends BaseManagerConfigDTO {
 
-  @Schema(description = "Enable or disable Jolokia monitoring", example = "false")
+  @Schema(
+      description = "Enable or disable Jolokia monitoring",
+      example = "false",
+      requiredMode = Schema.RequiredMode.REQUIRED,
+      nullable = false
+  )
   private boolean enable;
 
-  @Schema(description = "Mapping configuration for Jolokia")
-  private ConfigurationProperties jolokiaMapping;
+  @Schema(
+      description = "Mapping configuration for Jolokia (free-form object structure consumed by Jolokia integration).",
+      requiredMode = Schema.RequiredMode.NOT_REQUIRED,
+      nullable = true,
+      additionalProperties = Schema.AdditionalPropertiesValue.TRUE,
+      additionalPropertiesSchema = Object.class,
+      example = "{ \"rules\": [ { \"mbean\": \"java.lang:type=Memory\", \"attributes\": [\"HeapMemoryUsage\"] } ] }"
+  )
+  private Map<String, Object> config;
+
+  public JolokiaConfigDTO() {
+    super("JolokiaConfigDTO");
+  }
+
+  @Override
+  public String getSimpleName() {
+    return "Jolokia";
+  }
 }

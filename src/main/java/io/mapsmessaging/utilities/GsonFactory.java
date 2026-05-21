@@ -1,7 +1,7 @@
 /*
  *
  *  Copyright [ 2020 - 2024 ] Matthew Buckton
- *  Copyright [ 2024 - 2025 ] MapsMessaging B.V.
+ *  Copyright [ 2024 - 2026 ] MapsMessaging B.V.
  *
  *  Licensed under the Apache License, Version 2.0 with the Commons Clause
  *  (the "License"); you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@ package io.mapsmessaging.utilities;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import io.mapsmessaging.rest.translation.JsonHandler;
 import lombok.Getter;
 
 @SuppressWarnings("java:S6548") // yes, it is a singleton
@@ -43,5 +44,9 @@ public class GsonFactory {
 
   public Gson getSimpleGson() {
     return prettyGson;
+  }
+
+  public Gson getTimeSafeGson(){
+    return JsonHandler.gson;
   }
 }

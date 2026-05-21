@@ -1,7 +1,7 @@
 /*
  *
  *  Copyright [ 2020 - 2024 ] Matthew Buckton
- *  Copyright [ 2024 - 2025 ] MapsMessaging B.V.
+ *  Copyright [ 2024 - 2026 ] MapsMessaging B.V.
  *
  *  Licensed under the Apache License, Version 2.0 with the Commons Clause
  *  (the "License"); you may not use this file except in compliance with the License.
@@ -23,23 +23,31 @@ import io.mapsmessaging.dto.rest.config.protocol.ProtocolConfigDTO;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
-import lombok.NoArgsConstructor;
 
 @Data
 @EqualsAndHashCode(callSuper = true)
-@NoArgsConstructor
 @Schema(description = "Semtech Protocol Configuration DTO")
 public class SemtechConfigDTO extends ProtocolConfigDTO {
 
-  @Schema(description = "Maximum queue size for Semtech", example = "10")
+  public SemtechConfigDTO() {
+    super("semtech");
+  }
+
+  @Schema(description = "Maximum queue size for Semtech outbound messages per gateway", example = "10")
   protected int maxQueued = 10;
 
-  @Schema(description = "Inbound topic name for Semtech messages", example = "/semtech/inbound")
-  protected String inboundTopicName = "/semtech/inbound";
+  @Schema(description = "Inbound topic name for Semtech messages", example = "/semtech/inbound/{gatewayId}")
+  protected String inboundTopicName = "/semtech/inbound/{gatewayId}";
 
-  @Schema(description = "Outbound topic name for Semtech messages", example = "/semtech/outbound")
-  protected String outboundTopicName = "/semtech/outbound";
+  @Schema(description = "Outbound topic name for Semtech messages", example = "/semtech/outbound/{gatewayId}")
+  protected String outboundTopicName = "/semtech/outbound/{gatewayId}";
 
-  @Schema(description = "Status topic name for Semtech", example = "/semtech/status")
-  protected String statusTopicName = "/semtech/status";
+  @Schema(description = "Telemetry data from the gateway (Semtech stat packet)", example = "/semtech/telemetry/{gatewayId}")
+  protected String telemetryTopicName = "/semtech/telemetry/{gatewayId}";
+
+  @Schema(description = "Link status for the gateway (Maps internal state changes only)", example = "/semtech/status/{gatewayId}")
+  protected String statusTopicName = "/semtech/status/{gatewayId}";
+
+  @Schema(description = "Default transmit (txpk) parameters used when outbound payload is not already Semtech JSON")
+  protected SemtechTransmitDefaultsDTO transmitDefaults = new SemtechTransmitDefaultsDTO();
 }

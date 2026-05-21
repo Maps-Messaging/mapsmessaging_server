@@ -1,7 +1,7 @@
 /*
  *
  *  Copyright [ 2020 - 2024 ] Matthew Buckton
- *  Copyright [ 2024 - 2025 ] MapsMessaging B.V.
+ *  Copyright [ 2024 - 2026 ] MapsMessaging B.V.
  *
  *  Licensed under the Apache License, Version 2.0 with the Commons Clause
  *  (the "License"); you may not use this file except in compliance with the License.
@@ -19,35 +19,49 @@
 
 package io.mapsmessaging.dto.rest.auth;
 
+import io.mapsmessaging.dto.rest.config.BaseManagerConfigDTO;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.EqualsAndHashCode;
 
 import java.util.Map;
-
+@EqualsAndHashCode(callSuper = true)
 @Data
-@NoArgsConstructor
 @AllArgsConstructor
 @Schema(
     title = "Security Manager",
-    description = "Mapping between auth config and JAAS configurations")
-public class SecurityManagerDTO {
+    description = "Mapping between auth config names and JAAS configuration names"
+)
+public class SecurityManagerDTO extends BaseManagerConfigDTO {
 
   @Schema(
       title = "Mapping",
-      description = "The auth name as key and the JAAS implementation name as value map",
-      example = "Default:PublicAuthConfig",
-      nullable = false)
+      description = "Map of auth configuration name (key) to JAAS configuration name (value). " +
+          "If authName is blank, the value for key \"default\" is used.",
+      type = "object",
+      additionalPropertiesSchema = String.class,
+      example = "{\"default\":\"PublicAuthConfig\",\"Default\":\"PublicAuthConfig\"}",
+      nullable = false,
+      requiredMode = Schema.RequiredMode.REQUIRED,
+      additionalProperties = Schema.AdditionalPropertiesValue.TRUE
+  )
   protected Map<String, String> map;
 
-
-
-  public String getAuthName(String authName){
+  public String getAuthName(String authName) {
     if (authName != null && !authName.isEmpty()) {
       return map.get(authName);
     } else {
       return map.get("default");
     }
+  }
+
+  public SecurityManagerDTO(){
+    super("SecurityManagerConfigDTO");
+  }
+
+  @Override
+  public String getSimpleName() {
+    return "Security";
   }
 }

@@ -1,7 +1,7 @@
 /*
  *
  *  Copyright [ 2020 - 2024 ] Matthew Buckton
- *  Copyright [ 2024 - 2025 ] MapsMessaging B.V.
+ *  Copyright [ 2024 - 2026 ] MapsMessaging B.V.
  *
  *  Licensed under the Apache License, Version 2.0 with the Commons Clause
  *  (the "License"); you may not use this file except in compliance with the License.
@@ -25,32 +25,38 @@ import io.mapsmessaging.configuration.ConfigurationProperties;
 import io.mapsmessaging.dto.rest.schema.FileRepositoryConfigDTO;
 import io.mapsmessaging.dto.rest.schema.MapsRepositoryConfigDTO;
 import io.mapsmessaging.dto.rest.schema.RepositoryConfigDTO;
+import io.mapsmessaging.dto.rest.schema.SchemaImportLocationDTO;
 import io.mapsmessaging.dto.rest.system.Status;
 import io.mapsmessaging.dto.rest.system.SubSystemStatusDTO;
+import io.mapsmessaging.logging.Logger;
+import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.schemas.config.SchemaConfig;
 import io.mapsmessaging.schemas.config.SchemaResource;
-import io.mapsmessaging.schemas.config.impl.JsonSchemaConfig;
-import io.mapsmessaging.schemas.config.impl.NativeSchemaConfig;
+import io.mapsmessaging.schemas.config.impl.*;
 import io.mapsmessaging.schemas.config.impl.NativeSchemaConfig.TYPE;
-import io.mapsmessaging.schemas.config.impl.RawSchemaConfig;
-import io.mapsmessaging.schemas.config.impl.XmlSchemaConfig;
 import io.mapsmessaging.schemas.formatters.MessageFormatter;
 import io.mapsmessaging.schemas.formatters.MessageFormatterFactory;
+import io.mapsmessaging.schemas.formatters.ParseMode;
 import io.mapsmessaging.schemas.repository.SchemaRepository;
+import io.mapsmessaging.schemas.repository.SchemaResolver;
 import io.mapsmessaging.schemas.repository.impl.FileSchemaRepository;
 import io.mapsmessaging.schemas.repository.impl.RestSchemaRepository;
 import io.mapsmessaging.schemas.repository.impl.SimpleSchemaRepository;
+import io.mapsmessaging.schemas.tools.protobuf.ProtobufSchemaGenerator;
 import io.mapsmessaging.utilities.Agent;
 import io.mapsmessaging.utilities.configuration.ConfigurationManager;
 import lombok.Getter;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Path;
 import java.util.*;
 import java.util.Map.Entry;
 
-@SuppressWarnings("java:S6548") // yes it is a singleton
-public class SchemaManager implements Agent {
+import static io.mapsmessaging.logging.ServerLogMessages.*;
+
+@SuppressWarnings("java:S6548") // yes, it is a singleton
+public class SchemaManager implements Agent, SchemaResolver {
   private static final String MONITOR = "monitor";
 
   public static final UUID DEFAULT_RAW_UUID =              UUID.fromString("10000000-0000-1000-a000-100000000000");
@@ -67,9 +73,16 @@ public class SchemaManager implements Agent {
     return Holder.INSTANCE;
   }
 
+  private final Logger logger = LoggerFactory.getLogger(getClass());
   private final SchemaRepository repository;
   private final Map<String, MessageFormatter> loadedFormatter;
   private final Map<String, List<SchemaConfig>> pathMap;
+  private final List<SchemaImportLocationDTO> importLocations = new ArrayList<>();
+  private final Map<String, SchemaConfig> preLoadedSchemas = new HashMap<>();
+  private final String protocPath;
+
+  @Getter
+  private final ParseMode defaultParseMode;
 
   @Getter
   private long updateCount = 0;
@@ -85,14 +98,6 @@ public class SchemaManager implements Agent {
     }
     List<SchemaConfig> list = pathMap.computeIfAbsent(path, k -> new ArrayList<>());
     list.add(schemaConfig);
-    try {
-      if (!loadedFormatter.containsKey(schemaConfig.getUniqueId())) {
-        MessageFormatter messageFormatter = MessageFormatterFactory.getInstance().getFormatter(schemaConfig);
-        loadedFormatter.put(schemaConfig.getUniqueId(), messageFormatter);
-      }
-    } catch (Exception e) {
-      // Unable to load the formatter
-    }
     updateCount++;
     return resource.getDefaultVersion();
   }
@@ -112,18 +117,17 @@ public class SchemaManager implements Agent {
     };
   }
 
-  public MessageFormatter getMessageFormatter(String uniqueId) {
+  public MessageFormatter getMessageFormatter(SchemaConfig config) throws IOException{
+    return getMessageFormatter(config.getUniqueId());
+  }
+
+  public MessageFormatter getMessageFormatter(String uniqueId) throws IOException {
     MessageFormatter formatter = loadedFormatter.get(uniqueId);
     if(formatter == null){
       SchemaConfig schemaConfig = getSchema(uniqueId);
       if(schemaConfig != null) {
-        try {
-          formatter = MessageFormatterFactory.getInstance().getFormatter(schemaConfig);
-          loadedFormatter.put(schemaConfig.getUniqueId(), formatter);
-        } catch (IOException e) {
-          // log this
-        }
-
+        formatter = MessageFormatterFactory.getInstance().getFormatter(schemaConfig, this);
+        loadedFormatter.put(schemaConfig.getUniqueId(), formatter);
       }
     }
     return formatter;
@@ -132,7 +136,6 @@ public class SchemaManager implements Agent {
   public List<String> getMessageFormats() {
     return MessageFormatterFactory.getInstance().getFormatters();
   }
-
 
   public synchronized SchemaConfig getSchema(UUID uniqueId) {
     return getSchema(uniqueId.toString());
@@ -144,6 +147,40 @@ public class SchemaManager implements Agent {
       return resource.getDefaultVersion();
     }
     return null;
+  }
+
+
+  public synchronized SchemaConfig getSchemaByName(String name) {
+    SchemaConfig config = preLoadedSchemas.get(name);
+    if(config == null){
+      for(SchemaConfig schemaConfig: getAll()){
+        if(schemaConfig.getName().equalsIgnoreCase(name) ||
+           schemaConfig.getUniqueId().equalsIgnoreCase(name) ||
+           schemaConfig.getName().endsWith(name))
+        {
+          config = schemaConfig;
+          break;
+        }
+      }
+    }
+    return config;
+  }
+
+  public synchronized SchemaConfig getSchemaByNameAndType(String name, String type) {
+    SchemaConfig config = preLoadedSchemas.get(name);
+    if(config == null){
+      for(SchemaConfig schemaConfig: getAll()){
+        if( (schemaConfig.getName().equalsIgnoreCase(name) ||
+             schemaConfig.getUniqueId().equalsIgnoreCase(name) ||
+             schemaConfig.getName().endsWith(name)) &&
+           schemaConfig.getFormat().equalsIgnoreCase(type))
+        {
+          config = schemaConfig;
+          break;
+        }
+      }
+    }
+    return config;
   }
 
   public synchronized SchemaConfig locateSchema(String destinationName) {
@@ -218,6 +255,7 @@ public class SchemaManager implements Agent {
   }
 
   public void start() {
+    logger.log(SCHEMA_MANAGER_STARTUP);
     SchemaConfig rawConfig = new RawSchemaConfig();
     rawConfig.setUniqueId(DEFAULT_RAW_UUID);
     rawConfig.setVersion(1);
@@ -264,12 +302,70 @@ public class SchemaManager implements Agent {
     xmlSchemaConfig.setSchema(new JsonObject());
     addSchema("$SYS", xmlSchemaConfig);
 
+    Path protoExec = protocPath == null? null: Path.of(protocPath);
+
+    for(SchemaImportLocationDTO location: importLocations){
+      if(location.getFormat().equalsIgnoreCase("json")){
+        try {
+          JsonSchemaConfig jsonSchemaConfig1 = new JsonSchemaConfig(Path.of(location.getPath()));
+          addSchema(location.getName(), jsonSchemaConfig1);
+          loadBundle(jsonSchemaConfig1);
+          preLoadedSchemas.put(location.getName(), jsonSchemaConfig1);
+          logger.log(SCHEMA_MANAGER_LOADED_CONFIG,location.getName(), jsonSchemaConfig1.getUniqueId(), jsonSchemaConfig1.getFormat());
+        } catch (IOException e) {
+          logger.log(SCHEMA_MANAGER_LOADED_CONFIG_FAILED, location.getPath(), location.getFormat(), e);
+        }
+      }
+      else if(location.getFormat().equalsIgnoreCase("protobuf")){
+        try {
+          List<ProtoBufSchemaConfig> schemaList = ProtobufSchemaGenerator.loadSchemas(Path.of(location.getPath()), protoExec);
+          for(ProtoBufSchemaConfig schema: schemaList){
+            addSchema(location.getName(), schema);
+            loadBundle(schema);
+            preLoadedSchemas.put(location.getName(), schema);
+            logger.log(SCHEMA_MANAGER_LOADED_CONFIG,location.getName(), schema.getUniqueId(), schema.getFormat());
+          }
+        } catch (IOException e) {
+          logger.log(SCHEMA_MANAGER_LOADED_CONFIG_FAILED, location.getPath(), location.getFormat(), e);
+        }
+      }
+    }
     // This ensures the factory is loaded
     MessageFormatterFactory.getInstance();
   }
 
+  @Override
+  public SchemaConfig resolveParent(SchemaConfig schemaConfig) {
+    SchemaResource resource = repository.getResource(schemaConfig.getParentUuid());
+    if(resource != null){
+      return resource.getDefaultVersion();
+    }
+    return null;
+  }
+
+
+  private void loadBundle(SchemaConfig schema){
+    if(schema.isBundle()){
+      for (SchemaConfig config : schema.getBundledSchemas()) {
+        logger.log(SCHEMA_MANAGER_LOADED_BUNDLED, config.getName(), schema.getName(), schema.getUniqueId(), schema.getFormat());
+        repository.addVersion(config.getUniqueId(), config);
+      }
+    }
+  }
+
+
   private SchemaManager() {
-    SchemaManagerConfig config = ConfigurationManager.getInstance().getConfiguration(SchemaManagerConfig.class);
+    loadedFormatter = new LinkedHashMap<>();
+    pathMap = new LinkedHashMap<>();
+
+    SchemaManagerConfig config;
+    try {
+      config = ConfigurationManager.getInstance().getConfiguration(SchemaManagerConfig.class);
+    }
+    catch(Exception ex){
+      ConfigurationProperties props = new ConfigurationProperties();
+      config = new SchemaManagerConfig(props);
+    }
     SchemaRepository buildTime;
     if(config != null && config.getRepositoryConfig() != null) {
       try {
@@ -282,8 +378,18 @@ public class SchemaManager implements Agent {
       buildTime = new SimpleSchemaRepository();
     }
     repository = buildTime;
-    loadedFormatter = new LinkedHashMap<>();
-    pathMap = new LinkedHashMap<>();
+
+    if(config != null){
+      protocPath = config.getProtocPath();
+      if(config.getImportLocations() != null) {
+        importLocations.addAll(config.getImportLocations());
+      }
+      defaultParseMode = config.getParseMode();
+    }
+    else{
+      protocPath = null;
+      defaultParseMode = ParseMode.IGNORE;
+    }
   }
 
   @Override
@@ -296,9 +402,17 @@ public class SchemaManager implements Agent {
   }
 
    public List<SchemaResource> getSchemaByContext(String context) {
-    return repository.getAllSchemas().stream()
+     List<SchemaResource> list= repository.getAllSchemas().stream()
         .filter(s -> context.equals(s.getDefaultVersion().getTitle()))
         .toList();
+
+     if(list.isEmpty()){
+       SchemaResource resource = repository.getResource(context);
+       if(resource != null) {
+         list.add(resource);
+       }
+     }
+     return list;
   }
 
   public List<SchemaResource> getSchemas(String type) {

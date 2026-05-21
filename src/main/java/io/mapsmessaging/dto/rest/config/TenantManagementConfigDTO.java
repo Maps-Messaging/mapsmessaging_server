@@ -1,7 +1,7 @@
 /*
  *
  *  Copyright [ 2020 - 2024 ] Matthew Buckton
- *  Copyright [ 2024 - 2025 ] MapsMessaging B.V.
+ *  Copyright [ 2024 - 2026 ] MapsMessaging B.V.
  *
  *  Licensed under the Apache License, Version 2.0 with the Commons Clause
  *  (the "License"); you may not use this file except in compliance with the License.
@@ -20,19 +20,35 @@
 package io.mapsmessaging.dto.rest.config;
 
 import io.mapsmessaging.dto.rest.config.tenant.TenantConfigDTO;
+import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
-import lombok.NoArgsConstructor;
 
 import java.util.List;
 
 @Data
 @EqualsAndHashCode(callSuper = true)
-@NoArgsConstructor
 @Schema(description = "Tenant Management Configuration DTO")
-public class TenantManagementConfigDTO extends BaseConfigDTO {
-
-  @Schema(description = "List of tenant configurations")
+public class TenantManagementConfigDTO extends BaseManagerConfigDTO {
+  @ArraySchema(
+      schema = @Schema(implementation = TenantConfigDTO.class),
+      minItems = 0
+  )
+  @Schema(
+      description = "List of tenant configurations",
+      requiredMode = Schema.RequiredMode.NOT_REQUIRED,
+      implementation = TenantConfigDTO.class,
+      nullable = true
+  )
   protected List<TenantConfigDTO> tenantConfigList;
+
+  public TenantManagementConfigDTO(){
+    super("TenantManagementConfigDTO");
+  }
+
+  @Override
+  public String getSimpleName() {
+    return "Tenants";
+  }
 }

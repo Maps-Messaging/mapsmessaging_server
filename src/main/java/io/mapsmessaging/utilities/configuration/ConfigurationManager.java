@@ -1,7 +1,7 @@
 /*
  *
  *  Copyright [ 2020 - 2024 ] Matthew Buckton
- *  Copyright [ 2024 - 2025 ] MapsMessaging B.V.
+ *  Copyright [ 2024 - 2026 ] MapsMessaging B.V.
  *
  *  Licensed under the Apache License, Version 2.0 with the Commons Clause
  *  (the "License"); you may not use this file except in compliance with the License.
@@ -19,6 +19,15 @@
 
 package io.mapsmessaging.utilities.configuration;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
+import com.networknt.schema.Error;
+import com.networknt.schema.Schema;
+import com.networknt.schema.SchemaRegistry;
+import com.networknt.schema.dialect.Dialects;
 import io.mapsmessaging.config.ConfigManager;
 import io.mapsmessaging.configuration.ConfigurationProperties;
 import io.mapsmessaging.configuration.PropertyManager;
@@ -26,10 +35,16 @@ import io.mapsmessaging.configuration.consul.ConsulManagerFactory;
 import io.mapsmessaging.configuration.consul.ConsulPropertyManager;
 import io.mapsmessaging.configuration.file.FileYamlPropertyManager;
 import io.mapsmessaging.configuration.yaml.YamlPropertyManager;
+import io.mapsmessaging.dto.rest.config.BaseManagerConfigDTO;
+import io.mapsmessaging.dto.rest.config.ConfigNamingDTO;
 import io.mapsmessaging.license.FeatureManager;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.logging.ServerLogMessages;
+import io.mapsmessaging.tools.config.schema.RuntimeJsonSchemaGenerator;
+import io.mapsmessaging.tools.config.schema.RuntimeJsonSchemaService;
+import io.mapsmessaging.tools.config.yaml.RenderMode;
+import io.mapsmessaging.tools.config.yaml.YamlWriter;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.Setter;
@@ -37,15 +52,16 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 import static io.mapsmessaging.logging.ServerLogMessages.*;
 
+
 @SuppressWarnings("java:S6548") // yes it is a singleton
 public class ConfigurationManager {
-
 
   private static class Holder {
     static final ConfigurationManager INSTANCE = new ConfigurationManager();
@@ -55,24 +71,63 @@ public class ConfigurationManager {
     return Holder.INSTANCE;
   }
 
+  private final SchemaRegistry schemaRegistry = SchemaRegistry.withDialect(Dialects.getDraft202012());
   private final Logger logger = LoggerFactory.getLogger(ConfigurationManager.class);
 
   private final List<PropertyManager> propertyManagers;
   private final Map<String, ConfigManager> managerMap;
+  private final Map<String, String> configSchemas;
+
   private PropertyManager authoritative;
   @Setter
   @Getter
   private FeatureManager featureManager;
+
+  @Getter
+  private boolean hasErrors;
 
   private ConfigurationManager() {
     logger.log(ServerLogMessages.PROPERTY_MANAGER_START);
     propertyManagers = new ArrayList<>();
     authoritative = null;
     managerMap = new ConcurrentHashMap<>();
+    configSchemas = new ConcurrentHashMap<>();
+    hasErrors = false;
   }
 
   public void register(){
     // nothing to do here
+  }
+
+  public ConfigNamingDTO[] getKnownManagers(){
+    List<String> managerNames = new ArrayList<>(managerMap.keySet());
+    managerNames.sort(Comparator.naturalOrder());
+    List<ConfigNamingDTO> summary = new ArrayList<>();
+    for(String configName : managerNames){
+      ConfigNamingDTO dto = new ConfigNamingDTO();
+      dto.setName( ((BaseManagerConfigDTO)managerMap.get(configName)).getSimpleName());
+      dto.setConfigName(configName);
+      summary.add(dto);
+    }
+    return summary.toArray(new ConfigNamingDTO[0]);
+  }
+
+  public ConfigManager getManager(String name){
+    return managerMap.get(name);
+  }
+
+  public ConfigManager getByName(String name){
+    for(ConfigManager manager : managerMap.values()){
+      if( ((BaseManagerConfigDTO)manager).getSimpleName().equals(name)){
+        return manager;
+      }
+    }
+    return managerMap.get(name);
+  }
+
+
+  public String getSchema(String name) {
+    return configSchemas.get(name);
   }
 
   public void initialise(@NonNull @NotNull String serverId) {
@@ -113,8 +168,7 @@ public class ConfigurationManager {
     }
     return null;
   }
-
-
+  
   public @NonNull @NotNull ConfigurationProperties getProperties(String name) {
     if (authoritative != null && authoritative.contains(name)) {
       logger.log(PROPERTY_MANAGER_LOOKUP, name, "Main");
@@ -123,8 +177,19 @@ public class ConfigurationManager {
 
     for (PropertyManager manager : propertyManagers) {
       if ( manager.contains(name)) {
+        ConfigurationProperties props = manager.getProperties(name);
+        String schema = configSchemas.get(name);
+        Map<String, Object> raw = props.getMap();
+
+        List<String> errors = validate(schema, raw);
+        if(!errors.isEmpty()){
+          hasErrors = true;
+          for(String error:errors){
+            logger.log(PROPERTY_MANAGER_ENTRY_SCHEMA_ERROR, name, error);
+          }
+        }
         logger.log(PROPERTY_MANAGER_LOOKUP, name, "Backup");
-        return manager.getProperties(name);
+        return props;
       }
     }
     logger.log(PROPERTY_MANAGER_LOOKUP_FAILED, name);
@@ -171,11 +236,96 @@ public class ConfigurationManager {
     return defaultManager;
   }
 
-  private void loadAll(){
+  public void loadAll(){
+    RuntimeJsonSchemaGenerator generator = new RuntimeJsonSchemaGenerator();
+    RuntimeJsonSchemaService service = new RuntimeJsonSchemaService(generator);
+    configSchemas.putAll(service.generateAllSchemas());
     ServiceLoader<ConfigManager> configManagers = ServiceLoader.load(ConfigManager.class);
     for(ConfigManager manager : configManagers){
       ConfigManager loaded = manager.load(featureManager);
       managerMap.put(loaded.getClass().getSimpleName(), loaded);
     }
   }
+
+  private List<String> validate(String stringSchema, Map<String, Object> raw) {
+    ObjectMapper mapper = new ObjectMapper();
+    JsonNode instance = mapper.valueToTree(raw);
+    if (instance.isObject()) {
+      ((ObjectNode) instance).remove("loaded");
+    }
+
+    JsonNode jsonSchema;
+    try {
+      jsonSchema = mapper.readTree(stringSchema);
+    } catch (Throwable e) {
+      logger.log(PROPERTY_MANAGER_LOOKUP_FAILED, e.getMessage());
+      return List.of("Invalid schema loaded:"+e.getMessage());
+    }
+
+    JsonNode effectiveSchema = resolveTopLevelRef(jsonSchema);
+
+    Schema schema = schemaRegistry.getSchema(effectiveSchema);
+
+    List<Error> errors = schema.validate(instance);
+
+    return errors.stream()
+        .map(Error::getMessage)
+        .toList();
+  }
+
+  private JsonNode resolveTopLevelRef(JsonNode schemaRoot) {
+    JsonNode refNode = schemaRoot.get("$ref");
+    if (refNode == null || !refNode.isTextual()) {
+      return schemaRoot;
+    }
+
+    JsonNode resolved = resolveRef(schemaRoot, schemaRoot);
+    if (!resolved.isObject()) {
+      return schemaRoot;
+    }
+
+    ObjectNode merged = ((ObjectNode) resolved).deepCopy();
+
+    JsonNode defs = schemaRoot.get("$defs");
+    if (defs != null && defs.isObject()) {
+      merged.set("$defs", defs);
+    }
+
+    JsonNode schemaDecl = schemaRoot.get("$schema");
+    if (schemaDecl != null) {
+      merged.set("$schema", schemaDecl);
+    }
+
+    JsonNode id = schemaRoot.get("$id");
+    if (id != null) {
+      merged.set("$id", id);
+    }
+
+    return merged;
+  }
+
+  private JsonNode resolveRef(JsonNode schemaRoot, JsonNode node) {
+    JsonNode ref = node.get("$ref");
+    if (ref == null || !ref.isTextual()) {
+      return node;
+    }
+
+    String refText = ref.asText();
+    if (!refText.startsWith("#/")) {
+      return node;
+    }
+
+    String[] parts = refText.substring(2).split("/");
+    JsonNode current = schemaRoot;
+
+    for (String part : parts) {
+      current = current.get(part);
+      if (current == null) {
+        return node;
+      }
+    }
+
+    return current;
+  }
+
 }

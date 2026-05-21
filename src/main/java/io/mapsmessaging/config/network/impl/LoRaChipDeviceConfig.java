@@ -1,3 +1,22 @@
+/*
+ *
+ *  Copyright [ 2020 - 2024 ] Matthew Buckton
+ *  Copyright [ 2024 - 2026 ] MapsMessaging B.V.
+ *
+ *  Licensed under the Apache License, Version 2.0 with the Commons Clause
+ *  (the "License"); you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at:
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://commonsclause.com/
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ */
+
 package io.mapsmessaging.config.network.impl;
 
 import io.mapsmessaging.config.Config;
@@ -7,10 +26,8 @@ import io.mapsmessaging.dto.rest.config.network.impl.LoRaChipConfigDTO;
 
 public class LoRaChipDeviceConfig extends LoRaChipConfigDTO implements Config {
 
-
   public LoRaChipDeviceConfig(ConfigurationProperties properties) {
     super();
-    setType("loraDevice");
     this.name = properties.getProperty("name");
     this.address = properties.getIntProperty("address", 1);
     this.power = properties.getIntProperty("power", 14);
@@ -18,10 +35,6 @@ public class LoRaChipDeviceConfig extends LoRaChipConfigDTO implements Config {
     this.transmissionRate = properties.getIntProperty("transmissionRate", 2);
     this.hexKey = properties.getProperty("hexKey", "0x00000000000000000000000000000000");
     this.radio = properties.getProperty("radio");
-    this.cs = properties.getIntProperty("cs", -1);
-    this.irq = properties.getIntProperty("irq", -1);
-    this.rst = properties.getIntProperty("rst", -1);
-    this.cadTimeout = properties.getIntProperty("CADTimeout", 0);
   }
 
   @Override
@@ -34,10 +47,6 @@ public class LoRaChipDeviceConfig extends LoRaChipConfigDTO implements Config {
     properties.put("transmissionRate", this.transmissionRate);
     properties.put("radio", this.radio);
     properties.put("hexKey", this.hexKey);
-    properties.put("cs", this.cs);
-    properties.put("irq", this.irq);
-    properties.put("rst", this.rst);
-    properties.put("cadTimeout", this.cadTimeout);
     return properties;
 
   }
@@ -79,23 +88,6 @@ public class LoRaChipDeviceConfig extends LoRaChipConfigDTO implements Config {
       this.radio = newConfig.getRadio();
       hasChanged = true;
     }
-    if (this.cs != newConfig.getCs()) {
-      this.cs = newConfig.getCs();
-      hasChanged = true;
-    }
-    if (this.irq != newConfig.getIrq()) {
-      this.irq = newConfig.getIrq();
-      hasChanged = true;
-    }
-    if (this.rst != newConfig.getRst()) {
-      this.rst = newConfig.getRst();
-      hasChanged = true;
-    }
-    if (this.cadTimeout != newConfig.getCadTimeout()) {
-      this.cadTimeout = newConfig.getCadTimeout();
-      hasChanged = true;
-    }
-
     return hasChanged;
   }
 }

@@ -1,0 +1,24 @@
+[Unit]
+Description=Virtual CAN Interface vcan1
+After=network.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+
+User=root
+Group=root
+
+CapabilityBoundingSet=CAP_NET_ADMIN
+AmbientCapabilities=CAP_NET_ADMIN
+NoNewPrivileges=true
+
+ExecStart=/sbin/ip link add dev vcan1 type vcan
+ExecStart=/sbin/ip link set vcan1 txqueuelen 10000
+ExecStart=/sbin/ip link set up vcan1
+
+ExecStop=/sbin/ip link set down vcan1
+ExecStop=/sbin/ip link del vcan1
+
+[Install]
+WantedBy=multi-user.target

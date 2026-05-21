@@ -1,7 +1,7 @@
 /*
  *
  *  Copyright [ 2020 - 2024 ] Matthew Buckton
- *  Copyright [ 2024 - 2025 ] MapsMessaging B.V.
+ *  Copyright [ 2024 - 2026 ] MapsMessaging B.V.
  *
  *  Licensed under the Apache License, Version 2.0 with the Commons Clause
  *  (the "License"); you may not use this file except in compliance with the License.
@@ -19,12 +19,38 @@
 
 package io.mapsmessaging.license.features;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
 @Data
+@Schema(description = "Storage feature configuration for the license. All fields are required.")
 public class Storage {
+
+  @Schema(
+      description = "Enable S3-based archival storage.",
+      example = "true",
+      requiredMode = Schema.RequiredMode.REQUIRED
+  )
   private boolean s3Archive;
+
+  @Schema(
+      description = "Enable compression for archived data.",
+      example = "true",
+      requiredMode = Schema.RequiredMode.REQUIRED
+  )
   private boolean compressionArchive;
+
+  @Schema(
+      description = "Enable local file-based storage support.",
+      example = "true",
+      requiredMode = Schema.RequiredMode.REQUIRED
+  )
   private boolean fileSupport;
+
+  @Schema(
+      description = "Enable caching mechanisms for storage.",
+      example = "true",
+      requiredMode = Schema.RequiredMode.REQUIRED
+  )
   private boolean cacheSupport;
 }

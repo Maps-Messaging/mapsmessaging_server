@@ -1,7 +1,7 @@
 /*
  *
  *  Copyright [ 2020 - 2024 ] Matthew Buckton
- *  Copyright [ 2024 - 2025 ] MapsMessaging B.V.
+ *  Copyright [ 2024 - 2026 ] MapsMessaging B.V.
  *
  *  Licensed under the Apache License, Version 2.0 with the Commons Clause
  *  (the "License"); you may not use this file except in compliance with the License.
@@ -21,9 +21,31 @@ package io.mapsmessaging.license.features;
 
 import lombok.Data;
 
+import io.swagger.v3.oas.annotations.media.Schema;
+import lombok.Data;
+
 @Data
+@Schema(description = "Interconnection feature configuration for the license. All fields are required.")
 public class InterConnections {
+
+  @Schema(
+      description = "Enable push-based interconnection support.",
+      example = "true",
+      requiredMode = Schema.RequiredMode.REQUIRED
+  )
   private boolean pushSupport;
+
+  @Schema(
+      description = "Enable pull-based interconnection support.",
+      example = "true",
+      requiredMode = Schema.RequiredMode.REQUIRED
+  )
   private boolean pullSupport;
+
+  @Schema(
+      description = "Enable filtering capabilities on interconnections.",
+      example = "true",
+      requiredMode = Schema.RequiredMode.REQUIRED
+  )
   private boolean filteringSupport;
 }

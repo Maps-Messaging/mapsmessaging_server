@@ -1,7 +1,7 @@
 /*
  *
  *  Copyright [ 2020 - 2024 ] Matthew Buckton
- *  Copyright [ 2024 - 2025 ] MapsMessaging B.V.
+ *  Copyright [ 2024 - 2026 ] MapsMessaging B.V.
  *
  *  Licensed under the Apache License, Version 2.0 with the Commons Clause
  *  (the "License"); you may not use this file except in compliance with the License.
@@ -31,7 +31,6 @@ import io.mapsmessaging.api.message.TypedData;
 import io.mapsmessaging.engine.schema.SchemaManager;
 import io.mapsmessaging.schemas.config.SchemaConfig;
 import io.mapsmessaging.schemas.formatters.MessageFormatter;
-import io.mapsmessaging.schemas.formatters.MessageFormatterFactory;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -76,7 +75,7 @@ public abstract class PackHelper {
     MessageFormatter formatter = null;
     if (schemaConfig != null) {
       try {
-        formatter = MessageFormatterFactory.getInstance().getFormatter(schemaConfig);
+        formatter = SchemaManager.getInstance().getMessageFormatter(schemaConfig);
       } catch (Exception ignore) {
         // if we can not parse to json, we fall through and base64 it
       }

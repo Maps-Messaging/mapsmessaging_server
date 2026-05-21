@@ -1,7 +1,7 @@
 /*
  *
  *  Copyright [ 2020 - 2024 ] Matthew Buckton
- *  Copyright [ 2024 - 2025 ] MapsMessaging B.V.
+ *  Copyright [ 2024 - 2026 ] MapsMessaging B.V.
  *
  *  Licensed under the Apache License, Version 2.0 with the Commons Clause
  *  (the "License"); you may not use this file except in compliance with the License.
@@ -27,8 +27,8 @@ import lombok.ToString;
 import java.util.Arrays;
 import java.util.concurrent.atomic.AtomicInteger;
 
-@Data
 @ToString
+@Data
 public class ModemSatelliteMessage {
   private static final AtomicInteger nextId = new AtomicInteger(0);
   private static final int OGX_SERVICE_CLASS = 2;
@@ -61,12 +61,12 @@ public class ModemSatelliteMessage {
       format = MessageFormat.fromCode(Integer.parseInt(parts[parts.length - 2]));
       data = parts[parts.length - 1];
       if (format.equals(MessageFormat.TEXT)) {
-        min = Integer.parseInt(parts[3]);
-        sin = Integer.parseInt(parts[4]);
+        min = Integer.parseInt(parts[3]) & 0xff;
+        sin = Integer.parseInt(parts[4]) & 0xff;
       }
     } else {
       name = parts[0];
-      sin = Integer.parseInt(parts[3]);
+      sin = (Integer.parseInt(parts[3]) & 0xff);
       priority = Integer.parseInt(parts[4]);
       format = MessageFormat.fromCode(Integer.parseInt(parts[6]));
       data = parts[7];
@@ -74,8 +74,8 @@ public class ModemSatelliteMessage {
 
     this.payload = (data.isEmpty()) ? new byte[0] : this.format.decode(data);
     if (!format.equals(MessageFormat.TEXT) && isOgx) {
-      sin = payload[0];
-      min = payload[1];
+      sin = (payload[0] & 0xff);
+      min = (payload[1] & 0xff);
       payload = Arrays.copyOfRange(payload, 2, payload.length);
     }
     if (!isOgx) {

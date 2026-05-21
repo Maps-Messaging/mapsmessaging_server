@@ -1,7 +1,7 @@
 /*
  *
  *  Copyright [ 2020 - 2024 ] Matthew Buckton
- *  Copyright [ 2024 - 2025 ] MapsMessaging B.V.
+ *  Copyright [ 2024 - 2026 ] MapsMessaging B.V.
  *
  *  Licensed under the Apache License, Version 2.0 with the Commons Clause
  *  (the "License"); you may not use this file except in compliance with the License.
@@ -43,7 +43,7 @@ public class InmarsatClient implements SatelliteClient {
 
   public InmarsatClient(SatelliteConfigDTO satelliteConfigDTO) {
     inmarsatSession = new InmarsatSession(satelliteConfigDTO);
-    lastMoTimeUTC  = StateManager.loadLastMessageUtc(inmarsatSession.getClientId(), inmarsatSession.getClientSecret());
+    lastMoTimeUTC  = StateManager.loadLastMessageUtc(inmarsatSession.getClientId());
     if(lastMoTimeUTC == null) {
       lastMoTimeUTC = java.time.ZonedDateTime.now()
           .withZoneSameInstant(java.time.ZoneOffset.UTC)
@@ -90,7 +90,7 @@ public class InmarsatClient implements SatelliteClient {
     if(moResponse != null){
       if(moResponse.getNextStartTime() != null){
         lastMoTimeUTC = moResponse.getNextStartTime();
-        StateManager.saveLastMessageUtc(inmarsatSession.getClientId(), inmarsatSession.getClientSecret(), lastMoTimeUTC);
+        StateManager.saveLastMessageUtc(inmarsatSession.getClientId(), lastMoTimeUTC);
       }
       List<JsonObject> msgs = moResponse.getMessages();
       for (JsonObject msg : msgs) {

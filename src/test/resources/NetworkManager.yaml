@@ -100,6 +100,31 @@ NetworkManager:
 
     data:
 
+
+      -
+        url: udp://0.0.0.0:14550/
+        name: "mavLink Test"
+        protocols:
+          type: mavlink
+          dialect: common
+          idleSessionTimeout: 300
+          maximumSessionExpiry: 86400
+          advertiseInterval: 15
+          maxInFlightEvents: 8
+          topicNameTemplate: "/mavlink/{remoteSocket}/{systemId}/{componentId}/{messageName}"
+          parseToJson: true
+
+      - name: "N2K Interface"
+        url: canbus://::/
+        deviceName: vcan0
+        protocol: n2k
+
+      - name: "CanAerospace Interface"
+        url: canbus://::/
+        deviceName: vcan1
+        protocol: canaerospace
+
+
       - name: "NATS TCP Test anon Interface for raw buffer writes"
         url: "tcp://0.0.0.0:4222/"
         protocol: nats
@@ -276,6 +301,7 @@ NetworkManager:
         auth: anon
 
       -
+        name: "SSL Echo Server"
         url: ssl://0.0.0.0:8444/
         protocol: echo
         auth: anon
@@ -287,6 +313,12 @@ NetworkManager:
         maxBlockSize: 512
         idleTimePeriod: 120
 
+      - url: udp://0.0.0.0:1700/
+        name: "SemTech Interface"
+        protocol: semtech
+        maxBlockSize: 1024
+        idleTimePeriod: 120
+
       -
         url: ssl://0.0.0.0:9999/
         name: "bad SSL interface to test"
@@ -295,27 +327,19 @@ NetworkManager:
         ssl_keyStorePassphrase: invalidPassword
 
       -
-        name: NMEA GPS port
-        url: serial://ttyUSB0,9600,8,N,1/
-        port: ttyUSB0
-        baudRate: 9600
-        dataBits: 8
-        stopBits: 1
-        parity: n
-        protocol: NMEA
-        selectorThreadCount: 1
-
-      - name: "Inmarsat Iot nano interface"
+        name: "Inmarsat Iot nano interface"
         protocol: satellite
         auth: anon
         url: satellite://inmarsat:0/
         httpRequestTimeoutSec: 30
-        pollInterval: 15
+        pollInterval: 5
         sharedSecret: "This is a shared secret to use"
         maxInflightEventsPerDevice: 2
         outboundNamespaceRoot: "/inmarsat/{deviceId}"
         outboundBroadcast: "/inmarsat/broadcast"
-        baseUrl: "http://localhost:8085/v1"
+        outgoingMessagePollInterval: 5
+        incomingMessagePollInterval: 4
+        baseUrl: "http://localhost:8085/iotMessaging/v1"
         remoteAuthConfig:
           username: "this is not real"
           password: "this is just a junk password since we are in local mock test"

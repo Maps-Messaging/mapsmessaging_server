@@ -1,7 +1,7 @@
 /*
  *
  *  Copyright [ 2020 - 2024 ] Matthew Buckton
- *  Copyright [ 2024 - 2025 ] MapsMessaging B.V.
+ *  Copyright [ 2024 - 2026 ] MapsMessaging B.V.
  *
  *  Licensed under the Apache License, Version 2.0 with the Commons Clause
  *  (the "License"); you may not use this file except in compliance with the License.
@@ -32,10 +32,22 @@ import java.util.List;
 @Schema(description = "DTO for I2C Bus configuration properties")
 public class I2CBusConfigDTO extends DeviceBusConfigDTO {
 
-  @Schema(description = "Bus number for the I2C device")
+  @Schema(
+      description = "Bus number for the I2C device",
+      example = "1",
+      minimum = "0",
+      maximum = "255",
+      requiredMode = Schema.RequiredMode.REQUIRED,
+      nullable = false
+  )
   protected int bus;
 
-  @Schema(description = "Trigger configuration for the I2C bus")
+  @Schema(
+      description = "Trigger configuration for the I2C bus",
+      requiredMode = Schema.RequiredMode.REQUIRED,
+      example = "trigger name",
+      nullable = false
+  )
   protected String trigger;
 
   @Schema(description = "List of I2C devices on this bus")

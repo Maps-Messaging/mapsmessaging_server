@@ -1,7 +1,7 @@
 /*
  *
  *  Copyright [ 2020 - 2024 ] Matthew Buckton
- *  Copyright [ 2024 - 2025 ] MapsMessaging B.V.
+ *  Copyright [ 2024 - 2026 ] MapsMessaging B.V.
  *
  *  Licensed under the Apache License, Version 2.0 with the Commons Clause
  *  (the "License"); you may not use this file except in compliance with the License.
@@ -109,6 +109,7 @@ public class ServerConnectionManager implements ServiceListener, Agent {
     discoveryManager.registerListener("_mqtt._tcp.local.", this);
     discoveryManager.registerListener("_amqp._tcp.local.", this);
     discoveryManager.registerListener("_stomp._tcp.local.", this);
+    discoveryManager.registerListener("_nats._tcp.local.", this);
     discoveryManager.registerListener("_coap._udp.local.", this);
     discoveryManager.registerListener("_mqtt-sn._udp.local.", this);
   }

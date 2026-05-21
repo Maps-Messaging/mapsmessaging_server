@@ -1,7 +1,7 @@
 /*
  *
  *  Copyright [ 2020 - 2024 ] Matthew Buckton
- *  Copyright [ 2024 - 2025 ] MapsMessaging B.V.
+ *  Copyright [ 2024 - 2026 ] MapsMessaging B.V.
  *
  *  Licensed under the Apache License, Version 2.0 with the Commons Clause
  *  (the "License"); you may not use this file except in compliance with the License.
@@ -28,9 +28,7 @@ import io.mapsmessaging.dto.rest.messaging.AsyncMessageDTO;
 import io.mapsmessaging.dto.rest.messaging.ConsumeRequestDTO;
 import io.mapsmessaging.dto.rest.messaging.PublishRequestDTO;
 import io.mapsmessaging.dto.rest.messaging.SubscriptionRequestDTO;
-import io.mapsmessaging.engine.session.SessionContext;
 import io.mapsmessaging.rest.api.impl.BaseRestApi;
-import io.mapsmessaging.rest.api.impl.messaging.impl.RestClientConnection;
 import io.mapsmessaging.rest.api.impl.messaging.impl.RestMessageListener;
 import io.mapsmessaging.rest.api.impl.messaging.impl.SessionState;
 import io.mapsmessaging.rest.handler.SessionTracker;
@@ -77,20 +75,35 @@ public class MessagingApi extends BaseRestApi {
               description = "Operation was successful",
               content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))
           ),
-          @ApiResponse(responseCode = "400", description = "Bad request"),
-          @ApiResponse(responseCode = "401", description = "Invalid credentials or unauthorized access"),
-          @ApiResponse(responseCode = "403", description = "User is not authorised to access the resource"),
+          @ApiResponse(
+              responseCode = "400",
+              description = "Bad request",
+              content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))
+          ),
+          @ApiResponse(
+              responseCode = "401",
+              description = "Invalid credentials or unauthorized access",
+              content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))
+          ),
+          @ApiResponse(
+              responseCode = "403",
+              description = "User is not authorised to access the resource",
+              content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))
+          ),
       }
   )
   @POST
-  public StatusResponse publishMessage(@Valid PublishRequestDTO publishRequest) throws LoginException, IOException {
+  public Response publishMessage(@Valid PublishRequestDTO publishRequest) throws LoginException, IOException {
     hasAccess(RESOURCE);
     Session session = getAuthenticatedSession();
-    String destinationName = publishRequest.getDestinationName();
+    String destinationName = publishRequest.getDestinationName().trim();
+    if( destinationName.isBlank()){
+      return Response.status(Response.Status.BAD_REQUEST).entity(new StatusResponse("Topic name must be valid and not blank")).build();
+    }
     Destination destination = session.findDestination(destinationName, DestinationType.TOPIC).join();
     MessageBuilder messageBuilder = new MessageBuilder(publishRequest.getMessage());
     destination.storeMessage(messageBuilder.build());
-    return new StatusResponse("Message published successfully");
+    return Response.ok().entity(new StatusResponse("Message published successfully")).build();
   }
 
 
@@ -105,9 +118,12 @@ public class MessagingApi extends BaseRestApi {
               description = "Operation was successful",
               content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))
           ),
-          @ApiResponse(responseCode = "400", description = "Bad request"),
-          @ApiResponse(responseCode = "401", description = "Invalid credentials or unauthorized access"),
-          @ApiResponse(responseCode = "403", description = "User is not authorised to access the resource"),
+          @ApiResponse(responseCode = "400", description = "Bad request",
+              content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))),
+          @ApiResponse(responseCode = "401", description = "Invalid credentials or unauthorized access",
+              content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))),
+          @ApiResponse(responseCode = "403", description = "User is not authorised to access the resource",
+              content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))),
       })
   public StatusResponse unsubscribeToTopic(@Valid SubscriptionRequestDTO subscriptionRequest) {
     hasAccess(RESOURCE);
@@ -130,19 +146,26 @@ public class MessagingApi extends BaseRestApi {
               description = "Operation was successful",
               content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))
           ),
-          @ApiResponse(responseCode = "400", description = "Bad request"),
-          @ApiResponse(responseCode = "401", description = "Invalid credentials or unauthorized access"),
-          @ApiResponse(responseCode = "403", description = "User is not authorised to access the resource"),
+          @ApiResponse(responseCode = "400", description = "Bad request",
+              content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))),
+          @ApiResponse(responseCode = "401", description = "Invalid credentials or unauthorized access",
+              content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))),
+          @ApiResponse(responseCode = "403", description = "User is not authorised to access the resource",
+              content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))),
       })
-  public StatusResponse subscribeToTopic(@Valid SubscriptionRequestDTO subscriptionRequest) throws LoginException, IOException {
+  public Response subscribeToTopic(@Valid SubscriptionRequestDTO subscriptionRequest) throws LoginException, IOException {
     hasAccess(RESOURCE);
     Session session = getAuthenticatedSession();
     HttpSession httpSession = getSession();
+    String destinationName = subscriptionRequest.getDestinationName().trim();
+    if( destinationName.isBlank()){
+      return Response.status(Response.Status.BAD_REQUEST).entity(new StatusResponse("Topic name must be valid and not blank")).build();
+    }
     SubscribedEventManager eventManager = subscribeToTopic(session, subscriptionRequest);
     SessionState state = SessionTracker.getSessionStates().getSessionState(httpSession.getId());
     RestMessageListener restMessageListener = state.getRestMessageListener();
     restMessageListener.registerEventManager(subscriptionRequest.getDestinationName(), session, eventManager);
-    return new StatusResponse("Successfully subscribed to " + subscriptionRequest.getDestinationName());
+    return Response.ok().entity(new StatusResponse("Successfully subscribed to " + subscriptionRequest.getDestinationName())).build();
   }
 
   @GET
@@ -157,9 +180,12 @@ public class MessagingApi extends BaseRestApi {
               description = "String token to use to access the log SSE",
               content = @Content(mediaType = "text")
           ),
-          @ApiResponse(responseCode = "400", description = "Bad request"),
-          @ApiResponse(responseCode = "401", description = "Invalid credentials or unauthorized access"),
-          @ApiResponse(responseCode = "403", description = "User is not authorised to access the resource")
+          @ApiResponse(responseCode = "400", description = "Bad request",
+              content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))),
+          @ApiResponse(responseCode = "401", description = "Invalid credentials or unauthorized access",
+              content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))),
+          @ApiResponse(responseCode = "403", description = "User is not authorised to access the resource",
+              content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class)))
       }
   )
   public String requestSseMessageToken(@QueryParam("destination") String destinationName) {
@@ -179,9 +205,12 @@ public class MessagingApi extends BaseRestApi {
               description = "Operation was successful",
               content = @Content(mediaType = "application/json", schema = @Schema(implementation = AsyncMessageDTO.class))
           ),
-          @ApiResponse(responseCode = "400", description = "Bad request"),
-          @ApiResponse(responseCode = "401", description = "Invalid credentials or unauthorized access"),
-          @ApiResponse(responseCode = "403", description = "User is not authorised to access the resource")
+          @ApiResponse(responseCode = "400", description = "Bad request",
+              content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))),
+          @ApiResponse(responseCode = "401", description = "Invalid credentials or unauthorized access",
+              content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))),
+          @ApiResponse(responseCode = "403", description = "User is not authorised to access the resource",
+              content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class)))
       })
   public void subscribeSSE(
       @PathParam("token") String token,
@@ -215,17 +244,23 @@ public class MessagingApi extends BaseRestApi {
               description = "Operation was successful",
               content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))
           ),
-          @ApiResponse(responseCode = "400", description = "Bad request"),
-          @ApiResponse(responseCode = "401", description = "Invalid credentials or unauthorized access"),
-          @ApiResponse(responseCode = "403", description = "User is not authorised to access the resource"),
+          @ApiResponse(responseCode = "400", description = "Bad request",
+              content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))),
+          @ApiResponse(responseCode = "401", description = "Invalid credentials or unauthorized access",
+              content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))),
+          @ApiResponse(responseCode = "403", description = "User is not authorised to access the resource",
+              content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))),
       }
   )
   @POST
-  public StatusResponse commitMessages(@Valid TransactionData transactionData) {
+  public Response commitMessages(@Valid TransactionData transactionData) {
     hasAccess(RESOURCE);
     SessionState state = SessionTracker.getSessionStates().getSessionState(getSession().getId());
-    state.getRestMessageListener().ackReceived(transactionData.getDestinationName(), transactionData.getEventIds());
-    return new StatusResponse("Successfully committed messages");
+    if(!state.getRestMessageListener().ackReceived(transactionData.getDestinationName(), transactionData.getEventIds())){
+      return Response.status(Response.Status.BAD_REQUEST).entity(new StatusResponse("No such transaction")).build();
+    }
+    return Response.ok().entity(new StatusResponse("Successfully committed messages")).build();
+
   }
 
   @Path("/abort")
@@ -240,17 +275,24 @@ public class MessagingApi extends BaseRestApi {
               description = "Operation was successful",
               content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))
           ),
-          @ApiResponse(responseCode = "400", description = "Bad request"),
-          @ApiResponse(responseCode = "401", description = "Invalid credentials or unauthorized access"),
-          @ApiResponse(responseCode = "403", description = "User is not authorised to access the resource"),
+          @ApiResponse(responseCode = "400", description = "Bad request",
+              content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))),
+          @ApiResponse(responseCode = "401", description = "Invalid credentials or unauthorized access",
+              content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))),
+          @ApiResponse(responseCode = "403", description = "User is not authorised to access the resource",
+              content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))),
       }
   )
   @POST
-  public StatusResponse abortMessages(@Valid TransactionData transactionData) {
+  public Response abortMessages(@Valid TransactionData transactionData) {
     hasAccess(RESOURCE);
     SessionState state = SessionTracker.getSessionStates().getSessionState(getSession().getId());
-    state.getRestMessageListener().nakReceived(transactionData.getDestinationName(), transactionData.getEventIds());
-    return new StatusResponse("Successfully aborted messages");
+
+    if(!state.getRestMessageListener().nakReceived(transactionData.getDestinationName(), transactionData.getEventIds())){
+      return Response.status(Response.Status.BAD_REQUEST).entity(new StatusResponse("No such transaction")).build();
+
+    }
+    return Response.ok().entity(new StatusResponse("Successfully aborted messages")).build();
   }
 
   @Path("/consume")
@@ -265,9 +307,12 @@ public class MessagingApi extends BaseRestApi {
               description = "Operation was successful",
               content = @Content(mediaType = "application/json", schema = @Schema(implementation = ConsumedResponse.class))
           ),
-          @ApiResponse(responseCode = "400", description = "Bad request"),
-          @ApiResponse(responseCode = "401", description = "Invalid credentials or unauthorized access"),
-          @ApiResponse(responseCode = "403", description = "User is not authorised to access the resource"),
+          @ApiResponse(responseCode = "400", description = "Bad request",
+              content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))),
+          @ApiResponse(responseCode = "401", description = "Invalid credentials or unauthorized access",
+              content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))),
+          @ApiResponse(responseCode = "403", description = "User is not authorised to access the resource",
+              content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))),
       }
   )
   @POST
@@ -298,9 +343,12 @@ public class MessagingApi extends BaseRestApi {
               description = "Operation was successful",
               content = @Content(mediaType = "application/json", schema = @Schema(implementation = SubscriptionDepthResponse.class))
           ),
-          @ApiResponse(responseCode = "400", description = "Bad request"),
-          @ApiResponse(responseCode = "401", description = "Invalid credentials or unauthorized access"),
-          @ApiResponse(responseCode = "403", description = "User is not authorised to access the resource"),
+          @ApiResponse(responseCode = "400", description = "Bad request",
+              content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))),
+          @ApiResponse(responseCode = "401", description = "Invalid credentials or unauthorized access",
+              content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))),
+          @ApiResponse(responseCode = "403", description = "User is not authorised to access the resource",
+              content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))),
       }
   )
   @Produces(MediaType.APPLICATION_JSON)
@@ -323,42 +371,6 @@ public class MessagingApi extends BaseRestApi {
       SubscriptionDepth subscriptionDepth = new SubscriptionDepth(depth, consumeRequestDTO.getDestination());
       return new SubscriptionDepthResponse(List.of(subscriptionDepth));
     }
-  }
-
-  private Session getAuthenticatedSession() throws LoginException, IOException {
-    HttpSession httpSession = getSession();
-    SessionState state = SessionTracker.getSessionStates().getSessionState(getSession().getId());
-    if(state == null) {
-      boolean persistentSession = false;
-      Object obj = httpSession.getAttribute("persistentSession");
-      if (obj instanceof Boolean bool) {
-        persistentSession = bool;
-      }
-      RestClientConnection restClientConnection = new RestClientConnection(httpSession);
-
-      Object id = httpSession.getAttribute("sessionId");
-      String sessionId = id == null ? restClientConnection.getName() : id.toString();
-      String username = (String) httpSession.getAttribute("username");
-      if (username == null) {
-        username = httpSession.getId();
-        httpSession.setAttribute("username", username);
-      }
-      SessionContextBuilder sessionContextBuilder = new SessionContextBuilder(sessionId, restClientConnection)
-          .setPersistentSession(persistentSession)
-          .isAuthorized(true)
-          .setUsername(username);
-
-      SessionContext sessionContext = sessionContextBuilder.build();
-      RestMessageListener restMessageListener = new RestMessageListener();
-      Session session = SessionManager.getInstance().create(sessionContext, restMessageListener);
-      SessionState sessionState = new SessionState(session, restMessageListener);
-      SessionTracker.getSessionStates().setSessionState(getSession().getId(), sessionState);
-      return session;
-    }
-    if(state.getSession() != null){
-      return state.getSession();
-    }
-    throw new WebApplicationException("Access denied", Response.Status.FORBIDDEN);
   }
 
   private SubscribedEventManager subscribeToTopic(Session session, SubscriptionRequestDTO subscriptionRequest) throws IOException {

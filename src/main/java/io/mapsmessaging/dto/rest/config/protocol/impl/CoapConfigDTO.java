@@ -1,7 +1,7 @@
 /*
  *
  *  Copyright [ 2020 - 2024 ] Matthew Buckton
- *  Copyright [ 2024 - 2025 ] MapsMessaging B.V.
+ *  Copyright [ 2024 - 2026 ] MapsMessaging B.V.
  *
  *  Licensed under the Apache License, Version 2.0 with the Commons Clause
  *  (the "License"); you may not use this file except in compliance with the License.
@@ -23,13 +23,15 @@ import io.mapsmessaging.dto.rest.config.protocol.ProtocolConfigDTO;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
-import lombok.NoArgsConstructor;
 
 @Data
-@NoArgsConstructor
 @EqualsAndHashCode(callSuper = true)
 @Schema(description = "CoAP Protocol Configuration DTO")
 public class CoapConfigDTO extends ProtocolConfigDTO {
+
+  public CoapConfigDTO() {
+    super("coap");
+  }
 
   @Schema(description = "Maximum block size for CoAP", example = "128")
   protected int maxBlockSize = 128;

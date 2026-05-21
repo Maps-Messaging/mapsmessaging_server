@@ -1,7 +1,7 @@
 /*
  *
  *  Copyright [ 2020 - 2024 ] Matthew Buckton
- *  Copyright [ 2024 - 2025 ] MapsMessaging B.V.
+ *  Copyright [ 2024 - 2026 ] MapsMessaging B.V.
  *
  *  Licensed under the Apache License, Version 2.0 with the Commons Clause
  *  (the "License"); you may not use this file except in compliance with the License.
@@ -24,32 +24,75 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
-
 @Data
-@EqualsAndHashCode(callSuper=false)
+@EqualsAndHashCode(callSuper = true)
 @NoArgsConstructor
-@Schema(description = "SSL Configuration DTO")
+@Schema(description = "SSL/TLS Configuration DTO")
 public class SslConfigDTO extends BaseConfigDTO {
 
-  @Schema(description = "Whether client certificate is required", example = "true")
-  protected boolean clientCertificateRequired;
+  @Schema(
+      description = "Whether a client certificate is required for connections. " +
+          "If true, connections without a valid client certificate will be rejected.",
+      example = "false",
+      defaultValue = "false",
+      requiredMode = Schema.RequiredMode.REQUIRED,
+      nullable = false
+  )
+  protected boolean clientCertificateRequired = false;
 
-  @Schema(description = "Whether client certificate is wanted", example = "true")
-  protected boolean clientCertificateWanted;
+  @Schema(
+      description = "Whether a client certificate is requested but not required. " +
+          "Ignored if clientCertificateRequired is true.",
+      example = "false",
+      defaultValue = "false",
+      requiredMode = Schema.RequiredMode.REQUIRED,
+      nullable = false
+  )
+  protected boolean clientCertificateWanted = false;
 
-  @Schema(description = "URL for Certificate Revocation List", example = "http://example.com/crl")
+  @Schema(
+      description = "URL for the Certificate Revocation List (CRL). " +
+          "If not set, CRL checking is disabled.",
+      example = "http://example.com/crl.pem",
+      format = "uri",
+      requiredMode = Schema.RequiredMode.NOT_REQUIRED,
+      nullable = true
+  )
   protected String crlUrl;
 
-  @Schema(description = "Interval in milliseconds for CRL refresh", example = "3600000")
-  protected long crlInterval;
+  @Schema(
+      description = "Interval in milliseconds for refreshing the Certificate Revocation List (CRL)",
+      example = "3600000",
+      defaultValue = "3600000",
+      minimum = "60000",
+      maximum = "2419200000",
+      requiredMode = Schema.RequiredMode.REQUIRED,
+      nullable = false
+  )
+  protected long crlInterval = 3600000L;
 
-  @Schema(description = "SSL context identifier", example = "TLSv3")
-  protected String context;
+  @Schema(
+      description = "SSL context identifier or protocol profile to use (for example: TLS, TLSv1.2, TLSv1.3).",
+      example = "TLS",
+      defaultValue = "TLS",
+      pattern = "^TLS(?:v1\\.(?:2|3))?$",
+      requiredMode = Schema.RequiredMode.REQUIRED,
+      nullable = false
+  )
+  protected String context = "TLS";
 
-  @Schema(description = "Key store configuration")
+  @Schema(
+      description = "Key store configuration containing the server certificate and private key",
+      requiredMode = Schema.RequiredMode.NOT_REQUIRED,
+      nullable = true
+  )
   protected KeyStoreConfigDTO keyStore;
 
-  @Schema(description = "Trust store configuration")
+  @Schema(
+      description = "Trust store configuration containing trusted Certificate Authorities",
+      requiredMode = Schema.RequiredMode.NOT_REQUIRED,
+      nullable = true,
+      example = "{\"type\":\"PKCS12\",\"path\":\"/etc/maps/trust.p12\",\"passphrase\":\"changeit\"}"
+  )
   protected KeyStoreConfigDTO trustStore;
 }
-

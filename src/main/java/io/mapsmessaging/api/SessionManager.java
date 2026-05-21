@@ -1,7 +1,7 @@
 /*
  *
  *  Copyright [ 2020 - 2024 ] Matthew Buckton
- *  Copyright [ 2024 - 2025 ] MapsMessaging B.V.
+ *  Copyright [ 2024 - 2026 ] MapsMessaging B.V.
  *
  *  Licensed under the Apache License, Version 2.0 with the Commons Clause
  *  (the "License"); you may not use this file except in compliance with the License.
@@ -22,23 +22,18 @@ package io.mapsmessaging.api;
 import io.mapsmessaging.MessageDaemon;
 import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.auth.AuthManager;
-import io.mapsmessaging.auth.ServerPermissions;
 import io.mapsmessaging.engine.session.SessionContext;
 import io.mapsmessaging.engine.session.SessionImpl;
 import io.mapsmessaging.engine.session.security.SecurityContext;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.logging.ServerLogMessages;
-import io.mapsmessaging.security.authorisation.AuthRequest;
-import io.mapsmessaging.security.authorisation.ProtectedResource;
 import lombok.NonNull;
 import lombok.SneakyThrows;
 import org.jetbrains.annotations.NotNull;
 
 import javax.security.auth.login.LoginException;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.concurrent.*;
 
 import static io.mapsmessaging.logging.ServerLogMessages.SESSION_ERROR_DURING_CREATION;

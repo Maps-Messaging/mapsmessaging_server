@@ -1,7 +1,7 @@
 /*
  *
  *  Copyright [ 2020 - 2024 ] Matthew Buckton
- *  Copyright [ 2024 - 2025 ] MapsMessaging B.V.
+ *  Copyright [ 2024 - 2026 ] MapsMessaging B.V.
  *
  *  Licensed under the Apache License, Version 2.0 with the Commons Clause
  *  (the "License"); you may not use this file except in compliance with the License.
@@ -24,7 +24,8 @@ import io.mapsmessaging.config.device.SerialDeviceBusConfig;
 import io.mapsmessaging.devices.DeviceController;
 import io.mapsmessaging.devices.serial.SerialBusManager;
 import io.mapsmessaging.devices.serial.SerialDeviceController;
-import io.mapsmessaging.dto.rest.config.device.SerialDeviceDTO;
+import io.mapsmessaging.dto.rest.config.device.SerialBusConfigDTO;
+import io.mapsmessaging.dto.rest.config.device.SerialBusDeviceDTO;
 import io.mapsmessaging.hardware.device.handler.BusHandler;
 import io.mapsmessaging.hardware.device.handler.DeviceHandler;
 import io.mapsmessaging.hardware.trigger.Trigger;
@@ -40,7 +41,7 @@ public class SerialDeviceBusHandler extends BusHandler {
 
   private final SerialBusManager serialBusManager;
 
-  public SerialDeviceBusHandler(SerialBusManager serialBusManager, SerialDeviceBusConfig serialDeviceDTO, Trigger trigger) {
+  public SerialDeviceBusHandler(SerialBusManager serialBusManager, SerialBusConfigDTO serialDeviceDTO, Trigger trigger) {
     super(serialDeviceDTO, trigger);
     this.serialBusManager = serialBusManager;
   }
@@ -48,8 +49,8 @@ public class SerialDeviceBusHandler extends BusHandler {
   @Override
   protected Map<String, DeviceController> scan() {
     Map<String, DeviceController> map = new HashMap<>();
-    List<SerialDeviceDTO> list = ((SerialDeviceBusConfig)properties ).getDevices();
-    for(SerialDeviceDTO serialDeviceConfig: list){
+    List<SerialBusDeviceDTO> list = ((SerialDeviceBusConfig)properties ).getDevices();
+    for(SerialBusDeviceDTO serialDeviceConfig: list){
       String portName = serialDeviceConfig.getSerialConfig().getPort();
       if(!foundDevices.containsKey(portName)){
         SerialPort port = SerialPortScanner.getInstance().allocatePort(portName);

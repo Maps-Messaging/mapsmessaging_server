@@ -1,7 +1,7 @@
 /*
  *
  *  Copyright [ 2020 - 2024 ] Matthew Buckton
- *  Copyright [ 2024 - 2025 ] MapsMessaging B.V.
+ *  Copyright [ 2024 - 2026 ] MapsMessaging B.V.
  *
  *  Licensed under the Apache License, Version 2.0 with the Commons Clause
  *  (the "License"); you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@ package io.mapsmessaging.api.message;
 
 import io.mapsmessaging.storage.impl.streams.ObjectReader;
 import io.mapsmessaging.storage.impl.streams.ObjectWriter;
+import lombok.Getter;
 import lombok.ToString;
 
 import java.io.IOException;
@@ -29,6 +30,7 @@ import java.util.Map;
 
 @ToString(callSuper = true)
 
+@Getter
 public class TypedData {
 
   private final TYPE type;
@@ -133,14 +135,6 @@ public class TypedData {
     }
   }
 
-  public TYPE getType() {
-    return type;
-  }
-
-  public Object getData() {
-    return data;
-  }
-
   public enum TYPE {
     BYTE(0),
     SHORT(1),
@@ -153,12 +147,12 @@ public class TypedData {
     BOOLEAN(8),
     BYTE_ARRAY(20),
     SHORT_ARRAY(21),
-    INT_ARRAY(21),
-    LONG_ARRAY(22),
-    FLOAT_ARRAY(23),
-    DOUBLE_ARRAY(24),
-    STRING_ARRAY(25),
-    CHAR_ARRAY(26),
+    INT_ARRAY(22),
+    LONG_ARRAY(23),
+    FLOAT_ARRAY(24),
+    DOUBLE_ARRAY(25),
+    STRING_ARRAY(26),
+    CHAR_ARRAY(27),
     TYPED_MAP(30),
     UNKNOWN(1000);
 
@@ -170,7 +164,7 @@ public class TypedData {
       }
     }
 
-    byte value;
+    final byte value;
 
     TYPE(int val) {
       value = (byte) val;
@@ -241,61 +235,25 @@ public class TypedData {
   }
 
   private static Object readType(TYPE type, ObjectReader reader) throws IOException {
-    switch (type) {
-      case BOOLEAN:
-        return (reader.readByte() == 1);
-
-      case BYTE:
-        return reader.readByte();
-
-      case SHORT:
-        return reader.readShort();
-
-      case INT:
-        return reader.readInt();
-
-      case LONG:
-        return reader.readLong();
-
-      case FLOAT:
-        return reader.readFloat();
-
-      case DOUBLE:
-        return reader.readDouble();
-
-      case STRING:
-        return reader.readString();
-
-      case CHAR:
-        return reader.readChar();
-
-      case BYTE_ARRAY:
-        return reader.readByteArray();
-
-      case SHORT_ARRAY:
-        return reader.readShortArray();
-
-      case INT_ARRAY:
-        return reader.readIntArray();
-
-      case LONG_ARRAY:
-        return reader.readLongArray();
-
-      case FLOAT_ARRAY:
-        return reader.readFloatArray();
-
-      case DOUBLE_ARRAY:
-        return reader.readDoubleArray();
-
-      case STRING_ARRAY:
-        return reader.readStringArray();
-
-      case CHAR_ARRAY:
-        return reader.readCharArray();
-
-      case TYPED_MAP:
-      default:
-        return null;
-    }
+    return switch (type) {
+      case BOOLEAN -> (reader.readByte() == 1);
+      case BYTE -> reader.readByte();
+      case SHORT -> reader.readShort();
+      case INT -> reader.readInt();
+      case LONG -> reader.readLong();
+      case FLOAT -> reader.readFloat();
+      case DOUBLE -> reader.readDouble();
+      case STRING -> reader.readString();
+      case CHAR -> reader.readChar();
+      case BYTE_ARRAY -> reader.readByteArray();
+      case SHORT_ARRAY -> reader.readShortArray();
+      case INT_ARRAY -> reader.readIntArray();
+      case LONG_ARRAY -> reader.readLongArray();
+      case FLOAT_ARRAY -> reader.readFloatArray();
+      case DOUBLE_ARRAY -> reader.readDoubleArray();
+      case STRING_ARRAY -> reader.readStringArray();
+      case CHAR_ARRAY -> reader.readCharArray();
+      default -> null;
+    };
   }
 }

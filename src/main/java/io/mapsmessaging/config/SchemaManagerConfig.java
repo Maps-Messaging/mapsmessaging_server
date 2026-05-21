@@ -1,7 +1,7 @@
 /*
  *
  *  Copyright [ 2020 - 2024 ] Matthew Buckton
- *  Copyright [ 2024 - 2025 ] MapsMessaging B.V.
+ *  Copyright [ 2024 - 2026 ] MapsMessaging B.V.
  *
  *  Licensed under the Apache License, Version 2.0 with the Commons Clause
  *  (the "License"); you may not use this file except in compliance with the License.
@@ -23,28 +23,49 @@ package io.mapsmessaging.config;
 
 import io.mapsmessaging.configuration.ConfigurationProperties;
 import io.mapsmessaging.dto.rest.config.BaseConfigDTO;
-import io.mapsmessaging.dto.rest.schema.FileRepositoryConfigDTO;
-import io.mapsmessaging.dto.rest.schema.MapsRepositoryConfigDTO;
-import io.mapsmessaging.dto.rest.schema.RepositoryConfigDTO;
-import io.mapsmessaging.dto.rest.schema.SchemaManagerConfigDTO;
+import io.mapsmessaging.dto.rest.schema.*;
 import io.mapsmessaging.license.FeatureManager;
+import io.mapsmessaging.schemas.formatters.ParseMode;
 import io.mapsmessaging.utilities.configuration.ConfigurationManager;
 
 import java.io.IOException;
+import java.util.List;
 
 public class SchemaManagerConfig extends SchemaManagerConfigDTO implements Config, ConfigManager {
 
   public SchemaManagerConfig() {}
 
   public SchemaManagerConfig(ConfigurationProperties configurationProperties) {
-    String type = configurationProperties.getProperty("repositoryType", "Simple");
-    RepositoryType repositoryType = RepositoryType.valueOf(type);
-    super.setRepositoryType(repositoryType);
-    switch (repositoryType) {
-      case Simple -> super.setRepositoryConfig(new RepositoryConfigDTO());
-      case File -> super.setRepositoryConfig(configureFile( (ConfigurationProperties) configurationProperties.get("config")));
-      case Maps -> super.setRepositoryConfig(configureMaps( (ConfigurationProperties) configurationProperties.get("config")));
-      default -> super.setRepositoryConfig(new RepositoryConfigDTO());
+    String type = configurationProperties.getProperty("type", "simple");
+    switch (type) {
+      case "simple" -> super.setRepositoryConfig(new SimpleRepositoryConfigDTO());
+      case "file" -> super.setRepositoryConfig(configureFile( (ConfigurationProperties) configurationProperties.get("config")));
+      case "maps" -> super.setRepositoryConfig(configureMaps( (ConfigurationProperties) configurationProperties.get("config")));
+      default -> super.setRepositoryConfig(new SimpleRepositoryConfigDTO());
+    }
+    Object locations = configurationProperties.get("importLocations");
+    if(locations instanceof List list){
+      for(Object location : list){
+        if(location instanceof ConfigurationProperties props){
+          loadLocations(props);
+        }
+      }
+    }
+    else if(locations instanceof ConfigurationProperties props){
+      loadLocations(props);
+    }
+    setProtocPath(configurationProperties.getProperty("protocPath", null));
+    String parseModeString = configurationProperties.getProperty("parseMode", "IGNORE");
+    setParseMode(ParseMode.valueOf(parseModeString));
+  }
+
+  private void loadLocations(ConfigurationProperties props){
+    if(props.containsKey("path") && props.containsKey("format") && props.containsKey("name")){
+      SchemaImportLocationDTO locationDTO = new SchemaImportLocationDTO();
+      locationDTO.setPath(props.getProperty("path"));
+      locationDTO.setFormat(props.getProperty("format"));
+      locationDTO.setName(props.getProperty("name"));
+      super.getImportLocations().add(locationDTO);
     }
   }
 

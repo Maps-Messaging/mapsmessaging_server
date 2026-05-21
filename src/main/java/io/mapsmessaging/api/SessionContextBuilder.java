@@ -1,7 +1,7 @@
 /*
  *
  *  Copyright [ 2020 - 2024 ] Matthew Buckton
- *  Copyright [ 2024 - 2025 ] MapsMessaging B.V.
+ *  Copyright [ 2024 - 2026 ] MapsMessaging B.V.
  *
  *  Licensed under the Apache License, Version 2.0 with the Commons Clause
  *  (the "License"); you may not use this file except in compliance with the License.
@@ -48,6 +48,7 @@ public class SessionContextBuilder {
   private long sessionExpiry;
   private int receiveMaximum;
   private boolean authorized;
+  private boolean internal = false;
 
   public SessionContextBuilder(@NonNull @NotNull String id, @NonNull @NotNull ClientConnection clientConnection) {
     this.id = id;
@@ -120,6 +121,12 @@ public class SessionContextBuilder {
     return this;
   }
 
+
+  public @NonNull @NotNull SessionContextBuilder isInternal(boolean internal) {
+    this.internal = internal;
+    return this;
+  }
+
   public SessionContext build() {
     SessionContext sc = new SessionContext(id, clientConnection);
     sc.setUsername(username);
@@ -132,6 +139,7 @@ public class SessionContextBuilder {
     sc.setExpiry(sessionExpiry);
     sc.setReceiveMaximum(receiveMaximum);
     sc.setAuthorized(authorized);
+    sc.setInternal(internal);
     return sc;
   }
 

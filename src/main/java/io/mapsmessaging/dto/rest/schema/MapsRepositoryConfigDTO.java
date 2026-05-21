@@ -1,7 +1,7 @@
 /*
  *
  *  Copyright [ 2020 - 2024 ] Matthew Buckton
- *  Copyright [ 2024 - 2025 ] MapsMessaging B.V.
+ *  Copyright [ 2024 - 2026 ] MapsMessaging B.V.
  *
  *  Licensed under the Apache License, Version 2.0 with the Commons Clause
  *  (the "License"); you may not use this file except in compliance with the License.
@@ -20,13 +20,9 @@
 package io.mapsmessaging.dto.rest.schema;
 
 import io.swagger.v3.oas.annotations.media.Schema;
-import lombok.AllArgsConstructor;
 import lombok.Getter;
-import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-@NoArgsConstructor
-@AllArgsConstructor
 @Schema(
     title = "Maps Repository configuration",
     description = "Configuration details for the MapsMessaging-based repository. " +
@@ -34,6 +30,11 @@ import lombok.Setter;
 @Getter
 @Setter
 public class MapsRepositoryConfigDTO extends RepositoryConfigDTO {
+
+  public MapsRepositoryConfigDTO(){
+    super("maps");
+  }
+
 
   @Schema(
       description = "Local directory path for storing cached schemas " +

@@ -1,7 +1,7 @@
 /*
  *
  *  Copyright [ 2020 - 2024 ] Matthew Buckton
- *  Copyright [ 2024 - 2025 ] MapsMessaging B.V.
+ *  Copyright [ 2024 - 2026 ] MapsMessaging B.V.
  *
  *  Licensed under the Apache License, Version 2.0 with the Commons Clause
  *  (the "License"); you may not use this file except in compliance with the License.
@@ -31,8 +31,10 @@ import java.io.InputStreamReader;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Type;
 import java.nio.charset.StandardCharsets;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.Locale;
 
 @Provider
 @Consumes(MediaType.APPLICATION_JSON)
@@ -46,11 +48,15 @@ public class GsonMessageBodyReader implements MessageBodyReader<Object> {
       .registerTypeAdapter(LocalDateTime.class, new GsonDateTimeDeserialiser())
       .registerTypeAdapter(LocalDate.class, new GsonDateTimeSerialiser())
       .registerTypeAdapter(LocalDate.class, new GsonDateTimeDeserialiser())
+      .registerTypeAdapter(Instant.class, new InstantTypeAdapter())
       .create();
 
   @Override
   public boolean isReadable(Class<?> type, Type genericType, Annotation[] annotations, jakarta.ws.rs.core.MediaType mediaType) {
-    return mediaType.equals(MediaType.APPLICATION_JSON_TYPE);
+    return mediaType != null
+        && (MediaType.APPLICATION_JSON_TYPE.isCompatible(mediaType)
+        || "json".equalsIgnoreCase(mediaType.getSubtype())
+        || (mediaType.getSubtype() != null && mediaType.getSubtype().toLowerCase(Locale.ROOT).endsWith("+json")));
   }
 
   @Override

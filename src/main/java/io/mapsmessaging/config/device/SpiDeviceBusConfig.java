@@ -1,7 +1,7 @@
 /*
  *
  *  Copyright [ 2020 - 2024 ] Matthew Buckton
- *  Copyright [ 2024 - 2025 ] MapsMessaging B.V.
+ *  Copyright [ 2024 - 2026 ] MapsMessaging B.V.
  *
  *  Licensed under the Apache License, Version 2.0 with the Commons Clause
  *  (the "License"); you may not use this file except in compliance with the License.
@@ -39,9 +39,9 @@ public class SpiDeviceBusConfig extends SpiDeviceBusConfigDTO implements DeviceB
     this.scanTime = properties.getIntProperty("scanTime", 1000); // Default to 1000 ms
     this.filter = properties.getProperty("filter", "");
     this.selector = properties.getProperty("selector", "");
-
+    this.trigger = properties.getProperty("trigger", "");
     this.devices = new ArrayList<>();
-    Object obj = properties.get("devices");
+    Object obj = properties.get("config");
     if (obj instanceof List) {
       List<ConfigurationProperties> configList = (List<ConfigurationProperties>) obj;
       for (ConfigurationProperties config : configList) {
@@ -62,6 +62,7 @@ public class SpiDeviceBusConfig extends SpiDeviceBusConfigDTO implements DeviceB
     props.put("scanTime", this.scanTime);
     props.put("filter", this.filter);
     props.put("selector", this.selector);
+    props.put("trigger", trigger);
 
     List<ConfigurationProperties> deviceList = new ArrayList<>();
     for (SpiDeviceConfigDTO device : this.devices) {

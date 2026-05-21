@@ -1,7 +1,7 @@
 /*
  *
  *  Copyright [ 2020 - 2024 ] Matthew Buckton
- *  Copyright [ 2024 - 2025 ] MapsMessaging B.V.
+ *  Copyright [ 2024 - 2026 ] MapsMessaging B.V.
  *
  *  Licensed under the Apache License, Version 2.0 with the Commons Clause
  *  (the "License"); you may not use this file except in compliance with the License.
@@ -20,9 +20,11 @@
 package io.mapsmessaging.network.protocol.impl.stomp;
 
 import io.mapsmessaging.api.MessageEvent;
+import io.mapsmessaging.api.Session;
 import io.mapsmessaging.api.SubscriptionContextBuilder;
 import io.mapsmessaging.api.features.QualityOfService;
 import io.mapsmessaging.api.transformers.InterServerTransformation;
+import io.mapsmessaging.api.transformers.ParsedMessage;
 import io.mapsmessaging.dto.rest.analytics.StatisticsConfigDTO;
 import io.mapsmessaging.dto.rest.config.protocol.impl.StompConfigDTO;
 import io.mapsmessaging.dto.rest.protocol.ProtocolInformationDTO;
@@ -49,6 +51,8 @@ import org.jetbrains.annotations.Nullable;
 
 import javax.security.auth.Subject;
 import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.util.Map;
 
 import static java.nio.channels.SelectionKey.OP_READ;
 
@@ -106,7 +110,19 @@ public class StompProtocol extends Protocol {
 
   @Override
   public Subject getSubject() {
+    if(sessionState.getSession() == null){
+      return new Subject();
+    }
     return sessionState.getSession().getSecurityContext().getSubject();
+  }
+
+  @Override
+  public void setSession(Session session) {
+    try {
+      sessionState.setSession(session);
+    } catch (StompProtocolException e) {
+      // log this
+    }
   }
 
   @Override
@@ -120,8 +136,8 @@ public class StompProtocol extends Protocol {
   }
 
   @Override
-  public void subscribeRemote(@NonNull @NotNull String resource, @NonNull @NotNull String mappedResource, @NonNull @NotNull QualityOfService qos, @Nullable ParserExecutor executor, @Nullable InterServerTransformation transformer, StatisticsConfigDTO statistics) throws IOException {
-    super.subscribeRemote(resource, mappedResource, qos, executor, transformer, statistics);
+  public void subscribeRemote(@NonNull @NotNull String resource, @NonNull @NotNull String mappedResource, @NonNull @NotNull QualityOfService qos, @Nullable ParserExecutor executor, @Nullable InterServerTransformation transformer, StatisticsConfigDTO statistics, Map<String, Object> linkProperties) throws IOException {
+    super.subscribeRemote(resource, mappedResource, qos, executor, transformer, statistics, linkProperties);
     sessionState.addMapping(resource, mappedResource);
     Subscribe subscribe = new Subscribe();
     subscribe.setDestination(resource);
@@ -136,8 +152,8 @@ public class StompProtocol extends Protocol {
   }
 
   @Override
-  public void subscribeLocal(@NonNull @NotNull String resource, @NonNull @NotNull String mappedResource, @NonNull @NotNull QualityOfService qos, String selector, @Nullable InterServerTransformation transformer, @Nullable NamespaceFilters namespaceFilters, StatisticsConfigDTO statistics) throws IOException {
-    super.subscribeLocal(resource, mappedResource, qos, selector, transformer, namespaceFilters, statistics);
+  public void subscribeLocal(@NonNull @NotNull String resource, @NonNull @NotNull String mappedResource, @NonNull @NotNull QualityOfService qos, String selector, @Nullable InterServerTransformation transformer, @Nullable NamespaceFilters namespaceFilters, StatisticsConfigDTO statistics, Map<String, Object> linkProperties) throws IOException {
+    super.subscribeLocal(resource, mappedResource, qos, selector, transformer, namespaceFilters, statistics, linkProperties);
     sessionState.addMapping(resource, mappedResource);
     SubscriptionContextBuilder scb = createSubscriptionContextBuilder(resource, selector, qos, 10240);
     sessionState.createSubscription(scb.build());
@@ -199,7 +215,12 @@ public class StompProtocol extends Protocol {
 
   @Override
   public void sendKeepAlive() {
-    // Nothing to do, yet
+    byte[] ka = "\n".getBytes();
+    try {
+      endPoint.sendPacket(new Packet(ByteBuffer.wrap(ka)));
+    } catch (IOException e) {
+      this.close();
+    }
   }
 
   @Override

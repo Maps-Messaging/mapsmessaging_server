@@ -1,7 +1,7 @@
 /*
  *
  *  Copyright [ 2020 - 2024 ] Matthew Buckton
- *  Copyright [ 2024 - 2025 ] MapsMessaging B.V.
+ *  Copyright [ 2024 - 2026 ] MapsMessaging B.V.
  *
  *  Licensed under the Apache License, Version 2.0 with the Commons Clause
  *  (the "License"); you may not use this file except in compliance with the License.
@@ -35,7 +35,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
-class NatsVerbsTest extends BaseTestConfig {
+class NatsVerbTest extends BaseTestConfig {
 
   private Connection connection;
 
@@ -51,6 +51,7 @@ class NatsVerbsTest extends BaseTestConfig {
   @AfterEach
   void teardown() throws Exception {
     if (connection != null) {
+      connection.drain(Duration.ofSeconds(2));
       connection.close();
     }
   }
@@ -68,16 +69,22 @@ class NatsVerbsTest extends BaseTestConfig {
     String message = "Hello NATS";
     CompletableFuture<String> future = new CompletableFuture<>();
 
-    Dispatcher dispatcher = connection.createDispatcher(msg -> {
-      future.complete(new String(msg.getData()));
-    });
-    dispatcher.subscribe(subject);
+    Dispatcher dispatcher = null;
+    try {
+      dispatcher = connection.createDispatcher(msg -> future.complete(new String(msg.getData())));
+      dispatcher.subscribe(subject);
 
-    connection.publish(subject, message.getBytes());
-    connection.flush(Duration.ofSeconds(2));
+      connection.publish(subject, message.getBytes());
+      connection.flush(Duration.ofSeconds(2));
 
-    String received = future.get(6, TimeUnit.SECONDS);
-    assertEquals(message, received, "Received message should match published message");
+      String received = future.get(6, TimeUnit.SECONDS);
+      assertEquals(message, received, "Received message should match published message");
+    }
+    finally {
+      if (dispatcher != null && connection != null) {
+        connection.closeDispatcher(dispatcher);
+      }
+    }
   }
 
   @Test
@@ -86,22 +93,27 @@ class NatsVerbsTest extends BaseTestConfig {
     String subject = "test.unsub";
     CompletableFuture<String> future = new CompletableFuture<>();
 
-    Dispatcher dispatcher = connection.createDispatcher(msg -> {
-      future.complete(new String(msg.getData()));
-    });
-    dispatcher.subscribe(subject);
-    dispatcher.unsubscribe(subject);
+    Dispatcher dispatcher = null;
+    try {
+      dispatcher = connection.createDispatcher(msg -> future.complete(new String(msg.getData())));
+      dispatcher.subscribe(subject);
+      dispatcher.unsubscribe(subject);
 
-    connection.publish(subject, "Should not be received".getBytes());
-    connection.flush(Duration.ofSeconds(5));
+      connection.publish(subject, "Should not be received".getBytes());
+      connection.flush(Duration.ofSeconds(5));
 
-    assertThrows(Exception.class, () -> future.get(1, TimeUnit.SECONDS));
+      assertThrows(Exception.class, () -> future.get(1, TimeUnit.SECONDS));
+    }
+    finally {
+      if (dispatcher != null && connection != null) {
+        connection.closeDispatcher(dispatcher);
+      }
+    }
   }
 
   @Test
   @Order(4)
   void testPingPong() throws Exception {
-    // flush() sends PING and waits for PONG
     connection.flush(Duration.ofSeconds(2));
     assertTrue(connection.getStatus() == Connection.Status.CONNECTED, "Still connected after flush (PING/PONG)");
   }
@@ -109,9 +121,7 @@ class NatsVerbsTest extends BaseTestConfig {
   @Test
   @Order(5)
   void testErrorHandling() throws Exception {
-    assertThrows(IllegalArgumentException.class, () -> {
-      connection.publish("", "bad".getBytes());
-    });
+    assertThrows(IllegalArgumentException.class, () -> connection.publish("", "bad".getBytes()));
   }
 
   @Test
@@ -125,30 +135,30 @@ class NatsVerbsTest extends BaseTestConfig {
     CompletableFuture<String> payloadFuture = new CompletableFuture<>();
     CompletableFuture<String> headerFuture = new CompletableFuture<>();
 
-    Dispatcher dispatcher = connection.createDispatcher(msg -> {
-      if (msg.hasHeaders()) {
-        String val = msg.getHeaders().getFirst(headerKey);
-        headerFuture.complete(val);
-      } else {
-        headerFuture.complete(null);
+    Dispatcher dispatcher = null;
+    try {
+      dispatcher = connection.createDispatcher(msg -> {
+        headerFuture.complete(msg.hasHeaders() ? msg.getHeaders().getFirst(headerKey) : null);
+        payloadFuture.complete(new String(msg.getData()));
+      });
+      dispatcher.subscribe(subject);
+
+      Headers headers = new Headers();
+      headers.add(headerKey, headerValue);
+
+      connection.publish(subject, null, headers, messageBody.getBytes());
+      connection.flush(Duration.ofSeconds(10));
+
+      String receivedPayload = payloadFuture.get(6, TimeUnit.SECONDS);
+      String receivedHeader = headerFuture.get(6, TimeUnit.SECONDS);
+
+      assertEquals(messageBody, receivedPayload, "Hello with Headers");
+      assertEquals(headerValue, receivedHeader, "Header value should match");
+    }
+    finally {
+      if (dispatcher != null && connection != null) {
+        connection.closeDispatcher(dispatcher);
       }
-      payloadFuture.complete(new String(msg.getData()));
-    });
-    dispatcher.subscribe(subject);
-
-    // Manually create headers
-    Headers headers = new Headers();
-    headers.add(headerKey, headerValue);
-
-    // Publish with headers
-    connection.publish(subject, null, headers, messageBody.getBytes());
-    connection.flush(Duration.ofSeconds(10));
-
-    // Validate
-    String receivedPayload = payloadFuture.get(6, TimeUnit.SECONDS);
-    String receivedHeader = headerFuture.get(6, TimeUnit.SECONDS);
-
-    assertEquals(messageBody, receivedPayload, "Hello with Headers");
-    assertEquals(headerValue, receivedHeader, "Header value should match");
+    }
   }
 }

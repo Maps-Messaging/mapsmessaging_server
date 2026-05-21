@@ -1,0 +1,70 @@
+/*
+ *
+ *  Copyright [ 2020 - 2024 ] Matthew Buckton
+ *  Copyright [ 2024 - 2026 ] MapsMessaging B.V.
+ *
+ *  Licensed under the Apache License, Version 2.0 with the Commons Clause
+ *  (the "License"); you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at:
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://commonsclause.com/
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ */
+
+package io.mapsmessaging.rest.api.impl.destination;
+
+import io.mapsmessaging.rest.api.impl.destination.context.Entry;
+import io.swagger.v3.oas.annotations.media.ArraySchema;
+import io.swagger.v3.oas.annotations.media.Schema;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+@Data
+@AllArgsConstructor
+@NoArgsConstructor
+@Schema(
+    name = "DestinationPageResponse",
+    description = "Paged destination entries for a prefix. Entries contain only immediate children (no recursion)."
+)
+public class DestinationPageResponseDTO {
+
+  @Schema(
+      description = "Total number of entries available for this prefix (folders + destinations).",
+      example = "237",
+      minimum = "0",
+      requiredMode = Schema.RequiredMode.REQUIRED
+  )
+  private int totalEntries;
+
+  @Schema(
+      description = "Total pages available for this prefix given the requested pageSize. Zero if totalEntries is 0.",
+      example = "5",
+      minimum = "0",
+      requiredMode = Schema.RequiredMode.REQUIRED
+  )
+  private int totalPages;
+
+  @Schema(
+      description = "Zero-based page number returned.",
+      example = "0",
+      minimum = "0",
+      requiredMode = Schema.RequiredMode.REQUIRED
+  )
+  private int pageNo;
+
+  @ArraySchema(
+      arraySchema = @Schema(
+          description = "Entries returned for this page. May be empty but is never null.",
+          requiredMode = Schema.RequiredMode.REQUIRED
+      ),
+      schema = @Schema(implementation = Entry.class)
+  )
+  private Entry[] entries;
+}

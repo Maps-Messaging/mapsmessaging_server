@@ -1,7 +1,7 @@
 /*
  *
  *  Copyright [ 2020 - 2024 ] Matthew Buckton
- *  Copyright [ 2024 - 2025 ] MapsMessaging B.V.
+ *  Copyright [ 2024 - 2026 ] MapsMessaging B.V.
  *
  *  Licensed under the Apache License, Version 2.0 with the Commons Clause
  *  (the "License"); you may not use this file except in compliance with the License.
@@ -35,8 +35,8 @@ public class BaseMqttSnConfig extends BaseTestConfig {
   public static Stream<Arguments> createQoSVersionStream() {
     List<Arguments> args = new ArrayList<>();
     for (int qos : QOS_LIST) {
-      for (int verion : VERSIONS) {
-        args.add(arguments(qos, verion));
+      for (int version : VERSIONS) {
+        args.add(arguments(qos, version));
       }
     }
     return args.stream();
@@ -44,8 +44,8 @@ public class BaseMqttSnConfig extends BaseTestConfig {
 
   public static Stream<Arguments> createVersionStream() {
     List<Arguments> args = new ArrayList<>();
-    for (int verion : VERSIONS) {
-      args.add(arguments(verion));
+    for (int version : VERSIONS) {
+      args.add(arguments(version));
     }
     return args.stream();
   }

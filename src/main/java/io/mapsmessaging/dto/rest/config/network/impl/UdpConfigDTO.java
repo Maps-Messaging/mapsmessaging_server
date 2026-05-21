@@ -1,7 +1,7 @@
 /*
  *
  *  Copyright [ 2020 - 2024 ] Matthew Buckton
- *  Copyright [ 2024 - 2025 ] MapsMessaging B.V.
+ *  Copyright [ 2024 - 2026 ] MapsMessaging B.V.
  *
  *  Licensed under the Apache License, Version 2.0 with the Commons Clause
  *  (the "License"); you may not use this file except in compliance with the License.
@@ -24,23 +24,44 @@ import io.mapsmessaging.dto.rest.config.network.HmacConfigDTO;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
-import lombok.NoArgsConstructor;
 
 import java.util.List;
 
 @Data
 @EqualsAndHashCode(callSuper=true)
-@NoArgsConstructor
 @Schema(description = "UDP Configuration DTO")
 public class UdpConfigDTO extends EndPointConfigDTO {
 
-  @Schema(description = "Timeout for reusing packets, in milliseconds", example = "1000")
+  public UdpConfigDTO() {
+    this("udp");
+  }
+
+  protected UdpConfigDTO(String type){
+    super(type);
+  }
+
+  @Schema(
+      description = "Timeout for reusing packets, in milliseconds",
+      example = "1000",
+      minimum = "10",
+      maximum = "60000"
+  )
   private long packetReuseTimeout;
 
-  @Schema(description = "Idle session timeout duration, in seconds", example = "600")
+  @Schema(
+      description = "Idle session timeout duration, in seconds",
+      example = "600",
+      minimum = "60",
+      maximum = "1200"
+  )
   private long idleSessionTimeout;
 
-  @Schema(description = "Expiry time for HMAC host lookup cache, in seconds", example = "600")
+  @Schema(
+      description = "Expiry time for HMAC host lookup cache, in seconds",
+      example = "600",
+      minimum = "10",
+      maximum = "1200"
+  )
   private long hmacHostLookupCacheExpiry;
 
   @Schema(description = "List of HMAC configurations for nodes")

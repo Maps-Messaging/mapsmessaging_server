@@ -1,7 +1,7 @@
 /*
  *
  *  Copyright [ 2020 - 2024 ] Matthew Buckton
- *  Copyright [ 2024 - 2025 ] MapsMessaging B.V.
+ *  Copyright [ 2024 - 2026 ] MapsMessaging B.V.
  *
  *  Licensed under the Apache License, Version 2.0 with the Commons Clause
  *  (the "License"); you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@
 package io.mapsmessaging.config;
 
 import io.mapsmessaging.configuration.ConfigurationProperties;
+import io.mapsmessaging.dto.rest.config.LicenseManagerConfigDTO;
 import io.mapsmessaging.license.FeatureManager;
 import io.mapsmessaging.utilities.configuration.ConfigurationManager;
 import lombok.Getter;
@@ -29,10 +30,7 @@ import java.io.IOException;
 
 @Getter
 @NoArgsConstructor
-public class LicenseConfig implements ConfigManager {
-
-  private String clientName;
-  private String clientSecret;
+public class LicenseConfig extends LicenseManagerConfigDTO implements ConfigManager {
 
   public static LicenseConfig getInstance() {
     return ConfigurationManager.getInstance().getConfiguration(LicenseConfig.class);

@@ -1,7 +1,7 @@
 /*
  *
  *  Copyright [ 2020 - 2024 ] Matthew Buckton
- *  Copyright [ 2024 - 2025 ] MapsMessaging B.V.
+ *  Copyright [ 2024 - 2026 ] MapsMessaging B.V.
  *
  *  Licensed under the Apache License, Version 2.0 with the Commons Clause
  *  (the "License"); you may not use this file except in compliance with the License.
@@ -21,85 +21,246 @@ package io.mapsmessaging.dto.rest.config;
 
 import io.mapsmessaging.config.network.impl.TlsConfig;
 import io.mapsmessaging.config.rest.StaticConfig;
+import io.mapsmessaging.dto.rest.config.network.impl.TlsConfigDTO;
+import io.mapsmessaging.dto.rest.config.rest.StaticConfigDTO;
 import io.mapsmessaging.rest.handler.CorsHeaders;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
-import lombok.NoArgsConstructor;
-
 @Data
 @EqualsAndHashCode(callSuper = true)
-@NoArgsConstructor
 @Schema(description = "Rest API Configuration DTO")
-public class RestApiManagerConfigDTO extends BaseConfigDTO {
+public class RestApiManagerConfigDTO extends BaseManagerConfigDTO {
 
-  @Schema(description = "Indicates if REST API is enabled", example = "true")
-  protected boolean enabled;
+  @Schema(
+      description = "Indicates if REST API is enabled",
+      example = "true",
+      defaultValue = "true",
+      requiredMode = Schema.RequiredMode.REQUIRED,
+      nullable = false
+  )
+  protected boolean enabled = true;
 
-  @Schema(description = "Enables authentication", example = "true")
-  protected boolean enableAuthentication;
+  @Schema(
+      description = "Enables authentication for REST API endpoints",
+      example = "true",
+      defaultValue = "true",
+      requiredMode = Schema.RequiredMode.REQUIRED,
+      nullable = false
+  )
+  protected boolean enableAuthentication = true;
 
-  @Schema(description = "Hostnames for binding", example = "0.0.0.0")
-  protected String hostnames;
+  @Schema(
+      description = "Comma-separated list of hostnames or IP addresses to bind to. Whitespace around commas is ignored.",
+      example = "0.0.0.0, ::",
+      defaultValue = "0.0.0.0",
+      pattern = "^\\s*[^,\\s][^,]*\\s*(?:,\\s*[^,\\s][^,]*\\s*)*$",
+      requiredMode = Schema.RequiredMode.REQUIRED,
+      nullable = false
+  )
+  protected String hostnames = "0.0.0.0";
 
-  @Schema(description = "Port for the REST API", example = "8080")
-  protected int port;
+  @Schema(
+      description = "Port for the REST API",
+      example = "8080",
+      defaultValue = "8080",
+      minimum = "1",
+      maximum = "65535",
+      requiredMode = Schema.RequiredMode.REQUIRED,
+      nullable = false
+  )
+  protected int port = 8080;
 
-  @Schema(description = "Enable Caching of rest responses", example = "true")
-  protected boolean enableCache;
+  @Schema(
+      description = "Enable caching of REST responses",
+      example = "true",
+      defaultValue = "true",
+      requiredMode = Schema.RequiredMode.REQUIRED,
+      nullable = false
+  )
+  protected boolean enableCache = true;
 
-  @Schema(description = "Minimum number of network threads", example = "10")
-  protected int minThreads;
+  @Schema(
+      description = "Minimum number of network threads",
+      example = "2",
+      defaultValue = "2",
+      minimum = "1",
+      maximum = "1000",
+      requiredMode = Schema.RequiredMode.NOT_REQUIRED,
+      nullable = true
+  )
+  protected int minThreads = 2;
 
-  @Schema(description = "Maximum number of network threads", example = "50")
-  protected int maxThreads;
+  @Schema(
+      description = "Maximum number of network threads",
+      example = "5",
+      defaultValue = "5",
+      minimum = "1",
+      maximum = "1000",
+      requiredMode = Schema.RequiredMode.NOT_REQUIRED,
+      nullable = true
+  )
+  protected int maxThreads = 5;
 
-  @Schema(description = "Thread queue limit", example = "100")
-  protected int threadQueueLimit;
+  @Schema(
+      description = "Thread queue limit (maximum queued tasks)",
+      example = "100",
+      defaultValue = "100",
+      minimum = "10",
+      maximum = "1000",
+      requiredMode = Schema.RequiredMode.NOT_REQUIRED,
+      nullable = true
+  )
+  protected int threadQueueLimit = 100;
 
-  @Schema(description = "Selector threads", example = "2")
-  protected int selectorThreads;
+  @Schema(
+      description = "Selector thread count",
+      example = "2",
+      defaultValue = "2",
+      minimum = "1",
+      maximum = "1000",
+      requiredMode = Schema.RequiredMode.NOT_REQUIRED,
+      nullable = true
+  )
+  protected int selectorThreads = 2;
 
-  @Schema(description = "Max outstanding events per destination", example="10")
-  protected int maxEventsPerDestination;
+  @Schema(
+      description = "Maximum outstanding events per destination",
+      example = "10",
+      defaultValue = "10",
+      minimum = "1",
+      maximum = "1000",
+      requiredMode = Schema.RequiredMode.NOT_REQUIRED,
+      nullable = true
+  )
+  protected int maxEventsPerDestination = 10;
 
-  @Schema(description = "Cache element life time in ms", example = "10000")
-  protected long cacheLifetime;
+  @Schema(
+      description = "Cache element lifetime in milliseconds",
+      example = "60000",
+      defaultValue = "60000",
+      minimum = "1000",
+      maximum = "600000",
+      requiredMode = Schema.RequiredMode.REQUIRED,
+      nullable = false
+  )
+  protected long cacheLifetime = 60000L;
 
-  @Schema(description = "Cache element cleanup time in ms", example = "5000")
-  protected long cacheCleanup;
+  @Schema(
+      description = "Cache cleanup interval in milliseconds",
+      example = "5000",
+      defaultValue = "5000",
+      minimum = "1000",
+      maximum = "600000",
+      requiredMode = Schema.RequiredMode.REQUIRED,
+      nullable = false
+  )
+  protected long cacheCleanup = 5000L;
 
-  @Schema(description = "Session inactive timeout in ms", example = "180000")
-  protected int inactiveTimeout;
+  @Schema(
+      description = "Session inactive timeout in milliseconds",
+      example = "180000",
+      defaultValue = "180000",
+      minimum = "60000",
+      maximum = "600000",
+      requiredMode = Schema.RequiredMode.NOT_REQUIRED,
+      nullable = true
+  )
+  protected Integer inactiveTimeout = 180000;
 
-  @Schema(description = "If set, enables the /application.wadl end point", example = "false")
-  protected boolean enableWadlEndPoint;
+  @Schema(
+      description = "If set, enables the /application.wadl endpoint",
+      example = "false",
+      defaultValue = "false",
+      requiredMode = Schema.RequiredMode.REQUIRED,
+      nullable = false
+  )
+  protected boolean enableWadlEndPoint = false;
 
-  @Schema(description = "Enables Swagger documentation", example = "true")
-  protected boolean enableSwagger;
+  @Schema(
+      description = "Enables Swagger/OpenAPI documentation endpoints",
+      example = "true",
+      defaultValue = "true",
+      requiredMode = Schema.RequiredMode.REQUIRED,
+      nullable = false
+  )
+  protected boolean enableSwagger = true;
 
-  @Schema(description = "Enables Swagger UI", example = "true")
-  protected boolean enableSwaggerUI;
+  @Schema(
+      description = "Enables Swagger UI",
+      example = "true",
+      defaultValue = "true",
+      requiredMode = Schema.RequiredMode.REQUIRED,
+      nullable = false
+  )
+  protected boolean enableSwaggerUI = true;
 
-  @Schema(description = "Enables User Management features", example = "true")
-  protected boolean enableUserManagement;
+  @Schema(
+      description = "Enables User Management features",
+      example = "true",
+      defaultValue = "true",
+      requiredMode = Schema.RequiredMode.REQUIRED,
+      nullable = false
+  )
+  protected boolean enableUserManagement = true;
 
-  @Schema(description = "Enables Schema Management features", example = "true")
-  protected boolean enableSchemaManagement;
+  @Schema(
+      description = "Enables Schema Management features",
+      example = "true",
+      defaultValue = "true",
+      requiredMode = Schema.RequiredMode.REQUIRED,
+      nullable = false
+  )
+  protected boolean enableSchemaManagement = true;
 
-  @Schema(description = "Enables Interface Management features", example = "true")
-  protected boolean enableInterfaceManagement;
+  @Schema(
+      description = "Enables Interface Management features",
+      example = "true",
+      defaultValue = "true",
+      requiredMode = Schema.RequiredMode.REQUIRED,
+      nullable = false
+  )
+  protected boolean enableInterfaceManagement = true;
 
-  @Schema(description = "Enables Destination Management features", example = "true")
-  protected boolean enableDestinationManagement;
+  @Schema(
+      description = "Enables Destination Management features",
+      example = "true",
+      defaultValue = "true",
+      requiredMode = Schema.RequiredMode.REQUIRED,
+      nullable = false
+  )
+  protected boolean enableDestinationManagement = true;
 
-  @Schema(description = "TLS configuration", implementation = TlsConfig.class)
-  protected TlsConfig tlsConfig;
+  @Schema(
+      description = "TLS configuration",
+      implementation = TlsConfig.class,
+      requiredMode = Schema.RequiredMode.NOT_REQUIRED,
+      nullable = true
+  )
+  protected TlsConfigDTO tlsConfig;
 
-  @Schema(description = "Static configuration", implementation = StaticConfig.class)
-  protected StaticConfig staticConfig;
+  @Schema(
+      description = "Static content configuration",
+      implementation = StaticConfig.class,
+      requiredMode = Schema.RequiredMode.NOT_REQUIRED,
+      nullable = true
+  )
+  protected StaticConfigDTO staticConfig;
 
-  @Schema(description = "CORS headers", implementation = CorsHeaders.class)
+  @Schema(
+      description = "CORS configuration",
+      implementation = CorsHeaders.class,
+      requiredMode = Schema.RequiredMode.NOT_REQUIRED,
+      nullable = true
+  )
   protected CorsHeaders corsHeaders;
 
+  public RestApiManagerConfigDTO() {
+    super("RestApiManagerConfigDTO");
+  }
+
+  @Override
+  public String getSimpleName() {
+    return "Rest API";
+  }
 }

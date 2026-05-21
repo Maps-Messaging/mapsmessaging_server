@@ -5,7 +5,8 @@
 #  Copyright [ 2024 - 2025 ] MapsMessaging B.V.
 #
 #  Licensed under the Apache License, Version 2.0 with the Commons Clause
-#  (the "License"); you may not use this file except in compliance with the License.
+#  (the "License"); you may not use this file except in compliance with
+#  the License.
 #  You may obtain a copy of the License at:
 #
 #      http://www.apache.org/licenses/LICENSE-2.0
@@ -20,14 +21,110 @@
 
 set -e
 
-# Check if group exists, create if it doesn't
-if ! getent group mapsmessaging >/dev/null; then
-    addgroup --system mapsmessaging
+#
+# This script runs before dpkg unpacks the new package payload.
+#
+# The Maps package currently contains files under /opt/maps that may have been
+# locally modified after installation. During an upgrade, dpkg will replace
+# those files with the versions from the new package.
+#
+# To avoid overwriting local runtime configuration, this script backs up the
+# active versions before the package is unpacked. The postinst script then
+# restores these files after unpacking and moves the newly installed versions
+# to .dist files for comparison.
+#
+# Preserved local files/directories:
+#
+#   /opt/maps/conf
+#   /opt/maps/etc/maps.service
+#   /opt/maps/etc/maps.env
+#
+# Backup location:
+#
+#   /var/lib/mapsmessaging/package-backup
+#
+
+MAPS_USER="mapsmessaging"
+MAPS_GROUP="mapsmessaging"
+MAPS_HOME="/opt/maps"
+
+MAPS_CONFIG_DIRECTORY="${MAPS_HOME}/conf"
+MAPS_ETC_DIRECTORY="${MAPS_HOME}/etc"
+MAPS_SERVICE_FILE="${MAPS_ETC_DIRECTORY}/maps.service"
+MAPS_ENV_FILE="${MAPS_ETC_DIRECTORY}/maps.env"
+
+PACKAGE_BACKUP_DIRECTORY="/var/lib/mapsmessaging/package-backup"
+CONFIG_BACKUP_DIRECTORY="${PACKAGE_BACKUP_DIRECTORY}/conf"
+SERVICE_BACKUP_FILE="${PACKAGE_BACKUP_DIRECTORY}/maps.service"
+ENV_BACKUP_FILE="${PACKAGE_BACKUP_DIRECTORY}/maps.env"
+
+#
+# Ensure the service group exists before files are restored or permissions are
+# applied later. This is repeated in postinst as a safety net, because package
+# scripts may be run independently in unusual recovery scenarios.
+#
+if ! getent group "${MAPS_GROUP}" >/dev/null; then
+    addgroup --system "${MAPS_GROUP}"
 fi
 
-# Check if user exists, create if it doesn't
-if ! getent passwd mapsmessaging >/dev/null; then
-    adduser --system --ingroup mapsmessaging --home /opt/maps --shell /usr/sbin/nologin --disabled-login --gecos "Maps Messaging Server User" mapsmessaging
+#
+# Ensure the service user exists. The user is created as a system user with
+# /opt/maps as its home and no login shell.
+#
+if ! getent passwd "${MAPS_USER}" >/dev/null; then
+    adduser \
+        --system \
+        --ingroup "${MAPS_GROUP}" \
+        --home "${MAPS_HOME}" \
+        --shell /usr/sbin/nologin \
+        --disabled-login \
+        --gecos "Maps Messaging Server User" \
+        "${MAPS_USER}"
+fi
+
+#
+# Create a temporary package-maintainer backup area.
+#
+# This is deliberately not /tmp. Package upgrades should not depend on /tmp
+# surviving policy cleanup, reboot behaviour, or other bits of filesystem
+# theatre that make debugging upgrades extra miserable.
+#
+mkdir -p "${PACKAGE_BACKUP_DIRECTORY}"
+
+#
+# Preserve the active Maps configuration directory.
+#
+# On upgrade, dpkg will unpack a fresh /opt/maps/conf from the package. The
+# postinst script will move that new directory to /opt/maps/conf.dist and then
+# restore this backup to /opt/maps/conf.
+#
+if [ -d "${MAPS_CONFIG_DIRECTORY}" ]; then
+    rm -rf "${CONFIG_BACKUP_DIRECTORY}"
+    cp -a "${MAPS_CONFIG_DIRECTORY}" "${CONFIG_BACKUP_DIRECTORY}"
+fi
+
+#
+# Preserve the active systemd service template under /opt/maps/etc.
+#
+# /etc/systemd/system/maps.service is expected to be a symlink pointing to this
+# file. If an administrator edited the service, they may have unknowingly edited
+# the target under /opt/maps/etc. So this file must be treated as local state for
+# the current package layout.
+#
+if [ -f "${MAPS_SERVICE_FILE}" ] || [ -L "${MAPS_SERVICE_FILE}" ]; then
+    rm -f "${SERVICE_BACKUP_FILE}"
+    cp -a "${MAPS_SERVICE_FILE}" "${SERVICE_BACKUP_FILE}"
+fi
+
+#
+# Preserve the active environment file under /opt/maps/etc.
+#
+# /etc/maps/maps.env is expected to be a symlink pointing to this file. Since
+# administrators may edit /etc/maps/maps.env, this target is also preserved.
+#
+if [ -f "${MAPS_ENV_FILE}" ] || [ -L "${MAPS_ENV_FILE}" ]; then
+    rm -f "${ENV_BACKUP_FILE}"
+    cp -a "${MAPS_ENV_FILE}" "${ENV_BACKUP_FILE}"
 fi
 
 exit 0

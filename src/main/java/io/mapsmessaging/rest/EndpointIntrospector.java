@@ -1,7 +1,7 @@
 /*
  *
  *  Copyright [ 2020 - 2024 ] Matthew Buckton
- *  Copyright [ 2024 - 2025 ] MapsMessaging B.V.
+ *  Copyright [ 2024 - 2026 ] MapsMessaging B.V.
  *
  *  Licensed under the Apache License, Version 2.0 with the Commons Clause
  *  (the "License"); you may not use this file except in compliance with the License.
@@ -20,9 +20,7 @@
 package io.mapsmessaging.rest;
 
 
-import java.lang.reflect.Method;
-import java.util.ArrayList;
-import java.util.List;
+import org.glassfish.jersey.server.model.Invocable;
 import org.glassfish.jersey.server.model.Resource;
 import org.glassfish.jersey.server.model.ResourceMethod;
 import org.glassfish.jersey.server.model.ResourceModel;
@@ -30,7 +28,10 @@ import org.glassfish.jersey.server.monitoring.ApplicationEvent;
 import org.glassfish.jersey.server.monitoring.ApplicationEventListener;
 import org.glassfish.jersey.server.monitoring.RequestEvent;
 import org.glassfish.jersey.server.monitoring.RequestEventListener;
-import org.glassfish.jersey.server.model.Invocable;
+
+import java.lang.reflect.Method;
+import java.util.ArrayList;
+import java.util.List;
 
 public class EndpointIntrospector implements ApplicationEventListener {
 

@@ -1,7 +1,7 @@
 /*
  *
  *  Copyright [ 2020 - 2024 ] Matthew Buckton
- *  Copyright [ 2024 - 2025 ] MapsMessaging B.V.
+ *  Copyright [ 2024 - 2026 ] MapsMessaging B.V.
  *
  *  Licensed under the Apache License, Version 2.0 with the Commons Clause
  *  (the "License"); you may not use this file except in compliance with the License.
@@ -28,6 +28,7 @@ import io.mapsmessaging.schemas.config.impl.JsonSchemaConfig;
 import io.mapsmessaging.schemas.formatters.MessageFormatter;
 import org.jetbrains.annotations.Nullable;
 
+import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 
 public final class EnvelopePackHelper extends PackHelper {
@@ -48,17 +49,31 @@ public final class EnvelopePackHelper extends PackHelper {
 
     byte[] bytes = message.getOpaqueData();
     if (bytes != null && bytes.length > 0) {
+
       String mime = message.getContentType();
       if (mime == null || mime.isEmpty()) {
         mime = resolveMimeType(message, schemaConfig);
       }
       envelope.addProperty(PAYLOAD_MIME_KEY, mime);
-      if(schemaConfig instanceof JsonSchemaConfig){
-        JsonElement parsed = JsonParser.parseString(new String(bytes));
-        envelope.add(PAYLOAD_KEY, parsed);
+
+      boolean parsedSuccessfully = false;
+
+      if (schemaConfig instanceof JsonSchemaConfig) {
+        try {
+          String utf8 = new String(bytes, StandardCharsets.UTF_8);
+          JsonElement parsed = JsonParser.parseString(utf8);
+          envelope.add(PAYLOAD_KEY, parsed);
+          parsedSuccessfully = true;
+        } catch (Exception ignore) {
+          // fall through to base64
+        }
       }
-      else {
-        envelope.addProperty(PAYLOAD_BASE64_KEY, Base64.getEncoder().encodeToString(bytes));
+
+      if (!parsedSuccessfully) {
+        envelope.addProperty(
+            PAYLOAD_BASE64_KEY,
+            Base64.getEncoder().encodeToString(bytes)
+        );
       }
     }
 
@@ -73,4 +88,5 @@ public final class EnvelopePackHelper extends PackHelper {
       setDataschemaIfPresent(cloudEvent, schemaUri);
     }
   }
+
 }

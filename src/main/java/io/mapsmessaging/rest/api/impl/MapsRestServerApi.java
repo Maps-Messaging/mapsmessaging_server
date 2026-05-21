@@ -1,7 +1,7 @@
 /*
  *
  *  Copyright [ 2020 - 2024 ] Matthew Buckton
- *  Copyright [ 2024 - 2025 ] MapsMessaging B.V.
+ *  Copyright [ 2024 - 2026 ] MapsMessaging B.V.
  *
  *  Licensed under the Apache License, Version 2.0 with the Commons Clause
  *  (the "License"); you may not use this file except in compliance with the License.
@@ -41,6 +41,8 @@ import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
+import lombok.AllArgsConstructor;
+import lombok.Data;
 
 import static io.mapsmessaging.rest.api.Constants.URI_PATH;
 
@@ -165,12 +167,19 @@ public class MapsRestServerApi extends BaseRestApi {
       description = "A simple endpoint to verify that the server is operational and responsive.",
       security = {}, // Overrides global security to make this endpoint accessible without authentication
       responses = {
-          @ApiResponse(responseCode = "200", description = "Server is operational"),
+          @ApiResponse(
+              responseCode = "200",
+              description = "Server is operational",
+              content = @Content(
+                  mediaType = "application/json",
+                  schema = @Schema(implementation = PingResponse.class)
+              )
+          ),
           @ApiResponse(responseCode = "400", description = "Bad request")
       }
   )
-  public StatusResponse getPing() {
-    return new StatusResponse("Success");
+  public PingResponse getPing() {
+    return new PingResponse("ok");
   }
 
   @GET
@@ -183,15 +192,16 @@ public class MapsRestServerApi extends BaseRestApi {
           @ApiResponse(
               responseCode = "200",
               description = "Get server name was successful",
-              content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))
+              content = @Content(mediaType = "application/json", schema = @Schema(implementation = ServerName.class))
           ),
-          @ApiResponse(responseCode = "400", description = "Bad request"),
-          @ApiResponse(responseCode = "401", description = "Invalid credentials or unauthorized access"),
-          @ApiResponse(responseCode = "403", description = "User is not authorised to access the resource"),
+          @ApiResponse(responseCode = "401", description = "Invalid credentials or unauthorized access",
+              content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))),
+          @ApiResponse(responseCode = "403", description = "User is not authorised to access the resource",
+              content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))),
       }
   )
-  public StatusResponse getName() {
-    return new StatusResponse(MessageDaemon.getInstance().getId());
+  public ServerName getName() {
+    return new ServerName(MessageDaemon.getInstance().getId());
   }
 
   @GET
@@ -217,4 +227,19 @@ public class MapsRestServerApi extends BaseRestApi {
     return new UpdateCheckResponse(schema, 0, 0);
   }
 
+
+  @Data
+  @AllArgsConstructor
+  public static final class ServerName{
+    String name;
+  }
+
+
+  @Data
+  @AllArgsConstructor
+  public final class PingResponse {
+
+    @Schema(description = "Ping status", example = "ok")
+    private String status;
+  }
 }

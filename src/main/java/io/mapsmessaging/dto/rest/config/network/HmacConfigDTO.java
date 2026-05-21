@@ -1,7 +1,7 @@
 /*
  *
  *  Copyright [ 2020 - 2024 ] Matthew Buckton
- *  Copyright [ 2024 - 2025 ] MapsMessaging B.V.
+ *  Copyright [ 2024 - 2026 ] MapsMessaging B.V.
  *
  *  Licensed under the Apache License, Version 2.0 with the Commons Clause
  *  (the "License"); you may not use this file except in compliance with the License.
@@ -34,7 +34,12 @@ public class HmacConfigDTO extends BaseConfigDTO {
   @Schema(description = "The host for the HMAC configuration", example = "example.com")
   protected String host;
 
-  @Schema(description = "The port used for HMAC communication", example = "8080")
+  @Schema(
+      description = "The port used for HMAC communication",
+      example = "8080",
+      minimum = "1000",
+      maximum = "65536"
+  )
   protected int port;
 
   @Schema(description = "The secret key for HMAC operations", example = "mySecretKey")

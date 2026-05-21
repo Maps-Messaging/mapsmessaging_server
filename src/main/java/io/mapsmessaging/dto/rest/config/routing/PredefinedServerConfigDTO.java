@@ -1,7 +1,7 @@
 /*
  *
  *  Copyright [ 2020 - 2024 ] Matthew Buckton
- *  Copyright [ 2024 - 2025 ] MapsMessaging B.V.
+ *  Copyright [ 2024 - 2026 ] MapsMessaging B.V.
  *
  *  Licensed under the Apache License, Version 2.0 with the Commons Clause
  *  (the "License"); you may not use this file except in compliance with the License.
@@ -31,9 +31,20 @@ import lombok.NoArgsConstructor;
 @Schema(description = "Predefined Server Configuration DTO")
 public class PredefinedServerConfigDTO extends BaseConfigDTO {
 
-  @Schema(description = "Name of the predefined server", example = "Server1")
+  @Schema(
+      description = "Name of the predefined server",
+      example = "Server1",
+      requiredMode = Schema.RequiredMode.REQUIRED,
+      nullable = false
+  )
   protected String name;
 
-  @Schema(description = "URL of the predefined server", example = "tcp://server1:1883/")
+  @Schema(
+      description = "URL of the predefined server",
+      example = "tcp://server1:1883/",
+      requiredMode = Schema.RequiredMode.REQUIRED,
+      nullable = false,
+      format = "uri"
+  )
   protected String url;
 }

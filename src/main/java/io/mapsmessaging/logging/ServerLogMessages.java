@@ -1,7 +1,7 @@
 /*
  *
  *  Copyright [ 2020 - 2024 ] Matthew Buckton
- *  Copyright [ 2024 - 2025 ] MapsMessaging B.V.
+ *  Copyright [ 2024 - 2026 ] MapsMessaging B.V.
  *
  *  Licensed under the Apache License, Version 2.0 with the Commons Clause
  *  (the "License"); you may not use this file except in compliance with the License.
@@ -60,9 +60,16 @@ public enum ServerLogMessages implements LogMessage {
 
   MESSAGE_DAEMON_AGENT_STARTING(LEVEL.AUDIT, SERVER_CATEGORY.DAEMON, "Starting {} "),
   MESSAGE_DAEMON_AGENT_STARTED(LEVEL.WARN, SERVER_CATEGORY.DAEMON, "Started {} took {}ms"),
+  MESSAGE_DAEMON_AGENT_FAILED(LEVEL.FATAL, SERVER_CATEGORY.DAEMON, "Failed to start {}, exception {}, system exitting"),
 
   MESSAGE_DAEMON_AGENT_STOPPING(LEVEL.AUDIT, SERVER_CATEGORY.DAEMON, "Stopping {} "),
   MESSAGE_DAEMON_AGENT_STOPPED(LEVEL.WARN, SERVER_CATEGORY.DAEMON, "Stopped {} took {}ms"),
+  // </editor-fold>
+
+  // <editor-fold desc="jsonquery">
+  JSON_QUERY_COMPILE_EXCEPTION(LEVEL.FATAL, SERVER_CATEGORY.ENGINE, "JsonQuery compilation failed for {} with error {}"),
+  JSON_QUERY_COMPILE_SUCCESS(LEVEL.INFO, SERVER_CATEGORY.ENGINE, "JsonQuery compilation success for {} produced {}"),
+  JSON_QUERY_EXECUTION_EXCEPTION(LEVEL.FATAL, SERVER_CATEGORY.ENGINE, "JsonQuery execution failed for {} with {}"),
   // </editor-fold>
 
   // <editor-fold desc="routing manager messages">
@@ -94,7 +101,7 @@ public enum ServerLogMessages implements LogMessage {
   END_POINT_MANAGER_PAUSE(LEVEL.DEBUG, SERVER_CATEGORY.ENGINE, "Pause called on {}"),
   END_POINT_MANAGER_RESUME(LEVEL.DEBUG, SERVER_CATEGORY.ENGINE, "Resume called on {}"),
   END_POINT_MANAGER_CLOSE_SERVER(LEVEL.DEBUG, SERVER_CATEGORY.ENGINE, "Closing end point on closed server"),
-  END_POINT_MANAGER_NEW_SELECTOR(LEVEL.INFO, SERVER_CATEGORY.ENGINE, "Created thread safe selector implementation due to the JDK support on interface"),
+  END_POINT_MANAGER_NEW_SELECTOR(LEVEL.DEBUG, SERVER_CATEGORY.ENGINE, "Created thread safe selector implementation due to the JDK support on interface"),
   END_POINT_MANAGER_ACCEPT_EXCEPTION(LEVEL.WARN, SERVER_CATEGORY.ENGINE, "Exception raised during accept handling of the new connection"),
   END_POINT_MANAGER_CLOSE_EXCEPTION(LEVEL.WARN, SERVER_CATEGORY.ENGINE, "Closing end point on accept server raised exception"),
   END_POINT_MANAGER_CLOSE_EXCEPTION_1(LEVEL.WARN, SERVER_CATEGORY.ENGINE, "Closing end point on closed server raised exception"),
@@ -238,6 +245,13 @@ public enum ServerLogMessages implements LogMessage {
 
   // </editor-fold>
 
+  // <editor-fold desc="Packet Security">
+  PACKET_SECURITY_VERIFICATION_FAILED(LEVEL.WARN, SERVER_CATEGORY.NETWORK, "Packet integrity verification failed: ip={}, algorithm={}, reason={}, packetLength={}, signatureSize={}"),
+  PACKET_SECURITY_NOT_INITIALISED(LEVEL.ERROR, SERVER_CATEGORY.NETWORK, "Packet integrity not initialised: algorithm={}"),
+  PACKET_SECURITY_INTERNAL_ERROR(LEVEL.ERROR, SERVER_CATEGORY.NETWORK, "Packet integrity internal error: algorithm={}, error={}"),
+  // </editor-fold>
+
+
   // <editor-fold desc="Security Manager based log messages">
   SECURITY_MANAGER_STARTUP(LEVEL.DEBUG, SERVER_CATEGORY.ENGINE, "Starting Security Manager"),
   SECURITY_MANAGER_FAILED_LOG_IN(LEVEL.WARN, SERVER_CATEGORY.ENGINE, "User {} failed to logged in, {}"),
@@ -366,6 +380,19 @@ public enum ServerLogMessages implements LogMessage {
   NATS_INVALID_FRAME(LEVEL.WARN, SERVER_CATEGORY.PROTOCOL, "Invalid NATS frame received.. Unable to process::{}"),
   NATS_FRAME_HANDLE_EXCEPTION(LEVEL.WARN, SERVER_CATEGORY.PROTOCOL, "Exception raised during frame {} processing"),
   // </editor-fold>
+  // <editor-fold desc="Mavlink log messages">
+  MAVLINK_FAILED_SETTING_UP_SESSION(LEVEL.WARN, SERVER_CATEGORY.PROTOCOL, "Failed to setup Mavlink session for {}"),
+  MAVLINK_SESSION_CREATED(LEVEL.INFO, SERVER_CATEGORY.PROTOCOL, "New Mavlink session setup for {}"),
+  MAVLINK_FAILED_FORWARD_PACKET(LEVEL.WARN, SERVER_CATEGORY.PROTOCOL, "Failed to forward mavlink packet to {}"),
+  MAVLINK_DIALECT_FAILED_TO_LOAD(LEVEL.WARN, SERVER_CATEGORY.PROTOCOL, "Failed to load the mavlink dialect specifed at {}"),
+  MAVLINK_DIALECT_FORMAT_FAILURES(LEVEL.WARN, SERVER_CATEGORY.PROTOCOL, "Failed to parse  the mavlink dialect specifed at {}, falling back to default dialect"),
+
+
+  MAVLINK_SUCCESSFUL_FORWARD_PACKET(LEVEL.DEBUG, SERVER_CATEGORY.PROTOCOL, "Forward mavlink packet to {}"),
+  MAVLINK_DETECTED_PACKET(LEVEL.DEBUG, SERVER_CATEGORY.PROTOCOL, "Detected mavlink packet from {} as {}"),
+  MAVLINK_FAILED_PARSING_FORWARD_LIST(LEVEL.WARN, SERVER_CATEGORY.PROTOCOL, "Failed to parse {} as a valid address"),
+
+  // </editor-fold>
 
 
   // <editor-fold desc="MQTT 3.1.1 log messages">
@@ -414,6 +441,52 @@ public enum ServerLogMessages implements LogMessage {
   MQTT5_TOPIC_ALIAS_ALREADY_EXISTS(LEVEL.ERROR, SERVER_CATEGORY.PROTOCOL, "Alias already exists for {}"),
   // </editor-fold>
 
+  // <editor-fold desc="N2K Log messages">
+  N2K_LOADING_DATABASE_FROM_FILE(LEVEL.INFO, SERVER_CATEGORY.PROTOCOL, "Loading N2K database from file {}"),
+  N2K_LOADING_DEFAULT_DATABASE(LEVEL.INFO, SERVER_CATEGORY.PROTOCOL, "Loading default N2K database"),
+  N2K_LOADING_DATABASE_FROM_XML_DEFINITION(LEVEL.INFO, SERVER_CATEGORY.PROTOCOL, "Loading N2K from XML definition"),
+  N2K_LOADING_FAILED(LEVEL.ERROR, SERVER_CATEGORY.PROTOCOL, "Loading N2K database failed {}"),
+  N2K_PROTOCOL_CREATED_AND_BOUND(LEVEL.INFO, SERVER_CATEGORY.PROTOCOL, "loaded and bound to {} device"),
+  N2K_PROTOCOL_CLOSING(LEVEL.INFO, SERVER_CATEGORY.PROTOCOL, "Bound to {} device is closing"),
+  N2K_PROTOCOL_PARSING_PACKET(LEVEL.DEBUG, SERVER_CATEGORY.PROTOCOL, "Parsing inbound packet {}"),
+  N2K_PROTOCOL_PARSED_KNOWN_PACKET(LEVEL.DEBUG, SERVER_CATEGORY.PROTOCOL, "Parsed to known data pgn:{}"),
+  N2K_PROTOCOL_PARSED_UNKNOWN_PACKET(LEVEL.DEBUG, SERVER_CATEGORY.PROTOCOL, "Parsed unknown data pgn:{}"),
+  N2K_PROTOCOL_INBOUND_HANDLER_ERROR(LEVEL.ERROR, SERVER_CATEGORY.PROTOCOL, "Exception raised during inbound handler {}"),
+  N2K_PROTOCOL_CANBUS_BUILD_ERROR(LEVEL.ERROR, SERVER_CATEGORY.PROTOCOL, "Exception raised attempting to build canbus frame {}"),
+  // </editor-fold>
+
+  // <editor-fold desc="CanAerospace Log messages">
+  CANAEROSPACE_LOADING_DATABASE_FROM_FILE(LEVEL.INFO, SERVER_CATEGORY.PROTOCOL, "Loading CanAerospace database from file {}"),
+  CANAEROSPACE_LOADING_DEFAULT_DATABASE(LEVEL.INFO, SERVER_CATEGORY.PROTOCOL, "Loading default CanAerospace database"),
+  CANAEROSPACE_LOADING_DATABASE_FROM_XML_DEFINITION(LEVEL.INFO, SERVER_CATEGORY.PROTOCOL, "Loading CanAerospace from XML definition"),
+  CANAEROSPACE_LOADING_FAILED(LEVEL.ERROR, SERVER_CATEGORY.PROTOCOL, "Loading CanAerospace database failed {}"),
+  CANAEROSPACE_PROTOCOL_CREATED_AND_BOUND(LEVEL.INFO, SERVER_CATEGORY.PROTOCOL, "loaded and bound to {} device"),
+  CANAEROSPACE_PROTOCOL_CLOSING(LEVEL.INFO, SERVER_CATEGORY.PROTOCOL, "Bound to {} device is closing"),
+  CANAEROSPACE_PROTOCOL_PARSING_PACKET(LEVEL.DEBUG, SERVER_CATEGORY.PROTOCOL, "Parsing inbound packet {}"),
+  CANAEROSPACE_PROTOCOL_PARSED_KNOWN_PACKET(LEVEL.DEBUG, SERVER_CATEGORY.PROTOCOL, "Parsed to known data pgn:{}"),
+  CANAEROSPACE_PROTOCOL_PARSED_UNKNOWN_PACKET(LEVEL.DEBUG, SERVER_CATEGORY.PROTOCOL, "Parsed unknown data pgn:{}"),
+  CANAEROSPACE_PROTOCOL_INBOUND_HANDLER_ERROR(LEVEL.ERROR, SERVER_CATEGORY.PROTOCOL, "Exception raised during inbound handler {}"),
+  CANAEROSPACE_PROTOCOL_CANBUS_BUILD_ERROR(LEVEL.ERROR, SERVER_CATEGORY.PROTOCOL, "Exception raised attempting to build canbus frame {}"),
+  // </editor-fold>
+
+  // <editor-fold desc="Write Task log messages">
+  AGGREGATOR_MANAGER_TASK_CREATED(LEVEL.INFO, SERVER_CATEGORY.ENGINE, "Aggregator Manager created with {} aggregators"),
+  AGGREGATOR_MANAGER_TASK_CREATED_NO_CONFIG(LEVEL.INFO, SERVER_CATEGORY.ENGINE, "Aggregator Manager created with no aggregators"),
+  AGGREGATOR_MANAGER_TASK_STARTED(LEVEL.INFO, SERVER_CATEGORY.ENGINE, "Aggregator Manager started {} aggregators"),
+  AGGREGATOR_MANAGER_TASK_STOPPED(LEVEL.INFO, SERVER_CATEGORY.ENGINE, "Aggregator Manager stopped {} aggregators"),
+  AGGREGATOR_STARTED(LEVEL.INFO, SERVER_CATEGORY.ENGINE, "Aggregator started with {} handlers"),
+  AGGREGATOR_EXCEPTION(LEVEL.ERROR, SERVER_CATEGORY.ENGINE, "Aggregator {} failed to started, raised exception"),
+  AGGREGATOR_STOPPED(LEVEL.INFO, SERVER_CATEGORY.ENGINE, "Aggregator stopped with {} handlers"),
+  AGGREGATOR_COMPLETED(LEVEL.INFO, SERVER_CATEGORY.ENGINE, "Aggregator {}, completed with {} events"),
+  AGGREGATOR_COMPLETION_EXCEPTION(LEVEL.ERROR, SERVER_CATEGORY.ENGINE, "Aggregator {} completion task failed to complete, raised exception"),
+  AGGREGATOR_EVENT_RECEIVED(LEVEL.INFO, SERVER_CATEGORY.ENGINE, "Aggregator {} received event from {}"),
+  AGGREGATOR_EVENT_DROPPED(LEVEL.WARN, SERVER_CATEGORY.ENGINE, "Aggregator {} dropped event from {}"),
+  AGGREGATOR_QUEUE_OFFER(LEVEL.DEBUG, SERVER_CATEGORY.ENGINE, "Mailbox queue offered envelope for {}"),
+  AGGREGATOR_QUEUE_DRAIN(LEVEL.DEBUG, SERVER_CATEGORY.ENGINE, "Mailbox queue drained {} items"),
+  AGGREGATOR_SUBSCRIPTION_ADDED(LEVEL.DEBUG, SERVER_CATEGORY.ENGINE, "Adding subscription to {}"),
+
+  // </editor-fold>
+
   // <editor-fold desc="Loop connection log messages">
   LOOP_CREATED(LEVEL.DEBUG, SERVER_CATEGORY.PROTOCOL, "loop protocol connection created"),
   LOOP_CLOSED(LEVEL.DEBUG, SERVER_CATEGORY.PROTOCOL, "loop protocol connection closed"),
@@ -431,9 +504,9 @@ public enum ServerLogMessages implements LogMessage {
   PROTOCOL_ACCEPT_SCANNING(LEVEL.DEBUG, SERVER_CATEGORY.PROTOCOL, "Scanning packet :{}"),
   PROTOCOL_ACCEPT_COMPLETE(LEVEL.DEBUG, SERVER_CATEGORY.PROTOCOL, "Selector callback completed"),
   PROTOCOL_ACCEPT_EXCEPTION(LEVEL.DEBUG, SERVER_CATEGORY.PROTOCOL, "Exception raised during close of end point"),
-  PROTOCOL_ACCEPT_FAILED_DETECT(LEVEL.WARN, SERVER_CATEGORY.PROTOCOL, "Failed to detect protocol on End Point {}"),
+  PROTOCOL_ACCEPT_FAILED_DETECT(LEVEL.WARN, SERVER_CATEGORY.PROTOCOL, "Failed to detect protocol on End Point {}, ip={}"),
   PROTOCOL_ACCEPT_CREATED(LEVEL.WARN, SERVER_CATEGORY.PROTOCOL, "Created Protocol {}"),
-  PROTOCOL_ACCEPT_CLOSED(LEVEL.WARN, SERVER_CATEGORY.PROTOCOL, "EndPoint closed during protocol negotiation"),
+  PROTOCOL_ACCEPT_CLOSED(LEVEL.WARN, SERVER_CATEGORY.PROTOCOL, "EndPoint closed during protocol negotiation ip={}"),
   // </editor-fold>
 
   // <editor-fold desc="JMX specific log messages">
@@ -455,6 +528,7 @@ public enum ServerLogMessages implements LogMessage {
   PROPERTY_MANAGER_LOAD_FAILED(LEVEL.WARN, SERVER_CATEGORY.ENGINE, "Failed to load property {}"),
   PROPERTY_MANAGER_ENTRY_LOOKUP(LEVEL.DEBUG, SERVER_CATEGORY.ENGINE, "Lookup for {} found {} in {}"),
   PROPERTY_MANAGER_ENTRY_LOOKUP_FAILED(LEVEL.DEBUG, SERVER_CATEGORY.ENGINE, "Lookup for {} not found, returning default {}"),
+  PROPERTY_MANAGER_ENTRY_SCHEMA_ERROR(LEVEL.WARN, SERVER_CATEGORY.ENGINE, "Configuration for {} failed schema validation at {}"),
   // </editor-fold>
 
   //<editor-fold desc="Destination Manager log messages">
@@ -679,6 +753,17 @@ public enum ServerLogMessages implements LogMessage {
   COAP_BLOCK2_REQUEST(LEVEL.TRACE, SERVER_CATEGORY.PROTOCOL, "Block2 packet received, Message No: {}, Block Size: {}, has more:{}"),
   //</editor-fold>
 
+  //<editor-fold desc="Schema Manager, log messages">
+  SCHEMA_MANAGER_STARTUP(LEVEL.INFO, SERVER_CATEGORY.ENGINE, "Schema Manager starting up"),
+  SCHEMA_MANAGER_LOADED_CONFIG(LEVEL.INFO, SERVER_CATEGORY.ENGINE, "Loaded configuration from file name:{} UUID:{} type:{}"),
+  SCHEMA_MANAGER_LOADED_BUNDLED(LEVEL.INFO, SERVER_CATEGORY.ENGINE, "Loaded bundled schema {} from name:{} UUID:{} type:{} "),
+  SCHEMA_MANAGER_LOADED_CONFIG_FAILED(LEVEL.WARN, SERVER_CATEGORY.ENGINE, "Failed to loaded configuration from file {} of type:{}"),
+
+  SCHEMA_MESSAGE_FORMAT(LEVEL.INFO, SERVER_CATEGORY.ENGINE, "Message format for {} is {}"),
+  SCHEMA_MESSAGE_DROP(LEVEL.INFO, SERVER_CATEGORY.ENGINE, "Message is dropped for {}"),
+  //</editor-fold>
+
+
   //<editor-fold desc="Device Integration, log messages">
   DEVICE_SELECTOR_PARSER_EXCEPTION(LEVEL.INFO, SERVER_CATEGORY.DEVICE, "Selection {}, failed to parse with the following exception {}"),
   DEVICE_SCHEMA_UPDATED(LEVEL.WARN, SERVER_CATEGORY.DEVICE, "Device {} schema configuration updated"),
@@ -687,7 +772,8 @@ public enum ServerLogMessages implements LogMessage {
   DEVICE_PUBLISH_EXCEPTION(LEVEL.INFO, SERVER_CATEGORY.DEVICE, "Event publish failed {}"),
   DEVICE_START(LEVEL.INFO, SERVER_CATEGORY.DEVICE, "Starting device {}"),
   DEVICE_STOP(LEVEL.INFO, SERVER_CATEGORY.DEVICE, "Stopping device {}"),
-
+  DEVICE_SCHEDULE_TASK_FAILED(LEVEL.WARN, SERVER_CATEGORY.DEVICE, "Scheduled task for device failed"),
+  DEVICE_SCHEDULE_TASK_EXCCEDED_TIME(LEVEL.INFO, SERVER_CATEGORY.DEVICE, "Scheduled task exceeded time limit, took {}ms"),
   DEVICE_MANAGER_STARTUP(LEVEL.DEBUG, SERVER_CATEGORY.ENGINE, "Starting Device Manager"),
   DEVICE_MANAGER_STARTUP_FAILED(LEVEL.WARN, SERVER_CATEGORY.ENGINE, "Device Manager failed to start"),
   DEVICE_MANAGER_FAILED_TO_REGISTER(LEVEL.INFO, SERVER_CATEGORY.DEVICE, "Failed to register device"),
@@ -697,6 +783,7 @@ public enum ServerLogMessages implements LogMessage {
   DEVICE_MANAGER_RESUME_ALL(LEVEL.DEBUG, SERVER_CATEGORY.ENGINE, "Resuming all registered devices"),
   DEVICE_MANAGER_LOAD_PROPERTIES(LEVEL.DEBUG, SERVER_CATEGORY.ENGINE, "Loading Device Manager Properties"),
   DEVICE_MANAGER_STARTUP_COMPLETE(LEVEL.DEBUG, SERVER_CATEGORY.ENGINE, "Completed startup Device Manager"),
+  DEVICE_MANAGER_MOUNT_FAILED(LEVEL.WARN, SERVER_CATEGORY.DEVICE, "Exception raised mounting device {}"),
   //</editor-fold>
 
   //<editor-fold desc="Network Interface status log messages">
@@ -792,9 +879,10 @@ public enum ServerLogMessages implements LogMessage {
   SATELLITE_SENT_RAW_MESSAGE(LEVEL.INFO, SERVER_CATEGORY.NETWORK, "Sent SIN:{} MIN:{} length {}"),
   SATELLITE_FILTER_FAILED(LEVEL.FATAL, SERVER_CATEGORY.NETWORK, "Filter failed to process {}"),
   SATELLITE_QUEUED_PENDING_MESSAGE(LEVEL.INFO, SERVER_CATEGORY.NETWORK, "Queued message for {}, current queue depth {}"),
+  SATELLITE_SUBSCRIBE_TO(LEVEL.INFO, SERVER_CATEGORY.NETWORK, "Subscribing to {} for {}"),
   SATELLITE_SENT_PACKED_MESSAGES(LEVEL.INFO, SERVER_CATEGORY.NETWORK, "Sent using SIN:{}, total messages:{}, with total size:{}"),
   SATELLITE_RECEIVED_RAW_MESSAGE(LEVEL.INFO, SERVER_CATEGORY.NETWORK, "Received raw message SIN:{}, MIN:{}, size:{}, publishing to {}"),
-  SATELLITE_RECEIVED_PACKED_MESSAGE(LEVEL.INFO, SERVER_CATEGORY.NETWORK, "Received packed messages to {} destinations, for a total of {} messages, from buffer of size:{}"),
+  SATELLITE_RECEIVED_PACKED_MESSAGE(LEVEL.INFO, SERVER_CATEGORY.NETWORK, "Received packed messages to {} destinations, for a total of {} messages, from buffer of size:{} from raw length:{}"),
   SATELLITE_SCANNING_FOR_INCOMING(LEVEL.INFO, SERVER_CATEGORY.NETWORK, "Scanning for incoming messages, returned {} messages"),
 
   EVALUATION_START(LEVEL.TRACE, SERVER_CATEGORY.NETWORK, "Evaluating link selection"),
@@ -805,6 +893,31 @@ public enum ServerLogMessages implements LogMessage {
   EXCEPTION_DURING_EVALUATION(LEVEL.ERROR, SERVER_CATEGORY.NETWORK, "Exception during link evaluation: {}"),
 
   STATISTICS_UNKNOWN_NAME(LEVEL.FATAL, SERVER_CATEGORY.PROTOCOL, "Unknown statistics name found {}, defaulting to {}"),
+
+
+  // <editor-fold desc="Twin Manager">
+  TWIN_REGISTERED(LEVEL.INFO, SERVER_CATEGORY.STATE, "Registered twin {} of type {}"),
+  TWIN_REGISTER_EXISTING(LEVEL.DEBUG, SERVER_CATEGORY.STATE, "Twin {} already exists, returning existing instance"),
+  TWIN_UPDATED(LEVEL.DEBUG, SERVER_CATEGORY.STATE, "Updated twin {}"),
+  TWIN_REMOVED(LEVEL.INFO, SERVER_CATEGORY.STATE, "Removed twin {}"),
+  TWIN_STATUS_CHANGED(LEVEL.INFO, SERVER_CATEGORY.STATE, "Twin {} status changed from {} to {}"),
+  TWIN_RELATIONSHIP_UPSERTED(LEVEL.DEBUG, SERVER_CATEGORY.STATE, "Upserted relationship {} -> {} type {} for twin {}"),
+  TWIN_RELATIONSHIP_REMOVED(LEVEL.DEBUG, SERVER_CATEGORY.STATE, "Removed relationship {} -> {} type {} for twin {}"),
+  TWIN_PURGED(LEVEL.INFO, SERVER_CATEGORY.STATE, "Purged expired twin {}"),
+  TWIN_OBSERVER_CALLBACK_FAILED(LEVEL.ERROR, SERVER_CATEGORY.STATE, "Twin observer callback failed for twin {} during {}"),
+  // </editor-fold>
+
+
+  // <editor-fold desc="State Manager">
+  STATE_MANAGER_START(LEVEL.INFO, SERVER_CATEGORY.STATE, "StateManagerAgent starting"),
+  STATE_MANAGER_STARTED(LEVEL.INFO, SERVER_CATEGORY.STATE, "StateManagerAgent started"),
+  STATE_MANAGER_STOP(LEVEL.INFO, SERVER_CATEGORY.STATE, "StateManagerAgent stopping"),
+  STATE_MANAGER_STOPPED(LEVEL.INFO, SERVER_CATEGORY.STATE, "StateManagerAgent stopped"),
+  STATE_MANAGER_TAK_ENABLED(LEVEL.INFO, SERVER_CATEGORY.STATE, "TAK observer enabled"),
+  STATE_MANAGER_PUBLISH_ENABLED(LEVEL.INFO, SERVER_CATEGORY.STATE, "Twin JSON publisher enabled with topic {}"),
+  STATE_MANAGER_PUBLISH_FAILED(LEVEL.ERROR, SERVER_CATEGORY.STATE, "Failed to start Twin JSON publisher"),
+  STATE_MANAGER_SCHEDULER_ERROR(LEVEL.ERROR, SERVER_CATEGORY.STATE, "Scheduler task failed"),
+  // </editor-fold>
 
   //-------------------------------------------------------------------------------------------------------------
   LAST_LOG_MESSAGE(LEVEL.DEBUG, SERVER_CATEGORY.PROTOCOL, "Last message to make it simpler to add more");
@@ -839,6 +952,7 @@ public enum ServerLogMessages implements LogMessage {
     DEVICE("Device"),
     LICENSE("License"),
     DAEMON("Daemon"),
+    STATE("State"),
     ENGINE("Engine");
 
     private final @Getter String description;

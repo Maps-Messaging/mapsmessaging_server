@@ -1,7 +1,7 @@
 /*
  *
  *  Copyright [ 2020 - 2024 ] Matthew Buckton
- *  Copyright [ 2024 - 2025 ] MapsMessaging B.V.
+ *  Copyright [ 2024 - 2026 ] MapsMessaging B.V.
  *
  *  Licensed under the Apache License, Version 2.0 with the Commons Clause
  *  (the "License"); you may not use this file except in compliance with the License.
@@ -26,6 +26,7 @@ import io.mapsmessaging.api.features.Priority;
 import io.mapsmessaging.api.features.QualityOfService;
 import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.api.message.TypedData;
+import io.mapsmessaging.api.transformers.ParsedMessage;
 import io.mapsmessaging.engine.destination.MessageOverrides;
 import io.mapsmessaging.logging.ServerLogMessages;
 import io.mapsmessaging.network.io.EndPoint;
@@ -189,20 +190,25 @@ public class PublishListener5 extends PacketListener5 {
         return response;
       }
       try {
-        Destination destination = session.findDestination(lookup, DestinationType.TOPIC).get();
+        Message message =
+            createMessage(
+                session.getName(),
+                publish.getProperties().values(),
+                publish.getPriority(),
+                publish.isRetain(),
+                publish.getPayload(),
+                publish.getQos(),
+                protocol.getProtocolMessageTransformation(),
+                protocol);
+        ParsedMessage parsed = protocol.parseInboundMessage(lookup, message);
         int sent = 0;
-        if (destination != null) {
-          Message message =
-              createMessage(
-                  session.getName(),
-                  publish.getProperties().values(),
-                  publish.getPriority(),
-                  publish.isRetain(),
-                  publish.getPayload(),
-                  publish.getQos(),
-                  protocol.getProtocolMessageTransformation(),
-                  protocol);
-          sent = processMessage(message, publish, session, response, destination);
+        if(parsed != null){
+          lookup = parsed.getDestinationName();
+          message = parsed.getMessage();
+          Destination destination = session.findDestination(lookup, DestinationType.TOPIC).get();
+          if (destination != null) {
+            sent = processMessage(message, publish, session, response, destination);
+          }
         }
 
         if (response != null) {

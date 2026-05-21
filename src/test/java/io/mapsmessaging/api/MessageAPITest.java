@@ -1,7 +1,7 @@
 /*
  *
  *  Copyright [ 2020 - 2024 ] Matthew Buckton
- *  Copyright [ 2024 - 2025 ] MapsMessaging B.V.
+ *  Copyright [ 2024 - 2026 ] MapsMessaging B.V.
  *
  *  Licensed under the Apache License, Version 2.0 with the Commons Clause
  *  (the "License"); you may not use this file except in compliance with the License.
@@ -34,10 +34,9 @@ import org.junit.jupiter.api.BeforeEach;
 public class MessageAPITest extends BaseTestConfig {
 
   protected EngineManager engineManager;
-  protected SecurityManager previous;
 
   @BeforeEach
-  public void setupTest() throws IOException {
+  void setupTest() throws IOException {
     if(!BaseTestConfig.md.isStarted()){
       BaseTestConfig.md.start();
     }
@@ -46,34 +45,8 @@ public class MessageAPITest extends BaseTestConfig {
   }
 
   @AfterEach
-  public void resetState() {
+  void resetState() {
     engineManager.reset();
-  }
-
-  public Session createSession(String name, int keepAlive, int expiry, boolean persistent, MessageListener listener) throws LoginException, IOException {
-    return createSession(name, keepAlive, expiry, persistent, listener, false);
-  }
-
-  public Session createSession(String name, int keepAlive, int expiry, boolean persistent, MessageListener listener, boolean resetState) throws LoginException, IOException {
-    Protocol fakeProtocol = new FakeProtocol(listener);
-    SessionContextBuilder scb = new SessionContextBuilder(name, new ProtocolClientConnection(fakeProtocol));
-    scb.setPersistentSession(true)
-        .setPersistentSession(persistent)
-        .setResetState(resetState)
-        .setSessionExpiry(expiry);
-    return createSession(scb, fakeProtocol);
-  }
-
-  public Session createSession(SessionContextBuilder scb, MessageListener listener) throws LoginException, IOException {
-    Session session = SessionManager.getInstance().create(scb.build(), listener);
-    session.login();
-    session.resumeState();
-    //Assertions.assertTrue(session.isRestored());
-    return session;
-  }
-
-  public void close(Session session) throws IOException {
-    SessionManager.getInstance().close(session, false);
   }
 
   public boolean hasSessions(){

@@ -13,6 +13,34 @@ DestinationManager:
         type: WeakReference
         writeThrough: enable
 
+
+    - name: root
+      directory: ./target/dataDirectory/compute
+      namespace: /compute
+      type: Memory
+      sync: disable
+      itemCount: 20000
+      format:
+        name: json
+
+    - name: root
+      directory: ./target/dataDirectory/stats
+      namespace: /stats
+      type: Memory
+      sync: disable
+      itemCount: 20000
+      format:
+        name: json
+
+    - name: root
+      directory: ./target/dataDirectory/aggregator3
+      namespace: /aggregator3
+      type: Memory
+      sync: disable
+      itemCount: 20000
+      format:
+        name: json
+
     - name: mqtt-sn
       directory: ./target/dataMqttSn
       namespace: /mqttsn/
