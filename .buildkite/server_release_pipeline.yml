@@ -1,37 +1,17 @@
 steps:
   - label: ":maven: Build and release to github"
     command:
-      - |
-        set -euo pipefail
+      - wget https://github.com/Maps-Messaging/web-admin-client/releases/download/maps_web_client_1.0.1/webAdminClient.tgz
+      - tar -xvzf ./webAdminClient.tgz
+      - if [ ! -d "out" ]; then echo "'out' directory missing after extraction"; exit 1; fi
+      - chmod +x ./packaging/scripts/prepare_build.sh
+      - ./packaging/scripts/prepare_build.sh
+      - mvn -DskipTests=true clean package -U
+      - chmod +x ./packaging/*.sh
+      - chmod +x ./packaging/scripts/*
 
-        DOCKER_USER="$(buildkite-agent secret get DOCKER_USER)"
-        DOCKER_PASSWORD="$(buildkite-agent secret get DOCKER_PASSWORD)"
-        AWS_ECR_PASSWORD="$(buildkite-agent secret get AWS_ECR_PASSWORD)"
-
-        echo "Docker user: ${DOCKER_USER}"
-        echo "Docker token length: $(printf '%s' "${DOCKER_PASSWORD}" | wc -c)"
-        echo "Docker token prefix: $(printf '%s' "${DOCKER_PASSWORD}" | cut -c1-4)"
-
-        echo "${DOCKER_PASSWORD}" | sudo docker login --username "${DOCKER_USER}" --password-stdin
-
-        wget https://github.com/Maps-Messaging/web-admin-client/releases/download/maps_web_client_1.0.1/webAdminClient.tgz
-        tar -xvzf ./webAdminClient.tgz
-
-        if [ ! -d "out" ]; then
-          echo "'out' directory missing after extraction"
-          exit 1
-        fi
-
-        chmod +x ./packaging/scripts/prepare_build.sh
-        ./packaging/scripts/prepare_build.sh
-
-        mvn -DskipTests=true clean package -U
-
-        chmod +x ./packaging/*.sh
-        ./packaging/github_release.sh "$(buildkite-agent secret get GIT_HUB_TOKEN)"
-
-        chmod +x ./packaging/scripts/*
-        sudo ./packaging/docker_build_release.sh "${DOCKER_USER}" "${DOCKER_PASSWORD}" "${AWS_ECR_PASSWORD}"
+      - sudo ./packaging/docker_build_release.sh $(buildkite-agent secret get DOCKER_USER) $(buildkite-agent secret get DOCKER_PASSWORD) $(buildkite-agent secret get AWS_ECR_PASSWORD)
 
     agents:
       queue: "java_build_queue"
+
