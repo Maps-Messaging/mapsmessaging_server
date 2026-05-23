@@ -93,6 +93,10 @@ public class Message implements IdentifierResolver, Storable {
   @Getter
   @Setter
   private boolean lastMessage; // This is set via the engine as it is delivered to the client
+
+  @Getter
+  @Setter
+  private transient String destinationName; // Set by the engine before delivering to an Analyser
   // </editor-fold>
   // <editor-fold desc="Persistent data">
   @Getter
