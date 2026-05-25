@@ -233,6 +233,7 @@ public class MavlinkProtocol extends Protocol {
 
   protected String computeTopicName(String template, Frame envelope, String messageName) {
     template = template.replace("{remoteSocket}", getRemoteSocket());
+    template = template.replace("{systemName}", ""+envelope.getSystemId());
     template = template.replace("{systemId}", ""+envelope.getSystemId());
     template = template.replace("{componentId}", ""+envelope.getComponentId());
     template = template.replace("{messageId}", ""+envelope.getMessageId());
