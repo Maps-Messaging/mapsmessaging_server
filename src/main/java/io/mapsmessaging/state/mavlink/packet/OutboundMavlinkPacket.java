@@ -19,23 +19,12 @@
 
 package io.mapsmessaging.state.mavlink.packet;
 
-public class MavlinkMessageIds {
+import java.util.Map;
 
-  public static final int HEARTBEAT = 0;
-  public static final int SYS_STATUS = 1;
-  public static final int SYSTEM_TIME = 2;
-  public static final int GPS_RAW_INT = 24;
-  public static final int ATTITUDE = 30;
-  public static final int GLOBAL_POSITION_INT = 33;
-  public static final int MISSION_CURRENT = 42;
-  public static final int COMMAND_ACK = 77;
-  public static final int ALTITUDE = 141;
-  public static final int BATTERY_STATUS = 147;
-  public static final int AUTOPILOT_VERSION = 148;
-  public static final int HOME_POSITION = 242;
-  public static final int EXTENDED_SYS_STATE = 245;
-  public static final int STATUSTEXT = 253;
+public abstract class OutboundMavlinkPacket {
 
-  private MavlinkMessageIds() {
-  }
+  public abstract String getMessageName();
+
+  public abstract Map<String, Object> toFields();
+
 }

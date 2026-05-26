@@ -74,8 +74,12 @@ public class MavlinkSerialProtocol extends MavlinkProtocol {
         processRawFrame(env, raw);
       }
       else{
+        endPoint.getEndPointStatus().incrementOverFlow();
         logger.log(MAVLINK_STATE_UNKNOWN_PACKET_IGNORED, env.getFrame().getSystemId()+"/"+env.getFrame().getComponentId()+"/"+env.getFrame().getMessageId()+" - "+env.getFrame().getValidated().name());
       }
+    }
+    else{
+      endPoint.getEndPointStatus().incrementUnderFlow();
     }
     packet.clear();
     endPoint.register(SelectionKey.OP_READ, selectorTask.getReadTask());

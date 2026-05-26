@@ -23,6 +23,39 @@ import java.util.Map;
 
 public abstract class MavlinkPacket {
 
+  protected int[] getIntArray(Map<String, Object> fields, String key) {
+    Object value = fields.get(key);
+    if (value == null) {
+      return new int[0];
+    }
+
+    if (value instanceof int[] data) {
+      return data.clone();
+    }
+
+    if (value instanceof short[] data) {
+      int[] result = new int[data.length];
+      for (int index = 0; index < data.length; index++) {
+        result[index] = data[index] & 0xFFFF;
+      }
+      return result;
+    }
+
+    if (value instanceof byte[] data) {
+      int[] result = new int[data.length];
+      for (int index = 0; index < data.length; index++) {
+        result[index] = data[index] & 0xFF;
+      }
+      return result;
+    }
+
+    if (value instanceof Number number) {
+      return new int[] {number.intValue()};
+    }
+
+    return new int[0];
+  }
+
   protected int getInt(Map<String, Object> fields, String key) {
     Object value = fields.get(key);
     if (value == null) {

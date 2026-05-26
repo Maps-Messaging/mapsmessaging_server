@@ -225,6 +225,34 @@ public class DroneTwin extends EntityTwin {
   )
   private Instant operationalUpdatedAt;
 
+  @Schema(
+      description = "Last status text message reported by the vehicle.",
+      example = "GPS Glitch",
+      nullable = true
+  )
+  private String lastStatusText;
+
+  @Schema(
+      description = "Last command id acknowledged by the vehicle.",
+      example = "400",
+      nullable = true
+  )
+  private Integer lastAcknowledgedCommand;
+
+  @Schema(
+      description = "Last command acknowledgement result.",
+      example = "ACCEPTED",
+      nullable = true
+  )
+  private String lastCommandAcknowledgement;
+
+  @Schema(
+      description = "Timestamp of the last command acknowledgement.",
+      example = "2026-05-26T05:10:00Z",
+      nullable = true
+  )
+  private Instant lastCommandAcknowledgementAt;
+
   public String getProtocolSourceId() {
     if (systemId == null || componentId == null) {
       return null;

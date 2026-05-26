@@ -127,6 +127,8 @@ public class MavlinkProtocol extends Protocol {
 
 
   public void processRawFrame(ProcessedFrame env, byte[] raw) throws IOException {
+    endPoint.getEndPointStatus().incrementReceivedMessages();
+    endPoint.updateReadBytes(raw.length);
     if(mavlinkConfig.getStatusTopicNameTemplate() != null && !mavlinkConfig.getStatusTopicNameTemplate().isEmpty() ) {
       SequenceResult results = tracker.accept(env.getFrame().getSequence());
       if (results.isStatusChanged()) {
