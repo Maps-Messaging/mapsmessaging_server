@@ -20,8 +20,12 @@
 package io.mapsmessaging.network.protocol.impl.mavlink;
 
 import io.mapsmessaging.dto.rest.config.protocol.ProtocolConfigDTO;
+import io.mapsmessaging.dto.rest.config.protocol.impl.MavlinkConfigDTO;
+import io.mapsmessaging.logging.Logger;
+import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.mavlink.MavlinkEventFactory;
 import io.mapsmessaging.mavlink.ProcessedFrame;
+import io.mapsmessaging.mavlink.context.FrameFailureReason;
 import io.mapsmessaging.network.io.EndPoint;
 import io.mapsmessaging.network.io.Packet;
 import io.mapsmessaging.network.io.impl.SelectorTask;
@@ -35,18 +39,24 @@ import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
 import java.util.Optional;
 
+import static io.mapsmessaging.logging.ServerLogMessages.MAVLINK_STATE_UNKNOWN_PACKET_IGNORED;
+
 public class MavlinkSerialProtocol extends MavlinkProtocol {
   private static final MavlinkDeviceKey DUMMY_KEY = new MavlinkDeviceKey(0, InetSocketAddress.createUnresolved("localhost", 0), 0);
 
+  private final Logger logger = LoggerFactory.getLogger(MavlinkSerialProtocol.class);
   private final SelectorTask selectorTask;
   private final MavlinkEventFactory mavlinkEventFactory;
 
   protected MavlinkSerialProtocol(@NonNull @NotNull EndPoint endPoint,
                                   @NotNull @NonNull ProtocolConfigDTO protocolConfig) throws IOException {
     super(key1 -> {}, DUMMY_KEY, endPoint, protocolConfig);
-    mavlinkEventFactory  = new MavlinkEventFactory();
+    MavlinkConfigDTO mavlinkConfigDTO = (MavlinkConfigDTO) protocolConfig;
+    String dialectName = mavlinkConfigDTO.getDialectName();
+    mavlinkEventFactory  = MavlinkInterfaceManager.loadDialect(dialectName);
     if(endPoint instanceof SerialEndPoint serialEndPoint){
-      serialEndPoint.setStreamHandler(new MavlinkStreamHandler());
+      MavlinkStreamHandler handler = new MavlinkStreamHandler();
+      serialEndPoint.setStreamHandler(handler);
     }
     selectorTask = new SelectorTask(this, endPoint.getConfig().getEndPointConfig());
     endPoint.register(SelectionKey.OP_READ, selectorTask.getReadTask());
@@ -60,7 +70,12 @@ public class MavlinkSerialProtocol extends MavlinkProtocol {
     Optional<ProcessedFrame> potentialFrame = mavlinkEventFactory.unpack(endPoint.getName(), ByteBuffer.wrap(raw));
     if(potentialFrame.isPresent()) {
       ProcessedFrame env = potentialFrame.get();
-      processRawFrame(env, raw);
+      if(env.getFrame().getValidated() == FrameFailureReason.OK || env.getFrame().getValidated() == FrameFailureReason.UNSIGNED){
+        processRawFrame(env, raw);
+      }
+      else{
+        logger.log(MAVLINK_STATE_UNKNOWN_PACKET_IGNORED, env.getFrame().getSystemId()+"/"+env.getFrame().getComponentId()+"/"+env.getFrame().getMessageId()+" - "+env.getFrame().getValidated().name());
+      }
     }
     packet.clear();
     endPoint.register(SelectionKey.OP_READ, selectorTask.getReadTask());
