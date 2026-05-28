@@ -116,7 +116,12 @@ public class SubSystemManager {
           service.add(parser);
         }
       } catch (ServiceConfigurationError e) {
-        logger.log(ServerLogMessages.MESSAGE_DAEMON_PROTOCOL_NOT_AVAILABLE, e);
+        if(!e.getMessage().contains("Provider io.mapsmessaging.network.protocol")){
+          logger.log(ServerLogMessages.MESSAGE_DAEMON_PROTOCOL_NOT_AVAILABLE, e);
+        }
+        else{
+          logger.log(ServerLogMessages.MESSAGE_DAEMON_EXTENSION_PROTOCOL_NOT_AVAILABLE, e.getMessage());
+        }
       }
     }
     ProtocolFactory.setProtocolServiceList(service);
