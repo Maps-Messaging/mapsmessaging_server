@@ -52,6 +52,7 @@ import io.mapsmessaging.utilities.collections.NaturalOrderedLongList;
 import io.mapsmessaging.utilities.collections.bitset.BitSetFactory;
 import io.mapsmessaging.utilities.collections.bitset.BitSetFactoryImpl;
 import io.mapsmessaging.utilities.filtering.NamespaceFilters;
+import io.mapsmessaging.utilities.threads.SimpleTaskScheduler;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.Setter;
@@ -65,6 +66,8 @@ import java.nio.channels.ClosedChannelException;
 import java.nio.channels.SelectionKey;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
 
 // Between MQTT 3/4 and 5 there is duplicate code base, yes this is by design
 @java.lang.SuppressWarnings("DuplicatedBlocks")
@@ -111,6 +114,9 @@ public class MQTT5Protocol extends Protocol {
   private boolean sendProblemInformation;
   @Getter
   private final MqttConfig mqttConfig;
+
+  private ScheduledFuture<?> connectionTimeOut = null;
+
 
   public MQTT5Protocol(EndPoint endPoint) throws IOException {
     super(endPoint, endPoint.getConfig().getProtocolConfig("mqtt"));
@@ -194,10 +200,20 @@ public class MQTT5Protocol extends Protocol {
       connect.setWillProperties(willMsg.getProperties());
     }
     connect.setSessionId(sessionId);
+    connectionTimeOut = SimpleTaskScheduler.getInstance().schedule(new ConnectCompletionTimeout(this), 1, TimeUnit.MINUTES);
     writeFrame(connect);
     registerRead();
     completedConnection();
   }
+
+  public void setConnected(boolean connected) {
+    super.setConnected(connected);
+    if (connectionTimeOut != null) {
+      connectionTimeOut.cancel(true);
+      connectionTimeOut = null;
+    }
+  }
+
 
   public void registerRead() throws IOException {
     selectorTask.register(SelectionKey.OP_READ);
@@ -341,6 +357,17 @@ public class MQTT5Protocol extends Protocol {
     SubscriptionContext subInfo = subscription.getContext();
     QualityOfService qos = QualityOfService.getInstance(Math.min(subInfo.getQualityOfService().getLevel(), message.getQualityOfService().getLevel()));
     int packetId = getPacketId(qos, subscription, message);
+    Runnable r;
+    if(subInfo.getQualityOfService().getLevel() != 0 && qos.getLevel() == 0) {
+      r = () -> {
+        completionTask.run();
+        subscription.ackReceived(message.getIdentifier());
+      };
+    }
+    else {
+      r = completionTask;
+    }
+
     TopicAlias alias = serverTopicAliasMapping.find(normalisedName);
     String destinationName = normalisedName;
     if (alias != null) {
@@ -362,7 +389,7 @@ public class MQTT5Protocol extends Protocol {
       publish.add(alias);
     }
     addProperties(message, publish, subscription);
-    publish.setCallback(completionTask);
+    publish.setCallback(r);
     writeFrame(publish);
   }
 
