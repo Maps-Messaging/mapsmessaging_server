@@ -45,8 +45,10 @@ import io.mapsmessaging.network.protocol.Protocol;
 import io.mapsmessaging.network.protocol.impl.mqtt.listeners.PacketListener;
 import io.mapsmessaging.network.protocol.impl.mqtt.listeners.PacketListenerFactory;
 import io.mapsmessaging.network.protocol.impl.mqtt.packet.*;
+import io.mapsmessaging.network.protocol.impl.mqtt5.ConnectCompletionTimeout;
 import io.mapsmessaging.selector.operators.ParserExecutor;
 import io.mapsmessaging.utilities.filtering.NamespaceFilters;
+import io.mapsmessaging.utilities.threads.SimpleTaskScheduler;
 import lombok.Getter;
 import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
@@ -57,6 +59,8 @@ import java.io.IOException;
 import java.nio.channels.SelectionKey;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
 
 
 @java.lang.SuppressWarnings("DuplicatedBlocks")
@@ -77,6 +81,7 @@ public class MQTTProtocol extends Protocol {
   @Getter
   private Session session;
 
+  private ScheduledFuture<?> connectionTimeOut = null;
 
   public MQTTProtocol(EndPoint endPoint) throws IOException {
     super(endPoint, endPoint.getConfig().getProtocolConfig("mqtt"));
@@ -137,10 +142,22 @@ public class MQTTProtocol extends Protocol {
       connect.setWillFlag(true);
       connect.setWillTopic(willMsg.getDestinationName());
     }
+    connectionTimeOut = SimpleTaskScheduler.getInstance().schedule(new ConnectCompletionTimeout(this), 1, TimeUnit.MINUTES);
     writeFrame(connect);
     registerRead();
     completedConnection();
   }
+
+
+  public void setConnected(boolean connected) {
+    super.setConnected(connected);
+    if (connectionTimeOut != null) {
+      connectionTimeOut.cancel(true);
+      connectionTimeOut = null;
+    }
+  }
+
+
 
   @Override
   public void subscribeRemote(@NonNull @NotNull String resource, @NonNull @NotNull String mappedResource, @NonNull @NotNull QualityOfService qos, @Nullable ParserExecutor parser, @Nullable InterServerTransformation transformer, StatisticsConfigDTO statistics, Map<String, Object> linkProperties) throws IOException {
