@@ -205,7 +205,7 @@ public class N2kProtocol extends Protocol {
         try {
           processPacket(formatter.parseToJson(frame.getRawData(), SchemaManager.getInstance().getDefaultParseMode()));
         } catch (ParseException e) {
-          logger.log(N2K_PROTOCOL_CANBUS_BUILD_ERROR, e);
+          logger.log(N2K_PROTOCOL_CANBUS_BUILD_ERROR, frame.canIdentifier());
         }
       }
       else{
