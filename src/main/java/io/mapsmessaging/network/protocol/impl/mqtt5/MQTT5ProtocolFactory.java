@@ -23,6 +23,7 @@ import io.mapsmessaging.api.features.QualityOfService;
 import io.mapsmessaging.dto.rest.config.network.EndPointConnectionServerConfigDTO;
 import io.mapsmessaging.dto.rest.config.network.EndPointServerConfigDTO;
 import io.mapsmessaging.dto.rest.config.network.MqttWillConfigDTO;
+import io.mapsmessaging.dto.rest.config.protocol.impl.MqttVersion;
 import io.mapsmessaging.network.io.EndPoint;
 import io.mapsmessaging.network.io.Packet;
 import io.mapsmessaging.network.protocol.Protocol;
@@ -105,7 +106,7 @@ public class MQTT5ProtocolFactory extends ProtocolImplFactory {
 
   @Override
   public boolean matches(String protocolName){
-    return super.matches(protocolName) || "mqtt-v5".equalsIgnoreCase(protocolName);
+    return super.matches(protocolName) || MqttVersion.MQTT_5.name().equalsIgnoreCase(protocolName);
   }
 
 

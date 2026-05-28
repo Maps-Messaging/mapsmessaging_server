@@ -310,10 +310,12 @@ public class MQTT5Protocol extends Protocol {
     ThreadContext.clearMap();
   }
 
+  @Override
   public String getName() {
     return "MQTT";
   }
 
+  @Override
   public String getVersion() {
     return "5.0";
   }

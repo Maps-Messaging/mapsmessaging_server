@@ -172,6 +172,7 @@ public class MQTTProtocol extends Protocol {
     session.removeSubscription(resource);
   }
 
+  @Override
   public String getVersion() {
     return "3.1.1";
   }
