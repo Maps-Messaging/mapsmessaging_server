@@ -32,6 +32,7 @@ import lombok.NoArgsConstructor;
 import lombok.ToString;
 
 import java.time.Instant;
+import java.util.List;
 
 import static io.mapsmessaging.state.drone.util.SyntheticMmsiGenerator.generateSyntheticMmsi;
 
@@ -252,6 +253,53 @@ public class DroneTwin extends EntityTwin {
       nullable = true
   )
   private Instant lastCommandAcknowledgementAt;
+
+
+  @Schema(
+      description = "Current readiness state of the vehicle twin.",
+      example = "REGISTRATION_READY",
+      nullable = true
+  )
+  private String readinessState;
+
+  @Schema(
+      description = "Indicates whether this twin has enough information to be registered upstream.",
+      example = "true",
+      nullable = true
+  )
+  private Boolean registrationReady;
+
+  @Schema(
+      description = "Indicates whether this twin has enough information to accept command execution.",
+      example = "false",
+      nullable = true
+  )
+  private Boolean commandReady;
+
+  @Schema(
+      description = "Machine-readable missing readiness items.",
+      nullable = true
+  )
+  private List<String> missingReadinessItems;
+
+  @Schema(
+      description = "Machine-readable degraded readiness items.",
+      nullable = true
+  )
+  private List<String> degradedReadinessItems;
+
+  @Schema(
+      description = "Machine-readable blocking readiness items.",
+      nullable = true
+  )
+  private List<String> blockingReadinessItems;
+
+  @Schema(
+      description = "Timestamp of the last readiness evaluation.",
+      example = "2026-05-26T05:50:00Z",
+      nullable = true
+  )
+  private Instant readinessUpdatedAt;
 
   public String getProtocolSourceId() {
     if (systemId == null || componentId == null) {

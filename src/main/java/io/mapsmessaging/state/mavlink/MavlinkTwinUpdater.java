@@ -28,6 +28,10 @@ import io.mapsmessaging.state.drone.core.EntityTwin;
 import io.mapsmessaging.state.drone.core.TwinManager;
 import io.mapsmessaging.state.drone.core.TwinUpdateContext;
 import io.mapsmessaging.state.drone.drone.DroneTwin;
+import io.mapsmessaging.state.mavlink.bootstrap.DroneTwinReadinessEvaluator;
+import io.mapsmessaging.state.mavlink.bootstrap.MavlinkBootstrapEventPublisher;
+import io.mapsmessaging.state.mavlink.bootstrap.MavlinkBootstrapProfile;
+import io.mapsmessaging.state.mavlink.bootstrap.MavlinkBootstrapStateEngine;
 import io.mapsmessaging.state.mavlink.listener.ListenerManager;
 import io.mapsmessaging.state.mavlink.packet.MavlinkPacket;
 import lombok.NonNull;
@@ -41,6 +45,7 @@ public class MavlinkTwinUpdater {
 
   private final TwinManager twinManager;
   private final ListenerManager listenerManager;
+  private final MavlinkDroneMonitor droneMonitor;
 
   public MavlinkTwinUpdater(
       @NonNull @NotNull TwinManager twinManager,
@@ -48,6 +53,13 @@ public class MavlinkTwinUpdater {
   ) {
     this.twinManager = twinManager;
     this.listenerManager = listenerManager;
+    this.droneMonitor = new MavlinkDroneMonitor(
+        twinManager,
+        new DroneTwinReadinessEvaluator(),
+        new MavlinkBootstrapStateEngine(new MavlinkBootstrapProfile()),
+        null
+    );
+    twinManager.addObserver(droneMonitor);
   }
 
   public void updateTwinState(

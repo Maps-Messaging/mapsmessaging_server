@@ -88,14 +88,6 @@ public class MavlinkInterfaceManager implements SelectorCallback, MavlinkConnect
     if(name == null || name.isBlank()) {
       return new MavlinkEventFactory();
     }
-    Path path = Path.of(name);
-    if(path.toFile().exists()) {
-      try {
-        return new MavlinkEventFactory(path);
-      } catch (ParserConfigurationException |SAXException e) {
-        logger.log(MAVLINK_DIALECT_FORMAT_FAILURES, name, e);
-      }
-    }
     return new MavlinkEventFactory(name);
   }
 

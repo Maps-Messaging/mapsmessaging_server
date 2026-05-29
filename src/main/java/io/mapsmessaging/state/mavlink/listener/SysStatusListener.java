@@ -19,12 +19,13 @@
 
 package io.mapsmessaging.state.mavlink.listener;
 
-import io.mapsmessaging.state.mavlink.packet.MavlinkPacket;
-import io.mapsmessaging.state.mavlink.packet.SysStatusPacket;
 import io.mapsmessaging.state.drone.core.TwinManager;
 import io.mapsmessaging.state.drone.core.TwinUpdateContext;
 import io.mapsmessaging.state.drone.drone.DroneTwin;
 import io.mapsmessaging.state.drone.model.BatteryState;
+import io.mapsmessaging.state.drone.model.SystemState;
+import io.mapsmessaging.state.mavlink.packet.MavlinkPacket;
+import io.mapsmessaging.state.mavlink.packet.SysStatusPacket;
 
 import java.time.Instant;
 
@@ -58,29 +59,60 @@ public class SysStatusListener implements Listener {
         : Instant.now();
 
     twinManager.updateTwin(twinId, twin -> {
-
       DroneTwin drone = (DroneTwin) twin;
 
-      BatteryState batteryState = drone.getBatteryState();
-      if (batteryState == null) {
-        batteryState = new BatteryState();
-      }
+      updateBatteryState(drone, packet);
+      updateSystemState(drone, packet);
 
-      if (!Double.isNaN(packet.getVoltageVolts())) {
-        batteryState.setVoltageVolts(packet.getVoltageVolts());
-      }
-
-      if (!Double.isNaN(packet.getCurrentAmps())) {
-        batteryState.setCurrentAmps(packet.getCurrentAmps());
-      }
-
-      if (!Double.isNaN(packet.getRemainingPercent())) {
-        batteryState.setPercentage(packet.getRemainingPercent());
-      }
-
-      drone.setBatteryState(batteryState);
       drone.setPowerUpdatedAt(now);
+      drone.setOperationalUpdatedAt(now);
 
     }, context);
+  }
+
+  private void updateBatteryState(DroneTwin drone, SysStatusPacket packet) {
+    BatteryState batteryState = drone.getBatteryState();
+    if (batteryState == null) {
+      batteryState = new BatteryState();
+    }
+
+    if (!Double.isNaN(packet.getVoltageVolts())) {
+      batteryState.setVoltageVolts(packet.getVoltageVolts());
+    }
+
+    if (!Double.isNaN(packet.getCurrentAmps())) {
+      batteryState.setCurrentAmps(packet.getCurrentAmps());
+    }
+
+    if (!Double.isNaN(packet.getRemainingPercent())) {
+      batteryState.setPercentage(packet.getRemainingPercent());
+    }
+
+    drone.setBatteryState(batteryState);
+  }
+
+  private void updateSystemState(DroneTwin drone, SysStatusPacket packet) {
+    SystemState systemState = drone.getSystemState();
+    if (systemState == null) {
+      systemState = new SystemState();
+    }
+
+    if (!Double.isNaN(packet.getLoadPercent())) {
+      systemState.setCpuLoadPercent(packet.getLoadPercent());
+    }
+
+    boolean healthy = packet.getOnboardControlSensorsEnabled() == packet.getOnboardControlSensorsHealth();
+    systemState.setHealthy(healthy);
+    systemState.setStatusMessage(buildStatusMessage(packet, healthy));
+
+    drone.setSystemState(systemState);
+  }
+
+  private String buildStatusMessage(SysStatusPacket packet, boolean healthy) {
+    if (healthy) {
+      return "System health nominal";
+    }
+
+    return "System health degraded";
   }
 }

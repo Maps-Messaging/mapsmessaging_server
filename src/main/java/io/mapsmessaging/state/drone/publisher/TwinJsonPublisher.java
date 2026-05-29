@@ -121,7 +121,7 @@ public class TwinJsonPublisher implements TwinObserver, ClientConnection, Messag
   private String resolveTopic(String twinId, EntityTwin twin) {
     String resolvedTopic = topicTemplate.replace("{twinId}", twinId);
 
-    if (twin != null && twin.getClass().getSimpleName() != null) {
+    if (twin != null) {
       resolvedTopic = resolvedTopic.replace("{twinType}", twin.getClass().getSimpleName());
     }
     else {
