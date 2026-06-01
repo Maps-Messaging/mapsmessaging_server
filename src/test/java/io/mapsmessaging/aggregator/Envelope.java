@@ -19,8 +19,11 @@
 
 package io.mapsmessaging.aggregator;
 
+import com.google.gson.JsonObject;
 import lombok.Getter;
 
+import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -29,6 +32,24 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 public class Envelope {
 
   private final Map<String, Object> inputs;
+
+  public Envelope(Object val) {
+    inputs = new LinkedHashMap<>();
+    if(val instanceof List<?> list){
+      for(Object o:list){
+        if(o instanceof Map<?, ?> map){
+          String topic = (String) map.get("topic");
+          Map<String,Object> t = new LinkedHashMap<>();
+          Map<?,?> payload = (Map<?,?>) map.get("payload");
+          t.put("payload", payload);
+          inputs.put(topic, t);
+        }
+      }
+    }
+    else if(val instanceof Map map){
+      inputs.putAll( map );
+    }
+  }
 
   public Envelope(Map<String, Object> inputs) {
     this.inputs = inputs;
