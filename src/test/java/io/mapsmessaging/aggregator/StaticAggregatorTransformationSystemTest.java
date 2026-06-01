@@ -98,11 +98,12 @@ class StaticAggregatorTransformationSystemTest extends BaseAggreagtorTest {
       String outJson = toUtf8(out.getOpaqueData());
 
       Map<String, Object> root = gson.fromJson(outJson, mapType);
-      Object inputsObj = root.get("inputs");
+      Object inputsObj = root.get("envelopes");
       assertNotNull(inputsObj, "Envelope missing 'inputs'. Output=" + pretty(outJson));
 
+      Envelope envelope = new Envelope(inputsObj);
       @SuppressWarnings("unchecked")
-      Map<String, Object> inputs = (Map<String, Object>) inputsObj;
+      Map<String, Object> inputs = envelope.getInputs();
 
       assertEquals(3, inputs.size(), "Expected exactly 3 inputs present. Output=" + pretty(outJson));
       assertTrue(inputs.containsKey(IN1), "Missing input entry for " + IN1 + ". Output=" + pretty(outJson));
