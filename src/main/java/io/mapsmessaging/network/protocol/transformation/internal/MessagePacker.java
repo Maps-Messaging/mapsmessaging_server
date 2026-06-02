@@ -24,6 +24,7 @@ import io.mapsmessaging.api.features.QualityOfService;
 import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.api.message.TypedData;
 
+import java.nio.charset.StandardCharsets;
 import java.util.Map;
 
 public class MessagePacker {
@@ -48,8 +49,18 @@ public class MessagePacker {
     return message.getOpaqueData();
   }
 
-  public Object getCorrelationData(){
-    return message.getCorrelationData();
+  public Object getCorrelationData() {
+    byte[] correlationData = message.getCorrelationData();
+
+    if (correlationData == null) {
+      return null;
+    }
+
+    if (!message.isCorrelationDataByteArray()) {
+      return new String(correlationData, StandardCharsets.UTF_8);
+    }
+
+    return correlationData;
   }
 
   public String getContentType(){
