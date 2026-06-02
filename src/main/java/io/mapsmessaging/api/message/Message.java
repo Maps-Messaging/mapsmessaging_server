@@ -46,6 +46,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.BitSet;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.UUID;
 
 public class Message implements IdentifierResolver, Storable {
 
@@ -112,7 +113,10 @@ public class Message implements IdentifierResolver, Storable {
 
     identifier = builder.getId();
     meta = builder.getMeta();
-    if (meta != null &&  ( MessageDaemon.getInstance() == null || MessageDaemon.getInstance().isTagMetaData())) {
+    boolean isTagConfigured = ( MessageDaemon.getInstance() == null || MessageDaemon.getInstance().isTagMetaData());
+    boolean isCorrelationConfigured = ( MessageDaemon.getInstance() == null || MessageDaemon.getInstance().isEnableUniqueCorrelationIds());
+
+    if (meta != null &&  isTagConfigured ) {
       meta.put("time_ms", "" + System.currentTimeMillis());
       if (LocationManager.getInstance().isSet()) {
         meta.put("longitude", "" + LocationManager.getInstance().getLongitude());
@@ -138,6 +142,9 @@ public class Message implements IdentifierResolver, Storable {
     storeOffline = builder.isStoreOffline();
     qualityOfService = builder.getQualityOfService();
     Object correlation = builder.getCorrelationData();
+    if(correlation == null && isCorrelationConfigured) {
+      correlation = UUID.randomUUID().toString();
+    }
     if (correlation instanceof String cor) {
       correlationData = cor.getBytes(StandardCharsets.UTF_8);
     } else {
