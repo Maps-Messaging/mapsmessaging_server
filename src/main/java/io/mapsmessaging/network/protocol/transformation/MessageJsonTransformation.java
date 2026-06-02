@@ -63,13 +63,16 @@ public class MessageJsonTransformation implements ProtocolMessageTransformation 
   public void incoming(MessageBuilder messageBuilder) {
     try {
       byte[] opaqueData = messageBuilder.getOpaqueData();
-      if (opaqueData != null) {
-        String json = new String(opaqueData);
-        MessageLoader message = objectMapper.readValue(json, MessageLoader.class);
-        message.load(messageBuilder);
+      if(opaqueData != null &&
+          opaqueData.length > 1 &&
+          ( opaqueData[0] == '{' || opaqueData[0] == '[' )
+      ) {
+          String json = new String(opaqueData);
+          MessageLoader message = objectMapper.readValue(json, MessageLoader.class);
+          message.load(messageBuilder);
       }
     } catch (Exception e) {
-      logger.log(MESSAGE_TRANSFORMATION_EXCEPTION, e);
+      logger.log(MESSAGE_TRANSFORMATION_EXCEPTION);
     }
   }
 
@@ -77,16 +80,10 @@ public class MessageJsonTransformation implements ProtocolMessageTransformation 
   public Message outgoing(Message message, String destinationName) {
     if (!destinationName.startsWith("$")) {
       try {
-        byte[] opaqueData = message.getOpaqueData();
-        if(opaqueData != null &&
-            opaqueData.length > 1 &&
-            ( opaqueData[0] == '{' || opaqueData[0] == '[' )
-        ) {
-          byte[] data = objectMapper.writeValueAsBytes(new MessagePacker(message));
-          MessageBuilder messageBuilder = new MessageBuilder();
-          messageBuilder.setOpaqueData(data);
-          return messageBuilder.build();
-        }
+        byte[] data = objectMapper.writeValueAsBytes(new MessagePacker(message));
+        MessageBuilder messageBuilder = new MessageBuilder();
+        messageBuilder.setOpaqueData(data);
+        return messageBuilder.build();
       } catch (Exception e) {
         logger.log(MESSAGE_TRANSFORMATION_EXCEPTION);
       }
