@@ -28,6 +28,8 @@ import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.network.protocol.transformation.internal.MessageLoader;
 import io.mapsmessaging.network.protocol.transformation.internal.MessagePacker;
 
+import java.nio.charset.StandardCharsets;
+
 import static io.mapsmessaging.logging.ServerLogMessages.MESSAGE_TRANSFORMATION_EXCEPTION;
 
 public class MessageJsonTransformation implements ProtocolMessageTransformation {
@@ -63,14 +65,23 @@ public class MessageJsonTransformation implements ProtocolMessageTransformation 
   public void incoming(MessageBuilder messageBuilder) {
     try {
       byte[] opaqueData = messageBuilder.getOpaqueData();
-      if(opaqueData != null &&
-          opaqueData.length > 1 &&
-          ( opaqueData[0] == '{' || opaqueData[0] == '[' )
-      ) {
-          String json = new String(opaqueData);
-          MessageLoader message = objectMapper.readValue(json, MessageLoader.class);
-          message.load(messageBuilder);
+      if (opaqueData == null || opaqueData.length == 0) {
+        return;
       }
+
+      int jsonStart = findJsonStart(opaqueData);
+      if (jsonStart < 0) {
+        return;
+      }
+
+      byte firstCharacter = opaqueData[jsonStart];
+      if (firstCharacter != '{') {
+        return;
+      }
+      String json = new String(opaqueData, jsonStart, opaqueData.length - jsonStart, StandardCharsets.UTF_8);
+
+      MessageLoader message = objectMapper.readValue(json, MessageLoader.class);
+      message.load(messageBuilder);
     } catch (Exception e) {
       logger.log(MESSAGE_TRANSFORMATION_EXCEPTION);
     }
@@ -89,6 +100,31 @@ public class MessageJsonTransformation implements ProtocolMessageTransformation 
       }
     }
     return message;
+  }
+
+
+
+  private int findJsonStart(byte[] opaqueData) {
+    int offset = 0;
+
+    if (opaqueData.length >= 3 &&
+        (opaqueData[0] & 0xff) == 0xef &&
+        (opaqueData[1] & 0xff) == 0xbb &&
+        (opaqueData[2] & 0xff) == 0xbf) {
+      offset = 3;
+    }
+
+    while (offset < opaqueData.length) {
+      byte value = opaqueData[offset];
+      if (value != ' ' &&
+          value != '\n' &&
+          value != '\r' &&
+          value != '\t') {
+        return offset;
+      }
+      offset++;
+    }
+    return -1;
   }
 
 }

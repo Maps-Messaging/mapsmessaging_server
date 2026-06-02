@@ -70,7 +70,7 @@ public class Message implements IdentifierResolver, Storable {
   @Getter
   private final String contentType;
   @Getter
-  private final byte[] correlationData;
+  private byte[] correlationData;
   @Getter
   private final byte[] opaqueData;
 
@@ -97,7 +97,6 @@ public class Message implements IdentifierResolver, Storable {
   // </editor-fold>
   // <editor-fold desc="Persistent data">
   @Getter
-  @Setter
   private long identifier;
   // </editor-fold>
 
@@ -114,7 +113,6 @@ public class Message implements IdentifierResolver, Storable {
     identifier = builder.getId();
     meta = builder.getMeta();
     boolean isTagConfigured = ( MessageDaemon.getInstance() == null || MessageDaemon.getInstance().isTagMetaData());
-    boolean isCorrelationConfigured = ( MessageDaemon.getInstance() == null || MessageDaemon.getInstance().isEnableUniqueCorrelationIds());
 
     if (meta != null &&  isTagConfigured ) {
       meta.put("time_ms", "" + System.currentTimeMillis());
@@ -142,14 +140,13 @@ public class Message implements IdentifierResolver, Storable {
     storeOffline = builder.isStoreOffline();
     qualityOfService = builder.getQualityOfService();
     Object correlation = builder.getCorrelationData();
-    if(correlation == null && isCorrelationConfigured) {
-      correlation = UUID.randomUUID().toString();
-    }
     if (correlation instanceof String cor) {
       correlationData = cor.getBytes(StandardCharsets.UTF_8);
     } else {
       correlationData = (byte[]) builder.getCorrelationData();
-      flags.set(CORRELATION_BYTE_ARRAY_BIT); // Mark as byte[]
+      if (correlationData != null) {
+        flags.set(CORRELATION_BYTE_ARRAY_BIT); // Mark as byte[]
+      }
     }
     contentType = builder.getContentType();
     long dly = builder.getDelayed();
@@ -314,6 +311,13 @@ public class Message implements IdentifierResolver, Storable {
     return meta == null ? new LinkedHashMap<>() : meta;
   }
 
+  public void setIdentifier(long identifier) {
+    this.identifier = identifier;
+    boolean isCorrelationConfigured = ( MessageDaemon.getInstance() == null || MessageDaemon.getInstance().isEnableUniqueCorrelationIds());
+    if(correlationData == null && isCorrelationConfigured) {
+      correlationData = UUID.randomUUID().toString().getBytes(StandardCharsets.UTF_8);
+    }
+  }
 
   private long calculateExpiry(long dly, long exp) {
     long calc = 0;
