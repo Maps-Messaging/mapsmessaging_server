@@ -256,7 +256,7 @@ public abstract class Protocol implements SelectorCallback, MessageListener, Tim
     if(parsedMessage == null){
       return null;
     }
-    processTransformation(parsedMessage);
+    processInTransformation(parsedMessage);
     if(topicNameMapping != null){
       processDestinationNameLookup(parsedMessage);
     }
@@ -295,6 +295,14 @@ public abstract class Protocol implements SelectorCallback, MessageListener, Tim
   private void processTransformation(ParsedMessage parsedMessage){
     if (protocolMessageTransformation != null) {
       parsedMessage.setMessage(protocolMessageTransformation.outgoing(parsedMessage.getMessage(), parsedMessage.getDestinationName()));
+    }
+  }
+
+  private void processInTransformation(ParsedMessage parsedMessage){
+    if (protocolMessageTransformation != null) {
+      MessageBuilder messageBuilder = new MessageBuilder(parsedMessage.getMessage());
+      protocolMessageTransformation.incoming(messageBuilder);
+      parsedMessage.setMessage(messageBuilder.build());
     }
   }
 
