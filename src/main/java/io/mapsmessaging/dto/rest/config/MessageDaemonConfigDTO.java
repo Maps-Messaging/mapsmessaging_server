@@ -23,7 +23,6 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
-
 @Data
 @EqualsAndHashCode(callSuper = true)
 @Schema(description = "Message Daemon Configuration DTO")
@@ -138,6 +137,13 @@ public class MessageDaemonConfigDTO extends BaseManagerConfigDTO {
   protected boolean tagMetaData = false;
 
   @Schema(
+      description = "Generate a unique correlation identifier for messages that do not already have correlation data",
+      example = "false",
+      defaultValue = "false"
+  )
+  protected boolean enableUniqueCorrelationIds = false;
+
+  @Schema(
       description = "Latitude for the daemon location",
       example = "0.0",
       defaultValue = "0.0",
@@ -162,7 +168,6 @@ public class MessageDaemonConfigDTO extends BaseManagerConfigDTO {
   )
   protected boolean sendAnonymousStatusUpdates = true;
 
-
   @Schema(
       description = "Exit server startup if invalid configuration detected",
       example = "true",
@@ -171,7 +176,6 @@ public class MessageDaemonConfigDTO extends BaseManagerConfigDTO {
       nullable = true
   )
   protected boolean exitOnConfigError = false;
-
 
   protected MessageDaemonConfigDTO() {
     super("MessageDaemonConfigDTO");
