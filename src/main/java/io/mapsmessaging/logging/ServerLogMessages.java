@@ -817,7 +817,7 @@ public enum ServerLogMessages implements LogMessage {
   AUTH_STORAGE_FAILED_TO_LOAD(LEVEL.ERROR, SERVER_CATEGORY.AUTHENTICATION, "Authentication storage level failed to load"),
   AUTH_STORAGE_FAILED_ON_UPDATE(LEVEL.ERROR, SERVER_CATEGORY.AUTHENTICATION, "Authentication storage unable to update state"),
 
-  MESSAGE_TRANSFORMATION_EXCEPTION(LEVEL.ERROR, SERVER_CATEGORY.TRANSFORMATION, "Exception raised during transformation"),
+  MESSAGE_TRANSFORMATION_EXCEPTION(LEVEL.INFO, SERVER_CATEGORY.TRANSFORMATION, "Exception raised during transformation"),
 
   LICENSE_INSTALLING(LEVEL.INFO, SERVER_CATEGORY.LICENSE, "Installing license edition {}"),
   LICENSE_FAILED_INSTALLING(LEVEL.ERROR, SERVER_CATEGORY.LICENSE, "Failed to install license edition {}"),

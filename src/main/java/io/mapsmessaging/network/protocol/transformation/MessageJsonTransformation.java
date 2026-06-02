@@ -77,12 +77,18 @@ public class MessageJsonTransformation implements ProtocolMessageTransformation 
   public Message outgoing(Message message, String destinationName) {
     if (!destinationName.startsWith("$")) {
       try {
-        byte[] data = objectMapper.writeValueAsBytes(new MessagePacker(message));
-        MessageBuilder messageBuilder = new MessageBuilder();
-        messageBuilder.setOpaqueData(data);
-        return messageBuilder.build();
+        byte[] opaqueData = message.getOpaqueData();
+        if(opaqueData != null &&
+            opaqueData.length > 1 &&
+            ( opaqueData[0] == '{' || opaqueData[0] == '[' )
+        ) {
+          byte[] data = objectMapper.writeValueAsBytes(new MessagePacker(message));
+          MessageBuilder messageBuilder = new MessageBuilder();
+          messageBuilder.setOpaqueData(data);
+          return messageBuilder.build();
+        }
       } catch (Exception e) {
-        logger.log(MESSAGE_TRANSFORMATION_EXCEPTION, e);
+        logger.log(MESSAGE_TRANSFORMATION_EXCEPTION);
       }
     }
     return message;
