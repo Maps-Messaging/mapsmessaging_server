@@ -50,6 +50,7 @@ public class MessageDaemonConfig extends MessageDaemonConfigDTO implements Confi
     this.longitude = config.getDoubleProperty("longitude", longitude);
     this.sendAnonymousStatusUpdates = config.getBooleanProperty("SendAnonymousStatusUpdates", sendAnonymousStatusUpdates);
     this.exitOnConfigError = config.getBooleanProperty("exitOnConfigError", exitOnConfigError);
+    this.enableUniqueCorrelationIds = config.getBooleanProperty("enableUniqueCorrelationIds", enableUniqueCorrelationIds);
   }
 
   public static MessageDaemonConfig getInstance() {
@@ -64,7 +65,10 @@ public class MessageDaemonConfig extends MessageDaemonConfigDTO implements Confi
 
     MessageDaemonConfigDTO newConfig = (MessageDaemonConfigDTO) config;
     boolean hasChanged = false;
-
+    if (this.enableUniqueCorrelationIds != newConfig.isEnableUniqueCorrelationIds()) {
+      this.enableUniqueCorrelationIds = newConfig.isEnableUniqueCorrelationIds();
+      hasChanged = true;
+    }
     if (this.delayedPublishInterval != newConfig.getDelayedPublishInterval()) {
       this.delayedPublishInterval = newConfig.getDelayedPublishInterval();
       hasChanged = true;
@@ -155,6 +159,7 @@ public class MessageDaemonConfig extends MessageDaemonConfigDTO implements Confi
     config.put("tagMetaData", this.tagMetaData);
     config.put("latitude", this.latitude);
     config.put("longitude", this.longitude);
+    config.put("enableUniqueCorrelationIds", enableUniqueCorrelationIds);
     return config;
   }
 

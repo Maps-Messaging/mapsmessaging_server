@@ -90,6 +90,9 @@ public class MessageDaemon {
   @Getter
   private boolean tagMetaData;
   @Getter
+  private boolean enableUniqueCorrelationIds = false;
+
+  @Getter
   private boolean enableSystemTopics;
 
   private final Logger logger = LoggerFactory.getLogger(MessageDaemon.class);
@@ -190,6 +193,7 @@ public class MessageDaemon {
       LocationManager.getInstance().setPosition(messageDaemonConfig.getLatitude() , messageDaemonConfig.getLongitude());
     }
     tagMetaData = messageDaemonConfig.isTagMetaData();
+    enableUniqueCorrelationIds = messageDaemonConfig.isEnableUniqueCorrelationIds();
     long transactionExpiry = messageDaemonConfig.getTransactionExpiry();
     long transactionScan = messageDaemonConfig.getTransactionScan();
     TransactionManager.setTimeOutInterval(transactionScan);
