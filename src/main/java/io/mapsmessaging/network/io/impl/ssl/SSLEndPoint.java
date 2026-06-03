@@ -98,8 +98,10 @@ public class SSLEndPoint extends TCPEndPoint {
     handshakeManager.handleSSLHandshakeStatus();
     int original = packet.position();
     sendBuffer(packet.getRawBuffer());
-    logger.log(ServerLogMessages.SSL_SENT, (packet.position() - original));
-    return packet.position() - original;
+
+    int sent = packet.position() - original;
+    logger.log(ServerLogMessages.SSL_SENT, sent);
+    return sent;
   }
 
   @Override
@@ -130,9 +132,20 @@ public class SSLEndPoint extends TCPEndPoint {
 
     SSLEngineResult result;
     do {
+      int applicationPosition = applicationOutBuffer.position();
+      int encryptedPosition = encryptedOut.position();
+
       result = handleSSLEngineResult(sslEngine.wrap(applicationOutBuffer, encryptedOut));
       len += flushEncryptedOut();
       if (encryptedOut.position() != 0) {
+        break;
+      }
+
+      boolean noApplicationProgress = applicationOutBuffer.position() == applicationPosition;
+      boolean noEncryptedProgress = encryptedOut.position() == encryptedPosition;
+      boolean noEngineProgress = result.bytesConsumed() == 0 && result.bytesProduced() == 0;
+
+      if (noApplicationProgress && noEncryptedProgress && noEngineProgress) {
         break;
       }
 
@@ -208,7 +221,9 @@ public class SSLEndPoint extends TCPEndPoint {
   private SSLEngineResult handleSSLEngineResult(SSLEngineResult result) throws IOException {
     if (result.getStatus() == Status.CLOSED) {
       throw new IOException("Session closed");
-    } else {
+    }
+
+    if (result.getStatus() != SSLEngineResult.Status.OK) {
       logger.log(ServerLogMessages.SSL_ENGINE_RESULT, result.getStatus());
     }
     return result;
