@@ -333,7 +333,7 @@ public class TwinManager {
     for (TwinObserver observer : observers) {
       try {
         observer.onTwinAdded(twin, context);
-      } catch (Exception ignore) {
+      } catch (Throwable ignore) {
         logger.log(TWIN_OBSERVER_CALLBACK_FAILED, ignore);
       }
     }
@@ -343,7 +343,7 @@ public class TwinManager {
     for (TwinObserver observer : observers) {
       try {
         observer.onTwinUpdated(twin.getTwinId(), twin, context);
-      } catch (Exception ignore) {
+      } catch (Throwable ignore) {
         logger.log(TWIN_OBSERVER_CALLBACK_FAILED, ignore);
       }
     }
@@ -353,7 +353,7 @@ public class TwinManager {
     for (TwinObserver observer : observers) {
       try {
         observer.onTwinRemoved(removed, context);
-      } catch (Exception ignore) {
+      } catch (Throwable ignore) {
         logger.log(TWIN_OBSERVER_CALLBACK_FAILED, ignore);
       }
     }
@@ -365,7 +365,7 @@ public class TwinManager {
     for (TwinObserver observer : observers) {
       try {
         observer.onRelationshipUpdated(twinId, relationship, context);
-      } catch (Exception ignore) {
+      } catch (Throwable ignore) {
         logger.log(TWIN_OBSERVER_CALLBACK_FAILED, ignore);
       }
     }
@@ -377,7 +377,7 @@ public class TwinManager {
     for (TwinObserver observer : observers) {
       try {
         observer.onRelationshipRemoved(twinId, relationship, context);
-      } catch (Exception ignore) {
+      } catch (Throwable ignore) {
         logger.log(TWIN_OBSERVER_CALLBACK_FAILED, ignore);
       }
     }
