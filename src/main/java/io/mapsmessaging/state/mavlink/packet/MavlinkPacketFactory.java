@@ -28,17 +28,22 @@ public class MavlinkPacketFactory {
     int messageId = frame.getFrame().getMessageId();
 
     return switch (messageId) {
-      case MavlinkMessageIds.GLOBAL_POSITION_INT -> new GlobalPositionPacket(frame);
+      case MavlinkMessageIds.ALTITUDE -> new AltitudePacket(frame);
       case MavlinkMessageIds.ATTITUDE -> new AttitudePacket(frame);
+      case MavlinkMessageIds.AUTOPILOT_VERSION -> new AutopilotVersionPacket(frame);
+      case MavlinkMessageIds.BATTERY_STATUS -> new BatteryStatusPacket(frame);
+      case MavlinkMessageIds.COMMAND_ACK -> new CommandAckPacket(frame);
+      case MavlinkMessageIds.EXTENDED_SYS_STATE -> new ExtendedSysStatePacket(frame);
+      case MavlinkMessageIds.GLOBAL_POSITION_INT -> new GlobalPositionPacket(frame);
       case MavlinkMessageIds.GPS_RAW_INT -> new GpsRawIntPacket(frame);
       case MavlinkMessageIds.HEARTBEAT -> new HeartbeatPacket(frame);
+      case MavlinkMessageIds.HOME_POSITION -> new HomePositionPacket(frame);
+
+      case MavlinkMessageIds.MISSION_CURRENT -> new MissionCurrentPacket(frame);
+
+      case MavlinkMessageIds.STATUSTEXT -> new StatusTextPacket(frame);
       case MavlinkMessageIds.SYS_STATUS -> new SysStatusPacket(frame);
       case MavlinkMessageIds.SYSTEM_TIME -> new SystemTimePacket(frame);
-      case MavlinkMessageIds.ALTITUDE -> new AltitudePacket(frame);
-      case MavlinkMessageIds.EXTENDED_SYS_STATE -> new ExtendedSysStatePacket(frame);
-      case MavlinkMessageIds.MISSION_CURRENT -> new MissionCurrentPacket(frame);
-      case MavlinkMessageIds.AUTOPILOT_VERSION -> new AutopilotVersionPacket(frame);
-      case MavlinkMessageIds.HOME_POSITION -> new HomePositionPacket(frame);
       default -> null;
     };
   }

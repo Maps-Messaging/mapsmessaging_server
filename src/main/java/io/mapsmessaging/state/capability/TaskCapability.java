@@ -15,39 +15,25 @@
  *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
+ *
  */
 
-package io.mapsmessaging.dto.rest.config.transformer.jsonmapper;
+package io.mapsmessaging.state.capability;
 
-import io.swagger.v3.oas.annotations.media.Schema;
+import com.google.gson.annotations.SerializedName;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
-@Schema(description = "Transform function applied to a mapped JSON value.")
-public enum JsonMapFunction {
-  NONE,
-  TO_STRING,
-  TO_INT,
-  TO_LONG,
-  TO_FLOAT,
-  TO_DOUBLE,
-  TO_BOOLEAN,
-  TO_EPOCH_SECONDS,
-  DATE_TO_EPOCH_SECONDS,
-  DATE_TO_ISO_8601,
-  BASE64_ENCODE,
-  BASE64_DECODE;
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+public class TaskCapability {
 
+  @SerializedName("task_type")
+  private PlanTaskType taskType;
 
-  public static JsonMapFunction fromString(String value) {
-    if (value == null || value.isBlank()) {
-      return NONE;
-    }
+  @SerializedName("task_specialization")
+  private TaskSpecialization specialization = TaskSpecialization.NONE;
 
-    for (JsonMapFunction function : values()) {
-      if (function.name().equalsIgnoreCase(value.trim())) {
-        return function;
-      }
-    }
-
-    return NONE;
-  }
 }

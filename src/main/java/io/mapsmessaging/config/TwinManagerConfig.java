@@ -28,6 +28,7 @@ import io.mapsmessaging.dto.rest.config.protocol.impl.VehicleClass;
 import io.mapsmessaging.dto.rest.config.twin.MavlinkTwinConfigDTO;
 import io.mapsmessaging.dto.rest.config.twin.TwinPublishConfigDTO;
 import io.mapsmessaging.license.FeatureManager;
+import io.mapsmessaging.state.capability.*;
 import io.mapsmessaging.state.mavlink.MavlinkStateSubscriptionMode;
 import io.mapsmessaging.utilities.configuration.ConfigurationManager;
 import java.io.IOException;
@@ -210,6 +211,9 @@ public class TwinManagerConfig extends TwinManagerConfigDTO implements Config, C
     List<MavlinkKnownSourceDTO> knownSources = new ArrayList<>();
 
     if (!(value instanceof List<?> entries)) {
+      if (value instanceof ConfigurationProperties sourceProps) {
+        knownSources.add(parseKnownSource(sourceProps));
+      }
       return knownSources;
     }
 
@@ -229,8 +233,120 @@ public class TwinManagerConfig extends TwinManagerConfigDTO implements Config, C
     knownSource.setSystemId(properties.getIntProperty("systemId", knownSource.getSystemId()));
     knownSource.setComponentId(properties.getIntProperty("componentId", knownSource.getComponentId()));
     knownSource.setVehicleClass(parseVehicleClass(properties.getProperty("vehicleClass", null), knownSource.getVehicleClass()));
+    knownSource.setCapabilities(parseTaskCapabilities(properties.get("capabilities")));
 
     return knownSource;
+  }
+
+  @SuppressWarnings("unchecked")
+  private TaskCapabilities parseTaskCapabilities(Object value) {
+    TaskCapabilities capabilities = new TaskCapabilities();
+
+    if(value instanceof ConfigurationProperties configurationProperties) {
+      capabilities.setTasks(parseTaskCapabilityList(configurationProperties.get("tasks")));
+
+      if(capabilities.getTasks().isEmpty()) {
+        capabilities.setTasks(parseTaskCapabilityList(configurationProperties.get("task_capabilities")));
+      }
+
+      capabilities.setTaskConditionsMode(
+          parseTaskConditionMode(
+              configurationProperties.getProperty("task_conditions_mode", null),
+              capabilities.getTaskConditionsMode()
+          )
+      );
+
+      capabilities.setTaskConditionsTemplate(
+          parseTaskTemplateMode(
+              configurationProperties.getProperty("task_conditions_template", null),
+              capabilities.getTaskConditionsTemplate()
+          )
+      );
+    } else if(value instanceof List<?> list) {
+      capabilities.setTasks(parseTaskCapabilityList(list));
+    }
+
+    return capabilities;
+  }
+
+  private List<TaskCapability> parseTaskCapabilityList(Object value) {
+    List<TaskCapability> taskCapabilities = new ArrayList<>();
+
+    if(value instanceof ConfigurationProperties configurationProperties) {
+      taskCapabilities.add(parseTaskCapability(configurationProperties));
+    } else if(value instanceof List<?> list) {
+      for(Object entry : list) {
+        if(entry instanceof ConfigurationProperties configurationProperties) {
+          taskCapabilities.add(parseTaskCapability(configurationProperties));
+        }
+      }
+    }
+
+    return taskCapabilities;
+  }
+
+  private TaskCapability parseTaskCapability(ConfigurationProperties properties) {
+    TaskCapability taskCapability = new TaskCapability();
+
+    taskCapability.setTaskType(
+        parsePlanTaskType(
+            properties.getProperty("task_type", null),
+            taskCapability.getTaskType()
+        )
+    );
+
+    taskCapability.setSpecialization(
+        parseTaskSpecialization(
+            properties.getProperty("task_specialization", null),
+            taskCapability.getSpecialization()
+        )
+    );
+
+    return taskCapability;
+  }
+
+  private PlanTaskType parsePlanTaskType(String value, PlanTaskType defaultValue) {
+    if(value == null || value.isBlank()) {
+      return defaultValue;
+    }
+
+    String normalisedValue = removePrefix(value, "PlanTaskTypeEnum_");
+    return PlanTaskType.valueOf(normalisedValue);
+  }
+
+  private TaskSpecialization parseTaskSpecialization(String value, TaskSpecialization defaultValue) {
+    if(value == null || value.isBlank()) {
+      return defaultValue;
+    }
+
+    String normalisedValue = removePrefix(value, "TaskSpecializationEnum_");
+    return TaskSpecialization.valueOf(normalisedValue);
+  }
+
+  private TaskConditionMode parseTaskConditionMode(String value, TaskConditionMode defaultValue) {
+    if(value == null || value.isBlank()) {
+      return defaultValue;
+    }
+
+    String normalisedValue = removePrefix(value, "TaskConditionModeEnum_");
+    return TaskConditionMode.valueOf(normalisedValue);
+  }
+
+  private TaskTemplateMode parseTaskTemplateMode(String value, TaskTemplateMode defaultValue) {
+    if(value == null || value.isBlank()) {
+      return defaultValue;
+    }
+
+    String normalisedValue = removePrefix(value, "TaskTemplateModeEnum_");
+    return TaskTemplateMode.valueOf(normalisedValue);
+  }
+
+  private String removePrefix(String value, String prefix) {
+    if(value.startsWith(prefix)) {
+      return value.substring(prefix.length());
+    }
+
+    return value;
   }
 
   private MavlinkStateSubscriptionMode parseSubscriptionMode(String value) {

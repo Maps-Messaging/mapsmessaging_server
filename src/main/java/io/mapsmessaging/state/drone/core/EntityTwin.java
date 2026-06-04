@@ -58,6 +58,8 @@ public abstract class EntityTwin {
   )
   private String twinId;
 
+
+
   @Schema(
       description = "Hierarchical path of the twin within the model namespace.",
       example = "/fleet/alpha/drone-001",

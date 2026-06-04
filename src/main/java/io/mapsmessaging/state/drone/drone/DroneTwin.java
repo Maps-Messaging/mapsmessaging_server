@@ -19,20 +19,18 @@
 
 package io.mapsmessaging.state.drone.drone;
 
+import io.mapsmessaging.state.capability.TaskCapabilities;
 import io.mapsmessaging.state.drone.core.EntityTwin;
 import io.mapsmessaging.state.drone.core.TwinType;
+import io.mapsmessaging.state.drone.model.*;
 import io.mapsmessaging.state.drone.model.autopilot.AutopilotState;
-import io.mapsmessaging.state.drone.model.EnvironmentalState;
-import io.mapsmessaging.state.drone.model.SystemState;
-import io.mapsmessaging.state.drone.model.TimeState;
 import io.swagger.v3.oas.annotations.media.Schema;
+import java.time.Instant;
+import java.util.List;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
-
-import java.time.Instant;
-import java.util.List;
 
 import static io.mapsmessaging.state.drone.util.SyntheticMmsiGenerator.generateSyntheticMmsi;
 
@@ -88,13 +86,22 @@ public class DroneTwin extends EntityTwin {
   )
   private String callSign;
 
+  @Schema(
+      description = "Task capabilities supported by this drone or unmanned vehicle.",
+      nullable = true
+  )
+  private TaskCapabilities capabilities = new TaskCapabilities();
+
+  @Schema(hidden = true)
+  @ToString.Exclude
+  @EqualsAndHashCode.Exclude
+  private final DroneContactManager contactManager = new DroneContactManager();
 
   @Schema(
       description = "Decoded autopilot information for the vehicle.",
       nullable = true
   )
   private AutopilotState autopilotState;
-
 
   @Schema(
       description = "Indicates whether the vehicle is armed.",
@@ -254,7 +261,6 @@ public class DroneTwin extends EntityTwin {
   )
   private Instant lastCommandAcknowledgementAt;
 
-
   @Schema(
       description = "Current readiness state of the vehicle twin.",
       example = "REGISTRATION_READY",
@@ -301,6 +307,30 @@ public class DroneTwin extends EntityTwin {
   )
   private Instant readinessUpdatedAt;
 
+  public List<Contact> getContactList() {
+    return contactManager.getContactList();
+  }
+
+  public boolean hasContacts(){
+    return contactManager.size() > 0;
+  }
+
+  public DroneTwin(String twinId) {
+    super(twinId);
+    setTwinType(TwinType.DRONE);
+    setMmsi(generateSyntheticMmsi(twinId));
+  }
+
+  @Schema(hidden = true)
+  public DroneContactManager getContactManager() {
+    return contactManager;
+  }
+
+  @Schema(
+      description = "Current contacts detected by this drone. Expired contacts are removed before the list is returned.",
+      accessMode = Schema.AccessMode.READ_ONLY
+  )
+
   public String getProtocolSourceId() {
     if (systemId == null || componentId == null) {
       return null;
@@ -310,11 +340,5 @@ public class DroneTwin extends EntityTwin {
 
   public Long getOperationalUpdatedAtSeconds() {
     return operationalUpdatedAt != null ? operationalUpdatedAt.getEpochSecond() : null;
-  }
-
-  public DroneTwin(String twinId) {
-    super(twinId);
-    setTwinType(TwinType.DRONE);
-    setMmsi(generateSyntheticMmsi(twinId));
   }
 }

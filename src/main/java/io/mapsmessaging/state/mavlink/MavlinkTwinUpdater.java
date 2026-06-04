@@ -101,6 +101,9 @@ public class MavlinkTwinUpdater {
     droneTwin.setSystemId(env.getFrame().getSystemId());
     droneTwin.setComponentId(env.getFrame().getComponentId());
 
+    if(knownSource != null && knownSource.getCapabilities() != null) {
+      droneTwin.setCapabilities(knownSource.getCapabilities());
+    }
     twinManager.registerTwin(droneTwin, context);
 
     logger.log(
