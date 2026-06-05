@@ -15,25 +15,26 @@
  *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
- *
  */
 
-package io.mapsmessaging.state.capability;
+package io.mapsmessaging.state.config;
 
-import com.google.gson.annotations.SerializedName;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
-@Data
-@NoArgsConstructor
-@AllArgsConstructor
-public class TaskCapability {
+public class DroneInfoRegistry {
 
-  @SerializedName("task_type")
-  private PlanTaskType taskType;
+  private final Map<String, DroneInfo> droneInfoMap;
 
-  @SerializedName("task_specialization")
-  private TaskSpecialization specialization = TaskSpecialization.NONE;
+  public DroneInfoRegistry(List<DroneInfo> list) {
+    droneInfoMap = new ConcurrentHashMap<>();
+    for(DroneInfo droneInfo : list) {
+      droneInfoMap.put(droneInfo.getName(), droneInfo);
+    }
+  }
 
+  public DroneInfo getDroneInfo(String droneId) {
+    return droneInfoMap.get(droneId);
+  }
 }

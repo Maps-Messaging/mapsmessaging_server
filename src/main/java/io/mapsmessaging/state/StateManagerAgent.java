@@ -19,9 +19,10 @@
 
 package io.mapsmessaging.state;
 
-import io.mapsmessaging.config.TwinManagerConfig;
-import io.mapsmessaging.dto.rest.config.TwinManagerConfigDTO;
-import io.mapsmessaging.dto.rest.config.twin.MavlinkTwinConfigDTO;
+import io.mapsmessaging.state.config.DroneInfoRegistry;
+import io.mapsmessaging.state.config.TwinManagerConfig;
+import io.mapsmessaging.state.config.TwinManagerConfigDTO;
+import io.mapsmessaging.state.config.MavlinkTwinConfigDTO;
 import io.mapsmessaging.dto.rest.system.Status;
 import io.mapsmessaging.dto.rest.system.SubSystemStatusDTO;
 import io.mapsmessaging.logging.Logger;
@@ -30,8 +31,8 @@ import io.mapsmessaging.state.drone.core.TwinLifecycleStatus;
 import io.mapsmessaging.state.drone.core.TwinManager;
 import io.mapsmessaging.state.drone.publisher.TwinJsonPublisher;
 import io.mapsmessaging.state.drone.tak.TakTwinObserver;
-import io.mapsmessaging.state.mavlink.MavlinkSessionManager;
 import io.mapsmessaging.state.mavlink.MavlinkStateSubscriber;
+import io.mapsmessaging.state.mavlink.stanag.StanagStateSubscriber;
 import io.mapsmessaging.utilities.Agent;
 import io.mapsmessaging.utilities.configuration.ConfigurationManager;
 import lombok.Getter;
@@ -58,26 +59,35 @@ public class StateManagerAgent implements Agent {
   private TakTwinObserver takManager;
   private TwinJsonPublisher twinJsonPublisher;
   private ScheduledExecutorService scheduler;
+  private StanagStateSubscriber stanagStateSubscriber;
 
-  private List<MavlinkStateSubscriber> mavlinkSessionManagers;
+  private final List<MavlinkStateSubscriber> mavlinkSessionManagers;
 
   public StateManagerAgent() {
     config = ConfigurationManager.getInstance().getConfiguration(TwinManagerConfig.class);
+    DroneInfoRegistry registry;
+
     if(config == null){
       twinManager = new TwinManager();
+      registry = new DroneInfoRegistry(List.of());
     }
     else {
       twinManager = new TwinManager(config.isRemoveExpiredTwins(), config.getStaleTimeoutMillis(), config.getHeartbeatTimeoutMillis(), config.getRetentionTimeoutMillis());
+      registry = new DroneInfoRegistry(config.getDroneInfo());
     }
     mavlinkSessionManagers = new ArrayList<>();
     try {
       for(MavlinkTwinConfigDTO mavlinkConfig: config.getMavlink()){
-        mavlinkSessionManagers.add(new MavlinkStateSubscriber(twinManager, mavlinkConfig));
+        mavlinkSessionManagers.add(new MavlinkStateSubscriber(twinManager, mavlinkConfig, registry));
       }
     } catch (IOException e) {
       e.printStackTrace();
     }
-
+    try {
+      stanagStateSubscriber = new StanagStateSubscriber(config.getStanagConfig());
+    } catch (IOException e) {
+      e.printStackTrace();
+    }
   }
 
   @Override
@@ -146,6 +156,11 @@ public class StateManagerAgent implements Agent {
         twinJsonPublisher = null;
       }
 
+      try {
+        stanagStateSubscriber.start();
+      } catch (IOException e) {
+        e.printStackTrace();
+      }
     } finally {
       logger.log(STATE_MANAGER_STARTED);
     }
@@ -176,6 +191,13 @@ public class StateManagerAgent implements Agent {
           twinJsonPublisher.close();
         } catch (IOException e) {
           logger.log(STATE_MANAGER_PUBLISH_FAILED, e);
+        }
+      }
+      if(stanagStateSubscriber != null) {
+        try {
+          stanagStateSubscriber.stop();
+        } catch (IOException e) {
+          e.printStackTrace();
         }
       }
     } finally {

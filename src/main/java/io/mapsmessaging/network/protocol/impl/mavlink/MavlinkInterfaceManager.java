@@ -31,16 +31,13 @@ import io.mapsmessaging.network.io.impl.SelectorCallback;
 import io.mapsmessaging.network.io.impl.SelectorTask;
 import io.mapsmessaging.network.io.impl.udp.UDPFacadeEndPoint;
 import io.mapsmessaging.network.io.impl.udp.session.UDPSessionState;
-import org.xml.sax.SAXException;
 
-import javax.xml.parsers.ParserConfigurationException;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.net.URI;
 import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
-import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -151,12 +148,8 @@ public class MavlinkInterfaceManager implements SelectorCallback, MavlinkConnect
   }
 
   private boolean fromForward(Packet packet){
-    for(SocketAddress socketAddress:forwardList){
-      if(socketAddress.equals(packet.getFromAddress())){
-        return true;
-      }
-    }
-    return false;
+    SocketAddress fromAddress = packet.getFromAddress();
+    return forwardList.stream().anyMatch(forwardAddress -> forwardAddress.equals(fromAddress));
   }
 
   private void forwardPacket(byte[] raw){

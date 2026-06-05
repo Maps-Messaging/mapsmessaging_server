@@ -17,26 +17,26 @@
  *  limitations under the License.
  */
 
-package io.mapsmessaging.state.mavlink;
+package io.mapsmessaging.state.config.capability;
 
-import io.mapsmessaging.dto.rest.config.twin.MavlinkTwinConfigDTO;
-import io.mapsmessaging.state.drone.core.TwinManager;
+public enum TaskSpecialization {
 
-import java.io.IOException;
+  CLEAR_MCM_SWEEP_INFLUENCE,
+  CLEAR_MCM_SWEEP_MECHANICAL,
+  ANY,
+  CLEAR_MCM,
+  DETECT_ASW,
+  DETECT_MCM,
+  DETECT_SAR,
+  DETECT_SBW,
+  ENGAGE_ASW,
+  IDENTIFY_MCM,
+  IDENTIFY_SBW,
+  NEUTRALIZE_MCM,
+  NONE,
+  SURVEY_AERIAL,
+  SURVEY_BATHYMETRIC,
+  SURVEY_OCEANOGRAPHIC,
+  SURVEY_REA
 
-public class MavlinkSessionManager {
-
-  private final MavlinkStateSubscriber stateSubscriber;
-
-  public MavlinkSessionManager(TwinManager twinManager, MavlinkTwinConfigDTO config) throws IOException {
-    stateSubscriber = new MavlinkStateSubscriber(twinManager, config);
-  }
-
-  public void start() throws IOException{
-    stateSubscriber.start();
-  }
-
-  public void stop() throws IOException{
-    stateSubscriber.stop();
-  }
 }

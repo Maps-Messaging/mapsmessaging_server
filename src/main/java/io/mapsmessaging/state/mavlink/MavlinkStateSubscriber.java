@@ -18,20 +18,23 @@
 
 package io.mapsmessaging.state.mavlink;
 
+import com.google.common.reflect.TypeToken;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 import io.mapsmessaging.api.MessageEvent;
 import io.mapsmessaging.api.features.QualityOfService;
 import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.dto.rest.config.protocol.impl.MavlinkKnownSourceDTO;
-import io.mapsmessaging.dto.rest.config.twin.MavlinkTwinConfigDTO;
+import io.mapsmessaging.state.config.DroneInfoRegistry;
+import io.mapsmessaging.state.config.MavlinkTwinConfigDTO;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
-import io.mapsmessaging.mavlink.MavlinkEventFactory;
 import io.mapsmessaging.mavlink.ProcessedFrame;
+import io.mapsmessaging.mavlink.context.FrameFailureReason;
+import io.mapsmessaging.mavlink.message.Frame;
+import io.mapsmessaging.mavlink.message.Version;
 import io.mapsmessaging.network.io.impl.noop.NoOpEndPoint;
-import io.mapsmessaging.network.protocol.impl.mavlink.MavlinkInterfaceManager;
-import io.mapsmessaging.schemas.config.impl.MavlinkSchemaConfig;
-import io.mapsmessaging.schemas.formatters.MessageFormatter;
-import io.mapsmessaging.schemas.formatters.MessageFormatterFactory;
+import io.mapsmessaging.network.protocol.impl.mavlink.GsonFactory;
 import io.mapsmessaging.state.MessageHandler;
 import io.mapsmessaging.state.StateLoopProtocol;
 import io.mapsmessaging.state.drone.core.TwinManager;
@@ -40,45 +43,34 @@ import io.mapsmessaging.state.mavlink.listener.ListenerManager;
 import io.mapsmessaging.state.mavlink.packet.MavlinkPacket;
 import io.mapsmessaging.state.mavlink.packet.MavlinkPacketFactory;
 import java.io.IOException;
-import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.*;
+
 import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
 
-import static io.mapsmessaging.logging.ServerLogMessages.MAVLINK_STATE_DIALECT_DEFAULTED;
-import static io.mapsmessaging.logging.ServerLogMessages.MAVLINK_STATE_PACKET_UNPACK_EMPTY;
-import static io.mapsmessaging.logging.ServerLogMessages.MAVLINK_STATE_PACKET_UNPACK_FAILED;
-import static io.mapsmessaging.logging.ServerLogMessages.MAVLINK_STATE_UNSUPPORTED_PACKET_IGNORED;
+import static io.mapsmessaging.logging.ServerLogMessages.*;
 
 public class MavlinkStateSubscriber implements MessageHandler {
 
-  private static final String DEFAULT_DIALECT_NAME = "common";
-
   private final Logger logger = LoggerFactory.getLogger(MavlinkStateSubscriber.class);
 
-  private final MavlinkStateSubscriptionMode subscriptionMode;
-  private final MavlinkEventFactory mavlinkEventFactory;
   private final StateLoopProtocol protocol;
   private final String namespaceTopicPath;
-  private final MavlinkPayloadResolver payloadResolver;
   private final MavlinkSourceRegistry sourceRegistry;
+  private final DroneInfoRegistry droneRegistry;
   private final MavlinkTwinUpdater twinUpdater;
 
   public MavlinkStateSubscriber(
       @NonNull @NotNull TwinManager twinManager,
-      @NonNull @NotNull MavlinkTwinConfigDTO mavlinkConfig
+      @NonNull @NotNull MavlinkTwinConfigDTO mavlinkConfig,
+      @NonNull @NotNull DroneInfoRegistry registry
   ) throws IOException {
-    String formatterDialectName = resolveFormatterDialectName(mavlinkConfig.getDialectName());
-
-    this.subscriptionMode = mavlinkConfig.getSubscriptionMode();
     this.protocol = new StateLoopProtocol(new NoOpEndPoint(1, null, new ArrayList<>()), this);
     this.namespaceTopicPath = mavlinkConfig.getTopic();
-    this.mavlinkEventFactory = MavlinkInterfaceManager.loadDialect(mavlinkConfig.getDialectName());
     this.sourceRegistry = new MavlinkSourceRegistry(mavlinkConfig);
-    this.payloadResolver = new MavlinkPayloadResolver(createFormatter(formatterDialectName));
+    this.droneRegistry = registry;
     this.twinUpdater = new MavlinkTwinUpdater(twinManager, new ListenerManager(twinManager));
   }
 
@@ -95,27 +87,10 @@ public class MavlinkStateSubscriber implements MessageHandler {
   public void handle(@NonNull @NotNull MessageEvent messageEvent) {
     Message message = messageEvent.getMessage();
     String sourceName = messageEvent.getDestinationName();
-    byte[] payload = payloadResolver.resolve(sourceName, message.getOpaqueData());
-
-    if (payload == null) {
+    ProcessedFrame env = parseJson(message.getOpaqueData());
+    if(env == null){
       return;
     }
-
-    Optional<ProcessedFrame> potentialFrame;
-    try {
-      ByteBuffer mavlink = ByteBuffer.wrap(payload);
-      potentialFrame = mavlinkEventFactory.unpack(sourceName, mavlink);
-    } catch (IOException exception) {
-      logger.log(MAVLINK_STATE_PACKET_UNPACK_FAILED, sourceName);
-      return;
-    }
-
-    if (potentialFrame.isEmpty()) {
-      logger.log(MAVLINK_STATE_PACKET_UNPACK_EMPTY, sourceName);
-      return;
-    }
-
-    ProcessedFrame env = potentialFrame.get();
     MavlinkPacket packet = MavlinkPacketFactory.create(env);
 
     if (packet == null) {
@@ -130,27 +105,7 @@ public class MavlinkStateSubscriber implements MessageHandler {
     }
 
     TwinUpdateContext context = buildUpdateContext(env);
-    twinUpdater.updateTwinState(messageEvent, env, packet, context, knownSource, subscriptionMode);
-
-    if (subscriptionMode.includesPlanState()) {
-      // Later: planListenerManager.handle(env, packet, context);
-    }
-  }
-
-  private MessageFormatter createFormatter(String dialectName) throws IOException {
-    MavlinkSchemaConfig schemaConfig = new MavlinkSchemaConfig();
-    schemaConfig.setDialect(dialectName);
-
-    return MessageFormatterFactory.getInstance().getFormatter(schemaConfig);
-  }
-
-  private String resolveFormatterDialectName(String dialectName) {
-    if (dialectName == null || dialectName.isBlank()) {
-      logger.log(MAVLINK_STATE_DIALECT_DEFAULTED, DEFAULT_DIALECT_NAME);
-      return DEFAULT_DIALECT_NAME;
-    }
-
-    return dialectName;
+    twinUpdater.updateTwinState(env, packet, context, knownSource, droneRegistry.getDroneInfo(knownSource.getName()));
   }
 
   private TwinUpdateContext buildUpdateContext(ProcessedFrame env) {
@@ -163,5 +118,41 @@ public class MavlinkStateSubscriber implements MessageHandler {
     context.setFullSnapshot(false);
 
     return context;
+  }
+
+  private ProcessedFrame parseJson(byte[] opaqueData) {
+    JsonObject jsonObject = JsonParser.parseString(new String(opaqueData, StandardCharsets.UTF_8)).getAsJsonObject();
+    JsonObject mavlinkObject = jsonObject.getAsJsonObject("mavlink");
+    if(mavlinkObject == null) {
+      return null;
+    }
+    JsonObject payloadObject = mavlinkObject.getAsJsonObject("payload");
+
+    Frame frame = new Frame();
+    frame.setVersion(Version.valueOf(mavlinkObject.get("version").getAsString()));
+    frame.setMessageId(mavlinkObject.get("messageId").getAsInt());
+    frame.setSystemId(mavlinkObject.get("systemId").getAsInt());
+    frame.setComponentId(mavlinkObject.get("componentId").getAsInt());
+    frame.setSequence(mavlinkObject.get("sequence").getAsInt());
+    frame.setPayloadLength(mavlinkObject.get("payloadLength").getAsInt());
+    frame.setSigned(mavlinkObject.get("signed").getAsBoolean());
+    frame.setValidated(FrameFailureReason.OK);
+
+    frame.setChecksum(0);
+    frame.setIncompatibilityFlags((byte) 0);
+    frame.setCompatibilityFlags((byte) 0);
+    frame.setSignature(null);
+
+    Map<String, Object> fields = new LinkedHashMap<>();
+    if (payloadObject.has("decoded") && payloadObject.get("decoded").isJsonObject()) {
+      fields = GsonFactory.createStrictJsonWithSafeFloats().fromJson(
+          payloadObject.getAsJsonObject("decoded"),
+          new TypeToken<LinkedHashMap<String, Object>>() {
+          }.getType()
+      );
+    }
+
+    ProcessedFrame processedFrame = new ProcessedFrame(""+frame.getMessageId(), frame, fields, true, Collections.emptyList());
+    return processedFrame;
   }
 }

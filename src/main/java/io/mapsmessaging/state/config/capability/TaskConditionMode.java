@@ -15,29 +15,15 @@
  *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
- *
  */
 
-package io.mapsmessaging.state.capability;
+package io.mapsmessaging.state.config.capability;
 
-public enum TaskSpecialization {
+public enum TaskConditionMode {
 
-  CLEAR_MCM_SWEEP_INFLUENCE,
-  CLEAR_MCM_SWEEP_MECHANICAL,
-  ANY,
-  CLEAR_MCM,
-  DETECT_ASW,
-  DETECT_MCM,
-  DETECT_SAR,
-  DETECT_SBW,
-  ENGAGE_ASW,
-  IDENTIFY_MCM,
-  IDENTIFY_SBW,
-  NEUTRALIZE_MCM,
-  NONE,
-  SURVEY_AERIAL,
-  SURVEY_BATHYMETRIC,
-  SURVEY_OCEANOGRAPHIC,
-  SURVEY_REA
+  SIMPLE_TASK_STATE,
+  FOLLOW_TASK_STATE,
+  COMPLEX,
+  NOT_SUPPORTED
 
 }

@@ -19,14 +19,17 @@
 
 package io.mapsmessaging.state.drone.drone;
 
-import io.mapsmessaging.state.capability.TaskCapabilities;
+import io.mapsmessaging.state.config.capability.TaskCapabilities;
 import io.mapsmessaging.state.drone.core.EntityTwin;
 import io.mapsmessaging.state.drone.core.TwinType;
 import io.mapsmessaging.state.drone.model.*;
 import io.mapsmessaging.state.drone.model.autopilot.AutopilotState;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.time.Instant;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
@@ -77,7 +80,7 @@ public class DroneTwin extends EntityTwin {
       example = "Primary survey drone",
       nullable = true
   )
-  private String description;
+  private String descriptionString;
 
   @Schema(
       description = "Short 7 char string used for the call sign of the vessel.",
@@ -299,6 +302,12 @@ public class DroneTwin extends EntityTwin {
       nullable = true
   )
   private List<String> blockingReadinessItems;
+
+  @Schema(
+      description = "Open map to define description data",
+      nullable = true
+  )
+  private Map<String, Object> description = new HashMap<>();
 
   @Schema(
       description = "Timestamp of the last readiness evaluation.",

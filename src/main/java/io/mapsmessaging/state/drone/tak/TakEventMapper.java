@@ -265,7 +265,7 @@ public class TakEventMapper {
     StringBuilder remarksBuilder = new StringBuilder();
 
     if (twin instanceof DroneTwin droneTwin) {
-      appendRemarkText(remarksBuilder, droneTwin.getDescription());
+      appendRemarkText(remarksBuilder, droneTwin.getDescriptionString());
       appendLabelledRemark(remarksBuilder, "mode", resolveFlightMode(droneTwin));
       appendLabelledRemark(remarksBuilder, "mission", droneTwin.getMissionState());
       appendLabelledRemark(remarksBuilder, "landed", droneTwin.getLandedState());

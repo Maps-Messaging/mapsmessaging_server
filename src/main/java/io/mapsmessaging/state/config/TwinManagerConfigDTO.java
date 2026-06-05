@@ -17,11 +17,10 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package io.mapsmessaging.dto.rest.config;
+package io.mapsmessaging.state.config;
 
+import io.mapsmessaging.dto.rest.config.BaseManagerConfigDTO;
 import io.mapsmessaging.dto.rest.config.protocol.impl.TakProtocolDTO;
-import io.mapsmessaging.dto.rest.config.twin.MavlinkTwinConfigDTO;
-import io.mapsmessaging.dto.rest.config.twin.TwinPublishConfigDTO;
 import lombok.Data;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.EqualsAndHashCode;
@@ -98,6 +97,17 @@ public class TwinManagerConfigDTO extends BaseManagerConfigDTO {
       description = "MAVLink topic sources processed into twin state. If no entries are present, no MAVLink twin state subscribers are started."
   )
   protected List<MavlinkTwinConfigDTO> mavlink = new ArrayList<>();
+
+
+  @Schema(
+      description = "Stanag configuration"
+  )
+  protected StanagConfig stanagConfig;
+
+  @Schema(
+      description = "Configuration on each drone"
+  )
+  protected List<DroneInfo> droneInfo = new ArrayList<>();
 
   public TwinManagerConfigDTO() {
     super("TwinManagerConfigDTO");

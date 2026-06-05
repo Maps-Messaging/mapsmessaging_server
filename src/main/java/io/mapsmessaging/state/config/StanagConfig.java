@@ -15,49 +15,16 @@
  *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
- *
  */
 
-package io.mapsmessaging.state.capability;
+package io.mapsmessaging.state.config;
 
-public enum PlanTaskType {
+import lombok.Getter;
+import lombok.Setter;
 
-  REPOSITION,
-  NAVIGATE,
-  ESCORT,
-  FOLLOW,
-  IDENTIFY,
-  TRACK,
-  SHADOW,
-  CLASSIFY,
-  DETECT,
-  SURVEY,
-  PATROL,
-  RECONNAISSANCE,
-  PICKET,
-  SCREEN,
-  STANDBY,
-  LOITER,
-  PREPARE,
-  SYNCHRONIZATION,
-  HANDOVER,
-  RESUPPLY,
-  RECOVER,
-  LAUNCH,
-  DETER,
-  WARN,
-  COVER,
-  MARK,
-  DESTROY,
-  NEUTRALIZE,
-  ENGAGE,
-  DEPLOY,
-  REMOVE,
-  JAM,
-  RELAY,
-  CLEAR,
-  AVOID,
-  BARRIER,
-  INSPECT
-
+@Getter
+@Setter
+public class StanagConfig {
+  private String taskTopic;
+  private String chatTopic;
 }

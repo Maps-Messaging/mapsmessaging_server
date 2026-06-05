@@ -17,19 +17,17 @@
  *  limitations under the License.
  */
 
-package io.mapsmessaging.config;
+package io.mapsmessaging.state.config;
 
+import io.mapsmessaging.config.Config;
+import io.mapsmessaging.config.ConfigManager;
 import io.mapsmessaging.configuration.ConfigurationProperties;
 import io.mapsmessaging.dto.rest.config.BaseConfigDTO;
-import io.mapsmessaging.dto.rest.config.TwinManagerConfigDTO;
 import io.mapsmessaging.dto.rest.config.protocol.impl.MavlinkKnownSourceDTO;
 import io.mapsmessaging.dto.rest.config.protocol.impl.TakProtocolDTO;
 import io.mapsmessaging.dto.rest.config.protocol.impl.VehicleClass;
-import io.mapsmessaging.dto.rest.config.twin.MavlinkTwinConfigDTO;
-import io.mapsmessaging.dto.rest.config.twin.TwinPublishConfigDTO;
 import io.mapsmessaging.license.FeatureManager;
-import io.mapsmessaging.state.capability.*;
-import io.mapsmessaging.state.mavlink.MavlinkStateSubscriptionMode;
+import io.mapsmessaging.state.config.capability.*;
 import io.mapsmessaging.utilities.configuration.ConfigurationManager;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -64,8 +62,19 @@ public class TwinManagerConfig extends TwinManagerConfigDTO implements Config, C
       this.publish = publishConfig;
     }
 
+    if(properties.containsKey("droneInfo")) {
+      this.droneInfo = parseDroneInfos(properties.get("droneInfo"));
+    }
+
     if (properties.containsKey("mavlink")) {
       this.mavlink = parseMavlinkConfigs(properties.get("mavlink"));
+    }
+
+    if(properties.containsKey("stanag")) {
+      ConfigurationProperties stanagProps = (ConfigurationProperties) properties.get("stanag");
+      this.stanagConfig = new StanagConfig();
+      stanagConfig.setChatTopic(stanagProps.getProperty("chatTopic", null));
+      stanagConfig.setTaskTopic(stanagProps.getProperty("taskTopic", null));
     }
   }
 
@@ -198,8 +207,6 @@ public class TwinManagerConfig extends TwinManagerConfigDTO implements Config, C
     config.setName(properties.getProperty("name", config.getName()));
     config.setTopic(properties.getProperty("topic", config.getTopic()));
     config.setDialectName(properties.getProperty("dialectName", config.getDialectName()));
-    config.setSubscriptionMode(parseSubscriptionMode(properties.getProperty("subscriptionMode", config.getSubscriptionMode().name())));
-
     if (properties.containsKey("knownSources")) {
       config.setKnownSources(parseKnownSources(properties.get("knownSources")));
     }
@@ -233,10 +240,37 @@ public class TwinManagerConfig extends TwinManagerConfigDTO implements Config, C
     knownSource.setSystemId(properties.getIntProperty("systemId", knownSource.getSystemId()));
     knownSource.setComponentId(properties.getIntProperty("componentId", knownSource.getComponentId()));
     knownSource.setVehicleClass(parseVehicleClass(properties.getProperty("vehicleClass", null), knownSource.getVehicleClass()));
-    knownSource.setCapabilities(parseTaskCapabilities(properties.get("capabilities")));
-
     return knownSource;
   }
+
+
+  private List<DroneInfo> parseDroneInfos(Object properties) {
+    List<DroneInfo> droneInfos = new ArrayList<>();
+
+    if (!(properties instanceof List<?> entries)) {
+      if (properties instanceof ConfigurationProperties sourceProps) {
+        droneInfos.add(parseDroneInfo(sourceProps));
+      }
+      return droneInfos;
+    }
+
+    for (Object entry : entries) {
+      if (entry instanceof ConfigurationProperties sourceProps) {
+        droneInfos.add(parseDroneInfo(sourceProps));
+      }
+    }
+    return droneInfos;
+  }
+
+  private DroneInfo parseDroneInfo(ConfigurationProperties properties) {
+    DroneInfo droneInfo = new DroneInfo();
+    droneInfo.setName(properties.getProperty("name", droneInfo.getName()));
+    droneInfo.setDescription( ((ConfigurationProperties)properties.get("description")).getMap());
+    droneInfo.setCapabilities(parseTaskCapabilities(properties.get("capabilities")));
+    return droneInfo;
+  }
+
+
 
   @SuppressWarnings("unchecked")
   private TaskCapabilities parseTaskCapabilities(Object value) {
@@ -349,14 +383,6 @@ public class TwinManagerConfig extends TwinManagerConfigDTO implements Config, C
     return value;
   }
 
-  private MavlinkStateSubscriptionMode parseSubscriptionMode(String value) {
-    if (value == null || value.isBlank()) {
-      return MavlinkStateSubscriptionMode.TWIN;
-    }
-
-    return MavlinkStateSubscriptionMode.valueOf(value.trim().toUpperCase());
-  }
-
   private VehicleClass parseVehicleClass(String value, VehicleClass defaultValue) {
     if (value == null || value.isBlank()) {
       return defaultValue;
@@ -373,8 +399,6 @@ public class TwinManagerConfig extends TwinManagerConfigDTO implements Config, C
       properties.put("name", config.getName());
       properties.put("topic", config.getTopic());
       properties.put("dialectName", config.getDialectName());
-      properties.put("subscriptionMode", config.getSubscriptionMode().name());
-
       if (config.getKnownSources() != null && !config.getKnownSources().isEmpty()) {
         properties.put("knownSources", toKnownSourceConfigurationProperties(config.getKnownSources()));
       }

@@ -1,6 +1,5 @@
 package io.mapsmessaging.dto.rest.config.protocol.impl;
 
-import io.mapsmessaging.state.capability.TaskCapabilities;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -32,10 +31,5 @@ public class MavlinkKnownSourceDTO {
       description = "Vehicle class (UAV=air, USV=surface, UGV=ground, UUV=underwater, GCS=control)."
   )
   protected VehicleClass vehicleClass;
-
-  @Schema(
-      description = "Task capabilities supported by this known MAVLink source."
-  )
-  protected TaskCapabilities capabilities = new TaskCapabilities();
 
 }

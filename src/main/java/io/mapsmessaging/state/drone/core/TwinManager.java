@@ -126,6 +126,7 @@ public class TwinManager {
     synchronized (twin) {
       updater.accept(twin);
       twin.setLastSeenAt(now);
+      twin.setValidTill(now.plus(2, java.time.temporal.ChronoUnit.HOURS));
       transitionStatus(twin, TwinLifecycleStatus.ACTIVE, context);
       ensureLinkConnected(twin);
     }

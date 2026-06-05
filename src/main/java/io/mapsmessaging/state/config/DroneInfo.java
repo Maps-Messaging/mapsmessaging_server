@@ -17,30 +17,31 @@
  *  limitations under the License.
  */
 
-package io.mapsmessaging.state.plan;
+package io.mapsmessaging.state.config;
 
+import io.mapsmessaging.state.config.capability.TaskCapabilities;
 import io.swagger.v3.oas.annotations.media.Schema;
+import lombok.Getter;
+import lombok.Setter;
 
-@Schema(
-    description = "Execution state of a participant assigned to a plan."
-)
-public enum PlanParticipantState {
+import java.util.Map;
 
-  @Schema(description = "Participant has been assigned to the plan.")
-  ASSIGNED,
+@Getter
+@Setter
+public class DroneInfo {
 
-  @Schema(description = "Participant is actively executing the plan or assigned task.")
-  ACTIVE,
+  @Schema(
+      description = "Unique drone id"
+  )
+  private String name;
 
-  @Schema(description = "Participant execution is paused.")
-  PAUSED,
+  @Schema(
+      description = "Drone description"
+  )
+  private Map<String, Object> description;
 
-  @Schema(description = "Participant has completed its assigned work.")
-  COMPLETED,
-
-  @Schema(description = "Participant failed to complete its assigned work.")
-  FAILED,
-
-  @Schema(description = "Participant has been removed from the plan.")
-  REMOVED
+  @Schema(
+      description = "Task capabilities supported by this known MAVLink source."
+  )
+  private TaskCapabilities capabilities = new TaskCapabilities();
 }

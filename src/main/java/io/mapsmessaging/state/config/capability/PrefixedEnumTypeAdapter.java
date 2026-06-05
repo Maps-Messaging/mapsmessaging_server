@@ -17,7 +17,7 @@
  *  limitations under the License.
  */
 
-package io.mapsmessaging.state.capability;
+package io.mapsmessaging.state.config.capability;
 
 import com.google.gson.JsonDeserializationContext;
 import com.google.gson.JsonDeserializer;

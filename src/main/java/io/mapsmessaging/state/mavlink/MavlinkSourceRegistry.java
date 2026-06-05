@@ -19,8 +19,7 @@
 package io.mapsmessaging.state.mavlink;
 
 import io.mapsmessaging.dto.rest.config.protocol.impl.MavlinkKnownSourceDTO;
-import io.mapsmessaging.dto.rest.config.protocol.impl.VehicleClass;
-import io.mapsmessaging.dto.rest.config.twin.MavlinkTwinConfigDTO;
+import io.mapsmessaging.state.config.MavlinkTwinConfigDTO;
 import io.mapsmessaging.mavlink.ProcessedFrame;
 import java.util.HashMap;
 import java.util.List;

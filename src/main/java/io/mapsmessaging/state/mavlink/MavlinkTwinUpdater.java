@@ -18,18 +18,17 @@
 
 package io.mapsmessaging.state.mavlink;
 
-import io.mapsmessaging.api.MessageEvent;
 import io.mapsmessaging.dto.rest.config.protocol.impl.MavlinkKnownSourceDTO;
 import io.mapsmessaging.dto.rest.config.protocol.impl.VehicleClass;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.mavlink.ProcessedFrame;
+import io.mapsmessaging.state.config.DroneInfo;
 import io.mapsmessaging.state.drone.core.EntityTwin;
 import io.mapsmessaging.state.drone.core.TwinManager;
 import io.mapsmessaging.state.drone.core.TwinUpdateContext;
 import io.mapsmessaging.state.drone.drone.DroneTwin;
 import io.mapsmessaging.state.mavlink.bootstrap.DroneTwinReadinessEvaluator;
-import io.mapsmessaging.state.mavlink.bootstrap.MavlinkBootstrapEventPublisher;
 import io.mapsmessaging.state.mavlink.bootstrap.MavlinkBootstrapProfile;
 import io.mapsmessaging.state.mavlink.bootstrap.MavlinkBootstrapStateEngine;
 import io.mapsmessaging.state.mavlink.listener.ListenerManager;
@@ -63,17 +62,16 @@ public class MavlinkTwinUpdater {
   }
 
   public void updateTwinState(
-      @NonNull @NotNull MessageEvent messageEvent,
       @NonNull @NotNull ProcessedFrame env,
       @NonNull @NotNull MavlinkPacket packet,
       @NonNull @NotNull TwinUpdateContext context,
-      MavlinkKnownSourceDTO knownSource,
-      @NonNull @NotNull MavlinkStateSubscriptionMode subscriptionMode
+      @NonNull @NotNull MavlinkKnownSourceDTO knownSource,
+      DroneInfo droneInfo
   ) {
     String twinId = buildTwinId(env, knownSource);
 
     EntityTwin twin = twinManager.getTwin(twinId)
-        .orElseGet(() -> createTwin(twinId, env, context, knownSource));
+        .orElseGet(() -> createTwin(twinId, env, context, knownSource, droneInfo));
 
     twinManager.updateTwin(twinId, twinToUpdate -> {
       if (twinToUpdate instanceof DroneTwin drone) {
@@ -81,29 +79,29 @@ public class MavlinkTwinUpdater {
         drone.setComponentId(env.getFrame().getComponentId());
       }
     }, context);
-
-    if (subscriptionMode.includesTwinState()) {
-      listenerManager.handle(env.getFrame().getMessageId(), twinId, packet, context);
-    }
+    listenerManager.handle(env.getFrame().getMessageId(), twinId, packet, context);
   }
 
   private EntityTwin createTwin(
       String twinId,
       ProcessedFrame env,
       TwinUpdateContext context,
-      MavlinkKnownSourceDTO knownSource
+      MavlinkKnownSourceDTO knownSource,
+      DroneInfo droneInfo
   ) {
     DroneTwin droneTwin = new DroneTwin(twinId);
     droneTwin.setVehicleClass(resolveVehicleClass(knownSource));
-    droneTwin.setDescription(resolveDescription(twinId, env, knownSource));
+    droneTwin.setDescriptionString(resolveDescription(twinId, env, knownSource));
     droneTwin.setCallSign(resolveCallSign(twinId, knownSource));
     droneTwin.setDisplayName(resolveDisplayName(twinId, knownSource));
     droneTwin.setSystemId(env.getFrame().getSystemId());
     droneTwin.setComponentId(env.getFrame().getComponentId());
 
-    if(knownSource != null && knownSource.getCapabilities() != null) {
-      droneTwin.setCapabilities(knownSource.getCapabilities());
+    if(droneInfo != null && droneInfo.getCapabilities() != null) {
+      droneTwin.setCapabilities(droneInfo.getCapabilities());
+      droneTwin.setDescription(droneInfo.getDescription());
     }
+
     twinManager.registerTwin(droneTwin, context);
 
     logger.log(

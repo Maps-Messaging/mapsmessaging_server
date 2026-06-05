@@ -15,14 +15,18 @@
  *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
- *
  */
 
-package io.mapsmessaging.state.capability;
+package io.mapsmessaging.state.mavlink.stanag;
 
-public enum TaskTemplateMode {
+import com.google.gson.JsonObject;
 
-  NOT_SUPPORTED,
-  SUPPORTED
+import java.util.function.Consumer;
 
+public class TaskListener implements Consumer<JsonObject> {
+
+  @Override
+  public void accept(JsonObject jsonObject) {
+    System.out.println(jsonObject);
+  }
 }

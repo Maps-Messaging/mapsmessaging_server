@@ -36,14 +36,13 @@ import io.mapsmessaging.engine.session.ClientConnection;
 import io.mapsmessaging.rest.translation.GsonDateTimeDeserialiser;
 import io.mapsmessaging.rest.translation.GsonDateTimeSerialiser;
 import io.mapsmessaging.rest.translation.InstantTypeAdapter;
-import io.mapsmessaging.state.capability.*;
+import io.mapsmessaging.state.config.capability.*;
 import io.mapsmessaging.state.drone.core.EntityTwin;
 import io.mapsmessaging.state.drone.core.TwinManager;
 import io.mapsmessaging.state.drone.core.TwinObserver;
 import io.mapsmessaging.state.drone.core.TwinUpdateContext;
 import io.mapsmessaging.state.drone.drone.DroneTwin;
 import io.mapsmessaging.state.drone.model.Contact;
-import io.mapsmessaging.utilities.GsonFactory;
 import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
 

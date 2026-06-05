@@ -17,10 +17,9 @@
  *  limitations under the License.
  */
 
-package io.mapsmessaging.dto.rest.config.twin;
+package io.mapsmessaging.state.config;
 
 import io.mapsmessaging.dto.rest.config.protocol.impl.MavlinkKnownSourceDTO;
-import io.mapsmessaging.state.mavlink.MavlinkStateSubscriptionMode;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.ArrayList;
 import java.util.List;
@@ -54,13 +53,6 @@ public class MavlinkTwinConfigDTO {
       example = "common"
   )
   private String dialectName;
-
-  @Schema(
-      description = "Controls whether MAVLink messages update twin state, plan state, or both.",
-      defaultValue = "TWIN",
-      implementation = MavlinkStateSubscriptionMode.class
-  )
-  private MavlinkStateSubscriptionMode subscriptionMode = MavlinkStateSubscriptionMode.TWIN;
 
   @Schema(
       description = "Known MAVLink sources for this topic source. Only listed sources are processed into twins. Unknown sources are ignored."

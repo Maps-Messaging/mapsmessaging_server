@@ -15,16 +15,24 @@
  *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
- *
  */
 
-package io.mapsmessaging.state.capability;
+package io.mapsmessaging.state.config.capability;
 
-public enum TaskConditionMode {
+import com.google.gson.annotations.SerializedName;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
-  SIMPLE_TASK_STATE,
-  FOLLOW_TASK_STATE,
-  COMPLEX,
-  NOT_SUPPORTED
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+public class TaskCapability {
+
+  @SerializedName("task_type")
+  private PlanTaskType taskType;
+
+  @SerializedName("task_specialization")
+  private TaskSpecialization specialization = TaskSpecialization.NONE;
 
 }

@@ -35,6 +35,8 @@ import lombok.NoArgsConstructor;
 
 import java.security.NoSuchAlgorithmException;
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
+import java.time.temporal.TemporalUnit;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
@@ -162,6 +164,11 @@ public abstract class EntityTwin {
   private Instant lastSeenAt;
 
   @Schema(
+      description = "time that the data is valid till"
+  )
+  private Instant validTill;
+
+  @Schema(
       description = "Timestamp when identity-related fields were last updated.",
       example = "2026-04-20T06:31:00Z",
       nullable = true
@@ -242,6 +249,7 @@ public abstract class EntityTwin {
   public Long getRelationshipsUpdatedAtSeconds() {
     return relationshipsUpdatedAt != null ? relationshipsUpdatedAt.getEpochSecond() : null;
   }
+
 
 
   protected EntityTwin(String twinId) {
