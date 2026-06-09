@@ -25,7 +25,10 @@ import io.mapsmessaging.api.MessageEvent;
 import io.mapsmessaging.api.features.QualityOfService;
 import io.mapsmessaging.state.StateLoopProtocol;
 import io.mapsmessaging.state.config.DroneInfo;
+import io.mapsmessaging.state.config.capability.Authorities;
+import io.mapsmessaging.state.config.capability.PlanTaskType;
 import io.mapsmessaging.state.config.capability.TaskCapabilities;
+import io.mapsmessaging.state.config.capability.TaskCapability;
 import io.mapsmessaging.state.drone.core.EntityTwin;
 import io.mapsmessaging.state.drone.core.TwinManager;
 import io.mapsmessaging.state.drone.drone.DroneTwin;
@@ -80,21 +83,54 @@ public class TaskListener implements Consumer<JsonObject> {
 
   private void handleTaskForTwin(EntityTwin twin, TaskAdminCommand command) {
     if(twin instanceof DroneTwin droneTwin){
-      TaskCapabilities capabilities = droneTwin.getCapabilities();
-      Map<String, Object> description = droneTwin.getDescription();
-
-
-      // Need to validate that the request is valid and the drone is capable of it
-
-      // Build mavlink goto request for drone
-      GeoPosition geoPosition = command.getPosition();
-      MavlinkCommandInt mavlinkRequest = MavlinkCommandInt.reposition(droneTwin.getSystemId(), droneTwin.getComponentId(), geoPosition, taskSequence.getAndIncrement());
-      MessageBuilder messageBuilder = new MessageBuilder();
-      messageBuilder.setOpaqueData(mavlinkRequest.toMavlinkJsonObject(255, 0).toString().getBytes(StandardCharsets.UTF_8))
+      if(isAuthorised(droneTwin, command)){
+        if(command.getAction().equals("REPOSITION")) {
+          GeoPosition geoPosition = command.getPosition();
+          MavlinkCommandInt mavlinkRequest = MavlinkCommandInt.reposition(droneTwin.getSystemId(), droneTwin.getComponentId(), geoPosition, taskSequence.getAndIncrement());
+          MessageBuilder messageBuilder = new MessageBuilder();
+          messageBuilder.setOpaqueData(mavlinkRequest.toMavlinkJsonObject(255, 0).toString().getBytes(StandardCharsets.UTF_8))
               .setQoS(QualityOfService.AT_MOST_ONCE)
-          .setCorrelationData(twin.getUniqueOutboundIdentifier());
-      protocol.respond(twin.getResponseTopicName(), messageBuilder.build());
-
+              .setCorrelationData(twin.getUniqueOutboundIdentifier());
+          protocol.respond(twin.getResponseTopicName(), messageBuilder.build());
+        }
+      }
     }
+  }
+
+  private boolean isAuthorised(DroneTwin droneTwin, TaskAdminCommand command){
+    boolean authorised = false;
+    TaskCapabilities capabilities = droneTwin.getCapabilities();
+    TaskCapability capability = capabilities.getTasks()
+        .stream()
+        .filter(taskCapability -> matchesTaskType(taskCapability.getTaskType(), command.getTaskType()))
+        .findFirst()
+        .orElse(null);
+
+    if (capability == null) {
+      System.out.println("No matching capability found for task " + command.getAction() + " " + command.getTaskType());
+    } else {
+      if (capability.getAuthorities() == null || capability.getAuthorities().length == 0) {
+        authorised = true;
+      } else {
+        for (Authorities authority : capability.getAuthorities()) {
+          if (authority.getGuid().equals(command.getAuthorityGuid())) {
+            authorised = true;
+            break;
+          }
+        }
+      }
+      if (!authorised) {
+        System.out.println("Not authorised to perform task " + command.getAction());
+      }
+    }
+    return authorised;
+  }
+
+  private boolean matchesTaskType(PlanTaskType taskType, String taskTypeName) {
+    if (taskType == null) {
+      return false;
+    }
+
+    return taskType.name().equals(taskTypeName) || taskType.toString().equals(taskTypeName);
   }
 }

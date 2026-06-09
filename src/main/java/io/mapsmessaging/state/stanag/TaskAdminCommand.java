@@ -24,25 +24,36 @@ import io.mapsmessaging.state.drone.model.GeoPosition;
 import lombok.Getter;
 import lombok.ToString;
 
+import java.util.UUID;
+
 @Getter
 @ToString
 public class TaskAdminCommand {
 
+  private static final String TASK_ADMIN_ACTION_PREFIX = "TaskAdminActionEnum_";
+  private static final String TASK_TYPE_PREFIX = "TaskTypeEnum_";
+
   private final String action;
+  private final String taskType;
   private final String identifier;
   private final String nodeIdentifier;
+  private final UUID authorityGuid;
   private final String positionIdentifier;
   private final GeoPosition position;
 
   public TaskAdminCommand(
       String action,
+      String taskType,
       String identifier,
       String nodeIdentifier,
+      String authorityGuid,
       String positionIdentifier,
       GeoPosition position) {
     this.action = action;
+    this.taskType = taskType;
     this.identifier = identifier;
     this.nodeIdentifier = nodeIdentifier;
+    this.authorityGuid = UUID.fromString(authorityGuid);
     this.positionIdentifier = positionIdentifier;
     this.position = position;
   }
@@ -51,12 +62,28 @@ public class TaskAdminCommand {
     try {
       JsonObject bodyObject = getRequiredObject(jsonObject, "body");
 
-      String action = getRequiredString(bodyObject, "action");
+      String action = stripPrefix(
+          getRequiredString(bodyObject, "action"),
+          TASK_ADMIN_ACTION_PREFIX
+      );
+
       String identifier = getRequiredString(bodyObject, "identifier");
       String nodeIdentifier = getRequiredString(bodyObject, "node");
 
+      JsonObject authorityObject = getRequiredObject(bodyObject, "authority");
+      validateDiscriminator(authorityObject, "AuthorityTypeEnum_GUID");
+      String authorityGuid = getRequiredString(authorityObject, "guid");
+
       JsonObject descriptionObject = getRequiredObject(bodyObject, "description");
-      validateDiscriminator(descriptionObject, "TaskTypeEnum_REPOSITION");
+
+      String taskType = stripPrefix(
+          getRequiredString(descriptionObject, "$discriminator"),
+          TASK_TYPE_PREFIX
+      );
+
+      if (!"REPOSITION".equals(taskType)) {
+        throw new TaskAdminCommandException("Unsupported task type: " + taskType);
+      }
 
       JsonObject repositionObject = getRequiredObject(descriptionObject, "reposition");
       JsonObject locationObject = getRequiredObject(repositionObject, "location");
@@ -75,13 +102,23 @@ public class TaskAdminCommand {
 
       return new TaskAdminCommand(
           action,
+          taskType,
           identifier,
           nodeIdentifier,
+          authorityGuid,
           positionIdentifier,
-          position);
+          position
+      );
     } catch (IllegalStateException | ClassCastException exception) {
       throw new TaskAdminCommandException("Invalid TASK_ADMIN command structure", exception);
     }
+  }
+
+  private static String stripPrefix(String value, String prefix) {
+    if (value != null && value.startsWith(prefix)) {
+      return value.substring(prefix.length());
+    }
+    return value;
   }
 
   private static void validateDiscriminator(JsonObject jsonObject, String expectedValue)
