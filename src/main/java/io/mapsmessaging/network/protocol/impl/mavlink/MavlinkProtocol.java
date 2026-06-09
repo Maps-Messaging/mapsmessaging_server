@@ -183,7 +183,7 @@ public class MavlinkProtocol extends Protocol {
               drone.setDisplayName(known.getDescription());
             } else {
               ((DroneTwin) twin).setVehicleClass(VehicleClass.UAV);
-              twin.setDisplayName(known.getName());
+              twin.setDisplayName("unknown");
               if(twinId.length() > 7) {
                 String t = twinId.substring(twinId.length() - 7);
                 ((DroneTwin) twin).setCallSign(t);
