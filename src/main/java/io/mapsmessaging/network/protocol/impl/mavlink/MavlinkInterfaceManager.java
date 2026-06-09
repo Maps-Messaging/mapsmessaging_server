@@ -114,7 +114,7 @@ public class MavlinkInterfaceManager implements SelectorCallback, MavlinkConnect
           state.getContext().processPacket(packet);
         } else if (state.getContext() != null) {
           MavlinkProtocol protocol = state.getContext();
-          protocol.processRawFrame(env, raw);
+          protocol.processRawFrame(env, raw, packet.getFromAddress().toString());
           forwardPacket(raw);
         }
       }

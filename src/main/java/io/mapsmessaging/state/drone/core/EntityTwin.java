@@ -217,6 +217,19 @@ public abstract class EntityTwin {
   )
   private Instant relationshipsUpdatedAt;
 
+  @Schema(
+      description =
+          "Resolved response topic used to send outbound protocol messages to this twin. "
+              + "For MAVLink twins this is populated from the configured MAVLink outbound topic name, "
+              + "with placeholders such as {interfaceName} already resolved. Messages published to this "
+              + "topic are consumed by the MAVLink protocol implementation and sent onwards to the vehicle.",
+      example = "/protocol/mavlink/mavlink-interface-1/outbound",
+      nullable = true
+  )
+  private String responseTopicName;
+
+  private String uniqueOutboundIdentifier;
+
 
   public Long getCreatedAtSeconds() {
     return createdAt != null ? createdAt.getEpochSecond() : null;

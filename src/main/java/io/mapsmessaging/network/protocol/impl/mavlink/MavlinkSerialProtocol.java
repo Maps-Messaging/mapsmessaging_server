@@ -46,14 +46,11 @@ public class MavlinkSerialProtocol extends MavlinkProtocol {
 
   private final Logger logger = LoggerFactory.getLogger(MavlinkSerialProtocol.class);
   private final SelectorTask selectorTask;
-  private final MavlinkEventFactory mavlinkEventFactory;
 
   protected MavlinkSerialProtocol(@NonNull @NotNull EndPoint endPoint,
                                   @NotNull @NonNull ProtocolConfigDTO protocolConfig) throws IOException {
     super(key1 -> {}, DUMMY_KEY, endPoint, protocolConfig);
     MavlinkConfigDTO mavlinkConfigDTO = (MavlinkConfigDTO) protocolConfig;
-    String dialectName = mavlinkConfigDTO.getDialectName();
-    mavlinkEventFactory  = MavlinkInterfaceManager.loadDialect(dialectName);
     if(endPoint instanceof SerialEndPoint serialEndPoint){
       MavlinkStreamHandler handler = new MavlinkStreamHandler();
       serialEndPoint.setStreamHandler(handler);
@@ -71,7 +68,7 @@ public class MavlinkSerialProtocol extends MavlinkProtocol {
     if(potentialFrame.isPresent()) {
       ProcessedFrame env = potentialFrame.get();
       if(env.getFrame().getValidated() == FrameFailureReason.OK || env.getFrame().getValidated() == FrameFailureReason.UNSIGNED){
-        processRawFrame(env, raw);
+        processRawFrame(env, raw, "serial");
       }
       else{
         endPoint.getEndPointStatus().incrementOverFlow();

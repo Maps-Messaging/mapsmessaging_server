@@ -54,4 +54,8 @@ public class TwinUpdateContext {
 
   /** True when update represents a full snapshot, false for partial patch. */
   private boolean fullSnapshot;
+
+  private String responseTopic;
+
+  private String uniqueOutboundIdentifier;
 }

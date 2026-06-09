@@ -20,7 +20,8 @@
 package io.mapsmessaging.state;
 
 import io.mapsmessaging.state.config.StanagConfig;
-import io.mapsmessaging.state.mavlink.stanag.StanagStateSubscriber;
+import io.mapsmessaging.state.drone.core.TwinManager;
+import io.mapsmessaging.state.stanag.StanagStateSubscriber;
 import io.mapsmessaging.utilities.Lifecycle;
 
 import java.io.IOException;
@@ -29,9 +30,9 @@ public class StanagManager implements Lifecycle {
 
   private StanagStateSubscriber stanagStateSubscriber;
 
-  public StanagManager(StanagConfig config) {
+  public StanagManager(TwinManager twinManager, StanagConfig config) {
     try {
-      stanagStateSubscriber = new StanagStateSubscriber(config);
+      stanagStateSubscriber = new StanagStateSubscriber(twinManager, config);
     } catch (IOException e) {
       e.printStackTrace();
     }

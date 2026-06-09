@@ -20,6 +20,7 @@
 package io.mapsmessaging.state;
 
 import io.mapsmessaging.api.MessageEvent;
+import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.network.io.EndPoint;
 import io.mapsmessaging.network.protocol.impl.local.LocalLoopProtocol;
 import lombok.NonNull;
@@ -28,6 +29,7 @@ import org.jetbrains.annotations.NotNull;
 public class StateLoopProtocol extends LocalLoopProtocol {
 
   private final MessageHandler messageHandler;
+
   public StateLoopProtocol(@NonNull @NotNull EndPoint endPoint, MessageHandler messageHandler) {
     super(endPoint);
     this.messageHandler = messageHandler;
@@ -38,4 +40,5 @@ public class StateLoopProtocol extends LocalLoopProtocol {
   public void sendMessage(@NotNull @NonNull MessageEvent messageEvent) {
     messageHandler.handle(messageEvent);
   }
+
 }

@@ -17,13 +17,20 @@
  *  limitations under the License.
  */
 
-package io.mapsmessaging.state.mavlink.stanag;
+package io.mapsmessaging.state.stanag;
 
 import com.google.gson.JsonObject;
+import io.mapsmessaging.state.StateLoopProtocol;
 
 import java.util.function.Consumer;
 
-public class TaskListener implements Consumer<JsonObject> {
+public class ChatListener implements Consumer<JsonObject> {
+
+  private final StateLoopProtocol protocol;
+
+  public ChatListener(  StateLoopProtocol protocol) {
+    this.protocol = protocol;
+  }
 
   @Override
   public void accept(JsonObject jsonObject) {

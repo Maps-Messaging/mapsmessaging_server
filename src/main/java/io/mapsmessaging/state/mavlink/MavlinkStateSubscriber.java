@@ -104,13 +104,14 @@ public class MavlinkStateSubscriber implements MessageHandler {
     if (knownSource == null) {
       return;
     }
-
-    TwinUpdateContext context = buildUpdateContext(env);
+    String responseTopic = message.getResponseTopic();
+    TwinUpdateContext context = buildUpdateContext(env, responseTopic);
+    context.setUniqueOutboundIdentifier(new String(messageEvent.getMessage().getCorrelationData()));
     twinUpdater.updateTwinState(env, packet, context, knownSource, droneRegistry.getDroneInfo(knownSource.getName()));
     messageEvent.getCompletionTask().run();
   }
 
-  private TwinUpdateContext buildUpdateContext(ProcessedFrame env) {
+  private TwinUpdateContext buildUpdateContext(ProcessedFrame env, String responseTopic) {
     TwinUpdateContext context = new TwinUpdateContext();
     context.setUpdateSource("mavlink");
     context.setSourceInstanceId("mavlink:" + env.getFrame().getSystemId() + ":" + env.getFrame().getComponentId());
@@ -118,7 +119,7 @@ public class MavlinkStateSubscriber implements MessageHandler {
     context.setSequenceNumber((long) env.getFrame().getSequence());
     context.setReason(env.getMessageName());
     context.setFullSnapshot(false);
-
+    context.setResponseTopic(responseTopic);
     return context;
   }
 

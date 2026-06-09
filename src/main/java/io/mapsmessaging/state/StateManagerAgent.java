@@ -64,7 +64,7 @@ public class StateManagerAgent implements Agent {
       lifecycleList.add(new SchedulerManager(twinManager));
       lifecycleList.add(new TakManager(twinManager, takConfig));
       lifecycleList.add(new MavlinkTwinManager(twinManager, registry, config));
-      lifecycleList.add(new StanagManager(stanagConfig));
+      lifecycleList.add(new StanagManager(twinManager, stanagConfig));
       lifecycleList.add(new TwinPublisherManager(twinManager, config.getPublish()));
       aisManager = new AISN2KManager(twinManager, config.getN2KTwinConfig());
       lifecycleList.add(aisManager);

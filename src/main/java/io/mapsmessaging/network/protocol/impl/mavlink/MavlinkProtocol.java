@@ -21,7 +21,9 @@ package io.mapsmessaging.network.protocol.impl.mavlink;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 import io.mapsmessaging.api.*;
+import io.mapsmessaging.api.features.ClientAcknowledgement;
 import io.mapsmessaging.api.features.DestinationType;
 import io.mapsmessaging.api.features.QualityOfService;
 import io.mapsmessaging.api.message.Message;
@@ -31,6 +33,7 @@ import io.mapsmessaging.dto.rest.config.protocol.impl.MavlinkAcceptedSourceDTO;
 import io.mapsmessaging.dto.rest.config.protocol.impl.MavlinkConfigDTO;
 import io.mapsmessaging.dto.rest.protocol.ProtocolInformationDTO;
 import io.mapsmessaging.dto.rest.protocol.impl.MavlinkProtocolInformation;
+import io.mapsmessaging.mavlink.MavlinkEventFactory;
 import io.mapsmessaging.mavlink.ProcessedFrame;
 import io.mapsmessaging.mavlink.message.Frame;
 import io.mapsmessaging.network.io.EndPoint;
@@ -38,16 +41,22 @@ import io.mapsmessaging.network.io.Packet;
 import io.mapsmessaging.network.protocol.Protocol;
 import io.mapsmessaging.network.protocol.impl.mavlink.monitor.SequenceResult;
 import io.mapsmessaging.network.protocol.impl.mavlink.monitor.SequenceTracker;
+import io.mapsmessaging.schemas.config.impl.MavlinkSchemaConfig;
+import io.mapsmessaging.schemas.formatters.MessageFormatter;
+import io.mapsmessaging.schemas.formatters.MessageFormatterFactory;
 import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
 
 import javax.security.auth.Subject;
 import java.io.IOException;
+import java.net.InetSocketAddress;
+import java.net.SocketAddress;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class MavlinkProtocol extends Protocol {
 
@@ -58,6 +67,9 @@ public class MavlinkProtocol extends Protocol {
   protected Session session;
   private final Map<Integer, MavlinkAcceptedSourceDTO> acceptedComponents;
   private final SequenceTracker tracker;
+  private final String outboundTopicName;
+  protected final MavlinkEventFactory mavlinkEventFactory;
+  protected final MessageFormatter formatter;
 
   protected MavlinkProtocol(@NonNull @NotNull MavlinkConnectionManager factory,
                             @NonNull @NotNull MavlinkDeviceKey key,
@@ -68,6 +80,12 @@ public class MavlinkProtocol extends Protocol {
     this.key = key;
     tracker = new SequenceTracker();
     this.mavlinkConfig = (MavlinkConfigDTO)protocolConfig;
+    String dialectName = mavlinkConfig.getDialectName();
+    mavlinkEventFactory  = MavlinkInterfaceManager.loadDialect(dialectName);
+    MavlinkSchemaConfig config = new MavlinkSchemaConfig();
+    config.setDialect(dialectName);
+    formatter = MessageFormatterFactory.getInstance().getFormatter(config);
+
     if(mavlinkConfig.getAcceptedSources() != null){
        acceptedComponents = new LinkedHashMap<>();
       for(MavlinkAcceptedSourceDTO acceptedSourceDTO: mavlinkConfig.getAcceptedSources()){
@@ -87,6 +105,16 @@ public class MavlinkProtocol extends Protocol {
     } catch (InterruptedException e) {
       Thread.currentThread().interrupt();
     }
+    String outboundTopic = mavlinkConfig.getOutboundTopicName();
+    if(outboundTopic != null && !outboundTopic.isEmpty()) {
+      outboundTopic = outboundTopic.replace("{interfaceName}", endPoint.getConfig().getName());
+      SubscriptionContextBuilder subscriptionContextBuilder = new SubscriptionContextBuilder(outboundTopic, ClientAcknowledgement.AUTO);
+      subscriptionContextBuilder.setQos(QualityOfService.AT_MOST_ONCE);
+      subscriptionContextBuilder.setReceiveMaximum(10);
+      subscriptionContextBuilder.setNoLocalMessages(true);
+      session.addSubscription(subscriptionContextBuilder.build());
+    }
+    outboundTopicName = outboundTopic;
   }
 
   @Override
@@ -117,16 +145,52 @@ public class MavlinkProtocol extends Protocol {
 
   @Override
   public void sendMessage(@NotNull @NonNull MessageEvent messageEvent) {
-    // we do not send mavlink messages here
-  }
+    try {
+      byte[] correlationData = messageEvent.getMessage().getCorrelationData();
+      if (correlationData == null || correlationData.length == 0) {
+        return;
+      }
 
+      String correlationId = new String(correlationData, StandardCharsets.UTF_8);
+      if (!correlationId.startsWith("ID#")) {
+        return;
+      }
+
+      String[] parts = correlationId.split("#", 3);
+      if (parts.length != 3) {
+        return;
+      }
+
+      String endpointId = Long.toString(endPoint.getId());
+      if (!endpointId.equals(parts[1])) {
+        return;
+      }
+
+      String json = new String(messageEvent.getMessage().getOpaqueData(), StandardCharsets.UTF_8);
+      JsonObject input = JsonParser.parseString(json).getAsJsonObject();
+      try {
+        byte[] frame = formatter.parseFromJson(input);
+        SocketAddress socketAddress = parseSocketAddress(parts[2]);
+        Packet packet = new Packet(1024, false);
+        packet.setFromAddress(socketAddress);
+        packet.put(frame);
+        packet.flip();
+        endPoint.sendPacket(packet);
+      } catch (IOException e) {
+        // todo log this
+      }
+
+    } finally {
+      messageEvent.getCompletionTask().run();
+    }
+  }
   @Override
   public boolean processPacket(@NonNull @NotNull Packet packet) throws IOException {
     return true;
   }
 
 
-  public void processRawFrame(ProcessedFrame env, byte[] raw) throws IOException {
+  public void processRawFrame(ProcessedFrame env, byte[] raw, String socketAddress)  {
     endPoint.getEndPointStatus().incrementReceivedMessages();
     endPoint.updateReadBytes(raw.length);
     if(mavlinkConfig.getStatusTopicNameTemplate() != null && !mavlinkConfig.getStatusTopicNameTemplate().isEmpty() ) {
@@ -150,7 +214,7 @@ public class MavlinkProtocol extends Protocol {
         }
         raw = envelope.toString().getBytes();
       }
-      processPacket(env.getFrame(), env.getMessageName(), raw);
+      processPacket(env.getFrame(), env.getMessageName(), raw, socketAddress);
     }
     else{
       if(mavlinkConfig.getRejectedFrameNamespace() != null && !mavlinkConfig.getRejectedFrameNamespace().isEmpty()){
@@ -176,24 +240,27 @@ public class MavlinkProtocol extends Protocol {
     }
   }
 
-  public boolean processPacket(@NonNull @NotNull Frame envelope, String messageName, byte[] raw) throws IOException {
+  public boolean processPacket(@NonNull @NotNull Frame envelope, String messageName, byte[] raw, String socketAddress) {
     MessageBuilder messageBuilder = new MessageBuilder();
     Map<String, String> metaData = new HashMap<>();
     metaData.put("protocol", "MavLink");
     metaData.put("version", ""+envelope.getVersion());
     metaData.put("sessionId", session.getName());
     metaData.put("time_ms", "" + System.currentTimeMillis());
-
     Message message = messageBuilder.setContentType("mavlink")
         .setOpaqueData(raw)
         .setDataMap(convertToMap(envelope))
         .setQoS(QualityOfService.AT_MOST_ONCE)
         .setRetain(false)
         .storeOffline(false)
+        .setResponseTopic(outboundTopicName)
+        .setCorrelationData("ID#"+endPoint.getId()+"#"+socketAddress)
         .setMeta(metaData)
+
         .build();
 
     String topicName = computeTopicName(mavlinkConfig.getTopicNameTemplate(), envelope, messageName);
+
     sendMessage(topicName, message);
     return true;
   }
@@ -269,5 +336,37 @@ public class MavlinkProtocol extends Protocol {
     return knownSource.getAcceptedMessageIds().contains(messageId);
   }
 
+  private static InetSocketAddress parseSocketAddress(String socketAddressText) {
+    if (socketAddressText == null || socketAddressText.isBlank()) {
+      throw new IllegalArgumentException("Socket address must not be null or blank");
+    }
+
+    String trimmedSocketAddress = socketAddressText.trim();
+
+    int portSeparatorIndex = trimmedSocketAddress.lastIndexOf(':');
+    if (portSeparatorIndex < 0 || portSeparatorIndex == trimmedSocketAddress.length() - 1) {
+      throw new IllegalArgumentException("Socket address must include a port: " + socketAddressText);
+    }
+
+    String hostPart = trimmedSocketAddress.substring(0, portSeparatorIndex);
+    String portPart = trimmedSocketAddress.substring(portSeparatorIndex + 1);
+
+    if (hostPart.startsWith("/")) {
+      hostPart = hostPart.substring(1);
+    }
+
+    int slashIndex = hostPart.indexOf('/');
+    if (slashIndex >= 0) {
+      hostPart = hostPart.substring(0, slashIndex);
+    }
+
+    if (hostPart.isBlank()) {
+      throw new IllegalArgumentException("Socket address must include a host: " + socketAddressText);
+    }
+
+    int port = Integer.parseInt(portPart);
+
+    return new InetSocketAddress(hostPart, port);
+  }
 }
 

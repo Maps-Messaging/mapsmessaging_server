@@ -38,6 +38,7 @@ import io.mapsmessaging.network.io.Packet;
 import io.mapsmessaging.network.protocol.Protocol;
 import io.mapsmessaging.selector.operators.ParserExecutor;
 import io.mapsmessaging.utilities.filtering.NamespaceFilters;
+import lombok.Getter;
 import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -51,8 +52,10 @@ import java.util.concurrent.CompletableFuture;
 
 public class LocalLoopProtocol extends Protocol {
 
-  private final Logger logger;
+  @Getter
   private Session session;
+
+  private final Logger logger;
   private boolean closed;
   private String sessionId;
 
