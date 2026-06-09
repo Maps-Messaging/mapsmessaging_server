@@ -29,15 +29,8 @@ import java.util.UUID;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class TaskCapability {
-
-  @SerializedName("task_type")
-  private PlanTaskType taskType;
-
-  @SerializedName("task_specialization")
-  private TaskSpecialization specialization = TaskSpecialization.NONE;
-
-  @SerializedName("authorities")
-  private Authorities[] authorities;
-
+public class Authorities {
+  @SerializedName("$discriminator")
+  private final String discriminator =  "AuthorityTypeEnum_GUID";
+  private UUID guid;
 }

@@ -83,6 +83,7 @@ public class TaskListener implements Consumer<JsonObject> {
       TaskCapabilities capabilities = droneTwin.getCapabilities();
       Map<String, Object> description = droneTwin.getDescription();
 
+
       // Need to validate that the request is valid and the drone is capable of it
 
       // Build mavlink goto request for drone

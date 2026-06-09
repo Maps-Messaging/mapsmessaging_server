@@ -34,6 +34,8 @@ import io.mapsmessaging.utilities.configuration.ConfigurationManager;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
+
 import lombok.NoArgsConstructor;
 
 @NoArgsConstructor
@@ -377,9 +379,40 @@ public class TwinManagerConfig extends TwinManagerConfigDTO implements Config, C
             taskCapability.getSpecialization()
         )
     );
-
+    taskCapability.setAuthorities(
+        parseTaskAuthorities(
+            properties.get ("authorities")
+        )
+    );
     return taskCapability;
   }
+
+  private Authorities[] parseTaskAuthorities(Object authorities) {
+    if(authorities == null) {
+      return new Authorities[0];
+    }
+    List<Authorities> authoritiesList = new ArrayList<>();
+    if(authorities instanceof ConfigurationProperties configurationProperties) {
+      parseAuthority(authoritiesList, configurationProperties);
+    }
+    else if(authorities instanceof List){
+      for(Object entry : (List<?>)authorities) {
+        if(entry instanceof ConfigurationProperties configurationProperties) {
+          parseAuthority(authoritiesList, configurationProperties);
+
+        }
+      }
+    }
+    return authoritiesList.toArray(new Authorities[0]);
+  }
+
+  private void parseAuthority(List<Authorities> authoritiesList, ConfigurationProperties configurationProperties) {
+    String guid = configurationProperties.getProperty("guid", null);
+    if(guid != null){
+      authoritiesList.add(new Authorities(UUID.fromString(guid)));
+    }
+  }
+
 
   private PlanTaskType parsePlanTaskType(String value, PlanTaskType defaultValue) {
     if(value == null || value.isBlank()) {
