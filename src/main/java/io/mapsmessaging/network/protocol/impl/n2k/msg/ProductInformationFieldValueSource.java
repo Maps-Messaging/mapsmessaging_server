@@ -17,7 +17,7 @@
  *  limitations under the License.
  */
 
-package io.mapsmessaging.state.n2k.msg.source;
+package io.mapsmessaging.network.protocol.impl.n2k.msg;
 
 public class ProductInformationFieldValueSource extends AbstractAisFieldValueSource {
 

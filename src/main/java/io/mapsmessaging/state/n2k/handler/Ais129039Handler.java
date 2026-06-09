@@ -59,10 +59,7 @@ public class Ais129039Handler extends AbstractDronePgnHandler {
       return Optional.empty();
     }
 
-    byte[] payload =
-        n2kMessageParser.encodeFromSource(
-            getPgn(),
-            new AisClassBPositionFieldValueSource(optionalReport.get()));
+    byte[] payload = n2kMessageParser.encodeFromSource(getPgn(), new AisClassBPositionFieldValueSource(optionalReport.get()));
 
     if (payload == null || payload.length == 0) {
       return Optional.empty();

@@ -17,20 +17,10 @@
  *  limitations under the License.
  */
 
-package io.mapsmessaging.dto.rest.protocol.impl;
+package io.mapsmessaging.utilities;
 
-import io.mapsmessaging.dto.rest.protocol.ProtocolInformationDTO;
-import io.mapsmessaging.dto.rest.session.SessionInformationDTO;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
+public interface Startable {
 
-@Data
-@EqualsAndHashCode(callSuper = false)
-public class CanAerospaceProtocolInformation extends ProtocolInformationDTO {
+  void start();
 
-  private SessionInformationDTO sessionInfo;
-
-  public CanAerospaceProtocolInformation() {
-    type = "canaerospace";
-  }
 }

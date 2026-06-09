@@ -20,7 +20,6 @@
 package io.mapsmessaging.dto.rest.config.protocol.impl;
 
 import io.mapsmessaging.dto.rest.config.protocol.ProtocolConfigDTO;
-import io.mapsmessaging.dto.rest.config.protocol.impl.n2k.N2KAisConfigDTO;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -36,7 +35,6 @@ public class N2KConfigDTO extends ProtocolConfigDTO {
   public static final String DEFAULT_TOPIC_NAME_TEMPLATE = "/{candevice}/{pgn}/{messageName}";
   public static final String DEFAULT_UNKNOWN_PACKET_TOPIC = "/{candevice}/unknown";
   public static final boolean DEFAULT_PARSE_TO_JSON = true;
-  public static final boolean DEFAULT_PUBLISH_MAVLINK_DRONES = true;
 
   public N2KConfigDTO() {
     super("n2k");
@@ -89,12 +87,12 @@ public class N2KConfigDTO extends ProtocolConfigDTO {
   protected String unknownPacketTopic = DEFAULT_UNKNOWN_PACKET_TOPIC;
 
   @Schema(
-      description = "Optional inbound topic name filter used when accepting N2K frames from the messaging layer.",
+      description = "Optional outbound topic name filter used when accepting N2K frames from the messaging layer.",
       requiredMode = Schema.RequiredMode.NOT_REQUIRED,
       nullable = true,
       example = "/can1/#"
   )
-  protected String inboundTopicName;
+  protected String outboundTopicName;
 
   @Schema(
       description =
@@ -105,21 +103,4 @@ public class N2KConfigDTO extends ProtocolConfigDTO {
       requiredMode = Schema.RequiredMode.NOT_REQUIRED
   )
   protected boolean parseToJson = DEFAULT_PARSE_TO_JSON;
-
-  @Schema(
-      description = "Monitors and publishes MAVLink drone position and details as AIS N2K events.",
-      example = "true",
-      defaultValue = "true",
-      requiredMode = Schema.RequiredMode.NOT_REQUIRED
-  )
-  protected boolean publishMavlinkDrones = DEFAULT_PUBLISH_MAVLINK_DRONES;
-
-  @Schema(
-      description =
-          "AIS publishing configuration used when MAVLink drones or other tracked entities are projected "
-              + "onto NMEA 2000 AIS PGNs.",
-      requiredMode = Schema.RequiredMode.NOT_REQUIRED,
-      nullable = false
-  )
-  protected N2KAisConfigDTO ais = new N2KAisConfigDTO();
 }

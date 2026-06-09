@@ -21,6 +21,7 @@ package io.mapsmessaging.state.config;
 
 import io.mapsmessaging.config.Config;
 import io.mapsmessaging.config.ConfigManager;
+import io.mapsmessaging.state.config.n2k.N2KAisConfig;
 import io.mapsmessaging.configuration.ConfigurationProperties;
 import io.mapsmessaging.dto.rest.config.BaseConfigDTO;
 import io.mapsmessaging.dto.rest.config.protocol.impl.MavlinkKnownSourceDTO;
@@ -28,6 +29,7 @@ import io.mapsmessaging.dto.rest.config.protocol.impl.TakProtocolDTO;
 import io.mapsmessaging.dto.rest.config.protocol.impl.VehicleClass;
 import io.mapsmessaging.license.FeatureManager;
 import io.mapsmessaging.state.config.capability.*;
+import io.mapsmessaging.state.config.n2k.N2KTwinConfig;
 import io.mapsmessaging.utilities.configuration.ConfigurationManager;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -75,6 +77,20 @@ public class TwinManagerConfig extends TwinManagerConfigDTO implements Config, C
       this.stanagConfig = new StanagConfig();
       stanagConfig.setChatTopic(stanagProps.getProperty("chatTopic", null));
       stanagConfig.setTaskTopic(stanagProps.getProperty("taskTopic", null));
+    }
+
+    n2KTwinConfig = new N2KTwinConfig();
+    if(properties.containsKey("n2k")) {
+      ConfigurationProperties n2kProps = (ConfigurationProperties) properties.get("n2k");
+
+      n2KTwinConfig.setPublishMavlinkDrones(n2kProps.getBooleanProperty("publishMavlinkDrones", n2KTwinConfig.isPublishMavlinkDrones()));
+      if (n2kProps.containsKey("ais")) {
+        N2KAisConfig aisProperties = new N2KAisConfig((ConfigurationProperties) n2kProps.get("ais"));
+        n2KTwinConfig.setAis(aisProperties);
+      }
+    }
+    else{
+      n2KTwinConfig.setPublishMavlinkDrones(false);
     }
   }
 
@@ -126,7 +142,13 @@ public class TwinManagerConfig extends TwinManagerConfigDTO implements Config, C
     if (this.mavlink != null && !this.mavlink.isEmpty()) {
       props.put("mavlink", toMavlinkConfigurationProperties(this.mavlink));
     }
+    ConfigurationProperties n2kProps = new ConfigurationProperties();
+    n2kProps.put("publishMavlinkDrones", this.n2KTwinConfig.isPublishMavlinkDrones());
+    n2kProps.put("ais", n2KTwinConfig.getAis());
 
+    if (n2KTwinConfig.getAis() instanceof Config aisConfiguration) {
+      n2kProps.put("ais", aisConfiguration.toConfigurationProperties());
+    }
     return props;
   }
 
@@ -137,6 +159,21 @@ public class TwinManagerConfig extends TwinManagerConfigDTO implements Config, C
     }
 
     boolean hasChanged = false;
+
+
+    if (n2KTwinConfig.isPublishMavlinkDrones() != newConfig.n2KTwinConfig.isPublishMavlinkDrones()) {
+      n2KTwinConfig.setPublishMavlinkDrones(newConfig.n2KTwinConfig.isPublishMavlinkDrones());
+      hasChanged = true;
+    }
+
+    if (n2KTwinConfig.getAis() == null && newConfig.n2KTwinConfig.getAis() != null) {
+      n2KTwinConfig.setAis(newConfig.getN2KTwinConfig().getAis());
+      hasChanged = true;
+    } else if (n2KTwinConfig.getAis() != null && !n2KTwinConfig.getAis().equals(newConfig.n2KTwinConfig.getAis())) {
+      n2KTwinConfig.setAis(newConfig.n2KTwinConfig.getAis());
+      hasChanged = true;
+    }
+
 
     if (this.heartbeatTimeoutMillis != newConfig.getHeartbeatTimeoutMillis()) {
       this.heartbeatTimeoutMillis = newConfig.getHeartbeatTimeoutMillis();

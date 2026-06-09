@@ -17,7 +17,7 @@
  *  limitations under the License.
  */
 
-package io.mapsmessaging.dto.rest.config.protocol.impl.n2k;
+package io.mapsmessaging.state.config.n2k;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;

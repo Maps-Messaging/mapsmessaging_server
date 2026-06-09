@@ -26,7 +26,7 @@ import io.mapsmessaging.dto.rest.system.SubSystemStatusDTO;
  * This is the Agent interface.
  * It defines the methods and properties that an agent should have.
  */
-public interface Agent {
+public interface Agent extends Lifecycle {
 
   /**
    * Returns the name of the agent.
@@ -41,16 +41,6 @@ public interface Agent {
    * @return the description of the agent
    */
   String getDescription();
-
-  /**
-   * Starts the agent.
-   */
-  void start();
-
-  /**
-   * Stops the agent.
-   */
-  void stop();
 
   /**
    * Get the current status of the sub-system

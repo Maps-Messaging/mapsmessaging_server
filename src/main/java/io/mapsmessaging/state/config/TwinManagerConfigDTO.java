@@ -21,6 +21,7 @@ package io.mapsmessaging.state.config;
 
 import io.mapsmessaging.dto.rest.config.BaseManagerConfigDTO;
 import io.mapsmessaging.dto.rest.config.protocol.impl.TakProtocolDTO;
+import io.mapsmessaging.state.config.n2k.N2KTwinConfig;
 import lombok.Data;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.EqualsAndHashCode;
@@ -108,6 +109,10 @@ public class TwinManagerConfigDTO extends BaseManagerConfigDTO {
       description = "Configuration on each drone"
   )
   protected List<DroneInfo> droneInfo = new ArrayList<>();
+
+
+  protected N2KTwinConfig n2KTwinConfig;
+
 
   public TwinManagerConfigDTO() {
     super("TwinManagerConfigDTO");

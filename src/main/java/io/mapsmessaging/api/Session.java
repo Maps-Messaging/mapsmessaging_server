@@ -110,6 +110,10 @@ public class Session {
       destinationName = SCHEMA + destinationName.substring(SCHEMA.length());
     }
     Destination result = destinations.get(destinationName);
+    if(result != null && result.isClosed()){
+      result = null;
+      destinations.remove(destinationName);
+    }
     if (result == null) {
       String tmp = destinationName;
       DestinationType tmpMeta = type;

@@ -19,26 +19,19 @@
 
 package io.mapsmessaging.state;
 
-import io.mapsmessaging.state.config.DroneInfoRegistry;
-import io.mapsmessaging.state.config.TwinManagerConfig;
-import io.mapsmessaging.state.config.TwinManagerConfigDTO;
-import io.mapsmessaging.state.config.MavlinkTwinConfigDTO;
+import io.mapsmessaging.dto.rest.config.protocol.impl.TakProtocolDTO;
+import io.mapsmessaging.state.config.*;
 import io.mapsmessaging.dto.rest.system.Status;
 import io.mapsmessaging.dto.rest.system.SubSystemStatusDTO;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.state.drone.core.TwinLifecycleStatus;
 import io.mapsmessaging.state.drone.core.TwinManager;
-import io.mapsmessaging.state.drone.publisher.TwinJsonPublisher;
-import io.mapsmessaging.state.drone.tak.TakTwinObserver;
-import io.mapsmessaging.state.mavlink.MavlinkStateSubscriber;
-import io.mapsmessaging.state.mavlink.stanag.StanagStateSubscriber;
 import io.mapsmessaging.utilities.Agent;
+import io.mapsmessaging.utilities.Lifecycle;
 import io.mapsmessaging.utilities.configuration.ConfigurationManager;
 import lombok.Getter;
 
-import java.io.IOException;
-import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.*;
@@ -47,46 +40,37 @@ import static io.mapsmessaging.logging.ServerLogMessages.*;
 
 public class StateManagerAgent implements Agent {
 
-  private static final long SCAN_INTERVAL_MILLIS = 1000L;
-  private static final long PURGE_INTERVAL_MILLIS = 30000L;
+
   private final Logger logger = LoggerFactory.getLogger(StateManagerAgent.class);
 
+  private final List<Lifecycle> lifecycleList = new ArrayList<>();
+
   @Getter
-  private final TwinManager twinManager;
-  private final  TwinManagerConfigDTO config;
+  private final AISN2KManager aisManager;
 
-
-  private TakTwinObserver takManager;
-  private TwinJsonPublisher twinJsonPublisher;
-  private ScheduledExecutorService scheduler;
-  private StanagStateSubscriber stanagStateSubscriber;
-
-  private final List<MavlinkStateSubscriber> mavlinkSessionManagers;
+  @Getter
+  private TwinManager twinManager;
 
   public StateManagerAgent() {
-    config = ConfigurationManager.getInstance().getConfiguration(TwinManagerConfig.class);
+    TwinManagerConfigDTO config = ConfigurationManager.getInstance().getConfiguration(TwinManagerConfig.class);
     DroneInfoRegistry registry;
-
-    if(config == null){
-      twinManager = new TwinManager();
-      registry = new DroneInfoRegistry(List.of());
-    }
-    else {
+    TakProtocolDTO takConfig;
+    StanagConfig stanagConfig;
+    if(config != null){
       twinManager = new TwinManager(config.isRemoveExpiredTwins(), config.getStaleTimeoutMillis(), config.getHeartbeatTimeoutMillis(), config.getRetentionTimeoutMillis());
       registry = new DroneInfoRegistry(config.getDroneInfo());
+      takConfig = config.getTak();
+      stanagConfig = config.getStanagConfig();
+      lifecycleList.add(new SchedulerManager(twinManager));
+      lifecycleList.add(new TakManager(twinManager, takConfig));
+      lifecycleList.add(new MavlinkTwinManager(twinManager, registry, config));
+      lifecycleList.add(new StanagManager(stanagConfig));
+      lifecycleList.add(new TwinPublisherManager(twinManager, config.getPublish()));
+      aisManager = new AISN2KManager(twinManager, config.getN2KTwinConfig());
+      lifecycleList.add(aisManager);
     }
-    mavlinkSessionManagers = new ArrayList<>();
-    try {
-      for(MavlinkTwinConfigDTO mavlinkConfig: config.getMavlink()){
-        mavlinkSessionManagers.add(new MavlinkStateSubscriber(twinManager, mavlinkConfig, registry));
-      }
-    } catch (IOException e) {
-      e.printStackTrace();
-    }
-    try {
-      stanagStateSubscriber = new StanagStateSubscriber(config.getStanagConfig());
-    } catch (IOException e) {
-      e.printStackTrace();
+    else{
+      aisManager = null;
     }
   }
 
@@ -104,62 +88,8 @@ public class StateManagerAgent implements Agent {
   public synchronized void start() {
     try {
       logger.log(STATE_MANAGER_START);
-      if (scheduler != null && !scheduler.isShutdown()) {
-        return;
-      }
-
-      scheduler = Executors.newSingleThreadScheduledExecutor(runnable -> {
-        Thread thread = new Thread(runnable, "StateManagerAgent");
-        thread.setDaemon(true);
-        return thread;
-      });
-
-      scheduler.scheduleAtFixedRate(() -> {
-        try {
-          twinManager.scanTwinStates(Instant.now());
-        } catch (Exception e) {
-          logger.log(STATE_MANAGER_SCHEDULER_ERROR, e);
-        }
-      }, SCAN_INTERVAL_MILLIS, SCAN_INTERVAL_MILLIS, TimeUnit.MILLISECONDS);
-
-      scheduler.scheduleAtFixedRate(() -> {
-        try {
-          twinManager.purgeExpiredTwins(Instant.now());
-        } catch (Exception e) {
-          logger.log(STATE_MANAGER_SCHEDULER_ERROR, e);
-        }
-      }, PURGE_INTERVAL_MILLIS, PURGE_INTERVAL_MILLIS, TimeUnit.MILLISECONDS);
-
-
-      if (config != null) {
-        if (config.getTak() != null) {
-          takManager = new TakTwinObserver(twinManager);
-          logger.log(STATE_MANAGER_TAK_ENABLED);
-        }
-        if (config.getPublish() != null) {
-          try {
-            twinJsonPublisher = new TwinJsonPublisher(twinManager, config.getPublish().getTopicTemplate());
-            logger.log(STATE_MANAGER_PUBLISH_ENABLED, config.getPublish().getTopicTemplate());
-          } catch (Throwable e) {
-            logger.log(STATE_MANAGER_PUBLISH_FAILED, e);
-          }
-        }
-        for(MavlinkStateSubscriber mavlinkManagers: mavlinkSessionManagers){
-          try {
-            mavlinkManagers.start();
-          } catch (IOException e) {
-            e.printStackTrace();
-          }
-        }
-      } else {
-        takManager = null;
-        twinJsonPublisher = null;
-      }
-
-      try {
-        stanagStateSubscriber.start();
-      } catch (IOException e) {
-        e.printStackTrace();
+      for(Lifecycle lifecycle: lifecycleList){
+        lifecycle.start();
       }
     } finally {
       logger.log(STATE_MANAGER_STARTED);
@@ -170,35 +100,8 @@ public class StateManagerAgent implements Agent {
   public synchronized void stop() {
     logger.log(STATE_MANAGER_STOP);
     try {
-      if (scheduler == null) {
-        return;
-      }
-      for(MavlinkStateSubscriber mavlinkManagers: mavlinkSessionManagers){
-        try {
-          mavlinkManagers.stop();
-        } catch (IOException e) {
-          e.printStackTrace();
-        }
-      }
-
-      scheduler.shutdownNow();
-      scheduler = null;
-      if(takManager != null) {
-        takManager.shutdown();
-      }
-      if(twinJsonPublisher != null) {
-        try {
-          twinJsonPublisher.close();
-        } catch (IOException e) {
-          logger.log(STATE_MANAGER_PUBLISH_FAILED, e);
-        }
-      }
-      if(stanagStateSubscriber != null) {
-        try {
-          stanagStateSubscriber.stop();
-        } catch (IOException e) {
-          e.printStackTrace();
-        }
+      for(Lifecycle lifecycle: lifecycleList){
+        lifecycle.start();
       }
     } finally {
       logger.log(STATE_MANAGER_STOPPED);
