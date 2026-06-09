@@ -24,6 +24,8 @@ import io.mapsmessaging.dto.rest.config.BaseConfigDTO;
 import io.mapsmessaging.dto.rest.config.auth.SaslConfigDTO;
 import io.mapsmessaging.dto.rest.config.protocol.ProtocolConfigDTO;
 import io.mapsmessaging.dto.rest.config.protocol.impl.ExtensionConfigDTO;
+import io.mapsmessaging.dto.rest.config.protocol.impl.MqttConfigDTO;
+import io.mapsmessaging.dto.rest.config.protocol.impl.MqttVersion;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
@@ -140,6 +142,11 @@ public class EndPointServerConfigDTO extends BaseConfigDTO {
   private String computeProtocol(ProtocolConfigDTO protocolConfig) {
     if (protocolConfig instanceof ExtensionConfigDTO extensionConfig) {
       return extensionConfig.getProtocol();
+    }
+    if(protocolConfig instanceof MqttConfigDTO mqttConfig) {
+      if(mqttConfig.getVersion() != MqttVersion.AUTO){
+        return mqttConfig.getVersion().name();
+      }
     }
     return protocolConfig.getType();
   }

@@ -26,6 +26,7 @@ import io.mapsmessaging.config.protocol.ConnectionAuthConfig;
 import io.mapsmessaging.configuration.ConfigurationProperties;
 import io.mapsmessaging.dto.rest.config.protocol.ProtocolConfigDTO;
 import io.mapsmessaging.dto.rest.config.protocol.impl.MqttConfigDTO;
+import io.mapsmessaging.dto.rest.config.protocol.impl.MqttVersion;
 
 public class ProtocolConfigFactory {
 
@@ -39,8 +40,7 @@ public class ProtocolConfigFactory {
     if(protocolConfig.getMessageDefaults() != null) {
       config.put("messageDefaults", protocolConfig.getMessageDefaults());
     }
-    if(protocolConfig instanceof MqttConfigDTO){
-      MqttConfigDTO mqttConfig = (MqttConfigDTO) protocolConfig;
+    if(protocolConfig instanceof MqttConfigDTO mqttConfig){
       config.put("maximumSessionExpiry", mqttConfig.getMaximumSessionExpiry());
       config.put("maximumBufferSize", ConfigHelper.formatBufferSize(mqttConfig.getMaximumBufferSize()));
       config.put("serverReceiveMaximum", mqttConfig.getServerReceiveMaximum());
@@ -48,6 +48,7 @@ public class ProtocolConfigFactory {
       config.put("clientMaximumTopicAlias", mqttConfig.getClientMaximumTopicAlias());
       config.put("serverMaximumTopicAlias", mqttConfig.getServerMaximumTopicAlias());
       config.put("strictClientId", mqttConfig.isStrictClientId());
+      config.put("mqttVersion", mqttConfig.getVersion().name());
     }
   }
 
@@ -67,6 +68,7 @@ public class ProtocolConfigFactory {
       mqttConfig.setClientMaximumTopicAlias(config.getIntProperty("clientMaximumTopicAlias", 32767));
       mqttConfig.setServerMaximumTopicAlias(config.getIntProperty("serverMaximumTopicAlias", 0));
       mqttConfig.setStrictClientId(config.getBooleanProperty("strictClientId", false));
+      mqttConfig.setVersion(MqttVersion.valueOf(config.getProperty("mqttVersion", "AUTO").toUpperCase()));
     }
   }
 
@@ -79,10 +81,7 @@ public class ProtocolConfigFactory {
     if(original.getMessageDefaults() != null && updated.getMessageDefaults() != null) {
       hasChanged = ((Config) original.getMessageDefaults()).update(updated.getMessageDefaults());
     }
-    if(original instanceof MqttConfig && updated instanceof MqttConfigDTO){
-      MqttConfigDTO mqttConfigOriginal = (MqttConfigDTO) original;
-      MqttConfigDTO mqttConfigUpdated = (MqttConfigDTO) updated;
-
+    if(original instanceof MqttConfig mqttConfigOriginal && updated instanceof MqttConfigDTO mqttConfigUpdated){
       if (mqttConfigOriginal.getMaximumSessionExpiry() != mqttConfigUpdated.getMaximumSessionExpiry()) {
         mqttConfigOriginal.setMaximumSessionExpiry(mqttConfigUpdated.getMaximumSessionExpiry());
         hasChanged = true;
