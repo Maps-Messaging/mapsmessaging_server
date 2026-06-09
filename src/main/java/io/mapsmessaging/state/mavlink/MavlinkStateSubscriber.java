@@ -107,6 +107,7 @@ public class MavlinkStateSubscriber implements MessageHandler {
 
     TwinUpdateContext context = buildUpdateContext(env);
     twinUpdater.updateTwinState(env, packet, context, knownSource, droneRegistry.getDroneInfo(knownSource.getName()));
+    messageEvent.getCompletionTask().run();
   }
 
   private TwinUpdateContext buildUpdateContext(ProcessedFrame env) {

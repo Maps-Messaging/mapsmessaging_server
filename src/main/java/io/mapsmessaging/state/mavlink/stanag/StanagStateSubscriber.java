@@ -97,6 +97,7 @@ public class StanagStateSubscriber implements MessageHandler {
     if (matchesTopic(chatTopic, destinationName)) {
       chatListener.accept(jsonObject);
     }
+    messageEvent.getCompletionTask().run();
   }
 
   private void subscribe(String topicName) throws IOException {
