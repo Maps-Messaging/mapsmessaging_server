@@ -78,6 +78,11 @@ public class TwinManagerConfig extends TwinManagerConfigDTO implements Config, C
       stanagConfig.setChatTopic(stanagProps.getProperty("chatTopic", null));
       stanagConfig.setTaskTopic(stanagProps.getProperty("taskTopic", null));
     }
+    else{
+      stanagConfig = new StanagConfig();
+      stanagConfig.setChatTopic(null);
+      stanagConfig.setTaskTopic(null);
+    }
 
     n2KTwinConfig = new N2KTwinConfig();
     if(properties.containsKey("n2k")) {
