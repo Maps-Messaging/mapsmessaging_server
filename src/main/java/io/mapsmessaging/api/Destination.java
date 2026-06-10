@@ -49,6 +49,9 @@ public class Destination implements BaseDestination {
     this.securityContext = context;
     protectedResource = new ProtectedResource(impl.getResourceType().getName(), impl.getFullyQualifiedNamespace(), null);
   }
+  public boolean isClosed(){
+    return destinationImpl.isClosed();
+  }
 
   @Override
   public int storeMessage(@NonNull @NotNull Message message) throws IOException {

@@ -93,7 +93,7 @@ public class TwinManagementApi extends BaseRestApi {
   public Response listTwins() {
     try {
       hasAccess(RESOURCE);
-      Collection<EntityTwin> twins = MessageDaemon.getInstance().getSubSystemManager().getTwinManager().listTwins();
+      Collection<EntityTwin> twins = MessageDaemon.getInstance().getSubSystemManager().getStateManager().getTwinManager().listTwins();
       EntityTwin[] response = twins.toArray(new EntityTwin[0]);
       return ok(response);
     } catch (WebApplicationException ex) {
@@ -168,7 +168,7 @@ public class TwinManagementApi extends BaseRestApi {
         return badRequest("twinId is required");
       }
 
-      Optional<EntityTwin> twin = MessageDaemon.getInstance().getSubSystemManager().getTwinManager().getTwin(twinId);
+      Optional<EntityTwin> twin = MessageDaemon.getInstance().getSubSystemManager().getStateManager().getTwinManager().getTwin(twinId);
       if (twin.isEmpty()) {
         return notFound("Unknown twinId: " + twinId);
       }

@@ -166,9 +166,10 @@ public class SubSystemManager {
     return (SessionManager) agentMap.get("Session Manager").getAgent();
   }
 
-  public TwinManager getTwinManager() {
-    return ((StateManagerAgent) agentMap.get("State Manager").getAgent()).getTwinManager();
+  public StateManagerAgent getStateManager() {
+    return ((StateManagerAgent) agentMap.get("State Manager").getAgent());
   }
+
 
   public DeviceManager getDeviceManager() {
     AgentOrder order = agentMap.get("Device Manager");

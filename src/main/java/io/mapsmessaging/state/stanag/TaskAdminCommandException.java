@@ -17,16 +17,15 @@
  *  limitations under the License.
  */
 
-package io.mapsmessaging.state.mavlink.stanag;
+package io.mapsmessaging.state.stanag;
 
-import com.google.gson.JsonObject;
+public class TaskAdminCommandException extends Exception {
 
-import java.util.function.Consumer;
+  public TaskAdminCommandException(String message) {
+    super(message);
+  }
 
-public class ChatListener implements Consumer<JsonObject> {
-
-  @Override
-  public void accept(JsonObject jsonObject) {
-    System.out.println(jsonObject);
+  public TaskAdminCommandException(String message, Throwable cause) {
+    super(message, cause);
   }
 }

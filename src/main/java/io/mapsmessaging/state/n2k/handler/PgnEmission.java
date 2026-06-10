@@ -26,7 +26,6 @@ import lombok.Data;
 @Data
 @AllArgsConstructor
 public class PgnEmission {
-
   private int pgn;
   private byte[] payload;
 }

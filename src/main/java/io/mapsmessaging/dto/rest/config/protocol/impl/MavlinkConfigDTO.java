@@ -223,4 +223,15 @@ public class MavlinkConfigDTO extends ProtocolConfigDTO {
       nullable = true
   )
   protected boolean includeRejectedFrameMetadata = true;
+
+  @Schema(
+      description =
+          "Topic name used for outbound MAVLink requests. Events published to this topic are consumed by the MAVLink "
+              + "protocol implementation, converted into MAVLink frames, and sent onwards via this interface. "
+              + "Supported placeholders: {interfaceName}. The interface name is taken from the configured protocol interface name.",
+      example = "/protocol/mavlink/{interfaceName}/outbound",
+      defaultValue = "/protocol/mavlink/{interfaceName}/outbound",
+      requiredMode = Schema.RequiredMode.NOT_REQUIRED
+  )
+  protected String outboundTopicName = "/protocol/mavlink/{interfaceName}/outbound";
 }

@@ -21,14 +21,21 @@ package io.mapsmessaging.state.n2k;
 
 import io.mapsmessaging.MessageDaemon;
 import io.mapsmessaging.canbus.j1939.n2k.codec.N2kMessageParser;
-import io.mapsmessaging.dto.rest.config.protocol.impl.n2k.N2KAisConfigDTO;
+import io.mapsmessaging.network.EndPointManager;
+import io.mapsmessaging.network.NetworkManager;
+import io.mapsmessaging.network.io.EndPoint;
+import io.mapsmessaging.network.protocol.impl.n2k.msg.AbstractAisFieldValueSource;
+import io.mapsmessaging.schemas.formatters.impl.CanbusFormatter;
+import io.mapsmessaging.state.config.n2k.N2KAisConfigDTO;
 import io.mapsmessaging.network.protocol.impl.n2k.N2kProtocol;
+import io.mapsmessaging.state.drone.core.TwinManager;
 import io.mapsmessaging.state.n2k.handler.*;
 import io.mapsmessaging.state.n2k.msg.AisClassBEmitterConfig;
 import io.mapsmessaging.state.drone.core.EntityTwin;
 import io.mapsmessaging.state.drone.core.TwinObserver;
 import io.mapsmessaging.state.drone.core.TwinUpdateContext;
 import io.mapsmessaging.state.drone.drone.DroneTwin;
+import lombok.Getter;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -38,29 +45,30 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class DroneMonitor implements TwinObserver{
 
+  private final TwinManager twinManager;
+  @Getter
   private final N2kProtocol n2kProtocol;
 
   private final List<AbstractDronePgnHandler> handlers;
   private final Map<String, DroneEmissionState> droneStateMap;
 
-  public DroneMonitor(N2kProtocol n2kProtocol, N2kMessageParser parser, N2KAisConfigDTO aisConfig) {
-    this.n2kProtocol = n2kProtocol;
+  public DroneMonitor(TwinManager twinManager, N2KAisConfigDTO aisConfig,  N2kMessageParser parser, N2kProtocol n2kProtocol) {
     this.droneStateMap = new ConcurrentHashMap<>();
+    this.twinManager = twinManager;
+    this.n2kProtocol = n2kProtocol;
 
     AisClassBEmitterConfig config = AisClassBEmitterConfig.getDefaults();
     handlers = new ArrayList<>();
     if (aisConfig == null) {
       aisConfig = new N2KAisConfigDTO();
     }
-    if (aisConfig.isEnabled()) {
-      if (aisConfig.getPgn129039().isEnabled()) handlers.add(new Ais129039Handler(parser, config, aisConfig.getPgn129039().getIntervalMilliseconds()));
-      if (aisConfig.getPgn129040().isEnabled()) handlers.add(new Ais129040Handler(parser, config, aisConfig.getPgn129040().getIntervalMilliseconds()));
-      if (aisConfig.getPgn129809().isEnabled()) handlers.add(new Ais129809Handler(parser, config, aisConfig.getPgn129809().getIntervalMilliseconds()));
-      if (aisConfig.getPgn129810().isEnabled()) handlers.add(new Ais129810Handler(parser, config, aisConfig.getPgn129810().getIntervalMilliseconds()));
-    }
+    if (aisConfig.getPgn129039().isEnabled()) handlers.add(new Ais129039Handler(parser, config, aisConfig.getPgn129039().getIntervalMilliseconds()));
+    if (aisConfig.getPgn129040().isEnabled()) handlers.add(new Ais129040Handler(parser, config, aisConfig.getPgn129040().getIntervalMilliseconds()));
+    if (aisConfig.getPgn129809().isEnabled()) handlers.add(new Ais129809Handler(parser, config, aisConfig.getPgn129809().getIntervalMilliseconds()));
+    if (aisConfig.getPgn129810().isEnabled()) handlers.add(new Ais129810Handler(parser, config, aisConfig.getPgn129810().getIntervalMilliseconds()));
   }
   public void close() {
-    MessageDaemon.getInstance().getSubSystemManager().getTwinManager().removeObserver(this);
+    twinManager.removeObserver(this);
   }
 
   /**
@@ -89,12 +97,10 @@ public class DroneMonitor implements TwinObserver{
     }
   }
 
-  /**
-   * Rename this method to match the actual TwinObserver callback in your codebase.
-   */
-  public void onTwinRemoved(String twinId) {
-    if (twinId != null && !twinId.isBlank()) {
-      droneStateMap.remove(twinId);
+  @Override
+  public void onTwinRemoved(EntityTwin removed, TwinUpdateContext context) {
+    if(removed != null && removed.getTwinId() != null) {
+      droneStateMap.remove(removed.getTwinId());
     }
   }
 
@@ -111,6 +117,8 @@ public class DroneMonitor implements TwinObserver{
     if (pgnEmission == null || pgnEmission.getPayload() == null || pgnEmission.getPayload().length == 0) {
       return;
     }
+
+
     n2kProtocol.writePgn(pgnEmission.getPgn(), 0xff, pgnEmission.getPayload());
   }
 }

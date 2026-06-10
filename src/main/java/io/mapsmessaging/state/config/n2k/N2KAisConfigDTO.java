@@ -17,7 +17,7 @@
  *  limitations under the License.
  */
 
-package io.mapsmessaging.dto.rest.config.protocol.impl.n2k;
+package io.mapsmessaging.state.config.n2k;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
@@ -33,14 +33,6 @@ public class N2KAisConfigDTO {
 
   public N2KAisConfigDTO() {
   }
-
-  @Schema(
-      description = "Enables AIS PGN publishing from tracked entity state.",
-      example = "true",
-      defaultValue = "true",
-      requiredMode = Schema.RequiredMode.NOT_REQUIRED
-  )
-  protected boolean enabled = DEFAULT_ENABLED;
 
   @Schema(
       description = "AIS Class B Position Report, PGN 129039, transmit configuration.",

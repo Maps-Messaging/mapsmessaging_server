@@ -72,15 +72,28 @@ public class MavlinkTwinUpdater {
 
     EntityTwin twin = twinManager.getTwin(twinId)
         .orElseGet(() -> createTwin(twinId, env, context, knownSource, droneInfo));
-
     twinManager.updateTwin(twinId, twinToUpdate -> {
       if (twinToUpdate instanceof DroneTwin drone) {
         drone.setSystemId(env.getFrame().getSystemId());
         drone.setComponentId(env.getFrame().getComponentId());
+        updateTwinResponseTopic(twinToUpdate, context.getResponseTopic());
+        drone.setUniqueOutboundIdentifier(context.getUniqueOutboundIdentifier());
       }
     }, context);
     listenerManager.handle(env.getFrame().getMessageId(), twinId, packet, context);
   }
+
+  private void updateTwinResponseTopic(EntityTwin twin, String responseTopic) {
+    if (responseTopic == null || responseTopic.isEmpty()) {
+      return;
+    }
+
+    String currentResponseTopic = twin.getResponseTopicName();
+    if (currentResponseTopic == null || currentResponseTopic.isEmpty()) {
+      twin.setResponseTopicName(responseTopic);
+    }
+  }
+
 
   private EntityTwin createTwin(
       String twinId,

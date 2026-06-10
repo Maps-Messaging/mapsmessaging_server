@@ -24,6 +24,8 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.UUID;
+
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -34,5 +36,8 @@ public class TaskCapability {
 
   @SerializedName("task_specialization")
   private TaskSpecialization specialization = TaskSpecialization.NONE;
+
+  @SerializedName("authorities")
+  private Authorities[] authorities;
 
 }

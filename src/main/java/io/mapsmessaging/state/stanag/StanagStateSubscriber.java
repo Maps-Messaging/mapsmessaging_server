@@ -1,5 +1,6 @@
 /*
  *
+ *  Copyright [ 2020 - 2024 ] Matthew Buckton
  *  Copyright [ 2024 - 2026 ] MapsMessaging B.V.
  *
  *  Licensed under the Apache License, Version 2.0 with the Commons Clause
@@ -16,11 +17,13 @@
  *  limitations under the License.
  */
 
-package io.mapsmessaging.state.mavlink.stanag;
+package io.mapsmessaging.state.stanag;
 
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+import io.mapsmessaging.api.Destination;
 import io.mapsmessaging.api.MessageEvent;
+import io.mapsmessaging.api.features.DestinationType;
 import io.mapsmessaging.api.features.QualityOfService;
 import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.network.io.impl.noop.NoOpEndPoint;
@@ -29,10 +32,17 @@ import io.mapsmessaging.state.StateLoopProtocol;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.function.Consumer;
 
 import io.mapsmessaging.state.config.StanagConfig;
+import io.mapsmessaging.state.drone.core.TwinManager;
 import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
 
@@ -43,14 +53,15 @@ public class StanagStateSubscriber implements MessageHandler {
   private final String chatTopic;
   private final Consumer<JsonObject> taskListener;
   private final Consumer<JsonObject> chatListener;
+  private final Map<String, Destination> destinationCache = new ConcurrentHashMap<>();
 
-  public StanagStateSubscriber(
-      @NonNull @NotNull StanagConfig stanagConfig) throws IOException {
+
+  public StanagStateSubscriber(@NonNull @NotNull TwinManager twinManager,  @NonNull @NotNull StanagConfig stanagConfig) throws IOException {
     this.protocol = new StateLoopProtocol(new NoOpEndPoint(1, null, new ArrayList<>()), this);
     this.taskTopic = stanagConfig.getTaskTopic();
     this.chatTopic = stanagConfig.getChatTopic();
-    this.taskListener = new TaskListener();
-    this.chatListener = new ChatListener();
+    this.taskListener = new TaskListener(twinManager, this);
+    this.chatListener = new ChatListener(protocol);
   }
 
   public void start() throws IOException {
@@ -89,13 +100,34 @@ public class StanagStateSubscriber implements MessageHandler {
     }
 
     String destinationName = messageEvent.getDestinationName();
-
     if (matchesTopic(taskTopic, destinationName)) {
       taskListener.accept(jsonObject);
     }
 
     if (matchesTopic(chatTopic, destinationName)) {
       chatListener.accept(jsonObject);
+    }
+    messageEvent.getCompletionTask().run();
+  }
+
+  public void respond(String topicName, Message message) {
+    Destination destination = destinationCache.get(topicName);
+    if(destination != null && destination.isClosed()){
+      destinationCache.remove(topicName);
+      destination = null;
+    }
+    if(destination == null){
+      try {
+        destination = protocol.getSession().findDestination(topicName, DestinationType.TOPIC).get(1, TimeUnit.SECONDS);
+        destinationCache.put(topicName, destination);
+      } catch (InterruptedException | ExecutionException | TimeoutException e) {
+        //log it and return
+      }
+    }
+    try {
+      destination.storeMessage(message);
+    } catch (IOException e) {
+      // log this
     }
   }
 

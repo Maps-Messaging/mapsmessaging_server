@@ -17,18 +17,15 @@
  *  limitations under the License.
  */
 
-package io.mapsmessaging.config.protocol.impl.n2k;
+package io.mapsmessaging.state.config.n2k;
 
 
 import io.mapsmessaging.config.Config;
 import io.mapsmessaging.configuration.ConfigurationProperties;
-import io.mapsmessaging.dto.rest.config.protocol.impl.n2k.N2KAisConfigDTO;
 
 public class N2KAisConfig extends N2KAisConfigDTO {
 
   public N2KAisConfig(ConfigurationProperties config) {
-    this.enabled = config.getBooleanProperty("enabled", enabled);
-
     if (config.containsKey("pgn129039")) {
       ConfigurationProperties pgn129039Properties = (ConfigurationProperties) config.get("pgn129039");
       this.pgn129039 = new N2KPgnTransmitConfig(pgn129039Properties);
@@ -52,11 +49,6 @@ public class N2KAisConfig extends N2KAisConfigDTO {
 
   public boolean update(N2KAisConfigDTO newConfig) {
     boolean hasChanged = false;
-    if (enabled != newConfig.isEnabled()) {
-      enabled = newConfig.isEnabled();
-      hasChanged = true;
-    }
-
     if (pgn129039 == null && newConfig.getPgn129039() != null) {
       pgn129039 = newConfig.getPgn129039();
       hasChanged = true;
@@ -93,8 +85,6 @@ public class N2KAisConfig extends N2KAisConfigDTO {
 
   public ConfigurationProperties toConfigurationProperties() {
     ConfigurationProperties properties = new ConfigurationProperties();
-
-    properties.put("enabled", enabled);
 
     if (pgn129039 instanceof Config pgn129039Configuration) {
       properties.put("pgn129039", pgn129039Configuration.toConfigurationProperties());

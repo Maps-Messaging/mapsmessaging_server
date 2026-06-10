@@ -143,7 +143,7 @@ public class TwinJsonPublisher implements TwinObserver, ClientConnection, Messag
         }
       }
     } catch (Throwable e) {
-      e.printStackTrace();
+      destinationCache.remove(topic);
     }
   }
 
@@ -152,7 +152,6 @@ public class TwinJsonPublisher implements TwinObserver, ClientConnection, Messag
     if (destination != null) {
       return destination;
     }
-
     Destination resolvedDestination = session.findDestination(topic, DestinationType.TOPIC).get(1, TimeUnit.SECONDS);
     destinationCache.put(topic, resolvedDestination);
     return resolvedDestination;

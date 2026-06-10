@@ -17,10 +17,9 @@
  *  limitations under the License.
  */
 
-package io.mapsmessaging.config.protocol.impl.n2k;
+package io.mapsmessaging.state.config.n2k;
 
 import io.mapsmessaging.configuration.ConfigurationProperties;
-import io.mapsmessaging.dto.rest.config.protocol.impl.n2k.N2KPgnTransmitConfigDTO;
 
 public class N2KPgnTransmitConfig extends N2KPgnTransmitConfigDTO {
 

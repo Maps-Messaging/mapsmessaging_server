@@ -20,6 +20,7 @@
 package io.mapsmessaging.state.n2k.msg.source;
 
 
+import io.mapsmessaging.network.protocol.impl.n2k.msg.AbstractAisFieldValueSource;
 import io.mapsmessaging.state.n2k.msg.AisClassBStaticDataPartBReport;
 
 public class AisClassBStaticDataPartBFieldValueSource extends AbstractAisFieldValueSource {

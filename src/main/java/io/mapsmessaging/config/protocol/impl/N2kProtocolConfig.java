@@ -20,10 +20,11 @@
 package io.mapsmessaging.config.protocol.impl;
 
 import io.mapsmessaging.config.Config;
-import io.mapsmessaging.config.protocol.impl.n2k.N2KAisConfig;
 import io.mapsmessaging.configuration.ConfigurationProperties;
 import io.mapsmessaging.dto.rest.config.BaseConfigDTO;
 import io.mapsmessaging.dto.rest.config.protocol.impl.N2KConfigDTO;
+
+import java.util.Objects;
 
 public class N2kProtocolConfig extends N2KConfigDTO implements Config {
 
@@ -36,14 +37,9 @@ public class N2kProtocolConfig extends N2KConfigDTO implements Config {
     this.databasePath = config.getProperty("databasePath", databasePath);
     this.base64EncodedDatabase = config.getProperty("base64EncodedDatabase", base64EncodedDatabase);
     this.unknownPacketTopic = config.getProperty("unknownPacketTopic", unknownPacketTopic);
-    this.inboundTopicName = config.getProperty("inboundTopicName", inboundTopicName);
-    this.publishMavlinkDrones = config.getBooleanProperty("publishMavlinkDrones", publishMavlinkDrones);
+    this.outboundTopicName = config.getProperty("inboundTopicName", outboundTopicName);
     this.canBusAddress = config.getIntProperty("canBusAddress", canBusAddress);
-
-    if (config.containsKey("ais")) {
-      ConfigurationProperties aisProperties = (ConfigurationProperties) config.get("ais");
-      this.ais = new N2KAisConfig(aisProperties);
-    }
+    this.outboundTopicName = config.getProperty("outboundTopicName", outboundTopicName);
   }
 
   @Override
@@ -66,32 +62,17 @@ public class N2kProtocolConfig extends N2KConfigDTO implements Config {
         hasChanged = true;
       }
 
-      if (databasePath == null && newConfig.getDatabasePath() != null) {
+      if(outboundTopicName == null && newConfig.getOutboundTopicName() != null) {
+        outboundTopicName = newConfig.getOutboundTopicName();
+        hasChanged = true;
+      }
+      if (!Objects.equals(databasePath, newConfig.getDatabasePath())) {
         databasePath = newConfig.getDatabasePath();
         hasChanged = true;
-      } else if (databasePath != null && !databasePath.equals(newConfig.getDatabasePath())) {
-        databasePath = newConfig.getDatabasePath();
-        hasChanged = true;
       }
 
-      if (base64EncodedDatabase == null && newConfig.getBase64EncodedDatabase() != null) {
+      if (!Objects.equals(base64EncodedDatabase, newConfig.getBase64EncodedDatabase())) {
         base64EncodedDatabase = newConfig.getBase64EncodedDatabase();
-        hasChanged = true;
-      } else if (base64EncodedDatabase != null && !base64EncodedDatabase.equals(newConfig.getBase64EncodedDatabase())) {
-        base64EncodedDatabase = newConfig.getBase64EncodedDatabase();
-        hasChanged = true;
-      }
-
-      if (inboundTopicName == null && newConfig.getInboundTopicName() != null) {
-        inboundTopicName = newConfig.getInboundTopicName();
-        hasChanged = true;
-      } else if (inboundTopicName != null && !inboundTopicName.equals(newConfig.getInboundTopicName())) {
-        inboundTopicName = newConfig.getInboundTopicName();
-        hasChanged = true;
-      }
-
-      if (publishMavlinkDrones != newConfig.isPublishMavlinkDrones()) {
-        publishMavlinkDrones = newConfig.isPublishMavlinkDrones();
         hasChanged = true;
       }
 
@@ -99,15 +80,6 @@ public class N2kProtocolConfig extends N2KConfigDTO implements Config {
         canBusAddress = newConfig.getCanBusAddress();
         hasChanged = true;
       }
-
-      if (ais == null && newConfig.getAis() != null) {
-        ais = newConfig.getAis();
-        hasChanged = true;
-      } else if (ais != null && !ais.equals(newConfig.getAis())) {
-        ais = newConfig.getAis();
-        hasChanged = true;
-      }
-
       if (ProtocolConfigFactory.update(this, newConfig)) {
         hasChanged = true;
       }
@@ -127,14 +99,8 @@ public class N2kProtocolConfig extends N2KConfigDTO implements Config {
     properties.put("databasePath", databasePath);
     properties.put("base64EncodedDatabase", base64EncodedDatabase);
     properties.put("unknownPacketTopic", unknownPacketTopic);
-    properties.put("inboundTopicName", inboundTopicName);
-    properties.put("publishMavlinkDrones", publishMavlinkDrones);
+    properties.put("inboundTopicName", outboundTopicName);
     properties.put("canBusAddress", canBusAddress);
-
-    if (ais instanceof Config aisConfiguration) {
-      properties.put("ais", aisConfiguration.toConfigurationProperties());
-    }
-
     return properties;
   }
 }

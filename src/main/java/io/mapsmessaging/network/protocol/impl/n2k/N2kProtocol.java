@@ -43,12 +43,11 @@ import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.network.io.Packet;
 import io.mapsmessaging.network.io.impl.canbus.CanbusEndPoint;
 import io.mapsmessaging.network.protocol.Protocol;
-import  io.mapsmessaging.canbus.j1939.n2k.framing.FramePacker;
-import io.mapsmessaging.state.n2k.DroneMonitor;
-import io.mapsmessaging.state.n2k.msg.source.AbstractAisFieldValueSource;
-import io.mapsmessaging.state.n2k.msg.source.ConfigurationInformationFieldValueSource;
-import io.mapsmessaging.state.n2k.msg.source.IsoAddressClaimFieldValueSource;
-import io.mapsmessaging.state.n2k.msg.source.ProductInformationFieldValueSource;
+import io.mapsmessaging.canbus.j1939.n2k.framing.FramePacker;
+import io.mapsmessaging.network.protocol.impl.n2k.msg.AbstractAisFieldValueSource;
+import io.mapsmessaging.network.protocol.impl.n2k.msg.ConfigurationInformationFieldValueSource;
+import io.mapsmessaging.network.protocol.impl.n2k.msg.IsoAddressClaimFieldValueSource;
+import io.mapsmessaging.network.protocol.impl.n2k.msg.ProductInformationFieldValueSource;
 import io.mapsmessaging.schemas.config.SchemaConfig;
 import io.mapsmessaging.schemas.config.impl.CanbusSchemaConfig;
 import io.mapsmessaging.schemas.formatters.MessageFormatter;
@@ -57,6 +56,7 @@ import io.mapsmessaging.schemas.formatters.MessageFormatterFactory;
 import io.mapsmessaging.schemas.formatters.ParseException;
 import io.mapsmessaging.schemas.formatters.impl.CanbusFormatter;
 import io.mapsmessaging.utilities.threads.SimpleTaskScheduler;
+import lombok.Getter;
 import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
 
@@ -71,7 +71,9 @@ import static io.mapsmessaging.logging.ServerLogMessages.*;
 public class N2kProtocol extends Protocol {
   private final Logger logger = LoggerFactory.getLogger(N2kProtocol.class);
   private final Set<Integer> unknownCanIdentifiers = ConcurrentHashMap.newKeySet();
+  @Getter
   private final MessageFormatter formatter;
+
   private final FramePacker framePacker;
   private final Session session;
   private final InboundProcessor inboundProcessor;
@@ -79,7 +81,6 @@ public class N2kProtocol extends Protocol {
   private final String rawTopicTemplate;
   private final boolean parseToJson;
   private final SchemaConfig defaultSchemaConfig = SchemaManager.getInstance().getSchema(DEFAULT_JSON_SCHEMA);
-  private final DroneMonitor droneMonitor;
   private final int canbusAddress;
 
   private ScheduledFuture<?> scheduledFuture;
@@ -88,7 +89,6 @@ public class N2kProtocol extends Protocol {
     super(endPoint, protocolConfig );
     CanbusSchemaConfig canbusSchema = new CanbusSchemaConfig();
     try {
-
       String databasePath = ((N2KConfigDTO)protocolConfig).getDatabasePath();
       String encodedDatabase = ((N2KConfigDTO)protocolConfig).getBase64EncodedDatabase();
       if(databasePath != null && !databasePath.isEmpty()) {
@@ -109,9 +109,10 @@ public class N2kProtocol extends Protocol {
     N2KConfigDTO n2kConfig = (N2KConfigDTO)protocolConfig;
     topicTemplate = n2kConfig.getTopicNameTemplate();
     rawTopicTemplate =  n2kConfig.getUnknownPacketTopic().replace("{candevice}",endPoint.getName());
+
     parseToJson =n2kConfig.isParseToJson();
     canbusAddress = n2kConfig.getCanBusAddress();
-    String inboundTopicName =n2kConfig.getInboundTopicName();
+    String outboundTopicName =n2kConfig.getOutboundTopicName();
 
     formatter = MessageFormatterFactory.getInstance().getFormatter(canbusSchema);
     framePacker = new FramePacker( ((CanbusFormatter)formatter).getParser() );
@@ -123,8 +124,8 @@ public class N2kProtocol extends Protocol {
       Thread.currentThread().interrupt();
       throw new IOException(e);
     }
-    if(inboundTopicName != null && !inboundTopicName.isEmpty()){
-      SubscriptionContextBuilder scb = new SubscriptionContextBuilder(inboundTopicName, ClientAcknowledgement.AUTO);
+    if(outboundTopicName != null && !outboundTopicName.isEmpty()){
+      SubscriptionContextBuilder scb = new SubscriptionContextBuilder(outboundTopicName, ClientAcknowledgement.AUTO);
       SubscriptionContext context = scb.setQos(QualityOfService.AT_MOST_ONCE)
           .setReceiveMaximum(10)
           .setNoLocalMessages(true)
@@ -135,24 +136,17 @@ public class N2kProtocol extends Protocol {
     Thread t = new Thread(inboundProcessor);
     t.start();
     logger.log(N2K_PROTOCOL_CREATED_AND_BOUND,endPoint.getName());
-    if(((N2KConfigDTO)protocolConfig).isPublishMavlinkDrones()){
-      formatAndSend(IsoAddressClaimFieldValueSource.PGN, 0xff, new IsoAddressClaimFieldValueSource(MessageDaemon.getInstance().getUuid().toString()));
-      droneMonitor = new DroneMonitor(this, ((CanbusFormatter)formatter).getParser(), n2kConfig.getAis());
-      MessageDaemon.getInstance().getSubSystemManager().getTwinManager().addObserver(droneMonitor);
-    }
-    else{
-      droneMonitor = null;
-    }
     scheduledFuture = SimpleTaskScheduler.getInstance().scheduleAtFixedRate(() -> unknownCanIdentifiers.clear(), 10, 10, TimeUnit.MINUTES);
+    MessageDaemon.getInstance().getSubSystemManager().getStateManager().getAisManager().registerProtocol(this);
   }
 
   @Override
   public void close() throws IOException {
+    MessageDaemon.getInstance().getSubSystemManager().getStateManager().getAisManager().unregisterProtocol(this);
     super.close();
     inboundProcessor.close();
     endPoint.close();
     logger.log(N2K_PROTOCOL_CLOSING, endPoint.getName());
-    droneMonitor.close();
     if(scheduledFuture != null){
       scheduledFuture.cancel(false);
       scheduledFuture = null;
@@ -288,14 +282,6 @@ public class N2kProtocol extends Protocol {
     publishMessage(topicName, message);
     return true;
   }
-
-
-
-  private void formatAndSend(int pgn, int destinationAddress, AbstractAisFieldValueSource response) throws IOException {
-    byte[] data = ((CanbusFormatter)formatter).getParser().encodeFromSource(pgn, response);
-    writePgn(pgn, destinationAddress, data);
-  }
-
 
   private String computeTopicName(int pgn, String messageName) {
     if(messageName == null) {

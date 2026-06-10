@@ -17,28 +17,20 @@
  *  limitations under the License.
  */
 
-package io.mapsmessaging.state;
+package io.mapsmessaging.state.config.capability;
 
-import io.mapsmessaging.api.MessageEvent;
-import io.mapsmessaging.api.message.Message;
-import io.mapsmessaging.network.io.EndPoint;
-import io.mapsmessaging.network.protocol.impl.local.LocalLoopProtocol;
-import lombok.NonNull;
-import org.jetbrains.annotations.NotNull;
+import com.google.gson.annotations.SerializedName;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
-public class StateLoopProtocol extends LocalLoopProtocol {
+import java.util.UUID;
 
-  private final MessageHandler messageHandler;
-
-  public StateLoopProtocol(@NonNull @NotNull EndPoint endPoint, MessageHandler messageHandler) {
-    super(endPoint);
-    this.messageHandler = messageHandler;
-  }
-
-
-  @Override
-  public void sendMessage(@NotNull @NonNull MessageEvent messageEvent) {
-    messageHandler.handle(messageEvent);
-  }
-
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+public class Authorities {
+  @SerializedName("$discriminator")
+  private final String discriminator =  "AuthorityTypeEnum_GUID";
+  private UUID guid;
 }
