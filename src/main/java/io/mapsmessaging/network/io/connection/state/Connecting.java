@@ -38,8 +38,8 @@ public class Connecting extends State {
       // This is a UDP connection, we are connected by default
       try {
         endPointConnection.handleNewEndPoint(endPointConnection.getProtocol().getEndPoint());
-      } catch (IOException e) {
-        throw new RuntimeException(e);
+      } catch (Throwable e) {
+        endPointConnection.scheduleState(new Disconnected(endPointConnection));
       }
     }
     if(protocol.equalsIgnoreCase("noop")) {
