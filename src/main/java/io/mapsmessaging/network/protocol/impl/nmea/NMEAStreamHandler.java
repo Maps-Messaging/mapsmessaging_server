@@ -28,8 +28,8 @@ import java.io.OutputStream;
 
 public class NMEAStreamHandler implements StreamHandler {
 
-  // Larger than a defined NMEA buffer
-  private static final int BUFFER_SIZE = 256;
+  // Larger than a defined NMEA buffer, and large enough for Sonardyne proprietary telegrams
+  private static final int BUFFER_SIZE = 1024;
 
   private final byte[] inputBuffer;
 
@@ -44,30 +44,63 @@ public class NMEAStreamHandler implements StreamHandler {
 
   @Override
   public int parseInput(InputStream input, Packet packet) throws IOException {
-    //
-    // Skip any characters before the START character
-    //
-    int val = input.read();
-    while (val != Constants.START) {
-      val = input.read();
+    int value = readUntilStart(input);
+
+    int bufferIndex = 0;
+    inputBuffer[bufferIndex++] = (byte) value;
+
+    value = input.read();
+
+    while (value != -1 && value != Constants.CR && value != Constants.LF) {
+      if (bufferIndex >= inputBuffer.length - 2) {
+        throw new IOException("Exceeded buffer size of known NMEA sentences");
+      }
+
+      inputBuffer[bufferIndex++] = (byte) value;
+      value = input.read();
     }
-    //
-    // Read to CheckSum char
-    //
-    int idx = 0;
-    inputBuffer[idx++] = (byte) val;
-    val = input.read(); // Start on the next byte not the START frame
-    while (val != Constants.CR && val != Constants.LF && idx < inputBuffer.length) {
-      inputBuffer[idx++] = (byte) val;
-      val = input.read();
+
+    if (value == -1) {
+      throw new IOException("End of stream while reading NMEA sentence");
     }
-    if (idx >= inputBuffer.length) {
-      throw new IOException("Exceeded buffer size of known NMEA sentences");
+
+    if (value == Constants.CR) {
+      consumeOptionalLineFeed(input);
     }
-    inputBuffer[idx++] = (byte) Constants.CR;
-    inputBuffer[idx++] = (byte) Constants.LF;
-    packet.put(inputBuffer, 0, idx);
-    return idx;
+
+    inputBuffer[bufferIndex++] = (byte) Constants.CR;
+    inputBuffer[bufferIndex++] = (byte) Constants.LF;
+
+    packet.put(inputBuffer, 0, bufferIndex);
+    return bufferIndex;
+  }
+
+  private int readUntilStart(InputStream input) throws IOException {
+    int value = input.read();
+
+    while (value != -1 && value != Constants.START) {
+      value = input.read();
+    }
+
+    if (value == -1) {
+      throw new IOException("End of stream before NMEA sentence start");
+    }
+
+    return value;
+  }
+
+  private void consumeOptionalLineFeed(InputStream input) throws IOException {
+    if (!input.markSupported()) {
+      return;
+    }
+
+    input.mark(1);
+
+    int value = input.read();
+
+    if (value != Constants.LF && value != -1) {
+      input.reset();
+    }
   }
 
   @Override
