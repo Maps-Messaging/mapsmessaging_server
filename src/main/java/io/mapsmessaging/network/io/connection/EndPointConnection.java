@@ -60,6 +60,8 @@ public class EndPointConnection extends EndPointServerStatus {
   private final EndPointConnectionFactory endPointConnectionFactory;
   @Getter
   private final SelectorLoadManager selectorLoadManager;
+
+  private final StateMonitor stateMonitor;
   private Future<?> futureTask;
   @Getter
   private State state;
@@ -94,10 +96,12 @@ public class EndPointConnection extends EndPointServerStatus {
     if (manager != null) {
       manager.addConnection(this);
     }
+    stateMonitor = new StateMonitor(this);
     logger.log(ServerLogMessages.END_POINT_CONNECTION_INITIALISED);
   }
 
   public void close() {
+    stateMonitor.close();
     if (futureTask != null && !futureTask.isDone()) {
       futureTask.cancel(false);
     }
@@ -158,6 +162,7 @@ public class EndPointConnection extends EndPointServerStatus {
 
   public void start() {
     if (!running.get()) {
+      stateMonitor.start();
       setRunState(true, new Disconnected(this));
       logger.log(ServerLogMessages.END_POINT_CONNECTION_STARTING);
     }
@@ -165,6 +170,7 @@ public class EndPointConnection extends EndPointServerStatus {
 
   public void stop() {
     if (running.get()) {
+      stateMonitor.stop();
       setRunState(false, new Shutdown(this));
       logger.log(ServerLogMessages.END_POINT_CONNECTION_STOPPING);
     }
@@ -172,12 +178,14 @@ public class EndPointConnection extends EndPointServerStatus {
 
   public void pause() {
     if (paused.get()) {
+      stateMonitor.stop();
       paused.set(true);
     }
   }
 
   public void resume() {
     if (paused.get()) {
+      stateMonitor.start();
       paused.set(false);
     }
   }
@@ -213,6 +221,10 @@ public class EndPointConnection extends EndPointServerStatus {
 
   private void setState(State state) {
     this.state = state;
+  }
+
+  public boolean isRunning() {
+    return running.get();
   }
 
   public boolean isPaused() {

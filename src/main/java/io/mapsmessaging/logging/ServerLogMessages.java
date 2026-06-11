@@ -120,6 +120,11 @@ public enum ServerLogMessages implements LogMessage {
   END_POINT_CONNECTION_STATE_CHANGED(LEVEL.WARN, SERVER_CATEGORY.NETWORK, "Changing state on url {} protocol {} from {} to {}"),
   END_POINT_CONNECTION_STOPPING(LEVEL.WARN, SERVER_CATEGORY.NETWORK, "Stopping connection manager"),
 
+  STATE_MONITOR_STARTED(LEVEL.DEBUG, SERVER_CATEGORY.NETWORK, "State monitor started for {}"),
+  STATE_MONITOR_CLOSING_STALE_ENDPOINT(LEVEL.INFO, SERVER_CATEGORY.NETWORK, "Closing stale endpoint {} stuck in state {} for {} ms"),
+  STATE_MONITOR_ENDPOINT_CLOSE_EXCEPTION(LEVEL.ERROR, SERVER_CATEGORY.NETWORK, "Exception while closing stale endpoint {}"),
+  STATE_MONITOR_CLOSED(LEVEL.DEBUG, SERVER_CATEGORY.NETWORK, "State monitor closed for {}"),
+
   //</editor-fold>
 
   // <editor-fold desc="Selector and Selector task log messages">
