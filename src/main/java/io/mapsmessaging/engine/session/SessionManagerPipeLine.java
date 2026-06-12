@@ -206,7 +206,7 @@ public class SessionManagerPipeLine {
       willTaskImpl.cancel();
       willTaskImpl.run(); // Will Task MUST run on session close regardless of the will timeout
     }
-    subscriptionController.close();
+    subscriptionController.close(false);
     disconnectedSessions.decrement();
   }
 
@@ -240,7 +240,7 @@ public class SessionManagerPipeLine {
         disconnectedSessions.decrement(); // No longer stored
         logger.log(ServerLogMessages.SESSION_MANAGER_FOUND_EXISTING, context.getId(), context.isResetState());
         subscriptionManagerFactory.remove(context.getId());
-        subscriptionManager.close();
+        subscriptionManager.close(false);
         sessionDetails.clearSubscriptions();
         subscriptionManager = new SubscriptionController(context, destinationManager, new LinkedHashMap<>());
         if (context.isPersistentSession()) {

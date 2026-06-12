@@ -65,7 +65,11 @@ public class ConnectListener5 extends PacketListener5 {
       sessionId = UuidGenerator.getInstance().generate().toString();
       connAck.add(new AssignedClientIdentifier(sessionId));
     }
-
+    if(sessionId.contains("?Transformation=")){
+      String transformation = sessionId.split("\\?Transformation=")[1];
+      sessionId = sessionId.split("\\?Transformation=")[0];
+      protocol.setProtocolMessageTransformation(TransformationManager.getInstance().getTransformation(transformation));
+    }
     SessionContextBuilder scb = new SessionContextBuilder(sessionId, new ProtocolClientConnection(protocol));
     scb.setReceiveMaximum(((MQTT5Protocol) protocol).getClientReceiveMaximum());
     boolean sendResponseInfo = parseProperties((MQTT5Protocol) protocol, connect, scb);

@@ -152,11 +152,11 @@ public class SubscriptionController implements DestinationManagerListener {
     }
   }
 
-  public void close() {
+  public void close(boolean closeOnly) {
     logger.log(ServerLogMessages.SUBSCRIPTION_MGR_CLOSE, sessionId);
     destinationManager.removeListener(this);
     for(SubscriptionModeManager managers: subscriptionModeManager.values()){
-      managers.close();
+      managers.close(closeOnly);
     }
     subscriptions.clear();
     contextMap.clear();

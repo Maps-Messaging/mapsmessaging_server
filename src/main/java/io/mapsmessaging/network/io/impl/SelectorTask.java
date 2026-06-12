@@ -53,6 +53,7 @@ public class SelectorTask implements Selectable {
   private int selectionOps;
   private FutureTask<SelectionKey> future;
   private SelectionKey selectionKey;
+  @Getter
   private boolean isOpen;
 
   public SelectorTask(SelectorCallback selectorCallback, EndPointConfigDTO properties) {

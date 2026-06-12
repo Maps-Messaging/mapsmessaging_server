@@ -321,6 +321,7 @@ public class StoGiProtocol extends Protocol implements Consumer<Packet> {
     SessionContextBuilder sessionContextBuilder =
         new SessionContextBuilder(STOGI + endPoint.getId(), new ProtocolClientConnection(this));
     sessionContextBuilder.setSessionExpiry(0);
+    sessionContextBuilder.isInternal(true);
     sessionContextBuilder.setPersistentSession(false);
     return SessionManager.getInstance().create(sessionContextBuilder.build(), this);
   }
