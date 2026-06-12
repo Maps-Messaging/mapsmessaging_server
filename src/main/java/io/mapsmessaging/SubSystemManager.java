@@ -95,6 +95,7 @@ public class SubSystemManager {
         agent.getAgent().start();
       } catch (Throwable e) {
         logger.log(MESSAGE_DAEMON_AGENT_FAILED, agent.getAgent().getName(),e);
+        e.printStackTrace(); // We are exiting the daemon, so we need to print the stack trace to the console.
         System.exit(2);
       }
       logger.log(MESSAGE_DAEMON_AGENT_STARTED, agent.getAgent().getName(), (System.currentTimeMillis() - start));
