@@ -258,11 +258,9 @@ public abstract class SubscriptionModeManager {
     for (Subscription subscription : closeList) {
       try {
         if (close) {
-          System.err.println("Closing subscription ");
           subscription.close();
         }
         else{
-          System.err.println("Deleting subscription ");
           subscription.delete();
         }
       } catch (IOException e) {
