@@ -37,9 +37,7 @@ import io.mapsmessaging.network.io.impl.SelectorLoadManager;
 import io.mapsmessaging.network.protocol.Protocol;
 import io.mapsmessaging.network.protocol.ProtocolFactory;
 import io.mapsmessaging.network.protocol.ProtocolImplFactory;
-import io.mapsmessaging.network.protocol.impl.extension.ExtensionProtocol;
-import io.mapsmessaging.network.protocol.impl.local.LocalLoopProtocol;
-import io.mapsmessaging.network.protocol.impl.satellite.modem.protocol.StoGiProtocol;
+
 import io.mapsmessaging.network.protocol.transformation.ProtocolMessageTransformation;
 import io.mapsmessaging.network.protocol.transformation.TransformationManager;
 import io.mapsmessaging.network.route.link.LinkState;
@@ -48,6 +46,7 @@ import javax.security.auth.login.LoginException;
 import java.io.IOException;
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.TimeUnit;
 
 import static io.mapsmessaging.network.io.connection.Constants.DELAYED_TIME;
 
@@ -95,17 +94,10 @@ public class Disconnected extends State implements EndPointConnectedCallback {
         password = tokenGenerator.generate();
       }
       Protocol protocolImpl = protocolImplFactory.connect(endpoint, sessionId, username, password);
-      if (!(protocolImpl instanceof StoGiProtocol) &&
-          !( protocolImpl instanceof ExtensionProtocol) &&
-          !(protocolImpl instanceof LocalLoopProtocol)
-      ) {
-        protocolImpl.setSession(createSession(sessionId, protocolImpl));
-      }
-
       protocolImpl.setProtocolMessageTransformation(transformation);
       endPointConnection.setProtocol(protocolImpl);
       endPointConnection.scheduleState(new Connecting(endPointConnection));
-    } catch (IOException|LoginException ioException) {
+    } catch (IOException ioException) {
       endPointConnection.getLogger().log(ServerLogMessages.END_POINT_CONNECTION_PROTOCOL_FAILED, url, protocol, ioException);
       endPointConnection.scheduleState(new Delayed(endPointConnection), DELAYED_TIME);
     }
@@ -148,9 +140,11 @@ public class Disconnected extends State implements EndPointConnectedCallback {
   private Session createSession(String sessionId, Protocol protocol) throws LoginException, IOException {
     SessionContext sessionContext = new SessionContextBuilder("Internal-"+sessionId, new ProtocolClientConnection(protocol))
         .setPersistentSession(true)
+        .setSessionExpiry(TimeUnit.DAYS.toMillis(1))
+        .setResetState(false)
         .setUsername("admin")
         .isInternal(true)
-        .setResetState(true)
+        .setResetState(false)
         .isAuthorized(true)
         .build();
     return SessionManager.getInstance().create(sessionContext, protocol);

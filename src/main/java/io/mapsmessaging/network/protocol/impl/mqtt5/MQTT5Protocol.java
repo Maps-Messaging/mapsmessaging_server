@@ -138,11 +138,8 @@ public class MQTT5Protocol extends Protocol {
     clientTopicAliasMapping.setMaximum(clientMaximumTopicAlias);
     int serverMaximumTopicAlias = mqttConfig.getServerMaximumTopicAlias();
     serverTopicAliasMapping.setMaximum(serverMaximumTopicAlias);
-    keepAlive = (mqttConfig.getMaxServerKeepAlive() -10)* 1000L;
+    keepAlive = mqttConfig.getMaxServerKeepAlive() * 1000L;
     minimumKeepAlive = mqttConfig.getMinServerKeepAlive() * 1000; // Convert to milliseconds
-    if(keepAlive < minimumKeepAlive){
-      keepAlive = minimumKeepAlive+ 2000;
-    }
     selectorTask = new SelectorTask(this, endPoint.getConfig().getEndPointConfig());
     packetListenerFactory = new PacketListenerFactory5();
     packetFactory = new PacketFactory5(this);
@@ -173,14 +170,16 @@ public class MQTT5Protocol extends Protocol {
 
   @Override
   public void close() throws IOException {
+    if(selectorTask.isOpen()){
+      selectorTask.close();
+    }
+    if(session != null && !session.isClosed()){
+      SessionManager.getInstance().close(session, false);
+    }
     if (!closed) {
       closed = true;
-      selectorTask.close();
-      if (session != null) {
-        SessionManager.getInstance().close(session, false);
-      }
+      super.close();
     }
-    super.close();
   }
 
   @Override
@@ -190,6 +189,8 @@ public class MQTT5Protocol extends Protocol {
 
   public void connect(@NonNull @NotNull String sessionId, String username, String password, Publish5 willMsg) throws IOException {
     Connect5 connect = new Connect5();
+    connect.setCleanSession(false);
+    connect.setKeepAlive((int)(keepAlive)/1000);
     if (username != null) {
       connect.setUsername(username);
       connect.setPassword(password.trim().toCharArray());
@@ -356,7 +357,7 @@ public class MQTT5Protocol extends Protocol {
   }
 
   private void sendPublishFrame(@NonNull @NotNull String normalisedName, @NonNull @NotNull SubscribedEventManager subscription, @NonNull @NotNull Message message,
-      @NonNull @NotNull Runnable completionTask) {
+                                @NonNull @NotNull Runnable completionTask) {
     SubscriptionContext subInfo = subscription.getContext();
     QualityOfService qos = QualityOfService.getInstance(Math.min(subInfo.getQualityOfService().getLevel(), message.getQualityOfService().getLevel()));
     int packetId = getPacketId(qos, subscription, message);

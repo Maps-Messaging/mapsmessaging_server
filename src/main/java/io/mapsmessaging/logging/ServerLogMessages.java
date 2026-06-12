@@ -481,9 +481,9 @@ public enum ServerLogMessages implements LogMessage {
   AGGREGATOR_STARTED(LEVEL.INFO, SERVER_CATEGORY.ENGINE, "Aggregator started with {} handlers"),
   AGGREGATOR_EXCEPTION(LEVEL.ERROR, SERVER_CATEGORY.ENGINE, "Aggregator {} failed to started, raised exception"),
   AGGREGATOR_STOPPED(LEVEL.INFO, SERVER_CATEGORY.ENGINE, "Aggregator stopped with {} handlers"),
-  AGGREGATOR_COMPLETED(LEVEL.INFO, SERVER_CATEGORY.ENGINE, "Aggregator {}, completed with {} events"),
+  AGGREGATOR_COMPLETED(LEVEL.DEBUG, SERVER_CATEGORY.ENGINE, "Aggregator {}, completed with {} events"),
   AGGREGATOR_COMPLETION_EXCEPTION(LEVEL.ERROR, SERVER_CATEGORY.ENGINE, "Aggregator {} completion task failed to complete, raised exception"),
-  AGGREGATOR_EVENT_RECEIVED(LEVEL.INFO, SERVER_CATEGORY.ENGINE, "Aggregator {} received event from {}"),
+  AGGREGATOR_EVENT_RECEIVED(LEVEL.DEBUG, SERVER_CATEGORY.ENGINE, "Aggregator {} received event from {}"),
   AGGREGATOR_EVENT_DROPPED(LEVEL.WARN, SERVER_CATEGORY.ENGINE, "Aggregator {} dropped event from {}"),
   AGGREGATOR_QUEUE_OFFER(LEVEL.DEBUG, SERVER_CATEGORY.ENGINE, "Mailbox queue offered envelope for {}"),
   AGGREGATOR_QUEUE_DRAIN(LEVEL.DEBUG, SERVER_CATEGORY.ENGINE, "Mailbox queue drained {} items"),
@@ -554,11 +554,11 @@ public enum ServerLogMessages implements LogMessage {
   //</editor-fold>
 
   //<editor-fold desc="Message State Manager log messages">
-  MESSAGE_STATE_MANAGER_REGISTER(LEVEL.INFO, SERVER_CATEGORY.ENGINE, "{} Registering message:{} "),
-  MESSAGE_STATE_MANAGER_ALLOCATE(LEVEL.INFO, SERVER_CATEGORY.ENGINE, "{} Allocating message:{} "),
-  MESSAGE_STATE_MANAGER_COMMIT(LEVEL.INFO, SERVER_CATEGORY.ENGINE, "{} Committing message:{} "),
-  MESSAGE_STATE_MANAGER_ROLLBACK(LEVEL.INFO, SERVER_CATEGORY.ENGINE, "{} Rollback message:{} "),
-  MESSAGE_STATE_MANAGER_NEXT(LEVEL.INFO, SERVER_CATEGORY.ENGINE, "{} Scanning for next message returning:{} "),
+  MESSAGE_STATE_MANAGER_REGISTER(LEVEL.DEBUG, SERVER_CATEGORY.ENGINE, "{} Registering message:{} "),
+  MESSAGE_STATE_MANAGER_ALLOCATE(LEVEL.DEBUG, SERVER_CATEGORY.ENGINE, "{} Allocating message:{} "),
+  MESSAGE_STATE_MANAGER_COMMIT(LEVEL.DEBUG, SERVER_CATEGORY.ENGINE, "{} Committing message:{} "),
+  MESSAGE_STATE_MANAGER_ROLLBACK(LEVEL.DEBUG, SERVER_CATEGORY.ENGINE, "{} Rollback message:{} "),
+  MESSAGE_STATE_MANAGER_NEXT(LEVEL.DEBUG, SERVER_CATEGORY.ENGINE, "{} Scanning for next message returning:{} "),
   MESSAGE_STATE_MANAGER_ROLLBACK_INFLIGHT(LEVEL.INFO, SERVER_CATEGORY.ENGINE, "{} Rolling back all in flight messages {}"),
   MESSAGE_STATE_MANAGER_ROLLED_BACK_INFLIGHT(LEVEL.INFO, SERVER_CATEGORY.ENGINE, "{} Rolled back all in flight messages"),
   //</editor-fold>

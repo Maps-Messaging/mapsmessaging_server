@@ -73,7 +73,7 @@ public class ConnAckListener5 extends PacketListener5 {
     Session session = null;
     try {
       session = createSession((MQTT5Protocol) protocol, connAck, scb, user, pass);
-      ((MQTT5Protocol) protocol).setSession(session);
+      protocol.setSession(session);
       ProtocolMessageTransformation transformation = TransformationManager.getInstance().getTransformation(
           endPoint.getProtocol(),
           endPoint.getName(),
@@ -140,8 +140,9 @@ public class ConnAckListener5 extends PacketListener5 {
       keepAlive = maxKeepAlive; // Pull back to the maximum delay we accept
     }
     protocol.setKeepAlive(keepAlive * 1000L);
-    scb.setPersistentSession(false);
-    scb.setResetState(true);
+    scb.setPersistentSession(true);
+    scb.setResetState(false);
+    scb.setSessionExpiry( protocol.getMqttConfig().getMaximumSessionExpiry());
 
     if (pass != null && !pass.isEmpty()) {
       scb.setPassword(pass.toCharArray());

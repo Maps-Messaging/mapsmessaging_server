@@ -33,6 +33,8 @@ import lombok.Setter;
 
 // Between MQTT 3/4 and 5 there is duplicate code base, yes this is by design
 @java.lang.SuppressWarnings("common-java:DuplicatedBlocks")
+@Getter
+@Setter
 public class Connect5 extends MQTTPacket5 {
 
   private final byte[] mqtt = "MQTT".getBytes();
@@ -42,46 +44,25 @@ public class Connect5 extends MQTTPacket5 {
   //
   // Will fields
   //
-  @Getter
-  @Setter
   private MessageProperties willProperties;
-
-  @Getter
-  @Setter
   private boolean willFlag;
-  @Getter
-  @Setter
   private QualityOfService willQOS;
-  @Getter
-  @Setter
   private boolean willRetain;
-  @Getter
-  @Setter
   private String willTopic;
-  @Getter
-  @Setter
   private byte[] willMsg;
 
   //
   // Username / Password fields
   //
-  @Getter
-  @Setter
   private String username;
-  @Getter
-  @Setter
   private char[] password;
 
   //
   // Session fields
   //
-  @Getter
-  private final boolean cleanSession;
-  @Getter
-  private final int keepAlive;
+  private boolean cleanSession;
+  private int keepAlive;
 
-  @Getter
-  @Setter
   private String sessionId;
 
   public Connect5(){

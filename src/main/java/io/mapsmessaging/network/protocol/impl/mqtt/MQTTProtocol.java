@@ -85,6 +85,7 @@ public class MQTTProtocol extends Protocol {
 
   public MQTTProtocol(EndPoint endPoint) throws IOException {
     super(endPoint, endPoint.getConfig().getProtocolConfig("mqtt"));
+    System.err.println("MQTT 3.1.1 Protocol on " + endPoint.getName());
     logger = LoggerFactory.getLogger("MQTT 3.1.1 Protocol on " + endPoint.getName());
     ThreadContext.put("endpoint", endPoint.getName());
     ThreadContext.put("protocol", getName());
@@ -107,10 +108,14 @@ public class MQTTProtocol extends Protocol {
 
   @Override
   public void close() throws IOException {
+    if(selectorTask.isOpen()){
+      selectorTask.close();
+    }
+    if(session != null && !session.isClosed()){
+      SessionManager.getInstance().close(session, false);
+    }
     if (!closed) {
       closed = true;
-      selectorTask.close();
-      SessionManager.getInstance().close(session, false);
       super.close();
     }
   }
@@ -130,11 +135,12 @@ public class MQTTProtocol extends Protocol {
 
   public void connect(@NonNull @NotNull String sessionId, String username, String password, Publish willMsg ) throws IOException {
     Connect connect = new Connect();
+    connect.setSessionId(sessionId);
+    connect.setCleanSession(false);
     if (username != null) {
       connect.setUsername(username);
       connect.setPassword(password.trim().toCharArray());
     }
-    connect.setSessionId(sessionId);
     if(willMsg != null) {
       connect.setWillMsg(willMsg.getPayload());
       connect.setWillRetain(willMsg.isRetain());
@@ -304,8 +310,14 @@ public class MQTTProtocol extends Protocol {
     writeFrame(publish);
   }
 
-
   public void writeFrame(ServerPacket frame) {
+    if(this.endPoint.isClosed()){
+      try {
+        close();
+      } catch (IOException e) {
+        // Ignore here
+      }
+    }
     sentMessage();
     selectorTask.push(frame);
     logger.log(ServerLogMessages.PUSH_WRITE, frame);
