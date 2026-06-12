@@ -29,6 +29,13 @@ public class NmeaConfig extends NmeaConfigDTO implements Config {
 
   public NmeaConfig(ConfigurationProperties config) {
     setType("NMEA-0183");
+
+    format = config.getProperty("format", format);
+    topicNameTemplate = config.getProperty("topicNameTemplate", topicNameTemplate);
+    publish = config.getBooleanProperty("publish", publish);
+    useForServerLocation = config.getBooleanProperty("useForServerLocation", useForServerLocation);
+    sentenceForServerLocation = config.getProperty("sentenceForServerLocation", sentenceForServerLocation);
+
     ProtocolConfigFactory.unpack(config, this);
     serial = new SerialConfig(config);
   }
@@ -36,20 +43,25 @@ public class NmeaConfig extends NmeaConfigDTO implements Config {
   @Override
   public boolean update(BaseConfigDTO config) {
     boolean result = false;
-    if (config instanceof NmeaConfigDTO){
-      result = ProtocolConfigFactory.update(this, (NmeaConfigDTO) config);
-      result = ((SerialConfig)serial).update(config) || result;
+
+    if (config instanceof NmeaConfigDTO nmeaConfigDTO) {
+      result = ProtocolConfigFactory.update(this, nmeaConfigDTO);
+      result = ((SerialConfig) serial).update(config) || result;
     }
+
     return result;
   }
 
   @Override
   public ConfigurationProperties toConfigurationProperties() {
     ConfigurationProperties properties = new ConfigurationProperties();
+
     ProtocolConfigFactory.pack(properties, this);
-    if(serial instanceof SerialConfig){
-      properties.put("serial", ((SerialConfig) serial).toConfigurationProperties());
+
+    if (serial instanceof SerialConfig serialConfig) {
+      properties.put("serial", serialConfig.toConfigurationProperties());
     }
+
     return properties;
   }
 }

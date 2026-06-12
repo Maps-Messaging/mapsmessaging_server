@@ -27,14 +27,65 @@ import lombok.EqualsAndHashCode;
 
 @Data
 @EqualsAndHashCode(callSuper = true)
-@Schema(description = "NMEA Protocol Configuration DTO")
 public class NmeaConfigDTO extends ProtocolConfigDTO {
 
   public NmeaConfigDTO() {
     super("NMEA-0183");
   }
 
-  @Schema(description = "Serial port configuration")
-  protected SerialConfigDTO serial;
+  @Schema(
+      description =
+          "Topic name template used when publishing accepted NMEA 0183 sentences. "
+              + "Supported placeholders: {deviceName}, {sentence}. "
+              + "{deviceName} is populated from the configured source/device name. "
+              + "{sentence} is the NMEA sentence identifier, for example GPGGA, GPRMC, or AIVDM.",
+      example = "/NMEA0183/{deviceName}/{sentence}",
+      defaultValue = "/NMEA0183/{deviceName}/{sentence}",
+      requiredMode = Schema.RequiredMode.NOT_REQUIRED
+  )
+  protected String topicNameTemplate = "/NMEA0183/{deviceName}/{sentence}";
 
+  @Schema(
+      description = "Controls whether parsed NMEA 0183 sentences are published to the configured topic.",
+      example = "true",
+      defaultValue = "true",
+      requiredMode = Schema.RequiredMode.NOT_REQUIRED
+  )
+  protected boolean publish = true;
+
+  @Schema(
+      description =
+          "Controls whether selected NMEA 0183 position sentences are used to update the server location. "
+              + "When enabled, the sentence configured by sentenceForServerLocation is used as the location source.",
+      example = "false",
+      defaultValue = "false",
+      requiredMode = Schema.RequiredMode.NOT_REQUIRED
+  )
+  protected boolean useForServerLocation = false;
+
+  @Schema(
+      description =
+          "NMEA 0183 sentence identifier used for updating the server location when useForServerLocation is enabled. "
+              + "Common values include GGA, GLL, RMC, GPGGA, GNGGA, GPRMC, and GNRMC.",
+      example = "GGA",
+      defaultValue = "GGA",
+      requiredMode = Schema.RequiredMode.NOT_REQUIRED
+  )
+  protected String sentenceForServerLocation = "GGA";
+
+  @Schema(
+      description =
+          "Output format used when publishing parsed NMEA 0183 sentence data. "
+              + "Supported values: json.",
+      example = "json",
+      defaultValue = "json",
+      requiredMode = Schema.RequiredMode.NOT_REQUIRED
+  )
+  protected String format = "json";
+
+  @Schema(
+      description = "Serial port configuration used when the NMEA 0183 source is connected over a serial device.",
+      requiredMode = Schema.RequiredMode.NOT_REQUIRED
+  )
+  protected SerialConfigDTO serial;
 }

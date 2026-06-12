@@ -19,6 +19,7 @@
 
 package io.mapsmessaging.network.io;
 
+import io.mapsmessaging.network.protocol.EndOfBufferException;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -213,4 +214,11 @@ public class Packet {
     return sb.toString();
   }
 
+  public byte peek() throws EndOfBufferException {
+    if (!hasRemaining()) {
+      throw new EndOfBufferException();
+    }
+
+    return buffer.get(buffer.position());
+  }
 }
