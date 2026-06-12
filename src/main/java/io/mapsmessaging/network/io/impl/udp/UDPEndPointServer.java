@@ -40,8 +40,11 @@ import java.net.NetworkInterface;
 import java.net.SocketException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicLong;
 
 public class UDPEndPointServer extends EndPointServer {
+
+  private static final AtomicLong idGenerator = new AtomicLong(0);
 
   protected final EndPointManagerJMX managerMBean;
   protected final SelectorLoadManager selectorLoadManager;
@@ -103,7 +106,7 @@ public class UDPEndPointServer extends EndPointServer {
     return new UDPEndPoint(
         bonded,
         selectorLoadManager.allocate(),
-        1,
+        idGenerator.incrementAndGet(),
         this,
         authenticationConfig,
         managerMBean

@@ -27,7 +27,12 @@ public class LongType implements Type {
     if (value.isEmpty()) {
       this.value = 0;
     } else {
-      this.value = Long.parseLong(value);
+      if (value.contains(".")) {
+        double d = Double.parseDouble(value);
+        this.value = (long) d;
+      } else {
+        this.value = Long.parseLong(value);
+      }
     }
   }
 

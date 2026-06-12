@@ -19,18 +19,27 @@
 
 package io.mapsmessaging.network.protocol.impl.nmea;
 
+import io.mapsmessaging.config.protocol.impl.MqttSnConfig;
 import io.mapsmessaging.network.io.EndPoint;
+import io.mapsmessaging.network.io.InterfaceInformation;
 import io.mapsmessaging.network.io.Packet;
+import io.mapsmessaging.network.io.impl.NetworkInfoHelper;
 import io.mapsmessaging.network.io.impl.tcp.TCPEndPoint;
 import io.mapsmessaging.network.protocol.Protocol;
 import io.mapsmessaging.network.protocol.ProtocolImplFactory;
+import io.mapsmessaging.network.protocol.impl.mavlink.MavlinkInterfaceManager;
+import io.mapsmessaging.network.protocol.impl.mqtt_sn.MQTTSNInterfaceManager;
 
 import javax.security.auth.login.LoginException;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class NMEAProtocolFactory extends ProtocolImplFactory {
+
+  private final Map<EndPoint, NMEAProtocol> mappedInterfaces = new ConcurrentHashMap<>();
 
   public NMEAProtocolFactory() {
     super("NMEA-0183", "NMEA Gateway as per https://en.wikipedia.org/wiki/NMEA_0183", new NMEAProtocolDetection());
@@ -39,14 +48,13 @@ public class NMEAProtocolFactory extends ProtocolImplFactory {
   @Override
   public Protocol connect(EndPoint endPoint, String sessionId, String username, String password) throws IOException {
     if (endPoint instanceof TCPEndPoint) {
-      Packet packet = new Packet(ByteBuffer.allocate(256));
+      Packet packet = new Packet(ByteBuffer.allocate(1024));
       packet.put("?WATCH={\"enable\":true,\"nmea\":true}".getBytes(StandardCharsets.UTF_8));
       packet.flip();
       endPoint.sendPacket(packet);
       return build(endPoint, packet);
     }
     return null;
-
   }
 
   public void create(EndPoint endPoint, Packet packet) throws IOException {
@@ -60,6 +68,32 @@ public class NMEAProtocolFactory extends ProtocolImplFactory {
       // Ignore since it should just work
     }
     return null;
+  }
+
+  @Override
+  public void create(EndPoint endPoint, InterfaceInformation info) throws IOException {
+    int datagramSize = NetworkInfoHelper.getMTU(info);
+    if (datagramSize > 0) {
+      endPoint.getConfig().getEndPointConfig().setServerReadBufferSize(datagramSize * 2L);
+      endPoint.getConfig().getEndPointConfig().setServerWriteBufferSize(datagramSize * 2L);
+    }
+    try {
+      NMEAProtocol manager = new NMEAProtocol( endPoint, null);
+      mappedInterfaces.put(endPoint, manager);
+    } catch (LoginException e) {
+      e.printStackTrace();
+    }
+  }
+
+  public void close() {
+    for (NMEAProtocol managers : mappedInterfaces.values()) {
+      try {
+        managers.close();
+      } catch (IOException e) {
+        e.printStackTrace();
+      }
+    }
+    mappedInterfaces.clear();
   }
 
   @Override
