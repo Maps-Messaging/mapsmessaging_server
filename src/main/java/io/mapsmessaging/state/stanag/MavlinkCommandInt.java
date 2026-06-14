@@ -41,6 +41,7 @@ public class MavlinkCommandInt {
       int targetSystem,
       int targetComponent,
       GeoPosition position,
+      float yawDegrees,
       int sequence) {
     MavlinkCommandInt commandInt = new MavlinkCommandInt();
     commandInt.setSequence(sequence);
@@ -48,6 +49,7 @@ public class MavlinkCommandInt {
     commandInt.setTargetComponent(targetComponent);
     commandInt.setLatitude(toScaledCoordinate(position.getLatitude()));
     commandInt.setLongitude(toScaledCoordinate(position.getLongitude()));
+    commandInt.setParam4(normaliseYawDegrees(yawDegrees));
 
     Double altitudeMeters = position.getPreferredAltitudeMeters();
     if (altitudeMeters != null) {
@@ -100,5 +102,18 @@ public class MavlinkCommandInt {
       throw new IllegalArgumentException("Coordinate must not be null");
     }
     return (int) Math.round(value * 10_000_000.0d);
+  }
+
+  private static float normaliseYawDegrees(float yawDegrees) {
+    if (!Float.isFinite(yawDegrees)) {
+      return 0.0f;
+    }
+
+    float normalisedYawDegrees = yawDegrees % 360.0f;
+    if (normalisedYawDegrees < 0.0f) {
+      normalisedYawDegrees += 360.0f;
+    }
+
+    return normalisedYawDegrees;
   }
 }

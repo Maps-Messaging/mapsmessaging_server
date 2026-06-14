@@ -4,9 +4,9 @@ import io.mapsmessaging.state.drone.model.GeoPosition;
 
 public class GeoUtils {
 
-  public static double bearingDegrees(GeoPosition currentPosition, GeoPosition destinationPosition) {
+  public static float bearingDegrees(GeoPosition currentPosition, GeoPosition destinationPosition) {
     if (!hasValidCoordinates(currentPosition) || !hasValidCoordinates(destinationPosition)) {
-      return 0.0;
+      return 0.0f;
     }
 
     double currentLatitudeRadians = Math.toRadians(currentPosition.getLatitude());
@@ -25,12 +25,12 @@ public class GeoUtils {
             * Math.cos(longitudeDifferenceRadians);
 
     if (xComponent == 0.0 && yComponent == 0.0) {
-      return 0.0;
+      return 0.0f;
     }
 
     double bearingDegrees = Math.toDegrees(Math.atan2(xComponent, yComponent));
 
-    return (bearingDegrees + 360.0) % 360.0;
+    return (float) ((bearingDegrees + 360.0) % 360.0);
   }
 
   private static boolean hasValidCoordinates(GeoPosition geoPosition) {
