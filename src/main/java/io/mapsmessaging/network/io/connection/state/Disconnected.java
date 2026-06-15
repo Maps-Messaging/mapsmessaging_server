@@ -137,16 +137,4 @@ public class Disconnected extends State implements EndPointConnectedCallback {
     return LinkState.DISCONNECTED;
   }
 
-  private Session createSession(String sessionId, Protocol protocol) throws LoginException, IOException {
-    SessionContext sessionContext = new SessionContextBuilder("Internal-"+sessionId, new ProtocolClientConnection(protocol))
-        .setPersistentSession(true)
-        .setSessionExpiry(TimeUnit.DAYS.toMillis(1))
-        .setResetState(false)
-        .setUsername("admin")
-        .isInternal(true)
-        .setResetState(false)
-        .isAuthorized(true)
-        .build();
-    return SessionManager.getInstance().create(sessionContext, protocol);
-  }
 }
