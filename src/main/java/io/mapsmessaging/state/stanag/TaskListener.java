@@ -33,6 +33,7 @@ import io.mapsmessaging.state.drone.core.EntityTwin;
 import io.mapsmessaging.state.drone.core.TwinManager;
 import io.mapsmessaging.state.drone.drone.DroneTwin;
 import io.mapsmessaging.state.drone.model.GeoPosition;
+import io.mapsmessaging.state.util.GeoUtils;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Map;
@@ -86,7 +87,8 @@ public class TaskListener implements Consumer<JsonObject> {
       if(isAuthorised(droneTwin, command)){
         if(command.getAction().equals("REPOSITION")) {
           GeoPosition geoPosition = command.getPosition();
-          MavlinkCommandInt mavlinkRequest = MavlinkCommandInt.reposition(droneTwin.getSystemId(), droneTwin.getComponentId(), geoPosition, taskSequence.getAndIncrement());
+          float yaw = GeoUtils.bearingDegrees(twin.getGeoPosition(), geoPosition);
+          MavlinkCommandInt mavlinkRequest = MavlinkCommandInt.reposition(droneTwin.getSystemId(), droneTwin.getComponentId(), geoPosition, yaw, taskSequence.getAndIncrement());
           MessageBuilder messageBuilder = new MessageBuilder();
           messageBuilder.setOpaqueData(mavlinkRequest.toMavlinkJsonObject(255, 0).toString().getBytes(StandardCharsets.UTF_8))
               .setQoS(QualityOfService.AT_MOST_ONCE)

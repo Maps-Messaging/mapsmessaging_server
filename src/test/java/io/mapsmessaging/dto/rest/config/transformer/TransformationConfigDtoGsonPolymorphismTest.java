@@ -187,6 +187,37 @@ class TransformationConfigDtoGsonPolymorphismTest {
   }
 
   @Test
+  void jsonMapperDeserializesToConfigurationDto() {
+    Gson gson = buildGson();
+
+    TransformationConfigDTO dto =
+        gson.fromJson("{\"type\":\"jsonmapper\",\"operations\":[]}", TransformationConfigDTO.class);
+
+    assertInstanceOf(JsonMapperTransformationDTO.class, dto);
+    assertEquals(TransformationType.JSON_MAPPER, dto.getType());
+  }
+
+  @Test
+  void jsonToSchemaDeserializes() {
+    Gson gson = buildGson();
+
+    TransformationConfigDTO dto =
+        gson.fromJson("{\"type\":\"jsontoschema\",\"schemaName\":\"example\"}", TransformationConfigDTO.class);
+
+    assertInstanceOf(JsonToSchemaTransformationDTO.class, dto);
+    assertEquals(TransformationType.JSON_TO_SCHEMA, dto.getType());
+  }
+
+  @Test
+  void nonObjectInputThrows() {
+    Gson gson = buildGson();
+
+    assertThrows(JsonParseException.class, () -> gson.fromJson("[]", TransformationConfigDTO.class));
+    assertThrows(JsonParseException.class, () -> gson.fromJson("\"geohash\"", TransformationConfigDTO.class));
+    assertThrows(JsonParseException.class, () -> gson.fromJson("null", TransformationConfigDTO.class));
+  }
+
+  @Test
   void trivialTransformersDeserialize() {
     Gson gson = buildGson();
 

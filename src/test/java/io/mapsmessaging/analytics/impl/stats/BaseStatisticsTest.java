@@ -62,6 +62,21 @@ class BaseStatisticsTest {
   }
 
   @Test
+  void update_rejectsNonFiniteNumbersAndCountsMismatches() {
+    BaseStatistics stats = new BaseStatistics();
+
+    stats.update(Double.NaN);
+    stats.update(Double.POSITIVE_INFINITY);
+    stats.update(Double.NEGATIVE_INFINITY);
+
+    JsonObject json = stats.toJson();
+    assertEquals(0, json.get("count").getAsInt());
+    assertEquals(3, json.get("mismatched").getAsInt());
+    assertTrue(Double.isNaN(json.get("first").getAsDouble()));
+    assertTrue(Double.isNaN(json.get("last").getAsDouble()));
+  }
+
+  @Test
   void update_tracksFirstLastMinMaxAverageCount_andTimestamps() throws Exception {
     BaseStatistics stats = new BaseStatistics();
 

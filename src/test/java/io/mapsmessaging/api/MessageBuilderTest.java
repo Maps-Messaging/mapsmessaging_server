@@ -1,11 +1,14 @@
 package io.mapsmessaging.api;
 
+import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.api.message.TypedData;
+import io.mapsmessaging.network.protocol.transformation.ProtocolMessageTransformation;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 
 class MessageBuilderTest {
 
@@ -67,5 +70,41 @@ class MessageBuilderTest {
     builder.setDataMap(data);
 
     Assertions.assertEquals("v", builder.getDataMap().get("k").getData());
+  }
+
+  @Test
+  void build_appliesIncomingTransformationOnlyOnce() {
+    AtomicInteger invocationCount = new AtomicInteger();
+    ProtocolMessageTransformation transformation = new ProtocolMessageTransformation() {
+      @Override
+      public String getName() {
+        return "test";
+      }
+
+      @Override
+      public String getDescription() {
+        return "test transformation";
+      }
+
+      @Override
+      public int getId() {
+        return 1;
+      }
+
+      @Override
+      public void incoming(MessageBuilder messageBuilder) {
+        invocationCount.incrementAndGet();
+        messageBuilder.setContentType("application/transformed");
+      }
+    };
+    MessageBuilder builder = new MessageBuilder().setTransformation(transformation);
+
+    Message firstMessage = builder.build();
+    Message secondMessage = builder.build();
+
+    Assertions.assertEquals("application/transformed", firstMessage.getContentType());
+    Assertions.assertEquals("application/transformed", secondMessage.getContentType());
+    Assertions.assertEquals(1, invocationCount.get());
+    Assertions.assertNull(builder.getTransformation());
   }
 }
