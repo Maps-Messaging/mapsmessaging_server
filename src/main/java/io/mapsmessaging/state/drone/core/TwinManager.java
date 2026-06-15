@@ -5,6 +5,8 @@ import io.mapsmessaging.state.drone.model.LinkState;
 
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
+import io.mapsmessaging.state.stanag.audit.Auditor;
+import lombok.Getter;
 
 import java.time.Instant;
 import java.util.ArrayList;
@@ -24,16 +26,19 @@ public class TwinManager {
   private final ConcurrentHashMap<String, EntityTwin> twins = new ConcurrentHashMap<>();
   private final CopyOnWriteArrayList<TwinObserver> observers = new CopyOnWriteArrayList<>();
   private final Logger logger = LoggerFactory.getLogger(TwinManager.class);
+  @Getter
+  private final Auditor auditor;
   private final boolean removeExpiredTwins;
   private final long staleTimeoutMillis;
   private final long heartbeatTimeoutMillis;
   private final long retentionTimeoutMillis;
 
   public TwinManager() {
-    this(true, 10000L, 5000L, 120000L);
+    this(true, 10000L, 5000L, 120000L, null);
   }
 
-  public TwinManager(boolean removeExpiredTwins, long staleTimeoutMillis, long heartbeatTimeoutMillis, long retentionTimeoutMillis) {
+  public TwinManager(boolean removeExpiredTwins, long staleTimeoutMillis, long heartbeatTimeoutMillis, long retentionTimeoutMillis, Auditor auditor) {
+    this.auditor = auditor;
     this.removeExpiredTwins = removeExpiredTwins;
     this.staleTimeoutMillis = staleTimeoutMillis;
     this.heartbeatTimeoutMillis = heartbeatTimeoutMillis;

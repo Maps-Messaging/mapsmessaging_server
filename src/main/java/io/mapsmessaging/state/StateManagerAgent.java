@@ -19,7 +19,11 @@
 
 package io.mapsmessaging.state;
 
+
+
+import io.mapsmessaging.configuration.EnvironmentConfig;
 import io.mapsmessaging.dto.rest.config.protocol.impl.TakProtocolDTO;
+import io.mapsmessaging.state.auditor.AuditorFactory;
 import io.mapsmessaging.state.config.*;
 import io.mapsmessaging.dto.rest.system.Status;
 import io.mapsmessaging.dto.rest.system.SubSystemStatusDTO;
@@ -27,14 +31,16 @@ import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.state.drone.core.TwinLifecycleStatus;
 import io.mapsmessaging.state.drone.core.TwinManager;
+import io.mapsmessaging.state.stanag.audit.Auditor;
 import io.mapsmessaging.utilities.Agent;
 import io.mapsmessaging.utilities.Lifecycle;
 import io.mapsmessaging.utilities.configuration.ConfigurationManager;
 import lombok.Getter;
 
+import java.io.IOException;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.*;
 
 import static io.mapsmessaging.logging.ServerLogMessages.*;
 
@@ -51,13 +57,24 @@ public class StateManagerAgent implements Agent {
   @Getter
   private TwinManager twinManager;
 
+  @Getter
+  private Auditor auditor;
+  private AuditorFactory.AuditorInstance auditorInstance;
+
   public StateManagerAgent() {
     TwinManagerConfigDTO config = ConfigurationManager.getInstance().getConfiguration(TwinManagerConfig.class);
     DroneInfoRegistry registry;
     TakProtocolDTO takConfig;
     StanagConfig stanagConfig;
     if(config != null){
-      twinManager = new TwinManager(config.isRemoveExpiredTwins(), config.getStaleTimeoutMillis(), config.getHeartbeatTimeoutMillis(), config.getRetentionTimeoutMillis());
+      try {
+        AuditorFactory factory = new AuditorFactory();
+        auditorInstance = factory.build(Path.of( EnvironmentConfig.getInstance().getPathLookups().get("MAPS_DATA")));
+        auditor = auditorInstance.getAuditor();
+      } catch (IOException e) {
+        e.printStackTrace();
+      }
+      twinManager = new TwinManager(config.isRemoveExpiredTwins(), config.getStaleTimeoutMillis(), config.getHeartbeatTimeoutMillis(), config.getRetentionTimeoutMillis(), auditor);
       registry = new DroneInfoRegistry(config.getDroneInfo());
       takConfig = config.getTak();
       stanagConfig = config.getStanagConfig();

@@ -32,7 +32,6 @@ import io.mapsmessaging.state.StateLoopProtocol;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
@@ -43,6 +42,8 @@ import java.util.function.Consumer;
 
 import io.mapsmessaging.state.config.StanagConfig;
 import io.mapsmessaging.state.drone.core.TwinManager;
+import io.mapsmessaging.state.stanag.audit.Auditor;
+import lombok.Getter;
 import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
 
@@ -55,9 +56,13 @@ public class StanagStateSubscriber implements MessageHandler {
   private final Consumer<JsonObject> chatListener;
   private final Map<String, Destination> destinationCache = new ConcurrentHashMap<>();
 
+  @Getter
+  private final Auditor auditor;
 
-  public StanagStateSubscriber(@NonNull @NotNull TwinManager twinManager,  @NonNull @NotNull StanagConfig stanagConfig) throws IOException {
+
+  public StanagStateSubscriber(@NonNull @NotNull TwinManager twinManager, @NonNull @NotNull StanagConfig stanagConfig) throws IOException {
     this.protocol = new StateLoopProtocol(new NoOpEndPoint(1, null, new ArrayList<>()), this);
+    this.auditor = twinManager.getAuditor();
     this.taskTopic = stanagConfig.getTaskTopic();
     this.chatTopic = stanagConfig.getChatTopic();
     this.taskListener = new TaskListener(twinManager, this);
