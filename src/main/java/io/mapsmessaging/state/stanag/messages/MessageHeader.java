@@ -17,21 +17,24 @@
  *  limitations under the License.
  */
 
-package io.mapsmessaging.state.stanag.tasks;
+package io.mapsmessaging.state.stanag.messages;
 
-import io.mapsmessaging.state.drone.drone.DroneTwin;
-import io.mapsmessaging.state.stanag.StanagStateSubscriber;
-import io.mapsmessaging.state.stanag.TaskAdminCommand;
+import com.google.gson.annotations.SerializedName;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
 
-public class PrepareTaskHandler extends TaskHandler{
+import java.time.Instant;
 
-  @Override
-  public void handle(DroneTwin droneTwin, TaskAdminCommand command, StanagStateSubscriber protocol, int taskSequence) {
+@AllArgsConstructor
+@Getter
+public class MessageHeader {
+  @SerializedName("message_type")
+  private final MessageType messageType;
 
-  }
+  private final String source;
 
-  @Override
-  public String getTaskType() {
-    return "PREPARE";
-  }
+  @SerializedName("time_sent")
+  private final Instant timeSent;
+
+  private final String version;
 }

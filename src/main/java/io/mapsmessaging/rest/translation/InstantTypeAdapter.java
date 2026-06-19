@@ -26,8 +26,14 @@ import com.google.gson.stream.JsonWriter;
 
 import java.io.IOException;
 import java.time.Instant;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
+import java.time.temporal.ChronoUnit;
 
 public class InstantTypeAdapter extends TypeAdapter<Instant> {
+
+  private static final DateTimeFormatter DIRECT_TIME_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSxxx").withZone(ZoneOffset.UTC);
 
   @Override
   public void write(JsonWriter jsonWriter, Instant value) throws IOException {
@@ -35,7 +41,9 @@ public class InstantTypeAdapter extends TypeAdapter<Instant> {
       jsonWriter.nullValue();
       return;
     }
-    jsonWriter.value(value.toString());
+
+    String formattedValue = DIRECT_TIME_FORMATTER.format(value.truncatedTo(ChronoUnit.MILLIS));
+    jsonWriter.value(formattedValue);
   }
 
   @Override
@@ -44,10 +52,12 @@ public class InstantTypeAdapter extends TypeAdapter<Instant> {
       jsonReader.nextNull();
       return null;
     }
+
     String value = jsonReader.nextString();
     if (value == null || value.isBlank()) {
       return null;
     }
-    return Instant.parse(value);
+
+    return OffsetDateTime.parse(value, DateTimeFormatter.ISO_OFFSET_DATE_TIME).toInstant();
   }
 }

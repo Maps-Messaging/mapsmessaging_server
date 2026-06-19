@@ -31,7 +31,9 @@ public enum AuditMessages implements LogMessage {
   STANAG_COMMAND_TRANSLATED(LEVEL.AUDIT, CATEGORY.C2, "Translated STANAG task {} to drone command {} for drone {}"),
   DRONE_COMMAND_DISPATCHED(LEVEL.AUDIT, CATEGORY.C2, "Dispatched drone command {} to drone {} command {}"),
   DRONE_COMMAND_ACKNOWLEDGED(LEVEL.AUDIT, CATEGORY.C2, "Acknowledged drone command {} for drone {} command {}"),
-  DRONE_COMMAND_FAILED(LEVEL.AUDIT, CATEGORY.C2, "Failed drone command {} for drone {} reason {}");
+  DRONE_COMMAND_FAILED(LEVEL.AUDIT, CATEGORY.C2, "Failed drone command {} for drone {} reason {}"),
+  STANAG_TASK_RESULT_PUBLISHED(LEVEL.AUDIT, CATEGORY.C2, "Published STANAG task result {} for drone {} task {}"),
+  STANAG_TASK_RESULT_FAILED(LEVEL.AUDIT, CATEGORY.C2, "Failed STANAG task result {} for drone {} reason {}");
 
   private final @Getter LEVEL level;
   private final @Getter Category category;

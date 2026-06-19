@@ -17,23 +17,14 @@
  *  limitations under the License.
  */
 
-package io.mapsmessaging.state.stanag;
+package io.mapsmessaging.state.stanag.tasks.monitor;
 
-import com.google.gson.JsonObject;
-import io.mapsmessaging.state.StateLoopProtocol;
+import io.mapsmessaging.state.stanag.messages.feedback.TaskFeedbackMessage;
+import io.mapsmessaging.state.stanag.messages.result.TaskResultMessage;
 
-import java.util.function.Consumer;
+public interface TaskStatusPublisher {
 
-public class ChatListener implements Consumer<JsonObject> {
+  void publishFeedback(TaskMonitor taskMonitor, TaskFeedbackMessage taskFeedbackMessage);
 
-  private final StateLoopProtocol protocol;
-
-  public ChatListener(StateLoopProtocol protocol) {
-    this.protocol = protocol;
-  }
-
-  @Override
-  public void accept(JsonObject jsonObject) {
-    System.out.println(jsonObject);
-  }
+  void publishResult(TaskMonitor taskMonitor, TaskResultMessage taskResultMessage);
 }

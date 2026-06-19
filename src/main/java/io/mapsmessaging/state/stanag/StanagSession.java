@@ -29,6 +29,14 @@ import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.network.io.impl.noop.NoOpEndPoint;
 import io.mapsmessaging.state.MessageHandler;
 import io.mapsmessaging.state.StateLoopProtocol;
+import io.mapsmessaging.state.config.StanagConfig;
+import io.mapsmessaging.state.drone.core.TwinManager;
+import io.mapsmessaging.state.stanag.audit.Auditor;
+import io.mapsmessaging.utilities.Lifecycle;
+import lombok.Getter;
+import lombok.NonNull;
+import org.jetbrains.annotations.NotNull;
+
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -40,52 +48,49 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.function.Consumer;
 
-import io.mapsmessaging.state.config.StanagConfig;
-import io.mapsmessaging.state.drone.core.TwinManager;
-import io.mapsmessaging.state.stanag.audit.Auditor;
-import lombok.Getter;
-import lombok.NonNull;
-import org.jetbrains.annotations.NotNull;
-
-public class StanagStateSubscriber implements MessageHandler {
+public class StanagSession implements MessageHandler, TaskMessageSender, Lifecycle {
 
   private final StateLoopProtocol protocol;
   private final String taskTopic;
   private final String chatTopic;
-  private final Consumer<JsonObject> taskListener;
+  private final String taskTopicTemplate;
+  private final TaskListener taskListener;
   private final Consumer<JsonObject> chatListener;
   private final Map<String, Destination> destinationCache = new ConcurrentHashMap<>();
 
   @Getter
   private final Auditor auditor;
 
-
-  public StanagStateSubscriber(@NonNull @NotNull TwinManager twinManager, @NonNull @NotNull StanagConfig stanagConfig) throws IOException {
+  public StanagSession(@NonNull @NotNull TwinManager twinManager, @NonNull @NotNull StanagConfig stanagConfig) {
     this.protocol = new StateLoopProtocol(new NoOpEndPoint(1, null, new ArrayList<>()), this);
     this.auditor = twinManager.getAuditor();
     this.taskTopic = stanagConfig.getTaskTopic();
     this.chatTopic = stanagConfig.getChatTopic();
+    this.taskTopicTemplate = stanagConfig.getTaskTopicTemplate();
     this.taskListener = new TaskListener(twinManager, this);
     this.chatListener = new ChatListener(protocol);
   }
 
-  public void start() throws IOException {
-    if (!isConfigured(taskTopic) && !isConfigured(chatTopic)) {
-      return;
-    }
-
-    protocol.connect(UUID.randomUUID().toString(), "anonymous", "anonymous");
-
-    if (isConfigured(taskTopic)) {
-      subscribe(taskTopic);
-    }
-
-    if (isConfigured(chatTopic) && !chatTopic.equals(taskTopic)) {
-      subscribe(chatTopic);
+  public void start()  {
+    try {
+      if (!isConfigured(taskTopic) && !isConfigured(chatTopic)) {
+        return;
+      }
+      protocol.connect(UUID.randomUUID().toString(), "anonymous", "anonymous");
+      if (isConfigured(taskTopic)) {
+        subscribe(taskTopic);
+      }
+      if (isConfigured(chatTopic) && !chatTopic.equals(taskTopic)) {
+        subscribe(chatTopic);
+      }
+      taskListener.start();
+    } catch (IOException e) {
+      // Log this
     }
   }
 
-  public void stop() throws IOException {
+  public void stop() {
+    taskListener.stop();
     if (isConfigured(taskTopic)) {
       protocol.unsubscribeLocal(taskTopic);
     }
@@ -94,45 +99,71 @@ public class StanagStateSubscriber implements MessageHandler {
       protocol.unsubscribeLocal(chatTopic);
     }
 
-    protocol.close();
+    try {
+      protocol.close();
+    } catch (IOException e) {
+      // log this
+    }
   }
 
+  @Override
   public void handle(@NonNull @NotNull MessageEvent messageEvent) {
-    JsonObject jsonObject = parseJson(messageEvent.getMessage());
+    try {
+      JsonObject jsonObject = parseJson(messageEvent.getMessage());
+      if (jsonObject == null) {
+        return;
+      }
+      String destinationName = messageEvent.getDestinationName();
+      if (matchesTopic(taskTopic, destinationName)) {
+        taskListener.accept(jsonObject);
+      }
 
-    if (jsonObject == null) {
+      if (matchesTopic(chatTopic, destinationName)) {
+        chatListener.accept(jsonObject);
+      }
+    } finally {
+      messageEvent.getCompletionTask().run();
+    }
+  }
+
+  @Override
+  public void sendTaskMessage(String taskTopic, Message message) {
+    if (!isConfigured(taskTopicTemplate)) {
       return;
     }
 
-    String destinationName = messageEvent.getDestinationName();
-    if (matchesTopic(taskTopic, destinationName)) {
-      taskListener.accept(jsonObject);
-    }
-
-    if (matchesTopic(chatTopic, destinationName)) {
-      chatListener.accept(jsonObject);
-    }
-    messageEvent.getCompletionTask().run();
+    String topicName = buildTopicName(taskTopicTemplate, taskTopic);
+    respond(topicName, message);
   }
 
   public void respond(String topicName, Message message) {
-    Destination destination = destinationCache.get(topicName);
-    if(destination != null && destination.isClosed()){
-      destinationCache.remove(topicName);
-      destination = null;
+    Destination destination = resolveDestination(topicName);
+
+    if (destination == null) {
+      return;
     }
-    if(destination == null){
-      try {
-        destination = protocol.getSession().findDestination(topicName, DestinationType.TOPIC).get(1, TimeUnit.SECONDS);
-        destinationCache.put(topicName, destination);
-      } catch (InterruptedException | ExecutionException | TimeoutException e) {
-        //log it and return
-      }
-    }
+
     try {
       destination.storeMessage(message);
-    } catch (IOException e) {
+    } catch (IOException exception) {
       // log this
+    }
+  }
+
+  private Destination resolveDestination(String topicName) {
+    destinationCache.computeIfPresent(topicName, (cachedTopicName, destination) -> destination.isClosed() ? null : destination);
+    return destinationCache.computeIfAbsent(topicName, this::findDestination);
+  }
+
+  private Destination findDestination(String topicName) {
+    try {
+      return protocol.getSession().findDestination(topicName, DestinationType.TOPIC).get(1, TimeUnit.SECONDS);
+    } catch (InterruptedException exception) {
+      Thread.currentThread().interrupt();
+      return null;
+    } catch (ExecutionException | TimeoutException exception) {
+      // log this
+      return null;
     }
   }
 
@@ -149,8 +180,7 @@ public class StanagStateSubscriber implements MessageHandler {
 
     try {
       return JsonParser.parseString(new String(opaqueData, StandardCharsets.UTF_8)).getAsJsonObject();
-    }
-    catch (RuntimeException runtimeException) {
+    } catch (RuntimeException runtimeException) {
       return null;
     }
   }
@@ -160,11 +190,7 @@ public class StanagStateSubscriber implements MessageHandler {
       return false;
     }
 
-    if (configuredTopic.equals(destinationName)) {
-      return true;
-    }
-
-    return matchesWildcardTopic(configuredTopic, destinationName);
+    return configuredTopic.equals(destinationName) || matchesWildcardTopic(configuredTopic, destinationName);
   }
 
   private boolean matchesWildcardTopic(String configuredTopic, String destinationName) {
@@ -194,6 +220,10 @@ public class StanagStateSubscriber implements MessageHandler {
     }
 
     return destinationIndex == destinationParts.length;
+  }
+
+  private String buildTopicName(String topicTemplate, String taskTopic) {
+    return (topicTemplate + "/" + taskTopic).replaceAll("/+", "/");
   }
 
   private boolean isConfigured(String topicName) {

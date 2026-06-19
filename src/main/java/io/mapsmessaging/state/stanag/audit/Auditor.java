@@ -37,95 +37,92 @@ public class Auditor {
     this.auditPayloadStore = auditPayloadStore;
   }
 
-  public AuditRecord auditStanagCommandReceived(AuditEvent auditEvent, AuditPayload... payloads) throws IOException {
+  public AuditRecord auditStanagCommandReceived(AuditEvent auditEvent, AuditPayload... payloads)
+      throws IOException {
     return auditLogger.audit(
         AuditMessages.STANAG_COMMAND_RECEIVED,
-        buildAuditContext(
-            auditEvent,
-            "stanag-command-received",
-            AuditOutcome.SUCCESS
-        ),
+        buildAuditContext(auditEvent, "stanag-command-received", AuditOutcome.SUCCESS),
         writePayloads(auditEvent, payloads),
         safe(auditEvent.getStanagTaskType()),
         safe(auditEvent.getDroneId()),
-        safe(auditEvent.getCommandId())
-    );
+        safe(auditEvent.getCommandId()));
   }
 
-  public AuditRecord auditStanagCommandRejected(AuditEvent auditEvent, String reason, AuditPayload... payloads
-  ) throws IOException {
+  public AuditRecord auditStanagCommandRejected(
+      AuditEvent auditEvent, String reason, AuditPayload... payloads) throws IOException {
     return auditLogger.audit(
         AuditMessages.STANAG_COMMAND_REJECTED,
-        buildAuditContext(
-            auditEvent,
-            "stanag-command-rejected",
-            AuditOutcome.REJECTED
-        ),
+        buildAuditContext(auditEvent, "stanag-command-rejected", AuditOutcome.REJECTED),
         writePayloads(auditEvent, payloads),
         safe(auditEvent.getStanagTaskType()),
         safe(auditEvent.getDroneId()),
-        safe(reason)
-    );
+        safe(reason));
   }
 
-  public AuditRecord auditStanagCommandTranslated(AuditEvent auditEvent, AuditPayload... payloads) throws IOException {
+  public AuditRecord auditStanagCommandTranslated(AuditEvent auditEvent, AuditPayload... payloads)
+      throws IOException {
     return auditLogger.audit(
         AuditMessages.STANAG_COMMAND_TRANSLATED,
-        buildAuditContext(
-            auditEvent,
-            "stanag-command-translated",
-            AuditOutcome.SUCCESS
-        ),
+        buildAuditContext(auditEvent, "stanag-command-translated", AuditOutcome.SUCCESS),
         writePayloads(auditEvent, payloads),
         safe(auditEvent.getStanagTaskType()),
         safe(auditEvent.getDroneCommandType()),
-        safe(auditEvent.getDroneId())
-    );
+        safe(auditEvent.getDroneId()));
   }
 
-  public AuditRecord auditDroneCommandDispatched(AuditEvent auditEvent, AuditPayload... payloads) throws IOException {
+  public AuditRecord auditDroneCommandDispatched(AuditEvent auditEvent, AuditPayload... payloads)
+      throws IOException {
     return auditLogger.audit(
         AuditMessages.DRONE_COMMAND_DISPATCHED,
-        buildAuditContext(
-            auditEvent,
-            "drone-command-dispatched",
-            AuditOutcome.SUCCESS
-        ),
+        buildAuditContext(auditEvent, "drone-command-dispatched", AuditOutcome.SUCCESS),
         writePayloads(auditEvent, payloads),
         safe(auditEvent.getDroneCommandType()),
         safe(auditEvent.getDroneId()),
-        safe(auditEvent.getCommandId())
-    );
+        safe(auditEvent.getCommandId()));
   }
 
-  public AuditRecord auditDroneCommandAcknowledged(AuditEvent auditEvent, AuditPayload... payloads) throws IOException {
+  public AuditRecord auditDroneCommandAcknowledged(AuditEvent auditEvent, AuditPayload... payloads)
+      throws IOException {
     return auditLogger.audit(
         AuditMessages.DRONE_COMMAND_ACKNOWLEDGED,
-        buildAuditContext(
-            auditEvent,
-            "drone-command-acknowledged",
-            AuditOutcome.SUCCESS
-        ),
+        buildAuditContext(auditEvent, "drone-command-acknowledged", AuditOutcome.SUCCESS),
         writePayloads(auditEvent, payloads),
         safe(auditEvent.getDroneCommandType()),
         safe(auditEvent.getDroneId()),
-        safe(auditEvent.getCommandId())
-    );
+        safe(auditEvent.getCommandId()));
   }
 
-  public AuditRecord auditDroneCommandFailed(AuditEvent auditEvent, String reason, AuditPayload... payloads) throws IOException {
+  public AuditRecord auditDroneCommandFailed(
+      AuditEvent auditEvent, String reason, AuditPayload... payloads) throws IOException {
     return auditLogger.audit(
         AuditMessages.DRONE_COMMAND_FAILED,
-        buildAuditContext(
-            auditEvent,
-            "drone-command-failed",
-            AuditOutcome.FAILURE
-        ),
+        buildAuditContext(auditEvent, "drone-command-failed", AuditOutcome.FAILURE),
         writePayloads(auditEvent, payloads),
         safe(auditEvent.getDroneCommandType()),
         safe(auditEvent.getDroneId()),
-        safe(reason)
-    );
+        safe(reason));
+  }
+
+  public AuditRecord auditStanagTaskResultPublished(AuditEvent auditEvent, AuditPayload... payloads)
+      throws IOException {
+    return auditLogger.audit(
+        AuditMessages.STANAG_TASK_RESULT_PUBLISHED,
+        buildAuditContext(auditEvent, "stanag-task-result-published", AuditOutcome.SUCCESS),
+        writePayloads(auditEvent, payloads),
+        safe(auditEvent.getStanagTaskType()),
+        safe(auditEvent.getDroneId()),
+        safe(auditEvent.getTaskId()));
+  }
+
+  public AuditRecord auditStanagTaskResultFailed(
+      AuditEvent auditEvent, String reason, AuditPayload... payloads) throws IOException {
+    return auditLogger.audit(
+        AuditMessages.STANAG_TASK_RESULT_FAILED,
+        buildAuditContext(auditEvent, "stanag-task-result-failed", AuditOutcome.FAILURE),
+        writePayloads(auditEvent, payloads),
+        safe(auditEvent.getStanagTaskType()),
+        safe(auditEvent.getDroneId()),
+        safe(reason));
   }
 
   private AuditContext buildAuditContext(AuditEvent auditEvent, String action, AuditOutcome outcome) {
@@ -160,7 +157,8 @@ public class Auditor {
     return auditContext;
   }
 
-  private List<AuditPayloadReference> writePayloads(AuditEvent auditEvent, AuditPayload... payloads) throws IOException {
+  private List<AuditPayloadReference> writePayloads(AuditEvent auditEvent, AuditPayload... payloads)
+      throws IOException {
     List<AuditPayloadReference> payloadReferences = new ArrayList<>();
 
     if (payloads == null) {
@@ -176,8 +174,7 @@ public class Auditor {
           safeIdentifier(auditEvent.getCorrelationId()),
           safe(payload.getName()),
           safeFileName(payload.getFileName()),
-          payload.getPayload()
-      );
+          payload.getPayload());
 
       payloadReference.setContentType(safe(payload.getContentType()));
       payloadReferences.add(payloadReference);

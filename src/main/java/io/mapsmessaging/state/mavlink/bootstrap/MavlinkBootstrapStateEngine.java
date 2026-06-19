@@ -23,9 +23,9 @@ import io.mapsmessaging.state.drone.core.TwinUpdateContext;
 import io.mapsmessaging.state.drone.drone.DroneTwin;
 import java.time.Instant;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class MavlinkBootstrapStateEngine {
 
@@ -34,10 +34,10 @@ public class MavlinkBootstrapStateEngine {
 
   public MavlinkBootstrapStateEngine(MavlinkBootstrapProfile bootstrapProfile) {
     this.bootstrapProfile = bootstrapProfile;
-    this.bootstrapStates = new HashMap<>();
+    this.bootstrapStates = new ConcurrentHashMap<>();
   }
 
-  public List<MavlinkBootstrapEvent> update(
+  public synchronized List<MavlinkBootstrapEvent> update(
       DroneTwin droneTwin,
       DroneTwinReadinessResult readinessResult,
       TwinUpdateContext context
@@ -52,28 +52,14 @@ public class MavlinkBootstrapStateEngine {
     if (twinId == null) {
       return events;
     }
-
-    MavlinkBootstrapState bootstrapState = bootstrapStates.computeIfAbsent(
-        twinId,
-        MavlinkBootstrapState::new
-    );
-
+    MavlinkBootstrapState bootstrapState = bootstrapStates.computeIfAbsent(twinId, MavlinkBootstrapState::new);
     Instant now = getNow(context);
 
-    emitReadinessChangeIfRequired(
-        bootstrapState,
-        readinessResult,
-        events
-    );
-
+    emitReadinessChangeIfRequired(bootstrapState, readinessResult, events);
     bootstrapState.setUpdatedAt(now);
 
     if (readinessResult.isCommandReady()) {
-      markCompletedIfRequired(
-          bootstrapState,
-          readinessResult,
-          events
-      );
+      markCompletedIfRequired(bootstrapState, readinessResult, events);
       return events;
     }
 
@@ -85,14 +71,7 @@ public class MavlinkBootstrapStateEngine {
       return events;
     }
 
-    handleMissingStates(
-        droneTwin,
-        readinessResult,
-        bootstrapState,
-        now,
-        events
-    );
-
+    handleMissingStates(droneTwin, readinessResult, bootstrapState, now, events);
     return events;
   }
 

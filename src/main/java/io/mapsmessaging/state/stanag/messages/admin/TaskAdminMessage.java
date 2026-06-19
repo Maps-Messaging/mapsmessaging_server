@@ -17,23 +17,15 @@
  *  limitations under the License.
  */
 
-package io.mapsmessaging.state.stanag;
+package io.mapsmessaging.state.stanag.messages.admin;
 
-import com.google.gson.JsonObject;
-import io.mapsmessaging.state.StateLoopProtocol;
+import io.mapsmessaging.state.stanag.messages.MessageHeader;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
 
-import java.util.function.Consumer;
-
-public class ChatListener implements Consumer<JsonObject> {
-
-  private final StateLoopProtocol protocol;
-
-  public ChatListener(StateLoopProtocol protocol) {
-    this.protocol = protocol;
-  }
-
-  @Override
-  public void accept(JsonObject jsonObject) {
-    System.out.println(jsonObject);
-  }
+@AllArgsConstructor
+@Getter
+public class TaskAdminMessage {
+  private MessageHeader header;
+  private final TaskAdminBody body;
 }

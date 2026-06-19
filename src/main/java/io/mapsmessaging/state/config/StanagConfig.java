@@ -27,4 +27,5 @@ import lombok.Setter;
 public class StanagConfig {
   private String taskTopic;
   private String chatTopic;
+  private String taskTopicTemplate;
 }

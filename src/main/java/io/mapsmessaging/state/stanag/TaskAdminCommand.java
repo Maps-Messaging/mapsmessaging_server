@@ -36,7 +36,8 @@ public class TaskAdminCommand {
   private final String action;
   private final String taskType;
   private final String identifier;
-  private final String nodeIdentifier;
+  private final UUID taskId;
+  private final UUID nodeIdentifier;
   private final UUID authorityGuid;
   private final String positionIdentifier;
   private final GeoPosition position;
@@ -52,7 +53,8 @@ public class TaskAdminCommand {
     this.action = action;
     this.taskType = taskType;
     this.identifier = identifier;
-    this.nodeIdentifier = nodeIdentifier;
+    this.taskId = UUID.fromString(identifier);
+    this.nodeIdentifier = UUID.fromString(nodeIdentifier);
     this.authorityGuid = UUID.fromString(authorityGuid);
     this.positionIdentifier = positionIdentifier;
     this.position = position;
@@ -62,10 +64,7 @@ public class TaskAdminCommand {
     try {
       JsonObject bodyObject = getRequiredObject(jsonObject, "body");
 
-      String action = stripPrefix(
-          getRequiredString(bodyObject, "action"),
-          TASK_ADMIN_ACTION_PREFIX
-      );
+      String action = stripPrefix(getRequiredString(bodyObject, "action"), TASK_ADMIN_ACTION_PREFIX);
 
       String identifier = getRequiredString(bodyObject, "identifier");
       String nodeIdentifier = getRequiredString(bodyObject, "node");
@@ -100,15 +99,7 @@ public class TaskAdminCommand {
       position.setLongitude(getRequiredDouble(pointObject, "longitude"));
       position.setAltitudeMslMeters(getRequiredDouble(pointObject, "altitude"));
 
-      return new TaskAdminCommand(
-          action,
-          taskType,
-          identifier,
-          nodeIdentifier,
-          authorityGuid,
-          positionIdentifier,
-          position
-      );
+      return new TaskAdminCommand(action, taskType, identifier, nodeIdentifier, authorityGuid, positionIdentifier, position);
     } catch (IllegalStateException | ClassCastException exception) {
       throw new TaskAdminCommandException("Invalid TASK_ADMIN command structure", exception);
     }

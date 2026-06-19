@@ -17,6 +17,4 @@
 #  limitations under the License.
 #
 
-io.mapsmessaging.state.stanag.tasks.LoiterTaskHandler
-io.mapsmessaging.state.stanag.tasks.PrepareTaskHandler
 io.mapsmessaging.state.stanag.tasks.RepositionTaskHandler

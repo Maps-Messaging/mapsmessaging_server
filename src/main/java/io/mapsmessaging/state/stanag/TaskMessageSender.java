@@ -19,21 +19,8 @@
 
 package io.mapsmessaging.state.stanag;
 
-import com.google.gson.JsonObject;
-import io.mapsmessaging.state.StateLoopProtocol;
+import io.mapsmessaging.api.message.Message;
 
-import java.util.function.Consumer;
-
-public class ChatListener implements Consumer<JsonObject> {
-
-  private final StateLoopProtocol protocol;
-
-  public ChatListener(StateLoopProtocol protocol) {
-    this.protocol = protocol;
-  }
-
-  @Override
-  public void accept(JsonObject jsonObject) {
-    System.out.println(jsonObject);
-  }
+public interface TaskMessageSender {
+  void sendTaskMessage(String taskTopic, Message message);
 }

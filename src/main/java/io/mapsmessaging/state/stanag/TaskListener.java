@@ -21,125 +21,255 @@ package io.mapsmessaging.state.stanag;
 
 import com.google.gson.JsonObject;
 import io.mapsmessaging.state.config.capability.Authorities;
-import io.mapsmessaging.state.config.capability.PlanTaskType;
-import io.mapsmessaging.state.config.capability.TaskCapabilities;
-import io.mapsmessaging.state.config.capability.TaskCapability;
 import io.mapsmessaging.state.drone.core.EntityTwin;
 import io.mapsmessaging.state.drone.core.TwinManager;
 import io.mapsmessaging.state.drone.drone.DroneTwin;
-import io.mapsmessaging.state.stanag.tasks.LoiterTaskHandler;
-import io.mapsmessaging.state.stanag.tasks.PrepareTaskHandler;
-import io.mapsmessaging.state.stanag.tasks.RepositionTaskHandler;
-import io.mapsmessaging.state.stanag.tasks.TaskHandler;
+import io.mapsmessaging.state.stanag.audit.AuditEvent;
+import io.mapsmessaging.state.stanag.audit.Auditor;
+import io.mapsmessaging.state.stanag.messages.*;
+import io.mapsmessaging.state.stanag.messages.admin.TaskAdminActionEnum;
+import io.mapsmessaging.state.stanag.messages.admin.TaskAdminMessage;
+import io.mapsmessaging.state.stanag.messages.admin.TaskAdminMessageBuilder;
+import io.mapsmessaging.state.stanag.messages.feedback.TaskFeedbackMessage;
+import io.mapsmessaging.state.stanag.messages.result.ResultReason;
+import io.mapsmessaging.state.stanag.messages.result.ResultReasonBuilder;
+import io.mapsmessaging.state.stanag.messages.result.TaskResultMessage;
+import io.mapsmessaging.state.stanag.messages.result.TaskResultMessageBuilder;
+import io.mapsmessaging.state.stanag.tasks.TaskDispatchResult;
+import io.mapsmessaging.state.stanag.tasks.TaskDispatcher;
+import io.mapsmessaging.state.stanag.tasks.monitor.TaskMonitor;
+import io.mapsmessaging.state.stanag.tasks.monitor.TaskMonitorManager;
+import io.mapsmessaging.state.stanag.tasks.monitor.TaskStatusPublisher;
 
-import java.util.Map;
+import java.io.IOException;
+import java.time.Clock;
+import java.time.Duration;
 import java.util.Optional;
-import java.util.ServiceLoader;
 import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 
-public class TaskListener implements Consumer<JsonObject> {
+public class TaskListener implements Consumer<JsonObject>, TaskStatusPublisher {
 
   private final TwinManager twinManager;
-  private final AtomicInteger taskSequence = new AtomicInteger(0);
-  private final StanagStateSubscriber protocol;
+  private final Auditor auditor;
+  private final TaskDispatcher taskDispatcher;
+  private final TaskResultMessageBuilder taskResultMessageBuilder;
+  private final TaskEventPublisher taskEventPublisher;
+  private final TaskMonitorManager taskMonitorManager;
+  private final Clock clock = Clock.systemUTC();
 
-  private final Map<String, TaskHandler> taskHandlers = new ConcurrentHashMap<>();
-
-  public TaskListener(TwinManager twinManager, StanagStateSubscriber protocol) {
+  public TaskListener(TwinManager twinManager, StanagSession protocol) {
     this.twinManager = twinManager;
-    this.protocol = protocol;
-    ServiceLoader.load(TaskHandler.class).forEach(this::registerTaskHandler);
+    this.auditor = twinManager.getAuditor();
+    this.taskDispatcher = new TaskDispatcher(protocol, new AtomicInteger(0));
+    this.taskResultMessageBuilder = new TaskResultMessageBuilder(new MessageHeaderBuilder(clock), new ResultReasonBuilder());
+    this.taskEventPublisher = new TaskEventPublisher(protocol, new TaskSchemaValidator());
+    this.taskMonitorManager = new TaskMonitorManager(Duration.ofSeconds(5), this);
+    twinManager.addObserver(taskMonitorManager);
   }
 
-  private void registerTaskHandler(TaskHandler taskHandler) {
-    TaskHandler previousTaskHandler = taskHandlers.putIfAbsent(taskHandler.getTaskType(), taskHandler);
-    if (previousTaskHandler != null) {
-      throw new IllegalStateException("Duplicate task handler for task type " + taskHandler.getTaskType() + ": " + previousTaskHandler.getClass().getName() + " and " + taskHandler.getClass().getName());
-    }
+  public void start() {
+    taskMonitorManager.start();
+  }
+
+  public void stop() {
+    taskMonitorManager.close();
+  }
+
+  @Override
+  public void publishFeedback(TaskMonitor taskMonitor, TaskFeedbackMessage taskFeedbackMessage) {
+    taskEventPublisher.publishFeedback(taskMonitor, taskFeedbackMessage);
+  }
+
+  @Override
+  public void publishResult(TaskMonitor taskMonitor, TaskResultMessage taskResultMessage) {
+    taskEventPublisher.publishResult(taskMonitor, taskResultMessage);
+    auditTaskResult(taskMonitor, taskResultMessage);
+  }
+
+  public void publishAdmin(TaskMonitor taskMonitor, TaskAdminMessage taskAdminMessage) {
+    taskEventPublisher.publishAdmin(taskMonitor, taskAdminMessage);
+    auditTaskAdmin(taskMonitor, taskAdminMessage);
   }
 
   @Override
   public void accept(JsonObject jsonObject) {
-    try {
-      //audit receipt of task request
-      TaskAdminCommand command = TaskAdminCommand.fromJson(jsonObject);
-      String nodeId = command.getNodeIdentifier();
-      UUID nodeUuid = UUID.fromString(nodeId);
-
-      Optional<EntityTwin> matchingTwin = twinManager.listTwins()
-          .stream()
-          .filter(entityTwin -> nodeUuid.equals(entityTwin.getUuid()))
-          .findFirst();
-
-      if(matchingTwin.isEmpty()){
-        //audit no such drone found
-        System.out.println("No matching twin found for node " + nodeId);
-      }
-      else{
-        handleTaskForTwin(matchingTwin.get(), command);
-      }
-    } catch (TaskAdminCommandException e) {
-      e.printStackTrace();
-      // Log and Audit this
-      // send a rejected task
-    }
-  }
-
-  private void handleTaskForTwin(EntityTwin twin, TaskAdminCommand command) {
-    if(twin instanceof DroneTwin droneTwin && isAuthorised(droneTwin, command) && isValidState(droneTwin, command)){
-      TaskHandler taskHandler = taskHandlers.get(command.getTaskType().toUpperCase());
-      if(taskHandler != null){
-        taskHandler.handle(droneTwin, command, protocol, taskSequence.getAndIncrement());
-      }
-    }
-  }
-
-  private boolean isAuthorised(DroneTwin droneTwin, TaskAdminCommand command){
-    boolean authorised = false;
-    TaskCapabilities capabilities = droneTwin.getCapabilities();
-    TaskCapability capability = capabilities.getTasks()
-        .stream()
-        .filter(taskCapability -> matchesTaskType(taskCapability.getTaskType(), command.getTaskType()))
-        .findFirst()
-        .orElse(null);
-
-    if (capability == null) {
-      // Send Reject with reason
-      System.out.println("No matching capability found for task " + command.getAction() + " " + command.getTaskType());
-    } else {
-      if (capability.getAuthorities() == null || capability.getAuthorities().length == 0) {
-        authorised = true;
-      } else {
-        for (Authorities authority : capability.getAuthorities()) {
-          if (authority.getGuid().equals(command.getAuthorityGuid())) {
-            authorised = true;
-            break;
-          }
+    TaskAdminCommand command = createTaskCommand(jsonObject);
+    if (command != null) {
+      if(command.getAction().equals(TaskAdminActionEnum.PUSH.name())) {
+        DroneTwin droneTwin = findTwin(command);
+        if (droneTwin == null) {
+          return;
         }
+        handleTaskForTwin(droneTwin, command);
       }
-      if (!authorised) {
-        // Send Reject with not authorised reason
-        System.out.println("Not authorised to perform task " + command.getAction());
-      }
+    } else {
+      // log this
     }
-    return authorised;
   }
 
-  private boolean isValidState(DroneTwin droneTwin, TaskAdminCommand command) {
-    if (droneTwin == null) {
-      // send reject with no supporting task type
-      return false;
+  private void handleTaskForTwin(DroneTwin droneTwin, TaskAdminCommand command) {
+    TaskDispatchResult dispatchResult = taskDispatcher.dispatch(droneTwin, command);
+    if (!dispatchResult.isAccepted()) {
+      rejectTask(dispatchResult.getDroneTwin(), command, dispatchResult.getRejectReason(), dispatchResult.getRejectText());
+      return;
     }
-    return true;
+    TaskMonitor taskMonitor = dispatchResult.getTaskMonitor();
+    if (taskMonitor != null) {
+      acceptTask(taskMonitor, command);
+      taskMonitorManager.add(taskMonitor);
+    }
   }
 
-  private boolean matchesTaskType(PlanTaskType taskType, String taskTypeName) {
-    if (taskType == null) {
-      return false;
-    }
-    return taskType.name().equals(taskTypeName) || taskType.toString().equals(taskTypeName);
+  private void acceptTask(TaskMonitor taskMonitor, TaskAdminCommand command) {
+    //Authorities authority = new Authorities(command.getAuthorityGuid());
+    //TaskStatusContext context = new TaskStatusContext(command.getTaskId(), command.getNodeIdentifier(), authority);
+    //TaskAdminMessage taskAdminMessage = new TaskAdminMessageBuilder(new MessageHeaderBuilder(clock)).buildAssign(context);
+    //publishAdmin(taskMonitor, taskAdminMessage);
   }
+
+  private void rejectTask(DroneTwin droneTwin, TaskAdminCommand command, ResultReason resultReason, String reasonText) {
+    TaskResultMessage taskResultMessage = buildRejectedTaskResult(command, resultReason);
+    publishResult(taskResultMessage);
+    auditRejected(droneTwin, command, resultReason, reasonText);
+  }
+
+  private void rejectWithoutTwin(TaskAdminCommand command, ResultReason resultReason, String reasonText) {
+    TaskResultMessage taskResultMessage = buildRejectedTaskResult(command, resultReason);
+    // publishTaskResult(taskResultMessage);
+    auditRejected(null, command, resultReason, reasonText);
+  }
+
+  private TaskResultMessage buildRejectedTaskResult(TaskAdminCommand command, ResultReason resultReason) {
+    Authorities authority = new Authorities(command.getAuthorityGuid());
+    TaskStatusContext context = new TaskStatusContext(command.getTaskId(), command.getNodeIdentifier(), authority);
+    return taskResultMessageBuilder.buildRejected(context, resultReason);
+  }
+
+  private void auditRejected(DroneTwin droneTwin, TaskAdminCommand command, ResultReason resultReason, String reasonText) {
+    if (auditor != null) {
+      try {
+        auditor.auditStanagCommandRejected(buildRejectedAuditEvent(droneTwin, command), resultReason.name() + ": " + reasonText);
+      } catch (IOException exception) {
+        exception.printStackTrace();
+      }
+    }
+  }
+
+  private void auditTaskAdmin(TaskMonitor taskMonitor, TaskAdminMessage taskAdminMessage) {
+    if (auditor != null) {
+      AuditEvent auditEvent = taskMonitor.getAuditEvent();
+      if (auditEvent == null) {
+        throw new IllegalStateException("Task monitor has no audit event for task " + taskMonitor.getTaskId());
+      }
+
+      try {
+        if (isSuccessfulTaskAdmin(taskAdminMessage)) {
+          auditor.auditStanagTaskResultPublished(auditEvent);
+        } else {
+          auditor.auditStanagTaskResultFailed(auditEvent, taskAdminMessage.getBody().getAction().name());
+        }
+      } catch (IOException exception) {
+        exception.printStackTrace();
+      }
+    }
+  }
+
+  private void auditTaskResult(TaskMonitor taskMonitor, TaskResultMessage taskResultMessage) {
+    if (auditor != null) {
+      AuditEvent auditEvent = taskMonitor.getAuditEvent();
+      if (auditEvent == null) {
+        throw new IllegalStateException("Task monitor has no audit event for task " + taskMonitor.getTaskId());
+      }
+      try {
+        if (isSuccessfulTaskResult(taskResultMessage)) {
+          auditor.auditStanagTaskResultPublished(auditEvent);
+        } else {
+          auditor.auditStanagTaskResultFailed(auditEvent, taskResultMessage.getBody().getState().name());
+        }
+      } catch (IOException exception) {
+        exception.printStackTrace();
+      }
+    }
+  }
+
+  private AuditEvent buildRejectedAuditEvent(DroneTwin droneTwin, TaskAdminCommand command) {
+    UUID nodeIdentifier = command.getNodeIdentifier();
+    String droneId = nodeIdentifier.toString();
+    String destination = droneTwin == null ? droneId : droneTwin.getTwinId();
+
+    return AuditEvent.builder()
+        .auditId(command.getIdentifier())
+        .correlationId(command.getIdentifier())
+        .parentCorrelationId("")
+        .actor("stanag")
+        .actorType("system")
+        .source("stanag")
+        .destination(destination)
+        .subject(droneId)
+        .taskId(command.getIdentifier())
+        .commandId(command.getIdentifier())
+        .droneId(droneId)
+        .stanagTaskType(command.getTaskType())
+        .protocol("stanag-4817")
+        .build();
+  }
+
+  private boolean isSuccessfulTaskResult(TaskResultMessage taskResultMessage) {
+    return taskResultMessage.getBody().getState() == TaskState.SUCCEEDED;
+  }
+
+  private boolean isSuccessfulTaskAdmin(TaskAdminMessage taskAdminMessage) {
+    return taskAdminMessage.getBody().getAction() == TaskAdminActionEnum.ASSIGN;
+  }
+
+  private void publishResult(TaskResultMessage taskResultMessage) {
+    // Existing reject publishing behaviour preserved while you sort out the reject path.
+  }
+
+
+  private TaskAdminCommand createTaskCommand(JsonObject jsonObject) {
+    try {
+      return TaskAdminCommand.fromJson(jsonObject);
+    } catch (TaskAdminCommandException e) {
+      // Log this and respond
+    }
+    return null;
+  }
+
+  private DroneTwin findTwin(TaskAdminCommand command) {
+    UUID nodeUuid;
+
+    try {
+      nodeUuid = command.getNodeIdentifier();
+    } catch (IllegalArgumentException exception) {
+      rejectWithoutTwin(command, ResultReason.LOGIC, "Invalid node identifier");
+      return null;
+    }
+
+    if (nodeUuid == null) {
+      rejectWithoutTwin(command, ResultReason.LOGIC, "Invalid node identifier");
+      return null;
+    }
+
+    Optional<EntityTwin> matchingTwin =
+        twinManager.listTwins().stream()
+            .filter(entityTwin -> nodeUuid.equals(entityTwin.getUuid()))
+            .findFirst();
+
+    if (matchingTwin.isEmpty()) {
+      rejectWithoutTwin(command, ResultReason.CAPABILITY, "No matching twin found for node");
+      return null;
+    }
+
+    EntityTwin entityTwin = matchingTwin.get();
+    if (!(entityTwin instanceof DroneTwin droneTwin)) {
+      rejectWithoutTwin(command, ResultReason.CAPABILITY, "Matching twin is not a drone");
+      return null;
+    }
+
+    return droneTwin;
+  }
+
 }

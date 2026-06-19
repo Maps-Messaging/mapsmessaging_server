@@ -22,22 +22,23 @@ package io.mapsmessaging.state.stanag.tasks;
 import io.mapsmessaging.api.MessageBuilder;
 import io.mapsmessaging.api.features.QualityOfService;
 import io.mapsmessaging.state.drone.drone.DroneTwin;
-import io.mapsmessaging.state.stanag.MavlinkCommandInt;
-import io.mapsmessaging.state.stanag.StanagStateSubscriber;
+import io.mapsmessaging.state.mavlink.messages.MavlinkCommandInt;
+import io.mapsmessaging.state.stanag.StanagSession;
 import io.mapsmessaging.state.stanag.TaskAdminCommand;
 import io.mapsmessaging.state.stanag.audit.AuditEvent;
 import io.mapsmessaging.state.stanag.audit.Auditor;
+import io.mapsmessaging.state.stanag.tasks.monitor.TaskMonitor;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 
 public abstract class TaskHandler {
 
-  public abstract void handle(DroneTwin droneTwin, TaskAdminCommand command, StanagStateSubscriber protocol, int taskSequence);
+  public abstract TaskMonitor handle(DroneTwin droneTwin, TaskAdminCommand command, StanagSession protocol, int taskSequence);
 
   public abstract String getTaskType();
 
-  protected void auditAndDispatch(DroneTwin droneTwin, StanagStateSubscriber protocol, MavlinkCommandInt mavlinkRequest, AuditEvent auditEvent) {
+  protected void auditAndDispatch(DroneTwin droneTwin, StanagSession protocol, MavlinkCommandInt mavlinkRequest, AuditEvent auditEvent) {
     Auditor auditor = protocol.getAuditor();
     if (auditor != null) {
       auditTranslated(auditor, auditEvent);
@@ -48,11 +49,7 @@ public abstract class TaskHandler {
     }
   }
 
-  protected void sendMavlinkRequest(
-      DroneTwin droneTwin,
-      MavlinkCommandInt mavlinkRequest,
-      StanagStateSubscriber protocol
-  ) {
+  protected void sendMavlinkRequest(DroneTwin droneTwin, MavlinkCommandInt mavlinkRequest, StanagSession protocol) {
     MessageBuilder messageBuilder = new MessageBuilder();
 
     messageBuilder
@@ -60,20 +57,14 @@ public abstract class TaskHandler {
         .setQoS(QualityOfService.AT_MOST_ONCE)
         .setCorrelationData(droneTwin.getUniqueOutboundIdentifier());
 
-    protocol.respond(
-        droneTwin.getResponseTopicName(),
-        messageBuilder.build()
-    );
+    protocol.respond(droneTwin.getResponseTopicName(), messageBuilder.build());
   }
 
   protected void auditTranslated(Auditor auditor, AuditEvent auditEvent) {
     try {
       auditor.auditStanagCommandTranslated(auditEvent);
     } catch (IOException exception) {
-      throw new IllegalStateException(
-          "Unable to audit STANAG command translation",
-          exception
-      );
+      throw new IllegalStateException("Unable to audit STANAG command translation", exception);
     }
   }
 

@@ -17,23 +17,11 @@
  *  limitations under the License.
  */
 
-package io.mapsmessaging.state.stanag;
+package io.mapsmessaging.state.stanag.messages;
 
-import com.google.gson.JsonObject;
-import io.mapsmessaging.state.StateLoopProtocol;
+import io.mapsmessaging.state.config.capability.Authorities;
 
-import java.util.function.Consumer;
+import java.util.UUID;
 
-public class ChatListener implements Consumer<JsonObject> {
-
-  private final StateLoopProtocol protocol;
-
-  public ChatListener(StateLoopProtocol protocol) {
-    this.protocol = protocol;
-  }
-
-  @Override
-  public void accept(JsonObject jsonObject) {
-    System.out.println(jsonObject);
-  }
+public record TaskStatusContext(UUID taskIdentifier, UUID nodeIdentifier, Authorities authority) {
 }

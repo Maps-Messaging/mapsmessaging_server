@@ -17,23 +17,31 @@
  *  limitations under the License.
  */
 
-package io.mapsmessaging.state.stanag;
+package io.mapsmessaging.state.stanag.tasks.monitor;
 
-import com.google.gson.JsonObject;
-import io.mapsmessaging.state.StateLoopProtocol;
+import io.mapsmessaging.state.drone.drone.DroneTwin;
+import io.mapsmessaging.state.stanag.audit.AuditEvent;
 
-import java.util.function.Consumer;
+import java.time.Duration;
+import java.util.UUID;
 
-public class ChatListener implements Consumer<JsonObject> {
+public class CompletedTaskMonitor extends TaskMonitor {
 
-  private final StateLoopProtocol protocol;
+  private final String taskType;
 
-  public ChatListener(StateLoopProtocol protocol) {
-    this.protocol = protocol;
+  public CompletedTaskMonitor(UUID taskId, DroneTwin droneTwin, int taskSequence, String taskType, AuditEvent auditEvent) {
+    super(taskId, droneTwin, taskSequence, Duration.ofSeconds(1), Duration.ofSeconds(1), auditEvent);
+    this.taskType = taskType;
+    setComplete();
   }
 
   @Override
-  public void accept(JsonObject jsonObject) {
-    System.out.println(jsonObject);
+  public String getTaskType() {
+    return taskType;
+  }
+
+  @Override
+  protected void updateTask(DroneTwin droneTwin) {
+    setComplete();
   }
 }

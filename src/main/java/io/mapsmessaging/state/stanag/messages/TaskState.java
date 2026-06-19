@@ -17,21 +17,37 @@
  *  limitations under the License.
  */
 
-package io.mapsmessaging.state.stanag.tasks;
+package io.mapsmessaging.state.stanag.messages;
 
-import io.mapsmessaging.state.drone.drone.DroneTwin;
-import io.mapsmessaging.state.stanag.StanagStateSubscriber;
-import io.mapsmessaging.state.stanag.TaskAdminCommand;
+import lombok.Getter;
+import lombok.RequiredArgsConstructor;
 
-public class LoiterTaskHandler extends TaskHandler{
+@Getter
+@RequiredArgsConstructor
+public enum TaskState {
 
-  @Override
-  public void handle(DroneTwin droneTwin, TaskAdminCommand command, StanagStateSubscriber protocol, int taskSequence) {
+  PENDING(false),
+  ACTIVE(false),
+  RECALLING(false),
+  PREEMPTING(false),
+  PAUSING(false),
+  PAUSED(false),
+  RESUMING(false),
+  ON_HOLD(false),
+  ACTIONABLE(false),
+  PREPARED(false),
+  PLANNING(false),
+  WAITING_FOR_PUSH_ACK(false),
+  WAITING_FOR_CANCEL_ACK(false),
+  WAITING_FOR_PAUSE_ACK(false),
+  WAITING_FOR_RESUME_ACK(false),
 
-  }
+  REJECTED(true),
+  RECALLED(true),
+  PREEMPTED(true),
+  ABORTED(true),
+  SUCCEEDED(true),
+  LOST(true);
 
-  @Override
-  public String getTaskType() {
-    return "LOITER";
-  }
+  private final boolean terminal;
 }

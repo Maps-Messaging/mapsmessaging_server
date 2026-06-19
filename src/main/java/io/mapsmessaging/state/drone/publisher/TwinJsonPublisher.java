@@ -20,7 +20,6 @@
 package io.mapsmessaging.state.drone.publisher;
 
 import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
 import com.google.gson.JsonObject;
 import io.mapsmessaging.api.Destination;
 import io.mapsmessaging.api.MessageBuilder;
@@ -33,10 +32,7 @@ import io.mapsmessaging.api.features.DestinationType;
 import io.mapsmessaging.api.features.QualityOfService;
 import io.mapsmessaging.engine.schema.SchemaManager;
 import io.mapsmessaging.engine.session.ClientConnection;
-import io.mapsmessaging.rest.translation.GsonDateTimeDeserialiser;
-import io.mapsmessaging.rest.translation.GsonDateTimeSerialiser;
-import io.mapsmessaging.rest.translation.InstantTypeAdapter;
-import io.mapsmessaging.state.config.capability.*;
+import io.mapsmessaging.state.GsonStanagHelper;
 import io.mapsmessaging.state.drone.core.EntityTwin;
 import io.mapsmessaging.state.drone.core.TwinManager;
 import io.mapsmessaging.state.drone.core.TwinObserver;
@@ -49,9 +45,6 @@ import org.jetbrains.annotations.NotNull;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.security.Principal;
-import java.time.Instant;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
@@ -71,7 +64,7 @@ public class TwinJsonPublisher implements TwinObserver, ClientConnection, Messag
   public TwinJsonPublisher(TwinManager twinManager, String topicTemplate) throws ExecutionException, InterruptedException, TimeoutException {
     this.topicTemplate = topicTemplate;
     this.twinManager = twinManager;
-    this.gson = createGson();
+    this.gson = GsonStanagHelper.createGson();
     this.destinationCache = new ConcurrentHashMap<>();
     this.session = createSession();
     twinManager.addObserver(this);
@@ -230,33 +223,5 @@ public class TwinJsonPublisher implements TwinObserver, ClientConnection, Messag
   @Override
   public void sendMessage(@NotNull @NonNull MessageEvent messageEvent) {
     // no-op
-  }
-
-  private static Gson createGson() {
-    return new GsonBuilder()
-        .serializeNulls()
-        .setPrettyPrinting()
-        .registerTypeAdapter(LocalDateTime.class, new GsonDateTimeSerialiser())
-        .registerTypeAdapter(LocalDateTime.class, new GsonDateTimeDeserialiser())
-        .registerTypeAdapter(LocalDate.class, new GsonDateTimeSerialiser())
-        .registerTypeAdapter(LocalDate.class, new GsonDateTimeDeserialiser())
-        .registerTypeAdapter(Instant.class, new InstantTypeAdapter())
-        .registerTypeAdapter(
-            PlanTaskType.class,
-            new PrefixedEnumTypeAdapter<>(PlanTaskType.class, "PlanTaskTypeEnum_")
-        )
-        .registerTypeAdapter(
-            TaskSpecialization.class,
-            new PrefixedEnumTypeAdapter<>(TaskSpecialization.class, "TaskSpecializationEnum_")
-        )
-        .registerTypeAdapter(
-            TaskConditionMode.class,
-            new PrefixedEnumTypeAdapter<>(TaskConditionMode.class, "TaskConditionModeEnum_")
-        )
-        .registerTypeAdapter(
-            TaskTemplateMode.class,
-            new PrefixedEnumTypeAdapter<>(TaskTemplateMode.class, "TaskTemplateModeEnum_")
-        )
-        .create();
   }
 }

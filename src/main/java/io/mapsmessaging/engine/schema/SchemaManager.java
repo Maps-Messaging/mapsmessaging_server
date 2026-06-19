@@ -347,6 +347,7 @@ public class SchemaManager implements Agent, SchemaResolver {
   private void loadBundle(SchemaConfig schema){
     if(schema.isBundle()){
       for (SchemaConfig config : schema.getBundledSchemas()) {
+        System.err.println("Loading bundled schema: "+config.getName());
         logger.log(SCHEMA_MANAGER_LOADED_BUNDLED, config.getName(), schema.getName(), schema.getUniqueId(), schema.getFormat());
         repository.addVersion(config.getUniqueId(), config);
       }

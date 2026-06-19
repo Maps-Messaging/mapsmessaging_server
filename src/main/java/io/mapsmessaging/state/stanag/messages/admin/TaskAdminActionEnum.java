@@ -17,23 +17,31 @@
  *  limitations under the License.
  */
 
-package io.mapsmessaging.state.stanag;
+package io.mapsmessaging.state.stanag.messages.admin;
 
-import com.google.gson.JsonObject;
-import io.mapsmessaging.state.StateLoopProtocol;
 
-import java.util.function.Consumer;
+import com.google.gson.annotations.SerializedName;
 
-public class ChatListener implements Consumer<JsonObject> {
+public enum TaskAdminActionEnum {
 
-  private final StateLoopProtocol protocol;
+  @SerializedName("TaskAdminActionEnum_UPDATE")
+  UPDATE,
 
-  public ChatListener(StateLoopProtocol protocol) {
-    this.protocol = protocol;
-  }
+  @SerializedName("TaskAdminActionEnum_PUSH")
+  PUSH,
 
-  @Override
-  public void accept(JsonObject jsonObject) {
-    System.out.println(jsonObject);
-  }
+  @SerializedName("TaskAdminActionEnum_PULL")
+  PULL,
+
+  @SerializedName("TaskAdminActionEnum_CANCEL")
+  CANCEL,
+
+  @SerializedName("TaskAdminActionEnum_PAUSE")
+  PAUSE,
+
+  @SerializedName("TaskAdminActionEnum_RESUME")
+  RESUME,
+
+  @SerializedName("TaskAdminActionEnum_ASSIGN")
+  ASSIGN
 }

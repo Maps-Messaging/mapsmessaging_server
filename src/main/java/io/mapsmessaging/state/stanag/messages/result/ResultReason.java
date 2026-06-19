@@ -17,23 +17,19 @@
  *  limitations under the License.
  */
 
-package io.mapsmessaging.state.stanag;
+package io.mapsmessaging.state.stanag.messages.result;
 
-import com.google.gson.JsonObject;
-import io.mapsmessaging.state.StateLoopProtocol;
+public enum ResultReason {
 
-import java.util.function.Consumer;
-
-public class ChatListener implements Consumer<JsonObject> {
-
-  private final StateLoopProtocol protocol;
-
-  public ChatListener(StateLoopProtocol protocol) {
-    this.protocol = protocol;
-  }
-
-  @Override
-  public void accept(JsonObject jsonObject) {
-    System.out.println(jsonObject);
-  }
+  SAFETY,
+  AUTHORITY,
+  ENVIRONMENT,
+  ENDURANCE,
+  LOGIC,
+  DYNAMICS,
+  HARDWARE,
+  COMMUNICATION,
+  TEMPORAL,
+  GEOSPATIAL,
+  CAPABILITY
 }

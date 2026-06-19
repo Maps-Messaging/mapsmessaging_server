@@ -17,23 +17,34 @@
  *  limitations under the License.
  */
 
-package io.mapsmessaging.state.stanag;
+package io.mapsmessaging.state.stanag.messages.feedback;
 
-import com.google.gson.JsonObject;
-import io.mapsmessaging.state.StateLoopProtocol;
+import com.google.gson.annotations.SerializedName;
+import io.mapsmessaging.state.stanag.messages.TaskState;
+import lombok.Builder;
+import lombok.Getter;
 
-import java.util.function.Consumer;
+import java.util.List;
+import java.util.UUID;
 
-public class ChatListener implements Consumer<JsonObject> {
+@Getter
+@Builder
+public class TaskFeedbackBody {
 
-  private final StateLoopProtocol protocol;
+  private final UUID identifier;
 
-  public ChatListener(StateLoopProtocol protocol) {
-    this.protocol = protocol;
-  }
+  private final UUID node;
 
-  @Override
-  public void accept(JsonObject jsonObject) {
-    System.out.println(jsonObject);
-  }
+  private final TaskState state;
+
+  @SerializedName("percent_complete")
+  private final Double percentComplete;
+
+  @SerializedName("time_remaining")
+  private final String timeRemaining;
+
+  @SerializedName("waypoints_remaining")
+  private final List<String> waypointsRemaining;
+
+
 }
