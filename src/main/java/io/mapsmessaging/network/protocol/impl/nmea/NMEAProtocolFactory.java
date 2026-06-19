@@ -19,7 +19,6 @@
 
 package io.mapsmessaging.network.protocol.impl.nmea;
 
-import io.mapsmessaging.config.protocol.impl.MqttSnConfig;
 import io.mapsmessaging.network.io.EndPoint;
 import io.mapsmessaging.network.io.InterfaceInformation;
 import io.mapsmessaging.network.io.Packet;
@@ -27,8 +26,6 @@ import io.mapsmessaging.network.io.impl.NetworkInfoHelper;
 import io.mapsmessaging.network.io.impl.tcp.TCPEndPoint;
 import io.mapsmessaging.network.protocol.Protocol;
 import io.mapsmessaging.network.protocol.ProtocolImplFactory;
-import io.mapsmessaging.network.protocol.impl.mavlink.MavlinkInterfaceManager;
-import io.mapsmessaging.network.protocol.impl.mqtt_sn.MQTTSNInterfaceManager;
 
 import javax.security.auth.login.LoginException;
 import java.io.IOException;
@@ -72,10 +69,11 @@ public class NMEAProtocolFactory extends ProtocolImplFactory {
 
   @Override
   public void create(EndPoint endPoint, InterfaceInformation info) throws IOException {
-    int datagramSize = NetworkInfoHelper.getMTU(info);
+    int datagramSize = NetworkInfoHelper.getMTU(info, 20480);
     if (datagramSize > 0) {
-      endPoint.getConfig().getEndPointConfig().setServerReadBufferSize(datagramSize * 2L);
-      endPoint.getConfig().getEndPointConfig().setServerWriteBufferSize(datagramSize * 2L);
+      int size = datagramSize *2;
+      endPoint.getConfig().getEndPointConfig().setServerReadBufferSize(size);
+      endPoint.getConfig().getEndPointConfig().setServerWriteBufferSize(size);
     }
     try {
       NMEAProtocol manager = new NMEAProtocol( endPoint, null);

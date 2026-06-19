@@ -55,7 +55,7 @@ public class CoapProtocolFactory extends ProtocolImplFactory {
 
   @Override
   public void create(EndPoint endPoint, InterfaceInformation info) throws IOException {
-    int datagramSize = NetworkInfoHelper.getMTU(info);
+    int datagramSize = NetworkInfoHelper.getMTU(info, 20480);
     if (datagramSize > 0) {
       endPoint.getConfig().getEndPointConfig().setServerReadBufferSize(datagramSize * 2L);
       endPoint.getConfig().getEndPointConfig().setServerWriteBufferSize(datagramSize * 2L);
