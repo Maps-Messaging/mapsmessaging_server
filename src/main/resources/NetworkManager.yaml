@@ -122,78 +122,172 @@ NetworkManager:
 
     data:
 
-      - name: "Mavlink Interface"
-        url: udp://0.0.0.0:14440/
-        protocol: mavlink
-        auth: usernamePassword
-        selectorThreadCount: "{processors}/2"
-
+      - name: "NMEA0183 Interface"
+        url: udp://0.0.0.0:10110/
+        protocol: NMEA-0183
+        auth: default
+        publish: true
+        format: json
 
       - name: "MQTT Interface"
-        url: tcp://:::1883/
+        url: tcp://0.0.0.0:1883/
         protocol: mqtt
         auth: default
 
-      - name: "MQTT SSL Interface"
-        url: "ssl://0.0.0.0:1892/"
-        protocol: mqtt, ws
-        auth: default
 
-      - name: "NATS Interface"
-        url: "tcp://0.0.0.0:4222/"
-        protocol: nats
-        enableStreams: true
-        auth: default
+      - name: "Mavlink Interface 1"
+        url: udp://0.0.0.0:14550/
+        protocol: mavlink
+        auth: usernamePassword
+        dialectName: "common"
+        rejectedFrameNamespace: "/mavlink/dlq/{systemId}/{messageName}"
+        topicNameTemplate: "/mavlink/{systemId}/{messageName}"
+        statusTopicNameTemplate: "/mavlink/{systemId}/status"
+        selectorThreadCount: "{processors}/2"
 
-      - name: "Stomp Interface with WebSocket Support"
-        url: "tcp://0.0.0.0:8674/"
-        protocol: stomp,ws
-        auth: default
+      - name: "Mavlink Interface 2"
+        url: udp://0.0.0.0:14430/
+        protocol: mavlink
+        auth: usernamePassword
+        dialectName: "ardupilot/ardupilotmega"
 
-      - name: "Stomp Interface - Authenticated Stomp over SSL"
-        url: "ssl://0.0.0.0:8695/"
-        protocol: stomp,wss
-        auth: default
+        rejectedFrameNamespace: "/mavlink/dlq/{systemId}/{messageName}"
+        topicNameTemplate: "/mavlink/{systemId}/{messageName}"
+        statusTopicNameTemplate: "/mavlink/{systemId}/status"
+        selectorThreadCount: "{processors}/2"
 
-      - name: "AMQP Interface"
-        url: "tcp://0.0.0.0:5672/"
-        protocol : amqp
-        auth: default
+        # Protocol-side source filtering and topic-name enrichment only.
+        # No vehicleClass, no description, no twin metadata.
+        acceptedSources:
+          -
+            systemId: 255
+            componentId: 190
+            acceptedMessageIds:
+              - 0
 
-      - name: "AMQP anon ssl Interface"
-        url: "ssl://0.0.0.0:5692/"
-        protocol: amqp
-        auth: default
+          -
+            systemId: 1
+            componentId: 1
 
-      - name: "MQTT-SN Interface"
-        url: udp://0.0.0.0:1884/
-        protocol: mqtt-sn
-        eventsPerTopicDuringSleep: 10
-        maxTopicsInSleep: 10
-        advertiseGateway: true
-        enablePortChanges: true
-        enableAddressChanges: true
-        auth: default
+          -
+            systemId: 1
+            componentId: 50
 
-      - name: "DTLS MQTT-SN Interface"
-        url: dtls://0.0.0.0:1886/
-        protocol: mqtt-sn
-        eventsPerTopicDuringSleep: 10
-        maxTopicsInSleep: 10
-        advertiseGateway: true
-        auth: default
+          -
+            systemId: 1
+            componentId: 51
 
-      - name: "CoAP Interface"
-        url: udp://0.0.0.0:5683/
-        protocol: coap
-        maxBlockSize: 512
-        idleTimePeriod: 120
-        auth: default
+          -
+            systemId: 1
+            componentId: 52
 
-      - name: "DTLS CoAP Interface"
-        url: dtls://0.0.0.0:5684/
-        protocol: coap
-        maxBlockSize: 512
-        ssl_SSLContext: DTLS
+          -
+            systemId: 1
+            componentId: 53
+
+          -
+            systemId: 1
+            componentId: 115
+
+          - systemId: 1
+            componentId: 191
+
+          - systemId: 2
+            componentId: 1
+
+          - systemId: 3
+            componentId: 1
+
+          -
+            systemId: 4
+            componentId: 1
+
+          -
+            systemId: 5
+            componentId: 1
+
+      - name: "Canbus N2K Interface"
+        url: canbus://0.0.0.0/
+        deviceName: can1
+        protocol: n2k
         auth: default
+        parseToJson: true
+        canBusAddress: 123
+        modelId: "Maps Messaging Server"
+        modelSerialCode: "MAPS-CMRE-001"
+        # Canbus Queue Configuration
+        queuedWritesEnabled: true
+        queueDepth: 128
+        bitrateBitsPerSecond: 250000
+        maxBusUsagePercent: 20.0
+        queueFullPolicy: DROP_OLDEST
+        writeFailureBackoffMilliseconds: 100
+        ais:
+          enabled: false
+
+          pgn129039:
+            enabled: true
+            intervalMilliseconds: 5000
+
+          pgn129040:
+            enabled: false
+            intervalMilliseconds: 2000
+
+          pgn129809:
+            enabled: true
+            intervalMilliseconds: 300000
+
+          pgn129810:
+            enabled: true
+            intervalMilliseconds: 300000
+
+
+
+      -
+        name: "Inmarsat Iot nano interface"
+        protocol: satellite
+        auth: anon
+        url: satellite://inmarsat:0/
+        httpRequestTimeoutSec: 30
+        pollInterval: 5
+        sharedSecret: "This is a shared secret to use"
+        maxInflightEventsPerDevice: 2
+        outboundNamespaceRoot: "/inmarsat/{deviceId}"
+        outboundBroadcast: "/inmarsat/broadcast"
+        outgoingMessagePollInterval: 5
+        incomingMessagePollInterval: 4
+        baseUrl: "http://localhost:8085/iotMessaging/v1"
+        remoteAuthConfig:
+          username: "this is not real"
+          password: "this is just a junk password since we are in local mock test"
+
+        mailboxId: "again not valid, not real"
+        mailboxPassword: "whatever"
+        namespaceRoot: "/{mailboxId}/"
+
+
+#      - name: "inmarsat IoT interface"
+#        auth: anon
+#        protocol: satellite
+#        url: satellite://localhost:8500/
+#        sharedSecret: "This is a shared secret to use"
+#        maxInflightEventsPerDevice: 2
+#
+#
+#        # Rest Server Config
+#        baseUrl: "https://api.inmarsat.com/iotMessaging/v1"
+#        mailboxId: "c3052ac1-a7f8-4101-b336-5aef3b6c5af6"
+#        mailboxPassword: "Qn3`wVl^(VfP"
+#        # Timeouts
+#        incomingMessagePollInterval: 10
+#        outgoingMessagePollInterval: 30
+#        httpRequestTimeoutSec: 30
+#        # Namespace mapping
+#        namespaceRoot: "/{deviceId}"
+#        inboundNamespaceRoot: "/incoming/{deviceId}/{sin}/{min}"
+#        outboundNamespaceRoot: "/outgoing/{deviceId}/#"
+#        outboundBroadcast: "/inmarsat/broadcast"
+#        remoteAuthConfig:
+#          username: "0oah7vv2joaSE8O5D0i7"
+#          password: "rOuKFagDAcbc0COJp36ZypTe_YVDJs67MzoL5INMIsBkLE_iLPT73wyWcahA_F2H"
 

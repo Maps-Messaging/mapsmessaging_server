@@ -17,18 +17,24 @@
  *  limitations under the License.
  */
 
-package io.mapsmessaging.state.stanag.messages;
+package io.mapsmessaging.state.stanag.messages.core;
 
+import com.google.gson.annotations.SerializedName;
+import lombok.AllArgsConstructor;
 import lombok.Getter;
-import lombok.RequiredArgsConstructor;
 
+import java.time.Instant;
+
+@AllArgsConstructor
 @Getter
-@RequiredArgsConstructor
-public enum MessageType {
+public class MessageHeader {
+  @SerializedName("message_type")
+  private final MessageType messageType;
 
-  TASK_FEEDBACK(false),
-  TASK_RESULT(true),
-  TASK_ADMIN(false);
+  private final String source;
 
-  private final boolean terminalMessage;
+  @SerializedName("time_sent")
+  private final Instant timeSent;
+
+  private final String version;
 }

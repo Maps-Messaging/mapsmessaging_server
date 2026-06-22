@@ -23,12 +23,11 @@ import io.mapsmessaging.state.config.capability.Authorities;
 import io.mapsmessaging.state.drone.drone.DroneTwin;
 import io.mapsmessaging.state.stanag.audit.AuditEvent;
 import io.mapsmessaging.state.stanag.messages.*;
-import io.mapsmessaging.state.stanag.messages.feedback.TaskFeedbackDetails;
-import io.mapsmessaging.state.stanag.messages.feedback.TaskFeedbackMessage;
-import io.mapsmessaging.state.stanag.messages.feedback.TaskFeedbackMessageBuilder;
-import io.mapsmessaging.state.stanag.messages.result.ResultReason;
-import io.mapsmessaging.state.stanag.messages.result.TaskResultMessage;
-import io.mapsmessaging.state.stanag.messages.result.TaskResultMessageBuilder;
+import io.mapsmessaging.state.stanag.messages.task.feedback.TaskFeedbackMessage;
+import io.mapsmessaging.state.stanag.messages.task.feedback.TaskFeedbackMessageBuilder;
+import io.mapsmessaging.state.stanag.messages.task.result.ResultReason;
+import io.mapsmessaging.state.stanag.messages.task.result.TaskResultMessage;
+import io.mapsmessaging.state.stanag.messages.task.result.TaskResultMessageBuilder;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -62,6 +61,7 @@ public abstract class TaskMonitor {
   protected TaskMonitor(
       UUID taskId,
       DroneTwin droneTwin,
+      String topicPath,
       int taskSequence,
       Duration timeout,
       Duration feedbackInterval,
@@ -75,7 +75,7 @@ public abstract class TaskMonitor {
     this.createdTimestamp = Instant.now();
     this.lastUpdatedTimestamp = createdTimestamp;
     this.state = TaskMonitorState.ACCEPTED;
-    this.topicPath = droneTwin.getTwinId();
+    this.topicPath = topicPath;
   }
 
   public abstract String getTaskType();
@@ -114,7 +114,7 @@ public abstract class TaskMonitor {
   }
 
   public TaskFeedbackMessage buildFeedback(TaskFeedbackMessageBuilder feedbackMessageBuilder) {
-    TaskFeedbackMessage feedbackMessage = feedbackMessageBuilder.build(buildStatusContext(), mapFeedbackState(), buildFeedbackDetails());
+    TaskFeedbackMessage feedbackMessage = feedbackMessageBuilder.build(buildStatusContext(), mapFeedbackState());
     markFeedbackEmitted();
     return feedbackMessage;
   }
@@ -172,10 +172,6 @@ public abstract class TaskMonitor {
     if (!isFinished()) {
       state = TaskMonitorState.LOST;
     }
-  }
-
-  protected TaskFeedbackDetails buildFeedbackDetails() {
-    return null;
   }
 
   protected ResultReason buildResultReason() {

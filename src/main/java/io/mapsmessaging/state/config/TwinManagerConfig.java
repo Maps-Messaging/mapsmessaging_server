@@ -77,9 +77,12 @@ public class TwinManagerConfig extends TwinManagerConfigDTO implements Config, C
     if(properties.containsKey("stanag")) {
       ConfigurationProperties stanagProps = (ConfigurationProperties) properties.get("stanag");
       this.stanagConfig = new StanagConfig();
+      stanagConfig.setEnable(stanagProps.getBooleanProperty("enabled", stanagConfig.isEnable()));
       stanagConfig.setChatTopic(stanagProps.getProperty("chatTopic", null));
       stanagConfig.setTaskTopic(stanagProps.getProperty("taskTopic", null));
       stanagConfig.setTaskTopicTemplate(stanagProps.getProperty("taskTopicTemplate", null));
+      stanagConfig.setDescriptionIntervalSec(stanagProps.getIntProperty("descriptionIntervalSec", stanagConfig.getDescriptionIntervalSec()));
+      stanagConfig.setStatusIntervalSec(stanagProps.getIntProperty("statusIntervalSec", stanagConfig.getStatusIntervalSec()));
     }
     else{
       stanagConfig = new StanagConfig();

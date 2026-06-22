@@ -20,7 +20,7 @@
 package io.mapsmessaging.state.stanag.tasks;
 
 import io.mapsmessaging.state.drone.drone.DroneTwin;
-import io.mapsmessaging.state.stanag.messages.result.ResultReason;
+import io.mapsmessaging.state.stanag.messages.task.result.ResultReason;
 import io.mapsmessaging.state.stanag.tasks.monitor.TaskMonitor;
 import lombok.Getter;
 

@@ -17,29 +17,19 @@
  *  limitations under the License.
  */
 
-package io.mapsmessaging.state.stanag.messages.admin;
+package io.mapsmessaging.state.stanag.messages.node.common;
 
-
-import io.mapsmessaging.state.config.capability.Authorities;
+import com.google.gson.annotations.SerializedName;
+import lombok.Builder;
 import lombok.Getter;
-import lombok.Setter;
 
 @Getter
-@Setter
-public class TaskAdminBody {
+@Builder
+public class Position {
 
-  private String identifier;
+  @SerializedName("$discriminator")
+  private final String discriminator;
 
-  private String node;
-
-  private TaskAdminActionEnum action;
-
-  private Authorities authority;
-
-  public TaskAdminBody(String identifier, String node, TaskAdminActionEnum action, Authorities authority) {
-    this.identifier = identifier;
-    this.node = node;
-    this.action = action;
-    this.authority = authority;
-  }
+  @SerializedName("latitude_longitude_altitude")
+  private final LatitudeLongitudeAltitude latitudeLongitudeAltitude;
 }

@@ -19,14 +19,13 @@
 
 package io.mapsmessaging.state.stanag.tasks.monitor;
 
-import io.mapsmessaging.state.config.capability.Authorities;
 import io.mapsmessaging.state.drone.drone.DroneTwin;
 import io.mapsmessaging.state.drone.model.GeoPosition;
 import io.mapsmessaging.state.stanag.audit.AuditEvent;
-import io.mapsmessaging.state.stanag.messages.feedback.TaskFeedbackDetails;
+import io.mapsmessaging.state.stanag.messages.task.feedback.TaskFeedbackMessage;
+import io.mapsmessaging.state.stanag.messages.task.feedback.TaskFeedbackMessageBuilder;
 import io.mapsmessaging.state.util.GeoUtils;
 import lombok.Getter;
-import lombok.Setter;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -56,12 +55,13 @@ public class RepositionTaskMonitor extends TaskMonitor {
   public RepositionTaskMonitor(
       UUID taskId,
       DroneTwin droneTwin,
+      String topicPath,
       int taskSequence,
       Duration timeout,
       Duration feedbackInterval,
       GeoPosition targetPosition,
       AuditEvent auditEvent) {
-    super(taskId, droneTwin, taskSequence, timeout, feedbackInterval, auditEvent);
+    super(taskId, droneTwin, topicPath, taskSequence, timeout, feedbackInterval, auditEvent);
     this.targetPosition = targetPosition;
     this.originalDistanceMeters = Double.MAX_VALUE;
     this.currentDistanceMeters = Double.MAX_VALUE;
@@ -106,13 +106,10 @@ public class RepositionTaskMonitor extends TaskMonitor {
     setInProgress();
   }
 
-  @Override
-  protected TaskFeedbackDetails buildFeedbackDetails() {
-    String timeRemaining = null;
-    if (estimatedSecondsToTarget >= 0L) {
-      timeRemaining = buildTimeRemaining();
-    }
-    return new TaskFeedbackDetails(progressPercentage, timeRemaining, null);
+  public TaskFeedbackMessage buildFeedback(TaskFeedbackMessageBuilder feedbackMessageBuilder) {
+    TaskFeedbackMessage feedbackMessage =super.buildFeedback(feedbackMessageBuilder);
+    feedbackMessage.getBody().setPercentComplete(getProgressPercentage());
+    return feedbackMessage;
   }
 
   private void initialisePosition(GeoPosition currentPosition, Instant currentTimestamp) {

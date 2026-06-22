@@ -19,6 +19,7 @@
 
 package io.mapsmessaging.state.stanag.tasks;
 
+import io.mapsmessaging.state.config.StanagConfig;
 import io.mapsmessaging.state.config.capability.Authorities;
 import io.mapsmessaging.state.config.capability.PlanTaskType;
 import io.mapsmessaging.state.config.capability.TaskCapabilities;
@@ -27,7 +28,7 @@ import io.mapsmessaging.state.drone.core.EntityTwin;
 import io.mapsmessaging.state.drone.drone.DroneTwin;
 import io.mapsmessaging.state.stanag.StanagSession;
 import io.mapsmessaging.state.stanag.TaskAdminCommand;
-import io.mapsmessaging.state.stanag.messages.result.ResultReason;
+import io.mapsmessaging.state.stanag.messages.task.result.ResultReason;
 import io.mapsmessaging.state.stanag.tasks.monitor.TaskMonitor;
 
 import java.util.Locale;
@@ -41,10 +42,12 @@ public class TaskDispatcher {
   private final StanagSession protocol;
   private final AtomicInteger taskSequence;
   private final Map<String, TaskHandler> taskHandlers = new ConcurrentHashMap<>();
+  private final  StanagConfig stanagConfig;
 
-  public TaskDispatcher(StanagSession protocol, AtomicInteger taskSequence) {
+  public TaskDispatcher(StanagSession protocol, StanagConfig stanagConfig, AtomicInteger taskSequence) {
     this.protocol = protocol;
     this.taskSequence = taskSequence;
+    this.stanagConfig = stanagConfig;
     ServiceLoader.load(TaskHandler.class).forEach(this::registerTaskHandler);
   }
 
@@ -68,7 +71,7 @@ public class TaskDispatcher {
       return TaskDispatchResult.rejected(droneTwin, ResultReason.CAPABILITY, "No task handler for task type");
     }
 
-    TaskMonitor taskMonitor = taskHandler.handle(droneTwin, command, protocol, taskSequence.getAndIncrement());
+    TaskMonitor taskMonitor = taskHandler.handle(droneTwin, command, protocol, stanagConfig.getTaskTopicTemplate(), taskSequence.getAndIncrement());
     Authorities authority = new Authorities();
     authority.setGuid(command.getAuthorityGuid());
     taskMonitor.setAuthority(authority);

@@ -350,4 +350,5 @@ public class DroneTwin extends EntityTwin {
   public Long getOperationalUpdatedAtSeconds() {
     return operationalUpdatedAt != null ? operationalUpdatedAt.getEpochSecond() : null;
   }
+
 }

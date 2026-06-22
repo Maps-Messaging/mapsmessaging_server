@@ -34,7 +34,7 @@ import java.nio.charset.StandardCharsets;
 
 public abstract class TaskHandler {
 
-  public abstract TaskMonitor handle(DroneTwin droneTwin, TaskAdminCommand command, StanagSession protocol, int taskSequence);
+  public abstract TaskMonitor handle(DroneTwin droneTwin, TaskAdminCommand command, StanagSession protocol, String template, int taskSequence);
 
   public abstract String getTaskType();
 

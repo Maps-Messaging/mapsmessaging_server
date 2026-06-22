@@ -35,13 +35,13 @@ import java.util.UUID;
 public class RepositionTaskHandler extends TaskHandler {
 
   @Override
-  public TaskMonitor handle(DroneTwin droneTwin, TaskAdminCommand command, StanagSession protocol, int taskSequence) {
+  public TaskMonitor handle(DroneTwin droneTwin, TaskAdminCommand command, StanagSession protocol,String template, int taskSequence) {
     GeoPosition newPosition = command.getPosition();
     float yaw = GeoUtils.bearingDegrees(droneTwin.getGeoPosition(), newPosition);
     MavlinkCommandInt mavlinkRequest = MavlinkCommandInt.reposition(droneTwin.getSystemId(), droneTwin.getComponentId(), newPosition, yaw, taskSequence);
     AuditEvent auditEvent = buildAuditEvent(droneTwin, command, mavlinkRequest, taskSequence, newPosition, yaw);
     auditAndDispatch(droneTwin, protocol, mavlinkRequest, auditEvent);
-    return new RepositionTaskMonitor(command.getTaskId(), droneTwin, taskSequence, Duration.ofMinutes(60), Duration.ofSeconds(15), command.getPosition(), auditEvent);
+    return new RepositionTaskMonitor(command.getTaskId(), droneTwin, template, taskSequence, Duration.ofMinutes(60), Duration.ofSeconds(15), command.getPosition(), auditEvent);
   }
 
   @Override

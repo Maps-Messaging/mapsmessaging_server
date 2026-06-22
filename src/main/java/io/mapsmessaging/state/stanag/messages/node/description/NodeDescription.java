@@ -17,15 +17,18 @@
  *  limitations under the License.
  */
 
-package io.mapsmessaging.state.stanag.messages.result;
+package io.mapsmessaging.state.stanag.messages.node.description;
 
-import io.mapsmessaging.state.stanag.messages.MessageHeader;
+
+import io.mapsmessaging.state.stanag.messages.core.MessageHeader;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 
 @Getter
 @AllArgsConstructor
-public class TaskResultMessage{
+public class NodeDescription {
+
   private final MessageHeader header;
-  private final TaskResultBody body;
+
+  private final NodeDescriptionBody body;
 }

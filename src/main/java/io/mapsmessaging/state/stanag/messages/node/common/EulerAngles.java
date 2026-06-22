@@ -17,15 +17,18 @@
  *  limitations under the License.
  */
 
-package io.mapsmessaging.state.stanag.messages.admin;
+package io.mapsmessaging.state.stanag.messages.node.common;
 
-import io.mapsmessaging.state.stanag.messages.MessageHeader;
-import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Getter;
 
-@AllArgsConstructor
 @Getter
-public class TaskAdminMessage {
-  private MessageHeader header;
-  private final TaskAdminBody body;
+@Builder
+public class EulerAngles {
+
+  private final Double roll;
+
+  private final Double pitch;
+
+  private final Double yaw;
 }

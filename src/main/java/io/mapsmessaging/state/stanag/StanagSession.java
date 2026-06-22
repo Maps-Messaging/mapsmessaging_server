@@ -50,24 +50,31 @@ import java.util.function.Consumer;
 
 public class StanagSession implements MessageHandler, TaskMessageSender, Lifecycle {
 
+  private final TwinManager twinManager;
+
   private final StateLoopProtocol protocol;
   private final String taskTopic;
   private final String chatTopic;
   private final String taskTopicTemplate;
   private final TaskListener taskListener;
   private final Consumer<JsonObject> chatListener;
+  private final StanagConfig stanagConfig;
   private final Map<String, Destination> destinationCache = new ConcurrentHashMap<>();
+
+  private NodeUpdate nodeUpdateListener;
 
   @Getter
   private final Auditor auditor;
 
   public StanagSession(@NonNull @NotNull TwinManager twinManager, @NonNull @NotNull StanagConfig stanagConfig) {
+    this.twinManager = twinManager;
+    this.stanagConfig = stanagConfig;
     this.protocol = new StateLoopProtocol(new NoOpEndPoint(1, null, new ArrayList<>()), this);
     this.auditor = twinManager.getAuditor();
     this.taskTopic = stanagConfig.getTaskTopic();
     this.chatTopic = stanagConfig.getChatTopic();
     this.taskTopicTemplate = stanagConfig.getTaskTopicTemplate();
-    this.taskListener = new TaskListener(twinManager, this);
+    this.taskListener = new TaskListener(twinManager, this, stanagConfig);
     this.chatListener = new ChatListener(protocol);
   }
 
@@ -77,6 +84,7 @@ public class StanagSession implements MessageHandler, TaskMessageSender, Lifecyc
         return;
       }
       protocol.connect(UUID.randomUUID().toString(), "anonymous", "anonymous");
+      this.nodeUpdateListener = new NodeUpdate(protocol.getSession(), stanagConfig);
       if (isConfigured(taskTopic)) {
         subscribe(taskTopic);
       }
@@ -87,6 +95,7 @@ public class StanagSession implements MessageHandler, TaskMessageSender, Lifecyc
     } catch (IOException e) {
       // Log this
     }
+    twinManager.addObserver(nodeUpdateListener);
   }
 
   public void stop() {
@@ -128,12 +137,7 @@ public class StanagSession implements MessageHandler, TaskMessageSender, Lifecyc
 
   @Override
   public void sendTaskMessage(String taskTopic, Message message) {
-    if (!isConfigured(taskTopicTemplate)) {
-      return;
-    }
-
-    String topicName = buildTopicName(taskTopicTemplate, taskTopic);
-    respond(topicName, message);
+    respond(taskTopic, message);
   }
 
   public void respond(String topicName, Message message) {

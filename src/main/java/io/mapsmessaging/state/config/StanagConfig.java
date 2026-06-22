@@ -25,7 +25,10 @@ import lombok.Setter;
 @Getter
 @Setter
 public class StanagConfig {
+  private boolean enable = false;
   private String taskTopic;
   private String chatTopic;
   private String taskTopicTemplate;
+  private int descriptionIntervalSec = 30;
+  private int statusIntervalSec = 5;
 }

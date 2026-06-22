@@ -33,12 +33,13 @@ import java.util.UUID;
 import io.mapsmessaging.state.GsonStanagHelper;
 
 import io.mapsmessaging.state.stanag.messages.*;
-import io.mapsmessaging.state.stanag.messages.feedback.TaskFeedbackMessage;
-import io.mapsmessaging.state.stanag.messages.feedback.TaskFeedbackMessageBuilder;
-import io.mapsmessaging.state.stanag.messages.result.ResultReason;
-import io.mapsmessaging.state.stanag.messages.result.ResultReasonBuilder;
-import io.mapsmessaging.state.stanag.messages.result.TaskResultMessage;
-import io.mapsmessaging.state.stanag.messages.result.TaskResultMessageBuilder;
+import io.mapsmessaging.state.stanag.messages.core.MessageHeaderBuilder;
+import io.mapsmessaging.state.stanag.messages.task.feedback.TaskFeedbackMessage;
+import io.mapsmessaging.state.stanag.messages.task.feedback.TaskFeedbackMessageBuilder;
+import io.mapsmessaging.state.stanag.messages.task.result.ResultReason;
+import io.mapsmessaging.state.stanag.messages.task.result.ResultReasonBuilder;
+import io.mapsmessaging.state.stanag.messages.task.result.TaskResultMessage;
+import io.mapsmessaging.state.stanag.messages.task.result.TaskResultMessageBuilder;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 

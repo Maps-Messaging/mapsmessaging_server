@@ -1,39 +1,25 @@
-/*
- *
- *  Copyright [ 2020 - 2024 ] Matthew Buckton
- *  Copyright [ 2024 - 2026 ] MapsMessaging B.V.
- *
- *  Licensed under the Apache License, Version 2.0 with the Commons Clause
- *  (the "License"); you may not use this file except in compliance with the License.
- *  You may obtain a copy of the License at:
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *      https://commonsclause.com/
- *
- *  Unless required by applicable law or agreed to in writing, software
- *  distributed under the License is distributed on an "AS IS" BASIS,
- *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *  See the License for the specific language governing permissions and
- *  limitations under the License.
- */
+package io.mapsmessaging.state.stanag.messages.task.result;
 
-package io.mapsmessaging.state.stanag.messages.result;
-
-import io.mapsmessaging.state.stanag.messages.*;
+import io.mapsmessaging.MessageDaemon;
+import io.mapsmessaging.state.stanag.messages.TaskState;
+import io.mapsmessaging.state.stanag.messages.TaskStatusContext;
+import io.mapsmessaging.state.stanag.messages.core.MessageHeader;
+import io.mapsmessaging.state.stanag.messages.core.MessageHeaderBuilder;
+import io.mapsmessaging.state.stanag.messages.core.MessageType;
 import lombok.RequiredArgsConstructor;
+
+import java.time.Instant;
+import java.util.Objects;
 
 @RequiredArgsConstructor
 public class TaskResultMessageBuilder {
 
   private final MessageHeaderBuilder headerBuilder;
+
   private final ResultReasonBuilder resultReasonBuilder;
 
   public TaskResultMessage buildSucceeded(TaskStatusContext context) {
     return build(context, TaskState.SUCCEEDED, null);
-  }
-
-  public TaskResultMessage buildAccepted(TaskStatusContext context) {
-    return build(context, TaskState.ACTIVE, null);
   }
 
   public TaskResultMessage buildRejected(TaskStatusContext context, ResultReason resultReason) {
@@ -57,8 +43,27 @@ public class TaskResultMessageBuilder {
   }
 
   public TaskResultMessage build(TaskStatusContext context, TaskState taskState, ResultReason resultReason) {
-    TaskResultBody body = new TaskResultBody(context.taskIdentifier(), context.nodeIdentifier(), taskState, context.authority(), resultReasonBuilder.build(resultReason));
-    MessageHeader header = headerBuilder.build(MessageType.TASK_RESULT, context.nodeIdentifier().toString());
+    Objects.requireNonNull(context, "context cannot be null");
+    Objects.requireNonNull(taskState, "taskState cannot be null");
+
+    validateResultState(taskState);
+
+    MessageHeader header = headerBuilder.build(MessageType.TASK_RESULT, MessageDaemon.getInstance().getUuid(), Instant.now());
+
+    TaskResultBody body = TaskResultBody.builder()
+        .identifier(context.taskIdentifier())
+        .node(context.nodeIdentifier())
+        .state(taskState)
+        .authority(context.authority())
+        .resultReason(resultReasonBuilder.build(resultReason))
+        .build();
+
     return new TaskResultMessage(header, body);
+  }
+
+  private void validateResultState(TaskState taskState) {
+    if (!taskState.isTerminal()) {
+      throw new IllegalArgumentException("Non-terminal task states must use TASK_FEEDBACK: " + taskState);
+    }
   }
 }

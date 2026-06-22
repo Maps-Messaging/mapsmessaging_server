@@ -17,15 +17,20 @@
  *  limitations under the License.
  */
 
-package io.mapsmessaging.state.stanag.messages.feedback;
+package io.mapsmessaging.state.stanag.messages.node.common;
 
-import io.mapsmessaging.state.stanag.messages.MessageHeader;
-import lombok.AllArgsConstructor;
+import com.google.gson.annotations.SerializedName;
+import lombok.Builder;
 import lombok.Getter;
 
 @Getter
-@AllArgsConstructor
-public class TaskFeedbackMessage {
-  private final MessageHeader header;
-  private final TaskFeedbackBody body;
+@Builder
+public class SpeedCourseClimbRate {
+
+  private final Double speed;
+
+  private final Double course;
+
+  @SerializedName("climb_rate")
+  private final Double climbRate;
 }

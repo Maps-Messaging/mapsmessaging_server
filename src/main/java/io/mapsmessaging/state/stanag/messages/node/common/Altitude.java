@@ -17,19 +17,16 @@
  *  limitations under the License.
  */
 
-package io.mapsmessaging.state.stanag.messages.result;
+package io.mapsmessaging.state.stanag.messages.node.common;
 
-public enum ResultReason {
+import lombok.Builder;
+import lombok.Getter;
 
-  SAFETY,
-  AUTHORITY,
-  ENVIRONMENT,
-  ENDURANCE,
-  LOGIC,
-  DYNAMICS,
-  HARDWARE,
-  COMMUNICATION,
-  TEMPORAL,
-  GEOSPATIAL,
-  CAPABILITY
+@Getter
+@Builder
+public class Altitude {
+
+  private final Double value;
+
+  private final String type;
 }

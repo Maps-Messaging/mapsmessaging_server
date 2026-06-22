@@ -19,8 +19,8 @@
 
 package io.mapsmessaging.state.stanag.tasks.monitor;
 
-import io.mapsmessaging.state.stanag.messages.feedback.TaskFeedbackMessage;
-import io.mapsmessaging.state.stanag.messages.result.TaskResultMessage;
+import io.mapsmessaging.state.stanag.messages.task.feedback.TaskFeedbackMessage;
+import io.mapsmessaging.state.stanag.messages.task.result.TaskResultMessage;
 
 public interface TaskStatusPublisher {
 

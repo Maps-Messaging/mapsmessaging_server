@@ -20,6 +20,7 @@
 package io.mapsmessaging.state.stanag;
 
 import com.google.gson.JsonObject;
+import io.mapsmessaging.state.config.StanagConfig;
 import io.mapsmessaging.state.config.capability.Authorities;
 import io.mapsmessaging.state.drone.core.EntityTwin;
 import io.mapsmessaging.state.drone.core.TwinManager;
@@ -27,14 +28,14 @@ import io.mapsmessaging.state.drone.drone.DroneTwin;
 import io.mapsmessaging.state.stanag.audit.AuditEvent;
 import io.mapsmessaging.state.stanag.audit.Auditor;
 import io.mapsmessaging.state.stanag.messages.*;
-import io.mapsmessaging.state.stanag.messages.admin.TaskAdminActionEnum;
-import io.mapsmessaging.state.stanag.messages.admin.TaskAdminMessage;
-import io.mapsmessaging.state.stanag.messages.admin.TaskAdminMessageBuilder;
-import io.mapsmessaging.state.stanag.messages.feedback.TaskFeedbackMessage;
-import io.mapsmessaging.state.stanag.messages.result.ResultReason;
-import io.mapsmessaging.state.stanag.messages.result.ResultReasonBuilder;
-import io.mapsmessaging.state.stanag.messages.result.TaskResultMessage;
-import io.mapsmessaging.state.stanag.messages.result.TaskResultMessageBuilder;
+import io.mapsmessaging.state.stanag.messages.core.MessageHeaderBuilder;
+import io.mapsmessaging.state.stanag.messages.task.admin.TaskAdminActionEnum;
+import io.mapsmessaging.state.stanag.messages.task.admin.TaskAdminMessage;
+import io.mapsmessaging.state.stanag.messages.task.feedback.TaskFeedbackMessage;
+import io.mapsmessaging.state.stanag.messages.task.result.ResultReason;
+import io.mapsmessaging.state.stanag.messages.task.result.ResultReasonBuilder;
+import io.mapsmessaging.state.stanag.messages.task.result.TaskResultMessage;
+import io.mapsmessaging.state.stanag.messages.task.result.TaskResultMessageBuilder;
 import io.mapsmessaging.state.stanag.tasks.TaskDispatchResult;
 import io.mapsmessaging.state.stanag.tasks.TaskDispatcher;
 import io.mapsmessaging.state.stanag.tasks.monitor.TaskMonitor;
@@ -57,13 +58,12 @@ public class TaskListener implements Consumer<JsonObject>, TaskStatusPublisher {
   private final TaskResultMessageBuilder taskResultMessageBuilder;
   private final TaskEventPublisher taskEventPublisher;
   private final TaskMonitorManager taskMonitorManager;
-  private final Clock clock = Clock.systemUTC();
 
-  public TaskListener(TwinManager twinManager, StanagSession protocol) {
+  public TaskListener(TwinManager twinManager, StanagSession protocol, StanagConfig stanagConfig) {
     this.twinManager = twinManager;
     this.auditor = twinManager.getAuditor();
-    this.taskDispatcher = new TaskDispatcher(protocol, new AtomicInteger(0));
-    this.taskResultMessageBuilder = new TaskResultMessageBuilder(new MessageHeaderBuilder(clock), new ResultReasonBuilder());
+    this.taskDispatcher = new TaskDispatcher(protocol, stanagConfig, new AtomicInteger(0));
+    this.taskResultMessageBuilder = new TaskResultMessageBuilder(new MessageHeaderBuilder(Clock.systemUTC()), new ResultReasonBuilder());
     this.taskEventPublisher = new TaskEventPublisher(protocol, new TaskSchemaValidator());
     this.taskMonitorManager = new TaskMonitorManager(Duration.ofSeconds(5), this);
     twinManager.addObserver(taskMonitorManager);

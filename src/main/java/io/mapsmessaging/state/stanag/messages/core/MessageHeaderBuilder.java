@@ -17,13 +17,15 @@
  *  limitations under the License.
  */
 
-package io.mapsmessaging.state.stanag.messages;
+package io.mapsmessaging.state.stanag.messages.core;
 
 import lombok.RequiredArgsConstructor;
 
 import java.time.Clock;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.Objects;
+import java.util.UUID;
 
 @RequiredArgsConstructor
 public class MessageHeaderBuilder {
@@ -32,11 +34,19 @@ public class MessageHeaderBuilder {
 
   private final Clock clock;
 
-  public MessageHeader build(MessageType messageType, String sourceIdentifier) {
-    return new MessageHeader(messageType, sourceIdentifier, now(), VERSION);
+  public MessageHeader build(MessageType messageType, UUID sourceIdentifier, Instant timestamp) {
+    Objects.requireNonNull(messageType, "messageType cannot be null");
+    Objects.requireNonNull(sourceIdentifier, "sourceIdentifier cannot be null");
+
+    Instant resolvedTimestamp = timestamp != null ? timestamp : now();
+    return new MessageHeader(messageType, sourceIdentifier.toString(), truncate(resolvedTimestamp), VERSION);
   }
 
   private Instant now() {
-    return Instant.now(clock).truncatedTo(ChronoUnit.MILLIS);
+    return Instant.now(clock);
+  }
+
+  private Instant truncate(Instant timestamp) {
+    return timestamp.truncatedTo(ChronoUnit.MILLIS);
   }
 }

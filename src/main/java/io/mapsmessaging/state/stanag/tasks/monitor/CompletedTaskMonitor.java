@@ -29,8 +29,8 @@ public class CompletedTaskMonitor extends TaskMonitor {
 
   private final String taskType;
 
-  public CompletedTaskMonitor(UUID taskId, DroneTwin droneTwin, int taskSequence, String taskType, AuditEvent auditEvent) {
-    super(taskId, droneTwin, taskSequence, Duration.ofSeconds(1), Duration.ofSeconds(1), auditEvent);
+  public CompletedTaskMonitor(UUID taskId, DroneTwin droneTwin, String topicPath, int taskSequence, String taskType, AuditEvent auditEvent) {
+    super(taskId, droneTwin, topicPath, taskSequence, Duration.ofSeconds(1), Duration.ofSeconds(1), auditEvent);
     this.taskType = taskType;
     setComplete();
   }

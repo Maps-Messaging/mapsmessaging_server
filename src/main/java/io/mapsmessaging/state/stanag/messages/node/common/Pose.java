@@ -17,16 +17,16 @@
  *  limitations under the License.
  */
 
-package io.mapsmessaging.state.stanag.messages.result;
+package io.mapsmessaging.state.stanag.messages.node.common;
 
-import io.mapsmessaging.state.stanag.messages.FlexibleEnumeration;
+import lombok.Builder;
+import lombok.Getter;
 
-public class ResultReasonBuilder {
+@Getter
+@Builder
+public class Pose {
 
-  public FlexibleEnumeration build(ResultReason resultReason) {
-    if (resultReason == null) {
-      return null;
-    }
-    return new FlexibleEnumeration(resultReason.name());
-  }
+  private final Position position;
+
+  private final Orientation orientation;
 }

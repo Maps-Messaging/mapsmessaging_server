@@ -17,35 +17,19 @@
  *  limitations under the License.
  */
 
-package io.mapsmessaging.state.stanag.messages.feedback;
+package io.mapsmessaging.state.stanag.messages.node.common;
 
 import com.google.gson.annotations.SerializedName;
-import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Getter;
-import lombok.Singular;
-
-import java.util.List;
 
 @Getter
-public class TaskFeedbackDetails {
+@Builder
+public class Orientation {
 
-//  @SerializedName("time_remaining")
-//  private final String timeRemaining;
+  @SerializedName("$discriminator")
+  private final String discriminator;
 
-  @Singular("waypointRemaining")
-  private final List<String> waypointsRemaining;
-
-  @SerializedName("percent_complete")
-  private double percentComplete = 0.0d;
-
-  public TaskFeedbackDetails() {
-//    timeRemaining = null;
-    waypointsRemaining = null;
-  }
-
-  public TaskFeedbackDetails(double percentComplete, String timeRemaining, List<String> waypointsRemaining) {
-    this.percentComplete = percentComplete;
-//    this.timeRemaining = timeRemaining;
-    this.waypointsRemaining = waypointsRemaining;
-  }
+  @SerializedName("euler_angles")
+  private final EulerAngles eulerAngles;
 }

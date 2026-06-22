@@ -25,8 +25,9 @@ import io.mapsmessaging.rest.translation.GsonDateTimeDeserialiser;
 import io.mapsmessaging.rest.translation.GsonDateTimeSerialiser;
 import io.mapsmessaging.rest.translation.InstantTypeAdapter;
 import io.mapsmessaging.state.config.capability.*;
-import io.mapsmessaging.state.stanag.messages.MessageType;
-import io.mapsmessaging.state.stanag.messages.result.ResultReason;
+import io.mapsmessaging.state.stanag.messages.core.MessageType;
+import io.mapsmessaging.state.stanag.messages.task.admin.TaskAdminActionEnum;
+import io.mapsmessaging.state.stanag.messages.task.result.ResultReason;
 import io.mapsmessaging.state.stanag.messages.TaskState;
 
 import java.time.Instant;
@@ -70,6 +71,10 @@ public class GsonStanagHelper {
         .registerTypeAdapter(
             ResultReason.class,
             new PrefixedEnumTypeAdapter<>(ResultReason.class, "ResultReasonEnum_")
+        )
+        .registerTypeAdapter(
+            TaskAdminActionEnum.class,
+            new PrefixedEnumTypeAdapter<>(TaskAdminActionEnum.class, "TaskAdminActionEnum_")
         )
         .create();
   }

@@ -17,34 +17,19 @@
  *  limitations under the License.
  */
 
-package io.mapsmessaging.state.stanag.messages.feedback;
+package io.mapsmessaging.state.stanag.messages.node.common;
 
 import com.google.gson.annotations.SerializedName;
-import io.mapsmessaging.state.stanag.messages.TaskState;
 import lombok.Builder;
 import lombok.Getter;
 
-import java.util.List;
-import java.util.UUID;
-
 @Getter
 @Builder
-public class TaskFeedbackBody {
+public class Velocity {
 
-  private final UUID identifier;
+  @SerializedName("$discriminator")
+  private final String discriminator;
 
-  private final UUID node;
-
-  private final TaskState state;
-
-  @SerializedName("percent_complete")
-  private final Double percentComplete;
-
-  @SerializedName("time_remaining")
-  private final String timeRemaining;
-
-  @SerializedName("waypoints_remaining")
-  private final List<String> waypointsRemaining;
-
-
+  @SerializedName("speed_course_climb_rate")
+  private final SpeedCourseClimbRate speedCourseClimbRate;
 }

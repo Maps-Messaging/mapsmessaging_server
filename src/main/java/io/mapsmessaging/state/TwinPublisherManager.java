@@ -46,7 +46,7 @@ public class TwinPublisherManager implements Lifecycle {
 
   @Override
   public void start() {
-    if(config != null){
+    if(config != null && config.isEnabled()){
       try {
         twinJsonPublisher = new TwinJsonPublisher(twinManager, config.getTopicTemplate());
         logger.log(STATE_MANAGER_PUBLISH_ENABLED, config.getTopicTemplate());

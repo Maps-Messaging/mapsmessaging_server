@@ -17,24 +17,17 @@
  *  limitations under the License.
  */
 
-package io.mapsmessaging.state.stanag.messages;
+package io.mapsmessaging.state.stanag.messages.node.status;
 
-import com.google.gson.annotations.SerializedName;
+import io.mapsmessaging.state.stanag.messages.core.MessageHeader;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 
-import java.time.Instant;
-
-@AllArgsConstructor
 @Getter
-public class MessageHeader {
-  @SerializedName("message_type")
-  private final MessageType messageType;
+@AllArgsConstructor
+public class NodeStatus {
 
-  private final String source;
+  private final MessageHeader header;
 
-  @SerializedName("time_sent")
-  private final Instant timeSent;
-
-  private final String version;
+  private final NodeStatusBody body;
 }

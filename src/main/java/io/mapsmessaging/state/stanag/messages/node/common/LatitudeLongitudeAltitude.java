@@ -17,31 +17,20 @@
  *  limitations under the License.
  */
 
-package io.mapsmessaging.state.stanag.messages.admin;
+package io.mapsmessaging.state.stanag.messages.node.common;
 
+import lombok.Builder;
+import lombok.Getter;
 
-import com.google.gson.annotations.SerializedName;
+import java.util.List;
 
-public enum TaskAdminActionEnum {
+@Getter
+@Builder
+public class LatitudeLongitudeAltitude {
 
-  @SerializedName("TaskAdminActionEnum_UPDATE")
-  UPDATE,
+  private final Double latitude;
 
-  @SerializedName("TaskAdminActionEnum_PUSH")
-  PUSH,
+  private final Double longitude;
 
-  @SerializedName("TaskAdminActionEnum_PULL")
-  PULL,
-
-  @SerializedName("TaskAdminActionEnum_CANCEL")
-  CANCEL,
-
-  @SerializedName("TaskAdminActionEnum_PAUSE")
-  PAUSE,
-
-  @SerializedName("TaskAdminActionEnum_RESUME")
-  RESUME,
-
-  @SerializedName("TaskAdminActionEnum_ASSIGN")
-  ASSIGN
+  private final List<Altitude> altitude;
 }
