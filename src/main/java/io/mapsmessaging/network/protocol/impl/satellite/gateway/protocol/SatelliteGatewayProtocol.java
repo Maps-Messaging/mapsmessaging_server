@@ -109,7 +109,9 @@ public class SatelliteGatewayProtocol extends Protocol {
     scb.setPersistentSession(false)
         .setResetState(true)
         .setSessionExpiry(100)
+        .isInternal(true)
         .setReceiveMaximum(config.getMaxInflightEventsPerDevice());
+
 
 
     long millis = TimeUnit.SECONDS.toMillis(config.getMaxInflightEventsPerDevice());
