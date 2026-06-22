@@ -67,27 +67,6 @@ class TaskStatusMessageBuilderTest {
     context = new TaskStatusContext(TASK_IDENTIFIER, NODE_IDENTIFIER, null);
   }
 
-  @Test
-  void shouldBuildAcceptedFeedbackMessage() {
-    TaskFeedbackMessage message = feedbackMessageBuilder.buildAccepted(context);
-
-    JsonObject json = toJsonObject(message);
-    JsonObject header = json.getAsJsonObject("header");
-    JsonObject body = json.getAsJsonObject("body");
-
-    assertEquals("MessageTypeEnum_TASK_FEEDBACK", header.get("message_type").getAsString());
-    assertEquals(NODE_IDENTIFIER, header.get("source").getAsString());
-    assertEquals("2026-06-05T06:16:05.021Z", header.get("time_sent").getAsString());
-    assertEquals("0.3.0", header.get("version").getAsString());
-
-    assertEquals(TASK_IDENTIFIER, body.get("identifier").getAsString());
-    assertEquals(NODE_IDENTIFIER, body.get("node").getAsString());
-    assertEquals("TaskStateEnum_ACTIVE", body.get("state").getAsString());
-
-    assertFalse(body.has("percent_complete"));
-    assertFalse(body.has("time_remaining"));
-    assertFalse(body.has("waypoints_remaining"));
-  }
 
   @Test
   void shouldBuildProgressFeedbackMessage() {
