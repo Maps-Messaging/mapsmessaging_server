@@ -21,6 +21,8 @@ package io.mapsmessaging.api.transformers;
 
 public final class TransformationTestVectors {
 
+  public static final String VALID_JSON_OBJECT_FOR_XML =
+      "{\"root\":{\"a\":1,\"b\":\"x\",\"nested\":{\"c\":true}}}";
   public static final String VALID_JSON_OBJECT = "{\"a\":1,\"b\":\"x\",\"nested\":{\"c\":true}}";
   public static final String VALID_JSON_OBJECT_MINIMAL = "{\"a\":1}";
   public static final String VALID_JSON_ARRAY = "[1,2,3]";

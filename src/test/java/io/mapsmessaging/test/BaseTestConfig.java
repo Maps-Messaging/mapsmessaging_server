@@ -52,10 +52,7 @@ import io.mapsmessaging.network.protocol.Protocol;
 import io.mapsmessaging.security.access.Group;
 import io.mapsmessaging.security.access.Identity;
 import io.mapsmessaging.security.authorisation.ProtectedResource;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Timeout;
+import org.junit.jupiter.api.*;
 
 import javax.security.auth.login.LoginException;
 
@@ -180,12 +177,19 @@ public class BaseTestConfig extends BaseTest {
   @AfterEach
   void checkSessionState()  {
     try {
-      deleteUnknownDestinations();
+      SessionManager manager = md.getSubSystemManager().getSessionManager();
+      List<SessionImpl> sessionImpls = manager.getSessions();
+      for (SessionImpl sessionImpl : sessionImpls) {
+        if(!sessionImpl.getContext().isInternal()){
+          System.err.println("Session still active::" + sessionImpl.getName());
+          sessionImpl.setExpiryTime(1);
+          manager.close(sessionImpl, false);
+        }
+      }
     }
     catch (Exception ex){
       ex.printStackTrace();
-    }
-  }
+    }  }
 
   public static String getPassword(String user) throws IOException {
     if (usernamePasswordMap == null) {

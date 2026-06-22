@@ -19,41 +19,105 @@
 package io.mapsmessaging.dto.rest.config.transformer;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.mapsmessaging.dto.rest.config.transformer.impl.CloudEventEnvelopeTransformationDTO;
+import io.mapsmessaging.dto.rest.config.transformer.impl.CloudEventJsonTransformationDTO;
+import io.mapsmessaging.dto.rest.config.transformer.impl.CloudEventNativeTransformationDTO;
+import io.mapsmessaging.dto.rest.config.transformer.impl.GeoHashResolverTransformationDTO;
 import io.mapsmessaging.dto.rest.config.transformer.impl.JsonMapperTransformationDTO;
+import io.mapsmessaging.dto.rest.config.transformer.impl.JsonMutateTransformationDTO;
+import io.mapsmessaging.dto.rest.config.transformer.impl.JsonQueryTransformationDTO;
 import io.mapsmessaging.dto.rest.config.transformer.impl.JsonToSchemaTransformationDTO;
+import io.mapsmessaging.dto.rest.config.transformer.impl.JsonToValueTransformationDTO;
+import io.mapsmessaging.dto.rest.config.transformer.impl.JsonToXmlTransformationDTO;
 import io.mapsmessaging.dto.rest.config.transformer.impl.SchemaToJsonTransformationDTO;
-import org.junit.jupiter.api.Test;
+import io.mapsmessaging.dto.rest.config.transformer.impl.XmlToJsonTransformationDTO;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 
-import static org.junit.jupiter.api.Assertions.*;
+import java.util.stream.Stream;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 
 class TransformationConfigDtoJacksonPolymorphismTest {
 
   private final ObjectMapper objectMapper = new ObjectMapper();
 
-  @Test
-  void jsonMapperDiscriminator_deserializesToConfigurationDto() throws Exception {
-    TransformationConfigDTO dto =
-        objectMapper.readValue("{\"type\":\"jsonmapper\",\"operations\":[]}", TransformationConfigDTO.class);
+  @ParameterizedTest
+  @MethodSource("transformationConfigurations")
+  void discriminator_deserializesToExpectedConfigurationDto(
+      String json,
+      Class<? extends TransformationConfigDTO> expectedClass,
+      TransformationType expectedType) throws Exception {
 
-    assertInstanceOf(JsonMapperTransformationDTO.class, dto);
-    assertEquals(TransformationType.JSON_MAPPER, dto.getType());
+    TransformationConfigDTO dto = objectMapper.readValue(json, TransformationConfigDTO.class);
+
+    assertInstanceOf(expectedClass, dto);
+    assertEquals(expectedType, dto.getType());
   }
 
-  @Test
-  void jsonToSchemaDiscriminator_deserializesToConcreteType() throws Exception {
-    TransformationConfigDTO dto =
-        objectMapper.readValue("{\"type\":\"jsontoschema\",\"schemaName\":\"example\"}", TransformationConfigDTO.class);
+  private static Stream<Arguments> transformationConfigurations() {
+    return Stream.of(
+        Arguments.of(
+            "{\"type\":\"jsontoxml\"}",
+            JsonToXmlTransformationDTO.class,
+            TransformationType.JSON_TO_XML),
 
-    assertInstanceOf(JsonToSchemaTransformationDTO.class, dto);
-    assertEquals(TransformationType.JSON_TO_SCHEMA, dto.getType());
-  }
+        Arguments.of(
+            "{\"type\":\"xmltojson\"}",
+            XmlToJsonTransformationDTO.class,
+            TransformationType.XML_TO_JSON),
 
-  @Test
-  void schemaToJsonDiscriminator_deserializesToConcreteType() throws Exception {
-    TransformationConfigDTO dto =
-        objectMapper.readValue("{\"type\":\"schematojson\"}", TransformationConfigDTO.class);
+        Arguments.of(
+            "{\"type\":\"jsontoschema\",\"schemaName\":\"example\"}",
+            JsonToSchemaTransformationDTO.class,
+            TransformationType.JSON_TO_SCHEMA),
 
-    assertInstanceOf(SchemaToJsonTransformationDTO.class, dto);
-    assertEquals(TransformationType.SCHEMA_TO_JSON, dto.getType());
+        Arguments.of(
+            "{\"type\":\"schematojson\"}",
+            SchemaToJsonTransformationDTO.class,
+            TransformationType.SCHEMA_TO_JSON),
+
+        Arguments.of(
+            "{\"type\":\"jsontovalue\"}",
+            JsonToValueTransformationDTO.class,
+            TransformationType.JSON_TO_VALUE),
+
+        Arguments.of(
+            "{\"type\":\"jsonquery\"}",
+            JsonQueryTransformationDTO.class,
+            TransformationType.JSON_QUERY),
+
+        Arguments.of(
+            "{\"type\":\"geohash\"}",
+            GeoHashResolverTransformationDTO.class,
+            TransformationType.GEOHASH),
+
+        Arguments.of(
+            "{\"type\":\"jsonmutate\",\"operations\":[]}",
+            JsonMutateTransformationDTO.class,
+            TransformationType.JSON_MUTATE),
+
+        Arguments.of(
+            "{\"type\":\"jsonmapper\",\"operations\":[]}",
+            JsonMapperTransformationDTO.class,
+            TransformationType.JSON_MAPPER),
+
+        Arguments.of(
+            "{\"type\":\"cloudevent-envelope\"}",
+            CloudEventEnvelopeTransformationDTO.class,
+            TransformationType.CLOUD_EVENT_ENVELOPE),
+
+        Arguments.of(
+            "{\"type\":\"cloudevent-json\"}",
+            CloudEventJsonTransformationDTO.class,
+            TransformationType.CLOUD_EVENT_JSON),
+
+        Arguments.of(
+            "{\"type\":\"cloudevent-native\"}",
+            CloudEventNativeTransformationDTO.class,
+            TransformationType.CLOUD_EVENT_NATIVE)
+    );
   }
 }

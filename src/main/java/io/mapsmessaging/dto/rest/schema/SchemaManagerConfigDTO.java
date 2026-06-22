@@ -19,6 +19,7 @@
 
 package io.mapsmessaging.dto.rest.schema;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import io.mapsmessaging.dto.rest.config.BaseManagerConfigDTO;
 import io.mapsmessaging.schemas.formatters.ParseMode;
 import io.swagger.v3.oas.annotations.media.DiscriminatorMapping;
@@ -89,6 +90,7 @@ public class SchemaManagerConfigDTO extends BaseManagerConfigDTO {
     super("SchemaManagerConfigDTO");
   }
 
+  @JsonIgnore
   @Override
   public String getSimpleName() {
     return "Schemas";

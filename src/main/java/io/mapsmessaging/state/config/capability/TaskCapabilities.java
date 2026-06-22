@@ -34,7 +34,7 @@ public class TaskCapabilities {
   private List<TaskCapability> tasks = new ArrayList<>();
 
   @SerializedName("task_conditions_mode")
-  private TaskConditionMode taskConditionsMode = TaskConditionMode.SIMPLE_TASK_STATE;
+  private TaskConditionMode taskConditionsMode = TaskConditionMode.NOT_SUPPORTED;
 
   @SerializedName("task_conditions_template")
   private TaskTemplateMode taskConditionsTemplate = TaskTemplateMode.NOT_SUPPORTED;

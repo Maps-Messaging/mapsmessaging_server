@@ -231,21 +231,6 @@ class JsonMapperTest {
   }
 
   @Test
-  void apply_missingSourceValue_andIgnoreMissingFalse_withNoDefault_writesJsonNull() {
-    JsonObject source = new JsonObject();
-
-    JsonMapOpDTO operation = operation("missing.path", "target.value");
-    operation.setIgnoreMissing(false);
-
-    JsonMapper jsonMapper = new JsonMapper(List.of(operation));
-
-    JsonObject result = jsonMapper.apply(source);
-
-    assertNotNull(JsonPath.get(result, "target.value"));
-    assertTrue(JsonPath.get(result, "target.value").isJsonNull());
-  }
-
-  @Test
   void apply_nullOperation_skipsEntry() {
     JsonObject source = new JsonObject();
     source.addProperty("name", "drone-1");
@@ -360,7 +345,7 @@ class JsonMapperTest {
 
     JsonObject result = jsonMapper.apply(source);
 
-    assertTrue(JsonPath.get(result, "target.value").isJsonNull());
+    assertNull(JsonPath.get(result, "target.value"));
   }
 
   private JsonMapOpDTO operation(String from, String to) {

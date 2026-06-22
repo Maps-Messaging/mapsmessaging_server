@@ -19,6 +19,7 @@
 
 package io.mapsmessaging.dto.rest.config;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import io.mapsmessaging.config.network.impl.TlsConfig;
 import io.mapsmessaging.config.rest.StaticConfig;
 import io.mapsmessaging.dto.rest.config.network.impl.TlsConfigDTO;
@@ -259,6 +260,7 @@ public class RestApiManagerConfigDTO extends BaseManagerConfigDTO {
     super("RestApiManagerConfigDTO");
   }
 
+  @JsonIgnore
   @Override
   public String getSimpleName() {
     return "Rest API";

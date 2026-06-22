@@ -101,8 +101,12 @@ public class JsonQueryTransformation implements InterServerTransformation {
     if(jsonElement != null && jsonElement.isJsonObject()){
       JsonObject jsonObject = jsonElement.getAsJsonObject();
       JsonObject meta = new JsonObject();
-      meta.addProperty("utcTimeIso", message.getMessage().getDataMap().get("utcTimeIso").getData().toString());
-      meta.addProperty("utcExpiryTimeIso", message.getMessage().getDataMap().get("utcExpiryTimeIso").getData().toString());
+      if(message.getMessage().getDataMap() != null && message.getMessage().getDataMap().get("utcTimeIso") != null) {
+        meta.addProperty("utcTimeIso", message.getMessage().getDataMap().get("utcTimeIso").getData().toString());
+      }
+      if(message.getMessage().getDataMap() != null && message.getMessage().getDataMap().get("utcExpiryTimeIso") != null) {
+        meta.addProperty("utcExpiryTimeIso", message.getMessage().getDataMap().get("utcExpiryTimeIso").getData().toString());
+      }
       jsonObject.add("meta", meta);
     }
     try {

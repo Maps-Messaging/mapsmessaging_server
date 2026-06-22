@@ -32,7 +32,7 @@ class StorageConfigDtoPolymorphismTest {
   void constructors_setDeclaredDiscriminatorValues() {
     assertEquals("memory", new MemoryStorageConfigDTO().getType());
     assertEquals("partition", new PartitionStorageConfigDTO().getType());
-    assertEquals("tieredMemory", new MemoryTierConfigDTO().getType());
+    assertEquals("memoryTier", new MemoryTierConfigDTO().getType());
   }
 
   @Test

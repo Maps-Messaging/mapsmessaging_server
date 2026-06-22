@@ -330,10 +330,7 @@ public class TwinManagerConfig extends TwinManagerConfigDTO implements Config, C
       }
 
       capabilities.setTaskConditionsMode(
-          parseTaskConditionMode(
-              configurationProperties.getProperty("task_conditions_mode", null),
-              capabilities.getTaskConditionsMode()
-          )
+          parseTaskConditionMode(configurationProperties.getProperty("task_conditions_mode", null), capabilities.getTaskConditionsMode())
       );
 
       capabilities.setTaskConditionsTemplate(

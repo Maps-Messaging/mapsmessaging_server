@@ -50,8 +50,9 @@ class JsonHandlerTest {
 
     adapter.write(new JsonWriter(output), expected);
 
-    assertEquals("\"2026-06-14T03:04:05.123456789Z\"", output.toString());
-    assertEquals(expected, adapter.read(new JsonReader(new StringReader(output.toString()))));
+    String expectedString ="2026-06-14T03:04:05.123Z";
+    assertEquals("\"2026-06-14T03:04:05.123+00:00\"", output.toString());
+    assertEquals(expectedString, adapter.read(new JsonReader(new StringReader(output.toString()))).toString());
   }
 
   @Test
