@@ -102,7 +102,7 @@ public class SharedSubscription extends DestinationSubscription {
   protected boolean isReady() {
     if (super.isReady()) {
       for (SessionSharedSubscription subscription : subscriptions.flatMap) {
-        if (subscription.canSend()) {
+        if (subscription.canSend() && subscription.getSessionImpl() != null) {
           return true;
         }
       }
