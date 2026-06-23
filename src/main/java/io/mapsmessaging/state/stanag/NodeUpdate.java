@@ -27,13 +27,16 @@ import io.mapsmessaging.api.Session;
 import io.mapsmessaging.api.features.DestinationType;
 import io.mapsmessaging.api.features.QualityOfService;
 import io.mapsmessaging.engine.schema.SchemaManager;
+import io.mapsmessaging.security.uuid.NamedVersions;
 import io.mapsmessaging.state.GsonStanagHelper;
 import io.mapsmessaging.state.config.StanagConfig;
 import io.mapsmessaging.state.drone.core.EntityTwin;
 import io.mapsmessaging.state.drone.core.TwinObserver;
 import io.mapsmessaging.state.drone.core.TwinUpdateContext;
+import io.mapsmessaging.state.drone.core.UuidFactory;
 import io.mapsmessaging.state.drone.drone.DroneTwin;
 import io.mapsmessaging.state.drone.model.Contact;
+import io.mapsmessaging.state.drone.util.UuidGenerator;
 import io.mapsmessaging.state.stanag.messages.core.MessageHeaderBuilder;
 import io.mapsmessaging.state.stanag.messages.node.common.NodeMessageSupport;
 import io.mapsmessaging.state.stanag.messages.node.description.NodeDescriptionBuilder;
@@ -46,9 +49,7 @@ import lombok.Setter;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.time.Clock;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
@@ -77,7 +78,7 @@ public class NodeUpdate implements TwinObserver {
     NodeMessageSupport nodeMessageSupport = new NodeMessageSupport();
     nodeStatusBuilder = new NodeStatusBuilder(messageHeaderBuilder, nodeMessageSupport);
     nodeDescriptionBuilder = new NodeDescriptionBuilder(messageHeaderBuilder, nodeMessageSupport);
-    dynamicUpdateBuilder = new DynamicUpdateBuilder(messageHeaderBuilder, nodeMessageSupport, MessageDaemon.getInstance().getUuid());
+    dynamicUpdateBuilder = new DynamicUpdateBuilder(messageHeaderBuilder, nodeMessageSupport);
     gson = GsonStanagHelper.createGson();
   }
 

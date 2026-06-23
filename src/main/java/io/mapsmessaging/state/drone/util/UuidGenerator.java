@@ -17,37 +17,24 @@
  *  limitations under the License.
  */
 
-package io.mapsmessaging.state.config;
+package io.mapsmessaging.state.drone.util;
 
-import io.mapsmessaging.state.config.capability.TaskCapabilities;
-import io.swagger.v3.oas.annotations.media.Schema;
-import lombok.Getter;
-import lombok.Setter;
+import io.mapsmessaging.security.uuid.NamedVersions;
 
-import java.util.Map;
+import java.security.NoSuchAlgorithmException;
 import java.util.UUID;
 
-@Getter
-@Setter
-public class DroneInfo {
+public class UuidGenerator {
 
-  @Schema(
-      description = "Unique drone id"
-  )
-  private String name;
-
-  @Schema(
-      description = "UUID of drone"
-  )
-  private UUID uuid;
-
-  @Schema(
-      description = "Drone description"
-  )
-  private Map<String, Object> description;
-
-  @Schema(
-      description = "Task capabilities supported by this known MAVLink source."
-  )
-  private TaskCapabilities capabilities = new TaskCapabilities();
+  public UUID generateUuid(String namespace) {
+    try {
+      return io.mapsmessaging.security.uuid.UuidGenerator.getInstance().generate(NamedVersions.SHA1, null, namespace);
+    } catch (NoSuchAlgorithmException e) {
+      try {
+        return io.mapsmessaging.security.uuid.UuidGenerator.getInstance().generate(NamedVersions.MD5, null, namespace);
+      } catch (NoSuchAlgorithmException ex) {
+        return UUID.nameUUIDFromBytes(namespace.getBytes());
+      }
+    }
+  }
 }

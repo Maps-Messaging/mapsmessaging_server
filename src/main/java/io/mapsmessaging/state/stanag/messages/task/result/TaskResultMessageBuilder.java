@@ -19,43 +19,42 @@ public class TaskResultMessageBuilder {
   private final ResultReasonBuilder resultReasonBuilder;
 
   public TaskResultMessage buildSucceeded(TaskStatusContext context) {
-    return build(context, TaskState.SUCCEEDED, null);
+    return build(context, TaskState.SUCCEEDED, null, null);
   }
 
-  public TaskResultMessage buildRejected(TaskStatusContext context, ResultReason resultReason) {
-    return build(context, TaskState.REJECTED, resultReason);
+  public TaskResultMessage buildRejected(TaskStatusContext context, ResultReason resultReason, String reasonText) {
+    return build(context, TaskState.REJECTED, resultReason, reasonText);
   }
 
-  public TaskResultMessage buildAborted(TaskStatusContext context, ResultReason resultReason) {
-    return build(context, TaskState.ABORTED, resultReason);
+  public TaskResultMessage buildAborted(TaskStatusContext context, ResultReason resultReason,String reasonText) {
+    return build(context, TaskState.ABORTED, resultReason, reasonText);
   }
 
-  public TaskResultMessage buildLost(TaskStatusContext context, ResultReason resultReason) {
-    return build(context, TaskState.LOST, resultReason);
+  public TaskResultMessage buildLost(TaskStatusContext context, ResultReason resultReason,String reasonText) {
+    return build(context, TaskState.LOST, resultReason, reasonText);
   }
 
-  public TaskResultMessage buildRecalled(TaskStatusContext context, ResultReason resultReason) {
-    return build(context, TaskState.RECALLED, resultReason);
+  public TaskResultMessage buildRecalled(TaskStatusContext context, ResultReason resultReason,String reasonText) {
+    return build(context, TaskState.RECALLED, resultReason, reasonText);
   }
 
-  public TaskResultMessage buildPreempted(TaskStatusContext context, ResultReason resultReason) {
-    return build(context, TaskState.PREEMPTED, resultReason);
+  public TaskResultMessage buildPreempted(TaskStatusContext context, ResultReason resultReason,String reasonText) {
+    return build(context, TaskState.PREEMPTED, resultReason, reasonText);
   }
 
-  public TaskResultMessage build(TaskStatusContext context, TaskState taskState, ResultReason resultReason) {
+  public TaskResultMessage build(TaskStatusContext context, TaskState taskState, ResultReason resultReason, String reasonText) {
     Objects.requireNonNull(context, "context cannot be null");
     Objects.requireNonNull(taskState, "taskState cannot be null");
 
     validateResultState(taskState);
 
-    MessageHeader header = headerBuilder.build(MessageType.TASK_RESULT, MessageDaemon.getInstance().getUuid(), Instant.now());
-
+    MessageHeader header = headerBuilder.build(MessageType.TASK_RESULT, context.nodeIdentifier(), Instant.now());
     TaskResultBody body = TaskResultBody.builder()
         .identifier(context.taskIdentifier())
         .node(context.nodeIdentifier())
         .state(taskState)
-        .authority(context.authority())
-        .resultReason(resultReasonBuilder.build(resultReason))
+        .timestamp(Instant.now())
+        .resultReason(resultReasonBuilder.build(resultReason, reasonText))
         .build();
 
     return new TaskResultMessage(header, body);

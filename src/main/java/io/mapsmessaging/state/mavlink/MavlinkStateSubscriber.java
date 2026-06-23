@@ -107,7 +107,12 @@ public class MavlinkStateSubscriber implements MessageHandler {
     String responseTopic = message.getResponseTopic();
     TwinUpdateContext context = buildUpdateContext(env, responseTopic);
     context.setUniqueOutboundIdentifier(new String(messageEvent.getMessage().getCorrelationData()));
-    twinUpdater.updateTwinState(env, packet, context, knownSource, droneRegistry.getDroneInfo(knownSource.getName()));
+    if(droneRegistry.getDroneInfo(knownSource.getName()) != null) {
+      twinUpdater.updateTwinState(env, packet, context, knownSource, droneRegistry.getDroneInfo(knownSource.getName()));
+    }
+    else{
+      System.err.println("Unknown drone: " + knownSource.getName() );
+    }
     messageEvent.getCompletionTask().run();
   }
 

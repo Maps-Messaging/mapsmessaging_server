@@ -23,7 +23,7 @@ public class NodeStatusBuilder {
 
     MessageHeader header = messageHeaderBuilder.build(
         MessageType.NODE_STATUS,
-        MessageDaemon.getInstance().getUuid(),
+        droneTwin.getUuid(),
         droneTwin.getLastSeenAt());
 
     NodeStatusBody body = NodeStatusBody.builder()
@@ -34,7 +34,6 @@ public class NodeStatusBuilder {
         .pose(nodeMessageSupport.buildPose(droneTwin))
         .velocity(nodeMessageSupport.buildVelocity(droneTwin))
         .timeOfInitiation(droneTwin.getCreatedAt())
-        .sourceOfInformation(MessageDaemon.getInstance().getUuid())
         .build();
 
     return new NodeStatus(header, body);

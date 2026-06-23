@@ -102,7 +102,8 @@ public class MavlinkTwinUpdater {
       MavlinkKnownSourceDTO knownSource,
       DroneInfo droneInfo
   ) {
-    DroneTwin droneTwin = new DroneTwin(twinId);
+
+    DroneTwin droneTwin = new DroneTwin(twinId, droneInfo.getUuid());
     droneTwin.setVehicleClass(resolveVehicleClass(knownSource));
     droneTwin.setDescriptionString(resolveDescription(twinId, env, knownSource));
     droneTwin.setCallSign(resolveCallSign(twinId, knownSource));
@@ -110,7 +111,7 @@ public class MavlinkTwinUpdater {
     droneTwin.setSystemId(env.getFrame().getSystemId());
     droneTwin.setComponentId(env.getFrame().getComponentId());
 
-    if(droneInfo != null && droneInfo.getCapabilities() != null) {
+    if(droneInfo.getCapabilities() != null) {
       droneTwin.setCapabilities(droneInfo.getCapabilities());
       droneTwin.setDescription(droneInfo.getDescription());
     }

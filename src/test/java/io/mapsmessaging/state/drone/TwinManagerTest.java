@@ -45,7 +45,7 @@ class TwinManagerTest {
 
   @Test
   void entityTwin_secondsHelpers_returnEpochSeconds() {
-    DroneTwin droneTwin = new DroneTwin("drone-1");
+    DroneTwin droneTwin = new DroneTwin("drone-1", null);
     Instant instant = Instant.parse("2026-04-23T00:00:10Z");
 
     droneTwin.setCreatedAt(instant);

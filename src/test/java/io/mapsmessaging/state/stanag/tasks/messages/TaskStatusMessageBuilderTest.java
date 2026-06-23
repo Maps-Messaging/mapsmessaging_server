@@ -126,7 +126,7 @@ class TaskStatusMessageBuilderTest {
 
   @Test
   void shouldBuildRejectedResultMessageWithReason() {
-    TaskResultMessage message = resultMessageBuilder.buildRejected(context, ResultReason.SAFETY);
+    TaskResultMessage message = resultMessageBuilder.buildRejected(context, ResultReason.SAFETY, "Safety reason");
 
     JsonObject body = toJsonObject(message).getAsJsonObject("body");
     JsonObject resultReason = body.getAsJsonObject("result_reason");
@@ -139,7 +139,7 @@ class TaskStatusMessageBuilderTest {
 
   @Test
   void shouldBuildAbortedResultMessageWithReason() {
-    TaskResultMessage message = resultMessageBuilder.buildAborted(context, ResultReason.HARDWARE);
+    TaskResultMessage message = resultMessageBuilder.buildAborted(context, ResultReason.HARDWARE, "Hardware reason");
 
     JsonObject body = toJsonObject(message).getAsJsonObject("body");
     JsonObject resultReason = body.getAsJsonObject("result_reason");
@@ -150,7 +150,7 @@ class TaskStatusMessageBuilderTest {
 
   @Test
   void shouldBuildLostResultMessageWithReason() {
-    TaskResultMessage message = resultMessageBuilder.buildLost(context, ResultReason.COMMUNICATION);
+    TaskResultMessage message = resultMessageBuilder.buildLost(context, ResultReason.COMMUNICATION, "Communication reason");
 
     JsonObject body = toJsonObject(message).getAsJsonObject("body");
     JsonObject resultReason = body.getAsJsonObject("result_reason");
@@ -163,7 +163,7 @@ class TaskStatusMessageBuilderTest {
   void shouldNotAllowNonTerminalStateInResultMessage() {
     assertThrows(
         IllegalArgumentException.class,
-        () -> resultMessageBuilder.build(context, TaskState.ACTIVE, null));
+        () -> resultMessageBuilder.build(context, TaskState.ACTIVE, null, null));
   }
 
   private JsonObject toJsonObject(Object value) {

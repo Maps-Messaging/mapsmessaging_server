@@ -31,6 +31,7 @@ import io.mapsmessaging.state.stanag.messages.task.result.TaskResultMessage;
 import io.mapsmessaging.state.stanag.tasks.monitor.TaskMonitor;
 
 import java.nio.charset.StandardCharsets;
+import java.util.UUID;
 
 public class TaskEventPublisher {
 
@@ -41,41 +42,35 @@ public class TaskEventPublisher {
   private final StanagSession protocol;
   private final Gson gson;
   private final TaskSchemaValidator schemaValidator;
+  private final String topicTemplate;
 
-  public TaskEventPublisher(StanagSession protocol, TaskSchemaValidator schemaValidator) {
+  public TaskEventPublisher(StanagSession protocol, TaskSchemaValidator schemaValidator, String topicTemplate) {
     this.protocol = protocol;
     this.gson = GsonStanagHelper.createGson();
     this.schemaValidator = schemaValidator;
+    this.topicTemplate = topicTemplate;
   }
 
-  public void publishFeedback(TaskMonitor taskMonitor, TaskFeedbackMessage taskFeedbackMessage) {
-    String topicPath = taskMonitor.getTopicPath();
-    topicPath = topicPath.replace("{messageEnumName}","MessageTypeEnum_TASK_FEEDBACK");
-    topicPath = topicPath.replace("{twinId}", taskMonitor.getDroneUUID().toString() );
+  public void publishFeedback(UUID source, TaskFeedbackMessage taskFeedbackMessage) {
+    String topicPath = topicTemplate.replace("{messageEnumName}","MessageTypeEnum_TASK_FEEDBACK");
+    topicPath = topicPath.replace("{twinId}",source.toString() );
     JsonObject jsonObject = gson.toJsonTree(taskFeedbackMessage).getAsJsonObject();
-
     schemaValidator.validate(TASK_FEEDBACK_SCHEMA_NAME, jsonObject);
     publishTaskEvent(topicPath, jsonObject);
   }
 
-  public void publishResult(TaskMonitor taskMonitor, TaskResultMessage taskResultMessage) {
-    String topicPath = taskMonitor.getTopicPath();
-    topicPath = topicPath.replace("{messageEnumName}","MessageTypeEnum_TASK_RESULT");
-    topicPath = topicPath.replace("{twinId}", taskMonitor.getDroneUUID().toString() );
-
+  public void publishResult(UUID source, TaskResultMessage taskResultMessage) {
+    String topicPath = topicTemplate.replace("{messageEnumName}","MessageTypeEnum_TASK_RESULT");
+    topicPath = topicPath.replace("{twinId}", source.toString() );
     JsonObject jsonObject = gson.toJsonTree(taskResultMessage).getAsJsonObject();
-
     schemaValidator.validate(TASK_RESULT_SCHEMA_NAME, jsonObject);
     publishTaskEvent(topicPath, jsonObject);
   }
 
-  public void publishAdmin(TaskMonitor taskMonitor, TaskAdminMessage taskAdminMessage) {
-
-    String topicPath = taskMonitor.getTopicPath();
-    topicPath = topicPath.replace("{messageEnumName}","MessageTypeEnum_TASK_ADMIN");
-    topicPath = topicPath.replace("{twinId}", taskMonitor.getDroneUUID().toString() );
+  public void publishAdmin(UUID source, TaskAdminMessage taskAdminMessage) {
+    String topicPath = topicTemplate.replace("{messageEnumName}","MessageTypeEnum_TASK_ADMIN");
+    topicPath = topicPath.replace("{twinId}", source.toString() );
     JsonObject jsonObject = gson.toJsonTree(taskAdminMessage).getAsJsonObject();
-
     schemaValidator.validate(TASK_ADMIN_SCHEMA_NAME, jsonObject);
     publishTaskEvent(topicPath, jsonObject);
   }

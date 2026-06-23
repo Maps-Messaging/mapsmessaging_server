@@ -124,9 +124,7 @@ public abstract class TaskMonitor {
   }
 
   public TaskResultMessage buildResult(TaskResultMessageBuilder resultMessageBuilder) {
-    TaskResultMessage resultMessage =
-        resultMessageBuilder.build(buildStatusContext(), mapResultState(), buildResultReason());
-
+    TaskResultMessage resultMessage = resultMessageBuilder.build(buildStatusContext(), mapResultState(), buildResultReason(), null);
     markResultEmitted();
     return resultMessage;
   }

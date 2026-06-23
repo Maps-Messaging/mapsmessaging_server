@@ -49,7 +49,7 @@ public class TaskFeedbackMessageBuilder {
     validateFeedbackState(taskState);
     validatePercentComplete(percentComplete);
 
-    MessageHeader header = headerBuilder.build(MessageType.TASK_FEEDBACK, MessageDaemon.getInstance().getUuid(), Instant.now());
+    MessageHeader header = headerBuilder.build(MessageType.TASK_FEEDBACK, context.nodeIdentifier(), Instant.now());
 
     TaskFeedbackBody.TaskFeedbackBodyBuilder bodyBuilder = TaskFeedbackBody.builder()
         .identifier(context.taskIdentifier())

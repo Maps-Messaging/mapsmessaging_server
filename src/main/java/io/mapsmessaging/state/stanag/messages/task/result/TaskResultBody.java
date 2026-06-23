@@ -1,12 +1,12 @@
 package io.mapsmessaging.state.stanag.messages.task.result;
 
 import com.google.gson.annotations.SerializedName;
-import io.mapsmessaging.state.config.capability.Authorities;
 import io.mapsmessaging.state.stanag.messages.FlexibleEnumeration;
 import io.mapsmessaging.state.stanag.messages.TaskState;
 import lombok.Builder;
 import lombok.Getter;
 
+import java.time.Instant;
 import java.util.UUID;
 
 @Getter
@@ -19,7 +19,7 @@ public class TaskResultBody {
 
   private final TaskState state;
 
-  private final Authorities authority;
+  private final Instant timestamp;
 
   @SerializedName("result_reason")
   private final FlexibleEnumeration resultReason;

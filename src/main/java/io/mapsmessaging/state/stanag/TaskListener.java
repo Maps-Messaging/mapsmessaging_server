@@ -32,6 +32,7 @@ import io.mapsmessaging.state.stanag.messages.core.MessageHeaderBuilder;
 import io.mapsmessaging.state.stanag.messages.task.admin.TaskAdminActionEnum;
 import io.mapsmessaging.state.stanag.messages.task.admin.TaskAdminMessage;
 import io.mapsmessaging.state.stanag.messages.task.feedback.TaskFeedbackMessage;
+import io.mapsmessaging.state.stanag.messages.task.feedback.TaskFeedbackMessageBuilder;
 import io.mapsmessaging.state.stanag.messages.task.result.ResultReason;
 import io.mapsmessaging.state.stanag.messages.task.result.ResultReasonBuilder;
 import io.mapsmessaging.state.stanag.messages.task.result.TaskResultMessage;
@@ -58,13 +59,15 @@ public class TaskListener implements Consumer<JsonObject>, TaskStatusPublisher {
   private final TaskResultMessageBuilder taskResultMessageBuilder;
   private final TaskEventPublisher taskEventPublisher;
   private final TaskMonitorManager taskMonitorManager;
+  private final TaskFeedbackMessageBuilder taskFeedbackMessageBuilder;
 
   public TaskListener(TwinManager twinManager, StanagSession protocol, StanagConfig stanagConfig) {
     this.twinManager = twinManager;
     this.auditor = twinManager.getAuditor();
     this.taskDispatcher = new TaskDispatcher(protocol, stanagConfig, new AtomicInteger(0));
     this.taskResultMessageBuilder = new TaskResultMessageBuilder(new MessageHeaderBuilder(Clock.systemUTC()), new ResultReasonBuilder());
-    this.taskEventPublisher = new TaskEventPublisher(protocol, new TaskSchemaValidator());
+    this.taskFeedbackMessageBuilder = new TaskFeedbackMessageBuilder(new MessageHeaderBuilder(Clock.systemUTC()));
+    this.taskEventPublisher = new TaskEventPublisher(protocol, new TaskSchemaValidator(), stanagConfig.getTaskTopicTemplate());
     this.taskMonitorManager = new TaskMonitorManager(Duration.ofSeconds(5), this);
     twinManager.addObserver(taskMonitorManager);
   }
@@ -79,17 +82,17 @@ public class TaskListener implements Consumer<JsonObject>, TaskStatusPublisher {
 
   @Override
   public void publishFeedback(TaskMonitor taskMonitor, TaskFeedbackMessage taskFeedbackMessage) {
-    taskEventPublisher.publishFeedback(taskMonitor, taskFeedbackMessage);
+    taskEventPublisher.publishFeedback(taskMonitor.getDroneUUID(), taskFeedbackMessage);
   }
 
   @Override
   public void publishResult(TaskMonitor taskMonitor, TaskResultMessage taskResultMessage) {
-    taskEventPublisher.publishResult(taskMonitor, taskResultMessage);
+    taskEventPublisher.publishResult(taskMonitor.getDroneUUID(), taskResultMessage);
     auditTaskResult(taskMonitor, taskResultMessage);
   }
 
   public void publishAdmin(TaskMonitor taskMonitor, TaskAdminMessage taskAdminMessage) {
-    taskEventPublisher.publishAdmin(taskMonitor, taskAdminMessage);
+    taskEventPublisher.publishAdmin(taskMonitor.getDroneUUID(), taskAdminMessage);
     auditTaskAdmin(taskMonitor, taskAdminMessage);
   }
 
@@ -113,38 +116,37 @@ public class TaskListener implements Consumer<JsonObject>, TaskStatusPublisher {
     TaskDispatchResult dispatchResult = taskDispatcher.dispatch(droneTwin, command);
     if (!dispatchResult.isAccepted()) {
       rejectTask(dispatchResult.getDroneTwin(), command, dispatchResult.getRejectReason(), dispatchResult.getRejectText());
-      return;
     }
+    else{
     TaskMonitor taskMonitor = dispatchResult.getTaskMonitor();
     if (taskMonitor != null) {
       acceptTask(taskMonitor, command);
       taskMonitorManager.add(taskMonitor);
     }
+    }
   }
 
-  private void acceptTask(TaskMonitor taskMonitor, TaskAdminCommand command) {
-    //Authorities authority = new Authorities(command.getAuthorityGuid());
-    //TaskStatusContext context = new TaskStatusContext(command.getTaskId(), command.getNodeIdentifier(), authority);
-    //TaskAdminMessage taskAdminMessage = new TaskAdminMessageBuilder(new MessageHeaderBuilder(clock)).buildAssign(context);
-    //publishAdmin(taskMonitor, taskAdminMessage);
+  private void acceptTask(TaskMonitor taskStat, TaskAdminCommand command) {
+    Authorities authority = new Authorities(command.getAuthorityGuid());
+    TaskStatusContext context = new TaskStatusContext(command.getTaskId(), command.getNodeIdentifier(), authority);
+    taskEventPublisher.publishFeedback(taskStat.getDroneUUID(), taskFeedbackMessageBuilder.build(context, TaskState.ACTIVE));
   }
 
   private void rejectTask(DroneTwin droneTwin, TaskAdminCommand command, ResultReason resultReason, String reasonText) {
-    TaskResultMessage taskResultMessage = buildRejectedTaskResult(command, resultReason);
-    publishResult(taskResultMessage);
+    TaskResultMessage taskResultMessage = buildRejectedTaskResult(command, resultReason, reasonText);
+    taskEventPublisher.publishResult(droneTwin.getUuid(), taskResultMessage);
     auditRejected(droneTwin, command, resultReason, reasonText);
   }
 
   private void rejectWithoutTwin(TaskAdminCommand command, ResultReason resultReason, String reasonText) {
-    TaskResultMessage taskResultMessage = buildRejectedTaskResult(command, resultReason);
-    // publishTaskResult(taskResultMessage);
+    TaskResultMessage taskResultMessage = buildRejectedTaskResult(command, resultReason, reasonText);
     auditRejected(null, command, resultReason, reasonText);
   }
 
-  private TaskResultMessage buildRejectedTaskResult(TaskAdminCommand command, ResultReason resultReason) {
+  private TaskResultMessage buildRejectedTaskResult(TaskAdminCommand command, ResultReason resultReason, String reasonText) {
     Authorities authority = new Authorities(command.getAuthorityGuid());
     TaskStatusContext context = new TaskStatusContext(command.getTaskId(), command.getNodeIdentifier(), authority);
-    return taskResultMessageBuilder.buildRejected(context, resultReason);
+    return taskResultMessageBuilder.buildRejected(context, resultReason, reasonText);
   }
 
   private void auditRejected(DroneTwin droneTwin, TaskAdminCommand command, ResultReason resultReason, String reasonText) {

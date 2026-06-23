@@ -29,6 +29,7 @@ import java.time.Instant;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -325,7 +326,11 @@ public class DroneTwin extends EntityTwin {
   }
 
   public DroneTwin(String twinId) {
-    super(twinId);
+    this(twinId, null);
+  }
+
+  public DroneTwin(String twinId, UUID uuid) {
+    super(twinId, uuid);
     setTwinType(TwinType.DRONE);
     setMmsi(generateSyntheticMmsi(twinId));
   }

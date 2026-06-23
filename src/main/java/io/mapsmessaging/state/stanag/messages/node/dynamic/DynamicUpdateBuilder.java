@@ -19,8 +19,7 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class DynamicUpdateBuilder {
 
-  private static final String OPERATION_TYPE_PUT_VALUE =
-      "DynamicUpdateOperationTypeEnum_PUT_VALUE";
+  private static final String OPERATION_TYPE_PUT_VALUE = "DynamicUpdateOperationTypeEnum_PUT_VALUE";
 
   private static final String VALUE_TYPE_TRACK = "ValueTypeEnum_TRACK";
 
@@ -48,19 +47,15 @@ public class DynamicUpdateBuilder {
 
   private static final String DEFAULT_SECTOR_2 = "00";
 
-  private static final String HEADQUARTERS_TASK_FORCE_DUMMY_NOT_APPLICABLE =
-      "HeadquartersTaskForceDummyEnum_NOT_APPLICABLE";
+  private static final String HEADQUARTERS_TASK_FORCE_DUMMY_NOT_APPLICABLE = "HeadquartersTaskForceDummyEnum_NOT_APPLICABLE";
 
-  private static final String UNIT_ECHELON_EQUIPMENT_MOBILITY_UNKNOWN =
-      "UnitEchelonEquipmentMobilityEnum_UNKNOWN";
+  private static final String UNIT_ECHELON_EQUIPMENT_MOBILITY_UNKNOWN = "UnitEchelonEquipmentMobilityEnum_UNKNOWN";
 
   private static final String TRACK_PHASE_TRACKED = "TrackPhase_TRACKED";
 
   private final MessageHeaderBuilder messageHeaderBuilder;
 
   private final NodeMessageSupport nodeMessageSupport;
-
-  private final UUID sourceOfInformation;
 
   public Optional<DynamicUpdate> build(DroneTwin droneTwin, Contact contact) {
     Objects.requireNonNull(droneTwin, "droneTwin cannot be null");
@@ -87,7 +82,6 @@ public class DynamicUpdateBuilder {
         .description(buildEntityDescription(contact))
         .timestamp(Instant.ofEpochMilli(contact.getUpdatedTimeMs()))
         .pose(pose)
-        .sourceOfInformation(sourceOfInformation)
         .timeOfInitiation(buildCreatedTimestamp(contact))
         .timeOfValidity(buildValidityTimestamp(contact))
         .trackPhase(TRACK_PHASE_TRACKED)

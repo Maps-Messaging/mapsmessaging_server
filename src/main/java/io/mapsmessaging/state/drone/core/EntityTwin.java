@@ -37,10 +37,7 @@ import java.security.NoSuchAlgorithmException;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.time.temporal.TemporalUnit;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -265,17 +262,13 @@ public abstract class EntityTwin {
 
 
 
-  protected EntityTwin(String twinId) {
+  protected EntityTwin(String twinId, UUID uuid) {
     setTwinId(twinId);
-    try {
-      setUuid(UuidGenerator.getInstance().generate(NamedVersions.SHA1, null, twinId));
-    } catch (NoSuchAlgorithmException e) {
-      try {
-        setUuid(UuidGenerator.getInstance().generate(NamedVersions.MD5, null, twinId));
-      } catch (NoSuchAlgorithmException ex) {
-        setUuid(UUID.nameUUIDFromBytes(twinId.getBytes()));
-      }
+    if (uuid != null) {
+      setUuid(uuid);
     }
-
+    else {
+      setUuid(UuidFactory.getInstance().getUuidGenerator().generateUuid(twinId));
+    }
   }
 }

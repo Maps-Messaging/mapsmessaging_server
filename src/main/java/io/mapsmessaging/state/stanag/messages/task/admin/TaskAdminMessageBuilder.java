@@ -20,7 +20,7 @@ public class TaskAdminMessageBuilder {
     Objects.requireNonNull(context, "context cannot be null");
     Objects.requireNonNull(action, "action cannot be null");
 
-    MessageHeader header = headerBuilder.build(MessageType.TASK_ADMIN, MessageDaemon.getInstance().getUuid(), Instant.now());
+    MessageHeader header = headerBuilder.build(MessageType.TASK_ADMIN, context.nodeIdentifier() , Instant.now());
 
     TaskAdminBody body = TaskAdminBody.builder()
         .identifier(context.taskIdentifier())

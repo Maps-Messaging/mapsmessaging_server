@@ -76,6 +76,10 @@ public class GsonStanagHelper {
             TaskAdminActionEnum.class,
             new PrefixedEnumTypeAdapter<>(TaskAdminActionEnum.class, "TaskAdminActionEnum_")
         )
+        .registerTypeAdapter(
+            ResultReason.class,
+            new PrefixedEnumTypeAdapter<>(ResultReason.class, "ResultReasonEnum_")
+        )
         .create();
   }
 

@@ -118,7 +118,7 @@ public class GroundStationTwin extends EntityTwin {
   private EnvironmentalState environmentalState;
 
   public GroundStationTwin(String twinId) {
-    super(twinId);
+    super(twinId, null);
     setTwinType(TwinType.GROUND_CONTROL);
     setVehicleClass(VehicleClass.GCS);
   }
