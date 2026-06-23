@@ -107,7 +107,6 @@ public class GatewayManager {
 
 
     } catch (RuntimeException | IOException e) {
-      e.printStackTrace();
       TaskManager.getInstance().schedule(this::initSession, 1, TimeUnit.MINUTES);
     } catch (InterruptedException e) {
       Thread.currentThread().interrupt();
@@ -117,11 +116,11 @@ public class GatewayManager {
   }
 
 
-  public void muteClient(String id){
+  public void muteClient(String id) throws IOException {
     satelliteClient.mute(id);
   }
 
-  public void unmuteClient(String id){
+  public void unmuteClient(String id) throws IOException {
     satelliteClient.unmute(id);
   }
 
@@ -151,8 +150,9 @@ public class GatewayManager {
       if (!tmp.isEmpty()) {
         satelliteClient.processPendingMessages(tmp);
       }
-    }
-    finally {
+    } catch (IOException e) {
+      // log this
+    } finally {
       if(!closed.get()){
         scheduledFuture = TaskManager.getInstance().schedule(this::pollGateway, pollInterval, TimeUnit.SECONDS);
       }

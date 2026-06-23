@@ -60,11 +60,11 @@ public class SatelliteEndPoint extends EndPoint {
     }
   }
 
-  public void mute(){
+  public void mute() throws IOException {
     ((SatelliteEndPointServer) server).mute(terminalInfo.getUniqueId());
   }
 
-  public void unmute(){
+  public void unmute() throws IOException {
     ((SatelliteEndPointServer) server).unmute(terminalInfo.getUniqueId());
   }
 

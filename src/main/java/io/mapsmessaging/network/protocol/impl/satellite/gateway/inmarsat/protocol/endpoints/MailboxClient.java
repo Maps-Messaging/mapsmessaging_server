@@ -22,6 +22,7 @@ package io.mapsmessaging.network.protocol.impl.satellite.gateway.inmarsat.protoc
 import com.google.gson.Gson;
 import io.mapsmessaging.network.protocol.impl.satellite.gateway.inmarsat.protocol.model.Mailbox;
 
+import java.io.IOException;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.util.Map;
@@ -33,7 +34,7 @@ public final class MailboxClient extends BaseInmarsatClient {
   }
 
   // X-Mailbox endpoints
-  public Mailbox getMailbox(String bearer, String xMailbox) {
+  public Mailbox getMailbox(String bearer, String xMailbox) throws IOException {
     return get("mailbox", Map.of(), bearer, xMailbox, Mailbox.class);
   }
 

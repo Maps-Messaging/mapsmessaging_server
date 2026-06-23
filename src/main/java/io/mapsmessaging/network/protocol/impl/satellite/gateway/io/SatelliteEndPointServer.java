@@ -126,11 +126,11 @@ public class SatelliteEndPointServer extends EndPointServer implements IncomingM
     }
   }
 
-  public void mute(String primeId){
+  public void mute(String primeId) throws IOException {
     gatewayManager.muteClient(primeId);
   }
 
-  public void unmute(String primeId){
+  public void unmute(String primeId) throws IOException {
     gatewayManager.unmuteClient(primeId);
   }
 
