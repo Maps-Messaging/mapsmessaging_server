@@ -32,9 +32,10 @@ import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.state.config.n2k.N2KTwinConfig;
 import io.mapsmessaging.state.drone.core.TwinLifecycleStatus;
 import io.mapsmessaging.state.drone.core.TwinManager;
+mport io.mapsmessaging.state.adapter.StateMessageAdapterContext;
+import io.mapsmessaging.state.adapter.StateMessageAdapterFactory;
+import io.mapsmessaging.state.auditor.StateAuditContext;
 import io.mapsmessaging.state.n2k.N2kSession;
-import io.mapsmessaging.state.stanag.StanagSession;
-import io.mapsmessaging.state.stanag.audit.Auditor;
 import io.mapsmessaging.utilities.Agent;
 import io.mapsmessaging.utilities.Lifecycle;
 import io.mapsmessaging.utilities.configuration.ConfigurationManager;
@@ -44,6 +45,7 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.ServiceLoader;
 
 import static io.mapsmessaging.logging.ServerLogMessages.*;
 
@@ -61,33 +63,29 @@ public class StateManagerAgent implements Agent {
   private TwinManager twinManager;
 
   @Getter
-  private Auditor auditor;
+  private StateAuditContext auditContext;
   private AuditorFactory.AuditorInstance auditorInstance;
 
   public StateManagerAgent() {
     TwinManagerConfigDTO config = ConfigurationManager.getInstance().getConfiguration(TwinManagerConfig.class);
     DroneInfoRegistry registry;
     TakProtocolDTO takConfig;
-    StanagConfig stanagConfig;
     if(config != null){
       try {
         AuditorFactory factory = new AuditorFactory();
         auditorInstance = factory.build(Path.of( EnvironmentConfig.getInstance().getPathLookups().get("MAPS_DATA")));
-        auditor = auditorInstance.getAuditor();
+        auditContext = auditorInstance.getAuditContext();
       } catch (IOException e) {
-        e.printStackTrace();
+        logger.log(STATE_MANAGER_AUDIT_INIT_FAILED, e);
       }
-      twinManager = new TwinManager(config.isRemoveExpiredTwins(), config.getStaleTimeoutMillis(), config.getHeartbeatTimeoutMillis(), config.getRetentionTimeoutMillis(), auditor);
+      twinManager = new TwinManager(config.isRemoveExpiredTwins(), config.getStaleTimeoutMillis(), config.getHeartbeatTimeoutMillis(), config.getRetentionTimeoutMillis(), auditContext);
       registry = new DroneInfoRegistry(config.getDroneInfo());
       takConfig = config.getTak();
-      stanagConfig = config.getStanagConfig();
       N2KTwinConfig n2KTwinConfig = config.getN2KTwinConfig();
       lifecycleList.add(new SchedulerManager(twinManager));
       lifecycleList.add(new TakManager(twinManager, takConfig));
       lifecycleList.add(new MavlinkTwinManager(twinManager, registry, config));
-      if(stanagConfig != null && stanagConfig.isEnable()) {
-        lifecycleList.add(new StanagSession(twinManager, stanagConfig));
-      }
+      loadStateMessageAdapters(config);
       if(n2KTwinConfig != null && n2KTwinConfig.isEnable()){
         lifecycleList.add(new N2kSession(twinManager, n2KTwinConfig));
       }
@@ -108,6 +106,14 @@ public class StateManagerAgent implements Agent {
   @Override
   public String getDescription() {
     return "Manages state of known objects within memory and maintains a digital twin";
+  }
+
+  private void loadStateMessageAdapters(TwinManagerConfigDTO config) {
+    StateMessageAdapterContext context = new StateMessageAdapterContext(twinManager, config);
+    ServiceLoader<StateMessageAdapterFactory> adapterFactories = ServiceLoader.load(StateMessageAdapterFactory.class);
+    for (StateMessageAdapterFactory adapterFactory : adapterFactories) {
+      adapterFactory.create(context).ifPresent(lifecycleList::add);
+    }
   }
 
   @Override

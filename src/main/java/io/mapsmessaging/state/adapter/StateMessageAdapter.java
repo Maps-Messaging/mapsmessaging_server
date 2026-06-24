@@ -17,19 +17,11 @@
  *  limitations under the License.
  */
 
-package io.mapsmessaging.state.stanag.messages.node.common;
+package io.mapsmessaging.state.adapter;
 
-import com.google.gson.annotations.SerializedName;
-import lombok.Builder;
-import lombok.Getter;
+import io.mapsmessaging.utilities.Lifecycle;
 
-@Getter
-@Builder
-public class Velocity {
+public interface StateMessageAdapter extends Lifecycle {
 
-  @SerializedName("$discriminator")
-  private final String discriminator;
-
-  @SerializedName("speed_course_climb_rate")
-  private final SpeedCourseClimbRate speedCourseClimbRate;
+  String getName();
 }

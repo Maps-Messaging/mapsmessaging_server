@@ -17,37 +17,10 @@
  *  limitations under the License.
  */
 
-package io.mapsmessaging.state.stanag.messages;
+package io.mapsmessaging.state.auditor;
 
-import lombok.Getter;
-import lombok.RequiredArgsConstructor;
+import io.mapsmessaging.audit.AuditLogger;
+import io.mapsmessaging.audit.AuditPayloadStore;
 
-@Getter
-@RequiredArgsConstructor
-public enum TaskState {
-
-  PENDING(false),
-  ACTIVE(false),
-  RECALLING(false),
-  PREEMPTING(false),
-  PAUSING(false),
-  PAUSED(false),
-  RESUMING(false),
-  ON_HOLD(false),
-  ACTIONABLE(false),
-  PREPARED(false),
-  PLANNING(false),
-  WAITING_FOR_PUSH_ACK(false),
-  WAITING_FOR_CANCEL_ACK(false),
-  WAITING_FOR_PAUSE_ACK(false),
-  WAITING_FOR_RESUME_ACK(false),
-
-  REJECTED(true),
-  RECALLED(true),
-  PREEMPTED(true),
-  ABORTED(true),
-  SUCCEEDED(true),
-  LOST(true);
-
-  private final boolean terminal;
+public record StateAuditContext(AuditLogger auditLogger, AuditPayloadStore auditPayloadStore) {
 }
