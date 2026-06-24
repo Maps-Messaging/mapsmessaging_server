@@ -33,6 +33,7 @@ import io.mapsmessaging.state.config.n2k.N2KTwinConfig;
 import io.mapsmessaging.utilities.configuration.ConfigurationManager;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.UUID;
 
@@ -40,6 +41,8 @@ import lombok.NoArgsConstructor;
 
 @NoArgsConstructor
 public class TwinManagerConfig extends TwinManagerConfigDTO implements Config, ConfigManager {
+
+  private static final String STATE_ADAPTERS_CONFIG_KEY = "stateAdapters";
 
   private TwinManagerConfig(ConfigurationProperties properties) {
     this.heartbeatTimeoutMillis = properties.getLongProperty("heartbeatTimeoutMillis", heartbeatTimeoutMillis);
@@ -74,21 +77,8 @@ public class TwinManagerConfig extends TwinManagerConfigDTO implements Config, C
       this.mavlink = parseMavlinkConfigs(properties.get("mavlink"));
     }
 
-    if(properties.containsKey("stanag")) {
-      ConfigurationProperties stanagProps = (ConfigurationProperties) properties.get("stanag");
-      this.stanagConfig = new StanagConfig();
-      stanagConfig.setEnable(stanagProps.getBooleanProperty("enabled", stanagConfig.isEnable()));
-      stanagConfig.setChatTopic(stanagProps.getProperty("chatTopic", null));
-      stanagConfig.setTaskTopic(stanagProps.getProperty("taskTopic", null));
-      stanagConfig.setTaskTopicTemplate(stanagProps.getProperty("taskTopicTemplate", null));
-      stanagConfig.setDescriptionIntervalSec(stanagProps.getIntProperty("descriptionIntervalSec", stanagConfig.getDescriptionIntervalSec()));
-      stanagConfig.setStatusIntervalSec(stanagProps.getIntProperty("statusIntervalSec", stanagConfig.getStatusIntervalSec()));
-    }
-    else{
-      stanagConfig = new StanagConfig();
-      stanagConfig.setChatTopic(null);
-      stanagConfig.setTaskTopic(null);
-      stanagConfig.setTaskTopicTemplate(null);
+    if (properties.containsKey(STATE_ADAPTERS_CONFIG_KEY)) {
+      parseAdapterConfigs(properties.get(STATE_ADAPTERS_CONFIG_KEY));
     }
 
     n2KTwinConfig = new N2KTwinConfig();
@@ -154,6 +144,11 @@ public class TwinManagerConfig extends TwinManagerConfigDTO implements Config, C
     if (this.mavlink != null && !this.mavlink.isEmpty()) {
       props.put("mavlink", toMavlinkConfigurationProperties(this.mavlink));
     }
+
+    if (this.adapterConfig != null && !this.adapterConfig.isEmpty()) {
+      props.put(STATE_ADAPTERS_CONFIG_KEY, new ConfigurationProperties(new LinkedHashMap<>(this.adapterConfig)));
+    }
+
     ConfigurationProperties n2kProps = new ConfigurationProperties();
     n2kProps.put("publishMavlinkDrones", this.n2KTwinConfig.isPublishMavlinkDrones());
     n2kProps.put("ais", n2KTwinConfig.getAis());
@@ -232,7 +227,28 @@ public class TwinManagerConfig extends TwinManagerConfigDTO implements Config, C
       hasChanged = true;
     }
 
+    if (newConfig.getAdapterConfig() != null && !this.adapterConfig.equals(newConfig.getAdapterConfig())) {
+      this.adapterConfig = new LinkedHashMap<>(newConfig.getAdapterConfig());
+      hasChanged = true;
+    }
+
     return hasChanged;
+  }
+
+  private void parseAdapterConfigs(Object value) {
+    if (value instanceof ConfigurationProperties properties) {
+      for (var entry : properties.entrySet()) {
+        if (entry.getValue() instanceof ConfigurationProperties adapterProperties) {
+          this.adapterConfig.put(entry.getKey(), adapterProperties);
+        }
+      }
+    } else if(value instanceof java.util.Map<?, ?> entries) {
+      for (var entry : entries.entrySet()) {
+        if (entry.getKey() instanceof String adapterName && entry.getValue() instanceof ConfigurationProperties adapterProperties) {
+          this.adapterConfig.put(adapterName, adapterProperties);
+        }
+      }
+    }
   }
 
   private List<MavlinkTwinConfigDTO> parseMavlinkConfigs(Object value) {

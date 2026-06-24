@@ -17,17 +17,13 @@
  *  limitations under the License.
  */
 
-package io.mapsmessaging.state.stanag.messages.node.status;
+package io.mapsmessaging.state.adapter;
 
-import io.mapsmessaging.state.stanag.messages.core.MessageHeader;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
+import java.util.Optional;
 
-@Getter
-@AllArgsConstructor
-public class NodeStatus {
+public interface StateMessageAdapterFactory {
 
-  private final MessageHeader header;
+  String getName();
 
-  private final NodeStatusBody body;
+  Optional<StateMessageAdapter> create(StateMessageAdapterContext context);
 }

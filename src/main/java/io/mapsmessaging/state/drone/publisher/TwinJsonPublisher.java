@@ -32,7 +32,7 @@ import io.mapsmessaging.api.features.DestinationType;
 import io.mapsmessaging.api.features.QualityOfService;
 import io.mapsmessaging.engine.schema.SchemaManager;
 import io.mapsmessaging.engine.session.ClientConnection;
-import io.mapsmessaging.state.GsonStanagHelper;
+import io.mapsmessaging.state.StateJsonHelper;
 import io.mapsmessaging.state.drone.core.EntityTwin;
 import io.mapsmessaging.state.drone.core.TwinManager;
 import io.mapsmessaging.state.drone.core.TwinObserver;
@@ -64,7 +64,7 @@ public class TwinJsonPublisher implements TwinObserver, ClientConnection, Messag
   public TwinJsonPublisher(TwinManager twinManager, String topicTemplate) throws ExecutionException, InterruptedException, TimeoutException {
     this.topicTemplate = topicTemplate;
     this.twinManager = twinManager;
-    this.gson = GsonStanagHelper.createGson();
+    this.gson = StateJsonHelper.createGson();
     this.destinationCache = new ConcurrentHashMap<>();
     this.session = createSession();
     twinManager.addObserver(this);

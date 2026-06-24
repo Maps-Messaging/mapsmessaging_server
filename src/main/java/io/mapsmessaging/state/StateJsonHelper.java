@@ -24,17 +24,16 @@ import com.google.gson.GsonBuilder;
 import io.mapsmessaging.rest.translation.GsonDateTimeDeserialiser;
 import io.mapsmessaging.rest.translation.GsonDateTimeSerialiser;
 import io.mapsmessaging.rest.translation.InstantTypeAdapter;
-import io.mapsmessaging.state.config.capability.*;
-import io.mapsmessaging.state.stanag.messages.core.MessageType;
-import io.mapsmessaging.state.stanag.messages.task.admin.TaskAdminActionEnum;
-import io.mapsmessaging.state.stanag.messages.task.result.ResultReason;
-import io.mapsmessaging.state.stanag.messages.TaskState;
-
+import io.mapsmessaging.state.config.capability.PlanTaskType;
+import io.mapsmessaging.state.config.capability.PrefixedEnumTypeAdapter;
+import io.mapsmessaging.state.config.capability.TaskConditionMode;
+import io.mapsmessaging.state.config.capability.TaskSpecialization;
+import io.mapsmessaging.state.config.capability.TaskTemplateMode;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
-public class GsonStanagHelper {
+public class StateJsonHelper {
 
   public static Gson createGson() {
     return new GsonBuilder()
@@ -60,30 +59,10 @@ public class GsonStanagHelper {
             TaskTemplateMode.class,
             new PrefixedEnumTypeAdapter<>(TaskTemplateMode.class, "TaskTemplateModeEnum_")
         )
-        .registerTypeAdapter(
-            MessageType.class,
-            new PrefixedEnumTypeAdapter<>(MessageType.class, "MessageTypeEnum_")
-        )
-        .registerTypeAdapter(
-            TaskState.class,
-            new PrefixedEnumTypeAdapter<>(TaskState.class, "TaskStateEnum_")
-        )
-        .registerTypeAdapter(
-            ResultReason.class,
-            new PrefixedEnumTypeAdapter<>(ResultReason.class, "ResultReasonEnum_")
-        )
-        .registerTypeAdapter(
-            TaskAdminActionEnum.class,
-            new PrefixedEnumTypeAdapter<>(TaskAdminActionEnum.class, "TaskAdminActionEnum_")
-        )
-        .registerTypeAdapter(
-            ResultReason.class,
-            new PrefixedEnumTypeAdapter<>(ResultReason.class, "ResultReasonEnum_")
-        )
         .create();
   }
 
-  private GsonStanagHelper() {
+  private StateJsonHelper() {
     // helper only
   }
 }

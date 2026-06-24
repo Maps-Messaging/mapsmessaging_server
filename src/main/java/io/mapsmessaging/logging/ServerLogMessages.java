@@ -933,6 +933,7 @@ public enum ServerLogMessages implements LogMessage {
   STATE_MANAGER_PUBLISH_ENABLED(LEVEL.INFO, SERVER_CATEGORY.STATE, "Twin JSON publisher enabled with topic {}"),
   STATE_MANAGER_PUBLISH_FAILED(LEVEL.ERROR, SERVER_CATEGORY.STATE, "Failed to start Twin JSON publisher"),
   STATE_MANAGER_SCHEDULER_ERROR(LEVEL.ERROR, SERVER_CATEGORY.STATE, "Scheduler task failed"),
+  STATE_MANAGER_AUDIT_INIT_FAILED(LEVEL.ERROR, SERVER_CATEGORY.STATE, "Failed to initialize audit context - auditing will be disabled"),
   // </editor-fold>
 
   //-------------------------------------------------------------------------------------------------------------
