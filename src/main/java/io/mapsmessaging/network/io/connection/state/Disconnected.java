@@ -19,15 +19,11 @@
 
 package io.mapsmessaging.network.io.connection.state;
 
-import io.mapsmessaging.api.Session;
-import io.mapsmessaging.api.SessionContextBuilder;
-import io.mapsmessaging.api.SessionManager;
 import io.mapsmessaging.config.network.EndPointConnectionServerConfig;
-import io.mapsmessaging.engine.session.SessionContext;
+import io.mapsmessaging.dto.rest.config.protocol.LinkConfigDTO;
 import io.mapsmessaging.logging.ServerLogMessages;
 import io.mapsmessaging.logging.ThreadContext;
 import io.mapsmessaging.network.EndPointURL;
-import io.mapsmessaging.network.ProtocolClientConnection;
 import io.mapsmessaging.network.auth.TokenGenerator;
 import io.mapsmessaging.network.auth.TokenGeneratorManager;
 import io.mapsmessaging.network.io.EndPoint;
@@ -42,11 +38,11 @@ import io.mapsmessaging.network.protocol.transformation.ProtocolMessageTransform
 import io.mapsmessaging.network.protocol.transformation.TransformationManager;
 import io.mapsmessaging.network.route.link.LinkState;
 
-import javax.security.auth.login.LoginException;
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
-import java.util.concurrent.TimeUnit;
 
 import static io.mapsmessaging.network.io.connection.Constants.DELAYED_TIME;
 
@@ -93,7 +89,8 @@ public class Disconnected extends State implements EndPointConnectedCallback {
         TokenGenerator tokenGenerator = TokenGeneratorManager.getInstance().get(tokenGeneratorName).getInstance(properties.getAuthConfig().getTokenConfig());
         password = tokenGenerator.generate();
       }
-      Protocol protocolImpl = protocolImplFactory.connect(endpoint, sessionId, username, password);
+      Map<String, String> topicMap = getTopicMap(properties.getLinkConfigs());
+      Protocol protocolImpl = protocolImplFactory.connect(endpoint, sessionId, username, password, topicMap);
       protocolImpl.setProtocolMessageTransformation(transformation);
       endPointConnection.setProtocol(protocolImpl);
       endPointConnection.scheduleState(new Connecting(endPointConnection));
@@ -137,4 +134,21 @@ public class Disconnected extends State implements EndPointConnectedCallback {
     return LinkState.DISCONNECTED;
   }
 
+  private Map<String, String> getTopicMap(List<LinkConfigDTO> linkConfigs){
+    Map<String, String> topicMap = new HashMap<>();
+    for (LinkConfigDTO property : linkConfigs) {
+      String direction = property.getDirection();
+      String remote = property.getRemoteNamespace();
+      String local = property.getLocalNamespace();
+      if (direction.equalsIgnoreCase("pull")) {
+        topicMap.put(local, remote);
+      } else if (direction.equalsIgnoreCase("push")) {
+        if (remote.endsWith("#")) {
+          remote = remote.substring(0, remote.length() - 1);
+        }
+        topicMap.put(local, remote);
+      }
+    }
+    return topicMap;
+  }
 }

@@ -132,7 +132,7 @@ public class MQTTProtocol extends Protocol {
     connect(sessionId, username, password, null);
   }
 
-  public void connect(@NonNull @NotNull String sessionId, String username, String password, Publish willMsg ) throws IOException {
+  public void connect(@NonNull @NotNull String sessionId, String username, String password, Publish willMsg) throws IOException {
     Connect connect = new Connect();
     connect.setSessionId(sessionId);
     connect.setCleanSession(false);

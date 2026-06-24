@@ -26,6 +26,7 @@ import io.mapsmessaging.network.protocol.ProtocolImplFactory;
 import io.mapsmessaging.network.protocol.detection.MultiByteArrayDetection;
 
 import java.io.IOException;
+import java.util.Map;
 
 public class StompProtocolFactory extends ProtocolImplFactory {
 
@@ -36,8 +37,9 @@ public class StompProtocolFactory extends ProtocolImplFactory {
   }
 
   @Override
-  public Protocol connect(EndPoint endPoint, String sessionId, String username, String password) throws IOException {
+  public Protocol connect(EndPoint endPoint, String sessionId, String username, String password, Map<String, String> topicMap) throws IOException {
     StompProtocol protocol = new StompProtocol(endPoint);
+    protocol.getTopicNameMapping().putAll(topicMap);
     protocol.connect(sessionId, username, password);
     return protocol;
   }

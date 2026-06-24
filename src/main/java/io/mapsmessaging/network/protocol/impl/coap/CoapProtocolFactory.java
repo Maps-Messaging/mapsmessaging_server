@@ -29,6 +29,7 @@ import io.mapsmessaging.network.protocol.ProtocolImplFactory;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 public class CoapProtocolFactory extends ProtocolImplFactory {
   private final List<CoapInterfaceManager> managers;
@@ -39,7 +40,7 @@ public class CoapProtocolFactory extends ProtocolImplFactory {
   }
 
   @Override
-  public Protocol connect(EndPoint endPoint, String sessionId, String username, String password) throws IOException {
+  public Protocol connect(EndPoint endPoint, String sessionId, String username, String password, Map<String, String> topicMap) throws IOException {
     return null;
   }
 

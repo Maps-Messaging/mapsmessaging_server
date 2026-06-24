@@ -29,6 +29,7 @@ import io.mapsmessaging.network.protocol.impl.extension.ExtensionEndPoint;
 import io.mapsmessaging.network.protocol.impl.extension.ExtensionProtocol;
 
 import java.io.IOException;
+import java.util.Map;
 
 public class RestProtocolFactory extends ProtocolImplFactory {
 
@@ -37,7 +38,7 @@ public class RestProtocolFactory extends ProtocolImplFactory {
   }
 
   @Override
-  public Protocol connect(EndPoint endPoint, String sessionId, String username, String password) throws IOException {
+  public Protocol connect(EndPoint endPoint, String sessionId, String username, String password, Map<String, String> topicMap) throws IOException {
     ExtensionConfigDTO protocolConfigDTO = (ExtensionConfigDTO) ((ExtensionEndPoint) endPoint).config();
     Protocol protocol = new ExtensionProtocol(endPoint, new RestProtocol(endPoint, protocolConfigDTO));
     protocol.connect(sessionId, username, password);

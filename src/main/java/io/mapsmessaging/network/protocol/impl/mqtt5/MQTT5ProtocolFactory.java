@@ -38,6 +38,7 @@ import io.mapsmessaging.network.protocol.impl.mqtt5.packet.properties.WillDelayI
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
+import java.util.Map;
 
 public class MQTT5ProtocolFactory extends ProtocolImplFactory {
 
@@ -57,7 +58,7 @@ public class MQTT5ProtocolFactory extends ProtocolImplFactory {
   }
 
   @Override
-  public Protocol connect(EndPoint endPoint, String sessionId, String username, String password) throws IOException {
+  public Protocol connect(EndPoint endPoint, String sessionId, String username, String password, Map<String, String> topicMap) throws IOException {
     MQTT5Protocol protocol = new MQTT5Protocol(endPoint);
     EndPointServerConfigDTO dto = endPoint.getServer().getConfig();
     Publish5 willMsg = null;
@@ -100,6 +101,7 @@ public class MQTT5ProtocolFactory extends ProtocolImplFactory {
         }
       }
     }
+    protocol.getTopicNameMapping().putAll(topicMap);
     protocol.connect(sessionId, username, password, willMsg);
     return protocol;
   }
