@@ -227,7 +227,7 @@ public class TwinManagerConfig extends TwinManagerConfigDTO implements Config, C
       hasChanged = true;
     }
 
-    if (this.adapterConfig != newConfig.getAdapterConfig()) {
+    if (newConfig.getAdapterConfig() != null && !this.adapterConfig.equals(newConfig.getAdapterConfig())) {
       this.adapterConfig = new LinkedHashMap<>(newConfig.getAdapterConfig());
       hasChanged = true;
     }

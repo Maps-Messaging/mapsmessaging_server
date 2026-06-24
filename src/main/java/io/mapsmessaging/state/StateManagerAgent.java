@@ -74,7 +74,7 @@ public class StateManagerAgent implements Agent {
         auditorInstance = factory.build(Path.of( EnvironmentConfig.getInstance().getPathLookups().get("MAPS_DATA")));
         auditContext = auditorInstance.getAuditContext();
       } catch (IOException e) {
-        e.printStackTrace();
+        logger.log(STATE_MANAGER_AUDIT_INIT_FAILED, e);
       }
       twinManager = new TwinManager(config.isRemoveExpiredTwins(), config.getStaleTimeoutMillis(), config.getHeartbeatTimeoutMillis(), config.getRetentionTimeoutMillis(), auditContext);
       registry = new DroneInfoRegistry(config.getDroneInfo());

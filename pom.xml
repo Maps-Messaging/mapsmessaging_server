@@ -140,6 +140,7 @@
     <maps.nolc.version>1.2.3-SNAPSHOT</maps.nolc.version>
     <maps.mavlink.version>2.0.1-SNAPSHOT</maps.mavlink.version>
     <maps.jsonquery.version>1.1.1-SNAPSHOT</maps.jsonquery.version>
+    <maps.stanag.version>1.0.0-SNAPSHOT</maps.stanag.version>
 
     <!-- first level dependencies -->
     <maps.jsonquery.version>1.1.1-SNAPSHOT</maps.jsonquery.version> <!-- Requires JMS Selectors -->
@@ -684,7 +685,7 @@
     <dependency>
       <groupId>io.mapsmessaging</groupId>
       <artifactId>mapsmessaging-stanag-state-adapter</artifactId>
-      <version>${project.version}</version>
+      <version>${maps.stanag.version}</version>
     </dependency>
 
     <dependency>
