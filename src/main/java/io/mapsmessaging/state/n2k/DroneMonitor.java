@@ -117,8 +117,6 @@ public class DroneMonitor implements TwinObserver{
     if (pgnEmission == null || pgnEmission.getPayload() == null || pgnEmission.getPayload().length == 0) {
       return;
     }
-
-
     n2kProtocol.writePgn(pgnEmission.getPgn(), 0xff, pgnEmission.getPayload());
   }
 }

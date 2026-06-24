@@ -25,15 +25,49 @@ import lombok.Setter;
 
 @Getter
 @Setter
+@Schema(description = "NMEA 2000 twin integration configuration.")
 public class N2KTwinConfig {
 
+
+  protected boolean enable = true;
+
   @Schema(
-      description = "Monitors and publishes MAVLink drone position and details as AIS N2K events.",
+      description = "Enables publishing tracked MAVLink drones and other known entities as NMEA 2000 AIS events.",
       example = "true",
       defaultValue = "true",
       requiredMode = Schema.RequiredMode.NOT_REQUIRED
   )
   protected boolean publishMavlinkDrones = true;
+
+  @Schema(
+      description =
+          "Messaging topic subscription used to receive decoded NMEA 2000 JSON events for twin monitoring.",
+      example = "/canbus0/n2k/json/#",
+      defaultValue = "/canbus0/n2k/json/#",
+      requiredMode = Schema.RequiredMode.NOT_REQUIRED,
+      nullable = false
+  )
+  protected String topic = "/canbus0/n2k/json/#";
+
+  @Schema(
+      description =
+          "Logical name for this NMEA 2000 twin integration. Used for display, logging and source identification.",
+      example = "canbus0-n2k-drone-feed",
+      requiredMode = Schema.RequiredMode.NOT_REQUIRED,
+      nullable = true
+  )
+  protected String name;
+
+  @Schema(
+      description =
+          "Vehicle class associated with this NMEA 2000 feed. Used to describe the monitored platform.",
+      example = "USV",
+      allowableValues = {"UAV", "UGV", "USV", "UUV", "VESSEL", "ROVER", "UNKNOWN"},
+      defaultValue = "UNKNOWN",
+      requiredMode = Schema.RequiredMode.NOT_REQUIRED,
+      nullable = true
+  )
+  protected String vehicleClass;
 
   @Schema(
       description =

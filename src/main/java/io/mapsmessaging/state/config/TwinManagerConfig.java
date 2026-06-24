@@ -94,7 +94,10 @@ public class TwinManagerConfig extends TwinManagerConfigDTO implements Config, C
     n2KTwinConfig = new N2KTwinConfig();
     if(properties.containsKey("n2k")) {
       ConfigurationProperties n2kProps = (ConfigurationProperties) properties.get("n2k");
-
+      n2KTwinConfig.setEnable(n2kProps.getBooleanProperty("enabled", n2KTwinConfig.isEnable()));
+      n2KTwinConfig.setTopic(n2kProps.getProperty("topic", n2KTwinConfig.getTopic()));
+      n2KTwinConfig.setName(n2kProps.getProperty("name", n2KTwinConfig.getName()));
+      n2KTwinConfig.setVehicleClass(n2kProps.getProperty("vehicleClass", n2KTwinConfig.getVehicleClass()));
       n2KTwinConfig.setPublishMavlinkDrones(n2kProps.getBooleanProperty("publishMavlinkDrones", n2KTwinConfig.isPublishMavlinkDrones()));
       if (n2kProps.containsKey("ais")) {
         N2KAisConfig aisProperties = new N2KAisConfig((ConfigurationProperties) n2kProps.get("ais"));
@@ -102,6 +105,7 @@ public class TwinManagerConfig extends TwinManagerConfigDTO implements Config, C
       }
     }
     else{
+      n2KTwinConfig.setEnable(false);
       n2KTwinConfig.setPublishMavlinkDrones(false);
     }
   }

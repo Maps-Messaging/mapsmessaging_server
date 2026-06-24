@@ -61,13 +61,7 @@ public class MavlinkTwinUpdater {
     twinManager.addObserver(droneMonitor);
   }
 
-  public void updateTwinState(
-      @NonNull @NotNull ProcessedFrame env,
-      @NonNull @NotNull MavlinkPacket packet,
-      @NonNull @NotNull TwinUpdateContext context,
-      @NonNull @NotNull MavlinkKnownSourceDTO knownSource,
-      DroneInfo droneInfo
-  ) {
+  public void updateTwinState(@NonNull @NotNull ProcessedFrame env, @NonNull @NotNull MavlinkPacket packet, @NonNull @NotNull TwinUpdateContext context, @NonNull @NotNull MavlinkKnownSourceDTO knownSource, DroneInfo droneInfo) {
     String twinId = buildTwinId(env, knownSource);
 
     EntityTwin twin = twinManager.getTwin(twinId)
@@ -95,14 +89,7 @@ public class MavlinkTwinUpdater {
   }
 
 
-  private EntityTwin createTwin(
-      String twinId,
-      ProcessedFrame env,
-      TwinUpdateContext context,
-      MavlinkKnownSourceDTO knownSource,
-      DroneInfo droneInfo
-  ) {
-
+  private EntityTwin createTwin(String twinId, ProcessedFrame env, TwinUpdateContext context, MavlinkKnownSourceDTO knownSource, DroneInfo droneInfo) {
     DroneTwin droneTwin = new DroneTwin(twinId, droneInfo.getUuid());
     droneTwin.setVehicleClass(resolveVehicleClass(knownSource));
     droneTwin.setDescriptionString(resolveDescription(twinId, env, knownSource));

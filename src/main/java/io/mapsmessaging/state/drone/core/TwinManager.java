@@ -114,10 +114,7 @@ public class TwinManager {
     return Optional.ofNullable(removed);
   }
 
-  public Optional<EntityTwin> updateTwin(String twinId,
-                                         Consumer<EntityTwin> updater,
-                                         TwinUpdateContext context) {
-
+  public Optional<EntityTwin> updateTwin(String twinId, Consumer<EntityTwin> updater, TwinUpdateContext context) {
     Objects.requireNonNull(twinId, "twinId must not be null");
     Objects.requireNonNull(updater, "updater must not be null");
 

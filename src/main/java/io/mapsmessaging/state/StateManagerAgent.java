@@ -29,8 +29,10 @@ import io.mapsmessaging.dto.rest.system.Status;
 import io.mapsmessaging.dto.rest.system.SubSystemStatusDTO;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
+import io.mapsmessaging.state.config.n2k.N2KTwinConfig;
 import io.mapsmessaging.state.drone.core.TwinLifecycleStatus;
 import io.mapsmessaging.state.drone.core.TwinManager;
+import io.mapsmessaging.state.n2k.N2kSession;
 import io.mapsmessaging.state.stanag.StanagSession;
 import io.mapsmessaging.state.stanag.audit.Auditor;
 import io.mapsmessaging.utilities.Agent;
@@ -79,11 +81,15 @@ public class StateManagerAgent implements Agent {
       registry = new DroneInfoRegistry(config.getDroneInfo());
       takConfig = config.getTak();
       stanagConfig = config.getStanagConfig();
+      N2KTwinConfig n2KTwinConfig = config.getN2KTwinConfig();
       lifecycleList.add(new SchedulerManager(twinManager));
       lifecycleList.add(new TakManager(twinManager, takConfig));
       lifecycleList.add(new MavlinkTwinManager(twinManager, registry, config));
       if(stanagConfig != null && stanagConfig.isEnable()) {
         lifecycleList.add(new StanagSession(twinManager, stanagConfig));
+      }
+      if(n2KTwinConfig != null && n2KTwinConfig.isEnable()){
+        lifecycleList.add(new N2kSession(twinManager, n2KTwinConfig));
       }
       lifecycleList.add(new TwinPublisherManager(twinManager, config.getPublish()));
       aisManager = new AISN2KManager(twinManager, config.getN2KTwinConfig());

@@ -47,6 +47,7 @@ import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.*;
 
+import io.mapsmessaging.state.util.SessionHelper;
 import io.mapsmessaging.utilities.Agent;
 import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
@@ -68,7 +69,7 @@ public class MavlinkStateSubscriber implements MessageHandler {
       @NonNull @NotNull MavlinkTwinConfigDTO mavlinkConfig,
       @NonNull @NotNull DroneInfoRegistry registry
   ) throws IOException {
-    this.protocol = new StateLoopProtocol(new NoOpEndPoint(1, null, new ArrayList<>()), this);
+    this.protocol = SessionHelper.createLoopbackProtocol(this);
     this.namespaceTopicPath = mavlinkConfig.getTopic();
     this.sourceRegistry = new MavlinkSourceRegistry(mavlinkConfig);
     this.droneRegistry = registry;
@@ -86,34 +87,37 @@ public class MavlinkStateSubscriber implements MessageHandler {
   }
 
   public void handle(@NonNull @NotNull MessageEvent messageEvent) {
-    Message message = messageEvent.getMessage();
-    String sourceName = messageEvent.getDestinationName();
-    ProcessedFrame env = parseJson(message.getOpaqueData());
-    if(env == null){
-      return;
-    }
-    MavlinkPacket packet = MavlinkPacketFactory.create(env);
+    try {
+      Message message = messageEvent.getMessage();
+      String sourceName = messageEvent.getDestinationName();
+      ProcessedFrame env = parseJson(message.getOpaqueData());
+      if(env == null){
+        return;
+      }
+      MavlinkPacket packet = MavlinkPacketFactory.create(env);
 
-    if (packet == null) {
-      logger.log(MAVLINK_STATE_UNSUPPORTED_PACKET_IGNORED, env.getFrame().getMessageId(), sourceName);
-      return;
-    }
+      if (packet == null) {
+        logger.log(MAVLINK_STATE_UNSUPPORTED_PACKET_IGNORED, env.getFrame().getMessageId(), sourceName);
+        return;
+      }
 
-    MavlinkKnownSourceDTO knownSource = sourceRegistry.getKnownSource(env);
+      MavlinkKnownSourceDTO knownSource = sourceRegistry.getKnownSource(env);
 
-    if (knownSource == null) {
-      return;
+      if (knownSource == null) {
+        return;
+      }
+      String responseTopic = message.getResponseTopic();
+      TwinUpdateContext context = buildUpdateContext(env, responseTopic);
+      context.setUniqueOutboundIdentifier(new String(messageEvent.getMessage().getCorrelationData()));
+      if(droneRegistry.getDroneInfo(knownSource.getName()) != null) {
+        twinUpdater.updateTwinState(env, packet, context, knownSource, droneRegistry.getDroneInfo(knownSource.getName()));
+      }
+      else{
+        System.err.println("Unknown drone: " + knownSource.getName() );
+      }
+    } finally {
+      messageEvent.getCompletionTask().run();
     }
-    String responseTopic = message.getResponseTopic();
-    TwinUpdateContext context = buildUpdateContext(env, responseTopic);
-    context.setUniqueOutboundIdentifier(new String(messageEvent.getMessage().getCorrelationData()));
-    if(droneRegistry.getDroneInfo(knownSource.getName()) != null) {
-      twinUpdater.updateTwinState(env, packet, context, knownSource, droneRegistry.getDroneInfo(knownSource.getName()));
-    }
-    else{
-      System.err.println("Unknown drone: " + knownSource.getName() );
-    }
-    messageEvent.getCompletionTask().run();
   }
 
   private TwinUpdateContext buildUpdateContext(ProcessedFrame env, String responseTopic) {
