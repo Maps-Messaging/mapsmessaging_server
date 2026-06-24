@@ -33,7 +33,6 @@ import java.security.KeyPair;
 import java.security.PrivateKey;
 import java.security.interfaces.EdECPublicKey;
 
-import io.mapsmessaging.state.stanag.audit.Auditor;
 import lombok.Getter;
 
 public class AuditorFactory {
@@ -110,13 +109,13 @@ public class AuditorFactory {
     AuditLogger auditLogger = new AuditLogger(auditJournal);
     AuditPayloadStore auditPayloadStore = new AuditPayloadStore(payloadRootDirectory);
 
-    Auditor auditor = new Auditor(
+    StateAuditContext auditContext = new StateAuditContext(
         auditLogger,
         auditPayloadStore
     );
 
     return new AuditorInstance(
-        auditor,
+        auditContext,
         auditJournal,
         auditRootDirectory,
         journalRootDirectory,
@@ -179,7 +178,7 @@ public class AuditorFactory {
   @Getter
   public static class AuditorInstance implements AutoCloseable {
 
-    private final Auditor auditor;
+    private final StateAuditContext auditContext;
     private final AuditJournal auditJournal;
     private final Path auditRootDirectory;
     private final Path journalRootDirectory;
@@ -188,7 +187,7 @@ public class AuditorFactory {
     private final Path publicKeyPath;
 
     private AuditorInstance(
-        Auditor auditor,
+        StateAuditContext auditContext,
         AuditJournal auditJournal,
         Path auditRootDirectory,
         Path journalRootDirectory,
@@ -196,7 +195,7 @@ public class AuditorFactory {
         Path privateKeyPath,
         Path publicKeyPath
     ) {
-      this.auditor = auditor;
+      this.auditContext = auditContext;
       this.auditJournal = auditJournal;
       this.auditRootDirectory = auditRootDirectory;
       this.journalRootDirectory = journalRootDirectory;

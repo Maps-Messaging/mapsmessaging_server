@@ -21,13 +21,16 @@ package io.mapsmessaging.state.config;
 
 import io.mapsmessaging.dto.rest.config.BaseManagerConfigDTO;
 import io.mapsmessaging.dto.rest.config.protocol.impl.TakProtocolDTO;
+import io.mapsmessaging.configuration.ConfigurationProperties;
 import io.mapsmessaging.state.config.n2k.N2KTwinConfig;
 import lombok.Data;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.EqualsAndHashCode;
 
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 @Data
 @EqualsAndHashCode(callSuper = true)
@@ -101,9 +104,9 @@ public class TwinManagerConfigDTO extends BaseManagerConfigDTO {
 
 
   @Schema(
-      description = "Stanag configuration"
+      description = "Protocol-specific state message adapter configuration keyed by adapter name"
   )
-  protected StanagConfig stanagConfig;
+  protected Map<String, ConfigurationProperties> adapterConfig = new LinkedHashMap<>();
 
   @Schema(
       description = "Configuration on each drone"

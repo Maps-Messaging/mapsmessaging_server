@@ -17,10 +17,24 @@
  *  limitations under the License.
  */
 
-package io.mapsmessaging.state.stanag;
+package io.mapsmessaging.state.adapter;
 
-import io.mapsmessaging.api.message.Message;
+import io.mapsmessaging.state.config.TwinManagerConfigDTO;
+import io.mapsmessaging.state.drone.core.TwinManager;
+import lombok.Getter;
+import lombok.NonNull;
+import lombok.RequiredArgsConstructor;
+import org.jetbrains.annotations.NotNull;
 
-public interface TaskMessageSender {
-  void sendTaskMessage(String taskTopic, Message message);
+@Getter
+@RequiredArgsConstructor
+public class StateMessageAdapterContext {
+
+  @NonNull
+  @NotNull
+  private final TwinManager twinManager;
+
+  @NonNull
+  @NotNull
+  private final TwinManagerConfigDTO config;
 }
