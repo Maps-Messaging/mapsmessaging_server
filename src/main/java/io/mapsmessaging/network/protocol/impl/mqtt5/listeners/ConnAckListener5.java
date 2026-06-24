@@ -65,7 +65,7 @@ public class ConnAckListener5 extends PacketListener5 {
     scb.setReceiveMaximum(mqtt5Protocol.getClientReceiveMaximum());
     handleSessionCreation(protocol, sess, connAck, scb, endPoint, user, pass );
     protocol.setConnected(true);
-    return null;
+    return connAck;
   }
 
   private void handleSessionCreation(Protocol protocol, String sessionId, ConnAck5 connAck, SessionContextBuilder scb, EndPoint endPoint, String user, String pass)
