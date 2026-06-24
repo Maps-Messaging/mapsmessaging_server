@@ -160,6 +160,10 @@ public abstract class Protocol implements SelectorCallback, MessageListener, Tim
 
   public void connect(String sessionId, String username, String password) throws IOException {}
 
+  public void setTopicMapping(String resource, String mappedResource) {
+    topicNameMapping.put(resource, mappedResource);
+  }
+
   public void subscribeRemote(
       @NonNull @NotNull String resource,
       @NonNull @NotNull String mappedResource,

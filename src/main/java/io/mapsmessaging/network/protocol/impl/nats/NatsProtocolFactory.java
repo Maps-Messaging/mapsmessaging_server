@@ -28,6 +28,7 @@ import io.mapsmessaging.network.protocol.detection.MultiByteArrayDetection;
 import io.mapsmessaging.network.protocol.impl.nats.frames.InfoFrame;
 
 import java.io.IOException;
+import java.util.Map;
 
 public class NatsProtocolFactory extends ProtocolImplFactory {
 
@@ -44,7 +45,7 @@ public class NatsProtocolFactory extends ProtocolImplFactory {
   }
 
   @Override
-  public Protocol connect(EndPoint endPoint, String sessionId, String username, String password) throws IOException {
+  public Protocol connect(EndPoint endPoint, String sessionId, String username, String password, Map<String, String> topicMap) throws IOException {
     NatsProtocol protocol = new NatsProtocol(endPoint);
     protocol.connect(sessionId, username, password);
     return protocol;

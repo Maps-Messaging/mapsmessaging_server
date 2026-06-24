@@ -34,6 +34,7 @@ import io.mapsmessaging.network.protocol.impl.mqtt.packet.Publish;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
+import java.util.Map;
 
 public class MQTTProtocolFactory extends ProtocolImplFactory {
 
@@ -48,7 +49,7 @@ public class MQTTProtocolFactory extends ProtocolImplFactory {
   }
 
   @Override
-  public Protocol connect(EndPoint endPoint, String sessionId, String username, String password) throws IOException {
+  public Protocol connect(EndPoint endPoint, String sessionId, String username, String password, Map<String, String> topicMap) throws IOException {
     MQTTProtocol protocol = new MQTTProtocol(endPoint);
     EndPointServerConfigDTO dto = endPoint.getServer().getConfig();
     Publish willMsg = null;
@@ -72,6 +73,7 @@ public class MQTTProtocolFactory extends ProtocolImplFactory {
         );
       }
     }
+    protocol.getTopicNameMapping().putAll(topicMap);
     protocol.connect(sessionId, username, password, willMsg);
     return protocol;
   }

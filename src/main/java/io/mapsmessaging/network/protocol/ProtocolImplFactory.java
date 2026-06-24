@@ -28,6 +28,7 @@ import io.mapsmessaging.utilities.service.Service;
 import lombok.Getter;
 
 import java.io.IOException;
+import java.util.Map;
 
 @Getter
 public abstract class ProtocolImplFactory implements Service {
@@ -46,7 +47,7 @@ public abstract class ProtocolImplFactory implements Service {
     return null;
   }
 
-  public abstract Protocol connect(EndPoint endPoint, String sessionId, String username, String password) throws IOException;
+  public abstract Protocol connect(EndPoint endPoint, String sessionId, String username, String password, Map<String, String> topicMap) throws IOException;
 
   public abstract void create(EndPoint endPoint, Packet packet) throws IOException;
 
