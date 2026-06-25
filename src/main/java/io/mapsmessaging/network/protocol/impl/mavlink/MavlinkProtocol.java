@@ -250,11 +250,11 @@ public class MavlinkProtocol extends Protocol {
     Message message = messageBuilder.setContentType("mavlink")
         .setOpaqueData(raw)
         .setDataMap(convertToMap(envelope))
-        .setQoS(QualityOfService.AT_MOST_ONCE)
+        .setQoS(QualityOfService.AT_LEAST_ONCE)
         .setRetain(false)
-        .storeOffline(false)
         .setResponseTopic(outboundTopicName)
         .setCorrelationData("ID#"+endPoint.getId()+"#"+socketAddress)
+        .storeOffline(true)
         .setMeta(metaData)
 
         .build();
