@@ -112,7 +112,7 @@ public class ResourceImpl implements Resource {
     }
 
     Storage<Message> s = builder.build();
-    persistent = config instanceof MemoryStorageConfigDTO;
+    persistent = !(config instanceof MemoryStorageConfigDTO);
     store = new AsyncStorage<>(s);
     if (destinationConfig.getAutoPauseTimeout() > 0) {
       store.enableAutoPause(TimeUnit.SECONDS.toMillis(destinationConfig.getAutoPauseTimeout()));  // Convert to milliseconds
