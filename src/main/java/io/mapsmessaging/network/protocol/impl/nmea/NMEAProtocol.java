@@ -207,7 +207,8 @@ public class NMEAProtocol extends Protocol {
       if (destination != null) {
         MessageBuilder messageBuilder = new MessageBuilder();
         messageBuilder.setOpaqueData(processed.getBytes())
-            .setMessageExpiryInterval(8, TimeUnit.SECONDS) // Expire the event in 8 seconds
+            .setQoS(QualityOfService.AT_LEAST_ONCE)
+            .storeOffline(true)
             .setTransformation(getProtocolMessageTransformation());
         Message message = MessageOverrides.createMessageBuilder(protocolConfig.getMessageDefaults(), messageBuilder).build();
         destination.storeMessage(message);

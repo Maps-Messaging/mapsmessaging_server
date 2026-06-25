@@ -96,9 +96,10 @@ public class TwinJsonPublisher implements TwinObserver, ClientConnection, Messag
       }
       MessageBuilder messageBuilder = new MessageBuilder();
       messageBuilder.setOpaqueData(json.getBytes(StandardCharsets.UTF_8))
-          .setQoS(QualityOfService.AT_MOST_ONCE)
+          .setQoS(QualityOfService.AT_LEAST_ONCE)
           .setContentType("application/json")
           .setSchemaId(SchemaManager.DEFAULT_JSON_SCHEMA.toString())
+          .storeOffline(true)
           .setRetain(false);
 
       destination.storeMessage(messageBuilder.build());

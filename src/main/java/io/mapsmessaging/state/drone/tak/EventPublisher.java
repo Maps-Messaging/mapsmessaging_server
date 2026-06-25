@@ -48,8 +48,9 @@ public class EventPublisher implements ClientConnection, MessageListener {
   public void publish(String xml) throws IOException {
     MessageBuilder messageBuilder = new MessageBuilder();
     messageBuilder.setOpaqueData(xml.getBytes())
-        .setQoS(QualityOfService.AT_MOST_ONCE)
+        .setQoS(QualityOfService.AT_LEAST_ONCE)
         .setContentType("text/xml")
+        .storeOffline(true)
         .setSchemaId(SchemaManager.DEFAULT_XML_SCHEMA.toString())
         .setRetain(false);
     destination.storeMessage(messageBuilder.build());

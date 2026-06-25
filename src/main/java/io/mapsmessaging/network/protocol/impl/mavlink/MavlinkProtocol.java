@@ -148,7 +148,7 @@ public class MavlinkProtocol extends Protocol {
       if (results.isStatusChanged()) {
         String statusTopic = computeTopicName(mavlinkConfig.getStatusTopicNameTemplate(), env.getFrame(), env.getMessageName());
         JsonObject resultsJson = gson.toJsonTree(results).getAsJsonObject();
-        sendMessage(statusTopic, new MessageBuilder().setContentType("application/json").setOpaqueData(resultsJson.toString().getBytes(StandardCharsets.UTF_8)).build());
+        sendMessage(statusTopic, new MessageBuilder().setContentType("application/json").setQoS(QualityOfService.AT_LEAST_ONCE).setOpaqueData(resultsJson.toString().getBytes(StandardCharsets.UTF_8)).build());
       }
     }
 
@@ -243,9 +243,9 @@ public class MavlinkProtocol extends Protocol {
     Message message = messageBuilder.setContentType("mavlink")
         .setOpaqueData(raw)
         .setDataMap(convertToMap(envelope))
-        .setQoS(QualityOfService.AT_MOST_ONCE)
+        .setQoS(QualityOfService.AT_LEAST_ONCE)
         .setRetain(false)
-        .storeOffline(false)
+        .storeOffline(true)
         .setMeta(metaData)
         .build();
 

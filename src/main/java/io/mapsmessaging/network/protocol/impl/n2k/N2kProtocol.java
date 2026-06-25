@@ -124,7 +124,7 @@ public class N2kProtocol extends Protocol {
     }
     if(inboundTopicName != null && !inboundTopicName.isEmpty()){
       SubscriptionContextBuilder scb = new SubscriptionContextBuilder(inboundTopicName, ClientAcknowledgement.AUTO);
-      SubscriptionContext context = scb.setQos(QualityOfService.AT_MOST_ONCE)
+      SubscriptionContext context = scb.setQos(QualityOfService.AT_LEAST_ONCE)
           .setReceiveMaximum(10)
           .setNoLocalMessages(true)
           .build();
@@ -276,9 +276,9 @@ public class N2kProtocol extends Protocol {
     Message message = messageBuilder.setContentType("n2k")
         .setOpaqueData(json.toString().getBytes())
         .setDataMap(map)
-        .setQoS(QualityOfService.AT_MOST_ONCE)
+        .setQoS(QualityOfService.AT_LEAST_ONCE)
         .setRetain(false)
-        .storeOffline(false)
+        .storeOffline(true)
         .setContentType("canbus")
         .setMeta(metaData)
         .setSchemaId(defaultSchemaConfig.getUniqueId())
