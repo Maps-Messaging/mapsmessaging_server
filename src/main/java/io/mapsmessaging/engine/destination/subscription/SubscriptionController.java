@@ -373,10 +373,7 @@ public class SubscriptionController implements DestinationManagerListener {
         }
       }
     } else {
-      // We have received a subscription for an already registered subscription!!!
-      delSubscription(context.getKey());
-      context.setReplaced(true);
-      return addSubscription(context);
+      isReload = true;
     }
     if (!isReload) {
       contextMap.put(context.getKey(), context);
