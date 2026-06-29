@@ -72,6 +72,8 @@ public class NMEAProtocol extends Protocol {
   private final boolean publishRecords;
   private final Map<String, SentenceMapping> registeredSentences;
   private final String topicTemplate;
+  private final boolean storeOffline;
+  private final QualityOfService qos;
 
   public NMEAProtocol(EndPoint endPoint, Packet packet) throws LoginException, IOException {
     super(endPoint,  endPoint.getConfig().getProtocolConfig("NMEA-0183"));
@@ -102,7 +104,8 @@ public class NMEAProtocol extends Protocol {
     setProtocolMessageTransformation(transformation);
     NmeaConfigDTO nmeaConfigDTO = ( NmeaConfigDTO) super.protocolConfig;
     topicTemplate = nmeaConfigDTO.getTopicNameTemplate().replace("{deviceName}", endPoint.getName().replace("/", "_"));
-
+    qos = QualityOfService.getInstance(nmeaConfigDTO.getQualityOfService());
+    storeOffline = nmeaConfigDTO.isStoreOffline();
     format = nmeaConfigDTO.getFormat();
     boolean setServerLocation =nmeaConfigDTO.isUseForServerLocation();
     if (setServerLocation) {
@@ -207,8 +210,8 @@ public class NMEAProtocol extends Protocol {
       if (destination != null) {
         MessageBuilder messageBuilder = new MessageBuilder();
         messageBuilder.setOpaqueData(processed.getBytes())
-            .setQoS(QualityOfService.AT_LEAST_ONCE)
-            .storeOffline(true)
+            .setQoS(qos)
+            .storeOffline(storeOffline)
             .setTransformation(getProtocolMessageTransformation());
         Message message = MessageOverrides.createMessageBuilder(protocolConfig.getMessageDefaults(), messageBuilder).build();
         destination.storeMessage(message);

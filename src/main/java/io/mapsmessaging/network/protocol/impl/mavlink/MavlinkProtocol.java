@@ -70,6 +70,8 @@ public class MavlinkProtocol extends Protocol {
   private final String outboundTopicName;
   protected final MavlinkEventFactory mavlinkEventFactory;
   protected final MessageFormatter formatter;
+  private final QualityOfService qos;
+  private final boolean storeOffline;
 
   protected MavlinkProtocol(@NonNull @NotNull MavlinkConnectionManager factory,
                             @NonNull @NotNull MavlinkDeviceKey key,
@@ -97,6 +99,8 @@ public class MavlinkProtocol extends Protocol {
     else{
       acceptedComponents = null;
     }
+    storeOffline = mavlinkConfig.isStoreOffline();
+    qos = QualityOfService.getInstance(mavlinkConfig.getQualityOfService());
     gson = GsonFactory.createStrictJsonWithSafeFloats();
     try {
       session = buildSession(key.getRemoteAddress().getHostName()+"_"+key.getRemotePort()+"_"+key.getSystemId(), mavlinkConfig.getMaximumSessionExpiry());
@@ -109,7 +113,7 @@ public class MavlinkProtocol extends Protocol {
     if(outboundTopic != null && !outboundTopic.isEmpty()) {
       outboundTopic = outboundTopic.replace("{interfaceName}", endPoint.getConfig().getName());
       SubscriptionContextBuilder subscriptionContextBuilder = new SubscriptionContextBuilder(outboundTopic, ClientAcknowledgement.AUTO);
-      subscriptionContextBuilder.setQos(QualityOfService.AT_MOST_ONCE);
+      subscriptionContextBuilder.setQos(qos);
       subscriptionContextBuilder.setReceiveMaximum(10);
       subscriptionContextBuilder.setNoLocalMessages(true);
       session.addSubscription(subscriptionContextBuilder.build());
@@ -198,7 +202,9 @@ public class MavlinkProtocol extends Protocol {
       if (results.isStatusChanged()) {
         String statusTopic = computeTopicName(mavlinkConfig.getStatusTopicNameTemplate(), env.getFrame(), env.getMessageName());
         JsonObject resultsJson = gson.toJsonTree(results).getAsJsonObject();
-        sendMessage(statusTopic, new MessageBuilder().setContentType("application/json").setOpaqueData(resultsJson.toString().getBytes(StandardCharsets.UTF_8)).build());
+        MessageBuilder messageBuilder = new MessageBuilder();
+        messageBuilder.setQoS(qos).storeOffline(storeOffline);
+        sendMessage(statusTopic,messageBuilder.setContentType("application/json").setOpaqueData(resultsJson.toString().getBytes(StandardCharsets.UTF_8)).build());
       }
     }
 
@@ -219,6 +225,8 @@ public class MavlinkProtocol extends Protocol {
     else{
       if(mavlinkConfig.getRejectedFrameNamespace() != null && !mavlinkConfig.getRejectedFrameNamespace().isEmpty()){
         MessageBuilder messageBuilder = new MessageBuilder();
+        messageBuilder.setQoS(qos)
+            .storeOffline(storeOffline);
         if(mavlinkConfig.isIncludeRejectedFrameMetadata()){
           JsonObject metadata = new JsonObject();
           metadata.addProperty("messageName", env.getMessageName());
@@ -250,11 +258,11 @@ public class MavlinkProtocol extends Protocol {
     Message message = messageBuilder.setContentType("mavlink")
         .setOpaqueData(raw)
         .setDataMap(convertToMap(envelope))
-        .setQoS(QualityOfService.AT_LEAST_ONCE)
+        .setQoS(qos)
         .setRetain(false)
         .setResponseTopic(outboundTopicName)
         .setCorrelationData("ID#"+endPoint.getId()+"#"+socketAddress)
-        .storeOffline(true)
+        .storeOffline(storeOffline)
         .setMeta(metaData)
 
         .build();

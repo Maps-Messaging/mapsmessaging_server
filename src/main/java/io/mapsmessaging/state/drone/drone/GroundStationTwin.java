@@ -19,7 +19,7 @@
 
 package io.mapsmessaging.state.drone.drone;
 
-import io.mapsmessaging.dto.rest.config.protocol.impl.VehicleClass;
+import io.mapsmessaging.state.config.VehicleClass;
 import io.mapsmessaging.state.drone.core.EntityTwin;
 import io.mapsmessaging.state.drone.core.TwinType;
 import io.mapsmessaging.state.drone.model.EnvironmentalState;

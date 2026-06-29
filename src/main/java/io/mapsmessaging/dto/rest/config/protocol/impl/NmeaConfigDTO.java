@@ -35,6 +35,29 @@ public class NmeaConfigDTO extends ProtocolConfigDTO {
 
   @Schema(
       description =
+          "Quality of Service used when publishing telemetry events into the messaging layer. "
+              + "0 means at most once, 1 means at least once, and 2 means exactly once where supported.",
+      example = "0",
+      minimum = "0",
+      maximum = "2",
+      defaultValue = "0",
+      requiredMode = Schema.RequiredMode.NOT_REQUIRED
+  )
+  protected int qualityOfService = 1;
+
+  @Schema(
+      description =
+          "If true, published telemetry events are marked for offline storage so disconnected subscribers may receive them later. "
+              + "For high-rate streams this can significantly increase retained storage and replay load.",
+      example = "false",
+      defaultValue = "false",
+      requiredMode = Schema.RequiredMode.NOT_REQUIRED
+  )
+  protected boolean storeOffline = true;
+
+
+  @Schema(
+      description =
           "Topic name template used when publishing accepted NMEA 0183 sentences. "
               + "Supported placeholders: {deviceName}, {sentence}. "
               + "{deviceName} is populated from the configured source/device name. "
@@ -88,4 +111,6 @@ public class NmeaConfigDTO extends ProtocolConfigDTO {
       requiredMode = Schema.RequiredMode.NOT_REQUIRED
   )
   protected SerialConfigDTO serial;
+
+
 }

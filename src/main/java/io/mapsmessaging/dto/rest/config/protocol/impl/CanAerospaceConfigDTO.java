@@ -31,6 +31,28 @@ import lombok.EqualsAndHashCode;
 public class CanAerospaceConfigDTO extends ProtocolConfigDTO {
 
   @Schema(
+      description =
+          "Quality of Service used when publishing telemetry events into the messaging layer. "
+              + "0 means at most once, 1 means at least once, and 2 means exactly once where supported.",
+      example = "0",
+      minimum = "0",
+      maximum = "2",
+      defaultValue = "0",
+      requiredMode = Schema.RequiredMode.NOT_REQUIRED
+  )
+  protected int qualityOfService = 0;
+
+  @Schema(
+      description =
+          "If true, published telemetry events are marked for offline storage so disconnected subscribers may receive them later. "
+              + "For high-rate streams this can significantly increase retained storage and replay load.",
+      example = "false",
+      defaultValue = "false",
+      requiredMode = Schema.RequiredMode.NOT_REQUIRED
+  )
+  protected boolean storeOffline = false;
+
+  @Schema(
       description = "Optional path to an external CANAerospace YAML schema file. If omitted, the built-in schema bundled in the server is used.",
       requiredMode = Schema.RequiredMode.NOT_REQUIRED,
       nullable = true,

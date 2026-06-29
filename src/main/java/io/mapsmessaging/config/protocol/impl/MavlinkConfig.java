@@ -1,17 +1,36 @@
-/* * * Copyright [ 2020 - 2024 ] Matthew Buckton * Copyright [ 2024 - 2026 ] MapsMessaging B.V. * * Licensed under the Apache License, Version 2.0 with the Commons Clause * (the "License"); you may not use this file except in compliance with the License. * You may obtain a copy of the License at: * * http://www.apache.org/licenses/LICENSE-2.0 * https://commonsclause.com/ * * Unless required by applicable law or agreed to in writing, software * distributed under the License is distributed on an "AS IS" BASIS, * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. * See the License for the specific language governing permissions and * limitations under the License. */ package io.mapsmessaging.config.protocol.impl;
+/*
+ *
+ *  Copyright [ 2020 - 2024 ] Matthew Buckton
+ *  Copyright [ 2024 - 2026 ] MapsMessaging B.V.
+ *
+ *  Licensed under the Apache License, Version 2.0 with the Commons Clause
+ *  (the "License"); you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at:
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://commonsclause.com/
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ */
+
+package io.mapsmessaging.config.protocol.impl;
 
 import io.mapsmessaging.config.Config;
 import io.mapsmessaging.configuration.ConfigurationProperties;
 import io.mapsmessaging.dto.rest.config.BaseConfigDTO;
 import io.mapsmessaging.dto.rest.config.protocol.impl.MavlinkAcceptedSourceDTO;
 import io.mapsmessaging.dto.rest.config.protocol.impl.MavlinkConfigDTO;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
 public class MavlinkConfig extends MavlinkConfigDTO implements Config {
+
   public MavlinkConfig(ConfigurationProperties config) {
     setType("mavlink");
     ProtocolConfigFactory.unpack(config, this);
@@ -31,6 +50,9 @@ public class MavlinkConfig extends MavlinkConfigDTO implements Config {
     this.rejectUnknownSources = config.getBooleanProperty("rejectUnknownSources", rejectUnknownSources);
     this.rejectedFrameNamespace = config.getProperty("rejectedFrameNamespace", rejectedFrameNamespace);
     this.includeRejectedFrameMetadata = config.getBooleanProperty("includeRejectedFrameMetadata", includeRejectedFrameMetadata);
+    this.outboundTopicName = config.getProperty("outboundTopicName", outboundTopicName);
+    this.qualityOfService = config.getIntProperty("qualityOfService", qualityOfService);
+    this.storeOffline = config.getBooleanProperty("storeOffline", storeOffline);
     this.acceptedMessageIds = readIntegerList(config.get("acceptedMessageIds"));
     this.rejectedMessageIds = readIntegerList(config.get("rejectedMessageIds"));
     this.acceptedSources = readKnownSources(config.get("knownSources"));
@@ -62,6 +84,10 @@ public class MavlinkConfig extends MavlinkConfigDTO implements Config {
       }
       if (!Objects.equals(topicNameTemplate, newConfig.getTopicNameTemplate())) {
         topicNameTemplate = newConfig.getTopicNameTemplate();
+        hasChanged = true;
+      }
+      if (!Objects.equals(statusTopicNameTemplate, newConfig.getStatusTopicNameTemplate())) {
+        statusTopicNameTemplate = newConfig.getStatusTopicNameTemplate();
         hasChanged = true;
       }
       if (parseToJson != newConfig.isParseToJson()) {
@@ -112,6 +138,18 @@ public class MavlinkConfig extends MavlinkConfigDTO implements Config {
         includeRejectedFrameMetadata = newConfig.isIncludeRejectedFrameMetadata();
         hasChanged = true;
       }
+      if (!Objects.equals(outboundTopicName, newConfig.getOutboundTopicName())) {
+        outboundTopicName = newConfig.getOutboundTopicName();
+        hasChanged = true;
+      }
+      if (qualityOfService != newConfig.getQualityOfService()) {
+        qualityOfService = newConfig.getQualityOfService();
+        hasChanged = true;
+      }
+      if (storeOffline != newConfig.isStoreOffline()) {
+        storeOffline = newConfig.isStoreOffline();
+        hasChanged = true;
+      }
       if (ProtocolConfigFactory.update(this, newConfig)) {
         hasChanged = true;
       }
@@ -129,6 +167,7 @@ public class MavlinkConfig extends MavlinkConfigDTO implements Config {
     properties.put("advertiseInterval", advertiseInterval);
     properties.put("maxInFlightEvents", maxInFlightEvents);
     properties.put("topicNameTemplate", topicNameTemplate);
+    properties.put("statusTopicNameTemplate", statusTopicNameTemplate);
     properties.put("parseToJson", parseToJson);
     properties.put("forwardUrls", forwardUrls);
     properties.put("forwardRawFrames", forwardRawFrames);
@@ -141,6 +180,9 @@ public class MavlinkConfig extends MavlinkConfigDTO implements Config {
     properties.put("rejectUnknownSources", rejectUnknownSources);
     properties.put("rejectedFrameNamespace", rejectedFrameNamespace);
     properties.put("includeRejectedFrameMetadata", includeRejectedFrameMetadata);
+    properties.put("outboundTopicName", outboundTopicName);
+    properties.put("qualityOfService", qualityOfService);
+    properties.put("storeOffline", storeOffline);
     return properties;
   }
 
@@ -199,7 +241,6 @@ public class MavlinkConfig extends MavlinkConfigDTO implements Config {
     return result;
   }
 
-  @SuppressWarnings("unchecked")
   private MavlinkAcceptedSourceDTO toKnownSource(Object raw) {
     if (raw instanceof MavlinkAcceptedSourceDTO source) {
       return copyKnownSource(source);
@@ -221,10 +262,6 @@ public class MavlinkConfig extends MavlinkConfigDTO implements Config {
       return source;
     }
     return null;
-  }
-
-  private String readString(Object value) {
-    return value == null ? "" : value.toString();
   }
 
   private int defaultInteger(Object value) {

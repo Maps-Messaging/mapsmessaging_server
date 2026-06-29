@@ -19,7 +19,7 @@
 
 package io.mapsmessaging.state.mavlink.listener;
 
-import io.mapsmessaging.dto.rest.config.protocol.impl.VehicleClass;
+import io.mapsmessaging.state.config.VehicleClass;
 import io.mapsmessaging.state.mavlink.packet.HeartbeatPacket;
 import io.mapsmessaging.state.mavlink.packet.MavlinkPacket;
 import io.mapsmessaging.state.drone.core.TwinManager;

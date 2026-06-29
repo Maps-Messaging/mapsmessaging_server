@@ -19,7 +19,7 @@
 package io.mapsmessaging.state.mavlink;
 
 import io.mapsmessaging.dto.rest.config.protocol.impl.MavlinkKnownSourceDTO;
-import io.mapsmessaging.dto.rest.config.protocol.impl.VehicleClass;
+import io.mapsmessaging.state.config.VehicleClass;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.mavlink.ProcessedFrame;

@@ -19,9 +19,7 @@
 
 package io.mapsmessaging.state.drone.core;
 
-import io.mapsmessaging.dto.rest.config.protocol.impl.VehicleClass;
-import io.mapsmessaging.security.uuid.NamedVersions;
-import io.mapsmessaging.security.uuid.UuidGenerator;
+import io.mapsmessaging.state.config.VehicleClass;
 import io.mapsmessaging.state.drone.model.BatteryState;
 import io.mapsmessaging.state.drone.model.FixInfo;
 import io.mapsmessaging.state.drone.model.GeoPosition;
@@ -33,10 +31,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.security.NoSuchAlgorithmException;
 import java.time.Instant;
-import java.time.temporal.ChronoUnit;
-import java.time.temporal.TemporalUnit;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 

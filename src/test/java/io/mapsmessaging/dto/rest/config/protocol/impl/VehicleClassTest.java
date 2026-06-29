@@ -19,6 +19,8 @@
 
 package io.mapsmessaging.dto.rest.config.protocol.impl;
 
+import io.mapsmessaging.state.config.VehicleClass;
+import io.mapsmessaging.state.config.VehicleDomain;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
