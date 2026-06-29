@@ -19,6 +19,7 @@
 
 package io.mapsmessaging.engine.session;
 
+import io.mapsmessaging.MessageDaemon;
 import io.mapsmessaging.admin.SessionManagerJMX;
 import io.mapsmessaging.dto.rest.system.Status;
 import io.mapsmessaging.dto.rest.system.SubSystemStatusDTO;
@@ -112,6 +113,7 @@ public class SessionManager implements Agent {
       }
     }
     willTaskManager.start();
+    MessageDaemon.getInstance().getDestinationManager().cleanup();
   }
 
   public void stop() {
