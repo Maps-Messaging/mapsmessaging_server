@@ -542,6 +542,14 @@ public enum ServerLogMessages implements LogMessage {
   DESTINATION_MANAGER_RELOAD_INTERRUPTED(LEVEL.WARN, SERVER_CATEGORY.ENGINE, "The reloading of server resources was interrupted during reload"),
   //</editor-fold>
 
+  //<editor-fold desc="Resource management log messages">
+  RESOURCE_LOADING_STORE(LEVEL.DEBUG, SERVER_CATEGORY.ENGINE, "Loading resource store from {}"),
+  RESOURCE_INVALID_CONFIG(LEVEL.WARN, SERVER_CATEGORY.ENGINE, "Invalid resource store configuration, unable to load for {}"),
+  RESOURCE_KEEP_ONLY(LEVEL.WARN, SERVER_CATEGORY.ENGINE, "Keeping only specific events called for {}, retaining {}"),
+  RESOURCE_LOADED_STORE(LEVEL.INFO, SERVER_CATEGORY.ENGINE, "Loaded resource store from {} with {} events restored"),
+  RESOURCE_CLOSED(LEVEL.DEBUG, SERVER_CATEGORY.ENGINE, "Resource {} closed"),
+  //</editor-fold>
+
   //<editor-fold desc="Destination Subscription log messages">
   DESTINATION_SUBSCRIPTION_PUT(LEVEL.INFO, SERVER_CATEGORY.ENGINE, "Adding subscription {} to destination {} for session {}"),
   DESTINATION_SUBSCRIPTION_HIBERNATE(LEVEL.INFO, SERVER_CATEGORY.ENGINE, "Hibernating destination subscription {} with session id {}"),
@@ -579,6 +587,7 @@ public enum ServerLogMessages implements LogMessage {
   DESTINATION_MANAGER_STOPPING(LEVEL.INFO, SERVER_CATEGORY.ENGINE, "Shut down started"),
   DESTINATION_MANAGER_CLEARING(LEVEL.INFO, SERVER_CATEGORY.ENGINE, "Clear session id {} requested"),
   DESTINATION_MANAGER_DELETING_TEMPORARY_DESTINATION(LEVEL.INFO, SERVER_CATEGORY.ENGINE, "\"Reloaded temp destination {}, now deleting"),
+  DESTINATION_ERROR_SETTING_SCHEMA(LEVEL.ERROR, SERVER_CATEGORY.ENGINE, "Error setting schema for destination {}"),
   //</editor-fold>
 
   //<editor-fold desc="Serial Port Server log Messages">

@@ -368,12 +368,20 @@ public class SubscriptionController implements DestinationManagerListener {
         try {
           subscription = modeManager.processSubscriptions(this, context, destinationSet, isReload);
         } catch (IOException e) {
-          e.printStackTrace();
-          //ToDo, log this and report error
+          logger.log(ServerLogMessages.SUBSCRIPTION_MGR_FAILED, sessionId, context.getFilter(), e);
         }
       }
     } else {
       isReload = true;
+      DestinationSet destinationSet = subscriptions.get(context.getKey());
+      if (destinationSet != null && !destinationSet.isEmpty()) {
+        SubscriptionModeManager modeManager = subscriptionModeManager.get(context.getDestinationMode());
+        try {
+          subscription = modeManager.processSubscriptions(this, context, destinationSet, isReload);
+        } catch (IOException e) {
+          logger.log(ServerLogMessages.SUBSCRIPTION_MGR_FAILED, sessionId, context.getFilter(), e);
+        }
+      }
     }
     if (!isReload) {
       contextMap.put(context.getKey(), context);
