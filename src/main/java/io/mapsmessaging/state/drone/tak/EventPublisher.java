@@ -34,7 +34,7 @@ import java.util.concurrent.*;
 public class EventPublisher implements ClientConnection, MessageListener {
 
   private final Session session;
-  private final Destination destination;
+  private Destination destination;
 
   public EventPublisher(String topic) throws ExecutionException, InterruptedException, TimeoutException {
     session = createSession();
@@ -48,11 +48,16 @@ public class EventPublisher implements ClientConnection, MessageListener {
   public void publish(String xml) throws IOException {
     MessageBuilder messageBuilder = new MessageBuilder();
     messageBuilder.setOpaqueData(xml.getBytes())
-        .setQoS(QualityOfService.AT_MOST_ONCE)
+        .setQoS(QualityOfService.AT_LEAST_ONCE)
         .setContentType("text/xml")
+        .storeOffline(true)
         .setSchemaId(SchemaManager.DEFAULT_XML_SCHEMA.toString())
         .setRetain(false);
-    destination.storeMessage(messageBuilder.build());
+    try {
+      destination.storeMessage(messageBuilder.build());
+    } catch (IOException e) {
+      destination = locateDestination(destination.getFullyQualifiedNamespace());
+    }
   }
 
   private Session createSession() throws ExecutionException, InterruptedException, TimeoutException {
@@ -65,6 +70,14 @@ public class EventPublisher implements ClientConnection, MessageListener {
 
     CompletableFuture<Session> sessionFuture = SessionManager.getInstance().createAsync(sessionContextBuilder.build(), this);
     return sessionFuture.get(5, TimeUnit.SECONDS);
+  }
+
+  private Destination locateDestination(String name) throws IOException{
+    try {
+      return destination = session.findDestination(name, DestinationType.TOPIC).get(1, TimeUnit.SECONDS);
+    } catch (InterruptedException| ExecutionException|TimeoutException  e) {
+      throw new IOException(e);
+    }
   }
 
   @Override

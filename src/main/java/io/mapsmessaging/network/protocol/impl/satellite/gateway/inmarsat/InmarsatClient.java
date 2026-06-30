@@ -65,26 +65,26 @@ public class InmarsatClient implements SatelliteClient {
   }
 
   @Override
-  public List<RemoteDeviceInfo> getTerminals(String deviceId) {
+  public List<RemoteDeviceInfo> getTerminals(String deviceId) throws IOException {
     return new ArrayList<>(mailboxSession.listDevices(deviceId));
   }
 
-  public void unmute(String deviceId) {
+  public void unmute(String deviceId) throws IOException {
     setDeviceMuteState(deviceId, false);
   }
 
-  public void mute(String deviceId) {
+  public void mute(String deviceId) throws IOException {
     setDeviceMuteState(deviceId, true);
   }
 
-  private void setDeviceMuteState(String deviceId, boolean mute) {
+  private void setDeviceMuteState(String deviceId, boolean mute) throws IOException {
     MuteCommand command = new MuteCommand(deviceId, "mute_cmd"+deviceId, mute);
     List<MuteCommand> list = List.of(command);
     mailboxSession.mute(list, true);
   }
 
   @Override
-  public Queue<MessageData> scanForIncoming() {
+  public Queue<MessageData> scanForIncoming() throws IOException {
     Queue<MessageData> queue = new LinkedList<>();
     MobileOriginatedResponse moResponse = mailboxSession.pollMO(lastMoTimeUTC);
     if(moResponse != null){
@@ -135,7 +135,7 @@ public class InmarsatClient implements SatelliteClient {
   }
 
   @Override
-  public void processPendingMessages(List<MessageData> pendingMessages) {
+  public void processPendingMessages(List<MessageData> pendingMessages) throws IOException {
     List<Item> messageList = new ArrayList<>();
     for(MessageData msg : pendingMessages){
       String payload = Base64.getEncoder().encodeToString(msg.getPayload());

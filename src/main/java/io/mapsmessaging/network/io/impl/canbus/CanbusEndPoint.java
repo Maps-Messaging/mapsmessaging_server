@@ -49,12 +49,7 @@ public class CanbusEndPoint extends EndPoint implements SerialPortListener {
     this.closed = new AtomicBoolean(false);
     this.config = config;
     this.deviceLock = new Object();
-
     createDevice();
-    if (canDevice != null) {
-      name = canDevice.getClass().getName();
-    }
-
     this.mbean = new EndPointJMX(jmxPath, this);
   }
 

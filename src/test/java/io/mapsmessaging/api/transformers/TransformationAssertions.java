@@ -56,6 +56,8 @@ public final class TransformationAssertions {
   public static void assertOpaqueDataChanged(byte[] before, ParsedMessage result) {
     assertNotDropped(result);
     byte[] after = result.getMessage().getOpaqueData();
+    System.err.println("Before: " + utf8String(before));
+    System.err.println("After: " + utf8String(after));
     assertNotNull(after, "opaqueData must not be null");
     assertNotEquals(utf8String(before), utf8String(after), "Expected opaqueData content to change");
   }

@@ -19,19 +19,22 @@
 
 package io.mapsmessaging.state.drone.drone;
 
+import io.mapsmessaging.state.config.capability.TaskCapabilities;
 import io.mapsmessaging.state.drone.core.EntityTwin;
 import io.mapsmessaging.state.drone.core.TwinType;
+import io.mapsmessaging.state.drone.model.*;
 import io.mapsmessaging.state.drone.model.autopilot.AutopilotState;
-import io.mapsmessaging.state.drone.model.EnvironmentalState;
-import io.mapsmessaging.state.drone.model.SystemState;
-import io.mapsmessaging.state.drone.model.TimeState;
 import io.swagger.v3.oas.annotations.media.Schema;
+import java.time.Instant;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
-
-import java.time.Instant;
 
 import static io.mapsmessaging.state.drone.util.SyntheticMmsiGenerator.generateSyntheticMmsi;
 
@@ -78,7 +81,7 @@ public class DroneTwin extends EntityTwin {
       example = "Primary survey drone",
       nullable = true
   )
-  private String description;
+  private String descriptionString;
 
   @Schema(
       description = "Short 7 char string used for the call sign of the vessel.",
@@ -87,13 +90,22 @@ public class DroneTwin extends EntityTwin {
   )
   private String callSign;
 
+  @Schema(
+      description = "Task capabilities supported by this drone or unmanned vehicle.",
+      nullable = true
+  )
+  private TaskCapabilities capabilities = new TaskCapabilities();
+
+  @Schema(hidden = true)
+  @ToString.Exclude
+  @EqualsAndHashCode.Exclude
+  private final DroneContactManager contactManager = new DroneContactManager();
 
   @Schema(
       description = "Decoded autopilot information for the vehicle.",
       nullable = true
   )
   private AutopilotState autopilotState;
-
 
   @Schema(
       description = "Indicates whether the vehicle is armed.",
@@ -225,6 +237,114 @@ public class DroneTwin extends EntityTwin {
   )
   private Instant operationalUpdatedAt;
 
+  @Schema(
+      description = "Last status text message reported by the vehicle.",
+      example = "GPS Glitch",
+      nullable = true
+  )
+  private String lastStatusText;
+
+  @Schema(
+      description = "Last command id acknowledged by the vehicle.",
+      example = "400",
+      nullable = true
+  )
+  private Integer lastAcknowledgedCommand;
+
+  @Schema(
+      description = "Last command acknowledgement result.",
+      example = "ACCEPTED",
+      nullable = true
+  )
+  private String lastCommandAcknowledgement;
+
+  @Schema(
+      description = "Timestamp of the last command acknowledgement.",
+      example = "2026-05-26T05:10:00Z",
+      nullable = true
+  )
+  private Instant lastCommandAcknowledgementAt;
+
+  @Schema(
+      description = "Current readiness state of the vehicle twin.",
+      example = "REGISTRATION_READY",
+      nullable = true
+  )
+  private String readinessState;
+
+  @Schema(
+      description = "Indicates whether this twin has enough information to be registered upstream.",
+      example = "true",
+      nullable = true
+  )
+  private Boolean registrationReady;
+
+  @Schema(
+      description = "Indicates whether this twin has enough information to accept command execution.",
+      example = "false",
+      nullable = true
+  )
+  private Boolean commandReady;
+
+  @Schema(
+      description = "Machine-readable missing readiness items.",
+      nullable = true
+  )
+  private List<String> missingReadinessItems;
+
+  @Schema(
+      description = "Machine-readable degraded readiness items.",
+      nullable = true
+  )
+  private List<String> degradedReadinessItems;
+
+  @Schema(
+      description = "Machine-readable blocking readiness items.",
+      nullable = true
+  )
+  private List<String> blockingReadinessItems;
+
+  @Schema(
+      description = "Open map to define description data",
+      nullable = true
+  )
+  private Map<String, Object> description = new HashMap<>();
+
+  @Schema(
+      description = "Timestamp of the last readiness evaluation.",
+      example = "2026-05-26T05:50:00Z",
+      nullable = true
+  )
+  private Instant readinessUpdatedAt;
+
+  public List<Contact> getContactList() {
+    return contactManager.getContactList();
+  }
+
+  public boolean hasContacts(){
+    return contactManager.size() > 0;
+  }
+
+  public DroneTwin(String twinId) {
+    this(twinId, null);
+  }
+
+  public DroneTwin(String twinId, UUID uuid) {
+    super(twinId, uuid);
+    setTwinType(TwinType.DRONE);
+    setMmsi(generateSyntheticMmsi(twinId));
+  }
+
+  @Schema(hidden = true)
+  public DroneContactManager getContactManager() {
+    return contactManager;
+  }
+
+  @Schema(
+      description = "Current contacts detected by this drone. Expired contacts are removed before the list is returned.",
+      accessMode = Schema.AccessMode.READ_ONLY
+  )
+
   public String getProtocolSourceId() {
     if (systemId == null || componentId == null) {
       return null;
@@ -236,9 +356,4 @@ public class DroneTwin extends EntityTwin {
     return operationalUpdatedAt != null ? operationalUpdatedAt.getEpochSecond() : null;
   }
 
-  public DroneTwin(String twinId) {
-    super(twinId);
-    setTwinType(TwinType.DRONE);
-    setMmsi(generateSyntheticMmsi(twinId));
-  }
 }

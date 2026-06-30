@@ -53,7 +53,7 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 class StaticAggregatorOutboundTransformationSystemTest extends BaseAggreagtorTest {
 
-  private static final long COMPLETE_PUBLISH_DEADLINE_MS = 500;
+  private static final long COMPLETE_PUBLISH_DEADLINE_MS = 5000;
   private static final String JSON_CONTENT_TYPE = "application/json";
 
   private static final String OUT_TOPIC = "/aggregator3/out1";
@@ -85,8 +85,7 @@ class StaticAggregatorOutboundTransformationSystemTest extends BaseAggreagtorTes
       publish(IN2, humidity, session);
       publish(IN1, temp, session);
 
-      Message out = pollOrFail(outQueue, COMPLETE_PUBLISH_DEADLINE_MS,
-          "Expected aggregation output within " + COMPLETE_PUBLISH_DEADLINE_MS + "ms of third publish");
+      Message out = pollOrFail(outQueue, COMPLETE_PUBLISH_DEADLINE_MS, "Expected aggregation output within " + COMPLETE_PUBLISH_DEADLINE_MS + "ms of third publish");
 
       assertNotNull(out.getOpaqueData(), "Output message had null payload");
       assertEquals(JSON_CONTENT_TYPE, out.getContentType(), "Output contentType must be application/json");

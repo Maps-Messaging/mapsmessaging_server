@@ -160,6 +160,10 @@ public abstract class Protocol implements SelectorCallback, MessageListener, Tim
 
   public void connect(String sessionId, String username, String password) throws IOException {}
 
+  public void setTopicMapping(String resource, String mappedResource) {
+    topicNameMapping.put(resource, mappedResource);
+  }
+
   public void subscribeRemote(
       @NonNull @NotNull String resource,
       @NonNull @NotNull String mappedResource,
@@ -256,7 +260,7 @@ public abstract class Protocol implements SelectorCallback, MessageListener, Tim
     if(parsedMessage == null){
       return null;
     }
-    processTransformation(parsedMessage);
+    processInTransformation(parsedMessage);
     if(topicNameMapping != null){
       processDestinationNameLookup(parsedMessage);
     }
@@ -274,27 +278,76 @@ public abstract class Protocol implements SelectorCallback, MessageListener, Tim
 
   private void processDestinationNameLookup(ParsedMessage parsedMessage) {
     String destinationName = parsedMessage.getDestinationName();
-    String tmp = topicNameMapping.get(parsedMessage.getDestinationName());
-    if (tmp != null) {
-      destinationName = tmp;
+
+    String mappedDestinationName = topicNameMapping.get(destinationName);
+    if (mappedDestinationName != null) {
+      parsedMessage.setDestinationName(mappedDestinationName);
+      return;
     }
-    else{
-      for (String key : topicNameMapping.keySet()) {
-        int index = key.indexOf("#");
-        if (index > 0) {
-          String sub = key.substring(0, index);
-          if (destinationName.startsWith(sub)) {
-            destinationName = topicNameMapping.get(key) + destinationName.substring(sub.length());
-          }
+
+    for (String key : topicNameMapping.keySet()) {
+      if (matchesTopicFilter(key, destinationName)) {
+        String mappedPrefix = topicNameMapping.get(key);
+        String sourcePrefix = getSourcePrefixBeforeWildcard(key);
+
+        if (destinationName.startsWith(sourcePrefix)) {
+          destinationName = mappedPrefix + destinationName.substring(sourcePrefix.length());
+          break;
         }
       }
     }
+
     parsedMessage.setDestinationName(destinationName);
+  }
+
+  private boolean matchesTopicFilter(String filter, String topicName) {
+    String[] filterLevels = filter.split("/");
+    String[] topicLevels = topicName.split("/");
+    for (int level = 0; level < filterLevels.length; level++) {
+      String filterLevel = filterLevels[level];
+      if ("#".equals(filterLevel)) {
+        return level == filterLevels.length - 1;
+      }
+      if (level >= topicLevels.length) {
+        return false;
+      }
+      if (!"+".equals(filterLevel) && !filterLevel.equals(topicLevels[level])) {
+        return false;
+      }
+    }
+    return filterLevels.length == topicLevels.length;
+  }
+
+  private String getSourcePrefixBeforeWildcard(String filter) {
+    int hashIndex = filter.indexOf("#");
+    int plusIndex = filter.indexOf("+");
+    int wildcardIndex = -1;
+    if (hashIndex >= 0 && plusIndex >= 0) {
+      wildcardIndex = Math.min(hashIndex, plusIndex);
+    }
+    else if (hashIndex >= 0) {
+      wildcardIndex = hashIndex;
+    }
+    else if (plusIndex >= 0) {
+      wildcardIndex = plusIndex;
+    }
+    if (wildcardIndex < 0) {
+      return filter;
+    }
+    return filter.substring(0, wildcardIndex);
   }
 
   private void processTransformation(ParsedMessage parsedMessage){
     if (protocolMessageTransformation != null) {
       parsedMessage.setMessage(protocolMessageTransformation.outgoing(parsedMessage.getMessage(), parsedMessage.getDestinationName()));
+    }
+  }
+
+  private void processInTransformation(ParsedMessage parsedMessage){
+    if (protocolMessageTransformation != null) {
+      MessageBuilder messageBuilder = new MessageBuilder(parsedMessage.getMessage());
+      protocolMessageTransformation.incoming(messageBuilder);
+      parsedMessage.setMessage(messageBuilder.build());
     }
   }
 

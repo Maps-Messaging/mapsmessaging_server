@@ -23,6 +23,7 @@ import io.mapsmessaging.api.features.QualityOfService;
 import io.mapsmessaging.dto.rest.config.network.EndPointConnectionServerConfigDTO;
 import io.mapsmessaging.dto.rest.config.network.EndPointServerConfigDTO;
 import io.mapsmessaging.dto.rest.config.network.MqttWillConfigDTO;
+import io.mapsmessaging.dto.rest.config.protocol.impl.MqttVersion;
 import io.mapsmessaging.network.io.EndPoint;
 import io.mapsmessaging.network.io.Packet;
 import io.mapsmessaging.network.protocol.Protocol;
@@ -37,6 +38,7 @@ import io.mapsmessaging.network.protocol.impl.mqtt5.packet.properties.WillDelayI
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
+import java.util.Map;
 
 public class MQTT5ProtocolFactory extends ProtocolImplFactory {
 
@@ -56,7 +58,7 @@ public class MQTT5ProtocolFactory extends ProtocolImplFactory {
   }
 
   @Override
-  public Protocol connect(EndPoint endPoint, String sessionId, String username, String password) throws IOException {
+  public Protocol connect(EndPoint endPoint, String sessionId, String username, String password, Map<String, String> topicMap) throws IOException {
     MQTT5Protocol protocol = new MQTT5Protocol(endPoint);
     EndPointServerConfigDTO dto = endPoint.getServer().getConfig();
     Publish5 willMsg = null;
@@ -99,13 +101,14 @@ public class MQTT5ProtocolFactory extends ProtocolImplFactory {
         }
       }
     }
+    protocol.getTopicNameMapping().putAll(topicMap);
     protocol.connect(sessionId, username, password, willMsg);
     return protocol;
   }
 
   @Override
   public boolean matches(String protocolName){
-    return super.matches(protocolName) || "mqtt-v5".equalsIgnoreCase(protocolName);
+    return super.matches(protocolName) || MqttVersion.MQTT_5.name().equalsIgnoreCase(protocolName);
   }
 
 

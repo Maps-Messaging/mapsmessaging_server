@@ -56,8 +56,7 @@ class JsonQueryTransformationTest extends AbstractDroppingTransformationTest {
 
   private void setMessageFormatter(InterServerTransformation transformation) {
     try {
-      MessageFormatter messageFormatter =
-          SchemaManager.getInstance().getMessageFormatter(AbstractInterServerTransformationTest.JSON_SCHEMA_CONFIG);
+      MessageFormatter messageFormatter = SchemaManager.getInstance().getMessageFormatter(AbstractInterServerTransformationTest.JSON_SCHEMA_CONFIG);
       ((JsonQueryTransformation) transformation).schemaMap.put(AbstractInterServerTransformationTest.SOURCE, messageFormatter);
     } catch (IOException e) {
       throw new RuntimeException(e);
@@ -85,10 +84,7 @@ class JsonQueryTransformationTest extends AbstractDroppingTransformationTest {
 
   @Test
   void build_withTextFormatQuery_extractsValue() {
-    InterServerTransformation transformer = TransformerManager.getInstance().get(config(
-        "JsonQuery",
-        "query", ".a"
-    ));
+    InterServerTransformation transformer = TransformerManager.getInstance().get(config("JsonQuery", "query", ".a"));
     setMessageFormatter(transformer);
 
     ParsedMessage result = transformWith(transformer, utf8Bytes("{\"a\":1,\"b\":\"x\"}"));

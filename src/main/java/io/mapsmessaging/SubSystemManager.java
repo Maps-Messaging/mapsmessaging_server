@@ -46,7 +46,7 @@ import io.mapsmessaging.rest.RestApiServerManager;
 import io.mapsmessaging.rest.jolokia.JolokaManager;
 import io.mapsmessaging.routing.RoutingManager;
 import io.mapsmessaging.selector.model.ModelStore;
-import io.mapsmessaging.state.drone.StateManagerAgent;
+import io.mapsmessaging.state.StateManagerAgent;
 import io.mapsmessaging.state.drone.core.TwinManager;
 import io.mapsmessaging.utilities.Agent;
 import io.mapsmessaging.utilities.AgentOrder;
@@ -95,6 +95,7 @@ public class SubSystemManager {
         agent.getAgent().start();
       } catch (Throwable e) {
         logger.log(MESSAGE_DAEMON_AGENT_FAILED, agent.getAgent().getName(),e);
+        e.printStackTrace(); // We are exiting the daemon, so we need to print the stack trace to the console.
         System.exit(2);
       }
       logger.log(MESSAGE_DAEMON_AGENT_STARTED, agent.getAgent().getName(), (System.currentTimeMillis() - start));
@@ -116,7 +117,12 @@ public class SubSystemManager {
           service.add(parser);
         }
       } catch (ServiceConfigurationError e) {
-        logger.log(ServerLogMessages.MESSAGE_DAEMON_PROTOCOL_NOT_AVAILABLE, e);
+        if(!e.getMessage().contains("Provider io.mapsmessaging.network.protocol")){
+          logger.log(ServerLogMessages.MESSAGE_DAEMON_PROTOCOL_NOT_AVAILABLE, e);
+        }
+        else{
+          logger.log(ServerLogMessages.MESSAGE_DAEMON_EXTENSION_PROTOCOL_NOT_AVAILABLE, e.getMessage());
+        }
       }
     }
     ProtocolFactory.setProtocolServiceList(service);
@@ -161,9 +167,10 @@ public class SubSystemManager {
     return (SessionManager) agentMap.get("Session Manager").getAgent();
   }
 
-  public TwinManager getTwinManager() {
-    return ((StateManagerAgent) agentMap.get("State Manager").getAgent()).getTwinManager();
+  public StateManagerAgent getStateManager() {
+    return ((StateManagerAgent) agentMap.get("State Manager").getAgent());
   }
+
 
   public DeviceManager getDeviceManager() {
     AgentOrder order = agentMap.get("Device Manager");

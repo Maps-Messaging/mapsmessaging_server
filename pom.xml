@@ -25,7 +25,7 @@
   <groupId>io.mapsmessaging</groupId>
   <artifactId>maps</artifactId>
   <modelVersion>4.0.0</modelVersion>
-  <version>4.3.1-SNAPSHOT</version>
+  <version>4.5.0-SNAPSHOT</version>
   <packaging>jar</packaging>
 
   <name>Maps Messaging Server</name>
@@ -151,6 +151,7 @@
     <maps.storage.version>2.5.3-SNAPSHOT</maps.storage.version>
     <maps.device.version>3.1.2-SNAPSHOT</maps.device.version>
     <maps.auth.version>3.0.3-SNAPSHOT</maps.auth.version>
+
     <license.fetch.skip>false</license.fetch.skip>
     <license.fetch.dir>${project.build.directory}/license</license.fetch.dir>
 
@@ -625,7 +626,7 @@
       <dependency>
         <groupId>software.amazon.awssdk</groupId>
         <artifactId>bom</artifactId>
-        <version>2.44.9</version>
+        <version>2.46.15</version>
         <type>pom</type>
         <scope>import</scope>
       </dependency>
@@ -673,7 +674,14 @@
       <groupId>io.mapsmessaging</groupId>
       <artifactId>mavlink</artifactId>
       <version>${maps.mavlink.version}</version>
+      <exclusions>
+        <exclusion>
+          <groupId>io.swagger.core.v3</groupId>
+          <artifactId>swagger-annotations</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
+
     <dependency>
       <groupId>io.mapsmessaging</groupId>
       <artifactId>JsonQuery</artifactId>
@@ -841,13 +849,13 @@
     <dependency>
       <groupId>io.swagger.core.v3</groupId>
       <artifactId>swagger-jaxrs2-jakarta</artifactId>
-      <version>2.2.50</version>
+      <version>2.2.42</version>
     </dependency>
 
     <dependency>
       <groupId>io.swagger.core.v3</groupId>
       <artifactId>swagger-jaxrs2-servlet-initializer-v2-jakarta</artifactId>
-      <version>2.2.50</version>
+      <version>2.2.42</version>
     </dependency>
 
     <dependency>
@@ -955,13 +963,13 @@
     <dependency>
       <groupId>software.amazon.awssdk</groupId>
       <artifactId>cognitoidentity</artifactId>
-      <version>2.44.10</version>
+      <version>2.46.15</version>
     </dependency>
 
     <dependency>
       <groupId>software.amazon.awssdk</groupId>
       <artifactId>cognitoidentityprovider</artifactId>
-      <version>2.44.9</version>
+      <version>2.46.15</version>
     </dependency>
     <!-- https://mvnrepository.com/artifact/com.networknt/json-schema-validator -->
     <dependency>
@@ -1230,10 +1238,11 @@
       <version>1.6.0</version>
     </dependency>
 
+    <!-- Source: https://mvnrepository.com/artifact/com.squareup.okhttp3/mockwebserver -->
     <dependency>
       <groupId>com.squareup.okhttp3</groupId>
       <artifactId>mockwebserver</artifactId>
-      <version>5.3.2</version>
+      <version>5.4.0</version>
       <scope>test</scope>
     </dependency>
 

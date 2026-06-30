@@ -180,12 +180,13 @@ public class ConfigurationManager {
         ConfigurationProperties props = manager.getProperties(name);
         String schema = configSchemas.get(name);
         Map<String, Object> raw = props.getMap();
-
-        List<String> errors = validate(schema, raw);
-        if(!errors.isEmpty()){
-          hasErrors = true;
-          for(String error:errors){
-            logger.log(PROPERTY_MANAGER_ENTRY_SCHEMA_ERROR, name, error);
+        if(schema != null) {
+          List<String> errors = validate(schema, raw);
+          if (!errors.isEmpty()) {
+            hasErrors = true;
+            for (String error : errors) {
+              logger.log(PROPERTY_MANAGER_ENTRY_SCHEMA_ERROR, name, error);
+            }
           }
         }
         logger.log(PROPERTY_MANAGER_LOOKUP, name, "Backup");

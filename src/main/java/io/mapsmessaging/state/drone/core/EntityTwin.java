@@ -19,9 +19,7 @@
 
 package io.mapsmessaging.state.drone.core;
 
-import io.mapsmessaging.dto.rest.config.protocol.impl.VehicleClass;
-import io.mapsmessaging.security.uuid.NamedVersions;
-import io.mapsmessaging.security.uuid.UuidGenerator;
+import io.mapsmessaging.state.config.VehicleClass;
 import io.mapsmessaging.state.drone.model.BatteryState;
 import io.mapsmessaging.state.drone.model.FixInfo;
 import io.mapsmessaging.state.drone.model.GeoPosition;
@@ -33,12 +31,8 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.security.NoSuchAlgorithmException;
 import java.time.Instant;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -57,6 +51,8 @@ public abstract class EntityTwin {
       nullable = true
   )
   private String twinId;
+
+
 
   @Schema(
       description = "Hierarchical path of the twin within the model namespace.",
@@ -160,6 +156,11 @@ public abstract class EntityTwin {
   private Instant lastSeenAt;
 
   @Schema(
+      description = "time that the data is valid till"
+  )
+  private Instant validTill;
+
+  @Schema(
       description = "Timestamp when identity-related fields were last updated.",
       example = "2026-04-20T06:31:00Z",
       nullable = true
@@ -208,6 +209,19 @@ public abstract class EntityTwin {
   )
   private Instant relationshipsUpdatedAt;
 
+  @Schema(
+      description =
+          "Resolved response topic used to send outbound protocol messages to this twin. "
+              + "For MAVLink twins this is populated from the configured MAVLink outbound topic name, "
+              + "with placeholders such as {interfaceName} already resolved. Messages published to this "
+              + "topic are consumed by the MAVLink protocol implementation and sent onwards to the vehicle.",
+      example = "/protocol/mavlink/mavlink-interface-1/outbound",
+      nullable = true
+  )
+  private String responseTopicName;
+
+  private String uniqueOutboundIdentifier;
+
 
   public Long getCreatedAtSeconds() {
     return createdAt != null ? createdAt.getEpochSecond() : null;
@@ -242,17 +256,14 @@ public abstract class EntityTwin {
   }
 
 
-  protected EntityTwin(String twinId) {
-    setTwinId(twinId);
-    try {
-      setUuid(UuidGenerator.getInstance().generate(NamedVersions.SHA1, null, twinId));
-    } catch (NoSuchAlgorithmException e) {
-      try {
-        setUuid(UuidGenerator.getInstance().generate(NamedVersions.MD5, null, twinId));
-      } catch (NoSuchAlgorithmException ex) {
-        setUuid(UUID.nameUUIDFromBytes(twinId.getBytes()));
-      }
-    }
 
+  protected EntityTwin(String twinId, UUID uuid) {
+    setTwinId(twinId);
+    if (uuid != null) {
+      setUuid(uuid);
+    }
+    else {
+      setUuid(UuidFactory.getInstance().getUuidGenerator().generateUuid(twinId));
+    }
   }
 }

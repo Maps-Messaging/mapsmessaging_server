@@ -19,7 +19,7 @@
 
 package io.mapsmessaging.state.drone.tak;
 
-import io.mapsmessaging.dto.rest.config.protocol.impl.VehicleClass;
+import io.mapsmessaging.state.config.VehicleClass;
 import io.mapsmessaging.state.drone.core.EntityTwin;
 import io.mapsmessaging.state.drone.core.TwinRelationship;
 import io.mapsmessaging.state.drone.core.TwinType;
@@ -265,7 +265,7 @@ public class TakEventMapper {
     StringBuilder remarksBuilder = new StringBuilder();
 
     if (twin instanceof DroneTwin droneTwin) {
-      appendRemarkText(remarksBuilder, droneTwin.getDescription());
+      appendRemarkText(remarksBuilder, droneTwin.getDescriptionString());
       appendLabelledRemark(remarksBuilder, "mode", resolveFlightMode(droneTwin));
       appendLabelledRemark(remarksBuilder, "mission", droneTwin.getMissionState());
       appendLabelledRemark(remarksBuilder, "landed", droneTwin.getLandedState());

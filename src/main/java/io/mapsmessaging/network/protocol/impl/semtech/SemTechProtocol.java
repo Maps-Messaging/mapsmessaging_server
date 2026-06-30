@@ -80,6 +80,7 @@ public class SemTechProtocol extends Protocol {
     SessionContext sessionContext = new SessionContext("SemTech-Gateway:" + endPoint.getName(), new ProtocolClientConnection(this));
     sessionContext.setPersistentSession(false);
     sessionContext.setResetState(true);
+    sessionContext.setInternal(true);
     sessionContext.setReceiveMaximum(maxQueued);
     try {
       session = SessionManager.getInstance().createAsync(sessionContext, this).get();

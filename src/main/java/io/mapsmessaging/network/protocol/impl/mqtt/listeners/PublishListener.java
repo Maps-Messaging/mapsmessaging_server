@@ -64,8 +64,7 @@ public class PublishListener extends PacketListener {
         .setOpaqueData(msg)
         .setMeta(meta)
         .setQoS(qos)
-        .storeOffline(qos.isStoreOffLine())
-        .setTransformation(transformation);
+        .storeOffline(qos.isStoreOffLine());
     return MessageOverrides.createMessageBuilder(protocol.getProtocolConfig().getMessageDefaults(), mb).build();
   }
 

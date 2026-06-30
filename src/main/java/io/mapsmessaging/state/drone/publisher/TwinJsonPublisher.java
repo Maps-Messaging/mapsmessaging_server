@@ -20,6 +20,7 @@
 package io.mapsmessaging.state.drone.publisher;
 
 import com.google.gson.Gson;
+import com.google.gson.JsonObject;
 import io.mapsmessaging.api.Destination;
 import io.mapsmessaging.api.MessageBuilder;
 import io.mapsmessaging.api.MessageEvent;
@@ -31,17 +32,20 @@ import io.mapsmessaging.api.features.DestinationType;
 import io.mapsmessaging.api.features.QualityOfService;
 import io.mapsmessaging.engine.schema.SchemaManager;
 import io.mapsmessaging.engine.session.ClientConnection;
+import io.mapsmessaging.state.StateJsonHelper;
 import io.mapsmessaging.state.drone.core.EntityTwin;
 import io.mapsmessaging.state.drone.core.TwinManager;
 import io.mapsmessaging.state.drone.core.TwinObserver;
 import io.mapsmessaging.state.drone.core.TwinUpdateContext;
-import io.mapsmessaging.utilities.GsonFactory;
+import io.mapsmessaging.state.drone.drone.DroneTwin;
+import io.mapsmessaging.state.drone.model.Contact;
 import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.security.Principal;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
@@ -60,7 +64,7 @@ public class TwinJsonPublisher implements TwinObserver, ClientConnection, Messag
   public TwinJsonPublisher(TwinManager twinManager, String topicTemplate) throws ExecutionException, InterruptedException, TimeoutException {
     this.topicTemplate = topicTemplate;
     this.twinManager = twinManager;
-    this.gson = GsonFactory.getInstance().getTimeSafeGson();
+    this.gson = StateJsonHelper.createGson();
     this.destinationCache = new ConcurrentHashMap<>();
     this.session = createSession();
     twinManager.addObserver(this);
@@ -91,19 +95,49 @@ public class TwinJsonPublisher implements TwinObserver, ClientConnection, Messag
     Destination destination = resolveDestination(topic);
     try {
       String json;
+      JsonObject jsonObject;
+      List<Contact> contacts;
       synchronized (twin) {
-        json = gson.toJson(twin);
+        jsonObject = gson.toJsonTree(twin).getAsJsonObject();
+        json = gson.toJson(jsonObject);
+        if(twin instanceof DroneTwin droneTwin){
+          contacts = droneTwin.getContactList();
+        }
+        else{
+          contacts = List.of();
+        }
       }
+
       MessageBuilder messageBuilder = new MessageBuilder();
       messageBuilder.setOpaqueData(json.getBytes(StandardCharsets.UTF_8))
-          .setQoS(QualityOfService.AT_MOST_ONCE)
+          .setQoS(QualityOfService.AT_LEAST_ONCE)
           .setContentType("application/json")
           .setSchemaId(SchemaManager.DEFAULT_JSON_SCHEMA.toString())
+          .storeOffline(true)
           .setRetain(false);
 
       destination.storeMessage(messageBuilder.build());
+
+      if(!contacts.isEmpty()) {
+        String contactTopicName = resolveTopic(twinId, twin) + "/contacts";
+        Destination contactDestination = resolveDestination(contactTopicName);
+        jsonObject.remove("contactManager");
+        for (Contact contact : contacts) {
+          JsonObject contactJson = gson.toJsonTree(contact).getAsJsonObject();
+          jsonObject.add("contact", contactJson);
+          json = gson.toJson(jsonObject);
+          jsonObject.remove("contact");
+          MessageBuilder contactMessageBuilder = new MessageBuilder();
+          contactMessageBuilder.setOpaqueData(json.getBytes(StandardCharsets.UTF_8))
+              .setQoS(QualityOfService.AT_MOST_ONCE)
+              .setContentType("application/json")
+              .setSchemaId(SchemaManager.DEFAULT_JSON_SCHEMA.toString())
+              .setRetain(false);
+          contactDestination.storeMessage(contactMessageBuilder.build());
+        }
+      }
     } catch (Throwable e) {
-      e.printStackTrace();
+      destinationCache.remove(topic);
     }
   }
 
@@ -112,7 +146,6 @@ public class TwinJsonPublisher implements TwinObserver, ClientConnection, Messag
     if (destination != null) {
       return destination;
     }
-
     Destination resolvedDestination = session.findDestination(topic, DestinationType.TOPIC).get(1, TimeUnit.SECONDS);
     destinationCache.put(topic, resolvedDestination);
     return resolvedDestination;
@@ -121,7 +154,7 @@ public class TwinJsonPublisher implements TwinObserver, ClientConnection, Messag
   private String resolveTopic(String twinId, EntityTwin twin) {
     String resolvedTopic = topicTemplate.replace("{twinId}", twinId);
 
-    if (twin != null && twin.getClass().getSimpleName() != null) {
+    if (twin != null) {
       resolvedTopic = resolvedTopic.replace("{twinType}", twin.getClass().getSimpleName());
     }
     else {

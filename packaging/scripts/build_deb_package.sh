@@ -138,7 +138,14 @@ upload_new_package() {
 echo "Starting package replacement process..."
 
 build_package
-delete_old_package
+
+if [[ "$POM_VERSION" == *-SNAPSHOT ]]; then
+  echo "Snapshot build detected, checking for previous package to delete..."
+  delete_old_package
+else
+  echo "Release build detected, not deleting any existing package."
+fi
+
 upload_new_package
 
 echo "Package replacement process completed."

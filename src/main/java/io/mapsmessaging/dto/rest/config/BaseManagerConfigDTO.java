@@ -1,8 +1,10 @@
 package io.mapsmessaging.dto.rest.config;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import io.mapsmessaging.dto.rest.auth.SecurityManagerDTO;
 import io.mapsmessaging.dto.rest.config.ml.MLModelManagerDTO;
 import io.mapsmessaging.dto.rest.schema.SchemaManagerConfigDTO;
+import io.mapsmessaging.state.config.TwinManagerConfigDTO;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 @Schema(
@@ -55,6 +57,7 @@ public abstract class BaseManagerConfigDTO extends BaseConfigDTO {
     this.type = type;
   }
 
+  @JsonIgnore
   public abstract String getSimpleName();
 
 }

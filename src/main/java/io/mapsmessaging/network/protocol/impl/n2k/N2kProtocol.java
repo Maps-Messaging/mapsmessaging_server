@@ -43,11 +43,11 @@ import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.network.io.Packet;
 import io.mapsmessaging.network.io.impl.canbus.CanbusEndPoint;
 import io.mapsmessaging.network.protocol.Protocol;
-import  io.mapsmessaging.canbus.j1939.n2k.framing.FramePacker;
-import io.mapsmessaging.network.protocol.impl.n2k.msg.source.AbstractAisFieldValueSource;
-import io.mapsmessaging.network.protocol.impl.n2k.msg.source.ConfigurationInformationFieldValueSource;
-import io.mapsmessaging.network.protocol.impl.n2k.msg.source.IsoAddressClaimFieldValueSource;
-import io.mapsmessaging.network.protocol.impl.n2k.msg.source.ProductInformationFieldValueSource;
+import io.mapsmessaging.canbus.j1939.n2k.framing.FramePacker;
+import io.mapsmessaging.network.protocol.impl.n2k.msg.AbstractAisFieldValueSource;
+import io.mapsmessaging.network.protocol.impl.n2k.msg.ConfigurationInformationFieldValueSource;
+import io.mapsmessaging.network.protocol.impl.n2k.msg.IsoAddressClaimFieldValueSource;
+import io.mapsmessaging.network.protocol.impl.n2k.msg.ProductInformationFieldValueSource;
 import io.mapsmessaging.schemas.config.SchemaConfig;
 import io.mapsmessaging.schemas.config.impl.CanbusSchemaConfig;
 import io.mapsmessaging.schemas.formatters.MessageFormatter;
@@ -55,22 +55,25 @@ import io.mapsmessaging.schemas.formatters.MessageFormatterFactory;
 
 import io.mapsmessaging.schemas.formatters.ParseException;
 import io.mapsmessaging.schemas.formatters.impl.CanbusFormatter;
+import io.mapsmessaging.utilities.threads.SimpleTaskScheduler;
+import lombok.Getter;
 import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
 
 import javax.security.auth.Subject;
 import java.io.IOException;
 import java.util.*;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeoutException;
+import java.util.concurrent.*;
 
 import static io.mapsmessaging.engine.schema.SchemaManager.DEFAULT_JSON_SCHEMA;
 import static io.mapsmessaging.logging.ServerLogMessages.*;
 
 public class N2kProtocol extends Protocol {
   private final Logger logger = LoggerFactory.getLogger(N2kProtocol.class);
+  private final Set<Integer> unknownCanIdentifiers = ConcurrentHashMap.newKeySet();
+  @Getter
   private final MessageFormatter formatter;
+
   private final FramePacker framePacker;
   private final Session session;
   private final InboundProcessor inboundProcessor;
@@ -78,14 +81,16 @@ public class N2kProtocol extends Protocol {
   private final String rawTopicTemplate;
   private final boolean parseToJson;
   private final SchemaConfig defaultSchemaConfig = SchemaManager.getInstance().getSchema(DEFAULT_JSON_SCHEMA);
-  private final DroneMonitor droneMonitor;
   private final int canbusAddress;
+  private final QualityOfService qos;
+  private final boolean storeOffline;
+
+  private ScheduledFuture<?> scheduledFuture;
 
   public N2kProtocol(CanbusEndPoint endPoint, @NotNull @NonNull ProtocolConfigDTO protocolConfig) throws IOException {
     super(endPoint, protocolConfig );
     CanbusSchemaConfig canbusSchema = new CanbusSchemaConfig();
     try {
-
       String databasePath = ((N2KConfigDTO)protocolConfig).getDatabasePath();
       String encodedDatabase = ((N2KConfigDTO)protocolConfig).getBase64EncodedDatabase();
       if(databasePath != null && !databasePath.isEmpty()) {
@@ -106,9 +111,12 @@ public class N2kProtocol extends Protocol {
     N2KConfigDTO n2kConfig = (N2KConfigDTO)protocolConfig;
     topicTemplate = n2kConfig.getTopicNameTemplate();
     rawTopicTemplate =  n2kConfig.getUnknownPacketTopic().replace("{candevice}",endPoint.getName());
+    qos = QualityOfService.getInstance(n2kConfig.getQualityOfService());
+    storeOffline = n2kConfig.isStoreOffline();
+
     parseToJson =n2kConfig.isParseToJson();
     canbusAddress = n2kConfig.getCanBusAddress();
-    String inboundTopicName =n2kConfig.getInboundTopicName();
+    String outboundTopicName =n2kConfig.getOutboundTopicName();
 
     formatter = MessageFormatterFactory.getInstance().getFormatter(canbusSchema);
     framePacker = new FramePacker( ((CanbusFormatter)formatter).getParser() );
@@ -120,8 +128,8 @@ public class N2kProtocol extends Protocol {
       Thread.currentThread().interrupt();
       throw new IOException(e);
     }
-    if(inboundTopicName != null && !inboundTopicName.isEmpty()){
-      SubscriptionContextBuilder scb = new SubscriptionContextBuilder(inboundTopicName, ClientAcknowledgement.AUTO);
+    if(outboundTopicName != null && !outboundTopicName.isEmpty()){
+      SubscriptionContextBuilder scb = new SubscriptionContextBuilder(outboundTopicName, ClientAcknowledgement.AUTO);
       SubscriptionContext context = scb.setQos(QualityOfService.AT_MOST_ONCE)
           .setReceiveMaximum(10)
           .setNoLocalMessages(true)
@@ -132,23 +140,21 @@ public class N2kProtocol extends Protocol {
     Thread t = new Thread(inboundProcessor);
     t.start();
     logger.log(N2K_PROTOCOL_CREATED_AND_BOUND,endPoint.getName());
-    if(((N2KConfigDTO)protocolConfig).isPublishMavlinkDrones()){
-      formatAndSend(IsoAddressClaimFieldValueSource.PGN, 0xff, new IsoAddressClaimFieldValueSource(MessageDaemon.getInstance().getUuid().toString()));
-      droneMonitor = new DroneMonitor(this, ((CanbusFormatter)formatter).getParser(), n2kConfig.getAis());
-      MessageDaemon.getInstance().getSubSystemManager().getTwinManager().addObserver(droneMonitor);
-    }
-    else{
-      droneMonitor = null;
-    }
+    scheduledFuture = SimpleTaskScheduler.getInstance().scheduleAtFixedRate(() -> unknownCanIdentifiers.clear(), 10, 10, TimeUnit.MINUTES);
+    MessageDaemon.getInstance().getSubSystemManager().getStateManager().getAisManager().registerProtocol(this);
   }
 
   @Override
   public void close() throws IOException {
+    MessageDaemon.getInstance().getSubSystemManager().getStateManager().getAisManager().unregisterProtocol(this);
     super.close();
     inboundProcessor.close();
     endPoint.close();
     logger.log(N2K_PROTOCOL_CLOSING, endPoint.getName());
-    droneMonitor.close();
+    if(scheduledFuture != null){
+      scheduledFuture.cancel(false);
+      scheduledFuture = null;
+    }
   }
 
   @Override
@@ -197,63 +203,39 @@ public class N2kProtocol extends Protocol {
   @Override
   public boolean processPacket(@NonNull @NotNull Packet packet) throws IOException {
     CanFrame frame = ((CanbusEndPoint) endPoint).readFrame();
-    if(logger.isDebugEnabled() && frame != null){
+
+    if (frame == null) {
+      return true;
+    }
+
+    if (logger.isDebugEnabled()) {
       logger.log(N2K_PROTOCOL_PARSING_PACKET, packetToString(frame));
     }
-    if(frame != null) {
-      if(parseToJson) {
-        try {
-          processPacket(formatter.parseToJson(frame.getRawData(), SchemaManager.getInstance().getDefaultParseMode()));
-        } catch (ParseException e) {
-          logger.log(N2K_PROTOCOL_CANBUS_BUILD_ERROR, e);
-        }
-      }
-      else{
-        Map<String, String> metaData = new HashMap<>();
-        metaData.put("protocol", "n2k");
-        metaData.put("version", getVersion());
-        metaData.put("sessionId", session.getName());
-        metaData.put("time_ms", "" + System.currentTimeMillis());
-        byte[] data = frame.getRawData();
-        MessageBuilder messageBuilder = new MessageBuilder();
-        messageBuilder.setOpaqueData(data)
-            .setQoS(QualityOfService.AT_MOST_ONCE)
-            .setMeta(metaData)
-            .setRetain(false)
-            .setContentType("canbus");
 
-        Message message = messageBuilder.build();
-        publishMessage(rawTopicTemplate, message);
-      }
-      handleInboundRequest(frame);
+    boolean processedAsJson = processFrameAsJson(frame);
+
+    if (!processedAsJson) {
+      publishRawFrame(frame);
     }
+
+    handleInboundRequest(frame);
     return true;
   }
 
-  private void handleInboundRequest(CanFrame frame) throws IOException {
-    int id = frame.canIdentifier();
-    CanId canId = CanId.parse(id);
-    int pgn = canId.getPgn();
-    int dest = canId.getDestinationAddress();
-    if(pgn == 59904  && ( dest == 0xff || dest == canbusAddress) ){
-      byte[] payload = frame.data();
-      int requestedPgn = (payload[0] & 0xFF) | ((payload[1] & 0xFF) << 8) | ((payload[2] & 0xFF) << 16);
-      AbstractAisFieldValueSource response = switch (requestedPgn) {
-        case 126996 -> new ProductInformationFieldValueSource("Maps Messaging Server", BuildInfo.getBuildVersion(), "1.0", "1234567");
-        case 126998 -> new ConfigurationInformationFieldValueSource();
-        case 60928 -> new IsoAddressClaimFieldValueSource(MessageDaemon.getInstance().getUuid().toString());
-        default -> null;
-      };
-      if(response != null){
-        byte[] data = ((CanbusFormatter)formatter).getParser().encodeFromSource(requestedPgn, response);
-        writePgn(requestedPgn, canId.getSourceAddress(), data);
-      }
-    }
+
+  @Override
+  public String getName() {
+    return "n2k";
   }
 
-  protected void formatAndSend(int pgn, int destinationAddress, AbstractAisFieldValueSource response) throws IOException {
-    byte[] data = ((CanbusFormatter)formatter).getParser().encodeFromSource(pgn, response);
-    writePgn(pgn, destinationAddress, data);
+  @Override
+  public String getSessionId() {
+    return session.getName();
+  }
+
+  @Override
+  public String getVersion() {
+    return "1.0";
   }
 
   public void writePgn(int pgn, int destinationAddress, byte[] data) throws IOException {
@@ -268,8 +250,11 @@ public class N2kProtocol extends Protocol {
     }
   }
 
-  public boolean processPacket(JsonObject json) {
+  private boolean processPacket(JsonObject json) {
     MessageBuilder messageBuilder = new MessageBuilder();
+    messageBuilder.setQoS(qos);
+    messageBuilder.storeOffline(storeOffline);
+
     Map<String, String> metaData = new HashMap<>();
     metaData.put("protocol", "n2k");
     metaData.put("version", getVersion());
@@ -293,9 +278,7 @@ public class N2kProtocol extends Protocol {
     Message message = messageBuilder.setContentType("n2k")
         .setOpaqueData(json.toString().getBytes())
         .setDataMap(map)
-        .setQoS(QualityOfService.AT_MOST_ONCE)
         .setRetain(false)
-        .storeOffline(false)
         .setContentType("canbus")
         .setMeta(metaData)
         .setSchemaId(defaultSchemaConfig.getUniqueId())
@@ -304,8 +287,8 @@ public class N2kProtocol extends Protocol {
     publishMessage(topicName, message);
     return true;
   }
-//"/{candevice}/{pgn}/{messageName}",
-  protected String computeTopicName(int pgn, String messageName) {
+
+  private String computeTopicName(int pgn, String messageName) {
     if(messageName == null) {
       return rawTopicTemplate;
     }
@@ -314,21 +297,6 @@ public class N2kProtocol extends Protocol {
     template = template.replace("{pgn}", ""+pgn);
     template = template.replace("{messageName}", messageName);
     return template;
-  }
-
-  @Override
-  public String getName() {
-    return "n2k";
-  }
-
-  @Override
-  public String getSessionId() {
-    return session.getName();
-  }
-
-  @Override
-  public String getVersion() {
-    return "1.0";
   }
 
   private String packetToString(CanFrame frame) {
@@ -354,6 +322,68 @@ public class N2kProtocol extends Protocol {
         }
         return destination;
       });
+    }
+  }
+
+  private boolean processFrameAsJson(CanFrame frame) {
+    if (!parseToJson) {
+      return false;
+    }
+
+    int canIdentifier = frame.canIdentifier();
+
+    if (unknownCanIdentifiers.contains(canIdentifier)) {
+      return false;
+    }
+
+    try {
+      processPacket(formatter.parseToJson(frame.getRawData(), SchemaManager.getInstance().getDefaultParseMode()));
+      return true;
+    } catch (ParseException parseException) {
+      if (unknownCanIdentifiers.add(canIdentifier)) {
+        logger.log(N2K_PROTOCOL_CANBUS_BUILD_ERROR, canIdentifier);
+      }
+      return false;
+    }
+  }
+
+  private void publishRawFrame(CanFrame frame) {
+    Map<String, String> metaData = new HashMap<>();
+    metaData.put("protocol", "n2k");
+    metaData.put("version", getVersion());
+    metaData.put("sessionId", session.getName());
+    metaData.put("time_ms", Long.toString(System.currentTimeMillis()));
+
+    MessageBuilder messageBuilder = new MessageBuilder();
+    messageBuilder.storeOffline(storeOffline);
+    messageBuilder.setQoS(qos);
+    messageBuilder.setOpaqueData(frame.getRawData())
+        .setMeta(metaData)
+        .setRetain(false)
+        .setContentType("canbus");
+
+    Message message = messageBuilder.build();
+    publishMessage(rawTopicTemplate, message);
+  }
+
+  private void handleInboundRequest(CanFrame frame) throws IOException {
+    int id = frame.canIdentifier();
+    CanId canId = CanId.parse(id);
+    int pgn = canId.getPgn();
+    int dest = canId.getDestinationAddress();
+    if(pgn == 59904  && ( dest == 0xff || dest == canbusAddress) ){
+      byte[] payload = frame.data();
+      int requestedPgn = (payload[0] & 0xFF) | ((payload[1] & 0xFF) << 8) | ((payload[2] & 0xFF) << 16);
+      AbstractAisFieldValueSource response = switch (requestedPgn) {
+        case 126996 -> new ProductInformationFieldValueSource("Maps Messaging Server", BuildInfo.getBuildVersion(), "1.0", "1234567");
+        case 126998 -> new ConfigurationInformationFieldValueSource();
+        case 60928 -> new IsoAddressClaimFieldValueSource(MessageDaemon.getInstance().getUuid().toString());
+        default -> null;
+      };
+      if(response != null){
+        byte[] data = ((CanbusFormatter)formatter).getParser().encodeFromSource(requestedPgn, response);
+        writePgn(requestedPgn, canId.getSourceAddress(), data);
+      }
     }
   }
 }

@@ -51,7 +51,6 @@ import java.util.concurrent.Future;
 /**
  * Note: This is a complex class that maintains the state of events for a specific subscription to a specific destination.
  */
-@ToString
 public class DestinationSubscription extends Subscription {
 
   @Getter
@@ -451,6 +450,7 @@ public class DestinationSubscription extends Subscription {
     } catch (CancelledKeyException ignore) {
       // We get these because the End Point could be closed
     } catch (RuntimeException th) {
+      th.printStackTrace();
       logger.log(ServerLogMessages.DESTINATION_SUBSCRIPTION_TASK_FAILURE, destinationImpl.getFullyQualifiedNamespace(), sessionImpl.getName(), th);
     }
   }

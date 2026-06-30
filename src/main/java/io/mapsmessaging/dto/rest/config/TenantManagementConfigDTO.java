@@ -19,6 +19,7 @@
 
 package io.mapsmessaging.dto.rest.config;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import io.mapsmessaging.dto.rest.config.tenant.TenantConfigDTO;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -47,6 +48,7 @@ public class TenantManagementConfigDTO extends BaseManagerConfigDTO {
     super("TenantManagementConfigDTO");
   }
 
+  @JsonIgnore
   @Override
   public String getSimpleName() {
     return "Tenants";

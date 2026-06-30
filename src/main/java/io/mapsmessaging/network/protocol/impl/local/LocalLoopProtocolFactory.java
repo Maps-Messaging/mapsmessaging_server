@@ -26,6 +26,7 @@ import io.mapsmessaging.network.protocol.ProtocolImplFactory;
 import io.mapsmessaging.network.protocol.detection.NoOpDetection;
 
 import java.io.IOException;
+import java.util.Map;
 
 public class LocalLoopProtocolFactory extends ProtocolImplFactory {
 
@@ -34,8 +35,9 @@ public class LocalLoopProtocolFactory extends ProtocolImplFactory {
   }
 
   @Override
-  public Protocol connect(EndPoint endPoint, String sessionId, String username, String password) throws IOException {
+  public Protocol connect(EndPoint endPoint, String sessionId, String username, String password, Map<String, String> topicMap) throws IOException {
     Protocol protocol = new LocalLoopProtocol(endPoint);
+    protocol.getTopicNameMapping().putAll(topicMap);
     protocol.connect(sessionId, username, password);
     return protocol;
   }

@@ -56,6 +56,7 @@ public enum ServerLogMessages implements LogMessage {
   MESSAGE_DAEMON_HOME_DIRECTORY(LEVEL.ERROR, SERVER_CATEGORY.DAEMON, "The home directory has been defined as {}"),
   MESSAGE_DAEMON_SERVICE(LEVEL.WARN, SERVER_CATEGORY.DAEMON, "\t\tLoaded service {}, {}"),
   MESSAGE_DAEMON_SERVICE_LOADED(LEVEL.WARN, SERVER_CATEGORY.DAEMON, "Service Manager {} loaded"),
+  MESSAGE_DAEMON_EXTENSION_PROTOCOL_NOT_AVAILABLE(LEVEL.WARN, SERVER_CATEGORY.DAEMON, "Protocol not available {}"),
   MESSAGE_DAEMON_PROTOCOL_NOT_AVAILABLE(LEVEL.ERROR, SERVER_CATEGORY.DAEMON, "Protocol not available, see stack trace for more details"),
 
   MESSAGE_DAEMON_AGENT_STARTING(LEVEL.AUDIT, SERVER_CATEGORY.DAEMON, "Starting {} "),
@@ -118,6 +119,11 @@ public enum ServerLogMessages implements LogMessage {
   END_POINT_CONNECTION_CLOSED(LEVEL.WARN, SERVER_CATEGORY.NETWORK, "Closing connection"),
   END_POINT_CONNECTION_STATE_CHANGED(LEVEL.WARN, SERVER_CATEGORY.NETWORK, "Changing state on url {} protocol {} from {} to {}"),
   END_POINT_CONNECTION_STOPPING(LEVEL.WARN, SERVER_CATEGORY.NETWORK, "Stopping connection manager"),
+
+  STATE_MONITOR_STARTED(LEVEL.DEBUG, SERVER_CATEGORY.NETWORK, "State monitor started for {}"),
+  STATE_MONITOR_CLOSING_STALE_ENDPOINT(LEVEL.INFO, SERVER_CATEGORY.NETWORK, "Closing stale endpoint {} stuck in state {} for {} ms"),
+  STATE_MONITOR_ENDPOINT_CLOSE_EXCEPTION(LEVEL.ERROR, SERVER_CATEGORY.NETWORK, "Exception while closing stale endpoint {}"),
+  STATE_MONITOR_CLOSED(LEVEL.DEBUG, SERVER_CATEGORY.NETWORK, "State monitor closed for {}"),
 
   //</editor-fold>
 
@@ -386,8 +392,6 @@ public enum ServerLogMessages implements LogMessage {
   MAVLINK_FAILED_FORWARD_PACKET(LEVEL.WARN, SERVER_CATEGORY.PROTOCOL, "Failed to forward mavlink packet to {}"),
   MAVLINK_DIALECT_FAILED_TO_LOAD(LEVEL.WARN, SERVER_CATEGORY.PROTOCOL, "Failed to load the mavlink dialect specifed at {}"),
   MAVLINK_DIALECT_FORMAT_FAILURES(LEVEL.WARN, SERVER_CATEGORY.PROTOCOL, "Failed to parse  the mavlink dialect specifed at {}, falling back to default dialect"),
-
-
   MAVLINK_SUCCESSFUL_FORWARD_PACKET(LEVEL.DEBUG, SERVER_CATEGORY.PROTOCOL, "Forward mavlink packet to {}"),
   MAVLINK_DETECTED_PACKET(LEVEL.DEBUG, SERVER_CATEGORY.PROTOCOL, "Detected mavlink packet from {} as {}"),
   MAVLINK_FAILED_PARSING_FORWARD_LIST(LEVEL.WARN, SERVER_CATEGORY.PROTOCOL, "Failed to parse {} as a valid address"),
@@ -477,9 +481,9 @@ public enum ServerLogMessages implements LogMessage {
   AGGREGATOR_STARTED(LEVEL.INFO, SERVER_CATEGORY.ENGINE, "Aggregator started with {} handlers"),
   AGGREGATOR_EXCEPTION(LEVEL.ERROR, SERVER_CATEGORY.ENGINE, "Aggregator {} failed to started, raised exception"),
   AGGREGATOR_STOPPED(LEVEL.INFO, SERVER_CATEGORY.ENGINE, "Aggregator stopped with {} handlers"),
-  AGGREGATOR_COMPLETED(LEVEL.INFO, SERVER_CATEGORY.ENGINE, "Aggregator {}, completed with {} events"),
+  AGGREGATOR_COMPLETED(LEVEL.DEBUG, SERVER_CATEGORY.ENGINE, "Aggregator {}, completed with {} events"),
   AGGREGATOR_COMPLETION_EXCEPTION(LEVEL.ERROR, SERVER_CATEGORY.ENGINE, "Aggregator {} completion task failed to complete, raised exception"),
-  AGGREGATOR_EVENT_RECEIVED(LEVEL.INFO, SERVER_CATEGORY.ENGINE, "Aggregator {} received event from {}"),
+  AGGREGATOR_EVENT_RECEIVED(LEVEL.DEBUG, SERVER_CATEGORY.ENGINE, "Aggregator {} received event from {}"),
   AGGREGATOR_EVENT_DROPPED(LEVEL.WARN, SERVER_CATEGORY.ENGINE, "Aggregator {} dropped event from {}"),
   AGGREGATOR_QUEUE_OFFER(LEVEL.DEBUG, SERVER_CATEGORY.ENGINE, "Mailbox queue offered envelope for {}"),
   AGGREGATOR_QUEUE_DRAIN(LEVEL.DEBUG, SERVER_CATEGORY.ENGINE, "Mailbox queue drained {} items"),
@@ -536,6 +540,14 @@ public enum ServerLogMessages implements LogMessage {
   DESTINATION_MANAGER_RELOAD_INTERRUPTED(LEVEL.WARN, SERVER_CATEGORY.ENGINE, "The reloading of server resources was interrupted during reload"),
   //</editor-fold>
 
+  //<editor-fold desc="Resource management log messages">
+  RESOURCE_LOADING_STORE(LEVEL.DEBUG, SERVER_CATEGORY.ENGINE, "Loading resource store from {}"),
+  RESOURCE_INVALID_CONFIG(LEVEL.WARN, SERVER_CATEGORY.ENGINE, "Invalid resource store configuration, unable to load for {}"),
+  RESOURCE_KEEP_ONLY(LEVEL.WARN, SERVER_CATEGORY.ENGINE, "Keeping only specific events called for {}, retaining {}"),
+  RESOURCE_LOADED_STORE(LEVEL.INFO, SERVER_CATEGORY.ENGINE, "Loaded resource store from {} with {} events restored"),
+  RESOURCE_CLOSED(LEVEL.DEBUG, SERVER_CATEGORY.ENGINE, "Resource {} closed"),
+  //</editor-fold>
+
   //<editor-fold desc="Destination Subscription log messages">
   DESTINATION_SUBSCRIPTION_PUT(LEVEL.INFO, SERVER_CATEGORY.ENGINE, "Adding subscription {} to destination {} for session {}"),
   DESTINATION_SUBSCRIPTION_HIBERNATE(LEVEL.INFO, SERVER_CATEGORY.ENGINE, "Hibernating destination subscription {} with session id {}"),
@@ -550,11 +562,11 @@ public enum ServerLogMessages implements LogMessage {
   //</editor-fold>
 
   //<editor-fold desc="Message State Manager log messages">
-  MESSAGE_STATE_MANAGER_REGISTER(LEVEL.INFO, SERVER_CATEGORY.ENGINE, "{} Registering message:{} "),
-  MESSAGE_STATE_MANAGER_ALLOCATE(LEVEL.INFO, SERVER_CATEGORY.ENGINE, "{} Allocating message:{} "),
-  MESSAGE_STATE_MANAGER_COMMIT(LEVEL.INFO, SERVER_CATEGORY.ENGINE, "{} Committing message:{} "),
-  MESSAGE_STATE_MANAGER_ROLLBACK(LEVEL.INFO, SERVER_CATEGORY.ENGINE, "{} Rollback message:{} "),
-  MESSAGE_STATE_MANAGER_NEXT(LEVEL.INFO, SERVER_CATEGORY.ENGINE, "{} Scanning for next message returning:{} "),
+  MESSAGE_STATE_MANAGER_REGISTER(LEVEL.DEBUG, SERVER_CATEGORY.ENGINE, "{} Registering message:{} "),
+  MESSAGE_STATE_MANAGER_ALLOCATE(LEVEL.DEBUG, SERVER_CATEGORY.ENGINE, "{} Allocating message:{} "),
+  MESSAGE_STATE_MANAGER_COMMIT(LEVEL.DEBUG, SERVER_CATEGORY.ENGINE, "{} Committing message:{} "),
+  MESSAGE_STATE_MANAGER_ROLLBACK(LEVEL.DEBUG, SERVER_CATEGORY.ENGINE, "{} Rollback message:{} "),
+  MESSAGE_STATE_MANAGER_NEXT(LEVEL.DEBUG, SERVER_CATEGORY.ENGINE, "{} Scanning for next message returning:{} "),
   MESSAGE_STATE_MANAGER_ROLLBACK_INFLIGHT(LEVEL.INFO, SERVER_CATEGORY.ENGINE, "{} Rolling back all in flight messages {}"),
   MESSAGE_STATE_MANAGER_ROLLED_BACK_INFLIGHT(LEVEL.INFO, SERVER_CATEGORY.ENGINE, "{} Rolled back all in flight messages"),
   //</editor-fold>
@@ -573,6 +585,7 @@ public enum ServerLogMessages implements LogMessage {
   DESTINATION_MANAGER_STOPPING(LEVEL.INFO, SERVER_CATEGORY.ENGINE, "Shut down started"),
   DESTINATION_MANAGER_CLEARING(LEVEL.INFO, SERVER_CATEGORY.ENGINE, "Clear session id {} requested"),
   DESTINATION_MANAGER_DELETING_TEMPORARY_DESTINATION(LEVEL.INFO, SERVER_CATEGORY.ENGINE, "\"Reloaded temp destination {}, now deleting"),
+  DESTINATION_ERROR_SETTING_SCHEMA(LEVEL.ERROR, SERVER_CATEGORY.ENGINE, "Error setting schema for destination {}"),
   //</editor-fold>
 
   //<editor-fold desc="Serial Port Server log Messages">
@@ -818,7 +831,7 @@ public enum ServerLogMessages implements LogMessage {
   AUTH_STORAGE_FAILED_TO_LOAD(LEVEL.ERROR, SERVER_CATEGORY.AUTHENTICATION, "Authentication storage level failed to load"),
   AUTH_STORAGE_FAILED_ON_UPDATE(LEVEL.ERROR, SERVER_CATEGORY.AUTHENTICATION, "Authentication storage unable to update state"),
 
-  MESSAGE_TRANSFORMATION_EXCEPTION(LEVEL.ERROR, SERVER_CATEGORY.TRANSFORMATION, "Exception raised during transformation"),
+  MESSAGE_TRANSFORMATION_EXCEPTION(LEVEL.INFO, SERVER_CATEGORY.TRANSFORMATION, "Exception raised during transformation"),
 
   LICENSE_INSTALLING(LEVEL.INFO, SERVER_CATEGORY.LICENSE, "Installing license edition {}"),
   LICENSE_FAILED_INSTALLING(LEVEL.ERROR, SERVER_CATEGORY.LICENSE, "Failed to install license edition {}"),
@@ -905,6 +918,18 @@ public enum ServerLogMessages implements LogMessage {
   TWIN_RELATIONSHIP_REMOVED(LEVEL.DEBUG, SERVER_CATEGORY.STATE, "Removed relationship {} -> {} type {} for twin {}"),
   TWIN_PURGED(LEVEL.INFO, SERVER_CATEGORY.STATE, "Purged expired twin {}"),
   TWIN_OBSERVER_CALLBACK_FAILED(LEVEL.ERROR, SERVER_CATEGORY.STATE, "Twin observer callback failed for twin {} during {}"),
+
+  MAVLINK_STATE_DIALECT_DEFAULTED(LEVEL.DEBUG, SERVER_CATEGORY.PROTOCOL, "No MAVLink dialect specified for state subscriber, using default dialect {}"),
+  MAVLINK_STATE_DIALECT_LOADED(LEVEL.DEBUG, SERVER_CATEGORY.PROTOCOL, "Loaded MAVLink dialect {} for state subscriber"),
+  MAVLINK_STATE_DIALECT_LOAD_FAILED(LEVEL.WARN, SERVER_CATEGORY.PROTOCOL, "Failed to load MAVLink dialect {}, falling back to default dialect {}"),
+  MAVLINK_STATE_RAW_PACKET_DETECTED(LEVEL.DEBUG, SERVER_CATEGORY.PROTOCOL, "Detected raw MAVLink packet from {}"),
+  MAVLINK_STATE_JSON_PACKET_DETECTED(LEVEL.DEBUG, SERVER_CATEGORY.PROTOCOL, "Detected JSON MAVLink packet from {}"),
+  MAVLINK_STATE_UNKNOWN_PACKET_IGNORED(LEVEL.DEBUG, SERVER_CATEGORY.PROTOCOL, "Ignoring unknown MAVLink state packet from {}"),
+  MAVLINK_STATE_JSON_PARSE_FAILED(LEVEL.DEBUG, SERVER_CATEGORY.PROTOCOL, "Failed to parse JSON MAVLink state packet from {}"),
+  MAVLINK_STATE_PACKET_UNPACK_FAILED(LEVEL.DEBUG, SERVER_CATEGORY.PROTOCOL, "Failed to unpack MAVLink state packet from {}"),
+  MAVLINK_STATE_PACKET_UNPACK_EMPTY(LEVEL.DEBUG, SERVER_CATEGORY.PROTOCOL, "MAVLink state packet from {} did not produce a processed frame"),
+  MAVLINK_STATE_UNSUPPORTED_PACKET_IGNORED(LEVEL.DEBUG, SERVER_CATEGORY.PROTOCOL, "Ignoring unsupported MAVLink message {} from {}"),
+  MAVLINK_STATE_TWIN_CREATED(LEVEL.DEBUG, SERVER_CATEGORY.PROTOCOL, "Created MAVLink twin {} for system {} component {}"),
   // </editor-fold>
 
 
@@ -917,6 +942,7 @@ public enum ServerLogMessages implements LogMessage {
   STATE_MANAGER_PUBLISH_ENABLED(LEVEL.INFO, SERVER_CATEGORY.STATE, "Twin JSON publisher enabled with topic {}"),
   STATE_MANAGER_PUBLISH_FAILED(LEVEL.ERROR, SERVER_CATEGORY.STATE, "Failed to start Twin JSON publisher"),
   STATE_MANAGER_SCHEDULER_ERROR(LEVEL.ERROR, SERVER_CATEGORY.STATE, "Scheduler task failed"),
+  STATE_MANAGER_AUDIT_INIT_FAILED(LEVEL.ERROR, SERVER_CATEGORY.STATE, "Failed to initialize audit context - auditing will be disabled"),
   // </editor-fold>
 
   //-------------------------------------------------------------------------------------------------------------

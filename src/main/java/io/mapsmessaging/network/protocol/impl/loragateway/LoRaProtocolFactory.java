@@ -26,6 +26,7 @@ import io.mapsmessaging.network.protocol.ProtocolImplFactory;
 import io.mapsmessaging.network.protocol.detection.ByteArrayDetection;
 
 import java.io.IOException;
+import java.util.Map;
 
 public class LoRaProtocolFactory extends ProtocolImplFactory {
 
@@ -34,7 +35,7 @@ public class LoRaProtocolFactory extends ProtocolImplFactory {
   }
 
   @Override
-  public Protocol connect(EndPoint endPoint, String sessionId, String username, String password) throws IOException {
+  public Protocol connect(EndPoint endPoint, String sessionId, String username, String password, Map<String, String> topicMap) throws IOException {
     return null;
 
   }

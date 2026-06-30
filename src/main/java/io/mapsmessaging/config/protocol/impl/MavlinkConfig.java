@@ -1,22 +1,40 @@
-/* * * Copyright [ 2020 - 2024 ] Matthew Buckton * Copyright [ 2024 - 2026 ] MapsMessaging B.V. * * Licensed under the Apache License, Version 2.0 with the Commons Clause * (the "License"); you may not use this file except in compliance with the License. * You may obtain a copy of the License at: * * http://www.apache.org/licenses/LICENSE-2.0 * https://commonsclause.com/ * * Unless required by applicable law or agreed to in writing, software * distributed under the License is distributed on an "AS IS" BASIS, * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. * See the License for the specific language governing permissions and * limitations under the License. */ package io.mapsmessaging.config.protocol.impl;
+/*
+ *
+ *  Copyright [ 2020 - 2024 ] Matthew Buckton
+ *  Copyright [ 2024 - 2026 ] MapsMessaging B.V.
+ *
+ *  Licensed under the Apache License, Version 2.0 with the Commons Clause
+ *  (the "License"); you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at:
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://commonsclause.com/
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ */
+
+package io.mapsmessaging.config.protocol.impl;
 
 import io.mapsmessaging.config.Config;
 import io.mapsmessaging.configuration.ConfigurationProperties;
 import io.mapsmessaging.dto.rest.config.BaseConfigDTO;
+import io.mapsmessaging.dto.rest.config.protocol.impl.MavlinkAcceptedSourceDTO;
 import io.mapsmessaging.dto.rest.config.protocol.impl.MavlinkConfigDTO;
-import io.mapsmessaging.dto.rest.config.protocol.impl.MavlinkKnownSourceDTO;
-import io.mapsmessaging.dto.rest.config.protocol.impl.VehicleClass;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
 public class MavlinkConfig extends MavlinkConfigDTO implements Config {
+
   public MavlinkConfig(ConfigurationProperties config) {
     setType("mavlink");
     ProtocolConfigFactory.unpack(config, this);
-    this.fullyQualifiedPathToDialectXml = config.getProperty("fullyQualifiedPathToDialectXml", fullyQualifiedPathToDialectXml);
+    this.dialectName = config.getProperty("dialectName", dialectName);
     this.idleSessionTimeout = config.getLongProperty("idleSessionTimeout", idleSessionTimeout);
     this.maximumSessionExpiry = config.getIntProperty("maximumSessionExpiry", maximumSessionExpiry);
     this.advertiseInterval = config.getIntProperty("advertiseInterval", advertiseInterval);
@@ -32,17 +50,20 @@ public class MavlinkConfig extends MavlinkConfigDTO implements Config {
     this.rejectUnknownSources = config.getBooleanProperty("rejectUnknownSources", rejectUnknownSources);
     this.rejectedFrameNamespace = config.getProperty("rejectedFrameNamespace", rejectedFrameNamespace);
     this.includeRejectedFrameMetadata = config.getBooleanProperty("includeRejectedFrameMetadata", includeRejectedFrameMetadata);
+    this.outboundTopicName = config.getProperty("outboundTopicName", outboundTopicName);
+    this.qualityOfService = config.getIntProperty("qualityOfService", qualityOfService);
+    this.storeOffline = config.getBooleanProperty("storeOffline", storeOffline);
     this.acceptedMessageIds = readIntegerList(config.get("acceptedMessageIds"));
     this.rejectedMessageIds = readIntegerList(config.get("rejectedMessageIds"));
-    this.knownSources = readKnownSources(config.get("knownSources"));
+    this.acceptedSources = readKnownSources(config.get("knownSources"));
   }
 
   @Override
   public boolean update(BaseConfigDTO config) {
     boolean hasChanged = false;
     if (config instanceof MavlinkConfigDTO newConfig) {
-      if (!Objects.equals(fullyQualifiedPathToDialectXml, newConfig.getFullyQualifiedPathToDialectXml())) {
-        fullyQualifiedPathToDialectXml = newConfig.getFullyQualifiedPathToDialectXml();
+      if (!Objects.equals(dialectName, newConfig.getDialectName())) {
+        dialectName = newConfig.getDialectName();
         hasChanged = true;
       }
       if (idleSessionTimeout != newConfig.getIdleSessionTimeout()) {
@@ -63,6 +84,10 @@ public class MavlinkConfig extends MavlinkConfigDTO implements Config {
       }
       if (!Objects.equals(topicNameTemplate, newConfig.getTopicNameTemplate())) {
         topicNameTemplate = newConfig.getTopicNameTemplate();
+        hasChanged = true;
+      }
+      if (!Objects.equals(statusTopicNameTemplate, newConfig.getStatusTopicNameTemplate())) {
+        statusTopicNameTemplate = newConfig.getStatusTopicNameTemplate();
         hasChanged = true;
       }
       if (parseToJson != newConfig.isParseToJson()) {
@@ -97,8 +122,8 @@ public class MavlinkConfig extends MavlinkConfigDTO implements Config {
         rejectedMessageIds = copyIntegerList(newConfig.getRejectedMessageIds());
         hasChanged = true;
       }
-      if (!Objects.equals(knownSources, newConfig.getKnownSources())) {
-        knownSources = copyKnownSources(newConfig.getKnownSources());
+      if (!Objects.equals(acceptedSources, newConfig.getAcceptedSources())) {
+        acceptedSources = copyKnownSources(newConfig.getAcceptedSources());
         hasChanged = true;
       }
       if (rejectUnknownSources != newConfig.isRejectUnknownSources()) {
@@ -113,6 +138,18 @@ public class MavlinkConfig extends MavlinkConfigDTO implements Config {
         includeRejectedFrameMetadata = newConfig.isIncludeRejectedFrameMetadata();
         hasChanged = true;
       }
+      if (!Objects.equals(outboundTopicName, newConfig.getOutboundTopicName())) {
+        outboundTopicName = newConfig.getOutboundTopicName();
+        hasChanged = true;
+      }
+      if (qualityOfService != newConfig.getQualityOfService()) {
+        qualityOfService = newConfig.getQualityOfService();
+        hasChanged = true;
+      }
+      if (storeOffline != newConfig.isStoreOffline()) {
+        storeOffline = newConfig.isStoreOffline();
+        hasChanged = true;
+      }
       if (ProtocolConfigFactory.update(this, newConfig)) {
         hasChanged = true;
       }
@@ -124,12 +161,13 @@ public class MavlinkConfig extends MavlinkConfigDTO implements Config {
   public ConfigurationProperties toConfigurationProperties() {
     ConfigurationProperties properties = new ConfigurationProperties();
     ProtocolConfigFactory.pack(properties, this);
-    properties.put("fullyQualifiedPathToDialectXml", fullyQualifiedPathToDialectXml);
+    properties.put("dialectName", dialectName);
     properties.put("idleSessionTimeout", idleSessionTimeout);
     properties.put("maximumSessionExpiry", maximumSessionExpiry);
     properties.put("advertiseInterval", advertiseInterval);
     properties.put("maxInFlightEvents", maxInFlightEvents);
     properties.put("topicNameTemplate", topicNameTemplate);
+    properties.put("statusTopicNameTemplate", statusTopicNameTemplate);
     properties.put("parseToJson", parseToJson);
     properties.put("forwardUrls", forwardUrls);
     properties.put("forwardRawFrames", forwardRawFrames);
@@ -138,10 +176,13 @@ public class MavlinkConfig extends MavlinkConfigDTO implements Config {
     properties.put("dedupWindowMillis", dedupWindowMillis);
     properties.put("acceptedMessageIds", new ArrayList<>(acceptedMessageIds));
     properties.put("rejectedMessageIds", new ArrayList<>(rejectedMessageIds));
-    properties.put("knownSources", writeKnownSources(knownSources));
+    properties.put("acceptedSources", writeKnownSources(acceptedSources));
     properties.put("rejectUnknownSources", rejectUnknownSources);
     properties.put("rejectedFrameNamespace", rejectedFrameNamespace);
     properties.put("includeRejectedFrameMetadata", includeRejectedFrameMetadata);
+    properties.put("outboundTopicName", outboundTopicName);
+    properties.put("qualityOfService", qualityOfService);
+    properties.put("storeOffline", storeOffline);
     return properties;
   }
 
@@ -186,13 +227,13 @@ public class MavlinkConfig extends MavlinkConfigDTO implements Config {
     return null;
   }
 
-  private List<MavlinkKnownSourceDTO> readKnownSources(Object raw) {
-    List<MavlinkKnownSourceDTO> result = new ArrayList<>();
+  private List<MavlinkAcceptedSourceDTO> readKnownSources(Object raw) {
+    List<MavlinkAcceptedSourceDTO> result = new ArrayList<>();
     if (!(raw instanceof List<?> list)) {
       return result;
     }
     for (Object entry : list) {
-      MavlinkKnownSourceDTO source = toKnownSource(entry);
+      MavlinkAcceptedSourceDTO source = toKnownSource(entry);
       if (source != null) {
         result.add(source);
       }
@@ -200,38 +241,27 @@ public class MavlinkConfig extends MavlinkConfigDTO implements Config {
     return result;
   }
 
-  @SuppressWarnings("unchecked")
-  private MavlinkKnownSourceDTO toKnownSource(Object raw) {
-    if (raw instanceof MavlinkKnownSourceDTO source) {
+  private MavlinkAcceptedSourceDTO toKnownSource(Object raw) {
+    if (raw instanceof MavlinkAcceptedSourceDTO source) {
       return copyKnownSource(source);
     }
     if (raw instanceof ConfigurationProperties properties) {
-      MavlinkKnownSourceDTO source = new MavlinkKnownSourceDTO();
-      source.setName(properties.getProperty("name", ""));
-      source.setDescription(properties.getProperty("description", ""));
+      MavlinkAcceptedSourceDTO source = new MavlinkAcceptedSourceDTO();
       source.setSystemId(properties.getIntProperty("systemId", 0));
       source.setComponentId(properties.getIntProperty("componentId", 0));
       source.setAcceptedMessageIds(readIntegerList(properties.get("acceptedMessageIds")));
       source.setRejectedMessageIds(readIntegerList(properties.get("rejectedMessageIds")));
-      source.setVehicleClass(VehicleClass.valueOf(properties.getProperty("vehicleClass", VehicleClass.UAV.name())));
       return source;
     }
     if (raw instanceof Map<?, ?> map) {
-      MavlinkKnownSourceDTO source = new MavlinkKnownSourceDTO();
-      source.setName(readString(map.get("name")));
-      source.setDescription(readString(map.get("description")));
+      MavlinkAcceptedSourceDTO source = new MavlinkAcceptedSourceDTO();
       source.setSystemId(defaultInteger(map.get("systemId")));
       source.setComponentId(defaultInteger(map.get("componentId")));
       source.setAcceptedMessageIds(readIntegerList(map.get("acceptedMessageIds")));
       source.setRejectedMessageIds(readIntegerList(map.get("rejectedMessageIds")));
-      source.setVehicleClass(VehicleClass.valueOf((String)map.get("vehicleClass")));
       return source;
     }
     return null;
-  }
-
-  private String readString(Object value) {
-    return value == null ? "" : value.toString();
   }
 
   private int defaultInteger(Object value) {
@@ -246,21 +276,19 @@ public class MavlinkConfig extends MavlinkConfigDTO implements Config {
     return new ArrayList<>(source);
   }
 
-  private List<MavlinkKnownSourceDTO> copyKnownSources(List<MavlinkKnownSourceDTO> source) {
-    List<MavlinkKnownSourceDTO> result = new ArrayList<>();
+  private List<MavlinkAcceptedSourceDTO> copyKnownSources(List<MavlinkAcceptedSourceDTO> source) {
+    List<MavlinkAcceptedSourceDTO> result = new ArrayList<>();
     if (source == null) {
       return result;
     }
-    for (MavlinkKnownSourceDTO entry : source) {
+    for (MavlinkAcceptedSourceDTO entry : source) {
       result.add(copyKnownSource(entry));
     }
     return result;
   }
 
-  private MavlinkKnownSourceDTO copyKnownSource(MavlinkKnownSourceDTO source) {
-    MavlinkKnownSourceDTO copy = new MavlinkKnownSourceDTO();
-    copy.setName(source.getName());
-    copy.setDescription(source.getDescription());
+  private MavlinkAcceptedSourceDTO copyKnownSource(MavlinkAcceptedSourceDTO source) {
+    MavlinkAcceptedSourceDTO copy = new MavlinkAcceptedSourceDTO();
     copy.setSystemId(source.getSystemId());
     copy.setComponentId(source.getComponentId());
     copy.setAcceptedMessageIds(copyIntegerList(source.getAcceptedMessageIds()));
@@ -268,15 +296,13 @@ public class MavlinkConfig extends MavlinkConfigDTO implements Config {
     return copy;
   }
 
-  private List<ConfigurationProperties> writeKnownSources(List<MavlinkKnownSourceDTO> sources) {
+  private List<ConfigurationProperties> writeKnownSources(List<MavlinkAcceptedSourceDTO> sources) {
     List<ConfigurationProperties> result = new ArrayList<>();
     if (sources == null) {
       return result;
     }
-    for (MavlinkKnownSourceDTO source : sources) {
+    for (MavlinkAcceptedSourceDTO source : sources) {
       ConfigurationProperties properties = new ConfigurationProperties();
-      properties.put("name", source.getName());
-      properties.put("description", source.getDescription());
       properties.put("systemId", source.getSystemId());
       properties.put("componentId", source.getComponentId());
       properties.put("acceptedMessageIds", new ArrayList<>(source.getAcceptedMessageIds()));

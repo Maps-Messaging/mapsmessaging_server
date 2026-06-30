@@ -19,6 +19,7 @@
 
 package io.mapsmessaging.dto.rest.config;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -276,6 +277,7 @@ public class AuthManagerConfigDTO extends BaseManagerConfigDTO {
     this.maxSoftDelayMillis = source.maxSoftDelayMillis;
   }
 
+  @JsonIgnore
   @Override
   public String getSimpleName() {
     return "Auth";

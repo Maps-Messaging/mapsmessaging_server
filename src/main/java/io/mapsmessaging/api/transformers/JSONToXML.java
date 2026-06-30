@@ -71,6 +71,7 @@ public class JSONToXML implements InterServerTransformation {
       byte[] xml = convertUsingAttributes(jsonObject);
       messageBuilder.setOpaqueData(xml);
     } catch (Exception e) {
+      e.printStackTrace();
       logger.log(FORMATTER_UNEXPECTED_OBJECT, getName());
     }
   }

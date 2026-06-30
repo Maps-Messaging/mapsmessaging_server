@@ -1,5 +1,6 @@
 package io.mapsmessaging.dto.rest.config;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -28,6 +29,7 @@ public class LicenseManagerConfigDTO extends BaseManagerConfigDTO {
     super("LicenseManagerConfigDTO");
   }
 
+  @JsonIgnore
   @Override
   public String getSimpleName() {
     return "License";

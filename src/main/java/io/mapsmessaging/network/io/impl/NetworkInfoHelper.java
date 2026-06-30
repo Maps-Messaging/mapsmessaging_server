@@ -35,7 +35,7 @@ public class NetworkInfoHelper {
   private static final int IPV6_DATAGRAM_HEADER_SIZE = 48;
   private static final int LORA_DATAGRAM_HEADER_SIZE = 4;
 
-  public static int getMTU(InterfaceInformation info) throws SocketException {
+  public static int getMTU(InterfaceInformation info, int maxSize) throws SocketException {
     int datagramSize = info.getMTU();
     if(datagramSize < 0){
       datagramSize = 1500;
@@ -46,6 +46,9 @@ public class NetworkInfoHelper {
       datagramSize = datagramSize - IPV4_DATAGRAM_HEADER_SIZE;
     } else {
       datagramSize = datagramSize - IPV6_DATAGRAM_HEADER_SIZE;
+    }
+    if(datagramSize > maxSize){
+      datagramSize = maxSize;
     }
     return datagramSize;
   }

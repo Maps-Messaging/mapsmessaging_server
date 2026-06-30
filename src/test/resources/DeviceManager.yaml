@@ -44,7 +44,7 @@ DeviceManager:
       config:
         - bus: 1
           enabled: true
-          autoScan: true
+          autoScan: false
           topicNameTemplate: /device/[device_type]/[bus_name]/[bus_number]/[device_addr]/[device_name]
           trigger: everySecond
           devices:

@@ -36,7 +36,7 @@ NetworkManager:
       # ---------------------------------------------------------------------------------------------------------
       serverReadBufferSize: 1M
       serverWriteBufferSize: 1M
-      selectorThreadCount: 5
+      selectorThreadCount: 2
 
       # ---------------------------------------------------------------------------------------------------------
       # MQTT Protocol configuration

@@ -19,6 +19,7 @@
 
 package io.mapsmessaging.dto.rest.auth;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import io.mapsmessaging.dto.rest.config.BaseManagerConfigDTO;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
@@ -60,6 +61,7 @@ public class SecurityManagerDTO extends BaseManagerConfigDTO {
     super("SecurityManagerConfigDTO");
   }
 
+  @JsonIgnore
   @Override
   public String getSimpleName() {
     return "Security";

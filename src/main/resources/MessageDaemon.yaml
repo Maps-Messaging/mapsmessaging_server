@@ -67,7 +67,7 @@ MessageDaemon:
     # Enable or Disable $SYS topics, if disabled then the server will not populate any $SYS topics
     #
     # Default: true
-    EnableSystemTopics: true
+    EnableSystemTopics: false
 
     #
     # Enable or Disable $SYS/server topics that offer advanced JSON statistics from the server
@@ -119,3 +119,8 @@ MessageDaemon:
     # If errors detected in configuration then exit
     #
     exitOnConfigError: false
+
+    #
+    # Add a correlation Id if the event does not have one
+    #
+    enableUniqueCorrelationIds: false

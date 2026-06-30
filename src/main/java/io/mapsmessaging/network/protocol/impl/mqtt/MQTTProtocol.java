@@ -45,8 +45,10 @@ import io.mapsmessaging.network.protocol.Protocol;
 import io.mapsmessaging.network.protocol.impl.mqtt.listeners.PacketListener;
 import io.mapsmessaging.network.protocol.impl.mqtt.listeners.PacketListenerFactory;
 import io.mapsmessaging.network.protocol.impl.mqtt.packet.*;
+import io.mapsmessaging.network.protocol.impl.mqtt5.ConnectCompletionTimeout;
 import io.mapsmessaging.selector.operators.ParserExecutor;
 import io.mapsmessaging.utilities.filtering.NamespaceFilters;
+import io.mapsmessaging.utilities.threads.SimpleTaskScheduler;
 import lombok.Getter;
 import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
@@ -57,6 +59,8 @@ import java.io.IOException;
 import java.nio.channels.SelectionKey;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
 
 
 @java.lang.SuppressWarnings("DuplicatedBlocks")
@@ -77,6 +81,7 @@ public class MQTTProtocol extends Protocol {
   @Getter
   private Session session;
 
+  private ScheduledFuture<?> connectionTimeOut = null;
 
   public MQTTProtocol(EndPoint endPoint) throws IOException {
     super(endPoint, endPoint.getConfig().getProtocolConfig("mqtt"));
@@ -102,10 +107,14 @@ public class MQTTProtocol extends Protocol {
 
   @Override
   public void close() throws IOException {
+    if(selectorTask.isOpen()){
+      selectorTask.close();
+    }
+    if(session != null && !session.isClosed()){
+      SessionManager.getInstance().close(session, false);
+    }
     if (!closed) {
       closed = true;
-      selectorTask.close();
-      SessionManager.getInstance().close(session, false);
       super.close();
     }
   }
@@ -123,13 +132,14 @@ public class MQTTProtocol extends Protocol {
     connect(sessionId, username, password, null);
   }
 
-  public void connect(@NonNull @NotNull String sessionId, String username, String password, Publish willMsg ) throws IOException {
+  public void connect(@NonNull @NotNull String sessionId, String username, String password, Publish willMsg) throws IOException {
     Connect connect = new Connect();
+    connect.setSessionId(sessionId);
+    connect.setCleanSession(false);
     if (username != null) {
       connect.setUsername(username);
       connect.setPassword(password.trim().toCharArray());
     }
-    connect.setSessionId(sessionId);
     if(willMsg != null) {
       connect.setWillMsg(willMsg.getPayload());
       connect.setWillRetain(willMsg.isRetain());
@@ -137,10 +147,22 @@ public class MQTTProtocol extends Protocol {
       connect.setWillFlag(true);
       connect.setWillTopic(willMsg.getDestinationName());
     }
+    connectionTimeOut = SimpleTaskScheduler.getInstance().schedule(new ConnectCompletionTimeout(this), 1, TimeUnit.MINUTES);
     writeFrame(connect);
     registerRead();
     completedConnection();
   }
+
+
+  public void setConnected(boolean connected) {
+    super.setConnected(connected);
+    if (connectionTimeOut != null) {
+      connectionTimeOut.cancel(true);
+      connectionTimeOut = null;
+    }
+  }
+
+
 
   @Override
   public void subscribeRemote(@NonNull @NotNull String resource, @NonNull @NotNull String mappedResource, @NonNull @NotNull QualityOfService qos, @Nullable ParserExecutor parser, @Nullable InterServerTransformation transformer, StatisticsConfigDTO statistics, Map<String, Object> linkProperties) throws IOException {
@@ -172,6 +194,7 @@ public class MQTTProtocol extends Protocol {
     session.removeSubscription(resource);
   }
 
+  @Override
   public String getVersion() {
     return "3.1.1";
   }
@@ -286,8 +309,14 @@ public class MQTTProtocol extends Protocol {
     writeFrame(publish);
   }
 
-
   public void writeFrame(ServerPacket frame) {
+    if(this.endPoint.isClosed()){
+      try {
+        close();
+      } catch (IOException e) {
+        // Ignore here
+      }
+    }
     sentMessage();
     selectorTask.push(frame);
     logger.log(ServerLogMessages.PUSH_WRITE, frame);

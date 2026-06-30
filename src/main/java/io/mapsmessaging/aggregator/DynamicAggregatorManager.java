@@ -212,7 +212,12 @@ public class DynamicAggregatorManager implements Aggregator, ClientConnection, M
     AggregatorConfigDTO resolved = new AggregatorConfigDTO();
     resolved.setName(templateConfig.getName() + "-" + sanitiseKey(aggregatorKey));
     resolved.setEnabled(templateConfig.isEnabled());
-    resolved.setOutputTopic(templateConfig.getOutputTopic());
+    String resolvedName = templateConfig.getOutputTopic();
+    if(resolvedName.contains("{topicName}")){
+      resolvedName = resolvedName.replace("{topicName}", wildcardValues.get(wildcardInputIndexMap.get(templateConfig.getInputs().get(0).getTopicName())));
+    }
+
+    resolved.setOutputTopic(resolvedName);
     resolved.setWindowCloseMode(templateConfig.getWindowCloseMode());
     resolved.setWindowDurationMs(templateConfig.getWindowDurationMs());
     resolved.setTimeoutMs(templateConfig.getTimeoutMs());

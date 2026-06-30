@@ -98,22 +98,22 @@ public abstract class BaseInmarsatClient {
   }
 
   // ---------- Public parse wrappers ----------
-  protected <T> T send(HttpRequest req, Class<T> cls) {
+  protected <T> T send(HttpRequest req, Class<T> cls) throws IOException {
     String body = doSendWithRetry(req);
     return gson.fromJson(body, cls);
   }
 
-  protected <T> T send(HttpRequest req, Type type) {
+  protected <T> T send(HttpRequest req, Type type) throws IOException {
     String body = doSendWithRetry(req);
     return gson.fromJson(body, type);
   }
 
-  protected void sendVoid(HttpRequest req) {
+  protected void sendVoid(HttpRequest req) throws IOException {
     doSendWithRetry(req);
   }
 
   // ---------- Core send with retry/backoff ----------
-  private String doSendWithRetry(HttpRequest req) {
+  private String doSendWithRetry(HttpRequest req) throws IOException {
     int attempt = 0;
     while (true) {
       try {
@@ -136,6 +136,8 @@ public abstract class BaseInmarsatClient {
         throw errorFor(resp);
       } catch (InterruptedException ie) {
         Thread.currentThread().interrupt();
+        //log this, do not throw
+
         throw new RuntimeException("HTTP request interrupted", ie);
       } catch (IOException ioe) {
         if (attempt < MAX_RETRIES) {
@@ -143,7 +145,7 @@ public abstract class BaseInmarsatClient {
           attempt++;
           continue;
         }
-        throw new RuntimeException("HTTP transport failure", ioe);
+        throw new IOException("HTTP transport failure", ioe);
       }
     }
   }
@@ -165,21 +167,21 @@ public abstract class BaseInmarsatClient {
   }
 
   // ---------- With X-Mailbox ----------
-  protected <T> T get(String path, Map<String, String> query, String bearer, String xMailbox, Class<T> cls) {
+  protected <T> T get(String path, Map<String, String> query, String bearer, String xMailbox, Class<T> cls) throws IOException {
     HttpRequest req = baseRequest(path + qs(query), bearer)
         .header("X-Mailbox", Objects.requireNonNull(xMailbox))
         .GET().build();
     return send(req, cls);
   }
 
-  protected <T> T get(String path, Map<String, String> query, String bearer, String xMailbox, Type type) {
+  protected <T> T get(String path, Map<String, String> query, String bearer, String xMailbox, Type type) throws IOException {
     HttpRequest req = baseRequest(path + qs(query), bearer)
         .header("X-Mailbox", Objects.requireNonNull(xMailbox))
         .GET().build();
     return send(req, type);
   }
 
-  protected <T> T postJson(String path, Object body, String bearer, String xMailbox, Class<T> cls) {
+  protected <T> T postJson(String path, Object body, String bearer, String xMailbox, Class<T> cls) throws IOException {
     HttpRequest req = baseRequest(path, bearer)
         .header("X-Mailbox", Objects.requireNonNull(xMailbox))
         .header("Content-Type", "application/json")
@@ -188,7 +190,7 @@ public abstract class BaseInmarsatClient {
     return send(req, cls);
   }
 
-  protected <T> T getWithBodyJson(String path, Object body, String bearer, String xMailbox, Class<T> cls) {
+  protected <T> T getWithBodyJson(String path, Object body, String bearer, String xMailbox, Class<T> cls) throws IOException {
     HttpRequest req = baseRequest(path, bearer)
         .header("X-Mailbox", Objects.requireNonNull(xMailbox))
         .header("Content-Type", "application/json")
@@ -198,7 +200,7 @@ public abstract class BaseInmarsatClient {
   }
 
   // ---------- No X-Mailbox (VAR endpoints) ----------
-  protected <T> T getNoMailbox(String path, Map<String, String> query, String bearer, Type type) {
+  protected <T> T getNoMailbox(String path, Map<String, String> query, String bearer, Type type) throws IOException {
     HttpRequest req = baseRequest(path + qs(query), bearer).GET().build();
     return send(req, type);
   }

@@ -23,6 +23,8 @@ package io.mapsmessaging.rest;
 import com.atlassian.oai.validator.restassured.OpenApiValidationFilter;
 import io.mapsmessaging.test.BaseTestConfig;
 import io.restassured.RestAssured;
+import io.restassured.config.HttpClientConfig;
+import io.restassured.config.RestAssuredConfig;
 import io.restassured.http.Cookies;
 import io.restassured.specification.RequestSpecification;
 import org.junit.jupiter.api.BeforeAll;
@@ -109,14 +111,20 @@ public abstract class ApiTestBase extends BaseTestConfig {
   }
 
   private static void waitUntilHealthy(Duration timeout) {
+    RestAssuredConfig restAssuredConfig = RestAssuredConfig.config()
+        .httpClient(HttpClientConfig.httpClientConfig()
+            .setParam("http.connection.timeout", 2_000)
+            .setParam("http.socket.timeout", 2_000)
+            .setParam("http.connection-manager.timeout", 2_000));
+
     Instant deadline = Instant.now().plus(timeout);
     Throwable lastError = null;
 
     while (Instant.now().isBefore(deadline)) {
       try {
-        // Change "/health" to whatever your server exposes.
         int status = RestAssured
             .given()
+            .config(restAssuredConfig)
             .baseUri(baseUrl)
             .get("/health")
             .getStatusCode();
@@ -124,22 +132,22 @@ public abstract class ApiTestBase extends BaseTestConfig {
         if (status >= 200 && status < 500) {
           return;
         }
-      } catch (Throwable t) {
-        lastError = t;
+      } catch (Throwable throwable) {
+        lastError = throwable;
       }
 
       try {
         Thread.sleep(250);
-      } catch (InterruptedException e) {
+      } catch (InterruptedException interruptedException) {
         Thread.currentThread().interrupt();
-        throw new RuntimeException("Interrupted while waiting for server health", e);
+        throw new RuntimeException("Interrupted while waiting for server health", interruptedException);
       }
     }
 
-    RuntimeException e = new RuntimeException("Server not healthy at " + baseUrl + " within " + timeout);
+    RuntimeException exception = new RuntimeException("Server not healthy at " + baseUrl + " within " + timeout);
     if (lastError != null) {
-      e.addSuppressed(lastError);
+      exception.addSuppressed(lastError);
     }
-    throw e;
+    throw exception;
   }
 }

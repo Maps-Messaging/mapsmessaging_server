@@ -31,16 +31,13 @@ import io.mapsmessaging.network.io.impl.SelectorCallback;
 import io.mapsmessaging.network.io.impl.SelectorTask;
 import io.mapsmessaging.network.io.impl.udp.UDPFacadeEndPoint;
 import io.mapsmessaging.network.io.impl.udp.session.UDPSessionState;
-import org.xml.sax.SAXException;
 
-import javax.xml.parsers.ParserConfigurationException;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.net.URI;
 import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
-import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -49,31 +46,19 @@ import static io.mapsmessaging.logging.ServerLogMessages.*;
 
 public class MavlinkInterfaceManager implements SelectorCallback, MavlinkConnectionManager  {
 
-  private final Logger logger;
+  private static final Logger logger = LoggerFactory.getLogger(MavlinkInterfaceManager.class);
   private final SelectorTask selectorTask;
   private final EndPoint endPoint;
   private final MavLinkSessionManager<MavlinkProtocol> currentSessions;
   private final MavlinkEventFactory mavlinkEventFactory;
-
-
   private final MavlinkConfig mavlinkConfig;
   private final List<InetSocketAddress> forwardList;
 
   public MavlinkInterfaceManager(EndPoint endPoint) throws IOException {
-    logger = LoggerFactory.getLogger(MavlinkInterfaceManager.class);
     this.endPoint = endPoint;
     mavlinkConfig = (MavlinkConfig) endPoint.getConfig().getProtocolConfig("mavlink");
     long timeout = mavlinkConfig.getIdleSessionTimeout();
-    String path = mavlinkConfig.getFullyQualifiedPathToDialectXml();
-    Path dialectPath = null;
-    if(path != null && !path.isBlank()){
-      dialectPath = Path.of(path);
-      if(!dialectPath.toFile().exists()){
-        logger.log(MAVLINK_DIALECT_FAILED_TO_LOAD, path);
-        dialectPath = null;
-      }
-    }
-    mavlinkEventFactory  = loadDialect(dialectPath);
+    mavlinkEventFactory  = loadDialect(mavlinkConfig.getDialectName());
     currentSessions = new MavLinkSessionManager<>(timeout);
 
     selectorTask = new SelectorTask(this, endPoint.getConfig().getEndPointConfig(), endPoint.isUDP());
@@ -96,16 +81,11 @@ public class MavlinkInterfaceManager implements SelectorCallback, MavlinkConnect
     }
   }
 
-  private MavlinkEventFactory loadDialect(Path dialectPath) throws IOException {
-
-    if(dialectPath != null){
-      try {
-        return new MavlinkEventFactory(dialectPath);
-      } catch (ParserConfigurationException |SAXException e) {
-        logger.log(MAVLINK_DIALECT_FORMAT_FAILURES, dialectPath.toString(), e);
-      }
+  public static MavlinkEventFactory loadDialect(String name) throws IOException {
+    if(name == null || name.isBlank()) {
+      return new MavlinkEventFactory();
     }
-    return new MavlinkEventFactory();
+    return new MavlinkEventFactory(name);
   }
 
   @Override
@@ -124,9 +104,9 @@ public class MavlinkInterfaceManager implements SelectorCallback, MavlinkConnect
       ProcessedFrame env = potentialFrame.get();
       logger.log(MAVLINK_DETECTED_PACKET, endPoint.getName(), env.getMessageName());
       MavlinkDeviceKey key = buildKey(packet, env.getFrame().getSystemId());
-      boolean allowed = mavlinkConfig.getKnownSources() == null ||
-          mavlinkConfig.getKnownSources().isEmpty() ||
-          mavlinkConfig.getKnownSources().stream().anyMatch(knownSource -> knownSource.getSystemId() == key.getSystemId());
+      boolean allowed = mavlinkConfig.getAcceptedSources() == null ||
+          mavlinkConfig.getAcceptedSources().isEmpty() ||
+          mavlinkConfig.getAcceptedSources().stream().anyMatch(knownSource -> knownSource.getSystemId() == key.getSystemId());
 
       if(allowed) {
         UDPSessionState<MavlinkProtocol> state = findOrCreate(key);
@@ -134,12 +114,11 @@ public class MavlinkInterfaceManager implements SelectorCallback, MavlinkConnect
           state.getContext().processPacket(packet);
         } else if (state.getContext() != null) {
           MavlinkProtocol protocol = state.getContext();
-          protocol.processRawFrame(env, raw);
+          protocol.processRawFrame(env, raw, packet.getFromAddress().toString());
           forwardPacket(raw);
         }
       }
       else{
-        System.out.println("Ignoring packet from unknown source "+key.getSystemId());
         forwardPacket(raw);
       }
     }
@@ -169,12 +148,8 @@ public class MavlinkInterfaceManager implements SelectorCallback, MavlinkConnect
   }
 
   private boolean fromForward(Packet packet){
-    for(SocketAddress socketAddress:forwardList){
-      if(socketAddress.equals(packet.getFromAddress())){
-        return true;
-      }
-    }
-    return false;
+    SocketAddress fromAddress = packet.getFromAddress();
+    return forwardList.stream().anyMatch(forwardAddress -> forwardAddress.equals(fromAddress));
   }
 
   private void forwardPacket(byte[] raw){

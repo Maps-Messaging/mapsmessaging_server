@@ -5,6 +5,8 @@ import io.mapsmessaging.state.drone.model.LinkState;
 
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
+import io.mapsmessaging.state.auditor.StateAuditContext;
+import lombok.Getter;
 
 import java.time.Instant;
 import java.util.ArrayList;
@@ -24,16 +26,19 @@ public class TwinManager {
   private final ConcurrentHashMap<String, EntityTwin> twins = new ConcurrentHashMap<>();
   private final CopyOnWriteArrayList<TwinObserver> observers = new CopyOnWriteArrayList<>();
   private final Logger logger = LoggerFactory.getLogger(TwinManager.class);
+  @Getter
+  private final StateAuditContext auditContext;
   private final boolean removeExpiredTwins;
   private final long staleTimeoutMillis;
   private final long heartbeatTimeoutMillis;
   private final long retentionTimeoutMillis;
 
   public TwinManager() {
-    this(true, 10000L, 5000L, 120000L);
+    this(true, 10000L, 5000L, 120000L, null);
   }
 
-  public TwinManager(boolean removeExpiredTwins, long staleTimeoutMillis, long heartbeatTimeoutMillis, long retentionTimeoutMillis) {
+  public TwinManager(boolean removeExpiredTwins, long staleTimeoutMillis, long heartbeatTimeoutMillis, long retentionTimeoutMillis, StateAuditContext auditContext) {
+    this.auditContext = auditContext;
     this.removeExpiredTwins = removeExpiredTwins;
     this.staleTimeoutMillis = staleTimeoutMillis;
     this.heartbeatTimeoutMillis = heartbeatTimeoutMillis;
@@ -109,10 +114,7 @@ public class TwinManager {
     return Optional.ofNullable(removed);
   }
 
-  public Optional<EntityTwin> updateTwin(String twinId,
-                                         Consumer<EntityTwin> updater,
-                                         TwinUpdateContext context) {
-
+  public Optional<EntityTwin> updateTwin(String twinId, Consumer<EntityTwin> updater, TwinUpdateContext context) {
     Objects.requireNonNull(twinId, "twinId must not be null");
     Objects.requireNonNull(updater, "updater must not be null");
 
@@ -126,6 +128,7 @@ public class TwinManager {
     synchronized (twin) {
       updater.accept(twin);
       twin.setLastSeenAt(now);
+      twin.setValidTill(now.plus(2, java.time.temporal.ChronoUnit.HOURS));
       transitionStatus(twin, TwinLifecycleStatus.ACTIVE, context);
       ensureLinkConnected(twin);
     }
@@ -333,7 +336,7 @@ public class TwinManager {
     for (TwinObserver observer : observers) {
       try {
         observer.onTwinAdded(twin, context);
-      } catch (Exception ignore) {
+      } catch (Throwable ignore) {
         logger.log(TWIN_OBSERVER_CALLBACK_FAILED, ignore);
       }
     }
@@ -343,7 +346,7 @@ public class TwinManager {
     for (TwinObserver observer : observers) {
       try {
         observer.onTwinUpdated(twin.getTwinId(), twin, context);
-      } catch (Exception ignore) {
+      } catch (Throwable ignore) {
         logger.log(TWIN_OBSERVER_CALLBACK_FAILED, ignore);
       }
     }
@@ -353,7 +356,7 @@ public class TwinManager {
     for (TwinObserver observer : observers) {
       try {
         observer.onTwinRemoved(removed, context);
-      } catch (Exception ignore) {
+      } catch (Throwable ignore) {
         logger.log(TWIN_OBSERVER_CALLBACK_FAILED, ignore);
       }
     }
@@ -365,7 +368,7 @@ public class TwinManager {
     for (TwinObserver observer : observers) {
       try {
         observer.onRelationshipUpdated(twinId, relationship, context);
-      } catch (Exception ignore) {
+      } catch (Throwable ignore) {
         logger.log(TWIN_OBSERVER_CALLBACK_FAILED, ignore);
       }
     }
@@ -377,7 +380,7 @@ public class TwinManager {
     for (TwinObserver observer : observers) {
       try {
         observer.onRelationshipRemoved(twinId, relationship, context);
-      } catch (Exception ignore) {
+      } catch (Throwable ignore) {
         logger.log(TWIN_OBSERVER_CALLBACK_FAILED, ignore);
       }
     }

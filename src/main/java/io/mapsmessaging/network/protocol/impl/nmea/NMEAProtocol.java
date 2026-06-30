@@ -26,6 +26,7 @@ import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.api.transformers.InterServerTransformation;
 import io.mapsmessaging.configuration.ConfigurationProperties;
 import io.mapsmessaging.dto.rest.analytics.StatisticsConfigDTO;
+import io.mapsmessaging.dto.rest.config.protocol.impl.NmeaConfigDTO;
 import io.mapsmessaging.dto.rest.protocol.ProtocolInformationDTO;
 import io.mapsmessaging.dto.rest.protocol.impl.NmeaProtocolInformation;
 import io.mapsmessaging.engine.destination.MessageOverrides;
@@ -70,21 +71,28 @@ public class NMEAProtocol extends Protocol {
   private final String serverLocationSentence;
   private final boolean publishRecords;
   private final Map<String, SentenceMapping> registeredSentences;
-  private final String destinationName;
+  private final String topicTemplate;
+  private final boolean storeOffline;
+  private final QualityOfService qos;
 
   public NMEAProtocol(EndPoint endPoint, Packet packet) throws LoginException, IOException {
     super(endPoint,  endPoint.getConfig().getProtocolConfig("NMEA-0183"));
-    if (endPoint instanceof StreamEndPoint) {
-      ((StreamEndPoint) endPoint).setStreamHandler(new NMEAStreamHandler());
+    if (endPoint instanceof StreamEndPoint streamEndPoint) {
+      streamEndPoint.setStreamHandler(new NMEAStreamHandler());
     }
     if (packet != null) {
       packet.clear();
     }
-    SessionContextBuilder sessionContextBuilder = new SessionContextBuilder("NMEA-0183" + endPoint.getId(), new ProtocolClientConnection(this));
+    SessionContextBuilder sessionContextBuilder = new SessionContextBuilder("NMEA-0183" + endPoint.getName()+":"+endPoint.getId(), new ProtocolClientConnection(this));
     sessionContextBuilder.setSessionExpiry(0);
     sessionContextBuilder.setPersistentSession(false);
+    sessionContextBuilder.isInternal(true);
+    sessionContextBuilder.setUsername("anonymous");
+    sessionContextBuilder.setPassword("".toCharArray());
     session = SessionManager.getInstance().create(sessionContextBuilder.build(), this);
-    selectorTask = new SelectorTask(this, endPoint.getConfig().getEndPointConfig());
+    session.login();
+    session.start();
+    selectorTask = new SelectorTask(this, endPoint.getConfig().getEndPointConfig(), endPoint.isUDP());
     sentenceMap = new LinkedHashMap<>();
     endPoint.register(SelectionKey.OP_READ, selectorTask.getReadTask());
     ProtocolMessageTransformation transformation = TransformationManager.getInstance().getTransformation(
@@ -94,18 +102,27 @@ public class NMEAProtocol extends Protocol {
         session.getSecurityContext().getUsername()
     );
     setProtocolMessageTransformation(transformation);
-    ConfigurationProperties configurationProperties = ConfigurationManager.getInstance().getProperties("NMEA-0183");
-    format = configurationProperties.getProperty("format", "raw");
-    boolean setServerLocation = configurationProperties.getBooleanProperty("serverLocation", false);
+    NmeaConfigDTO nmeaConfigDTO = ( NmeaConfigDTO) super.protocolConfig;
+    topicTemplate = nmeaConfigDTO.getTopicNameTemplate().replace("{deviceName}", endPoint.getName().replace("/", "_"));
+    qos = QualityOfService.getInstance(nmeaConfigDTO.getQualityOfService());
+    storeOffline = nmeaConfigDTO.isStoreOffline();
+    format = nmeaConfigDTO.getFormat();
+    boolean setServerLocation =nmeaConfigDTO.isUseForServerLocation();
     if (setServerLocation) {
-      serverLocationSentence = configurationProperties.getProperty("sentenceForPosition");
+      serverLocationSentence = nmeaConfigDTO.getSentenceForServerLocation();
     } else {
-      serverLocationSentence = null;
+      serverLocationSentence = "";
     }
-    publishRecords = configurationProperties.getBooleanProperty("publish", false);
+    publishRecords = nmeaConfigDTO.isPublish();
+
+    ConfigurationProperties configurationProperties = ConfigurationManager.getInstance().getProperties("NMEA-0183");
     sentenceFactory = new SentenceFactory((ConfigurationProperties) configurationProperties.get("sentences"));
     registeredSentences = new LinkedHashMap<>();
-    destinationName = "$NMEA/" + endPoint.getName();
+  }
+
+  @Override
+  public void close() throws IOException {
+    SessionManager.getInstance().close(session, false);
   }
 
   @Override
@@ -141,10 +158,10 @@ public class NMEAProtocol extends Protocol {
       try {
         NMEAPacket nmeaPacket = new NMEAPacket(packet);
         String sentenceId = nmeaPacket.getName();
-        if (sentenceId.length() == 5) {
+        if(sentenceId != null && !sentenceId.isEmpty()) {
           prepareSentence(nmeaPacket.getSentence(), sentenceId, nmeaPacket.getEntries());
         }
-      } catch (EndOfBufferException e) {
+        } catch (EndOfBufferException e) {
         packet.position(pos);
       }
     }
@@ -153,8 +170,9 @@ public class NMEAProtocol extends Protocol {
   }
 
   private void prepareSentence(String sentence, String sentenceId, Iterator<String> gpsWords) {
+    String destination = topicTemplate.replace("{sentence}", sentenceId);
     if (registeredSentences.isEmpty()) {
-      publishMessage(sentence, sentenceId, gpsWords, destinationName, null);
+      publishMessage(sentence, sentenceId, gpsWords, destination, null);
     } else {
       SentenceMapping mapping = registeredSentences.get(sentenceId);
       if (mapping != null) {
@@ -162,7 +180,7 @@ public class NMEAProtocol extends Protocol {
       } else { // check wild card
         mapping = registeredSentences.get("#");
         if (mapping != null) {
-          String destination = mapping.destination;
+          destination = mapping.destination;
           if (destination.contains("#")) {
             destination = destination.replace("#", sentenceId);
           }
@@ -176,7 +194,13 @@ public class NMEAProtocol extends Protocol {
   @SneakyThrows
   @java.lang.SuppressWarnings({"java:S3824"})
   private void publishMessage(String sentence, String sentenceId, Iterator<String> gpsWords, String destinationName, InterServerTransformation transformer) {
-    String processed = parseSentence(sentence, sentenceId, gpsWords);
+    String processed = null;
+    try {
+      processed = parseSentence(sentence, sentenceId, gpsWords);
+    } catch (Exception e) {
+      // log
+      return;
+    }
     if (publishRecords) {
       Destination destination = sentenceMap.get(sentenceId);
       if (destination == null) {
@@ -186,7 +210,8 @@ public class NMEAProtocol extends Protocol {
       if (destination != null) {
         MessageBuilder messageBuilder = new MessageBuilder();
         messageBuilder.setOpaqueData(processed.getBytes())
-            .setMessageExpiryInterval(8, TimeUnit.SECONDS) // Expire the event in 8 seconds
+            .setQoS(qos)
+            .storeOffline(storeOffline)
             .setTransformation(getProtocolMessageTransformation());
         Message message = MessageOverrides.createMessageBuilder(protocolConfig.getMessageDefaults(), messageBuilder).build();
         destination.storeMessage(message);
@@ -198,10 +223,12 @@ public class NMEAProtocol extends Protocol {
   private String parseSentence(String raw, String sentenceId, Iterator<String> gpsWords) {
     if (format.equalsIgnoreCase("json") || serverLocationSentence != null) {
       Sentence sentence = sentenceFactory.parse(sentenceId, gpsWords);
-      if (sentenceId.equalsIgnoreCase(serverLocationSentence)  || sentenceId.toLowerCase().endsWith(serverLocationSentence.toLowerCase())) {
-        PositionType latitude = (PositionType) sentence.get("latitude");
-        PositionType longitude = (PositionType) sentence.get("longitude");
-        LocationManager.getInstance().setPosition(latitude.getPosition(), longitude.getPosition());
+      if (sentenceId.equalsIgnoreCase(serverLocationSentence) ) {
+        if(sentence != null && sentence.get("latitude") != null && sentence.get("longitude") != null) {
+          PositionType latitude = (PositionType) sentence.get("latitude");
+          PositionType longitude = (PositionType) sentence.get("longitude");
+          LocationManager.getInstance().setPosition(latitude.getPosition(), longitude.getPosition());
+        }
       }
       if (sentence != null && format.equalsIgnoreCase("json")) {
         return sentence.toJSON();

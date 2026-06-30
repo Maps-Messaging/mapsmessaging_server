@@ -152,11 +152,11 @@ public class SubscriptionController implements DestinationManagerListener {
     }
   }
 
-  public void close() {
+  public void close(boolean closeOnly) {
     logger.log(ServerLogMessages.SUBSCRIPTION_MGR_CLOSE, sessionId);
     destinationManager.removeListener(this);
     for(SubscriptionModeManager managers: subscriptionModeManager.values()){
-      managers.close();
+      managers.close(closeOnly);
     }
     subscriptions.clear();
     contextMap.clear();
@@ -368,15 +368,20 @@ public class SubscriptionController implements DestinationManagerListener {
         try {
           subscription = modeManager.processSubscriptions(this, context, destinationSet, isReload);
         } catch (IOException e) {
-          e.printStackTrace();
-          //ToDo, log this and report error
+          logger.log(ServerLogMessages.SUBSCRIPTION_MGR_FAILED, sessionId, context.getFilter(), e);
         }
       }
     } else {
-      // We have received a subscription for an already registered subscription!!!
-      delSubscription(context.getKey());
-      context.setReplaced(true);
-      return addSubscription(context);
+      isReload = true;
+      DestinationSet destinationSet = subscriptions.get(context.getKey());
+      if (destinationSet != null && !destinationSet.isEmpty()) {
+        SubscriptionModeManager modeManager = subscriptionModeManager.get(context.getDestinationMode());
+        try {
+          subscription = modeManager.processSubscriptions(this, context, destinationSet, isReload);
+        } catch (IOException e) {
+          logger.log(ServerLogMessages.SUBSCRIPTION_MGR_FAILED, sessionId, context.getFilter(), e);
+        }
+      }
     }
     if (!isReload) {
       contextMap.put(context.getKey(), context);

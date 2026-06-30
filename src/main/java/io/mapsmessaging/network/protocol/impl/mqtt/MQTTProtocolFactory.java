@@ -23,6 +23,7 @@ import io.mapsmessaging.api.features.QualityOfService;
 import io.mapsmessaging.dto.rest.config.network.EndPointConnectionServerConfigDTO;
 import io.mapsmessaging.dto.rest.config.network.EndPointServerConfigDTO;
 import io.mapsmessaging.dto.rest.config.network.MqttWillConfigDTO;
+import io.mapsmessaging.dto.rest.config.protocol.impl.MqttVersion;
 import io.mapsmessaging.network.io.EndPoint;
 import io.mapsmessaging.network.io.Packet;
 import io.mapsmessaging.network.protocol.Protocol;
@@ -33,6 +34,7 @@ import io.mapsmessaging.network.protocol.impl.mqtt.packet.Publish;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
+import java.util.Map;
 
 public class MQTTProtocolFactory extends ProtocolImplFactory {
 
@@ -47,7 +49,7 @@ public class MQTTProtocolFactory extends ProtocolImplFactory {
   }
 
   @Override
-  public Protocol connect(EndPoint endPoint, String sessionId, String username, String password) throws IOException {
+  public Protocol connect(EndPoint endPoint, String sessionId, String username, String password, Map<String, String> topicMap) throws IOException {
     MQTTProtocol protocol = new MQTTProtocol(endPoint);
     EndPointServerConfigDTO dto = endPoint.getServer().getConfig();
     Publish willMsg = null;
@@ -71,13 +73,14 @@ public class MQTTProtocolFactory extends ProtocolImplFactory {
         );
       }
     }
+    protocol.getTopicNameMapping().putAll(topicMap);
     protocol.connect(sessionId, username, password, willMsg);
     return protocol;
   }
 
   @Override
   public boolean matches(String protocolName){
-    return super.matches(protocolName) || "mqtt-v3".equalsIgnoreCase(protocolName);
+    return super.matches(protocolName) || MqttVersion.MQTT_3_1_1.name().equalsIgnoreCase(protocolName);
   }
 
   public void create(EndPoint endPoint, Packet packet) throws IOException {

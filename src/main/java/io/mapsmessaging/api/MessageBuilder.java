@@ -85,7 +85,12 @@ public class MessageBuilder {
     payloadUTF8 = previousMessage.isUTF8();
     expiry = (previousMessage.getExpiry() - System.currentTimeMillis());
     contentType = previousMessage.getContentType();
-    correlationData = previousMessage.getCorrelationData();
+    if(previousMessage.getCorrelationData() != null && !previousMessage.isCorrelationDataByteArray()) {
+      correlationData = new String(previousMessage.getCorrelationData());
+    }
+    else {
+      correlationData = previousMessage.getCorrelationData();
+    }
     qualityOfService = previousMessage.getQualityOfService();
     delayed = (previousMessage.getDelayed() - System.currentTimeMillis() );
   }

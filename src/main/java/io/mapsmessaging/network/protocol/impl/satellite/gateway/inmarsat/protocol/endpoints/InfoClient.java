@@ -23,6 +23,7 @@ import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import io.mapsmessaging.network.protocol.impl.satellite.gateway.inmarsat.protocol.model.ErrorDef;
 
+import java.io.IOException;
 import java.lang.reflect.Type;
 import java.net.URI;
 import java.net.http.HttpClient;
@@ -40,7 +41,7 @@ public final class InfoClient extends BaseInmarsatClient {
   /**
    * VAR / global: no X-Mailbox header
    */
-  public List<ErrorDef> getErrorCodes(String bearer) {
+  public List<ErrorDef> getErrorCodes(String bearer) throws IOException {
     return getNoMailbox("info/errors", Map.of(), bearer, ERROR_LIST);
   }
 }

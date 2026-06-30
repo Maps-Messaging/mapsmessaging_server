@@ -86,6 +86,8 @@ public class CanaerospaceProtocol extends Protocol {
   private final SchemaConfig defaultSchemaConfig;
   private final ParseMode parseMode;
   private final Map<Integer, String> mapCanIdToName;
+  private final boolean storeOffline;
+  private final QualityOfService qos;
 
   public CanaerospaceProtocol(CanbusEndPoint endPoint, @NotNull @NonNull ProtocolConfigDTO protocolConfig) throws IOException {
     super(endPoint, protocolConfig);
@@ -116,6 +118,8 @@ public class CanaerospaceProtocol extends Protocol {
 
     formatter = MessageFormatterFactory.getInstance().getFormatter(canAerospaceSchemaConfig);
 
+    storeOffline = canAerospaceConfig.isStoreOffline();
+    qos = QualityOfService.getInstance(canAerospaceConfig.getQualityOfService());
     try {
       session = buildSession(endPoint.getName(), 10000);
     }
@@ -223,9 +227,9 @@ public class CanaerospaceProtocol extends Protocol {
     Message message = messageBuilder
         .setOpaqueData(json.toString().getBytes(StandardCharsets.UTF_8))
         .setDataMap(dataMap)
-        .setQoS(QualityOfService.AT_MOST_ONCE)
+        .setQoS(qos)
         .setRetain(false)
-        .storeOffline(false)
+        .storeOffline(storeOffline)
         .setContentType("application/json")
         .setMeta(metadata)
         .setSchemaId(defaultSchemaConfig.getUniqueId())

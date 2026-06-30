@@ -28,6 +28,7 @@ import io.mapsmessaging.network.protocol.impl.satellite.gateway.inmarsat.protoco
 import io.mapsmessaging.utilities.GsonFactory;
 import lombok.Getter;
 
+import java.io.IOException;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.time.Duration;
@@ -86,13 +87,13 @@ public final class InmarsatSession {
     this.info = new InfoClient(base, http, gson, auth);
   }
 
-  private String bearer() {
+  private String bearer() throws IOException {
     return auth.getValidBearer(clientId, clientSecret);
   }
 
   // ---- Error code index -----------------------------------------------------
 
-  public Map<Integer, ErrorDef> errorIndex() {
+  public Map<Integer, ErrorDef> errorIndex() throws IOException {
     Map<Integer, ErrorDef> cached = errorIndexRef.get();
     Instant loadedAt = errorIndexLoadedAt.get();
     Instant now = Instant.now();
@@ -120,10 +121,14 @@ public final class InmarsatSession {
   }
 
   public Optional<ErrorDef> findError(int code) {
-    return Optional.ofNullable(errorIndex().get(code));
+    try {
+      return Optional.ofNullable(errorIndex().get(code));
+    } catch (IOException e) {
+      return Optional.empty();
+    }
   }
 
-  public String explainError(int code) {
+  public String explainError(int code) throws IOException {
     ErrorDef d = errorIndex().get(code);
     if (d == null) return "Unknown error (code=" + code + ")";
     String reason = d.getReason() == null ? "" : d.getReason();
@@ -131,7 +136,7 @@ public final class InmarsatSession {
     return "code=" + d.getCode() + " reason='" + reason + "' message='" + message + "'";
   }
 
-  public void refreshErrors() {
+  public void refreshErrors() throws IOException {
     synchronized (errorIndexRef) {
       List<ErrorDef> defs = info.getErrorCodes(bearer());
       Map<Integer, ErrorDef> idx = defs == null ? Collections.emptyMap()
@@ -146,7 +151,7 @@ public final class InmarsatSession {
 
   // ---- Global (non-mailbox) API --------------------------------------------
 
-  public List<ErrorDef> getErrorCodes() {
+  public List<ErrorDef> getErrorCodes() throws IOException {
     return info.getErrorCodes(bearer());
   }
 
@@ -170,10 +175,10 @@ public final class InmarsatSession {
       this.xMailbox = xMailbox;
     }
 
-    private String bearer() { return InmarsatSession.this.bearer(); }
+    private String bearer() throws IOException { return InmarsatSession.this.bearer(); }
 
     // Messaging
-    public MobileOriginatedResponse pollMO(String startTimeIso) {
+    public MobileOriginatedResponse pollMO(String startTimeIso) throws IOException {
       long start = System.currentTimeMillis();
       try {
         return messages.getMobileOriginated(bearer(), xMailbox, startTimeIso);
@@ -182,7 +187,7 @@ public final class InmarsatSession {
       }
     }
 
-    public MobileTerminatedSubmitResponse submitMT(MobileTerminatedSubmitRequest body) {
+    public MobileTerminatedSubmitResponse submitMT(MobileTerminatedSubmitRequest body) throws IOException {
       long start = System.currentTimeMillis();
       try {
         return messages.submitMobileTerminated(bearer(), xMailbox, body);
@@ -191,7 +196,7 @@ public final class InmarsatSession {
       }
     }
 
-    public MobileTerminatedStatusResponse pollMTStatus(String startTimeIso) {
+    public MobileTerminatedStatusResponse pollMTStatus(String startTimeIso) throws IOException {
       long start = System.currentTimeMillis();
       try {
         return messages.getMobileTerminatedStatus(bearer(), xMailbox, startTimeIso);
@@ -200,7 +205,7 @@ public final class InmarsatSession {
       }
     }
 
-    public List<MobileTerminatedDetail> getMTDetails(List<String> messageIds) {
+    public List<MobileTerminatedDetail> getMTDetails(List<String> messageIds) throws IOException {
       long start = System.currentTimeMillis();
       try {
         return messages.getMobileTerminatedDetails(bearer(), xMailbox, messageIds);
@@ -209,7 +214,7 @@ public final class InmarsatSession {
       }
     }
 
-    public MobileTerminatedSubmitResponse mute(List<MuteCommand> cmds, boolean usePost) {
+    public MobileTerminatedSubmitResponse mute(List<MuteCommand> cmds, boolean usePost) throws IOException {
       long start = System.currentTimeMillis();
       try {
         return commands.mute(bearer(), xMailbox, cmds, usePost);
@@ -219,7 +224,7 @@ public final class InmarsatSession {
     }
 
     // Devices
-    public List<DeviceInfo> listDevices(String deviceId) {
+    public List<DeviceInfo> listDevices(String deviceId) throws IOException {
       long start = System.currentTimeMillis();
       try {
         return devices.listDevices(bearer(), xMailbox, null, null, deviceId);
@@ -228,7 +233,7 @@ public final class InmarsatSession {
       }
     }
 
-    public List<DeviceInfo> listDevices(Integer limit, Integer offset, String deviceId) {
+    public List<DeviceInfo> listDevices(Integer limit, Integer offset, String deviceId) throws IOException {
       long start = System.currentTimeMillis();
       try {
         return devices.listDevices(bearer(), xMailbox, limit, offset, deviceId);
@@ -238,7 +243,7 @@ public final class InmarsatSession {
     }
 
     // Mailbox admin
-    public Mailbox getMailbox() {
+    public Mailbox getMailbox() throws IOException {
       long start = System.currentTimeMillis();
       try {
         return mailbox.getMailbox(bearer(), xMailbox);
@@ -252,7 +257,7 @@ public final class InmarsatSession {
       return InmarsatSession.this.findError(code);
     }
 
-    public String explainError(int code) {
+    public String explainError(int code) throws IOException {
       return InmarsatSession.this.explainError(code);
     }
   }
