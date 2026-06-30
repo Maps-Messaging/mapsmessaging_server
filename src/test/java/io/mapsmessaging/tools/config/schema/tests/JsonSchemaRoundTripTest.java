@@ -26,12 +26,12 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.networknt.schema.Error;
+import com.networknt.schema.InputFormat;
 import com.networknt.schema.Schema;
 import com.networknt.schema.SchemaRegistry;
 import com.networknt.schema.dialect.Dialects;
 import io.mapsmessaging.dto.rest.auth.SecurityManagerDTO;
 import io.mapsmessaging.dto.rest.config.*;
-import io.mapsmessaging.dto.rest.config.lora.LoRaDeviceConfigDTO;
 import io.mapsmessaging.dto.rest.config.ml.MLModelManagerDTO;
 import io.mapsmessaging.dto.rest.schema.SchemaManagerConfigDTO;
 import io.mapsmessaging.tools.config.schema.RuntimeJsonSchemaGenerator;
@@ -249,10 +249,8 @@ class JsonSchemaRoundTripTest {
     public List<String> validate(JsonNode schemaNode, JsonNode instance) {
       JsonNode effectiveSchema = resolveTopLevelRef(schemaNode);
 
-      Schema schema = schemaRegistry.getSchema(effectiveSchema);
-
-      // instance is already a JsonNode; no need to re-materialize it
-      List<Error> errors = schema.validate(instance);
+      Schema schema = schemaRegistry.getSchema(effectiveSchema.toString(), InputFormat.JSON);
+      List<Error> errors = schema.validate(instance.toString(), InputFormat.JSON);
 
       return errors.stream()
           .map(Error::getMessage)

@@ -22,9 +22,8 @@ package io.mapsmessaging.utilities.configuration;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
 import com.networknt.schema.Error;
+import com.networknt.schema.InputFormat;
 import com.networknt.schema.Schema;
 import com.networknt.schema.SchemaRegistry;
 import com.networknt.schema.dialect.Dialects;
@@ -250,6 +249,7 @@ public class ConfigurationManager {
 
   private List<String> validate(String stringSchema, Map<String, Object> raw) {
     ObjectMapper mapper = new ObjectMapper();
+
     JsonNode instance = mapper.valueToTree(raw);
     if (instance.isObject()) {
       ((ObjectNode) instance).remove("loaded");
@@ -260,18 +260,22 @@ public class ConfigurationManager {
       jsonSchema = mapper.readTree(stringSchema);
     } catch (Throwable e) {
       logger.log(PROPERTY_MANAGER_LOOKUP_FAILED, e.getMessage());
-      return List.of("Invalid schema loaded:"+e.getMessage());
+      return List.of("Invalid schema loaded:" + e.getMessage());
     }
 
-    JsonNode effectiveSchema = resolveTopLevelRef(jsonSchema);
+    try {
+      JsonNode effectiveSchema = resolveTopLevelRef(jsonSchema);
 
-    Schema schema = schemaRegistry.getSchema(effectiveSchema);
+      Schema schema = schemaRegistry.getSchema(effectiveSchema.toString(), InputFormat.JSON);
+      List<Error> errors = schema.validate(instance.toString(), InputFormat.JSON);
 
-    List<Error> errors = schema.validate(instance);
-
-    return errors.stream()
-        .map(Error::getMessage)
-        .toList();
+      return errors.stream()
+          .map(Error::getMessage)
+          .toList();
+    } catch (Throwable e) {
+      logger.log(PROPERTY_MANAGER_LOOKUP_FAILED, e.getMessage());
+      return List.of("Schema validation failed:" + e.getMessage());
+    }
   }
 
   private JsonNode resolveTopLevelRef(JsonNode schemaRoot) {
