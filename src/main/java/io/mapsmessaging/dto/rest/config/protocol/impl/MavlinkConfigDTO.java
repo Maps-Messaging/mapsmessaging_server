@@ -245,7 +245,7 @@ public class MavlinkConfigDTO extends ProtocolConfigDTO {
       defaultValue = "0",
       requiredMode = Schema.RequiredMode.NOT_REQUIRED
   )
-  protected int qualityOfService = 1;
+  protected int qualityOfService = 0;
 
   @Schema(
       description =
@@ -255,5 +255,5 @@ public class MavlinkConfigDTO extends ProtocolConfigDTO {
       defaultValue = "false",
       requiredMode = Schema.RequiredMode.NOT_REQUIRED
   )
-  protected boolean storeOffline = true;
+  protected boolean storeOffline = false;
 }
