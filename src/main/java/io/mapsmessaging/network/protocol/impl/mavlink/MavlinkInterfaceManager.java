@@ -122,6 +122,9 @@ public class MavlinkInterfaceManager implements SelectorCallback, MavlinkConnect
         forwardPacket(raw);
       }
     }
+    else{
+      forwardPacket(raw);
+    }
     selectorTask.register(SelectionKey.OP_READ);
     return true;
   }
