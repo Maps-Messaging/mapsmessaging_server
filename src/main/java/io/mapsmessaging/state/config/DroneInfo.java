@@ -42,6 +42,12 @@ public class DroneInfo {
   private UUID uuid;
 
   @Schema(
+      description = "Total battery capacity in amp-hours."
+  )
+  private double batteryCapacityAh = 0.0;
+
+
+  @Schema(
       description = "Drone description"
   )
   private Map<String, Object> description;
