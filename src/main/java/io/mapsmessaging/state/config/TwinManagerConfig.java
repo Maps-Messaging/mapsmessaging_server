@@ -337,6 +337,7 @@ public class TwinManagerConfig extends TwinManagerConfigDTO implements Config, C
       droneInfo.setUuid(UUID.fromString(uuidString));
     }
     droneInfo.setBatteryCapacityAh(properties.getDoubleProperty("batteryCapacityAh", droneInfo.getBatteryCapacityAh()));
+    droneInfo.setBatteryCapacityHours(properties.getDoubleProperty("batteryCapacityHours", droneInfo.getBatteryCapacityHours()));
     droneInfo.setName(properties.getProperty("name", droneInfo.getName()));
     droneInfo.setDescription( ((ConfigurationProperties)properties.get("description")).getMap());
     droneInfo.setCapabilities(parseTaskCapabilities(properties.get("capabilities")));

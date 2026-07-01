@@ -28,6 +28,8 @@ import io.mapsmessaging.state.drone.model.BatteryDurationCalculator;
 import io.mapsmessaging.state.drone.model.BatteryState;
 import io.mapsmessaging.state.mavlink.packet.BatteryStatusPacket;
 import io.mapsmessaging.state.mavlink.packet.MavlinkPacket;
+
+import java.time.Duration;
 import java.time.Instant;
 import java.util.Arrays;
 
@@ -89,8 +91,17 @@ public class BatteryStatusListener implements Listener {
         }
       }
 
-      batteryState.setDuration(BatteryDurationCalculator.calculateDuration(batteryState));
+      if(droneTwin.getBatteryCapacityHours() > 0 && batteryState.getPercentage() != null){
+        double totalHours = droneTwin.getBatteryCapacityHours();
+        double remainingHours = totalHours * (batteryState.getPercentage() / 100.0);
+        Duration remainingDuration = Duration.ofSeconds(Math.round(remainingHours * 3600));
+        batteryState.setDuration(remainingDuration.toString());
+      }
+      else {
+        batteryState.setDuration(BatteryDurationCalculator.calculateDuration(batteryState));
+      }
       batteryState.setCharging(isCharging(packet));
+
 
       droneTwin.setBatteryState(batteryState);
 

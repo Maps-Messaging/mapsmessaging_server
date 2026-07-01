@@ -64,8 +64,7 @@ public class MavlinkTwinUpdater {
   public void updateTwinState(@NonNull @NotNull ProcessedFrame env, @NonNull @NotNull MavlinkPacket packet, @NonNull @NotNull TwinUpdateContext context, @NonNull @NotNull MavlinkKnownSourceDTO knownSource, DroneInfo droneInfo) {
     String twinId = buildTwinId(env, knownSource);
 
-    EntityTwin twin = twinManager.getTwin(twinId)
-        .orElseGet(() -> createTwin(twinId, env, context, knownSource, droneInfo));
+    twinManager.getTwin(twinId).orElseGet(() -> createTwin(twinId, env, context, knownSource, droneInfo));
     twinManager.updateTwin(twinId, twinToUpdate -> {
       if (twinToUpdate instanceof DroneTwin drone) {
         drone.setSystemId(env.getFrame().getSystemId());
@@ -102,7 +101,12 @@ public class MavlinkTwinUpdater {
       droneTwin.setCapabilities(droneInfo.getCapabilities());
       droneTwin.setDescription(droneInfo.getDescription());
     }
+    if(droneInfo.getBatteryCapacityHours() > 0){
+      droneTwin.setBatteryCapacityHours(droneInfo.getBatteryCapacityHours());
+    }
+    else if(droneInfo.getBatteryCapacityAh() > 0){
 
+    }
     twinManager.registerTwin(droneTwin, context);
 
     logger.log(

@@ -180,7 +180,8 @@ public class MavlinkProtocol extends Protocol {
         packet.put(frame);
         packet.flip();
         endPoint.sendPacket(packet);
-      } catch (IOException e) {
+      } catch (Throwable e) {
+        e.printStackTrace();
         // todo log this
       }
 

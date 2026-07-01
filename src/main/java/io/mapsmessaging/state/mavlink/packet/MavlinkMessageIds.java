@@ -34,6 +34,7 @@ public class MavlinkMessageIds {
   public static final int AUTOPILOT_VERSION = 148;
   public static final int HOME_POSITION = 242;
   public static final int EXTENDED_SYS_STATE = 245;
+  public static final int NAMED_VALUE_FLOAT = 251;
   public static final int STATUSTEXT = 253;
 
   private MavlinkMessageIds() {

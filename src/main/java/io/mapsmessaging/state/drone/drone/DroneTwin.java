@@ -317,6 +317,13 @@ public class DroneTwin extends EntityTwin {
   )
   private Instant readinessUpdatedAt;
 
+  @Schema(
+      description = "Battery capacity in hours",
+      example = "48",
+      nullable = true
+  )
+  private double batteryCapacityHours;
+
   public List<Contact> getContactList() {
     return contactManager.getContactList();
   }

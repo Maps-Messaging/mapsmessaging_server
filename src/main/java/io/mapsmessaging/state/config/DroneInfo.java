@@ -46,6 +46,10 @@ public class DroneInfo {
   )
   private double batteryCapacityAh = 0.0;
 
+  @Schema(
+      description = "Total battery capacity in hours."
+  )
+  private double batteryCapacityHours = 0.0;
 
   @Schema(
       description = "Drone description"

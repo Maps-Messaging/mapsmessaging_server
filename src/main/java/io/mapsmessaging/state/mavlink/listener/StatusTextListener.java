@@ -21,9 +21,6 @@ package io.mapsmessaging.state.mavlink.listener;
 
 import io.mapsmessaging.state.drone.core.TwinManager;
 import io.mapsmessaging.state.drone.core.TwinUpdateContext;
-import io.mapsmessaging.state.drone.drone.DroneTwin;
-import io.mapsmessaging.state.drone.model.Contact;
-import io.mapsmessaging.state.drone.model.DroneContactManager;
 import io.mapsmessaging.state.mavlink.packet.MavlinkPacket;
 import io.mapsmessaging.state.mavlink.packet.StatusTextPacket;
 
@@ -58,28 +55,5 @@ public class StatusTextListener implements Listener {
       return;
     }
 
-    Instant now = (context != null && context.getReceivedTime() != null)
-        ? context.getReceivedTime()
-        : Instant.now();
-
-    twinManager.updateTwin(twinId, twin -> {
-      DroneTwin droneTwin = (DroneTwin) twin;
-      if(packet.getText() != null){
-        UUID uuid = UUID.nameUUIDFromBytes(packet.getText().getBytes());
-        DroneContactManager contactManager = droneTwin.getContactManager();
-        if(contactManager.hasContact(uuid)){
-          contactManager.updateContact(uuid, packet.getText(), droneTwin.getGeoPosition(), 60_000);
-        }
-        else{
-          Contact contact = new Contact(packet.getText(), droneTwin.getGeoPosition(), 60_000);
-          contactManager.addContact(contact);
-        }
-      }
-      else {
-        droneTwin.setLastStatusText(packet.getText());
-        droneTwin.setOperationalUpdatedAt(now);
-      }
-
-    }, context);
   }
 }

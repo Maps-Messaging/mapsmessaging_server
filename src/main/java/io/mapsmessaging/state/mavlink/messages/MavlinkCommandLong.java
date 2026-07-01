@@ -20,9 +20,7 @@
 
 package io.mapsmessaging.state.mavlink.messages;
 
-import com.google.gson.Gson;
 import com.google.gson.JsonObject;
-import io.mapsmessaging.network.protocol.impl.mavlink.GsonFactory;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -30,195 +28,24 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class MavlinkCommandLong {
+public class MavlinkCommandLong implements MavlinkMessage {
 
   public static final int MESSAGE_ID_COMMAND_LONG = 76;
-
-  public static final int MAV_CMD_COMPONENT_ARM_DISARM = 400;
-  public static final int MAV_CMD_NAV_WAYPOINT = 16;
-  public static final int MAV_CMD_NAV_LOITER_UNLIM = 17;
-  public static final int MAV_CMD_NAV_RETURN_TO_LAUNCH = 20;
-  public static final int MAV_CMD_DO_SET_MODE = 176;
-  public static final int MAV_CMD_MISSION_START = 300;
-
-
-  public static final float ARM = 1.0f;
-  public static final float DISARM = 0.0f;
-  public static final float NORMAL_ARM_DISARM = 0.0f;
-  public static final float FORCE_ARM_DISARM = 21196.0f;
 
   private String messageType = "COMMAND_LONG";
   private int messageId = MESSAGE_ID_COMMAND_LONG;
   private int targetSystem;
   private int targetComponent;
   private int command;
-  private int confirmation = 0;
+  private int confirmation;
   private int sequence;
-  private float param1 = 0.0f;
-  private float param2 = 0.0f;
-  private float param3 = 0.0f;
-  private float param4 = 0.0f;
-  private float param5 = 0.0f;
-  private float param6 = 0.0f;
-  private float param7 = 0.0f;
-
-  private static final Gson gson = GsonFactory.createStrictJsonWithSafeFloats();
-
-  public static MavlinkCommandLong arm(
-      int targetSystem,
-      int targetComponent,
-      int sequence) {
-    return arm(targetSystem, targetComponent, sequence, false);
-  }
-
-  public static MavlinkCommandLong forceArm(
-      int targetSystem,
-      int targetComponent,
-      int sequence) {
-    return arm(targetSystem, targetComponent, sequence, true);
-  }
-
-  public static MavlinkCommandLong disarm(
-      int targetSystem,
-      int targetComponent,
-      int sequence) {
-    return disarm(targetSystem, targetComponent, sequence, false);
-  }
-
-  public static MavlinkCommandLong forceDisarm(
-      int targetSystem,
-      int targetComponent,
-      int sequence) {
-    return disarm(targetSystem, targetComponent, sequence, true);
-  }
-
-  public static MavlinkCommandLong arm(
-      int targetSystem,
-      int targetComponent,
-      int sequence,
-      boolean force) {
-    MavlinkCommandLong commandLong = createArmDisarmCommand(
-        targetSystem,
-        targetComponent,
-        sequence,
-        ARM,
-        force);
-
-    return commandLong;
-  }
-
-  public static MavlinkCommandLong disarm(
-      int targetSystem,
-      int targetComponent,
-      int sequence,
-      boolean force) {
-    MavlinkCommandLong commandLong = createArmDisarmCommand(
-        targetSystem,
-        targetComponent,
-        sequence,
-        DISARM,
-        force);
-
-    return commandLong;
-  }
-
-  public static MavlinkCommandLong missionStart(
-      int targetSystem,
-      int targetComponent,
-      int sequence) {
-    MavlinkCommandLong commandLong = command(
-        targetSystem,
-        targetComponent,
-        MAV_CMD_MISSION_START,
-        sequence);
-
-    return commandLong;
-  }
-
-  public static MavlinkCommandLong missionStart(
-      int targetSystem,
-      int targetComponent,
-      int sequence,
-      int firstMissionItem,
-      int lastMissionItem) {
-    MavlinkCommandLong commandLong = missionStart(
-        targetSystem,
-        targetComponent,
-        sequence);
-
-    commandLong.setParam1(firstMissionItem);
-    commandLong.setParam2(lastMissionItem);
-
-    return commandLong;
-  }
-
-  public static MavlinkCommandLong returnToLaunch(
-      int targetSystem,
-      int targetComponent,
-      int sequence) {
-    MavlinkCommandLong commandLong = command(
-        targetSystem,
-        targetComponent,
-        MAV_CMD_NAV_RETURN_TO_LAUNCH,
-        sequence);
-
-    return commandLong;
-  }
-
-  public static MavlinkCommandLong loiterUnlimited(
-      int targetSystem,
-      int targetComponent,
-      int sequence) {
-    MavlinkCommandLong commandLong = command(
-        targetSystem,
-        targetComponent,
-        MAV_CMD_NAV_LOITER_UNLIM,
-        sequence);
-
-    return commandLong;
-  }
-
-  public static MavlinkCommandLong waypoint(
-      int targetSystem,
-      int targetComponent,
-      int sequence,
-      float holdTimeSeconds,
-      float acceptanceRadiusMeters,
-      float passRadiusMeters,
-      float yawDegrees,
-      double latitude,
-      double longitude,
-      float altitudeMeters) {
-    MavlinkCommandLong commandLong = command(
-        targetSystem,
-        targetComponent,
-        MAV_CMD_NAV_WAYPOINT,
-        sequence);
-
-    commandLong.setParam1(holdTimeSeconds);
-    commandLong.setParam2(acceptanceRadiusMeters);
-    commandLong.setParam3(passRadiusMeters);
-    commandLong.setParam4(yawDegrees);
-    commandLong.setParam5((float) latitude);
-    commandLong.setParam6((float) longitude);
-    commandLong.setParam7(altitudeMeters);
-
-    return commandLong;
-  }
-
-  public static MavlinkCommandLong command(
-      int targetSystem,
-      int targetComponent,
-      int command,
-      int sequence) {
-    MavlinkCommandLong commandLong = new MavlinkCommandLong();
-    commandLong.setTargetSystem(targetSystem);
-    commandLong.setTargetComponent(targetComponent);
-    commandLong.setCommand(command);
-    commandLong.setSequence(sequence);
-
-    return commandLong;
-  }
+  private float param1;
+  private float param2;
+  private float param3;
+  private float param4;
+  private float param5;
+  private float param6;
+  private float param7;
 
   public JsonObject toMavlinkJsonObject(int systemId, int componentId) {
     JsonObject root = new JsonObject();
@@ -250,28 +77,5 @@ public class MavlinkCommandLong {
     root.add("payload", payload);
 
     return root;
-  }
-
-  private static MavlinkCommandLong createArmDisarmCommand(
-      int targetSystem,
-      int targetComponent,
-      int sequence,
-      float armState,
-      boolean force) {
-    MavlinkCommandLong commandLong = command(
-        targetSystem,
-        targetComponent,
-        MAV_CMD_COMPONENT_ARM_DISARM,
-        sequence);
-
-    commandLong.setParam1(armState);
-
-    if (force) {
-      commandLong.setParam2(FORCE_ARM_DISARM);
-    } else {
-      commandLong.setParam2(NORMAL_ARM_DISARM);
-    }
-
-    return commandLong;
   }
 }

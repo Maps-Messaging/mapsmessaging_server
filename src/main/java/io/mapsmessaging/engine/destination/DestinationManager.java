@@ -429,12 +429,20 @@ public class DestinationManager implements DestinationFactory, Agent {
 
     @Override
     public void run() {
-      File file = fileList.poll();
-      while (file != null) {
-        parseDirectoryPath(file, pathManager);
-        file = fileList.poll();
+      try {
+        File file = fileList.poll();
+        while (file != null) {
+          System.err.println("Loading " + file.getAbsolutePath());
+          parseDirectoryPath(file, pathManager);
+          System.err.println("Loaded " + file.getAbsolutePath());
+          file = fileList.poll();
+        }
+      } catch (Throwable e) {
+        e.printStackTrace();
       }
-      complete.set(true);
+      finally {
+        complete.set(true);
+      }
     }
   }
 }
