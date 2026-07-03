@@ -37,7 +37,6 @@ import io.mapsmessaging.network.io.impl.SelectorCallback;
 import io.mapsmessaging.network.io.impl.SelectorTask;
 import io.mapsmessaging.network.io.impl.udp.UDPFacadeEndPoint;
 import io.mapsmessaging.network.io.impl.udp.session.UDPSessionState;
-import io.mapsmessaging.utilities.threads.SimpleTaskScheduler;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -48,30 +47,20 @@ import java.nio.channels.SelectionKey;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import java.util.concurrent.ScheduledFuture;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
 
 public class MavlinkInterfaceManager implements SelectorCallback, MavlinkConnectionManager {
 
   private static final Logger logger = LoggerFactory.getLogger(MavlinkInterfaceManager.class);
-
   private final SelectorTask selectorTask;
   private final EndPoint endPoint;
   private final MavLinkSessionManager<MavlinkProtocol> currentSessions;
   private final MavlinkEventFactory mavlinkEventFactory;
   private final MavlinkConfig mavlinkConfig;
   private final List<InetSocketAddress> forwardList;
-  private final MavlinkHeartbeatEmitter heartbeatEmitter;
-  private final AtomicInteger sequenceCounter = new AtomicInteger(0);
-
-  private ScheduledFuture<?> heartbeatFuture;
 
   public MavlinkInterfaceManager(EndPoint endPoint) throws IOException {
     this.endPoint = endPoint;
     mavlinkConfig = (MavlinkConfig) endPoint.getConfig().getProtocolConfig("mavlink");
-    validateLocalMavlinkIdentity(mavlinkConfig);
-
     long timeout = mavlinkConfig.getIdleSessionTimeout();
     mavlinkEventFactory = loadDialect(mavlinkConfig.getDialectName());
     currentSessions = new MavLinkSessionManager<>(timeout);
@@ -94,8 +83,6 @@ public class MavlinkInterfaceManager implements SelectorCallback, MavlinkConnect
         }
       }
     }
-    heartbeatEmitter = new MavlinkHeartbeatEmitter(sequenceCounter, endPoint, mavlinkConfig);
-    startHeartbeatIfConfigured();
   }
 
   public static MavlinkEventFactory loadDialect(String name) throws IOException {
@@ -154,7 +141,7 @@ public class MavlinkInterfaceManager implements SelectorCallback, MavlinkConnect
     if (state == null) {
       UDPFacadeEndPoint facade = new UDPFacadeEndPoint(endPoint, key.getRemoteAddress(), endPoint.getServer());
       try {
-        MavlinkProtocol protocol = new MavlinkProtocol(this, key, sequenceCounter, facade, this.mavlinkConfig);
+        MavlinkProtocol protocol = new MavlinkProtocol(this, key, facade, this.mavlinkConfig);
         state = new UDPSessionState<>(protocol);
         currentSessions.addState(key, state);
         logger.log(MAVLINK_SESSION_CREATED, key.toString());
@@ -184,34 +171,8 @@ public class MavlinkInterfaceManager implements SelectorCallback, MavlinkConnect
     }
   }
 
-  private void validateLocalMavlinkIdentity(MavlinkConfig mavlinkConfig) throws IOException {
-    boolean hasSystemId = mavlinkConfig.getSystemId() != null;
-    boolean hasComponentId = mavlinkConfig.getComponentId() != null;
-
-    if (hasSystemId != hasComponentId) {
-      throw new IOException("MAVLink systemId and componentId must be configured together");
-    }
-  }
-
-  private void startHeartbeatIfConfigured() {
-    if (!mavlinkConfig.hasLocalMavlinkIdentity()) {
-      return;
-    }
-
-    long intervalSeconds = Math.max(1, mavlinkConfig.getAdvertiseInterval());
-    SimpleTaskScheduler.getInstance().scheduleAtFixedRate(heartbeatEmitter, intervalSeconds, intervalSeconds, TimeUnit.SECONDS);
-  }
-
-  private void stopHeartbeat() {
-    if (heartbeatFuture != null) {
-      heartbeatFuture.cancel(false);
-      heartbeatFuture = null;
-    }
-  }
-
   @Override
   public void close() {
-    stopHeartbeat();
     currentSessions.close();
   }
 

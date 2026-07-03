@@ -22,7 +22,7 @@ package io.mapsmessaging.network.protocol.impl.mavlink;
 import static io.mapsmessaging.logging.ServerLogMessages.MAVLINK_FAILED_SENDING_HEARTBEAT;
 
 import com.google.gson.JsonObject;
-import io.mapsmessaging.config.protocol.impl.MavlinkConfig;
+import io.mapsmessaging.dto.rest.config.protocol.impl.MavlinkConfigDTO;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.network.io.EndPoint;
@@ -31,6 +31,7 @@ import io.mapsmessaging.schemas.config.impl.MavlinkSchemaConfig;
 import io.mapsmessaging.schemas.formatters.MessageFormatter;
 import io.mapsmessaging.schemas.formatters.MessageFormatterFactory;
 import java.io.IOException;
+import java.net.SocketAddress;
 import java.nio.ByteBuffer;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -54,9 +55,11 @@ public class MavlinkHeartbeatEmitter implements Runnable {
   private final JsonObject input;
   private final JsonObject header;
   private final AtomicInteger sequence;
+  private final SocketAddress socketAddress;
 
-  public MavlinkHeartbeatEmitter( AtomicInteger sequenceCounter, EndPoint endPoint, MavlinkConfig mavlinkConfig) throws IOException {
+  public MavlinkHeartbeatEmitter(AtomicInteger sequenceCounter, EndPoint endPoint, MavlinkConfigDTO mavlinkConfig, SocketAddress socketAddress) throws IOException {
     this.endPoint = Objects.requireNonNull(endPoint, "endPoint");
+    this.socketAddress = socketAddress;
     Objects.requireNonNull(mavlinkConfig, "mavlinkConfig");
 
     MavlinkSchemaConfig config = new MavlinkSchemaConfig();
@@ -76,13 +79,14 @@ public class MavlinkHeartbeatEmitter implements Runnable {
       updateSequence();
       byte[] frame = formatter.parseFromJson(input);
       Packet packet = new Packet(ByteBuffer.wrap(frame));
+      packet.setFromAddress(socketAddress);
       endPoint.sendPacket(packet);
-    } catch (IOException e) {
+    } catch (Throwable e) {
       logger.log(MAVLINK_FAILED_SENDING_HEARTBEAT, endPoint.getName(), e);
     }
   }
 
-  private JsonObject createHeader(MavlinkConfig mavlinkConfig) {
+  private JsonObject createHeader(MavlinkConfigDTO mavlinkConfig) {
     JsonObject json = new JsonObject();
     json.addProperty("version", MAVLINK_V2);
     json.addProperty("systemId", mavlinkConfig.getSystemId());
