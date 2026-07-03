@@ -147,6 +147,7 @@ public class MavlinkProtocol extends Protocol {
 
   @Override
   public void close() throws IOException {
+    stopHeartbeat();
     if (!session.isClosed()) {
       SessionManager.getInstance().close(session, false);
     }
@@ -203,6 +204,7 @@ public class MavlinkProtocol extends Protocol {
       String socketAddressText = parts[2];
       try {
         overrideSequence(input);
+        validateOutboundHeader(input);
         byte[] frame = formatter.parseFromJson(input);
         Packet packet = new Packet(ByteBuffer.wrap(frame));
         packet.setFromAddress(parseSocketAddress(socketAddressText));
@@ -215,25 +217,6 @@ public class MavlinkProtocol extends Protocol {
       messageEvent.getCompletionTask().run();
     }
   }
-
-  private void overrideSequence(JsonObject input) {
-    JsonObject header = input.getAsJsonObject("header");
-    if (header == null) {
-      header = new JsonObject();
-      input.add("header", header);
-    }
-    header.addProperty("sequence", nextSequence());
-
-    if (mavlinkConfig.hasLocalMavlinkIdentity()) {
-      header.addProperty("systemId", mavlinkConfig.getSystemId());
-      header.addProperty("componentId", mavlinkConfig.getComponentId());
-    }
-  }
-
-  public int nextSequence() {
-    return sequenceCounter.getAndUpdate(value -> (value + 1) & 0xff);
-  }
-
 
   @Override
   public boolean processPacket(@NonNull @NotNull Packet packet) throws IOException {
@@ -443,4 +426,47 @@ public class MavlinkProtocol extends Protocol {
     }
   }
 
+  private void overrideSequence(JsonObject input) {
+    JsonObject header = input.getAsJsonObject("header");
+    if (header == null) {
+      header = new JsonObject();
+      input.add("header", header);
+    }
+    header.addProperty("sequence", nextSequence());
+
+    if (mavlinkConfig.hasLocalMavlinkIdentity()) {
+      header.addProperty("systemId", mavlinkConfig.getSystemId());
+      header.addProperty("componentId", mavlinkConfig.getComponentId());
+    }
+  }
+
+  public int nextSequence() {
+    return sequenceCounter.getAndUpdate(value -> (value + 1) & 0xff);
+  }
+  private void validateOutboundHeader(JsonObject input) {
+    JsonObject header = input.getAsJsonObject("header");
+    if (header == null) {
+      throw new IllegalArgumentException("Missing MAVLink header");
+    }
+
+    int systemId = getRequiredUnsignedByte(header, "systemId");
+    int componentId = getRequiredUnsignedByte(header, "componentId");
+
+    if (systemId == 0 || componentId == 0) {
+      throw new IllegalArgumentException("Invalid MAVLink sender identity " + systemId + "/" + componentId);
+    }
+  }
+
+  private int getRequiredUnsignedByte(JsonObject object, String fieldName) {
+    if (!object.has(fieldName) || object.get(fieldName).isJsonNull()) {
+      throw new IllegalArgumentException("Missing MAVLink header field '" + fieldName + "'");
+    }
+
+    int value = object.get(fieldName).getAsInt();
+    if (value < 0 || value > 255) {
+      throw new IllegalArgumentException("Invalid MAVLink header field '" + fieldName + "': " + value);
+    }
+
+    return value;
+  }
 }

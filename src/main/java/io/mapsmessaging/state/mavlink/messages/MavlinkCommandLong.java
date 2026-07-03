@@ -47,14 +47,14 @@ public class MavlinkCommandLong implements MavlinkMessage {
   private float param6;
   private float param7;
 
-  public JsonObject toMavlinkJsonObject(int systemId, int componentId) {
+  public JsonObject toMavlinkJsonObject() {
     JsonObject root = new JsonObject();
     JsonObject header = new JsonObject();
     JsonObject payload = new JsonObject();
 
     header.addProperty("version", "V2");
-    header.addProperty("systemId", systemId);
-    header.addProperty("componentId", componentId);
+    header.addProperty("systemId", 0);
+    header.addProperty("componentId", 0);
     header.addProperty("sequence", sequence);
     header.addProperty("messageId", messageId);
     header.addProperty("signed", false);
