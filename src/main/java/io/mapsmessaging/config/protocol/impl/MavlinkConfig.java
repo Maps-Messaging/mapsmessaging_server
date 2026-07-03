@@ -38,6 +38,8 @@ public class MavlinkConfig extends MavlinkConfigDTO implements Config {
     this.idleSessionTimeout = config.getLongProperty("idleSessionTimeout", idleSessionTimeout);
     this.maximumSessionExpiry = config.getIntProperty("maximumSessionExpiry", maximumSessionExpiry);
     this.advertiseInterval = config.getIntProperty("advertiseInterval", advertiseInterval);
+    this.systemId = readOptionalInteger(config.get("systemId"));
+    this.componentId = readOptionalInteger(config.get("componentId"));
     this.maxInFlightEvents = config.getIntProperty("maxInFlightEvents", maxInFlightEvents);
     this.topicNameTemplate = config.getProperty("topicNameTemplate", topicNameTemplate);
     this.statusTopicNameTemplate = config.getProperty("statusTopicNameTemplate", statusTopicNameTemplate);
@@ -55,7 +57,8 @@ public class MavlinkConfig extends MavlinkConfigDTO implements Config {
     this.storeOffline = config.getBooleanProperty("storeOffline", storeOffline);
     this.acceptedMessageIds = readIntegerList(config.get("acceptedMessageIds"));
     this.rejectedMessageIds = readIntegerList(config.get("rejectedMessageIds"));
-    this.acceptedSources = readKnownSources(config.get("knownSources"));
+    this.acceptedSources = readKnownSources(config.get("acceptedSources"));
+    this.heartbeatIntervalSeconds = config.getIntProperty("heartbeatIntervalSeconds", heartbeatIntervalSeconds);
   }
 
   @Override
@@ -76,6 +79,18 @@ public class MavlinkConfig extends MavlinkConfigDTO implements Config {
       }
       if (advertiseInterval != newConfig.getAdvertiseInterval()) {
         advertiseInterval = newConfig.getAdvertiseInterval();
+        hasChanged = true;
+      }
+      if (!Objects.equals(systemId, newConfig.getSystemId())) {
+        systemId = newConfig.getSystemId();
+        hasChanged = true;
+      }
+      if (!Objects.equals(componentId, newConfig.getComponentId())) {
+        componentId = newConfig.getComponentId();
+        hasChanged = true;
+      }
+      if (heartbeatIntervalSeconds != newConfig.getHeartbeatIntervalSeconds()) {
+        heartbeatIntervalSeconds = newConfig.getHeartbeatIntervalSeconds();
         hasChanged = true;
       }
       if (maxInFlightEvents != newConfig.getMaxInFlightEvents()) {
@@ -165,6 +180,8 @@ public class MavlinkConfig extends MavlinkConfigDTO implements Config {
     properties.put("idleSessionTimeout", idleSessionTimeout);
     properties.put("maximumSessionExpiry", maximumSessionExpiry);
     properties.put("advertiseInterval", advertiseInterval);
+    putOptional(properties, "systemId", systemId);
+    putOptional(properties, "componentId", componentId);
     properties.put("maxInFlightEvents", maxInFlightEvents);
     properties.put("topicNameTemplate", topicNameTemplate);
     properties.put("statusTopicNameTemplate", statusTopicNameTemplate);
@@ -184,6 +201,19 @@ public class MavlinkConfig extends MavlinkConfigDTO implements Config {
     properties.put("qualityOfService", qualityOfService);
     properties.put("storeOffline", storeOffline);
     return properties;
+  }
+
+  private Integer readOptionalInteger(Object raw) {
+    if (raw == null) {
+      return null;
+    }
+    return toInteger(raw);
+  }
+
+  private void putOptional(ConfigurationProperties properties, String key, Object value) {
+    if (value != null) {
+      properties.put(key, value);
+    }
   }
 
   private List<Integer> readIntegerList(Object raw) {

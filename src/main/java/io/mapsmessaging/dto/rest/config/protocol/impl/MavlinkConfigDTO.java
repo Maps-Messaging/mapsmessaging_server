@@ -21,6 +21,44 @@ public class MavlinkConfigDTO extends ProtocolConfigDTO {
 
   @Schema(
       description =
+          "Local MAVLink system id used by this protocol instance when it originates MAVLink frames, such as heartbeats or outbound commands. "
+              + "If null, this MAVLink interface is listen-only and does not originate MAVLink traffic.",
+      example = "255",
+      minimum = "1",
+      maximum = "255",
+      requiredMode = Schema.RequiredMode.NOT_REQUIRED,
+      nullable = true
+  )
+  protected Integer systemId;
+
+  @Schema(
+      description =
+          "Local MAVLink component id used by this protocol instance when it originates MAVLink frames, such as heartbeats or outbound commands. "
+              + "If null, this MAVLink interface is listen-only and does not originate MAVLink traffic.",
+      example = "190",
+      minimum = "0",
+      maximum = "255",
+      requiredMode = Schema.RequiredMode.NOT_REQUIRED,
+      nullable = true
+  )
+  protected Integer componentId;
+
+  public boolean hasLocalMavlinkIdentity() {
+    return systemId != null && componentId != null;
+  }
+
+  @Schema(
+      description =
+          "Interval in seconds between MAVLink HEARTBEAT messages sent by this protocol instance. "
+              + "Only used when systemId and componentId are configured. "
+              + "Set to 0 to disable heartbeat emission.",
+      example = "30",
+      minimum = "0"
+  )
+  protected int heartbeatIntervalSeconds = 30;
+
+  @Schema(
+      description =
           "MAVLink dialect name or fully qualified path to a MAVLink dialect XML file. "
               + "If blank, the default MAVLink dialect is used. If the value resolves to an existing file, "
               + "it is loaded as a dialect XML path; otherwise it is treated as a dialect name.",

@@ -38,6 +38,7 @@ import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static io.mapsmessaging.logging.ServerLogMessages.MAVLINK_STATE_UNKNOWN_PACKET_IGNORED;
 
@@ -49,7 +50,7 @@ public class MavlinkSerialProtocol extends MavlinkProtocol {
 
   protected MavlinkSerialProtocol(@NonNull @NotNull EndPoint endPoint,
                                   @NotNull @NonNull ProtocolConfigDTO protocolConfig) throws IOException {
-    super(key1 -> {}, DUMMY_KEY, endPoint, protocolConfig);
+    super(key1 -> {}, DUMMY_KEY, new AtomicInteger(0), endPoint, protocolConfig);
     MavlinkConfigDTO mavlinkConfigDTO = (MavlinkConfigDTO) protocolConfig;
     if(endPoint instanceof SerialEndPoint serialEndPoint){
       MavlinkStreamHandler handler = new MavlinkStreamHandler();

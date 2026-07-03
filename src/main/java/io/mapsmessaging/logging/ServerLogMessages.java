@@ -945,6 +945,15 @@ public enum ServerLogMessages implements LogMessage {
   STATE_MANAGER_AUDIT_INIT_FAILED(LEVEL.ERROR, SERVER_CATEGORY.STATE, "Failed to initialize audit context - auditing will be disabled"),
   // </editor-fold>
 
+  MAVLINK_OUTBOUND_MESSAGE_IGNORED_NO_CORRELATION(LEVEL.DEBUG, SERVER_CATEGORY.PROTOCOL, "Ignoring outbound MAVLink message on '{}' because correlation data is missing"),
+  MAVLINK_OUTBOUND_MESSAGE_IGNORED_INVALID_CORRELATION(LEVEL.WARN, SERVER_CATEGORY.PROTOCOL, "Ignoring outbound MAVLink message on '{}' because correlation id '{}' is invalid"),
+  MAVLINK_OUTBOUND_MESSAGE_IGNORED_ENDPOINT_MISMATCH(LEVEL.DEBUG, SERVER_CATEGORY.PROTOCOL, "Ignoring outbound MAVLink message on '{}' because correlation endpoint '{}' does not match endpoint '{}'"),
+  MAVLINK_FAILED_PARSING_OUTBOUND_MESSAGE(LEVEL.ERROR, SERVER_CATEGORY.PROTOCOL, "Failed to parse outbound MAVLink message on '{}': {}"),
+  MAVLINK_DESTINATION_NOT_AVAILABLE(LEVEL.WARN, SERVER_CATEGORY.PROTOCOL, "Unable to publish MAVLink message because destination '{}' is not available"),
+  MAVLINK_DESTINATION_LOOKUP_FAILED(LEVEL.ERROR, SERVER_CATEGORY.PROTOCOL, "Failed to resolve MAVLink destination '{}': {}"),
+  MAVLINK_FAILED_STORING_PACKET_MESSAGE(LEVEL.ERROR, SERVER_CATEGORY.PROTOCOL, "Failed to store MAVLink message on topic '{}': {}"),
+  MAVLINK_FAILED_SENDING_OUTBOUND_PACKET(LEVEL.ERROR, SERVER_CATEGORY.PROTOCOL, "Failed to send outbound MAVLink packet on '{}', destination '{}': {}"),
+  MAVLINK_FAILED_SENDING_HEARTBEAT(LEVEL.ERROR, SERVER_CATEGORY.PROTOCOL, "Failed to send MAVLink heartbeat on '{}': {}"),
   //-------------------------------------------------------------------------------------------------------------
   LAST_LOG_MESSAGE(LEVEL.DEBUG, SERVER_CATEGORY.PROTOCOL, "Last message to make it simpler to add more");
 
