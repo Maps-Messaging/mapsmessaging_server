@@ -19,15 +19,14 @@
 
 package io.mapsmessaging.state.mavlink.listener;
 
+import static io.mapsmessaging.state.mavlink.packet.MavlinkMessageIds.COMMAND_ACK;
+
 import io.mapsmessaging.state.drone.core.TwinManager;
 import io.mapsmessaging.state.drone.core.TwinUpdateContext;
 import io.mapsmessaging.state.drone.drone.DroneTwin;
 import io.mapsmessaging.state.mavlink.packet.CommandAckPacket;
 import io.mapsmessaging.state.mavlink.packet.MavlinkPacket;
-
 import java.time.Instant;
-
-import static io.mapsmessaging.state.mavlink.packet.MavlinkMessageIds.COMMAND_ACK;
 
 /**
  * Listener for COMMAND_ACK.
@@ -43,10 +42,7 @@ public class CommandAckListener implements Listener {
   }
 
   @Override
-  public void handle(String twinId,
-                     MavlinkPacket pkt,
-                     TwinUpdateContext context) {
-
+  public void handle(String twinId, MavlinkPacket pkt, TwinUpdateContext context) {
     if (!(pkt instanceof CommandAckPacket packet)) {
       return;
     }
@@ -55,18 +51,18 @@ public class CommandAckListener implements Listener {
       return;
     }
 
-    Instant now = (context != null && context.getReceivedTime() != null)
-        ? context.getReceivedTime()
-        : Instant.now();
+    Instant now = context != null && context.getReceivedTime() != null ? context.getReceivedTime() : Instant.now();
 
     twinManager.updateTwin(twinId, twin -> {
       DroneTwin droneTwin = (DroneTwin) twin;
 
       droneTwin.setLastAcknowledgedCommand(packet.getCommand());
       droneTwin.setLastCommandAcknowledgement(packet.getResultName());
+      droneTwin.setLastCommandAcknowledgementResult(packet.getResult());
       droneTwin.setLastCommandAcknowledgementAt(now);
+      droneTwin.setLastCommandAcknowledgementTargetSystemId(packet.getTargetSystem());
+      droneTwin.setLastCommandAcknowledgementTargetComponentId(packet.getTargetComponent());
       droneTwin.setOperationalUpdatedAt(now);
-
     }, context);
   }
 }

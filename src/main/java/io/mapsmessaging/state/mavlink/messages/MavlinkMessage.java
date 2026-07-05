@@ -31,5 +31,5 @@ public interface MavlinkMessage {
 
   int getCommand();
 
-  JsonObject toMavlinkJsonObject(int systemId, int componentId);
+  JsonObject toMavlinkJsonObject();
 }
