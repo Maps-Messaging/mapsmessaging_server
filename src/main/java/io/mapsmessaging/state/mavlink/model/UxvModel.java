@@ -61,6 +61,10 @@ public interface UxvModel {
         throw unsupported(UxvOperation.REPOSITION);
     }
 
+    default UxvModelCommandSet orbit(UxvCommandContext context, OrbitRequest request) {
+        throw unsupported(UxvOperation.ORBIT);
+    }
+
     default UxvModelCommandSet holdPosition(UxvCommandContext context) {
         throw unsupported(UxvOperation.HOLD_POSITION);
     }
