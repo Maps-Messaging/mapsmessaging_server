@@ -21,19 +21,27 @@ package io.mapsmessaging.state.config;
 
 import io.mapsmessaging.config.Config;
 import io.mapsmessaging.config.ConfigManager;
-import io.mapsmessaging.state.config.n2k.N2KAisConfig;
 import io.mapsmessaging.configuration.ConfigurationProperties;
 import io.mapsmessaging.dto.rest.config.BaseConfigDTO;
 import io.mapsmessaging.dto.rest.config.protocol.impl.MavlinkKnownSourceDTO;
 import io.mapsmessaging.dto.rest.config.protocol.impl.TakProtocolDTO;
 import io.mapsmessaging.license.FeatureManager;
-import io.mapsmessaging.state.config.capability.*;
+import io.mapsmessaging.state.config.capability.Authorities;
+import io.mapsmessaging.state.config.capability.PlanTaskType;
+import io.mapsmessaging.state.config.capability.TaskCapabilities;
+import io.mapsmessaging.state.config.capability.TaskCapability;
+import io.mapsmessaging.state.config.capability.TaskConditionMode;
+import io.mapsmessaging.state.config.capability.TaskSpecialization;
+import io.mapsmessaging.state.config.capability.TaskTemplateMode;
+import io.mapsmessaging.state.config.n2k.N2KAisConfig;
 import io.mapsmessaging.state.config.n2k.N2KTwinConfig;
 import io.mapsmessaging.utilities.configuration.ConfigurationManager;
+
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 import lombok.NoArgsConstructor;
@@ -68,7 +76,7 @@ public class TwinManagerConfig extends TwinManagerConfigDTO implements Config, C
       this.publish = publishConfig;
     }
 
-    if(properties.containsKey("droneInfo")) {
+    if (properties.containsKey("droneInfo")) {
       this.droneInfo = parseDroneInfos(properties.get("droneInfo"));
     }
 
@@ -81,7 +89,7 @@ public class TwinManagerConfig extends TwinManagerConfigDTO implements Config, C
     }
 
     n2KTwinConfig = new N2KTwinConfig();
-    if(properties.containsKey("n2k")) {
+    if (properties.containsKey("n2k")) {
       ConfigurationProperties n2kProps = (ConfigurationProperties) properties.get("n2k");
       n2KTwinConfig.setEnable(n2kProps.getBooleanProperty("enabled", n2KTwinConfig.isEnable()));
       n2KTwinConfig.setTopic(n2kProps.getProperty("topic", n2KTwinConfig.getTopic()));
@@ -92,8 +100,7 @@ public class TwinManagerConfig extends TwinManagerConfigDTO implements Config, C
         N2KAisConfig aisProperties = new N2KAisConfig((ConfigurationProperties) n2kProps.get("ais"));
         n2KTwinConfig.setAis(aisProperties);
       }
-    }
-    else{
+    } else {
       n2KTwinConfig.setEnable(false);
       n2KTwinConfig.setPublishMavlinkDrones(false);
     }
@@ -144,6 +151,10 @@ public class TwinManagerConfig extends TwinManagerConfigDTO implements Config, C
       props.put("publish", publishProps);
     }
 
+    if (this.droneInfo != null && !this.droneInfo.isEmpty()) {
+      props.put("droneInfo", toDroneInfoConfigurationProperties(this.droneInfo));
+    }
+
     if (this.mavlink != null && !this.mavlink.isEmpty()) {
       props.put("mavlink", toMavlinkConfigurationProperties(this.mavlink));
     }
@@ -153,12 +164,20 @@ public class TwinManagerConfig extends TwinManagerConfigDTO implements Config, C
     }
 
     ConfigurationProperties n2kProps = new ConfigurationProperties();
+    n2kProps.put("enabled", this.n2KTwinConfig.isEnable());
+    n2kProps.put("topic", this.n2KTwinConfig.getTopic());
+    n2kProps.put("name", this.n2KTwinConfig.getName());
+    n2kProps.put("vehicleClass", this.n2KTwinConfig.getVehicleClass());
     n2kProps.put("publishMavlinkDrones", this.n2KTwinConfig.isPublishMavlinkDrones());
-    n2kProps.put("ais", n2KTwinConfig.getAis());
 
     if (n2KTwinConfig.getAis() instanceof Config aisConfiguration) {
       n2kProps.put("ais", aisConfiguration.toConfigurationProperties());
+    } else if (n2KTwinConfig.getAis() != null) {
+      n2kProps.put("ais", n2KTwinConfig.getAis());
     }
+
+    props.put("n2k", n2kProps);
+
     return props;
   }
 
@@ -169,7 +188,6 @@ public class TwinManagerConfig extends TwinManagerConfigDTO implements Config, C
     }
 
     boolean hasChanged = false;
-
 
     if (n2KTwinConfig.isPublishMavlinkDrones() != newConfig.n2KTwinConfig.isPublishMavlinkDrones()) {
       n2KTwinConfig.setPublishMavlinkDrones(newConfig.n2KTwinConfig.isPublishMavlinkDrones());
@@ -183,7 +201,6 @@ public class TwinManagerConfig extends TwinManagerConfigDTO implements Config, C
       n2KTwinConfig.setAis(newConfig.n2KTwinConfig.getAis());
       hasChanged = true;
     }
-
 
     if (this.heartbeatTimeoutMillis != newConfig.getHeartbeatTimeoutMillis()) {
       this.heartbeatTimeoutMillis = newConfig.getHeartbeatTimeoutMillis();
@@ -225,6 +242,11 @@ public class TwinManagerConfig extends TwinManagerConfigDTO implements Config, C
       hasChanged = true;
     }
 
+    if (this.droneInfo != newConfig.getDroneInfo()) {
+      this.droneInfo = newConfig.getDroneInfo();
+      hasChanged = true;
+    }
+
     if (this.mavlink != newConfig.getMavlink()) {
       this.mavlink = newConfig.getMavlink();
       hasChanged = true;
@@ -245,7 +267,7 @@ public class TwinManagerConfig extends TwinManagerConfigDTO implements Config, C
           this.adapterConfig.put(entry.getKey(), adapterProperties);
         }
       }
-    } else if(value instanceof java.util.Map<?, ?> entries) {
+    } else if (value instanceof Map<?, ?> entries) {
       for (var entry : entries.entrySet()) {
         if (entry.getKey() instanceof String adapterName && entry.getValue() instanceof ConfigurationProperties adapterProperties) {
           this.adapterConfig.put(adapterName, adapterProperties);
@@ -259,14 +281,14 @@ public class TwinManagerConfig extends TwinManagerConfigDTO implements Config, C
 
     if (value instanceof ConfigurationProperties entry) {
       configs.add(parseMavlinkConfig(entry));
-    }
-    else if(value instanceof List<?> list) {
+    } else if (value instanceof List<?> list) {
       for (Object entry : list) {
         if (entry instanceof ConfigurationProperties mavlinkProps) {
           configs.add(parseMavlinkConfig(mavlinkProps));
         }
       }
     }
+
     return configs;
   }
 
@@ -275,6 +297,7 @@ public class TwinManagerConfig extends TwinManagerConfigDTO implements Config, C
     config.setName(properties.getProperty("name", config.getName()));
     config.setTopic(properties.getProperty("topic", config.getTopic()));
     config.setDialectName(properties.getProperty("dialectName", config.getDialectName()));
+
     if (properties.containsKey("knownSources")) {
       config.setKnownSources(parseKnownSources(properties.get("knownSources")));
     }
@@ -311,7 +334,6 @@ public class TwinManagerConfig extends TwinManagerConfigDTO implements Config, C
     return knownSource;
   }
 
-
   private List<DroneInfo> parseDroneInfos(Object properties) {
     List<DroneInfo> droneInfos = new ArrayList<>();
 
@@ -327,61 +349,168 @@ public class TwinManagerConfig extends TwinManagerConfigDTO implements Config, C
         droneInfos.add(parseDroneInfo(sourceProps));
       }
     }
+
     return droneInfos;
   }
 
   private DroneInfo parseDroneInfo(ConfigurationProperties properties) {
     DroneInfo droneInfo = new DroneInfo();
+
     String uuidString = properties.getProperty("uuid", null);
-    if(uuidString != null) {
+    if (uuidString != null) {
       droneInfo.setUuid(UUID.fromString(uuidString));
     }
+
     droneInfo.setBatteryCapacityAh(properties.getDoubleProperty("batteryCapacityAh", droneInfo.getBatteryCapacityAh()));
     droneInfo.setBatteryCapacityHours(properties.getDoubleProperty("batteryCapacityHours", droneInfo.getBatteryCapacityHours()));
     droneInfo.setName(properties.getProperty("name", droneInfo.getName()));
-    droneInfo.setDescription( ((ConfigurationProperties)properties.get("description")).getMap());
+    droneInfo.setModelName(properties.getProperty("modelName", droneInfo.getModelName()));
+
+    if (properties.get("description") instanceof ConfigurationProperties descriptionProperties) {
+      droneInfo.setDescription(descriptionProperties.getMap());
+    } else if (properties.get("description") instanceof Map<?, ?> descriptionMap) {
+      droneInfo.setDescription(toStringObjectMap(descriptionMap));
+    }
+
     droneInfo.setCapabilities(parseTaskCapabilities(properties.get("capabilities")));
     return droneInfo;
   }
 
+  private List<ConfigurationProperties> toDroneInfoConfigurationProperties(List<DroneInfo> droneInfos) {
+    List<ConfigurationProperties> values = new ArrayList<>();
 
+    for (DroneInfo droneInfo : droneInfos) {
+      ConfigurationProperties properties = new ConfigurationProperties();
+      properties.put("name", droneInfo.getName());
+
+      if (droneInfo.getUuid() != null) {
+        properties.put("uuid", droneInfo.getUuid().toString());
+      }
+
+      if (droneInfo.getModelName() != null) {
+        properties.put("modelName", droneInfo.getModelName());
+      }
+
+      properties.put("batteryCapacityAh", droneInfo.getBatteryCapacityAh());
+      properties.put("batteryCapacityHours", droneInfo.getBatteryCapacityHours());
+
+      if (droneInfo.getDescription() != null && !droneInfo.getDescription().isEmpty()) {
+        properties.put("description", new ConfigurationProperties(new LinkedHashMap<>(droneInfo.getDescription())));
+      }
+
+      if (droneInfo.getCapabilities() != null) {
+        properties.put("capabilities", toTaskCapabilitiesConfigurationProperties(droneInfo.getCapabilities()));
+      }
+
+      values.add(properties);
+    }
+
+    return values;
+  }
 
   @SuppressWarnings("unchecked")
+  private Map<String, Object> toStringObjectMap(Map<?, ?> source) {
+    Map<String, Object> target = new LinkedHashMap<>();
+
+    for (Map.Entry<?, ?> entry : source.entrySet()) {
+      if (entry.getKey() instanceof String key) {
+        target.put(key, entry.getValue());
+      }
+    }
+
+    return target;
+  }
+
   private TaskCapabilities parseTaskCapabilities(Object value) {
     TaskCapabilities capabilities = new TaskCapabilities();
 
-    if(value instanceof ConfigurationProperties configurationProperties) {
+    if (value instanceof ConfigurationProperties configurationProperties) {
       capabilities.setTasks(parseTaskCapabilityList(configurationProperties.get("tasks")));
 
-      if(capabilities.getTasks().isEmpty()) {
+      if (capabilities.getTasks().isEmpty()) {
         capabilities.setTasks(parseTaskCapabilityList(configurationProperties.get("task_capabilities")));
       }
 
       capabilities.setTaskConditionsMode(
-          parseTaskConditionMode(configurationProperties.getProperty("task_conditions_mode", null), capabilities.getTaskConditionsMode())
-      );
+          parseTaskConditionMode(
+              configurationProperties.getProperty("task_conditions_mode", null),
+              capabilities.getTaskConditionsMode()));
 
       capabilities.setTaskConditionsTemplate(
           parseTaskTemplateMode(
               configurationProperties.getProperty("task_conditions_template", null),
-              capabilities.getTaskConditionsTemplate()
-          )
-      );
-    } else if(value instanceof List<?> list) {
+              capabilities.getTaskConditionsTemplate()));
+    } else if (value instanceof List<?> list) {
       capabilities.setTasks(parseTaskCapabilityList(list));
     }
 
     return capabilities;
   }
 
+  private ConfigurationProperties toTaskCapabilitiesConfigurationProperties(TaskCapabilities capabilities) {
+    ConfigurationProperties properties = new ConfigurationProperties();
+
+    if (capabilities.getTasks() != null && !capabilities.getTasks().isEmpty()) {
+      properties.put("tasks", toTaskCapabilityConfigurationProperties(capabilities.getTasks()));
+    }
+
+    if (capabilities.getTaskConditionsMode() != null) {
+      properties.put("task_conditions_mode", capabilities.getTaskConditionsMode().name());
+    }
+
+    if (capabilities.getTaskConditionsTemplate() != null) {
+      properties.put("task_conditions_template", capabilities.getTaskConditionsTemplate().name());
+    }
+
+    return properties;
+  }
+
+  private List<ConfigurationProperties> toTaskCapabilityConfigurationProperties(List<TaskCapability> taskCapabilities) {
+    List<ConfigurationProperties> values = new ArrayList<>();
+
+    for (TaskCapability taskCapability : taskCapabilities) {
+      ConfigurationProperties properties = new ConfigurationProperties();
+
+      if (taskCapability.getTaskType() != null) {
+        properties.put("task_type", taskCapability.getTaskType().name());
+      }
+
+      if (taskCapability.getSpecialization() != null) {
+        properties.put("task_specialization", taskCapability.getSpecialization().name());
+      }
+
+      if (taskCapability.getAuthorities() != null && taskCapability.getAuthorities().length > 0) {
+        properties.put("authorities", toTaskAuthoritiesConfigurationProperties(taskCapability.getAuthorities()));
+      }
+
+      values.add(properties);
+    }
+
+    return values;
+  }
+
+  private List<ConfigurationProperties> toTaskAuthoritiesConfigurationProperties(Authorities[] authorities) {
+    List<ConfigurationProperties> values = new ArrayList<>();
+
+    for (Authorities authority : authorities) {
+      if (authority != null && authority.getGuid() != null) {
+        ConfigurationProperties properties = new ConfigurationProperties();
+        properties.put("guid", authority.getGuid().toString());
+        values.add(properties);
+      }
+    }
+
+    return values;
+  }
+
   private List<TaskCapability> parseTaskCapabilityList(Object value) {
     List<TaskCapability> taskCapabilities = new ArrayList<>();
 
-    if(value instanceof ConfigurationProperties configurationProperties) {
+    if (value instanceof ConfigurationProperties configurationProperties) {
       taskCapabilities.add(parseTaskCapability(configurationProperties));
-    } else if(value instanceof List<?> list) {
-      for(Object entry : list) {
-        if(entry instanceof ConfigurationProperties configurationProperties) {
+    } else if (value instanceof List<?> list) {
+      for (Object entry : list) {
+        if (entry instanceof ConfigurationProperties configurationProperties) {
           taskCapabilities.add(parseTaskCapability(configurationProperties));
         }
       }
@@ -396,53 +525,48 @@ public class TwinManagerConfig extends TwinManagerConfigDTO implements Config, C
     taskCapability.setTaskType(
         parsePlanTaskType(
             properties.getProperty("task_type", null),
-            taskCapability.getTaskType()
-        )
-    );
+            taskCapability.getTaskType()));
 
     taskCapability.setSpecialization(
         parseTaskSpecialization(
             properties.getProperty("task_specialization", null),
-            taskCapability.getSpecialization()
-        )
-    );
+            taskCapability.getSpecialization()));
+
     taskCapability.setAuthorities(
         parseTaskAuthorities(
-            properties.get ("authorities")
-        )
-    );
+            properties.get("authorities")));
+
     return taskCapability;
   }
 
   private Authorities[] parseTaskAuthorities(Object authorities) {
-    if(authorities == null) {
+    if (authorities == null) {
       return new Authorities[0];
     }
-    List<Authorities> authoritiesList = new ArrayList<>();
-    if(authorities instanceof ConfigurationProperties configurationProperties) {
-      parseAuthority(authoritiesList, configurationProperties);
-    }
-    else if(authorities instanceof List){
-      for(Object entry : (List<?>)authorities) {
-        if(entry instanceof ConfigurationProperties configurationProperties) {
-          parseAuthority(authoritiesList, configurationProperties);
 
+    List<Authorities> authoritiesList = new ArrayList<>();
+    if (authorities instanceof ConfigurationProperties configurationProperties) {
+      parseAuthority(authoritiesList, configurationProperties);
+    } else if (authorities instanceof List<?>) {
+      for (Object entry : (List<?>) authorities) {
+        if (entry instanceof ConfigurationProperties configurationProperties) {
+          parseAuthority(authoritiesList, configurationProperties);
         }
       }
     }
+
     return authoritiesList.toArray(new Authorities[0]);
   }
 
   private void parseAuthority(List<Authorities> authoritiesList, ConfigurationProperties configurationProperties) {
     String guid = configurationProperties.getProperty("guid", null);
-    if(guid != null){
+    if (guid != null) {
       authoritiesList.add(new Authorities(UUID.fromString(guid)));
     }
   }
 
-
   private PlanTaskType parsePlanTaskType(String value, PlanTaskType defaultValue) {
-    if(value == null || value.isBlank()) {
+    if (value == null || value.isBlank()) {
       return defaultValue;
     }
 
@@ -451,7 +575,7 @@ public class TwinManagerConfig extends TwinManagerConfigDTO implements Config, C
   }
 
   private TaskSpecialization parseTaskSpecialization(String value, TaskSpecialization defaultValue) {
-    if(value == null || value.isBlank()) {
+    if (value == null || value.isBlank()) {
       return defaultValue;
     }
 
@@ -460,7 +584,7 @@ public class TwinManagerConfig extends TwinManagerConfigDTO implements Config, C
   }
 
   private TaskConditionMode parseTaskConditionMode(String value, TaskConditionMode defaultValue) {
-    if(value == null || value.isBlank()) {
+    if (value == null || value.isBlank()) {
       return defaultValue;
     }
 
@@ -469,7 +593,7 @@ public class TwinManagerConfig extends TwinManagerConfigDTO implements Config, C
   }
 
   private TaskTemplateMode parseTaskTemplateMode(String value, TaskTemplateMode defaultValue) {
-    if(value == null || value.isBlank()) {
+    if (value == null || value.isBlank()) {
       return defaultValue;
     }
 
@@ -478,7 +602,7 @@ public class TwinManagerConfig extends TwinManagerConfigDTO implements Config, C
   }
 
   private String removePrefix(String value, String prefix) {
-    if(value.startsWith(prefix)) {
+    if (value.startsWith(prefix)) {
       return value.substring(prefix.length());
     }
 
@@ -501,6 +625,7 @@ public class TwinManagerConfig extends TwinManagerConfigDTO implements Config, C
       properties.put("name", config.getName());
       properties.put("topic", config.getTopic());
       properties.put("dialectName", config.getDialectName());
+
       if (config.getKnownSources() != null && !config.getKnownSources().isEmpty()) {
         properties.put("knownSources", toKnownSourceConfigurationProperties(config.getKnownSources()));
       }

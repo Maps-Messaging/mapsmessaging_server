@@ -57,6 +57,9 @@ public class DroneTwin extends EntityTwin {
   @Schema(description = "MAVLink or protocol-specific component identifier.", example = "1", nullable = true)
   private Integer componentId;
 
+  @Schema(description = "Configured UxV model name used to resolve the command model implementation.", example = "generic-px4-uav", nullable = true)
+  private String modelName;
+
   @Schema(description = "Synthetic or assigned MMSI used for external maritime-style identity mapping.", example = "999001234", nullable = true)
   private Long mmsi;
 
