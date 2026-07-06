@@ -51,7 +51,7 @@ public final class ModelManager {
 
     public UxvModel getRequiredModel(String modelName) {
         return getModel(modelName)
-            .orElseThrow(() -> new IllegalArgumentException("No UxV model registered with name '" + modelName + "'"));
+            .orElse(null);
     }
 
     public Collection<UxvModel> getModels() {
