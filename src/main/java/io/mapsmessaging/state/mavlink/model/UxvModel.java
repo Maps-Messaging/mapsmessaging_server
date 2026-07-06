@@ -20,7 +20,12 @@
 
 package io.mapsmessaging.state.mavlink.model;
 
+import io.mapsmessaging.state.drone.drone.DroneTwin;
+import io.mapsmessaging.state.drone.model.DetectionEvent;
+import io.mapsmessaging.state.mavlink.packet.MavlinkPacket;
+
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 
 public interface UxvModel {
@@ -39,6 +44,10 @@ public interface UxvModel {
         if (!supports(operation)) {
             throw unsupported(operation);
         }
+    }
+
+    default Optional<DetectionEvent> interpretDetection(DroneTwin droneTwin, MavlinkPacket event){
+        return Optional.empty();
     }
 
     default UxvModelCommandSet arm(UxvCommandContext context) {

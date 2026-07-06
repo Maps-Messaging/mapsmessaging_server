@@ -39,7 +39,6 @@ public class ListenerManager {
     listeners.put(BatteryStatusListener.LISTENER_ID, new BatteryStatusListener(twinManager));
     listeners.put(CommandAckListener.LISTENER_ID, new CommandAckListener(twinManager));
     listeners.put(ExtendedSysStateListener.LISTENER_ID, new ExtendedSysStateListener(twinManager));
-    listeners.put(NamedValueFloatListener.LISTENER_ID, new NamedValueFloatListener(twinManager));
     listeners.put(GlobalPositionListener.LISTENER_ID, new GlobalPositionListener(twinManager));
     listeners.put(GpsRawIntListener.LISTENER_ID, new GpsRawIntListener(twinManager));
     listeners.put(HeartbeatListener.LISTENER_ID, new HeartbeatListener(twinManager));

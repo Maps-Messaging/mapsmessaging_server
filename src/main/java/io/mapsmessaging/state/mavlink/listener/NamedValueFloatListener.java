@@ -41,7 +41,7 @@ public class NamedValueFloatListener implements Listener {
 
   private static final double DETECTION_PRESENT = 1.0;
   private static final double DETECTION_LOST = 0.0;
-  private static final long CONTACT_TTL_MILLIS = 60_000L;
+  public static final long CONTACT_TTL_MILLIS = 60_000L;
 
   private final TwinManager twinManager;
 

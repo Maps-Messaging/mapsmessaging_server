@@ -20,6 +20,10 @@
 
 package io.mapsmessaging.state.mavlink.model.impl.uuv;
 
+import io.mapsmessaging.state.drone.drone.DroneTwin;
+import io.mapsmessaging.state.drone.model.DetectionEvent;
+import io.mapsmessaging.state.drone.model.DetectionEventType;
+import io.mapsmessaging.state.drone.model.DroneContactManager;
 import io.mapsmessaging.state.drone.model.GeoPosition;
 import io.mapsmessaging.state.mavlink.messages.MavlinkCommandIntFactory;
 import io.mapsmessaging.state.mavlink.messages.MavlinkCommandLong;
@@ -40,15 +44,23 @@ import io.mapsmessaging.state.mavlink.model.UxvModelCommandSet;
 import io.mapsmessaging.state.mavlink.model.UxvOperation;
 import io.mapsmessaging.state.mavlink.model.UxvVehicleType;
 import io.mapsmessaging.state.mavlink.model.impl.AbstractUxvModel;
+import io.mapsmessaging.state.mavlink.packet.MavlinkPacket;
+import io.mapsmessaging.state.mavlink.packet.NamedValueFloatPacket;
 
+import java.nio.charset.StandardCharsets;
 import java.time.Duration;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 
 public class SticklebackArdupilotUuvModel extends AbstractUxvModel implements UuvModel {
 
     public static final String MODEL_NAME = "stickleback-ardupilot-uuv";
+
+    private static final int DETECTION_LOST = 0;
+    private static final int DETECTION_PRESENT = 1;
+    private static final float DETECTION_STATE_EPSILON = 0.001f;
+    private static final long CONTACT_TTL_MILLIS = 60_000L;
+
+
 
     private static final int MAV_CMD_DO_SET_HOME = 179;
     private static final int MAV_CMD_DO_CHANGE_SPEED = 178;
@@ -269,6 +281,64 @@ public class SticklebackArdupilotUuvModel extends AbstractUxvModel implements Uu
             issues.add(new PlanValidationIssue(UxvOperation.BUILD_MISSION, "Mission item " + index + " depthMeters is not currently mapped by this Stickleback ArduPilot UUV model"));
         }
     }
+
+    @Override
+    public Optional<DetectionEvent> interpretDetection(DroneTwin droneTwin, MavlinkPacket event) {
+        if (!(event instanceof NamedValueFloatPacket packet)) {
+            return Optional.empty();
+        }
+
+        if (!packet.isValid() || !packet.hasName() || !packet.hasValue()) {
+            return Optional.empty();
+        }
+
+        OptionalInt detectionState = detectionState(packet.getValue());
+        if (detectionState.isEmpty()) {
+            return Optional.empty();
+        }
+
+        UUID contactId = UUID.nameUUIDFromBytes(packet.getName().getBytes(StandardCharsets.UTF_8));
+
+        return switch (detectionState.getAsInt()) {
+            case DETECTION_PRESENT -> Optional.of(createDetectedEvent(droneTwin, packet, contactId));
+            case DETECTION_LOST -> Optional.of(createLostEvent(packet, contactId));
+            default -> Optional.empty();
+        };
+    }
+
+    private OptionalInt detectionState(double value) {
+        int state = (int) Math.round(value);
+        if (Math.abs(value - state) > DETECTION_STATE_EPSILON) {
+            return OptionalInt.empty();
+        }
+
+        if (state != DETECTION_PRESENT && state != DETECTION_LOST) {
+            return OptionalInt.empty();
+        }
+
+        return OptionalInt.of(state);
+    }
+
+    private DetectionEvent createDetectedEvent(DroneTwin droneTwin, NamedValueFloatPacket packet, UUID contactId) {
+        DetectionEvent detectionEvent = new DetectionEvent(contactId, packet.getName(), DetectionEventType.DETECTED);
+        detectionEvent.setPosition(droneTwin.getGeoPosition());
+        detectionEvent.setTtlMillis(CONTACT_TTL_MILLIS);
+        addNamedValueFloatAttributes(detectionEvent, packet);
+        return detectionEvent;
+    }
+
+    private DetectionEvent createLostEvent(NamedValueFloatPacket packet, UUID contactId) {
+        DetectionEvent detectionEvent = new DetectionEvent(contactId, packet.getName(), DetectionEventType.LOST);
+        addNamedValueFloatAttributes(detectionEvent, packet);
+        return detectionEvent;
+    }
+
+    private void addNamedValueFloatAttributes(DetectionEvent detectionEvent, NamedValueFloatPacket packet) {
+        detectionEvent.addAttribute("mavlink.message", "NAMED_VALUE_FLOAT");
+        detectionEvent.addAttribute("mavlink.name", packet.getName());
+        detectionEvent.addAttribute("mavlink.value", packet.getValue());
+    }
+
 
     private float toAltitude(GeoPosition position) {
         Double altitudeMeters = position.getPreferredAltitudeMeters();
