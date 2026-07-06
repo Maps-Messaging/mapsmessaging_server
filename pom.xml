@@ -1032,12 +1032,6 @@
       <version>4.0.3</version>
     </dependency>
 
-    <dependency>
-      <groupId>io.mapsmessaging</groupId>
-      <artifactId>stanag-state-adapter</artifactId>
-      <version>4.5.0-SNAPSHOT</version>
-    </dependency>
-
     <!-- https://mvnrepository.com/artifact/ch.hsr/geohash -->
     <dependency>
       <groupId>ch.hsr</groupId>
