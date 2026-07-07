@@ -258,10 +258,23 @@ public class GenericPx4UavModel extends AbstractUxvModel implements UavModel {
         float yawDegrees = request.yawDegrees() == null ? Float.NaN : normaliseDegrees(request.yawDegrees());
 
         MavlinkMessage message;
-        if (request.duration() == null || request.duration().isZero() || request.duration().isNegative()) {
-            message = MavlinkCommandIntFactory.loiterUnlimited(context.targetSystem(), context.targetComponent(), position, request.radiusMeters(), yawDegrees, context.sequence());
+        if (request.duration().isZero()) {
+            message = MavlinkCommandIntFactory.loiterUnlimited(
+                context.targetSystem(),
+                context.targetComponent(),
+                position,
+                request.radiusMeters(),
+                yawDegrees,
+                context.sequence());
         } else {
-            message = MavlinkCommandIntFactory.loiterTime(context.targetSystem(), context.targetComponent(), position, request.radiusMeters(), request.duration(), yawDegrees, context.sequence());
+            message = MavlinkCommandIntFactory.loiterTime(
+                context.targetSystem(),
+                context.targetComponent(),
+                position,
+                request.radiusMeters(),
+                request.duration(),
+                yawDegrees,
+                context.sequence());
         }
 
         return UxvModelCommandSet.of(UxvOperation.LOITER, getModelName(), message);

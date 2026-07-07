@@ -20,19 +20,23 @@
 package io.mapsmessaging.state.mavlink.model;
 
 import io.mapsmessaging.state.drone.model.GeoPosition;
-
 import java.time.Duration;
 import java.util.Objects;
 
 public record LoiterRequest(
-        GeoPosition position,
-        double radiusMeters,
-        Duration duration,
-        Float yawDegrees,
-        Double altitudeMeters,
-        Double depthMeters) {
+    GeoPosition position,
+    double radiusMeters,
+    Duration duration,
+    Float yawDegrees,
+    Double altitudeMeters,
+    Double depthMeters) {
 
     public LoiterRequest {
         position = Objects.requireNonNull(position, "position must not be null");
+        duration = duration == null ? Duration.ZERO : duration;
+
+        if (duration.isNegative()) {
+            throw new IllegalArgumentException("duration must not be negative");
+        }
     }
 }

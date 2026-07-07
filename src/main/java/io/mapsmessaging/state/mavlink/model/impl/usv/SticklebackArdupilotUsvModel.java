@@ -17,32 +17,51 @@
  *  limitations under the License.
  */
 
-package io.mapsmessaging.state.mavlink.model.impl.uuv;
+package io.mapsmessaging.state.mavlink.model.impl.usv;
 
 import io.mapsmessaging.state.drone.drone.DroneTwin;
 import io.mapsmessaging.state.drone.model.DetectionEvent;
 import io.mapsmessaging.state.drone.model.DetectionEventType;
 import io.mapsmessaging.state.drone.model.GeoPosition;
-import io.mapsmessaging.state.mavlink.messages.*;
-import io.mapsmessaging.state.mavlink.model.*;
+import io.mapsmessaging.state.mavlink.messages.MavlinkCommandIntFactory;
+import io.mapsmessaging.state.mavlink.messages.MavlinkCommandLong;
+import io.mapsmessaging.state.mavlink.messages.MavlinkCommandLongFactory;
+import io.mapsmessaging.state.mavlink.messages.MavlinkMessage;
+import io.mapsmessaging.state.mavlink.messages.MavlinkMissionItemIntFactory;
+import io.mapsmessaging.state.mavlink.model.HomeRequest;
+import io.mapsmessaging.state.mavlink.model.LoiterRequest;
+import io.mapsmessaging.state.mavlink.model.MissionPlan;
+import io.mapsmessaging.state.mavlink.model.PlanItem;
+import io.mapsmessaging.state.mavlink.model.PlanItemType;
+import io.mapsmessaging.state.mavlink.model.PlanValidation;
+import io.mapsmessaging.state.mavlink.model.PlanValidationIssue;
+import io.mapsmessaging.state.mavlink.model.RepositionRequest;
+import io.mapsmessaging.state.mavlink.model.UnsupportedUxvOperationException;
+import io.mapsmessaging.state.mavlink.model.UsvModel;
+import io.mapsmessaging.state.mavlink.model.UxvCommandContext;
+import io.mapsmessaging.state.mavlink.model.UxvModelCommandSet;
+import io.mapsmessaging.state.mavlink.model.UxvOperation;
+import io.mapsmessaging.state.mavlink.model.UxvVehicleType;
 import io.mapsmessaging.state.mavlink.model.impl.AbstractUxvModel;
 import io.mapsmessaging.state.mavlink.packet.MavlinkPacket;
 import io.mapsmessaging.state.mavlink.packet.NamedValueFloatPacket;
-
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.OptionalInt;
+import java.util.UUID;
 
-public class SticklebackArdupilotUuvModel extends AbstractUxvModel implements UuvModel {
+public class SticklebackArdupilotUsvModel extends AbstractUxvModel implements UsvModel {
 
-    public static final String MODEL_NAME = "stickleback-ardupilot-uuv";
+    public static final String MODEL_NAME = "stickleback-ardupilot-usv";
 
     private static final int DETECTION_LOST = 0;
     private static final int DETECTION_PRESENT = 1;
     private static final float DETECTION_STATE_EPSILON = 0.001f;
     private static final long CONTACT_TTL_MILLIS = 60_000L;
-
-
 
     private static final int MAV_CMD_DO_SET_HOME = 179;
     private static final int MAV_CMD_DO_CHANGE_SPEED = 178;
@@ -58,23 +77,24 @@ public class SticklebackArdupilotUuvModel extends AbstractUxvModel implements Uu
     private static final float DEFAULT_PASS_RADIUS_METERS = 0.0f;
     private static final float DEFAULT_HOLD_SECONDS = 0.0f;
 
-    public SticklebackArdupilotUuvModel() {
+    public SticklebackArdupilotUsvModel() {
         super(
-                MODEL_NAME,
-                UxvVehicleType.UUV,
-                operations(
-                        UxvOperation.ARM,
-                        UxvOperation.DISARM,
-                        UxvOperation.SET_HOME,
-                        UxvOperation.REPOSITION,
-                        UxvOperation.HOLD_POSITION,
-                        UxvOperation.STOP,
-                        UxvOperation.PAUSE_VEHICLE,
-                        UxvOperation.RESUME_VEHICLE,
-                        UxvOperation.BUILD_MISSION,
-                        UxvOperation.START_MISSION,
-                        UxvOperation.SET_SPEED,
-                        UxvOperation.SET_HEADING));
+            MODEL_NAME,
+            UxvVehicleType.USV,
+            operations(
+                UxvOperation.ARM,
+                UxvOperation.DISARM,
+                UxvOperation.SET_HOME,
+                UxvOperation.REPOSITION,
+                UxvOperation.HOLD_POSITION,
+                UxvOperation.STOP,
+                UxvOperation.PAUSE_VEHICLE,
+                UxvOperation.RESUME_VEHICLE,
+                UxvOperation.BUILD_MISSION,
+                UxvOperation.START_MISSION,
+                UxvOperation.SET_SPEED,
+                UxvOperation.SET_HEADING,
+                UxvOperation.LOITER));
     }
 
     @Override
@@ -115,9 +135,9 @@ public class SticklebackArdupilotUuvModel extends AbstractUxvModel implements Uu
 
         float yawDegrees = request.yawDegrees() == null ? Float.NaN : normaliseDegrees(request.yawDegrees());
         return UxvModelCommandSet.of(
-                UxvOperation.REPOSITION,
-                getModelName(),
-                MavlinkCommandIntFactory.reposition(context.targetSystem(), context.targetComponent(), request.position(), yawDegrees, context.sequence()));
+            UxvOperation.REPOSITION,
+            getModelName(),
+            MavlinkCommandIntFactory.reposition(context.targetSystem(), context.targetComponent(), request.position(), yawDegrees, context.sequence()));
     }
 
     @Override
@@ -215,13 +235,50 @@ public class SticklebackArdupilotUuvModel extends AbstractUxvModel implements Uu
         return UxvModelCommandSet.of(UxvOperation.SET_HEADING, getModelName(), commandLong);
     }
 
+    @Override
+    public UxvModelCommandSet loiter(UxvCommandContext context, LoiterRequest request) {
+        Objects.requireNonNull(context, "context must not be null");
+        Objects.requireNonNull(request, "request must not be null");
+        requirePositiveOrZero(request.radiusMeters(), "radiusMeters");
+        rejectAltitude(request.altitudeMeters(), UxvOperation.LOITER);
+        rejectDepth(request.depthMeters(), UxvOperation.LOITER);
+        rejectYaw(request.yawDegrees(), UxvOperation.LOITER);
+
+        Duration duration = toDuration(request.duration(), "duration");
+
+        MavlinkMessage message;
+        if (duration.isZero()) {
+            message =
+                MavlinkCommandIntFactory.loiterUnlimited(
+                    context.targetSystem(),
+                    context.targetComponent(),
+                    request.position(),
+                    request.radiusMeters(),
+                    Float.NaN,
+                    context.sequence());
+        } else {
+            message =
+                MavlinkCommandIntFactory.loiterTime(
+                    context.targetSystem(),
+                    context.targetComponent(),
+                    request.position(),
+                    request.radiusMeters(),
+                    duration,
+                    Float.NaN,
+                    context.sequence());
+        }
+
+        return UxvModelCommandSet.of(UxvOperation.LOITER, getModelName(), message);
+    }
+
     private MavlinkCommandLong pauseCommand(UxvCommandContext context) {
         return MavlinkCommandLongFactory.pause(context.targetSystem(), context.targetComponent(), context.sequence());
     }
 
     private MavlinkMessage toMissionMessage(UxvCommandContext context, int sequence, PlanItem item) {
         return switch (item.type()) {
-            case WAYPOINT -> MavlinkMissionItemIntFactory.waypoint(
+            case WAYPOINT ->
+                MavlinkMissionItemIntFactory.waypoint(
                     context.targetSystem(),
                     context.targetComponent(),
                     sequence,
@@ -230,37 +287,60 @@ public class SticklebackArdupilotUuvModel extends AbstractUxvModel implements Uu
                     item.radiusMeters() == null ? DEFAULT_ACCEPTANCE_RADIUS_METERS : item.radiusMeters().floatValue(),
                     DEFAULT_PASS_RADIUS_METERS,
                     item.yawDegrees() == null ? Float.NaN : normaliseDegrees(item.yawDegrees()));
+            case LOITER -> toMissionLoiter(context, sequence, item);
             case RETURN_TO_HOME -> MavlinkMissionItemIntFactory.returnToLaunch(context.targetSystem(), context.targetComponent(), sequence);
-            case LOITER, ORBIT, HOLD_POSITION -> throw new UnsupportedUxvOperationException(
+            case ORBIT, HOLD_POSITION ->
+                throw new UnsupportedUxvOperationException(
                     getModelName(),
                     UxvOperation.BUILD_MISSION,
-                    "Mission item type " + item.type() + " is not supported by this Stickleback ArduPilot UUV model");
+                    "Mission item type " + item.type() + " is not supported by this Stickleback ArduPilot USV model");
         };
     }
 
+    private MavlinkMessage toMissionLoiter(UxvCommandContext context, int sequence, PlanItem item) {
+        double radiusMeters = item.radiusMeters() == null ? DEFAULT_ACCEPTANCE_RADIUS_METERS : item.radiusMeters();
+        requirePositiveOrZero(radiusMeters, "radiusMeters");
+
+        Duration duration = toDuration(item.holdDuration(), "holdDuration");
+        if (duration.isZero()) {
+            return MavlinkMissionItemIntFactory.loiterUnlimited(context.targetSystem(), context.targetComponent(), sequence, item.position(), radiusMeters);
+        }
+        return MavlinkMissionItemIntFactory.loiterTime(context.targetSystem(), context.targetComponent(), sequence, item.position(), duration.toSeconds(), radiusMeters);
+    }
+
     private void validatePlanItem(int index, PlanItem item, List<PlanValidationIssue> issues) {
-        if (item.type() == PlanItemType.WAYPOINT && item.position() == null) {
+        if ((item.type() == PlanItemType.WAYPOINT || item.type() == PlanItemType.LOITER) && item.position() == null) {
             issues.add(new PlanValidationIssue(UxvOperation.BUILD_MISSION, "Mission item " + index + " requires a position"));
         }
 
-        if (item.type() == PlanItemType.LOITER || item.type() == PlanItemType.ORBIT || item.type() == PlanItemType.HOLD_POSITION) {
-            issues.add(new PlanValidationIssue(UxvOperation.BUILD_MISSION, "Mission item " + index + " type " + item.type() + " is not supported by this Stickleback ArduPilot UUV model"));
+        if (item.type() == PlanItemType.ORBIT || item.type() == PlanItemType.HOLD_POSITION) {
+            issues.add(
+                new PlanValidationIssue(
+                    UxvOperation.BUILD_MISSION, "Mission item " + index + " type " + item.type() + " is not supported by this Stickleback ArduPilot USV model"));
         }
 
         if (item.radiusMeters() != null && !isPositiveOrZero(item.radiusMeters())) {
             issues.add(new PlanValidationIssue(UxvOperation.BUILD_MISSION, "Mission item " + index + " radiusMeters must be finite and must not be negative"));
         }
 
+        if (item.holdDuration() != null && item.holdDuration().isNegative()) {
+            issues.add(new PlanValidationIssue(UxvOperation.BUILD_MISSION, "Mission item " + index + " holdDuration must not be negative"));
+        }
+
+        if (item.type() == PlanItemType.LOITER && item.yawDegrees() != null) {
+            issues.add(new PlanValidationIssue(UxvOperation.BUILD_MISSION, "Mission item " + index + " yawDegrees is not currently mapped for loiter by this Stickleback ArduPilot USV model"));
+        }
+
         if (item.speedMetersPerSecond() != null) {
-            issues.add(new PlanValidationIssue(UxvOperation.BUILD_MISSION, "Mission item " + index + " speedMetersPerSecond is not currently mapped by this Stickleback ArduPilot UUV model"));
+            issues.add(new PlanValidationIssue(UxvOperation.BUILD_MISSION, "Mission item " + index + " speedMetersPerSecond is not currently mapped by this Stickleback ArduPilot USV model"));
         }
 
         if (item.altitudeMeters() != null) {
-            issues.add(new PlanValidationIssue(UxvOperation.BUILD_MISSION, "Mission item " + index + " altitudeMeters is not currently mapped by this Stickleback ArduPilot UUV model"));
+            issues.add(new PlanValidationIssue(UxvOperation.BUILD_MISSION, "Mission item " + index + " altitudeMeters is not currently mapped by this Stickleback ArduPilot USV model"));
         }
 
         if (item.depthMeters() != null) {
-            issues.add(new PlanValidationIssue(UxvOperation.BUILD_MISSION, "Mission item " + index + " depthMeters is not currently mapped by this Stickleback ArduPilot UUV model"));
+            issues.add(new PlanValidationIssue(UxvOperation.BUILD_MISSION, "Mission item " + index + " depthMeters is not valid for this Stickleback ArduPilot USV model"));
         }
     }
 
@@ -321,7 +401,6 @@ public class SticklebackArdupilotUuvModel extends AbstractUxvModel implements Uu
         detectionEvent.addAttribute("mavlink.value", packet.getValue());
     }
 
-
     private float toAltitude(GeoPosition position) {
         Double altitudeMeters = position.getPreferredAltitudeMeters();
         if (altitudeMeters == null) {
@@ -340,15 +419,46 @@ public class SticklebackArdupilotUuvModel extends AbstractUxvModel implements Uu
     }
 
     private float toSeconds(Duration duration) {
-        if (duration == null || duration.isZero() || duration.isNegative()) {
+        Duration validatedDuration = toDuration(duration, "duration");
+        if (validatedDuration.isZero()) {
             return DEFAULT_HOLD_SECONDS;
         }
-        return (float) duration.toSeconds();
+        return (float) validatedDuration.toSeconds();
+    }
+
+    private Duration toDuration(Duration duration, String name) {
+        if (duration == null) {
+            return Duration.ZERO;
+        }
+
+        if (duration.isNegative()) {
+            throw new IllegalArgumentException(name + " must not be negative");
+        }
+
+        return duration;
     }
 
     private void rejectSpeed(Double speedMetersPerSecond, UxvOperation operation) {
         if (speedMetersPerSecond != null) {
             throw new IllegalArgumentException(operation + " does not currently map speedMetersPerSecond for model " + getModelName());
+        }
+    }
+
+    private void rejectAltitude(Double altitudeMeters, UxvOperation operation) {
+        if (altitudeMeters != null) {
+            throw new IllegalArgumentException(operation + " does not currently map altitudeMeters for model " + getModelName());
+        }
+    }
+
+    private void rejectDepth(Double depthMeters, UxvOperation operation) {
+        if (depthMeters != null) {
+            throw new IllegalArgumentException(operation + " does not support depthMeters for surface model " + getModelName());
+        }
+    }
+
+    private void rejectYaw(Float yawDegrees, UxvOperation operation) {
+        if (yawDegrees != null) {
+            throw new IllegalArgumentException(operation + " does not currently map yawDegrees for model " + getModelName());
         }
     }
 

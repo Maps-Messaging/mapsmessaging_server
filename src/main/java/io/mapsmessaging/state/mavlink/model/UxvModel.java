@@ -45,7 +45,7 @@ public interface UxvModel {
         }
     }
 
-    default Optional<DetectionEvent> interpretDetection(DroneTwin droneTwin, MavlinkPacket event){
+    default Optional<DetectionEvent> interpretDetection(DroneTwin droneTwin, MavlinkPacket event) {
         return Optional.empty();
     }
 
@@ -71,6 +71,10 @@ public interface UxvModel {
 
     default UxvModelCommandSet orbit(UxvCommandContext context, OrbitRequest request) {
         throw unsupported(UxvOperation.ORBIT);
+    }
+
+    default UxvModelCommandSet loiter(UxvCommandContext context, LoiterRequest request) {
+        throw unsupported(UxvOperation.LOITER);
     }
 
     default UxvModelCommandSet holdPosition(UxvCommandContext context) {
