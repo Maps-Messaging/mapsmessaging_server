@@ -19,12 +19,12 @@
 
 package io.mapsmessaging.state.mavlink.listener;
 
-import io.mapsmessaging.state.mavlink.packet.AttitudePacket;
-import io.mapsmessaging.state.mavlink.packet.MavlinkPacket;
 import io.mapsmessaging.state.drone.core.TwinManager;
 import io.mapsmessaging.state.drone.core.TwinUpdateContext;
 import io.mapsmessaging.state.drone.drone.DroneTwin;
 import io.mapsmessaging.state.drone.model.Orientation;
+import io.mapsmessaging.state.mavlink.packet.AttitudePacket;
+import io.mapsmessaging.state.mavlink.packet.MavlinkPacket;
 
 import java.time.Instant;
 
@@ -40,9 +40,7 @@ public class AttitudeListener implements Listener {
   }
 
   @Override
-  public void handle(String twinId,
-                     MavlinkPacket pkt,
-                     TwinUpdateContext context) {
+  public void handle(String twinId, MavlinkPacket pkt, TwinUpdateContext context) {
 
     if (!(pkt instanceof AttitudePacket packet)) {
       return;

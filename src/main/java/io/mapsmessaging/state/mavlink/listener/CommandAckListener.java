@@ -19,14 +19,15 @@
 
 package io.mapsmessaging.state.mavlink.listener;
 
-import static io.mapsmessaging.state.mavlink.packet.MavlinkMessageIds.COMMAND_ACK;
-
 import io.mapsmessaging.state.drone.core.TwinManager;
 import io.mapsmessaging.state.drone.core.TwinUpdateContext;
 import io.mapsmessaging.state.drone.drone.DroneTwin;
 import io.mapsmessaging.state.mavlink.packet.CommandAckPacket;
 import io.mapsmessaging.state.mavlink.packet.MavlinkPacket;
+
 import java.time.Instant;
+
+import static io.mapsmessaging.state.mavlink.packet.MavlinkMessageIds.COMMAND_ACK;
 
 /**
  * Listener for COMMAND_ACK.

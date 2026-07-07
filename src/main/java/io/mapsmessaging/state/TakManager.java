@@ -26,7 +26,7 @@ import io.mapsmessaging.state.drone.core.TwinManager;
 import io.mapsmessaging.state.drone.tak.TakTwinObserver;
 import io.mapsmessaging.utilities.Lifecycle;
 
-import static io.mapsmessaging.logging.ServerLogMessages.STATE_MANAGER_TAK_ENABLED;
+import static io.mapsmessaging.state.logging.StateLogMessages.STATE_MANAGER_TAK_ENABLED;
 
 public class TakManager implements Lifecycle {
   private final Logger logger = LoggerFactory.getLogger(TakManager.class);

@@ -1,5 +1,6 @@
 /*
  *
+ *  Copyright [ 2020 - 2024 ] Matthew Buckton
  *  Copyright [ 2024 - 2026 ] MapsMessaging B.V.
  *
  *  Licensed under the Apache License, Version 2.0 with the Commons Clause
@@ -25,7 +26,6 @@ import io.mapsmessaging.state.drone.core.EntityTwin;
 import io.mapsmessaging.state.drone.core.TwinManager;
 import io.mapsmessaging.state.drone.core.TwinUpdateContext;
 import io.mapsmessaging.state.drone.drone.DroneTwin;
-
 import io.mapsmessaging.state.n2k.listener.N2kJsonListener;
 import io.mapsmessaging.state.n2k.listener.N2kJsonListenerRegistry;
 import lombok.NonNull;

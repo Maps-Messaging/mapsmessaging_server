@@ -20,9 +20,10 @@
 package io.mapsmessaging.state.mavlink.packet;
 
 import io.mapsmessaging.mavlink.ProcessedFrame;
+import lombok.Getter;
+
 import java.util.Arrays;
 import java.util.Map;
-import lombok.Getter;
 
 import static io.mapsmessaging.state.mavlink.packet.MavlinkMessageIds.BATTERY_STATUS;
 

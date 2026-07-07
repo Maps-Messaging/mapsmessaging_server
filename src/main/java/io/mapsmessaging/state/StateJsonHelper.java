@@ -24,11 +24,8 @@ import com.google.gson.GsonBuilder;
 import io.mapsmessaging.rest.translation.GsonDateTimeDeserialiser;
 import io.mapsmessaging.rest.translation.GsonDateTimeSerialiser;
 import io.mapsmessaging.rest.translation.InstantTypeAdapter;
-import io.mapsmessaging.state.config.capability.PlanTaskType;
-import io.mapsmessaging.state.config.capability.PrefixedEnumTypeAdapter;
-import io.mapsmessaging.state.config.capability.TaskConditionMode;
-import io.mapsmessaging.state.config.capability.TaskSpecialization;
-import io.mapsmessaging.state.config.capability.TaskTemplateMode;
+import io.mapsmessaging.state.config.capability.*;
+
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;

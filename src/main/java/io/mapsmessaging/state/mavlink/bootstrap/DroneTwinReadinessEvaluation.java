@@ -19,10 +19,11 @@
 
 package io.mapsmessaging.state.mavlink.bootstrap;
 
+import lombok.Getter;
+
 import java.time.Instant;
 import java.util.EnumSet;
 import java.util.Set;
-import lombok.Getter;
 
 @Getter
 public class DroneTwinReadinessEvaluation {

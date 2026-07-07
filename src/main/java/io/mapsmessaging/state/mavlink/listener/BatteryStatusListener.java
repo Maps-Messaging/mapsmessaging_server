@@ -19,8 +19,6 @@
 
 package io.mapsmessaging.state.mavlink.listener;
 
-import static io.mapsmessaging.state.mavlink.packet.MavlinkMessageIds.BATTERY_STATUS;
-
 import io.mapsmessaging.state.drone.core.TwinManager;
 import io.mapsmessaging.state.drone.core.TwinUpdateContext;
 import io.mapsmessaging.state.drone.drone.DroneTwin;
@@ -32,6 +30,8 @@ import io.mapsmessaging.state.mavlink.packet.MavlinkPacket;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Arrays;
+
+import static io.mapsmessaging.state.mavlink.packet.MavlinkMessageIds.BATTERY_STATUS;
 
 /**
  * Listener for BATTERY_STATUS.

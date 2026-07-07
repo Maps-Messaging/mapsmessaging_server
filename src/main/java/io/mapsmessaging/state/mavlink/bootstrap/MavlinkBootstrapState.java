@@ -19,11 +19,12 @@
 
 package io.mapsmessaging.state.mavlink.bootstrap;
 
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
 import java.time.Instant;
 import java.util.EnumMap;
 import java.util.Map;
-import lombok.Data;
-import lombok.NoArgsConstructor;
 
 @Data
 @NoArgsConstructor
@@ -46,9 +47,6 @@ public class MavlinkBootstrapState {
   }
 
   public MavlinkBootstrapRequestTracker getOrCreateTracker(DroneTwinMissingState missingState) {
-    return requestTrackers.computeIfAbsent(
-        missingState,
-        MavlinkBootstrapRequestTracker::new
-    );
+    return requestTrackers.computeIfAbsent(missingState, MavlinkBootstrapRequestTracker::new);
   }
 }

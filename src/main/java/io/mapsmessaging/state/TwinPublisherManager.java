@@ -28,8 +28,8 @@ import io.mapsmessaging.utilities.Lifecycle;
 
 import java.io.IOException;
 
-import static io.mapsmessaging.logging.ServerLogMessages.STATE_MANAGER_PUBLISH_ENABLED;
-import static io.mapsmessaging.logging.ServerLogMessages.STATE_MANAGER_PUBLISH_FAILED;
+import static io.mapsmessaging.state.logging.StateLogMessages.STATE_MANAGER_PUBLISH_ENABLED;
+import static io.mapsmessaging.state.logging.StateLogMessages.STATE_MANAGER_PUBLISH_FAILED;
 
 public class TwinPublisherManager implements Lifecycle {
 

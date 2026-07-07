@@ -1,5 +1,6 @@
 /*
  *
+ *  Copyright [ 2020 - 2024 ] Matthew Buckton
  *  Copyright [ 2024 - 2026 ] MapsMessaging B.V.
  *
  *  Licensed under the Apache License, Version 2.0 with the Commons Clause
@@ -25,34 +26,35 @@ import io.mapsmessaging.api.MessageEvent;
 import io.mapsmessaging.api.features.QualityOfService;
 import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.dto.rest.config.protocol.impl.MavlinkKnownSourceDTO;
-import io.mapsmessaging.state.config.DroneInfoRegistry;
-import io.mapsmessaging.state.config.MavlinkTwinConfigDTO;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.mavlink.ProcessedFrame;
 import io.mapsmessaging.mavlink.context.FrameFailureReason;
 import io.mapsmessaging.mavlink.message.Frame;
 import io.mapsmessaging.mavlink.message.Version;
-import io.mapsmessaging.network.io.impl.noop.NoOpEndPoint;
 import io.mapsmessaging.network.protocol.impl.mavlink.GsonFactory;
 import io.mapsmessaging.state.MessageHandler;
 import io.mapsmessaging.state.StateLoopProtocol;
+import io.mapsmessaging.state.config.DroneInfoRegistry;
+import io.mapsmessaging.state.config.MavlinkTwinConfigDTO;
 import io.mapsmessaging.state.drone.core.TwinManager;
 import io.mapsmessaging.state.drone.core.TwinUpdateContext;
 import io.mapsmessaging.state.mavlink.listener.ListenerManager;
 import io.mapsmessaging.state.mavlink.packet.MavlinkPacket;
 import io.mapsmessaging.state.mavlink.packet.MavlinkPacketFactory;
-import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.time.Instant;
-import java.util.*;
-
 import io.mapsmessaging.state.util.SessionHelper;
-import io.mapsmessaging.utilities.Agent;
 import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
 
-import static io.mapsmessaging.logging.ServerLogMessages.*;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.time.Instant;
+import java.util.Collections;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.UUID;
+
+import static io.mapsmessaging.state.logging.StateLogMessages.MAVLINK_STATE_UNSUPPORTED_PACKET_IGNORED;
 
 public class MavlinkStateSubscriber implements MessageHandler {
 
@@ -64,11 +66,7 @@ public class MavlinkStateSubscriber implements MessageHandler {
   private final DroneInfoRegistry droneRegistry;
   private final MavlinkTwinUpdater twinUpdater;
 
-  public MavlinkStateSubscriber(
-      @NonNull @NotNull TwinManager twinManager,
-      @NonNull @NotNull MavlinkTwinConfigDTO mavlinkConfig,
-      @NonNull @NotNull DroneInfoRegistry registry
-  ) throws IOException {
+  public MavlinkStateSubscriber(@NonNull @NotNull TwinManager twinManager, @NonNull @NotNull MavlinkTwinConfigDTO mavlinkConfig, @NonNull @NotNull DroneInfoRegistry registry) {
     this.protocol = SessionHelper.createLoopbackProtocol(this);
     this.namespaceTopicPath = mavlinkConfig.getTopic();
     this.sourceRegistry = new MavlinkSourceRegistry(mavlinkConfig);

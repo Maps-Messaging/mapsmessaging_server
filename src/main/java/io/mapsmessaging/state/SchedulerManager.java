@@ -29,7 +29,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
-import static io.mapsmessaging.logging.ServerLogMessages.STATE_MANAGER_SCHEDULER_ERROR;
+import static io.mapsmessaging.state.logging.StateLogMessages.STATE_MANAGER_SCHEDULER_ERROR;
 
 public class SchedulerManager implements Lifecycle {
   private static final long SCAN_INTERVAL_MILLIS = 1000L;

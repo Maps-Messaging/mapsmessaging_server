@@ -20,9 +20,9 @@
 package io.mapsmessaging.state.n2k.handler;
 
 import io.mapsmessaging.canbus.j1939.n2k.codec.N2kMessageParser;
-import io.mapsmessaging.state.n2k.msg.AisMappingSupport;
 import io.mapsmessaging.state.drone.core.TwinLifecycleStatus;
 import io.mapsmessaging.state.drone.drone.DroneTwin;
+import io.mapsmessaging.state.n2k.msg.AisMappingSupport;
 
 public abstract class AbstractDronePgnHandler implements DronePgnHandler {
 

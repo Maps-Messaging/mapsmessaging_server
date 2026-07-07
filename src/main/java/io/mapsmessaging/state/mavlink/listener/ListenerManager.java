@@ -19,10 +19,9 @@
 
 package io.mapsmessaging.state.mavlink.listener;
 
-import io.mapsmessaging.state.mavlink.packet.MavlinkPacket;
-
 import io.mapsmessaging.state.drone.core.TwinManager;
 import io.mapsmessaging.state.drone.core.TwinUpdateContext;
+import io.mapsmessaging.state.mavlink.packet.MavlinkPacket;
 
 import java.util.LinkedHashMap;
 import java.util.Map;

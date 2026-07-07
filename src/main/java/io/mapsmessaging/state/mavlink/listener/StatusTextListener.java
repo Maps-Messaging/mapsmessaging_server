@@ -24,9 +24,6 @@ import io.mapsmessaging.state.drone.core.TwinUpdateContext;
 import io.mapsmessaging.state.mavlink.packet.MavlinkPacket;
 import io.mapsmessaging.state.mavlink.packet.StatusTextPacket;
 
-import java.time.Instant;
-import java.util.UUID;
-
 import static io.mapsmessaging.state.mavlink.packet.MavlinkMessageIds.STATUSTEXT;
 
 /**
@@ -36,24 +33,20 @@ public class StatusTextListener implements Listener {
 
   public static final int LISTENER_ID = STATUSTEXT;
 
-  private final TwinManager twinManager;
 
   public StatusTextListener(TwinManager twinManager) {
-    this.twinManager = twinManager;
+
   }
 
   @Override
-  public void handle(String twinId,
-                     MavlinkPacket pkt,
-                     TwinUpdateContext context) {
+  public void handle(String twinId, MavlinkPacket pkt, TwinUpdateContext context) {
 
     if (!(pkt instanceof StatusTextPacket packet)) {
       return;
     }
 
-    if (!packet.isValid()) {
-      return;
+    if (packet.isValid() && packet.getText() != null) {
+      // log it
     }
-
   }
 }

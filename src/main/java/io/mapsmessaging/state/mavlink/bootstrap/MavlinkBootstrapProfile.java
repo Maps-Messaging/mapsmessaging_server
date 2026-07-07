@@ -19,10 +19,11 @@
 
 package io.mapsmessaging.state.mavlink.bootstrap;
 
+import lombok.Getter;
+
 import java.time.Duration;
 import java.util.EnumMap;
 import java.util.Map;
-import lombok.Getter;
 
 import static io.mapsmessaging.state.mavlink.packet.MavlinkMessageIds.*;
 

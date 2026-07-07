@@ -19,27 +19,21 @@
 
 package io.mapsmessaging.state.drone.drone;
 
-import static io.mapsmessaging.state.drone.util.SyntheticMmsiGenerator.generateSyntheticMmsi;
-
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import io.mapsmessaging.state.config.capability.TaskCapabilities;
 import io.mapsmessaging.state.drone.core.EntityTwin;
 import io.mapsmessaging.state.drone.core.TwinType;
-import io.mapsmessaging.state.drone.model.Contact;
-import io.mapsmessaging.state.drone.model.DroneContactManager;
-import io.mapsmessaging.state.drone.model.EnvironmentalState;
-import io.mapsmessaging.state.drone.model.SystemState;
-import io.mapsmessaging.state.drone.model.TimeState;
+import io.mapsmessaging.state.drone.model.*;
 import io.mapsmessaging.state.drone.model.autopilot.AutopilotState;
+import io.mapsmessaging.state.mavlink.sender.MavlinkEventListSender;
 import io.swagger.v3.oas.annotations.media.Schema;
+import lombok.*;
+
 import java.time.Instant;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
-import lombok.NoArgsConstructor;
-import lombok.ToString;
+import java.util.*;
+import java.util.concurrent.atomic.AtomicReference;
+
+import static io.mapsmessaging.state.drone.util.SyntheticMmsiGenerator.generateSyntheticMmsi;
 
 /**
  * Twin representing an unmanned aircraft or vehicle.
@@ -75,10 +69,18 @@ public class DroneTwin extends EntityTwin {
   @Schema(description = "Task capabilities supported by this drone or unmanned vehicle.", nullable = true)
   private TaskCapabilities capabilities = new TaskCapabilities();
 
+  @JsonIgnore
   @Schema(hidden = true)
   @ToString.Exclude
   @EqualsAndHashCode.Exclude
   private final DroneContactManager contactManager = new DroneContactManager();
+
+  @JsonIgnore
+  @Schema(hidden = true)
+  @ToString.Exclude
+  @EqualsAndHashCode.Exclude
+  @Getter(AccessLevel.NONE)
+  private final AtomicReference<MavlinkEventListSender> activeMavlinkSender = new AtomicReference<>();
 
   @Schema(description = "Decoded autopilot information for the vehicle.", nullable = true)
   private AutopilotState autopilotState;
@@ -206,9 +208,58 @@ public class DroneTwin extends EntityTwin {
     return contactManager.size() > 0;
   }
 
+  @JsonIgnore
   @Schema(hidden = true)
   public DroneContactManager getContactManager() {
     return contactManager;
+  }
+
+  @JsonIgnore
+  @Schema(hidden = true)
+  public MavlinkEventListSender getActiveMavlinkSender() {
+    return activeMavlinkSender.get();
+  }
+
+  @JsonIgnore
+  @Schema(hidden = true)
+  public boolean hasActiveMavlinkSender() {
+    return activeMavlinkSender.get() != null;
+  }
+
+  @JsonIgnore
+  @Schema(hidden = true)
+  public boolean registerMavlinkSender(MavlinkEventListSender sender) {
+    return activeMavlinkSender.compareAndSet(null, Objects.requireNonNull(sender, "sender must not be null"));
+  }
+
+  @JsonIgnore
+  @Schema(hidden = true)
+  public boolean removeMavlinkSender(MavlinkEventListSender sender) {
+    return activeMavlinkSender.compareAndSet(Objects.requireNonNull(sender, "sender must not be null"), null);
+  }
+
+  @JsonIgnore
+  @Schema(hidden = true)
+  public boolean cancelActiveMavlinkSender() {
+    MavlinkEventListSender sender = activeMavlinkSender.getAndSet(null);
+    if (sender == null) {
+      return false;
+    }
+
+    sender.cancel();
+    return true;
+  }
+
+  @JsonIgnore
+  @Schema(hidden = true)
+  public boolean closeActiveMavlinkSender() {
+    MavlinkEventListSender sender = activeMavlinkSender.getAndSet(null);
+    if (sender == null) {
+      return false;
+    }
+
+    sender.close();
+    return true;
   }
 
   @Schema(description = "Current contacts detected by this drone. Expired contacts are removed before the list is returned.", accessMode = Schema.AccessMode.READ_ONLY)

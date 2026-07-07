@@ -19,8 +19,8 @@
 
 package io.mapsmessaging.state.mavlink.listener;
 
-import io.mapsmessaging.state.mavlink.packet.MavlinkPacket;
 import io.mapsmessaging.state.drone.core.TwinUpdateContext;
+import io.mapsmessaging.state.mavlink.packet.MavlinkPacket;
 
 public interface Listener {
   void handle(String twinId, MavlinkPacket packet, TwinUpdateContext context);

@@ -17,16 +17,9 @@
  *  limitations under the License.
  */
 
-package io.mapsmessaging.state.mavlink.model.registry;
+package io.mapsmessaging.state.mavlink.model;
 
-import io.mapsmessaging.state.mavlink.model.UxvModel;
-
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.ServiceLoader;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 public final class ModelManager {

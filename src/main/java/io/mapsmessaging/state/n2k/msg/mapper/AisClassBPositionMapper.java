@@ -19,11 +19,11 @@
 
 package io.mapsmessaging.state.n2k.msg.mapper;
 
+import io.mapsmessaging.state.drone.core.TwinLifecycleStatus;
+import io.mapsmessaging.state.drone.drone.DroneTwin;
 import io.mapsmessaging.state.n2k.msg.AisClassBEmitterConfig;
 import io.mapsmessaging.state.n2k.msg.AisClassBPositionReport;
 import io.mapsmessaging.state.n2k.msg.AisMappingSupport;
-import io.mapsmessaging.state.drone.core.TwinLifecycleStatus;
-import io.mapsmessaging.state.drone.drone.DroneTwin;
 
 import java.time.Instant;
 import java.util.Optional;

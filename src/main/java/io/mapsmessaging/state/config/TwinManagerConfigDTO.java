@@ -19,12 +19,12 @@
  */
 package io.mapsmessaging.state.config;
 
+import io.mapsmessaging.configuration.ConfigurationProperties;
 import io.mapsmessaging.dto.rest.config.BaseManagerConfigDTO;
 import io.mapsmessaging.dto.rest.config.protocol.impl.TakProtocolDTO;
-import io.mapsmessaging.configuration.ConfigurationProperties;
 import io.mapsmessaging.state.config.n2k.N2KTwinConfig;
-import lombok.Data;
 import io.swagger.v3.oas.annotations.media.Schema;
+import lombok.Data;
 import lombok.EqualsAndHashCode;
 
 import java.util.ArrayList;

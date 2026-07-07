@@ -19,13 +19,13 @@
 
 package io.mapsmessaging.state.mavlink.listener;
 
-import io.mapsmessaging.state.mavlink.packet.GlobalPositionPacket;
-import io.mapsmessaging.state.mavlink.packet.MavlinkPacket;
 import io.mapsmessaging.state.drone.core.TwinManager;
 import io.mapsmessaging.state.drone.core.TwinUpdateContext;
 import io.mapsmessaging.state.drone.drone.DroneTwin;
 import io.mapsmessaging.state.drone.model.GeoPosition;
 import io.mapsmessaging.state.drone.model.VelocityVector;
+import io.mapsmessaging.state.mavlink.packet.GlobalPositionPacket;
+import io.mapsmessaging.state.mavlink.packet.MavlinkPacket;
 
 import java.time.Instant;
 
@@ -45,9 +45,7 @@ public class GlobalPositionListener implements Listener {
   }
 
   @Override
-  public void handle(String twinId,
-                     MavlinkPacket pkt,
-                     TwinUpdateContext context) {
+  public void handle(String twinId, MavlinkPacket pkt, TwinUpdateContext context) {
 
     // Defensive type check (dispatcher should guarantee this)
     if (!(pkt instanceof GlobalPositionPacket packet)) {

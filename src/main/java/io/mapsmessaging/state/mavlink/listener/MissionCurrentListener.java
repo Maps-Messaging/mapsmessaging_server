@@ -19,11 +19,11 @@
 
 package io.mapsmessaging.state.mavlink.listener;
 
-import io.mapsmessaging.state.mavlink.packet.MavlinkPacket;
-import io.mapsmessaging.state.mavlink.packet.MissionCurrentPacket;
 import io.mapsmessaging.state.drone.core.TwinManager;
 import io.mapsmessaging.state.drone.core.TwinUpdateContext;
 import io.mapsmessaging.state.drone.drone.DroneTwin;
+import io.mapsmessaging.state.mavlink.packet.MavlinkPacket;
+import io.mapsmessaging.state.mavlink.packet.MissionCurrentPacket;
 
 import java.time.Instant;
 
@@ -40,9 +40,7 @@ public class MissionCurrentListener implements Listener {
   }
 
   @Override
-  public void handle(String twinId,
-                     MavlinkPacket pkt,
-                     TwinUpdateContext context) {
+  public void handle(String twinId, MavlinkPacket pkt, TwinUpdateContext context) {
 
     if (!(pkt instanceof MissionCurrentPacket packet)) {
       return;

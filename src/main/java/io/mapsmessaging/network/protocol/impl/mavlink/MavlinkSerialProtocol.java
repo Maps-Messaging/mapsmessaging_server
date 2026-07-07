@@ -39,7 +39,7 @@ import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
 import java.util.Optional;
 
-import static io.mapsmessaging.logging.ServerLogMessages.MAVLINK_STATE_UNKNOWN_PACKET_IGNORED;
+import static io.mapsmessaging.logging.ServerLogMessages.MAVLINK_UNKNOWN_PACKET_IGNORED;
 
 public class MavlinkSerialProtocol extends MavlinkProtocol {
   private static final MavlinkDeviceKey DUMMY_KEY = new MavlinkDeviceKey(0, InetSocketAddress.createUnresolved("localhost", 0), 0);
@@ -72,7 +72,7 @@ public class MavlinkSerialProtocol extends MavlinkProtocol {
       }
       else{
         endPoint.getEndPointStatus().incrementOverFlow();
-        logger.log(MAVLINK_STATE_UNKNOWN_PACKET_IGNORED, env.getFrame().getSystemId()+"/"+env.getFrame().getComponentId()+"/"+env.getFrame().getMessageId()+" - "+env.getFrame().getValidated().name());
+        logger.log(MAVLINK_UNKNOWN_PACKET_IGNORED, env.getFrame().getSystemId()+"/"+env.getFrame().getComponentId()+"/"+env.getFrame().getMessageId()+" - "+env.getFrame().getValidated().name());
       }
     }
     else{

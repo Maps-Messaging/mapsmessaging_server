@@ -4,8 +4,7 @@
  *  Copyright [ 2024 - 2026 ] MapsMessaging B.V.
  *
  *  Licensed under the Apache License, Version 2.0 with the Commons Clause
- *  (the "License"); you may not use this file except in compliance with
- *  the License.
+ *  (the "License"); you may not use this file except in compliance with the License.
  *  You may obtain a copy of the License at:
  *
  *      http://www.apache.org/licenses/LICENSE-2.0
@@ -21,24 +20,8 @@
 package io.mapsmessaging.state.mavlink.model.impl.ugv;
 
 import io.mapsmessaging.state.drone.model.GeoPosition;
-import io.mapsmessaging.state.mavlink.messages.MavlinkCommandIntFactory;
-import io.mapsmessaging.state.mavlink.messages.MavlinkCommandLong;
-import io.mapsmessaging.state.mavlink.messages.MavlinkCommandLongFactory;
-import io.mapsmessaging.state.mavlink.messages.MavlinkMessage;
-import io.mapsmessaging.state.mavlink.messages.MavlinkMissionItemIntFactory;
-import io.mapsmessaging.state.mavlink.model.HomeRequest;
-import io.mapsmessaging.state.mavlink.model.MissionPlan;
-import io.mapsmessaging.state.mavlink.model.PlanItem;
-import io.mapsmessaging.state.mavlink.model.PlanItemType;
-import io.mapsmessaging.state.mavlink.model.PlanValidation;
-import io.mapsmessaging.state.mavlink.model.PlanValidationIssue;
-import io.mapsmessaging.state.mavlink.model.RepositionRequest;
-import io.mapsmessaging.state.mavlink.model.UgvModel;
-import io.mapsmessaging.state.mavlink.model.UnsupportedUxvOperationException;
-import io.mapsmessaging.state.mavlink.model.UxvCommandContext;
-import io.mapsmessaging.state.mavlink.model.UxvModelCommandSet;
-import io.mapsmessaging.state.mavlink.model.UxvOperation;
-import io.mapsmessaging.state.mavlink.model.UxvVehicleType;
+import io.mapsmessaging.state.mavlink.messages.*;
+import io.mapsmessaging.state.mavlink.model.*;
 import io.mapsmessaging.state.mavlink.model.impl.AbstractUxvModel;
 
 import java.time.Duration;

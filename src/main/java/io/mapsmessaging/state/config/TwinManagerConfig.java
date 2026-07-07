@@ -26,25 +26,14 @@ import io.mapsmessaging.dto.rest.config.BaseConfigDTO;
 import io.mapsmessaging.dto.rest.config.protocol.impl.MavlinkKnownSourceDTO;
 import io.mapsmessaging.dto.rest.config.protocol.impl.TakProtocolDTO;
 import io.mapsmessaging.license.FeatureManager;
-import io.mapsmessaging.state.config.capability.Authorities;
-import io.mapsmessaging.state.config.capability.PlanTaskType;
-import io.mapsmessaging.state.config.capability.TaskCapabilities;
-import io.mapsmessaging.state.config.capability.TaskCapability;
-import io.mapsmessaging.state.config.capability.TaskConditionMode;
-import io.mapsmessaging.state.config.capability.TaskSpecialization;
-import io.mapsmessaging.state.config.capability.TaskTemplateMode;
+import io.mapsmessaging.state.config.capability.*;
 import io.mapsmessaging.state.config.n2k.N2KAisConfig;
 import io.mapsmessaging.state.config.n2k.N2KTwinConfig;
 import io.mapsmessaging.utilities.configuration.ConfigurationManager;
+import lombok.NoArgsConstructor;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
-
-import lombok.NoArgsConstructor;
+import java.util.*;
 
 @NoArgsConstructor
 public class TwinManagerConfig extends TwinManagerConfigDTO implements Config, ConfigManager {

@@ -19,22 +19,16 @@
 
 package io.mapsmessaging.state.n2k;
 
-import io.mapsmessaging.MessageDaemon;
 import io.mapsmessaging.canbus.j1939.n2k.codec.N2kMessageParser;
-import io.mapsmessaging.network.EndPointManager;
-import io.mapsmessaging.network.NetworkManager;
-import io.mapsmessaging.network.io.EndPoint;
-import io.mapsmessaging.network.protocol.impl.n2k.msg.AbstractAisFieldValueSource;
-import io.mapsmessaging.schemas.formatters.impl.CanbusFormatter;
-import io.mapsmessaging.state.config.n2k.N2KAisConfigDTO;
 import io.mapsmessaging.network.protocol.impl.n2k.N2kProtocol;
-import io.mapsmessaging.state.drone.core.TwinManager;
-import io.mapsmessaging.state.n2k.handler.*;
-import io.mapsmessaging.state.n2k.msg.AisClassBEmitterConfig;
+import io.mapsmessaging.state.config.n2k.N2KAisConfigDTO;
 import io.mapsmessaging.state.drone.core.EntityTwin;
+import io.mapsmessaging.state.drone.core.TwinManager;
 import io.mapsmessaging.state.drone.core.TwinObserver;
 import io.mapsmessaging.state.drone.core.TwinUpdateContext;
 import io.mapsmessaging.state.drone.drone.DroneTwin;
+import io.mapsmessaging.state.n2k.handler.*;
+import io.mapsmessaging.state.n2k.msg.AisClassBEmitterConfig;
 import lombok.Getter;
 
 import java.io.IOException;

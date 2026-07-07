@@ -20,10 +20,10 @@
 package io.mapsmessaging.state.n2k.msg.mapper;
 
 
+import io.mapsmessaging.state.drone.drone.DroneTwin;
 import io.mapsmessaging.state.n2k.msg.AisClassBEmitterConfig;
 import io.mapsmessaging.state.n2k.msg.AisClassBStaticDataPartAReport;
 import io.mapsmessaging.state.n2k.msg.AisMappingSupport;
-import io.mapsmessaging.state.drone.drone.DroneTwin;
 
 import java.util.Optional;
 

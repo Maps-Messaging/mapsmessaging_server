@@ -21,9 +21,10 @@ package io.mapsmessaging.state.config;
 
 import io.mapsmessaging.dto.rest.config.protocol.impl.MavlinkKnownSourceDTO;
 import io.swagger.v3.oas.annotations.media.Schema;
+import lombok.Data;
+
 import java.util.ArrayList;
 import java.util.List;
-import lombok.Data;
 
 /**
  * Configuration for consuming MAVLink state from a topic source and applying it to the twin manager.

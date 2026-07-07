@@ -19,6 +19,7 @@
 
 package io.mapsmessaging.logging;
 
+import io.mapsmessaging.state.logging.StateLogMessages;
 import lombok.Getter;
 
 /**
@@ -907,44 +908,6 @@ public enum ServerLogMessages implements LogMessage {
 
   STATISTICS_UNKNOWN_NAME(LEVEL.FATAL, SERVER_CATEGORY.PROTOCOL, "Unknown statistics name found {}, defaulting to {}"),
 
-
-  // <editor-fold desc="Twin Manager">
-  TWIN_REGISTERED(LEVEL.INFO, SERVER_CATEGORY.STATE, "Registered twin {} of type {}"),
-  TWIN_REGISTER_EXISTING(LEVEL.DEBUG, SERVER_CATEGORY.STATE, "Twin {} already exists, returning existing instance"),
-  TWIN_UPDATED(LEVEL.DEBUG, SERVER_CATEGORY.STATE, "Updated twin {}"),
-  TWIN_REMOVED(LEVEL.INFO, SERVER_CATEGORY.STATE, "Removed twin {}"),
-  TWIN_STATUS_CHANGED(LEVEL.INFO, SERVER_CATEGORY.STATE, "Twin {} status changed from {} to {}"),
-  TWIN_RELATIONSHIP_UPSERTED(LEVEL.DEBUG, SERVER_CATEGORY.STATE, "Upserted relationship {} -> {} type {} for twin {}"),
-  TWIN_RELATIONSHIP_REMOVED(LEVEL.DEBUG, SERVER_CATEGORY.STATE, "Removed relationship {} -> {} type {} for twin {}"),
-  TWIN_PURGED(LEVEL.INFO, SERVER_CATEGORY.STATE, "Purged expired twin {}"),
-  TWIN_OBSERVER_CALLBACK_FAILED(LEVEL.ERROR, SERVER_CATEGORY.STATE, "Twin observer callback failed for twin {} during {}"),
-
-  MAVLINK_STATE_DIALECT_DEFAULTED(LEVEL.DEBUG, SERVER_CATEGORY.PROTOCOL, "No MAVLink dialect specified for state subscriber, using default dialect {}"),
-  MAVLINK_STATE_DIALECT_LOADED(LEVEL.DEBUG, SERVER_CATEGORY.PROTOCOL, "Loaded MAVLink dialect {} for state subscriber"),
-  MAVLINK_STATE_DIALECT_LOAD_FAILED(LEVEL.WARN, SERVER_CATEGORY.PROTOCOL, "Failed to load MAVLink dialect {}, falling back to default dialect {}"),
-  MAVLINK_STATE_RAW_PACKET_DETECTED(LEVEL.DEBUG, SERVER_CATEGORY.PROTOCOL, "Detected raw MAVLink packet from {}"),
-  MAVLINK_STATE_JSON_PACKET_DETECTED(LEVEL.DEBUG, SERVER_CATEGORY.PROTOCOL, "Detected JSON MAVLink packet from {}"),
-  MAVLINK_STATE_UNKNOWN_PACKET_IGNORED(LEVEL.DEBUG, SERVER_CATEGORY.PROTOCOL, "Ignoring unknown MAVLink state packet from {}"),
-  MAVLINK_STATE_JSON_PARSE_FAILED(LEVEL.DEBUG, SERVER_CATEGORY.PROTOCOL, "Failed to parse JSON MAVLink state packet from {}"),
-  MAVLINK_STATE_PACKET_UNPACK_FAILED(LEVEL.DEBUG, SERVER_CATEGORY.PROTOCOL, "Failed to unpack MAVLink state packet from {}"),
-  MAVLINK_STATE_PACKET_UNPACK_EMPTY(LEVEL.DEBUG, SERVER_CATEGORY.PROTOCOL, "MAVLink state packet from {} did not produce a processed frame"),
-  MAVLINK_STATE_UNSUPPORTED_PACKET_IGNORED(LEVEL.DEBUG, SERVER_CATEGORY.PROTOCOL, "Ignoring unsupported MAVLink message {} from {}"),
-  MAVLINK_STATE_TWIN_CREATED(LEVEL.DEBUG, SERVER_CATEGORY.PROTOCOL, "Created MAVLink twin {} for system {} component {}"),
-  // </editor-fold>
-
-
-  // <editor-fold desc="State Manager">
-  STATE_MANAGER_START(LEVEL.INFO, SERVER_CATEGORY.STATE, "StateManagerAgent starting"),
-  STATE_MANAGER_STARTED(LEVEL.INFO, SERVER_CATEGORY.STATE, "StateManagerAgent started"),
-  STATE_MANAGER_STOP(LEVEL.INFO, SERVER_CATEGORY.STATE, "StateManagerAgent stopping"),
-  STATE_MANAGER_STOPPED(LEVEL.INFO, SERVER_CATEGORY.STATE, "StateManagerAgent stopped"),
-  STATE_MANAGER_TAK_ENABLED(LEVEL.INFO, SERVER_CATEGORY.STATE, "TAK observer enabled"),
-  STATE_MANAGER_PUBLISH_ENABLED(LEVEL.INFO, SERVER_CATEGORY.STATE, "Twin JSON publisher enabled with topic {}"),
-  STATE_MANAGER_PUBLISH_FAILED(LEVEL.ERROR, SERVER_CATEGORY.STATE, "Failed to start Twin JSON publisher"),
-  STATE_MANAGER_SCHEDULER_ERROR(LEVEL.ERROR, SERVER_CATEGORY.STATE, "Scheduler task failed"),
-  STATE_MANAGER_AUDIT_INIT_FAILED(LEVEL.ERROR, SERVER_CATEGORY.STATE, "Failed to initialize audit context - auditing will be disabled"),
-  // </editor-fold>
-
   MAVLINK_OUTBOUND_MESSAGE_IGNORED_NO_CORRELATION(LEVEL.DEBUG, SERVER_CATEGORY.PROTOCOL, "Ignoring outbound MAVLink message on '{}' because correlation data is missing"),
   MAVLINK_OUTBOUND_MESSAGE_IGNORED_INVALID_CORRELATION(LEVEL.WARN, SERVER_CATEGORY.PROTOCOL, "Ignoring outbound MAVLink message on '{}' because correlation id '{}' is invalid"),
   MAVLINK_OUTBOUND_MESSAGE_IGNORED_ENDPOINT_MISMATCH(LEVEL.DEBUG, SERVER_CATEGORY.PROTOCOL, "Ignoring outbound MAVLink message on '{}' because correlation endpoint '{}' does not match endpoint '{}'"),
@@ -954,7 +917,10 @@ public enum ServerLogMessages implements LogMessage {
   MAVLINK_FAILED_STORING_PACKET_MESSAGE(LEVEL.ERROR, SERVER_CATEGORY.PROTOCOL, "Failed to store MAVLink message on topic '{}': {}"),
   MAVLINK_FAILED_SENDING_OUTBOUND_PACKET(LEVEL.ERROR, SERVER_CATEGORY.PROTOCOL, "Failed to send outbound MAVLink packet on '{}', destination '{}': {}"),
   MAVLINK_FAILED_SENDING_HEARTBEAT(LEVEL.ERROR, SERVER_CATEGORY.PROTOCOL, "Failed to send MAVLink heartbeat on '{}': {}"),
-  //-------------------------------------------------------------------------------------------------------------
+  MAVLINK_UNKNOWN_PACKET_IGNORED(LEVEL.DEBUG, SERVER_CATEGORY.PROTOCOL, "Ignoring unknown MAVLink state packet from {}"),
+
+
+
   LAST_LOG_MESSAGE(LEVEL.DEBUG, SERVER_CATEGORY.PROTOCOL, "Last message to make it simpler to add more");
 
   private final @Getter String message;

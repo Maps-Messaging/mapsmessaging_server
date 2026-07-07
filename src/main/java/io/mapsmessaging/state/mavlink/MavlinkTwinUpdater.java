@@ -1,5 +1,6 @@
 /*
  *
+ *  Copyright [ 2020 - 2024 ] Matthew Buckton
  *  Copyright [ 2024 - 2026 ] MapsMessaging B.V.
  *
  *  Licensed under the Apache License, Version 2.0 with the Commons Clause
@@ -36,14 +37,16 @@ import io.mapsmessaging.state.mavlink.bootstrap.DroneTwinReadinessEvaluator;
 import io.mapsmessaging.state.mavlink.bootstrap.MavlinkBootstrapProfile;
 import io.mapsmessaging.state.mavlink.bootstrap.MavlinkBootstrapStateEngine;
 import io.mapsmessaging.state.mavlink.listener.ListenerManager;
+import io.mapsmessaging.state.mavlink.model.ModelManager;
 import io.mapsmessaging.state.mavlink.model.UxvModel;
-import io.mapsmessaging.state.mavlink.model.registry.ModelManager;
 import io.mapsmessaging.state.mavlink.packet.MavlinkPacket;
-import java.util.Optional;
+import io.mapsmessaging.state.mavlink.sender.MavlinkEventListSender;
 import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
 
-import static io.mapsmessaging.logging.ServerLogMessages.MAVLINK_STATE_TWIN_CREATED;
+import java.util.Optional;
+
+import static io.mapsmessaging.state.logging.StateLogMessages.MAVLINK_STATE_TWIN_CREATED;
 
 public class MavlinkTwinUpdater {
 
@@ -78,8 +81,7 @@ public class MavlinkTwinUpdater {
   ) {
     String twinId = buildTwinId(env, knownSource);
 
-    EntityTwin entityTwin =
-        twinManager.getTwin(twinId).orElseGet(() -> createTwin(twinId, env, context, knownSource, droneInfo));
+    EntityTwin entityTwin = twinManager.getTwin(twinId).orElseGet(() -> createTwin(twinId, env, context, knownSource, droneInfo));
 
     twinManager.updateTwin(
         twinId,
@@ -97,6 +99,10 @@ public class MavlinkTwinUpdater {
     listenerManager.handle(env.getFrame().getMessageId(), twinId, packet, context);
 
     if (entityTwin instanceof DroneTwin droneTwin) {
+      MavlinkEventListSender sender = droneTwin.getActiveMavlinkSender();
+      if(sender != null){
+        sender.onMavlinkMessage(packet);
+      }
       applyModelDetectionEvent(droneTwin, packet);
     }
   }
