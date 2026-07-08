@@ -176,6 +176,7 @@ public class MavlinkEventListSender implements AutoCloseable {
 
       waitingMessage = null;
       waitingIndex = -1;
+      nextIndex = requestedIndex + 1;
     }
 
     sendRequestedIndex(requestedIndex, message);

@@ -27,6 +27,18 @@ import io.mapsmessaging.state.mavlink.packet.MavlinkPacket;
 
 public class MavlinkCommandAcknowledgementHandler implements MavlinkAcknowledgementHandler {
 
+  private final int localSystemId;
+  private final int localComponentId;
+
+  public MavlinkCommandAcknowledgementHandler() {
+    this(-1, -1);
+  }
+
+  public MavlinkCommandAcknowledgementHandler(int localSystemId, int localComponentId) {
+    this.localSystemId = localSystemId;
+    this.localComponentId = localComponentId;
+  }
+
   @Override
   public boolean requiresAcknowledgement(MavlinkMessage sentMessage) {
     return sentMessage instanceof MavlinkCommandLong || sentMessage instanceof MavlinkCommandInt;
@@ -51,6 +63,14 @@ public class MavlinkCommandAcknowledgementHandler implements MavlinkAcknowledgem
       return Acknowledgement.notRelated();
     }
 
+    if (!ackTargetSystemMatches(commandAckPacket)) {
+      return Acknowledgement.notRelated();
+    }
+
+    if (!ackTargetComponentMatches(commandAckPacket)) {
+      return Acknowledgement.notRelated();
+    }
+
     if (commandAckPacket.isAccepted()) {
       return Acknowledgement.advance();
     }
@@ -66,12 +86,20 @@ public class MavlinkCommandAcknowledgementHandler implements MavlinkAcknowledgem
     return Acknowledgement.fail("MAVLink command " + commandAckPacket.getCommand() + " failed with unknown result " + commandAckPacket.getResult());
   }
 
-  private boolean targetComponentMatches(CommandAckPacket commandAckPacket, CommandDetails commandDetails) {
-    if (!commandAckPacket.isTargetComponentPresent()) {
+  private boolean ackTargetSystemMatches(CommandAckPacket commandAckPacket) {
+    if (localSystemId < 0 || !commandAckPacket.isTargetSystemPresent()) {
       return true;
     }
 
-    return commandAckPacket.getTargetComponent() == commandDetails.targetComponent();
+    return commandAckPacket.getTargetSystem() == localSystemId;
+  }
+
+  private boolean ackTargetComponentMatches(CommandAckPacket commandAckPacket) {
+    if (localComponentId < 0 || !commandAckPacket.isTargetComponentPresent()) {
+      return true;
+    }
+
+    return commandAckPacket.getTargetComponent() == localComponentId;
   }
 
   private CommandDetails commandDetails(MavlinkMessage sentMessage) {
