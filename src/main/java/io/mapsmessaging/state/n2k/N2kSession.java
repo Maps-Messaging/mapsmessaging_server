@@ -28,6 +28,8 @@ import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.state.MessageHandler;
 import io.mapsmessaging.state.StateLoopProtocol;
+import io.mapsmessaging.state.config.DroneInfo;
+import io.mapsmessaging.state.config.DroneInfoRegistry;
 import io.mapsmessaging.state.config.n2k.N2KTwinConfig;
 import io.mapsmessaging.state.drone.core.TwinManager;
 import io.mapsmessaging.state.drone.core.TwinUpdateContext;
@@ -49,12 +51,14 @@ public class N2kSession implements MessageHandler, Lifecycle {
   private final String namespaceTopicPath;
   private final N2KTwinConfig n2kConfig;
   private final N2kTwinUpdater twinUpdater;
+  private final DroneInfo droneInfo;
 
-  public N2kSession(@NonNull @NotNull TwinManager twinManager, @NonNull @NotNull N2KTwinConfig n2kConfig) {
+  public N2kSession(@NonNull @NotNull TwinManager twinManager, @NonNull @NotNull N2KTwinConfig n2kConfig, DroneInfoRegistry droneRegistry) {
     this.protocol = SessionHelper.createLoopbackProtocol(this);
     this.namespaceTopicPath = n2kConfig.getTopic();
     this.n2kConfig = n2kConfig;
     this.twinUpdater = new N2kTwinUpdater(twinManager);
+    droneInfo = droneRegistry.getDroneInfo(n2kConfig.getName());
   }
 
   @Override
@@ -106,7 +110,7 @@ public class N2kSession implements MessageHandler, Lifecycle {
       }
 
       TwinUpdateContext context = createContext(sourceName, j1939, n2k, packet);
-      twinUpdater.updateTwinState(pgn, packet, context, n2kConfig);
+      twinUpdater.updateTwinState(pgn, packet, context, n2kConfig, droneInfo);
     } finally {
       messageEvent.getCompletionTask().run();
     }

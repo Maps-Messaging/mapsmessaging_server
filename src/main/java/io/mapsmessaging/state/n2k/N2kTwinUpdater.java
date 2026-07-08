@@ -20,6 +20,7 @@
 package io.mapsmessaging.state.n2k;
 
 import com.google.gson.JsonObject;
+import io.mapsmessaging.state.config.DroneInfo;
 import io.mapsmessaging.state.config.VehicleClass;
 import io.mapsmessaging.state.config.n2k.N2KTwinConfig;
 import io.mapsmessaging.state.drone.core.EntityTwin;
@@ -45,14 +46,11 @@ public class N2kTwinUpdater {
     this.listenerRegistry = new N2kJsonListenerRegistry();
   }
 
-  @NonNull
-  public void updateTwinState(
-      int pgn, @NonNull @NotNull JsonObject packet, @NonNull @NotNull TwinUpdateContext context,
-      @NonNull @NotNull N2KTwinConfig config) {
+  public void updateTwinState(int pgn, @NonNull @NotNull JsonObject packet, @NonNull @NotNull TwinUpdateContext context, @NonNull @NotNull N2KTwinConfig config, DroneInfo droneInfo) {
     String twinId = buildTwinId(config);
     N2kJsonListener listener = listenerRegistry.getListener(pgn);
 
-    twinManager.getTwin(twinId).orElseGet(() -> createTwin(twinId, config, context));
+    twinManager.getTwin(twinId).orElseGet(() -> createTwin(twinId, config, context, droneInfo));
 
     twinManager.updateTwin(twinId, twinToUpdate -> {
       if (twinToUpdate instanceof DroneTwin droneTwin) {
@@ -67,9 +65,21 @@ public class N2kTwinUpdater {
     }, context);
   }
 
-  private EntityTwin createTwin(String twinId, N2KTwinConfig config, TwinUpdateContext context) {
+  private EntityTwin createTwin(String twinId, N2KTwinConfig config, TwinUpdateContext context, DroneInfo droneInfo) {
     DroneTwin droneTwin = new DroneTwin(twinId);
     updateTwinIdentity(droneTwin, config, context);
+    if (droneInfo.getCapabilities() != null) {
+      droneTwin.setCapabilities(droneInfo.getCapabilities());
+      droneTwin.setDescription(droneInfo.getDescription());
+    }
+
+    if (droneInfo.getBatteryCapacityHours() > 0) {
+      droneTwin.setBatteryCapacityHours(droneInfo.getBatteryCapacityHours());
+    } else if (droneInfo.getBatteryCapacityAh() > 0) {
+
+    }
+
+
     twinManager.registerTwin(droneTwin, context);
     return droneTwin;
   }

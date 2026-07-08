@@ -56,10 +56,7 @@ public class MavlinkTwinUpdater {
   private final ListenerManager listenerManager;
   private final MavlinkDroneMonitor droneMonitor;
 
-  public MavlinkTwinUpdater(
-      @NonNull @NotNull TwinManager twinManager,
-      @NonNull @NotNull ListenerManager listenerManager
-  ) {
+  public MavlinkTwinUpdater(@NonNull @NotNull TwinManager twinManager, @NonNull @NotNull ListenerManager listenerManager) {
     this.twinManager = twinManager;
     this.listenerManager = listenerManager;
     this.droneMonitor =
@@ -72,17 +69,9 @@ public class MavlinkTwinUpdater {
     twinManager.addObserver(droneMonitor);
   }
 
-  public void updateTwinState(
-      @NonNull @NotNull ProcessedFrame env,
-      @NonNull @NotNull MavlinkPacket packet,
-      @NonNull @NotNull TwinUpdateContext context,
-      @NonNull @NotNull MavlinkKnownSourceDTO knownSource,
-      DroneInfo droneInfo
-  ) {
+  public void updateTwinState(@NonNull @NotNull ProcessedFrame env, @NonNull @NotNull MavlinkPacket packet, @NonNull @NotNull TwinUpdateContext context, @NonNull @NotNull MavlinkKnownSourceDTO knownSource, DroneInfo droneInfo) {
     String twinId = buildTwinId(env, knownSource);
-
     EntityTwin entityTwin = twinManager.getTwin(twinId).orElseGet(() -> createTwin(twinId, env, context, knownSource, droneInfo));
-
     twinManager.updateTwin(
         twinId,
         twinToUpdate -> {
@@ -115,8 +104,10 @@ public class MavlinkTwinUpdater {
 
     try {
       UxvModel uxvModel = ModelManager.getInstance().getRequiredModel(modelName);
-      Optional<DetectionEvent> detectionEvent = uxvModel.interpretDetection(droneTwin, packet);
-      detectionEvent.ifPresent(event -> applyDetectionEvent(droneTwin, event));
+      if(uxvModel != null) {
+        Optional<DetectionEvent> detectionEvent = uxvModel.interpretDetection(droneTwin, packet);
+        detectionEvent.ifPresent(event -> applyDetectionEvent(droneTwin, event));
+      }
     } catch (IllegalArgumentException e) {
       // no such model, ignore
     }
@@ -173,13 +164,7 @@ public class MavlinkTwinUpdater {
     }
   }
 
-  private EntityTwin createTwin(
-      String twinId,
-      ProcessedFrame env,
-      TwinUpdateContext context,
-      MavlinkKnownSourceDTO knownSource,
-      DroneInfo droneInfo
-  ) {
+  private EntityTwin createTwin(String twinId, ProcessedFrame env, TwinUpdateContext context, MavlinkKnownSourceDTO knownSource, DroneInfo droneInfo) {
     DroneTwin droneTwin = new DroneTwin(twinId, droneInfo.getUuid());
     droneTwin.setVehicleClass(resolveVehicleClass(knownSource));
     droneTwin.setDescriptionString(resolveDescription(twinId, env, knownSource));

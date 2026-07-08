@@ -88,7 +88,7 @@ public class StateManagerAgent implements Agent {
       lifecycleList.add(new MavlinkTwinManager(twinManager, registry, config));
       loadStateMessageAdapters(config);
       if(n2KTwinConfig != null && n2KTwinConfig.isEnable()){
-        lifecycleList.add(new N2kSession(twinManager, n2KTwinConfig));
+        lifecycleList.add(new N2kSession(twinManager, n2KTwinConfig, registry));
       }
       lifecycleList.add(new TwinPublisherManager(twinManager, config.getPublish()));
       aisManager = new AISN2KManager(twinManager, config.getN2KTwinConfig());

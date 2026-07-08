@@ -58,6 +58,7 @@ public class N2kMotionJsonListener extends AbstractN2kJsonListener {
       droneTwin.getAttributes().put("n2k.motion.courseReference", String.valueOf(courseReference.longValue()));
     }
 
+    droneTwin.setOperationalUpdatedAt(now);
     droneTwin.setMotionUpdatedAt(now);
     droneTwin.setLastSeenAt(now);
   }
