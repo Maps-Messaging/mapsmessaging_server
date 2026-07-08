@@ -27,7 +27,10 @@ public class MavlinkMessageIds {
   public static final int GPS_RAW_INT = 24;
   public static final int ATTITUDE = 30;
   public static final int GLOBAL_POSITION_INT = 33;
+  public static final int MISSION_REQUEST = 40;
   public static final int MISSION_CURRENT = 42;
+  public static final int MISSION_ACK = 47;
+  public static final int MISSION_REQUEST_INT = 51;
   public static final int COMMAND_ACK = 77;
   public static final int ALTITUDE = 141;
   public static final int BATTERY_STATUS = 147;
@@ -36,7 +39,6 @@ public class MavlinkMessageIds {
   public static final int EXTENDED_SYS_STATE = 245;
   public static final int NAMED_VALUE_FLOAT = 251;
   public static final int STATUSTEXT = 253;
-
   private MavlinkMessageIds() {
   }
 }
