@@ -258,6 +258,7 @@ public class SubSystemManager {
       addToMap(2200, 70, new DeviceManager(featureManager));
     }
     addOptionalML();
+    loadExtensionAgents();
   }
 
   private void addOptionalML(){
@@ -271,6 +272,19 @@ public class SubSystemManager {
         }
       } catch (Exception e) {
         // ignore, we do not support ML
+      }
+    }
+  }
+
+  private void loadExtensionAgents() {
+    ServiceLoader<ServerAgentFactory> loader = ServiceLoader.load(ServerAgentFactory.class);
+    for (ServerAgentFactory factory : loader) {
+      try {
+        Agent agent = factory.create();
+        addToMap(factory.startOrder(), factory.stopOrder(), agent);
+        logger.log(ServerLogMessages.MESSAGE_DAEMON_SERVICE_LOADED, agent.getName());
+      } catch (Throwable t) {
+        logger.log(ServerLogMessages.MESSAGE_DAEMON_AGENT_FAILED, "extension agent", t);
       }
     }
   }
