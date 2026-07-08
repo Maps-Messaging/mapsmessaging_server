@@ -26,6 +26,8 @@ import io.mapsmessaging.api.features.DestinationType;
 import io.mapsmessaging.api.features.QualityOfService;
 import io.mapsmessaging.engine.schema.SchemaManager;
 import io.mapsmessaging.engine.session.ClientConnection;
+import io.mapsmessaging.logging.Logger;
+import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.state.StateJsonHelper;
 import io.mapsmessaging.state.drone.core.EntityTwin;
 import io.mapsmessaging.state.drone.core.TwinManager;
@@ -43,8 +45,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.*;
 
+import static io.mapsmessaging.state.logging.StateLogMessages.*;
+
 public class TwinJsonPublisher implements TwinObserver, ClientConnection, MessageListener, AutoCloseable {
 
+  private final Logger logger = LoggerFactory.getLogger(TwinJsonPublisher.class);
   private final Session session;
   private final Gson gson;
   private final String topicTemplate;
@@ -83,54 +88,107 @@ public class TwinJsonPublisher implements TwinObserver, ClientConnection, Messag
   public void publishTwin(String twinId, EntityTwin twin) throws ExecutionException, InterruptedException, TimeoutException, IOException {
     String topic = resolveTopic(twinId, twin);
     Destination destination = resolveDestination(topic);
+
     try {
-      String json;
-      JsonObject jsonObject;
+      TwinJsonPayload twinJsonPayload;
       List<Contact> contacts;
+
       synchronized (twin) {
-        jsonObject = gson.toJsonTree(twin).getAsJsonObject();
-        json = gson.toJson(jsonObject);
-        if(twin instanceof DroneTwin droneTwin){
-          contacts = droneTwin.getContactList();
+        twinJsonPayload = generateTwinJsonPayload(twinId, twin);
+        if (twinJsonPayload == null) {
+          return;
         }
-        else{
+
+        if (twin instanceof DroneTwin droneTwin) {
+          contacts = droneTwin.getContactList();
+        } else {
           contacts = List.of();
         }
       }
 
-      MessageBuilder messageBuilder = new MessageBuilder();
-      messageBuilder.setOpaqueData(json.getBytes(StandardCharsets.UTF_8))
-          .setQoS(QualityOfService.AT_LEAST_ONCE)
-          .setContentType("application/json")
-          .setSchemaId(SchemaManager.DEFAULT_JSON_SCHEMA.toString())
-          .storeOffline(true)
-          .setRetain(false);
+      storeTwinMessage(destination, twinJsonPayload.json());
 
-      destination.storeMessage(messageBuilder.build());
-
-      if(!contacts.isEmpty()) {
-        String contactTopicName = resolveTopic(twinId, twin) + "/contacts";
-        Destination contactDestination = resolveDestination(contactTopicName);
-        jsonObject.remove("contactManager");
-        for (Contact contact : contacts) {
-          JsonObject contactJson = gson.toJsonTree(contact).getAsJsonObject();
-          jsonObject.add("contact", contactJson);
-          json = gson.toJson(jsonObject);
-          jsonObject.remove("contact");
-          MessageBuilder contactMessageBuilder = new MessageBuilder();
-          contactMessageBuilder.setOpaqueData(json.getBytes(StandardCharsets.UTF_8))
-              .setQoS(QualityOfService.AT_MOST_ONCE)
-              .setContentType("application/json")
-              .setSchemaId(SchemaManager.DEFAULT_JSON_SCHEMA.toString())
-              .setRetain(false);
-          contactDestination.storeMessage(contactMessageBuilder.build());
-        }
+      if (!contacts.isEmpty()) {
+        publishContacts(twinId, twin, twinJsonPayload.jsonObject(), contacts);
       }
     } catch (Throwable e) {
+      logger.log(TWIN_PUBLISH_FAILED, twinId, topic, e.getMessage());
       destinationCache.remove(topic);
     }
   }
 
+  private TwinJsonPayload generateTwinJsonPayload(String twinId, EntityTwin twin) {
+    try {
+      JsonObject jsonObject = gson.toJsonTree(twin).getAsJsonObject();
+      return new TwinJsonPayload(jsonObject, gson.toJson(jsonObject));
+    } catch (Throwable e) {
+      logger.log(TWIN_JSON_SERIALISATION_FAILED, twinId, twin.getClass().getName(), e.getMessage());
+      return null;
+    }
+  }
+
+  private void storeTwinMessage(Destination destination, String json) throws IOException {
+    MessageBuilder messageBuilder = new MessageBuilder();
+
+    messageBuilder
+        .setOpaqueData(json.getBytes(StandardCharsets.UTF_8))
+        .setQoS(QualityOfService.AT_LEAST_ONCE)
+        .setContentType("application/json")
+        .setSchemaId(SchemaManager.DEFAULT_JSON_SCHEMA.toString())
+        .storeOffline(true)
+        .setRetain(false);
+
+    destination.storeMessage(messageBuilder.build());
+  }
+
+  private void publishContacts(String twinId, EntityTwin twin, JsonObject sourceJsonObject, List<Contact> contacts)
+      throws ExecutionException, InterruptedException, TimeoutException, IOException {
+    String contactTopicName = resolveTopic(twinId, twin) + "/contacts";
+    Destination contactDestination = resolveDestination(contactTopicName);
+
+    for (Contact contact : contacts) {
+      String json = generateContactJson(twinId, sourceJsonObject, contact);
+      if (json == null) {
+        continue;
+      }
+
+      try {
+        storeContactMessage(contactDestination, json);
+      } catch (Throwable e) {
+        logger.log(CONTACT_PUBLISH_FAILED, twinId, contactTopicName, e.getMessage());
+        throw e;
+      }
+    }
+  }
+
+  private String generateContactJson(String twinId, JsonObject sourceJsonObject, Contact contact) {
+    try {
+      JsonObject jsonObject = sourceJsonObject.deepCopy();
+
+      jsonObject.remove("contactManager");
+      jsonObject.add("contact", gson.toJsonTree(contact).getAsJsonObject());
+
+      return gson.toJson(jsonObject);
+    } catch (Throwable e) {
+      logger.log(CONTACT_JSON_SERIALISATION_FAILED, twinId, e.getMessage());
+      return null;
+    }
+  }
+
+  private void storeContactMessage(Destination destination, String json) throws IOException {
+    MessageBuilder contactMessageBuilder = new MessageBuilder();
+
+    contactMessageBuilder
+        .setOpaqueData(json.getBytes(StandardCharsets.UTF_8))
+        .setQoS(QualityOfService.AT_MOST_ONCE)
+        .setContentType("application/json")
+        .setSchemaId(SchemaManager.DEFAULT_JSON_SCHEMA.toString())
+        .setRetain(false);
+
+    destination.storeMessage(contactMessageBuilder.build());
+  }
+
+  private record TwinJsonPayload(JsonObject jsonObject, String json) {}
   private Destination resolveDestination(String topic) throws ExecutionException, InterruptedException, TimeoutException {
     Destination destination = destinationCache.get(topic);
     if (destination != null) {

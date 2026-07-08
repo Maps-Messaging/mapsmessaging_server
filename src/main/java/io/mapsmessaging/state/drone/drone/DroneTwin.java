@@ -80,7 +80,7 @@ public class DroneTwin extends EntityTwin {
   @ToString.Exclude
   @EqualsAndHashCode.Exclude
   @Getter(AccessLevel.NONE)
-  private final AtomicReference<MavlinkEventListSender> activeMavlinkSender = new AtomicReference<>();
+  private transient final AtomicReference<MavlinkEventListSender> activeMavlinkSender = new AtomicReference<>();
 
   @Schema(description = "Decoded autopilot information for the vehicle.", nullable = true)
   private AutopilotState autopilotState;

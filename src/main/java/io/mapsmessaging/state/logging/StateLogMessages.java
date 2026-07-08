@@ -26,6 +26,11 @@ import lombok.Getter;
 
 public enum StateLogMessages implements LogMessage {
 
+  TWIN_JSON_SERIALISATION_FAILED(LEVEL.ERROR, SERVER_CATEGORY.PROTOCOL, "Failed to serialise twin '{}' of type '{}' to JSON: {}"),
+  CONTACT_JSON_SERIALISATION_FAILED(LEVEL.ERROR, SERVER_CATEGORY.PROTOCOL, "Failed to serialise contact for twin '{}' to JSON: {}"),
+  TWIN_PUBLISH_FAILED(LEVEL.ERROR, SERVER_CATEGORY.PROTOCOL, "Failed to publish twin '{}' to topic '{}': {}"),
+  CONTACT_PUBLISH_FAILED(LEVEL.ERROR, SERVER_CATEGORY.PROTOCOL, "Failed to publish contact for twin '{}' to topic '{}': {}"),
+
   // <editor-fold desc="Twin Manager">
   TWIN_REGISTERED(LEVEL.INFO, SERVER_CATEGORY.STATE, "Registered twin {} of type {}"),
   TWIN_REGISTER_EXISTING(LEVEL.DEBUG, SERVER_CATEGORY.STATE, "Twin {} already exists, returning existing instance"),
