@@ -278,13 +278,19 @@ public class SubSystemManager {
 
   private void loadExtensionAgents() {
     ServiceLoader<ServerAgentFactory> loader = ServiceLoader.load(ServerAgentFactory.class);
-    for (ServerAgentFactory factory : loader) {
+    for (Iterator<ServerAgentFactory> iterator = loader.iterator(); iterator.hasNext(); ) {
       try {
+        ServerAgentFactory factory = iterator.next();
         Agent agent = factory.create();
+        if (agentMap.containsKey(agent.getName())) {
+          logger.log(ServerLogMessages.MESSAGE_DAEMON_EXTENSION_AGENT_FAILED,
+              agent.getName() + " (duplicate name, ignored)");
+          continue;
+        }
         addToMap(factory.startOrder(), factory.stopOrder(), agent);
         logger.log(ServerLogMessages.MESSAGE_DAEMON_SERVICE_LOADED, agent.getName());
       } catch (Throwable t) {
-        logger.log(ServerLogMessages.MESSAGE_DAEMON_AGENT_FAILED, "extension agent", t);
+        logger.log(ServerLogMessages.MESSAGE_DAEMON_EXTENSION_AGENT_FAILED, String.valueOf(t.getMessage()));
       }
     }
   }
