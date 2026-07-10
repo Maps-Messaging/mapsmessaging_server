@@ -38,9 +38,11 @@ public class MavlinkPacketFactory {
       case MavlinkMessageIds.GPS_RAW_INT -> new GpsRawIntPacket(frame);
       case MavlinkMessageIds.HEARTBEAT -> new HeartbeatPacket(frame);
       case MavlinkMessageIds.HOME_POSITION -> new HomePositionPacket(frame);
-
+      case MavlinkMessageIds.NAMED_VALUE_FLOAT -> new NamedValueFloatPacket(frame);
       case MavlinkMessageIds.MISSION_CURRENT -> new MissionCurrentPacket(frame);
-
+      case MavlinkMessageIds.MISSION_REQUEST -> new MissionRequestPacket(frame);
+      case MavlinkMessageIds.MISSION_REQUEST_INT -> new MissionRequestIntPacket(frame);
+      case MavlinkMessageIds.MISSION_ACK -> new MissionAckPacket(frame);
       case MavlinkMessageIds.STATUSTEXT -> new StatusTextPacket(frame);
       case MavlinkMessageIds.SYS_STATUS -> new SysStatusPacket(frame);
       case MavlinkMessageIds.SYSTEM_TIME -> new SystemTimePacket(frame);

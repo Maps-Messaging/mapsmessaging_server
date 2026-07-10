@@ -21,6 +21,7 @@ package io.mapsmessaging.state.mavlink.bootstrap;
 
 import io.mapsmessaging.state.drone.core.TwinUpdateContext;
 import io.mapsmessaging.state.drone.drone.DroneTwin;
+
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
@@ -37,11 +38,7 @@ public class MavlinkBootstrapStateEngine {
     this.bootstrapStates = new ConcurrentHashMap<>();
   }
 
-  public synchronized List<MavlinkBootstrapEvent> update(
-      DroneTwin droneTwin,
-      DroneTwinReadinessResult readinessResult,
-      TwinUpdateContext context
-  ) {
+  public synchronized List<MavlinkBootstrapEvent> update(DroneTwin droneTwin, DroneTwinReadinessResult readinessResult, TwinUpdateContext context) {
     List<MavlinkBootstrapEvent> events = new ArrayList<>();
 
     if (droneTwin == null || readinessResult == null) {

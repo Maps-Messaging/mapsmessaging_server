@@ -43,10 +43,7 @@ public class CommandAckListener implements Listener {
   }
 
   @Override
-  public void handle(String twinId,
-                     MavlinkPacket pkt,
-                     TwinUpdateContext context) {
-
+  public void handle(String twinId, MavlinkPacket pkt, TwinUpdateContext context) {
     if (!(pkt instanceof CommandAckPacket packet)) {
       return;
     }
@@ -55,18 +52,18 @@ public class CommandAckListener implements Listener {
       return;
     }
 
-    Instant now = (context != null && context.getReceivedTime() != null)
-        ? context.getReceivedTime()
-        : Instant.now();
+    Instant now = context != null && context.getReceivedTime() != null ? context.getReceivedTime() : Instant.now();
 
     twinManager.updateTwin(twinId, twin -> {
       DroneTwin droneTwin = (DroneTwin) twin;
 
       droneTwin.setLastAcknowledgedCommand(packet.getCommand());
       droneTwin.setLastCommandAcknowledgement(packet.getResultName());
+      droneTwin.setLastCommandAcknowledgementResult(packet.getResult());
       droneTwin.setLastCommandAcknowledgementAt(now);
+      droneTwin.setLastCommandAcknowledgementTargetSystemId(packet.getTargetSystem());
+      droneTwin.setLastCommandAcknowledgementTargetComponentId(packet.getTargetComponent());
       droneTwin.setOperationalUpdatedAt(now);
-
     }, context);
   }
 }

@@ -42,9 +42,7 @@ public class SysStatusListener implements Listener {
   }
 
   @Override
-  public void handle(String twinId,
-                     MavlinkPacket pkt,
-                     TwinUpdateContext context) {
+  public void handle(String twinId, MavlinkPacket pkt, TwinUpdateContext context) {
 
     if (!(pkt instanceof SysStatusPacket packet)) {
       return;

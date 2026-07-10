@@ -76,4 +76,11 @@ public class BatteryState {
       nullable = true
   )
   private Boolean charging;
+
+  @Schema(
+      description = "Estimated remaining battery duration as an ISO 8601 duration.",
+      example = "PT19M50S",
+      nullable = true
+  )
+  private String duration;
 }

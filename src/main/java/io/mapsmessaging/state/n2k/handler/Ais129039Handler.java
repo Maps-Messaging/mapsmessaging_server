@@ -20,12 +20,12 @@
 package io.mapsmessaging.state.n2k.handler;
 
 import io.mapsmessaging.canbus.j1939.n2k.codec.N2kMessageParser;
+import io.mapsmessaging.state.drone.drone.DroneTwin;
 import io.mapsmessaging.state.n2k.DroneEmissionState;
 import io.mapsmessaging.state.n2k.msg.AisClassBEmitterConfig;
 import io.mapsmessaging.state.n2k.msg.AisClassBPositionReport;
 import io.mapsmessaging.state.n2k.msg.mapper.AisClassBPositionMapper;
 import io.mapsmessaging.state.n2k.msg.source.AisClassBPositionFieldValueSource;
-import io.mapsmessaging.state.drone.drone.DroneTwin;
 
 import java.util.Optional;
 

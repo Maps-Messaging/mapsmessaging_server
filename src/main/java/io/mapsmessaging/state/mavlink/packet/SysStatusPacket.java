@@ -20,8 +20,9 @@
 package io.mapsmessaging.state.mavlink.packet;
 
 import io.mapsmessaging.mavlink.ProcessedFrame;
-import java.util.Map;
 import lombok.Getter;
+
+import java.util.Map;
 
 import static io.mapsmessaging.state.mavlink.packet.MavlinkMessageIds.SYS_STATUS;
 

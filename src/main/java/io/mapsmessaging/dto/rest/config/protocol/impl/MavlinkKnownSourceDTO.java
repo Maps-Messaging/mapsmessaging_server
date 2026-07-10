@@ -1,5 +1,6 @@
 package io.mapsmessaging.dto.rest.config.protocol.impl;
 
+import io.mapsmessaging.state.config.VehicleClass;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import lombok.NoArgsConstructor;

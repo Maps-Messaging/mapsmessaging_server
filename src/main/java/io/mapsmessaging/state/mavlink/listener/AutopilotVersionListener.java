@@ -19,13 +19,13 @@
 
 package io.mapsmessaging.state.mavlink.listener;
 
-import io.mapsmessaging.state.mavlink.packet.AutopilotVersionPacket;
-import io.mapsmessaging.state.mavlink.packet.MavlinkPacket;
 import io.mapsmessaging.state.drone.core.TwinManager;
 import io.mapsmessaging.state.drone.core.TwinUpdateContext;
 import io.mapsmessaging.state.drone.drone.DroneTwin;
 import io.mapsmessaging.state.drone.model.autopilot.AutopilotState;
 import io.mapsmessaging.state.drone.model.autopilot.GenericAutopilotState;
+import io.mapsmessaging.state.mavlink.packet.AutopilotVersionPacket;
+import io.mapsmessaging.state.mavlink.packet.MavlinkPacket;
 
 import static io.mapsmessaging.state.mavlink.packet.MavlinkMessageIds.AUTOPILOT_VERSION;
 
@@ -43,9 +43,7 @@ public class AutopilotVersionListener implements Listener {
   }
 
   @Override
-  public void handle(String twinId,
-                     MavlinkPacket pkt,
-                     TwinUpdateContext context) {
+  public void handle(String twinId, MavlinkPacket pkt, TwinUpdateContext context) {
 
     if (!(pkt instanceof AutopilotVersionPacket packet)) {
       return;

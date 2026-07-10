@@ -223,6 +223,9 @@ public class DestinationManager implements DestinationFactory, Agent {
   public void start() {
     initialise();
     logger.log(ServerLogMessages.DESTINATION_MANAGER_STARTING);
+  }
+
+  public void cleanup(){
     for (DestinationManagerPipeline pipeline : creatorPipelines) {
       pipeline.start();
     }
@@ -426,12 +429,16 @@ public class DestinationManager implements DestinationFactory, Agent {
 
     @Override
     public void run() {
-      File file = fileList.poll();
-      while (file != null) {
-        parseDirectoryPath(file, pathManager);
-        file = fileList.poll();
+      try {
+        File file = fileList.poll();
+        while (file != null) {
+          parseDirectoryPath(file, pathManager);
+          file = fileList.poll();
+        }
       }
-      complete.set(true);
+      finally {
+        complete.set(true);
+      }
     }
   }
 }

@@ -1,5 +1,6 @@
 /*
  *
+ *  Copyright [ 2020 - 2024 ] Matthew Buckton
  *  Copyright [ 2024 - 2026 ] MapsMessaging B.V.
  *
  *  Licensed under the Apache License, Version 2.0 with the Commons Clause
@@ -19,24 +20,33 @@
 package io.mapsmessaging.state.mavlink;
 
 import io.mapsmessaging.dto.rest.config.protocol.impl.MavlinkKnownSourceDTO;
-import io.mapsmessaging.dto.rest.config.protocol.impl.VehicleClass;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.mavlink.ProcessedFrame;
 import io.mapsmessaging.state.config.DroneInfo;
+import io.mapsmessaging.state.config.VehicleClass;
 import io.mapsmessaging.state.drone.core.EntityTwin;
 import io.mapsmessaging.state.drone.core.TwinManager;
 import io.mapsmessaging.state.drone.core.TwinUpdateContext;
 import io.mapsmessaging.state.drone.drone.DroneTwin;
+import io.mapsmessaging.state.drone.model.Contact;
+import io.mapsmessaging.state.drone.model.DetectionEvent;
+import io.mapsmessaging.state.drone.model.DroneContactManager;
+import io.mapsmessaging.state.drone.model.GeoPosition;
 import io.mapsmessaging.state.mavlink.bootstrap.DroneTwinReadinessEvaluator;
 import io.mapsmessaging.state.mavlink.bootstrap.MavlinkBootstrapProfile;
 import io.mapsmessaging.state.mavlink.bootstrap.MavlinkBootstrapStateEngine;
 import io.mapsmessaging.state.mavlink.listener.ListenerManager;
+import io.mapsmessaging.state.mavlink.model.ModelManager;
+import io.mapsmessaging.state.mavlink.model.UxvModel;
 import io.mapsmessaging.state.mavlink.packet.MavlinkPacket;
+import io.mapsmessaging.state.mavlink.sender.MavlinkEventListSender;
 import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
 
-import static io.mapsmessaging.logging.ServerLogMessages.MAVLINK_STATE_TWIN_CREATED;
+import java.util.Optional;
+
+import static io.mapsmessaging.state.logging.StateLogMessages.MAVLINK_STATE_TWIN_CREATED;
 
 public class MavlinkTwinUpdater {
 
@@ -46,35 +56,61 @@ public class MavlinkTwinUpdater {
   private final ListenerManager listenerManager;
   private final MavlinkDroneMonitor droneMonitor;
 
-  public MavlinkTwinUpdater(
-      @NonNull @NotNull TwinManager twinManager,
-      @NonNull @NotNull ListenerManager listenerManager
-  ) {
+  public MavlinkTwinUpdater(@NonNull @NotNull TwinManager twinManager, @NonNull @NotNull ListenerManager listenerManager) {
     this.twinManager = twinManager;
     this.listenerManager = listenerManager;
-    this.droneMonitor = new MavlinkDroneMonitor(
-        twinManager,
-        new DroneTwinReadinessEvaluator(),
-        new MavlinkBootstrapStateEngine(new MavlinkBootstrapProfile()),
-        null
-    );
+    this.droneMonitor =
+        new MavlinkDroneMonitor(
+            twinManager,
+            new DroneTwinReadinessEvaluator(),
+            new MavlinkBootstrapStateEngine(new MavlinkBootstrapProfile()),
+            null
+        );
     twinManager.addObserver(droneMonitor);
   }
 
   public void updateTwinState(@NonNull @NotNull ProcessedFrame env, @NonNull @NotNull MavlinkPacket packet, @NonNull @NotNull TwinUpdateContext context, @NonNull @NotNull MavlinkKnownSourceDTO knownSource, DroneInfo droneInfo) {
     String twinId = buildTwinId(env, knownSource);
+    EntityTwin entityTwin = twinManager.getTwin(twinId).orElseGet(() -> createTwin(twinId, env, context, knownSource, droneInfo));
+    twinManager.updateTwin(
+        twinId,
+        twinToUpdate -> {
+          if (twinToUpdate instanceof DroneTwin drone) {
+            drone.setSystemId(env.getFrame().getSystemId());
+            drone.setComponentId(env.getFrame().getComponentId());
+            updateTwinResponseTopic(twinToUpdate, context.getResponseTopic());
+            drone.setUniqueOutboundIdentifier(context.getUniqueOutboundIdentifier());
+          }
+        },
+        context
+    );
 
-    EntityTwin twin = twinManager.getTwin(twinId)
-        .orElseGet(() -> createTwin(twinId, env, context, knownSource, droneInfo));
-    twinManager.updateTwin(twinId, twinToUpdate -> {
-      if (twinToUpdate instanceof DroneTwin drone) {
-        drone.setSystemId(env.getFrame().getSystemId());
-        drone.setComponentId(env.getFrame().getComponentId());
-        updateTwinResponseTopic(twinToUpdate, context.getResponseTopic());
-        drone.setUniqueOutboundIdentifier(context.getUniqueOutboundIdentifier());
-      }
-    }, context);
     listenerManager.handle(env.getFrame().getMessageId(), twinId, packet, context);
+
+    if (entityTwin instanceof DroneTwin droneTwin) {
+      MavlinkEventListSender sender = droneTwin.getActiveMavlinkSender();
+      if(sender != null){
+        sender.onMavlinkMessage(packet);
+      }
+      applyModelDetectionEvent(droneTwin, packet);
+    }
+  }
+
+  private void applyModelDetectionEvent(DroneTwin droneTwin, MavlinkPacket packet) {
+    String modelName = droneTwin.getModelName();
+    if (modelName == null || modelName.isBlank()) {
+      return;
+    }
+
+    try {
+      UxvModel uxvModel = ModelManager.getInstance().getRequiredModel(modelName);
+      if(uxvModel != null) {
+        Optional<DetectionEvent> detectionEvent = uxvModel.interpretDetection(droneTwin, packet);
+        detectionEvent.ifPresent(event -> applyDetectionEvent(droneTwin, event));
+      }
+    } catch (IllegalArgumentException e) {
+      // no such model, ignore
+    }
   }
 
   private void updateTwinResponseTopic(EntityTwin twin, String responseTopic) {
@@ -88,6 +124,45 @@ public class MavlinkTwinUpdater {
     }
   }
 
+  private void applyDetectionEvent(DroneTwin droneTwin, DetectionEvent event) {
+    if (!isValidDetectionEvent(event)) {
+      return;
+    }
+
+    DroneContactManager contactManager = droneTwin.getContactManager();
+
+    switch (event.getEventType()) {
+      case DETECTED, UPDATED -> upsertContact(contactManager, event);
+      case LOST -> removeContact(contactManager, event);
+    }
+  }
+
+  private boolean isValidDetectionEvent(DetectionEvent event) {
+    return event != null && event.getEventType() != null && event.getContactId() != null;
+  }
+
+  private void upsertContact(DroneContactManager contactManager, DetectionEvent event) {
+    Long ttlMillis = event.getTtlMillis();
+    if (ttlMillis == null || ttlMillis <= 0) {
+      return;
+    }
+
+    GeoPosition position = event.getPosition();
+    String name = event.getName();
+
+    if (contactManager.hasContact(event.getContactId())) {
+      contactManager.updateContact(event.getContactId(), name, position, ttlMillis);
+    } else {
+      Contact contact = new Contact(name, position, ttlMillis);
+      contactManager.addContact(contact);
+    }
+  }
+
+  private void removeContact(DroneContactManager contactManager, DetectionEvent event) {
+    if (contactManager.hasContact(event.getContactId())) {
+      contactManager.removeContact(event.getContactId());
+    }
+  }
 
   private EntityTwin createTwin(String twinId, ProcessedFrame env, TwinUpdateContext context, MavlinkKnownSourceDTO knownSource, DroneInfo droneInfo) {
     DroneTwin droneTwin = new DroneTwin(twinId, droneInfo.getUuid());
@@ -97,10 +172,17 @@ public class MavlinkTwinUpdater {
     droneTwin.setDisplayName(resolveDisplayName(twinId, knownSource));
     droneTwin.setSystemId(env.getFrame().getSystemId());
     droneTwin.setComponentId(env.getFrame().getComponentId());
+    droneTwin.setModelName(droneInfo.getModelName());
 
-    if(droneInfo.getCapabilities() != null) {
+    if (droneInfo.getCapabilities() != null) {
       droneTwin.setCapabilities(droneInfo.getCapabilities());
       droneTwin.setDescription(droneInfo.getDescription());
+    }
+
+    if (droneInfo.getBatteryCapacityHours() > 0) {
+      droneTwin.setBatteryCapacityHours(droneInfo.getBatteryCapacityHours());
+    } else if (droneInfo.getBatteryCapacityAh() > 0) {
+
     }
 
     twinManager.registerTwin(droneTwin, context);
@@ -164,9 +246,6 @@ public class MavlinkTwinUpdater {
       return "mavlink:" + knownSource.getName();
     }
 
-    return "mavlink:"
-        + env.getFrame().getSystemId()
-        + ":"
-        + env.getFrame().getComponentId();
+    return "mavlink:" + env.getFrame().getSystemId() + ":" + env.getFrame().getComponentId();
   }
 }

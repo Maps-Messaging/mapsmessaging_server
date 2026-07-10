@@ -19,17 +19,13 @@
 
 package io.mapsmessaging.state.drone.tak;
 
-import io.mapsmessaging.dto.rest.config.protocol.impl.VehicleClass;
+import io.mapsmessaging.state.config.VehicleClass;
 import io.mapsmessaging.state.drone.core.EntityTwin;
 import io.mapsmessaging.state.drone.core.TwinRelationship;
 import io.mapsmessaging.state.drone.core.TwinType;
 import io.mapsmessaging.state.drone.core.TwinUpdateContext;
 import io.mapsmessaging.state.drone.drone.DroneTwin;
-import io.mapsmessaging.state.drone.model.FixInfo;
-import io.mapsmessaging.state.drone.model.GeoPosition;
-import io.mapsmessaging.state.drone.model.LinkState;
-import io.mapsmessaging.state.drone.model.Orientation;
-import io.mapsmessaging.state.drone.model.VelocityVector;
+import io.mapsmessaging.state.drone.model.*;
 import io.mapsmessaging.state.drone.tak.model.*;
 
 import java.time.Instant;

@@ -19,6 +19,8 @@
 
 package io.mapsmessaging.state;
 
+import io.mapsmessaging.logging.Logger;
+import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.state.config.DroneInfoRegistry;
 import io.mapsmessaging.state.config.MavlinkTwinConfigDTO;
 import io.mapsmessaging.state.config.TwinManagerConfigDTO;
@@ -30,42 +32,42 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-public class MavlinkTwinManager implements Lifecycle{
+import static io.mapsmessaging.state.logging.StateLogMessages.MAVLINK_TWIN_MANAGER_START_FAILED;
+import static io.mapsmessaging.state.logging.StateLogMessages.MAVLINK_TWIN_MANAGER_STOP_FAILED;
+
+public class MavlinkTwinManager implements Lifecycle {
+
+  private final Logger logger = LoggerFactory.getLogger(MavlinkTwinManager.class);
 
   private final List<MavlinkStateSubscriber> mavlinkSessionManagers = new ArrayList<>();
 
   public MavlinkTwinManager(TwinManager twinManager, DroneInfoRegistry registry, TwinManagerConfigDTO config) {
-    if(config != null) {
-      try {
-        for (MavlinkTwinConfigDTO mavlinkConfig : config.getMavlink()) {
-          mavlinkSessionManagers.add(new MavlinkStateSubscriber(twinManager, mavlinkConfig, registry));
-        }
-      } catch (IOException e) {
-        e.printStackTrace();
+    if (config != null) {
+      for (MavlinkTwinConfigDTO mavlinkConfig : config.getMavlink()) {
+        mavlinkSessionManagers.add(new MavlinkStateSubscriber(twinManager, mavlinkConfig, registry));
       }
     }
   }
 
   @Override
   public void start() {
-    for(MavlinkStateSubscriber mavlinkSessionManager: mavlinkSessionManagers){
+    for (MavlinkStateSubscriber mavlinkSessionManager : mavlinkSessionManagers) {
       try {
         mavlinkSessionManager.start();
       } catch (IOException e) {
-        e.printStackTrace();
+        logger.log(MAVLINK_TWIN_MANAGER_START_FAILED, e.getMessage());
       }
     }
   }
 
   @Override
   public void stop() {
-    for(MavlinkStateSubscriber mavlinkSessionManager: mavlinkSessionManagers){
+    for (MavlinkStateSubscriber mavlinkSessionManager : mavlinkSessionManagers) {
       try {
         mavlinkSessionManager.stop();
       } catch (IOException e) {
-        e.printStackTrace();
+        logger.log(MAVLINK_TWIN_MANAGER_STOP_FAILED, e.getMessage());
       }
     }
-
   }
 }

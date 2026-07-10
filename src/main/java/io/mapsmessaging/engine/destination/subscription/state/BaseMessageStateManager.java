@@ -52,7 +52,6 @@ public abstract class BaseMessageStateManager implements MessageStateManager {
       priorityLists[x] = new ConcurrentNaturalOrderedLongQueue(priorityId, priorityBitSetFactory);
     }
     messagesAtRest = new PriorityQueue<>(priorityLists, null);
-
     priorityLists = new NaturalOrderedLongQueue[Priority.HIGHEST.getValue()+1];
     for (int x = 0; x < priorityLists.length; x++) {
       priorityLists[x] = new ConcurrentNaturalOrderedLongQueue(x, inflightBitSetFactory);

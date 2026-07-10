@@ -20,7 +20,6 @@
 package io.mapsmessaging.state;
 
 import io.mapsmessaging.api.MessageEvent;
-import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.network.io.EndPoint;
 import io.mapsmessaging.network.protocol.impl.local.LocalLoopProtocol;
 import lombok.NonNull;

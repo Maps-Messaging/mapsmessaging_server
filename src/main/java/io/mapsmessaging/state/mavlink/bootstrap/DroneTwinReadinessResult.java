@@ -19,11 +19,12 @@
 
 package io.mapsmessaging.state.mavlink.bootstrap;
 
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
 import java.time.Instant;
 import java.util.EnumSet;
 import java.util.Set;
-import lombok.Data;
-import lombok.NoArgsConstructor;
 
 @Data
 @NoArgsConstructor

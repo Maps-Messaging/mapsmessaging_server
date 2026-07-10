@@ -29,7 +29,10 @@ import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
 import java.security.Principal;
-import java.util.concurrent.*;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 public class EventPublisher implements ClientConnection, MessageListener {
 
@@ -48,8 +51,9 @@ public class EventPublisher implements ClientConnection, MessageListener {
   public void publish(String xml) throws IOException {
     MessageBuilder messageBuilder = new MessageBuilder();
     messageBuilder.setOpaqueData(xml.getBytes())
-        .setQoS(QualityOfService.AT_MOST_ONCE)
+        .setQoS(QualityOfService.AT_LEAST_ONCE)
         .setContentType("text/xml")
+        .storeOffline(true)
         .setSchemaId(SchemaManager.DEFAULT_XML_SCHEMA.toString())
         .setRetain(false);
     try {

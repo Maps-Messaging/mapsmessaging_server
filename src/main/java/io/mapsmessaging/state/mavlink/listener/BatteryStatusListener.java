@@ -22,10 +22,12 @@ package io.mapsmessaging.state.mavlink.listener;
 import io.mapsmessaging.state.drone.core.TwinManager;
 import io.mapsmessaging.state.drone.core.TwinUpdateContext;
 import io.mapsmessaging.state.drone.drone.DroneTwin;
+import io.mapsmessaging.state.drone.model.BatteryDurationCalculator;
 import io.mapsmessaging.state.drone.model.BatteryState;
 import io.mapsmessaging.state.mavlink.packet.BatteryStatusPacket;
 import io.mapsmessaging.state.mavlink.packet.MavlinkPacket;
 
+import java.time.Duration;
 import java.time.Instant;
 import java.util.Arrays;
 
@@ -45,10 +47,7 @@ public class BatteryStatusListener implements Listener {
   }
 
   @Override
-  public void handle(String twinId,
-                     MavlinkPacket pkt,
-                     TwinUpdateContext context) {
-
+  public void handle(String twinId, MavlinkPacket pkt, TwinUpdateContext context) {
     if (!(pkt instanceof BatteryStatusPacket packet)) {
       return;
     }
@@ -85,14 +84,24 @@ public class BatteryStatusListener implements Listener {
       if (packet.getCurrentConsumed() >= 0 && packet.isBatteryRemainingKnown()) {
         double consumedMilliampHours = packet.getCurrentConsumed();
         double remainingFraction = packet.getBatteryRemaining() / 100.0;
-        if (remainingFraction > 0.0) {
+        if (remainingFraction > 0.0 && remainingFraction < 1.0) {
           double estimatedCapacityMilliampHours = consumedMilliampHours / (1.0 - remainingFraction);
           double remainingMilliampHours = estimatedCapacityMilliampHours * remainingFraction;
           batteryState.setRemainingMilliampHours(remainingMilliampHours);
         }
       }
 
+      if(droneTwin.getBatteryCapacityHours() > 0 && batteryState.getPercentage() != null){
+        double totalHours = droneTwin.getBatteryCapacityHours();
+        double remainingHours = totalHours * (batteryState.getPercentage() / 100.0);
+        Duration remainingDuration = Duration.ofSeconds(Math.round(remainingHours * 3600));
+        batteryState.setDuration(remainingDuration.toString());
+      }
+      else {
+        batteryState.setDuration(BatteryDurationCalculator.calculateDuration(batteryState));
+      }
       batteryState.setCharging(isCharging(packet));
+
 
       droneTwin.setBatteryState(batteryState);
 
@@ -101,7 +110,6 @@ public class BatteryStatusListener implements Listener {
           : Instant.now();
 
       droneTwin.setOperationalUpdatedAt(now);
-
     }, context);
   }
 
@@ -120,7 +128,6 @@ public class BatteryStatusListener implements Listener {
       return false;
     }
 
-    return packet.getChargeState() == 2
-        || packet.getChargeState() == 3;
+    return packet.getChargeState() == 2 || packet.getChargeState() == 3;
   }
 }

@@ -23,7 +23,6 @@ import io.mapsmessaging.config.Config;
 import io.mapsmessaging.configuration.ConfigurationProperties;
 import io.mapsmessaging.dto.rest.config.BaseConfigDTO;
 import io.mapsmessaging.dto.rest.config.protocol.impl.N2KConfigDTO;
-
 import java.util.Objects;
 
 public class N2kProtocolConfig extends N2KConfigDTO implements Config {
@@ -37,9 +36,10 @@ public class N2kProtocolConfig extends N2KConfigDTO implements Config {
     this.databasePath = config.getProperty("databasePath", databasePath);
     this.base64EncodedDatabase = config.getProperty("base64EncodedDatabase", base64EncodedDatabase);
     this.unknownPacketTopic = config.getProperty("unknownPacketTopic", unknownPacketTopic);
-    this.outboundTopicName = config.getProperty("inboundTopicName", outboundTopicName);
     this.canBusAddress = config.getIntProperty("canBusAddress", canBusAddress);
     this.outboundTopicName = config.getProperty("outboundTopicName", outboundTopicName);
+    this.qualityOfService = config.getIntProperty("qualityOfService", qualityOfService);
+    this.storeOffline = config.getBooleanProperty("storeOffline", storeOffline);
   }
 
   @Override
@@ -52,20 +52,21 @@ public class N2kProtocolConfig extends N2KConfigDTO implements Config {
         hasChanged = true;
       }
 
-      if (!topicNameTemplate.equals(newConfig.getTopicNameTemplate())) {
+      if (!Objects.equals(topicNameTemplate, newConfig.getTopicNameTemplate())) {
         topicNameTemplate = newConfig.getTopicNameTemplate();
         hasChanged = true;
       }
 
-      if (!unknownPacketTopic.equals(newConfig.getUnknownPacketTopic())) {
+      if (!Objects.equals(unknownPacketTopic, newConfig.getUnknownPacketTopic())) {
         unknownPacketTopic = newConfig.getUnknownPacketTopic();
         hasChanged = true;
       }
 
-      if(outboundTopicName == null && newConfig.getOutboundTopicName() != null) {
+      if (!Objects.equals(outboundTopicName, newConfig.getOutboundTopicName())) {
         outboundTopicName = newConfig.getOutboundTopicName();
         hasChanged = true;
       }
+
       if (!Objects.equals(databasePath, newConfig.getDatabasePath())) {
         databasePath = newConfig.getDatabasePath();
         hasChanged = true;
@@ -80,6 +81,17 @@ public class N2kProtocolConfig extends N2KConfigDTO implements Config {
         canBusAddress = newConfig.getCanBusAddress();
         hasChanged = true;
       }
+
+      if (qualityOfService != newConfig.getQualityOfService()) {
+        qualityOfService = newConfig.getQualityOfService();
+        hasChanged = true;
+      }
+
+      if (storeOffline != newConfig.isStoreOffline()) {
+        storeOffline = newConfig.isStoreOffline();
+        hasChanged = true;
+      }
+
       if (ProtocolConfigFactory.update(this, newConfig)) {
         hasChanged = true;
       }
@@ -99,8 +111,11 @@ public class N2kProtocolConfig extends N2KConfigDTO implements Config {
     properties.put("databasePath", databasePath);
     properties.put("base64EncodedDatabase", base64EncodedDatabase);
     properties.put("unknownPacketTopic", unknownPacketTopic);
-    properties.put("inboundTopicName", outboundTopicName);
+    properties.put("outboundTopicName", outboundTopicName);
     properties.put("canBusAddress", canBusAddress);
+    properties.put("qualityOfService", qualityOfService);
+    properties.put("storeOffline", storeOffline);
+
     return properties;
   }
 }

@@ -35,6 +35,8 @@ public class CanAerospaceProtocolConfig extends CanAerospaceConfigDTO implements
     this.yamlPath = config.getProperty("yamlPath", yamlPath);
     this.unknownPacketTopic = config.getProperty("unknownPacketTopic", unknownPacketTopic);
     this.inboundTopicName = config.getProperty("inboundTopicName", inboundTopicName);
+    this.qualityOfService = config.getIntProperty("qualityOfService", qualityOfService);
+    this.storeOffline = config.getBooleanProperty("storeOffline", storeOffline);
   }
 
   @Override
@@ -68,6 +70,16 @@ public class CanAerospaceProtocolConfig extends CanAerospaceConfigDTO implements
         hasChanged = true;
       }
 
+      if (qualityOfService != newConfig.getQualityOfService()) {
+        qualityOfService = newConfig.getQualityOfService();
+        hasChanged = true;
+      }
+
+      if (storeOffline != newConfig.isStoreOffline()) {
+        storeOffline = newConfig.isStoreOffline();
+        hasChanged = true;
+      }
+
       if (ProtocolConfigFactory.update(this, newConfig)) {
         hasChanged = true;
       }
@@ -84,6 +96,8 @@ public class CanAerospaceProtocolConfig extends CanAerospaceConfigDTO implements
     properties.put("topicNameTemplate", topicNameTemplate);
     properties.put("parseToJson", parseToJson);
     properties.put("unknownPacketTopic", unknownPacketTopic);
+    properties.put("qualityOfService", qualityOfService);
+    properties.put("storeOffline", storeOffline);
 
     if (yamlPath != null && !yamlPath.isEmpty()) {
       properties.put("yamlPath", yamlPath);

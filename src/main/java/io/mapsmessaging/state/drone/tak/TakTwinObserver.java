@@ -15,19 +15,13 @@
  *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
- *
  */
 
 package io.mapsmessaging.state.drone.tak;
 
 import io.mapsmessaging.state.config.TwinManagerConfig;
 import io.mapsmessaging.state.config.TwinManagerConfigDTO;
-import io.mapsmessaging.state.drone.core.EntityTwin;
-import io.mapsmessaging.state.drone.core.TwinLifecycleStatus;
-import io.mapsmessaging.state.drone.core.TwinManager;
-import io.mapsmessaging.state.drone.core.TwinObserver;
-import io.mapsmessaging.state.drone.core.TwinRelationship;
-import io.mapsmessaging.state.drone.core.TwinUpdateContext;
+import io.mapsmessaging.state.drone.core.*;
 import io.mapsmessaging.state.drone.tak.model.TakEvent;
 import io.mapsmessaging.utilities.configuration.ConfigurationManager;
 

@@ -82,6 +82,8 @@ public class N2kProtocol extends Protocol {
   private final boolean parseToJson;
   private final SchemaConfig defaultSchemaConfig = SchemaManager.getInstance().getSchema(DEFAULT_JSON_SCHEMA);
   private final int canbusAddress;
+  private final QualityOfService qos;
+  private final boolean storeOffline;
 
   private ScheduledFuture<?> scheduledFuture;
 
@@ -109,6 +111,8 @@ public class N2kProtocol extends Protocol {
     N2KConfigDTO n2kConfig = (N2KConfigDTO)protocolConfig;
     topicTemplate = n2kConfig.getTopicNameTemplate();
     rawTopicTemplate =  n2kConfig.getUnknownPacketTopic().replace("{candevice}",endPoint.getName());
+    qos = QualityOfService.getInstance(n2kConfig.getQualityOfService());
+    storeOffline = n2kConfig.isStoreOffline();
 
     parseToJson =n2kConfig.isParseToJson();
     canbusAddress = n2kConfig.getCanBusAddress();
@@ -248,6 +252,9 @@ public class N2kProtocol extends Protocol {
 
   private boolean processPacket(JsonObject json) {
     MessageBuilder messageBuilder = new MessageBuilder();
+    messageBuilder.setQoS(qos);
+    messageBuilder.storeOffline(storeOffline);
+
     Map<String, String> metaData = new HashMap<>();
     metaData.put("protocol", "n2k");
     metaData.put("version", getVersion());
@@ -271,9 +278,7 @@ public class N2kProtocol extends Protocol {
     Message message = messageBuilder.setContentType("n2k")
         .setOpaqueData(json.toString().getBytes())
         .setDataMap(map)
-        .setQoS(QualityOfService.AT_MOST_ONCE)
         .setRetain(false)
-        .storeOffline(false)
         .setContentType("canbus")
         .setMeta(metaData)
         .setSchemaId(defaultSchemaConfig.getUniqueId())
@@ -350,8 +355,9 @@ public class N2kProtocol extends Protocol {
     metaData.put("time_ms", Long.toString(System.currentTimeMillis()));
 
     MessageBuilder messageBuilder = new MessageBuilder();
+    messageBuilder.storeOffline(storeOffline);
+    messageBuilder.setQoS(qos);
     messageBuilder.setOpaqueData(frame.getRawData())
-        .setQoS(QualityOfService.AT_MOST_ONCE)
         .setMeta(metaData)
         .setRetain(false)
         .setContentType("canbus");

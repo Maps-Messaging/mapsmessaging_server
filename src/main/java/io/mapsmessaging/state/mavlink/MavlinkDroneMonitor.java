@@ -19,19 +19,9 @@
 
 package io.mapsmessaging.state.mavlink;
 
-import io.mapsmessaging.state.drone.core.EntityTwin;
-import io.mapsmessaging.state.drone.core.TwinLifecycleStatus;
-import io.mapsmessaging.state.drone.core.TwinManager;
-import io.mapsmessaging.state.drone.core.TwinObserver;
-import io.mapsmessaging.state.drone.core.TwinRelationship;
-import io.mapsmessaging.state.drone.core.TwinUpdateContext;
+import io.mapsmessaging.state.drone.core.*;
 import io.mapsmessaging.state.drone.drone.DroneTwin;
-import io.mapsmessaging.state.mavlink.bootstrap.DroneTwinMissingState;
-import io.mapsmessaging.state.mavlink.bootstrap.DroneTwinReadinessEvaluator;
-import io.mapsmessaging.state.mavlink.bootstrap.DroneTwinReadinessResult;
-import io.mapsmessaging.state.mavlink.bootstrap.MavlinkBootstrapEvent;
-import io.mapsmessaging.state.mavlink.bootstrap.MavlinkBootstrapEventPublisher;
-import io.mapsmessaging.state.mavlink.bootstrap.MavlinkBootstrapStateEngine;
+import io.mapsmessaging.state.mavlink.bootstrap.*;
 
 import java.util.List;
 import java.util.Set;
@@ -117,14 +107,9 @@ public class MavlinkDroneMonitor implements TwinObserver {
       return;
     }
 
-    DroneTwinReadinessResult readinessResult =
-        readinessEvaluator.evaluate(droneTwin, context);
-
+    DroneTwinReadinessResult readinessResult = readinessEvaluator.evaluate(droneTwin, context);
     updateReadinessIfChanged(droneTwin, readinessResult, context);
-
-    List<MavlinkBootstrapEvent> events =
-        bootstrapStateEngine.update(droneTwin, readinessResult, context);
-
+    List<MavlinkBootstrapEvent> events = bootstrapStateEngine.update(droneTwin, readinessResult, context);
     if(bootstrapEventPublisher != null) {
       for (MavlinkBootstrapEvent event : events) {
         bootstrapEventPublisher.publish(event);

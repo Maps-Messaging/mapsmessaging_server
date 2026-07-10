@@ -19,25 +19,18 @@
 
 package io.mapsmessaging.state.drone.core;
 
-import io.mapsmessaging.dto.rest.config.protocol.impl.VehicleClass;
-import io.mapsmessaging.security.uuid.NamedVersions;
-import io.mapsmessaging.security.uuid.UuidGenerator;
-import io.mapsmessaging.state.drone.model.BatteryState;
-import io.mapsmessaging.state.drone.model.FixInfo;
-import io.mapsmessaging.state.drone.model.GeoPosition;
-import io.mapsmessaging.state.drone.model.LinkState;
-import io.mapsmessaging.state.drone.model.Orientation;
-import io.mapsmessaging.state.drone.model.VelocityVector;
+import io.mapsmessaging.state.config.VehicleClass;
+import io.mapsmessaging.state.drone.model.*;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.security.NoSuchAlgorithmException;
 import java.time.Instant;
-import java.time.temporal.ChronoUnit;
-import java.time.temporal.TemporalUnit;
-import java.util.*;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**

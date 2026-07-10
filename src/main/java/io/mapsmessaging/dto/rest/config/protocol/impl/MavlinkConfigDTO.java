@@ -21,6 +21,44 @@ public class MavlinkConfigDTO extends ProtocolConfigDTO {
 
   @Schema(
       description =
+          "Local MAVLink system id used by this protocol instance when it originates MAVLink frames, such as heartbeats or outbound commands. "
+              + "If null, this MAVLink interface is listen-only and does not originate MAVLink traffic.",
+      example = "255",
+      minimum = "1",
+      maximum = "255",
+      requiredMode = Schema.RequiredMode.NOT_REQUIRED,
+      nullable = true
+  )
+  protected Integer systemId;
+
+  @Schema(
+      description =
+          "Local MAVLink component id used by this protocol instance when it originates MAVLink frames, such as heartbeats or outbound commands. "
+              + "If null, this MAVLink interface is listen-only and does not originate MAVLink traffic.",
+      example = "190",
+      minimum = "0",
+      maximum = "255",
+      requiredMode = Schema.RequiredMode.NOT_REQUIRED,
+      nullable = true
+  )
+  protected Integer componentId;
+
+  public boolean hasLocalMavlinkIdentity() {
+    return systemId != null && componentId != null;
+  }
+
+  @Schema(
+      description =
+          "Interval in seconds between MAVLink HEARTBEAT messages sent by this protocol instance. "
+              + "Only used when systemId and componentId are configured. "
+              + "Set to 0 to disable heartbeat emission.",
+      example = "30",
+      minimum = "0"
+  )
+  protected int heartbeatIntervalSeconds = 30;
+
+  @Schema(
+      description =
           "MAVLink dialect name or fully qualified path to a MAVLink dialect XML file. "
               + "If blank, the default MAVLink dialect is used. If the value resolves to an existing file, "
               + "it is loaded as a dialect XML path; otherwise it is treated as a dialect name.",
@@ -234,4 +272,26 @@ public class MavlinkConfigDTO extends ProtocolConfigDTO {
       requiredMode = Schema.RequiredMode.NOT_REQUIRED
   )
   protected String outboundTopicName = "/protocol/mavlink/{interfaceName}/outbound";
+
+  @Schema(
+      description =
+          "Quality of Service used when publishing telemetry events into the messaging layer. "
+              + "0 means at most once, 1 means at least once, and 2 means exactly once where supported.",
+      example = "0",
+      minimum = "0",
+      maximum = "2",
+      defaultValue = "0",
+      requiredMode = Schema.RequiredMode.NOT_REQUIRED
+  )
+  protected int qualityOfService = 0;
+
+  @Schema(
+      description =
+          "If true, published telemetry events are marked for offline storage so disconnected subscribers may receive them later. "
+              + "For high-rate streams this can significantly increase retained storage and replay load.",
+      example = "false",
+      defaultValue = "false",
+      requiredMode = Schema.RequiredMode.NOT_REQUIRED
+  )
+  protected boolean storeOffline = false;
 }
