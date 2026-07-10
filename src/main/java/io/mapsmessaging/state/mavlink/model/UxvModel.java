@@ -21,8 +21,11 @@ package io.mapsmessaging.state.mavlink.model;
 
 import io.mapsmessaging.state.drone.drone.DroneTwin;
 import io.mapsmessaging.state.drone.model.DetectionEvent;
+import io.mapsmessaging.state.drone.model.GeoPosition;
 import io.mapsmessaging.state.mavlink.packet.MavlinkPacket;
 
+import java.time.Duration;
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
@@ -107,6 +110,10 @@ public interface UxvModel {
 
     default UxvModelCommandSet clearMission(UxvCommandContext context) {
         throw unsupported(UxvOperation.CLEAR_MISSION);
+    }
+
+    default UxvNavigationPlan navigate(UxvCommandContext context, List<GeoPosition> waypoints, Duration duration) {
+        throw unsupported(UxvOperation.NAVIGATE);
     }
 
     default UnsupportedUxvOperationException unsupported(UxvOperation operation) {

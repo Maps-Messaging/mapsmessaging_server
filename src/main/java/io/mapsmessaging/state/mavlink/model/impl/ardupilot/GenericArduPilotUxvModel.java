@@ -17,39 +17,16 @@
  *  limitations under the License.
  */
 
-package io.mapsmessaging.state.mavlink.model;
+package io.mapsmessaging.state.mavlink.model.impl.ardupilot;
 
-public enum UxvOperation {
-    ARM,
-    DISARM,
+import io.mapsmessaging.state.mavlink.model.UxvOperation;
+import io.mapsmessaging.state.mavlink.model.UxvVehicleType;
+import io.mapsmessaging.state.mavlink.model.impl.AbstractMissionUxvModel;
+import java.util.Set;
 
-    SET_HOME,
-    RETURN_TO_HOME,
+public abstract class GenericArduPilotUxvModel extends AbstractMissionUxvModel {
 
-    REPOSITION,
-    HOLD_POSITION,
-    STOP,
-    PAUSE_VEHICLE,
-    RESUME_VEHICLE,
-
-    NAVIGATE,
-    BUILD_MISSION,
-    START_MISSION,
-    CLEAR_MISSION,
-
-    TAKE_OFF,
-    LAND,
-    SET_ALTITUDE,
-
-    DIVE,
-    SURFACE,
-    SET_DEPTH,
-    HOLD_DEPTH,
-
-    SET_SPEED,
-    SET_HEADING,
-    SET_TURN_RATE,
-
-    ORBIT,
-    LOITER
+  protected GenericArduPilotUxvModel(String modelName, UxvVehicleType vehicleType, Set<UxvOperation> supportedOperations) {
+    super(modelName, vehicleType, supportedOperations);
+  }
 }
