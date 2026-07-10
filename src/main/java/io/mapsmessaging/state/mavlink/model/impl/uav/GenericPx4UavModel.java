@@ -106,11 +106,18 @@ public class GenericPx4UavModel extends GenericPx4UxvModel implements UavModel {
   public UxvModelCommandSet orbit(UxvCommandContext context, OrbitRequest request) {
     Objects.requireNonNull(context, "context must not be null");
     Objects.requireNonNull(request, "request must not be null");
+
     requirePositive(request.radiusMeters(), "radiusMeters");
     rejectDepth(request.depthMeters(), UxvOperation.ORBIT);
     rejectSpeed(request.speedMetersPerSecond(), UxvOperation.ORBIT);
     rejectDuration(request.duration(), UxvOperation.ORBIT);
-    rejectOrbitDirection(request.direction());
+
+    double radiusMeters =
+        switch (request.direction()) {
+          case COUNTER_CLOCKWISE -> -request.radiusMeters();
+          case CLOCKWISE, UNSPECIFIED -> request.radiusMeters();
+          case null -> request.radiusMeters();
+        };
 
     return UxvModelCommandSet.of(
         UxvOperation.ORBIT,
@@ -119,7 +126,7 @@ public class GenericPx4UavModel extends GenericPx4UxvModel implements UavModel {
             context.targetSystem(),
             context.targetComponent(),
             withAltitude(request.center(), request.altitudeMeters()),
-            request.radiusMeters(),
+            radiusMeters,
             context.sequence()));
   }
 
@@ -250,9 +257,4 @@ public class GenericPx4UavModel extends GenericPx4UxvModel implements UavModel {
     }
   }
 
-  private void rejectOrbitDirection(OrbitDirection direction) {
-    if (direction != null && direction != OrbitDirection.UNSPECIFIED) {
-      throw new IllegalArgumentException("ORBIT does not currently map direction for model " + getModelName());
-    }
-  }
 }

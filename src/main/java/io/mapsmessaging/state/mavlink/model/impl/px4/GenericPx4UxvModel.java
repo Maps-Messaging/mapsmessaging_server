@@ -41,4 +41,9 @@ public abstract class GenericPx4UxvModel extends AbstractMissionUxvModel {
         getModelName(),
         MavlinkCommandLongFactory.returnToLaunch(context.targetSystem(), context.targetComponent(), context.sequence()));
   }
+
+  @Override
+  public UxvModelCommandSet stop(UxvCommandContext context) {
+    return pauseVehicle(context);
+  }
 }

@@ -19,6 +19,8 @@
 
 package io.mapsmessaging.state.mavlink.model.impl.ardupilot;
 
+import io.mapsmessaging.state.mavlink.model.UxvCommandContext;
+import io.mapsmessaging.state.mavlink.model.UxvModelCommandSet;
 import io.mapsmessaging.state.mavlink.model.UxvOperation;
 import io.mapsmessaging.state.mavlink.model.UxvVehicleType;
 import io.mapsmessaging.state.mavlink.model.impl.AbstractMissionUxvModel;
@@ -29,4 +31,10 @@ public abstract class GenericArduPilotUxvModel extends AbstractMissionUxvModel {
   protected GenericArduPilotUxvModel(String modelName, UxvVehicleType vehicleType, Set<UxvOperation> supportedOperations) {
     super(modelName, vehicleType, supportedOperations);
   }
+
+  @Override
+  public UxvModelCommandSet stop(UxvCommandContext context) {
+    return pauseVehicle(context);
+  }
+
 }

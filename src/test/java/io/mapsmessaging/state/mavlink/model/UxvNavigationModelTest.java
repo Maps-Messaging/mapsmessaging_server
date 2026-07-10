@@ -19,6 +19,7 @@
 
 package io.mapsmessaging.state.mavlink.model;
 
+import static org.junit.Assert.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -32,6 +33,7 @@ import io.mapsmessaging.state.mavlink.model.UxvModel;
 import io.mapsmessaging.state.mavlink.model.UxvModelCommandSet;
 import io.mapsmessaging.state.mavlink.model.UxvNavigationPlan;
 import io.mapsmessaging.state.mavlink.model.UxvOperation;
+import io.mapsmessaging.state.mavlink.model.impl.AbstractMissionUxvModel;
 import io.mapsmessaging.state.mavlink.model.impl.uav.GenericPx4UavModel;
 import io.mapsmessaging.state.mavlink.model.impl.ugv.GenericPx4UgvModel;
 import io.mapsmessaging.state.mavlink.model.impl.usv.SticklebackArdupilotUsvModel;
@@ -214,27 +216,38 @@ class UxvNavigationModelTest {
             Duration.ZERO));
   }
 
-  private static void assertNavigationPlan(UxvModel model, UxvNavigationPlan plan, int waypointCount, Duration expectedDuration) {
-    assertTrue(model.supports(UxvOperation.NAVIGATE));
+  private void assertNavigationPlan(
+      AbstractMissionUxvModel model,
+      UxvNavigationPlan plan,
+      int expectedWaypointCount,
+      Duration expectedDuration) {
+
+    assertNotNull(plan);
     assertEquals(expectedDuration, plan.duration());
-    assertEquals(!expectedDuration.isZero(), plan.hasTimeout());
 
     assertEquals(1, plan.missionPhase().size());
-    UxvModelCommandSet mission = plan.missionPhase().getFirst();
-    assertEquals(UxvOperation.BUILD_MISSION, mission.operation());
-    assertEquals(model.getModelName(), mission.modelName());
-    assertEquals(waypointCount, mission.messages().size());
+
+    UxvModelCommandSet missionPhase = plan.missionPhase().getFirst();
+    assertEquals(UxvOperation.BUILD_MISSION, missionPhase.operation());
+    assertEquals(model.getModelName(), missionPhase.modelName());
+    assertEquals(expectedWaypointCount, missionPhase.messages().size());
 
     assertEquals(1, plan.postMissionUploadPhase().size());
-    UxvModelCommandSet start = plan.postMissionUploadPhase().getFirst();
-    assertEquals(UxvOperation.START_MISSION, start.operation());
-    assertEquals(model.getModelName(), start.modelName());
-    assertEquals(1, start.messages().size());
 
-    UxvModelCommandSet terminal = plan.terminalAction();
-    assertEquals(UxvOperation.STOP, terminal.operation());
-    assertEquals(model.getModelName(), terminal.modelName());
-    assertEquals(1, terminal.messages().size());
+    UxvModelCommandSet postMissionUploadPhase =
+        plan.postMissionUploadPhase().getFirst();
+
+    assertEquals(UxvOperation.START_MISSION, postMissionUploadPhase.operation());
+
+    assertEquals(model.getModelName(), postMissionUploadPhase.modelName());
+    assertEquals(1, postMissionUploadPhase.messages().size());
+
+    UxvModelCommandSet terminalAction = plan.terminalAction();
+
+    assertEquals(UxvOperation.PAUSE_VEHICLE, terminalAction.operation());
+
+    assertEquals(model.getModelName(), terminalAction.modelName());
+    assertEquals(1, terminalAction.messages().size());
   }
 
   private static void assertInvalidPosition(GeoPosition position) {

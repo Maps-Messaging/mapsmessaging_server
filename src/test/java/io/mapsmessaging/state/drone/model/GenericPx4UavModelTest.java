@@ -188,6 +188,26 @@ class GenericPx4UavModelTest {
     }
 
     @Test
+    void orbit_counterClockwiseUsesNegativeRadius() {
+        OrbitRequest request =
+            new OrbitRequest(
+                position(),
+                25.0d,
+                120.0d,
+                null,
+                null,
+                OrbitDirection.COUNTER_CLOCKWISE,
+                null);
+
+        UxvModelCommandSet commandSet = model.orbit(context(), request);
+
+        MavlinkCommandInt command = assertSingleCommandInt(commandSet, UxvOperation.ORBIT);
+        assertEquals(MavlinkCommandIntFactory.MAV_CMD_DO_ORBIT, command.getCommand());
+        assertEquals(-25.0f, command.getParam1());
+        assertEquals(120.0f, command.getAltitude());
+    }
+
+    @Test
     void orbit_withDepth_throws() {
         OrbitRequest request = new OrbitRequest(position(), 25.0d, null, 5.0d, null, OrbitDirection.CLOCKWISE, null);
 
