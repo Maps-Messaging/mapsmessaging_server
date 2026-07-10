@@ -149,16 +149,27 @@ public class TwinManagerConfig extends TwinManagerConfigDTO implements Config, C
       props.put("mavlink", toMavlinkConfigurationProperties(this.mavlink));
     }
 
+    if (this.droneInfo != null && !this.droneInfo.isEmpty()) {
+      props.put("droneInfo", toDroneInfoConfigurationProperties(this.droneInfo));
+    }
+
     if (this.adapterConfig != null && !this.adapterConfig.isEmpty()) {
       props.put(STATE_ADAPTERS_CONFIG_KEY, new ConfigurationProperties(new LinkedHashMap<>(this.adapterConfig)));
     }
 
-    ConfigurationProperties n2kProps = new ConfigurationProperties();
-    n2kProps.put("publishMavlinkDrones", this.n2KTwinConfig.isPublishMavlinkDrones());
-    n2kProps.put("ais", n2KTwinConfig.getAis());
+    if (shouldWriteN2kConfiguration()) {
+      ConfigurationProperties n2kProps = new ConfigurationProperties();
+      n2kProps.put("enabled", this.n2KTwinConfig.isEnable());
+      n2kProps.put("topic", this.n2KTwinConfig.getTopic());
+      n2kProps.put("name", this.n2KTwinConfig.getName());
+      n2kProps.put("vehicleClass", this.n2KTwinConfig.getVehicleClass());
+      n2kProps.put("publishMavlinkDrones", this.n2KTwinConfig.isPublishMavlinkDrones());
+      n2kProps.put("ais", n2KTwinConfig.getAis());
 
-    if (n2KTwinConfig.getAis() instanceof Config aisConfiguration) {
-      n2kProps.put("ais", aisConfiguration.toConfigurationProperties());
+      if (n2KTwinConfig.getAis() instanceof Config aisConfiguration) {
+        n2kProps.put("ais", aisConfiguration.toConfigurationProperties());
+      }
+      props.put("n2k", n2kProps);
     }
     return props;
   }
@@ -228,6 +239,11 @@ public class TwinManagerConfig extends TwinManagerConfigDTO implements Config, C
 
     if (this.mavlink != newConfig.getMavlink()) {
       this.mavlink = newConfig.getMavlink();
+      hasChanged = true;
+    }
+
+    if (this.droneInfo != newConfig.getDroneInfo()) {
+      this.droneInfo = newConfig.getDroneInfo();
       hasChanged = true;
     }
 
@@ -338,7 +354,9 @@ public class TwinManagerConfig extends TwinManagerConfigDTO implements Config, C
       droneInfo.setUuid(UUID.fromString(uuidString));
     }
     droneInfo.setName(properties.getProperty("name", droneInfo.getName()));
-    droneInfo.setDescription( ((ConfigurationProperties)properties.get("description")).getMap());
+    if (properties.get("description") instanceof ConfigurationProperties description) {
+      droneInfo.setDescription(description.getMap());
+    }
     droneInfo.setCapabilities(parseTaskCapabilities(properties.get("capabilities")));
     return droneInfo;
   }
@@ -528,5 +546,88 @@ public class TwinManagerConfig extends TwinManagerConfigDTO implements Config, C
     }
 
     return values;
+  }
+
+  private List<ConfigurationProperties> toDroneInfoConfigurationProperties(List<DroneInfo> droneInfos) {
+    List<ConfigurationProperties> values = new ArrayList<>();
+
+    for (DroneInfo droneInfo : droneInfos) {
+      ConfigurationProperties properties = new ConfigurationProperties();
+      properties.put("name", droneInfo.getName());
+      if (droneInfo.getUuid() != null) {
+        properties.put("uuid", droneInfo.getUuid().toString());
+      }
+      if (droneInfo.getDescription() != null && !droneInfo.getDescription().isEmpty()) {
+        properties.put("description", new ConfigurationProperties(new LinkedHashMap<>(droneInfo.getDescription())));
+      }
+      if (droneInfo.getCapabilities() != null) {
+        properties.put("capabilities", toTaskCapabilitiesConfigurationProperties(droneInfo.getCapabilities()));
+      }
+
+      values.add(properties);
+    }
+
+    return values;
+  }
+
+  private ConfigurationProperties toTaskCapabilitiesConfigurationProperties(TaskCapabilities capabilities) {
+    ConfigurationProperties properties = new ConfigurationProperties();
+    if (capabilities.getTaskConditionsMode() != null) {
+      properties.put("task_conditions_mode", capabilities.getTaskConditionsMode().name());
+    }
+    if (capabilities.getTaskConditionsTemplate() != null) {
+      properties.put("task_conditions_template", capabilities.getTaskConditionsTemplate().name());
+    }
+    if (capabilities.getTasks() != null) {
+      properties.put("tasks", toTaskCapabilityConfigurationProperties(capabilities.getTasks()));
+    }
+    return properties;
+  }
+
+  private List<ConfigurationProperties> toTaskCapabilityConfigurationProperties(List<TaskCapability> capabilities) {
+    List<ConfigurationProperties> values = new ArrayList<>();
+
+    for (TaskCapability capability : capabilities) {
+      ConfigurationProperties properties = new ConfigurationProperties();
+      if (capability.getTaskType() != null) {
+        properties.put("task_type", capability.getTaskType().name());
+      }
+      if (capability.getSpecialization() != null) {
+        properties.put("task_specialization", capability.getSpecialization().name());
+      }
+      properties.put("authorities", toAuthorityConfigurationProperties(capability.getAuthorities()));
+      values.add(properties);
+    }
+
+    return values;
+  }
+
+  private List<ConfigurationProperties> toAuthorityConfigurationProperties(Authorities[] authorities) {
+    List<ConfigurationProperties> values = new ArrayList<>();
+    if (authorities == null) {
+      return values;
+    }
+
+    for (Authorities authority : authorities) {
+      if (authority.getGuid() != null) {
+        ConfigurationProperties properties = new ConfigurationProperties();
+        properties.put("guid", authority.getGuid().toString());
+        values.add(properties);
+      }
+    }
+    return values;
+  }
+
+  private boolean shouldWriteN2kConfiguration() {
+    if (this.n2KTwinConfig == null) {
+      return false;
+    }
+    if (this.n2KTwinConfig.isEnable() || this.n2KTwinConfig.isPublishMavlinkDrones()) {
+      return true;
+    }
+    if (this.n2KTwinConfig.getName() != null || this.n2KTwinConfig.getVehicleClass() != null) {
+      return true;
+    }
+    return this.n2KTwinConfig.getTopic() != null && !"/canbus0/n2k/json/#".equals(this.n2KTwinConfig.getTopic());
   }
 }
