@@ -152,20 +152,21 @@ public class TwinManagerConfig extends TwinManagerConfigDTO implements Config, C
       props.put(STATE_ADAPTERS_CONFIG_KEY, new ConfigurationProperties(new LinkedHashMap<>(this.adapterConfig)));
     }
 
-    ConfigurationProperties n2kProps = new ConfigurationProperties();
-    n2kProps.put("enabled", this.n2KTwinConfig.isEnable());
-    n2kProps.put("topic", this.n2KTwinConfig.getTopic());
-    n2kProps.put("name", this.n2KTwinConfig.getName());
-    n2kProps.put("vehicleClass", this.n2KTwinConfig.getVehicleClass());
-    n2kProps.put("publishMavlinkDrones", this.n2KTwinConfig.isPublishMavlinkDrones());
+    if (shouldWriteN2kConfiguration()) {
+      ConfigurationProperties n2kProps = new ConfigurationProperties();
+      n2kProps.put("enabled", this.n2KTwinConfig.isEnable());
+      n2kProps.put("topic", this.n2KTwinConfig.getTopic());
+      n2kProps.put("name", this.n2KTwinConfig.getName());
+      n2kProps.put("vehicleClass", this.n2KTwinConfig.getVehicleClass());
+      n2kProps.put("publishMavlinkDrones", this.n2KTwinConfig.isPublishMavlinkDrones());
 
-    if (n2KTwinConfig.getAis() instanceof Config aisConfiguration) {
-      n2kProps.put("ais", aisConfiguration.toConfigurationProperties());
-    } else if (n2KTwinConfig.getAis() != null) {
-      n2kProps.put("ais", n2KTwinConfig.getAis());
+      if (n2KTwinConfig.getAis() instanceof Config aisConfiguration) {
+        n2kProps.put("ais", aisConfiguration.toConfigurationProperties());
+      } else if (n2KTwinConfig.getAis() != null) {
+        n2kProps.put("ais", n2KTwinConfig.getAis());
+      }
+      props.put("n2k", n2kProps);
     }
-
-    props.put("n2k", n2kProps);
 
     return props;
   }
@@ -238,6 +239,11 @@ public class TwinManagerConfig extends TwinManagerConfigDTO implements Config, C
 
     if (this.mavlink != newConfig.getMavlink()) {
       this.mavlink = newConfig.getMavlink();
+      hasChanged = true;
+    }
+
+    if (this.droneInfo != newConfig.getDroneInfo()) {
+      this.droneInfo = newConfig.getDroneInfo();
       hasChanged = true;
     }
 
@@ -643,5 +649,17 @@ public class TwinManagerConfig extends TwinManagerConfigDTO implements Config, C
     }
 
     return values;
+  }
+  private boolean shouldWriteN2kConfiguration() {
+    if (this.n2KTwinConfig == null) {
+      return false;
+    }
+    if (this.n2KTwinConfig.isEnable() || this.n2KTwinConfig.isPublishMavlinkDrones()) {
+      return true;
+    }
+    if (this.n2KTwinConfig.getName() != null || this.n2KTwinConfig.getVehicleClass() != null) {
+      return true;
+    }
+    return this.n2KTwinConfig.getTopic() != null && !"/canbus0/n2k/json/#".equals(this.n2KTwinConfig.getTopic());
   }
 }
