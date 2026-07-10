@@ -277,10 +277,23 @@ public class SubSystemManager {
   }
 
   private void loadExtensionAgents() {
+    Set<String> allowed = new HashSet<>();
+    for (String entry : System.getProperty("extension.agents.allowed", "").split(",")) {
+      String trimmed = entry.trim();
+      if (!trimmed.isEmpty()) {
+        allowed.add(trimmed);
+      }
+    }
     ServiceLoader<ServerAgentFactory> loader = ServiceLoader.load(ServerAgentFactory.class);
     for (Iterator<ServerAgentFactory> iterator = loader.iterator(); iterator.hasNext(); ) {
       try {
         ServerAgentFactory factory = iterator.next();
+        String factoryClass = factory.getClass().getName();
+        if (!allowed.contains(factoryClass)) {
+          logger.log(ServerLogMessages.MESSAGE_DAEMON_EXTENSION_AGENT_FAILED,
+              factoryClass + " (not listed in -Dextension.agents.allowed; skipped)");
+          continue;
+        }
         Agent agent = factory.create();
         if (agentMap.containsKey(agent.getName())) {
           logger.log(ServerLogMessages.MESSAGE_DAEMON_EXTENSION_AGENT_FAILED,
