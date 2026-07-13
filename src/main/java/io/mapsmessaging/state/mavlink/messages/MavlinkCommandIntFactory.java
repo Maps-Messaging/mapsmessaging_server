@@ -82,6 +82,28 @@ public final class MavlinkCommandIntFactory {
   }
 
 
+  public static MavlinkCommandInt stop(
+      int targetSystem,
+      int targetComponent,
+      int sequence) {
+    MavlinkCommandInt commandInt =
+        baseCommandInt(
+            targetSystem,
+            targetComponent,
+            MAV_FRAME_GLOBAL_RELATIVE_ALT_INT,
+            MAV_CMD_NAV_LOITER_UNLIM,
+            sequence);
+
+    commandInt.setParam1(0.0f);
+    commandInt.setParam2(0.0f);
+    commandInt.setParam3(0.0f);
+    commandInt.setParam4(Float.NaN);
+    commandInt.setLatitude(0);
+    commandInt.setLongitude(0);
+    commandInt.setAltitude(0.0f);
+
+    return commandInt;
+  }
 
   public static MavlinkCommandInt loiterTime(
       int targetSystem,

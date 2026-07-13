@@ -28,7 +28,7 @@ import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.state.MessageHandler;
 import io.mapsmessaging.state.StateLoopProtocol;
-import io.mapsmessaging.state.config.DroneInfo;
+import io.mapsmessaging.state.config.DroneInfoDTO;
 import io.mapsmessaging.state.config.DroneInfoRegistry;
 import io.mapsmessaging.state.config.n2k.N2KTwinConfig;
 import io.mapsmessaging.state.drone.core.TwinManager;
@@ -51,7 +51,7 @@ public class N2kSession implements MessageHandler, Lifecycle {
   private final String namespaceTopicPath;
   private final N2KTwinConfig n2kConfig;
   private final N2kTwinUpdater twinUpdater;
-  private final DroneInfo droneInfo;
+  private final DroneInfoDTO droneInfo;
 
   public N2kSession(@NonNull @NotNull TwinManager twinManager, @NonNull @NotNull N2KTwinConfig n2kConfig, DroneInfoRegistry droneRegistry) {
     this.protocol = SessionHelper.createLoopbackProtocol(this);

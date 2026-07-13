@@ -19,11 +19,14 @@
 
 package io.mapsmessaging.state.mavlink.model.impl.ardupilot;
 
+import io.mapsmessaging.state.mavlink.messages.MavlinkCommandLongFactory;
 import io.mapsmessaging.state.mavlink.model.UxvCommandContext;
 import io.mapsmessaging.state.mavlink.model.UxvModelCommandSet;
 import io.mapsmessaging.state.mavlink.model.UxvOperation;
 import io.mapsmessaging.state.mavlink.model.UxvVehicleType;
 import io.mapsmessaging.state.mavlink.model.impl.AbstractMissionUxvModel;
+
+import java.util.Objects;
 import java.util.Set;
 
 public abstract class GenericArduPilotUxvModel extends AbstractMissionUxvModel {
@@ -32,9 +35,14 @@ public abstract class GenericArduPilotUxvModel extends AbstractMissionUxvModel {
     super(modelName, vehicleType, supportedOperations);
   }
 
+
   @Override
-  public UxvModelCommandSet stop(UxvCommandContext context) {
-    return pauseVehicle(context);
+  public UxvModelCommandSet returnToHome(UxvCommandContext context) {
+    Objects.requireNonNull(context, "context must not be null");
+    return UxvModelCommandSet.of(
+        UxvOperation.RETURN_TO_HOME,
+        getModelName(),
+        MavlinkCommandLongFactory.returnToLaunch(context.targetSystem(), context.targetComponent(), context.sequence()));
   }
 
 }

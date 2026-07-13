@@ -29,7 +29,7 @@ import java.util.UUID;
 
 @Getter
 @Setter
-public class DroneInfo {
+public class DroneInfoDTO {
 
   @Schema(
       description = "Unique drone id"
@@ -65,4 +65,7 @@ public class DroneInfo {
       description = "Task capabilities supported by this known MAVLink source."
   )
   private TaskCapabilities capabilities = new TaskCapabilities();
+
+  @Schema(description = "Action performed when the drone receives a stop command.")
+  private StopActionEnum stopAction;
 }

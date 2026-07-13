@@ -65,6 +65,8 @@ public class MavlinkEventListSender implements AutoCloseable {
     this.completionHandler = Objects.requireNonNull(completionHandler, "completionHandler must not be null");
     this.waitingIndex = -1;
 
+    System.err.println("Command Set: " + commandSet.operation() + " " + commandSet.modelName() + " " + messages.size() + " messages:");
+    System.err.println(messages.get(0).toMavlinkJsonObject());
     logger.log(MAVLINK_EVENT_LIST_SENDER_CREATED, sequenceId, commandSet.operation(), commandSet.modelName(), messages.size());
   }
 

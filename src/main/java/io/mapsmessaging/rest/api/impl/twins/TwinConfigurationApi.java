@@ -23,7 +23,7 @@ import io.mapsmessaging.configuration.ConfigurationProperties;
 import io.mapsmessaging.dto.rest.config.protocol.impl.TakProtocolDTO;
 import io.mapsmessaging.rest.api.impl.BaseRestApi;
 import io.mapsmessaging.rest.responses.StatusResponse;
-import io.mapsmessaging.state.config.DroneInfo;
+import io.mapsmessaging.state.config.DroneInfoDTO;
 import io.mapsmessaging.state.config.MavlinkTwinConfigDTO;
 import io.mapsmessaging.state.config.TwinManagerConfig;
 import io.mapsmessaging.state.config.TwinPublishConfigDTO;
@@ -511,7 +511,7 @@ public class TwinConfigurationApi extends BaseRestApi {
       summary = "List known drone configurations",
       description = "Returns persisted drone metadata used when MAVLink sources create or update drone twins. Runtime drone metadata registries are not reloaded.",
       responses = {
-          @ApiResponse(responseCode = "200", description = "Drone configurations returned", content = @Content(mediaType = "application/json", array = @ArraySchema(schema = @Schema(implementation = DroneInfo.class)))),
+          @ApiResponse(responseCode = "200", description = "Drone configurations returned", content = @Content(mediaType = "application/json", array = @ArraySchema(schema = @Schema(implementation = DroneInfoDTO.class)))),
           @ApiResponse(responseCode = "401", description = "Invalid credentials or unauthorized access", content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))),
           @ApiResponse(responseCode = "403", description = "User is not authorised to access the resource", content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))),
           @ApiResponse(responseCode = "500", description = "Server twin configuration error", content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class)))
@@ -520,7 +520,7 @@ public class TwinConfigurationApi extends BaseRestApi {
   public Response listDrones() {
     try {
       hasAccess(RESOURCE);
-      return ok(store().listDrones().toArray(new DroneInfo[0]));
+      return ok(store().listDrones().toArray(new DroneInfoDTO[0]));
     } catch (WebApplicationException ex) {
       return mapAuthOrRethrow(ex);
     } catch (Exception ex) {
@@ -535,7 +535,7 @@ public class TwinConfigurationApi extends BaseRestApi {
       summary = "Get known drone configuration",
       description = "Returns one persisted drone metadata entry by name.",
       responses = {
-          @ApiResponse(responseCode = "200", description = "Drone configuration returned", content = @Content(mediaType = "application/json", schema = @Schema(implementation = DroneInfo.class))),
+          @ApiResponse(responseCode = "200", description = "Drone configuration returned", content = @Content(mediaType = "application/json", schema = @Schema(implementation = DroneInfoDTO.class))),
           @ApiResponse(responseCode = "401", description = "Invalid credentials or unauthorized access", content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))),
           @ApiResponse(responseCode = "403", description = "User is not authorised to access the resource", content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))),
           @ApiResponse(responseCode = "404", description = "Drone configuration not found", content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))),
@@ -565,10 +565,10 @@ public class TwinConfigurationApi extends BaseRestApi {
       requestBody = @RequestBody(
           description = "Drone metadata configuration to add",
           required = true,
-          content = @Content(mediaType = "application/json", schema = @Schema(implementation = DroneInfo.class))
+          content = @Content(mediaType = "application/json", schema = @Schema(implementation = DroneInfoDTO.class))
       ),
       responses = {
-          @ApiResponse(responseCode = "201", description = "Drone configuration created", content = @Content(mediaType = "application/json", schema = @Schema(implementation = DroneInfo.class))),
+          @ApiResponse(responseCode = "201", description = "Drone configuration created", content = @Content(mediaType = "application/json", schema = @Schema(implementation = DroneInfoDTO.class))),
           @ApiResponse(responseCode = "400", description = "Invalid drone configuration", content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))),
           @ApiResponse(responseCode = "401", description = "Invalid credentials or unauthorized access", content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))),
           @ApiResponse(responseCode = "403", description = "User is not authorised to access the resource", content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))),
@@ -576,7 +576,7 @@ public class TwinConfigurationApi extends BaseRestApi {
           @ApiResponse(responseCode = "500", description = "Unable to save twin configuration", content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class)))
       }
   )
-  public Response createDrone(DroneInfo droneInfo) {
+  public Response createDrone(DroneInfoDTO droneInfo) {
     try {
       hasAccess(RESOURCE);
       store().createDrone(droneInfo);
@@ -603,10 +603,10 @@ public class TwinConfigurationApi extends BaseRestApi {
       requestBody = @RequestBody(
           description = "Drone metadata configuration to persist",
           required = true,
-          content = @Content(mediaType = "application/json", schema = @Schema(implementation = DroneInfo.class))
+          content = @Content(mediaType = "application/json", schema = @Schema(implementation = DroneInfoDTO.class))
       ),
       responses = {
-          @ApiResponse(responseCode = "200", description = "Drone configuration updated", content = @Content(mediaType = "application/json", schema = @Schema(implementation = DroneInfo.class))),
+          @ApiResponse(responseCode = "200", description = "Drone configuration updated", content = @Content(mediaType = "application/json", schema = @Schema(implementation = DroneInfoDTO.class))),
           @ApiResponse(responseCode = "400", description = "Invalid drone configuration", content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))),
           @ApiResponse(responseCode = "401", description = "Invalid credentials or unauthorized access", content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))),
           @ApiResponse(responseCode = "403", description = "User is not authorised to access the resource", content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))),
@@ -614,7 +614,7 @@ public class TwinConfigurationApi extends BaseRestApi {
           @ApiResponse(responseCode = "500", description = "Unable to save twin configuration", content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class)))
       }
   )
-  public Response updateDrone(@PathParam("name") String name, DroneInfo droneInfo) {
+  public Response updateDrone(@PathParam("name") String name, DroneInfoDTO droneInfo) {
     try {
       hasAccess(RESOURCE);
       store().updateDrone(name, droneInfo);

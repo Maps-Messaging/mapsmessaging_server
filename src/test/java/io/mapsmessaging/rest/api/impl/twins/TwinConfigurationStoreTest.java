@@ -21,7 +21,7 @@ package io.mapsmessaging.rest.api.impl.twins;
 
 import io.mapsmessaging.configuration.ConfigurationProperties;
 import io.mapsmessaging.dto.rest.config.protocol.impl.TakProtocolDTO;
-import io.mapsmessaging.state.config.DroneInfo;
+import io.mapsmessaging.state.config.DroneInfoDTO;
 import io.mapsmessaging.state.config.MavlinkTwinConfigDTO;
 import io.mapsmessaging.state.config.TwinManagerConfig;
 import io.mapsmessaging.state.config.TwinPublishConfigDTO;
@@ -169,8 +169,8 @@ class TwinConfigurationStoreTest {
   void drone_createUpdateDelete_persistsEachMutation() throws IOException {
     SavingTwinManagerConfig config = newConfig();
     TwinConfigurationStore store = new TwinConfigurationStore(config);
-    DroneInfo created = drone("alpha");
-    DroneInfo updated = drone("alpha");
+    DroneInfoDTO created = drone("alpha");
+    DroneInfoDTO updated = drone("alpha");
     updated.setUuid(UUID.randomUUID());
 
     store.createDrone(created);
@@ -257,8 +257,8 @@ class TwinConfigurationStoreTest {
     return config;
   }
 
-  private DroneInfo drone(String name) {
-    DroneInfo droneInfo = new DroneInfo();
+  private DroneInfoDTO drone(String name) {
+    DroneInfoDTO droneInfo = new DroneInfoDTO();
     droneInfo.setName(name);
     droneInfo.setUuid(UUID.randomUUID());
     return droneInfo;

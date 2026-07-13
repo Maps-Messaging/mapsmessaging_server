@@ -111,7 +111,7 @@ public class TwinManagerConfigDTO extends BaseManagerConfigDTO {
   @Schema(
       description = "Configuration on each drone"
   )
-  protected List<DroneInfo> droneInfo = new ArrayList<>();
+  protected List<DroneInfoDTO> droneInfo = new ArrayList<>();
 
 
   protected N2KTwinConfig n2KTwinConfig;

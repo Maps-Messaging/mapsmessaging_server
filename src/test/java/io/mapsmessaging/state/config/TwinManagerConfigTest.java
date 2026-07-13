@@ -279,8 +279,8 @@ class TwinManagerConfigTest {
     return properties;
   }
 
-  private DroneInfo droneInfo(String name, UUID uuid) {
-    DroneInfo droneInfo = new DroneInfo();
+  private DroneInfoDTO droneInfo(String name, UUID uuid) {
+    DroneInfoDTO droneInfo = new DroneInfoDTO();
     droneInfo.setName(name);
     droneInfo.setUuid(uuid);
     droneInfo.setCapabilities(new TaskCapabilities());

@@ -21,7 +21,7 @@ package io.mapsmessaging.rest.api.impl.twins;
 
 import io.mapsmessaging.configuration.ConfigurationProperties;
 import io.mapsmessaging.dto.rest.config.protocol.impl.TakProtocolDTO;
-import io.mapsmessaging.state.config.DroneInfo;
+import io.mapsmessaging.state.config.DroneInfoDTO;
 import io.mapsmessaging.state.config.MavlinkTwinConfigDTO;
 import io.mapsmessaging.state.config.TwinManagerConfig;
 import io.mapsmessaging.state.config.TwinPublishConfigDTO;
@@ -167,17 +167,17 @@ class TwinConfigurationStore {
     config.save();
   }
 
-  List<DroneInfo> listDrones() {
+  List<DroneInfoDTO> listDrones() {
     return config.getDroneInfo();
   }
 
-  Optional<DroneInfo> getDrone(String name) {
+  Optional<DroneInfoDTO> getDrone(String name) {
     return config.getDroneInfo().stream()
         .filter(entry -> name.equals(entry.getName()))
         .findFirst();
   }
 
-  void createDrone(DroneInfo droneInfo) throws IOException {
+  void createDrone(DroneInfoDTO droneInfo) throws IOException {
     validateDrone(droneInfo);
     if (getDrone(droneInfo.getName()).isPresent()) {
       throw new TwinConfigurationException("Drone configuration already exists: " + droneInfo.getName(), 409);
@@ -186,14 +186,14 @@ class TwinConfigurationStore {
     config.save();
   }
 
-  void updateDrone(String name, DroneInfo droneInfo) throws IOException {
+  void updateDrone(String name, DroneInfoDTO droneInfo) throws IOException {
     validateName(name, "name");
     validateDrone(droneInfo);
     if (!name.equals(droneInfo.getName())) {
       throw new TwinConfigurationException("Drone configuration name cannot be changed", 400);
     }
 
-    List<DroneInfo> droneInfos = config.getDroneInfo();
+    List<DroneInfoDTO> droneInfos = config.getDroneInfo();
     for (int index = 0; index < droneInfos.size(); index++) {
       if (name.equals(droneInfos.get(index).getName())) {
         droneInfos.set(index, droneInfo);
@@ -320,7 +320,7 @@ class TwinConfigurationStore {
     }
   }
 
-  private void validateDrone(DroneInfo droneInfo) {
+  private void validateDrone(DroneInfoDTO droneInfo) {
     if (droneInfo == null) {
       throw new TwinConfigurationException("Drone configuration is required", 400);
     }

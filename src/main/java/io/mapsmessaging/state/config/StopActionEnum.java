@@ -19,22 +19,8 @@
 
 package io.mapsmessaging.state.config;
 
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-
-public class DroneInfoRegistry {
-
-  private final Map<String, DroneInfoDTO> droneInfoMap;
-
-  public DroneInfoRegistry(List<DroneInfoDTO> list) {
-    droneInfoMap = new ConcurrentHashMap<>();
-    for(DroneInfoDTO droneInfo : list) {
-      droneInfoMap.put(droneInfo.getName(), droneInfo);
-    }
-  }
-
-  public DroneInfoDTO getDroneInfo(String droneId) {
-    return droneInfoMap.get(droneId);
-  }
+public enum StopActionEnum {
+  STOP,
+  ORBIT,
+  RETURN_TO_HOME;
 }

@@ -20,6 +20,7 @@
 package io.mapsmessaging.state.drone.drone;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import io.mapsmessaging.state.config.StopActionEnum;
 import io.mapsmessaging.state.config.capability.TaskCapabilities;
 import io.mapsmessaging.state.drone.core.EntityTwin;
 import io.mapsmessaging.state.drone.core.TwinType;
@@ -189,6 +190,9 @@ public class DroneTwin extends EntityTwin {
 
   @Schema(description = "Battery capacity in hours", example = "48", nullable = true)
   private double batteryCapacityHours;
+
+  private StopActionEnum stopAction;
+
 
   public DroneTwin(String twinId) {
     this(twinId, null);

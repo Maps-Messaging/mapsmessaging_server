@@ -149,13 +149,11 @@ public abstract class AbstractMissionUxvModel extends AbstractUxvModel {
     );
   }
 
+  @Override
   public UxvModelCommandSet stop(UxvCommandContext context) {
-    Objects.requireNonNull(context, "context must not be null");
-    return UxvModelCommandSet.of(
-        UxvOperation.STOP,
-        getModelName(),
-        pauseCommand(context)
-    );
+    java.util.Objects.requireNonNull(context, "context must not be null");
+    MavlinkMessage message = MavlinkCommandIntFactory.stop(context.targetSystem(), context.targetComponent(), context.sequence());
+    return UxvModelCommandSet.of(UxvOperation.STOP, getModelName(), message);
   }
 
   public UxvModelCommandSet pauseVehicle(UxvCommandContext context) {

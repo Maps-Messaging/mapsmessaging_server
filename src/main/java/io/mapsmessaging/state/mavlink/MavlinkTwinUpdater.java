@@ -23,7 +23,8 @@ import io.mapsmessaging.dto.rest.config.protocol.impl.MavlinkKnownSourceDTO;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.mavlink.ProcessedFrame;
-import io.mapsmessaging.state.config.DroneInfo;
+import io.mapsmessaging.state.config.DroneInfoDTO;
+import io.mapsmessaging.state.config.StopActionEnum;
 import io.mapsmessaging.state.config.VehicleClass;
 import io.mapsmessaging.state.drone.core.EntityTwin;
 import io.mapsmessaging.state.drone.core.TwinManager;
@@ -69,7 +70,7 @@ public class MavlinkTwinUpdater {
     twinManager.addObserver(droneMonitor);
   }
 
-  public void updateTwinState(@NonNull @NotNull ProcessedFrame env, @NonNull @NotNull MavlinkPacket packet, @NonNull @NotNull TwinUpdateContext context, @NonNull @NotNull MavlinkKnownSourceDTO knownSource, DroneInfo droneInfo) {
+  public void updateTwinState(@NonNull @NotNull ProcessedFrame env, @NonNull @NotNull MavlinkPacket packet, @NonNull @NotNull TwinUpdateContext context, @NonNull @NotNull MavlinkKnownSourceDTO knownSource, DroneInfoDTO droneInfo) {
     String twinId = buildTwinId(env, knownSource);
     EntityTwin entityTwin = twinManager.getTwin(twinId).orElseGet(() -> createTwin(twinId, env, context, knownSource, droneInfo));
     twinManager.updateTwin(
@@ -164,7 +165,7 @@ public class MavlinkTwinUpdater {
     }
   }
 
-  private EntityTwin createTwin(String twinId, ProcessedFrame env, TwinUpdateContext context, MavlinkKnownSourceDTO knownSource, DroneInfo droneInfo) {
+  private EntityTwin createTwin(String twinId, ProcessedFrame env, TwinUpdateContext context, MavlinkKnownSourceDTO knownSource, DroneInfoDTO droneInfo) {
     DroneTwin droneTwin = new DroneTwin(twinId, droneInfo.getUuid());
     droneTwin.setVehicleClass(resolveVehicleClass(knownSource));
     droneTwin.setDescriptionString(resolveDescription(twinId, env, knownSource));
@@ -173,7 +174,12 @@ public class MavlinkTwinUpdater {
     droneTwin.setSystemId(env.getFrame().getSystemId());
     droneTwin.setComponentId(env.getFrame().getComponentId());
     droneTwin.setModelName(droneInfo.getModelName());
-
+    if(droneInfo.getStopAction() != null) {
+      droneTwin.setStopAction(droneInfo.getStopAction());
+    }
+    else{
+      droneTwin.setStopAction(StopActionEnum.STOP);
+    }
     if (droneInfo.getCapabilities() != null) {
       droneTwin.setCapabilities(droneInfo.getCapabilities());
       droneTwin.setDescription(droneInfo.getDescription());

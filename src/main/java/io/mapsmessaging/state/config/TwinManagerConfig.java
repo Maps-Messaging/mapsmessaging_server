@@ -329,8 +329,8 @@ public class TwinManagerConfig extends TwinManagerConfigDTO implements Config, C
     return knownSource;
   }
 
-  private List<DroneInfo> parseDroneInfos(Object properties) {
-    List<DroneInfo> droneInfos = new ArrayList<>();
+  private List<DroneInfoDTO> parseDroneInfos(Object properties) {
+    List<DroneInfoDTO> droneInfos = new ArrayList<>();
 
     if (!(properties instanceof List<?> entries)) {
       if (properties instanceof ConfigurationProperties sourceProps) {
@@ -348,8 +348,8 @@ public class TwinManagerConfig extends TwinManagerConfigDTO implements Config, C
     return droneInfos;
   }
 
-  private DroneInfo parseDroneInfo(ConfigurationProperties properties) {
-    DroneInfo droneInfo = new DroneInfo();
+  private DroneInfoDTO parseDroneInfo(ConfigurationProperties properties) {
+    DroneInfoDTO droneInfo = new DroneInfoDTO();
 
     String uuidString = properties.getProperty("uuid", null);
     if (uuidString != null) {
@@ -360,7 +360,7 @@ public class TwinManagerConfig extends TwinManagerConfigDTO implements Config, C
     droneInfo.setBatteryCapacityHours(properties.getDoubleProperty("batteryCapacityHours", droneInfo.getBatteryCapacityHours()));
     droneInfo.setName(properties.getProperty("name", droneInfo.getName()));
     droneInfo.setModelName(properties.getProperty("modelName", droneInfo.getModelName()));
-
+    droneInfo.setStopAction(parseStopAction(properties.getProperty("stopAction", null), droneInfo.getStopAction()));
     if (properties.get("description") instanceof ConfigurationProperties descriptionProperties) {
       droneInfo.setDescription(descriptionProperties.getMap());
     } else if (properties.get("description") instanceof Map<?, ?> descriptionMap) {
@@ -371,10 +371,18 @@ public class TwinManagerConfig extends TwinManagerConfigDTO implements Config, C
     return droneInfo;
   }
 
-  private List<ConfigurationProperties> toDroneInfoConfigurationProperties(List<DroneInfo> droneInfos) {
+  private StopActionEnum parseStopAction(String value, StopActionEnum defaultValue) {
+    if (value == null || value.isBlank()) {
+      return defaultValue;
+    }
+
+    return StopActionEnum.valueOf(value.trim().toUpperCase());
+  }
+
+  private List<ConfigurationProperties> toDroneInfoConfigurationProperties(List<DroneInfoDTO> droneInfos) {
     List<ConfigurationProperties> values = new ArrayList<>();
 
-    for (DroneInfo droneInfo : droneInfos) {
+    for (DroneInfoDTO droneInfo : droneInfos) {
       ConfigurationProperties properties = new ConfigurationProperties();
       properties.put("name", droneInfo.getName());
 
