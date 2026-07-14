@@ -103,7 +103,6 @@ public class SticklebackArdupilotUsvModel extends GenericArduPilotUxvModel imple
               request.position(),
               request.radiusMeters(),
               duration,
-              Float.NaN,
               context.sequence());
     }
 
@@ -156,29 +155,17 @@ public class SticklebackArdupilotUsvModel extends GenericArduPilotUxvModel imple
         context.targetComponent(),
         sequence,
         item.position(),
-        duration.toSeconds(),
+        duration,
         radiusMeters);
   }
 
   @Override
   protected void validatePlanItem(int index, PlanItem item, List<PlanValidationIssue> issues) {
-    if ((item.type() == PlanItemType.WAYPOINT || item.type() == PlanItemType.LOITER) && item.position() == null) {
-      issues.add(new PlanValidationIssue(UxvOperation.BUILD_MISSION, "Mission item " + index + " requires a position"));
-    }
-
     if (item.type() == PlanItemType.ORBIT || item.type() == PlanItemType.HOLD_POSITION) {
       issues.add(
           new PlanValidationIssue(
               UxvOperation.BUILD_MISSION,
               "Mission item " + index + " type " + item.type() + " is not supported by this Stickleback ArduPilot USV model"));
-    }
-
-    if (item.radiusMeters() != null && !isPositiveOrZero(item.radiusMeters())) {
-      issues.add(new PlanValidationIssue(UxvOperation.BUILD_MISSION, "Mission item " + index + " radiusMeters must be finite and must not be negative"));
-    }
-
-    if (item.holdDuration() != null && item.holdDuration().isNegative()) {
-      issues.add(new PlanValidationIssue(UxvOperation.BUILD_MISSION, "Mission item " + index + " holdDuration must not be negative"));
     }
 
     if (item.type() == PlanItemType.LOITER && item.yawDegrees() != null) {

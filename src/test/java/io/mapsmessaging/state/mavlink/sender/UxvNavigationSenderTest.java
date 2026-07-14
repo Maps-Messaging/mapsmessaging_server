@@ -36,10 +36,16 @@ import static org.mockito.Mockito.when;
 
 import io.mapsmessaging.state.drone.model.GeoPosition;
 import io.mapsmessaging.state.mavlink.messages.MavlinkMessage;
+import io.mapsmessaging.state.mavlink.messages.MavlinkMissionItemInt;
+import io.mapsmessaging.state.mavlink.messages.MavlinkMissionItemIntFactory;
+import io.mapsmessaging.state.mavlink.model.MissionPlan;
+import io.mapsmessaging.state.mavlink.model.PlanItem;
+import io.mapsmessaging.state.mavlink.model.PlanItemType;
 import io.mapsmessaging.state.mavlink.model.UxvCommandContext;
 import io.mapsmessaging.state.mavlink.model.UxvModelCommandSet;
 import io.mapsmessaging.state.mavlink.model.UxvNavigationPlan;
 import io.mapsmessaging.state.mavlink.model.UxvOperation;
+import io.mapsmessaging.state.mavlink.model.impl.uav.GenericPx4FixedWingUavModel;
 import io.mapsmessaging.state.mavlink.model.impl.ugv.GenericPx4UgvModel;
 import io.mapsmessaging.state.mavlink.packet.CommandAckPacket;
 import io.mapsmessaging.state.mavlink.packet.MissionAckPacket;
@@ -72,7 +78,7 @@ class UxvNavigationSenderTest {
 
     MavlinkEventSender transport = mock(MavlinkEventSender.class);
     MavlinkMessage missionCount = mock(MavlinkMessage.class);
-    UxvModelCommandSet uploadCommandSet = uploadCommandSet(plan, missionCount);
+    UxvModelCommandSet uploadCommandSet = uploadCommandSet(plan.missionPhase().getFirst(), missionCount);
     List<MavlinkSendResult> missionResults = new ArrayList<>();
     List<MavlinkSendResult> startResults = new ArrayList<>();
     AtomicReference<MavlinkEventListSender> startSender = new AtomicReference<>();
@@ -114,7 +120,8 @@ class UxvNavigationSenderTest {
 
     MavlinkMessage firstWaypoint = uploadCommandSet.messages().get(1);
     MavlinkMessage secondWaypoint = uploadCommandSet.messages().get(2);
-    MavlinkMessage startMission = plan.postMissionUploadPhase().getFirst().messages().getFirst();
+    MavlinkMessage startMission =
+        plan.postMissionUploadPhase().getFirst().messages().getFirst();
 
     InOrder inOrder = inOrder(transport);
     inOrder.verify(transport).send(missionCount);
@@ -136,6 +143,109 @@ class UxvNavigationSenderTest {
   }
 
   @Test
+  void generatedFixedWingRepeatMissionUploadsEveryExactItemBeforeMissionStart() throws Exception {
+    GenericPx4FixedWingUavModel model =
+        new GenericPx4FixedWingUavModel();
+
+    MissionPlan missionPlan =
+        new MissionPlan(
+            List.of(
+                waypoint(
+                    new GeoPosition(-33.8688d, 151.2093d, 120.0d, null),
+                    Duration.ZERO,
+                    null),
+                waypoint(
+                    new GeoPosition(-33.8695d, 151.2102d, 130.0d, null),
+                    Duration.ofSeconds(10),
+                    60.0d)),
+            2);
+
+    UxvModelCommandSet generatedMission =
+        model.buildMission(context(), missionPlan);
+    UxvModelCommandSet startMission =
+        model.startMission(context());
+
+    assertEquals(3, generatedMission.messages().size());
+
+    MavlinkMissionItemInt first =
+        (MavlinkMissionItemInt) generatedMission.messages().get(0);
+    MavlinkMissionItemInt second =
+        (MavlinkMissionItemInt) generatedMission.messages().get(1);
+    MavlinkMissionItemInt jump =
+        (MavlinkMissionItemInt) generatedMission.messages().get(2);
+
+    assertEquals(MavlinkMissionItemIntFactory.MAV_CMD_NAV_WAYPOINT, first.getCommand());
+    assertEquals(0, first.getMissionSequence());
+    assertEquals(MavlinkMissionItemIntFactory.MAV_CMD_NAV_LOITER_TIME, second.getCommand());
+    assertEquals(1, second.getMissionSequence());
+    assertEquals(10.0f, second.getParam1());
+    assertEquals(60.0f, second.getParam3());
+    assertEquals(MavlinkMissionItemIntFactory.MAV_CMD_DO_JUMP, jump.getCommand());
+    assertEquals(2, jump.getMissionSequence());
+    assertEquals(0.0f, jump.getParam1());
+    assertEquals(1.0f, jump.getParam2());
+
+    MavlinkEventSender transport = mock(MavlinkEventSender.class);
+    MavlinkMessage missionCount = mock(MavlinkMessage.class);
+    UxvModelCommandSet uploadCommandSet =
+        uploadCommandSet(generatedMission, missionCount);
+    List<MavlinkSendResult> missionResults = new ArrayList<>();
+    List<MavlinkSendResult> startResults = new ArrayList<>();
+    AtomicReference<MavlinkEventListSender> startSender = new AtomicReference<>();
+
+    MavlinkEventListSender missionSender =
+        new MavlinkEventListSender(
+            uploadCommandSet,
+            transport,
+            new MavlinkMissionAcknowledgementHandler(
+                uploadCommandSet.messages(),
+                1,
+                generatedMission.messages().size(),
+                LOCAL_SYSTEM,
+                LOCAL_COMPONENT,
+                MAV_MISSION_TYPE_MISSION),
+            result -> {
+              missionResults.add(result);
+              if (!result.isSuccess()) {
+                return;
+              }
+
+              MavlinkEventListSender sender =
+                  new MavlinkEventListSender(
+                      startMission,
+                      transport,
+                      new MavlinkCommandAcknowledgementHandler(),
+                      startResults::add);
+              startSender.set(sender);
+              sender.start();
+            });
+
+    missionSender.start();
+    missionSender.onMavlinkMessage(requestInt(0));
+    missionSender.onMavlinkMessage(requestInt(1));
+    missionSender.onMavlinkMessage(requestInt(2));
+    missionSender.onMavlinkMessage(acceptedMissionAck());
+
+    InOrder inOrder = inOrder(transport);
+    inOrder.verify(transport).send(missionCount);
+    inOrder.verify(transport).send(first);
+    inOrder.verify(transport).send(second);
+    inOrder.verify(transport).send(jump);
+    inOrder.verify(transport).send(startMission.messages().getFirst());
+
+    assertEquals(1, missionResults.size());
+    assertEquals(SUCCESS, missionResults.getFirst().status());
+    assertNotNull(startSender.get());
+    assertTrue(startResults.isEmpty());
+
+    startSender.get().onMavlinkMessage(acceptedCommandAck());
+
+    assertEquals(1, startResults.size());
+    assertEquals(SUCCESS, startResults.getFirst().status());
+    verifyNoMoreInteractions(transport);
+  }
+
+  @Test
   void rejectedMissionUploadDoesNotStartMission() throws Exception {
     GenericPx4UgvModel model = new GenericPx4UgvModel();
     UxvNavigationPlan plan =
@@ -148,7 +258,8 @@ class UxvNavigationSenderTest {
 
     MavlinkEventSender transport = mock(MavlinkEventSender.class);
     MavlinkMessage missionCount = mock(MavlinkMessage.class);
-    UxvModelCommandSet uploadCommandSet = uploadCommandSet(plan, missionCount);
+    UxvModelCommandSet uploadCommandSet =
+        uploadCommandSet(plan.missionPhase().getFirst(), missionCount);
     List<MavlinkSendResult> missionResults = new ArrayList<>();
     AtomicReference<MavlinkEventListSender> startSender = new AtomicReference<>();
 
@@ -180,7 +291,8 @@ class UxvNavigationSenderTest {
     missionSender.start();
     missionSender.onMavlinkMessage(rejectedMissionAck("INVALID_SEQUENCE"));
 
-    MavlinkMessage startMission = plan.postMissionUploadPhase().getFirst().messages().getFirst();
+    MavlinkMessage startMission =
+        plan.postMissionUploadPhase().getFirst().messages().getFirst();
 
     verify(transport).send(missionCount);
     verify(transport, never()).send(startMission);
@@ -195,8 +307,8 @@ class UxvNavigationSenderTest {
   }
 
   private static UxvModelCommandSet uploadCommandSet(
-      UxvNavigationPlan plan, MavlinkMessage missionCount) {
-    UxvModelCommandSet missionCommandSet = plan.missionPhase().getFirst();
+      UxvModelCommandSet missionCommandSet,
+      MavlinkMessage missionCount) {
     List<MavlinkMessage> uploadMessages =
         new ArrayList<>(missionCommandSet.messages().size() + 1);
 
@@ -207,6 +319,21 @@ class UxvNavigationSenderTest {
         UxvOperation.BUILD_MISSION,
         missionCommandSet.modelName(),
         uploadMessages);
+  }
+
+  private static PlanItem waypoint(
+      GeoPosition position,
+      Duration holdDuration,
+      Double radiusMeters) {
+    return new PlanItem(
+        PlanItemType.WAYPOINT,
+        position,
+        holdDuration,
+        radiusMeters,
+        null,
+        null,
+        null,
+        null);
   }
 
   private static UxvCommandContext context() {

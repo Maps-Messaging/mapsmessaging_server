@@ -20,3 +20,4 @@
 io.mapsmessaging.state.mavlink.model.impl.uav.GenericPx4UavModel
 io.mapsmessaging.state.mavlink.model.impl.ugv.GenericPx4UgvModel
 io.mapsmessaging.state.mavlink.model.impl.usv.SticklebackArdupilotUsvModel
+io.mapsmessaging.state.mavlink.model.impl.uav.GenericPx4FixedWingUavModel

@@ -82,23 +82,11 @@ public class GenericPx4UgvModel extends GenericPx4UxvModel implements UgvModel {
 
   @Override
   protected void validatePlanItem(int index, PlanItem item, List<PlanValidationIssue> issues) {
-    if (item.type() == PlanItemType.WAYPOINT && item.position() == null) {
-      issues.add(new PlanValidationIssue(UxvOperation.BUILD_MISSION, "Mission item " + index + " requires a position"));
-    }
-
     if (item.type() == PlanItemType.LOITER || item.type() == PlanItemType.ORBIT || item.type() == PlanItemType.HOLD_POSITION) {
       issues.add(
           new PlanValidationIssue(
               UxvOperation.BUILD_MISSION,
               "Mission item " + index + " type " + item.type() + " is not supported by this PX4 UGV model"));
-    }
-
-    if (item.radiusMeters() != null && !isPositiveOrZero(item.radiusMeters())) {
-      issues.add(new PlanValidationIssue(UxvOperation.BUILD_MISSION, "Mission item " + index + " radiusMeters must be finite and must not be negative"));
-    }
-
-    if (item.holdDuration() != null && item.holdDuration().isNegative()) {
-      issues.add(new PlanValidationIssue(UxvOperation.BUILD_MISSION, "Mission item " + index + " holdDuration must not be negative"));
     }
 
     if (item.speedMetersPerSecond() != null) {
@@ -113,4 +101,5 @@ public class GenericPx4UgvModel extends GenericPx4UxvModel implements UgvModel {
       issues.add(new PlanValidationIssue(UxvOperation.BUILD_MISSION, "Mission item " + index + " depthMeters is not valid for a UGV model"));
     }
   }
+
 }

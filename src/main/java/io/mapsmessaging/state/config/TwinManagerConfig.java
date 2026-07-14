@@ -360,7 +360,26 @@ public class TwinManagerConfig extends TwinManagerConfigDTO implements Config, C
     droneInfo.setBatteryCapacityHours(properties.getDoubleProperty("batteryCapacityHours", droneInfo.getBatteryCapacityHours()));
     droneInfo.setName(properties.getProperty("name", droneInfo.getName()));
     droneInfo.setModelName(properties.getProperty("modelName", droneInfo.getModelName()));
-    droneInfo.setStopAction(parseStopAction(properties.getProperty("stopAction", null), droneInfo.getStopAction()));
+
+    StopActionEnum legacyStopAction =
+        parseTerminalAction(
+            properties.getProperty("stopAction", null),
+            droneInfo.getCancelAction());
+
+    droneInfo.setCancelAction(
+        parseTerminalAction(
+            properties.getProperty("cancelAction", null),
+            legacyStopAction));
+
+    droneInfo.setMissionEndAction(
+        parseTerminalAction(
+            properties.getProperty("missionEndAction", null),
+            droneInfo.getMissionEndAction()));
+
+    droneInfo.setMissionTimeoutAction(
+        parseTerminalAction(
+            properties.getProperty("missionTimeoutAction", null),
+            droneInfo.getMissionTimeoutAction()));
     if (properties.get("description") instanceof ConfigurationProperties descriptionProperties) {
       droneInfo.setDescription(descriptionProperties.getMap());
     } else if (properties.get("description") instanceof Map<?, ?> descriptionMap) {
@@ -371,7 +390,7 @@ public class TwinManagerConfig extends TwinManagerConfigDTO implements Config, C
     return droneInfo;
   }
 
-  private StopActionEnum parseStopAction(String value, StopActionEnum defaultValue) {
+  private StopActionEnum parseTerminalAction(String value, StopActionEnum defaultValue) {
     if (value == null || value.isBlank()) {
       return defaultValue;
     }
@@ -392,6 +411,18 @@ public class TwinManagerConfig extends TwinManagerConfigDTO implements Config, C
 
       if (droneInfo.getModelName() != null) {
         properties.put("modelName", droneInfo.getModelName());
+      }
+
+      if (droneInfo.getCancelAction() != null) {
+        properties.put("cancelAction", droneInfo.getCancelAction().name());
+      }
+
+      if (droneInfo.getMissionEndAction() != null) {
+        properties.put("missionEndAction", droneInfo.getMissionEndAction().name());
+      }
+
+      if (droneInfo.getMissionTimeoutAction() != null) {
+        properties.put("missionTimeoutAction", droneInfo.getMissionTimeoutAction().name());
       }
 
       properties.put("batteryCapacityAh", droneInfo.getBatteryCapacityAh());

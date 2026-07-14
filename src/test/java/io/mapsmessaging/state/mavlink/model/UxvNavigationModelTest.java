@@ -19,21 +19,18 @@
 
 package io.mapsmessaging.state.mavlink.model;
 
-import static org.junit.Assert.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import io.mapsmessaging.state.drone.model.GeoPosition;
-import io.mapsmessaging.state.mavlink.model.UxvCommandContext;
-import io.mapsmessaging.state.mavlink.model.UxvModel;
-import io.mapsmessaging.state.mavlink.model.UxvModelCommandSet;
-import io.mapsmessaging.state.mavlink.model.UxvNavigationPlan;
-import io.mapsmessaging.state.mavlink.model.UxvOperation;
+import io.mapsmessaging.state.mavlink.messages.MavlinkMissionItemInt;
+import io.mapsmessaging.state.mavlink.messages.MavlinkMissionItemIntFactory;
 import io.mapsmessaging.state.mavlink.model.impl.AbstractMissionUxvModel;
+import io.mapsmessaging.state.mavlink.model.impl.uav.GenericPx4FixedWingUavModel;
 import io.mapsmessaging.state.mavlink.model.impl.uav.GenericPx4UavModel;
 import io.mapsmessaging.state.mavlink.model.impl.ugv.GenericPx4UgvModel;
 import io.mapsmessaging.state.mavlink.model.impl.usv.SticklebackArdupilotUsvModel;
@@ -51,62 +48,121 @@ class UxvNavigationModelTest {
   @Test
   void ugvBuildsNavigationPlanWithoutAltitude() {
     GenericPx4UgvModel model = new GenericPx4UgvModel();
-    List<GeoPosition> waypoints = List.of(
-        position(-33.8688, 151.2093),
-        position(-33.8695, 151.2102));
+    List<GeoPosition> waypoints =
+        List.of(
+            position(-33.8688, 151.2093),
+            position(-33.8695, 151.2102));
     Duration duration = Duration.ofMinutes(3);
 
     UxvNavigationPlan plan = model.navigate(context(), waypoints, duration);
 
-    assertNavigationPlan(model, plan, waypoints.size(), duration);
+    assertNavigationPlan(
+        model,
+        plan,
+        waypoints,
+        duration,
+        UxvOperation.PAUSE_VEHICLE,
+        MavlinkMissionItemIntFactory.MAV_FRAME_GLOBAL_RELATIVE_ALT_INT);
   }
 
   @Test
   void usvBuildsNavigationPlanWithoutAltitude() {
     SticklebackArdupilotUsvModel model = new SticklebackArdupilotUsvModel();
-    List<GeoPosition> waypoints = List.of(
-        position(59.434079, 24.747487),
-        position(59.434550, 24.748200));
+    List<GeoPosition> waypoints =
+        List.of(
+            position(59.434079, 24.747487),
+            position(59.434550, 24.748200));
 
     UxvNavigationPlan plan = model.navigate(context(), waypoints, null);
 
-    assertNavigationPlan(model, plan, waypoints.size(), Duration.ZERO);
+    assertNavigationPlan(
+        model,
+        plan,
+        waypoints,
+        Duration.ZERO,
+        UxvOperation.STOP,
+        MavlinkMissionItemIntFactory.MAV_FRAME_GLOBAL_RELATIVE_ALT_INT);
     assertFalse(plan.hasTimeout());
   }
 
   @Test
   void uavBuildsNavigationPlanWithMslAltitude() {
     GenericPx4UavModel model = new GenericPx4UavModel();
-    List<GeoPosition> waypoints = List.of(
-        new GeoPosition(-33.8688, 151.2093, 120.0, null),
-        new GeoPosition(-33.8695, 151.2102, 125.0, null));
+    List<GeoPosition> waypoints =
+        List.of(
+            new GeoPosition(-33.8688, 151.2093, 120.0, null),
+            new GeoPosition(-33.8695, 151.2102, 125.0, null));
 
-    UxvNavigationPlan plan = model.navigate(context(), waypoints, Duration.ofSeconds(90));
+    UxvNavigationPlan plan =
+        model.navigate(context(), waypoints, Duration.ofSeconds(90));
 
-    assertNavigationPlan(model, plan, waypoints.size(), Duration.ofSeconds(90));
+    assertNavigationPlan(
+        model,
+        plan,
+        waypoints,
+        Duration.ofSeconds(90),
+        UxvOperation.PAUSE_VEHICLE,
+        MavlinkMissionItemIntFactory.MAV_FRAME_GLOBAL_INT);
   }
 
   @Test
   void uavBuildsNavigationPlanWithAglAltitude() {
     GenericPx4UavModel model = new GenericPx4UavModel();
-    List<GeoPosition> waypoints = List.of(
-        new GeoPosition(-33.8688, 151.2093, null, 40.0),
-        new GeoPosition(-33.8695, 151.2102, null, 45.0));
+    List<GeoPosition> waypoints =
+        List.of(
+            new GeoPosition(-33.8688, 151.2093, null, 40.0),
+            new GeoPosition(-33.8695, 151.2102, null, 45.0));
 
-    UxvNavigationPlan plan = model.navigate(context(), waypoints, Duration.ZERO);
+    UxvNavigationPlan plan =
+        model.navigate(context(), waypoints, Duration.ZERO);
 
-    assertNavigationPlan(model, plan, waypoints.size(), Duration.ZERO);
+    assertNavigationPlan(
+        model,
+        plan,
+        waypoints,
+        Duration.ZERO,
+        UxvOperation.PAUSE_VEHICLE,
+        MavlinkMissionItemIntFactory.MAV_FRAME_GLOBAL_TERRAIN_ALT_INT);
     assertFalse(plan.hasTimeout());
+  }
+
+  @Test
+  void fixedWingNavigateBuildsNormalWaypointsBecauseConveniencePathHasNoPerPointHold() {
+    GenericPx4FixedWingUavModel model =
+        new GenericPx4FixedWingUavModel();
+    List<GeoPosition> waypoints =
+        List.of(
+            new GeoPosition(-33.8688, 151.2093, 120.0, null),
+            new GeoPosition(-33.8695, 151.2102, 130.0, null));
+
+    UxvNavigationPlan plan =
+        model.navigate(context(), waypoints, Duration.ofMinutes(2));
+
+    assertNavigationPlan(
+        model,
+        plan,
+        waypoints,
+        Duration.ofMinutes(2),
+        UxvOperation.PAUSE_VEHICLE,
+        MavlinkMissionItemIntFactory.MAV_FRAME_GLOBAL_INT);
+
+    for (var message : plan.missionPhase().getFirst().messages()) {
+      assertEquals(
+          MavlinkMissionItemIntFactory.MAV_CMD_NAV_WAYPOINT,
+          message.getCommand());
+    }
   }
 
   @Test
   void navigateRejectsNullContext() {
     assertThrows(
         NullPointerException.class,
-        () -> new GenericPx4UgvModel().navigate(
-            null,
-            List.of(position(-33.8688, 151.2093)),
-            Duration.ZERO));
+        () ->
+            new GenericPx4UgvModel()
+                .navigate(
+                    null,
+                    List.of(position(-33.8688, 151.2093)),
+                    Duration.ZERO));
   }
 
   @Test
@@ -138,10 +194,12 @@ class UxvNavigationModelTest {
   void navigateRejectsNegativeDuration() {
     assertThrows(
         IllegalArgumentException.class,
-        () -> new GenericPx4UgvModel().navigate(
-            context(),
-            List.of(position(-33.8688, 151.2093)),
-            Duration.ofMillis(-1)));
+        () ->
+            new GenericPx4UgvModel()
+                .navigate(
+                    context(),
+                    List.of(position(-33.8688, 151.2093)),
+                    Duration.ofMillis(-1)));
   }
 
   @Test
@@ -190,47 +248,87 @@ class UxvNavigationModelTest {
   void uavNavigateRejectsMissingAltitude() {
     assertThrows(
         IllegalArgumentException.class,
-        () -> new GenericPx4UavModel().navigate(
-            context(),
-            List.of(position(-33.8688, 151.2093)),
-            Duration.ZERO));
+        () ->
+            new GenericPx4UavModel()
+                .navigate(
+                    context(),
+                    List.of(position(-33.8688, 151.2093)),
+                    Duration.ZERO));
   }
 
   @Test
   void uavNavigateRejectsNonFiniteMslAltitude() {
     assertThrows(
         IllegalArgumentException.class,
-        () -> new GenericPx4UavModel().navigate(
-            context(),
-            List.of(new GeoPosition(-33.8688, 151.2093, Double.NaN, null)),
-            Duration.ZERO));
+        () ->
+            new GenericPx4UavModel()
+                .navigate(
+                    context(),
+                    List.of(
+                        new GeoPosition(
+                            -33.8688,
+                            151.2093,
+                            Double.NaN,
+                            null)),
+                    Duration.ZERO));
   }
 
   @Test
   void uavNavigateRejectsNonFiniteAglAltitude() {
     assertThrows(
         IllegalArgumentException.class,
-        () -> new GenericPx4UavModel().navigate(
-            context(),
-            List.of(new GeoPosition(-33.8688, 151.2093, null, Double.POSITIVE_INFINITY)),
-            Duration.ZERO));
+        () ->
+            new GenericPx4UavModel()
+                .navigate(
+                    context(),
+                    List.of(
+                        new GeoPosition(
+                            -33.8688,
+                            151.2093,
+                            null,
+                            Double.POSITIVE_INFINITY)),
+                    Duration.ZERO));
   }
 
-  private void assertNavigationPlan(
+  private static void assertNavigationPlan(
       AbstractMissionUxvModel model,
       UxvNavigationPlan plan,
-      int expectedWaypointCount,
-      Duration expectedDuration) {
-
+      List<GeoPosition> waypoints,
+      Duration expectedDuration,
+      UxvOperation expectedTerminalOperation,
+      int expectedFrame) {
     assertNotNull(plan);
     assertEquals(expectedDuration, plan.duration());
+    assertEquals(!expectedDuration.isZero(), plan.hasTimeout());
 
     assertEquals(1, plan.missionPhase().size());
 
     UxvModelCommandSet missionPhase = plan.missionPhase().getFirst();
     assertEquals(UxvOperation.BUILD_MISSION, missionPhase.operation());
     assertEquals(model.getModelName(), missionPhase.modelName());
-    assertEquals(expectedWaypointCount, missionPhase.messages().size());
+    assertEquals(waypoints.size(), missionPhase.messages().size());
+
+    for (int index = 0; index < waypoints.size(); index++) {
+      GeoPosition expectedPosition = waypoints.get(index);
+      MavlinkMissionItemInt item =
+          (MavlinkMissionItemInt) missionPhase.messages().get(index);
+
+      assertEquals(index, item.getMissionSequence());
+      assertEquals(MavlinkMissionItemIntFactory.MAV_CMD_NAV_WAYPOINT, item.getCommand());
+      assertEquals(expectedFrame, item.getFrame());
+      assertEquals(
+          (int) Math.round(expectedPosition.getLatitude() * 10_000_000.0d),
+          item.getLatitude());
+      assertEquals(
+          (int) Math.round(expectedPosition.getLongitude() * 10_000_000.0d),
+          item.getLongitude());
+      assertEquals(
+          expectedPosition.getPreferredAltitudeMeters() == null
+              ? 0.0f
+              : expectedPosition.getPreferredAltitudeMeters().floatValue(),
+          item.getAltitude());
+      assertEquals(0.0f, item.getParam1());
+    }
 
     assertEquals(1, plan.postMissionUploadPhase().size());
 
@@ -238,14 +336,11 @@ class UxvNavigationModelTest {
         plan.postMissionUploadPhase().getFirst();
 
     assertEquals(UxvOperation.START_MISSION, postMissionUploadPhase.operation());
-
     assertEquals(model.getModelName(), postMissionUploadPhase.modelName());
     assertEquals(1, postMissionUploadPhase.messages().size());
 
     UxvModelCommandSet terminalAction = plan.terminalAction();
-
-    assertEquals(UxvOperation.PAUSE_VEHICLE, terminalAction.operation());
-
+    assertEquals(expectedTerminalOperation, terminalAction.operation());
     assertEquals(model.getModelName(), terminalAction.modelName());
     assertEquals(1, terminalAction.messages().size());
   }
@@ -253,10 +348,12 @@ class UxvNavigationModelTest {
   private static void assertInvalidPosition(GeoPosition position) {
     assertThrows(
         IllegalArgumentException.class,
-        () -> new GenericPx4UgvModel().navigate(
-            context(),
-            List.of(position),
-            Duration.ZERO));
+        () ->
+            new GenericPx4UgvModel()
+                .navigate(
+                    context(),
+                    List.of(position),
+                    Duration.ZERO));
   }
 
   private static GeoPosition position(Double latitude, Double longitude) {

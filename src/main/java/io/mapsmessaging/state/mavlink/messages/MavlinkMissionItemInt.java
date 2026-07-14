@@ -31,11 +31,13 @@ public class MavlinkMissionItemInt implements MavlinkMessage {
 
   public static final int MESSAGE_ID_MISSION_ITEM_INT = 73;
 
+  private static final int TRANSPORT_SEQUENCE_PLACEHOLDER = 0;
+
   private String messageType = "MISSION_ITEM_INT";
   private int messageId = MESSAGE_ID_MISSION_ITEM_INT;
   private int targetSystem;
   private int targetComponent;
-  private int sequence;
+  private int missionSequence;
   private int frame;
   private int command;
   private int current;
@@ -49,6 +51,7 @@ public class MavlinkMissionItemInt implements MavlinkMessage {
   private float altitude;
   private int missionType;
 
+  @Override
   public JsonObject toMavlinkJsonObject() {
     JsonObject root = new JsonObject();
     JsonObject header = new JsonObject();
@@ -57,7 +60,7 @@ public class MavlinkMissionItemInt implements MavlinkMessage {
     header.addProperty("version", "V2");
     header.addProperty("systemId", 0);
     header.addProperty("componentId", 0);
-    header.addProperty("sequence", sequence);
+    header.addProperty("sequence", TRANSPORT_SEQUENCE_PLACEHOLDER);
     header.addProperty("messageId", messageId);
     header.addProperty("signed", false);
     header.addProperty("incompatibilityFlags", 0);
@@ -65,7 +68,7 @@ public class MavlinkMissionItemInt implements MavlinkMessage {
 
     payload.addProperty("target_system", targetSystem);
     payload.addProperty("target_component", targetComponent);
-    payload.addProperty("seq", sequence);
+    payload.addProperty("seq", missionSequence);
     payload.addProperty("frame", frame);
     payload.addProperty("command", command);
     payload.addProperty("current", current);

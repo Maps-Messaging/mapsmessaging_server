@@ -26,7 +26,6 @@ import io.mapsmessaging.state.mavlink.messages.MavlinkCommandLongFactory;
 import io.mapsmessaging.state.mavlink.messages.MavlinkMessage;
 import io.mapsmessaging.state.mavlink.messages.MavlinkMissionItemIntFactory;
 import io.mapsmessaging.state.mavlink.model.LoiterRequest;
-import io.mapsmessaging.state.mavlink.model.OrbitDirection;
 import io.mapsmessaging.state.mavlink.model.OrbitRequest;
 import io.mapsmessaging.state.mavlink.model.PlanItem;
 import io.mapsmessaging.state.mavlink.model.PlanItemType;
@@ -49,8 +48,12 @@ public class GenericPx4UavModel extends GenericPx4UxvModel implements UavModel {
   private static final int MAV_CMD_NAV_TAKEOFF = 22;
 
   public GenericPx4UavModel() {
+    this(MODEL_NAME);
+  }
+
+  protected GenericPx4UavModel(String modelName) {
     super(
-        MODEL_NAME,
+        modelName,
         UxvVehicleType.UAV,
         operations(
             UxvOperation.ARM,
@@ -92,6 +95,7 @@ public class GenericPx4UavModel extends GenericPx4UxvModel implements UavModel {
   @Override
   public UxvModelCommandSet land(UxvCommandContext context) {
     Objects.requireNonNull(context, "context must not be null");
+
     return UxvModelCommandSet.of(
         UxvOperation.LAND,
         getModelName(),
@@ -134,15 +138,20 @@ public class GenericPx4UavModel extends GenericPx4UxvModel implements UavModel {
   public UxvModelCommandSet loiter(UxvCommandContext context, LoiterRequest request) {
     Objects.requireNonNull(context, "context must not be null");
     Objects.requireNonNull(request, "request must not be null");
+
     requirePositiveOrZero(request.radiusMeters(), "radiusMeters");
     rejectDepth(request.depthMeters(), UxvOperation.LOITER);
 
     GeoPosition position = withAltitude(request.position(), request.altitudeMeters());
     validateCoordinates(position, "position");
-    float yawDegrees = request.yawDegrees() == null ? Float.NaN : normaliseDegrees(request.yawDegrees());
 
     MavlinkMessage message;
     if (toDuration(request.duration(), "duration").isZero()) {
+      float yawDegrees =
+          request.yawDegrees() == null
+              ? Float.NaN
+              : normaliseDegrees(request.yawDegrees());
+
       message =
           MavlinkCommandIntFactory.loiterUnlimited(
               context.targetSystem(),
@@ -152,6 +161,8 @@ public class GenericPx4UavModel extends GenericPx4UxvModel implements UavModel {
               yawDegrees,
               context.sequence());
     } else {
+      rejectYaw(request.yawDegrees(), UxvOperation.LOITER);
+
       message =
           MavlinkCommandIntFactory.loiterTime(
               context.targetSystem(),
@@ -159,7 +170,6 @@ public class GenericPx4UavModel extends GenericPx4UxvModel implements UavModel {
               position,
               request.radiusMeters(),
               request.duration(),
-              yawDegrees,
               context.sequence());
     }
 
@@ -167,41 +177,59 @@ public class GenericPx4UavModel extends GenericPx4UxvModel implements UavModel {
   }
 
   @Override
-  protected void validateNavigationPosition(GeoPosition position, int index) {
-    Double altitudeMeters = position.getPreferredAltitudeMeters();
-    if (altitudeMeters == null) {
-      throw new IllegalArgumentException("waypoints[" + index + "] must contain an MSL or AGL altitude");
-    }
-    requireFinite(altitudeMeters, "waypoints[" + index + "].altitudeMeters");
-  }
-
-  @Override
-  protected MavlinkMessage toMissionMessage(UxvCommandContext context, int sequence, PlanItem item) {
+  protected MavlinkMessage toMissionMessage(
+      UxvCommandContext context,
+      int sequence,
+      PlanItem item) {
     return switch (item.type()) {
-      case WAYPOINT ->
-          MavlinkMissionItemIntFactory.waypoint(
-              context.targetSystem(),
-              context.targetComponent(),
-              sequence,
-              withAltitude(item.position(), item.altitudeMeters()),
-              toSeconds(item.holdDuration()),
-              item.radiusMeters() == null ? DEFAULT_ACCEPTANCE_RADIUS_METERS : item.radiusMeters().floatValue(),
-              DEFAULT_PASS_RADIUS_METERS,
-              item.yawDegrees() == null ? Float.NaN : normaliseDegrees(item.yawDegrees()));
+      case WAYPOINT -> toMissionWaypoint(context, sequence, item);
       case LOITER -> toMissionLoiter(context, sequence, item);
       case RETURN_TO_HOME ->
-          MavlinkMissionItemIntFactory.returnToLaunch(context.targetSystem(), context.targetComponent(), sequence);
+          MavlinkMissionItemIntFactory.returnToLaunch(
+              context.targetSystem(),
+              context.targetComponent(),
+              sequence);
       case ORBIT, HOLD_POSITION ->
           throw new UnsupportedUxvOperationException(
               getModelName(),
               UxvOperation.BUILD_MISSION,
-              "Mission item type " + item.type() + " is not supported by this PX4 UAV model");
+              "Mission item type "
+                  + item.type()
+                  + " is not supported by this PX4 UAV model");
     };
   }
 
-  private MavlinkMessage toMissionLoiter(UxvCommandContext context, int sequence, PlanItem item) {
-    GeoPosition position = withAltitude(item.position(), item.altitudeMeters());
-    double radiusMeters = item.radiusMeters() == null ? DEFAULT_ACCEPTANCE_RADIUS_METERS : item.radiusMeters();
+  protected MavlinkMessage toMissionWaypoint(
+      UxvCommandContext context,
+      int sequence,
+      PlanItem item) {
+    return MavlinkMissionItemIntFactory.waypoint(
+        context.targetSystem(),
+        context.targetComponent(),
+        sequence,
+        withAltitude(item.position(), item.altitudeMeters()),
+        toSeconds(item.holdDuration()),
+        item.radiusMeters() == null
+            ? DEFAULT_ACCEPTANCE_RADIUS_METERS
+            : item.radiusMeters().floatValue(),
+        DEFAULT_PASS_RADIUS_METERS,
+        item.yawDegrees() == null
+            ? Float.NaN
+            : normaliseDegrees(item.yawDegrees()));
+  }
+
+  protected MavlinkMessage toMissionLoiter(
+      UxvCommandContext context,
+      int sequence,
+      PlanItem item) {
+    GeoPosition position =
+        withAltitude(item.position(), item.altitudeMeters());
+
+    double radiusMeters =
+        item.radiusMeters() == null
+            ? DEFAULT_ACCEPTANCE_RADIUS_METERS
+            : item.radiusMeters();
+
     requirePositiveOrZero(radiusMeters, "radiusMeters");
 
     if (toDuration(item.holdDuration(), "holdDuration").isZero()) {
@@ -212,49 +240,34 @@ public class GenericPx4UavModel extends GenericPx4UxvModel implements UavModel {
           position,
           radiusMeters);
     }
-    return MavlinkMissionItemIntFactory.loiterTime(
-        context.targetSystem(),
-        context.targetComponent(),
-        sequence,
-        position,
-        item.holdDuration().toSeconds(),
-        radiusMeters);
+
+    return MavlinkMissionItemIntFactory.loiterTime(context.targetSystem(), context.targetComponent(), sequence, position, item.holdDuration(), radiusMeters);
   }
 
   @Override
-  protected void validatePlanItem(int index, PlanItem item, List<PlanValidationIssue> issues) {
+  protected void validatePlanItem(
+      int index,
+      PlanItem item,
+      List<PlanValidationIssue> issues) {
     if (item.depthMeters() != null) {
       issues.add(new PlanValidationIssue(UxvOperation.BUILD_MISSION, "Mission item " + index + " contains depthMeters, which is not valid for a UAV model"));
     }
 
-    if (item.type() == PlanItemType.WAYPOINT || item.type() == PlanItemType.LOITER || item.type() == PlanItemType.ORBIT || item.type() == PlanItemType.HOLD_POSITION) {
-      if (item.position() == null) {
-        issues.add(new PlanValidationIssue(UxvOperation.BUILD_MISSION, "Mission item " + index + " requires a position"));
-      }
-    }
-
-    if (item.radiusMeters() != null && !isPositiveOrZero(item.radiusMeters())) {
-      issues.add(new PlanValidationIssue(UxvOperation.BUILD_MISSION, "Mission item " + index + " radiusMeters must be finite and must not be negative"));
-    }
-
-    if (item.holdDuration() != null && item.holdDuration().isNegative()) {
-      issues.add(new PlanValidationIssue(UxvOperation.BUILD_MISSION, "Mission item " + index + " holdDuration must not be negative"));
+    if ((item.type() == PlanItemType.WAYPOINT
+        || item.type() == PlanItemType.LOITER)
+        && item.position() != null
+        && item.altitudeMeters() == null
+        && item.position().getPreferredAltitudeMeters() == null) {
+      issues.add(new PlanValidationIssue(UxvOperation.BUILD_MISSION, "Mission item " + index + " requires an MSL or AGL altitude"));
     }
 
     if (item.speedMetersPerSecond() != null) {
       issues.add(new PlanValidationIssue(UxvOperation.BUILD_MISSION, "Mission item " + index + " speedMetersPerSecond is not currently mapped by this PX4 UAV model"));
     }
 
-    if (item.altitudeMeters() != null && !Double.isFinite(item.altitudeMeters())) {
-      issues.add(new PlanValidationIssue(UxvOperation.BUILD_MISSION, "Mission item " + index + " altitudeMeters must be finite"));
-    }
-
-    if (item.type() == PlanItemType.ORBIT || item.type() == PlanItemType.HOLD_POSITION) {
-      issues.add(
-          new PlanValidationIssue(
-              UxvOperation.BUILD_MISSION,
-              "Mission item " + index + " type " + item.type() + " is not supported by this PX4 UAV model"));
+    if (item.type() == PlanItemType.ORBIT
+        || item.type() == PlanItemType.HOLD_POSITION) {
+      issues.add(new PlanValidationIssue(UxvOperation.BUILD_MISSION, "Mission item " + index + " type " + item.type() + " is not supported by this PX4 UAV model"));
     }
   }
-
 }

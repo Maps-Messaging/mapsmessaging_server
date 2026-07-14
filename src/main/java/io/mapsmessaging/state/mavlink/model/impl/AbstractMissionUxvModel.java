@@ -23,11 +23,13 @@ import io.mapsmessaging.state.drone.model.GeoPosition;
 import io.mapsmessaging.state.mavlink.messages.MavlinkCommandIntFactory;
 import io.mapsmessaging.state.mavlink.messages.MavlinkCommandLong;
 import io.mapsmessaging.state.mavlink.messages.MavlinkCommandLongFactory;
+import io.mapsmessaging.state.mavlink.messages.MavlinkDuration;
 import io.mapsmessaging.state.mavlink.messages.MavlinkMessage;
 import io.mapsmessaging.state.mavlink.messages.MavlinkMissionItemIntFactory;
 import io.mapsmessaging.state.mavlink.model.HomeRequest;
 import io.mapsmessaging.state.mavlink.model.MissionPlan;
 import io.mapsmessaging.state.mavlink.model.PlanItem;
+import io.mapsmessaging.state.mavlink.model.PlanItemType;
 import io.mapsmessaging.state.mavlink.model.PlanValidation;
 import io.mapsmessaging.state.mavlink.model.PlanValidationIssue;
 import io.mapsmessaging.state.mavlink.model.RepositionRequest;
@@ -46,7 +48,6 @@ public abstract class AbstractMissionUxvModel extends AbstractUxvModel {
 
   protected static final float DEFAULT_ACCEPTANCE_RADIUS_METERS = 2.0f;
   protected static final float DEFAULT_PASS_RADIUS_METERS = 0.0f;
-  protected static final float DEFAULT_HOLD_SECONDS = 0.0f;
 
   private static final int MAV_CMD_DO_SET_HOME = 179;
   private static final int MAV_CMD_DO_CHANGE_SPEED = 178;
@@ -68,28 +69,17 @@ public abstract class AbstractMissionUxvModel extends AbstractUxvModel {
     Objects.requireNonNull(context, "context must not be null");
     Objects.requireNonNull(waypoints, "waypoints must not be null");
 
-    if (waypoints.isEmpty()) {
-      throw new IllegalArgumentException("waypoints must contain at least one position");
-    }
-
-    Duration validatedDuration = toDuration(duration, "duration");
-    List<MavlinkMessage> missionMessages = new ArrayList<>(waypoints.size());
-
+    List<PlanItem> items = new ArrayList<>(waypoints.size());
     for (int index = 0; index < waypoints.size(); index++) {
-      GeoPosition position = Objects.requireNonNull(waypoints.get(index), "waypoints must not contain null positions");
-      validateNavigationWaypoint(position, index);
-      missionMessages.add(toNavigationMessage(context, index, position));
+      GeoPosition position = Objects.requireNonNull(waypoints.get(index), "waypoints[" + index + "] must not be null");
+      items.add(new PlanItem(PlanItemType.WAYPOINT, position, null, null, null, null, null, null));
     }
 
-    UxvModelCommandSet missionPhase = UxvModelCommandSet.of(
-        UxvOperation.BUILD_MISSION,
-        getModelName(),
-        missionMessages);
-
+    MissionPlan missionPlan = new MissionPlan(items);
     return new UxvNavigationPlan(
-        List.of(missionPhase),
+        List.of(buildMission(context, missionPlan)),
         List.of(startMission(context)),
-        validatedDuration,
+        toDuration(duration, "duration"),
         stop(context));
   }
 
@@ -173,17 +163,18 @@ public abstract class AbstractMissionUxvModel extends AbstractUxvModel {
     Objects.requireNonNull(missionPlan, "missionPlan must not be null");
 
     List<PlanValidationIssue> issues = new ArrayList<>();
-    if (missionPlan.items().isEmpty()) {
-      issues.add(new PlanValidationIssue(UxvOperation.BUILD_MISSION, "Mission plan must contain at least one item"));
-    }
-
     for (int index = 0; index < missionPlan.items().size(); index++) {
       PlanItem item = missionPlan.items().get(index);
-      if (item == null) {
-        issues.add(new PlanValidationIssue(UxvOperation.BUILD_MISSION, "Mission item " + index + " must not be null"));
-      } else {
-        validatePlanItem(index, item, issues);
-      }
+      validateCommonPlanItem(index, item, issues);
+      validatePlanItem(index, item, issues);
+    }
+
+    if (missionPlan.iterations() > 1
+        && missionPlan.items().stream().anyMatch(item -> item.type() == PlanItemType.RETURN_TO_HOME)) {
+      issues.add(
+          new PlanValidationIssue(
+              UxvOperation.BUILD_MISSION,
+              "A repeating mission must not contain RETURN_TO_HOME"));
     }
 
     return issues.isEmpty() ? PlanValidation.success() : PlanValidation.failure(issues);
@@ -198,9 +189,22 @@ public abstract class AbstractMissionUxvModel extends AbstractUxvModel {
       throw new IllegalArgumentException("Invalid mission plan: " + validation.issues());
     }
 
-    List<MavlinkMessage> messages = new ArrayList<>(missionPlan.items().size());
+    int additionalItems = missionPlan.iterations() > 1 ? 1 : 0;
+    List<MavlinkMessage> messages =
+        new ArrayList<>(missionPlan.items().size() + additionalItems);
+
     for (int index = 0; index < missionPlan.items().size(); index++) {
       messages.add(toMissionMessage(context, index, missionPlan.items().get(index)));
+    }
+
+    if (missionPlan.iterations() > 1) {
+      messages.add(
+          MavlinkMissionItemIntFactory.jump(
+              context.targetSystem(),
+              context.targetComponent(),
+              missionPlan.items().size(),
+              0,
+              missionPlan.iterations() - 1));
     }
 
     return UxvModelCommandSet.of(UxvOperation.BUILD_MISSION, getModelName(), messages);
@@ -248,24 +252,80 @@ public abstract class AbstractMissionUxvModel extends AbstractUxvModel {
     return UxvModelCommandSet.of(UxvOperation.SET_HEADING, getModelName(), commandLong);
   }
 
+
+  private void validateCommonPlanItem(int index, PlanItem item, List<PlanValidationIssue> issues) {
+    String itemName = "Mission item " + index;
+
+    if (requiresPosition(item.type()) && item.position() == null) {
+      issues.add(new PlanValidationIssue(UxvOperation.BUILD_MISSION, itemName + " requires a position"));
+    }
+
+    if (item.position() != null) {
+      validatePlanPosition(itemName, item.position(), issues);
+    }
+
+    if (item.radiusMeters() != null && !isPositiveOrZero(item.radiusMeters())) {
+      issues.add(new PlanValidationIssue(UxvOperation.BUILD_MISSION, itemName + " radiusMeters must be finite and must not be negative"));
+    }
+
+    try {
+      MavlinkDuration.toSeconds(item.holdDuration(), "holdDuration");
+    } catch (IllegalArgumentException exception) {
+      issues.add(new PlanValidationIssue(UxvOperation.BUILD_MISSION, itemName + " " + exception.getMessage()));
+    }
+
+    if (item.yawDegrees() != null && !Float.isFinite(item.yawDegrees())) {
+      issues.add(new PlanValidationIssue(UxvOperation.BUILD_MISSION, itemName + " yawDegrees must be finite"));
+    }
+
+    if (item.speedMetersPerSecond() != null && !Double.isFinite(item.speedMetersPerSecond())) {
+      issues.add(new PlanValidationIssue(UxvOperation.BUILD_MISSION, itemName + " speedMetersPerSecond must be finite"));
+    }
+
+    if (item.altitudeMeters() != null && !Double.isFinite(item.altitudeMeters())) {
+      issues.add(new PlanValidationIssue(UxvOperation.BUILD_MISSION, itemName + " altitudeMeters must be finite"));
+    }
+
+    if (item.depthMeters() != null && !Double.isFinite(item.depthMeters())) {
+      issues.add(new PlanValidationIssue(UxvOperation.BUILD_MISSION, itemName + " depthMeters must be finite"));
+    }
+  }
+
+  private void validatePlanPosition(String itemName, GeoPosition position, List<PlanValidationIssue> issues) {
+    Double latitude = position.getLatitude();
+    Double longitude = position.getLongitude();
+
+    if (latitude == null) {
+      issues.add(new PlanValidationIssue(UxvOperation.BUILD_MISSION, itemName + " position.latitude must not be null"));
+    } else if (!Double.isFinite(latitude) || latitude < -90.0d || latitude > 90.0d) {
+      issues.add(new PlanValidationIssue(UxvOperation.BUILD_MISSION, itemName + " position.latitude must be finite and between -90 and 90 degrees"));
+    }
+
+    if (longitude == null) {
+      issues.add(new PlanValidationIssue(UxvOperation.BUILD_MISSION, itemName + " position.longitude must not be null"));
+    } else if (!Double.isFinite(longitude) || longitude < -180.0d || longitude > 180.0d) {
+      issues.add(new PlanValidationIssue(UxvOperation.BUILD_MISSION, itemName + " position.longitude must be finite and between -180 and 180 degrees"));
+    }
+
+    if (position.getAltitudeMslMeters() != null && !Double.isFinite(position.getAltitudeMslMeters())) {
+      issues.add(new PlanValidationIssue(UxvOperation.BUILD_MISSION, itemName + " position.altitudeMslMeters must be finite"));
+    }
+
+    if (position.getAltitudeAglMeters() != null && !Double.isFinite(position.getAltitudeAglMeters())) {
+      issues.add(new PlanValidationIssue(UxvOperation.BUILD_MISSION, itemName + " position.altitudeAglMeters must be finite"));
+    }
+  }
+
+  private boolean requiresPosition(PlanItemType type) {
+    return type == PlanItemType.WAYPOINT
+        || type == PlanItemType.LOITER
+        || type == PlanItemType.ORBIT
+        || type == PlanItemType.HOLD_POSITION;
+  }
+
   protected abstract MavlinkMessage toMissionMessage(UxvCommandContext context, int sequence, PlanItem item);
 
   protected abstract void validatePlanItem(int index, PlanItem item, List<PlanValidationIssue> issues);
-
-  protected MavlinkMessage toNavigationMessage(UxvCommandContext context, int sequence, GeoPosition position) {
-    return MavlinkMissionItemIntFactory.waypoint(
-        context.targetSystem(),
-        context.targetComponent(),
-        sequence,
-        position,
-        DEFAULT_HOLD_SECONDS,
-        DEFAULT_ACCEPTANCE_RADIUS_METERS,
-        DEFAULT_PASS_RADIUS_METERS,
-        Float.NaN);
-  }
-
-  protected void validateNavigationPosition(GeoPosition position, int index) {
-  }
 
   protected final void validateCoordinates(GeoPosition position, String name) {
     Objects.requireNonNull(position, name + " must not be null");
@@ -323,8 +383,7 @@ public abstract class AbstractMissionUxvModel extends AbstractUxvModel {
   }
 
   protected final float toSeconds(Duration duration) {
-    Duration validatedDuration = toDuration(duration, "duration");
-    return validatedDuration.isZero() ? DEFAULT_HOLD_SECONDS : (float) validatedDuration.toSeconds();
+    return MavlinkDuration.toSeconds(duration, "duration");
   }
 
   protected final Duration toDuration(Duration duration, String name) {
@@ -408,8 +467,4 @@ public abstract class AbstractMissionUxvModel extends AbstractUxvModel {
     return normalised;
   }
 
-  private void validateNavigationWaypoint(GeoPosition position, int index) {
-    validateCoordinates(position, "waypoints[" + index + "]");
-    validateNavigationPosition(position, index);
-  }
 }

@@ -19,9 +19,11 @@
 
 package io.mapsmessaging.state.mavlink.sender;
 
+import io.mapsmessaging.state.mavlink.messages.MavlinkCommandLong;
 import io.mapsmessaging.state.mavlink.messages.MavlinkMessage;
 import io.mapsmessaging.state.mavlink.model.UxvModelCommandSet;
 import io.mapsmessaging.state.mavlink.model.UxvOperation;
+import io.mapsmessaging.state.mavlink.packet.CommandAckPacket;
 import io.mapsmessaging.state.mavlink.packet.MavlinkPacket;
 import io.mapsmessaging.state.mavlink.sender.MavlinkAcknowledgementHandler.Acknowledgement;
 import org.junit.jupiter.api.Test;
@@ -29,6 +31,7 @@ import org.mockito.InOrder;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static io.mapsmessaging.state.mavlink.sender.MavlinkSendResult.Status.CANCELLED;
 import static io.mapsmessaging.state.mavlink.sender.MavlinkSendResult.Status.CLOSED;
@@ -46,6 +49,7 @@ import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
@@ -430,13 +434,92 @@ class MavlinkEventListSenderTest {
   }
 
   @Test
-  void timeoutCompletesUsingWaitingState() {
+  void commandTimeoutRetransmitsThenAcceptedCommandAckCompletesExactlyOnce() throws Exception {
+    MavlinkCommandLong command = mock(MavlinkCommandLong.class);
+    when(command.getCommand()).thenReturn(192);
+    when(command.getTargetSystem()).thenReturn(2);
+    when(command.getTargetComponent()).thenReturn(1);
+
+    MavlinkEventSender transport = mock(MavlinkEventSender.class);
+    List<MavlinkSendResult> results = new ArrayList<>();
+    MavlinkEventListSender sender =
+        new MavlinkEventListSender(commandSet(List.of(command)), transport, new MavlinkCommandAcknowledgementHandler(), results::add, 2);
+
+    sender.start();
+    sender.timeout();
+
+    verify(transport, times(2)).send(command);
+    assertTrue(results.isEmpty());
+    assertSame(command, sender.getWaitingMessage());
+    assertEquals(1, sender.getRetryCount());
+
+    CommandAckPacket acknowledgement = mock(CommandAckPacket.class);
+    when(acknowledgement.isValid()).thenReturn(true);
+    when(acknowledgement.getCommand()).thenReturn(192);
+    when(acknowledgement.isAccepted()).thenReturn(true);
+    when(acknowledgement.isTargetComponentPresent()).thenReturn(false);
+
+    sender.onMavlinkMessage(acknowledgement);
+
+    assertEquals(1, results.size());
+    assertEquals(SUCCESS, results.get(0).status());
+    assertNull(results.get(0).sentMessage());
+    assertNull(results.get(0).receivedMessage());
+
+    sender.timeout();
+    sender.cancel();
+    sender.close();
+
+    verify(transport, times(2)).send(command);
+    assertEquals(1, results.size());
+  }
+
+  @Test
+  void repeatedTimeoutCallbacksExhaustRetryBudgetThenRemainTerminal() throws Exception {
     Fixture fixture = fixture();
     MavlinkMessage first = fixture.message(true);
     fixture.messages.add(first);
 
-    MavlinkEventListSender sender = fixture.newSender();
+    MavlinkEventListSender sender = fixture.newSender(2);
     sender.start();
+
+    sender.timeout();
+    sender.timeout();
+
+    verify(fixture.sender, times(3)).send(first);
+    assertTrue(fixture.results.isEmpty());
+
+    sender.timeout();
+
+    assertEquals(1, fixture.results.size());
+    assertEquals(TIMEOUT, fixture.results.get(0).status());
+    assertSame(first, fixture.results.get(0).sentMessage());
+    assertEquals(0, sender.getRetryCount());
+    assertNull(sender.getWaitingMessage());
+    assertEquals(-1, sender.getWaitingIndex());
+
+    sender.timeout();
+    sender.timeout();
+
+    verify(fixture.sender, times(3)).send(first);
+    assertEquals(1, fixture.results.size());
+  }
+
+  @Test
+  void timeoutRetriesWaitingMessageUntilRetryBudgetIsExhausted() throws Exception {
+    Fixture fixture = fixture();
+    MavlinkMessage first = fixture.message(true);
+    fixture.messages.add(first);
+
+    MavlinkEventListSender sender = fixture.newSender(2);
+    sender.start();
+    sender.timeout();
+    sender.timeout();
+
+    verify(fixture.sender, times(3)).send(first);
+    assertTrue(fixture.results.isEmpty());
+    assertEquals(2, sender.getRetryCount());
+
     sender.timeout();
 
     assertEquals(1, fixture.results.size());
@@ -444,6 +527,107 @@ class MavlinkEventListSenderTest {
     assertEquals(0, fixture.results.get(0).index());
     assertSame(first, fixture.results.get(0).sentMessage());
     assertEquals("MAVLink event list sender timed out", fixture.results.get(0).reason());
+  }
+
+  @Test
+  void timeoutCompletesImmediatelyWhenRetriesAreDisabled() {
+    Fixture fixture = fixture();
+    MavlinkMessage first = fixture.message(true);
+    fixture.messages.add(first);
+
+    MavlinkEventListSender sender = fixture.newSender(0);
+    sender.start();
+    sender.timeout();
+
+    assertEquals(1, fixture.results.size());
+    assertEquals(TIMEOUT, fixture.results.get(0).status());
+    assertEquals(0, fixture.results.get(0).index());
+    assertSame(first, fixture.results.get(0).sentMessage());
+  }
+
+  @Test
+  void timeoutRetryFailureCompletesAsFailed() throws Exception {
+    Fixture fixture = fixture();
+    MavlinkMessage first = fixture.message(true);
+    RuntimeException failure = new RuntimeException("retry failed");
+    fixture.messages.add(first);
+
+    doAnswer(
+        invocation -> {
+          if (fixture.senderSendCount++ > 0) {
+            throw failure;
+          }
+          return null;
+        }).when(fixture.sender)
+        .send(first);
+
+    MavlinkEventListSender sender = fixture.newSender(2);
+    sender.start();
+    sender.timeout();
+
+    assertEquals(1, fixture.results.size());
+    assertEquals(FAILED, fixture.results.get(0).status());
+    assertSame(first, fixture.results.get(0).sentMessage());
+    assertSame(failure, fixture.results.get(0).cause());
+    assertEquals("Failed to resend MAVLink message after timeout", fixture.results.get(0).reason());
+  }
+
+  @Test
+  void acknowledgementArrivingDuringSendIsProcessed() throws Exception {
+    Fixture fixture = fixture();
+    MavlinkMessage first = fixture.message(true);
+    MavlinkMessage second = fixture.message(false);
+    MavlinkPacket acknowledgementPacket = mock(MavlinkPacket.class);
+    AtomicReference<MavlinkEventListSender> senderReference = new AtomicReference<>();
+
+    fixture.messages.addAll(List.of(first, second));
+    when(fixture.acknowledgementHandler.acknowledge(first, acknowledgementPacket)).thenReturn(Acknowledgement.advance());
+
+    doAnswer(
+        invocation -> {
+          senderReference.get().onMavlinkMessage(acknowledgementPacket);
+          return null;
+        }).when(fixture.sender)
+        .send(first);
+
+    MavlinkEventListSender sender = fixture.newSender();
+    senderReference.set(sender);
+    sender.start();
+
+    InOrder inOrder = inOrder(fixture.sender);
+    inOrder.verify(fixture.sender).send(first);
+    inOrder.verify(fixture.sender).send(second);
+
+    assertEquals(1, fixture.results.size());
+    assertEquals(SUCCESS, fixture.results.get(0).status());
+  }
+
+  @Test
+  void acknowledgementProgressResetsRetryBudget() throws Exception {
+    Fixture fixture = fixture();
+    MavlinkMessage first = fixture.message(true);
+    MavlinkMessage second = fixture.message(true);
+    MavlinkPacket firstAck = mock(MavlinkPacket.class);
+
+    fixture.messages.addAll(List.of(first, second));
+    when(fixture.acknowledgementHandler.acknowledge(first, firstAck)).thenReturn(Acknowledgement.advance());
+
+    MavlinkEventListSender sender = fixture.newSender(1);
+    sender.start();
+    sender.timeout();
+
+    assertEquals(1, sender.getRetryCount());
+
+    sender.onMavlinkMessage(firstAck);
+
+    assertSame(second, sender.getWaitingMessage());
+    assertEquals(0, sender.getRetryCount());
+
+    sender.timeout();
+
+    verify(fixture.sender, times(2)).send(first);
+    verify(fixture.sender, times(2)).send(second);
+    assertTrue(fixture.results.isEmpty());
   }
 
   @Test
@@ -486,7 +670,7 @@ class MavlinkEventListSenderTest {
     MavlinkMessage first = fixture.message(true);
     fixture.messages.add(first);
 
-    MavlinkEventListSender sender = fixture.newSender();
+    MavlinkEventListSender sender = fixture.newSender(0);
     sender.start();
     sender.timeout();
     sender.cancel();
@@ -552,9 +736,14 @@ class MavlinkEventListSenderTest {
     private final List<MavlinkSendResult> results = new ArrayList<>();
     private final MavlinkEventSender sender = mock(MavlinkEventSender.class);
     private final MavlinkAcknowledgementHandler acknowledgementHandler = mock(MavlinkAcknowledgementHandler.class);
+    private int senderSendCount;
 
     private MavlinkEventListSender newSender() {
       return new MavlinkEventListSender(commandSet(messages), sender, acknowledgementHandler, results::add);
+    }
+
+    private MavlinkEventListSender newSender(int maxRetries) {
+      return new MavlinkEventListSender(commandSet(messages), sender, acknowledgementHandler, results::add, maxRetries);
     }
 
     private MavlinkMessage message(boolean requiresAcknowledgement) {

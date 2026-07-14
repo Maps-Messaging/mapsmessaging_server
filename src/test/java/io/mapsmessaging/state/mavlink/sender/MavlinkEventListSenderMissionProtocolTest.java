@@ -34,11 +34,13 @@ import java.util.List;
 import static io.mapsmessaging.state.mavlink.sender.MavlinkMissionAcknowledgementHandler.MAV_MISSION_TYPE_MISSION;
 import static io.mapsmessaging.state.mavlink.sender.MavlinkSendResult.Status.FAILED;
 import static io.mapsmessaging.state.mavlink.sender.MavlinkSendResult.Status.SUCCESS;
+import static org.junit.Assert.assertTrue;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -87,7 +89,28 @@ class MavlinkEventListSenderMissionProtocolTest {
   }
 
   @Test
-  void missionProtocolFailsWhenVehicleRequestsBackwards() throws Exception {
+  void missionProtocolRetransmitsMostRecentlyRequestedItem() throws Exception {
+    Fixture fixture = fixture(3);
+
+    MavlinkEventListSender sender = fixture.newSender();
+    sender.start();
+    sender.onMavlinkMessage(fixture.requestInt(0));
+    sender.onMavlinkMessage(fixture.requestInt(0));
+    sender.onMavlinkMessage(fixture.requestInt(1));
+    sender.onMavlinkMessage(fixture.requestInt(2));
+    sender.onMavlinkMessage(fixture.acceptedMissionAck());
+
+    verify(fixture.sender).send(fixture.missionCountMessage);
+    verify(fixture.sender, times(2)).send(fixture.itemMessages.get(0));
+    verify(fixture.sender).send(fixture.itemMessages.get(1));
+    verify(fixture.sender).send(fixture.itemMessages.get(2));
+
+    assertEquals(1, fixture.results.size());
+    assertEquals(SUCCESS, fixture.results.get(0).status());
+  }
+
+  @Test
+  void missionProtocolIgnoresStaleRequestAndContinuesUpload() throws Exception {
     Fixture fixture = fixture(3);
 
     MavlinkEventListSender sender = fixture.newSender();
@@ -95,16 +118,94 @@ class MavlinkEventListSenderMissionProtocolTest {
     sender.onMavlinkMessage(fixture.requestInt(0));
     sender.onMavlinkMessage(fixture.requestInt(1));
     sender.onMavlinkMessage(fixture.requestInt(0));
+    sender.onMavlinkMessage(fixture.requestInt(2));
+    sender.onMavlinkMessage(fixture.acceptedMissionAck());
 
     InOrder inOrder = inOrder(fixture.sender);
     inOrder.verify(fixture.sender).send(fixture.missionCountMessage);
     inOrder.verify(fixture.sender).send(fixture.itemMessages.get(0));
     inOrder.verify(fixture.sender).send(fixture.itemMessages.get(1));
-    verify(fixture.sender, never()).send(fixture.itemMessages.get(2));
+    inOrder.verify(fixture.sender).send(fixture.itemMessages.get(2));
 
     assertEquals(1, fixture.results.size());
-    assertEquals(FAILED, fixture.results.get(0).status());
-    assertEquals("Mission requested sequence 0 but expected 2", fixture.results.get(0).reason());
+    assertEquals(SUCCESS, fixture.results.get(0).status());
+  }
+
+  @Test
+  void missionProtocolRepeatedFinalRequestRetransmitsLostFinalItemAndCompletes() throws Exception {
+    Fixture fixture = fixture(2);
+
+    MavlinkEventListSender sender = fixture.newSender();
+    sender.start();
+    sender.onMavlinkMessage(fixture.requestInt(0));
+    sender.onMavlinkMessage(fixture.requestInt(1));
+
+    verify(fixture.sender).send(fixture.missionCountMessage);
+    verify(fixture.sender).send(fixture.itemMessages.get(0));
+    verify(fixture.sender).send(fixture.itemMessages.get(1));
+    assertTrue(fixture.results.isEmpty());
+
+    sender.onMavlinkMessage(fixture.requestInt(1));
+
+    verify(fixture.sender, times(2)).send(fixture.itemMessages.get(1));
+    assertTrue(fixture.results.isEmpty());
+
+    sender.onMavlinkMessage(fixture.acceptedMissionAck());
+
+    assertEquals(1, fixture.results.size());
+    assertEquals(SUCCESS, fixture.results.get(0).status());
+    assertSame(fixture.itemMessages.get(1), fixture.results.get(0).sentMessage());
+  }
+
+  @Test
+  void missionProtocolTimeoutRetransmitsFinalItemWhenMissionAckIsLostAndThenCompletes() throws Exception {
+    Fixture fixture = fixture(2);
+
+    MavlinkEventListSender sender = fixture.newSender(2);
+    sender.start();
+    sender.onMavlinkMessage(fixture.requestInt(0));
+    sender.onMavlinkMessage(fixture.requestInt(1));
+
+    verify(fixture.sender).send(fixture.missionCountMessage);
+    verify(fixture.sender).send(fixture.itemMessages.get(0));
+    verify(fixture.sender).send(fixture.itemMessages.get(1));
+    assertTrue(fixture.results.isEmpty());
+
+    sender.timeout();
+
+    verify(fixture.sender, times(2)).send(fixture.itemMessages.get(1));
+    assertEquals(1, sender.getRetryCount());
+    assertTrue(fixture.results.isEmpty());
+
+    sender.onMavlinkMessage(fixture.acceptedMissionAck());
+
+    assertEquals(1, fixture.results.size());
+    assertEquals(SUCCESS, fixture.results.get(0).status());
+    assertSame(fixture.itemMessages.get(1), fixture.results.get(0).sentMessage());
+
+    sender.timeout();
+
+    verify(fixture.sender, times(2)).send(fixture.itemMessages.get(1));
+    assertEquals(1, fixture.results.size());
+  }
+
+  @Test
+  void missionProtocolRetriesMissionCountAfterTimeoutThenContinues() throws Exception {
+    Fixture fixture = fixture(2);
+
+    MavlinkEventListSender sender = fixture.newSender();
+    sender.start();
+    sender.timeout();
+    sender.onMavlinkMessage(fixture.requestInt(0));
+    sender.onMavlinkMessage(fixture.requestInt(1));
+    sender.onMavlinkMessage(fixture.acceptedMissionAck());
+
+    verify(fixture.sender, times(2)).send(fixture.missionCountMessage);
+    verify(fixture.sender).send(fixture.itemMessages.get(0));
+    verify(fixture.sender).send(fixture.itemMessages.get(1));
+
+    assertEquals(1, fixture.results.size());
+    assertEquals(SUCCESS, fixture.results.get(0).status());
   }
 
   @Test
@@ -207,6 +308,10 @@ class MavlinkEventListSenderMissionProtocolTest {
 
     private MavlinkEventListSender newSender() {
       return new MavlinkEventListSender(commandSet(messages), sender, acknowledgementHandler, results::add);
+    }
+
+    private MavlinkEventListSender newSender(int maxRetries) {
+      return new MavlinkEventListSender(commandSet(messages), sender, acknowledgementHandler, results::add, maxRetries);
     }
 
     private MissionRequestIntPacket requestInt(int sequence) {

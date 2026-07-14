@@ -133,28 +133,48 @@ class MavlinkMissionAcknowledgementHandlerTest {
   }
 
   @Test
-  void requestRepeatingSequenceFails() {
+  void requestRepeatingMostRecentSequenceRequestsRetransmission() {
     List<MavlinkMessage> messages = messages(4);
-    MavlinkMissionAcknowledgementHandler handler = new MavlinkMissionAcknowledgementHandler(messages, 3);
+    MavlinkMissionAcknowledgementHandler handler =
+        new MavlinkMissionAcknowledgementHandler(messages, 3);
 
     handler.acknowledge(messages.get(0), requestInt(0));
-    Acknowledgement acknowledgement = handler.acknowledge(messages.get(1), requestInt(0));
+    Acknowledgement acknowledgement =
+        handler.acknowledge(messages.get(1), requestInt(0));
 
-    assertEquals(Action.FAIL, acknowledgement.action());
-    assertEquals("Mission requested sequence 0 but expected 1", acknowledgement.reason());
+    assertEquals(Action.SEND_INDEX, acknowledgement.action());
+    assertEquals(1, acknowledgement.index());
   }
 
   @Test
-  void requestMovingBackwardsFails() {
+  void staleRequestOlderThanMostRecentSequenceIsIgnored() {
     List<MavlinkMessage> messages = messages(5);
-    MavlinkMissionAcknowledgementHandler handler = new MavlinkMissionAcknowledgementHandler(messages, 4);
+    MavlinkMissionAcknowledgementHandler handler =
+        new MavlinkMissionAcknowledgementHandler(messages, 4);
 
     handler.acknowledge(messages.get(0), requestInt(0));
     handler.acknowledge(messages.get(1), requestInt(1));
-    Acknowledgement acknowledgement = handler.acknowledge(messages.get(2), requestInt(0));
+    Acknowledgement acknowledgement =
+        handler.acknowledge(messages.get(2), requestInt(0));
 
-    assertEquals(Action.FAIL, acknowledgement.action());
-    assertEquals("Mission requested sequence 0 but expected 2", acknowledgement.reason());
+    assertEquals(Action.NOT_RELATED, acknowledgement.action());
+  }
+
+  @Test
+  void repeatedFinalItemRequestBeforeMissionAckRequestsRetransmission() {
+    List<MavlinkMessage> messages = messages(4);
+    MavlinkMissionAcknowledgementHandler handler =
+        new MavlinkMissionAcknowledgementHandler(messages, 3);
+
+    handler.acknowledge(messages.get(0), requestInt(0));
+    handler.acknowledge(messages.get(1), requestInt(1));
+    handler.acknowledge(messages.get(2), requestInt(2));
+
+    Acknowledgement acknowledgement =
+        handler.acknowledge(messages.get(3), requestInt(2));
+
+    assertEquals(Action.SEND_INDEX, acknowledgement.action());
+    assertEquals(3, acknowledgement.index());
   }
 
   @Test

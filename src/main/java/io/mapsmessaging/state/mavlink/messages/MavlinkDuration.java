@@ -19,15 +19,31 @@
 
 package io.mapsmessaging.state.mavlink.messages;
 
-import com.google.gson.JsonObject;
+import java.time.Duration;
+import java.util.Objects;
 
-public interface MavlinkMessage {
+public final class MavlinkDuration {
 
-  String getMessageType();
+  private static final double NANOSECONDS_PER_SECOND = 1_000_000_000.0d;
 
-  int getMessageId();
+  private MavlinkDuration() {
+  }
 
-  int getCommand();
+  public static float toSeconds(Duration duration, String name) {
+    Objects.requireNonNull(name, "name must not be null");
 
-  JsonObject toMavlinkJsonObject();
+    if (duration == null || duration.isZero()) {
+      return 0.0f;
+    }
+    if (duration.isNegative()) {
+      throw new IllegalArgumentException(name + " must not be negative");
+    }
+
+    double seconds = duration.getSeconds() + duration.getNano() / NANOSECONDS_PER_SECOND;
+    if (seconds > Float.MAX_VALUE) {
+      throw new IllegalArgumentException(name + " is too large to represent as MAVLink seconds");
+    }
+
+    return (float) seconds;
+  }
 }

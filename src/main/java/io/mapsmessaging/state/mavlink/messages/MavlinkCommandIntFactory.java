@@ -65,17 +65,12 @@ public final class MavlinkCommandIntFactory {
       double radiusMeters,
       float yawDegrees,
       int sequence) {
-    MavlinkCommandInt commandInt = baseCommandInt(
-        targetSystem,
-        targetComponent,
-        MAV_FRAME_GLOBAL_RELATIVE_ALT_INT,
-        MAV_CMD_NAV_LOITER_UNLIM,
-        sequence);
+    MavlinkCommandInt commandInt = baseCommandInt(targetSystem, targetComponent, MAV_FRAME_GLOBAL_RELATIVE_ALT_INT, MAV_CMD_NAV_LOITER_UNLIM, sequence);
 
     commandInt.setParam1(0.0f);
     commandInt.setParam2(0.0f);
     commandInt.setParam3((float) radiusMeters);
-    commandInt.setParam4(toYawRadians(yawDegrees));
+    commandInt.setParam4(normaliseYawDegrees(yawDegrees));
     setPosition(commandInt, position);
 
     return commandInt;
@@ -86,14 +81,7 @@ public final class MavlinkCommandIntFactory {
       int targetSystem,
       int targetComponent,
       int sequence) {
-    MavlinkCommandInt commandInt =
-        baseCommandInt(
-            targetSystem,
-            targetComponent,
-            MAV_FRAME_GLOBAL_RELATIVE_ALT_INT,
-            MAV_CMD_NAV_LOITER_UNLIM,
-            sequence);
-
+    MavlinkCommandInt commandInt = baseCommandInt(targetSystem, targetComponent, MAV_FRAME_GLOBAL_RELATIVE_ALT_INT, MAV_CMD_NAV_LOITER_UNLIM, sequence);
     commandInt.setParam1(0.0f);
     commandInt.setParam2(0.0f);
     commandInt.setParam3(0.0f);
@@ -111,7 +99,6 @@ public final class MavlinkCommandIntFactory {
       GeoPosition position,
       double radiusMeters,
       Duration duration,
-      float yawDegrees,
       int sequence) {
     MavlinkCommandInt commandInt = baseCommandInt(
         targetSystem,
@@ -120,10 +107,10 @@ public final class MavlinkCommandIntFactory {
         MAV_CMD_NAV_LOITER_TIME,
         sequence);
 
-    commandInt.setParam1(toSeconds(duration));
+    commandInt.setParam1(MavlinkDuration.toSeconds(duration, "duration"));
     commandInt.setParam2(0.0f);
     commandInt.setParam3((float) radiusMeters);
-    commandInt.setParam4(toYawRadians(yawDegrees));
+    commandInt.setParam4(Float.NaN);
     setPosition(commandInt, position);
 
     return commandInt;
@@ -167,14 +154,8 @@ public final class MavlinkCommandIntFactory {
     return (int) Math.round(value * 10_000_000.0d);
   }
 
-  private static float toSeconds(Duration duration) {
-    if (duration == null || duration.isZero() || duration.isNegative()) {
-      return 0.0f;
-    }
-    return duration.toSeconds();
-  }
 
-  private static float toYawRadians(float yawDegrees) {
+  private static float normaliseYawDegrees(float yawDegrees) {
     if (Float.isNaN(yawDegrees)) {
       return Float.NaN;
     }
@@ -188,6 +169,11 @@ public final class MavlinkCommandIntFactory {
       normalisedYawDegrees += 360.0f;
     }
 
-    return (float) Math.toRadians(normalisedYawDegrees);
+    return normalisedYawDegrees;
+  }
+
+  private static float toYawRadians(float yawDegrees) {
+    float normalisedYawDegrees = normaliseYawDegrees(yawDegrees);
+    return Float.isNaN(normalisedYawDegrees) ? Float.NaN : (float) Math.toRadians(normalisedYawDegrees);
   }
 }

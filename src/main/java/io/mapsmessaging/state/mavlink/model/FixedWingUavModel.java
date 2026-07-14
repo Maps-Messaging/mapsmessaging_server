@@ -19,23 +19,5 @@
 
 package io.mapsmessaging.state.mavlink.model;
 
-import java.util.List;
-import java.util.Objects;
-
-public record MissionPlan(List<PlanItem> items, int iterations) {
-
-    public MissionPlan(List<PlanItem> items) {
-        this(items, 1);
-    }
-
-    public MissionPlan {
-        items = List.copyOf(Objects.requireNonNull(items, "items must not be null"));
-
-        if (items.isEmpty()) {
-            throw new IllegalArgumentException("items must not be empty");
-        }
-        if (iterations < 1) {
-            throw new IllegalArgumentException("iterations must be at least 1");
-        }
-    }
+public interface FixedWingUavModel extends UavModel {
 }

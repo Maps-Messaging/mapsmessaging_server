@@ -66,6 +66,32 @@ public class DroneInfoDTO {
   )
   private TaskCapabilities capabilities = new TaskCapabilities();
 
-  @Schema(description = "Action performed when the drone receives a stop command.")
-  private StopActionEnum stopAction;
+  @Schema(description = "Action performed when the current task is cancelled.")
+  private StopActionEnum cancelAction = StopActionEnum.STOP;
+
+  @Schema(description = "Action performed when a mission completes normally.")
+  private StopActionEnum missionEndAction = StopActionEnum.STOP;
+
+  @Schema(description = "Action performed when a mission exceeds its configured duration.")
+  private StopActionEnum missionTimeoutAction = StopActionEnum.STOP;
+
+  /**
+   * Backwards-compatible alias for the former stopAction property.
+   *
+   * @return the configured cancellation action
+   */
+  @Deprecated
+  public StopActionEnum getStopAction() {
+    return cancelAction;
+  }
+
+  /**
+   * Backwards-compatible alias for the former stopAction property.
+   *
+   * @param stopAction action to perform when the current task is cancelled
+   */
+  @Deprecated
+  public void setStopAction(StopActionEnum stopAction) {
+    cancelAction = stopAction;
+  }
 }
