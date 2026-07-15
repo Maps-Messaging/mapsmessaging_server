@@ -24,6 +24,7 @@ public final class MavlinkCommandLongFactory {
   public static final int MAV_CMD_NAV_WAYPOINT = 16;
   public static final int MAV_CMD_NAV_LOITER_UNLIM = 17;
   public static final int MAV_CMD_NAV_RETURN_TO_LAUNCH = 20;
+  public static final int MAV_CMD_DO_ORBIT = 34;
   public static final int MAV_CMD_DO_SET_MODE = 176;
   public static final int MAV_CMD_DO_PAUSE_CONTINUE = 193;
   public static final int MAV_CMD_MISSION_START = 300;
@@ -36,7 +37,11 @@ public final class MavlinkCommandLongFactory {
 
   public static final float PAUSE = 0.0f;
   public static final float CONTINUE = 1.0f;
-  public static final int MAV_CMD_DO_ORBIT = 34;
+
+  public static final float MAV_MODE_FLAG_CUSTOM_MODE_ENABLED = 1.0f;
+
+  public static final float ARDUPLANE_MODE_TAKEOFF = 13.0f;
+  public static final float ARDUPLANE_MODE_GUIDED = 15.0f;
 
   private MavlinkCommandLongFactory() {
   }
@@ -58,21 +63,84 @@ public final class MavlinkCommandLongFactory {
   }
 
   public static MavlinkCommandLong arm(
-      int targetSystem, int targetComponent, int sequence, boolean force) {
+      int targetSystem,
+      int targetComponent,
+      int sequence,
+      boolean force) {
+
     return armDisarm(targetSystem, targetComponent, sequence, ARM, force);
   }
 
   public static MavlinkCommandLong disarm(
-      int targetSystem, int targetComponent, int sequence, boolean force) {
+      int targetSystem,
+      int targetComponent,
+      int sequence,
+      boolean force) {
+
     return armDisarm(targetSystem, targetComponent, sequence, DISARM, force);
   }
 
-  public static MavlinkCommandLong missionStart(int targetSystem, int targetComponent, int sequence) {
+  public static MavlinkCommandLong guidedMode(
+      int targetSystem,
+      int targetComponent,
+      int sequence) {
+
+    return ardupilotPlaneMode(
+        targetSystem,
+        targetComponent,
+        sequence,
+        ARDUPLANE_MODE_GUIDED);
+  }
+
+  public static MavlinkCommandLong takeoffMode(
+      int targetSystem,
+      int targetComponent,
+      int sequence) {
+
+    return ardupilotPlaneMode(
+        targetSystem,
+        targetComponent,
+        sequence,
+        ARDUPLANE_MODE_TAKEOFF);
+  }
+
+  public static MavlinkCommandLong missionStart(
+      int targetSystem,
+      int targetComponent,
+      int sequence) {
+
     return command(targetSystem, targetComponent, MAV_CMD_MISSION_START, sequence);
   }
 
-  public static MavlinkCommandLong orbit(int targetSystem, int targetComponent, int sequence, double radiusMeters, float velocityMetersPerSecond, float yawBehaviour, double latitude, double longitude, float altitudeMeters) {
-    MavlinkCommandLong commandLong = command(targetSystem, targetComponent, MAV_CMD_DO_ORBIT, sequence);
+  public static MavlinkCommandLong missionStart(
+      int targetSystem,
+      int targetComponent,
+      int sequence,
+      int firstMissionItem,
+      int lastMissionItem) {
+
+    MavlinkCommandLong commandLong =
+        missionStart(targetSystem, targetComponent, sequence);
+
+    commandLong.setParam1(firstMissionItem);
+    commandLong.setParam2(lastMissionItem);
+    return commandLong;
+  }
+
+  public static MavlinkCommandLong orbit(
+      int targetSystem,
+      int targetComponent,
+      int sequence,
+      double radiusMeters,
+      float velocityMetersPerSecond,
+      float yawBehaviour,
+      double latitude,
+      double longitude,
+      float altitudeMeters) {
+
+    MavlinkCommandLong commandLong =
+        command(targetSystem, targetComponent, MAV_CMD_DO_ORBIT, sequence);
+
     commandLong.setParam1((float) radiusMeters);
     commandLong.setParam2(velocityMetersPerSecond);
     commandLong.setParam3(yawBehaviour);
@@ -84,34 +152,66 @@ public final class MavlinkCommandLongFactory {
     return commandLong;
   }
 
-  public static MavlinkCommandLong missionStart(int targetSystem, int targetComponent, int sequence, int firstMissionItem, int lastMissionItem) {
-    MavlinkCommandLong commandLong = missionStart(targetSystem, targetComponent, sequence);
-    commandLong.setParam1(firstMissionItem);
-    commandLong.setParam2(lastMissionItem);
-    return commandLong;
-  }
+  public static MavlinkCommandLong returnToLaunch(
+      int targetSystem,
+      int targetComponent,
+      int sequence) {
 
-  public static MavlinkCommandLong returnToLaunch(int targetSystem, int targetComponent, int sequence) {
-    return command(targetSystem, targetComponent, MAV_CMD_NAV_RETURN_TO_LAUNCH, sequence);
+    return command(
+        targetSystem,
+        targetComponent,
+        MAV_CMD_NAV_RETURN_TO_LAUNCH,
+        sequence);
   }
 
   public static MavlinkCommandLong loiterUnlimited(
-      int targetSystem, int targetComponent, int sequence) {
-    return command(targetSystem, targetComponent, MAV_CMD_NAV_LOITER_UNLIM, sequence);
+      int targetSystem,
+      int targetComponent,
+      int sequence) {
+
+    return command(
+        targetSystem,
+        targetComponent,
+        MAV_CMD_NAV_LOITER_UNLIM,
+        sequence);
   }
 
-  public static MavlinkCommandLong standby(int targetSystem, int targetComponent, int sequence) {
+  public static MavlinkCommandLong standby(
+      int targetSystem,
+      int targetComponent,
+      int sequence) {
+
     return pause(targetSystem, targetComponent, sequence);
   }
 
-  public static MavlinkCommandLong pause(int targetSystem, int targetComponent, int sequence) {
-    MavlinkCommandLong commandLong = command(targetSystem, targetComponent, MAV_CMD_DO_PAUSE_CONTINUE, sequence);
+  public static MavlinkCommandLong pause(
+      int targetSystem,
+      int targetComponent,
+      int sequence) {
+
+    MavlinkCommandLong commandLong =
+        command(
+            targetSystem,
+            targetComponent,
+            MAV_CMD_DO_PAUSE_CONTINUE,
+            sequence);
+
     commandLong.setParam1(PAUSE);
     return commandLong;
   }
 
-  public static MavlinkCommandLong resume(int targetSystem, int targetComponent, int sequence) {
-    MavlinkCommandLong commandLong = command(targetSystem, targetComponent, MAV_CMD_DO_PAUSE_CONTINUE, sequence);
+  public static MavlinkCommandLong resume(
+      int targetSystem,
+      int targetComponent,
+      int sequence) {
+
+    MavlinkCommandLong commandLong =
+        command(
+            targetSystem,
+            targetComponent,
+            MAV_CMD_DO_PAUSE_CONTINUE,
+            sequence);
+
     commandLong.setParam1(CONTINUE);
     return commandLong;
   }
@@ -127,7 +227,13 @@ public final class MavlinkCommandLongFactory {
       double latitude,
       double longitude,
       float altitudeMeters) {
-    MavlinkCommandLong commandLong = command(targetSystem, targetComponent, MAV_CMD_NAV_WAYPOINT, sequence);
+
+    MavlinkCommandLong commandLong =
+        command(
+            targetSystem,
+            targetComponent,
+            MAV_CMD_NAV_WAYPOINT,
+            sequence);
 
     commandLong.setParam1(holdTimeSeconds);
     commandLong.setParam2(acceptanceRadiusMeters);
@@ -140,7 +246,12 @@ public final class MavlinkCommandLongFactory {
     return commandLong;
   }
 
-  public static MavlinkCommandLong command(int targetSystem, int targetComponent, int command, int sequence) {
+  public static MavlinkCommandLong command(
+      int targetSystem,
+      int targetComponent,
+      int command,
+      int sequence) {
+
     MavlinkCommandLong commandLong = new MavlinkCommandLong();
     commandLong.setTargetSystem(targetSystem);
     commandLong.setTargetComponent(targetComponent);
@@ -150,10 +261,41 @@ public final class MavlinkCommandLongFactory {
     return commandLong;
   }
 
-  private static MavlinkCommandLong armDisarm(int targetSystem, int targetComponent, int sequence, float armState, boolean force) {
-    MavlinkCommandLong commandLong = command(targetSystem, targetComponent, MAV_CMD_COMPONENT_ARM_DISARM, sequence);
+  private static MavlinkCommandLong ardupilotPlaneMode(
+      int targetSystem,
+      int targetComponent,
+      int sequence,
+      float customMode) {
+
+    MavlinkCommandLong commandLong =
+        command(
+            targetSystem,
+            targetComponent,
+            MAV_CMD_DO_SET_MODE,
+            sequence);
+
+    commandLong.setParam1(MAV_MODE_FLAG_CUSTOM_MODE_ENABLED);
+    commandLong.setParam2(customMode);
+    return commandLong;
+  }
+
+  private static MavlinkCommandLong armDisarm(
+      int targetSystem,
+      int targetComponent,
+      int sequence,
+      float armState,
+      boolean force) {
+
+    MavlinkCommandLong commandLong =
+        command(
+            targetSystem,
+            targetComponent,
+            MAV_CMD_COMPONENT_ARM_DISARM,
+            sequence);
+
     commandLong.setParam1(armState);
-    commandLong.setParam2(force ? FORCE_ARM_DISARM : NORMAL_ARM_DISARM);
+    commandLong.setParam2(
+        force ? FORCE_ARM_DISARM : NORMAL_ARM_DISARM);
     return commandLong;
   }
 }

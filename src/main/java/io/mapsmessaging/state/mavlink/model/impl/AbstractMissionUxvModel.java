@@ -97,12 +97,7 @@ public abstract class AbstractMissionUxvModel extends AbstractUxvModel {
     Objects.requireNonNull(context, "context must not be null");
     Objects.requireNonNull(request, "request must not be null");
 
-    MavlinkCommandLong commandLong =
-        MavlinkCommandLongFactory.command(
-            context.targetSystem(),
-            context.targetComponent(),
-            MAV_CMD_DO_SET_HOME,
-            context.sequence());
+    MavlinkCommandLong commandLong = MavlinkCommandLongFactory.command(context.targetSystem(), context.targetComponent(), MAV_CMD_DO_SET_HOME, context.sequence());
     commandLong.setParam1(request.useCurrentPosition() ? USE_CURRENT_POSITION : USE_SPECIFIED_POSITION);
 
     if (!request.useCurrentPosition()) {
@@ -121,12 +116,7 @@ public abstract class AbstractMissionUxvModel extends AbstractUxvModel {
     Objects.requireNonNull(request, "request must not be null");
     rejectSpeed(request.speedMetersPerSecond(), UxvOperation.REPOSITION);
     validateCoordinates(request.position(), "position");
-
-    float yawDegrees = request.yawDegrees() == null ? Float.NaN : normaliseDegrees(request.yawDegrees());
-    return UxvModelCommandSet.of(
-        UxvOperation.REPOSITION,
-        getModelName(),
-        MavlinkCommandIntFactory.reposition(context.targetSystem(), context.targetComponent(), request.position(), yawDegrees, context.sequence())
+    return UxvModelCommandSet.of(UxvOperation.REPOSITION, getModelName(), MavlinkCommandIntFactory.reposition(context.targetSystem(), context.targetComponent(), request.position(), context.sequence())
     );
   }
 

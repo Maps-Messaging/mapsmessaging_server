@@ -23,6 +23,8 @@ import io.mapsmessaging.state.drone.model.GeoPosition;
 
 import java.time.Duration;
 
+import static io.mapsmessaging.state.mavlink.messages.MavlinkMissionItemIntFactory.MAV_FRAME_GLOBAL_INT;
+
 public final class MavlinkCommandIntFactory {
   public static final int MAV_CMD_DO_ORBIT = 34;
   public static final int MAV_FRAME_GLOBAL = 0;
@@ -38,12 +40,12 @@ public final class MavlinkCommandIntFactory {
   private MavlinkCommandIntFactory() {
   }
 
-  public static MavlinkCommandInt reposition(int targetSystem, int targetComponent, GeoPosition position, float yawDegrees, int sequence) {
+  public static MavlinkCommandInt reposition(int targetSystem, int targetComponent, GeoPosition position, int sequence) {
     MavlinkCommandInt commandInt = baseCommandInt(targetSystem, targetComponent, MAV_FRAME_GLOBAL_RELATIVE_ALT_INT, MAV_CMD_DO_REPOSITION, sequence);
     commandInt.setParam1(-1.0f);
     commandInt.setParam2(1.0f);
-    commandInt.setParam3(0.0f);
-    commandInt.setParam4(toYawRadians(yawDegrees));
+    commandInt.setParam3(Float.NaN);
+    commandInt.setParam4(Float.NaN);
     setPosition(commandInt, position);
     return commandInt;
   }

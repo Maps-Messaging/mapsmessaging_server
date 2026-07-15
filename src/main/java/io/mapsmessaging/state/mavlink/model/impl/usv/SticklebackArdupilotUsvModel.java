@@ -22,28 +22,15 @@ package io.mapsmessaging.state.mavlink.model.impl.usv;
 import io.mapsmessaging.state.drone.drone.DroneTwin;
 import io.mapsmessaging.state.drone.model.DetectionEvent;
 import io.mapsmessaging.state.drone.model.DetectionEventType;
-import io.mapsmessaging.state.mavlink.messages.MavlinkCommandIntFactory;
-import io.mapsmessaging.state.mavlink.messages.MavlinkMessage;
-import io.mapsmessaging.state.mavlink.messages.MavlinkMissionItemIntFactory;
-import io.mapsmessaging.state.mavlink.model.LoiterRequest;
-import io.mapsmessaging.state.mavlink.model.PlanItem;
-import io.mapsmessaging.state.mavlink.model.PlanItemType;
-import io.mapsmessaging.state.mavlink.model.PlanValidationIssue;
-import io.mapsmessaging.state.mavlink.model.UnsupportedUxvOperationException;
-import io.mapsmessaging.state.mavlink.model.UsvModel;
-import io.mapsmessaging.state.mavlink.model.UxvCommandContext;
-import io.mapsmessaging.state.mavlink.model.UxvModelCommandSet;
-import io.mapsmessaging.state.mavlink.model.UxvOperation;
-import io.mapsmessaging.state.mavlink.model.UxvVehicleType;
+import io.mapsmessaging.state.drone.model.GeoPosition;
+import io.mapsmessaging.state.mavlink.messages.*;
+import io.mapsmessaging.state.mavlink.model.*;
 import io.mapsmessaging.state.mavlink.model.impl.ardupilot.GenericArduPilotUxvModel;
 import io.mapsmessaging.state.mavlink.packet.MavlinkPacket;
 import io.mapsmessaging.state.mavlink.packet.NamedValueFloatPacket;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
-import java.util.List;
-import java.util.Optional;
-import java.util.OptionalInt;
-import java.util.UUID;
+import java.util.*;
 
 public class SticklebackArdupilotUsvModel extends GenericArduPilotUxvModel implements UsvModel {
 
@@ -75,6 +62,50 @@ public class SticklebackArdupilotUsvModel extends GenericArduPilotUxvModel imple
             UxvOperation.LOITER));
   }
 
+  @Override
+  public UxvModelCommandSet reposition(
+      UxvCommandContext context,
+      RepositionRequest request) {
+
+    Objects.requireNonNull(context, "context must not be null");
+    Objects.requireNonNull(request, "request must not be null");
+
+    rejectSpeed(request.speedMetersPerSecond(), UxvOperation.REPOSITION);
+
+    GeoPosition position = Objects.requireNonNull(request.position(), "position must not be null");
+
+    validateCoordinates(position, "position");
+
+    Double altitudeMslMeters = position.getAltitudeMslMeters();
+    if (altitudeMslMeters == null) {
+      throw new IllegalArgumentException("position.altitudeMslMeters must contain the current drone altitude");
+    }
+    requireFinite(altitudeMslMeters, "position.altitudeMslMeters");
+
+    float alt = 0.6f;// altitudeMslMeters.floatValue();
+
+    List<MavlinkMessage> messages =
+        List.of(
+            MavlinkCommandIntFactory.reposition(
+                context.targetSystem(),
+                context.targetComponent(),
+                position,
+                context.sequence()),
+            MavlinkCommandLongFactory.guidedMode(
+                context.targetSystem(),
+                context.targetComponent(),
+                context.sequence()),
+            MavlinkMissionItemFactory.guidedWaypoint(
+                context.targetSystem(),
+                context.targetComponent(),
+                position,
+                alt));
+
+    return UxvModelCommandSet.of(
+        UxvOperation.REPOSITION,
+        getModelName(),
+        messages);
+  }
   @Override
   public UxvModelCommandSet loiter(UxvCommandContext context, LoiterRequest request) {
     java.util.Objects.requireNonNull(context, "context must not be null");
@@ -127,13 +158,9 @@ public class SticklebackArdupilotUsvModel extends GenericArduPilotUxvModel imple
               DEFAULT_PASS_RADIUS_METERS,
               item.yawDegrees() == null ? Float.NaN : normaliseDegrees(item.yawDegrees()));
       case LOITER -> toMissionLoiter(context, sequence, item);
-      case RETURN_TO_HOME ->
-          MavlinkMissionItemIntFactory.returnToLaunch(context.targetSystem(), context.targetComponent(), sequence);
+      case RETURN_TO_HOME -> MavlinkMissionItemIntFactory.returnToLaunch(context.targetSystem(), context.targetComponent(), sequence);
       case ORBIT, HOLD_POSITION ->
-          throw new UnsupportedUxvOperationException(
-              getModelName(),
-              UxvOperation.BUILD_MISSION,
-              "Mission item type " + item.type() + " is not supported by this Stickleback ArduPilot USV model");
+          throw new UnsupportedUxvOperationException(getModelName(), UxvOperation.BUILD_MISSION, "Mission item type " + item.type() + " is not supported by this Stickleback ArduPilot USV model");
     };
   }
 
@@ -162,10 +189,7 @@ public class SticklebackArdupilotUsvModel extends GenericArduPilotUxvModel imple
   @Override
   protected void validatePlanItem(int index, PlanItem item, List<PlanValidationIssue> issues) {
     if (item.type() == PlanItemType.ORBIT || item.type() == PlanItemType.HOLD_POSITION) {
-      issues.add(
-          new PlanValidationIssue(
-              UxvOperation.BUILD_MISSION,
-              "Mission item " + index + " type " + item.type() + " is not supported by this Stickleback ArduPilot USV model"));
+      issues.add(new PlanValidationIssue(UxvOperation.BUILD_MISSION, "Mission item " + index + " type " + item.type() + " is not supported by this Stickleback ArduPilot USV model"));
     }
 
     if (item.type() == PlanItemType.LOITER && item.yawDegrees() != null) {

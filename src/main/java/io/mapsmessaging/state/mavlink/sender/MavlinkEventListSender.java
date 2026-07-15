@@ -322,7 +322,7 @@ public class MavlinkEventListSender implements AutoCloseable {
 
   private void sendMessage(int index, MavlinkMessage message, boolean requiresAcknowledgement) throws Exception {
     logger.log(MAVLINK_EVENT_LIST_SENDER_SENDING, sequenceId, commandSet.operation(), commandSet.modelName(), index + 1, messages.size(), messageName(message), requiresAcknowledgement);
-
+    System.err.println("Sending message: " +message);
     sender.send(message);
 
     if (requiresAcknowledgement) {

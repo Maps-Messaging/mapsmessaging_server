@@ -209,13 +209,30 @@ public class MavlinkProtocol extends Protocol {
         Packet packet = new Packet(ByteBuffer.wrap(frame));
         packet.setFromAddress(parseSocketAddress(socketAddressText));
         endPoint.sendPacket(packet);
+        synchronized (System.err) {
+          System.err.println("---------------------------------------------------");
+          System.err.println(input);
+          System.err.println(toHexDump(frame));
+          System.err.println("---------------------------------------------------");
+        }
       } catch (Throwable e) {
         logger.log(MAVLINK_FAILED_SENDING_OUTBOUND_PACKET, endPoint.getName(), socketAddressText, e);
       }
-
-    } finally {
+    }
+    catch(Throwable th){
+      th.printStackTrace();
+    }
+    finally {
       messageEvent.getCompletionTask().run();
     }
+  }
+
+  public static String toHexDump(byte[] data) {
+    StringBuilder output = new StringBuilder(data.length * 3);
+    for (byte value : data) {
+      output.append(String.format("%02X ", value & 0xFF));
+    }
+    return output.toString().trim();
   }
 
   @Override
