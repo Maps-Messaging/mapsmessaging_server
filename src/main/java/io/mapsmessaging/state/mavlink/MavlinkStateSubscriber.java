@@ -161,8 +161,6 @@ public class MavlinkStateSubscriber implements MessageHandler {
           }.getType()
       );
     }
-
-    ProcessedFrame processedFrame = new ProcessedFrame(""+frame.getMessageId(), frame, fields, true, Collections.emptyList());
-    return processedFrame;
+    return new ProcessedFrame(""+frame.getMessageId(), frame, fields, true, Collections.emptyList(), null);
   }
 }

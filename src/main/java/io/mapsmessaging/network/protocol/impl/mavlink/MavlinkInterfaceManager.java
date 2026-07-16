@@ -103,9 +103,19 @@ public class MavlinkInterfaceManager implements SelectorCallback, MavlinkConnect
     int pos = packet.position();
     packet.get(raw);
     packet.position(pos);
-    Optional<ProcessedFrame> potentialFrame = mavlinkEventFactory.unpack(endPoint.getName(), packet.getRawBuffer());
-    if (potentialFrame.isPresent()) {
-      ProcessedFrame env = potentialFrame.get();
+    List<ProcessedFrame> frames = new ArrayList<>();
+
+    ByteBuffer buffer = ByteBuffer.wrap(raw);
+    while (buffer.hasRemaining()) {
+      Optional<ProcessedFrame> potentialFrame = mavlinkEventFactory.unpack(endPoint.getName(), buffer);
+      if (potentialFrame.isEmpty()) {
+        break;
+      }
+      frames.add(potentialFrame.get());
+    }
+
+    while (!frames.isEmpty()){
+      ProcessedFrame env = frames.remove(0);
       logger.log(MAVLINK_DETECTED_PACKET, endPoint.getName(), env.getMessageName());
       MavlinkDeviceKey key = buildKey(packet, env.getFrame().getSystemId());
       boolean allowed =
@@ -120,13 +130,9 @@ public class MavlinkInterfaceManager implements SelectorCallback, MavlinkConnect
         } else if (state.getContext() != null) {
           MavlinkProtocol protocol = state.getContext();
           protocol.processRawFrame(env, raw, packet.getFromAddress().toString());
-          forwardPacket(raw);
         }
-      } else {
-        forwardPacket(raw);
       }
-    } else {
-      forwardPacket(raw);
+      forwardPacket(env.getRawPayload());
     }
     selectorTask.register(SelectionKey.OP_READ);
     return true;
