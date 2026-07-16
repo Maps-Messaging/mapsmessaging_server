@@ -55,6 +55,7 @@ public class MavlinkConfig extends MavlinkConfigDTO implements Config {
     this.outboundTopicName = config.getProperty("outboundTopicName", outboundTopicName);
     this.qualityOfService = config.getIntProperty("qualityOfService", qualityOfService);
     this.storeOffline = config.getBooleanProperty("storeOffline", storeOffline);
+    this.tlogDirectory = config.getProperty("tlogDirectory", tlogDirectory);
     this.acceptedMessageIds = readIntegerList(config.get("acceptedMessageIds"));
     this.rejectedMessageIds = readIntegerList(config.get("rejectedMessageIds"));
     this.acceptedSources = readKnownSources(config.get("acceptedSources"));
@@ -165,6 +166,10 @@ public class MavlinkConfig extends MavlinkConfigDTO implements Config {
         storeOffline = newConfig.isStoreOffline();
         hasChanged = true;
       }
+      if (!Objects.equals(tlogDirectory, newConfig.getTlogDirectory())) {
+        tlogDirectory = newConfig.getTlogDirectory();
+        hasChanged = true;
+      }
       if (ProtocolConfigFactory.update(this, newConfig)) {
         hasChanged = true;
       }
@@ -200,6 +205,7 @@ public class MavlinkConfig extends MavlinkConfigDTO implements Config {
     properties.put("outboundTopicName", outboundTopicName);
     properties.put("qualityOfService", qualityOfService);
     properties.put("storeOffline", storeOffline);
+    putOptional(properties, "tlogDirectory", tlogDirectory);
     return properties;
   }
 

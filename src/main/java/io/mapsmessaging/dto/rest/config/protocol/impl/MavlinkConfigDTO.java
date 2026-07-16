@@ -294,4 +294,17 @@ public class MavlinkConfigDTO extends ProtocolConfigDTO {
       requiredMode = Schema.RequiredMode.NOT_REQUIRED
   )
   protected boolean storeOffline = false;
+
+
+  @Schema(
+      description =
+          "Directory where MAVLink telemetry log files are written. Each MAVLink endpoint creates a separate "
+              + "TLOG file using the endpoint name as the file name. If null or blank, TLOG recording is disabled.",
+      example = "/var/log/mapsmessaging/mavlink",
+      defaultValue = "",
+      requiredMode = Schema.RequiredMode.NOT_REQUIRED,
+      nullable = true
+  )
+  protected String tlogDirectory;
+
 }

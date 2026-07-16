@@ -21,4 +21,6 @@ package io.mapsmessaging.network.protocol.impl.mavlink;
 
 public interface MavlinkConnectionManager {
   void close(MavlinkDeviceKey key);
+  default void writeTlog(byte[] frameBytes) {
+  }
 }

@@ -59,6 +59,7 @@ class UpdateTest {
         null,
         fields,
         true,
+        null,
         null
     );
 
@@ -90,7 +91,8 @@ class UpdateTest {
         null,
         fields,
         true,
-        List.of()
+        List.of(),
+        null
     );
 
     AttitudePacket packet = new AttitudePacket(frame);
@@ -130,7 +132,8 @@ class UpdateTest {
         null,
         fields,
         true,
-        List.of()
+        List.of(),
+        null
     );
 
     HeartbeatPacket packet = new HeartbeatPacket(frame);
@@ -169,7 +172,8 @@ class UpdateTest {
         null,
         fields,
         true,
-        List.of()
+        List.of(),
+        null
     );
 
     SysStatusPacket packet = new SysStatusPacket(frame);
@@ -207,7 +211,8 @@ class UpdateTest {
         null,
         fields,
         true,
-        List.of()
+        List.of(),
+        null
     );
 
     GpsRawIntPacket packet = new GpsRawIntPacket(frame);
@@ -245,7 +250,8 @@ class UpdateTest {
         null,
         fields,
         true,
-        List.of()
+        List.of(),
+        null
     );
 
     SystemTimePacket packet = new SystemTimePacket(frame);
@@ -281,7 +287,8 @@ class UpdateTest {
         null,
         fields,
         true,
-        List.of()
+        List.of(),
+        null
     );
 
     AltitudePacket packet = new AltitudePacket(frame);
@@ -316,7 +323,8 @@ class UpdateTest {
         null,
         fields,
         true,
-        List.of()
+        List.of(),
+        null
     );
 
     ExtendedSysStatePacket packet = new ExtendedSysStatePacket(frame);
@@ -349,7 +357,8 @@ class UpdateTest {
         null,
         fields,
         true,
-        List.of()
+        List.of(),
+        null
     );
 
     MissionCurrentPacket packet = new MissionCurrentPacket(frame);

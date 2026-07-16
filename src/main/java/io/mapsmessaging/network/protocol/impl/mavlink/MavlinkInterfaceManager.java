@@ -31,12 +31,15 @@ import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.mavlink.MavlinkEventFactory;
 import io.mapsmessaging.mavlink.ProcessedFrame;
+import io.mapsmessaging.mavlink.tlog.MavlinkTlogWriter;
+import io.mapsmessaging.mavlink.tlog.TlogConfiguration;
 import io.mapsmessaging.network.io.EndPoint;
 import io.mapsmessaging.network.io.Packet;
 import io.mapsmessaging.network.io.impl.SelectorCallback;
 import io.mapsmessaging.network.io.impl.SelectorTask;
 import io.mapsmessaging.network.io.impl.udp.UDPFacadeEndPoint;
 import io.mapsmessaging.network.io.impl.udp.session.UDPSessionState;
+import lombok.Getter;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -44,19 +47,24 @@ import java.net.SocketAddress;
 import java.net.URI;
 import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
+import java.nio.file.Path;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Optional;
 
 public class MavlinkInterfaceManager implements SelectorCallback, MavlinkConnectionManager {
 
   private static final Logger logger = LoggerFactory.getLogger(MavlinkInterfaceManager.class);
+
   private final SelectorTask selectorTask;
   private final EndPoint endPoint;
   private final MavLinkSessionManager<MavlinkProtocol> currentSessions;
   private final MavlinkEventFactory mavlinkEventFactory;
   private final MavlinkConfig mavlinkConfig;
   private final List<InetSocketAddress> forwardList;
+  private final MavlinkTlogWriter tlogWriter;
 
   public MavlinkInterfaceManager(EndPoint endPoint) throws IOException {
     this.endPoint = endPoint;
@@ -83,6 +91,8 @@ public class MavlinkInterfaceManager implements SelectorCallback, MavlinkConnect
         }
       }
     }
+
+    tlogWriter = createTlogWriter();
   }
 
   public static MavlinkEventFactory loadDialect(String name) throws IOException {
@@ -94,17 +104,16 @@ public class MavlinkInterfaceManager implements SelectorCallback, MavlinkConnect
 
   @Override
   public boolean processPacket(Packet packet) throws IOException {
-    // OK, we have received a packet, lets find out if we have an existing context for it
     if (packet.getFromAddress() == null) {
-      return true; // Ignoring packet since unknown client
+      return true;
     }
 
     byte[] raw = new byte[packet.available()];
     int pos = packet.position();
     packet.get(raw);
     packet.position(pos);
-    List<ProcessedFrame> frames = new ArrayList<>();
 
+    List<ProcessedFrame> frames = new ArrayList<>();
     ByteBuffer buffer = ByteBuffer.wrap(raw);
     while (buffer.hasRemaining()) {
       Optional<ProcessedFrame> potentialFrame = mavlinkEventFactory.unpack(endPoint.getName(), buffer);
@@ -114,8 +123,10 @@ public class MavlinkInterfaceManager implements SelectorCallback, MavlinkConnect
       frames.add(potentialFrame.get());
     }
 
-    while (!frames.isEmpty()){
-      ProcessedFrame env = frames.remove(0);
+    for (ProcessedFrame env : frames) {
+      byte[] frameBytes = env.getRawPayload();
+      writeTlog(frameBytes);
+
       logger.log(MAVLINK_DETECTED_PACKET, endPoint.getName(), env.getMessageName());
       MavlinkDeviceKey key = buildKey(packet, env.getFrame().getSystemId());
       boolean allowed =
@@ -129,13 +140,41 @@ public class MavlinkInterfaceManager implements SelectorCallback, MavlinkConnect
           state.getContext().processPacket(packet);
         } else if (state.getContext() != null) {
           MavlinkProtocol protocol = state.getContext();
-          protocol.processRawFrame(env, raw, packet.getFromAddress().toString());
+          protocol.processRawFrame(env, frameBytes, packet.getFromAddress().toString());
+          forwardPacket(frameBytes);
         }
+      } else {
+        forwardPacket(frameBytes);
       }
-      forwardPacket(env.getRawPayload());
     }
+
     selectorTask.register(SelectionKey.OP_READ);
     return true;
+  }
+
+  private MavlinkTlogWriter createTlogWriter() throws IOException {
+    String tlogDirectory = mavlinkConfig.getTlogDirectory();
+    if (tlogDirectory == null || tlogDirectory.isBlank()) {
+      return null;
+    }
+
+    String fileName = endPoint.getName();
+    if (!fileName.toLowerCase(Locale.ROOT).endsWith(".tlog")) {
+      fileName += ".tlog";
+    }
+    fileName = toSafeFileName(fileName);
+    Path tlogFile = Path.of(tlogDirectory).resolve(fileName);
+    return new MavlinkTlogWriter(TlogConfiguration.builder(tlogFile).build());
+  }
+
+  public void writeTlog(byte[] frameBytes) {
+    if (tlogWriter == null) {
+      return;
+    }
+
+    Instant now = Instant.now();
+    long timestampMicros = now.getEpochSecond() * 1_000_000L + now.getNano() / 1_000L;
+    tlogWriter.write(timestampMicros, frameBytes);
   }
 
   private MavlinkDeviceKey buildKey(Packet packet, int systemId) {
@@ -179,7 +218,13 @@ public class MavlinkInterfaceManager implements SelectorCallback, MavlinkConnect
 
   @Override
   public void close() {
-    currentSessions.close();
+    try {
+      currentSessions.close();
+    } finally {
+      if (tlogWriter != null) {
+        tlogWriter.close();
+      }
+    }
   }
 
   @Override
@@ -204,5 +249,43 @@ public class MavlinkInterfaceManager implements SelectorCallback, MavlinkConnect
 
   public void close(MavlinkDeviceKey remoteClient) {
     currentSessions.deleteState(remoteClient);
+  }
+
+  private static String toSafeFileName(String value) {
+    if (value == null || value.isBlank()) {
+      return "mavlink";
+    }
+
+    StringBuilder safe = new StringBuilder(value.length());
+    boolean previousUnderscore = false;
+
+    for (int i = 0; i < value.length(); i++) {
+      char character = value.charAt(i);
+
+      if (Character.isLetterOrDigit(character) || character == '-' || character == '.') {
+        safe.append(character);
+        previousUnderscore = false;
+      } else if (!previousUnderscore) {
+        safe.append('_');
+        previousUnderscore = true;
+      }
+    }
+
+    int start = 0;
+    int end = safe.length();
+
+    while (start < end && (safe.charAt(start) == '.' || safe.charAt(start) == '_')) {
+      start++;
+    }
+
+    while (end > start && (safe.charAt(end - 1) == '.' || safe.charAt(end - 1) == '_')) {
+      end--;
+    }
+
+    if (start == end) {
+      return "mavlink";
+    }
+
+    return safe.substring(start, end);
   }
 }

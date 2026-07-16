@@ -209,6 +209,7 @@ public class MavlinkProtocol extends Protocol {
         Packet packet = new Packet(ByteBuffer.wrap(frame));
         packet.setFromAddress(parseSocketAddress(socketAddressText));
         endPoint.sendPacket(packet);
+        factory.writeTlog(frame);
         synchronized (System.err) {
           System.err.println("---------------------------------------------------");
           System.err.println(input);
