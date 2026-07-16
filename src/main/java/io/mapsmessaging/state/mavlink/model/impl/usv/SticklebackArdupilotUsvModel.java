@@ -36,8 +36,11 @@ public class SticklebackArdupilotUsvModel extends GenericArduPilotUxvModel imple
 
   public static final String MODEL_NAME = "stickleback-ardupilot-usv";
 
+  private static final double MAX_ALTITUDE_METERS = 0.6f;
   private static final int DETECTION_LOST = 0;
   private static final int DETECTION_PRESENT = 1;
+
+
   private static final float DETECTION_STATE_EPSILON = 0.001f;
   private static final long CONTACT_TTL_MILLIS = 60_000L;
 
@@ -74,15 +77,8 @@ public class SticklebackArdupilotUsvModel extends GenericArduPilotUxvModel imple
 
     GeoPosition position = Objects.requireNonNull(request.position(), "position must not be null");
 
+    position.setAltitudeMslMeters(MAX_ALTITUDE_METERS);
     validateCoordinates(position, "position");
-
-    Double altitudeMslMeters = position.getAltitudeMslMeters();
-    if (altitudeMslMeters == null) {
-      throw new IllegalArgumentException("position.altitudeMslMeters must contain the current drone altitude");
-    }
-    requireFinite(altitudeMslMeters, "position.altitudeMslMeters");
-
-    float alt = 0.6f;// altitudeMslMeters.floatValue();
 
     List<MavlinkMessage> messages =
         List.of(
@@ -90,16 +86,18 @@ public class SticklebackArdupilotUsvModel extends GenericArduPilotUxvModel imple
                 context.targetSystem(),
                 context.targetComponent(),
                 position,
-                context.sequence()),
+                context.sequence()
+            ),
             MavlinkCommandLongFactory.guidedMode(
                 context.targetSystem(),
                 context.targetComponent(),
-                context.sequence()),
+                context.sequence()
+            ),
             MavlinkMissionItemFactory.guidedWaypoint(
                 context.targetSystem(),
                 context.targetComponent(),
-                position,
-                alt));
+                position)
+        );
 
     return UxvModelCommandSet.of(
         UxvOperation.REPOSITION,

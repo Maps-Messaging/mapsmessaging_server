@@ -39,14 +39,9 @@ public final class MavlinkMissionItemFactory {
   public static MavlinkMissionItem guidedWaypoint(
       int targetSystem,
       int targetComponent,
-      GeoPosition position,
-      float relativeAltitudeMeters) {
+      GeoPosition position) {
 
     validatePosition(position);
-
-    if (!Float.isFinite(relativeAltitudeMeters)) {
-      throw new IllegalArgumentException("relativeAltitudeMeters must be finite");
-    }
 
     MavlinkMissionItem missionItem = new MavlinkMissionItem();
     missionItem.setTargetSystem(targetSystem);
@@ -65,7 +60,7 @@ public final class MavlinkMissionItemFactory {
 
     missionItem.setLatitude(position.getLatitude().floatValue());
     missionItem.setLongitude(position.getLongitude().floatValue());
-    missionItem.setAltitude(relativeAltitudeMeters);
+    missionItem.setAltitude(position.getAltitudeMslMeters().floatValue());
 
     return missionItem;
   }

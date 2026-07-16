@@ -35,15 +35,18 @@ import io.mapsmessaging.state.drone.core.TwinObserver;
 import io.mapsmessaging.state.drone.core.TwinUpdateContext;
 import io.mapsmessaging.state.drone.drone.DroneTwin;
 import io.mapsmessaging.state.drone.model.Contact;
-import lombok.NonNull;
-import org.jetbrains.annotations.NotNull;
-
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.security.Principal;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.*;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
+import lombok.NonNull;
+import org.jetbrains.annotations.NotNull;
 
 import static io.mapsmessaging.state.logging.StateLogMessages.*;
 
@@ -54,13 +57,26 @@ public class TwinJsonPublisher implements TwinObserver, ClientConnection, Messag
   private final Gson gson;
   private final String topicTemplate;
   private final TwinManager twinManager;
+  private final long publishRateMs;
   private final Map<String, Destination> destinationCache;
+  private final Map<String, Long> lastPublishedTimes;
 
   public TwinJsonPublisher(TwinManager twinManager, String topicTemplate) throws ExecutionException, InterruptedException, TimeoutException {
+    this(twinManager, topicTemplate, 0);
+  }
+
+  public TwinJsonPublisher(TwinManager twinManager, String topicTemplate, long publishRateMs)
+      throws ExecutionException, InterruptedException, TimeoutException {
+    if (publishRateMs < 0) {
+      throw new IllegalArgumentException("publishRateMs must be greater than or equal to zero");
+    }
+
     this.topicTemplate = topicTemplate;
     this.twinManager = twinManager;
+    this.publishRateMs = publishRateMs;
     this.gson = StateJsonHelper.createGson();
     this.destinationCache = new ConcurrentHashMap<>();
+    this.lastPublishedTimes = new ConcurrentHashMap<>();
     this.session = createSession();
     twinManager.addObserver(this);
   }
@@ -68,19 +84,20 @@ public class TwinJsonPublisher implements TwinObserver, ClientConnection, Messag
   @Override
   public void close() throws IOException {
     twinManager.removeObserver(this);
+    destinationCache.clear();
+    lastPublishedTimes.clear();
     SessionManager.getInstance().close(session, true);
   }
 
   @Override
   public void onTwinUpdated(String twinId, EntityTwin current, TwinUpdateContext context) {
-    if (twinId == null || twinId.isBlank() || current == null) {
+    if (twinId == null || twinId.isBlank() || current == null || !reservePublishSlot(twinId)) {
       return;
     }
 
     try {
       publishTwin(twinId, current);
-    }
-    catch (Exception exception) {
+    } catch (Exception exception) {
       throw new RuntimeException("Failed to publish twin update for twinId=" + twinId, exception);
     }
   }
@@ -114,6 +131,30 @@ public class TwinJsonPublisher implements TwinObserver, ClientConnection, Messag
     } catch (Throwable e) {
       logger.log(TWIN_PUBLISH_FAILED, twinId, topic, e.getMessage());
       destinationCache.remove(topic);
+    }
+  }
+
+  private boolean reservePublishSlot(String twinId) {
+    if (publishRateMs == 0) {
+      return true;
+    }
+
+    long currentTime = System.currentTimeMillis();
+
+    while (true) {
+      Long lastPublishedTime = lastPublishedTimes.get(twinId);
+
+      if (lastPublishedTime != null && currentTime - lastPublishedTime < publishRateMs) {
+        return false;
+      }
+
+      if (lastPublishedTime == null) {
+        if (lastPublishedTimes.putIfAbsent(twinId, currentTime) == null) {
+          return true;
+        }
+      } else if (lastPublishedTimes.replace(twinId, lastPublishedTime, currentTime)) {
+        return true;
+      }
     }
   }
 
@@ -188,12 +229,12 @@ public class TwinJsonPublisher implements TwinObserver, ClientConnection, Messag
     destination.storeMessage(contactMessageBuilder.build());
   }
 
-  private record TwinJsonPayload(JsonObject jsonObject, String json) {}
   private Destination resolveDestination(String topic) throws ExecutionException, InterruptedException, TimeoutException {
     Destination destination = destinationCache.get(topic);
     if (destination != null) {
       return destination;
     }
+
     Destination resolvedDestination = session.findDestination(topic, DestinationType.TOPIC).get(1, TimeUnit.SECONDS);
     destinationCache.put(topic, resolvedDestination);
     return resolvedDestination;
@@ -204,8 +245,7 @@ public class TwinJsonPublisher implements TwinObserver, ClientConnection, Messag
 
     if (twin != null) {
       resolvedTopic = resolvedTopic.replace("{twinType}", twin.getClass().getSimpleName());
-    }
-    else {
+    } else {
       resolvedTopic = resolvedTopic.replace("{twinType}", "EntityTwin");
     }
 
@@ -214,7 +254,8 @@ public class TwinJsonPublisher implements TwinObserver, ClientConnection, Messag
 
   private Session createSession() throws ExecutionException, InterruptedException, TimeoutException {
     SessionContextBuilder sessionContextBuilder = new SessionContextBuilder("twin_json_publisher", this);
-    sessionContextBuilder.setResetState(true)
+    sessionContextBuilder
+        .setResetState(true)
         .setSessionExpiry(0)
         .isInternal(true)
         .setPersistentSession(false)
@@ -223,6 +264,8 @@ public class TwinJsonPublisher implements TwinObserver, ClientConnection, Messag
     CompletableFuture<Session> sessionFuture = SessionManager.getInstance().createAsync(sessionContextBuilder.build(), this);
     return sessionFuture.get(5, TimeUnit.SECONDS);
   }
+
+  private record TwinJsonPayload(JsonObject jsonObject, String json) {}
 
   @Override
   public long getTimeOut() {

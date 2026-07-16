@@ -43,4 +43,13 @@ public class TwinPublishConfigDTO {
       requiredMode = Schema.RequiredMode.NOT_REQUIRED
   )
   protected String topicTemplate = "/state/twins/{twinId}";
+
+
+  @Schema(
+      description = "Minimum interval in milliseconds between published updates for each twin. A value of 0 publishes every update.",
+      example = "1000",
+      defaultValue = "0",
+      minimum = "0",
+      requiredMode = Schema.RequiredMode.NOT_REQUIRED)
+  protected long publishRateMs = 0;
 }

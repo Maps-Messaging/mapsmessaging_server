@@ -62,6 +62,7 @@ public class TwinManagerConfig extends TwinManagerConfigDTO implements Config, C
       TwinPublishConfigDTO publishConfig = new TwinPublishConfigDTO();
       publishConfig.setEnabled(publishProps.getBooleanProperty("enabled", publishConfig.isEnabled()));
       publishConfig.setTopicTemplate(publishProps.getProperty("topicTemplate", publishConfig.getTopicTemplate()));
+      publishConfig.setPublishRateMs(publishProps.getLongProperty("publishRateMs", publishConfig.getPublishRateMs()));
       this.publish = publishConfig;
     }
 

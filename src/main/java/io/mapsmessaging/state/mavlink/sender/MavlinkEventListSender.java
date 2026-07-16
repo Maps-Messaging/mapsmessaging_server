@@ -28,9 +28,12 @@ import io.mapsmessaging.state.mavlink.model.UxvModelCommandSet;
 import io.mapsmessaging.state.mavlink.packet.MavlinkPacket;
 import io.mapsmessaging.state.mavlink.sender.MavlinkAcknowledgementHandler.Acknowledgement;
 import io.mapsmessaging.state.mavlink.sender.MavlinkAcknowledgementHandler.Action;
+import io.mapsmessaging.utilities.threads.SimpleTaskScheduler;
 import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import lombok.Getter;
 
@@ -38,6 +41,7 @@ import lombok.Getter;
 public class MavlinkEventListSender implements AutoCloseable {
 
   public static final int DEFAULT_MAX_RETRIES = 3;
+  public static final long DEFAULT_ACKNOWLEDGEMENT_TIMEOUT_MILLIS = 2_000L;
 
   private static final Logger logger = LoggerFactory.getLogger(MavlinkEventListSender.class);
 
@@ -49,6 +53,7 @@ public class MavlinkEventListSender implements AutoCloseable {
   private final MavlinkAcknowledgementHandler acknowledgementHandler;
   private final MavlinkSendCompletionHandler completionHandler;
   private final int maxRetries;
+  private final long acknowledgementTimeoutMillis;
   private final AtomicBoolean isActive = new AtomicBoolean(true);
 
   private boolean started;
@@ -56,10 +61,12 @@ public class MavlinkEventListSender implements AutoCloseable {
   private int nextIndex;
   private int waitingIndex;
   private int retryCount;
+  private long acknowledgementTimeoutGeneration;
   private MavlinkMessage waitingMessage;
+  private ScheduledFuture<?> acknowledgementTimeoutFuture;
 
   public MavlinkEventListSender(UxvModelCommandSet commandSet, MavlinkEventSender sender, MavlinkAcknowledgementHandler acknowledgementHandler, MavlinkSendCompletionHandler completionHandler) {
-    this(commandSet, sender, acknowledgementHandler, completionHandler, DEFAULT_MAX_RETRIES);
+    this(commandSet, sender, acknowledgementHandler, completionHandler, DEFAULT_MAX_RETRIES, DEFAULT_ACKNOWLEDGEMENT_TIMEOUT_MILLIS);
   }
 
   public MavlinkEventListSender(
@@ -68,8 +75,21 @@ public class MavlinkEventListSender implements AutoCloseable {
       MavlinkAcknowledgementHandler acknowledgementHandler,
       MavlinkSendCompletionHandler completionHandler,
       int maxRetries) {
+    this(commandSet, sender, acknowledgementHandler, completionHandler, maxRetries, DEFAULT_ACKNOWLEDGEMENT_TIMEOUT_MILLIS);
+  }
+
+  public MavlinkEventListSender(
+      UxvModelCommandSet commandSet,
+      MavlinkEventSender sender,
+      MavlinkAcknowledgementHandler acknowledgementHandler,
+      MavlinkSendCompletionHandler completionHandler,
+      int maxRetries,
+      long acknowledgementTimeoutMillis) {
     if (maxRetries < 0) {
       throw new IllegalArgumentException("maxRetries must not be negative");
+    }
+    if (acknowledgementTimeoutMillis <= 0) {
+      throw new IllegalArgumentException("acknowledgementTimeoutMillis must be positive");
     }
 
     this.lock = new Object();
@@ -80,6 +100,7 @@ public class MavlinkEventListSender implements AutoCloseable {
     this.acknowledgementHandler = Objects.requireNonNull(acknowledgementHandler, "acknowledgementHandler must not be null");
     this.completionHandler = Objects.requireNonNull(completionHandler, "completionHandler must not be null");
     this.maxRetries = maxRetries;
+    this.acknowledgementTimeoutMillis = acknowledgementTimeoutMillis;
     this.waitingIndex = -1;
 
     logger.log(MAVLINK_EVENT_LIST_SENDER_CREATED, sequenceId, commandSet.operation(), commandSet.modelName(), messages.size());
@@ -103,7 +124,10 @@ public class MavlinkEventListSender implements AutoCloseable {
   }
 
   public void onMavlinkMessage(MavlinkPacket receivedPacket) {
+    System.err.println("[MAVLink ACK DEBUG] inbound sequenceId=" + sequenceId + ", active=" + isActive.get() + ", packet=" + receivedPacket);
+
     if (!isActive.get()) {
+      System.err.println("[MAVLink ACK DEBUG] ignored inactive sender sequenceId=" + sequenceId);
       return;
     }
 
@@ -114,10 +138,12 @@ public class MavlinkEventListSender implements AutoCloseable {
 
     synchronized (lock) {
       if (terminal) {
+        System.err.println("[MAVLink ACK DEBUG] ignored terminal sender sequenceId=" + sequenceId);
         logger.log(MAVLINK_EVENT_LIST_SENDER_INBOUND_IGNORED_TERMINAL, sequenceId, commandSet.operation(), commandSet.modelName());
         return;
       }
       if (waitingMessage == null) {
+        System.err.println("[MAVLink ACK DEBUG] ignored because sender is not waiting sequenceId=" + sequenceId + ", nextIndex=" + nextIndex);
         logger.log(MAVLINK_EVENT_LIST_SENDER_INBOUND_IGNORED_NOT_WAITING, sequenceId, commandSet.operation(), commandSet.modelName());
         return;
       }
@@ -132,17 +158,76 @@ public class MavlinkEventListSender implements AutoCloseable {
       acknowledgement = Acknowledgement.notRelated();
     }
 
+    System.err.println(
+        "[MAVLink ACK DEBUG] classified sequenceId="
+            + sequenceId
+            + ", waitingIndex="
+            + sentIndex
+            + ", action="
+            + acknowledgement.action()
+            + ", requestedIndex="
+            + acknowledgement.index()
+            + ", reason="
+            + acknowledgement.reason()
+            + ", sentMessage="
+            + sentMessage
+            + ", receivedPacket="
+            + receivedPacket);
+
     handleAcknowledgement(sentMessage, receivedPacket, sentIndex, acknowledgement);
   }
 
   public void timeout() {
+    processTimeout(null, null, null);
+  }
+
+  private void processTimeout(Integer expectedIndex, MavlinkMessage expectedMessage, Long expectedGeneration) {
     MavlinkMessage message;
     int index;
     boolean retriesExhausted;
 
     synchronized (lock) {
+      System.err.println(
+          "[MAVLink TIMEOUT DEBUG] invoked sequenceId="
+              + sequenceId
+              + ", terminal="
+              + terminal
+              + ", waitingIndex="
+              + waitingIndex
+              + ", retryCount="
+              + retryCount
+              + ", maxRetries="
+              + maxRetries
+              + ", timeoutGeneration="
+              + acknowledgementTimeoutGeneration
+              + ", waitingMessage="
+              + waitingMessage);
+
       if (terminal) {
+        System.err.println("[MAVLink TIMEOUT DEBUG] ignored terminal sender sequenceId=" + sequenceId);
         return;
+      }
+
+      if (expectedGeneration != null
+          && (expectedGeneration != acknowledgementTimeoutGeneration
+          || waitingIndex != expectedIndex
+          || waitingMessage != expectedMessage)) {
+        System.err.println(
+            "[MAVLink TIMEOUT DEBUG] ignored stale timeout sequenceId="
+                + sequenceId
+                + ", expectedIndex="
+                + expectedIndex
+                + ", currentIndex="
+                + waitingIndex
+                + ", expectedGeneration="
+                + expectedGeneration
+                + ", currentGeneration="
+                + acknowledgementTimeoutGeneration);
+        return;
+      }
+
+      if (expectedGeneration != null) {
+        acknowledgementTimeoutFuture = null;
       }
 
       message = waitingMessage;
@@ -155,9 +240,30 @@ public class MavlinkEventListSender implements AutoCloseable {
     }
 
     if (retriesExhausted) {
+      System.err.println(
+          "[MAVLink TIMEOUT DEBUG] retries exhausted sequenceId="
+              + sequenceId
+              + ", index="
+              + index
+              + ", retryCount="
+              + retryCount
+              + ", message="
+              + message);
       complete(MavlinkSendResult.Status.TIMEOUT, index, message, null, null, "MAVLink event list sender timed out");
       return;
     }
+
+    System.err.println(
+        "[MAVLink TIMEOUT DEBUG] resending sequenceId="
+            + sequenceId
+            + ", index="
+            + index
+            + ", retry="
+            + retryCount
+            + "/"
+            + maxRetries
+            + ", message="
+            + message);
 
     try {
       resendWaitingMessage(index, message);
@@ -178,12 +284,23 @@ public class MavlinkEventListSender implements AutoCloseable {
   private void handleAcknowledgement(MavlinkMessage sentMessage, MavlinkPacket receivedMessage, int sentIndex, Acknowledgement acknowledgement) {
     Action action = acknowledgement.action();
 
+    System.err.println(
+        "[MAVLink ACK DEBUG] handling sequenceId="
+            + sequenceId
+            + ", index="
+            + sentIndex
+            + ", action="
+            + action
+            + ", retryCount="
+            + retryCount);
+
     switch (action) {
       case NOT_RELATED ->
           logger.log(MAVLINK_EVENT_LIST_SENDER_ACK_IGNORED_UNRELATED, sequenceId, commandSet.operation(), commandSet.modelName(), sentIndex + 1);
 
       case WAIT -> {
         resetRetryCount(sentMessage, sentIndex);
+        scheduleAcknowledgementTimeout(sentIndex, sentMessage);
         logger.log(MAVLINK_EVENT_LIST_SENDER_ACK_PENDING, sequenceId, commandSet.operation(), commandSet.modelName(), sentIndex + 1);
       }
 
@@ -322,10 +439,21 @@ public class MavlinkEventListSender implements AutoCloseable {
 
   private void sendMessage(int index, MavlinkMessage message, boolean requiresAcknowledgement) throws Exception {
     logger.log(MAVLINK_EVENT_LIST_SENDER_SENDING, sequenceId, commandSet.operation(), commandSet.modelName(), index + 1, messages.size(), messageName(message), requiresAcknowledgement);
-    System.err.println("Sending message: " +message);
+    System.err.println(
+        "[MAVLink SEND DEBUG] sequenceId="
+            + sequenceId
+            + ", index="
+            + index
+            + ", retryCount="
+            + retryCount
+            + ", requiresAcknowledgement="
+            + requiresAcknowledgement
+            + ", message="
+            + message);
     sender.send(message);
 
     if (requiresAcknowledgement) {
+      scheduleAcknowledgementTimeout(index, message);
       logger.log(MAVLINK_EVENT_LIST_SENDER_WAITING_FOR_ACK, sequenceId, commandSet.operation(), commandSet.modelName(), index + 1);
     }
   }
@@ -344,7 +472,52 @@ public class MavlinkEventListSender implements AutoCloseable {
     }
   }
 
+  private void scheduleAcknowledgementTimeout(int index, MavlinkMessage message) {
+    synchronized (lock) {
+      if (terminal || waitingMessage != message || waitingIndex != index) {
+        return;
+      }
+
+      ScheduledFuture<?> existingFuture = acknowledgementTimeoutFuture;
+      if (existingFuture != null) {
+        existingFuture.cancel(false);
+      }
+
+      long generation = ++acknowledgementTimeoutGeneration;
+      acknowledgementTimeoutFuture =
+          SimpleTaskScheduler.getInstance()
+              .schedule(
+                  () -> processTimeout(index, message, generation),
+                  acknowledgementTimeoutMillis,
+                  TimeUnit.MILLISECONDS);
+
+      System.err.println(
+          "[MAVLink TIMEOUT DEBUG] scheduled sequenceId="
+              + sequenceId
+              + ", index="
+              + index
+              + ", generation="
+              + generation
+              + ", delayMillis="
+              + acknowledgementTimeoutMillis
+              + ", retryCount="
+              + retryCount);
+    }
+  }
+
+  private void cancelAcknowledgementTimeout() {
+    acknowledgementTimeoutGeneration++;
+
+    ScheduledFuture<?> future = acknowledgementTimeoutFuture;
+    acknowledgementTimeoutFuture = null;
+
+    if (future != null) {
+      future.cancel(false);
+    }
+  }
+
   private void clearWaitingState() {
+    cancelAcknowledgementTimeout();
     waitingMessage = null;
     waitingIndex = -1;
     retryCount = 0;
@@ -378,6 +551,15 @@ public class MavlinkEventListSender implements AutoCloseable {
     }
 
     isActive.set(false);
+    System.err.println(
+        "[MAVLink COMPLETE DEBUG] sequenceId="
+            + sequenceId
+            + ", status="
+            + result.status()
+            + ", index="
+            + result.index()
+            + ", reason="
+            + result.reason());
     logCompletion(result);
     notifyCompletionHandler(result);
   }

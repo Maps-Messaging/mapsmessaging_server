@@ -42,7 +42,6 @@ class MavlinkCommandIntFactoryTest {
             TARGET_SYSTEM,
             TARGET_COMPONENT,
             POSITION,
-            -90.0f,
             PACKET_SEQUENCE);
 
     assertEnvelope(
@@ -164,7 +163,6 @@ class MavlinkCommandIntFactoryTest {
                 TARGET_SYSTEM,
                 TARGET_COMPONENT,
                 null,
-                0.0f,
                 PACKET_SEQUENCE));
 
     assertThrows(
