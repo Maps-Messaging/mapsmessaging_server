@@ -20,12 +20,7 @@
 package io.mapsmessaging.state.mavlink.model.impl;
 
 import io.mapsmessaging.state.drone.model.GeoPosition;
-import io.mapsmessaging.state.mavlink.messages.MavlinkCommandIntFactory;
-import io.mapsmessaging.state.mavlink.messages.MavlinkCommandLong;
-import io.mapsmessaging.state.mavlink.messages.MavlinkCommandLongFactory;
-import io.mapsmessaging.state.mavlink.messages.MavlinkDuration;
-import io.mapsmessaging.state.mavlink.messages.MavlinkMessage;
-import io.mapsmessaging.state.mavlink.messages.MavlinkMissionItemIntFactory;
+import io.mapsmessaging.state.mavlink.messages.*;
 import io.mapsmessaging.state.mavlink.model.HomeRequest;
 import io.mapsmessaging.state.mavlink.model.MissionPlan;
 import io.mapsmessaging.state.mavlink.model.PlanItem;
@@ -116,17 +111,19 @@ public abstract class AbstractMissionUxvModel extends AbstractUxvModel {
     Objects.requireNonNull(request, "request must not be null");
     rejectSpeed(request.speedMetersPerSecond(), UxvOperation.REPOSITION);
     validateCoordinates(request.position(), "position");
-    return UxvModelCommandSet.of(UxvOperation.REPOSITION, getModelName(), MavlinkCommandIntFactory.reposition(context.targetSystem(), context.targetComponent(), request.position(), context.sequence())
-    );
+
+    GeoPosition position = Objects.requireNonNull(request.position(), "position must not be null");
+    List<MavlinkMessage> messages = List.of(
+            MavlinkCommandIntFactory.reposition(context.targetSystem(), context.targetComponent(), position, context.sequence()),
+            MavlinkCommandLongFactory.guidedMode(context.targetSystem(), context.targetComponent(), context.sequence()),
+            MavlinkMissionItemFactory.guidedWaypoint(context.targetSystem(), context.targetComponent(), position)
+        );
+    return UxvModelCommandSet.of(UxvOperation.REPOSITION, getModelName(), messages);
   }
 
   public UxvModelCommandSet holdPosition(UxvCommandContext context) {
     Objects.requireNonNull(context, "context must not be null");
-    return UxvModelCommandSet.of(
-        UxvOperation.HOLD_POSITION,
-        getModelName(),
-        pauseCommand(context)
-    );
+    return UxvModelCommandSet.of(UxvOperation.HOLD_POSITION, getModelName(), pauseCommand(context));
   }
 
   @Override

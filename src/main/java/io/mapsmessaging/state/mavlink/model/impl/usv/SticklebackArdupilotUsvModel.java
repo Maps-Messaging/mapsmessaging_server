@@ -65,45 +65,15 @@ public class SticklebackArdupilotUsvModel extends GenericArduPilotUxvModel imple
             UxvOperation.LOITER));
   }
 
+  // Ensure altitude is never greater then specified here
   @Override
-  public UxvModelCommandSet reposition(
-      UxvCommandContext context,
-      RepositionRequest request) {
-
-    Objects.requireNonNull(context, "context must not be null");
-    Objects.requireNonNull(request, "request must not be null");
-
-    rejectSpeed(request.speedMetersPerSecond(), UxvOperation.REPOSITION);
-
+  public UxvModelCommandSet reposition(UxvCommandContext context, RepositionRequest request) {
     GeoPosition position = Objects.requireNonNull(request.position(), "position must not be null");
-
     position.setAltitudeMslMeters(MAX_ALTITUDE_METERS);
-    validateCoordinates(position, "position");
-
-    List<MavlinkMessage> messages =
-        List.of(
-            MavlinkCommandIntFactory.reposition(
-                context.targetSystem(),
-                context.targetComponent(),
-                position,
-                context.sequence()
-            ),
-            MavlinkCommandLongFactory.guidedMode(
-                context.targetSystem(),
-                context.targetComponent(),
-                context.sequence()
-            ),
-            MavlinkMissionItemFactory.guidedWaypoint(
-                context.targetSystem(),
-                context.targetComponent(),
-                position)
-        );
-
-    return UxvModelCommandSet.of(
-        UxvOperation.REPOSITION,
-        getModelName(),
-        messages);
+    return super.reposition(context, request);
   }
+
+
   @Override
   public UxvModelCommandSet loiter(UxvCommandContext context, LoiterRequest request) {
     java.util.Objects.requireNonNull(context, "context must not be null");
