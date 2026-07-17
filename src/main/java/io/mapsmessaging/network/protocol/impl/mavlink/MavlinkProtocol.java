@@ -69,6 +69,10 @@ import org.jetbrains.annotations.NotNull;
 
 public class MavlinkProtocol extends Protocol {
 
+  private static final int MAV_AUTOPILOT_ARDUPILOTMEGA = 3;
+  private static final int MAV_AUTOPILOT_PX4           = 12;
+  private static final int MAV_AUTOPILOT_INVALID       = 8;
+
   private static final Logger logger = LoggerFactory.getLogger(MavlinkProtocol.class);
 
   private final Gson gson;
@@ -79,13 +83,14 @@ public class MavlinkProtocol extends Protocol {
   private final Map<Integer, MavlinkAcceptedSourceDTO> acceptedComponents;
   private final SequenceTracker tracker;
   private final String outboundTopicName;
-  protected final MavlinkEventFactory mavlinkEventFactory;
+  protected MavlinkEventFactory mavlinkEventFactory;
   protected final MessageFormatter formatter;
   private final QualityOfService qos;
   private final boolean storeOffline;
   private final AtomicInteger sequenceCounter = new AtomicInteger(0);
   private final MavlinkHeartbeatEmitter heartbeatEmitter;
   private ScheduledFuture<?> heartbeatFuture;
+  private boolean detectedDialect = false;
 
 
   protected MavlinkProtocol(
@@ -202,29 +207,27 @@ public class MavlinkProtocol extends Protocol {
       String json = new String(messageEvent.getMessage().getOpaqueData(), StandardCharsets.UTF_8);
       JsonObject input = JsonParser.parseString(json).getAsJsonObject();
       String socketAddressText = parts[2];
-      try {
-        overrideSequence(input);
-        validateOutboundHeader(input);
-        byte[] frame = formatter.parseFromJson(input);
-        Packet packet = new Packet(ByteBuffer.wrap(frame));
-        packet.setFromAddress(parseSocketAddress(socketAddressText));
-        endPoint.sendPacket(packet);
-        factory.writeTlog(frame);
-        synchronized (System.err) {
-          System.err.println("---------------------------------------------------");
-          System.err.println(input);
-          System.err.println(toHexDump(frame));
-          System.err.println("---------------------------------------------------");
-        }
-      } catch (Throwable e) {
-        logger.log(MAVLINK_FAILED_SENDING_OUTBOUND_PACKET, endPoint.getName(), socketAddressText, e);
-      }
+      sendData(input, socketAddressText);
     }
     catch(Throwable th){
       th.printStackTrace();
     }
     finally {
       messageEvent.getCompletionTask().run();
+    }
+  }
+
+  private void sendData(JsonObject input, String socketAddressText) {
+    try {
+      overrideSequence(input);
+      validateOutboundHeader(input);
+      byte[] frame = formatter.parseFromJson(input);
+      Packet packet = new Packet(ByteBuffer.wrap(frame));
+      packet.setFromAddress(parseSocketAddress(socketAddressText));
+      endPoint.sendPacket(packet);
+      factory.writeTlog(frame);
+    } catch (Throwable e) {
+      logger.log(MAVLINK_FAILED_SENDING_OUTBOUND_PACKET, endPoint.getName(), socketAddressText, e);
     }
   }
 
@@ -241,9 +244,37 @@ public class MavlinkProtocol extends Protocol {
     return true;
   }
 
-  public void processRawFrame(ProcessedFrame env, byte[] raw, String socketAddress) {
+  public void processRawFrame(byte[] raw, String socketAddress) throws IOException {
     endPoint.getEndPointStatus().incrementReceivedMessages();
     endPoint.updateReadBytes(raw.length);
+    ProcessedFrame env = mavlinkEventFactory.unpack(endPoint.getName(), ByteBuffer.wrap(raw)).orElse(null);
+    if(env == null) {
+      return;
+    }
+    if(!detectedDialect && env.getFrame().getMessageId() == 0 ){ // HeartBeat
+      detectedDialect = true;
+      if(env.getFields().containsKey("autopilot")) {
+        int val = (int) env.getFields().get("autopilot");
+        try {
+          switch (val) {
+            case MAV_AUTOPILOT_ARDUPILOTMEGA:
+              mavlinkEventFactory = MavlinkInterfaceManager.loadDialect("ardupilot/ardupilotmega");
+              break;
+
+            case MAV_AUTOPILOT_PX4:
+              mavlinkEventFactory = MavlinkInterfaceManager.loadDialect("common");
+              break;
+
+            default:
+              // Unknown or unsupported autopilot
+              break;
+          }
+        } catch (IOException e) {
+          e.printStackTrace();
+          // log it
+        }
+      }
+    }
 
     if (mavlinkConfig.getStatusTopicNameTemplate() != null && !mavlinkConfig.getStatusTopicNameTemplate().isEmpty()) {
       SequenceResult results = tracker.accept(env.getFrame().getSequence());

@@ -75,7 +75,6 @@ public class SequenceTracker {
     }
 
     boolean statusChanged = status != lastStatus;
-
     SequenceResult result = SequenceResult.builder()
         .previousSequenceNumber(previousSequenceNumber)
         .currentSequenceNumber(currentSequenceNumber)
@@ -89,7 +88,6 @@ public class SequenceTracker {
 
     lastSequenceNumber = currentSequenceNumber;
     lastStatus = status;
-
     return result;
   }
 }

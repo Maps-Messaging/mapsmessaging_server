@@ -68,7 +68,7 @@ public class MavlinkSerialProtocol extends MavlinkProtocol {
     if(potentialFrame.isPresent()) {
       ProcessedFrame env = potentialFrame.get();
       if(env.getFrame().getValidated() == FrameFailureReason.OK || env.getFrame().getValidated() == FrameFailureReason.UNSIGNED){
-        processRawFrame(env, raw, "serial");
+        processRawFrame(raw, "serial");
       }
       else{
         endPoint.getEndPointStatus().incrementOverFlow();

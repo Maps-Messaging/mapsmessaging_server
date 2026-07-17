@@ -72,7 +72,6 @@ public class MavlinkInterfaceManager implements SelectorCallback, MavlinkConnect
     long timeout = mavlinkConfig.getIdleSessionTimeout();
     mavlinkEventFactory = loadDialect(mavlinkConfig.getDialectName());
     currentSessions = new MavLinkSessionManager<>(timeout);
-
     selectorTask = new SelectorTask(this, endPoint.getConfig().getEndPointConfig(), endPoint.isUDP());
     selectorTask.register(SelectionKey.OP_READ);
 
@@ -113,22 +112,11 @@ public class MavlinkInterfaceManager implements SelectorCallback, MavlinkConnect
     packet.get(raw);
     packet.position(pos);
 
-    List<ProcessedFrame> frames = new ArrayList<>();
-    ByteBuffer buffer = ByteBuffer.wrap(raw);
-    while (buffer.hasRemaining()) {
-      Optional<ProcessedFrame> potentialFrame = mavlinkEventFactory.unpack(endPoint.getName(), buffer);
-      if (potentialFrame.isEmpty()) {
-        break;
-      }
-      frames.add(potentialFrame.get());
-    }
-
-    for (ProcessedFrame env : frames) {
-      byte[] frameBytes = env.getRawPayload();
-      writeTlog(frameBytes);
-
-      logger.log(MAVLINK_DETECTED_PACKET, endPoint.getName(), env.getMessageName());
-      MavlinkDeviceKey key = buildKey(packet, env.getFrame().getSystemId());
+    List<byte[]> packets = MavlinkFrameExtractor.extractMavlinkFrames(raw);
+    for(byte[] data:packets) {
+      writeTlog(data);
+      int systemId = MavlinkFrameExtractor.getSystemId(data);
+      MavlinkDeviceKey key = buildKey(packet, systemId);
       boolean allowed =
           mavlinkConfig.getAcceptedSources() == null
               || mavlinkConfig.getAcceptedSources().isEmpty()
@@ -140,14 +128,13 @@ public class MavlinkInterfaceManager implements SelectorCallback, MavlinkConnect
           state.getContext().processPacket(packet);
         } else if (state.getContext() != null) {
           MavlinkProtocol protocol = state.getContext();
-          protocol.processRawFrame(env, frameBytes, packet.getFromAddress().toString());
-          forwardPacket(frameBytes);
+          protocol.processRawFrame(data, packet.getFromAddress().toString());
+          forwardPacket(data);
         }
       } else {
-        forwardPacket(frameBytes);
+        forwardPacket(data);
       }
     }
-
     selectorTask.register(SelectionKey.OP_READ);
     return true;
   }
@@ -167,6 +154,7 @@ public class MavlinkInterfaceManager implements SelectorCallback, MavlinkConnect
     return new MavlinkTlogWriter(TlogConfiguration.builder(tlogFile).build());
   }
 
+  @Override
   public void writeTlog(byte[] frameBytes) {
     if (tlogWriter == null) {
       return;
