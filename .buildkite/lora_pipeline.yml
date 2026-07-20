@@ -17,6 +17,8 @@ steps:
   - trigger: "090-server-ml-snapshot-build"
 
   - wait
+  - trigger: "095-maps-apps-packaging"
+
   - trigger: "100-server-3rd-party-extensions-snapshot"
   - trigger: "200-build-windows-installer"
 
