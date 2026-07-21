@@ -356,11 +356,14 @@ public class TwinManagerConfig extends TwinManagerConfigDTO implements Config, C
     if (uuidString != null) {
       droneInfo.setUuid(UUID.fromString(uuidString));
     }
-
     droneInfo.setBatteryCapacityAh(properties.getDoubleProperty("batteryCapacityAh", droneInfo.getBatteryCapacityAh()));
     droneInfo.setBatteryCapacityHours(properties.getDoubleProperty("batteryCapacityHours", droneInfo.getBatteryCapacityHours()));
     droneInfo.setName(properties.getProperty("name", droneInfo.getName()));
     droneInfo.setModelName(properties.getProperty("modelName", droneInfo.getModelName()));
+    droneInfo.setMessageEncoding(
+        parseMessageEncoding(
+            properties.getProperty("messageEncoding", null),
+            droneInfo.getMessageEncoding()));
 
     StopActionEnum legacyStopAction =
         parseTerminalAction(
@@ -391,12 +394,20 @@ public class TwinManagerConfig extends TwinManagerConfigDTO implements Config, C
     return droneInfo;
   }
 
+  private MessageEncodingEnum parseMessageEncoding(String value, MessageEncodingEnum defaultValue) {
+    if (value == null || value.isBlank()) {
+      return defaultValue;
+    }
+
+    return MessageEncodingEnum.valueOf(value.trim().toUpperCase(Locale.ROOT));
+  }
+
   private StopActionEnum parseTerminalAction(String value, StopActionEnum defaultValue) {
     if (value == null || value.isBlank()) {
       return defaultValue;
     }
 
-    return StopActionEnum.valueOf(value.trim().toUpperCase());
+    return StopActionEnum.valueOf(value.trim().toUpperCase(Locale.ROOT));
   }
 
   private List<ConfigurationProperties> toDroneInfoConfigurationProperties(List<DroneInfoDTO> droneInfos) {
@@ -412,6 +423,10 @@ public class TwinManagerConfig extends TwinManagerConfigDTO implements Config, C
 
       if (droneInfo.getModelName() != null) {
         properties.put("modelName", droneInfo.getModelName());
+      }
+
+      if (droneInfo.getMessageEncoding() != null) {
+        properties.put("messageEncoding", droneInfo.getMessageEncoding().name());
       }
 
       if (droneInfo.getCancelAction() != null) {

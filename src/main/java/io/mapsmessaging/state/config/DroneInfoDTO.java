@@ -46,6 +46,9 @@ public class DroneInfoDTO {
   )
   private String modelName;
 
+  @Schema(description = "Message encoding used when communicating with this drone.")
+  private MessageEncodingEnum messageEncoding = MessageEncodingEnum.JSON;
+
   @Schema(
       description = "Total battery capacity in amp-hours."
   )
