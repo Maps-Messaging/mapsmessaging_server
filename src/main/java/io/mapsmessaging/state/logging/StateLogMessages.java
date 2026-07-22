@@ -67,6 +67,28 @@ public enum StateLogMessages implements LogMessage {
   // </editor-fold>
 
 
+  N2K_DRONE_CONFIG_RESOLVED(LEVEL.DEBUG, SERVER_CATEGORY.PROTOCOL, "Resolved drone configuration '{}' for N2K topic '{}'"),
+  N2K_DRONE_CONFIG_MISSING(LEVEL.DEBUG, SERVER_CATEGORY.PROTOCOL, "No drone configuration found for N2K source '{}' using topic '{}'"),
+  N2K_SESSION_START_SKIPPED(LEVEL.WARN, SERVER_CATEGORY.PROTOCOL, "N2K session '{}' was not started for topic '{}' because no matching drone is configured"),
+  N2K_SESSION_STARTING(LEVEL.INFO, SERVER_CATEGORY.PROTOCOL, "Starting N2K session '{}' using topic '{}'"),
+  N2K_SESSION_STARTED(LEVEL.INFO, SERVER_CATEGORY.PROTOCOL, "Started N2K session '{}' using topic '{}'"),
+  N2K_SESSION_START_FAILED(LEVEL.ERROR, SERVER_CATEGORY.PROTOCOL, "Failed to start N2K session '{}' using topic '{}': {}"),
+  N2K_SESSION_STOP_SKIPPED(LEVEL.DEBUG, SERVER_CATEGORY.PROTOCOL, "N2K session '{}' does not require stopping because no matching drone is configured"),
+  N2K_SESSION_STOPPING(LEVEL.INFO, SERVER_CATEGORY.PROTOCOL, "Stopping N2K session '{}' using topic '{}'"),
+  N2K_SESSION_STOPPED(LEVEL.INFO, SERVER_CATEGORY.PROTOCOL, "Stopped N2K session '{}' using topic '{}'"),
+  N2K_SESSION_STOP_FAILED(LEVEL.ERROR, SERVER_CATEGORY.PROTOCOL, "Failed to stop N2K session '{}' using topic '{}': {}"),
+  N2K_MESSAGE_RECEIVED(LEVEL.DEBUG, SERVER_CATEGORY.PROTOCOL, "Received N2K message from '{}'"),
+  N2K_MESSAGE_IGNORED_NO_DRONE(LEVEL.WARN, SERVER_CATEGORY.PROTOCOL, "Ignoring N2K message from '{}' because no drone is configured for N2K source '{}'"),
+  N2K_MESSAGE_IGNORED_EMPTY(LEVEL.DEBUG, SERVER_CATEGORY.PROTOCOL, "Ignoring empty N2K message from '{}'"),
+  N2K_MESSAGE_IGNORED_NOT_JSON(LEVEL.DEBUG, SERVER_CATEGORY.PROTOCOL, "Ignoring non-JSON N2K message from '{}'"),
+  N2K_MESSAGE_IGNORED_NO_J1939(LEVEL.DEBUG, SERVER_CATEGORY.PROTOCOL, "Ignoring N2K message from '{}' because it contains no J1939 object"),
+  N2K_MESSAGE_IGNORED_NO_PGN(LEVEL.DEBUG, SERVER_CATEGORY.PROTOCOL, "Ignoring N2K message from '{}' because the J1939 PGN is missing or invalid"),
+  N2K_MESSAGE_IGNORED_NO_N2K(LEVEL.DEBUG, SERVER_CATEGORY.PROTOCOL, "Ignoring N2K message from '{}' because it contains no N2K object"),
+  N2K_MESSAGE_IGNORED_NO_PACKET(LEVEL.DEBUG, SERVER_CATEGORY.PROTOCOL, "Ignoring N2K PGN '{}' from '{}' because it contains no packet object"),
+  N2K_MESSAGE_PROCESSING_FAILED(LEVEL.ERROR, SERVER_CATEGORY.PROTOCOL, "Failed to process N2K message from '{}': {}"),
+  N2K_TWIN_UPDATE(LEVEL.DEBUG, SERVER_CATEGORY.PROTOCOL, "Updating drone twin from N2K PGN '{}', source '{}', N2K message '{}'"),
+  N2K_TWIN_UPDATED(LEVEL.DEBUG, SERVER_CATEGORY.PROTOCOL, "Updated drone twin from N2K PGN '{}', source '{}'"),
+
   MAVLINK_EVENT_LIST_SENDER_CREATED(LEVEL.INFO, SERVER_CATEGORY.PROTOCOL, "Created MAVLink event list sender '{}', messages {}"),
   MAVLINK_EVENT_LIST_SENDER_STARTING(LEVEL.INFO, SERVER_CATEGORY.PROTOCOL, "Starting MAVLink event list sender '{}'"),
   MAVLINK_EVENT_LIST_SENDER_START_IGNORED_TERMINAL(LEVEL.DEBUG, SERVER_CATEGORY.PROTOCOL, "Ignoring start for MAVLink event list sender '{}' because it is terminal"),
