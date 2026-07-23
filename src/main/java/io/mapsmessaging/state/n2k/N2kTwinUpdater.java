@@ -66,7 +66,7 @@ public class N2kTwinUpdater {
   }
 
   private EntityTwin createTwin(String twinId, N2KTwinConfig config, TwinUpdateContext context, DroneInfoDTO droneInfo) {
-    DroneTwin droneTwin = new DroneTwin(twinId);
+    DroneTwin droneTwin = new DroneTwin(twinId, droneInfo.getUuid());
     updateTwinIdentity(droneTwin, config, context);
     if (droneInfo.getCapabilities() != null) {
       droneTwin.setCapabilities(droneInfo.getCapabilities());
@@ -75,8 +75,6 @@ public class N2kTwinUpdater {
 
     if (droneInfo.getBatteryCapacityHours() > 0) {
       droneTwin.setBatteryCapacityHours(droneInfo.getBatteryCapacityHours());
-    } else if (droneInfo.getBatteryCapacityAh() > 0) {
-
     }
 
 
