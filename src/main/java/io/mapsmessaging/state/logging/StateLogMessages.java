@@ -52,6 +52,22 @@ public enum StateLogMessages implements LogMessage {
   MAVLINK_STATE_PACKET_UNPACK_EMPTY(LEVEL.DEBUG, SERVER_CATEGORY.PROTOCOL, "MAVLink state packet from {} did not produce a processed frame"),
   MAVLINK_STATE_UNSUPPORTED_PACKET_IGNORED(LEVEL.DEBUG, SERVER_CATEGORY.PROTOCOL, "Ignoring unsupported MAVLink message {} from {}"),
   MAVLINK_STATE_TWIN_CREATED(LEVEL.DEBUG, SERVER_CATEGORY.PROTOCOL, "Created MAVLink twin {} for system {} component {}"),
+
+  MAVLINK_STATE_SUBSCRIBER_STARTING(LEVEL.INFO, SERVER_CATEGORY.PROTOCOL, "Starting MAVLink state subscriber on topic '{}'"),
+  MAVLINK_STATE_SUBSCRIBER_STARTED(LEVEL.INFO, SERVER_CATEGORY.PROTOCOL, "Started MAVLink state subscriber on topic '{}'"),
+  MAVLINK_STATE_SUBSCRIBER_START_FAILED(LEVEL.ERROR, SERVER_CATEGORY.PROTOCOL, "Failed to start MAVLink state subscriber on topic '{}'"),
+  MAVLINK_STATE_SUBSCRIBER_STOPPING(LEVEL.INFO, SERVER_CATEGORY.PROTOCOL, "Stopping MAVLink state subscriber on topic '{}'"),
+  MAVLINK_STATE_SUBSCRIBER_STOPPED(LEVEL.INFO, SERVER_CATEGORY.PROTOCOL, "Stopped MAVLink state subscriber on topic '{}'"),
+  MAVLINK_STATE_SUBSCRIBER_STOP_FAILED(LEVEL.ERROR, SERVER_CATEGORY.PROTOCOL, "Failed to stop MAVLink state subscriber on topic '{}'"),
+
+  MAVLINK_STATE_EMPTY_MESSAGE_IGNORED(LEVEL.DEBUG, SERVER_CATEGORY.PROTOCOL, "Ignoring empty MAVLink state message from '{}'"),
+  MAVLINK_STATE_MAVLINK_OBJECT_MISSING(LEVEL.DEBUG, SERVER_CATEGORY.PROTOCOL, "Ignoring JSON state message from '{}' because it contains no MAVLink object"),
+  MAVLINK_STATE_PAYLOAD_OBJECT_MISSING(LEVEL.DEBUG, SERVER_CATEGORY.PROTOCOL, "Ignoring MAVLink message {} from '{}' because it contains no payload object"),
+  MAVLINK_STATE_SOURCE_NOT_CONFIGURED(LEVEL.DEBUG, SERVER_CATEGORY.PROTOCOL, "Ignoring MAVLink message {} from system {} component {} because no known source is configured"),
+  MAVLINK_STATE_DRONE_NOT_CONFIGURED(LEVEL.WARN, SERVER_CATEGORY.PROTOCOL, "Ignoring MAVLink message {} from known source '{}' because drone '{}' is not configured"),
+  MAVLINK_STATE_CORRELATION_DATA_MISSING(LEVEL.DEBUG, SERVER_CATEGORY.PROTOCOL, "MAVLink message {} from '{}' contains no correlation data"),
+  MAVLINK_STATE_PROCESSING_FAILED(LEVEL.ERROR, SERVER_CATEGORY.PROTOCOL, "Failed to process MAVLink state message from '{}'"),
+  MAVLINK_STATE_TWIN_UPDATE_FAILED(LEVEL.ERROR, SERVER_CATEGORY.PROTOCOL, "Failed to update drone '{}' from MAVLink message {} received from '{}'"),
   // </editor-fold>
 
   // <editor-fold desc="State Manager">
