@@ -60,13 +60,7 @@ public class MavlinkTwinUpdater {
   public MavlinkTwinUpdater(@NonNull @NotNull TwinManager twinManager, @NonNull @NotNull ListenerManager listenerManager) {
     this.twinManager = twinManager;
     this.listenerManager = listenerManager;
-    this.droneMonitor =
-        new MavlinkDroneMonitor(
-            twinManager,
-            new DroneTwinReadinessEvaluator(),
-            new MavlinkBootstrapStateEngine(new MavlinkBootstrapProfile()),
-            null
-        );
+    this.droneMonitor = new MavlinkDroneMonitor(twinManager, new DroneTwinReadinessEvaluator(), new MavlinkBootstrapStateEngine(new MavlinkBootstrapProfile()), null);
     twinManager.addObserver(droneMonitor);
   }
 
@@ -249,9 +243,9 @@ public class MavlinkTwinUpdater {
 
   private String buildTwinId(ProcessedFrame env, MavlinkKnownSourceDTO knownSource) {
     if (knownSource != null && knownSource.getName() != null && !knownSource.getName().isBlank()) {
-      return "mavlink:" + knownSource.getName();
+      return knownSource.getName();
     }
 
-    return "mavlink:" + env.getFrame().getSystemId() + ":" + env.getFrame().getComponentId();
+    return "mavlink-" + env.getFrame().getSystemId() + ":" + env.getFrame().getComponentId();
   }
 }

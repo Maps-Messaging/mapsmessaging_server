@@ -110,14 +110,14 @@ public class N2kTwinUpdater {
 
   private String buildTwinId(N2KTwinConfig config) {
     if (config.getName() != null && !config.getName().isBlank()) {
-      return "n2k:" + normalizeTwinId(config.getName());
+      return normalizeTwinId(config.getName());
     }
 
     if (config.getTopic() != null && !config.getTopic().isBlank()) {
-      return "n2k:" + normalizeTwinId(config.getTopic());
+      return normalizeTwinId(config.getTopic());
     }
 
-    return "n2k:default";
+    return "n2k";
   }
 
   private String resolveDisplayName(String twinId, N2KTwinConfig config) {
