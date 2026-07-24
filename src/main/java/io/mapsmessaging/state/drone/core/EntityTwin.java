@@ -86,10 +86,29 @@ public abstract class EntityTwin {
   private GeoPosition geoPosition;
 
   @Schema(
+      description = "drone geohash",
+      nullable = true
+
+  )
+  private String geoHash;
+
+  @Schema(
       description = "Home or launch position of the twin.",
       nullable = true
   )
   private GeoPosition homePosition;
+
+  @Schema(
+      description = "Current server position.",
+      nullable = true
+  )
+  private GeoPosition serverPosition;
+
+  @Schema(
+      description = "Server geohash.",
+      nullable = true
+  )
+  private String serverGeoHash;
 
   @Schema(
       description = "Current velocity vector of the twin.",

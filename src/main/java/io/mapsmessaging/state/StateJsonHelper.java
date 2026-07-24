@@ -40,22 +40,10 @@ public class StateJsonHelper {
         .registerTypeAdapter(LocalDate.class, new GsonDateTimeSerialiser())
         .registerTypeAdapter(LocalDate.class, new GsonDateTimeDeserialiser())
         .registerTypeAdapter(Instant.class, new InstantTypeAdapter())
-        .registerTypeAdapter(
-            PlanTaskType.class,
-            new PrefixedEnumTypeAdapter<>(PlanTaskType.class, "PlanTaskTypeEnum_")
-        )
-        .registerTypeAdapter(
-            TaskSpecialization.class,
-            new PrefixedEnumTypeAdapter<>(TaskSpecialization.class, "TaskSpecializationEnum_")
-        )
-        .registerTypeAdapter(
-            TaskConditionMode.class,
-            new PrefixedEnumTypeAdapter<>(TaskConditionMode.class, "TaskConditionModeEnum_")
-        )
-        .registerTypeAdapter(
-            TaskTemplateMode.class,
-            new PrefixedEnumTypeAdapter<>(TaskTemplateMode.class, "TaskTemplateModeEnum_")
-        )
+        .registerTypeAdapter(PlanTaskType.class, new PrefixedEnumTypeAdapter<>(PlanTaskType.class, "PlanTaskTypeEnum_"))
+        .registerTypeAdapter(TaskSpecialization.class, new PrefixedEnumTypeAdapter<>(TaskSpecialization.class, "TaskSpecializationEnum_"))
+        .registerTypeAdapter(TaskConditionMode.class, new PrefixedEnumTypeAdapter<>(TaskConditionMode.class, "TaskConditionModeEnum_"))
+        .registerTypeAdapter(TaskTemplateMode.class, new PrefixedEnumTypeAdapter<>(TaskTemplateMode.class, "TaskTemplateModeEnum_"))
         .create();
   }
 

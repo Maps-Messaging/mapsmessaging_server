@@ -26,6 +26,7 @@ import io.mapsmessaging.api.features.DestinationType;
 import io.mapsmessaging.api.features.QualityOfService;
 import io.mapsmessaging.engine.schema.SchemaManager;
 import io.mapsmessaging.engine.session.ClientConnection;
+import io.mapsmessaging.location.LocationManager;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.state.StateJsonHelper;
@@ -45,6 +46,9 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+
+import io.mapsmessaging.state.drone.model.GeoPosition;
+import io.mapsmessaging.utilities.GeoHashUtils;
 import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
 
@@ -111,6 +115,23 @@ public class TwinJsonPublisher implements TwinObserver, ClientConnection, Messag
       List<Contact> contacts;
 
       synchronized (twin) {
+        LocationManager locationManager = LocationManager.getInstance();
+        if (locationManager != null) {
+          double lon = locationManager.getLongitude();
+          double lat = locationManager.getLatitude();
+
+          double epsilon = 0.000001;
+          if (Math.abs(lon) > epsilon && Math.abs(lat) > epsilon) {
+            GeoPosition serverLocation = new GeoPosition(lat, lon, null, null);
+            twin.setServerPosition(serverLocation);
+            twin.setServerGeoHash(GeoHashUtils.toGeoHash(lat, lon, 12));
+          }
+        }
+        GeoPosition dronePosition = twin.getGeoPosition();
+        if(dronePosition != null && dronePosition.getLatitude() != null && dronePosition.getLongitude() != null) {
+
+          twin.setGeoHash(GeoHashUtils.toGeoHash(dronePosition.getLatitude(), dronePosition.getLongitude(), 12));
+        }
         twinJsonPayload = generateTwinJsonPayload(twinId, twin);
         if (twinJsonPayload == null) {
           return;
