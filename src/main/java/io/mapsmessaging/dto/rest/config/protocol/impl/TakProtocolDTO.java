@@ -20,15 +20,12 @@
 
 package io.mapsmessaging.dto.rest.config.protocol.impl;
 
-import io.mapsmessaging.dto.rest.config.protocol.ProtocolConfigDTO;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
-import lombok.EqualsAndHashCode;
 
 @Data
-@EqualsAndHashCode(callSuper = true)
 @Schema(description = "TAK protocol configuration")
-public class TakProtocolDTO extends ProtocolConfigDTO {
+public class TakProtocolDTO {
 
   @Schema(
       description = "Hostname or IP address of the TAK server.",
@@ -61,10 +58,6 @@ public class TakProtocolDTO extends ProtocolConfigDTO {
       requiredMode = Schema.RequiredMode.NOT_REQUIRED,
       nullable = true
   )
-  private String topic =null;
+  private String topic = null;
 
-
-  public TakProtocolDTO() {
-    super("tak");
-  }
 }

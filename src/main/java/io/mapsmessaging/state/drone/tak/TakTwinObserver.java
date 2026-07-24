@@ -21,7 +21,13 @@ package io.mapsmessaging.state.drone.tak;
 
 import io.mapsmessaging.state.config.TwinManagerConfig;
 import io.mapsmessaging.state.config.TwinManagerConfigDTO;
-import io.mapsmessaging.state.drone.core.*;
+import io.mapsmessaging.state.drone.core.EntityTwin;
+import io.mapsmessaging.state.drone.core.TwinLifecycleStatus;
+import io.mapsmessaging.state.drone.core.TwinManager;
+import io.mapsmessaging.state.drone.core.TwinObserver;
+import io.mapsmessaging.state.drone.core.TwinRelationship;
+import io.mapsmessaging.state.drone.core.TwinUpdateContext;
+import io.mapsmessaging.state.drone.model.BatteryState;
 import io.mapsmessaging.state.drone.tak.model.TakEvent;
 import io.mapsmessaging.utilities.configuration.ConfigurationManager;
 
@@ -30,15 +36,16 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 
-
 /**
  * Twin observer that maps twin state into TAK CoT XML and publishes it to a topic.
  */
 public class TakTwinObserver implements TwinObserver {
 
   private static final long PUBLISH_INTERVAL_MS = 1000L;
+  private static final long STATS_PUBLISH_INTERVAL_MS = 30_000L;
 
   private final Map<String, TakTwinContext> takContexts;
+  private final Map<String, Long> lastStatsPublishTimes;
   private final String takHost;
   private final int takPort;
   private final TwinManager twinManager;
@@ -50,66 +57,78 @@ public class TakTwinObserver implements TwinObserver {
   public TakTwinObserver(TwinManager twinManager) {
     this.twinManager = Objects.requireNonNull(twinManager, "twinManager cannot be null");
     this.takContexts = new ConcurrentHashMap<>();
+    this.lastStatsPublishTimes = new ConcurrentHashMap<>();
     this.takEventMapper = new TakEventMapper();
     this.takXmlSerialiser = new TakXmlSerialiser();
-    TwinManagerConfigDTO config = ConfigurationManager.getInstance().getConfiguration(TwinManagerConfig.class);
+
+    TwinManagerConfigDTO config =
+        ConfigurationManager.getInstance().getConfiguration(TwinManagerConfig.class);
+
     if (config != null && config.getTak() != null) {
       this.takHost = config.getTak().getHostname();
       this.takPort = config.getTak().getPort();
-      if(config.getTak().isSharedConnection() && takHost != null && !takHost.isBlank() && takPort > 0){
+
+      if (config.getTak().isSharedConnection()
+          && takHost != null
+          && !takHost.isBlank()
+          && takPort > 0) {
         globalSocketConnection = new TakSocketConnection(takHost, takPort);
-      }
-      else{
+      } else {
         globalSocketConnection = null;
       }
-      if(config.getTak().getTopic() != null && !config.getTak().getTopic().isBlank()){
-        EventPublisher e = null;
+
+      if (config.getTak().getTopic() != null && !config.getTak().getTopic().isBlank()) {
+        EventPublisher publisher;
         try {
-          e = new EventPublisher(config.getTak().getTopic());
-        } catch (Throwable ex) {
-          e = null;
-          ex.printStackTrace();
+          publisher = new EventPublisher(config.getTak().getTopic());
+        } catch (Throwable exception) {
+          publisher = null;
+          exception.printStackTrace();
         }
-        eventPublisher = e;
-      }
-      else{
+        eventPublisher = publisher;
+      } else {
         eventPublisher = null;
       }
+
       twinManager.addObserver(this);
-    }
-    else {
+    } else {
       this.takHost = null;
       this.takPort = 0;
-      globalSocketConnection = null;
-      eventPublisher = null;
+      this.globalSocketConnection = null;
+      this.eventPublisher = null;
     }
   }
 
   public void shutdown() {
     twinManager.removeObserver(this);
-    for (TakTwinContext context : takContexts.values()) {
-      if(globalSocketConnection == null) {
+
+    if (globalSocketConnection != null) {
+      globalSocketConnection.close();
+    } else {
+      for (TakTwinContext context : takContexts.values()) {
         if (context.getSocketConnection() != null) {
           context.getSocketConnection().close();
         }
       }
-      else{
-        globalSocketConnection.close();
-      }
     }
+
     takContexts.clear();
-    if(eventPublisher != null){
+    lastStatsPublishTimes.clear();
+
+    if (eventPublisher != null) {
       try {
         eventPublisher.close();
-      } catch (IOException e) {
-
+      } catch (IOException ignored) {
       }
     }
   }
 
   @Override
   public void onTwinAdded(EntityTwin twin, TwinUpdateContext context) {
-    TakTwinContext twinContext = takContexts.computeIfAbsent(twin.getTwinId(), key -> new TakTwinContext());
+    TakTwinContext twinContext =
+        takContexts.computeIfAbsent(twin.getTwinId(), key -> new TakTwinContext());
+
+    twinContext.setLastUpdate(System.currentTimeMillis());
     publishTwin(twin, context, twinContext);
   }
 
@@ -129,7 +148,9 @@ public class TakTwinObserver implements TwinObserver {
     }
 
     long now = System.currentTimeMillis();
-    TakTwinContext twinContext = takContexts.computeIfAbsent(resolvedTwinId, key -> new TakTwinContext());
+    TakTwinContext twinContext =
+        takContexts.computeIfAbsent(resolvedTwinId, key -> new TakTwinContext());
+
     if (twinContext.getLastUpdate() + PUBLISH_INTERVAL_MS > now) {
       return;
     }
@@ -140,33 +161,59 @@ public class TakTwinObserver implements TwinObserver {
 
   @Override
   public void onTwinRemoved(EntityTwin removed, TwinUpdateContext context) {
+    if (removed == null || removed.getTwinId() == null) {
+      return;
+    }
+
     TakTwinContext twinContext = takContexts.get(removed.getTwinId());
     if (twinContext != null) {
       publishRemoval(removed, context, twinContext);
     }
 
     takContexts.remove(removed.getTwinId());
-    if (twinContext != null && twinContext.getSocketConnection() != null && globalSocketConnection == null) {
+    lastStatsPublishTimes.remove(removed.getTwinId());
+
+    if (twinContext != null
+        && twinContext.getSocketConnection() != null
+        && globalSocketConnection == null) {
       twinContext.getSocketConnection().close();
     }
   }
 
   @Override
-  public void onRelationshipUpdated(String twinId, TwinRelationship relationship, TwinUpdateContext context) {
+  public void onRelationshipUpdated(
+      String twinId, TwinRelationship relationship, TwinUpdateContext context) {
     // ignored for now
   }
 
   @Override
-  public void onTwinStatusChanged(String twinId,
-                                  TwinLifecycleStatus previousStatus,
-                                  TwinLifecycleStatus currentStatus,
-                                  EntityTwin twin,
-                                  TwinUpdateContext context) {
-    TakTwinContext twinContext = takContexts.computeIfAbsent(twinId, key -> new TakTwinContext());
+  public void onTwinStatusChanged(
+      String twinId,
+      TwinLifecycleStatus previousStatus,
+      TwinLifecycleStatus currentStatus,
+      EntityTwin twin,
+      TwinUpdateContext context) {
+
+    if (twin == null) {
+      return;
+    }
+
+    String resolvedTwinId =
+        twinId == null || twinId.isBlank() ? twin.getTwinId() : twinId;
+
+    if (resolvedTwinId == null || resolvedTwinId.isBlank()) {
+      return;
+    }
+
+    TakTwinContext twinContext =
+        takContexts.computeIfAbsent(resolvedTwinId, key -> new TakTwinContext());
+
     publishTwin(twin, context, twinContext);
   }
 
-  private void publishTwin(EntityTwin twin, TwinUpdateContext context, TakTwinContext twinContext) {
+  private void publishTwin(
+      EntityTwin twin, TwinUpdateContext context, TakTwinContext twinContext) {
+
     if (twin == null || twin.getGeoPosition() == null) {
       return;
     }
@@ -175,25 +222,32 @@ public class TakTwinObserver implements TwinObserver {
     if (takEvent == null) {
       return;
     }
-    String xml = takXmlSerialiser.toXml(takEvent);
 
-    if(takHost != null) {
+    String xml = takXmlSerialiser.toXml(takEvent);
+    xml = appendStatsIfDue(twin, xml);
+
+    if (takHost != null && !takHost.isBlank() && takPort > 0) {
       if (twinContext.getSocketConnection() == null) {
-        twinContext.setSocketConnection(Objects.requireNonNullElseGet(globalSocketConnection, () -> new TakSocketConnection(takHost, takPort)));
+        twinContext.setSocketConnection(
+            Objects.requireNonNullElseGet(
+                globalSocketConnection, () -> new TakSocketConnection(takHost, takPort)));
       }
+
       twinContext.getSocketConnection().accept(xml);
     }
-    if(eventPublisher != null) {
+
+    if (eventPublisher != null) {
       try {
         eventPublisher.publish(xml);
-      } catch (IOException e) {
-        e.printStackTrace();
+      } catch (IOException exception) {
+        exception.printStackTrace();
       }
     }
-
   }
 
-  private void publishRemoval(EntityTwin twin, TwinUpdateContext context, TakTwinContext twinContext) {
+  private void publishRemoval(
+      EntityTwin twin, TwinUpdateContext context, TakTwinContext twinContext) {
+
     if (twin == null || twinContext.getSocketConnection() == null) {
       return;
     }
@@ -204,5 +258,88 @@ public class TakTwinObserver implements TwinObserver {
     }
 
     twinContext.getSocketConnection().accept(takXmlSerialiser.toXml(takEvent));
+  }
+
+  private String appendStatsIfDue(EntityTwin twin, String xml) {
+    String twinId = twin.getTwinId();
+    if (twinId == null || twinId.isBlank() || xml == null || xml.isBlank()) {
+      return xml;
+    }
+
+    BatteryState batteryState = twin.getBatteryState();
+    String stats = buildStats(batteryState);
+    if (stats == null) {
+      return xml;
+    }
+
+    long now = System.currentTimeMillis();
+    long lastPublish = lastStatsPublishTimes.getOrDefault(twinId, 0L);
+    if (lastPublish + STATS_PUBLISH_INTERVAL_MS > now) {
+      return xml;
+    }
+
+    int detailEnd = xml.lastIndexOf("</detail>");
+    if (detailEnd < 0) {
+      return xml;
+    }
+
+    lastStatsPublishTimes.put(twinId, now);
+
+    return xml.substring(0, detailEnd)
+        + stats
+        + xml.substring(detailEnd);
+  }
+
+  private String buildStats(BatteryState batteryState) {
+    if (batteryState == null) {
+      return null;
+    }
+
+    StringBuilder stringBuilder = new StringBuilder(96);
+    stringBuilder.append("<stats");
+
+    int initialLength = stringBuilder.length();
+
+    Double percentage = batteryState.getPercentage();
+    if (percentage != null && Double.isFinite(percentage)) {
+      int batteryPercentage =
+          (int) Math.round(Math.max(0.0, Math.min(100.0, percentage)));
+
+      appendAttribute(stringBuilder, "battery", batteryPercentage);
+    }
+
+    Double temperatureCelsius = batteryState.getTemperatureCelsius();
+    if (temperatureCelsius != null && Double.isFinite(temperatureCelsius)) {
+      appendAttribute(
+          stringBuilder,
+          "battery_temp",
+          (int) Math.round(temperatureCelsius));
+    }
+
+    Boolean charging = batteryState.getCharging();
+    if (charging != null) {
+      appendAttribute(
+          stringBuilder,
+          "battery_status",
+          charging ? "Charging" : "Discharging");
+    }
+
+    if (stringBuilder.length() == initialLength) {
+      return null;
+    }
+
+    stringBuilder.append("/>");
+    return stringBuilder.toString();
+  }
+
+  private void appendAttribute(
+      StringBuilder stringBuilder, String name, Object value) {
+
+    stringBuilder
+        .append(' ')
+        .append(name)
+        .append("=\"")
+        .append(value)
+        .append('"');
   }
 }
