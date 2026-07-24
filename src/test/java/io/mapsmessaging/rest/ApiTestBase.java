@@ -126,7 +126,7 @@ public abstract class ApiTestBase extends BaseTestConfig {
             .given()
             .config(restAssuredConfig)
             .baseUri(baseUrl)
-            .get("/health")
+            .get("/active")
             .getStatusCode();
 
         if (status >= 200 && status < 500) {
