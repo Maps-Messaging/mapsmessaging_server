@@ -19,6 +19,7 @@
 
 package io.mapsmessaging.state.mavlink.model.impl.usv;
 
+import io.mapsmessaging.configuration.SystemProperties;
 import io.mapsmessaging.state.drone.drone.DroneTwin;
 import io.mapsmessaging.state.drone.model.DetectionEvent;
 import io.mapsmessaging.state.drone.model.DetectionEventType;
@@ -28,6 +29,7 @@ import io.mapsmessaging.state.mavlink.model.*;
 import io.mapsmessaging.state.mavlink.model.impl.ardupilot.GenericArduPilotUxvModel;
 import io.mapsmessaging.state.mavlink.packet.MavlinkPacket;
 import io.mapsmessaging.state.mavlink.packet.NamedValueFloatPacket;
+
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.*;
@@ -36,13 +38,12 @@ public class SticklebackArdupilotUsvModel extends GenericArduPilotUxvModel imple
 
   public static final String MODEL_NAME = "stickleback-ardupilot-usv";
 
-  private static final double MAX_ALTITUDE_METERS = 0.6f;
+  public static final double MAX_ALTITUDE_METERS = getMaxAltitudeMeters();
+  private static final long CONTACT_TTL_MILLIS = getDetectionTime();
+
   private static final int DETECTION_LOST = 0;
   private static final int DETECTION_PRESENT = 1;
-
-
   private static final float DETECTION_STATE_EPSILON = 0.001f;
-  private static final long CONTACT_TTL_MILLIS = 60_000L;
 
   public SticklebackArdupilotUsvModel() {
     super(
@@ -83,6 +84,9 @@ public class SticklebackArdupilotUsvModel extends GenericArduPilotUxvModel imple
     rejectDepth(request.depthMeters(), UxvOperation.LOITER);
     rejectYaw(request.yawDegrees(), UxvOperation.LOITER);
 
+    GeoPosition position = Objects.requireNonNull(request.position(), "position must not be null");
+    position.setAltitudeMslMeters(MAX_ALTITUDE_METERS);
+
     Duration duration = toDuration(request.duration(), "duration");
     MavlinkMessage message;
     if (duration.isZero()) {
@@ -90,7 +94,7 @@ public class SticklebackArdupilotUsvModel extends GenericArduPilotUxvModel imple
           MavlinkCommandIntFactory.loiterUnlimited(
               context.targetSystem(),
               context.targetComponent(),
-              request.position(),
+              position,
               request.radiusMeters(),
               Float.NaN,
               context.sequence());
@@ -99,7 +103,7 @@ public class SticklebackArdupilotUsvModel extends GenericArduPilotUxvModel imple
           MavlinkCommandIntFactory.loiterTime(
               context.targetSystem(),
               context.targetComponent(),
-              request.position(),
+              position,
               request.radiusMeters(),
               duration,
               context.sequence());
@@ -229,5 +233,30 @@ public class SticklebackArdupilotUsvModel extends GenericArduPilotUxvModel imple
     detectionEvent.addAttribute("mavlink.message", "NAMED_VALUE_FLOAT");
     detectionEvent.addAttribute("mavlink.name", packet.getName());
     detectionEvent.addAttribute("mavlink.value", packet.getValue());
+  }
+
+  private static double getMaxAltitudeMeters() {
+    double val = 10.0f;
+    String loaded = SystemProperties.getInstance().getProperty("STICKLEBACK_ALTITUDE", ""+val);
+    try{
+      val = Double.parseDouble(loaded);
+    }
+    catch(Throwable t){
+      //ignore
+    }
+    return val;
+  }
+
+
+  private static long getDetectionTime() {
+    long val = 60_000;
+    String loaded = SystemProperties.getInstance().getProperty("STICKLEBACK_DETECTION", ""+val);
+    try{
+      val = Long.parseLong(loaded);
+    }
+    catch(Throwable t){
+      //ignore
+    }
+    return val;
   }
 }
