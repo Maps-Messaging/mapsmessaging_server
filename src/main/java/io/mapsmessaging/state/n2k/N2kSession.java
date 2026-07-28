@@ -59,6 +59,7 @@ public class N2kSession implements MessageHandler, Lifecycle {
   private final DroneInfoDTO droneInfo;
   private final Clock clock;
   private final AtomicBoolean running;
+  private final AtomicBoolean terminated;
 
   public N2kSession(
       @NonNull @NotNull TwinManager twinManager,
@@ -71,6 +72,7 @@ public class N2kSession implements MessageHandler, Lifecycle {
     this.droneInfo = droneRegistry.getDroneInfo(n2kConfig.getName());
     this.clock = Clock.systemUTC();
     this.running = new AtomicBoolean();
+    this.terminated = new AtomicBoolean();
     logDroneResolution();
   }
 
@@ -87,6 +89,7 @@ public class N2kSession implements MessageHandler, Lifecycle {
     this.droneInfo = droneInfo;
     this.clock = clock;
     this.running = new AtomicBoolean();
+    this.terminated = new AtomicBoolean();
     logDroneResolution();
   }
 
@@ -104,7 +107,7 @@ public class N2kSession implements MessageHandler, Lifecycle {
       logger.log(N2K_SESSION_START_SKIPPED, n2kConfig.getName(), namespaceTopicPath);
       return;
     }
-    if (!running.compareAndSet(false, true)) {
+    if (terminated.get() || !running.compareAndSet(false, true)) {
       return;
     }
 
@@ -116,6 +119,7 @@ public class N2kSession implements MessageHandler, Lifecycle {
       logger.log(N2K_SESSION_STARTED, n2kConfig.getName(), namespaceTopicPath);
     } catch (IOException exception) {
       running.set(false);
+      terminated.set(true);
       try {
         protocol.close();
       } catch (IOException closeException) {
@@ -134,13 +138,14 @@ public class N2kSession implements MessageHandler, Lifecycle {
     if (!running.getAndSet(false)) {
       return;
     }
+    terminated.set(true);
 
     logger.log(N2K_SESSION_STOPPING, n2kConfig.getName(), namespaceTopicPath);
 
-    IOException failure = null;
+    Exception failure = null;
     try {
       protocol.unsubscribeLocal(namespaceTopicPath);
-    } catch (IOException exception) {
+    } catch (RuntimeException exception) {
       failure = exception;
     }
 
