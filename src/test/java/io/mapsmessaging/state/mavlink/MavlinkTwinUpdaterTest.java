@@ -26,20 +26,33 @@ import io.mapsmessaging.state.config.VehicleClass;
 import io.mapsmessaging.state.drone.core.TwinManager;
 import io.mapsmessaging.state.drone.core.TwinUpdateContext;
 import io.mapsmessaging.state.drone.drone.DroneTwin;
+import io.mapsmessaging.state.drone.model.BatteryState;
+import io.mapsmessaging.state.mavlink.bootstrap.DroneTwinMissingState;
+import io.mapsmessaging.state.mavlink.bootstrap.DroneTwinReadinessEvaluator;
+import io.mapsmessaging.state.mavlink.bootstrap.DroneTwinReadinessResult;
+import io.mapsmessaging.state.mavlink.bootstrap.DroneTwinReadinessState;
+import io.mapsmessaging.state.mavlink.bootstrap.MavlinkBootstrapStateEngine;
 import io.mapsmessaging.state.mavlink.listener.ListenerManager;
 import io.mapsmessaging.state.mavlink.packet.BatteryStatusPacket;
 import io.mapsmessaging.state.mavlink.packet.MavlinkPacket;
 import org.junit.jupiter.api.Test;
 
 import java.time.Instant;
+import java.util.EnumSet;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
 import static io.mapsmessaging.state.mavlink.packet.MavlinkMessageIds.BATTERY_STATUS;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.same;
 import static org.mockito.Mockito.RETURNS_DEEP_STUBS;
 import static org.mockito.Mockito.clearInvocations;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -93,6 +106,51 @@ class MavlinkTwinUpdaterTest {
     );
 
     assertNull(twin.getPowerUpdatedAt());
+    updater.close();
+  }
+
+  @Test
+  void readiness_is_evaluated_once_after_listener_updates_complete() {
+    TwinManager twinManager = twinManager();
+    ListenerManager listenerManager = mock(ListenerManager.class);
+    DroneTwinReadinessEvaluator readinessEvaluator = mock(DroneTwinReadinessEvaluator.class);
+    MavlinkBootstrapStateEngine stateEngine = mock(MavlinkBootstrapStateEngine.class);
+    MavlinkDroneMonitor monitor = new MavlinkDroneMonitor(twinManager, readinessEvaluator, stateEngine, null);
+    MavlinkTwinUpdater updater = new MavlinkTwinUpdater(twinManager, listenerManager, monitor);
+    TwinUpdateContext context = context(null, null);
+    BatteryStatusPacket packet = mock(BatteryStatusPacket.class);
+    when(packet.isValid()).thenReturn(true);
+    BatteryState batteryState = new BatteryState();
+    batteryState.setPercentage(80.0);
+    DroneTwinReadinessResult readinessResult = readinessResult();
+
+    doAnswer(invocation -> {
+      twinManager.updateTwin(
+          "drone-1",
+          twin -> ((DroneTwin) twin).setBatteryState(batteryState),
+          context
+      );
+      return true;
+    }).when(listenerManager).handle(eq(BATTERY_STATUS), eq("drone-1"), same(packet), same(context));
+
+    when(readinessEvaluator.evaluate(any(DroneTwin.class), same(context))).thenAnswer(invocation -> {
+      DroneTwin evaluatedTwin = invocation.getArgument(0);
+      assertSame(batteryState, evaluatedTwin.getBatteryState());
+      assertEquals(NOW, evaluatedTwin.getPowerUpdatedAt());
+      return readinessResult;
+    });
+    when(stateEngine.update(any(DroneTwin.class), same(readinessResult), same(context))).thenReturn(List.of());
+
+    updater.updateTwinState(
+        frame(17, 42, BATTERY_STATUS),
+        packet,
+        context,
+        knownSource(),
+        new DroneInfoDTO()
+    );
+
+    verify(readinessEvaluator, times(1)).evaluate(any(DroneTwin.class), same(context));
+    verify(stateEngine, times(1)).update(any(DroneTwin.class), same(readinessResult), same(context));
     updater.close();
   }
 
@@ -152,6 +210,18 @@ class MavlinkTwinUpdaterTest {
 
   private TwinManager twinManager() {
     return new TwinManager(false, 10_000L, 5_000L, 120_000L, null);
+  }
+
+  private DroneTwinReadinessResult readinessResult() {
+    DroneTwinReadinessResult result = new DroneTwinReadinessResult("drone-1");
+    result.setReadinessState(DroneTwinReadinessState.DISCOVERED);
+    result.setRegistrationReady(false);
+    result.setCommandReady(false);
+    result.setMissingStates(EnumSet.noneOf(DroneTwinMissingState.class));
+    result.setDegradedStates(EnumSet.noneOf(DroneTwinMissingState.class));
+    result.setBlockingStates(EnumSet.noneOf(DroneTwinMissingState.class));
+    result.setEvaluatedAt(NOW);
+    return result;
   }
 
   private MavlinkKnownSourceDTO knownSource() {
