@@ -78,6 +78,7 @@ class MavlinkStateSubscriberTest {
 
     assertThrows(IllegalStateException.class, fixture.subscriber::start);
     assertEquals(0, invocationCount(fixture.protocol, "connect"));
+    assertEquals(1, invocationCount(fixture.protocol, "close"));
   }
 
   @Test
