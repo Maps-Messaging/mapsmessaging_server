@@ -39,6 +39,7 @@ The review inspected the following invariants and paths:
 - Registration requires MAVLink identity, vehicle class, autopilot type, and a fresh connected heartbeat. Command readiness additionally requires finite in-range position coordinates, a valid GPS flag and non-sentinel fix type, usable and fresh battery data, fresh position state, and autopilot capabilities.
 - Missing home position and missing system-health data remain degraded advisory states and do not block command readiness under the current policy.
 - Twin updates preserve the first non-empty response topic, update system/component and outbound-correlation state, refresh power freshness only for a valid battery packet, and ignore updates after closure.
+- Generic MAVLink twin metadata and listener-decoded packet state form one logical update. Readiness and bootstrap evaluation must occur once after both stages complete, not against transient half-updated state.
 - Readiness writes are observer-generated twin updates. They must not recursively re-evaluate and advance bootstrap state a second time for the same source update.
 - Subscriber start and stop are idempotent, protocol cleanup still occurs when unsubscribe fails, an unstarted subscriber can be closed, monitor registration is removed once, and late messages after shutdown run only their completion task.
 - Source matching is the exact MAVLink system/component pair. Duplicate configured keys retain the final configured entry, matching the current map construction semantics.
@@ -53,6 +54,7 @@ The review inspected the following invariants and paths:
 | High | `BatteryReadinessCheck.evaluate` | Any non-null measurement, including `NaN`, infinity, zero voltage, or an out-of-range percentage, counted as usable battery state. | `DroneTwinReadinessEvaluatorTest.missing_stale_or_invalid_battery_state_is_health_partial` | Added finite and domain-specific measurement validation. |
 | Medium | `MavlinkBootstrapStateEngine.update` | Request trackers were never removed when a state recovered. An exhausted tracker could therefore suppress requests after the same state regressed later. | `MavlinkBootstrapStateEngineTest.resolved_item_resets_exhausted_tracker_before_it_becomes_missing_again` | Remove trackers whose missing state is no longer present before processing the current evaluation. |
 | Medium | `MavlinkDroneMonitor.updateReadinessIfChanged` | Writing readiness fields through `TwinManager.updateTwin` synchronously called the same observer again, causing duplicate readiness evaluation and bootstrap advancement. | `MavlinkDroneMonitorTest.repeated_registration_and_readiness_write_trigger_one_bootstrap_evaluation` | Added a per-twin re-entrancy guard around monitor-authored readiness updates. |
+| Medium | `MavlinkTwinUpdater.updateTwinState` | The monitor evaluated registration and generic metadata updates before the packet listener applied decoded state, producing transient readiness transitions and bootstrap requests from incomplete data. | `MavlinkTwinUpdaterTest.readiness_is_evaluated_once_after_listener_updates_complete` | Added a package-local update boundary that defers monitor evaluation until all mutations for the packet have completed. |
 | Medium | `MavlinkTwinUpdater.updateTwinState` | The excluded `BatteryStatusListener` writes `operationalUpdatedAt`, while readiness checks `powerUpdatedAt`; valid battery traffic therefore did not establish battery freshness. | `MavlinkTwinUpdaterTest.valid_battery_packet_refreshes_power_and_preserves_existing_response_topic` | The owned updater now stamps `powerUpdatedAt` for valid `BatteryStatusPacket` events before observer evaluation. |
 | Medium | `MavlinkStateSubscriber.stop`, `MavlinkTwinUpdater.close`, `MavlinkDroneMonitor.close` | Shutdown was not idempotent, unsubscribe failure skipped later cleanup, observers remained registered, and late callbacks could continue updating state. | `MavlinkStateSubscriberTest`, `MavlinkTwinUpdaterTest.close_is_idempotent_and_late_updates_are_ignored`, `MavlinkDroneMonitorTest.close_is_idempotent_and_late_callbacks_are_ignored` | Added deterministic lifecycle state, package-local dependency injection for subscriber tests, guaranteed cleanup, observer removal, and late-event guards. |
 
@@ -74,9 +76,9 @@ Regression tests were committed before the corresponding production fixes. They 
 | `MavlinkSourceRegistryTest` | Null/empty configuration, exact matching, unrelated IDs, and duplicate-key ordering. | Source rejection and replacement semantics. |
 | `MavlinkDroneMonitorTest` | Registration deduplication, re-entrancy suppression, unchanged readiness, removal, close, late callbacks, and non-MAVLink twins. | Observer ordering and lifecycle. |
 | `MavlinkStateSubscriberTest` | Repeated start/stop, unsubscribe failure cleanup, close-before-start, and late message completion. | Subscriber resource cleanup and shutdown. |
-| `MavlinkTwinUpdaterTest` | Changed/unchanged response state, valid/invalid battery freshness, configured twin creation, close, and late update rejection. | Twin mutation, absent state, invalid packet, lifecycle. |
+| `MavlinkTwinUpdaterTest` | Changed/unchanged response state, valid/invalid battery freshness, complete-update ordering, configured twin creation, close, and late update rejection. | Twin mutation, absent state, invalid packet, transient-state suppression, lifecycle. |
 
-A total of 47 focused JUnit test methods were added.
+A total of 48 focused JUnit test methods were added.
 
 ## Suggested production changes
 
@@ -91,7 +93,7 @@ A total of 47 focused JUnit test methods were added.
 - The branch was written through the GitHub connector because the execution container could not clone the repository. Maven compilation, JUnit execution, JaCoCo generation, and formatting checks were therefore not available.
 - MAVLink JSON parsing was reviewed but only subscriber lifecycle was tested. Binary decoding and packet construction remain WP30 concerns.
 - Live loopback subscription, broker delivery, network teardown, vehicle hardware, and autopilot timing were not exercised.
-- Concurrency coverage proves deterministic synchronous observer re-entrancy and late-callback guards, not high-contention stress behaviour.
+- Concurrency coverage proves deterministic synchronous observer re-entrancy, complete-update ordering, and late-callback guards, not high-contention stress behaviour.
 - Model-specific detection interpretation and active sender acknowledgement interaction were not changed or tested because those packages are excluded.
 - Request completion is inferred from readiness state rather than correlated response message IDs. The tests prove duplicate/out-of-order readiness evaluations and unrelated missing states, but the current architecture has no direct request-response correlation API to exercise.
 
@@ -104,7 +106,7 @@ A total of 47 focused JUnit test methods were added.
 | `java -version` | Passed: OpenJDK `21.0.10` |
 | `mvn -Dtest="io.mapsmessaging.state.mavlink.**,io.mapsmessaging.state.mavlink.bootstrap.**" test` | Not run, exit 127: `mvn: command not found` |
 | `mvn test` | Not run, exit 127: `mvn: command not found` |
-| GitHub connector compare: `development...review/state-mavlink-bootstrap` | Passed before README creation: branch ahead by 17 commits, behind by 0, 15 changed files |
+| GitHub connector compare: `development...review/state-mavlink-bootstrap` | Passed: branch ahead of `development`, behind by 0, 16 changed files |
 
 ## PR
 - PR URL: https://github.com/Maps-Messaging/mapsmessaging_server/pull/2138
