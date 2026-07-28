@@ -1,0 +1,20 @@
+name: WP33 head tree
+
+on:
+  pull_request:
+    branches:
+      - development
+
+jobs:
+  tree:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out head branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+
+      - name: Print head and tree
+        run: |
+          git rev-parse HEAD
+          git rev-parse 'HEAD^{tree}'
