@@ -1,0 +1,24 @@
+name: WP33 PR workspace export
+
+on:
+  pull_request:
+    branches:
+      - development
+
+jobs:
+  export:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Create workspace archive
+        run: tar --exclude=.git -czf ../mapsmessaging-server-development.tar.gz .
+
+      - name: Upload workspace archive
+        uses: actions/upload-artifact@v4
+        with:
+          name: wp33-workspace-pr
+          path: ../mapsmessaging-server-development.tar.gz
+          if-no-files-found: error
+          retention-days: 1
