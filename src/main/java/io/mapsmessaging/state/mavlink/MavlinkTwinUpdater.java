@@ -87,29 +87,34 @@ public class MavlinkTwinUpdater implements AutoCloseable {
     }
 
     String twinId = buildTwinId(env, knownSource);
-    EntityTwin entityTwin = twinManager.getTwin(twinId).orElseGet(() -> createTwin(twinId, env, context, knownSource, droneInfo));
-    twinManager.updateTwin(
-        twinId,
-        twinToUpdate -> {
-          if (twinToUpdate instanceof DroneTwin drone) {
-            drone.setSystemId(env.getFrame().getSystemId());
-            drone.setComponentId(env.getFrame().getComponentId());
-            updateTwinResponseTopic(twinToUpdate, context.getResponseTopic());
-            drone.setUniqueOutboundIdentifier(context.getUniqueOutboundIdentifier());
-            updateMessageFreshness(drone, packet, context);
-          }
-        },
-        context
-    );
+    droneMonitor.beginTwinUpdate(twinId);
+    try {
+      EntityTwin entityTwin = twinManager.getTwin(twinId).orElseGet(() -> createTwin(twinId, env, context, knownSource, droneInfo));
+      twinManager.updateTwin(
+          twinId,
+          twinToUpdate -> {
+            if (twinToUpdate instanceof DroneTwin drone) {
+              drone.setSystemId(env.getFrame().getSystemId());
+              drone.setComponentId(env.getFrame().getComponentId());
+              updateTwinResponseTopic(twinToUpdate, context.getResponseTopic());
+              drone.setUniqueOutboundIdentifier(context.getUniqueOutboundIdentifier());
+              updateMessageFreshness(drone, packet, context);
+            }
+          },
+          context
+      );
 
-    listenerManager.handle(env.getFrame().getMessageId(), twinId, packet, context);
+      listenerManager.handle(env.getFrame().getMessageId(), twinId, packet, context);
 
-    if (entityTwin instanceof DroneTwin droneTwin) {
-      MavlinkEventListSender sender = droneTwin.getActiveMavlinkSender();
-      if (sender != null) {
-        sender.onMavlinkMessage(packet);
+      if (entityTwin instanceof DroneTwin droneTwin) {
+        MavlinkEventListSender sender = droneTwin.getActiveMavlinkSender();
+        if (sender != null) {
+          sender.onMavlinkMessage(packet);
+        }
+        applyModelDetectionEvent(droneTwin, packet);
       }
-      applyModelDetectionEvent(droneTwin, packet);
+    } finally {
+      droneMonitor.endTwinUpdate(twinId, context);
     }
   }
 
