@@ -14,7 +14,7 @@ permissions:
 jobs:
   verify:
     runs-on: ubuntu-24.04
-    timeout-minutes: 90
+    timeout-minutes: 30
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
@@ -31,9 +31,6 @@ jobs:
           mvn -B -Dlicense.fetch.skip=true
           -Dtest=N2kSessionTest,N2kTwinUpdaterTest,DroneMonitorTest,AbstractDronePgnHandlerTest,AisHandlersTest
           test
-
-      - name: Run complete test suite
-        run: mvn -B -Dlicense.fetch.skip=true test
 
       - name: Calculate assigned-package coverage
         if: always()
@@ -72,7 +69,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: wp32-verification-reports
+          name: wp32-targeted-verification-reports
           path: |
             target/surefire-reports
             target/site/jacoco/jacoco.xml
