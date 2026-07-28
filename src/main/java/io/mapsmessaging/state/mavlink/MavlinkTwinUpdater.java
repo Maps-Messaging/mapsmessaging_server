@@ -46,6 +46,7 @@ import io.mapsmessaging.state.mavlink.sender.MavlinkEventListSender;
 import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -64,6 +65,18 @@ public class MavlinkTwinUpdater implements AutoCloseable {
     this.twinManager = twinManager;
     this.listenerManager = listenerManager;
     this.droneMonitor = new MavlinkDroneMonitor(twinManager, new DroneTwinReadinessEvaluator(), new MavlinkBootstrapStateEngine(new MavlinkBootstrapProfile()), null);
+    this.closed = new AtomicBoolean();
+    twinManager.addObserver(droneMonitor);
+  }
+
+  MavlinkTwinUpdater(
+      TwinManager twinManager,
+      ListenerManager listenerManager,
+      MavlinkDroneMonitor droneMonitor
+  ) {
+    this.twinManager = Objects.requireNonNull(twinManager, "twinManager must not be null");
+    this.listenerManager = Objects.requireNonNull(listenerManager, "listenerManager must not be null");
+    this.droneMonitor = Objects.requireNonNull(droneMonitor, "droneMonitor must not be null");
     this.closed = new AtomicBoolean();
     twinManager.addObserver(droneMonitor);
   }
