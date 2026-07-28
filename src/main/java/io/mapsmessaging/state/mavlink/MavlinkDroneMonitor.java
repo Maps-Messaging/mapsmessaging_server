@@ -19,12 +19,24 @@
 
 package io.mapsmessaging.state.mavlink;
 
-import io.mapsmessaging.state.drone.core.*;
+import io.mapsmessaging.state.drone.core.EntityTwin;
+import io.mapsmessaging.state.drone.core.TwinLifecycleStatus;
+import io.mapsmessaging.state.drone.core.TwinManager;
+import io.mapsmessaging.state.drone.core.TwinObserver;
+import io.mapsmessaging.state.drone.core.TwinRelationship;
+import io.mapsmessaging.state.drone.core.TwinUpdateContext;
 import io.mapsmessaging.state.drone.drone.DroneTwin;
-import io.mapsmessaging.state.mavlink.bootstrap.*;
+import io.mapsmessaging.state.mavlink.bootstrap.DroneTwinMissingState;
+import io.mapsmessaging.state.mavlink.bootstrap.DroneTwinReadinessEvaluator;
+import io.mapsmessaging.state.mavlink.bootstrap.DroneTwinReadinessResult;
+import io.mapsmessaging.state.mavlink.bootstrap.MavlinkBootstrapEvent;
+import io.mapsmessaging.state.mavlink.bootstrap.MavlinkBootstrapEventPublisher;
+import io.mapsmessaging.state.mavlink.bootstrap.MavlinkBootstrapStateEngine;
 
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * Observes MAVLink-backed drone twins and drives MAVLink bootstrap/readiness evaluation.
@@ -33,12 +45,14 @@ import java.util.Set;
  * updates readiness fields on the twin, and publishes bootstrap events for another
  * component to translate into MAVLink commands.</p>
  */
-public class MavlinkDroneMonitor implements TwinObserver {
+public class MavlinkDroneMonitor implements TwinObserver, AutoCloseable {
 
   private final TwinManager twinManager;
   private final DroneTwinReadinessEvaluator readinessEvaluator;
   private final MavlinkBootstrapStateEngine bootstrapStateEngine;
   private final MavlinkBootstrapEventPublisher bootstrapEventPublisher;
+  private final Set<String> readinessUpdates;
+  private final AtomicBoolean closed;
 
   public MavlinkDroneMonitor(
       TwinManager twinManager,
@@ -50,6 +64,8 @@ public class MavlinkDroneMonitor implements TwinObserver {
     this.readinessEvaluator = readinessEvaluator;
     this.bootstrapStateEngine = bootstrapStateEngine;
     this.bootstrapEventPublisher = bootstrapEventPublisher;
+    this.readinessUpdates = ConcurrentHashMap.newKeySet();
+    this.closed = new AtomicBoolean();
   }
 
   @Override
@@ -64,6 +80,10 @@ public class MavlinkDroneMonitor implements TwinObserver {
 
   @Override
   public void onTwinRemoved(EntityTwin removed, TwinUpdateContext context) {
+    if (closed.get()) {
+      return;
+    }
+
     if (removed != null && removed.getTwinId() != null) {
       bootstrapStateEngine.remove(removed.getTwinId());
     }
@@ -98,7 +118,19 @@ public class MavlinkDroneMonitor implements TwinObserver {
     // no-op
   }
 
+  @Override
+  public void close() {
+    if (closed.compareAndSet(false, true)) {
+      twinManager.removeObserver(this);
+      readinessUpdates.clear();
+    }
+  }
+
   private void evaluateTwin(EntityTwin twin, TwinUpdateContext context) {
+    if (closed.get()) {
+      return;
+    }
+
     if (!(twin instanceof DroneTwin droneTwin)) {
       return;
     }
@@ -107,10 +139,15 @@ public class MavlinkDroneMonitor implements TwinObserver {
       return;
     }
 
+    String twinId = droneTwin.getTwinId();
+    if (twinId != null && readinessUpdates.contains(twinId)) {
+      return;
+    }
+
     DroneTwinReadinessResult readinessResult = readinessEvaluator.evaluate(droneTwin, context);
     updateReadinessIfChanged(droneTwin, readinessResult, context);
     List<MavlinkBootstrapEvent> events = bootstrapStateEngine.update(droneTwin, readinessResult, context);
-    if(bootstrapEventPublisher != null) {
+    if (bootstrapEventPublisher != null && !closed.get()) {
       for (MavlinkBootstrapEvent event : events) {
         bootstrapEventPublisher.publish(event);
       }
@@ -134,19 +171,26 @@ public class MavlinkDroneMonitor implements TwinObserver {
     }
 
     String twinId = droneTwin.getTwinId();
+    if (twinId == null || !readinessUpdates.add(twinId)) {
+      return;
+    }
 
-    twinManager.updateTwin(twinId, twin -> {
-      DroneTwin updatedDroneTwin = (DroneTwin) twin;
+    try {
+      twinManager.updateTwin(twinId, twin -> {
+        DroneTwin updatedDroneTwin = (DroneTwin) twin;
 
-      updatedDroneTwin.setReadinessState(readinessResult.getReadinessState().name());
-      updatedDroneTwin.setRegistrationReady(readinessResult.isRegistrationReady());
-      updatedDroneTwin.setCommandReady(readinessResult.isCommandReady());
-      updatedDroneTwin.setMissingReadinessItems(toNames(readinessResult.getMissingStates()));
-      updatedDroneTwin.setDegradedReadinessItems(toNames(readinessResult.getDegradedStates()));
-      updatedDroneTwin.setBlockingReadinessItems(toNames(readinessResult.getBlockingStates()));
-      updatedDroneTwin.setReadinessUpdatedAt(readinessResult.getEvaluatedAt());
+        updatedDroneTwin.setReadinessState(readinessResult.getReadinessState().name());
+        updatedDroneTwin.setRegistrationReady(readinessResult.isRegistrationReady());
+        updatedDroneTwin.setCommandReady(readinessResult.isCommandReady());
+        updatedDroneTwin.setMissingReadinessItems(toNames(readinessResult.getMissingStates()));
+        updatedDroneTwin.setDegradedReadinessItems(toNames(readinessResult.getDegradedStates()));
+        updatedDroneTwin.setBlockingReadinessItems(toNames(readinessResult.getBlockingStates()));
+        updatedDroneTwin.setReadinessUpdatedAt(readinessResult.getEvaluatedAt());
 
-    }, context);
+      }, context);
+    } finally {
+      readinessUpdates.remove(twinId);
+    }
   }
 
   private boolean hasReadinessChanged(
