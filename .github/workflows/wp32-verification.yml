@@ -4,6 +4,9 @@ on:
   push:
     branches:
       - review/state-n2k-core
+  pull_request:
+    branches:
+      - development
 
 permissions:
   contents: read
