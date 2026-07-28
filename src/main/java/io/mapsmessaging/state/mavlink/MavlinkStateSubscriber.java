@@ -150,15 +150,15 @@ public class MavlinkStateSubscriber implements MessageHandler, AutoCloseable {
       } catch (IOException exception) {
         failure = exception;
       }
+    }
 
-      try {
-        protocol.close();
-      } catch (IOException exception) {
-        if (failure == null) {
-          failure = exception;
-        } else {
-          failure.addSuppressed(exception);
-        }
+    try {
+      protocol.close();
+    } catch (IOException exception) {
+      if (failure == null) {
+        failure = exception;
+      } else {
+        failure.addSuppressed(exception);
       }
     }
 
