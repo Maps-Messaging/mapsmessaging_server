@@ -62,12 +62,11 @@ public abstract class AbstractDronePgnHandler implements DronePgnHandler {
       return true;
     }
 
-    double movedMeters =
-        distanceMeters(
-            emissionState.getLastLatitude(),
-            emissionState.getLastLongitude(),
-            droneTwin.getGeoPosition().getLatitude(),
-            droneTwin.getGeoPosition().getLongitude());
+    double movedMeters = distanceMeters(
+        emissionState.getLastLatitude(),
+        emissionState.getLastLongitude(),
+        droneTwin.getGeoPosition().getLatitude(),
+        droneTwin.getGeoPosition().getLongitude());
 
     if (movedMeters >= POSITION_THRESHOLD_METERS) {
       return true;
@@ -99,6 +98,9 @@ public abstract class AbstractDronePgnHandler implements DronePgnHandler {
   }
 
   protected static double absoluteDifference(Double previousValue, Double currentValue) {
+    if (previousValue == null && currentValue == null) {
+      return 0.0d;
+    }
     if (previousValue == null || currentValue == null) {
       return Double.MAX_VALUE;
     }
@@ -106,6 +108,9 @@ public abstract class AbstractDronePgnHandler implements DronePgnHandler {
   }
 
   protected static double angularDifferenceDegrees(Double previousDegrees, Double currentDegrees) {
+    if (previousDegrees == null && currentDegrees == null) {
+      return 0.0d;
+    }
     if (previousDegrees == null || currentDegrees == null) {
       return Double.MAX_VALUE;
     }
@@ -122,20 +127,18 @@ public abstract class AbstractDronePgnHandler implements DronePgnHandler {
       double latitude1,
       double longitude1,
       double latitude2,
-      double longitude2
-  ) {
+      double longitude2) {
     double latitudeDeltaRadians = Math.toRadians(latitude2 - latitude1);
     double longitudeDeltaRadians = Math.toRadians(longitude2 - longitude1);
-
     double latitude1Radians = Math.toRadians(latitude1);
     double latitude2Radians = Math.toRadians(latitude2);
 
-    double a =
-        Math.sin(latitudeDeltaRadians / 2.0d) * Math.sin(latitudeDeltaRadians / 2.0d)
-            + Math.cos(latitude1Radians) * Math.cos(latitude2Radians)
-            * Math.sin(longitudeDeltaRadians / 2.0d) * Math.sin(longitudeDeltaRadians / 2.0d);
+    double a = Math.sin(latitudeDeltaRadians / 2.0d) * Math.sin(latitudeDeltaRadians / 2.0d)
+        + Math.cos(latitude1Radians) * Math.cos(latitude2Radians)
+        * Math.sin(longitudeDeltaRadians / 2.0d) * Math.sin(longitudeDeltaRadians / 2.0d);
 
-    double c = 2.0d * Math.atan2(Math.sqrt(a), Math.sqrt(1.0d - a));
+    double boundedA = Math.max(0.0d, Math.min(1.0d, a));
+    double c = 2.0d * Math.atan2(Math.sqrt(boundedA), Math.sqrt(1.0d - boundedA));
     return 6_371_000.0d * c;
   }
 }
