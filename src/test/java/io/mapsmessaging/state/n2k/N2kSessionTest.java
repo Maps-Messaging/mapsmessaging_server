@@ -43,6 +43,7 @@ class N2kSessionTest {
     fixture.session.start();
     fixture.session.stop();
     fixture.session.stop();
+    fixture.session.start();
 
     verify(fixture.protocol).connect(anyString(), eq("anonymous"), eq("anonymous"));
     verify(fixture.protocol).subscribeLocal(
@@ -61,7 +62,7 @@ class N2kSessionTest {
   @Test
   void stopClosesProtocolWhenUnsubscribeFails() throws Exception {
     Fixture fixture = new Fixture();
-    doThrow(new IOException("unsubscribe failed"))
+    doThrow(new IllegalStateException("unsubscribe failed"))
         .when(fixture.protocol)
         .unsubscribeLocal(fixture.config.getTopic());
 
