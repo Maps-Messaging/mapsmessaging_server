@@ -34,9 +34,11 @@ import io.mapsmessaging.state.mavlink.bootstrap.MavlinkBootstrapEventPublisher;
 import io.mapsmessaging.state.mavlink.bootstrap.MavlinkBootstrapStateEngine;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Observes MAVLink-backed drone twins and drives MAVLink bootstrap/readiness evaluation.
@@ -52,6 +54,7 @@ public class MavlinkDroneMonitor implements TwinObserver, AutoCloseable {
   private final MavlinkBootstrapStateEngine bootstrapStateEngine;
   private final MavlinkBootstrapEventPublisher bootstrapEventPublisher;
   private final Set<String> readinessUpdates;
+  private final Map<String, AtomicInteger> deferredUpdates;
   private final AtomicBoolean closed;
 
   public MavlinkDroneMonitor(
@@ -65,6 +68,7 @@ public class MavlinkDroneMonitor implements TwinObserver, AutoCloseable {
     this.bootstrapStateEngine = bootstrapStateEngine;
     this.bootstrapEventPublisher = bootstrapEventPublisher;
     this.readinessUpdates = ConcurrentHashMap.newKeySet();
+    this.deferredUpdates = new ConcurrentHashMap<>();
     this.closed = new AtomicBoolean();
   }
 
@@ -85,7 +89,10 @@ public class MavlinkDroneMonitor implements TwinObserver, AutoCloseable {
     }
 
     if (removed != null && removed.getTwinId() != null) {
-      bootstrapStateEngine.remove(removed.getTwinId());
+      String twinId = removed.getTwinId();
+      deferredUpdates.remove(twinId);
+      readinessUpdates.remove(twinId);
+      bootstrapStateEngine.remove(twinId);
     }
   }
 
@@ -123,7 +130,43 @@ public class MavlinkDroneMonitor implements TwinObserver, AutoCloseable {
     if (closed.compareAndSet(false, true)) {
       twinManager.removeObserver(this);
       readinessUpdates.clear();
+      deferredUpdates.clear();
     }
+  }
+
+  void beginTwinUpdate(String twinId) {
+    if (closed.get() || twinId == null) {
+      return;
+    }
+
+    deferredUpdates.compute(twinId, (key, depth) -> {
+      if (depth == null) {
+        return new AtomicInteger(1);
+      }
+      depth.incrementAndGet();
+      return depth;
+    });
+  }
+
+  void endTwinUpdate(String twinId, TwinUpdateContext context) {
+    if (twinId == null) {
+      return;
+    }
+
+    AtomicBoolean evaluate = new AtomicBoolean();
+    deferredUpdates.computeIfPresent(twinId, (key, depth) -> {
+      if (depth.decrementAndGet() <= 0) {
+        evaluate.set(true);
+        return null;
+      }
+      return depth;
+    });
+
+    if (!evaluate.get() || closed.get()) {
+      return;
+    }
+
+    twinManager.getTwin(twinId).ifPresent(twin -> evaluateTwin(twin, context));
   }
 
   private void evaluateTwin(EntityTwin twin, TwinUpdateContext context) {
@@ -140,7 +183,8 @@ public class MavlinkDroneMonitor implements TwinObserver, AutoCloseable {
     }
 
     String twinId = droneTwin.getTwinId();
-    if (twinId != null && readinessUpdates.contains(twinId)) {
+    if (twinId != null
+        && (readinessUpdates.contains(twinId) || deferredUpdates.containsKey(twinId))) {
       return;
     }
 
