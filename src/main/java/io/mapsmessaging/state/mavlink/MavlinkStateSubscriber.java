@@ -53,11 +53,27 @@ import java.time.Instant;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.UUID;
 
-import static io.mapsmessaging.state.logging.StateLogMessages.*;
+import static io.mapsmessaging.state.logging.StateLogMessages.MAVLINK_STATE_CORRELATION_DATA_MISSING;
+import static io.mapsmessaging.state.logging.StateLogMessages.MAVLINK_STATE_DRONE_NOT_CONFIGURED;
+import static io.mapsmessaging.state.logging.StateLogMessages.MAVLINK_STATE_EMPTY_MESSAGE_IGNORED;
+import static io.mapsmessaging.state.logging.StateLogMessages.MAVLINK_STATE_JSON_PARSE_FAILED;
+import static io.mapsmessaging.state.logging.StateLogMessages.MAVLINK_STATE_MAVLINK_OBJECT_MISSING;
+import static io.mapsmessaging.state.logging.StateLogMessages.MAVLINK_STATE_PAYLOAD_OBJECT_MISSING;
+import static io.mapsmessaging.state.logging.StateLogMessages.MAVLINK_STATE_PROCESSING_FAILED;
+import static io.mapsmessaging.state.logging.StateLogMessages.MAVLINK_STATE_SOURCE_NOT_CONFIGURED;
+import static io.mapsmessaging.state.logging.StateLogMessages.MAVLINK_STATE_SUBSCRIBER_START_FAILED;
+import static io.mapsmessaging.state.logging.StateLogMessages.MAVLINK_STATE_SUBSCRIBER_STARTED;
+import static io.mapsmessaging.state.logging.StateLogMessages.MAVLINK_STATE_SUBSCRIBER_STARTING;
+import static io.mapsmessaging.state.logging.StateLogMessages.MAVLINK_STATE_SUBSCRIBER_STOP_FAILED;
+import static io.mapsmessaging.state.logging.StateLogMessages.MAVLINK_STATE_SUBSCRIBER_STOPPED;
+import static io.mapsmessaging.state.logging.StateLogMessages.MAVLINK_STATE_SUBSCRIBER_STOPPING;
+import static io.mapsmessaging.state.logging.StateLogMessages.MAVLINK_STATE_TWIN_UPDATE_FAILED;
+import static io.mapsmessaging.state.logging.StateLogMessages.MAVLINK_STATE_UNSUPPORTED_PACKET_IGNORED;
 
-public class MavlinkStateSubscriber implements MessageHandler {
+public class MavlinkStateSubscriber implements MessageHandler, AutoCloseable {
 
   private final Logger logger = LoggerFactory.getLogger(MavlinkStateSubscriber.class);
 
@@ -67,6 +83,9 @@ public class MavlinkStateSubscriber implements MessageHandler {
   private final DroneInfoRegistry droneRegistry;
   private final MavlinkTwinUpdater twinUpdater;
 
+  private volatile boolean started;
+  private volatile boolean closed;
+
   public MavlinkStateSubscriber(@NonNull @NotNull TwinManager twinManager, @NonNull @NotNull MavlinkTwinConfigDTO mavlinkConfig, @NonNull @NotNull DroneInfoRegistry registry) {
     this.protocol = SessionHelper.createLoopbackProtocol(this);
     this.namespaceTopicPath = mavlinkConfig.getTopic();
@@ -75,34 +94,105 @@ public class MavlinkStateSubscriber implements MessageHandler {
     this.twinUpdater = new MavlinkTwinUpdater(twinManager, new ListenerManager(twinManager));
   }
 
-  public void start() throws IOException {
+  MavlinkStateSubscriber(
+      StateLoopProtocol protocol,
+      String namespaceTopicPath,
+      MavlinkSourceRegistry sourceRegistry,
+      DroneInfoRegistry droneRegistry,
+      MavlinkTwinUpdater twinUpdater
+  ) {
+    this.protocol = Objects.requireNonNull(protocol, "protocol must not be null");
+    this.namespaceTopicPath = Objects.requireNonNull(namespaceTopicPath, "namespaceTopicPath must not be null");
+    this.sourceRegistry = Objects.requireNonNull(sourceRegistry, "sourceRegistry must not be null");
+    this.droneRegistry = Objects.requireNonNull(droneRegistry, "droneRegistry must not be null");
+    this.twinUpdater = Objects.requireNonNull(twinUpdater, "twinUpdater must not be null");
+  }
+
+  public synchronized void start() throws IOException {
+    if (closed) {
+      throw new IllegalStateException("MAVLink state subscriber is closed");
+    }
+
+    if (started) {
+      return;
+    }
+
     logger.log(MAVLINK_STATE_SUBSCRIBER_STARTING, namespaceTopicPath);
 
     try {
       protocol.connect(UUID.randomUUID().toString(), "anonymous", "anonymous");
       protocol.subscribeLocal(namespaceTopicPath, namespaceTopicPath, QualityOfService.AT_MOST_ONCE, null, null, null, null, null);
+      started = true;
       logger.log(MAVLINK_STATE_SUBSCRIBER_STARTED, namespaceTopicPath);
     } catch (IOException exception) {
+      try {
+        protocol.close();
+      } catch (IOException closeException) {
+        exception.addSuppressed(closeException);
+      }
       logger.log(MAVLINK_STATE_SUBSCRIBER_START_FAILED, exception, namespaceTopicPath);
       throw exception;
     }
   }
 
-  public void stop() throws IOException {
+  public synchronized void stop() throws IOException {
+    if (closed) {
+      return;
+    }
+
+    closed = true;
     logger.log(MAVLINK_STATE_SUBSCRIBER_STOPPING, namespaceTopicPath);
 
-    try {
-      protocol.unsubscribeLocal(namespaceTopicPath);
-      protocol.close();
-      logger.log(MAVLINK_STATE_SUBSCRIBER_STOPPED, namespaceTopicPath);
-    } catch (IOException exception) {
-      logger.log(MAVLINK_STATE_SUBSCRIBER_STOP_FAILED, exception, namespaceTopicPath);
-      throw exception;
+    IOException failure = null;
+    if (started) {
+      try {
+        protocol.unsubscribeLocal(namespaceTopicPath);
+      } catch (IOException exception) {
+        failure = exception;
+      }
+
+      try {
+        protocol.close();
+      } catch (IOException exception) {
+        if (failure == null) {
+          failure = exception;
+        } else {
+          failure.addSuppressed(exception);
+        }
+      }
     }
+
+    started = false;
+
+    try {
+      twinUpdater.close();
+    } catch (RuntimeException exception) {
+      if (failure == null) {
+        throw exception;
+      }
+      failure.addSuppressed(exception);
+    }
+
+    if (failure != null) {
+      logger.log(MAVLINK_STATE_SUBSCRIBER_STOP_FAILED, failure, namespaceTopicPath);
+      throw failure;
+    }
+
+    logger.log(MAVLINK_STATE_SUBSCRIBER_STOPPED, namespaceTopicPath);
+  }
+
+  @Override
+  public void close() throws IOException {
+    stop();
   }
 
   @Override
   public void handle(@NonNull @NotNull MessageEvent messageEvent) {
+    if (closed) {
+      messageEvent.getCompletionTask().run();
+      return;
+    }
+
     String sourceName = messageEvent.getDestinationName();
     Integer messageId = null;
     String droneName = null;
