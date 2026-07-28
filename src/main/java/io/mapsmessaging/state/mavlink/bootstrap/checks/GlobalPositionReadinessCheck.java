@@ -42,9 +42,7 @@ public class GlobalPositionReadinessCheck implements DroneTwinReadinessCheck {
   ) {
     GeoPosition geoPosition = droneTwin.getGeoPosition();
 
-    if (geoPosition == null
-        || geoPosition.getLatitude() == null
-        || geoPosition.getLongitude() == null) {
+    if (!isValidPosition(geoPosition)) {
       evaluation.blocking(DroneTwinMissingState.MISSING_GLOBAL_POSITION);
       return;
     }
@@ -52,6 +50,23 @@ public class GlobalPositionReadinessCheck implements DroneTwinReadinessCheck {
     if (isStale(droneTwin.getNavigationUpdatedAt(), evaluation.getEvaluatedAt())) {
       evaluation.blocking(DroneTwinMissingState.STALE_POSITION);
     }
+  }
+
+  private boolean isValidPosition(GeoPosition geoPosition) {
+    if (geoPosition == null) {
+      return false;
+    }
+
+    Double latitude = geoPosition.getLatitude();
+    Double longitude = geoPosition.getLongitude();
+    return latitude != null
+        && longitude != null
+        && Double.isFinite(latitude)
+        && Double.isFinite(longitude)
+        && latitude >= -90.0
+        && latitude <= 90.0
+        && longitude >= -180.0
+        && longitude <= 180.0;
   }
 
   private boolean isStale(Instant timestamp, Instant now) {
