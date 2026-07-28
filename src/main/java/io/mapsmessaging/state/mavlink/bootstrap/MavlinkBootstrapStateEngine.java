@@ -26,6 +26,7 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class MavlinkBootstrapStateEngine {
@@ -52,6 +53,7 @@ public class MavlinkBootstrapStateEngine {
     MavlinkBootstrapState bootstrapState = bootstrapStates.computeIfAbsent(twinId, MavlinkBootstrapState::new);
     Instant now = getNow(context);
 
+    resetResolvedTrackers(bootstrapState, readinessResult.getMissingStates());
     emitReadinessChangeIfRequired(bootstrapState, readinessResult, events);
     bootstrapState.setUpdatedAt(now);
 
@@ -76,6 +78,18 @@ public class MavlinkBootstrapStateEngine {
     if (twinId != null) {
       bootstrapStates.remove(twinId);
     }
+  }
+
+  private void resetResolvedTrackers(
+      MavlinkBootstrapState bootstrapState,
+      Set<DroneTwinMissingState> missingStates
+  ) {
+    Map<DroneTwinMissingState, MavlinkBootstrapRequestTracker> requestTrackers = bootstrapState.getRequestTrackers();
+    if (requestTrackers == null || requestTrackers.isEmpty() || missingStates == null) {
+      return;
+    }
+
+    requestTrackers.keySet().removeIf(missingState -> !missingStates.contains(missingState));
   }
 
   private void emitReadinessChangeIfRequired(
