@@ -47,6 +47,10 @@ public interface UxvModel {
     }
   }
 
+  default boolean supportsPassiveDetection() {
+    return false;
+  }
+
   default Optional<DetectionEvent> interpretDetection(DroneTwin droneTwin, MavlinkPacket event) {
     return Optional.empty();
   }
