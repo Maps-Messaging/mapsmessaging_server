@@ -46,6 +46,7 @@ public class MavlinkEventListSender implements AutoCloseable {
   private static final Logger logger = LoggerFactory.getLogger(MavlinkEventListSender.class);
 
   private final Object lock;
+  private final Object inboundLock;
   private final UUID sequenceId;
   private final UxvModelCommandSet commandSet;
   private final List<MavlinkMessage> messages;
@@ -93,6 +94,7 @@ public class MavlinkEventListSender implements AutoCloseable {
     }
 
     this.lock = new Object();
+    this.inboundLock = new Object();
     this.sequenceId = UUID.randomUUID();
     this.commandSet = Objects.requireNonNull(commandSet, "commandSet must not be null");
     this.messages = List.copyOf(Objects.requireNonNull(commandSet.messages(), "commandSet.messages must not be null"));
@@ -130,30 +132,30 @@ public class MavlinkEventListSender implements AutoCloseable {
 
     Objects.requireNonNull(receivedPacket, "receivedMessage must not be null");
 
-    MavlinkMessage sentMessage;
-    int sentIndex;
+    synchronized (inboundLock) {
+      MavlinkMessage sentMessage;
+      int sentIndex;
 
-    synchronized (lock) {
-      if (terminal) {
-        logger.log(MAVLINK_EVENT_LIST_SENDER_INBOUND_IGNORED_TERMINAL, sequenceId, commandSet.operation(), commandSet.modelName());
-        return;
+      synchronized (lock) {
+        if (terminal) {
+          logger.log(MAVLINK_EVENT_LIST_SENDER_INBOUND_IGNORED_TERMINAL, sequenceId, commandSet.operation(), commandSet.modelName());
+          return;
+        }
+        if (waitingMessage == null) {
+          logger.log(MAVLINK_EVENT_LIST_SENDER_INBOUND_IGNORED_NOT_WAITING, sequenceId, commandSet.operation(), commandSet.modelName());
+          return;
+        }
+
+        sentMessage = waitingMessage;
+        sentIndex = waitingIndex;
       }
-      if (waitingMessage == null) {
-        logger.log(MAVLINK_EVENT_LIST_SENDER_INBOUND_IGNORED_NOT_WAITING, sequenceId, commandSet.operation(), commandSet.modelName());
-        return;
+
+      Acknowledgement acknowledgement = acknowledgementHandler.acknowledge(sentMessage, receivedPacket);
+      if (acknowledgement == null) {
+        acknowledgement = Acknowledgement.notRelated();
       }
-
-      sentMessage = waitingMessage;
-      sentIndex = waitingIndex;
+      handleAcknowledgement(sentMessage, receivedPacket, sentIndex, acknowledgement);
     }
-
-    Acknowledgement acknowledgement = acknowledgementHandler.acknowledge(sentMessage, receivedPacket);
-
-    if (acknowledgement == null) {
-      acknowledgement = Acknowledgement.notRelated();
-    }
-
-    handleAcknowledgement(sentMessage, receivedPacket, sentIndex, acknowledgement);
   }
 
   public void timeout() {
@@ -251,7 +253,6 @@ public class MavlinkEventListSender implements AutoCloseable {
     }
 
     logger.log(MAVLINK_EVENT_LIST_SENDER_ACK_SUCCESS, sequenceId, commandSet.operation(), commandSet.modelName(), sentIndex + 1);
-
     walk();
   }
 
@@ -295,7 +296,6 @@ public class MavlinkEventListSender implements AutoCloseable {
         nextIndex++;
 
         requiresAcknowledgement = acknowledgementHandler.requiresAcknowledgement(message);
-
         if (requiresAcknowledgement) {
           prepareWaitingState(sentIndex, message);
         }
@@ -343,7 +343,6 @@ public class MavlinkEventListSender implements AutoCloseable {
     }
 
     logger.log(MAVLINK_EVENT_LIST_SENDER_NO_ACK_ADVANCING, sequenceId, commandSet.operation(), commandSet.modelName(), requestedIndex + 1);
-
     walk();
   }
 
@@ -399,7 +398,6 @@ public class MavlinkEventListSender implements AutoCloseable {
                   () -> processTimeout(index, message, generation),
                   acknowledgementTimeoutMillis,
                   TimeUnit.MILLISECONDS);
-
     }
   }
 
@@ -444,7 +442,6 @@ public class MavlinkEventListSender implements AutoCloseable {
 
       terminal = true;
       clearWaitingState();
-
       result = new MavlinkSendResult(this, sequenceId, status, index, messages.size(), sentMessage, receivedMessage, cause, reason);
     }
 
@@ -507,13 +504,10 @@ public class MavlinkEventListSender implements AutoCloseable {
     if (acknowledgement.reason() == null || acknowledgement.reason().isBlank()) {
       return "MAVLink acknowledgement failed";
     }
-
     return acknowledgement.reason();
   }
 
   private String messageName(MavlinkMessage message) {
-    return message == null
-        ? ""
-        : message.getClass().getSimpleName();
+    return message == null ? "" : message.getClass().getSimpleName();
   }
 }

@@ -22,20 +22,41 @@ package io.mapsmessaging.state.mavlink.model;
 import java.util.List;
 import java.util.Objects;
 
-public record MissionPlan(List<PlanItem> items, int iterations) {
+public record MissionPlan(List<PlanItem> items, int iterations, boolean repeatIndefinitely) {
 
-    public MissionPlan(List<PlanItem> items) {
-        this(items, 1);
+  public static final int REPEAT_FOREVER = -1;
+
+  public MissionPlan(List<PlanItem> items) {
+    this(items, 1, false);
+  }
+
+  public MissionPlan(List<PlanItem> items, int iterations) {
+    this(items, iterations, false);
+  }
+
+  public MissionPlan {
+    items = List.copyOf(Objects.requireNonNull(items, "items must not be null"));
+
+    if (items.isEmpty()) {
+      throw new IllegalArgumentException("items must not be empty");
     }
-
-    public MissionPlan {
-        items = List.copyOf(Objects.requireNonNull(items, "items must not be null"));
-
-        if (items.isEmpty()) {
-            throw new IllegalArgumentException("items must not be empty");
-        }
-        if (iterations < 1) {
-            throw new IllegalArgumentException("iterations must be at least 1");
-        }
+    if (iterations < 1) {
+      throw new IllegalArgumentException("iterations must be at least 1");
     }
+    if (repeatIndefinitely && iterations != 1) {
+      throw new IllegalArgumentException("An indefinitely repeating mission must use one logical iteration");
+    }
+  }
+
+  public static MissionPlan repeatIndefinitely(List<PlanItem> items) {
+    return new MissionPlan(items, 1, true);
+  }
+
+  public boolean repeats() {
+    return repeatIndefinitely || iterations > 1;
+  }
+
+  public int jumpRepeatCount() {
+    return repeatIndefinitely ? REPEAT_FOREVER : iterations - 1;
+  }
 }

@@ -36,6 +36,7 @@ public final class MavlinkMissionItemIntFactory {
   public static final int MAV_CMD_DO_JUMP = 177;
 
   public static final int MAV_MISSION_TYPE_MISSION = 0;
+  public static final int MAV_CMD_DO_JUMP_REPEAT_FOREVER = -1;
 
   private static final float DEFAULT_WAYPOINT_ACCEPTANCE_RADIUS_METERS = 2.0f;
 
@@ -161,8 +162,8 @@ public final class MavlinkMissionItemIntFactory {
     if (targetMissionSequence < 0) {
       throw new IllegalArgumentException("targetMissionSequence must not be negative");
     }
-    if (repeatCount < 0) {
-      throw new IllegalArgumentException("repeatCount must not be negative");
+    if (repeatCount < MAV_CMD_DO_JUMP_REPEAT_FOREVER) {
+      throw new IllegalArgumentException("repeatCount must be -1 or greater");
     }
 
     MavlinkMissionItemInt missionItem = commandMissionItem(targetSystem, targetComponent, missionSequence, MAV_CMD_DO_JUMP);

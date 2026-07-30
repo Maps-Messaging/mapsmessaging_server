@@ -230,6 +230,11 @@ public class SticklebackArdupilotUsvModel extends GenericArduPilotUxvModel imple
   }
 
   @Override
+  public boolean supportsPassiveDetection() {
+    return true;
+  }
+
+  @Override
   public Optional<DetectionEvent> interpretDetection(DroneTwin droneTwin, MavlinkPacket event) {
     if (!(event instanceof NamedValueFloatPacket packet)) {
       return Optional.empty();
