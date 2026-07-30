@@ -32,155 +32,116 @@ class MavlinkCommandIntFactoryTest {
   private static final int TARGET_SYSTEM = 2;
   private static final int TARGET_COMPONENT = 1;
   private static final int PACKET_SEQUENCE = 17;
-  private static final GeoPosition POSITION =
-      new GeoPosition(-33.8688d, 151.2093d, 120.0d, null);
+  private static final GeoPosition MSL_POSITION = new GeoPosition(-33.8688d, 151.2093d, 120.0d, null);
+  private static final GeoPosition AGL_POSITION = new GeoPosition(-33.8688d, 151.2093d, null, 35.0d);
 
   @Test
-  void repositionConvertsYawDegreesToRadiansAndPopulatesPosition() {
-    MavlinkCommandInt command =
-        MavlinkCommandIntFactory.reposition(
-            TARGET_SYSTEM,
-            TARGET_COMPONENT,
-            POSITION,
-            PACKET_SEQUENCE);
+  void repositionUsesGlobalIntForMslAltitude() {
+    MavlinkCommandInt command = MavlinkCommandIntFactory.reposition(TARGET_SYSTEM, TARGET_COMPONENT, MSL_POSITION, PACKET_SEQUENCE);
 
-    assertEnvelope(
-        command,
-        MavlinkCommandIntFactory.MAV_FRAME_GLOBAL_RELATIVE_ALT_INT,
-        MavlinkCommandIntFactory.MAV_CMD_DO_REPOSITION);
-
+    assertEnvelope(command, MavlinkCommandIntFactory.MAV_FRAME_GLOBAL_INT, MavlinkCommandIntFactory.MAV_CMD_DO_REPOSITION);
     assertEquals(-1.0f, command.getParam1());
     assertEquals(1.0f, command.getParam2());
-    assertEquals(0.0f, command.getParam3());
-    assertEquals((float) (Math.PI * 1.5d), command.getParam4(), 0.000001f);
-    assertPosition(command, POSITION);
+    assertTrue(Float.isNaN(command.getParam3()));
+    assertTrue(Float.isNaN(command.getParam4()));
+    assertPosition(command, MSL_POSITION, 120.0f);
   }
 
   @Test
-  void unlimitedLoiterKeepsYawInDegrees() {
+  void repositionUsesTerrainFrameForAglAltitude() {
+    MavlinkCommandInt command = MavlinkCommandIntFactory.reposition(TARGET_SYSTEM, TARGET_COMPONENT, AGL_POSITION, PACKET_SEQUENCE);
+
+    assertEnvelope(command, MavlinkCommandIntFactory.MAV_FRAME_GLOBAL_TERRAIN_ALT_INT, MavlinkCommandIntFactory.MAV_CMD_DO_REPOSITION);
+    assertPosition(command, AGL_POSITION, 35.0f);
+  }
+
+  @Test
+  void repositionRelativeAltitudeUsesExplicitHomeRelativeAltitude() {
     MavlinkCommandInt command =
-        MavlinkCommandIntFactory.loiterUnlimited(
-            TARGET_SYSTEM,
-            TARGET_COMPONENT,
-            POSITION,
-            75.0d,
-            -90.0f,
-            PACKET_SEQUENCE);
+        MavlinkCommandIntFactory.repositionRelativeAltitude(TARGET_SYSTEM, TARGET_COMPONENT, MSL_POSITION, 10.0d, PACKET_SEQUENCE);
 
-    assertEnvelope(
-        command,
-        MavlinkCommandIntFactory.MAV_FRAME_GLOBAL_RELATIVE_ALT_INT,
-        MavlinkCommandIntFactory.MAV_CMD_NAV_LOITER_UNLIM);
+    assertEnvelope(command, MavlinkCommandIntFactory.MAV_FRAME_GLOBAL_RELATIVE_ALT_INT, MavlinkCommandIntFactory.MAV_CMD_DO_REPOSITION);
+    assertPosition(command, MSL_POSITION, 10.0f);
+  }
 
+  @Test
+  void unlimitedLoiterUsesMatchingMslFrameAndNormalisesYaw() {
+    MavlinkCommandInt command =
+        MavlinkCommandIntFactory.loiterUnlimited(TARGET_SYSTEM, TARGET_COMPONENT, MSL_POSITION, 75.0d, -90.0f, PACKET_SEQUENCE);
+
+    assertEnvelope(command, MavlinkCommandIntFactory.MAV_FRAME_GLOBAL_INT, MavlinkCommandIntFactory.MAV_CMD_NAV_LOITER_UNLIM);
     assertEquals(0.0f, command.getParam1());
     assertEquals(0.0f, command.getParam2());
     assertEquals(75.0f, command.getParam3());
     assertEquals(270.0f, command.getParam4());
-    assertPosition(command, POSITION);
+    assertPosition(command, MSL_POSITION, 120.0f);
   }
 
   @Test
-  void unlimitedLoiterPreservesUnspecifiedYaw() {
+  void unlimitedLoiterRelativeAltitudeIgnoresPositionAltitude() {
     MavlinkCommandInt command =
-        MavlinkCommandIntFactory.loiterUnlimited(
+        MavlinkCommandIntFactory.loiterUnlimitedRelativeAltitude(
             TARGET_SYSTEM,
             TARGET_COMPONENT,
-            POSITION,
+            MSL_POSITION,
+            10.0d,
             50.0d,
             Float.NaN,
             PACKET_SEQUENCE);
 
+    assertEnvelope(command, MavlinkCommandIntFactory.MAV_FRAME_GLOBAL_RELATIVE_ALT_INT, MavlinkCommandIntFactory.MAV_CMD_NAV_LOITER_UNLIM);
     assertTrue(Float.isNaN(command.getParam4()));
+    assertPosition(command, MSL_POSITION, 10.0f);
   }
 
   @Test
-  void timedLoiterUsesFractionalDurationAndDoesNotTreatParam4AsYaw() {
+  void timedLoiterUsesFractionalDuration() {
     MavlinkCommandInt command =
-        MavlinkCommandIntFactory.loiterTime(
-            TARGET_SYSTEM,
-            TARGET_COMPONENT,
-            POSITION,
-            60.0d,
-            Duration.ofMillis(1500),
-            PACKET_SEQUENCE);
+        MavlinkCommandIntFactory.loiterTime(TARGET_SYSTEM, TARGET_COMPONENT, AGL_POSITION, 60.0d, Duration.ofMillis(1500), PACKET_SEQUENCE);
 
-    assertEnvelope(
-        command,
-        MavlinkCommandIntFactory.MAV_FRAME_GLOBAL_RELATIVE_ALT_INT,
-        MavlinkCommandIntFactory.MAV_CMD_NAV_LOITER_TIME);
-
+    assertEnvelope(command, MavlinkCommandIntFactory.MAV_FRAME_GLOBAL_TERRAIN_ALT_INT, MavlinkCommandIntFactory.MAV_CMD_NAV_LOITER_TIME);
     assertEquals(1.5f, command.getParam1());
     assertEquals(0.0f, command.getParam2());
     assertEquals(60.0f, command.getParam3());
     assertTrue(Float.isNaN(command.getParam4()));
-    assertPosition(command, POSITION);
+    assertPosition(command, AGL_POSITION, 35.0f);
   }
 
   @Test
   void timedLoiterRejectsNegativeDuration() {
     assertThrows(
         IllegalArgumentException.class,
-        () ->
-            MavlinkCommandIntFactory.loiterTime(
-                TARGET_SYSTEM,
-                TARGET_COMPONENT,
-                POSITION,
-                60.0d,
-                Duration.ofMillis(-1),
-                PACKET_SEQUENCE));
+        () -> MavlinkCommandIntFactory.loiterTime(TARGET_SYSTEM, TARGET_COMPONENT, MSL_POSITION, 60.0d, Duration.ofMillis(-1), PACKET_SEQUENCE));
+  }
+
+  @Test
+  void relativeAltitudeCommandsRejectNonFiniteAltitude() {
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> MavlinkCommandIntFactory.repositionRelativeAltitude(TARGET_SYSTEM, TARGET_COMPONENT, MSL_POSITION, Double.NaN, PACKET_SEQUENCE));
   }
 
   @Test
   void orbitPopulatesRadiusAndYawBehaviour() {
-    MavlinkCommandInt command =
-        MavlinkCommandIntFactory.orbit(
-            TARGET_SYSTEM,
-            TARGET_COMPONENT,
-            POSITION,
-            -125.0d,
-            PACKET_SEQUENCE);
+    MavlinkCommandInt command = MavlinkCommandIntFactory.orbit(TARGET_SYSTEM, TARGET_COMPONENT, MSL_POSITION, -125.0d, PACKET_SEQUENCE);
 
-    assertEnvelope(
-        command,
-        MavlinkCommandIntFactory.MAV_FRAME_GLOBAL,
-        MavlinkCommandIntFactory.MAV_CMD_DO_ORBIT);
-
+    assertEnvelope(command, MavlinkCommandIntFactory.MAV_FRAME_GLOBAL, MavlinkCommandIntFactory.MAV_CMD_DO_ORBIT);
     assertEquals(-125.0f, command.getParam1());
     assertTrue(Float.isNaN(command.getParam2()));
-    assertEquals(
-        MavlinkCommandIntFactory.ORBIT_YAW_BEHAVIOUR_HOLD_FRONT_TO_CIRCLE_CENTER,
-        command.getParam3());
+    assertEquals(MavlinkCommandIntFactory.ORBIT_YAW_BEHAVIOUR_HOLD_FRONT_TO_CIRCLE_CENTER, command.getParam3());
     assertTrue(Float.isNaN(command.getParam4()));
-    assertPosition(command, POSITION);
+    assertPosition(command, MSL_POSITION, 120.0f);
   }
 
   @Test
   void positionalCommandsRejectNullPosition() {
+    assertThrows(IllegalArgumentException.class, () -> MavlinkCommandIntFactory.reposition(TARGET_SYSTEM, TARGET_COMPONENT, null, PACKET_SEQUENCE));
     assertThrows(
         IllegalArgumentException.class,
-        () ->
-            MavlinkCommandIntFactory.reposition(
-                TARGET_SYSTEM,
-                TARGET_COMPONENT,
-                null,
-                PACKET_SEQUENCE));
-
-    assertThrows(
-        IllegalArgumentException.class,
-        () ->
-            MavlinkCommandIntFactory.loiterUnlimited(
-                TARGET_SYSTEM,
-                TARGET_COMPONENT,
-                null,
-                50.0d,
-                Float.NaN,
-                PACKET_SEQUENCE));
+        () -> MavlinkCommandIntFactory.loiterUnlimited(TARGET_SYSTEM, TARGET_COMPONENT, null, 50.0d, Float.NaN, PACKET_SEQUENCE));
   }
 
-  private static void assertEnvelope(
-      MavlinkCommandInt command,
-      int expectedFrame,
-      int expectedCommand) {
+  private static void assertEnvelope(MavlinkCommandInt command, int expectedFrame, int expectedCommand) {
     assertEquals(TARGET_SYSTEM, command.getTargetSystem());
     assertEquals(TARGET_COMPONENT, command.getTargetComponent());
     assertEquals(PACKET_SEQUENCE, command.getSequence());
@@ -190,17 +151,9 @@ class MavlinkCommandIntFactoryTest {
     assertEquals(0, command.getAutocontinue());
   }
 
-  private static void assertPosition(
-      MavlinkCommandInt command,
-      GeoPosition position) {
-    assertEquals(
-        (int) Math.round(position.getLatitude() * 10_000_000.0d),
-        command.getLatitude());
-    assertEquals(
-        (int) Math.round(position.getLongitude() * 10_000_000.0d),
-        command.getLongitude());
-    assertEquals(
-        position.getPreferredAltitudeMeters().floatValue(),
-        command.getAltitude());
+  private static void assertPosition(MavlinkCommandInt command, GeoPosition position, float expectedAltitude) {
+    assertEquals((int) Math.round(position.getLatitude() * 10_000_000.0d), command.getLatitude());
+    assertEquals((int) Math.round(position.getLongitude() * 10_000_000.0d), command.getLongitude());
+    assertEquals(expectedAltitude, command.getAltitude());
   }
 }
