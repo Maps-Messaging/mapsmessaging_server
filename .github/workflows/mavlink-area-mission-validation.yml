@@ -1,9 +1,9 @@
 name: MAVLink area mission validation
 
 on:
-  push:
+  pull_request:
     branches:
-      - feature/mavlink-area-mission-planning
+      - development
 
 permissions:
   contents: read
