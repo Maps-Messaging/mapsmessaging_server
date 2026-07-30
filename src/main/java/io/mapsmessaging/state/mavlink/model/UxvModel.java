@@ -119,7 +119,7 @@ public interface UxvModel {
     throw unsupported(UxvOperation.NAVIGATE);
   }
 
-  default UxvNavigationPlan navigate(UxvCommandContext context, MissionPlan missionPlan, Duration duration) {
+  default UxvNavigationPlan navigatePlan(UxvCommandContext context, MissionPlan missionPlan, Duration duration) {
     throw unsupported(UxvOperation.NAVIGATE);
   }
 
