@@ -18,6 +18,8 @@ jobs:
           distribution: temurin
           java-version: '21'
           cache: maven
+      - name: Prepare test resources
+        run: mkdir -p src/test/resources
       - name: Run MAVLink mission tests
         run: >-
           mvn -B
