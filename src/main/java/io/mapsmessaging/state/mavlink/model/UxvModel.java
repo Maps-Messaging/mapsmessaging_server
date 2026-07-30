@@ -23,7 +23,6 @@ import io.mapsmessaging.state.drone.drone.DroneTwin;
 import io.mapsmessaging.state.drone.model.DetectionEvent;
 import io.mapsmessaging.state.drone.model.GeoPosition;
 import io.mapsmessaging.state.mavlink.packet.MavlinkPacket;
-
 import java.time.Duration;
 import java.util.List;
 import java.util.Objects;
@@ -32,91 +31,95 @@ import java.util.Set;
 
 public interface UxvModel {
 
-    String getModelName();
+  String getModelName();
 
-    UxvVehicleType getVehicleType();
+  UxvVehicleType getVehicleType();
 
-    Set<UxvOperation> getSupportedOperations();
+  Set<UxvOperation> getSupportedOperations();
 
-    default boolean supports(UxvOperation operation) {
-        return getSupportedOperations().contains(Objects.requireNonNull(operation, "operation must not be null"));
+  default boolean supports(UxvOperation operation) {
+    return getSupportedOperations().contains(Objects.requireNonNull(operation, "operation must not be null"));
+  }
+
+  default void requireSupported(UxvOperation operation) {
+    if (!supports(operation)) {
+      throw unsupported(operation);
     }
+  }
 
-    default void requireSupported(UxvOperation operation) {
-        if (!supports(operation)) {
-            throw unsupported(operation);
-        }
-    }
+  default Optional<DetectionEvent> interpretDetection(DroneTwin droneTwin, MavlinkPacket event) {
+    return Optional.empty();
+  }
 
-    default Optional<DetectionEvent> interpretDetection(DroneTwin droneTwin, MavlinkPacket event) {
-        return Optional.empty();
-    }
+  default UxvModelCommandSet arm(UxvCommandContext context) {
+    throw unsupported(UxvOperation.ARM);
+  }
 
-    default UxvModelCommandSet arm(UxvCommandContext context) {
-        throw unsupported(UxvOperation.ARM);
-    }
+  default UxvModelCommandSet disarm(UxvCommandContext context) {
+    throw unsupported(UxvOperation.DISARM);
+  }
 
-    default UxvModelCommandSet disarm(UxvCommandContext context) {
-        throw unsupported(UxvOperation.DISARM);
-    }
+  default UxvModelCommandSet setHome(UxvCommandContext context, HomeRequest request) {
+    throw unsupported(UxvOperation.SET_HOME);
+  }
 
-    default UxvModelCommandSet setHome(UxvCommandContext context, HomeRequest request) {
-        throw unsupported(UxvOperation.SET_HOME);
-    }
+  default UxvModelCommandSet returnToHome(UxvCommandContext context) {
+    throw unsupported(UxvOperation.RETURN_TO_HOME);
+  }
 
-    default UxvModelCommandSet returnToHome(UxvCommandContext context) {
-        throw unsupported(UxvOperation.RETURN_TO_HOME);
-    }
+  default UxvModelCommandSet reposition(UxvCommandContext context, RepositionRequest request) {
+    throw unsupported(UxvOperation.REPOSITION);
+  }
 
-    default UxvModelCommandSet reposition(UxvCommandContext context, RepositionRequest request) {
-        throw unsupported(UxvOperation.REPOSITION);
-    }
+  default UxvModelCommandSet orbit(UxvCommandContext context, OrbitRequest request) {
+    throw unsupported(UxvOperation.ORBIT);
+  }
 
-    default UxvModelCommandSet orbit(UxvCommandContext context, OrbitRequest request) {
-        throw unsupported(UxvOperation.ORBIT);
-    }
+  default UxvModelCommandSet loiter(UxvCommandContext context, LoiterRequest request) {
+    throw unsupported(UxvOperation.LOITER);
+  }
 
-    default UxvModelCommandSet loiter(UxvCommandContext context, LoiterRequest request) {
-        throw unsupported(UxvOperation.LOITER);
-    }
+  default UxvModelCommandSet holdPosition(UxvCommandContext context) {
+    throw unsupported(UxvOperation.HOLD_POSITION);
+  }
 
-    default UxvModelCommandSet holdPosition(UxvCommandContext context) {
-        throw unsupported(UxvOperation.HOLD_POSITION);
-    }
+  default UxvModelCommandSet stop(UxvCommandContext context) {
+    throw unsupported(UxvOperation.STOP);
+  }
 
-    default UxvModelCommandSet stop(UxvCommandContext context) {
-        throw unsupported(UxvOperation.STOP);
-    }
+  default UxvModelCommandSet pauseVehicle(UxvCommandContext context) {
+    throw unsupported(UxvOperation.PAUSE_VEHICLE);
+  }
 
-    default UxvModelCommandSet pauseVehicle(UxvCommandContext context) {
-        throw unsupported(UxvOperation.PAUSE_VEHICLE);
-    }
+  default UxvModelCommandSet resumeVehicle(UxvCommandContext context) {
+    throw unsupported(UxvOperation.RESUME_VEHICLE);
+  }
 
-    default UxvModelCommandSet resumeVehicle(UxvCommandContext context) {
-        throw unsupported(UxvOperation.RESUME_VEHICLE);
-    }
+  default PlanValidation validateMission(MissionPlan missionPlan) {
+    return PlanValidation.success();
+  }
 
-    default PlanValidation validateMission(MissionPlan missionPlan) {
-        return PlanValidation.success();
-    }
+  default UxvModelCommandSet buildMission(UxvCommandContext context, MissionPlan missionPlan) {
+    throw unsupported(UxvOperation.BUILD_MISSION);
+  }
 
-    default UxvModelCommandSet buildMission(UxvCommandContext context, MissionPlan missionPlan) {
-        throw unsupported(UxvOperation.BUILD_MISSION);
-    }
+  default UxvModelCommandSet startMission(UxvCommandContext context) {
+    throw unsupported(UxvOperation.START_MISSION);
+  }
 
-    default UxvModelCommandSet startMission(UxvCommandContext context) {
-        throw unsupported(UxvOperation.START_MISSION);
-    }
+  default UxvModelCommandSet clearMission(UxvCommandContext context) {
+    throw unsupported(UxvOperation.CLEAR_MISSION);
+  }
 
-    default UxvModelCommandSet clearMission(UxvCommandContext context) {
-        throw unsupported(UxvOperation.CLEAR_MISSION);
-    }
+  default UxvNavigationPlan navigate(UxvCommandContext context, List<GeoPosition> waypoints, Duration duration) {
+    throw unsupported(UxvOperation.NAVIGATE);
+  }
 
-    default UxvNavigationPlan navigate(UxvCommandContext context, List<GeoPosition> waypoints, Duration duration) {
-        throw unsupported(UxvOperation.NAVIGATE);
-    }
+  default UxvNavigationPlan navigate(UxvCommandContext context, MissionPlan missionPlan, Duration duration) {
+    throw unsupported(UxvOperation.NAVIGATE);
+  }
 
-    default UnsupportedUxvOperationException unsupported(UxvOperation operation) {
-        return new UnsupportedUxvOperationException(getModelName(), operation);
-    }
+  default UnsupportedUxvOperationException unsupported(UxvOperation operation) {
+    return new UnsupportedUxvOperationException(getModelName(), operation);
+  }
 }
