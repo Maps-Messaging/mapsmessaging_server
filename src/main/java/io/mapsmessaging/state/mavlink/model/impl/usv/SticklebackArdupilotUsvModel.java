@@ -29,7 +29,6 @@ import io.mapsmessaging.state.mavlink.model.*;
 import io.mapsmessaging.state.mavlink.model.impl.ardupilot.GenericArduPilotUxvModel;
 import io.mapsmessaging.state.mavlink.packet.MavlinkPacket;
 import io.mapsmessaging.state.mavlink.packet.NamedValueFloatPacket;
-
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.*;
@@ -38,9 +37,14 @@ public class SticklebackArdupilotUsvModel extends GenericArduPilotUxvModel imple
 
   public static final String MODEL_NAME = "stickleback-ardupilot-usv";
 
+  /**
+   * Fixed home-relative control altitude used to keep ArduPlane navigation active on the
+   * Stickleback surface vessel. This is not a physical vessel altitude and is never written back
+   * into the caller's geodetic position.
+   */
   public static final double MAX_ALTITUDE_METERS = getMaxAltitudeMeters();
-  private static final long CONTACT_TTL_MILLIS = getDetectionTime();
 
+  private static final long CONTACT_TTL_MILLIS = getDetectionTime();
   private static final int DETECTION_LOST = 0;
   private static final int DETECTION_PRESENT = 1;
   private static final float DETECTION_STATE_EPSILON = 0.001f;
@@ -66,44 +70,67 @@ public class SticklebackArdupilotUsvModel extends GenericArduPilotUxvModel imple
             UxvOperation.LOITER));
   }
 
-  // Ensure altitude is never greater then specified here
   @Override
   public UxvModelCommandSet reposition(UxvCommandContext context, RepositionRequest request) {
-    GeoPosition position = Objects.requireNonNull(request.position(), "position must not be null");
-    position.setAltitudeMslMeters(MAX_ALTITUDE_METERS);
-    return super.reposition(context, request);
-  }
+    Objects.requireNonNull(context, "context must not be null");
+    Objects.requireNonNull(request, "request must not be null");
+    rejectSpeed(request.speedMetersPerSecond(), UxvOperation.REPOSITION);
 
+    GeoPosition position = Objects.requireNonNull(request.position(), "position must not be null");
+    validateCoordinates(position, "position");
+
+    List<MavlinkMessage> messages =
+        List.of(
+            MavlinkCommandIntFactory.repositionRelativeAltitude(
+                context.targetSystem(),
+                context.targetComponent(),
+                position,
+                MAX_ALTITUDE_METERS,
+                context.sequence()),
+            MavlinkCommandLongFactory.guidedMode(
+                context.targetSystem(),
+                context.targetComponent(),
+                context.sequence()),
+            MavlinkMissionItemFactory.guidedWaypointRelativeAltitude(
+                context.targetSystem(),
+                context.targetComponent(),
+                position,
+                MAX_ALTITUDE_METERS));
+
+    return UxvModelCommandSet.of(UxvOperation.REPOSITION, getModelName(), messages);
+  }
 
   @Override
   public UxvModelCommandSet loiter(UxvCommandContext context, LoiterRequest request) {
-    java.util.Objects.requireNonNull(context, "context must not be null");
-    java.util.Objects.requireNonNull(request, "request must not be null");
+    Objects.requireNonNull(context, "context must not be null");
+    Objects.requireNonNull(request, "request must not be null");
     requirePositiveOrZero(request.radiusMeters(), "radiusMeters");
     rejectAltitude(request.altitudeMeters(), UxvOperation.LOITER);
     rejectDepth(request.depthMeters(), UxvOperation.LOITER);
     rejectYaw(request.yawDegrees(), UxvOperation.LOITER);
 
     GeoPosition position = Objects.requireNonNull(request.position(), "position must not be null");
-    position.setAltitudeMslMeters(MAX_ALTITUDE_METERS);
+    validateCoordinates(position, "position");
 
     Duration duration = toDuration(request.duration(), "duration");
     MavlinkMessage message;
     if (duration.isZero()) {
       message =
-          MavlinkCommandIntFactory.loiterUnlimited(
+          MavlinkCommandIntFactory.loiterUnlimitedRelativeAltitude(
               context.targetSystem(),
               context.targetComponent(),
               position,
+              MAX_ALTITUDE_METERS,
               request.radiusMeters(),
               Float.NaN,
               context.sequence());
     } else {
       message =
-          MavlinkCommandIntFactory.loiterTime(
+          MavlinkCommandIntFactory.loiterTimeRelativeAltitude(
               context.targetSystem(),
               context.targetComponent(),
               position,
+              MAX_ALTITUDE_METERS,
               request.radiusMeters(),
               duration,
               context.sequence());
@@ -132,7 +159,10 @@ public class SticklebackArdupilotUsvModel extends GenericArduPilotUxvModel imple
       case LOITER -> toMissionLoiter(context, sequence, item);
       case RETURN_TO_HOME -> MavlinkMissionItemIntFactory.returnToLaunch(context.targetSystem(), context.targetComponent(), sequence);
       case ORBIT, HOLD_POSITION ->
-          throw new UnsupportedUxvOperationException(getModelName(), UxvOperation.BUILD_MISSION, "Mission item type " + item.type() + " is not supported by this Stickleback ArduPilot USV model");
+          throw new UnsupportedUxvOperationException(
+              getModelName(),
+              UxvOperation.BUILD_MISSION,
+              "Mission item type " + item.type() + " is not supported by this Stickleback ArduPilot USV model");
     };
   }
 
@@ -161,23 +191,38 @@ public class SticklebackArdupilotUsvModel extends GenericArduPilotUxvModel imple
   @Override
   protected void validatePlanItem(int index, PlanItem item, List<PlanValidationIssue> issues) {
     if (item.type() == PlanItemType.ORBIT || item.type() == PlanItemType.HOLD_POSITION) {
-      issues.add(new PlanValidationIssue(UxvOperation.BUILD_MISSION, "Mission item " + index + " type " + item.type() + " is not supported by this Stickleback ArduPilot USV model"));
+      issues.add(
+          new PlanValidationIssue(
+              UxvOperation.BUILD_MISSION,
+              "Mission item " + index + " type " + item.type() + " is not supported by this Stickleback ArduPilot USV model"));
     }
 
     if (item.type() == PlanItemType.LOITER && item.yawDegrees() != null) {
-      issues.add(new PlanValidationIssue(UxvOperation.BUILD_MISSION, "Mission item " + index + " yawDegrees is not currently mapped for loiter by this Stickleback ArduPilot USV model"));
+      issues.add(
+          new PlanValidationIssue(
+              UxvOperation.BUILD_MISSION,
+              "Mission item " + index + " yawDegrees is not currently mapped for loiter by this Stickleback ArduPilot USV model"));
     }
 
     if (item.speedMetersPerSecond() != null) {
-      issues.add(new PlanValidationIssue(UxvOperation.BUILD_MISSION, "Mission item " + index + " speedMetersPerSecond is not currently mapped by this Stickleback ArduPilot USV model"));
+      issues.add(
+          new PlanValidationIssue(
+              UxvOperation.BUILD_MISSION,
+              "Mission item " + index + " speedMetersPerSecond is not currently mapped by this Stickleback ArduPilot USV model"));
     }
 
     if (item.altitudeMeters() != null) {
-      issues.add(new PlanValidationIssue(UxvOperation.BUILD_MISSION, "Mission item " + index + " altitudeMeters is not currently mapped by this Stickleback ArduPilot USV model"));
+      issues.add(
+          new PlanValidationIssue(
+              UxvOperation.BUILD_MISSION,
+              "Mission item " + index + " altitudeMeters is not currently mapped by this Stickleback ArduPilot USV model"));
     }
 
     if (item.depthMeters() != null) {
-      issues.add(new PlanValidationIssue(UxvOperation.BUILD_MISSION, "Mission item " + index + " depthMeters is not valid for this Stickleback ArduPilot USV model"));
+      issues.add(
+          new PlanValidationIssue(
+              UxvOperation.BUILD_MISSION,
+              "Mission item " + index + " depthMeters is not valid for this Stickleback ArduPilot USV model"));
     }
   }
 
@@ -236,27 +281,24 @@ public class SticklebackArdupilotUsvModel extends GenericArduPilotUxvModel imple
   }
 
   private static double getMaxAltitudeMeters() {
-    double val = 10.0f;
-    String loaded = SystemProperties.getInstance().getProperty("STICKLEBACK_ALTITUDE", ""+val);
-    try{
-      val = Double.parseDouble(loaded);
+    double defaultValue = 10.0d;
+    String loaded = SystemProperties.getInstance().getProperty("STICKLEBACK_ALTITUDE", Double.toString(defaultValue));
+    try {
+      double value = Double.parseDouble(loaded);
+      return Double.isFinite(value) && value > 0.0d ? value : defaultValue;
+    } catch (RuntimeException exception) {
+      return defaultValue;
     }
-    catch(Throwable t){
-      //ignore
-    }
-    return val;
   }
 
-
   private static long getDetectionTime() {
-    long val = 60_000;
-    String loaded = SystemProperties.getInstance().getProperty("STICKLEBACK_DETECTION", ""+val);
-    try{
-      val = Long.parseLong(loaded);
+    long defaultValue = 60_000L;
+    String loaded = SystemProperties.getInstance().getProperty("STICKLEBACK_DETECTION", Long.toString(defaultValue));
+    try {
+      long value = Long.parseLong(loaded);
+      return value > 0L ? value : defaultValue;
+    } catch (RuntimeException exception) {
+      return defaultValue;
     }
-    catch(Throwable t){
-      //ignore
-    }
-    return val;
   }
 }
