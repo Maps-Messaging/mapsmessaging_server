@@ -42,11 +42,7 @@ public final class MavlinkMissionItemIntFactory {
   private MavlinkMissionItemIntFactory() {
   }
 
-  public static MavlinkMissionItemInt waypoint(
-      int targetSystem,
-      int targetComponent,
-      int missionSequence,
-      GeoPosition position) {
+  public static MavlinkMissionItemInt waypoint(int targetSystem, int targetComponent, int missionSequence, GeoPosition position) {
     return waypoint(
         targetSystem,
         targetComponent,
@@ -67,19 +63,30 @@ public final class MavlinkMissionItemIntFactory {
       float acceptanceRadiusMeters,
       float passRadiusMeters,
       float yawDegrees) {
+    MavlinkMissionItemInt missionItem = positionMissionItem(targetSystem, targetComponent, missionSequence, MAV_CMD_NAV_WAYPOINT, position);
+    setWaypointParameters(missionItem, holdTimeSeconds, acceptanceRadiusMeters, passRadiusMeters, yawDegrees);
+    return missionItem;
+  }
+
+  public static MavlinkMissionItemInt waypointRelativeAltitude(
+      int targetSystem,
+      int targetComponent,
+      int missionSequence,
+      GeoPosition position,
+      double relativeAltitudeMeters,
+      float holdTimeSeconds,
+      float acceptanceRadiusMeters,
+      float passRadiusMeters,
+      float yawDegrees) {
     MavlinkMissionItemInt missionItem =
-        positionMissionItem(
+        positionMissionItemRelativeAltitude(
             targetSystem,
             targetComponent,
             missionSequence,
             MAV_CMD_NAV_WAYPOINT,
-            position);
-
-    missionItem.setParam1(holdTimeSeconds);
-    missionItem.setParam2(acceptanceRadiusMeters);
-    missionItem.setParam3(passRadiusMeters);
-    missionItem.setParam4(yawDegrees);
-
+            position,
+            relativeAltitudeMeters);
+    setWaypointParameters(missionItem, holdTimeSeconds, acceptanceRadiusMeters, passRadiusMeters, yawDegrees);
     return missionItem;
   }
 
@@ -89,19 +96,27 @@ public final class MavlinkMissionItemIntFactory {
       int missionSequence,
       GeoPosition position,
       double radiusMeters) {
+    MavlinkMissionItemInt missionItem = positionMissionItem(targetSystem, targetComponent, missionSequence, MAV_CMD_NAV_LOITER_UNLIM, position);
+    setLoiterParameters(missionItem, 0.0f, radiusMeters);
+    return missionItem;
+  }
+
+  public static MavlinkMissionItemInt loiterUnlimitedRelativeAltitude(
+      int targetSystem,
+      int targetComponent,
+      int missionSequence,
+      GeoPosition position,
+      double relativeAltitudeMeters,
+      double radiusMeters) {
     MavlinkMissionItemInt missionItem =
-        positionMissionItem(
+        positionMissionItemRelativeAltitude(
             targetSystem,
             targetComponent,
             missionSequence,
             MAV_CMD_NAV_LOITER_UNLIM,
-            position);
-
-    missionItem.setParam1(0.0f);
-    missionItem.setParam2(0.0f);
-    missionItem.setParam3((float) radiusMeters);
-    missionItem.setParam4(Float.NaN);
-
+            position,
+            relativeAltitudeMeters);
+    setLoiterParameters(missionItem, 0.0f, radiusMeters);
     return missionItem;
   }
 
@@ -112,22 +127,30 @@ public final class MavlinkMissionItemIntFactory {
       GeoPosition position,
       Duration duration,
       double radiusMeters) {
+    MavlinkMissionItemInt missionItem = positionMissionItem(targetSystem, targetComponent, missionSequence, MAV_CMD_NAV_LOITER_TIME, position);
+    setLoiterParameters(missionItem, MavlinkDuration.toSeconds(duration, "duration"), radiusMeters);
+    return missionItem;
+  }
+
+  public static MavlinkMissionItemInt loiterTimeRelativeAltitude(
+      int targetSystem,
+      int targetComponent,
+      int missionSequence,
+      GeoPosition position,
+      double relativeAltitudeMeters,
+      Duration duration,
+      double radiusMeters) {
     MavlinkMissionItemInt missionItem =
-        positionMissionItem(
+        positionMissionItemRelativeAltitude(
             targetSystem,
             targetComponent,
             missionSequence,
             MAV_CMD_NAV_LOITER_TIME,
-            position);
-
-    missionItem.setParam1(MavlinkDuration.toSeconds(duration, "duration"));
-    missionItem.setParam2(0.0f);
-    missionItem.setParam3((float) radiusMeters);
-    missionItem.setParam4(Float.NaN);
-
+            position,
+            relativeAltitudeMeters);
+    setLoiterParameters(missionItem, MavlinkDuration.toSeconds(duration, "duration"), radiusMeters);
     return missionItem;
   }
-
 
   public static MavlinkMissionItemInt jump(
       int targetSystem,
@@ -142,38 +165,40 @@ public final class MavlinkMissionItemIntFactory {
       throw new IllegalArgumentException("repeatCount must not be negative");
     }
 
-    MavlinkMissionItemInt missionItem =
-        commandMissionItem(
-            targetSystem,
-            targetComponent,
-            missionSequence,
-            MAV_CMD_DO_JUMP);
-
+    MavlinkMissionItemInt missionItem = commandMissionItem(targetSystem, targetComponent, missionSequence, MAV_CMD_DO_JUMP);
     missionItem.setParam1(targetMissionSequence);
     missionItem.setParam2(repeatCount);
     missionItem.setParam3(0.0f);
     missionItem.setParam4(0.0f);
-
     return missionItem;
   }
 
-  public static MavlinkMissionItemInt returnToLaunch(
-      int targetSystem,
-      int targetComponent,
-      int missionSequence) {
-    MavlinkMissionItemInt missionItem =
-        commandMissionItem(
-            targetSystem,
-            targetComponent,
-            missionSequence,
-            MAV_CMD_NAV_RETURN_TO_LAUNCH);
-
+  public static MavlinkMissionItemInt returnToLaunch(int targetSystem, int targetComponent, int missionSequence) {
+    MavlinkMissionItemInt missionItem = commandMissionItem(targetSystem, targetComponent, missionSequence, MAV_CMD_NAV_RETURN_TO_LAUNCH);
     missionItem.setParam1(0.0f);
     missionItem.setParam2(0.0f);
     missionItem.setParam3(0.0f);
     missionItem.setParam4(0.0f);
-
     return missionItem;
+  }
+
+  private static void setWaypointParameters(
+      MavlinkMissionItemInt missionItem,
+      float holdTimeSeconds,
+      float acceptanceRadiusMeters,
+      float passRadiusMeters,
+      float yawDegrees) {
+    missionItem.setParam1(holdTimeSeconds);
+    missionItem.setParam2(acceptanceRadiusMeters);
+    missionItem.setParam3(passRadiusMeters);
+    missionItem.setParam4(yawDegrees);
+  }
+
+  private static void setLoiterParameters(MavlinkMissionItemInt missionItem, float holdTimeSeconds, double radiusMeters) {
+    missionItem.setParam1(holdTimeSeconds);
+    missionItem.setParam2(0.0f);
+    missionItem.setParam3((float) radiusMeters);
+    missionItem.setParam4(Float.NaN);
   }
 
   private static MavlinkMissionItemInt positionMissionItem(
@@ -183,41 +208,55 @@ public final class MavlinkMissionItemIntFactory {
       int command,
       GeoPosition position) {
     validatePosition(position);
-
-    MavlinkMissionItemInt missionItem =
-        baseMissionItem(
-            targetSystem,
-            targetComponent,
-            missionSequence,
-            resolvePositionFrame(position),
-            command);
-
-    missionItem.setLatitude(toScaledCoordinate(position.getLatitude()));
-    missionItem.setLongitude(toScaledCoordinate(position.getLongitude()));
-    missionItem.setAltitude(resolveAltitude(position));
-
-    return missionItem;
-  }
-
-  private static MavlinkMissionItemInt commandMissionItem(
-      int targetSystem,
-      int targetComponent,
-      int missionSequence,
-      int command) {
-    return baseMissionItem(
+    return positionMissionItem(
         targetSystem,
         targetComponent,
         missionSequence,
-        MAV_FRAME_MISSION,
-        command);
+        command,
+        position,
+        resolvePositionFrame(position),
+        resolveAltitude(position));
   }
 
-  private static MavlinkMissionItemInt baseMissionItem(
+  private static MavlinkMissionItemInt positionMissionItemRelativeAltitude(
       int targetSystem,
       int targetComponent,
       int missionSequence,
+      int command,
+      GeoPosition position,
+      double relativeAltitudeMeters) {
+    validatePosition(position);
+    requireFinite(relativeAltitudeMeters, "relativeAltitudeMeters");
+    return positionMissionItem(
+        targetSystem,
+        targetComponent,
+        missionSequence,
+        command,
+        position,
+        MAV_FRAME_GLOBAL_RELATIVE_ALT_INT,
+        (float) relativeAltitudeMeters);
+  }
+
+  private static MavlinkMissionItemInt positionMissionItem(
+      int targetSystem,
+      int targetComponent,
+      int missionSequence,
+      int command,
+      GeoPosition position,
       int frame,
-      int command) {
+      float altitudeMeters) {
+    MavlinkMissionItemInt missionItem = baseMissionItem(targetSystem, targetComponent, missionSequence, frame, command);
+    missionItem.setLatitude(toScaledCoordinate(position.getLatitude()));
+    missionItem.setLongitude(toScaledCoordinate(position.getLongitude()));
+    missionItem.setAltitude(altitudeMeters);
+    return missionItem;
+  }
+
+  private static MavlinkMissionItemInt commandMissionItem(int targetSystem, int targetComponent, int missionSequence, int command) {
+    return baseMissionItem(targetSystem, targetComponent, missionSequence, MAV_FRAME_MISSION, command);
+  }
+
+  private static MavlinkMissionItemInt baseMissionItem(int targetSystem, int targetComponent, int missionSequence, int frame, int command) {
     MavlinkMissionItemInt missionItem = new MavlinkMissionItemInt();
     missionItem.setTargetSystem(targetSystem);
     missionItem.setTargetComponent(targetComponent);
@@ -249,7 +288,6 @@ public final class MavlinkMissionItemIntFactory {
     if (position == null) {
       throw new IllegalArgumentException("Position must not be null");
     }
-
     validateCoordinate(position.getLatitude(), -90.0d, 90.0d, "Latitude");
     validateCoordinate(position.getLongitude(), -180.0d, 180.0d, "Longitude");
     validateAltitude(position.getAltitudeMslMeters(), "MSL altitude");
@@ -266,15 +304,18 @@ public final class MavlinkMissionItemIntFactory {
   }
 
   private static void validateAltitude(Double altitudeMeters, String name) {
-    if (altitudeMeters != null && !Double.isFinite(altitudeMeters)) {
+    if (altitudeMeters != null) {
+      requireFinite(altitudeMeters, name);
+    }
+  }
+
+  private static void requireFinite(double value, String name) {
+    if (!Double.isFinite(value)) {
       throw new IllegalArgumentException(name + " must be finite");
     }
   }
 
   private static int toScaledCoordinate(Double value) {
-    if (value == null) {
-      throw new IllegalArgumentException("Coordinate must not be null");
-    }
     return (int) Math.round(value * 10_000_000.0d);
   }
 }
