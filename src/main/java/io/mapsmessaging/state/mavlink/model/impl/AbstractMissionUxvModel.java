@@ -61,7 +61,6 @@ public abstract class AbstractMissionUxvModel extends AbstractUxvModel {
 
   @Override
   public final UxvNavigationPlan navigate(UxvCommandContext context, List<GeoPosition> waypoints, Duration duration) {
-    Objects.requireNonNull(context, "context must not be null");
     Objects.requireNonNull(waypoints, "waypoints must not be null");
 
     List<PlanItem> items = new ArrayList<>(waypoints.size());
@@ -69,8 +68,14 @@ public abstract class AbstractMissionUxvModel extends AbstractUxvModel {
       GeoPosition position = Objects.requireNonNull(waypoints.get(index), "waypoints[" + index + "] must not be null");
       items.add(new PlanItem(PlanItemType.WAYPOINT, position, null, null, null, null, null, null));
     }
+    return navigate(context, new MissionPlan(items), duration);
+  }
 
-    MissionPlan missionPlan = new MissionPlan(items);
+  @Override
+  public final UxvNavigationPlan navigate(UxvCommandContext context, MissionPlan missionPlan, Duration duration) {
+    Objects.requireNonNull(context, "context must not be null");
+    Objects.requireNonNull(missionPlan, "missionPlan must not be null");
+
     return new UxvNavigationPlan(
         List.of(buildMission(context, missionPlan)),
         List.of(startMission(context)),
@@ -114,10 +119,9 @@ public abstract class AbstractMissionUxvModel extends AbstractUxvModel {
 
     GeoPosition position = Objects.requireNonNull(request.position(), "position must not be null");
     List<MavlinkMessage> messages = List.of(
-            MavlinkCommandIntFactory.reposition(context.targetSystem(), context.targetComponent(), position, context.sequence()),
-            MavlinkCommandLongFactory.guidedMode(context.targetSystem(), context.targetComponent(), context.sequence()),
-            MavlinkMissionItemFactory.guidedWaypoint(context.targetSystem(), context.targetComponent(), position)
-        );
+        MavlinkCommandIntFactory.reposition(context.targetSystem(), context.targetComponent(), position, context.sequence()),
+        MavlinkCommandLongFactory.guidedMode(context.targetSystem(), context.targetComponent(), context.sequence()),
+        MavlinkMissionItemFactory.guidedWaypoint(context.targetSystem(), context.targetComponent(), position));
     return UxvModelCommandSet.of(UxvOperation.REPOSITION, getModelName(), messages);
   }
 
@@ -128,7 +132,7 @@ public abstract class AbstractMissionUxvModel extends AbstractUxvModel {
 
   @Override
   public UxvModelCommandSet stop(UxvCommandContext context) {
-    java.util.Objects.requireNonNull(context, "context must not be null");
+    Objects.requireNonNull(context, "context must not be null");
     MavlinkMessage message = MavlinkCommandIntFactory.stop(context.targetSystem(), context.targetComponent(), context.sequence());
     return UxvModelCommandSet.of(UxvOperation.STOP, getModelName(), message);
   }
@@ -156,12 +160,9 @@ public abstract class AbstractMissionUxvModel extends AbstractUxvModel {
       validatePlanItem(index, item, issues);
     }
 
-    if (missionPlan.iterations() > 1
+    if (missionPlan.repeats()
         && missionPlan.items().stream().anyMatch(item -> item.type() == PlanItemType.RETURN_TO_HOME)) {
-      issues.add(
-          new PlanValidationIssue(
-              UxvOperation.BUILD_MISSION,
-              "A repeating mission must not contain RETURN_TO_HOME"));
+      issues.add(new PlanValidationIssue(UxvOperation.BUILD_MISSION, "A repeating mission must not contain RETURN_TO_HOME"));
     }
 
     return issues.isEmpty() ? PlanValidation.success() : PlanValidation.failure(issues);
@@ -176,22 +177,21 @@ public abstract class AbstractMissionUxvModel extends AbstractUxvModel {
       throw new IllegalArgumentException("Invalid mission plan: " + validation.issues());
     }
 
-    int additionalItems = missionPlan.iterations() > 1 ? 1 : 0;
-    List<MavlinkMessage> messages =
-        new ArrayList<>(missionPlan.items().size() + additionalItems);
+    int additionalItems = missionPlan.repeats() ? 1 : 0;
+    List<MavlinkMessage> messages = new ArrayList<>(missionPlan.items().size() + additionalItems);
 
     for (int index = 0; index < missionPlan.items().size(); index++) {
       messages.add(toMissionMessage(context, index, missionPlan.items().get(index)));
     }
 
-    if (missionPlan.iterations() > 1) {
+    if (missionPlan.repeats()) {
       messages.add(
           MavlinkMissionItemIntFactory.jump(
               context.targetSystem(),
               context.targetComponent(),
               missionPlan.items().size(),
               0,
-              missionPlan.iterations() - 1));
+              missionPlan.jumpRepeatCount()));
     }
 
     return UxvModelCommandSet.of(UxvOperation.BUILD_MISSION, getModelName(), messages);
@@ -238,7 +238,6 @@ public abstract class AbstractMissionUxvModel extends AbstractUxvModel {
 
     return UxvModelCommandSet.of(UxvOperation.SET_HEADING, getModelName(), commandLong);
   }
-
 
   private void validateCommonPlanItem(int index, PlanItem item, List<PlanValidationIssue> issues) {
     String itemName = "Mission item " + index;
@@ -453,5 +452,4 @@ public abstract class AbstractMissionUxvModel extends AbstractUxvModel {
     }
     return normalised;
   }
-
 }
