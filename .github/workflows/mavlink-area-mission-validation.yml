@@ -1,0 +1,25 @@
+name: MAVLink area mission validation
+
+on:
+  push:
+    branches:
+      - feature/mavlink-area-mission-planning
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+      - name: Run MAVLink mission tests
+        run: >-
+          mvn -B
+          -Dtest=MissionPlanRepeatTest,MavlinkCommandSetPreparerTest,MavlinkEventListSenderConcurrencyTest,SticklebackPassiveDetectionCapabilityTest
+          test
