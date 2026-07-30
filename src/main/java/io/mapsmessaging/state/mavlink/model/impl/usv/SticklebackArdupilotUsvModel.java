@@ -147,11 +147,12 @@ public class SticklebackArdupilotUsvModel extends GenericArduPilotUxvModel imple
   protected MavlinkMessage toMissionMessage(UxvCommandContext context, int sequence, PlanItem item) {
     return switch (item.type()) {
       case WAYPOINT ->
-          MavlinkMissionItemIntFactory.waypoint(
+          MavlinkMissionItemIntFactory.waypointRelativeAltitude(
               context.targetSystem(),
               context.targetComponent(),
               sequence,
               item.position(),
+              MAX_ALTITUDE_METERS,
               toSeconds(item.holdDuration()),
               item.radiusMeters() == null ? DEFAULT_ACCEPTANCE_RADIUS_METERS : item.radiusMeters().floatValue(),
               DEFAULT_PASS_RADIUS_METERS,
@@ -172,18 +173,20 @@ public class SticklebackArdupilotUsvModel extends GenericArduPilotUxvModel imple
 
     Duration duration = toDuration(item.holdDuration(), "holdDuration");
     if (duration.isZero()) {
-      return MavlinkMissionItemIntFactory.loiterUnlimited(
+      return MavlinkMissionItemIntFactory.loiterUnlimitedRelativeAltitude(
           context.targetSystem(),
           context.targetComponent(),
           sequence,
           item.position(),
+          MAX_ALTITUDE_METERS,
           radiusMeters);
     }
-    return MavlinkMissionItemIntFactory.loiterTime(
+    return MavlinkMissionItemIntFactory.loiterTimeRelativeAltitude(
         context.targetSystem(),
         context.targetComponent(),
         sequence,
         item.position(),
+        MAX_ALTITUDE_METERS,
         duration,
         radiusMeters);
   }
