@@ -22,7 +22,6 @@ package io.mapsmessaging.state.mavlink.listener;
 import io.mapsmessaging.state.drone.core.TwinManager;
 import io.mapsmessaging.state.drone.core.TwinUpdateContext;
 import io.mapsmessaging.state.mavlink.packet.MavlinkPacket;
-
 import java.util.LinkedHashMap;
 import java.util.Map;
 
@@ -43,6 +42,7 @@ public class ListenerManager {
     listeners.put(HeartbeatListener.LISTENER_ID, new HeartbeatListener(twinManager));
     listeners.put(HomePositionListener.LISTENER_ID, new HomePositionListener(twinManager));
     listeners.put(MissionCurrentListener.LISTENER_ID, new MissionCurrentListener(twinManager));
+    listeners.put(MissionItemReachedListener.LISTENER_ID, new MissionItemReachedListener(twinManager));
     listeners.put(StatusTextListener.LISTENER_ID, new StatusTextListener(twinManager));
     listeners.put(SysStatusListener.LISTENER_ID, new SysStatusListener(twinManager));
     listeners.put(SystemTimeListener.LISTENER_ID, new SystemTimeListener(twinManager));
