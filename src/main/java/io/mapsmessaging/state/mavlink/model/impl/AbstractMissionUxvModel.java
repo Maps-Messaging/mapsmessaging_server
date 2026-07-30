@@ -68,11 +68,11 @@ public abstract class AbstractMissionUxvModel extends AbstractUxvModel {
       GeoPosition position = Objects.requireNonNull(waypoints.get(index), "waypoints[" + index + "] must not be null");
       items.add(new PlanItem(PlanItemType.WAYPOINT, position, null, null, null, null, null, null));
     }
-    return navigate(context, new MissionPlan(items), duration);
+    return navigatePlan(context, new MissionPlan(items), duration);
   }
 
   @Override
-  public final UxvNavigationPlan navigate(UxvCommandContext context, MissionPlan missionPlan, Duration duration) {
+  public final UxvNavigationPlan navigatePlan(UxvCommandContext context, MissionPlan missionPlan, Duration duration) {
     Objects.requireNonNull(context, "context must not be null");
     Objects.requireNonNull(missionPlan, "missionPlan must not be null");
 
