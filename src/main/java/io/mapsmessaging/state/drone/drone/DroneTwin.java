@@ -19,26 +19,37 @@
 
 package io.mapsmessaging.state.drone.drone;
 
+import static io.mapsmessaging.state.drone.util.SyntheticMmsiGenerator.generateSyntheticMmsi;
+
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import io.mapsmessaging.state.config.StopActionEnum;
 import io.mapsmessaging.state.config.capability.TaskCapabilities;
 import io.mapsmessaging.state.drone.core.EntityTwin;
 import io.mapsmessaging.state.drone.core.TwinType;
-import io.mapsmessaging.state.drone.model.*;
+import io.mapsmessaging.state.drone.model.Contact;
+import io.mapsmessaging.state.drone.model.DetectionEvent;
+import io.mapsmessaging.state.drone.model.DroneContactManager;
+import io.mapsmessaging.state.drone.model.EnvironmentalState;
+import io.mapsmessaging.state.drone.model.SystemState;
+import io.mapsmessaging.state.drone.model.TimeState;
 import io.mapsmessaging.state.drone.model.autopilot.AutopilotState;
 import io.mapsmessaging.state.mavlink.sender.MavlinkEventListSender;
 import io.swagger.v3.oas.annotations.media.Schema;
-import lombok.*;
-
 import java.time.Instant;
-import java.util.*;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.UUID;
 import java.util.concurrent.atomic.AtomicReference;
+import lombok.AccessLevel;
+import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.ToString;
 
-import static io.mapsmessaging.state.drone.util.SyntheticMmsiGenerator.generateSyntheticMmsi;
-
-/**
- * Twin representing an unmanned aircraft or vehicle.
- */
+/** Twin representing an unmanned aircraft or vehicle. */
 @ToString(callSuper = true)
 @Data
 @NoArgsConstructor
@@ -140,6 +151,12 @@ public class DroneTwin extends EntityTwin {
   @Schema(description = "Current mission sequence number.", example = "12", nullable = true)
   private Integer currentMissionSequence;
 
+  @Schema(description = "Sequence number of the most recently reached MAVLink mission item.", example = "12", nullable = true)
+  private Integer lastMissionItemReachedSequence;
+
+  @Schema(description = "Timestamp when the most recent MAVLink mission item was reported reached.", example = "2026-07-30T03:05:00Z", nullable = true)
+  private Instant lastMissionItemReachedAt;
+
   @Schema(description = "Timestamp of the last operational state update.", example = "2026-04-20T05:42:00Z", nullable = true)
   private Instant operationalUpdatedAt;
 
@@ -192,7 +209,6 @@ public class DroneTwin extends EntityTwin {
   private double batteryCapacityHours;
 
   private StopActionEnum stopAction;
-
 
   public DroneTwin(String twinId) {
     this(twinId, null);
