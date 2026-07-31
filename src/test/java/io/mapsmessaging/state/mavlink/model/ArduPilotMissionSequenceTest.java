@@ -20,6 +20,8 @@ package io.mapsmessaging.state.mavlink.model;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import io.mapsmessaging.state.drone.model.GeoPosition;
+import io.mapsmessaging.state.mavlink.messages.MavlinkCommandLong;
+import io.mapsmessaging.state.mavlink.messages.MavlinkCommandLongFactory;
 import io.mapsmessaging.state.mavlink.messages.MavlinkMissionItemInt;
 import io.mapsmessaging.state.mavlink.messages.MavlinkMissionItemIntFactory;
 import io.mapsmessaging.state.mavlink.model.impl.uav.GenericPx4UavModel;
@@ -62,6 +64,25 @@ class ArduPilotMissionSequenceTest {
   }
 
   @Test
+  void ardupilotResetsMissionPointerBeforeStartingMission() {
+    SticklebackArdupilotUsvModel model = new SticklebackArdupilotUsvModel();
+
+    UxvModelCommandSet commandSet = model.startMission(CONTEXT);
+
+    assertEquals(2, commandSet.messages().size());
+
+    MavlinkCommandLong setCurrent = (MavlinkCommandLong) commandSet.messages().get(0);
+    assertEquals(MavlinkCommandLongFactory.MAV_CMD_DO_SET_MISSION_CURRENT, setCurrent.getCommand());
+    assertEquals(1.0f, setCurrent.getParam1());
+    assertEquals(1.0f, setCurrent.getParam2());
+
+    MavlinkCommandLong start = (MavlinkCommandLong) commandSet.messages().get(1);
+    assertEquals(MavlinkCommandLongFactory.MAV_CMD_MISSION_START, start.getCommand());
+    assertEquals(0.0f, start.getParam1());
+    assertEquals(0.0f, start.getParam2());
+  }
+
+  @Test
   void px4KeepsFirstRoutePointAtSequenceZero() {
     GenericPx4UavModel model = new GenericPx4UavModel();
 
@@ -71,6 +92,17 @@ class ArduPilotMissionSequenceTest {
     assertEquals(2, commandSet.messages().size());
     assertMissionItem(commandSet, 0, 0, FIRST);
     assertMissionItem(commandSet, 1, 1, LAST);
+  }
+
+  @Test
+  void px4StartsMissionWithoutArduPilotPointerReset() {
+    GenericPx4UavModel model = new GenericPx4UavModel();
+
+    UxvModelCommandSet commandSet = model.startMission(CONTEXT);
+
+    assertEquals(1, commandSet.messages().size());
+    MavlinkCommandLong start = (MavlinkCommandLong) commandSet.messages().get(0);
+    assertEquals(MavlinkCommandLongFactory.MAV_CMD_MISSION_START, start.getCommand());
   }
 
   private List<PlanItem> routeItems() {
