@@ -51,6 +51,10 @@ public interface UxvModel {
     return false;
   }
 
+  default int firstMissionItemSequence() {
+    return 0;
+  }
+
   default Optional<DetectionEvent> interpretDetection(DroneTwin droneTwin, MavlinkPacket event) {
     return Optional.empty();
   }

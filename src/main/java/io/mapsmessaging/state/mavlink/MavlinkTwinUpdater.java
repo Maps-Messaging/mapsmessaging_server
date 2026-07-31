@@ -19,6 +19,8 @@
 
 package io.mapsmessaging.state.mavlink;
 
+import static io.mapsmessaging.state.logging.StateLogMessages.MAVLINK_STATE_TWIN_CREATED;
+
 import io.mapsmessaging.dto.rest.config.protocol.impl.MavlinkKnownSourceDTO;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
@@ -42,12 +44,9 @@ import io.mapsmessaging.state.mavlink.model.ModelManager;
 import io.mapsmessaging.state.mavlink.model.UxvModel;
 import io.mapsmessaging.state.mavlink.packet.MavlinkPacket;
 import io.mapsmessaging.state.mavlink.sender.MavlinkEventListSender;
+import java.util.Optional;
 import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
-
-import java.util.Optional;
-
-import static io.mapsmessaging.state.logging.StateLogMessages.MAVLINK_STATE_TWIN_CREATED;
 
 public class MavlinkTwinUpdater {
 
@@ -168,6 +167,7 @@ public class MavlinkTwinUpdater {
     droneTwin.setSystemId(env.getFrame().getSystemId());
     droneTwin.setComponentId(env.getFrame().getComponentId());
     droneTwin.setModelName(droneInfo.getModelName());
+    droneTwin.setSurveyRadiusMeters(droneInfo.getSurveyRadiusMeters());
     if(droneInfo.getStopAction() != null) {
       droneTwin.setStopAction(droneInfo.getStopAction());
     }

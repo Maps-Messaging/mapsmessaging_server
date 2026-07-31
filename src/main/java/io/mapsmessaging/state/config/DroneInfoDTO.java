@@ -21,52 +21,45 @@ package io.mapsmessaging.state.config;
 
 import io.mapsmessaging.state.config.capability.TaskCapabilities;
 import io.swagger.v3.oas.annotations.media.Schema;
-import lombok.Getter;
-import lombok.Setter;
-
 import java.util.Map;
 import java.util.UUID;
+import lombok.Getter;
+import lombok.Setter;
 
 @Getter
 @Setter
 public class DroneInfoDTO {
 
-  @Schema(
-      description = "Unique drone id"
-  )
+  @Schema(description = "Unique drone id")
   private String name;
 
-  @Schema(
-      description = "UUID of drone"
-  )
+  @Schema(description = "UUID of drone")
   private UUID uuid;
 
-  @Schema(
-      description = "Configured UxV model name used to resolve the command model implementation."
-  )
+  @Schema(description = "Configured UxV model name used to resolve the command model implementation.")
   private String modelName;
 
   @Schema(description = "Message encoding used when communicating with this drone.")
   private MessageEncodingEnum messageEncoding = MessageEncodingEnum.JSON;
 
-  @Schema(
-      description = "Total battery capacity in amp-hours."
-  )
+  @Schema(description = "Total battery capacity in amp-hours.")
   private double batteryCapacityAh = 0.0;
 
-  @Schema(
-      description = "Total battery capacity in hours."
-  )
+  @Schema(description = "Total battery capacity in hours.")
   private double batteryCapacityHours = 0.0;
 
   @Schema(
-      description = "Drone description"
-  )
+      description =
+          "Survey coverage radius in metres measured from the vehicle centreline. "
+              + "The effective survey width is twice this value.",
+      example = "200.0",
+      nullable = true)
+  private Double surveyRadiusMeters;
+
+  @Schema(description = "Drone description")
   private Map<String, Object> description;
 
-  @Schema(
-      description = "Task capabilities supported by this known MAVLink source."
-  )
+  @Schema(description = "Task capabilities supported by this known MAVLink source.")
   private TaskCapabilities capabilities = new TaskCapabilities();
 
   @Schema(description = "Action performed when the current task is cancelled.")

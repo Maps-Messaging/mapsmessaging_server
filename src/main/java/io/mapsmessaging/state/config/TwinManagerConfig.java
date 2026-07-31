@@ -360,25 +360,13 @@ public class TwinManagerConfig extends TwinManagerConfigDTO implements Config, C
     droneInfo.setBatteryCapacityHours(properties.getDoubleProperty("batteryCapacityHours", droneInfo.getBatteryCapacityHours()));
     droneInfo.setName(properties.getProperty("name", droneInfo.getName()));
     droneInfo.setModelName(properties.getProperty("modelName", droneInfo.getModelName()));
-    droneInfo.setMessageEncoding(
-        parseMessageEncoding(
-            properties.getProperty("messageEncoding", null),
-            droneInfo.getMessageEncoding()));
-
-    StopActionEnum legacyStopAction =
-        parseTerminalAction(
-            properties.getProperty("stopAction", null),
-            droneInfo.getCancelAction());
-
-    droneInfo.setCancelAction(
-        parseTerminalAction(
-            properties.getProperty("cancelAction", null),
-            legacyStopAction));
-
-    droneInfo.setMissionEndAction(
-        parseTerminalAction(
-            properties.getProperty("missionEndAction", null),
-            droneInfo.getMissionEndAction()));
+    if(properties.containsKey("surveyRadiusMeters") && properties.getDoubleProperty("surveyRadiusMeters", 0.0) > 0.0) {
+      droneInfo.setSurveyRadiusMeters(properties.getDoubleProperty("surveyRadiusMeters", 0.0));
+    }
+    droneInfo.setMessageEncoding(parseMessageEncoding(properties.getProperty("messageEncoding", null), droneInfo.getMessageEncoding()));
+    StopActionEnum legacyStopAction = parseTerminalAction(properties.getProperty("stopAction", null), droneInfo.getCancelAction());
+    droneInfo.setCancelAction(parseTerminalAction(properties.getProperty("cancelAction", null), legacyStopAction));
+    droneInfo.setMissionEndAction(parseTerminalAction(properties.getProperty("missionEndAction", null), droneInfo.getMissionEndAction()));
 
     droneInfo.setMissionTimeoutAction(
         parseTerminalAction(
