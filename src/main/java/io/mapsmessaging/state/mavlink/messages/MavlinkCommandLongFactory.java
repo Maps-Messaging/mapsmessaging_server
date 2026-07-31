@@ -27,6 +27,7 @@ public final class MavlinkCommandLongFactory {
   public static final int MAV_CMD_DO_ORBIT = 34;
   public static final int MAV_CMD_DO_SET_MODE = 176;
   public static final int MAV_CMD_DO_PAUSE_CONTINUE = 193;
+  public static final int MAV_CMD_DO_SET_MISSION_CURRENT = 224;
   public static final int MAV_CMD_MISSION_START = 300;
   public static final int MAV_CMD_COMPONENT_ARM_DISARM = 400;
 
@@ -124,6 +125,29 @@ public final class MavlinkCommandLongFactory {
 
     commandLong.setParam1(firstMissionItem);
     commandLong.setParam2(lastMissionItem);
+    return commandLong;
+  }
+
+  public static MavlinkCommandLong setMissionCurrent(
+      int targetSystem,
+      int targetComponent,
+      int sequence,
+      int missionSequence,
+      boolean resetMission) {
+
+    if (missionSequence < -1) {
+      throw new IllegalArgumentException("missionSequence must be -1 or greater");
+    }
+
+    MavlinkCommandLong commandLong =
+        command(
+            targetSystem,
+            targetComponent,
+            MAV_CMD_DO_SET_MISSION_CURRENT,
+            sequence);
+
+    commandLong.setParam1(missionSequence);
+    commandLong.setParam2(resetMission ? 1.0f : 0.0f);
     return commandLong;
   }
 
