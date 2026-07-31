@@ -208,6 +208,14 @@ public class DroneTwin extends EntityTwin {
   @Schema(description = "Battery capacity in hours", example = "48", nullable = true)
   private double batteryCapacityHours;
 
+  @Schema(
+      description =
+          "Survey coverage radius in metres measured from the vehicle centreline. "
+              + "The effective survey width is twice this value.",
+      example = "200.0",
+      nullable = true)
+  private Double surveyRadiusMeters;
+
   private StopActionEnum stopAction;
 
   public DroneTwin(String twinId) {
