@@ -82,6 +82,24 @@ public abstract class GenericArduPilotUxvModel extends AbstractMissionUxvModel {
   }
 
   @Override
+  public UxvModelCommandSet startMission(UxvCommandContext context) {
+    Objects.requireNonNull(context, "context must not be null");
+    List<MavlinkMessage> messages =
+        List.of(
+            MavlinkCommandLongFactory.setMissionCurrent(
+                context.targetSystem(),
+                context.targetComponent(),
+                context.sequence(),
+                FIRST_REAL_MISSION_SEQUENCE,
+                true),
+            MavlinkCommandLongFactory.missionStart(
+                context.targetSystem(),
+                context.targetComponent(),
+                context.sequence()));
+    return UxvModelCommandSet.of(UxvOperation.START_MISSION, getModelName(), messages);
+  }
+
+  @Override
   public UxvModelCommandSet returnToHome(UxvCommandContext context) {
     Objects.requireNonNull(context, "context must not be null");
     return UxvModelCommandSet.of(
