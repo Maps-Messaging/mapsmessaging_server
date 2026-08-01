@@ -20,7 +20,17 @@
 package io.mapsmessaging.state.config;
 
 public enum StopActionEnum {
-  STOP,
-  ORBIT,
-  RETURN_TO_HOME;
+  HOLD_POSITION,
+  RETURN_TO_HOME,
+
+  /**
+   * Legacy configuration value. Interpreted as {@link #HOLD_POSITION} so that an aircraft is
+   * never instructed to literally stop moving.
+   */
+  @Deprecated
+  STOP;
+
+  public StopActionEnum normalized() {
+    return this == STOP ? HOLD_POSITION : this;
+  }
 }
