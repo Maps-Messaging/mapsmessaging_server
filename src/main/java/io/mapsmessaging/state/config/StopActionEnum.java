@@ -20,7 +20,21 @@
 package io.mapsmessaging.state.config;
 
 public enum StopActionEnum {
+  HOLD_POSITION,
+  RETURN_TO_HOME,
+
+  /** Legacy configuration value interpreted as {@link #HOLD_POSITION}. */
+  @Deprecated
   STOP,
-  ORBIT,
-  RETURN_TO_HOME;
+
+  /** Legacy completion value interpreted as {@link #HOLD_POSITION}. */
+  @Deprecated
+  ORBIT;
+
+  public StopActionEnum normalized() {
+    return switch (this) {
+      case STOP, ORBIT -> HOLD_POSITION;
+      case HOLD_POSITION, RETURN_TO_HOME -> this;
+    };
+  }
 }
