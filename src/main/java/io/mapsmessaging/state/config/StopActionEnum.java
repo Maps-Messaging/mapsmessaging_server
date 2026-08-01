@@ -23,14 +23,18 @@ public enum StopActionEnum {
   HOLD_POSITION,
   RETURN_TO_HOME,
 
-  /**
-   * Legacy configuration value. Interpreted as {@link #HOLD_POSITION} so that an aircraft is
-   * never instructed to literally stop moving.
-   */
+  /** Legacy configuration value interpreted as {@link #HOLD_POSITION}. */
   @Deprecated
-  STOP;
+  STOP,
+
+  /** Legacy completion value interpreted as {@link #HOLD_POSITION}. */
+  @Deprecated
+  ORBIT;
 
   public StopActionEnum normalized() {
-    return this == STOP ? HOLD_POSITION : this;
+    return switch (this) {
+      case STOP, ORBIT -> HOLD_POSITION;
+      case HOLD_POSITION, RETURN_TO_HOME -> this;
+    };
   }
 }
