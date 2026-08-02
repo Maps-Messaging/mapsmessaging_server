@@ -65,6 +65,18 @@ public class DroneInfoDTO {
   @Schema(description = "Action performed when a mission exceeds its configured duration.")
   private StopActionEnum missionTimeoutAction = StopActionEnum.STOP;
 
+  public List<DataProductConfig> getDataProducts() {
+    if (dataProducts == null || dataProducts.isEmpty()) {
+      dataProducts = new ArrayList<>(DataProductConfigLoader.load(name, uuid));
+    }
+    return List.copyOf(dataProducts);
+  }
+
+  public void setDataProducts(List<DataProductConfig> dataProducts) {
+    this.dataProducts =
+        dataProducts == null ? new ArrayList<>() : new ArrayList<>(dataProducts);
+  }
+
   @Deprecated
   public StopActionEnum getStopAction() {
     return cancelAction;
