@@ -70,22 +70,11 @@ public class MavlinkEventListSender implements AutoCloseable {
     this(commandSet, sender, acknowledgementHandler, completionHandler, DEFAULT_MAX_RETRIES, DEFAULT_ACKNOWLEDGEMENT_TIMEOUT_MILLIS);
   }
 
-  public MavlinkEventListSender(
-      UxvModelCommandSet commandSet,
-      MavlinkEventSender sender,
-      MavlinkAcknowledgementHandler acknowledgementHandler,
-      MavlinkSendCompletionHandler completionHandler,
-      int maxRetries) {
+  public MavlinkEventListSender(UxvModelCommandSet commandSet, MavlinkEventSender sender, MavlinkAcknowledgementHandler acknowledgementHandler, MavlinkSendCompletionHandler completionHandler, int maxRetries) {
     this(commandSet, sender, acknowledgementHandler, completionHandler, maxRetries, DEFAULT_ACKNOWLEDGEMENT_TIMEOUT_MILLIS);
   }
 
-  public MavlinkEventListSender(
-      UxvModelCommandSet commandSet,
-      MavlinkEventSender sender,
-      MavlinkAcknowledgementHandler acknowledgementHandler,
-      MavlinkSendCompletionHandler completionHandler,
-      int maxRetries,
-      long acknowledgementTimeoutMillis) {
+  public MavlinkEventListSender(UxvModelCommandSet commandSet, MavlinkEventSender sender, MavlinkAcknowledgementHandler acknowledgementHandler, MavlinkSendCompletionHandler completionHandler, int maxRetries, long acknowledgementTimeoutMillis) {
     if (maxRetries < 0) {
       throw new IllegalArgumentException("maxRetries must not be negative");
     }
@@ -359,7 +348,6 @@ public class MavlinkEventListSender implements AutoCloseable {
   private void sendMessage(int index, MavlinkMessage message, boolean requiresAcknowledgement) throws Exception {
     logger.log(MAVLINK_EVENT_LIST_SENDER_SENDING, sequenceId, commandSet.operation(), commandSet.modelName(), index + 1, messages.size(), messageName(message), requiresAcknowledgement);
     sender.send(message);
-
     if (requiresAcknowledgement) {
       scheduleAcknowledgementTimeout(index, message);
       logger.log(MAVLINK_EVENT_LIST_SENDER_WAITING_FOR_ACK, sequenceId, commandSet.operation(), commandSet.modelName(), index + 1);
