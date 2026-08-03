@@ -73,7 +73,7 @@ class WebSocketFrameDecoderTest {
   }
 
   @Test
-  void acceptsFragmentedTextWithInterleavedPing() throws IOException {
+  void withholdsFragmentedMessageUntilFinalFragment() throws IOException {
     byte[] first = maskedFrame(WebSocketFrameDecoder.TEXT, false, "HEL".getBytes(StandardCharsets.UTF_8), MASK);
     byte[] ping = maskedFrame(WebSocketFrameDecoder.PING, true, "check".getBytes(StandardCharsets.UTF_8), MASK);
     byte[] last = maskedFrame(WebSocketFrameDecoder.CONTINUATION, true, "LO".getBytes(StandardCharsets.UTF_8), MASK);
@@ -81,9 +81,11 @@ class WebSocketFrameDecoderTest {
     RecordingListener listener = new RecordingListener();
     Packet decoded = new Packet(5, false);
 
-    decoder.decode(packet(first), decoded, listener);
-    decoder.decode(packet(ping), decoded, listener);
-    decoder.decode(packet(last), decoded, listener);
+    assertEquals(0, decoder.decode(packet(first), decoded, listener));
+    assertEquals(0, decoded.position());
+    assertEquals(0, decoder.decode(packet(ping), decoded, listener));
+    assertEquals(0, decoded.position());
+    assertEquals(5, decoder.decode(packet(last), decoded, listener));
 
     assertEquals("HELLO", new String(bytes(decoded), StandardCharsets.UTF_8));
     assertEquals(1, listener.pings.size());
@@ -115,7 +117,7 @@ class WebSocketFrameDecoderTest {
   }
 
   @Test
-  void resumesPayloadWhenApplicationBufferFills() throws IOException {
+  void drainsValidatedMessageAcrossApplicationBuffers() throws IOException {
     byte[] payload = new byte[100];
     Arrays.fill(payload, (byte) 'z');
     byte[] frame = maskedFrame(WebSocketFrameDecoder.BINARY, true, payload, MASK);
@@ -124,11 +126,11 @@ class WebSocketFrameDecoderTest {
     RecordingListener listener = new RecordingListener();
     ByteArrayOutputStream decoded = new ByteArrayOutputStream();
 
-    while (source.hasRemaining()) {
+    do {
       Packet chunk = new Packet(17, false);
       decoder.decode(source, chunk, listener);
       decoded.writeBytes(bytes(chunk));
-    }
+    } while (source.hasRemaining() || decoder.hasPendingOutput());
 
     assertArrayEquals(payload, decoded.toByteArray());
   }
@@ -178,19 +180,21 @@ class WebSocketFrameDecoderTest {
   }
 
   @Test
-  void rejectsInvalidUtf8TextPayload() {
+  void rejectsInvalidUtf8TextPayloadWithoutExposingData() {
     byte[] frame = maskedFrame(
         WebSocketFrameDecoder.TEXT,
         true,
         new byte[]{(byte) 0xC3, 0x28},
         MASK);
     WebSocketFrameDecoder decoder = new WebSocketFrameDecoder();
+    Packet decoded = new Packet(8, false);
 
     WebSocketProtocolException error = assertThrows(
         WebSocketProtocolException.class,
-        () -> decoder.decode(packet(frame), new Packet(8, false), new RecordingListener()));
+        () -> decoder.decode(packet(frame), decoded, new RecordingListener()));
 
     assertEquals(1007, error.getCloseCode());
+    assertEquals(0, decoded.position());
   }
 
   @Test
@@ -214,7 +218,7 @@ class WebSocketFrameDecoderTest {
     WebSocketFrameDecoder decoder = new WebSocketFrameDecoder();
     Packet decoded = new Packet(euro.length, false);
 
-    decoder.decode(packet(first), decoded, new RecordingListener());
+    assertEquals(0, decoder.decode(packet(first), decoded, new RecordingListener()));
     decoder.decode(packet(last), decoded, new RecordingListener());
 
     assertArrayEquals(euro, bytes(decoded));
