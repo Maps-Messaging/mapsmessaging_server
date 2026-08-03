@@ -19,13 +19,15 @@
 
 package io.mapsmessaging.network.protocol.impl.websockets.endpoint;
 
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.network.io.EndPoint;
 import io.mapsmessaging.network.io.Packet;
 import io.mapsmessaging.network.io.Selectable;
-import org.junit.jupiter.api.Test;
-
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -36,9 +38,7 @@ import java.util.ArrayDeque;
 import java.util.Arrays;
 import java.util.Deque;
 import java.util.concurrent.FutureTask;
-
-import static org.junit.jupiter.api.Assertions.assertArrayEquals;
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import org.junit.jupiter.api.Test;
 
 class WebSocketEndPointTest {
 
@@ -67,7 +67,8 @@ class WebSocketEndPointTest {
     byte[] payload = "SEND\n\nhello\0".getBytes(StandardCharsets.UTF_8);
     byte[] frame = maskedFrame(WebSocketFrameDecoder.TEXT, true, payload, MASK);
     TestEndPoint delegate = new TestEndPoint();
-    WebSocketEndPoint webSocket = new WebSocketEndPoint(delegate, new Packet(ByteBuffer.wrap(frame)));
+    WebSocketEndPoint webSocket =
+        new WebSocketEndPoint(delegate, new Packet(ByteBuffer.wrap(frame)));
     Packet decoded = new Packet(payload.length, false);
 
     assertEquals(payload.length, webSocket.readPacket(decoded));
@@ -84,7 +85,32 @@ class WebSocketEndPointTest {
 
     assertEquals(0, webSocket.readPacket(new Packet(8, false)));
 
-    assertArrayEquals(new byte[]{(byte) 0x8A, 0x02, 'o', 'k'}, delegate.writtenBytes());
+    assertArrayEquals(new byte[] {(byte) 0x8A, 0x02, 'o', 'k'}, delegate.writtenBytes());
+  }
+
+  @Test
+  void sendsProtocolErrorCloseForMalformedClientFrame() {
+    TestEndPoint delegate = new TestEndPoint();
+    delegate.queueRead(new byte[] {(byte) 0x81, 0x01, 'x'});
+    WebSocketEndPoint webSocket = new WebSocketEndPoint(delegate);
+
+    assertThrows(IOException.class, () -> webSocket.readPacket(new Packet(8, false)));
+
+    assertArrayEquals(
+        new byte[] {(byte) 0x88, 0x02, 0x03, (byte) 0xEA}, delegate.writtenBytes());
+  }
+
+  @Test
+  void echoesValidClosePayloadBeforeClosing() throws IOException {
+    byte[] closePayload = {0x03, (byte) 0xE8};
+    TestEndPoint delegate = new TestEndPoint();
+    delegate.queueRead(maskedFrame(WebSocketFrameDecoder.CLOSE, true, closePayload, MASK));
+    WebSocketEndPoint webSocket = new WebSocketEndPoint(delegate);
+
+    assertEquals(-1, webSocket.readPacket(new Packet(8, false)));
+
+    assertArrayEquals(
+        new byte[] {(byte) 0x88, 0x02, 0x03, (byte) 0xE8}, delegate.writtenBytes());
   }
 
   private static byte[] maskedFrame(int opcode, boolean finish, byte[] payload, byte[] mask) {
@@ -159,7 +185,8 @@ class WebSocketEndPointTest {
     }
 
     @Override
-    public FutureTask<SelectionKey> deregister(int selectionKey) throws ClosedChannelException {
+    public FutureTask<SelectionKey> deregister(int selectionKey)
+        throws ClosedChannelException {
       return null;
     }
 
