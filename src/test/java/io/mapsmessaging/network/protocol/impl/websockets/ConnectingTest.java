@@ -27,6 +27,7 @@ import io.mapsmessaging.network.io.Selectable;
 import io.mapsmessaging.network.protocol.impl.websockets.frames.Frame;
 import org.junit.jupiter.api.Test;
 
+import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.ClosedChannelException;
 import java.nio.channels.SelectionKey;
@@ -75,10 +76,32 @@ class ConnectingTest {
     Connecting connecting = new Connecting();
     String request = REQUEST.replace("Sec-WebSocket-Version: 13", "Sec-WebSocket-Version: 12");
 
-    Exception error = assertThrows(Exception.class,
+    IOException error = assertThrows(IOException.class,
         () -> connecting.handle(packet(request.getBytes(StandardCharsets.US_ASCII), 0, request.length()), new TestEndPoint()));
 
     assertTrue(error.getMessage().contains("Unsupported WebSocket version"));
+  }
+
+  @Test
+  void rejectsOversizedHeaderAcrossTcpReads() throws Exception {
+    Connecting connecting = new Connecting();
+    TestEndPoint endPoint = new TestEndPoint();
+    byte[] first = ("GET /ws HTTP/1.1\r\nX-Padding:" + "x".repeat(5_000))
+        .getBytes(StandardCharsets.US_ASCII);
+
+    Packet firstRead = packet(first, 0, first.length);
+    assertNull(connecting.handle(firstRead, endPoint));
+    byte[] outstanding = remaining(firstRead);
+    byte[] suffix = ("x".repeat(4_000) + "\r\n\r\n")
+        .getBytes(StandardCharsets.US_ASCII);
+    byte[] second = new byte[outstanding.length + suffix.length];
+    System.arraycopy(outstanding, 0, second, 0, outstanding.length);
+    System.arraycopy(suffix, 0, second, outstanding.length, suffix.length);
+
+    IOException error = assertThrows(IOException.class,
+        () -> connecting.handle(new Packet(ByteBuffer.wrap(second)), endPoint));
+
+    assertTrue(error.getMessage().contains("headers exceed 8192 bytes"));
   }
 
   private static Packet packet(byte[] value, int start, int end) {
