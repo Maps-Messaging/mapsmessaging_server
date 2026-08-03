@@ -36,6 +36,7 @@ import java.io.IOException;
 public class WebSocketProtocol extends Protocol {
 
   private final Connecting connectingHandler;
+  private boolean upgraded;
 
   public WebSocketProtocol(EndPoint endPoint, Packet packet) throws IOException {
     super(endPoint, new ProtocolConfigDTO());
@@ -65,15 +66,28 @@ public class WebSocketProtocol extends Protocol {
 
   @Override
   public boolean processPacket(@NotNull Packet packet) throws IOException {
-    ServerPacket serverPacket = connectingHandler.handle(packet, endPoint);
-    if (serverPacket != null) {
-      Packet response = new Packet(64 * 1024, false);
-      serverPacket.packFrame(response);
-      response.flip();
-      endPoint.sendPacket(response);
-      WebSocketEndPoint webSocketEndPoint = new WebSocketEndPoint(endPoint);
-      endPoint.getServer().handleNewEndPoint(webSocketEndPoint);
+    if (upgraded) {
+      return true;
     }
+
+    ServerPacket serverPacket = connectingHandler.handle(packet, endPoint);
+    if (serverPacket == null) {
+      return false;
+    }
+
+    Packet response = new Packet(64 * 1024, false);
+    serverPacket.packFrame(response);
+    response.flip();
+    while (response.hasRemaining()) {
+      int written = endPoint.sendPacket(response);
+      if (written <= 0) {
+        throw new IOException("Unable to complete WebSocket upgrade response");
+      }
+    }
+
+    upgraded = true;
+    WebSocketEndPoint webSocketEndPoint = new WebSocketEndPoint(endPoint, packet);
+    endPoint.getServer().handleNewEndPoint(webSocketEndPoint);
     return true;
   }
 
@@ -84,13 +98,11 @@ public class WebSocketProtocol extends Protocol {
 
   @Override
   public String getSessionId() {
-    // There is no Session ID related to this protocol
     return null;
   }
 
   @Override
   public String getVersion() {
-    // there is no version to return
     return null;
   }
 }
