@@ -31,14 +31,23 @@ import java.nio.channels.SelectionKey;
 import java.util.List;
 import java.util.concurrent.FutureTask;
 
-//ToDo:: Configure packet sizes, break up the packets if its too large, deal with fragmented incoming packets
 public class WebSocketEndPoint extends EndPoint {
 
+  private static final int NETWORK_READ_BUFFER_SIZE = 128 * 1024;
+
   private final EndPoint endPoint;
-  private final WebSocketPacket wsReadPacket;
-  private final WebSocketPacket wsWritePacket;
+  private final Packet networkReadPacket;
+  private final WebSocketFrameDecoder decoder;
+  private final WebSocketFrameWriter writer;
+  private final WebSocketFrameDecoder.Listener controlFrameListener;
+
+  private boolean closeResponseSent;
 
   public WebSocketEndPoint(EndPoint endPoint) {
+    this(endPoint, null);
+  }
+
+  public WebSocketEndPoint(EndPoint endPoint, Packet initialData) {
     super(endPoint.getId(), endPoint.getServer());
     this.endPoint = endPoint;
     String tmp = endPoint.getName();
@@ -49,8 +58,14 @@ public class WebSocketEndPoint extends EndPoint {
     } else {
       name = tmp;
     }
-    wsReadPacket = new WebSocketPacket(1024 * 128);
-    wsWritePacket = new WebSocketPacket(1024 * 128);
+    int initialBytes = initialData == null ? 0 : initialData.available();
+    networkReadPacket = new Packet(Math.max(NETWORK_READ_BUFFER_SIZE, initialBytes), false);
+    if (initialBytes > 0) {
+      networkReadPacket.put(initialData);
+    }
+    decoder = new WebSocketFrameDecoder();
+    writer = new WebSocketFrameWriter(endPoint::sendPacket);
+    controlFrameListener = new ControlFrameListener();
   }
 
   @Override
@@ -61,10 +76,7 @@ public class WebSocketEndPoint extends EndPoint {
 
   @Override
   public String getProtocol() {
-    if (endPoint.isSSL()) {
-      return "wss";
-    }
-    return "ws";
+    return endPoint.isSSL() ? "wss" : "ws";
   }
 
   @Override
@@ -79,61 +91,70 @@ public class WebSocketEndPoint extends EndPoint {
 
   @Override
   public int sendPacket(Packet packet) throws IOException {
-    wsWritePacket.clear();
-    wsWritePacket.pack(packet);
-    wsWritePacket.flip();
-    int sent = wsWritePacket.available();
-    endPoint.sendPacket(wsWritePacket);
-    endPoint.sendPacket(packet);
-    updateWriteBytes(sent);
-
-    return sent;
+    int consumed = writer.writeBinary(packet);
+    int networkBytes = writer.getLastNetworkBytesWritten();
+    if (networkBytes > 0) {
+      updateWriteBytes(networkBytes);
+    }
+    return consumed;
   }
 
   @Override
   public int readPacket(Packet packet) throws IOException {
-    int len = endPoint.readPacket(wsReadPacket);
-    while (len > 0) {
-      updateReadBytes(len);
-      wsReadPacket.flip();
-      wsReadPacket.parse();
-      WebSocketHeader header = wsReadPacket.getHeader();
-      switch (header.getOpCode()) {
-        case WebSocketHeader.PING:
-        case WebSocketHeader.PONG:
-          wsReadPacket.position(0);
-          wsWritePacket.clear();
-          wsWritePacket.getHeader().setOpCode((byte) WebSocketHeader.PONG);
-          wsWritePacket.getHeader().setCompleted(true);
-          wsWritePacket.getHeader().setFinish(true);
-          wsWritePacket.pack();
-          endPoint.sendPacket(wsWritePacket);
-          return 0;
-
-        case WebSocketHeader.BINARY:
-        case WebSocketHeader.TEXT:
-        case WebSocketHeader.CONTINUATION:
-          if (header.isMask() &&
-              wsReadPacket.available() >= header.getLength()) {
-            wsReadPacket.copy(packet);
-            wsReadPacket.getHeader().reset();
-          }
-          break;
-
-        case WebSocketHeader.CLOSE:
-        default:
-          close();
-          return -1;
-      }
-      if (wsReadPacket.hasRemaining()) {
-        len = wsReadPacket.available();
-        wsReadPacket.compact();
-      } else {
-        wsReadPacket.clear();
-        len = 0;
-      }
+    int decoded = decodeBuffered(packet);
+    if (decoder.isCloseReceived()) {
+      return -1;
     }
-    return packet.position();
+    if (decoded > 0 || !packet.hasRemaining()) {
+      return packet.position();
+    }
+
+    int read = endPoint.readPacket(networkReadPacket);
+    if (read <= 0) {
+      return read;
+    }
+    updateReadBytes(read);
+
+    decoded = decodeBuffered(packet);
+    if (decoder.isCloseReceived()) {
+      return -1;
+    }
+    return decoded > 0 ? packet.position() : 0;
+  }
+
+  private int decodeBuffered(Packet destination) throws IOException {
+    if (networkReadPacket.position() == 0) {
+      return 0;
+    }
+
+    networkReadPacket.flip();
+    int decoded;
+    try {
+      decoded = decoder.decode(networkReadPacket, destination, controlFrameListener);
+    } catch (WebSocketProtocolException protocolError) {
+      sendProtocolClose(protocolError.getCloseCode());
+      throw protocolError;
+    } finally {
+      networkReadPacket.compact();
+    }
+    return decoded;
+  }
+
+  private void sendProtocolClose(int closeCode) {
+    if (closeResponseSent) {
+      return;
+    }
+    closeResponseSent = true;
+    byte[] payload = {(byte) ((closeCode >>> 8) & 0xFF), (byte) (closeCode & 0xFF)};
+    try {
+      writer.writeControl(WebSocketFrameDecoder.CLOSE, payload);
+      int networkBytes = writer.getLastNetworkBytesWritten();
+      if (networkBytes > 0) {
+        updateWriteBytes(networkBytes);
+      }
+    } catch (IOException ignored) {
+      // The connection is closed by the caller after the protocol error.
+    }
   }
 
   @Override
@@ -164,5 +185,41 @@ public class WebSocketEndPoint extends EndPoint {
   @Override
   public String getRemoteSocketAddress() {
     return endPoint.getRemoteSocketAddress();
+  }
+
+  private final class ControlFrameListener implements WebSocketFrameDecoder.Listener {
+
+    @Override
+    public void onPing(byte[] payload) throws IOException {
+      boolean written = writer.writeControl(WebSocketFrameDecoder.PONG, payload);
+      int networkBytes = writer.getLastNetworkBytesWritten();
+      if (networkBytes > 0) {
+        updateWriteBytes(networkBytes);
+      }
+      if (!written && !writer.hasPendingApplicationData()) {
+        throw new IOException("Unable to write WebSocket PONG frame");
+      }
+    }
+
+    @Override
+    public void onPong(byte[] payload) {
+      // A PONG is an acknowledgement and does not require a response.
+    }
+
+    @Override
+    public void onClose(byte[] payload) throws IOException {
+      if (closeResponseSent) {
+        return;
+      }
+      closeResponseSent = true;
+      boolean written = writer.writeControl(WebSocketFrameDecoder.CLOSE, payload);
+      int networkBytes = writer.getLastNetworkBytesWritten();
+      if (networkBytes > 0) {
+        updateWriteBytes(networkBytes);
+      }
+      if (!written) {
+        throw new IOException("Unable to write WebSocket CLOSE response");
+      }
+    }
   }
 }
