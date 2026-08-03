@@ -96,7 +96,7 @@ public class WebSocketProtocol extends Protocol {
     }
 
     if (waitingForUpgrade) {
-      selectorTask.close();
+      selectorTask.cancel(OP_READ);
       waitingForUpgrade = false;
     }
 
