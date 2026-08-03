@@ -21,6 +21,7 @@ package io.mapsmessaging.network.protocol.impl.websockets.endpoint;
 
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
+import io.mapsmessaging.network.io.BufferedReadEndPoint;
 import io.mapsmessaging.network.io.EndPoint;
 import io.mapsmessaging.network.io.Packet;
 import io.mapsmessaging.network.io.Selectable;
@@ -31,7 +32,7 @@ import java.nio.channels.SelectionKey;
 import java.util.List;
 import java.util.concurrent.FutureTask;
 
-public class WebSocketEndPoint extends EndPoint {
+public class WebSocketEndPoint extends EndPoint implements BufferedReadEndPoint {
 
   private static final int NETWORK_READ_BUFFER_SIZE = 128 * 1024;
 
@@ -101,7 +102,15 @@ public class WebSocketEndPoint extends EndPoint {
 
   @Override
   public int readPacket(Packet packet) throws IOException {
-    int decoded = decodeBuffered(packet);
+    int decoded = decoder.drain(packet);
+    if (decoder.isCloseReceived()) {
+      return -1;
+    }
+    if (!packet.hasRemaining()) {
+      return packet.position();
+    }
+
+    decoded += decodeBuffered(packet);
     if (decoder.isCloseReceived()) {
       return -1;
     }
@@ -120,6 +129,11 @@ public class WebSocketEndPoint extends EndPoint {
       return -1;
     }
     return decoded > 0 ? packet.position() : 0;
+  }
+
+  @Override
+  public boolean hasBufferedReadData() {
+    return decoder.hasPendingOutput();
   }
 
   private int decodeBuffered(Packet destination) throws IOException {
