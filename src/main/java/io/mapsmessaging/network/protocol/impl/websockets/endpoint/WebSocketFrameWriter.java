@@ -82,7 +82,9 @@ final class WebSocketFrameWriter {
   }
 
   synchronized boolean hasPendingApplicationData() {
-    return (currentFrame != null && currentFrame.source != null) || !dataFrames.isEmpty();
+    return (currentFrame != null && currentFrame.source != null)
+        || !dataFrames.isEmpty()
+        || !sourceFrames.isEmpty();
   }
 
   private void flush() throws IOException {
