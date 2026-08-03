@@ -92,6 +92,7 @@ public class Connecting {
     if (request == null || !request.matches("GET\\s+\\S+\\s+HTTP/1\\.1")) {
       throw new IOException("Invalid WebSocket HTTP request line");
     }
+    requireHeader("host");
     requireHeaderToken("upgrade", "websocket");
     requireHeaderToken("connection", "upgrade");
 
@@ -114,11 +115,16 @@ public class Connecting {
     }
   }
 
-  private void requireHeaderToken(String headerName, String requiredToken) throws IOException {
+  private String requireHeader(String headerName) throws IOException {
     String value = getFrame.getHeaders().get(headerName);
-    if (value == null) {
+    if (value == null || value.isBlank()) {
       throw new IOException("Missing WebSocket " + headerName + " header");
     }
+    return value;
+  }
+
+  private void requireHeaderToken(String headerName, String requiredToken) throws IOException {
+    String value = requireHeader(headerName);
     StringTokenizer tokenizer = new StringTokenizer(value, ",");
     while (tokenizer.hasMoreTokens()) {
       if (requiredToken.equalsIgnoreCase(tokenizer.nextToken().trim())) {
