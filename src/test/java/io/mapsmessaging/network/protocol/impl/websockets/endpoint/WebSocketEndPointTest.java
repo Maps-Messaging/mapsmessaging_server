@@ -63,6 +63,27 @@ class WebSocketEndPointTest {
   }
 
   @Test
+  void drainsValidatedMessageWithoutAnotherSocketRead() throws IOException {
+    byte[] payload = new byte[100];
+    Arrays.fill(payload, (byte) 'z');
+    TestEndPoint delegate = new TestEndPoint();
+    delegate.queueRead(maskedFrame(WebSocketFrameDecoder.TEXT, true, payload, MASK));
+    WebSocketEndPoint webSocket = new WebSocketEndPoint(delegate);
+    ByteArrayOutputStream decoded = new ByteArrayOutputStream();
+
+    do {
+      Packet chunk = new Packet(17, false);
+      int count = webSocket.readPacket(chunk);
+      if (count > 0) {
+        decoded.writeBytes(bytes(chunk));
+      }
+    } while (webSocket.hasBufferedReadData());
+
+    assertArrayEquals(payload, decoded.toByteArray());
+    assertEquals(1, delegate.readCalls());
+  }
+
+  @Test
   void decodesBytesCarriedWithTheUpgradeRequest() throws IOException {
     byte[] payload = "SEND\n\nhello\0".getBytes(StandardCharsets.UTF_8);
     byte[] frame = maskedFrame(WebSocketFrameDecoder.TEXT, true, payload, MASK);
@@ -141,6 +162,7 @@ class WebSocketEndPointTest {
   private static final class TestEndPoint extends EndPoint {
     private final Deque<byte[]> reads = new ArrayDeque<>();
     private final ByteArrayOutputStream writes = new ByteArrayOutputStream();
+    private int readCalls;
 
     private TestEndPoint() {
       super(1, null);
@@ -153,6 +175,10 @@ class WebSocketEndPointTest {
 
     private byte[] writtenBytes() {
       return writes.toByteArray();
+    }
+
+    private int readCalls() {
+      return readCalls;
     }
 
     @Override
@@ -171,6 +197,7 @@ class WebSocketEndPointTest {
 
     @Override
     public int readPacket(Packet packet) {
+      readCalls++;
       byte[] value = reads.poll();
       if (value == null) {
         return 0;
