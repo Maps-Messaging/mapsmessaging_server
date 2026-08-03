@@ -21,6 +21,7 @@ package io.mapsmessaging.network.protocol.impl.websockets.endpoint;
 
 import io.mapsmessaging.network.io.Packet;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.charset.CharacterCodingException;
@@ -39,7 +40,7 @@ final class WebSocketFrameDecoder {
 
   private static final int SHORT_LENGTH = 126;
   private static final int LONG_LENGTH = 127;
-  private static final long MAX_PAYLOAD_LENGTH = Integer.MAX_VALUE;
+  private static final int MAX_MESSAGE_LENGTH = 64 * 1024 * 1024;
 
   private final byte[] maskKey = new byte[4];
 
@@ -60,9 +61,16 @@ final class WebSocketFrameDecoder {
   private int utf8CodePoint;
   private int utf8MinimumCodePoint;
   private boolean closeReceived;
+  private ByteArrayOutputStream messagePayload;
+  private byte[] pendingOutput;
+  private int pendingOutputOffset;
 
   int decode(Packet source, Packet destination, Listener listener) throws IOException {
     int initialPosition = destination.position();
+    drain(destination);
+    if (hasPendingOutput() || !destination.hasRemaining()) {
+      return destination.position() - initialPosition;
+    }
 
     while (source.hasRemaining()) {
       switch (state) {
@@ -70,14 +78,33 @@ final class WebSocketFrameDecoder {
         case SECOND_BYTE -> readSecondByte(source);
         case EXTENDED_LENGTH -> readExtendedLength(source);
         case MASK -> readMask(source, listener);
-        case PAYLOAD -> {
-          if (!readPayload(source, destination, listener)) {
-            return destination.position() - initialPosition;
-          }
-        }
+        case PAYLOAD -> readPayload(source, listener);
+      }
+
+      drain(destination);
+      if (hasPendingOutput() || !destination.hasRemaining()) {
+        return destination.position() - initialPosition;
       }
     }
     return destination.position() - initialPosition;
+  }
+
+  int drain(Packet destination) {
+    int initialPosition = destination.position();
+    while (pendingOutput != null
+        && pendingOutputOffset < pendingOutput.length
+        && destination.hasRemaining()) {
+      destination.put(pendingOutput[pendingOutputOffset++]);
+    }
+    if (pendingOutput != null && pendingOutputOffset == pendingOutput.length) {
+      pendingOutput = null;
+      pendingOutputOffset = 0;
+    }
+    return destination.position() - initialPosition;
+  }
+
+  boolean hasPendingOutput() {
+    return pendingOutput != null;
   }
 
   boolean isCloseReceived() {
@@ -143,9 +170,8 @@ final class WebSocketFrameDecoder {
       if (lengthIndicator == LONG_LENGTH && payloadLength < 65_536) {
         throw protocolError("Non-minimal 64-bit WebSocket payload length");
       }
-      if (payloadLength > MAX_PAYLOAD_LENGTH) {
-        throw new WebSocketProtocolException(1009,
-            "WebSocket payload exceeds supported maximum of " + MAX_PAYLOAD_LENGTH + " bytes");
+      if (payloadLength > MAX_MESSAGE_LENGTH) {
+        throw messageTooLarge(payloadLength);
       }
       state = DecodeState.MASK;
     }
@@ -166,64 +192,62 @@ final class WebSocketFrameDecoder {
 
   private void beginPayload() throws IOException {
     if (opcode == CONTINUATION) {
-      if (fragmentedOpcode == -1) {
+      if (fragmentedOpcode == -1 || messagePayload == null) {
         throw protocolError("Continuation frame received without an open fragmented message");
       }
       validateTextPayload = fragmentedOpcode == TEXT;
     } else if (opcode == TEXT || opcode == BINARY) {
-      if (fragmentedOpcode != -1) {
+      if (fragmentedOpcode != -1 || messagePayload != null) {
         throw protocolError("New data frame received before fragmented message completion");
       }
       validateTextPayload = opcode == TEXT;
+      messagePayload = new ByteArrayOutputStream(initialMessageCapacity(payloadLength));
     } else {
       validateTextPayload = false;
     }
 
+    if (!isControlFrame()) {
+      ensureMessageLimit(payloadLength);
+    }
     controlPayload = isControlFrame() ? new byte[(int) payloadLength] : null;
     state = DecodeState.PAYLOAD;
   }
 
-  private boolean readPayload(Packet source, Packet destination, Listener listener) throws IOException {
+  private void readPayload(Packet source, Listener listener) throws IOException {
     if (isControlFrame()) {
       while (source.hasRemaining() && payloadRead < payloadLength) {
         controlPayload[(int) payloadRead] = unmask(source.get(), payloadRead);
         payloadRead++;
       }
     } else {
-      while (source.hasRemaining() && destination.hasRemaining() && payloadRead < payloadLength) {
+      while (source.hasRemaining() && payloadRead < payloadLength) {
         byte value = unmask(source.get(), payloadRead);
         if (validateTextPayload) {
           validateUtf8Byte(value);
         }
-        destination.put(value);
+        messagePayload.write(value);
         payloadRead++;
-      }
-      if (payloadRead < payloadLength && !destination.hasRemaining()) {
-        return false;
       }
     }
 
     if (payloadRead == payloadLength) {
       completeFrame(listener);
     }
-    return true;
   }
 
   private void completeFrame(Listener listener) throws IOException {
-    if (validateTextPayload && finish && utf8ContinuationBytes != 0) {
-      throw protocolError("Text message ends with an incomplete UTF-8 sequence");
-    }
-
     switch (opcode) {
       case TEXT, BINARY -> {
-        if (!finish) {
+        if (finish) {
+          completeMessage();
+        } else {
           fragmentedOpcode = opcode;
         }
       }
       case CONTINUATION -> {
         if (finish) {
+          completeMessage();
           fragmentedOpcode = -1;
-          resetUtf8Validation();
         }
       }
       case PING -> {
@@ -245,11 +269,38 @@ final class WebSocketFrameDecoder {
       }
       default -> throw protocolError("Unsupported WebSocket opcode " + opcode);
     }
-
-    if ((opcode == TEXT || opcode == BINARY) && finish) {
-      resetUtf8Validation();
-    }
     resetFrame();
+  }
+
+  private void completeMessage() throws IOException {
+    if (validateTextPayload && utf8ContinuationBytes != 0) {
+      throw invalidPayload("Text message ends with an incomplete UTF-8 sequence");
+    }
+    pendingOutput = messagePayload.toByteArray();
+    pendingOutputOffset = 0;
+    messagePayload = null;
+    resetUtf8Validation();
+  }
+
+  private int initialMessageCapacity(long framePayloadLength) {
+    return (int) Math.min(framePayloadLength, 8 * 1024L);
+  }
+
+  private void ensureMessageLimit(long additionalBytes) throws WebSocketProtocolException {
+    long currentBytes = messagePayload == null ? 0 : messagePayload.size();
+    long totalBytes = currentBytes + additionalBytes;
+    if (totalBytes > MAX_MESSAGE_LENGTH) {
+      throw messageTooLarge(totalBytes);
+    }
+  }
+
+  private WebSocketProtocolException messageTooLarge(long length) {
+    return new WebSocketProtocolException(
+        1009,
+        "WebSocket message exceeds supported maximum of "
+            + MAX_MESSAGE_LENGTH
+            + " bytes: "
+            + length);
   }
 
   private void validateUtf8Byte(byte value) throws IOException {
