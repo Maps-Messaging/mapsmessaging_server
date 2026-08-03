@@ -55,6 +55,7 @@ final class WebSocketFrameWriter {
     flush();
     if (frame.complete) {
       sourceFrames.remove(payload);
+      payload.limit(frame.sourceEnd);
       payload.position(frame.sourceEnd);
       return frame.payloadLength;
     }
@@ -109,10 +110,6 @@ final class WebSocketFrameWriter {
       }
 
       currentFrame.complete = true;
-      if (currentFrame.source != null) {
-        currentFrame.source.limit(currentFrame.sourceEnd);
-        currentFrame.source.position(currentFrame.sourceEnd);
-      }
       currentFrame = null;
     }
   }
