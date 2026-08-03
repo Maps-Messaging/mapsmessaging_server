@@ -19,29 +19,49 @@
 
 package io.mapsmessaging.network.protocol.impl.websockets;
 
+import static java.nio.channels.SelectionKey.OP_READ;
+
 import io.mapsmessaging.api.MessageEvent;
 import io.mapsmessaging.dto.rest.config.protocol.ProtocolConfigDTO;
 import io.mapsmessaging.dto.rest.protocol.ProtocolInformationDTO;
 import io.mapsmessaging.network.io.EndPoint;
 import io.mapsmessaging.network.io.Packet;
 import io.mapsmessaging.network.io.ServerPacket;
+import io.mapsmessaging.network.io.impl.SelectorTask;
 import io.mapsmessaging.network.protocol.Protocol;
 import io.mapsmessaging.network.protocol.impl.websockets.endpoint.WebSocketEndPoint;
+import java.io.IOException;
+import javax.security.auth.Subject;
 import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
-
-import javax.security.auth.Subject;
-import java.io.IOException;
 
 public class WebSocketProtocol extends Protocol {
 
   private final Connecting connectingHandler;
+  private final SelectorTask selectorTask;
   private boolean upgraded;
+  private boolean waitingForUpgrade;
 
   public WebSocketProtocol(EndPoint endPoint, Packet packet) throws IOException {
     super(endPoint, new ProtocolConfigDTO());
     connectingHandler = new Connecting();
-    processPacket(packet);
+    selectorTask = new SelectorTask(this, endPoint.getConfig().getEndPointConfig());
+
+    boolean complete = processPacket(packet);
+    selectorTask.getReadTask().pushOutstandingData(packet);
+    if (!complete) {
+      waitingForUpgrade = true;
+      selectorTask.register(OP_READ);
+    }
+  }
+
+  @Override
+  public void close() throws IOException {
+    if (waitingForUpgrade) {
+      selectorTask.close();
+      waitingForUpgrade = false;
+    }
+    super.close();
   }
 
   @Override
@@ -73,6 +93,11 @@ public class WebSocketProtocol extends Protocol {
     ServerPacket serverPacket = connectingHandler.handle(packet, endPoint);
     if (serverPacket == null) {
       return false;
+    }
+
+    if (waitingForUpgrade) {
+      selectorTask.close();
+      waitingForUpgrade = false;
     }
 
     Packet response = new Packet(64 * 1024, false);
