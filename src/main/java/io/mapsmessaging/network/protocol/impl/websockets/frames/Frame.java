@@ -23,6 +23,7 @@ import io.mapsmessaging.network.io.Packet;
 import io.mapsmessaging.network.io.ServerPacket;
 import io.mapsmessaging.network.protocol.EndOfBufferException;
 
+import java.io.IOException;
 import java.net.SocketAddress;
 import java.nio.charset.StandardCharsets;
 import java.util.LinkedHashMap;
@@ -31,11 +32,13 @@ import java.util.Map;
 public class Frame implements ServerPacket {
 
   private static final byte LF = 0xA;
+  private static final int MAX_HEADER_BYTES = 8 * 1024;
   private static final byte[] END_OF_LINE = {0xD, 0xA};
 
   protected final Map<String, String> headers;
   protected String request;
   protected boolean isComplete;
+  private int headerBytes;
 
   public Frame() {
     headers = new LinkedHashMap<>();
@@ -55,7 +58,7 @@ public class Frame implements ServerPacket {
     return request;
   }
 
-  public void parse(Packet packet) throws EndOfBufferException {
+  public void parse(Packet packet) throws IOException {
     if (isComplete) {
       return;
     }
@@ -79,18 +82,28 @@ public class Frame implements ServerPacket {
     }
   }
 
-  String getHeaderLine(Packet packet) throws EndOfBufferException {
+  String getHeaderLine(Packet packet) throws IOException {
     int position = packet.position();
     while (packet.hasRemaining()) {
       if (packet.get() == LF) {
-        byte[] value = new byte[packet.position() - position];
+        int lineLength = packet.position() - position;
+        enforceHeaderLimit(lineLength);
+        headerBytes += lineLength;
+        byte[] value = new byte[lineLength];
         packet.position(position);
         packet.get(value);
         return new String(value, StandardCharsets.ISO_8859_1);
       }
+      enforceHeaderLimit(packet.position() - position);
     }
     packet.position(position);
     throw new EndOfBufferException("Incomplete HTTP header line");
+  }
+
+  private void enforceHeaderLimit(int pendingLineBytes) throws IOException {
+    if (headerBytes + pendingLineBytes > MAX_HEADER_BYTES) {
+      throw new IOException("WebSocket HTTP upgrade headers exceed " + MAX_HEADER_BYTES + " bytes");
+    }
   }
 
   public boolean isComplete() {
