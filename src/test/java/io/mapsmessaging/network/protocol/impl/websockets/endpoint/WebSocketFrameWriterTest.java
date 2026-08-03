@@ -19,18 +19,17 @@
 
 package io.mapsmessaging.network.protocol.impl.websockets.endpoint;
 
-import io.mapsmessaging.network.io.Packet;
-import org.junit.jupiter.api.Test;
-
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.nio.ByteBuffer;
-import java.nio.charset.StandardCharsets;
-
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import io.mapsmessaging.network.io.Packet;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
+import org.junit.jupiter.api.Test;
 
 class WebSocketFrameWriterTest {
 
@@ -71,6 +70,35 @@ class WebSocketFrameWriterTest {
   }
 
   @Test
+  void anotherWriteCanFlushPendingFrameWithoutCompletingItsSourcePacket() throws IOException {
+    PartialThenBlockedSink sink = new PartialThenBlockedSink();
+    WebSocketFrameWriter writer = new WebSocketFrameWriter(sink);
+    byte[] firstPayload = "first".getBytes(StandardCharsets.UTF_8);
+    byte[] secondPayload = "second".getBytes(StandardCharsets.UTF_8);
+    Packet first = new Packet(ByteBuffer.wrap(firstPayload));
+    Packet second = new Packet(ByteBuffer.wrap(secondPayload));
+
+    assertEquals(0, writer.writeBinary(first));
+    assertTrue(first.position() > 0 && first.position() < first.limit());
+
+    assertEquals(secondPayload.length, writer.writeBinary(second));
+    assertTrue(first.position() < first.limit());
+    assertEquals(firstPayload.length, writer.writeBinary(first));
+    assertEquals(first.limit(), first.position());
+
+    byte[] expected = new byte[2 + firstPayload.length + 2 + secondPayload.length];
+    int offset = 0;
+    expected[offset++] = (byte) 0x82;
+    expected[offset++] = (byte) firstPayload.length;
+    System.arraycopy(firstPayload, 0, expected, offset, firstPayload.length);
+    offset += firstPayload.length;
+    expected[offset++] = (byte) 0x82;
+    expected[offset++] = (byte) secondPayload.length;
+    System.arraycopy(secondPayload, 0, expected, offset, secondPayload.length);
+    assertArrayEquals(expected, sink.bytes());
+  }
+
+  @Test
   void writesPongWithThePingPayloadAndNoPadding() throws IOException {
     ChunkedSink sink = new ChunkedSink(Integer.MAX_VALUE);
     WebSocketFrameWriter writer = new WebSocketFrameWriter(sink);
@@ -96,6 +124,28 @@ class WebSocketFrameWriterTest {
     assertEquals(0x04, frame[2] & 0xFF);
     assertEquals(0x9F, frame[3] & 0xFF);
     assertEquals(payload.length + 4, frame.length);
+  }
+
+  private static final class PartialThenBlockedSink implements WebSocketFrameWriter.PacketSink {
+    private final ByteArrayOutputStream output = new ByteArrayOutputStream();
+    private int calls;
+
+    @Override
+    public int write(Packet packet) {
+      calls++;
+      if (calls == 2) {
+        return 0;
+      }
+      int count = calls == 1 ? 1 : packet.available();
+      byte[] value = new byte[count];
+      packet.get(value);
+      output.writeBytes(value);
+      return count;
+    }
+
+    private byte[] bytes() {
+      return output.toByteArray();
+    }
   }
 
   private static final class BlockingOnceSink implements WebSocketFrameWriter.PacketSink {
