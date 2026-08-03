@@ -178,6 +178,35 @@ class WebSocketFrameDecoderTest {
   }
 
   @Test
+  void rejectsInvalidUtf8TextPayload() {
+    byte[] frame = maskedFrame(
+        WebSocketFrameDecoder.TEXT,
+        true,
+        new byte[]{(byte) 0xC3, 0x28},
+        MASK);
+    WebSocketFrameDecoder decoder = new WebSocketFrameDecoder();
+
+    WebSocketProtocolException error = assertThrows(
+        WebSocketProtocolException.class,
+        () -> decoder.decode(packet(frame), new Packet(8, false), new RecordingListener()));
+
+    assertEquals(1007, error.getCloseCode());
+  }
+
+  @Test
+  void rejectsNonMinimalExtendedPayloadLength() {
+    byte[] frame = {(byte) 0x81, (byte) 0xFE, 0x00, 0x7D};
+    WebSocketFrameDecoder decoder = new WebSocketFrameDecoder();
+
+    WebSocketProtocolException error = assertThrows(
+        WebSocketProtocolException.class,
+        () -> decoder.decode(packet(frame), new Packet(128, false), new RecordingListener()));
+
+    assertEquals(1002, error.getCloseCode());
+    assertTrue(error.getMessage().contains("Non-minimal"));
+  }
+
+  @Test
   void validatesUtf8AcrossFragmentBoundaries() throws IOException {
     byte[] euro = "€".getBytes(StandardCharsets.UTF_8);
     byte[] first = maskedFrame(WebSocketFrameDecoder.TEXT, false, Arrays.copyOfRange(euro, 0, 1), MASK);
