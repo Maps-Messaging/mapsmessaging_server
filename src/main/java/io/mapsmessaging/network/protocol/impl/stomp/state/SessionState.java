@@ -31,6 +31,7 @@ import io.mapsmessaging.network.io.CloseHandler;
 import io.mapsmessaging.network.protocol.impl.stomp.StompProtocol;
 import io.mapsmessaging.network.protocol.impl.stomp.StompProtocolException;
 import io.mapsmessaging.network.protocol.impl.stomp.frames.CompletionHandler;
+import io.mapsmessaging.network.protocol.impl.stomp.frames.Error;
 import io.mapsmessaging.network.protocol.impl.stomp.frames.Frame;
 import lombok.Getter;
 
@@ -46,7 +47,6 @@ public class SessionState implements CloseHandler, CompletionHandler {
   private final Logger logger;
   private final StompProtocol protocolImpl;
   private final Map<String, SubscribedEventManager> activeSubscriptions;
-
   private final Map<String, String> destinationMap;
 
   private int requestCounter;
@@ -59,11 +59,9 @@ public class SessionState implements CloseHandler, CompletionHandler {
     this.protocolImpl = protocolImpl;
     destinationMap = new ConcurrentHashMap<>();
     logger = protocolImpl.getLogger();
-    if (protocolImpl.getEndPoint().isClient()) {
-      currentState = new InitialClientState();
-    } else {
-      currentState = new InitialServerState();
-    }
+    currentState = protocolImpl.getEndPoint().isClient()
+        ? new InitialClientState()
+        : new InitialServerState();
     activeSubscriptions = new LinkedHashMap<>();
     requestCounter = 0;
     session = null;
@@ -72,6 +70,9 @@ public class SessionState implements CloseHandler, CompletionHandler {
   }
 
   public boolean send(Frame frame) {
+    if (frame instanceof Error && frame.getCallback() == null) {
+      frame.setCallback(this::shutdown);
+    }
     protocolImpl.writeFrame(frame);
     return true;
   }
@@ -108,23 +109,27 @@ public class SessionState implements CloseHandler, CompletionHandler {
   }
 
   public void setSession(Session session) throws StompProtocolException {
-    if (session != null) {
-      this.session = session;
-      protocolImpl.setConnected(true);
-      protocolImpl.completedConnection();
-
-    } else {
-      throw new StompProtocolException("Session already established");
+    if (session == null) {
+      throw new StompProtocolException("Unable to establish STOMP session");
     }
+    this.session = session;
+    protocolImpl.setConnected(true);
+    protocolImpl.completedConnection();
   }
 
   public void close() throws IOException {
     isValid = false;
-    CompletableFuture<Session> future = SessionManager.getInstance().closeAsync(session, false);
+    Session currentSession = session;
+    if (currentSession == null) {
+      return;
+    }
+    CompletableFuture<Session> future = SessionManager.getInstance().closeAsync(currentSession, false);
     try {
       future.get();
-    } catch (InterruptedException | ExecutionException e) {
+    } catch (InterruptedException e) {
       Thread.currentThread().interrupt();
+      throw new IOException(e);
+    } catch (ExecutionException e) {
       throw new IOException(e);
     }
   }
@@ -143,7 +148,7 @@ public class SessionState implements CloseHandler, CompletionHandler {
 
   public SubscribedEventManager createSubscription(SubscriptionContext context) throws IOException {
     if (context.getFilter().startsWith("/queue") || context.getFilter().startsWith("queue")) {
-      getSession().findDestination(context.getFilter(), DestinationType.QUEUE); // See if we have a queue
+      getSession().findDestination(context.getFilter(), DestinationType.QUEUE);
     }
     SubscribedEventManager subscription = getSession().addSubscription(context);
     activeSubscriptions.put(context.getAlias(), subscription);
@@ -171,10 +176,7 @@ public class SessionState implements CloseHandler, CompletionHandler {
 
   public String getMapping(String destinationName) {
     String mappedDestination = destinationMap.get(destinationName);
-    if (mappedDestination == null) {
-      mappedDestination = destinationName;
-    }
-    return mappedDestination;
+    return mappedDestination == null ? destinationName : mappedDestination;
   }
 
   public Map<String, String> getMap() {
