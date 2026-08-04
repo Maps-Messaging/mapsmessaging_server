@@ -31,6 +31,7 @@ public class FrameFactory {
 
   private final List<FrameLookup> frames;
   private final byte[] workingBuffer;
+  private boolean headerEscaping;
 
   public FrameFactory(int maxBufferSize, boolean isClient, boolean base64Encode) {
     frames = new ArrayList<>();
@@ -54,24 +55,25 @@ public class FrameFactory {
       frames.add(new FrameLookup("UNSUBSCRIBE".getBytes(), new Unsubscribe(), new UnsubscribeListener()));
     }
 
-    //
-    // OK lets parse the verbs and find the longest, this restricts our search to this max length,
-    // if we haven't found
-    // a match then there isn't one to find so we can simply abort
-    //
     int len = 0;
     for (FrameLookup lookup : frames) {
       len = Math.max(len, lookup.getCommand().length);
     }
-    workingBuffer = new byte[len + 1];
+    workingBuffer = new byte[len + 2];
+    headerEscaping = true;
+  }
+
+  public void setHeaderEscaping(boolean headerEscaping) {
+    this.headerEscaping = headerEscaping;
   }
 
   public Frame parseFrame(Packet packet) throws StompProtocolException, EndOfBufferException {
     FrameLookup clientFrameLookup = createFrame(packet);
     if (clientFrameLookup == null) {
-      throw new StompProtocolException("Unexpected Stomp frame received");
+      throw new StompProtocolException("Unexpected STOMP frame received");
     }
     Frame frame = clientFrameLookup.getClientFrame().instance();
+    frame.setHeaderEscaping(headerEscaping);
     frame.setListener(clientFrameLookup.getFrameListener());
     return frame;
   }
@@ -79,73 +81,54 @@ public class FrameFactory {
   private FrameLookup createFrame(Packet packet)
       throws StompProtocolException, EndOfBufferException {
     int pos = packet.position();
-    int idx = parseForVerb(packet, pos);
+    int commandLength = parseForVerb(packet);
 
-    //
-    // If we have exceeded the size of the command then we have corrupted the stream or its just
-    // wrong
-    //
-    if (idx == workingBuffer.length) {
+    if (commandLength == Integer.MIN_VALUE) {
       packet.position(pos);
-      throw new StompProtocolException("No known frame found::" + new String(workingBuffer));
+      throw new StompProtocolException("STOMP command exceeds the supported command length");
     }
-
-    //
-    // OK we don't have enough data so lets get some more
-    //
-    if (idx == -1) {
+    if (commandLength < 0) {
       packet.position(pos);
       throw new EndOfBufferException();
     }
 
-    //
-    // OK we now have a command lets find the frame
-    //
     for (FrameLookup lookup : frames) {
       byte[] command = lookup.getCommand();
-      if (command.length == idx) {
-        boolean found = true;
-        for (int x = 0; x < command.length; x++) {
-          if (command[x] != workingBuffer[x]) {
-            found = false;
-            break;
-          }
+      if (command.length != commandLength) {
+        continue;
+      }
+      boolean found = true;
+      for (int index = 0; index < command.length; index++) {
+        if (command[index] != workingBuffer[index]) {
+          found = false;
+          break;
         }
-        if (found) {
-          return lookup;
-        }
+      }
+      if (found) {
+        return lookup;
       }
     }
     packet.position(pos);
     return null;
   }
 
-  //
-  // Scan the packet for a 0xA, indicating an end of verb OR
-  // the max verb length OR
-  // the end of the buffer
-  //
-  // If we hit a 0xA the chances are the packet is well formed, else, if we don't have enough
-  // data in the packet we will need to do more reads until we do
-  //
-  // If we hit the end of the working buffer length and no 0xA, this means we have a corrupted frame
-  // and can not really continue with this session, best log it and raise an exception to be handled
-  //
-  private int parseForVerb(Packet packet, int start) {
-    int pos = start;
-    int idx = 0;
-    int end = packet.limit();
-    while (pos < end && idx < workingBuffer.length) {
-      workingBuffer[idx] = packet.get();
-      pos++;
-      if (workingBuffer[idx] == 0xA) {
-        return idx;
-      } else {
-        idx++;
+  private int parseForVerb(Packet packet) throws StompProtocolException {
+    int index = 0;
+    while (packet.hasRemaining()) {
+      byte value = packet.get();
+      if (value == Frame.END_OF_LINE) {
+        if (index > 0 && workingBuffer[index - 1] == Frame.CARRIAGE_RETURN) {
+          index--;
+        }
+        return index;
       }
-    }
-    if (idx == workingBuffer.length) {
-      return idx;
+      if (value == Frame.END_OF_FRAME) {
+        throw new StompProtocolException("NUL encountered in STOMP command line");
+      }
+      if (index >= workingBuffer.length) {
+        return Integer.MIN_VALUE;
+      }
+      workingBuffer[index++] = value;
     }
     return -1;
   }

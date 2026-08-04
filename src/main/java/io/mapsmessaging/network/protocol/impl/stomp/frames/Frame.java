@@ -29,14 +29,23 @@ import lombok.Setter;
 
 import java.io.IOException;
 import java.net.SocketAddress;
+import java.nio.ByteBuffer;
+import java.nio.charset.CharacterCodingException;
+import java.nio.charset.CodingErrorAction;
+import java.nio.charset.StandardCharsets;
 import java.util.LinkedHashMap;
+import java.util.Locale;
 import java.util.Map;
 
 public abstract class Frame implements ServerPacket {
 
   static final byte END_OF_FRAME = 0x00;
   static final byte END_OF_LINE = 0x0A;
+  static final byte CARRIAGE_RETURN = 0x0D;
   static final byte DELIMITER = ':';
+
+  private static final int MAX_HEADER_COUNT = 1024;
+  private static final int MAX_HEADER_LINE_LENGTH = 8192;
 
   @Getter
   private final Map<String, String> header;
@@ -51,6 +60,8 @@ public abstract class Frame implements ServerPacket {
   @Getter
   String receipt;
   private CompletionHandler completionHandler;
+  private int parsedHeaderCount;
+  private boolean headerEscaping;
 
   protected Frame() {
     header = new LinkedHashMap<>();
@@ -58,12 +69,14 @@ public abstract class Frame implements ServerPacket {
     completionHandler = null;
     endOfHeader = false;
     hasEndOfFrame = false;
+    parsedHeaderCount = 0;
+    headerEscaping = true;
   }
 
   protected String getHeader(String key) {
     String val = header.get(key);
     if (val == null) {
-      String keyLookup = caseHeader.get(key.toLowerCase());
+      String keyLookup = caseHeader.get(normaliseKey(key));
       if (keyLookup != null) {
         val = header.get(keyLookup);
       }
@@ -72,52 +85,69 @@ public abstract class Frame implements ServerPacket {
   }
 
   protected void putHeader(String key, String val) {
+    String normalised = normaliseKey(key);
+    String existing = caseHeader.put(normalised, key);
+    if (existing != null && !existing.equals(key)) {
+      header.remove(existing);
+    }
     header.put(key, val);
-    caseHeader.put(key.toLowerCase(), key);
+  }
+
+  private void putParsedHeader(String key, String val) {
+    String normalised = normaliseKey(key);
+    if (!caseHeader.containsKey(normalised)) {
+      caseHeader.put(normalised, key);
+      header.put(key, val);
+    }
   }
 
   protected String removeHeader(String key) {
-    String caseKey = caseHeader.remove(key.toLowerCase());
-    return header.remove(caseKey);
+    String caseKey = caseHeader.remove(normaliseKey(key));
+    return caseKey == null ? null : header.remove(caseKey);
   }
 
   protected boolean headerContainsKey(String key) {
-    return header.containsKey(key.toLowerCase());
+    return caseHeader.containsKey(normaliseKey(key));
   }
 
   abstract byte[] getCommand();
 
-  protected int packHeader(Packet packet){
+  public void setHeaderEscaping(boolean headerEscaping) {
+    this.headerEscaping = headerEscaping;
+  }
+
+  protected boolean escapeHeaders() {
+    return headerEscaping;
+  }
+
+  protected int packHeader(Packet packet) {
     int start = packet.position();
-    //
-    // Pack the command
-    //
     packet.put(getCommand());
     packet.put(END_OF_LINE);
 
-    //
-    // Pack the header
-    //
     if (receipt != null) {
-      packet.put("receipt-id".getBytes());
-      packet.put(DELIMITER);
-      packet.put(receipt.getBytes());
-      packet.put(END_OF_LINE);
+      putEncodedHeader(packet, "receipt-id", receipt);
     }
     for (Map.Entry<String, String> headerEntry : getHeader().entrySet()) {
-      packet.put(headerEntry.getKey().getBytes());
-      packet.put(DELIMITER);
-      packet.put(headerEntry.getValue().getBytes());
-      packet.put(END_OF_LINE);
+      putEncodedHeader(packet, headerEntry.getKey(), headerEntry.getValue());
     }
     packet.put(END_OF_LINE);
     return start;
   }
 
+  private void putEncodedHeader(Packet packet, String key, String value) {
+    String encodedKey = escapeHeaders() ? encodeHeader(key) : key;
+    String encodedValue = escapeHeaders() ? encodeHeader(value) : value;
+    packet.put(encodedKey.getBytes(StandardCharsets.UTF_8));
+    packet.put(DELIMITER);
+    packet.put(encodedValue.getBytes(StandardCharsets.UTF_8));
+    packet.put(END_OF_LINE);
+  }
+
   public int packFrame(Packet packet) {
     int start = packHeader(packet);
     packBody(packet);
-    packet.put((byte) 0x0);
+    packet.put(END_OF_FRAME);
     return packet.position() - start;
   }
 
@@ -177,57 +207,141 @@ public abstract class Frame implements ServerPacket {
   public void scanFrame(Packet packet, boolean scanForEnd) throws IOException {
     if (hasEndOfFrame) {
       resume(packet);
-    } else {
-      int lastValidPos = 0;
-      int pos;
-      if (!endOfHeader) {
-        pos = packet.position();
-        lastValidPos = loadHeader(packet, pos);
-      }
-
-      if (endOfHeader && packet.hasRemaining() && scanForEnd && packet.get() == END_OF_FRAME) {
-        parseCompleted();
-        hasEndOfFrame = true;
-        return;
-      }
-      packet.position(lastValidPos);
-      throw new EndOfBufferException("Expecting End Of Frame 0x0");
+      return;
     }
+
+    int lastValidPos = packet.position();
+    if (!endOfHeader) {
+      lastValidPos = loadHeader(packet);
+    }
+
+    if (endOfHeader && packet.hasRemaining() && scanForEnd && packet.get() == END_OF_FRAME) {
+      parseCompleted();
+      hasEndOfFrame = true;
+      return;
+    }
+    packet.position(lastValidPos);
+    throw new EndOfBufferException("Expecting End Of Frame 0x0");
   }
 
-  private int loadHeader(Packet packet, int pos) {
-    StringBuilder keyBuilder = new StringBuilder();
-    StringBuilder valBuilder = new StringBuilder();
-    boolean isKey = true;
-    int lastValidPos = pos;
-    while (packet.limit() != packet.position() && !endOfHeader) {
-      pos++;
-      byte t = packet.get();
-      if (t == Frame.END_OF_LINE) {
-        if (isKey && keyBuilder.length() == 0) {
-          endOfHeader = true;
-          lastValidPos = pos;
-          break;
-        } else {
-          putHeader(keyBuilder.toString(), valBuilder.toString());
-          keyBuilder = new StringBuilder();
-          valBuilder = new StringBuilder();
-          isKey = true;
-          lastValidPos = pos;
-        }
-      } else if (t == DELIMITER) {
-        isKey = false;
-      } else {
-        if (isKey) {
-          keyBuilder.append((char) t);
-        } else {
-          valBuilder.append((char) t);
-        }
+  private int loadHeader(Packet packet) throws IOException {
+    int lastValidPos = packet.position();
+    while (packet.hasRemaining() && !endOfHeader) {
+      int lineStart = packet.position();
+      String line = readLine(packet);
+      if (line == null) {
+        packet.position(lineStart);
+        break;
       }
+      lastValidPos = packet.position();
+      if (line.isEmpty()) {
+        endOfHeader = true;
+        break;
+      }
+
+      int delimiter = line.indexOf(':');
+      if (delimiter <= 0) {
+        throw new StompProtocolException("Invalid STOMP header line");
+      }
+      parsedHeaderCount++;
+      if (parsedHeaderCount > MAX_HEADER_COUNT) {
+        throw new StompProtocolException("STOMP frame contains too many headers");
+      }
+
+      String key = line.substring(0, delimiter);
+      String value = line.substring(delimiter + 1);
+      if (escapeHeaders()) {
+        key = decodeHeader(key);
+        value = decodeHeader(value);
+      }
+      putParsedHeader(key, value);
     }
     return lastValidPos;
   }
 
+  private String readLine(Packet packet) throws StompProtocolException {
+    int start = packet.position();
+    int length = 0;
+    while (packet.hasRemaining()) {
+      byte value = packet.get();
+      if (value == END_OF_FRAME) {
+        throw new StompProtocolException("NUL encountered in STOMP header line");
+      }
+      if (value == END_OF_LINE) {
+        int end = packet.position() - 1;
+        if (end > start && packet.get(end - 1) == CARRIAGE_RETURN) {
+          end--;
+        }
+        byte[] line = new byte[end - start];
+        int current = packet.position();
+        packet.position(start);
+        packet.get(line);
+        packet.position(current);
+        for (byte lineByte : line) {
+          if (lineByte == CARRIAGE_RETURN) {
+            throw new StompProtocolException("Raw carriage return in STOMP header line");
+          }
+        }
+        return decodeUtf8(line);
+      }
+      length++;
+      if (length > MAX_HEADER_LINE_LENGTH) {
+        throw new StompProtocolException("STOMP header line exceeds " + MAX_HEADER_LINE_LENGTH + " bytes");
+      }
+    }
+    packet.position(start);
+    return null;
+  }
+
+  private String decodeUtf8(byte[] value) throws StompProtocolException {
+    try {
+      return StandardCharsets.UTF_8.newDecoder()
+          .onMalformedInput(CodingErrorAction.REPORT)
+          .onUnmappableCharacter(CodingErrorAction.REPORT)
+          .decode(ByteBuffer.wrap(value))
+          .toString();
+    } catch (CharacterCodingException invalidUtf8) {
+      throw new StompProtocolException("STOMP header line is not valid UTF-8");
+    }
+  }
+
+  private String decodeHeader(String value) throws StompProtocolException {
+    StringBuilder decoded = new StringBuilder(value.length());
+    for (int index = 0; index < value.length(); index++) {
+      char current = value.charAt(index);
+      if (current != '\\') {
+        decoded.append(current);
+        continue;
+      }
+      if (++index >= value.length()) {
+        throw new StompProtocolException("Incomplete STOMP header escape");
+      }
+      char escaped = value.charAt(index);
+      switch (escaped) {
+        case 'n' -> decoded.append('\n');
+        case 'r' -> decoded.append('\r');
+        case 'c' -> decoded.append(':');
+        case '\\' -> decoded.append('\\');
+        default -> throw new StompProtocolException("Undefined STOMP header escape \\" + escaped);
+      }
+    }
+    return decoded.toString();
+  }
+
+  private String encodeHeader(String value) {
+    StringBuilder encoded = new StringBuilder(value.length());
+    for (int index = 0; index < value.length(); index++) {
+      char current = value.charAt(index);
+      switch (current) {
+        case '\n' -> encoded.append("\\n");
+        case '\r' -> encoded.append("\\r");
+        case ':' -> encoded.append("\\c");
+        case '\\' -> encoded.append("\\\\");
+        default -> encoded.append(current);
+      }
+    }
+    return encoded.toString();
+  }
 
   protected int parseHeaderInt(String key, int def) {
     String value = getHeader(key);
@@ -240,7 +354,6 @@ public abstract class Frame implements ServerPacket {
     }
     return def;
   }
-
 
   public int getReceiveMaximum() {
     String val = getHeader("receivemaximum");
@@ -266,7 +379,6 @@ public abstract class Frame implements ServerPacket {
     return def;
   }
 
-  // This class doesn't throw it, however, extending classes do
   @java.lang.SuppressWarnings("squid:RedundantThrowsDeclarationCheck")
   public void parseCompleted() throws IOException {
     receipt = removeHeader("receipt");
@@ -280,5 +392,9 @@ public abstract class Frame implements ServerPacket {
   @Override
   public SocketAddress getFromAddress() {
     return null;
+  }
+
+  private String normaliseKey(String key) {
+    return key.toLowerCase(Locale.ROOT);
   }
 }

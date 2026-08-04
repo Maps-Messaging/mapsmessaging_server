@@ -30,33 +30,45 @@ public class StompConfig extends StompConfigDTO implements Config {
     setType("stomp");
     ProtocolConfigFactory.unpack(config, this);
 
-    // Initialize Stomp-specific fields from config
-    this.maxBufferSize = config.getIntProperty("maximumBufferSize", maxBufferSize);
-    this.maxReceive = config.getIntProperty("maximumReceive", maxReceive);
-    this.base64EncodeBinary = config.getBooleanProperty("base64EncodeBinary", base64EncodeBinary);
+    maxBufferSize = config.getIntProperty("maximumBufferSize", maxBufferSize);
+    maxReceive = config.getIntProperty("maximumReceive", maxReceive);
+    base64EncodeBinary = config.getBooleanProperty("base64EncodeBinary", base64EncodeBinary);
+    heartbeatCanSendMillis =
+        config.getIntProperty("heartbeatCanSendMillis", heartbeatCanSendMillis);
+    heartbeatWantsReceiveMillis =
+        config.getIntProperty("heartbeatWantsReceiveMillis", heartbeatWantsReceiveMillis);
+    heartbeatToleranceMillis =
+        config.getIntProperty("heartbeatToleranceMillis", heartbeatToleranceMillis);
   }
 
   @Override
   public boolean update(BaseConfigDTO config) {
     boolean hasChanged = false;
-    if (config instanceof StompConfigDTO) {
-      StompConfigDTO newConfig = (StompConfigDTO) config;
-
-      // Check each field and update if necessary
-      if (this.maxBufferSize != newConfig.getMaxBufferSize()) {
-        this.maxBufferSize = newConfig.getMaxBufferSize();
+    if (config instanceof StompConfigDTO newConfig) {
+      if (maxBufferSize != newConfig.getMaxBufferSize()) {
+        maxBufferSize = newConfig.getMaxBufferSize();
         hasChanged = true;
       }
-      if (this.maxReceive != newConfig.getMaxReceive()) {
-        this.maxReceive = newConfig.getMaxReceive();
+      if (maxReceive != newConfig.getMaxReceive()) {
+        maxReceive = newConfig.getMaxReceive();
         hasChanged = true;
       }
-      if(this.base64EncodeBinary != newConfig.isBase64EncodeBinary()){
-        this.base64EncodeBinary = newConfig.isBase64EncodeBinary();
+      if (base64EncodeBinary != newConfig.isBase64EncodeBinary()) {
+        base64EncodeBinary = newConfig.isBase64EncodeBinary();
         hasChanged = true;
       }
-
-      // Update fields from ProtocolConfigFactory if needed
+      if (heartbeatCanSendMillis != newConfig.getHeartbeatCanSendMillis()) {
+        heartbeatCanSendMillis = newConfig.getHeartbeatCanSendMillis();
+        hasChanged = true;
+      }
+      if (heartbeatWantsReceiveMillis != newConfig.getHeartbeatWantsReceiveMillis()) {
+        heartbeatWantsReceiveMillis = newConfig.getHeartbeatWantsReceiveMillis();
+        hasChanged = true;
+      }
+      if (heartbeatToleranceMillis != newConfig.getHeartbeatToleranceMillis()) {
+        heartbeatToleranceMillis = newConfig.getHeartbeatToleranceMillis();
+        hasChanged = true;
+      }
       if (ProtocolConfigFactory.update(this, newConfig)) {
         hasChanged = true;
       }
@@ -68,9 +80,12 @@ public class StompConfig extends StompConfigDTO implements Config {
   public ConfigurationProperties toConfigurationProperties() {
     ConfigurationProperties properties = new ConfigurationProperties();
     ProtocolConfigFactory.pack(properties, this);
-    properties.put("maximumBufferSize", this.maxBufferSize);
-    properties.put("maximumReceive", this.maxReceive);
+    properties.put("maximumBufferSize", maxBufferSize);
+    properties.put("maximumReceive", maxReceive);
     properties.put("base64EncodeBinary", base64EncodeBinary);
+    properties.put("heartbeatCanSendMillis", heartbeatCanSendMillis);
+    properties.put("heartbeatWantsReceiveMillis", heartbeatWantsReceiveMillis);
+    properties.put("heartbeatToleranceMillis", heartbeatToleranceMillis);
     return properties;
   }
 }

@@ -28,7 +28,6 @@ public class Message extends Event implements ServerPublishPacket {
 
   private static final byte[] COMMAND = "MESSAGE".getBytes();
 
-
   public Message(int maxBufferSize, boolean base64Encode) {
     super(maxBufferSize, base64Encode);
   }
@@ -42,13 +41,28 @@ public class Message extends Event implements ServerPublishPacket {
     return COMMAND;
   }
 
-  public void packMessage(String destination, String subscriptionId, io.mapsmessaging.api.message.Message internalMessage) {
+  public void packMessage(
+      String destination,
+      String subscriptionId,
+      io.mapsmessaging.api.message.Message internalMessage) {
+    packMessage(destination, subscriptionId, internalMessage, false, false);
+  }
+
+  public void packMessage(
+      String destination,
+      String subscriptionId,
+      io.mapsmessaging.api.message.Message internalMessage,
+      boolean stomp12,
+      boolean acknowledgementRequired) {
     super.packMessage(destination, internalMessage);
 
-    // This is only present in MESSAGE
+    long identifier = internalMessage.getIdentifier();
     putHeader("subscription", subscriptionId);
-    putHeader("message-id", "" + internalMessage.getIdentifier());
-    putHeader("priority", "" + internalMessage.getPriority());
+    putHeader("message-id", Long.toString(identifier));
+    putHeader("priority", Integer.toString(internalMessage.getPriority().getValue()));
+    if (stomp12 && acknowledgementRequired) {
+      putHeader("ack", AcknowledgementToken.create(subscriptionId, identifier));
+    }
   }
 
   @Override
@@ -59,21 +73,20 @@ public class Message extends Event implements ServerPublishPacket {
   @Override
   public Packet[] packAdvancedFrame(Packet packet) {
     packHeader(packet);
-    if(this.getData().length < packet.available()) {
-      packet.put(this.getData());
-      packet.put((byte) 0x0);
+    if (getData().length < packet.available()) {
+      packet.put(getData());
+      packet.put(END_OF_FRAME);
       return new Packet[]{packet};
     }
-    Packet payloadPacket = new Packet(ByteBuffer.wrap(this.getData()));
+    Packet payloadPacket = new Packet(ByteBuffer.wrap(getData()));
     ByteBuffer endOfFrame = ByteBuffer.allocate(1);
-    endOfFrame.put((byte)0);
+    endOfFrame.put(END_OF_FRAME);
     endOfFrame.flip();
-    return new Packet[]{packet, payloadPacket, new Packet(endOfFrame) };
+    return new Packet[]{packet, payloadPacket, new Packet(endOfFrame)};
   }
 
   @Override
   public void packBody(Packet packet) {
-    // requires the extending class to provide this mechanism, if one is required
+    // ServerPublishPacket packs large payloads without copying them into the coalescing packet.
   }
-
 }

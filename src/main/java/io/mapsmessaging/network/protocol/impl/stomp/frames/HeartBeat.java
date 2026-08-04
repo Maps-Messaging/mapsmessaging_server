@@ -19,34 +19,70 @@
 
 package io.mapsmessaging.network.protocol.impl.stomp.frames;
 
-import java.util.StringTokenizer;
+import io.mapsmessaging.network.protocol.impl.stomp.StompProtocolException;
 
 public class HeartBeat {
 
-  private final int minimum;
-  private final int preferred;
+  private final int canSend;
+  private final int wantsReceive;
 
-  HeartBeat(String heartBeat) {
-    StringTokenizer st = new StringTokenizer(heartBeat, ",");
-    minimum = Integer.parseInt(st.nextElement().toString());
-    preferred = Integer.parseInt(st.nextElement().toString());
+  HeartBeat(String heartBeat) throws StompProtocolException {
+    if (heartBeat == null) {
+      throw new StompProtocolException("Missing STOMP heart-beat value");
+    }
+    String[] values = heartBeat.split(",", -1);
+    if (values.length != 2) {
+      throw new StompProtocolException("STOMP heart-beat must contain two values");
+    }
+    canSend = parseValue(values[0]);
+    wantsReceive = parseValue(values[1]);
   }
 
-  public HeartBeat(int minimum, int preferred) {
-    this.minimum = minimum;
-    this.preferred = preferred;
+  public HeartBeat(int canSend, int wantsReceive) {
+    if (canSend < 0 || wantsReceive < 0) {
+      throw new IllegalArgumentException("STOMP heartbeat values must not be negative");
+    }
+    this.canSend = canSend;
+    this.wantsReceive = wantsReceive;
   }
 
   @Override
   public String toString() {
-    return minimum + "," + preferred;
+    return canSend + "," + wantsReceive;
+  }
+
+  public int getCanSend() {
+    return canSend;
+  }
+
+  public int getWantsReceive() {
+    return wantsReceive;
   }
 
   public int getMinimum() {
-    return minimum;
+    return canSend;
   }
 
   public int getPreferred() {
-    return preferred;
+    return wantsReceive;
+  }
+
+  public static long negotiate(int senderCanSend, int receiverWantsReceive) {
+    if (senderCanSend == 0 || receiverWantsReceive == 0) {
+      return 0;
+    }
+    return Math.max(senderCanSend, receiverWantsReceive);
+  }
+
+  private int parseValue(String value) throws StompProtocolException {
+    try {
+      int parsed = Integer.parseInt(value.trim());
+      if (parsed < 0) {
+        throw new StompProtocolException("STOMP heartbeat values must not be negative");
+      }
+      return parsed;
+    } catch (NumberFormatException e) {
+      throw new StompProtocolException("Invalid STOMP heartbeat value " + value);
+    }
   }
 }
