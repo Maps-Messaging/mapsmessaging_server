@@ -61,7 +61,7 @@ public abstract class Event extends Frame {
   private String encodedString;
 
   protected Event(int maxBufferSize, boolean base64Encode) {
-    this.maxBufferSize = maxBufferSize;
+    this.maxBufferSize = Math.max(0, maxBufferSize);
     this.base64Encode = base64Encode;
     buffer = null;
     byteArrayOutputStream = null;
@@ -86,11 +86,14 @@ public abstract class Event extends Frame {
     putHeader("destination", destination);
 
     buffer = internalMessage.getOpaqueData();
+    if (buffer == null) {
+      buffer = new byte[0];
+    }
     if (base64Encode) {
       putHeader(ENCODED, "base64");
       buffer = Base64.getEncoder().encode(buffer);
     }
-    if (buffer != null && buffer.length > 0) {
+    if (buffer.length > 0) {
       putHeader(CONTENT_LENGTH, Integer.toString(buffer.length));
     }
   }
