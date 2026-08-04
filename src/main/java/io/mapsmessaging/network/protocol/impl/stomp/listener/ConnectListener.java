@@ -25,6 +25,7 @@ import io.mapsmessaging.api.SessionManager;
 import io.mapsmessaging.network.ProtocolClientConnection;
 import io.mapsmessaging.network.protocol.impl.stomp.frames.Connect;
 import io.mapsmessaging.network.protocol.impl.stomp.frames.Connected;
+import io.mapsmessaging.network.protocol.impl.stomp.frames.Error;
 import io.mapsmessaging.network.protocol.impl.stomp.frames.Frame;
 import io.mapsmessaging.network.protocol.impl.stomp.frames.HeartBeat;
 import io.mapsmessaging.network.protocol.impl.stomp.state.ConnectedState;
@@ -42,32 +43,37 @@ public class ConnectListener extends BaseConnectListener {
   public void frameEvent(Frame frame, SessionState engine, boolean endOfBuffer) {
     Connect connect = (Connect) frame;
 
-    // No version header supplied
-    String versionHeader = connect.getAcceptedVersion();
-    float version = processVersion(engine, versionHeader);
+    float version = processVersion(engine, connect.getAcceptedVersion());
     if (Float.isNaN(version)) {
-      return; // Unable to process the versioning
+      return;
     }
-    HeartBeat hb = connect.getHeartBeat();
-    CompletableFuture<Session> future = createSession(engine, connect, hb).thenApply(session -> {
+    if (version >= 1.1f && (connect.getHost() == null || connect.getHost().isBlank())) {
+      Error error = new Error();
+      error.setContentType(CONTENT_TYPE_TEXT);
+      error.setContent("STOMP 1.1 and 1.2 CONNECT frames require a host header".getBytes());
+      engine.send(error);
+      return;
+    }
+
+    HeartBeat clientHeartBeat = connect.getHeartBeat();
+    CompletableFuture<Session> future = createSession(engine, connect).thenApply(session -> {
       try {
         session.login();
         engine.setSession(session);
-        ProtocolMessageTransformation transformation = TransformationManager.getInstance().getTransformation(
-            engine.getProtocol().getEndPoint().getProtocol(),
-            engine.getProtocol().getEndPoint().getName(),
-            "stomp",
-            session.getSecurityContext().getUsername()
-
-        );
+        ProtocolMessageTransformation transformation =
+            TransformationManager.getInstance().getTransformation(
+                engine.getProtocol().getEndPoint().getProtocol(),
+                engine.getProtocol().getEndPoint().getName(),
+                "stomp",
+                session.getSecurityContext().getUsername());
         engine.getProtocol().setProtocolMessageTransformation(transformation);
+
+        HeartBeat serverHeartBeat = engine.getProtocol().configureHeartBeat(clientHeartBeat);
         Connected connected = new Connected();
         connected.setServer("MESSAGING/STOMP");
-        connected.setVersion("" + version);
+        connected.setVersion(Float.toString(version));
         connected.setSession(session.getName());
-        if (hb.getPreferred() != 0) {
-          connected.setHeartBeat(new HeartBeat(hb.getPreferred(), hb.getPreferred()));
-        }
+        connected.setHeartBeat(serverHeartBeat);
         engine.send(connected);
         engine.changeState(new ConnectedState());
         session.resumeState();
@@ -83,28 +89,30 @@ public class ConnectListener extends BaseConnectListener {
     } catch (InterruptedException failedAuth) {
       Thread.currentThread().interrupt();
     } catch (ExecutionException e) {
-      // We have handled it in the method
+      // The asynchronous connection path has already generated the protocol error.
     }
   }
 
-  private CompletableFuture<Session> createSession(SessionState engine, Connect connect, HeartBeat hb) {
-    long ka = Math.max(hb.getPreferred(), hb.getMinimum());
-    engine.getProtocol().setKeepAlive(ka);
-    SessionContextBuilder scb = new SessionContextBuilder(UuidGenerator.getInstance().generate().toString(), new ProtocolClientConnection(engine.getProtocol()));
+  private CompletableFuture<Session> createSession(SessionState engine, Connect connect) {
+    SessionContextBuilder scb =
+        new SessionContextBuilder(
+            UuidGenerator.getInstance().generate().toString(),
+            new ProtocolClientConnection(engine.getProtocol()));
     String username = connect.getLogin();
     if (username == null) {
       scb.setUsername("anonymous").setPassword("".toCharArray());
     } else {
-      scb.setUsername(username).setPassword(connect.getPasscode().toCharArray());
+      String passcode = connect.getPasscode() == null ? "" : connect.getPasscode();
+      scb.setUsername(username).setPassword(passcode.toCharArray());
     }
     scb.setPersistentSession(false);
 
     int inFlight = connect.getReceiveMaximum();
     if (inFlight <= 0) {
-      inFlight =  (engine.getProtocol().getMaxReceiveSize());
+      inFlight = engine.getProtocol().getMaxReceiveSize();
     }
     scb.setReceiveMaximum(inFlight);
-    scb.setSessionExpiry(0); // There is no idle Stomp sessions, so once disconnected the state is thrown away
+    scb.setSessionExpiry(0);
     return SessionManager.getInstance().createAsync(scb.build(), engine.getProtocol());
   }
 }
