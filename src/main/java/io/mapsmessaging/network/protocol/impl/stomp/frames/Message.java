@@ -59,7 +59,7 @@ public class Message extends Event implements ServerPublishPacket {
     long identifier = internalMessage.getIdentifier();
     putHeader("subscription", subscriptionId);
     putHeader("message-id", Long.toString(identifier));
-    putHeader("priority", Integer.toString(internalMessage.getPriority()));
+    putHeader("priority", Integer.toString(internalMessage.getPriority().getValue()));
     if (stomp12 && acknowledgementRequired) {
       putHeader("ack", AcknowledgementToken.create(subscriptionId, identifier));
     }
