@@ -11,7 +11,9 @@
 
 package io.mapsmessaging.network.protocol.impl.stomp.frames;
 
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import io.mapsmessaging.network.io.Packet;
@@ -37,6 +39,30 @@ class StompErrorFrameTest {
     assertTrue(frame.contains("content-length:3\n"), frame);
     assertTrue(frame.endsWith("\n\nbad\0"), frame);
     assertEquals(1, count(bytes, (byte) 0));
+  }
+
+  @Test
+  void parsesContentLengthErrorBody() throws Exception {
+    Error error = parse("ERROR\ncontent-length:3\n\nbad\0");
+
+    assertArrayEquals("bad".getBytes(StandardCharsets.UTF_8), error.getContent());
+  }
+
+  @Test
+  void parsesNullTerminatedErrorBody() throws Exception {
+    Error error = parse("ERROR\ncontent-type:text/plain\n\nfailed\0");
+
+    assertArrayEquals("failed".getBytes(StandardCharsets.UTF_8), error.getContent());
+  }
+
+  private Error parse(String frameText) throws Exception {
+    Packet packet =
+        new Packet(ByteBuffer.wrap(frameText.getBytes(StandardCharsets.UTF_8)));
+    Error error =
+        assertInstanceOf(
+            Error.class, new FrameFactory(1024, true, false).parseFrame(packet));
+    error.scanFrame(packet);
+    return error;
   }
 
   private int count(byte[] bytes, byte expected) {
