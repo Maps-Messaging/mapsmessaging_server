@@ -58,6 +58,7 @@ public abstract class Frame implements ServerPacket {
   String receipt;
   private CompletionHandler completionHandler;
   private int parsedHeaderCount;
+  private boolean headerEscaping;
 
   protected Frame() {
     header = new LinkedHashMap<>();
@@ -66,6 +67,7 @@ public abstract class Frame implements ServerPacket {
     endOfHeader = false;
     hasEndOfFrame = false;
     parsedHeaderCount = 0;
+    headerEscaping = true;
   }
 
   protected String getHeader(String key) {
@@ -107,8 +109,12 @@ public abstract class Frame implements ServerPacket {
 
   abstract byte[] getCommand();
 
+  public void setHeaderEscaping(boolean headerEscaping) {
+    this.headerEscaping = headerEscaping;
+  }
+
   protected boolean escapeHeaders() {
-    return true;
+    return headerEscaping;
   }
 
   protected int packHeader(Packet packet) {
