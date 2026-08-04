@@ -88,6 +88,57 @@ class StompFrameComplianceTest {
     assertThrows(StompProtocolException.class, () -> frame.scanFrame(packet));
   }
 
+  @Test
+  void escapesOutgoingHeaderNamesAndValues() {
+    Subscribe subscribe = new Subscribe();
+    subscribe.setId("sub:one");
+    subscribe.setDestination("/topic/test");
+    subscribe.getHeader().put("custom:key", "line\ncolon:slash\\return\r");
+    Packet packet = new Packet(512, false);
+
+    subscribe.packFrame(packet);
+    packet.flip();
+    byte[] bytes = new byte[packet.available()];
+    packet.get(bytes);
+    String wire = new String(bytes, StandardCharsets.UTF_8);
+
+    assertTrue(wire.contains("id:sub\\cone\n"), wire);
+    assertTrue(
+        wire.contains("custom\\ckey:line\\ncolon\\cslash\\\\return\\r\n"), wire);
+  }
+
+  @Test
+  void rejectsHeaderLinesLargerThanEightKiB() throws Exception {
+    String value = "x".repeat(8193);
+    Packet packet =
+        new Packet(
+            ByteBuffer.wrap(
+                ("SEND\n"
+                        + "destination:/topic/test\n"
+                        + "large:"
+                        + value
+                        + "\n\nbody\0")
+                    .getBytes(StandardCharsets.UTF_8)));
+    Frame frame = new FrameFactory(16384, false, false).parseFrame(packet);
+
+    assertThrows(StompProtocolException.class, () -> frame.scanFrame(packet));
+  }
+
+  @Test
+  void rejectsMoreThanOneThousandTwentyFourHeaders() throws Exception {
+    StringBuilder frameText = new StringBuilder("SEND\ndestination:/topic/test\n");
+    for (int index = 0; index < 1024; index++) {
+      frameText.append("header-").append(index).append(":value\n");
+    }
+    frameText.append("\nbody\0");
+    Packet packet =
+        new Packet(
+            ByteBuffer.wrap(frameText.toString().getBytes(StandardCharsets.UTF_8)));
+    Frame frame = new FrameFactory(32768, false, false).parseFrame(packet);
+
+    assertThrows(StompProtocolException.class, () -> frame.scanFrame(packet));
+  }
+
   private Frame parse(String value) throws Exception {
     Packet packet = new Packet(ByteBuffer.wrap(value.getBytes(StandardCharsets.UTF_8)));
     Frame frame = new FrameFactory(1024, false, false).parseFrame(packet);
