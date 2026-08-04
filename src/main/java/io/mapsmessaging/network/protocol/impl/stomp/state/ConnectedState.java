@@ -19,6 +19,7 @@
 
 package io.mapsmessaging.network.protocol.impl.stomp.state;
 
+import io.mapsmessaging.api.features.ClientAcknowledgement;
 import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.engine.destination.subscription.SubscriptionContext;
 import io.mapsmessaging.network.protocol.impl.stomp.StompProtocolException;
@@ -33,29 +34,47 @@ public class ConnectedState implements State {
 
   public void handleFrame(SessionState engine, Frame frame, boolean endOfBuffer) throws IOException {
     FrameListener listener = frame.getFrameListener();
-    if (listener != null) {
-      try {
-        listener.frameEvent(frame, engine, endOfBuffer);
-        listener.postFrameHandling(frame, engine);
-        frame.complete();
-      } catch (StompProtocolException e) {
-        Error error = new Error();
-        error.setContent(e.getMessage().getBytes());
-        if (frame.getReceipt() != null) {
-          error.setReceipt(frame.getReceipt());
-        }
-        engine.send(error);
-        frame.setReceipt(null); // its been handled
+    if (listener == null) {
+      throw new StompProtocolException("Unhandled client frame received");
+    }
+
+    try {
+      listener.frameEvent(frame, engine, endOfBuffer);
+      listener.postFrameHandling(frame, engine);
+      frame.complete();
+    } catch (StompProtocolException e) {
+      Error error = new Error();
+      error.setContent(e.getMessage().getBytes());
+      if (frame.getReceipt() != null) {
+        error.setReceipt(frame.getReceipt());
       }
-    } else {
-      throw new StompProtocolException("Unhandled Client Frame received");
+      error.setCallback(() -> {
+        frame.complete();
+        engine.shutdown();
+      });
+      engine.send(error);
+      frame.setReceipt(null);
     }
   }
 
   @Override
-  public boolean sendMessage(SessionState engine, String destinationName, SubscriptionContext context, Message message, Runnable completionTask) {
-    io.mapsmessaging.network.protocol.impl.stomp.frames.Message msg = new io.mapsmessaging.network.protocol.impl.stomp.frames.Message(1024, engine.getProtocol().isBase64Encode());
-    msg.packMessage(destinationName, context.getAlias(), message);
+  public boolean sendMessage(
+      SessionState engine,
+      String destinationName,
+      SubscriptionContext context,
+      Message message,
+      Runnable completionTask) {
+    io.mapsmessaging.network.protocol.impl.stomp.frames.Message msg =
+        new io.mapsmessaging.network.protocol.impl.stomp.frames.Message(
+            1024, engine.getProtocol().isBase64Encode());
+    boolean acknowledgementRequired =
+        context.getAcknowledgementController() != ClientAcknowledgement.AUTO;
+    msg.packMessage(
+        destinationName,
+        context.getAlias(),
+        message,
+        engine.getProtocol().isStomp12(),
+        acknowledgementRequired);
     msg.setCallback(new MessageCompletionHandler(completionTask));
     return engine.send(msg);
   }
@@ -70,7 +89,9 @@ public class ConnectedState implements State {
 
     @Override
     public void run() {
-      sessionCompletion.run();
+      if (sessionCompletion != null) {
+        sessionCompletion.run();
+      }
     }
   }
 }
