@@ -17,8 +17,10 @@ import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import io.mapsmessaging.api.MessageBuilder;
+import io.mapsmessaging.api.features.Priority;
 import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.network.io.Packet;
+import java.io.ByteArrayOutputStream;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import org.junit.jupiter.api.Test;
@@ -40,6 +42,33 @@ class StompAcknowledgementFrameTest {
     assertEquals("subscription:one:42", frame.getHeader("ack"));
     assertEquals("42", frame.getHeader("message-id"));
     assertEquals("subscription:one", frame.getHeader("subscription"));
+    assertEquals(Integer.toString(Priority.NORMAL.getValue()), frame.getHeader("priority"));
+  }
+
+  @Test
+  void packsCompleteMessageWithNumericPriorityAndOneTerminator() {
+    byte[] payload = "payload".getBytes(StandardCharsets.UTF_8);
+    Message internal =
+        new MessageBuilder()
+            .setId(42)
+            .setPriority(Priority.ONE_ABOVE_NORMAL)
+            .setOpaqueData(payload)
+            .build();
+    io.mapsmessaging.network.protocol.impl.stomp.frames.Message frame =
+        new io.mapsmessaging.network.protocol.impl.stomp.frames.Message(1024, false);
+    frame.packMessage("/topic/test", "subscription", internal, true, false);
+
+    Packet coalescingPacket = new Packet(1024, false);
+    Packet[] packets = frame.packAdvancedFrame(coalescingPacket);
+    packets[0].flip();
+    byte[] wire = concatenate(packets);
+    String text = new String(wire, StandardCharsets.UTF_8);
+
+    assertTrue(text.startsWith("MESSAGE\n"), text);
+    assertTrue(text.contains("content-length:" + payload.length + "\n"), text);
+    assertTrue(text.contains("priority:" + Priority.ONE_ABOVE_NORMAL.getValue() + "\n"), text);
+    assertTrue(text.endsWith("\n\npayload\0"), text);
+    assertEquals(1, count(wire, (byte) 0));
   }
 
   @Test
@@ -96,5 +125,26 @@ class StompAcknowledgementFrameTest {
     assertTrue(ack.isValid());
     assertEquals("subscription-one", ack.getSubscription());
     assertEquals("42", ack.getMessageId());
+  }
+
+  private byte[] concatenate(Packet[] packets) {
+    ByteArrayOutputStream output = new ByteArrayOutputStream();
+    for (Packet packet : packets) {
+      ByteBuffer duplicate = packet.getRawBuffer().duplicate();
+      byte[] part = new byte[duplicate.remaining()];
+      duplicate.get(part);
+      output.writeBytes(part);
+    }
+    return output.toByteArray();
+  }
+
+  private int count(byte[] bytes, byte expected) {
+    int result = 0;
+    for (byte value : bytes) {
+      if (value == expected) {
+        result++;
+      }
+    }
+    return result;
   }
 }
