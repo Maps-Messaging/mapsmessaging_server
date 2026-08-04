@@ -18,6 +18,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import io.mapsmessaging.network.io.Packet;
 import io.mapsmessaging.network.protocol.impl.stomp.StompProtocolException;
+import java.io.ByteArrayOutputStream;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import org.junit.jupiter.api.Test;
@@ -104,6 +105,19 @@ class StompFrameComplianceTest {
                 + "body\0")
             .getBytes(StandardCharsets.UTF_8);
     Packet packet = new Packet(ByteBuffer.wrap(data));
+    Frame frame = new FrameFactory(1024, false, false).parseFrame(packet);
+
+    assertThrows(StompProtocolException.class, () -> frame.scanFrame(packet));
+  }
+
+  @Test
+  void rejectsInvalidUtf8HeaderLine() throws Exception {
+    ByteArrayOutputStream bytes = new ByteArrayOutputStream();
+    bytes.writeBytes("SEND\ndestination:/topic/test\ncustom:".getBytes(StandardCharsets.UTF_8));
+    bytes.write(0xC3);
+    bytes.write(0x28);
+    bytes.writeBytes("\n\nbody\0".getBytes(StandardCharsets.UTF_8));
+    Packet packet = new Packet(ByteBuffer.wrap(bytes.toByteArray()));
     Frame frame = new FrameFactory(1024, false, false).parseFrame(packet);
 
     assertThrows(StompProtocolException.class, () -> frame.scanFrame(packet));
