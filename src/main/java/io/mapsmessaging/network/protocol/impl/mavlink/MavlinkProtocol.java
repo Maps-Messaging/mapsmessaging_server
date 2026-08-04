@@ -31,7 +31,6 @@ import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import io.mapsmessaging.api.Destination;
-import io.mapsmessaging.api.GsonFactory;
 import io.mapsmessaging.api.MessageBuilder;
 import io.mapsmessaging.api.MessageEvent;
 import io.mapsmessaging.api.Session;
@@ -135,7 +134,7 @@ public class MavlinkProtocol extends Protocol {
 
     storeOffline = mavlinkConfig.isStoreOffline();
     qos = QualityOfService.getInstance(mavlinkConfig.getQualityOfService());
-    gson = io.mapsmessaging.network.protocol.impl.mavlink.GsonFactory.createStrictJsonWithSafeFloats();
+    gson = GsonFactory.createStrictJsonWithSafeFloats();
 
     try {
       session =
