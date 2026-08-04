@@ -74,6 +74,27 @@ class StompFrameComplianceTest {
   }
 
   @Test
+  void stomp10DoesNotApplyHeaderEscaping() throws Exception {
+    FrameFactory factory = new FrameFactory(1024, false, false);
+    factory.setHeaderEscaping(false);
+    Packet packet =
+        new Packet(
+            ByteBuffer.wrap(
+                ("SEND\n"
+                        + "destination:/topic/test\n"
+                        + "custom:user\\cname\n"
+                        + "\n"
+                        + "body\0")
+                    .getBytes(StandardCharsets.UTF_8)));
+    Send send = assertInstanceOf(Send.class, factory.parseFrame(packet));
+
+    send.scanFrame(packet);
+
+    assertTrue(send.isValid());
+    assertEquals("user\\cname", send.getHeader("custom"));
+  }
+
+  @Test
   void rejectsUndefinedHeaderEscape() throws Exception {
     byte[] data =
         ("SEND\n"
