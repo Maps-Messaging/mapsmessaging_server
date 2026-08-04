@@ -19,6 +19,8 @@
 
 package io.mapsmessaging.network.protocol.impl.mavlink;
 
+import static io.mapsmessaging.logging.ServerLogMessages.MAVLINK_FAILED_SETTING_UP_SESSION;
+
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.network.io.EndPoint;
@@ -27,14 +29,10 @@ import io.mapsmessaging.network.io.Packet;
 import io.mapsmessaging.network.io.impl.NetworkInfoHelper;
 import io.mapsmessaging.network.protocol.Protocol;
 import io.mapsmessaging.network.protocol.ProtocolImplFactory;
-
 import java.io.IOException;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-import static io.mapsmessaging.logging.ServerLogMessages.MAVLINK_FAILED_SETTING_UP_SESSION;
-
-// The protocol is Mavlink so it makes sense
 @SuppressWarnings("squid:S00101")
 public class MavlinkProtocolFactory extends ProtocolImplFactory {
 
@@ -52,16 +50,22 @@ public class MavlinkProtocolFactory extends ProtocolImplFactory {
   }
 
   @Override
-  public Protocol connect(EndPoint endPoint, String sessionId, String username, String password, Map<String, String> topicMap) throws IOException {
+  public Protocol connect(
+      EndPoint endPoint,
+      String sessionId,
+      String username,
+      String password,
+      Map<String, String> topicMap)
+      throws IOException {
     return null;
   }
 
   @Override
   public void create(EndPoint endPoint, Packet packet) {
     try {
-      new MavlinkSerialProtocol(endPoint, endPoint.getConfig().getProtocolConfig("mavlink"));
-
-    } catch (IOException e) {
+      new MavlinkSerialProtocol(
+          endPoint, endPoint.getConfig().getProtocolConfig("mavlink"));
+    } catch (IOException | RuntimeException e) {
       logger.log(MAVLINK_FAILED_SETTING_UP_SESSION, endPoint.getName(), e);
     }
   }
@@ -87,8 +91,8 @@ public class MavlinkProtocolFactory extends ProtocolImplFactory {
   }
 
   public void close() {
-    for (MavlinkInterfaceManager managers : mappedInterfaces.values()) {
-      managers.close();
+    for (MavlinkInterfaceManager manager : mappedInterfaces.values()) {
+      manager.close();
     }
     mappedInterfaces.clear();
   }
