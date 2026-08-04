@@ -36,6 +36,7 @@ import io.mapsmessaging.network.protocol.impl.stomp.frames.Frame;
 import lombok.Getter;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
@@ -83,6 +84,19 @@ public class SessionState implements CloseHandler, CompletionHandler {
       frame.setCallback(this);
       requestCounter++;
       currentState.handleFrame(this, frame, endOfBuffer);
+    } catch (StompProtocolException protocolError) {
+      logger.log(ServerLogMessages.STOMP_FRAME_HANDLE_EXCEPTION, protocolError, frame);
+      Error error = new Error();
+      error.setContentType("text/plain");
+      error.setContent(protocolError.getMessage().getBytes(StandardCharsets.UTF_8));
+      if (frame.getReceipt() != null) {
+        error.setReceipt(frame.getReceipt());
+      }
+      error.setCallback(() -> {
+        frame.complete();
+        shutdown();
+      });
+      send(error);
     } catch (IOException e) {
       logger.log(ServerLogMessages.STOMP_FRAME_HANDLE_EXCEPTION, e, frame);
       try {
