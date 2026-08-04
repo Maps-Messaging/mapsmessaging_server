@@ -26,24 +26,39 @@ import io.mapsmessaging.network.protocol.ProtocolImplFactory;
 import io.mapsmessaging.network.protocol.detection.MultiByteArrayDetection;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.Map;
 
 public class StompProtocolFactory extends ProtocolImplFactory {
 
-  private static final byte[][] stompConnect = {"CONNECT\n".getBytes(), "STOMP\n".getBytes()};
+  private static final byte[][] STOMP_CONNECT_PREFIXES = {
+      "CONNECT\n".getBytes(StandardCharsets.US_ASCII),
+      "CONNECT\r\n".getBytes(StandardCharsets.US_ASCII),
+      "STOMP\n".getBytes(StandardCharsets.US_ASCII),
+      "STOMP\r\n".getBytes(StandardCharsets.US_ASCII)
+  };
 
   public StompProtocolFactory() {
-    super("STOMP", "STOMP protocol support as per https://stomp.github.io/ ", new MultiByteArrayDetection(stompConnect, 0));
+    super(
+        "STOMP",
+        "STOMP protocol support as per https://stomp.github.io/ ",
+        new MultiByteArrayDetection(STOMP_CONNECT_PREFIXES, 0));
   }
 
   @Override
-  public Protocol connect(EndPoint endPoint, String sessionId, String username, String password, Map<String, String> topicMap) throws IOException {
+  public Protocol connect(
+      EndPoint endPoint,
+      String sessionId,
+      String username,
+      String password,
+      Map<String, String> topicMap) throws IOException {
     StompProtocol protocol = new StompProtocol(endPoint);
     protocol.getTopicNameMapping().putAll(topicMap);
     protocol.connect(sessionId, username, password);
     return protocol;
   }
 
+  @Override
   public void create(EndPoint endPoint, Packet packet) throws IOException {
     new StompProtocol(endPoint, packet);
   }
@@ -52,5 +67,4 @@ public class StompProtocolFactory extends ProtocolImplFactory {
   public String getTransportType() {
     return "tcp";
   }
-
 }
