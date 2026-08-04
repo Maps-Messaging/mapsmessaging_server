@@ -18,6 +18,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.Socket;
 import java.nio.charset.StandardCharsets;
+import java.util.Base64;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
@@ -110,10 +111,6 @@ final class RawStompConnection implements AutoCloseable {
     return input.read();
   }
 
-  boolean isClosed() {
-    return socket.isClosed();
-  }
-
   @Override
   public void close() throws IOException {
     socket.close();
@@ -152,8 +149,15 @@ final class RawStompConnection implements AutoCloseable {
   }
 
   record StompFrame(String command, Map<String, String> headers, byte[] body) {
+    byte[] decodedBody() {
+      if ("base64".equalsIgnoreCase(headers.get("encoding"))) {
+        return Base64.getDecoder().decode(body);
+      }
+      return body;
+    }
+
     String bodyText() {
-      return new String(body, StandardCharsets.UTF_8);
+      return new String(decodedBody(), StandardCharsets.UTF_8);
     }
   }
 }
