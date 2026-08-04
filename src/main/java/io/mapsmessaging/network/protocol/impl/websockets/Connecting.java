@@ -21,6 +21,7 @@ package io.mapsmessaging.network.protocol.impl.websockets;
 
 import io.mapsmessaging.network.io.EndPoint;
 import io.mapsmessaging.network.io.Packet;
+import io.mapsmessaging.network.protocol.EndOfBufferException;
 import io.mapsmessaging.network.protocol.impl.websockets.frames.AcceptFrame;
 import io.mapsmessaging.network.protocol.impl.websockets.frames.Frame;
 import io.mapsmessaging.network.protocol.impl.websockets.frames.GetFrame;
@@ -30,6 +31,7 @@ import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Base64;
+import java.util.Locale;
 import java.util.Map;
 import java.util.StringTokenizer;
 
@@ -41,13 +43,14 @@ public class Connecting {
 
   private static final int PROTOCOL_NAME = 0;
   private static final int IANA_NAME = 1;
-  private static final String[][] SUB_PROTOCOL_MAP = {{STOMP, "v10.stomp"}, {STOMP, "v11.stomp"}, {STOMP, "v12.stomp"}, {MQTT, "mqtt"}, {AMQP, "amqp"}};
+  private static final String[][] SUB_PROTOCOL_MAP = {
+      {STOMP, "v10.stomp"},
+      {STOMP, "v11.stomp"},
+      {STOMP, "v12.stomp"},
+      {MQTT, "mqtt"},
+      {AMQP, "amqp"}
+  };
 
-  /*
-    https://en.wikipedia.org/wiki/WebSocket
-
-    Web Sockets secret UUID to use on the server
-   */
   public static final String MAGIC_STRING = "258EAFA5-E914-47DA-95CA-C5AB0DC85B11";
 
   private final GetFrame getFrame;
@@ -57,73 +60,114 @@ public class Connecting {
   }
 
   public Frame handle(Packet packet, EndPoint endPoint) throws IOException {
-    getFrame.parse(packet);
-    if (getFrame.isComplete()) {
-      AcceptFrame acceptFrame = new AcceptFrame();
-      Map<String, String> headers = acceptFrame.getHeaders();
-      headers.put("Upgrade", "websocket");
-      headers.put("Connection", "Upgrade");
-      String acceptKey = generateAcceptKey(getFrame);
-      if (acceptKey != null) {
-        headers.put("Sec-WebSocket-Accept", acceptKey);
+    try {
+      getFrame.parse(packet);
+    } catch (EndOfBufferException incomplete) {
+      return null;
+    }
+    if (!getFrame.isComplete()) {
+      return null;
+    }
+
+    validateHandshake();
+    AcceptFrame acceptFrame = new AcceptFrame();
+    Map<String, String> headers = acceptFrame.getHeaders();
+    headers.put("Upgrade", "websocket");
+    headers.put("Connection", "Upgrade");
+    headers.put("Sec-WebSocket-Accept", generateAcceptKey(getFrame));
+
+    String requestedProtocols = getFrame.getHeaders().get("sec-websocket-protocol");
+    if (requestedProtocols != null) {
+      String selectedProtocol = selectProtocol(requestedProtocols, endPoint.getServer().getConfig().getProtocols());
+      if (selectedProtocol == null) {
+        throw new IOException("No requested WebSocket subprotocol is enabled");
       }
-      if (getFrame.getHeaders().containsKey("sec-websocket-protocol")) {
-        processProtocols(endPoint, headers);
+      headers.put("Sec-WebSocket-Protocol", selectedProtocol);
+    }
+    return acceptFrame;
+  }
+
+  private void validateHandshake() throws IOException {
+    String request = getFrame.getRequest();
+    if (request == null || !request.matches("GET\\s+\\S+\\s+HTTP/1\\.1")) {
+      throw new IOException("Invalid WebSocket HTTP request line");
+    }
+    requireHeader("host");
+    requireHeaderToken("upgrade", "websocket");
+    requireHeaderToken("connection", "upgrade");
+
+    String version = getFrame.getHeaders().get(GetFrame.SEC_WEBSOCKET_VERSION_HEADER);
+    if (!"13".equals(version)) {
+      throw new IOException("Unsupported WebSocket version " + version);
+    }
+
+    String key = getFrame.getHeaders().get(GetFrame.SEC_WEBSOCKET_KEY_HEADER);
+    if (key == null) {
+      throw new IOException("Missing Sec-WebSocket-Key header");
+    }
+    try {
+      byte[] decoded = Base64.getDecoder().decode(key.trim());
+      if (decoded.length != 16) {
+        throw new IOException("Sec-WebSocket-Key must decode to 16 bytes");
       }
-      headers.put("Accept-Encoding", "gzip, deflate");
-      return acceptFrame;
+    } catch (IllegalArgumentException invalidBase64) {
+      throw new IOException("Sec-WebSocket-Key is not valid Base64", invalidBase64);
+    }
+  }
+
+  private String requireHeader(String headerName) throws IOException {
+    String value = getFrame.getHeaders().get(headerName);
+    if (value == null || value.isBlank()) {
+      throw new IOException("Missing WebSocket " + headerName + " header");
+    }
+    return value;
+  }
+
+  private void requireHeaderToken(String headerName, String requiredToken) throws IOException {
+    String value = requireHeader(headerName);
+    StringTokenizer tokenizer = new StringTokenizer(value, ",");
+    while (tokenizer.hasMoreTokens()) {
+      if (requiredToken.equalsIgnoreCase(tokenizer.nextToken().trim())) {
+        return;
+      }
+    }
+    throw new IOException("WebSocket " + headerName + " header does not contain " + requiredToken);
+  }
+
+  private String selectProtocol(String clientProtocols, String enabledProtocols) {
+    StringTokenizer tokenizer = new StringTokenizer(clientProtocols, ",");
+    while (tokenizer.hasMoreTokens()) {
+      String selected = isSupported(tokenizer.nextToken().trim(), enabledProtocols);
+      if (selected != null) {
+        return selected;
+      }
     }
     return null;
   }
 
-  private void processProtocols(EndPoint endPoint, Map<String, String> headers) {
-    String protocols = endPoint.getServer().getConfig().getProtocols();
-    String clientProtocols = getFrame.getHeaders().get("sec-websocket-protocol");
-    String subProtocol = "";
-    int isList = clientProtocols.indexOf(',');
-    if (isList > 0) {
-      StringTokenizer st = new StringTokenizer(clientProtocols, ",");
-      boolean found = false;
-      while (!found && st.hasMoreElements()) {
-        String result = isSupported((String) st.nextElement(), protocols);
-        if (result != null) {
-          found = true;
-          subProtocol = result;
-        }
-      }
-    } else {
-      clientProtocols = clientProtocols.trim();
-      subProtocol = isSupported(clientProtocols, protocols);
-    }
-    headers.put("Sec-WebSocket-Protocol", subProtocol);
-  }
-
-  private String isSupported(String ianaName, String protocols) {
+  private String isSupported(String ianaName, String enabledProtocols) {
+    String configured = enabledProtocols == null ? "" : enabledProtocols.toLowerCase(Locale.ROOT);
     for (String[] protocol : SUB_PROTOCOL_MAP) {
-      if (protocol[IANA_NAME].equalsIgnoreCase(ianaName) &&
-          protocols.toLowerCase().contains(protocol[PROTOCOL_NAME])) {
+      if (protocol[IANA_NAME].equalsIgnoreCase(ianaName)
+          && configured.contains(protocol[PROTOCOL_NAME])) {
         return protocol[IANA_NAME];
       }
     }
     return null;
   }
 
-  // This is part of the WebSocket handshake standard so we can safely assume the use of a digest is done correctly
   @java.lang.SuppressWarnings("squid:S4790")
-  String generateAcceptKey(GetFrame getFrame) throws IOException {
-    String webSocketKey = getFrame.getHeaders().get(GetFrame.SEC_WEBSOCKET_KEY_HEADER);
-    if (webSocketKey != null) {
-      webSocketKey = webSocketKey.trim();
-      try {
-        MessageDigest digest = MessageDigest.getInstance("SHA-1");
-        digest.reset();
-        byte[] result = digest.digest((webSocketKey + MAGIC_STRING).getBytes(StandardCharsets.UTF_8));
-        return Base64.getEncoder().encodeToString(result);
-      } catch (NoSuchAlgorithmException e) {
-        throw new IOException("Unable to create Accept Key", e);
-      }
+  String generateAcceptKey(GetFrame frame) throws IOException {
+    String webSocketKey = frame.getHeaders().get(GetFrame.SEC_WEBSOCKET_KEY_HEADER);
+    if (webSocketKey == null) {
+      throw new IOException("Missing Sec-WebSocket-Key header");
     }
-    return null;
+    try {
+      MessageDigest digest = MessageDigest.getInstance("SHA-1");
+      byte[] result = digest.digest((webSocketKey.trim() + MAGIC_STRING).getBytes(StandardCharsets.US_ASCII));
+      return Base64.getEncoder().encodeToString(result);
+    } catch (NoSuchAlgorithmException e) {
+      throw new IOException("Unable to create WebSocket accept key", e);
+    }
   }
 }
-

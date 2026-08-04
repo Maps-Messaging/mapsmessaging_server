@@ -34,6 +34,7 @@ import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.logging.ServerLogMessages;
 import io.mapsmessaging.network.io.EndPoint;
 import io.mapsmessaging.network.io.Packet;
+import io.mapsmessaging.network.io.ServerPacket;
 import io.mapsmessaging.network.io.impl.SelectorTask;
 import io.mapsmessaging.network.protocol.EndOfBufferException;
 import io.mapsmessaging.network.protocol.Protocol;
@@ -51,12 +52,14 @@ import org.jetbrains.annotations.Nullable;
 
 import javax.security.auth.Subject;
 import java.io.IOException;
-import java.nio.ByteBuffer;
+import java.net.SocketAddress;
 import java.util.Map;
 
 import static java.nio.channels.SelectionKey.OP_READ;
 
 public class StompProtocol extends Protocol {
+
+  private static final ServerPacket KEEP_ALIVE_FRAME = new KeepAliveFrame();
 
   @Getter
   private final Logger logger;
@@ -215,12 +218,7 @@ public class StompProtocol extends Protocol {
 
   @Override
   public void sendKeepAlive() {
-    byte[] ka = "\n".getBytes();
-    try {
-      endPoint.sendPacket(new Packet(ByteBuffer.wrap(ka)));
-    } catch (IOException e) {
-      this.close();
-    }
+    selectorTask.push(KEEP_ALIVE_FRAME);
   }
 
   @Override
@@ -263,6 +261,25 @@ public class StompProtocol extends Protocol {
     }
     activeFrame = null;
     return remaining != 0;
+  }
+
+  private static final class KeepAliveFrame implements ServerPacket {
+
+    @Override
+    public int packFrame(Packet packet) {
+      packet.put((byte) '\n');
+      return 1;
+    }
+
+    @Override
+    public void complete() {
+      // Nothing to complete for a STOMP heartbeat.
+    }
+
+    @Override
+    public SocketAddress getFromAddress() {
+      return null;
+    }
   }
 
 }

@@ -23,18 +23,22 @@ import io.mapsmessaging.network.io.Packet;
 import io.mapsmessaging.network.io.ServerPacket;
 import io.mapsmessaging.network.protocol.EndOfBufferException;
 
+import java.io.IOException;
 import java.net.SocketAddress;
+import java.nio.charset.StandardCharsets;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
 public class Frame implements ServerPacket {
 
   private static final byte LF = 0xA;
+  private static final int MAX_HEADER_BYTES = 8 * 1024;
   private static final byte[] END_OF_LINE = {0xD, 0xA};
 
   protected final Map<String, String> headers;
   protected String request;
   protected boolean isComplete;
+  private int headerBytes;
 
   public Frame() {
     headers = new LinkedHashMap<>();
@@ -54,43 +58,52 @@ public class Frame implements ServerPacket {
     return request;
   }
 
-  public void parse(Packet packet) throws EndOfBufferException {
-    request = getHeaderLine(packet);
-    boolean endOfHeader = false;
-    while (!endOfHeader) {
-      String header = getHeaderLine(packet);
-      if (header != null) {
-        header = header.trim();
-        if (!header.isEmpty()) {
-          int keyLocale = header.indexOf(':');
-          if (keyLocale > 0) {
+  public void parse(Packet packet) throws IOException {
+    if (isComplete) {
+      return;
+    }
+    if (request == null) {
+      request = getHeaderLine(packet).trim();
+    }
 
-            String key = header.substring(0, keyLocale).toLowerCase().trim();
-            String val = header.substring(keyLocale + 1).trim();
-            headers.put(key, val);
-          }
-        } else {
-          isComplete = true;
-          endOfHeader = true;
-        }
-      } else {
-        throw new EndOfBufferException();
+    while (!isComplete) {
+      String header = getHeaderLine(packet).trim();
+      if (header.isEmpty()) {
+        isComplete = true;
+        return;
+      }
+
+      int keyLocale = header.indexOf(':');
+      if (keyLocale > 0) {
+        String key = header.substring(0, keyLocale).toLowerCase().trim();
+        String value = header.substring(keyLocale + 1).trim();
+        headers.put(key, value);
       }
     }
   }
 
-  String getHeaderLine(Packet packet) throws EndOfBufferException {
-    int pos = packet.position();
+  String getHeaderLine(Packet packet) throws IOException {
+    int position = packet.position();
     while (packet.hasRemaining()) {
       if (packet.get() == LF) {
-        byte[] tmp = new byte[packet.position() - pos];
-        packet.position(pos);
-        packet.get(tmp);
-        return new String(tmp);
+        int lineLength = packet.position() - position;
+        enforceHeaderLimit(lineLength);
+        headerBytes += lineLength;
+        byte[] value = new byte[lineLength];
+        packet.position(position);
+        packet.get(value);
+        return new String(value, StandardCharsets.ISO_8859_1);
       }
+      enforceHeaderLimit(packet.position() - position);
     }
-    packet.position(pos);
-    throw new EndOfBufferException("End of Buffer reach");
+    packet.position(position);
+    throw new EndOfBufferException("Incomplete HTTP header line");
+  }
+
+  private void enforceHeaderLimit(int pendingLineBytes) throws IOException {
+    if (headerBytes + pendingLineBytes > MAX_HEADER_BYTES) {
+      throw new IOException("WebSocket HTTP upgrade headers exceed " + MAX_HEADER_BYTES + " bytes");
+    }
   }
 
   public boolean isComplete() {
@@ -99,20 +112,18 @@ public class Frame implements ServerPacket {
 
   @Override
   public int packFrame(Packet packet) {
-    packet.put(request.getBytes());
+    int initialPosition = packet.position();
+    packet.put(request.getBytes(StandardCharsets.US_ASCII));
     packet.put(END_OF_LINE);
     for (Map.Entry<String, String> entry : headers.entrySet()) {
-      packet.put(entry.getKey().getBytes());
-      packet.put(": ".getBytes());
-      packet.put(entry.getValue().getBytes());
+      packet.put(entry.getKey().getBytes(StandardCharsets.US_ASCII));
+      packet.put((byte) ':');
+      packet.put((byte) ' ');
+      packet.put(entry.getValue().getBytes(StandardCharsets.US_ASCII));
       packet.put(END_OF_LINE);
     }
     packet.put(END_OF_LINE);
-    int pos = packet.position();
-    packet.position(0);
-    byte[] test = new byte[pos];
-    packet.get(test);
-    return 0;
+    return packet.position() - initialPosition;
   }
 
   @Override
