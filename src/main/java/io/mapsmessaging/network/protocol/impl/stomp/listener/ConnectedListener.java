@@ -40,24 +40,22 @@ public class ConnectedListener extends BaseConnectListener {
   public void frameEvent(Frame frame, SessionState engine, boolean endOfBuffer) {
     Connected connected = (Connected) frame;
 
-    // No version header supplied
-    String versionHeader = connected.getHeader().get("version");
-    float version = processVersion(engine, versionHeader);
-    if (Float.isNaN(version)) {
-      return; // Unable to process the versioning
+    float version = processVersion(engine, connected.getVersion());
+    if (Float.isNaN(version) || engine.getSession() != null) {
+      return;
     }
-    if(engine.getSession() != null) return; // already have a session, no need to create one
     CompletableFuture<Session> future = createSession(engine).thenApply(session -> {
       try {
         session.login();
         engine.setSession(session);
-        ProtocolMessageTransformation transformation = TransformationManager.getInstance().getTransformation(
-            engine.getProtocol().getEndPoint().getProtocol(),
-            engine.getProtocol().getEndPoint().getName(),
-            "stomp",
-            session.getSecurityContext().getUsername()
-        );
+        ProtocolMessageTransformation transformation =
+            TransformationManager.getInstance().getTransformation(
+                engine.getProtocol().getEndPoint().getProtocol(),
+                engine.getProtocol().getEndPoint().getName(),
+                "stomp",
+                session.getSecurityContext().getUsername());
         engine.getProtocol().setProtocolMessageTransformation(transformation);
+        engine.getProtocol().configureHeartBeat(connected.getHeartBeat());
         engine.changeState(new ClientConnectedState());
         session.resumeState();
       } catch (Exception failedAuth) {
@@ -68,16 +66,21 @@ public class ConnectedListener extends BaseConnectListener {
 
     try {
       future.get();
-    } catch (InterruptedException | ExecutionException e) {
-     Thread.currentThread().interrupt();
+    } catch (InterruptedException e) {
+      Thread.currentThread().interrupt();
+    } catch (ExecutionException e) {
+      // The asynchronous connection path has already generated the protocol error.
     }
   }
 
   private CompletableFuture<Session> createSession(SessionState engine) {
-    SessionContextBuilder scb = new SessionContextBuilder(UuidGenerator.getInstance().generate().toString(), new ProtocolClientConnection(engine.getProtocol()));
+    SessionContextBuilder scb =
+        new SessionContextBuilder(
+            UuidGenerator.getInstance().generate().toString(),
+            new ProtocolClientConnection(engine.getProtocol()));
     scb.setPersistentSession(false);
     scb.setReceiveMaximum(engine.getProtocol().getMaxReceiveSize());
-    scb.setSessionExpiry(0); // There is no idle Stomp sessions, so once disconnected the state is thrown away
+    scb.setSessionExpiry(0);
     return SessionManager.getInstance().createAsync(scb.build(), engine.getProtocol());
   }
 }
