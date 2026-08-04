@@ -207,6 +207,7 @@ public class StompProtocol extends Protocol {
 
   public void setVersion(float version) {
     this.version = Float.toString(version);
+    factory.setHeaderEscaping(version >= 1.1f);
   }
 
   public boolean isStomp12() {
@@ -239,6 +240,7 @@ public class StompProtocol extends Protocol {
   }
 
   public void writeFrame(Frame frame) {
+    frame.setHeaderEscaping(!"1.0".equals(version));
     sentMessage();
     selectorTask.push(frame);
     logger.log(ServerLogMessages.STOMP_PUSHED_WRITE, frame);
