@@ -22,6 +22,8 @@ package io.mapsmessaging.network.protocol.impl.stomp.listener;
 import io.mapsmessaging.network.protocol.impl.stomp.frames.Error;
 import io.mapsmessaging.network.protocol.impl.stomp.state.SessionState;
 
+import java.nio.charset.StandardCharsets;
+
 public abstract class BaseConnectListener implements FrameListener {
 
   private static final float MIN_VERSION = 1.0f;
@@ -73,7 +75,7 @@ public abstract class BaseConnectListener implements FrameListener {
   private void sendError(SessionState engine, String message) {
     Error error = new Error();
     error.setContentType(CONTENT_TYPE_TEXT);
-    error.setContent(message.getBytes());
+    error.setContent(message.getBytes(StandardCharsets.UTF_8));
     engine.send(error);
   }
 }
