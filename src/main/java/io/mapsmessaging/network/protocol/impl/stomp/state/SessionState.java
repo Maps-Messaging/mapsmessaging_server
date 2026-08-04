@@ -71,8 +71,11 @@ public class SessionState implements CloseHandler, CompletionHandler {
   }
 
   public boolean send(Frame frame) {
-    if (frame instanceof Error && frame.getCallback() == null) {
-      frame.setCallback(this::shutdown);
+    if (frame instanceof Error) {
+      isValid = false;
+      if (frame.getCallback() == null) {
+        frame.setCallback(this::shutdown);
+      }
     }
     protocolImpl.writeFrame(frame);
     return true;
