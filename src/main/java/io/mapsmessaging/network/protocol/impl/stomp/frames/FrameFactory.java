@@ -31,6 +31,7 @@ public class FrameFactory {
 
   private final List<FrameLookup> frames;
   private final byte[] workingBuffer;
+  private boolean headerEscaping;
 
   public FrameFactory(int maxBufferSize, boolean isClient, boolean base64Encode) {
     frames = new ArrayList<>();
@@ -59,6 +60,11 @@ public class FrameFactory {
       len = Math.max(len, lookup.getCommand().length);
     }
     workingBuffer = new byte[len + 2];
+    headerEscaping = true;
+  }
+
+  public void setHeaderEscaping(boolean headerEscaping) {
+    this.headerEscaping = headerEscaping;
   }
 
   public Frame parseFrame(Packet packet) throws StompProtocolException, EndOfBufferException {
@@ -67,6 +73,7 @@ public class FrameFactory {
       throw new StompProtocolException("Unexpected STOMP frame received");
     }
     Frame frame = clientFrameLookup.getClientFrame().instance();
+    frame.setHeaderEscaping(headerEscaping);
     frame.setListener(clientFrameLookup.getFrameListener());
     return frame;
   }
