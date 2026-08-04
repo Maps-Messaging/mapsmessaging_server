@@ -28,7 +28,7 @@ public class Error extends ServerFrame {
 
   private static final byte[] COMMAND = "ERROR".getBytes();
 
-  private byte[] payload;
+  private byte[] payload = new byte[0];
 
   @Override
   public Frame instance() {
@@ -42,16 +42,15 @@ public class Error extends ServerFrame {
   @Override
   public void packBody(Packet packet) {
     packet.put(payload);
-    packet.put((byte) 0x0);
   }
 
-  public void setContentType(String s) {
-    putHeader("Content-Type", s);
+  public void setContentType(String contentType) {
+    putHeader("content-type", contentType);
   }
 
   public void setContent(byte[] bytes) {
-    payload = bytes;
-    putHeader("Content-Length", "" + (payload.length + 1));
+    payload = bytes == null ? new byte[0] : bytes;
+    putHeader("content-length", Integer.toString(payload.length));
   }
 
   @Override
