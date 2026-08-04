@@ -41,6 +41,33 @@ class StompWireComplianceTest extends StompBaseTest {
   }
 
   @Test
+  void malformedHeartbeatReturnsErrorBeforeClosingConnection() throws Exception {
+    try (RawStompConnection connection = new RawStompConnection(8674)) {
+      Map<String, String> headers = new LinkedHashMap<>();
+      headers.put("accept-version", "1.2");
+      headers.put("host", "localhost");
+      headers.put("heart-beat", "10000,nope");
+      connection.send("STOMP", headers, new byte[0], false, false);
+
+      RawStompConnection.StompFrame error = connection.readFrame();
+      assertEquals("ERROR", error.command());
+      assertTrue(error.bodyText().contains("heartbeat"));
+      assertEquals(-1, connection.read());
+    }
+  }
+
+  @Test
+  void advertisesDirectionalHeartbeatCapability() throws Exception {
+    try (RawStompConnection connection = new RawStompConnection(8674)) {
+      connection.connect("1.2", "30000,40000");
+
+      RawStompConnection.StompFrame connected = connection.readFrame();
+      assertEquals("CONNECTED", connected.command());
+      assertEquals("10000,10000", connected.headers().get("heart-beat"));
+    }
+  }
+
+  @Test
   void acceptsCrLfConnectAndPublishFrames() throws Exception {
     String destination = "/topic/stomp-crlf-" + UUID.randomUUID();
     try (RawStompConnection subscriber = new RawStompConnection(8674);
