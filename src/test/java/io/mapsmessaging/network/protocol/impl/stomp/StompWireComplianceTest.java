@@ -24,6 +24,20 @@ import org.junit.jupiter.api.Test;
 class StompWireComplianceTest extends StompBaseTest {
 
   @Test
+  void acceptsSpringStyleConnectWithoutHostHeader() throws Exception {
+    try (RawStompConnection connection = new RawStompConnection(8674)) {
+      Map<String, String> headers = new LinkedHashMap<>();
+      headers.put("accept-version", "1.1,1.2");
+      headers.put("heart-beat", "0,0");
+      connection.send("STOMP", headers, new byte[0], false, false);
+
+      RawStompConnection.StompFrame connected = connection.readFrame();
+      assertEquals("CONNECTED", connected.command());
+      assertEquals("1.2", connected.headers().get("version"));
+    }
+  }
+
+  @Test
   void malformedFrameReturnsErrorBeforeClosingConnection() throws Exception {
     try (RawStompConnection connection = new RawStompConnection(8674)) {
       connection.connect("1.2", "0,0");
