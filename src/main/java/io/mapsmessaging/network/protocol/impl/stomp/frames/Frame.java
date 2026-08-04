@@ -29,6 +29,9 @@ import lombok.Setter;
 
 import java.io.IOException;
 import java.net.SocketAddress;
+import java.nio.ByteBuffer;
+import java.nio.charset.CharacterCodingException;
+import java.nio.charset.CodingErrorAction;
 import java.nio.charset.StandardCharsets;
 import java.util.LinkedHashMap;
 import java.util.Locale;
@@ -261,6 +264,9 @@ public abstract class Frame implements ServerPacket {
     int length = 0;
     while (packet.hasRemaining()) {
       byte value = packet.get();
+      if (value == END_OF_FRAME) {
+        throw new StompProtocolException("NUL encountered in STOMP header line");
+      }
       if (value == END_OF_LINE) {
         int end = packet.position() - 1;
         if (end > start && packet.get(end - 1) == CARRIAGE_RETURN) {
@@ -271,7 +277,12 @@ public abstract class Frame implements ServerPacket {
         packet.position(start);
         packet.get(line);
         packet.position(current);
-        return new String(line, StandardCharsets.UTF_8);
+        for (byte lineByte : line) {
+          if (lineByte == CARRIAGE_RETURN) {
+            throw new StompProtocolException("Raw carriage return in STOMP header line");
+          }
+        }
+        return decodeUtf8(line);
       }
       length++;
       if (length > MAX_HEADER_LINE_LENGTH) {
@@ -280,6 +291,18 @@ public abstract class Frame implements ServerPacket {
     }
     packet.position(start);
     return null;
+  }
+
+  private String decodeUtf8(byte[] value) throws StompProtocolException {
+    try {
+      return StandardCharsets.UTF_8.newDecoder()
+          .onMalformedInput(CodingErrorAction.REPORT)
+          .onUnmappableCharacter(CodingErrorAction.REPORT)
+          .decode(ByteBuffer.wrap(value))
+          .toString();
+    } catch (CharacterCodingException invalidUtf8) {
+      throw new StompProtocolException("STOMP header line is not valid UTF-8");
+    }
   }
 
   private String decodeHeader(String value) throws StompProtocolException {
