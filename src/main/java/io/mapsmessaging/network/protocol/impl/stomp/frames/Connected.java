@@ -19,9 +19,16 @@
 
 package io.mapsmessaging.network.protocol.impl.stomp.frames;
 
+import java.io.IOException;
+
 public class Connected extends ServerFrame {
 
   private static final byte[] COMMAND = "CONNECTED".getBytes();
+
+  private String version;
+  private String session;
+  private String server;
+  private HeartBeat heartBeat = new HeartBeat(0, 0);
 
   public Connected() {
     super();
@@ -38,19 +45,49 @@ public class Connected extends ServerFrame {
   }
 
   public void setVersion(String version) {
+    this.version = version;
     putHeader("version", version);
   }
 
   public void setSession(String session) {
+    this.session = session;
     putHeader("session", session);
   }
 
   public void setServer(String server) {
+    this.server = server;
     putHeader("server", server);
   }
 
   public void setHeartBeat(HeartBeat heartBeat) {
+    this.heartBeat = heartBeat;
     putHeader("heart-beat", heartBeat.toString());
+  }
+
+  public String getVersion() {
+    return version;
+  }
+
+  public String getSession() {
+    return session;
+  }
+
+  public String getServer() {
+    return server;
+  }
+
+  public HeartBeat getHeartBeat() {
+    return heartBeat;
+  }
+
+  @Override
+  public void parseCompleted() throws IOException {
+    version = getHeader("version");
+    session = getHeader("session");
+    server = getHeader("server");
+    String heartbeatValue = getHeader("heart-beat");
+    heartBeat = heartbeatValue == null ? new HeartBeat(0, 0) : new HeartBeat(heartbeatValue);
+    super.parseCompleted();
   }
 
   byte[] getCommand() {
