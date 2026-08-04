@@ -19,6 +19,7 @@
 
 package io.mapsmessaging.state.mavlink.packet;
 
+import java.util.List;
 import java.util.Map;
 
 public abstract class MavlinkPacket {
@@ -45,6 +46,18 @@ public abstract class MavlinkPacket {
       int[] result = new int[data.length];
       for (int index = 0; index < data.length; index++) {
         result[index] = data[index] & 0xFF;
+      }
+      return result;
+    }
+
+    if (value instanceof List<?> data) {
+      int[] result = new int[data.size()];
+      for (int index = 0; index < data.size(); index++) {
+        Object entry = data.get(index);
+        if (!(entry instanceof Number number)) {
+          return new int[0];
+        }
+        result[index] = number.intValue();
       }
       return result;
     }
@@ -85,7 +98,6 @@ public abstract class MavlinkPacket {
 
     return raw / 100.0;
   }
-
 
   protected long getLong(Map<String, Object> fields, String key) {
     Object value = fields.get(key);
