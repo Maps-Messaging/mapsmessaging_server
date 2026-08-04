@@ -58,14 +58,13 @@ import java.io.IOException;
 import java.net.SocketAddress;
 import java.nio.charset.StandardCharsets;
 import java.util.Map;
-import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import static java.nio.channels.SelectionKey.OP_READ;
 
 public class StompProtocol extends Protocol {
-
-  private static final ServerPacket KEEP_ALIVE_FRAME = new KeepAliveFrame();
 
   @Getter
   private final Logger logger;
@@ -76,9 +75,11 @@ public class StompProtocol extends Protocol {
   private final int heartbeatCanSendMillis;
   private final int heartbeatWantsReceiveMillis;
   private final int heartbeatToleranceMillis;
+  private final AtomicBoolean heartbeatPending;
+  private final ServerPacket keepAliveFrame;
 
   private Frame activeFrame;
-  private ScheduledFuture<?> heartbeatFuture;
+  private Future<?> heartbeatFuture;
   private volatile long negotiatedOutgoingHeartbeat;
   private volatile long negotiatedIncomingHeartbeat;
 
@@ -101,6 +102,8 @@ public class StompProtocol extends Protocol {
     heartbeatCanSendMillis = Math.max(0, stompConfigDTO.getHeartbeatCanSendMillis());
     heartbeatWantsReceiveMillis = Math.max(0, stompConfigDTO.getHeartbeatWantsReceiveMillis());
     heartbeatToleranceMillis = Math.max(0, stompConfigDTO.getHeartbeatToleranceMillis());
+    heartbeatPending = new AtomicBoolean(false);
+    keepAliveFrame = new KeepAliveFrame(heartbeatPending);
     version = "1.2";
     selectorTask = new SelectorTask(this, endPoint.getConfig().getEndPointConfig());
     factory = new FrameFactory(maxBufferSize, endPoint.isClient(), base64Encode);
@@ -117,7 +120,7 @@ public class StompProtocol extends Protocol {
   @Override
   public void close() {
     logger.log(ServerLogMessages.STOMP_CLOSING, endPoint.toString());
-    ScheduledFuture<?> currentHeartbeat = heartbeatFuture;
+    Future<?> currentHeartbeat = heartbeatFuture;
     heartbeatFuture = null;
     if (currentHeartbeat != null) {
       currentHeartbeat.cancel(false);
@@ -286,8 +289,9 @@ public class StompProtocol extends Protocol {
 
   @Override
   public void sendKeepAlive() {
-    if (negotiatedOutgoingHeartbeat > 0) {
-      selectorTask.push(KEEP_ALIVE_FRAME);
+    if (negotiatedOutgoingHeartbeat > 0
+        && heartbeatPending.compareAndSet(false, true)) {
+      selectorTask.push(keepAliveFrame);
     }
   }
 
@@ -346,7 +350,7 @@ public class StompProtocol extends Protocol {
   }
 
   private void startHeartbeatTask() {
-    ScheduledFuture<?> current = heartbeatFuture;
+    Future<?> current = heartbeatFuture;
     if (current != null) {
       current.cancel(false);
     }
@@ -387,6 +391,12 @@ public class StompProtocol extends Protocol {
 
   private static final class KeepAliveFrame implements ServerPacket {
 
+    private final AtomicBoolean pending;
+
+    private KeepAliveFrame(AtomicBoolean pending) {
+      this.pending = pending;
+    }
+
     @Override
     public int packFrame(Packet packet) {
       packet.put((byte) '\n');
@@ -395,7 +405,7 @@ public class StompProtocol extends Protocol {
 
     @Override
     public void complete() {
-      // Nothing to complete for a STOMP heartbeat.
+      pending.set(false);
     }
 
     @Override
