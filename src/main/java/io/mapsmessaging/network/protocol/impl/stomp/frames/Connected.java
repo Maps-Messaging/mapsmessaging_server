@@ -32,6 +32,11 @@ public class Connected extends ServerFrame {
     return new Connected();
   }
 
+  @Override
+  protected boolean escapeHeaders() {
+    return false;
+  }
+
   public void setVersion(String version) {
     putHeader("version", version);
   }
@@ -56,5 +61,4 @@ public class Connected extends ServerFrame {
   public String toString() {
     return "STOMP Connected[ Header:" + getHeaderAsString() + "]";
   }
-
 }
