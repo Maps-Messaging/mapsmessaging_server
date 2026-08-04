@@ -25,7 +25,6 @@ import io.mapsmessaging.api.SessionManager;
 import io.mapsmessaging.network.ProtocolClientConnection;
 import io.mapsmessaging.network.protocol.impl.stomp.frames.Connect;
 import io.mapsmessaging.network.protocol.impl.stomp.frames.Connected;
-import io.mapsmessaging.network.protocol.impl.stomp.frames.Error;
 import io.mapsmessaging.network.protocol.impl.stomp.frames.Frame;
 import io.mapsmessaging.network.protocol.impl.stomp.frames.HeartBeat;
 import io.mapsmessaging.network.protocol.impl.stomp.state.ConnectedState;
@@ -45,13 +44,6 @@ public class ConnectListener extends BaseConnectListener {
 
     float version = processVersion(engine, connect.getAcceptedVersion());
     if (Float.isNaN(version)) {
-      return;
-    }
-    if (version >= 1.1f && (connect.getHost() == null || connect.getHost().isBlank())) {
-      Error error = new Error();
-      error.setContentType(CONTENT_TYPE_TEXT);
-      error.setContent("STOMP 1.1 and 1.2 CONNECT frames require a host header".getBytes());
-      engine.send(error);
       return;
     }
 
