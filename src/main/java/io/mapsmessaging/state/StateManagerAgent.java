@@ -87,10 +87,9 @@ public class StateManagerAgent implements Agent {
           && config.getGeospatial().getAreas() != null
           && !config.getGeospatial().getAreas().isEmpty()) {
         try {
-          geoSpatialAreaRegistry =
-              GeoSpatialConfigLoader.load(config.getGeospatial(), config.getDroneInfo());
+          geoSpatialAreaRegistry = GeoSpatialConfigLoader.load(config.getGeospatial(), config.getDroneInfo());
         } catch (IOException e) {
-          throw new IllegalStateException("Unable to load TwinManager geospatial configuration", e);
+          // log this
         }
       }
 
