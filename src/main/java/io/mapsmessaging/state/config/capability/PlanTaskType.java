@@ -68,14 +68,15 @@ public enum PlanTaskType {
   BARRIER,
   INSPECT;
 
-  private static final String PREFIX = "PlanTaskType_";
+  private static final String WIRE_PREFIX = "PlanTaskType_";
+  private static final String ENUM_PREFIX = "PlanTaskTypeEnum_";
 
   public static PlanTaskType fromConfigurationValue(String value) {
     if (value == null || value.isBlank()) {
       throw new IllegalArgumentException("Plan task type is missing");
     }
 
-    String normalized = value.startsWith(PREFIX) ? value.substring(PREFIX.length()) : value;
+    String normalized = normalize(value);
     if (normalized.isBlank()) {
       throw new IllegalArgumentException("Plan task type is missing after prefix");
     }
@@ -88,7 +89,17 @@ public enum PlanTaskType {
   }
 
   public String toWireValue() {
-    return PREFIX + name();
+    return WIRE_PREFIX + name();
+  }
+
+  private static String normalize(String value) {
+    if (value.startsWith(WIRE_PREFIX)) {
+      return value.substring(WIRE_PREFIX.length());
+    }
+    if (value.startsWith(ENUM_PREFIX)) {
+      return value.substring(ENUM_PREFIX.length());
+    }
+    return value;
   }
 
   public static final class Adapter extends TypeAdapter<PlanTaskType> {
