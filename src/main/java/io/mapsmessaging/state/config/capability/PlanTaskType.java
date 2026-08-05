@@ -87,6 +87,10 @@ public enum PlanTaskType {
     }
   }
 
+  public String toWireValue() {
+    return PREFIX + name();
+  }
+
   public static final class Adapter extends TypeAdapter<PlanTaskType> {
 
     @Override
@@ -95,7 +99,7 @@ public enum PlanTaskType {
         out.nullValue();
         return;
       }
-      out.value(value.name());
+      out.value(value.toWireValue());
     }
 
     @Override
