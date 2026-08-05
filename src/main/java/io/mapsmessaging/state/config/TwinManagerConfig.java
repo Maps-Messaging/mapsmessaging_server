@@ -608,8 +608,7 @@ public class TwinManagerConfig extends TwinManagerConfigDTO implements Config, C
       return defaultValue;
     }
 
-    String normalisedValue = removePrefix(value, "PlanTaskTypeEnum_");
-    return PlanTaskType.valueOf(normalisedValue);
+    return PlanTaskType.fromConfigurationValue(value);
   }
 
   private TaskSpecialization parseTaskSpecialization(String value, TaskSpecialization defaultValue) {
