@@ -20,6 +20,7 @@
 package io.mapsmessaging.state.drone.core;
 
 
+import io.mapsmessaging.geospatial.GeoSpatialAreaRegistry;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.state.auditor.StateAuditContext;
@@ -41,17 +42,41 @@ public class TwinManager {
   private final Logger logger = LoggerFactory.getLogger(TwinManager.class);
   @Getter
   private final StateAuditContext auditContext;
+  @Getter
+  private final GeoSpatialAreaRegistry geoSpatialAreaRegistry;
   private final boolean removeExpiredTwins;
   private final long staleTimeoutMillis;
   private final long heartbeatTimeoutMillis;
   private final long retentionTimeoutMillis;
 
   public TwinManager() {
-    this(true, 10000L, 5000L, 120000L, null);
+    this(true, 10000L, 5000L, 120000L, null, null);
   }
 
-  public TwinManager(boolean removeExpiredTwins, long staleTimeoutMillis, long heartbeatTimeoutMillis, long retentionTimeoutMillis, StateAuditContext auditContext) {
+  public TwinManager(
+      boolean removeExpiredTwins,
+      long staleTimeoutMillis,
+      long heartbeatTimeoutMillis,
+      long retentionTimeoutMillis,
+      StateAuditContext auditContext) {
+    this(
+        removeExpiredTwins,
+        staleTimeoutMillis,
+        heartbeatTimeoutMillis,
+        retentionTimeoutMillis,
+        auditContext,
+        null);
+  }
+
+  public TwinManager(
+      boolean removeExpiredTwins,
+      long staleTimeoutMillis,
+      long heartbeatTimeoutMillis,
+      long retentionTimeoutMillis,
+      StateAuditContext auditContext,
+      GeoSpatialAreaRegistry geoSpatialAreaRegistry) {
     this.auditContext = auditContext;
+    this.geoSpatialAreaRegistry = geoSpatialAreaRegistry;
     this.removeExpiredTwins = removeExpiredTwins;
     this.staleTimeoutMillis = staleTimeoutMillis;
     this.heartbeatTimeoutMillis = heartbeatTimeoutMillis;

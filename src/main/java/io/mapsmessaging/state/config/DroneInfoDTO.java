@@ -30,6 +30,9 @@ public class DroneInfoDTO {
   @Schema(description = "Configured UxV model name used to resolve the command model implementation.")
   private String modelName;
 
+  @Schema(description = "Named geospatial operating area assigned to this drone.")
+  private String geospatialArea;
+
   @Schema(description = "Message encoding used when communicating with this drone.")
   private MessageEncodingEnum messageEncoding = MessageEncodingEnum.JSON;
 

@@ -27,6 +27,7 @@ import io.mapsmessaging.dto.rest.config.protocol.impl.MavlinkKnownSourceDTO;
 import io.mapsmessaging.dto.rest.config.protocol.impl.TakProtocolDTO;
 import io.mapsmessaging.license.FeatureManager;
 import io.mapsmessaging.state.config.capability.*;
+import io.mapsmessaging.state.config.geospatial.GeoSpatialConfigSupport;
 import io.mapsmessaging.state.config.n2k.N2KAisConfig;
 import io.mapsmessaging.state.config.n2k.N2KTwinConfig;
 import io.mapsmessaging.utilities.configuration.ConfigurationManager;
@@ -55,6 +56,10 @@ public class TwinManagerConfig extends TwinManagerConfigDTO implements Config, C
       takProtocolDTO.setSharedConnection(takProps.getBooleanProperty("sharedConnection", takProtocolDTO.isSharedConnection()));
       takProtocolDTO.setTopic(takProps.getProperty("topic", null));
       this.tak = takProtocolDTO;
+    }
+
+    if (properties.containsKey("geospatial")) {
+      this.geospatial = GeoSpatialConfigSupport.parse(properties.get("geospatial"));
     }
 
     if (properties.containsKey("publish")) {
@@ -132,6 +137,12 @@ public class TwinManagerConfig extends TwinManagerConfigDTO implements Config, C
       takProps.put("sharedConnection", this.tak.isSharedConnection());
       takProps.put("topic", this.tak.getTopic());
       props.put("tak", takProps);
+    }
+
+    if (this.geospatial != null
+        && this.geospatial.getAreas() != null
+        && !this.geospatial.getAreas().isEmpty()) {
+      props.put("geospatial", GeoSpatialConfigSupport.toConfigurationProperties(this.geospatial));
     }
 
     if (this.publish != null) {
@@ -225,6 +236,11 @@ public class TwinManagerConfig extends TwinManagerConfigDTO implements Config, C
 
     if (this.tak != newConfig.getTak()) {
       this.tak = newConfig.getTak();
+      hasChanged = true;
+    }
+
+    if (!Objects.equals(this.geospatial, newConfig.getGeospatial())) {
+      this.geospatial = newConfig.getGeospatial();
       hasChanged = true;
     }
 
@@ -360,6 +376,7 @@ public class TwinManagerConfig extends TwinManagerConfigDTO implements Config, C
     droneInfo.setBatteryCapacityHours(properties.getDoubleProperty("batteryCapacityHours", droneInfo.getBatteryCapacityHours()));
     droneInfo.setName(properties.getProperty("name", droneInfo.getName()));
     droneInfo.setModelName(properties.getProperty("modelName", droneInfo.getModelName()));
+    droneInfo.setGeospatialArea(properties.getProperty("geospatialArea", droneInfo.getGeospatialArea()));
     if(properties.containsKey("surveyRadiusMeters") && properties.getDoubleProperty("surveyRadiusMeters", 0.0) > 0.0) {
       droneInfo.setSurveyRadiusMeters(properties.getDoubleProperty("surveyRadiusMeters", 0.0));
     }
@@ -411,6 +428,10 @@ public class TwinManagerConfig extends TwinManagerConfigDTO implements Config, C
 
       if (droneInfo.getModelName() != null) {
         properties.put("modelName", droneInfo.getModelName());
+      }
+
+      if (droneInfo.getGeospatialArea() != null) {
+        properties.put("geospatialArea", droneInfo.getGeospatialArea());
       }
 
       if (droneInfo.getMessageEncoding() != null) {
@@ -608,8 +629,7 @@ public class TwinManagerConfig extends TwinManagerConfigDTO implements Config, C
       return defaultValue;
     }
 
-    String normalisedValue = removePrefix(value, "PlanTaskTypeEnum_");
-    return PlanTaskType.valueOf(normalisedValue);
+    return PlanTaskType.fromConfigurationValue(value);
   }
 
   private TaskSpecialization parseTaskSpecialization(String value, TaskSpecialization defaultValue) {
@@ -693,6 +713,7 @@ public class TwinManagerConfig extends TwinManagerConfigDTO implements Config, C
 
     return values;
   }
+
   private boolean shouldWriteN2kConfiguration() {
     if (this.n2KTwinConfig == null) {
       return false;

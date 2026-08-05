@@ -22,6 +22,7 @@ package io.mapsmessaging.state.config;
 import io.mapsmessaging.configuration.ConfigurationProperties;
 import io.mapsmessaging.dto.rest.config.BaseManagerConfigDTO;
 import io.mapsmessaging.dto.rest.config.protocol.impl.TakProtocolDTO;
+import io.mapsmessaging.state.config.geospatial.GeoSpatialConfigDTO;
 import io.mapsmessaging.state.config.n2k.N2KTwinConfig;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
@@ -89,6 +90,9 @@ public class TwinManagerConfigDTO extends BaseManagerConfigDTO {
       nullable = true
   )
   protected TakProtocolDTO tak;
+
+  @Schema(description = "Named geospatial areas available to all twin and task implementations.")
+  protected GeoSpatialConfigDTO geospatial = new GeoSpatialConfigDTO();
 
   @Schema(
       description = "Optional configuration for publishing twin updates to messaging topics.",
