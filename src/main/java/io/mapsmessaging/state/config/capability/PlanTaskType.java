@@ -71,6 +71,8 @@ public enum PlanTaskType {
   private static final String WIRE_PREFIX = "PlanTaskType_";
   private static final String ENUM_PREFIX = "PlanTaskTypeEnum_";
 
+  private static volatile String outboundPrefix = WIRE_PREFIX;
+
   public static PlanTaskType fromConfigurationValue(String value) {
     if (value == null || value.isBlank()) {
       throw new IllegalArgumentException("Plan task type is missing");
@@ -88,8 +90,16 @@ public enum PlanTaskType {
     }
   }
 
+  public static void configureEnumWirePrefix(boolean useEnumPrefix) {
+    outboundPrefix = useEnumPrefix ? ENUM_PREFIX : WIRE_PREFIX;
+  }
+
+  public static boolean isEnumWirePrefixConfigured() {
+    return ENUM_PREFIX.equals(outboundPrefix);
+  }
+
   public String toWireValue() {
-    return WIRE_PREFIX + name();
+    return outboundPrefix + name();
   }
 
   private static String normalize(String value) {
