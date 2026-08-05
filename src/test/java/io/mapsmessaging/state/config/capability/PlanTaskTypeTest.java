@@ -15,7 +15,9 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.google.gson.Gson;
+import com.google.gson.JsonObject;
 import com.google.gson.JsonParseException;
+import com.google.gson.JsonParser;
 import io.mapsmessaging.configuration.SystemProperties;
 import org.junit.jupiter.api.Test;
 
@@ -39,6 +41,30 @@ class PlanTaskTypeTest {
             TaskCapability.class);
 
     assertEquals(PlanTaskType.NAVIGATE, capability.getTaskType());
+  }
+
+  @Test
+  void serializesTaskCapabilityWithCanonicalPlanTaskTypePrefix() {
+    TaskCapability capability = new TaskCapability();
+    capability.setTaskType(PlanTaskType.NAVIGATE);
+
+    JsonObject serialized = JsonParser.parseString(gson.toJson(capability)).getAsJsonObject();
+
+    assertEquals(
+        "PlanTaskType_NAVIGATE",
+        serialized.get("task_type").getAsString());
+  }
+
+  @Test
+  void legacyInputSerializesBackToCanonicalWireValue() {
+    TaskCapability capability =
+        gson.fromJson("{\"task_type\":\"NAVIGATE\"}", TaskCapability.class);
+
+    JsonObject serialized = JsonParser.parseString(gson.toJson(capability)).getAsJsonObject();
+
+    assertEquals(
+        "PlanTaskType_NAVIGATE",
+        serialized.get("task_type").getAsString());
   }
 
   @Test
