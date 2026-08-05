@@ -16,11 +16,12 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonParseException;
+import io.mapsmessaging.configuration.SystemProperties;
 import org.junit.jupiter.api.Test;
 
 class PlanTaskTypeTest {
 
-  private final Gson gson = new Gson();
+  private final Gson gson = SystemProperties.getInstance().getGson();
 
   @Test
   void parsesLegacyTaskTypeValue() {
