@@ -1,6 +1,6 @@
 #
 # Copyright [ 2020 - 2024 ] [Matthew Buckton]
-# Copyright [ 2024 - 2025 ] [Maps Messaging B.V.]
+# Copyright [ 2024 - 2026 ] [Maps Messaging B.V.]
 #
 #   Licensed under the Apache License, Version 2.0 (the "License");
 #   you may not use this file except in compliance with the License.
@@ -25,11 +25,30 @@ TwinManager:
   removeExpiredTwins: true
   defaultRootPath: "/"
 
-
   tak:
     hostname: "opentak.syd.mapsmessaging.io"
     port: 8088
     topic: "/tak/cot"
+
+  geospatial:
+    areas:
+      - name: "sesimbra-usv"
+        boundaries:
+          - name: "offshore"
+            type: "INSIDE"
+            path: "geospatial/offshore.geojson"
+          - name: "rio-1"
+            type: "INSIDE"
+            path: "geospatial/rio_1.geojson"
+          - name: "rio-2"
+            type: "INSIDE"
+            path: "geospatial/rio_2.geojson"
+
+        # Additional boundaries may use:
+        #   type: "DO_NOT_ENTER"
+        # A droneInfo entry selects this area with:
+        #   geospatialArea: "sesimbra-usv"
+
   publish:
     enabled: true
     topicTemplate: "/state/twins/drones"

@@ -24,6 +24,7 @@ import io.mapsmessaging.configuration.EnvironmentConfig;
 import io.mapsmessaging.dto.rest.config.protocol.impl.TakProtocolDTO;
 import io.mapsmessaging.dto.rest.system.Status;
 import io.mapsmessaging.dto.rest.system.SubSystemStatusDTO;
+import io.mapsmessaging.geospatial.GeoSpatialAreaRegistry;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.state.adapter.StateMessageAdapterContext;
@@ -33,6 +34,7 @@ import io.mapsmessaging.state.auditor.StateAuditContext;
 import io.mapsmessaging.state.config.DroneInfoRegistry;
 import io.mapsmessaging.state.config.TwinManagerConfig;
 import io.mapsmessaging.state.config.TwinManagerConfigDTO;
+import io.mapsmessaging.state.config.geospatial.GeoSpatialConfigLoader;
 import io.mapsmessaging.state.config.n2k.N2KTwinConfig;
 import io.mapsmessaging.state.drone.core.TwinLifecycleStatus;
 import io.mapsmessaging.state.drone.core.TwinManager;
@@ -79,7 +81,27 @@ public class StateManagerAgent implements Agent {
       } catch (IOException e) {
         logger.log(STATE_MANAGER_AUDIT_INIT_FAILED, e);
       }
-      twinManager = new TwinManager(config.isRemoveExpiredTwins(), config.getStaleTimeoutMillis(), config.getHeartbeatTimeoutMillis(), config.getRetentionTimeoutMillis(), auditContext);
+
+      GeoSpatialAreaRegistry geoSpatialAreaRegistry = null;
+      if (config.getGeospatial() != null
+          && config.getGeospatial().getAreas() != null
+          && !config.getGeospatial().getAreas().isEmpty()) {
+        try {
+          geoSpatialAreaRegistry =
+              GeoSpatialConfigLoader.load(config.getGeospatial(), config.getDroneInfo());
+        } catch (IOException e) {
+          throw new IllegalStateException("Unable to load TwinManager geospatial configuration", e);
+        }
+      }
+
+      twinManager =
+          new TwinManager(
+              config.isRemoveExpiredTwins(),
+              config.getStaleTimeoutMillis(),
+              config.getHeartbeatTimeoutMillis(),
+              config.getRetentionTimeoutMillis(),
+              auditContext,
+              geoSpatialAreaRegistry);
       registry = new DroneInfoRegistry(config.getDroneInfo());
       takConfig = config.getTak();
       N2KTwinConfig n2KTwinConfig = config.getN2KTwinConfig();
@@ -107,6 +129,10 @@ public class StateManagerAgent implements Agent {
   @Override
   public String getDescription() {
     return "Manages state of known objects within memory and maintains a digital twin";
+  }
+
+  public GeoSpatialAreaRegistry getGeoSpatialAreaRegistry() {
+    return twinManager == null ? null : twinManager.getGeoSpatialAreaRegistry();
   }
 
   private void loadStateMessageAdapters(TwinManagerConfigDTO config) {
