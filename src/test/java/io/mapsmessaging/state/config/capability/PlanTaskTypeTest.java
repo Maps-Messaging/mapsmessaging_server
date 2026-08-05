@@ -12,26 +12,18 @@
 package io.mapsmessaging.state.config.capability;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParseException;
 import com.google.gson.JsonParser;
 import io.mapsmessaging.configuration.SystemProperties;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 
 class PlanTaskTypeTest {
 
   private final Gson gson = SystemProperties.getInstance().getGson();
-
-  @AfterEach
-  void restoreDefaultWirePrefix() {
-    PlanTaskType.configureEnumWirePrefix(false);
-  }
 
   @Test
   void parsesLegacyTaskTypeValue() {
@@ -62,30 +54,18 @@ class PlanTaskTypeTest {
   }
 
   @Test
-  void defaultsToPlanTaskTypeWirePrefix() {
-    assertFalse(PlanTaskType.isEnumWirePrefixConfigured());
-
-    assertSerializedTaskType("PlanTaskType_SCREEN");
-  }
-
-  @Test
-  void canSerializeUsingPlanTaskTypeEnumWirePrefix() {
-    PlanTaskType.configureEnumWirePrefix(true);
-
-    assertTrue(PlanTaskType.isEnumWirePrefixConfigured());
-    assertSerializedTaskType("PlanTaskTypeEnum_SCREEN");
-  }
-
-  @Test
-  void legacyInputSerializesBackUsingConfiguredWirePrefix() {
-    TaskCapability capability =
-        gson.fromJson("{\"task_type\":\"SCREEN\"}", TaskCapability.class);
+  void serializesUsingCanonicalPlanTaskTypePrefix() {
+    TaskCapability capability = new TaskCapability();
+    capability.setTaskType(PlanTaskType.SCREEN);
 
     assertEquals("PlanTaskType_SCREEN", serializedTaskType(capability));
+  }
 
-    PlanTaskType.configureEnumWirePrefix(true);
-
-    assertEquals("PlanTaskTypeEnum_SCREEN", serializedTaskType(capability));
+  @Test
+  void allAcceptedInputsSerializeToCanonicalWireValue() {
+    assertCanonicalRoundTrip("SCREEN");
+    assertCanonicalRoundTrip("PlanTaskType_SCREEN");
+    assertCanonicalRoundTrip("PlanTaskTypeEnum_SCREEN");
   }
 
   @Test
@@ -108,11 +88,13 @@ class PlanTaskTypeTest {
                 TaskCapability.class));
   }
 
-  private void assertSerializedTaskType(String expected) {
-    TaskCapability capability = new TaskCapability();
-    capability.setTaskType(PlanTaskType.SCREEN);
+  private void assertCanonicalRoundTrip(String taskType) {
+    TaskCapability capability =
+        gson.fromJson(
+            "{\"task_type\":\"" + taskType + "\"}",
+            TaskCapability.class);
 
-    assertEquals(expected, serializedTaskType(capability));
+    assertEquals("PlanTaskType_SCREEN", serializedTaskType(capability));
   }
 
   private String serializedTaskType(TaskCapability capability) {
