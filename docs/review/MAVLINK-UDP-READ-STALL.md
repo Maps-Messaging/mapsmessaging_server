@@ -57,6 +57,37 @@ stall.
 **5. Resources are healthy.** Heap ~150 MB used of a 2560 MB max; file descriptors
 ~730; disk under 15% used.
 
+## Frequency (24.6 h continuous observation)
+
+The supervisor described below logs every detection, which gives a measured
+fault rate rather than an impression. Over **24.6 hours** of continuous replay at
+~360 msg/s:
+
+| | |
+|---|---|
+| Faults detected | **19** |
+| Mean time between faults | **82 min** |
+| Median | **56 min** |
+| Shortest / longest gap | **22 min** / **288 min** |
+| Recv-Q at detection | 163 KB – 214 KB (median 202 KB) |
+| Total downtime | ~10 min (**0.6 %** of the window) |
+
+Intervals in minutes, in order:
+
+```
+171, 37, 288, 55, 43, 68, 32, 62, 53, 228, 66, 69, 47, 55, 72, 49, 22, 56
+```
+
+The spread is wide and does not correlate with anything obvious — not with load
+(constant), client connections (sporadic, often none), or the replay's own
+capture-loop boundary (~13 min at this speed, so several passes complete inside
+even the shortest gap). It reproduces with no external clients connected at all,
+so it is not triggered by subscriber activity.
+
+Note that the queue depth at detection is tightly clustered (163–214 KB) simply
+because the supervisor samples every 60 s and fires on the third consecutive
+reading; it is not a ceiling. Left alone the queue keeps growing.
+
 ## What has been ruled out
 
 | Hypothesis | Result |
