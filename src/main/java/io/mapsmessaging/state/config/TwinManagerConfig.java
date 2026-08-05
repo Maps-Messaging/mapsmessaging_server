@@ -629,8 +629,7 @@ public class TwinManagerConfig extends TwinManagerConfigDTO implements Config, C
       return defaultValue;
     }
 
-    String normalisedValue = removePrefix(value, "PlanTaskTypeEnum_");
-    return PlanTaskType.valueOf(normalisedValue);
+    return PlanTaskType.fromConfigurationValue(value);
   }
 
   private TaskSpecialization parseTaskSpecialization(String value, TaskSpecialization defaultValue) {
@@ -714,6 +713,7 @@ public class TwinManagerConfig extends TwinManagerConfigDTO implements Config, C
 
     return values;
   }
+
   private boolean shouldWriteN2kConfiguration() {
     if (this.n2KTwinConfig == null) {
       return false;
