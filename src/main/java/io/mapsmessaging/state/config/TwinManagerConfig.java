@@ -31,10 +31,9 @@ import io.mapsmessaging.state.config.geospatial.GeoSpatialConfigSupport;
 import io.mapsmessaging.state.config.n2k.N2KAisConfig;
 import io.mapsmessaging.state.config.n2k.N2KTwinConfig;
 import io.mapsmessaging.utilities.configuration.ConfigurationManager;
-import lombok.NoArgsConstructor;
-
 import java.io.IOException;
 import java.util.*;
+import lombok.NoArgsConstructor;
 
 @NoArgsConstructor
 public class TwinManagerConfig extends TwinManagerConfigDTO implements Config, ConfigManager {
@@ -139,9 +138,7 @@ public class TwinManagerConfig extends TwinManagerConfigDTO implements Config, C
       props.put("tak", takProps);
     }
 
-    if (this.geospatial != null
-        && this.geospatial.getAreas() != null
-        && !this.geospatial.getAreas().isEmpty()) {
+    if (this.geospatial != null && this.geospatial.getAreas() != null && !this.geospatial.getAreas().isEmpty()) {
       props.put("geospatial", GeoSpatialConfigSupport.toConfigurationProperties(this.geospatial));
     }
 
@@ -377,18 +374,13 @@ public class TwinManagerConfig extends TwinManagerConfigDTO implements Config, C
     droneInfo.setName(properties.getProperty("name", droneInfo.getName()));
     droneInfo.setModelName(properties.getProperty("modelName", droneInfo.getModelName()));
     droneInfo.setGeospatialArea(properties.getProperty("geospatialArea", droneInfo.getGeospatialArea()));
-    if(properties.containsKey("surveyRadiusMeters") && properties.getDoubleProperty("surveyRadiusMeters", 0.0) > 0.0) {
-      droneInfo.setSurveyRadiusMeters(properties.getDoubleProperty("surveyRadiusMeters", 0.0));
-    }
+    droneInfo.setRangeMeters(readOptionalPositiveDouble(properties, "rangeMeters"));
+    droneInfo.setSurveyRadiusMeters(readOptionalPositiveDouble(properties, "surveyRadiusMeters"));
     droneInfo.setMessageEncoding(parseMessageEncoding(properties.getProperty("messageEncoding", null), droneInfo.getMessageEncoding()));
     StopActionEnum legacyStopAction = parseTerminalAction(properties.getProperty("stopAction", null), droneInfo.getCancelAction());
     droneInfo.setCancelAction(parseTerminalAction(properties.getProperty("cancelAction", null), legacyStopAction));
     droneInfo.setMissionEndAction(parseTerminalAction(properties.getProperty("missionEndAction", null), droneInfo.getMissionEndAction()));
-
-    droneInfo.setMissionTimeoutAction(
-        parseTerminalAction(
-            properties.getProperty("missionTimeoutAction", null),
-            droneInfo.getMissionTimeoutAction()));
+    droneInfo.setMissionTimeoutAction(parseTerminalAction(properties.getProperty("missionTimeoutAction", null), droneInfo.getMissionTimeoutAction()));
     if (properties.get("description") instanceof ConfigurationProperties descriptionProperties) {
       droneInfo.setDescription(descriptionProperties.getMap());
     } else if (properties.get("description") instanceof Map<?, ?> descriptionMap) {
@@ -397,6 +389,14 @@ public class TwinManagerConfig extends TwinManagerConfigDTO implements Config, C
 
     droneInfo.setCapabilities(parseTaskCapabilities(properties.get("capabilities")));
     return droneInfo;
+  }
+
+  private Double readOptionalPositiveDouble(ConfigurationProperties properties, String propertyName) {
+    if (!properties.containsKey(propertyName)) {
+      return null;
+    }
+    double value = properties.getDoubleProperty(propertyName, 0.0d);
+    return Double.isFinite(value) && value > 0.0d ? value : null;
   }
 
   private MessageEncodingEnum parseMessageEncoding(String value, MessageEncodingEnum defaultValue) {
@@ -432,6 +432,14 @@ public class TwinManagerConfig extends TwinManagerConfigDTO implements Config, C
 
       if (droneInfo.getGeospatialArea() != null) {
         properties.put("geospatialArea", droneInfo.getGeospatialArea());
+      }
+
+      if (droneInfo.getRangeMeters() != null && droneInfo.getRangeMeters() > 0.0d) {
+        properties.put("rangeMeters", droneInfo.getRangeMeters());
+      }
+
+      if (droneInfo.getSurveyRadiusMeters() != null && droneInfo.getSurveyRadiusMeters() > 0.0d) {
+        properties.put("surveyRadiusMeters", droneInfo.getSurveyRadiusMeters());
       }
 
       if (droneInfo.getMessageEncoding() != null) {
@@ -490,15 +498,8 @@ public class TwinManagerConfig extends TwinManagerConfigDTO implements Config, C
         capabilities.setTasks(parseTaskCapabilityList(configurationProperties.get("task_capabilities")));
       }
 
-      capabilities.setTaskConditionsMode(
-          parseTaskConditionMode(
-              configurationProperties.getProperty("task_conditions_mode", null),
-              capabilities.getTaskConditionsMode()));
-
-      capabilities.setTaskConditionsTemplate(
-          parseTaskTemplateMode(
-              configurationProperties.getProperty("task_conditions_template", null),
-              capabilities.getTaskConditionsTemplate()));
+      capabilities.setTaskConditionsMode(parseTaskConditionMode(configurationProperties.getProperty("task_conditions_mode", null), capabilities.getTaskConditionsMode()));
+      capabilities.setTaskConditionsTemplate(parseTaskTemplateMode(configurationProperties.getProperty("task_conditions_template", null), capabilities.getTaskConditionsTemplate()));
     } else if (value instanceof List<?> list) {
       capabilities.setTasks(parseTaskCapabilityList(list));
     }
@@ -581,20 +582,9 @@ public class TwinManagerConfig extends TwinManagerConfigDTO implements Config, C
   private TaskCapability parseTaskCapability(ConfigurationProperties properties) {
     TaskCapability taskCapability = new TaskCapability();
 
-    taskCapability.setTaskType(
-        parsePlanTaskType(
-            properties.getProperty("task_type", null),
-            taskCapability.getTaskType()));
-
-    taskCapability.setSpecialization(
-        parseTaskSpecialization(
-            properties.getProperty("task_specialization", null),
-            taskCapability.getSpecialization()));
-
-    taskCapability.setAuthorities(
-        parseTaskAuthorities(
-            properties.get("authorities")));
-
+    taskCapability.setTaskType(parsePlanTaskType(properties.getProperty("task_type", null), taskCapability.getTaskType()));
+    taskCapability.setSpecialization(parseTaskSpecialization(properties.getProperty("task_specialization", null), taskCapability.getSpecialization()));
+    taskCapability.setAuthorities(parseTaskAuthorities(properties.get("authorities")));
     return taskCapability;
   }
 
