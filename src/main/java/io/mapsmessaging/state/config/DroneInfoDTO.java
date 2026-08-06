@@ -43,6 +43,13 @@ public class DroneInfoDTO {
   private double batteryCapacityHours = 0.0;
 
   @Schema(
+      description = "Maximum route range in metres when the battery is at 100%. When omitted, battery-adjusted task range validation is disabled.",
+      example = "25000.0",
+      minimum = "0.0",
+      nullable = true)
+  private Double rangeMeters;
+
+  @Schema(
       description =
           "Survey coverage radius in metres measured from the vehicle centreline. "
               + "The effective survey width is twice this value.",
