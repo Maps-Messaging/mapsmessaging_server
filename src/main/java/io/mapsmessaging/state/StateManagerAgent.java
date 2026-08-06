@@ -27,6 +27,7 @@ import io.mapsmessaging.dto.rest.system.SubSystemStatusDTO;
 import io.mapsmessaging.geospatial.GeoSpatialAreaRegistry;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
+import io.mapsmessaging.state.adapter.StateMessageAdapter;
 import io.mapsmessaging.state.adapter.StateMessageAdapterContext;
 import io.mapsmessaging.state.adapter.StateMessageAdapterFactory;
 import io.mapsmessaging.state.auditor.AuditorFactory;
@@ -48,6 +49,7 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.ServiceLoader;
 
 import static io.mapsmessaging.state.logging.StateLogMessages.*;
@@ -69,23 +71,24 @@ public class StateManagerAgent implements Agent {
   private StateAuditContext auditContext;
   private AuditorFactory.AuditorInstance auditorInstance;
 
+  @Getter
+  private final List<String> restApiPackageList = new ArrayList<>();
+
   public StateManagerAgent() {
     TwinManagerConfigDTO config = ConfigurationManager.getInstance().getConfiguration(TwinManagerConfig.class);
     DroneInfoRegistry registry;
     TakProtocolDTO takConfig;
-    if(config != null){
+    if (config != null) {
       try {
         AuditorFactory factory = new AuditorFactory();
-        auditorInstance = factory.build(Path.of( EnvironmentConfig.getInstance().getPathLookups().get("MAPS_DATA")));
+        auditorInstance = factory.build(Path.of(EnvironmentConfig.getInstance().getPathLookups().get("MAPS_DATA")));
         auditContext = auditorInstance.getAuditContext();
       } catch (IOException e) {
         logger.log(STATE_MANAGER_AUDIT_INIT_FAILED, e);
       }
 
       GeoSpatialAreaRegistry geoSpatialAreaRegistry = null;
-      if (config.getGeospatial() != null
-          && config.getGeospatial().getAreas() != null
-          && !config.getGeospatial().getAreas().isEmpty()) {
+      if (config.getGeospatial() != null && config.getGeospatial().getAreas() != null && !config.getGeospatial().getAreas().isEmpty()) {
         try {
           geoSpatialAreaRegistry = GeoSpatialConfigLoader.load(config.getGeospatial(), config.getDroneInfo());
         } catch (IOException e) {
@@ -93,14 +96,7 @@ public class StateManagerAgent implements Agent {
         }
       }
 
-      twinManager =
-          new TwinManager(
-              config.isRemoveExpiredTwins(),
-              config.getStaleTimeoutMillis(),
-              config.getHeartbeatTimeoutMillis(),
-              config.getRetentionTimeoutMillis(),
-              auditContext,
-              geoSpatialAreaRegistry);
+      twinManager = new TwinManager(config.isRemoveExpiredTwins(), config.getStaleTimeoutMillis(), config.getHeartbeatTimeoutMillis(), config.getRetentionTimeoutMillis(), auditContext, geoSpatialAreaRegistry);
       registry = new DroneInfoRegistry(config.getDroneInfo());
       takConfig = config.getTak();
       N2KTwinConfig n2KTwinConfig = config.getN2KTwinConfig();
@@ -108,14 +104,13 @@ public class StateManagerAgent implements Agent {
       lifecycleList.add(new TakManager(twinManager, takConfig));
       lifecycleList.add(new MavlinkTwinManager(twinManager, registry, config));
       loadStateMessageAdapters(config);
-      if(n2KTwinConfig != null && n2KTwinConfig.isEnable()){
+      if (n2KTwinConfig != null && n2KTwinConfig.isEnable()) {
         lifecycleList.add(new N2kSession(twinManager, n2KTwinConfig, registry));
       }
       lifecycleList.add(new TwinPublisherManager(twinManager, config.getPublish()));
       aisManager = new AISN2KManager(twinManager, config.getN2KTwinConfig());
       lifecycleList.add(aisManager);
-    }
-    else{
+    } else {
       aisManager = null;
     }
   }
@@ -137,16 +132,24 @@ public class StateManagerAgent implements Agent {
   private void loadStateMessageAdapters(TwinManagerConfigDTO config) {
     StateMessageAdapterContext context = new StateMessageAdapterContext(twinManager, config);
     ServiceLoader<StateMessageAdapterFactory> adapterFactories = ServiceLoader.load(StateMessageAdapterFactory.class);
+
     for (StateMessageAdapterFactory adapterFactory : adapterFactories) {
-      adapterFactory.create(context).ifPresent(lifecycleList::add);
+      Optional<StateMessageAdapter> optionalAdapter = adapterFactory.create(context);
+      if (optionalAdapter.isPresent()) {
+        StateMessageAdapter adapter = optionalAdapter.get();
+        lifecycleList.add(adapter);
+        adapter.getRestApiPackageList();
+        restApiPackageList.addAll(adapter.getRestApiPackageList());
+      }
     }
+
   }
 
   @Override
   public synchronized void start() {
     try {
       logger.log(STATE_MANAGER_START);
-      for(Lifecycle lifecycle: lifecycleList){
+      for (Lifecycle lifecycle : lifecycleList) {
         lifecycle.start();
       }
     } finally {
@@ -158,7 +161,7 @@ public class StateManagerAgent implements Agent {
   public synchronized void stop() {
     logger.log(STATE_MANAGER_STOP);
     try {
-      for(Lifecycle lifecycle: lifecycleList){
+      for (Lifecycle lifecycle : lifecycleList) {
         lifecycle.start();
       }
     } finally {
@@ -170,12 +173,7 @@ public class StateManagerAgent implements Agent {
   public SubSystemStatusDTO getStatus() {
     SubSystemStatusDTO status = new SubSystemStatusDTO();
     status.setName(getName());
-    status.setComment(
-        "Current objects: " + twinManager.getTwinCount()
-            + ", active: " + twinManager.getTwinCountByStatus(TwinLifecycleStatus.ACTIVE)
-            + ", disconnected: " + twinManager.getTwinCountByStatus(TwinLifecycleStatus.DISCONNECTED)
-            + ", stale: " + twinManager.getTwinCountByStatus(TwinLifecycleStatus.STALE)
-    );
+    status.setComment("Current objects: " + twinManager.getTwinCount() + ", active: " + twinManager.getTwinCountByStatus(TwinLifecycleStatus.ACTIVE) + ", disconnected: " + twinManager.getTwinCountByStatus(TwinLifecycleStatus.DISCONNECTED) + ", stale: " + twinManager.getTwinCountByStatus(TwinLifecycleStatus.STALE));
     status.setStatus(Status.OK);
     return status;
   }

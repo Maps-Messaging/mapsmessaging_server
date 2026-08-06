@@ -21,7 +21,14 @@ package io.mapsmessaging.state.adapter;
 
 import io.mapsmessaging.utilities.Lifecycle;
 
+import java.util.List;
+
 public interface StateMessageAdapter extends Lifecycle {
 
   String getName();
+
+
+  default List<String> getRestApiPackageList(){
+    return List.of();
+  }
 }

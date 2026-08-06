@@ -83,10 +83,12 @@ public class RestApiServerManager implements Agent {
   private ServiceInfo[] serviceInfos;
   private HttpServer httpServer;
   private ScheduledFuture cleanupSchedule;
+  private final List<String> packageNames;
 
   public RestApiServerManager() {
     config = RestApiManagerConfig.getInstance();
     isSecure = false;
+    packageNames = buildInbuilt();
   }
 
   @Override
@@ -111,6 +113,9 @@ public class RestApiServerManager implements Agent {
     }
   }
 
+  public void addPackageNameList(List<String> external){
+    packageNames.addAll(external);
+  }
 
   public int getPort() {
     return config.getPort();
@@ -179,41 +184,10 @@ public class RestApiServerManager implements Agent {
     else{
       io.mapsmessaging.rest.api.Constants.setCentralCache(new NoCache<>());
     }
-    List<String> endpoints = new ArrayList<>();
-    endpoints.add("io.mapsmessaging.rest.api.impl");
-    endpoints.add("io.mapsmessaging.rest.api.impl.messaging");
-    endpoints.add("io.mapsmessaging.rest.translation");
-
-    if (config.isEnableSwagger()) {
-      endpoints.add("io.swagger.v3.jaxrs2.integration.resources");
-      endpoints.add("io.swagger.v3.jaxrs2.integration.resources.AcceptHeaderOpenApiResource");
-    }
-    if (config.isEnableUserManagement()) {
-      endpoints.add("io.mapsmessaging.rest.api.impl.auth");
-    }
-    if (config.isEnableDestinationManagement()) {
-      endpoints.add("io.mapsmessaging.rest.api.impl.destination");
-    }
-    if (config.isEnableInterfaceManagement()) {
-      endpoints.add("io.mapsmessaging.rest.api.impl.interfaces");
-      endpoints.add("io.mapsmessaging.rest.api.impl.integration");
-      endpoints.add("io.mapsmessaging.rest.api.impl.connections");
-      endpoints.add("io.mapsmessaging.rest.api.impl.lora");
-      endpoints.add("io.mapsmessaging.rest.api.impl.discovery");
-    }
-    if (config.isEnableSchemaManagement()) {
-      endpoints.add("io.mapsmessaging.rest.api.impl.schema");
-    }
-    endpoints.add("io.mapsmessaging.rest.api.impl.hardware");
-    endpoints.add("io.mapsmessaging.rest.api.impl.server");
-    endpoints.add("io.mapsmessaging.rest.api.impl.logging");
-    endpoints.add("io.mapsmessaging.rest.api.impl.ml");
-    endpoints.add("io.mapsmessaging.rest.api.impl.config");
-    endpoints.add("io.mapsmessaging.rest.api.impl.twins");
 
     try {
       final ResourceConfig resourceConfig = new ResourceConfig();
-      resourceConfig.packages(false, endpoints.toArray(new String[0]));
+      resourceConfig.packages(false, packageNames.toArray(new String[0]));
       resourceConfig.property(ServerProperties.WADL_FEATURE_DISABLE, !config.isEnableWadlEndPoint());
       resourceConfig.register(SseFeature.class);
       // Register Gson providers
@@ -334,6 +308,41 @@ public class RestApiServerManager implements Agent {
       status.setStatus(Status.DISABLED);
     }
     return status;
+  }
+
+  private List<String> buildInbuilt(){
+    List<String> endpoints = new ArrayList<>();
+    endpoints.add("io.mapsmessaging.rest.api.impl");
+    endpoints.add("io.mapsmessaging.rest.api.impl.messaging");
+    endpoints.add("io.mapsmessaging.rest.translation");
+
+    if (config.isEnableSwagger()) {
+      endpoints.add("io.swagger.v3.jaxrs2.integration.resources");
+      endpoints.add("io.swagger.v3.jaxrs2.integration.resources.AcceptHeaderOpenApiResource");
+    }
+    if (config.isEnableUserManagement()) {
+      endpoints.add("io.mapsmessaging.rest.api.impl.auth");
+    }
+    if (config.isEnableDestinationManagement()) {
+      endpoints.add("io.mapsmessaging.rest.api.impl.destination");
+    }
+    if (config.isEnableInterfaceManagement()) {
+      endpoints.add("io.mapsmessaging.rest.api.impl.interfaces");
+      endpoints.add("io.mapsmessaging.rest.api.impl.integration");
+      endpoints.add("io.mapsmessaging.rest.api.impl.connections");
+      endpoints.add("io.mapsmessaging.rest.api.impl.lora");
+      endpoints.add("io.mapsmessaging.rest.api.impl.discovery");
+    }
+    if (config.isEnableSchemaManagement()) {
+      endpoints.add("io.mapsmessaging.rest.api.impl.schema");
+    }
+    endpoints.add("io.mapsmessaging.rest.api.impl.hardware");
+    endpoints.add("io.mapsmessaging.rest.api.impl.server");
+    endpoints.add("io.mapsmessaging.rest.api.impl.logging");
+    endpoints.add("io.mapsmessaging.rest.api.impl.ml");
+    endpoints.add("io.mapsmessaging.rest.api.impl.config");
+    endpoints.add("io.mapsmessaging.rest.api.impl.twins");
+    return endpoints;
   }
 
 }

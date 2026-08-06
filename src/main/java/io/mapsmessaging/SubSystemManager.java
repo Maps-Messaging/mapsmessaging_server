@@ -220,6 +220,8 @@ public class SubSystemManager {
     DestinationManager destinationManager = new DestinationManager(featureManager);
     TransformationManager.getInstance();
 
+    StateManagerAgent stateManagerAgent;
+
     addToMap(10, 2000, AuthManager.getInstance());
     addToMap(50, 1100, SchemaManager.getInstance());
     addToMap(80, 20, NetworkInterfaceMonitor.getInstance());
@@ -227,15 +229,22 @@ public class SubSystemManager {
     addToMap(300, 11, new DiscoveryManager(uniqueId));
     addToMap(400, 1200, securityManager);
     addToMap(500, 950, destinationManager);
-    addToMap(550, 960, new StateManagerAgent());
+    stateManagerAgent = new StateManagerAgent();
+    addToMap(550, 960, stateManagerAgent);
     addToMap(600, 300, new SessionManager(securityManager, destinationManager, EnvironmentConfig.getInstance().getPathLookups().get("MAPS_DATA"),sessionPipeLines));
     addToMap(700, 150, new NetworkManager(featureManager));
     addToMap(900, 200, new NetworkConnectionManager());
     addToMap(750, 750, new AggregatorManager());
 
     if(featureManager.isEnabled("management.restApi")) {
-      addToMap(1200, 400, new RestApiServerManager());
+      RestApiServerManager restApiServerManager = new RestApiServerManager();
+      addToMap(1200, 400, restApiServerManager);
+      List<String> restApiPackages = stateManagerAgent.getRestApiPackageList();
+      if(!restApiPackages.isEmpty()){
+        restApiServerManager.addPackageNameList(restApiPackages);
+      }
     }
+
     if(featureManager.isEnabled("interConnections.pushSupport") ||
         featureManager.isEnabled("interConnections.pullSupport")) {
       addToMap(2000, 30, new ServerConnectionManager());
