@@ -19,34 +19,45 @@
 
 package io.mapsmessaging.state.mavlink.listener;
 
-import io.mapsmessaging.state.drone.core.TwinManager;
-import io.mapsmessaging.state.drone.core.TwinUpdateContext;
-import io.mapsmessaging.state.mavlink.packet.MavlinkPacket;
-import io.mapsmessaging.state.mavlink.packet.StatusTextPacket;
-
 import static io.mapsmessaging.state.mavlink.packet.MavlinkMessageIds.STATUSTEXT;
 
-/**
- * Listener for STATUSTEXT.
- */
+import io.mapsmessaging.state.drone.core.TwinManager;
+import io.mapsmessaging.state.drone.core.TwinUpdateContext;
+import io.mapsmessaging.state.drone.drone.DroneTwin;
+import io.mapsmessaging.state.mavlink.packet.MavlinkPacket;
+import io.mapsmessaging.state.mavlink.packet.StatusTextPacket;
+import java.time.Instant;
+
+/** Listener for STATUSTEXT. */
 public class StatusTextListener implements Listener {
 
   public static final int LISTENER_ID = STATUSTEXT;
 
+  private final TwinManager twinManager;
 
   public StatusTextListener(TwinManager twinManager) {
-
+    this.twinManager = twinManager;
   }
 
   @Override
   public void handle(String twinId, MavlinkPacket pkt, TwinUpdateContext context) {
-
-    if (!(pkt instanceof StatusTextPacket packet)) {
+    if (!(pkt instanceof StatusTextPacket packet) || !packet.isValid()) {
       return;
     }
 
-    if (packet.isValid() && packet.getText() != null) {
-      // log it
+    String text = packet.getText();
+    if (text == null || text.isBlank()) {
+      return;
     }
+
+    Instant now = context != null && context.getReceivedTime() != null ? context.getReceivedTime() : Instant.now();
+    twinManager.updateTwin(
+        twinId,
+        twin -> {
+          DroneTwin droneTwin = (DroneTwin) twin;
+          droneTwin.setLastStatusText(text.trim());
+          droneTwin.setOperationalUpdatedAt(now);
+        },
+        context);
   }
 }
