@@ -36,12 +36,9 @@ import com.hivemq.client.mqtt.mqtt5.message.connect.connack.Mqtt5ConnAckReasonCo
 import com.hivemq.client.mqtt.mqtt5.message.disconnect.Mqtt5Disconnect;
 import io.mapsmessaging.security.MapsSecurityProvider;
 import java.io.FileInputStream;
-import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.security.KeyStore;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
@@ -50,7 +47,6 @@ import javax.net.ssl.*;
 import javax.security.sasl.Sasl;
 import javax.security.sasl.SaslClient;
 import javax.security.sasl.SaslException;
-import org.eclipse.paho.mqttv5.client.MqttConnectionOptions;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
@@ -123,9 +119,9 @@ class MqttAuthSaslTest extends MQTTBaseTest {
   @ParameterizedTest
   @MethodSource("mqttGetAuthUrls")
   void testInvalidMechanism(int version, String protocol) throws Exception {
-    SaslClient saslClient = badMechanism(null, "admin", "Bad Password");
+    SaslClient saslClient = setForSasl(null, "admin", "Bad Password");
     boolean isSsl = protocol.equalsIgnoreCase("ssl") || protocol.equalsIgnoreCase("wss");
-    Mqtt5EnhancedAuthMechanism mqtt5EnhancedAuthMechanism = new Mqtt5SaslAuth(saslClient);
+    Mqtt5EnhancedAuthMechanism mqtt5EnhancedAuthMechanism = new Mqtt5SaslAuth(saslClient, true);
     Mqtt5ClientBuilder builder = MqttClient.builder()
         .useMqttVersion5()
         .enhancedAuth(mqtt5EnhancedAuthMechanism)
@@ -180,20 +176,6 @@ class MqttAuthSaslTest extends MQTTBaseTest {
         .build();
   }
 
-  public SaslClient badMechanism(MqttConnectionOptions options, String username, String password) throws IOException {
-    String mechanism = "SCRAM-SHA-512";
-    Map<String, String> props = new HashMap<>();
-    props.put(Sasl.QOP, "auth");
-    String[] mechanisms = {mechanism};
-    ClientCallbackHandler clientHandler = new ClientCallbackHandler(username, password, "servername");
-    SaslClient saslClient = Sasl.createSaslClient(mechanisms, "authorizationId", "MQTT", "serverName", props, clientHandler);
-    if (options != null) {
-      options.setAuthMethod(mechanism);
-      options.setAuthData(new byte[0]);
-    }
-    return saslClient;
-  }
-
   private static class Mqtt5SaslAuth implements Mqtt5EnhancedAuthMechanism {
 
     private final SaslClient saslClient;
@@ -225,8 +207,12 @@ class MqttAuthSaslTest extends MQTTBaseTest {
 
     @Override
     public @NotNull CompletableFuture<Void> onAuth(@NotNull Mqtt5ClientConfig mqtt5ClientConfig, @NotNull Mqtt5Connect mqtt5Connect, @NotNull Mqtt5EnhancedAuthBuilder mqtt5EnhancedAuthBuilder) {
-      mqtt5EnhancedAuthBuilder.data(new byte[0]);
-      return CompletableFuture.completedFuture(null);
+      try {
+        mqtt5EnhancedAuthBuilder.data(saslClient.evaluateChallenge(new byte[0]));
+        return CompletableFuture.completedFuture(null);
+      } catch (SaslException e) {
+        return CompletableFuture.failedFuture(e);
+      }
     }
 
     @Override

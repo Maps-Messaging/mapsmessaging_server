@@ -86,15 +86,15 @@ public class MQTTBaseTest extends BaseTestConfig {
   }
 
   public SaslClient setForSasl(MqttConnectionOptions options, String username, String password) throws IOException {
-    String mechanism = "CRAM-MD5";
+    String mechanism = "SCRAM-SHA-256";
     Map<String, String> props = new HashMap<>();
     props.put(Sasl.QOP, "auth");
     String[] mechanisms = {mechanism};
     ClientCallbackHandler clientHandler = new ClientCallbackHandler(username, password, "servername");
-    SaslClient saslClient = Sasl.createSaslClient(mechanisms, "authorizationId", "MQTT", "serverName", props, clientHandler);
+    SaslClient saslClient = Sasl.createSaslClient(mechanisms, null, "MQTT", "serverName", props, clientHandler);
     if (options != null) {
       options.setAuthMethod(mechanism);
-      options.setAuthData(new byte[0]);
+      options.setAuthData(saslClient.evaluateChallenge(new byte[0]));
     }
     return saslClient;
   }

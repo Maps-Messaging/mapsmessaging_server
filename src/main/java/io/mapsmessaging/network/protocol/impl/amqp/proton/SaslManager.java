@@ -48,6 +48,9 @@ public class SaslManager {
   }
 
   public void challenge() throws IOException {
+    if (saslAuthenticationMechanism == null) {
+      return;
+    }
     int pending = Math.max(0, sasl.pending());
     byte[] challenge;
     if (pending > 0) {
@@ -85,6 +88,12 @@ public class SaslManager {
     }
 
     return saslAuthenticationMechanism == null || sasl.getOutcome().equals(Sasl.SaslOutcome.PN_SASL_OK);
+  }
+
+  public void close() throws IOException {
+    if (saslAuthenticationMechanism != null) {
+      saslAuthenticationMechanism.close();
+    }
   }
 
 }
