@@ -21,14 +21,19 @@ package io.mapsmessaging.network.protocol.impl.amqp.proton.listeners;
 
 import io.mapsmessaging.api.Destination;
 import io.mapsmessaging.api.Session;
+import io.mapsmessaging.api.SubscribedEventManager;
 import io.mapsmessaging.api.features.DestinationType;
 import io.mapsmessaging.dto.rest.config.protocol.impl.AmqpConfigDTO;
+import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.network.protocol.impl.amqp.AMQPProtocol;
 import io.mapsmessaging.network.protocol.impl.amqp.proton.ProtonEngine;
+import io.mapsmessaging.network.protocol.impl.amqp.proton.SubscriptionManager;
 import org.apache.qpid.proton.amqp.Symbol;
+import org.apache.qpid.proton.amqp.messaging.Source;
 import org.apache.qpid.proton.amqp.messaging.Target;
 import org.apache.qpid.proton.engine.Event;
 import org.apache.qpid.proton.engine.Receiver;
+import org.apache.qpid.proton.engine.Sender;
 import org.junit.jupiter.api.Test;
 import org.mockito.InOrder;
 
@@ -46,6 +51,47 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 class LinkRemoteOpenEventListenerTest {
+
+  @Test
+  void sender_subscription_is_bound_before_attach_is_opened() throws Exception {
+    AMQPProtocol protocol = mock(AMQPProtocol.class);
+    ProtonEngine engine = mock(ProtonEngine.class);
+    SubscriptionManager subscriptions = mock(SubscriptionManager.class);
+    Event event = mock(Event.class);
+    Sender sender = mock(Sender.class);
+    org.apache.qpid.proton.engine.Session protonSession = mock(org.apache.qpid.proton.engine.Session.class);
+    Session session = mock(Session.class);
+    Destination destination = mock(Destination.class);
+    SubscribedEventManager manager = mock(SubscribedEventManager.class);
+    Source source = new Source();
+    source.setAddress("orders");
+    source.setCapabilities(Symbol.valueOf("queue"));
+    source.setDistributionMode(Symbol.valueOf("copy"));
+    when(protocol.getAmqpConfig()).thenReturn(new AmqpConfigDTO());
+    when(protocol.getLogger()).thenReturn(mock(Logger.class));
+    when(engine.getSubscriptions()).thenReturn(subscriptions);
+    when(event.getLink()).thenReturn(sender);
+    when(event.getSession()).thenReturn(protonSession);
+    when(protonSession.getContext()).thenReturn(session);
+    when(sender.getRemoteSource()).thenReturn(source);
+    when(sender.getSource()).thenReturn(source);
+    when(sender.getCredit()).thenReturn(0, 10);
+    when(session.findDestination("orders", DestinationType.QUEUE)).thenReturn(CompletableFuture.completedFuture(destination));
+    when(session.addSubscription(any())).thenReturn(manager);
+    LinkRemoteOpenEventListener listener = new LinkRemoteOpenEventListener(protocol, engine);
+
+    assertTrue(listener.handleEvent(event));
+
+    InOrder order = inOrder(session, subscriptions, sender);
+    order.verify(session).addSubscription(any());
+    order.verify(subscriptions).put(manager, sender);
+    order.verify(sender).setContext(manager);
+    order.verify(sender).open();
+
+    assertTrue(new LinkFlowEventListener(protocol, engine).handleEvent(event));
+
+    verify(manager).updateCredit(10);
+  }
 
   @Test
   void dynamic_receiver_target_has_address_before_link_opens_without_waiting_for_creation() {

@@ -23,13 +23,20 @@ import io.mapsmessaging.network.protocol.impl.amqp.AMQPProtocol;
 import io.mapsmessaging.network.protocol.impl.amqp.proton.ProtonEngine;
 import org.apache.qpid.proton.amqp.messaging.Source;
 import org.apache.qpid.proton.amqp.messaging.TerminusDurability;
+import org.apache.qpid.proton.amqp.transport.ErrorCondition;
 import org.apache.qpid.proton.engine.*;
 import org.apache.qpid.proton.engine.Event.Type;
 
+import javax.security.auth.login.LoginException;
+import java.io.IOException;
+
 public class LinkRemoteOpenEventListener extends BaseEventListener {
+
+  private final SenderLinkLocalOpenEventListener senderOpenListener;
 
   public LinkRemoteOpenEventListener(AMQPProtocol protocol, ProtonEngine engine) {
     super(protocol, engine);
+    senderOpenListener = new SenderLinkLocalOpenEventListener(protocol, engine);
   }
 
   @Override
@@ -37,7 +44,7 @@ public class LinkRemoteOpenEventListener extends BaseEventListener {
     Link link = event.getLink();
     if (link != null) {
       if (link instanceof Sender) {
-        handleSenderOpen((Sender) link);
+        handleSenderOpen(event, (Sender) link);
       } else if (link instanceof Receiver) {
         handleReceiverOpen(event, (Receiver) link);
       }
@@ -62,7 +69,7 @@ public class LinkRemoteOpenEventListener extends BaseEventListener {
     ReceiverLinkLocalOpenEventListener.prepareAndOpen(event, receiver, engine);
   }
 
-  private void handleSenderOpen(Sender sender) {
+  private void handleSenderOpen(Event event, Sender sender) {
     // Setup the local source/target
     if (sender.getRemoteSource() == null) {
       // We don't have the source, but we can reattach to the name given
@@ -81,7 +88,19 @@ public class LinkRemoteOpenEventListener extends BaseEventListener {
     if (sender.getRemoteReceiverSettleMode() != null) {
       sender.setReceiverSettleMode(sender.getRemoteReceiverSettleMode());
     }
-    sender.open();
+    try {
+      if (senderOpenListener.prepareSender(event, sender)) {
+        sender.open();
+      } else {
+        sender.setCondition(new ErrorCondition(SESSION_CREATION, "Failed to establish the sender link subscription"));
+        sender.open();
+        sender.close();
+      }
+    } catch (LoginException | IOException e) {
+      senderOpenListener.setSenderOpenFailure(sender, e);
+      sender.open();
+      sender.close();
+    }
   }
 
   @Override

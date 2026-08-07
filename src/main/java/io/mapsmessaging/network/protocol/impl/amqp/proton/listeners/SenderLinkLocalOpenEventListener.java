@@ -56,22 +56,42 @@ public class SenderLinkLocalOpenEventListener extends LinkLocalOpenEventListener
   @Override
   public boolean handleEvent(Event event) {
     Link link = event.getLink();
-    if (link instanceof Sender) {
-      Sender sender = (Sender) link;
-      Source source = (Source) sender.getRemoteSource();
+    if (link instanceof Sender sender) {
+      if (sender.getContext() instanceof SubscribedEventManager || sender.getContext() instanceof SubscriptionContext) {
+        return true;
+      }
       try {
-        String destinationName = resolveDestinationName(event, sender, source);
-        if (destinationName != null) {
-          return processEvent(event, link, sender, source, destinationName);
-        }
+        return prepareSender(event, sender);
       } catch (LoginException | IOException e) {
-        if (source != null && source.getDynamic()) {
-          link.setCondition(new ErrorCondition(DYNAMIC_CREATION_ERROR, "Failed to create the dynamic destination::" + e.getMessage()));
-        }
-        link.close();
+        failSenderOpen(sender, e);
       }
     }
     return false;
+  }
+
+  boolean prepareSender(Event event, Sender sender) throws LoginException, IOException {
+    Source source = getSource(sender);
+    String destinationName = resolveDestinationName(event, sender, source);
+    return destinationName != null && processEvent(event, sender, sender, source, destinationName);
+  }
+
+  void failSenderOpen(Sender sender, Exception exception) {
+    setSenderOpenFailure(sender, exception);
+    sender.close();
+  }
+
+  void setSenderOpenFailure(Sender sender, Exception exception) {
+    Source source = getSource(sender);
+    if (source != null && source.getDynamic()) {
+      sender.setCondition(new ErrorCondition(DYNAMIC_CREATION_ERROR, "Failed to create the dynamic destination::" + exception.getMessage()));
+    }
+  }
+
+  private Source getSource(Sender sender) {
+    if (sender.getRemoteSource() instanceof Source remoteSource) {
+      return remoteSource;
+    }
+    return sender.getSource() instanceof Source localSource ? localSource : null;
   }
 
   private String resolveDestinationName(Event event, Sender sender, Source source) throws LoginException, IOException {
