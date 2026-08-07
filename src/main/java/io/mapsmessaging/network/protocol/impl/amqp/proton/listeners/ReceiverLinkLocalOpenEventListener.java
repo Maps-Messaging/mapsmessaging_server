@@ -19,6 +19,7 @@
 
 package io.mapsmessaging.network.protocol.impl.amqp.proton.listeners;
 
+import io.mapsmessaging.api.Destination;
 import io.mapsmessaging.api.features.DestinationType;
 import io.mapsmessaging.network.protocol.impl.amqp.AMQPProtocol;
 import io.mapsmessaging.network.protocol.impl.amqp.proton.ProtonEngine;
@@ -32,6 +33,7 @@ import org.apache.qpid.proton.engine.Receiver;
 
 import java.io.IOException;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 
 public class ReceiverLinkLocalOpenEventListener extends LinkLocalOpenEventListener {
 
@@ -44,31 +46,38 @@ public class ReceiverLinkLocalOpenEventListener extends LinkLocalOpenEventListen
     Link link = event.getLink();
     if (link instanceof Receiver) {
       Receiver receiver = (Receiver) link;
-      try {
-        prepareReceiver(event, receiver);
-      } catch (IOException e) {
-        link.setCondition(new ErrorCondition(DYNAMIC_CREATION_ERROR, "Failed to create the dynamic destination::" + e.getMessage()));
-        receiver.open();
-        receiver.close();
-        return true;
-      }
-      receiver.open();
+      prepareAndOpen(event, receiver, engine);
       return true;
     }
     return false;
   }
 
-  static void prepareReceiver(Event event, Receiver receiver) throws IOException {
+  static void prepareAndOpen(Event event, Receiver receiver, ProtonEngine engine) {
+    try {
+      CompletableFuture<Destination> creation = prepareReceiver(event, receiver);
+      if (creation == null) {
+        receiver.open();
+      } else {
+        creation.whenComplete((destination, failure) -> engine.executeAndFlush(() -> completeDynamicOpen(receiver, destination, failure)));
+      }
+    } catch (IOException e) {
+      failDynamicOpen(receiver, e.getMessage());
+    }
+  }
+
+  static CompletableFuture<Destination> prepareReceiver(Event event, Receiver receiver) throws IOException {
     receiver.setSource(receiver.getRemoteSource());
     Target remoteTarget = receiver.getRemoteTarget();
     receiver.setTarget(remoteTarget);
+    CompletableFuture<Destination> creation = null;
     if (remoteTarget instanceof org.apache.qpid.proton.amqp.messaging.Target messagingTarget) {
-      handleDynamicTarget(event, messagingTarget);
+      creation = handleDynamicTarget(event, messagingTarget);
     }
     retainDestinationName(receiver, remoteTarget);
+    return creation;
   }
 
-  private static void handleDynamicTarget(Event event, org.apache.qpid.proton.amqp.messaging.Target messagingTarget) throws IOException {
+  private static CompletableFuture<Destination> handleDynamicTarget(Event event, org.apache.qpid.proton.amqp.messaging.Target messagingTarget) throws IOException {
     if (messagingTarget.getDynamic() && (messagingTarget.getAddress() == null || messagingTarget.getAddress().isBlank())) {
       DestinationType type = DestinationType.TEMPORARY_TOPIC;
       UUID uuid = UuidGenerator.getInstance().generate();
@@ -85,10 +94,29 @@ public class ReceiverLinkLocalOpenEventListener extends LinkLocalOpenEventListen
         throw new IOException("AMQP session is not established");
       }
       messagingTarget.setAddress(address);
-      if (session.findDestination(address, type) == null) {
+      CompletableFuture<Destination> creation = session.findDestination(address, type);
+      if (creation == null) {
         throw new IOException("Destination manager returned no dynamic destination future");
       }
+      return creation;
     }
+    return null;
+  }
+
+  private static void completeDynamicOpen(Receiver receiver, Destination destination, Throwable failure) {
+    if (failure != null) {
+      failDynamicOpen(receiver, failure.getMessage());
+    } else if (destination == null) {
+      failDynamicOpen(receiver, "Destination manager returned no dynamic destination");
+    } else {
+      receiver.open();
+    }
+  }
+
+  private static void failDynamicOpen(Receiver receiver, String reason) {
+    receiver.setCondition(new ErrorCondition(DYNAMIC_CREATION_ERROR, "Failed to create the dynamic destination::" + reason));
+    receiver.open();
+    receiver.close();
   }
 
   private static boolean scanForQueue(org.apache.qpid.proton.amqp.messaging.Target messagingTarget) {

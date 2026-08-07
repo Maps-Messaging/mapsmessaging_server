@@ -40,9 +40,10 @@ import org.apache.qpid.proton.engine.Transport;
 import java.io.IOException;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
+import java.util.concurrent.RejectedExecutionException;
+import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
-import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public class ProtonEngine {
@@ -159,6 +160,28 @@ public class ProtonEngine {
 
   public void sendMessage(Message message, SubscribedEventManager manager) {
     sendMessage(message, manager, null);
+  }
+
+  public void executeAndFlush(Runnable action) {
+    if (closed.get()) {
+      return;
+    }
+    try {
+      engineScheduler.submit(() -> {
+        if (closed.get()) {
+          return false;
+        }
+        try {
+          action.run();
+          return new TickTask(this).call();
+        } catch (Exception e) {
+          protocol.getLogger().log(ServerLogMessages.AMQP_ENGINE_TRANSPORT_EXCEPTION, e);
+          return false;
+        }
+      });
+    } catch (RejectedExecutionException ignored) {
+      // The engine closed between the state check and task submission.
+    }
   }
 
   public void tick() {

@@ -23,11 +23,8 @@ import io.mapsmessaging.network.protocol.impl.amqp.AMQPProtocol;
 import io.mapsmessaging.network.protocol.impl.amqp.proton.ProtonEngine;
 import org.apache.qpid.proton.amqp.messaging.Source;
 import org.apache.qpid.proton.amqp.messaging.TerminusDurability;
-import org.apache.qpid.proton.amqp.transport.ErrorCondition;
 import org.apache.qpid.proton.engine.*;
 import org.apache.qpid.proton.engine.Event.Type;
-
-import java.io.IOException;
 
 public class LinkRemoteOpenEventListener extends BaseEventListener {
 
@@ -56,21 +53,13 @@ public class LinkRemoteOpenEventListener extends BaseEventListener {
 
 
   private void handleReceiverOpen(Event event, Receiver receiver) {
-    try {
-      ReceiverLinkLocalOpenEventListener.prepareReceiver(event, receiver);
-    } catch (IOException e) {
-      receiver.setCondition(new ErrorCondition(DYNAMIC_CREATION_ERROR, "Failed to create the dynamic destination::" + e.getMessage()));
-      receiver.open();
-      receiver.close();
-      return;
-    }
     if (receiver.getRemoteSenderSettleMode() != null) {
       receiver.setSenderSettleMode(receiver.getRemoteSenderSettleMode());
     }
     if (receiver.getRemoteReceiverSettleMode() != null) {
       receiver.setReceiverSettleMode(receiver.getRemoteReceiverSettleMode());
     }
-    receiver.open();
+    ReceiverLinkLocalOpenEventListener.prepareAndOpen(event, receiver, engine);
   }
 
   private void handleSenderOpen(Sender sender) {

@@ -19,6 +19,7 @@
 
 package io.mapsmessaging.network.protocol.impl.amqp.proton.listeners;
 
+import io.mapsmessaging.api.Destination;
 import io.mapsmessaging.api.Session;
 import io.mapsmessaging.api.features.DestinationType;
 import io.mapsmessaging.network.protocol.impl.amqp.AMQPProtocol;
@@ -33,11 +34,13 @@ import org.mockito.InOrder;
 import java.util.concurrent.CompletableFuture;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -50,6 +53,8 @@ class LinkRemoteOpenEventListenerTest {
     Receiver receiver = mock(Receiver.class);
     org.apache.qpid.proton.engine.Session protonSession = mock(org.apache.qpid.proton.engine.Session.class);
     Session session = mock(Session.class);
+    ProtonEngine engine = mock(ProtonEngine.class);
+    CompletableFuture<Destination> creation = new CompletableFuture<>();
     Target target = new Target();
     target.setDynamic(true);
     target.setCapabilities(Symbol.valueOf("temporary-queue"));
@@ -57,17 +62,25 @@ class LinkRemoteOpenEventListenerTest {
     when(event.getSession()).thenReturn(protonSession);
     when(protonSession.getContext()).thenReturn(session);
     when(receiver.getRemoteTarget()).thenReturn(target);
-    when(session.findDestination(anyString(), eq(DestinationType.TEMPORARY_QUEUE))).thenReturn(new CompletableFuture<>());
+    when(session.findDestination(anyString(), eq(DestinationType.TEMPORARY_QUEUE))).thenReturn(creation);
+    doAnswer(invocation -> {
+      invocation.getArgument(0, Runnable.class).run();
+      return null;
+    }).when(engine).executeAndFlush(any(Runnable.class));
     doAnswer(invocation -> {
       assertTrue(target.getAddress().startsWith("/dynamic/temporary/queue/"));
       return null;
     }).when(receiver).open();
-    LinkRemoteOpenEventListener listener = new LinkRemoteOpenEventListener(protocol, mock(ProtonEngine.class));
+    LinkRemoteOpenEventListener listener = new LinkRemoteOpenEventListener(protocol, engine);
 
     assertTrue(listener.handleEvent(event));
 
     verify(receiver).setTarget(target);
     verify(receiver).setContext(new BaseEventListener.ReceiverTargetContext(target.getAddress()));
+    verify(receiver, never()).open();
+
+    creation.complete(mock(Destination.class));
+
     verify(receiver).open();
   }
 

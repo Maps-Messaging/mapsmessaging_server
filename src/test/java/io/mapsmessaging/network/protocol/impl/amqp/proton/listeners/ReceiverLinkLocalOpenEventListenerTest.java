@@ -33,6 +33,7 @@ import org.junit.jupiter.api.Test;
 import java.util.concurrent.CompletableFuture;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doAnswer;
@@ -49,6 +50,7 @@ class ReceiverLinkLocalOpenEventListenerTest {
     Receiver receiver = mock(Receiver.class);
     org.apache.qpid.proton.engine.Session protonSession = mock(org.apache.qpid.proton.engine.Session.class);
     Session session = mock(Session.class);
+    ProtonEngine engine = mock(ProtonEngine.class);
     Destination destination = mock(Destination.class);
     Target target = new Target();
     target.setDynamic(true);
@@ -59,10 +61,14 @@ class ReceiverLinkLocalOpenEventListenerTest {
     when(receiver.getRemoteTarget()).thenReturn(target);
     when(session.findDestination(anyString(), eq(DestinationType.TEMPORARY_QUEUE))).thenReturn(CompletableFuture.completedFuture(destination));
     doAnswer(invocation -> {
+      invocation.getArgument(0, Runnable.class).run();
+      return null;
+    }).when(engine).executeAndFlush(any(Runnable.class));
+    doAnswer(invocation -> {
       assertTrue(target.getAddress().startsWith("/dynamic/temporary/queue/"));
       return null;
     }).when(receiver).open();
-    ReceiverLinkLocalOpenEventListener listener = new ReceiverLinkLocalOpenEventListener(protocol, mock(ProtonEngine.class));
+    ReceiverLinkLocalOpenEventListener listener = new ReceiverLinkLocalOpenEventListener(protocol, engine);
 
     assertTrue(listener.handleEvent(event));
 
