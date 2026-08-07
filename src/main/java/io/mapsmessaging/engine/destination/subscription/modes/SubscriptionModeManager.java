@@ -197,7 +197,7 @@ public abstract class SubscriptionModeManager {
         }
       } catch (InterruptedException e) {
         Thread.currentThread().interrupt();
-        return null;
+        throw new IOException("Interrupted while creating subscription for " + context.getFilter(), e);
       } catch (ExecutionException e) {
         throw new IOException(e);
       }
