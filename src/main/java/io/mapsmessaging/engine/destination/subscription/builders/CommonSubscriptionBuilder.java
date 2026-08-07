@@ -83,10 +83,11 @@ public abstract class CommonSubscriptionBuilder extends SubscriptionBuilder {
       MessageStateManager proxy = new ProxyMessageStateManager(messageStateManager, boundedMessageStateManager);
       CreditManager creditManager = new FixedCreditManager(1024);
       AcknowledgementController acknowledgementController = new AutoAcknowledgementController(creditManager);
+      String subscriptionId = destination.getResourceType().isQueue() ? destination.getFullyQualifiedNamespace() : sessionId;
       if (parserExecutor != null) {
-        sharedSubscription = new SharedSelectorSubscription(destination, context, parserExecutor, sessionId, proxy, acknowledgementController, lookupName);
+        sharedSubscription = new SharedSelectorSubscription(destination, context, parserExecutor, subscriptionId, proxy, acknowledgementController, lookupName);
       } else {
-        sharedSubscription = new SharedSubscription(destination, context, sessionId, messageStateManager, acknowledgementController, lookupName);
+        sharedSubscription = new SharedSubscription(destination, context, subscriptionId, messageStateManager, acknowledgementController, lookupName);
       }
       sharedSubscriptionManager.add(lookupName, sharedSubscription);
     }

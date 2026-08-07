@@ -76,8 +76,12 @@ public class SharedSubscription extends DestinationSubscription {
   public void removeSession(SessionImpl remove) {
     subscriptions.remove(remove);
     if (subscriptions.isEmpty()) {
-      destinationImpl.removeSubscription(getSessionId());
-      close();
+      if (destinationImpl.getResourceType().isQueue()) {
+        hibernate();
+      } else {
+        destinationImpl.removeSubscription(getSessionId());
+        close();
+      }
     }
   }
 
