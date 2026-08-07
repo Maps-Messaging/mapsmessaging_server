@@ -19,7 +19,6 @@
 
 package io.mapsmessaging.network.protocol.impl.amqp.proton.listeners;
 
-import io.mapsmessaging.api.Destination;
 import io.mapsmessaging.api.features.DestinationType;
 import io.mapsmessaging.network.protocol.impl.amqp.AMQPProtocol;
 import io.mapsmessaging.network.protocol.impl.amqp.proton.ProtonEngine;
@@ -33,7 +32,6 @@ import org.apache.qpid.proton.engine.Receiver;
 
 import java.io.IOException;
 import java.util.UUID;
-import java.util.concurrent.ExecutionException;
 
 public class ReceiverLinkLocalOpenEventListener extends LinkLocalOpenEventListener {
 
@@ -86,17 +84,9 @@ public class ReceiverLinkLocalOpenEventListener extends LinkLocalOpenEventListen
       if (!(sessionContext instanceof io.mapsmessaging.api.Session session)) {
         throw new IOException("AMQP session is not established");
       }
-      try {
-        Destination destination = session.findDestination(address, type).get();
-        if (destination == null) {
-          throw new IOException("Destination manager returned no dynamic destination");
-        }
-        messagingTarget.setAddress(address);
-      } catch (InterruptedException e) {
-        Thread.currentThread().interrupt();
-        throw new IOException("Interrupted while creating dynamic destination", e);
-      } catch (ExecutionException e) {
-        throw new IOException("Unable to create dynamic destination", e.getCause());
+      messagingTarget.setAddress(address);
+      if (session.findDestination(address, type) == null) {
+        throw new IOException("Destination manager returned no dynamic destination future");
       }
     }
   }
