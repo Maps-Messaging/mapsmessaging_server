@@ -130,21 +130,12 @@ public class BrowserConnectionTest extends BaseConnection {
     else{
       browser = session.createBrowser(queue, selector);
     }
-    WaitForState.wait(100, TimeUnit.MILLISECONDS);
+    Enumeration<?> enumeration = browser.getEnumeration();
+    WaitForState.wait(2, TimeUnit.SECONDS);
 
-    long start = System.currentTimeMillis()+2000;
-    Enumeration e = browser.getEnumeration();
-    while(!e.hasMoreElements()){
-      e = browser.getEnumeration();
-      WaitForState.wait(100, TimeUnit.MILLISECONDS);
-      if(start < System.currentTimeMillis()){
-        return 0;
-      }
-    }
-    int counter =0;
-    Assertions.assertTrue(e.hasMoreElements());
-    while (e.hasMoreElements()) {
-      TextMessage message = (TextMessage) e.nextElement();
+    int counter = 0;
+    while (enumeration.hasMoreElements()) {
+      TextMessage message = (TextMessage) enumeration.nextElement();
       counter++;
     }
     WaitForState.wait(100, TimeUnit.MILLISECONDS);
