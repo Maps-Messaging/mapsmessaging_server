@@ -38,6 +38,7 @@ import org.mockito.ArgumentCaptor;
 import java.util.concurrent.CompletableFuture;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -87,7 +88,7 @@ class SenderLinkLocalOpenEventListenerTest {
   }
 
   @Test
-  void browser_with_existing_subscription_registers_context_when_add_returns_no_manager() throws Exception {
+  void browser_with_no_event_manager_fails_the_link_instead_of_discarding_flow_credit() throws Exception {
     AMQPProtocol protocol = mock(AMQPProtocol.class);
     ProtonEngine engine = mock(ProtonEngine.class);
     SubscriptionManager subscriptions = mock(SubscriptionManager.class);
@@ -114,12 +115,9 @@ class SenderLinkLocalOpenEventListenerTest {
     when(session.addSubscription(any())).thenReturn(null);
     SenderLinkLocalOpenEventListener listener = new SenderLinkLocalOpenEventListener(protocol, engine);
 
-    assertTrue(listener.handleEvent(event));
+    assertFalse(listener.handleEvent(event));
 
-    ArgumentCaptor<io.mapsmessaging.engine.destination.subscription.SubscriptionContext> context = ArgumentCaptor.forClass(
-        io.mapsmessaging.engine.destination.subscription.SubscriptionContext.class);
-    verify(subscriptions).put(context.capture(), eq(sender));
-    assertTrue(context.getValue().isBrowser());
-    verify(sender).setContext(context.getValue());
+    verify(sender).setCondition(any(org.apache.qpid.proton.amqp.transport.ErrorCondition.class));
+    verify(sender).close();
   }
 }

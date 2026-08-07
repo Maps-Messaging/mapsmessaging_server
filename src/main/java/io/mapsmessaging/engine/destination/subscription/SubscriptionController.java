@@ -369,6 +369,7 @@ public class SubscriptionController implements DestinationManagerListener {
           subscription = modeManager.processSubscriptions(this, context, destinationSet, isReload);
         } catch (IOException e) {
           logger.log(ServerLogMessages.SUBSCRIPTION_MGR_FAILED, sessionId, context.getFilter(), e);
+          throw e;
         }
       }
     } else {
@@ -380,6 +381,7 @@ public class SubscriptionController implements DestinationManagerListener {
           subscription = modeManager.processSubscriptions(this, context, destinationSet, !context.isBrowser());
         } catch (IOException e) {
           logger.log(ServerLogMessages.SUBSCRIPTION_MGR_FAILED, sessionId, context.getFilter(), e);
+          throw e;
         }
       }
     }

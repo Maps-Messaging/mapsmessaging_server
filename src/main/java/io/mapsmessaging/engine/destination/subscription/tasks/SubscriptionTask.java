@@ -24,10 +24,12 @@ import io.mapsmessaging.engine.destination.subscription.Subscription;
 import io.mapsmessaging.engine.destination.subscription.SubscriptionContext;
 import io.mapsmessaging.engine.destination.subscription.SubscriptionController;
 import io.mapsmessaging.engine.destination.subscription.impl.ClientSubscribedEventManager;
+import io.mapsmessaging.engine.destination.subscription.impl.DestinationSubscription;
 import io.mapsmessaging.engine.tasks.EngineTask;
 import io.mapsmessaging.engine.tasks.Response;
 import io.mapsmessaging.engine.tasks.SubscriptionResponse;
 
+import java.io.IOException;
 import java.util.concurrent.atomic.AtomicLong;
 
 public class SubscriptionTask extends EngineTask {
@@ -51,7 +53,11 @@ public class SubscriptionTask extends EngineTask {
     try {
       if (context.isBrowser() && destination.getResourceType().isQueue()) {
         // We are now looking at the base queue so we need to find "shared_<Name Of Queue>_normal"
-        subscription = controller.createBrowserSubscription(context, destination.getSubscription(destination.getFullyQualifiedNamespace()), destination);
+        DestinationSubscription parent = destination.getSubscription(destination.getFullyQualifiedNamespace());
+        if (parent == null) {
+          throw new IOException("Unable to locate the base queue subscription for " + destination.getFullyQualifiedNamespace());
+        }
+        subscription = controller.createBrowserSubscription(context, parent, destination);
       } else {
         subscription = controller.get(destination);
         if (subscription != null) {

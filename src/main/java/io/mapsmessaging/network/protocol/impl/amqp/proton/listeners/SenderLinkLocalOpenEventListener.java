@@ -164,6 +164,9 @@ public class SenderLinkLocalOpenEventListener extends LinkLocalOpenEventListener
           eventManager = session.addSubscription(context);
         }
         if (eventManager == null) {
+          if (browser) {
+            throw new IOException("The engine returned no event manager for browser subscription " + destinationName);
+          }
           engine.getSubscriptions().put(context, sender);
           link.setContext(context);
         } else {
