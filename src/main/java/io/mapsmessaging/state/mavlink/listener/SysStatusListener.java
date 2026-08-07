@@ -19,6 +19,8 @@
 
 package io.mapsmessaging.state.mavlink.listener;
 
+import static io.mapsmessaging.state.mavlink.packet.MavlinkMessageIds.SYS_STATUS;
+
 import io.mapsmessaging.state.drone.core.TwinManager;
 import io.mapsmessaging.state.drone.core.TwinUpdateContext;
 import io.mapsmessaging.state.drone.drone.DroneTwin;
@@ -26,10 +28,7 @@ import io.mapsmessaging.state.drone.model.BatteryState;
 import io.mapsmessaging.state.drone.model.SystemState;
 import io.mapsmessaging.state.mavlink.packet.MavlinkPacket;
 import io.mapsmessaging.state.mavlink.packet.SysStatusPacket;
-
 import java.time.Instant;
-
-import static io.mapsmessaging.state.mavlink.packet.MavlinkMessageIds.SYS_STATUS;
 
 public class SysStatusListener implements Listener {
 
@@ -43,29 +42,22 @@ public class SysStatusListener implements Listener {
 
   @Override
   public void handle(String twinId, MavlinkPacket pkt, TwinUpdateContext context) {
-
-    if (!(pkt instanceof SysStatusPacket packet)) {
+    if (!(pkt instanceof SysStatusPacket packet) || !packet.isValid()) {
       return;
     }
 
-    if (!packet.isValid()) {
-      return;
-    }
+    Instant now = context != null && context.getReceivedTime() != null ? context.getReceivedTime() : Instant.now();
 
-    Instant now = (context != null && context.getReceivedTime() != null)
-        ? context.getReceivedTime()
-        : Instant.now();
-
-    twinManager.updateTwin(twinId, twin -> {
-      DroneTwin drone = (DroneTwin) twin;
-
-      updateBatteryState(drone, packet);
-      updateSystemState(drone, packet);
-
-      drone.setPowerUpdatedAt(now);
-      drone.setOperationalUpdatedAt(now);
-
-    }, context);
+    twinManager.updateTwin(
+        twinId,
+        twin -> {
+          DroneTwin drone = (DroneTwin) twin;
+          updateBatteryState(drone, packet);
+          updateSystemState(drone, packet);
+          drone.setPowerUpdatedAt(now);
+          drone.setOperationalUpdatedAt(now);
+        },
+        context);
   }
 
   private void updateBatteryState(DroneTwin drone, SysStatusPacket packet) {
@@ -77,11 +69,9 @@ public class SysStatusListener implements Listener {
     if (!Double.isNaN(packet.getVoltageVolts())) {
       batteryState.setVoltageVolts(packet.getVoltageVolts());
     }
-
     if (!Double.isNaN(packet.getCurrentAmps())) {
       batteryState.setCurrentAmps(packet.getCurrentAmps());
     }
-
     if (!Double.isNaN(packet.getRemainingPercent())) {
       batteryState.setPercentage(packet.getRemainingPercent());
     }
@@ -99,10 +89,9 @@ public class SysStatusListener implements Listener {
       systemState.setCpuLoadPercent(packet.getLoadPercent());
     }
 
-    boolean healthy = packet.getOnboardControlSensorsEnabled() == packet.getOnboardControlSensorsHealth();
+    boolean healthy = packet.areEnabledSensorsHealthy() && packet.areEnabledExtendedSensorsHealthy();
     systemState.setHealthy(healthy);
     systemState.setStatusMessage(buildStatusMessage(packet, healthy));
-
     drone.setSystemState(systemState);
   }
 
@@ -111,6 +100,14 @@ public class SysStatusListener implements Listener {
       return "System health nominal";
     }
 
-    return "System health degraded";
+    long unhealthySensors = packet.getUnhealthyEnabledSensorsMask();
+    long unhealthyExtendedSensors = packet.getUnhealthyEnabledSensorsExtendedMask();
+    if (unhealthyExtendedSensors == 0) {
+      return "System health degraded: unhealthy enabled sensors 0x" + Long.toHexString(unhealthySensors).toUpperCase();
+    }
+    if (unhealthySensors == 0) {
+      return "System health degraded: unhealthy enabled extended sensors 0x" + Long.toHexString(unhealthyExtendedSensors).toUpperCase();
+    }
+    return "System health degraded: unhealthy enabled sensors 0x" + Long.toHexString(unhealthySensors).toUpperCase() + ", extended 0x" + Long.toHexString(unhealthyExtendedSensors).toUpperCase();
   }
 }

@@ -19,12 +19,11 @@
 
 package io.mapsmessaging.state.mavlink.packet;
 
-import io.mapsmessaging.mavlink.ProcessedFrame;
-import lombok.Getter;
-
-import java.util.Map;
-
 import static io.mapsmessaging.state.mavlink.packet.MavlinkMessageIds.SYS_STATUS;
+
+import io.mapsmessaging.mavlink.ProcessedFrame;
+import java.util.Map;
+import lombok.Getter;
 
 @Getter
 public class SysStatusPacket extends MavlinkPacket {
@@ -35,6 +34,7 @@ public class SysStatusPacket extends MavlinkPacket {
 
   private final long onboardControlSensorsPresentExtended;
   private final long onboardControlSensorsEnabledExtended;
+  private final long onboardControlSensorsHealthExtended;
 
   private final double loadPercent;
   private final double voltageVolts;
@@ -59,6 +59,7 @@ public class SysStatusPacket extends MavlinkPacket {
 
     this.onboardControlSensorsPresentExtended = getUnsignedInt(fields, "onboard_control_sensors_present_extended");
     this.onboardControlSensorsEnabledExtended = getUnsignedInt(fields, "onboard_control_sensors_enabled_extended");
+    this.onboardControlSensorsHealthExtended = getUnsignedInt(fields, "onboard_control_sensors_health_extended");
 
     this.loadPercent = getLoadPercent(fields);
     this.voltageVolts = getVoltageVolts(fields);
@@ -80,15 +81,23 @@ public class SysStatusPacket extends MavlinkPacket {
   }
 
   public boolean areEnabledSensorsHealthy() {
-    return (onboardControlSensorsEnabled & ~onboardControlSensorsHealth) == 0;
+    return getUnhealthyEnabledSensorsMask() == 0;
+  }
+
+  public boolean areEnabledExtendedSensorsHealthy() {
+    return getUnhealthyEnabledSensorsExtendedMask() == 0;
+  }
+
+  public long getUnhealthyEnabledSensorsMask() {
+    return onboardControlSensorsEnabled & ~onboardControlSensorsHealth;
+  }
+
+  public long getUnhealthyEnabledSensorsExtendedMask() {
+    return onboardControlSensorsEnabledExtended & ~onboardControlSensorsHealthExtended;
   }
 
   public boolean hasCommunicationErrors() {
-    return errorsComm > 0
-        || errorsCount1 > 0
-        || errorsCount2 > 0
-        || errorsCount3 > 0
-        || errorsCount4 > 0;
+    return errorsComm > 0 || errorsCount1 > 0 || errorsCount2 > 0 || errorsCount3 > 0 || errorsCount4 > 0;
   }
 
   private double getLoadPercent(Map<String, Object> fields) {
