@@ -21,10 +21,12 @@ package io.mapsmessaging.engine.destination.subscription.impl;
 
 import io.mapsmessaging.api.SubscribedEventManager;
 import io.mapsmessaging.engine.destination.DestinationImpl;
+import io.mapsmessaging.engine.destination.subscription.Subscription;
 import io.mapsmessaging.engine.destination.subscription.SubscriptionContext;
 import io.mapsmessaging.engine.destination.subscription.tasks.CreditUpdateTask;
 import io.mapsmessaging.engine.destination.subscription.tasks.SubscriptionTransactionTask;
 import io.mapsmessaging.engine.tasks.Response;
+import io.mapsmessaging.engine.tasks.VoidResponse;
 import lombok.Setter;
 
 import java.io.IOException;
@@ -85,6 +87,15 @@ public class ClientSubscribedEventManager implements SubscribedEventManager {
   @Override
   public int getDepth() {
     return subscription.getDepth();
+  }
+
+  public Future<Response> closeTransientSubscription() {
+    return destination.submit(() -> {
+      if (subscription instanceof Subscription transientSubscription) {
+        transientSubscription.close();
+      }
+      return new VoidResponse();
+    });
   }
 
 }

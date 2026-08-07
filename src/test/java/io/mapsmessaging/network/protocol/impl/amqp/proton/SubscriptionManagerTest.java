@@ -22,6 +22,7 @@ package io.mapsmessaging.network.protocol.impl.amqp.proton;
 import io.mapsmessaging.api.SubscribedEventManager;
 import io.mapsmessaging.api.Session;
 import io.mapsmessaging.engine.destination.subscription.SubscriptionContext;
+import io.mapsmessaging.engine.destination.subscription.impl.ClientSubscribedEventManager;
 import org.apache.qpid.proton.amqp.messaging.Source;
 import org.apache.qpid.proton.amqp.messaging.TerminusDurability;
 import org.apache.qpid.proton.engine.Sender;
@@ -29,6 +30,7 @@ import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -102,5 +104,25 @@ class SubscriptionManagerTest {
     subscriptions.close();
 
     verify(session).hibernateSubscription("orders");
+  }
+
+  @Test
+  void close_with_browser_releases_only_transient_subscription() {
+    ClientSubscribedEventManager manager = mock(ClientSubscribedEventManager.class);
+    Sender sender = mock(Sender.class);
+    org.apache.qpid.proton.engine.Session protonSession = mock(org.apache.qpid.proton.engine.Session.class);
+    Session session = mock(Session.class);
+    SubscriptionContext context = new SubscriptionContext("orders");
+    context.setBrowserFlag(true);
+    when(manager.getContext()).thenReturn(context);
+    when(sender.getSession()).thenReturn(protonSession);
+    when(protonSession.getContext()).thenReturn(session);
+    SubscriptionManager subscriptions = new SubscriptionManager();
+    subscriptions.put(manager, sender);
+
+    subscriptions.close();
+
+    verify(manager).closeTransientSubscription();
+    verify(session, never()).removeSubscription("orders");
   }
 }

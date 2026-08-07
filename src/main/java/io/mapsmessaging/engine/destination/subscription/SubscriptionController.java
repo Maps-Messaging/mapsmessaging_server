@@ -36,9 +36,12 @@ import io.mapsmessaging.engine.destination.DestinationManagerListener;
 import io.mapsmessaging.engine.destination.subscription.impl.DestinationSubscription;
 import io.mapsmessaging.engine.destination.subscription.modes.SubscriptionModeManager;
 import io.mapsmessaging.engine.destination.subscription.set.DestinationSet;
+import io.mapsmessaging.engine.destination.subscription.tasks.SubscriptionTask;
 import io.mapsmessaging.engine.session.SessionContext;
 import io.mapsmessaging.engine.session.SessionImpl;
 import io.mapsmessaging.engine.session.persistence.SessionDetails;
+import io.mapsmessaging.engine.tasks.Response;
+import io.mapsmessaging.engine.tasks.SubscriptionResponse;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.logging.ServerLogMessages;
@@ -54,7 +57,9 @@ import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * This class simply manages the subscription to destination mapping. It also manages the wildcard subscriptions, the overlap between wildcard subscriptions and simple
@@ -285,9 +290,7 @@ public class SubscriptionController implements DestinationManagerListener {
 
   public Subscription createBrowserSubscription(@NonNull @NotNull SubscriptionContext context, @NonNull @NotNull DestinationSubscription parent, @NonNull @NotNull DestinationImpl destinationImpl) throws IOException {
     SubscriptionBuilder builder = SubscriptionFactory.getInstance().getBrowserBuilder(destinationImpl, context, parent);
-    Subscription subscription = builder.construct(sessionImpl, sessionId, uniqueSessionId, context.getAllocatedId());
-    updateSubscriptionManager(context, destinationImpl, subscription);
-    return subscription;
+    return builder.construct(sessionImpl, sessionId, uniqueSessionId, context.getAllocatedId());
   }
 
   protected void updateSubscriptionManager(@NonNull @NotNull SubscriptionContext context, DestinationImpl destinationImpl,  Subscription subscription){
@@ -359,6 +362,9 @@ public class SubscriptionController implements DestinationManagerListener {
       }
       destinationSet.clear();
       destinationSet.addAll(authorisedSet);
+      if (isQueueBrowser(context, destinationSet)) {
+        return createTransientBrowser(context, destinationSet);
+      }
       subscriptions.put(context.getKey(), destinationSet);
       //
       // Now compare the active subscription destinations with the ones in this new subscriptionSet
@@ -376,6 +382,9 @@ public class SubscriptionController implements DestinationManagerListener {
       isReload = true;
       DestinationSet destinationSet = subscriptions.get(context.getKey());
       if (destinationSet != null && !destinationSet.isEmpty()) {
+        if (isQueueBrowser(context, destinationSet)) {
+          return createTransientBrowser(context, destinationSet);
+        }
         SubscriptionModeManager modeManager = subscriptionModeManager.get(context.getDestinationMode());
         try {
           subscription = modeManager.processSubscriptions(this, context, destinationSet, !context.isBrowser());
@@ -389,6 +398,33 @@ public class SubscriptionController implements DestinationManagerListener {
       contextMap.put(context.getKey(), context);
     }
     return subscription;
+  }
+
+  private boolean isQueueBrowser(SubscriptionContext context, DestinationSet destinationSet) {
+    return context.isBrowser()
+        && destinationSet.size() == 1
+        && destinationSet.iterator().next().getResourceType().isQueue();
+  }
+
+  private SubscribedEventManager createTransientBrowser(SubscriptionContext context, DestinationSet destinationSet) throws IOException {
+    DestinationImpl destination = destinationSet.iterator().next();
+    DestinationSubscription parent = destination.getSubscription(destination.getFullyQualifiedNamespace());
+    if (parent == null) {
+      throw new IOException("Unable to locate the base queue subscription for " + destination.getFullyQualifiedNamespace());
+    }
+    Future<Response> future = destination.submit(new SubscriptionTask(this, context, destination, new AtomicLong(1)));
+    try {
+      Response response = future.get();
+      if (response instanceof SubscriptionResponse subscriptionResponse) {
+        return subscriptionResponse.getSubscription();
+      }
+      throw new IOException("Browser subscription returned an invalid response for " + destination.getFullyQualifiedNamespace());
+    } catch (InterruptedException e) {
+      Thread.currentThread().interrupt();
+      throw new IOException("Interrupted while creating browser subscription for " + destination.getFullyQualifiedNamespace(), e);
+    } catch (ExecutionException e) {
+      throw new IOException("Unable to create browser subscription for " + destination.getFullyQualifiedNamespace(), e.getCause());
+    }
   }
 
   public SubscriptionInformationDTO getSubscriptionInformation() {

@@ -40,7 +40,19 @@ public class SelectorDestinationSubscription extends DestinationSubscription {
       AcknowledgementController acknowledgementController,
       MessageStateManager messageStateManager,
       ParserExecutor selector) {
-    super(destinationImpl, context, sessionImpl, sessionid, acknowledgementController, messageStateManager);
+    this(destinationImpl, context, sessionImpl, sessionid, acknowledgementController, messageStateManager, selector, true);
+  }
+
+  public SelectorDestinationSubscription(
+      DestinationImpl destinationImpl,
+      SubscriptionContext context,
+      SessionImpl sessionImpl,
+      String sessionid,
+      AcknowledgementController acknowledgementController,
+      MessageStateManager messageStateManager,
+      ParserExecutor selector,
+      boolean registerWithDestination) {
+    super(destinationImpl, context, sessionImpl, sessionid, acknowledgementController, messageStateManager, registerWithDestination);
     this.selector = selector;
   }
 

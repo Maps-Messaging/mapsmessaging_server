@@ -21,6 +21,7 @@ package io.mapsmessaging.network.protocol.impl.amqp.proton.listeners;
 
 import io.mapsmessaging.api.Session;
 import io.mapsmessaging.api.SubscribedEventManager;
+import io.mapsmessaging.engine.destination.subscription.impl.ClientSubscribedEventManager;
 import io.mapsmessaging.logging.ServerLogMessages;
 import io.mapsmessaging.network.protocol.impl.amqp.AMQPProtocol;
 import io.mapsmessaging.network.protocol.impl.amqp.proton.ProtonEngine;
@@ -46,7 +47,9 @@ public class LinkLocalCloseEventListener extends BaseEventListener {
       if (context instanceof SubscribedEventManager eventManager) {
         if (!eventManager.getContexts().isEmpty()) {
           String alias = eventManager.getContext().getAlias();
-          if (link instanceof Sender sender && SubscriptionManager.isDurable(sender)) {
+          if (eventManager.getContext().isBrowser() && eventManager instanceof ClientSubscribedEventManager clientManager) {
+            clientManager.closeTransientSubscription();
+          } else if (link instanceof Sender sender && SubscriptionManager.isDurable(sender)) {
             session.hibernateSubscription(alias);
           } else {
             session.removeSubscription(alias);

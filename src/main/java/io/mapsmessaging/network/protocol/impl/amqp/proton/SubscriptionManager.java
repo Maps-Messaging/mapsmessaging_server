@@ -22,6 +22,7 @@ package io.mapsmessaging.network.protocol.impl.amqp.proton;
 import io.mapsmessaging.api.SubscribedEventManager;
 import io.mapsmessaging.api.Session;
 import io.mapsmessaging.engine.destination.subscription.SubscriptionContext;
+import io.mapsmessaging.engine.destination.subscription.impl.ClientSubscribedEventManager;
 import org.apache.qpid.proton.amqp.messaging.Source;
 import org.apache.qpid.proton.amqp.messaging.TerminusDurability;
 import org.apache.qpid.proton.engine.Sender;
@@ -32,9 +33,11 @@ import java.util.Map;
 public class SubscriptionManager {
 
   private final Map<SubscriptionContext, Sender> subscriptions;
+  private final Map<SubscriptionContext, SubscribedEventManager> managers;
 
   public SubscriptionManager() {
     subscriptions = new IdentityHashMap<>();
+    managers = new IdentityHashMap<>();
   }
 
   public synchronized void close() {
@@ -42,7 +45,10 @@ public class SubscriptionManager {
       Object sessionContext = entry.getValue().getSession().getContext();
       if (sessionContext instanceof Session session) {
         String alias = entry.getKey().getAlias();
-        if (isDurable(entry.getValue())) {
+        SubscribedEventManager manager = managers.get(entry.getKey());
+        if (entry.getKey().isBrowser() && manager instanceof ClientSubscribedEventManager clientManager) {
+          clientManager.closeTransientSubscription();
+        } else if (isDurable(entry.getValue())) {
           session.hibernateSubscription(alias);
         } else {
           session.removeSubscription(alias);
@@ -50,10 +56,13 @@ public class SubscriptionManager {
       }
     }
     subscriptions.clear();
+    managers.clear();
   }
 
   public synchronized void put(SubscribedEventManager manager, Sender sender) {
-    put(manager.getContext(), sender);
+    SubscriptionContext context = manager.getContext();
+    managers.put(context, manager);
+    put(context, sender);
   }
 
   public synchronized void put(SubscriptionContext context, Sender sender) {
@@ -66,6 +75,7 @@ public class SubscriptionManager {
 
   public synchronized void remove(SubscriptionContext context) {
     subscriptions.remove(context);
+    managers.remove(context);
   }
 
   public synchronized Sender get(SubscribedEventManager manager) {

@@ -59,7 +59,7 @@ public class BrowserSubscriptionBuilder extends SubscriptionBuilder {
     MessageStateManager stateManager;
     if (parserExecutor == null) {
       stateManager = new IteratorStateManagerImpl(context.getAlias(), session.getContext().getInternalSessionId(), (MessageStateManagerImpl) parent.getMessageStateManager(), true);
-      return new DestinationSubscription(destination, context, session, sessionId, acknowledgementController, stateManager);
+      return new DestinationSubscription(destination, context, session, sessionId, acknowledgementController, stateManager, false);
     } else {
       if (selectorHasChanged(parent.getContext().getSelector(), context.getSelector())) {
         // Need task to filter the messages from the parent to the current state manager
@@ -69,7 +69,7 @@ public class BrowserSubscriptionBuilder extends SubscriptionBuilder {
       } else {
         stateManager = new IteratorStateManagerImpl(context.getAlias(), session.getContext().getInternalSessionId(), (MessageStateManagerImpl) parent.getMessageStateManager(), true);
       }
-      return new SelectorDestinationSubscription(destination, context, session, sessionId, acknowledgementController, stateManager, parserExecutor);
+      return new SelectorDestinationSubscription(destination, context, session, sessionId, acknowledgementController, stateManager, parserExecutor, false);
     }
   }
 
