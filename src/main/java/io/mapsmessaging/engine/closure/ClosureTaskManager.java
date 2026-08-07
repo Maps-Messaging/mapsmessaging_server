@@ -41,9 +41,13 @@ public class ClosureTaskManager implements Closeable {
 
   @Override
   public void close() {
-    for (ClosureTask task : closureTasks) {
+    List<ClosureTask> tasks;
+    synchronized (this) {
+      tasks = new ArrayList<>(closureTasks);
+      closureTasks.clear();
+    }
+    for (ClosureTask task : tasks) {
       task.run();
     }
-    closureTasks.clear();
   }
 }

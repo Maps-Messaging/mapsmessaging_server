@@ -87,4 +87,21 @@ class ClosureTaskManagerTest {
 
     Assertions.assertEquals(2, executionCount.get());
   }
+
+  @Test
+  void close_allowsTaskToRemoveItself() {
+    ClosureTaskManager manager = new ClosureTaskManager();
+    AtomicInteger executionCount = new AtomicInteger();
+    ClosureTask[] selfRemovingTask = new ClosureTask[1];
+    selfRemovingTask[0] = () -> {
+      executionCount.incrementAndGet();
+      manager.remove(selfRemovingTask[0]);
+    };
+    manager.add(selfRemovingTask[0]);
+    manager.add(executionCount::incrementAndGet);
+
+    manager.close();
+
+    Assertions.assertEquals(2, executionCount.get());
+  }
 }
