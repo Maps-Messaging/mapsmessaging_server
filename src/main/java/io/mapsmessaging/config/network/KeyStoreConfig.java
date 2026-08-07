@@ -23,6 +23,7 @@ import io.mapsmessaging.config.Config;
 import io.mapsmessaging.configuration.ConfigurationProperties;
 import io.mapsmessaging.dto.rest.config.BaseConfigDTO;
 import io.mapsmessaging.dto.rest.config.network.KeyStoreConfigDTO;
+import java.util.Objects;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
 
@@ -45,31 +46,31 @@ public class KeyStoreConfig extends KeyStoreConfigDTO implements Config {
     boolean hasChanged = false;
     if (config instanceof KeyStoreConfigDTO) {
       KeyStoreConfigDTO newConfig = (KeyStoreConfigDTO) config;
-      if (!this.alias.equals(newConfig.getAlias())) {
+      if (!Objects.equals(this.alias, newConfig.getAlias())) {
         this.alias = newConfig.getAlias();
         hasChanged = true;
       }
-      if (!this.type.equals(newConfig.getType())) {
+      if (!Objects.equals(this.type, newConfig.getType())) {
         this.type = newConfig.getType();
         hasChanged = true;
       }
-      if (!this.providerName.equals(newConfig.getProviderName())) {
+      if (!Objects.equals(this.providerName, newConfig.getProviderName())) {
         this.providerName = newConfig.getProviderName();
         hasChanged = true;
       }
-      if (!this.managerFactory.equals(newConfig.getManagerFactory())) {
+      if (!Objects.equals(this.managerFactory, newConfig.getManagerFactory())) {
         this.managerFactory = newConfig.getManagerFactory();
         hasChanged = true;
       }
-      if (!this.path.equals(newConfig.getPath())) {
+      if (!Objects.equals(this.path, newConfig.getPath())) {
         this.path = newConfig.getPath();
         hasChanged = true;
       }
-      if (!this.passphrase.equals(newConfig.getPassphrase())) {
+      if (!Objects.equals(this.passphrase, newConfig.getPassphrase())) {
         this.passphrase = newConfig.getPassphrase();
         hasChanged = true;
       }
-      if (!this.provider.equals(newConfig.getProvider())) {
+      if (!Objects.equals(this.provider, newConfig.getProvider())) {
         this.provider = newConfig.getProvider();
         hasChanged = true;
       }

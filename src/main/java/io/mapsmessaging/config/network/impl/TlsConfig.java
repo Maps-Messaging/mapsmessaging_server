@@ -23,7 +23,6 @@ import io.mapsmessaging.config.Config;
 import io.mapsmessaging.config.network.SslConfig;
 import io.mapsmessaging.configuration.ConfigurationProperties;
 import io.mapsmessaging.dto.rest.config.BaseConfigDTO;
-import io.mapsmessaging.dto.rest.config.network.impl.TcpConfigDTO;
 import io.mapsmessaging.dto.rest.config.network.impl.TlsConfigDTO;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -38,21 +37,21 @@ public class TlsConfig extends TlsConfigDTO implements Config {
 
   public TlsConfig(ConfigurationProperties config) {
     NetworkConfigFactory.unpack(config, this);
-    sslConfig = new SslConfig(config);
+    sslConfig = new SslConfig(config, "tls");
     if(sslConfig.getContext() == null || sslConfig.getContext().isEmpty()) {
       sslConfig.setContext("TLSv1.3");
     }
   }
 
   public boolean update(BaseConfigDTO update) {
-    boolean hasChanged = false;
-    if (update instanceof TcpConfigDTO) {
-      hasChanged = NetworkConfigFactory.update(this, (TcpConfigDTO) update);
-      if(((SslConfig)sslConfig).update(update)){
-        hasChanged = true;
-      }
+    if (!(update instanceof TlsConfigDTO newConfig)) {
+      return false;
     }
 
+    boolean hasChanged = NetworkConfigFactory.update(this, newConfig);
+    if (newConfig.getSslConfig() != null && ((SslConfig) sslConfig).update(newConfig.getSslConfig())) {
+      hasChanged = true;
+    }
     return hasChanged;
   }
 

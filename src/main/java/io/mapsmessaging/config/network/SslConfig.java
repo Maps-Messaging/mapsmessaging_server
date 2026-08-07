@@ -23,77 +23,97 @@ import io.mapsmessaging.config.Config;
 import io.mapsmessaging.configuration.ConfigurationProperties;
 import io.mapsmessaging.dto.rest.config.BaseConfigDTO;
 import io.mapsmessaging.dto.rest.config.network.SslConfigDTO;
+import java.util.Objects;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
 
 @EqualsAndHashCode(callSuper = true)
 @ToString
-public class SslConfig extends SslConfigDTO implements Config  {
+public class SslConfig extends SslConfigDTO implements Config {
 
   public SslConfig(ConfigurationProperties config) {
-    ConfigurationProperties securityProps = locateConfig(config);
-    this.context = securityProps.getProperty("context", "tls");
-    this.clientCertificateRequired = config.getBooleanProperty("clientCertificateRequired", false);
-    this.clientCertificateWanted = config.getBooleanProperty("clientCertificateWanted", false);
-    this.crlUrl = config.getProperty("crlUrl", null);
-    this.crlInterval = config.getLongProperty("crlInterval", 0);
+    this(config, "tls");
+  }
 
+  public SslConfig(ConfigurationProperties config, String transport) {
+    ConfigurationProperties securityProps = locateConfig(config, transport);
+    if (securityProps == null) {
+      throw new IllegalArgumentException("Missing security." + transport + " configuration");
+    }
+
+    String defaultContext = "dtls".equalsIgnoreCase(transport) ? "DTLSv1.2" : "TLS";
+    this.context = securityProps.getProperty("context", defaultContext);
+    this.clientCertificateRequired = securityProps.getBooleanProperty("clientCertificateRequired", false);
+    this.clientCertificateWanted = securityProps.getBooleanProperty("clientCertificateWanted", false);
+    this.hostnameVerificationEnabled = securityProps.getBooleanProperty("hostnameVerificationEnabled", true);
+    this.crlUrl = securityProps.getProperty("crlUrl", null);
+    this.crlInterval = securityProps.getLongProperty("crlInterval", 3600000L);
     this.keyStore = new KeyStoreConfig((ConfigurationProperties) securityProps.get("keyStore"));
     this.trustStore = new KeyStoreConfig((ConfigurationProperties) securityProps.get("trustStore"));
   }
 
-  private ConfigurationProperties locateConfig(ConfigurationProperties config) {
-    if (config.containsKey("clientCertificateRequired")) {
+  private ConfigurationProperties locateConfig(ConfigurationProperties config, String transport) {
+    if (config.containsKey("keyStore") || config.containsKey("trustStore") || config.containsKey("clientCertificateRequired")) {
       return config;
-    }
-    ConfigurationProperties security = (ConfigurationProperties) config.get("security");
-    if (security != null) {
-      security = (ConfigurationProperties) security.get("tls");
     }
 
     ConfigurationProperties endPoint = (ConfigurationProperties) config.get("endPoint");
     if (endPoint != null) {
-      return locateConfig(endPoint);
+      ConfigurationProperties endPointSecurity = locateConfig(endPoint, transport);
+      if (endPointSecurity != null) {
+        return endPointSecurity;
+      }
     }
 
-    return security;
+    ConfigurationProperties security = (ConfigurationProperties) config.get("security");
+    return security == null ? null : (ConfigurationProperties) security.get(transport);
   }
 
   public boolean update(BaseConfigDTO config) {
-    boolean hasChanged = false;
-    if (config instanceof SslConfigDTO) {
-      SslConfigDTO newConfig = (SslConfigDTO) config;
+    if (!(config instanceof SslConfigDTO newConfig)) {
+      return false;
+    }
 
-      if (this.clientCertificateRequired != newConfig.isClientCertificateRequired()) {
-        this.clientCertificateRequired = newConfig.isClientCertificateRequired();
-        hasChanged = true;
-      }
-      if (this.clientCertificateWanted != newConfig.isClientCertificateWanted()) {
-        this.clientCertificateWanted = newConfig.isClientCertificateWanted();
-        hasChanged = true;
-      }
-      if (!this.crlUrl.equals(newConfig.getCrlUrl())) {
-        this.crlUrl = newConfig.getCrlUrl();
-        hasChanged = true;
-      }
-      if (this.crlInterval != newConfig.getCrlInterval()) {
-        this.crlInterval = newConfig.getCrlInterval();
-        hasChanged = true;
-      }
-      if (((KeyStoreConfig)this.keyStore).update(newConfig.getKeyStore())) {
-        hasChanged = true;
-      }
-      if (((KeyStoreConfig)this.trustStore).update(newConfig.getTrustStore())) {
-        hasChanged = true;
-      }
+    boolean hasChanged = false;
+    if (this.clientCertificateRequired != newConfig.isClientCertificateRequired()) {
+      this.clientCertificateRequired = newConfig.isClientCertificateRequired();
+      hasChanged = true;
+    }
+    if (this.clientCertificateWanted != newConfig.isClientCertificateWanted()) {
+      this.clientCertificateWanted = newConfig.isClientCertificateWanted();
+      hasChanged = true;
+    }
+    if (this.hostnameVerificationEnabled != newConfig.isHostnameVerificationEnabled()) {
+      this.hostnameVerificationEnabled = newConfig.isHostnameVerificationEnabled();
+      hasChanged = true;
+    }
+    if (!Objects.equals(this.context, newConfig.getContext())) {
+      this.context = newConfig.getContext();
+      hasChanged = true;
+    }
+    if (!Objects.equals(this.crlUrl, newConfig.getCrlUrl())) {
+      this.crlUrl = newConfig.getCrlUrl();
+      hasChanged = true;
+    }
+    if (this.crlInterval != newConfig.getCrlInterval()) {
+      this.crlInterval = newConfig.getCrlInterval();
+      hasChanged = true;
+    }
+    if (newConfig.getKeyStore() != null && ((KeyStoreConfig) this.keyStore).update(newConfig.getKeyStore())) {
+      hasChanged = true;
+    }
+    if (newConfig.getTrustStore() != null && ((KeyStoreConfig) this.trustStore).update(newConfig.getTrustStore())) {
+      hasChanged = true;
     }
     return hasChanged;
   }
 
   public ConfigurationProperties toConfigurationProperties() {
     ConfigurationProperties config = new ConfigurationProperties();
+    config.put("context", this.context);
     config.put("clientCertificateRequired", this.clientCertificateRequired);
     config.put("clientCertificateWanted", this.clientCertificateWanted);
+    config.put("hostnameVerificationEnabled", this.hostnameVerificationEnabled);
     config.put("crlUrl", this.crlUrl);
     config.put("crlInterval", this.crlInterval);
     config.put("keyStore", ((KeyStoreConfig) keyStore).toConfigurationProperties());

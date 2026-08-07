@@ -51,6 +51,15 @@ public class SslConfigDTO extends BaseConfigDTO {
   protected boolean clientCertificateWanted = false;
 
   @Schema(
+      description = "Whether outbound TLS connections verify the server certificate hostname.",
+      example = "true",
+      defaultValue = "true",
+      requiredMode = Schema.RequiredMode.REQUIRED,
+      nullable = false
+  )
+  protected boolean hostnameVerificationEnabled = true;
+
+  @Schema(
       description = "URL for the Certificate Revocation List (CRL). " +
           "If not set, CRL checking is disabled.",
       example = "http://example.com/crl.pem",
@@ -72,10 +81,10 @@ public class SslConfigDTO extends BaseConfigDTO {
   protected long crlInterval = 3600000L;
 
   @Schema(
-      description = "SSL context identifier or protocol profile to use (for example: TLS, TLSv1.2, TLSv1.3).",
+      description = "SSL context identifier or protocol profile to use (for example: TLS, TLSv1.3, DTLS, DTLSv1.2).",
       example = "TLS",
       defaultValue = "TLS",
-      pattern = "^TLS(?:v1\\.(?:2|3))?$",
+      pattern = "^(?:TLS(?:v1\\.(?:2|3))?|DTLS(?:v1\\.(?:0|2))?)$",
       requiredMode = Schema.RequiredMode.REQUIRED,
       nullable = false
   )
