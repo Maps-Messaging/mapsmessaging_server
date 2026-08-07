@@ -22,6 +22,7 @@ package io.mapsmessaging.network.protocol.impl.amqp.proton.listeners;
 import io.mapsmessaging.api.Destination;
 import io.mapsmessaging.api.Session;
 import io.mapsmessaging.api.features.DestinationType;
+import io.mapsmessaging.dto.rest.config.protocol.impl.AmqpConfigDTO;
 import io.mapsmessaging.network.protocol.impl.amqp.AMQPProtocol;
 import io.mapsmessaging.network.protocol.impl.amqp.proton.ProtonEngine;
 import org.apache.qpid.proton.amqp.Symbol;
@@ -46,6 +47,7 @@ class ReceiverLinkLocalOpenEventListenerTest {
   @Test
   void dynamic_receiver_target_is_resolved_during_local_open() throws Exception {
     AMQPProtocol protocol = mock(AMQPProtocol.class);
+    when(protocol.getAmqpConfig()).thenReturn(new AmqpConfigDTO());
     Event event = mock(Event.class);
     Receiver receiver = mock(Receiver.class);
     org.apache.qpid.proton.engine.Session protonSession = mock(org.apache.qpid.proton.engine.Session.class);

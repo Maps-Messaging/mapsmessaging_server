@@ -22,6 +22,7 @@ package io.mapsmessaging.network.protocol.impl.amqp.proton.listeners;
 import io.mapsmessaging.api.Destination;
 import io.mapsmessaging.api.Session;
 import io.mapsmessaging.api.features.DestinationType;
+import io.mapsmessaging.dto.rest.config.protocol.impl.AmqpConfigDTO;
 import io.mapsmessaging.network.protocol.impl.amqp.AMQPProtocol;
 import io.mapsmessaging.network.protocol.impl.amqp.proton.ProtonEngine;
 import org.apache.qpid.proton.amqp.Symbol;
@@ -49,6 +50,7 @@ class LinkRemoteOpenEventListenerTest {
   @Test
   void dynamic_receiver_target_has_address_before_link_opens_without_waiting_for_creation() {
     AMQPProtocol protocol = mock(AMQPProtocol.class);
+    when(protocol.getAmqpConfig()).thenReturn(new AmqpConfigDTO());
     Event event = mock(Event.class);
     Receiver receiver = mock(Receiver.class);
     org.apache.qpid.proton.engine.Session protonSession = mock(org.apache.qpid.proton.engine.Session.class);
@@ -87,6 +89,7 @@ class LinkRemoteOpenEventListenerTest {
   @Test
   void fixed_receiver_target_is_set_before_link_opens() {
     AMQPProtocol protocol = mock(AMQPProtocol.class);
+    when(protocol.getAmqpConfig()).thenReturn(new AmqpConfigDTO());
     Event event = mock(Event.class);
     Receiver receiver = mock(Receiver.class);
     Target target = new Target();
