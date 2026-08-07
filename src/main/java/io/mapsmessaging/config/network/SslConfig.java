@@ -33,8 +33,8 @@ public class SslConfig extends SslConfigDTO implements Config  {
   public SslConfig(ConfigurationProperties config) {
     ConfigurationProperties securityProps = locateConfig(config);
     this.context = securityProps.getProperty("context", "tls");
-    this.clientCertificateRequired = config.getBooleanProperty("clientCertificateRequired", false);
-    this.clientCertificateWanted = config.getBooleanProperty("clientCertificateWanted", false);
+    this.clientCertificateRequired = securityProps.getBooleanProperty("clientCertificateRequired", false);
+    this.clientCertificateWanted = securityProps.getBooleanProperty("clientCertificateWanted", false);
     this.crlUrl = config.getProperty("crlUrl", null);
     this.crlInterval = config.getLongProperty("crlInterval", 0);
 
