@@ -66,7 +66,7 @@ class FilteredSubscriptionTest extends BaseConnection {
       else{
         message.setStringProperty("key", "b");
       }
-      message.setStringProperty("Country", "France");
+      message.setStringProperty("Country", x % 2 == 0 ? "France" : "Germany");
       messageProducer.send(message);
     }
 
@@ -80,7 +80,7 @@ class FilteredSubscriptionTest extends BaseConnection {
     }
 
     // Should only get 1/2 the events
-    Assertions.assertEquals(60, count);
+    Assertions.assertEquals(30, count);
     messageProducer.close();
     consumer.close();
     session.close();

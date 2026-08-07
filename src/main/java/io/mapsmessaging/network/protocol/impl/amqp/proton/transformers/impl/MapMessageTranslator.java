@@ -22,6 +22,7 @@ package io.mapsmessaging.network.protocol.impl.amqp.proton.transformers.impl;
 import io.mapsmessaging.api.MessageBuilder;
 import io.mapsmessaging.api.message.TypedData;
 import io.mapsmessaging.api.message.TypedData.TYPE;
+import io.mapsmessaging.network.protocol.impl.amqp.proton.BinaryHelper;
 import io.mapsmessaging.network.protocol.impl.amqp.proton.transformers.MessageTypes;
 import lombok.NonNull;
 import org.apache.qpid.proton.amqp.Binary;
@@ -47,18 +48,24 @@ public class MapMessageTranslator extends BaseMessageTranslator {
         dataMap = new LinkedHashMap<>();
         messageBuilder.setDataMap(dataMap);
       }
-      if (data instanceof LinkedHashMap) {
-        LinkedHashMap<String, Object> map = (LinkedHashMap) data;
-        for (Map.Entry<String, Object> entry : map.entrySet()) {
+      if (data instanceof Map<?, ?> map) {
+        for (Map.Entry<?, ?> entry : map.entrySet()) {
+          if (!(entry.getKey() instanceof String key)) {
+            throw new IllegalArgumentException("AMQP map message keys must be strings");
+          }
           Object val = entry.getValue();
           if (val instanceof Binary) {
             Binary binary = (Binary) val;
-            dataMap.put(entry.getKey(), new TypedData(binary.getArray()));
+            dataMap.put(key, new TypedData(BinaryHelper.copy(binary)));
           } else {
-            dataMap.put(entry.getKey(), new TypedData(val));
+            dataMap.put(key, new TypedData(val));
           }
         }
+      } else {
+        throw new IllegalArgumentException("AMQP map message requires a map body");
       }
+    } else {
+      throw new IllegalArgumentException("AMQP map message requires an AMQP value body");
     }
     return messageBuilder;
   }

@@ -57,16 +57,17 @@ public class InputPacketProcessTask extends PacketTask {
     return true;
   }
 
-  private void processBuffers() {
+  private void processBuffers() throws IOException {
     ByteBuffer buffer = transport.getInputBuffer();
-    if (buffer.capacity() < incomingPacket.available()) {
-      // Seems the buffer.put(ByteBuffer) will not just take what it can
-      byte[] tmp = new byte[buffer.capacity()];
-      incomingPacket.get(tmp);
-      buffer.put(tmp);
-    } else {
-      buffer.put(incomingPacket.getRawBuffer());
+    int length = Math.min(buffer.remaining(), incomingPacket.available());
+    if (length <= 0) {
+      throw new IOException("AMQP transport input buffer has no remaining capacity");
     }
+    ByteBuffer source = incomingPacket.getRawBuffer();
+    int originalLimit = source.limit();
+    source.limit(source.position() + length);
+    buffer.put(source);
+    source.limit(originalLimit);
   }
 
   private void handleEvents() {
@@ -81,12 +82,14 @@ public class InputPacketProcessTask extends PacketTask {
     while (incomingPacket.hasRemaining()) {
       processBuffers();
       TransportResult result = transport.processInput();
-      isInSasl();
       if (!result.isOk()) {
         if (result.getException() != null) {
           protocol.getLogger().log(ServerLogMessages.AMQP_ENGINE_TRANSPORT_EXCEPTION, result.getErrorDescription(), result.getException());
+          throw new IOException(result.getErrorDescription(), result.getException());
         }
+        throw new IOException(result.getErrorDescription());
       } else {
+        isInSasl();
         handleEvents();
       }
     }

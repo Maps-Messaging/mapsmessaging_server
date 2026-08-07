@@ -20,38 +20,20 @@
 package io.mapsmessaging.network.protocol.impl.amqp;
 
 import io.mapsmessaging.api.Session;
-import lombok.NonNull;
-import org.jetbrains.annotations.NotNull;
+import org.junit.jupiter.api.Test;
 
-import java.io.IOException;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.Mockito.mock;
 
-public class SessionManager {
+class SessionManagerTest {
 
-  private final Session session;
-  private int interestCount;
+  @Test
+  void decrement_when_final_interest_is_released_returns_zero() {
+    SessionManager manager = new SessionManager(mock(Session.class));
 
-  public SessionManager(Session session) {
-    this.session = session;
-    interestCount = 1;
-  }
-
-  public synchronized int increment() {
-    return ++interestCount;
-  }
-
-  public synchronized int decrement() {
-    if (interestCount > 0) {
-      interestCount--;
-    }
-    return interestCount;
-  }
-
-  public @NonNull @NotNull Session getSession() {
-    return session;
-  }
-
-  public synchronized void close() throws IOException {
-    interestCount = 0;
-    io.mapsmessaging.api.SessionManager.getInstance().close(session, false);
+    assertEquals(2, manager.increment());
+    assertEquals(1, manager.decrement());
+    assertEquals(0, manager.decrement());
+    assertEquals(0, manager.decrement());
   }
 }

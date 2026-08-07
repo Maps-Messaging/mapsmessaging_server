@@ -24,6 +24,7 @@ import jakarta.jms.*;
 import java.util.Properties;
 import javax.naming.Context;
 import javax.naming.InitialContext;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 class StandardClientTest extends BaseTestConfig {
@@ -31,38 +32,29 @@ class StandardClientTest extends BaseTestConfig {
 
 
   @Test
-  void qpidTest() {
+  void qpidTest() throws Exception {
+    Properties properties = new Properties();
+    properties.put(Context.INITIAL_CONTEXT_FACTORY, "org.apache.qpid.jms.jndi.JmsInitialContextFactory");
+    properties.put("connectionfactory.qpidConnectionfactory", "amqp://localhost:5673/test?brokerlist='tcp://localhost:5673'");
+    properties.put("destination.topicExchange", "amq.topic");
+
+    Context context = new InitialContext(properties);
+    Connection connection = ((ConnectionFactory) context.lookup("qpidConnectionfactory")).createConnection();
     try {
-      Properties properties = new Properties();
-      properties.put(Context.INITIAL_CONTEXT_FACTORY, "org.apache.qpid.jms.jndi.JmsInitialContextFactory");
-      properties.put("connectionfactory.qpidConnectionfactory", "amqp://localhost:5673/test?brokerlist='tcp://localhost:5673'");
-      properties.put("destination.topicExchange", "amq.topic");
-
-      Context context = new InitialContext(properties);
-
-      ConnectionFactory connectionFactory = (ConnectionFactory) context.lookup("qpidConnectionfactory");
-      //connectionFactory.setUsername("admin");
-      //factory.setPassword(getPassword("admin"));
-
-      Connection connection = connectionFactory.createConnection();
       connection.start();
-
       Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
       Destination destination = (Destination) context.lookup("topicExchange");
-
       MessageProducer messageProducer = session.createProducer(destination);
       MessageConsumer messageConsumer = session.createConsumer(destination);
+      messageProducer.send(session.createTextMessage("Hello world!"));
 
-      TextMessage message = session.createTextMessage("Hello world!");
-      messageProducer.send(message);
+      TextMessage message = (TextMessage) messageConsumer.receive(2000);
 
-      message = (TextMessage) messageConsumer.receive();
-      System.out.println(message.getText());
-
+      Assertions.assertNotNull(message);
+      Assertions.assertEquals("Hello world!", message.getText());
+    } finally {
       connection.close();
       context.close();
-    } catch (Exception exp) {
-      exp.printStackTrace();
     }
   }
 }

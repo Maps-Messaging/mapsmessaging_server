@@ -21,7 +21,6 @@ package io.mapsmessaging.network.protocol.impl.amqp.proton.tasks;
 
 import io.mapsmessaging.api.SubscribedEventManager;
 import io.mapsmessaging.api.message.Message;
-import io.mapsmessaging.logging.ServerLogMessages;
 import io.mapsmessaging.network.protocol.impl.amqp.proton.ProtonEngine;
 import io.mapsmessaging.network.protocol.impl.amqp.proton.SubscriptionManager;
 import io.mapsmessaging.network.protocol.impl.amqp.proton.transformers.MessageTranslator;
@@ -30,6 +29,7 @@ import org.apache.qpid.proton.codec.DroppingWritableBuffer;
 import org.apache.qpid.proton.codec.WritableBuffer;
 import org.apache.qpid.proton.engine.Delivery;
 import org.apache.qpid.proton.engine.Sender;
+import org.apache.qpid.proton.amqp.transport.SenderSettleMode;
 
 import java.io.IOException;
 
@@ -53,27 +53,29 @@ public class SendMessageTask extends PacketTask {
   }
 
   private void processMessage() throws IOException {
-    String alias = manager.getContext().getAlias();
-    Sender sender = subscriptions.get(alias);
+    Sender sender = subscriptions.get(manager);
     if (sender != null) {
       byte[] tag = packLong(message.getIdentifier());
       Delivery dlv = sender.delivery(tag);
       dlv.setContext(manager);
       MessageTranslator translator = MessageTranslatorFactory.getMessageTranslator(message);
-      try {
-        org.apache.qpid.proton.message.Message protonMessage = translator.encode(message);
-        WritableBuffer sizingBuffer = new DroppingWritableBuffer();
-        protonMessage.encode(sizingBuffer);
-        byte[] data = new byte[sizingBuffer.position() + 10];
-        int size = protonMessage.encode(data, 0, data.length);
-        sender.send(data, 0, size);
-        sender.advance();
-        if (message.isLastMessage()) {
-          sender.drained();
-        }
-      } catch (Exception e) {
-        protocol.getLogger().log(ServerLogMessages.AMQP_ENGINE_TRANSPORT_EXCEPTION, e);
+      org.apache.qpid.proton.message.Message protonMessage = translator.encode(message);
+      WritableBuffer sizingBuffer = new DroppingWritableBuffer();
+      protonMessage.encode(sizingBuffer);
+      byte[] data = new byte[sizingBuffer.position() + 10];
+      int size = protonMessage.encode(data, 0, data.length);
+      sender.send(data, 0, size);
+      sender.advance();
+      if (sender.getSenderSettleMode() == SenderSettleMode.SETTLED) {
+        manager.ackReceived(message.getIdentifier());
+        dlv.setContext(null);
+        dlv.settle();
       }
+      if (message.isLastMessage()) {
+        sender.drained();
+      }
+    } else {
+      throw new IOException("No AMQP sender is registered for subscription alias " + manager.getContext().getAlias());
     }
     processOutput();
   }

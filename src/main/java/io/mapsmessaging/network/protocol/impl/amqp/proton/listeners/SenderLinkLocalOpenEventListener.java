@@ -32,8 +32,8 @@ import io.mapsmessaging.logging.ServerLogMessages;
 import io.mapsmessaging.network.protocol.impl.amqp.AMQPProtocol;
 import io.mapsmessaging.network.protocol.impl.amqp.SessionManager;
 import io.mapsmessaging.network.protocol.impl.amqp.proton.ProtonEngine;
+import io.mapsmessaging.security.uuid.UuidGenerator;
 import io.mapsmessaging.selector.TokenMgrException;
-import lombok.SneakyThrows;
 import org.apache.qpid.proton.amqp.Symbol;
 import org.apache.qpid.proton.amqp.messaging.Source;
 import org.apache.qpid.proton.amqp.transport.ErrorCondition;
@@ -43,6 +43,8 @@ import org.apache.qpid.proton.engine.Sender;
 
 import javax.security.auth.login.LoginException;
 import java.io.IOException;
+import java.util.UUID;
+import java.util.concurrent.ExecutionException;
 
 public class SenderLinkLocalOpenEventListener extends LinkLocalOpenEventListener {
 
@@ -57,16 +59,44 @@ public class SenderLinkLocalOpenEventListener extends LinkLocalOpenEventListener
     if (link instanceof Sender) {
       Sender sender = (Sender) link;
       Source source = (Source) sender.getRemoteSource();
-      String destinationName = getDestinationName(source);
-      if (destinationName != null) {
-        try {
+      try {
+        String destinationName = resolveDestinationName(event, sender, source);
+        if (destinationName != null) {
           return processEvent(event, link, sender, source, destinationName);
-        } catch (LoginException | IOException e) {
-          link.close();
         }
+      } catch (LoginException | IOException e) {
+        if (source != null && source.getDynamic()) {
+          link.setCondition(new ErrorCondition(DYNAMIC_CREATION_ERROR, "Failed to create the dynamic destination::" + e.getMessage()));
+        }
+        link.close();
       }
     }
     return false;
+  }
+
+  private String resolveDestinationName(Event event, Sender sender, Source source) throws LoginException, IOException {
+    if (source == null || !source.getDynamic()) {
+      return getDestinationName(source);
+    }
+
+    Session session = getOrCreateSession(event);
+    DestinationType destinationType = getDestinationType(source).isQueue() ? DestinationType.TEMPORARY_QUEUE : DestinationType.TEMPORARY_TOPIC;
+    UUID uuid = UuidGenerator.getInstance().generate();
+    String destinationName = "/dynamic/temporary/" + (destinationType.isQueue() ? "queue/" : "topic/") + uuid;
+    try {
+      Destination destination = session.findDestination(destinationName, destinationType).get();
+      if (destination == null) {
+        throw new IOException("Destination manager returned no dynamic destination");
+      }
+      source.setAddress(destinationName);
+      sender.setSource(source);
+      return destinationName;
+    } catch (InterruptedException e) {
+      Thread.currentThread().interrupt();
+      throw new IOException("Interrupted while creating dynamic destination", e);
+    } catch (ExecutionException e) {
+      throw new IOException("Unable to create dynamic destination", e.getCause());
+    }
   }
 
   private boolean processEvent(Event event, Link link, Sender sender, Source source, String destinationName) throws LoginException, IOException {
@@ -74,9 +104,9 @@ public class SenderLinkLocalOpenEventListener extends LinkLocalOpenEventListener
     Symbol distribution = source.getDistributionMode();
     boolean browser = (distribution != null && distribution.toString().equalsIgnoreCase("copy"));
 
-    SubscriptionContextBuilder contextBuilder = new SubscriptionContextBuilder(destinationName, ClientAcknowledgement.BLOCK);
+    SubscriptionContextBuilder contextBuilder = new SubscriptionContextBuilder(destinationName, ClientAcknowledgement.INDIVIDUAL);
     contextBuilder.setQos(QualityOfService.AT_LEAST_ONCE)
-        .setNoLocalMessages(false) // This should be able to be set to true
+        .setNoLocalMessages(source.getFilter() != null && source.getFilter().containsKey(Symbol.valueOf("no-local")))
         .setAllowOverlap(false)
         .setReceiveMaximum(initialCredit)
         .setAlias(destinationName)
@@ -102,7 +132,6 @@ public class SenderLinkLocalOpenEventListener extends LinkLocalOpenEventListener
     return true;
   }
 
-  @SneakyThrows
   private void handleSubscription(Link link, Sender sender, boolean browser, SubscriptionContextBuilder contextBuilder, Session session, String destinationName,
       DestinationType destinationType)
       throws IOException {
@@ -114,10 +143,15 @@ public class SenderLinkLocalOpenEventListener extends LinkLocalOpenEventListener
         if (eventManager == null || browser) {
           eventManager = session.addSubscription(context);
         }
-        engine.getSubscriptions().put(context.getAlias(), sender);
+        engine.getSubscriptions().put(eventManager, sender);
         link.setContext(eventManager);
       }
       protocol.getLogger().log(ServerLogMessages.AMQP_CREATED_SUBSCRIPTION, destinationName, context.getAlias());
+    } catch (InterruptedException e) {
+      Thread.currentThread().interrupt();
+      throw new IOException("Interrupted while resolving destination " + destinationName, e);
+    } catch (ExecutionException e) {
+      throw new IOException("Unable to resolve destination " + destinationName, e.getCause());
     } catch (IOException e) {
       ErrorCondition errorCondition = new ErrorCondition(SUBSCRIPTION_ERROR, "Failed to establish subscription::" + e.getMessage());
       Throwable throwable = e.getCause();

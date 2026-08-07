@@ -22,12 +22,14 @@ package io.mapsmessaging.network.protocol.impl.amqp.proton.transformers.impl.enc
 import io.mapsmessaging.api.MessageBuilder;
 import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.api.message.TypedData;
+import io.mapsmessaging.network.protocol.impl.amqp.proton.BinaryHelper;
 import lombok.NonNull;
 import org.apache.qpid.proton.amqp.Binary;
 import org.apache.qpid.proton.amqp.UnsignedInteger;
 import org.apache.qpid.proton.amqp.messaging.Properties;
 import org.jetbrains.annotations.NotNull;
 
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -132,7 +134,7 @@ public class PropertiesEncoder {
     @Override
     public void unpack(@NonNull @NotNull MessageBuilder messageBuilder, @NonNull @NotNull Properties properties, @NonNull @NotNull Map<String, TypedData> map) {
       if (properties.getUserId() != null) {
-        map.put(PROPERTY, new TypedData(new String(properties.getUserId().getArray())));
+        map.put(PROPERTY, new TypedData(new String(BinaryHelper.copy(properties.getUserId()), StandardCharsets.UTF_8)));
       }
     }
 
@@ -140,7 +142,7 @@ public class PropertiesEncoder {
     public void pack(@NonNull @NotNull Message message, @NonNull @NotNull Properties properties) {
       Map<String, TypedData> map = message.getDataMap();
       if (map.containsKey(PROPERTY)) {
-        properties.setUserId(new Binary(((String) map.get(PROPERTY).getData()).getBytes()));
+        properties.setUserId(new Binary(((String) map.get(PROPERTY).getData()).getBytes(StandardCharsets.UTF_8)));
       }
     }
   }
@@ -248,7 +250,11 @@ public class PropertiesEncoder {
     @Override
     public void unpack(@NonNull @NotNull MessageBuilder messageBuilder, @NonNull @NotNull Properties properties, @NonNull @NotNull Map<String, TypedData> map) {
       if (properties.getMessageId() != null) {
-        map.put(PROPERTY, new TypedData(properties.getMessageId()));
+        Object messageId = properties.getMessageId();
+        if (messageId instanceof Binary binary) {
+          messageId = BinaryHelper.copy(binary);
+        }
+        map.put(PROPERTY, new TypedData(messageId));
       }
     }
 
@@ -256,7 +262,12 @@ public class PropertiesEncoder {
     public void pack(@NonNull @NotNull Message message, @NonNull @NotNull Properties properties) {
       Map<String, TypedData> map = message.getDataMap();
       if (map.containsKey(PROPERTY)) {
-        properties.setMessageId(map.get(PROPERTY).getData());
+        TypedData messageId = map.get(PROPERTY);
+        if (messageId.getType() == TypedData.TYPE.BYTE_ARRAY) {
+          properties.setMessageId(new Binary((byte[]) messageId.getData()));
+        } else {
+          properties.setMessageId(messageId.getData());
+        }
       }
     }
   }
@@ -338,7 +349,7 @@ public class PropertiesEncoder {
         Object obj = properties.getCorrelationId();
         if (obj instanceof Binary) {
           Binary binary = (Binary) obj;
-          messageBuilder.setCorrelationData(binary.getArray());
+          messageBuilder.setCorrelationData(BinaryHelper.copy(binary));
         } else {
           messageBuilder.setCorrelationData(obj.toString());
         }
@@ -352,7 +363,7 @@ public class PropertiesEncoder {
         if (message.isCorrelationDataByteArray()) {
           properties.setCorrelationId(new Binary(correlation));
         } else {
-          properties.setCorrelationId(new String(correlation));
+          properties.setCorrelationId(new String(correlation, StandardCharsets.UTF_8));
         }
       }
     }

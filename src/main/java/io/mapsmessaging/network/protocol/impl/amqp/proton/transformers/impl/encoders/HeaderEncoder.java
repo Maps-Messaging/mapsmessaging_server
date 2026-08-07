@@ -65,8 +65,9 @@ public class HeaderEncoder {
     }
 
     if (message.getExpiry() != 0) {
-      long expiry = (message.getExpiry()) - System.currentTimeMillis();
-      header.setTtl(new UnsignedInteger((int) (expiry)));
+      long remaining = message.getExpiry() - System.currentTimeMillis();
+      long ttl = Math.min(0xffffffffL, Math.max(0, remaining));
+      header.setTtl(new UnsignedInteger((int) ttl));
       addHeader = true;
     }
 

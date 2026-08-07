@@ -27,6 +27,8 @@ import org.apache.qpid.proton.amqp.messaging.Section;
 import org.apache.qpid.proton.message.Message;
 import org.jetbrains.annotations.NotNull;
 
+import java.nio.charset.StandardCharsets;
+
 public class TextMessageTranslator extends BaseMessageTranslator {
 
   @Override
@@ -37,8 +39,12 @@ public class TextMessageTranslator extends BaseMessageTranslator {
       AmqpValue amqpBody = (AmqpValue) body;
       Object data = amqpBody.getValue();
       if (data instanceof String) {
-        messageBuilder.setOpaqueData(data.toString().getBytes());
+        messageBuilder.setOpaqueData(data.toString().getBytes(StandardCharsets.UTF_8));
+      } else {
+        throw new IllegalArgumentException("AMQP text message requires a string value");
       }
+    } else {
+      throw new IllegalArgumentException("AMQP text message requires an AMQP value body");
     }
     return messageBuilder;
   }
@@ -47,7 +53,7 @@ public class TextMessageTranslator extends BaseMessageTranslator {
   public @NonNull @NotNull Message encode(@NonNull @NotNull io.mapsmessaging.api.message.Message message) {
     Message protonMessage = super.encode(message);
     if (message.getOpaqueData() != null) {
-      AmqpValue body = new AmqpValue(new String(message.getOpaqueData()));
+      AmqpValue body = new AmqpValue(new String(message.getOpaqueData(), StandardCharsets.UTF_8));
       protonMessage.setBody(body);
     }
     return protonMessage;

@@ -22,6 +22,7 @@ package io.mapsmessaging.network.protocol.impl.amqp.proton.listeners;
 import io.mapsmessaging.logging.ServerLogMessages;
 import io.mapsmessaging.network.protocol.impl.amqp.AMQPProtocol;
 import io.mapsmessaging.network.protocol.impl.amqp.proton.ProtonEngine;
+import io.mapsmessaging.security.uuid.UuidGenerator;
 import org.apache.qpid.proton.amqp.Symbol;
 import org.apache.qpid.proton.engine.Connection;
 import org.apache.qpid.proton.engine.EndpointState;
@@ -44,13 +45,13 @@ public class ConnectionRemoteOpenEventListener extends BaseEventListener {
   public boolean handleEvent(Event event) {
     Connection conn = event.getConnection();
     if (conn.getLocalState() == EndpointState.UNINITIALIZED) {
-      conn.open();
       Symbol[] symbols = conn.getRemoteDesiredCapabilities();
       List<Symbol> offered = getRemoteCapabilities(symbols);
       Symbol[] off = new Symbol[offered.size()];
       conn.setOfferedCapabilities(offered.toArray(off));
-      Connection connection = (Connection) event.getContext();
-      Map<Symbol, Object> remoteProperties = Optional.ofNullable(connection.getRemoteProperties())
+      conn.setContainer(UuidGenerator.getInstance().generate().toString());
+      conn.open();
+      Map<Symbol, Object> remoteProperties = Optional.ofNullable(conn.getRemoteProperties())
           .orElse(new LinkedHashMap<>());
       protocol.setJMS(false);
       remoteProperties.keySet().forEach(symbol -> {

@@ -19,40 +19,54 @@
 
 package io.mapsmessaging.network.protocol.impl.amqp.proton;
 
+import io.mapsmessaging.api.SubscribedEventManager;
 import io.mapsmessaging.api.Session;
+import org.apache.qpid.proton.amqp.messaging.Source;
+import org.apache.qpid.proton.amqp.messaging.TerminusDurability;
 import org.apache.qpid.proton.engine.Sender;
 
-import java.util.LinkedHashMap;
+import java.util.IdentityHashMap;
 import java.util.Map;
 
 public class SubscriptionManager {
 
-  private final Map<String, Sender> subscriptions;
+  private final Map<SubscribedEventManager, Sender> subscriptions;
 
   public SubscriptionManager() {
-    subscriptions = new LinkedHashMap<>();
+    subscriptions = new IdentityHashMap<>();
   }
 
-  public void close() {
-    for (Map.Entry<String, Sender> entry : subscriptions.entrySet()) {
+  public synchronized void close() {
+    for (Map.Entry<SubscribedEventManager, Sender> entry : subscriptions.entrySet()) {
       Object sessionContext = entry.getValue().getSession().getContext();
-      if (sessionContext != null) {
-        Session session = (Session) sessionContext;
-        session.removeSubscription(entry.getKey());
+      if (sessionContext instanceof Session session) {
+        String alias = entry.getKey().getContext().getAlias();
+        if (isDurable(entry.getValue())) {
+          session.hibernateSubscription(alias);
+        } else {
+          session.removeSubscription(alias);
+        }
       }
     }
     subscriptions.clear();
   }
 
-  public synchronized void put(String alias, Sender sender) {
-    subscriptions.put(alias, sender);
+  public synchronized void put(SubscribedEventManager manager, Sender sender) {
+    subscriptions.put(manager, sender);
   }
 
-  public synchronized void remove(String alias) {
-    subscriptions.remove(alias);
+  public synchronized void remove(SubscribedEventManager manager) {
+    subscriptions.remove(manager);
   }
 
-  public synchronized Sender get(String alias) {
-    return subscriptions.get(alias);
+  public synchronized Sender get(SubscribedEventManager manager) {
+    return subscriptions.get(manager);
+  }
+
+  public static boolean isDurable(Sender sender) {
+    if (sender.getSource() instanceof Source source) {
+      return source.getDurable() != null && source.getDurable() != TerminusDurability.NONE;
+    }
+    return false;
   }
 }

@@ -28,6 +28,7 @@ import io.mapsmessaging.network.ProtocolClientConnection;
 import io.mapsmessaging.network.protocol.impl.amqp.AMQPProtocol;
 import io.mapsmessaging.network.protocol.impl.amqp.proton.ProtonEngine;
 import org.apache.qpid.proton.amqp.Symbol;
+import org.apache.qpid.proton.amqp.messaging.MessageAnnotations;
 import org.apache.qpid.proton.amqp.messaging.Source;
 import org.apache.qpid.proton.amqp.transport.Target;
 import org.apache.qpid.proton.engine.Connection;
@@ -39,6 +40,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 public abstract class BaseEventListener implements EventListener {
+
+  private static final Symbol JMS_DESTINATION_TYPE = Symbol.valueOf("x-opt-jms-dest");
+  private static final Symbol LEGACY_DESTINATION_TYPE = Symbol.valueOf("x-opt-to-type");
 
   protected static final Symbol DeliveryError = Symbol.getSymbol("deliveryError");
   protected static final Symbol NoSuchDestinationError = Symbol.getSymbol("noSuchDestination");
@@ -58,12 +62,14 @@ public abstract class BaseEventListener implements EventListener {
   protected BaseEventListener(AMQPProtocol protocol, ProtonEngine engine) {
     this.protocol = protocol;
     this.engine = engine;
-    window = 10;
+    window = protocol.getAmqpConfig().getLinkCredit();
   }
 
   protected void topUp(Receiver rcv) {
     int delta = window - rcv.getCredit();
-    rcv.flow(delta);
+    if (delta > 0) {
+      rcv.flow(delta);
+    }
   }
 
   protected String parseSessionId(String sessionId) {
@@ -119,17 +125,49 @@ public abstract class BaseEventListener implements EventListener {
     return locateType(symbols, dynamic);
   }
 
+  protected DestinationType getDestinationType(Receiver receiver, org.apache.qpid.proton.message.Message message) {
+    if (receiver.getTarget() != null) {
+      return getDestinationType(receiver);
+    }
+    MessageAnnotations annotations = message.getMessageAnnotations();
+    if (annotations != null && annotations.getValue() != null) {
+      Object type = annotations.getValue().get(JMS_DESTINATION_TYPE);
+      if (type instanceof Number number) {
+        return switch (number.intValue()) {
+          case 0 -> DestinationType.QUEUE;
+          case 1 -> DestinationType.TOPIC;
+          case 2 -> DestinationType.TEMPORARY_QUEUE;
+          case 3 -> DestinationType.TEMPORARY_TOPIC;
+          default -> getDestinationType(receiver);
+        };
+      }
+      Object legacyType = annotations.getValue().get(LEGACY_DESTINATION_TYPE);
+      if (legacyType != null) {
+        String value = legacyType.toString();
+        boolean temporary = value.contains("temporary");
+        if (value.contains("queue")) {
+          return temporary ? DestinationType.TEMPORARY_QUEUE : DestinationType.QUEUE;
+        }
+        if (value.contains("topic")) {
+          return temporary ? DestinationType.TEMPORARY_TOPIC : DestinationType.TOPIC;
+        }
+      }
+    }
+    return getDestinationType(receiver);
+  }
+
   private DestinationType locateType(Symbol[] symbols, boolean dynamic) {
     for (Symbol symbol : symbols) {
-      if (symbol.equals(Symbol.getSymbol("queue"))) {
-        if (dynamic) {
+      String capability = symbol.toString();
+      if (capability.equals("queue") || capability.equals("temporary-queue")) {
+        if (dynamic || capability.equals("temporary-queue")) {
           return DestinationType.TEMPORARY_QUEUE;
         } else {
           return DestinationType.QUEUE;
         }
       }
-      if (symbol.equals(Symbol.getSymbol("topic"))) {
-        if (dynamic) {
+      if (capability.equals("topic") || capability.equals("temporary-topic")) {
+        if (dynamic || capability.equals("temporary-topic")) {
           return DestinationType.TEMPORARY_TOPIC;
         } else {
           return DestinationType.TOPIC;
@@ -143,11 +181,12 @@ public abstract class BaseEventListener implements EventListener {
     Symbol[] symbols = source.getCapabilities();
     if (symbols != null) {
       for (Symbol symbol : symbols) {
-        if (symbol.equals(Symbol.getSymbol("queue"))) {
-          return DestinationType.QUEUE;
+        String capability = symbol.toString();
+        if (capability.equals("queue") || capability.equals("temporary-queue")) {
+          return capability.equals("temporary-queue") ? DestinationType.TEMPORARY_QUEUE : DestinationType.QUEUE;
         }
-        if (symbol.equals(Symbol.getSymbol("topic"))) {
-          return DestinationType.TOPIC;
+        if (capability.equals("topic") || capability.equals("temporary-topic")) {
+          return capability.equals("temporary-topic") ? DestinationType.TEMPORARY_TOPIC : DestinationType.TOPIC;
         }
       }
     }

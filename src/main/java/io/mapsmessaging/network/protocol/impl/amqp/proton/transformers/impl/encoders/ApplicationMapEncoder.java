@@ -22,6 +22,7 @@ package io.mapsmessaging.network.protocol.impl.amqp.proton.transformers.impl.enc
 import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.api.message.TypedData;
 import io.mapsmessaging.api.message.TypedData.TYPE;
+import io.mapsmessaging.network.protocol.impl.amqp.proton.BinaryHelper;
 import org.apache.qpid.proton.amqp.Binary;
 import org.apache.qpid.proton.amqp.messaging.ApplicationProperties;
 
@@ -32,10 +33,14 @@ public class ApplicationMapEncoder {
 
   public static void unpackApplicationMap(Map<String, TypedData> dataMap, org.apache.qpid.proton.message.Message protonMessage) {
     ApplicationProperties applicationProperties = protonMessage.getApplicationProperties();
-    if (applicationProperties != null) {
+    if (applicationProperties != null && applicationProperties.getValue() != null) {
       Map<String, Object> map = applicationProperties.getValue();
       for (Map.Entry<String, Object> entry : map.entrySet()) {
-        dataMap.put(entry.getKey(), new TypedData(entry.getValue()));
+        Object value = entry.getValue();
+        if (value instanceof Binary binary) {
+          value = BinaryHelper.copy(binary);
+        }
+        dataMap.put(entry.getKey(), new TypedData(value));
       }
     }
   }

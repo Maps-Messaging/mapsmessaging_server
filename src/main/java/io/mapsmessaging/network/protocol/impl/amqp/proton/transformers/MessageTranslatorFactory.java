@@ -36,9 +36,11 @@ public class MessageTranslatorFactory {
     Map<Symbol, Object> maps;
     if (annotations != null) {
       maps = annotations.getValue();
-      Object type = maps.get(Symbol.getSymbol("x-opt-jms-msg-type"));
-      if (type instanceof Byte) {
-        messageType = MessageTypes.getInstance((Byte) type);
+      if (maps != null) {
+        Object type = maps.get(Symbol.getSymbol("x-opt-jms-msg-type"));
+        if (type instanceof Number number) {
+          messageType = MessageTypes.getInstance(number.intValue());
+        }
       }
     }
     return messageType.getMessageTranslator();

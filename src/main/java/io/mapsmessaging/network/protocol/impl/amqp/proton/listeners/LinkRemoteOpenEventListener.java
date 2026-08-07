@@ -53,27 +53,35 @@ public class LinkRemoteOpenEventListener extends BaseEventListener {
 
 
   private void handleReceiverOpen(Receiver receiver) {
+    if (receiver.getRemoteSenderSettleMode() != null) {
+      receiver.setSenderSettleMode(receiver.getRemoteSenderSettleMode());
+    }
+    if (receiver.getRemoteReceiverSettleMode() != null) {
+      receiver.setReceiverSettleMode(receiver.getRemoteReceiverSettleMode());
+    }
     receiver.open();
   }
 
   private void handleSenderOpen(Sender sender) {
     // Setup the local source/target
-    if (sender.getSource() == null) {
+    if (sender.getRemoteSource() == null) {
       // We don't have the source, but we can reattach to the name given
       String name = sender.getName();
       Source source = new Source();
       source.setAddress(name);
-      source.setDurable(TerminusDurability.UNSETTLED_STATE);
+      source.setDurable(protocol.getAmqpConfig().isDurable() ? TerminusDurability.UNSETTLED_STATE : TerminusDurability.NONE);
       sender.setSource(source);
     } else {
       sender.setSource(sender.getRemoteSource());
     }
     sender.setTarget(sender.getRemoteTarget());
-    sender.open();
-    if (sender.getLocalState() != EndpointState.UNINITIALIZED) {
-      sender.free();
-      sender.advance();
+    if (sender.getRemoteSenderSettleMode() != null) {
+      sender.setSenderSettleMode(sender.getRemoteSenderSettleMode());
     }
+    if (sender.getRemoteReceiverSettleMode() != null) {
+      sender.setReceiverSettleMode(sender.getRemoteReceiverSettleMode());
+    }
+    sender.open();
   }
 
   @Override

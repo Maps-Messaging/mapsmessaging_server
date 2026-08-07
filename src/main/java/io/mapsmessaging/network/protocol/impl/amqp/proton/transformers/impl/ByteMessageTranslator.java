@@ -20,6 +20,7 @@
 package io.mapsmessaging.network.protocol.impl.amqp.proton.transformers.impl;
 
 import io.mapsmessaging.api.MessageBuilder;
+import io.mapsmessaging.network.protocol.impl.amqp.proton.BinaryHelper;
 import io.mapsmessaging.network.protocol.impl.amqp.proton.transformers.MessageTypes;
 import lombok.NonNull;
 import org.apache.qpid.proton.amqp.Binary;
@@ -32,8 +33,10 @@ public class ByteMessageTranslator extends BaseMessageTranslator {
   @Override
   public @NonNull @NotNull MessageBuilder decode(@NonNull @NotNull MessageBuilder messageBuilder, @NonNull @NotNull org.apache.qpid.proton.message.Message protonMessage) {
     super.decode(messageBuilder, protonMessage);
-    Data data = (Data) protonMessage.getBody();
-    messageBuilder.setOpaqueData(data.getValue().getArray());
+    if (!(protonMessage.getBody() instanceof Data data)) {
+      throw new IllegalArgumentException("AMQP bytes message requires a data body");
+    }
+    messageBuilder.setOpaqueData(BinaryHelper.copy(data.getValue()));
     return messageBuilder;
   }
 

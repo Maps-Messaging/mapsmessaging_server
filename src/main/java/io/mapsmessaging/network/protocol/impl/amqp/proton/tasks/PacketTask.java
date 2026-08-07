@@ -19,7 +19,6 @@
 
 package io.mapsmessaging.network.protocol.impl.amqp.proton.tasks;
 
-import io.mapsmessaging.network.io.Packet;
 import io.mapsmessaging.network.protocol.impl.amqp.AMQPProtocol;
 import io.mapsmessaging.network.protocol.impl.amqp.proton.ProtonEngine;
 import org.apache.qpid.proton.engine.Transport;
@@ -41,9 +40,11 @@ public abstract class PacketTask implements Callable<Boolean> {
     transport.process();
     while (transport.pending() > 0) {
       ByteBuffer buffer = transport.getOutputBuffer();
-      Packet packet = new Packet(buffer);
       while (buffer.hasRemaining()) {
-        protocol.getEndPoint().sendPacket(packet);
+        int length = Math.min(buffer.remaining(), protocol.getOutputChunkSize());
+        byte[] data = new byte[length];
+        buffer.get(data);
+        protocol.queueOutput(data);
       }
       transport.outputConsumed();
       transport.process();

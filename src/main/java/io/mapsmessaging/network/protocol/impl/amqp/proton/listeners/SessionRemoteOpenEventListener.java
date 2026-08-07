@@ -44,9 +44,13 @@ public class SessionRemoteOpenEventListener extends BaseEventListener {
       try {
         io.mapsmessaging.network.protocol.impl.amqp.SessionManager sessionManager = createOrReuseSession(event.getConnection());
         ssn.setContext(sessionManager.getSession());
+        ssn.setIncomingCapacity(protocol.getAmqpConfig().getIncomingCapacity());
+        ssn.setOutgoingWindow(protocol.getAmqpConfig().getOutgoingWindow());
         ssn.open();
       } catch (LoginException | IOException e) {
         ssn.setCondition(new ErrorCondition(SESSION_ERROR, "Failed to establish session::" + e.getMessage()));
+        ssn.open();
+        ssn.close();
       }
     }
     return true;

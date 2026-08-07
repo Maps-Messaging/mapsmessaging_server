@@ -24,10 +24,12 @@ import io.mapsmessaging.api.SubscribedEventManager;
 import io.mapsmessaging.logging.ServerLogMessages;
 import io.mapsmessaging.network.protocol.impl.amqp.AMQPProtocol;
 import io.mapsmessaging.network.protocol.impl.amqp.proton.ProtonEngine;
+import io.mapsmessaging.network.protocol.impl.amqp.proton.SubscriptionManager;
 import org.apache.qpid.proton.engine.Event;
 import org.apache.qpid.proton.engine.Event.Type;
 import org.apache.qpid.proton.engine.EventType;
 import org.apache.qpid.proton.engine.Link;
+import org.apache.qpid.proton.engine.Sender;
 
 public class LinkLocalCloseEventListener extends BaseEventListener {
 
@@ -40,18 +42,23 @@ public class LinkLocalCloseEventListener extends BaseEventListener {
     Session session = (Session) event.getSession().getContext();
     if (session != null) {
       Link link = event.getLink();
-      SubscribedEventManager eventManager = (SubscribedEventManager) link.getContext();
-      if (eventManager != null) {
+      Object context = link.getContext();
+      if (context instanceof SubscribedEventManager eventManager) {
         if (!eventManager.getContexts().isEmpty()) {
           String alias = eventManager.getContext().getAlias();
-          session.removeSubscription(alias);
-          engine.getSubscriptions().remove(alias);
-          protocol.getLogger().log(ServerLogMessages.AMQP_DELETED_SUBSCRIPTION, alias);
+          if (link instanceof Sender sender && SubscriptionManager.isDurable(sender)) {
+            session.hibernateSubscription(alias);
+          } else {
+            session.removeSubscription(alias);
+            protocol.getLogger().log(ServerLogMessages.AMQP_DELETED_SUBSCRIPTION, alias);
+          }
+          engine.getSubscriptions().remove(eventManager);
         }
         link.setContext(null);
         return true;
       }
     }
+    event.getLink().setContext(null);
     return false;
   }
 

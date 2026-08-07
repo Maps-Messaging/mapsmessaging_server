@@ -22,6 +22,7 @@ package io.mapsmessaging.network.protocol.impl.amqp;
 import io.mapsmessaging.api.MessageEvent;
 import io.mapsmessaging.api.Session;
 import io.mapsmessaging.api.transformers.ParsedMessage;
+import io.mapsmessaging.dto.rest.config.protocol.impl.AmqpConfigDTO;
 import io.mapsmessaging.dto.rest.protocol.ProtocolInformationDTO;
 import io.mapsmessaging.dto.rest.protocol.impl.AmqpProtocolInformation;
 import io.mapsmessaging.dto.rest.session.SessionInformationDTO;
@@ -32,6 +33,7 @@ import io.mapsmessaging.network.io.EndPoint;
 import io.mapsmessaging.network.io.Packet;
 import io.mapsmessaging.network.io.impl.SelectorTask;
 import io.mapsmessaging.network.protocol.Protocol;
+import io.mapsmessaging.network.protocol.impl.amqp.proton.AmqpOutputPacket;
 import io.mapsmessaging.network.protocol.impl.amqp.proton.ProtonEngine;
 import lombok.Getter;
 import lombok.NonNull;
@@ -42,9 +44,9 @@ import javax.security.auth.Subject;
 import java.io.IOException;
 import java.nio.channels.SelectionKey;
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class AMQPProtocol extends Protocol {
 
@@ -52,6 +54,10 @@ public class AMQPProtocol extends Protocol {
   private final SelectorTask selectorTask;
   private final ProtonEngine protonEngine;
   private final Map<String, SessionManager> activeSessions;
+  @Getter
+  private final AmqpConfigDTO amqpConfig;
+  @Getter
+  private final int outputChunkSize;
   private boolean isJms;
 
   @Getter
@@ -70,10 +76,12 @@ public class AMQPProtocol extends Protocol {
     version = "1.0";
     logger = LoggerFactory.getLogger("AMQP Protocol on " + endPoint.getName());
     selectorTask = new SelectorTask(this, endPoint.getConfig().getEndPointConfig());
+    amqpConfig = (AmqpConfigDTO) getProtocolConfig();
+    outputChunkSize = Math.max(1, (int) Math.min(Integer.MAX_VALUE, endPoint.getConfig().getEndPointConfig().getServerWriteBufferSize()));
     ThreadContext.put("endpoint", endPoint.getName());
     ThreadContext.put("protocol", getName());
     ThreadContext.put("version", getVersion());
-    activeSessions = new LinkedHashMap<>();
+    activeSessions = new ConcurrentHashMap<>();
     closed = false;
     isJms = false;
     sessionId = "";
@@ -92,15 +100,42 @@ public class AMQPProtocol extends Protocol {
   }
 
   @Override
-  public void close() throws IOException {
-    closed = true;
-    protonEngine.close();
-    selectorTask.close();
-    super.close();
-    for (SessionManager sessionManager : activeSessions.values()) {
-      sessionManager.close();
+  public synchronized void close() throws IOException {
+    if (closed) {
+      return;
     }
-    deregisterRead();
+    closed = true;
+    IOException failure = null;
+    try {
+      protonEngine.close();
+    } catch (IOException e) {
+      failure = e;
+    }
+    selectorTask.close();
+    try {
+      super.close();
+    } catch (IOException e) {
+      if (failure == null) {
+        failure = e;
+      } else {
+        failure.addSuppressed(e);
+      }
+    }
+    for (SessionManager sessionManager : new ArrayList<>(activeSessions.values())) {
+      try {
+        sessionManager.close();
+      } catch (IOException e) {
+        if (failure == null) {
+          failure = e;
+        } else {
+          failure.addSuppressed(e);
+        }
+      }
+    }
+    activeSessions.clear();
+    if (failure != null) {
+      throw failure;
+    }
   }
 
   public SessionManager getSession(String sessionId) {
@@ -132,6 +167,10 @@ public class AMQPProtocol extends Protocol {
     selectorTask.cancel(SelectionKey.OP_READ);
   }
 
+  public void queueOutput(byte[] data) {
+    selectorTask.push(new AmqpOutputPacket(data));
+  }
+
   public String getName() {
     return "AMQP";
   }
@@ -142,8 +181,7 @@ public class AMQPProtocol extends Protocol {
     if(parsedMessage == null) {
       return;
     }
-    protonEngine.sendMessage(parsedMessage.getMessage(), messageEvent.getSubscription());
-    messageEvent.getCompletionTask().run();
+    protonEngine.sendMessage(parsedMessage.getMessage(), messageEvent.getSubscription(), messageEvent.getCompletionTask());
   }
 
   @Override
@@ -166,7 +204,7 @@ public class AMQPProtocol extends Protocol {
 
   @Override
   public void sendKeepAlive() {
-    // This needs to be done
+    protonEngine.tick();
   }
 
   public String getUsername() {

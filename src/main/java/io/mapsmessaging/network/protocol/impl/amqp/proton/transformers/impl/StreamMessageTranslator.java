@@ -22,6 +22,7 @@ package io.mapsmessaging.network.protocol.impl.amqp.proton.transformers.impl;
 import io.mapsmessaging.api.MessageBuilder;
 import io.mapsmessaging.api.message.TypedData;
 import io.mapsmessaging.api.message.TypedData.TYPE;
+import io.mapsmessaging.network.protocol.impl.amqp.proton.BinaryHelper;
 import io.mapsmessaging.network.protocol.impl.amqp.proton.transformers.MessageTypes;
 import lombok.NonNull;
 import org.apache.qpid.proton.amqp.Binary;
@@ -48,11 +49,13 @@ public class StreamMessageTranslator extends BaseMessageTranslator {
         Object val = list.get(x);
         if (val instanceof Binary) {
           Binary binary = (Binary) val;
-          dataMap.put("" + x, new TypedData(binary.getArray()));
+          dataMap.put("" + x, new TypedData(BinaryHelper.copy(binary)));
         } else {
           dataMap.put("" + x, new TypedData(list.get(x)));
         }
       }
+    } else {
+      throw new IllegalArgumentException("AMQP stream message requires an AMQP sequence body");
     }
     return messageBuilder;
   }

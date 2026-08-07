@@ -25,6 +25,9 @@ import jakarta.jms.JMSException;
 import jakarta.jms.MessageConsumer;
 import jakarta.jms.Session;
 import jakarta.jms.Topic;
+import jakarta.jms.TemporaryQueue;
+import jakarta.jms.MessageProducer;
+import jakarta.jms.Message;
 import java.io.IOException;
 import javax.naming.Context;
 import javax.naming.NamingException;
@@ -69,5 +72,40 @@ class SimpleTransactionConnectionTest extends BaseConnection {
   @Test
   void simpleQueuePubSub()  throws JMSException, NamingException, IOException {
     runSub(Session.SESSION_TRANSACTED,"qpidConnectionfactory", "queueExchange");
+  }
+
+  @Test
+  void rollback_restores_published_and_consumed_messages() throws JMSException, NamingException, IOException {
+    Context context = loadContext();
+    ConnectionFactory connectionFactory = (ConnectionFactory) context.lookup("qpidConnectionfactory");
+    Connection connection = connectionFactory.createConnection();
+    connection.start();
+
+    Session session = connection.createSession(true, Session.SESSION_TRANSACTED);
+    TemporaryQueue queue = session.createTemporaryQueue();
+    MessageProducer producer = session.createProducer(queue);
+    MessageConsumer consumer = session.createConsumer(queue);
+
+    producer.send(session.createTextMessage("rolled back publish"));
+    session.rollback();
+    Assertions.assertNull(consumer.receive(500));
+
+    producer.send(session.createTextMessage("committed publish"));
+    session.commit();
+    Message firstDelivery = consumer.receive(2000);
+    Assertions.assertNotNull(firstDelivery);
+    session.rollback();
+
+    Message redelivery = consumer.receive(2000);
+    Assertions.assertNotNull(redelivery);
+    Assertions.assertTrue(redelivery.getJMSRedelivered());
+    session.commit();
+
+    consumer.close();
+    producer.close();
+    queue.delete();
+    session.close();
+    connection.close();
+    context.close();
   }
 }

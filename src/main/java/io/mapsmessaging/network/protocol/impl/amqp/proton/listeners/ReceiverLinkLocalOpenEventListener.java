@@ -22,7 +22,6 @@ package io.mapsmessaging.network.protocol.impl.amqp.proton.listeners;
 import io.mapsmessaging.api.Destination;
 import io.mapsmessaging.api.features.DestinationType;
 import io.mapsmessaging.network.protocol.impl.amqp.AMQPProtocol;
-import io.mapsmessaging.network.protocol.impl.amqp.SessionManager;
 import io.mapsmessaging.network.protocol.impl.amqp.proton.ProtonEngine;
 import io.mapsmessaging.security.uuid.UuidGenerator;
 import org.apache.qpid.proton.amqp.Symbol;
@@ -32,8 +31,9 @@ import org.apache.qpid.proton.engine.Event;
 import org.apache.qpid.proton.engine.Link;
 import org.apache.qpid.proton.engine.Receiver;
 
+import java.io.IOException;
 import java.util.UUID;
-import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 
 public class ReceiverLinkLocalOpenEventListener extends LinkLocalOpenEventListener {
 
@@ -51,7 +51,14 @@ public class ReceiverLinkLocalOpenEventListener extends LinkLocalOpenEventListen
       Target target = receiver.getTarget();
       if (target instanceof org.apache.qpid.proton.amqp.messaging.Target) {
         org.apache.qpid.proton.amqp.messaging.Target messagingTarget = (org.apache.qpid.proton.amqp.messaging.Target) receiver.getTarget();
-        handleDynamicTarget(event, link, messagingTarget);
+        try {
+          handleDynamicTarget(event, messagingTarget);
+        } catch (IOException e) {
+          link.setCondition(new ErrorCondition(DYNAMIC_CREATION_ERROR, "Failed to create the dynamic destination::" + e.getMessage()));
+          receiver.open();
+          receiver.close();
+          return true;
+        }
       }
       receiver.open();
       return true;
@@ -59,7 +66,7 @@ public class ReceiverLinkLocalOpenEventListener extends LinkLocalOpenEventListen
     return false;
   }
 
-  private void handleDynamicTarget(Event event, Link link, org.apache.qpid.proton.amqp.messaging.Target messagingTarget) {
+  private void handleDynamicTarget(Event event, org.apache.qpid.proton.amqp.messaging.Target messagingTarget) throws IOException {
     if (messagingTarget.getDynamic()) {
       DestinationType type = DestinationType.TEMPORARY_TOPIC;
       UUID uuid = UuidGenerator.getInstance().generate();
@@ -71,13 +78,21 @@ public class ReceiverLinkLocalOpenEventListener extends LinkLocalOpenEventListen
         address += "topic/";
       }
       address += uuid;
-      String sessionId = parseSessionId(event.getConnection().getRemoteContainer());
-      SessionManager sessionManager = super.protocol.getSession(sessionId);
-      CompletableFuture<Destination> future = sessionManager.getSession().findDestination(address, type);
-      if (future.isCompletedExceptionally()) {
-        link.setCondition(new ErrorCondition(DYNAMIC_CREATION_ERROR, "Failed to create the dynamic destination::"));
-      } else {
+      Object sessionContext = event.getSession().getContext();
+      if (!(sessionContext instanceof io.mapsmessaging.api.Session session)) {
+        throw new IOException("AMQP session is not established");
+      }
+      try {
+        Destination destination = session.findDestination(address, type).get();
+        if (destination == null) {
+          throw new IOException("Destination manager returned no dynamic destination");
+        }
         messagingTarget.setAddress(address);
+      } catch (InterruptedException e) {
+        Thread.currentThread().interrupt();
+        throw new IOException("Interrupted while creating dynamic destination", e);
+      } catch (ExecutionException e) {
+        throw new IOException("Unable to create dynamic destination", e.getCause());
       }
     }
   }

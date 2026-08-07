@@ -20,6 +20,7 @@
 package io.mapsmessaging.network.protocol.impl.amqp.proton.transformers.impl;
 
 import io.mapsmessaging.api.MessageBuilder;
+import io.mapsmessaging.network.protocol.impl.amqp.proton.BinaryHelper;
 import io.mapsmessaging.network.protocol.impl.amqp.proton.transformers.MessageTypes;
 import lombok.NonNull;
 import org.apache.qpid.proton.amqp.Binary;
@@ -36,7 +37,9 @@ public class ObjectMessageTranslator extends BaseMessageTranslator {
     Section body = protonMessage.getBody();
     if (body instanceof Data) {
       Data data = (Data) body;
-      messageBuilder.setOpaqueData(data.getValue().getArray());
+      messageBuilder.setOpaqueData(BinaryHelper.copy(data.getValue()));
+    } else {
+      throw new IllegalArgumentException("AMQP object message requires a data body");
     }
     return messageBuilder;
   }

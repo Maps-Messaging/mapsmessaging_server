@@ -21,6 +21,7 @@ package io.mapsmessaging.network.protocol.impl.amqp.proton.transformers.impl;
 
 import io.mapsmessaging.api.MessageBuilder;
 import io.mapsmessaging.api.message.TypedData;
+import io.mapsmessaging.network.protocol.impl.amqp.proton.BinaryHelper;
 import io.mapsmessaging.network.protocol.impl.amqp.proton.transformers.MessageTranslator;
 import io.mapsmessaging.network.protocol.impl.amqp.proton.transformers.MessageTypes;
 import io.mapsmessaging.network.protocol.impl.amqp.proton.transformers.impl.encoders.ApplicationMapEncoder;
@@ -33,6 +34,7 @@ import org.apache.qpid.proton.amqp.messaging.*;
 import org.apache.qpid.proton.message.Message;
 import org.jetbrains.annotations.NotNull;
 
+import java.nio.charset.StandardCharsets;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
@@ -68,17 +70,20 @@ public class BaseMessageTranslator implements MessageTranslator {
       Object val = value.getValue();
       byte[] buf;
       if (val instanceof String str) {
-        buf = str.getBytes();
+        buf = str.getBytes(StandardCharsets.UTF_8);
         meta.put(AMQP_TYPE, STRING_TYPE);
       } else if (val instanceof byte[] buffer) {
         buf = buffer;
+        meta.put(AMQP_TYPE, BYTE_ARRAY_TYPE);
+      } else if (val instanceof Binary binary) {
+        buf = BinaryHelper.copy(binary);
         meta.put(AMQP_TYPE, BYTE_ARRAY_TYPE);
       } else {
         buf = new byte[0];
       }
       messageBuilder.setOpaqueData(buf);
     } else if (section instanceof Data data) {
-      messageBuilder.setOpaqueData(data.getValue().getArray());
+      messageBuilder.setOpaqueData(BinaryHelper.copy(data.getValue()));
       meta.put(AMQP_TYPE, DATA_TYPE);
     }
     return messageBuilder;
@@ -112,10 +117,10 @@ public class BaseMessageTranslator implements MessageTranslator {
       }
       switch (encoding) {
         case STRING_TYPE:
-          protonMessage.setBody(new AmqpValue(new String(message.getOpaqueData())));
+          protonMessage.setBody(new AmqpValue(new String(message.getOpaqueData(), StandardCharsets.UTF_8)));
           break;
         case BYTE_ARRAY_TYPE:
-          protonMessage.setBody(new AmqpValue(message.getOpaqueData()));
+          protonMessage.setBody(new AmqpValue(new Binary(message.getOpaqueData())));
           break;
         case DATA_TYPE:
         default:
