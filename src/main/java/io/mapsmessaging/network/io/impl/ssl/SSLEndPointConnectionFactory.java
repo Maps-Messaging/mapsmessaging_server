@@ -33,6 +33,7 @@ import io.mapsmessaging.security.ssl.SslHelper;
 
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLEngine;
+import javax.net.ssl.SSLParameters;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.channels.SocketChannel;
@@ -49,14 +50,28 @@ public class SSLEndPointConnectionFactory implements EndPointConnectionFactory {
       throws IOException {
     TlsConfig securityProps = (TlsConfig) endPointServerStatus.getConfig().getEndPointConfig();
     SSLContext context = SslHelper.createContext(securityProps.getSslConfig().getContext(),((Config) securityProps.getSslConfig()).toConfigurationProperties(), logger);
-    SSLEngine engine = SslHelper.createSSLEngine(context, ((Config)securityProps.getSslConfig()).toConfigurationProperties());
-    engine.setUseClientMode(true);
+    SSLEngine engine = createClientEngine(
+        context,
+        url.getHost(),
+        url.getPort(),
+        securityProps.getSslConfig().isHostnameVerificationEnabled());
     SocketChannel channel = SocketChannel.open();
     InetSocketAddress address = new InetSocketAddress(url.getHost(), url.getPort());
     channel.configureBlocking(true);
     channel.connect(address);
     channel.configureBlocking(false);
     return new SSLEndPoint(generateID(), engine, channel, selector.allocate(), callback, endPointServerStatus, jmxPath);
+  }
+
+  static SSLEngine createClientEngine(SSLContext context, String host, int port, boolean hostnameVerificationEnabled) {
+    SSLEngine engine = context.createSSLEngine(host, port);
+    engine.setUseClientMode(true);
+    if (hostnameVerificationEnabled) {
+      SSLParameters sslParameters = engine.getSSLParameters();
+      sslParameters.setEndpointIdentificationAlgorithm("HTTPS");
+      engine.setSSLParameters(sslParameters);
+    }
+    return engine;
   }
 
   @Override
