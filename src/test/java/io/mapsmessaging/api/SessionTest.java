@@ -87,6 +87,22 @@ class SessionTest extends MessageAPITest implements ProtocolMessageListener {
   }
 
   @Test
+  @DisplayName("Temporary destinations return usable typed handles")
+  void temporaryDestinationsReturnTypedHandles(TestInfo testInfo) throws Exception {
+    Session session = createSession(testInfo.getTestMethod().get().getName(), 5, 2, false, this);
+
+    Destination temporaryQueue = session.findDestination("temporaryQueue", DestinationType.TEMPORARY_QUEUE).get();
+    Destination temporaryTopic = session.findDestination("temporaryTopic", DestinationType.TEMPORARY_TOPIC).get();
+
+    Assertions.assertInstanceOf(io.mapsmessaging.api.Queue.class, temporaryQueue);
+    Assertions.assertEquals(DestinationType.TEMPORARY_QUEUE, temporaryQueue.getResourceType());
+    Assertions.assertInstanceOf(Topic.class, temporaryTopic);
+    Assertions.assertEquals(DestinationType.TEMPORARY_TOPIC, temporaryTopic.getResourceType());
+
+    close(session);
+  }
+
+  @Test
   @DisplayName("Simple session close on duplication tests")
   void sessionCloseOnDuplicateTest(TestInfo testInfo) throws Exception {
     Session session1 = createSession(testInfo.getTestMethod().get().getName(), 5, 2, false, this);

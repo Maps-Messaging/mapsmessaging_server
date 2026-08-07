@@ -151,10 +151,10 @@ public class Session {
     Destination end = null;
     if (destination != null) {
       switch (meta) {
-        case TOPIC:
+        case TOPIC, TEMPORARY_TOPIC:
           end = new Topic(destination, sessionImpl.getSecurityContext());
           break;
-        case QUEUE:
+        case QUEUE, TEMPORARY_QUEUE:
           end = new Queue(destination, sessionImpl.getSecurityContext());
           break;
         case SCHEMA:
