@@ -25,8 +25,8 @@ import io.mapsmessaging.api.Transaction;
 import io.mapsmessaging.security.uuid.UuidGenerator;
 import org.apache.qpid.proton.amqp.Binary;
 import org.apache.qpid.proton.amqp.messaging.Accepted;
+import org.apache.qpid.proton.amqp.messaging.Outcome;
 import org.apache.qpid.proton.amqp.messaging.Rejected;
-import org.apache.qpid.proton.amqp.transport.DeliveryState;
 import org.apache.qpid.proton.engine.Delivery;
 
 import java.io.IOException;
@@ -62,7 +62,7 @@ public class AmqpTransactionCoordinator {
     return context == null ? null : context.transaction;
   }
 
-  public synchronized boolean enlist(Binary transactionId, Delivery delivery, SubscribedEventManager manager, long messageId, DeliveryState outcome) {
+  public synchronized boolean enlist(Binary transactionId, Delivery delivery, SubscribedEventManager manager, long messageId, Outcome outcome) {
     TransactionContext context = findContext(transactionId);
     if (context == null) {
       return false;
@@ -204,9 +204,9 @@ public class AmqpTransactionCoordinator {
     private final Delivery delivery;
     private final SubscribedEventManager manager;
     private final long messageId;
-    private final DeliveryState outcome;
+    private final Outcome outcome;
 
-    private PendingOutcome(Delivery delivery, SubscribedEventManager manager, long messageId, DeliveryState outcome) {
+    private PendingOutcome(Delivery delivery, SubscribedEventManager manager, long messageId, Outcome outcome) {
       this.delivery = delivery;
       this.manager = manager;
       this.messageId = messageId;

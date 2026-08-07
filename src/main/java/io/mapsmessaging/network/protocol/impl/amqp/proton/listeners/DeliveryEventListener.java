@@ -36,6 +36,7 @@ import org.apache.qpid.proton.amqp.Binary;
 import org.apache.qpid.proton.amqp.messaging.Accepted;
 import org.apache.qpid.proton.amqp.messaging.AmqpValue;
 import org.apache.qpid.proton.amqp.messaging.Modified;
+import org.apache.qpid.proton.amqp.messaging.Outcome;
 import org.apache.qpid.proton.amqp.messaging.Rejected;
 import org.apache.qpid.proton.amqp.messaging.Released;
 import org.apache.qpid.proton.amqp.transaction.Coordinator;
@@ -94,7 +95,7 @@ public class DeliveryEventListener extends BaseEventListener {
     long messageId = unpackLong(delivery.getTag());
     DeliveryState state = delivery.getRemoteState();
     if (state instanceof TransactionalState transactionalState) {
-      DeliveryState outcome = transactionalState.getOutcome();
+      Outcome outcome = transactionalState.getOutcome();
       if (outcome != null && !engine.getTransactionCoordinator().enlist(transactionalState.getTxnId(), delivery, manager, messageId, outcome)) {
         manager.rollbackReceived(messageId);
         delivery.settle();
