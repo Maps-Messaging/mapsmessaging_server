@@ -135,8 +135,7 @@ public class DeliveryEventListener extends BaseEventListener {
       if (remoteTarget instanceof Coordinator) {
         processTransaction(delivery, receiver, event);
       } else {
-        String destinationName = receiver.getTarget() == null ? null : receiver.getTarget().getAddress();
-        processIncomingMessage(event, delivery, receiver, destinationName);
+        processIncomingMessage(event, delivery, receiver);
       }
     } catch (LoginException | IOException e) {
       reject(delivery, DeliveryError, e.getMessage());
@@ -181,11 +180,9 @@ public class DeliveryEventListener extends BaseEventListener {
     return session;
   }
 
-  private void processIncomingMessage(Event event, Delivery delivery, Receiver receiver, String destinationName) throws IOException {
+  private void processIncomingMessage(Event event, Delivery delivery, Receiver receiver) throws IOException {
     org.apache.qpid.proton.message.Message protonMessage = parseIncomingMessage(receiver);
-    if (destinationName == null) {
-      destinationName = protonMessage.getAddress();
-    }
+    String destinationName = getDestinationName(receiver, protonMessage);
     if (destinationName == null || destinationName.isBlank()) {
       reject(delivery, DeliveryError, "Message delivery failed, no destination supplied");
       return;

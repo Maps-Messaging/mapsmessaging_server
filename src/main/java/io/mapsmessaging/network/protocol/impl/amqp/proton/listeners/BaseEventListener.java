@@ -156,6 +156,18 @@ public abstract class BaseEventListener implements EventListener {
     return getDestinationType(receiver);
   }
 
+  protected String getDestinationName(Receiver receiver, org.apache.qpid.proton.message.Message message) {
+    Target localTarget = receiver.getTarget();
+    if (localTarget != null && localTarget.getAddress() != null && !localTarget.getAddress().isBlank()) {
+      return localTarget.getAddress();
+    }
+    Target remoteTarget = receiver.getRemoteTarget();
+    if (remoteTarget != null && remoteTarget.getAddress() != null && !remoteTarget.getAddress().isBlank()) {
+      return remoteTarget.getAddress();
+    }
+    return message.getAddress();
+  }
+
   private DestinationType locateType(Symbol[] symbols, boolean dynamic) {
     for (Symbol symbol : symbols) {
       String capability = symbol.toString();

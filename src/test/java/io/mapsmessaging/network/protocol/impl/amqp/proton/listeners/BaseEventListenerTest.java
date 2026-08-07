@@ -53,6 +53,20 @@ class BaseEventListenerTest {
     assertEquals(DestinationType.QUEUE, listener.destination_type(receiver, message));
   }
 
+  @Test
+  void fixed_receiver_uses_remote_target_address_when_local_target_is_unavailable() {
+    AMQPProtocol protocol = mock(AMQPProtocol.class);
+    when(protocol.getAmqpConfig()).thenReturn(new AmqpConfigDTO());
+    TestEventListener listener = new TestEventListener(protocol, mock(ProtonEngine.class));
+    Receiver receiver = mock(Receiver.class);
+    org.apache.qpid.proton.amqp.messaging.Target remoteTarget = new org.apache.qpid.proton.amqp.messaging.Target();
+    remoteTarget.setAddress("/dynamic/temporary/queue/test");
+    org.apache.qpid.proton.message.Message message = org.apache.qpid.proton.message.Message.Factory.create();
+    when(receiver.getRemoteTarget()).thenReturn(remoteTarget);
+
+    assertEquals("/dynamic/temporary/queue/test", listener.destination_name(receiver, message));
+  }
+
   private static final class TestEventListener extends BaseEventListener {
 
     private TestEventListener(AMQPProtocol protocol, ProtonEngine engine) {
@@ -61,6 +75,10 @@ class BaseEventListenerTest {
 
     private DestinationType destination_type(Receiver receiver, org.apache.qpid.proton.message.Message message) {
       return getDestinationType(receiver, message);
+    }
+
+    private String destination_name(Receiver receiver, org.apache.qpid.proton.message.Message message) {
+      return getDestinationName(receiver, message);
     }
 
     @Override
