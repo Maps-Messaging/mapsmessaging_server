@@ -60,12 +60,12 @@ class TlsSecurityConfigTest {
   void dtls_update_applies_nested_ssl_settings() {
     DtlsConfig dtlsConfig = new DtlsConfig(createConfig());
     DtlsConfigDTO update = new DtlsConfigDTO();
-    SslConfigDTO sslUpdate = createSslUpdate("DTLSv1.3");
+    SslConfigDTO sslUpdate = createSslUpdate("DTLSv1.2");
     update.setSslConfig(sslUpdate);
 
     Assertions.assertTrue(dtlsConfig.update(update));
     Assertions.assertTrue(dtlsConfig.getSslConfig().isClientCertificateRequired());
-    Assertions.assertEquals("DTLSv1.3", dtlsConfig.getSslConfig().getContext());
+    Assertions.assertEquals("DTLSv1.2", dtlsConfig.getSslConfig().getContext());
     Assertions.assertEquals(7200000L, dtlsConfig.getSslConfig().getCrlInterval());
   }
 
