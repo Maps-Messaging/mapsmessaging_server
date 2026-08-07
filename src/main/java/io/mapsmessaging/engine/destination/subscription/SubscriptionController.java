@@ -377,7 +377,7 @@ public class SubscriptionController implements DestinationManagerListener {
       if (destinationSet != null && !destinationSet.isEmpty()) {
         SubscriptionModeManager modeManager = subscriptionModeManager.get(context.getDestinationMode());
         try {
-          subscription = modeManager.processSubscriptions(this, context, destinationSet, isReload);
+          subscription = modeManager.processSubscriptions(this, context, destinationSet, !context.isBrowser());
         } catch (IOException e) {
           logger.log(ServerLogMessages.SUBSCRIPTION_MGR_FAILED, sessionId, context.getFilter(), e);
         }

@@ -69,6 +69,21 @@ class SubscriptionManagerTest {
   }
 
   @Test
+  void delivery_manager_replaces_pending_context_on_sender_link() {
+    SubscribedEventManager deliveryManager = mock(SubscribedEventManager.class);
+    SubscriptionContext context = new SubscriptionContext("orders");
+    Sender sender = mock(Sender.class);
+    when(deliveryManager.getContext()).thenReturn(context);
+    when(sender.getContext()).thenReturn(context);
+    SubscriptionManager subscriptions = new SubscriptionManager();
+    subscriptions.put(context, sender);
+
+    assertSame(sender, subscriptions.get(deliveryManager));
+
+    verify(sender).setContext(deliveryManager);
+  }
+
+  @Test
   void close_with_durable_source_hibernates_subscription() {
     SubscribedEventManager manager = mock(SubscribedEventManager.class);
     Sender sender = mock(Sender.class);

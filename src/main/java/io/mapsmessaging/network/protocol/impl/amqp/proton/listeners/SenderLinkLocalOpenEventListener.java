@@ -143,8 +143,13 @@ public class SenderLinkLocalOpenEventListener extends LinkLocalOpenEventListener
         if (eventManager == null || browser) {
           eventManager = session.addSubscription(context);
         }
-        engine.getSubscriptions().put(eventManager, sender);
-        link.setContext(eventManager);
+        if (eventManager == null) {
+          engine.getSubscriptions().put(context, sender);
+          link.setContext(context);
+        } else {
+          engine.getSubscriptions().put(eventManager, sender);
+          link.setContext(eventManager);
+        }
       }
       protocol.getLogger().log(ServerLogMessages.AMQP_CREATED_SUBSCRIPTION, destinationName, context.getAlias());
     } catch (InterruptedException e) {

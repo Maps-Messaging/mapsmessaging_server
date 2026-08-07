@@ -40,12 +40,12 @@ public class LinkFlowEventListener extends BaseEventListener {
     } else if (link instanceof Sender) {
       Sender snd = (Sender) link;
       if (snd.getSource() instanceof Source) {
-        SubscribedEventManager eventManager = (SubscribedEventManager) snd.getContext();
-        if (eventManager != null) {
+        Object context = snd.getContext();
+        if (context instanceof SubscribedEventManager eventManager) {
           eventManager.updateCredit(snd.getCredit());
-        }
-        if (snd.getDrain()) {
-          snd.drained();
+          if (snd.getDrain() && eventManager.isEmpty()) {
+            snd.drained();
+          }
         }
       }
     }

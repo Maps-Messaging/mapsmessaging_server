@@ -53,15 +53,27 @@ public class SubscriptionManager {
   }
 
   public synchronized void put(SubscribedEventManager manager, Sender sender) {
-    subscriptions.put(manager.getContext(), sender);
+    put(manager.getContext(), sender);
+  }
+
+  public synchronized void put(SubscriptionContext context, Sender sender) {
+    subscriptions.put(context, sender);
   }
 
   public synchronized void remove(SubscribedEventManager manager) {
-    subscriptions.remove(manager.getContext());
+    remove(manager.getContext());
+  }
+
+  public synchronized void remove(SubscriptionContext context) {
+    subscriptions.remove(context);
   }
 
   public synchronized Sender get(SubscribedEventManager manager) {
-    return subscriptions.get(manager.getContext());
+    Sender sender = subscriptions.get(manager.getContext());
+    if (sender != null && sender.getContext() instanceof SubscriptionContext) {
+      sender.setContext(manager);
+    }
+    return sender;
   }
 
   public static boolean isDurable(Sender sender) {

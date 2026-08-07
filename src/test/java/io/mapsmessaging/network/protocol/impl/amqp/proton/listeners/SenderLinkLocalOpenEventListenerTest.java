@@ -39,6 +39,7 @@ import java.util.concurrent.CompletableFuture;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.atLeastOnce;
@@ -83,5 +84,42 @@ class SenderLinkLocalOpenEventListenerTest {
     assertTrue(source.getAddress().startsWith("/dynamic/temporary/queue/"));
     verify(sender).setSource(source);
     verify(subscriptions).put(manager, sender);
+  }
+
+  @Test
+  void browser_with_existing_subscription_registers_context_when_add_returns_no_manager() throws Exception {
+    AMQPProtocol protocol = mock(AMQPProtocol.class);
+    ProtonEngine engine = mock(ProtonEngine.class);
+    SubscriptionManager subscriptions = mock(SubscriptionManager.class);
+    Event event = mock(Event.class);
+    Sender sender = mock(Sender.class);
+    org.apache.qpid.proton.engine.Session protonSession = mock(org.apache.qpid.proton.engine.Session.class);
+    Session session = mock(Session.class);
+    Destination destination = mock(Destination.class);
+    SubscribedEventManager existingManager = mock(SubscribedEventManager.class);
+    Source source = new Source();
+    source.setAddress("orders");
+    source.setCapabilities(Symbol.valueOf("queue"));
+    source.setDistributionMode(Symbol.valueOf("copy"));
+    when(protocol.getAmqpConfig()).thenReturn(new AmqpConfigDTO());
+    when(protocol.getLogger()).thenReturn(mock(Logger.class));
+    when(engine.getSubscriptions()).thenReturn(subscriptions);
+    when(event.getLink()).thenReturn(sender);
+    when(event.getSession()).thenReturn(protonSession);
+    when(protonSession.getContext()).thenReturn(session);
+    when(sender.getRemoteSource()).thenReturn(source);
+    when(sender.getCredit()).thenReturn(10);
+    when(session.findDestination("orders", DestinationType.QUEUE)).thenReturn(CompletableFuture.completedFuture(destination));
+    when(session.resume(destination)).thenReturn(existingManager);
+    when(session.addSubscription(any())).thenReturn(null);
+    SenderLinkLocalOpenEventListener listener = new SenderLinkLocalOpenEventListener(protocol, engine);
+
+    assertTrue(listener.handleEvent(event));
+
+    ArgumentCaptor<io.mapsmessaging.engine.destination.subscription.SubscriptionContext> context = ArgumentCaptor.forClass(
+        io.mapsmessaging.engine.destination.subscription.SubscriptionContext.class);
+    verify(subscriptions).put(context.capture(), eq(sender));
+    assertTrue(context.getValue().isBrowser());
+    verify(sender).setContext(context.getValue());
   }
 }

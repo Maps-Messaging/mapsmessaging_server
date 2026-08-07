@@ -46,19 +46,13 @@ public class ReceiverLinkLocalOpenEventListener extends LinkLocalOpenEventListen
     Link link = event.getLink();
     if (link instanceof Receiver) {
       Receiver receiver = (Receiver) link;
-      receiver.setSource(receiver.getRemoteSource());
-      receiver.setTarget(receiver.getRemoteTarget());
-      Target target = receiver.getTarget();
-      if (target instanceof org.apache.qpid.proton.amqp.messaging.Target) {
-        org.apache.qpid.proton.amqp.messaging.Target messagingTarget = (org.apache.qpid.proton.amqp.messaging.Target) receiver.getTarget();
-        try {
-          handleDynamicTarget(event, messagingTarget);
-        } catch (IOException e) {
-          link.setCondition(new ErrorCondition(DYNAMIC_CREATION_ERROR, "Failed to create the dynamic destination::" + e.getMessage()));
-          receiver.open();
-          receiver.close();
-          return true;
-        }
+      try {
+        prepareReceiver(event, receiver);
+      } catch (IOException e) {
+        link.setCondition(new ErrorCondition(DYNAMIC_CREATION_ERROR, "Failed to create the dynamic destination::" + e.getMessage()));
+        receiver.open();
+        receiver.close();
+        return true;
       }
       receiver.open();
       return true;
@@ -66,8 +60,17 @@ public class ReceiverLinkLocalOpenEventListener extends LinkLocalOpenEventListen
     return false;
   }
 
-  private void handleDynamicTarget(Event event, org.apache.qpid.proton.amqp.messaging.Target messagingTarget) throws IOException {
-    if (messagingTarget.getDynamic()) {
+  static void prepareReceiver(Event event, Receiver receiver) throws IOException {
+    receiver.setSource(receiver.getRemoteSource());
+    Target remoteTarget = receiver.getRemoteTarget();
+    receiver.setTarget(remoteTarget);
+    if (remoteTarget instanceof org.apache.qpid.proton.amqp.messaging.Target messagingTarget) {
+      handleDynamicTarget(event, messagingTarget);
+    }
+  }
+
+  private static void handleDynamicTarget(Event event, org.apache.qpid.proton.amqp.messaging.Target messagingTarget) throws IOException {
+    if (messagingTarget.getDynamic() && (messagingTarget.getAddress() == null || messagingTarget.getAddress().isBlank())) {
       DestinationType type = DestinationType.TEMPORARY_TOPIC;
       UUID uuid = UuidGenerator.getInstance().generate();
       String address = "/dynamic/temporary/";
@@ -97,7 +100,7 @@ public class ReceiverLinkLocalOpenEventListener extends LinkLocalOpenEventListen
     }
   }
 
-  private boolean scanForQueue(org.apache.qpid.proton.amqp.messaging.Target messagingTarget) {
+  private static boolean scanForQueue(org.apache.qpid.proton.amqp.messaging.Target messagingTarget) {
     Symbol[] capabilities = messagingTarget.getCapabilities();
     if (capabilities != null) {
       for (Symbol capability : capabilities) {
