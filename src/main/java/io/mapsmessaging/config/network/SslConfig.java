@@ -41,7 +41,7 @@ public class SslConfig extends SslConfigDTO implements Config {
       throw new IllegalArgumentException("Missing security." + transport + " configuration");
     }
 
-    String defaultContext = "dtls".equalsIgnoreCase(transport) ? "DTLSv1.2" : "TLSv1.3";
+    String defaultContext = "dtls".equalsIgnoreCase(transport) ? "DTLSv1.2" : "TLS";
     this.context = securityProps.getProperty("context", defaultContext);
     this.clientCertificateRequired = securityProps.getBooleanProperty("clientCertificateRequired", false);
     this.clientCertificateWanted = securityProps.getBooleanProperty("clientCertificateWanted", false);
