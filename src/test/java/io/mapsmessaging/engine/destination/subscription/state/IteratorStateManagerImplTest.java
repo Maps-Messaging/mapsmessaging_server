@@ -19,6 +19,7 @@
 
 package io.mapsmessaging.engine.destination.subscription.state;
 
+import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.engine.Constants;
 import io.mapsmessaging.utilities.collections.bitset.BitSetFactoryImpl;
 import org.junit.jupiter.api.Assertions;
@@ -30,18 +31,20 @@ import java.io.IOException;
 class IteratorStateManagerImplTest {
 
   @Test
-  void constructor_deepCopyTrue_copiesParentsAtRest() throws IOException {
+  void constructor_deepCopyTrue_copiesParentsAtRestAndInFlightMessages() throws IOException {
     BitSetFactoryImpl factory = new BitSetFactoryImpl(Constants.BITSET_BLOCK_SIZE);
 
-    MessageStateManagerImpl realParent =
-        new MessageStateManagerImpl("parent", 100L, factory);
+    MessageStateManagerImpl realParent = new MessageStateManagerImpl("parent", 100L, factory);
     MessageStateManagerImpl parent = Mockito.spy(realParent);
+    Message inFlight = Mockito.mock(Message.class, Mockito.RETURNS_DEEP_STUBS);
+    Mockito.when(inFlight.getIdentifier()).thenReturn(20L);
+    Mockito.when(inFlight.getPriority().getValue()).thenReturn(2);
 
     parent.register(10L);
-    parent.register(20L);
+    parent.register(inFlight);
+    parent.allocate(inFlight);
 
-    IteratorStateManagerImpl iterator =
-        new IteratorStateManagerImpl("iter", 200L, parent, true);
+    IteratorStateManagerImpl iterator = new IteratorStateManagerImpl("iter", 200L, parent, true);
 
     Assertions.assertTrue(iterator.hasAtRestMessages());
     Assertions.assertTrue(iterator.hasMessage(10L));
