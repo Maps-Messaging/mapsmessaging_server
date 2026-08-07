@@ -79,9 +79,16 @@ public class MQTT_SNProtocolV2 extends MQTT_SNProtocol {
   @Override
   public void close() throws IOException {
     if (!closed) {
-      logger.log(ServerLogMessages.MQTT_SN_CLOSED);
-      closed = true;
-      finish();
+      try {
+        if (saslAuthenticationMechanism != null) {
+          saslAuthenticationMechanism.close();
+        }
+      } finally {
+        saslAuthenticationMechanism = null;
+        logger.log(ServerLogMessages.MQTT_SN_CLOSED);
+        closed = true;
+        finish();
+      }
     }
   }
 

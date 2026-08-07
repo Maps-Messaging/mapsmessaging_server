@@ -160,7 +160,7 @@ NetworkManager:
         protocol: mqtt, ws
         auth: public
         sasl:
-          mechanism: "CRAM-MD5"
+          mechanism: "SCRAM-SHA-256"
           identityProvider: system
 
       - name: "MQTT SSL Test Auth Interface"
@@ -168,7 +168,7 @@ NetworkManager:
         protocol: mqtt, ws
         auth: public
         sasl:
-          mechanism: "CRAM-MD5"
+          mechanism: "SCRAM-SHA-256"
           identityProvider: system
 
       - name: "Stomp Interface - Anonymous Stomp over TCP"
@@ -210,14 +210,14 @@ NetworkManager:
         url: "tcp://0.0.0.0:5674/"
         protocol: amqp
         sasl:
-          mechanism: SCRAM-SHA-512
+          mechanism: SCRAM-SHA-256
           identityProvider: system
 
       - name: "AMQP Authenticated over ssl Interface"
         url: "ssl://0.0.0.0:5693/"
         protocol: amqp
         sasl:
-          mechanism: SCRAM-SHA-512
+          mechanism: SCRAM-SHA-256
           identityProvider: system
 
       -
@@ -283,7 +283,7 @@ NetworkManager:
             topic: predefined/topic
             address: '*'
         sasl:
-          mechanism: SCRAM-SHA-512
+          mechanism: SCRAM-SHA-256
           identityProvider: system
 
 

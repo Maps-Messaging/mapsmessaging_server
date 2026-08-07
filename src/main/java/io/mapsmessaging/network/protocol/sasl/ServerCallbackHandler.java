@@ -31,6 +31,7 @@ import javax.security.sasl.AuthorizeCallback;
 import javax.security.sasl.RealmCallback;
 import java.io.IOException;
 import java.security.GeneralSecurityException;
+import java.util.Objects;
 
 public class ServerCallbackHandler implements CallbackHandler {
 
@@ -50,7 +51,11 @@ public class ServerCallbackHandler implements CallbackHandler {
     for (Callback cb : cbs) {
       if (cb instanceof AuthorizeCallback) {
         AuthorizeCallback ac = (AuthorizeCallback) cb;
-        ac.setAuthorized(true);
+        boolean authorized = Objects.equals(ac.getAuthenticationID(), ac.getAuthorizationID());
+        ac.setAuthorized(authorized);
+        if (authorized) {
+          ac.setAuthorizedID(ac.getAuthorizationID());
+        }
       } else if (cb instanceof NameCallback) {
         NameCallback nc = (NameCallback) cb;
         username = nc.getDefaultName();
@@ -61,6 +66,9 @@ public class ServerCallbackHandler implements CallbackHandler {
         }
         nc.setName(nc.getDefaultName());
       } else if (cb instanceof PasswordCallback) {
+        if (hashedPassword == null) {
+          throw new IOException("Password requested before an identity was resolved");
+        }
         PasswordCallback pc = (PasswordCallback) cb;
         pc.setPassword(hashedPassword.getHash());
       } else if (cb instanceof RealmCallback) {

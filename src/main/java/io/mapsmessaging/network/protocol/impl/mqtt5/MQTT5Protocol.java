@@ -170,15 +170,22 @@ public class MQTT5Protocol extends Protocol {
 
   @Override
   public void close() throws IOException {
-    if(selectorTask.isOpen()){
-      selectorTask.close();
-    }
-    if(session != null && !session.isClosed()){
-      SessionManager.getInstance().close(session, false);
-    }
-    if (!closed) {
-      closed = true;
-      super.close();
+    try {
+      if (authenticationContext != null) {
+        authenticationContext.close();
+      }
+    } finally {
+      authenticationContext = null;
+      if(selectorTask.isOpen()){
+        selectorTask.close();
+      }
+      if(session != null && !session.isClosed()){
+        SessionManager.getInstance().close(session, false);
+      }
+      if (!closed) {
+        closed = true;
+        super.close();
+      }
     }
   }
 

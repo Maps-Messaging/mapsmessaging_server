@@ -43,10 +43,10 @@ class MqttSnAuthTest extends BaseMqttSnConfig {
   void simpleAuthValidation() throws MqttsnException, MqttsnClientConnectException, IOException, MqttsnQueueAcceptException {
     Map<String, String> props = new HashMap<>();
     props.put(Sasl.QOP, "auth");
-    String mechanisms = "SCRAM-SHA-512";
+    String mechanisms = "SCRAM-SHA-256";
     ClientCallbackHandler clientHandler = new ClientCallbackHandler("admin", getPassword("admin"), "servername");
 
-    IAuthHandler authHandler = new SaslAuthHandler(mechanisms, "Authorized", "localhost", props, clientHandler);
+    IAuthHandler authHandler = new SaslAuthHandler(mechanisms, null, "localhost", props, clientHandler);
     MqttSnClient client = new MqttSnClient( "localhost", 1887, 2, authHandler);
     client.connect(50, true);
     Assertions.assertTrue(client.isConnected());

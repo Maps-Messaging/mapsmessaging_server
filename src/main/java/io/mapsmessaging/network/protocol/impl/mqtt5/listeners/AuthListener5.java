@@ -45,7 +45,7 @@ public class AuthListener5 extends PacketListener5 {
       MQTT5Protocol mqtt5Protocol = ((MQTT5Protocol) protocol);
       AuthenticationMethod authMethod = (AuthenticationMethod) mqttPacket.getProperties().get(MessagePropertyFactory.AUTHENTICATION_METHOD);
       if (mqtt5Protocol.getAuthenticationContext() != null && authMethod != null) {
-        if (!mqtt5Protocol.getAuthenticationContext().getAuthMethod().equalsIgnoreCase(authMethod.getAuthenticationMethod())) {
+        if (!mqtt5Protocol.getAuthenticationContext().getAuthMethod().equals(authMethod.getAuthenticationMethod())) {
           return rejectAuth(authMethod, protocol);
         }
         context = mqtt5Protocol.getAuthenticationContext();
@@ -83,6 +83,9 @@ public class AuthListener5 extends PacketListener5 {
 
   private MQTTPacket5 handleAuth(AuthenticationContext context, Protocol protocol, MQTTPacket5 mqttPacket, Session session, EndPoint endPoint) throws MalformedException {
       AuthenticationData clientData = (AuthenticationData) mqttPacket.getProperties().get(MessagePropertyFactory.AUTHENTICATION_DATA);
+      if (clientData == null) {
+        throw new MalformedException("Authentication Data is required for SASL authentication");
+      }
       byte[] clientChallenge;
       try {
         clientChallenge = context.evaluateResponse(clientData.getAuthenticationData());
