@@ -231,7 +231,7 @@ public class SSLEndPoint extends TCPEndPoint {
 
   @Override
   public Principal getEndPointPrincipal() {
-    if (sslEngine.getNeedClientAuth()) {
+    if (sslEngine.getNeedClientAuth() || sslEngine.getWantClientAuth()) {
       try {
         return sslEngine.getSession().getPeerPrincipal();
       } catch (SSLPeerUnverifiedException e) {
