@@ -25,8 +25,10 @@ import org.apache.qpid.proton.amqp.messaging.Target;
 import org.apache.qpid.proton.engine.Event;
 import org.apache.qpid.proton.engine.Receiver;
 import org.junit.jupiter.api.Test;
+import org.mockito.InOrder;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -49,5 +51,23 @@ class LinkRemoteOpenEventListenerTest {
 
     verify(receiver).open();
     verify(receiver, never()).setTarget(target);
+  }
+
+  @Test
+  void fixed_receiver_target_is_set_before_link_opens() {
+    AMQPProtocol protocol = mock(AMQPProtocol.class);
+    Event event = mock(Event.class);
+    Receiver receiver = mock(Receiver.class);
+    Target target = new Target();
+    target.setAddress("/dynamic/temporary/queue/test");
+    when(event.getLink()).thenReturn(receiver);
+    when(receiver.getRemoteTarget()).thenReturn(target);
+    LinkRemoteOpenEventListener listener = new LinkRemoteOpenEventListener(protocol, mock(ProtonEngine.class));
+
+    assertTrue(listener.handleEvent(event));
+
+    InOrder order = inOrder(receiver);
+    order.verify(receiver).setTarget(target);
+    order.verify(receiver).open();
   }
 }

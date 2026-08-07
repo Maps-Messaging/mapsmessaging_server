@@ -23,6 +23,7 @@ import io.mapsmessaging.network.protocol.impl.amqp.AMQPProtocol;
 import io.mapsmessaging.network.protocol.impl.amqp.proton.ProtonEngine;
 import org.apache.qpid.proton.amqp.messaging.Source;
 import org.apache.qpid.proton.amqp.messaging.TerminusDurability;
+import org.apache.qpid.proton.amqp.transport.Target;
 import org.apache.qpid.proton.engine.*;
 import org.apache.qpid.proton.engine.Event.Type;
 
@@ -53,6 +54,11 @@ public class LinkRemoteOpenEventListener extends BaseEventListener {
 
 
   private void handleReceiverOpen(Receiver receiver) {
+    Target remoteTarget = receiver.getRemoteTarget();
+    if (!(remoteTarget instanceof org.apache.qpid.proton.amqp.messaging.Target messagingTarget) || !messagingTarget.getDynamic()) {
+      receiver.setSource(receiver.getRemoteSource());
+      receiver.setTarget(remoteTarget);
+    }
     if (receiver.getRemoteSenderSettleMode() != null) {
       receiver.setSenderSettleMode(receiver.getRemoteSenderSettleMode());
     }
