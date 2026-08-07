@@ -67,6 +67,7 @@ class ReceiverLinkLocalOpenEventListenerTest {
     assertTrue(listener.handleEvent(event));
 
     verify(receiver).setTarget(target);
+    verify(receiver).setContext(new BaseEventListener.ReceiverTargetContext(target.getAddress()));
     verify(receiver).open();
   }
 }

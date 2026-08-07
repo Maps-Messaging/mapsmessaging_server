@@ -67,6 +67,7 @@ public class ReceiverLinkLocalOpenEventListener extends LinkLocalOpenEventListen
     if (remoteTarget instanceof org.apache.qpid.proton.amqp.messaging.Target messagingTarget) {
       handleDynamicTarget(event, messagingTarget);
     }
+    retainDestinationName(receiver, remoteTarget);
   }
 
   private static void handleDynamicTarget(Event event, org.apache.qpid.proton.amqp.messaging.Target messagingTarget) throws IOException {

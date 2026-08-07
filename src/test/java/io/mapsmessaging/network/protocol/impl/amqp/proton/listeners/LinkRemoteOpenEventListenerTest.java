@@ -68,6 +68,7 @@ class LinkRemoteOpenEventListenerTest {
 
     InOrder order = inOrder(receiver);
     order.verify(receiver).setTarget(target);
+    order.verify(receiver).setContext(new BaseEventListener.ReceiverTargetContext("/dynamic/temporary/queue/test"));
     order.verify(receiver).open();
   }
 }

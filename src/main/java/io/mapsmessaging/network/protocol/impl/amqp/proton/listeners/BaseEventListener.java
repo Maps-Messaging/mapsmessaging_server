@@ -165,7 +165,19 @@ public abstract class BaseEventListener implements EventListener {
     if (remoteTarget != null && remoteTarget.getAddress() != null && !remoteTarget.getAddress().isBlank()) {
       return remoteTarget.getAddress();
     }
+    if (receiver.getContext() instanceof ReceiverTargetContext context) {
+      return context.destinationName();
+    }
     return message.getAddress();
+  }
+
+  protected static void retainDestinationName(Receiver receiver, Target target) {
+    if (target != null && target.getAddress() != null && !target.getAddress().isBlank()) {
+      receiver.setContext(new ReceiverTargetContext(target.getAddress()));
+    }
+  }
+
+  protected record ReceiverTargetContext(String destinationName) {
   }
 
   private DestinationType locateType(Symbol[] symbols, boolean dynamic) {

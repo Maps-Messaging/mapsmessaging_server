@@ -67,6 +67,18 @@ class BaseEventListenerTest {
     assertEquals("/dynamic/temporary/queue/test", listener.destination_name(receiver, message));
   }
 
+  @Test
+  void fixed_receiver_uses_retained_target_address_when_proton_termini_are_unavailable() {
+    AMQPProtocol protocol = mock(AMQPProtocol.class);
+    when(protocol.getAmqpConfig()).thenReturn(new AmqpConfigDTO());
+    TestEventListener listener = new TestEventListener(protocol, mock(ProtonEngine.class));
+    Receiver receiver = mock(Receiver.class);
+    org.apache.qpid.proton.message.Message message = org.apache.qpid.proton.message.Message.Factory.create();
+    when(receiver.getContext()).thenReturn(new BaseEventListener.ReceiverTargetContext("/dynamic/temporary/queue/test"));
+
+    assertEquals("/dynamic/temporary/queue/test", listener.destination_name(receiver, message));
+  }
+
   private static final class TestEventListener extends BaseEventListener {
 
     private TestEventListener(AMQPProtocol protocol, ProtonEngine engine) {

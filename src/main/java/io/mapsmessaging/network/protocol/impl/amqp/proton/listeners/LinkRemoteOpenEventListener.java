@@ -58,6 +58,7 @@ public class LinkRemoteOpenEventListener extends BaseEventListener {
     if (!(remoteTarget instanceof org.apache.qpid.proton.amqp.messaging.Target messagingTarget) || !messagingTarget.getDynamic()) {
       receiver.setSource(receiver.getRemoteSource());
       receiver.setTarget(remoteTarget);
+      retainDestinationName(receiver, remoteTarget);
     }
     if (receiver.getRemoteSenderSettleMode() != null) {
       receiver.setSenderSettleMode(receiver.getRemoteSenderSettleMode());
