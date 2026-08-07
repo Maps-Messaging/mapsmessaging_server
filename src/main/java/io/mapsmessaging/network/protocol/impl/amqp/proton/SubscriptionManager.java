@@ -21,6 +21,7 @@ package io.mapsmessaging.network.protocol.impl.amqp.proton;
 
 import io.mapsmessaging.api.SubscribedEventManager;
 import io.mapsmessaging.api.Session;
+import io.mapsmessaging.engine.destination.subscription.SubscriptionContext;
 import org.apache.qpid.proton.amqp.messaging.Source;
 import org.apache.qpid.proton.amqp.messaging.TerminusDurability;
 import org.apache.qpid.proton.engine.Sender;
@@ -30,17 +31,17 @@ import java.util.Map;
 
 public class SubscriptionManager {
 
-  private final Map<SubscribedEventManager, Sender> subscriptions;
+  private final Map<SubscriptionContext, Sender> subscriptions;
 
   public SubscriptionManager() {
     subscriptions = new IdentityHashMap<>();
   }
 
   public synchronized void close() {
-    for (Map.Entry<SubscribedEventManager, Sender> entry : subscriptions.entrySet()) {
+    for (Map.Entry<SubscriptionContext, Sender> entry : subscriptions.entrySet()) {
       Object sessionContext = entry.getValue().getSession().getContext();
       if (sessionContext instanceof Session session) {
-        String alias = entry.getKey().getContext().getAlias();
+        String alias = entry.getKey().getAlias();
         if (isDurable(entry.getValue())) {
           session.hibernateSubscription(alias);
         } else {
@@ -52,15 +53,15 @@ public class SubscriptionManager {
   }
 
   public synchronized void put(SubscribedEventManager manager, Sender sender) {
-    subscriptions.put(manager, sender);
+    subscriptions.put(manager.getContext(), sender);
   }
 
   public synchronized void remove(SubscribedEventManager manager) {
-    subscriptions.remove(manager);
+    subscriptions.remove(manager.getContext());
   }
 
   public synchronized Sender get(SubscribedEventManager manager) {
-    return subscriptions.get(manager);
+    return subscriptions.get(manager.getContext());
   }
 
   public static boolean isDurable(Sender sender) {

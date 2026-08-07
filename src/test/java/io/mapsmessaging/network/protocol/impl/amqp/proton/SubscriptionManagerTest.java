@@ -35,11 +35,15 @@ import static org.mockito.Mockito.when;
 class SubscriptionManagerTest {
 
   @Test
-  void subscriptions_with_distinct_manager_instances_do_not_collide() {
+  void subscriptions_with_distinct_contexts_do_not_collide() {
     SubscribedEventManager firstManager = mock(SubscribedEventManager.class);
     SubscribedEventManager secondManager = mock(SubscribedEventManager.class);
+    SubscriptionContext firstContext = new SubscriptionContext("orders");
+    SubscriptionContext secondContext = new SubscriptionContext("orders");
     Sender firstSender = mock(Sender.class);
     Sender secondSender = mock(Sender.class);
+    when(firstManager.getContext()).thenReturn(firstContext);
+    when(secondManager.getContext()).thenReturn(secondContext);
     SubscriptionManager subscriptions = new SubscriptionManager();
 
     subscriptions.put(firstManager, firstSender);
@@ -47,6 +51,21 @@ class SubscriptionManagerTest {
 
     assertSame(firstSender, subscriptions.get(firstManager));
     assertSame(secondSender, subscriptions.get(secondManager));
+  }
+
+  @Test
+  void delivery_manager_with_same_context_resolves_registered_sender() {
+    SubscribedEventManager registrationManager = mock(SubscribedEventManager.class);
+    SubscribedEventManager deliveryManager = mock(SubscribedEventManager.class);
+    SubscriptionContext context = new SubscriptionContext("orders");
+    Sender sender = mock(Sender.class);
+    when(registrationManager.getContext()).thenReturn(context);
+    when(deliveryManager.getContext()).thenReturn(context);
+    SubscriptionManager subscriptions = new SubscriptionManager();
+
+    subscriptions.put(registrationManager, sender);
+
+    assertSame(sender, subscriptions.get(deliveryManager));
   }
 
   @Test
