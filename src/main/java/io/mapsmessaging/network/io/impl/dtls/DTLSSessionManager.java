@@ -90,11 +90,7 @@ public class DTLSSessionManager implements Closeable, SelectorCallback {
     if (state == null) {
       StateEngine stateEngine;
       SSLEngine sslEngine = SslHelper.createSSLEngine(sslContext, ((Config)((DtlsConfig)udpEndPoint.getConfig().getEndPointConfig()).getSslConfig()).toConfigurationProperties());
-      SSLParameters paras = sslEngine.getSSLParameters();
-      int mtu = 8192;
-      paras.setMaximumPacketSize(mtu);
-      paras.setEnableRetransmissions(true);
-      sslEngine.setSSLParameters(paras);
+      configureEngine(sslEngine);
       stateEngine = new StateEngine(packet.getFromAddress(), sslEngine, this);
       endPoint = new DTLSEndPoint(this, uniqueId.incrementAndGet(), packet.getFromAddress(), server, stateEngine, managerMBean);
       sessionMapping.addState(packet.getFromAddress(), new UDPSessionState<>(endPoint));
@@ -109,6 +105,13 @@ public class DTLSSessionManager implements Closeable, SelectorCallback {
       return false;
     }
     return true;
+  }
+
+  static void configureEngine(SSLEngine sslEngine) {
+    SSLParameters sslParameters = sslEngine.getSSLParameters();
+    sslParameters.setMaximumPacketSize(8192);
+    sslParameters.setEnableRetransmissions(true);
+    sslEngine.setSSLParameters(sslParameters);
   }
 
   public void close(SocketAddress clientId) {
