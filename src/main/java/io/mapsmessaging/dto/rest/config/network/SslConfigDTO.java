@@ -51,6 +51,15 @@ public class SslConfigDTO extends BaseConfigDTO {
   protected boolean clientCertificateWanted = false;
 
   @Schema(
+      description = "Whether outbound TLS connections verify the server certificate hostname.",
+      example = "true",
+      defaultValue = "true",
+      requiredMode = Schema.RequiredMode.REQUIRED,
+      nullable = false
+  )
+  protected boolean hostnameVerificationEnabled = true;
+
+  @Schema(
       description = "URL for the Certificate Revocation List (CRL). " +
           "If not set, CRL checking is disabled.",
       example = "http://example.com/crl.pem",
