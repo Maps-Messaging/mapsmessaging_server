@@ -87,10 +87,11 @@ NetworkManager:
         tls:
           clientCertificateRequired: false
           clientCertificateWanted: false
+          hostnameVerificationEnabled: true
             #-----------------------------------
             # CRL Specific
             # crlUrl: <URL TO CRL>
-            # crlInterval: <time in seconds to reload CRL>
+            # crlInterval: <time in milliseconds to reload CRL>
             #-----------------------------------
 
           keyStore:
