@@ -94,7 +94,6 @@ public class DTLSSessionManager implements Closeable, SelectorCallback {
       int mtu = 8192;
       paras.setMaximumPacketSize(mtu);
       paras.setEnableRetransmissions(true);
-      paras.setNeedClientAuth(false);
       sslEngine.setSSLParameters(paras);
       stateEngine = new StateEngine(packet.getFromAddress(), sslEngine, this);
       endPoint = new DTLSEndPoint(this, uniqueId.incrementAndGet(), packet.getFromAddress(), server, stateEngine, managerMBean);
