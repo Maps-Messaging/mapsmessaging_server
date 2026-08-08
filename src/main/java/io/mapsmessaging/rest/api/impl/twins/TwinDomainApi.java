@@ -27,9 +27,11 @@ import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.WebApplicationException;
+import jakarta.ws.rs.core.EntityTag;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import java.io.IOException;
+import java.util.Optional;
 import java.util.UUID;
 
 @Tag(name = "Server Twin Administration", description = "Additive administrative REST facade over the existing TwinManager configuration model.")
@@ -38,6 +40,7 @@ import java.util.UUID;
 public class TwinDomainApi extends BaseRestApi {
 
   private static final String RESOURCE = "server/twin/config";
+  private static final int PRECONDITION_REQUIRED = 428;
 
   @GET
   @Path("/drones")
@@ -52,7 +55,8 @@ public class TwinDomainApi extends BaseRestApi {
   public Response getDrone(@PathParam("name") String name) {
     try {
       hasAccess(RESOURCE);
-      return service().getDrone(name).map(this::ok).orElseGet(() -> notFound("Unknown drone configuration: " + name));
+      Optional<DroneAdminDTO> drone = service().getDrone(name);
+      return drone.map(this::etagResponse).orElseGet(() -> notFound("Unknown drone configuration: " + name));
     } catch (WebApplicationException ex) {
       return mapAuthOrRethrow(ex);
     } catch (Exception ex) {
@@ -67,9 +71,12 @@ public class TwinDomainApi extends BaseRestApi {
   public Response createDrone(DroneAdminDTO request) {
     try {
       hasAccess(RESOURCE);
-      DroneAdminDTO created = service().createDrone(request);
-      removeUriFromCache(uriInfo.getPath());
-      return Response.status(Response.Status.CREATED).entity(created).build();
+      TwinManagerConfig config = config();
+      synchronized (config) {
+        DroneAdminDTO created = new TwinDomainService(config).createDrone(request);
+        removeUriFromCache(uriInfo.getPath());
+        return Response.status(Response.Status.CREATED).entity(created).tag(TwinResourceEtag.of(created)).build();
+      }
     } catch (TwinConfigurationStore.TwinConfigurationException ex) {
       return status(ex);
     } catch (WebApplicationException ex) {
@@ -88,9 +95,18 @@ public class TwinDomainApi extends BaseRestApi {
   public Response updateDrone(@PathParam("name") String name, DroneAdminDTO request) {
     try {
       hasAccess(RESOURCE);
-      DroneAdminDTO updated = service().updateDrone(name, request);
-      removeUriFromCache(uriInfo.getPath());
-      return ok(updated);
+      TwinManagerConfig config = config();
+      synchronized (config) {
+        TwinDomainService service = new TwinDomainService(config);
+        DroneAdminDTO current = service.getDrone(name).orElseThrow(() -> new TwinConfigurationStore.TwinConfigurationException("Unknown drone configuration: " + name, 404));
+        Response precondition = requireIfMatch(current);
+        if (precondition != null) {
+          return precondition;
+        }
+        DroneAdminDTO updated = service.updateDrone(name, request);
+        removeUriFromCache(uriInfo.getPath());
+        return Response.ok(updated).tag(TwinResourceEtag.of(updated)).build();
+      }
     } catch (TwinConfigurationStore.TwinConfigurationException ex) {
       return status(ex);
     } catch (WebApplicationException ex) {
@@ -106,7 +122,29 @@ public class TwinDomainApi extends BaseRestApi {
   @Path("/drones/{name}")
   @Operation(summary = "Delete a drone and remove its MAVLink or CAN/N2K mapping")
   public Response deleteDrone(@PathParam("name") String name) {
-    return mutateNoContent(() -> service().deleteDrone(name));
+    try {
+      hasAccess(RESOURCE);
+      TwinManagerConfig config = config();
+      synchronized (config) {
+        TwinDomainService service = new TwinDomainService(config);
+        DroneAdminDTO current = service.getDrone(name).orElseThrow(() -> new TwinConfigurationStore.TwinConfigurationException("Unknown drone configuration: " + name, 404));
+        Response precondition = requireIfMatch(current);
+        if (precondition != null) {
+          return precondition;
+        }
+        service.deleteDrone(name);
+        removeUriFromCache(uriInfo.getPath());
+        return noContent();
+      }
+    } catch (TwinConfigurationStore.TwinConfigurationException ex) {
+      return status(ex);
+    } catch (WebApplicationException ex) {
+      return mapAuthOrRethrow(ex);
+    } catch (IOException ex) {
+      return internalServerError("Unable to save twin configuration");
+    } catch (Exception ex) {
+      return internalServerError("Server twin administration error");
+    }
   }
 
   @GET
@@ -122,7 +160,7 @@ public class TwinDomainApi extends BaseRestApi {
   public Response getAuthority(@PathParam("uuid") UUID uuid) {
     try {
       hasAccess(RESOURCE);
-      return service().getAuthority(uuid).map(this::ok).orElseGet(() -> notFound("Unknown authority: " + uuid));
+      return service().getAuthority(uuid).map(this::etagResponse).orElseGet(() -> notFound("Unknown authority: " + uuid));
     } catch (WebApplicationException ex) {
       return mapAuthOrRethrow(ex);
     } catch (Exception ex) {
@@ -137,9 +175,18 @@ public class TwinDomainApi extends BaseRestApi {
   public Response updateAuthorityBindings(@PathParam("uuid") UUID uuid, AuthorityBindingDTO request) {
     try {
       hasAccess(RESOURCE);
-      AuthoritySummaryDTO updated = service().updateAuthorityBindings(uuid, request);
-      removeUriFromCache(uriInfo.getPath());
-      return ok(updated);
+      TwinManagerConfig config = config();
+      synchronized (config) {
+        TwinDomainService service = new TwinDomainService(config);
+        Optional<AuthoritySummaryDTO> current = service.getAuthority(uuid);
+        Response precondition = current.isPresent() ? requireIfMatch(current.get()) : requireIfNoneMatchStar();
+        if (precondition != null) {
+          return precondition;
+        }
+        AuthoritySummaryDTO updated = service.updateAuthorityBindings(uuid, request);
+        removeUriFromCache(uriInfo.getPath());
+        return Response.ok(updated).tag(TwinResourceEtag.of(updated)).build();
+      }
     } catch (TwinConfigurationStore.TwinConfigurationException ex) {
       return status(ex);
     } catch (WebApplicationException ex) {
@@ -155,7 +202,29 @@ public class TwinDomainApi extends BaseRestApi {
   @Path("/authorities/{uuid}")
   @Operation(summary = "Remove an authority UUID from every configured drone task capability")
   public Response deleteAuthority(@PathParam("uuid") UUID uuid) {
-    return mutateNoContent(() -> service().deleteAuthority(uuid));
+    try {
+      hasAccess(RESOURCE);
+      TwinManagerConfig config = config();
+      synchronized (config) {
+        TwinDomainService service = new TwinDomainService(config);
+        AuthoritySummaryDTO current = service.getAuthority(uuid).orElseThrow(() -> new TwinConfigurationStore.TwinConfigurationException("Unknown authority: " + uuid, 404));
+        Response precondition = requireIfMatch(current);
+        if (precondition != null) {
+          return precondition;
+        }
+        service.deleteAuthority(uuid);
+        removeUriFromCache(uriInfo.getPath());
+        return noContent();
+      }
+    } catch (TwinConfigurationStore.TwinConfigurationException ex) {
+      return status(ex);
+    } catch (WebApplicationException ex) {
+      return mapAuthOrRethrow(ex);
+    } catch (IOException ex) {
+      return internalServerError("Unable to save twin configuration");
+    } catch (Exception ex) {
+      return internalServerError("Server twin administration error");
+    }
   }
 
   @GET
@@ -169,14 +238,14 @@ public class TwinDomainApi extends BaseRestApi {
   @Path("/drones/{name}/authorities/{uuid}")
   @Operation(summary = "Add an authority UUID to every task capability configured on a drone")
   public Response putDroneAuthority(@PathParam("name") String name, @PathParam("uuid") UUID uuid) {
-    return mutateNoContent(() -> service().putDroneAuthority(name, uuid));
+    return mutateDroneAuthority(name, uuid, true);
   }
 
   @DELETE
   @Path("/drones/{name}/authorities/{uuid}")
   @Operation(summary = "Remove an authority UUID from every task capability configured on a drone")
   public Response deleteDroneAuthority(@PathParam("name") String name, @PathParam("uuid") UUID uuid) {
-    return mutateNoContent(() -> service().deleteDroneAuthority(name, uuid));
+    return mutateDroneAuthority(name, uuid, false);
   }
 
   @GET
@@ -214,12 +283,77 @@ public class TwinDomainApi extends BaseRestApi {
     return read(() -> service().listMavlinkSources());
   }
 
-  private TwinDomainService service() {
+  private Response mutateDroneAuthority(String name, UUID uuid, boolean add) {
+    try {
+      hasAccess(RESOURCE);
+      TwinManagerConfig config = config();
+      synchronized (config) {
+        TwinDomainService service = new TwinDomainService(config);
+        DroneAdminDTO current = service.getDrone(name).orElseThrow(() -> new TwinConfigurationStore.TwinConfigurationException("Unknown drone configuration: " + name, 404));
+        Response precondition = requireIfMatch(current);
+        if (precondition != null) {
+          return precondition;
+        }
+        if (add) {
+          service.putDroneAuthority(name, uuid);
+        } else {
+          service.deleteDroneAuthority(name, uuid);
+        }
+        DroneAdminDTO updated = service.getDrone(name).orElseThrow();
+        removeUriFromCache(uriInfo.getPath());
+        return Response.noContent().tag(TwinResourceEtag.of(updated)).build();
+      }
+    } catch (TwinConfigurationStore.TwinConfigurationException ex) {
+      return status(ex);
+    } catch (WebApplicationException ex) {
+      return mapAuthOrRethrow(ex);
+    } catch (IOException ex) {
+      return internalServerError("Unable to save twin configuration");
+    } catch (Exception ex) {
+      return internalServerError("Server twin administration error");
+    }
+  }
+
+  private Response etagResponse(Object entity) {
+    EntityTag tag = TwinResourceEtag.of(entity);
+    Response.ResponseBuilder preconditions = baseRequest.evaluatePreconditions(tag);
+    if (preconditions != null) {
+      return preconditions.tag(tag).build();
+    }
+    return Response.ok(entity).tag(tag).build();
+  }
+
+  private Response requireIfMatch(Object current) {
+    EntityTag tag = TwinResourceEtag.of(current);
+    String ifMatch = request.getHeader("If-Match");
+    if (ifMatch == null || ifMatch.isBlank()) {
+      return Response.status(PRECONDITION_REQUIRED).entity(new StatusResponse("If-Match is required for this resource mutation")).tag(tag).type(MediaType.APPLICATION_JSON).build();
+    }
+    Response.ResponseBuilder preconditions = baseRequest.evaluatePreconditions(tag);
+    if (preconditions == null) {
+      return null;
+    }
+    return preconditions.entity(new StatusResponse("Resource has changed; reload the current configuration before saving")).tag(tag).type(MediaType.APPLICATION_JSON).build();
+  }
+
+  private Response requireIfNoneMatchStar() {
+    String ifNoneMatch = request.getHeader("If-None-Match");
+    if (ifNoneMatch == null || !"*".equals(ifNoneMatch.trim())) {
+      return Response.status(PRECONDITION_REQUIRED).entity(new StatusResponse("If-None-Match: * is required when creating this resource with PUT")).type(MediaType.APPLICATION_JSON).build();
+    }
+    return null;
+  }
+
+  private TwinManagerConfig config() {
     TwinManagerConfig config = TwinManagerConfig.getInstance();
     if (config == null) {
       throw new IllegalStateException("TwinManager configuration is not available");
     }
-    return new TwinDomainService(config);
+    return config;
+  }
+
+  private TwinDomainService service() {
+    return new TwinDomainService(config());
   }
 
   private Response read(ReadAction action) {
@@ -230,23 +364,6 @@ public class TwinDomainApi extends BaseRestApi {
       return status(ex);
     } catch (WebApplicationException ex) {
       return mapAuthOrRethrow(ex);
-    } catch (Exception ex) {
-      return internalServerError("Server twin administration error");
-    }
-  }
-
-  private Response mutateNoContent(SaveAction action) {
-    try {
-      hasAccess(RESOURCE);
-      action.run();
-      removeUriFromCache(uriInfo.getPath());
-      return noContent();
-    } catch (TwinConfigurationStore.TwinConfigurationException ex) {
-      return status(ex);
-    } catch (WebApplicationException ex) {
-      return mapAuthOrRethrow(ex);
-    } catch (IOException ex) {
-      return internalServerError("Unable to save twin configuration");
     } catch (Exception ex) {
       return internalServerError("Server twin administration error");
     }
@@ -271,10 +388,5 @@ public class TwinDomainApi extends BaseRestApi {
   @FunctionalInterface
   private interface ReadAction {
     Object run();
-  }
-
-  @FunctionalInterface
-  private interface SaveAction {
-    void run() throws IOException;
   }
 }
