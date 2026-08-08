@@ -32,6 +32,7 @@ import io.mapsmessaging.network.io.EndPoint;
 import io.mapsmessaging.network.io.Packet;
 import io.mapsmessaging.network.io.impl.SelectorTask;
 import io.mapsmessaging.network.protocol.Protocol;
+import io.mapsmessaging.network.protocol.impl.amqp.proton.AmqpOutputPacket;
 import io.mapsmessaging.network.protocol.impl.amqp.proton.ProtonEngine;
 import lombok.Getter;
 import lombok.NonNull;
@@ -52,6 +53,8 @@ public class AMQPProtocol extends Protocol {
   private final SelectorTask selectorTask;
   private final ProtonEngine protonEngine;
   private final Map<String, SessionManager> activeSessions;
+  @Getter
+  private final int outputChunkSize;
   private boolean isJms;
 
   @Getter
@@ -70,6 +73,7 @@ public class AMQPProtocol extends Protocol {
     version = "1.0";
     logger = LoggerFactory.getLogger("AMQP Protocol on " + endPoint.getName());
     selectorTask = new SelectorTask(this, endPoint.getConfig().getEndPointConfig());
+    outputChunkSize = Math.max(1, (int) Math.min(Integer.MAX_VALUE, endPoint.getConfig().getEndPointConfig().getServerWriteBufferSize()));
     ThreadContext.put("endpoint", endPoint.getName());
     ThreadContext.put("protocol", getName());
     ThreadContext.put("version", getVersion());
@@ -130,6 +134,10 @@ public class AMQPProtocol extends Protocol {
 
   public void deregisterRead() throws IOException {
     selectorTask.cancel(SelectionKey.OP_READ);
+  }
+
+  public void queueOutput(byte[] data) {
+    selectorTask.push(new AmqpOutputPacket(data));
   }
 
   public String getName() {
