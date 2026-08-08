@@ -24,6 +24,7 @@ import io.mapsmessaging.geospatial.GeoSpatialBoundaryType;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 
 public final class GeoSpatialConfigSupport {
 
@@ -34,7 +35,8 @@ public final class GeoSpatialConfigSupport {
 
   public static GeoSpatialConfigDTO parse(Object value) {
     GeoSpatialConfigDTO config = new GeoSpatialConfigDTO();
-    if (value instanceof ConfigurationProperties properties) {
+    ConfigurationProperties properties = asConfigurationProperties(value);
+    if (properties != null) {
       config.setAreas(parseAreas(properties.get(AREAS_KEY)));
     }
     return config;
@@ -72,11 +74,15 @@ public final class GeoSpatialConfigSupport {
 
   private static List<GeoSpatialAreaConfigDTO> parseAreas(Object value) {
     List<GeoSpatialAreaConfigDTO> areas = new ArrayList<>();
-    if (value instanceof ConfigurationProperties properties) {
-      areas.add(parseArea(properties));
-    } else if (value instanceof List<?> entries) {
+    ConfigurationProperties singleArea = asConfigurationProperties(value);
+    if (singleArea != null) {
+      areas.add(parseArea(singleArea));
+      return areas;
+    }
+    if (value instanceof List<?> entries) {
       for (Object entry : entries) {
-        if (entry instanceof ConfigurationProperties properties) {
+        ConfigurationProperties properties = asConfigurationProperties(entry);
+        if (properties != null) {
           areas.add(parseArea(properties));
         }
       }
@@ -93,11 +99,15 @@ public final class GeoSpatialConfigSupport {
 
   private static List<GeoSpatialBoundaryConfigDTO> parseBoundaries(Object value) {
     List<GeoSpatialBoundaryConfigDTO> boundaries = new ArrayList<>();
-    if (value instanceof ConfigurationProperties properties) {
-      boundaries.add(parseBoundary(properties));
-    } else if (value instanceof List<?> entries) {
+    ConfigurationProperties singleBoundary = asConfigurationProperties(value);
+    if (singleBoundary != null) {
+      boundaries.add(parseBoundary(singleBoundary));
+      return boundaries;
+    }
+    if (value instanceof List<?> entries) {
       for (Object entry : entries) {
-        if (entry instanceof ConfigurationProperties properties) {
+        ConfigurationProperties properties = asConfigurationProperties(entry);
+        if (properties != null) {
           boundaries.add(parseBoundary(properties));
         }
       }
@@ -112,9 +122,25 @@ public final class GeoSpatialConfigSupport {
 
     String configuredType = properties.getProperty("type", null);
     if (configuredType != null && !configuredType.isBlank()) {
-      boundary.setType(
-          GeoSpatialBoundaryType.valueOf(configuredType.trim().toUpperCase(Locale.ROOT)));
+      boundary.setType(GeoSpatialBoundaryType.valueOf(configuredType.trim().toUpperCase(Locale.ROOT)));
     }
     return boundary;
+  }
+
+  private static ConfigurationProperties asConfigurationProperties(Object value) {
+    if (value instanceof ConfigurationProperties properties) {
+      return properties;
+    }
+    if (!(value instanceof Map<?, ?> map)) {
+      return null;
+    }
+
+    ConfigurationProperties properties = new ConfigurationProperties();
+    for (Map.Entry<?, ?> entry : map.entrySet()) {
+      if (entry.getKey() instanceof String key) {
+        properties.put(key, entry.getValue());
+      }
+    }
+    return properties;
   }
 }
