@@ -120,24 +120,37 @@ final class TwinDomainService {
     return listAuthorities().stream().filter(summary -> authority.equals(summary.getUuid())).findFirst();
   }
 
-  AuthoritySummaryDTO replaceAuthorityBindings(UUID authority, AuthorityBindingDTO request) throws IOException {
+  AuthoritySummaryDTO updateAuthorityBindings(UUID authority, AuthorityBindingDTO request) throws IOException {
     if (authority == null) {
       throw new TwinConfigurationStore.TwinConfigurationException("authority UUID is required", 400);
     }
     if (request == null) {
       throw new TwinConfigurationStore.TwinConfigurationException("authority binding request is required", 400);
     }
-    Set<String> requestedDrones = new LinkedHashSet<>(request.getDrones() == null ? List.of() : request.getDrones());
-    for (String droneName : requestedDrones) {
-      if (findDrone(droneName).isEmpty()) {
-        throw new TwinConfigurationStore.TwinConfigurationException("Unknown drone configuration: " + droneName, 404);
-      }
+    Set<String> additions = new LinkedHashSet<>(request.getAddDrones() == null ? List.of() : request.getAddDrones());
+    Set<String> removals = new LinkedHashSet<>(request.getRemoveDrones() == null ? List.of() : request.getRemoveDrones());
+    Set<String> overlap = new LinkedHashSet<>(additions);
+    overlap.retainAll(removals);
+    if (!overlap.isEmpty()) {
+      throw new TwinConfigurationStore.TwinConfigurationException("A drone cannot be added and removed in the same authority update: " + overlap, 400);
+    }
+    for (String droneName : additions) {
+      requireDrone(droneName);
+    }
+    for (String droneName : removals) {
+      requireDrone(droneName);
     }
     synchronized (CONFIG_LOCK) {
-      for (DroneInfoDTO drone : config.getDroneInfo()) {
-        setDroneAuthority(drone, authority, requestedDrones.contains(drone.getName()));
+      boolean changed = false;
+      for (String droneName : additions) {
+        changed |= setDroneAuthority(requireDrone(droneName), authority, true);
       }
-      config.save();
+      for (String droneName : removals) {
+        changed |= setDroneAuthority(requireDrone(droneName), authority, false);
+      }
+      if (changed) {
+        config.save();
+      }
       return getAuthority(authority).orElse(new AuthoritySummaryDTO(authority, List.of()));
     }
   }
@@ -156,7 +169,7 @@ final class TwinDomainService {
   }
 
   List<UUID> listDroneAuthorities(String name) {
-    DroneInfoDTO drone = findDrone(name).orElseThrow(() -> new TwinConfigurationStore.TwinConfigurationException("Unknown drone configuration: " + name, 404));
+    DroneInfoDTO drone = requireDrone(name);
     Set<UUID> values = new LinkedHashSet<>();
     for (TaskCapability task : tasks(drone)) {
       for (Authorities authority : authorities(task)) {
@@ -201,7 +214,7 @@ final class TwinDomainService {
       throw new TwinConfigurationStore.TwinConfigurationException("authority UUID is required", 400);
     }
     synchronized (CONFIG_LOCK) {
-      DroneInfoDTO drone = findDrone(name).orElseThrow(() -> new TwinConfigurationStore.TwinConfigurationException("Unknown drone configuration: " + name, 404));
+      DroneInfoDTO drone = requireDrone(name);
       boolean changed = setDroneAuthority(drone, authority, add);
       if (!changed && !add) {
         throw new TwinConfigurationStore.TwinConfigurationException("Authority is not assigned to drone " + name + ": " + authority, 404);
@@ -347,6 +360,11 @@ final class TwinDomainService {
       return transport;
     }
     return new DroneTransportDTO();
+  }
+
+  private DroneInfoDTO requireDrone(String name) {
+    validateName(name);
+    return findDrone(name).orElseThrow(() -> new TwinConfigurationStore.TwinConfigurationException("Unknown drone configuration: " + name, 404));
   }
 
   private Optional<DroneInfoDTO> findDrone(String name) {
