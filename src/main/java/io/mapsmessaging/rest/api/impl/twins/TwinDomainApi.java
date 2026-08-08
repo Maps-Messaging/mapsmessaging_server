@@ -30,7 +30,6 @@ import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import java.io.IOException;
-import java.util.List;
 import java.util.UUID;
 
 @Tag(name = "Server Twin Administration", description = "Additive administrative REST facade over the existing TwinManager configuration model.")
@@ -134,11 +133,11 @@ public class TwinDomainApi extends BaseRestApi {
   @PUT
   @Path("/authorities/{uuid}")
   @Consumes(MediaType.APPLICATION_JSON)
-  @Operation(summary = "Replace the full-drone bindings for an authority UUID")
-  public Response replaceAuthorityBindings(@PathParam("uuid") UUID uuid, AuthorityBindingDTO request) {
+  @Operation(summary = "Atomically add or remove full-drone bindings for an authority UUID while preserving untouched capability-level exceptions")
+  public Response updateAuthorityBindings(@PathParam("uuid") UUID uuid, AuthorityBindingDTO request) {
     try {
       hasAccess(RESOURCE);
-      AuthoritySummaryDTO updated = service().replaceAuthorityBindings(uuid, request);
+      AuthoritySummaryDTO updated = service().updateAuthorityBindings(uuid, request);
       removeUriFromCache(uriInfo.getPath());
       return ok(updated);
     } catch (TwinConfigurationStore.TwinConfigurationException ex) {
