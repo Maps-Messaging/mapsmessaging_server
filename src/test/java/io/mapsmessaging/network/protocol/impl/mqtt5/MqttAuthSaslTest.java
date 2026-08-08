@@ -186,15 +186,13 @@ class MqttAuthSaslTest extends MQTTBaseTest {
       this.failMechanism = failMechanism;
     }
 
-
-
     public Mqtt5SaslAuth(SaslClient saslClient) {
       this(saslClient, false);
     }
 
     @Override
     public @NotNull MqttUtf8String getMethod() {
-      if(failMechanism){
+      if (failMechanism) {
         return MqttUtf8String.of("SCRAM-SHA-512");
       }
       return MqttUtf8String.of(saslClient.getMechanismName());
@@ -206,9 +204,16 @@ class MqttAuthSaslTest extends MQTTBaseTest {
     }
 
     @Override
-    public @NotNull CompletableFuture<Void> onAuth(@NotNull Mqtt5ClientConfig mqtt5ClientConfig, @NotNull Mqtt5Connect mqtt5Connect, @NotNull Mqtt5EnhancedAuthBuilder mqtt5EnhancedAuthBuilder) {
+    public @NotNull CompletableFuture<Void> onAuth(
+        @NotNull Mqtt5ClientConfig mqtt5ClientConfig,
+        @NotNull Mqtt5Connect mqtt5Connect,
+        @NotNull Mqtt5EnhancedAuthBuilder mqtt5EnhancedAuthBuilder) {
+
       try {
-        mqtt5EnhancedAuthBuilder.data(saslClient.evaluateChallenge(new byte[0]));
+        byte[] initialResponse = saslClient.evaluateChallenge(new byte[0]);
+        if (initialResponse != null) {
+          mqtt5EnhancedAuthBuilder.data(initialResponse);
+        }
         return CompletableFuture.completedFuture(null);
       } catch (SaslException e) {
         return CompletableFuture.failedFuture(e);
@@ -221,25 +226,45 @@ class MqttAuthSaslTest extends MQTTBaseTest {
     }
 
     @Override
-    public @NotNull CompletableFuture<Boolean> onContinue(@NotNull Mqtt5ClientConfig mqtt5ClientConfig, @NotNull Mqtt5Auth mqtt5Auth, @NotNull Mqtt5AuthBuilder mqtt5AuthBuilder) {
+    public @NotNull CompletableFuture<Boolean> onContinue(
+        @NotNull Mqtt5ClientConfig mqtt5ClientConfig,
+        @NotNull Mqtt5Auth mqtt5Auth,
+        @NotNull Mqtt5AuthBuilder mqtt5AuthBuilder) {
+
       try {
-        ByteBuffer byteBuffer = mqtt5Auth.getData().get();
+        ByteBuffer byteBuffer = mqtt5Auth.getData().orElseThrow(() -> new SaslException("Missing SCRAM authentication data"));
         byte[] challenge = new byte[byteBuffer.remaining()];
         byteBuffer.get(challenge);
-        byte[] client = saslClient.evaluateChallenge(challenge);
-        mqtt5AuthBuilder.data(client);
-        if (saslClient.isComplete()) {
-          return CompletableFuture.completedFuture(true);
+
+        byte[] response = saslClient.evaluateChallenge(challenge);
+        if (response != null) {
+          mqtt5AuthBuilder.data(response);
         }
-        return CompletableFuture.completedFuture(false);
+
+        return CompletableFuture.completedFuture(true);
       } catch (SaslException e) {
-        throw new RuntimeException(e);
+        return CompletableFuture.failedFuture(e);
       }
     }
 
     @Override
     public @NotNull CompletableFuture<Boolean> onAuthSuccess(@NotNull Mqtt5ClientConfig mqtt5ClientConfig, @NotNull Mqtt5ConnAck mqtt5ConnAck) {
-      return CompletableFuture.completedFuture(true);
+      try {
+        ByteBuffer byteBuffer =
+            mqtt5ConnAck
+                .getEnhancedAuth()
+                .flatMap(auth -> auth.getData())
+                .orElseThrow(() -> new SaslException("Missing SCRAM server-final authentication data"));
+
+        byte[] serverFinal = new byte[byteBuffer.remaining()];
+        byteBuffer.get(serverFinal);
+
+        saslClient.evaluateChallenge(serverFinal);
+
+        return CompletableFuture.completedFuture(saslClient.isComplete());
+      } catch (SaslException e) {
+        return CompletableFuture.failedFuture(e);
+      }
     }
 
     @Override
@@ -248,20 +273,16 @@ class MqttAuthSaslTest extends MQTTBaseTest {
     }
 
     @Override
-    public void onAuthRejected(@NotNull Mqtt5ClientConfig mqtt5ClientConfig, @NotNull Mqtt5ConnAck mqtt5ConnAck) {
-    }
+    public void onAuthRejected(@NotNull Mqtt5ClientConfig mqtt5ClientConfig, @NotNull Mqtt5ConnAck mqtt5ConnAck) {}
 
     @Override
-    public void onReAuthRejected(@NotNull Mqtt5ClientConfig mqtt5ClientConfig, @NotNull Mqtt5Disconnect mqtt5Disconnect) {
-    }
+    public void onReAuthRejected(@NotNull Mqtt5ClientConfig mqtt5ClientConfig, @NotNull Mqtt5Disconnect mqtt5Disconnect) {}
 
     @Override
-    public void onAuthError(@NotNull Mqtt5ClientConfig mqtt5ClientConfig, @NotNull Throwable throwable) {
-    }
+    public void onAuthError(@NotNull Mqtt5ClientConfig mqtt5ClientConfig, @NotNull Throwable throwable) {}
 
     @Override
-    public void onReAuthError(@NotNull Mqtt5ClientConfig mqtt5ClientConfig, @NotNull Throwable throwable) {
-    }
-  };
+    public void onReAuthError(@NotNull Mqtt5ClientConfig mqtt5ClientConfig, @NotNull Throwable throwable) {}
+  }
 
 }
