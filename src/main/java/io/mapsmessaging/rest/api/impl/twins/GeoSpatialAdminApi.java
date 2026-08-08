@@ -35,7 +35,7 @@ import java.io.InputStream;
 import org.glassfish.jersey.media.multipart.FormDataParam;
 
 @Tag(name = "Server Twin Geospatial Administration", description = "Additive administration of the existing TwinManager geospatial area configuration and its GeoJSON boundary files.")
-@Path(URI_PATH + "/server/twin/geospatial")
+@Path(URI_PATH + "/server/twin/admin/geospatial")
 public class GeoSpatialAdminApi extends BaseRestApi {
 
   private static final String RESOURCE = "server/twin/config";
@@ -196,7 +196,7 @@ public class GeoSpatialAdminApi extends BaseRestApi {
       TwinManagerConfig config = config();
       synchronized (config) {
         GeoSpatialAdminService service = new GeoSpatialAdminService(config);
-        GeoSpatialAreaConfigDTO current = service.getArea(areaName).orElseThrow(() -> new TwinConfigurationStore.TwinConfigurationException("Unknown geospatial area: " + areaName, 404));
+        GeoSpatialAreaConfigDTO current = service().getArea(areaName).orElseThrow(() -> new TwinConfigurationStore.TwinConfigurationException("Unknown geospatial area: " + areaName, 404));
         Response precondition = requireIfMatch(current);
         if (precondition != null) {
           return precondition;
