@@ -237,7 +237,7 @@ public class RestApiServerManager implements Agent {
     WebappContext context = new WebappContext("GrizzlyContext", path);
     ServletRegistration registration = context.addServlet(servlet.getClass().getName(), servlet);
     context.addListener(new SessionTracker());
-    registration.addMapping("/*");
+    registration.addMapping("/api/*");
     HttpServer server;
     if (sslConfig != null) {
       SSLEngineConfigurator sslEngineConfigurator = new SSLEngineConfigurator(sslConfig, false, isClientCertRequired(), isClientCertWanted());
@@ -254,9 +254,7 @@ public class RestApiServerManager implements Agent {
     transport.setSelectorRunnersCount(config.getSelectorThreads());
     transport.setWorkerThreadPoolConfig(threadPoolConfig);
     transport.setKernelThreadPoolConfig(threadPoolConfig);
-    server.getServerConfiguration().setDefaultErrorPageGenerator(
-        (request, response, status, description, exception) -> null
-    );
+    server.getServerConfiguration().setDefaultErrorPageGenerator((request, response, status, description, exception) -> null);
 
     context.deploy(server);
     loadStatic(server);
@@ -280,16 +278,16 @@ public class RestApiServerManager implements Agent {
 
   private void mapDirectory(String path, HttpServer server) {
     File files = new File(path);
-    if(files.exists() && files.isDirectory()) {
+    if (files.exists() && files.isDirectory()) {
       File[] fileList = files.listFiles();
       if (fileList != null) {
         for (File file : fileList) {
           if (file.isDirectory()) {
-            String location = path+file.getName();
-            String uriMapping = "/"+file.getName()+"/";
-            StaticHttpHandler staticHttpHandler = new CorsEnabledStaticHttpHandler(location+File.separator);
+            String location = path + file.getName();
+            String uriMapping = file.getName().equals("admin") ? "/" : "/" + file.getName() + "/";
+            StaticHttpHandler staticHttpHandler = new CorsEnabledStaticHttpHandler(location + File.separator);
             staticHttpHandler.setFileCacheEnabled(true);
-            server.getServerConfiguration().addHttpHandler(staticHttpHandler, uriMapping+"*" );
+            server.getServerConfiguration().addHttpHandler(staticHttpHandler, uriMapping + "*");
           }
         }
       }
