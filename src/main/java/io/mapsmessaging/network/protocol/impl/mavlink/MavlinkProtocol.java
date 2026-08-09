@@ -56,6 +56,7 @@ import io.mapsmessaging.schemas.formatters.MessageFormatter;
 import io.mapsmessaging.schemas.formatters.MessageFormatterFactory;
 import java.io.IOException;
 import java.net.InetSocketAddress;
+import java.net.SocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
@@ -81,9 +82,9 @@ public class MavlinkProtocol extends Protocol {
   protected final MavlinkConfigDTO mavlinkConfig;
   protected Session session;
   private final Map<Integer, MavlinkAcceptedSourceDTO> acceptedComponents;
-  private final SequenceTracker tracker;
+  private final Map<Integer, SequenceTracker> sequenceTrackers;
   private final String outboundTopicName;
-  protected MavlinkEventFactory mavlinkEventFactory;
+  protected volatile MavlinkEventFactory mavlinkEventFactory;
   protected final MessageFormatter formatter;
   private final QualityOfService qos;
   private final boolean storeOffline;
@@ -102,7 +103,7 @@ public class MavlinkProtocol extends Protocol {
     super(endPoint, protocolConfig);
     this.factory = factory;
     this.key = key;
-    tracker = new SequenceTracker();
+    sequenceTrackers = new ConcurrentHashMap<>();
     this.mavlinkConfig = (MavlinkConfigDTO) protocolConfig;
     String dialectName = mavlinkConfig.getDialectName();
     mavlinkEventFactory = MavlinkInterfaceManager.loadDialect(dialectName);
@@ -145,23 +146,30 @@ public class MavlinkProtocol extends Protocol {
       session.addSubscription(subscriptionContextBuilder.build());
     }
     outboundTopicName = outboundTopic;
-    String remoteSocket = endPoint.getRemoteSocketAddress();
-    heartbeatEmitter = new MavlinkHeartbeatEmitter(sequenceCounter, endPoint, mavlinkConfig,  parseSocketAddress(remoteSocket));
+    if (mavlinkConfig.hasLocalMavlinkIdentity()) {
+      SocketAddress heartbeatAddress = endPoint.isUDP() ? parseSocketAddress(endPoint.getRemoteSocketAddress()) : null;
+      heartbeatEmitter = new MavlinkHeartbeatEmitter(sequenceCounter, endPoint, mavlinkConfig, heartbeatAddress);
+    } else {
+      heartbeatEmitter = null;
+    }
     startHeartbeatIfConfigured();
   }
 
   @Override
   public void close() throws IOException {
     stopHeartbeat();
-    if (!session.isClosed()) {
-      SessionManager.getInstance().close(session, false);
+    try {
+      if (!session.isClosed()) {
+        SessionManager.getInstance().close(session, false);
+      }
+      endPoint.close();
+      if (mbean != null) {
+        mbean.close();
+      }
+      super.close();
+    } finally {
+      factory.close(key);
     }
-    endPoint.close();
-    if (mbean != null) {
-      mbean.close();
-    }
-    super.close();
-    factory.close(key);
   }
 
   @Override
@@ -205,14 +213,10 @@ public class MavlinkProtocol extends Protocol {
       }
 
       String json = new String(messageEvent.getMessage().getOpaqueData(), StandardCharsets.UTF_8);
-      JsonObject input = JsonParser.parseString(json).getAsJsonObject();
-      String socketAddressText = parts[2];
-      sendData(input, socketAddressText);
-    }
-    catch(Throwable th){
-      th.printStackTrace();
-    }
-    finally {
+      sendData(JsonParser.parseString(json).getAsJsonObject(), parts[2]);
+    } catch (RuntimeException e) {
+      logger.log(MAVLINK_FAILED_SENDING_OUTBOUND_PACKET, endPoint.getName(), "message-event", e);
+    } finally {
       messageEvent.getCompletionTask().run();
     }
   }
@@ -223,10 +227,12 @@ public class MavlinkProtocol extends Protocol {
       validateOutboundHeader(input);
       byte[] frame = formatter.parseFromJson(input);
       Packet packet = new Packet(ByteBuffer.wrap(frame));
-      packet.setFromAddress(parseSocketAddress(socketAddressText));
+      if (endPoint.isUDP()) {
+        packet.setFromAddress(parseSocketAddress(socketAddressText));
+      }
       endPoint.sendPacket(packet);
       factory.writeTlog(frame);
-    } catch (Throwable e) {
+    } catch (Exception e) {
       logger.log(MAVLINK_FAILED_SENDING_OUTBOUND_PACKET, endPoint.getName(), socketAddressText, e);
     }
   }
@@ -277,6 +283,8 @@ public class MavlinkProtocol extends Protocol {
     }
 
     if (mavlinkConfig.getStatusTopicNameTemplate() != null && !mavlinkConfig.getStatusTopicNameTemplate().isEmpty()) {
+      int trackerKey = (env.getFrame().getSystemId() << 8) | env.getFrame().getComponentId();
+      SequenceTracker tracker = sequenceTrackers.computeIfAbsent(trackerKey, ignored -> new SequenceTracker());
       SequenceResult results = tracker.accept(env.getFrame().getSequence());
       if (results.isStatusChanged()) {
         String statusTopic = computeTopicName(mavlinkConfig.getStatusTopicNameTemplate(), env.getFrame(), env.getMessageName());
@@ -297,7 +305,7 @@ public class MavlinkProtocol extends Protocol {
         if (env.getDetections() != null && !env.getDetections().isEmpty()) {
           envelope.add("detections", gson.toJsonTree(env.getDetections()).getAsJsonArray());
         }
-        raw = envelope.toString().getBytes();
+        raw = envelope.toString().getBytes(StandardCharsets.UTF_8);
       }
       processPacket(env.getFrame(), env.getMessageName(), raw, socketAddress);
     } else {
@@ -460,18 +468,19 @@ public class MavlinkProtocol extends Protocol {
 
 
   private void startHeartbeatIfConfigured() {
-    if (!mavlinkConfig.hasLocalMavlinkIdentity()) {
+    if (heartbeatEmitter == null || heartbeatFuture != null) {
       return;
     }
 
     long intervalSeconds = Math.max(1, mavlinkConfig.getHeartbeatIntervalSeconds());
-    SimpleTaskScheduler.getInstance().scheduleAtFixedRate(heartbeatEmitter, intervalSeconds, intervalSeconds, TimeUnit.SECONDS);
+    heartbeatFuture = SimpleTaskScheduler.getInstance().scheduleAtFixedRate(heartbeatEmitter, intervalSeconds, intervalSeconds, TimeUnit.SECONDS);
   }
 
   private void stopHeartbeat() {
-    if (heartbeatFuture != null) {
-      heartbeatFuture.cancel(false);
-      heartbeatFuture = null;
+    ScheduledFuture<?> future = heartbeatFuture;
+    heartbeatFuture = null;
+    if (future != null) {
+      future.cancel(false);
     }
   }
 

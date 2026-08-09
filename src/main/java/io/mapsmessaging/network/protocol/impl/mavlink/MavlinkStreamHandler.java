@@ -35,7 +35,7 @@ public class MavlinkStreamHandler implements StreamHandler {
   private static final int MAVLINK_V1_MAGIC = 0xFE;
   private static final int MAVLINK_V2_MAGIC = 0xFD;
 
-  private static final int MAVLINK_V1_HEADER_REST = 5; // after magic+len
+  private static final int MAVLINK_V1_HEADER_REST = 4; // seq, sysid, compid, msgid
   private static final int MAVLINK_V1_CRC_LEN = 2;
 
   private static final int MAVLINK_V2_HEADER_REST = 8; // after magic+len (incompat, compat, seq, sys, comp, msgid[3])
@@ -43,7 +43,8 @@ public class MavlinkStreamHandler implements StreamHandler {
   private static final int MAVLINK_V2_SIGNATURE_LEN = 13;
   private static final int MAVLINK_V2_INCOMPAT_FLAG_SIGNED = 0x01;
 
-  private final byte[] smallBuffer;
+  private final byte[] inputBuffer;
+  private final byte[] outputBuffer;
   private final int readTimeoutMillis;
 
   private volatile boolean closed;
@@ -52,7 +53,8 @@ public class MavlinkStreamHandler implements StreamHandler {
     this(DEFAULT_READ_TIMEOUT_MILLIS);
   }
   public MavlinkStreamHandler(int readTimeoutMillis) {
-    this.smallBuffer = new byte[32];
+    this.inputBuffer = new byte[32];
+    this.outputBuffer = new byte[32];
     this.closed = false;
     if (readTimeoutMillis <= 0) {
       throw new IllegalArgumentException("readTimeoutMillis must be > 0");
@@ -106,19 +108,19 @@ public class MavlinkStreamHandler implements StreamHandler {
       packet.putByte(magic);
       packet.putByte(payloadLength);
 
-      readFully(input, smallBuffer, 0, MAVLINK_V1_HEADER_REST);
-      packet.put(smallBuffer, 0, MAVLINK_V1_HEADER_REST);
+      readFully(input, inputBuffer, 0, MAVLINK_V1_HEADER_REST);
+      packet.put(inputBuffer, 0, MAVLINK_V1_HEADER_REST);
 
       readPayload(input, packet, payloadLength);
 
-      readFully(input, smallBuffer, 0, MAVLINK_V1_CRC_LEN);
-      packet.put(smallBuffer, 0, MAVLINK_V1_CRC_LEN);
+      readFully(input, inputBuffer, 0, MAVLINK_V1_CRC_LEN);
+      packet.put(inputBuffer, 0, MAVLINK_V1_CRC_LEN);
       return frameLength;
     }
 
-    readFully(input, smallBuffer, 0, MAVLINK_V2_HEADER_REST);
+    readFully(input, inputBuffer, 0, MAVLINK_V2_HEADER_REST);
 
-    int incompatFlags = smallBuffer[0] & 0xFF;
+    int incompatFlags = inputBuffer[0] & 0xFF;
     boolean signed = (incompatFlags & MAVLINK_V2_INCOMPAT_FLAG_SIGNED) != 0;
 
     int frameLength = 2 + MAVLINK_V2_HEADER_REST + payloadLength + MAVLINK_V2_CRC_LEN + (signed ? MAVLINK_V2_SIGNATURE_LEN : 0);
@@ -127,16 +129,16 @@ public class MavlinkStreamHandler implements StreamHandler {
     packet.putByte(magic);
     packet.putByte(payloadLength);
 
-    packet.put(smallBuffer, 0, MAVLINK_V2_HEADER_REST);
+    packet.put(inputBuffer, 0, MAVLINK_V2_HEADER_REST);
 
     readPayload(input, packet, payloadLength);
 
-    readFully(input, smallBuffer, 0, MAVLINK_V2_CRC_LEN);
-    packet.put(smallBuffer, 0, MAVLINK_V2_CRC_LEN);
+    readFully(input, inputBuffer, 0, MAVLINK_V2_CRC_LEN);
+    packet.put(inputBuffer, 0, MAVLINK_V2_CRC_LEN);
 
     if (signed) {
-      readFully(input, smallBuffer, 0, MAVLINK_V2_SIGNATURE_LEN);
-      packet.put(smallBuffer, 0, MAVLINK_V2_SIGNATURE_LEN);
+      readFully(input, inputBuffer, 0, MAVLINK_V2_SIGNATURE_LEN);
+      packet.put(inputBuffer, 0, MAVLINK_V2_SIGNATURE_LEN);
     }
     return frameLength;
   }
@@ -168,9 +170,9 @@ public class MavlinkStreamHandler implements StreamHandler {
     }
 
     while (buffer.hasRemaining()) {
-      int chunk = Math.min(buffer.remaining(), smallBuffer.length);
-      buffer.get(smallBuffer, 0, chunk);
-      output.write(smallBuffer, 0, chunk);
+      int chunk = Math.min(buffer.remaining(), outputBuffer.length);
+      buffer.get(outputBuffer, 0, chunk);
+      output.write(outputBuffer, 0, chunk);
     }
 
     return length;
@@ -188,9 +190,9 @@ public class MavlinkStreamHandler implements StreamHandler {
     }
     int remaining = payloadLength;
     while (remaining > 0) {
-      int chunk = Math.min(remaining, smallBuffer.length);
-      readFully(input, smallBuffer, 0, chunk);
-      packet.put(smallBuffer, 0, chunk);
+      int chunk = Math.min(remaining, inputBuffer.length);
+      readFully(input, inputBuffer, 0, chunk);
+      packet.put(inputBuffer, 0, chunk);
       remaining -= chunk;
     }
   }
