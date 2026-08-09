@@ -24,6 +24,8 @@ import io.mapsmessaging.state.drone.model.FixInfo;
 import io.mapsmessaging.state.mavlink.bootstrap.DroneTwinMissingState;
 import io.mapsmessaging.state.mavlink.bootstrap.DroneTwinReadinessEvaluation;
 
+import java.util.Locale;
+
 public class GpsReadinessCheck implements DroneTwinReadinessCheck {
 
   @Override
@@ -37,8 +39,19 @@ public class GpsReadinessCheck implements DroneTwinReadinessCheck {
     }
 
     FixInfo fixInfo = droneTwin.getFixInfo();
-    if (fixInfo == null || fixInfo.getFixType() == null) {
+    if (fixInfo == null || !isValidFixType(fixInfo.getFixType())) {
       evaluation.blocking(DroneTwinMissingState.MISSING_GPS_FIX);
     }
+  }
+
+  private boolean isValidFixType(String fixType) {
+    if (fixType == null || fixType.isBlank()) {
+      return false;
+    }
+
+    return switch (fixType.trim().toUpperCase(Locale.ROOT)) {
+      case "NO_GPS", "NO_FIX", "UNKNOWN" -> false;
+      default -> true;
+    };
   }
 }

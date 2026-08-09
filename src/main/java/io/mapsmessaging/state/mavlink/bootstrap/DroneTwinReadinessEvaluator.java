@@ -22,7 +22,17 @@ package io.mapsmessaging.state.mavlink.bootstrap;
 import io.mapsmessaging.state.drone.core.TwinLifecycleStatus;
 import io.mapsmessaging.state.drone.core.TwinUpdateContext;
 import io.mapsmessaging.state.drone.drone.DroneTwin;
-import io.mapsmessaging.state.mavlink.bootstrap.checks.*;
+import io.mapsmessaging.state.mavlink.bootstrap.checks.AutopilotReadinessCheck;
+import io.mapsmessaging.state.mavlink.bootstrap.checks.BatteryReadinessCheck;
+import io.mapsmessaging.state.mavlink.bootstrap.checks.CapabilitiesReadinessCheck;
+import io.mapsmessaging.state.mavlink.bootstrap.checks.ConnectivityReadinessCheck;
+import io.mapsmessaging.state.mavlink.bootstrap.checks.DroneTwinReadinessCheck;
+import io.mapsmessaging.state.mavlink.bootstrap.checks.GlobalPositionReadinessCheck;
+import io.mapsmessaging.state.mavlink.bootstrap.checks.GpsReadinessCheck;
+import io.mapsmessaging.state.mavlink.bootstrap.checks.HomePositionReadinessCheck;
+import io.mapsmessaging.state.mavlink.bootstrap.checks.IdentityReadinessCheck;
+import io.mapsmessaging.state.mavlink.bootstrap.checks.LifecycleReadinessCheck;
+import io.mapsmessaging.state.mavlink.bootstrap.checks.SystemStateReadinessCheck;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -156,6 +166,10 @@ public class DroneTwinReadinessEvaluator {
     }
 
     if (missingStates.contains(DroneTwinMissingState.MISSING_BATTERY_STATE)) {
+      return false;
+    }
+
+    if (missingStates.contains(DroneTwinMissingState.STALE_POWER)) {
       return false;
     }
 

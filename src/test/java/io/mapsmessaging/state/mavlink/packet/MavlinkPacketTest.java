@@ -26,6 +26,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
 
@@ -63,6 +64,17 @@ class MavlinkPacketTest {
   }
 
   @Test
+  void getIntArray_convertsJsonNumberListsAndRejectsMixedLists() {
+    Map<String, Object> fields = Map.of(
+        "numbers", List.of(1.0d, 65535L, 42),
+        "mixed", List.of(1, "two", 3)
+    );
+
+    assertArrayEquals(new int[] {1, 65535, 42}, packet.intArray(fields, "numbers"));
+    assertArrayEquals(new int[0], packet.intArray(fields, "mixed"));
+  }
+
+  @Test
   void numericHelpers_missingValues_returnSentinels() {
     Map<String, Object> fields = Map.of();
 
@@ -89,6 +101,17 @@ class MavlinkPacketTest {
     assertEquals("A\u00ff", packet.string(fields, "bytes"));
     assertEquals("CD", packet.string(fields, "ints"));
     assertNull(packet.string(fields, "missing"));
+  }
+
+  @Test
+  void getString_decodesJsonNumberListsAndPreservesUnsupportedValues() {
+    Map<String, Object> fields = Map.of(
+        "characters", List.of(65.0d, 0x142, 0, 90),
+        "mixed", List.of(65, "B")
+    );
+
+    assertEquals("AB", packet.string(fields, "characters"));
+    assertEquals("[65, B]", packet.string(fields, "mixed"));
   }
 
   private static final class TestPacket extends MavlinkPacket {
