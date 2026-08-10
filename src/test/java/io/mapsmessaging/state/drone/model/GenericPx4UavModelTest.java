@@ -167,9 +167,12 @@ class GenericPx4UavModelTest {
 
         UxvModelCommandSet commandSet = model.reposition(context(), request);
 
-        MavlinkCommandInt command = assertSingleCommandInt(commandSet, UxvOperation.REPOSITION);
+        assertEquals(UxvOperation.REPOSITION, commandSet.operation());
+        assertEquals(GenericPx4UavModel.MODEL_NAME, commandSet.modelName());
+        assertEquals(3, commandSet.messages().size());
+        MavlinkCommandInt command = assertInstanceOf(MavlinkCommandInt.class, commandSet.messages().get(0));
         assertEquals(MavlinkCommandIntFactory.MAV_CMD_DO_REPOSITION, command.getCommand());
-        assertEquals(MavlinkCommandIntFactory.MAV_FRAME_GLOBAL_RELATIVE_ALT_INT, command.getFrame());
+        assertEquals(MavlinkCommandIntFactory.MAV_FRAME_GLOBAL_INT, command.getFrame());
         assertEquals(toScaledCoordinate(position().getLatitude()), command.getLatitude());
         assertEquals(toScaledCoordinate(position().getLongitude()), command.getLongitude());
         assertEquals(position().getPreferredAltitudeMeters().floatValue(), command.getAltitude());
@@ -228,13 +231,20 @@ class GenericPx4UavModelTest {
 
     @Test
     void loiter_withDuration_returnsTimedLoiter() {
-        LoiterRequest request = new LoiterRequest(position(), 10.0d, Duration.ofSeconds(30), 45.0f, 100.0d, null);
+        LoiterRequest request = new LoiterRequest(position(), 10.0d, Duration.ofSeconds(30), null, 100.0d, null);
 
         UxvModelCommandSet commandSet = model.loiter(context(), request);
 
         MavlinkCommandInt command = assertSingleCommandInt(commandSet, UxvOperation.LOITER);
         assertEquals(MavlinkCommandIntFactory.MAV_CMD_NAV_LOITER_TIME, command.getCommand());
         assertEquals(30.0f, command.getParam1());
+    }
+
+    @Test
+    void loiter_withDurationAndYaw_throws() {
+        LoiterRequest request = new LoiterRequest(position(), 10.0d, Duration.ofSeconds(30), 45.0f, 100.0d, null);
+
+        assertThrows(IllegalArgumentException.class, () -> model.loiter(context(), request));
     }
 
     @Test
@@ -277,10 +287,10 @@ class GenericPx4UavModelTest {
     @Test
     void buildMission_buildsMissionItemIntMessages() {
         MissionPlan missionPlan = new MissionPlan(
-                List.of(
-                        new PlanItem(PlanItemType.WAYPOINT, position(), null, null, null, null, 100.0d, null),
-                        new PlanItem(PlanItemType.LOITER, position(), Duration.ofSeconds(20), 15.0d, null, null, 100.0d, null),
-                        new PlanItem(PlanItemType.RETURN_TO_HOME, null, null, null, null, null, null, null)));
+            List.of(
+                new PlanItem(PlanItemType.WAYPOINT, position(), null, null, null, null, 100.0d, null),
+                new PlanItem(PlanItemType.LOITER, position(), Duration.ofSeconds(20), 15.0d, null, null, 100.0d, null),
+                new PlanItem(PlanItemType.RETURN_TO_HOME, null, null, null, null, null, null, null)));
 
         UxvModelCommandSet commandSet = model.buildMission(context(), missionPlan);
 
@@ -300,7 +310,7 @@ class GenericPx4UavModelTest {
     @Test
     void buildMission_withDepthItem_throws() {
         MissionPlan missionPlan = new MissionPlan(
-                List.of(new PlanItem(PlanItemType.WAYPOINT, position(), null, null, null, null, null, 5.0d)));
+            List.of(new PlanItem(PlanItemType.WAYPOINT, position(), null, null, null, null, null, 5.0d)));
 
         assertThrows(IllegalArgumentException.class, () -> model.buildMission(context(), missionPlan));
     }

@@ -19,8 +19,6 @@
 
 package io.mapsmessaging.state.config.n2k;
 
-
-import io.mapsmessaging.config.Config;
 import io.mapsmessaging.configuration.ConfigurationProperties;
 
 public class N2KAisConfig extends N2KAisConfigDTO {
@@ -84,24 +82,35 @@ public class N2KAisConfig extends N2KAisConfigDTO {
   }
 
   public ConfigurationProperties toConfigurationProperties() {
+    return toConfigurationProperties(this);
+  }
+
+  public static ConfigurationProperties toConfigurationProperties(N2KAisConfigDTO config) {
     ConfigurationProperties properties = new ConfigurationProperties();
 
-    if (pgn129039 instanceof Config pgn129039Configuration) {
-      properties.put("pgn129039", pgn129039Configuration.toConfigurationProperties());
+    if (config.getPgn129039() != null) {
+      properties.put("pgn129039", toConfigurationProperties(config.getPgn129039()));
     }
 
-    if (pgn129040 instanceof Config pgn129040Configuration) {
-      properties.put("pgn129040", pgn129040Configuration.toConfigurationProperties());
+    if (config.getPgn129040() != null) {
+      properties.put("pgn129040", toConfigurationProperties(config.getPgn129040()));
     }
 
-    if (pgn129809 instanceof Config pgn129809Configuration) {
-      properties.put("pgn129809", pgn129809Configuration.toConfigurationProperties());
+    if (config.getPgn129809() != null) {
+      properties.put("pgn129809", toConfigurationProperties(config.getPgn129809()));
     }
 
-    if (pgn129810 instanceof Config pgn129810Configuration) {
-      properties.put("pgn129810", pgn129810Configuration.toConfigurationProperties());
+    if (config.getPgn129810() != null) {
+      properties.put("pgn129810", toConfigurationProperties(config.getPgn129810()));
     }
 
+    return properties;
+  }
+
+  private static ConfigurationProperties toConfigurationProperties(N2KPgnTransmitConfigDTO config) {
+    ConfigurationProperties properties = new ConfigurationProperties();
+    properties.put("enabled", config.isEnabled());
+    properties.put("intervalMilliseconds", config.getIntervalMilliseconds());
     return properties;
   }
 }

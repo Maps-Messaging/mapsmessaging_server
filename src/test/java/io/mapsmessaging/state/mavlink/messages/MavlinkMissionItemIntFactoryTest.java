@@ -239,7 +239,20 @@ class MavlinkMissionItemIntFactoryTest {
   }
 
   @Test
-  void jumpRejectsNegativeRepeatCount() {
+  void jumpAcceptsRepeatForever() {
+    MavlinkMissionItemInt item =
+        MavlinkMissionItemIntFactory.jump(
+            TARGET_SYSTEM,
+            TARGET_COMPONENT,
+            MISSION_SEQUENCE,
+            0,
+            MavlinkMissionItemIntFactory.MAV_CMD_DO_JUMP_REPEAT_FOREVER);
+
+    assertEquals(MavlinkMissionItemIntFactory.MAV_CMD_DO_JUMP_REPEAT_FOREVER, (int) item.getParam2());
+  }
+
+  @Test
+  void jumpRejectsRepeatCountBelowRepeatForever() {
     assertThrows(
         IllegalArgumentException.class,
         () ->
@@ -248,7 +261,7 @@ class MavlinkMissionItemIntFactoryTest {
                 TARGET_COMPONENT,
                 MISSION_SEQUENCE,
                 0,
-                -1));
+                MavlinkMissionItemIntFactory.MAV_CMD_DO_JUMP_REPEAT_FOREVER - 1));
   }
 
   @Test

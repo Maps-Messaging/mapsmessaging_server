@@ -306,14 +306,15 @@ class UxvNavigationModelTest {
     UxvModelCommandSet missionPhase = plan.missionPhase().getFirst();
     assertEquals(UxvOperation.BUILD_MISSION, missionPhase.operation());
     assertEquals(model.getModelName(), missionPhase.modelName());
-    assertEquals(waypoints.size(), missionPhase.messages().size());
+    int firstMissionItemSequence = model.firstMissionItemSequence();
+    assertEquals(waypoints.size() + firstMissionItemSequence, missionPhase.messages().size());
 
     for (int index = 0; index < waypoints.size(); index++) {
       GeoPosition expectedPosition = waypoints.get(index);
-      MavlinkMissionItemInt item =
-          (MavlinkMissionItemInt) missionPhase.messages().get(index);
+      int missionSequence = index + firstMissionItemSequence;
+      MavlinkMissionItemInt item = (MavlinkMissionItemInt) missionPhase.messages().get(missionSequence);
 
-      assertEquals(index, item.getMissionSequence());
+      assertEquals(missionSequence, item.getMissionSequence());
       assertEquals(MavlinkMissionItemIntFactory.MAV_CMD_NAV_WAYPOINT, item.getCommand());
       assertEquals(expectedFrame, item.getFrame());
       assertEquals(
@@ -322,11 +323,7 @@ class UxvNavigationModelTest {
       assertEquals(
           (int) Math.round(expectedPosition.getLongitude() * 10_000_000.0d),
           item.getLongitude());
-      assertEquals(
-          expectedPosition.getPreferredAltitudeMeters() == null
-              ? 0.0f
-              : expectedPosition.getPreferredAltitudeMeters().floatValue(),
-          item.getAltitude());
+      assertEquals(expectedAltitude(model, expectedPosition), item.getAltitude());
       assertEquals(0.0f, item.getParam1());
     }
 
@@ -337,12 +334,19 @@ class UxvNavigationModelTest {
 
     assertEquals(UxvOperation.START_MISSION, postMissionUploadPhase.operation());
     assertEquals(model.getModelName(), postMissionUploadPhase.modelName());
-    assertEquals(1, postMissionUploadPhase.messages().size());
+    assertEquals(firstMissionItemSequence + 1, postMissionUploadPhase.messages().size());
 
     UxvModelCommandSet terminalAction = plan.terminalAction();
     assertEquals(expectedTerminalOperation, terminalAction.operation());
     assertEquals(model.getModelName(), terminalAction.modelName());
     assertEquals(1, terminalAction.messages().size());
+  }
+
+  private static float expectedAltitude(AbstractMissionUxvModel model, GeoPosition position) {
+    if (model instanceof SticklebackArdupilotUsvModel) {
+      return (float) SticklebackArdupilotUsvModel.MAX_ALTITUDE_METERS;
+    }
+    return position.getPreferredAltitudeMeters() == null ? 0.0f : position.getPreferredAltitudeMeters().floatValue();
   }
 
   private static void assertInvalidPosition(GeoPosition position) {

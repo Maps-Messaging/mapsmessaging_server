@@ -29,6 +29,7 @@ import io.mapsmessaging.license.FeatureManager;
 import io.mapsmessaging.state.config.capability.*;
 import io.mapsmessaging.state.config.geospatial.GeoSpatialConfigSupport;
 import io.mapsmessaging.state.config.n2k.N2KAisConfig;
+import io.mapsmessaging.state.config.n2k.N2KAisConfigDTO;
 import io.mapsmessaging.state.config.n2k.N2KTwinConfig;
 import io.mapsmessaging.utilities.configuration.ConfigurationManager;
 import java.io.IOException;
@@ -91,8 +92,12 @@ public class TwinManagerConfig extends TwinManagerConfigDTO implements Config, C
       n2KTwinConfig.setVehicleClass(n2kProps.getProperty("vehicleClass", n2KTwinConfig.getVehicleClass()));
       n2KTwinConfig.setPublishMavlinkDrones(n2kProps.getBooleanProperty("publishMavlinkDrones", n2KTwinConfig.isPublishMavlinkDrones()));
       if (n2kProps.containsKey("ais")) {
-        N2KAisConfig aisProperties = new N2KAisConfig((ConfigurationProperties) n2kProps.get("ais"));
-        n2KTwinConfig.setAis(aisProperties);
+        Object aisConfig = n2kProps.get("ais");
+        if (aisConfig instanceof ConfigurationProperties aisProperties) {
+          n2KTwinConfig.setAis(new N2KAisConfig(aisProperties));
+        } else if (aisConfig instanceof N2KAisConfigDTO aisDto) {
+          n2KTwinConfig.setAis(aisDto);
+        }
       }
     } else {
       n2KTwinConfig.setEnable(false);
@@ -169,10 +174,8 @@ public class TwinManagerConfig extends TwinManagerConfigDTO implements Config, C
       n2kProps.put("vehicleClass", this.n2KTwinConfig.getVehicleClass());
       n2kProps.put("publishMavlinkDrones", this.n2KTwinConfig.isPublishMavlinkDrones());
 
-      if (n2KTwinConfig.getAis() instanceof Config aisConfiguration) {
-        n2kProps.put("ais", aisConfiguration.toConfigurationProperties());
-      } else if (n2KTwinConfig.getAis() != null) {
-        n2kProps.put("ais", n2KTwinConfig.getAis());
+      if (n2KTwinConfig.getAis() != null) {
+        n2kProps.put("ais", N2KAisConfig.toConfigurationProperties(n2KTwinConfig.getAis()));
       }
       props.put("n2k", n2kProps);
     }

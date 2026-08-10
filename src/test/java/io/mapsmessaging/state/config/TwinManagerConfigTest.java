@@ -135,6 +135,10 @@ class TwinManagerConfigTest {
     assertEquals("canbus1", savedN2k.getProperty("name"));
     assertEquals("USV", savedN2k.getProperty("vehicleClass"));
     assertEquals(false, savedN2k.get("publishMavlinkDrones"));
+    ConfigurationProperties savedAis = assertInstanceOf(ConfigurationProperties.class, savedN2k.get("ais"));
+    ConfigurationProperties savedPgn129039 = assertInstanceOf(ConfigurationProperties.class, savedAis.get("pgn129039"));
+    assertEquals(true, savedPgn129039.get("enabled"));
+    assertEquals(1000L, savedPgn129039.get("intervalMilliseconds"));
   }
 
   @Test
@@ -209,6 +213,8 @@ class TwinManagerConfigTest {
     n2k.setTopic("/it/n2k/json/#");
     n2k.setName("it-n2k");
     n2k.setVehicleClass("USV");
+    n2k.getAis().getPgn129039().setEnabled(false);
+    n2k.getAis().getPgn129039().setIntervalMilliseconds(2500L);
     original.setN2KTwinConfig(n2k);
 
     MavlinkTwinConfigDTO mavlink = new MavlinkTwinConfigDTO();
@@ -237,6 +243,8 @@ class TwinManagerConfigTest {
     assertEquals("/it/n2k/json/#", reloaded.getN2KTwinConfig().getTopic());
     assertEquals("it-n2k", reloaded.getN2KTwinConfig().getName());
     assertEquals("USV", reloaded.getN2KTwinConfig().getVehicleClass());
+    assertEquals(false, reloaded.getN2KTwinConfig().getAis().getPgn129039().isEnabled());
+    assertEquals(2500L, reloaded.getN2KTwinConfig().getAis().getPgn129039().getIntervalMilliseconds());
     assertEquals(1, reloaded.getMavlink().size());
     assertEquals("it-mavlink", reloaded.getMavlink().get(0).getName());
     assertEquals("/it/mavlink/#", reloaded.getMavlink().get(0).getTopic());
