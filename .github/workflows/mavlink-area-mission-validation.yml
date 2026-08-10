@@ -25,3 +25,8 @@ jobs:
           mvn -B
           -Dtest=MissionPlanRepeatTest,MavlinkCommandSetPreparerTest,MavlinkEventListSenderConcurrencyTest,SticklebackPassiveDetectionCapabilityTest,PlanTaskTypeTest,TwinManagerConfigPlanTaskTypeTest
           test
+      - name: Run MAVLink bootstrap tests
+        run: >-
+          mvn -B
+          -Dtest=MavlinkBootstrapRequestPublisherTest,AutopilotVersionListenerTest,MavlinkBootstrapStateEngineTest
+          test
