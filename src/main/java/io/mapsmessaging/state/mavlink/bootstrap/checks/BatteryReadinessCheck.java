@@ -47,15 +47,31 @@ public class BatteryReadinessCheck implements DroneTwinReadinessCheck {
       return;
     }
 
-    if (batteryState.getPercentage() == null
-        && batteryState.getVoltageVolts() == null
-        && batteryState.getCurrentAmps() == null) {
+    if (!hasUsableMeasurement(batteryState)) {
       evaluation.degraded(DroneTwinMissingState.MISSING_BATTERY_STATE);
     }
 
     if (isStale(droneTwin.getPowerUpdatedAt(), evaluation.getEvaluatedAt())) {
       evaluation.degraded(DroneTwinMissingState.STALE_POWER);
     }
+  }
+
+  private boolean hasUsableMeasurement(BatteryState batteryState) {
+    return isValidPercentage(batteryState.getPercentage())
+        || isValidVoltage(batteryState.getVoltageVolts())
+        || isFinite(batteryState.getCurrentAmps());
+  }
+
+  private boolean isValidPercentage(Double percentage) {
+    return isFinite(percentage) && percentage >= 0.0 && percentage <= 100.0;
+  }
+
+  private boolean isValidVoltage(Double voltage) {
+    return isFinite(voltage) && voltage > 0.0;
+  }
+
+  private boolean isFinite(Double value) {
+    return value != null && Double.isFinite(value);
   }
 
   private boolean isStale(Instant timestamp, Instant now) {
