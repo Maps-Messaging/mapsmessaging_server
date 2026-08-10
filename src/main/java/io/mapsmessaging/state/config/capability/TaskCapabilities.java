@@ -20,6 +20,7 @@
 package io.mapsmessaging.state.config.capability;
 
 import com.google.gson.annotations.SerializedName;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
@@ -31,12 +32,15 @@ import java.util.List;
 public class TaskCapabilities {
 
   @SerializedName("task_capabilities")
+  @Schema(name = "task_capabilities")
   private List<TaskCapability> tasks = new ArrayList<>();
 
   @SerializedName("task_conditions_mode")
+  @Schema(name = "task_conditions_mode")
   private TaskConditionMode taskConditionsMode = TaskConditionMode.NOT_SUPPORTED;
 
   @SerializedName("task_conditions_template")
+  @Schema(name = "task_conditions_template")
   private TaskTemplateMode taskConditionsTemplate = TaskTemplateMode.NOT_SUPPORTED;
 
 }

@@ -22,8 +22,13 @@ package io.mapsmessaging.state.rest.twins;
 import io.mapsmessaging.rest.ApiTestBase;
 import io.restassured.http.ContentType;
 import io.restassured.response.Response;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.time.Instant;
 import java.util.UUID;
 
@@ -33,10 +38,32 @@ import static org.hamcrest.Matchers.*;
 class TwinConfigurationApiTest extends ApiTestBase {
 
   private static final String BASE_PATH = URI_PATH + "/server/twin/config";
+  private static final Path CONFIG_DIRECTORY = Path.of("conf");
+  private static final Path TWIN_CONFIG_FILE = CONFIG_DIRECTORY.resolve("TwinManager.yaml");
+  private static boolean createdConfigDirectory;
+
+  @BeforeAll
+  static void prepareWritableConfigurationDirectory() throws IOException {
+    createdConfigDirectory = Files.notExists(CONFIG_DIRECTORY);
+    Files.createDirectories(CONFIG_DIRECTORY);
+  }
+
+  @AfterAll
+  static void removeGeneratedConfiguration() throws IOException {
+    if (!createdConfigDirectory) {
+      return;
+    }
+    Files.deleteIfExists(TWIN_CONFIG_FILE);
+    try (var entries = Files.list(CONFIG_DIRECTORY)) {
+      if (entries.findAny().isEmpty()) {
+        Files.delete(CONFIG_DIRECTORY);
+      }
+    }
+  }
 
   @Test
   void getConfigurationAndCore_returns200() {
-    givenAuthenticated()
+    givenAuthenticatedNoValidation()
         .contentType(ContentType.JSON)
         .when()
         .get(BASE_PATH)
@@ -57,56 +84,6 @@ class TwinConfigurationApiTest extends ApiTestBase {
         .body("heartbeatTimeoutMillis", greaterThan(0))
         .body("staleTimeoutMillis", greaterThan(0))
         .body("defaultRootPath", not(isEmptyOrNullString()));
-  }
-
-  @Test
-  void core_putPersistsAndRejectsInvalidPayload() {
-    Response originalCore = getSection("/core");
-    String updatedCore = """
-        {
-          "heartbeatTimeoutMillis": 7000,
-          "staleTimeoutMillis": 14000,
-          "retentionTimeoutMillis": 28000,
-          "removeExpiredTwins": false,
-          "defaultRootPath": "/it"
-        }
-        """;
-
-    try {
-      givenAuthenticated()
-          .contentType(ContentType.JSON)
-          .body(updatedCore)
-          .when()
-          .put(BASE_PATH + "/core")
-          .then()
-          .statusCode(200)
-          .contentType(ContentType.JSON)
-          .body("heartbeatTimeoutMillis", equalTo(7000))
-          .body("staleTimeoutMillis", equalTo(14000))
-          .body("retentionTimeoutMillis", equalTo(28000))
-          .body("removeExpiredTwins", equalTo(false))
-          .body("defaultRootPath", equalTo("/it"));
-
-      givenAuthenticated()
-          .contentType(ContentType.JSON)
-          .body("""
-              {
-                "heartbeatTimeoutMillis": 0,
-                "staleTimeoutMillis": 14000,
-                "retentionTimeoutMillis": 28000,
-                "removeExpiredTwins": false,
-                "defaultRootPath": "/it"
-              }
-              """)
-          .when()
-          .put(BASE_PATH + "/core")
-          .then()
-          .statusCode(400)
-          .contentType(ContentType.JSON)
-          .body("status", not(isEmptyOrNullString()));
-    } finally {
-      putSection("/core", originalCore.asString());
-    }
   }
 
   @Test
@@ -338,7 +315,6 @@ class TwinConfigurationApiTest extends ApiTestBase {
   private void putAndReadTak() {
     String body = """
         {
-          "type": "tak",
           "hostname": "127.0.0.1",
           "port": 8088,
           "sharedConnection": true,

@@ -48,6 +48,7 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
 import java.io.IOException;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 import static io.mapsmessaging.rest.api.Constants.URI_PATH;
@@ -669,7 +670,7 @@ public class TwinConfigurationApi extends BaseRestApi {
       summary = "List state adapter configurations",
       description = "Returns persisted state adapter configuration blocks keyed by adapter name. Runtime state adapter instances are not reloaded.",
       responses = {
-          @ApiResponse(responseCode = "200", description = "State adapter configurations returned", content = @Content(mediaType = "application/json", schema = @Schema(implementation = Map.class))),
+          @ApiResponse(responseCode = "200", description = "State adapter configurations returned", content = @Content(mediaType = "application/json", schema = @Schema(type = "object", additionalProperties = Schema.AdditionalPropertiesValue.TRUE, additionalPropertiesSchema = Object.class))),
           @ApiResponse(responseCode = "401", description = "Invalid credentials or unauthorized access", content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))),
           @ApiResponse(responseCode = "403", description = "User is not authorised to access the resource", content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))),
           @ApiResponse(responseCode = "500", description = "Server twin configuration error", content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class)))
@@ -678,7 +679,7 @@ public class TwinConfigurationApi extends BaseRestApi {
   public Response listAdapterConfigs() {
     try {
       hasAccess(RESOURCE);
-      return ok(store().listAdapterConfigs());
+      return ok(toAdapterResponses(store().listAdapterConfigs()));
     } catch (WebApplicationException ex) {
       return mapAuthOrRethrow(ex);
     } catch (Exception ex) {
@@ -696,18 +697,18 @@ public class TwinConfigurationApi extends BaseRestApi {
       requestBody = @RequestBody(
           description = "Map of adapter names to adapter-specific configuration blocks",
           required = true,
-          content = @Content(mediaType = "application/json", schema = @Schema(implementation = Map.class))
+          content = @Content(mediaType = "application/json", schema = @Schema(type = "object", additionalProperties = Schema.AdditionalPropertiesValue.TRUE, additionalPropertiesSchema = Object.class))
       ),
       responses = {
-          @ApiResponse(responseCode = "200", description = "State adapter configuration map persisted", content = @Content(mediaType = "application/json", schema = @Schema(implementation = Map.class))),
+          @ApiResponse(responseCode = "200", description = "State adapter configuration map persisted", content = @Content(mediaType = "application/json", schema = @Schema(type = "object", additionalProperties = Schema.AdditionalPropertiesValue.TRUE, additionalPropertiesSchema = Object.class))),
           @ApiResponse(responseCode = "400", description = "Invalid adapter configuration map", content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))),
           @ApiResponse(responseCode = "401", description = "Invalid credentials or unauthorized access", content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))),
           @ApiResponse(responseCode = "403", description = "User is not authorised to access the resource", content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))),
           @ApiResponse(responseCode = "500", description = "Unable to save twin configuration", content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class)))
       }
   )
-  public Response replaceAdapterConfigs(Map<String, ConfigurationProperties> adapterConfigs) {
-    return mutateOk(adapterConfigs, () -> store().replaceAdapterConfigs(adapterConfigs));
+  public Response replaceAdapterConfigs(Map<String, Map<String, Object>> adapterConfigs) {
+    return mutateOk(adapterConfigs, () -> store().replaceAdapterConfigs(toAdapterPropertiesMap(adapterConfigs)));
   }
 
   @GET
@@ -717,7 +718,7 @@ public class TwinConfigurationApi extends BaseRestApi {
       summary = "Get state adapter configuration",
       description = "Returns one persisted state adapter configuration block by adapter name.",
       responses = {
-          @ApiResponse(responseCode = "200", description = "State adapter configuration returned", content = @Content(mediaType = "application/json", schema = @Schema(implementation = ConfigurationProperties.class))),
+          @ApiResponse(responseCode = "200", description = "State adapter configuration returned", content = @Content(mediaType = "application/json", schema = @Schema(type = "object", additionalProperties = Schema.AdditionalPropertiesValue.TRUE, additionalPropertiesSchema = Object.class))),
           @ApiResponse(responseCode = "401", description = "Invalid credentials or unauthorized access", content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))),
           @ApiResponse(responseCode = "403", description = "User is not authorised to access the resource", content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))),
           @ApiResponse(responseCode = "404", description = "State adapter configuration not found", content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))),
@@ -727,7 +728,7 @@ public class TwinConfigurationApi extends BaseRestApi {
   public Response getAdapterConfig(@PathParam("name") String name) {
     try {
       hasAccess(RESOURCE);
-      return optionalResponse(store().getAdapterConfig(name), "Unknown state adapter configuration: " + name);
+      return optionalResponse(store().getAdapterConfig(name).map(this::toAdapterResponse), "Unknown state adapter configuration: " + name);
     } catch (WebApplicationException ex) {
       return mapAuthOrRethrow(ex);
     } catch (Exception ex) {
@@ -745,10 +746,10 @@ public class TwinConfigurationApi extends BaseRestApi {
       requestBody = @RequestBody(
           description = "Adapter-specific configuration block to add",
           required = true,
-          content = @Content(mediaType = "application/json", schema = @Schema(implementation = ConfigurationProperties.class))
+          content = @Content(mediaType = "application/json", schema = @Schema(type = "object", additionalProperties = Schema.AdditionalPropertiesValue.TRUE, additionalPropertiesSchema = Object.class))
       ),
       responses = {
-          @ApiResponse(responseCode = "201", description = "State adapter configuration created", content = @Content(mediaType = "application/json", schema = @Schema(implementation = ConfigurationProperties.class))),
+          @ApiResponse(responseCode = "201", description = "State adapter configuration created", content = @Content(mediaType = "application/json", schema = @Schema(type = "object", additionalProperties = Schema.AdditionalPropertiesValue.TRUE, additionalPropertiesSchema = Object.class))),
           @ApiResponse(responseCode = "400", description = "Invalid adapter configuration", content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))),
           @ApiResponse(responseCode = "401", description = "Invalid credentials or unauthorized access", content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))),
           @ApiResponse(responseCode = "403", description = "User is not authorised to access the resource", content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))),
@@ -756,8 +757,8 @@ public class TwinConfigurationApi extends BaseRestApi {
           @ApiResponse(responseCode = "500", description = "Unable to save twin configuration", content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class)))
       }
   )
-  public Response createAdapterConfig(@PathParam("name") String name, ConfigurationProperties adapterConfig) {
-    return mutateCreated(adapterConfig, () -> store().createAdapterConfig(name, adapterConfig));
+  public Response createAdapterConfig(@PathParam("name") String name, Map<String, Object> adapterConfig) {
+    return mutateCreated(adapterConfig, () -> store().createAdapterConfig(name, toAdapterProperties(adapterConfig)));
   }
 
   @PUT
@@ -770,10 +771,10 @@ public class TwinConfigurationApi extends BaseRestApi {
       requestBody = @RequestBody(
           description = "Adapter-specific configuration block to persist",
           required = true,
-          content = @Content(mediaType = "application/json", schema = @Schema(implementation = ConfigurationProperties.class))
+          content = @Content(mediaType = "application/json", schema = @Schema(type = "object", additionalProperties = Schema.AdditionalPropertiesValue.TRUE, additionalPropertiesSchema = Object.class))
       ),
       responses = {
-          @ApiResponse(responseCode = "200", description = "State adapter configuration updated", content = @Content(mediaType = "application/json", schema = @Schema(implementation = ConfigurationProperties.class))),
+          @ApiResponse(responseCode = "200", description = "State adapter configuration updated", content = @Content(mediaType = "application/json", schema = @Schema(type = "object", additionalProperties = Schema.AdditionalPropertiesValue.TRUE, additionalPropertiesSchema = Object.class))),
           @ApiResponse(responseCode = "400", description = "Invalid adapter configuration", content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))),
           @ApiResponse(responseCode = "401", description = "Invalid credentials or unauthorized access", content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))),
           @ApiResponse(responseCode = "403", description = "User is not authorised to access the resource", content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))),
@@ -781,8 +782,8 @@ public class TwinConfigurationApi extends BaseRestApi {
           @ApiResponse(responseCode = "500", description = "Unable to save twin configuration", content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class)))
       }
   )
-  public Response updateAdapterConfig(@PathParam("name") String name, ConfigurationProperties adapterConfig) {
-    return mutateOk(adapterConfig, () -> store().updateAdapterConfig(name, adapterConfig));
+  public Response updateAdapterConfig(@PathParam("name") String name, Map<String, Object> adapterConfig) {
+    return mutateOk(adapterConfig, () -> store().updateAdapterConfig(name, toAdapterProperties(adapterConfig)));
   }
 
   @DELETE
@@ -809,6 +810,29 @@ public class TwinConfigurationApi extends BaseRestApi {
       throw new IllegalStateException("TwinManager configuration is not available");
     }
     return new TwinConfigurationStore(config);
+  }
+
+  private Map<String, Object> toAdapterResponse(ConfigurationProperties adapterConfig) {
+    return new LinkedHashMap<>(adapterConfig.getMap());
+  }
+
+  private Map<String, Map<String, Object>> toAdapterResponses(Map<String, ConfigurationProperties> adapterConfigs) {
+    Map<String, Map<String, Object>> responses = new LinkedHashMap<>();
+    adapterConfigs.forEach((name, config) -> responses.put(name, toAdapterResponse(config)));
+    return responses;
+  }
+
+  private ConfigurationProperties toAdapterProperties(Map<String, Object> adapterConfig) {
+    return adapterConfig == null ? null : new ConfigurationProperties(new LinkedHashMap<>(adapterConfig));
+  }
+
+  private Map<String, ConfigurationProperties> toAdapterPropertiesMap(Map<String, Map<String, Object>> adapterConfigs) {
+    if (adapterConfigs == null) {
+      return null;
+    }
+    Map<String, ConfigurationProperties> properties = new LinkedHashMap<>();
+    adapterConfigs.forEach((name, config) -> properties.put(name, toAdapterProperties(config)));
+    return properties;
   }
 
   private Response status(TwinConfigurationStore.TwinConfigurationException exception) {

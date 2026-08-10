@@ -57,7 +57,7 @@ public class DroneInfoDTO {
       nullable = true)
   private Double surveyRadiusMeters;
 
-  @Schema(description = "Drone description")
+  @Schema(description = "Drone description", type = "object", additionalProperties = Schema.AdditionalPropertiesValue.TRUE)
   private Map<String, Object> description;
 
   @Schema(description = "Optional external data products exposed by this drone.")
