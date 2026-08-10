@@ -55,7 +55,7 @@ class MavlinkStreamHandlerTest {
   private static final int MAVLINK_V1_MAGIC = 0xFE;
   private static final int MAVLINK_V2_MAGIC = 0xFD;
 
-  private static final int MAVLINK_V1_HEADER_REST = 5;
+  private static final int MAVLINK_V1_HEADER_REST = 4;
   private static final int MAVLINK_V1_CRC_LEN = 2;
 
   private static final int MAVLINK_V2_HEADER_REST = 8;
@@ -316,7 +316,6 @@ class MavlinkStreamHandlerTest {
     bb.put(sysId);
     bb.put(compId);
     bb.put(msgId);
-    bb.put((byte) 0x00);
 
     bb.put(payload);
     bb.put(crc);
