@@ -17,7 +17,7 @@
  *  limitations under the License.
  */
 
-package io.mapsmessaging.rest.api.impl.twins;
+package io.mapsmessaging.state.rest.twins;
 
 import io.mapsmessaging.rest.ApiTestBase;
 import io.restassured.http.ContentType;

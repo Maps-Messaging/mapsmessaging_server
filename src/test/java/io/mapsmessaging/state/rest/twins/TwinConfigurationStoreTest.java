@@ -17,7 +17,7 @@
  *  limitations under the License.
  */
 
-package io.mapsmessaging.rest.api.impl.twins;
+package io.mapsmessaging.state.rest.twins;
 
 import io.mapsmessaging.configuration.ConfigurationProperties;
 import io.mapsmessaging.dto.rest.config.protocol.impl.TakProtocolDTO;
@@ -26,6 +26,8 @@ import io.mapsmessaging.state.config.MavlinkTwinConfigDTO;
 import io.mapsmessaging.state.config.TwinManagerConfig;
 import io.mapsmessaging.state.config.TwinPublishConfigDTO;
 import io.mapsmessaging.state.config.n2k.N2KTwinConfig;
+import io.mapsmessaging.state.rest.twins.TwinConfigurationStore;
+import io.mapsmessaging.state.rest.twins.TwinCoreConfigDTO;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;

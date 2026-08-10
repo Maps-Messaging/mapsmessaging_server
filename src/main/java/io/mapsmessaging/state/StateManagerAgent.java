@@ -132,7 +132,7 @@ public class StateManagerAgent implements Agent {
   private void loadStateMessageAdapters(TwinManagerConfigDTO config) {
     StateMessageAdapterContext context = new StateMessageAdapterContext(twinManager, config);
     ServiceLoader<StateMessageAdapterFactory> adapterFactories = ServiceLoader.load(StateMessageAdapterFactory.class);
-
+    restApiPackageList.add("io.mapsmessaging.state.rest.twins");
     for (StateMessageAdapterFactory adapterFactory : adapterFactories) {
       Optional<StateMessageAdapter> optionalAdapter = adapterFactory.create(context);
       if (optionalAdapter.isPresent()) {
