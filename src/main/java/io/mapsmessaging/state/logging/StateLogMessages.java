@@ -68,6 +68,9 @@ public enum StateLogMessages implements LogMessage {
   MAVLINK_STATE_CORRELATION_DATA_MISSING(LEVEL.DEBUG, SERVER_CATEGORY.PROTOCOL, "MAVLink message {} from '{}' contains no correlation data"),
   MAVLINK_STATE_PROCESSING_FAILED(LEVEL.ERROR, SERVER_CATEGORY.PROTOCOL, "Failed to process MAVLink state message from '{}'"),
   MAVLINK_STATE_TWIN_UPDATE_FAILED(LEVEL.ERROR, SERVER_CATEGORY.PROTOCOL, "Failed to update drone '{}' from MAVLink message {} received from '{}'"),
+  MAVLINK_BOOTSTRAP_REQUEST_SKIPPED(LEVEL.DEBUG, SERVER_CATEGORY.PROTOCOL, "Skipping MAVLink bootstrap request for twin '{}': {}"),
+  MAVLINK_BOOTSTRAP_REQUEST_SENT(LEVEL.DEBUG, SERVER_CATEGORY.PROTOCOL, "Sent MAVLink bootstrap request for message {} to system {} component {} for twin '{}'"),
+  MAVLINK_BOOTSTRAP_REQUEST_FAILED(LEVEL.WARN, SERVER_CATEGORY.PROTOCOL, "Failed to send MAVLink bootstrap request for message {} to twin '{}'"),
   // </editor-fold>
 
   // <editor-fold desc="State Manager">

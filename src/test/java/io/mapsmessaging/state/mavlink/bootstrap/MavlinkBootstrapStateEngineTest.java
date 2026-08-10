@@ -30,6 +30,7 @@ import java.util.EnumSet;
 import java.util.List;
 import java.util.Set;
 
+import static io.mapsmessaging.state.mavlink.packet.MavlinkMessageIds.AUTOPILOT_VERSION;
 import static io.mapsmessaging.state.mavlink.packet.MavlinkMessageIds.BATTERY_STATUS;
 import static io.mapsmessaging.state.mavlink.packet.MavlinkMessageIds.GLOBAL_POSITION_INT;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -92,6 +93,35 @@ class MavlinkBootstrapStateEngineTest {
 
     assertTrue(stateEngine.update(droneTwin, result, contextAt(1)).isEmpty());
     assertEquals(1, requests(stateEngine.update(droneTwin, result, contextAt(2))).size());
+  }
+
+  @Test
+  void missing_autopilot_version_and_capabilities_share_one_request() {
+    DroneTwinReadinessResult result = result(
+        DroneTwinReadinessState.CAPABILITY_PARTIAL,
+        false,
+        DroneTwinMissingState.MISSING_AUTOPILOT_VERSION,
+        DroneTwinMissingState.MISSING_CAPABILITIES
+    );
+
+    List<MavlinkBootstrapEvent> initialRequests = requests(stateEngine.update(droneTwin, result, contextAt(0)));
+    List<MavlinkBootstrapEvent> retryRequests = requests(stateEngine.update(droneTwin, result, contextAt(2)));
+
+    assertEquals(1, initialRequests.size());
+    assertEquals(AUTOPILOT_VERSION, initialRequests.getFirst().getMavlinkMessageId());
+    assertEquals(MavlinkBootstrapRequestType.REQUEST_MESSAGE, initialRequests.getFirst().getRequestType());
+    assertEquals(1, retryRequests.size());
+    assertEquals(AUTOPILOT_VERSION, retryRequests.getFirst().getMavlinkMessageId());
+  }
+
+  @Test
+  void missing_capabilities_alone_requests_autopilot_version() {
+    DroneTwinReadinessResult result = result(DroneTwinReadinessState.CAPABILITY_PARTIAL, false, DroneTwinMissingState.MISSING_CAPABILITIES);
+
+    List<MavlinkBootstrapEvent> emittedRequests = requests(stateEngine.update(droneTwin, result, contextAt(0)));
+
+    assertEquals(1, emittedRequests.size());
+    assertEquals(AUTOPILOT_VERSION, emittedRequests.getFirst().getMavlinkMessageId());
   }
 
   @Test

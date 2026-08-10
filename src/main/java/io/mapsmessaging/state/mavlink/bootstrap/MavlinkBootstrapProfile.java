@@ -50,6 +50,11 @@ public class MavlinkBootstrapProfile {
     );
 
     addRequestMessage(
+        DroneTwinMissingState.MISSING_CAPABILITIES,
+        AUTOPILOT_VERSION
+    );
+
+    addRequestMessage(
         DroneTwinMissingState.MISSING_HOME_POSITION,
         HOME_POSITION
     );

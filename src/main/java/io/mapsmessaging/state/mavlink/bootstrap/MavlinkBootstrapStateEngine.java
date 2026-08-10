@@ -24,6 +24,7 @@ import io.mapsmessaging.state.drone.drone.DroneTwin;
 
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -146,6 +147,7 @@ public class MavlinkBootstrapStateEngine {
       return;
     }
 
+    Set<MavlinkBootstrapRequestDefinition> emittedRequests = new HashSet<>();
     for (DroneTwinMissingState missingState : readinessResult.getMissingStates()) {
       MavlinkBootstrapRequestDefinition requestDefinition =
           bootstrapProfile.getRequestDefinitions().get(missingState);
@@ -174,13 +176,15 @@ public class MavlinkBootstrapStateEngine {
         continue;
       }
 
-      events.add(
-          createRequestEvent(
-              droneTwin,
-              missingState,
-              requestDefinition
-          )
-      );
+      if (emittedRequests.add(requestDefinition)) {
+        events.add(
+            createRequestEvent(
+                droneTwin,
+                missingState,
+                requestDefinition
+            )
+        );
+      }
 
       requestTracker.markRequested(now);
     }
