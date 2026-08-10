@@ -30,6 +30,7 @@ public final class MavlinkCommandLongFactory {
   public static final int MAV_CMD_DO_SET_MISSION_CURRENT = 224;
   public static final int MAV_CMD_MISSION_START = 300;
   public static final int MAV_CMD_COMPONENT_ARM_DISARM = 400;
+  public static final int MAV_CMD_REQUEST_MESSAGE = 512;
 
   public static final float ARM = 1.0f;
   public static final float DISARM = 0.0f;
@@ -125,6 +126,12 @@ public final class MavlinkCommandLongFactory {
 
     commandLong.setParam1(firstMissionItem);
     commandLong.setParam2(lastMissionItem);
+    return commandLong;
+  }
+
+  public static MavlinkCommandLong requestMessage(int targetSystem, int targetComponent, int sequence, int messageId) {
+    MavlinkCommandLong commandLong = command(targetSystem, targetComponent, MAV_CMD_REQUEST_MESSAGE, sequence);
+    commandLong.setParam1(messageId);
     return commandLong;
   }
 

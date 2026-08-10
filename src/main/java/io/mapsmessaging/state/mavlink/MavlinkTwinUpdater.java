@@ -35,6 +35,7 @@ import io.mapsmessaging.state.drone.drone.DroneTwin;
 import io.mapsmessaging.state.drone.model.DetectionEvent;
 import io.mapsmessaging.state.drone.model.DroneContactManager;
 import io.mapsmessaging.state.mavlink.bootstrap.DroneTwinReadinessEvaluator;
+import io.mapsmessaging.state.mavlink.bootstrap.MavlinkBootstrapEventPublisher;
 import io.mapsmessaging.state.mavlink.bootstrap.MavlinkBootstrapProfile;
 import io.mapsmessaging.state.mavlink.bootstrap.MavlinkBootstrapStateEngine;
 import io.mapsmessaging.state.mavlink.listener.ListenerManager;
@@ -59,9 +60,13 @@ public class MavlinkTwinUpdater implements AutoCloseable {
   private final AtomicBoolean closed;
 
   public MavlinkTwinUpdater(@NonNull @NotNull TwinManager twinManager, @NonNull @NotNull ListenerManager listenerManager) {
+    this(twinManager, listenerManager, null);
+  }
+
+  public MavlinkTwinUpdater(@NonNull @NotNull TwinManager twinManager, @NonNull @NotNull ListenerManager listenerManager, MavlinkBootstrapEventPublisher bootstrapEventPublisher) {
     this.twinManager = twinManager;
     this.listenerManager = listenerManager;
-    this.droneMonitor = new MavlinkDroneMonitor(twinManager, new DroneTwinReadinessEvaluator(), new MavlinkBootstrapStateEngine(new MavlinkBootstrapProfile()), null);
+    this.droneMonitor = new MavlinkDroneMonitor(twinManager, new DroneTwinReadinessEvaluator(), new MavlinkBootstrapStateEngine(new MavlinkBootstrapProfile()), bootstrapEventPublisher);
     this.closed = new AtomicBoolean();
     twinManager.addObserver(droneMonitor);
   }

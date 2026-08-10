@@ -40,6 +40,7 @@ import io.mapsmessaging.state.config.DroneInfoRegistry;
 import io.mapsmessaging.state.config.MavlinkTwinConfigDTO;
 import io.mapsmessaging.state.drone.core.TwinManager;
 import io.mapsmessaging.state.drone.core.TwinUpdateContext;
+import io.mapsmessaging.state.mavlink.bootstrap.MavlinkBootstrapRequestPublisher;
 import io.mapsmessaging.state.mavlink.listener.ListenerManager;
 import io.mapsmessaging.state.mavlink.packet.MavlinkPacket;
 import io.mapsmessaging.state.mavlink.packet.MavlinkPacketFactory;
@@ -91,7 +92,7 @@ public class MavlinkStateSubscriber implements MessageHandler, AutoCloseable {
     this.namespaceTopicPath = mavlinkConfig.getTopic();
     this.sourceRegistry = new MavlinkSourceRegistry(mavlinkConfig);
     this.droneRegistry = registry;
-    this.twinUpdater = new MavlinkTwinUpdater(twinManager, new ListenerManager(twinManager));
+    this.twinUpdater = new MavlinkTwinUpdater(twinManager, new ListenerManager(twinManager), new MavlinkBootstrapRequestPublisher(twinManager, protocol));
   }
 
   MavlinkStateSubscriber(
