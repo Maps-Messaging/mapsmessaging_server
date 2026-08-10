@@ -60,7 +60,7 @@ public class MavlinkTwinUpdater implements AutoCloseable {
   private final AtomicBoolean closed;
 
   public MavlinkTwinUpdater(@NonNull @NotNull TwinManager twinManager, @NonNull @NotNull ListenerManager listenerManager) {
-    this(twinManager, listenerManager, null);
+    this(twinManager, listenerManager, (MavlinkBootstrapEventPublisher) null);
   }
 
   public MavlinkTwinUpdater(@NonNull @NotNull TwinManager twinManager, @NonNull @NotNull ListenerManager listenerManager, MavlinkBootstrapEventPublisher bootstrapEventPublisher) {
