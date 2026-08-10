@@ -364,7 +364,7 @@ public class MavlinkProtocol extends Protocol {
       try {
         destination.storeMessage(message);
       } catch (IOException e) {
-        logger.log(MAVLINK_FAILED_STORING_PACKET_MESSAGE, topicName, e);
+        logger.log(MAVLINK_FAILED_STORING_PACKET_MESSAGE, topicName, e.getMessage(), e);
       }
     });
   }
