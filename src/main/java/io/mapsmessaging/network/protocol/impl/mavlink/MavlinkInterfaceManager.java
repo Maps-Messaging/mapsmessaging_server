@@ -107,33 +107,34 @@ public class MavlinkInterfaceManager implements SelectorCallback, MavlinkConnect
       int pos = packet.position();
       packet.get(raw);
       packet.position(pos);
-
       boolean forwardedSource = fromForward(fromAddress);
       List<byte[]> packets = MavlinkFrameExtractor.extractMavlinkFrames(raw);
-      for(byte[] data:packets) {
-        writeTlog(data);
-        int systemId = MavlinkFrameExtractor.getSystemId(data);
-        if (!isAllowedSystem(systemId)) {
-          if (!forwardedSource) {
-            forwardPacket(data);
-          }
-          continue;
-        }
+      workThroughPackets(packets, packet, fromAddress, forwardedSource);
+      return true;
+    } finally {
+      selectorTask.register(SelectionKey.OP_READ);
+    }
+  }
 
-        MavlinkDeviceKey key = buildKey(packet, systemId);
-        UDPSessionState<MavlinkProtocol> state = findOrCreate(key);
-        if (state == null || state.getContext() == null) {
-          continue;
-        }
-
-        state.getContext().processRawFrame(data, fromAddress.toString());
+  private void workThroughPackets(List<byte[]> packets, Packet packet, SocketAddress fromAddress, boolean forwardedSource) throws IOException {
+    for(byte[] data:packets) {
+      writeTlog(data);
+      int systemId = MavlinkFrameExtractor.getSystemId(data);
+      if (!isAllowedSystem(systemId)) {
         if (!forwardedSource) {
           forwardPacket(data);
         }
       }
-      return true;
-    } finally {
-      selectorTask.register(SelectionKey.OP_READ);
+      else {
+        MavlinkDeviceKey key = buildKey(packet, systemId);
+        UDPSessionState<MavlinkProtocol> state = findOrCreate(key);
+        if (state != null && state.getContext() != null) {
+          state.getContext().processRawFrame(data, fromAddress.toString());
+          if (!forwardedSource) {
+            forwardPacket(data);
+          }
+        }
+      }
     }
   }
 
@@ -160,7 +161,7 @@ public class MavlinkInterfaceManager implements SelectorCallback, MavlinkConnect
 
   @Override
   public void writeTlog(byte[] frameBytes) {
-    if (tlogWriter == null) {
+    if (tlogWriter == null || frameBytes == null || frameBytes.length == 0) {
       return;
     }
 
