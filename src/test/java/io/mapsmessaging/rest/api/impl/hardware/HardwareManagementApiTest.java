@@ -25,10 +25,11 @@ import io.restassured.response.Response;
 import io.restassured.specification.RequestSpecification;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import static io.mapsmessaging.rest.api.Constants.URI_PATH;
 
 public class HardwareManagementApiTest extends ApiTestBase {
 
-  private static final String BASE_PATH = "/api/v1/server/hardware";
+  private static final String BASE_PATH = URI_PATH+"/server/hardware";
 
   @Test
   void scanForDevices_returns200_andJsonArray() {

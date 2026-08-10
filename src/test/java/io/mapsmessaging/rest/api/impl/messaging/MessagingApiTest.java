@@ -35,10 +35,11 @@ import org.junit.jupiter.api.Test;
 
 import java.util.Base64;
 import java.util.List;
+import static io.mapsmessaging.rest.api.Constants.URI_PATH;
 
 public class MessagingApiTest extends ApiTestBase {
 
-  private static final String BASE_PATH = "/api/v1/messaging";
+  private static final String BASE_PATH = URI_PATH+"/messaging";
 
   @Test
   void publish_subscribe_consume_unsubscribe_happyPath() {

@@ -28,10 +28,11 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
+import static io.mapsmessaging.rest.api.Constants.URI_PATH;
 
 public class IntegrationManagementApiTest extends ApiTestBase {
 
-  private static final String BASE_PATH = "/api/v1/server/integrations";
+  private static final String BASE_PATH = URI_PATH+"/server/integrations";
 
   @Test
   void getAllIntegrations_returns200_andHasProtocolsArray() {

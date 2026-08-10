@@ -30,10 +30,11 @@ import java.time.Instant;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
+import static io.mapsmessaging.rest.api.Constants.URI_PATH;
 
 public class ModelStoreApiTest extends ApiTestBase {
 
-  private static final String BASE_PATH = "/api/v1/server/models";
+  private static final String BASE_PATH = URI_PATH+"/server/models";
 
   @Test
   void listModels_whenMlNotSupported_returns406WithJsonBody() {

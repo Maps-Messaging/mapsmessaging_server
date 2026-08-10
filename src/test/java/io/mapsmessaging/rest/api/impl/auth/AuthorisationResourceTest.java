@@ -31,15 +31,17 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+import static io.mapsmessaging.rest.api.Constants.URI_PATH;
+
 public class AuthorisationResourceTest extends ApiTestBase {
 
-  private static final String PERMISSIONS_PATH = "/api/v1/auth/permissions";
-  private static final String RESOURCE_ACL_PATH = "/api/v1/auth/resources/acl";
-  private static final String IDENTITY_ACL_PATH = "/api/v1/auth/identities";
-  private static final String GROUP_ACL_PATH = "/api/v1/auth/groups";
-  private static final String USERS_PATH = "/api/v1/auth/users";
-  private static final String GROUPS_PATH = "/api/v1/auth/groups";
-  private static final String ACL_CHECK_PATH = "/api/v1/auth/acl/check";
+  private static final String PERMISSIONS_PATH = URI_PATH+"/auth/permissions";
+  private static final String RESOURCE_ACL_PATH = URI_PATH+"/auth/resources/acl";
+  private static final String IDENTITY_ACL_PATH = URI_PATH+"/auth/identities";
+  private static final String GROUP_ACL_PATH = URI_PATH+"/auth/groups";
+  private static final String USERS_PATH = URI_PATH+"/auth/users";
+  private static final String GROUPS_PATH = URI_PATH+"/auth/groups";
+  private static final String ACL_CHECK_PATH = URI_PATH+"/auth/acl/check";
   private static final String RESOURCE_TYPE_PARAM = "resourceType";
   private static final String RESOURCE_KEY_PARAM = "resourceKey";
 

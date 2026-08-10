@@ -25,10 +25,11 @@ import io.restassured.http.ContentType;
 import io.restassured.response.Response;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import static io.mapsmessaging.rest.api.Constants.URI_PATH;
 
 public class LogMonitorRestApiTest extends ApiTestBase {
 
-  private static final String BASE_PATH = "/api/v1/server/log";
+  private static final String BASE_PATH = URI_PATH+"/server/log";
 
   @Test
   void getLogEntries_noFilter_returns200() {

@@ -27,10 +27,11 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
+import static io.mapsmessaging.rest.api.Constants.URI_PATH;
 
 public class ConnectionManagementApiTest extends ApiTestBase {
 
-  private static final String BASE_PATH = "/api/v1/server/connections";
+  private static final String BASE_PATH = URI_PATH+"/server/connections";
 
   @Test
   void getAllConnections_returns200_andMatchesOpenApi() {
