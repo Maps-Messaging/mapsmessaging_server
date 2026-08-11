@@ -20,6 +20,7 @@
 package io.mapsmessaging.state.rest.twins;
 
 import io.mapsmessaging.configuration.ConfigurationProperties;
+import io.mapsmessaging.dto.rest.config.protocol.impl.MavlinkKnownSourceDTO;
 import io.mapsmessaging.dto.rest.config.protocol.impl.TakProtocolDTO;
 import io.mapsmessaging.state.config.DroneInfoDTO;
 import io.mapsmessaging.state.config.MavlinkTwinConfigDTO;
@@ -181,6 +182,11 @@ class TwinConfigurationStoreTest {
     DroneInfoDTO created = drone("alpha");
     DroneInfoDTO updated = drone("alpha");
     updated.setUuid(UUID.randomUUID());
+    MavlinkTwinConfigDTO mavlinkSource = mavlinkSource("primary", "/mavlink/#");
+    MavlinkTwinConfigDTO backupMavlinkSource = mavlinkSource("backup", "/mavlink/backup/#");
+    mavlinkSource.setKnownSources(List.of(mavlinkKnownSource("alpha"), mavlinkKnownSource("bravo")));
+    backupMavlinkSource.setKnownSources(List.of(mavlinkKnownSource("alpha")));
+    config.getMavlink().addAll(List.of(mavlinkSource, backupMavlinkSource));
 
     store.createDrone(created);
     assertSame(created, store.getDrone("alpha").orElseThrow());
@@ -191,7 +197,54 @@ class TwinConfigurationStoreTest {
     store.deleteDrone("alpha");
 
     assertTrue(store.listDrones().isEmpty());
+    assertEquals(List.of("bravo"), mavlinkSource.getKnownSources().stream().map(MavlinkKnownSourceDTO::getName).toList());
+    assertTrue(backupMavlinkSource.getKnownSources().isEmpty());
     assertEquals(3, config.getSaveCount());
+  }
+
+  @Test
+  void drone_deleteUnknownName_returnsNotFoundWithoutSaving() {
+    SavingTwinManagerConfig config = newConfig();
+    TwinConfigurationStore store = new TwinConfigurationStore(config);
+
+    TwinConfigurationStore.TwinConfigurationException exception = assertThrows(TwinConfigurationStore.TwinConfigurationException.class, () -> store.deleteDrone("missing"));
+
+    assertEquals(404, exception.getStatusCode());
+    assertEquals(0, config.getSaveCount());
+  }
+
+  @Test
+  void drone_deleteInvalidName_returnsBadRequestWithoutSaving() {
+    SavingTwinManagerConfig config = newConfig();
+    TwinConfigurationStore store = new TwinConfigurationStore(config);
+
+    TwinConfigurationStore.TwinConfigurationException exception = assertThrows(TwinConfigurationStore.TwinConfigurationException.class, () -> store.deleteDrone("invalid/name"));
+
+    assertEquals(400, exception.getStatusCode());
+    assertEquals(0, config.getSaveCount());
+  }
+
+  @Test
+  void drone_deleteSaveFailure_restoresDroneAndMavlinkBindings() {
+    SavingTwinManagerConfig config = newConfig();
+    TwinConfigurationStore store = new TwinConfigurationStore(config);
+    DroneInfoDTO drone = drone("alpha");
+    config.getDroneInfo().add(drone);
+    MavlinkTwinConfigDTO firstSource = mavlinkSource("primary", "/mavlink/primary/#");
+    MavlinkTwinConfigDTO secondSource = mavlinkSource("backup", "/mavlink/backup/#");
+    List<MavlinkKnownSourceDTO> firstKnownSources = List.of(mavlinkKnownSource("alpha"), mavlinkKnownSource("bravo"));
+    List<MavlinkKnownSourceDTO> secondKnownSources = List.of(mavlinkKnownSource("alpha"));
+    firstSource.setKnownSources(firstKnownSources);
+    secondSource.setKnownSources(secondKnownSources);
+    config.getMavlink().addAll(List.of(firstSource, secondSource));
+    config.failNextSave();
+
+    assertThrows(IOException.class, () -> store.deleteDrone("alpha"));
+
+    assertSame(drone, store.getDrone("alpha").orElseThrow());
+    assertSame(firstKnownSources, firstSource.getKnownSources());
+    assertSame(secondKnownSources, secondSource.getKnownSources());
+    assertEquals(1, config.getSaveCount());
   }
 
   @Test
@@ -412,6 +465,12 @@ class TwinConfigurationStoreTest {
     config.setTopic(topic);
     config.setDialectName("common");
     return config;
+  }
+
+  private MavlinkKnownSourceDTO mavlinkKnownSource(String name) {
+    MavlinkKnownSourceDTO source = new MavlinkKnownSourceDTO();
+    source.setName(name);
+    return source;
   }
 
   private DroneInfoDTO drone(String name) {
