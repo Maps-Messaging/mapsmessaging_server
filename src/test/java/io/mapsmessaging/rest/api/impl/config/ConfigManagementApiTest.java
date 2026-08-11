@@ -19,6 +19,7 @@
 
 package io.mapsmessaging.rest.api.impl.config;
 
+import io.mapsmessaging.config.MessageDaemonConfig;
 import io.mapsmessaging.rest.ApiTestBase;
 import io.restassured.http.ContentType;
 import io.restassured.path.json.JsonPath;
@@ -29,6 +30,8 @@ import org.junit.jupiter.api.Test;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 import static io.mapsmessaging.rest.api.Constants.URI_PATH;
 
@@ -118,6 +121,107 @@ class ConfigManagementApiTest extends ApiTestBase {
         .response();
 
     Assertions.assertTrue(hasNonBlankStatusMessage(response));
+  }
+
+  @Test
+  void update_config_section_saves_valid_configuration_and_invalidates_cached_response() {
+    Map<String, Object> originalConfig = getConfigSection("Discovery").jsonPath().getMap("config");
+    boolean originalValue = (Boolean) originalConfig.get("addTxtRecords");
+    Map<String, Object> updatedConfig = new LinkedHashMap<>(originalConfig);
+    updatedConfig.put("addTxtRecords", !originalValue);
+
+    try {
+      givenAuthenticated()
+          .contentType(ContentType.JSON)
+          .body(updatedConfig)
+          .when()
+          .put(BASE_PATH + "/Discovery")
+          .then()
+          .statusCode(200)
+          .contentType(ContentType.JSON);
+
+      Response updatedResponse = getConfigSection("Discovery");
+      Assertions.assertEquals(!originalValue, updatedResponse.jsonPath().getBoolean("config.addTxtRecords"));
+    } finally {
+      givenAuthenticated()
+          .contentType(ContentType.JSON)
+          .body(originalConfig)
+          .when()
+          .put(BASE_PATH + "/Discovery")
+          .then()
+          .statusCode(200);
+    }
+  }
+
+  @Test
+  void update_config_section_returns400_and_does_not_apply_invalid_configuration() {
+    Map<String, Object> invalidConfig = new LinkedHashMap<>(getConfigSection("Server").jsonPath().getMap("config"));
+    int originalValue = MessageDaemonConfig.getInstance().getDelayedPublishInterval();
+    invalidConfig.put("delayedPublishInterval", 499);
+
+    Response response = givenAuthenticatedNoValidation()
+        .contentType(ContentType.JSON)
+        .body(invalidConfig)
+        .when()
+        .put(BASE_PATH + "/Server")
+        .then()
+        .statusCode(400)
+        .contentType(ContentType.JSON)
+        .extract()
+        .response();
+
+    Assertions.assertTrue(hasNonBlankStatusMessage(response));
+    Assertions.assertEquals(originalValue, MessageDaemonConfig.getInstance().getDelayedPublishInterval());
+  }
+
+  @Test
+  void update_config_section_returns400_for_mismatched_configuration_type() {
+    Map<String, Object> config = new LinkedHashMap<>(getConfigSection("Server").jsonPath().getMap("config"));
+    config.put("type", "AuthManagerConfigDTO");
+
+    Response response = givenAuthenticatedNoValidation()
+        .contentType(ContentType.JSON)
+        .body(config)
+        .when()
+        .put(BASE_PATH + "/Server")
+        .then()
+        .statusCode(400)
+        .contentType(ContentType.JSON)
+        .extract()
+        .response();
+
+    Assertions.assertTrue(hasNonBlankStatusMessage(response));
+  }
+
+  @Test
+  void update_config_section_returns404_for_unknown_section() {
+    String unknownSection = "it_unknown_" + Instant.now().toEpochMilli();
+    Map<String, Object> config = getConfigSection("Server").jsonPath().getMap("config");
+
+    Response response = givenAuthenticated()
+        .contentType(ContentType.JSON)
+        .body(config)
+        .when()
+        .put(BASE_PATH + "/" + urlEncode(unknownSection))
+        .then()
+        .statusCode(404)
+        .contentType(ContentType.JSON)
+        .extract()
+        .response();
+
+    Assertions.assertTrue(hasNonBlankStatusMessage(response));
+  }
+
+  private Response getConfigSection(String sectionName) {
+    return givenAuthenticated()
+        .contentType(ContentType.JSON)
+        .when()
+        .get(BASE_PATH + "/" + urlEncode(sectionName))
+        .then()
+        .statusCode(200)
+        .contentType(ContentType.JSON)
+        .extract()
+        .response();
   }
 
   private String getAuthSectionNameFromArray(Response response) {
