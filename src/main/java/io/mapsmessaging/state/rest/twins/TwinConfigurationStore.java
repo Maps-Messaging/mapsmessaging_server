@@ -40,6 +40,7 @@ import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
@@ -203,7 +204,7 @@ class TwinConfigurationStore {
   }
 
   void createDrone(DroneInfoDTO droneInfo) throws IOException {
-    validateNewDrone(droneInfo);
+    validateDroneConfiguration(droneInfo);
 
     synchronized (config) {
       List<DroneInfoDTO> droneInfos = config.getDroneInfo();
@@ -225,21 +226,50 @@ class TwinConfigurationStore {
   }
 
   void updateDrone(String name, DroneInfoDTO droneInfo) throws IOException {
-    validateName(name, "name");
-    validateDrone(droneInfo);
-    if (!name.equals(droneInfo.getName())) {
+    String droneName = validateDroneName(name);
+    validateDroneConfiguration(droneInfo);
+    if (!droneName.equals(droneInfo.getName())) {
       throw new TwinConfigurationException("Drone configuration name cannot be changed", 400);
     }
 
-    List<DroneInfoDTO> droneInfos = config.getDroneInfo();
-    for (int index = 0; index < droneInfos.size(); index++) {
-      if (name.equals(droneInfos.get(index).getName())) {
-        droneInfos.set(index, droneInfo);
+    synchronized (config) {
+      List<DroneInfoDTO> droneInfos = config.getDroneInfo();
+      int droneIndex = -1;
+      for (int index = 0; index < droneInfos.size(); index++) {
+        if (droneName.equals(droneInfos.get(index).getName())) {
+          droneIndex = index;
+          break;
+        }
+      }
+      if (droneIndex < 0) {
+        throw new TwinConfigurationException("Unknown drone configuration: " + droneName, 404);
+      }
+
+      DroneInfoDTO existingDrone = droneInfos.get(droneIndex);
+      if (!Objects.equals(existingDrone.getUuid(), droneInfo.getUuid())) {
+        throw new TwinConfigurationException("Drone UUID cannot be changed: " + droneName, 409);
+      }
+      for (int index = 0; index < droneInfos.size(); index++) {
+        if (index == droneIndex) {
+          continue;
+        }
+        DroneInfoDTO otherDrone = droneInfos.get(index);
+        if (droneInfo.getName().equalsIgnoreCase(otherDrone.getName())) {
+          throw new TwinConfigurationException("Drone configuration name is already in use: " + droneInfo.getName(), 409);
+        }
+        if (droneInfo.getUuid().equals(otherDrone.getUuid())) {
+          throw new TwinConfigurationException("Drone UUID is already configured: " + droneInfo.getUuid(), 409);
+        }
+      }
+
+      droneInfos.set(droneIndex, droneInfo);
+      try {
         config.save();
-        return;
+      } catch (IOException | RuntimeException exception) {
+        droneInfos.set(droneIndex, existingDrone);
+        throw exception;
       }
     }
-    throw new TwinConfigurationException("Unknown drone configuration: " + name, 404);
   }
 
   void deleteDrone(String name) throws IOException {
@@ -401,7 +431,7 @@ class TwinConfigurationStore {
     }
   }
 
-  private void validateNewDrone(DroneInfoDTO droneInfo) {
+  private void validateDroneConfiguration(DroneInfoDTO droneInfo) {
     validateDrone(droneInfo);
 
     droneInfo.setName(validateDroneName(droneInfo.getName()));
