@@ -181,7 +181,8 @@ class TwinConfigurationStoreTest {
     TwinConfigurationStore store = new TwinConfigurationStore(config);
     DroneInfoDTO created = drone("alpha");
     DroneInfoDTO updated = drone("alpha");
-    updated.setUuid(UUID.randomUUID());
+    updated.setUuid(created.getUuid());
+    updated.setBatteryCapacityHours(24.0d);
     MavlinkTwinConfigDTO mavlinkSource = mavlinkSource("primary", "/mavlink/#");
     MavlinkTwinConfigDTO backupMavlinkSource = mavlinkSource("backup", "/mavlink/backup/#");
     mavlinkSource.setKnownSources(List.of(mavlinkKnownSource("alpha"), mavlinkKnownSource("bravo")));
@@ -405,6 +406,101 @@ class TwinConfigurationStoreTest {
     );
 
     assertEquals(400, exception.getStatusCode());
+  }
+
+  @Test
+  void drone_updateMissingDrone_returnsNotFoundWithoutSaving() {
+    SavingTwinManagerConfig config = newConfig();
+    TwinConfigurationStore store = new TwinConfigurationStore(config);
+
+    TwinConfigurationStore.TwinConfigurationException exception = assertThrows(TwinConfigurationStore.TwinConfigurationException.class, () -> store.updateDrone("alpha", drone("alpha")));
+
+    assertEquals(404, exception.getStatusCode());
+    assertEquals(0, config.getSaveCount());
+  }
+
+  @Test
+  void drone_updateChangingUuid_returnsConflictWithoutSaving() {
+    SavingTwinManagerConfig config = newConfig();
+    TwinConfigurationStore store = new TwinConfigurationStore(config);
+    DroneInfoDTO existing = drone("alpha");
+    config.getDroneInfo().add(existing);
+    DroneInfoDTO updated = drone("alpha");
+
+    TwinConfigurationStore.TwinConfigurationException exception = assertThrows(TwinConfigurationStore.TwinConfigurationException.class, () -> store.updateDrone("alpha", updated));
+
+    assertEquals(409, exception.getStatusCode());
+    assertSame(existing, store.getDrone("alpha").orElseThrow());
+    assertEquals(0, config.getSaveCount());
+  }
+
+  @Test
+  void drone_updateUuidConflictsWithAnotherDrone_returnsConflictWithoutSaving() {
+    SavingTwinManagerConfig config = newConfig();
+    TwinConfigurationStore store = new TwinConfigurationStore(config);
+    DroneInfoDTO existing = drone("alpha");
+    DroneInfoDTO conflicting = drone("bravo");
+    conflicting.setUuid(existing.getUuid());
+    config.getDroneInfo().addAll(List.of(existing, conflicting));
+    DroneInfoDTO updated = drone("alpha");
+    updated.setUuid(existing.getUuid());
+
+    TwinConfigurationStore.TwinConfigurationException exception = assertThrows(TwinConfigurationStore.TwinConfigurationException.class, () -> store.updateDrone("alpha", updated));
+
+    assertEquals(409, exception.getStatusCode());
+    assertSame(existing, store.getDrone("alpha").orElseThrow());
+    assertEquals(0, config.getSaveCount());
+  }
+
+  @Test
+  void drone_updateNameConflictsWithAnotherDrone_returnsConflictWithoutSaving() {
+    SavingTwinManagerConfig config = newConfig();
+    TwinConfigurationStore store = new TwinConfigurationStore(config);
+    DroneInfoDTO existing = drone("alpha");
+    DroneInfoDTO conflicting = drone("ALPHA");
+    config.getDroneInfo().addAll(List.of(existing, conflicting));
+    DroneInfoDTO updated = drone("alpha");
+    updated.setUuid(existing.getUuid());
+
+    TwinConfigurationStore.TwinConfigurationException exception = assertThrows(TwinConfigurationStore.TwinConfigurationException.class, () -> store.updateDrone("alpha", updated));
+
+    assertEquals(409, exception.getStatusCode());
+    assertSame(existing, store.getDrone("alpha").orElseThrow());
+    assertEquals(0, config.getSaveCount());
+  }
+
+  @Test
+  void drone_updateInvalidConfiguration_returnsBadRequestWithoutSaving() {
+    SavingTwinManagerConfig config = newConfig();
+    TwinConfigurationStore store = new TwinConfigurationStore(config);
+    DroneInfoDTO existing = drone("alpha");
+    config.getDroneInfo().add(existing);
+    DroneInfoDTO updated = drone("alpha");
+    updated.setUuid(existing.getUuid());
+    updated.setModelName("unknown-model");
+
+    TwinConfigurationStore.TwinConfigurationException exception = assertThrows(TwinConfigurationStore.TwinConfigurationException.class, () -> store.updateDrone("alpha", updated));
+
+    assertEquals(400, exception.getStatusCode());
+    assertSame(existing, store.getDrone("alpha").orElseThrow());
+    assertEquals(0, config.getSaveCount());
+  }
+
+  @Test
+  void drone_updateSaveFailure_restoresExistingConfiguration() {
+    SavingTwinManagerConfig config = newConfig();
+    TwinConfigurationStore store = new TwinConfigurationStore(config);
+    DroneInfoDTO existing = drone("alpha");
+    config.getDroneInfo().add(existing);
+    DroneInfoDTO updated = drone("alpha");
+    updated.setUuid(existing.getUuid());
+    updated.setBatteryCapacityHours(24.0d);
+    config.failNextSave();
+
+    assertThrows(IOException.class, () -> store.updateDrone("alpha", updated));
+
+    assertSame(existing, store.getDrone("alpha").orElseThrow());
+    assertEquals(1, config.getSaveCount());
   }
 
   @Test
