@@ -20,6 +20,7 @@
 package io.mapsmessaging.state.rest.twins;
 
 import io.mapsmessaging.configuration.ConfigurationProperties;
+import io.mapsmessaging.dto.rest.config.protocol.impl.MavlinkKnownSourceDTO;
 import io.mapsmessaging.dto.rest.config.protocol.impl.TakProtocolDTO;
 import io.mapsmessaging.state.config.DroneInfoDTO;
 import io.mapsmessaging.state.config.MavlinkTwinConfigDTO;
@@ -34,6 +35,7 @@ import io.mapsmessaging.state.config.n2k.N2KTwinConfig;
 import io.mapsmessaging.state.mavlink.model.ModelManager;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -241,11 +243,44 @@ class TwinConfigurationStore {
   }
 
   void deleteDrone(String name) throws IOException {
-    validateName(name, "name");
-    if (!config.getDroneInfo().removeIf(entry -> name.equals(entry.getName()))) {
-      throw new TwinConfigurationException("Unknown drone configuration: " + name, 404);
+    String droneName = validateDroneName(name);
+
+    synchronized (config) {
+      List<DroneInfoDTO> droneInfos = config.getDroneInfo();
+      int droneIndex = -1;
+      for (int index = 0; index < droneInfos.size(); index++) {
+        if (droneName.equals(droneInfos.get(index).getName())) {
+          droneIndex = index;
+          break;
+        }
+      }
+      if (droneIndex < 0) {
+        throw new TwinConfigurationException("Unknown drone configuration: " + droneName, 404);
+      }
+
+      DroneInfoDTO removedDrone = droneInfos.remove(droneIndex);
+      List<MavlinkTwinConfigDTO> mavlinkSources = config.getMavlink();
+      List<List<MavlinkKnownSourceDTO>> originalKnownSources = new ArrayList<>(mavlinkSources.size());
+      for (MavlinkTwinConfigDTO mavlinkSource : mavlinkSources) {
+        List<MavlinkKnownSourceDTO> knownSources = mavlinkSource.getKnownSources();
+        originalKnownSources.add(knownSources);
+        if (knownSources != null && knownSources.stream().anyMatch(knownSource -> knownSource != null && droneName.equals(knownSource.getName()))) {
+          List<MavlinkKnownSourceDTO> remainingSources = new ArrayList<>(knownSources);
+          remainingSources.removeIf(knownSource -> knownSource != null && droneName.equals(knownSource.getName()));
+          mavlinkSource.setKnownSources(remainingSources);
+        }
+      }
+
+      try {
+        config.save();
+      } catch (IOException | RuntimeException exception) {
+        droneInfos.add(droneIndex, removedDrone);
+        for (int index = 0; index < mavlinkSources.size(); index++) {
+          mavlinkSources.get(index).setKnownSources(originalKnownSources.get(index));
+        }
+        throw exception;
+      }
     }
-    config.save();
   }
 
   Map<String, ConfigurationProperties> listAdapterConfigs() {
@@ -369,10 +404,7 @@ class TwinConfigurationStore {
   private void validateNewDrone(DroneInfoDTO droneInfo) {
     validateDrone(droneInfo);
 
-    droneInfo.setName(droneInfo.getName().trim());
-    if (!DRONE_NAME_PATTERN.matcher(droneInfo.getName()).matches()) {
-      throw new TwinConfigurationException("name must contain only letters, numbers, '.', '_' or '-' and must not exceed 128 characters", 400);
-    }
+    droneInfo.setName(validateDroneName(droneInfo.getName()));
 
     if (droneInfo.getModelName() == null || droneInfo.getModelName().isBlank()) {
       throw new TwinConfigurationException("modelName is required", 400);
@@ -459,6 +491,15 @@ class TwinConfigurationStore {
     if (name == null || name.isBlank()) {
       throw new TwinConfigurationException(fieldName + " is required", 400);
     }
+  }
+
+  private String validateDroneName(String name) {
+    validateName(name, "name");
+    String droneName = name.trim();
+    if (!DRONE_NAME_PATTERN.matcher(droneName).matches()) {
+      throw new TwinConfigurationException("name must contain only letters, numbers, '.', '_' or '-' and must not exceed 128 characters", 400);
+    }
+    return droneName;
   }
 
   static class TwinConfigurationException extends RuntimeException {
