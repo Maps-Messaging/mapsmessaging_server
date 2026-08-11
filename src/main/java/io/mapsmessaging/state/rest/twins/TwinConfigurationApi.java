@@ -685,9 +685,10 @@ public class TwinConfigurationApi extends BaseRestApi {
   @Produces({MediaType.APPLICATION_JSON})
   @Operation(
       summary = "Delete known drone configuration",
-      description = "Removes persisted drone metadata. Runtime drone metadata registries are not reloaded.",
+      description = "Removes persisted drone metadata and matching MAVLink known-source bindings in one configuration save. Runtime drone metadata registries are not reloaded.",
       responses = {
           @ApiResponse(responseCode = "204", description = "Drone configuration deleted"),
+          @ApiResponse(responseCode = "400", description = "Invalid drone configuration name", content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))),
           @ApiResponse(responseCode = "401", description = "Invalid credentials or unauthorized access", content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))),
           @ApiResponse(responseCode = "403", description = "User is not authorised to access the resource", content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))),
           @ApiResponse(responseCode = "404", description = "Drone configuration not found", content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))),
@@ -698,7 +699,8 @@ public class TwinConfigurationApi extends BaseRestApi {
     try {
       hasAccess(RESOURCE);
       store().deleteDrone(name);
-      removeUriFromCache(uriInfo.getPath());
+      removeUriFromCache(URI_PATH + "/server/twin/config/drone-info");
+      removeUriFromCache(URI_PATH + "/server/twin/config/mavlink");
       return noContent();
     } catch (TwinConfigurationStore.TwinConfigurationException ex) {
       return status(ex);
