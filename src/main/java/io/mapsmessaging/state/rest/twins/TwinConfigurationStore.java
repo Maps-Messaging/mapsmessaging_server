@@ -20,20 +20,34 @@
 package io.mapsmessaging.state.rest.twins;
 
 import io.mapsmessaging.configuration.ConfigurationProperties;
+import io.mapsmessaging.dto.rest.config.protocol.impl.MavlinkKnownSourceDTO;
 import io.mapsmessaging.dto.rest.config.protocol.impl.TakProtocolDTO;
 import io.mapsmessaging.state.config.DroneInfoDTO;
 import io.mapsmessaging.state.config.MavlinkTwinConfigDTO;
 import io.mapsmessaging.state.config.TwinManagerConfig;
 import io.mapsmessaging.state.config.TwinPublishConfigDTO;
+import io.mapsmessaging.state.config.capability.Authorities;
+import io.mapsmessaging.state.config.capability.PlanTaskType;
+import io.mapsmessaging.state.config.capability.TaskCapabilities;
+import io.mapsmessaging.state.config.capability.TaskCapability;
+import io.mapsmessaging.state.config.geospatial.GeoSpatialAreaConfigDTO;
 import io.mapsmessaging.state.config.n2k.N2KTwinConfig;
+import io.mapsmessaging.state.mavlink.model.ModelManager;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
+import java.util.UUID;
+import java.util.regex.Pattern;
 
 class TwinConfigurationStore {
+
+  private static final Pattern DRONE_NAME_PATTERN = Pattern.compile("[A-Za-z0-9][A-Za-z0-9._-]{0,127}");
 
   private final TwinManagerConfig config;
 
@@ -171,6 +185,17 @@ class TwinConfigurationStore {
     return config.getDroneInfo();
   }
 
+  List<String> listDroneModelNames() {
+    return ModelManager.getInstance().getModelNames().stream().sorted().toList();
+  }
+
+  List<String> listGeospatialAreaNames() {
+    if (config.getGeospatial() == null || config.getGeospatial().getAreas() == null) {
+      return List.of();
+    }
+    return config.getGeospatial().getAreas().stream().map(GeoSpatialAreaConfigDTO::getName).filter(name -> name != null && !name.isBlank()).map(String::trim).distinct().sorted().toList();
+  }
+
   Optional<DroneInfoDTO> getDrone(String name) {
     return config.getDroneInfo().stream()
         .filter(entry -> name.equals(entry.getName()))
@@ -178,12 +203,25 @@ class TwinConfigurationStore {
   }
 
   void createDrone(DroneInfoDTO droneInfo) throws IOException {
-    validateDrone(droneInfo);
-    if (getDrone(droneInfo.getName()).isPresent()) {
-      throw new TwinConfigurationException("Drone configuration already exists: " + droneInfo.getName(), 409);
+    validateNewDrone(droneInfo);
+
+    synchronized (config) {
+      List<DroneInfoDTO> droneInfos = config.getDroneInfo();
+      if (droneInfos.stream().anyMatch(entry -> droneInfo.getName().equalsIgnoreCase(entry.getName()))) {
+        throw new TwinConfigurationException("Drone configuration already exists: " + droneInfo.getName(), 409);
+      }
+      if (droneInfos.stream().anyMatch(entry -> droneInfo.getUuid().equals(entry.getUuid()))) {
+        throw new TwinConfigurationException("Drone UUID is already configured: " + droneInfo.getUuid(), 409);
+      }
+
+      droneInfos.add(droneInfo);
+      try {
+        config.save();
+      } catch (IOException | RuntimeException exception) {
+        droneInfos.remove(droneInfo);
+        throw exception;
+      }
     }
-    config.getDroneInfo().add(droneInfo);
-    config.save();
   }
 
   void updateDrone(String name, DroneInfoDTO droneInfo) throws IOException {
@@ -205,11 +243,44 @@ class TwinConfigurationStore {
   }
 
   void deleteDrone(String name) throws IOException {
-    validateName(name, "name");
-    if (!config.getDroneInfo().removeIf(entry -> name.equals(entry.getName()))) {
-      throw new TwinConfigurationException("Unknown drone configuration: " + name, 404);
+    String droneName = validateDroneName(name);
+
+    synchronized (config) {
+      List<DroneInfoDTO> droneInfos = config.getDroneInfo();
+      int droneIndex = -1;
+      for (int index = 0; index < droneInfos.size(); index++) {
+        if (droneName.equals(droneInfos.get(index).getName())) {
+          droneIndex = index;
+          break;
+        }
+      }
+      if (droneIndex < 0) {
+        throw new TwinConfigurationException("Unknown drone configuration: " + droneName, 404);
+      }
+
+      DroneInfoDTO removedDrone = droneInfos.remove(droneIndex);
+      List<MavlinkTwinConfigDTO> mavlinkSources = config.getMavlink();
+      List<List<MavlinkKnownSourceDTO>> originalKnownSources = new ArrayList<>(mavlinkSources.size());
+      for (MavlinkTwinConfigDTO mavlinkSource : mavlinkSources) {
+        List<MavlinkKnownSourceDTO> knownSources = mavlinkSource.getKnownSources();
+        originalKnownSources.add(knownSources);
+        if (knownSources != null && knownSources.stream().anyMatch(knownSource -> knownSource != null && droneName.equals(knownSource.getName()))) {
+          List<MavlinkKnownSourceDTO> remainingSources = new ArrayList<>(knownSources);
+          remainingSources.removeIf(knownSource -> knownSource != null && droneName.equals(knownSource.getName()));
+          mavlinkSource.setKnownSources(remainingSources);
+        }
+      }
+
+      try {
+        config.save();
+      } catch (IOException | RuntimeException exception) {
+        droneInfos.add(droneIndex, removedDrone);
+        for (int index = 0; index < mavlinkSources.size(); index++) {
+          mavlinkSources.get(index).setKnownSources(originalKnownSources.get(index));
+        }
+        throw exception;
+      }
     }
-    config.save();
   }
 
   Map<String, ConfigurationProperties> listAdapterConfigs() {
@@ -330,10 +401,105 @@ class TwinConfigurationStore {
     }
   }
 
+  private void validateNewDrone(DroneInfoDTO droneInfo) {
+    validateDrone(droneInfo);
+
+    droneInfo.setName(validateDroneName(droneInfo.getName()));
+
+    if (droneInfo.getModelName() == null || droneInfo.getModelName().isBlank()) {
+      throw new TwinConfigurationException("modelName is required", 400);
+    }
+    droneInfo.setModelName(droneInfo.getModelName().trim());
+    if (ModelManager.getInstance().getModel(droneInfo.getModelName()).isEmpty()) {
+      throw new TwinConfigurationException("Unknown drone model: " + droneInfo.getModelName(), 400);
+    }
+
+    if (droneInfo.getGeospatialArea() != null) {
+      String geospatialArea = droneInfo.getGeospatialArea().trim();
+      droneInfo.setGeospatialArea(geospatialArea.isEmpty() ? null : geospatialArea);
+      if (!geospatialArea.isEmpty() && !listGeospatialAreaNames().contains(geospatialArea)) {
+        throw new TwinConfigurationException("Unknown geospatial area: " + geospatialArea, 400);
+      }
+    }
+
+    if (droneInfo.getMessageEncoding() == null) {
+      throw new TwinConfigurationException("messageEncoding is required", 400);
+    }
+    if (droneInfo.getCancelAction() == null || droneInfo.getMissionEndAction() == null || droneInfo.getMissionTimeoutAction() == null) {
+      throw new TwinConfigurationException("cancelAction, missionEndAction and missionTimeoutAction are required", 400);
+    }
+
+    validateNonNegativeFinite(droneInfo.getBatteryCapacityAh(), "batteryCapacityAh");
+    validateNonNegativeFinite(droneInfo.getBatteryCapacityHours(), "batteryCapacityHours");
+    validateOptionalPositiveFinite(droneInfo.getRangeMeters(), "rangeMeters");
+    validateOptionalPositiveFinite(droneInfo.getSurveyRadiusMeters(), "surveyRadiusMeters");
+    validateTaskCapabilities(droneInfo.getCapabilities());
+  }
+
+  private void validateTaskCapabilities(TaskCapabilities capabilities) {
+    if (capabilities == null || capabilities.getTasks() == null) {
+      throw new TwinConfigurationException("capabilities and task_capabilities are required", 400);
+    }
+    if (capabilities.getTaskConditionsMode() == null || capabilities.getTaskConditionsTemplate() == null) {
+      throw new TwinConfigurationException("task condition modes are required", 400);
+    }
+
+    Set<PlanTaskType> taskTypes = new HashSet<>();
+    for (TaskCapability capability : capabilities.getTasks()) {
+      if (capability == null || capability.getTaskType() == null) {
+        throw new TwinConfigurationException("Every task capability requires a task type", 400);
+      }
+      if (!taskTypes.add(capability.getTaskType())) {
+        throw new TwinConfigurationException("Task type is configured more than once: " + capability.getTaskType(), 400);
+      }
+      if (capability.getSpecialization() == null) {
+        throw new TwinConfigurationException("Every task capability requires a specialization", 400);
+      }
+      validateAuthorities(capability.getAuthorities(), capability.getTaskType());
+    }
+  }
+
+  private void validateAuthorities(Authorities[] authorities, PlanTaskType taskType) {
+    if (authorities == null) {
+      return;
+    }
+
+    Set<UUID> authorityIds = new HashSet<>();
+    for (Authorities authority : authorities) {
+      if (authority == null || authority.getGuid() == null) {
+        throw new TwinConfigurationException("Every authority for task type " + taskType + " requires a UUID", 400);
+      }
+      if (!authorityIds.add(authority.getGuid())) {
+        throw new TwinConfigurationException("Authority UUID is configured more than once for task type " + taskType + ": " + authority.getGuid(), 400);
+      }
+    }
+  }
+
+  private void validateNonNegativeFinite(double value, String fieldName) {
+    if (!Double.isFinite(value) || value < 0.0d) {
+      throw new TwinConfigurationException(fieldName + " must be a finite value greater than or equal to zero", 400);
+    }
+  }
+
+  private void validateOptionalPositiveFinite(Double value, String fieldName) {
+    if (value != null && (!Double.isFinite(value) || value <= 0.0d)) {
+      throw new TwinConfigurationException(fieldName + " must be a finite value greater than zero when supplied", 400);
+    }
+  }
+
   private void validateName(String name, String fieldName) {
     if (name == null || name.isBlank()) {
       throw new TwinConfigurationException(fieldName + " is required", 400);
     }
+  }
+
+  private String validateDroneName(String name) {
+    validateName(name, "name");
+    String droneName = name.trim();
+    if (!DRONE_NAME_PATTERN.matcher(droneName).matches()) {
+      throw new TwinConfigurationException("name must contain only letters, numbers, '.', '_' or '-' and must not exceed 128 characters", 400);
+    }
+    return droneName;
   }
 
   static class TwinConfigurationException extends RuntimeException {

@@ -20,18 +20,26 @@
 package io.mapsmessaging.state.rest.twins;
 
 import io.mapsmessaging.configuration.ConfigurationProperties;
+import io.mapsmessaging.dto.rest.config.protocol.impl.MavlinkKnownSourceDTO;
 import io.mapsmessaging.dto.rest.config.protocol.impl.TakProtocolDTO;
 import io.mapsmessaging.state.config.DroneInfoDTO;
 import io.mapsmessaging.state.config.MavlinkTwinConfigDTO;
 import io.mapsmessaging.state.config.TwinManagerConfig;
 import io.mapsmessaging.state.config.TwinPublishConfigDTO;
+import io.mapsmessaging.state.config.capability.Authorities;
+import io.mapsmessaging.state.config.capability.PlanTaskType;
+import io.mapsmessaging.state.config.capability.TaskCapability;
+import io.mapsmessaging.state.config.capability.TaskSpecialization;
+import io.mapsmessaging.state.config.geospatial.GeoSpatialAreaConfigDTO;
 import io.mapsmessaging.state.config.n2k.N2KTwinConfig;
+import io.mapsmessaging.state.mavlink.model.impl.uav.GenericPx4UavModel;
 import io.mapsmessaging.state.rest.twins.TwinConfigurationStore;
 import io.mapsmessaging.state.rest.twins.TwinCoreConfigDTO;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -174,6 +182,11 @@ class TwinConfigurationStoreTest {
     DroneInfoDTO created = drone("alpha");
     DroneInfoDTO updated = drone("alpha");
     updated.setUuid(UUID.randomUUID());
+    MavlinkTwinConfigDTO mavlinkSource = mavlinkSource("primary", "/mavlink/#");
+    MavlinkTwinConfigDTO backupMavlinkSource = mavlinkSource("backup", "/mavlink/backup/#");
+    mavlinkSource.setKnownSources(List.of(mavlinkKnownSource("alpha"), mavlinkKnownSource("bravo")));
+    backupMavlinkSource.setKnownSources(List.of(mavlinkKnownSource("alpha")));
+    config.getMavlink().addAll(List.of(mavlinkSource, backupMavlinkSource));
 
     store.createDrone(created);
     assertSame(created, store.getDrone("alpha").orElseThrow());
@@ -184,7 +197,202 @@ class TwinConfigurationStoreTest {
     store.deleteDrone("alpha");
 
     assertTrue(store.listDrones().isEmpty());
+    assertEquals(List.of("bravo"), mavlinkSource.getKnownSources().stream().map(MavlinkKnownSourceDTO::getName).toList());
+    assertTrue(backupMavlinkSource.getKnownSources().isEmpty());
     assertEquals(3, config.getSaveCount());
+  }
+
+  @Test
+  void drone_deleteUnknownName_returnsNotFoundWithoutSaving() {
+    SavingTwinManagerConfig config = newConfig();
+    TwinConfigurationStore store = new TwinConfigurationStore(config);
+
+    TwinConfigurationStore.TwinConfigurationException exception = assertThrows(TwinConfigurationStore.TwinConfigurationException.class, () -> store.deleteDrone("missing"));
+
+    assertEquals(404, exception.getStatusCode());
+    assertEquals(0, config.getSaveCount());
+  }
+
+  @Test
+  void drone_deleteInvalidName_returnsBadRequestWithoutSaving() {
+    SavingTwinManagerConfig config = newConfig();
+    TwinConfigurationStore store = new TwinConfigurationStore(config);
+
+    TwinConfigurationStore.TwinConfigurationException exception = assertThrows(TwinConfigurationStore.TwinConfigurationException.class, () -> store.deleteDrone("invalid/name"));
+
+    assertEquals(400, exception.getStatusCode());
+    assertEquals(0, config.getSaveCount());
+  }
+
+  @Test
+  void drone_deleteSaveFailure_restoresDroneAndMavlinkBindings() {
+    SavingTwinManagerConfig config = newConfig();
+    TwinConfigurationStore store = new TwinConfigurationStore(config);
+    DroneInfoDTO drone = drone("alpha");
+    config.getDroneInfo().add(drone);
+    MavlinkTwinConfigDTO firstSource = mavlinkSource("primary", "/mavlink/primary/#");
+    MavlinkTwinConfigDTO secondSource = mavlinkSource("backup", "/mavlink/backup/#");
+    List<MavlinkKnownSourceDTO> firstKnownSources = List.of(mavlinkKnownSource("alpha"), mavlinkKnownSource("bravo"));
+    List<MavlinkKnownSourceDTO> secondKnownSources = List.of(mavlinkKnownSource("alpha"));
+    firstSource.setKnownSources(firstKnownSources);
+    secondSource.setKnownSources(secondKnownSources);
+    config.getMavlink().addAll(List.of(firstSource, secondSource));
+    config.failNextSave();
+
+    assertThrows(IOException.class, () -> store.deleteDrone("alpha"));
+
+    assertSame(drone, store.getDrone("alpha").orElseThrow());
+    assertSame(firstKnownSources, firstSource.getKnownSources());
+    assertSame(secondKnownSources, secondSource.getKnownSources());
+    assertEquals(1, config.getSaveCount());
+  }
+
+  @Test
+  void drone_createDuplicateNameIgnoringCase_returnsConflict() throws IOException {
+    SavingTwinManagerConfig config = newConfig();
+    TwinConfigurationStore store = new TwinConfigurationStore(config);
+
+    store.createDrone(drone("alpha"));
+    TwinConfigurationStore.TwinConfigurationException exception = assertThrows(
+        TwinConfigurationStore.TwinConfigurationException.class,
+        () -> store.createDrone(drone("ALPHA"))
+    );
+
+    assertEquals(409, exception.getStatusCode());
+    assertEquals(1, store.listDrones().size());
+    assertEquals(1, config.getSaveCount());
+  }
+
+  @Test
+  void catalogues_returnRegisteredModelsAndConfiguredGeospatialAreas() {
+    SavingTwinManagerConfig config = newConfig();
+    GeoSpatialAreaConfigDTO bravo = new GeoSpatialAreaConfigDTO();
+    bravo.setName("bravo");
+    GeoSpatialAreaConfigDTO alpha = new GeoSpatialAreaConfigDTO();
+    alpha.setName("alpha");
+    config.getGeospatial().setAreas(List.of(bravo, alpha));
+    TwinConfigurationStore store = new TwinConfigurationStore(config);
+
+    assertTrue(store.listDroneModelNames().contains(GenericPx4UavModel.MODEL_NAME));
+    assertEquals(List.of("alpha", "bravo"), store.listGeospatialAreaNames());
+  }
+
+  @Test
+  void drone_createUnknownModel_returnsBadRequest() {
+    TwinConfigurationStore store = new TwinConfigurationStore(newConfig());
+    DroneInfoDTO drone = drone("alpha");
+    drone.setModelName("unknown-model");
+
+    TwinConfigurationStore.TwinConfigurationException exception = assertThrows(TwinConfigurationStore.TwinConfigurationException.class, () -> store.createDrone(drone));
+
+    assertEquals(400, exception.getStatusCode());
+    assertTrue(store.listDrones().isEmpty());
+  }
+
+  @Test
+  void drone_createUnknownGeospatialArea_returnsBadRequest() {
+    TwinConfigurationStore store = new TwinConfigurationStore(newConfig());
+    DroneInfoDTO drone = drone("alpha");
+    drone.setGeospatialArea("missing-area");
+
+    TwinConfigurationStore.TwinConfigurationException exception = assertThrows(TwinConfigurationStore.TwinConfigurationException.class, () -> store.createDrone(drone));
+
+    assertEquals(400, exception.getStatusCode());
+    assertTrue(store.listDrones().isEmpty());
+  }
+
+  @Test
+  void drone_createConfiguredGeospatialArea_persistsDrone() throws IOException {
+    SavingTwinManagerConfig config = newConfig();
+    GeoSpatialAreaConfigDTO area = new GeoSpatialAreaConfigDTO();
+    area.setName("test-area");
+    config.getGeospatial().setAreas(List.of(area));
+    TwinConfigurationStore store = new TwinConfigurationStore(config);
+    DroneInfoDTO drone = drone("alpha");
+    drone.setGeospatialArea("test-area");
+
+    store.createDrone(drone);
+
+    assertSame(drone, store.getDrone("alpha").orElseThrow());
+    assertEquals(1, config.getSaveCount());
+  }
+
+  @Test
+  void drone_createDuplicateUuid_returnsConflict() throws IOException {
+    SavingTwinManagerConfig config = newConfig();
+    TwinConfigurationStore store = new TwinConfigurationStore(config);
+    DroneInfoDTO first = drone("alpha");
+    DroneInfoDTO duplicate = drone("bravo");
+    duplicate.setUuid(first.getUuid());
+
+    store.createDrone(first);
+    TwinConfigurationStore.TwinConfigurationException exception = assertThrows(
+        TwinConfigurationStore.TwinConfigurationException.class,
+        () -> store.createDrone(duplicate)
+    );
+
+    assertEquals(409, exception.getStatusCode());
+    assertEquals(1, store.listDrones().size());
+    assertEquals(1, config.getSaveCount());
+  }
+
+  @Test
+  void drone_createIncompleteConfiguration_returnsBadRequest() {
+    TwinConfigurationStore store = new TwinConfigurationStore(newConfig());
+    DroneInfoDTO incomplete = drone("alpha");
+    incomplete.setModelName(" ");
+
+    TwinConfigurationStore.TwinConfigurationException exception = assertThrows(
+        TwinConfigurationStore.TwinConfigurationException.class,
+        () -> store.createDrone(incomplete)
+    );
+
+    assertEquals(400, exception.getStatusCode());
+    assertTrue(store.listDrones().isEmpty());
+  }
+
+  @Test
+  void drone_createDuplicateTaskType_returnsBadRequest() {
+    TwinConfigurationStore store = new TwinConfigurationStore(newConfig());
+    DroneInfoDTO drone = drone("alpha");
+    TaskCapability first = new TaskCapability(PlanTaskType.REPOSITION, TaskSpecialization.NONE, new Authorities[0]);
+    TaskCapability duplicate = new TaskCapability(PlanTaskType.REPOSITION, TaskSpecialization.NONE, new Authorities[0]);
+    drone.getCapabilities().setTasks(List.of(first, duplicate));
+
+    TwinConfigurationStore.TwinConfigurationException exception = assertThrows(
+        TwinConfigurationStore.TwinConfigurationException.class,
+        () -> store.createDrone(drone)
+    );
+
+    assertEquals(400, exception.getStatusCode());
+    assertTrue(store.listDrones().isEmpty());
+  }
+
+  @Test
+  void drone_createInvalidNumericConfiguration_returnsBadRequest() {
+    TwinConfigurationStore store = new TwinConfigurationStore(newConfig());
+    DroneInfoDTO drone = drone("alpha");
+    drone.setRangeMeters(0.0d);
+
+    TwinConfigurationStore.TwinConfigurationException exception = assertThrows(
+        TwinConfigurationStore.TwinConfigurationException.class,
+        () -> store.createDrone(drone)
+    );
+
+    assertEquals(400, exception.getStatusCode());
+    assertTrue(store.listDrones().isEmpty());
+  }
+
+  @Test
+  void drone_createSaveFailure_restoresConfiguration() {
+    SavingTwinManagerConfig config = newConfig();
+    TwinConfigurationStore store = new TwinConfigurationStore(config);
+    config.failNextSave();
+
+    assertThrows(IOException.class, () -> store.createDrone(drone("alpha")));
+
+    assertTrue(store.listDrones().isEmpty());
+    assertEquals(1, config.getSaveCount());
   }
 
   @Test
@@ -259,10 +467,17 @@ class TwinConfigurationStoreTest {
     return config;
   }
 
+  private MavlinkKnownSourceDTO mavlinkKnownSource(String name) {
+    MavlinkKnownSourceDTO source = new MavlinkKnownSourceDTO();
+    source.setName(name);
+    return source;
+  }
+
   private DroneInfoDTO drone(String name) {
     DroneInfoDTO droneInfo = new DroneInfoDTO();
     droneInfo.setName(name);
     droneInfo.setUuid(UUID.randomUUID());
+    droneInfo.setModelName(GenericPx4UavModel.MODEL_NAME);
     return droneInfo;
   }
 
@@ -291,10 +506,19 @@ class TwinConfigurationStoreTest {
   private static class SavingTwinManagerConfig extends TwinManagerConfig {
 
     private int saveCount;
+    private boolean failNextSave;
 
     @Override
-    public void save() {
+    public void save() throws IOException {
       saveCount++;
+      if (failNextSave) {
+        failNextSave = false;
+        throw new IOException("Expected test save failure");
+      }
+    }
+
+    void failNextSave() {
+      failNextSave = true;
     }
 
     int getSaveCount() {
