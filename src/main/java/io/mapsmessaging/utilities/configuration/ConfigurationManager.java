@@ -129,6 +129,14 @@ public class ConfigurationManager {
     return configSchemas.get(name);
   }
 
+  public List<String> validateConfiguration(String configName, Map<String, Object> config) {
+    String schema = configSchemas.get(configName);
+    if (schema == null || schema.isBlank()) {
+      return List.of("Schema not found for: " + configName);
+    }
+    return validate(schema, config);
+  }
+
   public void initialise(@NonNull @NotNull String serverId) {
     PropertyManager defaultManager = null;
     if (ConsulManagerFactory.getInstance().isStarted()) {

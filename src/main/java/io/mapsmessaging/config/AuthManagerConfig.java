@@ -39,7 +39,7 @@ import java.util.Objects;
 @NoArgsConstructor
 @ToString
 @Schema(description = "Auth Manager Configuration")
-public class AuthManagerConfig extends AuthManagerConfigDTO implements ConfigManager {
+public class AuthManagerConfig extends AuthManagerConfigDTO implements Config, ConfigManager {
 
   private AuthManagerConfig(ConfigurationProperties properties) {
     authenticationEnabled = properties.getBooleanProperty("authenticationEnabled", authenticationEnabled);
@@ -83,6 +83,7 @@ public class AuthManagerConfig extends AuthManagerConfigDTO implements ConfigMan
     return ConfigurationManager.getInstance().getConfiguration(AuthManagerConfig.class);
   }
 
+  @Override
   public boolean update(BaseConfigDTO config) {
     AuthManagerConfig newConfig = (AuthManagerConfig) config;
     boolean hasChanged = false;
@@ -199,6 +200,7 @@ public class AuthManagerConfig extends AuthManagerConfigDTO implements ConfigMan
     return hasChanged;
   }
 
+  @Override
   public ConfigurationProperties toConfigurationProperties() {
     ConfigurationProperties properties = new ConfigurationProperties();
     properties.put("authenticationEnabled", authenticationEnabled);
