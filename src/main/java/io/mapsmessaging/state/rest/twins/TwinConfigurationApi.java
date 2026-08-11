@@ -648,7 +648,7 @@ public class TwinConfigurationApi extends BaseRestApi {
   @Produces({MediaType.APPLICATION_JSON})
   @Operation(
       summary = "Update known drone configuration",
-      description = "Replaces persisted drone metadata. The path name must match the body name. Runtime drone metadata registries are not reloaded.",
+      description = "Validates and replaces persisted drone metadata. The path name, body name and persisted UUID must identify the same drone. Runtime drone metadata registries are not reloaded.",
       requestBody = @RequestBody(
           description = "Drone metadata configuration to persist",
           required = true,
@@ -660,6 +660,7 @@ public class TwinConfigurationApi extends BaseRestApi {
           @ApiResponse(responseCode = "401", description = "Invalid credentials or unauthorized access", content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))),
           @ApiResponse(responseCode = "403", description = "User is not authorised to access the resource", content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))),
           @ApiResponse(responseCode = "404", description = "Drone configuration not found", content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))),
+          @ApiResponse(responseCode = "409", description = "Drone identity conflicts with another configuration", content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))),
           @ApiResponse(responseCode = "500", description = "Unable to save twin configuration", content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class)))
       }
   )
