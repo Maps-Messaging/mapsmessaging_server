@@ -29,7 +29,9 @@ import io.mapsmessaging.state.config.capability.Authorities;
 import io.mapsmessaging.state.config.capability.PlanTaskType;
 import io.mapsmessaging.state.config.capability.TaskCapability;
 import io.mapsmessaging.state.config.capability.TaskSpecialization;
+import io.mapsmessaging.state.config.geospatial.GeoSpatialAreaConfigDTO;
 import io.mapsmessaging.state.config.n2k.N2KTwinConfig;
+import io.mapsmessaging.state.mavlink.model.impl.uav.GenericPx4UavModel;
 import io.mapsmessaging.state.rest.twins.TwinConfigurationStore;
 import io.mapsmessaging.state.rest.twins.TwinCoreConfigDTO;
 import org.junit.jupiter.api.Test;
@@ -209,6 +211,60 @@ class TwinConfigurationStoreTest {
   }
 
   @Test
+  void catalogues_returnRegisteredModelsAndConfiguredGeospatialAreas() {
+    SavingTwinManagerConfig config = newConfig();
+    GeoSpatialAreaConfigDTO bravo = new GeoSpatialAreaConfigDTO();
+    bravo.setName("bravo");
+    GeoSpatialAreaConfigDTO alpha = new GeoSpatialAreaConfigDTO();
+    alpha.setName("alpha");
+    config.getGeospatial().setAreas(List.of(bravo, alpha));
+    TwinConfigurationStore store = new TwinConfigurationStore(config);
+
+    assertTrue(store.listDroneModelNames().contains(GenericPx4UavModel.MODEL_NAME));
+    assertEquals(List.of("alpha", "bravo"), store.listGeospatialAreaNames());
+  }
+
+  @Test
+  void drone_createUnknownModel_returnsBadRequest() {
+    TwinConfigurationStore store = new TwinConfigurationStore(newConfig());
+    DroneInfoDTO drone = drone("alpha");
+    drone.setModelName("unknown-model");
+
+    TwinConfigurationStore.TwinConfigurationException exception = assertThrows(TwinConfigurationStore.TwinConfigurationException.class, () -> store.createDrone(drone));
+
+    assertEquals(400, exception.getStatusCode());
+    assertTrue(store.listDrones().isEmpty());
+  }
+
+  @Test
+  void drone_createUnknownGeospatialArea_returnsBadRequest() {
+    TwinConfigurationStore store = new TwinConfigurationStore(newConfig());
+    DroneInfoDTO drone = drone("alpha");
+    drone.setGeospatialArea("missing-area");
+
+    TwinConfigurationStore.TwinConfigurationException exception = assertThrows(TwinConfigurationStore.TwinConfigurationException.class, () -> store.createDrone(drone));
+
+    assertEquals(400, exception.getStatusCode());
+    assertTrue(store.listDrones().isEmpty());
+  }
+
+  @Test
+  void drone_createConfiguredGeospatialArea_persistsDrone() throws IOException {
+    SavingTwinManagerConfig config = newConfig();
+    GeoSpatialAreaConfigDTO area = new GeoSpatialAreaConfigDTO();
+    area.setName("test-area");
+    config.getGeospatial().setAreas(List.of(area));
+    TwinConfigurationStore store = new TwinConfigurationStore(config);
+    DroneInfoDTO drone = drone("alpha");
+    drone.setGeospatialArea("test-area");
+
+    store.createDrone(drone);
+
+    assertSame(drone, store.getDrone("alpha").orElseThrow());
+    assertEquals(1, config.getSaveCount());
+  }
+
+  @Test
   void drone_createDuplicateUuid_returnsConflict() throws IOException {
     SavingTwinManagerConfig config = newConfig();
     TwinConfigurationStore store = new TwinConfigurationStore(config);
@@ -362,7 +418,7 @@ class TwinConfigurationStoreTest {
     DroneInfoDTO droneInfo = new DroneInfoDTO();
     droneInfo.setName(name);
     droneInfo.setUuid(UUID.randomUUID());
-    droneInfo.setModelName("generic-test-drone");
+    droneInfo.setModelName(GenericPx4UavModel.MODEL_NAME);
     return droneInfo;
   }
 
