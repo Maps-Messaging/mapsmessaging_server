@@ -183,6 +183,7 @@ class TwinConfigurationApiTest extends ApiTestBase {
         {
           "name": "%s",
           "uuid": "%s",
+          "modelName": "generic-test-drone",
           "description": {
             "model": "integration-test"
           }
