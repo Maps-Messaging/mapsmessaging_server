@@ -506,6 +506,54 @@ public class TwinConfigurationApi extends BaseRestApi {
   }
 
   @GET
+  @Path("/drone-models")
+  @Produces({MediaType.APPLICATION_JSON})
+  @Operation(
+      summary = "List available drone models",
+      description = "Returns the model names discovered from registered UxV model implementations.",
+      responses = {
+          @ApiResponse(responseCode = "200", description = "Drone model names returned", content = @Content(mediaType = "application/json", array = @ArraySchema(schema = @Schema(type = "string")))),
+          @ApiResponse(responseCode = "401", description = "Invalid credentials or unauthorized access", content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))),
+          @ApiResponse(responseCode = "403", description = "User is not authorised to access the resource", content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))),
+          @ApiResponse(responseCode = "500", description = "Server twin configuration error", content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class)))
+      }
+  )
+  public Response listDroneModels() {
+    try {
+      hasAccess(RESOURCE);
+      return ok(store().listDroneModelNames().toArray(new String[0]));
+    } catch (WebApplicationException ex) {
+      return mapAuthOrRethrow(ex);
+    } catch (Exception ex) {
+      return internalServerError("Server twin configuration error");
+    }
+  }
+
+  @GET
+  @Path("/geospatial-area-names")
+  @Produces({MediaType.APPLICATION_JSON})
+  @Operation(
+      summary = "List configured geospatial area names",
+      description = "Returns the names of geospatial areas currently configured for assignment to drones.",
+      responses = {
+          @ApiResponse(responseCode = "200", description = "Geospatial area names returned", content = @Content(mediaType = "application/json", array = @ArraySchema(schema = @Schema(type = "string")))),
+          @ApiResponse(responseCode = "401", description = "Invalid credentials or unauthorized access", content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))),
+          @ApiResponse(responseCode = "403", description = "User is not authorised to access the resource", content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))),
+          @ApiResponse(responseCode = "500", description = "Server twin configuration error", content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class)))
+      }
+  )
+  public Response listGeospatialAreaNames() {
+    try {
+      hasAccess(RESOURCE);
+      return ok(store().listGeospatialAreaNames().toArray(new String[0]));
+    } catch (WebApplicationException ex) {
+      return mapAuthOrRethrow(ex);
+    } catch (Exception ex) {
+      return internalServerError("Server twin configuration error");
+    }
+  }
+
+  @GET
   @Path("/drone-info")
   @Produces({MediaType.APPLICATION_JSON})
   @Operation(
