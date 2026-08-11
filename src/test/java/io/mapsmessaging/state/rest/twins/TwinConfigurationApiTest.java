@@ -283,6 +283,32 @@ class TwinConfigurationApiTest extends ApiTestBase {
   }
 
   @Test
+  void authorityBindings_rejectInvalidRequests() {
+    givenAuthenticated()
+        .contentType(ContentType.JSON)
+        .body("""
+            {
+              "addDrones": ["missing"],
+              "removeDrones": []
+            }
+            """)
+        .when()
+        .put(BASE_PATH + "/authorities/not-a-uuid")
+        .then()
+        .statusCode(400)
+        .contentType(ContentType.JSON)
+        .body("status", not(isEmptyOrNullString()));
+
+    givenAuthenticated()
+        .when()
+        .delete(BASE_PATH + "/authorities/not-a-uuid")
+        .then()
+        .statusCode(400)
+        .contentType(ContentType.JSON)
+        .body("status", not(isEmptyOrNullString()));
+  }
+
+  @Test
   void adapter_lifecycle_exposesHttpCrudAndValidation() {
     String name = uniqueName("adapter");
     String body = """
