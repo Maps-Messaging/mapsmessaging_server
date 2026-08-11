@@ -20,6 +20,7 @@
 package io.mapsmessaging.state.rest.twins;
 
 import io.mapsmessaging.rest.ApiTestBase;
+import io.mapsmessaging.state.mavlink.model.impl.uav.GenericPx4UavModel;
 import io.restassured.http.ContentType;
 import io.restassured.response.Response;
 import org.junit.jupiter.api.AfterAll;
@@ -84,6 +85,25 @@ class TwinConfigurationApiTest extends ApiTestBase {
         .body("heartbeatTimeoutMillis", greaterThan(0))
         .body("staleTimeoutMillis", greaterThan(0))
         .body("defaultRootPath", not(isEmptyOrNullString()));
+  }
+
+  @Test
+  void catalogues_returnAvailableModelsAndConfiguredAreaNames() {
+    givenAuthenticated()
+        .when()
+        .get(BASE_PATH + "/drone-models")
+        .then()
+        .statusCode(200)
+        .contentType(ContentType.JSON)
+        .body("$", hasItem(GenericPx4UavModel.MODEL_NAME));
+
+    givenAuthenticated()
+        .when()
+        .get(BASE_PATH + "/geospatial-area-names")
+        .then()
+        .statusCode(200)
+        .contentType(ContentType.JSON)
+        .body("$", notNullValue());
   }
 
   @Test
@@ -183,12 +203,12 @@ class TwinConfigurationApiTest extends ApiTestBase {
         {
           "name": "%s",
           "uuid": "%s",
-          "modelName": "generic-test-drone",
+          "modelName": "%s",
           "description": {
             "model": "integration-test"
           }
         }
-        """.formatted(name, UUID.randomUUID());
+        """.formatted(name, UUID.randomUUID(), GenericPx4UavModel.MODEL_NAME);
 
     try {
       givenAuthenticated()
