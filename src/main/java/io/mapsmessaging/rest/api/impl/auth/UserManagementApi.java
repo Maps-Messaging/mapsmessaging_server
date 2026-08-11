@@ -84,7 +84,13 @@ public class UserManagementApi extends BaseAuthRestApi {
           description = "Optional filter string",
           schema = @Schema(type = "string", example = "username = 'bill'")
       )
-      @QueryParam("filter") String filter) {
+      @QueryParam("filter") String filter,
+        @Parameter(
+            description = "Optional string that is used to match names",
+            schema = @Schema(type = "string", example = "admin")
+        )
+        @QueryParam("startsWith") String startsWith
+  ) {
 
     hasAccess(RESOURCE);
 
@@ -104,6 +110,7 @@ public class UserManagementApi extends BaseAuthRestApi {
     UserDTO[] result = users.stream()
         .map(userDetails -> buildUser(userDetails, authManager))
         .filter(userDto -> parserExecutor == null || parserExecutor.evaluate(userDto))
+        .filter(userDto -> startsWith == null || userDto.getUsername().startsWith(startsWith))
         .toList()
         .toArray(new UserDTO[0]);
 

@@ -79,7 +79,12 @@ public class GroupManagementApi extends BaseAuthRestApi {
           description = "Optional filter string",
           schema = @Schema(type = "string", example = "name = 'admin'")
       )
-      @QueryParam("filter") String filter
+      @QueryParam("filter") String filter,
+      @Parameter(
+          description = "Optional string that is used to match names",
+          schema = @Schema(type = "string", example = "admin")
+      )
+      @QueryParam("startsWith") String startsWith
   ) {
 
     hasAccess(RESOURCE);
@@ -93,8 +98,8 @@ public class GroupManagementApi extends BaseAuthRestApi {
           .type(MediaType.APPLICATION_JSON)
           .build();
     }
-
-    CacheKey key = new CacheKey(uriInfo.getPath(), (filter != null && !filter.isBlank()) ? Integer.toString(filter.hashCode()) : "");
+    String cacheKey = ( (filter != null && !filter.isBlank()) ? filter : "") + ((startsWith != null && !startsWith.isBlank()) ? startsWith : "");
+    CacheKey key = new CacheKey(uriInfo.getPath(), cacheKey);
     GroupDTO[] cachedResponse = getFromCache(key, GroupDTO[].class);
     if (cachedResponse != null) {
       return Response.ok(cachedResponse).type(MediaType.APPLICATION_JSON).build();
@@ -106,6 +111,7 @@ public class GroupManagementApi extends BaseAuthRestApi {
     GroupDTO[] results = groups.stream()
         .map(this::createGroupDto)
         .filter(groupDto -> parserExecutor == null || parserExecutor.evaluate(groupDto))
+        .filter(groupDto -> startsWith == null || groupDto.getName().startsWith(startsWith))
         .toList()
         .toArray(new GroupDTO[0]);
 
