@@ -181,7 +181,8 @@ class TwinConfigurationStoreTest {
     TwinConfigurationStore store = new TwinConfigurationStore(config);
     DroneInfoDTO created = drone("alpha");
     DroneInfoDTO updated = drone("alpha");
-    updated.setUuid(UUID.randomUUID());
+    updated.setUuid(created.getUuid());
+    updated.setBatteryCapacityHours(24.0d);
     MavlinkTwinConfigDTO mavlinkSource = mavlinkSource("primary", "/mavlink/#");
     MavlinkTwinConfigDTO backupMavlinkSource = mavlinkSource("backup", "/mavlink/backup/#");
     mavlinkSource.setKnownSources(List.of(mavlinkKnownSource("alpha"), mavlinkKnownSource("bravo")));
@@ -408,6 +409,101 @@ class TwinConfigurationStoreTest {
   }
 
   @Test
+  void drone_updateMissingDrone_returnsNotFoundWithoutSaving() {
+    SavingTwinManagerConfig config = newConfig();
+    TwinConfigurationStore store = new TwinConfigurationStore(config);
+
+    TwinConfigurationStore.TwinConfigurationException exception = assertThrows(TwinConfigurationStore.TwinConfigurationException.class, () -> store.updateDrone("alpha", drone("alpha")));
+
+    assertEquals(404, exception.getStatusCode());
+    assertEquals(0, config.getSaveCount());
+  }
+
+  @Test
+  void drone_updateChangingUuid_returnsConflictWithoutSaving() {
+    SavingTwinManagerConfig config = newConfig();
+    TwinConfigurationStore store = new TwinConfigurationStore(config);
+    DroneInfoDTO existing = drone("alpha");
+    config.getDroneInfo().add(existing);
+    DroneInfoDTO updated = drone("alpha");
+
+    TwinConfigurationStore.TwinConfigurationException exception = assertThrows(TwinConfigurationStore.TwinConfigurationException.class, () -> store.updateDrone("alpha", updated));
+
+    assertEquals(409, exception.getStatusCode());
+    assertSame(existing, store.getDrone("alpha").orElseThrow());
+    assertEquals(0, config.getSaveCount());
+  }
+
+  @Test
+  void drone_updateUuidConflictsWithAnotherDrone_returnsConflictWithoutSaving() {
+    SavingTwinManagerConfig config = newConfig();
+    TwinConfigurationStore store = new TwinConfigurationStore(config);
+    DroneInfoDTO existing = drone("alpha");
+    DroneInfoDTO conflicting = drone("bravo");
+    conflicting.setUuid(existing.getUuid());
+    config.getDroneInfo().addAll(List.of(existing, conflicting));
+    DroneInfoDTO updated = drone("alpha");
+    updated.setUuid(existing.getUuid());
+
+    TwinConfigurationStore.TwinConfigurationException exception = assertThrows(TwinConfigurationStore.TwinConfigurationException.class, () -> store.updateDrone("alpha", updated));
+
+    assertEquals(409, exception.getStatusCode());
+    assertSame(existing, store.getDrone("alpha").orElseThrow());
+    assertEquals(0, config.getSaveCount());
+  }
+
+  @Test
+  void drone_updateNameConflictsWithAnotherDrone_returnsConflictWithoutSaving() {
+    SavingTwinManagerConfig config = newConfig();
+    TwinConfigurationStore store = new TwinConfigurationStore(config);
+    DroneInfoDTO existing = drone("alpha");
+    DroneInfoDTO conflicting = drone("ALPHA");
+    config.getDroneInfo().addAll(List.of(existing, conflicting));
+    DroneInfoDTO updated = drone("alpha");
+    updated.setUuid(existing.getUuid());
+
+    TwinConfigurationStore.TwinConfigurationException exception = assertThrows(TwinConfigurationStore.TwinConfigurationException.class, () -> store.updateDrone("alpha", updated));
+
+    assertEquals(409, exception.getStatusCode());
+    assertSame(existing, store.getDrone("alpha").orElseThrow());
+    assertEquals(0, config.getSaveCount());
+  }
+
+  @Test
+  void drone_updateInvalidConfiguration_returnsBadRequestWithoutSaving() {
+    SavingTwinManagerConfig config = newConfig();
+    TwinConfigurationStore store = new TwinConfigurationStore(config);
+    DroneInfoDTO existing = drone("alpha");
+    config.getDroneInfo().add(existing);
+    DroneInfoDTO updated = drone("alpha");
+    updated.setUuid(existing.getUuid());
+    updated.setModelName("unknown-model");
+
+    TwinConfigurationStore.TwinConfigurationException exception = assertThrows(TwinConfigurationStore.TwinConfigurationException.class, () -> store.updateDrone("alpha", updated));
+
+    assertEquals(400, exception.getStatusCode());
+    assertSame(existing, store.getDrone("alpha").orElseThrow());
+    assertEquals(0, config.getSaveCount());
+  }
+
+  @Test
+  void drone_updateSaveFailure_restoresExistingConfiguration() {
+    SavingTwinManagerConfig config = newConfig();
+    TwinConfigurationStore store = new TwinConfigurationStore(config);
+    DroneInfoDTO existing = drone("alpha");
+    config.getDroneInfo().add(existing);
+    DroneInfoDTO updated = drone("alpha");
+    updated.setUuid(existing.getUuid());
+    updated.setBatteryCapacityHours(24.0d);
+    config.failNextSave();
+
+    assertThrows(IOException.class, () -> store.updateDrone("alpha", updated));
+
+    assertSame(existing, store.getDrone("alpha").orElseThrow());
+    assertEquals(1, config.getSaveCount());
+  }
+
+  @Test
   void drone_deleteMissing_returnsNotFound() {
     TwinConfigurationStore store = new TwinConfigurationStore(newConfig());
 
@@ -417,6 +513,94 @@ class TwinConfigurationStoreTest {
     );
 
     assertEquals(404, exception.getStatusCode());
+  }
+
+  @Test
+  void authority_updateBindings_addsAndRemovesAcrossEveryTaskAndSavesOnce() throws IOException {
+    SavingTwinManagerConfig config = newConfig();
+    TwinConfigurationStore store = new TwinConfigurationStore(config);
+    UUID authorityId = UUID.randomUUID();
+    TaskCapability alphaReposition = task(PlanTaskType.REPOSITION);
+    TaskCapability alphaNavigate = task(PlanTaskType.NAVIGATE);
+    TaskCapability bravoReposition = task(PlanTaskType.REPOSITION, authorityId);
+    TaskCapability bravoNavigate = task(PlanTaskType.NAVIGATE, authorityId);
+    config.getDroneInfo().addAll(List.of(droneWithTasks("alpha", alphaReposition, alphaNavigate), droneWithTasks("bravo", bravoReposition, bravoNavigate)));
+    AuthorityBindingsUpdateDTO update = new AuthorityBindingsUpdateDTO();
+    update.setAddDrones(List.of("alpha"));
+    update.setRemoveDrones(List.of("bravo"));
+
+    store.updateAuthorityBindings(authorityId.toString(), update);
+
+    assertEquals(authorityId, alphaReposition.getAuthorities()[0].getGuid());
+    assertEquals(authorityId, alphaNavigate.getAuthorities()[0].getGuid());
+    assertEquals(0, bravoReposition.getAuthorities().length);
+    assertEquals(0, bravoNavigate.getAuthorities().length);
+    assertEquals(1, config.getSaveCount());
+  }
+
+  @Test
+  void authority_updateBindings_rejectsInvalidOrUnknownTargetsWithoutSaving() {
+    SavingTwinManagerConfig config = newConfig();
+    TwinConfigurationStore store = new TwinConfigurationStore(config);
+    AuthorityBindingsUpdateDTO update = new AuthorityBindingsUpdateDTO();
+    update.setAddDrones(List.of("missing"));
+
+    TwinConfigurationStore.TwinConfigurationException invalidUuid = assertThrows(TwinConfigurationStore.TwinConfigurationException.class, () -> store.updateAuthorityBindings("not-a-uuid", update));
+    TwinConfigurationStore.TwinConfigurationException missingDrone = assertThrows(TwinConfigurationStore.TwinConfigurationException.class, () -> store.updateAuthorityBindings(UUID.randomUUID().toString(), update));
+
+    assertEquals(400, invalidUuid.getStatusCode());
+    assertEquals(404, missingDrone.getStatusCode());
+    assertEquals(0, config.getSaveCount());
+  }
+
+  @Test
+  void authority_updateBindings_saveFailureRestoresEveryTask() {
+    SavingTwinManagerConfig config = newConfig();
+    TwinConfigurationStore store = new TwinConfigurationStore(config);
+    UUID authorityId = UUID.randomUUID();
+    TaskCapability firstTask = task(PlanTaskType.REPOSITION);
+    TaskCapability secondTask = task(PlanTaskType.NAVIGATE);
+    Authorities[] firstAuthorities = firstTask.getAuthorities();
+    Authorities[] secondAuthorities = secondTask.getAuthorities();
+    config.getDroneInfo().add(droneWithTasks("alpha", firstTask, secondTask));
+    AuthorityBindingsUpdateDTO update = new AuthorityBindingsUpdateDTO();
+    update.setAddDrones(List.of("alpha"));
+    config.failNextSave();
+
+    assertThrows(IOException.class, () -> store.updateAuthorityBindings(authorityId.toString(), update));
+
+    assertSame(firstAuthorities, firstTask.getAuthorities());
+    assertSame(secondAuthorities, secondTask.getAuthorities());
+    assertEquals(1, config.getSaveCount());
+  }
+
+  @Test
+  void authority_delete_removesEveryBindingAndSavesOnce() throws IOException {
+    SavingTwinManagerConfig config = newConfig();
+    TwinConfigurationStore store = new TwinConfigurationStore(config);
+    UUID authorityId = UUID.randomUUID();
+    UUID retainedAuthorityId = UUID.randomUUID();
+    TaskCapability firstTask = task(PlanTaskType.REPOSITION, authorityId, retainedAuthorityId);
+    TaskCapability secondTask = task(PlanTaskType.NAVIGATE, authorityId);
+    config.getDroneInfo().add(droneWithTasks("alpha", firstTask, secondTask));
+
+    store.deleteAuthority(authorityId.toString());
+
+    assertEquals(1, firstTask.getAuthorities().length);
+    assertEquals(retainedAuthorityId, firstTask.getAuthorities()[0].getGuid());
+    assertEquals(0, secondTask.getAuthorities().length);
+    assertEquals(1, config.getSaveCount());
+  }
+
+  @Test
+  void authority_deleteUnknown_returnsNotFoundWithoutSaving() {
+    SavingTwinManagerConfig config = newConfig();
+    TwinConfigurationStore store = new TwinConfigurationStore(config);
+
+    TwinConfigurationStore.TwinConfigurationException exception = assertThrows(TwinConfigurationStore.TwinConfigurationException.class, () -> store.deleteAuthority(UUID.randomUUID().toString()));
+
+    assertEquals(404, exception.getStatusCode());
+    assertEquals(0, config.getSaveCount());
   }
 
   @Test
@@ -479,6 +663,20 @@ class TwinConfigurationStoreTest {
     droneInfo.setUuid(UUID.randomUUID());
     droneInfo.setModelName(GenericPx4UavModel.MODEL_NAME);
     return droneInfo;
+  }
+
+  private DroneInfoDTO droneWithTasks(String name, TaskCapability... tasks) {
+    DroneInfoDTO droneInfo = drone(name);
+    droneInfo.getCapabilities().setTasks(List.of(tasks));
+    return droneInfo;
+  }
+
+  private TaskCapability task(PlanTaskType taskType, UUID... authorityIds) {
+    Authorities[] authorities = new Authorities[authorityIds.length];
+    for (int index = 0; index < authorityIds.length; index++) {
+      authorities[index] = new Authorities(authorityIds[index]);
+    }
+    return new TaskCapability(taskType, TaskSpecialization.NONE, authorities);
   }
 
   private TakProtocolDTO takConfig(String hostname, int port) {

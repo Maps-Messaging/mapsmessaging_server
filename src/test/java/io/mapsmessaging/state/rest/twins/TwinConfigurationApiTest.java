@@ -199,6 +199,7 @@ class TwinConfigurationApiTest extends ApiTestBase {
   @Test
   void droneInfo_lifecycle_exposesHttpCrudAndValidation() {
     String name = uniqueName("drone");
+    UUID uuid = UUID.randomUUID();
     String body = """
         {
           "name": "%s",
@@ -208,7 +209,7 @@ class TwinConfigurationApiTest extends ApiTestBase {
             "model": "integration-test"
           }
         }
-        """.formatted(name, UUID.randomUUID(), GenericPx4UavModel.MODEL_NAME);
+        """.formatted(name, uuid, GenericPx4UavModel.MODEL_NAME);
 
     try {
       givenAuthenticated()
@@ -258,6 +259,16 @@ class TwinConfigurationApiTest extends ApiTestBase {
           .statusCode(400)
           .contentType(ContentType.JSON)
           .body("status", not(isEmptyOrNullString()));
+
+      givenAuthenticated()
+          .contentType(ContentType.JSON)
+          .body(body.replace(uuid.toString(), UUID.randomUUID().toString()))
+          .when()
+          .put(BASE_PATH + "/drone-info/" + name)
+          .then()
+          .statusCode(409)
+          .contentType(ContentType.JSON)
+          .body("status", not(isEmptyOrNullString()));
     } finally {
       deleteIfPresent("/drone-info/" + name);
     }
@@ -267,6 +278,32 @@ class TwinConfigurationApiTest extends ApiTestBase {
         .get(BASE_PATH + "/drone-info/" + name)
         .then()
         .statusCode(404)
+        .contentType(ContentType.JSON)
+        .body("status", not(isEmptyOrNullString()));
+  }
+
+  @Test
+  void authorityBindings_rejectInvalidRequests() {
+    givenAuthenticated()
+        .contentType(ContentType.JSON)
+        .body("""
+            {
+              "addDrones": ["missing"],
+              "removeDrones": []
+            }
+            """)
+        .when()
+        .put(BASE_PATH + "/authorities/not-a-uuid")
+        .then()
+        .statusCode(400)
+        .contentType(ContentType.JSON)
+        .body("status", not(isEmptyOrNullString()));
+
+    givenAuthenticated()
+        .when()
+        .delete(BASE_PATH + "/authorities/not-a-uuid")
+        .then()
+        .statusCode(400)
         .contentType(ContentType.JSON)
         .body("status", not(isEmptyOrNullString()));
   }

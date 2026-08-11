@@ -648,7 +648,7 @@ public class TwinConfigurationApi extends BaseRestApi {
   @Produces({MediaType.APPLICATION_JSON})
   @Operation(
       summary = "Update known drone configuration",
-      description = "Replaces persisted drone metadata. The path name must match the body name. Runtime drone metadata registries are not reloaded.",
+      description = "Validates and replaces persisted drone metadata. The path name, body name and persisted UUID must identify the same drone. Runtime drone metadata registries are not reloaded.",
       requestBody = @RequestBody(
           description = "Drone metadata configuration to persist",
           required = true,
@@ -660,6 +660,7 @@ public class TwinConfigurationApi extends BaseRestApi {
           @ApiResponse(responseCode = "401", description = "Invalid credentials or unauthorized access", content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))),
           @ApiResponse(responseCode = "403", description = "User is not authorised to access the resource", content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))),
           @ApiResponse(responseCode = "404", description = "Drone configuration not found", content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))),
+          @ApiResponse(responseCode = "409", description = "Drone identity conflicts with another configuration", content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))),
           @ApiResponse(responseCode = "500", description = "Unable to save twin configuration", content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class)))
       }
   )
@@ -701,6 +702,78 @@ public class TwinConfigurationApi extends BaseRestApi {
       store().deleteDrone(name);
       removeUriFromCache(URI_PATH + "/server/twin/config/drone-info");
       removeUriFromCache(URI_PATH + "/server/twin/config/mavlink");
+      return noContent();
+    } catch (TwinConfigurationStore.TwinConfigurationException ex) {
+      return status(ex);
+    } catch (WebApplicationException ex) {
+      return mapAuthOrRethrow(ex);
+    } catch (IOException ex) {
+      return internalServerError("Unable to save twin configuration");
+    } catch (Exception ex) {
+      return internalServerError("Server twin configuration error");
+    }
+  }
+
+  @PUT
+  @Path("/authorities/{uuid}")
+  @Consumes({MediaType.APPLICATION_JSON})
+  @Produces({MediaType.APPLICATION_JSON})
+  @Operation(
+      summary = "Update authority drone bindings",
+      description = "Adds or removes an authority UUID across every task capability of the requested drones and persists all changes in one configuration save.",
+      requestBody = @RequestBody(
+          description = "Drone binding changes for the authority UUID",
+          required = true,
+          content = @Content(mediaType = "application/json", schema = @Schema(implementation = AuthorityBindingsUpdateDTO.class))
+      ),
+      responses = {
+          @ApiResponse(responseCode = "204", description = "Authority bindings updated"),
+          @ApiResponse(responseCode = "400", description = "Invalid authority binding update", content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))),
+          @ApiResponse(responseCode = "401", description = "Invalid credentials or unauthorized access", content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))),
+          @ApiResponse(responseCode = "403", description = "User is not authorised to access the resource", content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))),
+          @ApiResponse(responseCode = "404", description = "Drone configuration not found", content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))),
+          @ApiResponse(responseCode = "500", description = "Unable to save twin configuration", content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class)))
+      }
+  )
+  public Response updateAuthorityBindings(@PathParam("uuid") String uuid, AuthorityBindingsUpdateDTO update) {
+    try {
+      hasAccess(RESOURCE);
+      store().updateAuthorityBindings(uuid, update);
+      removeUriFromCache(URI_PATH + "/server/twin/config");
+      removeUriFromCache(URI_PATH + "/server/twin/config/drone-info");
+      return noContent();
+    } catch (TwinConfigurationStore.TwinConfigurationException ex) {
+      return status(ex);
+    } catch (WebApplicationException ex) {
+      return mapAuthOrRethrow(ex);
+    } catch (IOException ex) {
+      return internalServerError("Unable to save twin configuration");
+    } catch (Exception ex) {
+      return internalServerError("Server twin configuration error");
+    }
+  }
+
+  @DELETE
+  @Path("/authorities/{uuid}")
+  @Produces({MediaType.APPLICATION_JSON})
+  @Operation(
+      summary = "Delete authority bindings",
+      description = "Removes an authority UUID from every configured drone task capability and persists all changes in one configuration save.",
+      responses = {
+          @ApiResponse(responseCode = "204", description = "Authority bindings deleted"),
+          @ApiResponse(responseCode = "400", description = "Invalid authority UUID", content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))),
+          @ApiResponse(responseCode = "401", description = "Invalid credentials or unauthorized access", content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))),
+          @ApiResponse(responseCode = "403", description = "User is not authorised to access the resource", content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))),
+          @ApiResponse(responseCode = "404", description = "Authority UUID not found", content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))),
+          @ApiResponse(responseCode = "500", description = "Unable to save twin configuration", content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class)))
+      }
+  )
+  public Response deleteAuthority(@PathParam("uuid") String uuid) {
+    try {
+      hasAccess(RESOURCE);
+      store().deleteAuthority(uuid);
+      removeUriFromCache(URI_PATH + "/server/twin/config");
+      removeUriFromCache(URI_PATH + "/server/twin/config/drone-info");
       return noContent();
     } catch (TwinConfigurationStore.TwinConfigurationException ex) {
       return status(ex);

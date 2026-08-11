@@ -37,9 +37,11 @@ import io.mapsmessaging.state.mavlink.model.ModelManager;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.IdentityHashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
@@ -203,7 +205,7 @@ class TwinConfigurationStore {
   }
 
   void createDrone(DroneInfoDTO droneInfo) throws IOException {
-    validateNewDrone(droneInfo);
+    validateDroneConfiguration(droneInfo);
 
     synchronized (config) {
       List<DroneInfoDTO> droneInfos = config.getDroneInfo();
@@ -225,21 +227,50 @@ class TwinConfigurationStore {
   }
 
   void updateDrone(String name, DroneInfoDTO droneInfo) throws IOException {
-    validateName(name, "name");
-    validateDrone(droneInfo);
-    if (!name.equals(droneInfo.getName())) {
+    String droneName = validateDroneName(name);
+    validateDroneConfiguration(droneInfo);
+    if (!droneName.equals(droneInfo.getName())) {
       throw new TwinConfigurationException("Drone configuration name cannot be changed", 400);
     }
 
-    List<DroneInfoDTO> droneInfos = config.getDroneInfo();
-    for (int index = 0; index < droneInfos.size(); index++) {
-      if (name.equals(droneInfos.get(index).getName())) {
-        droneInfos.set(index, droneInfo);
+    synchronized (config) {
+      List<DroneInfoDTO> droneInfos = config.getDroneInfo();
+      int droneIndex = -1;
+      for (int index = 0; index < droneInfos.size(); index++) {
+        if (droneName.equals(droneInfos.get(index).getName())) {
+          droneIndex = index;
+          break;
+        }
+      }
+      if (droneIndex < 0) {
+        throw new TwinConfigurationException("Unknown drone configuration: " + droneName, 404);
+      }
+
+      DroneInfoDTO existingDrone = droneInfos.get(droneIndex);
+      if (!Objects.equals(existingDrone.getUuid(), droneInfo.getUuid())) {
+        throw new TwinConfigurationException("Drone UUID cannot be changed: " + droneName, 409);
+      }
+      for (int index = 0; index < droneInfos.size(); index++) {
+        if (index == droneIndex) {
+          continue;
+        }
+        DroneInfoDTO otherDrone = droneInfos.get(index);
+        if (droneInfo.getName().equalsIgnoreCase(otherDrone.getName())) {
+          throw new TwinConfigurationException("Drone configuration name is already in use: " + droneInfo.getName(), 409);
+        }
+        if (droneInfo.getUuid().equals(otherDrone.getUuid())) {
+          throw new TwinConfigurationException("Drone UUID is already configured: " + droneInfo.getUuid(), 409);
+        }
+      }
+
+      droneInfos.set(droneIndex, droneInfo);
+      try {
         config.save();
-        return;
+      } catch (IOException | RuntimeException exception) {
+        droneInfos.set(droneIndex, existingDrone);
+        throw exception;
       }
     }
-    throw new TwinConfigurationException("Unknown drone configuration: " + name, 404);
   }
 
   void deleteDrone(String name) throws IOException {
@@ -278,6 +309,85 @@ class TwinConfigurationStore {
         for (int index = 0; index < mavlinkSources.size(); index++) {
           mavlinkSources.get(index).setKnownSources(originalKnownSources.get(index));
         }
+        throw exception;
+      }
+    }
+  }
+
+  void updateAuthorityBindings(String uuid, AuthorityBindingsUpdateDTO update) throws IOException {
+    UUID authorityId = validateAuthorityUuid(uuid);
+    if (update == null) {
+      throw new TwinConfigurationException("Authority binding update is required", 400);
+    }
+
+    Set<String> addDrones = validateDroneNames(update.getAddDrones(), "addDrones");
+    Set<String> removeDrones = validateDroneNames(update.getRemoveDrones(), "removeDrones");
+    if (addDrones.isEmpty() && removeDrones.isEmpty()) {
+      throw new TwinConfigurationException("At least one drone binding change is required", 400);
+    }
+    Set<String> overlappingDrones = new HashSet<>(addDrones);
+    overlappingDrones.retainAll(removeDrones);
+    if (!overlappingDrones.isEmpty()) {
+      throw new TwinConfigurationException("A drone cannot be added and removed in the same authority update: " + overlappingDrones.iterator().next(), 400);
+    }
+
+    synchronized (config) {
+      Map<String, DroneInfoDTO> dronesByName = new LinkedHashMap<>();
+      for (DroneInfoDTO droneInfo : config.getDroneInfo()) {
+        dronesByName.put(droneInfo.getName(), droneInfo);
+      }
+      Set<String> requestedDrones = new HashSet<>(addDrones);
+      requestedDrones.addAll(removeDrones);
+      for (String droneName : requestedDrones) {
+        if (!dronesByName.containsKey(droneName)) {
+          throw new TwinConfigurationException("Unknown drone configuration: " + droneName, 404);
+        }
+      }
+      for (String droneName : addDrones) {
+        DroneInfoDTO droneInfo = dronesByName.get(droneName);
+        if (droneInfo.getCapabilities() == null || droneInfo.getCapabilities().getTasks() == null || droneInfo.getCapabilities().getTasks().isEmpty()) {
+          throw new TwinConfigurationException("Drone has no task capabilities to bind: " + droneName, 400);
+        }
+      }
+
+      Map<TaskCapability, Authorities[]> originalAuthorities = new IdentityHashMap<>();
+      boolean changed = false;
+      for (String droneName : addDrones) {
+        changed |= setAuthorityBinding(dronesByName.get(droneName), authorityId, true, originalAuthorities);
+      }
+      for (String droneName : removeDrones) {
+        changed |= setAuthorityBinding(dronesByName.get(droneName), authorityId, false, originalAuthorities);
+      }
+      if (!changed) {
+        return;
+      }
+
+      try {
+        config.save();
+      } catch (IOException | RuntimeException exception) {
+        originalAuthorities.forEach(TaskCapability::setAuthorities);
+        throw exception;
+      }
+    }
+  }
+
+  void deleteAuthority(String uuid) throws IOException {
+    UUID authorityId = validateAuthorityUuid(uuid);
+
+    synchronized (config) {
+      Map<TaskCapability, Authorities[]> originalAuthorities = new IdentityHashMap<>();
+      boolean changed = false;
+      for (DroneInfoDTO droneInfo : config.getDroneInfo()) {
+        changed |= setAuthorityBinding(droneInfo, authorityId, false, originalAuthorities);
+      }
+      if (!changed) {
+        throw new TwinConfigurationException("Unknown authority UUID: " + authorityId, 404);
+      }
+
+      try {
+        config.save();
+      } catch (IOException | RuntimeException exception) {
+        originalAuthorities.forEach(TaskCapability::setAuthorities);
         throw exception;
       }
     }
@@ -401,7 +511,7 @@ class TwinConfigurationStore {
     }
   }
 
-  private void validateNewDrone(DroneInfoDTO droneInfo) {
+  private void validateDroneConfiguration(DroneInfoDTO droneInfo) {
     validateDrone(droneInfo);
 
     droneInfo.setName(validateDroneName(droneInfo.getName()));
@@ -500,6 +610,71 @@ class TwinConfigurationStore {
       throw new TwinConfigurationException("name must contain only letters, numbers, '.', '_' or '-' and must not exceed 128 characters", 400);
     }
     return droneName;
+  }
+
+  private UUID validateAuthorityUuid(String uuid) {
+    if (uuid == null || uuid.isBlank()) {
+      throw new TwinConfigurationException("Authority UUID is required", 400);
+    }
+    try {
+      String value = uuid.trim();
+      UUID authorityId = UUID.fromString(value);
+      if (!authorityId.toString().equalsIgnoreCase(value)) {
+        throw new IllegalArgumentException("Non-canonical UUID");
+      }
+      return authorityId;
+    } catch (IllegalArgumentException exception) {
+      throw new TwinConfigurationException("Invalid authority UUID: " + uuid, 400);
+    }
+  }
+
+  private Set<String> validateDroneNames(List<String> droneNames, String fieldName) {
+    if (droneNames == null) {
+      throw new TwinConfigurationException(fieldName + " is required", 400);
+    }
+    Set<String> names = new HashSet<>();
+    for (String droneName : droneNames) {
+      String validatedName = validateDroneName(droneName);
+      if (!names.add(validatedName)) {
+        throw new TwinConfigurationException(fieldName + " contains the same drone more than once: " + validatedName, 400);
+      }
+    }
+    return names;
+  }
+
+  private boolean setAuthorityBinding(DroneInfoDTO droneInfo, UUID authorityId, boolean enabled, Map<TaskCapability, Authorities[]> originalAuthorities) {
+    if (droneInfo.getCapabilities() == null || droneInfo.getCapabilities().getTasks() == null) {
+      return false;
+    }
+
+    boolean changed = false;
+    for (TaskCapability task : droneInfo.getCapabilities().getTasks()) {
+      if (task == null) {
+        continue;
+      }
+      Authorities[] authorities = task.getAuthorities();
+      List<Authorities> updatedAuthorities = new ArrayList<>();
+      int matchingAuthorities = 0;
+      if (authorities != null) {
+        for (Authorities authority : authorities) {
+          if (authority != null && authorityId.equals(authority.getGuid())) {
+            matchingAuthorities++;
+          } else {
+            updatedAuthorities.add(authority);
+          }
+        }
+      }
+      if (enabled) {
+        updatedAuthorities.add(new Authorities(authorityId));
+      }
+      if ((!enabled && matchingAuthorities == 0) || (enabled && matchingAuthorities == 1)) {
+        continue;
+      }
+      originalAuthorities.put(task, authorities);
+      task.setAuthorities(updatedAuthorities.toArray(new Authorities[0]));
+      changed = true;
+    }
+    return changed;
   }
 
   static class TwinConfigurationException extends RuntimeException {
