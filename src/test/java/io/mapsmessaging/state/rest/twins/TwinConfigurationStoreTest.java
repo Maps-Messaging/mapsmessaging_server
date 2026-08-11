@@ -25,6 +25,10 @@ import io.mapsmessaging.state.config.DroneInfoDTO;
 import io.mapsmessaging.state.config.MavlinkTwinConfigDTO;
 import io.mapsmessaging.state.config.TwinManagerConfig;
 import io.mapsmessaging.state.config.TwinPublishConfigDTO;
+import io.mapsmessaging.state.config.capability.Authorities;
+import io.mapsmessaging.state.config.capability.PlanTaskType;
+import io.mapsmessaging.state.config.capability.TaskCapability;
+import io.mapsmessaging.state.config.capability.TaskSpecialization;
 import io.mapsmessaging.state.config.n2k.N2KTwinConfig;
 import io.mapsmessaging.state.rest.twins.TwinConfigurationStore;
 import io.mapsmessaging.state.rest.twins.TwinCoreConfigDTO;
@@ -32,6 +36,7 @@ import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -188,6 +193,100 @@ class TwinConfigurationStoreTest {
   }
 
   @Test
+  void drone_createDuplicateNameIgnoringCase_returnsConflict() throws IOException {
+    SavingTwinManagerConfig config = newConfig();
+    TwinConfigurationStore store = new TwinConfigurationStore(config);
+
+    store.createDrone(drone("alpha"));
+    TwinConfigurationStore.TwinConfigurationException exception = assertThrows(
+        TwinConfigurationStore.TwinConfigurationException.class,
+        () -> store.createDrone(drone("ALPHA"))
+    );
+
+    assertEquals(409, exception.getStatusCode());
+    assertEquals(1, store.listDrones().size());
+    assertEquals(1, config.getSaveCount());
+  }
+
+  @Test
+  void drone_createDuplicateUuid_returnsConflict() throws IOException {
+    SavingTwinManagerConfig config = newConfig();
+    TwinConfigurationStore store = new TwinConfigurationStore(config);
+    DroneInfoDTO first = drone("alpha");
+    DroneInfoDTO duplicate = drone("bravo");
+    duplicate.setUuid(first.getUuid());
+
+    store.createDrone(first);
+    TwinConfigurationStore.TwinConfigurationException exception = assertThrows(
+        TwinConfigurationStore.TwinConfigurationException.class,
+        () -> store.createDrone(duplicate)
+    );
+
+    assertEquals(409, exception.getStatusCode());
+    assertEquals(1, store.listDrones().size());
+    assertEquals(1, config.getSaveCount());
+  }
+
+  @Test
+  void drone_createIncompleteConfiguration_returnsBadRequest() {
+    TwinConfigurationStore store = new TwinConfigurationStore(newConfig());
+    DroneInfoDTO incomplete = drone("alpha");
+    incomplete.setModelName(" ");
+
+    TwinConfigurationStore.TwinConfigurationException exception = assertThrows(
+        TwinConfigurationStore.TwinConfigurationException.class,
+        () -> store.createDrone(incomplete)
+    );
+
+    assertEquals(400, exception.getStatusCode());
+    assertTrue(store.listDrones().isEmpty());
+  }
+
+  @Test
+  void drone_createDuplicateTaskType_returnsBadRequest() {
+    TwinConfigurationStore store = new TwinConfigurationStore(newConfig());
+    DroneInfoDTO drone = drone("alpha");
+    TaskCapability first = new TaskCapability(PlanTaskType.REPOSITION, TaskSpecialization.NONE, new Authorities[0]);
+    TaskCapability duplicate = new TaskCapability(PlanTaskType.REPOSITION, TaskSpecialization.NONE, new Authorities[0]);
+    drone.getCapabilities().setTasks(List.of(first, duplicate));
+
+    TwinConfigurationStore.TwinConfigurationException exception = assertThrows(
+        TwinConfigurationStore.TwinConfigurationException.class,
+        () -> store.createDrone(drone)
+    );
+
+    assertEquals(400, exception.getStatusCode());
+    assertTrue(store.listDrones().isEmpty());
+  }
+
+  @Test
+  void drone_createInvalidNumericConfiguration_returnsBadRequest() {
+    TwinConfigurationStore store = new TwinConfigurationStore(newConfig());
+    DroneInfoDTO drone = drone("alpha");
+    drone.setRangeMeters(0.0d);
+
+    TwinConfigurationStore.TwinConfigurationException exception = assertThrows(
+        TwinConfigurationStore.TwinConfigurationException.class,
+        () -> store.createDrone(drone)
+    );
+
+    assertEquals(400, exception.getStatusCode());
+    assertTrue(store.listDrones().isEmpty());
+  }
+
+  @Test
+  void drone_createSaveFailure_restoresConfiguration() {
+    SavingTwinManagerConfig config = newConfig();
+    TwinConfigurationStore store = new TwinConfigurationStore(config);
+    config.failNextSave();
+
+    assertThrows(IOException.class, () -> store.createDrone(drone("alpha")));
+
+    assertTrue(store.listDrones().isEmpty());
+    assertEquals(1, config.getSaveCount());
+  }
+
+  @Test
   void drone_updateChangingName_returnsBadRequest() {
     TwinConfigurationStore store = new TwinConfigurationStore(newConfig());
 
@@ -263,6 +362,7 @@ class TwinConfigurationStoreTest {
     DroneInfoDTO droneInfo = new DroneInfoDTO();
     droneInfo.setName(name);
     droneInfo.setUuid(UUID.randomUUID());
+    droneInfo.setModelName("generic-test-drone");
     return droneInfo;
   }
 
@@ -291,10 +391,19 @@ class TwinConfigurationStoreTest {
   private static class SavingTwinManagerConfig extends TwinManagerConfig {
 
     private int saveCount;
+    private boolean failNextSave;
 
     @Override
-    public void save() {
+    public void save() throws IOException {
       saveCount++;
+      if (failNextSave) {
+        failNextSave = false;
+        throw new IOException("Expected test save failure");
+      }
+    }
+
+    void failNextSave() {
+      failNextSave = true;
     }
 
     int getSaveCount() {
