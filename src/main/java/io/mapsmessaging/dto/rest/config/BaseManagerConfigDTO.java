@@ -5,6 +5,7 @@ import io.mapsmessaging.dto.rest.auth.SecurityManagerDTO;
 import io.mapsmessaging.dto.rest.config.ml.MLModelManagerDTO;
 import io.mapsmessaging.dto.rest.schema.SchemaManagerConfigDTO;
 import io.mapsmessaging.state.config.TwinManagerConfigDTO;
+import io.swagger.v3.oas.annotations.media.DiscriminatorMapping;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 @Schema(
@@ -31,13 +32,33 @@ import io.swagger.v3.oas.annotations.media.Schema;
         DeviceManagerConfigDTO.class,
         TwinManagerConfigDTO.class
     }
+    ,
+    discriminatorMapping = {
+        @DiscriminatorMapping(value = "AggregatorManagerConfigDTO", schema = AggregatorManagerConfigDTO.class),
+        @DiscriminatorMapping(value = "NetworkConnectionManagerConfigDTO", schema = NetworkConnectionManagerConfigDTO.class),
+        @DiscriminatorMapping(value = "RestApiManagerConfigDTO", schema = RestApiManagerConfigDTO.class),
+        @DiscriminatorMapping(value = "RoutingManagerConfigDTO", schema = RoutingManagerConfigDTO.class),
+        @DiscriminatorMapping(value = "DiscoveryManagerConfigDTO", schema = DiscoveryManagerConfigDTO.class),
+        @DiscriminatorMapping(value = "MLModelManagerDTO", schema = MLModelManagerDTO.class),
+        @DiscriminatorMapping(value = "SchemaManagerConfigDTO", schema = SchemaManagerConfigDTO.class),
+        @DiscriminatorMapping(value = "AuthManagerConfigDTO", schema = AuthManagerConfigDTO.class),
+        @DiscriminatorMapping(value = "LoRaDeviceManagerConfigDTO", schema = LoRaDeviceManagerConfigDTO.class),
+        @DiscriminatorMapping(value = "JolokiaConfigDTO", schema = JolokiaConfigDTO.class),
+        @DiscriminatorMapping(value = "TenantManagementConfigDTO", schema = TenantManagementConfigDTO.class),
+        @DiscriminatorMapping(value = "MessageDaemonConfigDTO", schema = MessageDaemonConfigDTO.class),
+        @DiscriminatorMapping(value = "DestinationManagerConfigDTO", schema = DestinationManagerConfigDTO.class),
+        @DiscriminatorMapping(value = "LicenseManagerConfigDTO", schema = LicenseManagerConfigDTO.class),
+        @DiscriminatorMapping(value = "SecurityManagerDTO", schema = SecurityManagerDTO.class),
+        @DiscriminatorMapping(value = "NetworkManagerConfigDTO", schema = NetworkManagerConfigDTO.class),
+        @DiscriminatorMapping(value = "DeviceManagerConfigDTO", schema = DeviceManagerConfigDTO.class),
+        @DiscriminatorMapping(value = "TwinManagerConfigDTO", schema = TwinManagerConfigDTO.class)
+    }
 )
 public abstract class BaseManagerConfigDTO extends BaseConfigDTO {
 
   @Schema(
       description = "Discriminator for the concrete configuration manager DTO.",
       requiredMode = Schema.RequiredMode.REQUIRED,
-      accessMode = Schema.AccessMode.READ_ONLY,
       example = "AuthManagerConfig"
   )
   private String type;
