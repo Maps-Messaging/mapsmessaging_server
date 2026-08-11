@@ -516,6 +516,94 @@ class TwinConfigurationStoreTest {
   }
 
   @Test
+  void authority_updateBindings_addsAndRemovesAcrossEveryTaskAndSavesOnce() throws IOException {
+    SavingTwinManagerConfig config = newConfig();
+    TwinConfigurationStore store = new TwinConfigurationStore(config);
+    UUID authorityId = UUID.randomUUID();
+    TaskCapability alphaReposition = task(PlanTaskType.REPOSITION);
+    TaskCapability alphaNavigate = task(PlanTaskType.NAVIGATE);
+    TaskCapability bravoReposition = task(PlanTaskType.REPOSITION, authorityId);
+    TaskCapability bravoNavigate = task(PlanTaskType.NAVIGATE, authorityId);
+    config.getDroneInfo().addAll(List.of(droneWithTasks("alpha", alphaReposition, alphaNavigate), droneWithTasks("bravo", bravoReposition, bravoNavigate)));
+    AuthorityBindingsUpdateDTO update = new AuthorityBindingsUpdateDTO();
+    update.setAddDrones(List.of("alpha"));
+    update.setRemoveDrones(List.of("bravo"));
+
+    store.updateAuthorityBindings(authorityId.toString(), update);
+
+    assertEquals(authorityId, alphaReposition.getAuthorities()[0].getGuid());
+    assertEquals(authorityId, alphaNavigate.getAuthorities()[0].getGuid());
+    assertEquals(0, bravoReposition.getAuthorities().length);
+    assertEquals(0, bravoNavigate.getAuthorities().length);
+    assertEquals(1, config.getSaveCount());
+  }
+
+  @Test
+  void authority_updateBindings_rejectsInvalidOrUnknownTargetsWithoutSaving() {
+    SavingTwinManagerConfig config = newConfig();
+    TwinConfigurationStore store = new TwinConfigurationStore(config);
+    AuthorityBindingsUpdateDTO update = new AuthorityBindingsUpdateDTO();
+    update.setAddDrones(List.of("missing"));
+
+    TwinConfigurationStore.TwinConfigurationException invalidUuid = assertThrows(TwinConfigurationStore.TwinConfigurationException.class, () -> store.updateAuthorityBindings("not-a-uuid", update));
+    TwinConfigurationStore.TwinConfigurationException missingDrone = assertThrows(TwinConfigurationStore.TwinConfigurationException.class, () -> store.updateAuthorityBindings(UUID.randomUUID().toString(), update));
+
+    assertEquals(400, invalidUuid.getStatusCode());
+    assertEquals(404, missingDrone.getStatusCode());
+    assertEquals(0, config.getSaveCount());
+  }
+
+  @Test
+  void authority_updateBindings_saveFailureRestoresEveryTask() {
+    SavingTwinManagerConfig config = newConfig();
+    TwinConfigurationStore store = new TwinConfigurationStore(config);
+    UUID authorityId = UUID.randomUUID();
+    TaskCapability firstTask = task(PlanTaskType.REPOSITION);
+    TaskCapability secondTask = task(PlanTaskType.NAVIGATE);
+    Authorities[] firstAuthorities = firstTask.getAuthorities();
+    Authorities[] secondAuthorities = secondTask.getAuthorities();
+    config.getDroneInfo().add(droneWithTasks("alpha", firstTask, secondTask));
+    AuthorityBindingsUpdateDTO update = new AuthorityBindingsUpdateDTO();
+    update.setAddDrones(List.of("alpha"));
+    config.failNextSave();
+
+    assertThrows(IOException.class, () -> store.updateAuthorityBindings(authorityId.toString(), update));
+
+    assertSame(firstAuthorities, firstTask.getAuthorities());
+    assertSame(secondAuthorities, secondTask.getAuthorities());
+    assertEquals(1, config.getSaveCount());
+  }
+
+  @Test
+  void authority_delete_removesEveryBindingAndSavesOnce() throws IOException {
+    SavingTwinManagerConfig config = newConfig();
+    TwinConfigurationStore store = new TwinConfigurationStore(config);
+    UUID authorityId = UUID.randomUUID();
+    UUID retainedAuthorityId = UUID.randomUUID();
+    TaskCapability firstTask = task(PlanTaskType.REPOSITION, authorityId, retainedAuthorityId);
+    TaskCapability secondTask = task(PlanTaskType.NAVIGATE, authorityId);
+    config.getDroneInfo().add(droneWithTasks("alpha", firstTask, secondTask));
+
+    store.deleteAuthority(authorityId.toString());
+
+    assertEquals(1, firstTask.getAuthorities().length);
+    assertEquals(retainedAuthorityId, firstTask.getAuthorities()[0].getGuid());
+    assertEquals(0, secondTask.getAuthorities().length);
+    assertEquals(1, config.getSaveCount());
+  }
+
+  @Test
+  void authority_deleteUnknown_returnsNotFoundWithoutSaving() {
+    SavingTwinManagerConfig config = newConfig();
+    TwinConfigurationStore store = new TwinConfigurationStore(config);
+
+    TwinConfigurationStore.TwinConfigurationException exception = assertThrows(TwinConfigurationStore.TwinConfigurationException.class, () -> store.deleteAuthority(UUID.randomUUID().toString()));
+
+    assertEquals(404, exception.getStatusCode());
+    assertEquals(0, config.getSaveCount());
+  }
+
+  @Test
   void adapter_createUpdateDelete_persistsEachMutation() throws IOException {
     SavingTwinManagerConfig config = newConfig();
     TwinConfigurationStore store = new TwinConfigurationStore(config);
@@ -575,6 +663,20 @@ class TwinConfigurationStoreTest {
     droneInfo.setUuid(UUID.randomUUID());
     droneInfo.setModelName(GenericPx4UavModel.MODEL_NAME);
     return droneInfo;
+  }
+
+  private DroneInfoDTO droneWithTasks(String name, TaskCapability... tasks) {
+    DroneInfoDTO droneInfo = drone(name);
+    droneInfo.getCapabilities().setTasks(List.of(tasks));
+    return droneInfo;
+  }
+
+  private TaskCapability task(PlanTaskType taskType, UUID... authorityIds) {
+    Authorities[] authorities = new Authorities[authorityIds.length];
+    for (int index = 0; index < authorityIds.length; index++) {
+      authorities[index] = new Authorities(authorityIds[index]);
+    }
+    return new TaskCapability(taskType, TaskSpecialization.NONE, authorities);
   }
 
   private TakProtocolDTO takConfig(String hostname, int port) {
