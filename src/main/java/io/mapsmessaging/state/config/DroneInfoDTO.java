@@ -21,13 +21,13 @@ import lombok.Setter;
 @Setter
 public class DroneInfoDTO {
 
-  @Schema(description = "Unique drone id")
+  @Schema(description = "Unique drone id", requiredMode = Schema.RequiredMode.REQUIRED)
   private String name;
 
-  @Schema(description = "UUID of drone")
+  @Schema(description = "UUID of drone", requiredMode = Schema.RequiredMode.REQUIRED)
   private UUID uuid;
 
-  @Schema(description = "Configured UxV model name used to resolve the command model implementation.")
+  @Schema(description = "Configured UxV model name used to resolve the command model implementation.", requiredMode = Schema.RequiredMode.REQUIRED)
   private String modelName;
 
   @Schema(description = "Named geospatial operating area assigned to this drone.")
