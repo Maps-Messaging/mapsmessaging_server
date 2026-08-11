@@ -29,7 +29,9 @@ import io.mapsmessaging.state.config.capability.Authorities;
 import io.mapsmessaging.state.config.capability.PlanTaskType;
 import io.mapsmessaging.state.config.capability.TaskCapabilities;
 import io.mapsmessaging.state.config.capability.TaskCapability;
+import io.mapsmessaging.state.config.geospatial.GeoSpatialAreaConfigDTO;
 import io.mapsmessaging.state.config.n2k.N2KTwinConfig;
+import io.mapsmessaging.state.mavlink.model.ModelManager;
 
 import java.io.IOException;
 import java.util.HashSet;
@@ -179,6 +181,17 @@ class TwinConfigurationStore {
 
   List<DroneInfoDTO> listDrones() {
     return config.getDroneInfo();
+  }
+
+  List<String> listDroneModelNames() {
+    return ModelManager.getInstance().getModelNames().stream().sorted().toList();
+  }
+
+  List<String> listGeospatialAreaNames() {
+    if (config.getGeospatial() == null || config.getGeospatial().getAreas() == null) {
+      return List.of();
+    }
+    return config.getGeospatial().getAreas().stream().map(GeoSpatialAreaConfigDTO::getName).filter(name -> name != null && !name.isBlank()).map(String::trim).distinct().sorted().toList();
   }
 
   Optional<DroneInfoDTO> getDrone(String name) {
@@ -365,6 +378,17 @@ class TwinConfigurationStore {
       throw new TwinConfigurationException("modelName is required", 400);
     }
     droneInfo.setModelName(droneInfo.getModelName().trim());
+    if (ModelManager.getInstance().getModel(droneInfo.getModelName()).isEmpty()) {
+      throw new TwinConfigurationException("Unknown drone model: " + droneInfo.getModelName(), 400);
+    }
+
+    if (droneInfo.getGeospatialArea() != null) {
+      String geospatialArea = droneInfo.getGeospatialArea().trim();
+      droneInfo.setGeospatialArea(geospatialArea.isEmpty() ? null : geospatialArea);
+      if (!geospatialArea.isEmpty() && !listGeospatialAreaNames().contains(geospatialArea)) {
+        throw new TwinConfigurationException("Unknown geospatial area: " + geospatialArea, 400);
+      }
+    }
 
     if (droneInfo.getMessageEncoding() == null) {
       throw new TwinConfigurationException("messageEncoding is required", 400);
