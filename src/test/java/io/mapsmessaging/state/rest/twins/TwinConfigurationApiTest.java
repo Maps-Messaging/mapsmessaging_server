@@ -199,6 +199,7 @@ class TwinConfigurationApiTest extends ApiTestBase {
   @Test
   void droneInfo_lifecycle_exposesHttpCrudAndValidation() {
     String name = uniqueName("drone");
+    UUID uuid = UUID.randomUUID();
     String body = """
         {
           "name": "%s",
@@ -208,7 +209,7 @@ class TwinConfigurationApiTest extends ApiTestBase {
             "model": "integration-test"
           }
         }
-        """.formatted(name, UUID.randomUUID(), GenericPx4UavModel.MODEL_NAME);
+        """.formatted(name, uuid, GenericPx4UavModel.MODEL_NAME);
 
     try {
       givenAuthenticated()
@@ -256,6 +257,16 @@ class TwinConfigurationApiTest extends ApiTestBase {
           .put(BASE_PATH + "/drone-info/" + name)
           .then()
           .statusCode(400)
+          .contentType(ContentType.JSON)
+          .body("status", not(isEmptyOrNullString()));
+
+      givenAuthenticated()
+          .contentType(ContentType.JSON)
+          .body(body.replace(uuid.toString(), UUID.randomUUID().toString()))
+          .when()
+          .put(BASE_PATH + "/drone-info/" + name)
+          .then()
+          .statusCode(409)
           .contentType(ContentType.JSON)
           .body("status", not(isEmptyOrNullString()));
     } finally {
