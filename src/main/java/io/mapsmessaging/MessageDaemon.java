@@ -41,6 +41,7 @@ import io.mapsmessaging.logging.LogMonitor;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.logging.ServerLogMessages;
+import io.mapsmessaging.rest.RestApiServerManager;
 import io.mapsmessaging.security.uuid.UuidGenerator;
 import io.mapsmessaging.stats.StatsReporter;
 import io.mapsmessaging.utilities.SystemProperties;
@@ -272,13 +273,16 @@ public class MessageDaemon {
     subSystemManager.start();
     logger.log(ServerLogMessages.MESSAGE_DAEMON_STARTUP, BuildInfo.getBuildVersion(), BuildInfo.getBuildDate());
     if (ConsulManagerFactory.getInstance().isStarted()) {
-      ConsulManagerFactory.getInstance().getManager().register(buildMetaData());
+      Map<String, String> meta = buildMetaData();
+      if (meta.containsKey("rest")) {
+        ConsulManagerFactory.getInstance().getManager().register(meta);
+      }
     }
     statsReporter = new StatsReporter();
     return null;
   }
 
-  private Map<String, String> buildMetaData(){
+  private Map<String, String> buildMetaData() throws UnknownHostException {
     NetworkManagerConfig networkManagerConfig = NetworkManagerConfig.getInstance();
     Map<String, String> meta =new LinkedHashMap<>();
     for(EndPointServerConfigDTO serverConfig: networkManagerConfig.getEndPointServerConfigList()){
@@ -292,7 +296,37 @@ public class MessageDaemon {
       }
       meta.put(protocols, url);
     }
+    RestApiServerManager restApiServerManager = subSystemManager.getRestApiServerManager();
+    if (restApiServerManager != null && restApiServerManager.isEnabled()) {
+      meta.put("rest", buildRestEndpoint(restApiServerManager.getHost(), restApiServerManager.getPort(), InetAddress.getLocalHost()));
+    }
     return meta;
+  }
+
+  static String buildRestEndpoint(String configuredHosts, int port, InetAddress localAddress) throws UnknownHostException {
+    if (port < 1 || port > 65535) {
+      throw new IllegalArgumentException("Invalid REST API port: " + port);
+    }
+
+    InetAddress serviceAddress = null;
+    if (configuredHosts != null) {
+      for (String configuredHost : configuredHosts.split(",")) {
+        String host = configuredHost.trim();
+        if (!host.isEmpty()) {
+          InetAddress candidate = InetAddress.getByName(host);
+          if (!candidate.isAnyLocalAddress()) {
+            serviceAddress = candidate;
+            break;
+          }
+        }
+      }
+    }
+    if (serviceAddress == null) {
+      serviceAddress = localAddress;
+    }
+
+    String host = serviceAddress.getHostAddress();
+    return host.contains(":") ? "[" + host + "]:" + port : host + ":" + port;
   }
 
   /**
