@@ -282,7 +282,7 @@ public class MessageDaemon {
     return null;
   }
 
-  private Map<String, String> buildMetaData() throws UnknownHostException {
+  private Map<String, String> buildMetaData() throws IOException {
     NetworkManagerConfig networkManagerConfig = NetworkManagerConfig.getInstance();
     Map<String, String> meta =new LinkedHashMap<>();
     for(EndPointServerConfigDTO serverConfig: networkManagerConfig.getEndPointServerConfigList()){
@@ -298,7 +298,8 @@ public class MessageDaemon {
     }
     RestApiServerManager restApiServerManager = subSystemManager.getRestApiServerManager();
     if (restApiServerManager != null && restApiServerManager.isEnabled()) {
-      meta.put("rest", buildRestEndpoint(restApiServerManager.getHost(), restApiServerManager.getPort(), InetAddress.getLocalHost()));
+      InetAddress consulRouteAddress = ConsulManagerFactory.getInstance().getManager().getLocalAddress();
+      meta.put("rest", buildRestEndpoint(restApiServerManager.getHost(), restApiServerManager.getPort(), consulRouteAddress));
     }
     return meta;
   }
