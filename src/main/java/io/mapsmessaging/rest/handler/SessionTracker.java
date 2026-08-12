@@ -124,17 +124,22 @@ public class SessionTracker implements HttpSessionListener {
 
 
   private static EndPointSummaryDTO createSummary(HttpSession session){
-    if(session == null)return null;
-    EndPointSummaryDTO connection = new EndPointSummaryDTO();
-    connection.setId((long) session.getAttribute("connectionId"));
-    connection.setName((String)session.getAttribute("name"));
-    connection.setUser((String)session.getAttribute("username"));
-    connection.setLastWrite(session.getLastAccessedTime());
-    connection.setLastRead(session.getLastAccessedTime());
-    connection.setConnectedTimeMs(System.currentTimeMillis() - session.getCreationTime());
-    connection.setProtocolName("REST");
-    connection.setProtocolVersion("1.1");
-    connection.setAdapter("rest-server");
-    return connection;
+    if(session != null) {
+      EndPointSummaryDTO connection = new EndPointSummaryDTO();
+      Object objId = session.getAttribute("connectionId");
+      if (objId instanceof Long conId) {
+        connection.setId(conId);
+        connection.setName((String) session.getAttribute("name"));
+        connection.setUser((String) session.getAttribute("username"));
+        connection.setLastWrite(session.getLastAccessedTime());
+        connection.setLastRead(session.getLastAccessedTime());
+        connection.setConnectedTimeMs(System.currentTimeMillis() - session.getCreationTime());
+        connection.setProtocolName("REST");
+        connection.setProtocolVersion("1.1");
+        connection.setAdapter("rest-server");
+        return connection;
+      }
+    }
+    return null;
   }
 }
