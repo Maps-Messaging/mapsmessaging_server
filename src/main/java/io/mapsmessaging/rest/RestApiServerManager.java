@@ -121,6 +121,10 @@ public class RestApiServerManager implements Agent {
     return config.getPort();
   }
 
+  public boolean isEnabled() {
+    return config.isEnabled();
+  }
+
   public String getHost() {
     return config.getHostnames();
   }
