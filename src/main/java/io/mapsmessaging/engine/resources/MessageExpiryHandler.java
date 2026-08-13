@@ -40,7 +40,7 @@ public class MessageExpiryHandler implements ExpiredStorableHandler {
 
   @Override
   public void expired(Queue<Long> queue) throws IOException {
-    destination.handleTask(new BulkRemoveMessageTask(destination, queue));
+    destination.submit(new BulkRemoveMessageTask(destination, queue), DestinationImpl.DELETE_PRIORITY);
   }
 
 }
