@@ -23,7 +23,11 @@ import io.mapsmessaging.api.SubscribedEventManager;
 import io.mapsmessaging.network.protocol.impl.amqp.AMQPProtocol;
 import io.mapsmessaging.network.protocol.impl.amqp.proton.ProtonEngine;
 import org.apache.qpid.proton.amqp.messaging.Source;
-import org.apache.qpid.proton.engine.*;
+import org.apache.qpid.proton.engine.Event;
+import org.apache.qpid.proton.engine.EventType;
+import org.apache.qpid.proton.engine.Link;
+import org.apache.qpid.proton.engine.Receiver;
+import org.apache.qpid.proton.engine.Sender;
 import org.apache.qpid.proton.engine.Event.Type;
 
 public class LinkFlowEventListener extends BaseEventListener {
@@ -35,18 +39,15 @@ public class LinkFlowEventListener extends BaseEventListener {
   @Override
   public boolean handleEvent(Event event) {
     Link link = event.getLink();
-    if (link instanceof Receiver) {
-      topUp((Receiver) link);
-    } else if (link instanceof Sender) {
-      Sender snd = (Sender) link;
-      if (snd.getSource() instanceof Source) {
-        SubscribedEventManager eventManager = (SubscribedEventManager) snd.getContext();
-        if (eventManager != null) {
-          eventManager.updateCredit(snd.getCredit());
-        }
-        if (snd.getDrain()) {
-          snd.drained();
-        }
+    if (link instanceof Receiver receiver) {
+      topUp(receiver);
+    } else if (link instanceof Sender sender) {
+      Object context = sender.getContext();
+      if (sender.getSource() instanceof Source && context instanceof SubscribedEventManager eventManager) {
+        eventManager.updateCredit(sender.getCredit());
+      }
+      if (sender.getDrain()) {
+        sender.drained();
       }
     }
     return true;

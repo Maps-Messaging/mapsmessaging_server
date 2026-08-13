@@ -89,11 +89,21 @@ public class DestinationSubscription extends Subscription {
 
   // <editor-fold desc="Life cycle functions">
   public DestinationSubscription(DestinationImpl destinationImpl,
-      SubscriptionContext context,
-      SessionImpl sessionImpl,
-      String sessionId,
-      AcknowledgementController acknowledgementController,
-      MessageStateManager messageStateManager) {
+                                 SubscriptionContext context,
+                                 SessionImpl sessionImpl,
+                                 String sessionId,
+                                 AcknowledgementController acknowledgementController,
+                                 MessageStateManager messageStateManager) {
+    this(destinationImpl, context, sessionImpl, sessionId, acknowledgementController, messageStateManager, true);
+  }
+
+  public DestinationSubscription(DestinationImpl destinationImpl,
+                                 SubscriptionContext context,
+                                 SessionImpl sessionImpl,
+                                 String sessionId,
+                                 AcknowledgementController acknowledgementController,
+                                 MessageStateManager messageStateManager,
+                                 boolean registerWithDestination) {
     super(sessionImpl, context);
     logger = LoggerFactory.getLogger(DestinationSubscription.class);
     this.eventStateManager = new ClientSubscribedEventManager(destinationImpl, this);
@@ -108,14 +118,18 @@ public class DestinationSubscription extends Subscription {
     messagesExpired = 0;
     isPaused = false;
     sync = context.isSync();
-    mbean = new SubscriptionJMX(destinationImpl.getTypePath(), this);
+    mbean = registerWithDestination ? new SubscriptionJMX(destinationImpl.getTypePath(), this) : null;
     completionTask = new MessageDeliveryCompletionTask(this, acknowledgementController);
-    destinationImpl.addSubscription(this);
+    if (registerWithDestination) {
+      destinationImpl.addSubscription(this);
+    }
   }
 
   @Override
   public void close() {
-    mbean.close();
+    if (mbean != null) {
+      mbean.close();
+    }
     acknowledgementController.close();
     messageStateManager.rollbackInFlightMessages();
 
@@ -129,7 +143,9 @@ public class DestinationSubscription extends Subscription {
   }
 
   public void delete() {
-    mbean.close();
+    if (mbean != null) {
+      mbean.close();
+    }
     acknowledgementController.close();
     messageStateManager.rollbackInFlightMessages();
     destinationImpl.removeSubscription(sessionId);
@@ -450,7 +466,6 @@ public class DestinationSubscription extends Subscription {
     } catch (CancelledKeyException ignore) {
       // We get these because the End Point could be closed
     } catch (RuntimeException th) {
-      th.printStackTrace();
       logger.log(ServerLogMessages.DESTINATION_SUBSCRIPTION_TASK_FAILURE, destinationImpl.getFullyQualifiedNamespace(), sessionImpl.getName(), th);
     }
   }

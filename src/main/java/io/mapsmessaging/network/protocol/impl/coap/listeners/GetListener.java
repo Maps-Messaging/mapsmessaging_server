@@ -78,47 +78,55 @@ public class GetListener extends Listener {
     return null;
   }
 
-  private BasePacket buildSubscription(String path, BasePacket request, CoapProtocol protocol){
-    BasePacket response;
+  private BasePacket buildSubscription(String path, BasePacket request, CoapProtocol protocol) {
     try {
       Session session = protocol.getSession();
-      Destination destination = session.findDestination(path, DestinationType.TOPIC).get();
-      if (destination != null) {
-        response = request.buildWaitResponse();
-        if (request.getType().equals(TYPE.NON)) {
-          request.setType(TYPE.NON);
+
+      if (request.getOptions().hasOption(OBSERVE)) {
+        Observe observe = (Observe) request.getOptions().getOption(OBSERVE);
+        if (!observe.register()) {
+          protocol.getSubscriptionState().remove(path);
+          session.removeSubscription(path);
+          return request.buildAckResponse(Code.CONTENT);
         }
-        if(request.getOptions().hasOption(OBSERVE)) {
-          Option observe = request.getOptions().getOption(OBSERVE);
-          if (((Observe) observe).register()) {
-            Observe option = new Observe(0);
-            response.getOptions().putOption(option);
-            response.setToken(request.getToken());
-          }
-        }
-        if(request.getType().equals(TYPE.CON)) {
-          protocol.sendResponse(response);
-        }
-        response = null;
-        SubscriptionContext context = new SubscriptionContext(path);
-        context.setReceiveMaximum(1);
-        context.setMaxAtRest(1);
-        String selector = getSelector(request);
-        if(selector != null){
-          context.setSelector(selector);
-        }
-        Context subscriptionContext = protocol.getSubscriptionState().create(path, request);
-        subscriptionContext.setSubscribedEventManager(session.addSubscription(context));
-      } else {
-        response = request.buildAckResponse(Code.CONTENT);
-        response.setCode(Code.NOT_FOUND);
       }
-    }
-    catch(Exception exception){
-      response = request.buildAckResponse(Code.INTERNAL_SERVER_ERROR);
+
+      Destination destination = session.findDestination(path, DestinationType.TOPIC).get();
+      if (destination == null) {
+        BasePacket response = request.buildAckResponse(Code.CONTENT);
+        response.setCode(Code.NOT_FOUND);
+        return response;
+      }
+
+      BasePacket response = request.buildWaitResponse();
+      if (request.getType().equals(TYPE.NON)) {
+        request.setType(TYPE.NON);
+      }
+
+      if (request.getOptions().hasOption(OBSERVE)) {
+        response.getOptions().putOption(new Observe(0));
+        response.setToken(request.getToken());
+      }
+
+      if (request.getType().equals(TYPE.CON)) {
+        protocol.sendResponse(response);
+      }
+
+      SubscriptionContext context = new SubscriptionContext(path);
+      context.setReceiveMaximum(1);
+      context.setMaxAtRest(1);
+      String selector = getSelector(request);
+      if (selector != null) {
+        context.setSelector(selector);
+      }
+
+      Context subscriptionContext = protocol.getSubscriptionState().create(path, request);
+      subscriptionContext.setSubscribedEventManager(session.addSubscription(context));
+      return null;
+    } catch (Exception exception) {
       Thread.currentThread().interrupt();
+      return request.buildAckResponse(Code.INTERNAL_SERVER_ERROR);
     }
-    return response;
   }
 
   private BasePacket sendWellKnown(BasePacket getRequest, CoapProtocol protocol) {
