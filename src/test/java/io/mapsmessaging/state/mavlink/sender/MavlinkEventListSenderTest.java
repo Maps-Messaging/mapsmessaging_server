@@ -145,8 +145,8 @@ class MavlinkEventListSenderTest {
     assertEquals(SUCCESS, fixture.results.get(0).status());
     assertEquals(2, fixture.results.get(0).index());
     assertEquals(2, fixture.results.get(0).total());
-    assertNull(fixture.results.get(0).sentMessage());
-    assertNull(fixture.results.get(0).receivedMessage());
+    assertSame(second, fixture.results.get(0).sentMessage());
+    assertSame(packet, fixture.results.get(0).receivedMessage());
   }
 
   @Test
@@ -463,8 +463,8 @@ class MavlinkEventListSenderTest {
 
     assertEquals(1, results.size());
     assertEquals(SUCCESS, results.get(0).status());
-    assertNull(results.get(0).sentMessage());
-    assertNull(results.get(0).receivedMessage());
+    assertSame(command, results.get(0).sentMessage());
+    assertSame(acknowledgement, results.get(0).receivedMessage());
 
     sender.timeout();
     sender.cancel();
