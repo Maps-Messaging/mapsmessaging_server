@@ -29,12 +29,18 @@ import static io.mapsmessaging.state.mavlink.packet.MavlinkMessageIds.MISSION_CU
 public class MissionCurrentPacket extends MavlinkPacket {
 
   private final int sequence;
+  private final int total;
+  private final int missionState;
+  private final long missionId;
   private final boolean valid;
 
   public MissionCurrentPacket(ProcessedFrame frame) {
     Map<String, Object> fields = frame.getFields();
 
     this.sequence = getInt(fields, "seq");
+    this.total = getInt(fields, "total");
+    this.missionState = getInt(fields, "mission_state");
+    this.missionId = getLong(fields, "mission_id");
     this.valid = frame.isValid();
   }
 
@@ -48,6 +54,18 @@ public class MissionCurrentPacket extends MavlinkPacket {
 
   public int getSequence() {
     return sequence;
+  }
+
+  public int getTotal() {
+    return total;
+  }
+
+  public int getMissionState() {
+    return missionState;
+  }
+
+  public long getMissionId() {
+    return missionId;
   }
 
 }
