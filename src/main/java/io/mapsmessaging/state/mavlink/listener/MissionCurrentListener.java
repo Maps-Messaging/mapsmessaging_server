@@ -60,11 +60,34 @@ public class MissionCurrentListener implements Listener {
 
       if (packet.getSequence() >= 0) {
         drone.setCurrentMissionSequence(packet.getSequence());
-        drone.setMissionState("MISSION_ACTIVE");
+        drone.setCurrentMissionUpdatedAt(now);
+        drone.setMissionState(missionStateName(packet.getMissionState()));
+      }
+      if (packet.getTotal() >= 0) {
+        drone.setCurrentMissionTotal(packet.getTotal());
+      }
+      if (packet.getMissionState() >= 0) {
+        drone.setCurrentMissionStateCode(packet.getMissionState());
+      }
+      if (packet.getMissionId() >= 0L) {
+        drone.setCurrentMissionId(packet.getMissionId());
       }
 
       drone.setOperationalUpdatedAt(now);
 
     }, context);
+  }
+
+  private static String missionStateName(int missionState) {
+    return switch (missionState) {
+      case 0 -> "MISSION_UNKNOWN";
+      case 1 -> "MISSION_NO_MISSION";
+      case 2 -> "MISSION_NOT_STARTED";
+      case 3 -> "MISSION_ACTIVE";
+      case 4 -> "MISSION_PAUSED";
+      case 5 -> "MISSION_COMPLETE";
+      case -1 -> "MISSION_ACTIVE";
+      default -> "MISSION_STATE_" + missionState;
+    };
   }
 }
