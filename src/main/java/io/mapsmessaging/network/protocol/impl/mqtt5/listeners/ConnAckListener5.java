@@ -125,19 +125,9 @@ public class ConnAckListener5 extends PacketListener5 {
 
   private Session createSession(MQTT5Protocol protocol, ConnAck5 connect, SessionContextBuilder scb, String user, String pass) throws LoginException, IOException {
     MessageProperty keepAliveProp = connect.getProperties().get(MessagePropertyFactory.SERVER_KEEPALIVE);
-    int keepAlive = 60;
+    int keepAlive = (int) (protocol.getKeepAlive() / 1000L);
     if(keepAliveProp != null) {
       keepAlive = ((ServerKeepAlive) keepAliveProp).getServerKeepAlive();
-    }
-    int minKeepAlive = protocol.getMinimumKeepAlive();
-    int maxKeepAlive = (int) protocol.getTimeOut() / 1000;
-
-    if (keepAlive == 0 && minKeepAlive != 0) { // Special case
-      keepAlive = maxKeepAlive; // Push to the end of acceptable range
-    } else if (keepAlive < minKeepAlive) {
-      keepAlive = minKeepAlive; // Move to the lowest we accept
-    } else if (keepAlive > maxKeepAlive) {
-      keepAlive = maxKeepAlive; // Pull back to the maximum delay we accept
     }
     protocol.setKeepAlive(keepAlive * 1000L);
     scb.setPersistentSession(true);

@@ -17,21 +17,21 @@
  *  limitations under the License.
  */
 
-package io.mapsmessaging.network.protocol.impl.mqtt.listeners;
+package io.mapsmessaging.network.protocol.impl.mqtt5;
 
-import io.mapsmessaging.api.Session;
-import io.mapsmessaging.logging.ServerLogMessages;
-import io.mapsmessaging.network.io.EndPoint;
-import io.mapsmessaging.network.protocol.Protocol;
-import io.mapsmessaging.network.protocol.impl.mqtt.MQTTProtocol;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+
 import io.mapsmessaging.network.protocol.impl.mqtt.packet.MQTTPacket;
+import io.mapsmessaging.network.protocol.impl.mqtt5.listeners.PacketListenerFactory5;
+import io.mapsmessaging.network.protocol.impl.mqtt5.listeners.PingResponseListener5;
+import org.junit.jupiter.api.Test;
 
-public class PingResponseListener extends PacketListener {
+class PingResponseListener5Test {
 
-  @Override
-  public MQTTPacket handlePacket(MQTTPacket mqttPacket, Session session, EndPoint endPoint, Protocol protocol) {
-    logger.log(ServerLogMessages.MQTT_PING);
-    ((MQTTProtocol) protocol).pingResponseReceived();
-    return null;
+  @Test
+  void packetListenerFactory_registersPingResponseListener() {
+    PacketListenerFactory5 factory = new PacketListenerFactory5();
+
+    assertInstanceOf(PingResponseListener5.class, factory.getListener(MQTTPacket.PINGRESP));
   }
 }

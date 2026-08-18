@@ -77,6 +77,7 @@ public class Connect extends MQTTPacket {
 
   public Connect() {
     super(CONNECT);
+    keepAlive = 60_000;
   }
 
 
@@ -250,8 +251,9 @@ public class Connect extends MQTTPacket {
     b.write(connectFlag);
 
     // Keep Alive
-    b.write(0);
-    b.write((byte) 60);
+    int keepAliveSeconds = keepAlive / 1000;
+    b.write((keepAliveSeconds >> 8) & 0xff);
+    b.write(keepAliveSeconds & 0xff);
 
     // Will never be greater then 2^31
     int size = 10 + sessionId.length() + 2;

@@ -49,8 +49,7 @@ public class ConnAckListener extends BaseConnectionListener {
     String user = config.getUsername();
     String pass = config.getPassword();
 
-    SessionContextBuilder scb = getBuilder(protocol, sess, false, 30000, user, pass.toCharArray());
-    protocol.setKeepAlive(30000);
+    SessionContextBuilder scb = getBuilder(protocol, sess, false, (int) protocol.getKeepAlive(), user, pass.toCharArray());
     CompletableFuture<Session> sessionFuture = createSession(endPoint, protocol, scb, sess);
     sessionFuture.thenApply(session1 -> {
       session1.resumeState();
