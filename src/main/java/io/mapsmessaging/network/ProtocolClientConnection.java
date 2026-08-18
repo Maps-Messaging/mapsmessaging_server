@@ -37,6 +37,11 @@ public class ProtocolClientConnection implements ClientConnection {
   }
 
   @Override
+  public long getKeepAliveTaskInterval() {
+    return protocol.getKeepAliveTaskInterval();
+  }
+
+  @Override
   public String getName() {
     return protocol.getName();
   }

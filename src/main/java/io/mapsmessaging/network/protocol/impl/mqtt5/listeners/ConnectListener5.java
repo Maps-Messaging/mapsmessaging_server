@@ -28,6 +28,7 @@ import io.mapsmessaging.logging.ServerLogMessages;
 import io.mapsmessaging.network.ProtocolClientConnection;
 import io.mapsmessaging.network.io.EndPoint;
 import io.mapsmessaging.network.protocol.Protocol;
+import io.mapsmessaging.network.protocol.impl.mqtt.MqttKeepAliveManager;
 import io.mapsmessaging.network.protocol.impl.mqtt.packet.MalformedException;
 import io.mapsmessaging.network.protocol.impl.mqtt5.AuthenticationContext;
 import io.mapsmessaging.network.protocol.impl.mqtt5.DefaultConstants;
@@ -157,17 +158,7 @@ public class ConnectListener5 extends PacketListener5 {
   }
 
   private Session createSession(MQTT5Protocol protocol, String sessionId, Connect5 connect, SessionContextBuilder scb) throws LoginException, IOException {
-    int keepAlive = connect.getKeepAlive();
-    int minKeepAlive = protocol.getMinimumKeepAlive();
-    int maxKeepAlive = (int) protocol.getTimeOut() / 1000;
-
-    if (keepAlive == 0 && minKeepAlive != 0) { // Special case
-      keepAlive = maxKeepAlive; // Push to the end of acceptable range
-    } else if (keepAlive < minKeepAlive) {
-      keepAlive = minKeepAlive; // Move to the lowest we accept
-    } else if (keepAlive > maxKeepAlive) {
-      keepAlive = maxKeepAlive; // Pull back to the maximum delay we accept
-    }
+    int keepAlive = MqttKeepAliveManager.negotiateServerKeepAlive(connect.getKeepAlive(), protocol.getMinimumKeepAlive(), protocol.getMqttConfig().getMaxServerKeepAlive());
     protocol.setKeepAlive(keepAlive * 1000L);
 
     scb.setResetState(connect.isCleanSession());

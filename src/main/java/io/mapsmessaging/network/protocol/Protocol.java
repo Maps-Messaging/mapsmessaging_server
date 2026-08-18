@@ -395,6 +395,10 @@ public abstract class Protocol implements SelectorCallback, MessageListener, Tim
     return keepAlive;
   }
 
+  public long getKeepAliveTaskInterval() {
+    return keepAlive + 5000L;
+  }
+
   public void setConnected(boolean connected) {
     if (this.connected != connected) {
       this.connected = connected;

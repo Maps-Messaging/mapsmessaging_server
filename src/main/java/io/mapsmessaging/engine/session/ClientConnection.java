@@ -25,6 +25,10 @@ public interface ClientConnection {
   
   long getTimeOut();
 
+  default long getKeepAliveTaskInterval() {
+    return getTimeOut() + 5000L;
+  }
+
   String getName();
 
   String getVersion();

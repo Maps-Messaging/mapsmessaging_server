@@ -70,6 +70,7 @@ public class MQTTProtocol extends Protocol {
   private final PacketFactory packetFactory;
   private final PacketListenerFactory packetListenerFactory;
   private final SelectorTask selectorTask;
+  private final MqttKeepAliveManager keepAliveManager;
   @Getter
   private final PacketIdManager packetIdManager;
   private final long maxBufferSize;
@@ -92,6 +93,8 @@ public class MQTTProtocol extends Protocol {
     logger.log(ServerLogMessages.MQTT_START);
     mqttConfig = (MqttConfigDTO) protocolConfig;
     maxBufferSize =  mqttConfig.getMaximumBufferSize();
+    keepAlive = mqttConfig.getMaxServerKeepAlive() * 1000L;
+    keepAliveManager = new MqttKeepAliveManager();
     selectorTask = new SelectorTask(this, endPoint.getConfig().getEndPointConfig());
     packetListenerFactory = new PacketListenerFactory();
     packetFactory = new PacketFactory(this);
@@ -136,6 +139,7 @@ public class MQTTProtocol extends Protocol {
     Connect connect = new Connect();
     connect.setSessionId(sessionId);
     connect.setCleanSession(false);
+    connect.setKeepAlive((int) keepAlive);
     if (username != null) {
       connect.setUsername(username);
       connect.setPassword(password.trim().toCharArray());
@@ -266,16 +270,14 @@ public class MQTTProtocol extends Protocol {
     ThreadContext.put("protocol", getName());
     ThreadContext.put("endpoint", endPoint.getName());
     ThreadContext.put("version", getVersion());
-    logger.log(ServerLogMessages.MQTT_KEEPALIVE_TIMOUT, keepAlive);
-    long timeout = System.currentTimeMillis() - (keepAlive + 1000);
-    if (endPoint.isClient()) {
+    long now = System.currentTimeMillis();
+    MqttKeepAliveManager.Action action = endPoint.isClient()
+        ? keepAliveManager.checkClient(now, endPoint.getLastWrite(), keepAlive)
+        : keepAliveManager.checkServer(now, endPoint.getLastRead(), keepAlive);
+    if (action == MqttKeepAliveManager.Action.SEND_PING) {
+      logger.log(ServerLogMessages.MQTT_KEEPALIVE_TIMOUT, keepAlive);
       writeFrame(new PingReq());
-      timeout = System.currentTimeMillis() - (keepAlive * 2);
-
-    }
-    boolean readTimeOut = endPoint.getLastRead() < timeout;
-    boolean writeTimeOut = endPoint.getLastWrite() < timeout;
-    if (readTimeOut && writeTimeOut) {
+    } else if (action == MqttKeepAliveManager.Action.DISCONNECT) {
       logger.log(ServerLogMessages.MQTT_DISCONNECT_TIMEOUT);
       try {
         close();
@@ -284,6 +286,15 @@ public class MQTTProtocol extends Protocol {
       }
     }
     ThreadContext.clearMap();
+  }
+
+  @Override
+  public long getKeepAliveTaskInterval() {
+    return keepAliveManager.getCheckInterval(keepAlive, endPoint.isClient());
+  }
+
+  public void pingResponseReceived() {
+    keepAliveManager.pingResponseReceived();
   }
 
   public String getName() {

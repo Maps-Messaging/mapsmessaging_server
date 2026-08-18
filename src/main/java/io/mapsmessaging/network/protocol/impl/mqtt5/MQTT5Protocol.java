@@ -41,6 +41,7 @@ import io.mapsmessaging.network.io.ServerPacket;
 import io.mapsmessaging.network.io.impl.SelectorTask;
 import io.mapsmessaging.network.protocol.EndOfBufferException;
 import io.mapsmessaging.network.protocol.Protocol;
+import io.mapsmessaging.network.protocol.impl.mqtt.MqttKeepAliveManager;
 import io.mapsmessaging.network.protocol.impl.mqtt.PacketIdManager;
 import io.mapsmessaging.network.protocol.impl.mqtt.packet.MalformedException;
 import io.mapsmessaging.network.protocol.impl.mqtt.packet.SubscriptionInfo;
@@ -76,6 +77,7 @@ public class MQTT5Protocol extends Protocol {
   private final Logger logger;
   private final PacketFactory5 packetFactory;
   private final SelectorTask selectorTask;
+  private final MqttKeepAliveManager keepAliveManager;
 
   @Getter
   private final PacketListenerFactory5 packetListenerFactory;
@@ -139,7 +141,8 @@ public class MQTT5Protocol extends Protocol {
     int serverMaximumTopicAlias = mqttConfig.getServerMaximumTopicAlias();
     serverTopicAliasMapping.setMaximum(serverMaximumTopicAlias);
     keepAlive = mqttConfig.getMaxServerKeepAlive() * 1000L;
-    minimumKeepAlive = mqttConfig.getMinServerKeepAlive() * 1000; // Convert to milliseconds
+    minimumKeepAlive = mqttConfig.getMinServerKeepAlive();
+    keepAliveManager = new MqttKeepAliveManager();
     selectorTask = new SelectorTask(this, endPoint.getConfig().getEndPointConfig());
     packetListenerFactory = new PacketListenerFactory5();
     packetFactory = new PacketFactory5(this);
@@ -317,16 +320,14 @@ public class MQTT5Protocol extends Protocol {
     ThreadContext.put("protocol", getName());
     ThreadContext.put("endpoint", endPoint.getName());
     ThreadContext.put("version", getVersion());
-    logger.log(ServerLogMessages.MQTT5_KEEP_ALIVE_CHECK, keepAlive);
-    long timeout = System.currentTimeMillis() - (keepAlive + 1000);
-    if (endPoint.isClient()) {
+    long now = System.currentTimeMillis();
+    MqttKeepAliveManager.Action action = endPoint.isClient()
+        ? keepAliveManager.checkClient(now, endPoint.getLastWrite(), keepAlive)
+        : keepAliveManager.checkServer(now, endPoint.getLastRead(), keepAlive);
+    if (action == MqttKeepAliveManager.Action.SEND_PING) {
+      logger.log(ServerLogMessages.MQTT5_KEEP_ALIVE_CHECK, keepAlive);
       writeFrame(new PingReq5());
-      timeout = System.currentTimeMillis() - (keepAlive * 2);
-
-    }
-    boolean readTimeOut = endPoint.getLastRead() < timeout;
-    boolean writeTimeOut = endPoint.getLastWrite() < timeout;
-    if (readTimeOut && writeTimeOut) {
+    } else if (action == MqttKeepAliveManager.Action.DISCONNECT) {
       logger.log(ServerLogMessages.MQTT_DISCONNECT_TIMEOUT);
       try {
         close();
@@ -335,6 +336,15 @@ public class MQTT5Protocol extends Protocol {
       }
     }
     ThreadContext.clearMap();
+  }
+
+  @Override
+  public long getKeepAliveTaskInterval() {
+    return keepAliveManager.getCheckInterval(keepAlive, endPoint.isClient());
+  }
+
+  public void pingResponseReceived() {
+    keepAliveManager.pingResponseReceived();
   }
 
   @Override

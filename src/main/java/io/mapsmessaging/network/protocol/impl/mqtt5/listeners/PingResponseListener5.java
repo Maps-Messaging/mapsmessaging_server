@@ -17,21 +17,22 @@
  *  limitations under the License.
  */
 
-package io.mapsmessaging.network.protocol.impl.mqtt.listeners;
+package io.mapsmessaging.network.protocol.impl.mqtt5.listeners;
 
 import io.mapsmessaging.api.Session;
 import io.mapsmessaging.logging.ServerLogMessages;
 import io.mapsmessaging.network.io.EndPoint;
 import io.mapsmessaging.network.protocol.Protocol;
-import io.mapsmessaging.network.protocol.impl.mqtt.MQTTProtocol;
-import io.mapsmessaging.network.protocol.impl.mqtt.packet.MQTTPacket;
+import io.mapsmessaging.network.protocol.impl.mqtt.packet.MalformedException;
+import io.mapsmessaging.network.protocol.impl.mqtt5.MQTT5Protocol;
+import io.mapsmessaging.network.protocol.impl.mqtt5.packet.MQTTPacket5;
 
-public class PingResponseListener extends PacketListener {
+public class PingResponseListener5 extends PacketListener5 {
 
   @Override
-  public MQTTPacket handlePacket(MQTTPacket mqttPacket, Session session, EndPoint endPoint, Protocol protocol) {
+  public MQTTPacket5 handlePacket(MQTTPacket5 mqttPacket, Session session, EndPoint endPoint, Protocol protocol) throws MalformedException {
     logger.log(ServerLogMessages.MQTT_PING);
-    ((MQTTProtocol) protocol).pingResponseReceived();
+    ((MQTT5Protocol) protocol).pingResponseReceived();
     return null;
   }
 }

@@ -40,6 +40,7 @@ public class PacketListenerFactory5 {
     listeners[MQTTPacket.CONNACK] = new ConnAckListener5();
     listeners[MQTTPacket.PUBLISH] = new PublishListener5();
     listeners[MQTTPacket.PINGREQ] = new PingRequestListener5();
+    listeners[MQTTPacket.PINGRESP] = new PingResponseListener5();
     listeners[MQTTPacket.SUBSCRIBE] = new SubscribeListener5();
     listeners[MQTTPacket.PUBACK] = new PubAckListener5();
     listeners[MQTTPacket.PUBREL] = new PubRelListener5();
