@@ -54,6 +54,10 @@ public class SessionManagerTest {
     return manager.getSessions().size();
   }
 
+  public boolean hasActiveSession(String sessionId) {
+    return manager.getSessions().stream().anyMatch(session -> session.getName().equals(sessionId));
+  }
+
   public boolean hasSessions() {
     return manager.hasSessions();
   }
