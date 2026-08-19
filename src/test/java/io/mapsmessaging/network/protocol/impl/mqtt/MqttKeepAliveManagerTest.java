@@ -28,7 +28,7 @@ class MqttKeepAliveManagerTest {
   private static final long KEEP_ALIVE = 60_000L;
 
   @Test
-  void checkIntervals_allowClientPingBeforeExpiryAndServerTimeoutAtOneAndAHalfPeriods() {
+  void checkIntervals_allowClientPingBeforeExpiryAndServerTimeoutAfterTwoPeriods() {
     MqttKeepAliveManager manager = new MqttKeepAliveManager();
 
     assertEquals(12_000L, manager.getCheckInterval(KEEP_ALIVE, true));
@@ -62,11 +62,11 @@ class MqttKeepAliveManagerTest {
   }
 
   @Test
-  void serverCheck_disconnectsAtOneAndAHalfKeepAlivePeriods() {
+  void serverCheck_disconnectsAfterTwoKeepAlivePeriods() {
     MqttKeepAliveManager manager = new MqttKeepAliveManager();
 
-    assertEquals(MqttKeepAliveManager.Action.NONE, manager.checkServer(89_999L, 0L, KEEP_ALIVE));
-    assertEquals(MqttKeepAliveManager.Action.DISCONNECT, manager.checkServer(90_000L, 0L, KEEP_ALIVE));
+    assertEquals(MqttKeepAliveManager.Action.NONE, manager.checkServer(119_999L, 0L, KEEP_ALIVE));
+    assertEquals(MqttKeepAliveManager.Action.DISCONNECT, manager.checkServer(120_000L, 0L, KEEP_ALIVE));
   }
 
   @Test

@@ -28,7 +28,7 @@ public class DefaultConstants {
   public static final int CLIENT_RECEIVE_MAXIMUM = 2048;
   public static final int SERVER_TOPIC_ALIAS_MAX = 2048;
   public static final int CLIENT_TOPIC_ALIAS_MAX = 2048;
-  public static final int SESSION_TIME_OUT = 86400;
+  public static final int SESSION_TIME_OUT = 0;
   public static final Priority PRIORITY = Priority.NORMAL;
 
   public static final int KEEPALIVE_MAXIMUM = 600;
