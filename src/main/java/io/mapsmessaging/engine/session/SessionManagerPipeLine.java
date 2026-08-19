@@ -142,7 +142,7 @@ public class SessionManagerPipeLine {
   void close(SessionImpl sessionImpl, boolean clearWillTask) {
     SubscriptionController subscriptionController;
     long expiry = sessionImpl.getExpiry();
-    sessions.remove(sessionImpl.getName(), sessionImpl);
+    sessions.remove(sessionImpl.getName());
     String storeName = (sessionImpl instanceof PersistentSession) ?  ((PersistentSession)sessionImpl).getStoreName(): "";
     sessionImpl.close();
 
@@ -189,11 +189,8 @@ public class SessionManagerPipeLine {
 
   void closeAndDeleteSubscriptionController(String sessionStateFile, SubscriptionController subscriptionController) {
     closeSubscriptionController(subscriptionController);
-    storeLookup.removeSessionDetails(subscriptionController.getSessionId(), subscriptionController.getUniqueSessionId());
     try {
-      if (!sessionStateFile.isEmpty()) {
-        Files.deleteIfExists(new File(sessionStateFile).toPath());
-      }
+      Files.deleteIfExists(new File(sessionStateFile).toPath());
     } catch (IOException e) {
       // ignore
     }
@@ -203,7 +200,7 @@ public class SessionManagerPipeLine {
     if (subscriptionController.getTimeout() != null) {
       expiredSessions.increment();
     }
-    subscriptionManagerFactory.remove(subscriptionController.getSessionId(), subscriptionController);
+    subscriptionManagerFactory.remove(subscriptionController.getSessionId());
     WillTaskImpl willTaskImpl = willTaskManager.remove(subscriptionController.getSessionId());
     if (willTaskImpl != null) {
       willTaskImpl.cancel();
@@ -222,7 +219,7 @@ public class SessionManagerPipeLine {
   //
   private SubscriptionController loadSubscriptionManager(SessionContext context) {
     context.setRestored(false);
-    SessionDetails sessionDetails = context.isResetState() ? storeLookup.resetSessionDetails(context) : storeLookup.getSessionDetails(context);
+    SessionDetails sessionDetails = storeLookup.getSessionDetails(context);
     context.setUniqueId(sessionDetails.getUniqueId());
     context.setInternalSessionId(sessionDetails.getInternalUnqueId());
     SubscriptionController subscriptionManager = subscriptionManagerFactory.get(context.getId());
@@ -242,7 +239,7 @@ public class SessionManagerPipeLine {
       if (context.isResetState()) {
         disconnectedSessions.decrement(); // No longer stored
         logger.log(ServerLogMessages.SESSION_MANAGER_FOUND_EXISTING, context.getId(), context.isResetState());
-        subscriptionManagerFactory.remove(context.getId(), subscriptionManager);
+        subscriptionManagerFactory.remove(context.getId());
         subscriptionManager.close(false);
         sessionDetails.clearSubscriptions();
         subscriptionManager = new SubscriptionController(context, destinationManager, new LinkedHashMap<>());

@@ -73,18 +73,4 @@ class SessionContextTest {
 
     assertFalse(context.getDetails().isHasWill());
   }
-
-  @Test
-  void expiryZero_forcesNonPersistentSessionRegardlessOfSetterOrder() {
-    SessionContext context = new SessionContext("session-one", null);
-    context.setPersistentSession(true);
-
-    context.setExpiry(0);
-
-    assertFalse(context.isPersistentSession());
-
-    context.setPersistentSession(true);
-
-    assertFalse(context.isPersistentSession());
-  }
 }

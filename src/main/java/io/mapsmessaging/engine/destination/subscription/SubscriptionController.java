@@ -72,7 +72,6 @@ public class SubscriptionController implements DestinationManagerListener {
   private final DestinationFactory destinationManager;
   @Getter
   private final String sessionId;
-  @Getter
   private final String uniqueSessionId;
   @Getter
   private final boolean isPersistent;

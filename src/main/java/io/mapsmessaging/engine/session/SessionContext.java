@@ -65,17 +65,6 @@ public class SessionContext {
     uniqueId = UuidGenerator.getInstance().generate().toString();
   }
 
-  public void setExpiry(long expiry) {
-    this.expiry = expiry;
-    if (expiry == 0) {
-      persistentSession = false;
-    }
-  }
-
-  public void setPersistentSession(boolean persistentSession) {
-    this.persistentSession = persistentSession && expiry != 0;
-  }
-
   public void update(SessionPrivileges sessionPrivileges) {
 
   }

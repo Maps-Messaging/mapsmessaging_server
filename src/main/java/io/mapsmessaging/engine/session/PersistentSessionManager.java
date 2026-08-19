@@ -67,42 +67,11 @@ public class PersistentSessionManager {
   }
 
   public SessionDetails getSessionDetails(SessionContext context){
-    SessionDetails sessionDetails;
-    if (context.isPersistentSession()) {
-      sessionDetails = persistentMap.computeIfAbsent(context.getId(), k -> new SessionDetails(context.getId(), context.getUniqueId(), context.getInternalSessionId(), context.getExpiry()));
-    } else {
-      sessionDetails = persistentMap.get(context.getId());
-      if (sessionDetails == null) {
-        sessionDetails = new SessionDetails(context.getId(), context.getUniqueId(), context.getInternalSessionId(), context.getExpiry());
-      }
-    }
+    SessionDetails sessionDetails = persistentMap.computeIfAbsent(context.getId(), k -> new SessionDetails(context.getId(), context.getUniqueId(), context.getInternalSessionId(), context.getExpiry()));
     if(context.getSecurityContext() != null){
       sessionDetails.setIdentity(context.getSecurityContext().getIdentity());
     }
     return sessionDetails;
-  }
-
-  synchronized SessionDetails resetSessionDetails(SessionContext context) {
-    SessionDetails previous = persistentMap.remove(context.getId());
-    if (previous != null) {
-      deleteStateFile(previous.getUniqueId());
-    }
-
-    SessionDetails replacement = new SessionDetails(context.getId(), context.getUniqueId(), context.getInternalSessionId(), context.getExpiry());
-    if (context.getSecurityContext() != null) {
-      replacement.setIdentity(context.getSecurityContext().getIdentity());
-    }
-    if (context.isPersistentSession()) {
-      persistentMap.put(context.getId(), replacement);
-    }
-    return replacement;
-  }
-
-  synchronized void removeSessionDetails(String sessionId, String uniqueSessionId) {
-    SessionDetails details = persistentMap.get(sessionId);
-    if (details != null && Objects.equals(details.getUniqueId(), uniqueSessionId) && persistentMap.remove(sessionId, details)) {
-      deleteStateFile(uniqueSessionId);
-    }
   }
 
   public SessionDetails getSessionDetails(String id){
@@ -119,15 +88,6 @@ public class PersistentSessionManager {
        }
      }
     return map;
-  }
-
-  private void deleteStateFile(String uniqueSessionId) {
-    File stateFile = new File(dataPath, uniqueSessionId + ".bin");
-    try {
-      Files.deleteIfExists(stateFile.toPath());
-    } catch (IOException exception) {
-      logger.log(SESSION_LOAD_STATE_ERROR, stateFile.getAbsolutePath(), exception);
-    }
   }
 
 
