@@ -142,7 +142,7 @@ public class SessionImpl {
     // Schedule a keep alive
     //
     if (context.getClientConnection().getTimeOut() != 0) {
-      long ka = context.getClientConnection().getKeepAliveTaskInterval();
+      long ka = Math.max(1L, context.getClientConnection().getKeepAliveTaskInterval());
       scheduledFuture = SimpleTaskScheduler.getInstance().scheduleAtFixedRate(new KeepAliveTask(context.getClientConnection()), ka, ka, TimeUnit.MILLISECONDS);
       logger.log(ServerLogMessages.SESSION_MANAGER_KEEP_ALIVE_TASK);
     } else {

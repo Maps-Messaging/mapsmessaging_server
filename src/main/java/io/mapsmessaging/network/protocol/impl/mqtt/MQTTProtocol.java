@@ -266,26 +266,54 @@ public class MQTTProtocol extends Protocol {
 
   @Override
   public void sendKeepAlive() {
-    ThreadContext.put("session", session.getName());
-    ThreadContext.put("protocol", getName());
-    ThreadContext.put("endpoint", endPoint.getName());
-    ThreadContext.put("version", getVersion());
-    long now = System.currentTimeMillis();
-    MqttKeepAliveManager.Action action = endPoint.isClient()
-        ? keepAliveManager.checkClient(now, endPoint.getLastWrite(), keepAlive)
-        : keepAliveManager.checkServer(now, endPoint.getLastRead(), keepAlive);
-    if (action == MqttKeepAliveManager.Action.SEND_PING) {
-      logger.log(ServerLogMessages.MQTT_KEEPALIVE_TIMOUT, keepAlive);
-      writeFrame(new PingReq());
-    } else if (action == MqttKeepAliveManager.Action.DISCONNECT) {
-      logger.log(ServerLogMessages.MQTT_DISCONNECT_TIMEOUT);
-      try {
-        close();
-      } catch (IOException e) {
-        // Ignore this, we are closing
-      }
+    Session activeSession = session;
+    if (closed || activeSession == null || activeSession.isClosed()) {
+      return;
     }
-    ThreadContext.clearMap();
+    try {
+      ThreadContext.put("session", activeSession.getName());
+      ThreadContext.put("protocol", getName());
+      ThreadContext.put("endpoint", endPoint.getName());
+      ThreadContext.put("version", getVersion());
+      long now = System.currentTimeMillis();
+      MqttKeepAliveManager.Action action = endPoint.isClient()
+          ? keepAliveManager.checkClient(now, endPoint.getLastWrite(), keepAlive)
+          : keepAliveManager.checkServer(now, endPoint.getLastRead(), keepAlive);
+      if (action == MqttKeepAliveManager.Action.SEND_PING) {
+        logger.log(ServerLogMessages.MQTT_KEEPALIVE_TIMOUT, keepAlive);
+        writeFrame(new PingReq());
+      } else if (action == MqttKeepAliveManager.Action.DISCONNECT) {
+        logger.log(ServerLogMessages.MQTT_DISCONNECT_TIMEOUT);
+        closeAfterKeepAliveTimeout(activeSession);
+      }
+    } finally {
+      ThreadContext.clearMap();
+    }
+  }
+
+  private void closeAfterKeepAliveTimeout(Session activeSession) {
+    closed = true;
+    try {
+      if (selectorTask.isOpen()) {
+        selectorTask.close();
+      }
+    } catch (RuntimeException exception) {
+      logger.log(ServerLogMessages.END_POINT_CLOSE_EXCEPTION, exception);
+    }
+    try {
+      SessionManager.getInstance().closeAsync(activeSession, false).whenComplete((closedSession, exception) -> {
+        if (exception != null) {
+          logger.log(ServerLogMessages.SESSION_CLOSE_EXCEPTION, exception);
+        }
+      });
+    } catch (RuntimeException exception) {
+      logger.log(ServerLogMessages.SESSION_CLOSE_EXCEPTION, exception);
+    }
+    try {
+      super.close();
+    } catch (IOException | RuntimeException exception) {
+      logger.log(ServerLogMessages.END_POINT_CLOSE_EXCEPTION, exception);
+    }
   }
 
   @Override
