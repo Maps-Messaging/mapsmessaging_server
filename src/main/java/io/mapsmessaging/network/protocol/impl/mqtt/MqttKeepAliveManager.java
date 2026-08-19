@@ -53,7 +53,7 @@ public class MqttKeepAliveManager {
   }
 
   public Action checkServer(long now, long lastRead, long keepAlive) {
-    long disconnectTime = keepAlive + (keepAlive / 2L);
+    long disconnectTime = keepAlive * 2L;
     return now - lastRead >= disconnectTime ? Action.DISCONNECT : Action.NONE;
   }
 
