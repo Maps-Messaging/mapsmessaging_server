@@ -37,22 +37,28 @@ import org.junit.jupiter.params.provider.MethodSource;
 
 class MQTTStoredMessageTest extends MQTTBaseTest {
 
+  private static final int MESSAGE_COUNT = 10;
+  private static final long SESSION_EXPIRY_INTERVAL_SECONDS = 60L;
+
   @ParameterizedTest
   @MethodSource("mqttPublishTestParameters")
-  @DisplayName("Test QoS wildcard subscription")
+  @DisplayName("Test stored QoS messages")
   void connectSubscribeDisconnectPublishAndCheck(int version, String protocol, boolean auth, int QoS) throws MqttException, IOException {
+    String topicName = getTopicName();
     String subId = UuidGenerator.getInstance().generate().toString();
     MqttClientPersistence persistence = new MemoryPersistence();
     MqttClient subscribe = new MqttClient(getUrl(protocol, auth), subId, persistence);
     MqttConnectionOptions subOption = getOptions(auth);
     subOption.setCleanStart(false);
+    subOption.setSessionExpiryInterval(SESSION_EXPIRY_INTERVAL_SECONDS);
+    subOption.setAutomaticReconnect(false);
 
     MessageListener ml = new MessageListener();
 
     subscribe.connectWithResult(subOption).waitForCompletion(2000);
     MqttSubscription[] subscriptions = new MqttSubscription[1];
     IMqttMessageListener[] listeners = new IMqttMessageListener[1];
-    subscriptions[0] = new MqttSubscription("/topic/test", QoS);
+    subscriptions[0] = new MqttSubscription(topicName, QoS);
     listeners[0] = ml;
     subscribe.setCallback(new MqttCallback() {
       @Override
@@ -85,7 +91,7 @@ class MQTTStoredMessageTest extends MQTTBaseTest {
 
       }
     });
-    subscribe.subscribe(subscriptions, listeners);
+    subscribe.subscribe(subscriptions, listeners).waitForCompletion(2000);
     Assertions.assertTrue(subscribe.isConnected());
     subscribe.disconnect();
 
@@ -95,12 +101,12 @@ class MQTTStoredMessageTest extends MQTTBaseTest {
     publish.connect(pubOption);
     Assertions.assertTrue(publish.isConnected());
 
-    for (int x = 0; x < 10; x++) {
+    for (int x = 0; x < MESSAGE_COUNT; x++) {
       MqttMessage message = new MqttMessage("this is a test msg,1,2,3,4,5,6,7,8,9,10".getBytes());
       message.setQos(QoS);
       message.setId(x);
       message.setRetained(false);
-      publish.publish("/topic/test", message);
+      publish.publish(topicName, message);
     }
     publish.disconnect();
     Assertions.assertFalse(publish.isConnected());
@@ -115,10 +121,10 @@ class MQTTStoredMessageTest extends MQTTBaseTest {
       WaitForState.waitFor(2, TimeUnit.SECONDS, () -> ml.getCounter() != 0);
       Assertions.assertEquals(0, ml.getCounter());
     } else {
-      WaitForState.waitFor(15, TimeUnit.SECONDS, () -> ml.getCounter() == 10);
-      Assertions.assertEquals(10, ml.getCounter());
+      WaitForState.waitFor(15, TimeUnit.SECONDS, () -> ml.getCounter() == MESSAGE_COUNT);
+      Assertions.assertEquals(MESSAGE_COUNT, ml.getCounter());
     }
-    subscribe.unsubscribe("/topic/test");
+    subscribe.unsubscribe(topicName);
     subscribe.disconnect();
     subscribe.close();
   }
