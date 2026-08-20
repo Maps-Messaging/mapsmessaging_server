@@ -27,7 +27,11 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import io.mapsmessaging.configuration.ConfigurationProperties;
 import io.mapsmessaging.dto.rest.config.protocol.impl.TakProtocolDTO;
+import io.mapsmessaging.state.config.capability.Authorities;
+import io.mapsmessaging.state.config.capability.PlanTaskType;
 import io.mapsmessaging.state.config.capability.TaskCapabilities;
+import io.mapsmessaging.state.config.capability.TaskCapability;
+import io.mapsmessaging.state.config.capability.TaskSpecialization;
 import io.mapsmessaging.state.config.n2k.N2KTwinConfig;
 import java.lang.reflect.Constructor;
 import java.util.List;
@@ -205,6 +209,7 @@ class TwinManagerConfigTest {
     TwinPublishConfigDTO publish = new TwinPublishConfigDTO();
     publish.setEnabled(true);
     publish.setTopicTemplate("/it/twins/{twinId}");
+    publish.setPublishRateMs(1000L);
     original.setPublish(publish);
 
     N2KTwinConfig n2k = new N2KTwinConfig();
@@ -222,8 +227,15 @@ class TwinManagerConfigTest {
     mavlink.setTopic("/it/mavlink/#");
     mavlink.setDialectName("common");
     original.getMavlink().add(mavlink);
-    original.getDroneInfo().add(droneInfo("it-drone", droneUuid));
-    original.getAdapterConfig().put("itAdapter", adapterProperties("/it/adapter", 15));
+    DroneInfoDTO drone = droneInfo("it-drone", droneUuid);
+    UUID repositionAuthority = UUID.randomUUID();
+    UUID navigateAuthority = UUID.randomUUID();
+    drone.getCapabilities().setTasks(List.of(
+        new TaskCapability(PlanTaskType.REPOSITION, TaskSpecialization.NONE, new Authorities[]{new Authorities(repositionAuthority)}),
+        new TaskCapability(PlanTaskType.NAVIGATE, TaskSpecialization.NONE, new Authorities[]{new Authorities(navigateAuthority)})
+    ));
+    original.getDroneInfo().add(drone);
+    original.getAdapterConfig().put("stanag", adapterProperties("4817/catl/maps/{protocol}/{twinId}/{messageEnumName}", 15));
 
     TwinManagerConfig reloaded = newTwinManagerConfig(original.toConfigurationProperties());
 
@@ -238,6 +250,7 @@ class TwinManagerConfigTest {
     assertEquals("tak/events", reloaded.getTak().getTopic());
     assertEquals(true, reloaded.getPublish().isEnabled());
     assertEquals("/it/twins/{twinId}", reloaded.getPublish().getTopicTemplate());
+    assertEquals(1000L, reloaded.getPublish().getPublishRateMs());
     assertEquals(true, reloaded.getN2KTwinConfig().isEnable());
     assertEquals(false, reloaded.getN2KTwinConfig().isPublishMavlinkDrones());
     assertEquals("/it/n2k/json/#", reloaded.getN2KTwinConfig().getTopic());
@@ -252,8 +265,10 @@ class TwinManagerConfigTest {
     assertEquals(1, reloaded.getDroneInfo().size());
     assertEquals("it-drone", reloaded.getDroneInfo().get(0).getName());
     assertEquals(droneUuid, reloaded.getDroneInfo().get(0).getUuid());
+    assertEquals(repositionAuthority, reloaded.getDroneInfo().get(0).getCapabilities().getTasks().get(0).getAuthorities()[0].getGuid());
+    assertEquals(navigateAuthority, reloaded.getDroneInfo().get(0).getCapabilities().getTasks().get(1).getAuthorities()[0].getGuid());
     assertEquals(1, reloaded.getAdapterConfig().size());
-    assertEquals("/it/adapter", reloaded.getAdapterConfig().get("itAdapter").getProperty("topic"));
+    assertEquals("4817/catl/maps/{protocol}/{twinId}/{messageEnumName}", reloaded.getAdapterConfig().get("stanag").getProperty("topic"));
   }
 
   private ConfigurationProperties adapterProperties(String topic, int interval) {
@@ -302,3 +317,4 @@ class TwinManagerConfigTest {
     return constructor.newInstance(properties);
   }
 }
+

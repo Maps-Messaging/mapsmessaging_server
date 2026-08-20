@@ -151,6 +151,7 @@ public class TwinManagerConfig extends TwinManagerConfigDTO implements Config, C
       ConfigurationProperties publishProps = new ConfigurationProperties();
       publishProps.put("enabled", this.publish.isEnabled());
       publishProps.put("topicTemplate", this.publish.getTopicTemplate());
+      publishProps.put("publishRateMs", this.publish.getPublishRateMs());
       props.put("publish", publishProps);
     }
 
@@ -720,3 +721,4 @@ public class TwinManagerConfig extends TwinManagerConfigDTO implements Config, C
     return this.n2KTwinConfig.getTopic() != null && !"/canbus0/n2k/json/#".equals(this.n2KTwinConfig.getTopic());
   }
 }
+
