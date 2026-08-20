@@ -30,7 +30,7 @@ public class DroneInfoDTO {
   @Schema(description = "Configured UxV model name used to resolve the command model implementation.", requiredMode = Schema.RequiredMode.REQUIRED)
   private String modelName;
 
-  @Schema(description = "Named geospatial operating area assigned to this drone.")
+  @Schema(description = "Named geospatial operating area assigned to this drone.", nullable = true)
   private String geospatialArea;
 
   @Schema(description = "Message encoding used when communicating with this drone.")
