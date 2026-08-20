@@ -64,6 +64,8 @@ public class MavlinkEventListSender implements AutoCloseable {
   private int retryCount;
   private long acknowledgementTimeoutGeneration;
   private MavlinkMessage waitingMessage;
+  private MavlinkMessage lastSentMessage;
+  private MavlinkPacket lastReceivedMessage;
   private ScheduledFuture<?> acknowledgementTimeoutFuture;
 
   public MavlinkEventListSender(UxvModelCommandSet commandSet, MavlinkEventSender sender, MavlinkAcknowledgementHandler acknowledgementHandler, MavlinkSendCompletionHandler completionHandler) {
@@ -216,6 +218,12 @@ public class MavlinkEventListSender implements AutoCloseable {
   private void handleAcknowledgement(MavlinkMessage sentMessage, MavlinkPacket receivedMessage, int sentIndex, Acknowledgement acknowledgement) {
     Action action = acknowledgement.action();
 
+    if (action != Action.NOT_RELATED) {
+      synchronized (lock) {
+        lastReceivedMessage = receivedMessage;
+      }
+    }
+
     switch (action) {
       case NOT_RELATED ->
           logger.log(MAVLINK_EVENT_LIST_SENDER_ACK_IGNORED_UNRELATED, sequenceId, commandSet.operation(), commandSet.modelName(), sentIndex + 1);
@@ -358,6 +366,9 @@ public class MavlinkEventListSender implements AutoCloseable {
 
   private void sendMessage(int index, MavlinkMessage message, boolean requiresAcknowledgement) throws Exception {
     logger.log(MAVLINK_EVENT_LIST_SENDER_SENDING, sequenceId, commandSet.operation(), commandSet.modelName(), index + 1, messages.size(), messageName(message), requiresAcknowledgement);
+    synchronized (lock) {
+      lastSentMessage = message;
+    }
     sender.send(message);
 
     if (requiresAcknowledgement) {
@@ -442,7 +453,9 @@ public class MavlinkEventListSender implements AutoCloseable {
 
       terminal = true;
       clearWaitingState();
-      result = new MavlinkSendResult(this, sequenceId, status, index, messages.size(), sentMessage, receivedMessage, cause, reason);
+      MavlinkMessage retainedSentMessage = sentMessage == null ? lastSentMessage : sentMessage;
+      MavlinkPacket retainedReceivedMessage = receivedMessage == null ? lastReceivedMessage : receivedMessage;
+      result = new MavlinkSendResult(this, sequenceId, status, index, messages.size(), retainedSentMessage, retainedReceivedMessage, cause, reason);
     }
 
     isActive.set(false);

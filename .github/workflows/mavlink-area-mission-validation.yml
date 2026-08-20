@@ -23,7 +23,7 @@ jobs:
       - name: Run MAVLink mission tests
         run: >-
           mvn -B
-          -Dtest=MissionPlanRepeatTest,MavlinkCommandSetPreparerTest,MavlinkEventListSenderConcurrencyTest,SticklebackPassiveDetectionCapabilityTest,PlanTaskTypeTest,TwinManagerConfigPlanTaskTypeTest
+          -Dtest=MissionPlanRepeatTest,MavlinkCommandSetPreparerTest,MavlinkEventListSenderTest,MavlinkEventListSenderConcurrencyTest,MissionCurrentListenerTest,SticklebackPassiveDetectionCapabilityTest,PlanTaskTypeTest,TwinManagerConfigPlanTaskTypeTest
           test
       - name: Run MAVLink bootstrap tests
         run: >-
