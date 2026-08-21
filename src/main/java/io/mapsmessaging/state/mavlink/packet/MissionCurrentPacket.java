@@ -31,6 +31,7 @@ public class MissionCurrentPacket extends MavlinkPacket {
   private final int sequence;
   private final int total;
   private final int missionState;
+  private final int missionMode;
   private final long missionId;
   private final boolean valid;
 
@@ -40,7 +41,9 @@ public class MissionCurrentPacket extends MavlinkPacket {
     this.sequence = getInt(fields, "seq");
     this.total = getInt(fields, "total");
     this.missionState = getInt(fields, "mission_state");
-    this.missionId = getLong(fields, "mission_id");
+    this.missionMode = getInt(fields, "mission_mode");
+    long suppliedMissionId = getLong(fields, "mission_id");
+    this.missionId = suppliedMissionId >= 0L ? suppliedMissionId : getLong(fields, "opaque_id");
     this.valid = frame.isValid();
   }
 
@@ -62,6 +65,10 @@ public class MissionCurrentPacket extends MavlinkPacket {
 
   public int getMissionState() {
     return missionState;
+  }
+
+  public int getMissionMode() {
+    return missionMode;
   }
 
   public long getMissionId() {

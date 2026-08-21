@@ -23,6 +23,7 @@ import io.mapsmessaging.state.drone.model.GeoPosition;
 import io.mapsmessaging.state.mavlink.messages.*;
 import io.mapsmessaging.state.mavlink.model.HomeRequest;
 import io.mapsmessaging.state.mavlink.model.MissionPlan;
+import io.mapsmessaging.state.mavlink.model.MissionCurrentRequest;
 import io.mapsmessaging.state.mavlink.model.PlanItem;
 import io.mapsmessaging.state.mavlink.model.PlanItemType;
 import io.mapsmessaging.state.mavlink.model.PlanValidation;
@@ -35,6 +36,7 @@ import io.mapsmessaging.state.mavlink.model.UxvOperation;
 import io.mapsmessaging.state.mavlink.model.UxvVehicleType;
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.EnumSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
@@ -56,7 +58,7 @@ public abstract class AbstractMissionUxvModel extends AbstractUxvModel {
   private static final float RELATIVE_YAW_OFFSET = 0.0f;
 
   protected AbstractMissionUxvModel(String modelName, UxvVehicleType vehicleType, Set<UxvOperation> supportedOperations) {
-    super(modelName, vehicleType, supportedOperations);
+    super(modelName, vehicleType, withMissionContinuation(supportedOperations));
   }
 
   @Override
@@ -205,6 +207,22 @@ public abstract class AbstractMissionUxvModel extends AbstractUxvModel {
         MavlinkCommandLongFactory.missionStart(context.targetSystem(), context.targetComponent(), context.sequence()));
   }
 
+  @Override
+  public UxvModelCommandSet setCurrentMission(
+      UxvCommandContext context, MissionCurrentRequest request) {
+    Objects.requireNonNull(context, "context must not be null");
+    Objects.requireNonNull(request, "request must not be null");
+    return UxvModelCommandSet.of(
+        UxvOperation.SET_CURRENT_MISSION,
+        getModelName(),
+        MavlinkCommandLongFactory.setMissionCurrent(
+            context.targetSystem(),
+            context.targetComponent(),
+            context.sequence(),
+            request.missionSequence(),
+            request.resetMission()));
+  }
+
   public UxvModelCommandSet setSpeed(UxvCommandContext context, double speedMetersPerSecond) {
     Objects.requireNonNull(context, "context must not be null");
     requirePositiveOrZero(speedMetersPerSecond, "speedMetersPerSecond");
@@ -275,6 +293,17 @@ public abstract class AbstractMissionUxvModel extends AbstractUxvModel {
     if (item.depthMeters() != null && !Double.isFinite(item.depthMeters())) {
       issues.add(new PlanValidationIssue(UxvOperation.BUILD_MISSION, itemName + " depthMeters must be finite"));
     }
+  }
+
+  private static Set<UxvOperation> withMissionContinuation(
+      Set<UxvOperation> supportedOperations) {
+    Objects.requireNonNull(supportedOperations, "supportedOperations must not be null");
+    EnumSet<UxvOperation> operations =
+        supportedOperations.isEmpty()
+            ? EnumSet.noneOf(UxvOperation.class)
+            : EnumSet.copyOf(supportedOperations);
+    operations.add(UxvOperation.SET_CURRENT_MISSION);
+    return Set.copyOf(operations);
   }
 
   private void validatePlanPosition(String itemName, GeoPosition position, List<PlanValidationIssue> issues) {

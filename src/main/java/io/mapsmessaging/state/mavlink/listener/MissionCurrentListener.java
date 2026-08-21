@@ -69,6 +69,9 @@ public class MissionCurrentListener implements Listener {
       if (packet.getMissionState() >= 0) {
         drone.setCurrentMissionStateCode(packet.getMissionState());
       }
+      if (packet.getMissionMode() >= 0) {
+        drone.setCurrentMissionModeCode(packet.getMissionMode());
+      }
       if (packet.getMissionId() >= 0L) {
         drone.setCurrentMissionId(packet.getMissionId());
       }

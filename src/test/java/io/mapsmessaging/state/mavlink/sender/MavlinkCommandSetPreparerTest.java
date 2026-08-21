@@ -25,6 +25,7 @@ import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import io.mapsmessaging.state.drone.model.GeoPosition;
+import io.mapsmessaging.state.mavlink.messages.MavlinkCommandLongFactory;
 import io.mapsmessaging.state.mavlink.messages.MavlinkMissionCount;
 import io.mapsmessaging.state.mavlink.messages.MavlinkMissionCountFactory;
 import io.mapsmessaging.state.mavlink.messages.MavlinkMissionItemInt;
@@ -82,6 +83,23 @@ class MavlinkCommandSetPreparerTest {
 
     assertSame(commandSet, prepared.commandSet());
     assertInstanceOf(MavlinkCommandAcknowledgementHandler.class, prepared.acknowledgementHandler());
+  }
+
+  @Test
+  void prepareSetCurrentMissionRequiresCommandAndMissionCurrentAcknowledgements() {
+    UxvModelCommandSet commandSet =
+        UxvModelCommandSet.of(
+            UxvOperation.SET_CURRENT_MISSION,
+            "test-model",
+            MavlinkCommandLongFactory.setMissionCurrent(10, 1, 7, 3, false));
+
+    PreparedMavlinkCommandSet prepared =
+        MavlinkCommandSetPreparer.prepare(commandSet);
+
+    assertSame(commandSet, prepared.commandSet());
+    assertInstanceOf(
+        MavlinkSetCurrentMissionAcknowledgementHandler.class,
+        prepared.acknowledgementHandler());
   }
 
   private MavlinkMissionItemInt waypoint(int sequence, double latitude, double longitude) {
