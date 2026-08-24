@@ -385,6 +385,21 @@ class TwinConfigurationStoreTest {
   }
 
   @Test
+  void drone_createNonPositiveArrivalTolerance_returnsBadRequest() {
+    TwinConfigurationStore store = new TwinConfigurationStore(newConfig());
+    DroneInfoDTO drone = drone("alpha");
+    drone.setArrivalToleranceMeters(0.0d);
+
+    TwinConfigurationStore.TwinConfigurationException exception =
+        assertThrows(
+            TwinConfigurationStore.TwinConfigurationException.class,
+            () -> store.createDrone(drone));
+
+    assertEquals(400, exception.getStatusCode());
+    assertTrue(store.listDrones().isEmpty());
+  }
+
+  @Test
   void drone_createSaveFailure_restoresConfiguration() {
     SavingTwinManagerConfig config = newConfig();
     TwinConfigurationStore store = new TwinConfigurationStore(config);

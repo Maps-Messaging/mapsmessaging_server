@@ -231,6 +231,13 @@ public class DroneTwin extends EntityTwin {
       nullable = true)
   private Double surveyRadiusMeters;
 
+  @Schema(
+      description =
+          "Distance in metres from a task destination that is considered an arrival.",
+      example = "100.0",
+      nullable = true)
+  private Double arrivalToleranceMeters;
+
   private StopActionEnum stopAction;
 
   public DroneTwin(String twinId) {

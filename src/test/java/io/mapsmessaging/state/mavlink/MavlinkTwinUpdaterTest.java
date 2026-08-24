@@ -171,6 +171,7 @@ class MavlinkTwinUpdaterTest {
     UUID uuid = UUID.fromString("d972348c-8496-45de-b130-9c003d7bf245");
     droneInfo.setUuid(uuid);
     droneInfo.setBatteryCapacityHours(4.5);
+    droneInfo.setArrivalToleranceMeters(35.0d);
     droneInfo.setDescription(Map.of("role", "survey"));
     MavlinkPacket packet = mock(MavlinkPacket.class);
     ProcessedFrame frame = frame(17, 42, 999);
@@ -184,6 +185,7 @@ class MavlinkTwinUpdaterTest {
     assertEquals("Survey aircraft", twin.getDescriptionString());
     assertEquals("drone-1", twin.getCallSign());
     assertEquals(4.5, twin.getBatteryCapacityHours());
+    assertEquals(35.0d, twin.getArrivalToleranceMeters());
     assertEquals("mavlink/outbound", twin.getResponseTopicName());
     assertEquals("outbound-2", twin.getUniqueOutboundIdentifier());
     assertEquals("survey", twin.getDescription().get("role"));

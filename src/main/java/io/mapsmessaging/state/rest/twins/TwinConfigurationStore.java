@@ -543,6 +543,8 @@ class TwinConfigurationStore {
     validateNonNegativeFinite(droneInfo.getBatteryCapacityHours(), "batteryCapacityHours");
     validateOptionalPositiveFinite(droneInfo.getRangeMeters(), "rangeMeters");
     validateOptionalPositiveFinite(droneInfo.getSurveyRadiusMeters(), "surveyRadiusMeters");
+    validateOptionalPositiveFinite(
+        droneInfo.getArrivalToleranceMeters(), "arrivalToleranceMeters");
     validateTaskCapabilities(droneInfo.getCapabilities());
   }
 

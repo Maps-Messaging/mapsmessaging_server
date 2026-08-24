@@ -33,16 +33,19 @@ class DroneInfoRangeConfigTest {
 
   @Test
   void constructor_readsOptionalRangeAndSurveyRadius() throws ReflectiveOperationException {
-    TwinManagerConfig config = newTwinManagerConfig(rootWithDrone(25_000.0d, 200.0d));
+    TwinManagerConfig config =
+        newTwinManagerConfig(rootWithDrone(25_000.0d, 200.0d, 35.0d));
 
     assertEquals(1, config.getDroneInfo().size());
     assertEquals(25_000.0d, config.getDroneInfo().get(0).getRangeMeters());
     assertEquals(200.0d, config.getDroneInfo().get(0).getSurveyRadiusMeters());
+    assertEquals(35.0d, config.getDroneInfo().get(0).getArrivalToleranceMeters());
   }
 
   @Test
   void toConfigurationProperties_writesOptionalRangeAndSurveyRadius() throws ReflectiveOperationException {
-    TwinManagerConfig config = newTwinManagerConfig(rootWithDrone(25_000.0d, 200.0d));
+    TwinManagerConfig config =
+        newTwinManagerConfig(rootWithDrone(25_000.0d, 200.0d, 35.0d));
 
     ConfigurationProperties saved = config.toConfigurationProperties();
     List<?> droneInfos = assertInstanceOf(List.class, saved.get("droneInfo"));
@@ -50,16 +53,21 @@ class DroneInfoRangeConfigTest {
 
     assertEquals(25_000.0d, drone.getDoubleProperty("rangeMeters", 0.0d));
     assertEquals(200.0d, drone.getDoubleProperty("surveyRadiusMeters", 0.0d));
+    assertEquals(
+        35.0d, drone.getDoubleProperty("arrivalToleranceMeters", 0.0d));
   }
 
   @Test
   void configurationRoundTrip_preservesOptionalRangeAndSurveyRadius() throws ReflectiveOperationException {
-    TwinManagerConfig original = newTwinManagerConfig(rootWithDrone(25_000.0d, 200.0d));
+    TwinManagerConfig original =
+        newTwinManagerConfig(rootWithDrone(25_000.0d, 200.0d, 35.0d));
 
     TwinManagerConfig reloaded = newTwinManagerConfig(original.toConfigurationProperties());
 
     assertEquals(25_000.0d, reloaded.getDroneInfo().get(0).getRangeMeters());
     assertEquals(200.0d, reloaded.getDroneInfo().get(0).getSurveyRadiusMeters());
+    assertEquals(
+        35.0d, reloaded.getDroneInfo().get(0).getArrivalToleranceMeters());
   }
 
   @Test
@@ -85,6 +93,13 @@ class DroneInfoRangeConfigTest {
   }
 
   private ConfigurationProperties rootWithDrone(Double rangeMeters, Double surveyRadiusMeters) {
+    return rootWithDrone(rangeMeters, surveyRadiusMeters, null);
+  }
+
+  private ConfigurationProperties rootWithDrone(
+      Double rangeMeters,
+      Double surveyRadiusMeters,
+      Double arrivalToleranceMeters) {
     ConfigurationProperties root = new ConfigurationProperties();
     ConfigurationProperties drone = baseDrone();
     if (rangeMeters != null) {
@@ -92,6 +107,9 @@ class DroneInfoRangeConfigTest {
     }
     if (surveyRadiusMeters != null) {
       drone.put("surveyRadiusMeters", surveyRadiusMeters);
+    }
+    if (arrivalToleranceMeters != null) {
+      drone.put("arrivalToleranceMeters", arrivalToleranceMeters);
     }
     root.put("droneInfo", List.of(drone));
     return root;
