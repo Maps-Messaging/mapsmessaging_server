@@ -49,14 +49,20 @@ class MavlinkSetCurrentMissionAcknowledgementHandlerTest {
   }
 
   @Test
-  void missionCurrentBeforeCommandAckStillRequiresBothConfirmations() {
+  void matchingMissionCurrentCompletesWithoutCommandAck() {
+    MavlinkSetCurrentMissionAcknowledgementHandler handler = handler();
+
+    assertEquals(
+        MavlinkAcknowledgementHandler.Action.COMPLETE,
+        handler.acknowledge(COMMAND, missionCurrent(EXPECTED_SEQUENCE)).action());
+  }
+
+  @Test
+  void acceptedCommandAckAloneWaitsForMissionCurrentConfirmation() {
     MavlinkSetCurrentMissionAcknowledgementHandler handler = handler();
 
     assertEquals(
         MavlinkAcknowledgementHandler.Action.WAIT,
-        handler.acknowledge(COMMAND, missionCurrent(EXPECTED_SEQUENCE)).action());
-    assertEquals(
-        MavlinkAcknowledgementHandler.Action.COMPLETE,
         handler.acknowledge(COMMAND, commandAck(0)).action());
   }
 
