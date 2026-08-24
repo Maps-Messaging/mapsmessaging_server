@@ -68,6 +68,7 @@ public class N2kTwinUpdater {
   private EntityTwin createTwin(String twinId, N2KTwinConfig config, TwinUpdateContext context, DroneInfoDTO droneInfo) {
     DroneTwin droneTwin = new DroneTwin(twinId, droneInfo.getUuid());
     updateTwinIdentity(droneTwin, config, context);
+    droneTwin.setArrivalToleranceMeters(droneInfo.getArrivalToleranceMeters());
     if (droneInfo.getCapabilities() != null) {
       droneTwin.setCapabilities(droneInfo.getCapabilities());
       droneTwin.setDescription(droneInfo.getDescription());

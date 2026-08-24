@@ -380,6 +380,8 @@ public class TwinManagerConfig extends TwinManagerConfigDTO implements Config, C
     droneInfo.setGeospatialArea(properties.getProperty("geospatialArea", droneInfo.getGeospatialArea()));
     droneInfo.setRangeMeters(readOptionalPositiveDouble(properties, "rangeMeters"));
     droneInfo.setSurveyRadiusMeters(readOptionalPositiveDouble(properties, "surveyRadiusMeters"));
+    droneInfo.setArrivalToleranceMeters(
+        readOptionalPositiveDouble(properties, "arrivalToleranceMeters"));
     droneInfo.setMessageEncoding(parseMessageEncoding(properties.getProperty("messageEncoding", null), droneInfo.getMessageEncoding()));
     StopActionEnum legacyStopAction = parseTerminalAction(properties.getProperty("stopAction", null), droneInfo.getCancelAction());
     droneInfo.setCancelAction(parseTerminalAction(properties.getProperty("cancelAction", null), legacyStopAction));
@@ -444,6 +446,12 @@ public class TwinManagerConfig extends TwinManagerConfigDTO implements Config, C
 
       if (droneInfo.getSurveyRadiusMeters() != null && droneInfo.getSurveyRadiusMeters() > 0.0d) {
         properties.put("surveyRadiusMeters", droneInfo.getSurveyRadiusMeters());
+      }
+
+      if (droneInfo.getArrivalToleranceMeters() != null
+          && droneInfo.getArrivalToleranceMeters() > 0.0d) {
+        properties.put(
+            "arrivalToleranceMeters", droneInfo.getArrivalToleranceMeters());
       }
 
       if (droneInfo.getMessageEncoding() != null) {

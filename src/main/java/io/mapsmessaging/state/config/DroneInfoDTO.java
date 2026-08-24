@@ -57,6 +57,15 @@ public class DroneInfoDTO {
       nullable = true)
   private Double surveyRadiusMeters;
 
+  @Schema(
+      description =
+          "Distance in metres from a task destination that is considered an arrival. "
+              + "When omitted, the state adapter default is used.",
+      example = "100.0",
+      minimum = "0.0",
+      nullable = true)
+  private Double arrivalToleranceMeters;
+
   @Schema(description = "Drone description", type = "object", additionalProperties = Schema.AdditionalPropertiesValue.TRUE)
   private Map<String, Object> description;
 
