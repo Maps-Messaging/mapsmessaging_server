@@ -30,8 +30,6 @@ public final class MavlinkSetCurrentMissionAcknowledgementHandler
     implements MavlinkAcknowledgementHandler {
 
   private final int expectedMissionSequence;
-  private boolean commandAcknowledged;
-  private boolean missionCurrentConfirmed;
 
   public MavlinkSetCurrentMissionAcknowledgementHandler(int expectedMissionSequence) {
     if (expectedMissionSequence < 0) {
@@ -61,8 +59,7 @@ public final class MavlinkSetCurrentMissionAcknowledgementHandler
         return Acknowledgement.notRelated();
       }
       if (commandAck.isAccepted()) {
-        commandAcknowledged = true;
-        return completionState();
+        return Acknowledgement.waitForMore();
       }
       if (commandAck.isInProgress()) {
         return Acknowledgement.waitForMore();
@@ -77,16 +74,9 @@ public final class MavlinkSetCurrentMissionAcknowledgementHandler
           || missionCurrent.getSequence() != expectedMissionSequence) {
         return Acknowledgement.notRelated();
       }
-      missionCurrentConfirmed = true;
-      return completionState();
+      return Acknowledgement.complete();
     }
 
     return Acknowledgement.notRelated();
-  }
-
-  private Acknowledgement completionState() {
-    return commandAcknowledged && missionCurrentConfirmed
-        ? Acknowledgement.complete()
-        : Acknowledgement.waitForMore();
   }
 }
