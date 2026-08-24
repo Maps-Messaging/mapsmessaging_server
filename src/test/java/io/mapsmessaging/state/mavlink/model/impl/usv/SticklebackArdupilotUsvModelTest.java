@@ -76,6 +76,20 @@ class SticklebackArdupilotUsvModelTest {
   }
 
   @Test
+  void resumeVehicleReentersAutoMissionAfterGuidedIntervention() {
+    SticklebackArdupilotUsvModel model = new SticklebackArdupilotUsvModel();
+
+    UxvModelCommandSet commandSet = model.resumeVehicle(CONTEXT);
+
+    MavlinkCommandLong command =
+        assertInstanceOf(MavlinkCommandLong.class, commandSet.messages().get(0));
+    assertEquals(1, commandSet.messages().size());
+    assertEquals(MavlinkCommandLongFactory.MAV_CMD_MISSION_START, command.getCommand());
+    assertEquals(0.0f, command.getParam1());
+    assertEquals(0.0f, command.getParam2());
+  }
+
+  @Test
   void unlimitedLoiterUsesFixedRelativeAltitudeWithoutMutatingPosition() {
     SticklebackArdupilotUsvModel model = new SticklebackArdupilotUsvModel();
     GeoPosition position = new GeoPosition(59.4673d, 24.828353d, 87.0d, null);
