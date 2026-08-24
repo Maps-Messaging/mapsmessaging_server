@@ -86,7 +86,7 @@ class MavlinkCommandSetPreparerTest {
   }
 
   @Test
-  void prepareSetCurrentMissionRequiresCommandAndMissionCurrentAcknowledgements() {
+  void prepareSetCurrentMissionUsesMissionCurrentAcknowledgementHandler() {
     UxvModelCommandSet commandSet =
         UxvModelCommandSet.of(
             UxvOperation.SET_CURRENT_MISSION,
