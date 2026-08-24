@@ -24,7 +24,7 @@ Assumptions:
 | `holdPosition(context)` | Yes | `COMMAND_LONG` | `76` | `MAV_CMD_DO_PAUSE_CONTINUE` | `193` | Pause command, effectively hold/stop because Stickleback minimum speed is `0`. |
 | `stop(context)` | Yes | `COMMAND_LONG` | `76` | `MAV_CMD_DO_PAUSE_CONTINUE` | `193` | Same pause command as hold. Valid here because the craft can actually stop. |
 | `pauseVehicle(context)` | Yes | `COMMAND_LONG` | `76` | `MAV_CMD_DO_PAUSE_CONTINUE` | `193` | `param1 = 0` pause, via factory. |
-| `resumeVehicle(context)` | Yes | `COMMAND_LONG` | `76` | `MAV_CMD_DO_PAUSE_CONTINUE` | `193` | `param1 = 1` resume/continue, via factory. |
+| `resumeVehicle(context)` | Yes | `COMMAND_LONG` | `76` | `MAV_CMD_MISSION_START` | `300` | Re-enters ArduPlane AUTO mission mode after a guided intervention. The selected mission item is set separately before this command. |
 | `startMission(context)` | Yes | `COMMAND_LONG` | `76` | `MAV_CMD_MISSION_START` | `300` | Starts mission; factory supplies defaults for first/last item unless it exposes more. |
 | `setSpeed(context, speedMetersPerSecond)` | Yes | `COMMAND_LONG` | `76` | `MAV_CMD_DO_CHANGE_SPEED` | `178` | `param1 = 1` ground speed, `param2 = speed m/s`, `param3 = -1` unchanged throttle. Zero speed allowed. |
 | `setHeading(context, headingDegrees)` | Yes, verify behaviour | `COMMAND_LONG` | `76` | `MAV_CMD_CONDITION_YAW` | `115` | `param1 = normalised heading`, `param2 = 0`, `param3 = 1` clockwise, `param4 = 0` absolute yaw. Test on Plane-style USV firmware. |
@@ -76,7 +76,7 @@ Everything else in this table is intentionally limited to the code-backed model 
 | `holdPosition(context)` | `COMMAND_LONG` | `76` | `MAV_CMD_DO_PAUSE_CONTINUE` | `193` | `target_system = context.targetSystem()`<br>`target_component = context.targetComponent()` | `param1 = 0` pause/hold<br>`param2-7 = default` |
 | `stop(context)` | `COMMAND_LONG` | `76` | `MAV_CMD_DO_PAUSE_CONTINUE` | `193` | Same as `holdPosition(context)` | `param1 = 0` pause/hold<br>`param2-7 = default` |
 | `pauseVehicle(context)` | `COMMAND_LONG` | `76` | `MAV_CMD_DO_PAUSE_CONTINUE` | `193` | Same as `holdPosition(context)` | `param1 = 0` pause/hold<br>`param2-7 = default` |
-| `resumeVehicle(context)` | `COMMAND_LONG` | `76` | `MAV_CMD_DO_PAUSE_CONTINUE` | `193` | `target_system = context.targetSystem()`<br>`target_component = context.targetComponent()` | `param1 = 1` continue/resume<br>`param2-7 = default` |
+| `resumeVehicle(context)` | `COMMAND_LONG` | `76` | `MAV_CMD_MISSION_START` | `300` | `target_system = context.targetSystem()`<br>`target_component = context.targetComponent()` | `param1 = 0` use previously selected mission item<br>`param2 = 0` no final-item override<br>`param3-7 = default` |
 | `startMission(context)` | `COMMAND_LONG` | `76` | `MAV_CMD_MISSION_START` | `300` | `target_system = context.targetSystem()`<br>`target_component = context.targetComponent()` | `param1 = first mission item/default`<br>`param2 = last mission item/default`<br>`param3-7 = default` |
 | `setSpeed(context, speedMetersPerSecond)` | `COMMAND_LONG` | `76` | `MAV_CMD_DO_CHANGE_SPEED` | `178` | `target_system = context.targetSystem()`<br>`target_component = context.targetComponent()` | `param1 = 1` ground speed<br>`param2 = speedMetersPerSecond` m/s<br>`param3 = -1` unchanged throttle<br>`param4-7 = default` |
 | `setHeading(context, headingDegrees)` | `COMMAND_LONG` | `76` | `MAV_CMD_CONDITION_YAW` | `115` | `target_system = context.targetSystem()`<br>`target_component = context.targetComponent()` | `param1 = normalised headingDegrees` `[0, 360)`<br>`param2 = 0` angular speed/default<br>`param3 = 1` clockwise<br>`param4 = 0` absolute heading<br>`param5-7 = default` |
@@ -107,6 +107,6 @@ For loiter, `MAV_CMD_NAV_LOITER_UNLIM` command `17` uses `param3` as loiter radi
 
 For fixed-wing / forward-only style vehicles, loiter means circling the point with the specified radius/direction. For Stickleback, this is interpreted as a surface circular loiter.
 
-For pause/hold/resume, `MAV_CMD_DO_PAUSE_CONTINUE` command `193` uses `param1 = 0` to pause/hold and `param1 = 1` to continue. For this USV, pause/hold is meaningful because minimum speed can be `0`.
+For pause/hold, `MAV_CMD_DO_PAUSE_CONTINUE` command `193` uses `param1 = 0`. For this USV, pause/hold is meaningful because minimum speed can be `0`. Mission continuation selects the saved mission item first, then uses `MAV_CMD_MISSION_START` command `300` to return ArduPlane to AUTO after guided intervention.
 
 `reposition(context, request)` and `setHeading(context, headingDegrees)` should be confirmed against Stickleback firmware or SITL because Plane-derived ArduPilot guided command behaviour can vary by mode and firmware configuration.

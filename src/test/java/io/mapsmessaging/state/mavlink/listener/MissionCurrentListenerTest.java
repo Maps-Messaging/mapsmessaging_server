@@ -51,6 +51,7 @@ class MissionCurrentListenerTest {
                 "seq", 2,
                 "total", 4,
                 "mission_state", 3,
+                "mission_mode", 1,
                 "mission_id", 14523L),
             true);
     new MissionCurrentListener(twinManager)
@@ -62,6 +63,7 @@ class MissionCurrentListenerTest {
     assertEquals(2, updated.getCurrentMissionSequence());
     assertEquals(4, updated.getCurrentMissionTotal());
     assertEquals(3, updated.getCurrentMissionStateCode());
+    assertEquals(1, updated.getCurrentMissionModeCode());
     assertEquals(14523L, updated.getCurrentMissionId());
     assertEquals("MISSION_ACTIVE", updated.getMissionState());
     assertEquals(receivedAt, updated.getCurrentMissionUpdatedAt());
@@ -88,7 +90,25 @@ class MissionCurrentListenerTest {
     assertEquals(receivedAt, updated.getCurrentMissionUpdatedAt());
     assertNull(updated.getCurrentMissionTotal());
     assertNull(updated.getCurrentMissionStateCode());
+    assertNull(updated.getCurrentMissionModeCode());
     assertNull(updated.getCurrentMissionId());
+  }
+
+  @Test
+  void handle_whenDialectSuppliesOpaqueId_usesItAsMissionIdentifier() {
+    TwinManager twinManager = new TwinManager();
+    DroneTwin droneTwin = new DroneTwin("mavlink:test:1");
+    twinManager.registerTwin(droneTwin, new TwinUpdateContext());
+
+    new MissionCurrentListener(twinManager)
+        .handle(
+            "mavlink:test:1",
+            packet(Map.of("seq", 1, "opaque_id", 9876L), true),
+            new TwinUpdateContext());
+
+    DroneTwin updated =
+        (DroneTwin) twinManager.getTwin("mavlink:test:1").orElseThrow();
+    assertEquals(9876L, updated.getCurrentMissionId());
   }
 
   private MissionCurrentPacket packet(Map<String, Object> fields, boolean valid) {

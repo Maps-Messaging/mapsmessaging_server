@@ -19,38 +19,15 @@
 
 package io.mapsmessaging.state.mavlink.model;
 
-public enum UxvOperation {
-    ARM,
-    DISARM,
+public record MissionCurrentRequest(int missionSequence, boolean resetMission) {
 
-    SET_HOME,
-    RETURN_TO_HOME,
+  public MissionCurrentRequest {
+    if (missionSequence < 0) {
+      throw new IllegalArgumentException("missionSequence must not be negative");
+    }
+  }
 
-    REPOSITION,
-    HOLD_POSITION,
-    STOP,
-    PAUSE_VEHICLE,
-    RESUME_VEHICLE,
-
-    NAVIGATE,
-    BUILD_MISSION,
-    START_MISSION,
-    SET_CURRENT_MISSION,
-    CLEAR_MISSION,
-
-    TAKE_OFF,
-    LAND,
-    SET_ALTITUDE,
-
-    DIVE,
-    SURFACE,
-    SET_DEPTH,
-    HOLD_DEPTH,
-
-    SET_SPEED,
-    SET_HEADING,
-    SET_TURN_RATE,
-
-    ORBIT,
-    LOITER
+  public static MissionCurrentRequest continueAt(int missionSequence) {
+    return new MissionCurrentRequest(missionSequence, false);
+  }
 }

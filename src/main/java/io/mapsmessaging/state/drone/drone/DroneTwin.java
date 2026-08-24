@@ -157,7 +157,10 @@ public class DroneTwin extends EntityTwin {
   @Schema(description = "Raw MAVLink MAV_MISSION_STATE value.", example = "3", nullable = true)
   private Integer currentMissionStateCode;
 
-  @Schema(description = "Mission identifier reported by MAVLink.", example = "14523", nullable = true)
+  @Schema(description = "Raw MAVLink MISSION_CURRENT mission_mode value.", example = "1", nullable = true)
+  private Integer currentMissionModeCode;
+
+  @Schema(description = "Mission identifier or opaque mission id reported by MAVLink.", example = "14523", nullable = true)
   private Long currentMissionId;
 
   @Schema(description = "Timestamp of the most recent MISSION_CURRENT observation.", example = "2026-08-17T04:10:00Z", nullable = true)

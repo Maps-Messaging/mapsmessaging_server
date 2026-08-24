@@ -101,6 +101,16 @@ public class SticklebackArdupilotUsvModel extends GenericArduPilotUxvModel imple
   }
 
   @Override
+  public UxvModelCommandSet resumeVehicle(UxvCommandContext context) {
+    Objects.requireNonNull(context, "context must not be null");
+    return UxvModelCommandSet.of(
+        UxvOperation.RESUME_VEHICLE,
+        getModelName(),
+        MavlinkCommandLongFactory.missionStart(
+            context.targetSystem(), context.targetComponent(), context.sequence()));
+  }
+
+  @Override
   public UxvModelCommandSet loiter(UxvCommandContext context, LoiterRequest request) {
     Objects.requireNonNull(context, "context must not be null");
     Objects.requireNonNull(request, "request must not be null");

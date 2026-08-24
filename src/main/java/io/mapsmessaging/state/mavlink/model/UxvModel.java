@@ -115,6 +115,11 @@ public interface UxvModel {
     throw unsupported(UxvOperation.START_MISSION);
   }
 
+  default UxvModelCommandSet setCurrentMission(
+      UxvCommandContext context, MissionCurrentRequest request) {
+    throw unsupported(UxvOperation.SET_CURRENT_MISSION);
+  }
+
   default UxvModelCommandSet clearMission(UxvCommandContext context) {
     throw unsupported(UxvOperation.CLEAR_MISSION);
   }

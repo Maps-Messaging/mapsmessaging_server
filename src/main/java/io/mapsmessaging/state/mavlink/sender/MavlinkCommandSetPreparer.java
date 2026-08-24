@@ -17,6 +17,8 @@
 
 package io.mapsmessaging.state.mavlink.sender;
 
+import io.mapsmessaging.state.mavlink.messages.MavlinkCommandLong;
+import io.mapsmessaging.state.mavlink.messages.MavlinkCommandLongFactory;
 import io.mapsmessaging.state.mavlink.messages.MavlinkMessage;
 import io.mapsmessaging.state.mavlink.messages.MavlinkMissionCount;
 import io.mapsmessaging.state.mavlink.messages.MavlinkMissionCountFactory;
@@ -34,10 +36,32 @@ public final class MavlinkCommandSetPreparer {
 
   public static PreparedMavlinkCommandSet prepare(UxvModelCommandSet commandSet) {
     Objects.requireNonNull(commandSet, "commandSet must not be null");
-    if (commandSet.operation() != UxvOperation.BUILD_MISSION) {
-      return new PreparedMavlinkCommandSet(commandSet, new MavlinkCommandAcknowledgementHandler());
+    if (commandSet.operation() == UxvOperation.BUILD_MISSION) {
+      return prepareMission(commandSet);
     }
-    return prepareMission(commandSet);
+    if (commandSet.operation() == UxvOperation.SET_CURRENT_MISSION) {
+      return prepareSetCurrentMission(commandSet);
+    }
+    return new PreparedMavlinkCommandSet(commandSet, new MavlinkCommandAcknowledgementHandler());
+  }
+
+  private static PreparedMavlinkCommandSet prepareSetCurrentMission(
+      UxvModelCommandSet commandSet) {
+    if (commandSet.messages().size() != 1
+        || !(commandSet.messages().getFirst() instanceof MavlinkCommandLong command)
+        || command.getCommand()
+            != MavlinkCommandLongFactory.MAV_CMD_DO_SET_MISSION_CURRENT) {
+      throw new IllegalArgumentException(
+          "SET_CURRENT_MISSION must contain one MAV_CMD_DO_SET_MISSION_CURRENT command");
+    }
+    int missionSequence = Math.round(command.getParam1());
+    if (missionSequence < 0 || command.getParam1() != missionSequence) {
+      throw new IllegalArgumentException(
+          "SET_CURRENT_MISSION sequence must be a non-negative integer");
+    }
+    return new PreparedMavlinkCommandSet(
+        commandSet,
+        new MavlinkSetCurrentMissionAcknowledgementHandler(missionSequence));
   }
 
   private static PreparedMavlinkCommandSet prepareMission(UxvModelCommandSet commandSet) {

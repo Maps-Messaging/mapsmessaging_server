@@ -107,12 +107,38 @@ class ArduPilotMissionSequenceTest {
     assertEquals(MavlinkCommandLongFactory.MAV_CMD_MISSION_START, start.getCommand());
   }
 
+  @Test
+  void ardupilotSetsCurrentMissionWithoutResettingProgress() {
+    assertSetCurrentMission(new SticklebackArdupilotUsvModel(), 3);
+  }
+
+  @Test
+  void px4SetsCurrentMissionWithoutResettingProgress() {
+    assertSetCurrentMission(new GenericPx4UavModel(), 3);
+  }
+
   private List<PlanItem> routeItems() {
     return List.of(waypoint(FIRST), waypoint(LAST));
   }
 
   private PlanItem waypoint(GeoPosition position) {
     return new PlanItem(PlanItemType.WAYPOINT, position, null, null, null, null, null, null);
+  }
+
+  private void assertSetCurrentMission(UxvModel model, int missionSequence) {
+    UxvModelCommandSet commandSet =
+        model.setCurrentMission(
+            CONTEXT, MissionCurrentRequest.continueAt(missionSequence));
+
+    assertEquals(UxvOperation.SET_CURRENT_MISSION, commandSet.operation());
+    assertEquals(true, model.supports(UxvOperation.SET_CURRENT_MISSION));
+    MavlinkCommandLong command =
+        (MavlinkCommandLong) commandSet.messages().getFirst();
+    assertEquals(
+        MavlinkCommandLongFactory.MAV_CMD_DO_SET_MISSION_CURRENT,
+        command.getCommand());
+    assertEquals(3.0f, command.getParam1());
+    assertEquals(0.0f, command.getParam2());
   }
 
   private void assertMissionItem(UxvModelCommandSet commandSet, int messageIndex, int missionSequence, GeoPosition position) {
