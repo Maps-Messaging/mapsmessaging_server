@@ -35,6 +35,7 @@ import io.mapsmessaging.state.config.capability.TaskSpecialization;
 import io.mapsmessaging.state.config.n2k.N2KTwinConfig;
 import java.lang.reflect.Constructor;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
 
@@ -117,6 +118,67 @@ class TwinManagerConfigTest {
     assertEquals(droneUuid.toString(), savedDroneInfo.getProperty("uuid"));
     assertInstanceOf(ConfigurationProperties.class, savedDroneInfo.get("description"));
     assertInstanceOf(ConfigurationProperties.class, savedDroneInfo.get("capabilities"));
+  }
+
+  @Test
+  void constructor_andWriter_roundTripDataProducts() throws ReflectiveOperationException {
+    UUID droneUuid = UUID.randomUUID();
+    ConfigurationProperties root = new ConfigurationProperties();
+    ConfigurationProperties droneInfo = droneInfoProperties("drone-alpha", droneUuid);
+    ConfigurationProperties dataProduct = new ConfigurationProperties();
+    dataProduct.put("identifier", "dp-thermal-camera-001");
+    dataProduct.put("description", "Thermal camera");
+    dataProduct.put("uri", "rtsp://drone01/thermal");
+    dataProduct.put(
+        "product_type",
+        new ConfigurationProperties(Map.of("name", "video/rtsp")));
+    dataProduct.put(
+        "conforms_to",
+        new ConfigurationProperties(Map.of("name", "ONVIF Profile S")));
+    droneInfo.put("data_products", List.of(dataProduct));
+    root.put("droneInfo", List.of(droneInfo));
+
+    TwinManagerConfig config = newTwinManagerConfig(root);
+
+    assertEquals(1, config.getDroneInfo().get(0).getDataProducts().size());
+    DataProductConfig loadedProduct =
+        config.getDroneInfo().get(0).getDataProducts().get(0);
+    assertEquals("dp-thermal-camera-001", loadedProduct.getIdentifier());
+    assertEquals("Thermal camera", loadedProduct.getDescription());
+    assertEquals("rtsp://drone01/thermal", loadedProduct.getUri());
+    assertEquals("video/rtsp", loadedProduct.getProductType().get("name"));
+    assertEquals("ONVIF Profile S", loadedProduct.getConformsTo().get("name"));
+
+    ConfigurationProperties saved = config.toConfigurationProperties();
+    List<?> savedDroneInfos =
+        assertInstanceOf(List.class, saved.get("droneInfo"));
+    ConfigurationProperties savedDroneInfo =
+        assertInstanceOf(ConfigurationProperties.class, savedDroneInfos.get(0));
+    List<?> savedProducts =
+        assertInstanceOf(List.class, savedDroneInfo.get("data_products"));
+    ConfigurationProperties savedProduct =
+        assertInstanceOf(ConfigurationProperties.class, savedProducts.get(0));
+    ConfigurationProperties savedProductType =
+        assertInstanceOf(
+            ConfigurationProperties.class, savedProduct.get("product_type"));
+    ConfigurationProperties savedConformsTo =
+        assertInstanceOf(
+            ConfigurationProperties.class, savedProduct.get("conforms_to"));
+
+    assertEquals("dp-thermal-camera-001", savedProduct.getProperty("identifier"));
+    assertEquals("Thermal camera", savedProduct.getProperty("description"));
+    assertEquals("rtsp://drone01/thermal", savedProduct.getProperty("uri"));
+    assertEquals("video/rtsp", savedProductType.getProperty("name"));
+    assertEquals("ONVIF Profile S", savedConformsTo.getProperty("name"));
+
+    config.getDroneInfo().get(0).setDataProducts(List.of());
+    List<?> droneInfosWithoutProducts =
+        assertInstanceOf(
+            List.class, config.toConfigurationProperties().get("droneInfo"));
+    ConfigurationProperties droneInfoWithoutProducts =
+        assertInstanceOf(
+            ConfigurationProperties.class, droneInfosWithoutProducts.get(0));
+    assertNull(droneInfoWithoutProducts.get("data_products"));
   }
 
   @Test

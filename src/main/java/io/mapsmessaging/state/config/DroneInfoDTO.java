@@ -70,7 +70,7 @@ public class DroneInfoDTO {
   private Map<String, Object> description;
 
   @Schema(description = "Optional external data products exposed by this drone.")
-  private List<DataProductConfig> dataProducts = new ArrayList<>();
+  private List<DataProductConfig> dataProducts;
 
   @Schema(description = "Task capabilities supported by this known MAVLink source.")
   private TaskCapabilities capabilities = new TaskCapabilities();
@@ -85,7 +85,7 @@ public class DroneInfoDTO {
   private StopActionEnum missionTimeoutAction = StopActionEnum.STOP;
 
   public List<DataProductConfig> getDataProducts() {
-    if (dataProducts == null || dataProducts.isEmpty()) {
+    if (dataProducts == null) {
       dataProducts = new ArrayList<>(DataProductConfigLoader.load(name, uuid));
     }
     return List.copyOf(dataProducts);

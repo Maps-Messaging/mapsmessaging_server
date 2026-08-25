@@ -393,6 +393,8 @@ public class TwinManagerConfig extends TwinManagerConfigDTO implements Config, C
       droneInfo.setDescription(toStringObjectMap(descriptionMap));
     }
 
+    droneInfo.setDataProducts(
+        DataProductConfigLoader.parseProducts(properties.get("data_products")));
     droneInfo.setCapabilities(parseTaskCapabilities(properties.get("capabilities")));
     return droneInfo;
   }
@@ -477,10 +479,49 @@ public class TwinManagerConfig extends TwinManagerConfigDTO implements Config, C
         properties.put("description", new ConfigurationProperties(new LinkedHashMap<>(droneInfo.getDescription())));
       }
 
+      if (!droneInfo.getDataProducts().isEmpty()) {
+        properties.put(
+            "data_products",
+            toDataProductConfigurationProperties(droneInfo.getDataProducts()));
+      }
+
       if (droneInfo.getCapabilities() != null) {
         properties.put("capabilities", toTaskCapabilitiesConfigurationProperties(droneInfo.getCapabilities()));
       }
 
+      values.add(properties);
+    }
+
+    return values;
+  }
+
+  private List<ConfigurationProperties> toDataProductConfigurationProperties(
+      List<DataProductConfig> dataProducts) {
+    List<ConfigurationProperties> values = new ArrayList<>();
+
+    for (DataProductConfig dataProduct : dataProducts) {
+      ConfigurationProperties properties = new ConfigurationProperties();
+      if (dataProduct.getIdentifier() != null) {
+        properties.put("identifier", dataProduct.getIdentifier());
+      }
+      if (dataProduct.getDescription() != null) {
+        properties.put("description", dataProduct.getDescription());
+      }
+      if (dataProduct.getUri() != null) {
+        properties.put("uri", dataProduct.getUri());
+      }
+      if (dataProduct.getProductType() != null && !dataProduct.getProductType().isEmpty()) {
+        properties.put(
+            "product_type",
+            new ConfigurationProperties(
+                new LinkedHashMap<>(dataProduct.getProductType())));
+      }
+      if (dataProduct.getConformsTo() != null && !dataProduct.getConformsTo().isEmpty()) {
+        properties.put(
+            "conforms_to",
+            new ConfigurationProperties(
+                new LinkedHashMap<>(dataProduct.getConformsTo())));
+      }
       values.add(properties);
     }
 

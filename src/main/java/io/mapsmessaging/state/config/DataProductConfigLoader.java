@@ -46,7 +46,7 @@ final class DataProductConfigLoader {
         || (droneUuid != null && Objects.equals(droneUuid.toString(), configuredUuid));
   }
 
-  private static List<DataProductConfig> parseProducts(Object value) {
+  static List<DataProductConfig> parseProducts(Object value) {
     if (value == null) {
       return List.of();
     }
