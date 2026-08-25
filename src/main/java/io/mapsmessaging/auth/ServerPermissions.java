@@ -118,6 +118,16 @@ public enum ServerPermissions implements Permission {
     return stringBuilder.toString();
   }
 
+  public static ServerPermissions fromName(String name) {
+    for (ServerPermissions permission : values()) {
+      if (permission.name.equals(name)) {
+        return permission;
+      }
+    }
+
+    throw new IllegalArgumentException("Unknown server permission: " + name);
+  }
+
   public static void main(String[] args) {
     System.err.println(generateOpenFgaModel());
   }
