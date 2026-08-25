@@ -131,7 +131,7 @@ public class StateMonitor implements Runnable {
       try {
         connection.getEndPoint().close();
       } catch (IOException exception) {
-        logger.log(ServerLogMessages.STATE_MONITOR_ENDPOINT_CLOSE_EXCEPTION, connection.getEndPoint(), exception);
+        logger.log(ServerLogMessages.STATE_MONITOR_ENDPOINT_CLOSE_EXCEPTION, exception, connection.getEndPoint());
       }
     }
 

@@ -75,7 +75,7 @@ public class Establishing extends State {
         endPointConnection.getLogger().log(ServerLogMessages.END_POINT_CONNECTION_SUBSCRIPTION_ESTABLISHED, direction, property.getLocalNamespace(), remote);
       } catch (IOException ioException) {
         success = false;
-        endPointConnection.getLogger().log(ServerLogMessages.END_POINT_CONNECTION_SUBSCRIPTION_FAILED, direction, property.getLocalNamespace(), remote, ioException);
+        endPointConnection.getLogger().log(ServerLogMessages.END_POINT_CONNECTION_SUBSCRIPTION_FAILED, ioException, direction, property.getLocalNamespace(), remote);
       }
     }
     return success;

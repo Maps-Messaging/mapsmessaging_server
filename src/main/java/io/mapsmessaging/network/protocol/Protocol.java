@@ -360,7 +360,7 @@ public abstract class Protocol implements SelectorCallback, MessageListener, Tim
           endPoint.getServer().handleCloseEndPoint(endPoint);
         }
       } catch (IOException ioException) {
-        endPoint.getLogger().log(ServerLogMessages.END_POINT_CONNECTION_FAILED, ioException);
+        endPoint.getLogger().log(ServerLogMessages.END_POINT_CONNECTION_FAILED, ioException, endPoint.getName());
         try {
           endPoint.close();
         } catch (IOException e) {
