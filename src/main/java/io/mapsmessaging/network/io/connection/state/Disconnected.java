@@ -98,7 +98,7 @@ public class Disconnected extends State implements EndPointConnectedCallback {
       endPointConnection.setProtocol(protocolImpl);
       endPointConnection.scheduleState(new Connecting(endPointConnection));
     } catch (IOException ioException) {
-      endPointConnection.getLogger().log(ServerLogMessages.END_POINT_CONNECTION_PROTOCOL_FAILED, url, protocol, ioException);
+      endPointConnection.getLogger().log(ServerLogMessages.END_POINT_CONNECTION_PROTOCOL_FAILED, ioException, url, protocol);
       endPointConnection.scheduleState(new Delayed(endPointConnection), DELAYED_TIME);
     }
   }
@@ -111,7 +111,7 @@ public class Disconnected extends State implements EndPointConnectedCallback {
       List<String> jmxPath = endPointConnection.getJMXPath();
       activeEndPoint = endPointConnection.getEndPointConnectionFactory().connect(url, selectorLoadManager, this, endPointConnection, jmxPath);
     } catch (Exception ioException) {
-      endPointConnection.getLogger().log(ServerLogMessages.END_POINT_CONNECTION_FAILED, url, ioException);
+      endPointConnection.getLogger().log(ServerLogMessages.END_POINT_CONNECTION_FAILED, ioException, url);
       endPointConnection.scheduleState(new Delayed(endPointConnection), DELAYED_TIME);
     }
   }
