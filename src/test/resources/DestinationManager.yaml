@@ -96,6 +96,7 @@ DestinationManager:
         contentType: application/xml
         schemaId: test-schema
         retain: true
+        storeOffline: true
         meta:
           mkey: mval
         dataMap:
@@ -150,6 +151,7 @@ DestinationManager:
         contentType: application/xml
         schemaId: test-schema
         retain: true
+        storeOffline: true
         meta:
           mkey: mval
         dataMap:

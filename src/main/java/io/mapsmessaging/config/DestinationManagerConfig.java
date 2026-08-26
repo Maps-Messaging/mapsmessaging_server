@@ -56,7 +56,7 @@ public class DestinationManagerConfig extends DestinationManagerConfigDTO implem
     ConfigurationProperties properties = new ConfigurationProperties();
     List<ConfigurationProperties> dataProperties = new ArrayList<>();
     for (DestinationConfigDTO destinationConfig : this.data) {
-      dataProperties.add(((Config)destinationConfig).toConfigurationProperties());
+      dataProperties.add(DestinationConfig.toConfigurationProperties(destinationConfig));
     }
     properties.put("data", dataProperties);
     return properties;
@@ -77,8 +77,15 @@ public class DestinationManagerConfig extends DestinationManagerConfigDTO implem
       hasChanged = true;
     } else {
       for (int i = 0; i < this.data.size(); i++) {
-        if (!this.data.get(i).equals(newConfig.getData().get(i))) {
-          this.data.set(i, newConfig.getData().get(i));
+        DestinationConfigDTO currentDestination = this.data.get(i);
+        DestinationConfigDTO updatedDestination = newConfig.getData().get(i);
+        if (currentDestination instanceof DestinationConfig destinationConfig) {
+          if (destinationConfig.update(updatedDestination)) {
+            hasChanged = true;
+          }
+        }
+        else if (!currentDestination.equals(updatedDestination)) {
+          this.data.set(i, updatedDestination);
           hasChanged = true;
         }
       }

@@ -22,8 +22,12 @@ package io.mapsmessaging.config.destination;
 import io.mapsmessaging.config.Config;
 import io.mapsmessaging.configuration.ConfigurationProperties;
 import io.mapsmessaging.dto.rest.config.BaseConfigDTO;
+import io.mapsmessaging.dto.rest.config.destination.CacheConfigDTO;
 import io.mapsmessaging.dto.rest.config.destination.DestinationConfigDTO;
+import io.mapsmessaging.dto.rest.config.destination.FormatConfigDTO;
 import io.mapsmessaging.license.FeatureManager;
+
+import java.util.Objects;
 
 public class DestinationConfig extends DestinationConfigDTO implements Config {
 
@@ -54,8 +58,11 @@ public class DestinationConfig extends DestinationConfigDTO implements Config {
     else{
       this.cache = null;
     }
-    if(properties.containsKey("messageOverrides")) {
+    if (properties.containsKey("messageOverrides")) {
       messageOverride = new MessageOverrideConfig((ConfigurationProperties) properties.get("messageOverrides"));
+    }
+    else if (properties.containsKey("messageOverride")) {
+      messageOverride = new MessageOverrideConfig((ConfigurationProperties) properties.get("messageOverride"));
     }
     String propertyNamespace = this.namespace;
     this.remap =
@@ -76,20 +83,29 @@ public class DestinationConfig extends DestinationConfigDTO implements Config {
 
   @Override
   public ConfigurationProperties toConfigurationProperties() {
+    return toConfigurationProperties(this);
+  }
+
+  public static ConfigurationProperties toConfigurationProperties(DestinationConfigDTO config) {
     ConfigurationProperties properties = new ConfigurationProperties();
-    properties.put("directory", this.directory);
-    properties.put("namespace", this.namespace);
-    properties.put("type", this.type);
-    properties.put("autoPauseTimeout", this.autoPauseTimeout);
-    ConfigHelper.packMap(properties, storageConfig);
-    if (this.format != null) {
-      properties.put("format", ((Config) format).toConfigurationProperties());
+    properties.put("directory", config.getDirectory());
+    properties.put("namespace", config.getNamespace());
+    properties.put("type", config.getType());
+    properties.put("autoPauseTimeout", config.getAutoPauseTimeout());
+    ConfigHelper.packMap(properties, config.getStorageConfig());
+    if (config.getFormat() != null) {
+      ConfigurationProperties formatProperties = new ConfigurationProperties();
+      formatProperties.put("name", config.getFormat().getName());
+      properties.put("format", formatProperties);
     }
-    if (this.cache != null) {
-      properties.put("cache", ((Config) cache).toConfigurationProperties());
+    if (config.getCache() != null) {
+      ConfigurationProperties cacheProperties = new ConfigurationProperties();
+      cacheProperties.put("type", config.getCache().getType());
+      cacheProperties.put("writeThrough", config.getCache().isWriteThrough() ? "enable" : "disable");
+      properties.put("cache", cacheProperties);
     }
-    if (this.messageOverride != null) {
-      properties.put("messageOverride", ((Config) messageOverride).toConfigurationProperties());
+    if (config.getMessageOverride() != null) {
+      properties.put("messageOverrides", MessageOverrideConfig.toConfigurationProperties(config.getMessageOverride()));
     }
     return properties;
   }
@@ -122,17 +138,61 @@ public class DestinationConfig extends DestinationConfigDTO implements Config {
       hasChanged = true;
     }
 
-    // Update nested configs and check for changes
-    if (this.format != null && ((Config) format).update(newConfig.getFormat())) {
-      hasChanged = true;
-    }
-    if (this.cache != null && ((Config) cache).update(newConfig.getCache())) {
-      hasChanged = true;
-    }
-    if (this.messageOverride != null && ((Config) messageOverride).update(newConfig.getMessageOverride())) {
+    if (!Objects.equals(this.storageConfig, newConfig.getStorageConfig())) {
+      this.storageConfig = newConfig.getStorageConfig();
       hasChanged = true;
     }
 
+    // Update nested configs and check for changes
+    if (this.format instanceof Config formatConfig && newConfig.getFormat() != null) {
+      hasChanged |= formatConfig.update(newConfig.getFormat());
+    }
+    else if (!Objects.equals(this.format, newConfig.getFormat())) {
+      this.format = copyFormat(newConfig.getFormat());
+      hasChanged = true;
+    }
+    if (this.cache instanceof Config cacheConfig && newConfig.getCache() != null) {
+      hasChanged |= cacheConfig.update(newConfig.getCache());
+    }
+    else if (!Objects.equals(this.cache, newConfig.getCache())) {
+      this.cache = copyCache(newConfig.getCache());
+      hasChanged = true;
+    }
+    if (this.messageOverride instanceof Config overrideConfig && newConfig.getMessageOverride() != null) {
+      hasChanged |= overrideConfig.update(newConfig.getMessageOverride());
+    }
+    else if (!Objects.equals(this.messageOverride, newConfig.getMessageOverride())) {
+      this.messageOverride = newConfig.getMessageOverride() == null
+          ? null
+          : new MessageOverrideConfig(MessageOverrideConfig.toConfigurationProperties(newConfig.getMessageOverride()));
+      hasChanged = true;
+    }
+
+    String propertyNamespace = this.namespace;
+    this.remap = propertyNamespace.endsWith(OPTIONAL_PATH) && this.directory.contains(OPTIONAL_PATH);
+    this.namespaceMapping = remap
+        ? propertyNamespace.substring(0, propertyNamespace.indexOf(OPTIONAL_PATH))
+        : propertyNamespace;
+
     return hasChanged;
+  }
+
+  private FormatConfigDTO copyFormat(FormatConfigDTO config) {
+    if (config == null) {
+      return null;
+    }
+    ConfigurationProperties properties = new ConfigurationProperties();
+    properties.put("name", config.getName());
+    return new FormatConfig(properties);
+  }
+
+  private CacheConfigDTO copyCache(CacheConfigDTO config) {
+    if (config == null) {
+      return null;
+    }
+    ConfigurationProperties properties = new ConfigurationProperties();
+    properties.put("type", config.getType());
+    properties.put("writeThrough", config.isWriteThrough() ? "enable" : "disable");
+    return new CacheConfig(properties);
   }
 }

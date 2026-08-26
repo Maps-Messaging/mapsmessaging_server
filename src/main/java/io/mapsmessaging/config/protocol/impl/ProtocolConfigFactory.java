@@ -38,7 +38,7 @@ public class ProtocolConfigFactory {
       config.put(REMOTE_AUTH_CONFIG, ((Config) protocolConfig.getRemoteAuthConfig()).toConfigurationProperties());
     }
     if(protocolConfig.getMessageDefaults() != null) {
-      config.put("messageDefaults", protocolConfig.getMessageDefaults());
+      config.put("messageDefaults", MessageOverrideConfig.toConfigurationProperties(protocolConfig.getMessageDefaults()));
     }
     if(protocolConfig instanceof MqttConfigDTO mqttConfig){
       config.put("maximumSessionExpiry", mqttConfig.getMaximumSessionExpiry());
@@ -78,8 +78,14 @@ public class ProtocolConfigFactory {
     if (original.getRemoteAuthConfig() != null && updated.getRemoteAuthConfig() != null) {
       hasChanged = ((Config) original.getRemoteAuthConfig()).update(updated.getRemoteAuthConfig());
     }
-    if(original.getMessageDefaults() != null && updated.getMessageDefaults() != null) {
-      hasChanged = ((Config) original.getMessageDefaults()).update(updated.getMessageDefaults());
+    if(original.getMessageDefaults() instanceof Config messageDefaults && updated.getMessageDefaults() != null) {
+      hasChanged |= messageDefaults.update(updated.getMessageDefaults());
+    }
+    else if(original.getMessageDefaults() != updated.getMessageDefaults()) {
+      original.setMessageDefaults(updated.getMessageDefaults() == null
+          ? null
+          : new MessageOverrideConfig(MessageOverrideConfig.toConfigurationProperties(updated.getMessageDefaults())));
+      hasChanged = true;
     }
     if(original instanceof MqttConfig mqttConfigOriginal && updated instanceof MqttConfigDTO mqttConfigUpdated){
       if (mqttConfigOriginal.getMaximumSessionExpiry() != mqttConfigUpdated.getMaximumSessionExpiry()) {

@@ -152,6 +152,11 @@ public class DestinationImpl implements BaseDestination {
    */
   public DestinationImpl(@NonNull @NotNull String name, @NonNull @NotNull DestinationConfigDTO pathManager, @NonNull @NotNull UUID uuid,
                          @NonNull @NotNull DestinationType destinationType) throws IOException {
+    this(name, pathManager, uuid, destinationType, pathManager.getMessageOverride());
+  }
+
+  public DestinationImpl(@NonNull @NotNull String name, @NonNull @NotNull DestinationConfigDTO pathManager, @NonNull @NotNull UUID uuid,
+                         @NonNull @NotNull DestinationType destinationType, MessageOverrideDTO messageOverrides) throws IOException {
     SchemaConfig config = SchemaManager.getInstance().locateSchema(name);
     if(config == null || config.getFormat().equalsIgnoreCase("raw")) {
       String configuredFormat = "raw";
@@ -161,7 +166,7 @@ public class DestinationImpl implements BaseDestination {
       config = SchemaManager.getInstance().getDefaultSchemaByName(configuredFormat);
     }
     schema = new Schema(config);
-    messageOverrides = pathManager.getMessageOverride();
+    this.messageOverrides = messageOverrides;
     this.fullyQualifiedNamespace = name;
     fullyQualifiedDirectoryRoot = computePath(pathManager, uuid);
     resourceTaskQueue = new PriorityConcurrentTaskScheduler(RESOURCE_TASK_KEY, TASK_QUEUE_PRIORITY_SIZE);
@@ -645,7 +650,7 @@ public class DestinationImpl implements BaseDestination {
     if(message.isBound()){
       throw new IOException("Message is bound to another destination, can not loop events");
     }
-    message = MessageOverrides.setOverrides(messageOverrides, message);
+    message = applyMessageOverrides(message);
     Callable<Response> task;
     if (message.getDelayed() > 0 && delayedMessageManager != null) {
       task = new DelayedStoreMessageTask(this, message, delayedMessageManager, message.getDelayed());
@@ -691,6 +696,9 @@ public class DestinationImpl implements BaseDestination {
    * @throws IOException If the file system raises any File I/O exceptions during the operation
    */
   public void storeTransactionalMessage(long transactionId, @NonNull @NotNull Message message) throws IOException {
+    if(message.isBound()){
+      throw new IOException("Message is bound to another destination, can not loop events");
+    }
     Callable<Response> task;
     if (transactionMessageManager != null) {
       task = new DelayedStoreMessageTask(this, message, transactionMessageManager, transactionId);
@@ -698,6 +706,10 @@ public class DestinationImpl implements BaseDestination {
       task = new NonDelayedStoreMessageTask(this, subscriptionManager, message);
     }
     handleTask(task);
+  }
+
+  public Message applyMessageOverrides(@NonNull @NotNull Message message) {
+    return MessageOverrides.setOverrides(messageOverrides, message);
   }
   //</editor-fold>
 

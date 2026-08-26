@@ -24,6 +24,7 @@ import io.mapsmessaging.api.features.Priority;
 import io.mapsmessaging.api.features.QualityOfService;
 import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.api.message.TypedData;
+import io.mapsmessaging.dto.rest.config.destination.DestinationConfigDTO;
 import io.mapsmessaging.dto.rest.config.destination.MessageOverrideDTO;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -86,6 +87,7 @@ class MessageOverridesTest {
     Mockito.when(override.getResponseTopic()).thenReturn("reply/to");
     Mockito.when(override.getExpiry()).thenReturn(1234L);
     Mockito.when(override.getRetain()).thenReturn(Boolean.TRUE);
+    Mockito.when(override.getStoreOffline()).thenReturn(Boolean.TRUE);
     Mockito.when(override.getSchemaId()).thenReturn("schema-2");
     Mockito.when(override.getDataMap()).thenReturn(null);
     Mockito.when(override.getMeta()).thenReturn(null);
@@ -101,6 +103,7 @@ class MessageOverridesTest {
     Assertions.assertEquals("reply/to", updated.getResponseTopic());
     Assertions.assertEquals(1234L, updated.getExpiry());
     Assertions.assertTrue(updated.isRetain());
+    Assertions.assertTrue(updated.isStoreOffline());
     Assertions.assertEquals("schema-2", updated.getSchemaId());
   }
 
@@ -117,7 +120,7 @@ class MessageOverridesTest {
     Mockito.when(override.getSchemaId()).thenReturn(null);
 
     Map<String, Object> overrideData = new LinkedHashMap<>();
-    overrideData.put("d1", "override"); // overwrite existing
+    overrideData.put("d1", "configured");
     overrideData.put("d2", 42L);
 
     Map<String, String> overrideMeta = new LinkedHashMap<>();
@@ -133,8 +136,10 @@ class MessageOverridesTest {
     Assertions.assertEquals("v1", updated.getMeta().get("m1"));
     Assertions.assertEquals("v2", updated.getMeta().get("m2"));
 
-    Assertions.assertEquals("override", updated.getDataMap().get("d1").getData());
+    Assertions.assertEquals("x", updated.getDataMap().get("d1").getData());
     Assertions.assertEquals(42L, updated.getDataMap().get("d2").getData());
+    Assertions.assertFalse(message.getMeta().containsKey("m2"));
+    Assertions.assertFalse(message.getDataMap().containsKey("d2"));
   }
 
   @Test
@@ -191,5 +196,67 @@ class MessageOverridesTest {
     Message updated = MessageOverrides.setOverrides(override, message);
 
     Assertions.assertEquals(0L, updated.getIdentifier(), "Identifier must be reset by overrides");
+  }
+
+  @Test
+  void setOverrides_preservesCreationAndSchema_whenNotOverridden() {
+    long creation = 123456789L;
+    Message message = new MessageBuilder()
+        .setCreation(creation)
+        .setSchemaId("schema-id")
+        .setOpaqueData(new byte[]{1})
+        .build();
+    MessageOverrideDTO override = new MessageOverrideDTO();
+    override.setMeta(Map.of("tag", "x"));
+
+    Message updated = MessageOverrides.setOverrides(override, message);
+
+    Assertions.assertEquals(creation, updated.getCreation());
+    Assertions.assertEquals("schema-id", updated.getSchemaId());
+  }
+
+  @Test
+  void setOverrides_nullExpiry_preservesExistingExpiry() {
+    Message message = new MessageBuilder()
+        .setExpiry(60_000)
+        .setOpaqueData(new byte[]{1})
+        .build();
+    MessageOverrideDTO override = new MessageOverrideDTO();
+    override.setExpiry(null);
+    long originalExpiry = message.getExpiry();
+
+    Message updated = MessageOverrides.setOverrides(override, message);
+
+    Assertions.assertTrue(Math.abs(updated.getExpiry() - originalExpiry) <= 50);
+  }
+
+  @Test
+  void resolve_mergesMatchingOverrides_fromGeneralToSpecific() {
+    MessageOverrideDTO rootOverride = new MessageOverrideDTO();
+    rootOverride.setExpiry(60_000L);
+    rootOverride.setMeta(Map.of("source", "root", "root", "present"));
+    DestinationConfigDTO root = new DestinationConfigDTO();
+    root.setMessageOverride(rootOverride);
+
+    MessageOverrideDTO fleetOverride = new MessageOverrideDTO();
+    fleetOverride.setPriority(Priority.HIGHEST);
+    fleetOverride.setMeta(Map.of("source", "fleet"));
+    DestinationConfigDTO fleet = new DestinationConfigDTO();
+    fleet.setMessageOverride(fleetOverride);
+
+    Map<String, DestinationConfigDTO> configs = new LinkedHashMap<>();
+    configs.put("/", root);
+    configs.put("/fleet/drone", fleet);
+
+    MessageOverrideDTO resolved = MessageOverrides.resolve("/fleet/drone/status", configs);
+    MessageOverrideDTO sibling = MessageOverrides.resolve("/fleet/droneBackup", configs);
+
+    Assertions.assertNotNull(resolved);
+    Assertions.assertEquals(60_000L, resolved.getExpiry());
+    Assertions.assertEquals(Priority.HIGHEST, resolved.getPriority());
+    Assertions.assertEquals("fleet", resolved.getMeta().get("source"));
+    Assertions.assertEquals("present", resolved.getMeta().get("root"));
+    Assertions.assertNotNull(sibling);
+    Assertions.assertNull(sibling.getPriority());
   }
 }
