@@ -157,7 +157,10 @@ public class Transaction {
     if (complete) {
       throw new TransactionException(EXCEPTION_MESSAGE);
     }
-    if(AuthManager.getInstance().isAuthorisationEnabled()) {
+    if (message.isBound()) {
+      throw new IOException("Message is bound to another destination, can not loop events");
+    }
+    if (AuthManager.getInstance().isAuthorisationEnabled()) {
       ProtectedResource resource = new ProtectedResource(destination.getResourceType().getName(), destination.getResourceType().getName(), null);
       if (!AuthManager.getInstance().canAccess(identity, ServerPermissions.PUBLISH, resource)) {
         throw new TransactionException("You don't have permission to start transactions on this resource");
@@ -165,21 +168,22 @@ public class Transaction {
     }
 
 
-    long delayed = message.getDelayed();
-    if (delayed > 0) {
-      message.setDelayed(delayed - System.currentTimeMillis());
-    }
     if (!list.containsKey(destination.getFullyQualifiedNamespace())) {
       list.put(destination.getFullyQualifiedNamespace(), destination);
     }
 
-    if(destination instanceof Schema){
+    if (destination instanceof Schema) {
       destination.storeMessage(message);
     }
     else {
-      if(destination.destinationImpl.getSchema() != null) {
+      if (destination.destinationImpl.getSchema() != null) {
         // Ensure the schema is applied to the incoming message
         message.setSchemaId(destination.destinationImpl.getSchema().getUniqueId());
+      }
+      message = destination.destinationImpl.applyMessageOverrides(message);
+      long delayed = message.getDelayed();
+      if (delayed > 0) {
+        message.setDelayed(delayed - System.currentTimeMillis());
       }
       destination.destinationImpl.storeTransactionalMessage(internalId, message);
     }

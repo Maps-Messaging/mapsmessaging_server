@@ -24,6 +24,7 @@ import io.mapsmessaging.api.features.CreditHandler;
 import io.mapsmessaging.api.features.DestinationType;
 import io.mapsmessaging.api.features.QualityOfService;
 import io.mapsmessaging.dto.rest.config.destination.DestinationConfigDTO;
+import io.mapsmessaging.dto.rest.config.destination.MessageOverrideDTO;
 import io.mapsmessaging.engine.audit.AuditEvent;
 import io.mapsmessaging.engine.destination.subscription.SubscriptionContext;
 import io.mapsmessaging.engine.destination.subscription.builders.CommonSubscriptionBuilder;
@@ -171,16 +172,17 @@ public class DestinationManagerPipeline {
       DestinationConfigDTO pathManager = rootPath;
       String namespace = "";
       for (Map.Entry<String, DestinationConfigDTO> entry : properties.entrySet()) {
-        if (name.startsWith(entry.getKey()) &&
+        if (matchesNamespace(name, entry.getKey()) &&
             namespace.length() < entry.getKey().length()) {
           pathManager = entry.getValue();
           namespace = entry.getKey();
         }
       }
+      MessageOverrideDTO messageOverrides = MessageOverrides.resolve(name, properties);
       if (destinationType.isTemporary()) {
-        destinationImpl = new TemporaryDestination(name, pathManager, destinationUUID, destinationType);
+        destinationImpl = new TemporaryDestination(name, pathManager, destinationUUID, destinationType, messageOverrides);
       } else {
-        destinationImpl = new DestinationImpl(name, pathManager, destinationUUID, destinationType);
+        destinationImpl = new DestinationImpl(name, pathManager, destinationUUID, destinationType, messageOverrides);
       }
       logger.log(AuditEvent.DESTINATION_CREATED, destinationImpl.getFullyQualifiedNamespace());
 
@@ -211,6 +213,18 @@ public class DestinationManagerPipeline {
     destinationManagerListeners.created(destinationImpl);
     logger.log(ServerLogMessages.DESTINATION_MANAGER_CREATED_TOPIC, name);
     return destinationImpl;
+  }
+
+  static boolean matchesNamespace(String name, String namespace) {
+    if (namespace.equals("/")) {
+      return true;
+    }
+    if (!name.startsWith(namespace)) {
+      return false;
+    }
+    return name.length() == namespace.length()
+        || namespace.endsWith("/")
+        || name.charAt(namespace.length()) == '/';
   }
 
   private DestinationImpl deleteInternal(@NonNull @NotNull DestinationImpl destination) {

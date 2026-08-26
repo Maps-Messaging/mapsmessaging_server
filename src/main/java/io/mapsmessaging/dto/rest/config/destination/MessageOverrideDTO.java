@@ -95,7 +95,15 @@ public class MessageOverrideDTO extends BaseConfigDTO {
   protected Boolean retain;
 
   @Schema(
-      description = "Metadata to inject if not present in the message",
+      description = "Override whether the message is stored for offline subscribers",
+      requiredMode = Schema.RequiredMode.NOT_REQUIRED,
+      example = "true",
+      nullable = true
+  )
+  protected Boolean storeOffline;
+
+  @Schema(
+      description = "Metadata to inject when a key is not present in the message",
       requiredMode = Schema.RequiredMode.NOT_REQUIRED,
       example = "true",
       nullable = true,
@@ -104,11 +112,10 @@ public class MessageOverrideDTO extends BaseConfigDTO {
   protected Map<String, String> meta;
 
   @Schema(
-      description = "Data map to inject if keys are not present in the message",
+      description = "Data map entries to inject when a key is not present in the message",
       requiredMode = Schema.RequiredMode.NOT_REQUIRED,
       nullable = true,
       additionalProperties = Schema.AdditionalPropertiesValue.TRUE
   )
   protected Map<String, Object> dataMap;
 }
-

@@ -126,4 +126,31 @@ class MessageBuilderTest {
     Assertions.assertEquals(1, invocationCount.get());
     Assertions.assertNull(builder.getTransformation());
   }
+
+  @Test
+  void copyConstructor_preservesMessageFields_andIsolatesMaps() {
+    Map<String, String> meta = new LinkedHashMap<>();
+    meta.put("meta", "original");
+    Map<String, TypedData> dataMap = new LinkedHashMap<>();
+    dataMap.put("data", new TypedData("original"));
+    long creation = 123456789L;
+    Message original = new MessageBuilder()
+        .setCreation(creation)
+        .setSchemaId("schema-id")
+        .setMeta(meta)
+        .setDataMap(dataMap)
+        .build();
+
+    Message copy = new MessageBuilder(original).build();
+
+    Assertions.assertEquals(creation, copy.getCreation());
+    Assertions.assertEquals("schema-id", copy.getSchemaId());
+    Assertions.assertNotSame(original.getMeta(), copy.getMeta());
+    Assertions.assertNotSame(original.getDataMap(), copy.getDataMap());
+
+    copy.getMeta().put("copy-meta", "copy");
+    copy.getDataMap().put("copy-data", new TypedData("copy"));
+    Assertions.assertFalse(original.getMeta().containsKey("copy-meta"));
+    Assertions.assertFalse(original.getDataMap().containsKey("copy-data"));
+  }
 }

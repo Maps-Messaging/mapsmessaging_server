@@ -76,14 +76,15 @@ public class MessageBuilder {
 
   public MessageBuilder(Message previousMessage) {
     id = 0;
-    meta = previousMessage.getMeta();
-    dataMap = previousMessage.getDataMap();
+    meta = new LinkedHashMap<>(previousMessage.getMeta());
+    dataMap = new LinkedHashMap<>(previousMessage.getDataMap());
     opaqueData = previousMessage.getOpaqueData();
     priority = previousMessage.getPriority();
     retain = previousMessage.isRetain();
     storeOffline = previousMessage.isStoreOffline();
     payloadUTF8 = previousMessage.isUTF8();
     expiry = (previousMessage.getExpiry() - System.currentTimeMillis());
+    creation = previousMessage.getCreation();
     contentType = previousMessage.getContentType();
     if(previousMessage.getCorrelationData() != null && !previousMessage.isCorrelationDataByteArray()) {
       correlationData = new String(previousMessage.getCorrelationData());
@@ -93,6 +94,7 @@ public class MessageBuilder {
     }
     qualityOfService = previousMessage.getQualityOfService();
     delayed = (previousMessage.getDelayed() - System.currentTimeMillis() );
+    schemaId = previousMessage.getSchemaId();
   }
 
 
