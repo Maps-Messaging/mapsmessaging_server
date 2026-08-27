@@ -86,6 +86,11 @@ public final class SharedMemoryTransport implements MemoryTransport {
   }
 
   @Override
+  public boolean canWrite() {
+    return transmitRing.availableSlots() > 0;
+  }
+
+  @Override
   public String remoteAddress() {
     return "shm:" + path;
   }
