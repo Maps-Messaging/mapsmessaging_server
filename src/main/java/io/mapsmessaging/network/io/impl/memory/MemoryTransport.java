@@ -21,5 +21,7 @@ public interface MemoryTransport extends Closeable {
 
   boolean hasData();
 
+  boolean canWrite();
+
   String remoteAddress();
 }
