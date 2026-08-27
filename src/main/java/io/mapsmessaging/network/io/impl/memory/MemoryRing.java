@@ -26,6 +26,7 @@ public final class MemoryRing {
   private final int slotSize;
   private final int slotCount;
   private final int payloadSize;
+  private int partialReadOffset;
 
   public MemoryRing(MemorySegment memory, long producerOffset, long consumerOffset, long dataOffset, int slotSize, int slotCount) {
     if (slotSize <= SLOT_HEADER_SIZE) {
@@ -44,7 +45,7 @@ public final class MemoryRing {
   }
 
   public boolean hasData() {
-    return producerAcquire() != consumerAcquire();
+    return partialReadOffset != 0 || producerAcquire() != consumerAcquire();
   }
 
   public int write(ByteBuffer source) {
@@ -77,16 +78,22 @@ public final class MemoryRing {
 
       long slotOffset = slotOffset(consumer);
       int length = memory.get(ValueLayout.JAVA_INT, slotOffset);
-      if (length < 0 || length > payloadSize) {
+      if (length < 0 || length > payloadSize || partialReadOffset > length) {
         throw new IllegalStateException("Invalid shared memory slot length " + length);
       }
-      if (length > destination.remaining()) {
+
+      int bytesToRead = Math.min(length - partialReadOffset, destination.remaining());
+      ByteBuffer source = memory.asSlice(slotOffset + SLOT_HEADER_SIZE + partialReadOffset, bytesToRead).asByteBuffer();
+      copyToByteBuffer(source, destination, bytesToRead);
+      partialReadOffset += bytesToRead;
+      read += bytesToRead;
+
+      if (partialReadOffset == length) {
+        partialReadOffset = 0;
+        consumerRelease(consumer + 1);
+      } else {
         break;
       }
-
-      copyToByteBuffer(memory.asSlice(slotOffset + SLOT_HEADER_SIZE, length).asByteBuffer(), destination, length);
-      consumerRelease(consumer + 1);
-      read += length;
     }
     return read;
   }
