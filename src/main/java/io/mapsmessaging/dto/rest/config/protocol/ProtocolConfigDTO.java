@@ -35,6 +35,7 @@ import lombok.NoArgsConstructor;
     @JsonSubTypes.Type(value = AmqpConfigDTO.class, name = "amqp"),
     @JsonSubTypes.Type(value = CoapConfigDTO.class, name = "coap"),
     @JsonSubTypes.Type(value = LoRaProtocolConfigDTO.class, name = "lora"),
+    @JsonSubTypes.Type(value = MapsConfigDTO.class, name = "maps"),
     @JsonSubTypes.Type(value = MqttConfigDTO.class, name = "mqtt"),
     @JsonSubTypes.Type(value = MavlinkConfigDTO.class, name = "mavlink"),
     @JsonSubTypes.Type(value = MqttSnConfigDTO.class, name = "mqtt-sn"),
@@ -56,6 +57,7 @@ import lombok.NoArgsConstructor;
         @DiscriminatorMapping(value = "amqp", schema = AmqpConfigDTO.class),
         @DiscriminatorMapping(value = "coap", schema = CoapConfigDTO.class),
         @DiscriminatorMapping(value = "lora", schema = LoRaProtocolConfigDTO.class),
+        @DiscriminatorMapping(value = "maps", schema = MapsConfigDTO.class),
         @DiscriminatorMapping(value = "mqtt", schema = MqttConfigDTO.class),
         @DiscriminatorMapping(value = "mqtt-v3", schema = MqttConfigDTO.class),
         @DiscriminatorMapping(value = "mqtt-v5", schema = MqttConfigDTO.class),
@@ -72,14 +74,12 @@ import lombok.NoArgsConstructor;
         @DiscriminatorMapping(value = "extension", schema = ExtensionConfigDTO.class),
         @DiscriminatorMapping(value = "n2k", schema = N2KConfigDTO.class),
         @DiscriminatorMapping(value = "canaerospace", schema = CanAerospaceConfigDTO.class),
-
     },
     requiredProperties = {"type"},
     additionalProperties = Schema.AdditionalPropertiesValue.TRUE,
     additionalPropertiesSchema = Object.class,
     schemaResolution = Schema.SchemaResolution.INLINE
 )
-
 @Data
 @EqualsAndHashCode(callSuper = false)
 @NoArgsConstructor
@@ -93,23 +93,8 @@ public class ProtocolConfigDTO extends BaseConfigDTO {
       description = "Type of the protocol configuration",
       example = "mqtt",
       allowableValues = {
-          "amqp",
-          "coap",
-          "lora",
-          "loop",
-          "mqtt",
-          "mqtt-sn",
-          "nats",
-          "NMEA-0183",
-          "orbcomm",
-          "satellite",
-          "semtech",
-          "stomp",
-          "ws",
-          "mavlink",
-          "extension",
-          "n2k",
-          "canaerospace"
+          "amqp", "coap", "lora", "loop", "maps", "mqtt", "mqtt-sn", "nats", "NMEA-0183",
+          "orbcomm", "satellite", "semtech", "stomp", "ws", "mavlink", "extension", "n2k", "canaerospace"
       },
       requiredMode = Schema.RequiredMode.REQUIRED,
       nullable = false,
@@ -117,28 +102,12 @@ public class ProtocolConfigDTO extends BaseConfigDTO {
   )
   protected String type;
 
-  @Schema(
-      description = "Enable support for the PROXY protocol (v1/v2) on incoming connections",
-      example = "false",
-      defaultValue = "false",
-      requiredMode = Schema.RequiredMode.REQUIRED,
-      nullable = false
-  )
+  @Schema(description = "Enable support for the PROXY protocol (v1/v2) on incoming connections", example = "false", defaultValue = "false", requiredMode = Schema.RequiredMode.REQUIRED, nullable = false)
   protected boolean proxyProtocol = false;
 
-  @Schema(
-      description = "Remote authentication configuration for this protocol. " +
-          "Used when the protocol establishes outbound or proxied connections.",
-      requiredMode = Schema.RequiredMode.NOT_REQUIRED,
-      nullable = true
-  )
+  @Schema(description = "Remote authentication configuration for this protocol. Used when the protocol establishes outbound or proxied connections.", requiredMode = Schema.RequiredMode.NOT_REQUIRED, nullable = true)
   protected ConnectionAuthConfigDTO remoteAuthConfig;
 
-  @Schema(
-      description = "Message default overrides applied to messages handled by this protocol",
-      requiredMode = Schema.RequiredMode.NOT_REQUIRED,
-      nullable = true
-  )
+  @Schema(description = "Message default overrides applied to messages handled by this protocol", requiredMode = Schema.RequiredMode.NOT_REQUIRED, nullable = true)
   protected MessageOverrideDTO messageDefaults;
 }
-
