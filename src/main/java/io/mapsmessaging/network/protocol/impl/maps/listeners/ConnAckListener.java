@@ -8,6 +8,8 @@ import java.io.IOException;
 public class ConnAckListener implements MapsPacketListener {
   @Override
   public void handle(MapsFrame frame, MapsProtocol protocol) throws IOException {
-    protocol.handleConnAck(frame);
+    if (!protocol.isConnected()) {
+      protocol.handleConnAck(frame);
+    }
   }
 }
