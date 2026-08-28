@@ -19,7 +19,6 @@
 
 package io.mapsmessaging.dto.rest.config.network;
 
-
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import io.mapsmessaging.dto.rest.config.BaseConfigDTO;
@@ -35,6 +34,7 @@ import lombok.EqualsAndHashCode;
     @JsonSubTypes.Type(value = DtlsConfigDTO.class, name = "dtls"),
     @JsonSubTypes.Type(value = LoRaSerialConfigDTO.class, name = "loraSerial"),
     @JsonSubTypes.Type(value = LoRaChipConfigDTO.class, name = "loraDevice"),
+    @JsonSubTypes.Type(value = MemoryConfigDTO.class, name = "memory"),
     @JsonSubTypes.Type(value = SerialConfigDTO.class, name = "serial"),
     @JsonSubTypes.Type(value = TcpConfigDTO.class, name = "tcp"),
     @JsonSubTypes.Type(value = TlsConfigDTO.class, name = "ssl"),
@@ -49,6 +49,7 @@ import lombok.EqualsAndHashCode;
         @DiscriminatorMapping(value = "dtls", schema = DtlsConfigDTO.class),
         @DiscriminatorMapping(value = "loraSerial", schema = LoRaSerialConfigDTO.class),
         @DiscriminatorMapping(value = "loraDevice", schema = LoRaChipConfigDTO.class),
+        @DiscriminatorMapping(value = "memory", schema = MemoryConfigDTO.class),
         @DiscriminatorMapping(value = "serial", schema = SerialConfigDTO.class),
         @DiscriminatorMapping(value = "tcp", schema = TcpConfigDTO.class),
         @DiscriminatorMapping(value = "ssl", schema = TlsConfigDTO.class),
@@ -62,80 +63,32 @@ import lombok.EqualsAndHashCode;
 )
 @Data
 @EqualsAndHashCode(callSuper = false)
-@SuppressWarnings("java:S1313") // the IP address is used in an example and it exposes no private info
+@SuppressWarnings("java:S1313")
 public class EndPointConfigDTO extends BaseConfigDTO {
 
-  public EndPointConfigDTO(String type){
-    this.type = type;
-  }
+  public EndPointConfigDTO(String type){ this.type = type; }
 
-  @Schema(description = "Type of the endpoint",
-      example = "tcp",
-      allowableValues = {"tcp", "ssl", "udp", "dtls", "loraDevice", "loraSerial", "serial", "satellite", "canbus"},
-      requiredMode = Schema.RequiredMode.REQUIRED
-  )
+  @Schema(description = "Type of the endpoint", example = "tcp", allowableValues = {"tcp", "ssl", "udp", "dtls", "memory", "loraDevice", "loraSerial", "serial", "satellite", "canbus"}, requiredMode = Schema.RequiredMode.REQUIRED)
   protected String type;
 
-  @Schema(
-      description = "Whether the endpoint is discoverable",
-      example = "false",
-      requiredMode = Schema.RequiredMode.NOT_REQUIRED,
-      defaultValue = "false",
-      nullable = false
-  )
+  @Schema(description = "Whether the endpoint is discoverable", example = "false", requiredMode = Schema.RequiredMode.NOT_REQUIRED, defaultValue = "false", nullable = false)
   protected boolean discoverable = false;
 
-  @Schema(
-      description = "Number of selector threads",
-      requiredMode = Schema.RequiredMode.NOT_REQUIRED,
-      example = "2",
-      minimum = "1",
-      maximum = "10000",
-      defaultValue = "2",
-      nullable = true
-  )
+  @Schema(description = "Number of selector threads", requiredMode = Schema.RequiredMode.NOT_REQUIRED, example = "2", minimum = "1", maximum = "10000", defaultValue = "2", nullable = true)
   protected int selectorThreadCount = 2;
 
-  @Schema(
-      description = "Server read buffer size in bytes",
-      example = "10240",
-      minimum = "1024",
-      maximum = "104857600",
-      defaultValue = "10240"
-  )
+  @Schema(description = "Server read buffer size in bytes", example = "10240", minimum = "1024", maximum = "104857600", defaultValue = "10240")
   protected long serverReadBufferSize = 10240;
 
-  @Schema(
-      description = "Server write buffer size in bytes",
-      example = "10240",
-      minimum = "1024",
-      maximum = "104857600"
-  )
+  @Schema(description = "Server write buffer size in bytes", example = "10240", minimum = "1024", maximum = "104857600")
   protected long serverWriteBufferSize = 10240;
 
-  @Schema(
-      description = "Proxy Protocol support mode. 'ENABLED' allows but doesn't require it, 'REQUIRED' enforces it, 'DISABLED' will NOT check for incoming PROXY requests.",
-      defaultValue = "DISABLED",
-      example = "REQUIRED",
-      requiredMode = Schema.RequiredMode.NOT_REQUIRED,
-      nullable = true
-  )
+  @Schema(description = "Proxy Protocol support mode. 'ENABLED' allows but doesn't require it, 'REQUIRED' enforces it, 'DISABLED' will NOT check for incoming PROXY requests.", defaultValue = "DISABLED", example = "REQUIRED", requiredMode = Schema.RequiredMode.NOT_REQUIRED, nullable = true)
   protected ProxyProtocolMode proxyProtocolMode = ProxyProtocolMode.DISABLED;
 
-  @Schema(
-      description = "Comma-separated list of allowed proxy source addresses. Supports hostnames, IPv4/IPv6 addresses, and CIDR blocks (e.g., 192.168.0.0/24, ::1, example.com).",
-      requiredMode = Schema.RequiredMode.NOT_REQUIRED,
-      pattern = "^(?:\\s*[^,\\s][^,]*\\s*(?:,\\s*[^,\\s][^,]*\\s*)*)?$",
-      example = "example.com, localhost, 192.168.1.10, [2001:db8::1]",
-      nullable = true
-  )
+  @Schema(description = "Comma-separated list of allowed proxy source addresses. Supports hostnames, IPv4/IPv6 addresses, and CIDR blocks.", requiredMode = Schema.RequiredMode.NOT_REQUIRED, pattern = "^(?:\\s*[^,\\s][^,]*\\s*(?:,\\s*[^,\\s][^,]*\\s*)*)?$", example = "example.com, localhost, 192.168.1.10, [2001:db8::1]", nullable = true)
   protected String allowedProxyHosts;
 
-  @Schema(
-      description = "Time to wait for a client to establish the connection, in milliseconds",
-      example = "5000",
-      minimum = "1000",
-      maximum = "120000"
-  )
+  @Schema(description = "Time to wait for a client to establish the connection, in milliseconds", example = "5000", minimum = "1000", maximum = "120000")
   protected long connectionTimeout = 5000;
 }
