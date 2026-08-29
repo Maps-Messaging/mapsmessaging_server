@@ -380,16 +380,12 @@ public class TwinManagerConfig extends TwinManagerConfigDTO implements Config, C
     droneInfo.setGeospatialArea(properties.getProperty("geospatialArea", droneInfo.getGeospatialArea()));
     droneInfo.setRangeMeters(readOptionalPositiveDouble(properties, "rangeMeters"));
     droneInfo.setSurveyRadiusMeters(readOptionalPositiveDouble(properties, "surveyRadiusMeters"));
-    droneInfo.setArrivalToleranceMeters(
-        readOptionalPositiveDouble(properties, "arrivalToleranceMeters"));
-    droneInfo.setAltitudeMode(
-        parseAltitudeMode(
-            properties.getProperty("altitudeMode", null), droneInfo.getAltitudeMode()));
+    droneInfo.setArrivalToleranceMeters(readOptionalPositiveDouble(properties, "arrivalToleranceMeters"));
+    droneInfo.setAltitudeMode(parseAltitudeMode(properties.getProperty("altitudeMode", null), droneInfo.getAltitudeMode()));
     if (properties.containsKey("altitudeMeters")) {
       double altitudeMeters = properties.getDoubleProperty("altitudeMeters", Double.NaN);
       if (!Double.isFinite(altitudeMeters)) {
-        throw new IllegalArgumentException(
-            "altitudeMeters must be a finite value");
+        throw new IllegalArgumentException("altitudeMeters must be a finite value");
       }
       droneInfo.setAltitudeMeters(altitudeMeters);
     }
