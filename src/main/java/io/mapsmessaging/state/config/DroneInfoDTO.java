@@ -66,6 +66,17 @@ public class DroneInfoDTO {
       nullable = true)
   private Double arrivalToleranceMeters;
 
+  @Schema(
+      description = "Source used to resolve the mission altitude for vehicle-specific tasking.",
+      example = "FIXED")
+  private AltitudeMode altitudeMode = AltitudeMode.FIXED;
+
+  @Schema(
+      description = "Configured home-relative mission altitude in metres when altitudeMode is FIXED.",
+      example = "10.0",
+      minimum = "0.0")
+  private double altitudeMeters = 10.0d;
+
   @Schema(description = "Drone description", type = "object", additionalProperties = Schema.AdditionalPropertiesValue.TRUE)
   private Map<String, Object> description;
 
