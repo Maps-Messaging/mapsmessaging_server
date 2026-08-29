@@ -42,6 +42,14 @@ public enum StateLogMessages implements LogMessage {
   TWIN_PURGED(LEVEL.INFO, SERVER_CATEGORY.STATE, "Purged expired twin {}"),
   TWIN_OBSERVER_CALLBACK_FAILED(LEVEL.ERROR, SERVER_CATEGORY.STATE, "Twin observer callback failed for twin {} during {}"),
 
+  MAVLINK_EVENT_LIST_SENDER_TERMINAL_TRANSITION_IGNORED(LEVEL.DEBUG, SERVER_CATEGORY.PROTOCOL, "Ignoring terminal transition for MAVLink event list sender '{}', operation '{}', model '{}', requested status '{}'"),
+  MAVLINK_EVENT_LIST_SENDER_COMPLETED_SUCCESS(LEVEL.INFO, SERVER_CATEGORY.PROTOCOL, "MAVLink event list sender '{}', operation '{}', model '{}', completed successfully, messages {}"),
+  MAVLINK_EVENT_LIST_SENDER_COMPLETED(LEVEL.INFO, SERVER_CATEGORY.PROTOCOL, "MAVLink event list sender '{}', operation '{}', model '{}', completed with status '{}', index {}/{}, message '{}', reason '{}'"),
+  MAVLINK_EVENT_LIST_SENDER_FAILED(LEVEL.WARN, SERVER_CATEGORY.PROTOCOL, "MAVLink event list sender '{}', operation '{}', model '{}', failed with status '{}', index {}/{}, message '{}', reason '{}'"),
+  MAVLINK_EVENT_LIST_SENDER_FAILED_EXCEPTION(LEVEL.ERROR, SERVER_CATEGORY.PROTOCOL, "MAVLink event list sender '{}', operation '{}', model '{}', failed with exception: {}"),
+  MAVLINK_EVENT_LIST_SENDER_COMPLETION_HANDLER_FAILED(LEVEL.ERROR, SERVER_CATEGORY.PROTOCOL, "MAVLink event list sender '{}', operation '{}', model '{}', completion handler failed: {}"),
+
+
   MAVLINK_STATE_DIALECT_DEFAULTED(LEVEL.DEBUG, SERVER_CATEGORY.PROTOCOL, "No MAVLink dialect specified for state subscriber, using default dialect {}"),
   MAVLINK_STATE_DIALECT_LOADED(LEVEL.DEBUG, SERVER_CATEGORY.PROTOCOL, "Loaded MAVLink dialect {} for state subscriber"),
   MAVLINK_STATE_DIALECT_LOAD_FAILED(LEVEL.WARN, SERVER_CATEGORY.PROTOCOL, "Failed to load MAVLink dialect {}, falling back to default dialect {}"),
@@ -124,13 +132,6 @@ public enum StateLogMessages implements LogMessage {
   MAVLINK_EVENT_LIST_SENDER_SENDING(LEVEL.INFO, SERVER_CATEGORY.PROTOCOL, "Sending MAVLink message for sender '{}', index {}/{}, message '{}', requires acknowledgement {}"),
   MAVLINK_EVENT_LIST_SENDER_WAITING_FOR_ACK(LEVEL.INFO, SERVER_CATEGORY.PROTOCOL, "MAVLink event list sender '{}' waiting for acknowledgement at index {}"),
   MAVLINK_EVENT_LIST_SENDER_NO_ACK_ADVANCING(LEVEL.INFO, SERVER_CATEGORY.PROTOCOL, "MAVLink message for sender '{}', index {}, does not require acknowledgement, advancing"),
-
-  MAVLINK_EVENT_LIST_SENDER_TERMINAL_TRANSITION_IGNORED(LEVEL.DEBUG, SERVER_CATEGORY.PROTOCOL, "Ignoring terminal transition for MAVLink event list sender '{}', requested status '{}'"),
-  MAVLINK_EVENT_LIST_SENDER_COMPLETED_SUCCESS(LEVEL.INFO, SERVER_CATEGORY.PROTOCOL, "MAVLink event list sender '{}' completed successfully, messages {}"),
-  MAVLINK_EVENT_LIST_SENDER_COMPLETED(LEVEL.INFO, SERVER_CATEGORY.PROTOCOL, "MAVLink event list sender '{}' completed with status '{}', index {}/{}, message '{}', reason '{}'"),
-  MAVLINK_EVENT_LIST_SENDER_FAILED(LEVEL.WARN, SERVER_CATEGORY.PROTOCOL, "MAVLink event list sender '{}' failed with status '{}', index {}/{}, message '{}', reason '{}'"),
-  MAVLINK_EVENT_LIST_SENDER_FAILED_EXCEPTION(LEVEL.ERROR, SERVER_CATEGORY.PROTOCOL, "MAVLink event list sender '{}' failed with exception: {}"),
-  MAVLINK_EVENT_LIST_SENDER_COMPLETION_HANDLER_FAILED(LEVEL.ERROR, SERVER_CATEGORY.PROTOCOL, "MAVLink event list sender '{}' completion handler failed: {}"),
 
   MAVLINK_TWIN_MANAGER_START_FAILED(LEVEL.ERROR, SERVER_CATEGORY.PROTOCOL, "Failed to start MAVLink twin manager subscriber: {}"),
   MAVLINK_TWIN_MANAGER_STOP_FAILED(LEVEL.ERROR, SERVER_CATEGORY.PROTOCOL, "Failed to stop MAVLink twin manager subscriber: {}");

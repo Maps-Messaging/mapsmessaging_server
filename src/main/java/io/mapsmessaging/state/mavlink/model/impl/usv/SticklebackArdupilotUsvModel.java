@@ -80,12 +80,6 @@ public class SticklebackArdupilotUsvModel extends GenericArduPilotUxvModel imple
 
     List<MavlinkMessage> messages =
         List.of(
-            MavlinkCommandIntFactory.repositionRelativeAltitude(
-                context.targetSystem(),
-                context.targetComponent(),
-                position,
-                altitudeMeters,
-                context.sequence()),
             MavlinkCommandLongFactory.guidedMode(
                 context.targetSystem(),
                 context.targetComponent(),
