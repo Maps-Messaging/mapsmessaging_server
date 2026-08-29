@@ -20,15 +20,19 @@
 package io.mapsmessaging.state.mavlink.model;
 
 import io.mapsmessaging.state.drone.model.GeoPosition;
-
 import java.util.Objects;
 
 public record RepositionRequest(
-        GeoPosition position,
-        Float yawDegrees,
-        Double speedMetersPerSecond) {
+    GeoPosition position,
+    Float yawDegrees,
+    Double speedMetersPerSecond,
+    Double altitudeMeters) {
 
-    public RepositionRequest {
-        position = Objects.requireNonNull(position, "position must not be null");
-    }
+  public RepositionRequest(GeoPosition position, Float yawDegrees, Double speedMetersPerSecond) {
+    this(position, yawDegrees, speedMetersPerSecond, null);
+  }
+
+  public RepositionRequest {
+    position = Objects.requireNonNull(position, "position must not be null");
+  }
 }
