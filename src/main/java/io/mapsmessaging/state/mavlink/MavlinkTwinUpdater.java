@@ -208,6 +208,8 @@ public class MavlinkTwinUpdater implements AutoCloseable {
     droneTwin.setSystemId(env.getFrame().getSystemId());
     droneTwin.setComponentId(env.getFrame().getComponentId());
     droneTwin.setModelName(droneInfo.getModelName());
+    droneTwin.setAltitudeMode(droneInfo.getAltitudeMode());
+    droneTwin.setAltitudeMeters(droneInfo.getAltitudeMeters());
     droneTwin.setSurveyRadiusMeters(droneInfo.getSurveyRadiusMeters());
     droneTwin.setArrivalToleranceMeters(droneInfo.getArrivalToleranceMeters());
     if (droneInfo.getStopAction() != null) {

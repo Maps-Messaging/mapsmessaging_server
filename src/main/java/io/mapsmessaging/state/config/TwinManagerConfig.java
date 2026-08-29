@@ -385,9 +385,12 @@ public class TwinManagerConfig extends TwinManagerConfigDTO implements Config, C
     droneInfo.setAltitudeMode(
         parseAltitudeMode(
             properties.getProperty("altitudeMode", null), droneInfo.getAltitudeMode()));
-    double altitudeMeters =
-        properties.getDoubleProperty("altitudeMeters", droneInfo.getAltitudeMeters());
-    if (Double.isFinite(altitudeMeters) && altitudeMeters > 0.0d) {
+    if (properties.containsKey("altitudeMeters")) {
+      double altitudeMeters = properties.getDoubleProperty("altitudeMeters", Double.NaN);
+      if (!Double.isFinite(altitudeMeters)) {
+        throw new IllegalArgumentException(
+            "altitudeMeters must be a finite value");
+      }
       droneInfo.setAltitudeMeters(altitudeMeters);
     }
     droneInfo.setMessageEncoding(parseMessageEncoding(properties.getProperty("messageEncoding", null), droneInfo.getMessageEncoding()));
@@ -476,8 +479,8 @@ public class TwinManagerConfig extends TwinManagerConfigDTO implements Config, C
         properties.put("altitudeMode", droneInfo.getAltitudeMode().name());
       }
 
-      if (Double.isFinite(droneInfo.getAltitudeMeters())
-          && droneInfo.getAltitudeMeters() > 0.0d) {
+      if (droneInfo.getAltitudeMeters() != null
+          && Double.isFinite(droneInfo.getAltitudeMeters())) {
         properties.put("altitudeMeters", droneInfo.getAltitudeMeters());
       }
 

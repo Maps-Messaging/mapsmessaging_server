@@ -22,6 +22,7 @@ package io.mapsmessaging.state.mavlink.model.impl.usv;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import io.mapsmessaging.state.drone.model.GeoPosition;
 import io.mapsmessaging.state.mavlink.messages.MavlinkCommandInt;
@@ -73,6 +74,51 @@ class SticklebackArdupilotUsvModelTest {
 
     assertEquals(123.0d, position.getAltitudeMslMeters());
     assertNull(position.getAltitudeAglMeters());
+  }
+
+  @Test
+  void repositionUsesResolvedAltitudeForEveryCommand() {
+    SticklebackArdupilotUsvModel model = new SticklebackArdupilotUsvModel();
+    GeoPosition position = new GeoPosition(59.4673d, 24.828353d, 123.0d, null);
+
+    UxvModelCommandSet commandSet =
+        model.reposition(
+            CONTEXT, new RepositionRequest(position, null, null, 7.5d));
+
+    MavlinkCommandInt reposition =
+        assertInstanceOf(MavlinkCommandInt.class, commandSet.messages().get(0));
+    MavlinkMissionItem guidedWaypoint =
+        assertInstanceOf(MavlinkMissionItem.class, commandSet.messages().get(2));
+    assertEquals(7.5f, reposition.getAltitude());
+    assertEquals(7.5f, guidedWaypoint.getAltitude());
+    assertEquals(123.0d, position.getAltitudeMslMeters());
+  }
+
+  @Test
+  void repositionRejectsNonFiniteResolvedAltitude() {
+    SticklebackArdupilotUsvModel model = new SticklebackArdupilotUsvModel();
+    GeoPosition position = new GeoPosition(59.4673d, 24.828353d, null, null);
+
+    assertThrows(
+        IllegalArgumentException.class,
+        () ->
+            model.reposition(
+                CONTEXT,
+                new RepositionRequest(position, null, null, Double.NaN)));
+  }
+
+  @Test
+  void repositionAcceptsNegativeResolvedAltitude() {
+    SticklebackArdupilotUsvModel model = new SticklebackArdupilotUsvModel();
+    GeoPosition position = new GeoPosition(59.4673d, 24.828353d, null, null);
+
+    UxvModelCommandSet commandSet =
+        model.reposition(
+            CONTEXT, new RepositionRequest(position, null, null, -10.0d));
+
+    MavlinkCommandInt reposition =
+        assertInstanceOf(MavlinkCommandInt.class, commandSet.messages().get(0));
+    assertEquals(-10.0f, reposition.getAltitude());
   }
 
   @Test

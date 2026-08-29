@@ -27,6 +27,7 @@ import io.mapsmessaging.state.drone.model.LinkState;
 import io.mapsmessaging.state.drone.model.autopilot.AutopilotState;
 import io.mapsmessaging.state.mavlink.packet.HeartbeatPacket;
 import io.mapsmessaging.state.mavlink.packet.MavlinkPacket;
+import io.mapsmessaging.state.mavlink.model.impl.usv.SticklebackArdupilotUsvModel;
 
 import java.time.Instant;
 
@@ -82,7 +83,13 @@ public class HeartbeatListener implements Listener {
       );
 
       droneTwin.setAutopilotState(autopilotState);
-      droneTwin.setFlightMode(autopilotState.getFlightMode());
+      String flightMode = autopilotState.getFlightMode();
+      if (SticklebackArdupilotUsvModel.MODEL_NAME.equals(droneTwin.getModelName())) {
+        flightMode =
+            MavlinkAutopilotSupport.resolveArduPlaneFlightMode(
+                (int) packet.getCustomMode());
+      }
+      droneTwin.setFlightMode(flightMode);
 
       LinkState linkState = droneTwin.getLinkState();
       if (linkState == null) {

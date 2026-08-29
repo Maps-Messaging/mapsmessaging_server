@@ -37,7 +37,11 @@ public class SticklebackArdupilotUsvModel extends GenericArduPilotUxvModel imple
 
   public static final String MODEL_NAME = "stickleback-ardupilot-usv";
 
-  private static final double DEFAULT_ALTITUDE_METERS = 10.0d;
+  public static final double DEFAULT_ALTITUDE_METERS = 10.0d;
+
+  /** @deprecated Use {@link #DEFAULT_ALTITUDE_METERS}. */
+  @Deprecated
+  public static final double MAX_ALTITUDE_METERS = DEFAULT_ALTITUDE_METERS;
   private static final long CONTACT_TTL_MILLIS = getDetectionTime();
   private static final int DETECTION_LOST = 0;
   private static final int DETECTION_PRESENT = 1;
@@ -221,11 +225,11 @@ public class SticklebackArdupilotUsvModel extends GenericArduPilotUxvModel imple
     }
 
     if (item.altitudeMeters() != null
-        && (!Double.isFinite(item.altitudeMeters()) || item.altitudeMeters() <= 0.0d)) {
+        && !Double.isFinite(item.altitudeMeters())) {
       issues.add(
           new PlanValidationIssue(
               UxvOperation.BUILD_MISSION,
-              "Mission item " + index + " altitudeMeters must be a positive finite value"));
+              "Mission item " + index + " altitudeMeters must be a finite value"));
     }
 
     if (item.depthMeters() != null) {
@@ -299,8 +303,8 @@ public class SticklebackArdupilotUsvModel extends GenericArduPilotUxvModel imple
     if (altitudeMeters == null) {
       return DEFAULT_ALTITUDE_METERS;
     }
-    if (!Double.isFinite(altitudeMeters) || altitudeMeters <= 0.0d) {
-      throw new IllegalArgumentException("altitudeMeters must be a positive finite value");
+    if (!Double.isFinite(altitudeMeters)) {
+      throw new IllegalArgumentException("altitudeMeters must be a finite value");
     }
     return altitudeMeters;
   }
