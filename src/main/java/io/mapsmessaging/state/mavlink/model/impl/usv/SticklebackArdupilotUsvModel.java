@@ -37,13 +37,11 @@ public class SticklebackArdupilotUsvModel extends GenericArduPilotUxvModel imple
 
   public static final String MODEL_NAME = "stickleback-ardupilot-usv";
 
-  /**
-   * Fixed home-relative control altitude used to keep ArduPlane navigation active on the
-   * Stickleback surface vessel. This is not a physical vessel altitude and is never written back
-   * into the caller's geodetic position.
-   */
-  public static final double MAX_ALTITUDE_METERS = getMaxAltitudeMeters();
+  public static final double DEFAULT_ALTITUDE_METERS = 10.0d;
 
+  /** @deprecated Use {@link #DEFAULT_ALTITUDE_METERS}. */
+  @Deprecated
+  public static final double MAX_ALTITUDE_METERS = DEFAULT_ALTITUDE_METERS;
   private static final long CONTACT_TTL_MILLIS = getDetectionTime();
   private static final int DETECTION_LOST = 0;
   private static final int DETECTION_PRESENT = 1;
@@ -78,6 +76,7 @@ public class SticklebackArdupilotUsvModel extends GenericArduPilotUxvModel imple
 
     GeoPosition position = Objects.requireNonNull(request.position(), "position must not be null");
     validateCoordinates(position, "position");
+    double altitudeMeters = resolveAltitude(request.altitudeMeters());
 
     List<MavlinkMessage> messages =
         List.of(
@@ -85,7 +84,7 @@ public class SticklebackArdupilotUsvModel extends GenericArduPilotUxvModel imple
                 context.targetSystem(),
                 context.targetComponent(),
                 position,
-                MAX_ALTITUDE_METERS,
+                altitudeMeters,
                 context.sequence()),
             MavlinkCommandLongFactory.guidedMode(
                 context.targetSystem(),
@@ -95,7 +94,7 @@ public class SticklebackArdupilotUsvModel extends GenericArduPilotUxvModel imple
                 context.targetSystem(),
                 context.targetComponent(),
                 position,
-                MAX_ALTITUDE_METERS));
+                altitudeMeters));
 
     return UxvModelCommandSet.of(UxvOperation.REPOSITION, getModelName(), messages);
   }
@@ -115,12 +114,12 @@ public class SticklebackArdupilotUsvModel extends GenericArduPilotUxvModel imple
     Objects.requireNonNull(context, "context must not be null");
     Objects.requireNonNull(request, "request must not be null");
     requirePositiveOrZero(request.radiusMeters(), "radiusMeters");
-    rejectAltitude(request.altitudeMeters(), UxvOperation.LOITER);
     rejectDepth(request.depthMeters(), UxvOperation.LOITER);
     rejectYaw(request.yawDegrees(), UxvOperation.LOITER);
 
     GeoPosition position = Objects.requireNonNull(request.position(), "position must not be null");
     validateCoordinates(position, "position");
+    double altitudeMeters = resolveAltitude(request.altitudeMeters());
 
     Duration duration = toDuration(request.duration(), "duration");
     MavlinkMessage message;
@@ -130,7 +129,7 @@ public class SticklebackArdupilotUsvModel extends GenericArduPilotUxvModel imple
               context.targetSystem(),
               context.targetComponent(),
               position,
-              MAX_ALTITUDE_METERS,
+              altitudeMeters,
               request.radiusMeters(),
               Float.NaN,
               context.sequence());
@@ -140,7 +139,7 @@ public class SticklebackArdupilotUsvModel extends GenericArduPilotUxvModel imple
               context.targetSystem(),
               context.targetComponent(),
               position,
-              MAX_ALTITUDE_METERS,
+              altitudeMeters,
               request.radiusMeters(),
               duration,
               context.sequence());
@@ -162,7 +161,7 @@ public class SticklebackArdupilotUsvModel extends GenericArduPilotUxvModel imple
               context.targetComponent(),
               sequence,
               item.position(),
-              MAX_ALTITUDE_METERS,
+              resolveAltitude(item.altitudeMeters()),
               toSeconds(item.holdDuration()),
               item.radiusMeters() == null ? DEFAULT_ACCEPTANCE_RADIUS_METERS : item.radiusMeters().floatValue(),
               DEFAULT_PASS_RADIUS_METERS,
@@ -180,6 +179,7 @@ public class SticklebackArdupilotUsvModel extends GenericArduPilotUxvModel imple
   private MavlinkMessage toMissionLoiter(UxvCommandContext context, int sequence, PlanItem item) {
     double radiusMeters = item.radiusMeters() == null ? DEFAULT_ACCEPTANCE_RADIUS_METERS : item.radiusMeters();
     requirePositiveOrZero(radiusMeters, "radiusMeters");
+    double altitudeMeters = resolveAltitude(item.altitudeMeters());
 
     Duration duration = toDuration(item.holdDuration(), "holdDuration");
     if (duration.isZero()) {
@@ -188,7 +188,7 @@ public class SticklebackArdupilotUsvModel extends GenericArduPilotUxvModel imple
           context.targetComponent(),
           sequence,
           item.position(),
-          MAX_ALTITUDE_METERS,
+          altitudeMeters,
           radiusMeters);
     }
     return MavlinkMissionItemIntFactory.loiterTimeRelativeAltitude(
@@ -196,7 +196,7 @@ public class SticklebackArdupilotUsvModel extends GenericArduPilotUxvModel imple
         context.targetComponent(),
         sequence,
         item.position(),
-        MAX_ALTITUDE_METERS,
+        altitudeMeters,
         duration,
         radiusMeters);
   }
@@ -224,11 +224,12 @@ public class SticklebackArdupilotUsvModel extends GenericArduPilotUxvModel imple
               "Mission item " + index + " speedMetersPerSecond is not currently mapped by this Stickleback ArduPilot USV model"));
     }
 
-    if (item.altitudeMeters() != null) {
+    if (item.altitudeMeters() != null
+        && !Double.isFinite(item.altitudeMeters())) {
       issues.add(
           new PlanValidationIssue(
               UxvOperation.BUILD_MISSION,
-              "Mission item " + index + " altitudeMeters is not currently mapped by this Stickleback ArduPilot USV model"));
+              "Mission item " + index + " altitudeMeters must be a finite value"));
     }
 
     if (item.depthMeters() != null) {
@@ -298,15 +299,14 @@ public class SticklebackArdupilotUsvModel extends GenericArduPilotUxvModel imple
     detectionEvent.addAttribute("mavlink.value", packet.getValue());
   }
 
-  private static double getMaxAltitudeMeters() {
-    double defaultValue = 10.0d;
-    String loaded = SystemProperties.getInstance().getProperty("STICKLEBACK_ALTITUDE", Double.toString(defaultValue));
-    try {
-      double value = Double.parseDouble(loaded);
-      return Double.isFinite(value) && value > 0.0d ? value : defaultValue;
-    } catch (RuntimeException exception) {
-      return defaultValue;
+  private double resolveAltitude(Double altitudeMeters) {
+    if (altitudeMeters == null) {
+      return DEFAULT_ALTITUDE_METERS;
     }
+    if (!Double.isFinite(altitudeMeters)) {
+      throw new IllegalArgumentException("altitudeMeters must be a finite value");
+    }
+    return altitudeMeters;
   }
 
   private static long getDetectionTime() {

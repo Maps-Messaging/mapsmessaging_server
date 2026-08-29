@@ -21,6 +21,7 @@ package io.mapsmessaging.state.mavlink;
 
 import io.mapsmessaging.dto.rest.config.protocol.impl.MavlinkKnownSourceDTO;
 import io.mapsmessaging.mavlink.ProcessedFrame;
+import io.mapsmessaging.state.config.AltitudeMode;
 import io.mapsmessaging.state.config.DroneInfoDTO;
 import io.mapsmessaging.state.config.VehicleClass;
 import io.mapsmessaging.state.drone.core.TwinManager;
@@ -172,6 +173,8 @@ class MavlinkTwinUpdaterTest {
     droneInfo.setUuid(uuid);
     droneInfo.setBatteryCapacityHours(4.5);
     droneInfo.setArrivalToleranceMeters(35.0d);
+    droneInfo.setAltitudeMode(AltitudeMode.FIXED);
+    droneInfo.setAltitudeMeters(7.5d);
     droneInfo.setDescription(Map.of("role", "survey"));
     MavlinkPacket packet = mock(MavlinkPacket.class);
     ProcessedFrame frame = frame(17, 42, 999);
@@ -186,6 +189,8 @@ class MavlinkTwinUpdaterTest {
     assertEquals("drone-1", twin.getCallSign());
     assertEquals(4.5, twin.getBatteryCapacityHours());
     assertEquals(35.0d, twin.getArrivalToleranceMeters());
+    assertEquals(AltitudeMode.FIXED, twin.getAltitudeMode());
+    assertEquals(7.5d, twin.getAltitudeMeters());
     assertEquals("mavlink/outbound", twin.getResponseTopicName());
     assertEquals("outbound-2", twin.getUniqueOutboundIdentifier());
     assertEquals("survey", twin.getDescription().get("role"));

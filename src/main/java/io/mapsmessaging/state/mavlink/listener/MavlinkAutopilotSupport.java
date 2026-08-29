@@ -73,6 +73,36 @@ public final class MavlinkAutopilotSupport {
     return major + "." + minor + "." + patch;
   }
 
+  public static String resolveArduPlaneFlightMode(int modeNumber) {
+    return switch (modeNumber) {
+      case 0 -> "MANUAL";
+      case 1 -> "CIRCLE";
+      case 2 -> "STABILIZE";
+      case 3 -> "TRAINING";
+      case 4 -> "ACRO";
+      case 5 -> "FLY_BY_WIRE_A";
+      case 6 -> "FLY_BY_WIRE_B";
+      case 7 -> "CRUISE";
+      case 8 -> "AUTOTUNE";
+      case 10 -> "AUTO";
+      case 11 -> "RTL";
+      case 12 -> "LOITER";
+      case 13 -> "TAKEOFF";
+      case 14 -> "AVOID_ADSB";
+      case 15 -> "GUIDED";
+      case 17 -> "QSTABILIZE";
+      case 18 -> "QHOVER";
+      case 19 -> "QLOITER";
+      case 20 -> "QLAND";
+      case 21 -> "QRTL";
+      case 22 -> "QAUTOTUNE";
+      case 23 -> "QACRO";
+      case 24 -> "THERMAL";
+      case 25 -> "LOITER_ALT_QLAND";
+      default -> Integer.toString(modeNumber);
+    };
+  }
+
   public static void populateHeartbeatFields(AutopilotState autopilotState,
                                              int autopilotType,
                                              int baseMode,
