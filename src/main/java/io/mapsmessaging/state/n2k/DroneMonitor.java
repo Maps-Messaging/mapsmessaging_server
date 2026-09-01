@@ -27,7 +27,12 @@ import io.mapsmessaging.state.drone.core.TwinManager;
 import io.mapsmessaging.state.drone.core.TwinObserver;
 import io.mapsmessaging.state.drone.core.TwinUpdateContext;
 import io.mapsmessaging.state.drone.drone.DroneTwin;
-import io.mapsmessaging.state.n2k.handler.*;
+import io.mapsmessaging.state.n2k.handler.AbstractDronePgnHandler;
+import io.mapsmessaging.state.n2k.handler.Ais129039Handler;
+import io.mapsmessaging.state.n2k.handler.Ais129040Handler;
+import io.mapsmessaging.state.n2k.handler.Ais129809Handler;
+import io.mapsmessaging.state.n2k.handler.Ais129810Handler;
+import io.mapsmessaging.state.n2k.handler.PgnEmission;
 import io.mapsmessaging.state.n2k.msg.AisClassBEmitterConfig;
 import lombok.Getter;
 
@@ -35,65 +40,79 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.LongSupplier;
 
-public class DroneMonitor implements TwinObserver{
+public class DroneMonitor implements TwinObserver {
 
   private final TwinManager twinManager;
   @Getter
   private final N2kProtocol n2kProtocol;
-
   private final List<AbstractDronePgnHandler> handlers;
   private final Map<String, DroneEmissionState> droneStateMap;
+  private final LongSupplier currentTimeMillis;
 
-  public DroneMonitor(TwinManager twinManager, N2KAisConfigDTO aisConfig,  N2kMessageParser parser, N2kProtocol n2kProtocol) {
-    this.droneStateMap = new ConcurrentHashMap<>();
-    this.twinManager = twinManager;
-    this.n2kProtocol = n2kProtocol;
-
-    AisClassBEmitterConfig config = AisClassBEmitterConfig.getDefaults();
-    handlers = new ArrayList<>();
-    if (aisConfig == null) {
-      aisConfig = new N2KAisConfigDTO();
-    }
-    if (aisConfig.getPgn129039().isEnabled()) handlers.add(new Ais129039Handler(parser, config, aisConfig.getPgn129039().getIntervalMilliseconds()));
-    if (aisConfig.getPgn129040().isEnabled()) handlers.add(new Ais129040Handler(parser, config, aisConfig.getPgn129040().getIntervalMilliseconds()));
-    if (aisConfig.getPgn129809().isEnabled()) handlers.add(new Ais129809Handler(parser, config, aisConfig.getPgn129809().getIntervalMilliseconds()));
-    if (aisConfig.getPgn129810().isEnabled()) handlers.add(new Ais129810Handler(parser, config, aisConfig.getPgn129810().getIntervalMilliseconds()));
+  public DroneMonitor(TwinManager twinManager, N2KAisConfigDTO aisConfig, N2kMessageParser parser, N2kProtocol n2kProtocol) {
+    this(twinManager, n2kProtocol, buildHandlers(aisConfig, parser), System::currentTimeMillis);
   }
+
+  DroneMonitor(TwinManager twinManager, N2kProtocol n2kProtocol, List<AbstractDronePgnHandler> handlers, LongSupplier currentTimeMillis) {
+    this.droneStateMap = new ConcurrentHashMap<>();
+    this.twinManager = Objects.requireNonNull(twinManager, "twinManager must not be null");
+    this.n2kProtocol = Objects.requireNonNull(n2kProtocol, "n2kProtocol must not be null");
+    this.handlers = List.copyOf(Objects.requireNonNull(handlers, "handlers must not be null"));
+    this.currentTimeMillis = Objects.requireNonNull(currentTimeMillis, "currentTimeMillis must not be null");
+  }
+
+  private static List<AbstractDronePgnHandler> buildHandlers(N2KAisConfigDTO aisConfig, N2kMessageParser parser) {
+    N2KAisConfigDTO effectiveConfig = aisConfig == null ? new N2KAisConfigDTO() : aisConfig;
+    AisClassBEmitterConfig config = AisClassBEmitterConfig.getDefaults();
+    List<AbstractDronePgnHandler> configuredHandlers = new ArrayList<>();
+
+    if (effectiveConfig.getPgn129039().isEnabled()) {
+      configuredHandlers.add(new Ais129039Handler(parser, config, effectiveConfig.getPgn129039().getIntervalMilliseconds()));
+    }
+    if (effectiveConfig.getPgn129040().isEnabled()) {
+      configuredHandlers.add(new Ais129040Handler(parser, config, effectiveConfig.getPgn129040().getIntervalMilliseconds()));
+    }
+    if (effectiveConfig.getPgn129809().isEnabled()) {
+      configuredHandlers.add(new Ais129809Handler(parser, config, effectiveConfig.getPgn129809().getIntervalMilliseconds()));
+    }
+    if (effectiveConfig.getPgn129810().isEnabled()) {
+      configuredHandlers.add(new Ais129810Handler(parser, config, effectiveConfig.getPgn129810().getIntervalMilliseconds()));
+    }
+    return configuredHandlers;
+  }
+
   public void close() {
     twinManager.removeObserver(this);
+    droneStateMap.clear();
   }
 
-  /**
-   * Rename this method to match the actual TwinObserver callback in your codebase.
-   */
   @Override
   public void onTwinUpdated(String twinId, EntityTwin current, TwinUpdateContext context) {
     if (!(current instanceof DroneTwin droneTwin)) {
       return;
     }
-
     if (twinId == null || twinId.isBlank()) {
       return;
     }
 
     DroneEmissionState droneEmissionState = droneStateMap.computeIfAbsent(twinId, ignored -> new DroneEmissionState());
-
-    long now = System.currentTimeMillis();
+    long now = currentTimeMillis.getAsLong();
     for (AbstractDronePgnHandler handler : handlers) {
       try {
         handler.emit(droneTwin, droneEmissionState, now).ifPresent(this::safeSendMessage);
-      }
-      catch (Exception exception) {
-        // Log this
+      } catch (Exception exception) {
+        // A handler must not prevent the remaining configured PGNs from being evaluated.
       }
     }
   }
 
   @Override
   public void onTwinRemoved(EntityTwin removed, TwinUpdateContext context) {
-    if(removed != null && removed.getTwinId() != null) {
+    if (removed != null && removed.getTwinId() != null) {
       droneStateMap.remove(removed.getTwinId());
     }
   }
@@ -101,9 +120,8 @@ public class DroneMonitor implements TwinObserver{
   private void safeSendMessage(PgnEmission pgnEmission) {
     try {
       sendMessage(pgnEmission);
-    }
-    catch (IOException ioException) {
-      // Log this
+    } catch (IOException ioException) {
+      // A failed CAN write must not break twin observer callbacks.
     }
   }
 

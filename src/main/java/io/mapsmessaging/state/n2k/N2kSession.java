@@ -41,8 +41,10 @@ import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.time.Clock;
 import java.time.Instant;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import static io.mapsmessaging.state.logging.StateLogMessages.*;
 
@@ -55,6 +57,9 @@ public class N2kSession implements MessageHandler, Lifecycle {
   private final N2KTwinConfig n2kConfig;
   private final N2kTwinUpdater twinUpdater;
   private final DroneInfoDTO droneInfo;
+  private final Clock clock;
+  private final AtomicBoolean running;
+  private final AtomicBoolean terminated;
 
   public N2kSession(
       @NonNull @NotNull TwinManager twinManager,
@@ -65,7 +70,30 @@ public class N2kSession implements MessageHandler, Lifecycle {
     this.n2kConfig = n2kConfig;
     this.twinUpdater = new N2kTwinUpdater(twinManager);
     this.droneInfo = droneRegistry.getDroneInfo(n2kConfig.getName());
+    this.clock = Clock.systemUTC();
+    this.running = new AtomicBoolean();
+    this.terminated = new AtomicBoolean();
+    logDroneResolution();
+  }
 
+  N2kSession(
+      StateLoopProtocol protocol,
+      N2KTwinConfig n2kConfig,
+      N2kTwinUpdater twinUpdater,
+      DroneInfoDTO droneInfo,
+      Clock clock) {
+    this.protocol = protocol;
+    this.namespaceTopicPath = n2kConfig.getTopic();
+    this.n2kConfig = n2kConfig;
+    this.twinUpdater = twinUpdater;
+    this.droneInfo = droneInfo;
+    this.clock = clock;
+    this.running = new AtomicBoolean();
+    this.terminated = new AtomicBoolean();
+    logDroneResolution();
+  }
+
+  private void logDroneResolution() {
     if (droneInfo == null) {
       logger.log(N2K_DRONE_CONFIG_MISSING, n2kConfig.getName(), namespaceTopicPath);
     } else {
@@ -79,6 +107,9 @@ public class N2kSession implements MessageHandler, Lifecycle {
       logger.log(N2K_SESSION_START_SKIPPED, n2kConfig.getName(), namespaceTopicPath);
       return;
     }
+    if (terminated.get() || !running.compareAndSet(false, true)) {
+      return;
+    }
 
     logger.log(N2K_SESSION_STARTING, n2kConfig.getName(), namespaceTopicPath);
 
@@ -87,6 +118,13 @@ public class N2kSession implements MessageHandler, Lifecycle {
       protocol.subscribeLocal(namespaceTopicPath, namespaceTopicPath, QualityOfService.AT_MOST_ONCE, null, null, null, null, null);
       logger.log(N2K_SESSION_STARTED, n2kConfig.getName(), namespaceTopicPath);
     } catch (IOException exception) {
+      running.set(false);
+      terminated.set(true);
+      try {
+        protocol.close();
+      } catch (IOException closeException) {
+        exception.addSuppressed(closeException);
+      }
       logger.log(N2K_SESSION_START_FAILED, exception);
     }
   }
@@ -97,15 +135,34 @@ public class N2kSession implements MessageHandler, Lifecycle {
       logger.log(N2K_SESSION_STOP_SKIPPED, n2kConfig.getName());
       return;
     }
+    if (!running.getAndSet(false)) {
+      return;
+    }
+    terminated.set(true);
 
     logger.log(N2K_SESSION_STOPPING, n2kConfig.getName(), namespaceTopicPath);
 
+    Exception failure = null;
     try {
       protocol.unsubscribeLocal(namespaceTopicPath);
+    } catch (RuntimeException exception) {
+      failure = exception;
+    }
+
+    try {
       protocol.close();
-      logger.log(N2K_SESSION_STOPPED, n2kConfig.getName(), namespaceTopicPath);
     } catch (IOException exception) {
-      logger.log(N2K_SESSION_STOP_FAILED, exception);
+      if (failure == null) {
+        failure = exception;
+      } else {
+        failure.addSuppressed(exception);
+      }
+    }
+
+    if (failure == null) {
+      logger.log(N2K_SESSION_STOPPED, n2kConfig.getName(), namespaceTopicPath);
+    } else {
+      logger.log(N2K_SESSION_STOP_FAILED, failure);
     }
   }
 
@@ -115,6 +172,10 @@ public class N2kSession implements MessageHandler, Lifecycle {
 
     try {
       logger.log(N2K_MESSAGE_RECEIVED, sourceName);
+
+      if (!running.get()) {
+        return;
+      }
 
       if (droneInfo == null) {
         logger.log(N2K_MESSAGE_IGNORED_NO_DRONE, sourceName, n2kConfig.getName());
@@ -177,7 +238,6 @@ public class N2kSession implements MessageHandler, Lifecycle {
     if (jsonObject == null || !jsonObject.has(name) || !jsonObject.get(name).isJsonObject()) {
       return null;
     }
-
     return jsonObject.getAsJsonObject(name);
   }
 
@@ -185,7 +245,6 @@ public class N2kSession implements MessageHandler, Lifecycle {
     if (jsonObject == null || !jsonObject.has(name) || jsonObject.get(name).isJsonNull()) {
       return null;
     }
-
     return jsonObject.get(name).getAsDouble();
   }
 
@@ -193,44 +252,36 @@ public class N2kSession implements MessageHandler, Lifecycle {
     if (jsonObject == null || !jsonObject.has(name) || jsonObject.get(name).isJsonNull()) {
       return null;
     }
-
     return jsonObject.get(name).getAsInt();
   }
 
   private TwinUpdateContext createContext(String sourceName, JsonObject j1939, JsonObject n2k, JsonObject packet) {
     TwinUpdateContext context = new TwinUpdateContext();
-
     context.setUpdateSource("n2k-updater");
     context.setSourceInstanceId(resolveSourceInstanceId(sourceName, j1939));
-    context.setReceivedTime(Instant.now());
+    context.setReceivedTime(Instant.now(clock));
     context.setSequenceNumber(resolveSequenceNumber(packet));
     context.setReason(resolveN2kName(n2k));
     context.setFullSnapshot(false);
-
     return context;
   }
 
   private String resolveSourceInstanceId(String sourceName, JsonObject j1939) {
     Integer sourceAddress = getInteger(j1939, "source");
-
     if (sourceAddress == null) {
       return sourceName;
     }
-
     return sourceName + ":source-" + sourceAddress;
   }
 
   private Long resolveSequenceNumber(JsonObject packet) {
     Double sequenceId = getDouble(packet, "sequenceId");
-
     if (sequenceId == null) {
       sequenceId = getDouble(packet, "sid");
     }
-
     if (sequenceId == null) {
       return null;
     }
-
     return sequenceId.longValue();
   }
 
@@ -238,7 +289,6 @@ public class N2kSession implements MessageHandler, Lifecycle {
     if (n2k == null || !n2k.has("name") || n2k.get("name").isJsonNull()) {
       return null;
     }
-
     return n2k.get("name").getAsString();
   }
 }
