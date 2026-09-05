@@ -55,6 +55,16 @@ class SchemaMatchSelectorTest {
   }
 
   @Test
+  void qualifiedSuffixBeatsStalePreloadedAlias() {
+    SchemaConfig preloaded = schema("base.task_feedback.PredictTaskFeedback", "predict-id", "protobuf");
+    SchemaConfig qualified = schema("base.task_feedback.TaskFeedback", "feedback-id", "protobuf");
+
+    assertEquals(
+        qualified,
+        SchemaMatchSelector.select("TaskFeedback", "protobuf", preloaded, List.of(preloaded, qualified)));
+  }
+
+  @Test
   void qualifiedSuffixBeatsLooseSuffix() {
     SchemaConfig loose = schema("PredictTaskFeedback", "loose", "protobuf");
     SchemaConfig qualified = schema("base.task_feedback.TaskFeedback", "qualified", "protobuf");
