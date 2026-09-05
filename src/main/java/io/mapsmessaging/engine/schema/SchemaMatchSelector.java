@@ -20,10 +20,10 @@ import java.util.Objects;
 
 final class SchemaMatchSelector {
 
-  private static final int EXACT_NAME_SCORE = 400;
-  private static final int EXACT_UNIQUE_ID_SCORE = 350;
+  private static final int EXACT_NAME_SCORE = 500;
+  private static final int EXACT_UNIQUE_ID_SCORE = 450;
+  private static final int QUALIFIED_SUFFIX_SCORE = 400;
   private static final int PRELOADED_ALIAS_SCORE = 300;
-  private static final int QUALIFIED_SUFFIX_SCORE = 200;
   private static final int LOOSE_SUFFIX_SCORE = 100;
 
   private SchemaMatchSelector() {}
@@ -72,10 +72,10 @@ final class SchemaMatchSelector {
       score = EXACT_NAME_SCORE;
     } else if (uniqueId != null && uniqueId.equalsIgnoreCase(name)) {
       score = EXACT_UNIQUE_ID_SCORE;
-    } else if (preloadedAlias) {
-      score = PRELOADED_ALIAS_SCORE;
     } else if (qualifiedSuffixMatch(schemaName, name)) {
       score = QUALIFIED_SUFFIX_SCORE;
+    } else if (preloadedAlias) {
+      score = PRELOADED_ALIAS_SCORE;
     } else if (schemaName != null && endsWithIgnoreCase(schemaName, name)) {
       score = LOOSE_SUFFIX_SCORE;
     }
