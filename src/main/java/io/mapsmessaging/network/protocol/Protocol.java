@@ -69,6 +69,21 @@ public abstract class Protocol implements SelectorCallback, MessageListener, Tim
   @Getter
   protected final Map<String, String> topicNameMapping;
 
+  // Link mappings are DIRECTIONAL. A push link (subscribeLocal) maps a LOCAL name to the
+  // remote one and must only ever be applied to OUTBOUND messages; a pull link
+  // (subscribeRemote) maps a REMOTE name to the local one and must only ever be applied to
+  // INBOUND messages. Both used to share topicNameMapping, so on a connection carrying both
+  // kinds an inbound publish could be rewritten by a push entry (a pull of
+  // 4817/catl/maps/json/+/X next to a push of 4817/catl/maps/json/# -> 4817/catl/maps/json/
+  // delivered the pulled message as 4817/catl/maps/json/4817/catl/maps/json/... and pushed it
+  // straight back out). topicNameMapping keeps every entry for compatibility (JMX, the
+  // satellite protocols); the lookups below consult the directional maps first and fall back
+  // to the entries that came from neither link direction (the static endpoint mapping).
+  @Getter
+  protected final Map<String, String> pushTopicMapping;
+  @Getter
+  protected final Map<String, String> pullTopicMapping;
+
   @Getter
   protected final Map<String, Analyser> topicNameAnalyserMap;
 
@@ -109,6 +124,8 @@ public abstract class Protocol implements SelectorCallback, MessageListener, Tim
     destinationTransformerMap = new ConcurrentHashMap<>();
     parserLookup = new ConcurrentHashMap<>();
     topicNameMapping = new ConcurrentHashMap<>();
+    pushTopicMapping = new ConcurrentHashMap<>();
+    pullTopicMapping = new ConcurrentHashMap<>();
     topicNameAnalyserMap = new ConcurrentHashMap<>();
     resourceNameAnalyserMap = new ConcurrentHashMap<>();
     endPoint.setBoundProtocol(this);
@@ -128,6 +145,8 @@ public abstract class Protocol implements SelectorCallback, MessageListener, Tim
     destinationTransformerMap = new ConcurrentHashMap<>();
     parserLookup = new ConcurrentHashMap<>();
     topicNameMapping = new ConcurrentHashMap<>();
+    pushTopicMapping = new ConcurrentHashMap<>();
+    pullTopicMapping = new ConcurrentHashMap<>();
     topicNameAnalyserMap = new ConcurrentHashMap<>();
     resourceNameAnalyserMap = new ConcurrentHashMap<>();
     endPoint.setBoundProtocol(this);
@@ -174,6 +193,7 @@ public abstract class Protocol implements SelectorCallback, MessageListener, Tim
       @Nullable Map<String, Object> linkProperties) throws IOException {
 
     topicNameMapping.put(resource, mappedResource);
+    pullTopicMapping.put(resource, mappedResource);
     if (transformer != null) {
       destinationTransformerMap.put(mappedResource, transformer);
     }
@@ -204,6 +224,7 @@ public abstract class Protocol implements SelectorCallback, MessageListener, Tim
       }
     }
     topicNameMapping.put(resource, mappedResource);
+    pushTopicMapping.put(resource, mappedResource);
     if (transformer != null) {
       destinationTransformerMap.put(resource, transformer);
     }
@@ -249,7 +270,7 @@ public abstract class Protocol implements SelectorCallback, MessageListener, Tim
     }
     processTransformation(parsedMessage);
     if(topicNameMapping != null){
-      processDestinationNameLookup(parsedMessage);
+      processDestinationNameLookup(parsedMessage, outboundMappings());
     }
     return parsedMessage;
   }
@@ -262,9 +283,38 @@ public abstract class Protocol implements SelectorCallback, MessageListener, Tim
     }
     processInTransformation(parsedMessage);
     if(topicNameMapping != null){
-      processDestinationNameLookup(parsedMessage);
+      processDestinationNameLookup(parsedMessage, inboundMappings());
     }
     return parsedMessage;
+  }
+
+  /**
+   * The mappings that apply to a message LEAVING this server through this protocol: the push
+   * links (local -> remote) first, then the static endpoint mapping. Pull entries are never
+   * consulted here.
+   */
+  Map<String, String> outboundMappings() {
+    return directionalView(pushTopicMapping);
+  }
+
+  /**
+   * The mappings that apply to a message ARRIVING from the remote end: the pull links
+   * (remote -> local) first, then the static endpoint mapping. Push entries are never
+   * consulted here.
+   */
+  Map<String, String> inboundMappings() {
+    return directionalView(pullTopicMapping);
+  }
+
+  private Map<String, String> directionalView(Map<String, String> primary) {
+    Map<String, String> view = new LinkedHashMap<>(primary);
+    for (Map.Entry<String, String> entry : topicNameMapping.entrySet()) {
+      String key = entry.getKey();
+      if (!pushTopicMapping.containsKey(key) && !pullTopicMapping.containsKey(key)) {
+        view.putIfAbsent(key, entry.getValue());
+      }
+    }
+    return view;
   }
 
   protected ParsedMessage processInterServerTransformations(String source, ParsedMessage parsedMessage) {
@@ -276,18 +326,18 @@ public abstract class Protocol implements SelectorCallback, MessageListener, Tim
   }
 
 
-  private void processDestinationNameLookup(ParsedMessage parsedMessage) {
+  private void processDestinationNameLookup(ParsedMessage parsedMessage, Map<String, String> mappings) {
     String destinationName = parsedMessage.getDestinationName();
 
-    String mappedDestinationName = topicNameMapping.get(destinationName);
+    String mappedDestinationName = mappings.get(destinationName);
     if (mappedDestinationName != null) {
       parsedMessage.setDestinationName(mappedDestinationName);
       return;
     }
 
-    for (String key : topicNameMapping.keySet()) {
+    for (String key : mappings.keySet()) {
       if (matchesTopicFilter(key, destinationName)) {
-        String mappedPrefix = topicNameMapping.get(key);
+        String mappedPrefix = mappings.get(key);
         String sourcePrefix = getSourcePrefixBeforeWildcard(key);
 
         if (destinationName.startsWith(sourcePrefix)) {
@@ -509,7 +559,8 @@ public abstract class Protocol implements SelectorCallback, MessageListener, Tim
   public String parseForLookup(String destinationName) {
     String lookup = destinationName;
 
-    Map<String, String> map = getTopicNameMapping();
+    // inbound publish from the remote end: pull links and the static mapping only
+    Map<String, String> map = inboundMappings();
     if (map != null) {
       lookup = map.get(destinationName);
       if (lookup == null) {
