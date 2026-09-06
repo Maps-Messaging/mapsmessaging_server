@@ -1,6 +1,9 @@
 package io.mapsmessaging.config.transformer;
 
+import com.google.gson.JsonElement;
 import com.google.gson.JsonParser;
+import com.google.gson.JsonPrimitive;
+import com.google.gson.JsonSyntaxException;
 import io.mapsmessaging.configuration.ConfigurationProperties;
 import io.mapsmessaging.dto.rest.config.transformer.TransformationType;
 import io.mapsmessaging.dto.rest.config.transformer.impl.JsonMutateTransformationDTO;
@@ -59,13 +62,28 @@ public class JsonMutateTransformationConfig extends JsonMutateTransformationDTO 
       operationDto.setPath(props.getProperty("path"));
       String value = props.getProperty("value");
       if (value != null) {
-        operationDto.setValue(JsonParser.parseString(value));
+        operationDto.setValue(parseJsonOrString(value));
       }
     } else {
       return;
     }
 
     operations.add(operationDto);
+  }
+
+  /**
+   * A jsonmutate SET value from YAML is usually a bare scalar. Parse it as JSON when it is valid
+   * JSON (number, boolean, null, quoted string, object, array); otherwise treat it as a literal
+   * string. The previous strict {@code JsonParser.parseString} threw MalformedJsonException on a
+   * plain word ({@code NEW}) or anything containing a colon (a URL), making string SET values
+   * unusable.
+   */
+  private static JsonElement parseJsonOrString(String raw) {
+    try {
+      return JsonParser.parseString(raw);
+    } catch (JsonSyntaxException e) {
+      return new JsonPrimitive(raw);
+    }
   }
 
 }
