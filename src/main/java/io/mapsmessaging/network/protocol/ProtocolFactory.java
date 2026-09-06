@@ -43,7 +43,10 @@ public class ProtocolFactory implements ServiceManager {
   private final List<ProxyProtocol> proxyProtocols;
 
   public ProtocolFactory(String protocols) {
-    this.protocols = protocols.toLowerCase();
+    // trim() as well as toLowerCase(): a listener config read from a CRLF YAML file yields e.g.
+    // "cot\r", and getBoundedProtocol()'s exact matches() (name.equalsIgnoreCase) then never
+    // matches a single-protocol listener, so it silently falls back to byte detection.
+    this.protocols = protocols.trim().toLowerCase();
     proxyProtocols = List.of(
         new ProxyProtocolV1(),
         new ProxyProtocolV2()
