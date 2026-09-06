@@ -19,6 +19,8 @@
 
 package io.mapsmessaging.state.mavlink.listener;
 
+import static io.mapsmessaging.state.mavlink.packet.MavlinkMessageIds.GLOBAL_POSITION_INT;
+
 import io.mapsmessaging.state.drone.core.TwinManager;
 import io.mapsmessaging.state.drone.core.TwinUpdateContext;
 import io.mapsmessaging.state.drone.drone.DroneTwin;
@@ -26,10 +28,7 @@ import io.mapsmessaging.state.drone.model.GeoPosition;
 import io.mapsmessaging.state.drone.model.VelocityVector;
 import io.mapsmessaging.state.mavlink.packet.GlobalPositionPacket;
 import io.mapsmessaging.state.mavlink.packet.MavlinkPacket;
-
 import java.time.Instant;
-
-import static io.mapsmessaging.state.mavlink.packet.MavlinkMessageIds.GLOBAL_POSITION_INT;
 
 /**
  * Listener for GLOBAL_POSITION_INT.
@@ -46,8 +45,6 @@ public class GlobalPositionListener implements Listener {
 
   @Override
   public void handle(String twinId, MavlinkPacket pkt, TwinUpdateContext context) {
-
-    // Defensive type check (dispatcher should guarantee this)
     if (!(pkt instanceof GlobalPositionPacket packet)) {
       return;
     }
@@ -60,38 +57,29 @@ public class GlobalPositionListener implements Listener {
         ? context.getReceivedTime()
         : Instant.now();
 
-    final double vx = packet.getVx();
-    final double vy = packet.getVy();
-    final double vz = packet.getVz();
-    twinManager.updateTwin(twinId, twin -> {
+    Double latitude = finiteOrNull(packet.getLatitude());
+    Double longitude = finiteOrNull(packet.getLongitude());
+    Double altitude = finiteOrNull(packet.getAltitudeMeters());
+    Double north = finiteOrNull(packet.getVx());
+    Double east = finiteOrNull(packet.getVy());
+    Double down = finiteOrNull(packet.getVz());
+    Double heading = finiteOrNull(packet.getHeadingDegrees());
 
+    twinManager.updateTwin(twinId, twin -> {
       DroneTwin drone = (DroneTwin) twin;
 
-      // Position
-      drone.setGeoPosition(new GeoPosition(
-          packet.getLatitude(),
-          packet.getLongitude(),
-          packet.getAltitudeMeters(),
-          null
-      ));
-
-      // Velocity (NED)
-      drone.setVelocityVector(new VelocityVector(vx, vy, vz));
-
-      // Derived navigation (guard NaN)
-      drone.setHeadingDegrees(packet.getHeadingDegrees());
-
-      if (!Double.isNaN(vx) && !Double.isNaN(vy)) {
-        drone.setGroundSpeedMetersPerSecond(Math.sqrt(vx * vx + vy * vy));
-      }
-
-      if (!Double.isNaN(vz)) {
-        drone.setVerticalSpeedMetersPerSecond(-vz); // NED → climb
-      }
-
-      // Freshness
+      drone.setGeoPosition(new GeoPosition(latitude, longitude, altitude, null));
+      drone.setVelocityVector(new VelocityVector(north, east, down));
+      drone.setHeadingDegrees(heading);
+      drone.setGroundSpeedMetersPerSecond(
+          north != null && east != null ? Math.sqrt(north * north + east * east) : null
+      );
+      drone.setVerticalSpeedMetersPerSecond(down != null ? -down : null);
       drone.setNavigationUpdatedAt(now);
-
     }, context);
+  }
+
+  private static Double finiteOrNull(double value) {
+    return Double.isFinite(value) ? value : null;
   }
 }

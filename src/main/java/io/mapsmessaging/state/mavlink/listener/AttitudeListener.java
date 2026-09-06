@@ -19,16 +19,15 @@
 
 package io.mapsmessaging.state.mavlink.listener;
 
+import static io.mapsmessaging.state.mavlink.packet.MavlinkMessageIds.ATTITUDE;
+
 import io.mapsmessaging.state.drone.core.TwinManager;
 import io.mapsmessaging.state.drone.core.TwinUpdateContext;
 import io.mapsmessaging.state.drone.drone.DroneTwin;
 import io.mapsmessaging.state.drone.model.Orientation;
 import io.mapsmessaging.state.mavlink.packet.AttitudePacket;
 import io.mapsmessaging.state.mavlink.packet.MavlinkPacket;
-
 import java.time.Instant;
-
-import static io.mapsmessaging.state.mavlink.packet.MavlinkMessageIds.ATTITUDE;
 
 public class AttitudeListener implements Listener {
 
@@ -41,7 +40,6 @@ public class AttitudeListener implements Listener {
 
   @Override
   public void handle(String twinId, MavlinkPacket pkt, TwinUpdateContext context) {
-
     if (!(pkt instanceof AttitudePacket packet)) {
       return;
     }
@@ -54,18 +52,18 @@ public class AttitudeListener implements Listener {
         ? context.getReceivedTime()
         : Instant.now();
 
+    Double roll = finiteOrNull(packet.getRollDegrees());
+    Double pitch = finiteOrNull(packet.getPitchDegrees());
+    Double yaw = finiteOrNull(packet.getYawDegrees());
+
     twinManager.updateTwin(twinId, twin -> {
-
       DroneTwin drone = (DroneTwin) twin;
-
-      drone.setOrientation(new Orientation(
-          packet.getRollDegrees(),
-          packet.getPitchDegrees(),
-          packet.getYawDegrees()
-      ));
-
+      drone.setOrientation(new Orientation(roll, pitch, yaw));
       drone.setMotionUpdatedAt(now);
-
     }, context);
+  }
+
+  private static Double finiteOrNull(double value) {
+    return Double.isFinite(value) ? value : null;
   }
 }
