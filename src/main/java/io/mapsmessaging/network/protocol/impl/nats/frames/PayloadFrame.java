@@ -60,21 +60,31 @@ public abstract class PayloadFrame extends NatsFrame {
     return frame;
   }
 
+  protected boolean requiresSubscriptionId() {
+    return false;
+  }
+
   public void parseFrame(Packet packet) throws IOException {
-    super.parseFrame(packet);
+    int start = packet.position();
+    try {
+      super.parseFrame(packet);
 
-    if (packet.available() < payloadSize + 2) { // plus \r\n
-      throw new EndOfBufferException("Incomplete payload for MSG frame");
-    }
+      if (packet.available() < payloadSize + 2) { // plus \r\n
+        throw new EndOfBufferException("Incomplete payload for NATS frame");
+      }
 
-    payload = new byte[payloadSize];
-    packet.get(payload);
+      payload = new byte[payloadSize];
+      packet.get(payload);
 
-    // Consume the trailing CRLF after payload
-    byte cr = packet.get();
-    byte lf = packet.get();
-    if (cr != '\r' || lf != '\n') {
-      throw new IOException("Invalid MSG frame ending");
+      // Consume the trailing CRLF after payload
+      byte cr = packet.get();
+      byte lf = packet.get();
+      if (cr != '\r' || lf != '\n') {
+        throw new IOException("Invalid NATS frame ending");
+      }
+    } catch (EndOfBufferException e) {
+      packet.position(start);
+      throw e;
     }
   }
 
@@ -82,22 +92,32 @@ public abstract class PayloadFrame extends NatsFrame {
   public void parseLine(String line) throws NatsProtocolException {
     String[] parts = line.trim().split(" ");
 
-    if (parts.length < 2) {
-      throw new NatsProtocolException("Invalid PUB frame header: " + line);
-    }
-
-    subject = parts[0];
-
-    if (parts.length == 2) {
-      // No reply-to
-      replyTo = null;
-      payloadSize = Integer.parseInt(parts[1]);
-    } else if (parts.length == 3) {
-      // reply-to present
-      replyTo = parts[1];
-      payloadSize = Integer.parseInt(parts[2]);
+    if (requiresSubscriptionId()) {
+      if (parts.length < 3 || parts.length > 4) {
+        throw new NatsProtocolException("Invalid MSG frame header: " + line);
+      }
+      subject = parts[0];
+      subscriptionId = parts[1];
+      if (parts.length == 3) {
+        replyTo = null;
+        payloadSize = Integer.parseInt(parts[2]);
+      } else {
+        replyTo = parts[2];
+        payloadSize = Integer.parseInt(parts[3]);
+      }
     } else {
-      throw new NatsProtocolException("Invalid PUB frame header: " + line);
+      if (parts.length < 2 || parts.length > 3) {
+        throw new NatsProtocolException("Invalid PUB frame header: " + line);
+      }
+      subject = parts[0];
+      subscriptionId = null;
+      if (parts.length == 2) {
+        replyTo = null;
+        payloadSize = Integer.parseInt(parts[1]);
+      } else {
+        replyTo = parts[1];
+        payloadSize = Integer.parseInt(parts[2]);
+      }
     }
 
     if (payloadSize > maxBufferSize) {

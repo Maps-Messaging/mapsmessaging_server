@@ -54,26 +54,31 @@ public abstract class HPayloadFrame extends PayloadFrame {
 
   @Override
   public void parseFrame(Packet packet) throws IOException {
+    int start = packet.position();
+    try {
+      parseLine(extractLine(packet));
 
-    parseLine(extractLine(packet));
+      if (packet.available() < payloadSize + 2) { // plus \r\n
+        throw new EndOfBufferException("Incomplete payload for NATS header frame");
+      }
 
-    if (packet.available() < payloadSize + 2) { // plus \r\n
-      throw new EndOfBufferException("Incomplete payload for MSG frame");
+      payload = new byte[payloadSize - headerSize];
+      headerBytes = new byte[headerSize];
+      packet.get(headerBytes);
+      packet.get(payload);
+
+      // Consume the trailing CRLF after payload
+      byte cr = packet.get();
+      byte lf = packet.get();
+      if (cr != '\r' || lf != '\n') {
+        throw new IOException("Invalid NATS frame ending");
+      }
+      String headerLine = new String(headerBytes, StandardCharsets.US_ASCII);
+      parseHeaders(headerLine);
+    } catch (EndOfBufferException e) {
+      packet.position(start);
+      throw e;
     }
-
-    payload = new byte[payloadSize - headerSize];
-    headerBytes = new byte[headerSize];
-    packet.get(headerBytes);
-    packet.get(payload);
-
-    // Consume the trailing CRLF after payload
-    byte cr = packet.get();
-    byte lf = packet.get();
-    if (cr != '\r' || lf != '\n') {
-      throw new IOException("Invalid MSG frame ending");
-    }
-    String headerLine = new String(headerBytes, StandardCharsets.US_ASCII);
-    parseHeaders(headerLine);
   }
 
   private void parseHeaders(String headersBlock) throws NatsProtocolException {
@@ -103,22 +108,36 @@ public abstract class HPayloadFrame extends PayloadFrame {
   public void parseLine(String line) throws NatsProtocolException {
     String[] parts = line.trim().split(" ");
 
-    if (parts.length < 3 || parts.length > 4) {
-      throw new NatsProtocolException("Invalid HPUB frame header: " + line);
-    }
-
-    subject = parts[0];
-
-    if (parts.length == 3) {
-      // No reply-to
-      replyTo = null;
-      headerSize = Integer.parseInt(parts[1]);
-      payloadSize = Integer.parseInt(parts[2]);
+    if (requiresSubscriptionId()) {
+      if (parts.length < 4 || parts.length > 5) {
+        throw new NatsProtocolException("Invalid HMSG frame header: " + line);
+      }
+      subject = parts[0];
+      subscriptionId = parts[1];
+      if (parts.length == 4) {
+        replyTo = null;
+        headerSize = Integer.parseInt(parts[2]);
+        payloadSize = Integer.parseInt(parts[3]);
+      } else {
+        replyTo = parts[2];
+        headerSize = Integer.parseInt(parts[3]);
+        payloadSize = Integer.parseInt(parts[4]);
+      }
     } else {
-      // reply-to present
-      replyTo = parts[1];
-      headerSize = Integer.parseInt(parts[2]);
-      payloadSize = Integer.parseInt(parts[3]);
+      if (parts.length < 3 || parts.length > 4) {
+        throw new NatsProtocolException("Invalid HPUB frame header: " + line);
+      }
+      subject = parts[0];
+      subscriptionId = null;
+      if (parts.length == 3) {
+        replyTo = null;
+        headerSize = Integer.parseInt(parts[1]);
+        payloadSize = Integer.parseInt(parts[2]);
+      } else {
+        replyTo = parts[1];
+        headerSize = Integer.parseInt(parts[2]);
+        payloadSize = Integer.parseInt(parts[3]);
+      }
     }
 
     if (payloadSize > maxBufferSize) {
