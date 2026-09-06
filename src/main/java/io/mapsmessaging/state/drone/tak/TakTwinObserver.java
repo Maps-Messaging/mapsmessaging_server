@@ -19,6 +19,12 @@
 
 package io.mapsmessaging.state.drone.tak;
 
+import io.mapsmessaging.config.Config;
+import io.mapsmessaging.configuration.ConfigurationProperties;
+import io.mapsmessaging.dto.rest.config.protocol.impl.TakProtocolDTO;
+import io.mapsmessaging.logging.Logger;
+import io.mapsmessaging.logging.LoggerFactory;
+import io.mapsmessaging.security.ssl.SslHelper;
 import io.mapsmessaging.state.config.TwinManagerConfig;
 import io.mapsmessaging.state.config.TwinManagerConfigDTO;
 import io.mapsmessaging.state.drone.core.EntityTwin;
@@ -29,8 +35,11 @@ import io.mapsmessaging.state.drone.core.TwinRelationship;
 import io.mapsmessaging.state.drone.core.TwinUpdateContext;
 import io.mapsmessaging.state.drone.model.BatteryState;
 import io.mapsmessaging.state.drone.tak.model.TakEvent;
+import io.mapsmessaging.state.logging.StateLogMessages;
 import io.mapsmessaging.utilities.configuration.ConfigurationManager;
 
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLSocketFactory;
 import java.io.IOException;
 import java.util.Map;
 import java.util.Objects;
@@ -44,10 +53,13 @@ public class TakTwinObserver implements TwinObserver {
   private static final long PUBLISH_INTERVAL_MS = 1000L;
   private static final long STATS_PUBLISH_INTERVAL_MS = 30_000L;
 
+  private final Logger logger = LoggerFactory.getLogger(TakTwinObserver.class);
+
   private final Map<String, TakTwinContext> takContexts;
   private final Map<String, Long> lastStatsPublishTimes;
   private final String takHost;
   private final int takPort;
+  private final SSLSocketFactory sslSocketFactory;
   private final TwinManager twinManager;
   private final TakEventMapper takEventMapper;
   private final TakXmlSerialiser takXmlSerialiser;
@@ -67,12 +79,13 @@ public class TakTwinObserver implements TwinObserver {
     if (config != null && config.getTak() != null) {
       this.takHost = config.getTak().getHostname();
       this.takPort = config.getTak().getPort();
+      this.sslSocketFactory = buildSslSocketFactory(config.getTak());
 
       if (config.getTak().isSharedConnection()
           && takHost != null
           && !takHost.isBlank()
           && takPort > 0) {
-        globalSocketConnection = new TakSocketConnection(takHost, takPort);
+        globalSocketConnection = new TakSocketConnection(takHost, takPort, sslSocketFactory);
       } else {
         globalSocketConnection = null;
       }
@@ -94,8 +107,25 @@ public class TakTwinObserver implements TwinObserver {
     } else {
       this.takHost = null;
       this.takPort = 0;
+      this.sslSocketFactory = null;
       this.globalSocketConnection = null;
       this.eventPublisher = null;
+    }
+  }
+
+  private SSLSocketFactory buildSslSocketFactory(TakProtocolDTO tak) {
+    if (!tak.isTlsEnabled() || tak.getKeyStore() == null || tak.getTrustStore() == null) {
+      return null;
+    }
+    try {
+      ConfigurationProperties sslProps = new ConfigurationProperties();
+      sslProps.put("keyStore", ((Config) tak.getKeyStore()).toConfigurationProperties());
+      sslProps.put("trustStore", ((Config) tak.getTrustStore()).toConfigurationProperties());
+      SSLContext sslContext = SslHelper.createContext(tak.getTlsContext(), sslProps, logger);
+      return sslContext.getSocketFactory();
+    } catch (IOException e) {
+      logger.log(StateLogMessages.STATE_MANAGER_TAK_TLS_CONTEXT_FAILED, e);
+      return null;
     }
   }
 
@@ -230,7 +260,7 @@ public class TakTwinObserver implements TwinObserver {
       if (twinContext.getSocketConnection() == null) {
         twinContext.setSocketConnection(
             Objects.requireNonNullElseGet(
-                globalSocketConnection, () -> new TakSocketConnection(takHost, takPort)));
+                globalSocketConnection, () -> new TakSocketConnection(takHost, takPort, sslSocketFactory)));
       }
 
       twinContext.getSocketConnection().accept(xml);

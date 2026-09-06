@@ -21,6 +21,8 @@ package io.mapsmessaging.state.drone.tak;
 
 import lombok.Getter;
 
+import javax.net.ssl.SSLSocket;
+import javax.net.ssl.SSLSocketFactory;
 import java.io.Closeable;
 import java.io.IOException;
 import java.io.OutputStream;
@@ -48,6 +50,7 @@ public class TakSocketConnection implements Closeable {
 
   private final LinkedBlockingDeque<String> queue;
   private final Thread writerThread;
+  private final SSLSocketFactory sslSocketFactory;
 
   private volatile boolean running;
 
@@ -55,7 +58,11 @@ public class TakSocketConnection implements Closeable {
   private OutputStream socketOutputStream;
 
   public TakSocketConnection(String host, int port) {
-    this(host, port, DEFAULT_CONNECT_TIMEOUT_MS, DEFAULT_SOCKET_TIMEOUT_MS, true, DEFAULT_MAX_QUEUE_SIZE);
+    this(host, port, DEFAULT_CONNECT_TIMEOUT_MS, DEFAULT_SOCKET_TIMEOUT_MS, true, DEFAULT_MAX_QUEUE_SIZE, null);
+  }
+
+  public TakSocketConnection(String host, int port, SSLSocketFactory sslSocketFactory) {
+    this(host, port, DEFAULT_CONNECT_TIMEOUT_MS, DEFAULT_SOCKET_TIMEOUT_MS, true, DEFAULT_MAX_QUEUE_SIZE, sslSocketFactory);
   }
 
   public TakSocketConnection(String host,
@@ -64,6 +71,16 @@ public class TakSocketConnection implements Closeable {
                              int socketTimeoutMs,
                              boolean appendNewLine,
                              int maxQueueSize) {
+    this(host, port, connectTimeoutMs, socketTimeoutMs, appendNewLine, maxQueueSize, null);
+  }
+
+  public TakSocketConnection(String host,
+                             int port,
+                             int connectTimeoutMs,
+                             int socketTimeoutMs,
+                             boolean appendNewLine,
+                             int maxQueueSize,
+                             SSLSocketFactory sslSocketFactory) {
     this.host = Objects.requireNonNull(host, "host cannot be null");
     this.port = port;
     this.connectTimeoutMs = connectTimeoutMs;
@@ -74,6 +91,7 @@ public class TakSocketConnection implements Closeable {
     this.running = true;
     this.socket = null;
     this.socketOutputStream = null;
+    this.sslSocketFactory = sslSocketFactory;
 
     this.writerThread = new Thread(this::writerLoop, "tak-socket-writer-" + host + "-" + port);
     this.writerThread.setDaemon(true);
@@ -156,8 +174,16 @@ public class TakSocketConnection implements Closeable {
     closeQuietly();
 
     try {
-      Socket newSocket = new Socket();
-      newSocket.connect(new InetSocketAddress(host, port), connectTimeoutMs);
+      Socket newSocket;
+      if (sslSocketFactory != null) {
+        SSLSocket sslSocket = (SSLSocket) sslSocketFactory.createSocket();
+        sslSocket.connect(new InetSocketAddress(host, port), connectTimeoutMs);
+        sslSocket.startHandshake();
+        newSocket = sslSocket;
+      } else {
+        newSocket = new Socket();
+        newSocket.connect(new InetSocketAddress(host, port), connectTimeoutMs);
+      }
       newSocket.setSoTimeout(socketTimeoutMs);
       newSocket.setKeepAlive(true);
       newSocket.setTcpNoDelay(true);
