@@ -102,11 +102,6 @@ public class SimpleBufferBasedTest extends BaseTestConfig {
             delay(delay);
           }
         }
-        try {
-          Thread.sleep(1000);
-        } catch (InterruptedException e) {
-          Thread.currentThread().interrupt();
-        }
       }
       if(endFrame != null) {
         delay(END_FRAME_DELAY);
@@ -137,11 +132,6 @@ public class SimpleBufferBasedTest extends BaseTestConfig {
             }
             outputStream.write(write, 0, x);
             outputStream.flush();
-          }
-          try {
-            Thread.sleep(1000);
-          } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
           }
         }
         if (endFrame != null) {
