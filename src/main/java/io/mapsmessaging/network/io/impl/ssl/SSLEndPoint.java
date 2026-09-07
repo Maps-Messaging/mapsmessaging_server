@@ -19,6 +19,7 @@
 
 package io.mapsmessaging.network.io.impl.ssl;
 
+import io.mapsmessaging.dto.rest.config.network.impl.TcpConfigDTO;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.logging.ServerLogMessages;
@@ -87,10 +88,23 @@ public class SSLEndPoint extends TCPEndPoint {
     sslEngine.setUseClientMode(callback != null);
 
     logger.log(ServerLogMessages.SSL_HANDSHAKE_START);
-    handshakeManager = new SSLHandShakeManagerImpl(this, callback);
-
     logger.log(ServerLogMessages.SSL_HANDSHAKE_READY);
     sslEngine.beginHandshake();
+
+    long timeout = 0;
+    if (callback != null && getConfig().getEndPointConfig() instanceof TcpConfigDTO tcpConfig) {
+      timeout = tcpConfig.getTimeout();
+    }
+    handshakeManager = new SSLHandShakeManagerImpl(this, callback, timeout);
+  }
+
+  @Override
+  public void close() {
+    SSLHandshakeManager currentManager = handshakeManager;
+    if (currentManager instanceof SSLHandShakeManagerImpl pendingHandshake) {
+      pendingHandshake.cancel();
+    }
+    super.close();
   }
 
   @Override

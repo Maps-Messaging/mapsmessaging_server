@@ -127,6 +127,7 @@ public class EndPointConnection extends EndPointServerStatus {
   public void close() {
     stateMonitor.close();
 
+    State stateToCancel;
     synchronized (stateLock) {
       transitionSequence.incrementAndGet();
 
@@ -137,6 +138,11 @@ public class EndPointConnection extends EndPointServerStatus {
       futureTask = null;
       running.set(false);
       paused.set(false);
+      stateToCancel = state;
+    }
+
+    if (stateToCancel != null) {
+      stateToCancel.cancel();
     }
 
     if (manager != null) {
@@ -144,6 +150,10 @@ public class EndPointConnection extends EndPointServerStatus {
     }
 
     EndPoint currentEndPoint = endPoint;
+    Protocol currentProtocol = protocol;
+    if (currentEndPoint == null && currentProtocol != null) {
+      currentEndPoint = currentProtocol.getEndPoint();
+    }
     if (currentEndPoint != null) {
       try {
         currentEndPoint.close();
@@ -170,6 +180,7 @@ public class EndPointConnection extends EndPointServerStatus {
     State stateChange;
 
     if (running.get() && currentState instanceof Connecting) {
+      endPoint = newEndPoint;
       stateChange = new Connected(this);
     } else {
       newEndPoint.close();
@@ -181,6 +192,9 @@ public class EndPointConnection extends EndPointServerStatus {
 
   @Override
   public void handleCloseEndPoint(EndPoint closedEndPoint) {
+    if (endPoint == closedEndPoint) {
+      endPoint = null;
+    }
     if (running.get() && !paused.get()) {
       scheduleState(new Delayed(this));
     }
@@ -210,6 +224,7 @@ public class EndPointConnection extends EndPointServerStatus {
   public void stop() {
     if (running.compareAndSet(true, false)) {
       stateMonitor.stop();
+      cancelCurrentState();
       scheduleState(new Shutdown(this));
       logger.log(ServerLogMessages.END_POINT_CONNECTION_STOPPING);
     }
@@ -218,6 +233,7 @@ public class EndPointConnection extends EndPointServerStatus {
   public void pause() {
     if (paused.compareAndSet(false, true)) {
       stateMonitor.stop();
+      cancelCurrentState();
     }
   }
 
@@ -298,6 +314,13 @@ public class EndPointConnection extends EndPointServerStatus {
 
       newState.execute();
     };
+  }
+
+  private void cancelCurrentState() {
+    State currentState = state;
+    if (currentState != null) {
+      currentState.cancel();
+    }
   }
 
   private boolean isCurrentTransition(long scheduledSequence) {
