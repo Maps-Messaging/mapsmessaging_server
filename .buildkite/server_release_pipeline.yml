@@ -17,5 +17,5 @@ steps:
 
 
     agents:
-      queue: "java_build_queue"
+      queue: "java_build_queue_aws"
 
