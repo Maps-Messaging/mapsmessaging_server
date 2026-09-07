@@ -27,6 +27,7 @@ import io.mapsmessaging.network.protocol.EndOfBufferException;
 import io.mapsmessaging.network.protocol.impl.mqtt.packet.MalformedException;
 import io.mapsmessaging.network.protocol.impl.mqtt5.DefaultConstants;
 import io.mapsmessaging.network.protocol.impl.mqtt5.packet.properties.MessageProperty;
+import io.mapsmessaging.network.protocol.impl.mqtt5.packet.properties.SubscriptionIdentifier;
 import lombok.Getter;
 
 import java.nio.ByteBuffer;
@@ -96,6 +97,15 @@ public class Publish5 extends MQTTPacket5 implements ServerPublishPacket {
     if (destinationName.contains("#") || destinationName.contains("+")) {
       throw new MalformedException("Destination name must not contain wildcards Reference: [MQTT-3.3.2-2]");
     }
+  }
+
+  @Override
+  public MessageProperties add(MessageProperty property) {
+    if (property instanceof SubscriptionIdentifier subscriptionIdentifier
+        && subscriptionIdentifier.getSubscriptionIdentifier() <= 0) {
+      return getProperties();
+    }
+    return super.add(property);
   }
 
   public boolean isDuplicate() {
