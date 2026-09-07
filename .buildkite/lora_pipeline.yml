@@ -21,6 +21,10 @@ steps:
 
   - trigger: "100-server-3rd-party-extensions-snapshot"
   - trigger: "200-build-windows-installer"
+    build:
+      message: "${BUILDKITE_MESSAGE}"
+      commit: "${BUILDKITE_COMMIT}"
+      branch: "${BUILDKITE_BRANCH}"
 
   - label: "110 Build Halos Maps Pi Image"
     trigger: "110-build-halos-maps-pi-image"
