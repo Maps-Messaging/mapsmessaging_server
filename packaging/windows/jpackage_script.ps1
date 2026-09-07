@@ -18,20 +18,19 @@ $DestDir   = Join-Path $StagingDir "maps-$SanitizedVersion"
 Move-Item -Force $SourceDir $DestDir
 
 $InputDir  = $DestDir
-$MainJar   = "maps-$Version.jar"  # Leave as original JAR name
+$MainJar   = "maps-$Version.jar"
 
-
-#
-# Move the windows version of logback to override the linux version
-#
 $content = (Get-Content "$InputDir\conf\logback.xml" -Raw) -replace 'MAPS_DATA', 'ProgramData'
 $content | Set-Content "$InputDir\conf\logback.xml"
 
+$IconPath = Join-Path $InputDir "www\admin\favicon.ico"
+if (-not (Test-Path $IconPath)) {
+  throw "Windows package icon not found at $IconPath"
+}
 
-# Run jpackage
 & "$Env:JAVA_HOME\bin\jpackage" `
   --type msi `
-  --icon "build\staging\maps-4.1.0\www\admin\favicon.ico" `
+  --icon "$IconPath" `
   --name "$AppName" `
   --app-version "$SanitizedVersion" `
   --input "$InputDir" `
@@ -49,10 +48,3 @@ $content | Set-Content "$InputDir\conf\logback.xml"
   --add-launcher mapsTop=mapsTop.properties `
   --license-file "$InputDir\LICENSE" `
   --java-options '-DMAPS_HOME="$APPDIR" -DMAPS_CONF="$APPDIR\conf" -DMAPS_DATA="${ProgramData}\MapsMessaging\data" -DCONSUL_URL=http://localhost:8500/'
-
-
-
-
-
-
-
