@@ -3,26 +3,56 @@ $Password = $args[1]
 $Version = $args[2]
 $AppName = "MapsMessaging"
 $PushRepo = "maps_windows_installer"
+$RepoRoot = Resolve-Path (Join-Path $PSScriptRoot "..\..")
 
+if ([string]::IsNullOrWhiteSpace($Version)) {
+    if ($env:BUILDKITE_BRANCH -eq "development") {
+        $PomPath = Join-Path $RepoRoot "pom.xml"
+        [xml]$Pom = Get-Content -Path $PomPath -Raw
+        $NamespaceManager = New-Object System.Xml.XmlNamespaceManager($Pom.NameTable)
+        $NamespaceManager.AddNamespace("m", "http://maven.apache.org/POM/4.0.0")
+        $VersionNode = $Pom.SelectSingleNode("/m:project/m:version", $NamespaceManager)
+        if ($null -eq $VersionNode -or [string]::IsNullOrWhiteSpace($VersionNode.InnerText)) {
+            throw "Unable to determine project version from $PomPath"
+        }
+        $Version = $VersionNode.InnerText.Trim()
+        if (-not $Version.EndsWith("-SNAPSHOT")) {
+            throw "Development branch must package a snapshot version, found '$Version'"
+        }
+        Write-Host "Development build: packaging snapshot $Version"
+    }
+    else {
+        $MetadataUrl = "https://repository.mapsmessaging.io/repository/maps_releases/io/mapsmessaging/maps/maven-metadata.xml"
+        $EncodedCreds = [Convert]::ToBase64String([Text.Encoding]::ASCII.GetBytes("$Username`:$Password"))
+        [xml]$Metadata = (Invoke-WebRequest -Uri $MetadataUrl -Headers @{ Authorization = "Basic $EncodedCreds" } -UseBasicParsing).Content
 
+        $ReleaseNode = $Metadata.SelectSingleNode("/metadata/versioning/release")
+        if ($null -eq $ReleaseNode -or [string]::IsNullOrWhiteSpace($ReleaseNode.InnerText)) {
+            $ReleaseNode = $Metadata.SelectSingleNode("/metadata/versioning/latest")
+        }
+        if ($null -eq $ReleaseNode -or [string]::IsNullOrWhiteSpace($ReleaseNode.InnerText)) {
+            throw "Unable to determine latest MAPS release from Maven metadata at $MetadataUrl"
+        }
+        $Version = $ReleaseNode.InnerText.Trim()
+        Write-Host "Non-development build: packaging latest Maven release $Version"
+    }
+}
+else {
+    Write-Host "Packaging explicitly requested version $Version"
+}
 
-$ZipName     = "maps-$Version-install.zip"
-$ZipUrl      = "https://github.com/Maps-Messaging/mapsmessaging_server/releases/download/$Version/$ZipName"
-$PushUrl     = "https://repository.mapsmessaging.io/service/rest/v1/components?repository=$PushRepo"
+$ZipName = "maps-$Version-install.zip"
+$ZipUrl = "https://github.com/Maps-Messaging/mapsmessaging_server/releases/download/$Version/$ZipName"
+$PushUrl = "https://repository.mapsmessaging.io/service/rest/v1/components?repository=$PushRepo"
 
-# Download the ZIP (anonymous or basic auth)
+Write-Host "Downloading $ZipUrl"
 Invoke-WebRequest -Uri $ZipUrl -OutFile $ZipName -UseBasicParsing
 
-# Unzip
 $InputDir = "maps-$Version"
-
 Expand-Archive -Path $ZipName -DestinationPath "." -Force
 
-# Build the installer
-$BaseDir = Join-Path (Get-Location) $InputDir
-.\build-windows-package.ps1 -Version $Version -AppName $AppName -BaseDir $BaseDir
+.\build-windows-package.ps1 -Version $Version -AppName $AppName
 
-# Find the built installer
 $InstallerPath = Get-ChildItem -Path "out\win" -Filter "$AppName*.msi" | Select-Object -First 1
 
 if ($InstallerPath) {
@@ -30,7 +60,6 @@ if ($InstallerPath) {
     $filename = $InstallerPath.Name
     $directory = "windows/$Version"
 
-    # DELETE existing component from Nexus
     $searchUrl = "https://repository.mapsmessaging.io/service/rest/v1/search?repository=$PushRepo&name=$($InstallerPath.BaseName)&version=$Version"
     try {
         $response = Invoke-RestMethod -Uri $searchUrl -Headers @{ Authorization = "Basic $encodedCreds" } -Method Get
@@ -46,7 +75,6 @@ if ($InstallerPath) {
         Write-Warning "Failed to query/delete existing component: $_"
     }
 
-    # UPLOAD the new installer to Nexus
     $boundary = [System.Guid]::NewGuid().ToString()
     $fileBytes = [System.IO.File]::ReadAllBytes($InstallerPath.FullName)
     $crlf = "`r`n"
