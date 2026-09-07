@@ -62,7 +62,7 @@ public class SubscriptionContextBuilder {
     retainAsPublish = false;
     isBrowser = false;
     sync = false;
-    subscriptionId = 0;
+    subscriptionId = -1;
     receiveMaximum = 1;
     mode = DestinationMode.NORMAL;
   }
