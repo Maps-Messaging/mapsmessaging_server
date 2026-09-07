@@ -17,4 +17,4 @@ steps:
       - ./packaging/scripts/build_rpm_package.sh $(buildkite-agent secret get NEXUS_USER) $(buildkite-agent secret get NEXUS_PASSWORD) maps_yum_release
       - ./packaging/scripts/build_deb_package.sh $(buildkite-agent secret get NEXUS_USER) $(buildkite-agent secret get NEXUS_PASSWORD) maps_apt_release
     agents:
-      queue: "java_build_queue"
+      queue: "java_build_queue_aws"
