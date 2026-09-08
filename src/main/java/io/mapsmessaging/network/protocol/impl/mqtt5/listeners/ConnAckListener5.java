@@ -107,7 +107,9 @@ public class ConnAckListener5 extends PacketListener5 {
     }
     protocol.setKeepAlive(keepAlive * 1000L);
     scb.setPersistentSession(true);
-    scb.setResetState(!connect.isSessionPresent());
+    // Session Present describes state held by the remote broker. It must not delete the
+    // local engine subscription and its queued messages when the peer loses that state.
+    scb.setResetState(false);
     scb.setSessionExpiry( protocol.getMqttConfig().getMaximumSessionExpiry());
 
     if (pass != null && !pass.isEmpty()) {

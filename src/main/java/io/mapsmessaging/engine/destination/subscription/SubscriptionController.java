@@ -381,9 +381,6 @@ public class SubscriptionController implements DestinationManagerListener {
       isReload = true;
       DestinationSet destinationSet = subscriptions.get(context.getKey());
       if (destinationSet != null && !destinationSet.isEmpty()) {
-        context.setReplaced(true);
-        destinationSet.replaceContext(context);
-        contextMap.put(context.getKey(), context);
         if (isQueueBrowser(context, destinationSet)) {
           return createTransientBrowser(context, destinationSet);
         }

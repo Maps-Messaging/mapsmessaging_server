@@ -60,7 +60,9 @@ public class ConnAckListener extends BaseConnectionListener {
 
     char[] password = pass == null ? null : pass.toCharArray();
     SessionContextBuilder scb = getBuilder(protocol, sess, false, (int) protocol.getKeepAlive(), user, password);
-    scb.setResetState(!connAck.isSessionPresent());
+    // Session Present describes state held by the remote broker. It must not delete the
+    // local engine subscription and its queued messages when the peer loses that state.
+    scb.setResetState(false);
     CompletableFuture<Session> sessionFuture = createSession(endPoint, protocol, scb, sess);
     sessionFuture.thenApply(session1 -> {
       session1.resumeState();

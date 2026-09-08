@@ -50,11 +50,7 @@ public class SchemaSubscriptionTask extends SubscriptionTask {
       if (config != null) {
         subscription = controller.getSchema(destination);
         if (subscription != null) {
-          if (context.isReplaced()) {
-            subscription.replaceContext(context);
-          } else {
-            subscription.addContext(context);
-          }
+          subscription.addContext(context);
         } else {
           subscription = controller.createSchemaSubscription(context, destination);
         }

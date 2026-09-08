@@ -189,6 +189,12 @@ public class SubscriptionContext  extends PersistentObject implements Comparable
 
   }
 
+  public boolean hasSameSubscriptionIdentity(SubscriptionContext context) {
+    return getKey().equals(context.getKey())
+        && Objects.equals(alias, context.alias)
+        && Objects.equals(sharedName, context.sharedName);
+  }
+
   public String getFilter() {
     return getCorrectedPath();
   }

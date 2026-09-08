@@ -55,11 +55,7 @@ public class SubscriptionTask extends EngineTask {
       } else {
         subscription = controller.get(destination);
         if (subscription != null) {
-          if (context.isReplaced()) {
-            subscription.replaceContext(context);
-          } else {
-            subscription.addContext(context);
-          }
+          subscription.addContext(context);
         } else {
           subscription = controller.createSubscription(context, destination);
         }
