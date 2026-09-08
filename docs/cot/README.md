@@ -2,7 +2,7 @@
 
 The `cot` protocol is a full-duplex Cursor on Target 2.0 XML bridge over an
 existing TCP or TLS stream endpoint. The endpoint owns transport security and
-connection lifecycle. See [`cot_config.md`](../cot_config.md) for complete client
+connection lifecycle. See [`cot_config.md`](cot_config.md) for complete client
 and listener examples.
 
 ## Listener endpoint
