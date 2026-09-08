@@ -24,12 +24,22 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
+import java.io.StringWriter;
+import java.util.Set;
+import javax.xml.transform.OutputKeys;
+import javax.xml.transform.TransformerException;
+import javax.xml.transform.TransformerFactory;
+import javax.xml.transform.dom.DOMSource;
+import javax.xml.transform.stream.StreamResult;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
 /** Maps a schema-validated CoT event into the TAK model used by the state layer. */
 public class CotXmlParser {
+
+  private static final Set<String> KNOWN_DETAIL_ELEMENTS = Set.of(
+      "contact", "track", "status", "remarks", "precisionlocation", "takv", "maps-link", "link", "maps-task", "maps-task-status");
 
   private final CotParser cotParser = new CotParser();
 
@@ -117,6 +127,14 @@ public class CotXmlParser {
     if (mapsLink != null) {
       detail.setMapsLink(parseLinkState(mapsLink));
     }
+    Element mapsTask = child(element, "maps-task");
+    if (mapsTask != null) {
+      detail.setTask(parseTask(mapsTask));
+    }
+    Element mapsTaskStatus = child(element, "maps-task-status");
+    if (mapsTaskStatus != null) {
+      detail.setTaskStatus(parseTaskStatus(mapsTaskStatus));
+    }
     List<TakLink> links = new ArrayList<>();
     for (Element link : children(element, "link")) {
       TakLink value = new TakLink();
@@ -125,7 +143,59 @@ public class CotXmlParser {
       links.add(value);
     }
     detail.setLinks(links);
+    detail.setExtensions(parseExtensions(element));
     return detail;
+  }
+
+  private TakTask parseTask(Element element) throws IOException {
+    TakTask task = new TakTask();
+    task.setProfile(attribute(element, "profile"));
+    task.setTaskId(attribute(element, "taskId"));
+    task.setOriginalTaskId(attribute(element, "originalTaskId"));
+    task.setSubjectUid(attribute(element, "subjectUid"));
+    task.setAction(attribute(element, "action"));
+    task.setTaskType(attribute(element, "taskType"));
+    task.setRequester(attribute(element, "requester"));
+    task.setEnd(attribute(element, "end"));
+    task.setSpeed(number(element, "speed"));
+    task.setArrivalTolerance(number(element, "arrivalTolerance"));
+    return task;
+  }
+
+  private TakTaskStatus parseTaskStatus(Element element) {
+    TakTaskStatus status = new TakTaskStatus();
+    status.setProfile(attribute(element, "profile"));
+    status.setTaskId(attribute(element, "taskId"));
+    status.setState(attribute(element, "state"));
+    status.setReason(attribute(element, "reason"));
+    return status;
+  }
+
+  private List<String> parseExtensions(Element detail) throws IOException {
+    List<String> extensions = new ArrayList<>();
+    NodeList nodes = detail.getChildNodes();
+    for (int index = 0; index < nodes.getLength(); index++) {
+      Node node = nodes.item(index);
+      if (node instanceof Element element && !KNOWN_DETAIL_ELEMENTS.contains(element.getTagName())) {
+        extensions.add(toXml(element));
+      }
+    }
+    return extensions;
+  }
+
+  private String toXml(Element element) throws IOException {
+    try {
+      TransformerFactory factory = TransformerFactory.newInstance();
+      factory.setAttribute("http://javax.xml.XMLConstants/property/accessExternalDTD", "");
+      factory.setAttribute("http://javax.xml.XMLConstants/property/accessExternalStylesheet", "");
+      var transformer = factory.newTransformer();
+      transformer.setOutputProperty(OutputKeys.OMIT_XML_DECLARATION, "yes");
+      StringWriter writer = new StringWriter();
+      transformer.transform(new DOMSource(element), new StreamResult(writer));
+      return writer.toString();
+    } catch (IllegalArgumentException | TransformerException exception) {
+      throw new IOException("Unable to preserve CoT detail extension", exception);
+    }
   }
 
   private TakLinkState parseLinkState(Element element) throws IOException {

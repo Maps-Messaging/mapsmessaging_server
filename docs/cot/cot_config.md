@@ -215,6 +215,78 @@ direct-echo, semantic-echo, hop-limit, older, unsupported, and queue-overflow
 events, plus current inbound and outbound queue depth. Normal position traffic is
 not logged at INFO.
 
+## Canonical twin and STANAG mapping
+
+Enable state mediation under `TwinManager.cotMapping`. CoT UIDs are scoped by
+the stable network endpoint name; callsigns are display values and are never
+used as identity keys.
+
+```yaml
+TwinManager:
+  cotMapping:
+    enabled: true
+    inboundTopic: /tak/cot/inbound
+    outboundTopic: /tak/cot/outbound
+    managedPlatforms:
+      - endpoint: tak-sydney
+        uid: vehicle-1
+        twinId: alpha
+        outboundUid: vehicle-1
+        taskingProfile: maps-stanag-4817-v1
+        haeToMslOffsetMeters: -30.2
+        sourcePriority: 50
+        taskable: true
+```
+
+Each `endpoint` value must match the configured CoT connection or listener
+endpoint name. Multiple endpoint-scoped UIDs may identify one twin. One
+endpoint-scoped UID cannot identify multiple twins. Unknown UIDs are classified
+as observed objects but do not become managed or taskable twins.
+
+Inbound CoT observations carry source, event time, receive time, stale time,
+priority, and quality metadata. A late observation from one source cannot
+regress the current field. A higher-priority valid source wins; a lower-priority
+source can become current after the winner expires. CoT-originated twin updates
+are not reflected directly back to CoT, but remain available to other adapters,
+including STANAG.
+
+CoT `point.hae` is height above the WGS84 ellipsoid while canonical twin and
+STANAG altitude is mean sea level. The configured conversion is
+`MSL metres = CoT HAE metres + haeToMslOffsetMeters`. The reverse mapping
+subtracts the same offset. If no offset is configured, altitude is omitted and
+a translation warning is recorded; zero is not assumed.
+
+## Named tasking profile
+
+The `maps-stanag-4817-v1` profile uses validated CoT detail extensions:
+
+```xml
+<maps-task profile="maps-stanag-4817-v1"
+           taskId="cot-task-1"
+           subjectUid="vehicle-1"
+           action="PUSH"
+           taskType="REPOSITION"
+           requester="operator-1"
+           speed="12.5"
+           arrivalTolerance="5"/>
+```
+
+`REPOSITION` and cancellation by `originalTaskId` are supported in the initial
+profile. `LOITER`, `DETECT`, and `PATROL` are persisted and returned as explicit
+rejections. Canonical tasks retain their UUID, CoT and STANAG task identifiers,
+requester, target, timing, lifecycle, response destination, original payload,
+and translation warnings under `${MAPS_DATA}/canonical/tasks`.
+
+Lifecycle replies use `<maps-task-status>` with `PENDING`, `ACTIVE`,
+`COMPLETED`, `REJECTED`, `ABORTED`, `PREEMPTING`, `PREEMPTED`, or `LOST`.
+`PENDING` means accepted for processing but not active. Duplicate protocol task
+IDs are idempotent, late lifecycle updates cannot regress active or terminal
+state, and terminal results survive restart.
+
+Unknown validated CoT detail extensions are retained for a later outbound CoT
+mapping. They are not invented, interpreted as STANAG fields, or placed on the
+canonical twin when no explicit mapping exists.
+
 ## Phase 1 limitations
 
 The shared Network Connection state model and connection-management mechanism are

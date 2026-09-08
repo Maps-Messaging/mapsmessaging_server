@@ -27,6 +27,7 @@ import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.state.config.TwinManagerConfig;
 import io.mapsmessaging.state.config.TwinManagerConfigDTO;
+import io.mapsmessaging.state.config.cot.CotTwinConfigDTO;
 import io.mapsmessaging.state.drone.core.EntityTwin;
 import io.mapsmessaging.state.drone.core.TwinLifecycleStatus;
 import io.mapsmessaging.state.drone.core.TwinManager;
@@ -59,33 +60,40 @@ public class TakTwinObserver implements TwinObserver {
   private final EventPublisher eventPublisher;
 
   public TakTwinObserver(TwinManager twinManager) {
+    this(twinManager, null);
+  }
+
+  public TakTwinObserver(TwinManager twinManager, CotTwinConfigDTO cotConfig) {
     this.twinManager = Objects.requireNonNull(twinManager, "twinManager cannot be null");
     this.takContexts = new ConcurrentHashMap<>();
     this.lastStatsPublishTimes = new ConcurrentHashMap<>();
-    this.takEventMapper = new TakEventMapper();
+    this.takEventMapper = cotConfig == null
+        ? new TakEventMapper()
+        : new TakEventMapper(
+            new CotIdentityRegistry(cotConfig), twinManager.getObservationRegistry());
     this.takXmlSerialiser = new TakXmlSerialiser();
 
     TwinManagerConfigDTO config =
         ConfigurationManager.getInstance().getConfiguration(TwinManagerConfig.class);
 
-    if (config != null && config.getTak() != null) {
-      if (config.getTak().getTopic() != null && !config.getTak().getTopic().isBlank()) {
+    String topic = cotConfig == null ? null : cotConfig.getOutboundTopic();
+    if ((topic == null || topic.isBlank()) && config != null && config.getTak() != null) {
+      topic = config.getTak().getTopic();
+    }
+    if (topic != null && !topic.isBlank()) {
+      String configuredTopic = topic;
         EventPublisher publisher;
         try {
-          publisher = new EventPublisher(config.getTak().getTopic());
+          publisher = new EventPublisher(configuredTopic);
         } catch (Exception exception) {
           publisher = null;
           LOGGER.log(
               TAK_PUBLISHER_START_FAILED,
               exception,
-              config.getTak().getTopic(),
+              configuredTopic,
               exception.getMessage());
         }
         eventPublisher = publisher;
-      } else {
-        eventPublisher = null;
-      }
-
       twinManager.addObserver(this);
     } else {
       this.eventPublisher = null;
@@ -193,6 +201,9 @@ public class TakTwinObserver implements TwinObserver {
   private void publishTwin(EntityTwin twin, TwinUpdateContext context) {
 
     if (twin == null || twin.getGeoPosition() == null) {
+      return;
+    }
+    if (context != null && "cot".equalsIgnoreCase(context.getUpdateSource())) {
       return;
     }
 

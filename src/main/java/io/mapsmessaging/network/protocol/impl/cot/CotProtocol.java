@@ -310,6 +310,12 @@ public class CotProtocol extends Protocol {
     metadata.put("protocol", "CoT");
     metadata.put("version", "2.0");
     metadata.put("sessionId", session.getName());
+    String configuredEndpointName = endPoint.getConfig().getName();
+    metadata.put(
+        "endpointName",
+        configuredEndpointName == null || configuredEndpointName.isBlank()
+            ? endPoint.getName()
+            : configuredEndpointName);
     Message message = new MessageBuilder()
         .setOpaqueData(xml)
         .setContentType("text/xml")

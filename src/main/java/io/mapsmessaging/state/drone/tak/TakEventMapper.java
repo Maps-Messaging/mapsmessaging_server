@@ -24,12 +24,16 @@ import io.mapsmessaging.state.drone.core.EntityTwin;
 import io.mapsmessaging.state.drone.core.TwinRelationship;
 import io.mapsmessaging.state.drone.core.TwinType;
 import io.mapsmessaging.state.drone.core.TwinUpdateContext;
+import io.mapsmessaging.state.drone.core.TwinObservationRegistry;
 import io.mapsmessaging.state.drone.drone.DroneTwin;
 import io.mapsmessaging.state.drone.model.*;
 import io.mapsmessaging.state.drone.tak.model.*;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.Collectors;
 
 public class TakEventMapper {
 
@@ -40,12 +44,33 @@ public class TakEventMapper {
   private static final double DEFAULT_CE = 10.0;
   private static final double DEFAULT_LE = 15.0;
   private static final long DEFAULT_STALE_SECONDS = 30L;
+  private final CotIdentityRegistry identityRegistry;
+  private final TwinObservationRegistry observationRegistry;
+
+  public TakEventMapper() {
+    this.identityRegistry = null;
+    this.observationRegistry = null;
+  }
+
+  public TakEventMapper(CotIdentityRegistry identityRegistry) {
+    this(identityRegistry, null);
+  }
+
+  public TakEventMapper(
+      CotIdentityRegistry identityRegistry, TwinObservationRegistry observationRegistry) {
+    this.identityRegistry = identityRegistry;
+    this.observationRegistry = observationRegistry;
+  }
 
   public TakEvent map(EntityTwin twin, TwinUpdateContext context) {
     if (twin == null || twin.getGeoPosition() == null) {
       return null;
     }
 
+    CotIdentityBinding binding = resolveBinding(twin);
+    if (identityRegistry != null && binding == null) {
+      return null;
+    }
     Instant eventTime = resolveEventTime(twin, context);
     Instant staleTime = eventTime.plus(resolveStaleSeconds(twin), ChronoUnit.SECONDS);
 
@@ -55,7 +80,7 @@ public class TakEventMapper {
     Orientation orientation = twin.getOrientation();
 
     TakEvent event = new TakEvent();
-    event.setUid(resolveUid(twin));
+    event.setUid(resolveUid(twin, binding));
     event.setType(resolveCotType(twin));
     event.setHow(DEFAULT_HOW);
     event.setTime(formatInstant(eventTime));
@@ -65,7 +90,7 @@ public class TakEventMapper {
     TakPoint point = new TakPoint();
     point.setLat(readLatitude(geoPosition));
     point.setLon(readLongitude(geoPosition));
-    point.setHae(readAltitude(geoPosition));
+    point.setHae(readAltitude(geoPosition, binding));
     point.setCe(resolveCircularError(fixInfo));
     point.setLe(resolveLinearError(fixInfo));
     event.setPoint(point);
@@ -78,6 +103,7 @@ public class TakEventMapper {
     detail.setPrecisionLocation(buildPrecisionLocation());
     detail.setTakv(buildPlatform(twin));
     detail.setMapsLink(buildLinkState(twin.getLinkState()));
+    detail.setExtensions(resolveCotExtensions(twin, eventTime));
 
     if (twin.getRelationships() != null) {
       for (TwinRelationship relationship : twin.getRelationships()) {
@@ -92,16 +118,37 @@ public class TakEventMapper {
     return event;
   }
 
+  private List<String> resolveCotExtensions(EntityTwin twin, Instant eventTime) {
+    if (observationRegistry == null || twin.getTwinId() == null) {
+      return new ArrayList<>();
+    }
+    Object value = observationRegistry
+        .resolve(twin.getTwinId(), "extensions.cot", eventTime)
+        .map(observation -> observation.getValue())
+        .orElse(null);
+    if (!(value instanceof List<?> extensions)) {
+      return new ArrayList<>();
+    }
+    return extensions.stream()
+        .filter(String.class::isInstance)
+        .map(String.class::cast)
+        .collect(Collectors.toCollection(ArrayList::new));
+  }
+
   public TakEvent mapRemoval(EntityTwin twin, TwinUpdateContext context) {
     if (twin == null) {
       return null;
     }
 
+    CotIdentityBinding binding = resolveBinding(twin);
+    if (identityRegistry != null && binding == null) {
+      return null;
+    }
     Instant eventTime = resolveEventTime(twin, context);
     Instant staleTime = eventTime.plus(1, ChronoUnit.SECONDS);
 
     TakEvent event = new TakEvent();
-    event.setUid(resolveUid(twin));
+    event.setUid(resolveUid(twin, binding));
     event.setType(resolveCotType(twin));
     event.setHow(DEFAULT_HOW);
     event.setTime(formatInstant(eventTime));
@@ -185,7 +232,10 @@ public class TakEventMapper {
     return link;
   }
 
-  private String resolveUid(EntityTwin twin) {
+  private String resolveUid(EntityTwin twin, CotIdentityBinding binding) {
+    if (binding != null) {
+      return binding.outboundUid();
+    }
     String rawValue;
     if (twin.getTwinId() != null && !twin.getTwinId().isBlank()) {
       rawValue = twin.getTwinId();
@@ -410,8 +460,21 @@ public class TakEventMapper {
     return geoPosition.getLongitude() != null ? geoPosition.getLongitude() : 0.0;
   }
 
-  private double readAltitude(GeoPosition geoPosition) {
-    return geoPosition.getAltitudeMslMeters() != null ? geoPosition.getAltitudeMslMeters() : 0.0;
+  private double readAltitude(GeoPosition geoPosition, CotIdentityBinding binding) {
+    if (geoPosition.getAltitudeMslMeters() == null) {
+      return 0.0;
+    }
+    if (binding == null || binding.haeToMslOffsetMeters() == null) {
+      return geoPosition.getAltitudeMslMeters();
+    }
+    return geoPosition.getAltitudeMslMeters() - binding.haeToMslOffsetMeters();
+  }
+
+  private CotIdentityBinding resolveBinding(EntityTwin twin) {
+    if (identityRegistry == null || twin == null) {
+      return null;
+    }
+    return identityRegistry.findByTwinId(twin.getTwinId()).orElse(null);
   }
 
   private String formatInstant(Instant instant) {

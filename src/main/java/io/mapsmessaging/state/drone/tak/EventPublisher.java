@@ -35,8 +35,11 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicLong;
 
 public class EventPublisher implements ClientConnection, MessageListener {
+
+  private static final AtomicLong SESSION_COUNTER = new AtomicLong();
 
   private final Session session;
   private Destination destination;
@@ -68,7 +71,8 @@ public class EventPublisher implements ClientConnection, MessageListener {
   }
 
   private Session createSession() throws ExecutionException, InterruptedException, TimeoutException {
-    SessionContextBuilder sessionContextBuilder = new SessionContextBuilder("tak_publisher", this);
+    SessionContextBuilder sessionContextBuilder = new SessionContextBuilder(
+        "tak_publisher_" + SESSION_COUNTER.incrementAndGet(), this);
     sessionContextBuilder.setResetState(true)
         .setSessionExpiry(0)
         .isInternal(true)

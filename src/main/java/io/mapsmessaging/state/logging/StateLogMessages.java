@@ -90,10 +90,15 @@ public enum StateLogMessages implements LogMessage {
   TAK_PUBLISHER_START_FAILED(LEVEL.ERROR, SERVER_CATEGORY.STATE, "Failed to start TAK event publisher for topic '{}': {}"),
   TAK_EVENT_PUBLISH_FAILED(LEVEL.ERROR, SERVER_CATEGORY.PROTOCOL, "Failed to publish CoT event for twin '{}': {}"),
   TAK_PUBLISHER_STOP_FAILED(LEVEL.ERROR, SERVER_CATEGORY.STATE, "Failed to stop TAK event publisher: {}"),
+  COT_STATE_SUBSCRIBER_STARTED(LEVEL.INFO, SERVER_CATEGORY.STATE, "Started CoT state subscriber on topic '{}'"),
+  COT_STATE_SUBSCRIBER_STOPPED(LEVEL.INFO, SERVER_CATEGORY.STATE, "Stopped CoT state subscriber on topic '{}'"),
+  COT_STATE_MESSAGE_FAILED(LEVEL.WARN, SERVER_CATEGORY.STATE, "Failed to process CoT state message from '{}': {}"),
+  COT_TASK_PUBLISH_FAILED(LEVEL.ERROR, SERVER_CATEGORY.STATE, "Failed to publish canonical task '{}': {}"),
   STATE_MANAGER_PUBLISH_ENABLED(LEVEL.INFO, SERVER_CATEGORY.STATE, "Twin JSON publisher enabled with topic {}"),
   STATE_MANAGER_PUBLISH_FAILED(LEVEL.ERROR, SERVER_CATEGORY.STATE, "Failed to start Twin JSON publisher"),
   STATE_MANAGER_SCHEDULER_ERROR(LEVEL.ERROR, SERVER_CATEGORY.STATE, "Scheduler task failed"),
   STATE_MANAGER_AUDIT_INIT_FAILED(LEVEL.ERROR, SERVER_CATEGORY.STATE, "Failed to initialize audit context - auditing will be disabled"),
+  STATE_MANAGER_TASK_STORE_INIT_FAILED(LEVEL.ERROR, SERVER_CATEGORY.STATE, "Failed to initialize canonical task store: {}"),
   // </editor-fold>
 
 
