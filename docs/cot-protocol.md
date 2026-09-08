@@ -1,6 +1,9 @@
-# Cursor on Target protocol
+# Cursor on Target protocol design
 
-The `cot` protocol reads and writes complete Cursor on Target XML events over an existing stream endpoint. The endpoint owns TCP or TLS; the protocol has no transport-specific security configuration.
+The `cot` protocol is a full-duplex Cursor on Target 2.0 XML bridge over an
+existing TCP or TLS stream endpoint. The endpoint owns transport security and
+connection lifecycle. See [`cot_config.md`](../cot_config.md) for complete client
+and listener examples.
 
 ## Listener endpoint
 
@@ -76,12 +79,60 @@ When `presence.enabled` is true, client connections send a presence event immedi
 
 Presence is disabled by default and is ignored on listener endpoints. Set `staleSeconds` greater than `intervalSeconds` so the presence does not expire between refreshes.
 
-With `suppressEchoes` enabled, Maps adds a namespaced `maps:origin` element under `detail` to every outbound event. An event received later with an origin matching `echoOrigin` is discarded before it is published locally. Keep `echoOrigin` stable and unique for each Maps instance; it supports the `{interfaceName}` placeholder. Markers from other Maps instances are retained and routed normally.
+With `suppressEchoes` enabled, Maps adds a namespaced `maps:origin` element under
+`detail` to every outbound event. Origin markers from other bridges are preserved.
+An event carrying this bridge's stable origin is dropped, and a configurable hop
+limit stops indirect loops. A bounded, expiring semantic fingerprint cache also
+recognises reformatted echoes; the fingerprint ignores attribute order,
+formatting whitespace, and Maps origin markers while retaining event timestamps
+and content. It never suppresses solely by UID.
 
 ## Payload behaviour
 
 - Inbound stream data is buffered until complete CoT XML events are available.
 - Each complete event is published as `text/xml`.
 - Fragmented and adjacent events are supported by the CoT stream decoder.
-- Outbound payloads are passed through configured link transformations, encoded as CoT XML and optionally terminated by a newline.
+- A bounded single-consumer inbound queue keeps broker processing off the socket
+  read loop.
+- One bounded outbound queue serializes concurrent publishers and retains partial
+  socket writes without allowing event bytes to interleave.
+- Queue overload coalesces state/map objects by UID and preserves alerts, chat,
+  control, and deletions ahead of lower-value state where possible.
+- Events are validated using a hardened streaming XML parser. DTDs, external
+  entities, external resources, oversized documents, excessive nesting, invalid
+  lifecycle attributes, and malformed XML are rejected without terminating the
+  service when framing remains recoverable.
+- Expired, not-yet-started, duplicate, echoed, over-hop, and out-of-order older
+  events are dropped. Unknown detail extensions are preserved. Unsupported event
+  types are passed through and counted/logged at a controlled rate.
+- Outbound payloads are passed through configured link transformations, encoded
+  as CoT XML and optionally followed by a newline. Newlines are not required for
+  inbound framing.
 - No CoT-to-Twin mapping is performed by this protocol.
+
+## Delivery and reconnect semantics
+
+Legacy CoT XML has no application acknowledgement. A completed local socket write
+does not prove that TAK received or processed the event, and a failure during a
+write leaves delivery uncertain. The protocol therefore provides best-effort,
+at-most-once delivery per connection session while accepting duplicate/replayed
+inbound state idempotently.
+
+The CoT session is nonpersistent. Its bounded queues are discarded when the
+connection closes; stale state is checked again before dispatch, and configured
+presence is regenerated with fresh UTC timestamps after reconnect. Fingerprint
+and per-UID ordering state are connection-local and reset on reconnect.
+
+TCP keepalive and the existing endpoint timeouts detect ordinary termination and
+many half-open paths. A write that makes no progress for `writeTimeoutSeconds`
+closes the affected protocol so the existing connection manager can reconnect.
+An otherwise healthy, quiet connection is not closed merely for receiving no
+events because TAK routing permissions can legitimately produce silence.
+
+## Scope boundaries
+
+This protocol supports legacy XML streaming only, not TAK Protocol/Protobuf. The
+shared Network Connection state model and lifecycle mechanism are unchanged.
+Known shared-component follow-ups are MSG-244 (XML-aware framing recovery),
+MSG-245 (superseded endpoint close callbacks), and MSG-246 (shared selector queue
+bounds and instrumentation).
