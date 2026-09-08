@@ -6,6 +6,7 @@ package io.mapsmessaging.config.protocol.impl;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 
 import io.mapsmessaging.configuration.ConfigurationProperties;
@@ -29,16 +30,42 @@ class CotConfigTest {
     properties.put("qualityOfService", 1);
     properties.put("storeOffline", true);
     properties.put("appendNewLine", false);
+    ConfigurationProperties presence = new ConfigurationProperties();
+    presence.put("enabled", true);
+    presence.put("uid", "maps-test");
+    presence.put("callsign", "MAPS-TEST");
+    presence.put("latitude", 38.44);
+    presence.put("longitude", -9.10);
+    presence.put("intervalSeconds", 30);
+    presence.put("staleSeconds", 90);
+    properties.put("presence", presence);
 
     CotConfig config = new CotConfig(properties);
     assertEquals("cot", config.getType());
     assertEquals("/cot/from-wire", config.getInboundTopicName());
     assertEquals(4096, config.getMaximumEventSize());
     assertFalse(config.isAppendNewLine());
+    assertTrue(config.getPresence().isEnabled());
+    assertEquals("maps-test", config.getPresence().getUid());
+    assertEquals(38.44, config.getPresence().getLatitude());
 
     ConfigurationProperties saved = config.toConfigurationProperties();
     assertEquals("/cot/to-wire", saved.getProperty("outboundTopicName"));
     assertEquals(1, saved.getIntProperty("qualityOfService", 0));
+    ConfigurationProperties savedPresence = (ConfigurationProperties) saved.get("presence");
+    assertTrue(savedPresence.getBooleanProperty("enabled", false));
+    assertEquals("MAPS-TEST", savedPresence.getProperty("callsign"));
+    assertEquals(90, savedPresence.getIntProperty("staleSeconds", 0));
+  }
+
+  @Test
+  void presence_is_disabled_by_default() {
+    CotConfig config = new CotConfig(new ConfigurationProperties());
+    assertFalse(config.getPresence().isEnabled());
+    assertEquals("maps-{interfaceName}", config.getPresence().getUid());
+    assertEquals(60, config.getPresence().getIntervalSeconds());
+    assertEquals(120, config.getPresence().getStaleSeconds());
+    assertTrue(config.toConfigurationProperties().containsKey("presence"));
   }
 
   @Test

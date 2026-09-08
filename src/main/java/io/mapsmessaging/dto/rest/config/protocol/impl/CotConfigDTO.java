@@ -51,4 +51,7 @@ public class CotConfigDTO extends ProtocolConfigDTO {
 
   @Schema(description = "Append a newline after outbound CoT events when one is not already present.", defaultValue = "true")
   protected boolean appendNewLine = true;
+
+  @Schema(description = "TAK client presence sent by outbound client connections.")
+  protected CotPresenceConfigDTO presence = new CotPresenceConfigDTO();
 }

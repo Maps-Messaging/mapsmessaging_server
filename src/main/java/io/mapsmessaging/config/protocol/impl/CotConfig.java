@@ -34,6 +34,11 @@ public class CotConfig extends CotConfigDTO implements Config {
     qualityOfService = config.getIntProperty("qualityOfService", qualityOfService);
     storeOffline = config.getBooleanProperty("storeOffline", storeOffline);
     appendNewLine = config.getBooleanProperty("appendNewLine", appendNewLine);
+    if (config.get("presence") instanceof ConfigurationProperties presenceProperties) {
+      presence = new CotPresenceConfig(presenceProperties);
+    } else {
+      presence = new CotPresenceConfig(new ConfigurationProperties());
+    }
   }
 
   @Override
@@ -70,6 +75,12 @@ public class CotConfig extends CotConfigDTO implements Config {
       appendNewLine = updated.isAppendNewLine();
       changed = true;
     }
+    if (presence instanceof CotPresenceConfig presenceConfig) {
+      changed |= presenceConfig.update(updated.getPresence());
+    } else if (!Objects.equals(presence, updated.getPresence())) {
+      presence = updated.getPresence();
+      changed = true;
+    }
     return changed;
   }
 
@@ -84,6 +95,9 @@ public class CotConfig extends CotConfigDTO implements Config {
     properties.put("qualityOfService", qualityOfService);
     properties.put("storeOffline", storeOffline);
     properties.put("appendNewLine", appendNewLine);
+    if (presence instanceof CotPresenceConfig presenceConfig) {
+      properties.put("presence", presenceConfig.toConfigurationProperties());
+    }
     return properties;
   }
 }

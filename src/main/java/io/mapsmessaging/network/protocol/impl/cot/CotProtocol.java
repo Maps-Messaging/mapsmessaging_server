@@ -45,9 +45,11 @@ import io.mapsmessaging.network.io.impl.SelectorTask;
 import io.mapsmessaging.network.protocol.Protocol;
 import io.mapsmessaging.selector.operators.ParserExecutor;
 import io.mapsmessaging.utilities.filtering.NamespaceFilters;
+import io.mapsmessaging.utilities.threads.SimpleTaskScheduler;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
+import java.time.Instant;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -56,8 +58,11 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import javax.security.auth.Subject;
+import javax.xml.stream.XMLStreamException;
 import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -76,6 +81,7 @@ public class CotProtocol extends Protocol {
   private final QualityOfService qos;
   private final List<InboundBinding> inboundBindings;
   private final Set<String> outboundSubscriptions;
+  private ScheduledFuture<?> presenceFuture;
 
   public CotProtocol(EndPoint endPoint, Packet initialPacket) throws IOException {
     super(endPoint, endPoint.getConfig().getProtocolConfig("cot"));
@@ -109,9 +115,10 @@ public class CotProtocol extends Protocol {
   }
 
   @Override
-  public void connect(String sessionId, String username, String password) {
+  public void connect(String sessionId, String username, String password) throws IOException {
     setConnected(true);
     completedConnection();
+    startPresenceIfConfigured();
   }
 
   @Override
@@ -230,13 +237,7 @@ public class CotProtocol extends Protocol {
         return;
       }
       byte[] encoded = encoder.encode(xml);
-      byte[] output = encoded;
-      if (cotConfig.isAppendNewLine() && encoded[encoded.length - 1] != '\n') {
-        output = Arrays.copyOf(encoded, encoded.length + 1);
-        output[output.length - 1] = '\n';
-      }
-      endPoint.sendPacket(new Packet(ByteBuffer.wrap(output)));
-      sentMessage();
+      sendEncoded(encoded);
     } catch (IOException exception) {
       LOGGER.log(
           COT_PROTOCOL_OUTBOUND_SEND_FAILED,
@@ -252,6 +253,7 @@ public class CotProtocol extends Protocol {
 
   @Override
   public void close() throws IOException {
+    stopPresence();
     if (!session.isClosed()) {
       SessionManager.getInstance().close(session, false);
     }
@@ -306,6 +308,63 @@ public class CotProtocol extends Protocol {
     } catch (IOException exception) {
       outboundSubscriptions.remove(resource);
       throw exception;
+    }
+  }
+
+  private void startPresenceIfConfigured() throws IOException {
+    if (!endPoint.isClient() || !cotConfig.getPresence().isEnabled()) {
+      return;
+    }
+    CotPresenceBuilder.validate(cotConfig.getPresence());
+    stopPresence();
+    sendPresence();
+    int intervalSeconds = cotConfig.getPresence().getIntervalSeconds();
+    presenceFuture = SimpleTaskScheduler.getInstance().scheduleAtFixedRate(
+        this::sendScheduledPresence,
+        intervalSeconds,
+        intervalSeconds,
+        TimeUnit.SECONDS);
+  }
+
+  private void sendScheduledPresence() {
+    try {
+      sendPresence();
+    } catch (IOException exception) {
+      LOGGER.log(
+          COT_PROTOCOL_OUTBOUND_SEND_FAILED,
+          exception,
+          endPoint.getName(),
+          exception.getMessage());
+    }
+  }
+
+  private void sendPresence() throws IOException {
+    try {
+      byte[] presence = CotPresenceBuilder.build(
+          cotConfig.getPresence(),
+          endPoint.getConfig().getName(),
+          Instant.now());
+      sendEncoded(encoder.encode(presence));
+    } catch (XMLStreamException exception) {
+      throw new IOException("Unable to encode CoT presence event", exception);
+    }
+  }
+
+  private void sendEncoded(byte[] encoded) throws IOException {
+    byte[] output = encoded;
+    if (cotConfig.isAppendNewLine() && encoded[encoded.length - 1] != '\n') {
+      output = Arrays.copyOf(encoded, encoded.length + 1);
+      output[output.length - 1] = '\n';
+    }
+    endPoint.sendPacket(new Packet(ByteBuffer.wrap(output)));
+    sentMessage();
+  }
+
+  private void stopPresence() {
+    ScheduledFuture<?> future = presenceFuture;
+    presenceFuture = null;
+    if (future != null) {
+      future.cancel(false);
     }
   }
 
