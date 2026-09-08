@@ -197,6 +197,21 @@ public class FrameHandler {
     cancelWrite();
   }
 
+  /**
+   * Cancels write interest for transports, such as UDP, that manage frame
+   * serialization themselves but share this handler's registration lifecycle.
+   */
+  public synchronized void cancel() {
+    cancelWrite();
+  }
+
+  /**
+   * Retains the transport-facing flush hook exposed by the original handler.
+   */
+  public synchronized void writeBuffer() {
+    writeBuffer(packet);
+  }
+
   private void cancelWrite() {
     isRegistered = false;
     try {

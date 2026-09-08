@@ -291,6 +291,20 @@ class FrameHandlerTest {
   }
 
   @Test
+  void explicit_cancel_preserves_shared_transport_lifecycle_contract() throws Exception {
+    Fixture fixture = new Fixture(32, 1);
+
+    fixture.handler.registerWrite();
+    fixture.handler.cancel();
+
+    verify(fixture.selectorTask).register(SelectionKey.OP_WRITE);
+    verify(fixture.selectorTask).cancel(SelectionKey.OP_WRITE);
+
+    fixture.handler.registerWrite();
+    verify(fixture.selectorTask, times(2)).register(SelectionKey.OP_WRITE);
+  }
+
+  @Test
   void frame_enqueued_while_write_is_being_cancelled_is_registered() throws Exception {
     WriteFixture fixture = new WriteFixture(8, new MaximumWriteWriter(Integer.MAX_VALUE));
     TestPacket first = new TestPacket(new byte[]{1});
