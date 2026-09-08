@@ -25,6 +25,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.util.List;
 import javax.xml.parsers.DocumentBuilderFactory;
 import org.junit.jupiter.api.Test;
 import org.w3c.dom.Document;
@@ -32,7 +33,7 @@ import org.w3c.dom.Element;
 
 class CotEchoSuppressorTest {
 
-  private static final String EVENT = "<event version=\"2.0\" uid=\"target\"><point lat=\"1\" lon=\"2\" hae=\"3\" ce=\"4\" le=\"5\"/><detail><contact callsign=\"Target\"/></detail></event>";
+  private static final String EVENT = "<event version=\"2.0\" uid=\"target\" type=\"a-f-G\" how=\"m-g\" time=\"2026-09-08T15:30:00Z\" start=\"2026-09-08T15:30:00Z\" stale=\"2026-09-08T15:32:00Z\"><point lat=\"1\" lon=\"2\" hae=\"3\" ce=\"4\" le=\"5\"/><detail><contact callsign=\"Target\"/></detail></event>";
 
   @Test
   void marks_event_and_identifies_only_its_own_echo() throws Exception {
@@ -43,13 +44,14 @@ class CotEchoSuppressorTest {
         .item(0);
 
     assertEquals("maps-gateway", marker.getAttribute(CotEchoSuppressor.MARKER_ATTRIBUTE));
+    assertEquals("1", marker.getAttribute(CotEchoSuppressor.HOP_ATTRIBUTE));
     assertTrue(CotEchoSuppressor.isEcho(marked, "maps-gateway"));
     assertFalse(CotEchoSuppressor.isEcho(marked, "another-gateway"));
   }
 
   @Test
   void creates_detail_when_event_has_none() throws Exception {
-    byte[] event = "<event version=\"2.0\" uid=\"target\"><point lat=\"1\" lon=\"2\"/></event>"
+    byte[] event = EVENT.replace("<detail><contact callsign=\"Target\"/></detail>", "")
         .getBytes(StandardCharsets.UTF_8);
     Document document = parse(CotEchoSuppressor.mark(event, "maps-gateway"));
 
@@ -76,7 +78,7 @@ class CotEchoSuppressorTest {
 
   @Test
   void preserves_existing_namespaces_text_and_attributes() throws Exception {
-    byte[] event = ("<event xmlns:x=\"urn:test\" uid=\"target\"><detail>before"
+    byte[] event = ("<event xmlns:x=\"urn:test\" version=\"2.0\" uid=\"target\" type=\"a-f-G\" how=\"m-g\" time=\"2026-09-08T15:30:00Z\" start=\"2026-09-08T15:30:00Z\" stale=\"2026-09-08T15:32:00Z\"><point lat=\"1\" lon=\"2\" hae=\"3\" ce=\"4\" le=\"5\"/><detail>before"
         + "<x:item x:value=\"a &amp; b\">payload</x:item>after</detail></event>")
         .getBytes(StandardCharsets.UTF_8);
     Document document = parse(CotEchoSuppressor.mark(event, "maps&amp;gateway"));
@@ -96,6 +98,61 @@ class CotEchoSuppressorTest {
     assertThrows(IllegalArgumentException.class, () -> CotEchoSuppressor.mark(event, " "));
     assertThrows(IOException.class, () -> CotEchoSuppressor.mark("<event>".getBytes(StandardCharsets.UTF_8), "maps"));
     assertFalse(CotEchoSuppressor.isEcho("<event>".getBytes(StandardCharsets.UTF_8), "maps"));
+  }
+
+  @Test
+  void preserves_each_bridge_hop_and_excludes_markers_from_the_fingerprint() throws Exception {
+    byte[] first = CotEchoSuppressor.mark(EVENT.getBytes(StandardCharsets.UTF_8), "maps-a");
+    byte[] second = CotEchoSuppressor.mark(first, "maps-b");
+    CotEchoSuppressor.CotEventInfo original =
+        CotEchoSuppressor.inspect(EVENT.getBytes(StandardCharsets.UTF_8), 64);
+    CotEchoSuppressor.CotEventInfo routed = CotEchoSuppressor.inspect(second, 64);
+
+    assertEquals(List.of("maps-a", "maps-b"), routed.origins());
+    assertEquals(2, routed.hopCount());
+    assertEquals(original.fingerprint(), routed.fingerprint());
+  }
+
+  @Test
+  void semantic_fingerprint_ignores_attribute_order_and_formatting_whitespace() throws Exception {
+    byte[] reformatted = ("<event stale=\"2026-09-08T15:32:00Z\" start=\"2026-09-08T15:30:00Z\""
+        + " time=\"2026-09-08T15:30:00Z\" how=\"m-g\" type=\"a-f-G\" uid=\"target\" version=\"2.0\">\n"
+        + "  <point le=\"5\" ce=\"4\" hae=\"3\" lon=\"2\" lat=\"1\"/>\n"
+        + "  <detail><contact callsign=\"Target\"/></detail>\n</event>")
+        .getBytes(StandardCharsets.UTF_8);
+
+    assertEquals(
+        CotEchoSuppressor.inspect(EVENT.getBytes(StandardCharsets.UTF_8), 64).fingerprint(),
+        CotEchoSuppressor.inspect(reformatted, 64).fingerprint());
+  }
+
+  @Test
+  void preserves_unknown_details_and_classifies_unsupported_types() throws Exception {
+    byte[] event = EVENT
+        .replace("type=\"a-f-G\"", "type=\"z-private-extension\"")
+        .replace("<contact callsign=\"Target\"/>", "<vendor:payload xmlns:vendor=\"urn:vendor\">data</vendor:payload>")
+        .getBytes(StandardCharsets.UTF_8);
+
+    byte[] marked = CotEchoSuppressor.mark(event, "maps-gateway");
+    CotEchoSuppressor.CotEventInfo info = CotEchoSuppressor.inspect(marked, 64);
+    Document document = parse(marked);
+
+    assertEquals(CotEchoSuppressor.CotEventClass.UNSUPPORTED, info.eventClass());
+    assertEquals("data", document.getElementsByTagNameNS("urn:vendor", "payload").item(0).getTextContent());
+  }
+
+  @Test
+  void rejects_xxe_and_excessive_nesting() {
+    byte[] xxe = ("<!DOCTYPE event [<!ENTITY xxe SYSTEM \"file:///etc/passwd\">]>"
+        + EVENT.replace("Target", "&xxe;"))
+        .getBytes(StandardCharsets.UTF_8);
+    byte[] deep = EVENT.replace(
+        "<contact callsign=\"Target\"/>",
+        "<a><b><c><d><e><f>value</f></e></d></c></b></a>")
+        .getBytes(StandardCharsets.UTF_8);
+
+    assertThrows(IOException.class, () -> CotEchoSuppressor.inspect(xxe, 64));
+    assertThrows(IOException.class, () -> CotEchoSuppressor.inspect(deep, 6));
   }
 
   private Document parse(byte[] xml) throws Exception {

@@ -36,6 +36,15 @@ public class CotConfig extends CotConfigDTO implements Config {
     appendNewLine = config.getBooleanProperty("appendNewLine", appendNewLine);
     suppressEchoes = config.getBooleanProperty("suppressEchoes", suppressEchoes);
     echoOrigin = config.getProperty("echoOrigin", echoOrigin);
+    maximumHopCount = config.getIntProperty("maximumHopCount", maximumHopCount);
+    fingerprintCacheSize = config.getIntProperty("fingerprintCacheSize", fingerprintCacheSize);
+    fingerprintCacheTtlSeconds = config.getIntProperty("fingerprintCacheTtlSeconds", fingerprintCacheTtlSeconds);
+    clockSkewSeconds = config.getIntProperty("clockSkewSeconds", clockSkewSeconds);
+    maximumTrackedUids = config.getIntProperty("maximumTrackedUids", maximumTrackedUids);
+    inboundQueueDepth = config.getIntProperty("inboundQueueDepth", inboundQueueDepth);
+    outboundQueueDepth = config.getIntProperty("outboundQueueDepth", outboundQueueDepth);
+    maximumXmlDepth = config.getIntProperty("maximumXmlDepth", maximumXmlDepth);
+    writeTimeoutSeconds = config.getIntProperty("writeTimeoutSeconds", writeTimeoutSeconds);
     if (config.get("presence") instanceof ConfigurationProperties presenceProperties) {
       presence = new CotPresenceConfig(presenceProperties);
     } else {
@@ -85,6 +94,42 @@ public class CotConfig extends CotConfigDTO implements Config {
       echoOrigin = updated.getEchoOrigin();
       changed = true;
     }
+    if (maximumHopCount != updated.getMaximumHopCount()) {
+      maximumHopCount = updated.getMaximumHopCount();
+      changed = true;
+    }
+    if (fingerprintCacheSize != updated.getFingerprintCacheSize()) {
+      fingerprintCacheSize = updated.getFingerprintCacheSize();
+      changed = true;
+    }
+    if (fingerprintCacheTtlSeconds != updated.getFingerprintCacheTtlSeconds()) {
+      fingerprintCacheTtlSeconds = updated.getFingerprintCacheTtlSeconds();
+      changed = true;
+    }
+    if (clockSkewSeconds != updated.getClockSkewSeconds()) {
+      clockSkewSeconds = updated.getClockSkewSeconds();
+      changed = true;
+    }
+    if (maximumTrackedUids != updated.getMaximumTrackedUids()) {
+      maximumTrackedUids = updated.getMaximumTrackedUids();
+      changed = true;
+    }
+    if (inboundQueueDepth != updated.getInboundQueueDepth()) {
+      inboundQueueDepth = updated.getInboundQueueDepth();
+      changed = true;
+    }
+    if (outboundQueueDepth != updated.getOutboundQueueDepth()) {
+      outboundQueueDepth = updated.getOutboundQueueDepth();
+      changed = true;
+    }
+    if (maximumXmlDepth != updated.getMaximumXmlDepth()) {
+      maximumXmlDepth = updated.getMaximumXmlDepth();
+      changed = true;
+    }
+    if (writeTimeoutSeconds != updated.getWriteTimeoutSeconds()) {
+      writeTimeoutSeconds = updated.getWriteTimeoutSeconds();
+      changed = true;
+    }
     if (presence instanceof CotPresenceConfig presenceConfig) {
       changed |= presenceConfig.update(updated.getPresence());
     } else if (!Objects.equals(presence, updated.getPresence())) {
@@ -107,6 +152,15 @@ public class CotConfig extends CotConfigDTO implements Config {
     properties.put("appendNewLine", appendNewLine);
     properties.put("suppressEchoes", suppressEchoes);
     properties.put("echoOrigin", echoOrigin);
+    properties.put("maximumHopCount", maximumHopCount);
+    properties.put("fingerprintCacheSize", fingerprintCacheSize);
+    properties.put("fingerprintCacheTtlSeconds", fingerprintCacheTtlSeconds);
+    properties.put("clockSkewSeconds", clockSkewSeconds);
+    properties.put("maximumTrackedUids", maximumTrackedUids);
+    properties.put("inboundQueueDepth", inboundQueueDepth);
+    properties.put("outboundQueueDepth", outboundQueueDepth);
+    properties.put("maximumXmlDepth", maximumXmlDepth);
+    properties.put("writeTimeoutSeconds", writeTimeoutSeconds);
     if (presence instanceof CotPresenceConfig presenceConfig) {
       properties.put("presence", presenceConfig.toConfigurationProperties());
     }

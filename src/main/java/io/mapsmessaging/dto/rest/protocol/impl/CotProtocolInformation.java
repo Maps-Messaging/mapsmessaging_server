@@ -27,6 +27,19 @@ import lombok.EqualsAndHashCode;
 public class CotProtocolInformation extends ProtocolInformationDTO {
 
   private SessionInformationDTO sessionInfo;
+  private long malformedEvents;
+  private long expiredEvents;
+  private long notStartedEvents;
+  private long duplicateEvents;
+  private long directEchoes;
+  private long semanticEchoes;
+  private long hopLimitEvents;
+  private long olderEvents;
+  private long unsupportedEvents;
+  private int inboundQueueDepth;
+  private long inboundOverflow;
+  private int outboundQueueDepth;
+  private long outboundOverflow;
 
   public CotProtocolInformation() {
     type = "cot";

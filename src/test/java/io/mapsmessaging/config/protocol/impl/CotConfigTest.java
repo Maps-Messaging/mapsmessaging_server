@@ -32,6 +32,15 @@ class CotConfigTest {
     properties.put("appendNewLine", false);
     properties.put("suppressEchoes", false);
     properties.put("echoOrigin", "gateway-test");
+    properties.put("maximumHopCount", 6);
+    properties.put("fingerprintCacheSize", 512);
+    properties.put("fingerprintCacheTtlSeconds", 45);
+    properties.put("clockSkewSeconds", 7);
+    properties.put("maximumTrackedUids", 500);
+    properties.put("inboundQueueDepth", 64);
+    properties.put("outboundQueueDepth", 32);
+    properties.put("maximumXmlDepth", 48);
+    properties.put("writeTimeoutSeconds", 20);
     ConfigurationProperties presence = new ConfigurationProperties();
     presence.put("enabled", true);
     presence.put("uid", "maps-test");
@@ -49,6 +58,15 @@ class CotConfigTest {
     assertFalse(config.isAppendNewLine());
     assertFalse(config.isSuppressEchoes());
     assertEquals("gateway-test", config.getEchoOrigin());
+    assertEquals(6, config.getMaximumHopCount());
+    assertEquals(512, config.getFingerprintCacheSize());
+    assertEquals(45, config.getFingerprintCacheTtlSeconds());
+    assertEquals(7, config.getClockSkewSeconds());
+    assertEquals(500, config.getMaximumTrackedUids());
+    assertEquals(64, config.getInboundQueueDepth());
+    assertEquals(32, config.getOutboundQueueDepth());
+    assertEquals(48, config.getMaximumXmlDepth());
+    assertEquals(20, config.getWriteTimeoutSeconds());
     assertTrue(config.getPresence().isEnabled());
     assertEquals("maps-test", config.getPresence().getUid());
     assertEquals(38.44, config.getPresence().getLatitude());
@@ -58,6 +76,10 @@ class CotConfigTest {
     assertEquals(1, saved.getIntProperty("qualityOfService", 0));
     assertFalse(saved.getBooleanProperty("suppressEchoes", true));
     assertEquals("gateway-test", saved.getProperty("echoOrigin"));
+    assertEquals(6, saved.getIntProperty("maximumHopCount", 0));
+    assertEquals(64, saved.getIntProperty("inboundQueueDepth", 0));
+    assertEquals(32, saved.getIntProperty("outboundQueueDepth", 0));
+    assertEquals(20, saved.getIntProperty("writeTimeoutSeconds", 0));
     ConfigurationProperties savedPresence = (ConfigurationProperties) saved.get("presence");
     assertTrue(savedPresence.getBooleanProperty("enabled", false));
     assertEquals("MAPS-TEST", savedPresence.getProperty("callsign"));
@@ -73,6 +95,14 @@ class CotConfigTest {
     assertEquals(120, config.getPresence().getStaleSeconds());
     assertTrue(config.isSuppressEchoes());
     assertEquals("maps-{interfaceName}", config.getEchoOrigin());
+    assertEquals(4, config.getMaximumHopCount());
+    assertEquals(4096, config.getFingerprintCacheSize());
+    assertEquals(120, config.getFingerprintCacheTtlSeconds());
+    assertEquals(5, config.getClockSkewSeconds());
+    assertEquals(1024, config.getInboundQueueDepth());
+    assertEquals(1024, config.getOutboundQueueDepth());
+    assertEquals(64, config.getMaximumXmlDepth());
+    assertEquals(30, config.getWriteTimeoutSeconds());
     assertTrue(config.toConfigurationProperties().containsKey("presence"));
   }
 

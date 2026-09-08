@@ -58,6 +58,33 @@ public class CotConfigDTO extends ProtocolConfigDTO {
   @Schema(description = "Stable origin written into outbound CoT echo markers. Supports {interfaceName}.", example = "maps-{interfaceName}")
   protected String echoOrigin = "maps-{interfaceName}";
 
+  @Schema(description = "Maximum Maps bridge hops before an event is discarded.", defaultValue = "4", minimum = "1")
+  protected int maximumHopCount = 4;
+
+  @Schema(description = "Maximum semantic fingerprints retained for echo and duplicate detection.", defaultValue = "4096", minimum = "1")
+  protected int fingerprintCacheSize = 4096;
+
+  @Schema(description = "Seconds semantic fingerprints remain eligible for suppression.", defaultValue = "120", minimum = "1")
+  protected int fingerprintCacheTtlSeconds = 120;
+
+  @Schema(description = "Permitted clock difference when evaluating stale events.", defaultValue = "5", minimum = "0")
+  protected int clockSkewSeconds = 5;
+
+  @Schema(description = "Maximum UID timestamp entries retained for out-of-order protection.", defaultValue = "10000", minimum = "1")
+  protected int maximumTrackedUids = 10_000;
+
+  @Schema(description = "Maximum events waiting in the CoT inbound processing queue.", defaultValue = "1024", minimum = "1")
+  protected int inboundQueueDepth = 1024;
+
+  @Schema(description = "Maximum events waiting or writing in the CoT outbound queue.", defaultValue = "1024", minimum = "1")
+  protected int outboundQueueDepth = 1024;
+
+  @Schema(description = "Maximum permitted XML element nesting depth.", defaultValue = "64", minimum = "4")
+  protected int maximumXmlDepth = 64;
+
+  @Schema(description = "Seconds a CoT frame may remain incomplete in the socket writer before the connection is closed.", defaultValue = "30", minimum = "1")
+  protected int writeTimeoutSeconds = 30;
+
   @Schema(description = "TAK client presence sent by outbound client connections.")
   protected CotPresenceConfigDTO presence = new CotPresenceConfigDTO();
 }
