@@ -113,15 +113,6 @@ public class SessionDetails extends PersistentObject {
     return map;
   }
 
-  public boolean addSubscriptionContextIfAbsent(SubscriptionContext context) {
-    boolean exists = subscriptionContextList.stream()
-        .anyMatch(existingContext -> existingContext.hasSameSubscriptionIdentity(context));
-    if (!exists) {
-      subscriptionContextList.add(context);
-    }
-    return !exists;
-  }
-
   public void clearSubscriptions() {
     subscriptionContextList.clear();
   }

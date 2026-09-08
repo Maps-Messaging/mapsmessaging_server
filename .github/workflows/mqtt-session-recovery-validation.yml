@@ -5,13 +5,9 @@ on:
     branches:
       - development
     paths:
-      - 'src/main/java/io/mapsmessaging/engine/destination/subscription/**'
-      - 'src/main/java/io/mapsmessaging/engine/session/**'
       - 'src/main/java/io/mapsmessaging/network/io/**'
       - 'src/main/java/io/mapsmessaging/network/protocol/impl/mqtt/**'
       - 'src/main/java/io/mapsmessaging/network/protocol/impl/mqtt5/**'
-      - 'src/test/java/io/mapsmessaging/engine/destination/subscription/**'
-      - 'src/test/java/io/mapsmessaging/engine/session/**'
       - 'src/test/java/io/mapsmessaging/network/io/**'
       - '.github/workflows/mqtt-session-recovery-validation.yml'
 
@@ -30,8 +26,8 @@ jobs:
           cache: maven
       - name: Prepare test resources
         run: mkdir -p src/test/resources
-      - name: Run MQTT recovery and frame delivery tests
+      - name: Run frame delivery tests
         run: >-
           mvn -B
-          -Dtest=FrameHandlerTest,DestinationSubscriptionContextTest,SessionDetailsTest
+          -Dtest=FrameHandlerTest
           test

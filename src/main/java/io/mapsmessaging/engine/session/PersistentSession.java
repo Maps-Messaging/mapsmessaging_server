@@ -63,9 +63,8 @@ public class PersistentSession extends SessionImpl{
   @Override
   public SubscribedEventManager addSubscription(SubscriptionContext context) throws IOException {
     SubscribedEventManager eventManager = super.addSubscription(context);
-    if (sessionDetails.addSubscriptionContextIfAbsent(context)) {
-      saveState();
-    }
+    sessionDetails.getSubscriptionContextList().add(context);
+    saveState();
     return eventManager;
   }
 

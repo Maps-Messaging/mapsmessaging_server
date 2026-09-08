@@ -58,11 +58,7 @@ public abstract class Subscription implements Runnable, SubscribedEventManager, 
   public abstract void delete() throws IOException;
 
   public void addContext(SubscriptionContext context) {
-    boolean exists = contextList.stream()
-        .anyMatch(existingContext -> existingContext.hasSameSubscriptionIdentity(context));
-    if (!exists) {
-      contextList.add(context);
-    }
+    contextList.add(context);
   }
 
   @Override
