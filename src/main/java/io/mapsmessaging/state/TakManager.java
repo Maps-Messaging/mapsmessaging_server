@@ -34,6 +34,7 @@ import io.mapsmessaging.state.config.TwinManagerConfigDTO;
 import io.mapsmessaging.state.config.cot.CotTwinConfigDTO;
 import io.mapsmessaging.state.task.CanonicalTaskRegistry;
 import io.mapsmessaging.utilities.Lifecycle;
+import java.io.IOException;
 
 import static io.mapsmessaging.state.logging.StateLogMessages.STATE_MANAGER_TAK_ENABLED;
 
