@@ -1,0 +1,27 @@
+name: CoT STANAG mapping validation
+
+on:
+  pull_request:
+    branches:
+      - development
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+      - name: Prepare test resources
+        run: mkdir -p src/test/resources
+      - name: Run CoT STANAG mapping tests
+        run: >-
+          mvn -B
+          -Dtest=CotIdentityRegistryTest,TwinObservationRegistryTest,CotTwinUpdaterTest,CotTaskProfileTest,CanonicalTaskRegistryTest,CotXmlParserTest
+          test
