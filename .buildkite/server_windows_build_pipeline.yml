@@ -4,4 +4,4 @@ steps:
       - cd ./packaging/windows
       - powershell -NoProfile -ExecutionPolicy Bypass -File .\windows_packager.ps1 "$(buildkite-agent secret get NEXUS_USER)" "$(buildkite-agent secret get NEXUS_PASSWORD)"
     agents:
-      queue: "windowsBuild"
+      queue: "windowsBuild-aws"
