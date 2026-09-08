@@ -18,16 +18,83 @@ import java.time.Instant;
 import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.jupiter.api.Test;
 
 class CotOutboundQueueTest {
 
   private static final Instant NOW = Instant.parse("2026-09-08T16:00:00Z");
+
+  @Test
+  void sustains_simultaneous_high_rate_inbound_and_outbound_traffic() throws Exception {
+    int publisherCount = 4;
+    int eventsPerPublisher = 100;
+    int eventCount = publisherCount * eventsPerPublisher;
+    MutableClock clock = new MutableClock(NOW);
+    BlockingQueue<ServerPacket> frames = new LinkedBlockingQueue<>();
+    CountDownLatch inboundComplete = new CountDownLatch(eventCount);
+    CountDownLatch outboundComplete = new CountDownLatch(eventCount);
+    ExecutorService inboundWorker = Executors.newSingleThreadExecutor();
+    ExecutorService publishers = Executors.newFixedThreadPool(publisherCount);
+    ExecutorService writer = Executors.newSingleThreadExecutor();
+    CotInboundQueue inbound = new CotInboundQueue(
+        512,
+        inboundWorker,
+        (xml, info) -> inboundComplete.countDown(),
+        (xml, info) -> { },
+        (info, exception) -> { });
+    CotOutboundQueue outbound = queue(512, 4096, frames::add, clock);
+    Future<?> writerFuture = writer.submit(() -> {
+      ByteArrayOutputStream wire = new ByteArrayOutputStream();
+      while (outboundComplete.getCount() > 0) {
+        writeAndComplete(frames.take(), wire);
+      }
+      return null;
+    });
+    CountDownLatch start = new CountDownLatch(1);
+    List<Future<?>> producerFutures = new ArrayList<>();
+    try {
+      for (int publisher = 0; publisher < publisherCount; publisher++) {
+        int source = publisher;
+        producerFutures.add(publishers.submit(() -> {
+          start.await();
+          for (int index = 0; index < eventsPerPublisher; index++) {
+            byte[] xml = event(
+                "duplex-" + source + '-' + index,
+                NOW,
+                NOW.plusSeconds(60),
+                "b-t-f");
+            CotEventInfo info = info(xml);
+            inbound.offer(xml, info);
+            outbound.offer(xml, info, outboundComplete::countDown);
+          }
+          return null;
+        }));
+      }
+      start.countDown();
+      for (Future<?> producer : producerFutures) {
+        producer.get();
+      }
+      assertTrue(inboundComplete.await(10, TimeUnit.SECONDS));
+      assertTrue(outboundComplete.await(10, TimeUnit.SECONDS));
+      writerFuture.get();
+      assertEquals(0, inbound.size());
+      assertEquals(0, outbound.size());
+    } finally {
+      inbound.close();
+      outbound.close();
+      publishers.shutdownNow();
+      writer.shutdownNow();
+      inboundWorker.shutdownNow();
+    }
+  }
 
   @Test
   void concurrent_publishers_produce_complete_non_interleaved_frames() throws Exception {
@@ -88,6 +155,26 @@ class CotOutboundQueueTest {
     assertEquals(1, firstCompletion.get());
     assertEquals(1, newStateCompletion.get());
     assertEquals(0, queue.size());
+  }
+
+  @Test
+  void overflow_evicts_queued_state_to_preserve_an_alert() throws Exception {
+    MutableClock clock = new MutableClock(NOW);
+    List<ServerPacket> frames = new ArrayList<>();
+    AtomicInteger stateCompletion = new AtomicInteger();
+    CotOutboundQueue queue = queue(2, 4096, frames::add, clock);
+    byte[] chat = event("chat", NOW, NOW.plusSeconds(60), "b-t-f");
+    byte[] state = event("state", NOW, NOW.plusSeconds(60), "a-f-G");
+    byte[] alert = event("alert", NOW, NOW.plusSeconds(60), "b-a-o-tbl");
+
+    queue.offer(chat, info(chat), null);
+    queue.offer(state, info(state), stateCompletion::incrementAndGet);
+
+    assertEquals(
+        CotOutboundQueue.OfferResult.ENQUEUED,
+        queue.offer(alert, info(alert), null));
+    assertEquals(1, stateCompletion.get());
+    assertEquals(2, queue.size());
   }
 
   @Test
