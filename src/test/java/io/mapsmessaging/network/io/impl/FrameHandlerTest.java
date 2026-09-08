@@ -292,15 +292,15 @@ class FrameHandlerTest {
 
   @Test
   void explicit_cancel_preserves_shared_transport_lifecycle_contract() throws Exception {
-    Fixture fixture = new Fixture(32, 1);
+    WriteFixture fixture = new WriteFixture(32, new MaximumWriteWriter(Integer.MAX_VALUE));
 
-    fixture.handler.registerWrite();
-    fixture.handler.cancel();
+    fixture.writeTask.frameHandler.registerWrite();
+    fixture.writeTask.frameHandler.cancel();
 
     verify(fixture.selectorTask).register(SelectionKey.OP_WRITE);
     verify(fixture.selectorTask).cancel(SelectionKey.OP_WRITE);
 
-    fixture.handler.registerWrite();
+    fixture.writeTask.frameHandler.registerWrite();
     verify(fixture.selectorTask, times(2)).register(SelectionKey.OP_WRITE);
   }
 
