@@ -25,10 +25,12 @@ import io.mapsmessaging.api.MessageEvent;
 import io.mapsmessaging.api.Session;
 import io.mapsmessaging.api.SessionManager;
 import io.mapsmessaging.api.SubscriptionContextBuilder;
-import io.mapsmessaging.api.features.ClientAcknowledgement;
 import io.mapsmessaging.api.features.DestinationType;
 import io.mapsmessaging.api.features.QualityOfService;
 import io.mapsmessaging.api.message.Message;
+import io.mapsmessaging.api.transformers.InterServerTransformation;
+import io.mapsmessaging.api.transformers.ParsedMessage;
+import io.mapsmessaging.dto.rest.analytics.StatisticsConfigDTO;
 import io.mapsmessaging.cot.CotStreamDecoder;
 import io.mapsmessaging.cot.CotStreamEncoder;
 import io.mapsmessaging.dto.rest.config.protocol.impl.CotConfigDTO;
@@ -41,6 +43,8 @@ import io.mapsmessaging.network.io.EndPoint;
 import io.mapsmessaging.network.io.Packet;
 import io.mapsmessaging.network.io.impl.SelectorTask;
 import io.mapsmessaging.network.protocol.Protocol;
+import io.mapsmessaging.selector.operators.ParserExecutor;
+import io.mapsmessaging.utilities.filtering.NamespaceFilters;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
@@ -48,11 +52,15 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeoutException;
 import javax.security.auth.Subject;
 import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 public class CotProtocol extends Protocol {
 
@@ -66,6 +74,8 @@ public class CotProtocol extends Protocol {
   private final String inboundTopicName;
   private final String outboundTopicName;
   private final QualityOfService qos;
+  private final List<InboundBinding> inboundBindings;
+  private final Set<String> outboundSubscriptions;
 
   public CotProtocol(EndPoint endPoint, Packet initialPacket) throws IOException {
     super(endPoint, endPoint.getConfig().getProtocolConfig("cot"));
@@ -75,6 +85,8 @@ public class CotProtocol extends Protocol {
     qos = QualityOfService.getInstance(cotConfig.getQualityOfService());
     inboundTopicName = resolveTopic(cotConfig.getInboundTopicName());
     outboundTopicName = resolveTopic(cotConfig.getOutboundTopicName());
+    inboundBindings = new CopyOnWriteArrayList<>();
+    outboundSubscriptions = ConcurrentHashMap.newKeySet();
     try {
       session = buildSession("cot_" + endPoint.getName() + "_" + endPoint.getId(),
           cotConfig.getMaximumSessionExpiry());
@@ -84,13 +96,8 @@ public class CotProtocol extends Protocol {
     } catch (ExecutionException | TimeoutException e) {
       throw new IOException("Unable to create CoT session", e);
     }
-    if (outboundTopicName != null && !outboundTopicName.isBlank()) {
-      SubscriptionContextBuilder builder =
-          new SubscriptionContextBuilder(outboundTopicName, ClientAcknowledgement.AUTO);
-      builder.setQos(qos);
-      builder.setReceiveMaximum(10);
-      builder.setNoLocalMessages(true);
-      session.addSubscription(builder.build());
+    if (!endPoint.isClient()) {
+      addOutboundSubscription(outboundTopicName, null, qos);
     }
     selectorTask = new SelectorTask(this, endPoint.getConfig().getEndPointConfig());
     if (initialPacket != null) {
@@ -108,6 +115,48 @@ public class CotProtocol extends Protocol {
   }
 
   @Override
+  public void subscribeLocal(
+      @NonNull @NotNull String resource,
+      @NonNull @NotNull String mappedResource,
+      @NonNull @NotNull QualityOfService qualityOfService,
+      @Nullable String selector,
+      @Nullable InterServerTransformation transformer,
+      @Nullable NamespaceFilters namespaceFilters,
+      @Nullable StatisticsConfigDTO statistics,
+      @Nullable Map<String, Object> linkProperties) throws IOException {
+    super.subscribeLocal(
+        resource,
+        mappedResource,
+        qualityOfService,
+        selector,
+        transformer,
+        namespaceFilters,
+        statistics,
+        linkProperties);
+    addOutboundSubscription(resource, selector, qualityOfService);
+  }
+
+  @Override
+  public void subscribeRemote(
+      @NonNull @NotNull String resource,
+      @NonNull @NotNull String mappedResource,
+      @NonNull @NotNull QualityOfService qualityOfService,
+      @Nullable ParserExecutor parser,
+      @Nullable InterServerTransformation transformer,
+      @Nullable StatisticsConfigDTO statistics,
+      @Nullable Map<String, Object> linkProperties) throws IOException {
+    super.subscribeRemote(
+        resource,
+        mappedResource,
+        qualityOfService,
+        parser,
+        transformer,
+        statistics,
+        linkProperties);
+    inboundBindings.add(new InboundBinding(mappedResource, parser));
+  }
+
+  @Override
   public boolean processPacket(Packet packet) throws IOException {
     byte[] bytes = new byte[packet.available()];
     packet.get(bytes);
@@ -121,9 +170,21 @@ public class CotProtocol extends Protocol {
   }
 
   private void publishInbound(byte[] xml) throws IOException {
-    if (inboundTopicName == null || inboundTopicName.isBlank()) {
+    if (inboundBindings.isEmpty()) {
+      if (inboundTopicName != null && !inboundTopicName.isBlank()) {
+        publishInbound(xml, inboundTopicName, null);
+      }
       return;
     }
+    for (InboundBinding binding : inboundBindings) {
+      publishInbound(xml, binding.destination(), binding.parser());
+    }
+  }
+
+  private void publishInbound(
+      byte[] xml,
+      String destinationName,
+      @Nullable ParserExecutor parser) throws IOException {
     Map<String, String> metadata = new HashMap<>();
     metadata.put("protocol", "CoT");
     metadata.put("version", "2.0");
@@ -138,9 +199,17 @@ public class CotProtocol extends Protocol {
         .storeOffline(cotConfig.isStoreOffline())
         .setMeta(metadata)
         .build();
+    if (parser != null && !parser.evaluate(message)) {
+      return;
+    }
+    ParsedMessage parsedMessage = parseInboundMessage(destinationName, message);
+    if (parsedMessage == null) {
+      return;
+    }
     try {
-      Destination destination = session.findDestination(inboundTopicName, DestinationType.TOPIC).get();
-      destination.storeMessage(message);
+      Destination destination =
+          session.findDestination(parsedMessage.getDestinationName(), DestinationType.TOPIC).get();
+      destination.storeMessage(parsedMessage.getMessage());
     } catch (InterruptedException e) {
       Thread.currentThread().interrupt();
       throw new IOException("Interrupted while publishing CoT event", e);
@@ -151,8 +220,12 @@ public class CotProtocol extends Protocol {
 
   @Override
   public void sendMessage(@NotNull @NonNull MessageEvent messageEvent) {
+    ParsedMessage parsedMessage = parseOutboundMessage(messageEvent);
+    if (parsedMessage == null) {
+      return;
+    }
     try {
-      byte[] xml = messageEvent.getMessage().getOpaqueData();
+      byte[] xml = parsedMessage.getMessage().getOpaqueData();
       if (xml == null || xml.length == 0) {
         return;
       }
@@ -215,5 +288,29 @@ public class CotProtocol extends Protocol {
 
   private String resolveTopic(String topic) {
     return topic == null ? null : topic.replace("{interfaceName}", endPoint.getConfig().getName());
+  }
+
+  private void addOutboundSubscription(String resource, String selector, QualityOfService qualityOfService)
+      throws IOException {
+    if (resource == null || resource.isBlank()) {
+      return;
+    }
+    if (!outboundSubscriptions.add(resource)) {
+      return;
+    }
+    try {
+      SubscriptionContextBuilder builder =
+          createSubscriptionContextBuilder(resource, selector, qualityOfService, 10);
+      builder.setNoLocalMessages(true);
+      session.addSubscription(builder.build());
+    } catch (IOException exception) {
+      outboundSubscriptions.remove(resource);
+      throw exception;
+    }
+  }
+
+  private record InboundBinding(
+      String destination,
+      @Nullable ParserExecutor parser) {
   }
 }

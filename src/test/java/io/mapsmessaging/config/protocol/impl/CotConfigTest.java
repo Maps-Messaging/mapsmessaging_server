@@ -6,9 +6,15 @@ package io.mapsmessaging.config.protocol.impl;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 
 import io.mapsmessaging.configuration.ConfigurationProperties;
+import io.mapsmessaging.config.network.EndPointConnectionServerConfig;
 import io.mapsmessaging.config.network.EndPointServerConfig;
+import io.mapsmessaging.config.network.impl.TcpConfig;
+import io.mapsmessaging.config.network.impl.TlsConfig;
+import io.mapsmessaging.dto.rest.config.protocol.LinkConfigDTO;
+import java.util.List;
 import org.junit.jupiter.api.Test;
 
 class CotConfigTest {
@@ -45,6 +51,45 @@ class CotConfigTest {
       EndPointServerConfig endpoint = new EndPointServerConfig(properties);
       assertEquals("cot", endpoint.getProtocolConfig("cot").getType());
       assertEquals(CotConfig.class, endpoint.getProtocolConfig("cot").getClass());
+    }
+  }
+
+  @Test
+  void network_connection_loads_cot_push_and_pull_bindings_for_tcp_and_tls() {
+    for (String url : new String[]{"tcp://tak.example:8088/", "ssl://tak.example:8089/"}) {
+      ConfigurationProperties push = new ConfigurationProperties();
+      push.put("direction", "push");
+      push.put("local_namespace", "/tak/cot/outbound");
+      push.put("remote_namespace", "/cot");
+      push.put("qos", 1);
+
+      ConfigurationProperties pull = new ConfigurationProperties();
+      pull.put("direction", "pull");
+      pull.put("remote_namespace", "/cot");
+      pull.put("local_namespace", "/tak/cot/inbound");
+      pull.put("qos", 1);
+
+      ConfigurationProperties properties = new ConfigurationProperties();
+      properties.put("name", "remote-tak");
+      properties.put("url", url);
+      properties.put("protocol", "cot");
+      properties.put("links", List.of(push, pull));
+
+      EndPointConnectionServerConfig endpoint = new EndPointConnectionServerConfig(properties);
+      assertInstanceOf(CotConfig.class, endpoint.getProtocolConfig("cot"));
+      if (url.startsWith("ssl")) {
+        assertInstanceOf(TlsConfig.class, endpoint.getEndPointConfig());
+      } else {
+        assertInstanceOf(TcpConfig.class, endpoint.getEndPointConfig());
+      }
+
+      assertEquals(2, endpoint.getLinkConfigs().size());
+      LinkConfigDTO pushBinding = endpoint.getLinkConfigs().get(0);
+      assertEquals("push", pushBinding.getDirection());
+      assertEquals("/tak/cot/outbound", pushBinding.getLocalNamespace());
+      LinkConfigDTO pullBinding = endpoint.getLinkConfigs().get(1);
+      assertEquals("pull", pullBinding.getDirection());
+      assertEquals("/tak/cot/inbound", pullBinding.getLocalNamespace());
     }
   }
 }

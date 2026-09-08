@@ -34,7 +34,6 @@ public class CotProtocolFactory extends ProtocolImplFactory {
   public Protocol connect(EndPoint endPoint, String sessionId, String username, String password,
       Map<String, String> topicMap) throws IOException {
     CotProtocol protocol = new CotProtocol(endPoint, null);
-    protocol.getTopicNameMapping().putAll(topicMap);
     protocol.connect(sessionId, username, password);
     return protocol;
   }
