@@ -32,6 +32,8 @@ NetworkConnectionManager:
       protocol: cot
       maximumEventSize: 1048576
       appendNewLine: true
+      suppressEchoes: true
+      echoOrigin: maps-{interfaceName}
       presence:
         enabled: true
         uid: maps-{interfaceName}
@@ -73,6 +75,8 @@ Use `tcp://` for an unencrypted connection or `ssl://` for TLS. The CoT protocol
 When `presence.enabled` is true, client connections send a presence event immediately after connecting and then every `intervalSeconds`. The event timestamps are generated for each send and expire after `staleSeconds`. OpenTAK uses the event UID and `contact` callsign to identify the client and establish its routed stream. The `uid` and `callsign` fields support the `{interfaceName}` placeholder. A configured latitude and longitude of zero with `ce` and `le` set to `9999999` represents an unknown gateway location rather than a precise position.
 
 Presence is disabled by default and is ignored on listener endpoints. Set `staleSeconds` greater than `intervalSeconds` so the presence does not expire between refreshes.
+
+With `suppressEchoes` enabled, Maps adds a namespaced `maps:origin` element under `detail` to every outbound event. An event received later with an origin matching `echoOrigin` is discarded before it is published locally. Keep `echoOrigin` stable and unique for each Maps instance; it supports the `{interfaceName}` placeholder. Markers from other Maps instances are retained and routed normally.
 
 ## Payload behaviour
 

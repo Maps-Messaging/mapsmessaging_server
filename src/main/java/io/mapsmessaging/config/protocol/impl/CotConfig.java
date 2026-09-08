@@ -34,6 +34,8 @@ public class CotConfig extends CotConfigDTO implements Config {
     qualityOfService = config.getIntProperty("qualityOfService", qualityOfService);
     storeOffline = config.getBooleanProperty("storeOffline", storeOffline);
     appendNewLine = config.getBooleanProperty("appendNewLine", appendNewLine);
+    suppressEchoes = config.getBooleanProperty("suppressEchoes", suppressEchoes);
+    echoOrigin = config.getProperty("echoOrigin", echoOrigin);
     if (config.get("presence") instanceof ConfigurationProperties presenceProperties) {
       presence = new CotPresenceConfig(presenceProperties);
     } else {
@@ -75,6 +77,14 @@ public class CotConfig extends CotConfigDTO implements Config {
       appendNewLine = updated.isAppendNewLine();
       changed = true;
     }
+    if (suppressEchoes != updated.isSuppressEchoes()) {
+      suppressEchoes = updated.isSuppressEchoes();
+      changed = true;
+    }
+    if (!Objects.equals(echoOrigin, updated.getEchoOrigin())) {
+      echoOrigin = updated.getEchoOrigin();
+      changed = true;
+    }
     if (presence instanceof CotPresenceConfig presenceConfig) {
       changed |= presenceConfig.update(updated.getPresence());
     } else if (!Objects.equals(presence, updated.getPresence())) {
@@ -95,6 +105,8 @@ public class CotConfig extends CotConfigDTO implements Config {
     properties.put("qualityOfService", qualityOfService);
     properties.put("storeOffline", storeOffline);
     properties.put("appendNewLine", appendNewLine);
+    properties.put("suppressEchoes", suppressEchoes);
+    properties.put("echoOrigin", echoOrigin);
     if (presence instanceof CotPresenceConfig presenceConfig) {
       properties.put("presence", presenceConfig.toConfigurationProperties());
     }

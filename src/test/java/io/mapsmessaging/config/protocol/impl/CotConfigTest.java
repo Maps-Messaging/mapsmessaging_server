@@ -30,6 +30,8 @@ class CotConfigTest {
     properties.put("qualityOfService", 1);
     properties.put("storeOffline", true);
     properties.put("appendNewLine", false);
+    properties.put("suppressEchoes", false);
+    properties.put("echoOrigin", "gateway-test");
     ConfigurationProperties presence = new ConfigurationProperties();
     presence.put("enabled", true);
     presence.put("uid", "maps-test");
@@ -45,6 +47,8 @@ class CotConfigTest {
     assertEquals("/cot/from-wire", config.getInboundTopicName());
     assertEquals(4096, config.getMaximumEventSize());
     assertFalse(config.isAppendNewLine());
+    assertFalse(config.isSuppressEchoes());
+    assertEquals("gateway-test", config.getEchoOrigin());
     assertTrue(config.getPresence().isEnabled());
     assertEquals("maps-test", config.getPresence().getUid());
     assertEquals(38.44, config.getPresence().getLatitude());
@@ -52,6 +56,8 @@ class CotConfigTest {
     ConfigurationProperties saved = config.toConfigurationProperties();
     assertEquals("/cot/to-wire", saved.getProperty("outboundTopicName"));
     assertEquals(1, saved.getIntProperty("qualityOfService", 0));
+    assertFalse(saved.getBooleanProperty("suppressEchoes", true));
+    assertEquals("gateway-test", saved.getProperty("echoOrigin"));
     ConfigurationProperties savedPresence = (ConfigurationProperties) saved.get("presence");
     assertTrue(savedPresence.getBooleanProperty("enabled", false));
     assertEquals("MAPS-TEST", savedPresence.getProperty("callsign"));
@@ -65,6 +71,8 @@ class CotConfigTest {
     assertEquals("maps-{interfaceName}", config.getPresence().getUid());
     assertEquals(60, config.getPresence().getIntervalSeconds());
     assertEquals(120, config.getPresence().getStaleSeconds());
+    assertTrue(config.isSuppressEchoes());
+    assertEquals("maps-{interfaceName}", config.getEchoOrigin());
     assertTrue(config.toConfigurationProperties().containsKey("presence"));
   }
 

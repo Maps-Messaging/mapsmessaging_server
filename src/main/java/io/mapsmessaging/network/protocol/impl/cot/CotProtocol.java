@@ -81,6 +81,7 @@ public class CotProtocol extends Protocol {
   private final QualityOfService qos;
   private final List<InboundBinding> inboundBindings;
   private final Set<String> outboundSubscriptions;
+  private final String echoOrigin;
   private ScheduledFuture<?> presenceFuture;
 
   public CotProtocol(EndPoint endPoint, Packet initialPacket) throws IOException {
@@ -91,6 +92,10 @@ public class CotProtocol extends Protocol {
     qos = QualityOfService.getInstance(cotConfig.getQualityOfService());
     inboundTopicName = resolveTopic(cotConfig.getInboundTopicName());
     outboundTopicName = resolveTopic(cotConfig.getOutboundTopicName());
+    echoOrigin = resolveInterfaceName(cotConfig.getEchoOrigin());
+    if (cotConfig.isSuppressEchoes() && (echoOrigin == null || echoOrigin.isBlank())) {
+      throw new IOException("CoT echoOrigin must not be blank when echo suppression is enabled");
+    }
     inboundBindings = new CopyOnWriteArrayList<>();
     outboundSubscriptions = ConcurrentHashMap.newKeySet();
     try {
@@ -177,6 +182,9 @@ public class CotProtocol extends Protocol {
   }
 
   private void publishInbound(byte[] xml) throws IOException {
+    if (cotConfig.isSuppressEchoes() && CotEchoSuppressor.isEcho(xml, echoOrigin)) {
+      return;
+    }
     if (inboundBindings.isEmpty()) {
       if (inboundTopicName != null && !inboundTopicName.isBlank()) {
         publishInbound(xml, inboundTopicName, null);
@@ -236,7 +244,7 @@ public class CotProtocol extends Protocol {
       if (xml == null || xml.length == 0) {
         return;
       }
-      byte[] encoded = encoder.encode(xml);
+      byte[] encoded = encoder.encode(markForEchoSuppression(xml));
       sendEncoded(encoded);
     } catch (IOException exception) {
       LOGGER.log(
@@ -289,7 +297,7 @@ public class CotProtocol extends Protocol {
   }
 
   private String resolveTopic(String topic) {
-    return topic == null ? null : topic.replace("{interfaceName}", endPoint.getConfig().getName());
+    return topic == null ? null : resolveInterfaceName(topic);
   }
 
   private void addOutboundSubscription(String resource, String selector, QualityOfService qualityOfService)
@@ -344,7 +352,7 @@ public class CotProtocol extends Protocol {
           cotConfig.getPresence(),
           endPoint.getConfig().getName(),
           Instant.now());
-      sendEncoded(encoder.encode(presence));
+      sendEncoded(encoder.encode(markForEchoSuppression(presence)));
     } catch (XMLStreamException exception) {
       throw new IOException("Unable to encode CoT presence event", exception);
     }
@@ -358,6 +366,14 @@ public class CotProtocol extends Protocol {
     }
     endPoint.sendPacket(new Packet(ByteBuffer.wrap(output)));
     sentMessage();
+  }
+
+  private byte[] markForEchoSuppression(byte[] xml) throws IOException {
+    return cotConfig.isSuppressEchoes() ? CotEchoSuppressor.mark(xml, echoOrigin) : xml;
+  }
+
+  private String resolveInterfaceName(String value) {
+    return value == null ? null : value.replace("{interfaceName}", endPoint.getConfig().getName());
   }
 
   private void stopPresence() {

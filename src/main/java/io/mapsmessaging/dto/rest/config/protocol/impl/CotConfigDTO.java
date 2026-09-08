@@ -52,6 +52,12 @@ public class CotConfigDTO extends ProtocolConfigDTO {
   @Schema(description = "Append a newline after outbound CoT events when one is not already present.", defaultValue = "true")
   protected boolean appendNewLine = true;
 
+  @Schema(description = "Mark outbound events and discard them if a TAK server echoes them back.", defaultValue = "true")
+  protected boolean suppressEchoes = true;
+
+  @Schema(description = "Stable origin written into outbound CoT echo markers. Supports {interfaceName}.", example = "maps-{interfaceName}")
+  protected String echoOrigin = "maps-{interfaceName}";
+
   @Schema(description = "TAK client presence sent by outbound client connections.")
   protected CotPresenceConfigDTO presence = new CotPresenceConfigDTO();
 }
