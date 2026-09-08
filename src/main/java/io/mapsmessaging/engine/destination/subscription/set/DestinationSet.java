@@ -32,12 +32,16 @@ import java.util.function.Predicate;
 public class DestinationSet implements Set<DestinationImpl> {
 
   @Getter
-  private final SubscriptionContext context;
+  private SubscriptionContext context;
   private final Map<String, DestinationImpl> matching;
 
   public DestinationSet(SubscriptionContext context, Map<String, DestinationImpl> destinationMap) {
     this.context = context;
     matching = new LinkedHashMap<>(destinationMap);
+  }
+
+  public void replaceContext(SubscriptionContext context) {
+    this.context = context;
   }
 
   // The wildcard loop has 3 break statements, but it is clearer to leave it here

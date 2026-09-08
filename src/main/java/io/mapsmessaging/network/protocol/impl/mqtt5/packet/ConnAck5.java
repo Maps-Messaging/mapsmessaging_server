@@ -86,6 +86,10 @@ public class ConnAck5 extends StatusPacket {
     isPresent = restored;
   }
 
+  public boolean isSessionPresent() {
+    return isPresent;
+  }
+
   @Override
   public String toString() {
     return "MQTTv5 ConAck:: isPresent:" + isPresent + " " + super.toString();

@@ -37,76 +37,84 @@ public class FrameHandler {
   private final Packet packet;
   private boolean isRegistered;
   private final Deque<ServerPacket> completedFrames;
+  private final Deque<Packet> pendingWrites;
 
   public FrameHandler(WriteTask task, int bufferSize) {
     this.writeTask = task;
     completedFrames = new LinkedList<>();
+    pendingWrites = new LinkedList<>();
     isRegistered = false;
     packet = new Packet(bufferSize, false);
   }
 
   public void processSelection() {
-    boolean sent = packPacket();
-    // Outstanding data in packet so lets empty it
-    if(!sent) {
-      writeBuffer();
+    if (pendingWrites.isEmpty()) {
+      packPacket();
     }
-    if (!packet.hasData()) {
+
+    if (!writePendingPackets()) {
+      pendingWrites.clear();
+      completedFrames.clear();
+      packet.clear();
+      cancel();
+      return;
+    }
+
+    if (pendingWrites.isEmpty()) {
       packet.clear();
       while (!completedFrames.isEmpty()) {
         completedFrames.poll().complete();
       }
-      // Completed the packet and the queue is empty, so cancel the write
-      if ( writeTask.outboundFrame.isEmpty()) {
+      if (writeTask.outboundFrame.isEmpty()) {
         cancel();
       }
     }
   }
 
-  private boolean packPacket(){
-    boolean sent = false;
-    if (!packet.hasData()) {
-      int count = 0;
-      ServerPacket serverPacket = writeTask.outboundFrame.poll();
-      while (count < writeTask.getCoalesceSize() && serverPacket != null) {
-        int startPos = packet.position();
-        try {
-          sent = processPacket(serverPacket);
-          completedFrames.add(serverPacket);
-          count++;
-        } catch (BufferOverflowException overflow) {
-          writeTask.selectorCallback.getEndPoint().getEndPointStatus().incrementOverFlow();
-          writeTask.setCoalesceSize( count );
-          packet.position(startPos);
-          writeTask.outboundFrame.addFirst(serverPacket);
-          serverPacket = null;
-          count =  writeTask.getCoalesceSize();
-        }
-        if (count <  writeTask.getCoalesceSize()) {
-          serverPacket =  writeTask.outboundFrame.poll();
-        }
-      }
-      if(!sent) {
-        packet.flip();
-      }
+  private void packPacket() {
+    ServerPacket serverPacket = writeTask.outboundFrame.poll();
+    if (serverPacket == null) {
+      return;
     }
-    return sent;
-  }
 
-  private boolean processPacket(ServerPacket serverPacket){
-    boolean sent = false;
-    if(serverPacket instanceof ServerPublishPacket serverPublishPacket){
+    if (serverPacket instanceof ServerPublishPacket serverPublishPacket) {
       Packet[] packets = serverPublishPacket.packAdvancedFrame(packet);
       packets[0].flip();
-      for(Packet packetParts:packets){
-        writeBuffer(packetParts);
+      for (Packet packetPart : packets) {
+        pendingWrites.add(packetPart);
       }
-      sent = true;
+      completedFrames.add(serverPacket);
+      return;
     }
-    else {
-      serverPacket.packFrame(packet);
+
+    int count = 0;
+    while (serverPacket != null && count < writeTask.getCoalesceSize()) {
+      int startPos = packet.position();
+      try {
+        serverPacket.packFrame(packet);
+        completedFrames.add(serverPacket);
+        count++;
+      } catch (BufferOverflowException overflow) {
+        writeTask.selectorCallback.getEndPoint().getEndPointStatus().incrementOverFlow();
+        writeTask.setCoalesceSize(Math.max(1, count));
+        packet.position(startPos);
+        writeTask.outboundFrame.addFirst(serverPacket);
+        break;
+      }
+
+      if (count >= writeTask.getCoalesceSize()) {
+        break;
+      }
+      ServerPacket nextPacket = writeTask.outboundFrame.peek();
+      if (nextPacket instanceof ServerPublishPacket) {
+        break;
+      }
+      serverPacket = writeTask.outboundFrame.poll();
     }
-    return sent;
+    packet.flip();
+    if (packet.hasRemaining()) {
+      pendingWrites.add(packet);
+    }
   }
 
   public synchronized void registerWrite() {
@@ -131,16 +139,28 @@ public class FrameHandler {
     }
   }
 
-  public void writeBuffer(){
-    writeBuffer(packet);
+  private boolean writePendingPackets() {
+    Packet packetToSend = pendingWrites.peek();
+    while (packetToSend != null) {
+      if (!writeBuffer(packetToSend)) {
+        return false;
+      }
+      if (packetToSend.hasRemaining()) {
+        return true;
+      }
+      pendingWrites.poll();
+      packetToSend = pendingWrites.peek();
+    }
+    return true;
   }
 
-  private void writeBuffer(Packet packetToSend) {
+  private boolean writeBuffer(Packet packetToSend) {
     try {
-      writeTask.logger.log(ServerLogMessages.WRITE_TASK_WRITE_PACKET, packet);
-      if ( writeTask.selectorCallback.getEndPoint().sendPacket(packetToSend) == 0) {
+      writeTask.logger.log(ServerLogMessages.WRITE_TASK_WRITE_PACKET, packetToSend);
+      if (writeTask.selectorCallback.getEndPoint().sendPacket(packetToSend) == 0) {
         writeTask.logger.log(WRITE_TASK_BLOCKED);
       }
+      return true;
     } catch (IOException e) {
       try {
         writeTask.selectorCallback.close();
@@ -148,6 +168,7 @@ public class FrameHandler {
         writeTask.logger.log(ServerLogMessages.END_POINT_CLOSE_EXCEPTION, e);
       }
       writeTask.logger.log(WRITE_TASK_SEND_FAILED, e);
+      return false;
     }
   }
 }

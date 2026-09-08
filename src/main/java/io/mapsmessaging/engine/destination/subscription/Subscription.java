@@ -61,6 +61,16 @@ public abstract class Subscription implements Runnable, SubscribedEventManager, 
     contextList.add(context);
   }
 
+  public void replaceContext(SubscriptionContext context) {
+    for (int index = 0; index < contextList.size(); index++) {
+      if (contextList.get(index).getKey().equals(context.getKey())) {
+        contextList.set(index, context);
+        return;
+      }
+    }
+    contextList.add(context);
+  }
+
   @Override
   public List<SubscriptionContext> getContexts() {
     return new ArrayList<>(contextList);

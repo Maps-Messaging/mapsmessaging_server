@@ -201,6 +201,8 @@ public class MQTT5Protocol extends Protocol {
     Connect5 connect = new Connect5();
     connect.setCleanSession(false);
     connect.setKeepAlive((int)(keepAlive)/1000);
+    connect.add(new SessionExpiryInterval(mqttConfig.getMaximumSessionExpiry()));
+    connect.add(new ReceiveMaximum(serverReceiveMaximum));
     if (username != null) {
       connect.setUsername(username);
       connect.setPassword(password.trim().toCharArray());
