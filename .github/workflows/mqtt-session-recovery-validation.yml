@@ -1,0 +1,33 @@
+name: MQTT session recovery validation
+
+on:
+  pull_request:
+    branches:
+      - development
+    paths:
+      - 'src/main/java/io/mapsmessaging/network/io/**'
+      - 'src/main/java/io/mapsmessaging/network/protocol/impl/mqtt/**'
+      - 'src/main/java/io/mapsmessaging/network/protocol/impl/mqtt5/**'
+      - 'src/test/java/io/mapsmessaging/network/io/**'
+      - '.github/workflows/mqtt-session-recovery-validation.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+      - name: Prepare test resources
+        run: mkdir -p src/test/resources
+      - name: Run frame delivery tests
+        run: >-
+          mvn -B
+          -Dtest=FrameHandlerTest
+          test

@@ -104,4 +104,8 @@ public class ConnAck extends MQTTPacket {
   public void setRestoredFlag(boolean restored) {
     isPresent = restored;
   }
+
+  public boolean isSessionPresent() {
+    return isPresent;
+  }
 }
