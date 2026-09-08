@@ -34,6 +34,7 @@ import java.util.Map;
 @JsonSubTypes({
     @JsonSubTypes.Type(value = AmqpProtocolInformation.class, name = "amqp"),
     @JsonSubTypes.Type(value = CoapProtocolInformation.class, name = "coap"),
+    @JsonSubTypes.Type(value = CotProtocolInformation.class, name = "cot"),
     @JsonSubTypes.Type(value = LoraProtocolInformation.class, name = "lora"),
     @JsonSubTypes.Type(value = MqttProtocolInformation.class, name = "mqtt"),
     @JsonSubTypes.Type(value = MqttSnProtocolInformation.class, name = "mqtt-sn"),
@@ -54,6 +55,7 @@ import java.util.Map;
     discriminatorMapping = {
         @DiscriminatorMapping(value = "amqp", schema = AmqpProtocolInformation.class),
         @DiscriminatorMapping(value = "coap", schema = CoapProtocolInformation.class),
+        @DiscriminatorMapping(value = "cot", schema = CotProtocolInformation.class),
         @DiscriminatorMapping(value = "lora", schema = LoraProtocolInformation.class),
         @DiscriminatorMapping(value = "mqtt", schema = MqttProtocolInformation.class),
         @DiscriminatorMapping(value = "mqtt-sn", schema = MqttSnProtocolInformation.class),
@@ -76,7 +78,7 @@ import java.util.Map;
 public class ProtocolInformationDTO {
 
   @Schema(description = "Type of the protocol", allowableValues = {
-      "amqp", "coap", "lora", "mqtt", "mqtt-sn", "mqttV5", "NMEA-0183", "semtech", "stomp", "rest", "extension", "orbcomm","mavlink", "n2k", "satellite"
+      "amqp", "coap", "cot", "lora", "mqtt", "mqtt-sn", "mqttV5", "NMEA-0183", "semtech", "stomp", "rest", "extension", "orbcomm","mavlink", "n2k", "satellite"
   })
   protected String type;
 

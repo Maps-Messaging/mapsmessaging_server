@@ -140,6 +140,7 @@ public class EndPointConfigFactory {
             protocolList.add("mqtt-sn");
           } else {
             protocolList.add("amqp");
+            protocolList.add("cot");
             protocolList.add("mqtt");
             protocolList.add("stomp");
             protocolList.add("nats");
@@ -196,6 +197,7 @@ public class EndPointConfigFactory {
       case "semtech" -> new SemtechConfig(config);
       case "mqtt-sn" -> new MqttSnConfig(config);
       case "coap" -> new CoapConfig(config);
+      case "cot" -> new CotConfig(config);
       case "nmea-0183" -> new NmeaConfig(config);
       case "lora" -> new LoRaProtocolConfig(config);
       case "echo" -> new EchoProtocolConfig(config);

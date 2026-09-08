@@ -26,10 +26,8 @@ import lombok.Setter;
 @Setter
 public class TakTwinContext {
   private long lastUpdate;
-  private TakSocketConnection socketConnection;
 
   public TakTwinContext(){
     lastUpdate = 0;
-    socketConnection = null;
   }
 }

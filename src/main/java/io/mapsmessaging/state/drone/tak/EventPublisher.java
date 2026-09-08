@@ -22,12 +22,14 @@ package io.mapsmessaging.state.drone.tak;
 import io.mapsmessaging.api.*;
 import io.mapsmessaging.api.features.DestinationType;
 import io.mapsmessaging.api.features.QualityOfService;
+import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.engine.schema.SchemaManager;
 import io.mapsmessaging.engine.session.ClientConnection;
 import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.security.Principal;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
@@ -50,16 +52,18 @@ public class EventPublisher implements ClientConnection, MessageListener {
 
   public void publish(String xml) throws IOException {
     MessageBuilder messageBuilder = new MessageBuilder();
-    messageBuilder.setOpaqueData(xml.getBytes())
+    messageBuilder.setOpaqueData(xml.getBytes(StandardCharsets.UTF_8))
         .setQoS(QualityOfService.AT_LEAST_ONCE)
         .setContentType("text/xml")
         .storeOffline(true)
         .setSchemaId(SchemaManager.DEFAULT_XML_SCHEMA.toString())
         .setRetain(false);
+    Message message = messageBuilder.build();
     try {
-      destination.storeMessage(messageBuilder.build());
+      destination.storeMessage(message);
     } catch (IOException e) {
       destination = locateDestination(destination.getFullyQualifiedNamespace());
+      destination.storeMessage(message);
     }
   }
 

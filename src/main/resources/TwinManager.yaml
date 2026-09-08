@@ -26,8 +26,6 @@ TwinManager:
   defaultRootPath: "/"
 
   tak:
-    hostname: "opentak.syd.mapsmessaging.io"
-    port: 8088
     topic: "/tak/cot"
 
   geospatial:

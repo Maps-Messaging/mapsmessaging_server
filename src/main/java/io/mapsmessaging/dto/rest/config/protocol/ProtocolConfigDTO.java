@@ -34,6 +34,7 @@ import lombok.NoArgsConstructor;
 @JsonSubTypes({
     @JsonSubTypes.Type(value = AmqpConfigDTO.class, name = "amqp"),
     @JsonSubTypes.Type(value = CoapConfigDTO.class, name = "coap"),
+    @JsonSubTypes.Type(value = CotConfigDTO.class, name = "cot"),
     @JsonSubTypes.Type(value = LoRaProtocolConfigDTO.class, name = "lora"),
     @JsonSubTypes.Type(value = MqttConfigDTO.class, name = "mqtt"),
     @JsonSubTypes.Type(value = MavlinkConfigDTO.class, name = "mavlink"),
@@ -55,6 +56,7 @@ import lombok.NoArgsConstructor;
     discriminatorMapping = {
         @DiscriminatorMapping(value = "amqp", schema = AmqpConfigDTO.class),
         @DiscriminatorMapping(value = "coap", schema = CoapConfigDTO.class),
+        @DiscriminatorMapping(value = "cot", schema = CotConfigDTO.class),
         @DiscriminatorMapping(value = "lora", schema = LoRaProtocolConfigDTO.class),
         @DiscriminatorMapping(value = "mqtt", schema = MqttConfigDTO.class),
         @DiscriminatorMapping(value = "mqtt-v3", schema = MqttConfigDTO.class),
@@ -95,6 +97,7 @@ public class ProtocolConfigDTO extends BaseConfigDTO {
       allowableValues = {
           "amqp",
           "coap",
+          "cot",
           "lora",
           "loop",
           "mqtt",
@@ -141,4 +144,3 @@ public class ProtocolConfigDTO extends BaseConfigDTO {
   )
   protected MessageOverrideDTO messageDefaults;
 }
-

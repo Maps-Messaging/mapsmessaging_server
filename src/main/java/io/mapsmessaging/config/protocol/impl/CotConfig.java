@@ -1,0 +1,89 @@
+/*
+ *
+ * Copyright [ 2024 - 2026 ] MapsMessaging B.V.
+ *
+ * Licensed under the Apache License, Version 2.0 with the Commons Clause
+ * (the "License"); you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at:
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *     https://commonsclause.com/
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package io.mapsmessaging.config.protocol.impl;
+
+import io.mapsmessaging.config.Config;
+import io.mapsmessaging.configuration.ConfigurationProperties;
+import io.mapsmessaging.dto.rest.config.BaseConfigDTO;
+import io.mapsmessaging.dto.rest.config.protocol.impl.CotConfigDTO;
+import java.util.Objects;
+
+public class CotConfig extends CotConfigDTO implements Config {
+
+  public CotConfig(ConfigurationProperties config) {
+    ProtocolConfigFactory.unpack(config, this);
+    inboundTopicName = config.getProperty("inboundTopicName", inboundTopicName);
+    outboundTopicName = config.getProperty("outboundTopicName", outboundTopicName);
+    maximumEventSize = config.getIntProperty("maximumEventSize", maximumEventSize);
+    maximumSessionExpiry = config.getIntProperty("maximumSessionExpiry", maximumSessionExpiry);
+    qualityOfService = config.getIntProperty("qualityOfService", qualityOfService);
+    storeOffline = config.getBooleanProperty("storeOffline", storeOffline);
+    appendNewLine = config.getBooleanProperty("appendNewLine", appendNewLine);
+  }
+
+  @Override
+  public boolean update(BaseConfigDTO config) {
+    if (!(config instanceof CotConfigDTO updated)) {
+      return false;
+    }
+    boolean changed = ProtocolConfigFactory.update(this, updated);
+    if (!Objects.equals(inboundTopicName, updated.getInboundTopicName())) {
+      inboundTopicName = updated.getInboundTopicName();
+      changed = true;
+    }
+    if (!Objects.equals(outboundTopicName, updated.getOutboundTopicName())) {
+      outboundTopicName = updated.getOutboundTopicName();
+      changed = true;
+    }
+    if (maximumEventSize != updated.getMaximumEventSize()) {
+      maximumEventSize = updated.getMaximumEventSize();
+      changed = true;
+    }
+    if (maximumSessionExpiry != updated.getMaximumSessionExpiry()) {
+      maximumSessionExpiry = updated.getMaximumSessionExpiry();
+      changed = true;
+    }
+    if (qualityOfService != updated.getQualityOfService()) {
+      qualityOfService = updated.getQualityOfService();
+      changed = true;
+    }
+    if (storeOffline != updated.isStoreOffline()) {
+      storeOffline = updated.isStoreOffline();
+      changed = true;
+    }
+    if (appendNewLine != updated.isAppendNewLine()) {
+      appendNewLine = updated.isAppendNewLine();
+      changed = true;
+    }
+    return changed;
+  }
+
+  @Override
+  public ConfigurationProperties toConfigurationProperties() {
+    ConfigurationProperties properties = new ConfigurationProperties();
+    ProtocolConfigFactory.pack(properties, this);
+    properties.put("inboundTopicName", inboundTopicName);
+    properties.put("outboundTopicName", outboundTopicName);
+    properties.put("maximumEventSize", maximumEventSize);
+    properties.put("maximumSessionExpiry", maximumSessionExpiry);
+    properties.put("qualityOfService", qualityOfService);
+    properties.put("storeOffline", storeOffline);
+    properties.put("appendNewLine", appendNewLine);
+    return properties;
+  }
+}
