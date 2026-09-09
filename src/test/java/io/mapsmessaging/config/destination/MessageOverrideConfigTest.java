@@ -49,6 +49,7 @@ class MessageOverrideConfigTest {
 
     Assertions.assertTrue(saved.containsKey("qos"));
     Assertions.assertFalse(saved.containsKey("qualityOfService"));
+    Assertions.assertEquals(QualityOfService.AT_LEAST_ONCE.name(), saved.getProperty("qos", null));
     Assertions.assertEquals(5000L, reloaded.getExpiry());
     Assertions.assertEquals(QualityOfService.AT_LEAST_ONCE, reloaded.getQualityOfService());
     Assertions.assertTrue(reloaded.getStoreOffline());
