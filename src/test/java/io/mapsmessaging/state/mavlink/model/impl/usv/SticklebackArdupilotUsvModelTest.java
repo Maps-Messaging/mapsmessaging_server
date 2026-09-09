@@ -56,18 +56,13 @@ class SticklebackArdupilotUsvModelTest {
 
     UxvModelCommandSet commandSet = model.reposition(CONTEXT, new RepositionRequest(position, null, null));
 
-    assertEquals(3, commandSet.messages().size());
+    assertEquals(2, commandSet.messages().size());
 
-    MavlinkCommandInt reposition = assertInstanceOf(MavlinkCommandInt.class, commandSet.messages().get(0));
-    assertEquals(MavlinkCommandIntFactory.MAV_CMD_DO_REPOSITION, reposition.getCommand());
-    assertEquals(MavlinkCommandIntFactory.MAV_FRAME_GLOBAL_RELATIVE_ALT_INT, reposition.getFrame());
-    assertEquals((float) SticklebackArdupilotUsvModel.MAX_ALTITUDE_METERS, reposition.getAltitude());
-
-    MavlinkCommandLong guidedMode = assertInstanceOf(MavlinkCommandLong.class, commandSet.messages().get(1));
+    MavlinkCommandLong guidedMode = assertInstanceOf(MavlinkCommandLong.class, commandSet.messages().get(0));
     assertEquals(MavlinkCommandLongFactory.MAV_CMD_DO_SET_MODE, guidedMode.getCommand());
     assertEquals(MavlinkCommandLongFactory.ARDUPLANE_MODE_GUIDED, guidedMode.getParam2());
 
-    MavlinkMissionItem guidedWaypoint = assertInstanceOf(MavlinkMissionItem.class, commandSet.messages().get(2));
+    MavlinkMissionItem guidedWaypoint = assertInstanceOf(MavlinkMissionItem.class, commandSet.messages().get(1));
     assertEquals(MavlinkMissionItemFactory.MAV_FRAME_GLOBAL_RELATIVE_ALT, guidedWaypoint.getFrame());
     assertEquals((float) SticklebackArdupilotUsvModel.MAX_ALTITUDE_METERS, guidedWaypoint.getAltitude());
     assertEquals(2, guidedWaypoint.getCurrent());
@@ -77,7 +72,7 @@ class SticklebackArdupilotUsvModelTest {
   }
 
   @Test
-  void repositionUsesResolvedAltitudeForEveryCommand() {
+  void repositionUsesResolvedAltitudeForGuidedWaypoint() {
     SticklebackArdupilotUsvModel model = new SticklebackArdupilotUsvModel();
     GeoPosition position = new GeoPosition(59.4673d, 24.828353d, 123.0d, null);
 
@@ -85,11 +80,8 @@ class SticklebackArdupilotUsvModelTest {
         model.reposition(
             CONTEXT, new RepositionRequest(position, null, null, 7.5d));
 
-    MavlinkCommandInt reposition =
-        assertInstanceOf(MavlinkCommandInt.class, commandSet.messages().get(0));
     MavlinkMissionItem guidedWaypoint =
-        assertInstanceOf(MavlinkMissionItem.class, commandSet.messages().get(2));
-    assertEquals(7.5f, reposition.getAltitude());
+        assertInstanceOf(MavlinkMissionItem.class, commandSet.messages().get(1));
     assertEquals(7.5f, guidedWaypoint.getAltitude());
     assertEquals(123.0d, position.getAltitudeMslMeters());
   }
@@ -116,9 +108,9 @@ class SticklebackArdupilotUsvModelTest {
         model.reposition(
             CONTEXT, new RepositionRequest(position, null, null, -10.0d));
 
-    MavlinkCommandInt reposition =
-        assertInstanceOf(MavlinkCommandInt.class, commandSet.messages().get(0));
-    assertEquals(-10.0f, reposition.getAltitude());
+    MavlinkMissionItem guidedWaypoint =
+        assertInstanceOf(MavlinkMissionItem.class, commandSet.messages().get(1));
+    assertEquals(-10.0f, guidedWaypoint.getAltitude());
   }
 
   @Test
