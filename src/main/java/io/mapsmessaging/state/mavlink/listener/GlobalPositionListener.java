@@ -65,6 +65,7 @@ public class GlobalPositionListener implements Listener {
     Double east = finiteOrNull(packet.getVy());
     Double down = finiteOrNull(packet.getVz());
     Double heading = finiteOrNull(packet.getHeadingDegrees());
+    Double courseOverGround = courseOverGroundDegrees(north, east);
 
     twinManager.updateTwin(twinId, twin -> {
       DroneTwin drone = (DroneTwin) twin;
@@ -73,12 +74,22 @@ public class GlobalPositionListener implements Listener {
           new GeoPosition(latitude, longitude, altitude, null, relativeAltitude));
       drone.setVelocityVector(new VelocityVector(north, east, down));
       drone.setHeadingDegrees(heading);
+      drone.setCourseOverGroundDegrees(courseOverGround);
       drone.setGroundSpeedMetersPerSecond(
           north != null && east != null ? Math.sqrt(north * north + east * east) : null
       );
       drone.setVerticalSpeedMetersPerSecond(down != null ? -down : null);
       drone.setNavigationUpdatedAt(now);
     }, context);
+  }
+
+  private static Double courseOverGroundDegrees(Double north, Double east) {
+    if (north == null || east == null || (north == 0.0d && east == 0.0d)) {
+      return null;
+    }
+
+    double course = Math.toDegrees(Math.atan2(east, north));
+    return course < 0.0d ? course + 360.0d : course;
   }
 
   private static Double finiteOrNull(double value) {

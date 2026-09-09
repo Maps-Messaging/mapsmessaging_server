@@ -45,6 +45,7 @@ class GlobalPositionListenerTest {
     TwinUpdateContext context = context();
     DroneTwin twin = new DroneTwin("drone-1");
     twin.setHeadingDegrees(123.0d);
+    twin.setCourseOverGroundDegrees(120.0d);
     twin.setGroundSpeedMetersPerSecond(8.0d);
     twin.setVerticalSpeedMetersPerSecond(1.5d);
     twin.setVelocityVector(new VelocityVector(7.0d, 3.0d, -1.5d));
@@ -67,6 +68,7 @@ class GlobalPositionListenerTest {
     assertEquals(12.5d, twin.getGeoPosition().getAltitudeMslMeters(), 0.0000001d);
     assertEquals(2.75d, twin.getGeoPosition().getAltitudeRelativeMeters(), 0.0000001d);
     assertNull(twin.getHeadingDegrees());
+    assertNull(twin.getCourseOverGroundDegrees());
     assertNull(twin.getGroundSpeedMetersPerSecond());
     assertNull(twin.getVerticalSpeedMetersPerSecond());
     assertNull(twin.getVelocityVector().getNorthMetersPerSecond());
@@ -77,6 +79,36 @@ class GlobalPositionListenerTest {
 
   @Test
   void finiteGlobalPositionPopulatesDerivedNavigationState() {
+    DroneTwin twin = processVelocity(300, 400);
+
+    assertEquals(90.0d, twin.getHeadingDegrees(), 0.0000001d);
+    assertEquals(53.1301024d, twin.getCourseOverGroundDegrees(), 0.0000001d);
+    assertEquals(5.0d, twin.getGroundSpeedMetersPerSecond(), 0.0000001d);
+    assertEquals(0.5d, twin.getVerticalSpeedMetersPerSecond(), 0.0000001d);
+    assertEquals(3.0d, twin.getVelocityVector().getNorthMetersPerSecond(), 0.0000001d);
+    assertEquals(4.0d, twin.getVelocityVector().getEastMetersPerSecond(), 0.0000001d);
+    assertEquals(-0.5d, twin.getVelocityVector().getDownMetersPerSecond(), 0.0000001d);
+  }
+
+  @Test
+  void fusedVelocityDeterminesNormalisedCourseOverGround() {
+    assertEquals(0.0d, processVelocity(300, 0).getCourseOverGroundDegrees(), 0.0000001d);
+    assertEquals(90.0d, processVelocity(0, 300).getCourseOverGroundDegrees(), 0.0000001d);
+    assertEquals(180.0d, processVelocity(-300, 0).getCourseOverGroundDegrees(), 0.0000001d);
+    assertEquals(270.0d, processVelocity(0, -300).getCourseOverGroundDegrees(), 0.0000001d);
+    assertEquals(45.0d, processVelocity(300, 300).getCourseOverGroundDegrees(), 0.0000001d);
+  }
+
+  @Test
+  void zeroHorizontalVelocityHasNoCourseOverGround() {
+    DroneTwin twin = processVelocity(0, 0);
+
+    assertNull(twin.getCourseOverGroundDegrees());
+    assertEquals(90.0d, twin.getHeadingDegrees(), 0.0000001d);
+    assertEquals(0.0d, twin.getGroundSpeedMetersPerSecond(), 0.0000001d);
+  }
+
+  private DroneTwin processVelocity(int northCentimetresPerSecond, int eastCentimetresPerSecond) {
     TwinManager twinManager = new TwinManager(false, 10_000L, 5_000L, 120_000L, null);
     TwinUpdateContext context = context();
     DroneTwin twin = new DroneTwin("drone-1");
@@ -87,22 +119,15 @@ class GlobalPositionListenerTest {
         "lat", 384321000,
         "lon", -91034000,
         "alt", 12500,
-        "vx", 300,
-        "vy", 400,
+        "vx", northCentimetresPerSecond,
+        "vy", eastCentimetresPerSecond,
         "vz", -50,
         "hdg", 9000
     ));
     when(frame.isValid()).thenReturn(true);
 
-    GlobalPositionPacket packet = new GlobalPositionPacket(frame);
-    new GlobalPositionListener(twinManager).handle("drone-1", packet, context);
-
-    assertEquals(90.0d, twin.getHeadingDegrees(), 0.0000001d);
-    assertEquals(5.0d, twin.getGroundSpeedMetersPerSecond(), 0.0000001d);
-    assertEquals(0.5d, twin.getVerticalSpeedMetersPerSecond(), 0.0000001d);
-    assertEquals(3.0d, twin.getVelocityVector().getNorthMetersPerSecond(), 0.0000001d);
-    assertEquals(4.0d, twin.getVelocityVector().getEastMetersPerSecond(), 0.0000001d);
-    assertEquals(-0.5d, twin.getVelocityVector().getDownMetersPerSecond(), 0.0000001d);
+    new GlobalPositionListener(twinManager).handle("drone-1", new GlobalPositionPacket(frame), context);
+    return twin;
   }
 
   private TwinUpdateContext context() {
