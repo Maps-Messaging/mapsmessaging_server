@@ -137,6 +137,7 @@ class MessageBuilderTest {
     Message original = new MessageBuilder()
         .setCreation(creation)
         .setSchemaId("schema-id")
+        .setResponseTopic("reply/topic")
         .setMeta(meta)
         .setDataMap(dataMap)
         .build();
@@ -145,6 +146,7 @@ class MessageBuilderTest {
 
     Assertions.assertEquals(creation, copy.getCreation());
     Assertions.assertEquals("schema-id", copy.getSchemaId());
+    Assertions.assertEquals("reply/topic", copy.getResponseTopic());
     Assertions.assertNotSame(original.getMeta(), copy.getMeta());
     Assertions.assertNotSame(original.getDataMap(), copy.getDataMap());
 
@@ -152,5 +154,14 @@ class MessageBuilderTest {
     copy.getDataMap().put("copy-data", new TypedData("copy"));
     Assertions.assertFalse(original.getMeta().containsKey("copy-meta"));
     Assertions.assertFalse(original.getDataMap().containsKey("copy-data"));
+  }
+
+  @Test
+  void copyConstructor_preservesNullResponseTopic() {
+    Message original = new MessageBuilder().build();
+
+    Message copy = new MessageBuilder(original).build();
+
+    Assertions.assertNull(copy.getResponseTopic());
   }
 }
