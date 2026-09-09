@@ -150,7 +150,11 @@ public class CotTaskProfile {
     String originalTaskId = required(source.getOriginalTaskId(), "originalTaskId");
     CanonicalTask original = tasks.find("cot", originalTaskId)
         .orElseThrow(() -> new IllegalArgumentException("Unknown CoT task " + originalTaskId));
-    return tasks.updateState(original.getCanonicalTaskId(), CanonicalTaskState.PREEMPTING, "Cancellation requested")
+    return tasks.updateState(
+            original.getCanonicalTaskId(),
+            CanonicalTaskState.PREEMPTING,
+            "Cancellation requested",
+            "cot")
         .orElseThrow();
   }
 

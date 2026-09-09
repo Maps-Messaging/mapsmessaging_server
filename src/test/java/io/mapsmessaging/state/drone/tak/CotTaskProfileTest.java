@@ -99,6 +99,7 @@ class CotTaskProfileTest {
 
     assertEquals(original.getCanonicalTaskId(), cancelled.getCanonicalTaskId());
     assertEquals(CanonicalTaskState.PREEMPTING, cancelled.getState());
+    assertEquals("cot", cancelled.getLastUpdateProtocol());
   }
 
   @Test
