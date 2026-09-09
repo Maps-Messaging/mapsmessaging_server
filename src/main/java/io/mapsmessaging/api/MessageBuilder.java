@@ -86,6 +86,7 @@ public class MessageBuilder {
     expiry = (previousMessage.getExpiry() - System.currentTimeMillis());
     creation = previousMessage.getCreation();
     contentType = previousMessage.getContentType();
+    responseTopic = previousMessage.getResponseTopic();
     if(previousMessage.getCorrelationData() != null && !previousMessage.isCorrelationDataByteArray()) {
       correlationData = new String(previousMessage.getCorrelationData());
     }
