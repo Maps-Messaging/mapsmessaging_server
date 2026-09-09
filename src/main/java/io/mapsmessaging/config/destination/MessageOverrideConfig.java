@@ -89,7 +89,7 @@ public class MessageOverrideConfig extends MessageOverrideDTO implements Config 
       properties.put("priority", config.getPriority());
     }
     if (config.getQualityOfService() != null) {
-      properties.put("qos", config.getQualityOfService());
+      properties.put("qos", config.getQualityOfService().name());
     }
     if (config.getResponseTopic() != null) {
       properties.put("responseTopic", config.getResponseTopic());

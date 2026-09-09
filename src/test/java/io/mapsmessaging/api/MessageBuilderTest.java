@@ -164,4 +164,44 @@ class MessageBuilderTest {
 
     Assertions.assertNull(copy.getResponseTopic());
   }
+
+  @Test
+  void copyConstructor_preservesAbsoluteExpiryAndDelay() {
+    Message original = new MessageBuilder().setExpiry(120_000).setDelayed(2_000).build();
+
+    Message copy = new MessageBuilder(original).build();
+
+    Assertions.assertTrue(Math.abs(copy.getExpiry() - original.getExpiry()) <= 50);
+    Assertions.assertTrue(Math.abs(copy.getDelayed() - original.getDelayed()) <= 50);
+  }
+
+  @Test
+  void copyConstructor_preservesAbsoluteExpiryWithoutDelay() {
+    Message original = new MessageBuilder().setExpiry(120_000).build();
+
+    Message copy = new MessageBuilder(original).build();
+
+    Assertions.assertTrue(Math.abs(copy.getExpiry() - original.getExpiry()) <= 50);
+    Assertions.assertEquals(0, copy.getDelayed());
+  }
+
+  @Test
+  void copyConstructor_preservesAbsoluteDelayWithoutExpiry() {
+    Message original = new MessageBuilder().setDelayed(2_000).build();
+
+    Message copy = new MessageBuilder(original).build();
+
+    Assertions.assertEquals(0, copy.getExpiry());
+    Assertions.assertTrue(Math.abs(copy.getDelayed() - original.getDelayed()) <= 50);
+  }
+
+  @Test
+  void copyConstructor_preservesAbsentExpiryAndDelay() {
+    Message original = new MessageBuilder().build();
+
+    Message copy = new MessageBuilder(original).build();
+
+    Assertions.assertEquals(0, copy.getExpiry());
+    Assertions.assertEquals(0, copy.getDelayed());
+  }
 }

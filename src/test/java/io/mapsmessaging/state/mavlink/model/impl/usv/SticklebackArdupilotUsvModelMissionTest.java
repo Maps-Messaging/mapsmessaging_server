@@ -142,25 +142,27 @@ class SticklebackArdupilotUsvModelMissionTest {
                             null,
                             null,
                             null,
-                            10.0d,
-                            null))))
-            .valid());
-
-    assertFalse(
-        model
-            .validateMission(
-                new MissionPlan(
-                    List.of(
-                        new PlanItem(
-                            PlanItemType.WAYPOINT,
-                            new GeoPosition(59.434079d, 24.747487d, null, null),
-                            null,
-                            null,
-                            null,
-                            null,
                             null,
                             2.0d))))
             .valid());
+  }
+
+  @Test
+  void acceptsFiniteResolvedAltitude() {
+    PlanItem waypoint =
+        new PlanItem(
+            PlanItemType.WAYPOINT,
+            new GeoPosition(59.434079d, 24.747487d, null, null),
+            null,
+            null,
+            null,
+            null,
+            10.0d,
+            null);
+    MissionPlan missionPlan = new MissionPlan(List.of(waypoint));
+
+    assertTrue(model.validateMission(missionPlan).valid());
+    assertEquals(10.0f, item(model.buildMission(CONTEXT, missionPlan), 1).getAltitude());
   }
 
   private static PlanItem waypoint(double latitude, double longitude) {
