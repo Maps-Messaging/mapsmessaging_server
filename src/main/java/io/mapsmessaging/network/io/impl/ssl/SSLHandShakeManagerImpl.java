@@ -38,12 +38,14 @@ public class SSLHandShakeManagerImpl implements SSLHandshakeManager {
   private final ByteBuffer handshakeBufferIn;
   private final ByteBuffer handshakeBufferOut;
   private final EndPointConnectedCallback callback;
+  private final SSLHandshakeTimeout handshakeTimeout;
 
-  SSLHandShakeManagerImpl(SSLEndPoint sslEndPointImpl, EndPointConnectedCallback callback) {
+  SSLHandShakeManagerImpl(SSLEndPoint sslEndPointImpl, EndPointConnectedCallback callback, long timeoutMillis) {
     this.sslEndPointImpl = sslEndPointImpl;
     this.callback = callback;
     handshakeBufferIn = ByteBuffer.allocate(sslEndPointImpl.sslEngine.getSession().getApplicationBufferSize());
     handshakeBufferOut = ByteBuffer.allocate(sslEndPointImpl.sslEngine.getSession().getApplicationBufferSize());
+    handshakeTimeout = callback == null ? null : new SSLHandshakeTimeout(timeoutMillis, this::handleHandshakeTimeout);
   }
 
   public boolean handleSSLHandshakeStatus() throws IOException {
@@ -65,6 +67,11 @@ public class SSLHandShakeManagerImpl implements SSLHandshakeManager {
       }
       handshakeStatus = sslEndPointImpl.sslEngine.getHandshakeStatus();
     }
+
+    if (handshakeTimeout != null && !handshakeTimeout.complete()) {
+      return true;
+    }
+
     logger.log(ServerLogMessages.SSL_HANDSHAKE_FINISHED);
     logger.log(ServerLogMessages.SSL_HANDSHAKE_ENCRYPTED, handshakeBufferIn.position(), handshakeBufferIn.limit());
     sslEndPointImpl.handshakeManager = new SSLHandshakeManagerFinished(handshakeBufferIn); // All done, no longer required
@@ -72,6 +79,12 @@ public class SSLHandShakeManagerImpl implements SSLHandshakeManager {
       callback.connected(sslEndPointImpl);
     }
     return false;
+  }
+
+  void cancel() {
+    if (handshakeTimeout != null) {
+      handshakeTimeout.cancel();
+    }
   }
 
   protected void runDelegatedTasks() {
@@ -83,11 +96,20 @@ public class SSLHandShakeManagerImpl implements SSLHandshakeManager {
     }
   }
 
+  private void handleHandshakeTimeout() {
+    Logger logger = sslEndPointImpl.getLogger();
+    logger.log(
+        ServerLogMessages.SSL_HANDSHAKE_EXCEPTION,
+        new IOException("TLS handshake timed out before the remote peer completed negotiation"));
+    sslEndPointImpl.close();
+  }
+
   @Override
   public void selected(Selectable selectable, Selector selector, int selection) {
     try {
       handleSSLHandshakeStatus();
     } catch (IOException ioException) {
+      cancel();
       Logger logger = sslEndPointImpl.getLogger();
       logger.log(ServerLogMessages.SSL_HANDSHAKE_EXCEPTION, ioException);
       sslEndPointImpl.close();
