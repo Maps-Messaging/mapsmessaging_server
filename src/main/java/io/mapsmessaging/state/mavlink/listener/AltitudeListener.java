@@ -69,7 +69,7 @@ public class AltitudeListener implements Listener {
       }
 
       if (!Double.isNaN(packet.getAltitudeRelativeMeters())) {
-        geoPosition.setAltitudeAglMeters(packet.getAltitudeRelativeMeters());
+        geoPosition.setAltitudeRelativeMeters(packet.getAltitudeRelativeMeters());
       }
 
       drone.setGeoPosition(geoPosition);

@@ -56,7 +56,7 @@ public final class MavlinkCommandIntFactory {
   }
 
   public static MavlinkCommandInt orbit(int targetSystem, int targetComponent, GeoPosition position, double radiusMeters, int sequence) {
-    MavlinkCommandInt commandInt = baseCommandInt(targetSystem, targetComponent, MAV_FRAME_GLOBAL, MAV_CMD_DO_ORBIT, sequence);
+    MavlinkCommandInt commandInt = baseCommandInt(targetSystem, targetComponent, resolvePositionFrame(position), MAV_CMD_DO_ORBIT, sequence);
     commandInt.setParam1((float) radiusMeters);
     commandInt.setParam2(Float.NaN);
     commandInt.setParam3(ORBIT_YAW_BEHAVIOUR_HOLD_FRONT_TO_CIRCLE_CENTER);
@@ -210,6 +210,9 @@ public final class MavlinkCommandIntFactory {
       altitudeMeters = position.getAltitudeAglMeters();
     }
     if (altitudeMeters == null) {
+      altitudeMeters = position.getAltitudeRelativeMeters();
+    }
+    if (altitudeMeters == null) {
       return 0.0f;
     }
     requireFinite(altitudeMeters, "altitudeMeters");
@@ -224,6 +227,7 @@ public final class MavlinkCommandIntFactory {
     validateCoordinate(position.getLongitude(), -180.0d, 180.0d, "Longitude");
     validateAltitude(position.getAltitudeMslMeters(), "MSL altitude");
     validateAltitude(position.getAltitudeAglMeters(), "AGL altitude");
+    validateAltitude(position.getAltitudeRelativeMeters(), "relative altitude");
   }
 
   private static void validateCoordinate(Double value, double minimum, double maximum, String name) {

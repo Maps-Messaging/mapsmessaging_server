@@ -258,7 +258,7 @@ public class GenericPx4UavModel extends GenericPx4UxvModel implements UavModel {
         && item.position() != null
         && item.altitudeMeters() == null
         && item.position().getPreferredAltitudeMeters() == null) {
-      issues.add(new PlanValidationIssue(UxvOperation.BUILD_MISSION, "Mission item " + index + " requires an MSL or AGL altitude"));
+      issues.add(new PlanValidationIssue(UxvOperation.BUILD_MISSION, "Mission item " + index + " requires an MSL, AGL, or relative altitude"));
     }
 
     if (item.speedMetersPerSecond() != null) {

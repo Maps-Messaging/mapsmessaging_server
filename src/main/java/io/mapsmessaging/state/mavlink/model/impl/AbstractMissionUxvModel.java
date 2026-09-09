@@ -119,7 +119,7 @@ public abstract class AbstractMissionUxvModel extends AbstractUxvModel {
     rejectSpeed(request.speedMetersPerSecond(), UxvOperation.REPOSITION);
     validateCoordinates(request.position(), "position");
 
-    GeoPosition position = Objects.requireNonNull(request.position(), "position must not be null");
+    GeoPosition position = withAltitude(request.position(), request.altitudeMeters());
     List<MavlinkMessage> messages = List.of(
         MavlinkCommandIntFactory.reposition(context.targetSystem(), context.targetComponent(), position, context.sequence()),
         MavlinkCommandLongFactory.guidedMode(context.targetSystem(), context.targetComponent(), context.sequence()),
@@ -329,6 +329,10 @@ public abstract class AbstractMissionUxvModel extends AbstractUxvModel {
     if (position.getAltitudeAglMeters() != null && !Double.isFinite(position.getAltitudeAglMeters())) {
       issues.add(new PlanValidationIssue(UxvOperation.BUILD_MISSION, itemName + " position.altitudeAglMeters must be finite"));
     }
+
+    if (position.getAltitudeRelativeMeters() != null && !Double.isFinite(position.getAltitudeRelativeMeters())) {
+      issues.add(new PlanValidationIssue(UxvOperation.BUILD_MISSION, itemName + " position.altitudeRelativeMeters must be finite"));
+    }
   }
 
   private boolean requiresPosition(PlanItemType type) {
@@ -377,7 +381,8 @@ public abstract class AbstractMissionUxvModel extends AbstractUxvModel {
     }
 
     requireFinite(altitudeMeters, "altitudeMeters");
-    return new GeoPosition(position.getLatitude(), position.getLongitude(), altitudeMeters, null);
+    return new GeoPosition(
+        position.getLatitude(), position.getLongitude(), null, null, altitudeMeters);
   }
 
   protected final float toAltitude(GeoPosition position) {

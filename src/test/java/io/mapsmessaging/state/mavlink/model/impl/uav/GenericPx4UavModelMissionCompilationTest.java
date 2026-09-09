@@ -122,7 +122,7 @@ class GenericPx4UavModelMissionCompilationTest {
   }
 
   @Test
-  void planItemAltitudeOverrideIsCompiledAsMslAltitude() {
+  void planItemAltitudeOverrideIsCompiledAsRelativeAltitude() {
     MissionPlan missionPlan =
         new MissionPlan(
             List.of(
@@ -136,7 +136,9 @@ class GenericPx4UavModelMissionCompilationTest {
     MavlinkMissionItemInt item =
         item(model.buildMission(context(), missionPlan), 0);
 
-    assertEquals(MavlinkMissionItemIntFactory.MAV_FRAME_GLOBAL_INT, item.getFrame());
+    assertEquals(
+        MavlinkMissionItemIntFactory.MAV_FRAME_GLOBAL_RELATIVE_ALT_INT,
+        item.getFrame());
     assertEquals(150.0f, item.getAltitude());
   }
 
