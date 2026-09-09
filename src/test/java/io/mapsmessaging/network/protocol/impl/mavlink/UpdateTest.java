@@ -303,7 +303,8 @@ class UpdateTest {
 
     assertNotNull(updated.getGeoPosition());
     assertEquals(123.45, updated.getGeoPosition().getAltitudeMslMeters(), 0.0001);
-    assertEquals(18.75, updated.getGeoPosition().getAltitudeAglMeters(), 0.0001);
+    assertEquals(18.75, updated.getGeoPosition().getAltitudeRelativeMeters(), 0.0001);
+    assertNull(updated.getGeoPosition().getAltitudeAglMeters());
     assertEquals(context.getReceivedTime(), updated.getNavigationUpdatedAt());
   }
 

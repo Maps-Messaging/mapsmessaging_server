@@ -60,6 +60,7 @@ public class GlobalPositionListener implements Listener {
     Double latitude = finiteOrNull(packet.getLatitude());
     Double longitude = finiteOrNull(packet.getLongitude());
     Double altitude = finiteOrNull(packet.getAltitudeMeters());
+    Double relativeAltitude = finiteOrNull(packet.getRelativeAltitudeMeters());
     Double north = finiteOrNull(packet.getVx());
     Double east = finiteOrNull(packet.getVy());
     Double down = finiteOrNull(packet.getVz());
@@ -68,7 +69,8 @@ public class GlobalPositionListener implements Listener {
     twinManager.updateTwin(twinId, twin -> {
       DroneTwin drone = (DroneTwin) twin;
 
-      drone.setGeoPosition(new GeoPosition(latitude, longitude, altitude, null));
+      drone.setGeoPosition(
+          new GeoPosition(latitude, longitude, altitude, null, relativeAltitude));
       drone.setVelocityVector(new VelocityVector(north, east, down));
       drone.setHeadingDegrees(heading);
       drone.setGroundSpeedMetersPerSecond(

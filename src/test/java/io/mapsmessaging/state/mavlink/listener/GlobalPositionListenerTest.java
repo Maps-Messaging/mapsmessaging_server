@@ -54,7 +54,8 @@ class GlobalPositionListenerTest {
     when(frame.getFields()).thenReturn(Map.of(
         "lat", 384321000,
         "lon", -91034000,
-        "alt", 12500
+        "alt", 12500,
+        "relative_alt", 2750
     ));
     when(frame.isValid()).thenReturn(true);
 
@@ -64,6 +65,7 @@ class GlobalPositionListenerTest {
     assertEquals(38.4321d, twin.getGeoPosition().getLatitude(), 0.0000001d);
     assertEquals(-9.1034d, twin.getGeoPosition().getLongitude(), 0.0000001d);
     assertEquals(12.5d, twin.getGeoPosition().getAltitudeMslMeters(), 0.0000001d);
+    assertEquals(2.75d, twin.getGeoPosition().getAltitudeRelativeMeters(), 0.0000001d);
     assertNull(twin.getHeadingDegrees());
     assertNull(twin.getGroundSpeedMetersPerSecond());
     assertNull(twin.getVerticalSpeedMetersPerSecond());
