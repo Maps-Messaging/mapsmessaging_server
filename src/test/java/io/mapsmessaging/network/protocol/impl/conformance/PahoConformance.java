@@ -67,17 +67,33 @@ abstract class PahoConformance extends BaseTestConfig {
 
     StreamReader errReader =new StreamReader(process.getErrorStream());
 
-    process.waitFor();
+    int exitCode;
+    try {
+      exitCode = process.waitFor();
+      outputReader.thread.join();
+      errReader.thread.join();
+    } catch (InterruptedException exception) {
+      process.destroyForcibly();
+      Thread.currentThread().interrupt();
+      throw exception;
+    }
+    if (outputReader.failure != null) {
+      throw outputReader.failure;
+    }
+    if (errReader.failure != null) {
+      throw errReader.failure;
+    }
     System.err.println(outputReader.sb);
     System.err.println(errReader.sb);
-    boolean result = !outputReader.sb.toString().contains("FAIL") && !errReader.sb.toString().contains("FAIL");
+    boolean result = exitCode == 0 && !outputReader.sb.toString().contains("FAIL") && !errReader.sb.toString().contains("FAIL");
     for(String exception:EXCEPTIONS){
       if(testName.equals(exception)){
         System.err.println("Ignoring result of test since test is in exclusion list");
         Assumptions.assumeTrue(result);
       }
     }
-    Assertions.assertTrue(result);
+    Assertions.assertTrue(result, "Paho " + testName + " exited with " + exitCode
+        + "\nstdout:\n" + outputReader.sb + "\nstderr:\n" + errReader.sb);
   }
 
   private List<String> scanForTests(File pythonSource) throws IOException {
@@ -107,13 +123,15 @@ abstract class PahoConformance extends BaseTestConfig {
 
     private final InputStream is;
     private final StringBuilder sb;
+    private final Thread thread;
+    private IOException failure;
 
     public StreamReader(InputStream is){
       this.is = is;
       sb = new StringBuilder();
-      Thread outputReaderThread = new Thread(this);
-      outputReaderThread.setDaemon(true);
-      outputReaderThread.start();
+      thread = new Thread(this);
+      thread.setDaemon(true);
+      thread.start();
     }
 
     @Override
@@ -129,6 +147,7 @@ abstract class PahoConformance extends BaseTestConfig {
             return;
           }
         } catch (IOException e) {
+          failure = e;
           return;
         }
       }
