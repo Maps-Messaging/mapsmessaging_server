@@ -49,7 +49,7 @@ import static org.junit.jupiter.api.Assertions.*;
  * - Expected final output is a flat JSON object containing:
  *     { "runId": "...", "temp": 20, "humidity": 60, "pressure": 990 }
  *
- * This test is expected to FAIL until aggregator-3 outbound transformers are configured.
+ * Aggregator-3 outbound transformers are configured in the test AggregatorManager.yaml.
  */
 class StaticAggregatorOutboundTransformationSystemTest extends BaseAggreagtorTest {
 
@@ -118,21 +118,26 @@ class StaticAggregatorOutboundTransformationSystemTest extends BaseAggreagtorTes
         return;
       }
 
-      if (!JSON_CONTENT_TYPE.equals(message.getContentType())) {
-        return;
-      }
+
 
       byte[] bytes = message.getOpaqueData();
       if (bytes == null) {
+        outQueue.offer(message);
         return;
       }
 
       String json = toUtf8(bytes);
 
-      // Keep this filter: server is long-running and other tests exist.
-      // Recommendation: keep runId in the outbound flattened output.
-      if (!json.contains("\"runId\":\"" + runId + "\"")) {
-        return;
+      // Ignore another run only when its identity can be established structurally.
+      // Preserve malformed or incomplete output for the assertions below.
+      try {
+        Map<String, Object> output = gson.fromJson(json, mapType);
+        if (output != null && output.containsKey("runId") && output.get("runId") != null
+            && !runId.equals(output.get("runId"))) {
+          return;
+        }
+      } catch (com.google.gson.JsonParseException ignored) {
+        // The test must report malformed output instead of a misleading timeout.
       }
 
       outQueue.offer(message);
