@@ -291,7 +291,11 @@ public class RestApiServerManager implements Agent {
             String uriMapping = file.getName().equals("admin") ? "/" : "/" + file.getName() + "/";
             StaticHttpHandler staticHttpHandler = new CorsEnabledStaticHttpHandler(location + File.separator);
             staticHttpHandler.setFileCacheEnabled(true);
-            server.getServerConfiguration().addHttpHandler(staticHttpHandler, uriMapping + "*");
+            if (file.getName().equals("drone-admin")) {
+              server.getServerConfiguration().addHttpHandler(staticHttpHandler, "/admin/*", uriMapping + "*");
+            } else {
+              server.getServerConfiguration().addHttpHandler(staticHttpHandler, uriMapping + "*");
+            }
           }
         }
       }
