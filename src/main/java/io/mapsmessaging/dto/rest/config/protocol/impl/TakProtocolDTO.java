@@ -28,7 +28,7 @@ import lombok.Data;
 public class TakProtocolDTO {
 
   @Schema(
-      description = "Hostname or IP address of the TAK server.",
+      description = "Deprecated. Configure the TAK server on a TCP or TLS endpoint using the CoT protocol.",
       example = "opentak.syd.mapsmessaging.io",
       requiredMode = Schema.RequiredMode.REQUIRED,
       nullable = false,
@@ -37,7 +37,7 @@ public class TakProtocolDTO {
   private String hostname;
 
   @Schema(
-      description = "Port of the TAK server (e.g. 8088 for TCP, 8089 for TLS).",
+      description = "Deprecated. Configure the port in the CoT endpoint URL.",
       example = "8088",
       requiredMode = Schema.RequiredMode.REQUIRED,
       nullable = false
@@ -45,7 +45,7 @@ public class TakProtocolDTO {
   private int port = 8088;
 
   @Schema(
-      description = "If true, all twins share a single TAK socket connection. If false, each twin uses its own socket.",
+      description = "Deprecated. CoT endpoint connection sharing is managed by NetworkManager.",
       example = "false",
       requiredMode = Schema.RequiredMode.NOT_REQUIRED,
       defaultValue = "false"
@@ -53,8 +53,8 @@ public class TakProtocolDTO {
   private boolean sharedConnection = false;
 
   @Schema(
-      description = "Topic to publish TAK CoT XML messages to.",
-      example = "tak/events",
+      description = "Topic used to hand outbound CoT XML to a CoT endpoint protocol.",
+      example = "/tak/cot",
       requiredMode = Schema.RequiredMode.NOT_REQUIRED,
       nullable = true
   )

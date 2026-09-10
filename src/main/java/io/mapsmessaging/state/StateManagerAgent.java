@@ -40,6 +40,7 @@ import io.mapsmessaging.state.config.n2k.N2KTwinConfig;
 import io.mapsmessaging.state.drone.core.TwinLifecycleStatus;
 import io.mapsmessaging.state.drone.core.TwinManager;
 import io.mapsmessaging.state.n2k.N2kSession;
+import io.mapsmessaging.state.task.CanonicalTaskRegistry;
 import io.mapsmessaging.utilities.Agent;
 import io.mapsmessaging.utilities.Lifecycle;
 import io.mapsmessaging.utilities.configuration.ConfigurationManager;
@@ -72,6 +73,9 @@ public class StateManagerAgent implements Agent {
   private AuditorFactory.AuditorInstance auditorInstance;
 
   @Getter
+  private CanonicalTaskRegistry taskRegistry;
+
+  @Getter
   private final List<String> restApiPackageList = new ArrayList<>();
 
   public StateManagerAgent() {
@@ -97,11 +101,12 @@ public class StateManagerAgent implements Agent {
       }
 
       twinManager = new TwinManager(config.isRemoveExpiredTwins(), config.getStaleTimeoutMillis(), config.getHeartbeatTimeoutMillis(), config.getRetentionTimeoutMillis(), auditContext, geoSpatialAreaRegistry);
+      taskRegistry = createTaskRegistry();
       registry = new DroneInfoRegistry(config.getDroneInfo());
       takConfig = config.getTak();
       N2KTwinConfig n2KTwinConfig = config.getN2KTwinConfig();
       lifecycleList.add(new SchedulerManager(twinManager));
-      lifecycleList.add(new TakManager(twinManager, takConfig));
+      lifecycleList.add(new TakManager(twinManager, takConfig, config.getCotMapping(), registry, taskRegistry));
       lifecycleList.add(new MavlinkTwinManager(twinManager, registry, config));
       loadStateMessageAdapters(config);
       if (n2KTwinConfig != null && n2KTwinConfig.isEnable()) {
@@ -130,7 +135,7 @@ public class StateManagerAgent implements Agent {
   }
 
   private void loadStateMessageAdapters(TwinManagerConfigDTO config) {
-    StateMessageAdapterContext context = new StateMessageAdapterContext(twinManager, config);
+    StateMessageAdapterContext context = new StateMessageAdapterContext(twinManager, config, taskRegistry);
     ServiceLoader<StateMessageAdapterFactory> adapterFactories = ServiceLoader.load(StateMessageAdapterFactory.class);
     restApiPackageList.add("io.mapsmessaging.state.rest.twins");
     for (StateMessageAdapterFactory adapterFactory : adapterFactories) {
@@ -143,6 +148,16 @@ public class StateManagerAgent implements Agent {
       }
     }
 
+  }
+
+  private CanonicalTaskRegistry createTaskRegistry() {
+    try {
+      return new CanonicalTaskRegistry(
+          Path.of(EnvironmentConfig.getInstance().getPathLookups().get("MAPS_DATA"), "canonical", "tasks"));
+    } catch (IOException | RuntimeException exception) {
+      logger.log(STATE_MANAGER_TASK_STORE_INIT_FAILED, exception, exception.getMessage());
+      return new CanonicalTaskRegistry();
+    }
   }
 
   @Override

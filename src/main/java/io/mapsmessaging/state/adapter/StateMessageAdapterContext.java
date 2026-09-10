@@ -23,11 +23,10 @@ import io.mapsmessaging.state.config.TwinManagerConfigDTO;
 import io.mapsmessaging.state.drone.core.TwinManager;
 import lombok.Getter;
 import lombok.NonNull;
-import lombok.RequiredArgsConstructor;
+import io.mapsmessaging.state.task.CanonicalTaskRegistry;
 import org.jetbrains.annotations.NotNull;
 
 @Getter
-@RequiredArgsConstructor
 public class StateMessageAdapterContext {
 
   @NonNull
@@ -37,4 +36,21 @@ public class StateMessageAdapterContext {
   @NonNull
   @NotNull
   private final TwinManagerConfigDTO config;
+
+  @NonNull
+  @NotNull
+  private final CanonicalTaskRegistry taskRegistry;
+
+  public StateMessageAdapterContext(TwinManager twinManager, TwinManagerConfigDTO config) {
+    this(twinManager, config, new CanonicalTaskRegistry());
+  }
+
+  public StateMessageAdapterContext(
+      TwinManager twinManager,
+      TwinManagerConfigDTO config,
+      CanonicalTaskRegistry taskRegistry) {
+    this.twinManager = twinManager;
+    this.config = config;
+    this.taskRegistry = taskRegistry;
+  }
 }

@@ -40,6 +40,9 @@ public class Protocols {
   @Schema(description = "Enable CoAP protocol support.", example = "false", requiredMode = Schema.RequiredMode.REQUIRED)
   private boolean coap;
 
+  @Schema(description = "Enable Cursor on Target protocol support.", example = "true", requiredMode = Schema.RequiredMode.REQUIRED)
+  private boolean cot;
+
   @Schema(description = "Enable NMEA 0183 protocol support.", example = "false", requiredMode = Schema.RequiredMode.REQUIRED)
   private boolean nmea_0183;
 

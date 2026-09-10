@@ -390,6 +390,10 @@ public enum ServerLogMessages implements LogMessage {
   // </editor-fold>
   // <editor-fold desc="Mavlink log messages">
   MAVLINK_FAILED_SETTING_UP_SESSION(LEVEL.WARN, SERVER_CATEGORY.PROTOCOL, "Failed to setup Mavlink session for {}"),
+  COT_PROTOCOL_EVENT_REJECTED(LEVEL.WARN, SERVER_CATEGORY.PROTOCOL, "Discarded CoT event on endpoint '{}' ({})"),
+  COT_PROTOCOL_INBOUND_PROCESSING_FAILED(LEVEL.WARN, SERVER_CATEGORY.PROTOCOL, "Failed to publish inbound CoT event on endpoint '{}' (type '{}')"),
+  COT_PROTOCOL_OUTBOUND_SEND_FAILED(LEVEL.WARN, SERVER_CATEGORY.PROTOCOL, "Failed to send outbound CoT event on endpoint '{}': {}"),
+  COT_PROTOCOL_WRITE_TIMEOUT(LEVEL.WARN, SERVER_CATEGORY.PROTOCOL, "CoT writer on endpoint '{}' made no frame progress for {} seconds; closing connection"),
   MAVLINK_SESSION_CREATED(LEVEL.INFO, SERVER_CATEGORY.PROTOCOL, "New Mavlink session setup for {}"),
   MAVLINK_FAILED_FORWARD_PACKET(LEVEL.WARN, SERVER_CATEGORY.PROTOCOL, "Failed to forward mavlink packet to {}"),
   MAVLINK_DIALECT_FAILED_TO_LOAD(LEVEL.WARN, SERVER_CATEGORY.PROTOCOL, "Failed to load the mavlink dialect specifed at {}"),

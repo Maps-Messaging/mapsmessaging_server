@@ -52,6 +52,7 @@ io.mapsmessaging.network.protocol.impl.coap.CoapProtocolFactory
 io.mapsmessaging.network.protocol.impl.mqtt_sn.MQTT_SNProtocolFactory
 io.mapsmessaging.network.protocol.impl.semtech.SemTechProtocolFactory
 io.mapsmessaging.network.protocol.impl.mavlink.MavlinkProtocolFactory
+io.mapsmessaging.network.protocol.impl.cot.CotProtocolFactory
 
 #
 # Layered Protocols

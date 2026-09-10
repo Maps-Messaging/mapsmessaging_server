@@ -55,4 +55,13 @@ public class TakDetail {
 
   @ArraySchema(arraySchema = @Schema(description = "Relationship links to other TAK entities."))
   private List<TakLink> links = new ArrayList<>();
+
+  @ArraySchema(arraySchema = @Schema(description = "Unknown validated CoT detail elements preserved as XML."))
+  private List<String> extensions = new ArrayList<>();
+
+  @Schema(description = "Maps named tasking profile request.")
+  private TakTask task;
+
+  @Schema(description = "Maps named tasking profile lifecycle result.")
+  private TakTaskStatus taskStatus;
 }

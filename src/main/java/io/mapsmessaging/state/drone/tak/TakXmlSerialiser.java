@@ -70,6 +70,8 @@ public class TakXmlSerialiser {
     appendPrecisionLocation(stringBuilder, detail.getPrecisionLocation());
     appendTakPlatform(stringBuilder, detail.getTakv());
     appendLinkState(stringBuilder, detail.getMapsLink());
+    appendTask(stringBuilder, detail.getTask());
+    appendTaskStatus(stringBuilder, detail.getTaskStatus());
 
     if (detail.getLinks() != null) {
       for (TakLink link : detail.getLinks()) {
@@ -77,7 +79,45 @@ public class TakXmlSerialiser {
       }
     }
 
+    if (detail.getExtensions() != null) {
+      for (String extension : detail.getExtensions()) {
+        if (extension != null && !extension.isBlank()) {
+          stringBuilder.append(extension);
+        }
+      }
+    }
+
     stringBuilder.append("</detail>");
+  }
+
+  private void appendTask(StringBuilder stringBuilder, TakTask task) {
+    if (task == null) {
+      return;
+    }
+    stringBuilder.append("<maps-task");
+    appendAttribute(stringBuilder, "profile", task.getProfile());
+    appendAttribute(stringBuilder, "taskId", task.getTaskId());
+    appendAttribute(stringBuilder, "originalTaskId", task.getOriginalTaskId());
+    appendAttribute(stringBuilder, "subjectUid", task.getSubjectUid());
+    appendAttribute(stringBuilder, "action", task.getAction());
+    appendAttribute(stringBuilder, "taskType", task.getTaskType());
+    appendAttribute(stringBuilder, "requester", task.getRequester());
+    appendAttribute(stringBuilder, "end", task.getEnd());
+    appendAttribute(stringBuilder, "speed", task.getSpeed());
+    appendAttribute(stringBuilder, "arrivalTolerance", task.getArrivalTolerance());
+    stringBuilder.append("/>");
+  }
+
+  private void appendTaskStatus(StringBuilder stringBuilder, TakTaskStatus status) {
+    if (status == null) {
+      return;
+    }
+    stringBuilder.append("<maps-task-status");
+    appendAttribute(stringBuilder, "profile", status.getProfile());
+    appendAttribute(stringBuilder, "taskId", status.getTaskId());
+    appendAttribute(stringBuilder, "state", status.getState());
+    appendAttribute(stringBuilder, "reason", status.getReason());
+    stringBuilder.append("/>");
   }
 
   private void appendContact(StringBuilder stringBuilder, TakContact contact) {

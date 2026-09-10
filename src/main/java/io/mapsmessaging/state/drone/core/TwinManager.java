@@ -39,6 +39,8 @@ public class TwinManager {
 
   private final ConcurrentHashMap<String, EntityTwin> twins = new ConcurrentHashMap<>();
   private final CopyOnWriteArrayList<TwinObserver> observers = new CopyOnWriteArrayList<>();
+  @Getter
+  private final TwinObservationRegistry observationRegistry = new TwinObservationRegistry();
   private final Logger logger = LoggerFactory.getLogger(TwinManager.class);
   @Getter
   private final StateAuditContext auditContext;

@@ -19,8 +19,15 @@
 
 package io.mapsmessaging.state.drone.tak;
 
+import static io.mapsmessaging.state.logging.StateLogMessages.TAK_EVENT_PUBLISH_FAILED;
+import static io.mapsmessaging.state.logging.StateLogMessages.TAK_PUBLISHER_START_FAILED;
+import static io.mapsmessaging.state.logging.StateLogMessages.TAK_PUBLISHER_STOP_FAILED;
+
+import io.mapsmessaging.logging.Logger;
+import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.state.config.TwinManagerConfig;
 import io.mapsmessaging.state.config.TwinManagerConfigDTO;
+import io.mapsmessaging.state.config.cot.CotTwinConfigDTO;
 import io.mapsmessaging.state.drone.core.EntityTwin;
 import io.mapsmessaging.state.drone.core.TwinLifecycleStatus;
 import io.mapsmessaging.state.drone.core.TwinManager;
@@ -41,60 +48,54 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class TakTwinObserver implements TwinObserver {
 
+  private static final Logger LOGGER = LoggerFactory.getLogger(TakTwinObserver.class);
   private static final long PUBLISH_INTERVAL_MS = 1000L;
   private static final long STATS_PUBLISH_INTERVAL_MS = 30_000L;
 
   private final Map<String, TakTwinContext> takContexts;
   private final Map<String, Long> lastStatsPublishTimes;
-  private final String takHost;
-  private final int takPort;
   private final TwinManager twinManager;
   private final TakEventMapper takEventMapper;
   private final TakXmlSerialiser takXmlSerialiser;
-  private final TakSocketConnection globalSocketConnection;
   private final EventPublisher eventPublisher;
 
   public TakTwinObserver(TwinManager twinManager) {
+    this(twinManager, null);
+  }
+
+  public TakTwinObserver(TwinManager twinManager, CotTwinConfigDTO cotConfig) {
     this.twinManager = Objects.requireNonNull(twinManager, "twinManager cannot be null");
     this.takContexts = new ConcurrentHashMap<>();
     this.lastStatsPublishTimes = new ConcurrentHashMap<>();
-    this.takEventMapper = new TakEventMapper();
+    this.takEventMapper = cotConfig == null
+        ? new TakEventMapper()
+        : new TakEventMapper(
+            new CotIdentityRegistry(cotConfig), twinManager.getObservationRegistry());
     this.takXmlSerialiser = new TakXmlSerialiser();
 
     TwinManagerConfigDTO config =
         ConfigurationManager.getInstance().getConfiguration(TwinManagerConfig.class);
 
-    if (config != null && config.getTak() != null) {
-      this.takHost = config.getTak().getHostname();
-      this.takPort = config.getTak().getPort();
-
-      if (config.getTak().isSharedConnection()
-          && takHost != null
-          && !takHost.isBlank()
-          && takPort > 0) {
-        globalSocketConnection = new TakSocketConnection(takHost, takPort);
-      } else {
-        globalSocketConnection = null;
-      }
-
-      if (config.getTak().getTopic() != null && !config.getTak().getTopic().isBlank()) {
+    String topic = cotConfig == null ? null : cotConfig.getOutboundTopic();
+    if ((topic == null || topic.isBlank()) && config != null && config.getTak() != null) {
+      topic = config.getTak().getTopic();
+    }
+    if (topic != null && !topic.isBlank()) {
+      String configuredTopic = topic;
         EventPublisher publisher;
         try {
-          publisher = new EventPublisher(config.getTak().getTopic());
-        } catch (Throwable exception) {
+          publisher = new EventPublisher(configuredTopic);
+        } catch (Exception exception) {
           publisher = null;
-          exception.printStackTrace();
+          LOGGER.log(
+              TAK_PUBLISHER_START_FAILED,
+              exception,
+              configuredTopic,
+              exception.getMessage());
         }
         eventPublisher = publisher;
-      } else {
-        eventPublisher = null;
-      }
-
       twinManager.addObserver(this);
     } else {
-      this.takHost = null;
-      this.takPort = 0;
-      this.globalSocketConnection = null;
       this.eventPublisher = null;
     }
   }
@@ -102,23 +103,14 @@ public class TakTwinObserver implements TwinObserver {
   public void shutdown() {
     twinManager.removeObserver(this);
 
-    if (globalSocketConnection != null) {
-      globalSocketConnection.close();
-    } else {
-      for (TakTwinContext context : takContexts.values()) {
-        if (context.getSocketConnection() != null) {
-          context.getSocketConnection().close();
-        }
-      }
-    }
-
     takContexts.clear();
     lastStatsPublishTimes.clear();
 
     if (eventPublisher != null) {
       try {
         eventPublisher.close();
-      } catch (IOException ignored) {
+      } catch (IOException exception) {
+        LOGGER.log(TAK_PUBLISHER_STOP_FAILED, exception, exception.getMessage());
       }
     }
   }
@@ -129,7 +121,7 @@ public class TakTwinObserver implements TwinObserver {
         takContexts.computeIfAbsent(twin.getTwinId(), key -> new TakTwinContext());
 
     twinContext.setLastUpdate(System.currentTimeMillis());
-    publishTwin(twin, context, twinContext);
+    publishTwin(twin, context);
   }
 
   @Override
@@ -156,7 +148,7 @@ public class TakTwinObserver implements TwinObserver {
     }
 
     twinContext.setLastUpdate(now);
-    publishTwin(current, context, twinContext);
+    publishTwin(current, context);
   }
 
   @Override
@@ -167,17 +159,12 @@ public class TakTwinObserver implements TwinObserver {
 
     TakTwinContext twinContext = takContexts.get(removed.getTwinId());
     if (twinContext != null) {
-      publishRemoval(removed, context, twinContext);
+      publishRemoval(removed, context);
     }
 
     takContexts.remove(removed.getTwinId());
     lastStatsPublishTimes.remove(removed.getTwinId());
 
-    if (twinContext != null
-        && twinContext.getSocketConnection() != null
-        && globalSocketConnection == null) {
-      twinContext.getSocketConnection().close();
-    }
   }
 
   @Override
@@ -208,13 +195,15 @@ public class TakTwinObserver implements TwinObserver {
     TakTwinContext twinContext =
         takContexts.computeIfAbsent(resolvedTwinId, key -> new TakTwinContext());
 
-    publishTwin(twin, context, twinContext);
+    publishTwin(twin, context);
   }
 
-  private void publishTwin(
-      EntityTwin twin, TwinUpdateContext context, TakTwinContext twinContext) {
+  private void publishTwin(EntityTwin twin, TwinUpdateContext context) {
 
     if (twin == null || twin.getGeoPosition() == null) {
+      return;
+    }
+    if (context != null && "cot".equalsIgnoreCase(context.getUpdateSource())) {
       return;
     }
 
@@ -226,29 +215,22 @@ public class TakTwinObserver implements TwinObserver {
     String xml = takXmlSerialiser.toXml(takEvent);
     xml = appendStatsIfDue(twin, xml);
 
-    if (takHost != null && !takHost.isBlank() && takPort > 0) {
-      if (twinContext.getSocketConnection() == null) {
-        twinContext.setSocketConnection(
-            Objects.requireNonNullElseGet(
-                globalSocketConnection, () -> new TakSocketConnection(takHost, takPort)));
-      }
-
-      twinContext.getSocketConnection().accept(xml);
-    }
-
     if (eventPublisher != null) {
       try {
         eventPublisher.publish(xml);
       } catch (IOException exception) {
-        exception.printStackTrace();
+        LOGGER.log(
+            TAK_EVENT_PUBLISH_FAILED,
+            exception,
+            twin.getTwinId(),
+            exception.getMessage());
       }
     }
   }
 
-  private void publishRemoval(
-      EntityTwin twin, TwinUpdateContext context, TakTwinContext twinContext) {
+  private void publishRemoval(EntityTwin twin, TwinUpdateContext context) {
 
-    if (twin == null || twinContext.getSocketConnection() == null) {
+    if (twin == null || eventPublisher == null) {
       return;
     }
 
@@ -257,7 +239,15 @@ public class TakTwinObserver implements TwinObserver {
       return;
     }
 
-    twinContext.getSocketConnection().accept(takXmlSerialiser.toXml(takEvent));
+    try {
+      eventPublisher.publish(takXmlSerialiser.toXml(takEvent));
+    } catch (IOException exception) {
+      LOGGER.log(
+          TAK_EVENT_PUBLISH_FAILED,
+          exception,
+          twin.getTwinId(),
+          exception.getMessage());
+    }
   }
 
   private String appendStatsIfDue(EntityTwin twin, String xml) {

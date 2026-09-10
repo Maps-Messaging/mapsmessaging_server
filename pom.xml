@@ -139,6 +139,7 @@
     <maps.ml-jms_selector.version>ml-2.1.2-SNAPSHOT</maps.ml-jms_selector.version>
     <maps.nolc.version>1.2.3-SNAPSHOT</maps.nolc.version>
     <maps.mavlink.version>2.0.1-SNAPSHOT</maps.mavlink.version>
+    <maps.cot.version>1.0.0-SNAPSHOT</maps.cot.version>
     <maps.jsonquery.version>1.1.1-SNAPSHOT</maps.jsonquery.version>
 
     <!-- first level dependencies -->
@@ -680,6 +681,11 @@
           <artifactId>swagger-annotations</artifactId>
         </exclusion>
       </exclusions>
+    </dependency>
+    <dependency>
+      <groupId>io.mapsmessaging</groupId>
+      <artifactId>cot</artifactId>
+      <version>${maps.cot.version}</version>
     </dependency>
 
     <dependency>
