@@ -43,7 +43,7 @@ class HighFanoutOrderingTest extends BaseTestConfig {
     final int nSubs = 100;
     final int nPubs = 500;
 
-    final AtomicInteger[] counters = new AtomicInteger[nConns];
+    final AtomicInteger orderingErrors = new AtomicInteger();
 
     String url = "nats://localhost:4222";
     String subject = "test.inbox." + System.nanoTime();
@@ -59,10 +59,7 @@ class HighFanoutOrderingTest extends BaseTestConfig {
         Connection conn = Nats.connect(new Options.Builder().server(url).build());
         connections.add(conn);
 
-        AtomicInteger local = new AtomicInteger();
-        counters[i] = local;
-
-        Dispatcher dispatcher = conn.createDispatcher(msg -> local.incrementAndGet());
+        Dispatcher dispatcher = conn.createDispatcher(msg -> orderingErrors.incrementAndGet());
         dispatchers.add(dispatcher);
 
         for (int j = 0; j < nSubs; j++) {
@@ -71,11 +68,18 @@ class HighFanoutOrderingTest extends BaseTestConfig {
           dispatcher.subscribe(subject, msg -> {
             int val = Integer.parseInt(new String(msg.getData()));
             int exp = expected.getAndIncrement();
-            if (val == exp && exp + 1 == nPubs) {
+            if (val != exp) {
+              orderingErrors.incrementAndGet();
+            }
+            if (exp + 1 == nPubs) {
               latch.countDown();
             }
           });
         }
+      }
+
+      for (Connection connection : connections) {
+        connection.flush(Duration.ofSeconds(30));
       }
 
       publisherConnection = Nats.connect(new Options.Builder().server(url).build());
@@ -85,7 +89,8 @@ class HighFanoutOrderingTest extends BaseTestConfig {
       publisherConnection.flush(Duration.ofSeconds(30));
 
       boolean completed = latch.await(30, TimeUnit.SECONDS);
-      assertEquals(true, completed, "Not all subscriptions received ordered messages");
+      assertEquals(true, completed, "Not all subscriptions received all messages");
+      assertEquals(0, orderingErrors.get(), "Subscriptions received out-of-order messages");
     }
     finally {
       if (publisherConnection != null) {
@@ -94,7 +99,7 @@ class HighFanoutOrderingTest extends BaseTestConfig {
 
       for (int i = 0; i < connections.size(); i++) {
         Connection conn = connections.get(i);
-        Dispatcher dispatcher = dispatchers.get(i);
+        Dispatcher dispatcher = i < dispatchers.size() ? dispatchers.get(i) : null;
 
         if (dispatcher != null) {
           conn.closeDispatcher(dispatcher);
