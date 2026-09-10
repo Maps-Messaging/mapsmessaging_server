@@ -1,8 +1,10 @@
 steps:
   - label: ":maven: Build and release to github"
     command:
-      - export SONAR_TOKEN=$(buildkite-agent secret get SONAR_TOKEN)
-      - export NVD_API_KEY=$(buildkite-agent secret get nvd_api_key)
+      - SONAR_TOKEN=$(buildkite-agent secret get SONAR_TOKEN) || exit 1
+      - NVD_API_KEY=$(buildkite-agent secret get nvd_api_key) || exit 1
+      - BUILDKITE_ANALYTICS_TOKEN=$(buildkite-agent secret get serverBuildKiteAnaylytics) || exit 1
+      - export SONAR_TOKEN NVD_API_KEY BUILDKITE_ANALYTICS_TOKEN
       - wget https://github.com/Maps-Messaging/web-admin-client/releases/download/maps_web_client_dev/webAdminClient.tgz
       - tar -xvzf ./webAdminClient.tgz
       - if [ ! -d "dist" ]; then echo "'dist' directory missing after extraction"; exit 1; fi
@@ -16,10 +18,6 @@ steps:
       - ./packaging/scripts/build_deb_package.sh $(buildkite-agent secret get NEXUS_USER) $(buildkite-agent secret get NEXUS_PASSWORD)  maps_apt_daily
       - ./packaging/scripts/build_rpm_package.sh $(buildkite-agent secret get NEXUS_USER) $(buildkite-agent secret get NEXUS_PASSWORD) maps_yum_snapshot
       - sudo ./packaging/docker_build_release.sh $(buildkite-agent secret get DOCKER_RELEASE_USERNAME) $(buildkite-agent secret get DOCKER_RELEASE_PASSWORD) $(buildkite-agent secret get AWS_ECR_PASSWORD)
-
-    env:
-      SONAR_TOKEN: "${SONAR_TOKEN}"
-      BUILDKITE_ANALYTICS_TOKEN: "$(buildkite-agent secret get serverBuildKiteAnaylytics)"
 
     agents:
       queue: "java_build_queue_aws"
