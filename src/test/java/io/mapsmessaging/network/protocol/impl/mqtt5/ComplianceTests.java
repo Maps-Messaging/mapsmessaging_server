@@ -183,40 +183,46 @@ class ComplianceTests extends MQTTBaseTest{
 
     aclient.connect(options);
 
-    MqttSubscription[] subscriptions = new MqttSubscription[1];
-    TestListener[] listeners = new TestListener[1];
-    subscriptions[0] = new MqttSubscription("TopicA", 2);
-    subscriptions[0].setNoLocal(false);
-    listeners[0] = new TestListener();
-    aclient.subscribe(subscriptions, listeners);
+    try {
+      String topic = "test/payload-format/" + UuidGenerator.getInstance().generate();
+      MqttSubscription subscription = new MqttSubscription(topic, 2);
+      subscription.setNoLocal(false);
+      aclient.subscribe(new MqttSubscription[]{subscription});
 
+      MqttProperties properties = new MqttProperties();
+      properties.setPayloadFormat(true);
+      properties.setContentType("My name");
 
-    MqttProperties properties = new MqttProperties();
-    properties.setPayloadFormat(true);
-    properties.setContentType("My name");
+      for (int qos = 0; qos <= 2; qos++) {
+        MqttMessage message = new MqttMessage(new byte[0]);
+        message.setQos(qos);
+        message.setRetained(false);
+        message.setProperties(properties);
+        aclient.publish(topic, message);
+      }
 
-    for (int qos = 0; qos <= 2; qos++) {
-      MqttMessage message = new MqttMessage("".getBytes(StandardCharsets.UTF_8));
-      message.setQos(qos);
-      message.setRetained(false);
-      message.setProperties(properties);
-      aclient.publish("TopicA", message);
-    }
+      int retries = 0;
+      while (callback.counter.get() < 3 && retries++ < 30) {
+        Thread.sleep(100);
+      }
 
-    int retries = 0;
-    while (callback.counter.get() < 3 && retries++ < 30) {
-      Thread.sleep(100);
-    }
-
-    aclient.disconnect();
-
-    Assertions.assertEquals(3, callback.counter.get(), "Expected 3 messages");
-
-    for (int i = 0; i < callback.messages.length && callback.messages[i] != null; i++) {
-      MqttMessage msg = callback.messages[i];
-      MqttProperties props = msg.getProperties();
-      Assertions.assertEquals("My name", props.getContentType());
-      Assertions.assertEquals(true, props.getPayloadFormat());
+      aclient.disconnect();
+      Assertions.assertEquals(3, callback.counter.get(), "Expected 3 messages");
+      for (int index = 0; index < 3; index++) {
+        MqttMessage message = callback.messages[index];
+        Assertions.assertNotNull(message, "Missing received message " + index);
+        Assertions.assertEquals(0, message.getPayload().length);
+        Assertions.assertEquals("My name", message.getProperties().getContentType());
+        Assertions.assertEquals(true, message.getProperties().getPayloadFormat());
+      }
+    } finally {
+      try {
+        if (aclient.isConnected()) {
+          aclient.disconnect();
+        }
+      } finally {
+        aclient.close();
+      }
     }
   }
 
