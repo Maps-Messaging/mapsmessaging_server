@@ -119,6 +119,12 @@ public class DroneTwin extends EntityTwin {
   @Schema(description = "Current mission execution state.", example = "ACTIVE", nullable = true)
   private String missionState;
 
+  @Schema(description = "Latest outbound MAVLink transmission snapshot, retained after completion.")
+  private volatile io.mapsmessaging.state.mavlink.sender.MavlinkTransmissionState missionTransmission;
+
+  @Schema(description = "Latest STANAG task upload retry state, retained after completion.")
+  private volatile Map<String, Object> taskTransmission;
+
   @Schema(description = "Vehicle heading in degrees.", example = "182.4", nullable = true)
   private Double headingDegrees;
 
@@ -286,7 +292,11 @@ public class DroneTwin extends EntityTwin {
   @JsonIgnore
   @Schema(hidden = true)
   public boolean registerMavlinkSender(MavlinkEventListSender sender) {
-    return activeMavlinkSender.compareAndSet(null, Objects.requireNonNull(sender, "sender must not be null"));
+    if (!activeMavlinkSender.compareAndSet(null, Objects.requireNonNull(sender, "sender must not be null"))) {
+      return false;
+    }
+    missionTransmission = sender.getTransmissionState();
+    return true;
   }
 
   @JsonIgnore

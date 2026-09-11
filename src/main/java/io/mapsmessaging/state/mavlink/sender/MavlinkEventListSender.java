@@ -58,6 +58,19 @@ public class MavlinkEventListSender implements AutoCloseable {
   private final long acknowledgementTimeoutMillis;
   private final AtomicBoolean isActive = new AtomicBoolean(true);
 
+  private final MavlinkTransmissionState transmissionState = new MavlinkTransmissionState();
+  private final int missionItemTotal;
+  private long sendAttempts;
+  private long totalPacketRetries;
+  private Long transmissionStartedAt;
+  private Long lastSentAt;
+  private Long lastResponseAt;
+  private Integer lastMissionSequence;
+  private Long nextRetryAt;
+  private String transmissionStatus = "PREPARED";
+  private String transmissionReason;
+  private int transmissionMessageIndex = -1;
+
   private boolean started;
   private boolean terminal;
   private int nextIndex;
@@ -109,6 +122,9 @@ public class MavlinkEventListSender implements AutoCloseable {
     this.maxRetries = maxRetries;
     this.acknowledgementTimeoutMillis = acknowledgementTimeoutMillis;
     this.waitingIndex = -1;
+    this.missionItemTotal = (int) messages.stream().filter(message ->
+        message instanceof io.mapsmessaging.state.mavlink.messages.MavlinkMissionItemInt
+            || message instanceof io.mapsmessaging.state.mavlink.messages.MavlinkMissionItem).count();
 
     logger.log(MAVLINK_EVENT_LIST_SENDER_CREATED, sequenceId, commandSet.operation(), commandSet.modelName(), messages.size());
   }
@@ -124,6 +140,8 @@ public class MavlinkEventListSender implements AutoCloseable {
         return;
       }
       started = true;
+      transmissionStartedAt = System.currentTimeMillis();
+      updateTransmission("STARTING", null);
     }
 
     logger.log(MAVLINK_EVENT_LIST_SENDER_STARTING, sequenceId, commandSet.operation(), commandSet.modelName());
@@ -204,6 +222,8 @@ public class MavlinkEventListSender implements AutoCloseable {
 
       if (!retriesExhausted) {
         retryCount++;
+        totalPacketRetries++;
+        updateTransmission("RETRYING", "Response timeout; retransmitting current message");
       }
     }
 
@@ -234,6 +254,8 @@ public class MavlinkEventListSender implements AutoCloseable {
     if (action != Action.NOT_RELATED) {
       synchronized (lock) {
         lastReceivedMessage = receivedMessage;
+        lastResponseAt = System.currentTimeMillis();
+        updateTransmission(transmissionStatus, acknowledgement.reason());
       }
     }
 
@@ -272,6 +294,8 @@ public class MavlinkEventListSender implements AutoCloseable {
       clearWaitingState();
       restartIndex = acknowledgement.index();
       missionRestartCount++;
+      nextRetryAt = System.currentTimeMillis() + acknowledgementTimeoutMillis * missionRestartCount;
+      updateTransmission("RESTART_BACKOFF", "INVALID_SEQUENCE; restarting mission upload");
       long generation = acknowledgementTimeoutGeneration;
       acknowledgementTimeoutFuture = SimpleTaskScheduler.getInstance().schedule(
           () -> restartMission(generation), acknowledgementTimeoutMillis * missionRestartCount,
@@ -417,6 +441,16 @@ public class MavlinkEventListSender implements AutoCloseable {
     logger.log(MAVLINK_EVENT_LIST_SENDER_SENDING, sequenceId, commandSet.operation(), commandSet.modelName(), index + 1, messages.size(), messageName(message), requiresAcknowledgement);
     synchronized (lock) {
       lastSentMessage = message;
+      transmissionMessageIndex = index;
+      sendAttempts++;
+      lastSentAt = System.currentTimeMillis();
+      if (message instanceof io.mapsmessaging.state.mavlink.messages.MavlinkMissionItemInt item) {
+        lastMissionSequence = item.getMissionSequence();
+      } else if (message instanceof io.mapsmessaging.state.mavlink.messages.MavlinkMissionItem item) {
+        lastMissionSequence = item.getMissionSequence();
+      }
+      nextRetryAt = requiresAcknowledgement ? lastSentAt + acknowledgementTimeoutMillis : null;
+      updateTransmission(requiresAcknowledgement ? "WAITING_RESPONSE" : "SENDING", null);
     }
     sender.send(message);
 
@@ -502,6 +536,8 @@ public class MavlinkEventListSender implements AutoCloseable {
       }
 
       terminal = true;
+      nextRetryAt = null;
+      updateTransmission(status.name(), reason);
       clearWaitingState();
       MavlinkMessage retainedSentMessage = sentMessage == null ? lastSentMessage : sentMessage;
       MavlinkPacket retainedReceivedMessage = receivedMessage == null ? lastReceivedMessage : receivedMessage;
@@ -554,6 +590,25 @@ public class MavlinkEventListSender implements AutoCloseable {
     if (result.cause() != null) {
       logger.log(MAVLINK_EVENT_LIST_SENDER_FAILED_EXCEPTION, sequenceId, commandSet.operation(), commandSet.modelName(), result.cause().getMessage());
     }
+  }
+
+  public MavlinkTransmissionState getTransmissionState() {
+    return transmissionState;
+  }
+
+  // Called only while holding the sender lock; readers receive an immutable snapshot.
+  private void updateTransmission(String state, String reason) {
+    transmissionStatus = state;
+    if (reason != null && !reason.isBlank()) {
+      transmissionReason = reason;
+    }
+    transmissionState.update(new MavlinkTransmissionState.Snapshot(
+        sequenceId.toString(), commandSet.operation().name(), state, transmissionMessageIndex,
+        messages.size(), lastMissionSequence, missionItemTotal, sendAttempts, retryCount, maxRetries,
+        totalPacketRetries, missionRestartCount, MAX_MISSION_RESTARTS, acknowledgementTimeoutMillis,
+        transmissionStartedAt, System.currentTimeMillis(), lastSentAt, lastResponseAt, nextRetryAt,
+        messageName(lastSentMessage), lastReceivedMessage == null ? null : lastReceivedMessage.getClass().getSimpleName(),
+        transmissionReason));
   }
 
   private MavlinkMessage messageAt(int index) {
