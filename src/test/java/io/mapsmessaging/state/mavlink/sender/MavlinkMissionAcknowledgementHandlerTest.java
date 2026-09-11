@@ -277,15 +277,16 @@ class MavlinkMissionAcknowledgementHandlerTest {
   }
 
   @Test
-  void rejectedMissionAckFails() {
+  void invalid_sequence_restarts_from_count() {
     List<MavlinkMessage> messages = messages(4);
     MavlinkMissionAcknowledgementHandler handler = new MavlinkMissionAcknowledgementHandler(messages, 3);
     MissionAckPacket missionAckPacket = missionAck(false, "INVALID_SEQUENCE", 13, 0, 0, false, 0);
 
     Acknowledgement acknowledgement = handler.acknowledge(messages.get(0), missionAckPacket);
 
-    assertEquals(Action.FAIL, acknowledgement.action());
-    assertEquals("Mission upload failed with result INVALID_SEQUENCE", acknowledgement.reason());
+    assertEquals(Action.RESTART, acknowledgement.action());
+    assertEquals(0, acknowledgement.index());
+    assertEquals(Action.SEND_INDEX, handler.acknowledge(messages.get(0), requestInt(0)).action());
   }
 
   @Test

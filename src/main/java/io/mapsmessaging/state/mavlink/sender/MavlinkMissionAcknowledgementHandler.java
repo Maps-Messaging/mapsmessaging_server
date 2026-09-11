@@ -217,6 +217,12 @@ public class MavlinkMissionAcknowledgementHandler
       return Acknowledgement.notRelated();
     }
 
+    if (packet.getType() == MissionAckPacket.MAV_MISSION_INVALID_SEQUENCE && missionItemOffset > 0) {
+      expectedSequence = 0;
+      return Acknowledgement.restart(missionItemOffset - 1,
+          "Mission upload rejected with INVALID_SEQUENCE");
+    }
+
     if (!packet.isAccepted()) {
       return Acknowledgement.fail(
           "Mission upload failed with result "

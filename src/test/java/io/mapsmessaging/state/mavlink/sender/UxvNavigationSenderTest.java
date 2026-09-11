@@ -289,7 +289,7 @@ class UxvNavigationSenderTest {
             });
 
     missionSender.start();
-    missionSender.onMavlinkMessage(rejectedMissionAck("INVALID_SEQUENCE"));
+    missionSender.onMavlinkMessage(rejectedMissionAck("UNSUPPORTED"));
 
     MavlinkMessage startMission =
         plan.postMissionUploadPhase().getFirst().messages().getFirst();
@@ -301,7 +301,7 @@ class UxvNavigationSenderTest {
     assertEquals(1, missionResults.size());
     assertEquals(FAILED, missionResults.getFirst().status());
     assertEquals(
-        "Mission upload failed with result INVALID_SEQUENCE",
+        "Mission upload failed with result UNSUPPORTED",
         missionResults.getFirst().reason());
     assertNull(startSender.get());
   }

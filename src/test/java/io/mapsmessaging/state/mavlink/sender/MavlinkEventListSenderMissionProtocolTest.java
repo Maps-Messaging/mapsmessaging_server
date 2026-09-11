@@ -253,7 +253,7 @@ class MavlinkEventListSenderMissionProtocolTest {
 
     MavlinkEventListSender sender = fixture.newSender();
     sender.start();
-    sender.onMavlinkMessage(fixture.rejectedMissionAck("INVALID_SEQUENCE"));
+    sender.onMavlinkMessage(fixture.rejectedMissionAck("UNSUPPORTED"));
 
     verify(fixture.sender).send(fixture.missionCountMessage);
     verify(fixture.sender, never()).send(fixture.itemMessages.get(0));
@@ -262,7 +262,81 @@ class MavlinkEventListSenderMissionProtocolTest {
 
     assertEquals(1, fixture.results.size());
     assertEquals(FAILED, fixture.results.get(0).status());
-    assertEquals("Mission upload failed with result INVALID_SEQUENCE", fixture.results.get(0).reason());
+    assertEquals("Mission upload failed with result UNSUPPORTED", fixture.results.get(0).reason());
+  }
+
+  @Test
+  void invalid_sequence_restarts_upload_and_requires_all_items_again() throws Exception {
+    Fixture fixture = fixture(2);
+    try (MavlinkEventListSender sender = fixture.newSender()) {
+      sender.start();
+      sender.onMavlinkMessage(fixture.requestInt(0));
+      sender.onMavlinkMessage(fixture.rejectedMissionAck("INVALID_SEQUENCE"));
+      assertTrue(fixture.results.isEmpty());
+      // Packets arriving during backoff cannot advance the replacement transfer.
+      sender.onMavlinkMessage(fixture.requestInt(1));
+      sender.onMavlinkMessage(fixture.acceptedMissionAck());
+      verify(fixture.sender, never()).send(fixture.itemMessages.get(1));
+      sender.timeout();
+      verify(fixture.sender, times(2)).send(fixture.missionCountMessage);
+      sender.onMavlinkMessage(fixture.requestInt(0));
+      sender.onMavlinkMessage(fixture.requestInt(1));
+      sender.onMavlinkMessage(fixture.acceptedMissionAck());
+      assertEquals(1, fixture.results.size());
+      assertEquals(SUCCESS, fixture.results.get(0).status());
+      verify(fixture.sender, times(2)).send(fixture.itemMessages.get(0));
+    }
+  }
+
+  @Test
+  void invalid_sequence_exhaustion_reports_timeout_for_task_resend() throws Exception {
+    Fixture fixture = fixture(1);
+    try (MavlinkEventListSender sender = fixture.newSender()) {
+      sender.start();
+      for (int attempt = 0; attempt < 3; attempt++) {
+        sender.onMavlinkMessage(fixture.rejectedMissionAck("INVALID_SEQUENCE"));
+        sender.timeout();
+      }
+      verify(fixture.sender, times(3)).send(fixture.missionCountMessage);
+      assertEquals(1, fixture.results.size());
+      assertEquals(MavlinkSendResult.Status.TIMEOUT, fixture.results.get(0).status());
+      sender.onMavlinkMessage(fixture.acceptedMissionAck());
+      assertEquals(1, fixture.results.size());
+    }
+  }
+
+  @Test
+  void cancel_during_restart_backoff_prevents_retransmission() throws Exception {
+    Fixture fixture = fixture(1);
+    try (MavlinkEventListSender sender = fixture.newSender()) {
+      sender.start();
+      sender.onMavlinkMessage(fixture.rejectedMissionAck("INVALID_SEQUENCE"));
+      sender.cancel();
+      sender.timeout();
+      verify(fixture.sender).send(fixture.missionCountMessage);
+      assertEquals(1, fixture.results.size());
+      assertEquals(MavlinkSendResult.Status.CANCELLED, fixture.results.get(0).status());
+    }
+  }
+
+  @Test
+  void scheduled_restart_sends_count_without_manual_timeout() throws Exception {
+    Fixture fixture = fixture(1);
+    java.util.concurrent.CountDownLatch restarted = new java.util.concurrent.CountDownLatch(1);
+    java.util.concurrent.atomic.AtomicInteger counts = new java.util.concurrent.atomic.AtomicInteger();
+    org.mockito.Mockito.doAnswer(invocation -> {
+      if (counts.incrementAndGet() == 2) {
+        restarted.countDown();
+      }
+      return null;
+    }).when(fixture.sender).send(fixture.missionCountMessage);
+    try (MavlinkEventListSender sender = new MavlinkEventListSender(
+        commandSet(fixture.messages), fixture.sender, fixture.acknowledgementHandler,
+        fixture.results::add, 3, 100)) {
+      sender.start();
+      sender.onMavlinkMessage(fixture.rejectedMissionAck("INVALID_SEQUENCE"));
+      assertTrue(restarted.await(2, java.util.concurrent.TimeUnit.SECONDS));
+    }
   }
 
   private Fixture fixture(int itemCount) {
@@ -345,6 +419,7 @@ class MavlinkEventListSenderMissionProtocolTest {
       when(packet.isValid()).thenReturn(true);
       when(packet.isAccepted()).thenReturn(false);
       when(packet.getTypeName()).thenReturn(resultName);
+      when(packet.getType()).thenReturn("INVALID_SEQUENCE".equals(resultName) ? 13 : 3);
       when(packet.getTargetSystem()).thenReturn(LOCAL_SYSTEM_ID);
       when(packet.getTargetComponent()).thenReturn(LOCAL_COMPONENT_ID);
       when(packet.isMissionTypePresent()).thenReturn(true);

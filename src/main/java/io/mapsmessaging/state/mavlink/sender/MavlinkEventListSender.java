@@ -41,6 +41,7 @@ import lombok.Getter;
 public class MavlinkEventListSender implements AutoCloseable {
 
   public static final int DEFAULT_MAX_RETRIES = 3;
+  public static final int MAX_MISSION_RESTARTS = 2;
   public static final long DEFAULT_ACKNOWLEDGEMENT_TIMEOUT_MILLIS = 2_000L;
 
   private static final Logger logger = LoggerFactory.getLogger(MavlinkEventListSender.class);
@@ -62,6 +63,8 @@ public class MavlinkEventListSender implements AutoCloseable {
   private int nextIndex;
   private int waitingIndex;
   private int retryCount;
+  private int missionRestartCount;
+  private int restartIndex = -1;
   private long acknowledgementTimeoutGeneration;
   private MavlinkMessage waitingMessage;
   private MavlinkMessage lastSentMessage;
@@ -161,7 +164,17 @@ public class MavlinkEventListSender implements AutoCloseable {
   }
 
   public void timeout() {
-    processTimeout(null, null, null);
+    synchronized (inboundLock) {
+      Long restartGeneration;
+      synchronized (lock) {
+        restartGeneration = restartIndex >= 0 && !terminal ? acknowledgementTimeoutGeneration : null;
+      }
+      if (restartGeneration != null) {
+        restartMission(restartGeneration);
+      } else {
+        processTimeout(null, null, null);
+      }
+    }
   }
 
   private void processTimeout(Integer expectedIndex, MavlinkMessage expectedMessage, Long expectedGeneration) {
@@ -236,12 +249,48 @@ public class MavlinkEventListSender implements AutoCloseable {
 
       case ADVANCE -> handleAdvance(sentMessage, sentIndex);
       case SEND_INDEX -> handleSendIndex(acknowledgement.index());
+      case RESTART -> scheduleMissionRestart(acknowledgement);
 
       case COMPLETE ->
           complete(MavlinkSendResult.Status.SUCCESS, sentIndex, sentMessage, receivedMessage, null, "MAVLink event list sender completed successfully");
 
       case FAIL ->
           complete(MavlinkSendResult.Status.FAILED, sentIndex, sentMessage, receivedMessage, null, failureReason(acknowledgement));
+    }
+  }
+
+  private void scheduleMissionRestart(Acknowledgement acknowledgement) {
+    synchronized (lock) {
+      if (terminal) {
+        return;
+      }
+      if (missionRestartCount >= MAX_MISSION_RESTARTS) {
+        complete(MavlinkSendResult.Status.TIMEOUT, waitingIndex, waitingMessage, lastReceivedMessage,
+            null, "Mission upload restart budget exhausted after INVALID_SEQUENCE");
+        return;
+      }
+      clearWaitingState();
+      restartIndex = acknowledgement.index();
+      missionRestartCount++;
+      long generation = acknowledgementTimeoutGeneration;
+      acknowledgementTimeoutFuture = SimpleTaskScheduler.getInstance().schedule(
+          () -> restartMission(generation), acknowledgementTimeoutMillis * missionRestartCount,
+          TimeUnit.MILLISECONDS);
+    }
+  }
+
+  private void restartMission(long generation) {
+    synchronized (inboundLock) {
+      int index;
+      synchronized (lock) {
+        if (terminal || restartIndex < 0 || generation != acknowledgementTimeoutGeneration) {
+          return;
+        }
+        index = restartIndex;
+        restartIndex = -1;
+        cancelAcknowledgementTimeout();
+      }
+      handleSendIndex(index);
     }
   }
 
@@ -427,6 +476,7 @@ public class MavlinkEventListSender implements AutoCloseable {
     cancelAcknowledgementTimeout();
     waitingMessage = null;
     waitingIndex = -1;
+    restartIndex = -1;
     retryCount = 0;
   }
 
