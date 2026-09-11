@@ -122,14 +122,14 @@ class MavlinkMissionAcknowledgementHandlerTest {
   }
 
   @Test
-  void requestSkippingSequenceFails() {
+  void nonzero_request_before_first_item_is_ignored() {
     List<MavlinkMessage> messages = messages(4);
     MavlinkMissionAcknowledgementHandler handler = new MavlinkMissionAcknowledgementHandler(messages, 3);
 
     Acknowledgement acknowledgement = handler.acknowledge(messages.get(0), requestInt(1));
 
-    assertEquals(Action.FAIL, acknowledgement.action());
-    assertEquals("Mission requested sequence 1 but expected 0", acknowledgement.reason());
+    assertEquals(Action.NOT_RELATED, acknowledgement.action());
+    assertEquals(Action.SEND_INDEX, handler.acknowledge(messages.get(0), requestInt(0)).action());
   }
 
   @Test

@@ -71,21 +71,39 @@ class MavlinkEventListSenderMissionProtocolTest {
   }
 
   @Test
-  void missionProtocolFailsWhenVehicleSkipsFirstItemRequest() throws Exception {
-    Fixture fixture = fixture(3);
+  void stale_sequence_six_preserves_count_retry_and_can_recover() throws Exception {
+    Fixture fixture = fixture(7);
+    try (MavlinkEventListSender sender = fixture.newSender()) {
+      sender.start();
+      sender.onMavlinkMessage(fixture.requestInt(6));
+      assertTrue(fixture.results.isEmpty());
+      sender.timeout();
+      assertEquals(1, sender.getRetryCount());
+      sender.onMavlinkMessage(fixture.requestInt(6));
+      assertEquals(1, sender.getRetryCount());
+      verify(fixture.sender, times(2)).send(fixture.missionCountMessage);
+      verify(fixture.sender, never()).send(fixture.itemMessages.get(6));
+      for (int sequence = 0; sequence < 7; sequence++) {
+        sender.onMavlinkMessage(fixture.requestInt(sequence));
+      }
+      sender.onMavlinkMessage(fixture.acceptedMissionAck());
+      assertEquals(1, fixture.results.size());
+      assertEquals(SUCCESS, fixture.results.get(0).status());
+    }
+  }
 
-    MavlinkEventListSender sender = fixture.newSender();
-    sender.start();
-    sender.onMavlinkMessage(fixture.requestInt(1));
-
-    verify(fixture.sender).send(fixture.missionCountMessage);
-    verify(fixture.sender, never()).send(fixture.itemMessages.get(0));
-    verify(fixture.sender, never()).send(fixture.itemMessages.get(1));
-    verify(fixture.sender, never()).send(fixture.itemMessages.get(2));
-
-    assertEquals(1, fixture.results.size());
-    assertEquals(FAILED, fixture.results.get(0).status());
-    assertEquals("Mission requested sequence 1 but expected 0", fixture.results.get(0).reason());
+  @Test
+  void repeated_stale_requests_exhaust_count_retries_without_aborting_task() {
+    Fixture fixture = fixture(7);
+    try (MavlinkEventListSender sender = fixture.newSender(1)) {
+      sender.start();
+      sender.onMavlinkMessage(fixture.requestInt(6));
+      sender.timeout();
+      sender.onMavlinkMessage(fixture.requestInt(6));
+      sender.timeout();
+      assertEquals(1, fixture.results.size());
+      assertEquals(MavlinkSendResult.Status.TIMEOUT, fixture.results.get(0).status());
+    }
   }
 
   @Test
@@ -279,6 +297,8 @@ class MavlinkEventListSenderMissionProtocolTest {
       verify(fixture.sender, never()).send(fixture.itemMessages.get(1));
       sender.timeout();
       verify(fixture.sender, times(2)).send(fixture.missionCountMessage);
+      sender.onMavlinkMessage(fixture.requestInt(1));
+      assertTrue(fixture.results.isEmpty());
       sender.onMavlinkMessage(fixture.requestInt(0));
       sender.onMavlinkMessage(fixture.requestInt(1));
       sender.onMavlinkMessage(fixture.acceptedMissionAck());

@@ -32,3 +32,16 @@ Regression coverage includes restart success after partial upload, ignored
 packets during backoff, restart-budget exhaustion, cancellation during backoff,
 and scheduled restart execution. Unsupported rejection still fails without
 starting navigation.
+
+While awaiting item zero, an in-range nonzero request is ignored without
+refreshing the MISSION_COUNT retry timer or resetting its retry budget. This
+covers stale requests such as sequence 6 while expecting 0, both initially and
+after a restart. Persistent stale requests therefore end in TIMEOUT rather than
+immediate task abortion. Out-of-range requests and skips after progress retain
+their existing explicit failure behaviour.
+
+When a local MAVLink identity is configured, outbound headers use that protocol
+configuration's systemId/componentId on each send. The retry path reuses the same sender and messages, without allocating a
+new identity. This does not guarantee identity consistency across independently
+configured bridge endpoints. Automatic MISSION_CLEAR_ALL is intentionally not
+used: it deletes the onboard plan and needs separate hold-state handling.
