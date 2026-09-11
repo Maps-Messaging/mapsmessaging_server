@@ -21,6 +21,7 @@ package io.mapsmessaging.state.config;
 
 import io.mapsmessaging.config.Config;
 import io.mapsmessaging.config.ConfigManager;
+import io.mapsmessaging.config.network.KeyStoreConfig;
 import io.mapsmessaging.configuration.ConfigurationProperties;
 import io.mapsmessaging.dto.rest.config.BaseConfigDTO;
 import io.mapsmessaging.dto.rest.config.protocol.impl.MavlinkKnownSourceDTO;
@@ -55,6 +56,16 @@ public class TwinManagerConfig extends TwinManagerConfigDTO implements Config, C
       takProtocolDTO.setPort(takProps.getIntProperty("port", takProtocolDTO.getPort()));
       takProtocolDTO.setSharedConnection(takProps.getBooleanProperty("sharedConnection", takProtocolDTO.isSharedConnection()));
       takProtocolDTO.setTopic(takProps.getProperty("topic", null));
+      takProtocolDTO.setTlsEnabled(takProps.getBooleanProperty("tlsEnabled", takProtocolDTO.isTlsEnabled()));
+      takProtocolDTO.setTlsContext(takProps.getProperty("tlsContext", takProtocolDTO.getTlsContext()));
+      ConfigurationProperties keyStoreProps = (ConfigurationProperties) takProps.get("keyStore");
+      if (keyStoreProps != null) {
+        takProtocolDTO.setKeyStore(new KeyStoreConfig(keyStoreProps));
+      }
+      ConfigurationProperties trustStoreProps = (ConfigurationProperties) takProps.get("trustStore");
+      if (trustStoreProps != null) {
+        takProtocolDTO.setTrustStore(new KeyStoreConfig(trustStoreProps));
+      }
       this.tak = takProtocolDTO;
     }
 

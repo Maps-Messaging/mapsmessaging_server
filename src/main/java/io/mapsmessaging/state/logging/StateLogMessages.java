@@ -134,7 +134,9 @@ public enum StateLogMessages implements LogMessage {
   MAVLINK_EVENT_LIST_SENDER_NO_ACK_ADVANCING(LEVEL.INFO, SERVER_CATEGORY.PROTOCOL, "MAVLink message for sender '{}', index {}, does not require acknowledgement, advancing"),
 
   MAVLINK_TWIN_MANAGER_START_FAILED(LEVEL.ERROR, SERVER_CATEGORY.PROTOCOL, "Failed to start MAVLink twin manager subscriber: {}"),
-  MAVLINK_TWIN_MANAGER_STOP_FAILED(LEVEL.ERROR, SERVER_CATEGORY.PROTOCOL, "Failed to stop MAVLink twin manager subscriber: {}");
+  MAVLINK_TWIN_MANAGER_STOP_FAILED(LEVEL.ERROR, SERVER_CATEGORY.PROTOCOL, "Failed to stop MAVLink twin manager subscriber: {}"),
+
+  STATE_MANAGER_TAK_TLS_CONTEXT_FAILED(LEVEL.ERROR, SERVER_CATEGORY.STATE, "Failed to build TLS context for TAK server connection, falling back to plain TCP");
   //-------------------------------------------------------------------------------------------------------------
 
   private final @Getter String message;

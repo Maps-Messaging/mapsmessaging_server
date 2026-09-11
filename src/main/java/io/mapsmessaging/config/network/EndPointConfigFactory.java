@@ -199,6 +199,7 @@ public class EndPointConfigFactory {
       case "nmea-0183" -> new NmeaConfig(config);
       case "lora" -> new LoRaProtocolConfig(config);
       case "echo" -> new EchoProtocolConfig(config);
+      case "cot" -> new CotProtocolConfig(config);
       case "stogi" -> new StoGiConfig(config);
       case "satellite" -> new SatelliteConfig(config);
       case "mavlink" -> new MavlinkConfig(config);

@@ -20,6 +20,7 @@
 
 package io.mapsmessaging.dto.rest.config.protocol.impl;
 
+import io.mapsmessaging.dto.rest.config.network.KeyStoreConfigDTO;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
@@ -59,5 +60,27 @@ public class TakProtocolDTO {
       nullable = true
   )
   private String topic = null;
+
+  @Schema(
+      description = "If true, connect to the TAK server over TLS instead of plain TCP.",
+      example = "false",
+      requiredMode = Schema.RequiredMode.NOT_REQUIRED,
+      defaultValue = "false"
+  )
+  private boolean tlsEnabled = false;
+
+  @Schema(
+      description = "TLS protocol used for the connection when tlsEnabled is true.",
+      example = "TLSv1.2",
+      requiredMode = Schema.RequiredMode.NOT_REQUIRED,
+      defaultValue = "TLSv1.2"
+  )
+  private String tlsContext = "TLSv1.2";
+
+  @Schema(description = "Key store presenting this broker's client certificate to the TAK server (mutual TLS). Required when tlsEnabled is true.")
+  private KeyStoreConfigDTO keyStore;
+
+  @Schema(description = "Trust store used to validate the TAK server's certificate. Required when tlsEnabled is true.")
+  private KeyStoreConfigDTO trustStore;
 
 }
