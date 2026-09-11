@@ -50,6 +50,10 @@ public interface MavlinkAcknowledgementHandler {
       return new Acknowledgement(Action.SEND_INDEX, index, null);
     }
 
+    public static Acknowledgement restart(int index, String reason) {
+      return new Acknowledgement(Action.RESTART, index, reason);
+    }
+
     public static Acknowledgement complete() {
       return new Acknowledgement(Action.COMPLETE, -1, null);
     }
@@ -64,6 +68,7 @@ public interface MavlinkAcknowledgementHandler {
     WAIT,
     ADVANCE,
     SEND_INDEX,
+    RESTART,
     COMPLETE,
     FAIL
   }

@@ -178,6 +178,12 @@ public class MavlinkMissionAcknowledgementHandler
               + Math.max(0, missionItemCount - 1));
     }
 
+    // A delayed request from an earlier upload must not abort a fresh count handshake.
+    // NOT_RELATED leaves the count retry timer and budget untouched.
+    if (expectedSequence == 0 && sequence != 0) {
+      return Acknowledgement.notRelated();
+    }
+
     if (sequence == expectedSequence) {
       expectedSequence++;
       return sendMissionItem(sequence);
@@ -215,6 +221,12 @@ public class MavlinkMissionAcknowledgementHandler
         packet.isMissionTypePresent(),
         packet.getMissionType())) {
       return Acknowledgement.notRelated();
+    }
+
+    if (packet.getType() == MissionAckPacket.MAV_MISSION_INVALID_SEQUENCE && missionItemOffset > 0) {
+      expectedSequence = 0;
+      return Acknowledgement.restart(missionItemOffset - 1,
+          "Mission upload rejected with INVALID_SEQUENCE");
     }
 
     if (!packet.isAccepted()) {
