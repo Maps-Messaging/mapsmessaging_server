@@ -131,7 +131,8 @@ try {
         Invoke-WebRequest -Uri $PushUrl `
                           -Method Post `
                           -Headers @{ Authorization = "Basic $encodedCreds"; "Content-Type" = "multipart/form-data; boundary=$boundary" } `
-                          -Body $body
+                          -Body $body `
+                          -UseBasicParsing
 
         Write-Host "Uploaded $filename to Nexus repo $PushRepo"
     } else {
