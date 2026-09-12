@@ -30,6 +30,7 @@ import io.mapsmessaging.state.drone.tak.model.*;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.Map;
 
 public class TakEventMapper {
 
@@ -40,6 +41,14 @@ public class TakEventMapper {
   private static final double DEFAULT_CE = 10.0;
   private static final double DEFAULT_LE = 15.0;
   private static final long DEFAULT_STALE_SECONDS = 30L;
+  // CONTACT twins (e.g. MILCO sonar detections) are one-shot historical reports, not
+  // continuously-refreshed telemetry - a 30s stale window means the marker is already
+  // expired before an operator can switch over and look at the map. Give them a long
+  // tasking-relevant lifetime instead.
+  private static final long CONTACT_STALE_SECONDS = 60L * 60L;
+  private static final String CONTACT_HOW = "m-g"; // machine-generated, not human-entered
+  private static final int CONTACT_COLOR_ARGB_RED = -65536;
+  private static final double UNKNOWN_ALTITUDE = 9999999.0; // CoT convention for "not available"
 
   public TakEvent map(EntityTwin twin, TwinUpdateContext context) {
     if (twin == null || twin.getGeoPosition() == null) {
@@ -57,7 +66,7 @@ public class TakEventMapper {
     TakEvent event = new TakEvent();
     event.setUid(resolveUid(twin));
     event.setType(resolveCotType(twin));
-    event.setHow(DEFAULT_HOW);
+    event.setHow(resolveHow(twin));
     event.setTime(formatInstant(eventTime));
     event.setStart(formatInstant(eventTime));
     event.setStale(formatInstant(staleTime));
@@ -65,7 +74,10 @@ public class TakEventMapper {
     TakPoint point = new TakPoint();
     point.setLat(readLatitude(geoPosition));
     point.setLon(readLongitude(geoPosition));
-    point.setHae(readAltitude(geoPosition));
+    // CONTACT twins never carry a real altitude reading (MilcoContactTwin doesn't set one) -
+    // report the CoT "not available" convention rather than a misleading 0.0 (sea level/ground).
+    point.setHae(twin.getTwinType() == TwinType.CONTACT && geoPosition.getAltitudeMslMeters() == null
+        ? UNKNOWN_ALTITUDE : readAltitude(geoPosition));
     point.setCe(resolveCircularError(fixInfo));
     point.setLe(resolveLinearError(fixInfo));
     event.setPoint(point);
@@ -78,6 +90,11 @@ public class TakEventMapper {
     detail.setPrecisionLocation(buildPrecisionLocation());
     detail.setTakv(buildPlatform(twin));
     detail.setMapsLink(buildLinkState(twin.getLinkState()));
+
+    if (twin.getTwinType() == TwinType.CONTACT) {
+      detail.setArchive(true);
+      detail.setColorArgb(CONTACT_COLOR_ARGB_RED);
+    }
 
     if (twin.getRelationships() != null) {
       for (TwinRelationship relationship : twin.getRelationships()) {
@@ -107,6 +124,20 @@ public class TakEventMapper {
     event.setTime(formatInstant(eventTime));
     event.setStart(formatInstant(eventTime));
     event.setStale(formatInstant(staleTime));
+
+    // TAK Server's CoT parser (SubmissionService.processNextEvent -> CotEventContainer.getLat)
+    // throws a NullPointerException on any <event> with no <point> - removal events need one
+    // too, not just updates. Reuse the twin's last known position.
+    GeoPosition geoPosition = twin.getGeoPosition();
+    if (geoPosition != null) {
+      TakPoint point = new TakPoint();
+      point.setLat(readLatitude(geoPosition));
+      point.setLon(readLongitude(geoPosition));
+      point.setHae(readAltitude(geoPosition));
+      point.setCe(DEFAULT_CE);
+      point.setLe(DEFAULT_LE);
+      event.setPoint(point);
+    }
 
     TakDetail detail = new TakDetail();
     detail.setContact(buildContact(twin));
@@ -146,7 +177,15 @@ public class TakEventMapper {
   private TakPrecisionLocation buildPrecisionLocation() {
     TakPrecisionLocation precisionLocation = new TakPrecisionLocation();
     precisionLocation.setAltsrc(DEFAULT_ALTITUDE_SOURCE);
+    precisionLocation.setGeopointsrc(DEFAULT_ALTITUDE_SOURCE);
     return precisionLocation;
+  }
+
+  private String resolveHow(EntityTwin twin) {
+    if (twin.getTwinType() == TwinType.CONTACT) {
+      return CONTACT_HOW;
+    }
+    return DEFAULT_HOW;
   }
 
   private TakPlatform buildPlatform(EntityTwin twin) {
@@ -212,6 +251,18 @@ public class TakEventMapper {
   }
 
   private String resolveCotType(EntityTwin twin) {
+    if (twin.getTwinType() == TwinType.CONTACT) {
+      // Unknown-affiliation, subsurface atom (standard MIL-STD-2525/CoT type) - "u" because
+      // a freshly-detected mine-like contact is unconfirmed/unclassified (a target requiring
+      // investigation), not "n" (neutral, i.e. already confirmed non-threat); "U" because it's
+      // a UUV sonar contact on/near the seafloor, not a ground contact - matches the same "U"
+      // battle-dimension letter this class already uses for UUV vehicle twins (a-f-U-X-M).
+      // "b-m-p-s-p-i" (Sensor Point of Interest) is valid CoT but some clients (including some
+      // WebTAK builds) have no icon mapped for it, so the event arrives and logs but never
+      // draws a marker - a-u-U is a standard atom type and renders everywhere.
+      return "a-u-U";
+    }
+
     if (twin instanceof DroneTwin droneTwin) {
       VehicleClass vehicleClass = droneTwin.getVehicleClass();
       if (vehicleClass != null) {
@@ -237,6 +288,12 @@ public class TakEventMapper {
     if (twin instanceof DroneTwin droneTwin && droneTwin.getVehicleClass() != null) {
       return droneTwin.getVehicleClass().name();
     }
+    if (twin.getTwinType() == TwinType.CONTACT) {
+      String category = twin.getAttributes().get("contactCategory");
+      if (category != null && !category.isBlank()) {
+        return category;
+      }
+    }
     return safeString(twin.getTwinType(), "UNKNOWN");
   }
 
@@ -248,6 +305,12 @@ public class TakEventMapper {
       if (droneTwin.getRegistrationId() != null && !droneTwin.getRegistrationId().isBlank()) {
         return droneTwin.getRegistrationId();
       }
+    }
+
+    if (twin.getTwinType() == TwinType.CONTACT) {
+      String category = twin.getAttributes().getOrDefault("contactCategory", "CONTACT");
+      String id = twin.getAttributes().getOrDefault("sourceDetectionId", twin.getTwinId());
+      return category + "-" + id;
     }
 
     if (twin.getDisplayName() != null && !twin.getDisplayName().isBlank()) {
@@ -266,6 +329,21 @@ public class TakEventMapper {
       appendLabelledRemark(remarksBuilder, "mission", droneTwin.getMissionState());
       appendLabelledRemark(remarksBuilder, "landed", droneTwin.getLandedState());
       appendLabelledRemark(remarksBuilder, "vtol", droneTwin.getVtolState());
+    }
+
+    if (twin.getTwinType() == TwinType.CONTACT) {
+      Map<String, String> attributes = twin.getAttributes();
+      String task = attributes.getOrDefault("requestedTaskType", "INSPECT");
+      String specialization = attributes.get("requestedTaskSpecialization");
+      String taskLabel = task + (specialization != null ? " (" + specialization + ")" : "");
+      String status = twin.getLifecycleStatus() != null ? twin.getLifecycleStatus().name() : "ACTIVE";
+      String updated = formatHhmmZ(twin.getLastSeenAt());
+      appendRemarkText(remarksBuilder, "Tasking: " + taskLabel + ". Status: " + status + ". Updated " + updated + ".");
+      appendLabelledRemark(remarksBuilder, "probability", attributes.get("probabilityDisplay"));
+      appendLabelledRemark(remarksBuilder, "depth", attributes.get("depthDisplay"));
+      appendLabelledRemark(remarksBuilder, "size", attributes.get("sizeDisplay"));
+      appendLabelledRemark(remarksBuilder, "source", attributes.get("sourceSensor"));
+      appendLabelledRemark(remarksBuilder, "detection_id", attributes.get("sourceDetectionId"));
     }
 
     if (remarksBuilder.isEmpty() && twin.getDisplayName() != null && !twin.getDisplayName().isBlank()) {
@@ -331,6 +409,9 @@ public class TakEventMapper {
   }
 
   private long resolveStaleSeconds(EntityTwin twin) {
+    if (twin.getTwinType() == TwinType.CONTACT) {
+      return CONTACT_STALE_SECONDS;
+    }
     return DEFAULT_STALE_SECONDS;
   }
 
@@ -416,6 +497,14 @@ public class TakEventMapper {
 
   private String formatInstant(Instant instant) {
     return instant.truncatedTo(ChronoUnit.MILLIS).toString();
+  }
+
+  private String formatHhmmZ(Instant instant) {
+    if (instant == null) {
+      return "unknown";
+    }
+    String iso = instant.truncatedTo(ChronoUnit.MINUTES).toString(); // yyyy-MM-ddTHH:mmZ
+    return iso.substring(11, 13) + iso.substring(14, 16) + "Z";
   }
 
   private String safeString(Object value, String defaultValue) {

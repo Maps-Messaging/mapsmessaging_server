@@ -1,0 +1,8 @@
+# Keeps the repmus-estonia-demo Dockerfile's local `COPY --from=server_src . /src` (see
+# docker-compose.yml additional_contexts.server_src) from dragging build output, VCS history,
+# and dev-only generated certs into the build context.
+target/
+.git/
+*.jks
+*.pem
+pr-drafts/

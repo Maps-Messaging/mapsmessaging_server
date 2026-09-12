@@ -53,6 +53,12 @@ public class TakDetail {
   @Schema(description = "Link health metadata.")
   private TakLinkState mapsLink;
 
+  @Schema(description = "When true, ask the receiving TAK client to persist this event locally (survive a client restart) rather than treat it as transient.")
+  private Boolean archive;
+
+  @Schema(description = "Marker tint, ARGB signed 32-bit integer (e.g. -65536 = opaque red).", example = "-65536")
+  private Integer colorArgb;
+
   @ArraySchema(arraySchema = @Schema(description = "Relationship links to other TAK entities."))
   private List<TakLink> links = new ArrayList<>();
 }

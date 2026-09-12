@@ -293,6 +293,16 @@ public class TwinManager {
     List<String> expiredIds = new ArrayList<>();
 
     for (EntityTwin twin : twins.values()) {
+      // CONTACT twins (e.g. MILCO sonar detections) represent a physical object that doesn't
+      // stop existing just because updates stopped arriving - unlike a drone, silence isn't
+      // evidence it's gone. Auto-purging them here also fires a TAK "removed" CoT event
+      // (removeTwin -> onTwinRemoved), which actively erases the marker from TAK clients
+      // within minutes - defeating the whole point of a long CoT stale time for tasking
+      // markers. Leave them registered (STALE is still reflected via scanTwinStates/REST)
+      // until something more deliberate clears them.
+      if (twin.getTwinType() == TwinType.CONTACT) {
+        continue;
+      }
       long ageMillis = ageMillis(effectiveNow, twin.getLastSeenAt());
       if (ageMillis >= retentionTimeoutMillis) {
         expiredIds.add(twin.getTwinId());

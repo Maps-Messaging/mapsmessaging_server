@@ -38,3 +38,8 @@ buildNumber.properties
 .DS_Store
 Thumbs.db
 .gitnexus
+
+# Local TLS test material (generated while debugging, never committed)
+*.jks
+*.pem
+*.p12
