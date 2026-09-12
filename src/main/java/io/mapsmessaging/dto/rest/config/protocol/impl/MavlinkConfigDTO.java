@@ -36,7 +36,7 @@ public class MavlinkConfigDTO extends ProtocolConfigDTO {
           "Local MAVLink component id used by this protocol instance when it originates MAVLink frames, such as heartbeats or outbound commands. "
               + "If null, this MAVLink interface is listen-only and does not originate MAVLink traffic.",
       example = "190",
-      minimum = "0",
+      minimum = "1",
       maximum = "255",
       requiredMode = Schema.RequiredMode.NOT_REQUIRED,
       nullable = true
@@ -44,7 +44,7 @@ public class MavlinkConfigDTO extends ProtocolConfigDTO {
   protected Integer componentId;
 
   public boolean hasLocalMavlinkIdentity() {
-    return systemId != null && componentId != null;
+    return systemId != null && systemId >= 1 && componentId != null && componentId >= 1;
   }
 
   @Schema(
