@@ -53,7 +53,9 @@ public final class CotConfigSupport {
       }
       ConfigurationProperties properties = new ConfigurationProperties();
       properties.put("namespacePath", config.getNamespacePath());
-      properties.put("affiliation", config.getAffiliation().name());
+      CotAffiliation affiliation =
+          config.getAffiliation() == null ? CotAffiliation.SOURCE : config.getAffiliation();
+      properties.put("affiliation", affiliation.name());
       properties.put("how", config.getHow());
       properties.put("staleTimeoutMillis", config.getStaleTimeoutMillis());
       if (config.getUidPrefix() != null) {

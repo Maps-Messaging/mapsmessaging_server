@@ -61,4 +61,27 @@ public class TwinUpdateContext {
   private String responseTopic;
 
   private String uniqueOutboundIdentifier;
+
+  public TwinUpdateContext(
+      String updateSource,
+      String sourceInstanceId,
+      Instant eventTime,
+      Instant receivedTime,
+      Long sequenceNumber,
+      String reason,
+      boolean fullSnapshot,
+      String responseTopic,
+      String uniqueOutboundIdentifier) {
+    this(
+        updateSource,
+        sourceInstanceId,
+        null,
+        eventTime,
+        receivedTime,
+        sequenceNumber,
+        reason,
+        fullSnapshot,
+        responseTopic,
+        uniqueOutboundIdentifier);
+  }
 }
