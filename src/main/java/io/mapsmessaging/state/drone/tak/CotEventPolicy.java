@@ -153,7 +153,7 @@ final class CotEventPolicy {
       case "ASSUMED_FRIEND" -> "a";
       case "NEUTRAL" -> "n";
       case "SUSPECT" -> "s";
-      case "HOSTILE", "ENEMY" -> "h";
+      case "HOSTILE" -> "h";
       case "PENDING" -> "p";
       default -> "u";
     };
