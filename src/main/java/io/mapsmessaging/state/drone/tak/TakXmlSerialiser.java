@@ -70,6 +70,8 @@ public class TakXmlSerialiser {
     appendPrecisionLocation(stringBuilder, detail.getPrecisionLocation());
     appendTakPlatform(stringBuilder, detail.getTakv());
     appendLinkState(stringBuilder, detail.getMapsLink());
+    appendArchive(stringBuilder, detail.getArchive());
+    appendColor(stringBuilder, detail.getColorArgb());
 
     if (detail.getLinks() != null) {
       for (TakLink link : detail.getLinks()) {
@@ -129,6 +131,23 @@ public class TakXmlSerialiser {
 
     stringBuilder.append("<precisionlocation");
     appendAttribute(stringBuilder, "altsrc", precisionLocation.getAltsrc());
+    appendAttribute(stringBuilder, "geopointsrc", precisionLocation.getGeopointsrc());
+    stringBuilder.append("/>");
+  }
+
+  private void appendArchive(StringBuilder stringBuilder, Boolean archive) {
+    if (archive == null || !archive) {
+      return;
+    }
+    stringBuilder.append("<archive/>");
+  }
+
+  private void appendColor(StringBuilder stringBuilder, Integer colorArgb) {
+    if (colorArgb == null) {
+      return;
+    }
+    stringBuilder.append("<color");
+    appendAttribute(stringBuilder, "argb", colorArgb);
     stringBuilder.append("/>");
   }
 
