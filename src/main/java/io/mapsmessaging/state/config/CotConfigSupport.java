@@ -95,11 +95,7 @@ public final class CotConfigSupport {
     if (value == null || value.isBlank()) {
       return defaultValue;
     }
-    String normalised = value.trim().toUpperCase(Locale.ROOT);
-    if ("ENEMY".equals(normalised)) {
-      return CotAffiliation.HOSTILE;
-    }
-    return CotAffiliation.valueOf(normalised);
+    return CotAffiliation.valueOf(value.trim().toUpperCase(Locale.ROOT));
   }
 
   private static void validate(CotConfigDTO config) {
