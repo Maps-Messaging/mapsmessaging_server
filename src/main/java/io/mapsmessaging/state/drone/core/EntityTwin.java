@@ -147,6 +147,12 @@ public abstract class EntityTwin {
   private TwinLifecycleStatus lifecycleStatus = TwinLifecycleStatus.ACTIVE;
 
   @Schema(
+      description = "Retention policy controlling scheduled removal after the global retention timeout.",
+      defaultValue = "DEFAULT",
+      nullable = false)
+  private TwinRetentionPolicy retentionPolicy = TwinRetentionPolicy.DEFAULT;
+
+  @Schema(
       description = "Relationship edges owned by this twin.",
       nullable = false
   )

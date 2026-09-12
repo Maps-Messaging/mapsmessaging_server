@@ -293,6 +293,9 @@ public class TwinManager {
     List<String> expiredIds = new ArrayList<>();
 
     for (EntityTwin twin : twins.values()) {
+      if (twin.getRetentionPolicy() == TwinRetentionPolicy.PERSISTENT) {
+        continue;
+      }
       long ageMillis = ageMillis(effectiveNow, twin.getLastSeenAt());
       if (ageMillis >= retentionTimeoutMillis) {
         expiredIds.add(twin.getTwinId());

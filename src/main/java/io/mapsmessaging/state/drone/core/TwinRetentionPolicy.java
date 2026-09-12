@@ -16,23 +16,12 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
+package io.mapsmessaging.state.drone.core;
 
-package io.mapsmessaging.state.drone.tak;
+import io.swagger.v3.oas.annotations.media.Schema;
 
-import io.mapsmessaging.state.config.CotConfigDTO;
-import lombok.Getter;
-import lombok.Setter;
-
-@Getter
-@Setter
-public class TakTwinContext {
-  private long lastUpdate;
-  private TakSocketConnection socketConnection;
-  private CotConfigDTO cotConfig;
-
-  public TakTwinContext(){
-    lastUpdate = 0;
-    socketConnection = null;
-    cotConfig = null;
-  }
+@Schema(description = "Retention policy controlling whether a Twin is removed by the global retention timeout.")
+public enum TwinRetentionPolicy {
+  DEFAULT,
+  PERSISTENT
 }
