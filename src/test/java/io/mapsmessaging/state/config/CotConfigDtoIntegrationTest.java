@@ -6,8 +6,10 @@ package io.mapsmessaging.state.config;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import io.mapsmessaging.configuration.ConfigurationProperties;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 
@@ -28,5 +30,14 @@ class CotConfigDtoIntegrationTest {
     config.setCot(List.of());
     assertFalse(config.getAdapterConfig().containsKey("cot"));
     assertTrue(config.getCot().isEmpty());
+  }
+
+  @Test
+  void rejectsNonStandardAffiliationNames() {
+    ConfigurationProperties mapping = new ConfigurationProperties();
+    mapping.put("namespacePath", "4817/catl/maps/#");
+    mapping.put("affiliation", "ENEMY");
+
+    assertThrows(IllegalArgumentException.class, () -> CotConfigSupport.parse(mapping));
   }
 }
