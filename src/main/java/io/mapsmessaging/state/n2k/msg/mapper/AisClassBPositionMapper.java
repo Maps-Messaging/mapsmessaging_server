@@ -25,7 +25,6 @@ import io.mapsmessaging.state.n2k.msg.AisClassBEmitterConfig;
 import io.mapsmessaging.state.n2k.msg.AisClassBPositionReport;
 import io.mapsmessaging.state.n2k.msg.AisMappingSupport;
 
-import java.time.Instant;
 import java.util.Optional;
 
 public class AisClassBPositionMapper {
@@ -54,13 +53,13 @@ public class AisClassBPositionMapper {
             ? config.getPositionAccuracy()
             : (Boolean.TRUE.equals(droneTwin.getGpsValid()) ? 1L : 0L));
     report.setRaim(config.getRaim());
-    report.setTimeStamp(toSecondOfMinute(droneTwin.getNavigationUpdatedAt()));
+    report.setTimeStamp(AisMappingSupport.toSecondOfMinute(droneTwin.getNavigationUpdatedAt()));
 
-    report.setCog(toRadians(droneTwin.getCourseOverGroundDegrees()));
-    report.setSog(droneTwin.getGroundSpeedMetersPerSecond());
+    report.setCog(AisMappingSupport.toRadians(droneTwin.getCourseOverGroundDegrees()));
+    report.setSog(AisMappingSupport.nonNegativeFinite(droneTwin.getGroundSpeedMetersPerSecond()));
     report.setCommunicationStateInformation(config.getCommunicationStateInformation());
     report.setAisTransceiverInformation(config.getAisTransceiverInformation());
-    report.setHeading(toRadians(droneTwin.getHeadingDegrees()));
+    report.setHeading(AisMappingSupport.toRadians(droneTwin.getHeadingDegrees()));
 
     report.setRegionalApplication(0L);
     report.setRegionalApplicationB(0L);
@@ -77,42 +76,10 @@ public class AisClassBPositionMapper {
   }
 
   private boolean isEligible(DroneTwin droneTwin) {
-    if (droneTwin == null) {
-      return false;
-    }
-    if (droneTwin.getLifecycleStatus() != TwinLifecycleStatus.ACTIVE) {
-      return false;
-    }
-    if (droneTwin.getMmsi() == null) {
-      return false;
-    }
-    if (droneTwin.getGeoPosition() == null) {
-      return false;
-    }
-    if (droneTwin.getGeoPosition().getLatitude() == null) {
-      return false;
-    }
-    if (droneTwin.getGeoPosition().getLongitude() == null) {
-      return false;
-    }
-    if (!Boolean.TRUE.equals(droneTwin.getGpsValid())) {
-      return false;
-    }
-    return droneTwin.getNavigationUpdatedAt() != null;
+    return AisMappingSupport.hasCorePosition(droneTwin)
+        && droneTwin.getLifecycleStatus() == TwinLifecycleStatus.ACTIVE
+        && Boolean.TRUE.equals(droneTwin.getGpsValid())
+        && droneTwin.getNavigationUpdatedAt() != null;
   }
 
-  private static Long toSecondOfMinute(Instant instant) {
-    return AisMappingSupport.toSecondOfMinute(instant);
-  }
-
-  private static Double toRadians(Double degrees) {
-    if (degrees == null) {
-      return null;
-    }
-    return Math.toRadians(normalizeDegrees(degrees));
-  }
-
-  private static double normalizeDegrees(double degrees) {
-    return AisMappingSupport.normalizeDegrees(degrees);
-  }
 }

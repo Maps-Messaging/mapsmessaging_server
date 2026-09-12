@@ -33,8 +33,8 @@ public final class AisMappingSupport {
     return droneTwin != null
         && droneTwin.getMmsi() != null
         && droneTwin.getGeoPosition() != null
-        && droneTwin.getGeoPosition().getLatitude() != null
-        && droneTwin.getGeoPosition().getLongitude() != null;
+        && isValidLatitude(droneTwin.getGeoPosition().getLatitude())
+        && isValidLongitude(droneTwin.getGeoPosition().getLongitude());
   }
 
   public static Long toSecondOfMinute(Instant instant) {
@@ -45,10 +45,17 @@ public final class AisMappingSupport {
   }
 
   public static Double toRadians(Double degrees) {
-    if (degrees == null) {
+    if (degrees == null || !Double.isFinite(degrees)) {
       return null;
     }
     return Math.toRadians(normalizeDegrees(degrees));
+  }
+
+  public static Double nonNegativeFinite(Double value) {
+    if (value == null || !Double.isFinite(value) || value < 0.0d) {
+      return null;
+    }
+    return value;
   }
 
   public static double normalizeDegrees(double degrees) {
@@ -104,9 +111,20 @@ public final class AisMappingSupport {
       return null;
     }
     if (droneTwin.getCallSign() != null && !droneTwin.getCallSign().isBlank()) {
-      return truncate(droneTwin.getCallSign(), 7);
+      return truncate(droneTwin.getCallSign().toUpperCase(Locale.ROOT), 7);
+    }
+    if (configuredCallsign != null && !configuredCallsign.isBlank()) {
+      return truncate(configuredCallsign.toUpperCase(Locale.ROOT), 7);
     }
     return null;
+  }
+
+  private static boolean isValidLatitude(Double latitude) {
+    return latitude != null && Double.isFinite(latitude) && latitude >= -90.0d && latitude <= 90.0d;
+  }
+
+  private static boolean isValidLongitude(Double longitude) {
+    return longitude != null && Double.isFinite(longitude) && longitude >= -180.0d && longitude <= 180.0d;
   }
 
   public static String truncate(String value, int maxLength) {
