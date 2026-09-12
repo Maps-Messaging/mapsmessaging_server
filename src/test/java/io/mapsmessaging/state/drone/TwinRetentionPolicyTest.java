@@ -11,6 +11,7 @@ import io.mapsmessaging.state.drone.core.TwinLifecycleStatus;
 import io.mapsmessaging.state.drone.core.TwinManager;
 import io.mapsmessaging.state.drone.core.TwinObserver;
 import io.mapsmessaging.state.drone.core.TwinRetentionPolicy;
+import io.mapsmessaging.state.drone.core.TwinType;
 import io.mapsmessaging.state.drone.core.TwinUpdateContext;
 import io.mapsmessaging.state.drone.drone.DroneTwin;
 import java.time.Instant;
@@ -30,6 +31,20 @@ class TwinRetentionPolicyTest {
 
     assertEquals(1, removed);
     assertTrue(manager.getTwin("default").isEmpty());
+  }
+
+  @Test
+  void contactTwinSurvivesRetentionPurgeByType() {
+    TwinManager manager = manager();
+    ContactTwin contact = new ContactTwin("contact");
+    manager.registerTwin(contact, context(REGISTERED_AT));
+
+    manager.scanTwinStates(REGISTERED_AT.plusSeconds(20));
+    int removed = manager.purgeExpiredTwins(REGISTERED_AT.plusSeconds(121));
+
+    EntityTwin retained = manager.getTwin("contact").orElseThrow();
+    assertEquals(0, removed);
+    assertEquals(TwinLifecycleStatus.STALE, retained.getLifecycleStatus());
   }
 
   @Test
@@ -75,5 +90,12 @@ class TwinRetentionPolicyTest {
     TwinUpdateContext context = new TwinUpdateContext();
     context.setReceivedTime(receivedAt);
     return context;
+  }
+
+  private static final class ContactTwin extends EntityTwin {
+    private ContactTwin(String twinId) {
+      super(twinId, null);
+      setTwinType(TwinType.CONTACT);
+    }
   }
 }
