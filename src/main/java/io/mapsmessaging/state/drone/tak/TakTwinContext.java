@@ -19,6 +19,7 @@
 
 package io.mapsmessaging.state.drone.tak;
 
+import io.mapsmessaging.state.config.CotConfigDTO;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -27,9 +28,11 @@ import lombok.Setter;
 public class TakTwinContext {
   private long lastUpdate;
   private TakSocketConnection socketConnection;
+  private CotConfigDTO cotConfig;
 
   public TakTwinContext(){
     lastUpdate = 0;
     socketConnection = null;
+    cotConfig = null;
   }
 }

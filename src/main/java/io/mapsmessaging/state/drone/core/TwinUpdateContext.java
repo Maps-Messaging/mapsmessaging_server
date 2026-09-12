@@ -40,6 +40,9 @@ public class TwinUpdateContext {
   /** Optional unique source instance/node id. */
   private String sourceInstanceId;
 
+  /** Optional source namespace or topic used to route context-aware adapters. */
+  private String sourceNamespace;
+
   /** Event timestamp from upstream payload if present. */
   private Instant eventTime;
 

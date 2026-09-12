@@ -46,8 +46,8 @@ public enum VehicleClass {
       case UAV -> "SymbolSetEnum_AIR";
       case USV -> "SymbolSetEnum_SEA_SURFACE";
       case UGV -> "SymbolSetEnum_LAND_UNIT";
-      case UUV -> "SymbolSetEnum_SUBSURFACE";
-      case GCS -> "SymbolSetEnum_CONTROL";
+      case UUV -> "SymbolSetEnum_SEA_SUBSURFACE";
+      case GCS -> "SymbolSetEnum_CONTROL_MEASURE";
       case UNKNOWN -> "SymbolSetEnum_UNKNOWN";
     };
   }

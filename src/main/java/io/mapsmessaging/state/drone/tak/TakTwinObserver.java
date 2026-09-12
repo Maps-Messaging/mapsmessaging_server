@@ -25,6 +25,7 @@ import io.mapsmessaging.dto.rest.config.protocol.impl.TakProtocolDTO;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.security.ssl.SslHelper;
+import io.mapsmessaging.state.config.CotConfigDTO;
 import io.mapsmessaging.state.config.TwinManagerConfig;
 import io.mapsmessaging.state.config.TwinManagerConfigDTO;
 import io.mapsmessaging.state.drone.core.EntityTwin;
@@ -41,6 +42,7 @@ import io.mapsmessaging.utilities.configuration.ConfigurationManager;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLSocketFactory;
 import java.io.IOException;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
@@ -65,6 +67,9 @@ public class TakTwinObserver implements TwinObserver {
   private final TakXmlSerialiser takXmlSerialiser;
   private final TakSocketConnection globalSocketConnection;
   private final EventPublisher eventPublisher;
+  private final CotConfigResolver cotConfigResolver;
+  private final CotEventPolicy cotEventPolicy;
+  private final boolean namespaceFilteringEnabled;
 
   public TakTwinObserver(TwinManager twinManager) {
     this.twinManager = Objects.requireNonNull(twinManager, "twinManager cannot be null");
@@ -72,9 +77,13 @@ public class TakTwinObserver implements TwinObserver {
     this.lastStatsPublishTimes = new ConcurrentHashMap<>();
     this.takEventMapper = new TakEventMapper();
     this.takXmlSerialiser = new TakXmlSerialiser();
+    this.cotEventPolicy = new CotEventPolicy();
 
     TwinManagerConfigDTO config =
         ConfigurationManager.getInstance().getConfiguration(TwinManagerConfig.class);
+    List<CotConfigDTO> cotConfigs = config == null ? List.of() : config.getCot();
+    this.cotConfigResolver = new CotConfigResolver(cotConfigs);
+    this.namespaceFilteringEnabled = !cotConfigs.isEmpty();
 
     if (config != null && config.getTak() != null) {
       this.takHost = config.getTak().getHostname();
@@ -248,10 +257,16 @@ public class TakTwinObserver implements TwinObserver {
       return;
     }
 
+    CotConfigDTO cotConfig = resolveCotConfig(context, twinContext);
+    if (namespaceFilteringEnabled && cotConfig == null) {
+      return;
+    }
+
     TakEvent takEvent = takEventMapper.map(twin, context);
     if (takEvent == null) {
       return;
     }
+    cotEventPolicy.apply(takEvent, twin, context, cotConfig);
 
     String xml = takXmlSerialiser.toXml(takEvent);
     xml = appendStatsIfDue(twin, xml);
@@ -282,12 +297,42 @@ public class TakTwinObserver implements TwinObserver {
       return;
     }
 
+    CotConfigDTO cotConfig = resolveCotConfig(context, twinContext);
+    if (namespaceFilteringEnabled && cotConfig == null) {
+      return;
+    }
+
     TakEvent takEvent = takEventMapper.mapRemoval(twin, context);
     if (takEvent == null) {
       return;
     }
+    cotEventPolicy.applyRemoval(takEvent, twin, context, cotConfig);
 
     twinContext.getSocketConnection().accept(takXmlSerialiser.toXml(takEvent));
+  }
+
+  private CotConfigDTO resolveCotConfig(TwinUpdateContext context, TakTwinContext twinContext) {
+    if (context != null && context.getSourceNamespace() != null && !context.getSourceNamespace().isBlank()) {
+      CotConfigDTO match = cotConfigResolver.resolve(context.getSourceNamespace());
+      if (match != null) {
+        twinContext.setCotConfig(match);
+      }
+      return match;
+    }
+
+    if (twinContext.getCotConfig() != null) {
+      return twinContext.getCotConfig();
+    }
+
+    if (context != null && context.getUpdateSource() != null && !context.getUpdateSource().isBlank()) {
+      CotConfigDTO match = cotConfigResolver.resolve(context.getUpdateSource());
+      if (match != null) {
+        twinContext.setCotConfig(match);
+        return match;
+      }
+    }
+
+    return null;
   }
 
   private String appendStatsIfDue(EntityTwin twin, String xml) {
