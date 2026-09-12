@@ -52,6 +52,19 @@ class CotEventPolicyTest {
   }
 
   @Test
+  void nonStandardSourceAffiliationFallsBackToUnknown() {
+    DroneTwin twin = twin(VehicleClass.USV);
+    twin.getDescription().put("standard_identity", "ENEMY");
+    TakEvent event = mapper.map(twin, new TwinUpdateContext());
+    CotConfigDTO config = new CotConfigDTO();
+    config.setAffiliation(CotAffiliation.SOURCE);
+
+    policy.apply(event, twin, null, config);
+
+    assertEquals("a-u-S-X-M", event.getType());
+  }
+
+  @Test
   void appliesCotOnlyDefaultsFromNamespaceConfiguration() {
     DroneTwin twin = twin(VehicleClass.UAV);
     TakEvent event = mapper.map(twin, new TwinUpdateContext());
