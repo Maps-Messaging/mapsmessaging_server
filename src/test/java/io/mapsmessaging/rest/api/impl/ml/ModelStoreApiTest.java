@@ -62,7 +62,7 @@ public class ModelStoreApiTest extends ApiTestBase {
         .when()
         .post(BASE_PATH + "/ ")
         .then()
-        .statusCode(400)
+        .statusCode(406)
         .contentType(ContentType.JSON)
         .body("status", not(isEmptyOrNullString()));
   }
@@ -78,7 +78,7 @@ public class ModelStoreApiTest extends ApiTestBase {
         .when()
         .post(BASE_PATH + "/" + modelName)
         .then()
-        .statusCode(400)
+        .statusCode(406)
         .contentType(ContentType.JSON)
         .body("status", not(isEmptyOrNullString()));
   }
@@ -89,7 +89,7 @@ public class ModelStoreApiTest extends ApiTestBase {
         .when()
         .get(BASE_PATH + "/ ")
         .then()
-        .statusCode(400)
+        .statusCode(406)
         .contentType(ContentType.JSON)
         .body("status", not(isEmptyOrNullString()));
   }
