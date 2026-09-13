@@ -33,7 +33,6 @@ public class Ais129040Handler extends AbstractDronePgnHandler {
 
   private static final int PGN = 129040;
   private final long intervalMillis;
-
   private final AisClassBExtendedPositionMapper mapper;
 
   public Ais129040Handler(N2kMessageParser n2kMessageParser, AisClassBEmitterConfig config, long intervalMillis) {
@@ -42,8 +41,6 @@ public class Ais129040Handler extends AbstractDronePgnHandler {
     this.mapper = new AisClassBExtendedPositionMapper(config);
   }
 
-
-
   @Override
   public Optional<PgnEmission> emit(DroneTwin droneTwin, DroneEmissionState droneEmissionState, long now) {
     if (!isActiveAndPositionValid(droneTwin)) {
@@ -51,7 +48,6 @@ public class Ais129040Handler extends AbstractDronePgnHandler {
     }
 
     PgnEmissionState pgnEmissionState = droneEmissionState.getOrCreateState(getPgn());
-
     if (!shouldEmit(droneTwin, pgnEmissionState, now)) {
       return Optional.empty();
     }
@@ -61,10 +57,9 @@ public class Ais129040Handler extends AbstractDronePgnHandler {
       return Optional.empty();
     }
 
-    byte[] payload =
-        n2kMessageParser.encodeFromSource(
-            getPgn(),
-            new AisClassBExtendedPositionFieldValueSource(optionalReport.get()));
+    byte[] payload = n2kMessageParser.encodeFromSource(
+        getPgn(),
+        new AisClassBExtendedPositionFieldValueSource(optionalReport.get()));
 
     if (payload == null || payload.length == 0) {
       return Optional.empty();
@@ -73,7 +68,6 @@ public class Ais129040Handler extends AbstractDronePgnHandler {
     pgnEmissionState.setLastEmitAt(now);
     pgnEmissionState.setEmitted(true);
     updateMotionSnapshot(droneTwin, pgnEmissionState);
-
     return Optional.of(new PgnEmission(getPgn(), payload));
   }
 
@@ -86,7 +80,7 @@ public class Ais129040Handler extends AbstractDronePgnHandler {
     if (elapsed >= intervalMillis) {
       return true;
     }
-    return hasMaterialMotionChange(droneTwin, pgnEmissionState);
+    return elapsed >= (intervalMillis / 2) && hasMaterialMotionChange(droneTwin, pgnEmissionState);
   }
 
   @Override

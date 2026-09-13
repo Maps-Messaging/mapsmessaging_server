@@ -29,10 +29,12 @@ import io.mapsmessaging.state.drone.core.TwinUpdateContext;
 import io.mapsmessaging.state.drone.drone.DroneTwin;
 import io.mapsmessaging.state.n2k.listener.N2kJsonListener;
 import io.mapsmessaging.state.n2k.listener.N2kJsonListenerRegistry;
+import io.mapsmessaging.state.n2k.listener.N2kPgns;
 import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
 
 import java.time.Instant;
+import java.util.Optional;
 
 public class N2kTwinUpdater {
 
@@ -49,8 +51,13 @@ public class N2kTwinUpdater {
   public void updateTwinState(int pgn, @NonNull @NotNull JsonObject packet, @NonNull @NotNull TwinUpdateContext context, @NonNull @NotNull N2KTwinConfig config, DroneInfoDTO droneInfo) {
     String twinId = buildTwinId(config);
     N2kJsonListener listener = listenerRegistry.getListener(pgn);
+    Optional<EntityTwin> existingTwin = twinManager.getTwin(twinId);
 
-    twinManager.getTwin(twinId).orElseGet(() -> createTwin(twinId, config, context, droneInfo));
+    if (existingTwin.isPresent() && existingTwin.get() instanceof DroneTwin droneTwin && isStaleUpdate(pgn, droneTwin, context)) {
+      return;
+    }
+
+    existingTwin.orElseGet(() -> createTwin(twinId, config, context, droneInfo));
 
     twinManager.updateTwin(twinId, twinToUpdate -> {
       if (twinToUpdate instanceof DroneTwin droneTwin) {
@@ -63,6 +70,21 @@ public class N2kTwinUpdater {
         }
       }
     }, context);
+  }
+
+  private boolean isStaleUpdate(int pgn, DroneTwin droneTwin, TwinUpdateContext context) {
+    Instant receivedTime = context.getReceivedTime();
+    if (receivedTime == null) {
+      return false;
+    }
+
+    Instant currentTimestamp = switch (pgn) {
+      case N2kPgns.POSITION_RAPID_UPDATE, N2kPgns.GNSS_POSITION_DATA -> droneTwin.getNavigationUpdatedAt();
+      case N2kPgns.COG_SOG_RAPID_UPDATE, N2kPgns.VESSEL_HEADING, N2kPgns.RATE_OF_TURN, N2kPgns.ATTITUDE -> droneTwin.getMotionUpdatedAt();
+      default -> null;
+    };
+
+    return currentTimestamp != null && receivedTime.isBefore(currentTimestamp);
   }
 
   private EntityTwin createTwin(String twinId, N2KTwinConfig config, TwinUpdateContext context, DroneInfoDTO droneInfo) {
@@ -78,14 +100,12 @@ public class N2kTwinUpdater {
       droneTwin.setBatteryCapacityHours(droneInfo.getBatteryCapacityHours());
     }
 
-
     twinManager.registerTwin(droneTwin, context);
     return droneTwin;
   }
 
   private void updateTwinIdentity(DroneTwin droneTwin, N2KTwinConfig config, TwinUpdateContext context) {
     Instant now = resolveTimestamp(context);
-
     droneTwin.setDisplayName(resolveDisplayName(droneTwin.getTwinId(), config));
     droneTwin.setDescriptionString(resolveDescription(droneTwin.getTwinId(), config));
     droneTwin.setCallSign(resolveCallSign(droneTwin.getTwinId(), config));
@@ -102,7 +122,6 @@ public class N2kTwinUpdater {
     if (responseTopic == null || responseTopic.isBlank()) {
       return;
     }
-
     String currentResponseTopic = twin.getResponseTopicName();
     if (currentResponseTopic == null || currentResponseTopic.isBlank()) {
       twin.setResponseTopicName(responseTopic);
@@ -113,11 +132,9 @@ public class N2kTwinUpdater {
     if (config.getName() != null && !config.getName().isBlank()) {
       return normalizeTwinId(config.getName());
     }
-
     if (config.getTopic() != null && !config.getTopic().isBlank()) {
       return normalizeTwinId(config.getTopic());
     }
-
     return "n2k";
   }
 
@@ -125,19 +142,13 @@ public class N2kTwinUpdater {
     if (config.getName() != null && !config.getName().isBlank()) {
       return config.getName();
     }
-
     return twinId;
   }
 
   private String resolveDescription(String twinId, N2KTwinConfig config) {
-//    if (config.getDescription() != null && !config.getDescription().isBlank()) {
-//      return config.getDescription();
-//    }
-
     if (config.getName() != null && !config.getName().isBlank()) {
       return "N2K STANAG feed " + config.getName();
     }
-
     return "N2K STANAG feed " + twinId;
   }
 
@@ -145,17 +156,7 @@ public class N2kTwinUpdater {
     if (config.getName() != null && !config.getName().isBlank()) {
       return config.getName();
     }
-
     return twinId;
-  }
-
-  private String trimCallSign(String value) {
-    String normalizedValue = normalizeTwinId(value);
-    if (normalizedValue.length() > 7) {
-      return normalizedValue.substring(normalizedValue.length() - 7);
-    }
-
-    return normalizedValue;
   }
 
   private VehicleClass resolveVehicleClass(N2KTwinConfig config) {
@@ -184,7 +185,6 @@ public class N2kTwinUpdater {
     if (context.getReceivedTime() != null) {
       return context.getReceivedTime();
     }
-
     return Instant.now();
   }
 }
