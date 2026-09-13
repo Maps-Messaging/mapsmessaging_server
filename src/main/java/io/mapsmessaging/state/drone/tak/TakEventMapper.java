@@ -40,6 +40,7 @@ public class TakEventMapper {
   private static final double DEFAULT_CE = 10.0;
   private static final double DEFAULT_LE = 15.0;
   private static final long DEFAULT_STALE_SECONDS = 30L;
+  private static final NatoCotTypeMapper NATO_COT_TYPE_MAPPER = new NatoCotTypeMapper();
 
   public TakEvent map(EntityTwin twin, TwinUpdateContext context) {
     if (twin == null || twin.getGeoPosition() == null) {
@@ -213,6 +214,11 @@ public class TakEventMapper {
 
   private String resolveCotType(EntityTwin twin) {
     if (twin instanceof DroneTwin droneTwin) {
+      String natoCotType = NATO_COT_TYPE_MAPPER.fromDescription(droneTwin.getDescription());
+      if (natoCotType != null) {
+        return natoCotType;
+      }
+
       VehicleClass vehicleClass = droneTwin.getVehicleClass();
       if (vehicleClass != null) {
         return switch (vehicleClass) {
