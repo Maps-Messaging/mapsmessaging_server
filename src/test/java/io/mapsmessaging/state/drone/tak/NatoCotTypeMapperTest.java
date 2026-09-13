@@ -63,6 +63,34 @@ class NatoCotTypeMapperTest {
   }
 
   @Test
+  void mapsMilitaryUnmannedSurfaceVehicle() {
+    Map<String, Object> description =
+        Map.of(
+            "standard_identity", "StandardIdentityEnum_FRIEND",
+            "symbol_set", "SymbolSetEnum_SEA_SURFACE",
+            "entity", "12",
+            "entity_type", "07",
+            "entity_subtype", "00",
+            "sector_1", "00",
+            "sector_2", "00");
+
+    assertEquals("a-f-S-C-U", mapper.fromDescription(description));
+  }
+
+  @Test
+  void genericMilitarySeaSurfaceFallsBackToDimension() {
+    Map<String, Object> description =
+        Map.of(
+            "standard_identity", "StandardIdentityEnum_FRIEND",
+            "symbol_set", "SymbolSetEnum_SEA_SURFACE",
+            "entity", "11",
+            "entity_type", "00",
+            "entity_subtype", "00");
+
+    assertEquals("a-f-S", mapper.fromDescription(description));
+  }
+
+  @Test
   void mapsSeaSurfaceClassification() {
     Map<String, Object> description =
         Map.of(
