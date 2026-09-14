@@ -70,8 +70,10 @@ final class CotEventPolicy {
     }
 
     boolean contact = TwinType.CONTACT.equals(twin.getTwinType());
+    MtiLookupResult mti = MtiStatusRegistry.lookup(twin.getTwinId());
     event.setUid(prefixUid(event.getUid(), config == null ? null : config.getUidPrefix()));
-    event.setType(contact ? CONTACT_COT_TYPE : resolveCotType(twin, config));
+    String baseType = contact ? CONTACT_COT_TYPE : resolveCotType(twin, config);
+    event.setType(applyMtiAffiliation(baseType, mti));
     event.setHow(contact ? CONTACT_HOW : valueOrDefault(config == null ? null : config.getHow(), DEFAULT_HOW));
 
     if (removal) {
@@ -107,6 +109,33 @@ final class CotEventPolicy {
         detail.setColorArgb(CONTACT_COLOR_ARGB_RED);
         applyContactDetail(detail, twin);
       }
+      applyMtiDetail(detail, mti);
+    }
+  }
+
+  private String applyMtiAffiliation(String baseType, MtiLookupResult mti) {
+    if (mti == null || mti.affiliationOverride() == null || mti.affiliationOverride().isBlank()) {
+      return baseType;
+    }
+    String[] parts = baseType.split("-", 3);
+    if (parts.length < 3) {
+      return baseType;
+    }
+    return parts[0] + "-" + mti.affiliationOverride() + "-" + parts[2];
+  }
+
+  private void applyMtiDetail(TakDetail detail, MtiLookupResult mti) {
+    if (mti == null) {
+      return;
+    }
+    if (mti.colorArgb() != null) {
+      detail.setColorArgb(mti.colorArgb());
+    }
+    if (mti.remarksSuffix() != null && !mti.remarksSuffix().isBlank()) {
+      String existing = detail.getRemarks();
+      detail.setRemarks(existing == null || existing.isBlank()
+          ? mti.remarksSuffix()
+          : existing + " | " + mti.remarksSuffix());
     }
   }
 
