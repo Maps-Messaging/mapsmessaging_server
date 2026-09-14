@@ -18,7 +18,7 @@ steps:
 
   - wait
   - trigger: "095-maps-apps-packaging"
-
+  - trigger: "095-drone-build-and-package"
   - trigger: "100-server-3rd-party-extensions-snapshot"
   - trigger: "200-build-windows-installer"
     build:
