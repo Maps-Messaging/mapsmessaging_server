@@ -51,6 +51,23 @@ class TakEventMapperNatoTypeTest {
   }
 
   @Test
+  void broadSeaSurfaceDescriptionIsRefinedForConfiguredUsv() {
+    DroneTwin twin = positionedTwin(VehicleClass.USV);
+    twin.setDescription(
+        Map.of(
+            "standard_identity", "StandardIdentityEnum_FRIEND",
+            "symbol_set", "SymbolSetEnum_SEA_SURFACE",
+            "entity", "11",
+            "entity_type", "00",
+            "entity_subtype", "00"));
+
+    TakEvent event = mapper.map(twin, null);
+
+    assertNotNull(event);
+    assertEquals("a-f-S-C-U", event.getType());
+  }
+
+  @Test
   void vehicleClassFallbackIsPreservedWithoutNatoClassification() {
     DroneTwin twin = positionedTwin(VehicleClass.USV);
 
