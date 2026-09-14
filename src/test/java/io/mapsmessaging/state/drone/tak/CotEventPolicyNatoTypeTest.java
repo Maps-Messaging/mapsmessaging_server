@@ -38,7 +38,7 @@ class CotEventPolicyNatoTypeTest {
 
   @Test
   void preservesNatoClassificationWhenApplyingPolicy() {
-    DroneTwin twin = militaryUsv();
+    DroneTwin twin = broadSeaSurfaceUsv();
     TakEvent event = mapper.map(twin, null);
     CotConfigDTO config = new CotConfigDTO();
     config.setAffiliation(CotAffiliation.FRIENDLY);
@@ -53,7 +53,7 @@ class CotEventPolicyNatoTypeTest {
 
   @Test
   void changesOnlyAffiliationWhenPolicyOverridesMappedType() {
-    DroneTwin twin = militaryUsv();
+    DroneTwin twin = broadSeaSurfaceUsv();
     TakEvent event = mapper.map(twin, null);
     CotConfigDTO config = new CotConfigDTO();
     config.setAffiliation(CotAffiliation.HOSTILE);
@@ -66,7 +66,7 @@ class CotEventPolicyNatoTypeTest {
     assertEquals("a-h-S-C-U", event.getType());
   }
 
-  private DroneTwin militaryUsv() {
+  private DroneTwin broadSeaSurfaceUsv() {
     DroneTwin twin = new DroneTwin("cot-policy-usv");
     twin.setVehicleClass(VehicleClass.USV);
     twin.setGeoPosition(new GeoPosition(38.444, -9.101, 0.0, null));
@@ -74,8 +74,8 @@ class CotEventPolicyNatoTypeTest {
         Map.of(
             "standard_identity", "StandardIdentityEnum_FRIEND",
             "symbol_set", "SymbolSetEnum_SEA_SURFACE",
-            "entity", "12",
-            "entity_type", "07",
+            "entity", "11",
+            "entity_type", "00",
             "entity_subtype", "00",
             "sector_1", "00",
             "sector_2", "00"));
