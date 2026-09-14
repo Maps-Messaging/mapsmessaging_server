@@ -21,8 +21,10 @@ package io.mapsmessaging.state.n2k.listener;
 
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import com.google.gson.JsonPrimitive;
 import io.mapsmessaging.state.drone.core.TwinUpdateContext;
 
+import java.math.BigDecimal;
 import java.time.Instant;
 
 public abstract class AbstractN2kJsonListener implements N2kJsonListener {
@@ -50,47 +52,63 @@ public abstract class AbstractN2kJsonListener implements N2kJsonListener {
   }
 
   protected Double getDouble(JsonObject packet, String... names) {
-    JsonElement jsonElement = getElement(packet, names);
-    if (jsonElement == null) {
+    JsonPrimitive primitive = getPrimitive(packet, names);
+    if (primitive == null || primitive.isBoolean()) {
       return null;
     }
-    return jsonElement.getAsDouble();
+
+    try {
+      double value = primitive.getAsDouble();
+      return Double.isFinite(value) ? value : null;
+    } catch (NumberFormatException | UnsupportedOperationException exception) {
+      return null;
+    }
   }
 
   protected Integer getInteger(JsonObject packet, String... names) {
-    JsonElement jsonElement = getElement(packet, names);
-    if (jsonElement == null) {
+    BigDecimal value = getDecimal(packet, names);
+    if (value == null) {
       return null;
     }
-    return jsonElement.getAsInt();
+
+    try {
+      return value.intValueExact();
+    } catch (ArithmeticException exception) {
+      return null;
+    }
   }
 
   protected Long getLong(JsonObject packet, String... names) {
-    JsonElement jsonElement = getElement(packet, names);
-    if (jsonElement == null) {
+    BigDecimal value = getDecimal(packet, names);
+    if (value == null) {
       return null;
     }
-    return jsonElement.getAsLong();
+
+    try {
+      return value.longValueExact();
+    } catch (ArithmeticException exception) {
+      return null;
+    }
   }
 
   protected String getString(JsonObject packet, String... names) {
-    JsonElement jsonElement = getElement(packet, names);
-    if (jsonElement == null) {
+    JsonPrimitive primitive = getPrimitive(packet, names);
+    if (primitive == null || !primitive.isString()) {
       return null;
     }
-    return jsonElement.getAsString();
+    return primitive.getAsString();
   }
 
   protected boolean isValidLatitude(Double latitude) {
-    return latitude != null && latitude >= -90.0d && latitude <= 90.0d;
+    return latitude != null && Double.isFinite(latitude) && latitude >= -90.0d && latitude <= 90.0d;
   }
 
   protected boolean isValidLongitude(Double longitude) {
-    return longitude != null && longitude >= -180.0d && longitude <= 180.0d;
+    return longitude != null && Double.isFinite(longitude) && longitude >= -180.0d && longitude <= 180.0d;
   }
 
   protected Double normalizeDegrees(Double degrees) {
-    if (degrees == null) {
+    if (degrees == null || !Double.isFinite(degrees)) {
       return null;
     }
 
@@ -103,10 +121,31 @@ public abstract class AbstractN2kJsonListener implements N2kJsonListener {
   }
 
   protected Double radiansToDegrees(Double radians) {
-    if (radians == null) {
+    if (radians == null || !Double.isFinite(radians)) {
       return null;
     }
     return Math.toDegrees(radians);
+  }
+
+  private BigDecimal getDecimal(JsonObject packet, String... names) {
+    JsonPrimitive primitive = getPrimitive(packet, names);
+    if (primitive == null || primitive.isBoolean()) {
+      return null;
+    }
+
+    try {
+      return new BigDecimal(primitive.getAsString().trim());
+    } catch (NumberFormatException exception) {
+      return null;
+    }
+  }
+
+  private JsonPrimitive getPrimitive(JsonObject packet, String... names) {
+    JsonElement jsonElement = getElement(packet, names);
+    if (jsonElement == null || !jsonElement.isJsonPrimitive()) {
+      return null;
+    }
+    return jsonElement.getAsJsonPrimitive();
   }
 
   private JsonElement getElement(JsonObject packet, String... names) {

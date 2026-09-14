@@ -21,27 +21,33 @@ package io.mapsmessaging.state.n2k.listener;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 
 public class N2kJsonListenerRegistry {
 
   private final Map<Integer, N2kJsonListener> listeners;
 
   public N2kJsonListenerRegistry() {
-    listeners = new HashMap<>();
+    this(
+        new N2kPositionJsonListener(),
+        new N2kGnssJsonListener(),
+        new N2kMotionJsonListener(),
+        new N2kHeadingJsonListener(),
+        new N2kAttitudeJsonListener(),
+        new N2kRateOfTurnJsonListener(),
+        new N2kGnssDopsJsonListener(),
+        new N2kBatteryStatusJsonListener(),
+        new N2kMagneticVariationJsonListener(),
+        new N2kWindJsonListener(),
+        new N2kEnvironmentalParametersJsonListener(),
+        new N2kInverterStatusJsonListener());
+  }
 
-    register(new N2kPositionJsonListener());
-    register(new N2kGnssJsonListener());
-    register(new N2kMotionJsonListener());
-    register(new N2kHeadingJsonListener());
-    register(new N2kAttitudeJsonListener());
-
-    register(new N2kRateOfTurnJsonListener());
-    register(new N2kGnssDopsJsonListener());
-    register(new N2kBatteryStatusJsonListener());
-    register(new N2kMagneticVariationJsonListener());
-    register(new N2kWindJsonListener());
-    register(new N2kEnvironmentalParametersJsonListener());
-    register(new N2kInverterStatusJsonListener());
+  N2kJsonListenerRegistry(N2kJsonListener... listeners) {
+    this.listeners = new HashMap<>();
+    for (N2kJsonListener listener : listeners) {
+      register(listener);
+    }
   }
 
   public N2kJsonListener getListener(int pgn) {
@@ -52,7 +58,11 @@ public class N2kJsonListenerRegistry {
     return listeners.containsKey(pgn);
   }
 
-  private void register(N2kJsonListener listener) {
-    listeners.put(listener.getPgn(), listener);
+  void register(N2kJsonListener listener) {
+    Objects.requireNonNull(listener, "listener must not be null");
+    N2kJsonListener existing = listeners.putIfAbsent(listener.getPgn(), listener);
+    if (existing != null) {
+      throw new IllegalArgumentException("Duplicate N2K JSON listener for PGN " + listener.getPgn());
+    }
   }
 }
