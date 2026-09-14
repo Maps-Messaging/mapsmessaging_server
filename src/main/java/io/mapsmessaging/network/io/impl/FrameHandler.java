@@ -26,8 +26,10 @@ import io.mapsmessaging.network.io.ServerPublishPacket;
 
 import java.io.IOException;
 import java.nio.BufferOverflowException;
+import java.util.ArrayList;
 import java.util.Deque;
 import java.util.LinkedList;
+import java.util.List;
 
 import static io.mapsmessaging.logging.ServerLogMessages.*;
 import static java.nio.channels.SelectionKey.OP_WRITE;
@@ -53,46 +55,62 @@ public class FrameHandler {
     packet = new Packet(bufferSize, false);
   }
 
-  public synchronized void processSelection() {
+  public void processSelection() {
     int processedFrames = 0;
     while (processedFrames < MAX_FRAMES_PER_SELECTION) {
-      if (pendingWrites.isEmpty()) {
-        int packedFrames;
-        try {
-          packedFrames = packPacket(MAX_FRAMES_PER_SELECTION - processedFrames);
-        } catch (RuntimeException runtimeException) {
-          writeTask.logger.log(WRITE_TASK_SEND_FAILED, runtimeException);
-          closeConnection();
-          clearPendingState();
-          cancelWrite();
-          return;
-        }
-        if (packedFrames == 0) {
-          cancelIfIdle();
-          return;
-        }
-        processedFrames += packedFrames;
+      ProcessResult processResult;
+      synchronized (this) {
+        processResult = processSelectionLocked(MAX_FRAMES_PER_SELECTION - processedFrames);
       }
 
-      WriteResult result = writePendingPackets();
-      if (result == WriteResult.FAILED) {
-        clearPendingState();
-        cancelWrite();
-        return;
-      }
-      if (result == WriteResult.BLOCKED) {
-        requestWriteCallback();
-        return;
-      }
-
-      resetPacket();
-      completeFrames();
-      if (writeTask.outboundFrame.isEmpty()) {
-        cancelIfIdle();
+      completeFrames(processResult.completedFrames());
+      processedFrames += processResult.processedFrames();
+      if (!processResult.continueProcessing()) {
         return;
       }
     }
-    requestWriteCallback();
+
+    synchronized (this) {
+      requestWriteCallback();
+    }
+  }
+
+  private ProcessResult processSelectionLocked(int maximumFrames) {
+    int packedFrames = 0;
+    if (pendingWrites.isEmpty()) {
+      try {
+        packedFrames = packPacket(maximumFrames);
+      } catch (RuntimeException runtimeException) {
+        writeTask.logger.log(WRITE_TASK_SEND_FAILED, runtimeException);
+        closeConnection();
+        clearPendingState();
+        cancelWrite();
+        return ProcessResult.stop(0);
+      }
+      if (packedFrames == 0) {
+        cancelIfIdle();
+        return ProcessResult.stop(0);
+      }
+    }
+
+    WriteResult result = writePendingPackets();
+    if (result == WriteResult.FAILED) {
+      clearPendingState();
+      cancelWrite();
+      return ProcessResult.stop(packedFrames);
+    }
+    if (result == WriteResult.BLOCKED) {
+      requestWriteCallback();
+      return ProcessResult.stop(packedFrames);
+    }
+
+    resetPacket();
+    List<ServerPacket> framesToComplete = drainCompletedFrames();
+    if (writeTask.outboundFrame.isEmpty()) {
+      cancelIfIdle();
+      return ProcessResult.stop(packedFrames, framesToComplete);
+    }
+    return ProcessResult.continueWith(packedFrames, framesToComplete);
   }
 
   private int packPacket(int maximumFrames) {
@@ -255,9 +273,18 @@ public class FrameHandler {
     }
   }
 
-  private void completeFrames() {
-    while (!completedFrames.isEmpty()) {
-      ServerPacket completedFrame = completedFrames.poll();
+  private List<ServerPacket> drainCompletedFrames() {
+    List<ServerPacket> framesToComplete = new ArrayList<>(completedFrames.size());
+    ServerPacket completedFrame = completedFrames.poll();
+    while (completedFrame != null) {
+      framesToComplete.add(completedFrame);
+      completedFrame = completedFrames.poll();
+    }
+    return framesToComplete;
+  }
+
+  private void completeFrames(List<ServerPacket> framesToComplete) {
+    for (ServerPacket completedFrame : framesToComplete) {
       try {
         completedFrame.complete();
       } catch (RuntimeException runtimeException) {
@@ -298,6 +325,21 @@ public class FrameHandler {
       writeTask.selectorCallback.close();
     } catch (IOException | RuntimeException ioException) {
       writeTask.logger.log(ServerLogMessages.END_POINT_CLOSE_EXCEPTION, ioException);
+    }
+  }
+
+  private record ProcessResult(int processedFrames, List<ServerPacket> completedFrames, boolean continueProcessing) {
+
+    private static ProcessResult stop(int processedFrames) {
+      return stop(processedFrames, List.of());
+    }
+
+    private static ProcessResult stop(int processedFrames, List<ServerPacket> completedFrames) {
+      return new ProcessResult(processedFrames, completedFrames, false);
+    }
+
+    private static ProcessResult continueWith(int processedFrames, List<ServerPacket> completedFrames) {
+      return new ProcessResult(processedFrames, completedFrames, true);
     }
   }
 
