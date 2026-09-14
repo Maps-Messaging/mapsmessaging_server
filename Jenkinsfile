@@ -1,4 +1,3 @@
-```
 /*
  * Jenkins cloud JUnit pipeline for MapsMessaging.
  *
@@ -418,4 +417,3 @@ node(nodeLabel) {
 stage("Summary") {
     echo "JUnit cloud run complete"
 }
-```
