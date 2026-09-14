@@ -71,7 +71,13 @@ final class CotEventPolicy {
 
     boolean contact = TwinType.CONTACT.equals(twin.getTwinType());
     event.setUid(prefixUid(event.getUid(), config == null ? null : config.getUidPrefix()));
-    event.setType(contact ? CONTACT_COT_TYPE : resolveCotType(twin, config));
+    if (contact) {
+      event.setType(CONTACT_COT_TYPE);
+    } else if (event.getType() == null || event.getType().isBlank()) {
+      event.setType(resolveCotType(twin, config));
+    } else {
+      event.setType(applyAffiliation(event.getType(), resolveAffiliationCode(twin, config)));
+    }
     event.setHow(contact ? CONTACT_HOW : valueOrDefault(config == null ? null : config.getHow(), DEFAULT_HOW));
 
     if (removal) {
@@ -134,6 +140,14 @@ final class CotEventPolicy {
     appendLabelledRemark(remarks, "source", attributes.get("sourceSensor"));
     appendLabelledRemark(remarks, "detection_id", attributes.get("sourceDetectionId"));
     detail.setRemarks(remarks.toString());
+  }
+
+  private String applyAffiliation(String cotType, String affiliation) {
+    String[] parts = cotType.split("-", 3);
+    if (parts.length != 3 || !"a".equals(parts[0]) || parts[1].length() != 1) {
+      return cotType;
+    }
+    return "a-" + affiliation + '-' + parts[2];
   }
 
   private String resolveCotType(EntityTwin twin, CotConfigDTO config) {
