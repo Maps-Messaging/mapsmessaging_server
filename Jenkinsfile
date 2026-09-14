@@ -1,3 +1,4 @@
+```
 /*
  * Jenkins cloud JUnit pipeline for MapsMessaging.
  *
@@ -345,15 +346,24 @@ branches["Long - SimpleBufferBasedStompIT"] = {
     runSuite("Long - SimpleBufferBasedStompIT", [heavySuites[1]], null)
 }
 
-(0..<5).each { int index ->
-    def shardIndex = index
-    branches["JUnit shard ${shardIndex + 1}"] = {
-        runSuite(
-            "JUnit shard ${shardIndex + 1}",
-            historicalGroups[shardIndex],
-            shardIndex
-        )
-    }
+branches["JUnit shard 1"] = {
+    runSuite("JUnit shard 1", historicalGroups[0], 0)
+}
+
+branches["JUnit shard 2"] = {
+    runSuite("JUnit shard 2", historicalGroups[1], 1)
+}
+
+branches["JUnit shard 3"] = {
+    runSuite("JUnit shard 3", historicalGroups[2], 2)
+}
+
+branches["JUnit shard 4"] = {
+    runSuite("JUnit shard 4", historicalGroups[3], 3)
+}
+
+branches["JUnit shard 5"] = {
+    runSuite("JUnit shard 5", historicalGroups[4], 4)
 }
 
 parallel branches
@@ -408,3 +418,4 @@ node(nodeLabel) {
 stage("Summary") {
     echo "JUnit cloud run complete"
 }
+```
