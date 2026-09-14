@@ -50,6 +50,9 @@ final class CotEventPolicy {
   private static final int CONTACT_COLOR_ARGB_RED = -65536;
   private static final String DEFAULT_ALTITUDE_SOURCE = "GPS";
   private static final String DEFAULT_GEOPOINT_SOURCE = "GPS";
+  // Must match io.mapsmessaging.network.protocol.impl.cot.CotToTwinMapper.ORIGINAL_COT_TYPE_ATTRIBUTE -
+  // not imported directly to avoid a state.drone.tak -> network.protocol.impl.cot dependency.
+  private static final String ORIGINAL_COT_TYPE_ATTRIBUTE = "originalCotType";
 
   void apply(TakEvent event, EntityTwin twin, TwinUpdateContext context, CotConfigDTO config) {
     apply(event, twin, context, config, false);
@@ -72,7 +75,7 @@ final class CotEventPolicy {
     boolean contact = TwinType.CONTACT.equals(twin.getTwinType());
     MtiLookupResult mti = MtiStatusRegistry.lookup(twin.getTwinId());
     event.setUid(prefixUid(event.getUid(), config == null ? null : config.getUidPrefix()));
-    String baseType = contact ? CONTACT_COT_TYPE : resolveCotType(twin, config);
+    String baseType = contact ? CONTACT_COT_TYPE : resolveBaseCotType(twin, config);
     event.setType(applyMtiAffiliation(baseType, mti));
     event.setHow(contact ? CONTACT_HOW : valueOrDefault(config == null ? null : config.getHow(), DEFAULT_HOW));
 
@@ -111,6 +114,21 @@ final class CotEventPolicy {
       }
       applyMtiDetail(detail, mti);
     }
+  }
+
+  /**
+   * A twin created via the CoT-ingest route (CotToTwinMapper) carries the type it originally
+   * arrived with - fall back to that, not the vehicle-class guess below, so an inbound CoT track
+   * with no MTI match renders exactly as it was initially mapped, per the agreed MTI design
+   * (delete/no-match = "route the message through as initially mapped"). Mavlink/N2K-sourced
+   * twins never carry this attribute, so their fallback is unchanged.
+   */
+  private String resolveBaseCotType(EntityTwin twin, CotConfigDTO config) {
+    String originalType = twin.getAttributes().get(ORIGINAL_COT_TYPE_ATTRIBUTE);
+    if (originalType != null && !originalType.isBlank()) {
+      return originalType;
+    }
+    return resolveCotType(twin, config);
   }
 
   private String applyMtiAffiliation(String baseType, MtiLookupResult mti) {
