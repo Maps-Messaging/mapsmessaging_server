@@ -389,6 +389,7 @@ public class MQTT5Protocol extends Protocol {
 
   @Override
   public void sendMessage(@NotNull @NonNull MessageEvent messageEvent) {
+    boolean retainedReplay = messageEvent.getSubscription().isRetainedReplay(messageEvent.getMessage().getIdentifier());
     ParsedMessage parsedMessage = parseOutboundMessage(messageEvent);
     if(parsedMessage == null) {
       return;
@@ -399,12 +400,12 @@ public class MQTT5Protocol extends Protocol {
       messageEvent.getCompletionTask().run();
       logger.log(ServerLogMessages.MQTT5_MAX_BUFFER_EXCEEDED, maxBufferSize, message.getOpaqueData().length);
     } else {
-      sendPublishFrame(topicName, messageEvent.getSubscription(), message, messageEvent.getCompletionTask());
+      sendPublishFrame(topicName, messageEvent.getSubscription(), message, messageEvent.getCompletionTask(), retainedReplay);
     }
   }
 
   private void sendPublishFrame(@NonNull @NotNull String normalisedName, @NonNull @NotNull SubscribedEventManager subscription, @NonNull @NotNull Message message,
-                                @NonNull @NotNull Runnable completionTask) {
+                                @NonNull @NotNull Runnable completionTask, boolean retainedReplay) {
     SubscriptionContext subInfo = subscription.getContext();
     QualityOfService qos = QualityOfService.getInstance(Math.min(subInfo.getQualityOfService().getLevel(), message.getQualityOfService().getLevel()));
     int packetId = getPacketId(qos, subscription, message);
@@ -428,13 +429,7 @@ public class MQTT5Protocol extends Protocol {
         alias = serverTopicAliasMapping.create(destinationName);
       }
     }
-    //
-    // Weird MQTT5 flag
-    //
-    boolean retain = message.isRetain();
-    if (!subInfo.isRetainAsPublish()) {
-      retain = false;
-    }
+    boolean retain = retainedReplay || (subInfo.isRetainAsPublish() && message.isRetain());
     Publish5 publish = new Publish5(message.getOpaqueData(), qos, packetId, destinationName, retain);
     if (alias != null) {
       publish.add(alias);

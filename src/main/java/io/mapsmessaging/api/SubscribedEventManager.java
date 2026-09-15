@@ -68,6 +68,9 @@ public interface SubscribedEventManager {
    */
   void updateCredit(int credit);
 
+  default boolean isRetainedReplay(long messageId) {
+    return false;
+  }
 
   /**
    * Returns true if the subscription has no current messages pending

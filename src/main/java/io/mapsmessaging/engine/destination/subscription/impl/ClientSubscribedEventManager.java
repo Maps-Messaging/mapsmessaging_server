@@ -68,6 +68,14 @@ public class ClientSubscribedEventManager implements SubscribedEventManager {
   }
 
   @Override
+  public boolean isRetainedReplay(long messageId) {
+    if (subscription instanceof DestinationSubscription destinationSubscription) {
+      return destinationSubscription.getMessageStateManager().isRetainedReplay(messageId);
+    }
+    return subscription.isRetainedReplay(messageId);
+  }
+
+  @Override
   public boolean isEmpty() {
     return subscription.isEmpty();
   }
