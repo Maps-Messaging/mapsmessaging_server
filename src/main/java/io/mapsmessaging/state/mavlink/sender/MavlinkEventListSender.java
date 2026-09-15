@@ -28,6 +28,7 @@ import io.mapsmessaging.state.mavlink.model.UxvModelCommandSet;
 import io.mapsmessaging.state.mavlink.packet.MavlinkPacket;
 import io.mapsmessaging.state.mavlink.sender.MavlinkAcknowledgementHandler.Acknowledgement;
 import io.mapsmessaging.state.mavlink.sender.MavlinkAcknowledgementHandler.Action;
+import io.mapsmessaging.state.mavlink.sender.MavlinkAcknowledgementHandler.TimeoutAction;
 import io.mapsmessaging.utilities.threads.SimpleTaskScheduler;
 import java.util.List;
 import java.util.Objects;
@@ -199,6 +200,7 @@ public class MavlinkEventListSender implements AutoCloseable {
     MavlinkMessage message;
     int index;
     boolean retriesExhausted;
+    boolean retryTransaction;
 
     synchronized (lock) {
       if (terminal) {
@@ -218,13 +220,28 @@ public class MavlinkEventListSender implements AutoCloseable {
 
       message = waitingMessage;
       index = waitingMessage == null ? nextIndex : waitingIndex;
+      retryTransaction = message != null
+          && acknowledgementHandler.timeoutAction(message) == TimeoutAction.RETRY_TRANSACTION;
       retriesExhausted = waitingMessage == null || retryCount >= maxRetries;
 
-      if (!retriesExhausted) {
+      if (retryTransaction) {
+        updateTransmission("TRANSACTION_TIMEOUT", "Response timeout; abandoning current transaction for bounded outer retry");
+      } else if (!retriesExhausted) {
         retryCount++;
         totalPacketRetries++;
         updateTransmission("RETRYING", "Response timeout; retransmitting current message");
       }
+    }
+
+    if (retryTransaction) {
+      complete(
+          MavlinkSendResult.Status.TIMEOUT,
+          index,
+          message,
+          null,
+          null,
+          "MAVLink mission transaction timed out waiting for vehicle request or acknowledgement");
+      return;
     }
 
     if (retriesExhausted) {
@@ -272,6 +289,8 @@ public class MavlinkEventListSender implements AutoCloseable {
       case ADVANCE -> handleAdvance(sentMessage, sentIndex);
       case SEND_INDEX -> handleSendIndex(acknowledgement.index());
       case RESTART -> scheduleMissionRestart(acknowledgement);
+      case RETRY_TRANSACTION ->
+          complete(MavlinkSendResult.Status.TIMEOUT, sentIndex, sentMessage, receivedMessage, null, failureReason(acknowledgement));
 
       case COMPLETE ->
           complete(MavlinkSendResult.Status.SUCCESS, sentIndex, sentMessage, receivedMessage, null, "MAVLink event list sender completed successfully");
@@ -449,7 +468,10 @@ public class MavlinkEventListSender implements AutoCloseable {
       } else if (message instanceof io.mapsmessaging.state.mavlink.messages.MavlinkMissionItem item) {
         lastMissionSequence = item.getMissionSequence();
       }
-      nextRetryAt = requiresAcknowledgement ? lastSentAt + acknowledgementTimeoutMillis : null;
+      long effectiveTimeoutMillis = requiresAcknowledgement
+          ? acknowledgementHandler.acknowledgementTimeoutMillis(message, acknowledgementTimeoutMillis)
+          : 0L;
+      nextRetryAt = requiresAcknowledgement ? lastSentAt + effectiveTimeoutMillis : null;
       updateTransmission(requiresAcknowledgement ? "WAITING_RESPONSE" : "SENDING", null);
     }
     sender.send(message);
@@ -486,11 +508,12 @@ public class MavlinkEventListSender implements AutoCloseable {
       }
 
       long generation = ++acknowledgementTimeoutGeneration;
+      long effectiveTimeoutMillis = acknowledgementHandler.acknowledgementTimeoutMillis(message, acknowledgementTimeoutMillis);
       acknowledgementTimeoutFuture =
           SimpleTaskScheduler.getInstance()
               .schedule(
                   () -> processTimeout(index, message, generation),
-                  acknowledgementTimeoutMillis,
+                  effectiveTimeoutMillis,
                   TimeUnit.MILLISECONDS);
     }
   }
