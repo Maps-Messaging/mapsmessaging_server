@@ -71,6 +71,11 @@ public class MavlinkProtocol extends Protocol {
   private static final int MAV_AUTOPILOT_PX4 = 12;
   private static final int MAV_AUTOPILOT_INVALID = 8;
 
+  private static final int MAVLINK_MISSION_REQUEST = 40;
+  private static final int MAVLINK_MISSION_ACK = 47;
+  private static final int MAVLINK_MISSION_REQUEST_INT = 51;
+  private static final int MAVLINK_COMMAND_ACK = 77;
+
   private static final Logger logger = LoggerFactory.getLogger(MavlinkProtocol.class);
 
   private final Gson gson;
@@ -293,6 +298,7 @@ public class MavlinkProtocol extends Protocol {
 
   private void handleEvent(ProcessedFrame env, byte[] raw, String socketAddress){
     boolean allow = acceptedComponents == null || acceptedComponents.isEmpty() || acceptedComponents.containsKey(env.getFrame().getComponentId());
+    allow = allow && allowLocalFeedbackTarget(env);
     if (allow && allowMessageId(env.getFrame().getComponentId(), env.getFrame().getMessageId())) {
       if (mavlinkConfig.isParseToJson()) {
         Map<String, Object> parsed = env.getFields();
@@ -308,6 +314,32 @@ public class MavlinkProtocol extends Protocol {
     } else {
       handleRejectedEvents(env, raw);
     }
+  }
+
+  private boolean allowLocalFeedbackTarget(ProcessedFrame env) {
+    if (!mavlinkConfig.hasLocalMavlinkIdentity()) {
+      return true;
+    }
+
+    int messageId = env.getFrame().getMessageId();
+    if (messageId != MAVLINK_MISSION_REQUEST
+        && messageId != MAVLINK_MISSION_REQUEST_INT
+        && messageId != MAVLINK_MISSION_ACK
+        && messageId != MAVLINK_COMMAND_ACK) {
+      return true;
+    }
+
+    Map<String, Object> fields = env.getFields();
+    return targetMatches(fields.get("target_system"), mavlinkConfig.getSystemId())
+        && targetMatches(fields.get("target_component"), mavlinkConfig.getComponentId());
+  }
+
+  private boolean targetMatches(Object value, int localId) {
+    if (!(value instanceof Number number)) {
+      return true;
+    }
+    int target = number.intValue();
+    return target == 0 || target == localId;
   }
 
   private void handleRejectedEvents(ProcessedFrame env, byte[] raw){
