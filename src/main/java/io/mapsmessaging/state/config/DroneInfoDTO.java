@@ -67,6 +67,13 @@ public class DroneInfoDTO {
   private Double arrivalToleranceMeters;
 
   @Schema(
+      description =
+          "When true, a post-dispatch MAVLink AUTO to LOITER mode transition may complete "
+              + "a non-continuous navigation task. Disabled by default.",
+      defaultValue = "false")
+  private boolean completeTaskOnAutoToLoiter = false;
+
+  @Schema(
       description = "Source used to resolve the mission altitude for vehicle-specific tasking.",
       example = "FIXED")
   private AltitudeMode altitudeMode;
