@@ -23,11 +23,17 @@ import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.engine.Constants;
 import io.mapsmessaging.utilities.collections.bitset.BitSetFactory;
 import io.mapsmessaging.utilities.collections.bitset.BitSetFactoryImpl;
+import io.mapsmessaging.utilities.collections.bitset.ConcurrentSharedFileBitSetFactoryImpl;
+import io.mapsmessaging.utilities.collections.bitset.SharedFileBitSetFactoryImpl;
+import java.nio.file.Path;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 import org.mockito.Mockito;
 
 class RetainedReplayMessageStateTest {
+
+  private static final long UNIQUE_SESSION_ID = 12345L;
 
   @Test
   void retainedReplayMarkerSurvivesRollbackUntilCommit() {
@@ -58,9 +64,28 @@ class RetainedReplayMessageStateTest {
     Assertions.assertFalse(manager.isRetainedReplay(message.getIdentifier()));
   }
 
+  @Test
+  void retainedReplayMarkerSurvivesPersistentFactoryReload(@TempDir Path tempDir) throws Exception {
+    String baseFilename = tempDir.resolve("subscription-state.bit").toString();
+    long messageId = 300L;
+
+    try (SharedFileBitSetFactoryImpl factory = new ConcurrentSharedFileBitSetFactoryImpl(baseFilename, 4, 128)) {
+      MessageStateManagerImpl manager = new MessageStateManagerImpl("persistent-retained-replay", UNIQUE_SESSION_ID, factory);
+      manager.registerRetainedReplay(messageId);
+      Assertions.assertTrue(manager.hasMessage(messageId));
+      Assertions.assertTrue(manager.isRetainedReplay(messageId));
+    }
+
+    try (SharedFileBitSetFactoryImpl factory = new ConcurrentSharedFileBitSetFactoryImpl(baseFilename, 4, 128)) {
+      MessageStateManagerImpl manager = new MessageStateManagerImpl("persistent-retained-replay", UNIQUE_SESSION_ID, factory);
+      Assertions.assertTrue(manager.hasMessage(messageId));
+      Assertions.assertTrue(manager.isRetainedReplay(messageId));
+    }
+  }
+
   private MessageStateManagerImpl createManager() {
     BitSetFactory bitSetFactory = new BitSetFactoryImpl(Constants.BITSET_BLOCK_SIZE);
-    return new MessageStateManagerImpl("retained-replay-test", 12345L, bitSetFactory);
+    return new MessageStateManagerImpl("retained-replay-test", UNIQUE_SESSION_ID, bitSetFactory);
   }
 
   private Message createMessage(long id) {
