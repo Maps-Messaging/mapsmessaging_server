@@ -68,6 +68,13 @@ public class DroneInfoDTO {
 
   @Schema(
       description =
+          "When true, arrival tolerance in metres may complete a task. Disable to test "
+              + "other task-completion evidence independently.",
+      defaultValue = "true")
+  private boolean completeTaskOnArrivalTolerance = true;
+
+  @Schema(
+      description =
           "When true, a post-dispatch MAVLink AUTO to LOITER mode transition may complete "
               + "a non-continuous navigation task. Disabled by default.",
       defaultValue = "false")
