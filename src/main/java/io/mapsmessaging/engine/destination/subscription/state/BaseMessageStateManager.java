@@ -38,9 +38,12 @@ import java.util.Queue;
 
 public abstract class BaseMessageStateManager implements MessageStateManager {
 
+  private static final int RETAINED_REPLAY_STATE_ID = Priority.HIGHEST.getValue() + 1;
+
   protected final Logger logger;
   protected final PriorityQueue<Long> messagesAtRest;
   protected final PriorityCollection<Long> messagesInFlight;
+  protected final NaturalOrderedLongQueue retainedReplays;
   protected final String name;
 
   protected BaseMessageStateManager(String name, long uniqueSessionId, BitSetFactory priorityBitSetFactory, BitSetFactory inflightBitSetFactory) {
@@ -57,11 +60,13 @@ public abstract class BaseMessageStateManager implements MessageStateManager {
       priorityLists[x] = new ConcurrentNaturalOrderedLongQueue(x, inflightBitSetFactory);
     }
     messagesInFlight = new PriorityQueue<>(priorityLists, null);
+    retainedReplays = new ConcurrentNaturalOrderedLongQueue(UniqueIdHelper.compute(uniqueSessionId, RETAINED_REPLAY_STATE_ID), priorityBitSetFactory);
   }
 
   public void close() throws IOException {
     messagesAtRest.clear();
     messagesInFlight.clear();
+    retainedReplays.clear();
   }
 
   public boolean isEmpty() {
@@ -111,6 +116,17 @@ public abstract class BaseMessageStateManager implements MessageStateManager {
   }
 
   @Override
+  public synchronized void registerRetainedReplay(long messageId) {
+    register(messageId);
+    retainedReplays.add(messageId);
+  }
+
+  @Override
+  public synchronized boolean isRetainedReplay(long messageId) {
+    return retainedReplays.contains(messageId);
+  }
+
+  @Override
   public synchronized void allocate(Message message) {
     messagesInFlight.add(message.getIdentifier(), message.getPriority().getValue());
     if (!messagesAtRest.remove(message.getIdentifier())) {
@@ -122,6 +138,7 @@ public abstract class BaseMessageStateManager implements MessageStateManager {
   @Override
   public synchronized void commit(long messageId) {
     messagesInFlight.remove(messageId);
+    retainedReplays.remove(messageId);
     logger.log(ServerLogMessages.MESSAGE_STATE_MANAGER_COMMIT, name, messageId);
   }
 
@@ -189,5 +206,6 @@ public abstract class BaseMessageStateManager implements MessageStateManager {
   public synchronized void expired(long messageIdentifier) {
     messagesAtRest.remove(messageIdentifier);
     messagesInFlight.remove(messageIdentifier);
+    retainedReplays.remove(messageIdentifier);
   }
 }
