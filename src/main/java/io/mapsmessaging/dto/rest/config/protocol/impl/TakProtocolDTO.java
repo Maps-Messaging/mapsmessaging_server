@@ -77,10 +77,18 @@ public class TakProtocolDTO {
   )
   private String tlsContext = "TLSv1.2";
 
-  @Schema(description = "Key store presenting this broker's client certificate to the TAK server (mutual TLS). Required when tlsEnabled is true.")
+  @Schema(
+      description = "Key store presenting this broker's client certificate to the TAK server (mutual TLS). Required when tlsEnabled is true.",
+      requiredMode = Schema.RequiredMode.NOT_REQUIRED,
+      nullable = true
+  )
   private KeyStoreConfigDTO keyStore;
 
-  @Schema(description = "Trust store used to validate the TAK server's certificate. Required when tlsEnabled is true.")
+  @Schema(
+      description = "Trust store used to validate the TAK server's certificate. Required when tlsEnabled is true.",
+      requiredMode = Schema.RequiredMode.NOT_REQUIRED,
+      nullable = true
+  )
   private KeyStoreConfigDTO trustStore;
 
 }
