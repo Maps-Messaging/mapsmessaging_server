@@ -24,6 +24,7 @@ import io.mapsmessaging.state.mavlink.packet.MavlinkPacket;
 import io.mapsmessaging.state.mavlink.packet.MissionAckPacket;
 import io.mapsmessaging.state.mavlink.packet.MissionRequestIntPacket;
 import io.mapsmessaging.state.mavlink.packet.MissionRequestPacket;
+import java.util.BitSet;
 import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
@@ -35,15 +36,15 @@ public class MavlinkMissionAcknowledgementHandler
   public static final int MAV_MISSION_TYPE_MISSION = 0;
   public static final int ANY_LOCAL_ID = -1;
   public static final int DEFAULT_MISSION_ITEM_OFFSET = 1;
+  public static final long MIN_MISSION_PROGRESS_TIMEOUT_MILLIS = 5_000L;
 
-  private final Map<MavlinkMessage, Boolean> missionMessages;
+  private final Map<MavlinkMessage, Integer> missionMessages;
+  private final BitSet requestedSequences = new BitSet();
   private final int missionItemOffset;
   private final int missionItemCount;
   private final int localSystemId;
   private final int localComponentId;
   private final int missionType;
-
-  private int expectedSequence;
 
   public MavlinkMissionAcknowledgementHandler(
       List<MavlinkMessage> missionMessages,
@@ -88,12 +89,12 @@ public class MavlinkMissionAcknowledgementHandler
 
     this.missionMessages = new IdentityHashMap<>();
 
-    for (MavlinkMessage message : messages) {
+    for (int index = 0; index < messages.size(); index++) {
       this.missionMessages.put(
           Objects.requireNonNull(
-              message,
+              messages.get(index),
               "missionMessages must not contain null messages"),
-          Boolean.TRUE);
+          index);
     }
 
     this.missionItemOffset = missionItemOffset;
@@ -107,6 +108,25 @@ public class MavlinkMissionAcknowledgementHandler
   public boolean requiresAcknowledgement(
       MavlinkMessage sentMessage) {
     return missionMessages.containsKey(sentMessage);
+  }
+
+  @Override
+  public TimeoutAction timeoutAction(MavlinkMessage sentMessage) {
+    Integer index = missionMessages.get(sentMessage);
+    if (index == null || index < missionItemOffset) {
+      return TimeoutAction.RETRY_MESSAGE;
+    }
+    return TimeoutAction.RETRY_TRANSACTION;
+  }
+
+  @Override
+  public long acknowledgementTimeoutMillis(
+      MavlinkMessage sentMessage, long defaultTimeoutMillis) {
+    Integer index = missionMessages.get(sentMessage);
+    if (index == null || index < missionItemOffset) {
+      return defaultTimeoutMillis;
+    }
+    return Math.max(defaultTimeoutMillis, MIN_MISSION_PROGRESS_TIMEOUT_MILLIS);
   }
 
   @Override
@@ -178,31 +198,17 @@ public class MavlinkMissionAcknowledgementHandler
               + Math.max(0, missionItemCount - 1));
     }
 
-    // A delayed request from an earlier upload must not abort a fresh count handshake.
-    // NOT_RELATED leaves the count retry timer and budget untouched.
-    if (expectedSequence == 0 && sequence != 0) {
+    // A new upload is established by request 0. Ignore a delayed request from an older transfer
+    // until the vehicle has acknowledged the new MISSION_COUNT by asking for item 0.
+    if (requestedSequences.isEmpty() && sequence != 0) {
       return Acknowledgement.notRelated();
     }
 
-    if (sequence == expectedSequence) {
-      expectedSequence++;
-      return sendMissionItem(sequence);
-    }
-
-    if (expectedSequence > 0
-        && sequence == expectedSequence - 1) {
-      return sendMissionItem(sequence);
-    }
-
-    if (sequence < expectedSequence - 1) {
-      return Acknowledgement.notRelated();
-    }
-
-    return Acknowledgement.fail(
-        "Mission requested sequence "
-            + sequence
-            + " but expected "
-            + expectedSequence);
+    // Once established, the vehicle's request is authoritative. Duplicate and non-monotonic
+    // requests are legitimate loss-recovery behaviour and simply cause the requested item to be
+    // sent again.
+    requestedSequences.set(sequence);
+    return sendMissionItem(sequence);
   }
 
   private synchronized Acknowledgement acknowledgeMissionAck(
@@ -223,10 +229,15 @@ public class MavlinkMissionAcknowledgementHandler
       return Acknowledgement.notRelated();
     }
 
-    if (packet.getType() == MissionAckPacket.MAV_MISSION_INVALID_SEQUENCE && missionItemOffset > 0) {
-      expectedSequence = 0;
-      return Acknowledgement.restart(missionItemOffset - 1,
-          "Mission upload rejected with INVALID_SEQUENCE");
+    if (packet.getType() == MissionAckPacket.MAV_MISSION_INVALID_SEQUENCE) {
+      return Acknowledgement.waitForMore(
+          "Ignoring MAV_MISSION_INVALID_SEQUENCE while mission upload remains active");
+    }
+
+    if (packet.getType() == MissionAckPacket.MAV_MISSION_ERROR
+        || packet.getType() == MissionAckPacket.MAV_MISSION_OPERATION_CANCELLED) {
+      return Acknowledgement.retryTransaction(
+          "Mission upload transient failure " + packet.getTypeName());
     }
 
     if (!packet.isAccepted()) {
@@ -235,12 +246,16 @@ public class MavlinkMissionAcknowledgementHandler
               + packet.getTypeName());
     }
 
-    if (expectedSequence != missionItemCount) {
+    if (!allMissionItemsRequested()) {
       return Acknowledgement.fail(
           "Mission upload completed before all requested items were sent");
     }
 
     return Acknowledgement.complete();
+  }
+
+  private boolean allMissionItemsRequested() {
+    return requestedSequences.nextClearBit(0) >= missionItemCount;
   }
 
   private Acknowledgement sendMissionItem(int sequence) {
