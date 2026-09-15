@@ -112,13 +112,13 @@ public abstract class BaseMessageStateManager implements MessageStateManager {
   @Override
   public synchronized void register(long messageId) {
     messagesAtRest.add(messageId, Priority.ONE_BELOW_HIGHEST.getValue());
+    retainedReplays.add(messageId);
     logger.log(ServerLogMessages.MESSAGE_STATE_MANAGER_REGISTER, name, messageId);
   }
 
   @Override
   public synchronized void registerRetainedReplay(long messageId) {
     register(messageId);
-    retainedReplays.add(messageId);
   }
 
   @Override
