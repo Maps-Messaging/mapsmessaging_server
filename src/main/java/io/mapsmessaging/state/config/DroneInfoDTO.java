@@ -82,12 +82,16 @@ public class DroneInfoDTO {
 
   @Schema(
       description = "Source used to resolve the mission altitude for vehicle-specific tasking.",
-      example = "FIXED")
+      example = "FIXED",
+      requiredMode = Schema.RequiredMode.NOT_REQUIRED,
+      nullable = true)
   private AltitudeMode altitudeMode;
 
   @Schema(
       description = "Configured home-relative mission altitude in metres when altitudeMode is FIXED.",
-      example = "-10.0")
+      example = "-10.0",
+      requiredMode = Schema.RequiredMode.NOT_REQUIRED,
+      nullable = true)
   private Double altitudeMeters;
 
   @Schema(description = "Drone description", type = "object", additionalProperties = Schema.AdditionalPropertiesValue.TRUE)
