@@ -42,6 +42,7 @@ import java.security.Principal;
 import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.LongAdder;
 
 /**
  * Consumes the MTI server's {@code mti.asset.health/v1} feed on one configured MQTT topic (their
@@ -70,7 +71,15 @@ public class MtiStatusAdapter implements StateMessageAdapter, ClientConnection, 
   private final Map<String, MtiStatus> cache = new ConcurrentHashMap<>();
   private final String topic;
 
+  // Metrics, exposed to Grafana via the JMX->Prometheus exporter (see MtiStatusAdapterJMX).
+  private final LongAdder upsertCount = new LongAdder();
+  private final LongAdder deleteCount = new LongAdder();
+  private final LongAdder lookupHitCount = new LongAdder();
+  private final LongAdder lookupMissCount = new LongAdder();
+  private volatile long lastMessageAt = 0L;
+
   private Session session;
+  private MtiStatusAdapterJMX jmxBean;
 
   public MtiStatusAdapter(String topic) {
     this.topic = topic;
@@ -96,6 +105,7 @@ public class MtiStatusAdapter implements StateMessageAdapter, ClientConnection, 
           .setQos(QualityOfService.AT_LEAST_ONCE)
           .build());
       MtiStatusRegistry.setDelegate(this::lookup);
+      jmxBean = new MtiStatusAdapterJMX(this);
       logger.info("MTI status adapter subscribed to {}", topic);
     } catch (Throwable t) {
       // Deliberately broad: StateManagerAgent.start() calls each Lifecycle's start() in an
@@ -112,6 +122,10 @@ public class MtiStatusAdapter implements StateMessageAdapter, ClientConnection, 
   @Override
   public void stop() {
     MtiStatusRegistry.setDelegate(null);
+    if (jmxBean != null) {
+      jmxBean.close();
+      jmxBean = null;
+    }
     if (session != null) {
       try {
         SessionManager.getInstance().close(session, false);
@@ -144,20 +158,29 @@ public class MtiStatusAdapter implements StateMessageAdapter, ClientConnection, 
       return;
     }
 
+    lastMessageAt = System.currentTimeMillis();
+
     if ("delete".equalsIgnoreCase(message.op())) {
       cache.remove(message.uid());
+      deleteCount.increment();
       logger.debug("MTI status cleared for {}", message.uid());
       return;
     }
 
     cache.put(message.uid(), MtiStatus.from(message));
+    upsertCount.increment();
     logger.debug("MTI status updated for {}: state={}", message.uid(), message.state());
   }
 
   /** Called by {@code CotEventPolicy} via {@code MtiStatusRegistry}, keyed on twinId. */
   MtiLookupResult lookup(String twinId) {
     MtiStatus status = cache.get(twinId);
-    if (status == null || status.state() == null) {
+    if (status == null) {
+      lookupMissCount.increment();
+      return null;
+    }
+    lookupHitCount.increment();
+    if (status.state() == null) {
       return null;
     }
 
@@ -176,6 +199,60 @@ public class MtiStatusAdapter implements StateMessageAdapter, ClientConnection, 
       // "go", or anything not in the MTI team's fixed 4-value alphabet - no override.
       default -> null;
     };
+  }
+
+  // --- Metrics, read by MtiStatusAdapterJMX. ---
+
+  public int getCacheSize() {
+    return cache.size();
+  }
+
+  public long getUpsertCount() {
+    return upsertCount.sum();
+  }
+
+  public long getDeleteCount() {
+    return deleteCount.sum();
+  }
+
+  public long getLookupHitCount() {
+    return lookupHitCount.sum();
+  }
+
+  public long getLookupMissCount() {
+    return lookupMissCount.sum();
+  }
+
+  /** -1 if no message has ever been received on this topic. */
+  public long getLastMessageAgeMillis() {
+    long at = lastMessageAt;
+    return at == 0L ? -1L : System.currentTimeMillis() - at;
+  }
+
+  /** Number of cached assets currently reporting MTI state mitigate/hold. */
+  public int getDegradedAssetCount() {
+    int count = 0;
+    for (MtiStatus status : cache.values()) {
+      String state = status.state();
+      if (state != null) {
+        String normalised = state.toLowerCase(Locale.ROOT);
+        if (normalised.equals("mitigate") || normalised.equals("hold")) {
+          count++;
+        }
+      }
+    }
+    return count;
+  }
+
+  /**
+   * Fraction (0.0-1.0) of the MTI-covered fleet NOT currently flagged mitigate/hold. Scoped to
+   * assets this feed has an opinion on - a twin with no MTI status entry is implicitly assumed
+   * nominal (same convention {@link #lookup} already uses), not counted against readiness.
+   * Vacuously 1.0 (fully ready) when the cache is empty.
+   */
+  public double getReadinessRate() {
+    int total = cache.size();
+    return total == 0 ? 1.0d : 1.0d - ((double) getDegradedAssetCount() / total);
   }
 
   // --- ClientConnection: this adapter has no real network endpoint of its own, it rides an

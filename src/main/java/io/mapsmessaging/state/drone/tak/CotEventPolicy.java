@@ -36,8 +36,18 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Locale;
 import java.util.Map;
+import java.util.concurrent.atomic.LongAdder;
 
 final class CotEventPolicy {
+
+  // Metrics, exposed to Grafana via the JMX->Prometheus exporter (see CotIntegrationJMX).
+  private final LongAdder appliedCount = new LongAdder();
+  private final LongAdder originalTypeFallbackCount = new LongAdder();
+  private final LongAdder classificationOverrideCount = new LongAdder();
+  private final LongAdder vehicleClassDerivedCount = new LongAdder();
+  private final LongAdder unknownVehicleClassCount = new LongAdder();
+  private final LongAdder mtiAffiliationOverrideCount = new LongAdder();
+  private final LongAdder mtiReadinessDegradedCount = new LongAdder();
 
   private static final long DEFAULT_STALE_TIMEOUT_MILLIS = 30_000L;
   private static final long CONTACT_STALE_TIMEOUT_MILLIS = 3_600_000L;
@@ -74,6 +84,7 @@ final class CotEventPolicy {
     if (event == null || twin == null) {
       return;
     }
+    appliedCount.increment();
 
     boolean contact = TwinType.CONTACT.equals(twin.getTwinType());
     MtiLookupResult mti = MtiStatusRegistry.lookup(twin.getTwinId());
@@ -129,6 +140,7 @@ final class CotEventPolicy {
   private String resolveBaseCotType(EntityTwin twin, CotConfigDTO config) {
     String originalType = twin.getAttributes().get(ORIGINAL_COT_TYPE_ATTRIBUTE);
     if (originalType != null && !originalType.isBlank()) {
+      originalTypeFallbackCount.increment();
       return originalType;
     }
     return resolveCotType(twin, config);
@@ -142,6 +154,7 @@ final class CotEventPolicy {
     if (parts.length < 3) {
       return baseType;
     }
+    mtiAffiliationOverrideCount.increment();
     return parts[0] + "-" + mti.affiliationOverride() + "-" + parts[2];
   }
 
@@ -160,6 +173,9 @@ final class CotEventPolicy {
     }
     if (mti.readiness() != null && detail.getStatus() != null) {
       detail.getStatus().setReadiness(mti.readiness());
+      if (Boolean.FALSE.equals(mti.readiness())) {
+        mtiReadinessDegradedCount.increment();
+      }
     }
   }
 
@@ -197,9 +213,14 @@ final class CotEventPolicy {
     // patrol boat vs. an unmanned surface vehicle, both configured as vehicleClass: USV).
     String classificationOverride = twin.getAttributes().get(COT_CLASSIFICATION_ATTRIBUTE);
     if (classificationOverride != null && !classificationOverride.isBlank()) {
+      classificationOverrideCount.increment();
       return "a-" + affiliation + '-' + classificationOverride;
     }
+    vehicleClassDerivedCount.increment();
     VehicleClass vehicleClass = resolveVehicleClass(twin);
+    if (vehicleClass == VehicleClass.UNKNOWN) {
+      unknownVehicleClassCount.increment();
+    }
     String classification =
         switch (vehicleClass) {
           case UAV -> "A-M-F-U";
@@ -382,5 +403,35 @@ final class CotEventPolicy {
 
   private String valueOrDefault(String value, String defaultValue) {
     return value == null || value.isBlank() ? defaultValue : value;
+  }
+
+  // --- Metrics, read by CotIntegrationJMX. ---
+
+  long getAppliedCount() {
+    return appliedCount.sum();
+  }
+
+  long getOriginalTypeFallbackCount() {
+    return originalTypeFallbackCount.sum();
+  }
+
+  long getClassificationOverrideCount() {
+    return classificationOverrideCount.sum();
+  }
+
+  long getVehicleClassDerivedCount() {
+    return vehicleClassDerivedCount.sum();
+  }
+
+  long getUnknownVehicleClassCount() {
+    return unknownVehicleClassCount.sum();
+  }
+
+  long getMtiAffiliationOverrideCount() {
+    return mtiAffiliationOverrideCount.sum();
+  }
+
+  long getMtiReadinessDegradedCount() {
+    return mtiReadinessDegradedCount.sum();
   }
 }
