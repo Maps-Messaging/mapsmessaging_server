@@ -20,6 +20,7 @@
 package io.mapsmessaging.state.mavlink;
 
 import static io.mapsmessaging.state.logging.StateLogMessages.MAVLINK_STATE_TWIN_CREATED;
+import static io.mapsmessaging.state.logging.StateLogMessages.MAVLINK_TASK_COMPLETION_GATES_DISABLED;
 
 import io.mapsmessaging.dto.rest.config.protocol.impl.MavlinkKnownSourceDTO;
 import io.mapsmessaging.logging.Logger;
@@ -231,6 +232,10 @@ public class MavlinkTwinUpdater implements AutoCloseable {
     droneTwin.setSurveyRadiusMeters(droneInfo.getSurveyRadiusMeters());
     droneTwin.setArrivalToleranceMeters(droneInfo.getArrivalToleranceMeters());
     applyTaskCompletionConfiguration(droneTwin, droneInfo);
+    if (!droneInfo.isCompleteTaskOnArrivalTolerance()
+        && !droneInfo.isCompleteTaskOnAutoToLoiter()) {
+      logger.log(MAVLINK_TASK_COMPLETION_GATES_DISABLED, twinId);
+    }
     if (droneInfo.getStopAction() != null) {
       droneTwin.setStopAction(droneInfo.getStopAction());
     } else {
