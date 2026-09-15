@@ -55,6 +55,7 @@ public class LimitedMessageStateManager extends MessageStateManagerImpl {
   private void trimAtRest(){
     while(messagesAtRest.size() > limit){
       long firstEntry = messagesAtRest.last();
+      retainedReplays.remove(firstEntry);
       eventReaperQueue.add(firstEntry);
     }
   }
