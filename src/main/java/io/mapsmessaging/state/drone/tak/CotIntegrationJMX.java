@@ -30,7 +30,7 @@ import java.util.List;
  * {@code TakTwinObserver} instance (constructed once per server, see its constructor/shutdown()).
  */
 @JMXBean(description = "CoT/TAK output integration metrics")
-class CotIntegrationJMX {
+public class CotIntegrationJMX {
 
   private final CotEventPolicy policy;
   private final ObjectInstance mbean;

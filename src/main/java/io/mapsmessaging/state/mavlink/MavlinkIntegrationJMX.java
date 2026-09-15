@@ -30,7 +30,7 @@ import java.util.List;
  * {@code MavlinkTwinUpdater} instance that constructs it.
  */
 @JMXBean(description = "MAVLink ingest integration metrics")
-class MavlinkIntegrationJMX {
+public class MavlinkIntegrationJMX {
 
   private final MavlinkTwinUpdater updater;
   private final ObjectInstance mbean;

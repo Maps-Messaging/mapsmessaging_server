@@ -33,7 +33,7 @@ import java.util.List;
  * blueprint's {@code observability/maps/prometheus.yml}).
  */
 @JMXBean(description = "MTI status feed integration metrics")
-class MtiStatusAdapterJMX {
+public class MtiStatusAdapterJMX {
 
   private final MtiStatusAdapter adapter;
   private final ObjectInstance mbean;
