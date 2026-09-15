@@ -154,22 +154,22 @@ TwinManager:
           - name: "MWX"
             type: "INSIDE"
             path: "geospatial/mwx.geojson"
-      - name: "troia-01"
+      - name: "troia_01"
         boundaries:
           - name: "TROIA 01"
             type: "INSIDE"
             path: "geospatial/troia_01.geojson"
-      - name: "troia-02"
+      - name: "troia_02"
         boundaries:
           - name: "TROIA 02"
             type: "INSIDE"
             path: "geospatial/troia_02.geojson"
-      - name: "troia-03"
+      - name: "troia_03"
         boundaries:
           - name: "TROIA 03"
             type: "INSIDE"
             path: "geospatial/troia_03.geojson"
-      - name: "troia-04"
+      - name: "troia_04"
         boundaries:
           - name: "TROIA 04"
             type: "INSIDE"
