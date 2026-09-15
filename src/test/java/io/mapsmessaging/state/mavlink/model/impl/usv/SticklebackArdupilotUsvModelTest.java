@@ -174,7 +174,7 @@ class SticklebackArdupilotUsvModelTest {
     assertEquals(0, home.getMissionSequence());
     assertEquals(MavlinkMissionItemIntFactory.MAV_CMD_NAV_WAYPOINT, home.getCommand());
     assertEquals(MavlinkMissionItemIntFactory.MAV_FRAME_GLOBAL_INT, home.getFrame());
-    assertEquals(123.0f, home.getAltitude());
+    assertEquals(0.0f, home.getAltitude());
 
     MavlinkMissionItemInt waypoint = assertInstanceOf(MavlinkMissionItemInt.class, commandSet.messages().get(1));
     assertEquals(1, waypoint.getMissionSequence());

@@ -71,9 +71,7 @@ public class SecurityManager implements Agent {
       context = new SaslSecurityContext(username, endPointPrincipal);
     }
     else if (defined != null) {
-      if(username == null || username.isEmpty()) {
-        username = "anonymous";
-      }
+      username = resolveUsername(username, authMap.isAllowAnonymous());
       if (AuthManager.getInstance().isAuthenticationEnabled()) {
         String ip = sessionContext.getClientConnection().getRemoteIp();
         String protocol = sessionContext.getClientConnection().getProtocolName();
@@ -89,6 +87,13 @@ public class SecurityManager implements Agent {
     }
     logger.log(SECURITY_MANAGER_SECURITY_CONTEXT, context.getSubject());
     return context;
+  }
+
+  static String resolveUsername(String username, boolean allowAnonymous) {
+    if ((username == null || username.isEmpty()) && allowAnonymous) {
+      return "anonymous";
+    }
+    return username;
   }
 
   public LoginContext getLoginContext(String definedAuth, String username, char[] passCode, Principal endPointPrincipal, AuthContext context) throws LoginException {

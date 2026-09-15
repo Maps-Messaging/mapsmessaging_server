@@ -225,6 +225,7 @@ public class MavlinkBootstrapStateEngine {
               "Timed out waiting for " + requestTracker.getMissingState()
           )
       );
+      return true;
     }
 
     return retryDue(requestTracker, now, bootstrapProfile.getRecoveryRetryInterval());
