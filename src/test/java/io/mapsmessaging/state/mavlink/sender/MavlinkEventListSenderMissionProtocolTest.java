@@ -60,7 +60,7 @@ class MavlinkEventListSenderMissionProtocolTest {
       inOrder.verify(fixture.sender).send(fixture.items.get(1));
       inOrder.verify(fixture.sender).send(fixture.items.get(2));
       assertEquals(1, fixture.results.size());
-      assertEquals(SUCCESS, fixture.results.getFirst().status());
+      assertEquals(SUCCESS, fixture.results.get(0).status());
     }
   }
 
@@ -89,7 +89,7 @@ class MavlinkEventListSenderMissionProtocolTest {
 
       verify(fixture.sender).send(fixture.items.get(0));
       assertEquals(1, fixture.results.size());
-      assertEquals(TIMEOUT, fixture.results.getFirst().status());
+      assertEquals(TIMEOUT, fixture.results.get(0).status());
     }
   }
 
@@ -106,7 +106,7 @@ class MavlinkEventListSenderMissionProtocolTest {
 
       verify(fixture.sender, times(2)).send(fixture.items.get(0));
       verify(fixture.sender).send(fixture.items.get(1));
-      assertEquals(SUCCESS, fixture.results.getFirst().status());
+      assertEquals(SUCCESS, fixture.results.get(0).status());
     }
   }
 
@@ -124,7 +124,7 @@ class MavlinkEventListSenderMissionProtocolTest {
       verify(fixture.sender).send(fixture.items.get(0));
       verify(fixture.sender).send(fixture.items.get(1));
       verify(fixture.sender).send(fixture.items.get(2));
-      assertEquals(SUCCESS, fixture.results.getFirst().status());
+      assertEquals(SUCCESS, fixture.results.get(0).status());
     }
   }
 
@@ -156,7 +156,7 @@ class MavlinkEventListSenderMissionProtocolTest {
       verify(fixture.sender).send(fixture.missionCount);
       verify(fixture.sender).send(fixture.items.get(0));
       verify(fixture.sender).send(fixture.items.get(1));
-      assertEquals(SUCCESS, fixture.results.getFirst().status());
+      assertEquals(SUCCESS, fixture.results.get(0).status());
     }
   }
 
@@ -170,7 +170,7 @@ class MavlinkEventListSenderMissionProtocolTest {
       sender.onMavlinkMessage(fixture.ack(MissionAckPacket.MAV_MISSION_ERROR, "ERROR"));
 
       assertEquals(1, fixture.results.size());
-      assertEquals(TIMEOUT, fixture.results.getFirst().status());
+      assertEquals(TIMEOUT, fixture.results.get(0).status());
       verify(fixture.sender).send(fixture.items.get(0));
     }
   }
@@ -187,7 +187,7 @@ class MavlinkEventListSenderMissionProtocolTest {
 
       verify(fixture.sender).send(fixture.items.get(0));
       verify(fixture.sender).send(fixture.items.get(1));
-      assertEquals(TIMEOUT, fixture.results.getFirst().status());
+      assertEquals(TIMEOUT, fixture.results.get(0).status());
     }
   }
 
