@@ -66,9 +66,19 @@ class MQTTRetainedReplayTest extends MQTTBaseTest {
       liveRetained.setRetained(true);
       publisher.publish(topicName, liveRetained);
 
+      MqttMessage liveRetainedDelivery = waitForMessage(received);
+      Assertions.assertNotNull(liveRetainedDelivery, "Expected live retained publication");
+      Assertions.assertEquals(retainAsPublished, liveRetainedDelivery.isRetained(), "Live retained publication must honour RAP");
+
+      received.set(null);
+      MqttMessage live = new MqttMessage("live value".getBytes(StandardCharsets.UTF_8));
+      live.setQos(1);
+      live.setRetained(false);
+      publisher.publish(topicName, live);
+
       MqttMessage liveDelivery = waitForMessage(received);
-      Assertions.assertNotNull(liveDelivery, "Expected live retained publication");
-      Assertions.assertEquals(retainAsPublished, liveDelivery.isRetained(), "Live retained publication must honour RAP");
+      Assertions.assertNotNull(liveDelivery, "Expected live non-retained publication");
+      Assertions.assertFalse(liveDelivery.isRetained(), "Live non-retained publication must not set RETAIN");
     } finally {
       if (subscriber.isConnected()) {
         subscriber.disconnect();
