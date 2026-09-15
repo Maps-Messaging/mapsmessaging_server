@@ -49,6 +49,132 @@ TwinManager:
         # A droneInfo entry selects this area with:
         #   geospatialArea: "sesimbra-usv"
 
+      - name: "mwa"
+        boundaries:
+          - name: "MWA"
+            type: "INSIDE"
+            path: "geospatial/mwa.geojson"
+      - name: "mwb"
+        boundaries:
+          - name: "MWB"
+            type: "INSIDE"
+            path: "geospatial/mwb.geojson"
+      - name: "mwc"
+        boundaries:
+          - name: "MWC"
+            type: "INSIDE"
+            path: "geospatial/mwc.geojson"
+      - name: "mwd"
+        boundaries:
+          - name: "MWD"
+            type: "INSIDE"
+            path: "geospatial/mwd.geojson"
+      - name: "mwe"
+        boundaries:
+          - name: "MWE"
+            type: "INSIDE"
+            path: "geospatial/mwe.geojson"
+      - name: "mwf"
+        boundaries:
+          - name: "MWF"
+            type: "INSIDE"
+            path: "geospatial/mwf.geojson"
+      - name: "mwg"
+        boundaries:
+          - name: "MWG"
+            type: "INSIDE"
+            path: "geospatial/mwg.geojson"
+      - name: "mwh"
+        boundaries:
+          - name: "MWH"
+            type: "INSIDE"
+            path: "geospatial/mwh.geojson"
+      - name: "mwj"
+        boundaries:
+          - name: "MWJ"
+            type: "INSIDE"
+            path: "geospatial/mwj.geojson"
+      - name: "mwk"
+        boundaries:
+          - name: "MWK"
+            type: "INSIDE"
+            path: "geospatial/mwk.geojson"
+      - name: "mwl"
+        boundaries:
+          - name: "MWL"
+            type: "INSIDE"
+            path: "geospatial/mwl.geojson"
+      - name: "mwm"
+        boundaries:
+          - name: "MWM"
+            type: "INSIDE"
+            path: "geospatial/mwm.geojson"
+      - name: "mwn"
+        boundaries:
+          - name: "MWN"
+            type: "INSIDE"
+            path: "geospatial/mwn.geojson"
+      - name: "mwp"
+        boundaries:
+          - name: "MWP"
+            type: "INSIDE"
+            path: "geospatial/mwp.geojson"
+      - name: "mwq"
+        boundaries:
+          - name: "MWQ"
+            type: "INSIDE"
+            path: "geospatial/mwq.geojson"
+      - name: "mwr"
+        boundaries:
+          - name: "MWR"
+            type: "INSIDE"
+            path: "geospatial/mwr.geojson"
+      - name: "mws"
+        boundaries:
+          - name: "MWS"
+            type: "INSIDE"
+            path: "geospatial/mws.geojson"
+      - name: "mwt"
+        boundaries:
+          - name: "MWT"
+            type: "INSIDE"
+            path: "geospatial/mwt.geojson"
+      - name: "mwu"
+        boundaries:
+          - name: "MWU"
+            type: "INSIDE"
+            path: "geospatial/mwu.geojson"
+      - name: "mwv"
+        boundaries:
+          - name: "MWV"
+            type: "INSIDE"
+            path: "geospatial/mwv.geojson"
+      - name: "mwx"
+        boundaries:
+          - name: "MWX"
+            type: "INSIDE"
+            path: "geospatial/mwx.geojson"
+      - name: "troia-01"
+        boundaries:
+          - name: "TROIA 01"
+            type: "INSIDE"
+            path: "geospatial/troia_01.geojson"
+      - name: "troia-02"
+        boundaries:
+          - name: "TROIA 02"
+            type: "INSIDE"
+            path: "geospatial/troia_02.geojson"
+      - name: "troia-03"
+        boundaries:
+          - name: "TROIA 03"
+            type: "INSIDE"
+            path: "geospatial/troia_03.geojson"
+      - name: "troia-04"
+        boundaries:
+          - name: "TROIA 04"
+            type: "INSIDE"
+            path: "geospatial/troia_04.geojson"
+
   publish:
     enabled: true
     topicTemplate: "/state/twins/drones"
