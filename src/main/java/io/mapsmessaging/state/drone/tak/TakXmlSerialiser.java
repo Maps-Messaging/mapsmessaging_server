@@ -111,6 +111,7 @@ public class TakXmlSerialiser {
     stringBuilder.append("<status");
     appendAttribute(stringBuilder, "lifecycle", status.getLifecycle());
     appendAttribute(stringBuilder, "reason", status.getReason());
+    appendAttribute(stringBuilder, "readiness", status.getReadiness());
     stringBuilder.append("/>");
   }
 

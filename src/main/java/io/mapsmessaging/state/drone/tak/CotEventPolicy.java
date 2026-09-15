@@ -155,6 +155,9 @@ final class CotEventPolicy {
           ? mti.remarksSuffix()
           : existing + " | " + mti.remarksSuffix());
     }
+    if (mti.readiness() != null && detail.getStatus() != null) {
+      detail.getStatus().setReadiness(mti.readiness());
+    }
   }
 
   private void applyContactDetail(TakDetail detail, EntityTwin twin) {

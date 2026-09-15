@@ -35,9 +35,19 @@ package io.mapsmessaging.state.drone.tak;
  *     twin's own {@code "a-" + affiliation + "-" + classification} type string, or {@code null} to
  *     leave the affiliation as {@link CotEventPolicy} would otherwise have resolved it.
  * @param colorArgb marker tint (signed 32-bit ARGB, e.g. {@code -65536} for opaque red) to apply
- *     to the CoT detail, or {@code null} to leave any existing colour untouched.
+ *     to the CoT detail, or {@code null} to leave any existing colour untouched. Field-tested
+ *     2026-09-15 against WebTAK: this tint is NOT visibly rendered for full MIL-STD-2525 vehicle
+ *     icons (only affiliation/type changes reliably drive icon appearance there) - kept anyway
+ *     since some TAK clients/icon types do respect it, and it's still present in {@code <detail>}
+ *     for anyone inspecting the raw event.
  * @param remarksSuffix text to append to the event's existing {@code <remarks>} (separated with
  *     " | "), or {@code null}/blank to add nothing.
+ * @param readiness standard CoT {@code <status readiness="...">} flag - {@code false} renders as
+ *     a visibly degraded icon (dimmed/struck-through, client-dependent) in many TAK clients
+ *     WITHOUT changing affiliation or type, added specifically because {@code colorArgb} above
+ *     turned out not to be enough on its own. {@code null} leaves readiness unset (the default,
+ *     healthy state).
  */
-public record MtiLookupResult(String affiliationOverride, Integer colorArgb, String remarksSuffix) {
+public record MtiLookupResult(String affiliationOverride, Integer colorArgb, String remarksSuffix,
+                               Boolean readiness) {
 }
