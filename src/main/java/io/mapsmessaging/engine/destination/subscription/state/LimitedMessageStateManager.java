@@ -19,7 +19,6 @@
 
 package io.mapsmessaging.engine.destination.subscription.state;
 
-import io.mapsmessaging.api.features.Priority;
 import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.logging.ServerLogMessages;
 import io.mapsmessaging.utilities.collections.bitset.BitSetFactory;
@@ -43,7 +42,8 @@ public class LimitedMessageStateManager extends MessageStateManagerImpl {
 
   @Override
   public synchronized void register(long messageId) {
-    register(messageId, Priority.ONE_BELOW_HIGHEST.getValue());
+    super.register(messageId);
+    trimAtRest();
   }
 
   private void register(long id, int priority){
