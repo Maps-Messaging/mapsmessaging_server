@@ -1,10 +1,9 @@
 steps:
-  - label: "maven: Build and Deploy LoRa device"
+  - label: "maven: Build and Deploy MAPS Server and Applications"
     command:
-      - echo "Skipping now"
+      - echo "Starting MAPS Release Cycle"
     agents:
-      queue: "java_build_queue_aws"
-
+      queue: "orchestration"
   - wait
 
   - trigger: "090-server-snapshot-build"

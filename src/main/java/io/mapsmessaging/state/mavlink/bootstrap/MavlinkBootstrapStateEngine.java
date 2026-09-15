@@ -22,6 +22,7 @@ package io.mapsmessaging.state.mavlink.bootstrap;
 import io.mapsmessaging.state.drone.core.TwinUpdateContext;
 import io.mapsmessaging.state.drone.drone.DroneTwin;
 
+import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -58,12 +59,17 @@ public class MavlinkBootstrapStateEngine {
     emitReadinessChangeIfRequired(bootstrapState, readinessResult, events);
     bootstrapState.setUpdatedAt(now);
 
-    if (readinessResult.isCommandReady()) {
+    boolean actionableMissingState = hasActionableMissingState(readinessResult.getMissingStates());
+    if (readinessResult.isCommandReady() && !actionableMissingState) {
       markCompletedIfRequired(bootstrapState, readinessResult, events);
       return events;
     }
 
-    if (bootstrapState.isCompleted() || bootstrapState.isFailed()) {
+    if (actionableMissingState && bootstrapState.isCompleted()) {
+      bootstrapState.setCompleted(false);
+    }
+
+    if (bootstrapState.isFailed()) {
       return events;
     }
 
@@ -79,6 +85,19 @@ public class MavlinkBootstrapStateEngine {
     if (twinId != null) {
       bootstrapStates.remove(twinId);
     }
+  }
+
+  private boolean hasActionableMissingState(Set<DroneTwinMissingState> missingStates) {
+    if (missingStates == null || missingStates.isEmpty()) {
+      return false;
+    }
+
+    for (DroneTwinMissingState missingState : missingStates) {
+      if (bootstrapProfile.getRequestDefinitions().containsKey(missingState)) {
+        return true;
+      }
+    }
+    return false;
   }
 
   private void resetResolvedTrackers(
@@ -158,21 +177,9 @@ public class MavlinkBootstrapStateEngine {
 
       MavlinkBootstrapRequestTracker requestTracker =
           bootstrapState.getOrCreateTracker(missingState);
+      boolean taskBlocking = isTaskBlocking(readinessResult, missingState);
 
-      if (handleTimeout(
-          bootstrapState,
-          requestTracker,
-          now,
-          events
-      )) {
-        continue;
-      }
-
-      if (!requestTracker.canRetry(
-          now,
-          bootstrapProfile.getRetryInterval(),
-          bootstrapProfile.getMaximumRetries()
-      )) {
+      if (!canRetry(requestTracker, taskBlocking, bootstrapState, now, events)) {
         continue;
       }
 
@@ -190,19 +197,27 @@ public class MavlinkBootstrapStateEngine {
     }
   }
 
-  private boolean handleTimeout(
-      MavlinkBootstrapState bootstrapState,
+  private boolean canRetry(
       MavlinkBootstrapRequestTracker requestTracker,
+      boolean taskBlocking,
+      MavlinkBootstrapState bootstrapState,
       Instant now,
       List<MavlinkBootstrapEvent> events
   ) {
+    if (!taskBlocking) {
+      return retryDue(requestTracker, now, bootstrapProfile.getBackgroundRetryInterval());
+    }
+
+    if (requestTracker.getRequestCount() < bootstrapProfile.getMaximumRetries()) {
+      return retryDue(requestTracker, now, bootstrapProfile.getRetryInterval());
+    }
+
     if (!requestTracker.hasTimedOut(now, bootstrapProfile.getTimeout())) {
       return false;
     }
 
     if (!requestTracker.isTimedOut()) {
       requestTracker.setTimedOut(true);
-
       events.add(
           MavlinkBootstrapEvent.timedOut(
               bootstrapState.getTwinId(),
@@ -212,7 +227,32 @@ public class MavlinkBootstrapStateEngine {
       );
     }
 
-    return true;
+    return retryDue(requestTracker, now, bootstrapProfile.getRecoveryRetryInterval());
+  }
+
+  private boolean retryDue(
+      MavlinkBootstrapRequestTracker requestTracker,
+      Instant now,
+      Duration interval
+  ) {
+    Instant lastRequestedAt = requestTracker.getLastRequestedAt();
+    if (lastRequestedAt == null) {
+      return true;
+    }
+    return Duration.between(lastRequestedAt, now).compareTo(interval) >= 0;
+  }
+
+  private boolean isTaskBlocking(
+      DroneTwinReadinessResult readinessResult,
+      DroneTwinMissingState missingState
+  ) {
+    if (readinessResult.getBlockingStates() != null
+        && readinessResult.getBlockingStates().contains(missingState)) {
+      return true;
+    }
+
+    return missingState == DroneTwinMissingState.MISSING_BATTERY_STATE
+        || missingState == DroneTwinMissingState.STALE_POWER;
   }
 
   private MavlinkBootstrapEvent createRequestEvent(

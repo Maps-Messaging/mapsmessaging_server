@@ -19,18 +19,7 @@
 
 package io.mapsmessaging.state.mavlink.sender;
 
-import io.mapsmessaging.state.mavlink.messages.MavlinkMessage;
-import io.mapsmessaging.state.mavlink.packet.MavlinkPacket;
-import io.mapsmessaging.state.mavlink.packet.MissionAckPacket;
-import io.mapsmessaging.state.mavlink.packet.MissionRequestIntPacket;
-import io.mapsmessaging.state.mavlink.packet.MissionRequestPacket;
-import io.mapsmessaging.state.mavlink.sender.MavlinkAcknowledgementHandler.Acknowledgement;
-import io.mapsmessaging.state.mavlink.sender.MavlinkAcknowledgementHandler.Action;
-import org.junit.jupiter.api.Test;
-
-import java.util.ArrayList;
-import java.util.List;
-
+import static io.mapsmessaging.state.mavlink.sender.MavlinkMissionAcknowledgementHandler.MAV_MISSION_TYPE_MISSION;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -38,41 +27,34 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import io.mapsmessaging.state.mavlink.messages.MavlinkMessage;
+import io.mapsmessaging.state.mavlink.packet.MavlinkPacket;
+import io.mapsmessaging.state.mavlink.packet.MissionAckPacket;
+import io.mapsmessaging.state.mavlink.packet.MissionRequestIntPacket;
+import io.mapsmessaging.state.mavlink.sender.MavlinkAcknowledgementHandler.Acknowledgement;
+import io.mapsmessaging.state.mavlink.sender.MavlinkAcknowledgementHandler.Action;
+import io.mapsmessaging.state.mavlink.sender.MavlinkAcknowledgementHandler.TimeoutAction;
+import java.util.ArrayList;
+import java.util.List;
+import org.junit.jupiter.api.Test;
+
 class MavlinkMissionAcknowledgementHandlerTest {
 
+  private static final int LOCAL_SYSTEM_ID = 103;
+  private static final int LOCAL_COMPONENT_ID = 190;
+
   @Test
-  void constructorRejectsNullMessageList() {
+  void constructorRejectsInvalidMissionShape() {
     assertThrows(NullPointerException.class, () -> new MavlinkMissionAcknowledgementHandler(null, 3));
+    assertThrows(IllegalArgumentException.class, () -> new MavlinkMissionAcknowledgementHandler(messages(4), -1, 3, LOCAL_SYSTEM_ID, LOCAL_COMPONENT_ID, 0));
+    assertThrows(IllegalArgumentException.class, () -> new MavlinkMissionAcknowledgementHandler(messages(4), 1, -1, LOCAL_SYSTEM_ID, LOCAL_COMPONENT_ID, 0));
+    assertThrows(IllegalArgumentException.class, () -> new MavlinkMissionAcknowledgementHandler(messages(3), 1, 3, LOCAL_SYSTEM_ID, LOCAL_COMPONENT_ID, 0));
   }
 
   @Test
-  void constructorRejectsNegativeMissionItemOffset() {
-    assertThrows(IllegalArgumentException.class, () -> new MavlinkMissionAcknowledgementHandler(messages(4), -1, 3, 255, 190, 0));
-  }
-
-  @Test
-  void constructorRejectsNegativeMissionItemCount() {
-    assertThrows(IllegalArgumentException.class, () -> new MavlinkMissionAcknowledgementHandler(messages(4), 1, -1, 255, 190, 0));
-  }
-
-  @Test
-  void constructorRejectsTooFewMessagesForMissionItems() {
-    assertThrows(IllegalArgumentException.class, () -> new MavlinkMissionAcknowledgementHandler(messages(3), 1, 3, 255, 190, 0));
-  }
-
-  @Test
-  void constructorRejectsNullMissionMessage() {
-    List<MavlinkMessage> messages = new ArrayList<>();
-    messages.add(mock(MavlinkMessage.class));
-    messages.add(null);
-
-    assertThrows(NullPointerException.class, () -> new MavlinkMissionAcknowledgementHandler(messages, 1));
-  }
-
-  @Test
-  void requiresAcknowledgementReturnsTrueForMissionMessagesOnly() {
+  void requiresAcknowledgementOnlyForMissionMessages() {
     List<MavlinkMessage> messages = messages(4);
-    MavlinkMissionAcknowledgementHandler handler = new MavlinkMissionAcknowledgementHandler(messages, 3);
+    MavlinkMissionAcknowledgementHandler handler = handler(messages, 3);
 
     assertTrue(handler.requiresAcknowledgement(messages.get(0)));
     assertTrue(handler.requiresAcknowledgement(messages.get(3)));
@@ -80,29 +62,9 @@ class MavlinkMissionAcknowledgementHandlerTest {
   }
 
   @Test
-  void acknowledgeReturnsNotRelatedWhenSentMessageIsNotPartOfMission() {
-    MavlinkMissionAcknowledgementHandler handler = new MavlinkMissionAcknowledgementHandler(messages(4), 3);
-
-    Acknowledgement acknowledgement = handler.acknowledge(mock(MavlinkMessage.class), requestInt(0));
-
-    assertEquals(Action.NOT_RELATED, acknowledgement.action());
-  }
-
-  @Test
-  void requestIntForExpectedSequenceReturnsSendIndex() {
+  void requestZeroEstablishesTransferAndSendsFirstItem() {
     List<MavlinkMessage> messages = messages(4);
-    MavlinkMissionAcknowledgementHandler handler = new MavlinkMissionAcknowledgementHandler(messages, 3);
-
-    Acknowledgement acknowledgement = handler.acknowledge(messages.get(0), requestInt(0));
-
-    assertEquals(Action.SEND_INDEX, acknowledgement.action());
-    assertEquals(1, acknowledgement.index());
-  }
-
-  @Test
-  void requestForExpectedSequenceReturnsSendIndex() {
-    List<MavlinkMessage> messages = messages(4);
-    MavlinkMissionAcknowledgementHandler handler = new MavlinkMissionAcknowledgementHandler(messages, 3);
+    MavlinkMissionAcknowledgementHandler handler = handler(messages, 3);
 
     Acknowledgement acknowledgement = handler.acknowledge(messages.get(0), request(0));
 
@@ -111,261 +73,212 @@ class MavlinkMissionAcknowledgementHandlerTest {
   }
 
   @Test
-  void requestSequenceMapsThroughMissionItemOffset() {
+  void delayedNonzeroRequestBeforeRequestZeroIsIgnored() {
+    List<MavlinkMessage> messages = messages(4);
+    MavlinkMissionAcknowledgementHandler handler = handler(messages, 3);
+
+    assertEquals(Action.NOT_RELATED, handler.acknowledge(messages.get(0), request(2)).action());
+    assertEquals(Action.SEND_INDEX, handler.acknowledge(messages.get(0), request(0)).action());
+  }
+
+  @Test
+  void duplicateRequestRetransmitsOnlyWhenVehicleRequestsIt() {
+    List<MavlinkMessage> messages = messages(4);
+    MavlinkMissionAcknowledgementHandler handler = handler(messages, 3);
+
+    handler.acknowledge(messages.get(0), request(0));
+    Acknowledgement duplicate = handler.acknowledge(messages.get(1), request(0));
+
+    assertEquals(Action.SEND_INDEX, duplicate.action());
+    assertEquals(1, duplicate.index());
+  }
+
+  @Test
+  void nonMonotonicValidRequestsAreAuthoritativeAfterTransferStarts() {
     List<MavlinkMessage> messages = messages(5);
-    MavlinkMissionAcknowledgementHandler handler = new MavlinkMissionAcknowledgementHandler(messages, 2, 3, 255, 190, 0);
+    MavlinkMissionAcknowledgementHandler handler = handler(messages, 4);
 
-    Acknowledgement acknowledgement = handler.acknowledge(messages.get(0), requestInt(0));
+    handler.acknowledge(messages.get(0), request(0));
+    Acknowledgement requestThree = handler.acknowledge(messages.get(1), request(3));
+    Acknowledgement requestOne = handler.acknowledge(messages.get(4), request(1));
+    Acknowledgement requestTwo = handler.acknowledge(messages.get(2), request(2));
 
-    assertEquals(Action.SEND_INDEX, acknowledgement.action());
-    assertEquals(2, acknowledgement.index());
-  }
-
-  @Test
-  void nonzero_request_before_first_item_is_ignored() {
-    List<MavlinkMessage> messages = messages(4);
-    MavlinkMissionAcknowledgementHandler handler = new MavlinkMissionAcknowledgementHandler(messages, 3);
-
-    Acknowledgement acknowledgement = handler.acknowledge(messages.get(0), requestInt(1));
-
-    assertEquals(Action.NOT_RELATED, acknowledgement.action());
-    assertEquals(Action.SEND_INDEX, handler.acknowledge(messages.get(0), requestInt(0)).action());
-  }
-
-  @Test
-  void requestRepeatingMostRecentSequenceRequestsRetransmission() {
-    List<MavlinkMessage> messages = messages(4);
-    MavlinkMissionAcknowledgementHandler handler =
-        new MavlinkMissionAcknowledgementHandler(messages, 3);
-
-    handler.acknowledge(messages.get(0), requestInt(0));
-    Acknowledgement acknowledgement =
-        handler.acknowledge(messages.get(1), requestInt(0));
-
-    assertEquals(Action.SEND_INDEX, acknowledgement.action());
-    assertEquals(1, acknowledgement.index());
-  }
-
-  @Test
-  void staleRequestOlderThanMostRecentSequenceIsIgnored() {
-    List<MavlinkMessage> messages = messages(5);
-    MavlinkMissionAcknowledgementHandler handler =
-        new MavlinkMissionAcknowledgementHandler(messages, 4);
-
-    handler.acknowledge(messages.get(0), requestInt(0));
-    handler.acknowledge(messages.get(1), requestInt(1));
-    Acknowledgement acknowledgement =
-        handler.acknowledge(messages.get(2), requestInt(0));
-
-    assertEquals(Action.NOT_RELATED, acknowledgement.action());
-  }
-
-  @Test
-  void repeatedFinalItemRequestBeforeMissionAckRequestsRetransmission() {
-    List<MavlinkMessage> messages = messages(4);
-    MavlinkMissionAcknowledgementHandler handler =
-        new MavlinkMissionAcknowledgementHandler(messages, 3);
-
-    handler.acknowledge(messages.get(0), requestInt(0));
-    handler.acknowledge(messages.get(1), requestInt(1));
-    handler.acknowledge(messages.get(2), requestInt(2));
-
-    Acknowledgement acknowledgement =
-        handler.acknowledge(messages.get(3), requestInt(2));
-
-    assertEquals(Action.SEND_INDEX, acknowledgement.action());
-    assertEquals(3, acknowledgement.index());
+    assertEquals(4, requestThree.index());
+    assertEquals(2, requestOne.index());
+    assertEquals(3, requestTwo.index());
   }
 
   @Test
   void requestOutsideRangeFails() {
     List<MavlinkMessage> messages = messages(4);
-    MavlinkMissionAcknowledgementHandler handler = new MavlinkMissionAcknowledgementHandler(messages, 3);
+    MavlinkMissionAcknowledgementHandler handler = handler(messages, 3);
 
-    Acknowledgement acknowledgement = handler.acknowledge(messages.get(0), requestInt(3));
+    Acknowledgement acknowledgement = handler.acknowledge(messages.get(0), request(3));
 
     assertEquals(Action.FAIL, acknowledgement.action());
     assertEquals("Mission requested sequence 3 outside range 0..2", acknowledgement.reason());
   }
 
   @Test
-  void invalidRequestReturnsNotRelated() {
+  void foreignGroundControlRequestAndAckAreIgnored() {
     List<MavlinkMessage> messages = messages(4);
-    MavlinkMissionAcknowledgementHandler handler = new MavlinkMissionAcknowledgementHandler(messages, 3);
-    MissionRequestIntPacket requestPacket = requestInt(0);
-    when(requestPacket.isValid()).thenReturn(false);
+    MavlinkMissionAcknowledgementHandler handler = handler(messages, 3);
 
-    Acknowledgement acknowledgement = handler.acknowledge(messages.get(0), requestPacket);
+    MissionRequestIntPacket foreignRequest = request(0, 250, 194);
+    MissionAckPacket foreignAck = missionAck(MissionAckPacket.MAV_MISSION_ACCEPTED, "ACCEPTED", 250, 194);
 
-    assertEquals(Action.NOT_RELATED, acknowledgement.action());
+    assertEquals(Action.NOT_RELATED, handler.acknowledge(messages.get(0), foreignRequest).action());
+    assertEquals(Action.NOT_RELATED, handler.acknowledge(messages.get(0), foreignAck).action());
   }
 
   @Test
-  void requestWithWrongTargetSystemReturnsNotRelated() {
+  void broadcastTargetIsAcceptedForCompatibility() {
     List<MavlinkMessage> messages = messages(4);
-    MavlinkMissionAcknowledgementHandler handler = new MavlinkMissionAcknowledgementHandler(messages, 1, 3, 255, 190, 0);
+    MavlinkMissionAcknowledgementHandler handler = handler(messages, 3);
 
-    Acknowledgement acknowledgement = handler.acknowledge(messages.get(0), requestInt(0, 254, 190, false, 0));
-
-    assertEquals(Action.NOT_RELATED, acknowledgement.action());
-  }
-
-  @Test
-  void requestWithWrongTargetComponentReturnsNotRelated() {
-    List<MavlinkMessage> messages = messages(4);
-    MavlinkMissionAcknowledgementHandler handler = new MavlinkMissionAcknowledgementHandler(messages, 1, 3, 255, 190, 0);
-
-    Acknowledgement acknowledgement = handler.acknowledge(messages.get(0), requestInt(0, 255, 191, false, 0));
-
-    assertEquals(Action.NOT_RELATED, acknowledgement.action());
-  }
-
-  @Test
-  void requestWithBroadcastTargetSystemAndComponentMatches() {
-    List<MavlinkMessage> messages = messages(4);
-    MavlinkMissionAcknowledgementHandler handler = new MavlinkMissionAcknowledgementHandler(messages, 1, 3, 255, 190, 0);
-
-    Acknowledgement acknowledgement = handler.acknowledge(messages.get(0), requestInt(0, 0, 0, false, 0));
-
-    assertEquals(Action.SEND_INDEX, acknowledgement.action());
-    assertEquals(1, acknowledgement.index());
-  }
-
-  @Test
-  void requestWithWrongMissionTypeReturnsNotRelated() {
-    List<MavlinkMessage> messages = messages(4);
-    MavlinkMissionAcknowledgementHandler handler = new MavlinkMissionAcknowledgementHandler(messages, 1, 3, 255, 190, 0);
-
-    Acknowledgement acknowledgement = handler.acknowledge(messages.get(0), requestInt(0, 255, 190, true, 1));
-
-    assertEquals(Action.NOT_RELATED, acknowledgement.action());
-  }
-
-  @Test
-  void requestWithoutMissionTypeMatchesForCompatibility() {
-    List<MavlinkMessage> messages = messages(4);
-    MavlinkMissionAcknowledgementHandler handler = new MavlinkMissionAcknowledgementHandler(messages, 1, 3, 255, 190, 0);
-
-    Acknowledgement acknowledgement = handler.acknowledge(messages.get(0), requestInt(0, 255, 190, false, 1));
+    Acknowledgement acknowledgement = handler.acknowledge(messages.get(0), request(0, 0, 0));
 
     assertEquals(Action.SEND_INDEX, acknowledgement.action());
   }
 
   @Test
-  void acceptedMissionAckCompletesAfterAllItemsRequested() {
+  void wrongMissionTypeIsIgnored() {
     List<MavlinkMessage> messages = messages(4);
-    MavlinkMissionAcknowledgementHandler handler = new MavlinkMissionAcknowledgementHandler(messages, 3);
+    MavlinkMissionAcknowledgementHandler handler = handler(messages, 3);
+    MissionRequestIntPacket packet = request(0);
+    when(packet.isMissionTypePresent()).thenReturn(true);
+    when(packet.getMissionType()).thenReturn(1);
 
-    handler.acknowledge(messages.get(0), requestInt(0));
-    handler.acknowledge(messages.get(1), requestInt(1));
-    handler.acknowledge(messages.get(2), requestInt(2));
-    Acknowledgement acknowledgement = handler.acknowledge(messages.get(3), acceptedMissionAck());
-
-    assertEquals(Action.COMPLETE, acknowledgement.action());
+    assertEquals(Action.NOT_RELATED, handler.acknowledge(messages.get(0), packet).action());
   }
 
   @Test
-  void acceptedMissionAckFailsBeforeAllItemsRequested() {
+  void acceptedAckRequiresEveryMissionItemToHaveBeenRequested() {
     List<MavlinkMessage> messages = messages(4);
-    MavlinkMissionAcknowledgementHandler handler = new MavlinkMissionAcknowledgementHandler(messages, 3);
+    MavlinkMissionAcknowledgementHandler handler = handler(messages, 3);
 
-    handler.acknowledge(messages.get(0), requestInt(0));
-    Acknowledgement acknowledgement = handler.acknowledge(messages.get(1), acceptedMissionAck());
+    handler.acknowledge(messages.get(0), request(0));
+    handler.acknowledge(messages.get(1), request(2));
+    handler.acknowledge(messages.get(3), request(1));
+
+    assertEquals(Action.COMPLETE, handler.acknowledge(messages.get(2), acceptedAck()).action());
+  }
+
+  @Test
+  void acceptedAckBeforeAllItemsWereRequestedFails() {
+    List<MavlinkMessage> messages = messages(4);
+    MavlinkMissionAcknowledgementHandler handler = handler(messages, 3);
+
+    handler.acknowledge(messages.get(0), request(0));
+    Acknowledgement acknowledgement = handler.acknowledge(messages.get(1), acceptedAck());
 
     assertEquals(Action.FAIL, acknowledgement.action());
     assertEquals("Mission upload completed before all requested items were sent", acknowledgement.reason());
   }
 
   @Test
-  void invalid_sequence_restarts_from_count() {
+  void invalidSequenceDoesNotRestartArduPilotTransfer() {
     List<MavlinkMessage> messages = messages(4);
-    MavlinkMissionAcknowledgementHandler handler = new MavlinkMissionAcknowledgementHandler(messages, 3);
-    MissionAckPacket missionAckPacket = missionAck(false, "INVALID_SEQUENCE", 13, 0, 0, false, 0);
+    MavlinkMissionAcknowledgementHandler handler = handler(messages, 3);
+    handler.acknowledge(messages.get(0), request(0));
 
-    Acknowledgement acknowledgement = handler.acknowledge(messages.get(0), missionAckPacket);
+    Acknowledgement acknowledgement =
+        handler.acknowledge(messages.get(1), missionAck(MissionAckPacket.MAV_MISSION_INVALID_SEQUENCE, "INVALID_SEQUENCE", LOCAL_SYSTEM_ID, LOCAL_COMPONENT_ID));
 
-    assertEquals(Action.RESTART, acknowledgement.action());
-    assertEquals(0, acknowledgement.index());
-    assertEquals(Action.SEND_INDEX, handler.acknowledge(messages.get(0), requestInt(0)).action());
+    assertEquals(Action.WAIT, acknowledgement.action());
+    assertEquals(Action.SEND_INDEX, handler.acknowledge(messages.get(1), request(1)).action());
   }
 
   @Test
-  void missionAckWithWrongMissionTypeReturnsNotRelated() {
+  void transientMissionErrorsRequestCleanOuterRetry() {
     List<MavlinkMessage> messages = messages(4);
-    MavlinkMissionAcknowledgementHandler handler = new MavlinkMissionAcknowledgementHandler(messages, 1, 3, 255, 190, 0);
+    MavlinkMissionAcknowledgementHandler handler = handler(messages, 3);
 
-    Acknowledgement acknowledgement = handler.acknowledge(messages.get(0), missionAck(true, "ACCEPTED", 0, 255, 190, true, 1));
-
-    assertEquals(Action.NOT_RELATED, acknowledgement.action());
+    assertEquals(
+        Action.RETRY_TRANSACTION,
+        handler.acknowledge(messages.get(0), missionAck(MissionAckPacket.MAV_MISSION_ERROR, "ERROR", LOCAL_SYSTEM_ID, LOCAL_COMPONENT_ID)).action());
+    assertEquals(
+        Action.RETRY_TRANSACTION,
+        handler.acknowledge(messages.get(0), missionAck(MissionAckPacket.MAV_MISSION_OPERATION_CANCELLED, "OPERATION_CANCELLED", LOCAL_SYSTEM_ID, LOCAL_COMPONENT_ID)).action());
   }
 
   @Test
-  void missionAckWithWrongTargetReturnsNotRelated() {
+  void permanentMissionErrorFailsImmediately() {
     List<MavlinkMessage> messages = messages(4);
-    MavlinkMissionAcknowledgementHandler handler = new MavlinkMissionAcknowledgementHandler(messages, 1, 3, 255, 190, 0);
+    MavlinkMissionAcknowledgementHandler handler = handler(messages, 3);
 
-    Acknowledgement acknowledgement = handler.acknowledge(messages.get(0), missionAck(true, "ACCEPTED", 0, 255, 191, false, 0));
+    Acknowledgement acknowledgement =
+        handler.acknowledge(messages.get(0), missionAck(MissionAckPacket.MAV_MISSION_UNSUPPORTED, "UNSUPPORTED", LOCAL_SYSTEM_ID, LOCAL_COMPONENT_ID));
 
-    assertEquals(Action.NOT_RELATED, acknowledgement.action());
+    assertEquals(Action.FAIL, acknowledgement.action());
   }
 
   @Test
-  void wrongPacketReturnsNotRelated() {
+  void missionCountCanRetryButMissionItemsAbortTransactionOnTimeout() {
     List<MavlinkMessage> messages = messages(4);
-    MavlinkMissionAcknowledgementHandler handler = new MavlinkMissionAcknowledgementHandler(messages, 3);
+    MavlinkMissionAcknowledgementHandler handler = handler(messages, 3);
 
-    Acknowledgement acknowledgement = handler.acknowledge(messages.get(0), mock(MavlinkPacket.class));
+    assertEquals(TimeoutAction.RETRY_MESSAGE, handler.timeoutAction(messages.get(0)));
+    assertEquals(TimeoutAction.RETRY_TRANSACTION, handler.timeoutAction(messages.get(1)));
+    assertEquals(2_000L, handler.acknowledgementTimeoutMillis(messages.get(0), 2_000L));
+    assertEquals(5_000L, handler.acknowledgementTimeoutMillis(messages.get(1), 2_000L));
+  }
 
-    assertEquals(Action.NOT_RELATED, acknowledgement.action());
+  @Test
+  void unrelatedPacketIsIgnored() {
+    List<MavlinkMessage> messages = messages(4);
+    MavlinkMissionAcknowledgementHandler handler = handler(messages, 3);
+
+    assertEquals(Action.NOT_RELATED, handler.acknowledge(messages.get(0), mock(MavlinkPacket.class)).action());
+  }
+
+  private MavlinkMissionAcknowledgementHandler handler(List<MavlinkMessage> messages, int itemCount) {
+    return new MavlinkMissionAcknowledgementHandler(
+        messages,
+        1,
+        itemCount,
+        LOCAL_SYSTEM_ID,
+        LOCAL_COMPONENT_ID,
+        MAV_MISSION_TYPE_MISSION);
   }
 
   private List<MavlinkMessage> messages(int count) {
     List<MavlinkMessage> messages = new ArrayList<>();
-    for (int i = 0; i < count; i++) {
+    for (int index = 0; index < count; index++) {
       messages.add(mock(MavlinkMessage.class));
     }
     return messages;
   }
 
-  private MissionRequestPacket request(int sequence) {
-    MissionRequestPacket packet = mock(MissionRequestPacket.class);
-    when(packet.isValid()).thenReturn(true);
-    when(packet.getSequence()).thenReturn(sequence);
-    when(packet.getTargetSystem()).thenReturn(0);
-    when(packet.getTargetComponent()).thenReturn(0);
-    when(packet.isMissionTypePresent()).thenReturn(false);
-    return packet;
+  private MissionRequestIntPacket request(int sequence) {
+    return request(sequence, LOCAL_SYSTEM_ID, LOCAL_COMPONENT_ID);
   }
 
-  private MissionRequestIntPacket requestInt(int sequence) {
-    return requestInt(sequence, 0, 0, false, 0);
-  }
-
-  private MissionRequestIntPacket requestInt(int sequence, int targetSystem, int targetComponent, boolean missionTypePresent, int missionType) {
+  private MissionRequestIntPacket request(int sequence, int targetSystem, int targetComponent) {
     MissionRequestIntPacket packet = mock(MissionRequestIntPacket.class);
     when(packet.isValid()).thenReturn(true);
     when(packet.getSequence()).thenReturn(sequence);
     when(packet.getTargetSystem()).thenReturn(targetSystem);
     when(packet.getTargetComponent()).thenReturn(targetComponent);
-    when(packet.isMissionTypePresent()).thenReturn(missionTypePresent);
-    when(packet.getMissionType()).thenReturn(missionType);
+    when(packet.isMissionTypePresent()).thenReturn(true);
+    when(packet.getMissionType()).thenReturn(MAV_MISSION_TYPE_MISSION);
     return packet;
   }
 
-  private MissionAckPacket acceptedMissionAck() {
-    return missionAck(true, "ACCEPTED", 0, 0, 0, false, 0);
+  private MissionAckPacket acceptedAck() {
+    return missionAck(MissionAckPacket.MAV_MISSION_ACCEPTED, "ACCEPTED", LOCAL_SYSTEM_ID, LOCAL_COMPONENT_ID);
   }
 
-  private MissionAckPacket missionAck(boolean accepted, String typeName, int type, int targetSystem, int targetComponent, boolean missionTypePresent, int missionType) {
+  private MissionAckPacket missionAck(int type, String typeName, int targetSystem, int targetComponent) {
     MissionAckPacket packet = mock(MissionAckPacket.class);
     when(packet.isValid()).thenReturn(true);
-    when(packet.isAccepted()).thenReturn(accepted);
+    when(packet.isAccepted()).thenReturn(type == MissionAckPacket.MAV_MISSION_ACCEPTED);
     when(packet.getType()).thenReturn(type);
     when(packet.getTypeName()).thenReturn(typeName);
     when(packet.getTargetSystem()).thenReturn(targetSystem);
     when(packet.getTargetComponent()).thenReturn(targetComponent);
-    when(packet.isMissionTypePresent()).thenReturn(missionTypePresent);
-    when(packet.getMissionType()).thenReturn(missionType);
+    when(packet.isMissionTypePresent()).thenReturn(true);
+    when(packet.getMissionType()).thenReturn(MAV_MISSION_TYPE_MISSION);
     return packet;
   }
 }

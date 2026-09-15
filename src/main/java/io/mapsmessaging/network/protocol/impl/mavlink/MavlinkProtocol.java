@@ -293,6 +293,7 @@ public class MavlinkProtocol extends Protocol {
 
   private void handleEvent(ProcessedFrame env, byte[] raw, String socketAddress){
     boolean allow = acceptedComponents == null || acceptedComponents.isEmpty() || acceptedComponents.containsKey(env.getFrame().getComponentId());
+    allow = allow && MavlinkFeedbackTargetFilter.allow(env, mavlinkConfig);
     if (allow && allowMessageId(env.getFrame().getComponentId(), env.getFrame().getMessageId())) {
       if (mavlinkConfig.isParseToJson()) {
         Map<String, Object> parsed = env.getFields();
