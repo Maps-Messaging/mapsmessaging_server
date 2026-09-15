@@ -1,0 +1,1 @@
+{"type":"FeatureCollection","name":"mwn","crs":{"type":"name","properties":{"name":"urn:ogc:def:crs:OGC:1.3:CRS84"}},"features":[{"type":"Feature","properties":{},"geometry":{"type":"Polygon","coordinates":[[[-9.10882,38.43413],[-9.10558,38.42744],[-9.10125,38.42873],[-9.1045,38.43542],[-9.10882,38.43413]]]}}]}

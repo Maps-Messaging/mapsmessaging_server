@@ -1,0 +1,1 @@
+{"type":"FeatureCollection","name":"mwh","crs":{"type":"name","properties":{"name":"urn:ogc:def:crs:OGC:1.3:CRS84"}},"features":[{"type":"Feature","properties":{},"geometry":{"type":"Polygon","coordinates":[[[-9.13009,38.42878],[-9.12958,38.42359],[-9.12476,38.42464],[-9.12598,38.42902],[-9.13009,38.42878]]]}}]}

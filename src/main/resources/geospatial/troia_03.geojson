@@ -1,0 +1,1 @@
+{"type":"FeatureCollection","name":"troia_03","crs":{"type":"name","properties":{"name":"urn:ogc:def:crs:OGC:1.3:CRS84"}},"features":[{"type":"Feature","properties":{},"geometry":{"type":"Polygon","coordinates":[[[-8.83333,38.33199],[-8.83333,38.31735],[-8.80215,38.31737],[-8.8023,38.33205],[-8.83333,38.33199]]]}}]}
