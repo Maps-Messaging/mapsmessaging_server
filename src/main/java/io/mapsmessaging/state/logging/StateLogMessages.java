@@ -49,7 +49,6 @@ public enum StateLogMessages implements LogMessage {
   MAVLINK_EVENT_LIST_SENDER_FAILED_EXCEPTION(LEVEL.ERROR, SERVER_CATEGORY.PROTOCOL, "MAVLink event list sender '{}', operation '{}', model '{}', failed with exception: {}"),
   MAVLINK_EVENT_LIST_SENDER_COMPLETION_HANDLER_FAILED(LEVEL.ERROR, SERVER_CATEGORY.PROTOCOL, "MAVLink event list sender '{}', operation '{}', model '{}', completion handler failed: {}"),
 
-
   MAVLINK_STATE_DIALECT_DEFAULTED(LEVEL.DEBUG, SERVER_CATEGORY.PROTOCOL, "No MAVLink dialect specified for state subscriber, using default dialect {}"),
   MAVLINK_STATE_DIALECT_LOADED(LEVEL.DEBUG, SERVER_CATEGORY.PROTOCOL, "Loaded MAVLink dialect {} for state subscriber"),
   MAVLINK_STATE_DIALECT_LOAD_FAILED(LEVEL.WARN, SERVER_CATEGORY.PROTOCOL, "Failed to load MAVLink dialect {}, falling back to default dialect {}"),
@@ -60,6 +59,7 @@ public enum StateLogMessages implements LogMessage {
   MAVLINK_STATE_PACKET_UNPACK_EMPTY(LEVEL.DEBUG, SERVER_CATEGORY.PROTOCOL, "MAVLink state packet from {} did not produce a processed frame"),
   MAVLINK_STATE_UNSUPPORTED_PACKET_IGNORED(LEVEL.DEBUG, SERVER_CATEGORY.PROTOCOL, "Ignoring unsupported MAVLink message {} from {}"),
   MAVLINK_STATE_TWIN_CREATED(LEVEL.DEBUG, SERVER_CATEGORY.PROTOCOL, "Created MAVLink twin {} for system {} component {}"),
+  MAVLINK_TASK_COMPLETION_GATES_DISABLED(LEVEL.WARN, SERVER_CATEGORY.PROTOCOL, "Drone '{}' has both completeTaskOnArrivalTolerance and completeTaskOnAutoToLoiter disabled; untimed navigation completion will rely on final MAVLink MISSION_ITEM_REACHED, which is fragile on lossy links"),
 
   MAVLINK_STATE_SUBSCRIBER_STARTING(LEVEL.INFO, SERVER_CATEGORY.PROTOCOL, "Starting MAVLink state subscriber on topic '{}'"),
   MAVLINK_STATE_SUBSCRIBER_STARTED(LEVEL.INFO, SERVER_CATEGORY.PROTOCOL, "Started MAVLink state subscriber on topic '{}'"),
@@ -93,9 +93,8 @@ public enum StateLogMessages implements LogMessage {
   STATE_MANAGER_AUDIT_INIT_FAILED(LEVEL.ERROR, SERVER_CATEGORY.STATE, "Failed to initialize audit context - auditing will be disabled"),
   // </editor-fold>
 
-
   N2K_DRONE_CONFIG_RESOLVED(LEVEL.DEBUG, SERVER_CATEGORY.PROTOCOL, "Resolved drone configuration '{}' for N2K topic '{}'"),
-  N2K_DRONE_CONFIG_MISSING(LEVEL.DEBUG, SERVER_CATEGORY.PROTOCOL, "No drone configuration found for N2K source '{}' using topic '{}'"),
+  N2K_DRONE_CONFIG_MISSING(LEVEL.DEBUG, SERVER_CATEGORY.PROTOCOL, "No N2K drone configuration found for source '{}' using topic '{}'"),
   N2K_SESSION_START_SKIPPED(LEVEL.WARN, SERVER_CATEGORY.PROTOCOL, "N2K session '{}' was not started for topic '{}' because no matching drone is configured"),
   N2K_SESSION_STARTING(LEVEL.INFO, SERVER_CATEGORY.PROTOCOL, "Starting N2K session '{}' using topic '{}'"),
   N2K_SESSION_STARTED(LEVEL.INFO, SERVER_CATEGORY.PROTOCOL, "Started N2K session '{}' using topic '{}'"),
@@ -137,7 +136,6 @@ public enum StateLogMessages implements LogMessage {
   MAVLINK_TWIN_MANAGER_STOP_FAILED(LEVEL.ERROR, SERVER_CATEGORY.PROTOCOL, "Failed to stop MAVLink twin manager subscriber: {}"),
 
   STATE_MANAGER_TAK_TLS_CONTEXT_FAILED(LEVEL.ERROR, SERVER_CATEGORY.STATE, "Failed to build TLS context for TAK server connection, falling back to plain TCP");
-  //-------------------------------------------------------------------------------------------------------------
 
   private final @Getter String message;
   private final @Getter LEVEL level;
