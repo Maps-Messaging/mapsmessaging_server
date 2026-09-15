@@ -1,0 +1,222 @@
+/*
+ *
+ *  Copyright [ 2026 ] Ralf Himmelein and Claude
+ *
+ *  Licensed under the Apache License, Version 2.0 with the Commons Clause
+ *  (the "License"); you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at:
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://commonsclause.com/
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ */
+
+package io.mapsmessaging.state.adapter.mti;
+
+import com.google.gson.Gson;
+import io.mapsmessaging.api.MessageEvent;
+import io.mapsmessaging.api.MessageListener;
+import io.mapsmessaging.api.Session;
+import io.mapsmessaging.api.SessionContextBuilder;
+import io.mapsmessaging.api.SessionManager;
+import io.mapsmessaging.api.SubscriptionContextBuilder;
+import io.mapsmessaging.api.features.ClientAcknowledgement;
+import io.mapsmessaging.api.features.QualityOfService;
+import io.mapsmessaging.engine.session.ClientConnection;
+import io.mapsmessaging.state.adapter.StateMessageAdapter;
+import io.mapsmessaging.state.drone.tak.MtiLookupResult;
+import io.mapsmessaging.state.drone.tak.MtiStatusRegistry;
+import io.mapsmessaging.utilities.GsonFactory;
+import org.jetbrains.annotations.NotNull;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.security.Principal;
+import java.util.Locale;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+
+/**
+ * Consumes the MTI server's {@code mti.asset.health/v1} feed on one configured MQTT topic (their
+ * spec default: {@code /tak/cot} - but see the topic-collision note in this repo's README, most
+ * deployments will want a different value) and keeps a live {@code uid -> MtiStatus} cache,
+ * registering itself with {@code MtiStatusRegistry} so {@code CotEventPolicy} can look twins up
+ * by twinId at CoT-composition time.
+ *
+ * <p>Subscribes via MAPS' own internal session API (same pattern as
+ * {@code state.drone.tak.EventPublisher}, just subscribing instead of publishing) rather than an
+ * external MQTT client - runs in the same JVM as the broker, so there's no reason to pay for a
+ * network hop or need to know the broker's own listener port.
+ *
+ * <p>Important: this is ONE shared topic, not one topic per asset - the broker only ever retains
+ * the single most-recently-published message on it, not one per uid. This cache is built entirely
+ * from consuming the live stream (upsert on op=new/update, remove on op=delete); it cannot recover
+ * full multi-asset state from retained-message replay after its own restart.
+ */
+public class MtiStatusAdapter implements StateMessageAdapter, ClientConnection, MessageListener {
+
+  private static final int COLOR_ARGB_MITIGATE = -23296; // 0xFFFFA500, opaque orange
+  private static final int COLOR_ARGB_HOLD = -65536;     // 0xFFFF0000, opaque red
+
+  private final Logger logger = LoggerFactory.getLogger(MtiStatusAdapter.class);
+  private final Gson gson = GsonFactory.getInstance().getSimpleGson();
+  private final Map<String, MtiStatus> cache = new ConcurrentHashMap<>();
+  private final String topic;
+
+  private Session session;
+
+  public MtiStatusAdapter(String topic) {
+    this.topic = topic;
+  }
+
+  @Override
+  public String getName() {
+    return "mti-status";
+  }
+
+  @Override
+  public void start() {
+    try {
+      SessionContextBuilder sessionContextBuilder = new SessionContextBuilder("mti-status-adapter", this);
+      sessionContextBuilder.setUsername("anonymous")
+          .setPassword("".toCharArray())
+          .isInternal(true)
+          .setPersistentSession(false)
+          .setSessionExpiry(0)
+          .setReceiveMaximum(100);
+      session = SessionManager.getInstance().create(sessionContextBuilder.build(), this);
+      session.addSubscription(new SubscriptionContextBuilder(topic, ClientAcknowledgement.AUTO)
+          .setQos(QualityOfService.AT_LEAST_ONCE)
+          .build());
+      MtiStatusRegistry.setDelegate(this::lookup);
+      logger.info("MTI status adapter subscribed to {}", topic);
+    } catch (Throwable t) {
+      // Deliberately broad: StateManagerAgent.start() calls each Lifecycle's start() in an
+      // unguarded loop, so an uncaught Throwable here - not just the checked exceptions below -
+      // takes down the ENTIRE state subsystem (TwinManager, mavlink, N2K, everything), not just
+      // this adapter. Confirmed the hard way: a classpath mismatch threw NoClassDefFoundError
+      // (an Error, not an Exception) here and crash-looped the whole maps-messaging container.
+      // This adapter not working is a real but contained problem (no MTI status applied); the
+      // rest of the server has no reason to go down with it.
+      logger.error("MTI status adapter failed to start on topic {} - MTI status will not be applied", topic, t);
+    }
+  }
+
+  @Override
+  public void stop() {
+    MtiStatusRegistry.setDelegate(null);
+    if (session != null) {
+      try {
+        SessionManager.getInstance().close(session, false);
+      } catch (IOException e) {
+        logger.warn("MTI status adapter failed to close its session cleanly", e);
+      }
+    }
+  }
+
+  @Override
+  public void sendMessage(@NotNull MessageEvent messageEvent) {
+    try {
+      byte[] payload = messageEvent.getMessage().getOpaqueData();
+      if (payload != null && payload.length > 0) {
+        handle(new String(payload, StandardCharsets.UTF_8));
+      }
+    } catch (Exception e) {
+      logger.warn("MTI status adapter failed to process an incoming message, dropped", e);
+    } finally {
+      if (messageEvent.getCompletionTask() != null) {
+        messageEvent.getCompletionTask().run();
+      }
+    }
+  }
+
+  private void handle(String json) {
+    MtiWireMessage message = gson.fromJson(json, MtiWireMessage.class);
+    if (message == null || message.uid() == null || message.uid().isBlank()) {
+      logger.warn("MTI status message had no uid, dropped: {}", json);
+      return;
+    }
+
+    if ("delete".equalsIgnoreCase(message.op())) {
+      cache.remove(message.uid());
+      logger.debug("MTI status cleared for {}", message.uid());
+      return;
+    }
+
+    cache.put(message.uid(), MtiStatus.from(message));
+    logger.debug("MTI status updated for {}: state={}", message.uid(), message.state());
+  }
+
+  /** Called by {@code CotEventPolicy} via {@code MtiStatusRegistry}, keyed on twinId. */
+  MtiLookupResult lookup(String twinId) {
+    MtiStatus status = cache.get(twinId);
+    if (status == null || status.state() == null) {
+      return null;
+    }
+
+    return switch (status.state().toLowerCase(Locale.ROOT)) {
+      // Semantically exact: MTI genuinely can't assess this asset, so "unknown" affiliation is
+      // both visually and factually correct - not just a convenient colour choice.
+      case "unknown" -> new MtiLookupResult("u", null, status.remarks(), null);
+      // mitigate/hold deliberately do NOT change affiliation - a friendly asset with a
+      // technical/trust fault must never render as unknown/suspect/hostile. Severity is
+      // communicated through marker colour + remarks + readiness=false, not identity.
+      // Field-tested 2026-09-15: WebTAK doesn't visibly render colorArgb for the vehicle icons
+      // this deployment uses, so readiness=false carries the actual glanceable signal here -
+      // colorArgb is kept for clients/icon types that do respect it.
+      case "mitigate" -> new MtiLookupResult(null, COLOR_ARGB_MITIGATE, status.remarks(), false);
+      case "hold" -> new MtiLookupResult(null, COLOR_ARGB_HOLD, status.remarks(), false);
+      // "go", or anything not in the MTI team's fixed 4-value alphabet - no override.
+      default -> null;
+    };
+  }
+
+  // --- ClientConnection: this adapter has no real network endpoint of its own, it rides an
+  // internal session - these are simple, honest stubs, same as EventPublisher's. ---
+
+  @Override
+  public long getTimeOut() {
+    return 0;
+  }
+
+  @Override
+  public String getVersion() {
+    return "1.0";
+  }
+
+  @Override
+  public void sendKeepAlive() {
+  }
+
+  @Override
+  public Principal getPrincipal() {
+    return null;
+  }
+
+  @Override
+  public String getAuthenticationConfig() {
+    return "";
+  }
+
+  @Override
+  public String getUniqueName() {
+    return "mti-status-adapter";
+  }
+
+  @Override
+  public String getProtocolName() {
+    return "internal";
+  }
+
+  @Override
+  public String getRemoteIp() {
+    return "";
+  }
+}
