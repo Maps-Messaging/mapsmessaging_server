@@ -40,6 +40,7 @@ public class TakEventMapper {
   private static final double DEFAULT_CE = 10.0;
   private static final double DEFAULT_LE = 15.0;
   private static final long DEFAULT_STALE_SECONDS = 30L;
+  private static final NatoCotTypeMapper NATO_COT_TYPE_MAPPER = new NatoCotTypeMapper();
 
   public TakEvent map(EntityTwin twin, TwinUpdateContext context) {
     if (twin == null || twin.getGeoPosition() == null) {
@@ -189,11 +190,9 @@ public class TakEventMapper {
     String rawValue;
     if (twin.getTwinId() != null && !twin.getTwinId().isBlank()) {
       rawValue = twin.getTwinId();
-    }
-    else if (twin.getDisplayName() != null && !twin.getDisplayName().isBlank()) {
+    } else if (twin.getDisplayName() != null && !twin.getDisplayName().isBlank()) {
       rawValue = twin.getDisplayName();
-    }
-    else {
+    } else {
       rawValue = "unknown-twin";
     }
     return sanitiseIdentifier(rawValue);
@@ -214,6 +213,11 @@ public class TakEventMapper {
   private String resolveCotType(EntityTwin twin) {
     if (twin instanceof DroneTwin droneTwin) {
       VehicleClass vehicleClass = droneTwin.getVehicleClass();
+      String natoCotType = NATO_COT_TYPE_MAPPER.fromDescription(droneTwin.getDescription());
+      if (natoCotType != null) {
+        return refineBroadNatoType(natoCotType, vehicleClass);
+      }
+
       if (vehicleClass != null) {
         return switch (vehicleClass) {
           case UAV -> "a-f-A-M-F-U";
@@ -231,6 +235,13 @@ public class TakEventMapper {
       return "a-f-A-M-F-U";
     }
     return "a-f-G-U-C";
+  }
+
+  private String refineBroadNatoType(String natoCotType, VehicleClass vehicleClass) {
+    if (vehicleClass == VehicleClass.USV && natoCotType.matches("a-[a-z]-S")) {
+      return natoCotType + "-C-U";
+    }
+    return natoCotType;
   }
 
   private String resolvePlatform(EntityTwin twin) {
