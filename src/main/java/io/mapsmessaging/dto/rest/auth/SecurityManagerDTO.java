@@ -49,6 +49,13 @@ public class SecurityManagerDTO extends BaseManagerConfigDTO {
   )
   protected Map<String, String> map;
 
+  @Schema(
+      title = "Allow Anonymous",
+      description = "Allow a missing or empty username to be treated as the anonymous identity.",
+      defaultValue = "false"
+  )
+  protected boolean allowAnonymous = false;
+
   public String getAuthName(String authName) {
     if (authName != null && !authName.isEmpty()) {
       return map.get(authName);
