@@ -795,6 +795,11 @@ class MavlinkEventListSenderTest {
     private MavlinkMessage message(boolean requiresAcknowledgement) {
       MavlinkMessage message = mock(MavlinkMessage.class);
       when(acknowledgementHandler.requiresAcknowledgement(message)).thenReturn(requiresAcknowledgement);
+      when(acknowledgementHandler.timeoutAction(message))
+          .thenReturn(MavlinkAcknowledgementHandler.TimeoutAction.RETRY_MESSAGE);
+      when(acknowledgementHandler.acknowledgementTimeoutMillis(
+              message, MavlinkEventListSender.DEFAULT_ACKNOWLEDGEMENT_TIMEOUT_MILLIS))
+          .thenReturn(MavlinkEventListSender.DEFAULT_ACKNOWLEDGEMENT_TIMEOUT_MILLIS);
       return message;
     }
   }
