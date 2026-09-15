@@ -192,9 +192,19 @@ final class CotEventPolicy {
     String classification =
         switch (vehicleClass) {
           case UAV -> "A-M-F-U";
-          case USV -> "S-X-M";
+          // Field-tested 2026-09-15 against WebTAK: "S-X-M" (Sea Surface, unspecified equipment
+          // type) has no real icon artwork in this icon set - friendly and unknown affiliation
+          // rendered as the same generic fallback icon, making affiliation-based signalling
+          // (e.g. the MTI "unknown" state) invisible for every USV twin. "S-C-P" (Sea Surface,
+          // Combatant, Patrol - the closest real category to a RIB/patrol-type USV) has full
+          // coverage: confirmed distinct, standard-colour icons (blue friendly / yellow unknown /
+          // red hostile), same as the well-supported "A-M-F-U" UAV code already used above.
+          case USV -> "S-C-P";
           case UGV -> "G-E-V";
-          case UUV -> "U-X-M";
+          // Same fix as USV above, same reasoning: "U-X-M" (Subsurface, unspecified) had no real
+          // icon coverage. "U-C" (Subsurface, Combatant) does - field-tested 2026-09-15, same
+          // distinct blue/yellow/red affiliation colouring confirmed.
+          case UUV -> "U-C";
           case GCS -> "G-U-C";
           case UNKNOWN -> "X";
         };
