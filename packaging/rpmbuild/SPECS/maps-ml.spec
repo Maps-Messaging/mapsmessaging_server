@@ -58,7 +58,6 @@ chmod +x %{buildroot}/opt/maps/bin/maps
 # Configs / unit
 cp %{buildroot}/opt/maps/etc/maps.env %{buildroot}/etc/maps/maps.env
 cp %{buildroot}/opt/maps/etc/maps.service %{buildroot}/usr/lib/systemd/system/maps.service
-rm -f %{buildroot}/opt/maps/lib/libLoRaChipDevice.so
 
 # Symlinks
 ln -s /opt/maps/bin/maps %{buildroot}/usr/local/bin/maps
