@@ -47,6 +47,9 @@ final class CotEventPolicy {
   private static final String DEFAULT_HOW = "h-g-i-g-o";
   private static final String CONTACT_HOW = "m-g";
   private static final String CONTACT_COT_TYPE = "a-u-U";
+  // Twin attribute set from mavlink.knownSources[].cotClassification (see MavlinkTwinUpdater) -
+  // overrides the vehicleClass-derived classification segment for this specific asset.
+  private static final String COT_CLASSIFICATION_ATTRIBUTE = "cotClassification";
   private static final int CONTACT_COLOR_ARGB_RED = -65536;
   private static final String DEFAULT_ALTITUDE_SOURCE = "GPS";
   private static final String DEFAULT_GEOPOINT_SOURCE = "GPS";
@@ -188,6 +191,14 @@ final class CotEventPolicy {
 
   private String resolveCotType(EntityTwin twin, CotConfigDTO config) {
     String affiliation = resolveAffiliationCode(twin, config);
+    // Per-asset override (set via mavlink.knownSources[].cotClassification, carried as a twin
+    // attribute) - for distinguishing an unmanned platform from another asset that happens to
+    // share the same VehicleClass but isn't actually the same kind of thing (e.g. a real manned
+    // patrol boat vs. an unmanned surface vehicle, both configured as vehicleClass: USV).
+    String classificationOverride = twin.getAttributes().get(COT_CLASSIFICATION_ATTRIBUTE);
+    if (classificationOverride != null && !classificationOverride.isBlank()) {
+      return "a-" + affiliation + '-' + classificationOverride;
+    }
     VehicleClass vehicleClass = resolveVehicleClass(twin);
     String classification =
         switch (vehicleClass) {

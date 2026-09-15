@@ -221,6 +221,12 @@ public class MavlinkTwinUpdater implements AutoCloseable {
   private EntityTwin createTwin(String twinId, ProcessedFrame env, TwinUpdateContext context, MavlinkKnownSourceDTO knownSource, DroneInfoDTO droneInfo) {
     DroneTwin droneTwin = new DroneTwin(twinId, droneInfo.getUuid());
     droneTwin.setVehicleClass(resolveVehicleClass(knownSource));
+    if (knownSource.getCotClassification() != null && !knownSource.getCotClassification().isBlank()) {
+      // See CotEventPolicy.COT_CLASSIFICATION_ATTRIBUTE - overrides the vehicleClass-derived
+      // CoT classification for this specific asset (e.g. distinguishing it from another asset
+      // sharing the same vehicleClass that isn't actually the same kind of thing).
+      droneTwin.getAttributes().put("cotClassification", knownSource.getCotClassification());
+    }
     droneTwin.setDescriptionString(resolveDescription(twinId, env, knownSource));
     droneTwin.setCallSign(resolveCallSign(twinId, knownSource));
     droneTwin.setDisplayName(resolveDisplayName(twinId, knownSource));
