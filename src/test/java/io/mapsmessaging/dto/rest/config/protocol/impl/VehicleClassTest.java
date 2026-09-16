@@ -36,9 +36,9 @@ class VehicleClassTest {
     assertEquals(VehicleDomain.GROUND, VehicleClass.UGV.getDomain());
     assertEquals("SymbolSetEnum_LAND_UNIT", VehicleClass.UGV.getSymbolSet());
     assertEquals(VehicleDomain.UNDERWATER, VehicleClass.UUV.getDomain());
-    assertEquals("SymbolSetEnum_SUBSURFACE", VehicleClass.UUV.getSymbolSet());
+    assertEquals("SymbolSetEnum_SEA_SUBSURFACE", VehicleClass.UUV.getSymbolSet());
     assertEquals(VehicleDomain.CONTROL, VehicleClass.GCS.getDomain());
-    assertEquals("SymbolSetEnum_CONTROL", VehicleClass.GCS.getSymbolSet());
+    assertEquals("SymbolSetEnum_CONTROL_MEASURE", VehicleClass.GCS.getSymbolSet());
     assertEquals(VehicleDomain.UNKNOWN, VehicleClass.UNKNOWN.getDomain());
     assertEquals("SymbolSetEnum_UNKNOWN", VehicleClass.UNKNOWN.getSymbolSet());
   }
