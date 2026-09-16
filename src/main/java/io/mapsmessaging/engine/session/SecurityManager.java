@@ -71,7 +71,7 @@ public class SecurityManager implements Agent {
       context = new SaslSecurityContext(username, endPointPrincipal);
     }
     else if (defined != null) {
-      username = resolveUsername(username, authMap.isAllowAnonymous());
+      username = resolveUsername(username, AuthManager.getInstance().getConfig().isAllowAnonymous());
       if (AuthManager.getInstance().isAuthenticationEnabled()) {
         String ip = sessionContext.getClientConnection().getRemoteIp();
         String protocol = sessionContext.getClientConnection().getProtocolName();
