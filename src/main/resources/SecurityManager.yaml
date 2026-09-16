@@ -18,6 +18,5 @@
 ---
 SecurityManager:
 
-    allowAnonymous: false
     default: PublicAuthConfig
     usernamePassword: UsernamePasswordLoginModule
