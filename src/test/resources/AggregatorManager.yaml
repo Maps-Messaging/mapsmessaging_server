@@ -128,9 +128,9 @@ AggregatorManager:
         outputTransformers:
           name: jsonquery
           query: |
-                {
-                  runId: .inputs."/aggregator3/in1".payload.runId,
-                  temp: .inputs."/aggregator3/in1".payload.temp,
-                  humidity: .inputs."/aggregator3/in2".payload.humidity,
-                  pressure: .inputs."/aggregator3/in3".payload.pressure
-                }
+                ["object",{
+                  "runId":["get","envelopes",0,"payload","runId"],
+                  "temp":["get","envelopes",0,"payload","temp"],
+                  "humidity":["get","envelopes",1,"payload","humidity"],
+                  "pressure":["get","envelopes",2,"payload","pressure"]
+                }]
