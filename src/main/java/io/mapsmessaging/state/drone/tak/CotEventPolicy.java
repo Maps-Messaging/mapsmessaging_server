@@ -63,9 +63,6 @@ final class CotEventPolicy {
   private static final int CONTACT_COLOR_ARGB_RED = -65536;
   private static final String DEFAULT_ALTITUDE_SOURCE = "GPS";
   private static final String DEFAULT_GEOPOINT_SOURCE = "GPS";
-  // Must match io.mapsmessaging.network.protocol.impl.cot.CotToTwinMapper.ORIGINAL_COT_TYPE_ATTRIBUTE -
-  // not imported directly to avoid a state.drone.tak -> network.protocol.impl.cot dependency.
-  private static final String ORIGINAL_COT_TYPE_ATTRIBUTE = "originalCotType";
 
   void apply(TakEvent event, EntityTwin twin, TwinUpdateContext context, CotConfigDTO config) {
     apply(event, twin, context, config, false);
@@ -138,7 +135,7 @@ final class CotEventPolicy {
    * twins never carry this attribute, so their fallback is unchanged.
    */
   private String resolveBaseCotType(EntityTwin twin, CotConfigDTO config) {
-    String originalType = twin.getAttributes().get(ORIGINAL_COT_TYPE_ATTRIBUTE);
+    String originalType = twin.getAttributes().get(CotToTwinMapper.ORIGINAL_COT_TYPE_ATTRIBUTE);
     if (originalType != null && !originalType.isBlank()) {
       originalTypeFallbackCount.increment();
       return originalType;

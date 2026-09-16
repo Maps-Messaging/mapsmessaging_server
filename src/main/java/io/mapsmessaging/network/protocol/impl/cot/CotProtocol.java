@@ -37,8 +37,7 @@ import io.mapsmessaging.network.io.Selectable;
 import io.mapsmessaging.network.io.impl.Selector;
 import io.mapsmessaging.network.protocol.Protocol;
 import io.mapsmessaging.state.drone.core.TwinManager;
-import io.mapsmessaging.state.drone.core.TwinUpdateContext;
-import io.mapsmessaging.state.drone.drone.DroneTwin;
+import io.mapsmessaging.state.drone.tak.CotToTwinMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -49,7 +48,6 @@ import java.io.IOException;
 import java.nio.channels.ClosedChannelException;
 import java.nio.channels.SelectionKey;
 import java.nio.charset.StandardCharsets;
-import java.time.Instant;
 import java.util.Arrays;
 import java.util.UUID;
 import java.util.concurrent.ExecutorService;
@@ -58,7 +56,7 @@ import java.util.concurrent.Executors;
 /**
  * Accepts a raw, unframed stream of Cursor-on-Target (CoT) XML &lt;event&gt; documents (the wire
  * format used by TAK clients/servers), republishes each complete document byte for byte and with
- * no parsing onto a fixed archive topic, and separately maps it into an {@link DroneTwin}
+ * no parsing onto a fixed archive topic, and separately maps it into a {@code DroneTwin}
  * ({@link CotToTwinMapper}) that gets registered/updated in the shared {@code TwinManager} - the
  * same twin store mavlink and N2K feed. From there {@code TakTwinObserver} ->
  * {@code TakEventMapper} -> {@code CotEventPolicy} (MTI-aware) renders it back out to TAK, so an
@@ -243,42 +241,14 @@ public class CotProtocol extends Protocol implements Selectable {
   }
 
   private void routeToTwinManager(byte[] xml) {
-    DroneTwin parsed = cotToTwinMapper.map(xml);
-    if (parsed == null) {
-      logger.warn("CoT event had no usable uid, not routed to TwinManager (still archived to {})", DESTINATION_NAME);
-      return;
-    }
-
     TwinManager twinManager = resolveTwinManager();
     if (twinManager == null) {
-      logger.warn("TwinManager not available yet, CoT event for {} not routed", parsed.getTwinId());
+      logger.warn("TwinManager not available yet, CoT event not routed");
       return;
     }
 
-    TwinUpdateContext context = new TwinUpdateContext();
-    context.setUpdateSource(UPDATE_SOURCE);
-    context.setReceivedTime(Instant.now());
-
-    if (twinManager.getTwin(parsed.getTwinId()).isPresent()) {
-      twinManager.updateTwin(parsed.getTwinId(), existing -> copyOnto(existing, parsed), context);
-    } else {
-      twinManager.registerTwin(parsed, context);
-    }
-  }
-
-  private void copyOnto(io.mapsmessaging.state.drone.core.EntityTwin existing, DroneTwin fresh) {
-    if (fresh.getGeoPosition() != null) {
-      existing.setGeoPosition(fresh.getGeoPosition());
-    }
-    if (fresh.getDisplayName() != null) {
-      existing.setDisplayName(fresh.getDisplayName());
-    }
-    if (existing instanceof DroneTwin existingDrone && fresh.getCallSign() != null) {
-      existingDrone.setCallSign(fresh.getCallSign());
-    }
-    String originalType = fresh.getAttributes().get(CotToTwinMapper.ORIGINAL_COT_TYPE_ATTRIBUTE);
-    if (originalType != null) {
-      existing.getAttributes().put(CotToTwinMapper.ORIGINAL_COT_TYPE_ATTRIBUTE, originalType);
+    if (!cotToTwinMapper.routeToTwinManager(twinManager, xml, UPDATE_SOURCE)) {
+      logger.warn("CoT event had no usable uid, not routed to TwinManager (still archived to {})", DESTINATION_NAME);
     }
   }
 
