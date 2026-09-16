@@ -58,8 +58,7 @@ public abstract class BaseManagerConfigDTO extends BaseConfigDTO {
 
   @Schema(
       description = "Discriminator for the concrete configuration manager DTO.",
-      requiredMode = Schema.RequiredMode.REQUIRED,
-      example = "AuthManagerConfig"
+      requiredMode = Schema.RequiredMode.REQUIRED
   )
   private String type;
 

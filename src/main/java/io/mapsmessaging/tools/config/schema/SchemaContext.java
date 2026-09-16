@@ -1,9 +1,14 @@
 package io.mapsmessaging.tools.config.schema;
 
+import io.swagger.v3.oas.annotations.media.DiscriminatorMapping;
+import io.swagger.v3.oas.annotations.media.Schema;
+
 import java.lang.reflect.Field;
 import java.util.*;
 
 public final class SchemaContext {
+
+  private static final String TYPE_FIELD_NAME = "type";
 
   private final String configName;
 
@@ -43,6 +48,7 @@ public final class SchemaContext {
   }
 
   public void putDef(Class<?> clazz, SchemaObject schemaObject) {
+    applyInheritedSwaggerDiscriminator(clazz, schemaObject);
     defs.put(defName(clazz), schemaObject.toJsonValue());
   }
 
@@ -85,6 +91,48 @@ public final class SchemaContext {
     sb.append("\n  reason: ").append(message);
 
     return new IllegalStateException(sb.toString(), cause);
+  }
+
+  private void applyInheritedSwaggerDiscriminator(Class<?> clazz, SchemaObject schemaObject) {
+    Object propertiesObject = schemaObject.get("properties");
+    if (!(propertiesObject instanceof Map<?, ?> properties)) {
+      return;
+    }
+
+    Object typeObject = properties.get(TYPE_FIELD_NAME);
+    if (!(typeObject instanceof Map<?, ?> rawTypeSchema)) {
+      return;
+    }
+
+    @SuppressWarnings("unchecked")
+    Map<String, Object> typeSchema = (Map<String, Object>) rawTypeSchema;
+    if (typeSchema.containsKey("const")) {
+      return;
+    }
+
+    String discriminatorValue = findInheritedSwaggerDiscriminatorValue(clazz);
+    if (discriminatorValue == null || discriminatorValue.isBlank()) {
+      return;
+    }
+
+    typeSchema.put("const", discriminatorValue);
+    typeSchema.put("enum", List.of(discriminatorValue));
+  }
+
+  private String findInheritedSwaggerDiscriminatorValue(Class<?> clazz) {
+    for (Class<?> current = clazz; current != null && current != Object.class; current = current.getSuperclass()) {
+      Schema schema = current.getDeclaredAnnotation(Schema.class);
+      if (schema == null) {
+        continue;
+      }
+
+      for (DiscriminatorMapping mapping : schema.discriminatorMapping()) {
+        if (mapping != null && mapping.schema() == clazz) {
+          return mapping.value();
+        }
+      }
+    }
+    return null;
   }
 
   private String contextPrefix() {
