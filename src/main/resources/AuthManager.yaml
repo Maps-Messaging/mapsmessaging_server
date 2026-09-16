@@ -31,6 +31,7 @@
 AuthManager:
   authenticationEnabled: true  # connections will be authorised according to the config
   authorisationEnabled: false   # Requests will be authorised according to the access control list for the resource
+  allowAnonymous: false
 
   maxFailuresBeforeLock: 5
   initialLockSeconds: 30
