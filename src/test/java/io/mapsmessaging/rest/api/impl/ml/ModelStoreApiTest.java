@@ -56,13 +56,13 @@ public class ModelStoreApiTest extends ApiTestBase {
 
   @Test
   void uploadModel_blankName_returns400() {
-    givenAuthenticated()
+    givenAuthenticatedNoValidation()
         .contentType("multipart/form-data")
         .multiPart("file", "model.bin", "abc".getBytes(StandardCharsets.UTF_8), "application/octet-stream")
         .when()
         .post(BASE_PATH + "/ ")
         .then()
-        .statusCode(406)
+        .statusCode(400)
         .contentType(ContentType.JSON)
         .body("status", not(isEmptyOrNullString()));
   }
@@ -85,18 +85,18 @@ public class ModelStoreApiTest extends ApiTestBase {
 
   @Test
   void getModel_blankName_returns400() {
-    givenAuthenticated()
+    givenAuthenticatedNoValidation()
         .when()
         .get(BASE_PATH + "/ ")
         .then()
-        .statusCode(406)
+        .statusCode(400)
         .contentType(ContentType.JSON)
         .body("status", not(isEmptyOrNullString()));
   }
 
   @Test
   void deleteModel_blankName_returns400() {
-    givenAuthenticated()
+    givenAuthenticatedNoValidation()
         .when()
         .delete(BASE_PATH + "/ ")
         .then()
