@@ -19,9 +19,10 @@
 
 package io.mapsmessaging.engine.session;
 
+import io.mapsmessaging.config.AuthManagerConfig;
 import io.mapsmessaging.config.SecurityManagerConfig;
 import io.mapsmessaging.configuration.ConfigurationProperties;
-import io.mapsmessaging.dto.rest.auth.SecurityManagerDTO;
+import io.mapsmessaging.dto.rest.config.AuthManagerConfigDTO;
 import org.junit.jupiter.api.Test;
 
 import java.lang.reflect.Constructor;
@@ -35,7 +36,7 @@ class SecurityManagerAnonymousTest {
 
   @Test
   void anonymousAccessIsDisabledByDefault() {
-    assertFalse(new SecurityManagerDTO().isAllowAnonymous());
+    assertFalse(new AuthManagerConfigDTO().isAllowAnonymous());
   }
 
   @Test
@@ -53,37 +54,56 @@ class SecurityManagerAnonymousTest {
   }
 
   @Test
-  void securityManagerConfigDefaultsAnonymousAccessToFalse() throws Exception {
-    ConfigurationProperties properties = new ConfigurationProperties();
-    properties.put("default", "PublicAuthConfig");
-    properties.put("usernamePassword", "UsernamePasswordLoginModule");
+  void authManagerConfigDefaultsAnonymousAccessToFalse() throws Exception {
+    ConfigurationProperties properties = authManagerProperties();
 
-    SecurityManagerConfig config = createConfig(properties);
+    AuthManagerConfig config = createAuthManagerConfig(properties);
 
     assertFalse(config.isAllowAnonymous());
-    assertEquals("PublicAuthConfig", config.getAuthName("default"));
-    assertEquals("UsernamePasswordLoginModule", config.getAuthName("usernamePassword"));
-    assertFalse(config.getMap().containsKey("allowAnonymous"));
+    assertFalse(config.toConfigurationProperties().getBooleanProperty("allowAnonymous", false));
   }
 
   @Test
-  void securityManagerConfigRoundTripsAnonymousAccess() throws Exception {
-    ConfigurationProperties properties = new ConfigurationProperties();
+  void authManagerConfigRoundTripsAnonymousAccess() throws Exception {
+    ConfigurationProperties properties = authManagerProperties();
     properties.put("allowAnonymous", true);
-    properties.put("default", "PublicAuthConfig");
-    properties.put("usernamePassword", "UsernamePasswordLoginModule");
 
-    SecurityManagerConfig config = createConfig(properties);
+    AuthManagerConfig config = createAuthManagerConfig(properties);
     ConfigurationProperties roundTrip = config.toConfigurationProperties();
 
     assertTrue(config.isAllowAnonymous());
-    assertFalse(config.getMap().containsKey("allowAnonymous"));
     assertTrue(roundTrip.getBooleanProperty("allowAnonymous", false));
-    assertEquals("PublicAuthConfig", roundTrip.getProperty("default"));
-    assertEquals("UsernamePasswordLoginModule", roundTrip.getProperty("usernamePassword"));
   }
 
-  private SecurityManagerConfig createConfig(ConfigurationProperties properties) throws Exception {
+  @Test
+  void securityManagerConfigContainsOnlyAuthenticationMappings() throws Exception {
+    ConfigurationProperties properties = new ConfigurationProperties();
+    properties.put("default", "PublicAuthConfig");
+    properties.put("usernamePassword", "UsernamePasswordLoginModule");
+
+    SecurityManagerConfig config = createSecurityManagerConfig(properties);
+    ConfigurationProperties roundTrip = config.toConfigurationProperties();
+
+    assertEquals("PublicAuthConfig", config.getAuthName("default"));
+    assertEquals("UsernamePasswordLoginModule", config.getAuthName("usernamePassword"));
+    assertFalse(roundTrip.containsKey("allowAnonymous"));
+  }
+
+  private ConfigurationProperties authManagerProperties() {
+    ConfigurationProperties properties = new ConfigurationProperties();
+    properties.put("authenticationEnabled", true);
+    properties.put("authorisationEnabled", true);
+    properties.put("config", new ConfigurationProperties());
+    return properties;
+  }
+
+  private AuthManagerConfig createAuthManagerConfig(ConfigurationProperties properties) throws Exception {
+    Constructor<AuthManagerConfig> constructor = AuthManagerConfig.class.getDeclaredConstructor(ConfigurationProperties.class);
+    constructor.setAccessible(true);
+    return constructor.newInstance(properties);
+  }
+
+  private SecurityManagerConfig createSecurityManagerConfig(ConfigurationProperties properties) throws Exception {
     Constructor<SecurityManagerConfig> constructor = SecurityManagerConfig.class.getDeclaredConstructor(ConfigurationProperties.class);
     constructor.setAccessible(true);
     return constructor.newInstance(properties);
