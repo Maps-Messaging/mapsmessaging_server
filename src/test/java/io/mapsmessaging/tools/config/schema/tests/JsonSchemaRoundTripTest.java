@@ -34,6 +34,7 @@ import io.mapsmessaging.dto.rest.auth.SecurityManagerDTO;
 import io.mapsmessaging.dto.rest.config.*;
 import io.mapsmessaging.dto.rest.config.ml.MLModelManagerDTO;
 import io.mapsmessaging.dto.rest.schema.SchemaManagerConfigDTO;
+import io.mapsmessaging.state.config.TwinManagerConfigDTO;
 import io.mapsmessaging.tools.config.schema.RuntimeJsonSchemaGenerator;
 import io.mapsmessaging.tools.config.schema.RuntimeJsonSchemaService;
 import org.junit.jupiter.api.DynamicTest;
