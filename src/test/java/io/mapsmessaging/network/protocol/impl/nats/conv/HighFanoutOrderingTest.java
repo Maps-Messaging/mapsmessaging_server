@@ -86,7 +86,6 @@ class HighFanoutOrderingTest extends BaseTestConfig {
       for (int i = 0; i < nPubs; i++) {
         publisherConnection.publish(subject, Integer.toString(i).getBytes());
       }
-      publisherConnection.flush(Duration.ofSeconds(30));
 
       boolean completed = latch.await(30, TimeUnit.SECONDS);
       assertEquals(true, completed, "Not all subscriptions received all messages");
