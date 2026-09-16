@@ -48,6 +48,7 @@ final class CotEventPolicy {
   private final LongAdder unknownVehicleClassCount = new LongAdder();
   private final LongAdder mtiAffiliationOverrideCount = new LongAdder();
   private final LongAdder mtiReadinessDegradedCount = new LongAdder();
+  private final LongAdder mtiCyberIconAppliedCount = new LongAdder();
 
   private static final long DEFAULT_STALE_TIMEOUT_MILLIS = 30_000L;
   private static final long CONTACT_STALE_TIMEOUT_MILLIS = 3_600_000L;
@@ -57,6 +58,16 @@ final class CotEventPolicy {
   private static final String DEFAULT_HOW = "h-g-i-g-o";
   private static final String CONTACT_HOW = "m-g";
   private static final String CONTACT_COT_TYPE = "a-u-U";
+  // MIL-STD-2525 "battle dimension" character - the 3rd hyphen-separated segment of a CoT type
+  // string (e.g. the "A" in "a-f-A-M-F-U"). Used to scope the cyber-compromise usericon override
+  // to drones only, regardless of which ingest path resolved the twin's classification.
+  private static final char AIR_BATTLE_DIMENSION = 'A';
+  // Custom iconset a partner supplied for visualising compromised drones (WinTAK/ATAK only -
+  // needs to be locally imported on the client; see MtiLookupResult.cyberIconFile). Fixed per
+  // this exercise's TAK deployment - every client is expected to already have this exact
+  // iconset imported under this exact id.
+  private static final String CYBER_ICONSET_UUID = "8ed4bdba4a2ff2972685f3420274f87cc8e2d7547ba7262bce94d8991e7f7a9b";
+  private static final String CYBER_ICON_GROUP = "cyber_icons";
   // Twin attribute set from mavlink.knownSources[].cotClassification (see MavlinkTwinUpdater) -
   // overrides the vehicleClass-derived classification segment for this specific asset.
   private static final String COT_CLASSIFICATION_ATTRIBUTE = "cotClassification";
@@ -123,7 +134,7 @@ final class CotEventPolicy {
         detail.setColorArgb(CONTACT_COLOR_ARGB_RED);
         applyContactDetail(detail, twin);
       }
-      applyMtiDetail(detail, mti);
+      applyMtiDetail(detail, mti, baseType);
     }
   }
 
@@ -155,7 +166,7 @@ final class CotEventPolicy {
     return parts[0] + "-" + mti.affiliationOverride() + "-" + parts[2];
   }
 
-  private void applyMtiDetail(TakDetail detail, MtiLookupResult mti) {
+  private void applyMtiDetail(TakDetail detail, MtiLookupResult mti, String baseType) {
     if (mti == null) {
       return;
     }
@@ -174,6 +185,26 @@ final class CotEventPolicy {
         mtiReadinessDegradedCount.increment();
       }
     }
+    if (mti.cyberIconFile() != null && !mti.cyberIconFile().isBlank() && isDroneClassification(baseType)) {
+      detail.setUsericonIconsetPath(CYBER_ICONSET_UUID + "/" + CYBER_ICON_GROUP + "/" + mti.cyberIconFile());
+      mtiCyberIconAppliedCount.increment();
+    }
+  }
+
+  /**
+   * Scopes the cyber-compromise usericon to drones only, by checking the CoT type's MIL-STD-2525
+   * battle-dimension segment (the "A" in "a-f-A-M-F-U") rather than {@code TwinType}/
+   * {@code VehicleClass} directly - a twin arriving via CoT ingest (see CotToTwinMapper) never
+   * has a resolved {@code VehicleClass} of its own, only whatever classification its
+   * {@code originalCotType} already carries, so checking the type string is the one thing that
+   * works for a drone regardless of which ingest path produced it.
+   */
+  private boolean isDroneClassification(String baseType) {
+    if (baseType == null) {
+      return false;
+    }
+    String[] parts = baseType.split("-", 4);
+    return parts.length >= 3 && parts[2].length() == 1 && parts[2].charAt(0) == AIR_BATTLE_DIMENSION;
   }
 
   private void applyContactDetail(TakDetail detail, EntityTwin twin) {
@@ -430,5 +461,9 @@ final class CotEventPolicy {
 
   long getMtiReadinessDegradedCount() {
     return mtiReadinessDegradedCount.sum();
+  }
+
+  long getMtiCyberIconAppliedCount() {
+    return mtiCyberIconAppliedCount.sum();
   }
 }

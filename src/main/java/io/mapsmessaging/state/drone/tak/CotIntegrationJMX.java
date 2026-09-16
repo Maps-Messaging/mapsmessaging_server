@@ -74,6 +74,11 @@ public class CotIntegrationJMX {
     return policy.getMtiReadinessDegradedCount();
   }
 
+  @JMXBeanAttribute(name = "Mti Cyber Icon Applied Count", description = "Composed events for a drone that got the custom cyber-compromise usericon override (WinTAK/ATAK only)")
+  public long getMtiCyberIconAppliedCount() {
+    return policy.getMtiCyberIconAppliedCount();
+  }
+
   @JMXBeanAttribute(name = "Classification Trust Rate", description = "Fraction (0.0-1.0) of vehicle-class-derived compositions that resolved to a real classification, not the generic/unclassified fallback")
   public double getClassificationTrustRate() {
     long derived = policy.getVehicleClassDerivedCount();

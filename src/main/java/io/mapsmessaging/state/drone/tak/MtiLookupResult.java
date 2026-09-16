@@ -47,7 +47,15 @@ package io.mapsmessaging.state.drone.tak;
  *     WITHOUT changing affiliation or type, added specifically because {@code colorArgb} above
  *     turned out not to be enough on its own. {@code null} leaves readiness unset (the default,
  *     healthy state).
+ * @param cyberIconFile filename (not a path) of a custom cyber-compromise icon within the
+ *     shared iconset {@link CotEventPolicy} references (e.g. {@code "ddos1_64x64.png"}), or
+ *     {@code null} for no override. {@code CotEventPolicy} owns the iconset UUID/path prefix and
+ *     decides which twins are eligible (drones only) - this field only says "this severity, if
+ *     applicable". WinTAK/ATAK-only: {@code <usericon>} needs the iconset locally imported on the
+ *     client, which WebTAK's browser rendering does not support (see {@code colorArgb} above for
+ *     the same class of WebTAK gap) - kept as a genuine addition alongside colour/readiness, not
+ *     a replacement for them.
  */
 public record MtiLookupResult(String affiliationOverride, Integer colorArgb, String remarksSuffix,
-                               Boolean readiness) {
+                               Boolean readiness, String cyberIconFile) {
 }

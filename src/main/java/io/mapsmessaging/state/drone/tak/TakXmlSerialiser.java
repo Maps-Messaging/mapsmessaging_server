@@ -72,6 +72,7 @@ public class TakXmlSerialiser {
     appendLinkState(stringBuilder, detail.getMapsLink());
     appendArchive(stringBuilder, detail.getArchive());
     appendColor(stringBuilder, detail.getColorArgb());
+    appendUsericon(stringBuilder, detail.getUsericonIconsetPath());
 
     if (detail.getLinks() != null) {
       for (TakLink link : detail.getLinks()) {
@@ -149,6 +150,15 @@ public class TakXmlSerialiser {
     }
     stringBuilder.append("<color");
     appendAttribute(stringBuilder, "argb", colorArgb);
+    stringBuilder.append("/>");
+  }
+
+  private void appendUsericon(StringBuilder stringBuilder, String usericonIconsetPath) {
+    if (usericonIconsetPath == null || usericonIconsetPath.isBlank()) {
+      return;
+    }
+    stringBuilder.append("<usericon");
+    appendAttribute(stringBuilder, "iconsetpath", usericonIconsetPath);
     stringBuilder.append("/>");
   }
 
