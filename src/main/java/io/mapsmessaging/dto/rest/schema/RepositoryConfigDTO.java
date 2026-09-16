@@ -19,6 +19,8 @@
 
 package io.mapsmessaging.dto.rest.schema;
 
+import com.fasterxml.jackson.annotation.JsonSubTypes;
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import io.mapsmessaging.dto.rest.config.BaseConfigDTO;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
@@ -26,6 +28,12 @@ import lombok.Setter;
 
 @Getter
 @Setter
+@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.PROPERTY, property = "type")
+@JsonSubTypes({
+    @JsonSubTypes.Type(value = SimpleRepositoryConfigDTO.class, name = "simple"),
+    @JsonSubTypes.Type(value = FileRepositoryConfigDTO.class, name = "file"),
+    @JsonSubTypes.Type(value = MapsRepositoryConfigDTO.class, name = "maps")
+})
 @Schema(
     description = "Repository-specific configuration object. Concrete schema is selected by the 'type' discriminator."
 )
