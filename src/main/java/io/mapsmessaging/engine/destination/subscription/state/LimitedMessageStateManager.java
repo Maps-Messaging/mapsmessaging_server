@@ -46,12 +46,6 @@ public class LimitedMessageStateManager extends MessageStateManagerImpl {
     trimAtRest();
   }
 
-  @Override
-  public synchronized void registerRetainedReplay(long messageId) {
-    super.registerRetainedReplay(messageId);
-    trimAtRest();
-  }
-
   private void register(long id, int priority){
     messagesAtRest.add(id, priority);
     logger.log(ServerLogMessages.MESSAGE_STATE_MANAGER_REGISTER, name, id);
