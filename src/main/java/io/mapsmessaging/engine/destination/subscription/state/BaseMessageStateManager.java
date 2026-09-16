@@ -38,7 +38,9 @@ import java.util.Queue;
 
 public abstract class BaseMessageStateManager implements MessageStateManager {
 
-  private static final int RETAINED_REPLAY_STATE_ID = Priority.HIGHEST.getValue() + 1;
+  // Temporary server-side namespace for retained replay state. Keep this positive until
+  // naturally_ordered_long_collections supports the full signed long ID range.
+  private static final long RETAINED_REPLAY_NAMESPACE = 1L << 59;
 
   protected final Logger logger;
   protected final PriorityQueue<Long> messagesAtRest;
@@ -60,7 +62,7 @@ public abstract class BaseMessageStateManager implements MessageStateManager {
       priorityLists[x] = new ConcurrentNaturalOrderedLongQueue(x, inflightBitSetFactory);
     }
     messagesInFlight = new PriorityQueue<>(priorityLists, null);
-    retainedReplays = new ConcurrentNaturalOrderedLongQueue(UniqueIdHelper.compute(uniqueSessionId, RETAINED_REPLAY_STATE_ID), priorityBitSetFactory);
+    retainedReplays = new ConcurrentNaturalOrderedLongQueue(retainedReplayStateId(uniqueSessionId), priorityBitSetFactory);
   }
 
   public void close() throws IOException {
@@ -111,14 +113,13 @@ public abstract class BaseMessageStateManager implements MessageStateManager {
 
   @Override
   public synchronized void register(long messageId) {
-    messagesAtRest.add(messageId, Priority.ONE_BELOW_HIGHEST.getValue());
-    retainedReplays.add(messageId);
-    logger.log(ServerLogMessages.MESSAGE_STATE_MANAGER_REGISTER, name, messageId);
+    registerMessageId(messageId);
   }
 
   @Override
   public synchronized void registerRetainedReplay(long messageId) {
-    register(messageId);
+    registerMessageId(messageId);
+    retainedReplays.add(messageId);
   }
 
   @Override
@@ -207,5 +208,17 @@ public abstract class BaseMessageStateManager implements MessageStateManager {
     messagesAtRest.remove(messageIdentifier);
     messagesInFlight.remove(messageIdentifier);
     retainedReplays.remove(messageIdentifier);
+  }
+
+  private void registerMessageId(long messageId) {
+    messagesAtRest.add(messageId, Priority.ONE_BELOW_HIGHEST.getValue());
+    logger.log(ServerLogMessages.MESSAGE_STATE_MANAGER_REGISTER, name, messageId);
+  }
+
+  private static long retainedReplayStateId(long uniqueSessionId) {
+    if (uniqueSessionId < 0 || uniqueSessionId >= RETAINED_REPLAY_NAMESPACE) {
+      throw new IllegalArgumentException("Session id must be between 0 and " + (RETAINED_REPLAY_NAMESPACE - 1));
+    }
+    return RETAINED_REPLAY_NAMESPACE | uniqueSessionId;
   }
 }
