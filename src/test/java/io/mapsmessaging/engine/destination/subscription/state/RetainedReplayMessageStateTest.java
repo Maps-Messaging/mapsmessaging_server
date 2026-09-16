@@ -65,6 +65,17 @@ class RetainedReplayMessageStateTest {
   }
 
   @Test
+  void normalLongRegistrationIsNotRetainedReplay() {
+    MessageStateManagerImpl manager = createManager();
+    long messageId = 250L;
+
+    manager.register(messageId);
+
+    Assertions.assertTrue(manager.hasMessage(messageId));
+    Assertions.assertFalse(manager.isRetainedReplay(messageId));
+  }
+
+  @Test
   void retainedReplayMarkerSurvivesPersistentFactoryReload(@TempDir Path tempDir) throws Exception {
     String baseFilename = tempDir.resolve("subscription-state.bit").toString();
     long messageId = 300L;
