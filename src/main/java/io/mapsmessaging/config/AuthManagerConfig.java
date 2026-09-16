@@ -44,6 +44,7 @@ public class AuthManagerConfig extends AuthManagerConfigDTO implements Config, C
   private AuthManagerConfig(ConfigurationProperties properties) {
     authenticationEnabled = properties.getBooleanProperty("authenticationEnabled", authenticationEnabled);
     authorisationEnabled = properties.getBooleanProperty("authorisationEnabled", authorisationEnabled) && authenticationEnabled;
+    allowAnonymous = properties.getBooleanProperty("allowAnonymous", allowAnonymous);
     authConfig = ConfigHelper.buildMap((ConfigurationProperties) properties.get("config"));
     minimumPasswordLength = properties.getIntProperty("minimumPasswordLength", minimumPasswordLength);
     maximumPasswordLength = properties.getIntProperty("maximumPasswordLength", maximumPasswordLength);
@@ -95,6 +96,11 @@ public class AuthManagerConfig extends AuthManagerConfigDTO implements Config, C
 
     if (authorisationEnabled != newConfig.authorisationEnabled) {
       authorisationEnabled = newConfig.authorisationEnabled;
+      hasChanged = true;
+    }
+
+    if (allowAnonymous != newConfig.allowAnonymous) {
+      allowAnonymous = newConfig.allowAnonymous;
       hasChanged = true;
     }
 
@@ -206,6 +212,7 @@ public class AuthManagerConfig extends AuthManagerConfigDTO implements Config, C
     properties.put("authenticationEnabled", authenticationEnabled);
     properties.put("authorizationEnabled", authorisationEnabled);
     properties.put("authorisationEnabled", authorisationEnabled);
+    properties.put("allowAnonymous", allowAnonymous);
     properties.put("config", authConfig);
     properties.put("minimumPasswordLength", minimumPasswordLength);
     properties.put("maximumPasswordLength", maximumPasswordLength);
