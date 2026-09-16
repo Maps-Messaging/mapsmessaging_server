@@ -35,10 +35,6 @@ public interface Subscribable extends Closeable {
 
   int register(long messageId);
 
-  default int registerRetainedReplay(long messageId) {
-    return register(messageId);
-  }
-
   boolean hasMessage(long messageIdentifier);
 
   boolean expired(long messageIdentifier);
