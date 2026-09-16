@@ -108,6 +108,7 @@ class JsonSchemaRoundTripTest {
     map.put("SchemaManager", SchemaManagerConfigDTO.class);
     map.put("SecurityManager", SecurityManagerDTO.class);
     map.put("TenantManagement", TenantManagementConfigDTO.class);
+    map.put("TwinManager", TwinManagerConfigDTO.class);
     map.put("jolokia", JolokiaConfigDTO.class);
     map.put("routing", RoutingManagerConfigDTO.class);
     return map;
