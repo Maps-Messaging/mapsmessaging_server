@@ -32,19 +32,14 @@ import java.util.concurrent.ConcurrentHashMap;
 @NoArgsConstructor
 public class SecurityManagerConfig extends SecurityManagerDTO implements Config, ConfigManager {
 
-  private static final String ALLOW_ANONYMOUS = "allowAnonymous";
-
   public static SecurityManagerConfig getInstance() {
     return ConfigurationManager.getInstance().getConfiguration(SecurityManagerConfig.class);
   }
 
   private SecurityManagerConfig(ConfigurationProperties properties) {
-    allowAnonymous = properties.getBooleanProperty(ALLOW_ANONYMOUS, false);
     map = new ConcurrentHashMap<>();
     for(String key :properties.keySet()){
-      if (!ALLOW_ANONYMOUS.equals(key)) {
-        map.put(key, properties.getProperty(key));
-      }
+      map.put(key, properties.getProperty(key));
     }
   }
 
@@ -67,7 +62,6 @@ public class SecurityManagerConfig extends SecurityManagerDTO implements Config,
   @Override
   public ConfigurationProperties toConfigurationProperties() {
     ConfigurationProperties props = new ConfigurationProperties();
-    props.put(ALLOW_ANONYMOUS, allowAnonymous);
     for(String key : map.keySet()){
       props.put(key, map.get(key));
     }
