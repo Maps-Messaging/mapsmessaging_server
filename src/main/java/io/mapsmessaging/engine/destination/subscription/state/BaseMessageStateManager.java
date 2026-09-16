@@ -113,13 +113,14 @@ public abstract class BaseMessageStateManager implements MessageStateManager {
 
   @Override
   public synchronized void register(long messageId) {
-    registerMessageId(messageId);
+    messagesAtRest.add(messageId, Priority.ONE_BELOW_HIGHEST.getValue());
+    retainedReplays.add(messageId);
+    logger.log(ServerLogMessages.MESSAGE_STATE_MANAGER_REGISTER, name, messageId);
   }
 
   @Override
   public synchronized void registerRetainedReplay(long messageId) {
-    registerMessageId(messageId);
-    retainedReplays.add(messageId);
+    register(messageId);
   }
 
   @Override
@@ -208,11 +209,6 @@ public abstract class BaseMessageStateManager implements MessageStateManager {
     messagesAtRest.remove(messageIdentifier);
     messagesInFlight.remove(messageIdentifier);
     retainedReplays.remove(messageIdentifier);
-  }
-
-  private void registerMessageId(long messageId) {
-    messagesAtRest.add(messageId, Priority.ONE_BELOW_HIGHEST.getValue());
-    logger.log(ServerLogMessages.MESSAGE_STATE_MANAGER_REGISTER, name, messageId);
   }
 
   private static long retainedReplayStateId(long uniqueSessionId) {
