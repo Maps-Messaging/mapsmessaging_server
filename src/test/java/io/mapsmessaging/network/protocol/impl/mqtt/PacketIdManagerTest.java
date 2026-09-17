@@ -41,7 +41,7 @@ class PacketIdManagerTest {
 
   @Test
   void allocatesValidPacketIdentifiers() {
-    PacketIdManager manager = new PacketIdManager();
+    PacketIdManager manager = new PacketIdManager(3);
 
     int packetIdentifier = manager.nextPacketIdentifier(null, 1L);
 
@@ -52,7 +52,7 @@ class PacketIdManagerTest {
 
   @Test
   void fullConnectionWindowQueuesDestinationsAndWakesOnlyNext() {
-    PacketIdManager manager = new PacketIdManager();
+    PacketIdManager manager = new PacketIdManager(4);
     manager.setMaximumOutstanding(2);
 
     SubscribedEventManager destinationA = mock(SubscribedEventManager.class);
@@ -82,7 +82,7 @@ class PacketIdManagerTest {
 
   @Test
   void repeatedFullWindowChecksDoNotQueueDestinationTwice() {
-    PacketIdManager manager = new PacketIdManager();
+    PacketIdManager manager = new PacketIdManager(3);
     manager.setMaximumOutstanding(1);
 
     SubscribedEventManager destinationA = mock(SubscribedEventManager.class);
@@ -100,15 +100,45 @@ class PacketIdManagerTest {
   }
 
   @Test
+  void releasingUnusedReservationWakesNextDestination() {
+    PacketIdManager manager = new PacketIdManager(3);
+    manager.setMaximumOutstanding(1);
+
+    SubscribedEventManager destinationA = mock(SubscribedEventManager.class);
+    SubscribedEventManager destinationB = mock(SubscribedEventManager.class);
+
+    assertTrue(manager.tryAcquireSendSlot(destinationA));
+    assertFalse(manager.tryAcquireSendSlot(destinationB));
+
+    manager.releaseSendSlot(destinationA);
+
+    verify(destinationB, times(1)).resumeDelivery();
+    assertTrue(manager.tryAcquireSendSlot(destinationB));
+  }
+
+  @Test
+  void controlPacketIdentifierAllocationIgnoresPublishWindow() {
+    PacketIdManager manager = new PacketIdManager(3);
+    manager.setMaximumOutstanding(1);
+    SubscribedEventManager destination = mock(SubscribedEventManager.class);
+
+    assertTrue(manager.tryAcquireSendSlot(destination));
+    int publishPacket = manager.nextPacketIdentifier(destination, 1L);
+    int controlPacket = manager.nextPacketIdentifier();
+
+    assertNotEquals(publishPacket, controlPacket);
+    assertEquals(1, manager.size());
+  }
+
+  @Test
   void exhaustionWaitsWithoutBlockingPacketRelease()
       throws InterruptedException, ExecutionException, TimeoutException {
     PacketIdManager manager = createFullManager();
-    int releasedPacketIdentifier = PacketIdManager.MAX_PACKET_IDENTIFIER / 2;
+    int releasedPacketIdentifier = 2;
 
     try (ExecutorService allocator = Executors.newSingleThreadExecutor();
          ExecutorService acknowledger = Executors.newSingleThreadExecutor()) {
-      Future<Integer> allocation = allocator.submit(
-          () -> manager.nextPacketIdentifier(null, PacketIdManager.MAX_PACKET_IDENTIFIER + 1L));
+      Future<Integer> allocation = allocator.submit(() -> manager.nextPacketIdentifier(null, 4L));
 
       assertThrows(TimeoutException.class, () -> allocation.get(50, TimeUnit.MILLISECONDS));
 
@@ -122,20 +152,18 @@ class PacketIdManagerTest {
   @Test
   void completingPacketIdentifierRestoresCapacity() {
     PacketIdManager manager = createFullManager();
-    int releasedPacketIdentifier = PacketIdManager.MAX_PACKET_IDENTIFIER / 2;
+    int releasedPacketIdentifier = 2;
 
     manager.completePacketId(releasedPacketIdentifier);
 
     assertTrue(manager.hasAvailablePacketIdentifier());
-    assertEquals(
-        releasedPacketIdentifier,
-        manager.nextPacketIdentifier(null, PacketIdManager.MAX_PACKET_IDENTIFIER + 1L));
+    assertEquals(releasedPacketIdentifier, manager.nextPacketIdentifier(null, 4L));
     assertFalse(manager.hasAvailablePacketIdentifier());
   }
 
   private PacketIdManager createFullManager() {
-    PacketIdManager manager = new PacketIdManager();
-    for (int messageId = 1; messageId <= PacketIdManager.MAX_PACKET_IDENTIFIER; messageId++) {
+    PacketIdManager manager = new PacketIdManager(3);
+    for (int messageId = 1; messageId <= 3; messageId++) {
       int packetIdentifier = manager.nextPacketIdentifier(null, messageId);
       assertNotEquals(0, packetIdentifier);
     }
