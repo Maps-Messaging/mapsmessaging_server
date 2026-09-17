@@ -6,9 +6,14 @@ on:
       - development
     paths:
       - 'src/main/java/io/mapsmessaging/network/io/**'
+      - 'src/main/java/io/mapsmessaging/network/ProtocolClientConnection.java'
       - 'src/main/java/io/mapsmessaging/network/protocol/impl/mqtt/**'
       - 'src/main/java/io/mapsmessaging/network/protocol/impl/mqtt5/**'
+      - 'src/main/java/io/mapsmessaging/engine/session/**'
+      - 'src/main/java/io/mapsmessaging/engine/destination/subscription/**'
       - 'src/test/java/io/mapsmessaging/network/io/**'
+      - 'src/test/java/io/mapsmessaging/network/protocol/impl/mqtt/**'
+      - 'src/test/java/io/mapsmessaging/engine/destination/subscription/**'
       - '.github/workflows/mqtt-session-recovery-validation.yml'
 
 permissions:
@@ -26,8 +31,8 @@ jobs:
           cache: maven
       - name: Prepare test resources
         run: mkdir -p src/test/resources
-      - name: Run frame delivery tests
+      - name: Run MQTT delivery and flow-control tests
         run: >-
           mvn -B
-          -Dtest=FrameHandlerTest
+          -Dtest=FrameHandlerTest,PacketIdManagerTest,DestinationSubscriptionFlowControlTest
           test
