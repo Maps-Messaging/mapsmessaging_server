@@ -19,10 +19,13 @@
 
 package io.mapsmessaging.network.protocol.impl.mqtt_sn;
 
+import io.mapsmessaging.auth.AuthManager;
+import io.mapsmessaging.auth.priviliges.SessionPrivileges;
 import io.mapsmessaging.network.protocol.impl.mqtt5.ClientCallbackHandler;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
 import javax.security.sasl.Sasl;
 import org.junit.jupiter.api.Assertions;
@@ -41,31 +44,44 @@ class MqttSnAuthTest extends BaseMqttSnConfig {
 
   @Test
   void simpleAuthValidation() throws MqttsnException, MqttsnClientConnectException, IOException, MqttsnQueueAcceptException {
+    String username = "mqtt-sn-auth-" + UUID.randomUUID();
+    String password = "mqtt-sn-test-password";
+    AuthManager authManager = AuthManager.getInstance();
+    Assertions.assertTrue(
+        authManager.addUser(username, password.toCharArray(), SessionPrivileges.create(username), new String[]{"everyone"}),
+        "Should create isolated MQTT-SN authentication user");
+
     Map<String, String> props = new HashMap<>();
     props.put(Sasl.QOP, "auth");
     String mechanisms = "SCRAM-SHA-256";
-    ClientCallbackHandler clientHandler = new ClientCallbackHandler("admin", getPassword("admin"), "servername");
+    ClientCallbackHandler clientHandler = new ClientCallbackHandler(username, password, "servername");
 
     IAuthHandler authHandler = new SaslAuthHandler(mechanisms, null, "localhost", props, clientHandler);
-    MqttSnClient client = new MqttSnClient( "localhost", 1887, 2, authHandler);
-    client.connect(50, true);
-    Assertions.assertTrue(client.isConnected());
-    AtomicBoolean receivedEvent = new AtomicBoolean(false);
-    client.registerPublishListener(new IMqttsnPublishReceivedListener() {
-      @Override
-      public void receive(IClientIdentifierContext iMqttsnContext, TopicPath topicPath, int i, boolean b, byte[] bytes, IMqttsnMessage iMqttsnMessage) {
-        receivedEvent.set(true);
-        System.err.println("Received event");
+    MqttSnClient client = new MqttSnClient("localhost", 1887, 2, authHandler);
+    try {
+      client.connect(50, true);
+      Assertions.assertTrue(client.isConnected());
+      AtomicBoolean receivedEvent = new AtomicBoolean(false);
+      client.registerPublishListener(new IMqttsnPublishReceivedListener() {
+        @Override
+        public void receive(IClientIdentifierContext iMqttsnContext, TopicPath topicPath, int i, boolean b, byte[] bytes, IMqttsnMessage iMqttsnMessage) {
+          receivedEvent.set(true);
+          System.err.println("Received event");
+        }
+      });
+      client.subscribe("/topic", 0);
+      client.publish("/topic", 2, "This is a message".getBytes());
+      long timeout = System.currentTimeMillis() + 10000;
+      while (!receivedEvent.get() && timeout > System.currentTimeMillis()) {
+        delay(10);
       }
-    });
-    client.subscribe("/topic", 0);
-    client.publish("/topic", 2, "This is a message".getBytes());
-    long timeout = System.currentTimeMillis()+10000;
-    while(!receivedEvent.get() && timeout > System.currentTimeMillis()){
-      delay(10);
+      Assertions.assertTrue(receivedEvent.get(), "Should have received the event");
+    } finally {
+      if (client.isConnected()) {
+        client.disconnect();
+      }
+      authManager.delUser(username);
+      delay(500);
     }
-    Assertions.assertTrue(receivedEvent.get(), "Should have received the event");
-    client.disconnect();
-    delay(500);
   }
 }
