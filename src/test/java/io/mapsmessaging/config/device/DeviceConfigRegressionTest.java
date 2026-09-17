@@ -57,6 +57,38 @@ class DeviceConfigRegressionTest {
   }
 
   @Test
+  void serialBus_roundTrip_preservesConfiguredDevices() {
+    ConfigurationProperties serial = new ConfigurationProperties();
+    serial.put("port", "/dev/ttyAMA0");
+    serial.put("baudRate", 4_800);
+    serial.put("dataBits", 8);
+    serial.put("stopBits", 1.0f);
+    serial.put("parity", "n");
+    serial.put("flowControl", 1);
+
+    ConfigurationProperties device = new ConfigurationProperties();
+    device.put("name", "SEN0657");
+    device.put("selector", "temperature > 20");
+    device.put("serial", serial);
+
+    ConfigurationProperties properties = new ConfigurationProperties();
+    properties.put("name", "serial");
+    properties.put("enabled", true);
+    properties.put("topicNameTemplate", "/serial/[device_name]");
+    properties.put("config", List.of(device));
+
+    SerialDeviceBusConfig original = new SerialDeviceBusConfig(properties);
+    assertEquals(1, original.getDevices().size());
+
+    SerialDeviceBusConfig roundTripped = new SerialDeviceBusConfig(original.toConfigurationProperties());
+
+    assertEquals(1, roundTripped.getDevices().size());
+    assertEquals("SEN0657", roundTripped.getDevices().get(0).getName());
+    assertEquals("/dev/ttyAMA0", roundTripped.getDevices().get(0).getSerialConfig().getPort());
+    assertEquals(4_800, roundTripped.getDevices().get(0).getSerialConfig().getBaudRate());
+  }
+
+  @Test
   void oneWireBus_update_acceptsOneWireBusDto() {
     ConfigurationProperties properties = new ConfigurationProperties();
     properties.put("name", "one-wire-a");
