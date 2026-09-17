@@ -21,6 +21,7 @@ package io.mapsmessaging.network;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -194,19 +195,17 @@ class ProtocolClientConnectionFlowControlTest {
     }
 
     assertEquals(51, manager.size());
+    verify(session, never()).getReceiveMaximum();
   }
 
   @Test
-  void mqtt311RetainsSubscriptionQosFlowControl() {
+  void mqtt311RetainsSubscriptionQosFlowControlWithoutConnectionReceiveMaximum() {
     MQTTProtocol protocol = mock(MQTTProtocol.class);
-    Session session = mock(Session.class);
     PacketIdManager manager = mock(PacketIdManager.class);
     SubscribedEventManager subscription = mock(SubscribedEventManager.class);
     SubscriptionContext context = mock(SubscriptionContext.class);
     Message message = mock(Message.class);
 
-    when(protocol.getSession()).thenReturn(session);
-    when(session.getReceiveMaximum()).thenReturn(1);
     when(protocol.getPacketIdManager()).thenReturn(manager);
     when(subscription.getContext()).thenReturn(context);
     when(context.getQualityOfService()).thenReturn(QualityOfService.AT_LEAST_ONCE);
@@ -216,7 +215,7 @@ class ProtocolClientConnectionFlowControlTest {
     ProtocolClientConnection connection = new ProtocolClientConnection(protocol);
 
     assertFalse(connection.tryAcquireSendSlot(subscription, message));
-    verify(manager).setMaximumOutstanding(1);
+    verify(manager, never()).setMaximumOutstanding(anyInt());
     verify(manager).tryAcquireSendSlot(subscription);
     verify(manager, never()).releaseSendSlot(subscription);
   }
