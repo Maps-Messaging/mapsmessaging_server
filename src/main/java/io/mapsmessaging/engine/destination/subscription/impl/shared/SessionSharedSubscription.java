@@ -58,7 +58,7 @@ public class SessionSharedSubscription extends Subscription {
     this.sharedSubscription = sharedSubscription;
     this.acknowledgementController = acknowledgementController;
     this.flowControlBlocked = false;
-    completionTask = new MessageDeliveryCompletionTask(sharedSubscription, acknowledgementController, this::releaseProtocolSendSlot);
+    completionTask = new MessageDeliveryCompletionTask(sharedSubscription, acknowledgementController);
   }
 
   @Override
