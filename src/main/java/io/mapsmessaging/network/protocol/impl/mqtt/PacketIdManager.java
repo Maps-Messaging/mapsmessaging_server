@@ -67,14 +67,14 @@ public class PacketIdManager {
 
   public synchronized boolean tryAcquireSendSlot(SubscribedEventManager subscription) {
     if (subscription == null) {
-      return hasCapacity();
+      return hasPublishCapacity();
     }
 
     if (reservations.getOrDefault(subscription, 0) > 0) {
       return true;
     }
 
-    if (hasCapacity()) {
+    if (hasPublishCapacity()) {
       reserve(subscription);
       return true;
     }
@@ -100,8 +100,16 @@ public class PacketIdManager {
 
   public int nextPacketIdentifier(SubscribedEventManager subscription, long messageId) {
     synchronized (this) {
-      consumeReservation(subscription);
-      while (!hasCapacityForDirectAllocation()) {
+      boolean reserved = consumeReservation(subscription);
+      while (!reserved && !hasPublishCapacity()) {
+        try {
+          wait();
+        } catch (InterruptedException e) {
+          Thread.currentThread().interrupt();
+          throw new PacketIdentifierExhaustedException();
+        }
+      }
+      while (!hasAvailablePacketIdentifier()) {
         try {
           wait();
         } catch (InterruptedException e) {
@@ -117,7 +125,7 @@ public class PacketIdManager {
   }
 
   public synchronized int nextPacketIdentifier() {
-    while (!hasCapacityForDirectAllocation()) {
+    while (!hasAvailablePacketIdentifier()) {
       try {
         wait();
       } catch (InterruptedException e) {
@@ -163,12 +171,7 @@ public class PacketIdManager {
     return tmp.stream().anyMatch(map -> map.getTime() < timeout);
   }
 
-  private boolean hasCapacity() {
-    return outstandingPacketId.size() + reservedSlots < maximumOutstanding
-        && outstandingPacketId.size() < MAX_PACKET_IDENTIFIER;
-  }
-
-  private boolean hasCapacityForDirectAllocation() {
+  private boolean hasPublishCapacity() {
     return outstandingPacketId.size() + reservedSlots < maximumOutstanding
         && outstandingPacketId.size() < MAX_PACKET_IDENTIFIER;
   }
@@ -178,13 +181,13 @@ public class PacketIdManager {
     reservedSlots++;
   }
 
-  private void consumeReservation(SubscribedEventManager subscription) {
+  private boolean consumeReservation(SubscribedEventManager subscription) {
     if (subscription == null) {
-      return;
+      return false;
     }
     Integer count = reservations.get(subscription);
     if (count == null || count == 0) {
-      return;
+      return false;
     }
     if (count == 1) {
       reservations.remove(subscription);
@@ -192,6 +195,7 @@ public class PacketIdManager {
       reservations.put(subscription, count - 1);
     }
     reservedSlots--;
+    return true;
   }
 
   private void releaseReservation(SubscribedEventManager subscription) {
@@ -211,7 +215,7 @@ public class PacketIdManager {
   }
 
   private SubscribedEventManager grantNextWaiter() {
-    if (!hasCapacity()) {
+    if (!hasPublishCapacity()) {
       return null;
     }
     SubscribedEventManager waiter = waiters.poll();
