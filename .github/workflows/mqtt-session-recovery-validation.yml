@@ -11,9 +11,11 @@ on:
       - 'src/main/java/io/mapsmessaging/network/protocol/impl/mqtt5/**'
       - 'src/main/java/io/mapsmessaging/engine/session/**'
       - 'src/main/java/io/mapsmessaging/engine/destination/subscription/**'
+      - 'src/main/java/io/mapsmessaging/api/Session.java'
       - 'src/test/java/io/mapsmessaging/network/io/**'
       - 'src/test/java/io/mapsmessaging/network/protocol/impl/mqtt/**'
       - 'src/test/java/io/mapsmessaging/engine/destination/subscription/**'
+      - 'src/test/java/io/mapsmessaging/api/SessionFlowControlTest.java'
       - '.github/workflows/mqtt-session-recovery-validation.yml'
 
 permissions:
@@ -34,5 +36,5 @@ jobs:
       - name: Run MQTT delivery and flow-control tests
         run: >-
           mvn -B
-          -Dtest=FrameHandlerTest,PacketIdManagerTest,DestinationSubscriptionFlowControlTest,SessionSharedSubscriptionFlowControlTest
+          -Dtest=FrameHandlerTest,PacketIdManagerTest,DestinationSubscriptionFlowControlTest,SessionSharedSubscriptionFlowControlTest,SessionFlowControlTest
           test
