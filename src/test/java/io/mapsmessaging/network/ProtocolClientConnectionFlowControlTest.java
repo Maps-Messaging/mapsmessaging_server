@@ -2,7 +2,7 @@
  *
  *  Copyright [ 2024 - 2026 ] MapsMessaging B.V.
  *
- *  Licensed under the Apache License, Version 2.0 with the Commons Clause
+ *  Licensed under the Apache License 2.0 with the Commons Clause
  *  (the "License"); you may not use this file except in compliance with the License.
  *  You may obtain a copy of the License at:
  *
@@ -18,6 +18,7 @@
 
 package io.mapsmessaging.network;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
@@ -167,6 +168,32 @@ class ProtocolClientConnectionFlowControlTest {
     assertTrue(connection.tryAcquireSendSlot(subscription, message));
     verify(manager).setMaximumOutstanding(2);
     verify(manager).tryAcquireSendSlot(subscription);
+  }
+
+  @Test
+  void mqtt311ConnectionWindowUsesPacketIdentifierCapacityNotSessionReceiveMaximum() {
+    MQTTProtocol protocol = mock(MQTTProtocol.class);
+    Session session = mock(Session.class);
+    PacketIdManager manager = new PacketIdManager();
+    SubscribedEventManager subscription = mock(SubscribedEventManager.class);
+    SubscriptionContext context = mock(SubscriptionContext.class);
+    Message message = mock(Message.class);
+
+    when(protocol.getSession()).thenReturn(session);
+    when(session.getReceiveMaximum()).thenReturn(50);
+    when(protocol.getPacketIdManager()).thenReturn(manager);
+    when(subscription.getContext()).thenReturn(context);
+    when(context.getQualityOfService()).thenReturn(QualityOfService.AT_LEAST_ONCE);
+    when(message.getQualityOfService()).thenReturn(QualityOfService.AT_LEAST_ONCE);
+
+    ProtocolClientConnection connection = new ProtocolClientConnection(protocol);
+
+    for (int messageId = 1; messageId <= 51; messageId++) {
+      assertTrue(connection.tryAcquireSendSlot(subscription, message), "MQTT 3 connection was capped by session receiveMaximum at message " + messageId);
+      manager.nextPacketIdentifier(subscription, messageId);
+    }
+
+    assertEquals(51, manager.size());
   }
 
   @Test
