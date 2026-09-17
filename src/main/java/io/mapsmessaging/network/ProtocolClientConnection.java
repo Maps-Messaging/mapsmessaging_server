@@ -22,6 +22,8 @@ package io.mapsmessaging.network;
 import io.mapsmessaging.api.SubscribedEventManager;
 import io.mapsmessaging.engine.session.ClientConnection;
 import io.mapsmessaging.network.protocol.Protocol;
+import io.mapsmessaging.network.protocol.impl.mqtt.MQTTProtocol;
+import io.mapsmessaging.network.protocol.impl.mqtt5.MQTT5Protocol;
 
 import java.security.Principal;
 
@@ -44,12 +46,22 @@ public class ProtocolClientConnection implements ClientConnection {
 
   @Override
   public boolean tryAcquireSendSlot(SubscribedEventManager subscription) {
-    return protocol.tryAcquireSendSlot(subscription);
+    if (protocol instanceof MQTTProtocol mqttProtocol) {
+      return mqttProtocol.getPacketIdManager().tryAcquireSendSlot(subscription);
+    }
+    if (protocol instanceof MQTT5Protocol mqtt5Protocol) {
+      return mqtt5Protocol.getPacketIdManager().tryAcquireSendSlot(subscription);
+    }
+    return true;
   }
 
   @Override
   public void releaseSendSlot(SubscribedEventManager subscription) {
-    protocol.releaseSendSlot(subscription);
+    if (protocol instanceof MQTTProtocol mqttProtocol) {
+      mqttProtocol.getPacketIdManager().releaseSendSlot(subscription);
+    } else if (protocol instanceof MQTT5Protocol mqtt5Protocol) {
+      mqtt5Protocol.getPacketIdManager().releaseSendSlot(subscription);
+    }
   }
 
   @Override
