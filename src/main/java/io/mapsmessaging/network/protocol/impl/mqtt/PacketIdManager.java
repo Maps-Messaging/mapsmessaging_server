@@ -28,6 +28,8 @@ import java.util.TreeMap;
 
 public class PacketIdManager {
 
+  static final int MAX_PACKET_IDENTIFIER = 0xffff;
+
   private final Map<Integer, PacketIdentifierMap> outstandingPacketId;
 
   private int packetId;
@@ -48,14 +50,21 @@ public class PacketIdManager {
   }
 
   public synchronized int nextPacketIdentifier() {
-    int retVal = 0;
-    while (retVal == 0) {
-      retVal = (packetId++) & 0xffff;
-      if (outstandingPacketId.containsKey(retVal)) {
-        retVal = 0;
+    if (!hasAvailablePacketIdentifier()) {
+      throw new PacketIdentifierExhaustedException();
+    }
+
+    for (int attempt = 0; attempt <= MAX_PACKET_IDENTIFIER; attempt++) {
+      int candidate = (packetId++) & MAX_PACKET_IDENTIFIER;
+      if (candidate != 0 && !outstandingPacketId.containsKey(candidate)) {
+        return candidate;
       }
     }
-    return retVal;
+    throw new PacketIdentifierExhaustedException();
+  }
+
+  public synchronized boolean hasAvailablePacketIdentifier() {
+    return outstandingPacketId.size() < MAX_PACKET_IDENTIFIER;
   }
 
   public synchronized PacketIdentifierMap receivedPacket(int id) {
