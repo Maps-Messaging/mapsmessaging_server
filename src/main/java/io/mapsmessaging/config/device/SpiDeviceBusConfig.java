@@ -70,7 +70,7 @@ public class SpiDeviceBusConfig extends SpiDeviceBusConfigDTO implements DeviceB
         deviceList.add(((SpiDeviceConfig) device).toConfigurationProperties());
       }
     }
-    props.put("devices", deviceList);
+    props.put("config", deviceList);
 
     return props;
   }
