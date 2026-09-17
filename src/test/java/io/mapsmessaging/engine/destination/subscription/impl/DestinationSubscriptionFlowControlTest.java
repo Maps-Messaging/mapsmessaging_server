@@ -22,6 +22,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.same;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -53,6 +54,7 @@ class DestinationSubscriptionFlowControlTest {
     assertNull(message);
     verify(fixture.messageStateManager).nextMessageId();
     verify(fixture.destination).getMessage(42L);
+    verify(fixture.clientConnection).tryAcquireSendSlot(any(), same(expected));
     verify(fixture.messageStateManager, never()).allocate(any());
   }
 
@@ -67,6 +69,7 @@ class DestinationSubscriptionFlowControlTest {
     Message message = fixture.subscription.retrieveWithFlowControl();
 
     assertSame(expected, message);
+    verify(fixture.clientConnection).tryAcquireSendSlot(any(), same(expected));
     verify(fixture.messageStateManager).allocate(expected);
   }
 
@@ -93,6 +96,22 @@ class DestinationSubscriptionFlowControlTest {
     verify(fixture.clientConnection, never()).tryAcquireSendSlot(any(), any());
     verify(fixture.clientConnection, never()).releaseSendSlot(any());
     verify(fixture.messageStateManager, never()).allocate(any());
+  }
+
+  @Test
+  void allocationFailureReleasesReservedConnectionSlot() throws IOException {
+    Fixture fixture = new Fixture();
+    Message expected = mock(Message.class);
+    when(fixture.messageStateManager.nextMessageId()).thenReturn(42L);
+    when(fixture.destination.getMessage(42L)).thenReturn(expected);
+    when(fixture.clientConnection.tryAcquireSendSlot(any(), any())).thenReturn(true);
+    org.mockito.Mockito.doThrow(new IllegalStateException("allocate failed"))
+        .when(fixture.messageStateManager).allocate(expected);
+
+    assertThrows(IllegalStateException.class, fixture.subscription::retrieveWithFlowControl);
+
+    verify(fixture.clientConnection).tryAcquireSendSlot(any(), same(expected));
+    verify(fixture.clientConnection).releaseSendSlot(any());
   }
 
   private static final class Fixture {
