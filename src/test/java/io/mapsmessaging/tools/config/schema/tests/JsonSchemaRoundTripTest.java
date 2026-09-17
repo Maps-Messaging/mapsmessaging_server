@@ -34,7 +34,6 @@ import io.mapsmessaging.dto.rest.auth.SecurityManagerDTO;
 import io.mapsmessaging.dto.rest.config.*;
 import io.mapsmessaging.dto.rest.config.ml.MLModelManagerDTO;
 import io.mapsmessaging.dto.rest.schema.SchemaManagerConfigDTO;
-import io.mapsmessaging.state.config.TwinManagerConfigDTO;
 import io.mapsmessaging.tools.config.schema.RuntimeJsonSchemaGenerator;
 import io.mapsmessaging.tools.config.schema.RuntimeJsonSchemaService;
 import org.junit.jupiter.api.DynamicTest;
@@ -109,7 +108,6 @@ class JsonSchemaRoundTripTest {
     map.put("SchemaManager", SchemaManagerConfigDTO.class);
     map.put("SecurityManager", SecurityManagerDTO.class);
     map.put("TenantManagement", TenantManagementConfigDTO.class);
-    map.put("TwinManager", TwinManagerConfigDTO.class);
     map.put("jolokia", JolokiaConfigDTO.class);
     map.put("routing", RoutingManagerConfigDTO.class);
     return map;

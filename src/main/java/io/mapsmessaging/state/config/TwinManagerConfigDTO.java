@@ -120,11 +120,7 @@ public class TwinManagerConfigDTO extends BaseManagerConfigDTO {
   )
   protected List<DroneInfoDTO> droneInfo = new ArrayList<>();
 
-  @Schema(
-      description = "Optional NMEA 2000 twin integration configuration.",
-      requiredMode = Schema.RequiredMode.NOT_REQUIRED,
-      nullable = true
-  )
+
   protected N2KTwinConfig n2KTwinConfig;
 
 

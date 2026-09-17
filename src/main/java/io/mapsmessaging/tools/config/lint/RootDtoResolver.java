@@ -28,11 +28,13 @@ public final class RootDtoResolver {
 
   @SuppressWarnings("unchecked")
   public static Class<? extends BaseConfigDTO> resolveRootDto(Class<?> managerClass) {
-    Class<?> current = managerClass == null ? null : managerClass.getSuperclass();
+    Class<?> current = managerClass;
 
     while (current != null && current != Object.class) {
-      if (BaseConfigDTO.class.isAssignableFrom(current) && current != BaseConfigDTO.class) {
-        return (Class<? extends BaseConfigDTO>) current;
+      if (BaseConfigDTO.class.isAssignableFrom(current)) {
+        if (current != BaseConfigDTO.class) {
+          return (Class<? extends BaseConfigDTO>) current;
+        }
       }
       current = current.getSuperclass();
     }
