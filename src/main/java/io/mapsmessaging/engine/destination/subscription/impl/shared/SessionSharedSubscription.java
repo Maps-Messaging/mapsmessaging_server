@@ -76,7 +76,6 @@ public class SessionSharedSubscription extends Subscription {
     cancel();
   }
 
-
   @Override
   public void delete() throws IOException {
     cancel();
@@ -130,12 +129,7 @@ public class SessionSharedSubscription extends Subscription {
     return !flowControlBlocked && sessionImpl != null && canSend();
   }
 
-  boolean tryAcquireProtocolSendSlot() {
-    SubscriptionContext context = getContext();
-    if (context == null || !context.getQualityOfService().isSendPacketId()) {
-      flowControlBlocked = false;
-      return true;
-    }
+  boolean tryAcquireProtocolSendSlot(Message message) {
     SessionImpl session = sessionImpl;
     if (session == null) {
       flowControlBlocked = false;
@@ -148,7 +142,7 @@ public class SessionSharedSubscription extends Subscription {
     }
 
     flowControlBlocked = true;
-    if (clientConnection.tryAcquireSendSlot(this)) {
+    if (clientConnection.tryAcquireSendSlot(this, message)) {
       flowControlBlocked = false;
       return true;
     }
