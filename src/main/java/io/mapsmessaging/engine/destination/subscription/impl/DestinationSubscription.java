@@ -137,8 +137,6 @@ public class DestinationSubscription extends Subscription {
     acknowledgementController.close();
     messageStateManager.rollbackInFlightMessages();
 
-    // We need to see if any other subscriptions have interest in these events, and if not then simply
-    // remove the events. Just like when we deliver all the events in a subscription
     try {
       messageStateManager.close();
     } catch (IOException e) {
@@ -155,8 +153,6 @@ public class DestinationSubscription extends Subscription {
     messageStateManager.rollbackInFlightMessages();
     destinationImpl.removeSubscription(sessionId);
 
-    // We need to see if any other subscriptions have interest in these events, and if not then simply
-    // remove the events. Just like when we deliver all the events in a subscription
     try {
       messageStateManager.delete();
     } catch (IOException e) {
@@ -170,9 +166,6 @@ public class DestinationSubscription extends Subscription {
     releaseProtocolSendSlot();
     acknowledgementController.clear();
     messageStateManager.rollbackInFlightMessages();
-    //
-    // Remove the session since it is now redundant
-    //
     super.hibernate();
   }
 
@@ -344,8 +337,13 @@ public class DestinationSubscription extends Subscription {
     if (!tryAcquireProtocolSendSlot(message)) {
       return null;
     }
-    allocateMessage(message);
-    return message;
+    try {
+      allocateMessage(message);
+      return message;
+    } catch (RuntimeException e) {
+      releaseProtocolSendSlot();
+      throw e;
+    }
   }
 
   protected Message retrieveNextMessage() throws IOException {
@@ -413,9 +411,6 @@ public class DestinationSubscription extends Subscription {
   }
 
   private Message prepareMessage(Message message) {
-    //
-    // Update state in an atomic fashion and then send the message
-    //
     if (!hasAtRestMessages()) {
       message.setLastMessage(true);
     }
@@ -492,10 +487,6 @@ public class DestinationSubscription extends Subscription {
 
   public void acknowledgePreviousEvent() {
     ThreadLocalContext.checkDomain(DestinationImpl.SUBSCRIPTION_TASK_KEY);
-
-    //
-    // Chained completion handlers
-    //
     long messageId = acknowledgementController.messageSent();
     if (messageId > -1) {
       completeMessage(messageId);
@@ -530,9 +521,6 @@ public class DestinationSubscription extends Subscription {
     }
   }
 
-  //
-  // So we have a message to send, but we are not scheduled to run
-  //
   public boolean schedule() {
     if (!flowControlBlocked && isReady()) {
       destinationImpl.scanForDelivery(this);
