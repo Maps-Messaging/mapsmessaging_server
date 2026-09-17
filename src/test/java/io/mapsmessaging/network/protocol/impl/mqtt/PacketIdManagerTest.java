@@ -110,10 +110,28 @@ class PacketIdManagerTest {
     assertTrue(manager.tryAcquireSendSlot(destinationA));
     assertFalse(manager.tryAcquireSendSlot(destinationB));
 
-    manager.releaseSendSlot(destinationA);
+    manager.releaseUnusedSendSlot(destinationA);
 
     verify(destinationB, times(1)).resumeDelivery();
     assertTrue(manager.tryAcquireSendSlot(destinationB));
+  }
+
+  @Test
+  void releasingUnusedSlotDoesNotRemoveQueuedDestination() {
+    PacketIdManager manager = new PacketIdManager(3);
+    manager.setMaximumOutstanding(1);
+
+    SubscribedEventManager destinationA = mock(SubscribedEventManager.class);
+    SubscribedEventManager destinationB = mock(SubscribedEventManager.class);
+
+    assertTrue(manager.tryAcquireSendSlot(destinationA));
+    int packetA = manager.nextPacketIdentifier(destinationA, 1L);
+    assertFalse(manager.tryAcquireSendSlot(destinationB));
+
+    manager.releaseUnusedSendSlot(destinationB);
+    manager.completePacketId(packetA);
+
+    verify(destinationB, times(1)).resumeDelivery();
   }
 
   @Test
