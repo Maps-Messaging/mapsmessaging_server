@@ -39,17 +39,23 @@ public class PacketIdManager {
   private final Map<SubscribedEventManager, Integer> reservations;
   private final Queue<SubscribedEventManager> waiters;
   private final Set<SubscribedEventManager> waiting;
+  private final int maxPacketIdentifier;
 
   private int packetId;
   private int maximumOutstanding;
   private int reservedSlots;
 
   public PacketIdManager() {
+    this(MAX_PACKET_IDENTIFIER);
+  }
+
+  PacketIdManager(int maxPacketIdentifier) {
+    this.maxPacketIdentifier = Math.max(1, Math.min(maxPacketIdentifier, MAX_PACKET_IDENTIFIER));
     outstandingPacketId = new TreeMap<>();
     reservations = new IdentityHashMap<>();
     waiters = new ArrayDeque<>();
     waiting = Collections.newSetFromMap(new IdentityHashMap<>());
-    maximumOutstanding = MAX_PACKET_IDENTIFIER;
+    maximumOutstanding = this.maxPacketIdentifier;
   }
 
   public synchronized void close() {
@@ -62,7 +68,7 @@ public class PacketIdManager {
   }
 
   public synchronized void setMaximumOutstanding(int maximumOutstanding) {
-    this.maximumOutstanding = Math.max(1, Math.min(maximumOutstanding, MAX_PACKET_IDENTIFIER));
+    this.maximumOutstanding = Math.max(1, Math.min(maximumOutstanding, maxPacketIdentifier));
   }
 
   public synchronized boolean tryAcquireSendSlot(SubscribedEventManager subscription) {
@@ -137,7 +143,7 @@ public class PacketIdManager {
   }
 
   public synchronized boolean hasAvailablePacketIdentifier() {
-    return outstandingPacketId.size() < MAX_PACKET_IDENTIFIER;
+    return outstandingPacketId.size() < maxPacketIdentifier;
   }
 
   public synchronized PacketIdentifierMap receivedPacket(int id) {
@@ -173,7 +179,7 @@ public class PacketIdManager {
 
   private boolean hasPublishCapacity() {
     return outstandingPacketId.size() + reservedSlots < maximumOutstanding
-        && outstandingPacketId.size() < MAX_PACKET_IDENTIFIER;
+        && outstandingPacketId.size() < maxPacketIdentifier;
   }
 
   private void reserve(SubscribedEventManager subscription) {
@@ -228,10 +234,13 @@ public class PacketIdManager {
   }
 
   private int nextAvailablePacketIdentifier() {
-    for (int attempt = 0; attempt <= MAX_PACKET_IDENTIFIER; attempt++) {
-      int candidate = (packetId++) & MAX_PACKET_IDENTIFIER;
-      if (candidate != 0 && !outstandingPacketId.containsKey(candidate)) {
-        return candidate;
+    for (int attempt = 0; attempt < maxPacketIdentifier; attempt++) {
+      packetId++;
+      if (packetId > maxPacketIdentifier) {
+        packetId = 1;
+      }
+      if (!outstandingPacketId.containsKey(packetId)) {
+        return packetId;
       }
     }
     throw new PacketIdentifierExhaustedException();
