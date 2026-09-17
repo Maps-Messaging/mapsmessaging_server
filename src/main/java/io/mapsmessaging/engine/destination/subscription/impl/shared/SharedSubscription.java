@@ -89,16 +89,17 @@ public class SharedSubscription extends DestinationSubscription {
 
   @Override
   protected Message retrieveNextMessageWithFlowControl() throws IOException {
-    reservedSubscription = subscriptions.reserveNext();
+    Message message = peekNextMessage();
+    if (message == null) {
+      return null;
+    }
+
+    reservedSubscription = subscriptions.reserveNext(message);
     if (reservedSubscription == null) {
       return null;
     }
 
-    Message message = super.retrieveNextMessage();
-    if (message == null) {
-      reservedSubscription.releaseProtocolSendSlot();
-      reservedSubscription = null;
-    }
+    allocateMessage(message);
     return message;
   }
 
@@ -180,12 +181,12 @@ public class SharedSubscription extends DestinationSubscription {
       return flatMap.isEmpty();
     }
 
-    public SessionSharedSubscription reserveNext() {
+    public SessionSharedSubscription reserveNext(Message message) {
       int loopCount = flatMap.size();
       while (loopCount > 0) {
         SessionSharedSubscription subscription = pollNext();
         loopCount--;
-        if (subscription != null && subscription.canAttemptSend() && subscription.tryAcquireProtocolSendSlot()) {
+        if (subscription != null && subscription.canAttemptSend() && subscription.tryAcquireProtocolSendSlot(message)) {
           return subscription;
         }
       }
