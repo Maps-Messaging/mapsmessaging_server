@@ -19,6 +19,7 @@
 
 package io.mapsmessaging.network;
 
+import io.mapsmessaging.api.SubscribedEventManager;
 import io.mapsmessaging.engine.session.ClientConnection;
 import io.mapsmessaging.network.protocol.Protocol;
 
@@ -39,6 +40,16 @@ public class ProtocolClientConnection implements ClientConnection {
   @Override
   public long getKeepAliveTaskInterval() {
     return protocol.getKeepAliveTaskInterval();
+  }
+
+  @Override
+  public boolean tryAcquireSendSlot(SubscribedEventManager subscription) {
+    return protocol.tryAcquireSendSlot(subscription);
+  }
+
+  @Override
+  public void releaseSendSlot(SubscribedEventManager subscription) {
+    protocol.releaseSendSlot(subscription);
   }
 
   @Override
