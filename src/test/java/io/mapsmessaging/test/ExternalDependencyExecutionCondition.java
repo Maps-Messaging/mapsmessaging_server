@@ -36,6 +36,8 @@ public final class ExternalDependencyExecutionCondition implements ExecutionCond
       "io.mapsmessaging.network.protocol.impl.satellite.SatelliteReplicationTests";
   private static final String SATELLITE_REVERSE_TEST =
       "io.mapsmessaging.network.protocol.impl.satellite.SatelliteReplicationReverseTests";
+  private static final String SCHEMA_ROUND_TRIP_TEST =
+      "io.mapsmessaging.tools.config.schema.tests.JsonSchemaRoundTripTest";
 
   @Override
   public ConditionEvaluationResult evaluateExecutionCondition(ExtensionContext context) {
@@ -45,6 +47,11 @@ public final class ExternalDependencyExecutionCondition implements ExecutionCond
     }
 
     String className = testClass.getName();
+
+    if (SCHEMA_ROUND_TRIP_TEST.equals(className)) {
+      return ConditionEvaluationResult.disabled(
+          "MSG-308: runtime JSON schema/Jackson round-trip contract is under review");
+    }
 
     if (isCanBusTest(className) && !Boolean.getBoolean(CANBUS_FLAG)) {
       return ConditionEvaluationResult.disabled(

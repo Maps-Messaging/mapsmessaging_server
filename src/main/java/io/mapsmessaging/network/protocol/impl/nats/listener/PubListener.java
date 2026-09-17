@@ -32,6 +32,7 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 
 public class PubListener implements FrameListener {
 
@@ -48,25 +49,31 @@ public class PubListener implements FrameListener {
     String destName = convertSubject(msgFrame.getSubject());
     String lookup = engine.getMapping(destName);
     CompletableFuture<Destination> future = engine.getSession().findDestination(lookup, DestinationType.TOPIC);
-    if (future != null) {
-      future.thenApply(destination -> {
-        try {
-          if (destination != null) {
-            handleMessageStoreToDestination(destination, engine, msgFrame);
-            if (engine.isVerbose()) engine.send(new OkFrame());
-          } else {
-            ErrFrame errFrame = new ErrFrame();
-            errFrame.setError("No such destination");
-            engine.send(errFrame);
-          }
-        } catch (IOException e) {
-          ErrFrame errFrame = new ErrFrame();
-          errFrame.setError(e.getMessage());
-          engine.send(errFrame);
-          future.completeExceptionally(e);
+    if (future == null) {
+      return;
+    }
+
+    try {
+      Destination destination = future.get();
+      if (destination != null) {
+        handleMessageStoreToDestination(destination, engine, msgFrame);
+        if (engine.isVerbose()) {
+          engine.send(new OkFrame());
         }
-        return destination;
-      });
+      } else {
+        ErrFrame errFrame = new ErrFrame();
+        errFrame.setError("No such destination");
+        engine.send(errFrame);
+      }
+    } catch (InterruptedException e) {
+      Thread.currentThread().interrupt();
+      throw new IOException("Interrupted while resolving NATS destination", e);
+    } catch (ExecutionException e) {
+      Throwable cause = e.getCause();
+      if (cause instanceof IOException ioException) {
+        throw ioException;
+      }
+      throw new IOException("Failed to resolve NATS destination", cause);
     }
   }
 

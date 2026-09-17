@@ -38,6 +38,7 @@ import static io.mapsmessaging.logging.ServerLogMessages.*;
 public class FileLockManager implements AutoCloseable {
 
   private static final long DEFAULT_RETRY_SLEEP_MILLIS = 1000;
+  private static final long THREAD_JOIN_TIMEOUT_MILLIS = 2000;
 
   private final Logger logger = LoggerFactory.getLogger(this.getClass());
   private final Path lockFilePath;
@@ -275,15 +276,16 @@ public class FileLockManager implements AutoCloseable {
 
   @Override
   public void close() {
+    shutdown.set(true);
+    Thread heartbeat = heartbeatThread;
+    Thread watcher = watchThread;
+    heartbeatThread = null;
+    watchThread = null;
+
+    stopThread(heartbeat);
+    stopThread(watcher);
+
     try {
-      if (heartbeatThread != null) {
-        heartbeatThread.interrupt();
-        heartbeatThread = null;
-      }
-      if (watchThread != null) {
-        watchThread.interrupt();
-        watchThread = null;
-      }
       if (lock != null && lock.isValid()) {
         lock.release();
       }
@@ -297,6 +299,18 @@ public class FileLockManager implements AutoCloseable {
       lock = null;
       channel = null;
       locked = false;
+    }
+  }
+
+  private void stopThread(Thread thread) {
+    if (thread == null || thread == Thread.currentThread()) {
+      return;
+    }
+    thread.interrupt();
+    try {
+      thread.join(THREAD_JOIN_TIMEOUT_MILLIS);
+    } catch (InterruptedException e) {
+      Thread.currentThread().interrupt();
     }
   }
 }
