@@ -25,6 +25,7 @@ import io.mapsmessaging.dto.rest.protocol.ProtocolInformationDTO;
 import io.mapsmessaging.network.io.EndPoint;
 import io.mapsmessaging.network.io.EndPointStatus;
 import io.mapsmessaging.network.protocol.Protocol;
+import io.mapsmessaging.utilities.stats.LinkedMovingAverages;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -55,6 +56,30 @@ class EndPointHelperTest {
   }
 
   @Test
+  void summary_with_moving_averages_exposes_current_and_total_values() {
+    EndPointStatus status = mock(EndPointStatus.class);
+    LinkedMovingAverages read = movingAverage(100L, 1_000L);
+    LinkedMovingAverages written = movingAverage(200L, 2_000L);
+    LinkedMovingAverages overflow = movingAverage(3L, 30L);
+    LinkedMovingAverages underflow = movingAverage(4L, 40L);
+    when(status.supportsMovingAverages()).thenReturn(true);
+    when(status.getReadByteAverages()).thenReturn(read);
+    when(status.getWriteByteAverages()).thenReturn(written);
+    when(status.getBufferOverFlow()).thenReturn(overflow);
+    when(status.getBufferUnderFlow()).thenReturn(underflow);
+    EndPoint endPoint = endpoint(null, status);
+
+    EndPointSummaryDTO summary = EndPointHelper.buildSummaryDTO("tcp", endPoint);
+
+    assertEquals(100L, summary.getBytesRead());
+    assertEquals(200L, summary.getBytesWritten());
+    assertEquals(3L, summary.getOverFlow());
+    assertEquals(30L, summary.getTotalOverflow());
+    assertEquals(4L, summary.getUnderFlow());
+    assertEquals(40L, summary.getTotalUnderflow());
+  }
+
+  @Test
   void details_without_bound_protocol_returns_null_protocol_information() {
     EndPoint endPoint = endpoint(null);
 
@@ -81,9 +106,15 @@ class EndPointHelperTest {
   }
 
   private EndPoint endpoint(Protocol protocol) {
-    EndPoint endPoint = mock(EndPoint.class);
     EndPointStatus status = mock(EndPointStatus.class);
+    when(status.getReadBytesTotal()).thenReturn(1_024L);
+    when(status.getWriteBytesTotal()).thenReturn(2_048L);
+    when(status.supportsMovingAverages()).thenReturn(false);
+    return endpoint(protocol, status);
+  }
 
+  private EndPoint endpoint(Protocol protocol, EndPointStatus status) {
+    EndPoint endPoint = mock(EndPoint.class);
     when(endPoint.getProxyProtocolInfo()).thenReturn(null);
     when(endPoint.getId()).thenReturn(7L);
     when(endPoint.getName()).thenReturn("endpoint-7");
@@ -93,9 +124,13 @@ class EndPointHelperTest {
     when(endPoint.getLastRead()).thenReturn(123L);
     when(endPoint.getLastWrite()).thenReturn(456L);
     when(endPoint.getEndPointStatus()).thenReturn(status);
-    when(status.getReadBytesTotal()).thenReturn(1_024L);
-    when(status.getWriteBytesTotal()).thenReturn(2_048L);
-    when(status.supportsMovingAverages()).thenReturn(false);
     return endPoint;
+  }
+
+  private LinkedMovingAverages movingAverage(long current, long total) {
+    LinkedMovingAverages movingAverage = mock(LinkedMovingAverages.class);
+    when(movingAverage.getCurrent()).thenReturn(current);
+    when(movingAverage.getTotal()).thenReturn(total);
+    return movingAverage;
   }
 }
