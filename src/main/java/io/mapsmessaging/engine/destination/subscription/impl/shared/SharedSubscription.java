@@ -99,8 +99,14 @@ public class SharedSubscription extends DestinationSubscription {
       return null;
     }
 
-    allocateMessage(message);
-    return message;
+    try {
+      allocateMessage(message);
+      return message;
+    } catch (RuntimeException e) {
+      reservedSubscription.releaseProtocolSendSlot();
+      reservedSubscription = null;
+      throw e;
+    }
   }
 
   @Override
@@ -143,7 +149,6 @@ public class SharedSubscription extends DestinationSubscription {
     }
 
     public void add(SessionSharedSubscription subscription) {
-      // If the put returns non null it means its being replaced
       if (lookupMap.put(subscription.getSessionId(), subscription) == null) {
         flatMap.add(subscription);
       }
