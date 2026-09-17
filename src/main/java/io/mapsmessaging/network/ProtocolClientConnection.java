@@ -20,6 +20,9 @@
 package io.mapsmessaging.network;
 
 import io.mapsmessaging.api.SubscribedEventManager;
+import io.mapsmessaging.api.features.QualityOfService;
+import io.mapsmessaging.api.message.Message;
+import io.mapsmessaging.engine.destination.subscription.SubscriptionContext;
 import io.mapsmessaging.engine.session.ClientConnection;
 import io.mapsmessaging.network.protocol.Protocol;
 import io.mapsmessaging.network.protocol.impl.mqtt.MQTTProtocol;
@@ -57,6 +60,17 @@ public class ProtocolClientConnection implements ClientConnection {
   }
 
   @Override
+  public boolean tryAcquireSendSlot(SubscribedEventManager subscription, Message message) {
+    if (protocol instanceof MQTT5Protocol && !mqtt5RequiresPacketIdentifier(subscription, message)) {
+      return true;
+    }
+    if (protocol instanceof MQTTProtocol && !subscriptionRequiresPacketIdentifier(subscription)) {
+      return true;
+    }
+    return tryAcquireSendSlot(subscription);
+  }
+
+  @Override
   public void releaseSendSlot(SubscribedEventManager subscription) {
     PacketIdManager manager = packetIdManager();
     if (manager != null) {
@@ -70,6 +84,27 @@ public class ProtocolClientConnection implements ClientConnection {
     if (manager != null) {
       manager.releaseUnusedSendSlot(subscription);
     }
+  }
+
+  private boolean mqtt5RequiresPacketIdentifier(SubscribedEventManager subscription, Message message) {
+    SubscriptionContext context = subscription == null ? null : subscription.getContext();
+    QualityOfService subscriptionQos = context == null ? null : context.getQualityOfService();
+    if (subscriptionQos == null) {
+      return true;
+    }
+    QualityOfService messageQos = message == null ? null : message.getQualityOfService();
+    if (messageQos == null) {
+      return subscriptionQos.isSendPacketId();
+    }
+    QualityOfService effectiveQos = QualityOfService.getInstance(
+        Math.min(subscriptionQos.getLevel(), messageQos.getLevel()));
+    return effectiveQos.isSendPacketId();
+  }
+
+  private boolean subscriptionRequiresPacketIdentifier(SubscribedEventManager subscription) {
+    SubscriptionContext context = subscription == null ? null : subscription.getContext();
+    QualityOfService qos = context == null ? null : context.getQualityOfService();
+    return qos == null || qos.isSendPacketId();
   }
 
   private boolean tryAcquire(PacketIdManager packetIdManager, int maximumOutstanding, SubscribedEventManager subscription) {
