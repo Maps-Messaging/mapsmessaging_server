@@ -21,6 +21,7 @@ package io.mapsmessaging.engine.destination.subscription.impl;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -48,7 +49,7 @@ class DestinationSubscriptionFlowControlTest {
 
     assertNull(message);
     verify(fixture.messageStateManager, never()).nextMessageId();
-    verify(fixture.destination, never()).getMessage(any(Long.class));
+    verify(fixture.destination, never()).getMessage(anyLong());
   }
 
   @Test
