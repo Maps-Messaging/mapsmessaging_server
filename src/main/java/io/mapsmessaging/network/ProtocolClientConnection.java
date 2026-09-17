@@ -23,6 +23,7 @@ import io.mapsmessaging.api.SubscribedEventManager;
 import io.mapsmessaging.engine.session.ClientConnection;
 import io.mapsmessaging.network.protocol.Protocol;
 import io.mapsmessaging.network.protocol.impl.mqtt.MQTTProtocol;
+import io.mapsmessaging.network.protocol.impl.mqtt.PacketIdManager;
 import io.mapsmessaging.network.protocol.impl.mqtt5.MQTT5Protocol;
 
 import java.security.Principal;
@@ -47,10 +48,10 @@ public class ProtocolClientConnection implements ClientConnection {
   @Override
   public boolean tryAcquireSendSlot(SubscribedEventManager subscription) {
     if (protocol instanceof MQTTProtocol mqttProtocol) {
-      return mqttProtocol.getPacketIdManager().tryAcquireSendSlot(subscription);
+      return tryAcquire(mqttProtocol.getPacketIdManager(), mqttProtocol.getSession() == null ? 0 : mqttProtocol.getSession().getReceiveMaximum(), subscription);
     }
     if (protocol instanceof MQTT5Protocol mqtt5Protocol) {
-      return mqtt5Protocol.getPacketIdManager().tryAcquireSendSlot(subscription);
+      return tryAcquire(mqtt5Protocol.getPacketIdManager(), mqtt5Protocol.getSession() == null ? 0 : mqtt5Protocol.getSession().getReceiveMaximum(), subscription);
     }
     return true;
   }
@@ -62,6 +63,13 @@ public class ProtocolClientConnection implements ClientConnection {
     } else if (protocol instanceof MQTT5Protocol mqtt5Protocol) {
       mqtt5Protocol.getPacketIdManager().releaseSendSlot(subscription);
     }
+  }
+
+  private boolean tryAcquire(PacketIdManager packetIdManager, int maximumOutstanding, SubscribedEventManager subscription) {
+    if (maximumOutstanding > 0) {
+      packetIdManager.setMaximumOutstanding(maximumOutstanding);
+    }
+    return packetIdManager.tryAcquireSendSlot(subscription);
   }
 
   @Override
