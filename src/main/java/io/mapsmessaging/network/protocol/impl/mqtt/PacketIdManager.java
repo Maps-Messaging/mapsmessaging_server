@@ -88,6 +88,9 @@ public class PacketIdManager {
   public void releaseSendSlot(SubscribedEventManager subscription) {
     SubscribedEventManager wake;
     synchronized (this) {
+      if (subscription != null && waiting.remove(subscription)) {
+        waiters.remove(subscription);
+      }
       releaseReservation(subscription);
       wake = grantNextWaiter();
       notifyAll();
@@ -166,7 +169,7 @@ public class PacketIdManager {
   }
 
   private boolean hasCapacityForDirectAllocation() {
-    return outstandingPacketId.size() < maximumOutstanding
+    return outstandingPacketId.size() + reservedSlots < maximumOutstanding
         && outstandingPacketId.size() < MAX_PACKET_IDENTIFIER;
   }
 
