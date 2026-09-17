@@ -33,7 +33,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class SerialDeviceConfigTest {
 
   @Test
-  void serialDeviceRoundTripPreservesConfiguration() {
+  void serialDevice_roundTrip_preservesConfiguration() {
     SerialDeviceConfig original = new SerialDeviceConfig(serialProperties());
 
     ConfigurationProperties serialized = original.toConfigurationProperties();
@@ -54,7 +54,7 @@ class SerialDeviceConfigTest {
   }
 
   @Test
-  void updateAppliesSerialDeviceDtoChanges() {
+  void update_serialDeviceDto_appliesChanges() {
     SerialDeviceConfig config = new SerialDeviceConfig(serialProperties());
     SerialBusDeviceDTO update = new SerialBusDeviceDTO();
     update.setName("SEN0640");
@@ -77,7 +77,20 @@ class SerialDeviceConfigTest {
   }
 
   @Test
-  void updateRejectsUnrelatedDto() {
+  void update_sameSerialDeviceDto_returnsFalse() {
+    SerialDeviceConfig config = new SerialDeviceConfig(serialProperties());
+    SerialBusDeviceDTO update = new SerialBusDeviceDTO();
+    update.setName(config.getName());
+    update.setSelector(config.getSelector());
+    update.setSerialConfig(config.getSerialConfig());
+    update.setReadTimeOut(config.getReadTimeOut());
+    update.setWriteTimeOut(config.getWriteTimeOut());
+
+    assertFalse(config.update(update));
+  }
+
+  @Test
+  void update_unrelatedDto_returnsFalse() {
     SerialDeviceConfig config = new SerialDeviceConfig(serialProperties());
 
     assertFalse(config.update(new I2CDeviceConfigDTO()));
