@@ -26,24 +26,14 @@ public class MessageDeliveryCompletionTask implements Runnable {
 
   private final DestinationSubscription subscription;
   private final AcknowledgementController acknowledgementController;
-  private final Runnable releaseSendSlot;
 
   public MessageDeliveryCompletionTask(DestinationSubscription subscription, AcknowledgementController acknowledgementController) {
-    this(subscription, acknowledgementController, subscription::releaseProtocolSendSlot);
-  }
-
-  public MessageDeliveryCompletionTask(
-      DestinationSubscription subscription,
-      AcknowledgementController acknowledgementController,
-      Runnable releaseSendSlot) {
     this.subscription = subscription;
     this.acknowledgementController = acknowledgementController;
-    this.releaseSendSlot = releaseSendSlot;
   }
 
   @Override
   public void run() {
-    releaseSendSlot.run();
     subscription.getDestinationImpl().submit(new MessageDeliveredListener(subscription, acknowledgementController));
   }
 }
