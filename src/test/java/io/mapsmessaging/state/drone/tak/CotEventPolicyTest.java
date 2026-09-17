@@ -48,7 +48,7 @@ class CotEventPolicyTest {
 
     policy.apply(event, twin, null, config);
 
-    assertEquals("a-n-S-X-M", event.getType());
+    assertEquals("a-n-S-C-P", event.getType());
   }
 
   @Test
@@ -61,7 +61,7 @@ class CotEventPolicyTest {
 
     policy.apply(event, twin, null, config);
 
-    assertEquals("a-u-S-X-M", event.getType());
+    assertEquals("a-u-S-C-P", event.getType());
   }
 
   @Test
@@ -98,7 +98,7 @@ class CotEventPolicyTest {
 
     policy.applyRemoval(event, twin, null, config);
 
-    assertEquals("a-n-U-X-M", event.getType());
+    assertEquals("a-n-U-C", event.getType());
     assertEquals("2026-09-12T10:00:01Z", event.getStale());
   }
 
@@ -113,9 +113,9 @@ class CotEventPolicyTest {
   private static Stream<Arguments> vehicleTypes() {
     return Stream.of(
         Arguments.of(VehicleClass.UAV, "a-f-A-M-F-U"),
-        Arguments.of(VehicleClass.USV, "a-f-S-X-M"),
+        Arguments.of(VehicleClass.USV, "a-f-S-C-P"),
         Arguments.of(VehicleClass.UGV, "a-f-G-E-V"),
-        Arguments.of(VehicleClass.UUV, "a-f-U-X-M"),
+        Arguments.of(VehicleClass.UUV, "a-f-U-C"),
         Arguments.of(VehicleClass.GCS, "a-f-G-U-C"),
         Arguments.of(VehicleClass.UNKNOWN, "a-f-X"));
   }
