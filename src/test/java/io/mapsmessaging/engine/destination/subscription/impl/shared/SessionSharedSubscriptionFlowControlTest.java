@@ -22,6 +22,8 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.same;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -94,6 +96,7 @@ class SessionSharedSubscriptionFlowControlTest {
 
     assertTrue(subscription.tryAcquireProtocolSendSlot(message));
     assertTrue(subscription.canAttemptSend());
+    verify(clientConnection).tryAcquireSendSlot(subscription, message);
   }
 
   @Test
@@ -129,6 +132,44 @@ class SessionSharedSubscriptionFlowControlTest {
 
     verify(clientConnection, never()).tryAcquireSendSlot(any(), any());
     verify(messageStateManager, never()).allocate(any());
+  }
+
+  @Test
+  void sharedAllocationFailureReleasesReservedConnectionSlot() throws IOException {
+    DestinationImpl destination = mock(DestinationImpl.class);
+    SubscriptionContext sharedContext = mock(SubscriptionContext.class);
+    MessageStateManager messageStateManager = mock(MessageStateManager.class);
+    AcknowledgementController sharedAcknowledgement = mock(AcknowledgementController.class);
+    SessionImpl session = mock(SessionImpl.class);
+    ClientConnection clientConnection = mock(ClientConnection.class);
+    SubscriptionContext sessionContext = mock(SubscriptionContext.class);
+    AcknowledgementController sessionAcknowledgement = mock(AcknowledgementController.class);
+    Message message = mock(Message.class);
+
+    when(sharedContext.isSync()).thenReturn(false);
+    when(messageStateManager.nextMessageId()).thenReturn(42L);
+    when(destination.getMessage(42L)).thenReturn(message);
+    when(session.getClientConnection()).thenReturn(clientConnection);
+    when(sessionContext.getQualityOfService()).thenReturn(QualityOfService.AT_LEAST_ONCE);
+    when(sessionAcknowledgement.canSend()).thenReturn(true);
+    when(clientConnection.tryAcquireSendSlot(any(), any())).thenReturn(true);
+    doThrow(new IllegalStateException("allocate failed")).when(messageStateManager).allocate(message);
+
+    TestSharedSubscription sharedSubscription = new TestSharedSubscription(
+        destination,
+        sharedContext,
+        messageStateManager,
+        sharedAcknowledgement);
+    sharedSubscription.addSession(
+        session,
+        "session",
+        sessionContext,
+        sessionAcknowledgement);
+
+    assertThrows(IllegalStateException.class, sharedSubscription::retrieveWithFlowControl);
+
+    verify(clientConnection).tryAcquireSendSlot(any(), same(message));
+    verify(clientConnection).releaseSendSlot(any());
   }
 
   private static final class TestSharedSubscription extends SharedSubscription {
