@@ -20,8 +20,8 @@ package io.mapsmessaging.engine.destination.subscription.impl;
 
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -41,22 +41,26 @@ import org.junit.jupiter.api.Test;
 class DestinationSubscriptionFlowControlTest {
 
   @Test
-  void fullConnectionWindowStopsBeforeRequestingNextEvent() throws IOException {
+  void fullConnectionWindowStopsBeforeAllocatingEvent() throws IOException {
     Fixture fixture = new Fixture();
-    when(fixture.clientConnection.tryAcquireSendSlot(any())).thenReturn(false);
+    Message expected = mock(Message.class);
+    when(fixture.messageStateManager.nextMessageId()).thenReturn(42L);
+    when(fixture.destination.getMessage(42L)).thenReturn(expected);
+    when(fixture.clientConnection.tryAcquireSendSlot(any(), any())).thenReturn(false);
 
     Message message = fixture.subscription.retrieveWithFlowControl();
 
     assertNull(message);
-    verify(fixture.messageStateManager, never()).nextMessageId();
-    verify(fixture.destination, never()).getMessage(anyLong());
+    verify(fixture.messageStateManager).nextMessageId();
+    verify(fixture.destination).getMessage(42L);
+    verify(fixture.messageStateManager, never()).allocate(any());
   }
 
   @Test
   void availableConnectionSlotAllowsOneEventToBeRetrieved() throws IOException {
     Fixture fixture = new Fixture();
     Message expected = mock(Message.class);
-    when(fixture.clientConnection.tryAcquireSendSlot(any())).thenReturn(true);
+    when(fixture.clientConnection.tryAcquireSendSlot(any(), any())).thenReturn(true);
     when(fixture.messageStateManager.nextMessageId()).thenReturn(42L);
     when(fixture.destination.getMessage(42L)).thenReturn(expected);
 
@@ -67,15 +71,28 @@ class DestinationSubscriptionFlowControlTest {
   }
 
   @Test
-  void unusedConnectionSlotIsReleasedWhenNoEventExists() throws IOException {
+  void emptyQueueDoesNotReserveConnectionSlot() throws IOException {
     Fixture fixture = new Fixture();
-    when(fixture.clientConnection.tryAcquireSendSlot(any())).thenReturn(true);
     when(fixture.messageStateManager.nextMessageId()).thenReturn(-1L);
 
     Message message = fixture.subscription.retrieveWithFlowControl();
 
     assertNull(message);
-    verify(fixture.clientConnection).releaseSendSlot(any());
+    verify(fixture.clientConnection, never()).tryAcquireSendSlot(any(), any());
+    verify(fixture.clientConnection, never()).releaseSendSlot(any());
+  }
+
+  @Test
+  void messageReadFailureDoesNotReserveConnectionSlot() throws IOException {
+    Fixture fixture = new Fixture();
+    when(fixture.messageStateManager.nextMessageId()).thenReturn(42L);
+    when(fixture.destination.getMessage(42L)).thenThrow(new IOException("store read failed"));
+
+    assertThrows(IOException.class, fixture.subscription::retrieveWithFlowControl);
+
+    verify(fixture.clientConnection, never()).tryAcquireSendSlot(any(), any());
+    verify(fixture.clientConnection, never()).releaseSendSlot(any());
+    verify(fixture.messageStateManager, never()).allocate(any());
   }
 
   private static final class Fixture {
