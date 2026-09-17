@@ -97,9 +97,20 @@ public class PacketIdManager {
       if (subscription != null && waiting.remove(subscription)) {
         waiters.remove(subscription);
       }
-      releaseReservation(subscription);
-      wake = grantNextWaiter();
+      boolean released = releaseReservation(subscription);
+      wake = released ? grantNextWaiter() : null;
       notifyAll();
+    }
+    resume(wake);
+  }
+
+  public void releaseUnusedSendSlot(SubscribedEventManager subscription) {
+    SubscribedEventManager wake = null;
+    synchronized (this) {
+      if (releaseReservation(subscription)) {
+        wake = grantNextWaiter();
+        notifyAll();
+      }
     }
     resume(wake);
   }
@@ -204,13 +215,13 @@ public class PacketIdManager {
     return true;
   }
 
-  private void releaseReservation(SubscribedEventManager subscription) {
+  private boolean releaseReservation(SubscribedEventManager subscription) {
     if (subscription == null) {
-      return;
+      return false;
     }
     Integer count = reservations.get(subscription);
     if (count == null || count == 0) {
-      return;
+      return false;
     }
     if (count == 1) {
       reservations.remove(subscription);
@@ -218,6 +229,7 @@ public class PacketIdManager {
       reservations.put(subscription, count - 1);
     }
     reservedSlots--;
+    return true;
   }
 
   private SubscribedEventManager grantNextWaiter() {
