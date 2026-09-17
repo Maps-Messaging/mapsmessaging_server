@@ -37,6 +37,9 @@ public interface ClientConnection {
   default void releaseSendSlot(SubscribedEventManager subscription) {
   }
 
+  default void releaseUnusedSendSlot(SubscribedEventManager subscription) {
+  }
+
   String getName();
 
   String getVersion();
