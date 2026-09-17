@@ -58,10 +58,17 @@ public class ProtocolClientConnection implements ClientConnection {
 
   @Override
   public void releaseSendSlot(SubscribedEventManager subscription) {
-    if (protocol instanceof MQTTProtocol mqttProtocol) {
-      mqttProtocol.getPacketIdManager().releaseSendSlot(subscription);
-    } else if (protocol instanceof MQTT5Protocol mqtt5Protocol) {
-      mqtt5Protocol.getPacketIdManager().releaseSendSlot(subscription);
+    PacketIdManager manager = packetIdManager();
+    if (manager != null) {
+      manager.releaseSendSlot(subscription);
+    }
+  }
+
+  @Override
+  public void releaseUnusedSendSlot(SubscribedEventManager subscription) {
+    PacketIdManager manager = packetIdManager();
+    if (manager != null) {
+      manager.releaseUnusedSendSlot(subscription);
     }
   }
 
@@ -70,6 +77,16 @@ public class ProtocolClientConnection implements ClientConnection {
       packetIdManager.setMaximumOutstanding(maximumOutstanding);
     }
     return packetIdManager.tryAcquireSendSlot(subscription);
+  }
+
+  private PacketIdManager packetIdManager() {
+    if (protocol instanceof MQTTProtocol mqttProtocol) {
+      return mqttProtocol.getPacketIdManager();
+    }
+    if (protocol instanceof MQTT5Protocol mqtt5Protocol) {
+      return mqtt5Protocol.getPacketIdManager();
+    }
+    return null;
   }
 
   @Override
