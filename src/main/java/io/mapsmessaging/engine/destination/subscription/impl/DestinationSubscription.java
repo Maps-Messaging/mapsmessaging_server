@@ -164,7 +164,6 @@ public class DestinationSubscription extends Subscription {
     }
   }
 
-
   @Override
   public void hibernate() {
     logger.log(ServerLogMessages.DESTINATION_SUBSCRIPTION_HIBERNATE, destinationImpl.getFullyQualifiedNamespace(), sessionId);
@@ -196,7 +195,6 @@ public class DestinationSubscription extends Subscription {
   // </editor-fold>
 
   // <editor-fold desc="Get Functions">
-
 
   @Override
   public int size() {
@@ -274,7 +272,6 @@ public class DestinationSubscription extends Subscription {
   @Override
   public boolean hasMessage(long messageId) {
     ThreadLocalContext.checkDomain(DestinationImpl.SUBSCRIPTION_TASK_KEY);
-
     return messageStateManager.hasMessage(messageId);
   }
 
@@ -327,8 +324,8 @@ public class DestinationSubscription extends Subscription {
     ThreadContext.clear();
   }
 
-  public Future<Response> getNext()  {
-    return destinationImpl.submit( new NextMessageTask(this));
+  public Future<Response> getNext() {
+    return destinationImpl.submit(new NextMessageTask(this));
   }
 
   public Message rawGetNext() throws IOException {
@@ -340,41 +337,46 @@ public class DestinationSubscription extends Subscription {
   }
 
   protected Message retrieveNextMessageWithFlowControl() throws IOException {
-    if (!tryAcquireProtocolSendSlot()) {
+    Message message = peekNextMessage();
+    if (message == null) {
       return null;
     }
-    Message message = retrieveNextMessage();
-    if (message == null) {
-      releaseProtocolSendSlot();
+    if (!tryAcquireProtocolSendSlot(message)) {
+      return null;
     }
+    allocateMessage(message);
     return message;
   }
 
   protected Message retrieveNextMessage() throws IOException {
+    Message message = peekNextMessage();
+    if (message != null) {
+      allocateMessage(message);
+    }
+    return message;
+  }
+
+  protected Message peekNextMessage() throws IOException {
     for (;;) {
       long nextMessageId = messageStateManager.nextMessageId();
       if (nextMessageId < 0) {
-        break;
+        return null;
       }
       Message message = destinationImpl.getMessage(nextMessageId);
       if (message != null) {
-        messageStateManager.allocate(message);
-        messagesSent++;
         return message;
-      } else {
-        messageStateManager.expired(nextMessageId);
-        messagesExpired++;
       }
+      messageStateManager.expired(nextMessageId);
+      messagesExpired++;
     }
-    return null;
   }
 
-  private boolean tryAcquireProtocolSendSlot() {
-    SubscriptionContext context = getContext();
-    if (context == null || !context.getQualityOfService().isSendPacketId()) {
-      flowControlBlocked = false;
-      return true;
-    }
+  protected void allocateMessage(Message message) {
+    messageStateManager.allocate(message);
+    messagesSent++;
+  }
+
+  private boolean tryAcquireProtocolSendSlot(Message message) {
     SessionImpl session = sessionImpl;
     if (session == null) {
       flowControlBlocked = false;
@@ -387,7 +389,7 @@ public class DestinationSubscription extends Subscription {
     }
 
     flowControlBlocked = true;
-    if (clientConnection.tryAcquireSendSlot(eventStateManager)) {
+    if (clientConnection.tryAcquireSendSlot(eventStateManager, message)) {
       flowControlBlocked = false;
       return true;
     }
@@ -513,7 +515,7 @@ public class DestinationSubscription extends Subscription {
     try {
       while (isReady()) {
         Message message = retrieveNextMessageWithFlowControl();
-        if(message != null) {
+        if (message != null) {
           sendMessage(message);
         } else {
           break;
