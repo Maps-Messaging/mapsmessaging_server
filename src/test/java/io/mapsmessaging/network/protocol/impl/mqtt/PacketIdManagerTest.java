@@ -24,6 +24,12 @@ import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import org.junit.jupiter.api.Test;
 
 class PacketIdManagerTest {
@@ -40,13 +46,20 @@ class PacketIdManagerTest {
   }
 
   @Test
-  void exhaustionFailsInsteadOfSpinning() {
+  void exhaustionWaitsForReleasedPacketIdentifier() throws InterruptedException, ExecutionException, TimeoutException {
     PacketIdManager manager = createFullManager();
+    int releasedPacketIdentifier = PacketIdManager.MAX_PACKET_IDENTIFIER / 2;
 
-    assertFalse(manager.hasAvailablePacketIdentifier());
-    assertThrows(
-        PacketIdentifierExhaustedException.class,
-        () -> manager.nextPacketIdentifier(null, PacketIdManager.MAX_PACKET_IDENTIFIER + 1L));
+    try (ExecutorService executor = Executors.newSingleThreadExecutor()) {
+      Future<Integer> allocation = executor.submit(
+          () -> manager.nextPacketIdentifier(null, PacketIdManager.MAX_PACKET_IDENTIFIER + 1L));
+
+      assertThrows(TimeoutException.class, () -> allocation.get(50, TimeUnit.MILLISECONDS));
+      manager.completePacketId(releasedPacketIdentifier);
+
+      assertEquals(releasedPacketIdentifier, allocation.get(1, TimeUnit.SECONDS));
+      assertFalse(manager.hasAvailablePacketIdentifier());
+    }
   }
 
   @Test
