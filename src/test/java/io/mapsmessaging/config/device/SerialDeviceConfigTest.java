@@ -20,6 +20,7 @@
 package io.mapsmessaging.config.device;
 
 import io.mapsmessaging.configuration.ConfigurationProperties;
+import io.mapsmessaging.dto.rest.config.device.I2CDeviceConfigDTO;
 import io.mapsmessaging.dto.rest.config.device.SerialBusDeviceDTO;
 import io.mapsmessaging.dto.rest.config.network.SerialDeviceDTO;
 import org.junit.jupiter.api.Test;
@@ -79,8 +80,7 @@ class SerialDeviceConfigTest {
   void updateRejectsUnrelatedDto() {
     SerialDeviceConfig config = new SerialDeviceConfig(serialProperties());
 
-    assertFalse(config.update(new SerialBusDeviceDTO() {
-    }.getClass().getSuperclass() == null ? null : new io.mapsmessaging.dto.rest.config.device.I2CDeviceConfigDTO()));
+    assertFalse(config.update(new I2CDeviceConfigDTO()));
   }
 
   private ConfigurationProperties serialProperties() {
