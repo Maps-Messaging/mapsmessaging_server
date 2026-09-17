@@ -21,6 +21,7 @@ package io.mapsmessaging.network.protocol.impl.mqtt;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
@@ -78,6 +79,69 @@ class PacketIdManagerTest {
     manager.completePacketId(packetB);
 
     verify(destinationD, times(1)).resumeDelivery();
+  }
+
+  @Test
+  void wokenDestinationOwnsFreedSlotBeforeItResumes() {
+    PacketIdManager manager = new PacketIdManager(3);
+    manager.setMaximumOutstanding(1);
+
+    SubscribedEventManager destinationA = mock(SubscribedEventManager.class);
+    SubscribedEventManager destinationB = mock(SubscribedEventManager.class);
+    SubscribedEventManager destinationC = mock(SubscribedEventManager.class);
+
+    assertTrue(manager.tryAcquireSendSlot(destinationA));
+    int packetA = manager.nextPacketIdentifier(destinationA, 1L);
+    assertFalse(manager.tryAcquireSendSlot(destinationB));
+
+    manager.completePacketId(packetA);
+
+    verify(destinationB).resumeDelivery();
+    assertFalse(manager.tryAcquireSendSlot(destinationC));
+    assertTrue(manager.tryAcquireSendSlot(destinationB));
+    int packetB = manager.nextPacketIdentifier(destinationB, 2L);
+
+    manager.completePacketId(packetB);
+
+    verify(destinationC).resumeDelivery();
+  }
+
+  @Test
+  void cancellingQueuedDestinationSkipsItAndWakesNextWaiter() {
+    PacketIdManager manager = new PacketIdManager(3);
+    manager.setMaximumOutstanding(1);
+
+    SubscribedEventManager destinationA = mock(SubscribedEventManager.class);
+    SubscribedEventManager destinationB = mock(SubscribedEventManager.class);
+    SubscribedEventManager destinationC = mock(SubscribedEventManager.class);
+
+    assertTrue(manager.tryAcquireSendSlot(destinationA));
+    int packetA = manager.nextPacketIdentifier(destinationA, 1L);
+    assertFalse(manager.tryAcquireSendSlot(destinationB));
+    assertFalse(manager.tryAcquireSendSlot(destinationC));
+
+    manager.releaseSendSlot(destinationB);
+    manager.completePacketId(packetA);
+
+    verify(destinationB, never()).resumeDelivery();
+    verify(destinationC, times(1)).resumeDelivery();
+  }
+
+  @Test
+  void unknownCompletionDoesNotWakeQueuedDestination() {
+    PacketIdManager manager = new PacketIdManager(3);
+    manager.setMaximumOutstanding(1);
+
+    SubscribedEventManager destinationA = mock(SubscribedEventManager.class);
+    SubscribedEventManager destinationB = mock(SubscribedEventManager.class);
+
+    assertTrue(manager.tryAcquireSendSlot(destinationA));
+    manager.nextPacketIdentifier(destinationA, 1L);
+    assertFalse(manager.tryAcquireSendSlot(destinationB));
+
+    assertNull(manager.completePacketId(3));
+
+    verify(destinationB, never()).resumeDelivery();
   }
 
   @Test
