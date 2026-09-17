@@ -78,7 +78,9 @@ public class ClientSubscribedEventManager implements SubscribedEventManager {
 
   @Override
   public void resumeDelivery() {
-    if (subscription instanceof Subscription activeSubscription) {
+    if (subscription instanceof DestinationSubscription destinationSubscription) {
+      destinationSubscription.sendCapacityAvailable();
+    } else if (subscription instanceof Subscription activeSubscription) {
       destination.scanForDelivery(activeSubscription);
     }
   }
