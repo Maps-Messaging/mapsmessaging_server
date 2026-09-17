@@ -21,6 +21,7 @@ package io.mapsmessaging.engine.destination.subscription.impl;
 
 import io.mapsmessaging.api.SubscribedEventManager;
 import io.mapsmessaging.engine.destination.DestinationImpl;
+import io.mapsmessaging.engine.destination.subscription.Subscription;
 import io.mapsmessaging.engine.destination.subscription.SubscriptionContext;
 import io.mapsmessaging.engine.destination.subscription.tasks.CreditUpdateTask;
 import io.mapsmessaging.engine.destination.subscription.tasks.SubscriptionTransactionTask;
@@ -73,6 +74,13 @@ public class ClientSubscribedEventManager implements SubscribedEventManager {
       return destinationSubscription.getMessageStateManager().isRetainedReplay(messageId);
     }
     return subscription.isRetainedReplay(messageId);
+  }
+
+  @Override
+  public void resumeDelivery() {
+    if (subscription instanceof Subscription activeSubscription) {
+      destination.scanForDelivery(activeSubscription);
+    }
   }
 
   @Override
