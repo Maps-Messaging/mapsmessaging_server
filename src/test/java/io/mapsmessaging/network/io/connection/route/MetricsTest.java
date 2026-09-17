@@ -36,7 +36,7 @@ import static org.mockito.Mockito.when;
 class MetricsTest {
 
   @Test
-  void firstThroughputSampleHasNoRateYet() {
+  void firstThroughputSample_hasNoRateYet() {
     EndPointStatus status = mock(EndPointStatus.class);
     when(status.getReadBytesTotal()).thenReturn(1_024L);
     when(status.getWriteBytesTotal()).thenReturn(2_048L);
@@ -49,7 +49,7 @@ class MetricsTest {
   }
 
   @Test
-  void lastUpdatedUsesEndpointMillisecondTimestamp() {
+  void lastUpdated_usesEndpointMillisecondTimestamp() {
     long lastRead = 1_789_600_000_123L;
     long lastWrite = 1_789_600_001_456L;
     Metrics metrics = createMetrics(mock(EndPointStatus.class), lastRead, lastWrite);
@@ -58,7 +58,7 @@ class MetricsTest {
   }
 
   @Test
-  void noProtocolHasNoThroughputSample() {
+  void noProtocol_hasNoThroughputSample() {
     EndPointConnection connection = mock(EndPointConnection.class);
     when(connection.getProtocol()).thenReturn(null);
 
