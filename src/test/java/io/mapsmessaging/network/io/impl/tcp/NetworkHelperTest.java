@@ -27,50 +27,50 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class NetworkHelperTest {
 
   @Test
-  void ipv4AddressInsideCidrReturnsTrue() {
+  void ipv4_addressInsideCidr_returnsTrue() {
     assertTrue(NetworkHelper.isInCidr("192.168.10.0/24", "192.168.10.42"));
   }
 
   @Test
-  void ipv4AddressOutsideCidrReturnsFalse() {
+  void ipv4_addressOutsideCidr_returnsFalse() {
     assertFalse(NetworkHelper.isInCidr("192.168.10.0/24", "192.168.11.42"));
   }
 
   @Test
-  void ipv6AddressInsideCidrReturnsTrue() {
+  void ipv6_addressInsideCidr_returnsTrue() {
     assertTrue(NetworkHelper.isInCidr("2001:db8::/32", "2001:db8:1::1"));
   }
 
   @Test
-  void addressFamilyMismatchReturnsFalse() {
+  void addressFamily_mismatch_returnsFalse() {
     assertFalse(NetworkHelper.isInCidr("192.168.10.0/24", "2001:db8::1"));
   }
 
   @Test
-  void malformedCidrReturnsFalse() {
+  void malformedCidr_returnsFalse() {
     assertFalse(NetworkHelper.isInCidr("not-a-cidr", "192.168.10.42"));
     assertFalse(NetworkHelper.isInCidr("192.168.10.0/not-a-prefix", "192.168.10.42"));
   }
 
   @Test
-  void negativePrefixReturnsFalse() {
+  void negativePrefix_returnsFalse() {
     assertFalse(NetworkHelper.isInCidr("10.0.0.0/-1", "203.0.113.7"));
   }
 
   @Test
-  void prefixLongerThanAddressReturnsFalse() {
+  void prefixLongerThanAddress_returnsFalse() {
     assertFalse(NetworkHelper.isInCidr("10.0.0.0/33", "10.0.0.1"));
     assertFalse(NetworkHelper.isInCidr("2001:db8::/129", "2001:db8::1"));
   }
 
   @Test
-  void zeroPrefixMatchesAnyAddressOfSameFamily() {
+  void zeroPrefix_matchesAnyAddressOfSameFamily() {
     assertTrue(NetworkHelper.isInCidr("10.0.0.0/0", "203.0.113.7"));
     assertTrue(NetworkHelper.isInCidr("2001:db8::/0", "fd00::1"));
   }
 
   @Test
-  void hostPrefixMatchesOnlyExactAddress() {
+  void hostPrefix_matchesOnlyExactAddress() {
     assertTrue(NetworkHelper.isInCidr("192.168.10.42/32", "192.168.10.42"));
     assertFalse(NetworkHelper.isInCidr("192.168.10.42/32", "192.168.10.43"));
   }
