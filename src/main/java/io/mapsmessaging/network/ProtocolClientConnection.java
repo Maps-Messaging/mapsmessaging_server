@@ -3,7 +3,7 @@
  *  Copyright [ 2020 - 2024 ] Matthew Buckton
  *  Copyright [ 2024 - 2026 ] MapsMessaging B.V.
  *
- *  Licensed under the Apache License, Version 2.0 with the Commons Clause
+ *  Licensed under the Apache License 2.0 with the Commons Clause
  *  (the "License"); you may not use this file except in compliance with the License.
  *  You may obtain a copy of the License at:
  *
@@ -51,10 +51,13 @@ public class ProtocolClientConnection implements ClientConnection {
   @Override
   public boolean tryAcquireSendSlot(SubscribedEventManager subscription) {
     if (protocol instanceof MQTTProtocol mqttProtocol) {
-      return tryAcquire(mqttProtocol.getPacketIdManager(), mqttProtocol.getSession() == null ? 0 : mqttProtocol.getSession().getReceiveMaximum(), subscription);
+      return mqttProtocol.getPacketIdManager().tryAcquireSendSlot(subscription);
     }
     if (protocol instanceof MQTT5Protocol mqtt5Protocol) {
-      return tryAcquire(mqtt5Protocol.getPacketIdManager(), mqtt5Protocol.getSession() == null ? 0 : mqtt5Protocol.getSession().getReceiveMaximum(), subscription);
+      return tryAcquire(
+          mqtt5Protocol.getPacketIdManager(),
+          mqtt5Protocol.getSession() == null ? 0 : mqtt5Protocol.getSession().getReceiveMaximum(),
+          subscription);
     }
     return true;
   }
