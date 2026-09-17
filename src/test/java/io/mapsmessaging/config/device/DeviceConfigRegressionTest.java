@@ -20,6 +20,7 @@
 package io.mapsmessaging.config.device;
 
 import io.mapsmessaging.configuration.ConfigurationProperties;
+import io.mapsmessaging.dto.rest.config.device.OneWireBusConfigDTO;
 import io.mapsmessaging.dto.rest.config.device.SerialBusConfigDTO;
 import org.junit.jupiter.api.Test;
 
@@ -31,7 +32,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class DeviceConfigRegressionTest {
 
   @Test
-  void serialBusUpdateAcceptsSerialBusDto() {
+  void serialBus_update_acceptsSerialBusDto() {
     ConfigurationProperties properties = new ConfigurationProperties();
     properties.put("name", "serial-a");
     properties.put("enabled", true);
@@ -56,7 +57,35 @@ class DeviceConfigRegressionTest {
   }
 
   @Test
-  void spiBusRoundTripPreservesConfiguredDevices() {
+  void oneWireBus_update_acceptsOneWireBusDto() {
+    ConfigurationProperties properties = new ConfigurationProperties();
+    properties.put("name", "one-wire-a");
+    properties.put("enabled", true);
+    properties.put("topicNameTemplate", "/device/[device_name]");
+    properties.put("filter", "ON_CHANGE");
+    properties.put("selector", "");
+    properties.put("trigger", "everySecond");
+
+    OneWireBusConfig config = new OneWireBusConfig(properties);
+
+    OneWireBusConfigDTO update = new OneWireBusConfigDTO();
+    update.setName("one-wire-b");
+    update.setEnabled(false);
+    update.setTopicNameTemplate("/updated/[device_name]");
+    update.setFilter("ALWAYS_SEND");
+    update.setSelector("temperature > 20");
+    update.setTrigger("everyMinute");
+
+    assertTrue(config.update(update));
+    assertEquals("one-wire-b", config.getName());
+    assertEquals("/updated/[device_name]", config.getTopicNameTemplate());
+    assertEquals("ALWAYS_SEND", config.getFilter());
+    assertEquals("temperature > 20", config.getSelector());
+    assertEquals("everyMinute", config.getTrigger());
+  }
+
+  @Test
+  void spiBus_roundTrip_preservesConfiguredDevices() {
     ConfigurationProperties device = new ConfigurationProperties();
     device.put("name", "Mcp3y0x");
     device.put("spiBus", 0);
@@ -81,7 +110,7 @@ class DeviceConfigRegressionTest {
   }
 
   @Test
-  void i2cDeviceAcceptsHexAddressUsedByConfiguration() {
+  void i2cDevice_hexAddressFromConfiguration_parsesCorrectly() {
     ConfigurationProperties properties = new ConfigurationProperties();
     properties.put("address", "0x10");
     properties.put("name", "DebugDevice");
