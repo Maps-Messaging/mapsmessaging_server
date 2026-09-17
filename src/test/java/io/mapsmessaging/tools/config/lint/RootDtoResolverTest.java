@@ -19,24 +19,23 @@
 
 package io.mapsmessaging.tools.config.lint;
 
-import io.mapsmessaging.dto.rest.config.BaseConfigDTO;
+import io.mapsmessaging.config.NetworkManagerConfig;
+import io.mapsmessaging.dto.rest.config.NetworkManagerConfigDTO;
+import io.mapsmessaging.state.config.TwinManagerConfig;
+import io.mapsmessaging.state.config.TwinManagerConfigDTO;
+import org.junit.jupiter.api.Test;
 
-public final class RootDtoResolver {
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
-  private RootDtoResolver() {
+class RootDtoResolverTest {
+
+  @Test
+  void resolvesNetworkManagerDtoRatherThanConcreteConfigManager() {
+    assertEquals(NetworkManagerConfigDTO.class, RootDtoResolver.resolveRootDto(NetworkManagerConfig.class));
   }
 
-  @SuppressWarnings("unchecked")
-  public static Class<? extends BaseConfigDTO> resolveRootDto(Class<?> managerClass) {
-    Class<?> current = managerClass == null ? null : managerClass.getSuperclass();
-
-    while (current != null && current != Object.class) {
-      if (BaseConfigDTO.class.isAssignableFrom(current) && current != BaseConfigDTO.class) {
-        return (Class<? extends BaseConfigDTO>) current;
-      }
-      current = current.getSuperclass();
-    }
-    return null;
+  @Test
+  void resolvesTwinManagerDtoRatherThanConcreteConfigManager() {
+    assertEquals(TwinManagerConfigDTO.class, RootDtoResolver.resolveRootDto(TwinManagerConfig.class));
   }
-
 }
