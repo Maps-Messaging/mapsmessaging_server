@@ -94,7 +94,7 @@ public class DroneInfoDTO {
       nullable = true)
   private Double altitudeMeters;
 
-  @Schema(description = "Drone description", type = "object", additionalProperties = Schema.AdditionalPropertiesValue.TRUE)
+  @Schema(description = "Drone description", type = "object", additionalProperties = Schema.AdditionalPropertiesValue.TRUE, nullable = true)
   private Map<String, Object> description;
 
   @Schema(description = "Optional external data products exposed by this drone.")
