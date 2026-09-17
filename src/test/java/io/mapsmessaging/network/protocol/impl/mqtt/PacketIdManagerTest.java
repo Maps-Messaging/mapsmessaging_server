@@ -23,7 +23,12 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 
+import io.mapsmessaging.api.SubscribedEventManager;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -46,19 +51,71 @@ class PacketIdManagerTest {
   }
 
   @Test
-  void exhaustionWaitsForReleasedPacketIdentifier() throws InterruptedException, ExecutionException, TimeoutException {
+  void fullConnectionWindowQueuesDestinationsAndWakesOnlyNext() {
+    PacketIdManager manager = new PacketIdManager();
+    manager.setMaximumOutstanding(2);
+
+    SubscribedEventManager destinationA = mock(SubscribedEventManager.class);
+    SubscribedEventManager destinationB = mock(SubscribedEventManager.class);
+    SubscribedEventManager destinationC = mock(SubscribedEventManager.class);
+    SubscribedEventManager destinationD = mock(SubscribedEventManager.class);
+
+    assertTrue(manager.tryAcquireSendSlot(destinationA));
+    int packetA = manager.nextPacketIdentifier(destinationA, 1L);
+    assertTrue(manager.tryAcquireSendSlot(destinationB));
+    int packetB = manager.nextPacketIdentifier(destinationB, 2L);
+
+    assertFalse(manager.tryAcquireSendSlot(destinationC));
+    assertFalse(manager.tryAcquireSendSlot(destinationD));
+
+    manager.completePacketId(packetA);
+
+    verify(destinationC, times(1)).resumeDelivery();
+    verify(destinationD, never()).resumeDelivery();
+    assertTrue(manager.tryAcquireSendSlot(destinationC));
+    manager.nextPacketIdentifier(destinationC, 3L);
+
+    manager.completePacketId(packetB);
+
+    verify(destinationD, times(1)).resumeDelivery();
+  }
+
+  @Test
+  void repeatedFullWindowChecksDoNotQueueDestinationTwice() {
+    PacketIdManager manager = new PacketIdManager();
+    manager.setMaximumOutstanding(1);
+
+    SubscribedEventManager destinationA = mock(SubscribedEventManager.class);
+    SubscribedEventManager destinationB = mock(SubscribedEventManager.class);
+
+    assertTrue(manager.tryAcquireSendSlot(destinationA));
+    int packetA = manager.nextPacketIdentifier(destinationA, 1L);
+
+    assertFalse(manager.tryAcquireSendSlot(destinationB));
+    assertFalse(manager.tryAcquireSendSlot(destinationB));
+
+    manager.completePacketId(packetA);
+
+    verify(destinationB, times(1)).resumeDelivery();
+  }
+
+  @Test
+  void exhaustionWaitsWithoutBlockingPacketRelease()
+      throws InterruptedException, ExecutionException, TimeoutException {
     PacketIdManager manager = createFullManager();
     int releasedPacketIdentifier = PacketIdManager.MAX_PACKET_IDENTIFIER / 2;
 
-    try (ExecutorService executor = Executors.newSingleThreadExecutor()) {
-      Future<Integer> allocation = executor.submit(
+    try (ExecutorService allocator = Executors.newSingleThreadExecutor();
+         ExecutorService acknowledger = Executors.newSingleThreadExecutor()) {
+      Future<Integer> allocation = allocator.submit(
           () -> manager.nextPacketIdentifier(null, PacketIdManager.MAX_PACKET_IDENTIFIER + 1L));
 
       assertThrows(TimeoutException.class, () -> allocation.get(50, TimeUnit.MILLISECONDS));
-      manager.completePacketId(releasedPacketIdentifier);
+
+      Future<?> release = acknowledger.submit(() -> manager.completePacketId(releasedPacketIdentifier));
+      release.get(1, TimeUnit.SECONDS);
 
       assertEquals(releasedPacketIdentifier, allocation.get(1, TimeUnit.SECONDS));
-      assertFalse(manager.hasAvailablePacketIdentifier());
     }
   }
 
