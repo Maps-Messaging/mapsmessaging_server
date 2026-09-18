@@ -145,6 +145,15 @@ class CotEventPolicyTest {
   }
 
   @Test
+  void aRelayedTrackWithoutItsDescriptionYetIsUnknown() {
+    // a COP twin before its NODE_DESCRIPTION arrives: no vehicle class, no description
+    DroneTwin relayed = twin(null);
+    TakEvent event = mapper.map(relayed, new TwinUpdateContext());
+    policy.apply(event, relayed, null, null);
+    assertEquals("a-u-X", event.getType());
+  }
+
+  @Test
   void aConfiguredAffiliationStillOverridesTheSource() {
     DroneTwin twin = twin(null);
     twin.getDescription().put("standard_identity", "HOSTILE");

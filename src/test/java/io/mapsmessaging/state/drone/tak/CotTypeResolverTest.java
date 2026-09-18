@@ -66,6 +66,8 @@ class CotTypeResolverTest {
         Arguments.of("MINE_WARFARE", "a-n-U"),
         Arguments.of("SymbolSetEnum_LAND_UNIT", "a-n-G"),
         Arguments.of("LAND_EQUIPMENT", "a-n-G"),
+        Arguments.of("SymbolSetEnum_LAND_INSTALLATIONS", "a-n-G"),   // plural, seen live
+        Arguments.of("SymbolSetEnum_AIR_MISSILE", "a-n-A"),
         Arguments.of("SPACE", "a-n-P"),
         Arguments.of("SymbolSetEnum_CONTROL_MEASURE", "a-n-X"),
         Arguments.of("", "a-n-X"),

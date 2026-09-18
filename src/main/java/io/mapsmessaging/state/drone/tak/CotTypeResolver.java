@@ -89,13 +89,29 @@ final class CotTypeResolver {
     if (normalised.startsWith(SYMBOL_SET_PREFIX)) {
       normalised = normalised.substring(SYMBOL_SET_PREFIX.length());
     }
+    // By family, not by exact name: sources spell the same set differently (LAND_INSTALLATION
+    // and LAND_INSTALLATIONS both occur on a live COP).
+    if (normalised.startsWith("AIR")) {
+      return BattleDimension.AIR;
+    }
+    if (normalised.startsWith("SPACE")) {
+      return BattleDimension.SPACE;
+    }
+    if (normalised.startsWith("LAND_") || normalised.startsWith("DISMOUNTED")) {
+      return BattleDimension.GROUND;
+    }
+    if (normalised.startsWith("SEA_SUBSURFACE") || normalised.startsWith("MINE_WARFARE")) {
+      return BattleDimension.SUBSURFACE;
+    }
+    if (normalised.startsWith("SEA_SURFACE")) {
+      return BattleDimension.SEA_SURFACE;
+    }
     return switch (normalised) {
-      case "AIR", "AIR_MISSILE", "01", "02" -> BattleDimension.AIR;
-      case "SPACE", "SPACE_MISSILE", "05", "06" -> BattleDimension.SPACE;
-      case "LAND_UNIT", "LAND_CIVILIAN_UNIT_ORGANIZATION", "LAND_EQUIPMENT", "LAND_INSTALLATION",
-          "DISMOUNTED_INDIVIDUAL", "10", "11", "15", "20", "27" -> BattleDimension.GROUND;
-      case "SEA_SURFACE", "30" -> BattleDimension.SEA_SURFACE;
-      case "SEA_SUBSURFACE", "MINE_WARFARE", "35", "36" -> BattleDimension.SUBSURFACE;
+      case "01", "02" -> BattleDimension.AIR;
+      case "05", "06" -> BattleDimension.SPACE;
+      case "10", "11", "15", "20", "27" -> BattleDimension.GROUND;
+      case "30" -> BattleDimension.SEA_SURFACE;
+      case "35", "36" -> BattleDimension.SUBSURFACE;
       default -> BattleDimension.OTHER;
     };
   }
