@@ -126,10 +126,10 @@ class MQTTConnectionTest extends MQTTBaseTest {
     client.close();
   }
 
-  @DisplayName("Reject MQTT connection with no credentials on authenticated listener")
+  @DisplayName("Accept MQTT connection with no credentials when anonymous access is enabled")
   @ParameterizedTest
   @ValueSource(ints = {MQTT_3_1, MQTT_3_1_1})
-  void testMissingCredentialsRejected(int version) throws MqttException, IOException {
+  void testMissingCredentialsAcceptedWhenAnonymousEnabled(int version) throws MqttException, IOException {
     MqttConnectOptions options = getOptions(false, version);
     options.setConnectionTimeout(5);
 
@@ -139,7 +139,9 @@ class MQTTConnectionTest extends MQTTBaseTest {
         new MemoryPersistence());
     client.setTimeToWait(5000);
 
-    Assertions.assertThrows(MqttException.class, () -> client.connect(options));
+    client.connect(options);
+    Assertions.assertTrue(client.isConnected());
+    client.disconnect();
     Assertions.assertFalse(client.isConnected());
     client.close();
   }
