@@ -26,15 +26,12 @@ import io.mapsmessaging.state.mavlink.packet.MavlinkPacket;
 import io.mapsmessaging.state.mavlink.packet.MountStatusPacket;
 import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
 
 public class ListenerManager {
 
   private static final boolean INJECT_DEBUG_MOUNT_STATUS = true;
 
   private final Map<Integer, Listener> listeners;
-  private final Set<String> debugMountStatusInjected = ConcurrentHashMap.newKeySet();
 
   public ListenerManager(TwinManager twinManager) {
     listeners = new LinkedHashMap<>();
@@ -61,8 +58,7 @@ public class ListenerManager {
     if (listener != null) {
       listener.handle(twinId, pkt, context);
       if (INJECT_DEBUG_MOUNT_STATUS
-          && messageId == HeartbeatListener.LISTENER_ID
-          && debugMountStatusInjected.add(twinId)) {
+          && messageId == HeartbeatListener.LISTENER_ID) {
         injectDebugMountStatus(twinId, context);
       }
       return true;
