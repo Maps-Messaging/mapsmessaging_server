@@ -73,7 +73,7 @@ public abstract class GenericArduPilotUxvModel extends AbstractMissionUxvModel {
               context.targetSystem(),
               context.targetComponent(),
               missionPlan.items().size() + FIRST_REAL_MISSION_SEQUENCE,
-              FIRST_REAL_MISSION_SEQUENCE,
+              FIRST_REAL_MISSION_SEQUENCE + missionPlan.repeatStartIndex(),
               missionPlan.jumpRepeatCount()));
     }
 
