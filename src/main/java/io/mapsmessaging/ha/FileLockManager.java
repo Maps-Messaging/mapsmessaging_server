@@ -159,7 +159,7 @@ public class FileLockManager implements AutoCloseable {
         try {
           lockInfo.setLastHeartbeat(OffsetDateTime.now().toString());
           String json = GsonFactory.getInstance().getSimpleGson().toJson(lockInfo);
-          Files.writeString(heartbeatFilePath, json);
+          writeHeartbeat(json);
         } catch (IOException ignored) {
         }
 
@@ -173,6 +173,29 @@ public class FileLockManager implements AutoCloseable {
     }, "FileLock-Heartbeat");
     heartbeatThread.setDaemon(true);
     heartbeatThread.start();
+  }
+
+  private void writeHeartbeat(String json) throws IOException {
+    Path tempFile = heartbeatFilePath.resolveSibling(heartbeatFilePath.getFileName() + ".tmp");
+    try {
+      Files.writeString(
+          tempFile,
+          json,
+          StandardOpenOption.CREATE,
+          StandardOpenOption.TRUNCATE_EXISTING,
+          StandardOpenOption.WRITE);
+      try {
+        Files.move(
+            tempFile,
+            heartbeatFilePath,
+            StandardCopyOption.ATOMIC_MOVE,
+            StandardCopyOption.REPLACE_EXISTING);
+      } catch (AtomicMoveNotSupportedException e) {
+        Files.move(tempFile, heartbeatFilePath, StandardCopyOption.REPLACE_EXISTING);
+      }
+    } finally {
+      Files.deleteIfExists(tempFile);
+    }
   }
 
   private void startWatchService() {
