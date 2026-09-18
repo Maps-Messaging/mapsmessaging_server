@@ -41,7 +41,6 @@ import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -73,7 +72,7 @@ class PubListenerErrorHandlingTest {
     when(protocol.getProtocolConfig()).thenReturn(protocolConfig);
     when(protocolConfig.getMessageDefaults()).thenReturn(null);
 
-    doThrow(new IOException("store failed")).when(destination).storeMessage(any(Message.class));
+    when(destination.storeMessage(any(Message.class))).thenThrow(new IOException("store failed"));
 
     assertDoesNotThrow(() -> listener.frameEvent(frame, engine, true));
 
