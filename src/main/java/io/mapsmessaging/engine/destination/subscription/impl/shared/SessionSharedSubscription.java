@@ -45,6 +45,7 @@ public class SessionSharedSubscription extends Subscription {
   private final AcknowledgementController acknowledgementController;
   private final MessageDeliveryCompletionTask completionTask;
   private final String sessionId;
+  private volatile boolean flowControlBlocked;
 
   public SessionSharedSubscription(
       SharedSubscription sharedSubscription,
@@ -56,11 +57,13 @@ public class SessionSharedSubscription extends Subscription {
     this.sessionId = sessionId;
     this.sharedSubscription = sharedSubscription;
     this.acknowledgementController = acknowledgementController;
+    this.flowControlBlocked = false;
     completionTask = new MessageDeliveryCompletionTask(sharedSubscription, acknowledgementController);
   }
 
   @Override
   public void cancel() throws IOException {
+    releaseProtocolSendSlot();
     List<OutstandingEventDetails> outstandingEvents = new ArrayList<>(acknowledgementController.getOutstanding());
     for (OutstandingEventDetails outstandingEvent : outstandingEvents) {
       sharedSubscription.handleTransaction(false, outstandingEvent.getId());
@@ -73,7 +76,6 @@ public class SessionSharedSubscription extends Subscription {
     cancel();
   }
 
-
   @Override
   public void delete() throws IOException {
     cancel();
@@ -81,6 +83,7 @@ public class SessionSharedSubscription extends Subscription {
 
   @Override
   public void hibernate() {
+    releaseProtocolSendSlot();
     for (OutstandingEventDetails outstanding : acknowledgementController.getOutstanding()) {
       sharedSubscription.getAcknowledgementController().rollback(outstanding.getId());
     }
@@ -120,6 +123,47 @@ public class SessionSharedSubscription extends Subscription {
 
   public boolean canSend() {
     return acknowledgementController.canSend();
+  }
+
+  boolean canAttemptSend() {
+    return !flowControlBlocked && sessionImpl != null && canSend();
+  }
+
+  boolean tryAcquireProtocolSendSlot(Message message) {
+    SessionImpl session = sessionImpl;
+    if (session == null) {
+      flowControlBlocked = false;
+      return false;
+    }
+    ClientConnection clientConnection = session.getClientConnection();
+    if (clientConnection == null) {
+      flowControlBlocked = false;
+      return true;
+    }
+
+    flowControlBlocked = true;
+    if (clientConnection.tryAcquireSendSlot(this, message)) {
+      flowControlBlocked = false;
+      return true;
+    }
+    return false;
+  }
+
+  void releaseProtocolSendSlot() {
+    SessionImpl session = sessionImpl;
+    if (session != null) {
+      ClientConnection clientConnection = session.getClientConnection();
+      if (clientConnection != null) {
+        clientConnection.releaseSendSlot(this);
+      }
+    }
+    flowControlBlocked = false;
+  }
+
+  @Override
+  public void resumeDelivery() {
+    flowControlBlocked = false;
+    sharedSubscription.schedule();
   }
 
   @Override

@@ -334,13 +334,16 @@ public class MQTTProtocol extends Protocol {
     Message msg = messageEvent.getMessage();
     SubscriptionContext subInfo = messageEvent.getSubscription().getContext();
     QualityOfService qos = subInfo.getQualityOfService();
-    int packetId = 0;
-    if (qos.isSendPacketId()) {
-      packetId = packetIdManager.nextPacketIdentifier(messageEvent.getSubscription(),msg.getIdentifier());
-    }
+
     ParsedMessage parsedMessage = parseOutboundMessage(messageEvent);
     if(parsedMessage == null) {
+      packetIdManager.releaseSendSlot(messageEvent.getSubscription());
       return;
+    }
+
+    int packetId = 0;
+    if (qos.isSendPacketId()) {
+      packetId = packetIdManager.nextPacketIdentifier(messageEvent.getSubscription(), msg.getIdentifier());
     }
     String topicName = parsedMessage.getDestinationName();
     Publish publish = new Publish(msg.isRetain(), parsedMessage.getMessage().getOpaqueData(), qos, packetId, topicName);

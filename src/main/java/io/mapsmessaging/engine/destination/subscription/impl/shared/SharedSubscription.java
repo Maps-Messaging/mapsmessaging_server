@@ -28,6 +28,7 @@ import io.mapsmessaging.engine.destination.subscription.state.MessageStateManage
 import io.mapsmessaging.engine.destination.subscription.transaction.AcknowledgementController;
 import io.mapsmessaging.engine.session.SessionImpl;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -37,6 +38,7 @@ public class SharedSubscription extends DestinationSubscription {
 
   private final SessionSubscriptionMap subscriptions;
   private final String shareName;
+  private SessionSharedSubscription reservedSubscription;
 
   public SharedSubscription(DestinationImpl destinationImpl,
       SubscriptionContext info,
@@ -51,6 +53,10 @@ public class SharedSubscription extends DestinationSubscription {
 
   @Override
   public void close() {
+    if (reservedSubscription != null) {
+      reservedSubscription.releaseProtocolSendSlot();
+      reservedSubscription = null;
+    }
     super.close();
     subscriptions.close();
     SharedSubscriptionManager register = destinationImpl.findShareRegister(destinationImpl.getFullyQualifiedNamespace());
@@ -82,17 +88,37 @@ public class SharedSubscription extends DestinationSubscription {
   }
 
   @Override
+  protected Message retrieveNextMessageWithFlowControl() throws IOException {
+    Message message = peekNextMessage();
+    if (message == null) {
+      return null;
+    }
+
+    reservedSubscription = subscriptions.reserveNext(message);
+    if (reservedSubscription == null) {
+      return null;
+    }
+
+    try {
+      allocateMessage(message);
+      return message;
+    } catch (RuntimeException e) {
+      reservedSubscription.releaseProtocolSendSlot();
+      reservedSubscription = null;
+      throw e;
+    }
+  }
+
+  @Override
   public void sendMessage(Message message) {
-    int loopCount = subscriptions.size();
-    while (loopCount > 0) {
-      SessionSharedSubscription subscription = subscriptions.pollNext();
-      loopCount--;
-      if (subscription != null &&
-          subscription.getSessionImpl() != null &&
-          subscription.canSend()) {
-        subscription.sendMessage(message);
-        return;
-      }
+    SessionSharedSubscription subscription = reservedSubscription;
+    reservedSubscription = null;
+    if (subscription != null && subscription.getSessionImpl() != null && subscription.canSend()) {
+      subscription.sendMessage(message);
+      return;
+    }
+    if (subscription != null) {
+      subscription.releaseProtocolSendSlot();
     }
     rollbackReceived(message.getIdentifier());
     // Unable to send for any number of reasons
@@ -102,7 +128,7 @@ public class SharedSubscription extends DestinationSubscription {
   protected boolean isReady() {
     if (super.isReady()) {
       for (SessionSharedSubscription subscription : subscriptions.flatMap) {
-        if (subscription.canSend() && subscription.getSessionImpl() != null) {
+        if (subscription.canAttemptSend()) {
           return true;
         }
       }
@@ -123,13 +149,15 @@ public class SharedSubscription extends DestinationSubscription {
     }
 
     public void add(SessionSharedSubscription subscription) {
-      // If the put returns non null it means its being replaced
       if (lookupMap.put(subscription.getSessionId(), subscription) == null) {
         flatMap.add(subscription);
       }
     }
 
     public void close() {
+      for (SessionSharedSubscription subscription : flatMap) {
+        subscription.releaseProtocolSendSlot();
+      }
       lookupMap.clear();
       flatMap.clear();
       idx = -1;
@@ -141,8 +169,9 @@ public class SharedSubscription extends DestinationSubscription {
 
     public void remove(SessionImpl sessionImpl) {
       if (sessionImpl != null) {
-        Subscription sub = lookupMap.remove(sessionImpl.getName());
+        SessionSharedSubscription sub = lookupMap.remove(sessionImpl.getName());
         if (sub != null) {
+          sub.releaseProtocolSendSlot();
           flatMap.remove(sub);
         }
         if (!flatMap.isEmpty()) {
@@ -157,7 +186,19 @@ public class SharedSubscription extends DestinationSubscription {
       return flatMap.isEmpty();
     }
 
-    public SessionSharedSubscription pollNext() {
+    public SessionSharedSubscription reserveNext(Message message) {
+      int loopCount = flatMap.size();
+      while (loopCount > 0) {
+        SessionSharedSubscription subscription = pollNext();
+        loopCount--;
+        if (subscription != null && subscription.canAttemptSend() && subscription.tryAcquireProtocolSendSlot(message)) {
+          return subscription;
+        }
+      }
+      return null;
+    }
+
+    private SessionSharedSubscription pollNext() {
       if (!flatMap.isEmpty()) {
         idx = (idx + 1) % flatMap.size();
         return flatMap.get(idx);
