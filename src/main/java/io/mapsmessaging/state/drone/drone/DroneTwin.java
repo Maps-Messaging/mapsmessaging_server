@@ -131,6 +131,38 @@ public class DroneTwin extends EntityTwin {
   @Schema(description = "Course over ground in degrees.", example = "180.0", nullable = true)
   private Double courseOverGroundDegrees;
 
+  @Schema(
+      description = "Camera or mount pitch in degrees reported by MAVLink MOUNT_STATUS.",
+      example = "-12.34",
+      nullable = true)
+  private Double cameraPitchDegrees;
+
+  @Schema(
+      description = "Camera or mount roll in degrees reported by MAVLink MOUNT_STATUS.",
+      example = "2.5",
+      nullable = true)
+  private Double cameraRollDegrees;
+
+  @Schema(
+      description =
+          "Camera or mount bearing in degrees clockwise from North, derived from MAVLink MOUNT_STATUS pointing_c.",
+      example = "359.5",
+      nullable = true)
+  private Double cameraBearingDegrees;
+
+  @Schema(
+      description = "Raw MAVLink MAV_MOUNT_MODE value reported by MOUNT_STATUS.",
+      example = "2",
+      nullable = true)
+  private Integer cameraMountMode;
+
+  @Schema(
+      description = "Timestamp of the most recent MAVLink MOUNT_STATUS camera orientation update.",
+      example = "2026-09-18T16:30:00Z",
+      nullable = true)
+  private Instant cameraOrientationUpdatedAt;
+
+
   @Schema(description = "Ground speed in meters per second.", example = "14.8", nullable = true)
   private Double groundSpeedMetersPerSecond;
 
