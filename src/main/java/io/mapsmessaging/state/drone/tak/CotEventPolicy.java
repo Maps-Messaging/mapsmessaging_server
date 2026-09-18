@@ -183,9 +183,11 @@ final class CotEventPolicy {
     };
   }
 
-  // No STANAG description at all means there is no classification to translate: the twin is a
-  // vehicle or station attached to this server (MAVLink, NMEA 2000, ground control), friendly as
-  // before. A description whose identity is missing or unrecognised is unknown, never friendly.
+  // No STANAG description at all means there is no classification to translate. A vehicle or
+  // station attached to this server (a MAVLink vehicle carries its vehicle class; a ground
+  // control twin) stays friendly as before. A relayed track whose description has not arrived
+  // yet has neither, and is unknown -- as is a description whose identity is missing or
+  // unrecognised. Never friendly by default for someone else's track.
   private String resolveSourceAffiliation(EntityTwin twin) {
     if (!(twin instanceof DroneTwin droneTwin)) {
       return "f";
@@ -193,7 +195,8 @@ final class CotEventPolicy {
 
     Map<String, Object> description = droneTwin.getDescription();
     if (description == null || description.isEmpty()) {
-      return "f";
+      VehicleClass vehicleClass = droneTwin.getVehicleClass();
+      return vehicleClass != null && vehicleClass != VehicleClass.UNKNOWN ? "f" : "u";
     }
 
     Object value = firstValue(description, "standard_identity", "standardIdentity", "affiliation");
