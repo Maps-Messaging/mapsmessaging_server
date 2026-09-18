@@ -84,7 +84,8 @@
 
 
   <properties>
-    <nvd.api.key>${env.NVD_API_KEY}</nvd.api.key>
+    <dependency.check.autoUpdate>true</dependency.check.autoUpdate>
+    <dependency.check.dataDirectory>${user.home}/.m2/repository/org/owasp/dependency-check-data/</dependency.check.dataDirectory>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 
     <logback.version>1.5.37</logback.version>
@@ -163,6 +164,20 @@
   test phase
   -->
   <profiles>
+    <profile>
+      <id>buildkite-dependency-check-cache</id>
+      <activation>
+        <property>
+          <name>env.BUILDKITE</name>
+          <value>true</value>
+        </property>
+      </activation>
+      <properties>
+        <dependency.check.autoUpdate>false</dependency.check.autoUpdate>
+        <dependency.check.dataDirectory>/var/cache/dependency-check/13</dependency.check.dataDirectory>
+      </properties>
+    </profile>
+
     <profile>
       <id>native</id>
       <build>
@@ -559,10 +574,10 @@
       <plugin>
         <groupId>org.owasp</groupId>
         <artifactId>dependency-check-maven</artifactId>
-        <version>12.2.2</version>
+        <version>13.0.0</version>
         <configuration>
-          <skip>true</skip>
-          <nvdApiKey>${nvd.api.key}</nvdApiKey>
+          <autoUpdate>${dependency.check.autoUpdate}</autoUpdate>
+          <dataDirectory>${dependency.check.dataDirectory}</dataDirectory>
           <failBuildOnCVSS>10</failBuildOnCVSS>
           <failOnError>false</failOnError>
           <skipArtifactType>test-jar</skipArtifactType>
