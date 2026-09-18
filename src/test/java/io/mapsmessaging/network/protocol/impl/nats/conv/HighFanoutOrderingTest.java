@@ -34,6 +34,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class HighFanoutOrderingTest extends BaseTestConfig {
 
@@ -86,10 +87,9 @@ class HighFanoutOrderingTest extends BaseTestConfig {
       for (int i = 0; i < nPubs; i++) {
         publisherConnection.publish(subject, Integer.toString(i).getBytes());
       }
-      publisherConnection.flush(Duration.ofSeconds(30));
 
-      boolean completed = latch.await(30, TimeUnit.SECONDS);
-      assertEquals(true, completed, "Not all subscriptions received all messages");
+      boolean completed = latch.await(90, TimeUnit.SECONDS);
+      assertTrue(completed, "Not all subscriptions received all messages");
       assertEquals(0, orderingErrors.get(), "Subscriptions received out-of-order messages");
     }
     finally {

@@ -51,13 +51,13 @@ public abstract class PublishListener extends  Listener {
       code = Code.DELETED;
     }
     boolean process = canProcess(destination, request);
+    if (isDelete || process) {
+      destination.storeMessage(build(request, protocol));
+    }
     if (request.getType().equals(TYPE.CON)) {
       BasePacket response = request.buildAckResponse(code);
       response.setCode(process ? code : Code.PRECONDITION_FAILED);
       protocol.sendResponse(response);
-    }
-    if (isDelete || process) {
-      destination.storeMessage(build(request, protocol));
     }
   }
 

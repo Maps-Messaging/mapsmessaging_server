@@ -71,8 +71,9 @@ class PeriodicRunnerTest {
     CountDownLatch completed = new CountDownLatch(2);
     AtomicInteger invocationCount = new AtomicInteger();
     PeriodicRunner runner = new PeriodicRunner(() -> {
+      int invocation = invocationCount.incrementAndGet();
       completed.countDown();
-      if (invocationCount.incrementAndGet() == 1) {
+      if (invocation == 1) {
         throw new IllegalStateException("expected test failure");
       }
     });

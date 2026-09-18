@@ -411,6 +411,11 @@ node(nodeLabel) {
             name: "JaCoCo Coverage",
             sourceCodeRetention: "EVERY_BUILD"
         )
+
+        archiveArtifacts(
+            artifacts: "target/site/jacoco/jacoco.xml",
+            fingerprint: true
+        )
     }
 }
 

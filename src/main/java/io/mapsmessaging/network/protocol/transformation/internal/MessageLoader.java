@@ -28,6 +28,8 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
 
+import java.util.Base64;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 @Data
@@ -62,13 +64,20 @@ public class MessageLoader {
   private Map<String, String> meta;
   private Map<String, TypedData> dataMap;
 
-
-
   public void load(MessageBuilder messageBuilder){
     Map<String, String> current = messageBuilder.getMeta();
-    if(current != null && getMeta() != null){
-      current.putAll(getMeta());
+    if (getMeta() != null) {
+      if (current == null) {
+        current = new LinkedHashMap<>(getMeta());
+      } else {
+        current.putAll(getMeta());
+      }
     }
+
+    long now = System.currentTimeMillis();
+    long remainingDelay = getDelayed() > now ? getDelayed() - now : 0;
+    long expiryBase = getDelayed() > now ? getDelayed() : now;
+    long remainingExpiry = getExpiry() > expiryBase ? getExpiry() - expiryBase : 0;
 
     messageBuilder.setMeta(current)
         .setDataMap(getDataMap())
@@ -78,16 +87,29 @@ public class MessageLoader {
         .setPriority(getPriority())
         .setRetain(isRetain())
         .setTransformation(null)
-        .setDelayed(getDelayed())
-        .setSchemaId(getSchemaId());
+        .setDelayed(remainingDelay)
+        .setExpiry(remainingExpiry)
+        .setSchemaId(getSchemaId())
+        .storeOffline(isStoreOffline())
+        .setPayloadUTF8(isUtf8() || isPayloadUTF8());
 
-    if(getCorrelationData() != null ){
+    if (getQualityOfService() != null) {
+      messageBuilder.setQoS(getQualityOfService());
+    }
+    if (getCreation() > 0) {
+      messageBuilder.setCreation(getCreation());
+    }
+
+    if (getCorrelationData() != null) {
       Object corr = getCorrelationData();
-      if(corr instanceof byte[]){
-        messageBuilder.setCorrelationData((byte[])correlationData);
-      }
-      else if(corr instanceof String){
-        messageBuilder.setCorrelationData((String)correlationData);
+      if (corr instanceof byte[] bytes) {
+        messageBuilder.setCorrelationData(bytes);
+      } else if (corr instanceof String value) {
+        if (isCorrelationDataByteArray()) {
+          messageBuilder.setCorrelationData(Base64.getDecoder().decode(value));
+        } else {
+          messageBuilder.setCorrelationData(value);
+        }
       }
     }
   }

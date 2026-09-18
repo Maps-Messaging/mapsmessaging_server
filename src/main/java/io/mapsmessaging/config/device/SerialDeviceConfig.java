@@ -23,8 +23,10 @@ import io.mapsmessaging.config.network.SerialDeviceHelper;
 import io.mapsmessaging.configuration.ConfigurationProperties;
 import io.mapsmessaging.dto.rest.config.BaseConfigDTO;
 import io.mapsmessaging.dto.rest.config.device.SerialBusDeviceDTO;
+import io.mapsmessaging.dto.rest.config.network.SerialDeviceDTO;
 
 import java.util.Map;
+import java.util.Objects;
 
 public class SerialDeviceConfig extends SerialBusDeviceDTO implements DeviceBusConfig {
 
@@ -32,17 +34,71 @@ public class SerialDeviceConfig extends SerialBusDeviceDTO implements DeviceBusC
     this.name = props.getProperty("name");
     this.selector = props.getProperty("selector", "");
     serialConfig = SerialDeviceHelper.getSerialDeviceDTO(props);
+    readTimeOut = serialConfig.getReadTimeOut();
+    writeTimeOut = serialConfig.getWriteTimeOut();
   }
-
 
   @Override
   public ConfigurationProperties toConfigurationProperties() {
-    return null;
+    ConfigurationProperties props = new ConfigurationProperties();
+    props.put("name", this.name);
+    if (this.selector != null && !this.selector.isEmpty()) {
+      props.put("selector", this.selector);
+    }
+
+    if (serialConfig != null) {
+      ConfigurationProperties serial = new ConfigurationProperties();
+      serial.put("port", serialConfig.getPort());
+      serial.put("baudRate", serialConfig.getBaudRate());
+      serial.put("dataBits", serialConfig.getDataBits());
+      serial.put("stopBits", serialConfig.getStopBits());
+      serial.put("parity", serialConfig.getParity());
+      serial.put("flowControl", serialConfig.getFlowControl());
+      if (serialConfig.getSerialNo() != null) {
+        serial.put("serialNo", serialConfig.getSerialNo());
+      }
+      props.put("serial", serial);
+      props.put("readTimeOut", readTimeOut);
+      props.put("writeTimeOut", writeTimeOut);
+      props.put("bufferSize", serialConfig.getBufferSize());
+    }
+    return props;
   }
 
   @Override
   public boolean update(BaseConfigDTO config) {
-    return false;
+    if (!(config instanceof SerialBusDeviceDTO)) {
+      return false;
+    }
+
+    SerialBusDeviceDTO newConfig = (SerialBusDeviceDTO) config;
+    boolean hasChanged = false;
+
+    if (!Objects.equals(this.name, newConfig.getName())) {
+      this.name = newConfig.getName();
+      hasChanged = true;
+    }
+    if (!Objects.equals(this.selector, newConfig.getSelector())) {
+      this.selector = newConfig.getSelector();
+      hasChanged = true;
+    }
+    if (!Objects.equals(this.serialConfig, newConfig.getSerialConfig())) {
+      this.serialConfig = newConfig.getSerialConfig();
+      hasChanged = true;
+    }
+    if (this.readTimeOut != newConfig.getReadTimeOut()) {
+      this.readTimeOut = newConfig.getReadTimeOut();
+      hasChanged = true;
+    }
+    if (this.writeTimeOut != newConfig.getWriteTimeOut()) {
+      this.writeTimeOut = newConfig.getWriteTimeOut();
+      hasChanged = true;
+    }
+    if (serialConfig != null) {
+      serialConfig.setReadTimeOut(readTimeOut);
+      serialConfig.setWriteTimeOut(writeTimeOut);
+    }
+    return hasChanged;
   }
 
   @Override

@@ -74,7 +74,9 @@ public class EndPointHelper {
   public static EndPointDetailsDTO buildDetailsDTO(String adapterName, EndPoint endPoint) {
     EndPointDetailsDTO detailsDTO = new EndPointDetailsDTO();
     detailsDTO.setEndPointSummary(buildSummaryDTO(adapterName, endPoint));
-    detailsDTO.setProtocolInformation(endPoint.getBoundProtocol().getInformation());
+    if (endPoint.getBoundProtocol() != null) {
+      detailsDTO.setProtocolInformation(endPoint.getBoundProtocol().getInformation());
+    }
     return detailsDTO;
   }
 

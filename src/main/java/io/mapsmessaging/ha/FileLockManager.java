@@ -38,6 +38,7 @@ import static io.mapsmessaging.logging.ServerLogMessages.*;
 public class FileLockManager implements AutoCloseable {
 
   private static final long DEFAULT_RETRY_SLEEP_MILLIS = 1000;
+  private static final long THREAD_JOIN_TIMEOUT_MILLIS = 2000;
 
   private final Logger logger = LoggerFactory.getLogger(this.getClass());
   private final Path lockFilePath;
@@ -158,7 +159,7 @@ public class FileLockManager implements AutoCloseable {
         try {
           lockInfo.setLastHeartbeat(OffsetDateTime.now().toString());
           String json = GsonFactory.getInstance().getSimpleGson().toJson(lockInfo);
-          Files.writeString(heartbeatFilePath, json);
+          writeHeartbeat(json);
         } catch (IOException ignored) {
         }
 
@@ -172,6 +173,29 @@ public class FileLockManager implements AutoCloseable {
     }, "FileLock-Heartbeat");
     heartbeatThread.setDaemon(true);
     heartbeatThread.start();
+  }
+
+  private void writeHeartbeat(String json) throws IOException {
+    Path tempFile = heartbeatFilePath.resolveSibling(heartbeatFilePath.getFileName() + ".tmp");
+    try {
+      Files.writeString(
+          tempFile,
+          json,
+          StandardOpenOption.CREATE,
+          StandardOpenOption.TRUNCATE_EXISTING,
+          StandardOpenOption.WRITE);
+      try {
+        Files.move(
+            tempFile,
+            heartbeatFilePath,
+            StandardCopyOption.ATOMIC_MOVE,
+            StandardCopyOption.REPLACE_EXISTING);
+      } catch (AtomicMoveNotSupportedException e) {
+        Files.move(tempFile, heartbeatFilePath, StandardCopyOption.REPLACE_EXISTING);
+      }
+    } finally {
+      Files.deleteIfExists(tempFile);
+    }
   }
 
   private void startWatchService() {
@@ -275,15 +299,16 @@ public class FileLockManager implements AutoCloseable {
 
   @Override
   public void close() {
+    shutdown.set(true);
+    Thread heartbeat = heartbeatThread;
+    Thread watcher = watchThread;
+    heartbeatThread = null;
+    watchThread = null;
+
+    stopThread(heartbeat);
+    stopThread(watcher);
+
     try {
-      if (heartbeatThread != null) {
-        heartbeatThread.interrupt();
-        heartbeatThread = null;
-      }
-      if (watchThread != null) {
-        watchThread.interrupt();
-        watchThread = null;
-      }
       if (lock != null && lock.isValid()) {
         lock.release();
       }
@@ -297,6 +322,18 @@ public class FileLockManager implements AutoCloseable {
       lock = null;
       channel = null;
       locked = false;
+    }
+  }
+
+  private void stopThread(Thread thread) {
+    if (thread == null || thread == Thread.currentThread()) {
+      return;
+    }
+    thread.interrupt();
+    try {
+      thread.join(THREAD_JOIN_TIMEOUT_MILLIS);
+    } catch (InterruptedException e) {
+      Thread.currentThread().interrupt();
     }
   }
 }

@@ -8,7 +8,6 @@
  *  You may obtain a copy of the License at:
  *
  *      http://www.apache.org/licenses/LICENSE-2.0
- *      https://commonsclause.com/
  *
  *  Unless required by applicable law or agreed to in writing, software
  *  distributed under the License is distributed on an "AS IS" BASIS,
@@ -35,6 +34,7 @@ import static io.mapsmessaging.rest.api.Constants.URI_PATH;
 public class ModelStoreApiTest extends ApiTestBase {
 
   private static final String BASE_PATH = URI_PATH+"/server/models";
+  private static final String BLANK_MODEL_PATH = BASE_PATH + "/%20";
 
   @Test
   void listModels_whenMlNotSupported_returns406WithJsonBody() {
@@ -56,13 +56,14 @@ public class ModelStoreApiTest extends ApiTestBase {
 
   @Test
   void uploadModel_blankName_returns400() {
-    givenAuthenticated()
+    givenAuthenticatedNoValidation()
+        .urlEncodingEnabled(false)
         .contentType("multipart/form-data")
         .multiPart("file", "model.bin", "abc".getBytes(StandardCharsets.UTF_8), "application/octet-stream")
         .when()
-        .post(BASE_PATH + "/ ")
+        .post(BLANK_MODEL_PATH)
         .then()
-        .statusCode(406)
+        .statusCode(400)
         .contentType(ContentType.JSON)
         .body("status", not(isEmptyOrNullString()));
   }
@@ -85,20 +86,22 @@ public class ModelStoreApiTest extends ApiTestBase {
 
   @Test
   void getModel_blankName_returns400() {
-    givenAuthenticated()
+    givenAuthenticatedNoValidation()
+        .urlEncodingEnabled(false)
         .when()
-        .get(BASE_PATH + "/ ")
+        .get(BLANK_MODEL_PATH)
         .then()
-        .statusCode(406)
+        .statusCode(400)
         .contentType(ContentType.JSON)
         .body("status", not(isEmptyOrNullString()));
   }
 
   @Test
   void deleteModel_blankName_returns400() {
-    givenAuthenticated()
+    givenAuthenticatedNoValidation()
+        .urlEncodingEnabled(false)
         .when()
-        .delete(BASE_PATH + "/ ")
+        .delete(BLANK_MODEL_PATH)
         .then()
         .statusCode(400)
         .contentType(ContentType.JSON)
