@@ -5,6 +5,8 @@
 package io.mapsmessaging.state.drone.tak;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 import io.mapsmessaging.state.config.CotAffiliation;
 import io.mapsmessaging.state.config.CotConfigDTO;
@@ -48,7 +50,7 @@ class CotEventPolicyTest {
 
     policy.apply(event, twin, null, config);
 
-    assertEquals("a-n-S-X-M", event.getType());
+    assertEquals("a-n-S-C-U", event.getType());
   }
 
   @Test
@@ -61,7 +63,7 @@ class CotEventPolicyTest {
 
     policy.apply(event, twin, null, config);
 
-    assertEquals("a-u-S-X-M", event.getType());
+    assertEquals("a-u-S-C-U", event.getType());
   }
 
   @Test
@@ -79,13 +81,95 @@ class CotEventPolicyTest {
 
     policy.apply(event, twin, null, config);
 
-    assertEquals("a-h-A-M-F-U", event.getType());
+    assertEquals("a-h-A-M-F-Q", event.getType());
     assertEquals("m-g", event.getHow());
     assertEquals("stanag-drone-1", event.getUid());
     assertEquals("2026-09-12T10:00:45Z", event.getStale());
     assertEquals(25.0d, event.getPoint().getCe());
     assertEquals(30.0d, event.getPoint().getLe());
     assertEquals("BARO", event.getDetail().getPrecisionLocation().getAltsrc());
+  }
+
+  @Test
+  void copTwinTakesItsDimensionFromTheStanagSymbolSet() {
+    // a COP twin: no vehicle class, only the STANAG description
+    DroneTwin twin = twin(null);
+    twin.getDescription().put("standard_identity", "StandardIdentityEnum_FRIEND");
+    twin.getDescription().put("symbol_set", "SymbolSetEnum_SEA_SURFACE");
+    TakEvent event = mapper.map(twin, new TwinUpdateContext());
+    CotConfigDTO config = new CotConfigDTO();
+    config.setAffiliation(CotAffiliation.SOURCE);
+
+    policy.apply(event, twin, null, config);
+
+    assertEquals("a-f-S", event.getType());
+  }
+
+  @Test
+  void copTwinWithoutIdentityIsUnknownNotFriendly() {
+    DroneTwin twin = twin(null);
+    twin.getDescription().put("symbol_set", "AIR");
+    TakEvent event = mapper.map(twin, new TwinUpdateContext());
+    CotConfigDTO config = new CotConfigDTO();
+    config.setAffiliation(CotAffiliation.SOURCE);
+
+    policy.apply(event, twin, null, config);
+
+    assertEquals("a-u-A", event.getType());
+  }
+
+  @Test
+  void withoutConfigurationTheStanagClassificationIsTranslated() {
+    // no cot configuration at all: affiliation and dimension come from the CATL description
+    DroneTwin partner = twin(null);
+    partner.getDescription().put("standard_identity", "StandardIdentityEnum_NEUTRAL");
+    partner.getDescription().put("symbol_set", "SymbolSetEnum_SEA_SURFACE");
+    TakEvent event = mapper.map(partner, new TwinUpdateContext());
+    policy.apply(event, partner, null, null);
+    assertEquals("a-n-S", event.getType());
+
+    DroneTwin unclassified = twin(null);
+    unclassified.getDescription().put("symbol_set", "AIR");
+    TakEvent unknown = mapper.map(unclassified, new TwinUpdateContext());
+    policy.apply(unknown, unclassified, null, null);
+    assertEquals("a-u-A", unknown.getType());
+  }
+
+  @Test
+  void aVehicleWithoutAStanagDescriptionStaysFriendly() {
+    // a MAVLink USV attached to this server, no description configured
+    DroneTwin own = twin(VehicleClass.USV);
+    TakEvent event = mapper.map(own, new TwinUpdateContext());
+    policy.apply(event, own, null, null);
+    assertEquals("a-f-S-C-U", event.getType());
+  }
+
+  @Test
+  void aConfiguredAffiliationStillOverridesTheSource() {
+    DroneTwin twin = twin(null);
+    twin.getDescription().put("standard_identity", "HOSTILE");
+    twin.getDescription().put("symbol_set", "SEA_SURFACE");
+    CotConfigDTO config = new CotConfigDTO();
+    config.setAffiliation(CotAffiliation.FRIENDLY);
+    TakEvent event = mapper.map(twin, new TwinUpdateContext());
+    policy.apply(event, twin, null, config);
+    assertEquals("a-f-S", event.getType());
+  }
+
+  @Test
+  void takvIsDroppedWhenTheNamespaceSaysSo() {
+    DroneTwin twin = twin(VehicleClass.USV);
+    CotConfigDTO config = new CotConfigDTO();
+
+    TakEvent kept = mapper.map(twin, new TwinUpdateContext());
+    policy.apply(kept, twin, null, config);
+    assertNotNull(kept.getDetail().getTakv());
+
+    config.setPublishTakv(false);
+    TakEvent dropped = mapper.map(twin, new TwinUpdateContext());
+    policy.apply(dropped, twin, null, config);
+    assertNull(dropped.getDetail().getTakv());
+    assertEquals("drone-1", dropped.getUid());
   }
 
   @Test
@@ -98,7 +182,7 @@ class CotEventPolicyTest {
 
     policy.applyRemoval(event, twin, null, config);
 
-    assertEquals("a-n-U-X-M", event.getType());
+    assertEquals("a-n-U-S-U", event.getType());
     assertEquals("2026-09-12T10:00:01Z", event.getStale());
   }
 
@@ -112,10 +196,11 @@ class CotEventPolicyTest {
 
   private static Stream<Arguments> vehicleTypes() {
     return Stream.of(
-        Arguments.of(VehicleClass.UAV, "a-f-A-M-F-U"),
-        Arguments.of(VehicleClass.USV, "a-f-S-X-M"),
-        Arguments.of(VehicleClass.UGV, "a-f-G-E-V"),
-        Arguments.of(VehicleClass.UUV, "a-f-U-X-M"),
+        // the CoT type table's entries for unmanned vehicles (io.mapsmessaging:cot)
+        Arguments.of(VehicleClass.UAV, "a-f-A-M-F-Q"),
+        Arguments.of(VehicleClass.USV, "a-f-S-C-U"),
+        Arguments.of(VehicleClass.UGV, "a-f-G-U-C-V-U"),
+        Arguments.of(VehicleClass.UUV, "a-f-U-S-U"),
         Arguments.of(VehicleClass.GCS, "a-f-G-U-C"),
         Arguments.of(VehicleClass.UNKNOWN, "a-f-X"));
   }

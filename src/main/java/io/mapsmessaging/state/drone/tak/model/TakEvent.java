@@ -34,7 +34,7 @@ public class TakEvent {
   @Schema(description = "Unique TAK event identifier.", example = "drone-1")
   private String uid;
 
-  @Schema(description = "Cursor on Target type.", example = "a-f-A-M-F-U")
+  @Schema(description = "Cursor on Target type.", example = "a-f-A-M-F-Q")
   private String type;
 
   @Schema(description = "How the event position was determined.", example = "h-g-i-g-o")
