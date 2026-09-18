@@ -2,9 +2,8 @@ steps:
   - label: ":maven: Build and release to github"
     command:
       - SONAR_TOKEN=$(buildkite-agent secret get SONAR_TOKEN) || exit 1
-      - NVD_API_KEY=$(buildkite-agent secret get nvd_api_key) || exit 1
       - BUILDKITE_ANALYTICS_TOKEN=$(buildkite-agent secret get serverBuildKiteAnaylytics) || exit 1
-      - export SONAR_TOKEN NVD_API_KEY BUILDKITE_ANALYTICS_TOKEN
+      - export SONAR_TOKEN BUILDKITE_ANALYTICS_TOKEN
       - wget https://github.com/Maps-Messaging/web-admin-client/releases/download/maps_web_client_dev/webAdminClient.tgz
       - tar -xvzf ./webAdminClient.tgz
       - if [ ! -d "dist" ]; then echo "'dist' directory missing after extraction"; exit 1; fi
