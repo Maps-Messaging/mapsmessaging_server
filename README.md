@@ -66,16 +66,13 @@ Replace localhost with the server's IP address if running remotely. Ensure the t
 We welcome contributions! Please refer to our contribution guidelines for how you can participate in making MAPS Messaging Server even better.
 
 ## License
+The Maps Messaging Server is licensed under the Apache License 2.0, subject to the Commons Clause License Condition v1.0.
 
-The Maps Messaging Server is dual-licensed under the Mozilla Public License Version 2.0 (MPL 2.0) and the Apache License 2.0 with Commons Clause License Condition v1.0.
+You may use, modify, and distribute the software in accordance with the terms of the Apache License 2.0 and the additional Commons Clause condition.
 
-Under the MPL 2.0 license, the software is provided for use, modification, and distribution under the terms of the MPL 2.0.
+The Commons Clause restricts the sale of the software, including products or services whose value derives entirely or substantially from the functionality of the software.
 
-Additionally, the "Commons Clause" restricts the selling of the software, which means you may not sell the software or services whose value derives entirely or substantially from the software's functionality.
-
-For full license terms, see the [LICENSE](LICENSE) file in the repository.
-
-
+For the complete license terms, see the LICENSE file in this repository.
 
 ## Library and Server Build and Release Status
 
