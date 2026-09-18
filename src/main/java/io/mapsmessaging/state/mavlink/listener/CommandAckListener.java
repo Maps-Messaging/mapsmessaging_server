@@ -48,6 +48,26 @@ public class CommandAckListener implements Listener {
       return;
     }
 
+    System.err.println(
+        "[MAVLINK-COMMAND-ACK] twin="
+            + twinId
+            + " command="
+            + packet.getCommand()
+            + " result="
+            + packet.getResult()
+            + " resultName="
+            + packet.getResultName()
+            + " valid="
+            + packet.isValid()
+            + " targetSystemPresent="
+            + packet.isTargetSystemPresent()
+            + " targetSystem="
+            + packet.getTargetSystem()
+            + " targetComponentPresent="
+            + packet.isTargetComponentPresent()
+            + " targetComponent="
+            + packet.getTargetComponent());
+
     if (!packet.isValid()) {
       return;
     }
