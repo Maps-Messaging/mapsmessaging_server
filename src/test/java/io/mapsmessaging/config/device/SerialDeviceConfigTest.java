@@ -76,6 +76,28 @@ class SerialDeviceConfigTest {
     assertEquals(9_600, config.getSerialConfig().getBaudRate());
   }
 
+
+  @Test
+  void update_timeoutOnly_isSerializedAndAppliedToSerialConfig() {
+    SerialDeviceConfig config = new SerialDeviceConfig(serialProperties());
+    SerialBusDeviceDTO update = new SerialBusDeviceDTO();
+    update.setName(config.getName());
+    update.setSelector(config.getSelector());
+    update.setSerialConfig(config.getSerialConfig());
+    update.setReadTimeOut(12_345);
+    update.setWriteTimeOut(23_456);
+
+    assertTrue(config.update(update));
+    assertEquals(12_345, config.getReadTimeOut());
+    assertEquals(23_456, config.getWriteTimeOut());
+    assertEquals(12_345, config.getSerialConfig().getReadTimeOut());
+    assertEquals(23_456, config.getSerialConfig().getWriteTimeOut());
+
+    ConfigurationProperties serialized = config.toConfigurationProperties();
+    assertEquals(12_345, serialized.getIntProperty("readTimeOut", -1));
+    assertEquals(23_456, serialized.getIntProperty("writeTimeOut", -1));
+  }
+
   @Test
   void update_sameSerialDeviceDto_returnsFalse() {
     SerialDeviceConfig config = new SerialDeviceConfig(serialProperties());
