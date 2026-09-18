@@ -34,6 +34,8 @@ public class SerialDeviceConfig extends SerialBusDeviceDTO implements DeviceBusC
     this.name = props.getProperty("name");
     this.selector = props.getProperty("selector", "");
     serialConfig = SerialDeviceHelper.getSerialDeviceDTO(props);
+    readTimeOut = serialConfig.getReadTimeOut();
+    writeTimeOut = serialConfig.getWriteTimeOut();
   }
 
   @Override
@@ -56,8 +58,8 @@ public class SerialDeviceConfig extends SerialBusDeviceDTO implements DeviceBusC
         serial.put("serialNo", serialConfig.getSerialNo());
       }
       props.put("serial", serial);
-      props.put("readTimeOut", serialConfig.getReadTimeOut());
-      props.put("writeTimeOut", serialConfig.getWriteTimeOut());
+      props.put("readTimeOut", readTimeOut);
+      props.put("writeTimeOut", writeTimeOut);
       props.put("bufferSize", serialConfig.getBufferSize());
     }
     return props;
@@ -91,6 +93,10 @@ public class SerialDeviceConfig extends SerialBusDeviceDTO implements DeviceBusC
     if (this.writeTimeOut != newConfig.getWriteTimeOut()) {
       this.writeTimeOut = newConfig.getWriteTimeOut();
       hasChanged = true;
+    }
+    if (serialConfig != null) {
+      serialConfig.setReadTimeOut(readTimeOut);
+      serialConfig.setWriteTimeOut(writeTimeOut);
     }
     return hasChanged;
   }
