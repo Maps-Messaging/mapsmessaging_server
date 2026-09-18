@@ -178,6 +178,21 @@ public class MavlinkEventListSender implements AutoCloseable {
       if (acknowledgement == null) {
         acknowledgement = Acknowledgement.notRelated();
       }
+      System.err.println(
+          "[MAVLINK-EVENT-SENDER] inbound sequence="
+              + sequenceId
+              + " operation="
+              + commandSet.operation()
+              + " waitingIndex="
+              + sentIndex
+              + " sent="
+              + describeMessage(sentMessage)
+              + " received="
+              + describePacket(receivedPacket)
+              + " action="
+              + acknowledgement.action()
+              + " reason="
+              + acknowledgement.reason());
       handleAcknowledgement(sentMessage, receivedPacket, sentIndex, acknowledgement);
     }
   }
@@ -232,6 +247,22 @@ public class MavlinkEventListSender implements AutoCloseable {
         updateTransmission("RETRYING", "Response timeout; retransmitting current message");
       }
     }
+
+    System.err.println(
+        "[MAVLINK-EVENT-SENDER] timeout sequence="
+            + sequenceId
+            + " operation="
+            + commandSet.operation()
+            + " index="
+            + index
+            + " retry="
+            + retryCount
+            + "/"
+            + maxRetries
+            + " exhausted="
+            + retriesExhausted
+            + " message="
+            + describeMessage(message));
 
     if (retryTransaction) {
       complete(
@@ -457,6 +488,23 @@ public class MavlinkEventListSender implements AutoCloseable {
   }
 
   private void sendMessage(int index, MavlinkMessage message, boolean requiresAcknowledgement) throws Exception {
+    System.err.println(
+        "[MAVLINK-EVENT-SENDER] send sequence="
+            + sequenceId
+            + " operation="
+            + commandSet.operation()
+            + " index="
+            + index
+            + "/"
+            + messages.size()
+            + " retry="
+            + retryCount
+            + "/"
+            + maxRetries
+            + " requiresAck="
+            + requiresAcknowledgement
+            + " message="
+            + describeMessage(message));
     logger.log(MAVLINK_EVENT_LIST_SENDER_SENDING, sequenceId, commandSet.operation(), commandSet.modelName(), index + 1, messages.size(), messageName(message), requiresAcknowledgement);
     synchronized (lock) {
       lastSentMessage = message;
@@ -568,6 +616,21 @@ public class MavlinkEventListSender implements AutoCloseable {
     }
 
     isActive.set(false);
+    System.err.println(
+        "[MAVLINK-EVENT-SENDER] complete sequence="
+            + sequenceId
+            + " operation="
+            + commandSet.operation()
+            + " status="
+            + status
+            + " index="
+            + index
+            + " reason="
+            + reason
+            + " sent="
+            + describeMessage(result.sentMessage())
+            + " received="
+            + describePacket(result.receivedMessage()));
     logCompletion(result);
     notifyCompletionHandler(result);
   }
@@ -650,5 +713,50 @@ public class MavlinkEventListSender implements AutoCloseable {
 
   private String messageName(MavlinkMessage message) {
     return message == null ? "" : message.getClass().getSimpleName();
+  }
+
+  private String describeMessage(MavlinkMessage message) {
+    if (message == null) {
+      return "null";
+    }
+    if (message instanceof io.mapsmessaging.state.mavlink.messages.MavlinkCommandLong command) {
+      return "COMMAND_LONG(command="
+          + command.getCommand()
+          + ",targetSystem="
+          + command.getTargetSystem()
+          + ",targetComponent="
+          + command.getTargetComponent()
+          + ")";
+    }
+    if (message instanceof io.mapsmessaging.state.mavlink.messages.MavlinkCommandInt command) {
+      return "COMMAND_INT(command="
+          + command.getCommand()
+          + ",targetSystem="
+          + command.getTargetSystem()
+          + ",targetComponent="
+          + command.getTargetComponent()
+          + ")";
+    }
+    return message.getClass().getSimpleName();
+  }
+
+  private String describePacket(MavlinkPacket packet) {
+    if (packet == null) {
+      return "null";
+    }
+    if (packet instanceof io.mapsmessaging.state.mavlink.packet.CommandAckPacket ack) {
+      return "COMMAND_ACK(command="
+          + ack.getCommand()
+          + ",result="
+          + ack.getResult()
+          + ",resultName="
+          + ack.getResultName()
+          + ",targetSystem="
+          + ack.getTargetSystem()
+          + ",targetComponent="
+          + ack.getTargetComponent()
+          + ")";
+    }
+    return packet.getClass().getSimpleName();
   }
 }
