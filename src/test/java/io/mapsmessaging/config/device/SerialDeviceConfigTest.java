@@ -53,6 +53,25 @@ class SerialDeviceConfigTest {
     assertEquals(1, roundTripped.getSerialConfig().getFlowControl());
   }
 
+
+  @Test
+  void serialDevice_customTimeouts_roundTripThroughTopLevelConfiguration() {
+    ConfigurationProperties properties = serialProperties();
+    properties.put("readTimeOut", 7_000);
+    properties.put("writeTimeOut", 8_000);
+
+    SerialDeviceConfig config = new SerialDeviceConfig(properties);
+
+    assertEquals(7_000, config.getReadTimeOut());
+    assertEquals(8_000, config.getWriteTimeOut());
+    assertEquals(7_000, config.getSerialConfig().getReadTimeOut());
+    assertEquals(8_000, config.getSerialConfig().getWriteTimeOut());
+
+    ConfigurationProperties serialized = config.toConfigurationProperties();
+    assertEquals(7_000, serialized.getIntProperty("readTimeOut", -1));
+    assertEquals(8_000, serialized.getIntProperty("writeTimeOut", -1));
+  }
+
   @Test
   void update_serialDeviceDto_appliesChanges() {
     SerialDeviceConfig config = new SerialDeviceConfig(serialProperties());
