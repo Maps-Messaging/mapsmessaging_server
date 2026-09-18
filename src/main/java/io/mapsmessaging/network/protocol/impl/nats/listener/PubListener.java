@@ -56,9 +56,15 @@ public class PubListener implements FrameListener {
     try {
       Destination destination = future.get();
       if (destination != null) {
-        handleMessageStoreToDestination(destination, engine, msgFrame);
-        if (engine.isVerbose()) {
-          engine.send(new OkFrame());
+        try {
+          handleMessageStoreToDestination(destination, engine, msgFrame);
+          if (engine.isVerbose()) {
+            engine.send(new OkFrame());
+          }
+        } catch (IOException e) {
+          ErrFrame errFrame = new ErrFrame();
+          errFrame.setError(e.getMessage());
+          engine.send(errFrame);
         }
       } else {
         ErrFrame errFrame = new ErrFrame();
