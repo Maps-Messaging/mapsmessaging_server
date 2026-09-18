@@ -28,6 +28,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
 
+import java.util.Base64;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
@@ -99,13 +100,16 @@ public class MessageLoader {
       messageBuilder.setCreation(getCreation());
     }
 
-    if(getCorrelationData() != null ){
+    if (getCorrelationData() != null) {
       Object corr = getCorrelationData();
-      if(corr instanceof byte[]){
-        messageBuilder.setCorrelationData((byte[])correlationData);
-      }
-      else if(corr instanceof String){
-        messageBuilder.setCorrelationData((String)correlationData);
+      if (corr instanceof byte[] bytes) {
+        messageBuilder.setCorrelationData(bytes);
+      } else if (corr instanceof String value) {
+        if (isCorrelationDataByteArray()) {
+          messageBuilder.setCorrelationData(Base64.getDecoder().decode(value));
+        } else {
+          messageBuilder.setCorrelationData(value);
+        }
       }
     }
   }
