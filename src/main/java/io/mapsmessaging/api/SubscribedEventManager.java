@@ -50,7 +50,7 @@ public interface SubscribedEventManager {
   /**
    * Retrieves the SubscriptionContext that created this subscription
    *
-   * @return The SubscriptionContext that created the subscription
+   * @return The SubscriptionContext that created this subscription
    */
   SubscriptionContext getContext();
 
@@ -70,6 +70,13 @@ public interface SubscribedEventManager {
 
   default boolean isRetainedReplay(long messageId) {
     return false;
+  }
+
+  /**
+   * Called when protocol-level outbound capacity becomes available after this subscription was blocked.
+   * Implementations that participate in protocol flow control can reschedule delivery here.
+   */
+  default void resumeDelivery() {
   }
 
   /**

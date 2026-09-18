@@ -19,6 +19,8 @@
 
 package io.mapsmessaging.engine.session;
 
+import io.mapsmessaging.api.SubscribedEventManager;
+import io.mapsmessaging.api.message.Message;
 import java.security.Principal;
 
 public interface ClientConnection {
@@ -27,6 +29,20 @@ public interface ClientConnection {
 
   default long getKeepAliveTaskInterval() {
     return getTimeOut() + 5000L;
+  }
+
+  default boolean tryAcquireSendSlot(SubscribedEventManager subscription) {
+    return true;
+  }
+
+  default boolean tryAcquireSendSlot(SubscribedEventManager subscription, Message message) {
+    return tryAcquireSendSlot(subscription);
+  }
+
+  default void releaseSendSlot(SubscribedEventManager subscription) {
+  }
+
+  default void releaseUnusedSendSlot(SubscribedEventManager subscription) {
   }
 
   String getName();

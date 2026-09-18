@@ -77,6 +77,8 @@ public class DestinationSubscription extends Subscription {
   @Setter
   private boolean sync;
 
+  private volatile boolean flowControlBlocked;
+
   protected long messagesIgnored;
   protected long messagesRegistered;
   @Getter
@@ -117,6 +119,7 @@ public class DestinationSubscription extends Subscription {
     messagesIgnored = 0;
     messagesExpired = 0;
     isPaused = false;
+    flowControlBlocked = false;
     sync = context.isSync();
     mbean = registerWithDestination ? new SubscriptionJMX(destinationImpl.getTypePath(), this) : null;
     completionTask = new MessageDeliveryCompletionTask(this, acknowledgementController);
@@ -127,14 +130,13 @@ public class DestinationSubscription extends Subscription {
 
   @Override
   public void close() {
+    releaseProtocolSendSlot();
     if (mbean != null) {
       mbean.close();
     }
     acknowledgementController.close();
     messageStateManager.rollbackInFlightMessages();
 
-    // We need to see if any other subscriptions have interest in these events, and if not then simply
-    // remove the events. Just like when we deliver all the events in a subscription
     try {
       messageStateManager.close();
     } catch (IOException e) {
@@ -143,6 +145,7 @@ public class DestinationSubscription extends Subscription {
   }
 
   public void delete() {
+    releaseProtocolSendSlot();
     if (mbean != null) {
       mbean.close();
     }
@@ -150,8 +153,6 @@ public class DestinationSubscription extends Subscription {
     messageStateManager.rollbackInFlightMessages();
     destinationImpl.removeSubscription(sessionId);
 
-    // We need to see if any other subscriptions have interest in these events, and if not then simply
-    // remove the events. Just like when we deliver all the events in a subscription
     try {
       messageStateManager.delete();
     } catch (IOException e) {
@@ -159,15 +160,12 @@ public class DestinationSubscription extends Subscription {
     }
   }
 
-
   @Override
   public void hibernate() {
     logger.log(ServerLogMessages.DESTINATION_SUBSCRIPTION_HIBERNATE, destinationImpl.getFullyQualifiedNamespace(), sessionId);
+    releaseProtocolSendSlot();
     acknowledgementController.clear();
     messageStateManager.rollbackInFlightMessages();
-    //
-    // Remove the session since it is now redundant
-    //
     super.hibernate();
   }
 
@@ -190,7 +188,6 @@ public class DestinationSubscription extends Subscription {
   // </editor-fold>
 
   // <editor-fold desc="Get Functions">
-
 
   @Override
   public int size() {
@@ -268,7 +265,6 @@ public class DestinationSubscription extends Subscription {
   @Override
   public boolean hasMessage(long messageId) {
     ThreadLocalContext.checkDomain(DestinationImpl.SUBSCRIPTION_TASK_KEY);
-
     return messageStateManager.hasMessage(messageId);
   }
 
@@ -321,8 +317,8 @@ public class DestinationSubscription extends Subscription {
     ThreadContext.clear();
   }
 
-  public Future<Response> getNext()  {
-    return destinationImpl.submit( new NextMessageTask(this));
+  public Future<Response> getNext() {
+    return destinationImpl.submit(new NextMessageTask(this));
   }
 
   public Message rawGetNext() throws IOException {
@@ -333,29 +329,88 @@ public class DestinationSubscription extends Subscription {
     return message;
   }
 
+  protected Message retrieveNextMessageWithFlowControl() throws IOException {
+    Message message = peekNextMessage();
+    if (message == null) {
+      return null;
+    }
+    if (!tryAcquireProtocolSendSlot(message)) {
+      return null;
+    }
+    try {
+      allocateMessage(message);
+      return message;
+    } catch (RuntimeException e) {
+      releaseProtocolSendSlot();
+      throw e;
+    }
+  }
+
   protected Message retrieveNextMessage() throws IOException {
+    Message message = peekNextMessage();
+    if (message != null) {
+      allocateMessage(message);
+    }
+    return message;
+  }
+
+  protected Message peekNextMessage() throws IOException {
     for (;;) {
       long nextMessageId = messageStateManager.nextMessageId();
       if (nextMessageId < 0) {
-        break;
+        return null;
       }
       Message message = destinationImpl.getMessage(nextMessageId);
       if (message != null) {
-        messageStateManager.allocate(message);
-        messagesSent++;
         return message;
-      } else {
-        messageStateManager.expired(nextMessageId);
-        messagesExpired++;
+      }
+      messageStateManager.expired(nextMessageId);
+      messagesExpired++;
+    }
+  }
+
+  protected void allocateMessage(Message message) {
+    messageStateManager.allocate(message);
+    messagesSent++;
+  }
+
+  private boolean tryAcquireProtocolSendSlot(Message message) {
+    SessionImpl session = sessionImpl;
+    if (session == null) {
+      flowControlBlocked = false;
+      return true;
+    }
+    ClientConnection clientConnection = session.getClientConnection();
+    if (clientConnection == null) {
+      flowControlBlocked = false;
+      return true;
+    }
+
+    flowControlBlocked = true;
+    if (clientConnection.tryAcquireSendSlot(eventStateManager, message)) {
+      flowControlBlocked = false;
+      return true;
+    }
+    return false;
+  }
+
+  protected void releaseProtocolSendSlot() {
+    SessionImpl session = sessionImpl;
+    if (session != null) {
+      ClientConnection clientConnection = session.getClientConnection();
+      if (clientConnection != null) {
+        clientConnection.releaseSendSlot(eventStateManager);
       }
     }
-    return null;
+    flowControlBlocked = false;
+  }
+
+  public void sendCapacityAvailable() {
+    flowControlBlocked = false;
+    schedule();
   }
 
   private Message prepareMessage(Message message) {
-    //
-    // Update state in an atomic fashion and then send the message
-    //
     if (!hasAtRestMessages()) {
       message.setLastMessage(true);
     }
@@ -432,10 +487,6 @@ public class DestinationSubscription extends Subscription {
 
   public void acknowledgePreviousEvent() {
     ThreadLocalContext.checkDomain(DestinationImpl.SUBSCRIPTION_TASK_KEY);
-
-    //
-    // Chained completion handlers
-    //
     long messageId = acknowledgementController.messageSent();
     if (messageId > -1) {
       completeMessage(messageId);
@@ -454,8 +505,8 @@ public class DestinationSubscription extends Subscription {
     ThreadLocalContext.checkDomain(DestinationImpl.SUBSCRIPTION_TASK_KEY);
     try {
       while (isReady()) {
-        Message message = retrieveNextMessage();
-        if(message != null) {
+        Message message = retrieveNextMessageWithFlowControl();
+        if (message != null) {
           sendMessage(message);
         } else {
           break;
@@ -470,11 +521,8 @@ public class DestinationSubscription extends Subscription {
     }
   }
 
-  //
-  // So we have a message to send, but we are not scheduled to run
-  //
   public boolean schedule() {
-    if (isReady()) {
+    if (!flowControlBlocked && isReady()) {
       destinationImpl.scanForDelivery(this);
       return true;
     }
