@@ -108,6 +108,29 @@ class SticklebackArdupilotUsvModelMissionTest {
     assertEquals(2.0f, jump.getParam2());
   }
 
+
+  @Test
+  void repeatingUsvRouteCanJumpToSuffixAfterHomePlaceholder() {
+    MissionPlan missionPlan =
+        MissionPlan.repeatIndefinitely(
+            List.of(
+                waypoint(59.434079d, 24.747487d),
+                waypoint(59.434179d, 24.747587d),
+                waypoint(59.434279d, 24.747687d),
+                waypoint(59.434379d, 24.747787d)),
+            2);
+
+    UxvModelCommandSet commandSet = model.buildMission(CONTEXT, missionPlan);
+
+    MavlinkMissionItemInt jump = item(commandSet, 5);
+    assertEquals(5, jump.getMissionSequence());
+    assertEquals(MavlinkMissionItemIntFactory.MAV_CMD_DO_JUMP, jump.getCommand());
+    assertEquals(3.0f, jump.getParam1());
+    assertEquals(
+        MavlinkMissionItemIntFactory.MAV_CMD_DO_JUMP_REPEAT_FOREVER,
+        (int) jump.getParam2());
+  }
+
   @Test
   void rejectsUnsupportedMissionItemsAndFields() {
     assertFalse(model.validateMission(new MissionPlan(List.of(positionItem(PlanItemType.ORBIT)))).valid());
