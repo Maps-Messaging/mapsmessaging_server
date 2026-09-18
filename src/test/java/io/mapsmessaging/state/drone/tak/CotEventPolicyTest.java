@@ -119,6 +119,44 @@ class CotEventPolicyTest {
   }
 
   @Test
+  void withoutConfigurationTheStanagClassificationIsTranslated() {
+    // no cot configuration at all: affiliation and dimension come from the CATL description
+    DroneTwin partner = twin(null);
+    partner.getDescription().put("standard_identity", "StandardIdentityEnum_NEUTRAL");
+    partner.getDescription().put("symbol_set", "SymbolSetEnum_SEA_SURFACE");
+    TakEvent event = mapper.map(partner, new TwinUpdateContext());
+    policy.apply(event, partner, null, null);
+    assertEquals("a-n-S", event.getType());
+
+    DroneTwin unclassified = twin(null);
+    unclassified.getDescription().put("symbol_set", "AIR");
+    TakEvent unknown = mapper.map(unclassified, new TwinUpdateContext());
+    policy.apply(unknown, unclassified, null, null);
+    assertEquals("a-u-A", unknown.getType());
+  }
+
+  @Test
+  void aVehicleWithoutAStanagDescriptionStaysFriendly() {
+    // a MAVLink USV attached to this server, no description configured
+    DroneTwin own = twin(VehicleClass.USV);
+    TakEvent event = mapper.map(own, new TwinUpdateContext());
+    policy.apply(event, own, null, null);
+    assertEquals("a-f-S-C-U", event.getType());
+  }
+
+  @Test
+  void aConfiguredAffiliationStillOverridesTheSource() {
+    DroneTwin twin = twin(null);
+    twin.getDescription().put("standard_identity", "HOSTILE");
+    twin.getDescription().put("symbol_set", "SEA_SURFACE");
+    CotConfigDTO config = new CotConfigDTO();
+    config.setAffiliation(CotAffiliation.FRIENDLY);
+    TakEvent event = mapper.map(twin, new TwinUpdateContext());
+    policy.apply(event, twin, null, config);
+    assertEquals("a-f-S", event.getType());
+  }
+
+  @Test
   void takvIsDroppedWhenTheNamespaceSaysSo() {
     DroneTwin twin = twin(VehicleClass.USV);
     CotConfigDTO config = new CotConfigDTO();

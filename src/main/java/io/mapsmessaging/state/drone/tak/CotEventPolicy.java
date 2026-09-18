@@ -166,8 +166,10 @@ final class CotEventPolicy {
     return VehicleClass.UNKNOWN;
   }
 
+  // The default, with or without a namespace configuration, is SOURCE: the affiliation is the
+  // STANAG 4817 classification the twin carries. A configuration can pin one instead.
   private String resolveAffiliationCode(EntityTwin twin, CotConfigDTO config) {
-    CotAffiliation affiliation = config == null ? CotAffiliation.FRIENDLY : config.getAffiliation();
+    CotAffiliation affiliation = config == null ? CotAffiliation.SOURCE : config.getAffiliation();
     if (affiliation == null) {
       affiliation = CotAffiliation.SOURCE;
     }
@@ -181,14 +183,17 @@ final class CotEventPolicy {
     };
   }
 
+  // No STANAG description at all means there is no classification to translate: the twin is a
+  // vehicle or station attached to this server (MAVLink, NMEA 2000, ground control), friendly as
+  // before. A description whose identity is missing or unrecognised is unknown, never friendly.
   private String resolveSourceAffiliation(EntityTwin twin) {
     if (!(twin instanceof DroneTwin droneTwin)) {
-      return "u";
+      return "f";
     }
 
     Map<String, Object> description = droneTwin.getDescription();
     if (description == null || description.isEmpty()) {
-      return "u";
+      return "f";
     }
 
     Object value = firstValue(description, "standard_identity", "standardIdentity", "affiliation");
