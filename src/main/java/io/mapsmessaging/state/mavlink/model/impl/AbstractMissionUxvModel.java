@@ -192,7 +192,7 @@ public abstract class AbstractMissionUxvModel extends AbstractUxvModel {
               context.targetSystem(),
               context.targetComponent(),
               missionPlan.items().size(),
-              0,
+              missionPlan.repeatStartIndex(),
               missionPlan.jumpRepeatCount()));
     }
 
