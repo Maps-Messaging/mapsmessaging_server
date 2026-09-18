@@ -90,7 +90,7 @@ class MetricsRouteSelectionTest {
 
     when(connection.getConfigName()).thenReturn(name);
     when(connection.getProperties()).thenReturn(properties);
-    when(properties.getCost()).thenReturn(0.0);
+    when(properties.getCost()).thenReturn(0);
     when(connection.getState()).thenReturn(state);
     when(state.getLinkState()).thenReturn(LinkState.CONNECTED);
     when(connection.getProtocol()).thenReturn(protocol);
