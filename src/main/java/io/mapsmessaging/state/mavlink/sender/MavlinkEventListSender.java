@@ -233,7 +233,6 @@ public class MavlinkEventListSender implements AutoCloseable {
       }
     }
 
-
     if (retryTransaction) {
       complete(
           MavlinkSendResult.Status.TIMEOUT,
@@ -652,5 +651,4 @@ public class MavlinkEventListSender implements AutoCloseable {
   private String messageName(MavlinkMessage message) {
     return message == null ? "" : message.getClass().getSimpleName();
   }
-
 }

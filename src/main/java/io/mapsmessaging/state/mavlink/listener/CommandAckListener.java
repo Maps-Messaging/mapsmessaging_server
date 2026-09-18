@@ -48,7 +48,6 @@ public class CommandAckListener implements Listener {
       return;
     }
 
-
     if (!packet.isValid()) {
       return;
     }

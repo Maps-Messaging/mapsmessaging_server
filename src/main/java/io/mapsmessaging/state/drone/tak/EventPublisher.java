@@ -52,9 +52,8 @@ public class EventPublisher implements ClientConnection, MessageListener {
     MessageBuilder messageBuilder = new MessageBuilder();
     messageBuilder.setOpaqueData(xml.getBytes())
         .setQoS(QualityOfService.AT_LEAST_ONCE)
-        .setExpiry(30_000)  // 30 seconds
         .setContentType("text/xml")
-        .storeOffline(false)  // If client is not online do not store it
+        .storeOffline(true)
         .setSchemaId(SchemaManager.DEFAULT_XML_SCHEMA.toString())
         .setRetain(false);
     try {
