@@ -18,6 +18,7 @@
  */
 package io.mapsmessaging.state.drone.tak;
 
+import io.mapsmessaging.cot.types.Affiliation;
 import io.mapsmessaging.state.config.CotAffiliation;
 import io.mapsmessaging.state.config.CotConfigDTO;
 import io.mapsmessaging.state.config.VehicleClass;
@@ -50,6 +51,16 @@ final class CotEventPolicy {
   private static final int CONTACT_COLOR_ARGB_RED = -65536;
   private static final String DEFAULT_ALTITUDE_SOURCE = "GPS";
   private static final String DEFAULT_GEOPOINT_SOURCE = "GPS";
+
+  private final CotTypeResolver cotTypeResolver;
+
+  CotEventPolicy() {
+    this(new CotTypeResolver());
+  }
+
+  CotEventPolicy(CotTypeResolver cotTypeResolver) {
+    this.cotTypeResolver = cotTypeResolver;
+  }
 
   void apply(TakEvent event, EntityTwin twin, TwinUpdateContext context, CotConfigDTO config) {
     apply(event, twin, context, config, false);
@@ -101,6 +112,9 @@ final class CotEventPolicy {
       precisionLocation.setAltsrc(
           valueOrDefault(config == null ? null : config.getAltitudeSource(), DEFAULT_ALTITUDE_SOURCE));
       precisionLocation.setGeopointsrc(DEFAULT_GEOPOINT_SOURCE);
+      if (config != null && !config.isPublishTakv()) {
+        detail.setTakv(null);
+      }
 
       if (contact) {
         detail.setArchive(true);
@@ -137,18 +151,9 @@ final class CotEventPolicy {
   }
 
   private String resolveCotType(EntityTwin twin, CotConfigDTO config) {
-    String affiliation = resolveAffiliationCode(twin, config);
-    VehicleClass vehicleClass = resolveVehicleClass(twin);
-    String classification =
-        switch (vehicleClass) {
-          case UAV -> "A-M-F-U";
-          case USV -> "S-X-M";
-          case UGV -> "G-E-V";
-          case UUV -> "U-X-M";
-          case GCS -> "G-U-C";
-          case UNKNOWN -> "X";
-        };
-    return "a-" + affiliation + '-' + classification;
+    Affiliation affiliation = Affiliation.fromCode(resolveAffiliationCode(twin, config).charAt(0));
+    Map<String, Object> description = twin instanceof DroneTwin droneTwin ? droneTwin.getDescription() : null;
+    return cotTypeResolver.resolve(affiliation, resolveVehicleClass(twin), description);
   }
 
   private VehicleClass resolveVehicleClass(EntityTwin twin) {

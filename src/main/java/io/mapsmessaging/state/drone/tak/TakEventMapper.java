@@ -19,6 +19,7 @@
 
 package io.mapsmessaging.state.drone.tak;
 
+import io.mapsmessaging.cot.types.Affiliation;
 import io.mapsmessaging.state.config.VehicleClass;
 import io.mapsmessaging.state.drone.core.EntityTwin;
 import io.mapsmessaging.state.drone.core.TwinRelationship;
@@ -36,6 +37,7 @@ public class TakEventMapper {
   private static final String DEFAULT_HOW = "h-g-i-g-o";
   private static final String DEFAULT_ALTITUDE_SOURCE = "GPS";
   private static final String MAPS_OS = "MapsMessaging";
+  private static final CotTypeResolver COT_TYPES = new CotTypeResolver();
   private static final String MAPS_VERSION = "1.0";
   private static final double DEFAULT_CE = 10.0;
   private static final double DEFAULT_LE = 15.0;
@@ -211,26 +213,14 @@ public class TakEventMapper {
     return sanitised.isBlank() ? "unknown" : sanitised;
   }
 
+  // Friendly baseline only: CotEventPolicy re-types every published event with the configured
+  // affiliation. Both go through the same CoT type table.
   private String resolveCotType(EntityTwin twin) {
-    if (twin instanceof DroneTwin droneTwin) {
-      VehicleClass vehicleClass = droneTwin.getVehicleClass();
-      if (vehicleClass != null) {
-        return switch (vehicleClass) {
-          case UAV -> "a-f-A-M-F-U";
-          case USV -> "a-f-S-X-M";
-          case UGV -> "a-f-G-E-V";
-          case UUV -> "a-f-U-X-M";
-          case GCS -> "a-f-G-U-C";
-          case UNKNOWN -> null;
-        };
-      }
+    if (twin instanceof DroneTwin droneTwin && droneTwin.getVehicleClass() != null) {
+      return COT_TYPES.resolve(Affiliation.FRIEND, droneTwin.getVehicleClass(), droneTwin.getDescription());
     }
-
-    TwinType twinType = twin.getTwinType();
-    if (TwinType.DRONE.equals(twinType)) {
-      return "a-f-A-M-F-U";
-    }
-    return "a-f-G-U-C";
+    VehicleClass fallback = TwinType.DRONE.equals(twin.getTwinType()) ? VehicleClass.UAV : VehicleClass.GCS;
+    return COT_TYPES.resolve(Affiliation.FRIEND, fallback, null);
   }
 
   private String resolvePlatform(EntityTwin twin) {

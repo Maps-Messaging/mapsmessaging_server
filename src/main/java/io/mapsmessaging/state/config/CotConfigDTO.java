@@ -52,4 +52,10 @@ public class CotConfigDTO {
 
   @Schema(description = "CoT precision-location altitude source.", defaultValue = "GPS")
   private String altitudeSource = "GPS";
+
+  @Schema(
+      description = "Publish the takv (publishing client) detail. Set false for namespaces whose twins are "
+          + "third-party tracks relayed by this server, which are not the publishing TAK client.",
+      defaultValue = "true")
+  private boolean publishTakv = true;
 }
