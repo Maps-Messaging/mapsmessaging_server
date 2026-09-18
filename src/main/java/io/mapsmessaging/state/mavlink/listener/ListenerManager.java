@@ -19,17 +19,13 @@
 
 package io.mapsmessaging.state.mavlink.listener;
 
-import io.mapsmessaging.mavlink.ProcessedFrame;
 import io.mapsmessaging.state.drone.core.TwinManager;
 import io.mapsmessaging.state.drone.core.TwinUpdateContext;
 import io.mapsmessaging.state.mavlink.packet.MavlinkPacket;
-import io.mapsmessaging.state.mavlink.packet.MountStatusPacket;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
 public class ListenerManager {
-
-  private static final boolean INJECT_DEBUG_MOUNT_STATUS = true;
 
   private final Map<Integer, Listener> listeners;
 
@@ -57,27 +53,8 @@ public class ListenerManager {
     Listener listener = listeners.get(messageId);
     if (listener != null) {
       listener.handle(twinId, pkt, context);
-      if (INJECT_DEBUG_MOUNT_STATUS
-          && messageId == HeartbeatListener.LISTENER_ID) {
-        injectDebugMountStatus(twinId, context);
-      }
       return true;
     }
     return false;
-  }
-
-  private void injectDebugMountStatus(String twinId, TwinUpdateContext context) {
-    Map<String, Object> fields = new LinkedHashMap<>();
-    fields.put("target_system", 1);
-    fields.put("target_component", 1);
-    fields.put("pointing_a", -1234);
-    fields.put("pointing_b", 250);
-    fields.put("pointing_c", -50);
-    fields.put("mount_mode", 2);
-
-    ProcessedFrame frame =
-        new ProcessedFrame("MOUNT_STATUS", null, fields, true, null, null);
-    Listener listener = listeners.get(MountStatusListener.LISTENER_ID);
-    listener.handle(twinId, new MountStatusPacket(frame), context);
   }
 }
