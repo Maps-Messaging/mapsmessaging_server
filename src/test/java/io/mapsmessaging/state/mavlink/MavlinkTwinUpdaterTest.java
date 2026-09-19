@@ -52,6 +52,7 @@ import static io.mapsmessaging.state.mavlink.packet.MavlinkMessageIds.MOUNT_STAT
 import static io.mapsmessaging.state.mavlink.packet.MavlinkMessageIds.NAMED_VALUE_FLOAT;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -209,6 +210,13 @@ class MavlinkTwinUpdaterTest {
     droneInfo.setAltitudeMode(AltitudeMode.FIXED);
     droneInfo.setAltitudeMeters(7.5d);
     droneInfo.setDescription(Map.of("role", "survey"));
+    droneInfo.setSpecialization(Map.of(
+        "$discriminator", "NodeSpecializationTypeEnum_SURFACE_VESSEL",
+        "surface_vessel", Map.of(
+            "app11_vessel_type", "NavalVesselTypeEnum_UNKNOWN",
+            "extra", Map.of("parameters", Map.of("vessel_form", "RHIB"))
+        )
+    ));
     MavlinkPacket packet = mock(MavlinkPacket.class);
     ProcessedFrame frame = frame(17, 42, 999);
     TwinUpdateContext context = context("mavlink/outbound", "outbound-2");
@@ -227,6 +235,12 @@ class MavlinkTwinUpdaterTest {
     assertEquals("mavlink/outbound", twin.getResponseTopicName());
     assertEquals("outbound-2", twin.getUniqueOutboundIdentifier());
     assertEquals("survey", twin.getDescription().get("role"));
+    assertEquals(
+        "NodeSpecializationTypeEnum_SURFACE_VESSEL",
+        twin.getSpecialization().get("$discriminator")
+    );
+    Map<?, ?> surfaceVessel = assertInstanceOf(Map.class, twin.getSpecialization().get("surface_vessel"));
+    assertEquals("NavalVesselTypeEnum_UNKNOWN", surfaceVessel.get("app11_vessel_type"));
     assertEquals("A-M-F-Q", twin.getAttributes().get("cotClassification"));
     updater.close();
   }

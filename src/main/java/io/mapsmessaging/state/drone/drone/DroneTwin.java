@@ -262,6 +262,9 @@ public class DroneTwin extends EntityTwin {
   @Schema(description = "Open map to define description data", nullable = true)
   private Map<String, Object> description = new HashMap<>();
 
+  @Schema(description = "Open map for protocol-specific node specialization metadata.", nullable = true)
+  private Map<String, Object> specialization = new HashMap<>();
+
   @Schema(description = "Timestamp of the last readiness evaluation.", example = "2026-05-26T05:50:00Z", nullable = true)
   private Instant readinessUpdatedAt;
 

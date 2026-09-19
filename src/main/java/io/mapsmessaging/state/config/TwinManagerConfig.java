@@ -412,6 +412,12 @@ public class TwinManagerConfig extends TwinManagerConfigDTO implements Config, C
       droneInfo.setDescription(toStringObjectMap(descriptionMap));
     }
 
+    if (properties.get("specialization") instanceof ConfigurationProperties specializationProperties) {
+      droneInfo.setSpecialization(toNestedStringObjectMap(specializationProperties.getMap()));
+    } else if (properties.get("specialization") instanceof Map<?, ?> specializationMap) {
+      droneInfo.setSpecialization(toNestedStringObjectMap(specializationMap));
+    }
+
     droneInfo.setDataProducts(
         DataProductConfigLoader.parseProducts(properties.get("data_products")));
     droneInfo.setCapabilities(parseTaskCapabilities(properties.get("capabilities")));
@@ -515,6 +521,10 @@ public class TwinManagerConfig extends TwinManagerConfigDTO implements Config, C
         properties.put("description", new ConfigurationProperties(new LinkedHashMap<>(droneInfo.getDescription())));
       }
 
+      if (droneInfo.getSpecialization() != null && !droneInfo.getSpecialization().isEmpty()) {
+        properties.put("specialization", toConfigurationProperties(droneInfo.getSpecialization()));
+      }
+
       if (!droneInfo.getDataProducts().isEmpty()) {
         properties.put(
             "data_products",
@@ -575,6 +585,57 @@ public class TwinManagerConfig extends TwinManagerConfigDTO implements Config, C
     }
 
     return target;
+  }
+
+  private Map<String, Object> toNestedStringObjectMap(Map<?, ?> source) {
+    Map<String, Object> target = new LinkedHashMap<>();
+
+    for (Map.Entry<?, ?> entry : source.entrySet()) {
+      if (entry.getKey() instanceof String key) {
+        target.put(key, normaliseConfigurationValue(entry.getValue()));
+      }
+    }
+
+    return target;
+  }
+
+  private Object normaliseConfigurationValue(Object value) {
+    if (value instanceof ConfigurationProperties properties) {
+      return toNestedStringObjectMap(properties.getMap());
+    }
+    if (value instanceof Map<?, ?> map) {
+      return toNestedStringObjectMap(map);
+    }
+    if (value instanceof List<?> list) {
+      List<Object> values = new ArrayList<>(list.size());
+      for (Object entry : list) {
+        values.add(normaliseConfigurationValue(entry));
+      }
+      return values;
+    }
+    return value;
+  }
+
+  private ConfigurationProperties toConfigurationProperties(Map<String, Object> source) {
+    ConfigurationProperties properties = new ConfigurationProperties();
+    for (Map.Entry<String, Object> entry : source.entrySet()) {
+      properties.put(entry.getKey(), toConfigurationValue(entry.getValue()));
+    }
+    return properties;
+  }
+
+  private Object toConfigurationValue(Object value) {
+    if (value instanceof Map<?, ?> map) {
+      return toConfigurationProperties(toNestedStringObjectMap(map));
+    }
+    if (value instanceof List<?> list) {
+      List<Object> values = new ArrayList<>(list.size());
+      for (Object entry : list) {
+        values.add(toConfigurationValue(entry));
+      }
+      return values;
+    }
+    return value;
   }
 
   private TaskCapabilities parseTaskCapabilities(Object value) {
