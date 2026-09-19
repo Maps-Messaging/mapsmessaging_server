@@ -20,6 +20,7 @@
 package io.mapsmessaging.network.protocol.impl.n2k.msg;
 
 import io.mapsmessaging.state.drone.drone.DroneTwin;
+import io.mapsmessaging.state.n2k.msg.AisMappingSupport;
 import io.mapsmessaging.state.drone.model.GeoPosition;
 import org.junit.jupiter.api.Test;
 
