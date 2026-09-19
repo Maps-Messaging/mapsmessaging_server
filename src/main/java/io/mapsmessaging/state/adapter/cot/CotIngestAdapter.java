@@ -18,6 +18,7 @@
 
 package io.mapsmessaging.state.adapter.cot;
 
+import io.mapsmessaging.MessageDaemon;
 import io.mapsmessaging.api.Destination;
 import io.mapsmessaging.api.MessageBuilder;
 import io.mapsmessaging.api.MessageEvent;
@@ -33,6 +34,7 @@ import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.engine.session.ClientConnection;
 import io.mapsmessaging.state.adapter.StateMessageAdapter;
 import io.mapsmessaging.state.drone.core.TwinManager;
+import io.mapsmessaging.state.drone.core.TwinUpdateContext;
 import io.mapsmessaging.state.drone.tak.CotToTwinMapper;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
@@ -92,7 +94,7 @@ public class CotIngestAdapter implements StateMessageAdapter, ClientConnection, 
   @Override
   public void start() {
     try {
-      SessionContextBuilder sessionContextBuilder = new SessionContextBuilder("cot-ingest-adapter", this);
+      SessionContextBuilder sessionContextBuilder = new SessionContextBuilder(sessionId(), this);
       sessionContextBuilder.setUsername("anonymous")
           .setPassword("".toCharArray())
           .isInternal(true)
@@ -154,8 +156,12 @@ public class CotIngestAdapter implements StateMessageAdapter, ClientConnection, 
   void handle(String destinationName, byte[] xml) {
     lastMessageAt = System.currentTimeMillis();
 
-    String updateSource = UPDATE_SOURCE_PREFIX + ":" + edgeNameFrom(destinationName);
-    if (cotToTwinMapper.routeToTwinManager(twinManager, xml, updateSource)) {
+    TwinUpdateContext context = new TwinUpdateContext();
+    context.setUpdateSource(UPDATE_SOURCE_PREFIX);
+    context.setSourceInstanceId(edgeNameFrom(destinationName));
+    context.setSourceNamespace(destinationName);
+
+    if (cotToTwinMapper.routeToTwinManager(twinManager, xml, context)) {
       routedCount.increment();
     } else {
       droppedCount.increment();
@@ -171,6 +177,10 @@ public class CotIngestAdapter implements StateMessageAdapter, ClientConnection, 
     int lastSlash = destinationName.lastIndexOf('/');
     String leaf = lastSlash >= 0 ? destinationName.substring(lastSlash + 1) : destinationName;
     return leaf.isBlank() ? "unknown" : leaf;
+  }
+
+  String sessionId() {
+    return "cot-ingest-adapter:" + MessageDaemon.getInstance().getId();
   }
 
   io.mapsmessaging.engine.destination.subscription.SubscriptionContext buildSubscriptionContext() {

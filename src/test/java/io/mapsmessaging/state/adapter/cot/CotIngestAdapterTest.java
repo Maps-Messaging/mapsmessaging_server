@@ -73,7 +73,9 @@ class CotIngestAdapterTest {
 
     ArgumentCaptor<TwinUpdateContext> context = ArgumentCaptor.forClass(TwinUpdateContext.class);
     verify(observer).onTwinAdded(any(), context.capture());
-    assertEquals("cot-bridge-ingest:edge-a", context.getValue().getUpdateSource());
+    assertEquals("cot-bridge-ingest", context.getValue().getUpdateSource());
+    assertEquals("edge-a", context.getValue().getSourceInstanceId());
+    assertEquals("/tak/cot/inbound/edge-a", context.getValue().getSourceNamespace());
   }
 
   @Test

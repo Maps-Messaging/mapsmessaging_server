@@ -84,14 +84,24 @@ public final class CotToTwinMapper {
    *     {@code uid} (nothing was routed).
    */
   public boolean routeToTwinManager(TwinManager twinManager, byte[] xml, String updateSource) {
+    TwinUpdateContext context = new TwinUpdateContext();
+    context.setUpdateSource(updateSource);
+    context.setReceivedTime(Instant.now());
+    return routeToTwinManager(twinManager, xml, context);
+  }
+
+  public boolean routeToTwinManager(
+      TwinManager twinManager,
+      byte[] xml,
+      TwinUpdateContext context) {
     DroneTwin parsed = map(xml);
     if (parsed == null) {
       return false;
     }
 
-    TwinUpdateContext context = new TwinUpdateContext();
-    context.setUpdateSource(updateSource);
-    context.setReceivedTime(Instant.now());
+    if (context.getReceivedTime() == null) {
+      context.setReceivedTime(Instant.now());
+    }
 
     if (twinManager.getTwin(parsed.getTwinId()).isPresent()) {
       twinManager.updateTwin(parsed.getTwinId(), existing -> copyOnto(existing, parsed), context);
