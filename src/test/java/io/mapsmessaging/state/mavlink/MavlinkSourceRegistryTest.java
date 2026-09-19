@@ -19,6 +19,8 @@
 
 package io.mapsmessaging.state.mavlink;
 
+import static io.mapsmessaging.state.mavlink.packet.MavlinkMessageIds.MOUNT_STATUS;
+
 import io.mapsmessaging.dto.rest.config.protocol.impl.MavlinkKnownSourceDTO;
 import io.mapsmessaging.mavlink.ProcessedFrame;
 import io.mapsmessaging.state.config.MavlinkTwinConfigDTO;
@@ -38,10 +40,10 @@ class MavlinkSourceRegistryTest {
   void null_or_empty_configuration_matches_no_sources() {
     MavlinkTwinConfigDTO nullConfig = new MavlinkTwinConfigDTO();
     nullConfig.setKnownSources(null);
-    assertNull(new MavlinkSourceRegistry(nullConfig).getKnownSource(frame(1, 1)));
+    assertNull(new MavlinkSourceRegistry(nullConfig).getKnownSource(frame(1, 1, 0)));
 
     MavlinkTwinConfigDTO emptyConfig = new MavlinkTwinConfigDTO();
-    assertNull(new MavlinkSourceRegistry(emptyConfig).getKnownSource(frame(1, 1)));
+    assertNull(new MavlinkSourceRegistry(emptyConfig).getKnownSource(frame(1, 1, 0)));
   }
 
   @Test
@@ -49,7 +51,7 @@ class MavlinkSourceRegistryTest {
     MavlinkKnownSourceDTO knownSource = source("drone-1", 17, 42);
     MavlinkTwinConfigDTO config = config(knownSource);
 
-    MavlinkKnownSourceDTO result = new MavlinkSourceRegistry(config).getKnownSource(frame(17, 42));
+    MavlinkKnownSourceDTO result = new MavlinkSourceRegistry(config).getKnownSource(frame(17, 42, 0));
 
     assertSame(knownSource, result);
   }
@@ -59,7 +61,7 @@ class MavlinkSourceRegistryTest {
     MavlinkKnownSourceDTO knownSource = source("drone-1", 17, 42);
     MavlinkSourceRegistry registry = new MavlinkSourceRegistry(config(knownSource));
 
-    assertNull(registry.getKnownSource(frame(18, 42)));
+    assertNull(registry.getKnownSource(frame(18, 42, 0)));
   }
 
   @Test
@@ -67,7 +69,15 @@ class MavlinkSourceRegistryTest {
     MavlinkKnownSourceDTO knownSource = source("drone-1", 17, 42);
     MavlinkSourceRegistry registry = new MavlinkSourceRegistry(config(knownSource));
 
-    assertSame(knownSource, registry.getKnownSource(frame(17, 154)));
+    assertSame(knownSource, registry.getKnownSource(frame(17, 154, MOUNT_STATUS)));
+  }
+
+  @Test
+  void auxiliary_component_with_other_message_is_not_related() {
+    MavlinkKnownSourceDTO knownSource = source("drone-1", 17, 42);
+    MavlinkSourceRegistry registry = new MavlinkSourceRegistry(config(knownSource));
+
+    assertNull(registry.getKnownSource(frame(17, 154, 0)));
   }
 
   @Test
@@ -76,9 +86,9 @@ class MavlinkSourceRegistryTest {
     MavlinkKnownSourceDTO camera = source("camera-1", 17, 154);
     MavlinkSourceRegistry registry = new MavlinkSourceRegistry(config(autopilot, camera));
 
-    assertSame(autopilot, registry.getKnownSource(frame(17, 42)));
-    assertSame(camera, registry.getKnownSource(frame(17, 154)));
-    assertNull(registry.getKnownSource(frame(17, 200)));
+    assertSame(autopilot, registry.getKnownSource(frame(17, 42, 0)));
+    assertSame(camera, registry.getKnownSource(frame(17, 154, 0)));
+    assertNull(registry.getKnownSource(frame(17, 200, MOUNT_STATUS)));
   }
 
   @Test
@@ -86,7 +96,7 @@ class MavlinkSourceRegistryTest {
     MavlinkKnownSourceDTO first = source("first", 17, 42);
     MavlinkKnownSourceDTO second = source("second", 17, 42);
 
-    MavlinkKnownSourceDTO result = new MavlinkSourceRegistry(config(first, second)).getKnownSource(frame(17, 42));
+    MavlinkKnownSourceDTO result = new MavlinkSourceRegistry(config(first, second)).getKnownSource(frame(17, 42, 0));
 
     assertSame(second, result);
   }
@@ -105,10 +115,11 @@ class MavlinkSourceRegistryTest {
     return source;
   }
 
-  private ProcessedFrame frame(int systemId, int componentId) {
+  private ProcessedFrame frame(int systemId, int componentId, int messageId) {
     ProcessedFrame processedFrame = mock(ProcessedFrame.class, RETURNS_DEEP_STUBS);
     when(processedFrame.getFrame().getSystemId()).thenReturn(systemId);
     when(processedFrame.getFrame().getComponentId()).thenReturn(componentId);
+    when(processedFrame.getFrame().getMessageId()).thenReturn(messageId);
     return processedFrame;
   }
 }

@@ -19,6 +19,8 @@
 
 package io.mapsmessaging.state.mavlink;
 
+import static io.mapsmessaging.state.mavlink.packet.MavlinkMessageIds.MOUNT_STATUS;
+
 import io.mapsmessaging.dto.rest.config.protocol.impl.MavlinkKnownSourceDTO;
 import io.mapsmessaging.mavlink.ProcessedFrame;
 import io.mapsmessaging.state.config.MavlinkTwinConfigDTO;
@@ -48,6 +50,10 @@ public class MavlinkSourceRegistry {
 
     if (exactSource != null) {
       return exactSource;
+    }
+
+    if (env.getFrame().getMessageId() != MOUNT_STATUS) {
+      return null;
     }
 
     return systemSources.get(systemId);
