@@ -119,7 +119,7 @@ class SentenceParserTest {
     field.put("name", name);
     field.put("type", type);
     field.put("param", param);
-    field.put("repeat", repeat);
+    field.put("repeat", Integer.toString(repeat));
     return field;
   }
 }
