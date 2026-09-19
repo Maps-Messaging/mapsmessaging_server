@@ -39,9 +39,11 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.security.Principal;
+import java.time.Instant;
 import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.LongAdder;
 
 /**
@@ -151,25 +153,64 @@ public class MtiStatusAdapter implements StateMessageAdapter, ClientConnection, 
     }
   }
 
-  private void handle(String json) {
+  void handle(String json) {
     MtiWireMessage message = gson.fromJson(json, MtiWireMessage.class);
     if (message == null || message.uid() == null || message.uid().isBlank()) {
-      logger.warn("MTI status message had no uid, dropped: {}", json);
+      logger.warn("MTI status message had no uid, dropped");
       return;
     }
 
     lastMessageAt = System.currentTimeMillis();
-
-    if ("delete".equalsIgnoreCase(message.op())) {
-      cache.remove(message.uid());
-      deleteCount.increment();
-      logger.debug("MTI status cleared for {}", message.uid());
+    Instant observedAt = MtiStatus.parseTimestamp(message.observedAt());
+    if (observedAt == null) {
+      logger.warn("MTI status message for {} had an invalid observed_at, dropped", message.uid());
       return;
     }
 
-    cache.put(message.uid(), MtiStatus.from(message));
+    if ("delete".equalsIgnoreCase(message.op())) {
+      AtomicBoolean accepted = new AtomicBoolean();
+      cache.compute(message.uid(), (uid, current) -> {
+        if (current == null || !observedAt.isBefore(current.observedAt())) {
+          accepted.set(true);
+          return null;
+        }
+        return current;
+      });
+      deleteCount.increment();
+      if (accepted.get()) {
+        logger.debug("MTI status cleared for {}", message.uid());
+      } else {
+        logger.debug("Ignored out-of-order MTI delete for {}", message.uid());
+      }
+      return;
+    }
+
+    MtiStatus incoming = MtiStatus.from(message);
+    if (incoming == null) {
+      logger.warn("MTI status message for {} had invalid validity timestamps, dropped", message.uid());
+      return;
+    }
+
+    Instant now = Instant.now();
+    AtomicBoolean accepted = new AtomicBoolean();
+    cache.compute(message.uid(), (uid, current) -> {
+      if (current != null && incoming.observedAt().isBefore(current.observedAt())) {
+        return current;
+      }
+      accepted.set(true);
+      return incoming.isExpired(now) ? null : incoming;
+    });
     upsertCount.increment();
-    logger.debug("MTI status updated for {}: state={}", message.uid(), message.state());
+
+    if (accepted.get()) {
+      if (incoming.isExpired(now)) {
+        logger.debug("MTI status for {} was already expired and cleared any older cached status", message.uid());
+      } else {
+        logger.debug("MTI status updated for {}: state={}", message.uid(), message.state());
+      }
+    } else {
+      logger.debug("Ignored out-of-order MTI status update for {}", message.uid());
+    }
   }
 
   /** Called by {@code CotEventPolicy} via {@code MtiStatusRegistry}, keyed on twinId. */
@@ -179,6 +220,14 @@ public class MtiStatusAdapter implements StateMessageAdapter, ClientConnection, 
       lookupMissCount.increment();
       return null;
     }
+
+    Instant now = Instant.now();
+    if (status.isExpired(now)) {
+      cache.remove(twinId, status);
+      lookupMissCount.increment();
+      return null;
+    }
+
     lookupHitCount.increment();
     if (status.state() == null) {
       return null;
@@ -211,6 +260,7 @@ public class MtiStatusAdapter implements StateMessageAdapter, ClientConnection, 
   // --- Metrics, read by MtiStatusAdapterJMX. ---
 
   public int getCacheSize() {
+    pruneExpired();
     return cache.size();
   }
 
@@ -238,6 +288,7 @@ public class MtiStatusAdapter implements StateMessageAdapter, ClientConnection, 
 
   /** Number of cached assets currently reporting MTI state mitigate/hold. */
   public int getDegradedAssetCount() {
+    pruneExpired();
     int count = 0;
     for (MtiStatus status : cache.values()) {
       String state = status.state();
@@ -258,8 +309,14 @@ public class MtiStatusAdapter implements StateMessageAdapter, ClientConnection, 
    * Vacuously 1.0 (fully ready) when the cache is empty.
    */
   public double getReadinessRate() {
+    pruneExpired();
     int total = cache.size();
     return total == 0 ? 1.0d : 1.0d - ((double) getDegradedAssetCount() / total);
+  }
+
+  private void pruneExpired() {
+    Instant now = Instant.now();
+    cache.entrySet().removeIf(entry -> entry.getValue().isExpired(now));
   }
 
   // --- ClientConnection: this adapter has no real network endpoint of its own, it rides an

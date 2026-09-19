@@ -18,11 +18,44 @@
 
 package io.mapsmessaging.state.adapter.mti;
 
+import java.time.Instant;
+import java.time.format.DateTimeParseException;
+
 /** This adapter's own cached view of one asset's last-known MTI status. */
-record MtiStatus(String uid, String state, String remarks) {
+record MtiStatus(
+    String uid,
+    String state,
+    String remarks,
+    Instant observedAt,
+    Instant validUntil) {
 
   static MtiStatus from(MtiWireMessage message) {
-    return new MtiStatus(message.uid(), message.state(), buildRemarks(message));
+    Instant observedAt = parseTimestamp(message.observedAt());
+    Instant validUntil = parseTimestamp(message.validUntil());
+    if (observedAt == null || validUntil == null || !validUntil.isAfter(observedAt)) {
+      return null;
+    }
+    return new MtiStatus(
+        message.uid(),
+        message.state(),
+        buildRemarks(message),
+        observedAt,
+        validUntil);
+  }
+
+  static Instant parseTimestamp(String value) {
+    if (value == null || value.isBlank()) {
+      return null;
+    }
+    try {
+      return Instant.parse(value);
+    } catch (DateTimeParseException e) {
+      return null;
+    }
+  }
+
+  boolean isExpired(Instant now) {
+    return now == null || validUntil == null || !validUntil.isAfter(now);
   }
 
   private static String buildRemarks(MtiWireMessage message) {
