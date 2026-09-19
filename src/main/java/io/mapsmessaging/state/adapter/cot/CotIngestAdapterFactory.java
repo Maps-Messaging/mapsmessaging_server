@@ -48,7 +48,7 @@ import java.util.Optional;
 public class CotIngestAdapterFactory implements StateMessageAdapterFactory {
 
   private static final String ADAPTER_KEY = "cotIngest";
-  private static final String DEFAULT_TOPIC = "/tak/cot/inbound/+";
+  static final String DEFAULT_TOPIC = "/tak/cot/inbound/+";
 
   @Override
   public String getName() {

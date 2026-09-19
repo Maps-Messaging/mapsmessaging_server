@@ -17,6 +17,7 @@ import io.mapsmessaging.state.drone.model.GeoPosition;
 import io.mapsmessaging.state.drone.tak.model.TakEvent;
 import java.time.Instant;
 import java.util.stream.Stream;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -26,6 +27,63 @@ class CotEventPolicyTest {
 
   private final TakEventMapper mapper = new TakEventMapper();
   private final CotEventPolicy policy = new CotEventPolicy();
+
+  @AfterEach
+  void clearMtiDelegate() {
+    MtiStatusRegistry.setDelegate(null);
+  }
+
+  @Test
+  void preservesOriginalCotTypeForCotIngestedTwin() {
+    DroneTwin twin = twin(null);
+    twin.getAttributes().put(CotToTwinMapper.ORIGINAL_COT_TYPE_ATTRIBUTE, "a-n-S-C-U");
+    TakEvent event = mapper.map(twin, new TwinUpdateContext());
+
+    policy.apply(event, twin, null, null);
+
+    assertEquals("a-n-S-C-U", event.getType());
+  }
+
+  @Test
+  void mtiCanOverrideAffiliationWithoutChangingClassification() {
+    DroneTwin twin = twin(VehicleClass.UAV);
+    MtiStatusRegistry.setDelegate(
+        twinId -> new MtiLookupResult("u", null, "MTI: unknown", null, null));
+    TakEvent event = mapper.map(twin, new TwinUpdateContext());
+
+    policy.apply(event, twin, null, null);
+
+    assertEquals("a-u-A-M-F-Q", event.getType());
+  }
+
+  @Test
+  void mtiAppliesReadinessAndCyberIconToAirAsset() {
+    DroneTwin twin = twin(VehicleClass.UAV);
+    MtiStatusRegistry.setDelegate(
+        twinId -> new MtiLookupResult(null, -23296, "MTI: mitigate", false, "ddos3_64x64.png"));
+    TakEvent event = mapper.map(twin, new TwinUpdateContext());
+
+    policy.apply(event, twin, null, null);
+
+    assertEquals(Boolean.FALSE, event.getDetail().getStatus().getReadiness());
+    assertEquals(-23296, event.getDetail().getColorArgb());
+    assertEquals(
+        "8ed4bdba4a2ff2972685f3420274f87cc8e2d7547ba7262bce94d8991e7f7a9b/cyber_icons/ddos3_64x64.png",
+        event.getDetail().getUsericonIconsetPath());
+  }
+
+  @Test
+  void mavlinkClassificationOverrideReplacesVehicleDerivedClassification() {
+    DroneTwin twin = twin(VehicleClass.USV);
+    twin.getAttributes().put("cotClassification", "S-C-P");
+    TakEvent event = mapper.map(twin, new TwinUpdateContext());
+    CotConfigDTO config = new CotConfigDTO();
+    config.setAffiliation(CotAffiliation.FRIENDLY);
+
+    policy.apply(event, twin, null, config);
+
+    assertEquals("a-f-S-C-P", event.getType());
+  }
 
   @ParameterizedTest
   @MethodSource("vehicleTypes")
