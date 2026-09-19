@@ -36,6 +36,7 @@ import io.mapsmessaging.state.mavlink.bootstrap.MavlinkBootstrapStateEngine;
 import io.mapsmessaging.state.mavlink.listener.ListenerManager;
 import io.mapsmessaging.state.mavlink.packet.BatteryStatusPacket;
 import io.mapsmessaging.state.mavlink.packet.MavlinkPacket;
+import io.mapsmessaging.state.mavlink.packet.MountStatusPacket;
 import io.mapsmessaging.state.mavlink.packet.NamedValueFloatPacket;
 import org.junit.jupiter.api.Test;
 
@@ -47,6 +48,7 @@ import java.util.Map;
 import java.util.UUID;
 
 import static io.mapsmessaging.state.mavlink.packet.MavlinkMessageIds.BATTERY_STATUS;
+import static io.mapsmessaging.state.mavlink.packet.MavlinkMessageIds.MOUNT_STATUS;
 import static io.mapsmessaging.state.mavlink.packet.MavlinkMessageIds.NAMED_VALUE_FLOAT;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -90,6 +92,36 @@ class MavlinkTwinUpdaterTest {
     assertEquals("mavlink/original", twin.getResponseTopicName());
     assertEquals("outbound-1", twin.getUniqueOutboundIdentifier());
     verify(listenerManager).handle(BATTERY_STATUS, "drone-1", packet, context);
+    updater.close();
+  }
+
+  @Test
+  void auxiliary_mount_component_updates_camera_without_replacing_primary_component_identity() {
+    TwinManager twinManager = twinManager();
+    DroneTwin twin = new DroneTwin("drone-1");
+    twin.setSystemId(17);
+    twin.setComponentId(42);
+    twinManager.registerTwin(twin, context(null, null));
+    MavlinkTwinUpdater updater = new MavlinkTwinUpdater(twinManager, new ListenerManager(twinManager));
+    ProcessedFrame frame = frame(17, 154, MOUNT_STATUS);
+    when(frame.getFields()).thenReturn(
+        Map.of(
+            "pointing_a", 0,
+            "pointing_b", 0,
+            "pointing_c", 9913
+        )
+    );
+    when(frame.isValid()).thenReturn(true);
+    MountStatusPacket packet = new MountStatusPacket(frame);
+
+    updater.updateTwinState(frame, packet, context(null, null), knownSource(), new DroneInfoDTO());
+
+    assertEquals(17, twin.getSystemId());
+    assertEquals(42, twin.getComponentId());
+    assertEquals(0.0d, twin.getCameraPitchDegrees(), 0.000001d);
+    assertEquals(0.0d, twin.getCameraRollDegrees(), 0.000001d);
+    assertEquals(99.13d, twin.getCameraBearingDegrees(), 0.000001d);
+    assertEquals(NOW, twin.getCameraOrientationUpdatedAt());
     updater.close();
   }
 

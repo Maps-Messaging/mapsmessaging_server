@@ -26,21 +26,31 @@ import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 public class MavlinkSourceRegistry {
 
   private final Map<String, MavlinkKnownSourceDTO> knownSources;
+  private final Map<Integer, MavlinkKnownSourceDTO> systemSources;
 
   public MavlinkSourceRegistry(@NonNull @NotNull MavlinkTwinConfigDTO mavlinkConfig) {
     this.knownSources = buildKnownSources(mavlinkConfig);
+    this.systemSources = buildSystemSources(knownSources);
   }
 
   public MavlinkKnownSourceDTO getKnownSource(ProcessedFrame env) {
-    String sourceKey = buildSourceKey(env.getFrame().getSystemId(), env.getFrame().getComponentId());
+    int systemId = env.getFrame().getSystemId();
+    String sourceKey = buildSourceKey(systemId, env.getFrame().getComponentId());
+    MavlinkKnownSourceDTO exactSource = knownSources.get(sourceKey);
 
-    return knownSources.get(sourceKey);
+    if (exactSource != null) {
+      return exactSource;
+    }
+
+    return systemSources.get(systemId);
   }
 
   private Map<String, MavlinkKnownSourceDTO> buildKnownSources(MavlinkTwinConfigDTO mavlinkConfig) {
@@ -57,6 +67,29 @@ public class MavlinkSourceRegistry {
     }
 
     return sources;
+  }
+
+  private Map<Integer, MavlinkKnownSourceDTO> buildSystemSources(
+      Map<String, MavlinkKnownSourceDTO> sourcesByComponent
+  ) {
+    Map<Integer, MavlinkKnownSourceDTO> sourcesBySystem = new HashMap<>();
+    Set<Integer> ambiguousSystems = new HashSet<>();
+
+    for (MavlinkKnownSourceDTO source : sourcesByComponent.values()) {
+      int systemId = source.getSystemId();
+
+      if (ambiguousSystems.contains(systemId)) {
+        continue;
+      }
+
+      MavlinkKnownSourceDTO existing = sourcesBySystem.putIfAbsent(systemId, source);
+      if (existing != null) {
+        sourcesBySystem.remove(systemId);
+        ambiguousSystems.add(systemId);
+      }
+    }
+
+    return sourcesBySystem;
   }
 
   private String buildSourceKey(int systemId, int componentId) {

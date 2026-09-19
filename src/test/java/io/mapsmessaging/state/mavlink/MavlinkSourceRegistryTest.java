@@ -55,12 +55,30 @@ class MavlinkSourceRegistryTest {
   }
 
   @Test
-  void different_system_or_component_is_not_related() {
+  void different_system_is_not_related() {
     MavlinkKnownSourceDTO knownSource = source("drone-1", 17, 42);
     MavlinkSourceRegistry registry = new MavlinkSourceRegistry(config(knownSource));
 
     assertNull(registry.getKnownSource(frame(18, 42)));
-    assertNull(registry.getKnownSource(frame(17, 43)));
+  }
+
+  @Test
+  void auxiliary_component_matches_only_source_for_system() {
+    MavlinkKnownSourceDTO knownSource = source("drone-1", 17, 42);
+    MavlinkSourceRegistry registry = new MavlinkSourceRegistry(config(knownSource));
+
+    assertSame(knownSource, registry.getKnownSource(frame(17, 154)));
+  }
+
+  @Test
+  void ambiguous_system_requires_exact_component_match() {
+    MavlinkKnownSourceDTO autopilot = source("drone-1", 17, 42);
+    MavlinkKnownSourceDTO camera = source("camera-1", 17, 154);
+    MavlinkSourceRegistry registry = new MavlinkSourceRegistry(config(autopilot, camera));
+
+    assertSame(autopilot, registry.getKnownSource(frame(17, 42)));
+    assertSame(camera, registry.getKnownSource(frame(17, 154)));
+    assertNull(registry.getKnownSource(frame(17, 200)));
   }
 
   @Test

@@ -56,7 +56,7 @@ public class MavlinkTwinConfigDTO {
   private String dialectName;
 
   @Schema(
-      description = "Known MAVLink sources for this topic source. Only listed sources are processed into twins. Unknown sources are ignored."
+      description = "Known MAVLink vehicle sources for this topic source. Exact system/component matches take priority; an unlisted component is associated with the sole configured source for the same system when that mapping is unambiguous."
   )
   private List<MavlinkKnownSourceDTO> knownSources = new ArrayList<>();
 }

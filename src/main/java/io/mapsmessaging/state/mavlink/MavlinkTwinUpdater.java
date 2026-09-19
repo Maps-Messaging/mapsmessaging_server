@@ -102,8 +102,8 @@ public class MavlinkTwinUpdater implements AutoCloseable {
           twinId,
           twinToUpdate -> {
             if (twinToUpdate instanceof DroneTwin drone) {
-              drone.setSystemId(env.getFrame().getSystemId());
-              drone.setComponentId(env.getFrame().getComponentId());
+              drone.setSystemId(knownSource.getSystemId());
+              drone.setComponentId(knownSource.getComponentId());
               updateTwinResponseTopic(twinToUpdate, context.getResponseTopic());
               drone.setUniqueOutboundIdentifier(context.getUniqueOutboundIdentifier());
               applyTaskCompletionConfiguration(drone, droneInfo);
@@ -224,8 +224,8 @@ public class MavlinkTwinUpdater implements AutoCloseable {
     droneTwin.setDescriptionString(resolveDescription(twinId, env, knownSource));
     droneTwin.setCallSign(resolveCallSign(twinId, knownSource));
     droneTwin.setDisplayName(resolveDisplayName(twinId, knownSource));
-    droneTwin.setSystemId(env.getFrame().getSystemId());
-    droneTwin.setComponentId(env.getFrame().getComponentId());
+    droneTwin.setSystemId(knownSource.getSystemId());
+    droneTwin.setComponentId(knownSource.getComponentId());
     droneTwin.setModelName(droneInfo.getModelName());
     droneTwin.setAltitudeMode(droneInfo.getAltitudeMode());
     droneTwin.setAltitudeMeters(droneInfo.getAltitudeMeters());
@@ -279,6 +279,10 @@ public class MavlinkTwinUpdater implements AutoCloseable {
   ) {
     if (knownSource != null && knownSource.getDescription() != null && !knownSource.getDescription().isBlank()) {
       return knownSource.getDescription();
+    }
+
+    if (knownSource != null) {
+      return "MAVLink system " + knownSource.getSystemId() + " component " + knownSource.getComponentId();
     }
 
     return "MAVLink system " + env.getFrame().getSystemId() + " component " + env.getFrame().getComponentId();
