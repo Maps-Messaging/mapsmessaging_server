@@ -38,7 +38,9 @@ import java.util.Optional;
  *     topic: "/tak/cot/inbound/#"   # all bridged edge leaves; local publishes are suppressed by noLocal
  * </pre>
  *
- * Intended for a MAPS-to-MAPS deployment topology: one or more edge nodes each run their own
+ * The adapter subscribes with noLocal enabled, so local CoT archive publications made through
+ * the same internal session are not re-ingested. Intended for a MAPS-to-MAPS deployment topology:
+ * one or more edge nodes each run their own
  * ingest (mavlink/n2k/CoT) + baseline CoT composition, then replicate their own
  * {@code TwinManagerConfig.tak.topic} onto a distinct leaf under this wildcard via their own
  * {@code NetworkConnectionManager.yaml} outbound bridge. This node (typically a central

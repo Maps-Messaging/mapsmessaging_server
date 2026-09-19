@@ -79,7 +79,7 @@ class CotIngestAdapterTest {
   @Test
   void malformedPayloadIsCountedAsDropped() {
     TwinManager twinManager = new TwinManager();
-    CotIngestAdapter adapter = new CotIngestAdapter("/tak/cot/inbound/+", twinManager);
+    CotIngestAdapter adapter = new CotIngestAdapter("/tak/cot/inbound/#", twinManager);
 
     adapter.handle("/tak/cot/inbound/edge-a", "<event".getBytes(StandardCharsets.UTF_8));
 

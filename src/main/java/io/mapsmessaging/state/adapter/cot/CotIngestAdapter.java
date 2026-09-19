@@ -52,9 +52,9 @@ import java.util.concurrent.atomic.LongAdder;
  * MTI-aware pipeline {@code CotProtocol} (raw TLS stream ingest) uses.
  *
  * <p>Subscribes with a wildcard ({@code /tak/cot/inbound/#} by default) so the fleet of edge
- * nodes can grow without touching this node's configuration: each edge picks its own leaf topic
- * under the wildcard in its own {@code NetworkConnectionManager.yaml}, and this adapter's single
- * subscription already covers it. {@code MessageEvent.getDestinationName()} gives the exact
+ * nodes can grow without touching this node's configuration. Local archive publications use this
+ * same session and are suppressed by {@code noLocal}; bridged messages use a different publishing
+ * session and are delivered normally. {@code MessageEvent.getDestinationName()} gives the exact
  * matched topic per message, so the originating edge is tagged onto the twin update without
  * maintaining a registry of edges here.
  *
@@ -104,6 +104,7 @@ public class CotIngestAdapter implements StateMessageAdapter, ClientConnection, 
       jmxBean = new CotIngestAdapterJMX(this);
       logger.info("CoT ingest adapter subscribed to {}", topic);
     } catch (Throwable t) {
+      closeSessionQuietly();
       // Deliberately broad: StateManagerAgent.start() calls each Lifecycle's start() in an
       // unguarded loop, so an uncaught Throwable here takes down the ENTIRE state subsystem
       // (TwinManager, mavlink, N2K, everything), not just this adapter - same reasoning as
@@ -119,9 +120,15 @@ public class CotIngestAdapter implements StateMessageAdapter, ClientConnection, 
       jmxBean.close();
       jmxBean = null;
     }
-    if (session != null) {
+    closeSessionQuietly();
+  }
+
+  private void closeSessionQuietly() {
+    Session current = session;
+    session = null;
+    if (current != null) {
       try {
-        SessionManager.getInstance().close(session, false);
+        SessionManager.getInstance().close(current, false);
       } catch (IOException e) {
         logger.warn("CoT ingest adapter failed to close its session cleanly", e);
       }
