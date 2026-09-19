@@ -73,15 +73,30 @@ public class MavlinkTwinUpdater implements AutoCloseable {
   private final LongAdder classificationOverrideCount = new LongAdder();
 
   public MavlinkTwinUpdater(@NonNull @NotNull TwinManager twinManager, @NonNull @NotNull ListenerManager listenerManager) {
-    this(twinManager, listenerManager, (MavlinkBootstrapEventPublisher) null);
+    this(twinManager, listenerManager, null, "mavlink");
   }
 
-  public MavlinkTwinUpdater(@NonNull @NotNull TwinManager twinManager, @NonNull @NotNull ListenerManager listenerManager, MavlinkBootstrapEventPublisher bootstrapEventPublisher) {
+  public MavlinkTwinUpdater(
+      @NonNull @NotNull TwinManager twinManager,
+      @NonNull @NotNull ListenerManager listenerManager,
+      MavlinkBootstrapEventPublisher bootstrapEventPublisher) {
+    this(twinManager, listenerManager, bootstrapEventPublisher, "mavlink");
+  }
+
+  public MavlinkTwinUpdater(
+      @NonNull @NotNull TwinManager twinManager,
+      @NonNull @NotNull ListenerManager listenerManager,
+      MavlinkBootstrapEventPublisher bootstrapEventPublisher,
+      String integrationSource) {
     this.twinManager = twinManager;
     this.listenerManager = listenerManager;
-    this.droneMonitor = new MavlinkDroneMonitor(twinManager, new DroneTwinReadinessEvaluator(), new MavlinkBootstrapStateEngine(new MavlinkBootstrapProfile()), bootstrapEventPublisher);
+    this.droneMonitor = new MavlinkDroneMonitor(
+        twinManager,
+        new DroneTwinReadinessEvaluator(),
+        new MavlinkBootstrapStateEngine(new MavlinkBootstrapProfile()),
+        bootstrapEventPublisher);
     this.closed = new AtomicBoolean();
-    this.integrationJMX = new MavlinkIntegrationJMX(this);
+    this.integrationJMX = new MavlinkIntegrationJMX(this, integrationSource);
     twinManager.addObserver(droneMonitor);
   }
 
@@ -94,7 +109,7 @@ public class MavlinkTwinUpdater implements AutoCloseable {
     this.listenerManager = Objects.requireNonNull(listenerManager, "listenerManager must not be null");
     this.droneMonitor = Objects.requireNonNull(droneMonitor, "droneMonitor must not be null");
     this.closed = new AtomicBoolean();
-    this.integrationJMX = new MavlinkIntegrationJMX(this);
+    this.integrationJMX = new MavlinkIntegrationJMX(this, "mavlink");
     twinManager.addObserver(droneMonitor);
   }
 

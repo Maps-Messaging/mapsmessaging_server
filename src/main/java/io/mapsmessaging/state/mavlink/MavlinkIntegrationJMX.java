@@ -23,25 +23,39 @@ import com.udojava.jmx.wrapper.JMXBeanAttribute;
 import io.mapsmessaging.utilities.admin.JMXManager;
 
 import javax.management.ObjectInstance;
+import javax.management.ObjectName;
 import java.util.List;
 
 /**
- * Registered under {@code io.mapsmessaging:type=Integration,name=Mavlink}, owned by the
- * {@code MavlinkTwinUpdater} instance that constructs it.
+ * Registered under {@code io.mapsmessaging:type=Integration,name=Mavlink,source="<source>"}.
+ * The source includes the configured MAVLink source name and topic so multiple MAVLink state
+ * inputs can expose metrics concurrently without colliding on one global MBean name.
  */
 @JMXBean(description = "MAVLink ingest integration metrics")
 public class MavlinkIntegrationJMX {
 
   private final MavlinkTwinUpdater updater;
+  private final String source;
   private final ObjectInstance mbean;
 
-  MavlinkIntegrationJMX(MavlinkTwinUpdater updater) {
+  MavlinkIntegrationJMX(MavlinkTwinUpdater updater, String source) {
     this.updater = updater;
-    this.mbean = JMXManager.getInstance().register(this, List.of("type=Integration", "name=Mavlink"));
+    this.source = source == null || source.isBlank() ? "mavlink" : source;
+    this.mbean = JMXManager.getInstance().register(
+        this,
+        List.of(
+            "type=Integration",
+            "name=Mavlink",
+            "source=" + ObjectName.quote(this.source)));
   }
 
   void close() {
     JMXManager.getInstance().unregister(mbean);
+  }
+
+  @JMXBeanAttribute(name = "Source", description = "Configured MAVLink source identity (name|topic)")
+  public String getSource() {
+    return source;
   }
 
   @JMXBeanAttribute(name = "Messages Processed Count", description = "Total MAVLink packets processed into twin state updates")
