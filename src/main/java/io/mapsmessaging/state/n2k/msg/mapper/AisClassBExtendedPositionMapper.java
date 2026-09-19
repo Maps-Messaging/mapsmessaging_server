@@ -63,7 +63,7 @@ public class AisClassBExtendedPositionMapper {
     report.setRaim(config.getRaim());
     report.setTimeStamp(AisMappingSupport.toSecondOfMinute(droneTwin.getNavigationUpdatedAt()));
     report.setCog(AisMappingSupport.toRadians(droneTwin.getCourseOverGroundDegrees()));
-    report.setSog(droneTwin.getGroundSpeedMetersPerSecond());
+    report.setSog(AisMappingSupport.nonNegativeFinite(droneTwin.getGroundSpeedMetersPerSecond()));
     report.setRegionalApplication(0L);
     report.setRegionalApplicationB(0L);
     report.setTypeOfShip(config.getShipType());
