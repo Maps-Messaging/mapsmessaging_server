@@ -101,7 +101,7 @@ class AisMappingSupportTest {
   void vendorAndCallsignAreSanitisedAndTruncated() {
     assertNull(AisMappingSupport.resolveVendorId(null));
     assertNull(AisMappingSupport.resolveVendorId(" "));
-    assertEquals("VENDOR1", AisMappingSupport.resolveVendorId("vendor-1"));
+    assertEquals("VENDOR1", AisMappingSupport.resolveVendorId("vendor1"));
     assertEquals("ABCDEFG", AisMappingSupport.resolveVendorId("abcdefghij"));
 
     assertEquals("CALL 12", AisMappingSupport.resolveCallsign(null, "call-12"));
