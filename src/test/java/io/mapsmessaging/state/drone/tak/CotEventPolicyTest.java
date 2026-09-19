@@ -16,6 +16,7 @@ import io.mapsmessaging.state.drone.drone.DroneTwin;
 import io.mapsmessaging.state.drone.model.GeoPosition;
 import io.mapsmessaging.state.drone.tak.model.TakEvent;
 import java.time.Instant;
+import java.util.Map;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -103,6 +104,24 @@ class CotEventPolicyTest {
     policy.apply(event, twin, null, config);
 
     assertEquals("a-f-S", event.getType());
+  }
+
+  @Test
+  void copTwinWithA2525DEntityCodeGetsItsSymbol() {
+    // our own boats as they come back on the COP: a USV and a (military) RHIB
+    DroneTwin usv = twin(null);
+    usv.getDescription().putAll(Map.of("standard_identity", "StandardIdentityEnum_FRIEND",
+        "symbol_set", "SymbolSetEnum_SEA_SURFACE", "entity", "12", "entity_type", "07", "entity_subtype", "00"));
+    TakEvent usvEvent = mapper.map(usv, new TwinUpdateContext());
+    policy.apply(usvEvent, usv, null, null);
+    assertEquals("a-f-S-C-U", usvEvent.getType());
+
+    DroneTwin rhib = twin(null);
+    rhib.getDescription().putAll(Map.of("standard_identity", "StandardIdentityEnum_FRIEND",
+        "symbol_set", "SymbolSetEnum_SEA_SURFACE", "entity", "12", "entity_type", "08", "entity_subtype", "01"));
+    TakEvent rhibEvent = mapper.map(rhib, new TwinUpdateContext());
+    policy.apply(rhibEvent, rhib, null, null);
+    assertEquals("a-f-S-C", rhibEvent.getType());
   }
 
   @Test
