@@ -37,8 +37,19 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Locale;
 import java.util.Map;
+import java.util.concurrent.atomic.LongAdder;
 
 final class CotEventPolicy {
+
+  // Metrics, exposed to Grafana via the JMX->Prometheus exporter (see CotIntegrationJMX).
+  private final LongAdder appliedCount = new LongAdder();
+  private final LongAdder originalTypeFallbackCount = new LongAdder();
+  private final LongAdder classificationOverrideCount = new LongAdder();
+  private final LongAdder vehicleClassDerivedCount = new LongAdder();
+  private final LongAdder unknownVehicleClassCount = new LongAdder();
+  private final LongAdder mtiAffiliationOverrideCount = new LongAdder();
+  private final LongAdder mtiReadinessDegradedCount = new LongAdder();
+  private final LongAdder mtiCyberIconAppliedCount = new LongAdder();
 
   private static final long DEFAULT_STALE_TIMEOUT_MILLIS = 30_000L;
   private static final long CONTACT_STALE_TIMEOUT_MILLIS = 3_600_000L;
@@ -48,6 +59,19 @@ final class CotEventPolicy {
   private static final String DEFAULT_HOW = "h-g-i-g-o";
   private static final String CONTACT_HOW = "m-g";
   private static final String CONTACT_COT_TYPE = "a-u-U";
+  // MIL-STD-2525 "battle dimension" character - the 3rd hyphen-separated segment of a CoT type
+  // string (e.g. the "A" in "a-f-A-M-F-U"). Used to scope the cyber-compromise usericon override
+  // to drones only, regardless of which ingest path resolved the twin's classification.
+  private static final char AIR_BATTLE_DIMENSION = 'A';
+  // Custom iconset a partner supplied for visualising compromised drones (WinTAK/ATAK only -
+  // needs to be locally imported on the client; see MtiLookupResult.cyberIconFile). Fixed per
+  // this exercise's TAK deployment - every client is expected to already have this exact
+  // iconset imported under this exact id.
+  private static final String CYBER_ICONSET_UUID = "8ed4bdba4a2ff2972685f3420274f87cc8e2d7547ba7262bce94d8991e7f7a9b";
+  private static final String CYBER_ICON_GROUP = "cyber_icons";
+  // Twin attribute set from mavlink.knownSources[].cotClassification (see MavlinkTwinUpdater) -
+  // overrides the vehicleClass-derived classification segment for this specific asset.
+  private static final String COT_CLASSIFICATION_ATTRIBUTE = "cotClassification";
   private static final int CONTACT_COLOR_ARGB_RED = -65536;
   private static final String DEFAULT_ALTITUDE_SOURCE = "GPS";
   private static final String DEFAULT_GEOPOINT_SOURCE = "GPS";
@@ -79,10 +103,13 @@ final class CotEventPolicy {
     if (event == null || twin == null) {
       return;
     }
+    appliedCount.increment();
 
     boolean contact = TwinType.CONTACT.equals(twin.getTwinType());
+    MtiLookupResult mti = MtiStatusRegistry.lookup(twin.getTwinId());
     event.setUid(prefixUid(event.getUid(), config == null ? null : config.getUidPrefix()));
-    event.setType(contact ? CONTACT_COT_TYPE : resolveCotType(twin, config));
+    String baseType = contact ? CONTACT_COT_TYPE : resolveBaseCotType(twin, config);
+    event.setType(applyMtiAffiliation(baseType, mti));
     event.setHow(contact ? CONTACT_HOW : valueOrDefault(config == null ? null : config.getHow(), DEFAULT_HOW));
 
     if (removal) {
@@ -121,7 +148,77 @@ final class CotEventPolicy {
         detail.setColorArgb(CONTACT_COLOR_ARGB_RED);
         applyContactDetail(detail, twin);
       }
+      applyMtiDetail(detail, mti, baseType);
     }
+  }
+
+  /**
+   * A twin created via the CoT-ingest route (CotToTwinMapper) carries the type it originally
+   * arrived with - fall back to that, not the vehicle-class guess below, so an inbound CoT track
+   * with no MTI match renders exactly as it was initially mapped, per the agreed MTI design
+   * (delete/no-match = "route the message through as initially mapped"). Mavlink/N2K-sourced
+   * twins never carry this attribute, so their fallback is unchanged.
+   */
+  private String resolveBaseCotType(EntityTwin twin, CotConfigDTO config) {
+    String originalType = twin.getAttributes().get(CotToTwinMapper.ORIGINAL_COT_TYPE_ATTRIBUTE);
+    if (originalType != null && !originalType.isBlank()) {
+      originalTypeFallbackCount.increment();
+      return originalType;
+    }
+    return resolveCotType(twin, config);
+  }
+
+  private String applyMtiAffiliation(String baseType, MtiLookupResult mti) {
+    if (mti == null || mti.affiliationOverride() == null || mti.affiliationOverride().isBlank()) {
+      return baseType;
+    }
+    String[] parts = baseType.split("-", 3);
+    if (parts.length < 3) {
+      return baseType;
+    }
+    mtiAffiliationOverrideCount.increment();
+    return parts[0] + "-" + mti.affiliationOverride() + "-" + parts[2];
+  }
+
+  private void applyMtiDetail(TakDetail detail, MtiLookupResult mti, String baseType) {
+    if (mti == null) {
+      return;
+    }
+    if (mti.colorArgb() != null) {
+      detail.setColorArgb(mti.colorArgb());
+    }
+    if (mti.remarksSuffix() != null && !mti.remarksSuffix().isBlank()) {
+      String existing = detail.getRemarks();
+      detail.setRemarks(existing == null || existing.isBlank()
+          ? mti.remarksSuffix()
+          : existing + " | " + mti.remarksSuffix());
+    }
+    if (mti.readiness() != null && detail.getStatus() != null) {
+      detail.getStatus().setReadiness(mti.readiness());
+      if (Boolean.FALSE.equals(mti.readiness())) {
+        mtiReadinessDegradedCount.increment();
+      }
+    }
+    if (mti.cyberIconFile() != null && !mti.cyberIconFile().isBlank() && isDroneClassification(baseType)) {
+      detail.setUsericonIconsetPath(CYBER_ICONSET_UUID + "/" + CYBER_ICON_GROUP + "/" + mti.cyberIconFile());
+      mtiCyberIconAppliedCount.increment();
+    }
+  }
+
+  /**
+   * Scopes the cyber-compromise usericon to drones only, by checking the CoT type's MIL-STD-2525
+   * battle-dimension segment (the "A" in "a-f-A-M-F-U") rather than {@code TwinType}/
+   * {@code VehicleClass} directly - a twin arriving via CoT ingest (see CotToTwinMapper) never
+   * has a resolved {@code VehicleClass} of its own, only whatever classification its
+   * {@code originalCotType} already carries, so checking the type string is the one thing that
+   * works for a drone regardless of which ingest path produced it.
+   */
+  private boolean isDroneClassification(String baseType) {
+    if (baseType == null) {
+      return false;
+    }
+    String[] parts = baseType.split("-", 4);
+    return parts.length >= 3 && parts[2].length() == 1 && parts[2].charAt(0) == AIR_BATTLE_DIMENSION;
   }
 
   private void applyContactDetail(TakDetail detail, EntityTwin twin) {
@@ -151,9 +248,24 @@ final class CotEventPolicy {
   }
 
   private String resolveCotType(EntityTwin twin, CotConfigDTO config) {
-    Affiliation affiliation = Affiliation.fromCode(resolveAffiliationCode(twin, config).charAt(0));
-    Map<String, Object> description = twin instanceof DroneTwin droneTwin ? droneTwin.getDescription() : null;
-    return cotTypeResolver.resolve(affiliation, resolveVehicleClass(twin), description);
+    String affiliationCode = resolveAffiliationCode(twin, config);
+
+    String classificationOverride = twin.getAttributes().get(COT_CLASSIFICATION_ATTRIBUTE);
+    if (classificationOverride != null && !classificationOverride.isBlank()) {
+      classificationOverrideCount.increment();
+      return "a-" + affiliationCode + '-' + classificationOverride;
+    }
+
+    vehicleClassDerivedCount.increment();
+    VehicleClass vehicleClass = resolveVehicleClass(twin);
+    if (vehicleClass == VehicleClass.UNKNOWN) {
+      unknownVehicleClassCount.increment();
+    }
+
+    Map<String, Object> description =
+        twin instanceof DroneTwin droneTwin ? droneTwin.getDescription() : null;
+    Affiliation affiliation = Affiliation.fromCode(affiliationCode.charAt(0));
+    return cotTypeResolver.resolve(affiliation, vehicleClass, description);
   }
 
   private VehicleClass resolveVehicleClass(EntityTwin twin) {
@@ -166,8 +278,6 @@ final class CotEventPolicy {
     return VehicleClass.UNKNOWN;
   }
 
-  // The default, with or without a namespace configuration, is SOURCE: the affiliation is the
-  // STANAG 4817 classification the twin carries. A configuration can pin one instead.
   private String resolveAffiliationCode(EntityTwin twin, CotConfigDTO config) {
     CotAffiliation affiliation = config == null ? CotAffiliation.SOURCE : config.getAffiliation();
     if (affiliation == null) {
@@ -183,11 +293,6 @@ final class CotEventPolicy {
     };
   }
 
-  // No STANAG description at all means there is no classification to translate. A vehicle or
-  // station attached to this server (a MAVLink vehicle carries its vehicle class; a ground
-  // control twin) stays friendly as before. A relayed track whose description has not arrived
-  // yet has neither, and is unknown -- as is a description whose identity is missing or
-  // unrecognised. Never friendly by default for someone else's track.
   private String resolveSourceAffiliation(EntityTwin twin) {
     if (!(twin instanceof DroneTwin droneTwin)) {
       return "f";
@@ -324,5 +429,39 @@ final class CotEventPolicy {
 
   private String valueOrDefault(String value, String defaultValue) {
     return value == null || value.isBlank() ? defaultValue : value;
+  }
+
+  // --- Metrics, read by CotIntegrationJMX. ---
+
+  long getAppliedCount() {
+    return appliedCount.sum();
+  }
+
+  long getOriginalTypeFallbackCount() {
+    return originalTypeFallbackCount.sum();
+  }
+
+  long getClassificationOverrideCount() {
+    return classificationOverrideCount.sum();
+  }
+
+  long getVehicleClassDerivedCount() {
+    return vehicleClassDerivedCount.sum();
+  }
+
+  long getUnknownVehicleClassCount() {
+    return unknownVehicleClassCount.sum();
+  }
+
+  long getMtiAffiliationOverrideCount() {
+    return mtiAffiliationOverrideCount.sum();
+  }
+
+  long getMtiReadinessDegradedCount() {
+    return mtiReadinessDegradedCount.sum();
+  }
+
+  long getMtiCyberIconAppliedCount() {
+    return mtiCyberIconAppliedCount.sum();
   }
 }

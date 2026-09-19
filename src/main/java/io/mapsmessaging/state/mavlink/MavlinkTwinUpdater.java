@@ -48,6 +48,7 @@ import io.mapsmessaging.state.mavlink.sender.MavlinkEventListSender;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.LongAdder;
 import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
 
@@ -64,6 +65,12 @@ public class MavlinkTwinUpdater implements AutoCloseable {
   private final ListenerManager listenerManager;
   private final MavlinkDroneMonitor droneMonitor;
   private final AtomicBoolean closed;
+  private final MavlinkIntegrationJMX integrationJMX;
+
+  // Metrics, exposed to Grafana via the JMX->Prometheus exporter (see MavlinkIntegrationJMX).
+  private final LongAdder messagesProcessedCount = new LongAdder();
+  private final LongAdder twinsCreatedCount = new LongAdder();
+  private final LongAdder classificationOverrideCount = new LongAdder();
 
   public MavlinkTwinUpdater(@NonNull @NotNull TwinManager twinManager, @NonNull @NotNull ListenerManager listenerManager) {
     this(twinManager, listenerManager, (MavlinkBootstrapEventPublisher) null);
@@ -74,6 +81,7 @@ public class MavlinkTwinUpdater implements AutoCloseable {
     this.listenerManager = listenerManager;
     this.droneMonitor = new MavlinkDroneMonitor(twinManager, new DroneTwinReadinessEvaluator(), new MavlinkBootstrapStateEngine(new MavlinkBootstrapProfile()), bootstrapEventPublisher);
     this.closed = new AtomicBoolean();
+    this.integrationJMX = new MavlinkIntegrationJMX(this);
     twinManager.addObserver(droneMonitor);
   }
 
@@ -86,6 +94,7 @@ public class MavlinkTwinUpdater implements AutoCloseable {
     this.listenerManager = Objects.requireNonNull(listenerManager, "listenerManager must not be null");
     this.droneMonitor = Objects.requireNonNull(droneMonitor, "droneMonitor must not be null");
     this.closed = new AtomicBoolean();
+    this.integrationJMX = new MavlinkIntegrationJMX(this);
     twinManager.addObserver(droneMonitor);
   }
 
@@ -93,6 +102,7 @@ public class MavlinkTwinUpdater implements AutoCloseable {
     if (closed.get()) {
       return;
     }
+    messagesProcessedCount.increment();
 
     String twinId = buildTwinId(env, knownSource);
     droneMonitor.beginTwinUpdate(twinId);
@@ -130,6 +140,7 @@ public class MavlinkTwinUpdater implements AutoCloseable {
   @Override
   public void close() {
     if (closed.compareAndSet(false, true)) {
+      integrationJMX.close();
       droneMonitor.close();
     }
   }
@@ -219,8 +230,16 @@ public class MavlinkTwinUpdater implements AutoCloseable {
   }
 
   private EntityTwin createTwin(String twinId, ProcessedFrame env, TwinUpdateContext context, MavlinkKnownSourceDTO knownSource, DroneInfoDTO droneInfo) {
+    twinsCreatedCount.increment();
     DroneTwin droneTwin = new DroneTwin(twinId, droneInfo.getUuid());
     droneTwin.setVehicleClass(resolveVehicleClass(knownSource));
+    if (knownSource.getCotClassification() != null && !knownSource.getCotClassification().isBlank()) {
+      // See CotEventPolicy.COT_CLASSIFICATION_ATTRIBUTE - overrides the vehicleClass-derived
+      // CoT classification for this specific asset (e.g. distinguishing it from another asset
+      // sharing the same vehicleClass that isn't actually the same kind of thing).
+      droneTwin.getAttributes().put("cotClassification", knownSource.getCotClassification());
+      classificationOverrideCount.increment();
+    }
     droneTwin.setDescriptionString(resolveDescription(twinId, env, knownSource));
     droneTwin.setCallSign(resolveCallSign(twinId, knownSource));
     droneTwin.setDisplayName(resolveDisplayName(twinId, knownSource));
@@ -314,5 +333,19 @@ public class MavlinkTwinUpdater implements AutoCloseable {
     }
 
     return "mavlink-" + env.getFrame().getSystemId() + ":" + env.getFrame().getComponentId();
+  }
+
+  // --- Metrics, read by MavlinkIntegrationJMX. ---
+
+  long getMessagesProcessedCount() {
+    return messagesProcessedCount.sum();
+  }
+
+  long getTwinsCreatedCount() {
+    return twinsCreatedCount.sum();
+  }
+
+  long getClassificationOverrideCount() {
+    return classificationOverrideCount.sum();
   }
 }
