@@ -20,13 +20,17 @@ class MavlinkIntegrationJMXTest {
 
   @Test
   void subscriberBuildsStableSourceIdentityFromNameAndTopic() {
-    MavlinkTwinConfigDTO config = new MavlinkTwinConfigDTO();
-    config.setName("primary");
-    config.setTopic("/mavlink/+/telemetry");
+    MavlinkTwinConfigDTO first = new MavlinkTwinConfigDTO();
+    first.setTopic("/mavlink/alpha/#");
+    MavlinkTwinConfigDTO second = new MavlinkTwinConfigDTO();
+    second.setTopic("/mavlink/bravo/#");
 
     assertEquals(
-        "primary|/mavlink/+/telemetry",
-        MavlinkStateSubscriber.integrationSource(config));
+        "mavlink|/mavlink/alpha/#",
+        MavlinkStateSubscriber.integrationSource(first));
+    assertEquals(
+        "mavlink|/mavlink/bravo/#",
+        MavlinkStateSubscriber.integrationSource(second));
   }
 
   @Test
