@@ -355,6 +355,7 @@ public class TwinManagerConfig extends TwinManagerConfigDTO implements Config, C
     knownSource.setSystemId(properties.getIntProperty("systemId", knownSource.getSystemId()));
     knownSource.setComponentId(properties.getIntProperty("componentId", knownSource.getComponentId()));
     knownSource.setVehicleClass(parseVehicleClass(properties.getProperty("vehicleClass", null), knownSource.getVehicleClass()));
+    knownSource.setCotClassification(properties.getProperty("cotClassification", null));
     return knownSource;
   }
 
@@ -784,6 +785,9 @@ public class TwinManagerConfig extends TwinManagerConfigDTO implements Config, C
 
       if (knownSource.getVehicleClass() != null) {
         properties.put("vehicleClass", knownSource.getVehicleClass().name());
+      }
+      if (knownSource.getCotClassification() != null) {
+        properties.put("cotClassification", knownSource.getCotClassification());
       }
 
       values.add(properties);

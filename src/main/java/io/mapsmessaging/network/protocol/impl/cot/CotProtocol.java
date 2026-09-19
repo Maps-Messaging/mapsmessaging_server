@@ -19,6 +19,7 @@
 
 package io.mapsmessaging.network.protocol.impl.cot;
 
+import io.mapsmessaging.MessageDaemon;
 import io.mapsmessaging.api.MessageBuilder;
 import io.mapsmessaging.api.MessageEvent;
 import io.mapsmessaging.api.Session;
@@ -27,8 +28,6 @@ import io.mapsmessaging.api.SessionManager;
 import io.mapsmessaging.api.features.DestinationType;
 import io.mapsmessaging.api.features.QualityOfService;
 import io.mapsmessaging.api.message.Message;
-import io.mapsmessaging.config.Config;
-import io.mapsmessaging.configuration.ConfigurationProperties;
 import io.mapsmessaging.dto.rest.config.protocol.impl.CotProtocolConfigDTO;
 import io.mapsmessaging.dto.rest.protocol.ProtocolInformationDTO;
 import io.mapsmessaging.network.ProtocolClientConnection;
@@ -37,12 +36,12 @@ import io.mapsmessaging.network.io.Packet;
 import io.mapsmessaging.network.io.Selectable;
 import io.mapsmessaging.network.io.impl.Selector;
 import io.mapsmessaging.network.protocol.Protocol;
-import io.mapsmessaging.security.ssl.SslHelper;
-import io.mapsmessaging.state.drone.tak.TakSocketConnection;
+import io.mapsmessaging.state.adapter.cot.CotIngestAdapter;
+import io.mapsmessaging.state.drone.core.TwinManager;
+import io.mapsmessaging.state.drone.tak.CotToTwinMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.net.ssl.SSLContext;
 import javax.security.auth.Subject;
 import javax.security.auth.login.LoginException;
 import java.io.ByteArrayOutputStream;
@@ -57,22 +56,25 @@ import java.util.concurrent.Executors;
 
 /**
  * Accepts a raw, unframed stream of Cursor-on-Target (CoT) XML &lt;event&gt; documents (the wire
- * format used by TAK clients/servers) and republishes each complete document, byte for byte and
- * with no parsing, onto a fixed topic, and - when takHostname is configured - forwards it directly
- * over its own TakSocketConnection to a real TAK server, the same mechanism TwinManager's own
- * drone-state pipeline uses. There is no application level login on this connection - the session
- * authenticates as the built in anonymous identity, the same identity the existing anonymous Stomp
- * interface uses. Transport security is provided by binding this protocol to an ssl:// listener in
- * NetworkManager.yaml.
+ * format used by TAK clients/servers), republishes each complete document byte for byte and with
+ * no parsing onto a fixed archive topic, and separately maps it into a {@code DroneTwin}
+ * ({@link CotToTwinMapper}) that gets registered/updated in the shared {@code TwinManager} - the
+ * same twin store mavlink and N2K feed. From there {@code TakTwinObserver} ->
+ * {@code TakEventMapper} -> {@code CotEventPolicy} (MTI-aware) renders it back out to TAK, so an
+ * inbound CoT track gets the same MTI status lookup, affiliation/colour handling and stale/expiry
+ * behaviour as every other twin, instead of passing straight through unmodified as before. There
+ * is no application level login on this connection - the session authenticates as the built in
+ * anonymous identity, the same identity the existing anonymous Stomp interface uses. Transport
+ * security is provided by binding this protocol to an ssl:// listener in NetworkManager.yaml.
  *
  * <p>Discovered via the standard ProtocolImplFactory ServiceLoader registration. Logging uses
- * SLF4J for now (this protocol carries no {@code ServerLogMessages} constants of its own);
- * {@link #mapsLogger} exists because {@link SslHelper#createContext} takes a MAPS logger.
+ * SLF4J for now (this protocol carries no {@code ServerLogMessages} constants of its own).
  */
 public class CotProtocol extends Protocol implements Selectable {
 
   private static final String DESTINATION_NAME = "/tak/cot/inbound";
   private static final int MAX_BUFFER_SIZE = 1_048_576; // 1MB safety cap against a malformed/never-terminated stream
+  private static final String UPDATE_SOURCE = "cot-ingest";
 
   private static final byte[] EVENT_START = "<event".getBytes(StandardCharsets.US_ASCII);
   private static final byte[] EVENT_END = "</event>".getBytes(StandardCharsets.US_ASCII);
@@ -86,12 +88,10 @@ public class CotProtocol extends Protocol implements Selectable {
   });
 
   private final Logger logger = LoggerFactory.getLogger(CotProtocol.class);
-  private final io.mapsmessaging.logging.Logger mapsLogger =
-      io.mapsmessaging.logging.LoggerFactory.getLogger(CotProtocol.class);
+  private final CotToTwinMapper cotToTwinMapper = new CotToTwinMapper();
   private final Packet packet;
   private final ByteArrayOutputStream buffer = new ByteArrayOutputStream();
   private final String sessionId;
-  private final TakSocketConnection takSocketConnection;
 
   private Session session;
   private boolean closed;
@@ -100,27 +100,12 @@ public class CotProtocol extends Protocol implements Selectable {
     super(endPoint, config != null ? config : new CotProtocolConfigDTO());
     this.packet = initialPacket;
     this.sessionId = "cot-" + UUID.randomUUID();
-    this.takSocketConnection = buildTakSocketConnection(config);
     createSession();
     logger.debug("CoT passthrough connection created on {}", endPoint.getConfig().getUrl());
     if (initialPacket.available() > 0) {
       appendAndProcess(initialPacket);
     }
     endPoint.register(SelectionKey.OP_READ, this);
-  }
-
-  private TakSocketConnection buildTakSocketConnection(CotProtocolConfigDTO config) throws IOException {
-    if (config == null || config.getTakHostname() == null || config.getTakHostname().isBlank()) {
-      return null;
-    }
-    if (!config.isTakTlsEnabled()) {
-      return new TakSocketConnection(config.getTakHostname(), config.getTakPort());
-    }
-    ConfigurationProperties sslProps = new ConfigurationProperties();
-    sslProps.put("keyStore", ((Config) config.getTakKeyStore()).toConfigurationProperties());
-    sslProps.put("trustStore", ((Config) config.getTakTrustStore()).toConfigurationProperties());
-    SSLContext sslContext = SslHelper.createContext(config.getTakTlsContext(), sslProps, mapsLogger);
-    return new TakSocketConnection(config.getTakHostname(), config.getTakPort(), sslContext.getSocketFactory());
   }
 
   private void createSession() throws IOException {
@@ -232,6 +217,27 @@ public class CotProtocol extends Protocol implements Selectable {
   }
 
   private void publish(byte[] xml) {
+    if (!publishThroughCotIngestAdapter(xml)) {
+      publishArchiveWithProtocolSession(xml);
+    }
+    routeToTwinManager(xml);
+  }
+
+  private boolean publishThroughCotIngestAdapter(byte[] xml) {
+    try {
+      return MessageDaemon.getInstance()
+          .getSubSystemManager()
+          .getStateManager()
+          .getStateMessageAdapter(CotIngestAdapter.class)
+          .map(adapter -> adapter.publishLocal(xml))
+          .orElse(false);
+    } catch (RuntimeException e) {
+      logger.debug("CoT ingest adapter unavailable for archive publishing", e);
+      return false;
+    }
+  }
+
+  private void publishArchiveWithProtocolSession(byte[] xml) {
     Message message = new MessageBuilder()
         .setOpaqueData(xml)
         .setContentType("text/xml")
@@ -252,9 +258,25 @@ public class CotProtocol extends Protocol implements Selectable {
         }
       }
     });
+  }
 
-    if (takSocketConnection != null) {
-      takSocketConnection.accept(new String(xml, StandardCharsets.UTF_8));
+  private void routeToTwinManager(byte[] xml) {
+    TwinManager twinManager = resolveTwinManager();
+    if (twinManager == null) {
+      logger.warn("TwinManager not available yet, CoT event not routed");
+      return;
+    }
+
+    if (!cotToTwinMapper.routeToTwinManager(twinManager, xml, UPDATE_SOURCE)) {
+      logger.warn("CoT event had no usable uid, not routed to TwinManager (still archived to {})", DESTINATION_NAME);
+    }
+  }
+
+  private TwinManager resolveTwinManager() {
+    try {
+      return MessageDaemon.getInstance().getSubSystemManager().getStateManager().getTwinManager();
+    } catch (Exception e) {
+      return null;
     }
   }
 
@@ -300,9 +322,6 @@ public class CotProtocol extends Protocol implements Selectable {
       return;
     }
     closed = true;
-    if (takSocketConnection != null) {
-      takSocketConnection.close();
-    }
     try {
       if (session != null) {
         SessionManager.getInstance().close(session, false);

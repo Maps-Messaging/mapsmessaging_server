@@ -200,6 +200,7 @@ class MavlinkTwinUpdaterTest {
     MavlinkKnownSourceDTO knownSource = knownSource();
     knownSource.setDescription("Survey aircraft");
     knownSource.setVehicleClass(VehicleClass.UAV);
+    knownSource.setCotClassification("A-M-F-Q");
     DroneInfoDTO droneInfo = new DroneInfoDTO();
     UUID uuid = UUID.fromString("d972348c-8496-45de-b130-9c003d7bf245");
     droneInfo.setUuid(uuid);
@@ -226,6 +227,7 @@ class MavlinkTwinUpdaterTest {
     assertEquals("mavlink/outbound", twin.getResponseTopicName());
     assertEquals("outbound-2", twin.getUniqueOutboundIdentifier());
     assertEquals("survey", twin.getDescription().get("role"));
+    assertEquals("A-M-F-Q", twin.getAttributes().get("cotClassification"));
     updater.close();
   }
 

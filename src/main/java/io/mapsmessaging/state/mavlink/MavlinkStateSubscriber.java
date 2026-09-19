@@ -92,7 +92,23 @@ public class MavlinkStateSubscriber implements MessageHandler, AutoCloseable {
     this.namespaceTopicPath = mavlinkConfig.getTopic();
     this.sourceRegistry = new MavlinkSourceRegistry(mavlinkConfig);
     this.droneRegistry = registry;
-    this.twinUpdater = new MavlinkTwinUpdater(twinManager, new ListenerManager(twinManager), new MavlinkBootstrapRequestPublisher(twinManager, protocol));
+    this.twinUpdater = new MavlinkTwinUpdater(
+        twinManager,
+        new ListenerManager(twinManager),
+        new MavlinkBootstrapRequestPublisher(twinManager, protocol),
+        integrationSource(mavlinkConfig));
+  }
+
+  static String integrationSource(MavlinkTwinConfigDTO config) {
+    String name = config.getName();
+    if (name == null || name.isBlank()) {
+      name = "mavlink";
+    }
+    String topic = config.getTopic();
+    if (topic == null || topic.isBlank()) {
+      topic = "unknown";
+    }
+    return name + "|" + topic;
   }
 
   MavlinkStateSubscriber(

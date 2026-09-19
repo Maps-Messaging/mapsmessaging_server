@@ -69,6 +69,7 @@ public class TakTwinObserver implements TwinObserver {
   private final EventPublisher eventPublisher;
   private final CotConfigResolver cotConfigResolver;
   private final CotEventPolicy cotEventPolicy;
+  private final CotIntegrationJMX cotIntegrationJMX;
   private final boolean namespaceFilteringEnabled;
 
   public TakTwinObserver(TwinManager twinManager) {
@@ -78,6 +79,7 @@ public class TakTwinObserver implements TwinObserver {
     this.takEventMapper = new TakEventMapper();
     this.takXmlSerialiser = new TakXmlSerialiser();
     this.cotEventPolicy = new CotEventPolicy();
+    this.cotIntegrationJMX = new CotIntegrationJMX(cotEventPolicy);
 
     TwinManagerConfigDTO config =
         ConfigurationManager.getInstance().getConfiguration(TwinManagerConfig.class);
@@ -140,6 +142,7 @@ public class TakTwinObserver implements TwinObserver {
 
   public void shutdown() {
     twinManager.removeObserver(this);
+    cotIntegrationJMX.close();
 
     if (globalSocketConnection != null) {
       globalSocketConnection.close();
