@@ -4,10 +4,12 @@
  */
 package io.mapsmessaging.state.mavlink;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 
+import io.mapsmessaging.state.config.MavlinkTwinConfigDTO;
 import io.mapsmessaging.utilities.admin.JMXManager;
 import java.lang.management.ManagementFactory;
 import javax.management.MBeanServer;
@@ -15,6 +17,17 @@ import javax.management.ObjectName;
 import org.junit.jupiter.api.Test;
 
 class MavlinkIntegrationJMXTest {
+
+  @Test
+  void subscriberBuildsStableSourceIdentityFromNameAndTopic() {
+    MavlinkTwinConfigDTO config = new MavlinkTwinConfigDTO();
+    config.setName("primary");
+    config.setTopic("/mavlink/+/telemetry");
+
+    assertEquals(
+        "primary|/mavlink/+/telemetry",
+        MavlinkStateSubscriber.integrationSource(config));
+  }
 
   @Test
   void distinctSourcesCanRegisterAndCloseIndependently() throws Exception {

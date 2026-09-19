@@ -7,6 +7,7 @@ package io.mapsmessaging.state.drone.tak;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import io.mapsmessaging.state.config.CotAffiliation;
 import io.mapsmessaging.state.config.CotConfigDTO;
@@ -70,6 +71,11 @@ class CotEventPolicyTest {
     assertEquals(
         "8ed4bdba4a2ff2972685f3420274f87cc8e2d7547ba7262bce94d8991e7f7a9b/cyber_icons/ddos3_64x64.png",
         event.getDetail().getUsericonIconsetPath());
+
+    String xml = new TakXmlSerialiser().toXml(event);
+    assertTrue(xml.contains("readiness=\"false\""));
+    assertTrue(xml.contains(
+        "iconsetpath=\"8ed4bdba4a2ff2972685f3420274f87cc8e2d7547ba7262bce94d8991e7f7a9b/cyber_icons/ddos3_64x64.png\""));
   }
 
   @Test

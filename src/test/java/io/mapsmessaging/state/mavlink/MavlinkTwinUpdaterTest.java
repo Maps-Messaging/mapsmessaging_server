@@ -39,15 +39,12 @@ import io.mapsmessaging.state.mavlink.packet.MavlinkPacket;
 import io.mapsmessaging.state.mavlink.packet.NamedValueFloatPacket;
 import org.junit.jupiter.api.Test;
 
-import java.lang.management.ManagementFactory;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-import javax.management.MBeanServer;
-import javax.management.ObjectName;
 
 import static io.mapsmessaging.state.mavlink.packet.MavlinkMessageIds.BATTERY_STATUS;
 import static io.mapsmessaging.state.mavlink.packet.MavlinkMessageIds.NAMED_VALUE_FLOAT;
@@ -56,7 +53,6 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import io.mapsmessaging.utilities.admin.JMXManager;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.same;
@@ -72,43 +68,6 @@ import static org.mockito.Mockito.when;
 class MavlinkTwinUpdaterTest {
 
   private static final Instant NOW = Instant.parse("2026-07-28T00:00:00Z");
-
-  @Test
-  void distinctMavlinkSourcesRegisterIndependentJmxBeans() throws Exception {
-    boolean originalJmxEnabled = JMXManager.isEnableJMX();
-    JMXManager.setEnableJMX(true);
-    MavlinkIntegrationJMX first = null;
-    MavlinkIntegrationJMX second = null;
-    try {
-      first = new MavlinkIntegrationJMX(mock(MavlinkTwinUpdater.class), "alpha|/mavlink/alpha/#");
-      second = new MavlinkIntegrationJMX(mock(MavlinkTwinUpdater.class), "bravo|/mavlink/bravo/#");
-
-      MBeanServer server = ManagementFactory.getPlatformMBeanServer();
-      ObjectName firstName = new ObjectName(
-          "io.mapsmessaging:type=Integration,name=Mavlink,source="
-              + ObjectName.quote("alpha|/mavlink/alpha/#"));
-      ObjectName secondName = new ObjectName(
-          "io.mapsmessaging:type=Integration,name=Mavlink,source="
-              + ObjectName.quote("bravo|/mavlink/bravo/#"));
-
-      assertTrue(server.isRegistered(firstName));
-      assertTrue(server.isRegistered(secondName));
-
-      first.close();
-      first = null;
-
-      assertFalse(server.isRegistered(firstName));
-      assertTrue(server.isRegistered(secondName));
-    } finally {
-      if (first != null) {
-        first.close();
-      }
-      if (second != null) {
-        second.close();
-      }
-      JMXManager.setEnableJMX(originalJmxEnabled);
-    }
-  }
 
   @Test
   void valid_battery_packet_refreshes_power_and_preserves_existing_response_topic() {
@@ -209,6 +168,7 @@ class MavlinkTwinUpdaterTest {
     MavlinkKnownSourceDTO knownSource = knownSource();
     knownSource.setDescription("Survey aircraft");
     knownSource.setVehicleClass(VehicleClass.UAV);
+    knownSource.setCotClassification("A-M-F-Q");
     DroneInfoDTO droneInfo = new DroneInfoDTO();
     UUID uuid = UUID.fromString("d972348c-8496-45de-b130-9c003d7bf245");
     droneInfo.setUuid(uuid);
@@ -235,6 +195,7 @@ class MavlinkTwinUpdaterTest {
     assertEquals("mavlink/outbound", twin.getResponseTopicName());
     assertEquals("outbound-2", twin.getUniqueOutboundIdentifier());
     assertEquals("survey", twin.getDescription().get("role"));
+    assertEquals("A-M-F-Q", twin.getAttributes().get("cotClassification"));
     updater.close();
   }
 

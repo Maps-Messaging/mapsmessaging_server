@@ -99,7 +99,7 @@ public class MavlinkStateSubscriber implements MessageHandler, AutoCloseable {
         integrationSource(mavlinkConfig));
   }
 
-  private static String integrationSource(MavlinkTwinConfigDTO config) {
+  static String integrationSource(MavlinkTwinConfigDTO config) {
     String name = config.getName();
     if (name == null || name.isBlank()) {
       name = "mavlink";

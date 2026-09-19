@@ -8,6 +8,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import io.mapsmessaging.state.drone.tak.MtiLookupResult;
 import org.junit.jupiter.api.Test;
@@ -94,7 +95,7 @@ class MtiStatusAdapterTest {
         java.time.Instant.parse("2026-09-19T11:00:00Z"));
 
     assertFalse(status.isExpired(java.time.Instant.parse("2026-09-19T10:59:59Z")));
-    assertEquals(true, status.isExpired(java.time.Instant.parse("2026-09-19T11:00:00Z")));
+    assertTrue(status.isExpired(java.time.Instant.parse("2026-09-19T11:00:00Z")));
   }
 
   private String message(String op, String state, String observedAt, String validUntil) {
