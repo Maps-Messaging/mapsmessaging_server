@@ -32,9 +32,12 @@ import java.util.Optional;
  * Chooses the CoT atom type of a twin from the CoT type table ({@code io.mapsmessaging:cot}).
  *
  * <p>The battle dimension and function come from, in order: the twin's vehicle class, when it
- * has one (MAVLink vehicles); the STANAG 4817 {@code symbol_set} of its description (COP twins);
- * otherwise the "other" dimension. A vehicle-class type is checked against the table and falls
- * back to its dimension alone when the table does not carry it.
+ * has one (MAVLink vehicles); the MIL-STD-2525D symbol of its STANAG 4817 description -- the
+ * {@code symbol_set} and the {@code entity}, {@code entity_type} and {@code entity_subtype} codes
+ * -- translated through the table's 2525D crosswalk, which falls back to the parent entity when a
+ * symbol has no 2525C counterpart; the dimension of the {@code symbol_set} alone; otherwise the
+ * "other" dimension. A vehicle-class type is checked against the table and falls back to its
+ * dimension alone when the table does not carry it.
  */
 final class CotTypeResolver {
 
@@ -55,7 +58,30 @@ final class CotTypeResolver {
     if (vehicleClass != null && vehicleClass != VehicleClass.UNKNOWN) {
       return vehicleType(resolvedAffiliation, vehicleClass).toString();
     }
+    Optional<CotType> symbol = entitySymbol(resolvedAffiliation, description);
+    if (symbol.isPresent()) {
+      return symbol.get().toString();
+    }
     return CotType.of(resolvedAffiliation, symbolSetDimension(description), FunctionKey.empty()).toString();
+  }
+
+  /** The type of the description's 2525D symbol, when it carries an entity code the table maps. */
+  private Optional<CotType> entitySymbol(Affiliation affiliation, Map<String, Object> description) {
+    if (registry == null || description == null) {
+      return Optional.empty();
+    }
+    Object symbolSet = firstValue(description, "symbol_set", "symbolSet");
+    Object entity = firstValue(description, "entity");
+    if (symbolSet == null || entity == null) {
+      return Optional.empty();
+    }
+    return registry.fromSymbol2525D(affiliation, String.valueOf(symbolSet), String.valueOf(entity),
+        text(firstValue(description, "entity_type", "entityType")),
+        text(firstValue(description, "entity_subtype", "entitySubtype")));
+  }
+
+  private static String text(Object value) {
+    return value == null ? null : String.valueOf(value);
   }
 
   private CotType vehicleType(Affiliation affiliation, VehicleClass vehicleClass) {
