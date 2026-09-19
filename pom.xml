@@ -581,9 +581,12 @@
           <dataDirectory>${dependency.check.dataDirectory}</dataDirectory>
           <failBuildOnCVSS>10</failBuildOnCVSS>
           <failOnError>false</failOnError>
-          <skip>true</skip>
           <skipArtifactType>test-jar</skipArtifactType>
           <skipTestScope>true</skipTestScope>
+          <excludes>
+            <exclude>com.hivemq:hivemq-mqtt-client</exclude>
+            <exclude>org.apache.qpid:qpid-jms-client</exclude>
+          </excludes>
         </configuration>
         <executions>
           <execution>
