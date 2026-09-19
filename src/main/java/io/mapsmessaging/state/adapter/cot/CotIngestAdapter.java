@@ -18,6 +18,8 @@
 
 package io.mapsmessaging.state.adapter.cot;
 
+import io.mapsmessaging.api.Destination;
+import io.mapsmessaging.api.MessageBuilder;
 import io.mapsmessaging.api.MessageEvent;
 import io.mapsmessaging.api.MessageListener;
 import io.mapsmessaging.api.Session;
@@ -25,7 +27,9 @@ import io.mapsmessaging.api.SessionContextBuilder;
 import io.mapsmessaging.api.SessionManager;
 import io.mapsmessaging.api.SubscriptionContextBuilder;
 import io.mapsmessaging.api.features.ClientAcknowledgement;
+import io.mapsmessaging.api.features.DestinationType;
 import io.mapsmessaging.api.features.QualityOfService;
+import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.engine.session.ClientConnection;
 import io.mapsmessaging.state.adapter.StateMessageAdapter;
 import io.mapsmessaging.state.drone.core.TwinManager;
@@ -36,6 +40,8 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.security.Principal;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.concurrent.atomic.LongAdder;
 
 /**
@@ -94,9 +100,7 @@ public class CotIngestAdapter implements StateMessageAdapter, ClientConnection, 
           .setSessionExpiry(0)
           .setReceiveMaximum(100);
       session = SessionManager.getInstance().create(sessionContextBuilder.build(), this);
-      session.addSubscription(new SubscriptionContextBuilder(topic, ClientAcknowledgement.AUTO)
-          .setQos(QualityOfService.AT_LEAST_ONCE)
-          .build());
+      session.addSubscription(buildSubscriptionContext());
       jmxBean = new CotIngestAdapterJMX(this);
       logger.info("CoT ingest adapter subscribed to {}", topic);
     } catch (Throwable t) {
@@ -143,11 +147,6 @@ public class CotIngestAdapter implements StateMessageAdapter, ClientConnection, 
   void handle(String destinationName, byte[] xml) {
     lastMessageAt = System.currentTimeMillis();
 
-    if (LOCAL_ARCHIVE_TOPIC.equals(destinationName)) {
-      logger.debug("Ignoring local CoT archive event on {}; CotProtocol already routed it directly", destinationName);
-      return;
-    }
-
     String updateSource = UPDATE_SOURCE_PREFIX + ":" + edgeNameFrom(destinationName);
     if (cotToTwinMapper.routeToTwinManager(twinManager, xml, updateSource)) {
       routedCount.increment();
@@ -165,6 +164,57 @@ public class CotIngestAdapter implements StateMessageAdapter, ClientConnection, 
     int lastSlash = destinationName.lastIndexOf('/');
     String leaf = lastSlash >= 0 ? destinationName.substring(lastSlash + 1) : destinationName;
     return leaf.isBlank() ? "unknown" : leaf;
+  }
+
+  io.mapsmessaging.engine.destination.subscription.SubscriptionContext buildSubscriptionContext() {
+    return new SubscriptionContextBuilder(topic, ClientAcknowledgement.AUTO)
+        .setQos(QualityOfService.AT_LEAST_ONCE)
+        .setNoLocalMessages(true)
+        .build();
+  }
+
+  public boolean publishLocal(byte[] xml) {
+    Session current = session;
+    if (current == null || xml == null || xml.length == 0) {
+      return false;
+    }
+
+    Message message = buildArchiveMessage(xml, current.getName());
+    current.findDestination(LOCAL_ARCHIVE_TOPIC, DestinationType.TOPIC)
+        .whenComplete((destination, throwable) -> publishArchive(destination, message, throwable));
+    return true;
+  }
+
+  Message buildArchiveMessage(byte[] xml, String sessionId) {
+    Map<String, String> meta = new LinkedHashMap<>();
+    meta.put("protocol", "CoT");
+    meta.put("version", getVersion());
+    meta.put("sessionId", sessionId);
+    meta.put("time_ms", Long.toString(System.currentTimeMillis()));
+
+    return new MessageBuilder()
+        .setOpaqueData(xml)
+        .setContentType("text/xml")
+        .setQoS(QualityOfService.AT_MOST_ONCE)
+        .setRetain(false)
+        .setMeta(meta)
+        .build();
+  }
+
+  private void publishArchive(Destination destination, Message message, Throwable throwable) {
+    if (throwable != null) {
+      logger.error("Failed to resolve CoT archive topic {}", LOCAL_ARCHIVE_TOPIC, throwable);
+      return;
+    }
+    if (destination == null) {
+      logger.warn("CoT archive topic {} was not available", LOCAL_ARCHIVE_TOPIC);
+      return;
+    }
+    try {
+      destination.storeMessage(message);
+    } catch (IOException e) {
+      logger.error("Failed to publish CoT event to {}", LOCAL_ARCHIVE_TOPIC, e);
+    }
   }
 
   // --- Metrics, read by CotIngestAdapterJMX. ---

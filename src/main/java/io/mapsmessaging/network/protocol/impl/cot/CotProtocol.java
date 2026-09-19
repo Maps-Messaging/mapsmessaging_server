@@ -36,6 +36,7 @@ import io.mapsmessaging.network.io.Packet;
 import io.mapsmessaging.network.io.Selectable;
 import io.mapsmessaging.network.io.impl.Selector;
 import io.mapsmessaging.network.protocol.Protocol;
+import io.mapsmessaging.state.adapter.cot.CotIngestAdapter;
 import io.mapsmessaging.state.drone.core.TwinManager;
 import io.mapsmessaging.state.drone.tak.CotToTwinMapper;
 import org.slf4j.Logger;
@@ -216,6 +217,27 @@ public class CotProtocol extends Protocol implements Selectable {
   }
 
   private void publish(byte[] xml) {
+    if (!publishThroughCotIngestAdapter(xml)) {
+      publishArchiveWithProtocolSession(xml);
+    }
+    routeToTwinManager(xml);
+  }
+
+  private boolean publishThroughCotIngestAdapter(byte[] xml) {
+    try {
+      return MessageDaemon.getInstance()
+          .getSubSystemManager()
+          .getStateManager()
+          .getStateMessageAdapter(CotIngestAdapter.class)
+          .map(adapter -> adapter.publishLocal(xml))
+          .orElse(false);
+    } catch (RuntimeException e) {
+      logger.debug("CoT ingest adapter unavailable for archive publishing", e);
+      return false;
+    }
+  }
+
+  private void publishArchiveWithProtocolSession(byte[] xml) {
     Message message = new MessageBuilder()
         .setOpaqueData(xml)
         .setContentType("text/xml")
@@ -236,8 +258,6 @@ public class CotProtocol extends Protocol implements Selectable {
         }
       }
     });
-
-    routeToTwinManager(xml);
   }
 
   private void routeToTwinManager(byte[] xml) {

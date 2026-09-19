@@ -60,6 +60,7 @@ public class StateManagerAgent implements Agent {
   private final Logger logger = LoggerFactory.getLogger(StateManagerAgent.class);
 
   private final List<Lifecycle> lifecycleList = new ArrayList<>();
+  private final List<StateMessageAdapter> stateMessageAdapters = new ArrayList<>();
 
   @Getter
   private final AISN2KManager aisManager;
@@ -137,12 +138,22 @@ public class StateManagerAgent implements Agent {
       Optional<StateMessageAdapter> optionalAdapter = adapterFactory.create(context);
       if (optionalAdapter.isPresent()) {
         StateMessageAdapter adapter = optionalAdapter.get();
+        stateMessageAdapters.add(adapter);
         lifecycleList.add(adapter);
         adapter.getRestApiPackageList();
         restApiPackageList.addAll(adapter.getRestApiPackageList());
       }
     }
 
+  }
+
+  public <T extends StateMessageAdapter> Optional<T> getStateMessageAdapter(Class<T> adapterType) {
+    for (StateMessageAdapter adapter : stateMessageAdapters) {
+      if (adapterType.isInstance(adapter)) {
+        return Optional.of(adapterType.cast(adapter));
+      }
+    }
+    return Optional.empty();
   }
 
   @Override
