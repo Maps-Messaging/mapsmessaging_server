@@ -4,9 +4,7 @@
  */
 package io.mapsmessaging.state.mavlink;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.mock;
 
 import io.mapsmessaging.state.config.MavlinkTwinConfigDTO;
@@ -34,18 +32,30 @@ class MavlinkIntegrationJMXTest {
   }
 
   @Test
-  void distinctSourcesCanRegisterAndCloseIndependently() throws Exception {
+  void distinctSourcesCanRegisterAndCloseIndependently() {
     boolean originalEnabled = JMXManager.isEnableJMX();
     JMXManager.setEnableJMX(true);
+
     MavlinkIntegrationJMX first = null;
     MavlinkIntegrationJMX second = null;
+
     try {
-      first = new MavlinkIntegrationJMX(mock(MavlinkTwinUpdater.class), "alpha|/mavlink/alpha/#");
-      second = new MavlinkIntegrationJMX(mock(MavlinkTwinUpdater.class), "bravo|/mavlink/bravo/#");
+      first = new MavlinkIntegrationJMX(
+          mock(MavlinkTwinUpdater.class),
+          "alpha|/mavlink/alpha/#");
+
+      second = new MavlinkIntegrationJMX(
+          mock(MavlinkTwinUpdater.class),
+          "bravo|/mavlink/bravo/#");
+
+      ObjectName firstName = first.getObjectName();
+      ObjectName secondName = second.getObjectName();
+
+      assertNotNull(firstName);
+      assertNotNull(secondName);
+      assertNotEquals(firstName, secondName);
 
       MBeanServer server = ManagementFactory.getPlatformMBeanServer();
-      ObjectName firstName = objectName("alpha|/mavlink/alpha/#");
-      ObjectName secondName = objectName("bravo|/mavlink/bravo/#");
 
       assertTrue(server.isRegistered(firstName));
       assertTrue(server.isRegistered(secondName));

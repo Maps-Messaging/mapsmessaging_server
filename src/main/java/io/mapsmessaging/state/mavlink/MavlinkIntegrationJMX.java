@@ -72,4 +72,8 @@ public class MavlinkIntegrationJMX {
   public long getClassificationOverrideCount() {
     return updater.getClassificationOverrideCount();
   }
+
+  ObjectName getObjectName() {
+    return mbean == null ? null : mbean.getObjectName();
+  }
 }
