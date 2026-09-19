@@ -98,8 +98,8 @@ class SentenceParserTest {
     Sentence sentence = parser.parse(List.of("ignored-input", "actual").iterator());
 
     assertNull(sentence.get("ignored"));
-    assertEquals("actual", sentence.get("value").jsonPack());
-    assertEquals("$TEST,actual", sentence.toString());
+    assertEquals("ignored-input", sentence.get("value").jsonPack());
+    assertEquals("$TEST,ignored-input", sentence.toString());
   }
 
   private static ConfigurationProperties parserConfig(ConfigurationProperties... fields) {
