@@ -279,6 +279,9 @@ public class MavlinkTwinUpdater implements AutoCloseable {
       droneTwin.setCapabilities(droneInfo.getCapabilities());
       droneTwin.setDescription(droneInfo.getDescription());
     }
+    if (droneInfo.getSpecialization() != null) {
+      droneTwin.setSpecialization(droneInfo.getSpecialization());
+    }
 
     if (droneInfo.getBatteryCapacityHours() > 0) {
       droneTwin.setBatteryCapacityHours(droneInfo.getBatteryCapacityHours());

@@ -97,6 +97,9 @@ public class DroneInfoDTO {
   @Schema(description = "Drone description", type = "object", additionalProperties = Schema.AdditionalPropertiesValue.TRUE, nullable = true)
   private Map<String, Object> description;
 
+  @Schema(description = "Optional protocol-specific node specialization metadata.", type = "object", additionalProperties = Schema.AdditionalPropertiesValue.TRUE, nullable = true)
+  private Map<String, Object> specialization;
+
   @Schema(description = "Optional external data products exposed by this drone.")
   private List<DataProductConfig> dataProducts;
 

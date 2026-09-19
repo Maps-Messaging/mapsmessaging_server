@@ -121,6 +121,52 @@ class TwinManagerConfigTest {
   }
 
   @Test
+  void constructor_andWriter_roundTripDroneSpecialization() throws ReflectiveOperationException {
+    UUID droneUuid = UUID.randomUUID();
+    ConfigurationProperties root = new ConfigurationProperties();
+    ConfigurationProperties droneInfo = droneInfoProperties("drone-alpha", droneUuid);
+    ConfigurationProperties specialization = new ConfigurationProperties();
+    ConfigurationProperties surfaceVessel = new ConfigurationProperties();
+    ConfigurationProperties extra = new ConfigurationProperties();
+    ConfigurationProperties parameters = new ConfigurationProperties();
+    parameters.put("vessel_form", "RHIB");
+    extra.put("parameters", parameters);
+    surfaceVessel.put("app11_vessel_type", "NavalVesselTypeEnum_UNKNOWN");
+    surfaceVessel.put("length", 6.0d);
+    surfaceVessel.put("maximum_speed", 12.5d);
+    surfaceVessel.put("extra", extra);
+    specialization.put("$discriminator", "NodeSpecializationTypeEnum_SURFACE_VESSEL");
+    specialization.put("surface_vessel", surfaceVessel);
+    droneInfo.put("specialization", specialization);
+    root.put("droneInfo", List.of(droneInfo));
+
+    TwinManagerConfig config = newTwinManagerConfig(root);
+
+    Map<String, Object> loadedSpecialization = config.getDroneInfo().get(0).getSpecialization();
+    assertEquals("NodeSpecializationTypeEnum_SURFACE_VESSEL", loadedSpecialization.get("$discriminator"));
+    Map<?, ?> loadedSurfaceVessel = assertInstanceOf(Map.class, loadedSpecialization.get("surface_vessel"));
+    assertEquals("NavalVesselTypeEnum_UNKNOWN", loadedSurfaceVessel.get("app11_vessel_type"));
+    assertEquals(6.0d, loadedSurfaceVessel.get("length"));
+    Map<?, ?> loadedExtra = assertInstanceOf(Map.class, loadedSurfaceVessel.get("extra"));
+    Map<?, ?> loadedParameters = assertInstanceOf(Map.class, loadedExtra.get("parameters"));
+    assertEquals("RHIB", loadedParameters.get("vessel_form"));
+
+    ConfigurationProperties saved = config.toConfigurationProperties();
+    List<?> savedDroneInfos = assertInstanceOf(List.class, saved.get("droneInfo"));
+    ConfigurationProperties savedDroneInfo = assertInstanceOf(ConfigurationProperties.class, savedDroneInfos.get(0));
+    ConfigurationProperties savedSpecialization = assertInstanceOf(ConfigurationProperties.class, savedDroneInfo.get("specialization"));
+    ConfigurationProperties savedSurfaceVessel = assertInstanceOf(ConfigurationProperties.class, savedSpecialization.get("surface_vessel"));
+    ConfigurationProperties savedExtra = assertInstanceOf(ConfigurationProperties.class, savedSurfaceVessel.get("extra"));
+    ConfigurationProperties savedParameters = assertInstanceOf(ConfigurationProperties.class, savedExtra.get("parameters"));
+
+    assertEquals("NodeSpecializationTypeEnum_SURFACE_VESSEL", savedSpecialization.getProperty("$discriminator"));
+    assertEquals("NavalVesselTypeEnum_UNKNOWN", savedSurfaceVessel.getProperty("app11_vessel_type"));
+    assertEquals(6.0d, savedSurfaceVessel.getDoubleProperty("length", 0.0d));
+    assertEquals(12.5d, savedSurfaceVessel.getDoubleProperty("maximum_speed", 0.0d));
+    assertEquals("RHIB", savedParameters.getProperty("vessel_form"));
+  }
+
+  @Test
   void constructor_andWriter_roundTripDataProducts() throws ReflectiveOperationException {
     UUID droneUuid = UUID.randomUUID();
     ConfigurationProperties root = new ConfigurationProperties();
