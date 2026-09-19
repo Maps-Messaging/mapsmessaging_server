@@ -57,6 +57,7 @@ import java.util.concurrent.atomic.LongAdder;
  */
 public class CotIngestAdapter implements StateMessageAdapter, ClientConnection, MessageListener {
 
+  static final String LOCAL_ARCHIVE_TOPIC = "/tak/cot/inbound";
   private static final String UPDATE_SOURCE_PREFIX = "cot-bridge-ingest";
 
   private final Logger logger = LoggerFactory.getLogger(CotIngestAdapter.class);
@@ -139,8 +140,13 @@ public class CotIngestAdapter implements StateMessageAdapter, ClientConnection, 
     }
   }
 
-  private void handle(String destinationName, byte[] xml) {
+  void handle(String destinationName, byte[] xml) {
     lastMessageAt = System.currentTimeMillis();
+
+    if (LOCAL_ARCHIVE_TOPIC.equals(destinationName)) {
+      logger.debug("Ignoring local CoT archive event on {}; CotProtocol already routed it directly", destinationName);
+      return;
+    }
 
     String updateSource = UPDATE_SOURCE_PREFIX + ":" + edgeNameFrom(destinationName);
     if (cotToTwinMapper.routeToTwinManager(twinManager, xml, updateSource)) {

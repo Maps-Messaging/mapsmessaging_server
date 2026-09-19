@@ -35,7 +35,7 @@ import java.util.Optional;
  * <pre>
  * stateAdapters:
  *   cotIngest:
- *     topic: "/tak/cot/inbound/#"   # wildcard: covers every edge without per-edge config here
+ *     topic: "/tak/cot/inbound/+"   # exactly one edge-name leaf below the local archive topic
  * </pre>
  *
  * Intended for a MAPS-to-MAPS deployment topology: one or more edge nodes each run their own
@@ -48,7 +48,7 @@ import java.util.Optional;
 public class CotIngestAdapterFactory implements StateMessageAdapterFactory {
 
   private static final String ADAPTER_KEY = "cotIngest";
-  private static final String DEFAULT_TOPIC = "/tak/cot/inbound/#";
+  private static final String DEFAULT_TOPIC = "/tak/cot/inbound/+";
 
   @Override
   public String getName() {
