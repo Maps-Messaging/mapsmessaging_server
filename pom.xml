@@ -294,7 +294,7 @@
       <id>ml</id>
       <properties>
         <!-- Base -->
-        <maps.jms_selector.version>ml-2.0.0</maps.jms_selector.version>
+        <maps.jms_selector.version>ml-2.1.2-SNAPSHOT</maps.jms_selector.version>
       </properties>
       <build>
         <plugins>
