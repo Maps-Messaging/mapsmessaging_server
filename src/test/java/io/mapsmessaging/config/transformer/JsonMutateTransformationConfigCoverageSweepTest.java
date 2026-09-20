@@ -1,5 +1,6 @@
 package io.mapsmessaging.config.transformer;
 
+import com.google.gson.JsonPrimitive;
 import io.mapsmessaging.configuration.ConfigurationProperties;
 import io.mapsmessaging.dto.rest.config.transformer.TransformationType;
 import io.mapsmessaging.dto.rest.config.transformer.jsonmutate.JsonMutateOperation;
@@ -29,6 +30,9 @@ class JsonMutateTransformationConfigCoverageSweepTest {
     assertEquals(1, config.getOperations().size());
     assertEquals(JsonMutateOperation.SET, config.getOperations().getFirst().getOp());
     assertEquals("state.mode", config.getOperations().getFirst().getPath());
-    assertEquals("AUTO", config.getOperations().getFirst().getValue().getAsString());
+    JsonPrimitive value = assertInstanceOf(
+        JsonPrimitive.class,
+        config.getOperations().getFirst().getValue());
+    assertEquals("AUTO", value.getAsString());
   }
 }
