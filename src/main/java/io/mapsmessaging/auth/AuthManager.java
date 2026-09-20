@@ -130,10 +130,8 @@ public class AuthManager implements Agent {
       }
       try {
         authenticationStorage = new AuthenticationStorage(new ConfigurationProperties(config.getAuthConfig()), config.buildMonitorConfig());
-        String configDirectory = (String) config.getAuthConfig().get("configDirectory");
-        secureExistingInitialPasswordFile(configDirectory);
         if (authenticationStorage.isFirstBoot()) {
-          createInitialUsers(configDirectory);
+          createInitialUsers((String)config.getAuthConfig().get("configDirectory"));
         }
         IdentityLookupFactory.getInstance().registerSiteIdentityLookup("system", authenticationStorage.getIdentityAccessManager().getIdentityLookup());
       } catch (Exception e) {
@@ -155,13 +153,6 @@ public class AuthManager implements Agent {
       }
     } catch (IOException e) {
       logger.log(AUTH_SAVE_FAILED, e);
-    }
-  }
-
-  private void secureExistingInitialPasswordFile(String path) throws IOException {
-    Path passwordFile = Path.of(path, ADMIN_PASSWORD_FILE);
-    if (Files.exists(passwordFile)) {
-      prepareInitialPasswordFile(passwordFile);
     }
   }
 
