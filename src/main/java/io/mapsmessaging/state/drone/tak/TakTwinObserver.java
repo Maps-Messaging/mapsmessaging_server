@@ -243,6 +243,7 @@ public class TakTwinObserver implements TwinObserver {
     if (takEvent == null) {
       return;
     }
+    cotEventPolicy.applyDetection(takEvent, source, cotConfig);
 
     publishDetection(takXmlSerialiser.toXml(takEvent), twinContext);
   }
