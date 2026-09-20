@@ -19,7 +19,7 @@ class CotEventPolicyTest {
     event.setPoint(new TakPoint());
     event.setDetail(new TakDetail());
 
-    new CotEventPolicy().applyDetection(event, new DroneTwin("source"), null);
+    new CotEventPolicy().apply(event, new DroneTwin("source"), null, null);
 
     assertEquals("h-g-i-g-o", event.getHow());
     assertEquals(10.0, event.getPoint().getCe(), 0.0);
@@ -56,6 +56,6 @@ class CotEventPolicyTest {
 
     assertDoesNotThrow(() -> policy.apply(null, new DroneTwin("d"), null, null));
     assertDoesNotThrow(() -> policy.apply(new TakEvent(), null, null, null));
-    assertDoesNotThrow(() -> policy.applyDetection(null, new DroneTwin("d"), null));
+    assertDoesNotThrow(() -> policy.apply(null, new DroneTwin("d"), null, null));
   }
 }
