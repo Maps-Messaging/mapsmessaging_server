@@ -52,8 +52,13 @@ import lombok.Getter;
 import javax.security.auth.Subject;
 import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileWriter;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
+import java.nio.file.attribute.PosixFileAttributeView;
+import java.nio.file.attribute.PosixFilePermission;
+import java.nio.file.attribute.PosixFilePermissions;
 import java.security.GeneralSecurityException;
 import java.security.Principal;
 import java.util.*;
@@ -68,6 +73,9 @@ public class AuthManager implements Agent {
   private static final String ADMIN_USER = "admin";
   private static final String USER = "user";
   private static final String ANONYMOUS = "anonymous";
+  private static final String ADMIN_PASSWORD_FILE = "admin_password";
+  private static final Set<PosixFilePermission> OWNER_READ_WRITE =
+      Set.of(PosixFilePermission.OWNER_READ, PosixFilePermission.OWNER_WRITE);
 
   private static final String ADMIN_GROUP = "admins";
   private static final String EVERYONE = "everyone";
@@ -122,8 +130,10 @@ public class AuthManager implements Agent {
       }
       try {
         authenticationStorage = new AuthenticationStorage(new ConfigurationProperties(config.getAuthConfig()), config.buildMonitorConfig());
+        String configDirectory = (String) config.getAuthConfig().get("configDirectory");
+        secureExistingInitialPasswordFile(Path.of(configDirectory, ADMIN_PASSWORD_FILE));
         if (authenticationStorage.isFirstBoot()) {
-          createInitialUsers((String)config.getAuthConfig().get("configDirectory"));
+          createInitialUsers(configDirectory);
         }
         IdentityLookupFactory.getInstance().registerSiteIdentityLookup("system", authenticationStorage.getIdentityAccessManager().getIdentityLookup());
       } catch (Exception e) {
@@ -134,13 +144,64 @@ public class AuthManager implements Agent {
   }
 
   private void saveInitialUserDetails(String path, String[][] details) {
-    try (BufferedWriter bw = new BufferedWriter(new FileWriter(path + File.separator + "admin_password", true))) {
-      for (String[] detail : details) {
-        bw.write(detail[0] + "=" + detail[1]);
-        bw.newLine(); // Add a newline character after each line
+    Path passwordFile = Path.of(path, ADMIN_PASSWORD_FILE);
+    try {
+      prepareInitialPasswordFile(passwordFile);
+      try (BufferedWriter bw = Files.newBufferedWriter(passwordFile, StandardOpenOption.APPEND)) {
+        for (String[] detail : details) {
+          bw.write(detail[0] + "=" + detail[1]);
+          bw.newLine();
+        }
       }
     } catch (IOException e) {
       logger.log(AUTH_SAVE_FAILED, e);
+    }
+  }
+
+  static void secureExistingInitialPasswordFile(Path passwordFile) throws IOException {
+    if (Files.exists(passwordFile)) {
+      restrictInitialPasswordFile(passwordFile);
+    }
+  }
+
+  static void prepareInitialPasswordFile(Path passwordFile) throws IOException {
+    boolean exists = Files.exists(passwordFile);
+    Path attributePath = exists ? passwordFile : passwordFile.toAbsolutePath().getParent();
+    PosixFileAttributeView posixView =
+        attributePath == null
+            ? null
+            : Files.getFileAttributeView(attributePath, PosixFileAttributeView.class);
+
+    if (exists) {
+      restrictInitialPasswordFile(passwordFile);
+      return;
+    }
+
+    if (posixView != null) {
+      Files.createFile(
+          passwordFile, PosixFilePermissions.asFileAttribute(OWNER_READ_WRITE));
+    } else {
+      Files.createFile(passwordFile);
+      restrictOwnerOnly(passwordFile);
+    }
+  }
+
+  static void restrictInitialPasswordFile(Path passwordFile) throws IOException {
+    PosixFileAttributeView posixView =
+        Files.getFileAttributeView(passwordFile, PosixFileAttributeView.class);
+    if (posixView != null) {
+      Files.setPosixFilePermissions(passwordFile, OWNER_READ_WRITE);
+    } else {
+      restrictOwnerOnly(passwordFile);
+    }
+  }
+
+  private static void restrictOwnerOnly(Path passwordFile) throws IOException {
+    File file = passwordFile.toFile();
+    boolean readable = file.setReadable(false, false) && file.setReadable(true, true);
+    boolean writable = file.setWritable(false, false) && file.setWritable(true, true);
+    if (!readable || !writable) {
+      throw new IOException("Unable to restrict admin password file to owner-only access");
     }
   }
 
