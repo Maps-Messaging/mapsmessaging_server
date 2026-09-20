@@ -94,6 +94,41 @@ final class CotEventPolicy {
     apply(event, twin, context, config, true);
   }
 
+  void applyDetection(TakEvent event, DroneTwin source, CotConfigDTO config) {
+    if (event == null || source == null) {
+      return;
+    }
+    appliedCount.increment();
+
+    event.setHow(valueOrDefault(config == null ? null : config.getHow(), DEFAULT_HOW));
+
+    TakPoint point = event.getPoint();
+    if (point != null) {
+      point.setCe(
+          resolveError(
+              config == null ? null : config.getDefaultCircularErrorMeters(),
+              DEFAULT_CE_METERS));
+      point.setLe(
+          resolveError(
+              config == null ? null : config.getDefaultLinearErrorMeters(),
+              DEFAULT_LE_METERS));
+    }
+
+    TakDetail detail = event.getDetail();
+    if (detail != null) {
+      TakPrecisionLocation precisionLocation = detail.getPrecisionLocation();
+      if (precisionLocation == null) {
+        precisionLocation = new TakPrecisionLocation();
+        detail.setPrecisionLocation(precisionLocation);
+      }
+      precisionLocation.setAltsrc(
+          valueOrDefault(
+              config == null ? null : config.getAltitudeSource(),
+              DEFAULT_ALTITUDE_SOURCE));
+      precisionLocation.setGeopointsrc(DEFAULT_GEOPOINT_SOURCE);
+    }
+  }
+
   private void apply(
       TakEvent event,
       EntityTwin twin,

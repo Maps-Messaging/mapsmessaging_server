@@ -20,6 +20,9 @@
 package io.mapsmessaging.state.drone.tak;
 
 import io.mapsmessaging.cot.types.Affiliation;
+import io.mapsmessaging.cot.types.BattleDimension;
+import io.mapsmessaging.cot.types.CotType;
+import io.mapsmessaging.cot.types.FunctionKey;
 import io.mapsmessaging.state.config.VehicleClass;
 import io.mapsmessaging.state.config.DataProductConfig;
 import io.mapsmessaging.state.drone.tak.model.TakVideo;
@@ -36,9 +39,11 @@ import io.mapsmessaging.state.drone.tak.model.*;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
-import java.util.Locale;
-import java.util.UUID;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Locale;
+import java.util.Set;
+import java.util.UUID;
 
 public class TakEventMapper {
 
@@ -50,6 +55,10 @@ public class TakEventMapper {
   private static final double DEFAULT_CE = 10.0;
   private static final double DEFAULT_LE = 15.0;
   private static final long DEFAULT_STALE_SECONDS = 30L;
+  private static final String DETECTION_COT_TYPE = "a-u-G";
+  private static final String DETECTION_PARENT_RELATION = "p-p";
+  private static final String DETECTION_VIDEO_URL_ATTRIBUTE = "tak.videoUrl";
+  private static final String DETECTION_VIDEO_URLS_ATTRIBUTE = "tak.videoUrls";
 
   public TakEvent map(EntityTwin twin, TwinUpdateContext context) {
     if (twin == null || twin.getGeoPosition() == null) {
@@ -100,6 +109,57 @@ public class TakEventMapper {
     }
 
     event.setDetail(detail);
+    return event;
+  }
+
+  public TakEvent mapDetection(
+      DroneTwin source, DetectionEvent detection, TwinUpdateContext context) {
+    if (source == null
+        || detection == null
+        || detection.getContactId() == null
+        || detection.getTtlMillis() == null
+        || detection.getTtlMillis() <= 0
+        || !detection.isDetectedOrUpdated()
+        || !isValidDetectionPosition(detection.getPosition())) {
+      return null;
+    }
+
+    Instant eventTime = resolveDetectionEventTime(detection, context);
+    Instant staleTime = eventTime.plusMillis(detection.getTtlMillis());
+    GeoPosition position = detection.getPosition();
+
+    TakEvent event = new TakEvent();
+    event.setUid(detection.getContactId().toString());
+    event.setType(resolveDetectionType(source));
+    event.setHow(DEFAULT_HOW);
+    event.setTime(formatInstant(eventTime));
+    event.setStart(formatInstant(eventTime));
+    event.setStale(formatInstant(staleTime));
+
+    TakPoint point = new TakPoint();
+    point.setLat(position.getLatitude());
+    point.setLon(position.getLongitude());
+    point.setHae(readAltitude(position));
+    point.setCe(DEFAULT_CE);
+    point.setLe(DEFAULT_LE);
+    event.setPoint(point);
+
+    TakDetail detail = new TakDetail();
+    if (detection.getName() != null && !detection.getName().isBlank()) {
+      TakContact contact = new TakContact();
+      contact.setCallsign(detection.getName());
+      detail.setContact(contact);
+      detail.setRemarks(detection.getName());
+    }
+    detail.setVideos(resolveDetectionVideos(detection));
+
+    TakLink parent = new TakLink();
+    parent.setUid(resolveUid(source));
+    parent.setRelation(DETECTION_PARENT_RELATION);
+    detail.getLinks().add(parent);
+    detail.setPrecisionLocation(buildPrecisionLocation());
+    event.setDetail(detail);
+
     return event;
   }
 
@@ -304,6 +364,48 @@ public class TakEventMapper {
    * The video feeds among a node's data products: the streams TAK's own player opens (RTSP, RTMP
    * or an HLS playlist). A page it cannot open is left to the remarks as a link.
    */
+  private List<TakVideo> resolveDetectionVideos(DetectionEvent detection) {
+    if (detection.getAttributes() == null || detection.getAttributes().isEmpty()) {
+      return List.of();
+    }
+
+    Set<String> urls = new LinkedHashSet<>();
+    addDetectionVideoUrls(urls, detection.getAttributes().get(DETECTION_VIDEO_URL_ATTRIBUTE));
+    addDetectionVideoUrls(urls, detection.getAttributes().get(DETECTION_VIDEO_URLS_ATTRIBUTE));
+
+    List<TakVideo> videos = new ArrayList<>();
+    for (String url : urls) {
+      TakVideo video = videoFeed(url);
+      if (video == null) {
+        continue;
+      }
+      video.setUid(UUID.nameUUIDFromBytes(url.getBytes(StandardCharsets.UTF_8)).toString());
+      video.setAlias("detection");
+      videos.add(video);
+    }
+    return videos;
+  }
+
+  private void addDetectionVideoUrls(Set<String> urls, Object value) {
+    if (value instanceof CharSequence sequence) {
+      String url = sequence.toString().trim();
+      if (!url.isEmpty()) {
+        urls.add(url);
+      }
+      return;
+    }
+    if (value instanceof Iterable<?> iterable) {
+      for (Object item : iterable) {
+        if (item != null) {
+          String url = item.toString().trim();
+          if (!url.isEmpty()) {
+            urls.add(url);
+          }
+        }
+      }
+    }
+  }
+
   private List<TakVideo> resolveVideos(EntityTwin twin) {
     if (!(twin instanceof DroneTwin droneTwin) || droneTwin.getDataProducts() == null) {
       return List.of();
@@ -421,6 +523,68 @@ public class TakEventMapper {
     }
 
     return flightMode;
+  }
+
+  private String resolveDetectionType(DroneTwin source) {
+    BattleDimension dimension = resolveDetectionDimension(source);
+    if (dimension == null || dimension == BattleDimension.OTHER) {
+      return DETECTION_COT_TYPE;
+    }
+    return CotType.of(Affiliation.UNKNOWN, dimension, FunctionKey.empty()).toString();
+  }
+
+  private BattleDimension resolveDetectionDimension(DroneTwin source) {
+    if (source == null) {
+      return BattleDimension.OTHER;
+    }
+
+    VehicleClass vehicleClass = source.getVehicleClass();
+    if (vehicleClass != null) {
+      BattleDimension vehicleDimension =
+          switch (vehicleClass) {
+            case UAV -> BattleDimension.AIR;
+            case USV -> BattleDimension.SEA_SURFACE;
+            case UUV -> BattleDimension.SUBSURFACE;
+            case UGV, GCS -> BattleDimension.GROUND;
+            case UNKNOWN -> BattleDimension.OTHER;
+          };
+      if (vehicleDimension != BattleDimension.OTHER) {
+        return vehicleDimension;
+      }
+    }
+
+    return CotTypeResolver.symbolSetDimension(source.getDescription());
+  }
+
+  private Instant resolveDetectionEventTime(
+      DetectionEvent detection, TwinUpdateContext context) {
+    if (detection.getTimestamp() != null) {
+      return detection.getTimestamp();
+    }
+    if (context != null && context.getEventTime() != null) {
+      return context.getEventTime();
+    }
+    if (context != null && context.getReceivedTime() != null) {
+      return context.getReceivedTime();
+    }
+    return Instant.now();
+  }
+
+  private boolean isValidDetectionPosition(GeoPosition position) {
+    if (position == null
+        || position.getLatitude() == null
+        || position.getLongitude() == null) {
+      return false;
+    }
+
+    double latitude = position.getLatitude();
+    double longitude = position.getLongitude();
+    return Double.isFinite(latitude)
+        && Double.isFinite(longitude)
+        && latitude >= -90.0
+        && latitude <= 90.0
+        && longitude >= -180.0
+        && longitude <= 180.0;
   }
 
   private Instant resolveEventTime(EntityTwin twin, TwinUpdateContext context) {

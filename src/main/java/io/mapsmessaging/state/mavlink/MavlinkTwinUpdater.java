@@ -26,6 +26,7 @@ import io.mapsmessaging.dto.rest.config.protocol.impl.MavlinkKnownSourceDTO;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.mavlink.ProcessedFrame;
+import io.mapsmessaging.state.config.DataProductConfig;
 import io.mapsmessaging.state.config.DroneInfoDTO;
 import io.mapsmessaging.state.config.StopActionEnum;
 import io.mapsmessaging.state.config.VehicleClass;
@@ -45,6 +46,8 @@ import io.mapsmessaging.state.mavlink.model.UxvModel;
 import io.mapsmessaging.state.mavlink.packet.BatteryStatusPacket;
 import io.mapsmessaging.state.mavlink.packet.MavlinkPacket;
 import io.mapsmessaging.state.mavlink.sender.MavlinkEventListSender;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -58,6 +61,7 @@ public class MavlinkTwinUpdater implements AutoCloseable {
       "completeTaskOnArrivalTolerance";
   private static final String COMPLETE_TASK_ON_AUTO_TO_LOITER_ATTRIBUTE =
       "completeTaskOnAutoToLoiter";
+  private static final String TAK_VIDEO_URLS_ATTRIBUTE = "tak.videoUrls";
 
   private final Logger logger = LoggerFactory.getLogger(MavlinkTwinUpdater.class);
 
@@ -145,7 +149,7 @@ public class MavlinkTwinUpdater implements AutoCloseable {
         if (sender != null) {
           sender.onMavlinkMessage(packet);
         }
-        applyModelDetectionEvent(droneTwin, packet);
+        applyModelDetectionEvent(droneTwin, packet, context, droneInfo);
       }
     } finally {
       droneMonitor.endTwinUpdate(twinId, context);
@@ -172,7 +176,11 @@ public class MavlinkTwinUpdater implements AutoCloseable {
     }
   }
 
-  private void applyModelDetectionEvent(DroneTwin droneTwin, MavlinkPacket packet) {
+  private void applyModelDetectionEvent(
+      DroneTwin droneTwin,
+      MavlinkPacket packet,
+      TwinUpdateContext context,
+      DroneInfoDTO droneInfo) {
     String modelName = droneTwin.getModelName();
     if (modelName == null || modelName.isBlank()) {
       return;
@@ -182,10 +190,31 @@ public class MavlinkTwinUpdater implements AutoCloseable {
       UxvModel uxvModel = ModelManager.getInstance().getRequiredModel(modelName);
       if (uxvModel != null) {
         Optional<DetectionEvent> detectionEvent = uxvModel.interpretDetection(droneTwin, packet);
-        detectionEvent.ifPresent(event -> applyDetectionEvent(droneTwin, event));
+        detectionEvent.ifPresent(
+            event -> {
+              attachVideoUrls(event, droneInfo);
+              applyDetectionEvent(droneTwin, event, context);
+            });
       }
     } catch (IllegalArgumentException e) {
       // no such model, ignore
+    }
+  }
+
+  private void attachVideoUrls(DetectionEvent event, DroneInfoDTO droneInfo) {
+    if (event == null || droneInfo == null) {
+      return;
+    }
+
+    List<String> urls = new ArrayList<>();
+    for (DataProductConfig dataProduct : droneInfo.getDataProducts()) {
+      if (dataProduct == null || dataProduct.getUri() == null || dataProduct.getUri().isBlank()) {
+        continue;
+      }
+      urls.add(dataProduct.getUri().trim());
+    }
+    if (!urls.isEmpty()) {
+      event.addAttribute(TAK_VIDEO_URLS_ATTRIBUTE, List.copyOf(urls));
     }
   }
 
@@ -212,7 +241,8 @@ public class MavlinkTwinUpdater implements AutoCloseable {
         Boolean.toString(droneInfo.isCompleteTaskOnAutoToLoiter()));
   }
 
-  private void applyDetectionEvent(DroneTwin droneTwin, DetectionEvent event) {
+  private void applyDetectionEvent(
+      DroneTwin droneTwin, DetectionEvent event, TwinUpdateContext context) {
     if (!isValidDetectionEvent(event)) {
       return;
     }
@@ -220,9 +250,20 @@ public class MavlinkTwinUpdater implements AutoCloseable {
     DroneContactManager contactManager = droneTwin.getContactManager();
 
     switch (event.getEventType()) {
-      case DETECTED, UPDATED -> upsertContact(contactManager, event);
+      case DETECTED, UPDATED -> {
+        upsertContact(contactManager, event);
+        if (isPublishableDetectionEvent(event)) {
+          twinManager.notifyDetectionEvent(droneTwin, event, context);
+        }
+      }
       case LOST -> removeContact(contactManager, event);
     }
+  }
+
+  private boolean isPublishableDetectionEvent(DetectionEvent event) {
+    return event.getPosition() != null
+        && event.getTtlMillis() != null
+        && event.getTtlMillis() > 0;
   }
 
   private boolean isValidDetectionEvent(DetectionEvent event) {
