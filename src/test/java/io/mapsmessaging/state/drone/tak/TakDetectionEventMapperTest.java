@@ -8,6 +8,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import io.mapsmessaging.state.config.CotConfigDTO;
+import io.mapsmessaging.state.config.VehicleClass;
 import io.mapsmessaging.state.drone.core.TwinUpdateContext;
 import io.mapsmessaging.state.drone.drone.DroneTwin;
 import io.mapsmessaging.state.drone.model.DetectionEvent;
@@ -64,6 +66,45 @@ class TakDetectionEventMapperTest {
   }
 
   @Test
+  void detectionUsesTheSourceBattleDimensionWithUnknownAffiliation() {
+    DroneTwin usv = new DroneTwin("USV-002");
+    usv.setVehicleClass(VehicleClass.USV);
+
+    DroneTwin air = new DroneTwin("UAV-001");
+    air.getDescription().put("symbol_set", "SymbolSetEnum_AIR");
+
+    assertEquals("a-u-S", mapper.mapDetection(usv, detection(), null).getType());
+    assertEquals("a-u-A", mapper.mapDetection(air, detection(), null).getType());
+  }
+
+  @Test
+  void detectionPolicyPreservesTrackIdentityAndTtl() {
+    DroneTwin drone = new DroneTwin("USV-002");
+    drone.setVehicleClass(VehicleClass.USV);
+    DetectionEvent detection = detection();
+    TakEvent event = mapper.mapDetection(drone, detection, null);
+
+    CotConfigDTO config = new CotConfigDTO();
+    config.setHow("m-g");
+    config.setUidPrefix("ignored-");
+    config.setStaleTimeoutMillis(5_000L);
+    config.setDefaultCircularErrorMeters(25.0d);
+    config.setDefaultLinearErrorMeters(30.0d);
+    config.setAltitudeSource("BARO");
+
+    new CotEventPolicy().applyDetection(event, drone, config);
+
+    assertEquals(CONTACT_ID.toString(), event.getUid());
+    assertEquals("a-u-S", event.getType());
+    assertEquals("2026-09-20T10:01:00Z", event.getStale());
+    assertEquals("m-g", event.getHow());
+    assertEquals(25.0d, event.getPoint().getCe());
+    assertEquals(30.0d, event.getPoint().getLe());
+    assertEquals("BARO", event.getDetail().getPrecisionLocation().getAltsrc());
+    assertEquals("GPS", event.getDetail().getPrecisionLocation().getGeopointsrc());
+  }
+
+  @Test
   void supportsLegacySingleVideoUrlAttribute() {
     DroneTwin drone = new DroneTwin("USV-002");
     DetectionEvent detection =
@@ -75,6 +116,15 @@ class TakDetectionEventMapperTest {
     TakEvent event = mapper.mapDetection(drone, detection, null);
 
     assertEquals(1, event.getDetail().getVideos().size());
+  }
+
+  private static DetectionEvent detection() {
+    DetectionEvent detection =
+        new DetectionEvent(CONTACT_ID, "DETECT", DetectionEventType.DETECTED);
+    detection.setPosition(new GeoPosition(38.42886d, -9.10898d, 0.0d, null, null));
+    detection.setTimestamp(Instant.parse("2026-09-20T10:00:00Z"));
+    detection.setTtlMillis(60_000L);
+    return detection;
   }
 
   @Test
