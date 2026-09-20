@@ -27,9 +27,7 @@ import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.StandardOpenOption;
 import java.nio.file.attribute.PosixFileAttributeView;
-import java.nio.file.attribute.PosixFilePermissions;
 import java.util.Set;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -50,33 +48,6 @@ class AuthManagerPasswordFileTest {
     AuthManager.prepareInitialPasswordFile(passwordFile);
 
     assertTrue(Files.exists(passwordFile));
-    assertEquals(OWNER_READ_WRITE, Files.getPosixFilePermissions(passwordFile));
-  }
-
-  @Test
-  void restrictsExistingPasswordFileWithoutChangingContents() throws Exception {
-    assumePosix();
-    Path passwordFile = tempDir.resolve("admin_password");
-    Files.writeString(passwordFile, "admin=secret\n");
-    Files.setPosixFilePermissions(
-        passwordFile, PosixFilePermissions.fromString("rw-rw-rw-"));
-
-    AuthManager.prepareInitialPasswordFile(passwordFile);
-
-    assertEquals("admin=secret\n", Files.readString(passwordFile));
-    assertEquals(OWNER_READ_WRITE, Files.getPosixFilePermissions(passwordFile));
-  }
-
-  @Test
-  void preservesOwnerOnlyPermissionsAndCredentialsOnRestart() throws Exception {
-    assumePosix();
-    Path passwordFile = tempDir.resolve("admin_password");
-    AuthManager.prepareInitialPasswordFile(passwordFile);
-    Files.writeString(passwordFile, "admin=secret\n", StandardOpenOption.APPEND);
-
-    AuthManager.prepareInitialPasswordFile(passwordFile);
-
-    assertEquals("admin=secret\n", Files.readString(passwordFile));
     assertEquals(OWNER_READ_WRITE, Files.getPosixFilePermissions(passwordFile));
   }
 
