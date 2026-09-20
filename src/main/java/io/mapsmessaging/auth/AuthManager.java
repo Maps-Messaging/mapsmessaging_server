@@ -131,7 +131,7 @@ public class AuthManager implements Agent {
       try {
         authenticationStorage = new AuthenticationStorage(new ConfigurationProperties(config.getAuthConfig()), config.buildMonitorConfig());
         String configDirectory = (String) config.getAuthConfig().get("configDirectory");
-        secureExistingInitialPasswordFile(configDirectory);
+        secureExistingInitialPasswordFile(Path.of(configDirectory, ADMIN_PASSWORD_FILE));
         if (authenticationStorage.isFirstBoot()) {
           createInitialUsers(configDirectory);
         }
@@ -158,8 +158,7 @@ public class AuthManager implements Agent {
     }
   }
 
-  private void secureExistingInitialPasswordFile(String path) throws IOException {
-    Path passwordFile = Path.of(path, ADMIN_PASSWORD_FILE);
+  static void secureExistingInitialPasswordFile(Path passwordFile) throws IOException {
     if (Files.exists(passwordFile)) {
       restrictInitialPasswordFile(passwordFile);
     }
