@@ -2,7 +2,6 @@ package io.mapsmessaging.config;
 
 import io.mapsmessaging.configuration.ConfigurationProperties;
 import io.mapsmessaging.dto.rest.config.BaseConfigDTO;
-import io.mapsmessaging.dto.rest.config.MessageDaemonConfigDTO;
 import org.junit.jupiter.api.Test;
 
 import java.lang.reflect.Constructor;
@@ -50,7 +49,7 @@ class MessageDaemonConfigBranchCoverageTest {
     MessageDaemonConfig config = new MessageDaemonConfig();
     assertFalse(config.update(new BaseConfigDTO()));
 
-    MessageDaemonConfigDTO update = new MessageDaemonConfigDTO();
+    MessageDaemonConfig update = new MessageDaemonConfig();
     update.setEnableUniqueCorrelationIds(!config.isEnableUniqueCorrelationIds());
     update.setDelayedPublishInterval(config.getDelayedPublishInterval() + 1);
     update.setSessionPipeLines(config.getSessionPipeLines() + 1);
