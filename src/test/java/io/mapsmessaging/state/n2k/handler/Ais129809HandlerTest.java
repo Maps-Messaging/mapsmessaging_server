@@ -50,6 +50,7 @@ class Ais129809HandlerTest {
         new Ais129809Handler(parser, AisClassBEmitterConfig.getDefaults(), 1000);
 
     DroneTwin missing = new DroneTwin("missing");
+    missing.setMmsi(null);
     assertTrue(handler.emit(missing, new DroneEmissionState(), 0).isEmpty());
     verifyNoInteractions(parser);
 
