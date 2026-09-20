@@ -369,7 +369,14 @@ public class TakEventMapper {
     }
 
     String value = String.valueOf(videoUrl);
-    return value.isBlank() ? null : value;
+    if (value.isBlank()) {
+      return null;
+    }
+
+    String normalised = value.toLowerCase(java.util.Locale.ROOT);
+    return normalised.startsWith("rtsp://") || normalised.startsWith("rtsps://")
+        ? value
+        : null;
   }
 
   private Instant resolveDetectionEventTime(

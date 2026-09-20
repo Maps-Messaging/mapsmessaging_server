@@ -33,7 +33,7 @@ class TakDetectionEventMapperTest {
     detection.setPosition(new GeoPosition(38.42886d, -9.10898d, 0.0d, null, null));
     detection.setTimestamp(Instant.parse("2026-09-20T10:00:00Z"));
     detection.setTtlMillis(60_000L);
-    detection.addAttribute("tak.videoUrl", "https://ops-se.stickleback.ai/optical_view/");
+    detection.addAttribute("tak.videoUrl", "rtsp://ops-se.stickleback.ai/optical");
 
     TakEvent event = mapper.mapDetection(drone, detection, new TwinUpdateContext());
 
@@ -46,16 +46,30 @@ class TakDetectionEventMapperTest {
     assertEquals("USV-002", event.getDetail().getLinks().getFirst().getUid());
     assertEquals("p-p", event.getDetail().getLinks().getFirst().getRelation());
     assertEquals(
-        "https://ops-se.stickleback.ai/optical_view/",
+        "rtsp://ops-se.stickleback.ai/optical",
         event.getDetail().getVideoUrl());
     assertEquals(
         true,
         serialiser
             .toXml(event)
-            .contains("<__video url=\"https://ops-se.stickleback.ai/optical_view/\"/>"));
+            .contains("<__video url=\"rtsp://ops-se.stickleback.ai/optical\"/>"));
 
     detection.setEventType(DetectionEventType.UPDATED);
     assertEquals(CONTACT_ID.toString(), mapper.mapDetection(drone, detection, null).getUid());
+  }
+
+  @Test
+  void ignoresNonRtspVideoUrl() {
+    DroneTwin drone = new DroneTwin("USV-002");
+    DetectionEvent detection =
+        new DetectionEvent(CONTACT_ID, "target-1", DetectionEventType.DETECTED);
+    detection.setPosition(new GeoPosition(38.42886d, -9.10898d, 0.0d, null, null));
+    detection.setTtlMillis(60_000L);
+    detection.addAttribute("tak.videoUrl", "https://ops-se.stickleback.ai/optical_view/");
+
+    TakEvent event = mapper.mapDetection(drone, detection, null);
+
+    assertNull(event.getDetail().getVideoUrl());
   }
 
   @Test
