@@ -51,6 +51,15 @@ class AuthManagerPasswordFileTest {
     assertEquals(OWNER_READ_WRITE, Files.getPosixFilePermissions(passwordFile));
   }
 
+  @Test
+  void doesNotRecreateDeletedBootstrapPasswordFile() throws Exception {
+    Path passwordFile = tempDir.resolve("admin_password");
+
+    AuthManager.secureExistingInitialPasswordFile(passwordFile);
+
+    assertTrue(Files.notExists(passwordFile));
+  }
+
   private void assumePosix() {
     assumeTrue(Files.getFileAttributeView(tempDir, PosixFileAttributeView.class) != null);
   }
