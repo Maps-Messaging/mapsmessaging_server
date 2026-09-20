@@ -1,41 +1,53 @@
-/*
- * Copyright [ 2020 - 2024 ] Matthew Buckton
- * Copyright [ 2024 - 2026 ] MapsMessaging B.V.
- *
- * Licensed under the Apache License, Version 2.0 with the Commons Clause
- */
-
 package io.mapsmessaging.dto.rest.config.protocol.impl;
 
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-
 import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.*;
 
 class MavlinkConfigDTOTest {
 
   @Test
-  void listenOnlyConfigurationHasNoLocalIdentity() {
+  void defaultConfigurationIsListenOnly() {
     MavlinkConfigDTO config = new MavlinkConfigDTO();
 
+    assertEquals("mavlink", config.getType());
+    assertNull(config.getSystemId());
+    assertNull(config.getComponentId());
     assertFalse(config.hasLocalMavlinkIdentity());
+    assertEquals(30, config.getHeartbeatIntervalSeconds());
+    assertEquals("", config.getDialectName());
   }
 
   @Test
-  void zeroComponentIdCannotEnableOutboundMavlink() {
+  void validPositiveSystemAndComponentIdsEnableLocalIdentity() {
     MavlinkConfigDTO config = new MavlinkConfigDTO();
-    config.setSystemId(255);
-    config.setComponentId(0);
 
-    assertFalse(config.hasLocalMavlinkIdentity());
-  }
-
-  @Test
-  void validSystemAndComponentIdsEnableOutboundMavlink() {
-    MavlinkConfigDTO config = new MavlinkConfigDTO();
-    config.setSystemId(255);
-    config.setComponentId(190);
-
+    config.setSystemId(1);
+    config.setComponentId(1);
     assertTrue(config.hasLocalMavlinkIdentity());
+
+    config.setSystemId(255);
+    config.setComponentId(255);
+    assertTrue(config.hasLocalMavlinkIdentity());
+  }
+
+  @Test
+  void missingZeroOrNegativeIdentityComponentsRemainListenOnly() {
+    MavlinkConfigDTO config = new MavlinkConfigDTO();
+
+    config.setSystemId(1);
+    assertFalse(config.hasLocalMavlinkIdentity());
+
+    config.setComponentId(1);
+    config.setSystemId(0);
+    assertFalse(config.hasLocalMavlinkIdentity());
+
+    config.setSystemId(1);
+    config.setComponentId(0);
+    assertFalse(config.hasLocalMavlinkIdentity());
+
+    config.setSystemId(-1);
+    config.setComponentId(190);
+    assertFalse(config.hasLocalMavlinkIdentity());
   }
 }
