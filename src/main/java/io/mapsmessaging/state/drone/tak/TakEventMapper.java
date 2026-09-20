@@ -21,6 +21,9 @@ package io.mapsmessaging.state.drone.tak;
 
 import io.mapsmessaging.cot.types.Affiliation;
 import io.mapsmessaging.state.config.VehicleClass;
+import io.mapsmessaging.cot.types.BattleDimension;
+import io.mapsmessaging.cot.types.CotType;
+import io.mapsmessaging.cot.types.FunctionKey;
 import io.mapsmessaging.state.config.DataProductConfig;
 import io.mapsmessaging.state.drone.tak.model.TakVideo;
 import java.net.URI;
@@ -127,7 +130,7 @@ public class TakEventMapper {
 
     TakEvent event = new TakEvent();
     event.setUid(detection.getContactId().toString());
-    event.setType(DETECTION_COT_TYPE);
+    event.setType(resolveDetectionType(source));
     event.setHow(DEFAULT_HOW);
     event.setTime(formatInstant(eventTime));
     event.setStart(formatInstant(eventTime));
@@ -520,6 +523,21 @@ public class TakEventMapper {
     }
 
     return flightMode;
+  }
+
+  /**
+   * A detection is unknown by definition -- nobody has classified it -- but the medium it was
+   * found in is not: a surface vessel detects things on the water. The dimension of whatever saw
+   * it is therefore a better statement than a fixed type, and {@link #DETECTION_COT_TYPE} remains
+   * the fallback for a source that says nothing about itself.
+   */
+  private String resolveDetectionType(DroneTwin source) {
+    BattleDimension dimension =
+        CotTypeResolver.symbolSetDimension(source == null ? null : source.getDescription());
+    if (dimension == null || dimension == BattleDimension.OTHER) {
+      return DETECTION_COT_TYPE;
+    }
+    return CotType.of(Affiliation.UNKNOWN, dimension, FunctionKey.empty()).toString();
   }
 
   private Instant resolveDetectionEventTime(

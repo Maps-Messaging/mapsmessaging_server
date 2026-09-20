@@ -1,2 +1,3 @@
 io.mapsmessaging.state.adapter.mti.MtiStatusAdapterFactory
 io.mapsmessaging.state.adapter.cot.CotIngestAdapterFactory
+io.mapsmessaging.state.adapter.twin.TwinContactIngestAdapterFactory
