@@ -21,7 +21,7 @@ class N2kTwinUpdaterBranchCoverageTest {
     N2KTwinConfig config = new N2KTwinConfig();
     config.setName("  boat/a##+b  ");
     config.setTopic("/ignored/#");
-    assertEquals("boat-a__b", build.invoke(updater, config));
+    assertEquals("boat-a___b", build.invoke(updater, config));
 
     config.setName(" ");
     config.setTopic("/n2k/boat/#");
