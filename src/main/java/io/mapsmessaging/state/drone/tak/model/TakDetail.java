@@ -49,6 +49,9 @@ public class TakDetail {
   @Schema(description = "TAK client/platform information.")
   private TakPlatform takv;
 
+  @Schema(description = "Video stream URL associated with this event.", nullable = true)
+  private String videoUrl;
+
   @Schema(description = "Link health metadata.")
   private TakLinkState mapsLink;
 

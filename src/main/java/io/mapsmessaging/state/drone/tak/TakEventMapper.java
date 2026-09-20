@@ -44,6 +44,7 @@ public class TakEventMapper {
   private static final long DEFAULT_STALE_SECONDS = 30L;
   private static final String DETECTION_COT_TYPE = "a-u-G";
   private static final String DETECTION_PARENT_RELATION = "p-p";
+  private static final String DETECTION_VIDEO_URL_ATTRIBUTE = "tak.videoUrl";
 
   public TakEvent map(EntityTwin twin, TwinUpdateContext context) {
     if (twin == null || twin.getGeoPosition() == null) {
@@ -141,6 +142,7 @@ public class TakEventMapper {
     parent.setRelation(DETECTION_PARENT_RELATION);
     detail.getLinks().add(parent);
     detail.setPrecisionLocation(buildPrecisionLocation());
+    detail.setVideoUrl(resolveDetectionVideoUrl(detection));
     event.setDetail(detail);
 
     return event;
@@ -354,6 +356,20 @@ public class TakEventMapper {
     }
 
     return flightMode;
+  }
+
+  private String resolveDetectionVideoUrl(DetectionEvent detection) {
+    if (detection.getAttributes() == null) {
+      return null;
+    }
+
+    Object videoUrl = detection.getAttributes().get(DETECTION_VIDEO_URL_ATTRIBUTE);
+    if (videoUrl == null) {
+      return null;
+    }
+
+    String value = String.valueOf(videoUrl);
+    return value.isBlank() ? null : value;
   }
 
   private Instant resolveDetectionEventTime(

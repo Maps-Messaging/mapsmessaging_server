@@ -68,6 +68,7 @@ public class TakXmlSerialiser {
     appendStatus(stringBuilder, detail.getStatus());
     appendRemarks(stringBuilder, detail.getRemarks());
     appendPrecisionLocation(stringBuilder, detail.getPrecisionLocation());
+    appendVideo(stringBuilder, detail.getVideoUrl());
     appendTakPlatform(stringBuilder, detail.getTakv());
     appendLinkState(stringBuilder, detail.getMapsLink());
     appendArchive(stringBuilder, detail.getArchive());
@@ -134,6 +135,16 @@ public class TakXmlSerialiser {
     stringBuilder.append("<precisionlocation");
     appendAttribute(stringBuilder, "altsrc", precisionLocation.getAltsrc());
     appendAttribute(stringBuilder, "geopointsrc", precisionLocation.getGeopointsrc());
+    stringBuilder.append("/>");
+  }
+
+  private void appendVideo(StringBuilder stringBuilder, String videoUrl) {
+    if (videoUrl == null || videoUrl.isBlank()) {
+      return;
+    }
+
+    stringBuilder.append("<__video");
+    appendAttribute(stringBuilder, "url", videoUrl);
     stringBuilder.append("/>");
   }
 

@@ -23,6 +23,7 @@ class TakDetectionEventMapperTest {
       UUID.fromString("74f36503-e9e5-47fa-92bf-d7a9915018c8");
 
   private final TakEventMapper mapper = new TakEventMapper();
+  private final TakXmlSerialiser serialiser = new TakXmlSerialiser();
 
   @Test
   void mapsDetectionToStableCotEvent() {
@@ -32,6 +33,7 @@ class TakDetectionEventMapperTest {
     detection.setPosition(new GeoPosition(38.42886d, -9.10898d, 0.0d, null, null));
     detection.setTimestamp(Instant.parse("2026-09-20T10:00:00Z"));
     detection.setTtlMillis(60_000L);
+    detection.addAttribute("tak.videoUrl", "https://ops-se.stickleback.ai/optical_view/");
 
     TakEvent event = mapper.mapDetection(drone, detection, new TwinUpdateContext());
 
@@ -43,6 +45,14 @@ class TakDetectionEventMapperTest {
     assertEquals("target-1", event.getDetail().getContact().getCallsign());
     assertEquals("USV-002", event.getDetail().getLinks().getFirst().getUid());
     assertEquals("p-p", event.getDetail().getLinks().getFirst().getRelation());
+    assertEquals(
+        "https://ops-se.stickleback.ai/optical_view/",
+        event.getDetail().getVideoUrl());
+    assertEquals(
+        true,
+        serialiser
+            .toXml(event)
+            .contains("<__video url=\"https://ops-se.stickleback.ai/optical_view/\"/>"));
 
     detection.setEventType(DetectionEventType.UPDATED);
     assertEquals(CONTACT_ID.toString(), mapper.mapDetection(drone, detection, null).getUid());

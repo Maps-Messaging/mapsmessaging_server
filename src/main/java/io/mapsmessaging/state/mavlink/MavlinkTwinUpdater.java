@@ -26,6 +26,7 @@ import io.mapsmessaging.dto.rest.config.protocol.impl.MavlinkKnownSourceDTO;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.mavlink.ProcessedFrame;
+import io.mapsmessaging.state.config.DataProductConfig;
 import io.mapsmessaging.state.config.DroneInfoDTO;
 import io.mapsmessaging.state.config.StopActionEnum;
 import io.mapsmessaging.state.config.VehicleClass;
@@ -58,6 +59,7 @@ public class MavlinkTwinUpdater implements AutoCloseable {
       "completeTaskOnArrivalTolerance";
   private static final String COMPLETE_TASK_ON_AUTO_TO_LOITER_ATTRIBUTE =
       "completeTaskOnAutoToLoiter";
+  private static final String TAK_VIDEO_URL_ATTRIBUTE = "tak.videoUrl";
 
   private final Logger logger = LoggerFactory.getLogger(MavlinkTwinUpdater.class);
 
@@ -145,7 +147,7 @@ public class MavlinkTwinUpdater implements AutoCloseable {
         if (sender != null) {
           sender.onMavlinkMessage(packet);
         }
-        applyModelDetectionEvent(droneTwin, packet, context);
+        applyModelDetectionEvent(droneTwin, packet, context, droneInfo);
       }
     } finally {
       droneMonitor.endTwinUpdate(twinId, context);
@@ -173,7 +175,10 @@ public class MavlinkTwinUpdater implements AutoCloseable {
   }
 
   private void applyModelDetectionEvent(
-      DroneTwin droneTwin, MavlinkPacket packet, TwinUpdateContext context) {
+      DroneTwin droneTwin,
+      MavlinkPacket packet,
+      TwinUpdateContext context,
+      DroneInfoDTO droneInfo) {
     String modelName = droneTwin.getModelName();
     if (modelName == null || modelName.isBlank()) {
       return;
@@ -183,10 +188,37 @@ public class MavlinkTwinUpdater implements AutoCloseable {
       UxvModel uxvModel = ModelManager.getInstance().getRequiredModel(modelName);
       if (uxvModel != null) {
         Optional<DetectionEvent> detectionEvent = uxvModel.interpretDetection(droneTwin, packet);
-        detectionEvent.ifPresent(event -> applyDetectionEvent(droneTwin, event, context));
+        detectionEvent.ifPresent(
+            event -> {
+              attachVideoUrl(event, droneInfo);
+              applyDetectionEvent(droneTwin, event, context);
+            });
       }
     } catch (IllegalArgumentException e) {
       // no such model, ignore
+    }
+  }
+
+  private void attachVideoUrl(DetectionEvent event, DroneInfoDTO droneInfo) {
+    if (event == null
+        || droneInfo == null
+        || event.getAttributes().containsKey(TAK_VIDEO_URL_ATTRIBUTE)) {
+      return;
+    }
+
+    for (DataProductConfig dataProduct : droneInfo.getDataProducts()) {
+      if (dataProduct == null
+          || dataProduct.getUri() == null
+          || dataProduct.getUri().isBlank()
+          || dataProduct.getProductType() == null) {
+        continue;
+      }
+
+      Object typeName = dataProduct.getProductType().get("name");
+      if (typeName != null && String.valueOf(typeName).startsWith("video/")) {
+        event.addAttribute(TAK_VIDEO_URL_ATTRIBUTE, dataProduct.getUri());
+        return;
+      }
     }
   }
 
