@@ -65,4 +65,7 @@ public class TakDetail {
 
   @ArraySchema(arraySchema = @Schema(description = "Relationship links to other TAK entities."))
   private List<TakLink> links = new ArrayList<>();
+
+  @Schema(description = "Video feeds the client can play from this marker.")
+  private List<TakVideo> videos = new ArrayList<>();
 }

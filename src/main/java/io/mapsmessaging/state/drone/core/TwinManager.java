@@ -24,6 +24,8 @@ import io.mapsmessaging.geospatial.GeoSpatialAreaRegistry;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.state.auditor.StateAuditContext;
+import io.mapsmessaging.state.drone.drone.DroneTwin;
+import io.mapsmessaging.state.drone.model.DetectionEvent;
 import io.mapsmessaging.state.drone.model.LinkState;
 import lombok.Getter;
 
@@ -251,6 +253,21 @@ public class TwinManager {
     }
     logger.log(TWIN_RELATIONSHIP_REMOVED, twinId, sourceTwinId, targetTwinId, relationshipType);
     return Optional.of(twin);
+  }
+
+  public void notifyDetectionEvent(
+      DroneTwin source, DetectionEvent event, TwinUpdateContext context) {
+    if (source == null || event == null) {
+      return;
+    }
+
+    for (TwinObserver observer : observers) {
+      try {
+        observer.onDetectionEvent(source, event, context);
+      } catch (Throwable ignore) {
+        logger.log(TWIN_OBSERVER_CALLBACK_FAILED, ignore);
+      }
+    }
   }
 
   public int getTwinCountByStatus(TwinLifecycleStatus status) {
