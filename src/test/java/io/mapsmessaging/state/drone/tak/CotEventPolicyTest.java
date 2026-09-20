@@ -4,6 +4,7 @@
  */
 package io.mapsmessaging.state.drone.tak;
 
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -279,6 +280,47 @@ class CotEventPolicyTest {
 
     assertEquals("a-n-U-S-U", event.getType());
     assertEquals("2026-09-12T10:00:01Z", event.getStale());
+  }
+
+
+  @Test
+  void defaultPolicyAppliesHowErrorsAndPrecisionSources() {
+    TakEvent event = new TakEvent();
+    event.setPoint(new io.mapsmessaging.state.drone.tak.model.TakPoint());
+    event.setDetail(new io.mapsmessaging.state.drone.tak.model.TakDetail());
+
+    policy.apply(event, new DroneTwin("source"), null, null);
+
+    assertEquals("h-g-i-g-o", event.getHow());
+    assertEquals(10.0, event.getPoint().getCe(), 0.0);
+    assertEquals(15.0, event.getPoint().getLe(), 0.0);
+    assertEquals("GPS", event.getDetail().getPrecisionLocation().getAltsrc());
+    assertEquals("GPS", event.getDetail().getPrecisionLocation().getGeopointsrc());
+  }
+
+  @Test
+  void defaultPolicyAdvancesStaleByThirtySeconds() {
+    DroneTwin twin = new DroneTwin("drone-default");
+    twin.setGeoPosition(new GeoPosition(1.0, 2.0, 3.0, null, null));
+
+    TakEvent event = new TakEvent();
+    event.setUid("drone-default");
+    event.setType("a-f-A");
+    event.setHow("old");
+    event.setTime(Instant.parse("2026-09-20T12:00:00Z").toString());
+    event.setPoint(new io.mapsmessaging.state.drone.tak.model.TakPoint());
+    event.setDetail(new io.mapsmessaging.state.drone.tak.model.TakDetail());
+
+    policy.apply(event, twin, null, null);
+
+    assertEquals("h-g-i-g-o", event.getHow());
+    assertEquals("2026-09-20T12:00:30Z", event.getStale());
+  }
+
+  @Test
+  void nullPolicyInputsAreIgnored() {
+    assertDoesNotThrow(() -> policy.apply(null, new DroneTwin("d"), null, null));
+    assertDoesNotThrow(() -> policy.apply(new TakEvent(), null, null, null));
   }
 
   // --- data products on the contact ------------------------------------------------------
