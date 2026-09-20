@@ -22,6 +22,9 @@ package io.mapsmessaging.state.drone.tak;
 import io.mapsmessaging.cot.types.Affiliation;
 import io.mapsmessaging.state.config.VehicleClass;
 import io.mapsmessaging.state.config.DataProductConfig;
+import io.mapsmessaging.state.drone.tak.model.TakVideo;
+import java.net.URI;
+import java.nio.charset.StandardCharsets;
 import io.mapsmessaging.state.drone.core.EntityTwin;
 import io.mapsmessaging.state.drone.core.TwinRelationship;
 import io.mapsmessaging.state.drone.core.TwinType;
@@ -32,6 +35,9 @@ import io.mapsmessaging.state.drone.tak.model.*;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
+import java.util.Locale;
+import java.util.UUID;
 import java.util.List;
 
 public class TakEventMapper {
@@ -79,6 +85,7 @@ public class TakEventMapper {
     detail.setTrack(buildTrack(twin, velocityVector, orientation));
     detail.setStatus(buildStatus(twin, "updated"));
     detail.setRemarks(resolveRemarks(twin));
+    detail.setVideos(resolveVideos(twin));
     detail.setPrecisionLocation(buildPrecisionLocation());
     detail.setTakv(buildPlatform(twin));
     detail.setMapsLink(buildLinkState(twin.getLinkState()));
@@ -115,6 +122,7 @@ public class TakEventMapper {
     TakDetail detail = new TakDetail();
     detail.setContact(buildContact(twin));
     detail.setRemarks(resolveRemarks(twin));
+    detail.setVideos(resolveVideos(twin));
     detail.setPrecisionLocation(buildPrecisionLocation());
     detail.setStatus(buildStatus(twin, "removed"));
     event.setDetail(detail);
@@ -283,8 +291,87 @@ public class TakEventMapper {
       if (dataProduct == null || dataProduct.getUri() == null || dataProduct.getUri().isBlank()) {
         continue;
       }
-      appendLabelledRemark(remarksBuilder, dataProductLabel(dataProduct), dataProduct.getUri().trim());
+      String uri = dataProduct.getUri().trim();
+      // a stream the client plays is a __video element instead: it also keeps a URL that may
+      // carry credentials out of the remarks, where they would be in plain sight on the marker
+      if (videoFeed(uri) == null) {
+        appendLabelledRemark(remarksBuilder, dataProductLabel(dataProduct), uri);
+      }
     }
+  }
+
+  /**
+   * The video feeds among a node's data products: the streams TAK's own player opens (RTSP, RTMP
+   * or an HLS playlist). A page it cannot open is left to the remarks as a link.
+   */
+  private List<TakVideo> resolveVideos(EntityTwin twin) {
+    if (!(twin instanceof DroneTwin droneTwin) || droneTwin.getDataProducts() == null) {
+      return List.of();
+    }
+    List<TakVideo> videos = new ArrayList<>();
+    for (DataProductConfig dataProduct : droneTwin.getDataProducts()) {
+      if (dataProduct == null || dataProduct.getUri() == null || dataProduct.getUri().isBlank()) {
+        continue;
+      }
+      TakVideo video = videoFeed(dataProduct.getUri().trim());
+      if (video == null) {
+        continue;
+      }
+      video.setAlias(dataProductLabel(dataProduct));
+      video.setUid(feedUid(dataProduct, video.getUrl()));
+      videos.add(video);
+    }
+    return videos;
+  }
+
+  /** The stream taken apart, or null when the client has no player for it. */
+  private TakVideo videoFeed(String uri) {
+    URI parsed;
+    try {
+      parsed = URI.create(uri);
+    } catch (IllegalArgumentException e) {
+      return null;
+    }
+    String scheme = parsed.getScheme() == null ? "" : parsed.getScheme().toLowerCase(Locale.ROOT);
+    String path = parsed.getPath() == null ? "" : parsed.getPath();
+    boolean playable = switch (scheme) {
+      case "rtsp", "rtsps", "rtmp", "rtmps", "udp", "srt" -> true;
+      case "http", "https" -> path.endsWith(".m3u8") || path.endsWith(".ts");
+      default -> false;
+    };
+    if (!playable || parsed.getHost() == null) {
+      return null;
+    }
+    TakVideo video = new TakVideo();
+    video.setUrl(uri);
+    video.setProtocol(scheme);
+    video.setAddress(parsed.getHost());
+    video.setPort(parsed.getPort() > 0 ? parsed.getPort() : defaultPort(scheme));
+    video.setPath(path);
+    return video;
+  }
+
+  private static int defaultPort(String scheme) {
+    return switch (scheme) {
+      case "rtsp" -> 554;
+      case "rtsps" -> 322;
+      case "rtmp" -> 1935;
+      case "rtmps" -> 443;
+      case "https" -> 443;
+      case "http" -> 80;
+      default -> -1;
+    };
+  }
+
+  /**
+   * The feed's identity: the configured one, else derived from the URL so that it is the same in
+   * every event and a client does not collect a new feed each second.
+   */
+  private static String feedUid(DataProductConfig dataProduct, String url) {
+    if (dataProduct.getIdentifier() != null && !dataProduct.getIdentifier().isBlank()) {
+      return dataProduct.getIdentifier().trim();
+    }
+    return UUID.nameUUIDFromBytes(url.getBytes(StandardCharsets.UTF_8)).toString();
   }
 
   private String dataProductLabel(DataProductConfig dataProduct) {
