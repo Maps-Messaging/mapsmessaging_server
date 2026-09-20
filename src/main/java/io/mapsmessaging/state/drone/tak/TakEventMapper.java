@@ -42,6 +42,8 @@ public class TakEventMapper {
   private static final double DEFAULT_CE = 10.0;
   private static final double DEFAULT_LE = 15.0;
   private static final long DEFAULT_STALE_SECONDS = 30L;
+  private static final String DETECTION_COT_TYPE = "a-u-G";
+  private static final String DETECTION_PARENT_RELATION = "p-p";
 
   public TakEvent map(EntityTwin twin, TwinUpdateContext context) {
     if (twin == null || twin.getGeoPosition() == null) {
@@ -91,6 +93,56 @@ public class TakEventMapper {
     }
 
     event.setDetail(detail);
+    return event;
+  }
+
+  public TakEvent mapDetection(
+      DroneTwin source, DetectionEvent detection, TwinUpdateContext context) {
+    if (source == null
+        || detection == null
+        || detection.getContactId() == null
+        || detection.getTtlMillis() == null
+        || detection.getTtlMillis() <= 0
+        || !detection.isDetectedOrUpdated()
+        || !isValidDetectionPosition(detection.getPosition())) {
+      return null;
+    }
+
+    Instant eventTime = resolveDetectionEventTime(detection, context);
+    Instant staleTime = eventTime.plusMillis(detection.getTtlMillis());
+    GeoPosition position = detection.getPosition();
+
+    TakEvent event = new TakEvent();
+    event.setUid(detection.getContactId().toString());
+    event.setType(DETECTION_COT_TYPE);
+    event.setHow(DEFAULT_HOW);
+    event.setTime(formatInstant(eventTime));
+    event.setStart(formatInstant(eventTime));
+    event.setStale(formatInstant(staleTime));
+
+    TakPoint point = new TakPoint();
+    point.setLat(position.getLatitude());
+    point.setLon(position.getLongitude());
+    point.setHae(readAltitude(position));
+    point.setCe(DEFAULT_CE);
+    point.setLe(DEFAULT_LE);
+    event.setPoint(point);
+
+    TakDetail detail = new TakDetail();
+    if (detection.getName() != null && !detection.getName().isBlank()) {
+      TakContact contact = new TakContact();
+      contact.setCallsign(detection.getName());
+      detail.setContact(contact);
+      detail.setRemarks(detection.getName());
+    }
+
+    TakLink parent = new TakLink();
+    parent.setUid(resolveUid(source));
+    parent.setRelation(DETECTION_PARENT_RELATION);
+    detail.getLinks().add(parent);
+    detail.setPrecisionLocation(buildPrecisionLocation());
+    event.setDetail(detail);
+
     return event;
   }
 
@@ -302,6 +354,37 @@ public class TakEventMapper {
     }
 
     return flightMode;
+  }
+
+  private Instant resolveDetectionEventTime(
+      DetectionEvent detection, TwinUpdateContext context) {
+    if (detection.getTimestamp() != null) {
+      return detection.getTimestamp();
+    }
+    if (context != null && context.getEventTime() != null) {
+      return context.getEventTime();
+    }
+    if (context != null && context.getReceivedTime() != null) {
+      return context.getReceivedTime();
+    }
+    return Instant.now();
+  }
+
+  private boolean isValidDetectionPosition(GeoPosition position) {
+    if (position == null
+        || position.getLatitude() == null
+        || position.getLongitude() == null) {
+      return false;
+    }
+
+    double latitude = position.getLatitude();
+    double longitude = position.getLongitude();
+    return Double.isFinite(latitude)
+        && Double.isFinite(longitude)
+        && latitude >= -90.0
+        && latitude <= 90.0
+        && longitude >= -180.0
+        && longitude <= 180.0;
   }
 
   private Instant resolveEventTime(EntityTwin twin, TwinUpdateContext context) {

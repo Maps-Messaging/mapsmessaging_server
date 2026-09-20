@@ -34,7 +34,9 @@ import io.mapsmessaging.state.drone.core.TwinManager;
 import io.mapsmessaging.state.drone.core.TwinObserver;
 import io.mapsmessaging.state.drone.core.TwinRelationship;
 import io.mapsmessaging.state.drone.core.TwinUpdateContext;
+import io.mapsmessaging.state.drone.drone.DroneTwin;
 import io.mapsmessaging.state.drone.model.BatteryState;
+import io.mapsmessaging.state.drone.model.DetectionEvent;
 import io.mapsmessaging.state.drone.tak.model.TakEvent;
 import io.mapsmessaging.state.logging.StateLogMessages;
 import io.mapsmessaging.utilities.configuration.ConfigurationManager;
@@ -223,6 +225,29 @@ public class TakTwinObserver implements TwinObserver {
   }
 
   @Override
+  public void onDetectionEvent(
+      DroneTwin source, DetectionEvent event, TwinUpdateContext context) {
+    if (source == null || source.getTwinId() == null || source.getTwinId().isBlank()) {
+      return;
+    }
+
+    TakTwinContext twinContext =
+        takContexts.computeIfAbsent(source.getTwinId(), key -> new TakTwinContext());
+
+    CotConfigDTO cotConfig = resolveCotConfig(context, twinContext);
+    if (namespaceFilteringEnabled && cotConfig == null) {
+      return;
+    }
+
+    TakEvent takEvent = takEventMapper.mapDetection(source, event, context);
+    if (takEvent == null) {
+      return;
+    }
+
+    publishDetection(takXmlSerialiser.toXml(takEvent), twinContext);
+  }
+
+  @Override
   public void onRelationshipUpdated(
       String twinId, TwinRelationship relationship, TwinUpdateContext context) {
     // ignored for now
@@ -281,6 +306,26 @@ public class TakTwinObserver implements TwinObserver {
                 globalSocketConnection, () -> new TakSocketConnection(takHost, takPort, sslSocketFactory)));
       }
 
+      twinContext.getSocketConnection().accept(xml);
+    }
+
+    if (eventPublisher != null) {
+      try {
+        eventPublisher.publish(xml);
+      } catch (IOException exception) {
+        exception.printStackTrace();
+      }
+    }
+  }
+
+  private void publishDetection(String xml, TakTwinContext twinContext) {
+    if (takHost != null && !takHost.isBlank() && takPort > 0) {
+      if (twinContext.getSocketConnection() == null) {
+        twinContext.setSocketConnection(
+            Objects.requireNonNullElseGet(
+                globalSocketConnection,
+                () -> new TakSocketConnection(takHost, takPort, sslSocketFactory)));
+      }
       twinContext.getSocketConnection().accept(xml);
     }
 
