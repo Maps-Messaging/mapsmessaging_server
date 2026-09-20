@@ -10,6 +10,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import io.mapsmessaging.state.config.CotAffiliation;
+import io.mapsmessaging.state.config.DataProductConfig;
 import io.mapsmessaging.state.config.CotConfigDTO;
 import io.mapsmessaging.state.config.VehicleClass;
 import io.mapsmessaging.state.drone.core.TwinUpdateContext;
@@ -17,6 +18,7 @@ import io.mapsmessaging.state.drone.drone.DroneTwin;
 import io.mapsmessaging.state.drone.model.GeoPosition;
 import io.mapsmessaging.state.drone.tak.model.TakEvent;
 import java.time.Instant;
+import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.AfterEach;
@@ -276,6 +278,62 @@ class CotEventPolicyTest {
 
     assertEquals("a-n-U-S-U", event.getType());
     assertEquals("2026-09-12T10:00:01Z", event.getStale());
+  }
+
+  // --- data products on the contact ------------------------------------------------------
+  // An asset's external data products (a camera page, a stream) belong where the operator
+  // looks: the marker's remarks, which both TAK clients render and linkify.
+
+  @Test
+  void aDataProductUriReachesTheMarkersRemarks() {
+    DroneTwin usv = twin(VehicleClass.USV);
+    usv.setDescriptionString("unmanned surface vehicle");
+    usv.setDataProducts(List.of(dataProduct("optical", "https://example.net/optical_view/"),
+        dataProduct("thermal", "https://example.net/thermal_view/")));
+
+    TakEvent event = mapper.map(usv, new TwinUpdateContext());
+
+    assertEquals("unmanned surface vehicle | optical=https://example.net/optical_view/"
+        + " | thermal=https://example.net/thermal_view/", event.getDetail().getRemarks());
+  }
+
+  @Test
+  void aDataProductWithoutAUriIsNotRemarkedOn() {
+    DroneTwin usv = twin(VehicleClass.USV);
+    DataProductConfig noUri = new DataProductConfig();
+    noUri.setDescription("sonar log");
+    usv.setDataProducts(List.of(noUri, dataProduct("optical", "https://example.net/optical_view/")));
+
+    TakEvent event = mapper.map(usv, new TwinUpdateContext());
+
+    assertEquals("optical=https://example.net/optical_view/", event.getDetail().getRemarks());
+  }
+
+  @Test
+  void aDataProductFallsBackToItsIdentifierForALabel() {
+    DroneTwin usv = twin(VehicleClass.USV);
+    DataProductConfig unnamed = new DataProductConfig();
+    unnamed.setIdentifier("cam-1");
+    unnamed.setUri("https://example.net/optical_view/");
+    usv.setDataProducts(List.of(unnamed));
+
+    assertEquals("cam-1=https://example.net/optical_view/",
+        mapper.map(usv, new TwinUpdateContext()).getDetail().getRemarks());
+  }
+
+  @Test
+  void aTwinWithoutDataProductsRemarksExactlyAsBefore() {
+    DroneTwin usv = twin(VehicleClass.USV);
+    usv.setDescriptionString("unmanned surface vehicle");
+
+    assertEquals("unmanned surface vehicle", mapper.map(usv, new TwinUpdateContext()).getDetail().getRemarks());
+  }
+
+  private static DataProductConfig dataProduct(String description, String uri) {
+    DataProductConfig product = new DataProductConfig();
+    product.setDescription(description);
+    product.setUri(uri);
+    return product;
   }
 
   private DroneTwin twin(VehicleClass vehicleClass) {

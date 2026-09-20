@@ -21,6 +21,7 @@ package io.mapsmessaging.state.drone.tak;
 
 import io.mapsmessaging.cot.types.Affiliation;
 import io.mapsmessaging.state.config.VehicleClass;
+import io.mapsmessaging.state.config.DataProductConfig;
 import io.mapsmessaging.state.drone.core.EntityTwin;
 import io.mapsmessaging.state.drone.core.TwinRelationship;
 import io.mapsmessaging.state.drone.core.TwinType;
@@ -31,6 +32,7 @@ import io.mapsmessaging.state.drone.tak.model.*;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.List;
 
 public class TakEventMapper {
 
@@ -256,6 +258,7 @@ public class TakEventMapper {
       appendLabelledRemark(remarksBuilder, "mission", droneTwin.getMissionState());
       appendLabelledRemark(remarksBuilder, "landed", droneTwin.getLandedState());
       appendLabelledRemark(remarksBuilder, "vtol", droneTwin.getVtolState());
+      appendDataProducts(remarksBuilder, droneTwin);
     }
 
     if (remarksBuilder.isEmpty() && twin.getDisplayName() != null && !twin.getDisplayName().isBlank()) {
@@ -263,6 +266,35 @@ public class TakEventMapper {
     }
 
     return remarksBuilder.isEmpty() ? null : remarksBuilder.toString();
+  }
+
+  /**
+   * The node's external data products, as {@code <label>=<uri>} remarks: a camera page or a
+   * stream is something the operator opens from the marker, and both TAK clients turn a URL in
+   * the remarks into a link. A product with no URI is configuration, not a destination, and is
+   * left out.
+   */
+  private void appendDataProducts(StringBuilder remarksBuilder, DroneTwin droneTwin) {
+    List<DataProductConfig> dataProducts = droneTwin.getDataProducts();
+    if (dataProducts == null) {
+      return;
+    }
+    for (DataProductConfig dataProduct : dataProducts) {
+      if (dataProduct == null || dataProduct.getUri() == null || dataProduct.getUri().isBlank()) {
+        continue;
+      }
+      appendLabelledRemark(remarksBuilder, dataProductLabel(dataProduct), dataProduct.getUri().trim());
+    }
+  }
+
+  private String dataProductLabel(DataProductConfig dataProduct) {
+    if (dataProduct.getDescription() != null && !dataProduct.getDescription().isBlank()) {
+      return dataProduct.getDescription().trim();
+    }
+    if (dataProduct.getIdentifier() != null && !dataProduct.getIdentifier().isBlank()) {
+      return dataProduct.getIdentifier().trim();
+    }
+    return "stream";
   }
 
   private void appendRemarkText(StringBuilder remarksBuilder, String value) {
