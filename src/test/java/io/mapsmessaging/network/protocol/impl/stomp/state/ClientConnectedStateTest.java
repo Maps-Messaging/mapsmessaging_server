@@ -2,12 +2,14 @@ package io.mapsmessaging.network.protocol.impl.stomp.state;
 
 import io.mapsmessaging.api.MessageBuilder;
 import io.mapsmessaging.api.message.Message;
+import io.mapsmessaging.network.io.Packet;
 import io.mapsmessaging.network.protocol.impl.stomp.StompProtocol;
 import io.mapsmessaging.network.protocol.impl.stomp.frames.Frame;
 import io.mapsmessaging.network.protocol.impl.stomp.frames.Send;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 
+import java.nio.charset.StandardCharsets;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -51,7 +53,7 @@ class ClientConnectedStateTest {
   }
 
   @Test
-  void base64ModeIsAppliedToPayloadButDataRoundTrips() {
+  void base64ModeIsAppliedToOutboundWirePayload() {
     SessionState engine = mock(SessionState.class);
     StompProtocol protocol = mock(StompProtocol.class);
     when(engine.getProtocol()).thenReturn(protocol);
@@ -69,6 +71,16 @@ class ClientConnectedStateTest {
     ArgumentCaptor<Frame> captor = ArgumentCaptor.forClass(Frame.class);
     verify(engine).send(captor.capture());
     Send frame = (Send) captor.getValue();
-    assertArrayEquals(new byte[]{1, 2}, frame.getData());
+    assertTrue(frame.getHeaderAsString().contains("encoding:base64"));
+
+    Packet packet = new Packet(256, false);
+    frame.packFrame(packet);
+    packet.flip();
+    byte[] wireBytes = new byte[packet.available()];
+    packet.get(wireBytes);
+    String wire = new String(wireBytes, StandardCharsets.US_ASCII);
+
+    assertTrue(wire.contains("encoding:base64"));
+    assertTrue(wire.contains("AQI="));
   }
 }
