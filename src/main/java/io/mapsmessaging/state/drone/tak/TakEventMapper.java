@@ -20,6 +20,9 @@
 package io.mapsmessaging.state.drone.tak;
 
 import io.mapsmessaging.cot.types.Affiliation;
+import io.mapsmessaging.cot.types.BattleDimension;
+import io.mapsmessaging.cot.types.CotType;
+import io.mapsmessaging.cot.types.FunctionKey;
 import io.mapsmessaging.state.config.VehicleClass;
 import io.mapsmessaging.state.config.DataProductConfig;
 import io.mapsmessaging.state.drone.tak.model.TakVideo;
@@ -127,7 +130,7 @@ public class TakEventMapper {
 
     TakEvent event = new TakEvent();
     event.setUid(detection.getContactId().toString());
-    event.setType(DETECTION_COT_TYPE);
+    event.setType(resolveDetectionType(source));
     event.setHow(DEFAULT_HOW);
     event.setTime(formatInstant(eventTime));
     event.setStart(formatInstant(eventTime));
@@ -520,6 +523,37 @@ public class TakEventMapper {
     }
 
     return flightMode;
+  }
+
+  private String resolveDetectionType(DroneTwin source) {
+    BattleDimension dimension = resolveDetectionDimension(source);
+    if (dimension == null || dimension == BattleDimension.OTHER) {
+      return DETECTION_COT_TYPE;
+    }
+    return CotType.of(Affiliation.UNKNOWN, dimension, FunctionKey.empty()).toString();
+  }
+
+  private BattleDimension resolveDetectionDimension(DroneTwin source) {
+    if (source == null) {
+      return BattleDimension.OTHER;
+    }
+
+    VehicleClass vehicleClass = source.getVehicleClass();
+    if (vehicleClass != null) {
+      BattleDimension vehicleDimension =
+          switch (vehicleClass) {
+            case UAV -> BattleDimension.AIR;
+            case USV -> BattleDimension.SEA_SURFACE;
+            case UUV -> BattleDimension.SUBSURFACE;
+            case UGV, GCS -> BattleDimension.GROUND;
+            case UNKNOWN -> BattleDimension.OTHER;
+          };
+      if (vehicleDimension != BattleDimension.OTHER) {
+        return vehicleDimension;
+      }
+    }
+
+    return CotTypeResolver.symbolSetDimension(source.getDescription());
   }
 
   private Instant resolveDetectionEventTime(
