@@ -214,12 +214,16 @@ public class MavlinkTwinUpdater implements AutoCloseable {
         continue;
       }
 
-      Object typeName = dataProduct.getProductType().get("name");
-      if (typeName != null && String.valueOf(typeName).startsWith("video/")) {
+      if (isTakVideoUri(dataProduct.getUri())) {
         event.addAttribute(TAK_VIDEO_URL_ATTRIBUTE, dataProduct.getUri());
         return;
       }
     }
+  }
+
+  private boolean isTakVideoUri(String uri) {
+    String normalised = uri.toLowerCase(java.util.Locale.ROOT);
+    return normalised.startsWith("rtsp://") || normalised.startsWith("rtsps://");
   }
 
   private void updateTwinResponseTopic(EntityTwin twin, String responseTopic) {
