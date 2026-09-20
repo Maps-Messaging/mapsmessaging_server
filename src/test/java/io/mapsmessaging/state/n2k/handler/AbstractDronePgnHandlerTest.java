@@ -3,9 +3,11 @@ package io.mapsmessaging.state.n2k.handler;
 import io.mapsmessaging.state.drone.core.TwinLifecycleStatus;
 import io.mapsmessaging.state.drone.drone.DroneTwin;
 import io.mapsmessaging.state.drone.model.GeoPosition;
+import io.mapsmessaging.state.n2k.DroneEmissionState;
 import org.junit.jupiter.api.Test;
 
 import java.time.Instant;
+import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -128,6 +130,15 @@ class AbstractDronePgnHandlerTest {
     @Override
     public String getName() {
       return "test";
+    }
+
+    @Override
+    public Optional<PgnEmission> emit(
+        DroneTwin droneTwin,
+        DroneEmissionState droneEmissionState,
+        long now
+    ) {
+      return Optional.empty();
     }
 
     boolean active(DroneTwin twin) {
