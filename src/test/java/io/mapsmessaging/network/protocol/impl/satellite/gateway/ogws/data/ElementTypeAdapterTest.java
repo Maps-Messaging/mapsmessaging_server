@@ -32,7 +32,7 @@ class ElementTypeAdapterTest {
   void readsAttributesCaseInsensitively() throws Exception {
     ElementTypeAdapter adapter = new ElementTypeAdapter();
 
-    JsonReader reader = new JsonReader(new StringReader("\\\"BoOlEaN\\\""));
+    JsonReader reader = new JsonReader(new StringReader("\"BoOlEaN\""));
 
     assertSame(ElementType.BOOLEAN, adapter.read(reader));
   }
@@ -43,7 +43,7 @@ class ElementTypeAdapterTest {
 
     assertThrows(
         IllegalArgumentException.class,
-        () -> adapter.read(new JsonReader(new StringReader("\\\"mystery\\\"")))
+        () -> adapter.read(new JsonReader(new StringReader("\"mystery\"")))
     );
   }
 
