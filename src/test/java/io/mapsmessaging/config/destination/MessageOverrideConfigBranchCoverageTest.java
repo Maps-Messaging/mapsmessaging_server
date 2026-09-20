@@ -17,13 +17,13 @@ class MessageOverrideConfigBranchCoverageTest {
   void legacyQualityOfServiceAndOptionalBooleanAbsenceAreParsed() {
     ConfigurationProperties props = new ConfigurationProperties();
     props.put("expiry", 100L);
-    props.put("priority", Priority.HIGH.name());
+    props.put("priority", Priority.HIGHEST.name());
     props.put("qualityOfService", QualityOfService.AT_LEAST_ONCE.name());
 
     MessageOverrideConfig config = new MessageOverrideConfig(props);
 
     assertEquals(100L, config.getExpiry());
-    assertEquals(Priority.HIGH, config.getPriority());
+    assertEquals(Priority.HIGHEST, config.getPriority());
     assertEquals(QualityOfService.AT_LEAST_ONCE, config.getQualityOfService());
     assertNull(config.getRetain());
     assertNull(config.getStoreOffline());
@@ -57,7 +57,7 @@ class MessageOverrideConfigBranchCoverageTest {
 
     MessageOverrideDTO update = new MessageOverrideDTO();
     update.setExpiry(500L);
-    update.setPriority(Priority.LOW);
+    update.setPriority(Priority.LOWEST);
     update.setQualityOfService(QualityOfService.EXACTLY_ONCE);
     update.setResponseTopic("/reply");
     update.setContentType("application/json");
