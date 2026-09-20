@@ -189,6 +189,43 @@ class CotEventPolicyTest {
   }
 
   @Test
+  void aTwinThatOnlyDeclaresItsNodeSpecializationIsStillTyped() {
+    // a source that classifies its node but sends no 2525D entity code: the specialization is
+    // the finest thing it says about the platform
+    DroneTwin usv = twin(null);
+    usv.getDescription().putAll(Map.of("standard_identity", "StandardIdentityEnum_FRIEND",
+        "symbol_set", "SymbolSetEnum_SEA_SURFACE"));
+    usv.getSpecialization().putAll(Map.of("$discriminator", "NodeSpecializationTypeEnum_SURFACE_UNMANNED_SYSTEM",
+        "surface_unmanned_system", Map.of("app11_vessel_type", "NavalVesselTypeEnum_NOT_OTHERWISE_SPECIFIED")));
+    TakEvent usvEvent = mapper.map(usv, new TwinUpdateContext());
+    policy.apply(usvEvent, usv, null, null);
+    assertEquals("a-f-S-C-U", usvEvent.getType());
+
+    // a crewed vessel says which medium it moves in and no more
+    DroneTwin boat = twin(null);
+    boat.getDescription().putAll(Map.of("standard_identity", "StandardIdentityEnum_FRIEND",
+        "symbol_set", "SymbolSetEnum_SEA_SURFACE"));
+    boat.getSpecialization().putAll(Map.of("$discriminator", "NodeSpecializationTypeEnum_SURFACE_VESSEL",
+        "surface_vessel", Map.of()));
+    TakEvent boatEvent = mapper.map(boat, new TwinUpdateContext());
+    policy.apply(boatEvent, boat, null, null);
+    assertEquals("a-f-S", boatEvent.getType());
+  }
+
+  @Test
+  void the2525dEntityCodeStillWinsOverTheSpecialization() {
+    // our own boats carry both: the code is the finer statement (a military RHIB)
+    DroneTwin rhib = twin(null);
+    rhib.getDescription().putAll(Map.of("standard_identity", "StandardIdentityEnum_FRIEND",
+        "symbol_set", "SymbolSetEnum_SEA_SURFACE", "entity", "12", "entity_type", "08", "entity_subtype", "01"));
+    rhib.getSpecialization().putAll(Map.of("$discriminator", "NodeSpecializationTypeEnum_SURFACE_VESSEL",
+        "surface_vessel", Map.of()));
+    TakEvent event = mapper.map(rhib, new TwinUpdateContext());
+    policy.apply(event, rhib, null, null);
+    assertEquals("a-f-S-C", event.getType());
+  }
+
+  @Test
   void copTwinWithoutIdentityIsUnknownNotFriendly() {
     DroneTwin twin = twin(null);
     twin.getDescription().put("symbol_set", "AIR");
