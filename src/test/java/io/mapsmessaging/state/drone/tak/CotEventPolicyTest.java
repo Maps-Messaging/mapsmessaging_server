@@ -56,6 +56,5 @@ class CotEventPolicyTest {
 
     assertDoesNotThrow(() -> policy.apply(null, new DroneTwin("d"), null, null));
     assertDoesNotThrow(() -> policy.apply(new TakEvent(), null, null, null));
-    assertDoesNotThrow(() -> policy.apply(null, new DroneTwin("d"), null, null));
   }
 }
