@@ -68,12 +68,17 @@ public class TakXmlSerialiser {
     appendStatus(stringBuilder, detail.getStatus());
     appendRemarks(stringBuilder, detail.getRemarks());
     appendPrecisionLocation(stringBuilder, detail.getPrecisionLocation());
-    appendVideo(stringBuilder, detail.getVideoUrl());
     appendTakPlatform(stringBuilder, detail.getTakv());
     appendLinkState(stringBuilder, detail.getMapsLink());
     appendArchive(stringBuilder, detail.getArchive());
     appendColor(stringBuilder, detail.getColorArgb());
     appendUsericon(stringBuilder, detail.getUsericonIconsetPath());
+
+    if (detail.getVideos() != null) {
+      for (TakVideo video : detail.getVideos()) {
+        appendVideo(stringBuilder, video);
+      }
+    }
 
     if (detail.getLinks() != null) {
       for (TakLink link : detail.getLinks()) {
@@ -82,6 +87,38 @@ public class TakXmlSerialiser {
     }
 
     stringBuilder.append("</detail>");
+  }
+
+  /**
+   * The {@code __video} element: the client plays the url, and the connection entry beside it is
+   * the same stream taken apart, which is what older clients read. The timeouts and flags are the
+   * values ATAK writes for a stream it has been given by hand.
+   */
+  private void appendVideo(StringBuilder stringBuilder, TakVideo video) {
+    if (video == null || video.getUrl() == null || video.getUrl().isBlank()) {
+      return;
+    }
+
+    stringBuilder.append("<__video");
+    appendAttribute(stringBuilder, "uid", video.getUid());
+    appendAttribute(stringBuilder, "url", video.getUrl());
+    stringBuilder.append(">");
+
+    stringBuilder.append("<ConnectionEntry");
+    appendAttribute(stringBuilder, "uid", video.getUid());
+    appendAttribute(stringBuilder, "alias", video.getAlias());
+    appendAttribute(stringBuilder, "address", video.getAddress());
+    appendAttribute(stringBuilder, "port", video.getPort());
+    appendAttribute(stringBuilder, "path", video.getPath());
+    appendAttribute(stringBuilder, "protocol", video.getProtocol());
+    appendAttribute(stringBuilder, "networkTimeout", 12000);
+    appendAttribute(stringBuilder, "bufferTime", -1);
+    appendAttribute(stringBuilder, "roverPort", -1);
+    appendAttribute(stringBuilder, "rtspReliable", "rtsp".equals(video.getProtocol()) ? 1 : 0);
+    appendAttribute(stringBuilder, "ignoreEmbeddedKLV", "false");
+    stringBuilder.append("/>");
+
+    stringBuilder.append("</__video>");
   }
 
   private void appendContact(StringBuilder stringBuilder, TakContact contact) {
@@ -135,16 +172,6 @@ public class TakXmlSerialiser {
     stringBuilder.append("<precisionlocation");
     appendAttribute(stringBuilder, "altsrc", precisionLocation.getAltsrc());
     appendAttribute(stringBuilder, "geopointsrc", precisionLocation.getGeopointsrc());
-    stringBuilder.append("/>");
-  }
-
-  private void appendVideo(StringBuilder stringBuilder, String videoUrl) {
-    if (videoUrl == null || videoUrl.isBlank()) {
-      return;
-    }
-
-    stringBuilder.append("<__video");
-    appendAttribute(stringBuilder, "url", videoUrl);
     stringBuilder.append("/>");
   }
 

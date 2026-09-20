@@ -21,6 +21,10 @@ package io.mapsmessaging.state.drone.tak;
 
 import io.mapsmessaging.cot.types.Affiliation;
 import io.mapsmessaging.state.config.VehicleClass;
+import io.mapsmessaging.state.config.DataProductConfig;
+import io.mapsmessaging.state.drone.tak.model.TakVideo;
+import java.net.URI;
+import java.nio.charset.StandardCharsets;
 import io.mapsmessaging.state.drone.core.EntityTwin;
 import io.mapsmessaging.state.drone.core.TwinRelationship;
 import io.mapsmessaging.state.drone.core.TwinType;
@@ -31,6 +35,12 @@ import io.mapsmessaging.state.drone.tak.model.*;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Locale;
+import java.util.Set;
+import java.util.UUID;
 
 public class TakEventMapper {
 
@@ -45,6 +55,7 @@ public class TakEventMapper {
   private static final String DETECTION_COT_TYPE = "a-u-G";
   private static final String DETECTION_PARENT_RELATION = "p-p";
   private static final String DETECTION_VIDEO_URL_ATTRIBUTE = "tak.videoUrl";
+  private static final String DETECTION_VIDEO_URLS_ATTRIBUTE = "tak.videoUrls";
 
   public TakEvent map(EntityTwin twin, TwinUpdateContext context) {
     if (twin == null || twin.getGeoPosition() == null) {
@@ -80,6 +91,7 @@ public class TakEventMapper {
     detail.setTrack(buildTrack(twin, velocityVector, orientation));
     detail.setStatus(buildStatus(twin, "updated"));
     detail.setRemarks(resolveRemarks(twin));
+    detail.setVideos(resolveVideos(twin));
     detail.setPrecisionLocation(buildPrecisionLocation());
     detail.setTakv(buildPlatform(twin));
     detail.setMapsLink(buildLinkState(twin.getLinkState()));
@@ -136,13 +148,13 @@ public class TakEventMapper {
       detail.setContact(contact);
       detail.setRemarks(detection.getName());
     }
+    detail.setVideos(resolveDetectionVideos(detection));
 
     TakLink parent = new TakLink();
     parent.setUid(resolveUid(source));
     parent.setRelation(DETECTION_PARENT_RELATION);
     detail.getLinks().add(parent);
     detail.setPrecisionLocation(buildPrecisionLocation());
-    detail.setVideoUrl(resolveDetectionVideoUrl(detection));
     event.setDetail(detail);
 
     return event;
@@ -167,6 +179,7 @@ public class TakEventMapper {
     TakDetail detail = new TakDetail();
     detail.setContact(buildContact(twin));
     detail.setRemarks(resolveRemarks(twin));
+    detail.setVideos(resolveVideos(twin));
     detail.setPrecisionLocation(buildPrecisionLocation());
     detail.setStatus(buildStatus(twin, "removed"));
     event.setDetail(detail);
@@ -310,6 +323,7 @@ public class TakEventMapper {
       appendLabelledRemark(remarksBuilder, "mission", droneTwin.getMissionState());
       appendLabelledRemark(remarksBuilder, "landed", droneTwin.getLandedState());
       appendLabelledRemark(remarksBuilder, "vtol", droneTwin.getVtolState());
+      appendDataProducts(remarksBuilder, droneTwin);
     }
 
     if (remarksBuilder.isEmpty() && twin.getDisplayName() != null && !twin.getDisplayName().isBlank()) {
@@ -317,6 +331,156 @@ public class TakEventMapper {
     }
 
     return remarksBuilder.isEmpty() ? null : remarksBuilder.toString();
+  }
+
+  /**
+   * The node's external data products, as {@code <label>=<uri>} remarks: a camera page or a
+   * stream is something the operator opens from the marker, and both TAK clients turn a URL in
+   * the remarks into a link. A product with no URI is configuration, not a destination, and is
+   * left out.
+   */
+  private void appendDataProducts(StringBuilder remarksBuilder, DroneTwin droneTwin) {
+    List<DataProductConfig> dataProducts = droneTwin.getDataProducts();
+    if (dataProducts == null) {
+      return;
+    }
+    for (DataProductConfig dataProduct : dataProducts) {
+      if (dataProduct == null || dataProduct.getUri() == null || dataProduct.getUri().isBlank()) {
+        continue;
+      }
+      String uri = dataProduct.getUri().trim();
+      // a stream the client plays is a __video element instead: it also keeps a URL that may
+      // carry credentials out of the remarks, where they would be in plain sight on the marker
+      if (videoFeed(uri) == null) {
+        appendLabelledRemark(remarksBuilder, dataProductLabel(dataProduct), uri);
+      }
+    }
+  }
+
+  /**
+   * The video feeds among a node's data products: the streams TAK's own player opens (RTSP, RTMP
+   * or an HLS playlist). A page it cannot open is left to the remarks as a link.
+   */
+  private List<TakVideo> resolveDetectionVideos(DetectionEvent detection) {
+    if (detection.getAttributes() == null || detection.getAttributes().isEmpty()) {
+      return List.of();
+    }
+
+    Set<String> urls = new LinkedHashSet<>();
+    addDetectionVideoUrls(urls, detection.getAttributes().get(DETECTION_VIDEO_URL_ATTRIBUTE));
+    addDetectionVideoUrls(urls, detection.getAttributes().get(DETECTION_VIDEO_URLS_ATTRIBUTE));
+
+    List<TakVideo> videos = new ArrayList<>();
+    for (String url : urls) {
+      TakVideo video = videoFeed(url);
+      if (video == null) {
+        continue;
+      }
+      video.setUid(UUID.nameUUIDFromBytes(url.getBytes(StandardCharsets.UTF_8)).toString());
+      video.setAlias("detection");
+      videos.add(video);
+    }
+    return videos;
+  }
+
+  private void addDetectionVideoUrls(Set<String> urls, Object value) {
+    if (value instanceof CharSequence sequence) {
+      String url = sequence.toString().trim();
+      if (!url.isEmpty()) {
+        urls.add(url);
+      }
+      return;
+    }
+    if (value instanceof Iterable<?> iterable) {
+      for (Object item : iterable) {
+        if (item != null) {
+          String url = item.toString().trim();
+          if (!url.isEmpty()) {
+            urls.add(url);
+          }
+        }
+      }
+    }
+  }
+
+  private List<TakVideo> resolveVideos(EntityTwin twin) {
+    if (!(twin instanceof DroneTwin droneTwin) || droneTwin.getDataProducts() == null) {
+      return List.of();
+    }
+    List<TakVideo> videos = new ArrayList<>();
+    for (DataProductConfig dataProduct : droneTwin.getDataProducts()) {
+      if (dataProduct == null || dataProduct.getUri() == null || dataProduct.getUri().isBlank()) {
+        continue;
+      }
+      TakVideo video = videoFeed(dataProduct.getUri().trim());
+      if (video == null) {
+        continue;
+      }
+      video.setAlias(dataProductLabel(dataProduct));
+      video.setUid(feedUid(dataProduct, video.getUrl()));
+      videos.add(video);
+    }
+    return videos;
+  }
+
+  /** The stream taken apart, or null when the client has no player for it. */
+  private TakVideo videoFeed(String uri) {
+    URI parsed;
+    try {
+      parsed = URI.create(uri);
+    } catch (IllegalArgumentException e) {
+      return null;
+    }
+    String scheme = parsed.getScheme() == null ? "" : parsed.getScheme().toLowerCase(Locale.ROOT);
+    String path = parsed.getPath() == null ? "" : parsed.getPath();
+    boolean playable = switch (scheme) {
+      case "rtsp", "rtsps", "rtmp", "rtmps", "udp", "srt" -> true;
+      case "http", "https" -> path.endsWith(".m3u8") || path.endsWith(".ts");
+      default -> false;
+    };
+    if (!playable || parsed.getHost() == null) {
+      return null;
+    }
+    TakVideo video = new TakVideo();
+    video.setUrl(uri);
+    video.setProtocol(scheme);
+    video.setAddress(parsed.getHost());
+    video.setPort(parsed.getPort() > 0 ? parsed.getPort() : defaultPort(scheme));
+    video.setPath(path);
+    return video;
+  }
+
+  private static int defaultPort(String scheme) {
+    return switch (scheme) {
+      case "rtsp" -> 554;
+      case "rtsps" -> 322;
+      case "rtmp" -> 1935;
+      case "rtmps" -> 443;
+      case "https" -> 443;
+      case "http" -> 80;
+      default -> -1;
+    };
+  }
+
+  /**
+   * The feed's identity: the configured one, else derived from the URL so that it is the same in
+   * every event and a client does not collect a new feed each second.
+   */
+  private static String feedUid(DataProductConfig dataProduct, String url) {
+    if (dataProduct.getIdentifier() != null && !dataProduct.getIdentifier().isBlank()) {
+      return dataProduct.getIdentifier().trim();
+    }
+    return UUID.nameUUIDFromBytes(url.getBytes(StandardCharsets.UTF_8)).toString();
+  }
+
+  private String dataProductLabel(DataProductConfig dataProduct) {
+    if (dataProduct.getDescription() != null && !dataProduct.getDescription().isBlank()) {
+      return dataProduct.getDescription().trim();
+    }
+    if (dataProduct.getIdentifier() != null && !dataProduct.getIdentifier().isBlank()) {
+      return dataProduct.getIdentifier().trim();
+    }
+    return "stream";
   }
 
   private void appendRemarkText(StringBuilder remarksBuilder, String value) {
@@ -356,27 +520,6 @@ public class TakEventMapper {
     }
 
     return flightMode;
-  }
-
-  private String resolveDetectionVideoUrl(DetectionEvent detection) {
-    if (detection.getAttributes() == null) {
-      return null;
-    }
-
-    Object videoUrl = detection.getAttributes().get(DETECTION_VIDEO_URL_ATTRIBUTE);
-    if (videoUrl == null) {
-      return null;
-    }
-
-    String value = String.valueOf(videoUrl);
-    if (value.isBlank()) {
-      return null;
-    }
-
-    String normalised = value.toLowerCase(java.util.Locale.ROOT);
-    return normalised.startsWith("rtsp://") || normalised.startsWith("rtsps://")
-        ? value
-        : null;
   }
 
   private Instant resolveDetectionEventTime(

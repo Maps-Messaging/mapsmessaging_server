@@ -46,6 +46,8 @@ import io.mapsmessaging.state.mavlink.model.UxvModel;
 import io.mapsmessaging.state.mavlink.packet.BatteryStatusPacket;
 import io.mapsmessaging.state.mavlink.packet.MavlinkPacket;
 import io.mapsmessaging.state.mavlink.sender.MavlinkEventListSender;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -59,7 +61,7 @@ public class MavlinkTwinUpdater implements AutoCloseable {
       "completeTaskOnArrivalTolerance";
   private static final String COMPLETE_TASK_ON_AUTO_TO_LOITER_ATTRIBUTE =
       "completeTaskOnAutoToLoiter";
-  private static final String TAK_VIDEO_URL_ATTRIBUTE = "tak.videoUrl";
+  private static final String TAK_VIDEO_URLS_ATTRIBUTE = "tak.videoUrls";
 
   private final Logger logger = LoggerFactory.getLogger(MavlinkTwinUpdater.class);
 
@@ -190,7 +192,7 @@ public class MavlinkTwinUpdater implements AutoCloseable {
         Optional<DetectionEvent> detectionEvent = uxvModel.interpretDetection(droneTwin, packet);
         detectionEvent.ifPresent(
             event -> {
-              attachVideoUrl(event, droneInfo);
+              attachVideoUrls(event, droneInfo);
               applyDetectionEvent(droneTwin, event, context);
             });
       }
@@ -199,31 +201,21 @@ public class MavlinkTwinUpdater implements AutoCloseable {
     }
   }
 
-  private void attachVideoUrl(DetectionEvent event, DroneInfoDTO droneInfo) {
-    if (event == null
-        || droneInfo == null
-        || event.getAttributes().containsKey(TAK_VIDEO_URL_ATTRIBUTE)) {
+  private void attachVideoUrls(DetectionEvent event, DroneInfoDTO droneInfo) {
+    if (event == null || droneInfo == null) {
       return;
     }
 
+    List<String> urls = new ArrayList<>();
     for (DataProductConfig dataProduct : droneInfo.getDataProducts()) {
-      if (dataProduct == null
-          || dataProduct.getUri() == null
-          || dataProduct.getUri().isBlank()
-          || dataProduct.getProductType() == null) {
+      if (dataProduct == null || dataProduct.getUri() == null || dataProduct.getUri().isBlank()) {
         continue;
       }
-
-      if (isTakVideoUri(dataProduct.getUri())) {
-        event.addAttribute(TAK_VIDEO_URL_ATTRIBUTE, dataProduct.getUri());
-        return;
-      }
+      urls.add(dataProduct.getUri().trim());
     }
-  }
-
-  private boolean isTakVideoUri(String uri) {
-    String normalised = uri.toLowerCase(java.util.Locale.ROOT);
-    return normalised.startsWith("rtsp://") || normalised.startsWith("rtsps://");
+    if (!urls.isEmpty()) {
+      event.addAttribute(TAK_VIDEO_URLS_ATTRIBUTE, List.copyOf(urls));
+    }
   }
 
   private void updateTwinResponseTopic(EntityTwin twin, String responseTopic) {
@@ -330,6 +322,9 @@ public class MavlinkTwinUpdater implements AutoCloseable {
     }
     if (droneInfo.getSpecialization() != null) {
       droneTwin.setSpecialization(droneInfo.getSpecialization());
+    }
+    if (!droneInfo.getDataProducts().isEmpty()) {
+      droneTwin.setDataProducts(droneInfo.getDataProducts());
     }
 
     if (droneInfo.getBatteryCapacityHours() > 0) {

@@ -76,6 +76,9 @@ public class N2kTwinUpdater {
     if (droneInfo.getSpecialization() != null) {
       droneTwin.setSpecialization(droneInfo.getSpecialization());
     }
+    if (!droneInfo.getDataProducts().isEmpty()) {
+      droneTwin.setDataProducts(droneInfo.getDataProducts());
+    }
 
     if (droneInfo.getBatteryCapacityHours() > 0) {
       droneTwin.setBatteryCapacityHours(droneInfo.getBatteryCapacityHours());

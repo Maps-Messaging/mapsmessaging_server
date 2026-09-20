@@ -6,6 +6,7 @@ package io.mapsmessaging.state.drone.tak;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import io.mapsmessaging.state.drone.core.TwinUpdateContext;
 import io.mapsmessaging.state.drone.drone.DroneTwin;
@@ -14,6 +15,7 @@ import io.mapsmessaging.state.drone.model.DetectionEventType;
 import io.mapsmessaging.state.drone.model.GeoPosition;
 import io.mapsmessaging.state.drone.tak.model.TakEvent;
 import java.time.Instant;
+import java.util.List;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
 
@@ -26,14 +28,19 @@ class TakDetectionEventMapperTest {
   private final TakXmlSerialiser serialiser = new TakXmlSerialiser();
 
   @Test
-  void mapsDetectionToStableCotEvent() {
+  void mapsDetectionToStableCotEventWithMultipleVideoFeeds() {
     DroneTwin drone = new DroneTwin("USV-002");
     DetectionEvent detection =
-        new DetectionEvent(CONTACT_ID, "target-1", DetectionEventType.DETECTED);
+        new DetectionEvent(CONTACT_ID, "DETECT", DetectionEventType.DETECTED);
     detection.setPosition(new GeoPosition(38.42886d, -9.10898d, 0.0d, null, null));
     detection.setTimestamp(Instant.parse("2026-09-20T10:00:00Z"));
     detection.setTtlMillis(60_000L);
-    detection.addAttribute("tak.videoUrl", "rtsp://ops-se.stickleback.ai/optical");
+    detection.addAttribute(
+        "tak.videoUrls",
+        List.of(
+            "rtsp://ops-se.stickleback.ai:8554/optical_view",
+            "rtsp://ops-se.stickleback.ai:8554/thermal_view",
+            "https://ops-se.stickleback.ai/viewer"));
 
     TakEvent event = mapper.mapDetection(drone, detection, new TwinUpdateContext());
 
@@ -42,41 +49,39 @@ class TakDetectionEventMapperTest {
     assertEquals("2026-09-20T10:01:00Z", event.getStale());
     assertEquals(38.42886d, event.getPoint().getLat());
     assertEquals(-9.10898d, event.getPoint().getLon());
-    assertEquals("target-1", event.getDetail().getContact().getCallsign());
+    assertEquals("DETECT", event.getDetail().getContact().getCallsign());
     assertEquals("USV-002", event.getDetail().getLinks().getFirst().getUid());
     assertEquals("p-p", event.getDetail().getLinks().getFirst().getRelation());
-    assertEquals(
-        "rtsp://ops-se.stickleback.ai/optical",
-        event.getDetail().getVideoUrl());
-    assertEquals(
-        true,
-        serialiser
-            .toXml(event)
-            .contains("<__video url=\"rtsp://ops-se.stickleback.ai/optical\"/>"));
+    assertEquals(2, event.getDetail().getVideos().size());
+
+    String xml = serialiser.toXml(event);
+    assertTrue(xml.contains("rtsp://ops-se.stickleback.ai:8554/optical_view"));
+    assertTrue(xml.contains("rtsp://ops-se.stickleback.ai:8554/thermal_view"));
+    assertTrue(!xml.contains("https://ops-se.stickleback.ai/viewer"));
 
     detection.setEventType(DetectionEventType.UPDATED);
     assertEquals(CONTACT_ID.toString(), mapper.mapDetection(drone, detection, null).getUid());
   }
 
   @Test
-  void ignoresNonRtspVideoUrl() {
+  void supportsLegacySingleVideoUrlAttribute() {
     DroneTwin drone = new DroneTwin("USV-002");
     DetectionEvent detection =
-        new DetectionEvent(CONTACT_ID, "target-1", DetectionEventType.DETECTED);
+        new DetectionEvent(CONTACT_ID, "DETECT", DetectionEventType.DETECTED);
     detection.setPosition(new GeoPosition(38.42886d, -9.10898d, 0.0d, null, null));
     detection.setTtlMillis(60_000L);
-    detection.addAttribute("tak.videoUrl", "https://ops-se.stickleback.ai/optical_view/");
+    detection.addAttribute("tak.videoUrl", "rtsp://ops-se.stickleback.ai:8554/optical_view");
 
     TakEvent event = mapper.mapDetection(drone, detection, null);
 
-    assertNull(event.getDetail().getVideoUrl());
+    assertEquals(1, event.getDetail().getVideos().size());
   }
 
   @Test
   void ignoresDetectionWithoutPosition() {
     DroneTwin drone = new DroneTwin("USV-002");
     DetectionEvent detection =
-        new DetectionEvent(CONTACT_ID, "target-1", DetectionEventType.DETECTED);
+        new DetectionEvent(CONTACT_ID, "DETECT", DetectionEventType.DETECTED);
     detection.setTtlMillis(60_000L);
 
     assertNull(mapper.mapDetection(drone, detection, null));

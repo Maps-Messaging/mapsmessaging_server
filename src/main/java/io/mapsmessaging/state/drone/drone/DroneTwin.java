@@ -23,6 +23,7 @@ import static io.mapsmessaging.state.drone.util.SyntheticMmsiGenerator.generateS
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import io.mapsmessaging.state.config.AltitudeMode;
+import io.mapsmessaging.state.config.DataProductConfig;
 import io.mapsmessaging.state.config.StopActionEnum;
 import io.mapsmessaging.state.config.capability.TaskCapabilities;
 import io.mapsmessaging.state.drone.core.EntityTwin;
@@ -37,6 +38,7 @@ import io.mapsmessaging.state.drone.model.autopilot.AutopilotState;
 import io.mapsmessaging.state.mavlink.sender.MavlinkEventListSender;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -264,6 +266,9 @@ public class DroneTwin extends EntityTwin {
 
   @Schema(description = "Open map for protocol-specific node specialization metadata.", nullable = true)
   private Map<String, Object> specialization = new HashMap<>();
+
+  @Schema(description = "External data products this node offers (a camera page, a stream).", nullable = true)
+  private List<DataProductConfig> dataProducts = new ArrayList<>();
 
   @Schema(description = "Timestamp of the last readiness evaluation.", example = "2026-05-26T05:50:00Z", nullable = true)
   private Instant readinessUpdatedAt;

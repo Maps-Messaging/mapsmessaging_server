@@ -10,13 +10,16 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import io.mapsmessaging.state.config.CotAffiliation;
+import io.mapsmessaging.state.config.DataProductConfig;
 import io.mapsmessaging.state.config.CotConfigDTO;
 import io.mapsmessaging.state.config.VehicleClass;
 import io.mapsmessaging.state.drone.core.TwinUpdateContext;
 import io.mapsmessaging.state.drone.drone.DroneTwin;
 import io.mapsmessaging.state.drone.model.GeoPosition;
 import io.mapsmessaging.state.drone.tak.model.TakEvent;
+import io.mapsmessaging.state.drone.tak.model.TakVideo;
 import java.time.Instant;
+import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.AfterEach;
@@ -276,6 +279,154 @@ class CotEventPolicyTest {
 
     assertEquals("a-n-U-S-U", event.getType());
     assertEquals("2026-09-12T10:00:01Z", event.getStale());
+  }
+
+  // --- data products on the contact ------------------------------------------------------
+  // An asset's external data products (a camera page, a stream) belong where the operator
+  // looks: the marker's remarks, which both TAK clients render and linkify.
+
+  @Test
+  void aDataProductUriReachesTheMarkersRemarks() {
+    DroneTwin usv = twin(VehicleClass.USV);
+    usv.setDescriptionString("unmanned surface vehicle");
+    usv.setDataProducts(List.of(dataProduct("optical", "https://example.net/optical_view/"),
+        dataProduct("thermal", "https://example.net/thermal_view/")));
+
+    TakEvent event = mapper.map(usv, new TwinUpdateContext());
+
+    assertEquals("unmanned surface vehicle | optical=https://example.net/optical_view/"
+        + " | thermal=https://example.net/thermal_view/", event.getDetail().getRemarks());
+  }
+
+  @Test
+  void aDataProductWithoutAUriIsNotRemarkedOn() {
+    DroneTwin usv = twin(VehicleClass.USV);
+    DataProductConfig noUri = new DataProductConfig();
+    noUri.setDescription("sonar log");
+    usv.setDataProducts(List.of(noUri, dataProduct("optical", "https://example.net/optical_view/")));
+
+    TakEvent event = mapper.map(usv, new TwinUpdateContext());
+
+    assertEquals("optical=https://example.net/optical_view/", event.getDetail().getRemarks());
+  }
+
+  @Test
+  void aDataProductFallsBackToItsIdentifierForALabel() {
+    DroneTwin usv = twin(VehicleClass.USV);
+    DataProductConfig unnamed = new DataProductConfig();
+    unnamed.setIdentifier("cam-1");
+    unnamed.setUri("https://example.net/optical_view/");
+    usv.setDataProducts(List.of(unnamed));
+
+    assertEquals("cam-1=https://example.net/optical_view/",
+        mapper.map(usv, new TwinUpdateContext()).getDetail().getRemarks());
+  }
+
+  @Test
+  void aTwinWithoutDataProductsRemarksExactlyAsBefore() {
+    DroneTwin usv = twin(VehicleClass.USV);
+    usv.setDescriptionString("unmanned surface vehicle");
+
+    assertEquals("unmanned surface vehicle", mapper.map(usv, new TwinUpdateContext()).getDetail().getRemarks());
+  }
+
+  // --- video feeds ------------------------------------------------------------------------
+  // A data product TAK's own player can open (RTSP, RTMP, HLS) becomes a __video element, so the
+  // marker carries a video icon and plays in the app. Anything else stays a remarks link.
+
+  @Test
+  void aPlayableDataProductBecomesAVideoFeedOnTheMarker() {
+    DroneTwin usv = twin(VehicleClass.USV);
+    usv.setDataProducts(List.of(dataProduct("optical", "rtsp://viewer:secret@example.net:8554/optical_view")));
+
+    TakEvent event = mapper.map(usv, new TwinUpdateContext());
+
+    TakVideo video = event.getDetail().getVideos().get(0);
+    // the URL keeps its credentials: the client has nowhere else to carry them
+    assertEquals("rtsp://viewer:secret@example.net:8554/optical_view", video.getUrl());
+    assertEquals("optical", video.getAlias());
+    assertEquals("example.net", video.getAddress());
+    assertEquals(8554, video.getPort());
+    assertEquals("/optical_view", video.getPath());
+    assertEquals("rtsp", video.getProtocol());
+    // and it is NOT repeated in the remarks, where the password would be in plain sight
+    assertEquals(null, event.getDetail().getRemarks());
+  }
+
+  @Test
+  void aPageTheTakPlayerCannotOpenStaysALink() {
+    DroneTwin usv = twin(VehicleClass.USV);
+    usv.setDataProducts(List.of(dataProduct("optical", "https://example.net/optical_view/")));
+
+    TakEvent event = mapper.map(usv, new TwinUpdateContext());
+
+    assertTrue(event.getDetail().getVideos().isEmpty());
+    assertEquals("optical=https://example.net/optical_view/", event.getDetail().getRemarks());
+  }
+
+  @Test
+  void anHlsPlaylistIsPlayableAndAStreamKeepsItsDefaultPort() {
+    DroneTwin usv = twin(VehicleClass.USV);
+    usv.setDataProducts(List.of(dataProduct("optical", "https://example.net/optical_view/index.m3u8"),
+        dataProduct("thermal", "rtsp://example.net/thermal_view")));
+
+    List<TakVideo> videos = mapper.map(usv, new TwinUpdateContext()).getDetail().getVideos();
+
+    assertEquals(2, videos.size());
+    assertEquals("https", videos.get(0).getProtocol());
+    assertEquals(443, videos.get(0).getPort());
+    assertEquals("/optical_view/index.m3u8", videos.get(0).getPath());
+    assertEquals(554, videos.get(1).getPort());          // the RTSP default
+  }
+
+  @Test
+  void aFeedKeepsTheSameUidAcrossEventsSoTheClientDoesNotCollectDuplicates() {
+    DroneTwin usv = twin(VehicleClass.USV);
+    usv.setDataProducts(List.of(dataProduct("optical", "rtsp://example.net:8554/optical_view")));
+
+    String first = mapper.map(usv, new TwinUpdateContext()).getDetail().getVideos().get(0).getUid();
+    String second = mapper.map(usv, new TwinUpdateContext()).getDetail().getVideos().get(0).getUid();
+
+    assertEquals(first, second);
+    assertNotNull(first);
+  }
+
+  @Test
+  void aConfiguredIdentifierIsTheFeedsUid() {
+    DroneTwin usv = twin(VehicleClass.USV);
+    DataProductConfig product = dataProduct("optical", "rtsp://example.net:8554/optical_view");
+    product.setIdentifier("6f1d2a3b-0000-4000-8000-000000000001");
+    usv.setDataProducts(List.of(product));
+
+    assertEquals("6f1d2a3b-0000-4000-8000-000000000001",
+        mapper.map(usv, new TwinUpdateContext()).getDetail().getVideos().get(0).getUid());
+  }
+
+  @Test
+  void theVideoElementIsSerialisedTheWayTheClientReadsIt() {
+    DroneTwin usv = twin(VehicleClass.USV);
+    usv.setDataProducts(List.of(dataProduct("optical", "rtsp://example.net:8554/optical_view")));
+    TakEvent event = mapper.map(usv, new TwinUpdateContext());
+    policy.apply(event, usv, null, null);
+
+    String xml = new TakXmlSerialiser().toXml(event);
+
+    assertTrue(xml.contains("<__video"), xml);
+    assertTrue(xml.contains("url=\"rtsp://example.net:8554/optical_view\""), xml);
+    assertTrue(xml.contains("<ConnectionEntry"), xml);
+    assertTrue(xml.contains("protocol=\"rtsp\""), xml);
+    assertTrue(xml.contains("address=\"example.net\""), xml);
+    assertTrue(xml.contains("port=\"8554\""), xml);
+    assertTrue(xml.contains("alias=\"optical\""), xml);
+    assertTrue(xml.contains("networkTimeout="), xml);
+    assertTrue(xml.contains("</__video>"), xml);
+  }
+
+  private static DataProductConfig dataProduct(String description, String uri) {
+    DataProductConfig product = new DataProductConfig();
+    product.setDescription(description);
+    product.setUri(uri);
+    return product;
   }
 
   private DroneTwin twin(VehicleClass vehicleClass) {
