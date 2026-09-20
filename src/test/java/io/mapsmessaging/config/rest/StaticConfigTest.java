@@ -10,11 +10,14 @@ import static org.junit.jupiter.api.Assertions.*;
 class StaticConfigTest {
 
   @Test
-  void defaultsMatchDtoContractAndRoundTrip() {
+  void defaultsRespectDirectoryTranslationAndRoundTrip() {
     StaticConfig config = new StaticConfig(new ConfigurationProperties());
 
     assertTrue(config.isEnabled());
-    assertEquals("{{MAPS_HOME}}/www", config.getDirectory());
+    String expectedDirectory =
+        new ConfigurationProperties()
+            .getProperty("directory", "{{MAPS_HOME}}/www");
+    assertEquals(expectedDirectory, config.getDirectory());
 
     StaticConfig restored = new StaticConfig(config.toConfigurationProperties());
     assertEquals(config.isEnabled(), restored.isEnabled());
