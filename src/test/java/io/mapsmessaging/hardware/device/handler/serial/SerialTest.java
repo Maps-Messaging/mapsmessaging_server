@@ -14,8 +14,8 @@ class SerialTest {
     when(port.isOpen()).thenReturn(true);
     when(port.openPort()).thenReturn(true);
     when(port.getSystemPortName()).thenReturn("ttyUSB0");
-    when(port.writeBytes(any(byte[].class), eq(3L))).thenReturn(3);
-    when(port.readBytes(any(byte[].class), eq(4L))).thenReturn(4);
+    when(port.writeBytes(any(byte[].class), eq(3))).thenReturn(3);
+    when(port.readBytes(any(byte[].class), eq(4))).thenReturn(4);
 
     Serial serial = new Serial(port);
 

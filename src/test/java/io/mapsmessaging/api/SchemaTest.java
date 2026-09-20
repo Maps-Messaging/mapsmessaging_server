@@ -15,7 +15,7 @@ import static org.mockito.Mockito.*;
 class SchemaTest {
 
   @Test
-  void invalidSchemaPayloadIsRejectedWithoutUpdatingDestination() {
+  void invalidSchemaPayloadIsRejectedWithoutUpdatingDestination() throws Exception {
     DestinationImpl destination = destination();
     Schema schema = new Schema(destination, mock(SecurityContext.class));
     Message message = mock(Message.class);
