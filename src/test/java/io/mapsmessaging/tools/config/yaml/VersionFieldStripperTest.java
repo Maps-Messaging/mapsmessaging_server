@@ -61,8 +61,11 @@ class VersionFieldStripperTest {
 
   @Test
   void absentVersionFieldsAreLeftAlone() {
+    Map<String, Object> nested = new LinkedHashMap<>();
+    nested.put("nested", "ok");
+
     Map<String, Object> root = new LinkedHashMap<>();
-    root.put("value", Map.of("nested", "ok"));
+    root.put("value", nested);
 
     new VersionFieldStripper("schemaLoadingVersion")
         .removeVersionFromChildrenOnly(root);
