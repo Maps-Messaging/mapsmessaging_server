@@ -18,7 +18,7 @@ class EndPointLinkTest {
     when(connection.getProtocol().getEndPoint().getConfig().getUrl())
         .thenReturn("tcp://edge.example:1883");
     when(connection.getState().getLinkState()).thenReturn(LinkState.CONNECTED);
-    when(connection.getProperties().getCost()).thenReturn(3.25);
+    when(connection.getProperties().getCost()).thenReturn(3);
 
     EndPointLink link = new EndPointLink(connection);
 
@@ -27,7 +27,7 @@ class EndPointLinkTest {
     assertEquals(LinkState.CONNECTED, link.getState());
     assertTrue(link.isAvailable());
     assertSame(link.getMetrics(), link.getMetrics());
-    assertEquals(3.25, link.getBaseCost().orElseThrow(), 0.0);
+    assertEquals(3.0, link.getBaseCost().orElseThrow(), 0.0);
   }
 
   @Test
