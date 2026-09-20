@@ -130,8 +130,10 @@ public class AuthManager implements Agent {
       }
       try {
         authenticationStorage = new AuthenticationStorage(new ConfigurationProperties(config.getAuthConfig()), config.buildMonitorConfig());
+        String configDirectory = (String) config.getAuthConfig().get("configDirectory");
+        secureExistingInitialPasswordFile(configDirectory);
         if (authenticationStorage.isFirstBoot()) {
-          createInitialUsers((String)config.getAuthConfig().get("configDirectory"));
+          createInitialUsers(configDirectory);
         }
         IdentityLookupFactory.getInstance().registerSiteIdentityLookup("system", authenticationStorage.getIdentityAccessManager().getIdentityLookup());
       } catch (Exception e) {
@@ -156,6 +158,13 @@ public class AuthManager implements Agent {
     }
   }
 
+  private void secureExistingInitialPasswordFile(String path) throws IOException {
+    Path passwordFile = Path.of(path, ADMIN_PASSWORD_FILE);
+    if (Files.exists(passwordFile)) {
+      restrictInitialPasswordFile(passwordFile);
+    }
+  }
+
   static void prepareInitialPasswordFile(Path passwordFile) throws IOException {
     boolean exists = Files.exists(passwordFile);
     Path attributePath = exists ? passwordFile : passwordFile.toAbsolutePath().getParent();
@@ -165,11 +174,7 @@ public class AuthManager implements Agent {
             : Files.getFileAttributeView(attributePath, PosixFileAttributeView.class);
 
     if (exists) {
-      if (posixView != null) {
-        Files.setPosixFilePermissions(passwordFile, OWNER_READ_WRITE);
-      } else {
-        restrictOwnerOnly(passwordFile);
-      }
+      restrictInitialPasswordFile(passwordFile);
       return;
     }
 
@@ -178,6 +183,16 @@ public class AuthManager implements Agent {
           passwordFile, PosixFilePermissions.asFileAttribute(OWNER_READ_WRITE));
     } else {
       Files.createFile(passwordFile);
+      restrictOwnerOnly(passwordFile);
+    }
+  }
+
+  static void restrictInitialPasswordFile(Path passwordFile) throws IOException {
+    PosixFileAttributeView posixView =
+        Files.getFileAttributeView(passwordFile, PosixFileAttributeView.class);
+    if (posixView != null) {
+      Files.setPosixFilePermissions(passwordFile, OWNER_READ_WRITE);
+    } else {
       restrictOwnerOnly(passwordFile);
     }
   }
