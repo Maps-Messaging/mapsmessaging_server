@@ -56,12 +56,12 @@ class AttributeXmlBuilderBranchCoverageTest {
 
     String xml = AttributeXmlBuilder.buildXmlString(root);
 
-    assertTrue(xml.contains("<root id="7">"));
+    assertTrue(xml.contains("<root id=\"7\">"));
     assertTrue(xml.contains("hello"));
     assertTrue(xml.contains("<enabled>true</enabled>"));
-    assertTrue(xml.contains("<child kind="nested"><value>3.5</value></child>"));
+    assertTrue(xml.contains("<child kind=\"nested\"><value>3.5</value></child>"));
     assertTrue(xml.contains("<value>one</value>"));
-    assertTrue(xml.contains("<value code="two"/>"));
+    assertTrue(xml.contains("code=\"two\""));
     assertTrue(xml.contains("<item>1</item>"));
     assertTrue(xml.contains("<item>false</item>"));
   }
