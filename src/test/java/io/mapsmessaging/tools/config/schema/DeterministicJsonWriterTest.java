@@ -22,10 +22,10 @@ class DeterministicJsonWriterTest {
 
     String json = DeterministicJsonWriter.write(value);
 
-    assertTrue(json.indexOf(""$schema"") < json.indexOf(""title""));
-    assertTrue(json.indexOf(""title"") < json.indexOf(""properties""));
-    assertTrue(json.indexOf(""properties"") < json.indexOf(""alpha""));
-    assertTrue(json.indexOf(""alpha"") < json.indexOf(""zeta""));
+    assertTrue(json.indexOf("\"$schema\"") < json.indexOf("\"title\""));
+    assertTrue(json.indexOf("\"title\"") < json.indexOf("\"properties\""));
+    assertTrue(json.indexOf("\"properties\"") < json.indexOf("\"alpha\""));
+    assertTrue(json.indexOf("\"alpha\"") < json.indexOf("\"zeta\""));
     assertFalse(json.contains("description"));
   }
 
@@ -39,11 +39,11 @@ class DeterministicJsonWriterTest {
 
     String json = DeterministicJsonWriter.write(value);
 
-    assertTrue(json.contains(""minimum": 1.5"));
-    assertTrue(json.contains(""default": "+2""));
+    assertTrue(json.contains("\"minimum\": 1.5"));
+    assertTrue(json.contains("\"default\": \"+2\""));
     assertTrue(json.contains("3,"));
-    assertTrue(json.contains(""text""));
-    assertTrue(json.contains(""title": "4""));
+    assertTrue(json.contains("\"text\""));
+    assertTrue(json.contains("\"title\": \"4\""));
   }
 
   @Test
@@ -55,6 +55,8 @@ class DeterministicJsonWriterTest {
 
   @Test
   void unsupportedValueTypesAreRejected() {
-    assertThrows(IllegalStateException.class, () -> DeterministicJsonWriter.write(Map.of("title", new Object())));
+    assertThrows(
+        IllegalStateException.class,
+        () -> DeterministicJsonWriter.write(Map.of("title", new Object())));
   }
 }
