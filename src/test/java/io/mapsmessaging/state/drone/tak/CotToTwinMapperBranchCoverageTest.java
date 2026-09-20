@@ -15,7 +15,7 @@ class CotToTwinMapperBranchCoverageTest {
 
     assertNull(mapper.map("<event".getBytes(StandardCharsets.UTF_8)));
     assertNull(mapper.map("<detail/>".getBytes(StandardCharsets.UTF_8)));
-    assertNull(mapper.map("<event uid=" "/>".getBytes(StandardCharsets.UTF_8)));
+    assertNull(mapper.map("<event uid=\" \"/>".getBytes(StandardCharsets.UTF_8)));
   }
 
   @Test
