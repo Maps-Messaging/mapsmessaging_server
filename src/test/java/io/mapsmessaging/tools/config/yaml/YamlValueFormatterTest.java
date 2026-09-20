@@ -34,7 +34,7 @@ class YamlValueFormatterTest {
     assertEquals("\"a: b\"", formatter.formatScalar("a: b"));
     assertEquals("\"a#b\"", formatter.formatScalar("a#b"));
     assertEquals("\"-value\"", formatter.formatScalar("-value"));
-    assertEquals("\"line1\\nline2\"", formatter.formatScalar("line1\nline2"));
+    assertEquals("\"line1\nline2\"", formatter.formatScalar("line1\nline2"));
   }
 
   @Test
