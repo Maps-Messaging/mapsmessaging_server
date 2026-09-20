@@ -8,6 +8,7 @@ import io.mapsmessaging.schemas.config.SchemaConfig;
 import io.mapsmessaging.schemas.formatters.MessageFormatter;
 import org.junit.jupiter.api.Test;
 
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -43,8 +44,10 @@ class PackHelperBranchCoverageTest {
     when(message.getDataMap()).thenReturn(Map.of());
     assertNull(helper.mapsData(message));
 
-    when(message.getDataMap()).thenReturn(
-        Map.of("present", new TypedData("value"), "nullEntry", null));
+    Map<String, TypedData> values = new LinkedHashMap<>();
+    values.put("present", new TypedData("value"));
+    values.put("nullEntry", null);
+    when(message.getDataMap()).thenReturn(values);
     JsonObject node = helper.mapsData(message);
     assertEquals("value", node.get("present").getAsString());
     assertTrue(node.get("nullEntry").isJsonNull());
