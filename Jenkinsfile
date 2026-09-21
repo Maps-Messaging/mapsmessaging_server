@@ -417,6 +417,19 @@ node(nodeLabel) {
             fingerprint: true
         )
     }
+
+    stage("SonarCloud") {
+        withCredentials([
+            string(credentialsId: "sonarcloud-token", variable: "SONAR_TOKEN")
+        ]) {
+            sh '''#!/bin/bash
+                set -euo pipefail
+
+                mvn -DskipTests sonar:sonar \
+                  -Dsonar.token="$SONAR_TOKEN"
+            '''
+        }
+    }
 }
 
 stage("Summary") {
