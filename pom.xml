@@ -359,6 +359,13 @@
           </execution>
         </executions>
       </plugin>
+      <!-- SonarCloud scanner used by Jenkins -->
+      <plugin>
+        <groupId>org.sonarsource.scanner.maven</groupId>
+        <artifactId>sonar-maven-plugin</artifactId>
+        <version>5.7.0.6970</version>
+      </plugin>
+
       <!-- Allow JDKs greater than 1.8 to be used by maven -->
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
