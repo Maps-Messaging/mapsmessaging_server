@@ -58,6 +58,13 @@ import static org.mockito.Mockito.when;
 class MavlinkEventListSenderTest {
 
   @Test
+  void defaultsAreTunedForDegradedLinks() {
+    assertEquals(6, MavlinkEventListSender.DEFAULT_MAX_RETRIES);
+    assertEquals(5_000L, MavlinkEventListSender.DEFAULT_ACKNOWLEDGEMENT_TIMEOUT_MILLIS);
+  }
+
+
+  @Test
   void transmission_snapshot_tracks_retries_and_retains_terminal_state() {
     Fixture fixture = fixture();
     fixture.messages.add(fixture.message(true));

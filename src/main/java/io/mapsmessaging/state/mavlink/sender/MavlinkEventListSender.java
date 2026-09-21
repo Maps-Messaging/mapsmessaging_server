@@ -41,9 +41,9 @@ import lombok.Getter;
 @Getter
 public class MavlinkEventListSender implements AutoCloseable {
 
-  public static final int DEFAULT_MAX_RETRIES = 3;
+  public static final int DEFAULT_MAX_RETRIES = 6;
   public static final int MAX_MISSION_RESTARTS = 2;
-  public static final long DEFAULT_ACKNOWLEDGEMENT_TIMEOUT_MILLIS = 2_000L;
+  public static final long DEFAULT_ACKNOWLEDGEMENT_TIMEOUT_MILLIS = 5_000L;
 
   private static final Logger logger = LoggerFactory.getLogger(MavlinkEventListSender.class);
 
