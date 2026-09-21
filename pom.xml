@@ -129,8 +129,6 @@
     <sonar.c.file.suffixes>-</sonar.c.file.suffixes>
     <sonar.cpp.file.suffixes>-</sonar.cpp.file.suffixes>
     <sonar.objc.file.suffixes>-</sonar.objc.file.suffixes>
-    <sonar.branch.name>main</sonar.branch.name>
-    <branchName>main</branchName>
     <java.version>21</java.version>
 
     <!-- Base -->
