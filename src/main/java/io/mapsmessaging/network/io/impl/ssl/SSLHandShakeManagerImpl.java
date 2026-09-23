@@ -66,7 +66,9 @@ public class SSLHandShakeManagerImpl implements SSLHandshakeManager {
         logger.log(ServerLogMessages.SSL_HANDSHAKE_NEED_WRAP);
         sslEndPointImpl.sendBuffer(ByteBuffer.allocate(0));
         if (sslEndPointImpl.hasPendingEncryptedOutput()) {
-          sslEndPointImpl.registerHandshakeSelection();
+          if (callback != null) {
+            sslEndPointImpl.registerHandshakeSelection();
+          }
           return true;
         }
       }
