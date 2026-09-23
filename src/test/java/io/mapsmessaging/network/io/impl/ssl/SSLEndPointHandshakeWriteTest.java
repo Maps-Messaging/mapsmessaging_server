@@ -138,6 +138,39 @@ class SSLEndPointHandshakeWriteTest {
   }
 
   @Test
+  void handshake_without_outbound_callback_does_not_take_selector_ownership() throws Exception {
+    Fixture fixture = new Fixture(false);
+    SSLEndPoint endPoint = fixture.createEndPoint();
+    SSLHandShakeManagerImpl inboundManager = new SSLHandShakeManagerImpl(endPoint, null, 0);
+    endPoint.handshakeManager = inboundManager;
+    fixture.registeredOps.clear();
+    fixture.registeredAttachments.clear();
+
+    AtomicInteger writes = new AtomicInteger();
+    doAnswer(invocation -> {
+      ByteBuffer encrypted = invocation.getArgument(0);
+      int call = writes.incrementAndGet();
+      if (call == 1) {
+        encrypted.position(encrypted.position() + 2);
+        return 2;
+      }
+      return 0;
+    }).when(fixture.channel).write(any(ByteBuffer.class));
+
+    when(fixture.sslEngine.getHandshakeStatus())
+        .thenReturn(
+            SSLEngineResult.HandshakeStatus.NEED_WRAP,
+            SSLEngineResult.HandshakeStatus.NEED_UNWRAP);
+
+    inboundManager.handleSSLHandshakeStatus();
+    endPoint.close();
+
+    Assertions.assertFalse(
+        fixture.registeredAttachments.contains(inboundManager),
+        "An inbound handshake must not replace the ProtocolAcceptRunner selector attachment");
+  }
+
+  @Test
   void need_unwrap_again_invokes_unwrap() throws Exception {
     Fixture fixture = new Fixture(false);
     SSLEndPoint endPoint = fixture.createEndPoint();
@@ -170,6 +203,7 @@ class SSLEndPointHandshakeWriteTest {
     private final EndPointServerStatus serverStatus = mock(EndPointServerStatus.class);
     private final AtomicInteger writeCount = new AtomicInteger();
     private final List<Integer> registeredOps = new ArrayList<>();
+    private final List<Object> registeredAttachments = new ArrayList<>();
     private final List<Integer> wrapSourceRemaining = new ArrayList<>();
     private final boolean partialInitialWrite;
 
@@ -218,6 +252,7 @@ class SSLEndPointHandshakeWriteTest {
 
       doAnswer(invocation -> {
         registeredOps.add(invocation.getArgument(1));
+        registeredAttachments.add(invocation.getArgument(2));
         return null;
       }).when(selector).register(any(SocketChannel.class), anyInt(), any());
     }
