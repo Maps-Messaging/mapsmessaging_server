@@ -65,7 +65,7 @@ public class SSLEndPoint extends TCPEndPoint {
     encryptedIn = ByteBuffer.allocateDirect(sessionSize);
     init(engine, callback);
     sendBuffer(ByteBuffer.allocate(0)); // Kick off the SSL handshake
-    select.register(accepted, SelectionKey.OP_READ, handshakeManager);
+    registerHandshakeSelection();
   }
 
 
@@ -133,6 +133,33 @@ public class SSLEndPoint extends TCPEndPoint {
       return len;
     }
     return 0;
+  }
+
+  boolean hasPendingEncryptedOutput() {
+    return encryptedOut.position() != 0;
+  }
+
+  int flushPendingEncryptedOutput() throws IOException {
+    return flushEncryptedOut();
+  }
+
+  void registerHandshakeSelection() {
+    int selection = SelectionKey.OP_READ;
+    if (hasPendingEncryptedOutput()) {
+      selection |= SelectionKey.OP_WRITE;
+    }
+    selector.register(socketChannel, selection, handshakeManager);
+  }
+
+  SSLEngineResult unwrapPendingHandshakeData(ByteBuffer applicationIn) throws IOException {
+    encryptedIn.flip();
+    SSLEngineResult result = handleSSLEngineResult(sslEngine.unwrap(encryptedIn, applicationIn));
+    if (encryptedIn.hasRemaining()) {
+      encryptedIn.compact();
+    } else {
+      encryptedIn.clear();
+    }
+    return result;
   }
 
   @Override

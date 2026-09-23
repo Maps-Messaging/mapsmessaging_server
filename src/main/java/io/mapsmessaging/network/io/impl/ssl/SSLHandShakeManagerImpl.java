@@ -29,6 +29,7 @@ import lombok.Getter;
 import javax.net.ssl.SSLEngineResult.HandshakeStatus;
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.nio.channels.SelectionKey;
 
 public class SSLHandShakeManagerImpl implements SSLHandshakeManager {
 
@@ -36,7 +37,6 @@ public class SSLHandShakeManagerImpl implements SSLHandshakeManager {
 
   @Getter
   private final ByteBuffer handshakeBufferIn;
-  private final ByteBuffer handshakeBufferOut;
   private final EndPointConnectedCallback callback;
   private final SSLHandshakeTimeout handshakeTimeout;
 
@@ -44,7 +44,6 @@ public class SSLHandShakeManagerImpl implements SSLHandshakeManager {
     this.sslEndPointImpl = sslEndPointImpl;
     this.callback = callback;
     handshakeBufferIn = ByteBuffer.allocate(sslEndPointImpl.sslEngine.getSession().getApplicationBufferSize());
-    handshakeBufferOut = ByteBuffer.allocate(sslEndPointImpl.sslEngine.getSession().getApplicationBufferSize());
     handshakeTimeout = callback == null ? null : new SSLHandshakeTimeout(timeoutMillis, this::handleHandshakeTimeout);
   }
 
@@ -61,9 +60,17 @@ public class SSLHandShakeManagerImpl implements SSLHandshakeManager {
         if (sslEndPointImpl.readBuffer(handshakeBufferIn) == 0 ) {
           return true; // Wait for more data
         }
+      } else if (handshakeStatus == HandshakeStatus.NEED_UNWRAP_AGAIN) {
+        sslEndPointImpl.unwrapPendingHandshakeData(handshakeBufferIn);
       } else if (handshakeStatus == HandshakeStatus.NEED_WRAP) {
         logger.log(ServerLogMessages.SSL_HANDSHAKE_NEED_WRAP);
-        sslEndPointImpl.sendBuffer(handshakeBufferOut);
+        sslEndPointImpl.sendBuffer(ByteBuffer.allocate(0));
+        if (sslEndPointImpl.hasPendingEncryptedOutput()) {
+          if (callback != null) {
+            sslEndPointImpl.registerHandshakeSelection();
+          }
+          return true;
+        }
       }
       handshakeStatus = sslEndPointImpl.sslEngine.getHandshakeStatus();
     }
@@ -107,6 +114,13 @@ public class SSLHandShakeManagerImpl implements SSLHandshakeManager {
   @Override
   public void selected(Selectable selectable, Selector selector, int selection) {
     try {
+      if ((selection & SelectionKey.OP_WRITE) != 0) {
+        sslEndPointImpl.flushPendingEncryptedOutput();
+        sslEndPointImpl.registerHandshakeSelection();
+        if (sslEndPointImpl.hasPendingEncryptedOutput()) {
+          return;
+        }
+      }
       handleSSLHandshakeStatus();
     } catch (IOException ioException) {
       cancel();
