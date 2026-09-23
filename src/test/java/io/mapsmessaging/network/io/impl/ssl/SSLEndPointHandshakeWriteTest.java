@@ -40,8 +40,10 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 class SSLEndPointHandshakeWriteTest {
@@ -133,6 +135,29 @@ class SSLEndPointHandshakeWriteTest {
 
     Assertions.assertEquals(List.of(0), fixture.wrapSourceRemaining,
         "TLS handshake NEED_WRAP must not expose arbitrary application bytes to SSLEngine.wrap()");
+  }
+
+  @Test
+  void need_unwrap_again_invokes_unwrap() throws Exception {
+    Fixture fixture = new Fixture(false);
+    SSLEndPoint endPoint = fixture.createEndPoint();
+
+    when(fixture.sslEngine.getHandshakeStatus())
+        .thenReturn(
+            SSLEngineResult.HandshakeStatus.NEED_UNWRAP_AGAIN,
+            SSLEngineResult.HandshakeStatus.FINISHED);
+    when(fixture.sslEngine.unwrap(any(ByteBuffer.class), any(ByteBuffer.class)))
+        .thenReturn(
+            new SSLEngineResult(
+                SSLEngineResult.Status.OK,
+                SSLEngineResult.HandshakeStatus.FINISHED,
+                0,
+                0));
+
+    endPoint.handshakeManager.handleSSLHandshakeStatus();
+    endPoint.close();
+
+    verify(fixture.sslEngine, atLeastOnce()).unwrap(any(ByteBuffer.class), any(ByteBuffer.class));
   }
 
   private static final class Fixture {
