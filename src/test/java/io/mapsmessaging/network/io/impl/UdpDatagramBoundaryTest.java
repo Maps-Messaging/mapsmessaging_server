@@ -14,14 +14,12 @@ import io.mapsmessaging.network.io.Packet;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
-import java.lang.reflect.Field;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Deque;
 import java.util.List;
-import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -106,18 +104,25 @@ class UdpDatagramBoundaryTest {
     @Test
     void endpointMustNotRetainUnreadTailForCrossDatagramReassembly() throws Exception {
       SocketAddress source = new InetSocketAddress("127.0.0.1", 12005);
-      TestHarness harness = new TestHarness(datagram(source, 1, 2, 3));
+      TestHarness harness = new TestHarness(
+          datagram(source, 1, 2, 3),
+          datagram(source, 9, 8));
 
+      List<byte[]> observed = new ArrayList<>();
       when(harness.callback.processPacket(any(Packet.class))).thenAnswer(invocation -> {
         Packet packet = invocation.getArgument(0);
+        observed.add(remaining(packet));
         packet.get();
         return false;
       });
 
       harness.task.read();
+      harness.task.read();
 
-      assertTrue(outstandingPackets(harness.task).isEmpty(),
-          "UDP endpoint layer must not retain an unread datagram tail for concatenation with a later datagram");
+      assertEquals(2, observed.size());
+      assertArrayEquals(bytes(1, 2, 3), observed.get(0));
+      assertArrayEquals(bytes(9, 8), observed.get(1),
+          "UDP endpoint layer must discard unread bytes at the datagram boundary");
     }
 
     @Test
@@ -159,17 +164,23 @@ class UdpDatagramBoundaryTest {
         datagrams[i] = datagram(source, i, i + 1, i + 2);
       }
       TestHarness harness = new TestHarness(datagrams);
+      List<byte[]> observed = new ArrayList<>();
 
       when(harness.callback.processPacket(any(Packet.class))).thenAnswer(invocation -> {
         Packet packet = invocation.getArgument(0);
+        observed.add(remaining(packet));
         packet.get();
         return false;
       });
 
       for (int i = 0; i < datagrams.length; i++) {
         harness.task.read();
-        assertTrue(outstandingPackets(harness.task).isEmpty(),
-            "UDP endpoint must remain stateless between datagrams even when the protocol leaves bytes unread");
+      }
+
+      assertEquals(datagrams.length, observed.size());
+      for (int i = 0; i < datagrams.length; i++) {
+        assertArrayEquals(datagrams[i].payload(), observed.get(i),
+            "each UDP receive must remain an independent datagram");
       }
     }
 
@@ -200,13 +211,6 @@ class UdpDatagramBoundaryTest {
       assertArrayEquals(bytes(3, 3, 3), observed.get(2));
       assertArrayEquals(bytes(4, 4, 4), observed.get(3));
     }
-  }
-
-  @SuppressWarnings("unchecked")
-  private static Map<SocketAddress, ?> outstandingPackets(UDPReadTask task) throws Exception {
-    Field field = UDPReadTask.class.getDeclaredField("outstandingPacketMap");
-    field.setAccessible(true);
-    return (Map<SocketAddress, ?>) field.get(task);
   }
 
   private static final class TestHarness {
