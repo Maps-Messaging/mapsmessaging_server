@@ -28,6 +28,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.TimeUnit;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
@@ -123,6 +124,8 @@ class EventPublisherTest extends MessageAPITest {
 
       LinkedBlockingDeque<?> queue = getQueue(eventPublisher);
       assertTrue(queue.size() <= 1000, "bounded queue must never grow past its capacity");
+      assertEquals(overflowAttempts - 1000, eventPublisher.getDroppedEventCount(),
+          "every event pushed past capacity must be counted as dropped");
 
       releaseStore.countDown();
       // Let the background thread actually resume and drain the backlog before close()

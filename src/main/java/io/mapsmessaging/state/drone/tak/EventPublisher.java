@@ -37,12 +37,15 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicLong;
 
 public class EventPublisher implements ClientConnection, MessageListener {
 
   private static final int MAX_QUEUE_SIZE = 1000;
+  private static final long DROP_LOG_INTERVAL = 1000;
 
   private final Logger logger = LoggerFactory.getLogger(EventPublisher.class);
+  private final AtomicLong droppedEvents = new AtomicLong();
   private final String topic;
   private final Session session;
   private final LinkedBlockingDeque<String> queue;
@@ -73,12 +76,25 @@ public class EventPublisher implements ClientConnection, MessageListener {
    * their shared task pool if the destination is backed up.
    */
   public void publish(String xml) throws IOException {
+    boolean dropped = false;
     synchronized (queue) {
       if (queue.remainingCapacity() == 0) {
         queue.pollFirst();
+        dropped = true;
       }
       queue.offerLast(xml);
     }
+    if (dropped) {
+      long total = droppedEvents.incrementAndGet();
+      // Rate-limited: a stuck destination at replay rates would otherwise flood the log.
+      if (total == 1 || total % DROP_LOG_INTERVAL == 0) {
+        logger.log(StateLogMessages.STATE_MANAGER_TAK_EVENT_QUEUE_FULL, topic, total);
+      }
+    }
+  }
+
+  long getDroppedEventCount() {
+    return droppedEvents.get();
   }
 
   private void publisherLoop() {
