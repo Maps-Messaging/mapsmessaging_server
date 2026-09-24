@@ -161,8 +161,10 @@ public class NMEAProtocol extends Protocol {
         if(sentenceId != null && !sentenceId.isEmpty()) {
           prepareSentence(nmeaPacket.getSentence(), sentenceId, nmeaPacket.getEntries());
         }
-        } catch (EndOfBufferException e) {
+      } catch (EndOfBufferException e) {
         packet.position(pos);
+        endPoint.register(SelectionKey.OP_READ, selectorTask.getReadTask());
+        return false;
       }
     }
     endPoint.register(SelectionKey.OP_READ, selectorTask.getReadTask());
