@@ -10,6 +10,7 @@ package io.mapsmessaging.network.io.impl;
 
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.network.io.EndPoint;
+import io.mapsmessaging.network.io.EndPointStatus;
 import io.mapsmessaging.network.io.Packet;
 import io.mapsmessaging.network.io.ServerPacket;
 import org.junit.jupiter.api.Nested;
@@ -186,12 +187,14 @@ class WriteBufferLifecycleTest {
   private static final class Harness {
     private final SelectorCallback callback = mock(SelectorCallback.class);
     private final EndPoint endPoint = mock(EndPoint.class);
+    private final EndPointStatus endPointStatus = mock(EndPointStatus.class);
     private final SelectorTask selectorTask = mock(SelectorTask.class);
     private final Logger logger = mock(Logger.class);
     private final WriteTask task;
 
     private Harness(int bufferSize) throws Exception {
       when(callback.getEndPoint()).thenReturn(endPoint);
+      when(endPoint.getEndPointStatus()).thenReturn(endPointStatus);
       task = new WriteTask(callback, bufferSize, selectorTask, logger);
     }
   }
