@@ -72,9 +72,9 @@ class CotProtocolTest {
     last.setAccessible(true);
     whitespace.setAccessible(true);
 
-    assertEquals(12, index.invoke(null, data, "<event".getBytes(), 0));
-    assertEquals(2, last.invoke(null, data, "<?xml".getBytes(), 0, 12));
-    assertEquals(true, whitespace.invoke(null, data, 9, 12));
+    assertEquals(11, index.invoke(null, data, "<event".getBytes(), 0));
+    assertEquals(2, last.invoke(null, data, "<?xml".getBytes(), 0, 11));
+    assertEquals(true, whitespace.invoke(null, data, 9, 11));
     assertEquals(-1, index.invoke(null, data, "missing".getBytes(), 0));
   }
 
