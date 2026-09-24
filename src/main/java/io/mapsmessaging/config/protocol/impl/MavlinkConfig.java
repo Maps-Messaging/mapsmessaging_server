@@ -196,8 +196,8 @@ public class MavlinkConfig extends MavlinkConfigDTO implements Config {
     properties.put("forwardRejectedRawFrames", forwardRejectedRawFrames);
     properties.put("dropIfTargetEqualsSource", dropIfTargetEqualsSource);
     properties.put("dedupWindowMillis", dedupWindowMillis);
-    properties.put("acceptedMessageIds", new ArrayList<>(acceptedMessageIds));
-    properties.put("rejectedMessageIds", new ArrayList<>(rejectedMessageIds));
+    properties.put("acceptedMessageIds", writeIntegerList(acceptedMessageIds));
+    properties.put("rejectedMessageIds", writeIntegerList(rejectedMessageIds));
     properties.put("acceptedSources", writeKnownSources(acceptedSources));
     properties.put("rejectUnknownSources", rejectUnknownSources);
     properties.put("rejectedFrameNamespace", rejectedFrameNamespace);
@@ -332,6 +332,15 @@ public class MavlinkConfig extends MavlinkConfigDTO implements Config {
     return copy;
   }
 
+  private String writeIntegerList(List<Integer> values) {
+    if (values == null || values.isEmpty()) {
+      return "";
+    }
+    return values.stream()
+        .map(String::valueOf)
+        .collect(java.util.stream.Collectors.joining(","));
+  }
+
   private List<ConfigurationProperties> writeKnownSources(List<MavlinkAcceptedSourceDTO> sources) {
     List<ConfigurationProperties> result = new ArrayList<>();
     if (sources == null) {
@@ -341,8 +350,8 @@ public class MavlinkConfig extends MavlinkConfigDTO implements Config {
       ConfigurationProperties properties = new ConfigurationProperties();
       properties.put("systemId", source.getSystemId());
       properties.put("componentId", source.getComponentId());
-      properties.put("acceptedMessageIds", new ArrayList<>(source.getAcceptedMessageIds()));
-      properties.put("rejectedMessageIds", new ArrayList<>(source.getRejectedMessageIds()));
+      properties.put("acceptedMessageIds", writeIntegerList(source.getAcceptedMessageIds()));
+      properties.put("rejectedMessageIds", writeIntegerList(source.getRejectedMessageIds()));
       result.add(properties);
     }
     return result;
