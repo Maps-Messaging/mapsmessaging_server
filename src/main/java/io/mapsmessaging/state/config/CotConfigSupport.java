@@ -68,6 +68,7 @@ public final class CotConfigSupport {
         properties.put("defaultLinearErrorMeters", config.getDefaultLinearErrorMeters());
       }
       properties.put("altitudeSource", config.getAltitudeSource());
+      properties.put("publishTakv", config.isPublishTakv());
       values.add(properties);
     }
     return values;
@@ -87,6 +88,7 @@ public final class CotConfigSupport {
       config.setDefaultLinearErrorMeters(properties.getDoubleProperty("defaultLinearErrorMeters", config.getDefaultLinearErrorMeters()));
     }
     config.setAltitudeSource(properties.getProperty("altitudeSource", config.getAltitudeSource()));
+    config.setPublishTakv(properties.getBooleanProperty("publishTakv", config.isPublishTakv()));
     validate(config);
     return config;
   }
