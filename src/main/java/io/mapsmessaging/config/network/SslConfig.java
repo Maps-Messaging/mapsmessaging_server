@@ -38,18 +38,24 @@ public class SslConfig extends SslConfigDTO implements Config {
   public SslConfig(ConfigurationProperties config, String transport) {
     ConfigurationProperties securityProps = locateConfig(config, transport);
     if (securityProps == null) {
-      throw new IllegalArgumentException("Missing security." + transport + " configuration");
+      securityProps = new ConfigurationProperties();
     }
 
-    String defaultContext = "dtls".equalsIgnoreCase(transport) ? "DTLSv1.2" : "TLS";
+    String defaultContext = "dtls".equalsIgnoreCase(transport) ? "DTLSv1.2" : "TLSv1.3";
     this.context = securityProps.getProperty("context", defaultContext);
     this.clientCertificateRequired = securityProps.getBooleanProperty("clientCertificateRequired", false);
     this.clientCertificateWanted = securityProps.getBooleanProperty("clientCertificateWanted", false);
     this.hostnameVerificationEnabled = securityProps.getBooleanProperty("hostnameVerificationEnabled", true);
     this.crlUrl = securityProps.getProperty("crlUrl", null);
     this.crlInterval = securityProps.getLongProperty("crlInterval", 3600000L);
-    this.keyStore = new KeyStoreConfig((ConfigurationProperties) securityProps.get("keyStore"));
-    this.trustStore = new KeyStoreConfig((ConfigurationProperties) securityProps.get("trustStore"));
+    ConfigurationProperties keyStoreProperties =
+        securityProps.get("keyStore") instanceof ConfigurationProperties properties
+            ? properties : new ConfigurationProperties();
+    ConfigurationProperties trustStoreProperties =
+        securityProps.get("trustStore") instanceof ConfigurationProperties properties
+            ? properties : new ConfigurationProperties();
+    this.keyStore = new KeyStoreConfig(keyStoreProperties);
+    this.trustStore = new KeyStoreConfig(trustStoreProperties);
   }
 
   private ConfigurationProperties locateConfig(ConfigurationProperties config, String transport) {
