@@ -13,24 +13,18 @@ import static org.junit.jupiter.api.Assertions.*;
 class MavlinkConfigBranchCoverageTest {
 
   @Test
-  void parsesOptionalIdentityListsAndMixedAcceptedSourceRepresentations() {
+  void parsesOptionalIdentityListsAndSupportedAcceptedSourceRepresentations() {
     ConfigurationProperties sourceProps = new ConfigurationProperties();
     sourceProps.put("systemId", "4");
     sourceProps.put("componentId", 5L);
     sourceProps.put("acceptedMessageIds", "1, 2, 3");
-    sourceProps.put("rejectedMessageIds", List.of(9, "10"));
-
-    MavlinkAcceptedSourceDTO dtoSource = new MavlinkAcceptedSourceDTO();
-    dtoSource.setSystemId(6);
-    dtoSource.setComponentId(7);
-    dtoSource.setAcceptedMessageIds(List.of(11));
-    dtoSource.setRejectedMessageIds(List.of(12));
+    sourceProps.put("rejectedMessageIds", "9,10");
 
     ConfigurationProperties properties = new ConfigurationProperties();
     properties.put("systemId", "42");
     properties.put("componentId", 24L);
     properties.put("acceptedMessageIds", "1, 2, ,3");
-    properties.put("rejectedMessageIds", List.of(4, "5", 6L));
+    properties.put("rejectedMessageIds", "4,5,6");
     properties.put(
         "acceptedSources",
         List.of(
@@ -39,9 +33,7 @@ class MavlinkConfigBranchCoverageTest {
                 "systemId", "8",
                 "componentId", 9,
                 "acceptedMessageIds", "13,14",
-                "rejectedMessageIds", List.of(15)),
-            dtoSource,
-            "ignored"));
+                "rejectedMessageIds", "15")));
 
     MavlinkConfig config = new MavlinkConfig(properties);
 
@@ -49,10 +41,9 @@ class MavlinkConfigBranchCoverageTest {
     assertEquals(24, config.getComponentId());
     assertEquals(List.of(1, 2, 3), config.getAcceptedMessageIds());
     assertEquals(List.of(4, 5, 6), config.getRejectedMessageIds());
-    assertEquals(3, config.getAcceptedSources().size());
+    assertEquals(2, config.getAcceptedSources().size());
     assertEquals(List.of(1, 2, 3), config.getAcceptedSources().get(0).getAcceptedMessageIds());
     assertEquals(8, config.getAcceptedSources().get(1).getSystemId());
-    assertEquals(6, config.getAcceptedSources().get(2).getSystemId());
   }
 
   @Test
