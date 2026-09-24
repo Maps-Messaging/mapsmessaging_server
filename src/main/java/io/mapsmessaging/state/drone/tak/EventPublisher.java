@@ -24,6 +24,9 @@ import io.mapsmessaging.api.features.DestinationType;
 import io.mapsmessaging.api.features.QualityOfService;
 import io.mapsmessaging.engine.schema.SchemaManager;
 import io.mapsmessaging.engine.session.ClientConnection;
+import io.mapsmessaging.logging.Logger;
+import io.mapsmessaging.logging.LoggerFactory;
+import io.mapsmessaging.state.logging.StateLogMessages;
 import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
 
@@ -31,24 +34,70 @@ import java.io.IOException;
 import java.security.Principal;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 public class EventPublisher implements ClientConnection, MessageListener {
 
+  private static final int MAX_QUEUE_SIZE = 1000;
+
+  private final Logger logger = LoggerFactory.getLogger(EventPublisher.class);
+  private final String topic;
   private final Session session;
+  private final LinkedBlockingDeque<String> queue;
+  private final Thread publisherThread;
+  private volatile boolean running;
   private Destination destination;
 
   public EventPublisher(String topic) throws ExecutionException, InterruptedException, TimeoutException {
+    this.topic = topic;
     session = createSession();
     destination = session.findDestination(topic, DestinationType.TOPIC).get(1, TimeUnit.SECONDS);
+    queue = new LinkedBlockingDeque<>(MAX_QUEUE_SIZE);
+    running = true;
+    publisherThread = new Thread(this::publisherLoop, "tak-event-publisher-" + topic);
+    publisherThread.setDaemon(true);
+    publisherThread.start();
   }
 
   public void close() throws IOException {
+    running = false;
+    publisherThread.interrupt();
     SessionManager.getInstance().close(session, true);
   }
 
+  /**
+   * Queues the event for asynchronous publishing. Must never block the calling thread: callers
+   * include destination delivery/task-scheduler threads, and a synchronous store here can starve
+   * their shared task pool if the destination is backed up.
+   */
   public void publish(String xml) throws IOException {
+    synchronized (queue) {
+      if (queue.remainingCapacity() == 0) {
+        queue.pollFirst();
+      }
+      queue.offerLast(xml);
+    }
+  }
+
+  private void publisherLoop() {
+    while (running) {
+      String xml;
+      try {
+        xml = queue.takeFirst();
+      } catch (InterruptedException interruptedException) {
+        Thread.currentThread().interrupt();
+        if (!running) {
+          break;
+        }
+        continue;
+      }
+      storeEvent(xml);
+    }
+  }
+
+  private void storeEvent(String xml) {
     MessageBuilder messageBuilder = new MessageBuilder();
     messageBuilder.setOpaqueData(xml.getBytes())
         .setQoS(QualityOfService.AT_LEAST_ONCE)
@@ -59,7 +108,11 @@ public class EventPublisher implements ClientConnection, MessageListener {
     try {
       destination.storeMessage(messageBuilder.build());
     } catch (IOException e) {
-      destination = locateDestination(destination.getFullyQualifiedNamespace());
+      try {
+        destination = locateDestination(destination.getFullyQualifiedNamespace());
+      } catch (IOException relocateException) {
+        logger.log(StateLogMessages.STATE_MANAGER_TAK_EVENT_PUBLISH_FAILED, topic, relocateException.getMessage());
+      }
     }
   }
 
