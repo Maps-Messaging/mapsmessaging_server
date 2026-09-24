@@ -21,6 +21,7 @@ package io.mapsmessaging.aggregator.aggregate;
 
 import com.google.common.reflect.TypeToken;
 import com.google.gson.Gson;
+import com.google.gson.JsonNull;
 import com.google.gson.JsonObject;
 import io.mapsmessaging.api.MessageBuilder;
 import io.mapsmessaging.api.message.Message;
@@ -87,7 +88,7 @@ public class EnvelopeAggregationStrategy implements AggregationStrategy {
 
     byte[] opaqueData = message.getOpaqueData();
     if (opaqueData == null) {
-      entry.put("payloadBase64", null);
+      entry.put("payloadBase64", JsonNull.INSTANCE);
       return entry;
     }
 
