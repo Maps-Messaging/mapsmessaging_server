@@ -21,7 +21,7 @@ package io.mapsmessaging.aggregator.aggregate;
 
 import com.google.common.reflect.TypeToken;
 import com.google.gson.Gson;
-import com.google.gson.JsonNull;
+import com.google.gson.GsonBuilder;
 import com.google.gson.JsonObject;
 import io.mapsmessaging.api.MessageBuilder;
 import io.mapsmessaging.api.message.Message;
@@ -39,7 +39,7 @@ public class EnvelopeAggregationStrategy implements AggregationStrategy {
 
   private static final String JSON_CONTENT_TYPE = "application/json";
 
-  private final Gson gson = new Gson();
+  private final Gson gson = new GsonBuilder().serializeNulls().create();
 
   @Override
   public String getName() {
@@ -88,7 +88,7 @@ public class EnvelopeAggregationStrategy implements AggregationStrategy {
 
     byte[] opaqueData = message.getOpaqueData();
     if (opaqueData == null) {
-      entry.put("payloadBase64", JsonNull.INSTANCE);
+      entry.put("payloadBase64", null);
       return entry;
     }
 
