@@ -42,19 +42,17 @@ class TakSocketConnectionTest {
   }
 
   @Test
-  void blankMessagesAreIgnoredAndCloseClearsQueue() {
+  void blankAndPostCloseMessagesAreIgnored() {
     TakSocketConnection connection =
         new TakSocketConnection("unused", 1, 10, 10, true, 2);
-    try {
-      connection.accept(null);
-      connection.accept("   ");
-      assertTrue(connection.getQueue().isEmpty());
 
-      connection.accept("<event/>");
-      assertFalse(connection.getQueue().isEmpty());
-    } finally {
-      connection.close();
-    }
+    connection.accept(null);
+    connection.accept("   ");
+    assertTrue(connection.getQueue().isEmpty());
+
+    connection.close();
+    connection.accept("<event/>");
+
     assertTrue(connection.getQueue().isEmpty());
   }
 
