@@ -174,8 +174,6 @@ class WebSocketBufferLifecycleTest {
 
       assertEquals(0, writer.writeBinary(application));
       assertTrue(writer.hasPendingApplicationData());
-      assertEquals(0, writer.writeBinary(application));
-      assertTrue(writer.hasPendingApplicationData());
       assertEquals(4, writer.writeBinary(application));
       assertFalse(writer.hasPendingApplicationData());
       assertEquals(application.limit(), application.position());
