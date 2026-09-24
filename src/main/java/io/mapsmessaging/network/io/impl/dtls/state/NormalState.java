@@ -49,6 +49,9 @@ public class NormalState extends State {
     SSLEngineResult rs;
     do {
       rs = stateEngine.getSslEngine().unwrap(packet.getRawBuffer(), networkOut.getRawBuffer());
+      if (rs.getStatus() == Status.OK && rs.bytesConsumed() == 0 && rs.bytesProduced() == 0) {
+        break;
+      }
     } while (rs.getStatus() == Status.OK && packet.hasRemaining());
 
     if (rs.getStatus() == Status.OK) {
