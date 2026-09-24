@@ -28,8 +28,8 @@ class MessageQueueUnpackerBranchCoverageTest {
     CipherManager cipher = new CipherManager("key".getBytes());
     byte[] encrypted = cipher.encrypt(new byte[]{1, 2, 3});
 
-    assertThrows(
-        RuntimeException.class,
-        () -> MessageQueueUnpacker.unpack(encrypted, false, cipher));
+    assertTrue(
+        MessageQueueUnpacker.unpack(encrypted, false, cipher).isEmpty(),
+        "decrypted malformed frames must fail closed without leaking runtime exceptions");
   }
 }
