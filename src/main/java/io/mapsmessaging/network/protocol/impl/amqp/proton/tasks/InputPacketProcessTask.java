@@ -91,9 +91,6 @@ public class InputPacketProcessTask extends PacketTask {
       }
     }
     processOutput();
-    if (!incomingPacket.hasRemaining()) {
-      incomingPacket.clear();
-    }
   }
 
 
