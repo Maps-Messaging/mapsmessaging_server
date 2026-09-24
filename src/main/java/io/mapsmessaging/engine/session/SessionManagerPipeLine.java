@@ -164,7 +164,14 @@ public class SessionManagerPipeLine {
         persistentSession.setExpiryTime(System.currentTimeMillis() + TimeUnit.SECONDS.toMillis(expiry));
       }
       subscriptionController.hibernateAll();
-      Future<?> sched = SimpleTaskScheduler.getInstance().schedule(() -> closeAndDeleteSubscriptionController(storeName, subscriptionController), expiry, TimeUnit.SECONDS);
+      // The actual cleanup runs on this pipeline's own single-threaded taskScheduler, not
+      // directly on the global scheduler thread, so it is serialised against create()/close()
+      // for this same session ID. Without this, a reconnect racing the exact moment this timer
+      // fires could find and reuse a SubscriptionController that closeAndDeleteSubscriptionController
+      // is concurrently tearing down (see loadSubscriptionManager()'s clearAndIsTimeOut() check).
+      Future<?> sched = SimpleTaskScheduler.getInstance().schedule(
+          () -> taskScheduler.submit(() -> closeAndDeleteSubscriptionController(storeName, subscriptionController)),
+          expiry, TimeUnit.SECONDS);
       subscriptionController.setTimeout(sched);
       disconnectedSessions.increment();
     } else {
@@ -179,7 +186,11 @@ public class SessionManagerPipeLine {
     disconnectedSessions.increment();
     long timeout =  sessionDetails.getExpiryTime() - System.currentTimeMillis();
     if(timeout > 0) {
-      Future<?> sched = SimpleTaskScheduler.getInstance().schedule(() -> closeAndDeleteSubscriptionController(storeName, subscriptionManager), timeout, TimeUnit.MILLISECONDS);
+      // Same reasoning as the identical pattern in close(): route the actual cleanup through
+      // this pipeline's taskScheduler so it can't race a reconnect's loadSubscriptionManager().
+      Future<?> sched = SimpleTaskScheduler.getInstance().schedule(
+          () -> taskScheduler.submit(() -> closeAndDeleteSubscriptionController(storeName, subscriptionManager)),
+          timeout, TimeUnit.MILLISECONDS);
       subscriptionManager.setTimeout(sched);
     }
     else{
