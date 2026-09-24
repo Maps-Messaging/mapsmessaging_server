@@ -44,7 +44,7 @@ public class ConfigHelper {
     PartitionStorageConfigDTO partitionStorageConfig = new PartitionStorageConfigDTO();
     partitionStorageConfig.setCapacity( properties.getIntProperty("capacity", -1));
     partitionStorageConfig.setExpiredEventPoll(properties.getIntProperty("expiredEventPoll", 20));
-    partitionStorageConfig.setFileName(properties.getProperty("name", ""));
+    partitionStorageConfig.setFileName(properties.getProperty("file", properties.getProperty("name", "")));
     partitionStorageConfig.setItemCount(properties.getIntProperty("itemCount", 100));
     partitionStorageConfig.setMaxPartitionSize(properties.getLongProperty("maxPartitionSize", 4096L));
     partitionStorageConfig.setSync(properties.getProperty("sync", "disable").equalsIgnoreCase("enable"));
@@ -56,16 +56,24 @@ public class ConfigHelper {
       dConfig.setIdleTime(archive.getLongProperty("idleTime", -1));
       dConfig.setDigestName(archive.getProperty("digestAlgorithm", "MD5"));
       dConfig.setMigrationDestination(archive.getProperty("migrationPath"));
-      if (properties.containsKey("s3") || archive.containsKey("s3")) {
-        if(archive.containsKey("s3")) {
-          archive = (ConfigurationProperties)archive.get("s3");
-        }
+      ConfigurationProperties s3Properties = null;
+      if (archive.get("s3") instanceof ConfigurationProperties nestedS3) {
+        s3Properties = nestedS3;
+      } else if (properties.get("s3") instanceof ConfigurationProperties topLevelS3) {
+        s3Properties = topLevelS3;
+      } else if (archive.containsKey("bucketName")
+          || archive.containsKey("regionName")
+          || archive.containsKey("accessKeyId")
+          || archive.containsKey("secretAccessKey")) {
+        s3Properties = archive;
+      }
+      if (s3Properties != null) {
         S3Config s3Config = new S3Config();
-        s3Config.setRegion(archive.getProperty("regionName", ""));
-        s3Config.setAccessKey(archive.getProperty("accessKeyId", ""));
-        s3Config.setSecretKey(archive.getProperty("secretAccessKey", ""));
-        s3Config.setBucket(archive.getProperty("bucketName", ""));
-        s3Config.setCompression(archive.getBooleanProperty("compression", false));
+        s3Config.setRegion(s3Properties.getProperty("regionName", ""));
+        s3Config.setAccessKey(s3Properties.getProperty("accessKeyId", ""));
+        s3Config.setSecretKey(s3Properties.getProperty("secretAccessKey", ""));
+        s3Config.setBucket(s3Properties.getProperty("bucketName", ""));
+        s3Config.setCompression(s3Properties.getBooleanProperty("compression", false));
         dConfig.setS3Config(s3Config);
       }
     }
