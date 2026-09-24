@@ -50,7 +50,7 @@ public final class MessageQueueUnpacker extends MessageQueue {
       data = cipherManager.decrypt(data);
     }
     byte[] rawBuffer = compressed ? inflate(data) : data;
-    if (rawBuffer == null || rawBuffer.length < lengthSize) return Map.of();
+    if (rawBuffer == null || rawBuffer.length < 5) return Map.of();
 
     // Decrypt post unzip
     int length = rawBuffer.length;
