@@ -163,7 +163,6 @@ public class NMEAProtocol extends Protocol {
         }
       } catch (EndOfBufferException e) {
         packet.position(pos);
-        endPoint.register(SelectionKey.OP_READ, selectorTask.getReadTask());
         return false;
       }
     }
