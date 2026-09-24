@@ -39,6 +39,10 @@ public class XmodemReceiver extends Xmodem {
     final ByteArrayOutputStream buffer = new ByteArrayOutputStream(Math.max(announcedLength, 128));
 
     RxState state = handshake(linkIn, linkOut, buffer, announcedLength, readTimeoutMs);
+    if (state.complete) {
+      return finalizeAndWrite(
+          dst, buffer, announcedLength, expectedCrc32, start, state.totalBlocks, state.totalRetries);
+    }
     return receiveLoop(linkIn, linkOut, dst, buffer, announcedLength, expectedCrc32, readTimeoutMs, start, state);
   }
 
@@ -57,14 +61,35 @@ public class XmodemReceiver extends Xmodem {
 
       int b = readByteWithTimeout(linkIn, readTimeoutMs);
       if (b == SOH || b == STX) {
-        started = true;
-        processBlock(linkIn, linkOut, buffer, announcedLength, b, s.expectedBlock);
-        s.expectedBlock = nextExpected(s.expectedBlock);
-        s.totalBlocks++;
+        int header = b;
+        int perBlockRetries = 0;
+        while (true) {
+          try {
+            int wrote = processBlock(linkIn, linkOut, buffer, announcedLength, header, s.expectedBlock);
+            if (wrote >= 0) {
+              s.expectedBlock = nextExpected(s.expectedBlock);
+              s.totalBlocks++;
+            }
+            started = true;
+            break;
+          } catch (RetryBlock e) {
+            if (++perBlockRetries > 10) {
+              throw new IOException("Too many NAKs/timeouts on block " + s.expectedBlock);
+            }
+            s.totalRetries++;
+            linkOut.write(NAK);
+            linkOut.flush();
+            header = readByteWithTimeout(linkIn, readTimeoutMs);
+            if (header != SOH && header != STX) {
+              throw new IOException("Expected SOH/STX on retry, got: " + header);
+            }
+          }
+        }
       } else if (b == EOT) {
         linkOut.write(ACK);
         linkOut.flush();
-        return s; // early EOT
+        s.complete = true;
+        return s;
       } else if (b == CAN) {
         throw new IOException("Sender cancelled (CAN)");
       }
@@ -126,7 +151,7 @@ public class XmodemReceiver extends Xmodem {
     }
   }
 
-  /** Reads one block; returns >=0 when delivered (bytes written or 0 if duplicate), throws RetryBlock to request NAK/resend. */
+  /** Reads one block; returns >=0 when delivered and -1 for a duplicate, throws RetryBlock to request NAK/resend. */
   private int processBlock(InputStream in,
                            OutputStream out,
                            ByteArrayOutputStream buf,
@@ -148,7 +173,7 @@ public class XmodemReceiver extends Xmodem {
     if (recvCrc != calcCrc) throw new RetryBlock("CRC mismatch");
 
     int expected = expectedBlock & 0xFF;
-    int last = ((expected - 2) & 0xFF) + 1; // previous delivered block in 1..255 space
+    int last = expected == 1 ? 255 : expected - 1;
     if (blk == expected) {
       int remaining = announcedLength - buf.size();
       int toWrite = Math.max(0, Math.min(remaining, data.length));
@@ -159,7 +184,7 @@ public class XmodemReceiver extends Xmodem {
     } else if (blk == last) {
       out.write(ACK);
       out.flush();
-      return 0;
+      return -1;
     } else {
       throw new RetryBlock("Unexpected block " + blk + " (expected " + expected + ")");
     }
