@@ -152,13 +152,16 @@ class DtlsBufferLifecycleTest {
     @Test
     void zeroProgressOkResultMustNotSpinForever() throws Exception {
       Harness harness = new Harness(4096);
-      when(harness.engine.unwrap(any(ByteBuffer.class), any(ByteBuffer.class)))
-          .thenReturn(result(OK, NOT_HANDSHAKING, 0, 0));
+      AtomicInteger calls = new AtomicInteger();
 
-      assertTimeoutPreemptively(
-          java.time.Duration.ofSeconds(1),
-          () -> harness.normal.inbound(packet(1, 2, 3)),
-          "DTLS unwrap loop must stop when the engine reports no progress");
+      when(harness.engine.unwrap(any(ByteBuffer.class), any(ByteBuffer.class))).thenAnswer(invocation -> {
+        assertEquals(1, calls.incrementAndGet(),
+            "DTLS unwrap must stop after an OK result that consumes and produces no bytes");
+        return result(OK, NOT_HANDSHAKING, 0, 0);
+      });
+
+      assertEquals(0, harness.normal.inbound(packet(1, 2, 3)));
+      assertEquals(1, calls.get());
     }
   }
 
