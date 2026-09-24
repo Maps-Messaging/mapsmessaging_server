@@ -88,7 +88,7 @@ public class EndPointConfigFactory {
     }
 
     server.setBacklog(config.getIntProperty("backlog", server.getBacklog()));
-    server.setSelectorTaskWait(config.getIntProperty("taskWait", server.getSelectorTaskWait()));
+    server.setSelectorTaskWait(config.getIntProperty("selectorTaskWait", config.getIntProperty("taskWait", server.getSelectorTaskWait())));
     server.setAuthenticationRealm(config.getProperty("auth", ""));
 
     server.setEndPointConfig( server.getUrl() != null ? createEndPointConfig(server.getUrl(), config) : null);
