@@ -25,7 +25,6 @@ import io.mapsmessaging.network.io.StreamHandler;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.nio.ByteBuffer;
 
 public class MavlinkStreamHandler implements StreamHandler {
 
@@ -155,23 +154,14 @@ public class MavlinkStreamHandler implements StreamHandler {
       throw new IOException("Packet is null");
     }
 
-    ByteBuffer buffer = packet.getRawBuffer().duplicate();
-
-    int position = buffer.position();
-    int limit = buffer.limit();
-
-    if (limit < position) {
-      throw new IOException("Invalid packet buffer state (limit < position)");
-    }
-
-    int length = limit - position;
+    int length = packet.available();
     if (length == 0) {
       return 0;
     }
 
-    while (buffer.hasRemaining()) {
-      int chunk = Math.min(buffer.remaining(), outputBuffer.length);
-      buffer.get(outputBuffer, 0, chunk);
+    while (packet.hasRemaining()) {
+      int chunk = Math.min(packet.available(), outputBuffer.length);
+      packet.get(outputBuffer, 0, chunk);
       output.write(outputBuffer, 0, chunk);
     }
 
