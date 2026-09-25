@@ -39,9 +39,16 @@ import java.util.concurrent.*;
 import java.util.concurrent.atomic.LongAdder;
 
 //
-// One SessionManagerPipeLine owns the serial execution order for a hash partition
-// of session IDs. Session creation, close, reconnect and expiry cleanup for a given
-// session ID must execute through this pipeline's taskScheduler.
+// One SessionManagerPipeLine owns the serial execution order for a hash partition of session IDs.
+//
+// Lifecycle invariants:
+// - SessionImpl closes session-owned resources only. SubscriptionController destruction belongs here.
+// - All controller destruction passes through finaliseController(); callers must not close a controller directly.
+// - Active session ownership is identity-safe: a stale SessionImpl must never remove or account for its replacement.
+// - Persistent controller ownership is identity-safe: stale expiry cleanup must never remove a replacement controller.
+// - persistentControllers records persistent ownership; disconnectedControllers records disconnected state. They are not interchangeable.
+// - connected/disconnected/expired counters change only when their corresponding ownership/state transition succeeds.
+// - Expiry work is represented by SessionExpiryTask through completion of queued pipeline cleanup, not merely by the timer firing.
 //
 public class SessionManagerPipeLine {
 
@@ -232,15 +239,18 @@ public class SessionManagerPipeLine {
 
     SubscriptionController controller = getIdleSubscriptions(sessionId);
     if (controller != null) {
-      closeDisconnectedController(controller);
+      closeDisconnectedController(controller, clearWillTask);
     }
   }
 
-  private void closeDisconnectedController(SubscriptionController controller) {
+  private void closeDisconnectedController(SubscriptionController controller, boolean clearWillTask) {
     Future<?> timeout = controller.getTimeout();
     if (timeout != null) {
       timeout.cancel(false);
       controller.setTimeout(null);
+    }
+    if (clearWillTask) {
+      willTaskManager.remove(controller.getSessionId());
     }
     finaliseController(controller, ControllerCloseReason.TERMINATED);
   }
