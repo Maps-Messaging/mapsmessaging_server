@@ -78,6 +78,10 @@ public class PersistentSessionManager {
     return persistentMap.get(id);
   }
 
+  SessionDetails removeSessionDetails(String sessionId){
+    return persistentMap.remove(sessionId);
+  }
+
 
   public Map<String, SubscriptionContext> getSubscriptionContextMap(String sessionId, boolean isPersistent) {
     Map<String, SubscriptionContext> map = new LinkedHashMap<>();
