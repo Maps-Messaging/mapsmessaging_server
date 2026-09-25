@@ -16,6 +16,7 @@ on:
       - 'src/test/java/io/mapsmessaging/network/ProtocolClientConnectionFlowControlTest.java'
       - 'src/test/java/io/mapsmessaging/network/protocol/impl/mqtt/**'
       - 'src/test/java/io/mapsmessaging/engine/destination/subscription/**'
+      - 'src/test/java/io/mapsmessaging/engine/session/**'
       - 'src/test/java/io/mapsmessaging/api/SessionFlowControlTest.java'
       - '.github/workflows/mqtt-session-recovery-validation.yml'
 
@@ -37,5 +38,5 @@ jobs:
       - name: Run MQTT delivery and flow-control tests
         run: >-
           mvn -B
-          -Dtest=FrameHandlerTest,PacketIdManagerTest,ProtocolClientConnectionFlowControlTest,DestinationSubscriptionFlowControlTest,SessionSharedSubscriptionFlowControlTest,SessionFlowControlTest,SessionManagerPipeLineTest,SessionExpiryTaskTest
+          -Dtest=FrameHandlerTest,PacketIdManagerTest,ProtocolClientConnectionFlowControlTest,DestinationSubscriptionFlowControlTest,SessionSharedSubscriptionFlowControlTest,SessionFlowControlTest,SessionManagerPipeLineTest,SessionExpiryTaskTest,SessionImplLifecycleTest
           test
