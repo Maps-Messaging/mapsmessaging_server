@@ -209,7 +209,7 @@ public class SessionManager implements Agent {
   //
   boolean hasIdleSessions() {
     for (SessionManagerPipeLine sessionManagerPipeLine : sessionPipeLines) {
-      if (!sessionManagerPipeLine.hasSubscriptions()) {
+      if (sessionManagerPipeLine.hasSubscriptions()) {
         return true;
       }
     }
