@@ -68,7 +68,7 @@
     <appender-ref ref="AuditFile"/>
   </appender>
 
-  <root level="warn">
+  <root level="info">
     <appender-ref ref="AsyncLogFile"/>
     <appender-ref ref="AsyncAuditFile"/>
   </root>
