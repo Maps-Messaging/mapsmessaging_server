@@ -95,7 +95,7 @@ class SessionManagerPipeLineTest {
     when(details.getExpiryTime()).thenReturn(System.currentTimeMillis() + TimeUnit.MINUTES.toMillis(1));
     when(subscriptionControllerFactory.create(sessionId, details, destinationManager, subscriptions)).thenReturn(controller);
 
-    pipeline.addDisconnectedSession(sessionId, "/tmp/idle-session.bin", details, subscriptions);
+    pipeline.addDisconnectedSession(sessionId, details, subscriptions);
 
     assertTrue(pipeline.hasSubscriptions());
     assertEquals(java.util.Set.of(sessionId), pipeline.getSessionIds());
@@ -336,7 +336,7 @@ class SessionManagerPipeLineTest {
     when(details.getSubscriptionContextMap()).thenReturn(subscriptions);
     when(subscriptionControllerFactory.create(sessionId, details, destinationManager, subscriptions)).thenReturn(controller);
 
-    pipeline.addDisconnectedSession(sessionId, "/tmp/reconnect.bin", details, subscriptions);
+    pipeline.addDisconnectedSession(sessionId, details, subscriptions);
     Future<?> timeout = controller.getTimeout();
 
     SessionContext context = mock(SessionContext.class);
@@ -375,7 +375,7 @@ class SessionManagerPipeLineTest {
     when(details.getSubscriptionContextMap()).thenReturn(subscriptions);
     when(subscriptionControllerFactory.create(sessionId, details, destinationManager, subscriptions)).thenReturn(oldController);
 
-    pipeline.addDisconnectedSession(sessionId, "/tmp/reset.bin", details, subscriptions);
+    pipeline.addDisconnectedSession(sessionId, details, subscriptions);
 
     SessionContext context = mock(SessionContext.class);
     io.mapsmessaging.engine.session.security.SecurityContext securityContext =
@@ -417,7 +417,7 @@ class SessionManagerPipeLineTest {
     when(details.getSubscriptionContextMap()).thenReturn(subscriptions);
     when(subscriptionControllerFactory.create(sessionId, details, destinationManager, subscriptions)).thenReturn(oldController);
 
-    pipeline.addDisconnectedSession(sessionId, stateFile, details, subscriptions);
+    pipeline.addDisconnectedSession(sessionId, details, subscriptions);
     expiryScheduler.fire();
     assertEquals(1, executor.queuedTasks());
 
@@ -464,7 +464,7 @@ class SessionManagerPipeLineTest {
     when(details.getSubscriptionContextMap()).thenReturn(subscriptions);
     when(subscriptionControllerFactory.create(sessionId, details, destinationManager, subscriptions)).thenReturn(expiredController);
 
-    pipeline.addDisconnectedSession(sessionId, stateFile, details, subscriptions);
+    pipeline.addDisconnectedSession(sessionId, details, subscriptions);
     expiryScheduler.fire();
     executor.runNext();
 
@@ -507,7 +507,7 @@ class SessionManagerPipeLineTest {
     when(details.getExpiryTime()).thenReturn(System.currentTimeMillis() + TimeUnit.MINUTES.toMillis(1));
     when(subscriptionControllerFactory.create(sessionId, details, destinationManager, subscriptions)).thenReturn(controller);
 
-    pipeline.addDisconnectedSession(sessionId, stateFile, details, subscriptions);
+    pipeline.addDisconnectedSession(sessionId, details, subscriptions);
 
     assertSame(controller, pipeline.getIdleSubscriptions(sessionId));
     assertEquals(1, disconnected.sum());
@@ -539,7 +539,7 @@ class SessionManagerPipeLineTest {
     when(details.getExpiryTime()).thenReturn(System.currentTimeMillis() - 1);
     when(subscriptionControllerFactory.create(sessionId, details, destinationManager, subscriptions)).thenReturn(controller);
 
-    pipeline.addDisconnectedSession(sessionId, stateFile, details, subscriptions);
+    pipeline.addDisconnectedSession(sessionId, details, subscriptions);
 
     assertNull(pipeline.getIdleSubscriptions(sessionId));
     assertEquals(0, disconnected.sum());
@@ -561,19 +561,18 @@ class SessionManagerPipeLineTest {
     when(details.getExpiryTime()).thenReturn(System.currentTimeMillis() + TimeUnit.MINUTES.toMillis(1));
     when(subscriptionControllerFactory.create(sessionId, details, destinationManager, subscriptions)).thenReturn(controller);
 
-    pipeline.addDisconnectedSession(sessionId, stateFile, details, subscriptions);
+    pipeline.addDisconnectedSession(sessionId, details, subscriptions);
     expiryScheduler.fire();
     executor.runNext();
 
     assertEquals(0, disconnected.sum());
     assertEquals(1, expired.sum());
 
-    pipeline.closeAndDeleteSubscriptionController(stateFile, controller);
+    pipeline.close(sessionId, false);
 
     assertEquals(0, disconnected.sum());
     assertEquals(1, expired.sum());
     verify(controller, times(1)).close(false);
-    verify(stateFileStore, times(1)).delete(stateFile);
   }
 
   @Test
@@ -588,7 +587,7 @@ class SessionManagerPipeLineTest {
     when(subscriptionControllerFactory.create(sessionId, details, destinationManager, subscriptions)).thenReturn(controller);
     doThrow(new IOException("expected")).when(stateFileStore).delete(stateFile);
 
-    assertDoesNotThrow(() -> pipeline.addDisconnectedSession(sessionId, stateFile, details, subscriptions));
+    assertDoesNotThrow(() -> pipeline.addDisconnectedSession(sessionId, details, subscriptions));
 
     assertNull(pipeline.getIdleSubscriptions(sessionId));
     assertEquals(0, disconnected.sum());
@@ -781,7 +780,7 @@ class SessionManagerPipeLineTest {
     when(details.getExpiryTime()).thenReturn(System.currentTimeMillis() + TimeUnit.MINUTES.toMillis(1));
     when(subscriptionControllerFactory.create(sessionId, details, destinationManager, subscriptions)).thenReturn(controller);
 
-    pipeline.addDisconnectedSession(sessionId, "/tmp/stopped-session.bin", details, subscriptions);
+    pipeline.addDisconnectedSession(sessionId, details, subscriptions);
     Future<?> timeout = controller.getTimeout();
 
     pipeline.stop();
