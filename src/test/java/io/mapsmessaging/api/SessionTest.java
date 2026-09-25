@@ -82,7 +82,7 @@ class SessionTest extends MessageAPITest implements ProtocolMessageListener {
       for(String sessionName:SessionManagerTest.getInstance().getIdleSessions()){
         SubscriptionController controller = SessionManagerTest.getInstance().getIdleSubscriptions(sessionName);
         System.err.println("Left over controller::"+controller.getSessionId()+" Timeout::"+controller.getTimeout());
-        super.closeSubscriptionController(controller);
+        super.closeSession(controller.getSessionId());
       }
     }
     Assertions.assertEquals(initialCount, SessionManagerTest.getInstance().sessionCount());
