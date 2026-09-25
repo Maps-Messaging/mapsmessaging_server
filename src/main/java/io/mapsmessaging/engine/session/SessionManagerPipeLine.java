@@ -131,32 +131,28 @@ public class SessionManagerPipeLine {
   }
 
   SessionImpl create(SessionContext sessionContext) throws LoginException {
-    SessionImpl sessionImpl;
+    replaceActiveSession(sessionContext.getId());
+
     SecurityContext securityContext = sessionContext.getSecurityContext();
-    //
-    // Force close the older session if duplicates are not allowed
-    //
-    SessionImpl oldSessionImpl = sessions.remove(sessionContext.getId());
-    if (oldSessionImpl != null) {
-      oldSessionImpl.close();
-      connectedSessions.decrement();
-      logger.log(ServerLogMessages.SESSION_MANAGER_FOUND_CLOSED, sessionContext.getId());
-    }
-    SubscriptionController subscriptionManager = loadSubscriptionManager(sessionContext);
-    sessionImpl = sessionFactory.create(sessionContext, securityContext, destinationManager, subscriptionManager, storeLookup);
+    SubscriptionController controller = loadSubscriptionManager(sessionContext);
+    SessionImpl session = sessionFactory.create(sessionContext, securityContext, destinationManager, controller, storeLookup);
 
-    //
-    // Either reload or create a new subscription manager
-    //
     ThreadContext.put("session", sessionContext.getId());
-    logger.log(ServerLogMessages.SESSION_MANAGER_LOADED_SUBSCRIPTION, sessionContext.getId(), subscriptionManager.toString());
+    logger.log(ServerLogMessages.SESSION_MANAGER_LOADED_SUBSCRIPTION, sessionContext.getId(), controller.toString());
 
-    //
-    // Now record the session
-    //
-    sessions.put(sessionImpl.getName(), sessionImpl);
+    sessions.put(session.getName(), session);
     connectedSessions.increment();
-    return sessionImpl;
+    return session;
+  }
+
+  private void replaceActiveSession(String sessionId) {
+    SessionImpl previous = sessions.remove(sessionId);
+    if (previous == null) {
+      return;
+    }
+    previous.close();
+    connectedSessions.decrement();
+    logger.log(ServerLogMessages.SESSION_MANAGER_FOUND_CLOSED, sessionId);
   }
 
   void close(SessionImpl sessionImpl, boolean clearWillTask) {
@@ -167,31 +163,36 @@ public class SessionManagerPipeLine {
     long expiry = sessionImpl.getExpiry();
     String storeName = (sessionImpl instanceof PersistentSession) ?  ((PersistentSession)sessionImpl).getStoreName(): "";
     sessionImpl.close();
+    handleWill(sessionImpl.getName(), clearWillTask);
 
-    if (!clearWillTask) {
-      WillTaskImpl task = willTaskManager.get(sessionImpl.getName());
-      if (task != null) {
-        task.schedule();
-      }
-    } else {
-      willTaskManager.remove(sessionImpl.getName());
-    }
-
-    //
-    // Now lets check the expiry on the session
-    //
     subscriptionController = sessionImpl.getSubscriptionController();
     if (sessionImpl instanceof PersistentSession persistentSession && expiry > 0) {
-      persistentSession.setExpiryTime(System.currentTimeMillis() + TimeUnit.SECONDS.toMillis(expiry));
-      subscriptionController.hibernateAll();
-      Future<?> sched = SessionExpiryTask.schedule(expiryScheduler, taskScheduler,
-          () -> expireAndDeleteSubscriptionController(storeName, subscriptionController), expiry, TimeUnit.SECONDS);
-      subscriptionController.setTimeout(sched);
-      markDisconnected(subscriptionController);
+      disconnectPersistentSession(persistentSession, storeName, subscriptionController, expiry);
     } else {
       closeAndDeleteSubscriptionController(storeName, subscriptionController);
     }
     connectedSessions.decrement();
+  }
+
+  private void handleWill(String sessionId, boolean clearWillTask) {
+    if (clearWillTask) {
+      willTaskManager.remove(sessionId);
+      return;
+    }
+    WillTaskImpl task = willTaskManager.get(sessionId);
+    if (task != null) {
+      task.schedule();
+    }
+  }
+
+  private void disconnectPersistentSession(PersistentSession session, String storeName,
+      SubscriptionController controller, long expirySeconds) {
+    session.setExpiryTime(System.currentTimeMillis() + TimeUnit.SECONDS.toMillis(expirySeconds));
+    controller.hibernateAll();
+    Future<?> expiryTask = SessionExpiryTask.schedule(expiryScheduler, taskScheduler,
+        () -> expireAndDeleteSubscriptionController(storeName, controller), expirySeconds, TimeUnit.SECONDS);
+    controller.setTimeout(expiryTask);
+    markDisconnected(controller);
   }
 
   void addDisconnectedSession(String sessionId, String storeName, SessionDetails sessionDetails, Map<String, SubscriptionContext> map) {
@@ -254,8 +255,8 @@ public class SessionManagerPipeLine {
     return true;
   }
 
-  private void markDisconnected(SubscriptionController subscriptionController) {
-    if (disconnectedControllers.add(subscriptionController)) {
+  private void markDisconnected(SubscriptionController controller) {
+    if (disconnectedControllers.add(controller)) {
       disconnectedSessions.increment();
     }
   }
