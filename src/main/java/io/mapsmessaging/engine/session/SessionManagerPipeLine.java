@@ -45,6 +45,22 @@ import java.util.concurrent.atomic.LongAdder;
 //
 public class SessionManagerPipeLine {
 
+  private enum ControllerCloseReason {
+    TERMINATED(false, true, true),
+    EXPIRED(true, true, true),
+    RESET(false, false, false);
+
+    private final boolean expired;
+    private final boolean finaliseWill;
+    private final boolean deletePersistence;
+
+    ControllerCloseReason(boolean expired, boolean finaliseWill, boolean deletePersistence) {
+      this.expired = expired;
+      this.finaliseWill = finaliseWill;
+      this.deletePersistence = deletePersistence;
+    }
+  }
+
   private final Logger logger = LoggerFactory.getLogger(SessionManagerPipeLine.class);
   private final Map<String, SubscriptionController> persistentControllers;
   private final Set<SubscriptionController> disconnectedControllers;
@@ -149,15 +165,14 @@ public class SessionManagerPipeLine {
     }
     SubscriptionController subscriptionController;
     long expiry = sessionImpl.getExpiry();
-    String storeName = (sessionImpl instanceof PersistentSession) ? ((PersistentSession) sessionImpl).getStoreName() : "";
     sessionImpl.close();
     handleWill(sessionImpl.getName(), clearWillTask);
 
     subscriptionController = sessionImpl.getSubscriptionController();
     if (sessionImpl instanceof PersistentSession persistentSession && expiry > 0) {
-      disconnectPersistentSession(persistentSession, storeName, subscriptionController, expiry);
+      disconnectPersistentSession(persistentSession, subscriptionController, expiry);
     } else {
-      closeAndDeleteSubscriptionController(storeName, subscriptionController);
+      finaliseController(subscriptionController, ControllerCloseReason.TERMINATED);
     }
     connectedSessions.decrement();
   }
@@ -173,41 +188,29 @@ public class SessionManagerPipeLine {
     }
   }
 
-  private void disconnectPersistentSession(PersistentSession session, String storeName, SubscriptionController controller, long expirySeconds) {
+  private void disconnectPersistentSession(PersistentSession session, SubscriptionController controller, long expirySeconds) {
     session.setExpiryTime(System.currentTimeMillis() + TimeUnit.SECONDS.toMillis(expirySeconds));
     controller.hibernateAll();
-    scheduleExpiry(storeName, controller, expirySeconds, TimeUnit.SECONDS);
+    scheduleExpiry(controller, expirySeconds, TimeUnit.SECONDS);
   }
 
-  void addDisconnectedSession(String sessionId, String storeName, SessionDetails sessionDetails, Map<String, SubscriptionContext> subscriptions) {
+  void addDisconnectedSession(String sessionId, SessionDetails sessionDetails, Map<String, SubscriptionContext> subscriptions) {
     SubscriptionController controller = subscriptionControllerFactory.create(sessionId, sessionDetails, destinationManager, subscriptions);
     persistentControllers.put(sessionId, controller);
 
     long remainingMillis = sessionDetails.getExpiryTime() - System.currentTimeMillis();
     if (remainingMillis > 0) {
-      scheduleExpiry(storeName, controller, remainingMillis, TimeUnit.MILLISECONDS);
+      scheduleExpiry(controller, remainingMillis, TimeUnit.MILLISECONDS);
     } else {
       markDisconnected(controller);
-      expireAndDeleteSubscriptionController(storeName, controller);
+      finaliseController(controller, ControllerCloseReason.EXPIRED);
     }
   }
 
-  private void scheduleExpiry(String stateFile, SubscriptionController controller, long delay, TimeUnit unit) {
-    Future<?> expiryTask = SessionExpiryTask.schedule(expiryScheduler, taskScheduler, () -> expireAndDeleteSubscriptionController(stateFile, controller), delay, unit);
+  private void scheduleExpiry(SubscriptionController controller, long delay, TimeUnit unit) {
+    Future<?> expiryTask = SessionExpiryTask.schedule(expiryScheduler, taskScheduler, () -> finaliseController(controller, ControllerCloseReason.EXPIRED), delay, unit);
     controller.setTimeout(expiryTask);
     markDisconnected(controller);
-  }
-
-  void closeAndDeleteSubscriptionController(String sessionStateFile, SubscriptionController subscriptionController) {
-    if (finaliseController(subscriptionController, false)) {
-      deleteStateFile(sessionStateFile);
-    }
-  }
-
-  private void expireAndDeleteSubscriptionController(String sessionStateFile, SubscriptionController subscriptionController) {
-    if (finaliseController(subscriptionController, true)) {
-      deleteStateFile(sessionStateFile);
-    }
   }
 
   private void deleteStateFile(String sessionStateFile) {
@@ -239,22 +242,10 @@ public class SessionManagerPipeLine {
       timeout.cancel(false);
       controller.setTimeout(null);
     }
-    closeAndDeleteSubscriptionController(resolveStateFile(controller), controller);
+    finaliseController(controller, ControllerCloseReason.TERMINATED);
   }
 
-  private String resolveStateFile(SubscriptionController controller) {
-    SessionDetails details = storeLookup.getSessionDetails(controller.getSessionId());
-    if (details == null || details.getUniqueId() == null || details.getUniqueId().isBlank()) {
-      return "";
-    }
-    return storeLookup.getDataPath() + "/" + details.getUniqueId() + ".bin";
-  }
-
-  private boolean finaliseController(SubscriptionController controller, boolean expired) {
-    return finaliseController(controller, expired, true);
-  }
-
-  private boolean finaliseController(SubscriptionController controller, boolean expired, boolean finaliseWill) {
+  private boolean finaliseController(SubscriptionController controller, ControllerCloseReason reason) {
     String sessionId = controller.getSessionId();
     if (sessions.containsKey(sessionId)) {
       return false;
@@ -264,14 +255,25 @@ public class SessionManagerPipeLine {
     }
 
     clearDisconnected(controller);
-    if (expired) {
+    if (reason.expired) {
       expiredSessions.increment();
     }
-    if (finaliseWill) {
+    if (reason.finaliseWill) {
       finaliseWill(sessionId);
     }
     controller.close(false);
+    if (reason.deletePersistence) {
+      deletePersistence(sessionId);
+    }
     return true;
+  }
+
+  private void deletePersistence(String sessionId) {
+    SessionDetails details = storeLookup.removeSessionDetails(sessionId);
+    if (details == null || details.getUniqueId() == null || details.getUniqueId().isBlank()) {
+      return;
+    }
+    deleteStateFile(storeLookup.getDataPath() + "/" + details.getUniqueId() + ".bin");
   }
 
   private void finaliseWill(String sessionId) {
@@ -317,7 +319,7 @@ public class SessionManagerPipeLine {
     if (!cancelPendingExpiry(controller)) {
       SubscriptionController current = persistentControllers.get(context.getId());
       if (current == controller) {
-        finaliseController(controller, false);
+        finaliseController(controller, ControllerCloseReason.EXPIRED);
       }
       return createSubscriptionController(context, sessionDetails, sessionDetails.getSubscriptionContextMap());
     }
@@ -343,7 +345,7 @@ public class SessionManagerPipeLine {
 
   private SubscriptionController resetSubscriptionController(SessionContext context, SessionDetails sessionDetails, SubscriptionController controller) {
     logger.log(ServerLogMessages.SESSION_MANAGER_FOUND_EXISTING, context.getId(), true);
-    finaliseController(controller, false, false);
+    finaliseController(controller, ControllerCloseReason.RESET);
     sessionDetails.clearSubscriptions();
 
     SubscriptionController replacement = subscriptionControllerFactory.create(context, destinationManager, new LinkedHashMap<>());
