@@ -140,12 +140,11 @@ public class SessionManagerPipeLine {
   }
 
   private void replaceActiveSession(String sessionId) {
-    SessionImpl previous = sessions.remove(sessionId);
+    SessionImpl previous = sessions.get(sessionId);
     if (previous == null) {
       return;
     }
-    previous.close();
-    connectedSessions.decrement();
+    close(previous, true);
     logger.log(ServerLogMessages.SESSION_MANAGER_FOUND_CLOSED, sessionId);
   }
 
@@ -258,6 +257,10 @@ public class SessionManagerPipeLine {
   }
 
   private boolean closeSubscriptionController(SubscriptionController controller, boolean expired) {
+    return closeSubscriptionController(controller, expired, true);
+  }
+
+  private boolean closeSubscriptionController(SubscriptionController controller, boolean expired, boolean finaliseWill) {
     String sessionId = controller.getSessionId();
     if (sessions.containsKey(sessionId)) {
       return false;
@@ -270,7 +273,9 @@ public class SessionManagerPipeLine {
     if (expired) {
       expiredSessions.increment();
     }
-    finaliseWill(sessionId);
+    if (finaliseWill) {
+      finaliseWill(sessionId);
+    }
     controller.close(false);
     return true;
   }
@@ -343,10 +348,8 @@ public class SessionManagerPipeLine {
   }
 
   private SubscriptionController resetSubscriptionController(SessionContext context, SessionDetails sessionDetails, SubscriptionController controller) {
-    clearDisconnected(controller);
     logger.log(ServerLogMessages.SESSION_MANAGER_FOUND_EXISTING, context.getId(), true);
-    persistentControllers.remove(context.getId(), controller);
-    controller.close(false);
+    closeSubscriptionController(controller, false, false);
     sessionDetails.clearSubscriptions();
 
     SubscriptionController replacement = subscriptionControllerFactory.create(context, destinationManager, new LinkedHashMap<>());
