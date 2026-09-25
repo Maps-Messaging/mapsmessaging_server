@@ -39,9 +39,9 @@ import java.util.concurrent.*;
 import java.util.concurrent.atomic.LongAdder;
 
 //
-// This class locks the specific hashed pipeline for Session creation and deletion
-// Anything that needs to be thread safe needs to be in here and accessed within
-// the lock structure
+// One SessionManagerPipeLine owns the serial execution order for a hash partition
+// of session IDs. Session creation, close, reconnect and expiry cleanup for a given
+// session ID must execute through this pipeline's taskScheduler.
 //
 public class SessionManagerPipeLine {
 
