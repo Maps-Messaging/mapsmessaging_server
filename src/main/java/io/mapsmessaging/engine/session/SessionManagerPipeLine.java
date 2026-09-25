@@ -41,7 +41,7 @@ import java.util.concurrent.atomic.LongAdder;
 //
 // One SessionManagerPipeLine owns the serial execution order for a hash partition of session IDs.
 //
-// Lifecycle invariants:
+// Lifecycle invariants (see docs/session-lifecycle.md):
 // - SessionImpl closes session-owned resources only. SubscriptionController destruction belongs here.
 // - All controller destruction passes through finaliseController(); callers must not close a controller directly.
 // - Active session ownership is identity-safe: a stale SessionImpl must never remove or account for its replacement.
