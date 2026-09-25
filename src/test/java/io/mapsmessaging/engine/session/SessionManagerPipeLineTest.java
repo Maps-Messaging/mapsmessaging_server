@@ -23,6 +23,7 @@ import io.mapsmessaging.engine.destination.DestinationManager;
 import io.mapsmessaging.engine.destination.subscription.SubscriptionContext;
 import io.mapsmessaging.engine.destination.subscription.SubscriptionController;
 import io.mapsmessaging.engine.session.persistence.SessionDetails;
+import io.mapsmessaging.engine.session.will.WillTaskImpl;
 import io.mapsmessaging.engine.session.will.WillTaskManager;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -535,6 +536,54 @@ class SessionManagerPipeLineTest {
     verify(controller).close(false);
   }
 
+
+
+  @Test
+  void persistentExpirySchedulesThenForcesPendingWillOnFinalCleanup() throws Exception {
+    String sessionId = "persistent-will";
+    String stateFile = "/tmp/persistent-will.bin";
+    SessionContext context = mock(SessionContext.class);
+    SessionDetails details = mock(SessionDetails.class);
+    io.mapsmessaging.engine.session.security.SecurityContext securityContext =
+        mock(io.mapsmessaging.engine.session.security.SecurityContext.class);
+    PersistentSession session = mock(PersistentSession.class);
+    SubscriptionController controller = controller(sessionId);
+    WillTaskImpl willTask = mock(WillTaskImpl.class);
+    Map<String, SubscriptionContext> subscriptions = new LinkedHashMap<>();
+
+    when(context.getId()).thenReturn(sessionId);
+    when(context.getSecurityContext()).thenReturn(securityContext);
+    when(context.isPersistentSession()).thenReturn(true);
+    when(details.getUniqueId()).thenReturn("unique-persistent-will");
+    when(details.getInternalUnqueId()).thenReturn(61L);
+    when(details.getSubscriptionContextMap()).thenReturn(subscriptions);
+    when(persistentSessionManager.getSessionDetails(context)).thenReturn(details);
+    when(subscriptionControllerFactory.create(context, destinationManager, subscriptions)).thenReturn(controller);
+    when(sessionFactory.create(context, securityContext, destinationManager, controller, persistentSessionManager)).thenReturn(session);
+    when(session.getName()).thenReturn(sessionId);
+    when(session.getStoreName()).thenReturn(stateFile);
+    when(session.getExpiry()).thenReturn(30L);
+    when(session.getSubscriptionController()).thenReturn(controller);
+    when(willTaskManager.get(sessionId)).thenReturn(willTask);
+    when(willTaskManager.remove(sessionId)).thenReturn(willTask);
+
+    pipeline.create(context);
+    pipeline.close(session, false);
+
+    verify(willTask).schedule();
+    verify(willTask, never()).cancel();
+    verify(willTask, never()).run();
+
+    expiryScheduler.fire();
+    executor.runNext();
+
+    verify(willTask).cancel();
+    verify(willTask).run();
+    verify(stateFileStore).delete(stateFile);
+    assertEquals(0, connected.sum());
+    assertEquals(0, disconnected.sum());
+    assertEquals(1, expired.sum());
+  }
 
   @Test
   void positiveExpiryNonPersistentSessionStillClosesImmediately() throws Exception {
