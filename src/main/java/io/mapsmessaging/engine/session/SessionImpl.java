@@ -173,9 +173,6 @@ public class SessionImpl {
     }
     closureTaskManager.close();
     namespaceMapping.clear();
-    if(!context.isPersistentSession()) {
-      subscriptionManager.close(false); // delete the subscriuptions we do not need these between sessions
-    }
   }
 
   /**
