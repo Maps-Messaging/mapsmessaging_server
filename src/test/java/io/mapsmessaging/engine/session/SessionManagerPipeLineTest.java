@@ -138,8 +138,10 @@ class SessionManagerPipeLineTest {
 
 
   @Test
-  void activePersistentControllerCannotBeClosedOutFromUnderSession() throws Exception {
+  void administrativeCloseFullyTerminatesActivePersistentSession() throws Exception {
     String sessionId = "active-controller-close";
+    String uniqueId = "unique-active-controller-close";
+    String stateFile = "/tmp/sessions/" + uniqueId + ".bin";
     SessionContext context = mock(SessionContext.class);
     SessionDetails details = mock(SessionDetails.class);
     io.mapsmessaging.engine.session.security.SecurityContext securityContext =
@@ -151,26 +153,38 @@ class SessionManagerPipeLineTest {
     when(context.getId()).thenReturn(sessionId);
     when(context.getSecurityContext()).thenReturn(securityContext);
     when(context.isPersistentSession()).thenReturn(true);
-    when(details.getUniqueId()).thenReturn("unique-active-controller-close");
+    when(details.getUniqueId()).thenReturn(uniqueId);
     when(details.getInternalUnqueId()).thenReturn(67L);
     when(details.getSubscriptionContextMap()).thenReturn(subscriptions);
     when(persistentSessionManager.getSessionDetails(context)).thenReturn(details);
+    when(persistentSessionManager.getSessionDetails(sessionId)).thenReturn(details);
+    when(persistentSessionManager.getDataPath()).thenReturn("/tmp/sessions");
     when(subscriptionControllerFactory.create(context, destinationManager, subscriptions)).thenReturn(controller);
     when(sessionFactory.create(context, securityContext, destinationManager, controller, persistentSessionManager)).thenReturn(session);
     when(session.getName()).thenReturn(sessionId);
+    when(session.getStoreName()).thenReturn(stateFile);
+    when(session.getExpiry()).thenReturn(30L);
+    when(session.getSubscriptionController()).thenReturn(controller);
 
     pipeline.create(context);
-    pipeline.closeSubscriptionController(controller);
+    pipeline.close(sessionId, false);
 
-    assertEquals(1, connected.sum());
-    assertTrue(pipeline.hasSessions());
-    verify(controller, never()).close(false);
-    verify(willTaskManager, never()).remove(sessionId);
+    assertEquals(0, connected.sum());
+    assertEquals(0, disconnected.sum());
+    assertFalse(pipeline.hasSessions());
+    assertFalse(pipeline.hasSubscriptions());
+    assertNull(pipeline.getIdleSubscriptions(sessionId));
+    verify(session).close();
+    verify(controller).hibernateAll();
+    verify(controller).close(false);
+    verify(stateFileStore).delete(stateFile);
   }
 
   @Test
-  void persistentControllerCanBeFinallyClosedAfterOwningSessionLeavesActiveMap() throws Exception {
+  void administrativeCloseFullyTerminatesDisconnectedPersistentSession() throws Exception {
     String sessionId = "inactive-controller-close";
+    String uniqueId = "unique-inactive-controller-close";
+    String stateFile = "/tmp/sessions/" + uniqueId + ".bin";
     SessionContext context = mock(SessionContext.class);
     SessionDetails details = mock(SessionDetails.class);
     io.mapsmessaging.engine.session.security.SecurityContext securityContext =
@@ -182,14 +196,16 @@ class SessionManagerPipeLineTest {
     when(context.getId()).thenReturn(sessionId);
     when(context.getSecurityContext()).thenReturn(securityContext);
     when(context.isPersistentSession()).thenReturn(true);
-    when(details.getUniqueId()).thenReturn("unique-inactive-controller-close");
+    when(details.getUniqueId()).thenReturn(uniqueId);
     when(details.getInternalUnqueId()).thenReturn(71L);
     when(details.getSubscriptionContextMap()).thenReturn(subscriptions);
     when(persistentSessionManager.getSessionDetails(context)).thenReturn(details);
+    when(persistentSessionManager.getSessionDetails(sessionId)).thenReturn(details);
+    when(persistentSessionManager.getDataPath()).thenReturn("/tmp/sessions");
     when(subscriptionControllerFactory.create(context, destinationManager, subscriptions)).thenReturn(controller);
     when(sessionFactory.create(context, securityContext, destinationManager, controller, persistentSessionManager)).thenReturn(session);
     when(session.getName()).thenReturn(sessionId);
-    when(session.getStoreName()).thenReturn("/tmp/inactive-controller-close.bin");
+    when(session.getStoreName()).thenReturn(stateFile);
     when(session.getExpiry()).thenReturn(30L);
     when(session.getSubscriptionController()).thenReturn(controller);
 
@@ -199,10 +215,13 @@ class SessionManagerPipeLineTest {
     assertFalse(pipeline.hasSessions());
     assertEquals(1, disconnected.sum());
 
-    pipeline.closeSubscriptionController(controller);
+    pipeline.close(sessionId, false);
 
     assertEquals(0, disconnected.sum());
+    assertFalse(pipeline.hasSubscriptions());
+    assertNull(pipeline.getIdleSubscriptions(sessionId));
     verify(controller).close(false);
+    verify(stateFileStore).delete(stateFile);
   }
 
   @Test
