@@ -129,39 +129,51 @@ class SessionManagerPipeLineScaleTest {
     SessionManagerPipeLine pipeline = new SessionManagerPipeLine(destinationManager, persistentSessionManager, connected, disconnected, expired, pipelineExecutor,
         expiryScheduler, stateFileStore, subscriptionControllerFactory, sessionFactory, willTaskManager);
 
+    Map<String, SessionContext> contexts = new LinkedHashMap<>();
+    Map<String, SessionDetails> detailsBySession = new LinkedHashMap<>();
+    Map<String, SubscriptionController> controllers = new LinkedHashMap<>();
     Map<String, SessionImpl> sessions = new java.util.concurrent.ConcurrentHashMap<>();
+
+    for (int i = 0; i < sessionCount; i++) {
+      String sessionId = "concurrent-" + i;
+      SessionContext context = context(sessionId, false);
+      SessionDetails details = mock(SessionDetails.class);
+      SubscriptionController controller = controller(sessionId, false);
+      SessionImpl session = mock(SessionImpl.class);
+
+      when(details.getUniqueId()).thenReturn("unique-" + sessionId);
+      when(details.getInternalUnqueId()).thenReturn((long) sessionId.hashCode());
+      when(details.getSubscriptionContextMap()).thenReturn(new LinkedHashMap<>());
+      when(session.getName()).thenReturn(sessionId);
+      when(session.getExpiry()).thenReturn(0L);
+      when(session.getSubscriptionController()).thenReturn(controller);
+
+      contexts.put(sessionId, context);
+      detailsBySession.put(sessionId, details);
+      controllers.put(sessionId, controller);
+      sessions.put(sessionId, session);
+    }
 
     when(persistentSessionManager.getSessionDetails(any(SessionContext.class))).thenAnswer(invocation -> {
       SessionContext context = invocation.getArgument(0);
-      SessionDetails details = mock(SessionDetails.class);
-      when(details.getUniqueId()).thenReturn("unique-" + context.getId());
-      when(details.getInternalUnqueId()).thenReturn((long) context.getId().hashCode());
-      when(details.getSubscriptionContextMap()).thenReturn(new LinkedHashMap<>());
-      return details;
+      return detailsBySession.get(context.getId());
     });
 
     when(subscriptionControllerFactory.create(any(SessionContext.class), eq(destinationManager), anyMap())).thenAnswer(invocation -> {
       SessionContext context = invocation.getArgument(0);
-      return controller(context.getId(), false);
+      return controllers.get(context.getId());
     });
 
     when(sessionFactory.create(any(SessionContext.class), any(SecurityContext.class), eq(destinationManager), any(SubscriptionController.class),
         eq(persistentSessionManager))).thenAnswer(invocation -> {
       SessionContext context = invocation.getArgument(0);
-      SubscriptionController controller = invocation.getArgument(3);
-      SessionImpl session = mock(SessionImpl.class);
-      when(session.getName()).thenReturn(context.getId());
-      when(session.getExpiry()).thenReturn(0L);
-      when(session.getSubscriptionController()).thenReturn(controller);
-      sessions.put(context.getId(), session);
-      return session;
+      return sessions.get(context.getId());
     });
 
     ExecutorService producers = Executors.newFixedThreadPool(16);
     List<Future<?>> createFutures = new ArrayList<>();
-    for (int i = 0; i < sessionCount; i++) {
-      String sessionId = "concurrent-" + i;
-      createFutures.add(producers.submit(() -> pipeline.submit(() -> pipeline.create(context(sessionId, false))).get()));
+    for (SessionContext context : contexts.values()) {
+      createFutures.add(producers.submit(() -> pipeline.submit(() -> pipeline.create(context)).get()));
     }
     for (Future<?> future : createFutures) {
       future.get();
