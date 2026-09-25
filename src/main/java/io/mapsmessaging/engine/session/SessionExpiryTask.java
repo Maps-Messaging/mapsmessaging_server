@@ -60,7 +60,6 @@ class SessionExpiryTask implements Future<Void> {
         completion.complete(null);
       } catch (Throwable throwable) {
         completion.completeExceptionally(throwable);
-        throw throwable;
       }
     });
     if (completion.isCancelled()) {
