@@ -179,6 +179,10 @@ The focused lifecycle tests must continue to cover:
 - clearing Will on an already-disconnected administrative close;
 - shutdown of active transient and disconnected persistent sessions;
 - `SessionImpl.close()` never destroying the `SubscriptionController`;
+- thousands of independent transient sessions connecting and disconnecting without state or counter leakage;
+- concurrent producers queueing thousands of lifecycle operations onto one pipeline without lost sessions;
+- mass persistent expiry finalizing every controller, persistence record, and pending Will exactly once;
+- repeated reconnect/disconnect churn on one persistent session without counter drift or stale expiry cleanup;
 - `SessionExpiryTask` cancellation before timer, after timer but before cleanup, cleanup completion semantics, and rejected submission.
 
 ## Review checklist
