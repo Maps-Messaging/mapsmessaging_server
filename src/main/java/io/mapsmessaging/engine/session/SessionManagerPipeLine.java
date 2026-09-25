@@ -85,16 +85,11 @@ public class SessionManagerPipeLine {
   }
 
   public void stop() {
-    for (SessionImpl session : sessions.values()) {
-      session.close();
+    for (String sessionId : Set.copyOf(sessions.keySet())) {
+      close(sessionId, true);
     }
-    for (SubscriptionController controller : persistentControllers.values()) {
-      Future<?> timeout = controller.getTimeout();
-      if (timeout != null) {
-        timeout.cancel(false);
-        controller.setTimeout(null);
-      }
-      controller.shutdown();
+    for (String sessionId : getSessionIds()) {
+      close(sessionId, true);
     }
     taskScheduler.shutdown();
   }
