@@ -54,40 +54,46 @@ class SessionManagerPipeLineScaleTest {
     final int sessionCount = 2048;
     TestHarness harness = new TestHarness();
 
+    Map<String, SessionContext> contexts = new LinkedHashMap<>();
+    Map<String, SessionDetails> detailsBySession = new LinkedHashMap<>();
     Map<String, SessionImpl> sessions = new LinkedHashMap<>();
     Map<String, SubscriptionController> controllers = new LinkedHashMap<>();
-
-    when(harness.persistentSessionManager.getSessionDetails(any(SessionContext.class))).thenAnswer(invocation -> {
-      SessionContext context = invocation.getArgument(0);
-      SessionDetails details = mock(SessionDetails.class);
-      when(details.getUniqueId()).thenReturn("unique-" + context.getId());
-      when(details.getInternalUnqueId()).thenReturn((long) context.getId().hashCode());
-      when(details.getSubscriptionContextMap()).thenReturn(new LinkedHashMap<>());
-      return details;
-    });
-
-    when(harness.subscriptionControllerFactory.create(any(SessionContext.class), eq(harness.destinationManager), anyMap())).thenAnswer(invocation -> {
-      SessionContext context = invocation.getArgument(0);
-      SubscriptionController controller = controller(context.getId(), false);
-      controllers.put(context.getId(), controller);
-      return controller;
-    });
-
-    when(harness.sessionFactory.create(any(SessionContext.class), any(SecurityContext.class), eq(harness.destinationManager), any(SubscriptionController.class),
-        eq(harness.persistentSessionManager))).thenAnswer(invocation -> {
-      SessionContext context = invocation.getArgument(0);
-      SubscriptionController controller = invocation.getArgument(3);
-      SessionImpl session = mock(SessionImpl.class);
-      when(session.getName()).thenReturn(context.getId());
-      when(session.getExpiry()).thenReturn(0L);
-      when(session.getSubscriptionController()).thenReturn(controller);
-      sessions.put(context.getId(), session);
-      return session;
-    });
 
     for (int i = 0; i < sessionCount; i++) {
       String sessionId = "transient-" + i;
       SessionContext context = context(sessionId, false);
+      SessionDetails details = mock(SessionDetails.class);
+      SubscriptionController controller = controller(sessionId, false);
+      SessionImpl session = mock(SessionImpl.class);
+
+      when(details.getUniqueId()).thenReturn("unique-" + sessionId);
+      when(details.getInternalUnqueId()).thenReturn((long) sessionId.hashCode());
+      when(details.getSubscriptionContextMap()).thenReturn(new LinkedHashMap<>());
+      when(session.getName()).thenReturn(sessionId);
+      when(session.getExpiry()).thenReturn(0L);
+      when(session.getSubscriptionController()).thenReturn(controller);
+
+      contexts.put(sessionId, context);
+      detailsBySession.put(sessionId, details);
+      controllers.put(sessionId, controller);
+      sessions.put(sessionId, session);
+    }
+
+    when(harness.persistentSessionManager.getSessionDetails(any(SessionContext.class))).thenAnswer(invocation -> {
+      SessionContext context = invocation.getArgument(0);
+      return detailsBySession.get(context.getId());
+    });
+    when(harness.subscriptionControllerFactory.create(any(SessionContext.class), eq(harness.destinationManager), anyMap())).thenAnswer(invocation -> {
+      SessionContext context = invocation.getArgument(0);
+      return controllers.get(context.getId());
+    });
+    when(harness.sessionFactory.create(any(SessionContext.class), any(SecurityContext.class), eq(harness.destinationManager), any(SubscriptionController.class),
+        eq(harness.persistentSessionManager))).thenAnswer(invocation -> {
+      SessionContext context = invocation.getArgument(0);
+      return sessions.get(context.getId());
+    });
+
+    for (SessionContext context : contexts.values()) {
       harness.pipeline.create(context);
     }
 
@@ -209,34 +215,39 @@ class SessionManagerPipeLineScaleTest {
   void massPersistentExpiryFinalisesEachControllerAndWillExactlyOnce() throws Exception {
     final int sessionCount = 1024;
     TestHarness harness = new TestHarness();
+    Map<String, SessionDetails> activeDetails = new LinkedHashMap<>();
+    Map<String, SessionDetails> removedDetails = new LinkedHashMap<>();
     Map<String, SubscriptionController> controllers = new LinkedHashMap<>();
     Map<String, WillTaskImpl> willTasks = new LinkedHashMap<>();
 
     when(harness.persistentSessionManager.getDataPath()).thenReturn("/tmp/sessions");
 
+    for (int i = 0; i < sessionCount; i++) {
+      String sessionId = "persistent-" + i;
+      SessionDetails details = mock(SessionDetails.class);
+      SessionDetails removed = mock(SessionDetails.class);
+      SubscriptionController controller = controller(sessionId, true);
+      WillTaskImpl willTask = mock(WillTaskImpl.class);
+
+      when(details.getExpiryTime()).thenReturn(System.currentTimeMillis() + TimeUnit.MINUTES.toMillis(1));
+      when(removed.getUniqueId()).thenReturn("unique-" + sessionId);
+
+      activeDetails.put(sessionId, details);
+      removedDetails.put(sessionId, removed);
+      controllers.put(sessionId, controller);
+      willTasks.put(sessionId, willTask);
+    }
+
     when(harness.subscriptionControllerFactory.create(anyString(), any(SessionDetails.class), eq(harness.destinationManager), anyMap())).thenAnswer(invocation -> {
       String sessionId = invocation.getArgument(0);
-      SubscriptionController controller = controller(sessionId, true);
-      controllers.put(sessionId, controller);
-      return controller;
+      return controllers.get(sessionId);
     });
-
-    when(harness.persistentSessionManager.removeSessionDetails(anyString())).thenAnswer(invocation -> {
-      String sessionId = invocation.getArgument(0);
-      SessionDetails details = mock(SessionDetails.class);
-      when(details.getUniqueId()).thenReturn("unique-" + sessionId);
-      return details;
-    });
-
+    when(harness.persistentSessionManager.removeSessionDetails(anyString())).thenAnswer(invocation -> removedDetails.get(invocation.getArgument(0)));
     when(harness.willTaskManager.remove(anyString())).thenAnswer(invocation -> willTasks.get(invocation.getArgument(0)));
 
     for (int i = 0; i < sessionCount; i++) {
       String sessionId = "persistent-" + i;
-      SessionDetails details = mock(SessionDetails.class);
-      when(details.getExpiryTime()).thenReturn(System.currentTimeMillis() + TimeUnit.MINUTES.toMillis(1));
-      WillTaskImpl willTask = mock(WillTaskImpl.class);
-      willTasks.put(sessionId, willTask);
-      harness.pipeline.addDisconnectedSession(sessionId, details, new LinkedHashMap<>());
+      harness.pipeline.addDisconnectedSession(sessionId, activeDetails.get(sessionId), new LinkedHashMap<>());
     }
 
     assertEquals(sessionCount, harness.disconnected.sum());
@@ -280,13 +291,19 @@ class SessionManagerPipeLineScaleTest {
     when(harness.persistentSessionManager.getSessionDetails(any(SessionContext.class))).thenReturn(details);
     when(harness.subscriptionControllerFactory.create(any(SessionContext.class), eq(harness.destinationManager), eq(subscriptions))).thenReturn(controller);
 
-    AtomicReference<SessionImpl> latestSession = new AtomicReference<>();
-    when(harness.sessionFactory.create(any(SessionContext.class), any(SecurityContext.class), eq(harness.destinationManager), eq(controller),
-        eq(harness.persistentSessionManager))).thenAnswer(invocation -> {
+    Queue<SessionImpl> sessionInstances = new ConcurrentLinkedQueue<>();
+    for (int i = 0; i <= cycles; i++) {
       SessionImpl session = mock(PersistentSession.class);
       when(session.getName()).thenReturn(sessionId);
       when(session.getExpiry()).thenReturn(30L);
       when(session.getSubscriptionController()).thenReturn(controller);
+      sessionInstances.add(session);
+    }
+
+    AtomicReference<SessionImpl> latestSession = new AtomicReference<>();
+    when(harness.sessionFactory.create(any(SessionContext.class), any(SecurityContext.class), eq(harness.destinationManager), eq(controller),
+        eq(harness.persistentSessionManager))).thenAnswer(invocation -> {
+      SessionImpl session = sessionInstances.remove();
       latestSession.set(session);
       return session;
     });
