@@ -43,7 +43,7 @@ public class EngineManager {
     return manager.hasSessions();
   }
 
-  public void closeSubscriptionController(SubscriptionController controller) {
-    manager.closeSubscriptionController(controller);
+  public void closeSession(String sessionId) {
+    manager.close(sessionId, false);
   }
 }
