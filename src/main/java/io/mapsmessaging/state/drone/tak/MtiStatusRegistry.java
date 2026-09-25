@@ -45,7 +45,17 @@ public final class MtiStatusRegistry {
     MtiLookupResult lookup(String twinId);
   }
 
+  /**
+   * Side-effect-free view of the adapter's cache for metrics. Must not touch lookup hit/miss
+   * counters or evict entries, otherwise every metrics scrape would skew the CoT-composition KPIs.
+   */
+  public interface SnapshotSource {
+    /** @return the current, unexpired MTI status of that twin, or {@code null} if none. */
+    MtiStatusSnapshot snapshot(String twinId);
+  }
+
   private static volatile Lookup delegate;
+  private static volatile SnapshotSource snapshotSource;
 
   private MtiStatusRegistry() {
   }
@@ -54,8 +64,17 @@ public final class MtiStatusRegistry {
     delegate = lookup;
   }
 
+  public static void setSnapshotSource(SnapshotSource source) {
+    snapshotSource = source;
+  }
+
   public static MtiLookupResult lookup(String twinId) {
     Lookup current = delegate;
     return current == null || twinId == null ? null : current.lookup(twinId);
+  }
+
+  public static MtiStatusSnapshot snapshot(String twinId) {
+    SnapshotSource current = snapshotSource;
+    return current == null || twinId == null ? null : current.snapshot(twinId);
   }
 }

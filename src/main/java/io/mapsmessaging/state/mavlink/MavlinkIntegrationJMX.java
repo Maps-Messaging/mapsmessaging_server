@@ -63,6 +63,11 @@ public class MavlinkIntegrationJMX {
     return updater.getMessagesProcessedCount();
   }
 
+  @JMXBeanAttribute(name = "Last Message Age Millis", description = "Milliseconds since the last MAVLink packet was processed, -1 if none yet")
+  public long getLastMessageAgeMillis() {
+    return updater.getLastMessageAgeMillis();
+  }
+
   @JMXBeanAttribute(name = "Twins Created Count", description = "Total new twins created from MAVLink sources")
   public long getTwinsCreatedCount() {
     return updater.getTwinsCreatedCount();

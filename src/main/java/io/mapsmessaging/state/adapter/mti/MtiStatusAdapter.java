@@ -31,6 +31,7 @@ import io.mapsmessaging.engine.session.ClientConnection;
 import io.mapsmessaging.state.adapter.StateMessageAdapter;
 import io.mapsmessaging.state.drone.tak.MtiLookupResult;
 import io.mapsmessaging.state.drone.tak.MtiStatusRegistry;
+import io.mapsmessaging.state.drone.tak.MtiStatusSnapshot;
 import io.mapsmessaging.utilities.GsonFactory;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
@@ -107,6 +108,7 @@ public class MtiStatusAdapter implements StateMessageAdapter, ClientConnection, 
           .setQos(QualityOfService.AT_LEAST_ONCE)
           .build());
       MtiStatusRegistry.setDelegate(this::lookup);
+      MtiStatusRegistry.setSnapshotSource(this::snapshot);
       jmxBean = new MtiStatusAdapterJMX(this);
       logger.info("MTI status adapter subscribed to {}", topic);
     } catch (Throwable t) {
@@ -124,6 +126,7 @@ public class MtiStatusAdapter implements StateMessageAdapter, ClientConnection, 
   @Override
   public void stop() {
     MtiStatusRegistry.setDelegate(null);
+    MtiStatusRegistry.setSnapshotSource(null);
     if (jmxBean != null) {
       jmxBean.close();
       jmxBean = null;
@@ -255,6 +258,15 @@ public class MtiStatusAdapter implements StateMessageAdapter, ClientConnection, 
       // "go", or anything not in the MTI team's fixed 4-value alphabet - no override.
       default -> null;
     };
+  }
+
+  /** Metrics-only view: no counters touched, no eviction (see {@link MtiStatusRegistry.SnapshotSource}). */
+  MtiStatusSnapshot snapshot(String twinId) {
+    MtiStatus status = cache.get(twinId);
+    if (status == null || status.isExpired(Instant.now())) {
+      return null;
+    }
+    return new MtiStatusSnapshot(status.state(), status.observedAt(), status.validUntil());
   }
 
   // --- Metrics, read by MtiStatusAdapterJMX. ---

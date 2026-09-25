@@ -72,6 +72,7 @@ public class TakTwinObserver implements TwinObserver {
   private final CotConfigResolver cotConfigResolver;
   private final CotEventPolicy cotEventPolicy;
   private final CotIntegrationJMX cotIntegrationJMX;
+  private final TakOutputJMX takOutputJMX;
   private final boolean namespaceFilteringEnabled;
 
   public TakTwinObserver(TwinManager twinManager) {
@@ -124,6 +125,7 @@ public class TakTwinObserver implements TwinObserver {
       this.globalSocketConnection = null;
       this.eventPublisher = null;
     }
+    this.takOutputJMX = new TakOutputJMX(eventPublisher);
   }
 
   private SSLSocketFactory buildSslSocketFactory(TakProtocolDTO tak) {
@@ -145,6 +147,7 @@ public class TakTwinObserver implements TwinObserver {
   public void shutdown() {
     twinManager.removeObserver(this);
     cotIntegrationJMX.close();
+    takOutputJMX.close();
 
     if (globalSocketConnection != null) {
       globalSocketConnection.close();
@@ -299,6 +302,10 @@ public class TakTwinObserver implements TwinObserver {
 
     String xml = takXmlSerialiser.toXml(takEvent);
     xml = appendStatsIfDue(twin, xml);
+
+    if (context != null && context.getReceivedTime() != null) {
+      TakOutputStats.recordLatencyMillis(System.currentTimeMillis() - context.getReceivedTime().toEpochMilli());
+    }
 
     if (takHost != null && !takHost.isBlank() && takPort > 0) {
       if (twinContext.getSocketConnection() == null) {
