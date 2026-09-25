@@ -30,13 +30,10 @@ import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.logging.ServerLogMessages;
 import io.mapsmessaging.logging.ThreadContext;
-import io.mapsmessaging.utilities.threads.SimpleTaskScheduler;
 import io.mapsmessaging.utilities.threads.tasks.SingleConcurrentTaskScheduler;
 
 import javax.security.auth.login.LoginException;
-import java.io.File;
 import java.io.IOException;
-import java.nio.file.Files;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.LongAdder;
@@ -54,7 +51,10 @@ public class SessionManagerPipeLine {
   private final DestinationManager destinationManager;
   private final PersistentSessionManager storeLookup;
 
-  private final ExecutorService taskScheduler = new SingleConcurrentTaskScheduler("SessionManagerPipeLine");
+  private final ExecutorService taskScheduler;
+  private final SessionExpiryScheduler expiryScheduler;
+  private final SessionStateFileStore stateFileStore;
+  private final SubscriptionControllerFactory subscriptionControllerFactory;
 
   private final LongAdder connectedSessions;
   private final LongAdder disconnectedSessions;
@@ -63,14 +63,27 @@ public class SessionManagerPipeLine {
 
   SessionManagerPipeLine(DestinationManager destinationManager, PersistentSessionManager lookup, LongAdder connected, LongAdder disconnected,
       LongAdder expired) {
+    this(destinationManager, lookup, connected, disconnected, expired,
+        new SingleConcurrentTaskScheduler("SessionManagerPipeLine"),
+        (task, delay, unit) -> io.mapsmessaging.utilities.threads.SimpleTaskScheduler.getInstance().schedule(task, delay, unit),
+        new SessionStateFileStore(), new SubscriptionControllerFactory(), WillTaskManager.getInstance());
+  }
+
+  SessionManagerPipeLine(DestinationManager destinationManager, PersistentSessionManager lookup, LongAdder connected, LongAdder disconnected,
+      LongAdder expired, ExecutorService taskScheduler, SessionExpiryScheduler expiryScheduler, SessionStateFileStore stateFileStore,
+      SubscriptionControllerFactory subscriptionControllerFactory, WillTaskManager willTaskManager) {
     subscriptionManagerFactory = new ConcurrentHashMap<>();
     sessions = new ConcurrentHashMap<>();
     this.destinationManager = destinationManager;
+    this.taskScheduler = taskScheduler;
+    this.expiryScheduler = expiryScheduler;
+    this.stateFileStore = stateFileStore;
+    this.subscriptionControllerFactory = subscriptionControllerFactory;
     connectedSessions = connected;
     disconnectedSessions = disconnected;
     expiredSessions = expired;
     storeLookup = lookup;
-    willTaskManager = WillTaskManager.getInstance();
+    this.willTaskManager = willTaskManager;
   }
 
   public void stop() {
@@ -164,7 +177,9 @@ public class SessionManagerPipeLine {
         persistentSession.setExpiryTime(System.currentTimeMillis() + TimeUnit.SECONDS.toMillis(expiry));
       }
       subscriptionController.hibernateAll();
-      Future<?> sched = SimpleTaskScheduler.getInstance().schedule(() -> closeAndDeleteSubscriptionController(storeName, subscriptionController), expiry, TimeUnit.SECONDS);
+      Future<?> sched = expiryScheduler.schedule(
+          () -> taskScheduler.submit(() -> closeAndDeleteSubscriptionController(storeName, subscriptionController)),
+          expiry, TimeUnit.SECONDS);
       subscriptionController.setTimeout(sched);
       disconnectedSessions.increment();
     } else {
@@ -174,12 +189,14 @@ public class SessionManagerPipeLine {
   }
 
   void addDisconnectedSession(String sessionId, String storeName, SessionDetails sessionDetails, Map<String, SubscriptionContext> map) {
-    SubscriptionController subscriptionManager = new SubscriptionController(sessionId, sessionDetails, destinationManager, map);
+    SubscriptionController subscriptionManager = subscriptionControllerFactory.create(sessionId, sessionDetails, destinationManager, map);
     subscriptionManagerFactory.put(sessionId, subscriptionManager);
     disconnectedSessions.increment();
     long timeout =  sessionDetails.getExpiryTime() - System.currentTimeMillis();
     if(timeout > 0) {
-      Future<?> sched = SimpleTaskScheduler.getInstance().schedule(() -> closeAndDeleteSubscriptionController(storeName, subscriptionManager), timeout, TimeUnit.MILLISECONDS);
+      Future<?> sched = expiryScheduler.schedule(
+          () -> taskScheduler.submit(() -> closeAndDeleteSubscriptionController(storeName, subscriptionManager)),
+          timeout, TimeUnit.MILLISECONDS);
       subscriptionManager.setTimeout(sched);
     }
     else{
@@ -190,7 +207,7 @@ public class SessionManagerPipeLine {
   void closeAndDeleteSubscriptionController(String sessionStateFile, SubscriptionController subscriptionController) {
     closeSubscriptionController(subscriptionController);
     try {
-      Files.deleteIfExists(new File(sessionStateFile).toPath());
+      stateFileStore.delete(sessionStateFile);
     } catch (IOException e) {
       // ignore
     }
@@ -226,7 +243,7 @@ public class SessionManagerPipeLine {
     if (subscriptionManager == null) {
       logger.log(ServerLogMessages.SESSION_MANAGER_NO_EXISTING, context.getId());
       Map<String, SubscriptionContext> contextMap = sessionDetails.getSubscriptionContextMap();
-      subscriptionManager = new SubscriptionController(context, destinationManager, contextMap);
+      subscriptionManager = subscriptionControllerFactory.create(context, destinationManager, contextMap);
       if (context.isPersistentSession()) {
         logger.log(ServerLogMessages.SESSION_MANAGER_ADDING_SUBSCRIPTION, context.getId());
         subscriptionManagerFactory.put(context.getId(), subscriptionManager);
@@ -242,7 +259,7 @@ public class SessionManagerPipeLine {
         subscriptionManagerFactory.remove(context.getId());
         subscriptionManager.close(false);
         sessionDetails.clearSubscriptions();
-        subscriptionManager = new SubscriptionController(context, destinationManager, new LinkedHashMap<>());
+        subscriptionManager = subscriptionControllerFactory.create(context, destinationManager, new LinkedHashMap<>());
         if (context.isPersistentSession()) {
           subscriptionManagerFactory.put(context.getId(), subscriptionManager);
         }
