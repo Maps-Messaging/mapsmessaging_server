@@ -65,7 +65,7 @@ public class SessionManagerTest {
   public void closeIdleSession(String idleSession) {
     SubscriptionController sub = manager.getIdleSubscriptions(idleSession);
     if(sub != null){
-      manager.closeSubscriptionController(sub);
+      manager.close(sub.getSessionId(), false);
     }
   }
 }
