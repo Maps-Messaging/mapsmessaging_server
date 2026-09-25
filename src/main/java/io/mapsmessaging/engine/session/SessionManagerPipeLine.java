@@ -47,6 +47,7 @@ public class SessionManagerPipeLine {
 
   private final Logger logger = LoggerFactory.getLogger(SessionManagerPipeLine.class);
   private final Map<String, SubscriptionController> subscriptionManagerFactory;
+  private final Set<SubscriptionController> disconnectedControllers;
   private final Map<String, SessionImpl> sessions;
   private final DestinationManager destinationManager;
   private final PersistentSessionManager storeLookup;
@@ -74,6 +75,7 @@ public class SessionManagerPipeLine {
       LongAdder expired, ExecutorService taskScheduler, SessionExpiryScheduler expiryScheduler, SessionStateFileStore stateFileStore,
       SubscriptionControllerFactory subscriptionControllerFactory, SessionFactory sessionFactory, WillTaskManager willTaskManager) {
     subscriptionManagerFactory = new ConcurrentHashMap<>();
+    disconnectedControllers = ConcurrentHashMap.newKeySet();
     sessions = new ConcurrentHashMap<>();
     this.destinationManager = destinationManager;
     this.taskScheduler = taskScheduler;
@@ -173,11 +175,10 @@ public class SessionManagerPipeLine {
         persistentSession.setExpiryTime(System.currentTimeMillis() + TimeUnit.SECONDS.toMillis(expiry));
       }
       subscriptionController.hibernateAll();
-      Future<?> sched = expiryScheduler.schedule(
-          () -> taskScheduler.submit(() -> closeAndDeleteSubscriptionController(storeName, subscriptionController)),
-          expiry, TimeUnit.SECONDS);
+      Future<?> sched = SessionExpiryTask.schedule(expiryScheduler, taskScheduler,
+          () -> expireAndDeleteSubscriptionController(storeName, subscriptionController), expiry, TimeUnit.SECONDS);
       subscriptionController.setTimeout(sched);
-      disconnectedSessions.increment();
+      markDisconnected(subscriptionController);
     } else {
       closeAndDeleteSubscriptionController(storeName, subscriptionController);
     }
@@ -187,21 +188,31 @@ public class SessionManagerPipeLine {
   void addDisconnectedSession(String sessionId, String storeName, SessionDetails sessionDetails, Map<String, SubscriptionContext> map) {
     SubscriptionController subscriptionManager = subscriptionControllerFactory.create(sessionId, sessionDetails, destinationManager, map);
     subscriptionManagerFactory.put(sessionId, subscriptionManager);
-    disconnectedSessions.increment();
+    markDisconnected(subscriptionManager);
     long timeout =  sessionDetails.getExpiryTime() - System.currentTimeMillis();
     if(timeout > 0) {
-      Future<?> sched = expiryScheduler.schedule(
-          () -> taskScheduler.submit(() -> closeAndDeleteSubscriptionController(storeName, subscriptionManager)),
-          timeout, TimeUnit.MILLISECONDS);
+      Future<?> sched = SessionExpiryTask.schedule(expiryScheduler, taskScheduler,
+          () -> expireAndDeleteSubscriptionController(storeName, subscriptionManager), timeout, TimeUnit.MILLISECONDS);
       subscriptionManager.setTimeout(sched);
     }
     else{
-      closeAndDeleteSubscriptionController(storeName, subscriptionManager);
+      expireAndDeleteSubscriptionController(storeName, subscriptionManager);
     }
   }
 
   void closeAndDeleteSubscriptionController(String sessionStateFile, SubscriptionController subscriptionController) {
-    closeSubscriptionController(subscriptionController);
+    if (closeSubscriptionController(subscriptionController, false)) {
+      deleteStateFile(sessionStateFile);
+    }
+  }
+
+  private void expireAndDeleteSubscriptionController(String sessionStateFile, SubscriptionController subscriptionController) {
+    if (closeSubscriptionController(subscriptionController, true)) {
+      deleteStateFile(sessionStateFile);
+    }
+  }
+
+  private void deleteStateFile(String sessionStateFile) {
     try {
       stateFileStore.delete(sessionStateFile);
     } catch (IOException e) {
@@ -210,17 +221,37 @@ public class SessionManagerPipeLine {
   }
 
   void closeSubscriptionController(SubscriptionController subscriptionController) {
-    if (subscriptionController.getTimeout() != null) {
+    closeSubscriptionController(subscriptionController, false);
+  }
+
+  private boolean closeSubscriptionController(SubscriptionController subscriptionController, boolean expired) {
+    if (subscriptionController.isPersistent()
+        && !subscriptionManagerFactory.remove(subscriptionController.getSessionId(), subscriptionController)) {
+      return false;
+    }
+    if (expired) {
       expiredSessions.increment();
     }
-    subscriptionManagerFactory.remove(subscriptionController.getSessionId());
+    markConnected(subscriptionController);
     WillTaskImpl willTaskImpl = willTaskManager.remove(subscriptionController.getSessionId());
     if (willTaskImpl != null) {
       willTaskImpl.cancel();
       willTaskImpl.run(); // Will Task MUST run on session close regardless of the will timeout
     }
     subscriptionController.close(false);
-    disconnectedSessions.decrement();
+    return true;
+  }
+
+  private void markDisconnected(SubscriptionController subscriptionController) {
+    if (disconnectedControllers.add(subscriptionController)) {
+      disconnectedSessions.increment();
+    }
+  }
+
+  private void markConnected(SubscriptionController subscriptionController) {
+    if (disconnectedControllers.remove(subscriptionController)) {
+      disconnectedSessions.decrement();
+    }
   }
 
   SubscriptionController getIdleSubscriptions(String sessionId) {
@@ -250,9 +281,9 @@ public class SessionManagerPipeLine {
       }
 
       if (context.isResetState()) {
-        disconnectedSessions.decrement(); // No longer stored
+        markConnected(subscriptionManager);
         logger.log(ServerLogMessages.SESSION_MANAGER_FOUND_EXISTING, context.getId(), context.isResetState());
-        subscriptionManagerFactory.remove(context.getId());
+        subscriptionManagerFactory.remove(context.getId(), subscriptionManager);
         subscriptionManager.close(false);
         sessionDetails.clearSubscriptions();
         subscriptionManager = subscriptionControllerFactory.create(context, destinationManager, new LinkedHashMap<>());
@@ -261,7 +292,7 @@ public class SessionManagerPipeLine {
         }
       } else {
         context.setRestored(true);
-        disconnectedSessions.decrement(); // Restored
+        markConnected(subscriptionManager);
       }
     }
     return subscriptionManager;
