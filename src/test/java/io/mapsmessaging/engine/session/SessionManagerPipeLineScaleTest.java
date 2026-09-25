@@ -38,6 +38,8 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.Future;
 import java.util.concurrent.FutureTask;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.atomic.LongAdder;
 
@@ -108,6 +110,87 @@ class SessionManagerPipeLineScaleTest {
     for (SubscriptionController controller : controllers.values()) {
       verify(controller, times(1)).close(false);
     }
+  }
+
+  @Test
+  void concurrentProducersCanQueueThousandsOfLifecycleOperationsWithoutLosingSessions() throws Exception {
+    final int sessionCount = 2048;
+    DestinationManager destinationManager = mock(DestinationManager.class);
+    PersistentSessionManager persistentSessionManager = mock(PersistentSessionManager.class);
+    SubscriptionControllerFactory subscriptionControllerFactory = mock(SubscriptionControllerFactory.class);
+    SessionFactory sessionFactory = mock(SessionFactory.class);
+    SessionStateFileStore stateFileStore = mock(SessionStateFileStore.class);
+    WillTaskManager willTaskManager = mock(WillTaskManager.class);
+    LongAdder connected = new LongAdder();
+    LongAdder disconnected = new LongAdder();
+    LongAdder expired = new LongAdder();
+    ExecutorService pipelineExecutor = Executors.newSingleThreadExecutor();
+    BulkExpiryScheduler expiryScheduler = new BulkExpiryScheduler();
+    SessionManagerPipeLine pipeline = new SessionManagerPipeLine(destinationManager, persistentSessionManager, connected, disconnected, expired, pipelineExecutor,
+        expiryScheduler, stateFileStore, subscriptionControllerFactory, sessionFactory, willTaskManager);
+
+    Map<String, SessionImpl> sessions = new java.util.concurrent.ConcurrentHashMap<>();
+
+    when(persistentSessionManager.getSessionDetails(any(SessionContext.class))).thenAnswer(invocation -> {
+      SessionContext context = invocation.getArgument(0);
+      SessionDetails details = mock(SessionDetails.class);
+      when(details.getUniqueId()).thenReturn("unique-" + context.getId());
+      when(details.getInternalUnqueId()).thenReturn((long) context.getId().hashCode());
+      when(details.getSubscriptionContextMap()).thenReturn(new LinkedHashMap<>());
+      return details;
+    });
+
+    when(subscriptionControllerFactory.create(any(SessionContext.class), eq(destinationManager), anyMap())).thenAnswer(invocation -> {
+      SessionContext context = invocation.getArgument(0);
+      return controller(context.getId(), false);
+    });
+
+    when(sessionFactory.create(any(SessionContext.class), any(SecurityContext.class), eq(destinationManager), any(SubscriptionController.class),
+        eq(persistentSessionManager))).thenAnswer(invocation -> {
+      SessionContext context = invocation.getArgument(0);
+      SubscriptionController controller = invocation.getArgument(3);
+      SessionImpl session = mock(SessionImpl.class);
+      when(session.getName()).thenReturn(context.getId());
+      when(session.getExpiry()).thenReturn(0L);
+      when(session.getSubscriptionController()).thenReturn(controller);
+      sessions.put(context.getId(), session);
+      return session;
+    });
+
+    ExecutorService producers = Executors.newFixedThreadPool(16);
+    List<Future<?>> createFutures = new ArrayList<>();
+    for (int i = 0; i < sessionCount; i++) {
+      String sessionId = "concurrent-" + i;
+      createFutures.add(producers.submit(() -> pipeline.submit(() -> pipeline.create(context(sessionId, false))).get()));
+    }
+    for (Future<?> future : createFutures) {
+      future.get();
+    }
+
+    assertEquals(sessionCount, connected.sum());
+    assertEquals(sessionCount, pipeline.getSessions().size());
+
+    List<Future<?>> closeFutures = new ArrayList<>();
+    for (SessionImpl session : sessions.values()) {
+      closeFutures.add(producers.submit(() -> pipeline.submit(() -> {
+        pipeline.close(session, true);
+        return null;
+      }).get()));
+    }
+    for (Future<?> future : closeFutures) {
+      future.get();
+    }
+
+    producers.shutdown();
+    assertTrue(producers.awaitTermination(30, TimeUnit.SECONDS));
+    pipeline.stop();
+
+    assertEquals(0, connected.sum());
+    assertEquals(0, disconnected.sum());
+    assertEquals(0, expired.sum());
+    assertFalse(pipeline.hasSessions());
+    assertFalse(pipeline.hasSubscriptions());
+    assertTrue(pipelineExecutor.isShutdown());
   }
 
   @Test
