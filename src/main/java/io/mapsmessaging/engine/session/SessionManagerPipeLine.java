@@ -46,7 +46,7 @@ import java.util.concurrent.atomic.LongAdder;
 public class SessionManagerPipeLine {
 
   private final Logger logger = LoggerFactory.getLogger(SessionManagerPipeLine.class);
-  private final Map<String, SubscriptionController> subscriptionManagerFactory;
+  private final Map<String, SubscriptionController> persistentControllers;
   private final Set<SubscriptionController> disconnectedControllers;
   private final Map<String, SessionImpl> sessions;
   private final DestinationManager destinationManager;
@@ -74,7 +74,7 @@ public class SessionManagerPipeLine {
   SessionManagerPipeLine(DestinationManager destinationManager, PersistentSessionManager lookup, LongAdder connected, LongAdder disconnected,
       LongAdder expired, ExecutorService taskScheduler, SessionExpiryScheduler expiryScheduler, SessionStateFileStore stateFileStore,
       SubscriptionControllerFactory subscriptionControllerFactory, SessionFactory sessionFactory, WillTaskManager willTaskManager) {
-    subscriptionManagerFactory = new ConcurrentHashMap<>();
+    persistentControllers = new ConcurrentHashMap<>();
     disconnectedControllers = ConcurrentHashMap.newKeySet();
     sessions = new ConcurrentHashMap<>();
     this.destinationManager = destinationManager;
@@ -94,7 +94,7 @@ public class SessionManagerPipeLine {
     for (SessionImpl session : sessions.values()) {
       session.close();
     }
-    for (SubscriptionController controller : subscriptionManagerFactory.values()) {
+    for (SubscriptionController controller : persistentControllers.values()) {
       Future<?> timeout = controller.getTimeout();
       if (timeout != null) {
         timeout.cancel(false);
@@ -198,7 +198,7 @@ public class SessionManagerPipeLine {
 
   void addDisconnectedSession(String sessionId, String storeName, SessionDetails sessionDetails, Map<String, SubscriptionContext> map) {
     SubscriptionController subscriptionManager = subscriptionControllerFactory.create(sessionId, sessionDetails, destinationManager, map);
-    subscriptionManagerFactory.put(sessionId, subscriptionManager);
+    persistentControllers.put(sessionId, subscriptionManager);
     markDisconnected(subscriptionManager);
     long timeout =  sessionDetails.getExpiryTime() - System.currentTimeMillis();
     if(timeout > 0) {
@@ -240,7 +240,7 @@ public class SessionManagerPipeLine {
 
   private boolean closeSubscriptionController(SubscriptionController subscriptionController, boolean expired) {
     if (subscriptionController.isPersistent()
-        && !subscriptionManagerFactory.remove(subscriptionController.getSessionId(), subscriptionController)) {
+        && !persistentControllers.remove(subscriptionController.getSessionId(), subscriptionController)) {
       return false;
     }
     if (expired) {
@@ -269,7 +269,7 @@ public class SessionManagerPipeLine {
   }
 
   SubscriptionController getIdleSubscriptions(String sessionId) {
-    SubscriptionController controller = subscriptionManagerFactory.get(sessionId);
+    SubscriptionController controller = persistentControllers.get(sessionId);
     return disconnectedControllers.contains(controller) ? controller : null;
   }
 
@@ -281,36 +281,58 @@ public class SessionManagerPipeLine {
     SessionDetails sessionDetails = storeLookup.getSessionDetails(context);
     context.setUniqueId(sessionDetails.getUniqueId());
     context.setInternalSessionId(sessionDetails.getInternalUnqueId());
-    SubscriptionController subscriptionManager = subscriptionManagerFactory.get(context.getId());
-    if (subscriptionManager == null) {
-      logger.log(ServerLogMessages.SESSION_MANAGER_NO_EXISTING, context.getId());
-      Map<String, SubscriptionContext> contextMap = sessionDetails.getSubscriptionContextMap();
-      subscriptionManager = subscriptionControllerFactory.create(context, destinationManager, contextMap);
-      if (context.isPersistentSession()) {
-        logger.log(ServerLogMessages.SESSION_MANAGER_ADDING_SUBSCRIPTION, context.getId());
-        subscriptionManagerFactory.put(context.getId(), subscriptionManager);
-      }
-    } else {
-      if (!cancelPendingExpiry(subscriptionManager)) {
-        return loadSubscriptionManager(context);
-      }
 
-      if (context.isResetState()) {
-        markConnected(subscriptionManager);
-        logger.log(ServerLogMessages.SESSION_MANAGER_FOUND_EXISTING, context.getId(), context.isResetState());
-        subscriptionManagerFactory.remove(context.getId(), subscriptionManager);
-        subscriptionManager.close(false);
-        sessionDetails.clearSubscriptions();
-        subscriptionManager = subscriptionControllerFactory.create(context, destinationManager, new LinkedHashMap<>());
-        if (context.isPersistentSession()) {
-          subscriptionManagerFactory.put(context.getId(), subscriptionManager);
-        }
-      } else {
-        context.setRestored(true);
-        markConnected(subscriptionManager);
+    SubscriptionController controller = persistentControllers.get(context.getId());
+    if (controller == null) {
+      return createSubscriptionController(context, sessionDetails, sessionDetails.getSubscriptionContextMap());
+    }
+
+    if (!cancelPendingExpiry(controller)) {
+      controller = persistentControllers.get(context.getId());
+      if (controller == null) {
+        return createSubscriptionController(context, sessionDetails, sessionDetails.getSubscriptionContextMap());
+      }
+      if (controller.getTimeout() != null && controller.getTimeout().isDone()) {
+        persistentControllers.remove(context.getId(), controller);
+        markConnected(controller);
+        return createSubscriptionController(context, sessionDetails, sessionDetails.getSubscriptionContextMap());
       }
     }
-    return subscriptionManager;
+
+    if (context.isResetState()) {
+      return resetSubscriptionController(context, sessionDetails, controller);
+    }
+
+    context.setRestored(true);
+    markConnected(controller);
+    return controller;
+  }
+
+  private SubscriptionController createSubscriptionController(SessionContext context, SessionDetails sessionDetails,
+      Map<String, SubscriptionContext> subscriptions) {
+    logger.log(ServerLogMessages.SESSION_MANAGER_NO_EXISTING, context.getId());
+    SubscriptionController controller = subscriptionControllerFactory.create(context, destinationManager, subscriptions);
+    if (context.isPersistentSession()) {
+      logger.log(ServerLogMessages.SESSION_MANAGER_ADDING_SUBSCRIPTION, context.getId());
+      persistentControllers.put(context.getId(), controller);
+    }
+    return controller;
+  }
+
+  private SubscriptionController resetSubscriptionController(SessionContext context, SessionDetails sessionDetails,
+      SubscriptionController controller) {
+    markConnected(controller);
+    logger.log(ServerLogMessages.SESSION_MANAGER_FOUND_EXISTING, context.getId(), true);
+    persistentControllers.remove(context.getId(), controller);
+    controller.close(false);
+    sessionDetails.clearSubscriptions();
+
+    SubscriptionController replacement =
+        subscriptionControllerFactory.create(context, destinationManager, new LinkedHashMap<>());
+    if (context.isPersistentSession()) {
+      persistentControllers.put(context.getId(), replacement);
+    }
+    return replacement;
   }
 
   private boolean cancelPendingExpiry(SubscriptionController subscriptionManager) {
