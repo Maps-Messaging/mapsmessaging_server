@@ -37,5 +37,5 @@ jobs:
       - name: Run MQTT delivery and flow-control tests
         run: >-
           mvn -B
-          -Dtest=FrameHandlerTest,PacketIdManagerTest,ProtocolClientConnectionFlowControlTest,DestinationSubscriptionFlowControlTest,SessionSharedSubscriptionFlowControlTest,SessionFlowControlTest
+          -Dtest=FrameHandlerTest,PacketIdManagerTest,ProtocolClientConnectionFlowControlTest,DestinationSubscriptionFlowControlTest,SessionSharedSubscriptionFlowControlTest,SessionFlowControlTest,SessionManagerPipeLineTest,SessionExpiryTaskTest
           test
