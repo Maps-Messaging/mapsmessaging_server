@@ -134,6 +134,90 @@ class SessionManagerPipeLineTest {
     verify(context).setInternalSessionId(17L);
   }
 
+
+  @Test
+  void staleCloseCannotRemoveReplacementSessionOrChangeCounters() throws Exception {
+    String sessionId = "stale-close";
+    SessionContext firstContext = mock(SessionContext.class);
+    SessionContext secondContext = mock(SessionContext.class);
+    SessionDetails details = mock(SessionDetails.class);
+    io.mapsmessaging.engine.session.security.SecurityContext firstSecurity =
+        mock(io.mapsmessaging.engine.session.security.SecurityContext.class);
+    io.mapsmessaging.engine.session.security.SecurityContext secondSecurity =
+        mock(io.mapsmessaging.engine.session.security.SecurityContext.class);
+    SubscriptionController controller = controller(sessionId, false);
+    SessionImpl firstSession = mock(SessionImpl.class);
+    SessionImpl secondSession = mock(SessionImpl.class);
+    Map<String, SubscriptionContext> subscriptions = new LinkedHashMap<>();
+
+    when(firstContext.getId()).thenReturn(sessionId);
+    when(firstContext.getSecurityContext()).thenReturn(firstSecurity);
+    when(secondContext.getId()).thenReturn(sessionId);
+    when(secondContext.getSecurityContext()).thenReturn(secondSecurity);
+    when(details.getUniqueId()).thenReturn("unique-stale-close");
+    when(details.getInternalUnqueId()).thenReturn(47L);
+    when(details.getSubscriptionContextMap()).thenReturn(subscriptions);
+    when(persistentSessionManager.getSessionDetails(any(SessionContext.class))).thenReturn(details);
+    when(subscriptionControllerFactory.create(any(SessionContext.class), eq(destinationManager), eq(subscriptions))).thenReturn(controller);
+    when(sessionFactory.create(firstContext, firstSecurity, destinationManager, controller, persistentSessionManager)).thenReturn(firstSession);
+    when(sessionFactory.create(secondContext, secondSecurity, destinationManager, controller, persistentSessionManager)).thenReturn(secondSession);
+    when(firstSession.getName()).thenReturn(sessionId);
+    when(secondSession.getName()).thenReturn(sessionId);
+
+    pipeline.create(firstContext);
+    pipeline.create(secondContext);
+
+    assertEquals(1, connected.sum());
+    assertSame(secondSession, pipeline.getSessions().get(0));
+    verify(firstSession).close();
+
+    pipeline.close(firstSession, true);
+
+    assertEquals(1, connected.sum());
+    assertSame(secondSession, pipeline.getSessions().get(0));
+    verify(firstSession, times(1)).close();
+    verify(secondSession, never()).close();
+  }
+
+  @Test
+  void duplicateCreateReplacesActiveSessionWithoutInflatingConnectedCount() throws Exception {
+    String sessionId = "duplicate-create";
+    SessionContext firstContext = mock(SessionContext.class);
+    SessionContext secondContext = mock(SessionContext.class);
+    SessionDetails details = mock(SessionDetails.class);
+    io.mapsmessaging.engine.session.security.SecurityContext firstSecurity =
+        mock(io.mapsmessaging.engine.session.security.SecurityContext.class);
+    io.mapsmessaging.engine.session.security.SecurityContext secondSecurity =
+        mock(io.mapsmessaging.engine.session.security.SecurityContext.class);
+    SubscriptionController controller = controller(sessionId, false);
+    SessionImpl firstSession = mock(SessionImpl.class);
+    SessionImpl secondSession = mock(SessionImpl.class);
+    Map<String, SubscriptionContext> subscriptions = new LinkedHashMap<>();
+
+    when(firstContext.getId()).thenReturn(sessionId);
+    when(firstContext.getSecurityContext()).thenReturn(firstSecurity);
+    when(secondContext.getId()).thenReturn(sessionId);
+    when(secondContext.getSecurityContext()).thenReturn(secondSecurity);
+    when(details.getUniqueId()).thenReturn("unique-duplicate");
+    when(details.getInternalUnqueId()).thenReturn(53L);
+    when(details.getSubscriptionContextMap()).thenReturn(subscriptions);
+    when(persistentSessionManager.getSessionDetails(any(SessionContext.class))).thenReturn(details);
+    when(subscriptionControllerFactory.create(any(SessionContext.class), eq(destinationManager), eq(subscriptions))).thenReturn(controller);
+    when(sessionFactory.create(firstContext, firstSecurity, destinationManager, controller, persistentSessionManager)).thenReturn(firstSession);
+    when(sessionFactory.create(secondContext, secondSecurity, destinationManager, controller, persistentSessionManager)).thenReturn(secondSession);
+    when(firstSession.getName()).thenReturn(sessionId);
+    when(secondSession.getName()).thenReturn(sessionId);
+
+    pipeline.create(firstContext);
+    pipeline.create(secondContext);
+
+    assertEquals(1, connected.sum());
+    assertEquals(1, pipeline.getSessions().size());
+    assertSame(secondSession, pipeline.getSessions().get(0));
+    verify(firstSession).close();
+    verify(secondSession, never()).close();
+  }
+
   @Test
   void reconnectBeforeExpiryRestoresExistingControllerAndCancelsTimeout() throws Exception {
     String sessionId = "reconnect-session";
@@ -204,7 +288,8 @@ class SessionManagerPipeLineTest {
 
     pipeline.create(context);
 
-    assertSame(newController, pipeline.getIdleSubscriptions(sessionId));
+    assertNull(pipeline.getIdleSubscriptions(sessionId));
+    assertFalse(pipeline.hasSubscriptions());
     assertEquals(0, disconnected.sum());
     assertEquals(1, connected.sum());
     verify(oldController).close(false);
@@ -244,13 +329,15 @@ class SessionManagerPipeLineTest {
     when(session.getName()).thenReturn(sessionId);
 
     pipeline.create(context);
-    assertSame(oldController, pipeline.getIdleSubscriptions(sessionId));
+    assertNull(pipeline.getIdleSubscriptions(sessionId));
+    assertFalse(pipeline.hasSubscriptions());
     assertEquals(0, disconnected.sum());
     assertEquals(0, expired.sum());
 
     executor.runNext();
 
-    assertSame(oldController, pipeline.getIdleSubscriptions(sessionId));
+    assertNull(pipeline.getIdleSubscriptions(sessionId));
+    assertFalse(pipeline.hasSubscriptions());
     verify(oldController, never()).close(false);
     verify(replacementController, never()).close(false);
     verify(stateFileStore, never()).delete(stateFile);
@@ -297,7 +384,8 @@ class SessionManagerPipeLineTest {
 
     pipeline.create(context);
 
-    assertSame(replacementController, pipeline.getIdleSubscriptions(sessionId));
+    assertNull(pipeline.getIdleSubscriptions(sessionId));
+    assertFalse(pipeline.hasSubscriptions());
     assertEquals(1, connected.sum());
     assertEquals(0, disconnected.sum());
     assertEquals(1, expired.sum());
@@ -447,15 +535,29 @@ class SessionManagerPipeLineTest {
   }
 
   @Test
-  void zeroExpirySessionCleansUpSynchronously() {
+  void zeroExpirySessionCleansUpSynchronously() throws Exception {
+    String sessionId = "non-persistent-session";
+    SessionContext context = mock(SessionContext.class);
+    SessionDetails details = mock(SessionDetails.class);
+    io.mapsmessaging.engine.session.security.SecurityContext securityContext =
+        mock(io.mapsmessaging.engine.session.security.SecurityContext.class);
     SessionImpl session = mock(SessionImpl.class);
-    SubscriptionController controller = controller("non-persistent-session", false);
+    SubscriptionController controller = controller(sessionId, false);
+    Map<String, SubscriptionContext> subscriptions = new LinkedHashMap<>();
 
-    connected.increment();
-    when(session.getName()).thenReturn("non-persistent-session");
+    when(context.getId()).thenReturn(sessionId);
+    when(context.getSecurityContext()).thenReturn(securityContext);
+    when(details.getUniqueId()).thenReturn("unique-non-persistent");
+    when(details.getInternalUnqueId()).thenReturn(43L);
+    when(details.getSubscriptionContextMap()).thenReturn(subscriptions);
+    when(persistentSessionManager.getSessionDetails(context)).thenReturn(details);
+    when(subscriptionControllerFactory.create(context, destinationManager, subscriptions)).thenReturn(controller);
+    when(sessionFactory.create(context, securityContext, destinationManager, controller, persistentSessionManager)).thenReturn(session);
+    when(session.getName()).thenReturn(sessionId);
     when(session.getExpiry()).thenReturn(0L);
     when(session.getSubscriptionController()).thenReturn(controller);
 
+    pipeline.create(context);
     pipeline.close(session, true);
 
     assertEquals(0, connected.sum());
