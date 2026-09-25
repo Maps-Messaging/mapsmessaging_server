@@ -181,10 +181,8 @@ public class SessionManagerPipeLine {
     // Now lets check the expiry on the session
     //
     subscriptionController = sessionImpl.getSubscriptionController();
-    if (expiry > 0) {
-      if(sessionImpl instanceof PersistentSession persistentSession) {
-        persistentSession.setExpiryTime(System.currentTimeMillis() + TimeUnit.SECONDS.toMillis(expiry));
-      }
+    if (sessionImpl instanceof PersistentSession persistentSession && expiry > 0) {
+      persistentSession.setExpiryTime(System.currentTimeMillis() + TimeUnit.SECONDS.toMillis(expiry));
       subscriptionController.hibernateAll();
       Future<?> sched = SessionExpiryTask.schedule(expiryScheduler, taskScheduler,
           () -> expireAndDeleteSubscriptionController(storeName, subscriptionController), expiry, TimeUnit.SECONDS);
