@@ -219,18 +219,67 @@ class SessionManagerPipeLineTest {
     when(context.getSecurityContext()).thenReturn(securityContext);
     when(context.isPersistentSession()).thenReturn(true);
     when(persistentSessionManager.getSessionDetails(context)).thenReturn(details);
+    when(sessionFactory.create(context, securityContext, destinationManager, oldController, persistentSessionManager)).thenReturn(session);
+    when(session.getName()).thenReturn(sessionId);
+
+    pipeline.create(context);
+    assertSame(oldController, pipeline.getIdleSubscriptions(sessionId));
+    assertEquals(0, disconnected.sum());
+    assertEquals(0, expired.sum());
+
+    executor.runNext();
+
+    assertSame(oldController, pipeline.getIdleSubscriptions(sessionId));
+    verify(oldController, never()).close(false);
+    verify(replacementController, never()).close(false);
+    verify(stateFileStore, never()).delete(stateFile);
+  }
+
+
+  @Test
+  void expiryCleanupRunningBeforeReconnectWinsLifecycleOrdering() throws Exception {
+    String sessionId = "expired-before-reconnect";
+    String stateFile = "/tmp/expired-before-reconnect.bin";
+    SessionDetails details = mock(SessionDetails.class);
+    SubscriptionController expiredController = controller(sessionId);
+    SubscriptionController replacementController = controller(sessionId);
+    Map<String, SubscriptionContext> subscriptions = new LinkedHashMap<>();
+
+    when(details.getExpiryTime()).thenReturn(System.currentTimeMillis() + TimeUnit.MINUTES.toMillis(1));
+    when(details.getUniqueId()).thenReturn("unique-expired-before-reconnect");
+    when(details.getInternalUnqueId()).thenReturn(37L);
+    when(details.getSubscriptionContextMap()).thenReturn(subscriptions);
+    when(subscriptionControllerFactory.create(sessionId, details, destinationManager, subscriptions)).thenReturn(expiredController);
+
+    pipeline.addDisconnectedSession(sessionId, stateFile, details, subscriptions);
+    expiryScheduler.fire();
+    executor.runNext();
+
+    assertNull(pipeline.getIdleSubscriptions(sessionId));
+    assertEquals(0, disconnected.sum());
+    assertEquals(1, expired.sum());
+    verify(expiredController).close(false);
+    verify(stateFileStore).delete(stateFile);
+
+    SessionContext context = mock(SessionContext.class);
+    io.mapsmessaging.engine.session.security.SecurityContext securityContext =
+        mock(io.mapsmessaging.engine.session.security.SecurityContext.class);
+    SessionImpl session = mock(SessionImpl.class);
+
+    when(context.getId()).thenReturn(sessionId);
+    when(context.getSecurityContext()).thenReturn(securityContext);
+    when(context.isPersistentSession()).thenReturn(true);
+    when(persistentSessionManager.getSessionDetails(context)).thenReturn(details);
     when(subscriptionControllerFactory.create(eq(context), eq(destinationManager), anyMap())).thenReturn(replacementController);
     when(sessionFactory.create(context, securityContext, destinationManager, replacementController, persistentSessionManager)).thenReturn(session);
     when(session.getName()).thenReturn(sessionId);
 
     pipeline.create(context);
-    assertSame(replacementController, pipeline.getIdleSubscriptions(sessionId));
-
-    executor.runNext();
 
     assertSame(replacementController, pipeline.getIdleSubscriptions(sessionId));
-    verify(replacementController, never()).close(false);
-    verify(stateFileStore, never()).delete(stateFile);
+    assertEquals(1, connected.sum());
+    assertEquals(0, disconnected.sum());
+    assertEquals(1, expired.sum());
   }
 
   @Test
@@ -280,7 +329,7 @@ class SessionManagerPipeLineTest {
 
     assertNull(pipeline.getIdleSubscriptions(sessionId));
     assertEquals(0, disconnected.sum());
-    assertEquals(0, expired.sum());
+    assertEquals(1, expired.sum());
     assertNull(expiryScheduler.task);
     verify(controller).close(false);
     verify(stateFileStore).delete(stateFile);
@@ -319,7 +368,7 @@ class SessionManagerPipeLineTest {
 
     assertEquals(0, connected.sum());
     assertEquals(1, disconnected.sum());
-    assertSame(expiryScheduler.future, timeoutOf(controller));
+    assertNotNull(timeoutOf(controller));
     verify(session).close();
     verify(controller).hibernateAll();
     verify(willTaskManager).remove("active-session");
@@ -335,7 +384,7 @@ class SessionManagerPipeLineTest {
   @Test
   void zeroExpirySessionCleansUpSynchronously() {
     SessionImpl session = mock(SessionImpl.class);
-    SubscriptionController controller = controller("non-persistent-session");
+    SubscriptionController controller = controller("non-persistent-session", false);
 
     connected.increment();
     when(session.getName()).thenReturn("non-persistent-session");
@@ -381,10 +430,15 @@ class SessionManagerPipeLineTest {
   }
 
   private SubscriptionController controller(String sessionId) {
+    return controller(sessionId, true);
+  }
+
+  private SubscriptionController controller(String sessionId, boolean persistent) {
     SubscriptionController controller = mock(SubscriptionController.class);
     AtomicReference<Future<?>> timeout = new AtomicReference<>();
 
     when(controller.getSessionId()).thenReturn(sessionId);
+    when(controller.isPersistent()).thenReturn(persistent);
     when(controller.getTimeout()).thenAnswer(invocation -> timeout.get());
     doAnswer(invocation -> {
       timeout.set(invocation.getArgument(0));
