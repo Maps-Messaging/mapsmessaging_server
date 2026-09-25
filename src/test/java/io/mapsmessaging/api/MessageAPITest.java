@@ -53,7 +53,7 @@ public class MessageAPITest extends BaseTestConfig {
     return engineManager.hasSessions();
   }
 
-  protected void closeSubscriptionController(SubscriptionController controller) {
-    engineManager.closeSubscriptionController(controller);
+  protected void closeSession(String sessionId) {
+    engineManager.closeSession(sessionId);
   }
 }
