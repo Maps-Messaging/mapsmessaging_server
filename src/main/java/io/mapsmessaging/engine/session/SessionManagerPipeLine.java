@@ -114,11 +114,15 @@ public class SessionManagerPipeLine {
   }
 
   public boolean hasSubscriptions() {
-    return !subscriptionManagerFactory.isEmpty();
+    return !disconnectedControllers.isEmpty();
   }
 
   public Set<String> getSessionIds() {
-    return Set.copyOf(subscriptionManagerFactory.keySet());
+    Set<String> sessionIds = new HashSet<>();
+    for (SubscriptionController controller : disconnectedControllers) {
+      sessionIds.add(controller.getSessionId());
+    }
+    return Set.copyOf(sessionIds);
   }
 
   @SuppressWarnings("java:S1452")
@@ -132,12 +136,11 @@ public class SessionManagerPipeLine {
     //
     // Force close the older session if duplicates are not allowed
     //
-    if (sessions.containsKey(sessionContext.getId())) {
-      SessionImpl oldSessionImpl = sessions.get(sessionContext.getId());
-      if (oldSessionImpl != null) {
-        oldSessionImpl.close();
-        logger.log(ServerLogMessages.SESSION_MANAGER_FOUND_CLOSED, sessionContext.getId());
-      }
+    SessionImpl oldSessionImpl = sessions.remove(sessionContext.getId());
+    if (oldSessionImpl != null) {
+      oldSessionImpl.close();
+      connectedSessions.decrement();
+      logger.log(ServerLogMessages.SESSION_MANAGER_FOUND_CLOSED, sessionContext.getId());
     }
     SubscriptionController subscriptionManager = loadSubscriptionManager(sessionContext);
     sessionImpl = sessionFactory.create(sessionContext, securityContext, destinationManager, subscriptionManager, storeLookup);
@@ -157,9 +160,11 @@ public class SessionManagerPipeLine {
   }
 
   void close(SessionImpl sessionImpl, boolean clearWillTask) {
+    if (!sessions.remove(sessionImpl.getName(), sessionImpl)) {
+      return;
+    }
     SubscriptionController subscriptionController;
     long expiry = sessionImpl.getExpiry();
-    sessions.remove(sessionImpl.getName());
     String storeName = (sessionImpl instanceof PersistentSession) ?  ((PersistentSession)sessionImpl).getStoreName(): "";
     sessionImpl.close();
 
@@ -264,7 +269,8 @@ public class SessionManagerPipeLine {
   }
 
   SubscriptionController getIdleSubscriptions(String sessionId) {
-    return subscriptionManagerFactory.get(sessionId);
+    SubscriptionController controller = subscriptionManagerFactory.get(sessionId);
+    return disconnectedControllers.contains(controller) ? controller : null;
   }
 
   //
