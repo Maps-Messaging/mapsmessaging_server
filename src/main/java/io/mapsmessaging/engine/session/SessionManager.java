@@ -107,8 +107,7 @@ public class SessionManager implements Agent {
       // Register the subscription info with the specific pipeline
       //
       if (!map.isEmpty()) {
-        String path = storeLookup.getDataPath() + "/" + sessionDetails.getUniqueId() + ".bin";
-        sessionPipeLines[getPipeLineIndex(sessionId)].addDisconnectedSession(sessionId, path, sessionDetails, map);
+        sessionPipeLines[getPipeLineIndex(sessionId)].addDisconnectedSession(sessionId, sessionDetails, map);
       }
     }
     willTaskManager.start();
