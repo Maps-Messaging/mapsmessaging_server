@@ -193,9 +193,10 @@ public class SessionManager implements Agent {
 
   //<editor-fold desc="Internal subscription controller functions">
   public void closeSubscriptionController(SubscriptionController subscriptionController) {
-    SessionManagerPipeLine pipeLine = sessionPipeLines[getPipeLineIndex(subscriptionController.getSessionId())];
+    String sessionId = subscriptionController.getSessionId();
+    SessionManagerPipeLine pipeLine = sessionPipeLines[getPipeLineIndex(sessionId)];
     pipeLine.submit((Callable<Void>) () -> {
-      pipeLine.closeSubscriptionController(subscriptionController);
+      pipeLine.close(sessionId, false);
       return null;
     });
   }
