@@ -231,6 +231,14 @@ class SessionManagerPipeLineScaleTest {
     assertFalse(harness.pipeline.hasSessions());
     assertFalse(harness.pipeline.hasSubscriptions());
     verify(controller, times(1)).close(false);
+
+    harness.expiryScheduler.fireAll();
+    harness.executor.runAll();
+
+    assertEquals(0, harness.connected.sum());
+    assertEquals(0, harness.disconnected.sum());
+    assertEquals(0, harness.expired.sum());
+    verify(controller, times(1)).close(false);
   }
 
   private static SessionContext context(String sessionId, boolean persistent) {
