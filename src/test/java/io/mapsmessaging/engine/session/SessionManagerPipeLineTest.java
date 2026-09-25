@@ -80,6 +80,27 @@ class SessionManagerPipeLineTest {
   }
 
 
+
+  @Test
+  void subscriptionAccessorsReportIdleControllerStateDirectly() {
+    String sessionId = "idle-session";
+    SessionDetails details = mock(SessionDetails.class);
+    SubscriptionController controller = controller(sessionId);
+    Map<String, SubscriptionContext> subscriptions = new LinkedHashMap<>();
+
+    assertFalse(pipeline.hasSubscriptions());
+    assertTrue(pipeline.getSessionIds().isEmpty());
+
+    when(details.getExpiryTime()).thenReturn(System.currentTimeMillis() + TimeUnit.MINUTES.toMillis(1));
+    when(subscriptionControllerFactory.create(sessionId, details, destinationManager, subscriptions)).thenReturn(controller);
+
+    pipeline.addDisconnectedSession(sessionId, "/tmp/idle-session.bin", details, subscriptions);
+
+    assertTrue(pipeline.hasSubscriptions());
+    assertEquals(java.util.Set.of(sessionId), pipeline.getSessionIds());
+    assertThrows(UnsupportedOperationException.class, () -> pipeline.getSessionIds().add("other"));
+  }
+
   @Test
   void createNewSessionBuildsControllerAndRecordsSession() throws Exception {
     String sessionId = "new-session";
@@ -398,6 +419,7 @@ class SessionManagerPipeLineTest {
     assertEquals(0, expired.sum());
     assertNull(expiryScheduler.task);
     verify(controller).close(false);
+    verifyNoInteractions(stateFileStore);
   }
 
   @Test
@@ -424,8 +446,13 @@ class SessionManagerPipeLineTest {
     when(subscriptionControllerFactory.create(sessionId, details, destinationManager, subscriptions)).thenReturn(controller);
 
     pipeline.addDisconnectedSession(sessionId, "/tmp/stopped-session.bin", details, subscriptions);
+    Future<?> timeout = controller.getTimeout();
+
     pipeline.stop();
 
+    assertTrue(timeout.isCancelled());
+    assertNull(controller.getTimeout());
+    assertTrue(executor.isShutdown());
     verify(controller).shutdown();
   }
 
