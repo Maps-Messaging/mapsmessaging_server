@@ -249,7 +249,7 @@ public class SessionManagerPipeLine {
     if (expired) {
       expiredSessions.increment();
     }
-    markConnected(subscriptionController);
+    clearDisconnected(subscriptionController);
     WillTaskImpl willTaskImpl = willTaskManager.remove(subscriptionController.getSessionId());
     if (willTaskImpl != null) {
       willTaskImpl.cancel();
@@ -303,7 +303,7 @@ public class SessionManagerPipeLine {
     }
 
     context.setRestored(true);
-    markConnected(controller);
+    clearDisconnected(controller);
     return controller;
   }
 
@@ -320,7 +320,7 @@ public class SessionManagerPipeLine {
 
   private SubscriptionController resetSubscriptionController(SessionContext context, SessionDetails sessionDetails,
       SubscriptionController controller) {
-    markConnected(controller);
+    clearDisconnected(controller);
     logger.log(ServerLogMessages.SESSION_MANAGER_FOUND_EXISTING, context.getId(), true);
     persistentControllers.remove(context.getId(), controller);
     controller.close(false);
