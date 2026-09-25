@@ -93,6 +93,9 @@ class SessionManagerPipeLineTest {
     assertTrue(pipeline.getSessionIds().isEmpty());
 
     when(details.getExpiryTime()).thenReturn(System.currentTimeMillis() + TimeUnit.MINUTES.toMillis(1));
+    when(details.getUniqueId()).thenReturn(uniqueId);
+    when(persistentSessionManager.removeSessionDetails(sessionId)).thenReturn(details);
+    when(persistentSessionManager.getDataPath()).thenReturn("/tmp/sessions");
     when(subscriptionControllerFactory.create(sessionId, details, destinationManager, subscriptions)).thenReturn(controller);
 
     pipeline.addDisconnectedSession(sessionId, details, subscriptions);
