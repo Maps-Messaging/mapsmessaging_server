@@ -230,7 +230,6 @@ public class SessionManagerPipeLine {
     SessionImpl active = sessions.get(sessionId);
     if (active != null) {
       close(active, clearWillTask);
-      return;
     }
 
     SubscriptionController controller = getIdleSubscriptions(sessionId);
