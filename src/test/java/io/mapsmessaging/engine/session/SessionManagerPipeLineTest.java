@@ -497,7 +497,7 @@ class SessionManagerPipeLineTest {
     SessionDetails details = mock(SessionDetails.class);
     io.mapsmessaging.engine.session.security.SecurityContext securityContext =
         mock(io.mapsmessaging.engine.session.security.SecurityContext.class);
-    SessionImpl session = mock(SessionImpl.class);
+    PersistentSession session = mock(PersistentSession.class);
     SubscriptionController controller = controller(sessionId);
     Map<String, SubscriptionContext> subscriptions = new LinkedHashMap<>();
 
@@ -511,6 +511,7 @@ class SessionManagerPipeLineTest {
     when(subscriptionControllerFactory.create(context, destinationManager, subscriptions)).thenReturn(controller);
     when(sessionFactory.create(context, securityContext, destinationManager, controller, persistentSessionManager)).thenReturn(session);
     when(session.getName()).thenReturn(sessionId);
+    when(session.getStoreName()).thenReturn("/tmp/active-session.bin");
     when(session.getExpiry()).thenReturn(30L);
     when(session.getSubscriptionController()).thenReturn(controller);
 
@@ -532,6 +533,42 @@ class SessionManagerPipeLineTest {
     assertEquals(0, disconnected.sum());
     assertEquals(1, expired.sum());
     verify(controller).close(false);
+  }
+
+
+  @Test
+  void positiveExpiryNonPersistentSessionStillClosesImmediately() throws Exception {
+    String sessionId = "non-persistent-positive-expiry";
+    SessionContext context = mock(SessionContext.class);
+    SessionDetails details = mock(SessionDetails.class);
+    io.mapsmessaging.engine.session.security.SecurityContext securityContext =
+        mock(io.mapsmessaging.engine.session.security.SecurityContext.class);
+    SessionImpl session = mock(SessionImpl.class);
+    SubscriptionController controller = controller(sessionId, false);
+    Map<String, SubscriptionContext> subscriptions = new LinkedHashMap<>();
+
+    when(context.getId()).thenReturn(sessionId);
+    when(context.getSecurityContext()).thenReturn(securityContext);
+    when(details.getUniqueId()).thenReturn("unique-non-persistent-positive");
+    when(details.getInternalUnqueId()).thenReturn(59L);
+    when(details.getSubscriptionContextMap()).thenReturn(subscriptions);
+    when(persistentSessionManager.getSessionDetails(context)).thenReturn(details);
+    when(subscriptionControllerFactory.create(context, destinationManager, subscriptions)).thenReturn(controller);
+    when(sessionFactory.create(context, securityContext, destinationManager, controller, persistentSessionManager)).thenReturn(session);
+    when(session.getName()).thenReturn(sessionId);
+    when(session.getExpiry()).thenReturn(100L);
+    when(session.getSubscriptionController()).thenReturn(controller);
+
+    pipeline.create(context);
+    pipeline.close(session, true);
+
+    assertEquals(0, connected.sum());
+    assertEquals(0, disconnected.sum());
+    assertEquals(0, expired.sum());
+    assertNull(expiryScheduler.task);
+    verify(controller, never()).hibernateAll();
+    verify(controller).close(false);
+    verifyNoInteractions(stateFileStore);
   }
 
   @Test
