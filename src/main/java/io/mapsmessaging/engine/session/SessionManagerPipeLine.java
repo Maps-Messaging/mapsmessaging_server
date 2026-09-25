@@ -55,6 +55,7 @@ public class SessionManagerPipeLine {
   private final SessionExpiryScheduler expiryScheduler;
   private final SessionStateFileStore stateFileStore;
   private final SubscriptionControllerFactory subscriptionControllerFactory;
+  private final SessionFactory sessionFactory;
 
   private final LongAdder connectedSessions;
   private final LongAdder disconnectedSessions;
@@ -66,12 +67,12 @@ public class SessionManagerPipeLine {
     this(destinationManager, lookup, connected, disconnected, expired,
         new SingleConcurrentTaskScheduler("SessionManagerPipeLine"),
         (task, delay, unit) -> io.mapsmessaging.utilities.threads.SimpleTaskScheduler.getInstance().schedule(task, delay, unit),
-        new SessionStateFileStore(), new SubscriptionControllerFactory(), WillTaskManager.getInstance());
+        new SessionStateFileStore(), new SubscriptionControllerFactory(), new SessionFactory(), WillTaskManager.getInstance());
   }
 
   SessionManagerPipeLine(DestinationManager destinationManager, PersistentSessionManager lookup, LongAdder connected, LongAdder disconnected,
       LongAdder expired, ExecutorService taskScheduler, SessionExpiryScheduler expiryScheduler, SessionStateFileStore stateFileStore,
-      SubscriptionControllerFactory subscriptionControllerFactory, WillTaskManager willTaskManager) {
+      SubscriptionControllerFactory subscriptionControllerFactory, SessionFactory sessionFactory, WillTaskManager willTaskManager) {
     subscriptionManagerFactory = new ConcurrentHashMap<>();
     sessions = new ConcurrentHashMap<>();
     this.destinationManager = destinationManager;
@@ -79,6 +80,7 @@ public class SessionManagerPipeLine {
     this.expiryScheduler = expiryScheduler;
     this.stateFileStore = stateFileStore;
     this.subscriptionControllerFactory = subscriptionControllerFactory;
+    this.sessionFactory = sessionFactory;
     connectedSessions = connected;
     disconnectedSessions = disconnected;
     expiredSessions = expired;
@@ -130,13 +132,7 @@ public class SessionManagerPipeLine {
       }
     }
     SubscriptionController subscriptionManager = loadSubscriptionManager(sessionContext);
-    SessionDestinationManager sessionDestinationManager = new SessionDestinationManager(destinationManager);
-    if(sessionContext.isPersistentSession()) {
-      sessionImpl = new PersistentSession(sessionContext, securityContext, sessionDestinationManager, subscriptionManager, storeLookup);
-    }
-    else{
-      sessionImpl = new SessionImpl(sessionContext, securityContext, sessionDestinationManager, subscriptionManager);
-    }
+    sessionImpl = sessionFactory.create(sessionContext, securityContext, destinationManager, subscriptionManager, storeLookup);
 
     //
     // Either reload or create a new subscription manager
