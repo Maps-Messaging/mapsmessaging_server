@@ -227,8 +227,34 @@ public class SessionManagerPipeLine {
     }
   }
 
-  void closeSubscriptionController(SubscriptionController subscriptionController) {
-    closeSubscriptionController(subscriptionController, false);
+  void close(String sessionId, boolean clearWillTask) {
+    SessionImpl active = sessions.get(sessionId);
+    if (active != null) {
+      close(active, clearWillTask);
+      return;
+    }
+
+    SubscriptionController controller = getIdleSubscriptions(sessionId);
+    if (controller != null) {
+      closeDisconnectedController(controller);
+    }
+  }
+
+  private void closeDisconnectedController(SubscriptionController controller) {
+    Future<?> timeout = controller.getTimeout();
+    if (timeout != null) {
+      timeout.cancel(false);
+      controller.setTimeout(null);
+    }
+    closeAndDeleteSubscriptionController(resolveStateFile(controller), controller);
+  }
+
+  private String resolveStateFile(SubscriptionController controller) {
+    SessionDetails details = storeLookup.getSessionDetails(controller.getSessionId());
+    if (details == null || details.getUniqueId() == null || details.getUniqueId().isBlank()) {
+      return "";
+    }
+    return storeLookup.getDataPath() + "/" + details.getUniqueId() + ".bin";
   }
 
   private boolean closeSubscriptionController(SubscriptionController controller, boolean expired) {
