@@ -91,6 +91,8 @@ public enum StateLogMessages implements LogMessage {
   STATE_MANAGER_PUBLISH_FAILED(LEVEL.ERROR, SERVER_CATEGORY.STATE, "Failed to start Twin JSON publisher"),
   STATE_MANAGER_SCHEDULER_ERROR(LEVEL.ERROR, SERVER_CATEGORY.STATE, "Scheduler task failed"),
   STATE_MANAGER_AUDIT_INIT_FAILED(LEVEL.ERROR, SERVER_CATEGORY.STATE, "Failed to initialize audit context - auditing will be disabled"),
+  STATE_MANAGER_TAK_EVENT_PUBLISH_FAILED(LEVEL.ERROR, SERVER_CATEGORY.STATE, "Failed to publish TAK event to topic '{}': {}"),
+  STATE_MANAGER_TAK_EVENT_QUEUE_FULL(LEVEL.WARN, SERVER_CATEGORY.STATE, "TAK event publish queue for topic '{}' is full, dropping oldest events ({} dropped so far)"),
   // </editor-fold>
 
   N2K_DRONE_CONFIG_RESOLVED(LEVEL.DEBUG, SERVER_CATEGORY.PROTOCOL, "Resolved drone configuration '{}' for N2K topic '{}'"),
