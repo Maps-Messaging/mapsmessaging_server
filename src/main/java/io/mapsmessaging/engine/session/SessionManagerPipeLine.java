@@ -299,7 +299,7 @@ public class SessionManagerPipeLine {
 
   SubscriptionController getIdleSubscriptions(String sessionId) {
     SubscriptionController controller = persistentControllers.get(sessionId);
-    return disconnectedControllers.contains(controller) ? controller : null;
+    return controller != null && disconnectedControllers.contains(controller) ? controller : null;
   }
 
   //
