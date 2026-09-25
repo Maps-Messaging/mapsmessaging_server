@@ -204,13 +204,13 @@ public class SessionManagerPipeLine {
   }
 
   void closeAndDeleteSubscriptionController(String sessionStateFile, SubscriptionController subscriptionController) {
-    if (closeSubscriptionController(subscriptionController, false)) {
+    if (finaliseController(subscriptionController, false)) {
       deleteStateFile(sessionStateFile);
     }
   }
 
   private void expireAndDeleteSubscriptionController(String sessionStateFile, SubscriptionController subscriptionController) {
-    if (closeSubscriptionController(subscriptionController, true)) {
+    if (finaliseController(subscriptionController, true)) {
       deleteStateFile(sessionStateFile);
     }
   }
@@ -256,11 +256,11 @@ public class SessionManagerPipeLine {
     return storeLookup.getDataPath() + "/" + details.getUniqueId() + ".bin";
   }
 
-  private boolean closeSubscriptionController(SubscriptionController controller, boolean expired) {
-    return closeSubscriptionController(controller, expired, true);
+  private boolean finaliseController(SubscriptionController controller, boolean expired) {
+    return finaliseController(controller, expired, true);
   }
 
-  private boolean closeSubscriptionController(SubscriptionController controller, boolean expired, boolean finaliseWill) {
+  private boolean finaliseController(SubscriptionController controller, boolean expired, boolean finaliseWill) {
     String sessionId = controller.getSessionId();
     if (sessions.containsKey(sessionId)) {
       return false;
@@ -323,7 +323,7 @@ public class SessionManagerPipeLine {
     if (!cancelPendingExpiry(controller)) {
       SubscriptionController current = persistentControllers.get(context.getId());
       if (current == controller) {
-        closeSubscriptionController(controller, false);
+        finaliseController(controller, false);
       }
       return createSubscriptionController(context, sessionDetails, sessionDetails.getSubscriptionContextMap());
     }
@@ -349,7 +349,7 @@ public class SessionManagerPipeLine {
 
   private SubscriptionController resetSubscriptionController(SessionContext context, SessionDetails sessionDetails, SubscriptionController controller) {
     logger.log(ServerLogMessages.SESSION_MANAGER_FOUND_EXISTING, context.getId(), true);
-    closeSubscriptionController(controller, false, false);
+    finaliseController(controller, false, false);
     sessionDetails.clearSubscriptions();
 
     SubscriptionController replacement = subscriptionControllerFactory.create(context, destinationManager, new LinkedHashMap<>());
