@@ -685,6 +685,8 @@ class SessionManagerPipeLineTest {
     when(details.getInternalUnqueId()).thenReturn(61L);
     when(details.getSubscriptionContextMap()).thenReturn(subscriptions);
     when(persistentSessionManager.getSessionDetails(context)).thenReturn(details);
+    when(persistentSessionManager.removeSessionDetails(sessionId)).thenReturn(details);
+    when(persistentSessionManager.getDataPath()).thenReturn("/tmp/sessions");
     when(subscriptionControllerFactory.create(context, destinationManager, subscriptions)).thenReturn(controller);
     when(sessionFactory.create(context, securityContext, destinationManager, controller, persistentSessionManager)).thenReturn(session);
     when(session.getName()).thenReturn(sessionId);
