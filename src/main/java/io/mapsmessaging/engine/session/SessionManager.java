@@ -165,9 +165,8 @@ public class SessionManager implements Agent {
   //<editor-fold desc="Session life cycle API">
 
   //
-  // We lock here so that the change to the sessions map and the construction of this session
-  // is an atomic operation. If we had 2 or more competing sessions with the same ID we would
-  // get corruption as to which will or session was what.
+  // The API submits creation to the session ID's pipeline executor. Once on that executor,
+  // creation and replacement of a session are serial with close, reconnect and expiry cleanup.
   //
   public SessionImpl create(SessionContext sessionContext) throws LoginException {
     if(sessionContext.getInternalSessionId() == 0){
@@ -183,8 +182,8 @@ public class SessionManager implements Agent {
   }
 
   //
-  // This needs to be an atomic operation, if we are 1/2 way through hibernating a session and a client
-  // reconnects or wants to restart we would have a race condition between the 2
+  // The API submits close to the same session ID pipeline used by create(), keeping hibernation,
+  // reconnect and expiry cleanup in one serial execution order.
   //
   public void close(SessionImpl sessionImpl, boolean clearWillTask) {
     logger.log(ServerLogMessages.SESSION_MANAGER_CLOSE, sessionImpl.getName());
