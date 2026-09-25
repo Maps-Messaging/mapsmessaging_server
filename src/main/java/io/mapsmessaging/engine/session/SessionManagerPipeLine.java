@@ -189,25 +189,29 @@ public class SessionManagerPipeLine {
       SubscriptionController controller, long expirySeconds) {
     session.setExpiryTime(System.currentTimeMillis() + TimeUnit.SECONDS.toMillis(expirySeconds));
     controller.hibernateAll();
-    Future<?> expiryTask = SessionExpiryTask.schedule(expiryScheduler, taskScheduler,
-        () -> expireAndDeleteSubscriptionController(storeName, controller), expirySeconds, TimeUnit.SECONDS);
-    controller.setTimeout(expiryTask);
-    markDisconnected(controller);
+    scheduleExpiry(storeName, controller, expirySeconds, TimeUnit.SECONDS);
   }
 
-  void addDisconnectedSession(String sessionId, String storeName, SessionDetails sessionDetails, Map<String, SubscriptionContext> map) {
-    SubscriptionController subscriptionManager = subscriptionControllerFactory.create(sessionId, sessionDetails, destinationManager, map);
-    persistentControllers.put(sessionId, subscriptionManager);
-    markDisconnected(subscriptionManager);
-    long timeout =  sessionDetails.getExpiryTime() - System.currentTimeMillis();
-    if(timeout > 0) {
-      Future<?> sched = SessionExpiryTask.schedule(expiryScheduler, taskScheduler,
-          () -> expireAndDeleteSubscriptionController(storeName, subscriptionManager), timeout, TimeUnit.MILLISECONDS);
-      subscriptionManager.setTimeout(sched);
+  void addDisconnectedSession(String sessionId, String storeName, SessionDetails sessionDetails,
+      Map<String, SubscriptionContext> subscriptions) {
+    SubscriptionController controller =
+        subscriptionControllerFactory.create(sessionId, sessionDetails, destinationManager, subscriptions);
+    persistentControllers.put(sessionId, controller);
+
+    long remainingMillis = sessionDetails.getExpiryTime() - System.currentTimeMillis();
+    if (remainingMillis > 0) {
+      scheduleExpiry(storeName, controller, remainingMillis, TimeUnit.MILLISECONDS);
+    } else {
+      markDisconnected(controller);
+      expireAndDeleteSubscriptionController(storeName, controller);
     }
-    else{
-      expireAndDeleteSubscriptionController(storeName, subscriptionManager);
-    }
+  }
+
+  private void scheduleExpiry(String stateFile, SubscriptionController controller, long delay, TimeUnit unit) {
+    Future<?> expiryTask = SessionExpiryTask.schedule(expiryScheduler, taskScheduler,
+        () -> expireAndDeleteSubscriptionController(stateFile, controller), delay, unit);
+    controller.setTimeout(expiryTask);
+    markDisconnected(controller);
   }
 
   void closeAndDeleteSubscriptionController(String sessionStateFile, SubscriptionController subscriptionController) {
@@ -261,8 +265,8 @@ public class SessionManagerPipeLine {
     }
   }
 
-  private void markConnected(SubscriptionController subscriptionController) {
-    if (disconnectedControllers.remove(subscriptionController)) {
+  private void clearDisconnected(SubscriptionController controller) {
+    if (disconnectedControllers.remove(controller)) {
       disconnectedSessions.decrement();
     }
   }
