@@ -234,7 +234,8 @@ class SessionManagerPipeLineTest {
         mock(io.mapsmessaging.engine.session.security.SecurityContext.class);
     io.mapsmessaging.engine.session.security.SecurityContext secondSecurity =
         mock(io.mapsmessaging.engine.session.security.SecurityContext.class);
-    SubscriptionController controller = controller(sessionId, false);
+    SubscriptionController firstController = controller(sessionId, false);
+    SubscriptionController secondController = controller(sessionId, false);
     SessionImpl firstSession = mock(SessionImpl.class);
     SessionImpl secondSession = mock(SessionImpl.class);
     Map<String, SubscriptionContext> subscriptions = new LinkedHashMap<>();
@@ -247,11 +248,16 @@ class SessionManagerPipeLineTest {
     when(details.getInternalUnqueId()).thenReturn(47L);
     when(details.getSubscriptionContextMap()).thenReturn(subscriptions);
     when(persistentSessionManager.getSessionDetails(any(SessionContext.class))).thenReturn(details);
-    when(subscriptionControllerFactory.create(any(SessionContext.class), eq(destinationManager), eq(subscriptions))).thenReturn(controller);
-    when(sessionFactory.create(firstContext, firstSecurity, destinationManager, controller, persistentSessionManager)).thenReturn(firstSession);
-    when(sessionFactory.create(secondContext, secondSecurity, destinationManager, controller, persistentSessionManager)).thenReturn(secondSession);
+    when(subscriptionControllerFactory.create(firstContext, destinationManager, subscriptions)).thenReturn(firstController);
+    when(subscriptionControllerFactory.create(secondContext, destinationManager, subscriptions)).thenReturn(secondController);
+    when(sessionFactory.create(firstContext, firstSecurity, destinationManager, firstController, persistentSessionManager)).thenReturn(firstSession);
+    when(sessionFactory.create(secondContext, secondSecurity, destinationManager, secondController, persistentSessionManager)).thenReturn(secondSession);
     when(firstSession.getName()).thenReturn(sessionId);
+    when(firstSession.getExpiry()).thenReturn(0L);
+    when(firstSession.getSubscriptionController()).thenReturn(firstController);
     when(secondSession.getName()).thenReturn(sessionId);
+    when(secondSession.getExpiry()).thenReturn(0L);
+    when(secondSession.getSubscriptionController()).thenReturn(secondController);
 
     pipeline.create(firstContext);
     pipeline.create(secondContext);
@@ -265,7 +271,9 @@ class SessionManagerPipeLineTest {
     assertEquals(1, connected.sum());
     assertSame(secondSession, pipeline.getSessions().get(0));
     verify(firstSession, times(1)).close();
+    verify(firstController).close(false);
     verify(secondSession, never()).close();
+    verify(secondController, never()).close(false);
   }
 
   @Test
@@ -278,7 +286,8 @@ class SessionManagerPipeLineTest {
         mock(io.mapsmessaging.engine.session.security.SecurityContext.class);
     io.mapsmessaging.engine.session.security.SecurityContext secondSecurity =
         mock(io.mapsmessaging.engine.session.security.SecurityContext.class);
-    SubscriptionController controller = controller(sessionId, false);
+    SubscriptionController firstController = controller(sessionId, false);
+    SubscriptionController secondController = controller(sessionId, false);
     SessionImpl firstSession = mock(SessionImpl.class);
     SessionImpl secondSession = mock(SessionImpl.class);
     Map<String, SubscriptionContext> subscriptions = new LinkedHashMap<>();
@@ -291,11 +300,16 @@ class SessionManagerPipeLineTest {
     when(details.getInternalUnqueId()).thenReturn(53L);
     when(details.getSubscriptionContextMap()).thenReturn(subscriptions);
     when(persistentSessionManager.getSessionDetails(any(SessionContext.class))).thenReturn(details);
-    when(subscriptionControllerFactory.create(any(SessionContext.class), eq(destinationManager), eq(subscriptions))).thenReturn(controller);
-    when(sessionFactory.create(firstContext, firstSecurity, destinationManager, controller, persistentSessionManager)).thenReturn(firstSession);
-    when(sessionFactory.create(secondContext, secondSecurity, destinationManager, controller, persistentSessionManager)).thenReturn(secondSession);
+    when(subscriptionControllerFactory.create(firstContext, destinationManager, subscriptions)).thenReturn(firstController);
+    when(subscriptionControllerFactory.create(secondContext, destinationManager, subscriptions)).thenReturn(secondController);
+    when(sessionFactory.create(firstContext, firstSecurity, destinationManager, firstController, persistentSessionManager)).thenReturn(firstSession);
+    when(sessionFactory.create(secondContext, secondSecurity, destinationManager, secondController, persistentSessionManager)).thenReturn(secondSession);
     when(firstSession.getName()).thenReturn(sessionId);
+    when(firstSession.getExpiry()).thenReturn(0L);
+    when(firstSession.getSubscriptionController()).thenReturn(firstController);
     when(secondSession.getName()).thenReturn(sessionId);
+    when(secondSession.getExpiry()).thenReturn(0L);
+    when(secondSession.getSubscriptionController()).thenReturn(secondController);
 
     pipeline.create(firstContext);
     pipeline.create(secondContext);
@@ -304,7 +318,9 @@ class SessionManagerPipeLineTest {
     assertEquals(1, pipeline.getSessions().size());
     assertSame(secondSession, pipeline.getSessions().get(0));
     verify(firstSession).close();
+    verify(firstController).close(false);
     verify(secondSession, never()).close();
+    verify(secondController, never()).close(false);
   }
 
   @Test
