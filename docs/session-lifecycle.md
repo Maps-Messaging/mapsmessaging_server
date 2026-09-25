@@ -183,6 +183,7 @@ The focused lifecycle tests must continue to cover:
 - concurrent producers queueing thousands of lifecycle operations onto one pipeline without lost sessions;
 - mass persistent expiry finalizing every controller, persistence record, and pending Will exactly once;
 - repeated reconnect/disconnect churn on one persistent session without counter drift or stale expiry cleanup;
+- end-to-end MQTT Will publication after an ungraceful disconnect;
 - `SessionExpiryTask` cancellation before timer, after timer but before cleanup, cleanup completion semantics, and rejected submission.
 
 ## Review checklist
