@@ -52,18 +52,22 @@ class SessionExpiryTask implements Future<Void> {
     if (completion.isDone()) {
       return;
     }
-    cleanupFuture = pipelineExecutor.submit(() -> {
-      try {
-        if (!completion.isCancelled()) {
-          cleanup.run();
+    try {
+      cleanupFuture = pipelineExecutor.submit(() -> {
+        try {
+          if (!completion.isCancelled()) {
+            cleanup.run();
+          }
+          completion.complete(null);
+        } catch (Throwable throwable) {
+          completion.completeExceptionally(throwable);
         }
-        completion.complete(null);
-      } catch (Throwable throwable) {
-        completion.completeExceptionally(throwable);
+      });
+      if (completion.isCancelled()) {
+        cleanupFuture.cancel(false);
       }
-    });
-    if (completion.isCancelled()) {
-      cleanupFuture.cancel(false);
+    } catch (RuntimeException runtimeException) {
+      completion.completeExceptionally(runtimeException);
     }
   }
 
