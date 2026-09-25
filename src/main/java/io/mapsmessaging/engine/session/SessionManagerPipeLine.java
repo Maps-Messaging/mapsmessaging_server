@@ -288,15 +288,11 @@ public class SessionManagerPipeLine {
     }
 
     if (!cancelPendingExpiry(controller)) {
-      controller = persistentControllers.get(context.getId());
-      if (controller == null) {
-        return createSubscriptionController(context, sessionDetails, sessionDetails.getSubscriptionContextMap());
+      SubscriptionController current = persistentControllers.get(context.getId());
+      if (current == controller) {
+        closeSubscriptionController(controller, false);
       }
-      if (controller.getTimeout() != null && controller.getTimeout().isDone()) {
-        persistentControllers.remove(context.getId(), controller);
-        markConnected(controller);
-        return createSubscriptionController(context, sessionDetails, sessionDetails.getSubscriptionContextMap());
-      }
+      return createSubscriptionController(context, sessionDetails, sessionDetails.getSubscriptionContextMap());
     }
 
     if (context.isResetState()) {
