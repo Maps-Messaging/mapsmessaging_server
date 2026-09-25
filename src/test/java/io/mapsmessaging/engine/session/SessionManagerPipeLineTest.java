@@ -800,6 +800,29 @@ class SessionManagerPipeLineTest {
   }
 
   @Test
+  void disconnectedAdministrativeCloseCanClearPendingWillWithoutRunningIt() {
+    String sessionId = "disconnected-clear-will";
+    SessionDetails details = mock(SessionDetails.class);
+    SubscriptionController controller = controller(sessionId);
+    WillTaskImpl willTask = mock(WillTaskImpl.class);
+    Map<String, SubscriptionContext> subscriptions = new LinkedHashMap<>();
+
+    when(details.getExpiryTime()).thenReturn(System.currentTimeMillis() + TimeUnit.MINUTES.toMillis(1));
+    when(subscriptionControllerFactory.create(sessionId, details, destinationManager, subscriptions)).thenReturn(controller);
+    when(willTaskManager.remove(sessionId)).thenReturn(willTask);
+
+    pipeline.addDisconnectedSession(sessionId, details, subscriptions);
+    pipeline.close(sessionId, true);
+
+    assertFalse(pipeline.hasSubscriptions());
+    assertEquals(0, disconnected.sum());
+    verify(willTaskManager, times(1)).remove(sessionId);
+    verify(willTask, never()).cancel();
+    verify(willTask, never()).run();
+    verify(controller).close(false);
+  }
+
+  @Test
   void stopClosesDisconnectedControllersThroughLifecycle() {
     String sessionId = "stopped-session";
     SessionDetails details = mock(SessionDetails.class);
