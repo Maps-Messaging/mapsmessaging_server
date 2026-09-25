@@ -39,5 +39,5 @@ jobs:
         run: |
           TESTS="FrameHandlerTest,PacketIdManagerTest,ProtocolClientConnectionFlowControlTest,DestinationSubscriptionFlowControlTest"
           TESTS="$TESTS,SessionSharedSubscriptionFlowControlTest,SessionFlowControlTest"
-          TESTS="$TESTS,SessionManagerPipeLineTest,SessionExpiryTaskTest,SessionImplLifecycleTest"
+          TESTS="$TESTS,SessionManagerPipeLineTest,SessionManagerPipeLineScaleTest,SessionExpiryTaskTest,SessionImplLifecycleTest"
           mvn -B -Dtest="$TESTS" test
