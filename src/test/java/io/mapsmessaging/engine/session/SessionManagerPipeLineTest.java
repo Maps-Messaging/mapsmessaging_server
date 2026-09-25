@@ -756,7 +756,7 @@ class SessionManagerPipeLineTest {
   }
 
   @Test
-  void stopShutsDownDisconnectedControllers() {
+  void stopClosesDisconnectedControllersThroughLifecycle() {
     String sessionId = "stopped-session";
     SessionDetails details = mock(SessionDetails.class);
     SubscriptionController controller = controller(sessionId);
@@ -772,8 +772,43 @@ class SessionManagerPipeLineTest {
 
     assertTrue(timeout.isCancelled());
     assertNull(controller.getTimeout());
+    assertEquals(0, disconnected.sum());
     assertTrue(executor.isShutdown());
-    verify(controller).shutdown();
+    verify(controller).close(false);
+    verify(controller, never()).shutdown();
+  }
+
+  @Test
+  void stopClosesActiveTransientControllerThroughLifecycle() throws Exception {
+    String sessionId = "stopped-active-transient";
+    SessionContext context = mock(SessionContext.class);
+    SessionDetails details = mock(SessionDetails.class);
+    io.mapsmessaging.engine.session.security.SecurityContext securityContext =
+        mock(io.mapsmessaging.engine.session.security.SecurityContext.class);
+    SessionImpl session = mock(SessionImpl.class);
+    SubscriptionController controller = controller(sessionId, false);
+    Map<String, SubscriptionContext> subscriptions = new LinkedHashMap<>();
+
+    when(context.getId()).thenReturn(sessionId);
+    when(context.getSecurityContext()).thenReturn(securityContext);
+    when(details.getUniqueId()).thenReturn("unique-stopped-active-transient");
+    when(details.getInternalUnqueId()).thenReturn(73L);
+    when(details.getSubscriptionContextMap()).thenReturn(subscriptions);
+    when(persistentSessionManager.getSessionDetails(context)).thenReturn(details);
+    when(subscriptionControllerFactory.create(context, destinationManager, subscriptions)).thenReturn(controller);
+    when(sessionFactory.create(context, securityContext, destinationManager, controller, persistentSessionManager)).thenReturn(session);
+    when(session.getName()).thenReturn(sessionId);
+    when(session.getExpiry()).thenReturn(0L);
+    when(session.getSubscriptionController()).thenReturn(controller);
+
+    pipeline.create(context);
+    pipeline.stop();
+
+    assertEquals(0, connected.sum());
+    assertFalse(pipeline.hasSessions());
+    assertTrue(executor.isShutdown());
+    verify(session).close();
+    verify(controller).close(false);
   }
 
   private SubscriptionController controller(String sessionId) {
