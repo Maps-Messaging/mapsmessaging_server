@@ -37,7 +37,7 @@ jobs:
         run: mkdir -p src/test/resources
       - name: Run MQTT delivery and flow-control tests
         run: |
-          TESTS="FrameHandlerTest,PacketIdManagerTest,ProtocolClientConnectionFlowControlTest,DestinationSubscriptionFlowControlTest"
+          TESTS="FrameHandlerTest,PacketIdManagerTest,MQTTConnectionTest,ProtocolClientConnectionFlowControlTest,DestinationSubscriptionFlowControlTest"
           TESTS="$TESTS,SessionSharedSubscriptionFlowControlTest,SessionFlowControlTest"
           TESTS="$TESTS,SessionManagerPipeLineTest,SessionManagerPipeLineScaleTest,SessionExpiryTaskTest,SessionImplLifecycleTest"
           mvn -B -Dtest="$TESTS" test
