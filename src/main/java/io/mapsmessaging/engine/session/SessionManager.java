@@ -191,16 +191,14 @@ public class SessionManager implements Agent {
   }
   //</editor-fold>
 
-  //<editor-fold desc="Internal subscription controller functions">
-  public void closeSubscriptionController(SubscriptionController subscriptionController) {
-    String sessionId = subscriptionController.getSessionId();
+  //<editor-fold desc="Administrative session close">
+  public void close(String sessionId, boolean clearWillTask) {
     SessionManagerPipeLine pipeLine = sessionPipeLines[getPipeLineIndex(sessionId)];
     pipeLine.submit((Callable<Void>) () -> {
-      pipeLine.close(sessionId, false);
+      pipeLine.close(sessionId, clearWillTask);
       return null;
     });
   }
-
   //</editor-fold>
 
   //<editor-fold desc="Test Functions ONLY">
