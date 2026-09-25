@@ -718,6 +718,76 @@ class SessionManagerPipeLineTest {
   }
 
   @Test
+  void transientTerminalCloseClearsWillExactlyOnce() throws Exception {
+    String sessionId = "transient-clear-will";
+    SessionContext context = mock(SessionContext.class);
+    SessionDetails details = mock(SessionDetails.class);
+    io.mapsmessaging.engine.session.security.SecurityContext securityContext =
+        mock(io.mapsmessaging.engine.session.security.SecurityContext.class);
+    SessionImpl session = mock(SessionImpl.class);
+    SubscriptionController controller = controller(sessionId, false);
+    WillTaskImpl willTask = mock(WillTaskImpl.class);
+    Map<String, SubscriptionContext> subscriptions = new LinkedHashMap<>();
+
+    when(context.getId()).thenReturn(sessionId);
+    when(context.getSecurityContext()).thenReturn(securityContext);
+    when(details.getUniqueId()).thenReturn("unique-transient-clear-will");
+    when(details.getInternalUnqueId()).thenReturn(101L);
+    when(details.getSubscriptionContextMap()).thenReturn(subscriptions);
+    when(persistentSessionManager.getSessionDetails(context)).thenReturn(details);
+    when(subscriptionControllerFactory.create(context, destinationManager, subscriptions)).thenReturn(controller);
+    when(sessionFactory.create(context, securityContext, destinationManager, controller, persistentSessionManager)).thenReturn(session);
+    when(session.getName()).thenReturn(sessionId);
+    when(session.getExpiry()).thenReturn(0L);
+    when(session.getSubscriptionController()).thenReturn(controller);
+    when(willTaskManager.remove(sessionId)).thenReturn(willTask);
+
+    pipeline.create(context);
+    pipeline.close(session, true);
+
+    verify(willTaskManager, times(1)).remove(sessionId);
+    verify(willTask, never()).cancel();
+    verify(willTask, never()).run();
+    verify(controller, times(1)).close(false);
+    assertEquals(0, connected.sum());
+  }
+
+  @Test
+  void transientTerminalCloseRunsWillExactlyOnce() throws Exception {
+    String sessionId = "transient-run-will";
+    SessionContext context = mock(SessionContext.class);
+    SessionDetails details = mock(SessionDetails.class);
+    io.mapsmessaging.engine.session.security.SecurityContext securityContext =
+        mock(io.mapsmessaging.engine.session.security.SecurityContext.class);
+    SessionImpl session = mock(SessionImpl.class);
+    SubscriptionController controller = controller(sessionId, false);
+    WillTaskImpl willTask = mock(WillTaskImpl.class);
+    Map<String, SubscriptionContext> subscriptions = new LinkedHashMap<>();
+
+    when(context.getId()).thenReturn(sessionId);
+    when(context.getSecurityContext()).thenReturn(securityContext);
+    when(details.getUniqueId()).thenReturn("unique-transient-run-will");
+    when(details.getInternalUnqueId()).thenReturn(103L);
+    when(details.getSubscriptionContextMap()).thenReturn(subscriptions);
+    when(persistentSessionManager.getSessionDetails(context)).thenReturn(details);
+    when(subscriptionControllerFactory.create(context, destinationManager, subscriptions)).thenReturn(controller);
+    when(sessionFactory.create(context, securityContext, destinationManager, controller, persistentSessionManager)).thenReturn(session);
+    when(session.getName()).thenReturn(sessionId);
+    when(session.getExpiry()).thenReturn(0L);
+    when(session.getSubscriptionController()).thenReturn(controller);
+    when(willTaskManager.remove(sessionId)).thenReturn(willTask);
+
+    pipeline.create(context);
+    pipeline.close(session, false);
+
+    verify(willTaskManager, times(1)).remove(sessionId);
+    verify(willTask, times(1)).cancel();
+    verify(willTask, times(1)).run();
+    verify(controller, times(1)).close(false);
+    assertEquals(0, connected.sum());
+  }
+
+  @Test
   void positiveExpiryNonPersistentSessionStillClosesImmediately() throws Exception {
     String sessionId = "non-persistent-positive-expiry";
     SessionContext context = mock(SessionContext.class);
