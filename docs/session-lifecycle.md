@@ -202,8 +202,8 @@ When changing session lifecycle code, verify all of the following before merge:
 
 ## Rationale
 
-The lifecycle is intentionally centralized because the difficult failures are not simple close operations. They are ordering and ownership failures between reconnect, expiry, replacement,
-shutdown, persistence, and delayed Will execution.
+The lifecycle is intentionally centralized because the difficult failures are not simple close operations. They are ordering and ownership failures between reconnect, expiry,
+replacement, shutdown, persistence, and delayed Will execution.
 
-Adding a second teardown path may look simpler locally, but it creates another place that must correctly coordinate all of those concerns. The design therefore prefers one explicit lifecycle
-mechanism with deterministic tests over multiple locally convenient cleanup paths.
+Adding a second teardown path may look simpler locally, but it creates another place that must correctly coordinate all of those concerns. The design therefore prefers one explicit
+lifecycle mechanism with deterministic tests over multiple locally convenient cleanup paths.
