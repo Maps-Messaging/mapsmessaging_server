@@ -34,12 +34,19 @@ public class SaslConfig extends SaslConfigDTO implements Config {
 
   public SaslConfig(ConfigurationProperties config) {
     identityProvider = config.getProperty(IDENTITY_PROVIDER);
-    realmName = config.getProperty("realmName", MessageDaemon.getInstance().getId());
+    String configuredRealm = config.getProperty("realmName");
+    MessageDaemon daemon = MessageDaemon.getInstance();
+    realmName = configuredRealm != null
+        ? configuredRealm
+        : daemon == null ? null : daemon.getId();
     mechanism = config.getProperty("mechanism");
     saslEntries = new LinkedHashMap<>();
     for (Map.Entry<String, Object> entry : config.entrySet()) {
-      if (!entry.getKey().equalsIgnoreCase(IDENTITY_PROVIDER)) {
-        saslEntries.put(entry.getKey(), entry.getValue());
+      String key = entry.getKey();
+      if (!key.equalsIgnoreCase(IDENTITY_PROVIDER)
+          && !key.equalsIgnoreCase("realmName")
+          && !key.equalsIgnoreCase("mechanism")) {
+        saslEntries.put(key, entry.getValue());
       }
     }
   }
@@ -87,7 +94,13 @@ public class SaslConfig extends SaslConfigDTO implements Config {
     }
 
     // Check and update saslEntries map
-    if (updateMap(this.saslEntries, newConfig.getSaslEntries())) {
+    Map<String, Object> newEntries = newConfig.getSaslEntries();
+    if (newEntries == null) {
+      if (this.saslEntries != null && !this.saslEntries.isEmpty()) {
+        this.saslEntries = new LinkedHashMap<>();
+        hasChanged = true;
+      }
+    } else if (updateMap(this.saslEntries, newEntries)) {
       hasChanged = true;
     }
 

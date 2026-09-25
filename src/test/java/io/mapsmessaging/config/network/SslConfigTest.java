@@ -35,8 +35,12 @@ class SslConfigTest {
   }
 
   @Test
-  void missingSecurityConfigurationIsRejected() {
-    assertThrows(IllegalArgumentException.class, () -> new SslConfig(new ConfigurationProperties()));
+  void missingSecurityConfigurationUsesSafeDefaults() {
+    SslConfig config = new SslConfig(new ConfigurationProperties());
+
+    assertEquals("TLSv1.3", config.getContext());
+    assertNotNull(config.getKeyStore());
+    assertNotNull(config.getTrustStore());
   }
 
   @Test

@@ -166,7 +166,9 @@ public class TakSocketConnection implements Closeable {
   private synchronized void write(String xml) throws IOException {
     String t = xml.replace("—", "-");
     socketOutputStream.write(t.getBytes(StandardCharsets.UTF_8));
-    socketOutputStream.write('\n');
+    if (appendNewLine) {
+      socketOutputStream.write('\n');
+    }
     socketOutputStream.flush();
   }
 

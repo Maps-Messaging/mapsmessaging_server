@@ -21,6 +21,7 @@ package io.mapsmessaging.network.protocol.impl.satellite.gateway.ogws.data;
 
 import com.google.gson.TypeAdapter;
 import com.google.gson.stream.JsonReader;
+import com.google.gson.stream.JsonToken;
 import com.google.gson.stream.JsonWriter;
 
 import java.io.IOException;
@@ -37,6 +38,10 @@ public class ElementTypeAdapter extends TypeAdapter<ElementType> {
 
   @Override
   public ElementType read(JsonReader in) throws IOException {
+    if (in.peek() == JsonToken.NULL) {
+      in.nextNull();
+      return null;
+    }
     String value = in.nextString();
     for (ElementType type : ElementType.values()) {
       if (type.getAttribute().equalsIgnoreCase(value)) {

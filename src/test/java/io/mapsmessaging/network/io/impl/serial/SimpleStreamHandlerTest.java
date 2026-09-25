@@ -14,7 +14,7 @@ import static org.junit.jupiter.api.Assertions.*;
 class SimpleStreamHandlerTest {
 
   @Test
-  void inputIsReadInChunksAndReplacesExistingPacketContents() throws Exception {
+  void inputIsReadInChunksAndAppendsToExistingPacketContents() throws Exception {
     SimpleStreamHandler handler = new SimpleStreamHandler(4);
     Packet packet = new Packet(32, false);
     packet.put(new byte[]{99, 98});
@@ -25,11 +25,11 @@ class SimpleStreamHandlerTest {
     );
 
     assertEquals(9, count);
-    assertEquals(9, packet.position());
+    assertEquals(11, packet.position());
     packet.flip();
-    byte[] actual = new byte[9];
+    byte[] actual = new byte[11];
     packet.get(actual);
-    assertArrayEquals(new byte[]{1,2,3,4,5,6,7,8,9}, actual);
+    assertArrayEquals(new byte[]{99,98,1,2,3,4,5,6,7,8,9}, actual);
   }
 
   @Test
