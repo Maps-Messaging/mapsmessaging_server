@@ -24,6 +24,7 @@ import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.logging.ServerLogMessages;
 import io.mapsmessaging.network.admin.EndPointManagerJMX;
+import io.mapsmessaging.network.io.BufferedReadEndPoint;
 import io.mapsmessaging.network.io.EndPointConnectedCallback;
 import io.mapsmessaging.network.io.EndPointServer;
 import io.mapsmessaging.network.io.EndPointServerStatus;
@@ -44,7 +45,7 @@ import java.nio.channels.SocketChannel;
 import java.security.Principal;
 import java.util.List;
 
-public class SSLEndPoint extends TCPEndPoint {
+public class SSLEndPoint extends TCPEndPoint implements BufferedReadEndPoint {
 
   private final ByteBuffer encryptedOut;
   private final ByteBuffer encryptedIn;
@@ -133,6 +134,15 @@ public class SSLEndPoint extends TCPEndPoint {
       return len;
     }
     return 0;
+  }
+
+  @Override
+  public boolean hasBufferedReadData() {
+    ByteBuffer handshakeBuffer = handshakeManager.getHandshakeBufferIn();
+    boolean handshakeData = handshakeManager instanceof SSLHandshakeManagerFinished
+        ? handshakeBuffer.hasRemaining()
+        : handshakeBuffer.position() > 0;
+    return handshakeData || encryptedIn.position() > 0;
   }
 
   boolean hasPendingEncryptedOutput() {

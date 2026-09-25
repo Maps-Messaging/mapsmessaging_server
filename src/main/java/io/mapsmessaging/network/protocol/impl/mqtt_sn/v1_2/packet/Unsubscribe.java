@@ -54,7 +54,7 @@ public class Unsubscribe extends MQTT_SNPacket {
   }
 
   public void setTopicIdType(int type) {
-    flags = (byte) (flags | (type & 0b11));
+    flags = (byte) ((flags & ~0b11) | (type & 0b11));
   }
 
 }

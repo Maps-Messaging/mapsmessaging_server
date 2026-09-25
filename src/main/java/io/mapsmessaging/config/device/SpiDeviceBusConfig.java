@@ -112,6 +112,10 @@ public class SpiDeviceBusConfig extends SpiDeviceBusConfigDTO implements DeviceB
       this.selector = newConfig.getSelector();
       hasChanged = true;
     }
+    if (this.trigger == null || !this.trigger.equals(newConfig.getTrigger())) {
+      this.trigger = newConfig.getTrigger();
+      hasChanged = true;
+    }
 
     // Update devices list
     if (this.devices.size() != newConfig.getDevices().size()) {

@@ -35,8 +35,9 @@ public class NormalState extends State {
 
   @Override
   int outbound(Packet packet) throws IOException {
-    ByteBuffer appNet = ByteBuffer.allocate(32768);
-    SSLEngineResult r = stateEngine.getSslEngine().wrap(packet.getRawBuffer(), appNet);
+    int packetBufferSize = stateEngine.getSslEngine().getSession().getPacketBufferSize();
+    ByteBuffer appNet = ByteBuffer.allocate(packetBufferSize);
+    stateEngine.getSslEngine().wrap(packet.getRawBuffer(), appNet);
     appNet.flip();
     Packet p = new Packet(appNet);
     p.setFromAddress(stateEngine.getClientId());
@@ -45,17 +46,47 @@ public class NormalState extends State {
 
   @Override
   int inbound(Packet packet) throws SSLException {
-    Packet networkOut = new Packet(2048, false);
-    SSLEngineResult rs;
-    do {
-      rs = stateEngine.getSslEngine().unwrap(packet.getRawBuffer(), networkOut.getRawBuffer());
-    } while (rs.getStatus() == Status.OK && packet.hasRemaining());
+    int applicationBufferSize = stateEngine.getSslEngine().getSession().getApplicationBufferSize();
+    Packet application = new Packet(Math.max(1, applicationBufferSize), false);
 
-    if (rs.getStatus() == Status.OK) {
-      networkOut.flip();
-      networkOut.setFromAddress(packet.getFromAddress());
-      stateEngine.pushToInBoundQueue(networkOut);
+    while (packet.hasRemaining()) {
+      SSLEngineResult result = stateEngine.getSslEngine().unwrap(
+          packet.getRawBuffer(),
+          application.getRawBuffer());
+
+      if (result.getStatus() == Status.BUFFER_OVERFLOW) {
+        application = growApplicationBuffer(application);
+        continue;
+      }
+
+      if (result.getStatus() == Status.BUFFER_UNDERFLOW
+          || result.getStatus() == Status.CLOSED) {
+        break;
+      }
+
+      if (result.getStatus() == Status.OK
+          && result.bytesConsumed() == 0
+          && result.bytesProduced() == 0) {
+        break;
+      }
     }
+
+    if (application.position() > 0) {
+      application.flip();
+      application.setFromAddress(packet.getFromAddress());
+      stateEngine.pushToInBoundQueue(application);
+    }
+
     return packet.position();
+  }
+
+  private Packet growApplicationBuffer(Packet current) {
+    int nextCapacity = Math.max(
+        current.capacity() * 2,
+        stateEngine.getSslEngine().getSession().getApplicationBufferSize());
+    Packet expanded = new Packet(nextCapacity, false);
+    current.flip();
+    expanded.put(current);
+    return expanded;
   }
 }

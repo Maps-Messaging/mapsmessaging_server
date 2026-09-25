@@ -32,7 +32,7 @@ class MavlinkConfigFinalCoverageTest {
         List.of(
             Map.of(
                 "acceptedMessageIds", "1,2",
-                "rejectedMessageIds", List.of(3, "4"))));
+                "rejectedMessageIds", "3,4")));
 
     MavlinkConfig config = new MavlinkConfig(properties);
 
@@ -48,13 +48,13 @@ class MavlinkConfigFinalCoverageTest {
     ConfigurationProperties source = new ConfigurationProperties();
     source.put("systemId", 12);
     source.put("componentId", 34);
-    source.put("acceptedMessageIds", List.of(1, 2));
-    source.put("rejectedMessageIds", List.of(9));
+    source.put("acceptedMessageIds", "1,2");
+    source.put("rejectedMessageIds", "9");
 
     ConfigurationProperties properties = new ConfigurationProperties();
     properties.put("acceptedSources", List.of(source));
-    properties.put("acceptedMessageIds", List.of(10));
-    properties.put("rejectedMessageIds", List.of(11));
+    properties.put("acceptedMessageIds", "10");
+    properties.put("rejectedMessageIds", "11");
 
     MavlinkConfig restored =
         new MavlinkConfig(new MavlinkConfig(properties).toConfigurationProperties());
