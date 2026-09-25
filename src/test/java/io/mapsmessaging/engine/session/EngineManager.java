@@ -20,7 +20,6 @@
 package io.mapsmessaging.engine.session;
 
 import io.mapsmessaging.MessageDaemon;
-import io.mapsmessaging.engine.destination.subscription.SubscriptionController;
 
 public class EngineManager {
   protected SessionManager manager;
