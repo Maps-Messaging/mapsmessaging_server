@@ -63,17 +63,11 @@ public class SessionManagerPipeLine {
   private final LongAdder expiredSessions;
   private final WillTaskManager willTaskManager;
 
-  SessionManagerPipeLine(DestinationManager destinationManager, PersistentSessionManager lookup, LongAdder connected, LongAdder disconnected,
-      LongAdder expired) {
-    this(destinationManager, lookup, connected, disconnected, expired,
-        new SingleConcurrentTaskScheduler("SessionManagerPipeLine"),
-        (task, delay, unit) -> io.mapsmessaging.utilities.threads.SimpleTaskScheduler.getInstance().schedule(task, delay, unit),
-        new SessionStateFileStore(), new SubscriptionControllerFactory(), new SessionFactory(), WillTaskManager.getInstance());
+  SessionManagerPipeLine(DestinationManager destinationManager, PersistentSessionManager lookup, LongAdder connected, LongAdder disconnected, LongAdder expired) {
+    this(destinationManager, lookup, connected, disconnected, expired, new SingleConcurrentTaskScheduler("SessionManagerPipeLine"), (task, delay, unit) -> io.mapsmessaging.utilities.threads.SimpleTaskScheduler.getInstance().schedule(task, delay, unit), new SessionStateFileStore(), new SubscriptionControllerFactory(), new SessionFactory(), WillTaskManager.getInstance());
   }
 
-  SessionManagerPipeLine(DestinationManager destinationManager, PersistentSessionManager lookup, LongAdder connected, LongAdder disconnected,
-      LongAdder expired, ExecutorService taskScheduler, SessionExpiryScheduler expiryScheduler, SessionStateFileStore stateFileStore,
-      SubscriptionControllerFactory subscriptionControllerFactory, SessionFactory sessionFactory, WillTaskManager willTaskManager) {
+  SessionManagerPipeLine(DestinationManager destinationManager, PersistentSessionManager lookup, LongAdder connected, LongAdder disconnected, LongAdder expired, ExecutorService taskScheduler, SessionExpiryScheduler expiryScheduler, SessionStateFileStore stateFileStore, SubscriptionControllerFactory subscriptionControllerFactory, SessionFactory sessionFactory, WillTaskManager willTaskManager) {
     persistentControllers = new ConcurrentHashMap<>();
     disconnectedControllers = ConcurrentHashMap.newKeySet();
     sessions = new ConcurrentHashMap<>();
@@ -161,7 +155,7 @@ public class SessionManagerPipeLine {
     }
     SubscriptionController subscriptionController;
     long expiry = sessionImpl.getExpiry();
-    String storeName = (sessionImpl instanceof PersistentSession) ?  ((PersistentSession)sessionImpl).getStoreName(): "";
+    String storeName = (sessionImpl instanceof PersistentSession) ? ((PersistentSession) sessionImpl).getStoreName() : "";
     sessionImpl.close();
     handleWill(sessionImpl.getName(), clearWillTask);
 
@@ -185,17 +179,14 @@ public class SessionManagerPipeLine {
     }
   }
 
-  private void disconnectPersistentSession(PersistentSession session, String storeName,
-      SubscriptionController controller, long expirySeconds) {
+  private void disconnectPersistentSession(PersistentSession session, String storeName, SubscriptionController controller, long expirySeconds) {
     session.setExpiryTime(System.currentTimeMillis() + TimeUnit.SECONDS.toMillis(expirySeconds));
     controller.hibernateAll();
     scheduleExpiry(storeName, controller, expirySeconds, TimeUnit.SECONDS);
   }
 
-  void addDisconnectedSession(String sessionId, String storeName, SessionDetails sessionDetails,
-      Map<String, SubscriptionContext> subscriptions) {
-    SubscriptionController controller =
-        subscriptionControllerFactory.create(sessionId, sessionDetails, destinationManager, subscriptions);
+  void addDisconnectedSession(String sessionId, String storeName, SessionDetails sessionDetails, Map<String, SubscriptionContext> subscriptions) {
+    SubscriptionController controller = subscriptionControllerFactory.create(sessionId, sessionDetails, destinationManager, subscriptions);
     persistentControllers.put(sessionId, controller);
 
     long remainingMillis = sessionDetails.getExpiryTime() - System.currentTimeMillis();
@@ -208,8 +199,7 @@ public class SessionManagerPipeLine {
   }
 
   private void scheduleExpiry(String stateFile, SubscriptionController controller, long delay, TimeUnit unit) {
-    Future<?> expiryTask = SessionExpiryTask.schedule(expiryScheduler, taskScheduler,
-        () -> expireAndDeleteSubscriptionController(stateFile, controller), delay, unit);
+    Future<?> expiryTask = SessionExpiryTask.schedule(expiryScheduler, taskScheduler, () -> expireAndDeleteSubscriptionController(stateFile, controller), delay, unit);
     controller.setTimeout(expiryTask);
     markDisconnected(controller);
   }
@@ -242,8 +232,7 @@ public class SessionManagerPipeLine {
   }
 
   private boolean closeSubscriptionController(SubscriptionController subscriptionController, boolean expired) {
-    if (subscriptionController.isPersistent()
-        && !persistentControllers.remove(subscriptionController.getSessionId(), subscriptionController)) {
+    if (subscriptionController.isPersistent() && !persistentControllers.remove(subscriptionController.getSessionId(), subscriptionController)) {
       return false;
     }
     if (expired) {
@@ -307,8 +296,7 @@ public class SessionManagerPipeLine {
     return controller;
   }
 
-  private SubscriptionController createSubscriptionController(SessionContext context, SessionDetails sessionDetails,
-      Map<String, SubscriptionContext> subscriptions) {
+  private SubscriptionController createSubscriptionController(SessionContext context, SessionDetails sessionDetails, Map<String, SubscriptionContext> subscriptions) {
     logger.log(ServerLogMessages.SESSION_MANAGER_NO_EXISTING, context.getId());
     SubscriptionController controller = subscriptionControllerFactory.create(context, destinationManager, subscriptions);
     if (context.isPersistentSession()) {
@@ -318,16 +306,14 @@ public class SessionManagerPipeLine {
     return controller;
   }
 
-  private SubscriptionController resetSubscriptionController(SessionContext context, SessionDetails sessionDetails,
-      SubscriptionController controller) {
+  private SubscriptionController resetSubscriptionController(SessionContext context, SessionDetails sessionDetails, SubscriptionController controller) {
     clearDisconnected(controller);
     logger.log(ServerLogMessages.SESSION_MANAGER_FOUND_EXISTING, context.getId(), true);
     persistentControllers.remove(context.getId(), controller);
     controller.close(false);
     sessionDetails.clearSubscriptions();
 
-    SubscriptionController replacement =
-        subscriptionControllerFactory.create(context, destinationManager, new LinkedHashMap<>());
+    SubscriptionController replacement = subscriptionControllerFactory.create(context, destinationManager, new LinkedHashMap<>());
     if (context.isPersistentSession()) {
       persistentControllers.put(context.getId(), replacement);
     }
