@@ -53,19 +53,23 @@ import java.util.concurrent.atomic.LongAdder;
 public class SessionManagerPipeLine {
 
   private enum ControllerCloseReason {
-    TERMINATED(false, true, true),
-    EXPIRED(true, true, true),
-    RESET(false, false, false);
+    TERMINATED(false, true),
+    EXPIRED(true, true),
+    RESET(false, false);
 
     private final boolean expired;
-    private final boolean finaliseWill;
     private final boolean deletePersistence;
 
-    ControllerCloseReason(boolean expired, boolean finaliseWill, boolean deletePersistence) {
+    ControllerCloseReason(boolean expired, boolean deletePersistence) {
       this.expired = expired;
-      this.finaliseWill = finaliseWill;
       this.deletePersistence = deletePersistence;
     }
+  }
+
+  private enum WillFinalisation {
+    NONE,
+    CLEAR,
+    RUN
   }
 
   private final Logger logger = LoggerFactory.getLogger(SessionManagerPipeLine.class);
@@ -173,13 +177,13 @@ public class SessionManagerPipeLine {
     SubscriptionController subscriptionController;
     long expiry = sessionImpl.getExpiry();
     sessionImpl.close();
-    handleWill(sessionImpl.getName(), clearWillTask);
 
     subscriptionController = sessionImpl.getSubscriptionController();
     if (sessionImpl instanceof PersistentSession persistentSession && expiry > 0) {
+      handleWill(sessionImpl.getName(), clearWillTask);
       disconnectPersistentSession(persistentSession, subscriptionController, expiry);
     } else {
-      finaliseController(subscriptionController, ControllerCloseReason.TERMINATED);
+      finaliseController(subscriptionController, ControllerCloseReason.TERMINATED, clearWillTask ? WillFinalisation.CLEAR : WillFinalisation.RUN);
     }
     connectedSessions.decrement();
   }
@@ -249,13 +253,15 @@ public class SessionManagerPipeLine {
       timeout.cancel(false);
       controller.setTimeout(null);
     }
-    if (clearWillTask) {
-      willTaskManager.remove(controller.getSessionId());
-    }
-    finaliseController(controller, ControllerCloseReason.TERMINATED);
+    finaliseController(controller, ControllerCloseReason.TERMINATED, clearWillTask ? WillFinalisation.CLEAR : WillFinalisation.RUN);
   }
 
   private boolean finaliseController(SubscriptionController controller, ControllerCloseReason reason) {
+    WillFinalisation willFinalisation = reason == ControllerCloseReason.EXPIRED ? WillFinalisation.RUN : WillFinalisation.NONE;
+    return finaliseController(controller, reason, willFinalisation);
+  }
+
+  private boolean finaliseController(SubscriptionController controller, ControllerCloseReason reason, WillFinalisation willFinalisation) {
     String sessionId = controller.getSessionId();
     if (sessions.containsKey(sessionId)) {
       return false;
@@ -268,9 +274,7 @@ public class SessionManagerPipeLine {
     if (reason.expired) {
       expiredSessions.increment();
     }
-    if (reason.finaliseWill) {
-      finaliseWill(sessionId);
-    }
+    finaliseWill(sessionId, willFinalisation);
     controller.close(false);
     if (reason.deletePersistence) {
       deletePersistence(sessionId);
@@ -286,9 +290,12 @@ public class SessionManagerPipeLine {
     deleteStateFile(storeLookup.getDataPath() + "/" + details.getUniqueId() + ".bin");
   }
 
-  private void finaliseWill(String sessionId) {
+  private void finaliseWill(String sessionId, WillFinalisation finalisation) {
+    if (finalisation == WillFinalisation.NONE) {
+      return;
+    }
     WillTaskImpl willTask = willTaskManager.remove(sessionId);
-    if (willTask == null) {
+    if (willTask == null || finalisation == WillFinalisation.CLEAR) {
       return;
     }
     willTask.cancel();
