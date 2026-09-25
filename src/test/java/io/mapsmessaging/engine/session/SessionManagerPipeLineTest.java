@@ -93,9 +93,6 @@ class SessionManagerPipeLineTest {
     assertTrue(pipeline.getSessionIds().isEmpty());
 
     when(details.getExpiryTime()).thenReturn(System.currentTimeMillis() + TimeUnit.MINUTES.toMillis(1));
-    when(details.getUniqueId()).thenReturn(uniqueId);
-    when(persistentSessionManager.removeSessionDetails(sessionId)).thenReturn(details);
-    when(persistentSessionManager.getDataPath()).thenReturn("/tmp/sessions");
     when(subscriptionControllerFactory.create(sessionId, details, destinationManager, subscriptions)).thenReturn(controller);
 
     pipeline.addDisconnectedSession(sessionId, details, subscriptions);
@@ -122,8 +119,6 @@ class SessionManagerPipeLineTest {
     when(details.getInternalUnqueId()).thenReturn(17L);
     when(details.getSubscriptionContextMap()).thenReturn(subscriptions);
     when(persistentSessionManager.getSessionDetails(context)).thenReturn(details);
-    when(persistentSessionManager.removeSessionDetails(sessionId)).thenReturn(details);
-    when(persistentSessionManager.getDataPath()).thenReturn("/tmp/sessions");
     when(subscriptionControllerFactory.create(context, destinationManager, subscriptions)).thenReturn(controller);
     when(sessionFactory.create(context, securityContext, destinationManager, controller, persistentSessionManager)).thenReturn(session);
     when(session.getName()).thenReturn(sessionId);
@@ -205,7 +200,7 @@ class SessionManagerPipeLineTest {
     when(details.getInternalUnqueId()).thenReturn(71L);
     when(details.getSubscriptionContextMap()).thenReturn(subscriptions);
     when(persistentSessionManager.getSessionDetails(context)).thenReturn(details);
-    when(persistentSessionManager.getSessionDetails(sessionId)).thenReturn(details);
+    when(persistentSessionManager.removeSessionDetails(sessionId)).thenReturn(details);
     when(persistentSessionManager.getDataPath()).thenReturn("/tmp/sessions");
     when(subscriptionControllerFactory.create(context, destinationManager, subscriptions)).thenReturn(controller);
     when(sessionFactory.create(context, securityContext, destinationManager, controller, persistentSessionManager)).thenReturn(session);
