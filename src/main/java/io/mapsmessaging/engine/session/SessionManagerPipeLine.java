@@ -231,21 +231,31 @@ public class SessionManagerPipeLine {
     closeSubscriptionController(subscriptionController, false);
   }
 
-  private boolean closeSubscriptionController(SubscriptionController subscriptionController, boolean expired) {
-    if (subscriptionController.isPersistent() && !persistentControllers.remove(subscriptionController.getSessionId(), subscriptionController)) {
+  private boolean closeSubscriptionController(SubscriptionController controller, boolean expired) {
+    String sessionId = controller.getSessionId();
+    if (sessions.containsKey(sessionId)) {
       return false;
     }
+    if (controller.isPersistent() && !persistentControllers.remove(sessionId, controller)) {
+      return false;
+    }
+
+    clearDisconnected(controller);
     if (expired) {
       expiredSessions.increment();
     }
-    clearDisconnected(subscriptionController);
-    WillTaskImpl willTaskImpl = willTaskManager.remove(subscriptionController.getSessionId());
-    if (willTaskImpl != null) {
-      willTaskImpl.cancel();
-      willTaskImpl.run(); // Will Task MUST run on session close regardless of the will timeout
-    }
-    subscriptionController.close(false);
+    finaliseWill(sessionId);
+    controller.close(false);
     return true;
+  }
+
+  private void finaliseWill(String sessionId) {
+    WillTaskImpl willTask = willTaskManager.remove(sessionId);
+    if (willTask == null) {
+      return;
+    }
+    willTask.cancel();
+    willTask.run(); // Will Task MUST run on final session close regardless of the will timeout
   }
 
   private void markDisconnected(SubscriptionController controller) {
