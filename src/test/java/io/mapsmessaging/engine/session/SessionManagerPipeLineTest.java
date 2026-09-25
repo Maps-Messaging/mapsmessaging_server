@@ -356,6 +356,33 @@ class SessionManagerPipeLineTest {
     verify(stateFileStore).delete(stateFile);
   }
 
+
+  @Test
+  void duplicatePersistentCleanupIsIdempotent() throws Exception {
+    String sessionId = "idempotent-session";
+    String stateFile = "/tmp/idempotent-session.bin";
+    SessionDetails details = mock(SessionDetails.class);
+    SubscriptionController controller = controller(sessionId);
+    Map<String, SubscriptionContext> subscriptions = new LinkedHashMap<>();
+
+    when(details.getExpiryTime()).thenReturn(System.currentTimeMillis() + TimeUnit.MINUTES.toMillis(1));
+    when(subscriptionControllerFactory.create(sessionId, details, destinationManager, subscriptions)).thenReturn(controller);
+
+    pipeline.addDisconnectedSession(sessionId, stateFile, details, subscriptions);
+    expiryScheduler.fire();
+    executor.runNext();
+
+    assertEquals(0, disconnected.sum());
+    assertEquals(1, expired.sum());
+
+    pipeline.closeAndDeleteSubscriptionController(stateFile, controller);
+
+    assertEquals(0, disconnected.sum());
+    assertEquals(1, expired.sum());
+    verify(controller, times(1)).close(false);
+    verify(stateFileStore, times(1)).delete(stateFile);
+  }
+
   @Test
   void stateFileDeletionFailureDoesNotPreventControllerCleanup() throws Exception {
     String sessionId = "delete-failure";
@@ -376,14 +403,31 @@ class SessionManagerPipeLineTest {
   }
 
   @Test
-  void closingPersistentLifetimeSessionHibernatesAndSchedulesCleanup() {
+  void closingPersistentLifetimeSessionHibernatesAndSchedulesCleanup() throws Exception {
+    String sessionId = "active-session";
+    SessionContext context = mock(SessionContext.class);
+    SessionDetails details = mock(SessionDetails.class);
+    io.mapsmessaging.engine.session.security.SecurityContext securityContext =
+        mock(io.mapsmessaging.engine.session.security.SecurityContext.class);
     SessionImpl session = mock(SessionImpl.class);
-    SubscriptionController controller = controller("active-session");
+    SubscriptionController controller = controller(sessionId);
+    Map<String, SubscriptionContext> subscriptions = new LinkedHashMap<>();
 
-    connected.increment();
-    when(session.getName()).thenReturn("active-session");
+    when(context.getId()).thenReturn(sessionId);
+    when(context.getSecurityContext()).thenReturn(securityContext);
+    when(context.isPersistentSession()).thenReturn(true);
+    when(details.getUniqueId()).thenReturn("unique-active-session");
+    when(details.getInternalUnqueId()).thenReturn(41L);
+    when(details.getSubscriptionContextMap()).thenReturn(subscriptions);
+    when(persistentSessionManager.getSessionDetails(context)).thenReturn(details);
+    when(subscriptionControllerFactory.create(context, destinationManager, subscriptions)).thenReturn(controller);
+    when(sessionFactory.create(context, securityContext, destinationManager, controller, persistentSessionManager)).thenReturn(session);
+    when(session.getName()).thenReturn(sessionId);
     when(session.getExpiry()).thenReturn(30L);
     when(session.getSubscriptionController()).thenReturn(controller);
+
+    pipeline.create(context);
+    assertEquals(1, connected.sum());
 
     pipeline.close(session, true);
 
@@ -392,7 +436,7 @@ class SessionManagerPipeLineTest {
     assertNotNull(timeoutOf(controller));
     verify(session).close();
     verify(controller).hibernateAll();
-    verify(willTaskManager).remove("active-session");
+    verify(willTaskManager).remove(sessionId);
 
     expiryScheduler.fire();
     executor.runNext();
