@@ -94,9 +94,15 @@ public class SessionManagerPipeLine {
     for (SessionImpl session : sessions.values()) {
       session.close();
     }
-    for(SubscriptionController controller:subscriptionManagerFactory.values()){
+    for (SubscriptionController controller : subscriptionManagerFactory.values()) {
+      Future<?> timeout = controller.getTimeout();
+      if (timeout != null) {
+        timeout.cancel(false);
+        controller.setTimeout(null);
+      }
       controller.shutdown();
     }
+    taskScheduler.shutdown();
   }
 
   public boolean hasSessions() {
@@ -108,11 +114,11 @@ public class SessionManagerPipeLine {
   }
 
   public boolean hasSubscriptions() {
-    return subscriptionManagerFactory.isEmpty();
+    return !subscriptionManagerFactory.isEmpty();
   }
 
   public Set<String> getSessionIds() {
-    return subscriptionManagerFactory.keySet();
+    return Set.copyOf(subscriptionManagerFactory.keySet());
   }
 
   @SuppressWarnings("java:S1452")
@@ -213,6 +219,9 @@ public class SessionManagerPipeLine {
   }
 
   private void deleteStateFile(String sessionStateFile) {
+    if (sessionStateFile == null || sessionStateFile.isBlank()) {
+      return;
+    }
     try {
       stateFileStore.delete(sessionStateFile);
     } catch (IOException e) {
