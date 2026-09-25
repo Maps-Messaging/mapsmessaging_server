@@ -67,21 +67,11 @@ public class PersistentSessionManager {
   }
 
   public SessionDetails getSessionDetails(SessionContext context){
-    SessionDetails sessionDetails;
-    if(context.isPersistentSession()){
-      sessionDetails = persistentMap.computeIfAbsent(context.getId(), k -> new SessionDetails(context.getId(), context.getUniqueId(), context.getInternalSessionId(), context.getExpiry()));
-    }
-    else{
-      sessionDetails = new SessionDetails(context.getId(), context.getUniqueId(), context.getInternalSessionId(), context.getExpiry());
-    }
+    SessionDetails sessionDetails = persistentMap.computeIfAbsent(context.getId(), k -> new SessionDetails(context.getId(), context.getUniqueId(), context.getInternalSessionId(), context.getExpiry()));
     if(context.getSecurityContext() != null){
       sessionDetails.setIdentity(context.getSecurityContext().getIdentity());
     }
     return sessionDetails;
-  }
-
-  public SessionDetails removeSessionDetails(String sessionId){
-    return persistentMap.remove(sessionId);
   }
 
   public SessionDetails getSessionDetails(String id){
