@@ -27,6 +27,7 @@ import java.util.concurrent.AbstractExecutorService;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.Future;
 import java.util.concurrent.FutureTask;
+import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -71,6 +72,22 @@ class SessionExpiryTaskTest {
 
     assertTrue(task.isCancelled());
     assertEquals(0, cleanupCalls.get());
+  }
+
+
+  @Test
+  void rejectedPipelineCleanupCompletesTaskExceptionally() {
+    ManualExpiryScheduler scheduler = new ManualExpiryScheduler();
+    ManualExecutor executor = new ManualExecutor();
+    SessionExpiryTask task = SessionExpiryTask.schedule(
+        scheduler, executor, () -> fail("cleanup must not run"), 30, TimeUnit.SECONDS);
+
+    executor.shutdown();
+    scheduler.fire();
+
+    assertTrue(task.isDone());
+    assertFalse(task.isCancelled());
+    assertThrows(java.util.concurrent.ExecutionException.class, task::get);
   }
 
   @Test
@@ -146,6 +163,9 @@ class SessionExpiryTaskTest {
 
     @Override
     public void execute(Runnable command) {
+      if (shutdown) {
+        throw new RejectedExecutionException("executor is shut down");
+      }
       tasks.add(command);
     }
 
