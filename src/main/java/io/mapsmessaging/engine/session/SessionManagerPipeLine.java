@@ -285,7 +285,7 @@ public class SessionManagerPipeLine {
         subscriptionManagerFactory.put(context.getId(), subscriptionManager);
       }
     } else {
-      if (clearAndIsTimeOut(subscriptionManager)) {
+      if (!cancelPendingExpiry(subscriptionManager)) {
         return loadSubscriptionManager(context);
       }
 
@@ -307,17 +307,15 @@ public class SessionManagerPipeLine {
     return subscriptionManager;
   }
 
-  private boolean clearAndIsTimeOut(SubscriptionController subscriptionManager) {
+  private boolean cancelPendingExpiry(SubscriptionController subscriptionManager) {
     Future<?> timeout = subscriptionManager.getTimeout();
-    if (timeout != null) {
-      boolean fired = timeout.isDone();
-      timeout.cancel(true);
-      if (fired) {
-        closeSubscriptionController(subscriptionManager); // Timeout has been executed
-        return true;
-      }
+    if (timeout == null) {
+      return true;
+    }
+    if (!timeout.cancel(false)) {
+      return false;
     }
     subscriptionManager.setTimeout(null);
-    return false;
+    return true;
   }
 }
