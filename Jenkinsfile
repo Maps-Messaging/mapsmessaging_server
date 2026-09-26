@@ -365,73 +365,75 @@ branches["JUnit shard 5"] = {
     runSuite("JUnit shard 5", historicalGroups[4], 4)
 }
 
-parallel branches
+timeout(time: 1, unit: "HOURS") {
+    parallel branches
 
-node(nodeLabel) {
-    stage("Coverage") {
-        deleteDir()
-        checkout scm
+    node(nodeLabel) {
+        stage("Coverage") {
+            deleteDir()
+            checkout scm
 
-        def coverageStageNames = [
-            "Long - ServerTopicTest",
-            "Long - SimpleBufferBasedStompIT",
-            "JUnit shard 1",
-            "JUnit shard 2",
-            "JUnit shard 3",
-            "JUnit shard 4",
-            "JUnit shard 5"
-        ]
+            def coverageStageNames = [
+                "Long - ServerTopicTest",
+                "Long - SimpleBufferBasedStompIT",
+                "JUnit shard 1",
+                "JUnit shard 2",
+                "JUnit shard 3",
+                "JUnit shard 4",
+                "JUnit shard 5"
+            ]
 
-        coverageStageNames.each { String coverageStageName ->
-            def coverageId = coverageStageName.replaceAll("[^A-Za-z0-9_.-]", "_")
-            unstash "jacoco-${coverageId}"
-        }
+            coverageStageNames.each { String coverageStageName ->
+                def coverageId = coverageStageName.replaceAll("[^A-Za-z0-9_.-]", "_")
+                unstash "jacoco-${coverageId}"
+            }
 
-        sh '''#!/bin/bash
-            set -euo pipefail
-
-            mvn -q -Dtransitive=false dependency:get \
-              -Dartifact=org.jacoco:org.jacoco.cli:0.8.15:jar:nodeps
-
-            mkdir -p target
-            java -jar "$HOME/.m2/repository/org/jacoco/org.jacoco.cli/0.8.15/org.jacoco.cli-0.8.15-nodeps.jar" \
-              merge coverage/*.exec \
-              --destfile target/jacoco.exec
-
-            mvn -DskipTests compile jacoco:report \
-              -Djacoco.dataFile=target/jacoco.exec
-        '''
-
-        recordCoverage(
-            tools: [[
-                parser: "JACOCO",
-                pattern: "target/site/jacoco/jacoco.xml"
-            ]],
-            id: "jacoco",
-            name: "JaCoCo Coverage",
-            sourceCodeRetention: "EVERY_BUILD"
-        )
-
-        archiveArtifacts(
-            artifacts: "target/site/jacoco/jacoco.xml",
-            fingerprint: true
-        )
-    }
-
-    stage("SonarCloud") {
-        withCredentials([
-            string(credentialsId: "sonarcloud-token", variable: "SONAR_TOKEN")
-        ]) {
             sh '''#!/bin/bash
                 set -euo pipefail
 
-                mvn -DskipTests sonar:sonar \
-                  -Dsonar.token="$SONAR_TOKEN"
+                mvn -q -Dtransitive=false dependency:get \
+                  -Dartifact=org.jacoco:org.jacoco.cli:0.8.15:jar:nodeps
+
+                mkdir -p target
+                java -jar "$HOME/.m2/repository/org.jacoco/org.jacoco.cli/0.8.15/org.jacoco.cli-0.8.15-nodeps.jar" \
+                  merge coverage/*.exec \
+                  --destfile target/jacoco.exec
+
+                mvn -DskipTests compile jacoco:report \
+                  -Djacoco.dataFile=target/jacoco.exec
             '''
+
+            recordCoverage(
+                tools: [[
+                    parser: "JACOCO",
+                    pattern: "target/site/jacoco/jacoco.xml"
+                ]],
+                id: "jacoco",
+                name: "JaCoCo Coverage",
+                sourceCodeRetention: "EVERY_BUILD"
+            )
+
+            archiveArtifacts(
+                artifacts: "target/site/jacoco/jacoco.xml",
+                fingerprint: true
+            )
+        }
+
+        stage("SonarCloud") {
+            withCredentials([
+                string(credentialsId: "sonarcloud-token", variable: "SONAR_TOKEN")
+            ]) {
+                sh '''#!/bin/bash
+                    set -euo pipefail
+
+                    mvn -DskipTests sonar:sonar \
+                      -Dsonar.token="$SONAR_TOKEN"
+                '''
+            }
         }
     }
-}
 
-stage("Summary") {
-    echo "JUnit cloud run complete"
+    stage("Summary") {
+        echo "JUnit cloud run complete"
+    }
 }
