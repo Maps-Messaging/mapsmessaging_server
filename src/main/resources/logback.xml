@@ -21,7 +21,7 @@
 <configuration>
   <shutdownHook/>
 
-  <!-- Main application log (DENY Audit) -->
+  <!-- Main application log. Audit-marked events are excluded. -->
   <appender name="LogFile" class="ch.qos.logback.core.rolling.RollingFileAppender">
     <file>${MAPS_DATA}/log/messaging.log</file>
     <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
@@ -44,7 +44,7 @@
     <appender-ref ref="LogFile"/>
   </appender>
 
-  <!-- Audit-only log (ACCEPT only Audit) -->
+  <!-- Audit log. Only Audit-marked events are included. -->
   <appender name="AuditFile" class="ch.qos.logback.core.rolling.RollingFileAppender">
     <file>${MAPS_DATA}/log/audit.log</file>
     <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
@@ -52,7 +52,6 @@
       <maxHistory>7</maxHistory>
     </rollingPolicy>
     <encoder>
-      <!-- prints 'Audit' for audited events; blank otherwise -->
       <pattern>%d{yyyy-MM-dd HH:mm:ss}, [%X{division}-%X{category}], [%t] %logger{36} - %msg%n</pattern>
     </encoder>
   </appender>
@@ -68,7 +67,8 @@
     <appender-ref ref="AuditFile"/>
   </appender>
 
-  <root level="warn">
+  <!-- INFO and above are logged by default. Package loggers may opt in to DEBUG. -->
+  <root level="info">
     <appender-ref ref="AsyncLogFile"/>
     <appender-ref ref="AsyncAuditFile"/>
   </root>
