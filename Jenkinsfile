@@ -391,11 +391,12 @@ timeout(time: 1, unit: "HOURS") {
             sh '''#!/bin/bash
                 set -euo pipefail
 
-                mvn -q -Dtransitive=false dependency:get \
-                  -Dartifact=org.jacoco:org.jacoco.cli:0.8.15:jar:nodeps
+                mkdir -p target/jacoco-cli
+                mvn -q dependency:copy \
+                  -Dartifact=org.jacoco:org.jacoco.cli:0.8.15:jar:nodeps \
+                  -DoutputDirectory=target/jacoco-cli
 
-                mkdir -p target
-                java -jar "$HOME/.m2/repository/org.jacoco/org.jacoco.cli/0.8.15/org.jacoco.cli-0.8.15-nodeps.jar" \
+                java -jar target/jacoco-cli/org.jacoco.cli-0.8.15-nodeps.jar \
                   merge coverage/*.exec \
                   --destfile target/jacoco.exec
 
