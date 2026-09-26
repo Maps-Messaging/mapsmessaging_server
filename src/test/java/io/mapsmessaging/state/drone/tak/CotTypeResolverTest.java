@@ -83,6 +83,103 @@ class CotTypeResolverTest {
     assertEquals("a-h-U", unvalidated.resolve(Affiliation.HOSTILE, null, description("SEA_SUBSURFACE")));
   }
 
+  // --- the STANAG 4817 node specialization -------------------------------------------------
+  // A source that classifies its node but sends no 2525D entity code still says what kind of
+  // platform it is. That is worth a function, but never worth contradicting the symbol set.
+
+  @ParameterizedTest
+  @MethodSource("specializations")
+  void aSpecializationTypesATwinTheEntityCodeDoesNot(String symbolSet, String type, String expectedType) {
+    assertEquals(expectedType,
+        resolver.resolve(Affiliation.FRIEND, null, description(symbolSet), specialization(type)));
+  }
+
+  @Test
+  void theSpecializationIsReadFromTheObjectKeyWhenTheDiscriminatorIsMissing() {
+    Map<String, Object> specialization = new HashMap<>();
+    specialization.put("surface_unmanned_system", Map.of("app11_vessel_type", "NavalVesselTypeEnum_NOT_OTHERWISE_SPECIFIED"));
+    assertEquals("a-f-S-C-U",
+        resolver.resolve(Affiliation.FRIEND, null, description("SymbolSetEnum_SEA_SURFACE"), specialization));
+  }
+
+  @Test
+  void theEntityCodeWinsOverTheSpecialization() {
+    // the code is the finer statement: a vessel that also declares itself unmanned
+    Map<String, Object> description = description("SymbolSetEnum_SEA_SURFACE");
+    description.put("entity", "12");
+    description.put("entity_type", "07");
+    description.put("entity_subtype", "00");
+    assertEquals("a-f-S-C-U",
+        resolver.resolve(Affiliation.FRIEND, null, description, specialization("SURFACE_VESSEL")));
+  }
+
+  @Test
+  void theVehicleClassWinsOverTheSpecialization() {
+    assertEquals("a-f-S-C-U",
+        resolver.resolve(Affiliation.FRIEND, VehicleClass.USV, description("SymbolSetEnum_AIR"), specialization("AIRCRAFT")));
+  }
+
+  @Test
+  void aSpecializationOutsideTheSymbolSetsDimensionIsIgnored() {
+    // the symbol set is the 2525 statement; a specialization that disagrees is a source error,
+    // and moving a sea track into the air dimension is worse than saying less about it
+    assertEquals("a-f-S",
+        resolver.resolve(Affiliation.FRIEND, null, description("SymbolSetEnum_SEA_SURFACE"), specialization("AIRCRAFT")));
+  }
+
+  @Test
+  void aSpecializationTypesATwinWithNoDescriptionAtAll() {
+    assertEquals("a-f-S-C-U", resolver.resolve(Affiliation.FRIEND, null, null, specialization("SURFACE_UNMANNED_SYSTEM")));
+    assertEquals("a-f-U-S-U", resolver.resolve(Affiliation.FRIEND, null, Map.of(), specialization("SUBSURFACE_UNMANNED_SYSTEM")));
+  }
+
+  @ParameterizedTest
+  @MethodSource("unmappedSpecializations")
+  void aSpecializationTheTableCannotPlaceChangesNothing(String type) {
+    assertEquals("a-f-S", resolver.resolve(Affiliation.FRIEND, null, description("SEA_SURFACE"), specialization(type)));
+    assertEquals("a-f-X", resolver.resolve(Affiliation.FRIEND, null, null, specialization(type)));
+  }
+
+  @Test
+  void withoutTheTableTheSpecializationKeepsItsDimension() {
+    CotTypeResolver unvalidated = new CotTypeResolver(null);
+    assertEquals("a-f-S", unvalidated.resolve(Affiliation.FRIEND, null, null, specialization("SURFACE_UNMANNED_SYSTEM")));
+    assertEquals("a-f-G", unvalidated.resolve(Affiliation.FRIEND, null, null, specialization("RADAR")));
+  }
+
+  private static Map<String, Object> specialization(String type) {
+    Map<String, Object> specialization = new HashMap<>();
+    specialization.put("$discriminator", "NodeSpecializationTypeEnum_" + type);
+    specialization.put(type.toLowerCase(java.util.Locale.ROOT), new HashMap<>());
+    return specialization;
+  }
+
+  private static Stream<Arguments> specializations() {
+    return Stream.of(
+        // the three unmanned systems the table knows by name
+        Arguments.of("SymbolSetEnum_SEA_SURFACE", "SURFACE_UNMANNED_SYSTEM", "a-f-S-C-U"),
+        Arguments.of("SymbolSetEnum_SEA_SUBSURFACE", "SUBSURFACE_UNMANNED_SYSTEM", "a-f-U-S-U"),
+        Arguments.of("SymbolSetEnum_LAND_EQUIPMENT", "GROUND_UNMANNED_SYSTEM", "a-f-G-U-C-V-U"),
+        // a crewed vessel: the dimension is all the specialization claims
+        Arguments.of("SymbolSetEnum_SEA_SURFACE", "SURFACE_VESSEL", "a-f-S"),
+        Arguments.of("SymbolSetEnum_SEA_SURFACE", "VESSEL", "a-f-S"),
+        Arguments.of("SymbolSetEnum_SEA_SUBSURFACE", "SUBSURFACE_VESSEL", "a-f-U"),
+        Arguments.of("SymbolSetEnum_AIR", "AIRCRAFT", "a-f-A"),
+        Arguments.of("SPACE", "SPACECRAFT", "a-f-P"),
+        Arguments.of("SymbolSetEnum_LAND_EQUIPMENT", "LAND_VEHICLE", "a-f-G"),
+        // sensors: the table has one sensor, one radar and CBRN equipment
+        Arguments.of("SymbolSetEnum_LAND_EQUIPMENT", "RADAR", "a-f-G-E-S-R"),
+        Arguments.of("SymbolSetEnum_LAND_EQUIPMENT", "SONAR", "a-f-G-E-S"),
+        Arguments.of("SymbolSetEnum_LAND_EQUIPMENT", "ACOUSTIC_SENSOR", "a-f-G-E-S"),
+        Arguments.of("SymbolSetEnum_LAND_EQUIPMENT", "SENSOR", "a-f-G-E-S"),
+        Arguments.of("SymbolSetEnum_LAND_EQUIPMENT", "CBRN_SENSOR", "a-f-G-E-X-N"));
+  }
+
+  private static Stream<Arguments> unmappedSpecializations() {
+    // a value the table cannot place says nothing more than the symbol set already did
+    return Stream.of(Arguments.of("OTHER"), Arguments.of("VEHICLE"), Arguments.of("CYBER_SENSOR"));
+  }
+
   private static Map<String, Object> description(String symbolSet) {
     Map<String, Object> description = new HashMap<>();
     description.put("symbol_set", symbolSet);

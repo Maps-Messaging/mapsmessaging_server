@@ -297,10 +297,11 @@ final class CotEventPolicy {
       unknownVehicleClassCount.increment();
     }
 
-    Map<String, Object> description =
-        twin instanceof DroneTwin droneTwin ? droneTwin.getDescription() : null;
+    DroneTwin droneTwin = twin instanceof DroneTwin drone ? drone : null;
+    Map<String, Object> description = droneTwin == null ? null : droneTwin.getDescription();
+    Map<String, Object> specialization = droneTwin == null ? null : droneTwin.getSpecialization();
     Affiliation affiliation = Affiliation.fromCode(affiliationCode.charAt(0));
-    return cotTypeResolver.resolve(affiliation, vehicleClass, description);
+    return cotTypeResolver.resolve(affiliation, vehicleClass, description, specialization);
   }
 
   private VehicleClass resolveVehicleClass(EntityTwin twin) {
