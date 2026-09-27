@@ -400,7 +400,7 @@ node(nodeLabel) {
               merge coverage/*.exec \
               --destfile target/jacoco.exec
 
-            mvn -DskipTests compile jacoco:report \
+            mvn -DskipTests test-compile jacoco:report \
               -Djacoco.dataFile=target/jacoco.exec
         '''
 
@@ -428,6 +428,7 @@ node(nodeLabel) {
                 set -euo pipefail
 
                 mvn -DskipTests sonar:sonar \
+                  -Dsonar.branch.name=development \
                   -Dsonar.token="$SONAR_TOKEN"
             '''
         }

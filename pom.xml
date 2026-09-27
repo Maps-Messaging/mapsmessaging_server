@@ -110,8 +110,8 @@
     </sonar.exclusions>
 
 
-    <sonar.jacoco.reportPaths>target/jacoco.exec</sonar.jacoco.reportPaths>
     <sonar.coverage.jacoco.xmlReportPaths>target/site/jacoco/jacoco.xml</sonar.coverage.jacoco.xmlReportPaths>
+    <sonar.java.test.binaries>target/test-classes</sonar.java.test.binaries>
 
     <sonar.issue.ignore.multicriteria>IgnoreVar</sonar.issue.ignore.multicriteria>
     <sonar.issue.ignore.multicriteria.IgnoreVar.ruleKey>java:S6212</sonar.issue.ignore.multicriteria.IgnoreVar.ruleKey>
