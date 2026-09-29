@@ -44,6 +44,9 @@ import io.mapsmessaging.utilities.configuration.ConfigurationManager;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLSocketFactory;
 import java.io.IOException;
+import java.time.Clock;
+import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -73,6 +76,8 @@ public class TakTwinObserver implements TwinObserver {
   private final CotEventPolicy cotEventPolicy;
   private final CotIntegrationJMX cotIntegrationJMX;
   private final TakOutputJMX takOutputJMX;
+  private final PictureRecoveryTracker pictureRecoveryTracker;
+  private final List<PictureRecoveryJMX> pictureRecoveryJMXs;
   private final boolean namespaceFilteringEnabled;
 
   public TakTwinObserver(TwinManager twinManager) {
@@ -126,6 +131,14 @@ public class TakTwinObserver implements TwinObserver {
       this.eventPublisher = null;
     }
     this.takOutputJMX = new TakOutputJMX(eventPublisher);
+    this.pictureRecoveryTracker = new PictureRecoveryTracker(Clock.systemUTC());
+    this.pictureRecoveryJMXs = new ArrayList<>();
+    for (PictureRecoveryTracker.FailureType failureType : PictureRecoveryTracker.FailureType.values()) {
+      for (PictureRecoveryTracker.Stage stage : PictureRecoveryTracker.Stage.values()) {
+        pictureRecoveryJMXs.add(new PictureRecoveryJMX(pictureRecoveryTracker, failureType, stage));
+      }
+    }
+    MtiStatusRegistry.setStatusListener(pictureRecoveryTracker);
   }
 
   private SSLSocketFactory buildSslSocketFactory(TakProtocolDTO tak) {
@@ -148,6 +161,11 @@ public class TakTwinObserver implements TwinObserver {
     twinManager.removeObserver(this);
     cotIntegrationJMX.close();
     takOutputJMX.close();
+    MtiStatusRegistry.setStatusListener(null);
+    for (PictureRecoveryJMX pictureRecoveryJMX : pictureRecoveryJMXs) {
+      pictureRecoveryJMX.close();
+    }
+    pictureRecoveryJMXs.clear();
 
     if (globalSocketConnection != null) {
       globalSocketConnection.close();
@@ -176,6 +194,7 @@ public class TakTwinObserver implements TwinObserver {
         takContexts.computeIfAbsent(twin.getTwinId(), key -> new TakTwinContext());
 
     twinContext.setLastUpdate(System.currentTimeMillis());
+    pictureRecoveryTracker.onTwinAdded(twin.getTwinId(), receivedTime(context));
     publishTwin(twin, context, twinContext);
   }
 
@@ -219,6 +238,7 @@ public class TakTwinObserver implements TwinObserver {
 
     takContexts.remove(removed.getTwinId());
     lastStatsPublishTimes.remove(removed.getTwinId());
+    pictureRecoveryTracker.onTwinRemoved(removed.getTwinId());
 
     if (twinContext != null
         && twinContext.getSocketConnection() != null
@@ -279,6 +299,7 @@ public class TakTwinObserver implements TwinObserver {
     TakTwinContext twinContext =
         takContexts.computeIfAbsent(resolvedTwinId, key -> new TakTwinContext());
 
+    pictureRecoveryTracker.onTwinStatusChanged(resolvedTwinId, previousStatus, currentStatus, receivedTime(context));
     publishTwin(twin, context, twinContext);
   }
 
@@ -307,6 +328,7 @@ public class TakTwinObserver implements TwinObserver {
       TakOutputStats.recordLatencyMillis(System.currentTimeMillis() - context.getReceivedTime().toEpochMilli());
     }
 
+    boolean handedToTak = false;
     if (takHost != null && !takHost.isBlank() && takPort > 0) {
       if (twinContext.getSocketConnection() == null) {
         twinContext.setSocketConnection(
@@ -315,15 +337,26 @@ public class TakTwinObserver implements TwinObserver {
       }
 
       twinContext.getSocketConnection().accept(xml);
+      handedToTak = true;
     }
 
     if (eventPublisher != null) {
       try {
         eventPublisher.publish(xml);
+        handedToTak = true;
       } catch (IOException exception) {
         exception.printStackTrace();
       }
     }
+
+    if (handedToTak) {
+      pictureRecoveryTracker.onCotHandedToTak(
+          twin.getTwinId(), MtiStatusRegistry.snapshot(twin.getTwinId()) != null);
+    }
+  }
+
+  private static Instant receivedTime(TwinUpdateContext context) {
+    return context == null ? null : context.getReceivedTime();
   }
 
   private void publishDetection(String xml, TakTwinContext twinContext) {

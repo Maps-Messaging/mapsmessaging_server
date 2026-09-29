@@ -181,6 +181,7 @@ public class MtiStatusAdapter implements StateMessageAdapter, ClientConnection, 
       });
       deleteCount.increment();
       if (accepted.get()) {
+        MtiStatusRegistry.statusCleared(message.uid());
         logger.debug("MTI status cleared for {}", message.uid());
       } else {
         logger.debug("Ignored out-of-order MTI delete for {}", message.uid());
@@ -209,6 +210,7 @@ public class MtiStatusAdapter implements StateMessageAdapter, ClientConnection, 
       if (incoming.isExpired(now)) {
         logger.debug("MTI status for {} was already expired and cleared any older cached status", message.uid());
       } else {
+        MtiStatusRegistry.statusAccepted(message.uid(), now);
         logger.debug("MTI status updated for {}: state={}", message.uid(), message.state());
       }
     } else {

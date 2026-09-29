@@ -112,12 +112,49 @@ class TwinStatusJMXTest {
     assertEquals(0, active.getMtiAgeLe300sCount());
   }
 
-  private void addDrone(String twinId, TwinLifecycleStatus status, String mtiState, Instant observedAt) {
+  @Test
+  void reportAgeCounts_areCumulativeAndIgnoreTwinsWithoutAReport() {
+    Instant now = Instant.now();
+    addDrone("fresh", TwinLifecycleStatus.ACTIVE, null, null).setLastSeenAt(now.minusSeconds(2));
+    addDrone("quiet-20s", TwinLifecycleStatus.ACTIVE, null, null).setLastSeenAt(now.minusSeconds(20));
+    addDrone("quiet-90s", TwinLifecycleStatus.ACTIVE, null, null).setLastSeenAt(now.minusSeconds(90));
+    addDrone("quiet-200s", TwinLifecycleStatus.ACTIVE, null, null).setLastSeenAt(now.minusSeconds(200));
+    addDrone("never-reported", TwinLifecycleStatus.ACTIVE, null, null).setLastSeenAt(null);
+    addDrone("stale-fresh", TwinLifecycleStatus.STALE, null, null).setLastSeenAt(now.minusSeconds(2));
+
+    TwinStatusJMX active = new TwinStatusJMX(twinManager, TwinType.DRONE, TwinLifecycleStatus.ACTIVE);
+
+    assertEquals(5, active.getTwinCount());
+    assertEquals(1, active.getReportAgeLe10sCount());
+    assertEquals(2, active.getReportAgeLe30sCount());
+    assertEquals(2, active.getReportAgeLe60sCount());
+    assertEquals(3, active.getReportAgeLe120sCount(), "200s-old and never-reported twins fall outside every bucket");
+  }
+
+  @Test
+  void reportAgeMtiKnownCounts_onlyCountFreshTwinsWithAGoMitigateOrHoldStatus() {
+    Instant now = Instant.now();
+    addDrone("fresh-go", TwinLifecycleStatus.ACTIVE, "go", now).setLastSeenAt(now.minusSeconds(2));
+    addDrone("fresh-hold", TwinLifecycleStatus.ACTIVE, "HOLD", now).setLastSeenAt(now.minusSeconds(2));
+    addDrone("fresh-unknown", TwinLifecycleStatus.ACTIVE, "unknown", now).setLastSeenAt(now.minusSeconds(2));
+    addDrone("fresh-no-mti", TwinLifecycleStatus.ACTIVE, null, null).setLastSeenAt(now.minusSeconds(2));
+    addDrone("quiet-mitigate", TwinLifecycleStatus.ACTIVE, "mitigate", now).setLastSeenAt(now.minusSeconds(45));
+
+    TwinStatusJMX active = new TwinStatusJMX(twinManager, TwinType.DRONE, TwinLifecycleStatus.ACTIVE);
+
+    assertEquals(2, active.getReportAgeLe10sMtiKnownCount(), "MTI unknown and no MTI are not known");
+    assertEquals(2, active.getReportAgeLe30sMtiKnownCount());
+    assertEquals(3, active.getReportAgeLe60sMtiKnownCount());
+    assertEquals(3, active.getReportAgeLe120sMtiKnownCount());
+  }
+
+  private DroneTwin addDrone(String twinId, TwinLifecycleStatus status, String mtiState, Instant observedAt) {
     DroneTwin twin = new DroneTwin(twinId);
     twinManager.registerTwin(twin, new TwinUpdateContext());
     twin.setLifecycleStatus(status);
     if (observedAt != null) {
       mtiStatuses.put(twinId, new MtiStatusSnapshot(mtiState, observedAt, observedAt.plusSeconds(3600)));
     }
+    return twin;
   }
 }

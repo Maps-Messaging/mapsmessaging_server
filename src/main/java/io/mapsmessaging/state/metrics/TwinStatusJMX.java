@@ -44,8 +44,8 @@ import java.util.function.Predicate;
  *
  * <p>Deliberately raw: coverage, unknown-asset and staleness KPIs are formulas over these counts,
  * so their definitions (which lifecycle states count as "active", staleness threshold, whether
- * MTI "unknown" counts as covered) can be decided in the dashboard without code changes. Age
- * buckets are cumulative, like Prometheus histogram buckets.
+ * MTI "unknown" counts as covered) can be decided in the dashboard without code changes. MTI age
+ * and report age buckets are cumulative, like Prometheus histogram buckets.
  */
 @JMXBean(description = "Digital twin counts by type and lifecycle, with MTI state and age")
 public class TwinStatusJMX {
@@ -125,6 +125,74 @@ public class TwinStatusJMX {
   @JMXBeanAttribute(name = "Mti Age Le 300s Count", description = "Twins whose MTI status was observed at most 300s ago")
   public long getMtiAgeLe300sCount() {
     return countAgeAtMost(Duration.ofSeconds(300));
+  }
+
+  @JMXBeanAttribute(name = "Report Age Le 10s Count", description = "Twins whose last report arrived at most 10s ago")
+  public long getReportAgeLe10sCount() {
+    return countReportAgeAtMost(Duration.ofSeconds(10));
+  }
+
+  @JMXBeanAttribute(name = "Report Age Le 30s Count", description = "Twins whose last report arrived at most 30s ago")
+  public long getReportAgeLe30sCount() {
+    return countReportAgeAtMost(Duration.ofSeconds(30));
+  }
+
+  @JMXBeanAttribute(name = "Report Age Le 60s Count", description = "Twins whose last report arrived at most 60s ago")
+  public long getReportAgeLe60sCount() {
+    return countReportAgeAtMost(Duration.ofSeconds(60));
+  }
+
+  @JMXBeanAttribute(name = "Report Age Le 120s Count", description = "Twins whose last report arrived at most 120s ago")
+  public long getReportAgeLe120sCount() {
+    return countReportAgeAtMost(Duration.ofSeconds(120));
+  }
+
+  @JMXBeanAttribute(name = "Report Age Le 10s Mti Known Count", description = "Twins reporting within 10s that also have a go/mitigate/hold MTI status")
+  public long getReportAgeLe10sMtiKnownCount() {
+    return countReportAgeAtMost(Duration.ofSeconds(10), TwinStatusJMX::isKnown);
+  }
+
+  @JMXBeanAttribute(name = "Report Age Le 30s Mti Known Count", description = "Twins reporting within 30s that also have a go/mitigate/hold MTI status")
+  public long getReportAgeLe30sMtiKnownCount() {
+    return countReportAgeAtMost(Duration.ofSeconds(30), TwinStatusJMX::isKnown);
+  }
+
+  @JMXBeanAttribute(name = "Report Age Le 60s Mti Known Count", description = "Twins reporting within 60s that also have a go/mitigate/hold MTI status")
+  public long getReportAgeLe60sMtiKnownCount() {
+    return countReportAgeAtMost(Duration.ofSeconds(60), TwinStatusJMX::isKnown);
+  }
+
+  @JMXBeanAttribute(name = "Report Age Le 120s Mti Known Count", description = "Twins reporting within 120s that also have a go/mitigate/hold MTI status")
+  public long getReportAgeLe120sMtiKnownCount() {
+    return countReportAgeAtMost(Duration.ofSeconds(120), TwinStatusJMX::isKnown);
+  }
+
+  private long countReportAgeAtMost(Duration maxAge) {
+    return countReportAgeAtMost(maxAge, snapshot -> true);
+  }
+
+  // Report age is independent of the lifecycle thresholds configured in TwinManager, so the
+  // dashboard can compare several "active asset" timeouts side by side without a restart. The
+  // MTI-known variant is the joint count "fresh AND known" - the complement of "stale or unknown",
+  // which can't be derived from separate stale and unknown counts without double-counting.
+  private long countReportAgeAtMost(Duration maxAge, Predicate<MtiStatusSnapshot> mtiPredicate) {
+    Instant cutoff = Instant.now().minus(maxAge);
+    long matches = 0;
+    for (EntityTwin twin : twinManager.listTwins()) {
+      Instant lastSeenAt = twin.getLastSeenAt();
+      if (twin.getTwinType() == twinType
+          && twin.getLifecycleStatus() == lifecycleStatus
+          && lastSeenAt != null
+          && !lastSeenAt.isBefore(cutoff)
+          && mtiPredicate.test(MtiStatusRegistry.snapshot(twin.getTwinId()))) {
+        matches++;
+      }
+    }
+    return matches;
+  }
+
+  private static boolean isKnown(MtiStatusSnapshot snapshot) {
+    return hasState(snapshot, "go") || hasState(snapshot, "mitigate") || hasState(snapshot, "hold");
   }
 
   private long countAgeAtMost(Duration maxAge) {

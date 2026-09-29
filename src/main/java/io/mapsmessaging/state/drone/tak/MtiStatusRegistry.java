@@ -18,6 +18,8 @@
  */
 package io.mapsmessaging.state.drone.tak;
 
+import java.time.Instant;
+
 /**
  * Static bridge between {@link CotEventPolicy} (constructed by {@code TakTwinObserver} early in
  * server startup, inside {@code StateManagerAgent}'s constructor) and an MTI-feed
@@ -54,8 +56,19 @@ public final class MtiStatusRegistry {
     MtiStatusSnapshot snapshot(String twinId);
   }
 
+  /**
+   * Told when the adapter accepts or explicitly clears an MTI status, so recovery timing can tell
+   * "MTI data is available again" apart from "MTI deliberately withdrew this asset's status".
+   */
+  public interface StatusListener {
+    void onStatusAccepted(String twinId, Instant receivedAt);
+
+    void onStatusCleared(String twinId);
+  }
+
   private static volatile Lookup delegate;
   private static volatile SnapshotSource snapshotSource;
+  private static volatile StatusListener statusListener;
 
   private MtiStatusRegistry() {
   }
@@ -66,6 +79,24 @@ public final class MtiStatusRegistry {
 
   public static void setSnapshotSource(SnapshotSource source) {
     snapshotSource = source;
+  }
+
+  public static void setStatusListener(StatusListener listener) {
+    statusListener = listener;
+  }
+
+  public static void statusAccepted(String twinId, Instant receivedAt) {
+    StatusListener current = statusListener;
+    if (current != null && twinId != null) {
+      current.onStatusAccepted(twinId, receivedAt);
+    }
+  }
+
+  public static void statusCleared(String twinId) {
+    StatusListener current = statusListener;
+    if (current != null && twinId != null) {
+      current.onStatusCleared(twinId);
+    }
   }
 
   public static MtiLookupResult lookup(String twinId) {
