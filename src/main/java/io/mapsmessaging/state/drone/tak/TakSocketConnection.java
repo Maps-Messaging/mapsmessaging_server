@@ -51,6 +51,7 @@ public class TakSocketConnection implements Closeable {
   private final LinkedBlockingDeque<String> queue;
   private final Thread writerThread;
   private final SSLSocketFactory sslSocketFactory;
+  private final TakServerStats serverStats;
 
   private volatile boolean running;
 
@@ -92,6 +93,7 @@ public class TakSocketConnection implements Closeable {
     this.socket = null;
     this.socketOutputStream = null;
     this.sslSocketFactory = sslSocketFactory;
+    this.serverStats = new TakServerStats();
 
     this.writerThread = new Thread(this::writerLoop, "tak-socket-writer-" + host + "-" + port);
     this.writerThread.setDaemon(true);
@@ -107,6 +109,7 @@ public class TakSocketConnection implements Closeable {
       if (queue.remainingCapacity() == 0) {
         queue.pollFirst();
         TakOutputStats.SOCKET_DROPPED_COUNT.increment();
+        serverStats.recordDrop();
       }
       queue.offerLast(xml);
     }
@@ -172,6 +175,7 @@ public class TakSocketConnection implements Closeable {
     }
     socketOutputStream.flush();
     TakOutputStats.recordWrite();
+    serverStats.recordWrite();
   }
 
   private synchronized void reconnect() {
@@ -195,11 +199,13 @@ public class TakSocketConnection implements Closeable {
       socket = newSocket;
       socketOutputStream = newSocket.getOutputStream();
       TakOutputStats.CONNECT_COUNT.increment();
+      serverStats.recordConnect();
     }
     catch (IOException ignored) {
       socket = null;
       socketOutputStream = null;
       TakOutputStats.CONNECT_FAILURE_COUNT.increment();
+      serverStats.recordConnectFailure();
     }
   }
 
@@ -236,6 +242,7 @@ public class TakSocketConnection implements Closeable {
       }
       socket = null;
       TakOutputStats.DISCONNECT_COUNT.increment();
+      serverStats.recordDisconnect();
     }
   }
 }

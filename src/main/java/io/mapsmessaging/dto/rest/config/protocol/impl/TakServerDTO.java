@@ -15,7 +15,6 @@
  *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
- *
  */
 
 package io.mapsmessaging.dto.rest.config.protocol.impl;
@@ -24,16 +23,13 @@ import io.mapsmessaging.dto.rest.config.network.KeyStoreConfigDTO;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
-import java.util.ArrayList;
-import java.util.List;
-
 @Data
-@Schema(description = "TAK protocol configuration")
-public class TakProtocolDTO {
+@Schema(description = "An additional TAK server that receives the same CoT events as the primary TAK server")
+public class TakServerDTO {
 
   @Schema(
       description = "Hostname or IP address of the TAK server.",
-      example = "opentak.syd.mapsmessaging.io",
+      example = "tak2.example.org",
       requiredMode = Schema.RequiredMode.REQUIRED,
       nullable = false,
       minLength = 1
@@ -42,31 +38,15 @@ public class TakProtocolDTO {
 
   @Schema(
       description = "Port of the TAK server (e.g. 8088 for TCP, 8089 for TLS).",
-      example = "8088",
+      example = "8089",
       requiredMode = Schema.RequiredMode.REQUIRED,
       nullable = false
   )
   private int port = 8088;
 
   @Schema(
-      description = "If true, all twins share a single TAK socket connection. If false, each twin uses its own socket.",
-      example = "false",
-      requiredMode = Schema.RequiredMode.NOT_REQUIRED,
-      defaultValue = "false"
-  )
-  private boolean sharedConnection = false;
-
-  @Schema(
-      description = "Topic to publish TAK CoT XML messages to.",
-      example = "tak/events",
-      requiredMode = Schema.RequiredMode.NOT_REQUIRED,
-      nullable = true
-  )
-  private String topic = null;
-
-  @Schema(
       description = "If true, connect to the TAK server over TLS instead of plain TCP.",
-      example = "false",
+      example = "true",
       requiredMode = Schema.RequiredMode.NOT_REQUIRED,
       defaultValue = "false"
   )
@@ -93,11 +73,5 @@ public class TakProtocolDTO {
       nullable = true
   )
   private KeyStoreConfigDTO trustStore;
-
-  @Schema(
-      description = "Further TAK servers that receive the same CoT events as this one, each over its own shared connection.",
-      requiredMode = Schema.RequiredMode.NOT_REQUIRED
-  )
-  private List<TakServerDTO> additionalServers = new ArrayList<>();
 
 }

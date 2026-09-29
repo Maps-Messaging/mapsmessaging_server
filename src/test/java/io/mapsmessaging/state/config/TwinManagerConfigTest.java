@@ -27,6 +27,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import io.mapsmessaging.configuration.ConfigurationProperties;
 import io.mapsmessaging.dto.rest.config.protocol.impl.TakProtocolDTO;
+import io.mapsmessaging.dto.rest.config.protocol.impl.TakServerDTO;
 import io.mapsmessaging.state.config.capability.Authorities;
 import io.mapsmessaging.state.config.capability.PlanTaskType;
 import io.mapsmessaging.state.config.capability.TaskCapabilities;
@@ -416,6 +417,72 @@ class TwinManagerConfigTest {
     droneInfo.setUuid(uuid);
     droneInfo.setCapabilities(new TaskCapabilities());
     return droneInfo;
+  }
+
+  @Test
+  void tak_additionalServers_areParsedAndInvalidEntriesSkipped() throws ReflectiveOperationException {
+    ConfigurationProperties tak2 = new ConfigurationProperties();
+    tak2.put("hostname", "tak2.ic.example.org");
+    tak2.put("port", 8089);
+    tak2.put("tlsEnabled", true);
+    tak2.put("tlsContext", "TLSv1.3");
+    ConfigurationProperties missingHost = new ConfigurationProperties();
+    missingHost.put("port", 8089);
+    ConfigurationProperties tak = new ConfigurationProperties();
+    tak.put("hostname", "tak.ic.example.org");
+    tak.put("port", 8089);
+    tak.put("additionalServers", List.of(tak2, missingHost));
+    ConfigurationProperties root = new ConfigurationProperties();
+    root.put("tak", tak);
+
+    TwinManagerConfig config = newTwinManagerConfig(root);
+
+    assertEquals(1, config.getTak().getAdditionalServers().size());
+    TakServerDTO server = config.getTak().getAdditionalServers().get(0);
+    assertEquals("tak2.ic.example.org", server.getHostname());
+    assertEquals(8089, server.getPort());
+    assertTrue(server.isTlsEnabled());
+    assertEquals("TLSv1.3", server.getTlsContext());
+    assertNull(server.getKeyStore());
+    assertNull(server.getTrustStore());
+  }
+
+  @Test
+  void tak_withoutAdditionalServers_defaultsToEmptyList() throws ReflectiveOperationException {
+    ConfigurationProperties tak = new ConfigurationProperties();
+    tak.put("hostname", "tak.ic.example.org");
+    ConfigurationProperties root = new ConfigurationProperties();
+    root.put("tak", tak);
+
+    TwinManagerConfig config = newTwinManagerConfig(root);
+
+    assertTrue(config.getTak().getAdditionalServers().isEmpty());
+    ConfigurationProperties savedTak =
+        assertInstanceOf(ConfigurationProperties.class, config.toConfigurationProperties().get("tak"));
+    assertNull(savedTak.get("additionalServers"));
+  }
+
+  @Test
+  void toConfigurationProperties_writesAdditionalTakServersBack() throws ReflectiveOperationException {
+    ConfigurationProperties tak2 = new ConfigurationProperties();
+    tak2.put("hostname", "tak2.ic.example.org");
+    tak2.put("port", 8089);
+    tak2.put("tlsEnabled", true);
+    ConfigurationProperties tak = new ConfigurationProperties();
+    tak.put("hostname", "tak.ic.example.org");
+    tak.put("additionalServers", List.of(tak2));
+    ConfigurationProperties root = new ConfigurationProperties();
+    root.put("tak", tak);
+
+    ConfigurationProperties saved = newTwinManagerConfig(root).toConfigurationProperties();
+
+    ConfigurationProperties savedTak = assertInstanceOf(ConfigurationProperties.class, saved.get("tak"));
+    List<?> savedServers = assertInstanceOf(List.class, savedTak.get("additionalServers"));
+    assertEquals(1, savedServers.size());
+    ConfigurationProperties savedServer = assertInstanceOf(ConfigurationProperties.class, savedServers.get(0));
+    assertEquals("tak2.ic.example.org", savedServer.getProperty("hostname"));
+    assertEquals(8089, savedServer.getIntProperty("port", 0));
+    assertTrue(savedServer.getBooleanProperty("tlsEnabled", false));
   }
 
   private TwinManagerConfig newTwinManagerConfig(ConfigurationProperties properties)

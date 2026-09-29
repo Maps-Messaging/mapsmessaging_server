@@ -21,7 +21,9 @@ package io.mapsmessaging.state.drone.tak;
 
 import io.mapsmessaging.config.Config;
 import io.mapsmessaging.configuration.ConfigurationProperties;
+import io.mapsmessaging.dto.rest.config.network.KeyStoreConfigDTO;
 import io.mapsmessaging.dto.rest.config.protocol.impl.TakProtocolDTO;
+import io.mapsmessaging.dto.rest.config.protocol.impl.TakServerDTO;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.security.ssl.SslHelper;
@@ -71,6 +73,8 @@ public class TakTwinObserver implements TwinObserver {
   private final TakEventMapper takEventMapper;
   private final TakXmlSerialiser takXmlSerialiser;
   private final TakSocketConnection globalSocketConnection;
+  private final AdditionalTakServers additionalTakServers;
+  private final List<TakServerJMX> takServerJMXs;
   private final EventPublisher eventPublisher;
   private final CotConfigResolver cotConfigResolver;
   private final CotEventPolicy cotEventPolicy;
@@ -108,6 +112,8 @@ public class TakTwinObserver implements TwinObserver {
       } else {
         globalSocketConnection = null;
       }
+      additionalTakServers = new AdditionalTakServers(
+          config.getTak().getAdditionalServers(), this::buildSslSocketFactory);
 
       if (config.getTak().getTopic() != null && !config.getTak().getTopic().isBlank()) {
         EventPublisher publisher;
@@ -128,9 +134,17 @@ public class TakTwinObserver implements TwinObserver {
       this.takPort = 0;
       this.sslSocketFactory = null;
       this.globalSocketConnection = null;
+      this.additionalTakServers = AdditionalTakServers.none();
       this.eventPublisher = null;
     }
     this.takOutputJMX = new TakOutputJMX(eventPublisher);
+    this.takServerJMXs = new ArrayList<>();
+    if (globalSocketConnection != null) {
+      takServerJMXs.add(new TakServerJMX(globalSocketConnection, "primary"));
+    }
+    for (TakSocketConnection connection : additionalTakServers.getConnections()) {
+      takServerJMXs.add(new TakServerJMX(connection, "additional"));
+    }
     this.pictureRecoveryTracker = new PictureRecoveryTracker(Clock.systemUTC());
     this.pictureRecoveryJMXs = new ArrayList<>();
     for (PictureRecoveryTracker.FailureType failureType : PictureRecoveryTracker.FailureType.values()) {
@@ -142,14 +156,23 @@ public class TakTwinObserver implements TwinObserver {
   }
 
   private SSLSocketFactory buildSslSocketFactory(TakProtocolDTO tak) {
-    if (!tak.isTlsEnabled() || tak.getKeyStore() == null || tak.getTrustStore() == null) {
+    return buildSslSocketFactory(tak.isTlsEnabled(), tak.getTlsContext(), tak.getKeyStore(), tak.getTrustStore());
+  }
+
+  private SSLSocketFactory buildSslSocketFactory(TakServerDTO server) {
+    return buildSslSocketFactory(server.isTlsEnabled(), server.getTlsContext(), server.getKeyStore(), server.getTrustStore());
+  }
+
+  private SSLSocketFactory buildSslSocketFactory(
+      boolean tlsEnabled, String tlsContext, KeyStoreConfigDTO keyStore, KeyStoreConfigDTO trustStore) {
+    if (!tlsEnabled || keyStore == null || trustStore == null) {
       return null;
     }
     try {
       ConfigurationProperties sslProps = new ConfigurationProperties();
-      sslProps.put("keyStore", ((Config) tak.getKeyStore()).toConfigurationProperties());
-      sslProps.put("trustStore", ((Config) tak.getTrustStore()).toConfigurationProperties());
-      SSLContext sslContext = SslHelper.createContext(tak.getTlsContext(), sslProps, logger);
+      sslProps.put("keyStore", ((Config) keyStore).toConfigurationProperties());
+      sslProps.put("trustStore", ((Config) trustStore).toConfigurationProperties());
+      SSLContext sslContext = SslHelper.createContext(tlsContext, sslProps, logger);
       return sslContext.getSocketFactory();
     } catch (IOException e) {
       logger.log(StateLogMessages.STATE_MANAGER_TAK_TLS_CONTEXT_FAILED, e);
@@ -161,6 +184,11 @@ public class TakTwinObserver implements TwinObserver {
     twinManager.removeObserver(this);
     cotIntegrationJMX.close();
     takOutputJMX.close();
+    for (TakServerJMX takServerJMX : takServerJMXs) {
+      takServerJMX.close();
+    }
+    takServerJMXs.clear();
+    additionalTakServers.close();
     MtiStatusRegistry.setStatusListener(null);
     for (PictureRecoveryJMX pictureRecoveryJMX : pictureRecoveryJMXs) {
       pictureRecoveryJMX.close();
@@ -340,6 +368,11 @@ public class TakTwinObserver implements TwinObserver {
       handedToTak = true;
     }
 
+    if (!additionalTakServers.isEmpty()) {
+      additionalTakServers.accept(xml);
+      handedToTak = true;
+    }
+
     if (eventPublisher != null) {
       try {
         eventPublisher.publish(xml);
@@ -369,6 +402,7 @@ public class TakTwinObserver implements TwinObserver {
       }
       twinContext.getSocketConnection().accept(xml);
     }
+    additionalTakServers.accept(xml);
 
     if (eventPublisher != null) {
       try {
@@ -382,7 +416,7 @@ public class TakTwinObserver implements TwinObserver {
   private void publishRemoval(
       EntityTwin twin, TwinUpdateContext context, TakTwinContext twinContext) {
 
-    if (twin == null || twinContext.getSocketConnection() == null) {
+    if (twin == null || (twinContext.getSocketConnection() == null && additionalTakServers.isEmpty())) {
       return;
     }
 
@@ -397,7 +431,11 @@ public class TakTwinObserver implements TwinObserver {
     }
     cotEventPolicy.applyRemoval(takEvent, twin, context, cotConfig);
 
-    twinContext.getSocketConnection().accept(takXmlSerialiser.toXml(takEvent));
+    String xml = takXmlSerialiser.toXml(takEvent);
+    if (twinContext.getSocketConnection() != null) {
+      twinContext.getSocketConnection().accept(xml);
+    }
+    additionalTakServers.accept(xml);
   }
 
   private CotConfigDTO resolveCotConfig(TwinUpdateContext context, TakTwinContext twinContext) {
