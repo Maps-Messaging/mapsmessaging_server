@@ -22,6 +22,7 @@ public class UpgradeTest {
 
   private static final Logger logger = LoggerFactory.getLogger(UpgradeTest.class);
 
+  @SuppressWarnings("java:S106") // This standalone CLI reports configuration comparison results directly to the invoking user.
   public static void main(String[] args) {
     ObjectMapper objectMapper = buildObjectMapper();
 

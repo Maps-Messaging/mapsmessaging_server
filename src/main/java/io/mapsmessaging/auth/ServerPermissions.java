@@ -128,6 +128,7 @@ public enum ServerPermissions implements Permission {
     throw new IllegalArgumentException("Unknown server permission: " + name);
   }
 
+  @SuppressWarnings("java:S106") // This standalone CLI writes the generated OpenFGA model directly to the terminal.
   public static void main(String[] args) {
     System.err.println(generateOpenFgaModel());
   }

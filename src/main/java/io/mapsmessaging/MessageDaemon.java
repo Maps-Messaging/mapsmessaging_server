@@ -253,6 +253,7 @@ public class MessageDaemon {
    * @return null
    * @throws IOException if an I/O error occurs during the initialization steps
    */
+  @SuppressWarnings("java:S106") // Startup configuration failures must reach stderr even if logging configuration or file output is unavailable.
   public Integer start() throws IOException {
 
     ConfigurationManager.getInstance().initialise(uniqueId);
@@ -392,7 +393,7 @@ public class MessageDaemon {
     return subSystemManager.getSubSystemStatus();
   }
 
-  @SuppressWarnings("java:S106") // we use system.err here since we have not actually been able to start up yet
+  @SuppressWarnings("java:S106") // Environment and lock-acquisition failures must reach stderr before daemon logging configuration is loaded.
   public static void main(String[] args) throws IOException, InterruptedException {
     String directoryPath = MapsEnvironment.getMapsData();
     if (directoryPath.isEmpty()) {
@@ -424,6 +425,7 @@ public class MessageDaemon {
       lockManager.setOnShutdown(instance::stop);
       instance.start();
     } catch (Exception e) {
+      System.err.println("Unexpected error starting the messaging daemon: " + e.getMessage());
       LoggerFactory.getLogger(MessageDaemon.class).log(ServerLogMessages.MESSAGE_DAEMON_START_FAILED, e);
       lockManager.shutdown();
       lockManager.close();

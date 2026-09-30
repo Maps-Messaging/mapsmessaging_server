@@ -116,6 +116,7 @@ public class SendMessageState {
     }
   }
 
+  @SuppressWarnings("java:S106") // This standalone parser demonstration prints its result directly to the invoking user.
   public static void main(String[] args) {
     SendMessageState state = new SendMessageState("%MOQS: 1,3,2025-08-21 02:21:39,3,0,2,20,84,0", true);
     System.out.println(state);
