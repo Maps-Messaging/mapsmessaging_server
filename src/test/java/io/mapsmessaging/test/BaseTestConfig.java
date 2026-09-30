@@ -189,15 +189,13 @@ public class BaseTestConfig extends BaseTest {
     }  }
 
   public static String getPassword(String user) throws IOException {
-    if (usernamePasswordMap == null) {
-      if (md != null && md.isStarted() && AuthManager.getInstance().isAuthenticationEnabled()) {
-        ConfigurationProperties properties = new ConfigurationProperties(AuthManager.getInstance().getConfig().getAuthConfig());
-        String path = properties.getProperty("configDirectory");
-        usernamePasswordMap = Files.lines(Paths.get(path + File.separator + "admin_password"))
-            .map(line -> line.split("="))
-            .collect(Collectors.toMap(arr -> arr[0], arr -> arr[1]));
-
-      }
+    if (usernamePasswordMap == null
+        && md != null && md.isStarted() && AuthManager.getInstance().isAuthenticationEnabled()) {
+      ConfigurationProperties properties = new ConfigurationProperties(AuthManager.getInstance().getConfig().getAuthConfig());
+      String path = properties.getProperty("configDirectory");
+      usernamePasswordMap = Files.lines(Paths.get(path + File.separator + "admin_password"))
+          .map(line -> line.split("="))
+          .collect(Collectors.toMap(arr -> arr[0], arr -> arr[1]));
     }
     if (usernamePasswordMap != null) {
       return usernamePasswordMap.get(user);

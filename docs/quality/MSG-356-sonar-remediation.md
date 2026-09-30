@@ -300,7 +300,7 @@ Both changed shell scripts pass bash -n. Stubbed before/after executions match s
 
 ### Outstanding exported code-smell categories
 
-Counts below describe the original 1,213-finding export, not refreshed SonarCloud results. Fully addressed rule categories (Override, imports, switch labels, immediate returns, modifiers, empty statement, Java/shell duplicated literals) account for 225 exported findings. The remaining 988 findings include the partly addressed 112 pattern/cast findings; they are not a count of currently open issues. Further reliability/security review is tracked in the original 106-finding table above. Full build, fresh coverage/analysis, and final merge remain pending.
+Counts below describe the original 1,213-finding export, not refreshed SonarCloud results. Fully addressed rule categories (Override, imports, switch labels, immediate returns, modifiers, empty statement, Java/shell duplicated literals, nested-if merges and identical catches) account for 246 exported findings. The remaining 967 findings include the partly addressed 112 pattern/cast findings; they are not a count of currently open issues. Further reliability/security review is tracked in the original 106-finding table above. Full build, fresh coverage/analysis, and final merge remain pending.
 
 | Rule | Export findings | Review status |
 | --- | ---: | --- |
@@ -318,7 +318,6 @@ Counts below describe the original 1,213-finding export, not refreshed SonarClou
 | java:S106 | 18 | Pending review |
 | java:S107 | 16 | Pending review |
 | java:S4165 | 16 | Pending review |
-| java:S1066 | 14 | Pending review |
 | java:S2925 | 14 | Pending review |
 | java:S2160 | 14 | Pending review |
 | java:S6885 | 13 | Pending review |
@@ -340,7 +339,6 @@ Counts below describe the original 1,213-finding export, not refreshed SonarClou
 | java:S1854 | 8 | Pending review |
 | java:S115 | 8 | Pending review |
 | java:S1871 | 7 | Pending review |
-| java:S2147 | 7 | Pending review |
 | java:S2143 | 7 | Pending review |
 | java:S1144 | 6 | Pending review |
 | shelldre:S7688 | 6 | Pending review |
@@ -402,3 +400,9 @@ Counts below describe the original 1,213-finding export, not refreshed SonarClou
 | java:S1611 | 1 | Pending review |
 | java:S9397 | 1 | Pending review |
 | java:S3063 | 1 | Pending review |
+
+### Block 6: nested conditions and identical catches
+
+Merged all 14 exported S1066 nested-if findings across 13 files, preserving left-to-right short-circuit evaluation, null guards and existing actions. Consolidated all seven S2147 findings across five files using multi-catch; exception types, responses, messages, causes and interruption behavior remain unchanged. No suppression was added.
+
+Validation: Java 21 compilation and 116 focused tests passed with zero failures, errors or skips, using fresh JaCoCo execution data. Added 27 regression cases for MQTT 3/5 will guards and encodings, CONNACK length handling, endpoint resume state transitions, Inmarsat authentication reset, twin altitude validation, REST error responses and satellite publication exceptions. Existing tests exercised WebSocket UTF-8 parsing, PROXY v2, file locking, schema generation, DTO resolution and NMEA parsing. Test utility edits were compiled; no external daemon or broker was required. Full build and fresh Sonar analysis remain pending.

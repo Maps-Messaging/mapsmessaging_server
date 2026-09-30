@@ -102,9 +102,7 @@ public class StoreFiller {
         subscriberThreads[x*y] = new Thread(() -> {
           try {
             subscriber(topicNames[finalX], counter.incrementAndGet());
-          } catch (MqttException e) {
-            throw new RuntimeException(e);
-          } catch (InterruptedException e) {
+          } catch (MqttException | InterruptedException e) {
             throw new RuntimeException(e);
           }
         });
@@ -136,9 +134,7 @@ public class StoreFiller {
         Thread t = new Thread(() -> {
           try {
             publisher(topicNames[(index%topicNames.length)]);
-          } catch (MqttException e) {
-            throw new RuntimeException(e);
-          } catch (InterruptedException e) {
+          } catch (MqttException | InterruptedException e) {
             throw new RuntimeException(e);
           }
         });

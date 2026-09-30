@@ -126,10 +126,9 @@ public abstract class BaseInmarsatClient {
         if (code / 100 == 2) {
           return resp.body();
         }
-        if(resp.statusCode() == 401){
-          if(authReset != null) {
-            authReset.resetAuth();
-          }
+        if (resp.statusCode() == 401
+            && authReset != null) {
+          authReset.resetAuth();
         }
         if (shouldRetry(code) && attempt < MAX_RETRIES) {
           sleepBackoff(attempt, resp.headers());

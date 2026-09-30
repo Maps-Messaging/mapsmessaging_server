@@ -163,12 +163,10 @@ public class ProxyProtocolV2 extends ProxyProtocol {
       }
 
       return new ProxyProtocolInfo(source, destination, buildVersionString(transport, family));
-    } catch (BufferUnderflowException e) {
+    } catch (BufferUnderflowException | ProxyProtocolParseException e) {
       throw e;
     } catch (UnknownHostException e) {
       throw new ProxyProtocolParseException("Failed to parse PROXY v2 addresses", e);
-    } catch (ProxyProtocolParseException e) {
-      throw e;
     } catch (Exception e) {
       throw new ProxyProtocolParseException("Failed to parse PROXY v2 header", e);
     }

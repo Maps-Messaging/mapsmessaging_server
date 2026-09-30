@@ -652,6 +652,39 @@ class TwinConfigurationStoreTest {
     assertEquals(1, config.getSaveCount());
   }
 
+  @Test
+  void fixed_altitude_requires_value_before_persistence() {
+    SavingTwinManagerConfig config = newConfig();
+    TwinConfigurationStore store = new TwinConfigurationStore(config);
+    DroneInfoDTO drone = drone("fixed-altitude");
+    drone.setAltitudeMode(io.mapsmessaging.state.config.AltitudeMode.FIXED);
+    drone.setAltitudeMeters(null);
+
+    TwinConfigurationStore.TwinConfigurationException failure = assertThrows(
+        TwinConfigurationStore.TwinConfigurationException.class, () -> store.createDrone(drone));
+
+    assertEquals(400, failure.getStatusCode());
+    assertEquals("altitudeMeters is required when altitudeMode is FIXED", failure.getMessage());
+    assertEquals(0, config.getSaveCount());
+  }
+
+  @Test
+  void fixed_altitude_value_and_current_altitude_without_value_are_accepted() throws IOException {
+    SavingTwinManagerConfig config = newConfig();
+    TwinConfigurationStore store = new TwinConfigurationStore(config);
+    DroneInfoDTO fixed = drone("fixed-altitude");
+    fixed.setAltitudeMode(io.mapsmessaging.state.config.AltitudeMode.FIXED);
+    fixed.setAltitudeMeters(125.5);
+    DroneInfoDTO current = drone("current-altitude");
+    current.setAltitudeMode(io.mapsmessaging.state.config.AltitudeMode.CURRENT);
+    current.setAltitudeMeters(null);
+
+    store.createDrone(fixed);
+    store.createDrone(current);
+
+    assertEquals(2, config.getSaveCount());
+  }
+
   private SavingTwinManagerConfig newConfig() {
     SavingTwinManagerConfig config = new SavingTwinManagerConfig();
     config.setN2KTwinConfig(new N2KTwinConfig());

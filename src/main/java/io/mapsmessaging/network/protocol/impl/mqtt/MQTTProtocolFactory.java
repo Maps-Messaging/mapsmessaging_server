@@ -53,25 +53,24 @@ public class MQTTProtocolFactory extends ProtocolImplFactory {
     MQTTProtocol protocol = new MQTTProtocol(endPoint);
     EndPointServerConfigDTO dto = endPoint.getServer().getConfig();
     Publish willMsg = null;
-    if(dto instanceof EndPointConnectionServerConfigDTO connectionServerConfigDTO) {
-      if(connectionServerConfigDTO.getWillConfig() != null) {
-        MqttWillConfigDTO will =  connectionServerConfigDTO.getWillConfig();
-        QualityOfService qos = QualityOfService.getInstance(will.getQos());
-        byte[] payload;
-        if(will.getPayloadEncoding().equals("base64")) {
-          payload = Base64.getDecoder().decode(will.getPayload());
-        }
-        else{
-          payload = will.getPayload().getBytes(StandardCharsets.UTF_8);
-        }
-        willMsg = new Publish(
-            will.isRetain(),
-            payload,
-            qos,
-            0,
-            will.getTopic()
-        );
+    if (dto instanceof EndPointConnectionServerConfigDTO connectionServerConfigDTO
+        && connectionServerConfigDTO.getWillConfig() != null) {
+      MqttWillConfigDTO will =  connectionServerConfigDTO.getWillConfig();
+      QualityOfService qos = QualityOfService.getInstance(will.getQos());
+      byte[] payload;
+      if(will.getPayloadEncoding().equals("base64")) {
+        payload = Base64.getDecoder().decode(will.getPayload());
       }
+      else{
+        payload = will.getPayload().getBytes(StandardCharsets.UTF_8);
+      }
+      willMsg = new Publish(
+          will.isRetain(),
+          payload,
+          qos,
+          0,
+          will.getTopic()
+      );
     }
     protocol.getTopicNameMapping().putAll(topicMap);
     protocol.connect(sessionId, username, password, willMsg);

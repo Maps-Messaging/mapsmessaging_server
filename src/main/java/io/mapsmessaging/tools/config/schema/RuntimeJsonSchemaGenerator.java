@@ -185,12 +185,11 @@ public class RuntimeJsonSchemaGenerator {
               }
             }
           }
-          else if (Map.class.isAssignableFrom(rawType)) {
-            if (args.length == 2) {
-              Class<?> valueClass = ReflectionTypes.toClass(args[1]);
-              if (valueClass != null && BaseConfigDTO.class.isAssignableFrom(valueClass)) {
-                stack.push(valueClass);
-              }
+          else if (Map.class.isAssignableFrom(rawType)
+              && args.length == 2) {
+            Class<?> valueClass = ReflectionTypes.toClass(args[1]);
+            if (valueClass != null && BaseConfigDTO.class.isAssignableFrom(valueClass)) {
+              stack.push(valueClass);
             }
           }
 
@@ -604,10 +603,9 @@ public class RuntimeJsonSchemaGenerator {
         propertySchema.put("multipleOf", multipleOf);
       }
     }
-    else if (mode == SchemaGenerationMode.RELAXED) {
-      if (!schemaAnn.minimum().isBlank() || !schemaAnn.maximum().isBlank() || schemaAnn.multipleOf() > 0.0d) {
-        context.warn("Ignored numeric constraints on non-numeric field type " + javaType.getName());
-      }
+    else if (mode == SchemaGenerationMode.RELAXED
+        && (!schemaAnn.minimum().isBlank() || !schemaAnn.maximum().isBlank() || schemaAnn.multipleOf() > 0.0d)) {
+      context.warn("Ignored numeric constraints on non-numeric field type " + javaType.getName());
     }
   }
 
