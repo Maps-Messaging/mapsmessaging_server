@@ -42,8 +42,6 @@ import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.logging.ServerLogMessages;
 import io.mapsmessaging.tools.config.schema.RuntimeJsonSchemaGenerator;
 import io.mapsmessaging.tools.config.schema.RuntimeJsonSchemaService;
-import io.mapsmessaging.tools.config.yaml.RenderMode;
-import io.mapsmessaging.tools.config.yaml.YamlWriter;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.Setter;
@@ -51,7 +49,6 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;

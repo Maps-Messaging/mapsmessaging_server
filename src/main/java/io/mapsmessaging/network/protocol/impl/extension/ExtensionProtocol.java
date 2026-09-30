@@ -76,6 +76,7 @@ public class ExtensionProtocol extends Protocol implements MessageListener, Clie
     extension.setExtensionProtocol(this);
   }
 
+  @Override
   public void connect(String sessionId, String username, String password) throws IOException {
     session = serverApi.createSession(this, sessionId, username, password);
     principal = new UserPrincipal(username);

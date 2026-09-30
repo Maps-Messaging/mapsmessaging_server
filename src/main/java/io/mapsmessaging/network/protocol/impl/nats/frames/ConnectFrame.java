@@ -51,6 +51,7 @@ public class ConnectFrame extends NatsFrame {
     return "CONNECT".getBytes(StandardCharsets.US_ASCII);
   }
 
+  @Override
   protected void parseLine(String line) {
     this.echo = extractBoolean(line, "\"echo\":");
     this.headers = extractBoolean(line, "\"headers\":");

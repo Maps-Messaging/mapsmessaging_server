@@ -126,3 +126,81 @@ Branch: `fix/MSG-356-server-sonar-remediation`. Baseline: 106 unresolved bugs/vu
 Draft PR: https://github.com/Maps-Messaging/mapsmessaging_server/pull/2260. Jira: https://mapsmessaging.atlassian.net/browse/MSG-356.
 
 Java 21 Maven compilation succeeded. The focused satellite, LoRa, schema, namespace and metrics suites passed 31 tests; TAK passed 4 tests. New regression tests reproduced defects before fixes. Full-suite execution and refreshed SonarCloud analysis remain pending. The remaining rows explicitly marked pending have not been adjudicated.
+
+## Code-smell cleanup blocks
+
+The 30 September development export contains 1,213 unresolved code smells. Use the existing branch and PR for every block, with focused commits. A fresh analysis is required to confirm that findings disappear.
+
+### Block 1: imports and overrides
+
+Added 37 missing `@Override` annotations and removed 24 unused or duplicate imports across 34 Java source/test files. No method bodies, signatures, runtime annotations or dependencies changed. No tests were added or modified beyond import/annotation cleanup.
+
+Validation: Java 21 `mvn -B -DskipTests -Dexec.skip=true -Ddependency-check.skip=true test-compile` succeeded, compiling production and test sources. Full tests/build are deferred until the cleanup blocks are ready.
+
+| Issue key | Rule | File |
+|---|---|---|
+| AaDC8DxDin_CbpmeOlRX | java:S1128 | src/main/java/io/mapsmessaging/config/device/SerialDeviceConfig.java |
+| AaDC8CbWin_CbpmeOlJM | java:S1161 | src/main/java/io/mapsmessaging/state/mavlink/model/impl/px4/GenericPx4UxvModel.java |
+| AaDC8Cbrin_CbpmeOlJS | java:S1161 | src/main/java/io/mapsmessaging/state/mavlink/model/impl/AbstractMissionUxvModel.java |
+| AaDC8Cbrin_CbpmeOlJT | java:S1161 | src/main/java/io/mapsmessaging/state/mavlink/model/impl/AbstractMissionUxvModel.java |
+| AaDC8Cbrin_CbpmeOlJU | java:S1161 | src/main/java/io/mapsmessaging/state/mavlink/model/impl/AbstractMissionUxvModel.java |
+| AaDC8Cbrin_CbpmeOlJV | java:S1161 | src/main/java/io/mapsmessaging/state/mavlink/model/impl/AbstractMissionUxvModel.java |
+| AaDC8Cbrin_CbpmeOlJW | java:S1161 | src/main/java/io/mapsmessaging/state/mavlink/model/impl/AbstractMissionUxvModel.java |
+| AaDC8Cbrin_CbpmeOlJX | java:S1161 | src/main/java/io/mapsmessaging/state/mavlink/model/impl/AbstractMissionUxvModel.java |
+| AaDC8Cbrin_CbpmeOlJY | java:S1161 | src/main/java/io/mapsmessaging/state/mavlink/model/impl/AbstractMissionUxvModel.java |
+| AaDC8Cbrin_CbpmeOlJZ | java:S1161 | src/main/java/io/mapsmessaging/state/mavlink/model/impl/AbstractMissionUxvModel.java |
+| AaDC8Cbrin_CbpmeOlJa | java:S1161 | src/main/java/io/mapsmessaging/state/mavlink/model/impl/AbstractMissionUxvModel.java |
+| AaDC8Cbrin_CbpmeOlJb | java:S1161 | src/main/java/io/mapsmessaging/state/mavlink/model/impl/AbstractMissionUxvModel.java |
+| AaDC8CdLin_CbpmeOlJt | java:S1161 | src/main/java/io/mapsmessaging/state/mavlink/model/UavModel.java |
+| AaDC8CdLin_CbpmeOlJu | java:S1161 | src/main/java/io/mapsmessaging/state/mavlink/model/UavModel.java |
+| AaDC8CTFin_CbpmeOlJB | java:S1161 | src/main/java/io/mapsmessaging/state/mavlink/model/UgvModel.java |
+| AaDC8CTFin_CbpmeOlJC | java:S1161 | src/main/java/io/mapsmessaging/state/mavlink/model/UgvModel.java |
+| AaDC8CcJin_CbpmeOlJj | java:S1161 | src/main/java/io/mapsmessaging/state/mavlink/model/UsvModel.java |
+| AaDC8CcJin_CbpmeOlJk | java:S1161 | src/main/java/io/mapsmessaging/state/mavlink/model/UsvModel.java |
+| AaDC8Catin_CbpmeOlJF | java:S1161 | src/main/java/io/mapsmessaging/state/mavlink/model/UuvModel.java |
+| AaDC8Catin_CbpmeOlJG | java:S1161 | src/main/java/io/mapsmessaging/state/mavlink/model/UuvModel.java |
+| AaDC8EVfin_CbpmeOlaw | java:S1128 | src/test/java/io/mapsmessaging/aggregator/Envelope.java |
+| AaDC8DMzin_CbpmeOlL2 | java:S1161 | src/main/java/io/mapsmessaging/network/protocol/impl/mqtt/MQTTProtocol.java |
+| AaDC8DA9in_CbpmeOlLS | java:S1161 | src/main/java/io/mapsmessaging/network/protocol/impl/mqtt5/MQTT5Protocol.java |
+| AaDC8CI0in_CbpmeOlHz | java:S1128 | src/main/java/io/mapsmessaging/dto/rest/config/transformer/impl/JsonMutateTransformationDTO.java |
+| AaDC8CJBin_CbpmeOlH1 | java:S1128 | src/main/java/io/mapsmessaging/dto/rest/config/transformer/TransformationConfigDTO.java |
+| AaDC8C1nin_CbpmeOlLC | java:S1128 | src/main/java/io/mapsmessaging/state/rest/twins/TwinManagementApi.java |
+| AaDC8C1nin_CbpmeOlLD | java:S1128 | src/main/java/io/mapsmessaging/state/rest/twins/TwinManagementApi.java |
+| AaDC8ELIin_CbpmeOlXt | java:S1128 | src/main/java/io/mapsmessaging/license/FeatureDetails.java |
+| AaDC8ELIin_CbpmeOlXu | java:S1128 | src/main/java/io/mapsmessaging/license/FeatureDetails.java |
+| AaDC8EKlin_CbpmeOlXo | java:S1128 | src/main/java/io/mapsmessaging/license/features/Hardware.java |
+| AaDC8EKuin_CbpmeOlXp | java:S1128 | src/main/java/io/mapsmessaging/license/features/InterConnections.java |
+| AaDC8EPrin_CbpmeOlYi | java:S1128 | src/main/java/io/mapsmessaging/SubSystemManager.java |
+| AaDj9zzeHmxAf3IaJAdd | java:S1128 | src/test/java/io/mapsmessaging/network/protocol/impl/satellite/SatelliteReplicationTests.java |
+| AaDC8CJBin_CbpmeOlH0 | java:S1128 | src/main/java/io/mapsmessaging/dto/rest/config/transformer/TransformationConfigDTO.java |
+| AaDC8Dk_in_CbpmeOlPR | java:S1128 | src/main/java/io/mapsmessaging/network/protocol/impl/mavlink/MavlinkSerialProtocol.java |
+| AaDC8CMQin_CbpmeOlIO | java:S1128 | src/main/java/io/mapsmessaging/utilities/configuration/ConfigurationManager.java |
+| AaDC8CMQin_CbpmeOlIP | java:S1128 | src/main/java/io/mapsmessaging/utilities/configuration/ConfigurationManager.java |
+| AaDC8CMQin_CbpmeOlIQ | java:S1128 | src/main/java/io/mapsmessaging/utilities/configuration/ConfigurationManager.java |
+| AaDC8EUzin_CbpmeOlak | java:S1128 | src/test/java/io/mapsmessaging/api/transformers/TransformationAssertions.java |
+| AaDC8EUrin_CbpmeOlaj | java:S1128 | src/test/java/io/mapsmessaging/api/transformers/TransformationTestSupport.java |
+| AaDC8ENxin_CbpmeOlYQ | java:S1161 | src/main/java/io/mapsmessaging/hardware/device/handler/spi/SpiDeviceHandler.java |
+| AaDC8ENxin_CbpmeOlYR | java:S1161 | src/main/java/io/mapsmessaging/hardware/device/handler/spi/SpiDeviceHandler.java |
+| AaDj9zoeHmxAf3IaJAdb | java:S1128 | src/test/java/io/mapsmessaging/test/BaseTestConfig.java |
+| AaDC8D4Win_CbpmeOlS7 | java:S1128 | src/main/java/io/mapsmessaging/engine/destination/subscription/impl/DestinationSubscription.java |
+| AaDC8Dpjin_CbpmeOlQJ | java:S1161 | src/main/java/io/mapsmessaging/network/io/impl/tcp/TCPEndPoint.java |
+| AaDC8Dpjin_CbpmeOlQL | java:S1161 | src/main/java/io/mapsmessaging/network/io/impl/tcp/TCPEndPoint.java |
+| AaDC8DU0in_CbpmeOlNU | java:S1161 | src/main/java/io/mapsmessaging/network/protocol/impl/nats/jetstream/stream/transactions/TransactionManager.java |
+| AaDC8DV_in_CbpmeOlNb | java:S1161 | src/main/java/io/mapsmessaging/network/protocol/impl/nats/frames/HPayloadFrame.java |
+| AaDC8DWmin_CbpmeOlNf | java:S1161 | src/main/java/io/mapsmessaging/network/protocol/impl/nats/frames/ConnectFrame.java |
+| AaDC8DW9in_CbpmeOlNh | java:S1161 | src/main/java/io/mapsmessaging/network/protocol/impl/nats/frames/PayloadFrame.java |
+| AaDC8ESHin_CbpmeOlZt | java:S1128 | src/test/java/io/mapsmessaging/test/TestFeatureManager.java |
+| AaDC8ESHin_CbpmeOlZs | java:S1161 | src/test/java/io/mapsmessaging/test/TestFeatureManager.java |
+| AaDC8DjJin_CbpmeOlOy | java:S1161 | src/main/java/io/mapsmessaging/network/protocol/impl/extension/ExtensionProtocol.java |
+| AaDC8CLQin_CbpmeOlIE | java:S1161 | src/main/java/io/mapsmessaging/utilities/stats/LinkedMovingAverages.java |
+| AaDj9zoeHmxAf3IaJAda | java:S1128 | src/test/java/io/mapsmessaging/test/BaseTestConfig.java |
+| AaDj9zoeHmxAf3IaJAdc | java:S1128 | src/test/java/io/mapsmessaging/test/BaseTestConfig.java |
+| AaDC8DMzin_CbpmeOlL3 | java:S1161 | src/main/java/io/mapsmessaging/network/protocol/impl/mqtt/MQTTProtocol.java |
+| AaDC8DA9in_CbpmeOlLT | java:S1161 | src/main/java/io/mapsmessaging/network/protocol/impl/mqtt5/MQTT5Protocol.java |
+| AaDC8CLQin_CbpmeOlIC | java:S1161 | src/main/java/io/mapsmessaging/utilities/stats/LinkedMovingAverages.java |
+| AaDC8CLQin_CbpmeOlID | java:S1161 | src/main/java/io/mapsmessaging/utilities/stats/LinkedMovingAverages.java |
+| AaDC8EU9in_CbpmeOlal | java:S1161 | src/test/java/io/mapsmessaging/engine/session/FakeSecurityManager.java |
+
+### Next scan
+
+The export has 112 instanceof/cast findings, 12 switch-label consolidation findings, 2 modifier-order findings, 4 immediate-return findings and 1 empty statement. Review source semantics before applying each block. Do not bulk-convert loops, mutable list collectors, exception handling, serialized field names or equality methods solely to satisfy style rules.

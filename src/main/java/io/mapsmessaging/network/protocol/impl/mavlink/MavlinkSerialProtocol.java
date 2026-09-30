@@ -23,7 +23,6 @@ import io.mapsmessaging.dto.rest.config.protocol.ProtocolConfigDTO;
 import io.mapsmessaging.dto.rest.config.protocol.impl.MavlinkConfigDTO;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
-import io.mapsmessaging.mavlink.MavlinkEventFactory;
 import io.mapsmessaging.mavlink.ProcessedFrame;
 import io.mapsmessaging.mavlink.context.FrameFailureReason;
 import io.mapsmessaging.network.io.EndPoint;

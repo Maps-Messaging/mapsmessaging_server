@@ -19,7 +19,6 @@
 
 package io.mapsmessaging.aggregator;
 
-import com.google.gson.JsonObject;
 import lombok.Getter;
 
 import java.util.LinkedHashMap;

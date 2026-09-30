@@ -85,16 +85,19 @@ public abstract class AbstractMissionUxvModel extends AbstractUxvModel {
         stop(context));
   }
 
+  @Override
   public UxvModelCommandSet arm(UxvCommandContext context) {
     Objects.requireNonNull(context, "context must not be null");
     return UxvModelCommandSet.of(UxvOperation.ARM, getModelName(), MavlinkCommandLongFactory.arm(context.targetSystem(), context.targetComponent(), context.sequence()));
   }
 
+  @Override
   public UxvModelCommandSet disarm(UxvCommandContext context) {
     Objects.requireNonNull(context, "context must not be null");
     return UxvModelCommandSet.of(UxvOperation.DISARM, getModelName(), MavlinkCommandLongFactory.disarm(context.targetSystem(), context.targetComponent(), context.sequence()));
   }
 
+  @Override
   public UxvModelCommandSet setHome(UxvCommandContext context, HomeRequest request) {
     Objects.requireNonNull(context, "context must not be null");
     Objects.requireNonNull(request, "request must not be null");
@@ -113,6 +116,7 @@ public abstract class AbstractMissionUxvModel extends AbstractUxvModel {
     return UxvModelCommandSet.of(UxvOperation.SET_HOME, getModelName(), commandLong);
   }
 
+  @Override
   public UxvModelCommandSet reposition(UxvCommandContext context, RepositionRequest request) {
     Objects.requireNonNull(context, "context must not be null");
     Objects.requireNonNull(request, "request must not be null");
@@ -127,6 +131,7 @@ public abstract class AbstractMissionUxvModel extends AbstractUxvModel {
     return UxvModelCommandSet.of(UxvOperation.REPOSITION, getModelName(), messages);
   }
 
+  @Override
   public UxvModelCommandSet holdPosition(UxvCommandContext context) {
     Objects.requireNonNull(context, "context must not be null");
     return UxvModelCommandSet.of(UxvOperation.HOLD_POSITION, getModelName(), pauseCommand(context));
@@ -139,11 +144,13 @@ public abstract class AbstractMissionUxvModel extends AbstractUxvModel {
     return UxvModelCommandSet.of(UxvOperation.STOP, getModelName(), message);
   }
 
+  @Override
   public UxvModelCommandSet pauseVehicle(UxvCommandContext context) {
     Objects.requireNonNull(context, "context must not be null");
     return UxvModelCommandSet.of(UxvOperation.PAUSE_VEHICLE, getModelName(), pauseCommand(context));
   }
 
+  @Override
   public UxvModelCommandSet resumeVehicle(UxvCommandContext context) {
     Objects.requireNonNull(context, "context must not be null");
     return UxvModelCommandSet.of(
@@ -152,6 +159,7 @@ public abstract class AbstractMissionUxvModel extends AbstractUxvModel {
         MavlinkCommandLongFactory.resume(context.targetSystem(), context.targetComponent(), context.sequence()));
   }
 
+  @Override
   public PlanValidation validateMission(MissionPlan missionPlan) {
     Objects.requireNonNull(missionPlan, "missionPlan must not be null");
 
@@ -170,6 +178,7 @@ public abstract class AbstractMissionUxvModel extends AbstractUxvModel {
     return issues.isEmpty() ? PlanValidation.success() : PlanValidation.failure(issues);
   }
 
+  @Override
   public UxvModelCommandSet buildMission(UxvCommandContext context, MissionPlan missionPlan) {
     Objects.requireNonNull(context, "context must not be null");
     Objects.requireNonNull(missionPlan, "missionPlan must not be null");
@@ -199,6 +208,7 @@ public abstract class AbstractMissionUxvModel extends AbstractUxvModel {
     return UxvModelCommandSet.of(UxvOperation.BUILD_MISSION, getModelName(), messages);
   }
 
+  @Override
   public UxvModelCommandSet startMission(UxvCommandContext context) {
     Objects.requireNonNull(context, "context must not be null");
     return UxvModelCommandSet.of(

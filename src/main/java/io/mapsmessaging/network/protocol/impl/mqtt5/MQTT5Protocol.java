@@ -222,6 +222,7 @@ public class MQTT5Protocol extends Protocol {
     completedConnection();
   }
 
+  @Override
   public void setConnected(boolean connected) {
     super.setConnected(connected);
     if (connectionTimeOut != null) {
@@ -243,6 +244,7 @@ public class MQTT5Protocol extends Protocol {
     return session.getName();
   }
 
+  @Override
   public void setSession(Session session) {
     this.session = session;
     completedConnection();
