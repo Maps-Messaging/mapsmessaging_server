@@ -24,6 +24,7 @@ import lombok.Getter;
 /** A small retained snapshot; never retains the sender or its mission payload. */
 @Getter
 public final class MavlinkTransmissionState {
+  @SuppressWarnings("java:S3077") // Snapshot contains only immutable values; volatile safely publishes each replacement.
   private volatile Snapshot snapshot;
 
   void update(Snapshot value) {
