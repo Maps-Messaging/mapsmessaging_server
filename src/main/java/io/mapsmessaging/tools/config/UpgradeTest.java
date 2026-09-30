@@ -1,5 +1,9 @@
 package io.mapsmessaging.tools.config;
 
+import io.mapsmessaging.logging.Logger;
+import io.mapsmessaging.logging.LoggerFactory;
+import io.mapsmessaging.logging.ServerLogMessages;
+
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.MapperFeature;
@@ -15,6 +19,8 @@ import io.mapsmessaging.utilities.configuration.ConfigurationManager;
 import java.util.ArrayList;
 
 public class UpgradeTest {
+
+  private static final Logger logger = LoggerFactory.getLogger(UpgradeTest.class);
 
   public static void main(String[] args) {
     ObjectMapper objectMapper = buildObjectMapper();
@@ -56,9 +62,7 @@ public class UpgradeTest {
         }
 
       } catch (Exception exception) {
-        System.err.println("Error processing manager: " + managerName);
-        exception.printStackTrace();
-        // keep swallowing, as per your original test
+        logger.log(ServerLogMessages.CONFIG_UPGRADE_FAILED, managerName.getConfigName(), exception);
       }
     }
   }

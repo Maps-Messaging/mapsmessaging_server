@@ -109,7 +109,7 @@ public class TakTwinObserver implements TwinObserver {
           publisher = new EventPublisher(config.getTak().getTopic());
         } catch (Throwable exception) {
           publisher = null;
-          exception.printStackTrace();
+          logger.log(StateLogMessages.STATE_MANAGER_TAK_PUBLISHER_CREATE_FAILED, config.getTak().getTopic(), exception);
         }
         eventPublisher = publisher;
       } else {
@@ -314,7 +314,7 @@ public class TakTwinObserver implements TwinObserver {
       try {
         eventPublisher.publish(xml);
       } catch (IOException exception) {
-        exception.printStackTrace();
+        logger.log(StateLogMessages.STATE_MANAGER_TAK_OBSERVER_PUBLISH_FAILED, exception);
       }
     }
   }
@@ -334,7 +334,7 @@ public class TakTwinObserver implements TwinObserver {
       try {
         eventPublisher.publish(xml);
       } catch (IOException exception) {
-        exception.printStackTrace();
+        logger.log(StateLogMessages.STATE_MANAGER_TAK_OBSERVER_PUBLISH_FAILED, exception);
       }
     }
   }

@@ -30,6 +30,22 @@ import lombok.Getter;
 public enum ServerLogMessages implements LogMessage {
 
   //-------------------------------------------------------------------------------------------------------------
+  // <editor-fold desc="Failure diagnostics">
+  MESSAGE_DAEMON_START_FAILED(LEVEL.FATAL, SERVER_CATEGORY.DAEMON, "Unexpected error starting the messaging daemon"),
+  AGGREGATOR_DRAIN_FAILED(LEVEL.ERROR, SERVER_CATEGORY.ENGINE, "Failed to drain aggregator worker '{}'"),
+  AGGREGATOR_TIMEOUT_FAILED(LEVEL.ERROR, SERVER_CATEGORY.ENGINE, "Failed to check timeout for aggregator worker '{}'"),
+  SUBSCRIPTION_AUTHORISATION_CHECK_FAILED(LEVEL.ERROR, SERVER_CATEGORY.AUTHORISATION, "Failed to check subscription authorisation for '{}'"),
+  JSON_MAPPER_TRANSFORMATION_FAILED(LEVEL.WARN, SERVER_CATEGORY.TRANSFORMATION, "Failed to apply JSON mapping for source '{}'"),
+  ROUTE_MANAGER_EVALUATION_FAILED(LEVEL.WARN, SERVER_CATEGORY.NETWORK, "Failed to evaluate connection routes"),
+  MQTT_SUBSCRIBE_FAILED(LEVEL.WARN, SERVER_CATEGORY.PROTOCOL, "Failed to subscribe to MQTT topic '{}'"),
+  MQTT_SN_AUTHENTICATION_FAILED(LEVEL.WARN, SERVER_CATEGORY.AUTHENTICATION, "Failed to process MQTT-SN authentication challenge"),
+  NATS_SUBSCRIBE_FAILED(LEVEL.WARN, SERVER_CATEGORY.PROTOCOL, "Failed to subscribe to NATS subject '{}'"),
+  NMEA_PROTOCOL_CREATE_FAILED(LEVEL.WARN, SERVER_CATEGORY.PROTOCOL, "Failed to create NMEA protocol"),
+  NMEA_PROTOCOL_CLOSE_FAILED(LEVEL.WARN, SERVER_CATEGORY.PROTOCOL, "Failed to close NMEA protocol"),
+  STATS_REPORT_FAILED(LEVEL.WARN, SERVER_CATEGORY.NETWORK, "Failed to send server statistics report"),
+  CONFIG_UPGRADE_FAILED(LEVEL.ERROR, SERVER_CATEGORY.ENGINE, "Failed to process configuration manager '{}' during upgrade validation"),
+  // </editor-fold>
+
   // <editor-fold desc="File Lock Management">
   LOCKFILE_STALE_HEARTBEAT(LEVEL.ERROR, SERVER_CATEGORY.ENGINE, "Heartbeat is stale, attempting forced takeover"),
   LOCKFILE_DELETED(LEVEL.ERROR, SERVER_CATEGORY.ENGINE, "Lock file deleted"),
@@ -62,7 +78,7 @@ public enum ServerLogMessages implements LogMessage {
 
   MESSAGE_DAEMON_AGENT_STARTING(LEVEL.AUDIT, SERVER_CATEGORY.DAEMON, "Starting {} "),
   MESSAGE_DAEMON_AGENT_STARTED(LEVEL.WARN, SERVER_CATEGORY.DAEMON, "Started {} took {}ms"),
-  MESSAGE_DAEMON_AGENT_FAILED(LEVEL.FATAL, SERVER_CATEGORY.DAEMON, "Failed to start {}, exception {}, system exitting"),
+  MESSAGE_DAEMON_AGENT_FAILED(LEVEL.FATAL, SERVER_CATEGORY.DAEMON, "Failed to start {}, system exiting"),
 
   MESSAGE_DAEMON_AGENT_STOPPING(LEVEL.AUDIT, SERVER_CATEGORY.DAEMON, "Stopping {} "),
   MESSAGE_DAEMON_AGENT_STOPPED(LEVEL.WARN, SERVER_CATEGORY.DAEMON, "Stopped {} took {}ms"),

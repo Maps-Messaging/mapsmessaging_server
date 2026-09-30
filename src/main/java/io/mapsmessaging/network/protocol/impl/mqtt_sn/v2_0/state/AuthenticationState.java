@@ -19,6 +19,10 @@
 
 package io.mapsmessaging.network.protocol.impl.mqtt_sn.v2_0.state;
 
+import io.mapsmessaging.logging.Logger;
+import io.mapsmessaging.logging.LoggerFactory;
+import io.mapsmessaging.logging.ServerLogMessages;
+
 import io.mapsmessaging.api.Session;
 import io.mapsmessaging.network.io.EndPoint;
 import io.mapsmessaging.network.protocol.impl.mqtt.packet.MalformedException;
@@ -35,6 +39,8 @@ import io.mapsmessaging.network.protocol.sasl.SaslAuthenticationMechanism;
 import java.io.IOException;
 
 public class AuthenticationState implements State {
+
+  private static final Logger logger = LoggerFactory.getLogger(AuthenticationState.class);
 
   private final MQTT_SNPacket connectRequest;
   private final SaslAuthenticationMechanism saslAuthenticationMechanism;
@@ -64,8 +70,7 @@ public class AuthenticationState implements State {
         }
         return new Auth(reasonCodes, saslAuthenticationMechanism.getName(), data);
       } catch (IOException e) {
-        e.printStackTrace();
-        // Log this and allow the session to be closed
+        logger.log(ServerLogMessages.MQTT_SN_AUTHENTICATION_FAILED, e);
       }
     }
     try {

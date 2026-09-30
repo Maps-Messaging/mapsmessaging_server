@@ -424,8 +424,7 @@ public class MessageDaemon {
       lockManager.setOnShutdown(instance::stop);
       instance.start();
     } catch (Exception e) {
-      e.printStackTrace();
-      System.err.println("Unexpected error: " + e.getMessage());
+      LoggerFactory.getLogger(MessageDaemon.class).log(ServerLogMessages.MESSAGE_DAEMON_START_FAILED, e);
       lockManager.shutdown();
       lockManager.close();
     }

@@ -220,7 +220,7 @@ public class SessionState implements CloseHandler, CompletionHandler {
       if (isVerbose()) send(new OkFrame());
       return manager;
     } catch (IOException ioe) {
-      ioe.printStackTrace();
+      logger.log(ServerLogMessages.NATS_SUBSCRIBE_FAILED, destination, ioe);
       ErrFrame error = new ErrFrame();
       error.setError("Error encounted subscribing to " + destination+", "+ioe.getMessage());
       send(error);

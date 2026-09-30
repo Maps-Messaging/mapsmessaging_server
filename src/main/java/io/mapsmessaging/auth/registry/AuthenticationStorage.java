@@ -85,7 +85,7 @@ public class AuthenticationStorage {
       identityAccessManager = new IdentityAccessManager(authProvider, map, new IdDbStore<>(dbStoreManager.getUserMapSet()), new IdDbStore<>(dbStoreManager.getGroupMapSet()), new ServerTraversalFactory(), monitorConfig, ServerPermissions.values());
       userPermisionManager = new UserPermisionManager(dbStoreManager.getSessionPrivilegesMap());
     } catch (IOException e) {
-      e.printStackTrace();
+      logger.log(AUTH_STORAGE_FAILED_TO_LOAD, e);
       throw new RuntimeException(e);
     }
   }

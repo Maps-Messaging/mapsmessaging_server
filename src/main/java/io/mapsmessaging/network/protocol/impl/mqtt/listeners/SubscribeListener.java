@@ -19,6 +19,8 @@
 
 package io.mapsmessaging.network.protocol.impl.mqtt.listeners;
 
+import io.mapsmessaging.logging.ServerLogMessages;
+
 import io.mapsmessaging.api.Session;
 import io.mapsmessaging.api.SubscriptionContextBuilder;
 import io.mapsmessaging.api.features.ClientAcknowledgement;
@@ -58,7 +60,7 @@ public class SubscribeListener extends PacketListener {
         session.addSubscription(context);
         result[x] = (byte) info.getQualityOfService().getLevel();
       } catch (IOException e) {
-        e.printStackTrace();
+        logger.log(ServerLogMessages.MQTT_SUBSCRIBE_FAILED, info.getTopicName(), e);
         result[x] = (byte) 0x80;
       }
     }

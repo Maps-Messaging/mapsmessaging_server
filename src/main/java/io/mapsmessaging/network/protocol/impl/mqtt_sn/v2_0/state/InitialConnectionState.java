@@ -19,6 +19,10 @@
 
 package io.mapsmessaging.network.protocol.impl.mqtt_sn.v2_0.state;
 
+import io.mapsmessaging.logging.Logger;
+import io.mapsmessaging.logging.LoggerFactory;
+import io.mapsmessaging.logging.ServerLogMessages;
+
 import io.mapsmessaging.api.Session;
 import io.mapsmessaging.api.SessionContextBuilder;
 import io.mapsmessaging.config.protocol.impl.MqttSnConfig;
@@ -53,6 +57,8 @@ import java.util.concurrent.TimeUnit;
  * Receive a Will Message response f) At this point we can establish a valid MQTT session and we respond with a ConAck response
  */
 public class InitialConnectionState implements State {
+
+  private static final Logger logger = LoggerFactory.getLogger(InitialConnectionState.class);
 
   private static final String PROTOCOL_NAME = "mqtt-sn";
 
@@ -163,8 +169,7 @@ public class InitialConnectionState implements State {
         SaslAuthenticationMechanism saslAuthenticationMechanism = ((MQTT_SNProtocolV2)protocol).getSaslAuthenticationMechanism();
         saslAuthenticationMechanism.challenge(auth.getData());
       } catch (IOException e) {
-        e.printStackTrace();
-        // Log this and allow the session to be closed
+        logger.log(ServerLogMessages.MQTT_SN_AUTHENTICATION_FAILED, e);
       }
     }
     return null;

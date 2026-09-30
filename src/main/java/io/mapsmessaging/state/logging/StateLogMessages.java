@@ -92,6 +92,8 @@ public enum StateLogMessages implements LogMessage {
   STATE_MANAGER_SCHEDULER_ERROR(LEVEL.ERROR, SERVER_CATEGORY.STATE, "Scheduler task failed"),
   STATE_MANAGER_AUDIT_INIT_FAILED(LEVEL.ERROR, SERVER_CATEGORY.STATE, "Failed to initialize audit context - auditing will be disabled"),
   STATE_MANAGER_TAK_EVENT_PUBLISH_FAILED(LEVEL.ERROR, SERVER_CATEGORY.STATE, "Failed to publish TAK event to topic '{}': {}"),
+  STATE_MANAGER_TAK_PUBLISHER_CREATE_FAILED(LEVEL.ERROR, SERVER_CATEGORY.STATE, "Failed to create TAK event publisher for topic '{}'"),
+  STATE_MANAGER_TAK_OBSERVER_PUBLISH_FAILED(LEVEL.ERROR, SERVER_CATEGORY.STATE, "Failed to publish TAK observer event"),
   STATE_MANAGER_TAK_EVENT_QUEUE_FULL(LEVEL.WARN, SERVER_CATEGORY.STATE, "TAK event publish queue for topic '{}' is full, dropping oldest events ({} dropped so far)"),
   // </editor-fold>
 

@@ -19,6 +19,10 @@
 
 package io.mapsmessaging.api.transformers;
 
+import io.mapsmessaging.logging.Logger;
+import io.mapsmessaging.logging.LoggerFactory;
+import io.mapsmessaging.logging.ServerLogMessages;
+
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
@@ -31,6 +35,8 @@ import io.mapsmessaging.dto.rest.config.transformer.impl.JsonMapperTransformatio
 import java.nio.charset.StandardCharsets;
 
 public class JsonMapperTransformation implements InterServerTransformation {
+
+  private static final Logger logger = LoggerFactory.getLogger(JsonMapperTransformation.class);
 
   private static final String ENVELOPES_KEY = "envelopes";
 
@@ -67,7 +73,7 @@ public class JsonMapperTransformation implements InterServerTransformation {
       message.setMessage(messageBuilder.build());
       return message;
     } catch (Exception ignored) {
-      ignored.printStackTrace();
+      logger.log(ServerLogMessages.JSON_MAPPER_TRANSFORMATION_FAILED, source, ignored);
       return message;
     }
   }
