@@ -240,3 +240,13 @@ Extracted 15 private String constants across SaslConfig, SslConfig, destination 
 Validation: Java 21 Maven focused suite (SaslConfigTest, SslConfigTest, ConfigHelperTest, DestinationConfigTest, DestinationConfigBranchCoverageTest, MessageOverrideConfigTest, MessageOverrideConfigBranchCoverageTest, ProtocolConfigFactoryTest) passed: 29 tests, zero failures/errors/skips. Added a protocol messageDefaults regression covering exact retain/storeOffline keys and values through serialization and restoration. Existing tests cover SASL, TLS, destination settings and S3 archive mapping. Command: mvn -s /tmp/msg356-tools/settings.xml -B -Dtest=SaslConfigTest,SslConfigTest,ConfigHelperTest,DestinationConfigTest,DestinationConfigBranchCoverageTest,MessageOverrideConfigTest,MessageOverrideConfigBranchCoverageTest,ProtocolConfigFactoryTest -Dexec.skip=true -Ddependency-check.skip=true test.
 
 JaCoCo report was generated, but accumulated execution data contains mismatches for other previously changed classes; no fresh overall coverage percentage is claimed. Full build and SonarCloud rescan remain pending.
+
+### Block 5b: duplicated state configuration keys
+
+Extracted 17 private String constants across TwinManagerConfig (11), CotConfigSupport (2) and n2k/N2KAisConfig (4). Exact inverse-substitution verification confirms production changes only replace literals and declare constants; key spelling, control flow and existing line endings are preserved. Fresh SonarCloud analysis must confirm issue closure.
+
+Validation: 31 focused tests passed with zero failures/errors/skips using Java 21 Maven. Strengthened the CoT round-trip test for both error-distance keys/values. Added two twin regression tests covering MAVLink known sources in single/list forms and drone altitude serialization/restoration. Existing tests cover N2K PGN blocks, specialization, descriptions, publishing and geospatial configuration.
+
+Fresh isolated JaCoCo execution data produced no class-mismatch warnings. Class coverage (line / branch): TwinManagerConfig 84.1% / 64.4%, CotConfigSupport 94.9% / 73.8%, N2KAisConfig 74.5% / 52.1%. These are focused-suite class measurements, not overall server coverage or SonarCloud new-code coverage. Some existing class branches remain uncovered; production edits are only literal substitutions. Full build and refreshed analysis remain pending.
+
+Command: mvn -s /tmp/msg356-tools/settings.xml -B -Dtest=CotConfigSupportTest,N2KAisConfigBranchCoverageTest,TwinManagerConfigTest,TwinManagerConfigFinalCoverageTest,TwinManagerConfigPlanTaskTypeTest,GeoSpatialTwinManagerConfigTest -Djacoco.destFile=/tmp/msg356-state-constants-final.exec -Djacoco.dataFile=/tmp/msg356-state-constants-final.exec -Dexec.skip=true -Ddependency-check.skip=true test.
