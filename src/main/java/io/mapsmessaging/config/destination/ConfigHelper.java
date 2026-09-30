@@ -27,6 +27,11 @@ import io.mapsmessaging.dto.rest.config.destination.*;
 
 public class ConfigHelper {
 
+  private static final String BUCKET_NAME = "bucketName";
+  private static final String REGION_NAME = "regionName";
+  private static final String ACCESS_KEY_ID = "accessKeyId";
+  private static final String SECRET_ACCESS_KEY = "secretAccessKey";
+
   public static StorageConfigDTO buildConfig(String type, ConfigurationProperties properties) {
     StorageConfigDTO storageConfig = switch (type.toLowerCase()) {
       case "memory" -> buildMemoryStorageConfig(properties);
@@ -61,18 +66,18 @@ public class ConfigHelper {
         s3Properties = nestedS3;
       } else if (properties.get("s3") instanceof ConfigurationProperties topLevelS3) {
         s3Properties = topLevelS3;
-      } else if (archive.containsKey("bucketName")
-          || archive.containsKey("regionName")
-          || archive.containsKey("accessKeyId")
-          || archive.containsKey("secretAccessKey")) {
+      } else if (archive.containsKey(BUCKET_NAME)
+          || archive.containsKey(REGION_NAME)
+          || archive.containsKey(ACCESS_KEY_ID)
+          || archive.containsKey(SECRET_ACCESS_KEY)) {
         s3Properties = archive;
       }
       if (s3Properties != null) {
         S3Config s3Config = new S3Config();
-        s3Config.setRegion(s3Properties.getProperty("regionName", ""));
-        s3Config.setAccessKey(s3Properties.getProperty("accessKeyId", ""));
-        s3Config.setSecretKey(s3Properties.getProperty("secretAccessKey", ""));
-        s3Config.setBucket(s3Properties.getProperty("bucketName", ""));
+        s3Config.setRegion(s3Properties.getProperty(REGION_NAME, ""));
+        s3Config.setAccessKey(s3Properties.getProperty(ACCESS_KEY_ID, ""));
+        s3Config.setSecretKey(s3Properties.getProperty(SECRET_ACCESS_KEY, ""));
+        s3Config.setBucket(s3Properties.getProperty(BUCKET_NAME, ""));
         s3Config.setCompression(s3Properties.getBooleanProperty("compression", false));
         dConfig.setS3Config(s3Config);
       }
@@ -97,10 +102,10 @@ public class ConfigHelper {
       archive.put("migrationPath", deferredConfig.getMigrationDestination());
       S3Config s3Config = deferredConfig.getS3Config();
       if(s3Config != null) {
-        archive.put("bucketName", s3Config.getBucket());
-        archive.put("accessKeyId", s3Config.getAccessKey());
-        archive.put("secretAccessKey", s3Config.getSecretKey());
-        archive.put("regionName", s3Config.getRegion());
+        archive.put(BUCKET_NAME, s3Config.getBucket());
+        archive.put(ACCESS_KEY_ID, s3Config.getAccessKey());
+        archive.put(SECRET_ACCESS_KEY, s3Config.getSecretKey());
+        archive.put(REGION_NAME, s3Config.getRegion());
         archive.put("compression",s3Config.isCompression());
       }
       properties.put("archive", archive);
