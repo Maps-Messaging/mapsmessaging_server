@@ -42,8 +42,8 @@ public class DestinationManagerConfig extends DestinationManagerConfigDTO implem
       for (ConfigurationProperties entry : (List<ConfigurationProperties>) configEntry) {
         this.data.add(new DestinationConfig(entry, featureManager));
       }
-    } else if (configEntry instanceof ConfigurationProperties) {
-      this.data.add(new DestinationConfig((ConfigurationProperties) configEntry, featureManager));
+    } else if (configEntry instanceof ConfigurationProperties matchedConfigurationProperties) {
+      this.data.add(new DestinationConfig(matchedConfigurationProperties, featureManager));
     }
   }
 

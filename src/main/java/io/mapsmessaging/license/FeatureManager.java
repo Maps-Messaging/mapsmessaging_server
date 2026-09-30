@@ -78,8 +78,8 @@ public class FeatureManager {
     int maxValue = 0;
     for (FeatureDetails features : featuresList) {
       Object value = getFieldValue(features.getFeature(), featurePath);
-      if (value instanceof Integer) {
-        maxValue = Math.max(maxValue, (Integer) value);
+      if (value instanceof Integer matchedInteger) {
+        maxValue = Math.max(maxValue, matchedInteger);
       }
     }
     return maxValue;

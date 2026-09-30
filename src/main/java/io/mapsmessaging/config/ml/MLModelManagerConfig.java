@@ -98,8 +98,8 @@ public class MLModelManagerConfig extends MLModelManagerDTO implements Config, C
       List<ConfigurationProperties> list = new ArrayList<>();
       if (eventStreamsObj instanceof List) {
         list = (List<ConfigurationProperties>) eventStreamsObj;
-      } else if (eventStreamsObj instanceof ConfigurationProperties) {
-        list.add((ConfigurationProperties) eventStreamsObj);
+      } else if (eventStreamsObj instanceof ConfigurationProperties matchedConfigurationProperties) {
+        list.add(matchedConfigurationProperties);
       }
       for (ConfigurationProperties streamProps : list) {
         MLEventStreamDTO dto = new MLEventStreamDTO();

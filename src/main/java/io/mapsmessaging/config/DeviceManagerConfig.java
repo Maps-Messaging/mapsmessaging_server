@@ -154,18 +154,18 @@ public class DeviceManagerConfig extends DeviceManagerConfigDTO implements Confi
           deviceList.add(props);
         }
       }
-    } else if (obj instanceof ConfigurationProperties) {
-      deviceList.add((ConfigurationProperties) obj);
+    } else if (obj instanceof ConfigurationProperties deviceProperties) {
+      deviceList.add(deviceProperties);
     }
     loadConfig(deviceList);
   }
 
   private void loadTriggers(ConfigurationProperties deviceConfig) {
     Object configList = deviceConfig.get("config");
-    if (configList instanceof List) {
-      for (Object triggerConfigObj : (List) configList) {
-        if (triggerConfigObj instanceof ConfigurationProperties) {
-          BaseTriggerConfigDTO triggerConfig = createTriggerConfig((ConfigurationProperties) triggerConfigObj);
+    if (configList instanceof List triggerEntries) {
+      for (Object triggerConfigObj : triggerEntries) {
+        if (triggerConfigObj instanceof ConfigurationProperties triggerProperties) {
+          BaseTriggerConfigDTO triggerConfig = createTriggerConfig(triggerProperties);
           if (triggerConfig != null) {
             triggers.add(triggerConfig);
           }
@@ -204,14 +204,14 @@ public class DeviceManagerConfig extends DeviceManagerConfigDTO implements Confi
 
   private void loadI2CBuses(ConfigurationProperties deviceConfig) {
     Object configList = deviceConfig.get("config");
-    if (configList instanceof List) {
-      for (Object i2cBusConfigObj : (List) configList) {
-        if (i2cBusConfigObj instanceof ConfigurationProperties) {
-          i2cBuses.add(new I2CBusConfig((ConfigurationProperties) i2cBusConfigObj));
+    if (configList instanceof List matchedList) {
+      for (Object i2cBusConfigObj : matchedList) {
+        if (i2cBusConfigObj instanceof ConfigurationProperties busProperties) {
+          i2cBuses.add(new I2CBusConfig(busProperties));
         }
       }
-    } else if (configList instanceof ConfigurationProperties) {
-      i2cBuses.add(new I2CBusConfig((ConfigurationProperties) configList));
+    } else if (configList instanceof ConfigurationProperties matchedConfigurationProperties) {
+      i2cBuses.add(new I2CBusConfig(matchedConfigurationProperties));
     }
   }
 

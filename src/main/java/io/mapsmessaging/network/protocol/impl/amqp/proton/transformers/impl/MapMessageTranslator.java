@@ -46,8 +46,8 @@ public class MapMessageTranslator extends BaseMessageTranslator {
         dataMap = new LinkedHashMap<>();
         messageBuilder.setDataMap(dataMap);
       }
-      if (data instanceof LinkedHashMap) {
-        LinkedHashMap<String, Object> map = (LinkedHashMap) data;
+      if (data instanceof LinkedHashMap matchedLinkedHashMap) {
+        LinkedHashMap<String, Object> map = matchedLinkedHashMap;
         for (Map.Entry<String, Object> entry : map.entrySet()) {
           Object val = entry.getValue();
           if (val instanceof Binary binary) {

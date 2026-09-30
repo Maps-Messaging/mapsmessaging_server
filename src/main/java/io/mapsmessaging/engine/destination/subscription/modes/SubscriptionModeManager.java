@@ -72,8 +72,8 @@ public abstract class SubscriptionModeManager {
     for (Subscription subscription : activeSubscriptions.values()) {
       if (subscription.getContext() != null && subscription.getContext().getFilter().equals(destination.getFullyQualifiedNamespace())) {
         subscription.wakeUp(sessionImpl);
-        if (subscription instanceof DestinationSubscription && subscription.getContext() != null && subscription.getContext().getRetainHandler().equals(RetainHandler.SEND_IF_NEW)) {
-          queueRetainedMessage(((DestinationSubscription) subscription).getDestinationImpl(), subscription);
+        if (subscription instanceof DestinationSubscription destinationSubscription && subscription.getContext() != null && subscription.getContext().getRetainHandler().equals(RetainHandler.SEND_IF_NEW)) {
+          queueRetainedMessage((destinationSubscription).getDestinationImpl(), subscription);
         }
       }
     }
@@ -83,8 +83,8 @@ public abstract class SubscriptionModeManager {
   public void wakeAll(SessionImpl sessionImpl) {
     for (Subscription subscription : activeSubscriptions.values()) {
       subscription.wakeUp(sessionImpl);
-      if (subscription instanceof DestinationSubscription && subscription.getContext() != null && subscription.getContext().getRetainHandler().equals(RetainHandler.SEND_IF_NEW)) {
-        queueRetainedMessage(((DestinationSubscription) subscription).getDestinationImpl(), subscription);
+      if (subscription instanceof DestinationSubscription matchedDestinationSubscription && subscription.getContext() != null && subscription.getContext().getRetainHandler().equals(RetainHandler.SEND_IF_NEW)) {
+        queueRetainedMessage((matchedDestinationSubscription).getDestinationImpl(), subscription);
       }
     }
   }

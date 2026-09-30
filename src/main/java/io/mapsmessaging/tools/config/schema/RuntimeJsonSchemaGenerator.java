@@ -710,8 +710,8 @@ public class RuntimeJsonSchemaGenerator {
     Map<?, ?> current = (Map<?, ?>) propertySchema.toJsonValue();
     Object typeObj = current.get("type");
 
-    if (typeObj instanceof String) {
-      String schemaType = ((String) typeObj).toLowerCase(Locale.ROOT);
+    if (typeObj instanceof String matchedString) {
+      String schemaType = (matchedString).toLowerCase(Locale.ROOT);
 
       if ("array".equals(schemaType)) {
         if (trimmed.startsWith("[")) {

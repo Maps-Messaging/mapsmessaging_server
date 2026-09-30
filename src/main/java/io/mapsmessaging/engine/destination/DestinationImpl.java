@@ -800,12 +800,12 @@ public class DestinationImpl implements BaseDestination {
     Future<Response> future = submit(task, PUBLISH_PRIORITY);
     try {
       Response response = future.get(60, TimeUnit.SECONDS);
-      if (response instanceof LongResponse) {
-        return (int) ((LongResponse) response).getResponse();
-      } else if (response instanceof FutureResponse) {
-        response = ((FutureResponse) response).getResponse().get();
-        if (response instanceof LongResponse) {
-          return (int) ((LongResponse) response).getResponse();
+      if (response instanceof LongResponse directResponse) {
+        return (int) (directResponse).getResponse();
+      } else if (response instanceof FutureResponse matchedFutureResponse) {
+        response = (matchedFutureResponse).getResponse().get();
+        if (response instanceof LongResponse matchedLongResponse) {
+          return (int) (matchedLongResponse).getResponse();
         }
       }
       return 0;
@@ -871,8 +871,8 @@ public class DestinationImpl implements BaseDestination {
 
   public DestinationSubscription getSubscription(String subscriptionName) {
     Subscribable subscribable = subscriptionManager.getSubscription(subscriptionName);
-    if (subscribable instanceof DestinationSubscription) {
-      return (DestinationSubscription) subscribable;
+    if (subscribable instanceof DestinationSubscription matchedDestinationSubscription) {
+      return matchedDestinationSubscription;
     }
     return null;
   }

@@ -47,8 +47,8 @@ public class SpiDeviceBusConfig extends SpiDeviceBusConfigDTO implements DeviceB
       for (ConfigurationProperties config : configList) {
         this.devices.add(new SpiDeviceConfig(config));
       }
-    } else if (obj instanceof ConfigurationProperties) {
-      this.devices.add(new SpiDeviceConfig((ConfigurationProperties) obj));
+    } else if (obj instanceof ConfigurationProperties matchedConfigurationProperties) {
+      this.devices.add(new SpiDeviceConfig(matchedConfigurationProperties));
     }
   }
 
@@ -66,8 +66,8 @@ public class SpiDeviceBusConfig extends SpiDeviceBusConfigDTO implements DeviceB
 
     List<ConfigurationProperties> deviceList = new ArrayList<>();
     for (SpiDeviceConfigDTO device : this.devices) {
-      if (device instanceof SpiDeviceConfig) {
-        deviceList.add(((SpiDeviceConfig) device).toConfigurationProperties());
+      if (device instanceof SpiDeviceConfig matchedSpiDeviceConfig) {
+        deviceList.add((matchedSpiDeviceConfig).toConfigurationProperties());
       }
     }
     props.put("config", deviceList);

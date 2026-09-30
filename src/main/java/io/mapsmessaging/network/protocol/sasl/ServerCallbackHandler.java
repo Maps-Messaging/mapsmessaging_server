@@ -63,11 +63,10 @@ public class ServerCallbackHandler implements CallbackHandler {
           throw new IOException(e);
         }
         nc.setName(nc.getDefaultName());
-      } else if (cb instanceof PasswordCallback) {
+      } else if (cb instanceof PasswordCallback pc) {
         if (hashedPassword == null) {
           throw new IOException("Password requested before an identity was resolved");
         }
-        PasswordCallback pc = (PasswordCallback) cb;
         pc.setPassword(hashedPassword.getHash());
       } else if (cb instanceof RealmCallback rc) {
         rc.setText(serverName);

@@ -126,14 +126,14 @@ public class ConfigHelper {
 
   public static void packMap(ConfigurationProperties properties, StorageConfigDTO storageConfig) {
     if(storageConfig != null) {
-      if(storageConfig instanceof MemoryStorageConfigDTO) {
-        packMemoryConfig(properties, (MemoryStorageConfigDTO) storageConfig);
+      if(storageConfig instanceof MemoryStorageConfigDTO matchedMemoryStorageConfigDTO) {
+        packMemoryConfig(properties, matchedMemoryStorageConfigDTO);
       }
-      else if(storageConfig instanceof PartitionStorageConfigDTO) {
-        packPartitionStorageConfig(properties, (PartitionStorageConfigDTO)storageConfig);
+      else if(storageConfig instanceof PartitionStorageConfigDTO matchedPartitionStorageConfigDTO) {
+        packPartitionStorageConfig(properties, matchedPartitionStorageConfigDTO);
       }
-      else if (storageConfig instanceof MemoryTierConfigDTO){
-        packMemoryTierConfig(properties, (MemoryTierConfigDTO) storageConfig);
+      else if (storageConfig instanceof MemoryTierConfigDTO matchedMemoryTierConfigDTO){
+        packMemoryTierConfig(properties, matchedMemoryTierConfigDTO);
       }
       properties.put("debug", storageConfig.isDebug());
     }

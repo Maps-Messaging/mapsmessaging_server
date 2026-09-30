@@ -138,8 +138,7 @@ public class NetworkConfigFactory {
       hasChanged = true;
     }
 
-    if (original instanceof TcpConfigDTO && config instanceof TcpConfigDTO newConfig) {
-      TcpConfigDTO oldConfig = (TcpConfigDTO) original;
+    if (original instanceof TcpConfigDTO oldConfig && config instanceof TcpConfigDTO newConfig) {
 
 
       if (oldConfig.getReceiveBufferSize() != newConfig.getReceiveBufferSize()) {
@@ -175,8 +174,7 @@ public class NetworkConfigFactory {
         hasChanged = true;
       }
     }
-    if (original instanceof UdpConfigDTO && config instanceof UdpConfigDTO newConfig) {
-      UdpConfigDTO oldConfig = (UdpConfigDTO) original;
+    if (original instanceof UdpConfigDTO oldConfig && config instanceof UdpConfigDTO newConfig) {
 
       if (oldConfig.getPacketReuseTimeout() != newConfig.getPacketReuseTimeout()) {
         oldConfig.setPacketReuseTimeout(newConfig.getPacketReuseTimeout());

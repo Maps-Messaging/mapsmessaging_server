@@ -42,8 +42,8 @@ public class NetworkConnectionManagerConfig extends NetworkConnectionManagerConf
       for (ConfigurationProperties entry : (List<ConfigurationProperties>) obj) {
         endPointServerConfigList.add(new EndPointConnectionServerConfig(entry));
       }
-    } else if (obj instanceof ConfigurationProperties) {
-      endPointServerConfigList.add(new EndPointConnectionServerConfig((ConfigurationProperties) obj));
+    } else if (obj instanceof ConfigurationProperties matchedConfigurationProperties) {
+      endPointServerConfigList.add(new EndPointConnectionServerConfig(matchedConfigurationProperties));
     }
   }
 

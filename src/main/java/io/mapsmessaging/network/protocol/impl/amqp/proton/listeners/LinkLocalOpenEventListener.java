@@ -46,8 +46,8 @@ public class LinkLocalOpenEventListener extends BaseEventListener {
   public boolean handleEvent(Event event) {
     // Check to see if we update the credit
     Link link = event.getLink();
-    if (link instanceof Receiver) {
-      topUp((Receiver) link);
+    if (link instanceof Receiver matchedReceiver) {
+      topUp(matchedReceiver);
     }
     return true;
   }

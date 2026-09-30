@@ -99,8 +99,8 @@ public class PubListener implements FrameListener {
           .setCorrelationData(msgFrame.getReplyTo())
           .setTransformation(engine.getProtocol().getProtocolMessageTransformation());
       Message message = MessageOverrides.createMessageBuilder(engine.getProtocol().getProtocolConfig().getMessageDefaults(), mb).build();
-      if (msgFrame instanceof HPayloadFrame) {
-        Map<String, String> headers = ((HPayloadFrame) msgFrame).getHeader();
+      if (msgFrame instanceof HPayloadFrame matchedHPayloadFrame) {
+        Map<String, String> headers = (matchedHPayloadFrame).getHeader();
         Map<String, TypedData> map = message.getDataMap();
         if (headers != null) {
           for (Map.Entry<String, String> entry : headers.entrySet()) {

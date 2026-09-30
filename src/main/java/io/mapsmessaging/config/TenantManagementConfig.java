@@ -46,8 +46,8 @@ public class TenantManagementConfig extends TenantManagementConfigDTO implements
       for (ConfigurationProperties entry : (List<ConfigurationProperties>) configEntry) {
         tenantConfigList.add(new TenantConfig(entry));
       }
-    } else if (configEntry instanceof ConfigurationProperties) {
-      tenantConfigList.add(new TenantConfig((ConfigurationProperties) configEntry));
+    } else if (configEntry instanceof ConfigurationProperties matchedConfigurationProperties) {
+      tenantConfigList.add(new TenantConfig(matchedConfigurationProperties));
     }
   }
 

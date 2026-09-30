@@ -287,10 +287,9 @@ public class MQTT5Protocol extends Protocol {
       EndPoint.totalReceived.increment();
       boolean clientHasAuth = false;
       MessageProperty authMethod = null;
-      if (mqtt instanceof Connect5) {
+      if (mqtt instanceof Connect5 connect5) {
         // We may have an auth / sasl request so lets c heck first, if so we need to park the connect until after
         // we have authenticated
-        Connect5 connect5 = (Connect5) mqtt;
         authMethod = connect5.getProperties().get(MessagePropertyFactory.AUTHENTICATION_METHOD);
         clientHasAuth = !(authMethod == null || (authMethod.getName() != null && authMethod.getName().isEmpty()));
       }
@@ -310,8 +309,7 @@ public class MQTT5Protocol extends Protocol {
       if (logger.isInfoEnabled()) {
         logger.log(ServerLogMessages.RESPONSE_PACKET, response);
       }
-      if (sendProblemInformation && response instanceof StatusPacket && !(response instanceof ConnAck5)) {
-        StatusPacket statusPacket = (StatusPacket) response;
+      if (sendProblemInformation && response instanceof StatusPacket statusPacket && !(response instanceof ConnAck5)) {
         statusPacket.getProperties().add(new ReasonString(statusPacket.getStatusCode().getDescription()));
       }
       selectorTask.push(response);
