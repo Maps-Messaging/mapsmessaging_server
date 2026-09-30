@@ -314,8 +314,8 @@ public class MavlinkTwinUpdater implements AutoCloseable {
         && !droneInfo.isCompleteTaskOnAutoToLoiter()) {
       logger.log(MAVLINK_TASK_COMPLETION_GATES_DISABLED, twinId);
     }
-    if (droneInfo.getStopAction() != null) {
-      droneTwin.setStopAction(droneInfo.getStopAction());
+    if (droneInfo.getCancelAction() != null) {
+      droneTwin.setStopAction(droneInfo.getCancelAction());
     } else {
       droneTwin.setStopAction(StopActionEnum.STOP);
     }

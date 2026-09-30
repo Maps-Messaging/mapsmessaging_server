@@ -62,7 +62,7 @@ class SticklebackArdupilotUsvModelMissionTest {
     assertEquals(MavlinkMissionItemIntFactory.MAV_FRAME_GLOBAL_RELATIVE_ALT_INT, item.getFrame());
     assertEquals(594_340_790, item.getLatitude());
     assertEquals(247_474_870, item.getLongitude());
-    assertEquals((float) SticklebackArdupilotUsvModel.MAX_ALTITUDE_METERS, item.getAltitude());
+    assertEquals(0.0f, item.getAltitude());
     assertEquals(1.5f, item.getParam1());
     assertEquals(6.0f, item.getParam2());
     assertEquals(270.0f, item.getParam4());
@@ -74,7 +74,7 @@ class SticklebackArdupilotUsvModelMissionTest {
 
     assertEquals(1, item.getMissionSequence());
     assertEquals(MavlinkMissionItemIntFactory.MAV_CMD_NAV_LOITER_UNLIM, item.getCommand());
-    assertEquals((float) SticklebackArdupilotUsvModel.MAX_ALTITUDE_METERS, item.getAltitude());
+    assertEquals(0.0f, item.getAltitude());
     assertEquals(40.0f, item.getParam3());
     assertTrue(Float.isNaN(item.getParam4()));
   }
@@ -85,7 +85,7 @@ class SticklebackArdupilotUsvModelMissionTest {
 
     assertEquals(1, item.getMissionSequence());
     assertEquals(MavlinkMissionItemIntFactory.MAV_CMD_NAV_LOITER_TIME, item.getCommand());
-    assertEquals((float) SticklebackArdupilotUsvModel.MAX_ALTITUDE_METERS, item.getAltitude());
+    assertEquals(0.0f, item.getAltitude());
     assertEquals(2.5f, item.getParam1());
     assertEquals(45.0f, item.getParam3());
     assertTrue(Float.isNaN(item.getParam4()));
