@@ -33,6 +33,8 @@ import java.util.List;
 
 public class GenericPx4FixedWingUavModel extends GenericPx4UavModel implements FixedWingUavModel {
 
+  private static final String MISSION_ITEM_PREFIX = "Mission item ";
+
   public static final String MODEL_NAME = "generic-px4-fixed-wing-uav";
   public static final double DEFAULT_LOITER_RADIUS_METERS = 50.0d;
 
@@ -110,16 +112,16 @@ public class GenericPx4FixedWingUavModel extends GenericPx4UavModel implements F
     if ((timedWaypoint || item.type() == PlanItemType.LOITER)
         && item.radiusMeters() != null
         && item.radiusMeters() <= 0.0d) {
-      issues.add(new PlanValidationIssue(UxvOperation.BUILD_MISSION, "Mission item " + index + " radiusMeters must be greater than zero for fixed-wing loiter"));
+      issues.add(new PlanValidationIssue(UxvOperation.BUILD_MISSION, MISSION_ITEM_PREFIX + index + " radiusMeters must be greater than zero for fixed-wing loiter"));
     }
 
     if (timedWaypoint && item.yawDegrees() != null) {
       issues.add(
-          new PlanValidationIssue(UxvOperation.BUILD_MISSION, "Mission item " + index + " yawDegrees is not supported for a timed fixed-wing waypoint"));
+          new PlanValidationIssue(UxvOperation.BUILD_MISSION, MISSION_ITEM_PREFIX + index + " yawDegrees is not supported for a timed fixed-wing waypoint"));
     }
 
     if (item.type() == PlanItemType.LOITER && item.yawDegrees() != null) {
-      issues.add(new PlanValidationIssue(UxvOperation.BUILD_MISSION, "Mission item " + index + " yawDegrees is not supported for fixed-wing loiter"));
+      issues.add(new PlanValidationIssue(UxvOperation.BUILD_MISSION, MISSION_ITEM_PREFIX + index + " yawDegrees is not supported for fixed-wing loiter"));
     }
   }
 

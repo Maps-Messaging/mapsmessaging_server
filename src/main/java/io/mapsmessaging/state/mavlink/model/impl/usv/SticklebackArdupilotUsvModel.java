@@ -35,6 +35,9 @@ import java.util.*;
 
 public class SticklebackArdupilotUsvModel extends GenericArduPilotUxvModel implements UsvModel {
 
+  private static final String CONTEXT_REQUIRED = "context must not be null";
+  private static final String MISSION_ITEM_PREFIX = "Mission item ";
+
   public static final String MODEL_NAME = "stickleback-ardupilot-usv";
 
   public static final double DEFAULT_ALTITUDE_METERS = 10.0d;
@@ -70,7 +73,7 @@ public class SticklebackArdupilotUsvModel extends GenericArduPilotUxvModel imple
 
   @Override
   public UxvModelCommandSet reposition(UxvCommandContext context, RepositionRequest request) {
-    Objects.requireNonNull(context, "context must not be null");
+    Objects.requireNonNull(context, CONTEXT_REQUIRED);
     Objects.requireNonNull(request, "request must not be null");
     rejectSpeed(request.speedMetersPerSecond(), UxvOperation.REPOSITION);
 
@@ -95,7 +98,7 @@ public class SticklebackArdupilotUsvModel extends GenericArduPilotUxvModel imple
 
   @Override
   public UxvModelCommandSet pauseVehicle(UxvCommandContext context) {
-    Objects.requireNonNull(context, "context must not be null");
+    Objects.requireNonNull(context, CONTEXT_REQUIRED);
     return UxvModelCommandSet.of(
         UxvOperation.PAUSE_VEHICLE,
         getModelName(),
@@ -105,7 +108,7 @@ public class SticklebackArdupilotUsvModel extends GenericArduPilotUxvModel imple
 
   @Override
   public UxvModelCommandSet resumeVehicle(UxvCommandContext context) {
-    Objects.requireNonNull(context, "context must not be null");
+    Objects.requireNonNull(context, CONTEXT_REQUIRED);
     return UxvModelCommandSet.of(
         UxvOperation.RESUME_VEHICLE,
         getModelName(),
@@ -115,7 +118,7 @@ public class SticklebackArdupilotUsvModel extends GenericArduPilotUxvModel imple
 
   @Override
   public UxvModelCommandSet loiter(UxvCommandContext context, LoiterRequest request) {
-    Objects.requireNonNull(context, "context must not be null");
+    Objects.requireNonNull(context, CONTEXT_REQUIRED);
     Objects.requireNonNull(request, "request must not be null");
     requirePositiveOrZero(request.radiusMeters(), "radiusMeters");
     rejectDepth(request.depthMeters(), UxvOperation.LOITER);
@@ -211,21 +214,21 @@ public class SticklebackArdupilotUsvModel extends GenericArduPilotUxvModel imple
       issues.add(
           new PlanValidationIssue(
               UxvOperation.BUILD_MISSION,
-              "Mission item " + index + " type " + item.type() + " is not supported by this Stickleback ArduPilot USV model"));
+              MISSION_ITEM_PREFIX + index + " type " + item.type() + " is not supported by this Stickleback ArduPilot USV model"));
     }
 
     if (item.type() == PlanItemType.LOITER && item.yawDegrees() != null) {
       issues.add(
           new PlanValidationIssue(
               UxvOperation.BUILD_MISSION,
-              "Mission item " + index + " yawDegrees is not currently mapped for loiter by this Stickleback ArduPilot USV model"));
+              MISSION_ITEM_PREFIX + index + " yawDegrees is not currently mapped for loiter by this Stickleback ArduPilot USV model"));
     }
 
     if (item.speedMetersPerSecond() != null) {
       issues.add(
           new PlanValidationIssue(
               UxvOperation.BUILD_MISSION,
-              "Mission item " + index + " speedMetersPerSecond is not currently mapped by this Stickleback ArduPilot USV model"));
+              MISSION_ITEM_PREFIX + index + " speedMetersPerSecond is not currently mapped by this Stickleback ArduPilot USV model"));
     }
 
     if (item.altitudeMeters() != null
@@ -233,14 +236,14 @@ public class SticklebackArdupilotUsvModel extends GenericArduPilotUxvModel imple
       issues.add(
           new PlanValidationIssue(
               UxvOperation.BUILD_MISSION,
-              "Mission item " + index + " altitudeMeters must be a finite value"));
+              MISSION_ITEM_PREFIX + index + " altitudeMeters must be a finite value"));
     }
 
     if (item.depthMeters() != null) {
       issues.add(
           new PlanValidationIssue(
               UxvOperation.BUILD_MISSION,
-              "Mission item " + index + " depthMeters is not valid for this Stickleback ArduPilot USV model"));
+              MISSION_ITEM_PREFIX + index + " depthMeters is not valid for this Stickleback ArduPilot USV model"));
     }
   }
 

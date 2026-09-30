@@ -37,6 +37,8 @@ import java.util.Set;
 
 public abstract class GenericArduPilotUxvModel extends AbstractMissionUxvModel {
 
+  private static final String CONTEXT_REQUIRED = "context must not be null";
+
   private static final int HOME_MISSION_SEQUENCE = 0;
   private static final int FIRST_REAL_MISSION_SEQUENCE = 1;
 
@@ -51,7 +53,7 @@ public abstract class GenericArduPilotUxvModel extends AbstractMissionUxvModel {
 
   @Override
   public UxvModelCommandSet buildMission(UxvCommandContext context, MissionPlan missionPlan) {
-    Objects.requireNonNull(context, "context must not be null");
+    Objects.requireNonNull(context, CONTEXT_REQUIRED);
     Objects.requireNonNull(missionPlan, "missionPlan must not be null");
 
     PlanValidation validation = validateMission(missionPlan);
@@ -82,7 +84,7 @@ public abstract class GenericArduPilotUxvModel extends AbstractMissionUxvModel {
 
   @Override
   public UxvModelCommandSet startMission(UxvCommandContext context) {
-    Objects.requireNonNull(context, "context must not be null");
+    Objects.requireNonNull(context, CONTEXT_REQUIRED);
     List<MavlinkMessage> messages =
         List.of(
             MavlinkCommandLongFactory.setMissionCurrent(
@@ -98,7 +100,7 @@ public abstract class GenericArduPilotUxvModel extends AbstractMissionUxvModel {
 
   @Override
   public UxvModelCommandSet returnToHome(UxvCommandContext context) {
-    Objects.requireNonNull(context, "context must not be null");
+    Objects.requireNonNull(context, CONTEXT_REQUIRED);
     return UxvModelCommandSet.of(
         UxvOperation.RETURN_TO_HOME,
         getModelName(),

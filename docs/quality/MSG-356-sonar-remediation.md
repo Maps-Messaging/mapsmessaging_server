@@ -250,3 +250,24 @@ Validation: 31 focused tests passed with zero failures/errors/skips using Java 2
 Fresh isolated JaCoCo execution data produced no class-mismatch warnings. Class coverage (line / branch): TwinManagerConfig 84.1% / 64.4%, CotConfigSupport 94.9% / 73.8%, N2KAisConfig 74.5% / 52.1%. These are focused-suite class measurements, not overall server coverage or SonarCloud new-code coverage. Some existing class branches remain uncovered; production edits are only literal substitutions. Full build and refreshed analysis remain pending.
 
 Command: mvn -s /tmp/msg356-tools/settings.xml -B -Dtest=CotConfigSupportTest,N2KAisConfigBranchCoverageTest,TwinManagerConfigTest,TwinManagerConfigFinalCoverageTest,TwinManagerConfigPlanTaskTypeTest,GeoSpatialTwinManagerConfigTest -Djacoco.destFile=/tmp/msg356-state-constants-final.exec -Djacoco.dataFile=/tmp/msg356-state-constants-final.exec -Dexec.skip=true -Ddependency-check.skip=true test.
+
+### Block 5c: duplicated MAVLink model strings
+
+Extracted 12 private constants across six MAVLink model classes: common mission model, ArduPilot base, PX4 UAV/fixed-wing/UGV, and Stickleback USV. Exact inverse-substitution checks verified that only literals and constant declarations changed. Exception text, validation messages (including trailing spaces in the mission-item prefix), parameter labels and control flow are preserved. Fresh analysis must confirm issue closure.
+
+Added MavlinkModelValidationMessageTest: 13 parameterized/test cases for null-context/request/plan diagnostics, exact indexed depth-validation messages across four concrete vehicle models, and the negative-radius parameter diagnostic. Final Java 21 focused model suite plus the PX4 drone command tests passed: 151 tests, no failures/errors/skips.
+
+Initial existing-test failures were caused by Mockito being unable to self-attach its agent. Loading the cached Mockito agent at JVM startup resolved these without repository changes. Final command: JAVA_TOOL_OPTIONS=-javaagent:/root/.m2/repository/org/mockito/mockito-core/5.23.0/mockito-core-5.23.0.jar mvn -s /tmp/msg356-tools/settings.xml -B '-Dtest=io.mapsmessaging.state.mavlink.model.**,io.mapsmessaging.state.drone.model.GenericPx4UavModelTest' -Djacoco.destFile=/tmp/msg356-model-constants-final.exec -Djacoco.dataFile=/tmp/msg356-model-constants-final.exec -Dexec.skip=true -Ddependency-check.skip=true test.
+
+Fresh focused-suite JaCoCo coverage (no class-mismatch warnings):
+
+| Class | Line | Branch |
+| --- | --- | --- |
+| GenericPx4UgvModel | 68.0% | 52.6% |
+| SticklebackArdupilotUsvModel | 69.1% | 56.4% |
+| AbstractMissionUxvModel | 92.6% | 85.8% |
+| GenericArduPilotUxvModel | 87.5% | 87.5% |
+| GenericPx4UavModel | 95.4% | 86.5% |
+| GenericPx4FixedWingUavModel | 100.0% | 100.0% |
+
+These are focused class measurements, not whole-server or SonarCloud new-code coverage. Existing UGV/USV paths remain uncovered by this suite. Full integration build and refreshed analysis remain pending.
