@@ -19,22 +19,16 @@
 
 package io.mapsmessaging.api.transformers;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.dataformat.xml.XmlMapper;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
-import com.google.gson.reflect.TypeToken;
 import io.mapsmessaging.api.MessageBuilder;
 import io.mapsmessaging.api.transformers.xml.AttributeXmlBuilder;
 import io.mapsmessaging.dto.rest.config.transformer.TransformationConfigDTO;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
-import io.mapsmessaging.utilities.GsonFactory;
 
 import java.io.IOException;
-import java.lang.reflect.Type;
 import java.nio.charset.StandardCharsets;
-import java.util.Map;
 
 import static io.mapsmessaging.schemas.logging.SchemaLogMessages.FORMATTER_UNEXPECTED_OBJECT;
 
@@ -76,12 +70,6 @@ public class JSONToXML implements InterServerTransformation {
     }
   }
 
-  private byte[] convertToXml(JsonObject jsonObject) throws JsonProcessingException {
-    Type type = new TypeToken<Map<String, Object>>() {}.getType();
-    Map<String, Object> map =  GsonFactory.getInstance().getSimpleGson().fromJson(jsonObject, type);
-    XmlMapper xmlMapper = new XmlMapper();
-    return xmlMapper.writeValueAsString(map).getBytes();
-  }
 
   private byte[] convertUsingAttributes(JsonObject jsonObject) throws IOException {
     return AttributeXmlBuilder.buildXml(jsonObject);

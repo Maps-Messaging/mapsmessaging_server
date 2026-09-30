@@ -351,11 +351,9 @@ public class TwinManagerConfig extends TwinManagerConfigDTO implements Config, C
       return knownSources;
     }
 
-    for (Object entry : entries) {
-      if (entry instanceof ConfigurationProperties sourceProps) {
-        knownSources.add(parseKnownSource(sourceProps));
-      }
-    }
+    entries.stream().filter(ConfigurationProperties.class::isInstance).map(ConfigurationProperties.class::cast)
+        .map(sourceProps -> parseKnownSource(sourceProps))
+        .forEachOrdered(knownSources::add);
 
     return knownSources;
   }
@@ -381,11 +379,9 @@ public class TwinManagerConfig extends TwinManagerConfigDTO implements Config, C
       return droneInfos;
     }
 
-    for (Object entry : entries) {
-      if (entry instanceof ConfigurationProperties sourceProps) {
-        droneInfos.add(parseDroneInfo(sourceProps));
-      }
-    }
+    entries.stream().filter(ConfigurationProperties.class::isInstance).map(ConfigurationProperties.class::cast)
+        .map(sourceProps -> parseDroneInfo(sourceProps))
+        .forEachOrdered(droneInfos::add);
 
     return droneInfos;
   }
@@ -620,9 +616,9 @@ public class TwinManagerConfig extends TwinManagerConfigDTO implements Config, C
     }
     if (value instanceof List<?> list) {
       List<Object> values = new ArrayList<>(list.size());
-      for (Object entry : list) {
-        values.add(normaliseConfigurationValue(entry));
-      }
+      list.stream()
+          .map(entry -> normaliseConfigurationValue(entry))
+          .forEachOrdered(values::add);
       return values;
     }
     return value;
@@ -642,9 +638,9 @@ public class TwinManagerConfig extends TwinManagerConfigDTO implements Config, C
     }
     if (value instanceof List<?> list) {
       List<Object> values = new ArrayList<>(list.size());
-      for (Object entry : list) {
-        values.add(toConfigurationValue(entry));
-      }
+      list.stream()
+          .map(entry -> toConfigurationValue(entry))
+          .forEachOrdered(values::add);
       return values;
     }
     return value;

@@ -70,7 +70,7 @@ public class LoRaDeviceManagerConfig extends LoRaDeviceManagerConfigDTO implemen
       deviceConfigList.add(loRaDeviceConfigDTO);
     }
     loRaDeviceConfigDTO.setPower(properties.getIntProperty("power", 0));
-    loRaDeviceConfigDTO.setFrequency(properties.getIntProperty("frequency", 0));
+    loRaDeviceConfigDTO.setFrequency((float) properties.getIntProperty("frequency", 0));
     loRaDeviceConfigDTO.setName(properties.getProperty("name"));
   }
 

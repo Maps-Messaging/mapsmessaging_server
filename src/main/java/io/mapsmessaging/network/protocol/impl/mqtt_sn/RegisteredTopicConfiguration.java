@@ -106,10 +106,9 @@ public class RegisteredTopicConfiguration {
 
   private int searchForTopicId(SocketAddress from, List<TopicConfiguration> list) {
     for (TopicConfiguration tc : list) {
-      if (from instanceof InetSocketAddress inetAddress) {
-        if (inetAddress.getAddress().getHostAddress().equals(tc.address) || inetAddress.getHostName().equals(tc.address)) {
-          return tc.id;
-        }
+      if (from instanceof InetSocketAddress inetAddress
+          && (inetAddress.getAddress().getHostAddress().equals(tc.address) || inetAddress.getHostName().equals(tc.address))) {
+        return tc.id;
       }
     }
     return -1;

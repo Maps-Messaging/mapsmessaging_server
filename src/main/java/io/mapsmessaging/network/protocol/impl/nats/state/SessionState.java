@@ -292,7 +292,7 @@ public class SessionState implements CloseHandler, CompletionHandler {
       msg = new HMsgFrame(getMaxBufferSize());
       StringBuilder sb = new StringBuilder("NATS/1.0\r\n");
       for (Map.Entry<String, TypedData> entry : message.getDataMap().entrySet()) {
-        sb.append(entry.getKey().replace(" ", "_")).append(": ").append("" + entry.getValue().getData()).append("\r\n");
+        sb.append(entry.getKey().replace(" ", "_")).append(": ").append(String.valueOf(entry.getValue().getData())).append("\r\n");
       }
       sb.append("\r\n");
       ((HMsgFrame) msg).setHeaderBytes(sb.toString().getBytes());

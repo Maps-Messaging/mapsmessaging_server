@@ -97,7 +97,7 @@ public class QuantileStatistics extends AdvancedStatistics {
     private int m = 0; // number of samples seen so far (<=5 during init)
 
     P2Quantile(double quantile) {
-      this.p = Math.max(0.0, Math.min(1.0, quantile));
+      this.p = Math.clamp(quantile, 0.0, 1.0);
     }
 
     void reset() {
@@ -166,8 +166,12 @@ public class QuantileStatistics extends AdvancedStatistics {
       if (s == 0) return;
 
       // Try parabolic interpolation
-      double n_im1 = n[i - 1], n_i = n[i], n_ip1 = n[i + 1];
-      double q_im1 = q[i - 1], q_i = q[i], q_ip1 = q[i + 1];
+      double n_im1 = n[i - 1];
+      double n_i = n[i];
+      double n_ip1 = n[i + 1];
+      double q_im1 = q[i - 1];
+      double q_i = q[i];
+      double q_ip1 = q[i + 1];
 
       double denom = (n_ip1 - n_im1);
       double qiParabolic = q_i;

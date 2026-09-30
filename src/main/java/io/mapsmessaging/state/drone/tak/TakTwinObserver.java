@@ -427,7 +427,7 @@ public class TakTwinObserver implements TwinObserver {
     Double percentage = batteryState.getPercentage();
     if (percentage != null && Double.isFinite(percentage)) {
       int batteryPercentage =
-          (int) Math.round(Math.max(0.0, Math.min(100.0, percentage)));
+          (int) Math.round(Math.clamp(percentage, 0.0, 100.0));
 
       appendAttribute(stringBuilder, "battery", batteryPercentage);
     }

@@ -522,9 +522,9 @@ public abstract class Protocol implements SelectorCallback, MessageListener, Tim
               if (lookup.toLowerCase().startsWith(DestinationMode.SCHEMA.getNamespace())) {
                 lookup = lookup.substring(DestinationMode.SCHEMA.getNamespace().length());
               }
-              lookup = check + lookup;
+              lookup = new StringBuilder().append(check).append(lookup).toString();
               lookup = lookup.replace("#", "");
-              lookup = lookup.replaceAll("//", "/");
+              lookup = lookup.replace("//", "/");
             }
           }
         }

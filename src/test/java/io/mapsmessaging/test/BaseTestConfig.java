@@ -85,7 +85,6 @@ public class BaseTestConfig extends BaseTest {
     if(md == null) {
       File file = new File(".");
       System.out.println(file.getAbsolutePath());
-      File jaasConf = new File(file, "conf");
 
       setIfNot(
           "java.security.auth.login.config",

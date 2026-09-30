@@ -239,12 +239,10 @@ class PacketIntegrityVerificationTests {
   }
 
   private static class TestContext {
-    private final Packet payload;
     private final PacketIntegrity integrity;
     private final Packet secured;
 
     private TestContext(Packet payload, PacketIntegrity integrity, Packet secured) {
-      this.payload = payload;
       this.integrity = integrity;
       this.secured = secured;
     }

@@ -55,11 +55,9 @@ public class ProtocolFactory implements ServiceManager {
 
   public ProtocolImplFactory getBoundedProtocol() {
     List<ProtocolImplFactory> list = new ArrayList<>();
-    for (ProtocolImplFactory protocol : protocolServiceList) {
-      if(protocol.matches(protocols)) {
-        list.add(protocol);
-      }
-    }
+    java.util.stream.StreamSupport.stream(protocolServiceList.spliterator(), false)
+        .filter(protocol -> protocol.matches(protocols))
+        .forEachOrdered(list::add);
     if(list.isEmpty()) {
       return null;
     }

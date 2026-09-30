@@ -49,12 +49,7 @@ public class SerialConfig extends SerialConfigDTO implements Config {
 
   @Override
   public boolean update(BaseConfigDTO config) {
-    boolean hasChanged = false;
-    if(config instanceof SerialConfigDTO){
-      SerialConfigDTO newConfig = (SerialConfigDTO) config;
-
-    }
-    return hasChanged;
+    return false;
   }
 
   @Override

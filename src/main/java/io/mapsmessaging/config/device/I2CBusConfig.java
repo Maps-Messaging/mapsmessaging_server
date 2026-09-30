@@ -118,11 +118,9 @@ public class I2CBusConfig extends I2CBusConfigDTO implements DeviceBusConfig {
     if (getTrigger() != null && !getTrigger().isEmpty()) props.put("trigger", getTrigger());
 
     List<ConfigurationProperties> deviceList = new ArrayList<>();
-    for (I2CDeviceConfigDTO device : getDevices()) {
-      if (device instanceof Config matchedConfig) {
-        deviceList.add((matchedConfig).toConfigurationProperties());
-      }
-    }
+    getDevices().stream().filter(Config.class::isInstance).map(Config.class::cast)
+        .map(matchedConfig -> (matchedConfig).toConfigurationProperties())
+        .forEachOrdered(deviceList::add);
     props.put("devices", deviceList);
     return props;
   }

@@ -245,7 +245,7 @@ public class OrbcommOgwsClient implements SatelliteClient {
         }
       }
     }
-    SubmitMessagesResponse submitMessagesResponse = gson.fromJson(response.body(), SubmitMessagesResponse.class);
+    gson.fromJson(response.body(), SubmitMessagesResponse.class);
   }
 
   @Override

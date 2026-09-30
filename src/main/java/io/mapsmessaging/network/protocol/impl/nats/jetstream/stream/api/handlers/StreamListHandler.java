@@ -58,7 +58,7 @@ public class StreamListHandler extends JetStreamFrameHandler {
     int limit = json.has("limit") ? json.get("limit").getAsInt() : 1024;
 
     // Clamp values to avoid index errors
-    offset = Math.max(0, Math.min(offset, entries.size()));
+    offset = Math.clamp(offset, 0, entries.size());
     int toIndex = Math.min(offset + limit, entries.size());
 
     List<StreamEntry> page = entries.subList(offset, toIndex);

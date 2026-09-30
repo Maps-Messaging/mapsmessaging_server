@@ -23,7 +23,6 @@ import io.mapsmessaging.config.tenant.TenantConfig;
 import io.mapsmessaging.configuration.ConfigurationProperties;
 import io.mapsmessaging.dto.rest.config.BaseConfigDTO;
 import io.mapsmessaging.dto.rest.config.TenantManagementConfigDTO;
-import io.mapsmessaging.dto.rest.config.tenant.TenantConfigDTO;
 import io.mapsmessaging.license.FeatureManager;
 import io.mapsmessaging.utilities.configuration.ConfigurationManager;
 import lombok.NoArgsConstructor;
@@ -79,9 +78,9 @@ public class TenantManagementConfig extends TenantManagementConfigDTO implements
   public ConfigurationProperties toConfigurationProperties() {
     ConfigurationProperties configurationProperties = new ConfigurationProperties();
     List<ConfigurationProperties> tenantList = new ArrayList<>();
-    for (TenantConfigDTO tenantConfig : tenantConfigList) {
-      tenantList.add(((Config)tenantConfig).toConfigurationProperties());
-    }
+    tenantConfigList.stream()
+        .map(tenantConfig -> ((Config)tenantConfig).toConfigurationProperties())
+        .forEachOrdered(tenantList::add);
     configurationProperties.put("data", tenantList);
     return configurationProperties;
   }

@@ -58,9 +58,9 @@ public class NetworkConfigFactory {
       config.put("HmacHostLookupCacheExpiry", udpConfigDTO.getHmacHostLookupCacheExpiry());
 
       List<ConfigurationProperties> nodeConfigs = new ArrayList<>();
-      for (HmacConfigDTO hmacConfig : udpConfigDTO.getHmacConfigList()) {
-        nodeConfigs.add(((Config)hmacConfig).toConfigurationProperties());
-      }
+      udpConfigDTO.getHmacConfigList().stream()
+          .map(hmacConfig -> ((Config)hmacConfig).toConfigurationProperties())
+          .forEachOrdered(nodeConfigs::add);
       config.put("nodeConfiguration", nodeConfigs);
     }
   }
@@ -107,9 +107,9 @@ public class NetworkConfigFactory {
 
   private static List<HmacConfigDTO> loadNodeConfig(List<ConfigurationProperties> nodes) {
     List<HmacConfigDTO> list = new ArrayList<>();
-    for (ConfigurationProperties node : nodes) {
-      list.add(new HmacConfig(node));
-    }
+    nodes.stream()
+        .map(node -> new HmacConfig(node))
+        .forEachOrdered(list::add);
     return list;
   }
 

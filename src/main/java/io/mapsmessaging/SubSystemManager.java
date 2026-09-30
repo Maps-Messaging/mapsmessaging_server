@@ -320,9 +320,9 @@ public class SubSystemManager {
 
   public List<SubSystemStatusDTO> getSubSystemStatus() {
     List<SubSystemStatusDTO> list = new ArrayList<>();
-    for(AgentOrder agent:agentMap.values()){
-      list.add(agent.getAgent().getStatus());
-    }
+    agentMap.values().stream()
+        .map(agent -> agent.getAgent().getStatus())
+        .forEachOrdered(list::add);
     return list;
   }
 

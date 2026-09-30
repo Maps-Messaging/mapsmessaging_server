@@ -26,7 +26,6 @@ import io.mapsmessaging.config.transformer.TransformationConfigFactory;
 import io.mapsmessaging.configuration.ConfigurationProperties;
 import io.mapsmessaging.dto.rest.config.BaseConfigDTO;
 import io.mapsmessaging.dto.rest.config.protocol.LinkConfigDTO;
-import io.mapsmessaging.dto.rest.config.protocol.NamespaceFilterDTO;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -102,9 +101,9 @@ public class LinkConfig extends LinkConfigDTO implements Config {
 
     if (this.namespaceFilters != null && !this.namespaceFilters.isEmpty()) {
       List<ConfigurationProperties> configList = new ArrayList<>();
-      for (NamespaceFilterDTO filter : namespaceFilters) {
-        configList.add(((NamespaceFilter) filter).toConfigurationProperties());
-      }
+      namespaceFilters.stream()
+          .map(filter -> ((NamespaceFilter) filter).toConfigurationProperties())
+          .forEachOrdered(configList::add);
       config.put("namespaceFilters", configList);
     }
 

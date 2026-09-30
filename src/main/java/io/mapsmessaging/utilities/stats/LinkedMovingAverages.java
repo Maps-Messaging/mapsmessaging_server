@@ -223,7 +223,7 @@ public class LinkedMovingAverages implements Stats {
     long corrected = dataProcessor.add(value, previous);
     currentQuantum.add(corrected);
     total.add(corrected);
-    currentStatistics.addValue(corrected);
+    currentStatistics.addValue((double) corrected);
     previous = value;
   }
 

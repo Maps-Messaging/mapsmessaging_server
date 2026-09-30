@@ -107,7 +107,7 @@ public class NetworkInterfaceMonitor implements Agent {
       if (networkInterfaceState.getName().equals(adapterName)) {
         list.addAll(networkInterfaceState.getIpAddresses());
       } else if (adapterName.equals(IPv4_ALL_HOSTS)) {
-        networkInterfaceState.getIpAddresses().forEach((inetAddress) -> {
+        networkInterfaceState.getIpAddresses().forEach(inetAddress -> {
           if (inetAddress instanceof Inet4Address) {
             list.add(inetAddress);
           }

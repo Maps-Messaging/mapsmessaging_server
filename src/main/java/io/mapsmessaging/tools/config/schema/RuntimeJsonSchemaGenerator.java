@@ -432,11 +432,9 @@ public class RuntimeJsonSchemaGenerator {
 
     if (hasOneOf) {
       List<Class<?>> classes = new ArrayList<>();
-      for (Class<?> c : oneOfClasses) {
-        if (c != null && c != Void.class) {
-          classes.add(c);
-        }
-      }
+      java.util.Arrays.stream(oneOfClasses)
+          .filter(c -> c != null && c != Void.class)
+          .forEachOrdered(classes::add);
       classes.sort(Comparator.comparing(Class::getName));
 
       List<Object> oneOf = new ArrayList<>();
@@ -501,9 +499,9 @@ public class RuntimeJsonSchemaGenerator {
 
       Object[] constants = clazz.getEnumConstants();
       List<String> values = new ArrayList<>(constants.length);
-      for (Object c : constants) {
-        values.add(((Enum<?>) c).name());
-      }
+      java.util.Arrays.stream(constants)
+          .map(c -> ((Enum<?>) c).name())
+          .forEachOrdered(values::add);
       e.put("enum", values);
       return e;
     }
@@ -616,11 +614,9 @@ public class RuntimeJsonSchemaGenerator {
     }
 
     List<String> vals = new ArrayList<>();
-    for (String v : allowable) {
-      if (v != null && !v.isBlank()) {
-        vals.add(v);
-      }
-    }
+    java.util.Arrays.stream(allowable)
+        .filter(v -> v != null && !v.isBlank())
+        .forEachOrdered(vals::add);
     return vals;
   }
 

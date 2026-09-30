@@ -172,9 +172,9 @@ public class AuthenticationStorage {
     for (Identity entry : userIdMaps) {
       List<UUID> groupIds = new ArrayList<>();
       List<Group> groupEntries = entry.getGroupList();
-      for (Group group : groupEntries) {
-        groupIds.add(group.getId());
-      }
+      groupEntries.stream()
+          .map(group -> group.getId())
+          .forEachOrdered(groupIds::add);
       UserDetails details = new UserDetails(
           entry,
           groupIds

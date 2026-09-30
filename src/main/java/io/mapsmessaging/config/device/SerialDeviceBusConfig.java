@@ -22,7 +22,6 @@ package io.mapsmessaging.config.device;
 import io.mapsmessaging.configuration.ConfigurationProperties;
 import io.mapsmessaging.dto.rest.config.BaseConfigDTO;
 import io.mapsmessaging.dto.rest.config.device.SerialBusConfigDTO;
-import io.mapsmessaging.dto.rest.config.device.SerialBusDeviceDTO;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -60,11 +59,9 @@ public class SerialDeviceBusConfig extends SerialBusConfigDTO implements DeviceB
     if (getFilter() != null) props.put("filter", getFilter());
     if (getSelector() != null) props.put("selector", getSelector());
     List<ConfigurationProperties> deviceList = new ArrayList<>();
-    for (SerialBusDeviceDTO device : this.devices) {
-      if (device instanceof SerialDeviceConfig serialDeviceConfig) {
-        deviceList.add(serialDeviceConfig.toConfigurationProperties());
-      }
-    }
+    this.devices.stream().filter(SerialDeviceConfig.class::isInstance).map(SerialDeviceConfig.class::cast)
+        .map(serialDeviceConfig -> serialDeviceConfig.toConfigurationProperties())
+        .forEachOrdered(deviceList::add);
     props.put("config", deviceList);
     return props;
   }

@@ -192,13 +192,12 @@ public class MQTTSNInterfaceManager implements SelectorCallback {
       for (PacketFactory factory : packetFactory) {
         MQTT_SNPacket mqttMsg = factory.parseFrame(packet);
         packet.position(0);
-        if (mqttMsg instanceof PingRequest pingRequest) {
-          if (pingRequest.getClientId() != null) {
-            UDPSessionState<MQTT_SNProtocol> state = currentSessions.findAndUpdate(pingRequest.getClientId(), packet.getFromAddress(), enableAddressChanges);
-            if (state != null) {
-              state.getContext().setAddressKey(packet.getFromAddress());
-              return state;
-            }
+        if (mqttMsg instanceof PingRequest pingRequest
+            && pingRequest.getClientId() != null) {
+          UDPSessionState<MQTT_SNProtocol> state = currentSessions.findAndUpdate(pingRequest.getClientId(), packet.getFromAddress(), enableAddressChanges);
+          if (state != null) {
+            state.getContext().setAddressKey(packet.getFromAddress());
+            return state;
           }
         }
       }

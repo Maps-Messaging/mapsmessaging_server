@@ -156,11 +156,9 @@ public class GatewayManager {
     public void run() {
       long timeout = System.currentTimeMillis() - 600000;
       List<GatewayInfo> timedOut = new ArrayList<>();
-      for (GatewayInfo info : gatewayMap.values()) {
-        if (info.getLastAccess() < timeout) {
-          timedOut.add(info);
-        }
-      }
+      gatewayMap.values().stream()
+          .filter(info -> info.getLastAccess() < timeout)
+          .forEachOrdered(timedOut::add);
       for (GatewayInfo old : timedOut) {
         old.close(session);
         SemtechStatusEvent event = SemtechStatusEventFactory.getInstance().createGatewayEvent(old.getName(), SemtechStatusState.GATEWAY_EXPIRED);

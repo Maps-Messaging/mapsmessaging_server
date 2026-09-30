@@ -155,14 +155,6 @@ public class N2kTwinUpdater {
     return twinId;
   }
 
-  private String trimCallSign(String value) {
-    String normalizedValue = normalizeTwinId(value);
-    if (normalizedValue.length() > 7) {
-      return normalizedValue.substring(normalizedValue.length() - 7);
-    }
-
-    return normalizedValue;
-  }
 
   private VehicleClass resolveVehicleClass(N2KTwinConfig config) {
     if (config.getVehicleClass() == null || config.getVehicleClass().isBlank()) {

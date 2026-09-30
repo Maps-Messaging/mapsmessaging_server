@@ -151,9 +151,9 @@ public class MqttSnConfig extends MqttSnConfigDTO implements Config {
 
     // Add predefined topics list to properties
     List<ConfigurationProperties> predefinedPropsList = new ArrayList<>();
-    for (PredefinedTopics topic : predefinedTopicsList) {
-      predefinedPropsList.add(topic.toConfigurationProperties());
-    }
+    predefinedTopicsList.stream()
+        .map(topic -> topic.toConfigurationProperties())
+        .forEachOrdered(predefinedPropsList::add);
     properties.put("preDefinedTopics", predefinedPropsList);
 
     return properties;

@@ -149,11 +149,9 @@ public abstract class SubscriptionModeManager {
       // Create a list of destination sets that have this destination in its mapping
       //
       List<DestinationSet> interested = new ArrayList<>();
-      for (DestinationSet destinationSet : subscriptions.values()) {
-        if (destinationSet.contains(destinationImpl)) {
-          interested.add(destinationSet);
-        }
-      }
+      subscriptions.values().stream()
+          .filter(destinationSet -> destinationSet.contains(destinationImpl))
+          .forEachOrdered(interested::add);
 
       //
       // Now lets see if there is now no interest and clear out any subscription

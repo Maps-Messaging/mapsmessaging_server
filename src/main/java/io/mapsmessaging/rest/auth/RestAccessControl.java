@@ -26,7 +26,6 @@ import java.util.Map;
 
 public class RestAccessControl {
 
-  private static final String ACL_TYPE = "Permission";
 
 
   public RestAccessControl() {

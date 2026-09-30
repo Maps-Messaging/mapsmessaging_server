@@ -20,7 +20,6 @@
 package io.mapsmessaging.network.protocol.impl.mavlink;
 
 import io.mapsmessaging.dto.rest.config.protocol.ProtocolConfigDTO;
-import io.mapsmessaging.dto.rest.config.protocol.impl.MavlinkConfigDTO;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.mavlink.ProcessedFrame;
@@ -49,7 +48,6 @@ public class MavlinkSerialProtocol extends MavlinkProtocol {
   protected MavlinkSerialProtocol(@NonNull @NotNull EndPoint endPoint,
                                   @NotNull @NonNull ProtocolConfigDTO protocolConfig) throws IOException {
     super(key1 -> {}, DUMMY_KEY, endPoint, protocolConfig);
-    MavlinkConfigDTO mavlinkConfigDTO = (MavlinkConfigDTO) protocolConfig;
     if(endPoint instanceof SerialEndPoint serialEndPoint){
       MavlinkStreamHandler handler = new MavlinkStreamHandler();
       serialEndPoint.setStreamHandler(handler);

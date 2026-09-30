@@ -70,7 +70,7 @@ public class NamesHandler extends JetStreamFrameHandler {
         .collect(Collectors.toList());
 
     int total = allNames.size();
-    offset = Math.max(0, Math.min(offset, total));
+    offset = Math.clamp(offset, 0, total);
     int toIndex = Math.min(offset + limit, total);
     List<String> page = allNames.subList(offset, toIndex);
 

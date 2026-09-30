@@ -29,7 +29,6 @@ import io.mapsmessaging.config.device.triggers.PeriodicTriggerConfig;
 import io.mapsmessaging.configuration.ConfigurationProperties;
 import io.mapsmessaging.dto.rest.config.BaseConfigDTO;
 import io.mapsmessaging.dto.rest.config.DeviceManagerConfigDTO;
-import io.mapsmessaging.dto.rest.config.device.I2CBusConfigDTO;
 import io.mapsmessaging.dto.rest.config.device.triggers.BaseTriggerConfigDTO;
 import io.mapsmessaging.license.FeatureManager;
 import io.mapsmessaging.utilities.configuration.ConfigurationManager;
@@ -120,15 +119,15 @@ public class DeviceManagerConfig extends DeviceManagerConfigDTO implements Confi
     config.put("demoEnabled", this.demoEnabled);
 
     List<ConfigurationProperties> triggerConfigs = new ArrayList<>();
-    for (BaseTriggerConfigDTO trigger : this.triggers) {
-      triggerConfigs.add(((Config)trigger).toConfigurationProperties());
-    }
+    this.triggers.stream()
+        .map(trigger -> ((Config)trigger).toConfigurationProperties())
+        .forEachOrdered(triggerConfigs::add);
     config.put("triggers", triggerConfigs);
 
     List<ConfigurationProperties> i2cBusConfigs = new ArrayList<>();
-    for (I2CBusConfigDTO i2cBus : this.i2cBuses) {
-      i2cBusConfigs.add(((Config)i2cBus).toConfigurationProperties());
-    }
+    this.i2cBuses.stream()
+        .map(i2cBus -> ((Config)i2cBus).toConfigurationProperties())
+        .forEachOrdered(i2cBusConfigs::add);
     config.put("i2cBuses", i2cBusConfigs);
 
     if (this.spiBus != null) {

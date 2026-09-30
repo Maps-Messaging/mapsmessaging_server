@@ -76,7 +76,6 @@ public class MavlinkProtocol extends Protocol {
 
   private static final int MAV_AUTOPILOT_ARDUPILOTMEGA = 3;
   private static final int MAV_AUTOPILOT_PX4 = 12;
-  private static final int MAV_AUTOPILOT_INVALID = 8;
 
   private static final Logger logger = LoggerFactory.getLogger(MavlinkProtocol.class);
 

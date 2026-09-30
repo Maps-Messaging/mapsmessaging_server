@@ -176,7 +176,7 @@ public class XmodemReceiver extends Xmodem {
     int last = expected == 1 ? 255 : expected - 1;
     if (blk == expected) {
       int remaining = announcedLength - buf.size();
-      int toWrite = Math.max(0, Math.min(remaining, data.length));
+      int toWrite = Math.clamp(remaining, 0, data.length);
       if (toWrite > 0) buf.write(data, 0, toWrite);
       out.write(ACK);
       out.flush();

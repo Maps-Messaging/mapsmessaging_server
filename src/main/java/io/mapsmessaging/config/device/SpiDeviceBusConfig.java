@@ -23,7 +23,6 @@ import io.mapsmessaging.config.Config;
 import io.mapsmessaging.configuration.ConfigurationProperties;
 import io.mapsmessaging.dto.rest.config.BaseConfigDTO;
 import io.mapsmessaging.dto.rest.config.device.SpiDeviceBusConfigDTO;
-import io.mapsmessaging.dto.rest.config.device.SpiDeviceConfigDTO;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -65,11 +64,9 @@ public class SpiDeviceBusConfig extends SpiDeviceBusConfigDTO implements DeviceB
     props.put("trigger", trigger);
 
     List<ConfigurationProperties> deviceList = new ArrayList<>();
-    for (SpiDeviceConfigDTO device : this.devices) {
-      if (device instanceof SpiDeviceConfig matchedSpiDeviceConfig) {
-        deviceList.add((matchedSpiDeviceConfig).toConfigurationProperties());
-      }
-    }
+    this.devices.stream().filter(SpiDeviceConfig.class::isInstance).map(SpiDeviceConfig.class::cast)
+        .map(matchedSpiDeviceConfig -> (matchedSpiDeviceConfig).toConfigurationProperties())
+        .forEachOrdered(deviceList::add);
     props.put("config", deviceList);
 
     return props;

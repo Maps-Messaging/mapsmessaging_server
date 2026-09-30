@@ -98,9 +98,9 @@ public class StreamUpdateHandler extends JetStreamFrameHandler {
 
     List<CompletableFuture<Destination>> futures = new ArrayList<>();
 
-    for (String subjectName : toAdd) {
-      futures.add(constructDestinationFromSubject(streamName, subjectName, sessionState));
-    }
+    toAdd.stream()
+        .map(subjectName -> constructDestinationFromSubject(streamName, subjectName, sessionState))
+        .forEachOrdered(futures::add);
 
     List<CompletableFuture<Void>> deletes = new ArrayList<>();
     if (sessionState.getProtocol().getNatsConfig().isEnableStreamDelete()) {

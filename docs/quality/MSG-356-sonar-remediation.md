@@ -418,3 +418,24 @@ The largest remaining groups are cognitive complexity (113), S9391 (69), empty m
 Remove unused locals for the MQTT 5 UNSUBACK reason code and LoRa gateway minor version while retaining both `packet.get()` calls. This addresses two S1481 findings and the overlapping LoRa S1854 finding without changing byte consumption, failure behavior or protocol dispatch.
 
 Six new regression cases passed against unchanged production code before cleanup. Post-change Java 21 `mvn -B -Dtest=UnsubAck5ConsumptionTest,VersionHandlerConsumptionTest,ConnAck5LengthContractTest -Dexec.skip=true -Ddependency-check.skip=true test` passed all nine tests with zero failures/errors/skips and fresh isolated JaCoCo data. Six cases are new, covering zero/one/multiple reason codes, following-byte boundaries, truncation, configuration send order and missing-version failures. Full build remains deferred.
+
+### Block 8: selected mechanical work from planned blocks 13, 5, 1 and 2
+
+User scope: exact string output, straightforward sequential loops only, hierarchy-aware unused-member review, and small expressions/casts. Complex loops and behavior/API changes remain deferred.
+
+| Planned group | Implemented in this block | Impacted existing Java files | Remaining review |
+| --- | --- | ---: | --- |
+| 13: String building | All three findings: YAML allowed-value wrapping, topic lookup prefix building, NATS header value appending | 3 | Fresh analysis confirms closure |
+| 5: Loops/streams | 52 simple loops use sequential map/filter pipelines with ordered addition to existing mutable results | 41 | 17 other loop suggestions plus collector mutability, entry-set/compute-if-absent and complex loop-control suggestions retained |
+| 1: Unused locals/members | Remove demonstrably unused private storage and five private methods; retain parsing/unwrap operations while discarding unused results | 18 | Authentication/getter/cast side effects, volatile evaluation state and callback lifecycle need separate review |
+| 2: Small expressions/casts | Four nested guards, ten safe clamps, ten explicit numeric conversions, split declarations and small expression cleanups | 24 | Repeated-getter bindings, dynamic/inverted clamp bounds, API type changes, serialized constants, ML prompt escapes, switch guards and other conditional rewrites retained |
+
+File counts overlap between groups. Existing headers and TwinManagerConfig CRLF line endings are preserved. Removing a repeated MAVLink cast is safe because its superclass constructor performs the same cast first. SerialConfig.update continues returning false without mutation. Orbcomm Gson parsing and DTLS unwrap still execute and throw as before. The aggregator constructor still uses its first-event argument for timeout selection; only unused duplicate storage is removed. ExampleProtocol retains constructor signatures and the superclass extension state. Satellite DTO removal does not affect inherited sessionId/type fields. Private methods have no production or test callers; the separately reported BaseRestApi.computeAccess method is retained because an existing reflection test calls it.
+
+Explicitly retained: NMEA logger/config initialization, REST authentication getters/casts, LinkSelector volatile writes, SASL callback username state, ConfigLintRunner issue accumulation, and DestinationImpl.failedFiles. The latter controls deletion retry behavior, despite its exported unused-builder warning. No Sonar acceptance/suppression/status changes were made.
+
+Regression tests: eight new exact-output cases cover YAML length 100/wrapping/indent/separators/Unicode, exact and sequential wildcard topic mappings, single-pass slash replacement and ordered NATS headers with CRLF. Schema DTO tests now also assert non-empty result lists remain independently mutable. Existing tests exercise configuration round trips, schema output, aggregators, MAVLink numeric values, packet identifier bounds, XMODEM, geospatial geometry, REST and session handling.
+
+Validation: Java 21 production/test compilation passed. The 69-class focused Maven suite ran 437 tests with zero failures/errors and two existing skips (unimplemented interface test and absent LoRa hardware). A follow-up run after the final twin conversion and stronger collection assertions passed 70 tests with zero failures/errors/skips. Each run used isolated fresh JaCoCo execution data and a Mockito startup agent. Full integration build and refreshed analysis remain deferred. Final post-import compilation and seven-class run passed 22 tests with zero failures/errors/skips. Maven selectors and execution logs were kept for each focused run.
+
+Final scope review retained the subscription-creation loop because its predicate mutates destination membership. The final subscription coverage run passed three tests with zero failures/errors/skips.

@@ -69,7 +69,7 @@ public class ListHandler extends JetStreamFrameHandler {
         .collect(Collectors.toList());
 
     int total = all.size();
-    offset = Math.max(0, Math.min(offset, total));
+    offset = Math.clamp(offset, 0, total);
     int toIndex = Math.min(offset + limit, total);
     List<NamedConsumer> page = all.subList(offset, toIndex);
 

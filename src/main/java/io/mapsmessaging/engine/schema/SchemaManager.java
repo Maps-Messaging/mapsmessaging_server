@@ -185,22 +185,20 @@ public class SchemaManager implements Agent, SchemaResolver {
   public synchronized List<SchemaConfig> getSchemaByType(String type) {
     List<SchemaResource> resources = repository.search(type, new LinkedHashMap<>(), 0, 0);
     List<SchemaConfig> schemas = new ArrayList<>();
-    for(SchemaResource resource : resources){
-      if(resource.getDefaultVersion() != null) {
-        schemas.add(resource.getDefaultVersion());
-      }
-    }
+    resources.stream()
+        .filter(resource -> resource.getDefaultVersion() != null)
+        .map(resource -> resource.getDefaultVersion())
+        .forEachOrdered(schemas::add);
     return schemas;
   }
 
   public synchronized List<SchemaConfig> getAll() {
     List<SchemaResource> resources = repository.getAllSchemas();
     List<SchemaConfig> schemas = new ArrayList<>();
-    for(SchemaResource resource : resources){
-      if(resource.getDefaultVersion() != null) {
-        schemas.add(resource.getDefaultVersion());
-      }
-    }
+    resources.stream()
+        .filter(resource -> resource.getDefaultVersion() != null)
+        .map(resource -> resource.getDefaultVersion())
+        .forEachOrdered(schemas::add);
     return schemas;
   }
 

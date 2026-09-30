@@ -23,7 +23,6 @@ import io.mapsmessaging.config.network.EndPointConnectionServerConfig;
 import io.mapsmessaging.configuration.ConfigurationProperties;
 import io.mapsmessaging.dto.rest.config.BaseConfigDTO;
 import io.mapsmessaging.dto.rest.config.NetworkConnectionManagerConfigDTO;
-import io.mapsmessaging.dto.rest.config.network.EndPointConnectionServerConfigDTO;
 import io.mapsmessaging.license.FeatureManager;
 import io.mapsmessaging.utilities.configuration.ConfigurationManager;
 import lombok.NoArgsConstructor;
@@ -74,9 +73,9 @@ public class NetworkConnectionManagerConfig extends NetworkConnectionManagerConf
   public ConfigurationProperties toConfigurationProperties() {
     ConfigurationProperties config = new ConfigurationProperties();
     List<ConfigurationProperties> data = new ArrayList<>();
-    for (EndPointConnectionServerConfigDTO endPointServerConfig : endPointServerConfigList) {
-      data.add(((EndPointConnectionServerConfig) endPointServerConfig).toConfigurationProperties());
-    }
+    endPointServerConfigList.stream()
+        .map(endPointServerConfig -> ((EndPointConnectionServerConfig) endPointServerConfig).toConfigurationProperties())
+        .forEachOrdered(data::add);
     config.put("data", data);
     return config;
   }

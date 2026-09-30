@@ -26,7 +26,6 @@ import io.mapsmessaging.configuration.ConfigurationProperties;
 import io.mapsmessaging.dto.rest.config.BaseConfigDTO;
 import io.mapsmessaging.dto.rest.config.network.EndPointConnectionServerConfigDTO;
 import io.mapsmessaging.dto.rest.config.network.EndPointServerConfigDTO;
-import io.mapsmessaging.dto.rest.config.protocol.LinkConfigDTO;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -67,9 +66,9 @@ public class EndPointConnectionServerConfig extends EndPointConnectionServerConf
       config.put("will", ((MqttWillConfig) willConfig).toConfigurationProperties());
     }
     List<ConfigurationProperties> linkProperties = new ArrayList<>();
-    for (LinkConfigDTO linkConfig : linkConfigs) {
-      linkProperties.add(((Config)linkConfig).toConfigurationProperties());
-    }
+    linkConfigs.stream()
+        .map(linkConfig -> ((Config)linkConfig).toConfigurationProperties())
+        .forEachOrdered(linkProperties::add);
     config.put("links", linkProperties);
     return config;
   }

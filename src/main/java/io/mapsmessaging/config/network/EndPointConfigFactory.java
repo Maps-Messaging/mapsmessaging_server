@@ -170,11 +170,9 @@ public class EndPointConfigFactory {
 
   private static List<ConfigurationProperties> packProtocolConfig(EndPointServerConfigDTO server) {
     List<ConfigurationProperties> protocolConfigs = new ArrayList<>();
-    for(ProtocolConfigDTO protocolConfigDTO : server.getProtocolConfigs()){
-      if (protocolConfigDTO instanceof Config protocolConfig) {
-        protocolConfigs.add(protocolConfig.toConfigurationProperties());
-      }
-    }
+    server.getProtocolConfigs().stream().filter(Config.class::isInstance).map(Config.class::cast)
+        .map(protocolConfig -> protocolConfig.toConfigurationProperties())
+        .forEachOrdered(protocolConfigs::add);
     return protocolConfigs;
   }
   private static EndPointConfigDTO createEndPointConfig(String url, ConfigurationProperties properties) {
