@@ -33,8 +33,7 @@ public class RestAccessControl {
   }
 
   public Map<String, String> getAccess(Subject subject){
-    Map<String, String> accessMap = new LinkedHashMap<>();
-    return accessMap;
+    return new LinkedHashMap<>();
   }
 
   public boolean hasAccess(String resource, Subject subject, long access){

@@ -93,7 +93,6 @@ public class AggregatorWorkScheduler {
     }
 
     int cpu = Runtime.getRuntime().availableProcessors();
-    int resolved = Math.max(1, cpu / 2);
-    return resolved;
+    return Math.max(1, cpu / 2);
   }
 }

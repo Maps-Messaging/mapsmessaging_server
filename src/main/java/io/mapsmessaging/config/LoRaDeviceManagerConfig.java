@@ -95,8 +95,7 @@ public class LoRaDeviceManagerConfig extends LoRaDeviceManagerConfigDTO implemen
 
   @Override
   public ConfigurationProperties toConfigurationProperties() {
-    ConfigurationProperties properties = new ConfigurationProperties();
-    return properties;
+    return new ConfigurationProperties();
   }
 
   @Override
