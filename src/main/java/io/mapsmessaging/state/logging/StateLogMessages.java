@@ -112,6 +112,7 @@ public enum StateLogMessages implements LogMessage {
   N2K_MESSAGE_IGNORED_EMPTY(LEVEL.DEBUG, SERVER_CATEGORY.PROTOCOL, "Ignoring empty N2K message from '{}'"),
   N2K_MESSAGE_IGNORED_NOT_JSON(LEVEL.DEBUG, SERVER_CATEGORY.PROTOCOL, "Ignoring non-JSON N2K message from '{}'"),
   N2K_MESSAGE_IGNORED_NO_J1939(LEVEL.DEBUG, SERVER_CATEGORY.PROTOCOL, "Ignoring N2K message from '{}' because it contains no J1939 object"),
+  N2K_MESSAGE_IGNORED_NO_LISTENER(LEVEL.DEBUG, SERVER_CATEGORY.PROTOCOL, "No N2K twin-state listener registered for PGN '{}', packet {}"),
   N2K_MESSAGE_IGNORED_NO_PGN(LEVEL.DEBUG, SERVER_CATEGORY.PROTOCOL, "Ignoring N2K message from '{}' because the J1939 PGN is missing or invalid"),
   N2K_MESSAGE_IGNORED_NO_N2K(LEVEL.DEBUG, SERVER_CATEGORY.PROTOCOL, "Ignoring N2K message from '{}' because it contains no N2K object"),
   N2K_MESSAGE_IGNORED_NO_PACKET(LEVEL.DEBUG, SERVER_CATEGORY.PROTOCOL, "Ignoring N2K PGN '{}' from '{}' because it contains no packet object"),

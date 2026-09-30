@@ -168,7 +168,6 @@ public class ConfigManagementApi extends BaseRestApi {
         return internalServerError("Configuration section is not a DTO: " + name);
       }
 
-      System.err.println("Manager Name:"+manager.getName());
       String schema = ConfigurationManager.getInstance().getSchema(manager.getName());
       if (schema == null || schema.isBlank()) {
         return notFound("Schema not found for: " + name);
