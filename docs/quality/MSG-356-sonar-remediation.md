@@ -271,3 +271,11 @@ Fresh focused-suite JaCoCo coverage (no class-mismatch warnings):
 | GenericPx4FixedWingUavModel | 100.0% | 100.0% |
 
 These are focused class measurements, not whole-server or SonarCloud new-code coverage. Existing UGV/USV paths remain uncovered by this suite. Full integration build and refreshed analysis remain pending.
+
+### Block 5d: duplicated REST configuration messages
+
+Extracted four private constants across ConfigManagementApi and TwinConfigurationApi: configuration error messages, twin save error message, and the drone-info cache path. Runtime responses and OpenAPI descriptions use the same exact text; cache invalidation uses the original path. Exact inverse-substitution checks confirmed production changes are only constant declarations and literal replacement. Fresh analysis must confirm issue closure.
+
+Added seven direct API response tests (ConfigManagementErrorResponseTest and TwinConfigurationErrorResponseTest): configuration read/update failure responses, twin read failures, persistence IOException mapping, unexpected update failures, and successful drone deletion invalidating both original cache paths. Authentication is isolated; the storage boundary is mocked to inject failures. No full daemon startup.
+
+Validation: Java 21 Maven passed, 7 tests, zero failures/errors/skips. Fresh isolated JaCoCo report generated without class-mismatch warnings; no whole-API/server coverage claim. Command: JAVA_TOOL_OPTIONS=-javaagent:/root/.m2/repository/org/mockito/mockito-core/5.23.0/mockito-core-5.23.0.jar mvn -s /tmp/msg356-tools/settings.xml -B -Dtest=TwinConfigurationErrorResponseTest,ConfigManagementErrorResponseTest -Djacoco.destFile=/tmp/msg356-rest-constants-final.exec -Djacoco.dataFile=/tmp/msg356-rest-constants-final.exec -Dexec.skip=true -Ddependency-check.skip=true test. Full REST integration build remains deferred.
