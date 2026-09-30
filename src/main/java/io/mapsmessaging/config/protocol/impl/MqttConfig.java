@@ -36,8 +36,7 @@ public class MqttConfig extends MqttConfigDTO implements Config {
   @Override
   public boolean update(BaseConfigDTO config) {
     boolean hasChanged = false;
-    if (config instanceof MqttConfigDTO) {
-      MqttConfigDTO newConfig = (MqttConfigDTO) config;
+    if (config instanceof MqttConfigDTO newConfig) {
       if (ProtocolConfigFactory.update(this, newConfig)) {
         hasChanged = true;
       }

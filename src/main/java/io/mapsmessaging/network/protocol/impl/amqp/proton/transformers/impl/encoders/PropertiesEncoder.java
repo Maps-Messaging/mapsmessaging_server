@@ -336,8 +336,7 @@ public class PropertiesEncoder {
     public void unpack(@NonNull @NotNull MessageBuilder messageBuilder, @NonNull @NotNull Properties properties, @NonNull @NotNull Map<String, TypedData> map) {
       if (properties.getCorrelationId() != null) {
         Object obj = properties.getCorrelationId();
-        if (obj instanceof Binary) {
-          Binary binary = (Binary) obj;
+        if (obj instanceof Binary binary) {
           messageBuilder.setCorrelationData(binary.getArray());
         } else {
           messageBuilder.setCorrelationData(obj.toString());

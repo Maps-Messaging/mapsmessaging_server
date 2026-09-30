@@ -134,8 +134,7 @@ public class ResourceStatistics extends Statistics implements AutoCloseable, Run
   public void run() {
     io.mapsmessaging.storage.Statistics actualStats = resource.getStatistics();
     if (actualStats != null) {
-      if (actualStats instanceof CacheStatistics) {
-        CacheStatistics cacheStatistics = (CacheStatistics) actualStats;
+      if (actualStats instanceof CacheStatistics cacheStatistics) {
         processCacheStatistics(cacheStatistics);
         actualStats = cacheStatistics.getStorageStatistics();
       }

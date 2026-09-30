@@ -42,8 +42,7 @@ public class NetworkConfigFactory {
     config.put("discoverable", endPointConfigDTO.isDiscoverable());
     config.put("serverReadBufferSize", ConfigHelper.formatBufferSize(endPointConfigDTO.getServerReadBufferSize()));
     config.put("serverWriteBufferSize", ConfigHelper.formatBufferSize(endPointConfigDTO.getServerWriteBufferSize()));
-    if(endPointConfigDTO instanceof TcpConfigDTO){
-      TcpConfigDTO tcpConfigDTO = (TcpConfigDTO)endPointConfigDTO;
+    if(endPointConfigDTO instanceof TcpConfigDTO tcpConfigDTO){
       config.put("receiveBufferSize", tcpConfigDTO.getReceiveBufferSize());
       config.put("sendBufferSize", tcpConfigDTO.getSendBufferSize());
       config.put("timeout", tcpConfigDTO.getTimeout());
@@ -53,8 +52,7 @@ public class NetworkConfigFactory {
       config.put("enableReadDelayOnFragmentation", tcpConfigDTO.isEnableReadDelayOnFragmentation());
       config.put("fragmentationLimit", tcpConfigDTO.getFragmentationLimit());
     }
-    if(endPointConfigDTO instanceof UdpConfigDTO){
-      UdpConfigDTO udpConfigDTO = (UdpConfigDTO)endPointConfigDTO;
+    if(endPointConfigDTO instanceof UdpConfigDTO udpConfigDTO){
       config.put("packetReuseTimeout", udpConfigDTO.getPacketReuseTimeout());
       config.put("idleSessionTimeout", udpConfigDTO.getIdleSessionTimeout());
       config.put("HmacHostLookupCacheExpiry", udpConfigDTO.getHmacHostLookupCacheExpiry());
@@ -140,8 +138,7 @@ public class NetworkConfigFactory {
       hasChanged = true;
     }
 
-    if (original instanceof TcpConfigDTO && config instanceof TcpConfigDTO) {
-      TcpConfigDTO newConfig = (TcpConfigDTO) config;
+    if (original instanceof TcpConfigDTO && config instanceof TcpConfigDTO newConfig) {
       TcpConfigDTO oldConfig = (TcpConfigDTO) original;
 
 
@@ -178,8 +175,7 @@ public class NetworkConfigFactory {
         hasChanged = true;
       }
     }
-    if (original instanceof UdpConfigDTO && config instanceof UdpConfigDTO) {
-      UdpConfigDTO newConfig = (UdpConfigDTO) config;
+    if (original instanceof UdpConfigDTO && config instanceof UdpConfigDTO newConfig) {
       UdpConfigDTO oldConfig = (UdpConfigDTO) original;
 
       if (oldConfig.getPacketReuseTimeout() != newConfig.getPacketReuseTimeout()) {

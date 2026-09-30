@@ -30,9 +30,7 @@ final class DeterministicJsonWriter {
       return;
     }
 
-    if (v instanceof String) {
-      String s = (String) v;
-
+    if (v instanceof String s) {
       if (shouldCoerceStringNumber(contextKey)) {
         BigDecimal coerced = tryParseNumber(s);
         if (coerced != null) {

@@ -72,8 +72,7 @@ public class RegisteredTopicConfiguration {
 
   private String searchForExplicitMapping(SocketAddress from, List<TopicConfiguration> list){
     for (TopicConfiguration tc : list) {
-      if (from instanceof InetSocketAddress) {
-        InetSocketAddress inetAddress = (InetSocketAddress) from;
+      if (from instanceof InetSocketAddress inetAddress) {
         String address = inetAddress.getAddress().getHostAddress();
         String hostName = address.startsWith("169.254") ? address : inetAddress.getAddress().getHostName();
         if (address.equals(tc.address) || hostName.equals(tc.address)) {
@@ -107,8 +106,7 @@ public class RegisteredTopicConfiguration {
 
   private int searchForTopicId(SocketAddress from, List<TopicConfiguration> list) {
     for (TopicConfiguration tc : list) {
-      if (from instanceof InetSocketAddress) {
-        InetSocketAddress inetAddress = (InetSocketAddress) from;
+      if (from instanceof InetSocketAddress inetAddress) {
         if (inetAddress.getAddress().getHostAddress().equals(tc.address) || inetAddress.getHostName().equals(tc.address)) {
           return tc.id;
         }

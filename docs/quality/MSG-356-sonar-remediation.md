@@ -204,3 +204,9 @@ Validation: Java 21 `mvn -B -DskipTests -Dexec.skip=true -Ddependency-check.skip
 ### Next scan
 
 The export has 112 instanceof/cast findings, 12 switch-label consolidation findings, 2 modifier-order findings, 4 immediate-return findings and 1 empty statement. Review source semantics before applying each block. Do not bulk-convert loops, mutable list collectors, exception handling, serialized field names or equality methods solely to satisfy style rules.
+
+### Block 2a: direct instanceof bindings
+
+Converted 44 immediate checked casts into pattern bindings across 33 production files, retaining the existing local names and all subsequent statements. Repeated getters, generic map casts, and more complex flow scopes remain pending. Added six AMQP decoder tests for binary/scalar payloads, sequence order, text, absent bodies and unmatched bodies. Isolated network discovery test singleton initialization from daemon configuration.
+
+Validation: 43 focused tests passed, zero failures/errors/skips, using Java 21 Maven test with Mockito JVM attachment enabled. The initial sandbox run could not attach Mockito; the unrestricted run exposed two network test configuration initialization errors, which were corrected in the test fixture. No production configuration behavior was changed.
