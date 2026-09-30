@@ -439,3 +439,11 @@ Regression tests: eight new exact-output cases cover YAML length 100/wrapping/in
 Validation: Java 21 production/test compilation passed. The 69-class focused Maven suite ran 437 tests with zero failures/errors and two existing skips (unimplemented interface test and absent LoRa hardware). A follow-up run after the final twin conversion and stronger collection assertions passed 70 tests with zero failures/errors/skips. Each run used isolated fresh JaCoCo execution data and a Mockito startup agent. Full integration build and refreshed analysis remain deferred. Final post-import compilation and seven-class run passed 22 tests with zero failures/errors/skips. Maven selectors and execution logs were kept for each focused run.
 
 Final scope review retained the subscription-creation loop because its predicate mutates destination membership. The final subscription coverage run passed three tests with zero failures/errors/skips.
+
+### Block 9: commented-out code and deprecation review
+
+Removed ten S125 commented-code blocks across ten files, including disabled N2K description fallback, schema options, JMX path addition, REST ACL invocation, MQTT-SN ping invocation and test utilities. A lexical comparison with comments/whitespace removed confirms identical executable tokens for every changed Java file. The ArduPilot home-slot explanation is prose describing a safety contract, not disabled code, and is retained. No active authorization/keepalive logic changed.
+
+Deprecation metadata is presented for user review and remains unchanged: SticklebackArdupilotUsvModel.MAX_ALTITUDE_METERS is a compatibility alias for DEFAULT_ALTITUDE_METERS and already has replacement Javadoc; DroneInfoDTO.getStopAction/setStopAction alias cancelAction and lack replacement Javadoc. All three use bare @Deprecated and have S6355/S1133 findings; the DTO methods also have S1123 findings. Do not invent a deprecation release or removal commitment.
+
+Validation: comment-only token equivalence checked across all ten files; Java 21 Maven `test-compile -DskipTests -Dexec.skip=true -Ddependency-check.skip=true` passed, compiling production and test sources. No new tests are needed for unchanged executable tokens.

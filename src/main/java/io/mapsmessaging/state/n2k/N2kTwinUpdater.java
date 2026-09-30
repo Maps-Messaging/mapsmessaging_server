@@ -136,9 +136,6 @@ public class N2kTwinUpdater {
   }
 
   private String resolveDescription(String twinId, N2KTwinConfig config) {
-//    if (config.getDescription() != null && !config.getDescription().isBlank()) {
-//      return config.getDescription();
-//    }
 
     if (config.getName() != null && !config.getName().isBlank()) {
       return "N2K STANAG feed " + config.getName();

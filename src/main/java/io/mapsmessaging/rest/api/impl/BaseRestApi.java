@@ -164,12 +164,6 @@ public class BaseRestApi {
       }
     }
     RestAccessControl accessControl = AuthenticationContext.getInstance().getAccessControl();
-/*
-    if (accessControl != null) {
-      access = (userIdMap != null && accessControl.hasAccess(resource, subject, computeAccess(method)));
-    }
-
-*/
     if (!access) {
       throw new WebApplicationException("Access denied", Response.Status.FORBIDDEN);
     }

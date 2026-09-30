@@ -110,20 +110,7 @@ public class StoreFiller {
       }
       TimeUnit.MILLISECONDS.sleep(500);
     }
-    /*
-    MqttConnectOptions options = new MqttConnectOptions();
-    options.setMqttVersion(4);
-    options.setCleanSession(true);
-    MqttClient client = new MqttClient("tcp://localhost:1883","PausedClient", new MemoryPersistence());
-    client.connect(options);
-    Assertions.assertTrue(client.isConnected());
-    for(String topic:topicNames) {
-      client.subscribe(topic, 2);
-    }
-    TimeUnit.SECONDS.sleep(2);
-    client.disconnect();
-    Assertions.assertFalse(client.isConnected());
-*/
+
     System.err.println("Subscriptions started");
     TimeUnit.SECONDS.sleep(20);
     System.err.println("Publishers starting");

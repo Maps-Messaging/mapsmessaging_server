@@ -85,7 +85,6 @@ public class RuntimeJsonSchemaGenerator {
     // IMPORTANT:
     // Do NOT set additionalProperties:false on the wrapper document when $ref is used.
     // Put object-closure rules on the referenced object schemas instead.
-    //doc.put("unevaluatedProperties", false);
 
     Schema rootSchemaAnn = rootDtoClass.getAnnotation(Schema.class);
     if (rootSchemaAnn != null && !rootSchemaAnn.description().isBlank()) {

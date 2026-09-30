@@ -31,7 +31,7 @@ import javax.naming.NameNotFoundException;
 import javax.naming.NamingException;
 import org.junit.jupiter.api.Assertions;
 
-public class JmsAdministrator {//implements Administrator {
+public class JmsAdministrator {
 
   private final NamingException ex;
   private Context context;
