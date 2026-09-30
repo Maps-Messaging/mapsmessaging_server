@@ -104,10 +104,7 @@ public class SemtechStatusEventFactory {
   private void validateGatewayState(SemtechStatusState state) {
     Objects.requireNonNull(state, "state must not be null");
     switch (state) {
-      case GATEWAY_REGISTERED:
-      case GATEWAY_PULL:
-      case GATEWAY_EXPIRED:
-      case GATEWAY_ADDRESS_CHANGED:
+      case GATEWAY_REGISTERED, GATEWAY_PULL, GATEWAY_EXPIRED, GATEWAY_ADDRESS_CHANGED:
         return;
 
       default:
@@ -118,13 +115,7 @@ public class SemtechStatusEventFactory {
   private void validateDownlinkState(SemtechStatusState state) {
     Objects.requireNonNull(state, "state must not be null");
     switch (state) {
-      case DOWNLINK_RECEIVED:
-      case DOWNLINK_QUEUED:
-      case DOWNLINK_SENT:
-      case DOWNLINK_ACK_OK:
-      case DOWNLINK_ACK_ERROR:
-      case DOWNLINK_NO_ROUTE:
-      case DOWNLINK_DROPPED:
+      case DOWNLINK_RECEIVED, DOWNLINK_QUEUED, DOWNLINK_SENT, DOWNLINK_ACK_OK, DOWNLINK_ACK_ERROR, DOWNLINK_NO_ROUTE, DOWNLINK_DROPPED:
         return;
 
       default:

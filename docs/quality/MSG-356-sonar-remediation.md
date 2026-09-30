@@ -210,3 +210,9 @@ The export has 112 instanceof/cast findings, 12 switch-label consolidation findi
 Converted 44 immediate checked casts into pattern bindings across 33 production files, retaining the existing local names and all subsequent statements. Repeated getters, generic map casts, and more complex flow scopes remain pending. Added six AMQP decoder tests for binary/scalar payloads, sequence order, text, absent bodies and unmatched bodies. Isolated network discovery test singleton initialization from daemon configuration.
 
 Validation: 43 focused tests passed, zero failures/errors/skips, using Java 21 Maven test with Mockito JVM attachment enabled. The initial sandbox run could not attach Mockito; the unrestricted run exposed two network test configuration initialization errors, which were corrected in the test fixture. No production configuration behavior was changed.
+
+### Block 3a: tested switch-label consolidation
+
+Consolidated five empty fall-through label groups in NMEA TypeFactory and SemtechStatusEventFactory, preserving branch bodies/defaults. Existing NMEA tests exercise each scalar alias. Added parameterized Semtech tests for all 12 states through both factory methods and a null-state test. Validation: 28 tests passed, zero failures/errors/skips.
+
+The Semtech gateway factory continues to reject GATEWAY_PUSH, matching its existing implementation. No semantics were changed to accommodate that state. Remaining pattern/cast and switch-label findings are still pending; do not count all 112 pattern or 12 switch findings as fixed.
