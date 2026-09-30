@@ -31,17 +31,20 @@ import lombok.ToString;
 @ToString
 public class SerialConfig extends SerialConfigDTO implements Config {
 
+  private static final String PROTOCOL_NAME = "serial";
+
+
 
   public SerialConfig(ConfigurationProperties config) {
     NetworkConfigFactory.unpack(config, this);
-    if (config.containsKey("serial")) {
-      ConfigurationProperties serial = (ConfigurationProperties) config.get("serial");
+    if (config.containsKey(PROTOCOL_NAME)) {
+      ConfigurationProperties serial = (ConfigurationProperties) config.get(PROTOCOL_NAME);
       serialDevice = SerialDeviceHelper.getSerialDeviceDTO(serial);
     }
     else{
       serialDevice = SerialDeviceHelper.getSerialDeviceDTO(config);
     }
-    setType("serial");
+    setType(PROTOCOL_NAME);
   }
 
   @Override

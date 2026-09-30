@@ -29,6 +29,13 @@ import java.util.Set;
 
 public final class SchemaResolver {
 
+  private static final String ALL_OF_KEY = "allOf";
+  private static final String ANY_OF_KEY = "anyOf";
+  private static final String ONE_OF_KEY = "oneOf";
+  private static final String PROPERTIES_KEY = "properties";
+  private static final String REQUIRED_KEY = "required";
+
+
   public JsonElement resolve(JsonElement schemaElement, JsonObject schemaRoot) {
     if (schemaElement == null || schemaElement.isJsonNull()) {
       return schemaElement;
@@ -48,19 +55,19 @@ public final class SchemaResolver {
       }
     }
 
-    if (schemaObject.has("allOf") && schemaObject.get("allOf").isJsonArray()) {
+    if (schemaObject.has(ALL_OF_KEY) && schemaObject.get(ALL_OF_KEY).isJsonArray()) {
       return mergeAllOf(schemaObject, schemaRoot);
     }
 
-    if (schemaObject.has("oneOf") && schemaObject.get("oneOf").isJsonArray()) {
-      JsonArray oneOfArray = schemaObject.getAsJsonArray("oneOf");
+    if (schemaObject.has(ONE_OF_KEY) && schemaObject.get(ONE_OF_KEY).isJsonArray()) {
+      JsonArray oneOfArray = schemaObject.getAsJsonArray(ONE_OF_KEY);
       if (!oneOfArray.isEmpty()) {
         return resolve(oneOfArray.get(0), schemaRoot);
       }
     }
 
-    if (schemaObject.has("anyOf") && schemaObject.get("anyOf").isJsonArray()) {
-      JsonArray anyOfArray = schemaObject.getAsJsonArray("anyOf");
+    if (schemaObject.has(ANY_OF_KEY) && schemaObject.get(ANY_OF_KEY).isJsonArray()) {
+      JsonArray anyOfArray = schemaObject.getAsJsonArray(ANY_OF_KEY);
       if (!anyOfArray.isEmpty()) {
         return resolve(anyOfArray.get(0), schemaRoot);
       }
@@ -73,13 +80,13 @@ public final class SchemaResolver {
     JsonObject resolvedSchema = schema;
     String resolvedType = getType(resolvedSchema);
 
-    if ("object".equals(resolvedType) || (resolvedSchema != null && resolvedSchema.has("properties"))) {
+    if ("object".equals(resolvedType) || (resolvedSchema != null && resolvedSchema.has(PROPERTIES_KEY))) {
       return resolvedSchema;
     }
 
     JsonObject objectSchema = new JsonObject();
     objectSchema.addProperty("type", "object");
-    objectSchema.add("properties", new JsonObject());
+    objectSchema.add(PROPERTIES_KEY, new JsonObject());
     return objectSchema;
   }
 
@@ -104,12 +111,12 @@ public final class SchemaResolver {
     JsonObject mergedSchema = new JsonObject();
 
     for (Map.Entry<String, JsonElement> entry : schemaObject.entrySet()) {
-      if (!entry.getKey().equals("allOf")) {
+      if (!entry.getKey().equals(ALL_OF_KEY)) {
         mergedSchema.add(entry.getKey(), entry.getValue());
       }
     }
 
-    JsonArray allOfArray = schemaObject.getAsJsonArray("allOf");
+    JsonArray allOfArray = schemaObject.getAsJsonArray(ALL_OF_KEY);
     for (JsonElement element : allOfArray) {
       JsonElement resolvedElement = resolve(element, schemaRoot);
       if (resolvedElement != null && resolvedElement.isJsonObject()) {
@@ -127,12 +134,12 @@ public final class SchemaResolver {
   }
 
   private void mergeProperties(JsonObject target, JsonObject source) {
-    JsonObject targetProperties = target.has("properties") && target.get("properties").isJsonObject()
-        ? target.getAsJsonObject("properties")
+    JsonObject targetProperties = target.has(PROPERTIES_KEY) && target.get(PROPERTIES_KEY).isJsonObject()
+        ? target.getAsJsonObject(PROPERTIES_KEY)
         : null;
 
-    JsonObject sourceProperties = source.has("properties") && source.get("properties").isJsonObject()
-        ? source.getAsJsonObject("properties")
+    JsonObject sourceProperties = source.has(PROPERTIES_KEY) && source.get(PROPERTIES_KEY).isJsonObject()
+        ? source.getAsJsonObject(PROPERTIES_KEY)
         : null;
 
     if (sourceProperties == null) {
@@ -140,7 +147,7 @@ public final class SchemaResolver {
     }
 
     if (targetProperties == null) {
-      target.add("properties", sourceProperties);
+      target.add(PROPERTIES_KEY, sourceProperties);
       return;
     }
 
@@ -152,8 +159,8 @@ public final class SchemaResolver {
   }
 
   private void mergeRequired(JsonObject target, JsonObject source) {
-    JsonArray sourceRequired = source.has("required") && source.get("required").isJsonArray()
-        ? source.getAsJsonArray("required")
+    JsonArray sourceRequired = source.has(REQUIRED_KEY) && source.get(REQUIRED_KEY).isJsonArray()
+        ? source.getAsJsonArray(REQUIRED_KEY)
         : null;
 
     if (sourceRequired == null) {
@@ -162,8 +169,8 @@ public final class SchemaResolver {
 
     Set<String> combined = new LinkedHashSet<>();
 
-    if (target.has("required") && target.get("required").isJsonArray()) {
-      JsonArray targetRequired = target.getAsJsonArray("required");
+    if (target.has(REQUIRED_KEY) && target.get(REQUIRED_KEY).isJsonArray()) {
+      JsonArray targetRequired = target.getAsJsonArray(REQUIRED_KEY);
       for (JsonElement element : targetRequired) {
         if (element.isJsonPrimitive()) {
           combined.add(element.getAsString());
@@ -182,13 +189,13 @@ public final class SchemaResolver {
       mergedRequired.add(value);
     }
 
-    target.add("required", mergedRequired);
+    target.add(REQUIRED_KEY, mergedRequired);
   }
 
   private void mergeMissingSimpleKeys(JsonObject target, JsonObject source) {
     for (Map.Entry<String, JsonElement> entry : source.entrySet()) {
       String key = entry.getKey();
-      if (key.equals("properties") || key.equals("required")) {
+      if (key.equals(PROPERTIES_KEY) || key.equals(REQUIRED_KEY)) {
         continue;
       }
       if (!target.has(key)) {

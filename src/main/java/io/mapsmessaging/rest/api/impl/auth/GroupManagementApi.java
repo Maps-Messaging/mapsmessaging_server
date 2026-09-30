@@ -52,6 +52,11 @@ import static io.mapsmessaging.rest.api.Constants.URI_PATH;
 @Path(URI_PATH + "/auth/groups")
 public class GroupManagementApi extends BaseAuthRestApi {
 
+  private static final String GROUPS_PATH = "/auth/groups";
+  private static final String GROUP_NOT_FOUND = "Group not found";
+  private static final String INVALID_UUID = "Invalid UUID";
+
+
   @GET
   @Produces(MediaType.APPLICATION_JSON)
   @Operation(
@@ -142,7 +147,7 @@ public class GroupManagementApi extends BaseAuthRestApi {
               content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))),
           @ApiResponse(
               responseCode = "404",
-              description = "Group not found",
+              description = GROUP_NOT_FOUND,
               content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))
           ),
       }
@@ -162,7 +167,7 @@ public class GroupManagementApi extends BaseAuthRestApi {
       uuid = UUID.fromString(groupUuid);
     } catch (IllegalArgumentException ex) {
       return Response.status(Response.Status.BAD_REQUEST)
-          .entity(new StatusResponse("Invalid UUID"))
+          .entity(new StatusResponse(INVALID_UUID))
           .type(MediaType.APPLICATION_JSON)
           .build();
     }
@@ -175,7 +180,7 @@ public class GroupManagementApi extends BaseAuthRestApi {
 
     if (groupDetails == null) {
       return Response.status(Response.Status.NOT_FOUND)
-          .entity(new StatusResponse("Group not found"))
+          .entity(new StatusResponse(GROUP_NOT_FOUND))
           .type(MediaType.APPLICATION_JSON)
           .build();
     }
@@ -241,7 +246,7 @@ public class GroupManagementApi extends BaseAuthRestApi {
 
     try {
       authManager.addGroup(groupName);
-      removeUriFromCache(URI_PATH + "/auth/groups");
+      removeUriFromCache(URI_PATH + GROUPS_PATH);
     } catch (IOException ex) {
       return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
           .entity(new StatusResponse("Group creation failed"))
@@ -312,7 +317,7 @@ public class GroupManagementApi extends BaseAuthRestApi {
       groupId = UUID.fromString(groupUuid);
     } catch (IllegalArgumentException ex) {
       return Response.status(Response.Status.BAD_REQUEST)
-          .entity(new StatusResponse("Invalid UUID"))
+          .entity(new StatusResponse(INVALID_UUID))
           .type(MediaType.APPLICATION_JSON)
           .build();
     }
@@ -326,7 +331,7 @@ public class GroupManagementApi extends BaseAuthRestApi {
 
     if (groupDetails == null) {
       return Response.status(Response.Status.NOT_FOUND)
-          .entity(new StatusResponse("Group not found"))
+          .entity(new StatusResponse(GROUP_NOT_FOUND))
           .type(MediaType.APPLICATION_JSON)
           .build();
     }
@@ -351,7 +356,7 @@ public class GroupManagementApi extends BaseAuthRestApi {
           .type(MediaType.APPLICATION_JSON)
           .build();
     }
-    removeUriFromCache(URI_PATH + "/auth/groups");
+    removeUriFromCache(URI_PATH + GROUPS_PATH);
     return Response.ok(new StatusResponse(
             "Successfully added user " + userDetails.getIdentityEntry().getUsername() + " to group " + groupDetails.getName()
         ))
@@ -416,7 +421,7 @@ public class GroupManagementApi extends BaseAuthRestApi {
       groupId = UUID.fromString(groupUuid);
     } catch (IllegalArgumentException ex) {
       return Response.status(Response.Status.BAD_REQUEST)
-          .entity(new StatusResponse("Invalid UUID"))
+          .entity(new StatusResponse(INVALID_UUID))
           .type(MediaType.APPLICATION_JSON)
           .build();
     }
@@ -430,7 +435,7 @@ public class GroupManagementApi extends BaseAuthRestApi {
 
     if (groupDetails == null) {
       return Response.status(Response.Status.NOT_FOUND)
-          .entity(new StatusResponse("Group not found"))
+          .entity(new StatusResponse(GROUP_NOT_FOUND))
           .type(MediaType.APPLICATION_JSON)
           .build();
     }
@@ -455,7 +460,7 @@ public class GroupManagementApi extends BaseAuthRestApi {
           .type(MediaType.APPLICATION_JSON)
           .build();
     }
-    removeUriFromCache(URI_PATH + "/auth/groups");
+    removeUriFromCache(URI_PATH + GROUPS_PATH);
 
     return Response.ok(new StatusResponse(
             "User " + userDetails.getIdentityEntry().getUsername() + " removed from group " + groupDetails.getName()
@@ -483,7 +488,7 @@ public class GroupManagementApi extends BaseAuthRestApi {
               content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))),
           @ApiResponse(
               responseCode = "404",
-              description = "Group not found",
+              description = GROUP_NOT_FOUND,
               content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))
           ),
           @ApiResponse(
@@ -508,7 +513,7 @@ public class GroupManagementApi extends BaseAuthRestApi {
       groupId = UUID.fromString(groupUuid);
     } catch (IllegalArgumentException ex) {
       return Response.status(Response.Status.BAD_REQUEST)
-          .entity(new StatusResponse("Invalid UUID"))
+          .entity(new StatusResponse(INVALID_UUID))
           .type(MediaType.APPLICATION_JSON)
           .build();
     }
@@ -521,7 +526,7 @@ public class GroupManagementApi extends BaseAuthRestApi {
 
     if (groupDetails == null) {
       return Response.status(Response.Status.NOT_FOUND)
-          .entity(new StatusResponse("Group not found"))
+          .entity(new StatusResponse(GROUP_NOT_FOUND))
           .type(MediaType.APPLICATION_JSON)
           .build();
     }
@@ -534,7 +539,7 @@ public class GroupManagementApi extends BaseAuthRestApi {
           .type(MediaType.APPLICATION_JSON)
           .build();
     }
-    removeUriFromCache(URI_PATH + "/auth/groups");
+    removeUriFromCache(URI_PATH + GROUPS_PATH);
 
     return Response.noContent().build();
   }

@@ -27,6 +27,11 @@ import io.mapsmessaging.dto.rest.config.destination.*;
 
 public class ConfigHelper {
 
+  private static final String ARCHIVE_KEY = "archive";
+  private static final String CAPACITY_KEY = "capacity";
+  private static final String EXPIRED_EVENT_POLL_KEY = "expiredEventPoll";
+
+
   private static final String BUCKET_NAME = "bucketName";
   private static final String REGION_NAME = "regionName";
   private static final String ACCESS_KEY_ID = "accessKeyId";
@@ -47,16 +52,16 @@ public class ConfigHelper {
 
   private static PartitionStorageConfigDTO buildPartitionStorageConfig(ConfigurationProperties properties) {
     PartitionStorageConfigDTO partitionStorageConfig = new PartitionStorageConfigDTO();
-    partitionStorageConfig.setCapacity( properties.getIntProperty("capacity", -1));
-    partitionStorageConfig.setExpiredEventPoll(properties.getIntProperty("expiredEventPoll", 20));
+    partitionStorageConfig.setCapacity( properties.getIntProperty(CAPACITY_KEY, -1));
+    partitionStorageConfig.setExpiredEventPoll(properties.getIntProperty(EXPIRED_EVENT_POLL_KEY, 20));
     partitionStorageConfig.setFileName(properties.getProperty("file", properties.getProperty("name", "")));
     partitionStorageConfig.setItemCount(properties.getIntProperty("itemCount", 100));
     partitionStorageConfig.setMaxPartitionSize(properties.getLongProperty("maxPartitionSize", 4096L));
     partitionStorageConfig.setSync(properties.getProperty("sync", "disable").equalsIgnoreCase("enable"));
 
     DeferredConfigDTO dConfig = new DeferredConfigDTO();
-    if (properties.containsKey("archive")) {
-      ConfigurationProperties archive = (ConfigurationProperties)properties.get("archive");
+    if (properties.containsKey(ARCHIVE_KEY)) {
+      ConfigurationProperties archive = (ConfigurationProperties)properties.get(ARCHIVE_KEY);
       dConfig.setDeferredName(archive.getProperty("name", "None"));
       dConfig.setIdleTime(archive.getLongProperty("idleTime", -1));
       dConfig.setDigestName(archive.getProperty("digestAlgorithm", "MD5"));
@@ -87,8 +92,8 @@ public class ConfigHelper {
   }
 
   private static void packPartitionStorageConfig(ConfigurationProperties properties, PartitionStorageConfigDTO storageConfig) {
-    properties.put("capacity", storageConfig.getCapacity());
-    properties.put("expiredEventPoll", storageConfig.getExpiredEventPoll());
+    properties.put(CAPACITY_KEY, storageConfig.getCapacity());
+    properties.put(EXPIRED_EVENT_POLL_KEY, storageConfig.getExpiredEventPoll());
     properties.put("file", storageConfig.getFileName());
     properties.put("itemCount", storageConfig.getItemCount());
     properties.put("maxPartitionSize", storageConfig.getMaxPartitionSize());
@@ -108,14 +113,14 @@ public class ConfigHelper {
         archive.put(REGION_NAME, s3Config.getRegion());
         archive.put("compression",s3Config.isCompression());
       }
-      properties.put("archive", archive);
+      properties.put(ARCHIVE_KEY, archive);
     }
   }
 
   private static MemoryStorageConfigDTO buildMemoryStorageConfig(ConfigurationProperties properties) {
     MemoryStorageConfigDTO memoryStorageConfig = new MemoryStorageConfigDTO();
-    memoryStorageConfig.setCapacity( properties.getIntProperty("capacity", -1));
-    memoryStorageConfig.setExpiredEventPoll(properties.getIntProperty("expiredEventPoll", 20));
+    memoryStorageConfig.setCapacity( properties.getIntProperty(CAPACITY_KEY, -1));
+    memoryStorageConfig.setExpiredEventPoll(properties.getIntProperty(EXPIRED_EVENT_POLL_KEY, 20));
     return memoryStorageConfig;
   }
 
@@ -153,8 +158,8 @@ public class ConfigHelper {
   }
 
   private static void packMemoryConfig(ConfigurationProperties properties, MemoryStorageConfigDTO storageConfig) {
-    properties.put("capacity", storageConfig.getCapacity());
-    properties.put("expiredEventPoll", storageConfig.getExpiredEventPoll());
+    properties.put(CAPACITY_KEY, storageConfig.getCapacity());
+    properties.put(EXPIRED_EVENT_POLL_KEY, storageConfig.getExpiredEventPoll());
   }
 
   private ConfigHelper() {

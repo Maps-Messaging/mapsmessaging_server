@@ -45,6 +45,10 @@ import static io.mapsmessaging.logging.ServerLogMessages.*;
 
 public class OrbcommOgwsClient implements SatelliteClient {
 
+  private static final String AUTHORIZATION_HEADER = "Authorization";
+  private static final String BEARER_PREFIX = "Bearer ";
+
+
   private final Gson gson = new GsonBuilder()
       .registerTypeAdapter(ElementType.class, new ElementTypeAdapter())
       .disableHtmlEscaping()
@@ -152,7 +156,7 @@ public class OrbcommOgwsClient implements SatelliteClient {
       }
       HttpRequest request = HttpRequest.newBuilder()
           .uri(URI.create(url))
-          .header("Authorization", "Bearer " + bearerToken)
+          .header(AUTHORIZATION_HEADER, BEARER_PREFIX + bearerToken)
           .GET()
           .build();
 
@@ -220,7 +224,7 @@ public class OrbcommOgwsClient implements SatelliteClient {
       String jsonMessages = gson.toJson(pending);
       HttpRequest request = HttpRequest.newBuilder()
           .uri(URI.create(baseUrl + "/submit/messages"))
-          .header("Authorization", "Bearer " + bearerToken)
+          .header(AUTHORIZATION_HEADER, BEARER_PREFIX + bearerToken)
           .header("Content-Type", "application/json")
           .POST(BodyPublishers.ofString(jsonMessages))
           .build();
@@ -257,7 +261,7 @@ public class OrbcommOgwsClient implements SatelliteClient {
   private HttpRequest authorizedGet(String path) {
     return HttpRequest.newBuilder()
         .uri(URI.create(baseUrl + path))
-        .header("Authorization", "Bearer " + bearerToken)
+        .header(AUTHORIZATION_HEADER, BEARER_PREFIX + bearerToken)
         .GET()
         .build();
   }

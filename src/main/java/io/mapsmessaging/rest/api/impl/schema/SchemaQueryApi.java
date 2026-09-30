@@ -59,6 +59,9 @@ import static io.mapsmessaging.rest.api.Constants.URI_PATH;
 @Path(URI_PATH + "/server/schemas")
 public class SchemaQueryApi extends BaseRestApi {
 
+  private static final String SCHEMA_JSON_MEDIA_TYPE = "application/schema+json";
+
+
   private static final String RESOURCE = "schemas";
 
   @DELETE
@@ -633,13 +636,13 @@ public class SchemaQueryApi extends BaseRestApi {
     }
     String format = (schemaConfig.getFormat() == null) ? "" : schemaConfig.getFormat().toLowerCase(Locale.ROOT);
     return switch (format) {
-      case "json" -> "application/schema+json";
+      case "json" -> SCHEMA_JSON_MEDIA_TYPE;
       case "protobuf" -> "application/x-protobuf";
       case "avro" -> "application/avro+json";
       case "xml" -> "application/xml";
       case "cbor" -> "application/cddl";
-      case "messagepack", "msgpack" -> "application/schema+json";
-      case "csv" -> "application/schema+json";
+      case "messagepack", "msgpack" -> SCHEMA_JSON_MEDIA_TYPE;
+      case "csv" -> SCHEMA_JSON_MEDIA_TYPE;
       case "native", "raw" -> "application/octet-stream";
       default -> "application/octet-stream";
     };

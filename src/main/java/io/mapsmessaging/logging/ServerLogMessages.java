@@ -368,7 +368,7 @@ public enum ServerLogMessages implements LogMessage {
   STOMP_STARTING(LEVEL.DEBUG, SERVER_CATEGORY.PROTOCOL, "Starting Stomp Protocol Implementation on {}"),
   STOMP_CLOSING(LEVEL.DEBUG, SERVER_CATEGORY.PROTOCOL, "Closing Stomp Implementation {}"),
   STOMP_PUSHED_WRITE(LEVEL.DEBUG, SERVER_CATEGORY.PROTOCOL, "Pushed Frame for write, {}"),
-  STOMP_FAILED_MAXIMUM_BUFFER(LEVEL.WARN, SERVER_CATEGORY.PROTOCOL, "Failed to set maximum buffer size, is not an integer::{}, using default of {}"),
+  STOMP_FAILED_MAXIMUM_BUFFER(LEVEL.WARN, SERVER_CATEGORY.PROTOCOL, ServerLogMessages.INVALID_MAXIMUM_BUFFER_MESSAGE),
   STOMP_FAILED_CLOSE(LEVEL.WARN, SERVER_CATEGORY.PROTOCOL, "Failed in close"),
   STOMP_PROCESSING_FRAME(LEVEL.INFO, SERVER_CATEGORY.PROTOCOL, "Processing frame {}"),
   STOMP_PROCESSING_FRAME_EXCEPTION(LEVEL.WARN, SERVER_CATEGORY.PROTOCOL, "Processing frame raised exception, closing session"),
@@ -381,7 +381,7 @@ public enum ServerLogMessages implements LogMessage {
   NATS_STARTING(LEVEL.DEBUG, SERVER_CATEGORY.PROTOCOL, "Starting Nats Protocol Implementation on {}"),
   NATS_CLOSING(LEVEL.DEBUG, SERVER_CATEGORY.PROTOCOL, "Closing Nats Implementation {}"),
   NATS_PUSHED_WRITE(LEVEL.DEBUG, SERVER_CATEGORY.PROTOCOL, "Pushed Frame for write, {}"),
-  NATS_FAILED_MAXIMUM_BUFFER(LEVEL.WARN, SERVER_CATEGORY.PROTOCOL, "Failed to set maximum buffer size, is not an integer::{}, using default of {}"),
+  NATS_FAILED_MAXIMUM_BUFFER(LEVEL.WARN, SERVER_CATEGORY.PROTOCOL, ServerLogMessages.INVALID_MAXIMUM_BUFFER_MESSAGE),
   NATS_FAILED_CLOSE(LEVEL.WARN, SERVER_CATEGORY.PROTOCOL, "Failed in close"),
   NATS_PROCESSING_FRAME(LEVEL.INFO, SERVER_CATEGORY.PROTOCOL, "Processing frame {}"),
   NATS_PROCESSING_FRAME_EXCEPTION(LEVEL.WARN, SERVER_CATEGORY.PROTOCOL, "Processing frame raised exception, closing session"),
@@ -416,7 +416,7 @@ public enum ServerLogMessages implements LogMessage {
   MQTT_ALREADY_CLOSED(LEVEL.DEBUG, SERVER_CATEGORY.PROTOCOL, "Potentially already closed"),
   MQTT_KEEPALIVE_TIMOUT(LEVEL.DEBUG, SERVER_CATEGORY.PROTOCOL, "Checking for keepalive timeout period of {}"),
   MQTT_DISCONNECT_TIMEOUT(LEVEL.INFO, SERVER_CATEGORY.PROTOCOL, "Disconnecting session since keep alive period has expired with no frames received"),
-  MQTT_BUFFER_SIZE_FAILED(LEVEL.WARN, SERVER_CATEGORY.PROTOCOL, "Failed to set maximum buffer size, is not an integer::{}, using default of {}"),
+  MQTT_BUFFER_SIZE_FAILED(LEVEL.WARN, SERVER_CATEGORY.PROTOCOL, ServerLogMessages.INVALID_MAXIMUM_BUFFER_MESSAGE),
   // </editor-fold>
 
   // <editor-fold desc="MQTT 5.0 log messages">
@@ -967,4 +967,6 @@ public enum ServerLogMessages implements LogMessage {
       this.description = description;
     }
   }
+
+  private static final String INVALID_MAXIMUM_BUFFER_MESSAGE = "Failed to set maximum buffer size, is not an integer::{}, using default of {}";
 }

@@ -75,6 +75,9 @@ import static io.mapsmessaging.logging.ServerLogMessages.MESSAGE_DAEMON_STARTUP_
  */
 public class MessageDaemon {
 
+  private static final String SERVER_ID_PROPERTY = "SERVER_ID";
+
+
   @Getter
   private static FileLockManager lockManager;
 
@@ -155,7 +158,7 @@ public class MessageDaemon {
     if (serverId != null) {
       uniqueId = serverId;
     } else {
-      uniqueId = SystemProperties.getInstance().getProperty("SERVER_ID", generateUniqueId());
+      uniqueId = SystemProperties.getInstance().getProperty(SERVER_ID_PROPERTY, generateUniqueId());
       instanceConfig.setServerName(uniqueId);
       instanceConfig.saveState();
       logger.log(MESSAGE_DAEMON_STARTUP_BOOTSTRAP, uniqueId);
@@ -368,7 +371,7 @@ public class MessageDaemon {
    * @return The unique identifier for the MessageDaemon instance.
    */
   private String generateUniqueId() {
-    String env = SystemProperties.getInstance().getProperty("SERVER_ID", SystemProperties.getInstance().getEnvProperty("SERVER_ID"));
+    String env = SystemProperties.getInstance().getProperty(SERVER_ID_PROPERTY, SystemProperties.getInstance().getEnvProperty(SERVER_ID_PROPERTY));
     if (env != null) {
       return env;
     }

@@ -47,6 +47,9 @@ import java.util.UUID;
 
 public class TakEventMapper {
 
+  private static final String UNKNOWN_VALUE = "unknown";
+
+
   private static final String DEFAULT_HOW = "h-g-i-g-o";
   private static final String DEFAULT_ALTITUDE_SOURCE = "GPS";
   private static final String MAPS_OS = "MapsMessaging";
@@ -252,7 +255,7 @@ public class TakEventMapper {
     }
 
     TakLink link = new TakLink();
-    link.setUid(sanitiseIdentifier(safeString(relationship.getTargetTwinId(), "unknown")));
+    link.setUid(sanitiseIdentifier(safeString(relationship.getTargetTwinId(), UNKNOWN_VALUE)));
     link.setRelation(safeString(relationship.getRelationshipType(), "related"));
     return link;
   }
@@ -273,14 +276,14 @@ public class TakEventMapper {
 
   private String sanitiseIdentifier(String value) {
     if (value == null || value.isBlank()) {
-      return "unknown";
+      return UNKNOWN_VALUE;
     }
 
     String sanitised = value.trim().replaceAll("[^A-Za-z0-9._-]+", "-");
     sanitised = sanitised.replaceAll("-{2,}", "-");
     sanitised = sanitised.replaceAll("^-+", "");
     sanitised = sanitised.replaceAll("-+$", "");
-    return sanitised.isBlank() ? "unknown" : sanitised;
+    return sanitised.isBlank() ? UNKNOWN_VALUE : sanitised;
   }
 
   // Friendly baseline only: CotEventPolicy re-types every published event with the configured

@@ -57,6 +57,9 @@ import org.jetbrains.annotations.NotNull;
 
 public class MavlinkTwinUpdater implements AutoCloseable {
 
+  private static final String MAVLINK_NAME = "mavlink";
+
+
   private static final String COMPLETE_TASK_ON_ARRIVAL_TOLERANCE_ATTRIBUTE =
       "completeTaskOnArrivalTolerance";
   private static final String COMPLETE_TASK_ON_AUTO_TO_LOITER_ATTRIBUTE =
@@ -77,14 +80,14 @@ public class MavlinkTwinUpdater implements AutoCloseable {
   private final LongAdder classificationOverrideCount = new LongAdder();
 
   public MavlinkTwinUpdater(@NonNull @NotNull TwinManager twinManager, @NonNull @NotNull ListenerManager listenerManager) {
-    this(twinManager, listenerManager, null, "mavlink");
+    this(twinManager, listenerManager, null, MAVLINK_NAME);
   }
 
   public MavlinkTwinUpdater(
       @NonNull @NotNull TwinManager twinManager,
       @NonNull @NotNull ListenerManager listenerManager,
       MavlinkBootstrapEventPublisher bootstrapEventPublisher) {
-    this(twinManager, listenerManager, bootstrapEventPublisher, "mavlink");
+    this(twinManager, listenerManager, bootstrapEventPublisher, MAVLINK_NAME);
   }
 
   public MavlinkTwinUpdater(
@@ -113,7 +116,7 @@ public class MavlinkTwinUpdater implements AutoCloseable {
     this.listenerManager = Objects.requireNonNull(listenerManager, "listenerManager must not be null");
     this.droneMonitor = Objects.requireNonNull(droneMonitor, "droneMonitor must not be null");
     this.closed = new AtomicBoolean();
-    this.integrationJMX = new MavlinkIntegrationJMX(this, "mavlink");
+    this.integrationJMX = new MavlinkIntegrationJMX(this, MAVLINK_NAME);
     twinManager.addObserver(droneMonitor);
   }
 

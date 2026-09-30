@@ -38,14 +38,19 @@ import java.util.List;
 @NoArgsConstructor
 public class MLModelManagerConfig extends MLModelManagerDTO implements Config, ConfigManager, ConfigurationManagerDTO {
 
+  private static final String AUTO_REFRESH_KEY = "autoRefresh";
+  private static final String NEXUS_KEY = "nexus";
+  private static final String PASSWORD_KEY = "password";
+
+
   private MLModelManagerConfig(ConfigurationProperties config) {
     this.enableCaching = config.getBooleanProperty("enableCaching", enableCaching);
     this.cacheSize = config.getIntProperty("cacheSize", cacheSize);
     this.cacheExpiryMinutes = config.getIntProperty("cacheExpiryMinutes", cacheExpiryMinutes);
     this.preloadModels = convertToList(config.getProperty("preloadModels", ""));
 
-    if (config.get("autoRefresh") != null) {
-      ConfigurationProperties autoRefresh = (ConfigurationProperties) config.get("autoRefresh");
+    if (config.get(AUTO_REFRESH_KEY) != null) {
+      ConfigurationProperties autoRefresh = (ConfigurationProperties) config.get(AUTO_REFRESH_KEY);
       this.autoRefresh = new AutoRefreshConfigDTO();
       this.autoRefresh.setEnabled(autoRefresh.getBooleanProperty("enabled", false));
       this.autoRefresh.setIntervalMinutes(autoRefresh.getIntProperty("intervalMinutes", 10));
@@ -75,12 +80,12 @@ public class MLModelManagerConfig extends MLModelManagerDTO implements Config, C
         file.setPath(fileProps.getProperty("path"));
         block.setFile(file);
       }
-      case "nexus" -> {
-        ConfigurationProperties nexusProps = (ConfigurationProperties) storeConfig.get("nexus");
+      case NEXUS_KEY -> {
+        ConfigurationProperties nexusProps = (ConfigurationProperties) storeConfig.get(NEXUS_KEY);
         var nexus = new NexusConfig();
         nexus.setUrl(nexusProps.getProperty("url"));
         nexus.setUser(nexusProps.getProperty("user"));
-        nexus.setPassword(nexusProps.getProperty("password"));
+        nexus.setPassword(nexusProps.getProperty(PASSWORD_KEY));
         block.setNexus(nexus);
       }
       case "maps" ->{
@@ -88,7 +93,7 @@ public class MLModelManagerConfig extends MLModelManagerDTO implements Config, C
         var maps = new MapsConfig();
         maps.setUrl(mapsProps.getProperty("url"));
         maps.setUser(mapsProps.getProperty("user"));
-        maps.setPassword(mapsProps.getProperty("password"));
+        maps.setPassword(mapsProps.getProperty(PASSWORD_KEY));
         block.setMaps(maps);
       }
     }
@@ -181,7 +186,7 @@ public class MLModelManagerConfig extends MLModelManagerDTO implements Config, C
       ConfigurationProperties autoRefreshProps = new ConfigurationProperties();
       autoRefreshProps.put("enabled", this.autoRefresh.isEnabled());
       autoRefreshProps.put("intervalMinutes", this.autoRefresh.getIntervalMinutes());
-      props.put("autoRefresh", autoRefreshProps);
+      props.put(AUTO_REFRESH_KEY, autoRefreshProps);
     }
 
     if (this.modelStore != null && this.modelStore.getType() != null) {
@@ -213,14 +218,14 @@ public class MLModelManagerConfig extends MLModelManagerDTO implements Config, C
             storeConfig.put("file", fileProps);
           }
         }
-        case "nexus" -> {
+        case NEXUS_KEY -> {
           var nexus = cfg.getNexus();
           if (nexus != null) {
             ConfigurationProperties nexusProps = new ConfigurationProperties();
             nexusProps.put("url", nexus.getUrl());
             nexusProps.put("user", nexus.getUser());
-            nexusProps.put("password", nexus.getPassword());
-            storeConfig.put("nexus", nexusProps);
+            nexusProps.put(PASSWORD_KEY, nexus.getPassword());
+            storeConfig.put(NEXUS_KEY, nexusProps);
           }
         }
         case "maps" -> {
@@ -229,7 +234,7 @@ public class MLModelManagerConfig extends MLModelManagerDTO implements Config, C
             ConfigurationProperties mapsProps = new ConfigurationProperties();
             mapsProps.put("url", maps.getUrl());
             mapsProps.put("user", maps.getUser());
-            mapsProps.put("password", maps.getPassword());
+            mapsProps.put(PASSWORD_KEY, maps.getPassword());
             storeConfig.put("maps", mapsProps);
           }
         }

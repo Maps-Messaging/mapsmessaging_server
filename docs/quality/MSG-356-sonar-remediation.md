@@ -287,3 +287,118 @@ Extracted six private constants across InterfaceInstanceApi, IntegrationInstance
 Added RestResourceValidationResponseTest with 13 executed cases covering null/empty/blank/malformed inputs across endpoint, integration and model operations; missing endpoint/integration responses; and all four model-store-unavailable responses, including servlet HTTP status updates. Authentication/cache lookup and network/storage services are isolated through scoped test doubles; no daemon starts.
 
 Validation: Java 21 focused Maven suite passed (23 tests, zero failures/errors/skips), including prior configuration response tests and existing interface-state transition tests. Fresh isolated JaCoCo report generated without class-mismatch warnings; no overall coverage claim. Command: JAVA_TOOL_OPTIONS=-javaagent:/root/.m2/repository/org/mockito/mockito-core/5.23.0/mockito-core-5.23.0.jar mvn -s /tmp/msg356-tools/settings.xml -B -Dtest=RestResourceValidationResponseTest,InterfaceInstanceApiBranchCoverageTest,TwinConfigurationErrorResponseTest,ConfigManagementErrorResponseTest -Djacoco.destFile=/tmp/msg356-rest-resource-constants.exec -Djacoco.dataFile=/tmp/msg356-rest-resource-constants.exec -Dexec.skip=true -Ddependency-check.skip=true test. Full REST integration and a fresh SonarCloud analysis remain pending.
+
+### Block 5f: complete remaining duplicated literals
+
+Extracted the remaining 88 Java S1192 literals across 50 files, plus three shell S1192 findings in download-extensions.sh/generate.sh. Protocol names, JSON/schema keys, HTTP headers, route/cache paths, auth error messages, log text, enum values and shell arguments retain their exact values. Substitution reversal checks verified unchanged production statements/control flow. Class-level group/user route annotations retain literal spelling because private class constants cannot be referenced there; each route string now occurs only twice in source (annotation and private constant). Enum constructor literals use qualified private compile-time constants to avoid forward-reference errors. No public constants/APIs were added.
+
+Validation: 271 focused Java 21 tests across 48 classes passed, zero failures/errors/skips. Existing coverage includes configuration, transformations, aggregation, MAVLink state/packets, schema/YAML/lint, REST responses, permissions, logs and CoT mapping. Added five auth response/route test cases for malformed UUIDs, missing users/groups and unchanged routes. A scheduler fixture race surfaced under the larger suite: enqueue 1,000 signals before starting its worker to deterministically verify coalescing. Its call-count assertion is unchanged; no scheduler production logic changed. This test-only fix has its own commit under MSG-356.
+
+Command: JAVA_TOOL_OPTIONS=-javaagent:/root/.m2/repository/org/mockito/mockito-core/5.23.0/mockito-core-5.23.0.jar mvn -s /tmp/msg356-tools/settings.xml -B -Dtest=AdapterManagerTest,BaseRestApiBranchCoverageTest,BaseRestApiFinalCoverageTest,ConfigHelperTest,ConfigManagementErrorResponseTest,DeterministicJsonWriterTest,EndPointConfigFactoryTest,EnvelopeAggregationStrategyBranchCoverageTest,EnvelopeAggregationStrategyFinalCoverageTest,EnvelopeAggregationStrategyTest,JsonMapperTest,JsonQueryTransformationConfigCoverageSweepTest,JsonQueryTransformationTest,LinkConfigBranchCoverageTest,LinkConfigTest,LintEngineTest,MLModelManagerConfigBranchCoverageTest,MavlinkConfigBranchCoverageTest,MavlinkConfigDTOTest,MavlinkConfigFinalCoverageTest,MavlinkStateSubscriberTest,MavlinkTwinUpdaterTest,NMEAPacketTest,RestApiManagerConfigBranchCoverageTest,RestResourceValidationResponseTest,RuntimeJsonSchemaGeneratorFinalCoverageTest,SatelliteGatewayHardeningTest,SchemaQueryApiFinalCoverageTest,SchemaResolverBranchCoverageTest,SchemaResolverFinalCoverageTest,SchemaResolverTest,SemtechStatusEventFactoryTest,SerialConfigCoverageSweepTest,ServerLogMessagesTest,ServerPermissionsTest,StaticAggregatorWorkSchedulerTest,SwitchDispatchContractTest,TakEventMapperFinalCoverageTest,TakEventMapperTest,TwinConfigurationErrorResponseTest,TwinManagerConfigFinalCoverageTest,TwinManagerConfigPlanTaskTypeTest,TwinManagerConfigTest,TwinManagerGeoSpatialRegistryTest,TwinManagerTest,YamlNodeRendererBranchCoverageTest,YamlNodeRendererTest,AuthResourceValidationResponseTest -Djacoco.destFile=/tmp/msg356-all-literals-verified.exec -Djacoco.dataFile=/tmp/msg356-all-literals-verified.exec -Dexec.skip=true -Ddependency-check.skip=true test. Fresh JaCoCo report generated without class-mismatch warnings; no whole-server coverage claim.
+
+Both changed shell scripts pass bash -n. Stubbed before/after executions match stdout, external command arguments, jar filenames and jar content exactly. curl/keytool/rm were stubbed; no network download or real certificate generation/deletion ran. Java token checks confirm all 142 exported literals now occur at most twice (usually once). All 145 Java/shell duplicated-literal findings have source changes; a fresh SonarCloud scan must confirm closure.
+
+### Outstanding exported code-smell categories
+
+Counts below describe the original 1,213-finding export, not refreshed SonarCloud results. Fully addressed rule categories (Override, imports, switch labels, immediate returns, modifiers, empty statement, Java/shell duplicated literals) account for 225 exported findings. The remaining 988 findings include the partly addressed 112 pattern/cast findings; they are not a count of currently open issues. Further reliability/security review is tracked in the original 106-finding table above. Full build, fresh coverage/analysis, and final merge remain pending.
+
+| Rule | Export findings | Review status |
+| --- | ---: | --- |
+| java:S3776 | 114 | Pending review |
+| java:S6201 | 112 | Partly addressed; repeated-getter/generic cases still need review |
+| java:S9391 | 69 | Pending review |
+| java:S1186 | 59 | Pending review |
+| java:S1181 | 53 | Pending review |
+| java:S108 | 36 | Pending review |
+| java:S1172 | 35 | Pending review |
+| java:S135 | 30 | Pending review |
+| java:S116 | 21 | Pending review |
+| java:S1135 | 19 | Pending review |
+| java:S1168 | 18 | Pending review |
+| java:S106 | 18 | Pending review |
+| java:S107 | 16 | Pending review |
+| java:S4165 | 16 | Pending review |
+| java:S1066 | 14 | Pending review |
+| java:S2925 | 14 | Pending review |
+| java:S2160 | 14 | Pending review |
+| java:S6885 | 13 | Pending review |
+| java:S1130 | 13 | Pending review |
+| java:S1481 | 12 | Pending review |
+| java:S125 | 11 | Pending review |
+| java:S1068 | 11 | Pending review |
+| java:S8688 | 11 | Pending review |
+| java:S3358 | 10 | Pending review |
+| java:S9395 | 10 | Pending review |
+| docker:S6570 | 10 | Pending review |
+| java:S1948 | 10 | Pending review |
+| java:S6880 | 9 | Pending review |
+| java:S112 | 9 | Pending review |
+| java:S117 | 9 | Pending review |
+| java:S1118 | 8 | Pending review |
+| java:S6204 | 8 | Pending review |
+| java:S5665 | 8 | Pending review |
+| java:S1854 | 8 | Pending review |
+| java:S115 | 8 | Pending review |
+| java:S1871 | 7 | Pending review |
+| java:S2147 | 7 | Pending review |
+| java:S2143 | 7 | Pending review |
+| java:S1144 | 6 | Pending review |
+| shelldre:S7688 | 6 | Pending review |
+| java:S1141 | 5 | Pending review |
+| java:S1117 | 5 | Pending review |
+| java:S1845 | 5 | Pending review |
+| java:S2065 | 5 | Pending review |
+| powershelldre:S8677 | 5 | Pending review |
+| java:S2442 | 4 | Pending review |
+| java:S4144 | 4 | Pending review |
+| java:S2093 | 3 | Pending review |
+| java:S6355 | 3 | Pending review |
+| java:S1133 | 3 | Pending review |
+| java:S6916 | 3 | Pending review |
+| java:S4276 | 3 | Pending review |
+| java:S131 | 3 | Pending review |
+| java:S3038 | 3 | Pending review |
+| java:S6126 | 3 | Pending review |
+| java:S1452 | 2 | Pending review |
+| java:S1119 | 2 | Pending review |
+| java:S1123 | 2 | Pending review |
+| java:S1170 | 2 | Pending review |
+| java:S1612 | 2 | Pending review |
+| java:S5993 | 2 | Pending review |
+| java:S1643 | 2 | Pending review |
+| java:S5411 | 2 | Pending review |
+| java:S6206 | 2 | Pending review |
+| java:S3011 | 2 | Pending review |
+| docker:S7019 | 2 | Pending review |
+| java:S1700 | 2 | Pending review |
+| java:S2864 | 2 | Pending review |
+| java:S3252 | 2 | Pending review |
+| java:S1450 | 2 | Pending review |
+| java:S1659 | 2 | Pending review |
+| java:S1905 | 2 | Pending review |
+| java:S9396 | 2 | Pending review |
+| shell:S6573 | 2 | Pending review |
+| java:S3824 | 1 | Pending review |
+| java:S127 | 1 | Pending review |
+| java:S3398 | 1 | Pending review |
+| java:S1121 | 1 | Pending review |
+| java:S8786 | 1 | Pending review |
+| java:S7158 | 1 | Pending review |
+| java:S5976 | 1 | Pending review |
+| java:S5778 | 1 | Pending review |
+| java:S1313 | 1 | Pending review |
+| java:S4030 | 1 | Pending review |
+| java:S6213 | 1 | Pending review |
+| java:S2696 | 1 | Pending review |
+| java:S1075 | 1 | Pending review |
+| java:S2589 | 1 | Pending review |
+| java:S5361 | 1 | Pending review |
+| docker:S7018 | 1 | Pending review |
+| java:S2094 | 1 | Pending review |
+| java:S2692 | 1 | Pending review |
+| java:S3024 | 1 | Pending review |
+| java:S3010 | 1 | Pending review |
+| java:S4042 | 1 | Pending review |
+| java:S1611 | 1 | Pending review |
+| java:S9397 | 1 | Pending review |
+| java:S3063 | 1 | Pending review |

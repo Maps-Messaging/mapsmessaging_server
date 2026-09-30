@@ -47,6 +47,9 @@ import java.util.stream.Collectors;
 
 public class StreamUpdateHandler extends JetStreamFrameHandler {
 
+  private static final String SUBJECTS_KEY = "subjects";
+
+
   @Override
   public String getName() {
     return "STREAM.UPDATE";
@@ -67,7 +70,7 @@ public class StreamUpdateHandler extends JetStreamFrameHandler {
     String streamName = parts[4];
 
     // Process subjects
-    if (!json.has("subjects") || !json.get("subjects").isJsonArray()) {
+    if (!json.has(SUBJECTS_KEY) || !json.get(SUBJECTS_KEY).isJsonArray()) {
       return new ErrFrame("Missing or invalid 'subjects' array");
     }
     PayloadFrame result = (PayloadFrame) msg;
@@ -76,7 +79,7 @@ public class StreamUpdateHandler extends JetStreamFrameHandler {
       result.setPayload(streamNotFound("io.nats.jetstream.api.v1.stream_delete_response").getBytes());
       return result;
     }
-    JsonArray subjectsArray = json.getAsJsonArray("subjects");
+    JsonArray subjectsArray = json.getAsJsonArray(SUBJECTS_KEY);
 
     Set<String> newSubjects = new HashSet<>();
     subjectsArray.forEach(e -> newSubjects.add(e.getAsString()));

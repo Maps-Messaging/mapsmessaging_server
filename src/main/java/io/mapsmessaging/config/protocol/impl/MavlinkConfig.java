@@ -31,6 +31,12 @@ import java.util.Objects;
 
 public class MavlinkConfig extends MavlinkConfigDTO implements Config {
 
+  private static final String ACCEPTED_MESSAGE_IDS_KEY = "acceptedMessageIds";
+  private static final String COMPONENT_ID_KEY = "componentId";
+  private static final String REJECTED_MESSAGE_IDS_KEY = "rejectedMessageIds";
+  private static final String SYSTEM_ID_KEY = "systemId";
+
+
   public MavlinkConfig(ConfigurationProperties config) {
     setType("mavlink");
     ProtocolConfigFactory.unpack(config, this);
@@ -38,8 +44,8 @@ public class MavlinkConfig extends MavlinkConfigDTO implements Config {
     this.idleSessionTimeout = config.getLongProperty("idleSessionTimeout", idleSessionTimeout);
     this.maximumSessionExpiry = config.getIntProperty("maximumSessionExpiry", maximumSessionExpiry);
     this.advertiseInterval = config.getIntProperty("advertiseInterval", advertiseInterval);
-    this.systemId = readOptionalInteger(config.get("systemId"));
-    this.componentId = readOptionalInteger(config.get("componentId"));
+    this.systemId = readOptionalInteger(config.get(SYSTEM_ID_KEY));
+    this.componentId = readOptionalInteger(config.get(COMPONENT_ID_KEY));
     this.maxInFlightEvents = config.getIntProperty("maxInFlightEvents", maxInFlightEvents);
     this.topicNameTemplate = config.getProperty("topicNameTemplate", topicNameTemplate);
     this.statusTopicNameTemplate = config.getProperty("statusTopicNameTemplate", statusTopicNameTemplate);
@@ -56,8 +62,8 @@ public class MavlinkConfig extends MavlinkConfigDTO implements Config {
     this.qualityOfService = config.getIntProperty("qualityOfService", qualityOfService);
     this.storeOffline = config.getBooleanProperty("storeOffline", storeOffline);
     this.tlogDirectory = config.getProperty("tlogDirectory", tlogDirectory);
-    this.acceptedMessageIds = readIntegerList(config.get("acceptedMessageIds"));
-    this.rejectedMessageIds = readIntegerList(config.get("rejectedMessageIds"));
+    this.acceptedMessageIds = readIntegerList(config.get(ACCEPTED_MESSAGE_IDS_KEY));
+    this.rejectedMessageIds = readIntegerList(config.get(REJECTED_MESSAGE_IDS_KEY));
     this.acceptedSources = readKnownSources(config.get("acceptedSources"));
     this.heartbeatIntervalSeconds = config.getIntProperty("heartbeatIntervalSeconds", heartbeatIntervalSeconds);
   }
@@ -185,8 +191,8 @@ public class MavlinkConfig extends MavlinkConfigDTO implements Config {
     properties.put("idleSessionTimeout", idleSessionTimeout);
     properties.put("maximumSessionExpiry", maximumSessionExpiry);
     properties.put("advertiseInterval", advertiseInterval);
-    putOptional(properties, "systemId", systemId);
-    putOptional(properties, "componentId", componentId);
+    putOptional(properties, SYSTEM_ID_KEY, systemId);
+    putOptional(properties, COMPONENT_ID_KEY, componentId);
     properties.put("maxInFlightEvents", maxInFlightEvents);
     properties.put("topicNameTemplate", topicNameTemplate);
     properties.put("statusTopicNameTemplate", statusTopicNameTemplate);
@@ -196,8 +202,8 @@ public class MavlinkConfig extends MavlinkConfigDTO implements Config {
     properties.put("forwardRejectedRawFrames", forwardRejectedRawFrames);
     properties.put("dropIfTargetEqualsSource", dropIfTargetEqualsSource);
     properties.put("dedupWindowMillis", dedupWindowMillis);
-    properties.put("acceptedMessageIds", writeIntegerList(acceptedMessageIds));
-    properties.put("rejectedMessageIds", writeIntegerList(rejectedMessageIds));
+    properties.put(ACCEPTED_MESSAGE_IDS_KEY, writeIntegerList(acceptedMessageIds));
+    properties.put(REJECTED_MESSAGE_IDS_KEY, writeIntegerList(rejectedMessageIds));
     properties.put("acceptedSources", writeKnownSources(acceptedSources));
     properties.put("rejectUnknownSources", rejectUnknownSources);
     properties.put("rejectedFrameNamespace", rejectedFrameNamespace);
@@ -283,18 +289,18 @@ public class MavlinkConfig extends MavlinkConfigDTO implements Config {
     }
     if (raw instanceof ConfigurationProperties properties) {
       MavlinkAcceptedSourceDTO source = new MavlinkAcceptedSourceDTO();
-      source.setSystemId(properties.getIntProperty("systemId", 0));
-      source.setComponentId(properties.getIntProperty("componentId", 0));
-      source.setAcceptedMessageIds(readIntegerList(properties.get("acceptedMessageIds")));
-      source.setRejectedMessageIds(readIntegerList(properties.get("rejectedMessageIds")));
+      source.setSystemId(properties.getIntProperty(SYSTEM_ID_KEY, 0));
+      source.setComponentId(properties.getIntProperty(COMPONENT_ID_KEY, 0));
+      source.setAcceptedMessageIds(readIntegerList(properties.get(ACCEPTED_MESSAGE_IDS_KEY)));
+      source.setRejectedMessageIds(readIntegerList(properties.get(REJECTED_MESSAGE_IDS_KEY)));
       return source;
     }
     if (raw instanceof Map<?, ?> map) {
       MavlinkAcceptedSourceDTO source = new MavlinkAcceptedSourceDTO();
-      source.setSystemId(defaultInteger(map.get("systemId")));
-      source.setComponentId(defaultInteger(map.get("componentId")));
-      source.setAcceptedMessageIds(readIntegerList(map.get("acceptedMessageIds")));
-      source.setRejectedMessageIds(readIntegerList(map.get("rejectedMessageIds")));
+      source.setSystemId(defaultInteger(map.get(SYSTEM_ID_KEY)));
+      source.setComponentId(defaultInteger(map.get(COMPONENT_ID_KEY)));
+      source.setAcceptedMessageIds(readIntegerList(map.get(ACCEPTED_MESSAGE_IDS_KEY)));
+      source.setRejectedMessageIds(readIntegerList(map.get(REJECTED_MESSAGE_IDS_KEY)));
       return source;
     }
     return null;
@@ -348,10 +354,10 @@ public class MavlinkConfig extends MavlinkConfigDTO implements Config {
     }
     for (MavlinkAcceptedSourceDTO source : sources) {
       ConfigurationProperties properties = new ConfigurationProperties();
-      properties.put("systemId", source.getSystemId());
-      properties.put("componentId", source.getComponentId());
-      properties.put("acceptedMessageIds", writeIntegerList(source.getAcceptedMessageIds()));
-      properties.put("rejectedMessageIds", writeIntegerList(source.getRejectedMessageIds()));
+      properties.put(SYSTEM_ID_KEY, source.getSystemId());
+      properties.put(COMPONENT_ID_KEY, source.getComponentId());
+      properties.put(ACCEPTED_MESSAGE_IDS_KEY, writeIntegerList(source.getAcceptedMessageIds()));
+      properties.put(REJECTED_MESSAGE_IDS_KEY, writeIntegerList(source.getRejectedMessageIds()));
       result.add(properties);
     }
     return result;

@@ -54,6 +54,9 @@ import java.util.concurrent.TimeUnit;
  */
 public class InitialConnectionState implements State {
 
+  private static final String PROTOCOL_NAME = "mqtt-sn";
+
+
   @Override
   public String getName() {
     return "Initial";
@@ -79,7 +82,7 @@ public class InitialConnectionState implements State {
       scb.setResetState(connect.isCleanStart());
       scb.setPersistentSession(!connect.isCleanStart());
 
-      int receiveMax = ((MqttSnConfig)endPoint.getConfig().getProtocolConfig("mqtt-sn")).getReceiveMaximum();
+      int receiveMax = ((MqttSnConfig)endPoint.getConfig().getProtocolConfig(PROTOCOL_NAME)).getReceiveMaximum();
       scb.setReceiveMaximum(receiveMax);
       scb.setSessionExpiry(connect.getSessionExpiry());
       if(saslAuthenticationMechanism != null){
@@ -103,7 +106,7 @@ public class InitialConnectionState implements State {
             authProps.put(Sasl.QOP, "auth");
             try {
               String serverName = saslConfig.getRealmName();
-              saslAuthenticationMechanism = new SaslAuthenticationMechanism(saslConfig.getMechanism(), serverName, "mqtt-sn", authProps, endPoint.getConfig());
+              saslAuthenticationMechanism = new SaslAuthenticationMechanism(saslConfig.getMechanism(), serverName, PROTOCOL_NAME, authProps, endPoint.getConfig());
               stateEngine.setState(new AuthenticationState(connect, saslAuthenticationMechanism));
               ((MQTT_SNProtocolV2)protocol).setSaslAuthenticationMechanism(saslAuthenticationMechanism);
               return new Auth(ReasonCodes.CONTINUE_AUTHENTICATION, saslAuthenticationMechanism.getName(), new byte[0]);
@@ -133,7 +136,7 @@ public class InitialConnectionState implements State {
           ProtocolMessageTransformation transformation = TransformationManager.getInstance().getTransformation(
               endPoint.getProtocol(),
               endPoint.getName(),
-              "mqtt-sn",
+              PROTOCOL_NAME,
               session.getSecurityContext().getUsername()
 
           );

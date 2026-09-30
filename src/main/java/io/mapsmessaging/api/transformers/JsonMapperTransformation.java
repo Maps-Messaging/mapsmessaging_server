@@ -32,6 +32,9 @@ import java.nio.charset.StandardCharsets;
 
 public class JsonMapperTransformation implements InterServerTransformation {
 
+  private static final String ENVELOPES_KEY = "envelopes";
+
+
   private final JsonMapper mapper;
 
   public JsonMapperTransformation() {
@@ -55,8 +58,8 @@ public class JsonMapperTransformation implements InterServerTransformation {
         return message;
       }
       JsonObject base = element.getAsJsonObject();
-      if(base.has("envelopes") && base.getAsJsonArray("envelopes").size() > 0){
-        base =  base.getAsJsonArray("envelopes").get(0).getAsJsonObject().getAsJsonObject("payload");
+      if(base.has(ENVELOPES_KEY) && base.getAsJsonArray(ENVELOPES_KEY).size() > 0){
+        base =  base.getAsJsonArray(ENVELOPES_KEY).get(0).getAsJsonObject().getAsJsonObject("payload");
       }
       JsonObject mutated = mapper.apply(base);
       MessageBuilder messageBuilder = new MessageBuilder(message.getMessage());

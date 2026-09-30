@@ -56,6 +56,9 @@ import static io.mapsmessaging.logging.ServerLogMessages.REST_CACHE_MISS;
 
 public class BaseRestApi {
 
+  private static final String USERNAME_KEY = "username";
+
+
   public static boolean AUTH_ENABLED = true;
 
   private final Logger logger = LoggerFactory.getLogger(BaseRestApi.class);
@@ -119,10 +122,10 @@ public class BaseRestApi {
 
       Object id = httpSession.getAttribute("sessionId");
       String sessionId = id == null ? restClientConnection.getName() : id.toString();
-      String username = (String) httpSession.getAttribute("username");
+      String username = (String) httpSession.getAttribute(USERNAME_KEY);
       if (username == null) {
         username = httpSession.getId();
-        httpSession.setAttribute("username", username);
+        httpSession.setAttribute(USERNAME_KEY, username);
       }
       SessionContextBuilder sessionContextBuilder = new SessionContextBuilder(sessionId, restClientConnection)
           .setPersistentSession(persistentSession)
@@ -154,7 +157,7 @@ public class BaseRestApi {
     HttpSession session = getSession();
     Identity userIdMap = (Identity) session.getAttribute("userIdMap");
     if(userIdMap == null) {
-      String username = (String) session.getAttribute("username");
+      String username = (String) session.getAttribute(USERNAME_KEY);
       userIdMap = AuthManager.getInstance().getUserIdentity(username);
       if(userIdMap != null) {
         session.setAttribute("userIdMap", userIdMap);

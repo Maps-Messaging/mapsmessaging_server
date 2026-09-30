@@ -35,6 +35,9 @@ import java.util.List;
 
 public class LinkConfig extends LinkConfigDTO implements Config {
 
+  private static final String LINK_PROPERTIES_KEY = "linkProperties";
+
+
   public LinkConfig(ConfigurationProperties config) {
     this.direction = config.getProperty("direction");
     this.remoteNamespace = config.getProperty("remote_namespace");
@@ -72,7 +75,7 @@ public class LinkConfig extends LinkConfigDTO implements Config {
     else{
       statistics = null;
     }
-    if(config.containsKey("linkProperties") && config.get("linkProperties") instanceof ConfigurationProperties props){
+    if(config.containsKey(LINK_PROPERTIES_KEY) && config.get(LINK_PROPERTIES_KEY) instanceof ConfigurationProperties props){
       this.linkProperties = props.getMap();
     }
     else{
@@ -110,7 +113,7 @@ public class LinkConfig extends LinkConfigDTO implements Config {
     }
 
     if (this.linkProperties != null && !this.linkProperties.isEmpty()) {
-      config.put("linkProperties", this.linkProperties);
+      config.put(LINK_PROPERTIES_KEY, this.linkProperties);
     }
 
     return config;

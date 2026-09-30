@@ -56,6 +56,9 @@ import java.util.concurrent.TimeoutException;
 @java.lang.SuppressWarnings("squid:S00101")
 public class MQTTSNInterfaceManager implements SelectorCallback {
 
+  private static final String PROTOCOL_NAME = "mqtt-sn";
+
+
   private final Logger logger;
   private final SelectorTask selectorTask;
   private final EndPoint endPoint;
@@ -79,7 +82,7 @@ public class MQTTSNInterfaceManager implements SelectorCallback {
     this.selectorTask = selectorTask;
     advertiserTask = null;
     this.endPoint = endPoint;
-    mqttSnConfig = (MqttSnConfig) endPoint.getConfig().getProtocolConfig("mqtt-sn");
+    mqttSnConfig = (MqttSnConfig) endPoint.getConfig().getProtocolConfig(PROTOCOL_NAME);
     long timeout = mqttSnConfig.getIdleSessionTimeout();
     enablePortChanges = mqttSnConfig.isEnablePortChanges();
     enableAddressChanges = mqttSnConfig.isEnableAddressChanges();
@@ -91,7 +94,7 @@ public class MQTTSNInterfaceManager implements SelectorCallback {
     transformation = TransformationManager.getInstance().getTransformation(
         endPoint.getProtocol(),
         endPoint.getName(),
-        "mqtt-sn",
+        PROTOCOL_NAME,
         "<registered>"
     );
 
@@ -102,7 +105,7 @@ public class MQTTSNInterfaceManager implements SelectorCallback {
     logger = LoggerFactory.getLogger("MQTT-SN Protocol on " + endPoint.getName());
     this.endPoint = endPoint;
     this.gatewayId = gatewayId;
-    mqttSnConfig = (MqttSnConfig) endPoint.getConfig().getProtocolConfig("mqtt-sn");
+    mqttSnConfig = (MqttSnConfig) endPoint.getConfig().getProtocolConfig(PROTOCOL_NAME);
     long timeout = mqttSnConfig.getIdleSessionTimeout();
     enablePortChanges = mqttSnConfig.isEnablePortChanges();
     enableAddressChanges = mqttSnConfig.isEnableAddressChanges();
@@ -131,7 +134,7 @@ public class MQTTSNInterfaceManager implements SelectorCallback {
     transformation = TransformationManager.getInstance().getTransformation(
         endPoint.getProtocol(),
         endPoint.getName(),
-        "mqtt-sn",
+        PROTOCOL_NAME,
         "<registered>"
     );
   }

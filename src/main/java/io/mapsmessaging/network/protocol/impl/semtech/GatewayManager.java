@@ -43,6 +43,9 @@ import java.util.concurrent.TimeUnit;
 
 public class GatewayManager {
 
+  private static final String GATEWAY_ID_PLACEHOLDER = "{gatewayId}";
+
+
   private final Map<String, GatewayInfo> gatewayMap;
   private final Session session;
   private final String inbound;
@@ -96,14 +99,14 @@ public class GatewayManager {
 
   private GatewayInfo createInfo(byte[] gatewayIdentifier, @NotNull @NonNull SemTechPacket packet) throws IOException {
     String name = dumpIdentifier(gatewayIdentifier);
-    String inTopic = inbound.replace("{gatewayId}", name);
-    String statusTopic = status.replace("{gatewayId}", name);
-    String telemetryTopic = telemetry.replace("{gatewayId}", name);
+    String inTopic = inbound.replace(GATEWAY_ID_PLACEHOLDER, name);
+    String statusTopic = status.replace(GATEWAY_ID_PLACEHOLDER, name);
+    String telemetryTopic = telemetry.replace(GATEWAY_ID_PLACEHOLDER, name);
     try {
       Destination in = session.findDestination(inTopic, DestinationType.TOPIC).get();
       Destination telemtry =session.findDestination(telemetryTopic, DestinationType.TOPIC).get();
       Destination stat =session.findDestination(statusTopic, DestinationType.TOPIC).get();
-      String outTopic = outbound.replace("{gatewayId}", name);
+      String outTopic = outbound.replace(GATEWAY_ID_PLACEHOLDER, name);
 
 
       SubscriptionContext subscriptionContext = new SubscriptionContext(outTopic);
