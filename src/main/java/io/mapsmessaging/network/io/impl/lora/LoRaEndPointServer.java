@@ -126,7 +126,7 @@ public class LoRaEndPointServer extends EndPointServer implements SerialPortList
 
   @Override
   public void unbind(SerialPort port) throws IOException {
-    if (loRaProtocol == null) {
+    if (loRaProtocol != null) {
       loRaProtocol.getEndPoint().close();
       loRaProtocol = null;
     }
