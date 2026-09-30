@@ -174,28 +174,32 @@ public class TakSocketConnection implements Closeable {
 
   private synchronized void reconnect() {
     closeQuietly();
-
+    Socket pendingSocket = null;
     try {
-      Socket newSocket;
-      if (sslSocketFactory != null) {
-        SSLSocket sslSocket = (SSLSocket) sslSocketFactory.createSocket();
-        sslSocket.connect(new InetSocketAddress(host, port), connectTimeoutMs);
+      pendingSocket = sslSocketFactory != null ? sslSocketFactory.createSocket() : new Socket();
+      pendingSocket.connect(new InetSocketAddress(host, port), connectTimeoutMs);
+      if (pendingSocket instanceof SSLSocket sslSocket) {
         sslSocket.startHandshake();
-        newSocket = sslSocket;
-      } else {
-        newSocket = new Socket();
-        newSocket.connect(new InetSocketAddress(host, port), connectTimeoutMs);
       }
-      newSocket.setSoTimeout(socketTimeoutMs);
-      newSocket.setKeepAlive(true);
-      newSocket.setTcpNoDelay(true);
+      pendingSocket.setSoTimeout(socketTimeoutMs);
+      pendingSocket.setKeepAlive(true);
+      pendingSocket.setTcpNoDelay(true);
 
-      socket = newSocket;
-      socketOutputStream = newSocket.getOutputStream();
-    }
-    catch (IOException ignored) {
+      OutputStream output = pendingSocket.getOutputStream();
+      socket = pendingSocket;
+      socketOutputStream = output;
+      pendingSocket = null;
+    } catch (IOException ignored) {
       socket = null;
       socketOutputStream = null;
+    } finally {
+      if (pendingSocket != null) {
+        try {
+          pendingSocket.close();
+        } catch (IOException ignored) {
+          // Connection failed; the pending socket must not become the active connection.
+        }
+      }
     }
   }
 

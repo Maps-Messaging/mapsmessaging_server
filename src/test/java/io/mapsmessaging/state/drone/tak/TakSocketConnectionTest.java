@@ -3,6 +3,11 @@ package io.mapsmessaging.state.drone.tak;
 import org.junit.jupiter.api.Test;
 
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import javax.net.ssl.SSLSocket;
+import javax.net.ssl.SSLSocketFactory;
+
+import static org.mockito.Mockito.*;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 
@@ -54,6 +59,24 @@ class TakSocketConnectionTest {
     connection.accept("<event/>");
 
     assertTrue(connection.getQueue().isEmpty());
+  }
+
+  @Test
+  void failed_tls_handshake_closes_the_new_socket() throws Exception {
+    SSLSocketFactory factory = mock(SSLSocketFactory.class);
+    SSLSocket socket = mock(SSLSocket.class);
+    when(factory.createSocket()).thenReturn(socket);
+    doThrow(new IOException("handshake failed")).when(socket).startHandshake();
+    TakSocketConnection connection = new TakSocketConnection("localhost", 1234, 10, 10, false, 4, factory);
+    try {
+      Method reconnect = TakSocketConnection.class.getDeclaredMethod("reconnect");
+      reconnect.setAccessible(true);
+      reconnect.invoke(connection);
+      assertFalse(connection.isConnected());
+      verify(socket).close();
+    } finally {
+      connection.close();
+    }
   }
 
   private static ByteArrayOutputStream installOutput(TakSocketConnection connection)
