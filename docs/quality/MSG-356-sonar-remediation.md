@@ -216,3 +216,13 @@ Validation: 43 focused tests passed, zero failures/errors/skips, using Java 21 M
 Consolidated five empty fall-through label groups in NMEA TypeFactory and SemtechStatusEventFactory, preserving branch bodies/defaults. Existing NMEA tests exercise each scalar alias. Added parameterized Semtech tests for all 12 states through both factory methods and a null-state test. Validation: 28 tests passed, zero failures/errors/skips.
 
 The Semtech gateway factory continues to reject GATEWAY_PUSH, matching its existing implementation. No semantics were changed to accommodate that state. Remaining pattern/cast and switch-label findings are still pending; do not count all 112 pattern or 12 switch findings as fixed.
+
+### Block 4: small mechanical cleanup
+
+Removed four immediate-return temporary variables, reordered two modifier declarations, and removed one empty statement. Added tests verifying fresh mutable configuration/maps, map insertion order, numeric generator bounds and equal-bound handling.
+
+### Block 3b: remaining switch-label groups
+
+Consolidated the remaining seven reported switch-label groups: JMS delivery mode, hardware sensor/clock dispatch, CoAP GET/PATCH, MQTT-SN v1/v2 duplicate CONNECT/WILLMSG responses, and NATS +ack/+term. Added direct dispatch contract tests for all grouped labels. Combined focused suite (SwitchDispatchContractTest, JsonInstanceGeneratorNumericTest, EmptyConfigurationResultTest, StaticAggregatorWorkSchedulerTest, StatisticsTests, DeviceSessionManagementTest, FieldInterceptorTest): 29 tests passed, no failures/errors/skips, Java 21 Maven. Full integration build remains deferred.
+
+All 12 exported S6208 switch-label findings now have code changes; fresh SonarCloud analysis must confirm removal. The remaining S6201 pattern/cast findings are pending. No unrelated production bug was changed.
