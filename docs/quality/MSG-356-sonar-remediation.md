@@ -406,3 +406,15 @@ Counts below describe the original 1,213-finding export, not refreshed SonarClou
 Merged all 14 exported S1066 nested-if findings across 13 files, preserving left-to-right short-circuit evaluation, null guards and existing actions. Consolidated all seven S2147 findings across five files using multi-catch; exception types, responses, messages, causes and interruption behavior remain unchanged. No suppression was added.
 
 Validation: Java 21 compilation and 116 focused tests passed with zero failures, errors or skips, using fresh JaCoCo execution data. Added 27 regression cases for MQTT 3/5 will guards and encodings, CONNACK length handling, endpoint resume state transitions, Inmarsat authentication reset, twin altitude validation, REST error responses and satellite publication exceptions. Existing tests exercised WebSocket UTF-8 parsing, PROXY v2, file locking, schema generation, DTO resolution and NMEA parsing. Test utility edits were compiled; no external daemon or broker was required. Full build and fresh Sonar analysis remain pending.
+
+## Latest supplied snapshot and continued cleanup
+
+The supplied `maps-server-code-smells(1).json` snapshot was exported at 2026-09-30 20:26 UTC and contains 876 findings, compared with 1,213 originally: 355 original issue keys are absent and 18 new keys are present (net reduction 337). The user confirms the branch label should be ignored; treat this as the latest scan. The PR has not merged. Continue on the same MSG-356 branch and PR.
+
+The largest remaining groups are cognitive complexity (113), S9391 (69), empty methods (59), broad catches (53), empty blocks (36), unused parameters (35), loop exits (30) and naming (21). Record-constructor S4165 self-assignment reports need review rather than blind assignment removal. Unused-local removals must preserve initializer side effects, casts, parsing, authentication and exceptions.
+
+### Block 7a: discarded wire values
+
+Remove unused locals for the MQTT 5 UNSUBACK reason code and LoRa gateway minor version while retaining both `packet.get()` calls. This addresses two S1481 findings and the overlapping LoRa S1854 finding without changing byte consumption, failure behavior or protocol dispatch.
+
+Six new regression cases passed against unchanged production code before cleanup. Post-change Java 21 `mvn -B -Dtest=UnsubAck5ConsumptionTest,VersionHandlerConsumptionTest,ConnAck5LengthContractTest -Dexec.skip=true -Ddependency-check.skip=true test` passed all nine tests with zero failures/errors/skips and fresh isolated JaCoCo data. Six cases are new, covering zero/one/multiple reason codes, following-byte boundaries, truncation, configuration send order and missing-version failures. Full build remains deferred.
