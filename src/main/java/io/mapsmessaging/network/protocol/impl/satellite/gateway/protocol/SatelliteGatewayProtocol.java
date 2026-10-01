@@ -517,7 +517,10 @@ public class SatelliteGatewayProtocol extends Protocol {
             requestClose();
             return null;
           }).get(1, TimeUnit.SECONDS);
-    } catch (InterruptedException | ExecutionException | TimeoutException e) {
+    } catch (InterruptedException e) {
+      Thread.currentThread().interrupt();
+      throw new RuntimeException(e);
+    } catch (ExecutionException | TimeoutException e) {
       throw new RuntimeException(e);
     }
   }

@@ -41,6 +41,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.CALLS_REAL_METHODS;
 import static org.mockito.Mockito.mock;
@@ -67,12 +69,21 @@ class SatellitePublishFailureTest {
         byte[].class, String.class, ProtocolMessageTransformation.class, Map.class);
     publish.setAccessible(true);
 
-    InvocationTargetException invocation = assertThrows(InvocationTargetException.class,
-        () -> publish.invoke(protocol, new byte[]{1}, "/incoming", null, new HashMap<>()));
+    try {
+      InvocationTargetException invocation = assertThrows(InvocationTargetException.class,
+          () -> publish.invoke(protocol, new byte[]{1}, "/incoming", null, new HashMap<>()));
 
-    RuntimeException wrapped = assertInstanceOf(RuntimeException.class, invocation.getCause());
-    assertEquals(RuntimeException.class, wrapped.getClass(), wrapped::toString);
-    assertSame(failure, wrapped.getCause());
+      RuntimeException wrapped = assertInstanceOf(RuntimeException.class, invocation.getCause());
+      assertEquals(RuntimeException.class, wrapped.getClass(), wrapped::toString);
+      assertSame(failure, wrapped.getCause());
+      if (failure instanceof InterruptedException) {
+        assertTrue(Thread.currentThread().isInterrupted());
+      } else {
+        assertFalse(Thread.currentThread().isInterrupted());
+      }
+    } finally {
+      Thread.interrupted();
+    }
   }
 
   private static Stream<Exception> failures() {
