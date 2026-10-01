@@ -126,6 +126,11 @@ public class SemTechProtocol extends Protocol {
     logger.log(ServerLogMessages.SEMTECH_QUEUE_MESSAGE, messageEvent.getMessage());
     String alias = messageEvent.getSubscription().getContext().getAlias();
     GatewayInfo info = gatewayManager.getInfo(alias);
+    if (info == null) {
+      logger.log(ServerLogMessages.SEMTECH_DROP_UNKNOWN_GATEWAY, alias);
+      messageEvent.getCompletionTask().run();
+      return;
+    }
     info.getWaitingMessages().offer(messageEvent);
   }
 
