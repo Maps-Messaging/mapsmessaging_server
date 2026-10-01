@@ -150,7 +150,7 @@ public class MavlinkConfigDTO extends ProtocolConfigDTO {
       description =
           "Comma-separated list of MAVLink-compatible UDP endpoints to forward received frames to. "
               + "Each entry must be a valid udp://host:port/ URI. Blank disables forwarding.",
-      example = "udp://192.168.1.50:14550/,udp://192.168.1.51:14550/",
+      example = "udp://gcs-one.example.com:14550/,udp://gcs-two.example.com:14550/",
       defaultValue = "",
       requiredMode = Schema.RequiredMode.NOT_REQUIRED
   )
