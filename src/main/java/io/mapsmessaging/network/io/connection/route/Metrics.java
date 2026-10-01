@@ -22,6 +22,7 @@ package io.mapsmessaging.network.io.connection.route;
 import io.mapsmessaging.network.io.EndPoint;
 import io.mapsmessaging.network.io.connection.EndPointConnection;
 import io.mapsmessaging.network.route.link.LinkMetrics;
+import io.mapsmessaging.network.protocol.Protocol;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -94,10 +95,10 @@ public class Metrics implements LinkMetrics {
 
   @Override
   public Instant getLastUpdated() {
-    if (getEndPoint() == null) {
+    EndPoint endPoint = getEndPoint();
+    if (endPoint == null) {
       return Instant.now();
     }
-    EndPoint endPoint = getEndPoint();
     long last = Math.max(endPoint.getLastRead(), endPoint.getLastWrite());
     return Instant.ofEpochMilli(last);
   }
@@ -108,9 +109,7 @@ public class Metrics implements LinkMetrics {
   }
 
   private EndPoint getEndPoint() {
-    if (endPointConnection.getProtocol() == null) {
-      return null;
-    }
-    return endPointConnection.getProtocol().getEndPoint();
+    Protocol protocol = endPointConnection.getProtocol();
+    return protocol == null ? null : protocol.getEndPoint();
   }
 }

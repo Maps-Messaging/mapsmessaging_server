@@ -73,7 +73,7 @@ public final class SchemaResolver {
     JsonObject resolvedSchema = schema;
     String resolvedType = getType(resolvedSchema);
 
-    if ("object".equals(resolvedType) || resolvedSchema.has("properties")) {
+    if ("object".equals(resolvedType) || (resolvedSchema != null && resolvedSchema.has("properties"))) {
       return resolvedSchema;
     }
 

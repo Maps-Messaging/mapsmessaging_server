@@ -396,7 +396,7 @@ public class SchemaManager implements Agent, SchemaResolver {
      if(list.isEmpty()){
        SchemaResource resource = repository.getResource(context);
        if(resource != null) {
-         list.add(resource);
+         return List.of(resource);
        }
      }
      return list;

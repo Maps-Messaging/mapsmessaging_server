@@ -35,6 +35,10 @@ public class SendMessageState {
   public SendMessageState(String line, boolean isOgx) {
     String content = line.substring(line.indexOf(':') + 1).trim();
     String[] parts = content.split(",");
+    int requiredFields = isOgx ? 9 : 7;
+    if (parts.length < requiredFields) {
+      throw new IllegalArgumentException("Incomplete outgoing message status: expected at least " + requiredFields + " fields");
+    }
     if (!isOgx) { // IDP/ST
       this.messageName = parts[0].replace("\"", "").trim();
       this.messageNumber = Double.parseDouble(parts[1].trim());
