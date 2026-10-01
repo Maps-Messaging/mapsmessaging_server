@@ -76,6 +76,9 @@ import java.util.concurrent.*;
  * single destination needs to do.
  */
 public class DestinationImpl implements BaseDestination {
+
+  private static final String SUBSCRIPTIONS_KEY = "subscriptions";
+
   @Getter
   private static final DestinationGlobalStats globalStats = new DestinationGlobalStats(StatsFactory.getDefaultType());
 
@@ -183,7 +186,7 @@ public class DestinationImpl implements BaseDestination {
     destinationJMXBean = new DestinationJMX(this, resourceTaskQueue, subscriptionTaskQueue);
     sharedSubscriptionRegistry = new SharedSubscriptionRegister();
 
-    subscriptionBitsetFactory = DestinationStateManagerFactory.createSubscriptionFactory(this, true, "subscriptions");
+    subscriptionBitsetFactory = DestinationStateManagerFactory.createSubscriptionFactory(this, true, SUBSCRIPTIONS_KEY);
     delayedMessageManager = DestinationStateManagerFactory.createDelayed(this, true, "delayed");
     delayScheduler = SimpleTaskScheduler.getInstance().scheduleAtFixedRate(new DelayProcessor(), 990, 1000, TimeUnit.MILLISECONDS);
 
@@ -230,7 +233,7 @@ public class DestinationImpl implements BaseDestination {
     // Delayed Messages are automatically dealt with once the structure has been reloaded
     delayedMessageManager = DestinationStateManagerFactory.createDelayed(this, true, "delayed");
     delayScheduler = SimpleTaskScheduler.getInstance().scheduleAtFixedRate(new DelayProcessor(), 990, 1000, TimeUnit.MILLISECONDS);
-    subscriptionBitsetFactory = DestinationStateManagerFactory.createSubscriptionFactory(this, true, "subscriptions");
+    subscriptionBitsetFactory = DestinationStateManagerFactory.createSubscriptionFactory(this, true, SUBSCRIPTIONS_KEY);
     transactionMessageManager = DestinationStateManagerFactory.createTransaction(this, true, "transactions");
     rollbackTransactionsOnReload();
     closed = false;
@@ -264,7 +267,7 @@ public class DestinationImpl implements BaseDestination {
     sharedSubscriptionRegistry = new SharedSubscriptionRegister();
     delayedMessageManager = null;
     delayScheduler = null;
-    subscriptionBitsetFactory = DestinationStateManagerFactory.createSubscriptionFactory(this, false, "subscriptions");
+    subscriptionBitsetFactory = DestinationStateManagerFactory.createSubscriptionFactory(this, false, SUBSCRIPTIONS_KEY);
     transactionMessageManager = null;
     closed = false;
     completionQueue = new EventReaperQueue();
@@ -800,12 +803,12 @@ public class DestinationImpl implements BaseDestination {
     Future<Response> future = submit(task, PUBLISH_PRIORITY);
     try {
       Response response = future.get(60, TimeUnit.SECONDS);
-      if (response instanceof LongResponse) {
-        return (int) ((LongResponse) response).getResponse();
-      } else if (response instanceof FutureResponse) {
-        response = ((FutureResponse) response).getResponse().get();
-        if (response instanceof LongResponse) {
-          return (int) ((LongResponse) response).getResponse();
+      if (response instanceof LongResponse directResponse) {
+        return (int) (directResponse).getResponse();
+      } else if (response instanceof FutureResponse matchedFutureResponse) {
+        response = (matchedFutureResponse).getResponse().get();
+        if (response instanceof LongResponse matchedLongResponse) {
+          return (int) (matchedLongResponse).getResponse();
         }
       }
       return 0;
@@ -871,8 +874,8 @@ public class DestinationImpl implements BaseDestination {
 
   public DestinationSubscription getSubscription(String subscriptionName) {
     Subscribable subscribable = subscriptionManager.getSubscription(subscriptionName);
-    if (subscribable instanceof DestinationSubscription) {
-      return (DestinationSubscription) subscribable;
+    if (subscribable instanceof DestinationSubscription matchedDestinationSubscription) {
+      return matchedDestinationSubscription;
     }
     return null;
   }

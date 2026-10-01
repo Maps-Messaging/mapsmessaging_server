@@ -158,6 +158,7 @@ public class MQTTProtocol extends Protocol {
   }
 
 
+  @Override
   public void setConnected(boolean connected) {
     super.setConnected(connected);
     if (connectionTimeOut != null) {
@@ -215,6 +216,7 @@ public class MQTTProtocol extends Protocol {
     return session.getName();
   }
 
+  @Override
   public void setSession(Session session) {
     this.session = session;
     completedConnection();

@@ -33,10 +33,12 @@ public interface UavModel extends UxvModel {
         throw unsupported(UxvOperation.SET_ALTITUDE);
     }
 
+    @Override
     default UxvModelCommandSet orbit(UxvCommandContext context, OrbitRequest request) {
         throw unsupported(UxvOperation.ORBIT);
     }
 
+    @Override
     default UxvModelCommandSet loiter(UxvCommandContext context, LoiterRequest request) {
         throw unsupported(UxvOperation.LOITER);
     }

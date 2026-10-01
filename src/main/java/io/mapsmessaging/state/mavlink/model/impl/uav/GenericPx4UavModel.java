@@ -42,6 +42,10 @@ import java.util.Objects;
 
 public class GenericPx4UavModel extends GenericPx4UxvModel implements UavModel {
 
+  private static final String MISSION_ITEM_PREFIX = "Mission item ";
+  private static final String CONTEXT_REQUIRED = "context must not be null";
+  private static final String RADIUS_METERS_PARAMETER = "radiusMeters";
+
   public static final String MODEL_NAME = "generic-px4-uav";
 
   private static final int MAV_CMD_NAV_LAND = 21;
@@ -78,7 +82,7 @@ public class GenericPx4UavModel extends GenericPx4UxvModel implements UavModel {
 
   @Override
   public UxvModelCommandSet takeOff(UxvCommandContext context, double altitudeMeters) {
-    Objects.requireNonNull(context, "context must not be null");
+    Objects.requireNonNull(context, CONTEXT_REQUIRED);
     requirePositive(altitudeMeters, "altitudeMeters");
 
     MavlinkCommandLong commandLong =
@@ -94,7 +98,7 @@ public class GenericPx4UavModel extends GenericPx4UxvModel implements UavModel {
 
   @Override
   public UxvModelCommandSet land(UxvCommandContext context) {
-    Objects.requireNonNull(context, "context must not be null");
+    Objects.requireNonNull(context, CONTEXT_REQUIRED);
 
     return UxvModelCommandSet.of(
         UxvOperation.LAND,
@@ -108,10 +112,10 @@ public class GenericPx4UavModel extends GenericPx4UxvModel implements UavModel {
 
   @Override
   public UxvModelCommandSet orbit(UxvCommandContext context, OrbitRequest request) {
-    Objects.requireNonNull(context, "context must not be null");
+    Objects.requireNonNull(context, CONTEXT_REQUIRED);
     Objects.requireNonNull(request, "request must not be null");
 
-    requirePositive(request.radiusMeters(), "radiusMeters");
+    requirePositive(request.radiusMeters(), RADIUS_METERS_PARAMETER);
     rejectDepth(request.depthMeters(), UxvOperation.ORBIT);
     rejectSpeed(request.speedMetersPerSecond(), UxvOperation.ORBIT);
     rejectDuration(request.duration(), UxvOperation.ORBIT);
@@ -136,10 +140,10 @@ public class GenericPx4UavModel extends GenericPx4UxvModel implements UavModel {
 
   @Override
   public UxvModelCommandSet loiter(UxvCommandContext context, LoiterRequest request) {
-    Objects.requireNonNull(context, "context must not be null");
+    Objects.requireNonNull(context, CONTEXT_REQUIRED);
     Objects.requireNonNull(request, "request must not be null");
 
-    requirePositiveOrZero(request.radiusMeters(), "radiusMeters");
+    requirePositiveOrZero(request.radiusMeters(), RADIUS_METERS_PARAMETER);
     rejectDepth(request.depthMeters(), UxvOperation.LOITER);
 
     GeoPosition position = withAltitude(request.position(), request.altitudeMeters());
@@ -230,7 +234,7 @@ public class GenericPx4UavModel extends GenericPx4UxvModel implements UavModel {
             ? DEFAULT_ACCEPTANCE_RADIUS_METERS
             : item.radiusMeters();
 
-    requirePositiveOrZero(radiusMeters, "radiusMeters");
+    requirePositiveOrZero(radiusMeters, RADIUS_METERS_PARAMETER);
 
     if (toDuration(item.holdDuration(), "holdDuration").isZero()) {
       return MavlinkMissionItemIntFactory.loiterUnlimited(
@@ -250,7 +254,7 @@ public class GenericPx4UavModel extends GenericPx4UxvModel implements UavModel {
       PlanItem item,
       List<PlanValidationIssue> issues) {
     if (item.depthMeters() != null) {
-      issues.add(new PlanValidationIssue(UxvOperation.BUILD_MISSION, "Mission item " + index + " contains depthMeters, which is not valid for a UAV model"));
+      issues.add(new PlanValidationIssue(UxvOperation.BUILD_MISSION, MISSION_ITEM_PREFIX + index + " contains depthMeters, which is not valid for a UAV model"));
     }
 
     if ((item.type() == PlanItemType.WAYPOINT
@@ -258,16 +262,16 @@ public class GenericPx4UavModel extends GenericPx4UxvModel implements UavModel {
         && item.position() != null
         && item.altitudeMeters() == null
         && item.position().getPreferredAltitudeMeters() == null) {
-      issues.add(new PlanValidationIssue(UxvOperation.BUILD_MISSION, "Mission item " + index + " requires an MSL, AGL, or relative altitude"));
+      issues.add(new PlanValidationIssue(UxvOperation.BUILD_MISSION, MISSION_ITEM_PREFIX + index + " requires an MSL, AGL, or relative altitude"));
     }
 
     if (item.speedMetersPerSecond() != null) {
-      issues.add(new PlanValidationIssue(UxvOperation.BUILD_MISSION, "Mission item " + index + " speedMetersPerSecond is not currently mapped by this PX4 UAV model"));
+      issues.add(new PlanValidationIssue(UxvOperation.BUILD_MISSION, MISSION_ITEM_PREFIX + index + " speedMetersPerSecond is not currently mapped by this PX4 UAV model"));
     }
 
     if (item.type() == PlanItemType.ORBIT
         || item.type() == PlanItemType.HOLD_POSITION) {
-      issues.add(new PlanValidationIssue(UxvOperation.BUILD_MISSION, "Mission item " + index + " type " + item.type() + " is not supported by this PX4 UAV model"));
+      issues.add(new PlanValidationIssue(UxvOperation.BUILD_MISSION, MISSION_ITEM_PREFIX + index + " type " + item.type() + " is not supported by this PX4 UAV model"));
     }
   }
 }

@@ -31,6 +31,10 @@ import lombok.ToString;
 @ToString
 public class SslConfig extends SslConfigDTO implements Config {
 
+  private static final String KEY_STORE = "keyStore";
+  private static final String TRUST_STORE = "trustStore";
+  private static final String CLIENT_CERTIFICATE_REQUIRED = "clientCertificateRequired";
+
   public SslConfig(ConfigurationProperties config) {
     this(config, "tls");
   }
@@ -43,23 +47,23 @@ public class SslConfig extends SslConfigDTO implements Config {
 
     String defaultContext = "dtls".equalsIgnoreCase(transport) ? "DTLSv1.2" : "TLSv1.3";
     this.context = securityProps.getProperty("context", defaultContext);
-    this.clientCertificateRequired = securityProps.getBooleanProperty("clientCertificateRequired", false);
+    this.clientCertificateRequired = securityProps.getBooleanProperty(CLIENT_CERTIFICATE_REQUIRED, false);
     this.clientCertificateWanted = securityProps.getBooleanProperty("clientCertificateWanted", false);
     this.hostnameVerificationEnabled = securityProps.getBooleanProperty("hostnameVerificationEnabled", true);
     this.crlUrl = securityProps.getProperty("crlUrl", null);
     this.crlInterval = securityProps.getLongProperty("crlInterval", 3600000L);
     ConfigurationProperties keyStoreProperties =
-        securityProps.get("keyStore") instanceof ConfigurationProperties properties
+        securityProps.get(KEY_STORE) instanceof ConfigurationProperties properties
             ? properties : new ConfigurationProperties();
     ConfigurationProperties trustStoreProperties =
-        securityProps.get("trustStore") instanceof ConfigurationProperties properties
+        securityProps.get(TRUST_STORE) instanceof ConfigurationProperties properties
             ? properties : new ConfigurationProperties();
     this.keyStore = new KeyStoreConfig(keyStoreProperties);
     this.trustStore = new KeyStoreConfig(trustStoreProperties);
   }
 
   private ConfigurationProperties locateConfig(ConfigurationProperties config, String transport) {
-    if (config.containsKey("keyStore") || config.containsKey("trustStore") || config.containsKey("clientCertificateRequired")) {
+    if (config.containsKey(KEY_STORE) || config.containsKey(TRUST_STORE) || config.containsKey(CLIENT_CERTIFICATE_REQUIRED)) {
       return config;
     }
 
@@ -117,13 +121,13 @@ public class SslConfig extends SslConfigDTO implements Config {
   public ConfigurationProperties toConfigurationProperties() {
     ConfigurationProperties config = new ConfigurationProperties();
     config.put("context", this.context);
-    config.put("clientCertificateRequired", this.clientCertificateRequired);
+    config.put(CLIENT_CERTIFICATE_REQUIRED, this.clientCertificateRequired);
     config.put("clientCertificateWanted", this.clientCertificateWanted);
     config.put("hostnameVerificationEnabled", this.hostnameVerificationEnabled);
     config.put("crlUrl", this.crlUrl);
     config.put("crlInterval", this.crlInterval);
-    config.put("keyStore", ((KeyStoreConfig) keyStore).toConfigurationProperties());
-    config.put("trustStore", ((KeyStoreConfig) trustStore).toConfigurationProperties());
+    config.put(KEY_STORE, ((KeyStoreConfig) keyStore).toConfigurationProperties());
+    config.put(TRUST_STORE, ((KeyStoreConfig) trustStore).toConfigurationProperties());
     return config;
   }
 }

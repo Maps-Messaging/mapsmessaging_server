@@ -36,7 +36,6 @@ import io.mapsmessaging.network.protocol.impl.coap.packet.options.*;
 
 import java.io.IOException;
 import java.util.*;
-import java.util.Map.Entry;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
@@ -189,11 +188,10 @@ public abstract class PublishListener extends  Listener {
   private List<byte[]> extractTags(Message message){
     List<byte[]> etags = new ArrayList<>();
     Map<String, TypedData> map = message.getDataMap();
-    for(Entry<String, TypedData> entry:map.entrySet()){
-      if(entry.getKey().startsWith("etag_")){
-        etags.add((byte[])entry.getValue().getData());
-      }
-    }
+    map.entrySet().stream()
+        .filter(entry -> entry.getKey().startsWith("etag_"))
+        .map(entry -> (byte[])entry.getValue().getData())
+        .forEachOrdered(etags::add);
     return etags;
   }
 

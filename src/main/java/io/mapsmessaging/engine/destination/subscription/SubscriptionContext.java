@@ -251,8 +251,8 @@ public class SubscriptionContext  extends PersistentObject implements Comparable
 
   @Override
   public boolean equals(Object lhs) {
-    if (lhs instanceof SubscriptionContext) {
-      return ((SubscriptionContext) lhs).qualityOfService == qualityOfService;
+    if (lhs instanceof SubscriptionContext matchedSubscriptionContext) {
+      return (matchedSubscriptionContext).qualityOfService == qualityOfService;
     }
     return false;
   }

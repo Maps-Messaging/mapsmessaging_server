@@ -60,6 +60,10 @@ import static io.mapsmessaging.rest.api.Constants.URI_PATH;
 @Path(URI_PATH + "/server/twin/config")
 public class TwinConfigurationApi extends BaseRestApi {
 
+  private static final String TWIN_CONFIGURATION_ERROR = "Server twin configuration error";
+  private static final String SAVE_CONFIGURATION_ERROR = "Unable to save twin configuration";
+  private static final String DRONE_INFO_PATH = "/server/twin/config/drone-info";
+
   private static final String RESOURCE = "server/twin/config";
 
   @GET
@@ -71,7 +75,7 @@ public class TwinConfigurationApi extends BaseRestApi {
           @ApiResponse(responseCode = "200", description = "Twin configuration returned", content = @Content(mediaType = "application/json", schema = @Schema(implementation = TwinManagerConfig.class))),
           @ApiResponse(responseCode = "401", description = "Invalid credentials or unauthorized access", content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))),
           @ApiResponse(responseCode = "403", description = "User is not authorised to access the resource", content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))),
-          @ApiResponse(responseCode = "500", description = "Server twin configuration error", content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class)))
+          @ApiResponse(responseCode = "500", description = TWIN_CONFIGURATION_ERROR, content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class)))
       }
   )
   public Response getTwinConfiguration() {
@@ -81,7 +85,7 @@ public class TwinConfigurationApi extends BaseRestApi {
     } catch (WebApplicationException ex) {
       return mapAuthOrRethrow(ex);
     } catch (Exception ex) {
-      return internalServerError("Server twin configuration error");
+      return internalServerError(TWIN_CONFIGURATION_ERROR);
     }
   }
 
@@ -95,7 +99,7 @@ public class TwinConfigurationApi extends BaseRestApi {
           @ApiResponse(responseCode = "200", description = "Core twin configuration returned", content = @Content(mediaType = "application/json", schema = @Schema(implementation = TwinCoreConfigDTO.class))),
           @ApiResponse(responseCode = "401", description = "Invalid credentials or unauthorized access", content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))),
           @ApiResponse(responseCode = "403", description = "User is not authorised to access the resource", content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))),
-          @ApiResponse(responseCode = "500", description = "Server twin configuration error", content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class)))
+          @ApiResponse(responseCode = "500", description = TWIN_CONFIGURATION_ERROR, content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class)))
       }
   )
   public Response getCoreConfig() {
@@ -105,7 +109,7 @@ public class TwinConfigurationApi extends BaseRestApi {
     } catch (WebApplicationException ex) {
       return mapAuthOrRethrow(ex);
     } catch (Exception ex) {
-      return internalServerError("Server twin configuration error");
+      return internalServerError(TWIN_CONFIGURATION_ERROR);
     }
   }
 
@@ -126,7 +130,7 @@ public class TwinConfigurationApi extends BaseRestApi {
           @ApiResponse(responseCode = "400", description = "Invalid core twin configuration", content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))),
           @ApiResponse(responseCode = "401", description = "Invalid credentials or unauthorized access", content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))),
           @ApiResponse(responseCode = "403", description = "User is not authorised to access the resource", content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))),
-          @ApiResponse(responseCode = "500", description = "Unable to save twin configuration", content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class)))
+          @ApiResponse(responseCode = "500", description = SAVE_CONFIGURATION_ERROR, content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class)))
       }
   )
   public Response updateCoreConfig(TwinCoreConfigDTO coreConfig) {
@@ -140,9 +144,9 @@ public class TwinConfigurationApi extends BaseRestApi {
     } catch (WebApplicationException ex) {
       return mapAuthOrRethrow(ex);
     } catch (IOException ex) {
-      return internalServerError("Unable to save twin configuration");
+      return internalServerError(SAVE_CONFIGURATION_ERROR);
     } catch (Exception ex) {
-      return internalServerError("Server twin configuration error");
+      return internalServerError(TWIN_CONFIGURATION_ERROR);
     }
   }
 
@@ -157,7 +161,7 @@ public class TwinConfigurationApi extends BaseRestApi {
           @ApiResponse(responseCode = "401", description = "Invalid credentials or unauthorized access", content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))),
           @ApiResponse(responseCode = "403", description = "User is not authorised to access the resource", content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))),
           @ApiResponse(responseCode = "404", description = "TAK configuration is not configured", content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))),
-          @ApiResponse(responseCode = "500", description = "Server twin configuration error", content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class)))
+          @ApiResponse(responseCode = "500", description = TWIN_CONFIGURATION_ERROR, content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class)))
       }
   )
   public Response getTakConfig() {
@@ -167,7 +171,7 @@ public class TwinConfigurationApi extends BaseRestApi {
     } catch (WebApplicationException ex) {
       return mapAuthOrRethrow(ex);
     } catch (Exception ex) {
-      return internalServerError("Server twin configuration error");
+      return internalServerError(TWIN_CONFIGURATION_ERROR);
     }
   }
 
@@ -188,7 +192,7 @@ public class TwinConfigurationApi extends BaseRestApi {
           @ApiResponse(responseCode = "400", description = "Invalid TAK configuration", content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))),
           @ApiResponse(responseCode = "401", description = "Invalid credentials or unauthorized access", content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))),
           @ApiResponse(responseCode = "403", description = "User is not authorised to access the resource", content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))),
-          @ApiResponse(responseCode = "500", description = "Unable to save twin configuration", content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class)))
+          @ApiResponse(responseCode = "500", description = SAVE_CONFIGURATION_ERROR, content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class)))
       }
   )
   public Response putTakConfig(TakProtocolDTO takConfig) {
@@ -206,7 +210,7 @@ public class TwinConfigurationApi extends BaseRestApi {
           @ApiResponse(responseCode = "401", description = "Invalid credentials or unauthorized access", content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))),
           @ApiResponse(responseCode = "403", description = "User is not authorised to access the resource", content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))),
           @ApiResponse(responseCode = "404", description = "TAK configuration is not configured", content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))),
-          @ApiResponse(responseCode = "500", description = "Unable to save twin configuration", content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class)))
+          @ApiResponse(responseCode = "500", description = SAVE_CONFIGURATION_ERROR, content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class)))
       }
   )
   public Response deleteTakConfig() {
@@ -224,7 +228,7 @@ public class TwinConfigurationApi extends BaseRestApi {
           @ApiResponse(responseCode = "401", description = "Invalid credentials or unauthorized access", content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))),
           @ApiResponse(responseCode = "403", description = "User is not authorised to access the resource", content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))),
           @ApiResponse(responseCode = "404", description = "Publish configuration is not configured", content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))),
-          @ApiResponse(responseCode = "500", description = "Server twin configuration error", content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class)))
+          @ApiResponse(responseCode = "500", description = TWIN_CONFIGURATION_ERROR, content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class)))
       }
   )
   public Response getPublishConfig() {
@@ -234,7 +238,7 @@ public class TwinConfigurationApi extends BaseRestApi {
     } catch (WebApplicationException ex) {
       return mapAuthOrRethrow(ex);
     } catch (Exception ex) {
-      return internalServerError("Server twin configuration error");
+      return internalServerError(TWIN_CONFIGURATION_ERROR);
     }
   }
 
@@ -255,7 +259,7 @@ public class TwinConfigurationApi extends BaseRestApi {
           @ApiResponse(responseCode = "400", description = "Invalid publish configuration", content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))),
           @ApiResponse(responseCode = "401", description = "Invalid credentials or unauthorized access", content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))),
           @ApiResponse(responseCode = "403", description = "User is not authorised to access the resource", content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))),
-          @ApiResponse(responseCode = "500", description = "Unable to save twin configuration", content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class)))
+          @ApiResponse(responseCode = "500", description = SAVE_CONFIGURATION_ERROR, content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class)))
       }
   )
   public Response putPublishConfig(TwinPublishConfigDTO publishConfig) {
@@ -273,7 +277,7 @@ public class TwinConfigurationApi extends BaseRestApi {
           @ApiResponse(responseCode = "401", description = "Invalid credentials or unauthorized access", content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))),
           @ApiResponse(responseCode = "403", description = "User is not authorised to access the resource", content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))),
           @ApiResponse(responseCode = "404", description = "Publish configuration is not configured", content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))),
-          @ApiResponse(responseCode = "500", description = "Unable to save twin configuration", content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class)))
+          @ApiResponse(responseCode = "500", description = SAVE_CONFIGURATION_ERROR, content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class)))
       }
   )
   public Response deletePublishConfig() {
@@ -291,7 +295,7 @@ public class TwinConfigurationApi extends BaseRestApi {
           @ApiResponse(responseCode = "401", description = "Invalid credentials or unauthorized access", content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))),
           @ApiResponse(responseCode = "403", description = "User is not authorised to access the resource", content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))),
           @ApiResponse(responseCode = "404", description = "N2K configuration is not configured", content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))),
-          @ApiResponse(responseCode = "500", description = "Server twin configuration error", content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class)))
+          @ApiResponse(responseCode = "500", description = TWIN_CONFIGURATION_ERROR, content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class)))
       }
   )
   public Response getN2kConfig() {
@@ -301,7 +305,7 @@ public class TwinConfigurationApi extends BaseRestApi {
     } catch (WebApplicationException ex) {
       return mapAuthOrRethrow(ex);
     } catch (Exception ex) {
-      return internalServerError("Server twin configuration error");
+      return internalServerError(TWIN_CONFIGURATION_ERROR);
     }
   }
 
@@ -322,7 +326,7 @@ public class TwinConfigurationApi extends BaseRestApi {
           @ApiResponse(responseCode = "400", description = "Invalid N2K configuration", content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))),
           @ApiResponse(responseCode = "401", description = "Invalid credentials or unauthorized access", content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))),
           @ApiResponse(responseCode = "403", description = "User is not authorised to access the resource", content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))),
-          @ApiResponse(responseCode = "500", description = "Unable to save twin configuration", content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class)))
+          @ApiResponse(responseCode = "500", description = SAVE_CONFIGURATION_ERROR, content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class)))
       }
   )
   public Response putN2kConfig(N2KTwinConfig n2kConfig) {
@@ -340,7 +344,7 @@ public class TwinConfigurationApi extends BaseRestApi {
           @ApiResponse(responseCode = "401", description = "Invalid credentials or unauthorized access", content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))),
           @ApiResponse(responseCode = "403", description = "User is not authorised to access the resource", content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))),
           @ApiResponse(responseCode = "404", description = "N2K configuration is not configured", content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))),
-          @ApiResponse(responseCode = "500", description = "Unable to save twin configuration", content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class)))
+          @ApiResponse(responseCode = "500", description = SAVE_CONFIGURATION_ERROR, content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class)))
       }
   )
   public Response deleteN2kConfig() {
@@ -357,7 +361,7 @@ public class TwinConfigurationApi extends BaseRestApi {
           @ApiResponse(responseCode = "200", description = "MAVLink twin sources returned", content = @Content(mediaType = "application/json", array = @ArraySchema(schema = @Schema(implementation = MavlinkTwinConfigDTO.class)))),
           @ApiResponse(responseCode = "401", description = "Invalid credentials or unauthorized access", content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))),
           @ApiResponse(responseCode = "403", description = "User is not authorised to access the resource", content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))),
-          @ApiResponse(responseCode = "500", description = "Server twin configuration error", content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class)))
+          @ApiResponse(responseCode = "500", description = TWIN_CONFIGURATION_ERROR, content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class)))
       }
   )
   public Response listMavlinkSources() {
@@ -367,7 +371,7 @@ public class TwinConfigurationApi extends BaseRestApi {
     } catch (WebApplicationException ex) {
       return mapAuthOrRethrow(ex);
     } catch (Exception ex) {
-      return internalServerError("Server twin configuration error");
+      return internalServerError(TWIN_CONFIGURATION_ERROR);
     }
   }
 
@@ -382,7 +386,7 @@ public class TwinConfigurationApi extends BaseRestApi {
           @ApiResponse(responseCode = "401", description = "Invalid credentials or unauthorized access", content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))),
           @ApiResponse(responseCode = "403", description = "User is not authorised to access the resource", content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))),
           @ApiResponse(responseCode = "404", description = "MAVLink twin source not found", content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))),
-          @ApiResponse(responseCode = "500", description = "Server twin configuration error", content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class)))
+          @ApiResponse(responseCode = "500", description = TWIN_CONFIGURATION_ERROR, content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class)))
       }
   )
   public Response getMavlinkSource(@PathParam("name") String name) {
@@ -394,7 +398,7 @@ public class TwinConfigurationApi extends BaseRestApi {
     } catch (WebApplicationException ex) {
       return mapAuthOrRethrow(ex);
     } catch (Exception ex) {
-      return internalServerError("Server twin configuration error");
+      return internalServerError(TWIN_CONFIGURATION_ERROR);
     }
   }
 
@@ -416,7 +420,7 @@ public class TwinConfigurationApi extends BaseRestApi {
           @ApiResponse(responseCode = "401", description = "Invalid credentials or unauthorized access", content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))),
           @ApiResponse(responseCode = "403", description = "User is not authorised to access the resource", content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))),
           @ApiResponse(responseCode = "409", description = "MAVLink twin source already exists", content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))),
-          @ApiResponse(responseCode = "500", description = "Unable to save twin configuration", content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class)))
+          @ApiResponse(responseCode = "500", description = SAVE_CONFIGURATION_ERROR, content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class)))
       }
   )
   public Response createMavlinkSource(MavlinkTwinConfigDTO mavlinkConfig) {
@@ -430,9 +434,9 @@ public class TwinConfigurationApi extends BaseRestApi {
     } catch (WebApplicationException ex) {
       return mapAuthOrRethrow(ex);
     } catch (IOException ex) {
-      return internalServerError("Unable to save twin configuration");
+      return internalServerError(SAVE_CONFIGURATION_ERROR);
     } catch (Exception ex) {
-      return internalServerError("Server twin configuration error");
+      return internalServerError(TWIN_CONFIGURATION_ERROR);
     }
   }
 
@@ -454,7 +458,7 @@ public class TwinConfigurationApi extends BaseRestApi {
           @ApiResponse(responseCode = "401", description = "Invalid credentials or unauthorized access", content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))),
           @ApiResponse(responseCode = "403", description = "User is not authorised to access the resource", content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))),
           @ApiResponse(responseCode = "404", description = "MAVLink twin source not found", content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))),
-          @ApiResponse(responseCode = "500", description = "Unable to save twin configuration", content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class)))
+          @ApiResponse(responseCode = "500", description = SAVE_CONFIGURATION_ERROR, content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class)))
       }
   )
   public Response updateMavlinkSource(@PathParam("name") String name, MavlinkTwinConfigDTO mavlinkConfig) {
@@ -468,9 +472,9 @@ public class TwinConfigurationApi extends BaseRestApi {
     } catch (WebApplicationException ex) {
       return mapAuthOrRethrow(ex);
     } catch (IOException ex) {
-      return internalServerError("Unable to save twin configuration");
+      return internalServerError(SAVE_CONFIGURATION_ERROR);
     } catch (Exception ex) {
-      return internalServerError("Server twin configuration error");
+      return internalServerError(TWIN_CONFIGURATION_ERROR);
     }
   }
 
@@ -485,7 +489,7 @@ public class TwinConfigurationApi extends BaseRestApi {
           @ApiResponse(responseCode = "401", description = "Invalid credentials or unauthorized access", content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))),
           @ApiResponse(responseCode = "403", description = "User is not authorised to access the resource", content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))),
           @ApiResponse(responseCode = "404", description = "MAVLink twin source not found", content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))),
-          @ApiResponse(responseCode = "500", description = "Unable to save twin configuration", content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class)))
+          @ApiResponse(responseCode = "500", description = SAVE_CONFIGURATION_ERROR, content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class)))
       }
   )
   public Response deleteMavlinkSource(@PathParam("name") String name) {
@@ -499,9 +503,9 @@ public class TwinConfigurationApi extends BaseRestApi {
     } catch (WebApplicationException ex) {
       return mapAuthOrRethrow(ex);
     } catch (IOException ex) {
-      return internalServerError("Unable to save twin configuration");
+      return internalServerError(SAVE_CONFIGURATION_ERROR);
     } catch (Exception ex) {
-      return internalServerError("Server twin configuration error");
+      return internalServerError(TWIN_CONFIGURATION_ERROR);
     }
   }
 
@@ -515,7 +519,7 @@ public class TwinConfigurationApi extends BaseRestApi {
           @ApiResponse(responseCode = "200", description = "Drone model names returned", content = @Content(mediaType = "application/json", array = @ArraySchema(schema = @Schema(type = "string")))),
           @ApiResponse(responseCode = "401", description = "Invalid credentials or unauthorized access", content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))),
           @ApiResponse(responseCode = "403", description = "User is not authorised to access the resource", content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))),
-          @ApiResponse(responseCode = "500", description = "Server twin configuration error", content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class)))
+          @ApiResponse(responseCode = "500", description = TWIN_CONFIGURATION_ERROR, content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class)))
       }
   )
   public Response listDroneModels() {
@@ -525,7 +529,7 @@ public class TwinConfigurationApi extends BaseRestApi {
     } catch (WebApplicationException ex) {
       return mapAuthOrRethrow(ex);
     } catch (Exception ex) {
-      return internalServerError("Server twin configuration error");
+      return internalServerError(TWIN_CONFIGURATION_ERROR);
     }
   }
 
@@ -539,7 +543,7 @@ public class TwinConfigurationApi extends BaseRestApi {
           @ApiResponse(responseCode = "200", description = "Geospatial area names returned", content = @Content(mediaType = "application/json", array = @ArraySchema(schema = @Schema(type = "string")))),
           @ApiResponse(responseCode = "401", description = "Invalid credentials or unauthorized access", content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))),
           @ApiResponse(responseCode = "403", description = "User is not authorised to access the resource", content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))),
-          @ApiResponse(responseCode = "500", description = "Server twin configuration error", content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class)))
+          @ApiResponse(responseCode = "500", description = TWIN_CONFIGURATION_ERROR, content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class)))
       }
   )
   public Response listGeospatialAreaNames() {
@@ -549,7 +553,7 @@ public class TwinConfigurationApi extends BaseRestApi {
     } catch (WebApplicationException ex) {
       return mapAuthOrRethrow(ex);
     } catch (Exception ex) {
-      return internalServerError("Server twin configuration error");
+      return internalServerError(TWIN_CONFIGURATION_ERROR);
     }
   }
 
@@ -563,7 +567,7 @@ public class TwinConfigurationApi extends BaseRestApi {
           @ApiResponse(responseCode = "200", description = "Drone configurations returned", content = @Content(mediaType = "application/json", array = @ArraySchema(schema = @Schema(implementation = DroneInfoDTO.class)))),
           @ApiResponse(responseCode = "401", description = "Invalid credentials or unauthorized access", content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))),
           @ApiResponse(responseCode = "403", description = "User is not authorised to access the resource", content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))),
-          @ApiResponse(responseCode = "500", description = "Server twin configuration error", content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class)))
+          @ApiResponse(responseCode = "500", description = TWIN_CONFIGURATION_ERROR, content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class)))
       }
   )
   public Response listDrones() {
@@ -573,7 +577,7 @@ public class TwinConfigurationApi extends BaseRestApi {
     } catch (WebApplicationException ex) {
       return mapAuthOrRethrow(ex);
     } catch (Exception ex) {
-      return internalServerError("Server twin configuration error");
+      return internalServerError(TWIN_CONFIGURATION_ERROR);
     }
   }
 
@@ -588,7 +592,7 @@ public class TwinConfigurationApi extends BaseRestApi {
           @ApiResponse(responseCode = "401", description = "Invalid credentials or unauthorized access", content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))),
           @ApiResponse(responseCode = "403", description = "User is not authorised to access the resource", content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))),
           @ApiResponse(responseCode = "404", description = "Drone configuration not found", content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))),
-          @ApiResponse(responseCode = "500", description = "Server twin configuration error", content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class)))
+          @ApiResponse(responseCode = "500", description = TWIN_CONFIGURATION_ERROR, content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class)))
       }
   )
   public Response getDrone(@PathParam("name") String name) {
@@ -600,7 +604,7 @@ public class TwinConfigurationApi extends BaseRestApi {
     } catch (WebApplicationException ex) {
       return mapAuthOrRethrow(ex);
     } catch (Exception ex) {
-      return internalServerError("Server twin configuration error");
+      return internalServerError(TWIN_CONFIGURATION_ERROR);
     }
   }
 
@@ -622,7 +626,7 @@ public class TwinConfigurationApi extends BaseRestApi {
           @ApiResponse(responseCode = "401", description = "Invalid credentials or unauthorized access", content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))),
           @ApiResponse(responseCode = "403", description = "User is not authorised to access the resource", content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))),
           @ApiResponse(responseCode = "409", description = "Drone name or UUID already exists", content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))),
-          @ApiResponse(responseCode = "500", description = "Unable to save twin configuration", content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class)))
+          @ApiResponse(responseCode = "500", description = SAVE_CONFIGURATION_ERROR, content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class)))
       }
   )
   public Response createDrone(DroneInfoDTO droneInfo) {
@@ -636,9 +640,9 @@ public class TwinConfigurationApi extends BaseRestApi {
     } catch (WebApplicationException ex) {
       return mapAuthOrRethrow(ex);
     } catch (IOException ex) {
-      return internalServerError("Unable to save twin configuration");
+      return internalServerError(SAVE_CONFIGURATION_ERROR);
     } catch (Exception ex) {
-      return internalServerError("Server twin configuration error");
+      return internalServerError(TWIN_CONFIGURATION_ERROR);
     }
   }
 
@@ -661,7 +665,7 @@ public class TwinConfigurationApi extends BaseRestApi {
           @ApiResponse(responseCode = "403", description = "User is not authorised to access the resource", content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))),
           @ApiResponse(responseCode = "404", description = "Drone configuration not found", content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))),
           @ApiResponse(responseCode = "409", description = "Drone identity conflicts with another configuration", content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))),
-          @ApiResponse(responseCode = "500", description = "Unable to save twin configuration", content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class)))
+          @ApiResponse(responseCode = "500", description = SAVE_CONFIGURATION_ERROR, content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class)))
       }
   )
   public Response updateDrone(@PathParam("name") String name, DroneInfoDTO droneInfo) {
@@ -675,9 +679,9 @@ public class TwinConfigurationApi extends BaseRestApi {
     } catch (WebApplicationException ex) {
       return mapAuthOrRethrow(ex);
     } catch (IOException ex) {
-      return internalServerError("Unable to save twin configuration");
+      return internalServerError(SAVE_CONFIGURATION_ERROR);
     } catch (Exception ex) {
-      return internalServerError("Server twin configuration error");
+      return internalServerError(TWIN_CONFIGURATION_ERROR);
     }
   }
 
@@ -693,14 +697,14 @@ public class TwinConfigurationApi extends BaseRestApi {
           @ApiResponse(responseCode = "401", description = "Invalid credentials or unauthorized access", content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))),
           @ApiResponse(responseCode = "403", description = "User is not authorised to access the resource", content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))),
           @ApiResponse(responseCode = "404", description = "Drone configuration not found", content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))),
-          @ApiResponse(responseCode = "500", description = "Unable to save twin configuration", content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class)))
+          @ApiResponse(responseCode = "500", description = SAVE_CONFIGURATION_ERROR, content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class)))
       }
   )
   public Response deleteDrone(@PathParam("name") String name) {
     try {
       hasAccess(RESOURCE);
       store().deleteDrone(name);
-      removeUriFromCache(URI_PATH + "/server/twin/config/drone-info");
+      removeUriFromCache(URI_PATH + DRONE_INFO_PATH);
       removeUriFromCache(URI_PATH + "/server/twin/config/mavlink");
       return noContent();
     } catch (TwinConfigurationStore.TwinConfigurationException ex) {
@@ -708,9 +712,9 @@ public class TwinConfigurationApi extends BaseRestApi {
     } catch (WebApplicationException ex) {
       return mapAuthOrRethrow(ex);
     } catch (IOException ex) {
-      return internalServerError("Unable to save twin configuration");
+      return internalServerError(SAVE_CONFIGURATION_ERROR);
     } catch (Exception ex) {
-      return internalServerError("Server twin configuration error");
+      return internalServerError(TWIN_CONFIGURATION_ERROR);
     }
   }
 
@@ -732,7 +736,7 @@ public class TwinConfigurationApi extends BaseRestApi {
           @ApiResponse(responseCode = "401", description = "Invalid credentials or unauthorized access", content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))),
           @ApiResponse(responseCode = "403", description = "User is not authorised to access the resource", content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))),
           @ApiResponse(responseCode = "404", description = "Drone configuration not found", content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))),
-          @ApiResponse(responseCode = "500", description = "Unable to save twin configuration", content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class)))
+          @ApiResponse(responseCode = "500", description = SAVE_CONFIGURATION_ERROR, content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class)))
       }
   )
   public Response updateAuthorityBindings(@PathParam("uuid") String uuid, AuthorityBindingsUpdateDTO update) {
@@ -740,16 +744,16 @@ public class TwinConfigurationApi extends BaseRestApi {
       hasAccess(RESOURCE);
       store().updateAuthorityBindings(uuid, update);
       removeUriFromCache(URI_PATH + "/server/twin/config");
-      removeUriFromCache(URI_PATH + "/server/twin/config/drone-info");
+      removeUriFromCache(URI_PATH + DRONE_INFO_PATH);
       return noContent();
     } catch (TwinConfigurationStore.TwinConfigurationException ex) {
       return status(ex);
     } catch (WebApplicationException ex) {
       return mapAuthOrRethrow(ex);
     } catch (IOException ex) {
-      return internalServerError("Unable to save twin configuration");
+      return internalServerError(SAVE_CONFIGURATION_ERROR);
     } catch (Exception ex) {
-      return internalServerError("Server twin configuration error");
+      return internalServerError(TWIN_CONFIGURATION_ERROR);
     }
   }
 
@@ -765,7 +769,7 @@ public class TwinConfigurationApi extends BaseRestApi {
           @ApiResponse(responseCode = "401", description = "Invalid credentials or unauthorized access", content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))),
           @ApiResponse(responseCode = "403", description = "User is not authorised to access the resource", content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))),
           @ApiResponse(responseCode = "404", description = "Authority UUID not found", content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))),
-          @ApiResponse(responseCode = "500", description = "Unable to save twin configuration", content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class)))
+          @ApiResponse(responseCode = "500", description = SAVE_CONFIGURATION_ERROR, content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class)))
       }
   )
   public Response deleteAuthority(@PathParam("uuid") String uuid) {
@@ -773,16 +777,16 @@ public class TwinConfigurationApi extends BaseRestApi {
       hasAccess(RESOURCE);
       store().deleteAuthority(uuid);
       removeUriFromCache(URI_PATH + "/server/twin/config");
-      removeUriFromCache(URI_PATH + "/server/twin/config/drone-info");
+      removeUriFromCache(URI_PATH + DRONE_INFO_PATH);
       return noContent();
     } catch (TwinConfigurationStore.TwinConfigurationException ex) {
       return status(ex);
     } catch (WebApplicationException ex) {
       return mapAuthOrRethrow(ex);
     } catch (IOException ex) {
-      return internalServerError("Unable to save twin configuration");
+      return internalServerError(SAVE_CONFIGURATION_ERROR);
     } catch (Exception ex) {
-      return internalServerError("Server twin configuration error");
+      return internalServerError(TWIN_CONFIGURATION_ERROR);
     }
   }
 
@@ -796,7 +800,7 @@ public class TwinConfigurationApi extends BaseRestApi {
           @ApiResponse(responseCode = "200", description = "State adapter configurations returned", content = @Content(mediaType = "application/json", schema = @Schema(type = "object", additionalProperties = Schema.AdditionalPropertiesValue.TRUE, additionalPropertiesSchema = Object.class))),
           @ApiResponse(responseCode = "401", description = "Invalid credentials or unauthorized access", content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))),
           @ApiResponse(responseCode = "403", description = "User is not authorised to access the resource", content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))),
-          @ApiResponse(responseCode = "500", description = "Server twin configuration error", content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class)))
+          @ApiResponse(responseCode = "500", description = TWIN_CONFIGURATION_ERROR, content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class)))
       }
   )
   public Response listAdapterConfigs() {
@@ -806,7 +810,7 @@ public class TwinConfigurationApi extends BaseRestApi {
     } catch (WebApplicationException ex) {
       return mapAuthOrRethrow(ex);
     } catch (Exception ex) {
-      return internalServerError("Server twin configuration error");
+      return internalServerError(TWIN_CONFIGURATION_ERROR);
     }
   }
 
@@ -827,7 +831,7 @@ public class TwinConfigurationApi extends BaseRestApi {
           @ApiResponse(responseCode = "400", description = "Invalid adapter configuration map", content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))),
           @ApiResponse(responseCode = "401", description = "Invalid credentials or unauthorized access", content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))),
           @ApiResponse(responseCode = "403", description = "User is not authorised to access the resource", content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))),
-          @ApiResponse(responseCode = "500", description = "Unable to save twin configuration", content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class)))
+          @ApiResponse(responseCode = "500", description = SAVE_CONFIGURATION_ERROR, content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class)))
       }
   )
   public Response replaceAdapterConfigs(Map<String, Map<String, Object>> adapterConfigs) {
@@ -845,7 +849,7 @@ public class TwinConfigurationApi extends BaseRestApi {
           @ApiResponse(responseCode = "401", description = "Invalid credentials or unauthorized access", content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))),
           @ApiResponse(responseCode = "403", description = "User is not authorised to access the resource", content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))),
           @ApiResponse(responseCode = "404", description = "State adapter configuration not found", content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))),
-          @ApiResponse(responseCode = "500", description = "Server twin configuration error", content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class)))
+          @ApiResponse(responseCode = "500", description = TWIN_CONFIGURATION_ERROR, content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class)))
       }
   )
   public Response getAdapterConfig(@PathParam("name") String name) {
@@ -855,7 +859,7 @@ public class TwinConfigurationApi extends BaseRestApi {
     } catch (WebApplicationException ex) {
       return mapAuthOrRethrow(ex);
     } catch (Exception ex) {
-      return internalServerError("Server twin configuration error");
+      return internalServerError(TWIN_CONFIGURATION_ERROR);
     }
   }
 
@@ -877,7 +881,7 @@ public class TwinConfigurationApi extends BaseRestApi {
           @ApiResponse(responseCode = "401", description = "Invalid credentials or unauthorized access", content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))),
           @ApiResponse(responseCode = "403", description = "User is not authorised to access the resource", content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))),
           @ApiResponse(responseCode = "409", description = "State adapter configuration already exists", content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))),
-          @ApiResponse(responseCode = "500", description = "Unable to save twin configuration", content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class)))
+          @ApiResponse(responseCode = "500", description = SAVE_CONFIGURATION_ERROR, content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class)))
       }
   )
   public Response createAdapterConfig(@PathParam("name") String name, Map<String, Object> adapterConfig) {
@@ -902,7 +906,7 @@ public class TwinConfigurationApi extends BaseRestApi {
           @ApiResponse(responseCode = "401", description = "Invalid credentials or unauthorized access", content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))),
           @ApiResponse(responseCode = "403", description = "User is not authorised to access the resource", content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))),
           @ApiResponse(responseCode = "404", description = "State adapter configuration not found", content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))),
-          @ApiResponse(responseCode = "500", description = "Unable to save twin configuration", content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class)))
+          @ApiResponse(responseCode = "500", description = SAVE_CONFIGURATION_ERROR, content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class)))
       }
   )
   public Response updateAdapterConfig(@PathParam("name") String name, Map<String, Object> adapterConfig) {
@@ -920,7 +924,7 @@ public class TwinConfigurationApi extends BaseRestApi {
           @ApiResponse(responseCode = "401", description = "Invalid credentials or unauthorized access", content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))),
           @ApiResponse(responseCode = "403", description = "User is not authorised to access the resource", content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))),
           @ApiResponse(responseCode = "404", description = "State adapter configuration not found", content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))),
-          @ApiResponse(responseCode = "500", description = "Unable to save twin configuration", content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class)))
+          @ApiResponse(responseCode = "500", description = SAVE_CONFIGURATION_ERROR, content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class)))
       }
   )
   public Response deleteAdapterConfig(@PathParam("name") String name) {
@@ -982,9 +986,9 @@ public class TwinConfigurationApi extends BaseRestApi {
     } catch (WebApplicationException ex) {
       return mapAuthOrRethrow(ex);
     } catch (IOException ex) {
-      return internalServerError("Unable to save twin configuration");
+      return internalServerError(SAVE_CONFIGURATION_ERROR);
     } catch (Exception ex) {
-      return internalServerError("Server twin configuration error");
+      return internalServerError(TWIN_CONFIGURATION_ERROR);
     }
   }
 
@@ -999,9 +1003,9 @@ public class TwinConfigurationApi extends BaseRestApi {
     } catch (WebApplicationException ex) {
       return mapAuthOrRethrow(ex);
     } catch (IOException ex) {
-      return internalServerError("Unable to save twin configuration");
+      return internalServerError(SAVE_CONFIGURATION_ERROR);
     } catch (Exception ex) {
-      return internalServerError("Server twin configuration error");
+      return internalServerError(TWIN_CONFIGURATION_ERROR);
     }
   }
 
@@ -1016,9 +1020,9 @@ public class TwinConfigurationApi extends BaseRestApi {
     } catch (WebApplicationException ex) {
       return mapAuthOrRethrow(ex);
     } catch (IOException ex) {
-      return internalServerError("Unable to save twin configuration");
+      return internalServerError(SAVE_CONFIGURATION_ERROR);
     } catch (Exception ex) {
-      return internalServerError("Server twin configuration error");
+      return internalServerError(TWIN_CONFIGURATION_ERROR);
     }
   }
 

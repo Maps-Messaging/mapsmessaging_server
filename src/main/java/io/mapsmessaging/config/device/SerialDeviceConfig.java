@@ -23,7 +23,6 @@ import io.mapsmessaging.config.network.SerialDeviceHelper;
 import io.mapsmessaging.configuration.ConfigurationProperties;
 import io.mapsmessaging.dto.rest.config.BaseConfigDTO;
 import io.mapsmessaging.dto.rest.config.device.SerialBusDeviceDTO;
-import io.mapsmessaging.dto.rest.config.network.SerialDeviceDTO;
 
 import java.util.Map;
 import java.util.Objects;

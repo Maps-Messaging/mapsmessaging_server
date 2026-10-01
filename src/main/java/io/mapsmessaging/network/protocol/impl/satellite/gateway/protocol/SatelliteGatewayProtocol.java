@@ -61,6 +61,11 @@ import static io.mapsmessaging.logging.ServerLogMessages.*;
 
 public class SatelliteGatewayProtocol extends Protocol {
 
+  private static final String SCHEMA_KEY = "$schema";
+  private static final String DEVICE_ID_PLACEHOLDER = "{deviceId}";
+  private static final String MAILBOX_ID_PLACEHOLDER = "{mailboxId}";
+
+
   private final Logger logger = LoggerFactory.getLogger(SatelliteGatewayProtocol.class);
   private final SatelliteMessageRebuilder messageRebuilder;
   private final Session session;
@@ -121,8 +126,8 @@ public class SatelliteGatewayProtocol extends Protocol {
     session.resumeState();
     String outBoundNamespacePath = config.getCommonOutboundPublishRoot().trim();
     if(!outBoundNamespacePath.isEmpty()){
-      String path = outBoundNamespacePath.replace("{deviceId}", primeId);
-      path = path.replace("{mailboxId}", config.getMailboxId());
+      String path = outBoundNamespacePath.replace(DEVICE_ID_PLACEHOLDER, primeId);
+      path = path.replace(MAILBOX_ID_PLACEHOLDER, config.getMailboxId());
       logger.log(SATELLITE_SUBSCRIBE_TO, path, "common requests");
       SubscriptionContextBuilder subBuilder = new SubscriptionContextBuilder(path, ClientAcknowledgement.AUTO);
       subBuilder.setQos(QualityOfService.AT_MOST_ONCE)
@@ -133,8 +138,8 @@ public class SatelliteGatewayProtocol extends Protocol {
     }
     String outboundNameSpace = config.getMapsOutboundPublishRoot();
     if(!outboundNameSpace.isEmpty()){
-      String path = outboundNameSpace.replace("{deviceId}", primeId);
-      path = path.replace("{mailboxId}", config.getMailboxId());
+      String path = outboundNameSpace.replace(DEVICE_ID_PLACEHOLDER, primeId);
+      path = path.replace(MAILBOX_ID_PLACEHOLDER, config.getMailboxId());
       logger.log(SATELLITE_SUBSCRIBE_TO, path, "mapped requests");
       SubscriptionContextBuilder subBuilder = new SubscriptionContextBuilder(path, ClientAcknowledgement.AUTO);
       subBuilder.setQos(QualityOfService.AT_MOST_ONCE)
@@ -175,8 +180,8 @@ public class SatelliteGatewayProtocol extends Protocol {
     if(path == null || path.isEmpty()){
       path = defaultValue;
     }
-    path = path.replace("{deviceId}", primeId);
-    return path.replace("{mailboxId}", mailboxId);
+    path = path.replace(DEVICE_ID_PLACEHOLDER, primeId);
+    return path.replace(MAILBOX_ID_PLACEHOLDER, mailboxId);
   }
 
   @Override
@@ -426,8 +431,8 @@ public class SatelliteGatewayProtocol extends Protocol {
           messageCount += entry.getValue().size();
           String topic = entry.getKey();
           boolean isSchema = false;
-          if(topic.toLowerCase().startsWith("$schema")){
-            topic = topic.substring("$schema".length());
+          if(topic.toLowerCase().startsWith(SCHEMA_KEY)){
+            topic = topic.substring(SCHEMA_KEY.length());
             isSchema = true;
           }
           if(mapsIncomingNamespacePath != null && !mapsIncomingNamespacePath.isEmpty()){
@@ -435,7 +440,7 @@ public class SatelliteGatewayProtocol extends Protocol {
             topic = topic.replace("//", "/"); // to be sure
           }
           if(isSchema){
-            topic = "$schema"+topic;
+            topic = SCHEMA_KEY+topic;
           }
           publishEvents(topic, entry.getValue(), transformation1, meta);
         }
@@ -512,11 +517,7 @@ public class SatelliteGatewayProtocol extends Protocol {
             requestClose();
             return null;
           }).get(1, TimeUnit.SECONDS);
-    } catch (InterruptedException e) {
-      throw new RuntimeException(e);
-    } catch (ExecutionException e) {
-      throw new RuntimeException(e);
-    } catch (TimeoutException e) {
+    } catch (InterruptedException | ExecutionException | TimeoutException e) {
       throw new RuntimeException(e);
     }
   }

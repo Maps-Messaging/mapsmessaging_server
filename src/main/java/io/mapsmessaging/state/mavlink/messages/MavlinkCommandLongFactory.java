@@ -124,14 +124,14 @@ public final class MavlinkCommandLongFactory {
     MavlinkCommandLong commandLong =
         missionStart(targetSystem, targetComponent, sequence);
 
-    commandLong.setParam1(firstMissionItem);
-    commandLong.setParam2(lastMissionItem);
+    commandLong.setParam1((float) firstMissionItem);
+    commandLong.setParam2((float) lastMissionItem);
     return commandLong;
   }
 
   public static MavlinkCommandLong requestMessage(int targetSystem, int targetComponent, int sequence, int messageId) {
     MavlinkCommandLong commandLong = command(targetSystem, targetComponent, MAV_CMD_REQUEST_MESSAGE, sequence);
-    commandLong.setParam1(messageId);
+    commandLong.setParam1((float) messageId);
     return commandLong;
   }
 
@@ -153,7 +153,7 @@ public final class MavlinkCommandLongFactory {
             MAV_CMD_DO_SET_MISSION_CURRENT,
             sequence);
 
-    commandLong.setParam1(missionSequence);
+    commandLong.setParam1((float) missionSequence);
     commandLong.setParam2(resetMission ? 1.0f : 0.0f);
     return commandLong;
   }

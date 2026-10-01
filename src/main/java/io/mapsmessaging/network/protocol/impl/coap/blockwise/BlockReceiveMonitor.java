@@ -25,7 +25,6 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 
 public class BlockReceiveMonitor {
 
@@ -44,11 +43,10 @@ public class BlockReceiveMonitor {
   public void scanForIdle() {
     long expired = System.currentTimeMillis() + 30_000;
     List<String> expiredList = new ArrayList<>();
-    for (Entry<String, BlockReceiveState> entry : blockBasedPackets.entrySet()) {
-      if (entry.getValue().getLastAccess() < expired) {
-        expiredList.add(entry.getKey());
-      }
-    }
+    blockBasedPackets.entrySet().stream()
+        .filter(entry -> entry.getValue().getLastAccess() < expired)
+        .map(entry -> entry.getKey())
+        .forEachOrdered(expiredList::add);
     for (String key : expiredList) {
       blockBasedPackets.remove(key);
     }

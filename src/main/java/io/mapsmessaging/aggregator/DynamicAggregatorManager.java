@@ -262,7 +262,7 @@ public class DynamicAggregatorManager implements Aggregator, ClientConnection, M
       if ("#".equals(templateToken)) {
         StringBuilder tail = new StringBuilder();
         for (int index = destinationIndex; index < destinationTokens.length; index++) {
-          if (tail.length() > 0) {
+          if (!tail.isEmpty()) {
             tail.append('/');
           }
           tail.append(destinationTokens[index]);

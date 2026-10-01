@@ -42,6 +42,9 @@ import java.util.concurrent.TimeoutException;
 
 public class StreamCreateHandler extends JetStreamFrameHandler {
 
+  private static final String SUBJECTS_KEY = "subjects";
+
+
   @Override
   public String getName() {
     return "STREAM.CREATE";
@@ -62,11 +65,11 @@ public class StreamCreateHandler extends JetStreamFrameHandler {
     String streamName = parts[4];
 
     // Process subjects
-    if (!json.has("subjects") || !json.get("subjects").isJsonArray()) {
+    if (!json.has(SUBJECTS_KEY) || !json.get(SUBJECTS_KEY).isJsonArray()) {
       return new ErrFrame("Missing or invalid 'subjects' array");
     }
 
-    JsonArray subjectsArray = json.getAsJsonArray("subjects");
+    JsonArray subjectsArray = json.getAsJsonArray(SUBJECTS_KEY);
     List<CompletableFuture<Destination>> futures = new ArrayList<>();
 
     for (JsonElement entry : subjectsArray) {

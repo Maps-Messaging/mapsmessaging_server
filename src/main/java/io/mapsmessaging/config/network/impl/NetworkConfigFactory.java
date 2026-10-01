@@ -42,8 +42,7 @@ public class NetworkConfigFactory {
     config.put("discoverable", endPointConfigDTO.isDiscoverable());
     config.put("serverReadBufferSize", ConfigHelper.formatBufferSize(endPointConfigDTO.getServerReadBufferSize()));
     config.put("serverWriteBufferSize", ConfigHelper.formatBufferSize(endPointConfigDTO.getServerWriteBufferSize()));
-    if(endPointConfigDTO instanceof TcpConfigDTO){
-      TcpConfigDTO tcpConfigDTO = (TcpConfigDTO)endPointConfigDTO;
+    if(endPointConfigDTO instanceof TcpConfigDTO tcpConfigDTO){
       config.put("receiveBufferSize", tcpConfigDTO.getReceiveBufferSize());
       config.put("sendBufferSize", tcpConfigDTO.getSendBufferSize());
       config.put("timeout", tcpConfigDTO.getTimeout());
@@ -53,16 +52,15 @@ public class NetworkConfigFactory {
       config.put("enableReadDelayOnFragmentation", tcpConfigDTO.isEnableReadDelayOnFragmentation());
       config.put("fragmentationLimit", tcpConfigDTO.getFragmentationLimit());
     }
-    if(endPointConfigDTO instanceof UdpConfigDTO){
-      UdpConfigDTO udpConfigDTO = (UdpConfigDTO)endPointConfigDTO;
+    if(endPointConfigDTO instanceof UdpConfigDTO udpConfigDTO){
       config.put("packetReuseTimeout", udpConfigDTO.getPacketReuseTimeout());
       config.put("idleSessionTimeout", udpConfigDTO.getIdleSessionTimeout());
       config.put("HmacHostLookupCacheExpiry", udpConfigDTO.getHmacHostLookupCacheExpiry());
 
       List<ConfigurationProperties> nodeConfigs = new ArrayList<>();
-      for (HmacConfigDTO hmacConfig : udpConfigDTO.getHmacConfigList()) {
-        nodeConfigs.add(((Config)hmacConfig).toConfigurationProperties());
-      }
+      udpConfigDTO.getHmacConfigList().stream()
+          .map(hmacConfig -> ((Config)hmacConfig).toConfigurationProperties())
+          .forEachOrdered(nodeConfigs::add);
       config.put("nodeConfiguration", nodeConfigs);
     }
   }
@@ -109,9 +107,9 @@ public class NetworkConfigFactory {
 
   private static List<HmacConfigDTO> loadNodeConfig(List<ConfigurationProperties> nodes) {
     List<HmacConfigDTO> list = new ArrayList<>();
-    for (ConfigurationProperties node : nodes) {
-      list.add(new HmacConfig(node));
-    }
+    nodes.stream()
+        .map(node -> new HmacConfig(node))
+        .forEachOrdered(list::add);
     return list;
   }
 
@@ -140,9 +138,7 @@ public class NetworkConfigFactory {
       hasChanged = true;
     }
 
-    if (original instanceof TcpConfigDTO && config instanceof TcpConfigDTO) {
-      TcpConfigDTO newConfig = (TcpConfigDTO) config;
-      TcpConfigDTO oldConfig = (TcpConfigDTO) original;
+    if (original instanceof TcpConfigDTO oldConfig && config instanceof TcpConfigDTO newConfig) {
 
 
       if (oldConfig.getReceiveBufferSize() != newConfig.getReceiveBufferSize()) {
@@ -178,9 +174,7 @@ public class NetworkConfigFactory {
         hasChanged = true;
       }
     }
-    if (original instanceof UdpConfigDTO && config instanceof UdpConfigDTO) {
-      UdpConfigDTO newConfig = (UdpConfigDTO) config;
-      UdpConfigDTO oldConfig = (UdpConfigDTO) original;
+    if (original instanceof UdpConfigDTO oldConfig && config instanceof UdpConfigDTO newConfig) {
 
       if (oldConfig.getPacketReuseTimeout() != newConfig.getPacketReuseTimeout()) {
         oldConfig.setPacketReuseTimeout(newConfig.getPacketReuseTimeout());

@@ -546,11 +546,10 @@ class TwinConfigurationStore {
     validateOptionalPositiveFinite(droneInfo.getSurveyRadiusMeters(), "surveyRadiusMeters");
     validateOptionalPositiveFinite(
         droneInfo.getArrivalToleranceMeters(), "arrivalToleranceMeters");
-    if (droneInfo.getAltitudeMode() == AltitudeMode.FIXED) {
-      if (droneInfo.getAltitudeMeters() == null) {
-        throw new TwinConfigurationException(
-            "altitudeMeters is required when altitudeMode is FIXED", 400);
-      }
+    if (droneInfo.getAltitudeMode() == AltitudeMode.FIXED
+        && droneInfo.getAltitudeMeters() == null) {
+      throw new TwinConfigurationException(
+          "altitudeMeters is required when altitudeMode is FIXED", 400);
     }
     if (droneInfo.getAltitudeMeters() != null
         && !Double.isFinite(droneInfo.getAltitudeMeters())) {

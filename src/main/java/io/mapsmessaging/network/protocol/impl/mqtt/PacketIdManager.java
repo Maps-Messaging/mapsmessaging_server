@@ -50,7 +50,7 @@ public class PacketIdManager {
   }
 
   PacketIdManager(int maxPacketIdentifier) {
-    this.maxPacketIdentifier = Math.max(1, Math.min(maxPacketIdentifier, MAX_PACKET_IDENTIFIER));
+    this.maxPacketIdentifier = Math.clamp(maxPacketIdentifier, 1, MAX_PACKET_IDENTIFIER);
     outstandingPacketId = new TreeMap<>();
     reservations = new IdentityHashMap<>();
     waiters = new ArrayDeque<>();
@@ -68,7 +68,7 @@ public class PacketIdManager {
   }
 
   public synchronized void setMaximumOutstanding(int maximumOutstanding) {
-    this.maximumOutstanding = Math.max(1, Math.min(maximumOutstanding, maxPacketIdentifier));
+    this.maximumOutstanding = Math.clamp(maximumOutstanding, 1, maxPacketIdentifier);
   }
 
   public synchronized boolean tryAcquireSendSlot(SubscribedEventManager subscription) {

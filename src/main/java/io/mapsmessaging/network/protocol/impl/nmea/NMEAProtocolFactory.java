@@ -19,6 +19,10 @@
 
 package io.mapsmessaging.network.protocol.impl.nmea;
 
+import io.mapsmessaging.logging.Logger;
+import io.mapsmessaging.logging.LoggerFactory;
+import io.mapsmessaging.logging.ServerLogMessages;
+
 import io.mapsmessaging.network.io.EndPoint;
 import io.mapsmessaging.network.io.InterfaceInformation;
 import io.mapsmessaging.network.io.Packet;
@@ -35,6 +39,8 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class NMEAProtocolFactory extends ProtocolImplFactory {
+
+  private static final Logger logger = LoggerFactory.getLogger(NMEAProtocolFactory.class);
 
   private final Map<EndPoint, NMEAProtocol> mappedInterfaces = new ConcurrentHashMap<>();
 
@@ -79,7 +85,7 @@ public class NMEAProtocolFactory extends ProtocolImplFactory {
       NMEAProtocol manager = new NMEAProtocol( endPoint, null);
       mappedInterfaces.put(endPoint, manager);
     } catch (LoginException e) {
-      e.printStackTrace();
+      logger.log(ServerLogMessages.NMEA_PROTOCOL_CREATE_FAILED, e);
     }
   }
 
@@ -88,7 +94,7 @@ public class NMEAProtocolFactory extends ProtocolImplFactory {
       try {
         managers.close();
       } catch (IOException e) {
-        e.printStackTrace();
+        logger.log(ServerLogMessages.NMEA_PROTOCOL_CLOSE_FAILED, e);
       }
     }
     mappedInterfaces.clear();

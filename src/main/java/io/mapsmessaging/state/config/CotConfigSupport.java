@@ -25,6 +25,9 @@ import java.util.Locale;
 
 public final class CotConfigSupport {
 
+  private static final String DEFAULT_CIRCULAR_ERROR_METERS = "defaultCircularErrorMeters";
+  private static final String DEFAULT_LINEAR_ERROR_METERS = "defaultLinearErrorMeters";
+
   private CotConfigSupport() {}
 
   public static List<CotConfigDTO> parse(Object value) {
@@ -62,10 +65,10 @@ public final class CotConfigSupport {
         properties.put("uidPrefix", config.getUidPrefix());
       }
       if (config.getDefaultCircularErrorMeters() != null) {
-        properties.put("defaultCircularErrorMeters", config.getDefaultCircularErrorMeters());
+        properties.put(DEFAULT_CIRCULAR_ERROR_METERS, config.getDefaultCircularErrorMeters());
       }
       if (config.getDefaultLinearErrorMeters() != null) {
-        properties.put("defaultLinearErrorMeters", config.getDefaultLinearErrorMeters());
+        properties.put(DEFAULT_LINEAR_ERROR_METERS, config.getDefaultLinearErrorMeters());
       }
       properties.put("altitudeSource", config.getAltitudeSource());
       properties.put("publishTakv", config.isPublishTakv());
@@ -81,11 +84,11 @@ public final class CotConfigSupport {
     config.setHow(properties.getProperty("how", config.getHow()));
     config.setStaleTimeoutMillis(properties.getLongProperty("staleTimeoutMillis", config.getStaleTimeoutMillis()));
     config.setUidPrefix(properties.getProperty("uidPrefix", null));
-    if (properties.containsKey("defaultCircularErrorMeters")) {
-      config.setDefaultCircularErrorMeters(properties.getDoubleProperty("defaultCircularErrorMeters", config.getDefaultCircularErrorMeters()));
+    if (properties.containsKey(DEFAULT_CIRCULAR_ERROR_METERS)) {
+      config.setDefaultCircularErrorMeters(properties.getDoubleProperty(DEFAULT_CIRCULAR_ERROR_METERS, config.getDefaultCircularErrorMeters()));
     }
-    if (properties.containsKey("defaultLinearErrorMeters")) {
-      config.setDefaultLinearErrorMeters(properties.getDoubleProperty("defaultLinearErrorMeters", config.getDefaultLinearErrorMeters()));
+    if (properties.containsKey(DEFAULT_LINEAR_ERROR_METERS)) {
+      config.setDefaultLinearErrorMeters(properties.getDoubleProperty(DEFAULT_LINEAR_ERROR_METERS, config.getDefaultLinearErrorMeters()));
     }
     config.setAltitudeSource(properties.getProperty("altitudeSource", config.getAltitudeSource()));
     config.setPublishTakv(properties.getBooleanProperty("publishTakv", config.isPublishTakv()));
@@ -107,8 +110,8 @@ public final class CotConfigSupport {
     if (config.getStaleTimeoutMillis() < 1) {
       throw new IllegalArgumentException("CoT staleTimeoutMillis must be positive");
     }
-    validateError(config.getDefaultCircularErrorMeters(), "defaultCircularErrorMeters");
-    validateError(config.getDefaultLinearErrorMeters(), "defaultLinearErrorMeters");
+    validateError(config.getDefaultCircularErrorMeters(), DEFAULT_CIRCULAR_ERROR_METERS);
+    validateError(config.getDefaultLinearErrorMeters(), DEFAULT_LINEAR_ERROR_METERS);
   }
 
   private static void validateError(Double value, String name) {

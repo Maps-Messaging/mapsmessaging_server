@@ -88,11 +88,11 @@ public class SimpleStats implements Stats{
   private synchronized void process() {
     long currentTime = System.currentTimeMillis();
     if((nextProcessed+timeSpan) <= currentTime) {
-      double duration = (currentTime - nextProcessed);
+      double duration = (double) (currentTime - nextProcessed);
       long t = current.sum();
       duration = duration/1000L;
       if(duration == 0){
-        duration = timeSpan;
+        duration = (double) timeSpan;
       }
       perSecond = (float) ((t-previousSum)/duration);
       nextProcessed = currentTime;

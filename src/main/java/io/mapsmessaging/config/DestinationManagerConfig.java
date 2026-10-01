@@ -42,8 +42,8 @@ public class DestinationManagerConfig extends DestinationManagerConfigDTO implem
       for (ConfigurationProperties entry : (List<ConfigurationProperties>) configEntry) {
         this.data.add(new DestinationConfig(entry, featureManager));
       }
-    } else if (configEntry instanceof ConfigurationProperties) {
-      this.data.add(new DestinationConfig((ConfigurationProperties) configEntry, featureManager));
+    } else if (configEntry instanceof ConfigurationProperties matchedConfigurationProperties) {
+      this.data.add(new DestinationConfig(matchedConfigurationProperties, featureManager));
     }
   }
 
@@ -55,9 +55,9 @@ public class DestinationManagerConfig extends DestinationManagerConfigDTO implem
   public ConfigurationProperties toConfigurationProperties() {
     ConfigurationProperties properties = new ConfigurationProperties();
     List<ConfigurationProperties> dataProperties = new ArrayList<>();
-    for (DestinationConfigDTO destinationConfig : this.data) {
-      dataProperties.add(DestinationConfig.toConfigurationProperties(destinationConfig));
-    }
+    this.data.stream()
+        .map(destinationConfig -> DestinationConfig.toConfigurationProperties(destinationConfig))
+        .forEachOrdered(dataProperties::add);
     properties.put("data", dataProperties);
     return properties;
   }

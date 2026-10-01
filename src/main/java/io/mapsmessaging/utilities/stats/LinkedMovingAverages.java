@@ -125,6 +125,7 @@ public class LinkedMovingAverages implements Stats {
   /**
    * Increment the current value
    */
+  @Override
   public void increment() {
     add(1);
   }
@@ -132,6 +133,7 @@ public class LinkedMovingAverages implements Stats {
   /**
    * Decrement the current value
    */
+  @Override
   public void decrement() {
     subtract(1);
   }
@@ -196,6 +198,7 @@ public class LinkedMovingAverages implements Stats {
     }
   }
 
+  @Override
   public void update() {
     long now = System.currentTimeMillis();
     if (lastUpdate < now) {
@@ -220,7 +223,7 @@ public class LinkedMovingAverages implements Stats {
     long corrected = dataProcessor.add(value, previous);
     currentQuantum.add(corrected);
     total.add(corrected);
-    currentStatistics.addValue(corrected);
+    currentStatistics.addValue((double) corrected);
     previous = value;
   }
 

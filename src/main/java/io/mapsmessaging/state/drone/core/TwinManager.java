@@ -39,6 +39,9 @@ import static io.mapsmessaging.state.logging.StateLogMessages.*;
 
 public class TwinManager {
 
+  private static final String TWIN_ID_REQUIRED = "twinId must not be null";
+
+
   private final ConcurrentHashMap<String, EntityTwin> twins = new ConcurrentHashMap<>();
   private final CopyOnWriteArrayList<TwinObserver> observers = new CopyOnWriteArrayList<>();
   private final Logger logger = LoggerFactory.getLogger(TwinManager.class);
@@ -144,7 +147,7 @@ public class TwinManager {
   }
 
   public Optional<EntityTwin> removeTwin(String twinId, TwinUpdateContext context) {
-    Objects.requireNonNull(twinId, "twinId must not be null");
+    Objects.requireNonNull(twinId, TWIN_ID_REQUIRED);
 
     EntityTwin removed = twins.remove(twinId);
     if (removed != null) {
@@ -155,7 +158,7 @@ public class TwinManager {
   }
 
   public Optional<EntityTwin> updateTwin(String twinId, Consumer<EntityTwin> updater, TwinUpdateContext context) {
-    Objects.requireNonNull(twinId, "twinId must not be null");
+    Objects.requireNonNull(twinId, TWIN_ID_REQUIRED);
     Objects.requireNonNull(updater, "updater must not be null");
 
     EntityTwin twin = twins.get(twinId);
@@ -182,7 +185,7 @@ public class TwinManager {
                                                  TwinRelationship relationship,
                                                  TwinUpdateContext context) {
 
-    Objects.requireNonNull(twinId, "twinId must not be null");
+    Objects.requireNonNull(twinId, TWIN_ID_REQUIRED);
     Objects.requireNonNull(relationship, "relationship must not be null");
 
     EntityTwin twin = twins.get(twinId);
@@ -221,7 +224,7 @@ public class TwinManager {
                                                  String relationshipType,
                                                  TwinUpdateContext context) {
 
-    Objects.requireNonNull(twinId, "twinId must not be null");
+    Objects.requireNonNull(twinId, TWIN_ID_REQUIRED);
 
     EntityTwin twin = twins.get(twinId);
     if (twin == null) {

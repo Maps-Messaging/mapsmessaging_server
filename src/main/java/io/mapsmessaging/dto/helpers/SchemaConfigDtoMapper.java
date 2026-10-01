@@ -68,9 +68,9 @@ public class SchemaConfigDtoMapper {
     }
 
     List<SchemaConfigDTO> results = new ArrayList<>();
-    for (SchemaConfig schemaConfig : schemaConfigs) {
-      results.add(toDto(schemaConfig));
-    }
+    schemaConfigs.stream()
+        .map(schemaConfig -> toDto(schemaConfig))
+        .forEachOrdered(results::add);
     return results.toArray(new SchemaConfigDTO[0]);
   }
 
@@ -80,9 +80,9 @@ public class SchemaConfigDtoMapper {
     }
 
     List<SchemaConfigDTO> results = new ArrayList<>();
-    for (SchemaConfig schemaConfig : schemaConfigs) {
-      results.add(toDto(schemaConfig));
-    }
+    schemaConfigs.stream()
+        .map(schemaConfig -> toDto(schemaConfig))
+        .forEachOrdered(results::add);
     return results;
   }
 }

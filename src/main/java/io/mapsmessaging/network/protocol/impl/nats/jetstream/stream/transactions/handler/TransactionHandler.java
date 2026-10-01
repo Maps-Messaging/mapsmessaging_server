@@ -51,8 +51,7 @@ public class TransactionHandler extends JetStreamFrameHandler {
       if (info != null) {
         String commandString = new String(frame.getPayload()).trim().toLowerCase();
         switch (commandString) {
-          case "+ack":
-          case "+term":
+          case "+ack", "+term":
             ackProcessor.handle(info, transactionSubject);
             break;
           case "-nak":

@@ -36,15 +36,15 @@ public class LinkRemoteOpenEventListener extends BaseEventListener {
   public boolean handleEvent(Event event) {
     Link link = event.getLink();
     if (link != null) {
-      if (link instanceof Sender) {
-        handleSenderOpen((Sender) link);
-      } else if (link instanceof Receiver) {
-        handleReceiverOpen((Receiver) link);
+      if (link instanceof Sender matchedSender) {
+        handleSenderOpen(matchedSender);
+      } else if (link instanceof Receiver remoteReceiver) {
+        handleReceiverOpen(remoteReceiver);
       }
 
       // Adjust the credit for the link if its a receiver
-      if (link instanceof Receiver) {
-        topUp((Receiver) link);
+      if (link instanceof Receiver matchedReceiver) {
+        topUp(matchedReceiver);
       }
       return true;
     }

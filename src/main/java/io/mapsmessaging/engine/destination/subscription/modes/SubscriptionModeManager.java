@@ -72,8 +72,8 @@ public abstract class SubscriptionModeManager {
     for (Subscription subscription : activeSubscriptions.values()) {
       if (subscription.getContext() != null && subscription.getContext().getFilter().equals(destination.getFullyQualifiedNamespace())) {
         subscription.wakeUp(sessionImpl);
-        if (subscription instanceof DestinationSubscription && subscription.getContext() != null && subscription.getContext().getRetainHandler().equals(RetainHandler.SEND_IF_NEW)) {
-          queueRetainedMessage(((DestinationSubscription) subscription).getDestinationImpl(), subscription);
+        if (subscription instanceof DestinationSubscription destinationSubscription && subscription.getContext() != null && subscription.getContext().getRetainHandler().equals(RetainHandler.SEND_IF_NEW)) {
+          queueRetainedMessage((destinationSubscription).getDestinationImpl(), subscription);
         }
       }
     }
@@ -83,8 +83,8 @@ public abstract class SubscriptionModeManager {
   public void wakeAll(SessionImpl sessionImpl) {
     for (Subscription subscription : activeSubscriptions.values()) {
       subscription.wakeUp(sessionImpl);
-      if (subscription instanceof DestinationSubscription && subscription.getContext() != null && subscription.getContext().getRetainHandler().equals(RetainHandler.SEND_IF_NEW)) {
-        queueRetainedMessage(((DestinationSubscription) subscription).getDestinationImpl(), subscription);
+      if (subscription instanceof DestinationSubscription matchedDestinationSubscription && subscription.getContext() != null && subscription.getContext().getRetainHandler().equals(RetainHandler.SEND_IF_NEW)) {
+        queueRetainedMessage((matchedDestinationSubscription).getDestinationImpl(), subscription);
       }
     }
   }
@@ -149,11 +149,9 @@ public abstract class SubscriptionModeManager {
       // Create a list of destination sets that have this destination in its mapping
       //
       List<DestinationSet> interested = new ArrayList<>();
-      for (DestinationSet destinationSet : subscriptions.values()) {
-        if (destinationSet.contains(destinationImpl)) {
-          interested.add(destinationSet);
-        }
-      }
+      subscriptions.values().stream()
+          .filter(destinationSet -> destinationSet.contains(destinationImpl))
+          .forEachOrdered(interested::add);
 
       //
       // Now lets see if there is now no interest and clear out any subscription

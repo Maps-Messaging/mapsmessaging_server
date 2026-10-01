@@ -349,9 +349,9 @@ public class AuthManager implements Agent {
     Group admin = authenticationStorage.findGroup(ADMIN_GROUP);
     ProtectedResource server  = new  ProtectedResource("Server", MessageDaemon.getInstance().getId(), null);
     List<ProtectedResource> destinations = new ArrayList<>();
-    for(DestinationType type : DestinationType.values()){
-      destinations.add( new  ProtectedResource(type.getName(), "/", null));
-    }
+    java.util.Arrays.stream(DestinationType.values())
+        .map(type -> new ProtectedResource(type.getName(), "/", null))
+        .forEachOrdered(destinations::add);
 
     for(Permission permission:ServerPermissions.values()){
       int mask = Long.numberOfTrailingZeros(permission.getMask());

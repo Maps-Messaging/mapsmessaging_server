@@ -58,11 +58,10 @@ public class ConnAck5 extends StatusPacket {
 
     // Basic length validation: 1 (flags) + 1 (reason) + properties
     long consumed = 2 + propertiesBytes;
-    if (consumed != remainingLen) {
+    if (consumed != remainingLen
+        && consumed > remainingLen) {
       // If strictness desired, throw; otherwise, tolerate minor mismatches.
-      if (consumed > remainingLen) {
-        throw new MalformedException("ConnAck: Remaining length too small");
-      }
+      throw new MalformedException("ConnAck: Remaining length too small");
     }
   }
 

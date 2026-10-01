@@ -107,9 +107,9 @@ public abstract class BaseEventListener implements EventListener {
     Target target = receiver.getTarget();
     boolean dynamic = false;
     Symbol[] symbols;
-    if (target instanceof org.apache.qpid.proton.amqp.messaging.Target) {
-      symbols = ((org.apache.qpid.proton.amqp.messaging.Target) target).getCapabilities();
-      dynamic = ((org.apache.qpid.proton.amqp.messaging.Target) target).getDynamic();
+    if (target instanceof org.apache.qpid.proton.amqp.messaging.Target matchedTarget) {
+      symbols = (matchedTarget).getCapabilities();
+      dynamic = (matchedTarget).getDynamic();
     } else {
       symbols = new Symbol[0];
     }

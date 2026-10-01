@@ -39,8 +39,7 @@ public class GetListener extends Listener {
   @Override
   public BasePacket handle(BasePacket request, CoapProtocol protocol) throws IOException {
     switch(request.getType()){
-      case CON:
-      case NON:
+      case CON, NON:
         return handleGetRequest(request, protocol);
 
       case ACK:
