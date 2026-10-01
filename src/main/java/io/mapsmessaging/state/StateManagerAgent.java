@@ -39,6 +39,7 @@ import io.mapsmessaging.state.config.geospatial.GeoSpatialConfigLoader;
 import io.mapsmessaging.state.config.n2k.N2KTwinConfig;
 import io.mapsmessaging.state.drone.core.TwinLifecycleStatus;
 import io.mapsmessaging.state.drone.core.TwinManager;
+import io.mapsmessaging.state.metrics.TwinMetricsManager;
 import io.mapsmessaging.state.n2k.N2kSession;
 import io.mapsmessaging.utilities.Agent;
 import io.mapsmessaging.utilities.Lifecycle;
@@ -102,6 +103,7 @@ public class StateManagerAgent implements Agent {
       takConfig = config.getTak();
       N2KTwinConfig n2KTwinConfig = config.getN2KTwinConfig();
       lifecycleList.add(new SchedulerManager(twinManager));
+      lifecycleList.add(new TwinMetricsManager(twinManager));
       lifecycleList.add(new TakManager(twinManager, takConfig));
       lifecycleList.add(new MavlinkTwinManager(twinManager, registry, config));
       loadStateMessageAdapters(config);
