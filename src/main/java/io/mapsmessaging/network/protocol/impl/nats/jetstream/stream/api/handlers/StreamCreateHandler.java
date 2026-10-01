@@ -81,7 +81,10 @@ public class StreamCreateHandler extends JetStreamFrameHandler {
       all.get(20, TimeUnit.SECONDS);
     } catch (TimeoutException e) {
       return new ErrFrame("Timed out waiting for destination creation");
-    } catch (ExecutionException | InterruptedException e) {
+    } catch (InterruptedException e) {
+      Thread.currentThread().interrupt();
+      return new ErrFrame("Failed to create one or more destinations");
+    } catch (ExecutionException e) {
       return new ErrFrame("Failed to create one or more destinations");
     }
 

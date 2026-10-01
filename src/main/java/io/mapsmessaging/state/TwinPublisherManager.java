@@ -50,6 +50,9 @@ public class TwinPublisherManager implements Lifecycle {
       try {
         twinJsonPublisher = new TwinJsonPublisher(twinManager, config.getTopicTemplate(), config.getPublishRateMs());
         logger.log(STATE_MANAGER_PUBLISH_ENABLED, config.getTopicTemplate());
+      } catch (InterruptedException e) {
+        Thread.currentThread().interrupt();
+        logger.log(STATE_MANAGER_PUBLISH_FAILED, e);
       } catch (Throwable e) {
         logger.log(STATE_MANAGER_PUBLISH_FAILED, e);
       }

@@ -79,7 +79,10 @@ public class StreamDeleteHandler extends JetStreamFrameHandler {
       all.get(20, TimeUnit.SECONDS); // Optional timeout
     } catch (TimeoutException e) {
       return new ErrFrame("Timed out while deleting stream destinations");
-    } catch (ExecutionException | InterruptedException e) {
+    } catch (InterruptedException e) {
+      Thread.currentThread().interrupt();
+      return new ErrFrame("Error while deleting stream destinations");
+    } catch (ExecutionException e) {
       return new ErrFrame("Error while deleting stream destinations");
     }
     result.setPayload(success().getBytes());

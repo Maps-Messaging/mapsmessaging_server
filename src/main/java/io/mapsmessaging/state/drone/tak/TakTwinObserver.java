@@ -113,6 +113,10 @@ public class TakTwinObserver implements TwinObserver {
         EventPublisher publisher;
         try {
           publisher = new EventPublisher(config.getTak().getTopic());
+        } catch (InterruptedException exception) {
+          Thread.currentThread().interrupt();
+          publisher = null;
+          logger.log(StateLogMessages.STATE_MANAGER_TAK_PUBLISHER_CREATE_FAILED, config.getTak().getTopic(), exception);
         } catch (Throwable exception) {
           publisher = null;
           logger.log(StateLogMessages.STATE_MANAGER_TAK_PUBLISHER_CREATE_FAILED, config.getTak().getTopic(), exception);

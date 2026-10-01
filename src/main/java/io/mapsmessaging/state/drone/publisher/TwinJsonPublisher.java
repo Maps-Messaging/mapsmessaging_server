@@ -104,6 +104,9 @@ public class TwinJsonPublisher implements TwinObserver, ClientConnection, Messag
 
     try {
       publishTwin(twinId, current);
+    } catch (InterruptedException exception) {
+      Thread.currentThread().interrupt();
+      throw new RuntimeException("Failed to publish twin update for twinId=" + twinId, exception);
     } catch (Exception exception) {
       throw new RuntimeException("Failed to publish twin update for twinId=" + twinId, exception);
     }
@@ -152,6 +155,9 @@ public class TwinJsonPublisher implements TwinObserver, ClientConnection, Messag
       if (!contacts.isEmpty()) {
         publishContacts(twinId, twin, twinJsonPayload.jsonObject(), contacts);
       }
+    } catch (InterruptedException e) {
+      Thread.currentThread().interrupt();
+      throw e;
     } catch (Throwable e) {
       logger.log(TWIN_PUBLISH_FAILED, twinId, topic, e.getMessage());
       destinationCache.remove(topic);

@@ -82,6 +82,9 @@ public class NamedConsumer {
             return msg;
           }
         }
+      } catch (InterruptedException e) {
+        Thread.currentThread().interrupt();
+        throw new IOException(e);
       } catch (Exception e) {
         throw new IOException(e);
       }
