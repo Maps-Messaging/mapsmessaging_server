@@ -21,7 +21,7 @@ package io.mapsmessaging.logging;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import io.mapsmessaging.logging.LogMessage.LEVEL;
+import io.mapsmessaging.logging.LEVEL;
 import org.junit.jupiter.api.Test;
 
 class ServerLogMessagesSeverityTest {
