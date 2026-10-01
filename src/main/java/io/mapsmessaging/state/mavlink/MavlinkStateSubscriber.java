@@ -45,6 +45,7 @@ import io.mapsmessaging.state.mavlink.listener.ListenerManager;
 import io.mapsmessaging.state.mavlink.packet.MavlinkPacket;
 import io.mapsmessaging.state.mavlink.packet.MavlinkPacketFactory;
 import io.mapsmessaging.state.util.SessionHelper;
+import io.mapsmessaging.state.metrics.MessageOutcomeStats;
 import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
 
@@ -230,6 +231,7 @@ public class MavlinkStateSubscriber implements MessageHandler, AutoCloseable {
       ProcessedFrame env = parseJson(message.getOpaqueData(), sourceName);
 
       if (env == null) {
+        MessageOutcomeStats.failure(MessageOutcomeStats.Source.MAVLINK, "malformed");
         return;
       }
 
@@ -239,12 +241,14 @@ public class MavlinkStateSubscriber implements MessageHandler, AutoCloseable {
       MavlinkPacket packet = MavlinkPacketFactory.create(env);
       if (packet == null) {
         logger.log(MAVLINK_STATE_UNSUPPORTED_PACKET_IGNORED, messageId, sourceName);
+        MessageOutcomeStats.filtered(MessageOutcomeStats.Source.MAVLINK, "unsupported_message");
         return;
       }
 
       MavlinkKnownSourceDTO knownSource = sourceRegistry.getKnownSource(env);
       if (knownSource == null) {
         logger.log(MAVLINK_STATE_SOURCE_NOT_CONFIGURED, messageId, frame.getSystemId(), frame.getComponentId());
+        MessageOutcomeStats.filtered(MessageOutcomeStats.Source.MAVLINK, "source_not_configured");
         return;
       }
 
@@ -253,6 +257,7 @@ public class MavlinkStateSubscriber implements MessageHandler, AutoCloseable {
 
       if (droneInfo == null) {
         logger.log(MAVLINK_STATE_DRONE_NOT_CONFIGURED, messageId, sourceName, droneName);
+        MessageOutcomeStats.filtered(MessageOutcomeStats.Source.MAVLINK, "drone_not_configured");
         return;
       }
 
@@ -268,6 +273,7 @@ public class MavlinkStateSubscriber implements MessageHandler, AutoCloseable {
       updatingTwin = true;
       twinUpdater.updateTwinState(env, packet, context, knownSource, droneInfo);
     } catch (RuntimeException exception) {
+      MessageOutcomeStats.failure(MessageOutcomeStats.Source.MAVLINK, updatingTwin ? "twin_update_failed" : "conversion_failed");
       if (updatingTwin) {
         logger.log(MAVLINK_STATE_TWIN_UPDATE_FAILED, exception, droneName, messageId, sourceName);
       } else {

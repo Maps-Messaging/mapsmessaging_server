@@ -19,6 +19,8 @@
 
 package io.mapsmessaging.state.drone.tak;
 
+import io.mapsmessaging.state.metrics.FeedActivityRegistry;
+import io.mapsmessaging.state.metrics.MessageOutcomeStats;
 import lombok.Getter;
 
 import javax.net.ssl.SSLSocket;
@@ -35,6 +37,9 @@ import java.util.concurrent.LinkedBlockingDeque;
 
 @Getter
 public class TakSocketConnection implements Closeable {
+
+  /** Feed name prefix in {@link FeedActivityRegistry}: one feed per TAK server connection. */
+  public static final String FEED_PREFIX = "tak:";
 
   private static final int DEFAULT_CONNECT_TIMEOUT_MS = 5000;
   private static final int DEFAULT_SOCKET_TIMEOUT_MS = 5000;
@@ -110,6 +115,7 @@ public class TakSocketConnection implements Closeable {
         queue.pollFirst();
         TakOutputStats.SOCKET_DROPPED_COUNT.increment();
         serverStats.recordDrop();
+        MessageOutcomeStats.failure(MessageOutcomeStats.Source.TAK_SOCKET, "queue_full");
       }
       queue.offerLast(xml);
     }
@@ -176,6 +182,7 @@ public class TakSocketConnection implements Closeable {
     socketOutputStream.flush();
     TakOutputStats.recordWrite();
     serverStats.recordWrite();
+    FeedActivityRegistry.recordActivity(feedName());
   }
 
   private synchronized void reconnect() {
@@ -200,12 +207,14 @@ public class TakSocketConnection implements Closeable {
       socketOutputStream = newSocket.getOutputStream();
       TakOutputStats.CONNECT_COUNT.increment();
       serverStats.recordConnect();
+      FeedActivityRegistry.setConnected(feedName(), true);
     }
     catch (IOException ignored) {
       socket = null;
       socketOutputStream = null;
       TakOutputStats.CONNECT_FAILURE_COUNT.increment();
       serverStats.recordConnectFailure();
+      FeedActivityRegistry.setConnected(feedName(), false);
     }
   }
 
@@ -243,6 +252,12 @@ public class TakSocketConnection implements Closeable {
       socket = null;
       TakOutputStats.DISCONNECT_COUNT.increment();
       serverStats.recordDisconnect();
+      FeedActivityRegistry.setConnected(feedName(), false);
     }
+  }
+
+  /** Feed name in {@link FeedActivityRegistry}; matches the server label of {@code TakServerJMX}. */
+  String feedName() {
+    return FEED_PREFIX + host + "_" + port;
   }
 }

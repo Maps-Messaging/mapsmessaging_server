@@ -36,6 +36,8 @@ import io.mapsmessaging.state.adapter.StateMessageAdapter;
 import io.mapsmessaging.state.drone.core.TwinManager;
 import io.mapsmessaging.state.drone.core.TwinUpdateContext;
 import io.mapsmessaging.state.drone.tak.CotToTwinMapper;
+import io.mapsmessaging.state.metrics.FeedActivityRegistry;
+import io.mapsmessaging.state.metrics.MessageOutcomeStats;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -76,6 +78,9 @@ public class CotIngestAdapter implements StateMessageAdapter, ClientConnection, 
   // Metrics, exposed to Grafana via the JMX->Prometheus exporter (see CotIngestAdapterJMX).
   private final LongAdder routedCount = new LongAdder();
   private final LongAdder droppedCount = new LongAdder();
+
+  /** Feed name prefix in {@link FeedActivityRegistry}: one partner CoT feed per inbound edge topic. */
+  public static final String FEED_PREFIX = "cot:";
   private volatile long lastMessageAt = 0L;
 
   private Session session;
@@ -145,6 +150,7 @@ public class CotIngestAdapter implements StateMessageAdapter, ClientConnection, 
         handle(messageEvent.getDestinationName(), payload);
       }
     } catch (Exception e) {
+      MessageOutcomeStats.failure(MessageOutcomeStats.Source.COT_INGEST, "unparseable");
       logger.warn("CoT ingest adapter failed to process an incoming message, dropped", e);
     } finally {
       if (messageEvent.getCompletionTask() != null) {
@@ -155,6 +161,7 @@ public class CotIngestAdapter implements StateMessageAdapter, ClientConnection, 
 
   void handle(String destinationName, byte[] xml) {
     lastMessageAt = System.currentTimeMillis();
+    FeedActivityRegistry.recordActivity(FEED_PREFIX + edgeNameFrom(destinationName));
 
     TwinUpdateContext context = new TwinUpdateContext();
     context.setUpdateSource(UPDATE_SOURCE_PREFIX);
@@ -165,6 +172,7 @@ public class CotIngestAdapter implements StateMessageAdapter, ClientConnection, 
       routedCount.increment();
     } else {
       droppedCount.increment();
+      MessageOutcomeStats.failure(MessageOutcomeStats.Source.COT_INGEST, "missing_uid");
       logger.warn("CoT event on {} had no usable uid, dropped", destinationName);
     }
   }

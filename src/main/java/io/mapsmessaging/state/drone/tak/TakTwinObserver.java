@@ -152,7 +152,7 @@ public class TakTwinObserver implements TwinObserver {
         pictureRecoveryJMXs.add(new PictureRecoveryJMX(pictureRecoveryTracker, failureType, stage));
       }
     }
-    MtiStatusRegistry.setStatusListener(pictureRecoveryTracker);
+    MtiStatusRegistry.addStatusListener(pictureRecoveryTracker);
   }
 
   private SSLSocketFactory buildSslSocketFactory(TakProtocolDTO tak) {
@@ -189,7 +189,7 @@ public class TakTwinObserver implements TwinObserver {
     }
     takServerJMXs.clear();
     additionalTakServers.close();
-    MtiStatusRegistry.setStatusListener(null);
+    MtiStatusRegistry.removeStatusListener(pictureRecoveryTracker);
     for (PictureRecoveryJMX pictureRecoveryJMX : pictureRecoveryJMXs) {
       pictureRecoveryJMX.close();
     }

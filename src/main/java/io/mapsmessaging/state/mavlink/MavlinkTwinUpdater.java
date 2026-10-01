@@ -46,6 +46,7 @@ import io.mapsmessaging.state.mavlink.model.UxvModel;
 import io.mapsmessaging.state.mavlink.packet.BatteryStatusPacket;
 import io.mapsmessaging.state.mavlink.packet.MavlinkPacket;
 import io.mapsmessaging.state.mavlink.sender.MavlinkEventListSender;
+import io.mapsmessaging.state.metrics.FeedActivityRegistry;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -74,6 +75,10 @@ public class MavlinkTwinUpdater implements AutoCloseable {
   // Metrics, exposed to Grafana via the JMX->Prometheus exporter (see MavlinkIntegrationJMX).
   private final LongAdder messagesProcessedCount = new LongAdder();
   private volatile long lastMessageAtMillis = 0L;
+  private final String feedName;
+
+  /** Feed name prefix in {@link FeedActivityRegistry}: one MAVLink feed per integration source. */
+  public static final String FEED_PREFIX = "mavlink:";
   private final LongAdder twinsCreatedCount = new LongAdder();
   private final LongAdder classificationOverrideCount = new LongAdder();
 
@@ -102,6 +107,7 @@ public class MavlinkTwinUpdater implements AutoCloseable {
         bootstrapEventPublisher);
     this.closed = new AtomicBoolean();
     this.integrationJMX = new MavlinkIntegrationJMX(this, integrationSource);
+    this.feedName = FEED_PREFIX + integrationSource;
     twinManager.addObserver(droneMonitor);
   }
 
@@ -115,6 +121,7 @@ public class MavlinkTwinUpdater implements AutoCloseable {
     this.droneMonitor = Objects.requireNonNull(droneMonitor, "droneMonitor must not be null");
     this.closed = new AtomicBoolean();
     this.integrationJMX = new MavlinkIntegrationJMX(this, "mavlink");
+    this.feedName = FEED_PREFIX + "mavlink";
     twinManager.addObserver(droneMonitor);
   }
 
@@ -124,6 +131,7 @@ public class MavlinkTwinUpdater implements AutoCloseable {
     }
     messagesProcessedCount.increment();
     lastMessageAtMillis = System.currentTimeMillis();
+    FeedActivityRegistry.recordActivity(feedName);
 
     String twinId = buildTwinId(env, knownSource);
     droneMonitor.beginTwinUpdate(twinId);

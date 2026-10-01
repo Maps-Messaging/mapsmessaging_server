@@ -19,6 +19,7 @@
 
 package io.mapsmessaging.state.drone.tak;
 
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.LongAdder;
 
 /**
@@ -42,6 +43,15 @@ final class TakOutputStats {
 
   private static volatile long lastWriteMillis = 0L;
 
+  // Max latency (clarification Q16): all-time, plus a rolling max over the current and previous
+  // one-minute window so a dashboard can show the recent worst case without resetting on read.
+  static final long RECENT_WINDOW_MILLIS = 60_000L;
+  private static final AtomicLong MAX_LATENCY_MILLIS = new AtomicLong(-1L);
+  private static final Object WINDOW_LOCK = new Object();
+  private static long windowStartMillis = 0L;
+  private static long windowMaxMillis = -1L;
+  private static long previousWindowMaxMillis = -1L;
+
   static {
     for (int i = 0; i < LATENCY_BUCKET_COUNTS.length; i++) {
       LATENCY_BUCKET_COUNTS[i] = new LongAdder();
@@ -63,6 +73,8 @@ final class TakOutputStats {
 
   static void recordLatencyMillis(long latencyMillis) {
     long clamped = Math.max(0L, latencyMillis);
+    MAX_LATENCY_MILLIS.accumulateAndGet(clamped, Math::max);
+    recordRecentMax(clamped, System.currentTimeMillis());
     LATENCY_COUNT.increment();
     LATENCY_SUM_MICROS.add(clamped * 1000L);
     double seconds = clamped / 1000.0;
@@ -71,6 +83,45 @@ final class TakOutputStats {
         LATENCY_BUCKET_COUNTS[i].increment();
         return;
       }
+    }
+  }
+
+  static void recordRecentMax(long latencyMillis, long nowMillis) {
+    synchronized (WINDOW_LOCK) {
+      rollWindow(nowMillis);
+      windowMaxMillis = Math.max(windowMaxMillis, latencyMillis);
+    }
+  }
+
+  private static void rollWindow(long nowMillis) {
+    long elapsed = nowMillis - windowStartMillis;
+    if (elapsed >= 2 * RECENT_WINDOW_MILLIS) {
+      previousWindowMaxMillis = -1L;
+      windowMaxMillis = -1L;
+      windowStartMillis = nowMillis;
+    } else if (elapsed >= RECENT_WINDOW_MILLIS) {
+      previousWindowMaxMillis = windowMaxMillis;
+      windowMaxMillis = -1L;
+      windowStartMillis = nowMillis;
+    }
+  }
+
+  /** -1 if nothing has been timed yet. */
+  static double getLatencyMaxSeconds() {
+    long max = MAX_LATENCY_MILLIS.get();
+    return max < 0 ? -1.0 : max / 1000.0;
+  }
+
+  /** Max over the current and previous window, -1 if nothing was timed in that span. */
+  static double getLatencyRecentMaxSeconds() {
+    return getLatencyRecentMaxSeconds(System.currentTimeMillis());
+  }
+
+  static double getLatencyRecentMaxSeconds(long nowMillis) {
+    synchronized (WINDOW_LOCK) {
+      rollWindow(nowMillis);
+      long max = Math.max(windowMaxMillis, previousWindowMaxMillis);
+      return max < 0 ? -1.0 : max / 1000.0;
     }
   }
 

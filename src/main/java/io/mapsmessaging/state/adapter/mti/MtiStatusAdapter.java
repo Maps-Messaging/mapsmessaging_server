@@ -32,6 +32,8 @@ import io.mapsmessaging.state.adapter.StateMessageAdapter;
 import io.mapsmessaging.state.drone.tak.MtiLookupResult;
 import io.mapsmessaging.state.drone.tak.MtiStatusRegistry;
 import io.mapsmessaging.state.drone.tak.MtiStatusSnapshot;
+import io.mapsmessaging.state.metrics.FeedActivityRegistry;
+import io.mapsmessaging.state.metrics.MessageOutcomeStats;
 import io.mapsmessaging.utilities.GsonFactory;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
@@ -74,6 +76,9 @@ public class MtiStatusAdapter implements StateMessageAdapter, ClientConnection, 
   private final Map<String, MtiStatus> cache = new ConcurrentHashMap<>();
   private final String topic;
 
+  /** Feed name in {@link FeedActivityRegistry}, watched by the KPI feed outage monitor. */
+  public static final String FEED_NAME = "mti:status";
+
   // Metrics, exposed to Grafana via the JMX->Prometheus exporter (see MtiStatusAdapterJMX).
   private final LongAdder upsertCount = new LongAdder();
   private final LongAdder deleteCount = new LongAdder();
@@ -109,6 +114,7 @@ public class MtiStatusAdapter implements StateMessageAdapter, ClientConnection, 
           .build());
       MtiStatusRegistry.setDelegate(this::lookup);
       MtiStatusRegistry.setSnapshotSource(this::snapshot);
+      MtiStatusRegistry.setCacheClearer(this::clearCache);
       jmxBean = new MtiStatusAdapterJMX(this);
       logger.info("MTI status adapter subscribed to {}", topic);
     } catch (Throwable t) {
@@ -127,6 +133,7 @@ public class MtiStatusAdapter implements StateMessageAdapter, ClientConnection, 
   public void stop() {
     MtiStatusRegistry.setDelegate(null);
     MtiStatusRegistry.setSnapshotSource(null);
+    MtiStatusRegistry.setCacheClearer(null);
     if (jmxBean != null) {
       jmxBean.close();
       jmxBean = null;
@@ -148,6 +155,7 @@ public class MtiStatusAdapter implements StateMessageAdapter, ClientConnection, 
         handle(new String(payload, StandardCharsets.UTF_8));
       }
     } catch (Exception e) {
+      MessageOutcomeStats.failure(MessageOutcomeStats.Source.MTI, "unparseable");
       logger.warn("MTI status adapter failed to process an incoming message, dropped", e);
     } finally {
       if (messageEvent.getCompletionTask() != null) {
@@ -159,13 +167,16 @@ public class MtiStatusAdapter implements StateMessageAdapter, ClientConnection, 
   void handle(String json) {
     MtiWireMessage message = gson.fromJson(json, MtiWireMessage.class);
     if (message == null || message.uid() == null || message.uid().isBlank()) {
+      MessageOutcomeStats.failure(MessageOutcomeStats.Source.MTI, "missing_uid");
       logger.warn("MTI status message had no uid, dropped");
       return;
     }
 
     lastMessageAt = System.currentTimeMillis();
+    FeedActivityRegistry.recordActivity(FEED_NAME);
     Instant observedAt = MtiStatus.parseTimestamp(message.observedAt());
     if (observedAt == null) {
+      MessageOutcomeStats.failure(MessageOutcomeStats.Source.MTI, "invalid_observed_at");
       logger.warn("MTI status message for {} had an invalid observed_at, dropped", message.uid());
       return;
     }
@@ -184,6 +195,7 @@ public class MtiStatusAdapter implements StateMessageAdapter, ClientConnection, 
         MtiStatusRegistry.statusCleared(message.uid());
         logger.debug("MTI status cleared for {}", message.uid());
       } else {
+        MessageOutcomeStats.filtered(MessageOutcomeStats.Source.MTI, "out_of_order");
         logger.debug("Ignored out-of-order MTI delete for {}", message.uid());
       }
       return;
@@ -191,6 +203,7 @@ public class MtiStatusAdapter implements StateMessageAdapter, ClientConnection, 
 
     MtiStatus incoming = MtiStatus.from(message);
     if (incoming == null) {
+      MessageOutcomeStats.failure(MessageOutcomeStats.Source.MTI, "invalid_validity");
       logger.warn("MTI status message for {} had invalid validity timestamps, dropped", message.uid());
       return;
     }
@@ -208,14 +221,25 @@ public class MtiStatusAdapter implements StateMessageAdapter, ClientConnection, 
 
     if (accepted.get()) {
       if (incoming.isExpired(now)) {
+        MessageOutcomeStats.filtered(MessageOutcomeStats.Source.MTI, "already_expired");
         logger.debug("MTI status for {} was already expired and cleared any older cached status", message.uid());
       } else {
         MtiStatusRegistry.statusAccepted(message.uid(), now);
         logger.debug("MTI status updated for {}: state={}", message.uid(), message.state());
       }
     } else {
+      MessageOutcomeStats.filtered(MessageOutcomeStats.Source.MTI, "out_of_order");
       logger.debug("Ignored out-of-order MTI status update for {}", message.uid());
     }
+  }
+
+  /**
+   * Controlled cache-loss test (KPI fault injection): forgets every MTI status as if the in-memory
+   * cache had been lost. Deliberately not a delete - MTI did not withdraw these opinions.
+   */
+  void clearCache() {
+    cache.clear();
+    logger.warn("MTI status cache cleared by a controlled cache-loss test");
   }
 
   /** Called by {@code CotEventPolicy} via {@code MtiStatusRegistry}, keyed on twinId. */
