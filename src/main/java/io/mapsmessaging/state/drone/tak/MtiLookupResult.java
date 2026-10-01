@@ -48,7 +48,7 @@ package io.mapsmessaging.state.drone.tak;
  *     turned out not to be enough on its own. {@code null} leaves readiness unset (the default,
  *     healthy state).
  * @param cyberIconFile filename (not a path) of a custom cyber-compromise icon within the
- *     shared iconset {@link CotEventPolicy} references (e.g. {@code "ddos1_64x64.png"}), or
+ *     shared iconset {@link CotEventPolicy} references (e.g. {@code "exploit_64x64.png"}), or
  *     {@code null} for no override. {@code CotEventPolicy} owns the iconset UUID/path prefix and
  *     decides which twins are eligible (drones only) - this field only says "this severity, if
  *     applicable". WinTAK/ATAK-only: {@code <usericon>} needs the iconset locally imported on the

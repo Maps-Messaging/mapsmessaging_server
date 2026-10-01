@@ -60,7 +60,7 @@ public class TakDetail {
 
   @Schema(description = "Custom icon override: {iconsetUuid}/{group}/{filename}, resolved against "
       + "an iconset the receiving TAK client has locally imported. WinTAK/ATAK only - not "
-      + "rendered by WebTAK.", example = "8ed4bdba4a2ff2972685f3420274f87cc8e2d7547ba7262bce94d8991e7f7a9b/cyber_icons/ddos1_64x64.png")
+      + "rendered by WebTAK.", example = "8ed4bdba4a2ff2972685f3420274f87cc8e2d7547ba7262bce94d8991e7f7a9b/cyber_icons/exploit_64x64.png")
   private String usericonIconsetPath;
 
   @ArraySchema(arraySchema = @Schema(description = "Relationship links to other TAK entities."))

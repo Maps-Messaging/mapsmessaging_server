@@ -276,11 +276,11 @@ public class MtiStatusAdapter implements StateMessageAdapter, ClientConnection, 
       //
       // cyberIconFile: a fixed two-level severity split (not a 1:1 map of the ddos1-5 gradient
       // in the shared iconset) - mitigate is "degraded but still trusted enough to act",
-      // hold is "trust withdrawn", so hold gets the more severe icon. Ddos2/4/5 and exploit are
-      // unused for now - there's no MTI wire field (domain/finding count, signal_id) confirmed
-      // to correlate with them yet; revisit if/when the MTI team specifies one.
+      // hold is "trust withdrawn", so hold gets the exploit icon. Ddos1/2/4/5 are unused for
+      // now - there's no MTI wire field (domain/finding count, signal_id) confirmed to
+      // correlate with them yet; revisit if/when the MTI team specifies one.
       case "mitigate" -> new MtiLookupResult(null, COLOR_ARGB_MITIGATE, status.remarks(), false, "ddos3_64x64.png");
-      case "hold" -> new MtiLookupResult(null, COLOR_ARGB_HOLD, status.remarks(), false, "ddos1_64x64.png");
+      case "hold" -> new MtiLookupResult(null, COLOR_ARGB_HOLD, status.remarks(), false, "exploit_64x64.png");
       // "go", or anything not in the MTI team's fixed 4-value alphabet - no override.
       default -> null;
     };

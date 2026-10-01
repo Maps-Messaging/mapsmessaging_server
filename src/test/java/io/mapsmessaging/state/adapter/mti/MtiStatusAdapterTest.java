@@ -79,7 +79,7 @@ class MtiStatusAdapterTest {
     assertNotNull(hold);
     assertEquals(-65536, hold.colorArgb());
     assertEquals(Boolean.FALSE, hold.readiness());
-    assertEquals("ddos1_64x64.png", hold.cyberIconFile());
+    assertEquals("exploit_64x64.png", hold.cyberIconFile());
 
     adapter.handle(message("update", "go", "2026-09-19T13:00:00Z", "2099-01-01T00:00:00Z"));
     assertNull(adapter.lookup("asset-1"));
