@@ -81,7 +81,10 @@ public abstract class Extension {
     }
     try {
       extensionProtocol.saveMessage(destinationName, message);
-    } catch (ExecutionException | InterruptedException | TimeoutException e) {
+    } catch (InterruptedException e) {
+      Thread.currentThread().interrupt();
+      throw new IOException("Error processing inbound message", e);
+    } catch (ExecutionException | TimeoutException e) {
       throw new IOException("Error processing inbound message", e);
     }
   }

@@ -149,7 +149,10 @@ public class EventPublisher implements ClientConnection, MessageListener {
   private Destination locateDestination(String name) throws IOException{
     try {
       return destination = session.findDestination(name, DestinationType.TOPIC).get(1, TimeUnit.SECONDS);
-    } catch (InterruptedException| ExecutionException|TimeoutException  e) {
+    } catch (InterruptedException e) {
+      Thread.currentThread().interrupt();
+      throw new IOException(e);
+    } catch (ExecutionException | TimeoutException e) {
       throw new IOException(e);
     }
   }

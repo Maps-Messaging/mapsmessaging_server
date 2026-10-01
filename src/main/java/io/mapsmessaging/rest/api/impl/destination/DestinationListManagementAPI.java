@@ -164,12 +164,7 @@ public class DestinationListManagementAPI extends BaseDestinationApi {
       return Response.ok(destinationPageResponse, MediaType.APPLICATION_JSON)
           .header("ETag", etag)
           .build();
-    } catch (LoginException exception) {
-      return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
-          .type(MediaType.APPLICATION_JSON)
-          .entity(new StatusResponse("Failed to build destination list: " + exception.getMessage()))
-          .build();
-    } catch (IOException | RuntimeException exception) {
+    } catch (LoginException | IOException | RuntimeException exception) {
       return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
           .type(MediaType.APPLICATION_JSON)
           .entity(new StatusResponse("Failed to build destination list: " + exception.getMessage()))

@@ -25,8 +25,6 @@ import io.mapsmessaging.configuration.ConfigurationProperties;
 import io.mapsmessaging.dto.rest.config.BaseConfigDTO;
 import io.mapsmessaging.dto.rest.config.aggregator.AggregatorInputConfigDTO;
 
-import java.util.List;
-import java.util.Map;
 
 public class AggregatorInputConfig extends AggregatorInputConfigDTO implements Config {
 
@@ -84,10 +82,4 @@ public class AggregatorInputConfig extends AggregatorInputConfigDTO implements C
     return left.equals(right);
   }
 
-  private boolean safeEqualsListMap(List<Map<String, Object>> left, List<Map<String, Object>> right) {
-    if (left == null) {
-      return right == null;
-    }
-    return left.equals(right);
-  }
 }

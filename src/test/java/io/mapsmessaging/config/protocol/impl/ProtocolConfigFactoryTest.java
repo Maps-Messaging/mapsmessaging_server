@@ -10,6 +10,26 @@ import static org.junit.jupiter.api.Assertions.*;
 class ProtocolConfigFactoryTest {
 
   @Test
+  void message_defaults_preserve_literal_keys_and_values_through_round_trip() {
+    ConfigurationProperties defaults = new ConfigurationProperties();
+    defaults.put("retain", true);
+    defaults.put("storeOffline", false);
+    ConfigurationProperties properties = new ConfigurationProperties();
+    properties.put("messageDefaults", defaults);
+
+    MqttConfig config = new MqttConfig(properties);
+    ConfigurationProperties packed = config.toConfigurationProperties();
+    ConfigurationProperties packedDefaults =
+        (ConfigurationProperties) packed.get("messageDefaults");
+
+    assertEquals(true, packedDefaults.get("retain"));
+    assertEquals(false, packedDefaults.get("storeOffline"));
+    MqttConfig restored = new MqttConfig(packed);
+    assertEquals(true, restored.getMessageDefaults().getRetain());
+    assertEquals(false, restored.getMessageDefaults().getStoreOffline());
+  }
+
+  @Test
   void mqttFactoryFieldsRoundTripThroughConfigurationProperties() {
     ConfigurationProperties properties = new ConfigurationProperties();
     properties.put("maximumSessionExpiry", 12345L);

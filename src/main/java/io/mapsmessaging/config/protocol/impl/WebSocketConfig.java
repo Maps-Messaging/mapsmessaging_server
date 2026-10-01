@@ -34,8 +34,8 @@ public class WebSocketConfig extends WebSocketConfigDTO implements Config {
 
   @Override
   public boolean update(BaseConfigDTO config) {
-    if(config instanceof ProtocolConfigDTO) {
-      return ProtocolConfigFactory.update(this, (ProtocolConfigDTO) config);
+    if(config instanceof ProtocolConfigDTO matchedProtocolConfigDTO) {
+      return ProtocolConfigFactory.update(this, matchedProtocolConfigDTO);
     }
     return false;
   }

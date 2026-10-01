@@ -95,7 +95,7 @@ public class PublishListener extends PacketListener {
           //
         }
       } catch (InterruptedException e) {
-        //ignore
+        Thread.currentThread().interrupt();
       }
     } else {
       return response;

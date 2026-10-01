@@ -30,22 +30,25 @@ import java.util.Map;
 
 public class SaslConfig extends SaslConfigDTO implements Config {
 
+  private static final String REALM_NAME = "realmName";
+  private static final String MECHANISM = "mechanism";
+
   private static final String IDENTITY_PROVIDER = "identityProvider";
 
   public SaslConfig(ConfigurationProperties config) {
     identityProvider = config.getProperty(IDENTITY_PROVIDER);
-    String configuredRealm = config.getProperty("realmName");
+    String configuredRealm = config.getProperty(REALM_NAME);
     MessageDaemon daemon = MessageDaemon.getInstance();
     realmName = configuredRealm != null
         ? configuredRealm
         : daemon == null ? null : daemon.getId();
-    mechanism = config.getProperty("mechanism");
+    mechanism = config.getProperty(MECHANISM);
     saslEntries = new LinkedHashMap<>();
     for (Map.Entry<String, Object> entry : config.entrySet()) {
       String key = entry.getKey();
       if (!key.equalsIgnoreCase(IDENTITY_PROVIDER)
-          && !key.equalsIgnoreCase("realmName")
-          && !key.equalsIgnoreCase("mechanism")) {
+          && !key.equalsIgnoreCase(REALM_NAME)
+          && !key.equalsIgnoreCase(MECHANISM)) {
         saslEntries.put(key, entry.getValue());
       }
     }
@@ -55,8 +58,8 @@ public class SaslConfig extends SaslConfigDTO implements Config {
   public ConfigurationProperties toConfigurationProperties() {
     ConfigurationProperties properties = new ConfigurationProperties();
     properties.put(IDENTITY_PROVIDER, this.identityProvider);
-    properties.put("realmName", this.realmName);
-    properties.put("mechanism", this.mechanism);
+    properties.put(REALM_NAME, this.realmName);
+    properties.put(MECHANISM, this.mechanism);
 
     // Include saslEntries, excluding identityProvider
     if (saslEntries != null) {

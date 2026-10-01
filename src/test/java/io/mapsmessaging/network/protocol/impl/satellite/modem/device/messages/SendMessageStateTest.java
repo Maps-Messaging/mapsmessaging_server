@@ -66,4 +66,16 @@ class SendMessageStateTest {
     assertThrows(RuntimeException.class,
         () -> new SendMessageState("%MGRS: missing,fields", false));
   }
+  @Test
+  void truncated_legacy_status_has_an_explicit_validation_error() {
+    assertThrows(IllegalArgumentException.class,
+        () -> new SendMessageState("%MGRS: msg,1,1,1,3,20", false));
+  }
+
+  @Test
+  void truncated_ogx_status_has_an_explicit_validation_error() {
+    assertThrows(IllegalArgumentException.class,
+        () -> new SendMessageState("%MOQS: 1,msg,date,3,0,2,20,84", true));
+  }
+
 }

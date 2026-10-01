@@ -380,6 +380,58 @@ class TwinManagerConfigTest {
     assertEquals("4817/catl/maps/{protocol}/{twinId}/{messageEnumName}", reloaded.getAdapterConfig().get("stanag").getProperty("topic"));
   }
 
+  @Test
+  void mavlink_known_sources_preserve_keys_and_values_for_single_and_list_forms()
+      throws ReflectiveOperationException {
+    for (boolean singleSource : List.of(true, false)) {
+      ConfigurationProperties source = new ConfigurationProperties();
+      source.put("name", "usv-001");
+      source.put("description", "Stickleback");
+      source.put("systemId", 3);
+      source.put("componentId", 1);
+      source.put("vehicleClass", "USV");
+      ConfigurationProperties mavlink = new ConfigurationProperties();
+      mavlink.put("topic", "/mavlink/3/#");
+      mavlink.put("knownSources", singleSource ? source : List.of(source));
+      ConfigurationProperties root = new ConfigurationProperties();
+      root.put("mavlink", mavlink);
+
+      TwinManagerConfig config = newTwinManagerConfig(root);
+      ConfigurationProperties packed = config.toConfigurationProperties();
+      List<?> mavlinkEntries = assertInstanceOf(List.class, packed.get("mavlink"));
+      ConfigurationProperties packedMavlink =
+          assertInstanceOf(ConfigurationProperties.class, mavlinkEntries.getFirst());
+      assertEquals("/mavlink/3/#", packedMavlink.getProperty("topic"));
+      List<?> knownSources = assertInstanceOf(List.class, packedMavlink.get("knownSources"));
+      ConfigurationProperties packedSource =
+          assertInstanceOf(ConfigurationProperties.class, knownSources.getFirst());
+      assertEquals("Stickleback", packedSource.getProperty("description"));
+      assertEquals("USV", packedSource.getProperty("vehicleClass"));
+      TwinManagerConfig restored = newTwinManagerConfig(packed);
+      assertEquals(3, restored.getMavlink().getFirst().getKnownSources().getFirst().getSystemId());
+      assertEquals(VehicleClass.USV,
+          restored.getMavlink().getFirst().getKnownSources().getFirst().getVehicleClass());
+    }
+  }
+
+  @Test
+  void drone_altitude_preserves_exact_key_and_value_through_round_trip()
+      throws ReflectiveOperationException {
+    ConfigurationProperties drone = droneInfoProperties("drone-altitude", UUID.randomUUID());
+    drone.put("altitudeMeters", 125.5);
+    ConfigurationProperties root = new ConfigurationProperties();
+    root.put("droneInfo", drone);
+
+    TwinManagerConfig config = newTwinManagerConfig(root);
+    ConfigurationProperties packed = config.toConfigurationProperties();
+    List<?> entries = assertInstanceOf(List.class, packed.get("droneInfo"));
+    ConfigurationProperties packedDrone =
+        assertInstanceOf(ConfigurationProperties.class, entries.getFirst());
+    assertEquals(125.5, packedDrone.getDoubleProperty("altitudeMeters", -1.0));
+    TwinManagerConfig restored = newTwinManagerConfig(packed);
+    assertEquals(125.5, restored.getDroneInfo().getFirst().getAltitudeMeters(), 0.0);
+  }
+
   private ConfigurationProperties adapterProperties(String topic, int interval) {
     ConfigurationProperties properties = new ConfigurationProperties();
     properties.put("enabled", true);

@@ -104,7 +104,7 @@ class StatisticsTests {
   // ---------- QuantileStatistics ----------
   @Test
   void quantiles_p2Approx() {
-    QuantileStatistics q = (QuantileStatistics) StatisticsFactory.getInstance().getAnalyser("Quantiles"); ;
+    QuantileStatistics q = (QuantileStatistics) StatisticsFactory.getInstance().getAnalyser("Quantiles");
     for (int i = 1; i <= 10000; i++) q.update(i);
 
     assertEquals(5000.5, q.getMedian(), 10.0);

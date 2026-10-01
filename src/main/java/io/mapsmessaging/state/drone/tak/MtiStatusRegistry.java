@@ -21,6 +21,7 @@ package io.mapsmessaging.state.drone.tak;
 import java.time.Instant;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * Static bridge between {@link CotEventPolicy} (constructed by {@code TakTwinObserver} early in
@@ -68,20 +69,20 @@ public final class MtiStatusRegistry {
     void onStatusCleared(String twinId);
   }
 
-  private static volatile Lookup delegate;
-  private static volatile SnapshotSource snapshotSource;
+  private static final AtomicReference<Lookup> delegate = new AtomicReference<>();
+  private static final AtomicReference<SnapshotSource> snapshotSource = new AtomicReference<>();
   private static final List<StatusListener> STATUS_LISTENERS = new CopyOnWriteArrayList<>();
-  private static volatile Runnable cacheClearer;
+  private static final AtomicReference<Runnable> cacheClearer = new AtomicReference<>();
 
   private MtiStatusRegistry() {
   }
 
   public static void setDelegate(Lookup lookup) {
-    delegate = lookup;
+    delegate.set(lookup);
   }
 
   public static void setSnapshotSource(SnapshotSource source) {
-    snapshotSource = source;
+    snapshotSource.set(source);
   }
 
   public static void addStatusListener(StatusListener listener) {
@@ -114,12 +115,12 @@ public final class MtiStatusRegistry {
 
   /** Registered by the MTI adapter; lets a controlled cache-loss test empty the MTI cache. */
   public static void setCacheClearer(Runnable clearer) {
-    cacheClearer = clearer;
+    cacheClearer.set(clearer);
   }
 
   /** @return true if an MTI adapter was registered and its cache was cleared. */
   public static boolean clearCache() {
-    Runnable current = cacheClearer;
+    Runnable current = cacheClearer.get();
     if (current == null) {
       return false;
     }
@@ -128,12 +129,12 @@ public final class MtiStatusRegistry {
   }
 
   public static MtiLookupResult lookup(String twinId) {
-    Lookup current = delegate;
+    Lookup current = delegate.get();
     return current == null || twinId == null ? null : current.lookup(twinId);
   }
 
   public static MtiStatusSnapshot snapshot(String twinId) {
-    SnapshotSource current = snapshotSource;
+    SnapshotSource current = snapshotSource.get();
     return current == null || twinId == null ? null : current.snapshot(twinId);
   }
 }

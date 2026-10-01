@@ -47,7 +47,6 @@ import io.mapsmessaging.rest.jolokia.JolokaManager;
 import io.mapsmessaging.routing.RoutingManager;
 import io.mapsmessaging.selector.model.ModelStore;
 import io.mapsmessaging.state.StateManagerAgent;
-import io.mapsmessaging.state.drone.core.TwinManager;
 import io.mapsmessaging.utilities.Agent;
 import io.mapsmessaging.utilities.AgentOrder;
 import io.mapsmessaging.utilities.service.Service;
@@ -95,7 +94,6 @@ public class SubSystemManager {
         agent.getAgent().start();
       } catch (Throwable e) {
         logger.log(MESSAGE_DAEMON_AGENT_FAILED, agent.getAgent().getName(),e);
-        e.printStackTrace(); // We are exiting the daemon, so we need to print the stack trace to the console.
         System.exit(2);
       }
       logger.log(MESSAGE_DAEMON_AGENT_STARTED, agent.getAgent().getName(), (System.currentTimeMillis() - start));
@@ -321,9 +319,9 @@ public class SubSystemManager {
 
   public List<SubSystemStatusDTO> getSubSystemStatus() {
     List<SubSystemStatusDTO> list = new ArrayList<>();
-    for(AgentOrder agent:agentMap.values()){
-      list.add(agent.getAgent().getStatus());
-    }
+    agentMap.values().stream()
+        .map(agent -> agent.getAgent().getStatus())
+        .forEachOrdered(list::add);
     return list;
   }
 

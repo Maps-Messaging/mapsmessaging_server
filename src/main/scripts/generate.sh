@@ -17,17 +17,19 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 #
-echo "===================================================="
+readonly CERT_SECTION_SEPARATOR="===================================================="
+
+echo "${CERT_SECTION_SEPARATOR}"
 echo "Please note: These are self signed certicates and"
 echo "not intended for production use but only local tests"
-echo "===================================================="
+echo "${CERT_SECTION_SEPARATOR}"
 
 rm *.jks 2> /dev/null
 rm *.pem 2> /dev/null
 
-echo "===================================================="
+echo "${CERT_SECTION_SEPARATOR}"
 echo "Creating fake third-party chain root -> ca"
-echo "===================================================="
+echo "${CERT_SECTION_SEPARATOR}"
 
 # generate private keys (for root and ca)
 

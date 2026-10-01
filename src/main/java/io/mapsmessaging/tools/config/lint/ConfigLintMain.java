@@ -23,6 +23,7 @@ import java.nio.file.Path;
 
 public class ConfigLintMain {
 
+  @SuppressWarnings("java:S106") // This CLI reports validation status directly to terminal users and build scripts before exiting.
   public static void main(String[] args) throws Exception {
     Path projectDir = Path.of(System.getProperty("user.dir"));
     Path targetDir = projectDir.resolve("target");

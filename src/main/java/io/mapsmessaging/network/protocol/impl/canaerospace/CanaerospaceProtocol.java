@@ -75,6 +75,9 @@ import static io.mapsmessaging.logging.ServerLogMessages.CANAEROSPACE_PROTOCOL_P
 
 public class CanaerospaceProtocol extends Protocol {
 
+  private static final String PROTOCOL_NAME = "canaerospace";
+
+
   private final Logger logger = LoggerFactory.getLogger(CanaerospaceProtocol.class);
 
   private final MessageFormatter formatter;
@@ -217,7 +220,7 @@ public class CanaerospaceProtocol extends Protocol {
 
     MessageBuilder messageBuilder = new MessageBuilder();
     Map<String, String> metadata = new HashMap<>();
-    metadata.put("protocol", "canaerospace");
+    metadata.put("protocol", PROTOCOL_NAME);
     metadata.put("version", getVersion());
     metadata.put("sessionId", session.getName());
     metadata.put("time_ms", Long.toString(System.currentTimeMillis()));
@@ -253,7 +256,7 @@ public class CanaerospaceProtocol extends Protocol {
 
   @Override
   public String getName() {
-    return "canaerospace";
+    return PROTOCOL_NAME;
   }
 
   @Override
@@ -299,7 +302,7 @@ public class CanaerospaceProtocol extends Protocol {
 
   private void publishRawFrame(CanFrame frame) {
     Map<String, String> metadata = new HashMap<>();
-    metadata.put("protocol", "canaerospace");
+    metadata.put("protocol", PROTOCOL_NAME);
     metadata.put("version", getVersion());
     metadata.put("sessionId", session.getName());
     metadata.put("time_ms", Long.toString(System.currentTimeMillis()));
@@ -318,11 +321,11 @@ public class CanaerospaceProtocol extends Protocol {
   }
 
   private String extractMessageName(JsonObject json) {
-    if (json == null || !json.has("canaerospace") || !json.get("canaerospace").isJsonObject()) {
+    if (json == null || !json.has(PROTOCOL_NAME) || !json.get(PROTOCOL_NAME).isJsonObject()) {
       return null;
     }
 
-    JsonObject canAerospaceObject = json.getAsJsonObject("canaerospace");
+    JsonObject canAerospaceObject = json.getAsJsonObject(PROTOCOL_NAME);
     if (!canAerospaceObject.has("name") || canAerospaceObject.get("name").isJsonNull()) {
       return null;
     }

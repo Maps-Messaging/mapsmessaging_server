@@ -40,15 +40,15 @@ public class PrivilegeSerializer implements Serializer<SessionPrivileges> {
     dataOutput2.writeInt(count);
     for (Privilege p : userDetails.getPriviliges()) {
       dataOutput2.writeUTF(p.getName());
-      if (p instanceof BooleanPrivilege) {
+      if (p instanceof BooleanPrivilege matchedBooleanPrivilege) {
         dataOutput2.writeInt(0);
-        dataOutput2.writeBoolean(((BooleanPrivilege) p).isValue());
-      } else if (p instanceof LongPrivilege) {
+        dataOutput2.writeBoolean((matchedBooleanPrivilege).isValue());
+      } else if (p instanceof LongPrivilege matchedLongPrivilege) {
         dataOutput2.writeInt(1);
-        dataOutput2.writeLong(((LongPrivilege) p).getValue());
-      } else if (p instanceof StringPrivilege) {
+        dataOutput2.writeLong((matchedLongPrivilege).getValue());
+      } else if (p instanceof StringPrivilege matchedStringPrivilege) {
         dataOutput2.writeInt(2);
-        dataOutput2.writeUTF(((StringPrivilege) p).getValue());
+        dataOutput2.writeUTF((matchedStringPrivilege).getValue());
       }
     }
   }

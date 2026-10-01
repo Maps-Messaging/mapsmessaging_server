@@ -37,6 +37,9 @@ import java.util.*;
 
 public class EnvelopeAggregationStrategy implements AggregationStrategy {
 
+  private static final String PAYLOAD_BASE64_KEY = "payloadBase64";
+
+
   private static final String JSON_CONTENT_TYPE = "application/json";
 
   private final Gson gson = new GsonBuilder().serializeNulls().create();
@@ -88,7 +91,7 @@ public class EnvelopeAggregationStrategy implements AggregationStrategy {
 
     byte[] opaqueData = message.getOpaqueData();
     if (opaqueData == null) {
-      entry.put("payloadBase64", null);
+      entry.put(PAYLOAD_BASE64_KEY, null);
       return entry;
     }
 
@@ -106,12 +109,12 @@ public class EnvelopeAggregationStrategy implements AggregationStrategy {
           Map<String, Object> map = gson.fromJson(json, type);
           entry.put("payload", map);
         } catch (IOException e) {
-          entry.put("payloadBase64", Base64.getEncoder().encodeToString(opaqueData));
+          entry.put(PAYLOAD_BASE64_KEY, Base64.getEncoder().encodeToString(opaqueData));
           // log it
         }
       }
       else {
-        entry.put("payloadBase64", Base64.getEncoder().encodeToString(opaqueData));
+        entry.put(PAYLOAD_BASE64_KEY, Base64.getEncoder().encodeToString(opaqueData));
       }
     }
     return entry;

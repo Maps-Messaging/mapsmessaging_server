@@ -77,6 +77,11 @@ import static io.mapsmessaging.state.logging.StateLogMessages.MAVLINK_STATE_UNSU
 
 public class MavlinkStateSubscriber implements MessageHandler, AutoCloseable {
 
+  private static final String DECODED_KEY = "decoded";
+  private static final String MAVLINK_NAME = "mavlink";
+  private static final String MESSAGE_ID_KEY = "messageId";
+
+
   private final Logger logger = LoggerFactory.getLogger(MavlinkStateSubscriber.class);
 
   private final StateLoopProtocol protocol;
@@ -103,7 +108,7 @@ public class MavlinkStateSubscriber implements MessageHandler, AutoCloseable {
   static String integrationSource(MavlinkTwinConfigDTO config) {
     String name = config.getName();
     if (name == null || name.isBlank()) {
-      name = "mavlink";
+      name = MAVLINK_NAME;
     }
     String topic = config.getTopic();
     if (topic == null || topic.isBlank()) {
@@ -288,7 +293,7 @@ public class MavlinkStateSubscriber implements MessageHandler, AutoCloseable {
 
   private TwinUpdateContext buildUpdateContext(ProcessedFrame env, String responseTopic) {
     TwinUpdateContext context = new TwinUpdateContext();
-    context.setUpdateSource("mavlink");
+    context.setUpdateSource(MAVLINK_NAME);
     context.setSourceInstanceId("mavlink:" + env.getFrame().getSystemId() + ":" + env.getFrame().getComponentId());
     context.setReceivedTime(Instant.now());
     context.setSequenceNumber((long) env.getFrame().getSequence());
@@ -306,14 +311,14 @@ public class MavlinkStateSubscriber implements MessageHandler, AutoCloseable {
 
     try {
       JsonObject jsonObject = JsonParser.parseString(new String(opaqueData, StandardCharsets.UTF_8)).getAsJsonObject();
-      JsonObject mavlinkObject = jsonObject.getAsJsonObject("mavlink");
+      JsonObject mavlinkObject = jsonObject.getAsJsonObject(MAVLINK_NAME);
 
       if (mavlinkObject == null) {
         logger.log(MAVLINK_STATE_MAVLINK_OBJECT_MISSING, sourceName);
         return null;
       }
 
-      Object messageId = mavlinkObject.has("messageId") && !mavlinkObject.get("messageId").isJsonNull() ? mavlinkObject.get("messageId").getAsInt() : "unknown";
+      Object messageId = mavlinkObject.has(MESSAGE_ID_KEY) && !mavlinkObject.get(MESSAGE_ID_KEY).isJsonNull() ? mavlinkObject.get(MESSAGE_ID_KEY).getAsInt() : "unknown";
       JsonObject payloadObject = mavlinkObject.getAsJsonObject("payload");
 
       if (payloadObject == null) {
@@ -323,7 +328,7 @@ public class MavlinkStateSubscriber implements MessageHandler, AutoCloseable {
 
       Frame frame = new Frame();
       frame.setVersion(Version.valueOf(mavlinkObject.get("version").getAsString()));
-      frame.setMessageId(mavlinkObject.get("messageId").getAsInt());
+      frame.setMessageId(mavlinkObject.get(MESSAGE_ID_KEY).getAsInt());
       frame.setSystemId(mavlinkObject.get("systemId").getAsInt());
       frame.setComponentId(mavlinkObject.get("componentId").getAsInt());
       frame.setSequence(mavlinkObject.get("sequence").getAsInt());
@@ -337,8 +342,8 @@ public class MavlinkStateSubscriber implements MessageHandler, AutoCloseable {
 
       Map<String, Object> fields = new LinkedHashMap<>();
 
-      if (payloadObject.has("decoded") && payloadObject.get("decoded").isJsonObject()) {
-        fields = GsonFactory.createStrictJsonWithSafeFloats().fromJson(payloadObject.getAsJsonObject("decoded"), new TypeToken<LinkedHashMap<String, Object>>() {}.getType());
+      if (payloadObject.has(DECODED_KEY) && payloadObject.get(DECODED_KEY).isJsonObject()) {
+        fields = GsonFactory.createStrictJsonWithSafeFloats().fromJson(payloadObject.getAsJsonObject(DECODED_KEY), new TypeToken<LinkedHashMap<String, Object>>() {}.getType());
       }
 
       return new ProcessedFrame(Integer.toString(frame.getMessageId()), frame, fields, true, Collections.emptyList(), null);

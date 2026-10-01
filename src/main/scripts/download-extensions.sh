@@ -21,6 +21,8 @@
 set -euo pipefail
 
 REPO_BASE="https://repository.mapsmessaging.io/repository/maps_snapshots"
+readonly EXTENSION_GROUP_ID="io.mapsmessaging"
+readonly EXTENSION_VERSION="1.0.0-SNAPSHOT"
 
 download_latest_snapshot_jar_and_rename() {
   local group_id="$1"
@@ -78,7 +80,7 @@ download_latest_snapshot_jar_and_rename() {
 }
 
 # ---- Examples (fill in the exact artifactIds/versions you use) ----
-download_latest_snapshot_jar_and_rename "io.mapsmessaging" "aws-sns-extension"   "1.0.0-SNAPSHOT"
-download_latest_snapshot_jar_and_rename "io.mapsmessaging" "ibm-mq-extension"    "1.0.0-SNAPSHOT"
-download_latest_snapshot_jar_and_rename "io.mapsmessaging" "pulsar-extension"    "1.0.0-SNAPSHOT"
-download_latest_snapshot_jar_and_rename "io.mapsmessaging" "v2x-step-extension"  "1.0.0-SNAPSHOT"
+download_latest_snapshot_jar_and_rename "${EXTENSION_GROUP_ID}" "aws-sns-extension"   "${EXTENSION_VERSION}"
+download_latest_snapshot_jar_and_rename "${EXTENSION_GROUP_ID}" "ibm-mq-extension"    "${EXTENSION_VERSION}"
+download_latest_snapshot_jar_and_rename "${EXTENSION_GROUP_ID}" "pulsar-extension"    "${EXTENSION_VERSION}"
+download_latest_snapshot_jar_and_rename "${EXTENSION_GROUP_ID}" "v2x-step-extension"  "${EXTENSION_VERSION}"

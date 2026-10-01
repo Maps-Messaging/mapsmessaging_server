@@ -31,6 +31,10 @@ import java.util.Objects;
 
 public class DestinationConfig extends DestinationConfigDTO implements Config {
 
+  private static final String FORMAT = "format";
+  private static final String CACHE = "cache";
+  private static final String MESSAGE_OVERRIDES = "messageOverrides";
+
   private static final String OPTIONAL_PATH = "{folder}";
 
   public DestinationConfig() {
@@ -49,17 +53,17 @@ public class DestinationConfig extends DestinationConfigDTO implements Config {
 
     storageConfig = ConfigHelper.buildConfig(type, properties);
 
-    if (properties.containsKey("format")) {
-      this.format = new FormatConfig((ConfigurationProperties) properties.get("format"));
+    if (properties.containsKey(FORMAT)) {
+      this.format = new FormatConfig((ConfigurationProperties) properties.get(FORMAT));
     }
-    if (properties.containsKey("cache") && featureManager.isEnabled("storage.cacheSupport")) {
-      this.cache = new CacheConfig((ConfigurationProperties) properties.get("cache"));
+    if (properties.containsKey(CACHE) && featureManager.isEnabled("storage.cacheSupport")) {
+      this.cache = new CacheConfig((ConfigurationProperties) properties.get(CACHE));
     }
     else{
       this.cache = null;
     }
-    if (properties.containsKey("messageOverrides")) {
-      messageOverride = new MessageOverrideConfig((ConfigurationProperties) properties.get("messageOverrides"));
+    if (properties.containsKey(MESSAGE_OVERRIDES)) {
+      messageOverride = new MessageOverrideConfig((ConfigurationProperties) properties.get(MESSAGE_OVERRIDES));
     }
     else if (properties.containsKey("messageOverride")) {
       messageOverride = new MessageOverrideConfig((ConfigurationProperties) properties.get("messageOverride"));
@@ -96,16 +100,16 @@ public class DestinationConfig extends DestinationConfigDTO implements Config {
     if (config.getFormat() != null) {
       ConfigurationProperties formatProperties = new ConfigurationProperties();
       formatProperties.put("name", config.getFormat().getName());
-      properties.put("format", formatProperties);
+      properties.put(FORMAT, formatProperties);
     }
     if (config.getCache() != null) {
       ConfigurationProperties cacheProperties = new ConfigurationProperties();
       cacheProperties.put("type", config.getCache().getType());
       cacheProperties.put("writeThrough", config.getCache().isWriteThrough() ? "enable" : "disable");
-      properties.put("cache", cacheProperties);
+      properties.put(CACHE, cacheProperties);
     }
     if (config.getMessageOverride() != null) {
-      properties.put("messageOverrides", MessageOverrideConfig.toConfigurationProperties(config.getMessageOverride()));
+      properties.put(MESSAGE_OVERRIDES, MessageOverrideConfig.toConfigurationProperties(config.getMessageOverride()));
     }
     return properties;
   }

@@ -51,8 +51,7 @@ public class UnsubAck5 extends MQTTPacket5 {
     // Payload (optional in v5): may contain one or more reason codes
     if (payloadLen > 0) {
       for (int i = 0; i < payloadLen; i++) {
-        byte reason = packet.get();
-        // You can store reason codes if needed later
+        packet.get(); // Consume reason codes without retaining them.
       }
     }
   }

@@ -135,9 +135,9 @@ public class SessionManagerPipeLine {
 
   public Set<String> getSessionIds() {
     Set<String> sessionIds = new HashSet<>();
-    for (SubscriptionController controller : disconnectedControllers) {
-      sessionIds.add(controller.getSessionId());
-    }
+    disconnectedControllers.stream()
+        .map(controller -> controller.getSessionId())
+        .forEachOrdered(sessionIds::add);
     return Set.copyOf(sessionIds);
   }
 

@@ -75,12 +75,12 @@ public class EndPointStatisticsJMX {
 
   @JMXBeanAttribute(name = "Bytes Read", description = "Returns the total number of bytes read on this end point")
   public long getBytesRead() {
-    return endPoint.getEndPointStatus().getReadByteAverages().getTotal();
+    return endPoint.getEndPointStatus().getReadBytesTotal();
   }
 
   @JMXBeanAttribute(name = "Bytes sent", description = "Returns the last total number of bytes sent from this end point")
   public long getBytesSent() {
-    return endPoint.getEndPointStatus().getWriteByteAverages().getTotal();
+    return endPoint.getEndPointStatus().getWriteBytesTotal();
   }
 
   @JMXBeanAttribute(name = "Total Underflow", description = "Returns the number of times that the buffer did not contain the entire protocol packet")

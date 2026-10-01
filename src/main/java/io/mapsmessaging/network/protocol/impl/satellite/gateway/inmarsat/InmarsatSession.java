@@ -167,11 +167,9 @@ public final class InmarsatSession {
 
   // Per-mailbox API
   public final class MailboxSession {
-    private final String mailboxId;
     private final String xMailbox;
 
     private MailboxSession(String mailboxId, String xMailbox) {
-      this.mailboxId = mailboxId;
       this.xMailbox = xMailbox;
     }
 

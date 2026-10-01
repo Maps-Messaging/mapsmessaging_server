@@ -67,9 +67,15 @@ import static io.mapsmessaging.logging.ServerLogMessages.*;
 
 public class MavlinkProtocol extends Protocol {
 
+  private static final String COMPONENT_ID_KEY = "componentId";
+  private static final String HEADER_KEY = "header";
+  private static final String MAVLINK_NAME = "mavlink";
+  private static final String SEQUENCE_KEY = "sequence";
+  private static final String SYSTEM_ID_KEY = "systemId";
+
+
   private static final int MAV_AUTOPILOT_ARDUPILOTMEGA = 3;
   private static final int MAV_AUTOPILOT_PX4 = 12;
-  private static final int MAV_AUTOPILOT_INVALID = 8;
 
   private static final Logger logger = LoggerFactory.getLogger(MavlinkProtocol.class);
 
@@ -299,7 +305,7 @@ public class MavlinkProtocol extends Protocol {
         Map<String, Object> parsed = env.getFields();
         JsonObject complete = MavlinkJsonEnvelopeBuilder.toJson(env.getFrame(), parsed);
         JsonObject envelope = new JsonObject();
-        envelope.add("mavlink", complete);
+        envelope.add(MAVLINK_NAME, complete);
         if (env.getDetections() != null && !env.getDetections().isEmpty()) {
           envelope.add("detections", gson.toJsonTree(env.getDetections()).getAsJsonArray());
         }
@@ -319,10 +325,10 @@ public class MavlinkProtocol extends Protocol {
         JsonObject metadata = new JsonObject();
         metadata.addProperty("messageName", env.getMessageName());
         metadata.addProperty("messageId", env.getFrame().getMessageId());
-        metadata.addProperty("systemId", env.getFrame().getSystemId());
-        metadata.addProperty("componentId", env.getFrame().getComponentId());
+        metadata.addProperty(SYSTEM_ID_KEY, env.getFrame().getSystemId());
+        metadata.addProperty(COMPONENT_ID_KEY, env.getFrame().getComponentId());
         metadata.addProperty("payload", Base64.getEncoder().encodeToString(env.getFrame().getPayload()));
-        metadata.addProperty("sequence", env.getFrame().getSequence());
+        metadata.addProperty(SEQUENCE_KEY, env.getFrame().getSequence());
         metadata.addProperty("signed", env.getFrame().isSigned());
         metadata.addProperty("time_ms", System.currentTimeMillis());
         messageBuilder.setOpaqueData(metadata.toString().getBytes(StandardCharsets.UTF_8));
@@ -342,7 +348,7 @@ public class MavlinkProtocol extends Protocol {
     metaData.put("sessionId", session.getName());
     metaData.put("time_ms", "" + System.currentTimeMillis());
 
-    Message message = messageBuilder.setContentType("mavlink").setOpaqueData(raw).setDataMap(convertToMap(envelope)).setQoS(qos).setRetain(false).setResponseTopic(outboundTopicName).setCorrelationData("ID#" + endPoint.getId() + "#" + socketAddress).storeOffline(storeOffline).setMeta(metaData).build();
+    Message message = messageBuilder.setContentType(MAVLINK_NAME).setOpaqueData(raw).setDataMap(convertToMap(envelope)).setQoS(qos).setRetain(false).setResponseTopic(outboundTopicName).setCorrelationData("ID#" + endPoint.getId() + "#" + socketAddress).storeOffline(storeOffline).setMeta(metaData).build();
 
     String topicName = computeTopicName(mavlinkConfig.getTopicNameTemplate(), envelope, messageName);
     sendMessage(topicName, message);
@@ -372,7 +378,7 @@ public class MavlinkProtocol extends Protocol {
 
   @Override
   public String getName() {
-    return "mavlink";
+    return MAVLINK_NAME;
   }
 
   @Override
@@ -405,9 +411,9 @@ public class MavlinkProtocol extends Protocol {
   private Map<String, TypedData> convertToMap(Frame envelope) {
     Map<String, TypedData> map = new LinkedHashMap<>();
     map.put("version", new TypedData(envelope.getVersion().toString()));
-    map.put("systemId", new TypedData(envelope.getSystemId()));
-    map.put("componentId", new TypedData(envelope.getComponentId()));
-    map.put("sequence", new TypedData(envelope.getSequence()));
+    map.put(SYSTEM_ID_KEY, new TypedData(envelope.getSystemId()));
+    map.put(COMPONENT_ID_KEY, new TypedData(envelope.getComponentId()));
+    map.put(SEQUENCE_KEY, new TypedData(envelope.getSequence()));
     map.put("payload", new TypedData(envelope.getPayload()));
     map.put("signed", new TypedData(envelope.isSigned()));
     return map;
@@ -477,16 +483,16 @@ public class MavlinkProtocol extends Protocol {
   }
 
   private void overrideSequence(JsonObject input) {
-    JsonObject header = input.getAsJsonObject("header");
+    JsonObject header = input.getAsJsonObject(HEADER_KEY);
     if (header == null) {
       header = new JsonObject();
-      input.add("header", header);
+      input.add(HEADER_KEY, header);
     }
-    header.addProperty("sequence", nextSequence());
+    header.addProperty(SEQUENCE_KEY, nextSequence());
 
     if (mavlinkConfig.hasLocalMavlinkIdentity()) {
-      header.addProperty("systemId", mavlinkConfig.getSystemId());
-      header.addProperty("componentId", mavlinkConfig.getComponentId());
+      header.addProperty(SYSTEM_ID_KEY, mavlinkConfig.getSystemId());
+      header.addProperty(COMPONENT_ID_KEY, mavlinkConfig.getComponentId());
     }
   }
 
@@ -495,13 +501,13 @@ public class MavlinkProtocol extends Protocol {
   }
 
   private void validateOutboundHeader(JsonObject input) {
-    JsonObject header = input.getAsJsonObject("header");
+    JsonObject header = input.getAsJsonObject(HEADER_KEY);
     if (header == null) {
       throw new IllegalArgumentException("Missing MAVLink header");
     }
 
-    int systemId = getRequiredUnsignedByte(header, "systemId");
-    int componentId = getRequiredUnsignedByte(header, "componentId");
+    int systemId = getRequiredUnsignedByte(header, SYSTEM_ID_KEY);
+    int componentId = getRequiredUnsignedByte(header, COMPONENT_ID_KEY);
 
     if (systemId == 0 || componentId == 0) {
       throw new IllegalArgumentException("Invalid MAVLink sender identity " + systemId + "/" + componentId);

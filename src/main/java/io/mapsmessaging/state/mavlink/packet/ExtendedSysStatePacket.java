@@ -29,6 +29,9 @@ import static io.mapsmessaging.state.mavlink.packet.MavlinkMessageIds.EXTENDED_S
 @Getter
 public class ExtendedSysStatePacket extends MavlinkPacket {
 
+  private static final String UNDEFINED_STATE = "UNDEFINED";
+
+
   private final int landedState;
   private final int vtolState;
   private final boolean valid;
@@ -51,18 +54,18 @@ public class ExtendedSysStatePacket extends MavlinkPacket {
       case 2 -> "IN_AIR";
       case 3 -> "TAKEOFF";
       case 4 -> "LANDING";
-      default -> "UNDEFINED";
+      default -> UNDEFINED_STATE;
     };
   }
 
   public String getVtolStateName() {
     return switch (vtolState) {
-      case 1 -> "UNDEFINED";
+      case 1 -> UNDEFINED_STATE;
       case 2 -> "TRANSITION_TO_FW";
       case 3 -> "TRANSITION_TO_MC";
       case 4 -> "MC";
       case 5 -> "FW";
-      default -> "UNDEFINED";
+      default -> UNDEFINED_STATE;
     };
   }
 }

@@ -21,10 +21,8 @@ package io.mapsmessaging.state.rest.twins;
 
 import io.mapsmessaging.MessageDaemon;
 import io.mapsmessaging.rest.api.impl.BaseRestApi;
-import io.mapsmessaging.rest.cache.CacheKey;
 import io.mapsmessaging.rest.responses.StatusResponse;
 import io.mapsmessaging.state.drone.core.EntityTwin;
-import io.mapsmessaging.state.drone.core.TwinManager;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Content;

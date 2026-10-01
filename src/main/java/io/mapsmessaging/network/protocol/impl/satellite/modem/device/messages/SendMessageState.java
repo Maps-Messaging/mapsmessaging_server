@@ -35,6 +35,10 @@ public class SendMessageState {
   public SendMessageState(String line, boolean isOgx) {
     String content = line.substring(line.indexOf(':') + 1).trim();
     String[] parts = content.split(",");
+    int requiredFields = isOgx ? 9 : 7;
+    if (parts.length < requiredFields) {
+      throw new IllegalArgumentException("Incomplete outgoing message status: expected at least " + requiredFields + " fields");
+    }
     if (!isOgx) { // IDP/ST
       this.messageName = parts[0].replace("\"", "").trim();
       this.messageNumber = Double.parseDouble(parts[1].trim());
@@ -112,6 +116,7 @@ public class SendMessageState {
     }
   }
 
+  @SuppressWarnings("java:S106") // This standalone parser demonstration prints its result directly to the invoking user.
   public static void main(String[] args) {
     SendMessageState state = new SendMessageState("%MOQS: 1,3,2025-08-21 02:21:39,3,0,2,20,84,0", true);
     System.out.println(state);
