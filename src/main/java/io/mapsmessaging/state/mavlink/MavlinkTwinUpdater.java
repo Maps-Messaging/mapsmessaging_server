@@ -73,6 +73,7 @@ public class MavlinkTwinUpdater implements AutoCloseable {
 
   // Metrics, exposed to Grafana via the JMX->Prometheus exporter (see MavlinkIntegrationJMX).
   private final LongAdder messagesProcessedCount = new LongAdder();
+  private volatile long lastMessageAtMillis = 0L;
   private final LongAdder twinsCreatedCount = new LongAdder();
   private final LongAdder classificationOverrideCount = new LongAdder();
 
@@ -122,6 +123,7 @@ public class MavlinkTwinUpdater implements AutoCloseable {
       return;
     }
     messagesProcessedCount.increment();
+    lastMessageAtMillis = System.currentTimeMillis();
 
     String twinId = buildTwinId(env, knownSource);
     droneMonitor.beginTwinUpdate(twinId);
@@ -405,6 +407,12 @@ public class MavlinkTwinUpdater implements AutoCloseable {
 
   long getMessagesProcessedCount() {
     return messagesProcessedCount.sum();
+  }
+
+  /** -1 if no MAVLink message has been processed yet. */
+  long getLastMessageAgeMillis() {
+    long at = lastMessageAtMillis;
+    return at == 0L ? -1L : System.currentTimeMillis() - at;
   }
 
   long getTwinsCreatedCount() {

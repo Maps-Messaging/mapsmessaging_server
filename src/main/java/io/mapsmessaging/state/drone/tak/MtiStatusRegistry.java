@@ -18,6 +18,8 @@
  */
 package io.mapsmessaging.state.drone.tak;
 
+import java.time.Instant;
+
 /**
  * Static bridge between {@link CotEventPolicy} (constructed by {@code TakTwinObserver} early in
  * server startup, inside {@code StateManagerAgent}'s constructor) and an MTI-feed
@@ -45,7 +47,28 @@ public final class MtiStatusRegistry {
     MtiLookupResult lookup(String twinId);
   }
 
+  /**
+   * Side-effect-free view of the adapter's cache for metrics. Must not touch lookup hit/miss
+   * counters or evict entries, otherwise every metrics scrape would skew the CoT-composition KPIs.
+   */
+  public interface SnapshotSource {
+    /** @return the current, unexpired MTI status of that twin, or {@code null} if none. */
+    MtiStatusSnapshot snapshot(String twinId);
+  }
+
+  /**
+   * Told when the adapter accepts or explicitly clears an MTI status, so recovery timing can tell
+   * "MTI data is available again" apart from "MTI deliberately withdrew this asset's status".
+   */
+  public interface StatusListener {
+    void onStatusAccepted(String twinId, Instant receivedAt);
+
+    void onStatusCleared(String twinId);
+  }
+
   private static volatile Lookup delegate;
+  private static volatile SnapshotSource snapshotSource;
+  private static volatile StatusListener statusListener;
 
   private MtiStatusRegistry() {
   }
@@ -54,8 +77,35 @@ public final class MtiStatusRegistry {
     delegate = lookup;
   }
 
+  public static void setSnapshotSource(SnapshotSource source) {
+    snapshotSource = source;
+  }
+
+  public static void setStatusListener(StatusListener listener) {
+    statusListener = listener;
+  }
+
+  public static void statusAccepted(String twinId, Instant receivedAt) {
+    StatusListener current = statusListener;
+    if (current != null && twinId != null) {
+      current.onStatusAccepted(twinId, receivedAt);
+    }
+  }
+
+  public static void statusCleared(String twinId) {
+    StatusListener current = statusListener;
+    if (current != null && twinId != null) {
+      current.onStatusCleared(twinId);
+    }
+  }
+
   public static MtiLookupResult lookup(String twinId) {
     Lookup current = delegate;
     return current == null || twinId == null ? null : current.lookup(twinId);
+  }
+
+  public static MtiStatusSnapshot snapshot(String twinId) {
+    SnapshotSource current = snapshotSource;
+    return current == null || twinId == null ? null : current.snapshot(twinId);
   }
 }
