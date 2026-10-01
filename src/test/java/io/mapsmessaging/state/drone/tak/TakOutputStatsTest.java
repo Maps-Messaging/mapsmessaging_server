@@ -63,6 +63,9 @@ class TakOutputStatsTest {
 
   @Test
   void socket_connectWriteAndCloseAreCounted() throws Exception {
+    var writeTimeField = TakOutputStats.class.getDeclaredField("lastWriteMillis");
+    writeTimeField.setAccessible(true);
+    writeTimeField.setLong(null, System.currentTimeMillis() - 60_000);
     long connects = TakOutputStats.CONNECT_COUNT.sum();
     long disconnects = TakOutputStats.DISCONNECT_COUNT.sum();
 
@@ -74,7 +77,13 @@ class TakOutputStatsTest {
         connection.accept("<event/>");
         try (Socket accepted = server.accept()) {
           awaitIncrease(() -> TakOutputStats.CONNECT_COUNT.sum(), connects);
-          awaitTrue(() -> TakOutputStats.getLastWriteAgeMillis() >= 0);
+          accepted.setSoTimeout(5000);
+          var reader = new java.io.BufferedReader(new java.io.InputStreamReader(
+              accepted.getInputStream(), java.nio.charset.StandardCharsets.UTF_8));
+          assertEquals("<event/>", reader.readLine());
+          awaitTrue(() -> TakOutputStats.getLastWriteAgeMillis() >= 0
+              && TakOutputStats.getLastWriteAgeMillis() < 5000);
+          assertTrue(TakOutputStats.getLastWriteAgeMillis() < 5000);
         }
       } finally {
         connection.close();
@@ -116,6 +125,21 @@ class TakOutputStatsTest {
     } finally {
       connection.close();
     }
+  }
+
+  @org.junit.jupiter.params.ParameterizedTest
+  @org.junit.jupiter.params.provider.ValueSource(longs = {5, 10, 25, 50, 100, 250, 500, 1000, 2500, 5000, 10000})
+  void latency_bucket_includes_its_exact_bound_and_excludes_next_millisecond(long boundMillis) {
+    int bucket = 0;
+    while (TakOutputStats.LATENCY_BUCKETS_SECONDS[bucket] * 1000 != boundMillis) {
+      bucket++;
+    }
+    long before = TakOutputStats.getLatencyCumulativeCount(bucket);
+    long count = TakOutputStats.getLatencyCount();
+    TakOutputStats.recordLatencyMillis(boundMillis);
+    TakOutputStats.recordLatencyMillis(boundMillis + 1);
+    assertEquals(1, TakOutputStats.getLatencyCumulativeCount(bucket) - before);
+    assertEquals(2, TakOutputStats.getLatencyCount() - count);
   }
 
   private static void awaitIncrease(LongSupplier value, long from) throws InterruptedException {
