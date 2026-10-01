@@ -295,6 +295,23 @@ class MavlinkTwinUpdaterTest {
     updater.close();
   }
 
+  @Test
+  void last_message_age_starts_unset_and_closed_updates_do_not_refresh_it() {
+    MavlinkTwinUpdater updater = new MavlinkTwinUpdater(twinManager(), mock(ListenerManager.class));
+    try {
+      assertEquals(-1, updater.getLastMessageAgeMillis());
+      updater.updateTwinState(frame(17, 42, 999), mock(MavlinkPacket.class),
+          context(null, null), knownSource(), new DroneInfoDTO());
+      assertTrue(updater.getLastMessageAgeMillis() >= 0);
+      assertEquals(1, updater.getMessagesProcessedCount());
+    } finally {
+      updater.close();
+    }
+    updater.updateTwinState(frame(17, 42, 999), mock(MavlinkPacket.class),
+        context(null, null), knownSource(), new DroneInfoDTO());
+    assertEquals(1, updater.getMessagesProcessedCount());
+  }
+
   private TwinManager twinManager() {
     return new TwinManager(false, 10_000L, 5_000L, 120_000L, null);
   }
