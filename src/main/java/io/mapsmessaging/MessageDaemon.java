@@ -433,6 +433,7 @@ public class MessageDaemon {
   }
 
   public String getRestServerUrl() {
-    return subSystemManager.getRestApiServerManager().getBaseUri();
+    RestApiServerManager restApiServerManager = subSystemManager.getRestApiServerManager();
+    return restApiServerManager != null ? restApiServerManager.getBaseUri() : null;
   }
 }
