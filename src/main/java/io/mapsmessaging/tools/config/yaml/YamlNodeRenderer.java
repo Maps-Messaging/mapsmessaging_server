@@ -26,6 +26,9 @@ import com.google.gson.JsonObject;
 import java.util.*;
 
 public final class YamlNodeRenderer {
+
+  private static final String ITEMS_KEY = "items";
+
   private static final String LIST_SEPARATOR = "# ----------------------------------------------------------------------";
   private static final String VERSION_FIELD = "schemaLoadingVersion";
 
@@ -168,7 +171,7 @@ public final class YamlNodeRenderer {
         builder.append(indent(indentLevel + 1)).append(LIST_SEPARATOR).append("\n");
         builder.append(indent(indentLevel + 1)).append("-").append("\n");
 
-        JsonObject itemSchema = schemaResolver.resolve(arraySchema.get("items"), schemaRoot).getAsJsonObject();
+        JsonObject itemSchema = schemaResolver.resolve(arraySchema.get(ITEMS_KEY), schemaRoot).getAsJsonObject();
         JsonObject itemObjectSchema = schemaResolver.coerceToObjectSchema(itemSchema, schemaRoot);
 
         renderObject(builder, indentLevel + 2, itemObjectSchema, new LinkedHashMap<>(), schemaRoot, renderMode, false);
@@ -182,8 +185,8 @@ public final class YamlNodeRenderer {
     builder.append("\n");
 
     JsonObject itemsSchema = null;
-    if (arraySchema.has("items")) {
-      JsonElement resolvedItems = schemaResolver.resolve(arraySchema.get("items"), schemaRoot);
+    if (arraySchema.has(ITEMS_KEY)) {
+      JsonElement resolvedItems = schemaResolver.resolve(arraySchema.get(ITEMS_KEY), schemaRoot);
       if (resolvedItems != null && resolvedItems.isJsonObject()) {
         itemsSchema = resolvedItems.getAsJsonObject();
       }
@@ -232,10 +235,10 @@ public final class YamlNodeRenderer {
     if (arraySchema == null) {
       return false;
     }
-    if (!arraySchema.has("items")) {
+    if (!arraySchema.has(ITEMS_KEY)) {
       return false;
     }
-    JsonElement itemsElement = arraySchema.get("items");
+    JsonElement itemsElement = arraySchema.get(ITEMS_KEY);
     if (itemsElement == null || !itemsElement.isJsonObject()) {
       return false;
     }

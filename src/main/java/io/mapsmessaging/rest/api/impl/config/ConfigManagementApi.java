@@ -54,6 +54,8 @@ import static io.mapsmessaging.rest.api.Constants.URI_PATH;
 @Path(URI_PATH + "/server/config")
 public class ConfigManagementApi extends BaseRestApi {
 
+  private static final String CONFIGURATION_ERROR = "Server configuration error";
+
   private static final String RESOURCE = "server/config";
   private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
@@ -80,7 +82,7 @@ public class ConfigManagementApi extends BaseRestApi {
           ),
           @ApiResponse(
               responseCode = "500",
-              description = "Server configuration error",
+              description = CONFIGURATION_ERROR,
               content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))
           )
       }
@@ -100,7 +102,7 @@ public class ConfigManagementApi extends BaseRestApi {
     } catch (WebApplicationException ex) {
       return mapAuthOrRethrow(ex);
     } catch (Exception ex) {
-      return internalServerError("Server configuration error");
+      return internalServerError(CONFIGURATION_ERROR);
     }
   }
 
@@ -138,7 +140,7 @@ public class ConfigManagementApi extends BaseRestApi {
           ),
           @ApiResponse(
               responseCode = "500",
-              description = "Server configuration error",
+              description = CONFIGURATION_ERROR,
               content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))
           )
       }
@@ -166,7 +168,6 @@ public class ConfigManagementApi extends BaseRestApi {
         return internalServerError("Configuration section is not a DTO: " + name);
       }
 
-      System.err.println("Manager Name:"+manager.getName());
       String schema = ConfigurationManager.getInstance().getSchema(manager.getName());
       if (schema == null || schema.isBlank()) {
         return notFound("Schema not found for: " + name);
@@ -181,7 +182,7 @@ public class ConfigManagementApi extends BaseRestApi {
     } catch (WebApplicationException ex) {
       return mapAuthOrRethrow(ex);
     } catch (Exception ex) {
-      return internalServerError("Server configuration error");
+      return internalServerError(CONFIGURATION_ERROR);
     }
   }
 
@@ -225,7 +226,7 @@ public class ConfigManagementApi extends BaseRestApi {
           ),
           @ApiResponse(
               responseCode = "500",
-              description = "Server configuration error",
+              description = CONFIGURATION_ERROR,
               content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))
           )
       }
@@ -279,7 +280,7 @@ public class ConfigManagementApi extends BaseRestApi {
     } catch (IOException ex) {
       return internalServerError("Unable to save configuration");
     } catch (Exception ex) {
-      return internalServerError("Server configuration error");
+      return internalServerError(CONFIGURATION_ERROR);
     }
   }
 

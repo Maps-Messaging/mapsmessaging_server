@@ -26,7 +26,6 @@ import io.mapsmessaging.network.protocol.impl.nats.frames.PayloadFrame;
 import io.mapsmessaging.network.protocol.impl.nats.jetstream.stream.JetStreamFrameHandler;
 import io.mapsmessaging.network.protocol.impl.nats.state.SessionState;
 import io.mapsmessaging.network.protocol.impl.nats.streams.NamespaceManager;
-import io.mapsmessaging.network.protocol.impl.nats.streams.StreamInfo;
 import io.mapsmessaging.network.protocol.impl.nats.streams.StreamInfoList;
 
 import java.io.IOException;
@@ -71,9 +70,9 @@ public class StreamDeleteHandler extends JetStreamFrameHandler {
 
     List<CompletableFuture<Void>> deletes = new ArrayList<>();
 
-    for (StreamInfo streamInfo : info.getSubjects()) {
-      deletes.add(sessionState.getSession().deleteDestinationImpl(streamInfo.getDestination()));
-    }
+    info.getSubjects().stream()
+        .map(streamInfo -> sessionState.getSession().deleteDestinationImpl(streamInfo.getDestination()))
+        .forEachOrdered(deletes::add);
 
     try {
       CompletableFuture<Void> all = CompletableFuture.allOf(deletes.toArray(new CompletableFuture[0]));

@@ -1,6 +1,8 @@
 package io.mapsmessaging.network.discovery;
 
+import io.mapsmessaging.config.NetworkManagerConfig;
 import io.mapsmessaging.network.monitor.NetworkInterfaceMonitor;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.mockito.MockedStatic;
 
@@ -13,6 +15,17 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 class NetworkAddressHelperTest {
+
+  @BeforeAll
+  static void initialize_monitor_without_daemon_configuration() throws Exception {
+    // Mockito initializes the monitor class before mocking it; its singleton reads config.
+    try (MockedStatic<NetworkManagerConfig> configuration = mockStatic(NetworkManagerConfig.class)) {
+      NetworkManagerConfig config = mock(NetworkManagerConfig.class);
+      configuration.when(NetworkManagerConfig::getInstance).thenReturn(config);
+      Class.forName(NetworkInterfaceMonitor.class.getName());
+    }
+  }
+
 
   @Test
   void hostnameListIsTrimmedAndLoopbackAddressesAreExcluded() throws Exception {

@@ -33,8 +33,7 @@ public class TextMessageTranslator extends BaseMessageTranslator {
   public @NonNull @NotNull MessageBuilder decode(@NonNull @NotNull MessageBuilder messageBuilder, @NonNull @NotNull org.apache.qpid.proton.message.Message protonMessage) {
     super.decode(messageBuilder, protonMessage);
     Section body = protonMessage.getBody();
-    if (body instanceof AmqpValue) {
-      AmqpValue amqpBody = (AmqpValue) body;
+    if (body instanceof AmqpValue amqpBody) {
       Object data = amqpBody.getValue();
       if (data instanceof String) {
         messageBuilder.setOpaqueData(data.toString().getBytes());

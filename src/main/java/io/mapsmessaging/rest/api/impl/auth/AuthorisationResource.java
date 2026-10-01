@@ -49,6 +49,9 @@ import static io.mapsmessaging.rest.api.Constants.URI_PATH;
 @Path(URI_PATH + "/auth")
 public class AuthorisationResource extends BaseAuthRestApi {
 
+  private static final String INTERNAL_SERVER_ERROR_VALUE = "Internal server error";
+
+
   private final AuthorisationRestHelper managementService = new AuthorisationRestHelper();
 
   @GET
@@ -65,7 +68,7 @@ public class AuthorisationResource extends BaseAuthRestApi {
           ),
           @ApiResponse(
               responseCode = "500",
-              description = "Internal server error",
+              description = INTERNAL_SERVER_ERROR_VALUE,
               content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))
           ),
           @ApiResponse(responseCode = "401", description = "Invalid credentials or unauthorized access",
@@ -79,9 +82,9 @@ public class AuthorisationResource extends BaseAuthRestApi {
 
     try {
       List<PermissionDetailsDTO> details = new ArrayList<>();
-      for (ServerPermissions permission : ServerPermissions.values()) {
-        details.add(new PermissionDetailsDTO(permission));
-      }
+      java.util.Arrays.stream(ServerPermissions.values())
+          .map(permission -> new PermissionDetailsDTO(permission))
+          .forEachOrdered(details::add);
 
       List<ResourceTypeDetailsDTO> resourceTypes = new ArrayList<>();
       resourceTypes.add(new ResourceTypeDetailsDTO("Server", true));
@@ -94,7 +97,7 @@ public class AuthorisationResource extends BaseAuthRestApi {
           .build();
     } catch (RuntimeException ex) {
       return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
-          .entity(new StatusResponse("Internal server error"))
+          .entity(new StatusResponse(INTERNAL_SERVER_ERROR_VALUE))
           .type(MediaType.APPLICATION_JSON)
           .build();
     }
@@ -124,7 +127,7 @@ public class AuthorisationResource extends BaseAuthRestApi {
           ),
           @ApiResponse(
               responseCode = "500",
-              description = "Internal server error",
+              description = INTERNAL_SERVER_ERROR_VALUE,
               content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))
           ),
           @ApiResponse(responseCode = "401", description = "Invalid credentials or unauthorized access",
@@ -180,7 +183,7 @@ public class AuthorisationResource extends BaseAuthRestApi {
       return Response.ok(result).type(MediaType.APPLICATION_JSON).build();
     } catch (RuntimeException ex) {
       return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
-          .entity(new StatusResponse("Internal server error"))
+          .entity(new StatusResponse(INTERNAL_SERVER_ERROR_VALUE))
           .type(MediaType.APPLICATION_JSON)
           .build();
     }
@@ -211,7 +214,7 @@ public class AuthorisationResource extends BaseAuthRestApi {
           ),
           @ApiResponse(
               responseCode = "500",
-              description = "Internal server error",
+              description = INTERNAL_SERVER_ERROR_VALUE,
               content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))
           ),
           @ApiResponse(responseCode = "401", description = "Invalid credentials or unauthorized access",
@@ -256,7 +259,7 @@ public class AuthorisationResource extends BaseAuthRestApi {
       return Response.ok(result).type(MediaType.APPLICATION_JSON).build();
     } catch (RuntimeException ex) {
       return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
-          .entity(new StatusResponse("Internal server error"))
+          .entity(new StatusResponse(INTERNAL_SERVER_ERROR_VALUE))
           .type(MediaType.APPLICATION_JSON)
           .build();
     }
@@ -286,7 +289,7 @@ public class AuthorisationResource extends BaseAuthRestApi {
           ),
           @ApiResponse(
               responseCode = "500",
-              description = "Internal server error",
+              description = INTERNAL_SERVER_ERROR_VALUE,
               content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))
           ),
           @ApiResponse(responseCode = "401", description = "Invalid credentials or unauthorized access",
@@ -326,7 +329,7 @@ public class AuthorisationResource extends BaseAuthRestApi {
       return Response.ok(result).type(MediaType.APPLICATION_JSON).build();
     } catch (RuntimeException ex) {
       return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
-          .entity(new StatusResponse("Internal server error"))
+          .entity(new StatusResponse(INTERNAL_SERVER_ERROR_VALUE))
           .type(MediaType.APPLICATION_JSON)
           .build();
     }
@@ -356,7 +359,7 @@ public class AuthorisationResource extends BaseAuthRestApi {
           ),
           @ApiResponse(
               responseCode = "500",
-              description = "Internal server error",
+              description = INTERNAL_SERVER_ERROR_VALUE,
               content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))
           ),
           @ApiResponse(responseCode = "401", description = "Invalid credentials or unauthorized access",
@@ -396,7 +399,7 @@ public class AuthorisationResource extends BaseAuthRestApi {
       return Response.ok(result).type(MediaType.APPLICATION_JSON).build();
     } catch (RuntimeException ex) {
       return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
-          .entity(new StatusResponse("Internal server error"))
+          .entity(new StatusResponse(INTERNAL_SERVER_ERROR_VALUE))
           .type(MediaType.APPLICATION_JSON)
           .build();
     }
@@ -422,7 +425,7 @@ public class AuthorisationResource extends BaseAuthRestApi {
           ),
           @ApiResponse(
               responseCode = "500",
-              description = "Internal server error",
+              description = INTERNAL_SERVER_ERROR_VALUE,
               content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))
           ),
           @ApiResponse(responseCode = "401", description = "Invalid credentials or unauthorized access",
@@ -446,7 +449,7 @@ public class AuthorisationResource extends BaseAuthRestApi {
       return Response.ok(result).type(MediaType.APPLICATION_JSON).build();
     } catch (RuntimeException ex) {
       return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
-          .entity(new StatusResponse("Internal server error"))
+          .entity(new StatusResponse(INTERNAL_SERVER_ERROR_VALUE))
           .type(MediaType.APPLICATION_JSON)
           .build();
     }

@@ -37,9 +37,7 @@ public class LoRaProtocolConfig extends LoRaProtocolConfigDTO implements Config 
   @Override
   public boolean update(BaseConfigDTO config) {
     boolean hasChanged = false;
-    if (config instanceof LoRaProtocolConfigDTO) {
-      LoRaProtocolConfigDTO newConfig = (LoRaProtocolConfigDTO) config;
-
+    if (config instanceof LoRaProtocolConfigDTO newConfig) {
       // Check each field and update if necessary
       if (this.retransmit != newConfig.getRetransmit()) {
         this.retransmit = newConfig.getRetransmit();

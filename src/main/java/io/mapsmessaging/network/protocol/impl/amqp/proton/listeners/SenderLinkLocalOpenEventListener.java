@@ -54,8 +54,7 @@ public class SenderLinkLocalOpenEventListener extends LinkLocalOpenEventListener
   @Override
   public boolean handleEvent(Event event) {
     Link link = event.getLink();
-    if (link instanceof Sender) {
-      Sender sender = (Sender) link;
+    if (link instanceof Sender sender) {
       Source source = (Source) sender.getRemoteSource();
       String destinationName = getDestinationName(source);
       if (destinationName != null) {

@@ -19,10 +19,16 @@
 
 package io.mapsmessaging.aggregator.worker;
 
+import io.mapsmessaging.logging.Logger;
+import io.mapsmessaging.logging.LoggerFactory;
+import io.mapsmessaging.logging.ServerLogMessages;
+
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.LockSupport;
 
 public class AggregatorStripeWorker implements Runnable {
+
+  private static final Logger logger = LoggerFactory.getLogger(AggregatorStripeWorker.class);
 
   private static final int TIMEOUT_TICK_MS = 50;
 
@@ -59,8 +65,7 @@ public class AggregatorStripeWorker implements Runnable {
         try {
           drained = workItem.drainOnce(maxBatchPerWorkItem);
         } catch (Throwable ignored) {
-          ignored.printStackTrace();
-          // log if you want; keep stripe alive
+          logger.log(ServerLogMessages.AGGREGATOR_DRAIN_FAILED, workItem.getName(), ignored);
         }
 
         if (drained > 0) {
@@ -80,8 +85,7 @@ public class AggregatorStripeWorker implements Runnable {
           try {
             item.checkTimeout();
           } catch (Throwable ignored) {
-            ignored.printStackTrace();
-            // log if you want
+            logger.log(ServerLogMessages.AGGREGATOR_TIMEOUT_FAILED, item.getName(), ignored);
           }
         }
         lastTimeoutTickMillis = now;

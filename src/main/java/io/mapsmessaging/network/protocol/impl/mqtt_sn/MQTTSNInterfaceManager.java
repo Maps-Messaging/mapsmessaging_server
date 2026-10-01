@@ -56,6 +56,9 @@ import java.util.concurrent.TimeoutException;
 @java.lang.SuppressWarnings("squid:S00101")
 public class MQTTSNInterfaceManager implements SelectorCallback {
 
+  private static final String PROTOCOL_NAME = "mqtt-sn";
+
+
   private final Logger logger;
   private final SelectorTask selectorTask;
   private final EndPoint endPoint;
@@ -79,7 +82,7 @@ public class MQTTSNInterfaceManager implements SelectorCallback {
     this.selectorTask = selectorTask;
     advertiserTask = null;
     this.endPoint = endPoint;
-    mqttSnConfig = (MqttSnConfig) endPoint.getConfig().getProtocolConfig("mqtt-sn");
+    mqttSnConfig = (MqttSnConfig) endPoint.getConfig().getProtocolConfig(PROTOCOL_NAME);
     long timeout = mqttSnConfig.getIdleSessionTimeout();
     enablePortChanges = mqttSnConfig.isEnablePortChanges();
     enableAddressChanges = mqttSnConfig.isEnableAddressChanges();
@@ -91,7 +94,7 @@ public class MQTTSNInterfaceManager implements SelectorCallback {
     transformation = TransformationManager.getInstance().getTransformation(
         endPoint.getProtocol(),
         endPoint.getName(),
-        "mqtt-sn",
+        PROTOCOL_NAME,
         "<registered>"
     );
 
@@ -102,7 +105,7 @@ public class MQTTSNInterfaceManager implements SelectorCallback {
     logger = LoggerFactory.getLogger("MQTT-SN Protocol on " + endPoint.getName());
     this.endPoint = endPoint;
     this.gatewayId = gatewayId;
-    mqttSnConfig = (MqttSnConfig) endPoint.getConfig().getProtocolConfig("mqtt-sn");
+    mqttSnConfig = (MqttSnConfig) endPoint.getConfig().getProtocolConfig(PROTOCOL_NAME);
     long timeout = mqttSnConfig.getIdleSessionTimeout();
     enablePortChanges = mqttSnConfig.isEnablePortChanges();
     enableAddressChanges = mqttSnConfig.isEnableAddressChanges();
@@ -131,7 +134,7 @@ public class MQTTSNInterfaceManager implements SelectorCallback {
     transformation = TransformationManager.getInstance().getTransformation(
         endPoint.getProtocol(),
         endPoint.getName(),
-        "mqtt-sn",
+        PROTOCOL_NAME,
         "<registered>"
     );
   }
@@ -189,14 +192,12 @@ public class MQTTSNInterfaceManager implements SelectorCallback {
       for (PacketFactory factory : packetFactory) {
         MQTT_SNPacket mqttMsg = factory.parseFrame(packet);
         packet.position(0);
-        if (mqttMsg instanceof PingRequest) {
-          PingRequest pingRequest = (PingRequest) mqttMsg;
-          if (pingRequest.getClientId() != null) {
-            UDPSessionState<MQTT_SNProtocol> state = currentSessions.findAndUpdate(pingRequest.getClientId(), packet.getFromAddress(), enableAddressChanges);
-            if (state != null) {
-              state.getContext().setAddressKey(packet.getFromAddress());
-              return state;
-            }
+        if (mqttMsg instanceof PingRequest pingRequest
+            && pingRequest.getClientId() != null) {
+          UDPSessionState<MQTT_SNProtocol> state = currentSessions.findAndUpdate(pingRequest.getClientId(), packet.getFromAddress(), enableAddressChanges);
+          if (state != null) {
+            state.getContext().setAddressKey(packet.getFromAddress());
+            return state;
           }
         }
       }
@@ -208,21 +209,20 @@ public class MQTTSNInterfaceManager implements SelectorCallback {
     int len = packet.available();
     MQTT_SNPacket mqttSn = factory.parseFrame(packet);
 
-    if (mqttSn instanceof Connect) {
+    if (mqttSn instanceof Connect matchedConnect) {
       // Cool, so we have a new connect, so let's create a new protocol Impl and add it into our list
       // of current sessions
       UDPFacadeEndPoint facade = new UDPFacadeEndPoint(endPoint, packet.getFromAddress(), endPoint.getServer());
-      MQTT_SNProtocol impl = new MQTT_SNProtocol(this, facade, packet.getFromAddress(), selectorTask, registeredTopicConfiguration, (Connect) mqttSn, mqttSnConfig);
+      MQTT_SNProtocol impl = new MQTT_SNProtocol(this, facade, packet.getFromAddress(), selectorTask, registeredTopicConfiguration, matchedConnect, mqttSnConfig);
       UDPSessionState<MQTT_SNProtocol> state = new UDPSessionState<>(impl);
-      state.setClientIdentifier( ((Connect) mqttSn).getClientId());
+      state.setClientIdentifier( (matchedConnect).getClientId());
       currentSessions.addState(packet.getFromAddress(), state);
       facade.updateReadBytes(len);
       facade.updateWriteBytes(len);
-    } else if (mqttSn instanceof io.mapsmessaging.network.protocol.impl.mqtt_sn.v2_0.packet.Connect) {
+    } else if (mqttSn instanceof io.mapsmessaging.network.protocol.impl.mqtt_sn.v2_0.packet.Connect connectV2) {
       // Cool, so we have a new connect, so let's create a new protocol Impl and add it into our list
       // of current sessions
       UDPFacadeEndPoint facade = new UDPFacadeEndPoint(endPoint, packet.getFromAddress(), endPoint.getServer());
-      io.mapsmessaging.network.protocol.impl.mqtt_sn.v2_0.packet.Connect connectV2 = (io.mapsmessaging.network.protocol.impl.mqtt_sn.v2_0.packet.Connect) mqttSn;
       MQTT_SNProtocol impl = new MQTT_SNProtocolV2(this, facade, packet.getFromAddress(), selectorTask, registeredTopicConfiguration, connectV2, mqttSnConfig);
       UDPSessionState<MQTT_SNProtocol> state = new UDPSessionState<>(impl);
       state.setClientIdentifier(connectV2.getClientId());
@@ -231,10 +231,10 @@ public class MQTTSNInterfaceManager implements SelectorCallback {
       facade.updateWriteBytes(len);
     } else if (mqttSn instanceof SearchGateway) {
       handleSearch(packet);
-    } else if (mqttSn instanceof Publish) {
-      handlePublish(packet, (Publish) mqttSn);
-    } else if (mqttSn instanceof Advertise) {
-      handleAdvertise(packet, (Advertise) mqttSn);
+    } else if (mqttSn instanceof Publish matchedPublish) {
+      handlePublish(packet, matchedPublish);
+    } else if (mqttSn instanceof Advertise matchedAdvertise) {
+      handleAdvertise(packet, matchedAdvertise);
     } else if (mqttSn instanceof ConnAck || mqttSn instanceof io.mapsmessaging.network.protocol.impl.mqtt_sn.v2_0.packet.ConnAck) {
       Packet error = new Packet(32, false);
       mqttSn.packFrame(error);

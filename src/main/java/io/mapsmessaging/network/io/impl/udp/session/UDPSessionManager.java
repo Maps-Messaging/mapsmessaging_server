@@ -84,9 +84,7 @@ public class UDPSessionManager<T extends Timeoutable> {
         // We have found a matching client ID, but lets see if the address changes and we allow this
         SocketAddress socketAddress = entry.getKey();
         boolean allowChange = false;
-        if(socketAddress instanceof InetSocketAddress && updatedAddress instanceof InetSocketAddress){
-          InetSocketAddress inetSocketAddress = (InetSocketAddress )socketAddress;
-          InetSocketAddress inetUpdateAddress = (InetSocketAddress )updatedAddress;
+        if(socketAddress instanceof InetSocketAddress inetSocketAddress && updatedAddress instanceof InetSocketAddress inetUpdateAddress){
           allowChange = enableAddressChange || inetSocketAddress.getHostName().equals(inetUpdateAddress.getHostName());
         }
         if(allowChange) {

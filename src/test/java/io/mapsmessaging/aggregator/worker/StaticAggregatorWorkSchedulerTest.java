@@ -42,12 +42,13 @@ class StaticAggregatorWorkSchedulerTest {
     FakeWorkItem workItem = new FakeWorkItem("A", 100);
 
     scheduler.register(workItem);
-    scheduler.start();
 
     try {
+      // Queue repeated signals before the worker can clear the scheduled flag.
       for (int i = 0; i < 1000; i++) {
         scheduler.signal(workItem);
       }
+      scheduler.start();
 
       assertTrue(workItem.awaitDrained(100, 2, TimeUnit.SECONDS), "Work item did not drain");
       assertEquals(100, workItem.totalDrained.get(), "Expected all work to be drained");

@@ -184,7 +184,6 @@ public class MQTT_SNProtocol extends Protocol {
   @Override
   public void sendKeepAlive() {
     logger.log(ServerLogMessages.MQTT_SN_KEEP_ALIVE_SEND, endPoint.getName());
-    //writeFrame(getPingRequest());
     endPoint.updateWriteBytes(2);
     long timeout = System.currentTimeMillis() - (keepAlive + 1000);
     if (endPoint.getLastRead() < timeout && endPoint.getLastWrite() < timeout) {

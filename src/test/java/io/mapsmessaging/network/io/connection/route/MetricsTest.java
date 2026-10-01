@@ -67,6 +67,19 @@ class MetricsTest {
     assertTrue(metrics.getThroughputMibPerSecond().isEmpty());
   }
 
+  @Test
+  void last_updated_uses_one_protocol_snapshot_during_disconnect() {
+    EndPointConnection connection = mock(EndPointConnection.class);
+    Protocol protocol = mock(Protocol.class);
+    EndPoint endpoint = mock(EndPoint.class);
+    when(connection.getProtocol()).thenReturn(protocol, (Protocol) null);
+    when(protocol.getEndPoint()).thenReturn(endpoint);
+    when(endpoint.getLastRead()).thenReturn(100L);
+    when(endpoint.getLastWrite()).thenReturn(200L);
+
+    assertEquals(Instant.ofEpochMilli(200), new Metrics(connection).getLastUpdated());
+  }
+
   private Metrics createMetrics(EndPointStatus status, long lastRead, long lastWrite) {
     EndPointConnection connection = mock(EndPointConnection.class);
     Protocol protocol = mock(Protocol.class);

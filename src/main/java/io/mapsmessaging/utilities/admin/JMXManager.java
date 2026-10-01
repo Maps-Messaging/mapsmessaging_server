@@ -65,8 +65,8 @@ public class JMXManager {
     logger.log(ServerLogMessages.JMX_MANAGER_REGISTER, objectId);
     try {
       ObjectName objectName = new ObjectName(objectId);
-      if (obj instanceof HealthMonitor) {
-        healthMonitorMap.put(objectName, (HealthMonitor) obj);
+      if (obj instanceof HealthMonitor matchedHealthMonitor) {
+        healthMonitorMap.put(objectName, matchedHealthMonitor);
       }
       //Test to see if it is an annotated JMX bean, else assume its a normal JMXBean
       Class<?> beanClass = obj.getClass();

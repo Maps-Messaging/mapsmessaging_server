@@ -81,9 +81,9 @@ public class StreamInfoHandler extends JetStreamFrameHandler {
     StreamConfig streamConfig = new StreamConfig();
     streamConfig.setName(streamInfoList.getName());
     List<String> subjects = new ArrayList<>();
-    for (StreamInfo info : streamInfoList.getSubjects()) {
-      subjects.add(info.getSubject());
-    }
+    streamInfoList.getSubjects().stream()
+        .map(info -> info.getSubject())
+        .forEachOrdered(subjects::add);
     streamConfig.setSubjects(subjects);
     streamConfig.setStorage("maps");
     return streamConfig;

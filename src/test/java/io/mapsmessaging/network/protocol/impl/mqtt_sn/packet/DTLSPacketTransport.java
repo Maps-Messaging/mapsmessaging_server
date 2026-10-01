@@ -56,7 +56,7 @@ public class DTLSPacketTransport implements PacketTransport {
     Packet pkt = new Packet(MAXIMUM_PACKET_SIZE, false);
     udpPacketTransport.readPacket(pkt);
     pkt.flip();
-    SSLEngineResult rs = sslEngine.unwrap(pkt.getRawBuffer(), packet.getRawBuffer());
+    sslEngine.unwrap(pkt.getRawBuffer(), packet.getRawBuffer());
     return packet.position()- pos;
   }
 

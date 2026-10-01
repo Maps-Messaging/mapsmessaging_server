@@ -40,11 +40,17 @@ class CotConfigSupportTest {
   void roundTripPreservesPublishTakvPolicy() {
     CotConfigDTO source = CotConfigSupport.parse(validEntry()).getFirst();
     source.setPublishTakv(false);
+    source.setDefaultCircularErrorMeters(3.5);
+    source.setDefaultLinearErrorMeters(4.5);
 
     ConfigurationProperties packed = CotConfigSupport.toConfigurationProperties(List.of(source)).getFirst();
     CotConfigDTO restored = CotConfigSupport.parse(packed).getFirst();
 
     assertFalse(restored.isPublishTakv());
+    assertEquals(3.5, packed.getDoubleProperty("defaultCircularErrorMeters", -1.0));
+    assertEquals(4.5, packed.getDoubleProperty("defaultLinearErrorMeters", -1.0));
+    assertEquals(3.5, restored.getDefaultCircularErrorMeters(), 0.0);
+    assertEquals(4.5, restored.getDefaultLinearErrorMeters(), 0.0);
   }
 
   @Test

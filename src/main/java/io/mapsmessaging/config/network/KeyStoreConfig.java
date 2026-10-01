@@ -44,8 +44,7 @@ public class KeyStoreConfig extends KeyStoreConfigDTO implements Config {
 
   public boolean update(BaseConfigDTO config) {
     boolean hasChanged = false;
-    if (config instanceof KeyStoreConfigDTO) {
-      KeyStoreConfigDTO newConfig = (KeyStoreConfigDTO) config;
+    if (config instanceof KeyStoreConfigDTO newConfig) {
       if (!Objects.equals(this.alias, newConfig.getAlias())) {
         this.alias = newConfig.getAlias();
         hasChanged = true;

@@ -35,6 +35,10 @@ import java.util.stream.Collectors;
 
 public class ListHandler extends JetStreamFrameHandler {
 
+  private static final String LIMIT_KEY = "limit";
+  private static final String OFFSET_KEY = "offset";
+
+
   private static final String TYPE = "io.nats.jetstream.api.v1.consumer_list_response";
 
   @Override
@@ -57,15 +61,15 @@ public class ListHandler extends JetStreamFrameHandler {
     }
 
     String stream = parts[4];
-    int offset = json.has("offset") ? json.get("offset").getAsInt() : 0;
-    int limit = json.has("limit") ? json.get("limit").getAsInt() : 1024;
+    int offset = json.has(OFFSET_KEY) ? json.get(OFFSET_KEY).getAsInt() : 0;
+    int limit = json.has(LIMIT_KEY) ? json.get(LIMIT_KEY).getAsInt() : 1024;
 
     List<NamedConsumer> all = sessionState.getNamedConsumers().values().stream()
         .filter(c -> stream.equalsIgnoreCase(c.getStreamName()))
         .collect(Collectors.toList());
 
     int total = all.size();
-    offset = Math.max(0, Math.min(offset, total));
+    offset = Math.clamp(offset, 0, total);
     int toIndex = Math.min(offset + limit, total);
     List<NamedConsumer> page = all.subList(offset, toIndex);
 
@@ -84,8 +88,8 @@ public class ListHandler extends JetStreamFrameHandler {
     response.addProperty("type", TYPE);
     response.add("consumers", consumers);
     response.addProperty("total", total);
-    response.addProperty("offset", offset);
-    response.addProperty("limit", limit);
+    response.addProperty(OFFSET_KEY, offset);
+    response.addProperty(LIMIT_KEY, limit);
 
     PayloadFrame success = new MsgFrame(0);
     success.setSubject(replyTo);

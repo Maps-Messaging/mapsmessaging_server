@@ -92,6 +92,8 @@ public enum StateLogMessages implements LogMessage {
   STATE_MANAGER_SCHEDULER_ERROR(LEVEL.ERROR, SERVER_CATEGORY.STATE, "Scheduler task failed"),
   STATE_MANAGER_AUDIT_INIT_FAILED(LEVEL.ERROR, SERVER_CATEGORY.STATE, "Failed to initialize audit context - auditing will be disabled"),
   STATE_MANAGER_TAK_EVENT_PUBLISH_FAILED(LEVEL.ERROR, SERVER_CATEGORY.STATE, "Failed to publish TAK event to topic '{}': {}"),
+  STATE_MANAGER_TAK_PUBLISHER_CREATE_FAILED(LEVEL.ERROR, SERVER_CATEGORY.STATE, "Failed to create TAK event publisher for topic '{}'"),
+  STATE_MANAGER_TAK_OBSERVER_PUBLISH_FAILED(LEVEL.ERROR, SERVER_CATEGORY.STATE, "Failed to publish TAK observer event"),
   STATE_MANAGER_TAK_EVENT_QUEUE_FULL(LEVEL.WARN, SERVER_CATEGORY.STATE, "TAK event publish queue for topic '{}' is full, dropping oldest events ({} dropped so far)"),
   // </editor-fold>
 
@@ -110,6 +112,7 @@ public enum StateLogMessages implements LogMessage {
   N2K_MESSAGE_IGNORED_EMPTY(LEVEL.DEBUG, SERVER_CATEGORY.PROTOCOL, "Ignoring empty N2K message from '{}'"),
   N2K_MESSAGE_IGNORED_NOT_JSON(LEVEL.DEBUG, SERVER_CATEGORY.PROTOCOL, "Ignoring non-JSON N2K message from '{}'"),
   N2K_MESSAGE_IGNORED_NO_J1939(LEVEL.DEBUG, SERVER_CATEGORY.PROTOCOL, "Ignoring N2K message from '{}' because it contains no J1939 object"),
+  N2K_MESSAGE_IGNORED_NO_LISTENER(LEVEL.DEBUG, SERVER_CATEGORY.PROTOCOL, "No N2K twin-state listener registered for PGN '{}', packet {}"),
   N2K_MESSAGE_IGNORED_NO_PGN(LEVEL.DEBUG, SERVER_CATEGORY.PROTOCOL, "Ignoring N2K message from '{}' because the J1939 PGN is missing or invalid"),
   N2K_MESSAGE_IGNORED_NO_N2K(LEVEL.DEBUG, SERVER_CATEGORY.PROTOCOL, "Ignoring N2K message from '{}' because it contains no N2K object"),
   N2K_MESSAGE_IGNORED_NO_PACKET(LEVEL.DEBUG, SERVER_CATEGORY.PROTOCOL, "Ignoring N2K PGN '{}' from '{}' because it contains no packet object"),

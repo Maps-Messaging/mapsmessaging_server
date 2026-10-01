@@ -148,6 +148,18 @@ class TwinStatusJMXTest {
     assertEquals(3, active.getReportAgeLe120sMtiKnownCount());
   }
 
+  @Test
+  void null_mti_state_is_other_and_future_timestamps_are_in_all_age_buckets() {
+    Instant future = Instant.now().plusSeconds(60);
+    addDrone("null-state", TwinLifecycleStatus.ACTIVE, null, future).setLastSeenAt(future);
+    TwinStatusJMX active = new TwinStatusJMX(twinManager, TwinType.DRONE, TwinLifecycleStatus.ACTIVE);
+    assertEquals(1, active.getMtiOtherCount());
+    assertEquals(0, active.getMtiNoneCount());
+    assertEquals(1, active.getMtiAgeLe30sCount());
+    assertEquals(1, active.getReportAgeLe10sCount());
+    assertEquals(0, active.getReportAgeLe10sMtiKnownCount());
+  }
+
   private DroneTwin addDrone(String twinId, TwinLifecycleStatus status, String mtiState, Instant observedAt) {
     DroneTwin twin = new DroneTwin(twinId);
     twinManager.registerTwin(twin, new TwinUpdateContext());

@@ -38,7 +38,6 @@ public class Compliance extends BaseTestConfig {
     System.err.println("POLICY_FILE::"+System.getProperty("POLICY_FILE"));
 
     String[] args = {"run", "-filter", "src/test/resources/jmscts/config/filter.xml"};
-   // org.exolab.jmscts.test.ComplianceTestSuite.main(args);
   }
 
 }

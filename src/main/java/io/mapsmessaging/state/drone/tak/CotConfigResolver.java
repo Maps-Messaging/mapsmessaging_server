@@ -92,11 +92,9 @@ public final class CotConfigResolver {
   private static List<String> levels(String path) {
     String[] rawLevels = path.trim().split("/", -1);
     List<String> result = new ArrayList<>(rawLevels.length);
-    for (String level : rawLevels) {
-      if (!level.isEmpty()) {
-        result.add(level);
-      }
-    }
+    java.util.Arrays.stream(rawLevels)
+        .filter(level -> !level.isEmpty())
+        .forEachOrdered(result::add);
     return result;
   }
 }

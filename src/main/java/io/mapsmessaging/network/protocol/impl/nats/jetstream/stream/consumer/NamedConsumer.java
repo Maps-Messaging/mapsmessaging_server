@@ -76,8 +76,7 @@ public class NamedConsumer {
       Future<Response> response = streams.get(index).getSubscribedEventManager().getNext();
       try {
         Response  val = response.get(100, TimeUnit.MILLISECONDS);
-        if(val instanceof MessageResponse){
-          MessageResponse messageResponse = (MessageResponse)val;
+        if(val instanceof MessageResponse messageResponse){
           MessageEvent msg = messageResponse.getResponse();
           if(msg != null){
             return msg;

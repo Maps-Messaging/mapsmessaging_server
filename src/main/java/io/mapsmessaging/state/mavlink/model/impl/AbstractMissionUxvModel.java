@@ -43,6 +43,11 @@ import java.util.Set;
 
 public abstract class AbstractMissionUxvModel extends AbstractUxvModel {
 
+  private static final String CONTEXT_REQUIRED = "context must not be null";
+  private static final String REQUEST_REQUIRED = "request must not be null";
+  private static final String MISSION_PLAN_REQUIRED = "missionPlan must not be null";
+  private static final String DURATION_PARAMETER = "duration";
+
   protected static final float DEFAULT_ACCEPTANCE_RADIUS_METERS = 2.0f;
   protected static final float DEFAULT_PASS_RADIUS_METERS = 0.0f;
 
@@ -75,29 +80,32 @@ public abstract class AbstractMissionUxvModel extends AbstractUxvModel {
 
   @Override
   public final UxvNavigationPlan navigatePlan(UxvCommandContext context, MissionPlan missionPlan, Duration duration) {
-    Objects.requireNonNull(context, "context must not be null");
-    Objects.requireNonNull(missionPlan, "missionPlan must not be null");
+    Objects.requireNonNull(context, CONTEXT_REQUIRED);
+    Objects.requireNonNull(missionPlan, MISSION_PLAN_REQUIRED);
 
     return new UxvNavigationPlan(
         List.of(buildMission(context, missionPlan)),
         List.of(startMission(context)),
-        toDuration(duration, "duration"),
+        toDuration(duration, DURATION_PARAMETER),
         stop(context));
   }
 
+  @Override
   public UxvModelCommandSet arm(UxvCommandContext context) {
-    Objects.requireNonNull(context, "context must not be null");
+    Objects.requireNonNull(context, CONTEXT_REQUIRED);
     return UxvModelCommandSet.of(UxvOperation.ARM, getModelName(), MavlinkCommandLongFactory.arm(context.targetSystem(), context.targetComponent(), context.sequence()));
   }
 
+  @Override
   public UxvModelCommandSet disarm(UxvCommandContext context) {
-    Objects.requireNonNull(context, "context must not be null");
+    Objects.requireNonNull(context, CONTEXT_REQUIRED);
     return UxvModelCommandSet.of(UxvOperation.DISARM, getModelName(), MavlinkCommandLongFactory.disarm(context.targetSystem(), context.targetComponent(), context.sequence()));
   }
 
+  @Override
   public UxvModelCommandSet setHome(UxvCommandContext context, HomeRequest request) {
-    Objects.requireNonNull(context, "context must not be null");
-    Objects.requireNonNull(request, "request must not be null");
+    Objects.requireNonNull(context, CONTEXT_REQUIRED);
+    Objects.requireNonNull(request, REQUEST_REQUIRED);
 
     MavlinkCommandLong commandLong = MavlinkCommandLongFactory.command(context.targetSystem(), context.targetComponent(), MAV_CMD_DO_SET_HOME, context.sequence());
     commandLong.setParam1(request.useCurrentPosition() ? USE_CURRENT_POSITION : USE_SPECIFIED_POSITION);
@@ -113,9 +121,10 @@ public abstract class AbstractMissionUxvModel extends AbstractUxvModel {
     return UxvModelCommandSet.of(UxvOperation.SET_HOME, getModelName(), commandLong);
   }
 
+  @Override
   public UxvModelCommandSet reposition(UxvCommandContext context, RepositionRequest request) {
-    Objects.requireNonNull(context, "context must not be null");
-    Objects.requireNonNull(request, "request must not be null");
+    Objects.requireNonNull(context, CONTEXT_REQUIRED);
+    Objects.requireNonNull(request, REQUEST_REQUIRED);
     rejectSpeed(request.speedMetersPerSecond(), UxvOperation.REPOSITION);
     validateCoordinates(request.position(), "position");
 
@@ -127,33 +136,37 @@ public abstract class AbstractMissionUxvModel extends AbstractUxvModel {
     return UxvModelCommandSet.of(UxvOperation.REPOSITION, getModelName(), messages);
   }
 
+  @Override
   public UxvModelCommandSet holdPosition(UxvCommandContext context) {
-    Objects.requireNonNull(context, "context must not be null");
+    Objects.requireNonNull(context, CONTEXT_REQUIRED);
     return UxvModelCommandSet.of(UxvOperation.HOLD_POSITION, getModelName(), pauseCommand(context));
   }
 
   @Override
   public UxvModelCommandSet stop(UxvCommandContext context) {
-    Objects.requireNonNull(context, "context must not be null");
+    Objects.requireNonNull(context, CONTEXT_REQUIRED);
     MavlinkMessage message = MavlinkCommandIntFactory.stop(context.targetSystem(), context.targetComponent(), context.sequence());
     return UxvModelCommandSet.of(UxvOperation.STOP, getModelName(), message);
   }
 
+  @Override
   public UxvModelCommandSet pauseVehicle(UxvCommandContext context) {
-    Objects.requireNonNull(context, "context must not be null");
+    Objects.requireNonNull(context, CONTEXT_REQUIRED);
     return UxvModelCommandSet.of(UxvOperation.PAUSE_VEHICLE, getModelName(), pauseCommand(context));
   }
 
+  @Override
   public UxvModelCommandSet resumeVehicle(UxvCommandContext context) {
-    Objects.requireNonNull(context, "context must not be null");
+    Objects.requireNonNull(context, CONTEXT_REQUIRED);
     return UxvModelCommandSet.of(
         UxvOperation.RESUME_VEHICLE,
         getModelName(),
         MavlinkCommandLongFactory.resume(context.targetSystem(), context.targetComponent(), context.sequence()));
   }
 
+  @Override
   public PlanValidation validateMission(MissionPlan missionPlan) {
-    Objects.requireNonNull(missionPlan, "missionPlan must not be null");
+    Objects.requireNonNull(missionPlan, MISSION_PLAN_REQUIRED);
 
     List<PlanValidationIssue> issues = new ArrayList<>();
     for (int index = 0; index < missionPlan.items().size(); index++) {
@@ -170,9 +183,10 @@ public abstract class AbstractMissionUxvModel extends AbstractUxvModel {
     return issues.isEmpty() ? PlanValidation.success() : PlanValidation.failure(issues);
   }
 
+  @Override
   public UxvModelCommandSet buildMission(UxvCommandContext context, MissionPlan missionPlan) {
-    Objects.requireNonNull(context, "context must not be null");
-    Objects.requireNonNull(missionPlan, "missionPlan must not be null");
+    Objects.requireNonNull(context, CONTEXT_REQUIRED);
+    Objects.requireNonNull(missionPlan, MISSION_PLAN_REQUIRED);
 
     PlanValidation validation = validateMission(missionPlan);
     if (!validation.valid()) {
@@ -199,8 +213,9 @@ public abstract class AbstractMissionUxvModel extends AbstractUxvModel {
     return UxvModelCommandSet.of(UxvOperation.BUILD_MISSION, getModelName(), messages);
   }
 
+  @Override
   public UxvModelCommandSet startMission(UxvCommandContext context) {
-    Objects.requireNonNull(context, "context must not be null");
+    Objects.requireNonNull(context, CONTEXT_REQUIRED);
     return UxvModelCommandSet.of(
         UxvOperation.START_MISSION,
         getModelName(),
@@ -210,8 +225,8 @@ public abstract class AbstractMissionUxvModel extends AbstractUxvModel {
   @Override
   public UxvModelCommandSet setCurrentMission(
       UxvCommandContext context, MissionCurrentRequest request) {
-    Objects.requireNonNull(context, "context must not be null");
-    Objects.requireNonNull(request, "request must not be null");
+    Objects.requireNonNull(context, CONTEXT_REQUIRED);
+    Objects.requireNonNull(request, REQUEST_REQUIRED);
     return UxvModelCommandSet.of(
         UxvOperation.SET_CURRENT_MISSION,
         getModelName(),
@@ -224,7 +239,7 @@ public abstract class AbstractMissionUxvModel extends AbstractUxvModel {
   }
 
   public UxvModelCommandSet setSpeed(UxvCommandContext context, double speedMetersPerSecond) {
-    Objects.requireNonNull(context, "context must not be null");
+    Objects.requireNonNull(context, CONTEXT_REQUIRED);
     requirePositiveOrZero(speedMetersPerSecond, "speedMetersPerSecond");
 
     MavlinkCommandLong commandLong =
@@ -241,7 +256,7 @@ public abstract class AbstractMissionUxvModel extends AbstractUxvModel {
   }
 
   public UxvModelCommandSet setHeading(UxvCommandContext context, float headingDegrees) {
-    Objects.requireNonNull(context, "context must not be null");
+    Objects.requireNonNull(context, CONTEXT_REQUIRED);
 
     MavlinkCommandLong commandLong =
         MavlinkCommandLongFactory.command(
@@ -403,7 +418,7 @@ public abstract class AbstractMissionUxvModel extends AbstractUxvModel {
   }
 
   protected final float toSeconds(Duration duration) {
-    return MavlinkDuration.toSeconds(duration, "duration");
+    return MavlinkDuration.toSeconds(duration, DURATION_PARAMETER);
   }
 
   protected final Duration toDuration(Duration duration, String name) {
@@ -441,7 +456,7 @@ public abstract class AbstractMissionUxvModel extends AbstractUxvModel {
   }
 
   protected final void rejectDuration(Duration duration, UxvOperation operation) {
-    Duration validatedDuration = toDuration(duration, "duration");
+    Duration validatedDuration = toDuration(duration, DURATION_PARAMETER);
     if (!validatedDuration.isZero()) {
       throw new IllegalArgumentException(operation + " does not currently map duration for model " + getModelName());
     }

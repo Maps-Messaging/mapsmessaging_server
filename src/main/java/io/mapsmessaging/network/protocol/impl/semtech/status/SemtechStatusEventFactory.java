@@ -30,6 +30,9 @@ import java.util.Objects;
 
 public class SemtechStatusEventFactory {
 
+  private static final String STATE_REQUIRED = "state must not be null";
+
+
   private static final SemtechStatusEventFactory INSTANCE = new SemtechStatusEventFactory();
   public static SemtechStatusEventFactory getInstance() {
     return INSTANCE;
@@ -91,7 +94,7 @@ public class SemtechStatusEventFactory {
   private SemtechStatusEvent createBaseEvent(String gatewayId, SemtechStatusType type, SemtechStatusState state) {
     Objects.requireNonNull(gatewayId, "gatewayId must not be null");
     Objects.requireNonNull(type, "type must not be null");
-    Objects.requireNonNull(state, "state must not be null");
+    Objects.requireNonNull(state, STATE_REQUIRED);
 
     SemtechStatusEvent event = new SemtechStatusEvent();
     event.setGatewayId(gatewayId);
@@ -102,12 +105,9 @@ public class SemtechStatusEventFactory {
   }
 
   private void validateGatewayState(SemtechStatusState state) {
-    Objects.requireNonNull(state, "state must not be null");
+    Objects.requireNonNull(state, STATE_REQUIRED);
     switch (state) {
-      case GATEWAY_REGISTERED:
-      case GATEWAY_PULL:
-      case GATEWAY_EXPIRED:
-      case GATEWAY_ADDRESS_CHANGED:
+      case GATEWAY_REGISTERED, GATEWAY_PULL, GATEWAY_EXPIRED, GATEWAY_ADDRESS_CHANGED:
         return;
 
       default:
@@ -116,15 +116,9 @@ public class SemtechStatusEventFactory {
   }
 
   private void validateDownlinkState(SemtechStatusState state) {
-    Objects.requireNonNull(state, "state must not be null");
+    Objects.requireNonNull(state, STATE_REQUIRED);
     switch (state) {
-      case DOWNLINK_RECEIVED:
-      case DOWNLINK_QUEUED:
-      case DOWNLINK_SENT:
-      case DOWNLINK_ACK_OK:
-      case DOWNLINK_ACK_ERROR:
-      case DOWNLINK_NO_ROUTE:
-      case DOWNLINK_DROPPED:
+      case DOWNLINK_RECEIVED, DOWNLINK_QUEUED, DOWNLINK_SENT, DOWNLINK_ACK_OK, DOWNLINK_ACK_ERROR, DOWNLINK_NO_ROUTE, DOWNLINK_DROPPED:
         return;
 
       default:

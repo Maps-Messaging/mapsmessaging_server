@@ -39,7 +39,6 @@ public class AggregatorWorker implements AggregatorWorkItem {
   private final WindowCloseMode windowCloseMode;
   private final MessageEvent[] contributions;
   private final boolean[] seen;
-  private final boolean emitFirstEventImmediately;
   private long currentTimeout;
 
   private long deadlineMillis;
@@ -63,7 +62,6 @@ public class AggregatorWorker implements AggregatorWorkItem {
     this.seen = new boolean[handlers.length];
     this.windowCloseMode = windowCloseMode;
     this.deadlineMillis = -1;
-    this.emitFirstEventImmediately = emitFirstEventImmediately;
     currentTimeout = emitFirstEventImmediately ? 100 : timeoutMillis;
   }
 

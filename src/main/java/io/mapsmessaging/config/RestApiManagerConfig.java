@@ -36,6 +36,10 @@ import java.util.Map;
 @NoArgsConstructor
 public class RestApiManagerConfig extends RestApiManagerConfigDTO implements Config, ConfigManager {
 
+  private static final String CORS_HEADERS_KEY = "corsHeaders";
+  private static final String STATIC_CONFIG_KEY = "static";
+
+
   public static RestApiManagerConfig getInstance() {
     return ConfigurationManager.getInstance().getConfiguration(RestApiManagerConfig.class);
   }
@@ -68,13 +72,13 @@ public class RestApiManagerConfig extends RestApiManagerConfigDTO implements Con
       this.tlsConfig = new TlsConfig((ConfigurationProperties) properties.get("tls"));
     }
 
-    if (properties.containsKey("static")) {
-      this.staticConfig = new StaticConfig((ConfigurationProperties) properties.get("static"));
+    if (properties.containsKey(STATIC_CONFIG_KEY)) {
+      this.staticConfig = new StaticConfig((ConfigurationProperties) properties.get(STATIC_CONFIG_KEY));
     }
 
     corsHeaders = CorsHeaderManager.getInstance().getCorsHeaders();
-    if(properties.containsKey("corsHeaders")) {
-      Map<String, Object> corsHeadersProp = ((ConfigurationProperties) properties.get("corsHeaders")).getMap();
+    if(properties.containsKey(CORS_HEADERS_KEY)) {
+      Map<String, Object> corsHeadersProp = ((ConfigurationProperties) properties.get(CORS_HEADERS_KEY)).getMap();
       for(Map.Entry<String, Object> entry : corsHeadersProp.entrySet()) {
         String key = entry.getKey();
         String value = entry.getValue().toString();
@@ -176,10 +180,10 @@ public class RestApiManagerConfig extends RestApiManagerConfigDTO implements Con
     }
 
     if (this.staticConfig != null) {
-      properties.put("static", ((StaticConfig) this.staticConfig).toConfigurationProperties());
+      properties.put(STATIC_CONFIG_KEY, ((StaticConfig) this.staticConfig).toConfigurationProperties());
     }
     Map<String, Object> corsHeadersProp = new HashMap<>(CorsHeaderManager.getInstance().getCorsHeaders().getHeaders());
-    properties.put("corsHeaders", corsHeadersProp);
+    properties.put(CORS_HEADERS_KEY, corsHeadersProp);
     return properties;
   }
 

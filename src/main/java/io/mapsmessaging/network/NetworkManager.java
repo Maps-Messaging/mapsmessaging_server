@@ -169,9 +169,9 @@ public class NetworkManager implements ServiceManager, Agent {
 
   public  List<EndPointManager> getAll(){
     List<EndPointManager> response = new ArrayList<>();
-    for (Map.Entry<String, EndPointManager> entry : endPointManagers.entrySet()) {
-        response.add(entry.getValue());
-    }
+    endPointManagers.entrySet().stream()
+        .map(entry -> entry.getValue())
+        .forEachOrdered(response::add);
     return response;
   }
 

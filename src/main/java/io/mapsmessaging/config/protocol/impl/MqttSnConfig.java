@@ -62,9 +62,7 @@ public class MqttSnConfig extends MqttSnConfigDTO implements Config {
   @Override
   public boolean update(BaseConfigDTO config) {
     boolean hasChanged = false;
-    if (config instanceof MqttSnConfigDTO) {
-      MqttSnConfigDTO newConfig = (MqttSnConfigDTO) config;
-
+    if (config instanceof MqttSnConfigDTO newConfig) {
       // Check each field and update if necessary
       if (!this.gatewayId.equals(newConfig.getGatewayId())) {
         this.gatewayId = newConfig.getGatewayId();
@@ -153,9 +151,9 @@ public class MqttSnConfig extends MqttSnConfigDTO implements Config {
 
     // Add predefined topics list to properties
     List<ConfigurationProperties> predefinedPropsList = new ArrayList<>();
-    for (PredefinedTopics topic : predefinedTopicsList) {
-      predefinedPropsList.add(topic.toConfigurationProperties());
-    }
+    predefinedTopicsList.stream()
+        .map(topic -> topic.toConfigurationProperties())
+        .forEachOrdered(predefinedPropsList::add);
     properties.put("preDefinedTopics", predefinedPropsList);
 
     return properties;

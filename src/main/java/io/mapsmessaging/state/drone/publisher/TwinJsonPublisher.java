@@ -56,6 +56,9 @@ import static io.mapsmessaging.state.logging.StateLogMessages.*;
 
 public class TwinJsonPublisher implements TwinObserver, ClientConnection, MessageListener, AutoCloseable {
 
+  private static final String PUBLISHER_NAME = "twin_json_publisher";
+
+
   private final Logger logger = LoggerFactory.getLogger(TwinJsonPublisher.class);
   private final Session session;
   private final Gson gson;
@@ -274,7 +277,7 @@ public class TwinJsonPublisher implements TwinObserver, ClientConnection, Messag
   }
 
   private Session createSession() throws ExecutionException, InterruptedException, TimeoutException {
-    SessionContextBuilder sessionContextBuilder = new SessionContextBuilder("twin_json_publisher", this);
+    SessionContextBuilder sessionContextBuilder = new SessionContextBuilder(PUBLISHER_NAME, this);
     sessionContextBuilder
         .setResetState(true)
         .setSessionExpiry(0)
@@ -295,7 +298,7 @@ public class TwinJsonPublisher implements TwinObserver, ClientConnection, Messag
 
   @Override
   public String getName() {
-    return "twin_json_publisher";
+    return PUBLISHER_NAME;
   }
 
   @Override
@@ -320,7 +323,7 @@ public class TwinJsonPublisher implements TwinObserver, ClientConnection, Messag
 
   @Override
   public String getUniqueName() {
-    return "twin_json_publisher";
+    return PUBLISHER_NAME;
   }
 
   @Override

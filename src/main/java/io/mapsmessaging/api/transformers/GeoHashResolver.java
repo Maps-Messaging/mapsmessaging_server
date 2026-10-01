@@ -266,22 +266,6 @@ public class GeoHashResolver implements InterServerTransformation {
     return result;
   }
 
-  private static double[] parseLatLonPair(String text) {
-    if (text == null) {
-      return null;
-    }
-    String[] parts = text.split(",");
-    if (parts.length != 2) {
-      return null;
-    }
-    try {
-      double lat = Double.parseDouble(parts[0].trim());
-      double lon = Double.parseDouble(parts[1].trim());
-      return new double[]{lat, lon};
-    } catch (NumberFormatException e) {
-      return null;
-    }
-  }
 
   @Override
   public String getName() {

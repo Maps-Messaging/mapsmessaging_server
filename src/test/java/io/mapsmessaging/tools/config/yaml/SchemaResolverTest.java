@@ -31,6 +31,13 @@ class SchemaResolverTest {
   private final SchemaResolver resolver = new SchemaResolver();
 
   @Test
+  void missing_schema_coerces_to_an_empty_object_schema() {
+    JsonObject result = resolver.coerceToObjectSchema(null, new JsonObject());
+    assertEquals("object", result.get("type").getAsString());
+    assertTrue(result.getAsJsonObject("properties").isEmpty());
+  }
+
+  @Test
   void localReferencesResolveThroughSchemaRoot() {
     JsonObject root = new JsonObject();
     JsonObject definitions = new JsonObject();

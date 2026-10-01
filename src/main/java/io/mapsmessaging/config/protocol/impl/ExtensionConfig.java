@@ -42,10 +42,9 @@ public class ExtensionConfig extends ExtensionConfigDTO implements Config {
   @Override
   public boolean update(BaseConfigDTO config) {
     boolean hasChanged = false;
-    if (config instanceof ExtensionConfig newConfig) {
-      if (ProtocolConfigFactory.update(this, newConfig)) {
-        hasChanged = true;
-      }
+    if (config instanceof ExtensionConfig newConfig
+        && ProtocolConfigFactory.update(this, newConfig)) {
+      hasChanged = true;
     }
     return hasChanged;
   }
