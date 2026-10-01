@@ -103,5 +103,9 @@ class SchemaConfigDtoMapperTest {
             "019c21a1-0626-7258-ae03-78fd8247d4f5"),
         listResult.stream().filter(dto -> dto != null).map(SchemaConfigDTO::getUniqueId).toList());
     assertNull(listResult.get(1));
+    listResult.add(new SchemaConfigDTO());
+    listResult.remove(1);
+    assertEquals(3, listResult.size());
+    assertEquals(3, source.size());
   }
 }

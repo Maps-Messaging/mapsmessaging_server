@@ -21,7 +21,6 @@ package io.mapsmessaging.test;
 
 import io.mapsmessaging.license.FeatureDetails;
 import io.mapsmessaging.license.FeatureManager;
-import io.mapsmessaging.license.features.Features;
 
 import java.util.List;
 
@@ -30,6 +29,7 @@ public class TestFeatureManager extends FeatureManager {
     super(featuresList);
   }
 
+  @Override
   public boolean isEnabled(String featurePath){
     return true;
   }

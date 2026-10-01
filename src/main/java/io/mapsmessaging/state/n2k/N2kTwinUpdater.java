@@ -136,9 +136,6 @@ public class N2kTwinUpdater {
   }
 
   private String resolveDescription(String twinId, N2KTwinConfig config) {
-//    if (config.getDescription() != null && !config.getDescription().isBlank()) {
-//      return config.getDescription();
-//    }
 
     if (config.getName() != null && !config.getName().isBlank()) {
       return "N2K STANAG feed " + config.getName();
@@ -155,14 +152,6 @@ public class N2kTwinUpdater {
     return twinId;
   }
 
-  private String trimCallSign(String value) {
-    String normalizedValue = normalizeTwinId(value);
-    if (normalizedValue.length() > 7) {
-      return normalizedValue.substring(normalizedValue.length() - 7);
-    }
-
-    return normalizedValue;
-  }
 
   private VehicleClass resolveVehicleClass(N2KTwinConfig config) {
     if (config.getVehicleClass() == null || config.getVehicleClass().isBlank()) {

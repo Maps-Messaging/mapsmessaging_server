@@ -234,6 +234,85 @@ class PictureRecoveryTrackerTest {
     assertEquals(400.0, stats.getLastSeconds(), 0.0001);
   }
 
+  @Test
+  void second_outage_after_picture_recovery_supersedes_only_unrestored_status() {
+    tracker.onTwinAdded(TWIN, clock.instant());
+    tracker.onCotHandedToTak(TWIN, false);
+    tracker.onTwinStatusChanged(TWIN, TwinLifecycleStatus.STALE, TwinLifecycleStatus.ACTIVE, clock.instant());
+    assertEquals(0, tracker.stats(FailureType.RESTART, Stage.PICTURE).getNotRestoredCount());
+    assertEquals(1, tracker.stats(FailureType.RESTART, Stage.STATUS).getNotRestoredCount());
+    assertEquals(0, tracker.getOpenCount(FailureType.RESTART));
+    assertEquals(1, tracker.getOpenCount(FailureType.FEED_LOSS));
+    tracker.onCotHandedToTak(TWIN, false);
+    assertEquals(0, tracker.getOpenCount(FailureType.FEED_LOSS));
+  }
+
+  @Test
+  void removed_twin_at_memory_expiry_is_new_and_forgets_previous_mti_coverage() {
+    pastRestartWindow();
+    tracker.onCotHandedToTak(TWIN, true);
+    tracker.onTwinRemoved(TWIN);
+    clock.advance(PictureRecoveryTracker.REMOVED_MEMORY);
+    tracker.onTwinAdded(TWIN, clock.instant());
+    tracker.onCotHandedToTak(TWIN, false);
+    assertEquals(0, tracker.getOpenedCount(FailureType.FEED_LOSS));
+    assertEquals(0, tracker.getOpenedCount(FailureType.MTI_STATUS_LOSS));
+  }
+
+  @Test
+  void restart_window_excludes_exact_upper_boundary() {
+    clock.advance(PictureRecoveryTracker.RESTART_WINDOW);
+    tracker.onTwinAdded(TWIN, null);
+    assertEquals(0, tracker.getOpenedCount(FailureType.RESTART));
+  }
+
+  @Test
+  void explicit_delete_cancels_open_mti_loss_without_not_restored_count() {
+    pastRestartWindow();
+    tracker.onCotHandedToTak(TWIN, true);
+    tracker.onCotHandedToTak(TWIN, false);
+    tracker.onStatusCleared(TWIN);
+    tracker.onCotHandedToTak(TWIN, false);
+    assertEquals(1, tracker.getOpenedCount(FailureType.MTI_STATUS_LOSS));
+    assertEquals(0, tracker.getOpenCount(FailureType.MTI_STATUS_LOSS));
+    assertEquals(0, tracker.stats(FailureType.MTI_STATUS_LOSS, Stage.STATUS).getNotRestoredCount());
+  }
+
+  @Test
+  void status_arriving_before_data_does_not_move_start_before_data_receipt() {
+    tracker.onTwinAdded(TWIN, clock.instant());
+    tracker.onStatusAccepted(TWIN, clock.instant().minusSeconds(5));
+    clock.advance(Duration.ofMillis(100));
+    tracker.onCotHandedToTak(TWIN, true);
+    tracker.onCotHandedToTak(TWIN, true);
+    assertRestored(FailureType.RESTART, Stage.PICTURE, 1, 0.1);
+    assertRestored(FailureType.RESTART, Stage.STATUS, 1, 0.1);
+  }
+
+  @Test
+  void independent_assets_complete_without_closing_each_others_events() {
+    tracker.onTwinAdded(TWIN, null);
+    tracker.onTwinAdded("other", null);
+    tracker.onCotHandedToTak(TWIN, true);
+    assertEquals(1, tracker.getOpenCount(FailureType.RESTART));
+    tracker.onTwinRemoved("other");
+    assertEquals(0, tracker.getOpenCount(FailureType.RESTART));
+    assertEquals(1, tracker.stats(FailureType.RESTART, Stage.PICTURE).getCount());
+    assertEquals(1, tracker.stats(FailureType.RESTART, Stage.PICTURE).getNotRestoredCount());
+  }
+
+  @Test
+  void recovery_histogram_includes_exact_boundaries_and_clamps_negative_duration() {
+    RecoveryDurationStats stats = new RecoveryDurationStats();
+    stats.record(-1);
+    stats.record(100);
+    stats.record(101);
+    assertEquals(2, stats.getCumulativeCount(0));
+    assertEquals(3, stats.getCumulativeCount(1));
+    assertEquals(3, stats.getCount());
+    assertEquals(0.201, stats.getSumSeconds(), 0.000001);
+  }
+
   private void pastRestartWindow() {
     clock.advance(PictureRecoveryTracker.RESTART_WINDOW.plusSeconds(1));
   }

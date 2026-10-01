@@ -167,8 +167,8 @@ public final class MavlinkMissionItemIntFactory {
     }
 
     MavlinkMissionItemInt missionItem = commandMissionItem(targetSystem, targetComponent, missionSequence, MAV_CMD_DO_JUMP);
-    missionItem.setParam1(targetMissionSequence);
-    missionItem.setParam2(repeatCount);
+    missionItem.setParam1((float) targetMissionSequence);
+    missionItem.setParam2((float) repeatCount);
     missionItem.setParam3(0.0f);
     missionItem.setParam4(0.0f);
     return missionItem;

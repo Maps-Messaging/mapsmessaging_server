@@ -127,12 +127,16 @@ public class DroneInfoDTO {
         dataProducts == null ? new ArrayList<>() : new ArrayList<>(dataProducts);
   }
 
-  @Deprecated
+  /** @deprecated Use {@link #getCancelAction()}; retained for REST and adapter compatibility. */
+  @Deprecated(forRemoval = false)
+  @SuppressWarnings({"java:S1133", "java:S6355"})
   public StopActionEnum getStopAction() {
     return cancelAction;
   }
 
-  @Deprecated
+  /** @deprecated Use {@link #setCancelAction(StopActionEnum)}; retained for legacy REST requests. */
+  @Deprecated(forRemoval = false)
+  @SuppressWarnings({"java:S1133", "java:S6355"})
   public void setStopAction(StopActionEnum stopAction) {
     cancelAction = stopAction;
   }

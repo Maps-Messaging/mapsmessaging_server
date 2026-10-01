@@ -19,6 +19,8 @@
 
 package io.mapsmessaging.network.io.connection.route;
 
+import io.mapsmessaging.logging.ServerLogMessages;
+
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.network.io.connection.EndPointConnection;
@@ -150,7 +152,7 @@ public class RouteManager implements LinkSwitcher, StateChangeListener {
       }
       selector.evaluateOnce();
     } catch (Exception e) {
-      e.printStackTrace();
+      logger.log(ServerLogMessages.ROUTE_MANAGER_EVALUATION_FAILED, e);
     }
   }
 

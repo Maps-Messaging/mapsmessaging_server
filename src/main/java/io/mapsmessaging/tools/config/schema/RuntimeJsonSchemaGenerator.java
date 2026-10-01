@@ -36,6 +36,14 @@ import java.math.BigDecimal;
 import java.util.*;
 
 public class RuntimeJsonSchemaGenerator {
+
+  private static final String DEFINITION_REFERENCE_PREFIX = "#/$defs/";
+  private static final String ADDITIONAL_PROPERTIES_KEY = "additionalProperties";
+  private static final String DESCRIPTION_KEY = "description";
+  private static final String DISCRIMINATOR_KEY = "discriminator";
+  private static final String OBJECT_KEY = "object";
+  private static final String ONE_OF_KEY = "oneOf";
+
   private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
   private static final String TYPE_FIELD_NAME = "type";
 
@@ -67,7 +75,7 @@ public class RuntimeJsonSchemaGenerator {
       context.putDef(dtoClass, defSchema);
     }
 
-    String rootRef = "#/$defs/" + context.defName(rootDtoClass);
+    String rootRef = DEFINITION_REFERENCE_PREFIX + context.defName(rootDtoClass);
 
     SchemaDocument doc = new SchemaDocument();
     doc.put("$schema", "https://json-schema.org/draft/2020-12/schema");
@@ -77,11 +85,10 @@ public class RuntimeJsonSchemaGenerator {
     // IMPORTANT:
     // Do NOT set additionalProperties:false on the wrapper document when $ref is used.
     // Put object-closure rules on the referenced object schemas instead.
-    //doc.put("unevaluatedProperties", false);
 
     Schema rootSchemaAnn = rootDtoClass.getAnnotation(Schema.class);
     if (rootSchemaAnn != null && !rootSchemaAnn.description().isBlank()) {
-      doc.put("description", rootSchemaAnn.description());
+      doc.put(DESCRIPTION_KEY, rootSchemaAnn.description());
     }
 
     doc.put("$ref", rootRef);
@@ -177,12 +184,11 @@ public class RuntimeJsonSchemaGenerator {
               }
             }
           }
-          else if (Map.class.isAssignableFrom(rawType)) {
-            if (args.length == 2) {
-              Class<?> valueClass = ReflectionTypes.toClass(args[1]);
-              if (valueClass != null && BaseConfigDTO.class.isAssignableFrom(valueClass)) {
-                stack.push(valueClass);
-              }
+          else if (Map.class.isAssignableFrom(rawType)
+              && args.length == 2) {
+            Class<?> valueClass = ReflectionTypes.toClass(args[1]);
+            if (valueClass != null && BaseConfigDTO.class.isAssignableFrom(valueClass)) {
+              stack.push(valueClass);
             }
           }
 
@@ -226,14 +232,14 @@ public class RuntimeJsonSchemaGenerator {
       }
 
       SchemaObject schema = new SchemaObject();
-      schema.put("type", "object");
+      schema.put("type", OBJECT_KEY);
 
       // Close every DTO object. This is where additionalProperties belongs.
-      schema.put("additionalProperties", false);
+      schema.put(ADDITIONAL_PROPERTIES_KEY, false);
 
       Schema classSchema = dtoClass.getAnnotation(Schema.class);
       if (classSchema != null && !classSchema.description().isBlank()) {
-        schema.put("description", classSchema.description());
+        schema.put(DESCRIPTION_KEY, classSchema.description());
       }
 
       Map<String, Object> properties = new LinkedHashMap<>();
@@ -332,7 +338,7 @@ public class RuntimeJsonSchemaGenerator {
         continue;
       }
 
-      String ref = "#/$defs/" + context.defName(subtypeClass);
+      String ref = DEFINITION_REFERENCE_PREFIX + context.defName(subtypeClass);
       oneOf.add(SchemaObject.ref(ref).toJsonValue());
 
       String name = subtype.name();
@@ -344,12 +350,12 @@ public class RuntimeJsonSchemaGenerator {
     }
 
     SchemaObject schema = new SchemaObject();
-    schema.put("oneOf", oneOf);
+    schema.put(ONE_OF_KEY, oneOf);
 
     Map<String, Object> discriminator = new LinkedHashMap<>();
     discriminator.put("propertyName", discriminatorProperty);
     discriminator.put("mapping", mapping);
-    schema.put("discriminator", discriminator);
+    schema.put(DISCRIMINATOR_KEY, discriminator);
 
     return schema;
   }
@@ -397,8 +403,8 @@ public class RuntimeJsonSchemaGenerator {
       SchemaObject valueSchema = schemaForType(args[1], context);
 
       SchemaObject obj = new SchemaObject();
-      obj.put("type", "object");
-      obj.put("additionalProperties", valueSchema.toJsonValue());
+      obj.put("type", OBJECT_KEY);
+      obj.put(ADDITIONAL_PROPERTIES_KEY, valueSchema.toJsonValue());
       return obj;
     }
 
@@ -425,19 +431,17 @@ public class RuntimeJsonSchemaGenerator {
 
     if (hasOneOf) {
       List<Class<?>> classes = new ArrayList<>();
-      for (Class<?> c : oneOfClasses) {
-        if (c != null && c != Void.class) {
-          classes.add(c);
-        }
-      }
+      java.util.Arrays.stream(oneOfClasses)
+          .filter(c -> c != null && c != Void.class)
+          .forEachOrdered(classes::add);
       classes.sort(Comparator.comparing(Class::getName));
 
       List<Object> oneOf = new ArrayList<>();
       for (Class<?> c : classes) {
-        String ref = "#/$defs/" + context.defName(c);
+        String ref = DEFINITION_REFERENCE_PREFIX + context.defName(c);
         oneOf.add(SchemaObject.ref(ref).toJsonValue());
       }
-      out.put("oneOf", oneOf);
+      out.put(ONE_OF_KEY, oneOf);
     }
 
     if (hasDiscriminator) {
@@ -457,7 +461,7 @@ public class RuntimeJsonSchemaGenerator {
           if (schemaClass == null || schemaClass == Void.class) {
             continue;
           }
-          mapping.put(dm.value(), "#/$defs/" + context.defName(schemaClass));
+          mapping.put(dm.value(), DEFINITION_REFERENCE_PREFIX + context.defName(schemaClass));
         }
 
         if (!mapping.isEmpty()) {
@@ -465,7 +469,7 @@ public class RuntimeJsonSchemaGenerator {
         }
       }
 
-      out.put("discriminator", disc);
+      out.put(DISCRIMINATOR_KEY, disc);
     }
 
     return out;
@@ -485,7 +489,7 @@ public class RuntimeJsonSchemaGenerator {
     }
 
     if (BaseConfigDTO.class.isAssignableFrom(clazz)) {
-      return SchemaObject.ref("#/$defs/" + context.defName(clazz));
+      return SchemaObject.ref(DEFINITION_REFERENCE_PREFIX + context.defName(clazz));
     }
 
     if (clazz.isEnum()) {
@@ -494,9 +498,9 @@ public class RuntimeJsonSchemaGenerator {
 
       Object[] constants = clazz.getEnumConstants();
       List<String> values = new ArrayList<>(constants.length);
-      for (Object c : constants) {
-        values.add(((Enum<?>) c).name());
-      }
+      java.util.Arrays.stream(constants)
+          .map(c -> ((Enum<?>) c).name())
+          .forEachOrdered(values::add);
       e.put("enum", values);
       return e;
     }
@@ -535,10 +539,10 @@ public class RuntimeJsonSchemaGenerator {
       SchemaContext context
   ) {
     Map<?, ?> current = (Map<?, ?>) propertySchema.toJsonValue();
-    boolean isPolymorphic = current.containsKey("oneOf") || current.containsKey("discriminator");
+    boolean isPolymorphic = current.containsKey(ONE_OF_KEY) || current.containsKey(DISCRIMINATOR_KEY);
 
     if (!schemaAnn.description().isBlank()) {
-      propertySchema.put("description", schemaAnn.description());
+      propertySchema.put(DESCRIPTION_KEY, schemaAnn.description());
     }
 
     // examples
@@ -596,10 +600,9 @@ public class RuntimeJsonSchemaGenerator {
         propertySchema.put("multipleOf", multipleOf);
       }
     }
-    else if (mode == SchemaGenerationMode.RELAXED) {
-      if (!schemaAnn.minimum().isBlank() || !schemaAnn.maximum().isBlank() || schemaAnn.multipleOf() > 0.0d) {
-        context.warn("Ignored numeric constraints on non-numeric field type " + javaType.getName());
-      }
+    else if (mode == SchemaGenerationMode.RELAXED
+        && (!schemaAnn.minimum().isBlank() || !schemaAnn.maximum().isBlank() || schemaAnn.multipleOf() > 0.0d)) {
+      context.warn("Ignored numeric constraints on non-numeric field type " + javaType.getName());
     }
   }
 
@@ -610,11 +613,9 @@ public class RuntimeJsonSchemaGenerator {
     }
 
     List<String> vals = new ArrayList<>();
-    for (String v : allowable) {
-      if (v != null && !v.isBlank()) {
-        vals.add(v);
-      }
-    }
+    java.util.Arrays.stream(allowable)
+        .filter(v -> v != null && !v.isBlank())
+        .forEachOrdered(vals::add);
     return vals;
   }
 
@@ -671,9 +672,9 @@ public class RuntimeJsonSchemaGenerator {
 
   private SchemaObject unsupportedPlaceholder(String label, String detail) {
     SchemaObject placeholder = new SchemaObject();
-    placeholder.put("type", "object");
-    placeholder.put("description", label + ": " + detail);
-    placeholder.put("additionalProperties", true);
+    placeholder.put("type", OBJECT_KEY);
+    placeholder.put(DESCRIPTION_KEY, label + ": " + detail);
+    placeholder.put(ADDITIONAL_PROPERTIES_KEY, true);
     return placeholder;
   }
 
@@ -710,8 +711,8 @@ public class RuntimeJsonSchemaGenerator {
     Map<?, ?> current = (Map<?, ?>) propertySchema.toJsonValue();
     Object typeObj = current.get("type");
 
-    if (typeObj instanceof String) {
-      String schemaType = ((String) typeObj).toLowerCase(Locale.ROOT);
+    if (typeObj instanceof String matchedString) {
+      String schemaType = (matchedString).toLowerCase(Locale.ROOT);
 
       if ("array".equals(schemaType)) {
         if (trimmed.startsWith("[")) {
@@ -728,7 +729,7 @@ public class RuntimeJsonSchemaGenerator {
         return null;
       }
 
-      if ("object".equals(schemaType)) {
+      if (OBJECT_KEY.equals(schemaType)) {
         if (trimmed.startsWith("{")) {
           try {
             Object parsed = OBJECT_MAPPER.readValue(trimmed, new TypeReference<Object>() {});

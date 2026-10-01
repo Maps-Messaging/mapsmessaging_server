@@ -30,12 +30,9 @@ import io.mapsmessaging.auth.ServerPermissions;
 import io.mapsmessaging.auth.priviliges.SessionPrivileges;
 import io.mapsmessaging.configuration.ConfigurationProperties;
 import io.mapsmessaging.engine.destination.DestinationImpl;
-import io.mapsmessaging.engine.destination.DestinationManagerListener;
-import io.mapsmessaging.engine.destination.subscription.SubscriptionController;
 import io.mapsmessaging.engine.session.FakeProtocol;
 import io.mapsmessaging.engine.session.SessionImpl;
 import io.mapsmessaging.engine.session.SessionManager;
-import io.mapsmessaging.engine.session.SessionManagerTest;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -88,7 +85,6 @@ public class BaseTestConfig extends BaseTest {
     if(md == null) {
       File file = new File(".");
       System.out.println(file.getAbsolutePath());
-      File jaasConf = new File(file, "conf");
 
       setIfNot(
           "java.security.auth.login.config",
@@ -192,15 +188,13 @@ public class BaseTestConfig extends BaseTest {
     }  }
 
   public static String getPassword(String user) throws IOException {
-    if (usernamePasswordMap == null) {
-      if (md != null && md.isStarted() && AuthManager.getInstance().isAuthenticationEnabled()) {
-        ConfigurationProperties properties = new ConfigurationProperties(AuthManager.getInstance().getConfig().getAuthConfig());
-        String path = properties.getProperty("configDirectory");
-        usernamePasswordMap = Files.lines(Paths.get(path + File.separator + "admin_password"))
-            .map(line -> line.split("="))
-            .collect(Collectors.toMap(arr -> arr[0], arr -> arr[1]));
-
-      }
+    if (usernamePasswordMap == null
+        && md != null && md.isStarted() && AuthManager.getInstance().isAuthenticationEnabled()) {
+      ConfigurationProperties properties = new ConfigurationProperties(AuthManager.getInstance().getConfig().getAuthConfig());
+      String path = properties.getProperty("configDirectory");
+      usernamePasswordMap = Files.lines(Paths.get(path + File.separator + "admin_password"))
+          .map(line -> line.split("="))
+          .collect(Collectors.toMap(arr -> arr[0], arr -> arr[1]));
     }
     if (usernamePasswordMap != null) {
       return usernamePasswordMap.get(user);

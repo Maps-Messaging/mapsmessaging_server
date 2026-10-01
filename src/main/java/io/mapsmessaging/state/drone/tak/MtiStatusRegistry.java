@@ -19,6 +19,7 @@
 package io.mapsmessaging.state.drone.tak;
 
 import java.time.Instant;
+import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * Static bridge between {@link CotEventPolicy} (constructed by {@code TakTwinObserver} early in
@@ -66,46 +67,46 @@ public final class MtiStatusRegistry {
     void onStatusCleared(String twinId);
   }
 
-  private static volatile Lookup delegate;
-  private static volatile SnapshotSource snapshotSource;
-  private static volatile StatusListener statusListener;
+  private static final AtomicReference<Lookup> delegate = new AtomicReference<>();
+  private static final AtomicReference<SnapshotSource> snapshotSource = new AtomicReference<>();
+  private static final AtomicReference<StatusListener> statusListener = new AtomicReference<>();
 
   private MtiStatusRegistry() {
   }
 
   public static void setDelegate(Lookup lookup) {
-    delegate = lookup;
+    delegate.set(lookup);
   }
 
   public static void setSnapshotSource(SnapshotSource source) {
-    snapshotSource = source;
+    snapshotSource.set(source);
   }
 
   public static void setStatusListener(StatusListener listener) {
-    statusListener = listener;
+    statusListener.set(listener);
   }
 
   public static void statusAccepted(String twinId, Instant receivedAt) {
-    StatusListener current = statusListener;
+    StatusListener current = statusListener.get();
     if (current != null && twinId != null) {
       current.onStatusAccepted(twinId, receivedAt);
     }
   }
 
   public static void statusCleared(String twinId) {
-    StatusListener current = statusListener;
+    StatusListener current = statusListener.get();
     if (current != null && twinId != null) {
       current.onStatusCleared(twinId);
     }
   }
 
   public static MtiLookupResult lookup(String twinId) {
-    Lookup current = delegate;
+    Lookup current = delegate.get();
     return current == null || twinId == null ? null : current.lookup(twinId);
   }
 
   public static MtiStatusSnapshot snapshot(String twinId) {
-    SnapshotSource current = snapshotSource;
+    SnapshotSource current = snapshotSource.get();
     return current == null || twinId == null ? null : current.snapshot(twinId);
   }
 }

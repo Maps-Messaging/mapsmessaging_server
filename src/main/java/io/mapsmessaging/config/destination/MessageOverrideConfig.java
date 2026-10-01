@@ -32,6 +32,9 @@ import java.util.Objects;
 
 public class MessageOverrideConfig extends MessageOverrideDTO implements Config {
 
+  private static final String RETAIN = "retain";
+  private static final String STORE_OFFLINE = "storeOffline";
+
   public MessageOverrideConfig(ConfigurationProperties properties) {
     this.expiry = properties.getLongProperty("expiry", -1);
     String configuredPriority = properties.getProperty("priority", null);
@@ -45,14 +48,14 @@ public class MessageOverrideConfig extends MessageOverrideDTO implements Config 
     this.responseTopic = properties.getProperty("responseTopic", null);
     this.contentType = properties.getProperty("contentType", null);
     this.schemaId = properties.getProperty("schemaId", null);
-    if(properties.containsKey("retain")) {
-      this.retain = properties.getBooleanProperty("retain",false);
+    if(properties.containsKey(RETAIN)) {
+      this.retain = properties.getBooleanProperty(RETAIN,false);
     }
     else{
       this.retain = null;
     }
-    if (properties.containsKey("storeOffline")) {
-      this.storeOffline = properties.getBooleanProperty("storeOffline", false);
+    if (properties.containsKey(STORE_OFFLINE)) {
+      this.storeOffline = properties.getBooleanProperty(STORE_OFFLINE, false);
     }
     else{
       this.storeOffline = null;
@@ -101,10 +104,10 @@ public class MessageOverrideConfig extends MessageOverrideDTO implements Config 
       properties.put("schemaId", config.getSchemaId());
     }
     if (config.getRetain() != null) {
-      properties.put("retain", config.getRetain());
+      properties.put(RETAIN, config.getRetain());
     }
     if (config.getStoreOffline() != null) {
-      properties.put("storeOffline", config.getStoreOffline());
+      properties.put(STORE_OFFLINE, config.getStoreOffline());
     }
     if (config.getMeta() != null) {
       properties.put("meta", new ConfigurationProperties(new LinkedHashMap<>(config.getMeta())));

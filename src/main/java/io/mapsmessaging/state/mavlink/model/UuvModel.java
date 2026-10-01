@@ -37,10 +37,12 @@ public interface UuvModel extends UxvModel {
         throw unsupported(UxvOperation.HOLD_DEPTH);
     }
 
+    @Override
     default UxvModelCommandSet orbit(UxvCommandContext context, OrbitRequest request) {
         throw unsupported(UxvOperation.ORBIT);
     }
 
+    @Override
     default UxvModelCommandSet loiter(UxvCommandContext context, LoiterRequest request) {
         throw unsupported(UxvOperation.LOITER);
     }

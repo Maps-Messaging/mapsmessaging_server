@@ -56,6 +56,9 @@ import static io.mapsmessaging.state.logging.StateLogMessages.*;
 
 public class TwinJsonPublisher implements TwinObserver, ClientConnection, MessageListener, AutoCloseable {
 
+  private static final String PUBLISHER_NAME = "twin_json_publisher";
+
+
   private final Logger logger = LoggerFactory.getLogger(TwinJsonPublisher.class);
   private final Session session;
   private final Gson gson;
@@ -101,6 +104,9 @@ public class TwinJsonPublisher implements TwinObserver, ClientConnection, Messag
 
     try {
       publishTwin(twinId, current);
+    } catch (InterruptedException exception) {
+      Thread.currentThread().interrupt();
+      throw new RuntimeException("Failed to publish twin update for twinId=" + twinId, exception);
     } catch (Exception exception) {
       throw new RuntimeException("Failed to publish twin update for twinId=" + twinId, exception);
     }
@@ -149,6 +155,9 @@ public class TwinJsonPublisher implements TwinObserver, ClientConnection, Messag
       if (!contacts.isEmpty()) {
         publishContacts(twinId, twin, twinJsonPayload.jsonObject(), contacts);
       }
+    } catch (InterruptedException e) {
+      Thread.currentThread().interrupt();
+      throw e;
     } catch (Throwable e) {
       logger.log(TWIN_PUBLISH_FAILED, twinId, topic, e.getMessage());
       destinationCache.remove(topic);
@@ -274,7 +283,7 @@ public class TwinJsonPublisher implements TwinObserver, ClientConnection, Messag
   }
 
   private Session createSession() throws ExecutionException, InterruptedException, TimeoutException {
-    SessionContextBuilder sessionContextBuilder = new SessionContextBuilder("twin_json_publisher", this);
+    SessionContextBuilder sessionContextBuilder = new SessionContextBuilder(PUBLISHER_NAME, this);
     sessionContextBuilder
         .setResetState(true)
         .setSessionExpiry(0)
@@ -295,7 +304,7 @@ public class TwinJsonPublisher implements TwinObserver, ClientConnection, Messag
 
   @Override
   public String getName() {
-    return "twin_json_publisher";
+    return PUBLISHER_NAME;
   }
 
   @Override
@@ -320,7 +329,7 @@ public class TwinJsonPublisher implements TwinObserver, ClientConnection, Messag
 
   @Override
   public String getUniqueName() {
-    return "twin_json_publisher";
+    return PUBLISHER_NAME;
   }
 
   @Override

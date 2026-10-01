@@ -57,7 +57,7 @@ public class StreamNamesHandler extends JetStreamFrameHandler {
     int offset = json.has("offset") ? json.get("offset").getAsInt() : 0;
     int limit = json.has("limit") ? json.get("limit").getAsInt() : 1024;
 
-    offset = Math.max(0, Math.min(offset, entries.size()));
+    offset = Math.clamp(offset, 0, entries.size());
     int toIndex = Math.min(offset + limit, entries.size());
 
     List<String> names = entries.subList(offset, toIndex).stream()

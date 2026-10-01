@@ -81,10 +81,8 @@ public class FileLockManager implements AutoCloseable {
         FileLock attemptedLock = null;
         try {
           attemptedLock = channel.tryLock();
-        } catch (OverlappingFileLockException ignored) {
-          // Same JVM already holds an overlapping lock. Treat as "lock unavailable".
-          attemptedLock = null;
-        } catch (IOException ignored) {
+        } catch (OverlappingFileLockException | IOException ignored) {
+          // An overlapping lock or IO failure means the lock is unavailable.
           attemptedLock = null;
         }
 

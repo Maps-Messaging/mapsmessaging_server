@@ -20,7 +20,7 @@
 package io.mapsmessaging.network.protocol.impl.amqp.jms.jmscts;
 
 
-public class JmsProvider {//} implements Provider {
+public class JmsProvider {
 
   private JmsAdministrator _admin = new JmsAdministrator();
 

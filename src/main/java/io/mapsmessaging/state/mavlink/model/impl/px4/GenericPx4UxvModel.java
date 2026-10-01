@@ -34,6 +34,7 @@ public abstract class GenericPx4UxvModel extends AbstractMissionUxvModel {
     super(modelName, vehicleType, supportedOperations);
   }
 
+  @Override
   public UxvModelCommandSet
   returnToHome(UxvCommandContext context) {
     Objects.requireNonNull(context, "context must not be null");

@@ -335,12 +335,9 @@ final class WebSocketFrameDecoder {
     }
     utf8CodePoint = (utf8CodePoint << 6) | (unsigned & 0x3F);
     utf8ContinuationBytes--;
-    if (utf8ContinuationBytes == 0) {
-      if (utf8CodePoint < utf8MinimumCodePoint
-          || utf8CodePoint > 0x10FFFF
-          || (utf8CodePoint >= 0xD800 && utf8CodePoint <= 0xDFFF)) {
-        throw invalidPayload("Invalid UTF-8 code point in text message");
-      }
+    if (utf8ContinuationBytes == 0
+        && (utf8CodePoint < utf8MinimumCodePoint || utf8CodePoint > 0x10FFFF || (utf8CodePoint >= 0xD800 && utf8CodePoint <= 0xDFFF))) {
+      throw invalidPayload("Invalid UTF-8 code point in text message");
     }
   }
 

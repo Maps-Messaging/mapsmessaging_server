@@ -119,9 +119,13 @@ public class TakTwinObserver implements TwinObserver {
         EventPublisher publisher;
         try {
           publisher = new EventPublisher(config.getTak().getTopic());
+        } catch (InterruptedException exception) {
+          Thread.currentThread().interrupt();
+          publisher = null;
+          logger.log(StateLogMessages.STATE_MANAGER_TAK_PUBLISHER_CREATE_FAILED, config.getTak().getTopic(), exception);
         } catch (Throwable exception) {
           publisher = null;
-          exception.printStackTrace();
+          logger.log(StateLogMessages.STATE_MANAGER_TAK_PUBLISHER_CREATE_FAILED, config.getTak().getTopic(), exception);
         }
         eventPublisher = publisher;
       } else {
@@ -378,7 +382,7 @@ public class TakTwinObserver implements TwinObserver {
         eventPublisher.publish(xml);
         handedToTak = true;
       } catch (IOException exception) {
-        exception.printStackTrace();
+        logger.log(StateLogMessages.STATE_MANAGER_TAK_OBSERVER_PUBLISH_FAILED, exception);
       }
     }
 
@@ -408,7 +412,7 @@ public class TakTwinObserver implements TwinObserver {
       try {
         eventPublisher.publish(xml);
       } catch (IOException exception) {
-        exception.printStackTrace();
+        logger.log(StateLogMessages.STATE_MANAGER_TAK_OBSERVER_PUBLISH_FAILED, exception);
       }
     }
   }
@@ -505,7 +509,7 @@ public class TakTwinObserver implements TwinObserver {
     Double percentage = batteryState.getPercentage();
     if (percentage != null && Double.isFinite(percentage)) {
       int batteryPercentage =
-          (int) Math.round(Math.max(0.0, Math.min(100.0, percentage)));
+          (int) Math.round(Math.clamp(percentage, 0.0, 100.0));
 
       appendAttribute(stringBuilder, "battery", batteryPercentage);
     }

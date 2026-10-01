@@ -30,9 +30,7 @@ final class DeterministicJsonWriter {
       return;
     }
 
-    if (v instanceof String) {
-      String s = (String) v;
-
+    if (v instanceof String s) {
       if (shouldCoerceStringNumber(contextKey)) {
         BigDecimal coerced = tryParseNumber(s);
         if (coerced != null) {
@@ -45,8 +43,8 @@ final class DeterministicJsonWriter {
       return;
     }
 
-    if (v instanceof Boolean) {
-      sb.append(((Boolean) v) ? "true" : "false");
+    if (v instanceof Boolean matchedBoolean) {
+      sb.append((matchedBoolean) ? "true" : "false");
       return;
     }
 
@@ -55,8 +53,8 @@ final class DeterministicJsonWriter {
       return;
     }
 
-    if (v instanceof BigDecimal) {
-      sb.append(((BigDecimal) v).toPlainString());
+    if (v instanceof BigDecimal matchedBigDecimal) {
+      sb.append((matchedBigDecimal).toPlainString());
       return;
     }
 
@@ -123,8 +121,8 @@ final class DeterministicJsonWriter {
 
       newline(sb, indent + 2);
 
-      if (item instanceof String && "enum".equals(contextKey)) {
-        BigDecimal coerced = tryParseNumber((String) item);
+      if (item instanceof String matchedString && "enum".equals(contextKey)) {
+        BigDecimal coerced = tryParseNumber(matchedString);
         if (coerced != null) {
           sb.append(coerced.toPlainString());
           continue;

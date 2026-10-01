@@ -238,11 +238,10 @@ public class EndPointConnection extends EndPointServerStatus {
   }
 
   public void resume() {
-    if (paused.compareAndSet(true, false)) {
-      if (running.get()) {
-        stateMonitor.start();
-        scheduleState(new Delayed(this));
-      }
+    if (paused.compareAndSet(true, false)
+        && running.get()) {
+      stateMonitor.start();
+      scheduleState(new Delayed(this));
     }
   }
 

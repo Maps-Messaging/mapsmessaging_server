@@ -47,8 +47,8 @@ public class LoRaDeviceManagerConfig extends LoRaDeviceManagerConfigDTO implemen
       for (ConfigurationProperties entry : (List<ConfigurationProperties>) configEntry) {
         parseConfig(entry);
       }
-    } else if (configEntry instanceof ConfigurationProperties) {
-      parseConfig((ConfigurationProperties) configEntry);
+    } else if (configEntry instanceof ConfigurationProperties matchedConfigurationProperties) {
+      parseConfig(matchedConfigurationProperties);
     }
   }
 
@@ -70,7 +70,7 @@ public class LoRaDeviceManagerConfig extends LoRaDeviceManagerConfigDTO implemen
       deviceConfigList.add(loRaDeviceConfigDTO);
     }
     loRaDeviceConfigDTO.setPower(properties.getIntProperty("power", 0));
-    loRaDeviceConfigDTO.setFrequency(properties.getIntProperty("frequency", 0));
+    loRaDeviceConfigDTO.setFrequency((float) properties.getIntProperty("frequency", 0));
     loRaDeviceConfigDTO.setName(properties.getProperty("name"));
   }
 
@@ -95,8 +95,7 @@ public class LoRaDeviceManagerConfig extends LoRaDeviceManagerConfigDTO implemen
 
   @Override
   public ConfigurationProperties toConfigurationProperties() {
-    ConfigurationProperties properties = new ConfigurationProperties();
-    return properties;
+    return new ConfigurationProperties();
   }
 
   @Override

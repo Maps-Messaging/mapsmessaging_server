@@ -167,8 +167,7 @@ public class BasePacket implements ServerPacket {
       Option option = options.getOption((int) optionId);
       currentDelta = (int) optionId - currentOptionId;
       currentOptionId = (int) optionId;
-      if(option instanceof PathOption){
-        PathOption pathOption = (PathOption) option;
+      if(option instanceof PathOption pathOption){
         for(String path:pathOption.getPath()){
           byte[] packed = path.getBytes();
           packOption(packet, currentDelta, packed);
@@ -176,8 +175,7 @@ public class BasePacket implements ServerPacket {
           currentOptionId = (int) optionId;
         }
       }
-      else if(option instanceof ListOption){
-        ListOption listOption = (ListOption)option;
+      else if(option instanceof ListOption listOption){
         for(byte[] opt:listOption.getList()){
           packOption(packet, currentDelta, opt);
           currentDelta = (int) optionId - currentOptionId;

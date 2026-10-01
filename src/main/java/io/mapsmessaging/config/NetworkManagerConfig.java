@@ -100,8 +100,8 @@ public class NetworkManagerConfig extends NetworkManagerConfigDTO implements Con
         name = endPointServerConfigDTO.getUrl();
       }
       if(name.equals(endPointServerConfig.getName())
-          && endPointServerConfigDTO instanceof EndPointServerConfig) {
-        return ((EndPointServerConfig) endPointServerConfigDTO).update(endPointServerConfig);
+          && endPointServerConfigDTO instanceof EndPointServerConfig matchedEndPointServerConfig) {
+        return (matchedEndPointServerConfig).update(endPointServerConfig);
       }
     }
     return false;

@@ -26,15 +26,13 @@ import java.util.Map;
 
 public class RestAccessControl {
 
-  private static final String ACL_TYPE = "Permission";
 
 
   public RestAccessControl() {
   }
 
   public Map<String, String> getAccess(Subject subject){
-    Map<String, String> accessMap = new LinkedHashMap<>();
-    return accessMap;
+    return new LinkedHashMap<>();
   }
 
   public boolean hasAccess(String resource, Subject subject, long access){

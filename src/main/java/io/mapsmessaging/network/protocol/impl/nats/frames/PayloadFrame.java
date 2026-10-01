@@ -60,6 +60,7 @@ public abstract class PayloadFrame extends NatsFrame {
     return frame;
   }
 
+  @Override
   public void parseFrame(Packet packet) throws IOException {
     super.parseFrame(packet);
 

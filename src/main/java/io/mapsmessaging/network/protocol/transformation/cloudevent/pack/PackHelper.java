@@ -63,7 +63,10 @@ public abstract class PackHelper {
     if (message.getSchemaId() != null) {
       schemaConfig = SchemaManager.getInstance().getSchema(message.getSchemaId());
       if(schemaConfig != null) {
-        schemaUri = MessageDaemon.getInstance().getRestServerUrl()+"api/v1/server/schema/impl/"+schemaConfig.getUniqueId();
+        String restServerUrl = MessageDaemon.getInstance().getRestServerUrl();
+        if (restServerUrl != null) {
+          schemaUri = restServerUrl+"api/v1/server/schema/impl/"+schemaConfig.getUniqueId();
+        }
       }
     }
 

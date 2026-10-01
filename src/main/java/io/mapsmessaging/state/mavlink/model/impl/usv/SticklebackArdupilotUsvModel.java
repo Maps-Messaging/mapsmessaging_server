@@ -35,13 +35,11 @@ import java.util.*;
 
 public class SticklebackArdupilotUsvModel extends GenericArduPilotUxvModel implements UsvModel {
 
+  private static final String CONTEXT_REQUIRED = "context must not be null";
+  private static final String MISSION_ITEM_PREFIX = "Mission item ";
+
   public static final String MODEL_NAME = "stickleback-ardupilot-usv";
 
-  public static final double DEFAULT_ALTITUDE_METERS = 10.0d;
-
-  /** @deprecated Use {@link #DEFAULT_ALTITUDE_METERS}. */
-  @Deprecated
-  public static final double MAX_ALTITUDE_METERS = DEFAULT_ALTITUDE_METERS;
   private static final long CONTACT_TTL_MILLIS = getDetectionTime();
   private static final int DETECTION_LOST = 0;
   private static final int DETECTION_PRESENT = 1;
@@ -70,13 +68,13 @@ public class SticklebackArdupilotUsvModel extends GenericArduPilotUxvModel imple
 
   @Override
   public UxvModelCommandSet reposition(UxvCommandContext context, RepositionRequest request) {
-    Objects.requireNonNull(context, "context must not be null");
+    Objects.requireNonNull(context, CONTEXT_REQUIRED);
     Objects.requireNonNull(request, "request must not be null");
     rejectSpeed(request.speedMetersPerSecond(), UxvOperation.REPOSITION);
 
     GeoPosition position = Objects.requireNonNull(request.position(), "position must not be null");
     validateCoordinates(position, "position");
-    double altitudeMeters = resolveAltitude(request.altitudeMeters());
+    double altitudeMeters = toAltitude(withAltitude(position, request.altitudeMeters()));
 
     List<MavlinkMessage> messages =
         List.of(
@@ -95,7 +93,7 @@ public class SticklebackArdupilotUsvModel extends GenericArduPilotUxvModel imple
 
   @Override
   public UxvModelCommandSet pauseVehicle(UxvCommandContext context) {
-    Objects.requireNonNull(context, "context must not be null");
+    Objects.requireNonNull(context, CONTEXT_REQUIRED);
     return UxvModelCommandSet.of(
         UxvOperation.PAUSE_VEHICLE,
         getModelName(),
@@ -105,7 +103,7 @@ public class SticklebackArdupilotUsvModel extends GenericArduPilotUxvModel imple
 
   @Override
   public UxvModelCommandSet resumeVehicle(UxvCommandContext context) {
-    Objects.requireNonNull(context, "context must not be null");
+    Objects.requireNonNull(context, CONTEXT_REQUIRED);
     return UxvModelCommandSet.of(
         UxvOperation.RESUME_VEHICLE,
         getModelName(),
@@ -115,7 +113,7 @@ public class SticklebackArdupilotUsvModel extends GenericArduPilotUxvModel imple
 
   @Override
   public UxvModelCommandSet loiter(UxvCommandContext context, LoiterRequest request) {
-    Objects.requireNonNull(context, "context must not be null");
+    Objects.requireNonNull(context, CONTEXT_REQUIRED);
     Objects.requireNonNull(request, "request must not be null");
     requirePositiveOrZero(request.radiusMeters(), "radiusMeters");
     rejectDepth(request.depthMeters(), UxvOperation.LOITER);
@@ -123,7 +121,7 @@ public class SticklebackArdupilotUsvModel extends GenericArduPilotUxvModel imple
 
     GeoPosition position = Objects.requireNonNull(request.position(), "position must not be null");
     validateCoordinates(position, "position");
-    double altitudeMeters = resolveAltitude(request.altitudeMeters());
+    double altitudeMeters = toAltitude(withAltitude(position, request.altitudeMeters()));
 
     Duration duration = toDuration(request.duration(), "duration");
     MavlinkMessage message;
@@ -165,7 +163,7 @@ public class SticklebackArdupilotUsvModel extends GenericArduPilotUxvModel imple
               context.targetComponent(),
               sequence,
               item.position(),
-              resolveAltitude(item.altitudeMeters()),
+              toAltitude(withAltitude(item.position(), item.altitudeMeters())),
               toSeconds(item.holdDuration()),
               item.radiusMeters() == null ? DEFAULT_ACCEPTANCE_RADIUS_METERS : item.radiusMeters().floatValue(),
               DEFAULT_PASS_RADIUS_METERS,
@@ -183,7 +181,7 @@ public class SticklebackArdupilotUsvModel extends GenericArduPilotUxvModel imple
   private MavlinkMessage toMissionLoiter(UxvCommandContext context, int sequence, PlanItem item) {
     double radiusMeters = item.radiusMeters() == null ? DEFAULT_ACCEPTANCE_RADIUS_METERS : item.radiusMeters();
     requirePositiveOrZero(radiusMeters, "radiusMeters");
-    double altitudeMeters = resolveAltitude(item.altitudeMeters());
+    double altitudeMeters = toAltitude(withAltitude(item.position(), item.altitudeMeters()));
 
     Duration duration = toDuration(item.holdDuration(), "holdDuration");
     if (duration.isZero()) {
@@ -211,21 +209,21 @@ public class SticklebackArdupilotUsvModel extends GenericArduPilotUxvModel imple
       issues.add(
           new PlanValidationIssue(
               UxvOperation.BUILD_MISSION,
-              "Mission item " + index + " type " + item.type() + " is not supported by this Stickleback ArduPilot USV model"));
+              MISSION_ITEM_PREFIX + index + " type " + item.type() + " is not supported by this Stickleback ArduPilot USV model"));
     }
 
     if (item.type() == PlanItemType.LOITER && item.yawDegrees() != null) {
       issues.add(
           new PlanValidationIssue(
               UxvOperation.BUILD_MISSION,
-              "Mission item " + index + " yawDegrees is not currently mapped for loiter by this Stickleback ArduPilot USV model"));
+              MISSION_ITEM_PREFIX + index + " yawDegrees is not currently mapped for loiter by this Stickleback ArduPilot USV model"));
     }
 
     if (item.speedMetersPerSecond() != null) {
       issues.add(
           new PlanValidationIssue(
               UxvOperation.BUILD_MISSION,
-              "Mission item " + index + " speedMetersPerSecond is not currently mapped by this Stickleback ArduPilot USV model"));
+              MISSION_ITEM_PREFIX + index + " speedMetersPerSecond is not currently mapped by this Stickleback ArduPilot USV model"));
     }
 
     if (item.altitudeMeters() != null
@@ -233,14 +231,14 @@ public class SticklebackArdupilotUsvModel extends GenericArduPilotUxvModel imple
       issues.add(
           new PlanValidationIssue(
               UxvOperation.BUILD_MISSION,
-              "Mission item " + index + " altitudeMeters must be a finite value"));
+              MISSION_ITEM_PREFIX + index + " altitudeMeters must be a finite value"));
     }
 
     if (item.depthMeters() != null) {
       issues.add(
           new PlanValidationIssue(
               UxvOperation.BUILD_MISSION,
-              "Mission item " + index + " depthMeters is not valid for this Stickleback ArduPilot USV model"));
+              MISSION_ITEM_PREFIX + index + " depthMeters is not valid for this Stickleback ArduPilot USV model"));
     }
   }
 
@@ -301,16 +299,6 @@ public class SticklebackArdupilotUsvModel extends GenericArduPilotUxvModel imple
     detectionEvent.addAttribute("mavlink.message", "NAMED_VALUE_FLOAT");
     detectionEvent.addAttribute("mavlink.name", packet.getName());
     detectionEvent.addAttribute("mavlink.value", packet.getValue());
-  }
-
-  private double resolveAltitude(Double altitudeMeters) {
-    if (altitudeMeters == null) {
-      return DEFAULT_ALTITUDE_METERS;
-    }
-    if (!Double.isFinite(altitudeMeters)) {
-      throw new IllegalArgumentException("altitudeMeters must be a finite value");
-    }
-    return altitudeMeters;
   }
 
   private static long getDetectionTime() {

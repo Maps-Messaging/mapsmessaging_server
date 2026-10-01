@@ -20,9 +20,7 @@ package io.mapsmessaging.dto.rest.config.transformer;
 
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
-import io.mapsmessaging.dto.rest.config.BaseConfigDTO;
 import io.mapsmessaging.dto.rest.config.transformer.impl.*;
-import io.mapsmessaging.dto.rest.config.transformer.jsonmapper.JsonMapOpDTO;
 import io.swagger.v3.oas.annotations.media.DiscriminatorMapping;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
