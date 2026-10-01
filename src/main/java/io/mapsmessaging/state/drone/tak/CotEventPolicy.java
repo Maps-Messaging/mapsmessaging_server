@@ -144,6 +144,9 @@ final class CotEventPolicy {
     MtiLookupResult mti = MtiStatusRegistry.lookup(twin.getTwinId());
     event.setUid(prefixUid(event.getUid(), config == null ? null : config.getUidPrefix()));
     String baseType = contact ? CONTACT_COT_TYPE : resolveBaseCotType(twin, config);
+    if (!contact && !removal) {
+      ClassificationRegistry.record(twin.getTwinId(), classificationOutcome(twin, baseType), baseType);
+    }
     event.setType(applyMtiAffiliation(baseType, mti));
     event.setHow(contact ? CONTACT_HOW : valueOrDefault(config == null ? null : config.getHow(), DEFAULT_HOW));
 
@@ -201,6 +204,16 @@ final class CotEventPolicy {
       return originalType;
     }
     return resolveCotType(twin, config);
+  }
+
+  private static ClassificationRegistry.Outcome classificationOutcome(EntityTwin twin, String baseType) {
+    if (ClassificationRegistry.isGeneric(baseType)) {
+      return ClassificationRegistry.Outcome.UNRESOLVED;
+    }
+    String originalType = twin.getAttributes().get(CotToTwinMapper.ORIGINAL_COT_TYPE_ATTRIBUTE);
+    return originalType != null && !originalType.isBlank()
+        ? ClassificationRegistry.Outcome.FALLBACK
+        : ClassificationRegistry.Outcome.RESOLVED;
   }
 
   private String applyMtiAffiliation(String baseType, MtiLookupResult mti) {

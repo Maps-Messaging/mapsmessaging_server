@@ -19,6 +19,8 @@
 package io.mapsmessaging.state.drone.tak;
 
 import java.time.Instant;
+import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
@@ -69,7 +71,8 @@ public final class MtiStatusRegistry {
 
   private static final AtomicReference<Lookup> delegate = new AtomicReference<>();
   private static final AtomicReference<SnapshotSource> snapshotSource = new AtomicReference<>();
-  private static final AtomicReference<StatusListener> statusListener = new AtomicReference<>();
+  private static final List<StatusListener> STATUS_LISTENERS = new CopyOnWriteArrayList<>();
+  private static final AtomicReference<Runnable> cacheClearer = new AtomicReference<>();
 
   private MtiStatusRegistry() {
   }
@@ -82,22 +85,47 @@ public final class MtiStatusRegistry {
     snapshotSource.set(source);
   }
 
-  public static void setStatusListener(StatusListener listener) {
-    statusListener.set(listener);
+  public static void addStatusListener(StatusListener listener) {
+    if (listener != null) {
+      STATUS_LISTENERS.add(listener);
+    }
+  }
+
+  public static void removeStatusListener(StatusListener listener) {
+    STATUS_LISTENERS.remove(listener);
   }
 
   public static void statusAccepted(String twinId, Instant receivedAt) {
-    StatusListener current = statusListener.get();
-    if (current != null && twinId != null) {
-      current.onStatusAccepted(twinId, receivedAt);
+    if (twinId == null) {
+      return;
+    }
+    for (StatusListener listener : STATUS_LISTENERS) {
+      listener.onStatusAccepted(twinId, receivedAt);
     }
   }
 
   public static void statusCleared(String twinId) {
-    StatusListener current = statusListener.get();
-    if (current != null && twinId != null) {
-      current.onStatusCleared(twinId);
+    if (twinId == null) {
+      return;
     }
+    for (StatusListener listener : STATUS_LISTENERS) {
+      listener.onStatusCleared(twinId);
+    }
+  }
+
+  /** Registered by the MTI adapter; lets a controlled cache-loss test empty the MTI cache. */
+  public static void setCacheClearer(Runnable clearer) {
+    cacheClearer.set(clearer);
+  }
+
+  /** @return true if an MTI adapter was registered and its cache was cleared. */
+  public static boolean clearCache() {
+    Runnable current = cacheClearer.get();
+    if (current == null) {
+      return false;
+    }
+    current.run();
+    return true;
   }
 
   public static MtiLookupResult lookup(String twinId) {

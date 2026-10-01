@@ -62,6 +62,24 @@ class TakSocketConnectionTest {
   }
 
   @Test
+  void writes_areCountedForThisServer() throws Exception {
+    TakSocketConnection connection =
+        new TakSocketConnection("unused", 1, 10, 10, true, 4);
+    try {
+      installOutput(connection);
+      assertEquals(-1L, connection.getServerStats().getLastWriteAgeMillis());
+
+      invokeWrite(connection, "<event/>");
+      invokeWrite(connection, "<event/>");
+
+      assertEquals(2, connection.getServerStats().getWriteCount());
+      assertTrue(connection.getServerStats().getLastWriteAgeMillis() >= 0);
+    } finally {
+      connection.close();
+    }
+  }
+
+  @Test
   void failed_tls_handshake_closes_the_new_socket() throws Exception {
     SSLSocketFactory factory = mock(SSLSocketFactory.class);
     SSLSocket socket = mock(SSLSocket.class);
@@ -74,8 +92,32 @@ class TakSocketConnectionTest {
       reconnect.invoke(connection);
       assertFalse(connection.isConnected());
       verify(socket).close();
+      assertEquals(1, connection.getServerStats().getConnectFailureCount());
     } finally {
       connection.close();
+    }
+  }
+
+  @Test
+  void failedConnect_isCountedForThisServerOnly() throws Exception {
+    int closedPort;
+    try (java.net.ServerSocket serverSocket = new java.net.ServerSocket(0, 1, java.net.InetAddress.getLoopbackAddress())) {
+      closedPort = serverSocket.getLocalPort();
+    }
+    TakSocketConnection failing = new TakSocketConnection("127.0.0.1", closedPort, 500, 500, true, 4);
+    TakSocketConnection other = new TakSocketConnection("unused", 1, 10, 10, true, 4);
+    try {
+      Method reconnect = TakSocketConnection.class.getDeclaredMethod("reconnect");
+      reconnect.setAccessible(true);
+      reconnect.invoke(failing);
+
+      assertFalse(failing.isConnected());
+      assertEquals(1, failing.getServerStats().getConnectFailureCount());
+      assertEquals(0, failing.getServerStats().getConnectCount());
+      assertEquals(0, other.getServerStats().getConnectFailureCount());
+    } finally {
+      failing.close();
+      other.close();
     }
   }
 

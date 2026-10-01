@@ -91,6 +91,16 @@ public class TakOutputJMX {
     return TakOutputStats.getLatencySumSeconds();
   }
 
+  @JMXBeanAttribute(name = "Latency Max Seconds", description = "Highest receipt-to-CoT latency since startup, -1 if none timed yet")
+  public double getLatencyMaxSeconds() {
+    return TakOutputStats.getLatencyMaxSeconds();
+  }
+
+  @JMXBeanAttribute(name = "Latency Recent Max Seconds", description = "Highest receipt-to-CoT latency in the last one to two minutes, -1 if none")
+  public double getLatencyRecentMaxSeconds() {
+    return TakOutputStats.getLatencyRecentMaxSeconds();
+  }
+
   @JMXBeanAttribute(name = "Latency Bucket 0.005", description = "Updates with latency <= 5ms")
   public long getLatencyBucket0005() {
     return TakOutputStats.getLatencyCumulativeCount(0);

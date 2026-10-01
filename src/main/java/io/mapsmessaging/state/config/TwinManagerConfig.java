@@ -26,6 +26,7 @@ import io.mapsmessaging.configuration.ConfigurationProperties;
 import io.mapsmessaging.dto.rest.config.BaseConfigDTO;
 import io.mapsmessaging.dto.rest.config.protocol.impl.MavlinkKnownSourceDTO;
 import io.mapsmessaging.dto.rest.config.protocol.impl.TakProtocolDTO;
+import io.mapsmessaging.dto.rest.config.protocol.impl.TakServerDTO;
 import io.mapsmessaging.license.FeatureManager;
 import io.mapsmessaging.state.config.capability.*;
 import io.mapsmessaging.state.config.geospatial.GeoSpatialConfigSupport;
@@ -78,6 +79,7 @@ public class TwinManagerConfig extends TwinManagerConfigDTO implements Config, C
       if (trustStoreProps != null) {
         takProtocolDTO.setTrustStore(new KeyStoreConfig(trustStoreProps));
       }
+      takProtocolDTO.setAdditionalServers(parseAdditionalTakServers(takProps.get("additionalServers")));
       this.tak = takProtocolDTO;
     }
 
@@ -163,6 +165,9 @@ public class TwinManagerConfig extends TwinManagerConfigDTO implements Config, C
       takProps.put("port", this.tak.getPort());
       takProps.put("sharedConnection", this.tak.isSharedConnection());
       takProps.put(TOPIC, this.tak.getTopic());
+      if (this.tak.getAdditionalServers() != null && !this.tak.getAdditionalServers().isEmpty()) {
+        takProps.put("additionalServers", toAdditionalTakServerProperties(this.tak.getAdditionalServers()));
+      }
       props.put("tak", takProps);
     }
 
@@ -310,6 +315,54 @@ public class TwinManagerConfig extends TwinManagerConfigDTO implements Config, C
         }
       }
     }
+  }
+
+  private List<TakServerDTO> parseAdditionalTakServers(Object value) {
+    List<TakServerDTO> servers = new ArrayList<>();
+    if (!(value instanceof List<?> entries)) {
+      return servers;
+    }
+    for (Object entry : entries) {
+      if (!(entry instanceof ConfigurationProperties serverProps)) {
+        continue;
+      }
+      TakServerDTO server = new TakServerDTO();
+      server.setHostname(serverProps.getProperty("hostname", null));
+      server.setPort(serverProps.getIntProperty("port", server.getPort()));
+      server.setTlsEnabled(serverProps.getBooleanProperty("tlsEnabled", server.isTlsEnabled()));
+      server.setTlsContext(serverProps.getProperty("tlsContext", server.getTlsContext()));
+      ConfigurationProperties keyStoreProps = (ConfigurationProperties) serverProps.get("keyStore");
+      if (keyStoreProps != null) {
+        server.setKeyStore(new KeyStoreConfig(keyStoreProps));
+      }
+      ConfigurationProperties trustStoreProps = (ConfigurationProperties) serverProps.get("trustStore");
+      if (trustStoreProps != null) {
+        server.setTrustStore(new KeyStoreConfig(trustStoreProps));
+      }
+      if (server.getHostname() != null && !server.getHostname().isBlank() && server.getPort() > 0) {
+        servers.add(server);
+      }
+    }
+    return servers;
+  }
+
+  private List<ConfigurationProperties> toAdditionalTakServerProperties(List<TakServerDTO> servers) {
+    List<ConfigurationProperties> values = new ArrayList<>();
+    for (TakServerDTO server : servers) {
+      ConfigurationProperties serverProps = new ConfigurationProperties();
+      serverProps.put("hostname", server.getHostname());
+      serverProps.put("port", server.getPort());
+      serverProps.put("tlsEnabled", server.isTlsEnabled());
+      serverProps.put("tlsContext", server.getTlsContext());
+      if (server.getKeyStore() instanceof Config keyStore) {
+        serverProps.put("keyStore", keyStore.toConfigurationProperties());
+      }
+      if (server.getTrustStore() instanceof Config trustStore) {
+        serverProps.put("trustStore", trustStore.toConfigurationProperties());
+      }
+      values.add(serverProps);
+    }
+    return values;
   }
 
   private List<MavlinkTwinConfigDTO> parseMavlinkConfigs(Object value) {

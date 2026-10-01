@@ -24,6 +24,9 @@ import io.mapsmessaging.dto.rest.config.network.KeyStoreConfigDTO;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
+import java.util.ArrayList;
+import java.util.List;
+
 @Data
 @Schema(description = "TAK protocol configuration")
 public class TakProtocolDTO {
@@ -90,5 +93,11 @@ public class TakProtocolDTO {
       nullable = true
   )
   private KeyStoreConfigDTO trustStore;
+
+  @Schema(
+      description = "Further TAK servers that receive the same CoT events as this one, each over its own shared connection.",
+      requiredMode = Schema.RequiredMode.NOT_REQUIRED
+  )
+  private List<TakServerDTO> additionalServers = new ArrayList<>();
 
 }

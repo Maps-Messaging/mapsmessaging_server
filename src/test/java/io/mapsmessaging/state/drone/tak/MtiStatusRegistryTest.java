@@ -33,7 +33,6 @@ class MtiStatusRegistryTest {
   void clear_registry() {
     MtiStatusRegistry.setDelegate(null);
     MtiStatusRegistry.setSnapshotSource(null);
-    MtiStatusRegistry.setStatusListener(null);
   }
 
   @Test
@@ -66,7 +65,7 @@ class MtiStatusRegistryTest {
   void listener_receives_events_and_stops_after_deregistration() {
     AtomicReference<Instant> acceptedAt = new AtomicReference<>();
     AtomicReference<String> clearedTwin = new AtomicReference<>();
-    MtiStatusRegistry.setStatusListener(new MtiStatusRegistry.StatusListener() {
+    MtiStatusRegistry.StatusListener listener = new MtiStatusRegistry.StatusListener() {
       public void onStatusAccepted(String twinId, Instant receivedAt) {
         acceptedAt.set(receivedAt);
       }
@@ -74,7 +73,8 @@ class MtiStatusRegistryTest {
       public void onStatusCleared(String twinId) {
         clearedTwin.set(twinId);
       }
-    });
+    };
+    MtiStatusRegistry.addStatusListener(listener);
     Instant receivedAt = Instant.now();
     String twinId = "vehicle";
     CompletableFuture.runAsync(() -> {
@@ -87,7 +87,7 @@ class MtiStatusRegistryTest {
     clearedTwin.set(null);
     MtiStatusRegistry.statusAccepted(null, receivedAt);
     MtiStatusRegistry.statusCleared(null);
-    MtiStatusRegistry.setStatusListener(null);
+    MtiStatusRegistry.removeStatusListener(listener);
     MtiStatusRegistry.statusAccepted(twinId, receivedAt);
     MtiStatusRegistry.statusCleared(twinId);
     assertNull(acceptedAt.get());

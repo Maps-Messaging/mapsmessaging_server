@@ -79,7 +79,7 @@ class MtiStatusAdapterTest {
     assertNotNull(hold);
     assertEquals(-65536, hold.colorArgb());
     assertEquals(Boolean.FALSE, hold.readiness());
-    assertEquals("ddos1_64x64.png", hold.cyberIconFile());
+    assertEquals("exploit_64x64.png", hold.cyberIconFile());
 
     adapter.handle(message("update", "go", "2026-09-19T13:00:00Z", "2099-01-01T00:00:00Z"));
     assertNull(adapter.lookup("asset-1"));
@@ -135,14 +135,15 @@ class MtiStatusAdapterTest {
     MtiStatusAdapter adapter = new MtiStatusAdapter("/mti/status");
     var accepted = new java.util.ArrayList<String>();
     var cleared = new java.util.ArrayList<String>();
-    io.mapsmessaging.state.drone.tak.MtiStatusRegistry.setStatusListener(
+    io.mapsmessaging.state.drone.tak.MtiStatusRegistry.StatusListener listener =
         new io.mapsmessaging.state.drone.tak.MtiStatusRegistry.StatusListener() {
           public void onStatusAccepted(String twinId, java.time.Instant receivedAt) {
             assertNotNull(receivedAt);
             accepted.add(twinId);
           }
           public void onStatusCleared(String twinId) { cleared.add(twinId); }
-        });
+        };
+    io.mapsmessaging.state.drone.tak.MtiStatusRegistry.addStatusListener(listener);
     try {
       adapter.handle(message("update", "hold", "2026-09-19T10:00:00Z", "2099-01-01T00:00:00Z"));
       adapter.handle(message("update", "go", "2026-09-19T09:00:00Z", "2099-01-01T00:00:00Z"));
@@ -156,7 +157,7 @@ class MtiStatusAdapterTest {
       adapter.handle(message("update", "go", "2021-01-01T00:00:00Z", "2021-01-02T00:00:00Z"));
       assertEquals(1, accepted.size());
     } finally {
-      io.mapsmessaging.state.drone.tak.MtiStatusRegistry.setStatusListener(null);
+      io.mapsmessaging.state.drone.tak.MtiStatusRegistry.removeStatusListener(listener);
     }
   }
 

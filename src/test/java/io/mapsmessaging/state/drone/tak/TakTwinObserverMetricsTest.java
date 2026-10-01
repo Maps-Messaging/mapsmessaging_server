@@ -132,7 +132,6 @@ class TakTwinObserverMetricsTest {
       }
     } finally {
       MtiStatusRegistry.setSnapshotSource(null);
-      MtiStatusRegistry.setStatusListener(null);
       JMXManager.setEnableJMX(enabled);
     }
   }

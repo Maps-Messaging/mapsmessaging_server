@@ -27,6 +27,7 @@ import io.mapsmessaging.engine.session.ClientConnection;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.state.logging.StateLogMessages;
+import io.mapsmessaging.state.metrics.MessageOutcomeStats;
 import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
 
@@ -85,6 +86,7 @@ public class EventPublisher implements ClientConnection, MessageListener {
       queue.offerLast(xml);
     }
     if (dropped) {
+      MessageOutcomeStats.failure(MessageOutcomeStats.Source.TAK_PUBLISHER, "queue_full");
       long total = droppedEvents.incrementAndGet();
       // Rate-limited: a stuck destination at replay rates would otherwise flood the log.
       if (total == 1 || total % DROP_LOG_INTERVAL == 0) {
