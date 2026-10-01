@@ -95,7 +95,8 @@ final class TakOutputStats {
 
   private static void rollWindow(long nowMillis) {
     long elapsed = nowMillis - windowStartMillis;
-    if (elapsed >= 2 * RECENT_WINDOW_MILLIS) {
+    // A clock that jumped backwards would otherwise freeze the window; start a fresh one.
+    if (elapsed < 0 || elapsed >= 2 * RECENT_WINDOW_MILLIS) {
       previousWindowMaxMillis = -1L;
       windowMaxMillis = -1L;
       windowStartMillis = nowMillis;

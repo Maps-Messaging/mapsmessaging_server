@@ -28,9 +28,9 @@ class TakOutputStatsMaxLatencyTest {
 
   @Test
   void recentMax_coversCurrentAndPreviousWindow_thenExpires() {
-    long start = 1_000_000_000L;
-    TakOutputStats.getLatencyRecentMaxSeconds(start + 10 * TakOutputStats.RECENT_WINDOW_MILLIS);
-    long base = start + 10 * TakOutputStats.RECENT_WINDOW_MILLIS;
+    // Shared static state: other tests record real latencies at the real time, so start well after it.
+    long base = System.currentTimeMillis() + 100 * TakOutputStats.RECENT_WINDOW_MILLIS;
+    TakOutputStats.getLatencyRecentMaxSeconds(base);
 
     TakOutputStats.recordRecentMax(800, base + 1);
     TakOutputStats.recordRecentMax(200, base + TakOutputStats.RECENT_WINDOW_MILLIS + 1);
@@ -38,6 +38,16 @@ class TakOutputStatsMaxLatencyTest {
     assertEquals(0.8, TakOutputStats.getLatencyRecentMaxSeconds(base + TakOutputStats.RECENT_WINDOW_MILLIS + 2));
     assertEquals(0.2, TakOutputStats.getLatencyRecentMaxSeconds(base + 2 * TakOutputStats.RECENT_WINDOW_MILLIS + 2));
     assertEquals(-1.0, TakOutputStats.getLatencyRecentMaxSeconds(base + 5 * TakOutputStats.RECENT_WINDOW_MILLIS));
+  }
+
+  @Test
+  void recentMax_startsAFreshWindowWhenTheClockJumpsBack() {
+    long base = System.currentTimeMillis() + 300 * TakOutputStats.RECENT_WINDOW_MILLIS;
+    TakOutputStats.recordRecentMax(900, base);
+
+    TakOutputStats.recordRecentMax(100, base - 5 * TakOutputStats.RECENT_WINDOW_MILLIS);
+
+    assertEquals(0.1, TakOutputStats.getLatencyRecentMaxSeconds(base - 5 * TakOutputStats.RECENT_WINDOW_MILLIS + 1));
   }
 
   @Test
