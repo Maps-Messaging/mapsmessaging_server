@@ -460,22 +460,29 @@ public class AuthManager implements Agent {
 
   public void delGroup(String groupName) throws IOException {
     logger.log(AUTH_DELETED_GROUP, groupName);
-    authenticationStorage.delGroup(groupName);
+    requireAuthenticationStorage().delGroup(groupName);
   }
 
   public GroupIdMap addGroup(String groupName) throws IOException {
     logger.log(AUTH_ADDED_GROUP, groupName);
-    return authenticationStorage.addGroup(groupName);
+    return requireAuthenticationStorage().addGroup(groupName);
   }
 
   public void addUserToGroup(String user, String group) throws IOException {
     logger.log(AUTH_MODIFIED_GROUP, user, "added to",  group);
-    authenticationStorage.addUserToGroup(user, group);
+    requireAuthenticationStorage().addUserToGroup(user, group);
   }
 
   public void removeUserFromGroup(String username, String groupName) throws IOException {
     logger.log(AUTH_MODIFIED_GROUP, username, "removed from",  groupName);
-    authenticationStorage.removeUserFromGroup(username, groupName);
+    requireAuthenticationStorage().removeUserFromGroup(username, groupName);
+  }
+
+  private AuthenticationStorage requireAuthenticationStorage() throws IOException {
+    if (authenticationStorage == null) {
+      throw new IOException("Authentication storage is not available");
+    }
+    return authenticationStorage;
   }
 
   @Override
