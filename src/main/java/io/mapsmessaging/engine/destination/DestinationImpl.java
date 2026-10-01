@@ -342,7 +342,7 @@ public class DestinationImpl implements BaseDestination {
     Schema newSchema = new Schema(config);
     ResourceProperties resourceProperties = resource.getResourceProperties();
 
-    if (schema == null || schema.update(newSchema) && resourceProperties != null) {
+    if ((schema == null || schema.update(newSchema)) && resourceProperties != null) {
       resourceProperties.setSchemaId(config.getUniqueId());
       resourceProperties.write(new File(fullyQualifiedDirectoryRoot));
       if (message != null && schemaSubscriptionManager.hasSubscriptions()) {

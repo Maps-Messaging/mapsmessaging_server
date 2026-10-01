@@ -118,7 +118,7 @@ public class SchemaManager implements Agent, SchemaResolver {
   }
 
   public MessageFormatter getMessageFormatter(SchemaConfig config) throws IOException{
-    return getMessageFormatter(config.getUniqueId());
+    return config != null ? getMessageFormatter(config.getUniqueId()) : null;
   }
 
   public MessageFormatter getMessageFormatter(String uniqueId) throws IOException {

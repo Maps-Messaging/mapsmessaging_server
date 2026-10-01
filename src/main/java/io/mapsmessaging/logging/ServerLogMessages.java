@@ -756,6 +756,7 @@ public enum ServerLogMessages implements LogMessage {
   SEMTECH_SENDING_PACKET(LEVEL.INFO, SERVER_CATEGORY.PROTOCOL, "Sending packet {}"),
   SEMTECH_CLOSE(LEVEL.INFO, SERVER_CATEGORY.PROTOCOL, "Closing Protocol"),
   SEMTECH_QUEUE_MESSAGE(LEVEL.DEBUG, SERVER_CATEGORY.PROTOCOL, "Message queued for delivery {}"),
+  SEMTECH_DROP_UNKNOWN_GATEWAY(LEVEL.WARN, SERVER_CATEGORY.PROTOCOL, "Dropping outbound message for unavailable gateway {}"),
   // </editor-fold>
 
   //<editor-fold desc="Server Discovery, mDNS, log messages">

@@ -123,7 +123,7 @@ public class ExtensionProtocol extends Protocol implements MessageListener, Clie
     if(!extension.supportsRemoteFiltering() && parser != null){
       parsers.put(resource, parser);
     }
-    extension.registerRemoteLink(resource, extension.supportsRemoteFiltering()? parser.toString(): null, linkProperties );
+    extension.registerRemoteLink(resource, extension.supportsRemoteFiltering() && parser != null ? parser.toString() : null, linkProperties );
   }
 
   protected int saveMessage(@NonNull @NotNull String destinationName, @NotNull Message message) throws ExecutionException, InterruptedException, TimeoutException, IOException {
