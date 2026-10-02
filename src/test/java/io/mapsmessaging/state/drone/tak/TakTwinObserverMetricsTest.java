@@ -122,7 +122,8 @@ class TakTwinObserverMetricsTest {
       observer.onTwinUpdated("asset", null, context());
       assertTrue(contexts.isEmpty());
 
-      DroneTwin unidentified = new DroneTwin("");
+      DroneTwin unidentified = mock(DroneTwin.class);
+      when(unidentified.getTwinId()).thenReturn("");
       observer.onTwinUpdated(null, unidentified, context());
       assertTrue(contexts.isEmpty());
     });
