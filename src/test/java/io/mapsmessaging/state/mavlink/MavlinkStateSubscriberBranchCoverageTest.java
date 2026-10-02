@@ -86,6 +86,25 @@ class MavlinkStateSubscriberBranchCoverageTest {
     verify(event.getCompletionTask()).run();
   }
 
+
+  @Test
+  void configuredHeartbeatCopiesCorrelationIdentifierIntoUpdateContext() {
+    Fixture fixture = fixture();
+    MavlinkKnownSourceDTO source = mock(MavlinkKnownSourceDTO.class);
+    DroneInfoDTO droneInfo = mock(DroneInfoDTO.class);
+    when(source.getName()).thenReturn("drone-1");
+    when(fixture.sourceRegistry.getKnownSource(any())).thenReturn(source);
+    when(fixture.droneRegistry.getDroneInfo("drone-1")).thenReturn(droneInfo);
+    MessageEvent event = event(validHeartbeatJson(), "/mavlink/out", "ID#42#vehicle");
+
+    fixture.subscriber.handle(event);
+
+    ArgumentCaptor<TwinUpdateContext> captor = ArgumentCaptor.forClass(TwinUpdateContext.class);
+    verify(fixture.twinUpdater).updateTwinState(any(), any(), captor.capture(), same(source), same(droneInfo));
+    assertEquals("ID#42#vehicle", captor.getValue().getUniqueOutboundIdentifier());
+    verify(event.getCompletionTask()).run();
+  }
+
   private Fixture fixture() {
     MavlinkSourceRegistry sourceRegistry = mock(MavlinkSourceRegistry.class);
     DroneInfoRegistry droneRegistry = mock(DroneInfoRegistry.class);

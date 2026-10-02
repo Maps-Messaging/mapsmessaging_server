@@ -34,6 +34,7 @@ import java.nio.charset.StandardCharsets;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockingDetails;
@@ -128,6 +129,44 @@ class MavlinkStateSubscriberTest {
     assertEquals(1, invocationCount(fixture.protocol, "close"));
     verify(fixture.twinUpdater).close();
     assertThrows(IllegalStateException.class, fixture.subscriber::start);
+  }
+
+
+  @Test
+  void startFailureRetainsProtocolAndUpdaterCleanupFailuresAsSuppressed() throws Exception {
+    Fixture fixture = fixture();
+    IOException startFailure = new IOException("connect failed");
+    IOException protocolCloseFailure = new IOException("protocol close failed");
+    RuntimeException updaterCloseFailure = new IllegalStateException("updater close failed");
+    doThrow(startFailure).when(fixture.protocol).connect(
+        org.mockito.ArgumentMatchers.anyString(),
+        org.mockito.ArgumentMatchers.anyString(),
+        org.mockito.ArgumentMatchers.anyString()
+    );
+    doThrow(protocolCloseFailure).when(fixture.protocol).close();
+    doThrow(updaterCloseFailure).when(fixture.twinUpdater).close();
+
+    IOException thrown = assertThrows(IOException.class, fixture.subscriber::start);
+
+    assertSame(startFailure, thrown);
+    assertEquals(2, thrown.getSuppressed().length);
+    assertSame(protocolCloseFailure, thrown.getSuppressed()[0]);
+    assertSame(updaterCloseFailure, thrown.getSuppressed()[1]);
+  }
+
+  @Test
+  void stopPropagatesProtocolCloseFailureAndSuppressesUpdaterCloseFailure() throws Exception {
+    Fixture fixture = fixture();
+    IOException protocolCloseFailure = new IOException("protocol close failed");
+    RuntimeException updaterCloseFailure = new IllegalStateException("updater close failed");
+    doThrow(protocolCloseFailure).when(fixture.protocol).close();
+    doThrow(updaterCloseFailure).when(fixture.twinUpdater).close();
+
+    IOException thrown = assertThrows(IOException.class, fixture.subscriber::stop);
+
+    assertSame(protocolCloseFailure, thrown);
+    assertEquals(1, thrown.getSuppressed().length);
+    assertSame(updaterCloseFailure, thrown.getSuppressed()[0]);
   }
 
   @Test
