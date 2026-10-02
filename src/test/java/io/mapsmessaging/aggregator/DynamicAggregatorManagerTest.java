@@ -7,8 +7,10 @@ import io.mapsmessaging.dto.rest.config.aggregator.AggregatorInputConfigDTO;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 
+import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -148,6 +150,58 @@ class DynamicAggregatorManagerTest {
     assertEquals("/out/vehicle-7", resolved.getOutputTopic());
     assertEquals("/sensor/vehicle-7/value", resolved.getInputs().getFirst().getTopicName());
     assertEquals("/sensor/+/value", template.getInputs().getFirst().getTopicName());
+  }
+
+
+  @Test
+  void destinationDeletionKeepsSharedAggregatorUntilLastResolvedTopicIsRemoved() throws Exception {
+    manager = new DynamicAggregatorManager(new AggregatorWorkScheduler(1, 4, 1), config("/sensor/+/value"));
+
+    Map<String, String> topics = mapField("topicToAggregatorKey");
+    Map<String, Long> lastSeen = mapField("aggregatorLastSeen");
+    topics.put("/sensor/a/value", "a");
+    topics.put("/sensor/a/secondary", "a");
+    lastSeen.put("a", System.currentTimeMillis());
+
+    manager.destinationDeleted("/sensor/a/value");
+
+    assertFalse(topics.containsKey("/sensor/a/value"));
+    assertEquals("a", topics.get("/sensor/a/secondary"));
+    assertTrue(lastSeen.containsKey("a"));
+
+    manager.destinationDeleted("/sensor/a/secondary");
+
+    assertFalse(topics.containsValue("a"));
+    assertFalse(lastSeen.containsKey("a"));
+  }
+
+  @Test
+  void cleanupRemovesExpiredAggregatorStateAndKeepsRecentState() throws Exception {
+    manager = new DynamicAggregatorManager(new AggregatorWorkScheduler(1, 4, 1), config("/sensor/+/value"));
+
+    Map<String, String> topics = mapField("topicToAggregatorKey");
+    Map<String, Long> lastSeen = mapField("aggregatorLastSeen");
+    long now = System.currentTimeMillis();
+    topics.put("/sensor/stale/value", "stale");
+    topics.put("/sensor/fresh/value", "fresh");
+    lastSeen.put("stale", now - 20_000L);
+    lastSeen.put("fresh", now);
+
+    Method cleanup = DynamicAggregatorManager.class.getDeclaredMethod("cleanupInactiveAggregators");
+    cleanup.setAccessible(true);
+    cleanup.invoke(manager);
+
+    assertFalse(topics.containsKey("/sensor/stale/value"));
+    assertFalse(lastSeen.containsKey("stale"));
+    assertEquals("fresh", topics.get("/sensor/fresh/value"));
+    assertTrue(lastSeen.containsKey("fresh"));
+  }
+
+  @SuppressWarnings("unchecked")
+  private <K, V> Map<K, V> mapField(String name) throws Exception {
+    Field field = DynamicAggregatorManager.class.getDeclaredField(name);
+    field.setAccessible(true);
+    return (Map<K, V>) field.get(manager);
   }
 
   private static AggregatorConfigDTO config(String topic) {
