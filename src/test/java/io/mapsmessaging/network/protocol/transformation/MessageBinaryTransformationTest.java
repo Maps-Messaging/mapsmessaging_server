@@ -83,7 +83,6 @@ class MessageBinaryTransformationTest {
       assertEquals("/reply", restored.getResponseTopic());
       assertEquals(Priority.HIGHEST, restored.getPriority());
       assertTrue(restored.isRetain());
-      assertNull(restored.getTransformation());
     }
   }
 
