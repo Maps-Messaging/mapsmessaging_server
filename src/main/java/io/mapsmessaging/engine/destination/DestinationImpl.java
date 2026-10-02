@@ -431,7 +431,11 @@ public class DestinationImpl implements BaseDestination {
       List<File> failed = new ArrayList<>();
       for (File file : allContents) {
         try {
-          Files.delete(file.toPath());
+          if (file.isDirectory()) {
+            deleteFile(file, 0);
+          } else {
+            Files.delete(file.toPath());
+          }
         } catch (IOException e) {
           failed.add(file);
         }
