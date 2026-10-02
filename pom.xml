@@ -1070,7 +1070,7 @@
     <dependency>
       <groupId>global.namespace.truelicense</groupId>
       <artifactId>truelicense-v4</artifactId>
-      <version>4.0.3</version>
+      <version>4.1.4</version>
     </dependency>
     <!-- https://mvnrepository.com/artifact/global.namespace.truelicense/truelicense-spi -->
     <dependency>
