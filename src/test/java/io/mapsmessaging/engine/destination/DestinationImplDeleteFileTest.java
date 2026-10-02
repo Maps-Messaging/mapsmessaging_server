@@ -54,4 +54,17 @@ class DestinationImplDeleteFileTest {
     assertFalse(Files.exists(child));
     assertFalse(Files.exists(destination));
   }
+  @Test
+  void deleteFileRemovesNestedDirectoryContents() throws Exception {
+    Path destination = Files.createDirectory(tempDir.resolve("destination-nested"));
+    Path child = Files.createDirectory(destination.resolve("child"));
+    Files.writeString(child.resolve("nested.bin"), "nested");
+
+    DestinationImpl.deleteFile(destination.toFile(), 0);
+
+    assertFalse(Files.exists(child.resolve("nested.bin")));
+    assertFalse(Files.exists(child));
+    assertFalse(Files.exists(destination));
+  }
+
 }
