@@ -153,22 +153,22 @@ public class RestMessageListener implements MessageListener {
 
   public boolean ackReceived(String destination, List<Long> messageId) {
     SessionSubscriptionMap subscribedEventManager = sessionSubscriptionsMap.get(destination);
-    if (subscribedEventManager != null) {
+    if (subscribedEventManager != null && !messageId.isEmpty()) {
       for (long id : messageId) {
         subscribedEventManager.getSubscribedEventManager().ackReceived(id);
-        return true;
       }
+      return true;
     }
     return false;
   }
 
   public boolean nakReceived(String destination, List<Long> messageId) {
     SessionSubscriptionMap subscribedEventManager = sessionSubscriptionsMap.get(destination);
-    if (subscribedEventManager != null) {
+    if (subscribedEventManager != null && !messageId.isEmpty()) {
       for (long id : messageId) {
         subscribedEventManager.getSubscribedEventManager().rollbackReceived(id);
-        return true;
       }
+      return true;
     }
     return false;
   }
