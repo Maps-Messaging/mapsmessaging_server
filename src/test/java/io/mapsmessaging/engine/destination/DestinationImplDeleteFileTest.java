@@ -19,6 +19,7 @@
 
 package io.mapsmessaging.engine.destination;
 
+import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -26,6 +27,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class DestinationImplDeleteFileTest {
 
@@ -64,6 +66,27 @@ class DestinationImplDeleteFileTest {
 
     assertFalse(Files.exists(child.resolve("nested.bin")));
     assertFalse(Files.exists(child));
+    assertFalse(Files.exists(destination));
+  }
+
+  @Test
+  void deleteFileDoesNotFollowSymbolicDirectoryLinks() throws Exception {
+    Path outside = Files.createDirectory(tempDir.resolve("outside"));
+    Path protectedFile = Files.writeString(outside.resolve("keep.bin"), "keep");
+    Path destination = Files.createDirectory(tempDir.resolve("destination-link"));
+    Path link = destination.resolve("external");
+
+    try {
+      Files.createSymbolicLink(link, outside);
+    } catch (UnsupportedOperationException | java.io.IOException | SecurityException exception) {
+      Assumptions.assumeTrue(false, "Symbolic links unavailable: " + exception.getMessage());
+    }
+
+    DestinationImpl.deleteFile(destination.toFile(), 0);
+
+    assertTrue(Files.exists(protectedFile));
+    assertTrue(Files.exists(outside));
+    assertFalse(Files.exists(link));
     assertFalse(Files.exists(destination));
   }
 
