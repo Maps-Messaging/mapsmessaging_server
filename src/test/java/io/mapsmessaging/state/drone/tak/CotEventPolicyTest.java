@@ -6,6 +6,7 @@ package io.mapsmessaging.state.drone.tak;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -63,24 +64,120 @@ class CotEventPolicyTest {
   }
 
   @Test
-  void mtiAppliesReadinessAndCyberIconToAirAsset() {
+  void mti_degrades_readiness_but_keeps_the_assets_own_icon() {
     DroneTwin twin = twin(VehicleClass.UAV);
     MtiStatusRegistry.setDelegate(
-        twinId -> new MtiLookupResult(null, -23296, "MTI: mitigate", false, "ddos3_64x64.png"));
+        twinId -> new MtiLookupResult(null, -65536, "MTI: hold", false, "exploit_64x64.png"));
     TakEvent event = mapper.map(twin, new TwinUpdateContext());
 
     policy.apply(event, twin, null, null);
 
+    assertEquals("a-f-A-M-F-Q", event.getType());
     assertEquals(Boolean.FALSE, event.getDetail().getStatus().getReadiness());
-    assertEquals(-23296, event.getDetail().getColorArgb());
-    assertEquals(
-        "8ed4bdba4a2ff2972685f3420274f87cc8e2d7547ba7262bce94d8991e7f7a9b/cyber_icons/ddos3_64x64.png",
-        event.getDetail().getUsericonIconsetPath());
+    assertEquals(-65536, event.getDetail().getColorArgb());
+    assertNull(event.getDetail().getUsericonIconsetPath());
+    assertFalse(new TakXmlSerialiser().toXml(event).contains("usericon"));
+  }
 
-    String xml = new TakXmlSerialiser().toXml(event);
-    assertTrue(xml.contains("readiness=\"false\""));
+  @Test
+  void mti_cyber_icon_is_a_second_marker_to_the_right_of_the_asset() {
+    DroneTwin twin = twin(VehicleClass.UAV);
+    MtiStatusRegistry.setDelegate(
+        twinId -> new MtiLookupResult(null, -65536, "MTI: hold", false, "exploit_64x64.png"));
+    TakEvent event = mapper.map(twin, new TwinUpdateContext());
+
+    TakEvent marker = policy.apply(event, twin, null, null);
+
+    assertNotNull(marker);
+    assertEquals("drone-1-mti-cyber", marker.getUid());
+    assertEquals("a-u-G", marker.getType());
+    assertEquals(
+        "8ed4bdba4a2ff2972685f3420274f87cc8e2d7547ba7262bce94d8991e7f7a9b/cyber_icons/exploit_64x64.png",
+        marker.getDetail().getUsericonIconsetPath());
+    assertEquals("MTI: hold", marker.getDetail().getRemarks());
+    assertEquals(event.getTime(), marker.getTime());
+    assertEquals(event.getStale(), marker.getStale());
+
+    assertEquals(event.getPoint().getLat(), marker.getPoint().getLat());
+    assertEquals(event.getPoint().getHae(), marker.getPoint().getHae());
+    double eastMeters = (marker.getPoint().getLon() - event.getPoint().getLon())
+        * 111_320.0d * Math.cos(Math.toRadians(event.getPoint().getLat()));
+    assertEquals(CotEventPolicy.CYBER_ICON_OFFSET_METERS, eastMeters, 0.001d);
+
+    assertEquals(1, marker.getDetail().getLinks().size());
+    assertEquals("drone-1", marker.getDetail().getLinks().get(0).getUid());
+    assertEquals("p-p", marker.getDetail().getLinks().get(0).getRelation());
+
+    String xml = new TakXmlSerialiser().toXml(marker);
+    assertTrue(xml.contains("uid=\"drone-1-mti-cyber\""));
     assertTrue(xml.contains(
-        "iconsetpath=\"8ed4bdba4a2ff2972685f3420274f87cc8e2d7547ba7262bce94d8991e7f7a9b/cyber_icons/ddos3_64x64.png\""));
+        "<usericon iconsetpath=\"8ed4bdba4a2ff2972685f3420274f87cc8e2d7547ba7262bce94d8991e7f7a9b/cyber_icons/exploit_64x64.png\"/>"));
+  }
+
+  @Test
+  void mti_cyber_icon_marker_follows_the_prefixed_asset_uid() {
+    DroneTwin twin = twin(VehicleClass.UAV);
+    MtiStatusRegistry.setDelegate(
+        twinId -> new MtiLookupResult(null, -23296, "MTI: mitigate", false, "ddos3_64x64.png"));
+    TakEvent event = mapper.map(twin, new TwinUpdateContext());
+    CotConfigDTO config = new CotConfigDTO();
+    config.setUidPrefix("edge-");
+
+    TakEvent marker = policy.apply(event, twin, null, config);
+
+    assertEquals("edge-drone-1", event.getUid());
+    assertEquals("edge-drone-1-mti-cyber", marker.getUid());
+    assertEquals("edge-drone-1", marker.getDetail().getLinks().get(0).getUid());
+  }
+
+  @Test
+  void mti_cyber_icon_marker_is_only_for_air_assets() {
+    DroneTwin twin = twin(VehicleClass.USV);
+    MtiStatusRegistry.setDelegate(
+        twinId -> new MtiLookupResult(null, -65536, "MTI: hold", false, "exploit_64x64.png"));
+    TakEvent event = mapper.map(twin, new TwinUpdateContext());
+
+    assertNull(policy.apply(event, twin, null, null));
+  }
+
+  @Test
+  void no_cyber_icon_marker_without_an_mti_cyber_icon() {
+    DroneTwin twin = twin(VehicleClass.UAV);
+    TakEvent withoutMti = mapper.map(twin, new TwinUpdateContext());
+    assertNull(policy.apply(withoutMti, twin, null, null));
+
+    MtiStatusRegistry.setDelegate(
+        twinId -> new MtiLookupResult("u", null, "MTI: unknown", null, null));
+    TakEvent unknown = mapper.map(twin, new TwinUpdateContext());
+    assertNull(policy.apply(unknown, twin, null, null));
+  }
+
+  @Test
+  void cyber_icon_removal_reuses_the_marker_uid_and_goes_stale_after_one_second() {
+    DroneTwin twin = twin(VehicleClass.UAV);
+    TakEvent event = mapper.map(twin, new TwinUpdateContext());
+    policy.apply(event, twin, null, null);
+
+    TakEvent removal = policy.buildCyberIconRemoval(event);
+
+    assertEquals("drone-1-mti-cyber", removal.getUid());
+    assertEquals(Instant.parse(event.getTime()).plusSeconds(1), Instant.parse(removal.getStale()));
+    assertNull(removal.getDetail().getUsericonIconsetPath());
+    assertNull(policy.buildCyberIconRemoval(null));
+  }
+
+  @Test
+  void east_offset_grows_with_latitude_and_wraps_at_the_antimeridian() {
+    double atEquator = CotEventPolicy.offsetLongitudeEast(0.0d, 10.0d, 1_000.0d) - 10.0d;
+    double atSixty = CotEventPolicy.offsetLongitudeEast(60.0d, 10.0d, 1_000.0d) - 10.0d;
+    assertEquals(2.0d * atEquator, atSixty, 1e-9);
+
+    Double wrapped = CotEventPolicy.offsetLongitudeEast(0.0d, 179.9999d, 1_000.0d);
+    assertTrue(wrapped < -179.99d && wrapped > -180.0d);
+
+    assertEquals(25.0d, CotEventPolicy.offsetLongitudeEast(90.0d, 25.0d, 1_000.0d));
+    assertNull(CotEventPolicy.offsetLongitudeEast(10.0d, null, 1_000.0d));
+    assertEquals(25.0d, CotEventPolicy.offsetLongitudeEast(null, 25.0d, 1_000.0d));
   }
 
   @Test

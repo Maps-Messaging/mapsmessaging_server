@@ -31,6 +31,7 @@ import io.mapsmessaging.state.drone.model.GeoPosition;
 import io.mapsmessaging.state.drone.tak.model.TakContact;
 import io.mapsmessaging.state.drone.tak.model.TakDetail;
 import io.mapsmessaging.state.drone.tak.model.TakEvent;
+import io.mapsmessaging.state.drone.tak.model.TakLink;
 import io.mapsmessaging.state.drone.tak.model.TakPoint;
 import io.mapsmessaging.state.drone.tak.model.TakPrecisionLocation;
 import java.time.Instant;
@@ -69,6 +70,18 @@ final class CotEventPolicy {
   // iconset imported under this exact id.
   private static final String CYBER_ICONSET_UUID = "8ed4bdba4a2ff2972685f3420274f87cc8e2d7547ba7262bce94d8991e7f7a9b";
   private static final String CYBER_ICON_GROUP = "cyber_icons";
+  // The cyber icon is sent as its own CoT marker beside the asset, so the asset keeps the icon
+  // its own type gives it. uid = asset uid + suffix, so TAK replaces it in place on every update.
+  private static final String CYBER_ICON_UID_SUFFIX = "-mti-cyber";
+  // Generic unknown point; the usericon is what gets drawn. Matches the iconset's type2525b="a-u".
+  private static final String CYBER_ICON_COT_TYPE = "a-u-G";
+  // Distance east of the asset the cyber icon is placed at. TAK draws icons at a fixed screen
+  // size, so this only reads as "right next to it" for a range of zoom levels - tune it for the
+  // map scale the operators actually use.
+  static final double CYBER_ICON_OFFSET_METERS = 50.0d;
+  private static final double METERS_PER_DEGREE_LATITUDE = 111_320.0d;
+  private static final String CYBER_ICON_PARENT_RELATION = "p-p";
+  private static final long CYBER_ICON_REMOVAL_STALE_MILLIS = 1_000L;
   // Twin attribute set from mavlink.knownSources[].cotClassification (see MavlinkTwinUpdater) -
   // overrides the vehicleClass-derived classification segment for this specific asset.
   private static final String COT_CLASSIFICATION_ATTRIBUTE = "cotClassification";
@@ -86,12 +99,34 @@ final class CotEventPolicy {
     this.cotTypeResolver = cotTypeResolver;
   }
 
-  void apply(TakEvent event, EntityTwin twin, TwinUpdateContext context, CotConfigDTO config) {
-    apply(event, twin, context, config, false);
+  /**
+   * @return the cyber-icon marker to publish next to this asset, or {@code null} if MTI has no
+   *     cyber icon for it (see {@link #buildCyberIconEvent}).
+   */
+  TakEvent apply(TakEvent event, EntityTwin twin, TwinUpdateContext context, CotConfigDTO config) {
+    return apply(event, twin, context, config, false);
   }
 
   void applyRemoval(TakEvent event, EntityTwin twin, TwinUpdateContext context, CotConfigDTO config) {
     apply(event, twin, context, config, true);
+  }
+
+  /**
+   * Builds the event that takes a previously published cyber-icon marker off the map: same uid
+   * and position as the marker, stale one second after the asset event's time, which is how this
+   * observer removes markers (see {@code TakEventMapper.mapRemoval}).
+   */
+  TakEvent buildCyberIconRemoval(TakEvent assetEvent) {
+    if (assetEvent == null || assetEvent.getPoint() == null) {
+      return null;
+    }
+    Instant time = parseInstant(assetEvent.getTime());
+    if (time == null) {
+      time = Instant.now();
+    }
+    TakEvent removal = buildCyberIconMarker(assetEvent, null, null);
+    removal.setStale(time.plusMillis(CYBER_ICON_REMOVAL_STALE_MILLIS).toString());
+    return removal;
   }
 
   void applyDetection(TakEvent event, DroneTwin source, CotConfigDTO config) {
@@ -129,14 +164,14 @@ final class CotEventPolicy {
     }
   }
 
-  private void apply(
+  private TakEvent apply(
       TakEvent event,
       EntityTwin twin,
       TwinUpdateContext context,
       CotConfigDTO config,
       boolean removal) {
     if (event == null || twin == null) {
-      return;
+      return null;
     }
     appliedCount.increment();
 
@@ -186,8 +221,9 @@ final class CotEventPolicy {
         detail.setColorArgb(CONTACT_COLOR_ARGB_RED);
         applyContactDetail(detail, twin);
       }
-      applyMtiDetail(detail, mti, baseType);
+      applyMtiDetail(detail, mti);
     }
+    return removal ? null : buildCyberIconEvent(event, mti, baseType);
   }
 
   /**
@@ -228,7 +264,7 @@ final class CotEventPolicy {
     return parts[0] + "-" + mti.affiliationOverride() + "-" + parts[2];
   }
 
-  private void applyMtiDetail(TakDetail detail, MtiLookupResult mti, String baseType) {
+  private void applyMtiDetail(TakDetail detail, MtiLookupResult mti) {
     if (mti == null) {
       return;
     }
@@ -247,10 +283,75 @@ final class CotEventPolicy {
         mtiReadinessDegradedCount.increment();
       }
     }
-    if (mti.cyberIconFile() != null && !mti.cyberIconFile().isBlank() && isDroneClassification(baseType)) {
-      detail.setUsericonIconsetPath(CYBER_ICONSET_UUID + "/" + CYBER_ICON_GROUP + "/" + mti.cyberIconFile());
-      mtiCyberIconAppliedCount.increment();
+  }
+
+  /**
+   * The cyber-compromise icon is NOT put on the asset itself - the asset keeps the icon its own
+   * CoT type gives it. Instead it goes on a second marker placed {@link #CYBER_ICON_OFFSET_METERS}
+   * east of the asset (to the right of it on a north-up map), sharing the asset's time/stale so
+   * it moves and expires with it.
+   */
+  private TakEvent buildCyberIconEvent(TakEvent assetEvent, MtiLookupResult mti, String baseType) {
+    if (mti == null || mti.cyberIconFile() == null || mti.cyberIconFile().isBlank()
+        || !isDroneClassification(baseType) || assetEvent.getPoint() == null) {
+      return null;
     }
+    mtiCyberIconAppliedCount.increment();
+    return buildCyberIconMarker(
+        assetEvent,
+        CYBER_ICONSET_UUID + "/" + CYBER_ICON_GROUP + "/" + mti.cyberIconFile(),
+        mti.remarksSuffix());
+  }
+
+  private TakEvent buildCyberIconMarker(TakEvent assetEvent, String iconsetPath, String remarks) {
+    TakPoint assetPoint = assetEvent.getPoint();
+    TakPoint point = new TakPoint();
+    point.setLat(assetPoint.getLat());
+    point.setLon(offsetLongitudeEast(assetPoint.getLat(), assetPoint.getLon(), CYBER_ICON_OFFSET_METERS));
+    point.setHae(assetPoint.getHae());
+    point.setCe(assetPoint.getCe());
+    point.setLe(assetPoint.getLe());
+
+    TakLink parent = new TakLink();
+    parent.setUid(assetEvent.getUid());
+    parent.setRelation(CYBER_ICON_PARENT_RELATION);
+
+    TakDetail detail = new TakDetail();
+    detail.setUsericonIconsetPath(iconsetPath);
+    detail.setRemarks(remarks);
+    detail.getLinks().add(parent);
+
+    TakEvent marker = new TakEvent();
+    marker.setUid(cyberIconUid(assetEvent.getUid()));
+    marker.setType(CYBER_ICON_COT_TYPE);
+    marker.setHow(assetEvent.getHow());
+    marker.setTime(assetEvent.getTime());
+    marker.setStart(assetEvent.getStart());
+    marker.setStale(assetEvent.getStale());
+    marker.setPoint(point);
+    marker.setDetail(detail);
+    return marker;
+  }
+
+  static String cyberIconUid(String assetUid) {
+    return (assetUid == null ? "" : assetUid) + CYBER_ICON_UID_SUFFIX;
+  }
+
+  /**
+   * Moves a position {@code meters} due east. A degree of longitude shrinks with cos(latitude),
+   * so the same distance is more degrees the further from the equator; the result is wrapped back
+   * into [-180, 180). At the poles there is no "east", so the longitude is left unchanged.
+   */
+  static Double offsetLongitudeEast(Double latitude, Double longitude, double meters) {
+    if (latitude == null || longitude == null || !Double.isFinite(latitude) || !Double.isFinite(longitude)) {
+      return longitude;
+    }
+    double metersPerDegreeLongitude = METERS_PER_DEGREE_LATITUDE * Math.cos(Math.toRadians(latitude));
+    if (metersPerDegreeLongitude < 1.0d) {
+      return longitude;
+    }
+    double shifted = longitude + meters / metersPerDegreeLongitude;
+    return ((shifted + 180.0d) % 360.0d + 360.0d) % 360.0d - 180.0d;
   }
 
   /**
@@ -428,6 +529,17 @@ final class CotEventPolicy {
     return configuredValue != null && Double.isFinite(configuredValue) && configuredValue >= 0.0d
         ? configuredValue
         : defaultValue;
+  }
+
+  private static Instant parseInstant(String value) {
+    if (value == null || value.isBlank()) {
+      return null;
+    }
+    try {
+      return Instant.parse(value);
+    } catch (RuntimeException ignored) {
+      return null;
+    }
   }
 
   private Instant resolveEventTime(TakEvent event, TwinUpdateContext context) {
