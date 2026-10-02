@@ -274,12 +274,12 @@ public class MtiStatusAdapter implements StateMessageAdapter, ClientConnection, 
       // this deployment uses, so readiness=false carries the actual glanceable signal here -
       // colorArgb is kept for clients/icon types that do respect it.
       //
-      // cyberIconFile: a fixed two-level severity split (not a 1:1 map of the ddos1-5 gradient
-      // in the shared iconset) - mitigate is "degraded but still trusted enough to act",
-      // hold is "trust withdrawn", so hold gets the exploit icon. Ddos1/2/4/5 are unused for
-      // now - there's no MTI wire field (domain/finding count, signal_id) confirmed to
-      // correlate with them yet; revisit if/when the MTI team specifies one.
-      case "mitigate" -> new MtiLookupResult(null, COLOR_ARGB_MITIGATE, status.remarks(), false, "ddos3_64x64.png");
+      // cyberIconFile: one icon per state - mitigate is "degraded but still trusted enough to
+      // act", hold is "trust withdrawn". The icon names match the icons of the same name in the
+      // WinTAK cyber iconset pack. The ddos1-5 icons are unused - there's no MTI wire field
+      // (domain/finding count, signal_id) confirmed to correlate with them yet; revisit if/when
+      // the MTI team specifies one.
+      case "mitigate" -> new MtiLookupResult(null, COLOR_ARGB_MITIGATE, status.remarks(), false, "mitigate_64x64.png");
       case "hold" -> new MtiLookupResult(null, COLOR_ARGB_HOLD, status.remarks(), false, "exploit_64x64.png");
       // "go", or anything not in the MTI team's fixed 4-value alphabet - no override.
       default -> null;

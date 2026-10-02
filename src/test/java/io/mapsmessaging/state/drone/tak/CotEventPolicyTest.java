@@ -118,7 +118,7 @@ class CotEventPolicyTest {
   void mti_cyber_icon_marker_follows_the_prefixed_asset_uid() {
     DroneTwin twin = twin(VehicleClass.UAV);
     MtiStatusRegistry.setDelegate(
-        twinId -> new MtiLookupResult(null, -23296, "MTI: mitigate", false, "ddos3_64x64.png"));
+        twinId -> new MtiLookupResult(null, -23296, "MTI: mitigate", false, "mitigate_64x64.png"));
     TakEvent event = mapper.map(twin, new TwinUpdateContext());
     CotConfigDTO config = new CotConfigDTO();
     config.setUidPrefix("edge-");
