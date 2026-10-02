@@ -36,7 +36,7 @@ class ResourceStatisticsAdapterTest {
     CacheStatistics statistics = mock(CacheStatistics.class);
     when(statistics.getHit()).thenReturn(11L);
     when(statistics.getMiss()).thenReturn(7L);
-    when(statistics.getSize()).thenReturn(19L);
+    when(statistics.getSize()).thenReturn(19);
 
     Stats hit = mock(Stats.class);
     Stats miss = mock(Stats.class);
