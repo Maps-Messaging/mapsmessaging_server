@@ -16,6 +16,7 @@ import io.mapsmessaging.api.features.DestinationType;
 import io.mapsmessaging.api.features.QualityOfService;
 import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.network.io.EndPoint;
+import io.mapsmessaging.network.io.Selectable;
 import io.mapsmessaging.network.protocol.Protocol;
 import io.mapsmessaging.state.StateManagerAgent;
 import io.mapsmessaging.state.adapter.cot.CotIngestAdapter;
@@ -213,7 +214,7 @@ class CotProtocolPublishingCoverageTest {
     try (Fixture fixture = new Fixture()) {
       doThrow(new ClosedChannelException()).when(fixture.endpoint).deregister(anyInt());
 
-      fixture.protocol.selected(fixture.endpoint, null, 0);
+      fixture.protocol.selected(mock(Selectable.class), null, 0);
 
       verify(fixture.endpoint).deregister(SelectionKey.OP_READ);
       verify(fixture.endpoint, never()).readPacket(any());
