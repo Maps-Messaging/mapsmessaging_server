@@ -34,14 +34,12 @@ class SubscriptionIdentifierBoundaryTest {
       "0,1",
       "1,1",
       "126,1",
-      "127,4",
+      "127,1",
       "128,2",
-      "32638,2",
-      "32639,4",
-      "32640,3",
-      "16777086,3",
-      "16777087,4",
-      "16777088,4",
+      "16383,2",
+      "16384,3",
+      "2097151,3",
+      "2097152,4",
       "268435455,4"
   })
   void reportsEncodedSizeAcrossVariableIntegerBoundaries(long value, int expectedSize) {
