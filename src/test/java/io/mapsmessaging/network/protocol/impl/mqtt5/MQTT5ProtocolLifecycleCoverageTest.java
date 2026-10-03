@@ -241,11 +241,13 @@ class MQTT5ProtocolLifecycleCoverageTest {
 
     int expectedId = expectedAuthListener ? MQTTPacket5.AUTH : connect.getControlPacketId();
     verify(listenerFactory).getListener(expectedId);
-    verify(listener).handlePacket(
-        same(connect),
-        expectedAuthListener ? isNull() : same(session),
-        same(fixture.endPoint),
-        same(fixture.protocol));
+    if (expectedAuthListener) {
+      verify(listener).handlePacket(
+          same(connect), isNull(), same(fixture.endPoint), same(fixture.protocol));
+    } else {
+      verify(listener).handlePacket(
+          same(connect), same(session), same(fixture.endPoint), same(fixture.protocol));
+    }
   }
 
   @Test
