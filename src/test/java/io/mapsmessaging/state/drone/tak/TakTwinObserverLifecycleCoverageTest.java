@@ -218,7 +218,7 @@ class TakTwinObserverLifecycleCoverageTest {
   void statusChangeFallsBackToTwinIdentityAndCreatesContext() throws Exception {
     withObserver(observer -> {
       TakEventMapper mapper = mock(TakEventMapper.class);
-      DroneTwin twin = new DroneTwin("asset");
+      DroneTwin twin = positionedTwin("asset");
       setField(observer, "takEventMapper", mapper);
 
       observer.onTwinStatusChanged(
