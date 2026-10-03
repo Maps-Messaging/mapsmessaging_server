@@ -132,11 +132,11 @@ class CotProtocolFramingTest {
         Arguments.of("<?xml version='1.0'?><event></event>", 0, 0),
         Arguments.of("<?xml version='1.0'?> <event></event>", 0, 0),
         Arguments.of("<?xml version='1.0'?>\n\t<event></event>", 0, 0),
-        Arguments.of("<?xml version='1.0'?>garbage<event></event>", 0, 27),
+        Arguments.of("<?xml version='1.0'?>garbage<event></event>", 0, 28),
         Arguments.of("<event></event>", 0, 0),
         Arguments.of("noise<?xml version='1.0'?> <event></event>", 0, 5),
         Arguments.of("<?xml version='1.0'?> <event></event>", 1, 22),
-        Arguments.of("<?xml version='1.0'<event></event>", 0, 20),
+        Arguments.of("<?xml version='1.0'<event></event>", 0, 19),
         Arguments.of("<?xml?>X<event></event>", 0, 8)
     );
   }
