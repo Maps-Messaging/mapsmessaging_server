@@ -267,6 +267,8 @@ class StompServerListenerCoverageTest {
     new MessageListener().processEvent(
         engine, sendEvent("/topic/in", null), mock(Message.class));
 
+    verify(session).findDestination(
+        "/topic/out", io.mapsmessaging.api.features.DestinationType.TOPIC);
     verifyNoMoreInteractions(session);
   }
 
