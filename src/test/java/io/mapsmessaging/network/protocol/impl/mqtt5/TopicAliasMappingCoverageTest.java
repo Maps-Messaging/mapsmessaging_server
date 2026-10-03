@@ -87,7 +87,8 @@ class TopicAliasMappingCoverageTest {
     assertNull(mapping.find(4));
     assertNull(mapping.find("a"));
     TopicAlias reused = mapping.create("new");
-    assertEquals(0, reused.getTopicAlias());
+    assertNotNull(reused);
+    assertEquals(1, reused.getTopicAlias());
   }
 
   @Test
