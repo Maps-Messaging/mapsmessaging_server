@@ -177,7 +177,7 @@ class Mqtt5AcknowledgementListenerCoverageTest {
 
   @ParameterizedTest
   @MethodSource("packetIdentifiers")
-  void pubRelWithoutTransactionReturnsPubCompAndCallbackIsHarmless(int packetId) {
+  void pubRelWithoutTransactionReturnsPubCompAndCallbackIsHarmless(int packetId) throws Exception {
     ListenerFixture fixture = fixture();
     when(fixture.session.getName()).thenReturn("mqtt5-session");
     when(fixture.session.getTransaction("mqtt5-session_" + packetId)).thenReturn(null);
