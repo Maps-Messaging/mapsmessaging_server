@@ -171,7 +171,7 @@ class CoapRfc7252WireComplianceTest {
     return new BasePacket(
         PacketFactory.GET,
         TYPE.NON,
-        Code.valueOf((byte) 1),
+        Code.CONTENT,
         1,
         0x1234,
         new byte[0]);
