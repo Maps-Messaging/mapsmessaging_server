@@ -60,10 +60,7 @@ class MqttSn12ConnectionlessPublishSpecificationTest {
               ('A' << 8) | 'B',
               "payload".getBytes()));
 
-      verify(manager).publish(
-          eq("AB"),
-          any(),
-          "MQTT-SN 1.2 QoS -1 permits a two-octet short topic name without CONNECT");
+      verify(manager).publish(eq("AB"), any());
     }
   }
 
@@ -84,10 +81,7 @@ class MqttSn12ConnectionlessPublishSpecificationTest {
               42,
               "payload".getBytes()));
 
-      verify(manager, never()).publish(
-          anyString(),
-          any(),
-          "QoS -1 outside a session may use predefined IDs or short names, not registered TopicIds");
+      verify(manager, never()).publish(anyString(), any());
     }
   }
 
