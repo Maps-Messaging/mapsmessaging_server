@@ -2,11 +2,14 @@ package io.mapsmessaging.network.protocol;
 
 import io.mapsmessaging.api.MessageBuilder;
 import io.mapsmessaging.api.MessageEvent;
+import io.mapsmessaging.api.SubscriptionContextBuilder;
+import io.mapsmessaging.api.features.QualityOfService;
 import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.api.transformers.InterServerTransformation;
 import io.mapsmessaging.api.transformers.ParsedMessage;
 import io.mapsmessaging.dto.rest.config.protocol.ProtocolConfigDTO;
 import io.mapsmessaging.dto.rest.protocol.ProtocolInformationDTO;
+import io.mapsmessaging.engine.destination.subscription.SubscriptionContext;
 import io.mapsmessaging.network.io.EndPoint;
 import io.mapsmessaging.network.io.EndPointStatus;
 import io.mapsmessaging.network.io.Packet;
@@ -82,10 +85,41 @@ class ProtocolRoutingCoverageTest {
     assertEquals(expected, protocol.parseForLookup(input));
   }
 
+  @ParameterizedTest
+  @MethodSource("builderCases")
+  void subscriptionBuilderMatrix(QualityOfService qos, String selector, int receiveMaximum) {
+    SubscriptionContext context =
+        protocol.builder("root/topic", selector, qos, receiveMaximum).build();
+
+    assertEquals("root/topic", context.getAlias());
+    assertEquals(qos, context.getQualityOfService());
+    assertEquals(qos.getClientAcknowledgement(), context.getAcknowledgementController());
+    assertEquals(receiveMaximum, context.getReceiveMaximum());
+    assertTrue(context.allowOverlap());
+    assertEquals(selector == null || selector.isEmpty() ? null : selector, context.getSelector());
+  }
+
   private static Message message() {
     MessageBuilder builder = new MessageBuilder();
     builder.setOpaqueData(new byte[]{1, 2, 3});
     return builder.build();
+  }
+
+  private static Stream<Arguments> builderCases() {
+    return Stream.of(
+        Arguments.of(QualityOfService.AT_MOST_ONCE, null, 1),
+        Arguments.of(QualityOfService.AT_MOST_ONCE, "", 10),
+        Arguments.of(QualityOfService.AT_MOST_ONCE, "x = 1", 100),
+        Arguments.of(QualityOfService.AT_LEAST_ONCE, null, 1),
+        Arguments.of(QualityOfService.AT_LEAST_ONCE, "", 10),
+        Arguments.of(QualityOfService.AT_LEAST_ONCE, "x = 1", 100),
+        Arguments.of(QualityOfService.EXACTLY_ONCE, null, 1),
+        Arguments.of(QualityOfService.EXACTLY_ONCE, "", 10),
+        Arguments.of(QualityOfService.EXACTLY_ONCE, "x = 1", 100),
+        Arguments.of(QualityOfService.MQTT_SN_REGISTERED, null, 1),
+        Arguments.of(QualityOfService.MQTT_SN_REGISTERED, "", 10),
+        Arguments.of(QualityOfService.MQTT_SN_REGISTERED, "x = 1", 100)
+    );
   }
 
   private static Stream<Arguments> lookupCases() {
@@ -199,6 +233,11 @@ class ProtocolRoutingCoverageTest {
 
     private String scan(String name) {
       return scanForName(name);
+    }
+
+    private SubscriptionContextBuilder builder(
+        String resource, String selector, QualityOfService qos, int receiveMaximum) {
+      return createSubscriptionContextBuilder(resource, selector, qos, receiveMaximum);
     }
   }
 }
