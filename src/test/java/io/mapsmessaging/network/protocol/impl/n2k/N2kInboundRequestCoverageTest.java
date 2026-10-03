@@ -67,7 +67,7 @@ class N2kInboundRequestCoverageTest {
     Fixture fixture = fixture();
     when(fixture.formatter.getParser().encodeFromSource(
         eq(126996), any(AbstractAisFieldValueSource.class)))
-        .thenThrow(new java.io.IOException("encode"));
+        .thenThrow(new IllegalStateException("encode"));
 
     InvocationTargetException thrown = assertThrows(
         InvocationTargetException.class,
@@ -75,7 +75,7 @@ class N2kInboundRequestCoverageTest {
             fixture.protocol,
             frame(59904, 22, 255, requestedPgn(126996))));
 
-    assertInstanceOf(java.io.IOException.class, thrown.getCause());
+    assertInstanceOf(IllegalStateException.class, thrown.getCause());
     assertEquals("encode", thrown.getCause().getMessage());
     verify(fixture.endPoint, never()).writeFrames(anyList());
   }
