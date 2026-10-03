@@ -64,7 +64,8 @@ class StatisticalAnalyserCoverageTest {
     if (expectedClass == null) {
       assertNull(statistic);
     } else {
-      assertEquals(expectedClass, assertNotNull(statistic).getClass().getSimpleName());
+      assertNotNull(statistic);
+      assertEquals(expectedClass, statistic.getClass().getSimpleName());
     }
   }
 
