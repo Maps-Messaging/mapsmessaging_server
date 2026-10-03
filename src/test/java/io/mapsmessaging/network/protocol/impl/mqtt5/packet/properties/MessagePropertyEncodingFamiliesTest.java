@@ -110,7 +110,7 @@ class MessagePropertyEncodingFamiliesTest {
     restored.load(packet);
 
     assertEquals(value, restored.getContentType());
-    assertEquals(2 + value.length(), original.getSize());
+    assertEquals(2 + value.getBytes(StandardCharsets.UTF_8).length, original.getSize());
   }
 
   @Test
