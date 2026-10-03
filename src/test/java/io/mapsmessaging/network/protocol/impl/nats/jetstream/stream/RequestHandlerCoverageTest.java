@@ -88,10 +88,14 @@ class RequestHandlerCoverageTest {
     MsgFrame message = (MsgFrame) result;
     assertEquals("_INBOX.JS", message.getSubject());
     assertEquals("42", message.getSubscriptionId());
-    String json = new String(message.getPayload(), StandardCharsets.UTF_8);
-    assertTrue(json.contains("\"code\": 501"));
-    assertTrue(json.contains("\"err_code\": 1"));
-    assertTrue(json.contains("Function not implemented: $JS.API.UNKNOWN.ACTION"));
+    JsonObject json = JsonParser.parseString(
+        new String(message.getPayload(), StandardCharsets.UTF_8)).getAsJsonObject();
+    JsonObject error = json.getAsJsonObject("error");
+    assertEquals(501, error.get("code").getAsInt());
+    assertEquals(1, error.get("err_code").getAsInt());
+    assertEquals(
+        "Function not implemented: $JS.API.UNKNOWN.ACTION",
+        error.get("description").getAsString());
   }
 
   @Test
@@ -102,10 +106,13 @@ class RequestHandlerCoverageTest {
 
     assertEquals("_INBOX.JS", result.getSubject());
     assertEquals("7", result.getSubscriptionId());
-    String json = new String(result.getPayload(), StandardCharsets.UTF_8);
-    assertTrue(json.contains("io.nats.jetstream.api.v1.error"));
-    assertTrue(json.contains("\"code\": 501"));
-    assertTrue(json.contains("\"description\": \"not implemented\""));
+    JsonObject json = JsonParser.parseString(
+        new String(result.getPayload(), StandardCharsets.UTF_8)).getAsJsonObject();
+    assertEquals("io.nats.jetstream.api.v1.error", json.get("type").getAsString());
+    JsonObject error = json.getAsJsonObject("error");
+    assertEquals(501, error.get("code").getAsInt());
+    assertEquals(1, error.get("err_code").getAsInt());
+    assertEquals("not implemented", error.get("description").getAsString());
   }
 
   @Test
