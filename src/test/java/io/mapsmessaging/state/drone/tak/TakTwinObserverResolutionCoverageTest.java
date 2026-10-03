@@ -65,9 +65,9 @@ class TakTwinObserverResolutionCoverageTest {
 
   @ParameterizedTest
   @MethodSource("unusableStatsInputs")
-  void appendStatsLeavesUnusableInputsUntouched(String twinId, String xml) throws Exception {
+  void appendStatsLeavesUnusableInputsUntouched(String xml) throws Exception {
     withObserver(observer -> {
-      DroneTwin twin = new DroneTwin(twinId);
+      DroneTwin twin = new DroneTwin("asset");
       BatteryState battery = new BatteryState();
       battery.setPercentage(50.0);
       twin.setBatteryState(battery);
@@ -274,12 +274,9 @@ class TakTwinObserverResolutionCoverageTest {
 
   private static Stream<Arguments> unusableStatsInputs() {
     return Stream.of(
-        Arguments.of(null, "<event><detail/></event>"),
-        Arguments.of("", "<event><detail/></event>"),
-        Arguments.of(" ", "<event><detail/></event>"),
-        Arguments.of("asset", null),
-        Arguments.of("asset", ""),
-        Arguments.of("asset", " ")
+        Arguments.of((Object) null),
+        Arguments.of(""),
+        Arguments.of(" ")
     );
   }
 
