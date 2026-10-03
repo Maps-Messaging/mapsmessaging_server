@@ -111,6 +111,57 @@ class TakTwinObserverMetricsTest {
     });
   }
 
+
+  @Test
+  void null_and_unidentified_updates_are_ignored_without_creating_contexts() throws Exception {
+    withObserver(observer -> {
+      @SuppressWarnings("unchecked")
+      Map<String, TakTwinContext> contexts =
+          (Map<String, TakTwinContext>) field(observer, "takContexts");
+
+      observer.onTwinUpdated("asset", null, context());
+      assertTrue(contexts.isEmpty());
+
+      DroneTwin unidentified = mock(DroneTwin.class);
+      when(unidentified.getTwinId()).thenReturn("");
+      observer.onTwinUpdated(null, unidentified, context());
+      assertTrue(contexts.isEmpty());
+    });
+  }
+
+  @Test
+  void blank_update_id_falls_back_to_twin_id_and_rate_limits_immediate_repeat() throws Exception {
+    withObserver(observer -> {
+      EventPublisher publisher = mock(EventPublisher.class);
+      setField(observer, "eventPublisher", publisher);
+      DroneTwin twin = positionedTwin();
+
+      observer.onTwinUpdated("", twin, context());
+      observer.onTwinUpdated("", twin, context());
+
+      verify(publisher, times(1)).publish(anyString());
+      @SuppressWarnings("unchecked")
+      Map<String, TakTwinContext> contexts =
+          (Map<String, TakTwinContext>) field(observer, "takContexts");
+      assertTrue(contexts.containsKey("asset"));
+    });
+  }
+
+  @Test
+  void null_removal_detection_and_status_inputs_are_ignored() throws Exception {
+    withObserver(observer -> {
+      @SuppressWarnings("unchecked")
+      Map<String, TakTwinContext> contexts =
+          (Map<String, TakTwinContext>) field(observer, "takContexts");
+
+      observer.onTwinRemoved(null, context());
+      observer.onDetectionEvent(null, null, context());
+      observer.onTwinStatusChanged("asset", null, null, null, context());
+
+      assertTrue(contexts.isEmpty());
+    });
+  }
+
   private void assertPictureWaiting(TakTwinObserver observer) throws Exception {
     PictureRecoveryTracker tracker = tracker(observer);
     assertEquals(0, tracker.stats(PictureRecoveryTracker.FailureType.RESTART,

@@ -49,6 +49,7 @@ import io.mapsmessaging.network.protocol.Protocol;
 import io.mapsmessaging.security.access.Group;
 import io.mapsmessaging.security.access.Identity;
 import io.mapsmessaging.security.authorisation.ProtectedResource;
+import io.mapsmessaging.utilities.configuration.ConfigurationManager;
 import org.junit.jupiter.api.*;
 
 import javax.security.auth.login.LoginException;
@@ -104,7 +105,17 @@ public class BaseTestConfig extends BaseTest {
       setIfNot("javax.net.debug", "none");
 
       setIfNot("org.slf4j.simpleLogger.defaultLogLevel", "debug");
-      md = new MessageDaemon(new TestFeatureManager(new ArrayList<>()));
+      TestFeatureManager featureManager = new TestFeatureManager(new ArrayList<>());
+      md = new MessageDaemon(featureManager);
+
+      // Other unit tests can touch the ConfigurationManager singleton before the shared
+      // integration daemon starts. Fully initialise it here so daemon startup never
+      // inherits a partial managerMap from an earlier test in the same Surefire fork.
+      ConfigurationManager configurationManager = ConfigurationManager.getInstance();
+      configurationManager.setFeatureManager(featureManager);
+      configurationManager.initialise("junit");
+      configurationManager.loadAll();
+
       Runnable runnable = () -> {
         try {
           md.start();
@@ -173,6 +184,9 @@ public class BaseTestConfig extends BaseTest {
   @AfterEach
   void checkSessionState()  {
     try {
+      if (md == null || md.getSubSystemManager() == null) {
+        return;
+      }
       SessionManager manager = md.getSubSystemManager().getSessionManager();
       List<SessionImpl> sessionImpls = manager.getSessions();
       for (SessionImpl sessionImpl : sessionImpls) {
@@ -192,9 +206,25 @@ public class BaseTestConfig extends BaseTest {
         && md != null && md.isStarted() && AuthManager.getInstance().isAuthenticationEnabled()) {
       ConfigurationProperties properties = new ConfigurationProperties(AuthManager.getInstance().getConfig().getAuthConfig());
       String path = properties.getProperty("configDirectory");
-      usernamePasswordMap = Files.lines(Paths.get(path + File.separator + "admin_password"))
-          .map(line -> line.split("="))
-          .collect(Collectors.toMap(arr -> arr[0], arr -> arr[1]));
+      if (path == null || path.isBlank()) {
+        String mapsData = System.getProperty("MAPS_DATA");
+        if (mapsData != null && !mapsData.isBlank()) {
+          path = Paths.get(mapsData, ".security").toString();
+        }
+      }
+      if (path == null || path.isBlank()) {
+        throw new IOException("Test authentication configDirectory and MAPS_DATA are both unavailable");
+      }
+      java.nio.file.Path passwordFile = Paths.get(path, "admin_password");
+      if (!Files.isRegularFile(passwordFile)) {
+        throw new IOException("Test admin password file was not created: " + passwordFile);
+      }
+      try (java.util.stream.Stream<String> lines = Files.lines(passwordFile)) {
+        usernamePasswordMap = lines
+            .map(line -> line.split("=", 2))
+            .filter(arr -> arr.length == 2)
+            .collect(Collectors.toMap(arr -> arr[0], arr -> arr[1]));
+      }
     }
     if (usernamePasswordMap != null) {
       return usernamePasswordMap.get(user);
@@ -206,9 +236,13 @@ public class BaseTestConfig extends BaseTest {
 
     @Override
     public void run() {
-      md.stop();
+      if (md != null && md.getSubSystemManager() != null) {
+        md.stop();
+      }
       try {
-        th.join(2000);
+        if (th != null) {
+          th.join(2000);
+        }
       } catch (InterruptedException e) {
         Thread.currentThread().interrupt();
       }
@@ -216,6 +250,9 @@ public class BaseTestConfig extends BaseTest {
   }
 
   private void deleteUnknownDestinations(){
+    if (md == null || !md.isStarted() || md.getSubSystemManager() == null) {
+      return;
+    }
     Map<String, DestinationImpl> destinations = md.getDestinationManager().get(null);
     List<DestinationImpl> toDelete = new ArrayList<>();
     for(DestinationImpl destination:destinations.values()){
