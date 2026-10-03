@@ -73,10 +73,34 @@ class ProtocolRoutingCoverageTest {
     assertEquals(expected, protocol.scan(topic));
   }
 
+  @ParameterizedTest
+  @MethodSource("lookupCases")
+  void lookupMappingMatrix(String filter, String mapped, String input, String expected) {
+    if (filter != null) {
+      protocol.setTopicMapping(filter, mapped);
+    }
+    assertEquals(expected, protocol.parseForLookup(input));
+  }
+
   private static Message message() {
     MessageBuilder builder = new MessageBuilder();
     builder.setOpaqueData(new byte[]{1, 2, 3});
     return builder.build();
+  }
+
+  private static Stream<Arguments> lookupCases() {
+    return Stream.of(
+        Arguments.of(null, null, "unchanged", "unchanged"),
+        Arguments.of("exact", "mapped", "exact", "mapped"),
+        Arguments.of("exact", "mapped", "other", "other"),
+        Arguments.of("sensor/#", "local/", "sensor/value", "local/sensor/value"),
+        Arguments.of("sensor/#", "local/", "sensor/a/b", "local/sensor/a/b"),
+        Arguments.of("root/#", "mapped/", "root/value", "mapped/root/value"),
+        Arguments.of("a/#", "b/", "a/value", "b/a/value"),
+        Arguments.of("sensor/#", "local/", "other/value", "other/value"),
+        Arguments.of("plain", "mapped", "plain", "mapped"),
+        Arguments.of("plain", "mapped", "plain/child", "plain/child")
+    );
   }
 
   private static Stream<Arguments> mappingCases() {
