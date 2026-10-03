@@ -332,6 +332,7 @@ class StompServerListenerCoverageTest {
     Packet packet = new Packet(ByteBuffer.wrap(wire.getBytes(StandardCharsets.UTF_8)));
     Frame frame = new FrameFactory(4096, false, false).parseFrame(packet);
     frame.scanFrame(packet);
+    frame.isValid();
     return frame;
   }
 
