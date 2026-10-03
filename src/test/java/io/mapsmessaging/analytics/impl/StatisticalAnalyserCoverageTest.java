@@ -148,8 +148,9 @@ class StatisticalAnalyserCoverageTest {
   void populatedStatisticsPreventRediscovery() throws Exception {
     StatisticalAnalyser analyser = analyser(10, List.of(), List.of());
     MessageFormatter formatter = mock(MessageFormatter.class);
-    when(formatter.parse(any(byte[].class), any()))
-        .thenReturn(resolver(Map.of("alpha", 1)), resolver(Map.of("beta", 2)));
+    ParsedObject first = resolver(Map.of("alpha", 1));
+    ParsedObject second = resolver(Map.of("beta", 2));
+    when(formatter.parse(any(byte[].class), any())).thenReturn(first, second);
     injectFormatter(analyser, formatter);
 
     analyser.ingest(event());
@@ -163,8 +164,9 @@ class StatisticalAnalyserCoverageTest {
   void emptyDiscoveryRetriesOnNextEvent() throws Exception {
     StatisticalAnalyser analyser = analyser(10, List.of(), List.of());
     MessageFormatter formatter = mock(MessageFormatter.class);
-    when(formatter.parse(any(byte[].class), any()))
-        .thenReturn(resolver(Map.of("flag", true)), resolver(Map.of("value", 5)));
+    ParsedObject first = resolver(Map.of("flag", true));
+    ParsedObject second = resolver(Map.of("value", 5));
+    when(formatter.parse(any(byte[].class), any())).thenReturn(first, second);
     injectFormatter(analyser, formatter);
 
     analyser.ingest(event());
