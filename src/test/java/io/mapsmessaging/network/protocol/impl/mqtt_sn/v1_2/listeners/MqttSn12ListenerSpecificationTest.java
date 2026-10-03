@@ -1,6 +1,7 @@
 package io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.listeners;
 
 import io.mapsmessaging.api.Session;
+import io.mapsmessaging.api.features.DestinationMode;
 import io.mapsmessaging.api.features.QualityOfService;
 import io.mapsmessaging.config.protocol.impl.MqttSnConfig;
 import io.mapsmessaging.engine.destination.subscription.SubscriptionContext;
@@ -162,7 +163,15 @@ class MqttSn12ListenerSpecificationTest {
     ArgumentCaptor<SubscriptionContext> context =
         ArgumentCaptor.forClass(SubscriptionContext.class);
     verify(fixture.session).addSubscription(context.capture());
-    assertEquals(topic, context.getValue().getFilter());
+    if (topic.startsWith(DestinationMode.SCHEMA.getNamespace())) {
+      assertEquals(DestinationMode.SCHEMA, context.getValue().getDestinationMode());
+      assertEquals(
+          topic.substring(DestinationMode.SCHEMA.getNamespace().length()),
+          context.getValue().getFilter());
+    } else {
+      assertEquals(DestinationMode.NORMAL, context.getValue().getDestinationMode());
+      assertEquals(topic, context.getValue().getFilter());
+    }
   }
 
   @Test
