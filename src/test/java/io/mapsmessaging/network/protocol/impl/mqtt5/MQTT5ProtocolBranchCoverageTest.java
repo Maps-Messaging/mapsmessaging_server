@@ -435,7 +435,7 @@ class MQTT5ProtocolBranchCoverageTest {
     assertEquals("/local/source", context.getDestinationName());
     assertEquals(QualityOfService.EXACTLY_ONCE, context.getQualityOfService());
     assertEquals(1024, context.getReceiveMaximum());
-    assertTrue(context.isAllowOverlap());
+    assertTrue(context.allowOverlap());
     assertEquals(expectedSelector ? selector : null, context.getSelector());
     assertEquals("/remote/mapped",
         fixture.protocol.getTopicNameMapping().get("/local/source"));
