@@ -643,7 +643,7 @@ class KpiAdapterCoverageTest {
   private Object getFieldUnchecked(KpiAdapter adapter, String name) {
     try {
       return getField(adapter, name);
-    } catch (ReflectiveOperationException e) {
+    } catch (Exception e) {
       throw new AssertionError(e);
     }
   }
