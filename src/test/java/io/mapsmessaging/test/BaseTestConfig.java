@@ -192,9 +192,25 @@ public class BaseTestConfig extends BaseTest {
         && md != null && md.isStarted() && AuthManager.getInstance().isAuthenticationEnabled()) {
       ConfigurationProperties properties = new ConfigurationProperties(AuthManager.getInstance().getConfig().getAuthConfig());
       String path = properties.getProperty("configDirectory");
-      usernamePasswordMap = Files.lines(Paths.get(path + File.separator + "admin_password"))
-          .map(line -> line.split("="))
-          .collect(Collectors.toMap(arr -> arr[0], arr -> arr[1]));
+      if (path == null || path.isBlank()) {
+        String mapsData = System.getProperty("MAPS_DATA");
+        if (mapsData != null && !mapsData.isBlank()) {
+          path = Paths.get(mapsData, ".security").toString();
+        }
+      }
+      if (path == null || path.isBlank()) {
+        throw new IOException("Test authentication configDirectory and MAPS_DATA are both unavailable");
+      }
+      java.nio.file.Path passwordFile = Paths.get(path, "admin_password");
+      if (!Files.isRegularFile(passwordFile)) {
+        throw new IOException("Test admin password file was not created: " + passwordFile);
+      }
+      try (java.util.stream.Stream<String> lines = Files.lines(passwordFile)) {
+        usernamePasswordMap = lines
+            .map(line -> line.split("=", 2))
+            .filter(arr -> arr.length == 2)
+            .collect(Collectors.toMap(arr -> arr[0], arr -> arr[1]));
+      }
     }
     if (usernamePasswordMap != null) {
       return usernamePasswordMap.get(user);
@@ -206,9 +222,13 @@ public class BaseTestConfig extends BaseTest {
 
     @Override
     public void run() {
-      md.stop();
+      if (md != null) {
+        md.stop();
+      }
       try {
-        th.join(2000);
+        if (th != null) {
+          th.join(2000);
+        }
       } catch (InterruptedException e) {
         Thread.currentThread().interrupt();
       }
@@ -216,6 +236,9 @@ public class BaseTestConfig extends BaseTest {
   }
 
   private void deleteUnknownDestinations(){
+    if (md == null || !md.isStarted() || md.getSubSystemManager() == null) {
+      return;
+    }
     Map<String, DestinationImpl> destinations = md.getDestinationManager().get(null);
     List<DestinationImpl> toDelete = new ArrayList<>();
     for(DestinationImpl destination:destinations.values()){
