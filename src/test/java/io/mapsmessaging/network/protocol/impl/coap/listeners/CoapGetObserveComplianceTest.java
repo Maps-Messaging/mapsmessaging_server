@@ -153,9 +153,17 @@ class CoapGetObserveComplianceTest {
         io.mapsmessaging.network.protocol.impl.coap.packet.options.Constants.OBSERVE));
   }
 
-  private BasePacket request(TYPE type, int messageId, String path) {
+  private BasePacket request(TYPE type, int messageId, String path) throws Exception {
+    byte first = (byte) ((1 << 6) | (type.getValue() << 4));
+    byte[] wire = new byte[]{
+        first,
+        0x01,
+        (byte) ((messageId >>> 8) & 0xff),
+        (byte) (messageId & 0xff)
+    };
     BasePacket request =
-        new BasePacket(PacketFactory.GET, type, Code.valueOf((byte) 1), 1, messageId, new byte[0]);
+        new PacketFactory().parseFrame(
+            new io.mapsmessaging.network.io.Packet(java.nio.ByteBuffer.wrap(wire)));
     UriPath uriPath = new UriPath();
     uriPath.setPath(path);
     request.getOptions().putOption(uriPath);
