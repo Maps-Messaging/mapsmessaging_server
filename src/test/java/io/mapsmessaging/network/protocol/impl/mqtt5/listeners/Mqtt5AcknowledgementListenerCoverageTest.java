@@ -160,7 +160,8 @@ class Mqtt5AcknowledgementListenerCoverageTest {
   @MethodSource("packetIdentifiers")
   void pubCompCompletesPacketAndRemovesClientOutstandingId(int packetId) {
     ListenerFixture fixture = fixture();
-    List<Long> outstanding = new ArrayList<>(List.of((long) packetId, 100_000L));
+    io.mapsmessaging.utilities.collections.NaturalOrderedLongList outstanding =
+        mock(io.mapsmessaging.utilities.collections.NaturalOrderedLongList.class);
     when(fixture.protocol.getClientOutstanding()).thenReturn(outstanding);
 
     MQTTPacket5 response = new PubCompListener5().handlePacket(
@@ -171,7 +172,7 @@ class Mqtt5AcknowledgementListenerCoverageTest {
 
     assertNull(response);
     verify(fixture.packetIdManager).completePacketId(packetId);
-    assertEquals(List.of(100_000L), outstanding);
+    verify(outstanding).remove((long) packetId);
   }
 
   @ParameterizedTest
