@@ -355,7 +355,7 @@ class N2kProtocolBranchCoverageTest {
     verify(fixture.session).findDestination("/raw/can0", DestinationType.TOPIC);
     ArgumentCaptor<Message> captor = ArgumentCaptor.forClass(Message.class);
     verify(fixture.destination).storeMessage(captor.capture());
-    assertEquals(127251L, captor.getValue().getDataMap().get("pgn").getData());
+    assertEquals(127251, captor.getValue().getDataMap().get("pgn").getData());
   }
 
   @Test
@@ -376,7 +376,7 @@ class N2kProtocolBranchCoverageTest {
     assertEquals("n2k", message.getMeta().get("protocol"));
     assertEquals("1.0", message.getMeta().get("version"));
     assertEquals("session-1", message.getMeta().get("sessionId"));
-    assertEquals(127250L, message.getDataMap().get("pgn").getData());
+    assertEquals(127250, message.getDataMap().get("pgn").getData());
     assertEquals("Vessel Heading", message.getDataMap().get("name").getData());
     assertEquals("schema-1", message.getSchemaId());
   }
@@ -544,9 +544,7 @@ class N2kProtocolBranchCoverageTest {
   @SuppressWarnings("unchecked")
   private static <T> T invoke(Object target, String name, Class<?>[] parameterTypes, Object... arguments)
       throws Exception {
-    Method method = target.getClass().getSuperclass() == N2kProtocol.class
-        ? N2kProtocol.class.getDeclaredMethod(name, parameterTypes)
-        : N2kProtocol.class.getDeclaredMethod(name, parameterTypes);
+    Method method = N2kProtocol.class.getDeclaredMethod(name, parameterTypes);
     method.setAccessible(true);
     return (T) method.invoke(target, arguments);
   }
