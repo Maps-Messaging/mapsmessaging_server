@@ -55,12 +55,12 @@ class SubscribeUnsubscribeSubAckCoverageTest {
     original.setMessageId(9);
     original.getSubscriptionList().add(
         new SubscriptionInfo("a/b", QualityOfService.EXACTLY_ONCE,
-            RetainHandler.SEND_IF_NEW_SUBSCRIPTION, true, true, null));
+            RetainHandler.SEND_IF_NEW, true, true, null));
 
     SubscriptionInfo info = unpackSubscribe(original).getSubscriptionList().get(0);
 
     assertEquals(QualityOfService.EXACTLY_ONCE, info.getQualityOfService());
-    assertEquals(RetainHandler.SEND_IF_NEW_SUBSCRIPTION, info.getRetainHandling());
+    assertEquals(RetainHandler.SEND_IF_NEW, info.getRetainHandling());
     assertTrue(info.noLocalMessages());
     assertTrue(info.isRetainAsPublished());
   }
