@@ -169,7 +169,22 @@ class ProtocolRoutingCoverageTest {
         Arguments.of("site/+/+/temp", "archive/", "site/a/b/temp", "archive/a/b/temp"),
         Arguments.of("a/+", "x/", "a/b", "x/b"),
         Arguments.of("root/+/status", "state/", "root/n1/status", "state/n1/status"),
-        Arguments.of("root/#", "state/", "root/n1/n2", "state/n1/n2")
+        Arguments.of("root/#", "state/", "root/n1/n2", "state/n1/n2"),
+        Arguments.of("fleet/#", "archive/", "fleet/uav/1", "archive/uav/1"),
+        Arguments.of("fleet/#", "archive/", "fleet/usv/2", "archive/usv/2"),
+        Arguments.of("fleet/+/status", "status/", "fleet/uav/status", "status/uav/status"),
+        Arguments.of("fleet/+/position", "position/", "fleet/usv/position", "position/usv/position"),
+        Arguments.of("site/+/+/metric", "metrics/", "site/a/b/metric", "metrics/a/b/metric"),
+        Arguments.of("site/+/+/metric", "metrics/", "site/a/b/state", "site/a/b/state"),
+        Arguments.of("one/two/#", "three/", "one/two/four", "three/four"),
+        Arguments.of("one/two/#", "three/", "one/two/four/five", "three/four/five"),
+        Arguments.of("one/+/three", "mapped/", "one/two/three", "mapped/two/three"),
+        Arguments.of("one/+/three", "mapped/", "one/two/four", "one/two/four"),
+        Arguments.of("alpha/beta/+", "gamma/", "alpha/beta/delta", "gamma/delta"),
+        Arguments.of("alpha/beta/+", "gamma/", "alpha/beta", "alpha/beta"),
+        Arguments.of("alpha/#", "omega/", "alpha/beta/gamma", "omega/beta/gamma"),
+        Arguments.of("alpha/#", "omega/", "beta/alpha/gamma", "beta/alpha/gamma"),
+        Arguments.of("+/tail", "head/", "node/tail", "head/node/tail")
     );
   }
 
