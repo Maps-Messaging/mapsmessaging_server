@@ -64,7 +64,7 @@ class ConnAckListener5Test {
     when(authConfig.getPassword()).thenReturn("password");
 
     ConnAck5 connAck = new ConnAck5();
-    connAck.setStatusCode(StatusCode.NOT_AUTHORIZED);
+    connAck.setStatusCode(StatusCode.NOT_AUTHORISED);
 
     assertNull(new ConnAckListener5().handlePacket(connAck, null, endPoint, protocol));
 
