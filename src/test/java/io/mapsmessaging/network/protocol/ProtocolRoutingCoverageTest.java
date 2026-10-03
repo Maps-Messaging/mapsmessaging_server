@@ -164,7 +164,12 @@ class ProtocolRoutingCoverageTest {
         Arguments.of("root/#", "mapped/", "other/root/a", "other/root/a"),
         Arguments.of("a/b/c", "x", "a/b", "a/b"),
         Arguments.of("a/b/c", "x", "a/b/c/d", "a/b/c/d"),
-        Arguments.of("+/b", "mapped/", "a/c", "a/c")
+        Arguments.of("+/b", "mapped/", "a/c", "a/c"),
+        Arguments.of("/sensor/#", "/local/", "/sensor/a", "/local/a"),
+        Arguments.of("site/+/+/temp", "archive/", "site/a/b/temp", "archive/a/b/temp"),
+        Arguments.of("a/+", "x/", "a/b", "x/b"),
+        Arguments.of("root/+/status", "state/", "root/n1/status", "state/n1/status"),
+        Arguments.of("root/#", "state/", "root/n1/n2", "state/n1/n2")
     );
   }
 
