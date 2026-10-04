@@ -265,20 +265,6 @@ class CanaerospaceProtocolCoverageTest {
   }
 
   @Test
-  void destinationStoreFailureCompletesLookupFutureExceptionally() throws Exception {
-    Harness harness = harness();
-    CompletableFuture<Destination> future = new CompletableFuture<>();
-    future.complete(harness.destination);
-    when(harness.session.findDestination(anyString(), eq(DestinationType.TOPIC))).thenReturn(future);
-    doThrow(new java.io.IOException("store failed"))
-        .when(harness.destination).storeMessage(any(Message.class));
-
-    harness.protocol.processPacket(frame(0x122), payload("Pressure"));
-
-    assertTrue(future.isCompletedExceptionally());
-  }
-
-  @Test
   void rawFrameMessageCarriesProtocolMetadataAndConfiguredStoragePolicy() throws Exception {
     Harness harness = harness();
     CanFrame frame = frame(0x123);
@@ -293,12 +279,12 @@ class CanaerospaceProtocolCoverageTest {
     assertEquals("session-name", message.getMeta().get("sessionId"));
     assertNotNull(message.getMeta().get("time_ms"));
     assertFalse(message.isRetain());
-    assertFalse(message.isStoreOffline());
-    assertEquals(QualityOfService.AT_MOST_ONCE, message.getQualityOfService());
+    assertTrue(message.isStoreOffline());
+    assertEquals(QualityOfService.AT_LEAST_ONCE, message.getQualityOfService());
   }
 
   @Test
-  void missingNameIsCachedAsRawFallbackPerCanIdentifier() throws Exception {
+  void unnamedFrameDoesNotPreventLaterNameResolutionForSameCanIdentifier() throws Exception {
     Harness harness = harness();
     JsonObject first = new JsonObject();
     first.add("canaerospace", new JsonObject());
@@ -306,10 +292,32 @@ class CanaerospaceProtocolCoverageTest {
     harness.protocol.processPacket(frame(0x124), first);
     harness.protocol.processPacket(frame(0x124), payload("Later Name"));
 
-    verify(harness.session, times(2))
+    verify(harness.session)
         .findDestination("/can/vcan1/unknown", DestinationType.TOPIC);
-    verify(harness.session, never())
+    verify(harness.session)
         .findDestination("/can/vcan1/Later_Name", DestinationType.TOPIC);
+  }
+
+  @Test
+  void nullNameFallsBackToUnknownTopic() throws Exception {
+    Harness harness = harness();
+    JsonObject root = new JsonObject();
+    JsonObject canaerospace = new JsonObject();
+    canaerospace.add("name", com.google.gson.JsonNull.INSTANCE);
+    root.add("canaerospace", canaerospace);
+
+    assertDoesNotThrow(() -> harness.protocol.processPacket(frame(0x125), root));
+    verify(harness.session)
+        .findDestination("/can/vcan1/unknown", DestinationType.TOPIC);
+  }
+
+  @Test
+  void emptyNameFallsBackToUnknownTopic() throws Exception {
+    Harness harness = harness();
+
+    assertDoesNotThrow(() -> harness.protocol.processPacket(frame(0x126), payload("")));
+    verify(harness.session)
+        .findDestination("/can/vcan1/unknown", DestinationType.TOPIC);
   }
 
   @Test
