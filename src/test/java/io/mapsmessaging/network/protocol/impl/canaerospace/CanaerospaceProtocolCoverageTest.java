@@ -17,6 +17,7 @@ import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.canbus.device.frames.CanFrame;
 import io.mapsmessaging.network.io.impl.canbus.CanbusEndPoint;
 import io.mapsmessaging.schemas.config.SchemaConfig;
+import io.mapsmessaging.schemas.formatters.MessageFormatter;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
@@ -214,6 +215,54 @@ class CanaerospaceProtocolCoverageTest {
   }
 
   @Test
+  void packetDispatchRejectsMissingCanFrame() throws Exception {
+    Harness harness = harness();
+    when(harness.endPoint.readFrame()).thenReturn(null);
+
+    java.io.IOException failure = assertThrows(
+        java.io.IOException.class,
+        () -> harness.protocol.processPacket(mock(io.mapsmessaging.network.io.Packet.class)));
+
+    assertEquals("No frame received from CAN bus", failure.getMessage());
+  }
+
+  @Test
+  void packetDispatchPublishesRawFrameWhenJsonParsingIsDisabled() throws Exception {
+    Harness harness = harness();
+    CanFrame frame = frame(0x120);
+    set(harness.protocol, "parseToJson", false);
+    when(harness.endPoint.readFrame()).thenReturn(frame);
+
+    assertTrue(harness.protocol.processPacket(mock(io.mapsmessaging.network.io.Packet.class)));
+
+    verify(harness.session)
+        .findDestination("/can/vcan1/unknown", DestinationType.TOPIC);
+    Message message = capturedMessage(harness.destination);
+    assertArrayEquals(frame.getRawData(), message.getOpaqueData());
+    assertEquals("application/octet-stream", message.getContentType());
+    assertEquals(QualityOfService.AT_MOST_ONCE, message.getQualityOfService());
+    verifyNoInteractions(harness.formatter);
+  }
+
+  @Test
+  void packetDispatchParsesAndPublishesJsonWhenEnabled() throws Exception {
+    Harness harness = harness();
+    CanFrame frame = frame(0x121);
+    JsonObject json = payload("Engine RPM");
+    set(harness.protocol, "parseToJson", true);
+    when(harness.endPoint.readFrame()).thenReturn(frame);
+    when(harness.formatter.parseToJson(any(byte[].class), isNull())).thenReturn(json);
+
+    assertTrue(harness.protocol.processPacket(mock(io.mapsmessaging.network.io.Packet.class)));
+
+    verify(harness.formatter).parseToJson(any(byte[].class), isNull());
+    verify(harness.session)
+        .findDestination("/can/vcan1/Engine_RPM", DestinationType.TOPIC);
+    Message message = capturedMessage(harness.destination);
+    assertEquals("application/json", message.getContentType());
+  }
+
+  @Test
   void metadataMethodsReportProtocolIdentity() throws Exception {
     Harness harness = harness();
 
@@ -228,6 +277,7 @@ class CanaerospaceProtocolCoverageTest {
     Destination destination = mock(Destination.class);
     CanbusEndPoint endPoint = mock(CanbusEndPoint.class);
     SchemaConfig defaultSchema = mock(SchemaConfig.class);
+    MessageFormatter formatter = mock(MessageFormatter.class);
 
     when(session.getName()).thenReturn("session-name");
     when(endPoint.getName()).thenReturn("vcan1");
@@ -242,9 +292,11 @@ class CanaerospaceProtocolCoverageTest {
     set(protocol, "qos", QualityOfService.AT_LEAST_ONCE);
     set(protocol, "storeOffline", true);
     set(protocol, "defaultSchemaConfig", defaultSchema);
+    set(protocol, "formatter", formatter);
+    set(protocol, "parseMode", null);
     setInherited(protocol, "endPoint", endPoint);
 
-    return new Harness(protocol, session, destination, defaultSchema);
+    return new Harness(protocol, session, destination, defaultSchema, endPoint, formatter);
   }
 
   private static JsonObject payload(String name) {
@@ -304,6 +356,8 @@ class CanaerospaceProtocolCoverageTest {
       CanaerospaceProtocol protocol,
       Session session,
       Destination destination,
-      SchemaConfig defaultSchema) {
+      SchemaConfig defaultSchema,
+      CanbusEndPoint endPoint,
+      MessageFormatter formatter) {
   }
 }
