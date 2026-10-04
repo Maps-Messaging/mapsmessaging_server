@@ -8,6 +8,7 @@
 
 package io.mapsmessaging.network.protocol.impl.nats;
 
+import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.network.io.EndPoint;
 import io.mapsmessaging.network.io.Packet;
 import io.mapsmessaging.network.io.impl.SelectorTask;
@@ -60,6 +61,7 @@ class NatsProtocolFailureCoverageTest {
     NatsProtocol protocol = mock(NatsProtocol.class, CALLS_REAL_METHODS);
     set(Protocol.class, protocol, "endPoint", endPoint);
     set(NatsProtocol.class, protocol, "selectorTask", selectorTask);
+    set(NatsProtocol.class, protocol, "logger", mock(Logger.class));
     set(NatsProtocol.class, protocol, "factory", factory);
     return protocol;
   }
