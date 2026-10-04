@@ -190,7 +190,9 @@ public class BaseTestConfig extends BaseTest {
       SessionManager manager = md.getSubSystemManager().getSessionManager();
       List<SessionImpl> sessionImpls = manager.getSessions();
       for (SessionImpl sessionImpl : sessionImpls) {
-        if(!sessionImpl.getContext().isInternal()){
+        if (!sessionImpl.getContext().isInternal()
+            && !sessionImpl.getName().equals("vcan0")
+            && !sessionImpl.getName().equals("vcan1")) {
           System.err.println("Session still active::" + sessionImpl.getName());
           sessionImpl.setExpiryTime(1);
           manager.close(sessionImpl, false);
