@@ -9,8 +9,12 @@
 package io.mapsmessaging.network.discovery;
 
 import io.mapsmessaging.config.DiscoveryManagerConfig;
+import io.mapsmessaging.dto.rest.config.network.EndPointConfigDTO;
+import io.mapsmessaging.dto.rest.config.network.EndPointServerConfigDTO;
 import io.mapsmessaging.dto.rest.system.Status;
 import io.mapsmessaging.logging.Logger;
+import io.mapsmessaging.network.EndPointURL;
+import io.mapsmessaging.network.io.EndPointServer;
 import io.mapsmessaging.network.monitor.NetworkEvent;
 import io.mapsmessaging.network.monitor.NetworkInterfaceState;
 import io.mapsmessaging.network.monitor.NetworkStateChange;
@@ -104,6 +108,48 @@ class DiscoveryManagerCoreCoverageTest {
   }
 
   @Test
+  void endpointRegistrationRoutesWildcardTcpServiceToEveryAdapter() throws Exception {
+    Harness h = harness(true);
+    AdapterManager first = adapter("10.10.0.1");
+    AdapterManager second = adapter("10.10.0.2");
+    h.adapters.add(first);
+    h.adapters.add(second);
+    EndPointServer server = endpointServer("tcp://0.0.0.0:1883", true, "mqtt,stomp");
+
+    h.manager.register(server);
+
+    verify(first).register(same(server), eq("tcp"), eq(List.of("mqtt", "stomp")));
+    verify(second).register(same(server), eq("tcp"), eq(List.of("mqtt", "stomp")));
+  }
+
+  @Test
+  void endpointRegistrationUsesUdpTransportForHmacAndSpecificAdapter() throws Exception {
+    Harness h = harness(true);
+    AdapterManager first = adapter("10.20.0.1");
+    AdapterManager second = adapter("10.20.0.2");
+    h.adapters.add(first);
+    h.adapters.add(second);
+    EndPointServer server = endpointServer("hmac://10.20.0.2:1884", true, "mqtt-sn");
+
+    h.manager.register(server);
+
+    verify(first, never()).register(any(EndPointServer.class), anyString(), anyList());
+    verify(second).register(same(server), eq("udp"), eq(List.of("mqtt-sn")));
+  }
+
+  @Test
+  void undiscoverableEndpointIsIgnored() throws Exception {
+    Harness h = harness(true);
+    AdapterManager adapter = adapter("10.30.0.1");
+    h.adapters.add(adapter);
+    EndPointServer server = endpointServer("tcp://0.0.0.0:1883", false, "mqtt");
+
+    h.manager.register(server);
+
+    verifyNoInteractions(adapter);
+  }
+
+  @Test
   void deregisterServiceAndAllFanOutAcrossAdapters() throws Exception {
     Harness h = harness(true);
     AdapterManager first = adapter("10.0.0.1");
@@ -175,6 +221,19 @@ class DiscoveryManagerCoreCoverageTest {
     Harness h = harness(true);
 
     assertThrows(NullPointerException.class, () -> h.manager.andThen(null));
+  }
+
+  private static EndPointServer endpointServer(
+      String url, boolean discoverable, String protocols) {
+    EndPointServer server = mock(EndPointServer.class);
+    EndPointServerConfigDTO config = mock(EndPointServerConfigDTO.class);
+    EndPointConfigDTO endPointConfig = mock(EndPointConfigDTO.class);
+    when(server.getConfig()).thenReturn(config);
+    when(server.getUrl()).thenReturn(new EndPointURL(url));
+    when(config.getEndPointConfig()).thenReturn(endPointConfig);
+    when(config.getProtocols()).thenReturn(protocols);
+    when(endPointConfig.isDiscoverable()).thenReturn(discoverable);
+    return server;
   }
 
   private static AdapterManager adapter(String address) {
