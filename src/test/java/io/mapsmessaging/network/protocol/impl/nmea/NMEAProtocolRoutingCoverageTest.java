@@ -15,6 +15,7 @@ import io.mapsmessaging.api.features.QualityOfService;
 import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.dto.rest.config.protocol.ProtocolConfigDTO;
 import io.mapsmessaging.network.io.EndPoint;
+import io.mapsmessaging.network.io.EndPointStatus;
 import io.mapsmessaging.network.protocol.impl.nmea.sentences.SentenceFactory;
 import io.mapsmessaging.schemas.formatters.ParseMode;
 import org.junit.jupiter.api.Test;
@@ -148,6 +149,7 @@ class NMEAProtocolRoutingCoverageTest {
     SentenceFactory factory = mock(SentenceFactory.class);
 
     when(endPoint.getName()).thenReturn("device");
+    when(endPoint.getEndPointStatus()).thenReturn(mock(EndPointStatus.class));
     when(session.findDestination(anyString(), eq(DestinationType.TOPIC)))
         .thenReturn(CompletableFuture.completedFuture(destination));
 
