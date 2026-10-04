@@ -75,8 +75,8 @@ class ResourceStatisticsCoverageTest {
     Resource resource = mock(Resource.class);
     CacheStatistics cache = mock(CacheStatistics.class);
     StorageStatistics storage = storage(101);
-    when(cache.getHit()).thenReturn(7);
-    when(cache.getMiss()).thenReturn(3);
+    when(cache.getHit()).thenReturn(7L);
+    when(cache.getMiss()).thenReturn(3L);
     when(cache.getSize()).thenReturn(5);
     when(cache.getStorageStatistics()).thenReturn(storage);
     when(resource.getStatistics()).thenReturn(cache);
@@ -106,7 +106,7 @@ class ResourceStatisticsCoverageTest {
     StorageStatistics file = storage(301);
     when(tier.getMemoryStatistics()).thenReturn(memory);
     when(tier.getFileStatistics()).thenReturn(file);
-    when(tier.getMigratedCount()).thenReturn(13);
+    when(tier.getMigratedCount()).thenReturn(13L);
     when(resource.getStatistics()).thenReturn(tier);
     MessageDaemon daemon = enabledDaemon();
 
@@ -136,12 +136,12 @@ class ResourceStatisticsCoverageTest {
     StorageStatistics memory = storage(401);
     StorageStatistics file = storage(501);
     when(cache.getStorageStatistics()).thenReturn(tier);
-    when(cache.getHit()).thenReturn(4);
-    when(cache.getMiss()).thenReturn(2);
+    when(cache.getHit()).thenReturn(4L);
+    when(cache.getMiss()).thenReturn(2L);
     when(cache.getSize()).thenReturn(8);
     when(tier.getMemoryStatistics()).thenReturn(memory);
     when(tier.getFileStatistics()).thenReturn(file);
-    when(tier.getMigratedCount()).thenReturn(17);
+    when(tier.getMigratedCount()).thenReturn(17L);
     when(resource.getStatistics()).thenReturn(cache);
     MessageDaemon daemon = enabledDaemon();
 
@@ -186,8 +186,8 @@ class ResourceStatisticsCoverageTest {
       long expected) {
     Stats movingAverage = mock(Stats.class);
     CacheStatistics cache = mock(CacheStatistics.class);
-    when(cache.getHit()).thenReturn(11);
-    when(cache.getMiss()).thenReturn(12);
+    when(cache.getHit()).thenReturn(11L);
+    when(cache.getMiss()).thenReturn(12L);
     when(cache.getSize()).thenReturn(13);
 
     Object adapter = adapterFactory.apply(movingAverage);
@@ -217,7 +217,7 @@ class ResourceStatisticsCoverageTest {
     when(memory.getWrites()).thenReturn(22L);
     when(memory.getDeletes()).thenReturn(23L);
     when(memory.getTotalSize()).thenReturn(24L);
-    when(tier.getMigratedCount()).thenReturn(25);
+    when(tier.getMigratedCount()).thenReturn(25L);
 
     Object adapter = adapterFactory.apply(movingAverage);
     if (adapter instanceof ResourceStatistics.TierReadStats stats) {
@@ -286,7 +286,7 @@ class ResourceStatisticsCoverageTest {
     when(storage.getBytesWritten()).thenReturn(base + 8);
     when(storage.getTotalSize()).thenReturn(base + 9);
     when(storage.getTotalEmptySpace()).thenReturn(base + 10);
-    when(storage.getPartitionCount()).thenReturn(base + 11);
+    when(storage.getPartitionCount()).thenReturn((int) (base + 11));
     return storage;
   }
 
