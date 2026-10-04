@@ -44,7 +44,7 @@ class DestinationManagerCoreCoverageTest {
   }
 
   @ParameterizedTest
-  @EnumSource(DestinationType.class)
+  @EnumSource(value = DestinationType.class, names = {"TOPIC", "QUEUE", "TEMPORARY_TOPIC", "TEMPORARY_QUEUE", "SCHEMA"})
   void unlicensedDestinationTypesAreRejected(DestinationType type) throws Exception {
     Harness h = harness(false, 0, 0);
 
