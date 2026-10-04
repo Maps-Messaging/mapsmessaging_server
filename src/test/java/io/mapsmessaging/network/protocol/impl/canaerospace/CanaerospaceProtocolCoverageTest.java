@@ -17,6 +17,7 @@ import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.canbus.device.frames.CanFrame;
 import io.mapsmessaging.network.io.impl.canbus.CanbusEndPoint;
 import io.mapsmessaging.engine.schema.Schema;
+import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.schemas.config.SchemaConfig;
 import io.mapsmessaging.schemas.formatters.MessageFormatter;
 import io.mapsmessaging.schemas.formatters.ParseMode;
@@ -57,11 +58,13 @@ class CanaerospaceProtocolCoverageTest {
     assertTrue(harness.protocol.processPacket(frame(0x101), json));
 
     String topic = capturedTopic(harness.session);
-    assertFalse(topic.contains(" "));
-    assertFalse(topic.contains("/"));
-    assertFalse(topic.contains("+"));
-    assertFalse(topic.contains("#"));
-    assertFalse(topic.contains(":"));
+    assertTrue(topic.startsWith("/can/vcan1/"));
+    String token = topic.substring("/can/vcan1/".length());
+    assertFalse(token.contains(" "));
+    assertFalse(token.contains("/"));
+    assertFalse(token.contains("+"));
+    assertFalse(token.contains("#"));
+    assertFalse(token.contains(":"));
   }
 
   @Test
@@ -336,6 +339,7 @@ class CanaerospaceProtocolCoverageTest {
     CanbusEndPoint endPoint = mock(CanbusEndPoint.class);
     SchemaConfig defaultSchema = mock(SchemaConfig.class);
     MessageFormatter formatter = mock(MessageFormatter.class);
+    Logger logger = mock(Logger.class);
 
     when(session.getName()).thenReturn("session-name");
     when(endPoint.getName()).thenReturn("vcan1");
@@ -343,6 +347,7 @@ class CanaerospaceProtocolCoverageTest {
     when(session.findDestination(anyString(), eq(DestinationType.TOPIC)))
         .thenReturn(CompletableFuture.completedFuture(destination));
 
+    set(protocol, "logger", logger);
     set(protocol, "session", session);
     set(protocol, "topicTemplate", "/can/{candevice}/{messageName}");
     set(protocol, "rawTopicTemplate", "/can/vcan1/unknown");
