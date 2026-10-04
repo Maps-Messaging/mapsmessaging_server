@@ -66,7 +66,7 @@ class TwinConfigurationApiFailureMatrixTest {
 
     try (Response response = operation.invoke(api)) {
       assertEquals(500, response.getStatus(), operation.name());
-      assertEquals("application/json", response.getMediaType().toString());
+      assertInstanceOf(io.mapsmessaging.rest.responses.StatusResponse.class, response.getEntity());
     }
   }
 
