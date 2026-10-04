@@ -265,6 +265,54 @@ class CanaerospaceProtocolCoverageTest {
   }
 
   @Test
+  void destinationStoreFailureCompletesLookupFutureExceptionally() throws Exception {
+    Harness harness = harness();
+    CompletableFuture<Destination> future = new CompletableFuture<>();
+    future.complete(harness.destination);
+    when(harness.session.findDestination(anyString(), eq(DestinationType.TOPIC))).thenReturn(future);
+    doThrow(new java.io.IOException("store failed"))
+        .when(harness.destination).storeMessage(any(Message.class));
+
+    harness.protocol.processPacket(frame(0x122), payload("Pressure"));
+
+    assertTrue(future.isCompletedExceptionally());
+  }
+
+  @Test
+  void rawFrameMessageCarriesProtocolMetadataAndConfiguredStoragePolicy() throws Exception {
+    Harness harness = harness();
+    CanFrame frame = frame(0x123);
+    set(harness.protocol, "parseToJson", false);
+    when(harness.endPoint.readFrame()).thenReturn(frame);
+
+    harness.protocol.processPacket(mock(io.mapsmessaging.network.io.Packet.class));
+
+    Message message = capturedMessage(harness.destination);
+    assertEquals("canaerospace", message.getMeta().get("protocol"));
+    assertEquals("1.0", message.getMeta().get("version"));
+    assertEquals("session-name", message.getMeta().get("sessionId"));
+    assertNotNull(message.getMeta().get("time_ms"));
+    assertFalse(message.isRetain());
+    assertFalse(message.isStoreOffline());
+    assertEquals(QualityOfService.AT_MOST_ONCE, message.getQualityOfService());
+  }
+
+  @Test
+  void missingNameIsCachedAsRawFallbackPerCanIdentifier() throws Exception {
+    Harness harness = harness();
+    JsonObject first = new JsonObject();
+    first.add("canaerospace", new JsonObject());
+
+    harness.protocol.processPacket(frame(0x124), first);
+    harness.protocol.processPacket(frame(0x124), payload("Later Name"));
+
+    verify(harness.session, times(2))
+        .findDestination("/can/vcan1/unknown", DestinationType.TOPIC);
+    verify(harness.session, never())
+        .findDestination("/can/vcan1/Later_Name", DestinationType.TOPIC);
+  }
+
+  @Test
   void metadataMethodsReportProtocolIdentity() throws Exception {
     Harness harness = harness();
 
