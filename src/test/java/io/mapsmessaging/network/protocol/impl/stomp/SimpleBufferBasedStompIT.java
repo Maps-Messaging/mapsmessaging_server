@@ -31,12 +31,13 @@ import org.junit.jupiter.api.Timeout;
 class SimpleBufferBasedStompIT extends SimpleBufferBasedTest {
 
   private final int TOTAL_FRAMES = 101;
+  private final int FRAGMENTED_FRAMES = 10;
 
   @Test
   @Timeout(value = 600, unit = TimeUnit.SECONDS)
   @DisplayName("Send Stomp frame single character at a time")
   void simpleCharByCharTest() throws IOException,  URISyntaxException {
-    simpleByteWriteTest(1);
+    simpleByteWrite("/input.txt", 0x0, 1, "localhost", 8674, FRAGMENTED_FRAMES);
   }
 
 
