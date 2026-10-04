@@ -18,6 +18,7 @@ import io.mapsmessaging.canbus.device.frames.CanFrame;
 import io.mapsmessaging.network.io.impl.canbus.CanbusEndPoint;
 import io.mapsmessaging.schemas.config.SchemaConfig;
 import io.mapsmessaging.schemas.formatters.MessageFormatter;
+import io.mapsmessaging.schemas.formatters.ParseMode;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
@@ -251,11 +252,11 @@ class CanaerospaceProtocolCoverageTest {
     JsonObject json = payload("Engine RPM");
     set(harness.protocol, "parseToJson", true);
     when(harness.endPoint.readFrame()).thenReturn(frame);
-    when(harness.formatter.parseToJson(any(byte[].class), isNull())).thenReturn(json);
+    when(harness.formatter.parseToJson(any(byte[].class), eq(ParseMode.IGNORE))).thenReturn(json);
 
     assertTrue(harness.protocol.processPacket(mock(io.mapsmessaging.network.io.Packet.class)));
 
-    verify(harness.formatter).parseToJson(any(byte[].class), isNull());
+    verify(harness.formatter).parseToJson(any(byte[].class), eq(ParseMode.IGNORE));
     verify(harness.session)
         .findDestination("/can/vcan1/Engine_RPM", DestinationType.TOPIC);
     Message message = capturedMessage(harness.destination);
@@ -293,7 +294,7 @@ class CanaerospaceProtocolCoverageTest {
     set(protocol, "storeOffline", true);
     set(protocol, "defaultSchemaConfig", defaultSchema);
     set(protocol, "formatter", formatter);
-    set(protocol, "parseMode", null);
+    set(protocol, "parseMode", ParseMode.IGNORE);
     setInherited(protocol, "endPoint", endPoint);
 
     return new Harness(protocol, session, destination, defaultSchema, endPoint, formatter);
