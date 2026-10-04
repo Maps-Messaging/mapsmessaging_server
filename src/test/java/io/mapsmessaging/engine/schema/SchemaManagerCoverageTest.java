@@ -45,7 +45,9 @@ class SchemaManagerCoverageTest {
     SchemaRepository repository = mock(SchemaRepository.class);
     SchemaConfig alpha = schema("alpha.schema", "id-alpha", "json");
     SchemaConfig beta = schema("namespace.beta", "id-beta", "xml");
-    when(repository.getAllSchemas()).thenReturn(List.of(resource(alpha), resource(beta)));
+    SchemaResource alphaResource = resource(alpha);
+    SchemaResource betaResource = resource(beta);
+    when(repository.getAllSchemas()).thenReturn(List.of(alphaResource, betaResource));
     SchemaManager manager = manager(repository);
 
     SchemaConfig result = manager.getSchemaByName(requested);
@@ -103,7 +105,8 @@ class SchemaManagerCoverageTest {
   void schemaLookupReturnsDefaultVersionOrNull(String id, boolean present) throws Exception {
     SchemaRepository repository = mock(SchemaRepository.class);
     SchemaConfig config = schema("name", id, "json");
-    when(repository.getResource(id)).thenReturn(present ? resource(config) : null);
+    SchemaResource configuredResource = present ? resource(config) : null;
+    when(repository.getResource(id)).thenReturn(configuredResource);
     SchemaManager manager = manager(repository);
 
     SchemaConfig result = manager.getSchema(id);
@@ -120,7 +123,9 @@ class SchemaManagerCoverageTest {
     SchemaConfig first = schema("first", "1", "json");
     SchemaConfig second = schema("second", "2", "xml");
     SchemaResource missing = mock(SchemaResource.class);
-    when(repository.getAllSchemas()).thenReturn(List.of(resource(first), missing, resource(second)));
+    SchemaResource firstResource = resource(first);
+    SchemaResource secondResource = resource(second);
+    when(repository.getAllSchemas()).thenReturn(List.of(firstResource, missing, secondResource));
     SchemaManager manager = manager(repository);
 
     assertEquals(List.of(first, second), manager.getAll());
@@ -131,7 +136,8 @@ class SchemaManagerCoverageTest {
     SchemaRepository repository = mock(SchemaRepository.class);
     SchemaConfig first = schema("first", "1", "json");
     SchemaResource missing = mock(SchemaResource.class);
-    when(repository.search(eq("json"), anyMap(), eq(0), eq(0))).thenReturn(List.of(resource(first), missing));
+    SchemaResource firstResource = resource(first);
+    when(repository.search(eq("json"), anyMap(), eq(0), eq(0))).thenReturn(List.of(firstResource, missing));
     SchemaManager manager = manager(repository);
 
     assertEquals(List.of(first), manager.getSchemaByType("json"));
@@ -143,7 +149,8 @@ class SchemaManagerCoverageTest {
     SchemaConfig child = mock(SchemaConfig.class);
     SchemaConfig parent = schema("parent", "parent-id", "json");
     when(child.getParentUuid()).thenReturn("parent-id");
-    when(repository.getResource("parent-id")).thenReturn(resource(parent));
+    SchemaResource parentResource = resource(parent);
+    when(repository.getResource("parent-id")).thenReturn(parentResource);
     SchemaManager manager = manager(repository);
 
     assertSame(parent, manager.resolveParent(child));
