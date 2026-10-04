@@ -16,6 +16,7 @@ import io.mapsmessaging.api.features.QualityOfService;
 import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.canbus.device.frames.CanFrame;
 import io.mapsmessaging.network.io.impl.canbus.CanbusEndPoint;
+import io.mapsmessaging.engine.schema.Schema;
 import io.mapsmessaging.schemas.config.SchemaConfig;
 import io.mapsmessaging.schemas.formatters.MessageFormatter;
 import io.mapsmessaging.schemas.formatters.ParseMode;
@@ -144,7 +145,7 @@ class CanaerospaceProtocolCoverageTest {
   @Test
   void destinationWithRawSchemaIsUpgradedBeforeStore() throws Exception {
     Harness harness = harness();
-    SchemaConfig rawSchema = mock(SchemaConfig.class);
+    Schema rawSchema = mock(Schema.class);
     when(rawSchema.getUniqueId()).thenReturn(
         io.mapsmessaging.engine.schema.SchemaManager.DEFAULT_RAW_UUID.toString());
     when(harness.destination.getSchema()).thenReturn(rawSchema);
@@ -158,7 +159,7 @@ class CanaerospaceProtocolCoverageTest {
   @Test
   void destinationWithSpecificSchemaIsNotRewritten() throws Exception {
     Harness harness = harness();
-    SchemaConfig schema = mock(SchemaConfig.class);
+    Schema schema = mock(Schema.class);
     when(schema.getUniqueId()).thenReturn("specific-schema");
     when(harness.destination.getSchema()).thenReturn(schema);
 
