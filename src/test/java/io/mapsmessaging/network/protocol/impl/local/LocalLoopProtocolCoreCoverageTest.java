@@ -117,7 +117,7 @@ class LocalLoopProtocolCoreCoverageTest {
   @Test
   void subjectComesFromLoopbackSessionSecurityContext() throws Exception {
     Harness h = harness();
-    var security = mock(io.mapsmessaging.security.access.SecurityContext.class);
+    var security = mock(io.mapsmessaging.engine.session.security.SecurityContext.class);
     var subject = new javax.security.auth.Subject();
     when(h.session.getSecurityContext()).thenReturn(security);
     when(security.getSubject()).thenReturn(subject);
