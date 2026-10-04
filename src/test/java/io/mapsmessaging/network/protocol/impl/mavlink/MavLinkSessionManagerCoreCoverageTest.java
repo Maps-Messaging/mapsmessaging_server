@@ -97,7 +97,7 @@ class MavLinkSessionManagerCoreCoverageTest {
   }
 
   @Test
-  void activeSessionSurvivesTimeoutScan() {
+  void activeSessionSurvivesTimeoutScan() throws Exception {
     MavLinkSessionManager<Timeoutable> manager = new MavLinkSessionManager<>(60);
     Timeoutable context = mock(Timeoutable.class);
     UDPSessionState<Timeoutable> state = new UDPSessionState<>(context);
