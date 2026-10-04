@@ -19,16 +19,22 @@
 
 package io.mapsmessaging.state.mavlink;
 
+import io.mapsmessaging.api.MessageBuilder;
 import io.mapsmessaging.api.MessageEvent;
+import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.state.StateLoopProtocol;
 import io.mapsmessaging.state.config.DroneInfoRegistry;
+import io.mapsmessaging.state.config.MavlinkTwinConfigDTO;
 import org.junit.jupiter.api.Test;
 import org.mockito.invocation.Invocation;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockingDetails;
@@ -38,6 +44,44 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 class MavlinkStateSubscriberTest {
+
+  @Test
+  void integrationSourceUsesConfiguredValuesAndSafeFallbacks() {
+    MavlinkTwinConfigDTO configured = mock(MavlinkTwinConfigDTO.class);
+    when(configured.getName()).thenReturn("primary");
+    when(configured.getTopic()).thenReturn("/mavlink/+");
+
+    assertEquals("primary|/mavlink/+", MavlinkStateSubscriber.integrationSource(configured));
+
+    MavlinkTwinConfigDTO defaults = mock(MavlinkTwinConfigDTO.class);
+    when(defaults.getName()).thenReturn(" ");
+    when(defaults.getTopic()).thenReturn(null);
+
+    assertEquals("mavlink|unknown", MavlinkStateSubscriber.integrationSource(defaults));
+  }
+
+  @Test
+  void malformedAndIncompleteMessagesAreIgnoredAndCompleted() {
+    Fixture fixture = fixture();
+
+    assertMalformedCompleted(fixture, null);
+    assertMalformedCompleted(fixture, new byte[0]);
+    assertMalformedCompleted(fixture, "not-json".getBytes(StandardCharsets.UTF_8));
+    assertMalformedCompleted(fixture, "{}".getBytes(StandardCharsets.UTF_8));
+    assertMalformedCompleted(
+        fixture,
+        "{\"mavlink\":{\"messageId\":42}}".getBytes(StandardCharsets.UTF_8)
+    );
+
+    verify(fixture.sourceRegistry, never()).getKnownSource(org.mockito.ArgumentMatchers.any());
+    verify(fixture.twinUpdater, never()).updateTwinState(
+        org.mockito.ArgumentMatchers.any(),
+        org.mockito.ArgumentMatchers.any(),
+        org.mockito.ArgumentMatchers.any(),
+        org.mockito.ArgumentMatchers.any(),
+        org.mockito.ArgumentMatchers.any()
+    );
+  }
 
   @Test
   void repeated_start_and_stop_are_idempotent() throws Exception {
@@ -87,6 +131,44 @@ class MavlinkStateSubscriberTest {
     assertThrows(IllegalStateException.class, fixture.subscriber::start);
   }
 
+
+  @Test
+  void startFailureRetainsProtocolAndUpdaterCleanupFailuresAsSuppressed() throws Exception {
+    Fixture fixture = fixture();
+    IOException startFailure = new IOException("connect failed");
+    IOException protocolCloseFailure = new IOException("protocol close failed");
+    RuntimeException updaterCloseFailure = new IllegalStateException("updater close failed");
+    doThrow(startFailure).when(fixture.protocol).connect(
+        org.mockito.ArgumentMatchers.anyString(),
+        org.mockito.ArgumentMatchers.anyString(),
+        org.mockito.ArgumentMatchers.anyString()
+    );
+    doThrow(protocolCloseFailure).when(fixture.protocol).close();
+    doThrow(updaterCloseFailure).when(fixture.twinUpdater).close();
+
+    IOException thrown = assertThrows(IOException.class, fixture.subscriber::start);
+
+    assertSame(startFailure, thrown);
+    assertEquals(2, thrown.getSuppressed().length);
+    assertSame(protocolCloseFailure, thrown.getSuppressed()[0]);
+    assertSame(updaterCloseFailure, thrown.getSuppressed()[1]);
+  }
+
+  @Test
+  void stopPropagatesProtocolCloseFailureAndSuppressesUpdaterCloseFailure() throws Exception {
+    Fixture fixture = fixture();
+    IOException protocolCloseFailure = new IOException("protocol close failed");
+    RuntimeException updaterCloseFailure = new IllegalStateException("updater close failed");
+    doThrow(protocolCloseFailure).when(fixture.protocol).close();
+    doThrow(updaterCloseFailure).when(fixture.twinUpdater).close();
+
+    IOException thrown = assertThrows(IOException.class, fixture.subscriber::stop);
+
+    assertSame(protocolCloseFailure, thrown);
+    assertEquals(1, thrown.getSuppressed().length);
+    assertSame(updaterCloseFailure, thrown.getSuppressed()[0]);
+  }
+
   @Test
   void start_after_stop_is_rejected() throws Exception {
     Fixture fixture = fixture();
@@ -119,6 +201,19 @@ class MavlinkStateSubscriberTest {
     );
   }
 
+  private void assertMalformedCompleted(Fixture fixture, byte[] payload) {
+    Message message = new MessageBuilder().setOpaqueData(payload).build();
+    MessageEvent messageEvent = mock(MessageEvent.class);
+    Runnable completionTask = mock(Runnable.class);
+    when(messageEvent.getDestinationName()).thenReturn("/mavlink/source");
+    when(messageEvent.getMessage()).thenReturn(message);
+    when(messageEvent.getCompletionTask()).thenReturn(completionTask);
+
+    assertDoesNotThrow(() -> fixture.subscriber.handle(messageEvent));
+
+    verify(completionTask).run();
+  }
+
   private long invocationCount(Object mock, String methodName) {
     return mockingDetails(mock).getInvocations().stream()
         .map(Invocation::getMethod)
@@ -138,11 +233,12 @@ class MavlinkStateSubscriberTest {
         droneRegistry,
         twinUpdater
     );
-    return new Fixture(protocol, twinUpdater, subscriber);
+    return new Fixture(protocol, sourceRegistry, twinUpdater, subscriber);
   }
 
   private record Fixture(
       StateLoopProtocol protocol,
+      MavlinkSourceRegistry sourceRegistry,
       MavlinkTwinUpdater twinUpdater,
       MavlinkStateSubscriber subscriber
   ) {

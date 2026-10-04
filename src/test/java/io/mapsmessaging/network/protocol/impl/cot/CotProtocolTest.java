@@ -51,8 +51,12 @@ class CotProtocolTest {
       protocol.sendMessage(event);
       verify(completion).run();
 
+      MessageEvent eventWithoutCompletion = mock(MessageEvent.class);
+      assertDoesNotThrow(() -> protocol.sendMessage(eventWithoutCompletion));
+
       protocol.close();
-      verify(manager).close(session, false);
+      protocol.close();
+      verify(manager, times(1)).close(session, false);
     } finally {
       JMXManager.setEnableJMX(original);
     }
