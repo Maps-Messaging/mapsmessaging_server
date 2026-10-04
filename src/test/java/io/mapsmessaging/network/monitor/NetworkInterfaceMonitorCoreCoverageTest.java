@@ -48,7 +48,7 @@ class NetworkInterfaceMonitorCoreCoverageTest {
       "192.0.2.1,127.0.0.1,false",
       "::,::1,true",
       "0.0.0.0,::1,false",
-      "::1,::1,true"
+      "0:0:0:0:0:0:0:1,::1,true"
   })
   void addressMatchingHandlesExactAndWildcardForms(
       String source, String address, boolean expected) throws Exception {
