@@ -8,11 +8,14 @@
 
 package io.mapsmessaging.network.monitor;
 
+import io.mapsmessaging.config.NetworkManagerConfig;
 import io.mapsmessaging.dto.rest.system.Status;
 import io.mapsmessaging.logging.Logger;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
+import org.mockito.MockedStatic;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
@@ -29,6 +32,15 @@ import static org.mockito.Mockito.*;
 
 class NetworkInterfaceMonitorCoreCoverageTest {
 
+  @BeforeAll
+  static void initializeMonitorWithIsolatedConfiguration() throws Exception {
+    try (MockedStatic<NetworkManagerConfig> configuration = mockStatic(NetworkManagerConfig.class)) {
+      NetworkManagerConfig config = mock(NetworkManagerConfig.class);
+      configuration.when(NetworkManagerConfig::getInstance).thenReturn(config);
+      Class.forName(NetworkInterfaceMonitor.class.getName());
+    }
+  }
+
   @ParameterizedTest
   @CsvSource({
       "127.0.0.1,127.0.0.1,true",
@@ -43,6 +55,16 @@ class NetworkInterfaceMonitorCoreCoverageTest {
     NetworkInterfaceMonitor monitor = monitor(false);
 
     assertEquals(expected, monitor.ipAddressMatches(source, InetAddress.getByName(address)));
+  }
+
+  @Test
+  void addressLookupFallsBackToLiteralResolutionAndRejectsUnknownHost() throws Exception {
+    NetworkInterfaceMonitor monitor = monitor(false);
+
+    assertEquals(
+        InetAddress.getByName("127.0.0.1"),
+        monitor.getIpAddressByName("127.0.0.1").get(0));
+    assertTrue(monitor.getIpAddressByName("mapsmessaging.invalid").isEmpty());
   }
 
   @Test
