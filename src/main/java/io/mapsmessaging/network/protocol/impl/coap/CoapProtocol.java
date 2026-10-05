@@ -341,7 +341,7 @@ public class CoapProtocol extends Protocol {
 
   @Override
   public void sendKeepAlive() {
-    if (lastAccess.get() < System.currentTimeMillis() + getTimeOut() && subscriptionState.isEmpty()) {
+    if (lastAccess.get() < System.currentTimeMillis() - getTimeOut() && subscriptionState.isEmpty()) {
       logger.log(COAP_SESSION_TIMED_OUT, socketAddress, getTimeOut());
       try {
         close();
