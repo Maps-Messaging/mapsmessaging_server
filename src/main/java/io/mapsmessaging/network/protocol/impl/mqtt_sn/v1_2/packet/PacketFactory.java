@@ -61,7 +61,11 @@ public class PacketFactory {
         return new Disconnect(packet, length);
 
       case MQTT_SNPacket.SUBSCRIBE:
-        return new Subscribe(packet);
+        Subscribe subscribe = new Subscribe(packet);
+        if (subscribe.getTopicIdType() == MQTT_SNPacket.LONG_TOPIC_NAME) {
+          throw new IOException("Reserved MQTT-SN 1.2 TopicIdType");
+        }
+        return subscribe;
 
       case MQTT_SNPacket.ADVERTISE:
         return new Advertise(packet, length);
@@ -100,7 +104,11 @@ public class PacketFactory {
         return new PubRel(packet);
 
       case MQTT_SNPacket.UNSUBSCRIBE:
-        return new Unsubscribe(packet);
+        Unsubscribe unsubscribe = new Unsubscribe(packet);
+        if (unsubscribe.topicIdType() == MQTT_SNPacket.LONG_TOPIC_NAME) {
+          throw new IOException("Reserved MQTT-SN 1.2 TopicIdType");
+        }
+        return unsubscribe;
 
       case MQTT_SNPacket.PINGREQ:
         return new PingRequest(packet, length);
