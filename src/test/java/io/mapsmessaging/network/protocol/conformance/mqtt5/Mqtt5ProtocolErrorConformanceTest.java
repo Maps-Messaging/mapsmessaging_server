@@ -139,8 +139,104 @@ class Mqtt5ProtocolErrorConformanceTest extends BaseTestConfig {
       source = ProtocolRequirement.MQTT_5_SOURCE)
   void publishWithReservedQosThreeIsMalformedPacket() throws Exception {
     try (MqttWireClient client = connected()) {
-      client.send(MqttWireClient.packet(0x36, new byte[]{0x00, 0x01, 'a', 0x00}));
+      client.send(MqttWireClient.packet(0x36, new byte[]{0x00, 0x01, 'a', 0x00, 0x01, 0x00}));
       assertDisconnectOrClose(client, 0x81);
+    }
+  }
+
+
+  @Test
+  @ProtocolRequirement(
+      specification = "MQTT-5.0",
+      value = "Section 1.5.5 Variable Byte Integer [MQTT-1.5.5-1]",
+      source = ProtocolRequirement.MQTT_5_SOURCE)
+  void nonMinimalRemainingLengthEncodingIsMalformedPacket() throws Exception {
+    try (MqttWireClient client = connected()) {
+      client.send(new byte[]{(byte) 0xC0, (byte) 0x80, 0x00});
+      assertDisconnectOrClose(client, 0x81);
+    }
+  }
+
+  @Test
+  @ProtocolRequirement(
+      specification = "MQTT-5.0",
+      value = "Section 1.5.5 Variable Byte Integer: maximum four bytes",
+      source = ProtocolRequirement.MQTT_5_SOURCE)
+  void fiveByteRemainingLengthEncodingIsMalformedPacket() throws Exception {
+    try (MqttWireClient client = connected()) {
+      client.send(new byte[]{(byte) 0xC0, (byte) 0x80, (byte) 0x80, (byte) 0x80, (byte) 0x80, 0x00});
+      assertDisconnectOrClose(client, 0x81);
+    }
+  }
+
+  @Test
+  @ProtocolRequirement(
+      specification = "MQTT-5.0",
+      value = "Section 4.7.1 Topic wildcards [MQTT-4.7.0-1]",
+      source = ProtocolRequirement.MQTT_5_SOURCE)
+  void wildcardInPublishTopicNameIsRejected() throws Exception {
+    try (MqttWireClient client = connected()) {
+      client.send(MqttWireClient.publishQos1_5(
+          701,
+          "bad/+",
+          new byte[]{1}));
+      assertDisconnectOrClose(client, 0x90);
+    }
+  }
+
+  @Test
+  @ProtocolRequirement(
+      specification = "MQTT-5.0",
+      value = "Section 3.8.3.1 Subscription Options [MQTT-3.8.3-4]",
+      source = ProtocolRequirement.MQTT_5_SOURCE)
+  void noLocalOnSharedSubscriptionIsProtocolError() throws Exception {
+    try (MqttWireClient client = connected()) {
+      client.send(MqttWireClient.subscribe5(
+          702,
+          new byte[0],
+          "$share/conformance/topic",
+          0x04));
+      assertDisconnectOrClose(client, 0x82);
+    }
+  }
+
+  @Test
+  @ProtocolRequirement(
+      specification = "MQTT-5.0",
+      value = "Section 3.3.4 Subscription Identifier [MQTT-3.3.4-6]",
+      source = ProtocolRequirement.MQTT_5_SOURCE)
+  void clientPublishMustNotContainSubscriptionIdentifier() throws Exception {
+    byte[] subscriptionIdentifier = new byte[]{0x0B, 0x01};
+    try (MqttWireClient client = connected()) {
+      client.send(MqttWireClient.publishQos1_5(
+          703,
+          "conformance/mqtt5/client-sub-id",
+          subscriptionIdentifier,
+          new byte[]{1}));
+      assertDisconnectOrClose(client, 0x82);
+    }
+  }
+
+  @Test
+  @ProtocolRequirement(
+      specification = "MQTT-5.0",
+      value = "Section 4.3.3 QoS 2 and PUBREC Packet Identifier not found (0x92)",
+      source = ProtocolRequirement.MQTT_5_SOURCE)
+  void unknownPubRecReturnsPubRelPacketIdentifierNotFound() throws Exception {
+    int packetId = 321;
+    try (MqttWireClient client = connected()) {
+      client.send(new byte[]{
+          0x50, 0x02,
+          (byte) ((packetId >>> 8) & 0xff),
+          (byte) (packetId & 0xff)
+      });
+
+      WirePacket pubRel = client.readPacket();
+      assertEquals(6, pubRel.type(), pubRel::toString);
+      assertEquals(0x02, pubRel.flags());
+      assertEquals(packetId, MqttWireClient.unsignedShort(pubRel.body(), 0));
+      assertTrue(pubRel.body().length >= 3);
+      assertEquals(0x92, pubRel.body()[2] & 0xff);
     }
   }
 
