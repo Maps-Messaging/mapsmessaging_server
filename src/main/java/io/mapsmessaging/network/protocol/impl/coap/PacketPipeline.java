@@ -95,6 +95,17 @@ public class PacketPipeline {
     }
   }
 
+  public void reset(BasePacket resetPacket) throws IOException {
+    BasePacket sent = outstandingQueue.remove(resetPacket.getMessageId());
+    if (sent == null) {
+      return;
+    }
+    BasePacket next = sendQueue.poll();
+    if (next != null) {
+      sendPacket(next);
+    }
+  }
+
   private final class RetransmissionThread implements Runnable{
     @Override
     public void run() {
