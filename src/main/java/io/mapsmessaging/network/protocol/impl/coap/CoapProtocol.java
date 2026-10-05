@@ -200,6 +200,9 @@ public class CoapProtocol extends Protocol {
 
     try {
       transactionState.sent(context.getRequest().getToken(), response.getMessageId(), messageEvent.getMessage().getIdentifier(), messageEvent.getSubscription());
+      if (context.isObserve()) {
+        subscriptionState.notificationSent(context.getPath(), response.getMessageId());
+      }
       outboundPipeline.send(response);
     } catch (IOException e) {
       try {
@@ -263,8 +266,8 @@ public class CoapProtocol extends Protocol {
         receivedMessage();
         if(basePacket.getType() == TYPE.RST){
           logger.log(COAP_RECEIVED_RESET, packet.getFromAddress());
-          close();
-          return false;
+          handleReset(basePacket);
+          return true;
         }
         logger.log(COAP_PACKET_SENT, basePacket, packet.getFromAddress());
         BasePacket duplicateResponse = duplicationManager.getResponse(basePacket.getMessageId());
@@ -350,6 +353,14 @@ public class CoapProtocol extends Protocol {
       }
     }
     blockReceiveMonitor.scanForIdle();
+  }
+
+  private void handleReset(BasePacket resetPacket) throws IOException {
+    outboundPipeline.reset(resetPacket);
+    Context context = subscriptionState.removeByMessageId(resetPacket.getMessageId());
+    if (context != null && context.isObserve()) {
+      session.removeSubscription(context.getPath());
+    }
   }
 
   public void ack(BasePacket ackPacket) throws IOException {
