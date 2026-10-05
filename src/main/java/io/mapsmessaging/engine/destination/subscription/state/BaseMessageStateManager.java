@@ -81,13 +81,13 @@ public abstract class BaseMessageStateManager implements MessageStateManager {
   }
 
   @Override
-  public Queue<Long> getAllAtRest() {
+  public synchronized Queue<Long> getAllAtRest() {
     Queue<Long> queue = new NaturalOrderedLongQueue(0, new BitSetFactoryImpl(Constants.BITSET_BLOCK_SIZE));
     return messagesAtRest.flatten(queue);
   }
 
   @Override
-  public Queue<Long> getAll() {
+  public synchronized Queue<Long> getAll() {
     Queue<Long> queue = new NaturalOrderedLongQueue(0, new BitSetFactoryImpl(Constants.BITSET_BLOCK_SIZE));
     messagesAtRest.flatten(queue);
     queue.addAll(messagesInFlight);
@@ -95,7 +95,7 @@ public abstract class BaseMessageStateManager implements MessageStateManager {
   }
 
   @Override
-  public Queue<Long> getAllAtRest(Queue<Long> copy) {
+  public synchronized Queue<Long> getAllAtRest(Queue<Long> copy) {
     copy.addAll(messagesAtRest);
     return copy;
   }

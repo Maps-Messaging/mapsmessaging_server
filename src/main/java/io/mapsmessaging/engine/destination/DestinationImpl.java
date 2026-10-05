@@ -304,7 +304,12 @@ public class DestinationImpl implements BaseDestination {
   }
 
   private ScheduledFuture<?> queueReaper() {
-    return SimpleTaskScheduler.getInstance().scheduleAtFixedRate(new EventReaper(), 5, 5, TimeUnit.SECONDS);
+    CompletedMessageReaper reaper = new CompletedMessageReaper(
+        fullyQualifiedNamespace,
+        completionQueue,
+        subscriptionManager::getAll,
+        completed -> subscriptionTaskQueue.submit(new BulkRemoveMessageTask(this, completed)));
+    return SimpleTaskScheduler.getInstance().scheduleAtFixedRate(reaper, 5, 5, TimeUnit.SECONDS);
   }
 
   private void loadSchema() throws IOException {
@@ -881,33 +886,5 @@ public class DestinationImpl implements BaseDestination {
   }
 
   //</editor-fold>
-
-  private final class EventReaper implements Runnable {
-
-    private int countDown = 0;
-    private int idleCount =0;
-
-    @Override
-    public void run() {
-      if(countDown <= 0) {
-        Queue<Long> completedQueue = completionQueue.getAndClear();
-        if (!completedQueue.isEmpty()) {
-          idleCount = 0;
-          countDown =0;
-          Queue<Long> interested = subscriptionManager.getAll();
-          completedQueue.removeAll(interested);
-          if (!completedQueue.isEmpty()) {
-            BulkRemoveMessageTask bulkRemoveMessageTask = new BulkRemoveMessageTask(DestinationImpl.this, completedQueue);
-            subscriptionTaskQueue.submit(bulkRemoveMessageTask);
-          }
-        }
-        else{
-          idleCount = (idleCount+1) % 20;
-          countDown = 5 * idleCount;
-        }
-      }
-      countDown--;
-    }
-  }
 
 }

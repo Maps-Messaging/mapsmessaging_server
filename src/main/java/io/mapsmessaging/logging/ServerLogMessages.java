@@ -604,6 +604,7 @@ public enum ServerLogMessages implements LogMessage {
   DESTINATION_MANAGER_CLEARING(LEVEL.INFO, SERVER_CATEGORY.ENGINE, "Clear session id {} requested"),
   DESTINATION_MANAGER_DELETING_TEMPORARY_DESTINATION(LEVEL.INFO, SERVER_CATEGORY.ENGINE, "\"Reloaded temp destination {}, now deleting"),
   DESTINATION_ERROR_SETTING_SCHEMA(LEVEL.ERROR, SERVER_CATEGORY.ENGINE, "Error setting schema for destination {}"),
+  DESTINATION_REAPER_FAILED(LEVEL.ERROR, SERVER_CATEGORY.ENGINE, "Removing completed messages from destination {} failed, retrying on the next pass"),
   //</editor-fold>
 
   //<editor-fold desc="Serial Port Server log Messages">
