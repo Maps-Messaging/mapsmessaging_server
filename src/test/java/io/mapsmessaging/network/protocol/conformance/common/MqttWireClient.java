@@ -182,8 +182,24 @@ public final class MqttWireClient implements AutoCloseable {
   }
 
   public static byte[] pubAck(int packetId) {
+    return acknowledgement(0x40, packetId);
+  }
+
+  public static byte[] pubRec(int packetId) {
+    return acknowledgement(0x50, packetId);
+  }
+
+  public static byte[] pubRel(int packetId) {
+    return acknowledgement(0x62, packetId);
+  }
+
+  public static byte[] pubComp(int packetId) {
+    return acknowledgement(0x70, packetId);
+  }
+
+  private static byte[] acknowledgement(int fixedHeader, int packetId) {
     return new byte[]{
-        0x40,
+        (byte) fixedHeader,
         0x02,
         (byte) ((packetId >>> 8) & 0xff),
         (byte) (packetId & 0xff)
