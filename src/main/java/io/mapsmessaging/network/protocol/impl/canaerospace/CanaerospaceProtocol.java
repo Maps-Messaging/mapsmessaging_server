@@ -212,6 +212,11 @@ public class CanaerospaceProtocol extends Protocol {
   }
 
   public boolean processPacket(CanFrame frame, JsonObject json) {
+    if (json == null) {
+      publishRawFrame(frame);
+      return true;
+    }
+
     String messageName = mapCanIdToName.get(frame.canIdentifier());
     if (messageName == null) {
       messageName = extractMessageName(json);
