@@ -36,10 +36,26 @@ public class PacketFactory {
 
 
   public BasePacket parseFrame(Packet packet) throws IOException {
-    byte val = packet.get(packet.position() + 1);
-    int code = val & 0b11111;
+    if (packet.available() < 4) {
+      throw new IOException("Truncated CoAP header");
+    }
+    int first = packet.get(packet.position()) & 0xff;
+    int version = (first >>> 6) & 0b11;
+    int tokenLength = first & 0b1111;
+    if (version != 1) {
+      throw new IOException("Unsupported CoAP version");
+    }
+    if (tokenLength > 8) {
+      throw new IOException("Invalid CoAP token length");
+    }
+
+    int rawCode = packet.get(packet.position() + 1) & 0xff;
+    int codeClass = (rawCode >>> 5) & 0b111;
+    int code = rawCode & 0b11111;
     BasePacket basePacket;
-    switch (code) {
+    if (codeClass != 0) {
+      basePacket = new BasePacket(0, packet);
+    } else switch (code) {
       case EMPTY:
         basePacket = new Empty( packet);
         break;
