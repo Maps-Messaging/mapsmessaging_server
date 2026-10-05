@@ -12,6 +12,22 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ElementType.TYPE, ElementType.METHOD})
 public @interface ProtocolRequirement {
+
+  String MQTT_311_SOURCE =
+      "https://docs.oasis-open.org/mqtt/mqtt/v3.1.1/os/mqtt-v3.1.1-os.html";
+
+  String MQTT_5_SOURCE =
+      "https://docs.oasis-open.org/mqtt/mqtt/v5.0/os/mqtt-v5.0-os.html";
+
   String specification();
+
+  /**
+   * Normative section and, where available, the MQTT requirement identifier.
+   */
   String value();
+
+  /**
+   * Authoritative specification URL containing the normative requirement.
+   */
+  String source();
 }
