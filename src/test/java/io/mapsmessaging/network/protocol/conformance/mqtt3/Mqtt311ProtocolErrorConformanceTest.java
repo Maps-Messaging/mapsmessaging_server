@@ -91,6 +91,36 @@ class Mqtt311ProtocolErrorConformanceTest extends BaseTestConfig {
     }
   }
 
+
+  @Test
+  @ProtocolRequirement(
+      specification = "MQTT-3.1.1",
+      value = "Section 2.2.3 Remaining Length: maximum four bytes",
+      source = ProtocolRequirement.MQTT_311_SOURCE)
+  void malformedFiveByteRemainingLengthClosesConnection() throws Exception {
+    try (MqttWireClient client = connected()) {
+      client.send(new byte[]{(byte) 0xC0, (byte) 0x80, (byte) 0x80, (byte) 0x80, (byte) 0x80, 0x00});
+      assertPeerClosed(client);
+    }
+  }
+
+  @Test
+  @ProtocolRequirement(
+      specification = "MQTT-3.1.1",
+      value = "Section 4.7.1 Topic wildcards [MQTT-4.7.1-1]",
+      source = ProtocolRequirement.MQTT_311_SOURCE)
+  void wildcardInPublishTopicNameClosesConnection() throws Exception {
+    byte[] malformedPublish = new byte[]{
+        0x32, 0x09,
+        0x00, 0x05, 'b', 'a', 'd', '/', '+',
+        0x00, 0x01
+    };
+    try (MqttWireClient client = connected()) {
+      client.send(malformedPublish);
+      assertPeerClosed(client);
+    }
+  }
+
   private MqttWireClient connected() throws Exception {
     MqttWireClient client = new MqttWireClient("localhost", 1883);
     client.send(MqttWireClient.connect311("mqtt311-error-" + UUID.randomUUID(), true));
