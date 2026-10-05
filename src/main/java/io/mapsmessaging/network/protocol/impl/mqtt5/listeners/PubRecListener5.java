@@ -41,6 +41,6 @@ public class PubRecListener5 extends PacketListener5 {
     }
     PubRel5 pubRel = new PubRel5(pubRec.getPacketIdentifier());
     pubRel.setStatusCode(StatusCode.PACKET_IDENTIFIER_NOT_FOUND);
-    return pubRec;
+    return pubRel;
   }
 }
