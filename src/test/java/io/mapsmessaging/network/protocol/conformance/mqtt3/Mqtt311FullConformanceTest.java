@@ -32,7 +32,7 @@ class Mqtt311FullConformanceTest extends BaseTestConfig {
   private static final String URL = "tcp://localhost:1883";
 
   @Test
-  @ProtocolRequirement(specification = "MQTT-3.1.1", value = "Section 3.1.3.1 Client Identifier")
+  @ProtocolRequirement(specification = "MQTT-3.1.1", value = "Section 3.1.3.1 Client Identifier", source = ProtocolRequirement.MQTT_311_SOURCE)
   void zeroLengthClientIdentifierRequiresCleanSession() throws Exception {
     try (MqttWireClient rejected = new MqttWireClient("localhost", 1883)) {
       rejected.send(MqttWireClient.connect311("", false));
@@ -51,7 +51,7 @@ class Mqtt311FullConformanceTest extends BaseTestConfig {
   }
 
   @Test
-  @ProtocolRequirement(specification = "MQTT-3.1.1", value = "Section 3.1.2.10 Will Message and Section 3.1.2.10 Keep Alive")
+  @ProtocolRequirement(specification = "MQTT-3.1.1", value = "Section 3.1.2.10 Will Message and Section 3.1.2.10 Keep Alive", source = ProtocolRequirement.MQTT_311_SOURCE)
   void keepAliveTimeoutPublishesWill() throws Exception {
     String willTopic = "conformance/mqtt311/will/" + UUID.randomUUID();
     byte[] expected = "keepalive-expiry".getBytes(StandardCharsets.UTF_8);
@@ -80,7 +80,7 @@ class Mqtt311FullConformanceTest extends BaseTestConfig {
   }
 
   @Test
-  @ProtocolRequirement(specification = "MQTT-3.1.1", value = "Section 4.4 Message delivery retry")
+  @ProtocolRequirement(specification = "MQTT-3.1.1", value = "Section 4.4 Message delivery retry", source = ProtocolRequirement.MQTT_311_SOURCE)
   void unacknowledgedQosOnePublishIsRedeliveredWithDupAfterReconnect() throws Exception {
     String clientId = "mqtt311-redelivery-" + UUID.randomUUID();
     String topic = "conformance/mqtt311/redelivery/" + UUID.randomUUID();
