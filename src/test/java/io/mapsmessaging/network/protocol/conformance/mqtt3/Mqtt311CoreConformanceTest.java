@@ -114,6 +114,33 @@ class Mqtt311CoreConformanceTest extends BaseTestConfig {
   }
 
   @Test
+  @ProtocolRequirement(
+      specification = "MQTT-3.1.1",
+      value = "Section 4.3.3 QoS 2 delivery",
+      source = ProtocolRequirement.MQTT_311_SOURCE)
+  void qos2PublishCompletesFourStepExchange() throws Exception {
+    int packetId = 71;
+    try (MqttWireClient client = connected()) {
+      byte[] body = new byte[]{
+          0x00, 0x19,
+          'c','o','n','f','o','r','m','a','n','c','e','/','m','q','t','t','3','1','1','/','q','o','s','2',
+          0x00, (byte) packetId,
+          'x'
+      };
+      client.send(MqttWireClient.packet(0x34, body));
+
+      WirePacket pubRec = client.readPacket();
+      assertEquals(5, pubRec.type(), pubRec::toString);
+      assertEquals(packetId, MqttWireClient.unsignedShort(pubRec.body(), 0));
+
+      client.send(MqttWireClient.pubRel(packetId));
+      WirePacket pubComp = client.readPacket();
+      assertEquals(7, pubComp.type(), pubComp::toString);
+      assertEquals(packetId, MqttWireClient.unsignedShort(pubComp.body(), 0));
+    }
+  }
+
+  @Test
   @ProtocolRequirement(specification = "MQTT-3.1.1", value = "Section 1.5 Network Transport", source = ProtocolRequirement.MQTT_311_SOURCE)
   void connectAndPingMayShareOneTcpWrite() throws Exception {
     byte[] connect = MqttWireClient.connect311(clientId(), true);
