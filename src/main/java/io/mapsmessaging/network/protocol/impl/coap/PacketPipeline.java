@@ -29,29 +29,30 @@ import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
 
 import static io.mapsmessaging.logging.ServerLogMessages.COAP_FAILED_TO_SEND;
+import static io.mapsmessaging.network.protocol.impl.coap.Constants.ACK_RANDOM_FACTOR;
+import static io.mapsmessaging.network.protocol.impl.coap.Constants.ACK_TIMEOUT;
 import static io.mapsmessaging.network.protocol.impl.coap.Constants.MAX_RETRANSMIT;
 
 public class PacketPipeline {
 
   private final Queue<BasePacket> sendQueue;
-  private final Map<Integer, BasePacket> outstandingQueue;
+  private final Map<Integer, OutstandingExchange> outstandingQueue;
   private final CoapProtocol protocol;
-  private final ScheduledFuture<?> retransmissionThread;
 
   public PacketPipeline(CoapProtocol protocol) {
     sendQueue = new ConcurrentLinkedQueue<>();
     outstandingQueue = new ConcurrentSkipListMap<>();
     this.protocol = protocol;
-    retransmissionThread = SimpleTaskScheduler.getInstance().scheduleAtFixedRate(new RetransmissionThread(),Constants.ACK_TIMEOUT,Constants.ACK_TIMEOUT, TimeUnit.SECONDS);
   }
 
   public void close(){
     sendQueue.clear();
+    outstandingQueue.values().forEach(OutstandingExchange::cancel);
     outstandingQueue.clear();
-    retransmissionThread.cancel(true);
   }
 
   public void send(BasePacket packet) throws IOException {
@@ -69,18 +70,29 @@ public class PacketPipeline {
   }
 
   private void sendPacket(BasePacket basePacket) throws IOException {
-    if(basePacket.getType().equals(TYPE.CON)){
-      outstandingQueue.put(basePacket.getMessageId(), basePacket);
-    }
     protocol.send(basePacket);
     basePacket.setTimeSent(System.currentTimeMillis());
+    if(basePacket.getType().equals(TYPE.CON)){
+      OutstandingExchange exchange = new OutstandingExchange(basePacket, initialTimeoutMillis());
+      outstandingQueue.put(basePacket.getMessageId(), exchange);
+      exchange.schedule();
+    }
+  }
+
+  private long initialTimeoutMillis() {
+    long minimum = ACK_TIMEOUT * 1000L;
+    long maximum = (long) (ACK_TIMEOUT * ACK_RANDOM_FACTOR * 1000L);
+    return ThreadLocalRandom.current().nextLong(minimum, maximum + 1);
   }
 
   public void ack(BasePacket ackPacket) throws IOException {
-    BasePacket sent = outstandingQueue.remove(ackPacket.getMessageId());
-    if (sent == null) {
+    OutstandingExchange exchange = outstandingQueue.remove(ackPacket.getMessageId());
+    if (exchange == null) {
       return;
     }
+    exchange.cancel();
+
+    BasePacket sent = exchange.packet;
     BasePacket packet;
     if(sent.isComplete()){
       packet = sendQueue.poll();
@@ -96,35 +108,67 @@ public class PacketPipeline {
   }
 
   public void reset(BasePacket resetPacket) throws IOException {
-    BasePacket sent = outstandingQueue.remove(resetPacket.getMessageId());
-    if (sent == null) {
+    OutstandingExchange exchange = outstandingQueue.remove(resetPacket.getMessageId());
+    if (exchange == null) {
       return;
     }
+    exchange.cancel();
+    sendNext();
+  }
+
+  private void sendNext() throws IOException {
     BasePacket next = sendQueue.poll();
     if (next != null) {
       sendPacket(next);
     }
   }
 
-  private final class RetransmissionThread implements Runnable{
+  private final class OutstandingExchange implements Runnable {
+
+    private final BasePacket packet;
+    private long timeoutMillis;
+    private int retransmissions;
+    private ScheduledFuture<?> future;
+
+    private OutstandingExchange(BasePacket packet, long timeoutMillis) {
+      this.packet = packet;
+      this.timeoutMillis = timeoutMillis;
+      retransmissions = 0;
+    }
+
+    private void schedule() {
+      future = SimpleTaskScheduler.getInstance().schedule(this, timeoutMillis, TimeUnit.MILLISECONDS);
+    }
+
+    private void cancel() {
+      if (future != null) {
+        future.cancel(false);
+      }
+    }
+
     @Override
     public void run() {
-      long now = System.currentTimeMillis();
-      for(BasePacket packet: outstandingQueue.values()){
-        if(packet.getTimeSent() < (now- (Constants.ACK_TIMEOUT * 1000L))){
-          if(packet.incrementResendCount() <  MAX_RETRANSMIT){
-            try {
-              send(packet);
-            } catch (IOException e) {
-              protocol.getLogger().log(COAP_FAILED_TO_SEND, packet.getFromAddress(), e);
-            }
-            packet.setTimeSent(now);
-          }
-          else{
-            outstandingQueue.remove(packet.getMessageId());
-            break;
-          }
+      if (outstandingQueue.get(packet.getMessageId()) != this) {
+        return;
+      }
+      if (retransmissions >= MAX_RETRANSMIT) {
+        outstandingQueue.remove(packet.getMessageId(), this);
+        try {
+          sendNext();
+        } catch (IOException e) {
+          protocol.getLogger().log(COAP_FAILED_TO_SEND, packet.getFromAddress(), e);
         }
+        return;
+      }
+
+      try {
+        protocol.send(packet);
+        packet.setTimeSent(System.currentTimeMillis());
+        retransmissions++;
+        timeoutMillis *= 2;
+        schedule();
+      } catch (IOException e) {
+        protocol.getLogger().log(COAP_FAILED_TO_SEND, packet.getFromAddress(), e);
       }
     }
   }
