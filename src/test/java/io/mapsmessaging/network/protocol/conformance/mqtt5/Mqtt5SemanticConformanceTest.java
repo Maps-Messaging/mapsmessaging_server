@@ -42,7 +42,7 @@ class Mqtt5SemanticConformanceTest extends BaseTestConfig {
   private static final String URL = "tcp://localhost:1883";
 
   @Test
-  @ProtocolRequirement(specification = "MQTT-5.0", value = "Section 3.3.1 RETAIN")
+  @ProtocolRequirement(specification = "MQTT-5.0", value = "Section 3.3.1 RETAIN", source = ProtocolRequirement.MQTT_5_SOURCE)
   void retainedMessagePreservesUserProperties() throws Exception {
     String topic = topic("retained");
     List<MqttMessage> received = new ArrayList<>();
@@ -75,7 +75,7 @@ class Mqtt5SemanticConformanceTest extends BaseTestConfig {
   }
 
   @Test
-  @ProtocolRequirement(specification = "MQTT-5.0", value = "Section 3.1.2.11 Session Expiry Interval")
+  @ProtocolRequirement(specification = "MQTT-5.0", value = "Section 3.1.2.11 Session Expiry Interval", source = ProtocolRequirement.MQTT_5_SOURCE)
   void persistentSessionQueuesQosOneAndTwoWhileOffline() throws Exception {
     String topic = topic("offline");
     String id = "mqtt5-offline-" + UUID.randomUUID();
@@ -101,7 +101,7 @@ class Mqtt5SemanticConformanceTest extends BaseTestConfig {
   }
 
   @Test
-  @ProtocolRequirement(specification = "MQTT-5.0", value = "Section 4.7.3 Topic Filter matching")
+  @ProtocolRequirement(specification = "MQTT-5.0", value = "Section 4.7.3 Topic Filter matching", source = ProtocolRequirement.MQTT_5_SOURCE)
   void overlappingSubscriptionsUsePermittedDeliverySemantics() throws Exception {
     String prefix = topic("overlap");
     String exact = prefix + "/value";
@@ -121,7 +121,7 @@ class Mqtt5SemanticConformanceTest extends BaseTestConfig {
   }
 
   @Test
-  @ProtocolRequirement(specification = "MQTT-5.0", value = "MQTT-4.7.2-1")
+  @ProtocolRequirement(specification = "MQTT-5.0", value = "MQTT-4.7.2-1", source = ProtocolRequirement.MQTT_5_SOURCE)
   void rootWildcardDoesNotMatchDollarPrefixedTopic() throws Exception {
     AtomicInteger received = new AtomicInteger();
     String systemTopic = "$maps/conformance/" + UUID.randomUUID();
@@ -138,7 +138,7 @@ class Mqtt5SemanticConformanceTest extends BaseTestConfig {
   }
 
   @Test
-  @ProtocolRequirement(specification = "MQTT-5.0", value = "Section 3.10 UNSUBSCRIBE")
+  @ProtocolRequirement(specification = "MQTT-5.0", value = "Section 3.10 UNSUBSCRIBE", source = ProtocolRequirement.MQTT_5_SOURCE)
   void unsubscribeStopsFurtherDelivery() throws Exception {
     String topic = topic("unsubscribe");
     AtomicInteger received = new AtomicInteger();
@@ -156,7 +156,7 @@ class Mqtt5SemanticConformanceTest extends BaseTestConfig {
   }
 
   @Test
-  @ProtocolRequirement(specification = "MQTT-5.0", value = "Section 3.1.2.11 Session Expiry Interval")
+  @ProtocolRequirement(specification = "MQTT-5.0", value = "Section 3.1.2.11 Session Expiry Interval", source = ProtocolRequirement.MQTT_5_SOURCE)
   void zeroSessionExpiryDoesNotRestoreSession() throws Exception {
     String id = "mqtt5-expiry-" + UUID.randomUUID();
     String topic = topic("expiry");
@@ -175,7 +175,7 @@ class Mqtt5SemanticConformanceTest extends BaseTestConfig {
   }
 
   @Test
-  @ProtocolRequirement(specification = "MQTT-5.0", value = "Section 2.2.2.3.8 User Property")
+  @ProtocolRequirement(specification = "MQTT-5.0", value = "Section 2.2.2.3.8 User Property", source = ProtocolRequirement.MQTT_5_SOURCE)
   void publishUserPropertiesRoundTrip() throws Exception {
     String topic = topic("user-properties");
     AtomicReference<MqttMessage> received = new AtomicReference<>();
@@ -200,7 +200,7 @@ class Mqtt5SemanticConformanceTest extends BaseTestConfig {
   }
 
   @Test
-  @ProtocolRequirement(specification = "MQTT-5.0", value = "Payload Format Indicator and Content Type")
+  @ProtocolRequirement(specification = "MQTT-5.0", value = "Payload Format Indicator and Content Type", source = ProtocolRequirement.MQTT_5_SOURCE)
   void payloadFormatAndContentTypeRoundTrip() throws Exception {
     String topic = topic("payload-format");
     AtomicReference<MqttMessage> received = new AtomicReference<>();
@@ -225,7 +225,7 @@ class Mqtt5SemanticConformanceTest extends BaseTestConfig {
   }
 
   @Test
-  @ProtocolRequirement(specification = "MQTT-5.0", value = "Section 3.1.3.1 Client Identifier")
+  @ProtocolRequirement(specification = "MQTT-5.0", value = "Section 3.1.3.1 Client Identifier", source = ProtocolRequirement.MQTT_5_SOURCE)
   void emptyClientIdReceivesAssignedClientIdentifier() throws Exception {
     try (MqttClient client = new MqttClient(URL, "", new MemoryPersistence())) {
       IMqttToken token = client.connectWithResult(options(true, 0));
@@ -239,7 +239,7 @@ class Mqtt5SemanticConformanceTest extends BaseTestConfig {
   }
 
   @Test
-  @ProtocolRequirement(specification = "MQTT-5.0", value = "No Local subscription option")
+  @ProtocolRequirement(specification = "MQTT-5.0", value = "No Local subscription option", source = ProtocolRequirement.MQTT_5_SOURCE)
   void noLocalPreventsSelfDelivery() throws Exception {
     String topic = topic("no-local");
     AtomicInteger received = new AtomicInteger();
@@ -258,7 +258,7 @@ class Mqtt5SemanticConformanceTest extends BaseTestConfig {
   }
 
   @Test
-  @ProtocolRequirement(specification = "MQTT-5.0", value = "Response Topic and Correlation Data")
+  @ProtocolRequirement(specification = "MQTT-5.0", value = "Response Topic and Correlation Data", source = ProtocolRequirement.MQTT_5_SOURCE)
   void requestResponsePropertiesRoundTrip() throws Exception {
     String requestTopic = topic("request");
     String responseTopic = topic("response");
@@ -287,7 +287,7 @@ class Mqtt5SemanticConformanceTest extends BaseTestConfig {
   }
 
   @Test
-  @ProtocolRequirement(specification = "MQTT-5.0", value = "Subscription Identifier")
+  @ProtocolRequirement(specification = "MQTT-5.0", value = "Subscription Identifier", source = ProtocolRequirement.MQTT_5_SOURCE)
   void subscriptionIdentifierIsReturnedOnMatchingPublish() throws Exception {
     String topic = topic("subscription-id");
     AtomicReference<MqttMessage> received = new AtomicReference<>();
@@ -322,7 +322,7 @@ class Mqtt5SemanticConformanceTest extends BaseTestConfig {
   }
 
   @Test
-  @ProtocolRequirement(specification = "MQTT-5.0", value = "Section 4.8 Shared Subscriptions")
+  @ProtocolRequirement(specification = "MQTT-5.0", value = "Section 4.8 Shared Subscriptions", source = ProtocolRequirement.MQTT_5_SOURCE)
   void sharedSubscriptionDistributesEachMessageOnce() throws Exception {
     String publishTopic = topic("shared");
     String sharedFilter = "$share/conformance/" + publishTopic;
@@ -351,7 +351,7 @@ class Mqtt5SemanticConformanceTest extends BaseTestConfig {
   }
 
   @Test
-  @ProtocolRequirement(specification = "MQTT-5.0", value = "Section 3.9 SUBACK")
+  @ProtocolRequirement(specification = "MQTT-5.0", value = "Section 3.9 SUBACK", source = ProtocolRequirement.MQTT_5_SOURCE)
   void unauthorisedSubscriptionReturnsFailureReason() throws Exception {
     try (MqttWireClient client = new MqttWireClient("localhost", 1883)) {
       client.send(MqttWireClient.connect5("mqtt5-denied-" + UUID.randomUUID(), true));
