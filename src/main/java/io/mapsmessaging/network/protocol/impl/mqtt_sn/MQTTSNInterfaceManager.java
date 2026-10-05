@@ -256,16 +256,26 @@ public class MQTTSNInterfaceManager implements SelectorCallback {
   }
 
   private void handlePublish(Packet packet, Publish publish) throws IOException {
-    if (publish.getQoS().equals(QualityOfService.MQTT_SN_REGISTERED)) {
-      String topic = registeredTopicConfiguration.getTopic(packet.getFromAddress(), publish.getTopicId());
-      if (topic != null) {
-        logger.log(ServerLogMessages.MQTT_SN_REGISTERED_EVENT, topic);
-        publishRegisteredTopic(topic, publish);
-      } else {
-        logger.log(ServerLogMessages.MQTT_SN_REGISTERED_EVENT_NOT_FOUND, packet.getFromAddress(), publish.getTopicId());
-      }
-    } else {
+    if (!publish.getQoS().equals(QualityOfService.MQTT_SN_REGISTERED)) {
       logger.log(ServerLogMessages.MQTT_SN_INVALID_QOS_PACKET_DETECTED, packet.getFromAddress(), publish.getQoS());
+      return;
+    }
+
+    String topic = null;
+    if (publish.getTopicIdType() == MQTT_SNPacket.TOPIC_PRE_DEFINED_ID) {
+      topic = registeredTopicConfiguration.getTopic(packet.getFromAddress(), publish.getTopicId());
+    } else if (publish.getTopicIdType() == MQTT_SNPacket.TOPIC_SHORT_NAME) {
+      topic = new String(new byte[]{
+          (byte) ((publish.getTopicId() >>> 8) & 0xff),
+          (byte) (publish.getTopicId() & 0xff)
+      }, java.nio.charset.StandardCharsets.US_ASCII);
+    }
+
+    if (topic != null) {
+      logger.log(ServerLogMessages.MQTT_SN_REGISTERED_EVENT, topic);
+      publishRegisteredTopic(topic, publish);
+    } else {
+      logger.log(ServerLogMessages.MQTT_SN_REGISTERED_EVENT_NOT_FOUND, packet.getFromAddress(), publish.getTopicId());
     }
   }
 
