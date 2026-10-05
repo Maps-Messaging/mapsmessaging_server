@@ -97,11 +97,11 @@ public abstract class MQTTPacket5 extends MQTTPacket {
   }
 
   public int lengthSize(int check) {
-    if (check < 0x7F) {
+    if (check <= 127) {
       return 1;
-    } else if (check < 0xff7f) {
+    } else if (check <= 16_383) {
       return 2;
-    } else if (check < 0xffff7f) {
+    } else if (check <= 2_097_151) {
       return 3;
     } else {
       return 4;
