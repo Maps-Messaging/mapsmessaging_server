@@ -39,6 +39,10 @@ public final class MqttWireClient implements AutoCloseable {
     }
   }
 
+  public void setReadTimeoutMillis(int timeoutMillis) throws IOException {
+    socket.setSoTimeout(timeoutMillis);
+  }
+
   public WirePacket readPacket() throws IOException {
     int header = input.read();
     if (header < 0) {
@@ -63,13 +67,64 @@ public final class MqttWireClient implements AutoCloseable {
   }
 
   public static byte[] connect5(String clientId, boolean cleanStart) {
+    return connect5(clientId, cleanStart, 30, new byte[0]);
+  }
+
+  public static byte[] connect5(String clientId, boolean cleanStart, int keepAlive, byte[] properties) {
     ByteArrayOutputStream body = new ByteArrayOutputStream();
     writeUtf8(body, "MQTT");
     body.write(5);
     body.write(cleanStart ? 0x02 : 0x00);
-    writeUnsignedShort(body, 30);
-    writeVariableByteInteger(body, 0);
+    writeUnsignedShort(body, keepAlive);
+    writeVariableByteInteger(body, properties.length);
+    body.writeBytes(properties);
     writeUtf8(body, clientId);
+    return packet(0x10, body.toByteArray());
+  }
+
+  public static byte[] connect311WithWill(
+      String clientId,
+      int keepAlive,
+      String willTopic,
+      byte[] willPayload) {
+    ByteArrayOutputStream body = new ByteArrayOutputStream();
+    writeUtf8(body, "MQTT");
+    body.write(4);
+    body.write(0x0E); // clean session + Will flag + Will QoS 1
+    writeUnsignedShort(body, keepAlive);
+    writeUtf8(body, clientId);
+    writeUtf8(body, willTopic);
+    writeBinary(body, willPayload);
+    return packet(0x10, body.toByteArray());
+  }
+
+  public static byte[] connect5WithWill(
+      String clientId,
+      int keepAlive,
+      long sessionExpiry,
+      long willDelay,
+      String willTopic,
+      byte[] willPayload) {
+    ByteArrayOutputStream connectProperties = new ByteArrayOutputStream();
+    connectProperties.write(0x11); // Session Expiry Interval
+    writeUnsignedInt(connectProperties, sessionExpiry);
+
+    ByteArrayOutputStream willProperties = new ByteArrayOutputStream();
+    willProperties.write(0x18); // Will Delay Interval
+    writeUnsignedInt(willProperties, willDelay);
+
+    ByteArrayOutputStream body = new ByteArrayOutputStream();
+    writeUtf8(body, "MQTT");
+    body.write(5);
+    body.write(0x0E); // clean start + Will flag + Will QoS 1
+    writeUnsignedShort(body, keepAlive);
+    writeVariableByteInteger(body, connectProperties.size());
+    body.writeBytes(connectProperties.toByteArray());
+    writeUtf8(body, clientId);
+    writeVariableByteInteger(body, willProperties.size());
+    body.writeBytes(willProperties.toByteArray());
+    writeUtf8(body, willTopic);
+    writeBinary(body, willPayload);
     return packet(0x10, body.toByteArray());
   }
 
@@ -92,6 +147,31 @@ public final class MqttWireClient implements AutoCloseable {
 
   public static byte[] disconnect() {
     return new byte[]{(byte) 0xE0, 0x00};
+  }
+
+  public static byte[] pubAck(int packetId) {
+    return new byte[]{
+        0x40,
+        0x02,
+        (byte) ((packetId >>> 8) & 0xff),
+        (byte) (packetId & 0xff)
+    };
+  }
+
+  public static int publishPacketIdentifier(WirePacket packet) throws IOException {
+    if (packet.type() != 3) {
+      throw new IOException("Expected PUBLISH but received packet type " + packet.type());
+    }
+    byte[] body = packet.body();
+    if (body.length < 4) {
+      throw new IOException("PUBLISH packet too short");
+    }
+    int topicLength = unsignedShort(body, 0);
+    int packetIdOffset = 2 + topicLength;
+    if (packetIdOffset + 1 >= body.length) {
+      throw new IOException("PUBLISH packet does not contain a packet identifier");
+    }
+    return unsignedShort(body, packetIdOffset);
   }
 
   public static byte[] subscribe311(int packetId, String topicFilter, int qos) {
@@ -240,6 +320,18 @@ public final class MqttWireClient implements AutoCloseable {
   private static void writeUnsignedShort(ByteArrayOutputStream out, int value) {
     out.write((value >>> 8) & 0xff);
     out.write(value & 0xff);
+  }
+
+  private static void writeUnsignedInt(ByteArrayOutputStream out, long value) {
+    out.write((int) ((value >>> 24) & 0xff));
+    out.write((int) ((value >>> 16) & 0xff));
+    out.write((int) ((value >>> 8) & 0xff));
+    out.write((int) (value & 0xff));
+  }
+
+  private static void writeBinary(ByteArrayOutputStream out, byte[] value) {
+    writeUnsignedShort(out, value.length);
+    out.writeBytes(value);
   }
 
   @Override
