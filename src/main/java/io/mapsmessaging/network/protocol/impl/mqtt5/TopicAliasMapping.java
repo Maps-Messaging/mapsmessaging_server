@@ -94,6 +94,7 @@ public class TopicAliasMapping {
     keyByInteger.clear();
     keyByString.clear();
     available.clear();
+    available.set(0); // MQTT topic alias 0 is reserved
   }
 
   public int getMaximum() {
