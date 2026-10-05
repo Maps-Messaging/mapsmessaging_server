@@ -245,7 +245,8 @@ class CanaerospaceProtocolCoverageTest {
     Message message = capturedMessage(harness.destination);
     assertArrayEquals(frame.getRawData(), message.getOpaqueData());
     assertEquals("application/octet-stream", message.getContentType());
-    assertEquals(QualityOfService.AT_MOST_ONCE, message.getQualityOfService());
+    assertEquals(QualityOfService.AT_LEAST_ONCE, message.getQualityOfService());
+    assertTrue(message.isStoreOffline());
     verifyNoInteractions(harness.formatter);
   }
 
