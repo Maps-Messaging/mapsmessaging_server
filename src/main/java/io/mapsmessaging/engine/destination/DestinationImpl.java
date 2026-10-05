@@ -424,33 +424,29 @@ public class DestinationImpl implements BaseDestination {
   }
 
   public static void deleteFile(File directoryToBeDeleted, int count) {
-    int recursionDepth = count +1;
+    int recursionDepth = count + 1;
     StringBuilder failedFiles = new StringBuilder();
     File[] allContents = directoryToBeDeleted.listFiles();
     if (allContents != null) {
-      List<File> failed = new ArrayList<>();
       for (File file : allContents) {
         try {
-          Files.delete(file.toPath());
+          if (file.isDirectory() && !Files.isSymbolicLink(file.toPath())) {
+            deleteFile(file, recursionDepth);
+          }
+          else {
+            Files.deleteIfExists(file.toPath());
+          }
         } catch (IOException e) {
-          failed.add(file);
-        }
-      }
-      // Try once more
-      for (File file : failed) {
-        try {
-          Files.delete(file.toPath());
-        } catch (IOException io) {
           failedFiles.append(file.getAbsolutePath()).append(",");
         }
       }
     }
     try {
-      Files.delete(directoryToBeDeleted.toPath());
+      Files.deleteIfExists(directoryToBeDeleted.toPath());
     } catch (IOException e) {
       failedFiles.append(directoryToBeDeleted.getAbsolutePath()).append(",");
     }
-    if(!failedFiles.isEmpty() && recursionDepth < 3) {
+    if (!failedFiles.isEmpty() && recursionDepth < 3) {
       SimpleTaskScheduler.getInstance().schedule(() -> deleteFile(directoryToBeDeleted, recursionDepth), 10, TimeUnit.SECONDS);
     }
   }
