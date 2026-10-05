@@ -131,6 +131,30 @@ class Mqtt5CoreConformanceTest extends BaseTestConfig {
   }
 
   @Test
+  @ProtocolRequirement(
+      specification = "MQTT-5.0",
+      value = "Section 4.3.3 QoS 2 delivery",
+      source = ProtocolRequirement.MQTT_5_SOURCE)
+  void qos2PublishCompletesFourStepExchange() throws Exception {
+    int packetId = 171;
+    try (MqttWireClient client = connected()) {
+      client.send(MqttWireClient.publishQos2_5(
+          packetId,
+          "conformance/mqtt5/qos2",
+          new byte[]{1}));
+
+      WirePacket pubRec = client.readPacket();
+      assertEquals(5, pubRec.type(), pubRec::toString);
+      assertEquals(packetId, MqttWireClient.unsignedShort(pubRec.body(), 0));
+
+      client.send(MqttWireClient.pubRel(packetId));
+      WirePacket pubComp = client.readPacket();
+      assertEquals(7, pubComp.type(), pubComp::toString);
+      assertEquals(packetId, MqttWireClient.unsignedShort(pubComp.body(), 0));
+    }
+  }
+
+  @Test
   @ProtocolRequirement(specification = "MQTT-5.0", value = "Section 1.5 Network Transport", source = ProtocolRequirement.MQTT_5_SOURCE)
   void connectAndPingMayShareOneTcpWrite() throws Exception {
     byte[] connect = MqttWireClient.connect5(clientId(), true);
