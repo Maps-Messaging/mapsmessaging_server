@@ -203,6 +203,9 @@ public class RestMessageListener implements MessageListener {
     while (hasEvents && count != 0 && destinationMessages != null) {
       hasEvents = false;
       for (Map.Entry<String, List<MessageEvent>> entry : destinationMessages.entrySet()) {
+        if (count == 0) {
+          break;
+        }
         if (!entry.getValue().isEmpty()) {
           List<MessageDTO> returnEvents = response.computeIfAbsent(entry.getKey(), key -> new ArrayList<>());
           MessageEvent msg = entry.getValue().remove(0);
