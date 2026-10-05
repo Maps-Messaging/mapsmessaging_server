@@ -215,12 +215,34 @@ public final class MqttWireClient implements AutoCloseable {
   }
 
   public static byte[] publishQos1_5(int packetId, String topic, byte[] payload) {
+    return publish5(0x32, packetId, topic, new byte[0], payload);
+  }
+
+  public static byte[] publishQos2_5(int packetId, String topic, byte[] payload) {
+    return publish5(0x34, packetId, topic, new byte[0], payload);
+  }
+
+  public static byte[] publishQos1_5(
+      int packetId,
+      String topic,
+      byte[] properties,
+      byte[] payload) {
+    return publish5(0x32, packetId, topic, properties, payload);
+  }
+
+  private static byte[] publish5(
+      int fixedHeader,
+      int packetId,
+      String topic,
+      byte[] properties,
+      byte[] payload) {
     ByteArrayOutputStream body = new ByteArrayOutputStream();
     writeUtf8(body, topic);
     writeUnsignedShort(body, packetId);
-    writeVariableByteInteger(body, 0);
+    writeVariableByteInteger(body, properties.length);
+    body.writeBytes(properties);
     body.writeBytes(payload);
-    return packet(0x32, body.toByteArray());
+    return packet(fixedHeader, body.toByteArray());
   }
 
   public static byte[] packet(int fixedHeader, byte[] body) {
