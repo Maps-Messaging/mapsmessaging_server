@@ -277,7 +277,7 @@ public class RestMessageListener implements MessageListener {
     for (String key : sessionSubscriptionsMap.keySet()) {
       deregisterEventManager(key);
     }
-    closed = false;
+    closed = true;
     messages.clear();
     eventSinkMap.clear();
     sessionSubscriptionsMap.clear();
