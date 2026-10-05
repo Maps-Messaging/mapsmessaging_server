@@ -106,7 +106,7 @@ public class CoapProtocol extends Protocol {
     subscriptionState = new SubscriptionState();
     transactionState = new TransactionState();
     outboundPipeline = new PacketPipeline(this);
-    duplicationManager = new DuplicationManager(1);
+    duplicationManager = new DuplicationManager();
     this.socketAddress = socketAddress;
     this.coapInterfaceManager = coapInterfaceManager;
     mtu = coapInterfaceManager.getMtu();
