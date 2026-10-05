@@ -215,7 +215,9 @@ public class CanaerospaceProtocol extends Protocol {
     String messageName = mapCanIdToName.get(frame.canIdentifier());
     if (messageName == null) {
       messageName = extractMessageName(json);
-      mapCanIdToName.put(frame.canIdentifier(), messageName);
+      if (messageName != null && !messageName.isEmpty()) {
+        mapCanIdToName.put(frame.canIdentifier(), messageName);
+      }
     }
 
     MessageBuilder messageBuilder = new MessageBuilder();
@@ -311,9 +313,10 @@ public class CanaerospaceProtocol extends Protocol {
 
     Message message = new MessageBuilder()
         .setOpaqueData(rawData)
-        .setQoS(QualityOfService.AT_MOST_ONCE)
+        .setQoS(qos)
         .setMeta(metadata)
         .setRetain(false)
+        .storeOffline(storeOffline)
         .setContentType("application/octet-stream")
         .build();
 
