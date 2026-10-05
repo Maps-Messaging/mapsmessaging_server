@@ -93,13 +93,13 @@ public class PacketPipeline {
     exchange.cancel();
 
     BasePacket sent = exchange.packet;
+    sent.sent(ackPacket);
     BasePacket packet;
     if(sent.isComplete()){
       packet = sendQueue.poll();
     }
     else{
       packet = sent;
-      packet.sent(ackPacket);
       packet.setMessageId(protocol.getNextMessageId());
     }
     if (packet != null) {
