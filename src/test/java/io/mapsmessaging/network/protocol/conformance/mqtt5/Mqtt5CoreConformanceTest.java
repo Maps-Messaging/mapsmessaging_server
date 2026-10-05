@@ -23,7 +23,7 @@ class Mqtt5CoreConformanceTest extends BaseTestConfig {
   private static final int PORT = 1883;
 
   @Test
-  @ProtocolRequirement(specification = "MQTT-5.0", value = "Section 3.2 CONNACK")
+  @ProtocolRequirement(specification = "MQTT-5.0", value = "Section 3.2 CONNACK", source = ProtocolRequirement.MQTT_5_SOURCE)
   void connectReturnsSuccessfulConnAck() throws Exception {
     try (MqttWireClient client = new MqttWireClient("localhost", PORT)) {
       client.send(MqttWireClient.connect5(clientId(), true));
@@ -36,7 +36,7 @@ class Mqtt5CoreConformanceTest extends BaseTestConfig {
   }
 
   @Test
-  @ProtocolRequirement(specification = "MQTT-5.0", value = "Section 1.5 Network Transport")
+  @ProtocolRequirement(specification = "MQTT-5.0", value = "Section 1.5 Network Transport", source = ProtocolRequirement.MQTT_5_SOURCE)
   void connectCanArriveOneByteAtATime() throws Exception {
     try (MqttWireClient client = new MqttWireClient("localhost", PORT)) {
       client.sendByteByByte(MqttWireClient.connect5(clientId(), true));
@@ -47,7 +47,7 @@ class Mqtt5CoreConformanceTest extends BaseTestConfig {
   }
 
   @Test
-  @ProtocolRequirement(specification = "MQTT-5.0", value = "MQTT-3.12.4-1")
+  @ProtocolRequirement(specification = "MQTT-5.0", value = "MQTT-3.12.4-1", source = ProtocolRequirement.MQTT_5_SOURCE)
   void pingReqReturnsPingResp() throws Exception {
     try (MqttWireClient client = connected()) {
       client.send(MqttWireClient.pingReq());
@@ -60,7 +60,7 @@ class Mqtt5CoreConformanceTest extends BaseTestConfig {
   }
 
   @Test
-  @ProtocolRequirement(specification = "MQTT-5.0", value = "Section 3.9 SUBACK")
+  @ProtocolRequirement(specification = "MQTT-5.0", value = "Section 3.9 SUBACK", source = ProtocolRequirement.MQTT_5_SOURCE)
   void subscribeReturnsSubAckReasonCode() throws Exception {
     int packetId = 141;
     try (MqttWireClient client = connected()) {
@@ -76,7 +76,7 @@ class Mqtt5CoreConformanceTest extends BaseTestConfig {
   }
 
   @Test
-  @ProtocolRequirement(specification = "MQTT-5.0", value = "Section 3.11 UNSUBACK")
+  @ProtocolRequirement(specification = "MQTT-5.0", value = "Section 3.11 UNSUBACK", source = ProtocolRequirement.MQTT_5_SOURCE)
   void unsubscribeReturnsSuccessfulUnsubAck() throws Exception {
     int subscribeId = 151;
     int unsubscribeId = 152;
@@ -99,7 +99,7 @@ class Mqtt5CoreConformanceTest extends BaseTestConfig {
   }
 
   @Test
-  @ProtocolRequirement(specification = "MQTT-5.0", value = "Section 4.3.2 QoS 1")
+  @ProtocolRequirement(specification = "MQTT-5.0", value = "Section 4.3.2 QoS 1", source = ProtocolRequirement.MQTT_5_SOURCE)
   void qos1PublishReturnsMatchingPubAck() throws Exception {
     int packetId = 161;
     try (MqttWireClient client = connected()) {
@@ -118,7 +118,7 @@ class Mqtt5CoreConformanceTest extends BaseTestConfig {
   }
 
   @Test
-  @ProtocolRequirement(specification = "MQTT-5.0", value = "Section 1.5.5 Variable Byte Integer")
+  @ProtocolRequirement(specification = "MQTT-5.0", value = "Section 1.5.5 Variable Byte Integer", source = ProtocolRequirement.MQTT_5_SOURCE)
   void variableByteIntegerBoundaryEncodingMatchesSpecification() {
     int[] values = {0, 1, 126, 127, 128, 16_383, 16_384, 2_097_151, 2_097_152, 268_435_455};
     int[] sizes =  {1, 1,   1,   1,   2,      2,      3,         3,         4,           4};
@@ -131,7 +131,7 @@ class Mqtt5CoreConformanceTest extends BaseTestConfig {
   }
 
   @Test
-  @ProtocolRequirement(specification = "MQTT-5.0", value = "Section 1.5 Network Transport")
+  @ProtocolRequirement(specification = "MQTT-5.0", value = "Section 1.5 Network Transport", source = ProtocolRequirement.MQTT_5_SOURCE)
   void connectAndPingMayShareOneTcpWrite() throws Exception {
     byte[] connect = MqttWireClient.connect5(clientId(), true);
     byte[] ping = MqttWireClient.pingReq();
