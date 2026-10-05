@@ -43,6 +43,10 @@ public final class MqttWireClient implements AutoCloseable {
     socket.setSoTimeout(timeoutMillis);
   }
 
+  public int readRawByte() throws IOException {
+    return input.read();
+  }
+
   public WirePacket readPacket() throws IOException {
     int header = input.read();
     if (header < 0) {
@@ -129,13 +133,24 @@ public final class MqttWireClient implements AutoCloseable {
   }
 
   public static byte[] connectWithProtocolLevel(String clientId, int level) {
+    return connectPacket("MQTT", level, 0x02, 30, new byte[0], clientId);
+  }
+
+  public static byte[] connectPacket(
+      String protocolName,
+      int level,
+      int connectFlags,
+      int keepAlive,
+      byte[] properties,
+      String clientId) {
     ByteArrayOutputStream body = new ByteArrayOutputStream();
-    writeUtf8(body, "MQTT");
+    writeUtf8(body, protocolName);
     body.write(level);
-    body.write(0x02);
-    writeUnsignedShort(body, 30);
+    body.write(connectFlags);
+    writeUnsignedShort(body, keepAlive);
     if (level == 5) {
-      writeVariableByteInteger(body, 0);
+      writeVariableByteInteger(body, properties.length);
+      body.writeBytes(properties);
     }
     writeUtf8(body, clientId);
     return packet(0x10, body.toByteArray());
@@ -198,11 +213,20 @@ public final class MqttWireClient implements AutoCloseable {
   }
 
   public static byte[] subscribe5(int packetId, String topicFilter, int qos) {
+    return subscribe5(packetId, new byte[0], topicFilter, qos & 0x03);
+  }
+
+  public static byte[] subscribe5(
+      int packetId,
+      byte[] properties,
+      String topicFilter,
+      int subscriptionOptions) {
     ByteArrayOutputStream body = new ByteArrayOutputStream();
     writeUnsignedShort(body, packetId);
-    writeVariableByteInteger(body, 0);
+    writeVariableByteInteger(body, properties.length);
+    body.writeBytes(properties);
     writeUtf8(body, topicFilter);
-    body.write(qos & 0x03);
+    body.write(subscriptionOptions & 0xff);
     return packet(0x82, body.toByteArray());
   }
 
