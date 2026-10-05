@@ -49,7 +49,7 @@ public class GetListener extends Listener {
         break;
 
       case RST:
-        protocol.close();
+        break;
     }
     return null;
   }
