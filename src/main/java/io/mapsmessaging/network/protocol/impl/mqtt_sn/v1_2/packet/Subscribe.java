@@ -25,6 +25,9 @@ import io.mapsmessaging.network.protocol.impl.mqtt.packet.MQTTPacket;
 import lombok.Getter;
 import lombok.ToString;
 
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+
 @ToString
 public class Subscribe extends MQTT_SNPacket {
 
@@ -43,7 +46,7 @@ public class Subscribe extends MQTT_SNPacket {
 
   private byte flags;
 
-  public Subscribe(Packet packet) {
+  public Subscribe(Packet packet) throws IOException {
     super(SUBSCRIBE);
     flags = packet.get();
 
@@ -52,10 +55,17 @@ public class Subscribe extends MQTT_SNPacket {
     topicIdType = (flags & 0b11);
 
     msgId = MQTTPacket.readShort(packet);
+    if (topicIdType == LONG_TOPIC_NAME) {
+      throw new IOException("Reserved MQTT-SN 1.2 TopicIdType");
+    }
     if (topicIdType == TOPIC_NAME) {
       byte[] tmp = new byte[packet.available()];
       packet.get(tmp, 0, tmp.length);
-      topicName = new String(tmp);
+      topicName = new String(tmp, StandardCharsets.UTF_8);
+    } else if (topicIdType == TOPIC_SHORT_NAME) {
+      byte[] tmp = new byte[2];
+      packet.get(tmp, 0, tmp.length);
+      topicName = new String(tmp, StandardCharsets.US_ASCII);
     } else {
       topicId = (short) MQTTPacket.readShort(packet);
     }
