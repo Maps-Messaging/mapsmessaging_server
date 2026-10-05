@@ -424,7 +424,7 @@ public abstract class Protocol implements SelectorCallback, MessageListener, Tim
     if(transformation == null){
       for(Map.Entry<String, InterServerTransformation> entry:destinationTransformerMap.entrySet()){
         if((entry.getKey().contains("+") || entry.getKey().contains("#"))
-            && DestinationSet.matches(entry.getKey(), name)){
+            && matchesTopicFilter(entry.getKey(), name)){
           transformation = entry.getValue();
           destinationTransformerMap.put(name, transformation);
           break;
