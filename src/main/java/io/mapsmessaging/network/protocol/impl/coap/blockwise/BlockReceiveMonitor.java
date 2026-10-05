@@ -41,7 +41,7 @@ public class BlockReceiveMonitor {
   }
 
   public void scanForIdle() {
-    long expired = System.currentTimeMillis() + 30_000;
+    long expired = System.currentTimeMillis() - 30_000;
     List<String> expiredList = new ArrayList<>();
     blockBasedPackets.entrySet().stream()
         .filter(entry -> entry.getValue().getLastAccess() < expired)
