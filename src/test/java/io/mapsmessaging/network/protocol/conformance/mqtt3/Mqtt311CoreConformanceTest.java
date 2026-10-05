@@ -23,7 +23,7 @@ class Mqtt311CoreConformanceTest extends BaseTestConfig {
   private static final int PORT = 1883;
 
   @Test
-  @ProtocolRequirement(specification = "MQTT-3.1.1", value = "MQTT-3.1.4-4")
+  @ProtocolRequirement(specification = "MQTT-3.1.1", value = "Section 3.2 CONNACK")
   void connectReturnsAcceptedConnAck() throws Exception {
     try (MqttWireClient client = new MqttWireClient("localhost", PORT)) {
       client.send(MqttWireClient.connect311(clientId(), true));
@@ -39,7 +39,7 @@ class Mqtt311CoreConformanceTest extends BaseTestConfig {
   }
 
   @Test
-  @ProtocolRequirement(specification = "MQTT-3.1.1", value = "MQTT-1.5.3-1")
+  @ProtocolRequirement(specification = "MQTT-3.1.1", value = "Section 1.5 Network Transport")
   void connectCanArriveOneByteAtATime() throws Exception {
     try (MqttWireClient client = new MqttWireClient("localhost", PORT)) {
       client.sendByteByByte(MqttWireClient.connect311(clientId(), true));
@@ -66,7 +66,7 @@ class Mqtt311CoreConformanceTest extends BaseTestConfig {
   }
 
   @Test
-  @ProtocolRequirement(specification = "MQTT-3.1.1", value = "MQTT-3.8.4-1")
+  @ProtocolRequirement(specification = "MQTT-3.1.1", value = "Section 3.9 SUBACK")
   void subscribeReturnsSubAckWithRequestedQos() throws Exception {
     int packetId = 41;
     try (MqttWireClient client = connected()) {
@@ -80,7 +80,7 @@ class Mqtt311CoreConformanceTest extends BaseTestConfig {
   }
 
   @Test
-  @ProtocolRequirement(specification = "MQTT-3.1.1", value = "MQTT-3.10.4-4")
+  @ProtocolRequirement(specification = "MQTT-3.1.1", value = "Section 3.11 UNSUBACK")
   void unsubscribeReturnsMatchingUnsubAck() throws Exception {
     int subscribeId = 51;
     int unsubscribeId = 52;
@@ -98,7 +98,7 @@ class Mqtt311CoreConformanceTest extends BaseTestConfig {
   }
 
   @Test
-  @ProtocolRequirement(specification = "MQTT-3.1.1", value = "MQTT-3.4.4-1")
+  @ProtocolRequirement(specification = "MQTT-3.1.1", value = "Section 4.3.2 QoS 1")
   void qos1PublishReturnsMatchingPubAck() throws Exception {
     int packetId = 61;
     try (MqttWireClient client = connected()) {
@@ -114,7 +114,7 @@ class Mqtt311CoreConformanceTest extends BaseTestConfig {
   }
 
   @Test
-  @ProtocolRequirement(specification = "MQTT-3.1.1", value = "MQTT-2.2.2-1")
+  @ProtocolRequirement(specification = "MQTT-3.1.1", value = "Section 1.5 Network Transport")
   void connectAndPingMayShareOneTcpWrite() throws Exception {
     byte[] connect = MqttWireClient.connect311(clientId(), true);
     byte[] ping = MqttWireClient.pingReq();
