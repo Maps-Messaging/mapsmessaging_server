@@ -86,6 +86,23 @@ public final class MqttWireClient implements AutoCloseable {
     return packet(0x10, body.toByteArray());
   }
 
+  public static byte[] connectWithRawClientId(
+      int level,
+      boolean cleanStart,
+      byte[] clientIdBytes) {
+    ByteArrayOutputStream body = new ByteArrayOutputStream();
+    writeUtf8(body, "MQTT");
+    body.write(level);
+    body.write(cleanStart ? 0x02 : 0x00);
+    writeUnsignedShort(body, 30);
+    if (level == 5) {
+      writeVariableByteInteger(body, 0);
+    }
+    writeUnsignedShort(body, clientIdBytes.length);
+    body.writeBytes(clientIdBytes);
+    return packet(0x10, body.toByteArray());
+  }
+
   public static byte[] connect311WithWill(
       String clientId,
       int keepAlive,
