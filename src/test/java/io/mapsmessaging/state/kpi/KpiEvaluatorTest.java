@@ -51,6 +51,8 @@ class KpiEvaluatorTest {
     final Map<String, Instant> lastSeen = new TreeMap<>();
     final Map<String, MtiStatusSnapshot> mti = new HashMap<>();
     final Map<String, FeedActivityRegistry.FeedState> feeds = new HashMap<>();
+    /** Base CoT type per asset; assets not listed are friendly drones. */
+    final Map<String, String> types = new HashMap<>();
     boolean cacheCleared;
     KpiEvaluator evaluator;
 
@@ -71,7 +73,8 @@ class KpiEvaluatorTest {
             return twins;
           },
           mti::get,
-          uid -> new ClassificationRegistry.Classification(ClassificationRegistry.Outcome.RESOLVED, "a-f-A-M-F-Q"),
+          uid -> new ClassificationRegistry.Classification(
+              ClassificationRegistry.Outcome.RESOLVED, types.getOrDefault(uid, "a-f-A-M-F-Q")),
           () -> Map.copyOf(feeds),
           () -> {
             cacheCleared = true;
@@ -170,6 +173,45 @@ class KpiEvaluatorTest {
     assertEquals(Band.AMBER, fleet.evaluator.getOverall());
     assertFalse(fleet.evaluator.isFullyRestored());
     assertTrue(fleet.evaluator.isUsable());
+  }
+
+  @Test
+  void non_friendly_assets_are_left_out_of_every_kpi() {
+    Fleet fleet = new Fleet(4, Map.of());
+    fleet.types.put("uas-1", "a-h-A-M-F-Q");
+    fleet.types.put("uas-2", "a-u-A");
+    fleet.evaluator.start();
+    fleet.run(2, () -> {
+      fleet.healthy();
+      fleet.mti.put("uas-1", new MtiStatusSnapshot("hold", fleet.clock.instant(), fleet.clock.instant().plusSeconds(600)));
+      fleet.mti.put("uas-2", new MtiStatusSnapshot("hold", fleet.clock.instant(), fleet.clock.instant().plusSeconds(600)));
+    });
+
+    KpiSnapshot latest = fleet.evaluator.getLatest();
+    assertEquals(2, latest.rosterSize());
+    assertEquals(2, latest.eligibleSize());
+    assertEquals(1.0, latest.value(KpiId.READINESS).value());
+    assertEquals(0.0, latest.value(KpiId.DEGRADED).value());
+    assertEquals(2, latest.value(KpiId.POSITION_STALE).denominator());
+  }
+
+  @Test
+  void an_asset_reclassified_as_hostile_drops_out_and_mti_unknown_keeps_a_friend_in() {
+    Fleet fleet = new Fleet(3, Map.of());
+    fleet.evaluator.start();
+    fleet.run(2, fleet::healthy);
+    assertEquals(3, fleet.evaluator.getLatest().rosterSize());
+
+    fleet.types.put("uas-0", "a-h-A-M-F-Q");
+    fleet.run(1, () -> {
+      fleet.healthy();
+      fleet.mti.put("uas-1", new MtiStatusSnapshot("unknown", fleet.clock.instant(), fleet.clock.instant().plusSeconds(600)));
+    });
+
+    KpiSnapshot latest = fleet.evaluator.getLatest();
+    assertEquals(2, latest.rosterSize());
+    assertEquals(2, latest.eligibleSize());
+    assertEquals(0.5, latest.value(KpiId.READINESS).value());
   }
 
   @Test

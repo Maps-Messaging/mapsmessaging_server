@@ -190,4 +190,27 @@ class KpiCalculatorTest {
     assertEquals(1, snapshot.value(KpiId.CLASSIFICATION_CORRECTNESS).denominator());
     assertEquals(1.0, snapshot.value(KpiId.CLASSIFICATION_CORRECTNESS).value());
   }
+
+  @Test
+  void friend_and_assumed_friend_are_friendly() {
+    assertTrue(KpiCalculator.isFriendly(classified("a-f-A-M-F-Q")));
+    assertTrue(KpiCalculator.isFriendly(classified("a-a-S-C-U")));
+    assertTrue(KpiCalculator.isFriendly(classified("a-F-G")));
+  }
+
+  @Test
+  void adversary_unknown_neutral_and_unclassified_assets_are_not_friendly() {
+    for (String type : List.of("a-h-A-M-F-Q", "a-s-A", "a-j-G", "a-k-G", "a-u-U", "a-p-A", "a-n-S-C-U")) {
+      assertFalse(KpiCalculator.isFriendly(classified(type)), type);
+    }
+    assertFalse(KpiCalculator.isFriendly(null));
+    assertFalse(KpiCalculator.isFriendly(classified(null)));
+    assertFalse(KpiCalculator.isFriendly(classified("")));
+    assertFalse(KpiCalculator.isFriendly(classified("a")));
+    assertFalse(KpiCalculator.isFriendly(classified("a-fx-A")));
+  }
+
+  private static ClassificationRegistry.Classification classified(String baseCotType) {
+    return new ClassificationRegistry.Classification(ClassificationRegistry.Outcome.RESOLVED, baseCotType);
+  }
 }

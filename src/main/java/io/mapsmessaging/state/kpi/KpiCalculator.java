@@ -79,6 +79,24 @@ final class KpiCalculator {
     };
   }
 
+  /**
+   * Whether the asset's own classification is friendly: CoT affiliation {@code f} (friend) or
+   * {@code a} (assumed friend). Read from the type before any MTI override, so MTI's own "unknown"
+   * verdict never takes an asset out of the KPIs. Hostile, suspect, joker, faker, neutral, unknown,
+   * pending and not-yet-classified assets are not friendly.
+   */
+  static boolean isFriendly(ClassificationRegistry.Classification classification) {
+    if (classification == null || classification.baseCotType() == null) {
+      return false;
+    }
+    String[] parts = classification.baseCotType().split("-");
+    if (parts.length < 2 || parts[1].length() != 1) {
+      return false;
+    }
+    char affiliation = Character.toLowerCase(parts[1].charAt(0));
+    return affiliation == 'f' || affiliation == 'a';
+  }
+
   /** Segment-wise comparison; {@code *} in the expected type matches any single segment. */
   static boolean matchesExpected(String actualType, String expectedType) {
     if (actualType == null) {
