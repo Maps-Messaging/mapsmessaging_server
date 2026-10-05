@@ -19,6 +19,7 @@
 
 package io.mapsmessaging.network.protocol.impl.nats;
 
+import io.mapsmessaging.MessageDaemon;
 import io.mapsmessaging.network.io.EndPoint;
 import io.mapsmessaging.network.io.Packet;
 import io.mapsmessaging.network.io.ServerPacket;
@@ -41,7 +42,8 @@ public class NatsProtocolFactory extends ProtocolImplFactory {
 
   @Override
   public ServerPacket getInitialPacket() {
-    return new InfoFrame(1024 * 1024);
+    MessageDaemon daemon = MessageDaemon.getInstance();
+    return new InfoFrame(1024 * 1024, daemon.getUuid().toString(), daemon.getId());
   }
 
   @Override
