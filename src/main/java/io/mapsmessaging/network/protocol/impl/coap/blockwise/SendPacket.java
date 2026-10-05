@@ -82,22 +82,19 @@ public class SendPacket {
     int offset = blockSize * index;
 
     //b)
-    blockSize = newSize;
-
-    //c)
     List<byte[]> sentBlocks = new ArrayList<>();
-    for(int x=0;x<index;x++){
+    for (int x = 0; x < index; x++) {
       sentBlocks.add(blocks.get(x));
     }
 
+    //c)
+    blockSize = newSize;
+    blocks.clear();
+    blocks.addAll(sentBlocks);
+
     //d)
-    byte[] remaining = new byte[(full.length - offset)];
+    byte[] remaining = new byte[full.length - offset];
     System.arraycopy(full, offset, remaining, 0, remaining.length);
     packList(remaining);
-
-    // e)
-    for(int x=0;x<index;x++){
-      blocks.add(sentBlocks.get(x));
-    }
   }
 }
