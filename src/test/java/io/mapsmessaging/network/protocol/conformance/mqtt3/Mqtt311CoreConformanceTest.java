@@ -121,13 +121,10 @@ class Mqtt311CoreConformanceTest extends BaseTestConfig {
   void qos2PublishCompletesFourStepExchange() throws Exception {
     int packetId = 71;
     try (MqttWireClient client = connected()) {
-      byte[] body = new byte[]{
-          0x00, 0x19,
-          'c','o','n','f','o','r','m','a','n','c','e','/','m','q','t','t','3','1','1','/','q','o','s','2',
-          0x00, (byte) packetId,
-          'x'
-      };
-      client.send(MqttWireClient.packet(0x34, body));
+      client.send(MqttWireClient.publishQos2_311(
+          packetId,
+          "conformance/mqtt311/qos2",
+          new byte[]{'x'}));
 
       WirePacket pubRec = client.readPacket();
       assertEquals(5, pubRec.type(), pubRec::toString);
