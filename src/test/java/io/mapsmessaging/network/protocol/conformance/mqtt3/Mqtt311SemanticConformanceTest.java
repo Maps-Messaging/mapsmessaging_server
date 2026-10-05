@@ -33,7 +33,7 @@ class Mqtt311SemanticConformanceTest extends BaseTestConfig {
   private static final String URL = "tcp://localhost:1883";
 
   @Test
-  @ProtocolRequirement(specification = "MQTT-3.1.1", value = "Section 3.3.1 RETAIN")
+  @ProtocolRequirement(specification = "MQTT-3.1.1", value = "Section 3.3.1 RETAIN", source = ProtocolRequirement.MQTT_311_SOURCE)
   void retainedMessagesAreDeliveredToNewSubscription() throws Exception {
     String prefix = topic("retained");
     try (MqttClient publisher = client();
@@ -65,7 +65,7 @@ class Mqtt311SemanticConformanceTest extends BaseTestConfig {
   }
 
   @Test
-  @ProtocolRequirement(specification = "MQTT-3.1.1", value = "Section 3.1.2.4 Clean Session")
+  @ProtocolRequirement(specification = "MQTT-3.1.1", value = "Section 3.1.2.4 Clean Session", source = ProtocolRequirement.MQTT_311_SOURCE)
   void persistentSessionQueuesQosOneAndTwoWhileOffline() throws Exception {
     String topic = topic("offline");
     String clientId = "mqtt311-offline-" + UUID.randomUUID();
@@ -91,7 +91,7 @@ class Mqtt311SemanticConformanceTest extends BaseTestConfig {
   }
 
   @Test
-  @ProtocolRequirement(specification = "MQTT-3.1.1", value = "Section 4.7.3 Topic Filter matching")
+  @ProtocolRequirement(specification = "MQTT-3.1.1", value = "Section 4.7.3 Topic Filter matching", source = ProtocolRequirement.MQTT_311_SOURCE)
   void overlappingSubscriptionsUsePermittedDeliverySemantics() throws Exception {
     String prefix = topic("overlap");
     String exact = prefix + "/value";
@@ -112,7 +112,7 @@ class Mqtt311SemanticConformanceTest extends BaseTestConfig {
   }
 
   @Test
-  @ProtocolRequirement(specification = "MQTT-3.1.1", value = "MQTT-4.7.2-1")
+  @ProtocolRequirement(specification = "MQTT-3.1.1", value = "MQTT-4.7.2-1", source = ProtocolRequirement.MQTT_311_SOURCE)
   void rootWildcardDoesNotMatchDollarPrefixedTopic() throws Exception {
     AtomicInteger received = new AtomicInteger();
     String systemTopic = "$maps/conformance/" + UUID.randomUUID();
@@ -129,7 +129,7 @@ class Mqtt311SemanticConformanceTest extends BaseTestConfig {
   }
 
   @Test
-  @ProtocolRequirement(specification = "MQTT-3.1.1", value = "Section 3.10 UNSUBSCRIBE")
+  @ProtocolRequirement(specification = "MQTT-3.1.1", value = "Section 3.10 UNSUBSCRIBE", source = ProtocolRequirement.MQTT_311_SOURCE)
   void unsubscribeStopsFurtherDelivery() throws Exception {
     String topic = topic("unsubscribe");
     AtomicInteger received = new AtomicInteger();
@@ -147,7 +147,7 @@ class Mqtt311SemanticConformanceTest extends BaseTestConfig {
   }
 
   @Test
-  @ProtocolRequirement(specification = "MQTT-3.1.1", value = "Section 3.9 SUBACK")
+  @ProtocolRequirement(specification = "MQTT-3.1.1", value = "Section 3.9 SUBACK", source = ProtocolRequirement.MQTT_311_SOURCE)
   void unauthorisedSubscriptionReturnsFailureCode() throws Exception {
     try (MqttWireClient client = new MqttWireClient("localhost", 1883)) {
       client.send(MqttWireClient.connect311("mqtt311-denied-" + UUID.randomUUID(), true));
