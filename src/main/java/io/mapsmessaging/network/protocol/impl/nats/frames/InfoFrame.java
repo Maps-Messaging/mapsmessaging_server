@@ -19,7 +19,6 @@
 
 package io.mapsmessaging.network.protocol.impl.nats.frames;
 
-import io.mapsmessaging.MessageDaemon;
 import io.mapsmessaging.network.io.Packet;
 import io.mapsmessaging.utilities.GsonFactory;
 import lombok.Getter;
@@ -39,6 +38,10 @@ public class InfoFrame extends NatsFrame {
   private InfoData infoData;
 
   public InfoFrame(int maxPayloadLength) {
+    this(maxPayloadLength, null, null);
+  }
+
+  public InfoFrame(int maxPayloadLength, String serverId, String serverName) {
     super();
     this.infoData = new InfoData();
     this.infoData.setClientId(counter.incrementAndGet());
@@ -49,8 +52,8 @@ public class InfoFrame extends NatsFrame {
     infoData.setPort(4222);
     infoData.setHeaders(true);
     infoData.setClientIp("127.0.0.1");
-    infoData.setServerId(MessageDaemon.getInstance().getUuid().toString());
-    infoData.setServerName(MessageDaemon.getInstance().getId());
+    infoData.setServerId(serverId);
+    infoData.setServerName(serverName);
     infoData.setJava(System.getProperty("java.version"));
   }
 
