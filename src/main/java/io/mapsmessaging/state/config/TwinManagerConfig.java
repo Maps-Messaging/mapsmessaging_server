@@ -319,7 +319,14 @@ public class TwinManagerConfig extends TwinManagerConfigDTO implements Config, C
 
   private List<TakServerDTO> parseAdditionalTakServers(Object value) {
     List<TakServerDTO> servers = new ArrayList<>();
-    if (!(value instanceof List<?> entries)) {
+    // The YAML loader replaces a one-entry list with that entry, so a single additional server
+    // arrives as ConfigurationProperties, not as a List.
+    List<?> entries;
+    if (value instanceof List<?> list) {
+      entries = list;
+    } else if (value instanceof ConfigurationProperties single) {
+      entries = List.of(single);
+    } else {
       return servers;
     }
     for (Object entry : entries) {
