@@ -21,28 +21,41 @@ package io.mapsmessaging.network.protocol.impl.coap;
 
 import io.mapsmessaging.network.protocol.impl.coap.packet.BasePacket;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 public class DuplicationManager {
 
-  private final int nstart; // Depth of outstanding
-  private final List<BasePacket> requestResponseMap;
+  private final Map<Integer, CachedResponse> requestResponseMap;
 
-  public DuplicationManager(int nstart){
-    requestResponseMap = new ArrayList<>();
-    this.nstart = nstart;
+  public DuplicationManager(){
+    requestResponseMap = new LinkedHashMap<>();
   }
 
   public synchronized void put(BasePacket response){
-    requestResponseMap.add(response);
-    while(requestResponseMap.size() > nstart){
-      requestResponseMap.remove(0).getMessageId();
-    }
+    purgeExpired();
+    requestResponseMap.put(
+        response.getMessageId(),
+        new CachedResponse(response, System.currentTimeMillis() + Constants.EXCHANGE_LIFETIME_MILLIS));
   }
 
   public synchronized BasePacket getResponse(int messageId){
-    return requestResponseMap.stream().filter(response -> response.getMessageId() == messageId).findFirst().orElse(null);
+    purgeExpired();
+    CachedResponse cached = requestResponseMap.get(messageId);
+    return cached == null ? null : cached.response();
   }
 
+  private void purgeExpired() {
+    long now = System.currentTimeMillis();
+    Iterator<CachedResponse> iterator = requestResponseMap.values().iterator();
+    while (iterator.hasNext()) {
+      if (iterator.next().expiresAt() <= now) {
+        iterator.remove();
+      }
+    }
+  }
+
+  private record CachedResponse(BasePacket response, long expiresAt) {
+  }
 }
