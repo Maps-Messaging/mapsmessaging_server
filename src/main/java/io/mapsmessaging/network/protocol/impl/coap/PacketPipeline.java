@@ -78,6 +78,9 @@ public class PacketPipeline {
 
   public void ack(BasePacket ackPacket) throws IOException {
     BasePacket sent = outstandingQueue.remove(ackPacket.getMessageId());
+    if (sent == null) {
+      return;
+    }
     BasePacket packet;
     if(sent.isComplete()){
       packet = sendQueue.poll();
