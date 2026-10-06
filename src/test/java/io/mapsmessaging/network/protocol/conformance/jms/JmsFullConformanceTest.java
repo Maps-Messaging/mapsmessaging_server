@@ -5,7 +5,6 @@
 package io.mapsmessaging.network.protocol.conformance.jms;
 
 import io.mapsmessaging.network.protocol.conformance.common.ProtocolRequirement;
-import io.mapsmessaging.network.protocol.impl.amqp.jms.BaseConnection;
 import jakarta.jms.ConnectionFactory;
 import jakarta.jms.DeliveryMode;
 import jakarta.jms.JMSConsumer;
@@ -23,7 +22,6 @@ import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
-import javax.naming.Context;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
@@ -33,7 +31,7 @@ import static org.junit.jupiter.api.Assertions.*;
 @Tag("conformance-full")
 @Tag("jms")
 @Tag("amqp10")
-class JmsFullConformanceTest extends BaseConnection {
+class JmsFullConformanceTest extends JmsConformanceSupport {
 
   private static final String JMS_SOURCE =
       "https://jakarta.ee/specifications/messaging/3.1/jakarta-messaging-spec-3.1.html";
@@ -50,7 +48,7 @@ class JmsFullConformanceTest extends BaseConnection {
     AtomicInteger first = new AtomicInteger();
     AtomicInteger second = new AtomicInteger();
 
-    try (Context naming = loadContext()) {
+    try (CloseableNamingContext naming = namingContext()) {
       ConnectionFactory factory = (ConnectionFactory) naming.lookup("qpidConnectionfactory");
       Topic topic = (Topic) naming.lookup("topicExchange");
 
@@ -92,7 +90,7 @@ class JmsFullConformanceTest extends BaseConnection {
       value = "Section 6.2: Session is a factory for QueueBrowser; browsing does not consume queue messages",
       source = JMS_SOURCE)
   void queueBrowserDoesNotConsumeMessages() throws Exception {
-    try (Context naming = loadContext()) {
+    try (CloseableNamingContext naming = namingContext()) {
       ConnectionFactory factory = (ConnectionFactory) naming.lookup("qpidConnectionfactory");
       try (JMSContext context = factory.createContext(JMSContext.AUTO_ACKNOWLEDGE)) {
         TemporaryQueue queue = context.createTemporaryQueue();
@@ -127,7 +125,7 @@ class JmsFullConformanceTest extends BaseConnection {
       value = "Sections 3.4.3, 3.4.9, 3.4.10 and 7.4: delivery mode, expiration and priority headers",
       source = JMS_SOURCE)
   void deliveryOptionsAreReflectedInReceivedHeaders() throws Exception {
-    try (Context naming = loadContext()) {
+    try (CloseableNamingContext naming = namingContext()) {
       ConnectionFactory factory = (ConnectionFactory) naming.lookup("qpidConnectionfactory");
       try (JMSContext context = factory.createContext(JMSContext.AUTO_ACKNOWLEDGE)) {
         TemporaryQueue queue = context.createTemporaryQueue();
@@ -154,7 +152,7 @@ class JmsFullConformanceTest extends BaseConnection {
       value = "Section 7.9: delivery delay prevents delivery before JMSDeliveryTime",
       source = JMS_SOURCE)
   void deliveryDelayDefersMessageAvailability() throws Exception {
-    try (Context naming = loadContext()) {
+    try (CloseableNamingContext naming = namingContext()) {
       ConnectionFactory factory = (ConnectionFactory) naming.lookup("qpidConnectionfactory");
       try (JMSContext context = factory.createContext(JMSContext.AUTO_ACKNOWLEDGE)) {
         TemporaryQueue queue = context.createTemporaryQueue();
@@ -178,7 +176,7 @@ class JmsFullConformanceTest extends BaseConnection {
       value = "Section 3.10.4: StreamMessage body is a stream of typed values",
       source = JMS_SOURCE)
   void streamMessageRoundTripsTypedValues() throws Exception {
-    try (Context naming = loadContext()) {
+    try (CloseableNamingContext naming = namingContext()) {
       ConnectionFactory factory = (ConnectionFactory) naming.lookup("qpidConnectionfactory");
       try (JMSContext context = factory.createContext(JMSContext.AUTO_ACKNOWLEDGE)) {
         TemporaryQueue queue = context.createTemporaryQueue();
@@ -204,7 +202,7 @@ class JmsFullConformanceTest extends BaseConnection {
       value = "Section 3.10.5: ObjectMessage contains a Serializable Java object",
       source = JMS_SOURCE)
   void objectMessageRoundTripsSerializableValue() throws Exception {
-    try (Context naming = loadContext()) {
+    try (CloseableNamingContext naming = namingContext()) {
       ConnectionFactory factory = (ConnectionFactory) naming.lookup("qpidConnectionfactory");
       try (JMSContext context = factory.createContext(JMSContext.AUTO_ACKNOWLEDGE)) {
         TemporaryQueue queue = context.createTemporaryQueue();
