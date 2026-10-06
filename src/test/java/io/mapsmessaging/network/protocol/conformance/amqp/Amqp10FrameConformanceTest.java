@@ -16,6 +16,7 @@ import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
 @Tag("conformance")
@@ -59,6 +60,62 @@ class Amqp10FrameConformanceTest extends BaseTestConfig {
       output.writeByte(1);
       output.writeByte(0);
       output.writeShort(0);
+      output.flush();
+
+      assertEventuallyClosed(socket);
+    }
+  }
+
+
+  @Test
+  @ProtocolRequirement(
+      specification = "AMQP-1.0",
+      value = "Part 2 section 2.3.1: frame body begins at DOFF*4 and DOFF must describe a position within SIZE",
+      source = SOURCE)
+  void dataOffsetBeyondFrameSizeIsRejected() throws Exception {
+    try (Socket socket = connectedTransport()) {
+      DataOutputStream output = new DataOutputStream(socket.getOutputStream());
+      output.writeInt(8);
+      output.writeByte(3);
+      output.writeByte(0);
+      output.writeShort(0);
+      output.flush();
+
+      assertEventuallyClosed(socket);
+    }
+  }
+
+  @Test
+  @ProtocolRequirement(
+      specification = "AMQP-1.0",
+      value = "Part 2 section 2.3.1: AMQP frame type is 0x00; SASL frame type 0x01 is defined only for SASL framing",
+      source = SOURCE)
+  void unknownFrameTypeIsRejected() throws Exception {
+    try (Socket socket = connectedTransport()) {
+      DataOutputStream output = new DataOutputStream(socket.getOutputStream());
+      output.writeInt(8);
+      output.writeByte(2);
+      output.writeByte(0x7f);
+      output.writeShort(0);
+      output.flush();
+
+      assertEventuallyClosed(socket);
+    }
+  }
+
+  @Test
+  @ProtocolRequirement(
+      specification = "AMQP-1.0",
+      value = "Part 2 section 2.4.1: prior to negotiation max-frame-size is 512 octets",
+      source = SOURCE)
+  void preOpenFrameLargerThanInitialMaximumIsRejected() throws Exception {
+    try (Socket socket = connectedTransport()) {
+      DataOutputStream output = new DataOutputStream(socket.getOutputStream());
+      output.writeInt(513);
+      output.writeByte(2);
+      output.writeByte(0);
+      output.writeShort(0);
+      output.write(new byte[505]);
       output.flush();
 
       assertEventuallyClosed(socket);
