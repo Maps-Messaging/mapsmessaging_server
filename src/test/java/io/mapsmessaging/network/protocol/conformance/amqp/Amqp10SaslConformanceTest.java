@@ -6,6 +6,9 @@ package io.mapsmessaging.network.protocol.conformance.amqp;
 
 import io.mapsmessaging.network.protocol.conformance.common.ProtocolRequirement;
 import io.mapsmessaging.test.BaseTestConfig;
+import jakarta.jms.Connection;
+import jakarta.jms.JMSException;
+import org.apache.qpid.jms.JmsConnectionFactory;
 import java.io.DataInputStream;
 import java.net.Socket;
 import java.util.Arrays;
@@ -13,6 +16,7 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -64,4 +68,34 @@ class Amqp10SaslConformanceTest extends BaseTestConfig {
       assertEquals(0x40, frameRemainder[bodyOffset + 2] & 0xff, "Expected SASL-MECHANISMS performative");
     }
   }
+  @Test
+  @ProtocolRequirement(
+      specification = "AMQP-1.0",
+      value = "Part 5 section 5.3: successful SASL exchange authenticates before AMQP connection establishment",
+      source = SECURITY_SOURCE)
+  void validScramCredentialsEstablishAuthenticatedAmqpConnection() throws Exception {
+    JmsConnectionFactory factory =
+        new JmsConnectionFactory("admin", getPassword("admin"), "amqp://localhost:" + SASL_PORT);
+
+    try (Connection connection = factory.createConnection()) {
+      connection.start();
+    }
+  }
+
+  @Test
+  @ProtocolRequirement(
+      specification = "AMQP-1.0",
+      value = "Part 5 sections 5.3.3 and 5.3.5: failed authentication produces non-OK SASL outcome and no AMQP connection",
+      source = SECURITY_SOURCE)
+  void invalidScramCredentialsAreRejected() {
+    JmsConnectionFactory factory =
+        new JmsConnectionFactory("admin", "not-the-password", "amqp://localhost:" + SASL_PORT);
+
+    assertThrows(JMSException.class, () -> {
+      try (Connection connection = factory.createConnection()) {
+        connection.start();
+      }
+    });
+  }
+
 }
