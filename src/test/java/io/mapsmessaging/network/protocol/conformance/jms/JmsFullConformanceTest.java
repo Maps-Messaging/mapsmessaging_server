@@ -133,7 +133,7 @@ class JmsFullConformanceTest extends JmsConformanceSupport {
   @Test
   @ProtocolRequirement(
       specification = "Jakarta-Messaging-3.1",
-      value = "Sections 3.4.3, 3.4.9, 3.4.10 and 7.4: delivery mode, expiration and priority headers",
+      value = "Sections 3.4.2, 3.4.9, 3.4.10 and 7.4: delivery mode, expiration and priority headers",
       source = JMS_SOURCE)
   void deliveryOptionsAreReflectedInReceivedHeaders() throws Exception {
     try (CloseableNamingContext naming = namingContext();
@@ -190,7 +190,7 @@ class JmsFullConformanceTest extends JmsConformanceSupport {
   @Test
   @ProtocolRequirement(
       specification = "Jakarta-Messaging-3.1",
-      value = "Section 3.10.4: StreamMessage body is a stream of typed values",
+      value = "Sections 3.11 and 3.11.3: StreamMessage body is a sequential stream of typed values",
       source = JMS_SOURCE)
   void streamMessageRoundTripsTypedValues() throws Exception {
     try (CloseableNamingContext naming = namingContext();
@@ -218,7 +218,7 @@ class JmsFullConformanceTest extends JmsConformanceSupport {
   @Test
   @ProtocolRequirement(
       specification = "Jakarta-Messaging-3.1",
-      value = "Section 3.10.5: ObjectMessage contains a Serializable Java object",
+      value = "Section 3.11: ObjectMessage contains a Serializable Java object",
       source = JMS_SOURCE)
   void objectMessageRoundTripsSerializableValue() throws Exception {
     try (CloseableNamingContext naming = namingContext();

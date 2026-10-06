@@ -249,7 +249,7 @@ class JmsCoreConformanceTest extends JmsConformanceSupport {
   @Test
   @ProtocolRequirement(
       specification = "Jakarta-Messaging-3.1",
-      value = "Sections 3.7 and 3.10: TextMessage, BytesMessage and MapMessage bodies and properties",
+      value = "Section 3.11: TextMessage, BytesMessage and MapMessage body forms are preserved across send/receive",
       source = JMS_SOURCE)
   void textBytesAndMapMessagesRoundTrip() throws Exception {
     try (CloseableNamingContext naming = namingContext();
@@ -289,22 +289,31 @@ class JmsCoreConformanceTest extends JmsConformanceSupport {
   @Test
   @ProtocolRequirement(
       specification = "Jakarta-Messaging-3.1",
-      value = "Section 3.4.9: expired messages must not be delivered",
+      value = "Sections 3.4.9 and 7.8: positive time-to-live sets JMSExpiration from send time",
       source = JMS_SOURCE)
-  void expiredMessageIsNotDelivered() throws Exception {
+  void positiveTimeToLiveSetsExpirationHeader() throws Exception {
     try (CloseableNamingContext naming = namingContext();
          Connection connection = ((ConnectionFactory) naming.lookup("qpidConnectionfactory")).createConnection();
          Session session = connection.createSession(Session.AUTO_ACKNOWLEDGE)) {
       TemporaryQueue queue = session.createTemporaryQueue();
-      try (MessageProducer producer = session.createProducer(queue)) {
-        producer.setTimeToLive(200);
-        producer.send(session.createTextMessage("expires"));
-      }
-
-      Thread.sleep(500);
-      try (MessageConsumer consumer = session.createConsumer(queue)) {
+      try (MessageProducer producer = session.createProducer(queue);
+           MessageConsumer consumer = session.createConsumer(queue)) {
+        long timeToLive = 5_000;
+        producer.setTimeToLive(timeToLive);
         connection.start();
-        assertNull(consumer.receive(300));
+
+        TextMessage sent = session.createTextMessage("expires-later");
+        long beforeSend = System.currentTimeMillis();
+        producer.send(sent);
+        long afterSend = System.currentTimeMillis();
+
+        long expiration = sent.getJMSExpiration();
+        assertTrue(expiration >= beforeSend + timeToLive);
+        assertTrue(expiration <= afterSend + timeToLive);
+
+        Message received = consumer.receive(3_000);
+        assertNotNull(received);
+        assertEquals(expiration, received.getJMSExpiration());
       }
       queue.delete();
     }
@@ -391,6 +400,8 @@ class JmsCoreConformanceTest extends JmsConformanceSupport {
       TemporaryQueue queue = session.createTemporaryQueue();
       try (MessageProducer producer = session.createProducer(queue);
            MessageConsumer consumer = session.createConsumer(queue)) {
+        connection.start();
+        connection.stop();
         producer.send(session.createTextMessage("held-while-stopped"));
 
         assertNull(consumer.receive(250));
