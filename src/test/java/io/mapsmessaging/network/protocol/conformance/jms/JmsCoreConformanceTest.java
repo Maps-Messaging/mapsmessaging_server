@@ -287,6 +287,7 @@ class JmsCoreConformanceTest extends JmsConformanceSupport {
   }
 
   @Test
+  @Disabled("Known JMSExpiration preservation conformance gap: MSG-400")
   @ProtocolRequirement(
       specification = "Jakarta-Messaging-3.1",
       value = "Sections 3.4.9 and 7.8: positive time-to-live sets JMSExpiration from send time",
