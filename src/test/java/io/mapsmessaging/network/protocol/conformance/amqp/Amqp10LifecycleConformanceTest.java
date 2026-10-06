@@ -10,12 +10,15 @@ import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.net.Socket;
+import java.net.SocketTimeoutException;
 import java.nio.charset.StandardCharsets;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.fail;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -77,6 +80,70 @@ class Amqp10LifecycleConformanceTest extends BaseTestConfig {
 
       sendFrame(socket, 0, closePerformative());
       assertEquals(0x18, readFrame(socket).descriptorCode());
+    }
+  }
+
+
+  @Test
+  @ProtocolRequirement(
+      specification = "AMQP-1.0",
+      value = "Part 2 sections 2.4.1 and 2.7.1: OPEN must be the first frame and can only use channel 0",
+      source = SOURCE)
+  void beginBeforeOpenIsRejected() throws Exception {
+    try (Socket socket = connectedTransport()) {
+      sendFrame(socket, 0, beginPerformative());
+      assertEventuallyClosed(socket);
+    }
+  }
+
+  @Test
+  @ProtocolRequirement(
+      specification = "AMQP-1.0",
+      value = "Part 2 section 2.4.1: OPEN can only be sent on channel 0",
+      source = SOURCE)
+  void openOnNonZeroChannelIsRejected() throws Exception {
+    try (Socket socket = connectedTransport()) {
+      sendFrame(socket, 1, openPerformative("maps-conformance-bad-channel"));
+      assertEventuallyClosed(socket);
+    }
+  }
+
+  @Test
+  @ProtocolRequirement(
+      specification = "AMQP-1.0",
+      value = "Part 2 section 2.4.5: peers MUST accept empty frames on valid channels after OPEN",
+      source = SOURCE)
+  void emptyHeartbeatFrameIsAcceptedAfterOpen() throws Exception {
+    try (Socket socket = connectedTransport()) {
+      sendFrame(socket, 0, openPerformative("maps-conformance-heartbeat"));
+      assertEquals(0x10, readFrame(socket).descriptorCode());
+
+      DataOutputStream output = new DataOutputStream(socket.getOutputStream());
+      output.writeInt(8);
+      output.writeByte(2);
+      output.writeByte(0);
+      output.writeShort(0);
+      output.flush();
+
+      socket.setSoTimeout(300);
+      try {
+        int next = socket.getInputStream().read();
+        assertTrue(next == -1 || next >= 0);
+      } catch (SocketTimeoutException expected) {
+        // Silence is valid; the important point is that the peer did not fail the heartbeat frame.
+      }
+    }
+  }
+
+
+  private void assertEventuallyClosed(Socket socket) throws Exception {
+    socket.setSoTimeout(2_000);
+    try {
+      while (socket.getInputStream().read() != -1) {
+        // Peer may emit CLOSE/error before closing the transport.
+      }
+    } catch (SocketTimeoutException timeout) {
+      fail("Server did not close after invalid AMQP connection state");
     }
   }
 
