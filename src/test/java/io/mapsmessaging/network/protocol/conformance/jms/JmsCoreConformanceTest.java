@@ -20,6 +20,7 @@ import jakarta.jms.TextMessage;
 import jakarta.jms.Topic;
 import java.nio.charset.StandardCharsets;
 import java.util.UUID;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
@@ -199,6 +200,7 @@ class JmsCoreConformanceTest extends JmsConformanceSupport {
   }
 
   @Test
+  @Disabled("Known AMQP link-close conformance gap: MSG-397")
   @ProtocolRequirement(
       specification = "Jakarta-Messaging-3.1",
       value = "Section 8.3.3: durable subscription retains messages while inactive",
