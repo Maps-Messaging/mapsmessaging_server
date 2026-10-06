@@ -12,9 +12,13 @@ import jakarta.jms.MessageConsumer;
 import jakarta.jms.MessageProducer;
 import jakarta.jms.Session;
 import jakarta.jms.TemporaryQueue;
+import jakarta.jms.TextMessage;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 
 @Tag("conformance")
 @Tag("conformance-core")
@@ -38,7 +42,9 @@ class JmsUnidentifiedProducerConformanceTest extends JmsConformanceSupport {
                  .createContext(JMSContext.AUTO_ACKNOWLEDGE)) {
       TemporaryQueue queue = context.createTemporaryQueue();
       context.createProducer().send(queue, "simplified");
-      context.createConsumer(queue).receive(3_000);
+      TextMessage received =
+          assertInstanceOf(TextMessage.class, context.createConsumer(queue).receive(3_000));
+      assertEquals("simplified", received.getText());
     }
   }
 
@@ -58,7 +64,8 @@ class JmsUnidentifiedProducerConformanceTest extends JmsConformanceSupport {
            MessageConsumer consumer = session.createConsumer(queue)) {
         connection.start();
         producer.send(queue, session.createTextMessage("classic-unidentified"));
-        consumer.receive(3_000);
+        TextMessage received = assertInstanceOf(TextMessage.class, consumer.receive(3_000));
+        assertEquals("classic-unidentified", received.getText());
       }
       queue.delete();
     }
