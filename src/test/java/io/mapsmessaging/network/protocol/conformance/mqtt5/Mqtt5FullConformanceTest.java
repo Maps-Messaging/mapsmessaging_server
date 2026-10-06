@@ -4,6 +4,7 @@
  */
 package io.mapsmessaging.network.protocol.conformance.mqtt5;
 
+import io.mapsmessaging.network.protocol.conformance.common.CloseableMqtt5Client;
 import io.mapsmessaging.network.protocol.conformance.common.MqttWireClient;
 import io.mapsmessaging.network.protocol.conformance.common.MqttWireClient.WirePacket;
 import io.mapsmessaging.network.protocol.conformance.common.ProtocolRequirement;
@@ -17,7 +18,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import org.eclipse.paho.mqttv5.client.IMqttToken;
 import org.eclipse.paho.mqttv5.client.MqttCallback;
-import org.eclipse.paho.mqttv5.client.MqttClient;
 import org.eclipse.paho.mqttv5.client.MqttConnectionOptions;
 import org.eclipse.paho.mqttv5.client.MqttConnectionOptionsBuilder;
 import org.eclipse.paho.mqttv5.client.MqttDisconnectResponse;
@@ -44,7 +44,7 @@ class Mqtt5FullConformanceTest extends BaseTestConfig {
       value = "Section 3.2.2.3.14 Server Keep Alive [MQTT-3.2.2-21]",
       source = ProtocolRequirement.MQTT_5_SOURCE)
   void serverKeepAliveOverridesLargerClientValue() throws Exception {
-    try (MqttClient client = client()) {
+    try (CloseableMqtt5Client client = client()) {
       MqttConnectionOptions options = new MqttConnectionOptionsBuilder()
           .cleanStart(true)
           .sessionExpiryInterval(0L)
@@ -69,7 +69,7 @@ class Mqtt5FullConformanceTest extends BaseTestConfig {
     byte[] expected = "delayed-will".getBytes(StandardCharsets.UTF_8);
     AtomicReference<byte[]> received = new AtomicReference<>();
 
-    try (MqttClient subscriber = client()) {
+    try (CloseableMqtt5Client subscriber = client()) {
       subscriber.setCallback(callback((name, message) -> received.set(message.getPayload())));
       subscriber.connect(options(true, 0));
       subscriber.subscribe(willTopic, 1);
@@ -108,7 +108,7 @@ class Mqtt5FullConformanceTest extends BaseTestConfig {
     byte[] expiry60 = sessionExpiryProperty(60);
 
     try (MqttWireClient subscriber = new MqttWireClient("localhost", 1883);
-         MqttClient publisher = client()) {
+         CloseableMqtt5Client publisher = client()) {
       subscriber.send(MqttWireClient.connect5(clientId, true, 30, expiry60));
       WirePacket connAck = subscriber.readPacket();
       assertEquals(0, connAck.body()[1] & 0xff);
@@ -154,8 +154,8 @@ class Mqtt5FullConformanceTest extends BaseTestConfig {
     String topic = topic("publication-expiry");
     AtomicReference<String> received = new AtomicReference<>();
 
-    try (MqttClient subscriber = new MqttClient(URL, clientId, new MemoryPersistence());
-         MqttClient publisher = client()) {
+    try (CloseableMqtt5Client subscriber = new CloseableMqtt5Client(URL, clientId);
+         CloseableMqtt5Client publisher = client()) {
       subscriber.setCallback(callback((name, message) ->
           received.set(new String(message.getPayload(), StandardCharsets.UTF_8))));
       subscriber.connect(options(true, 60));
@@ -195,8 +195,8 @@ class Mqtt5FullConformanceTest extends BaseTestConfig {
     String topic = topic("maximum-packet");
     AtomicInteger received = new AtomicInteger();
 
-    try (MqttClient subscriber = client();
-         MqttClient publisher = client()) {
+    try (CloseableMqtt5Client subscriber = client();
+         CloseableMqtt5Client publisher = client()) {
       subscriber.setCallback(callback((name, message) -> received.incrementAndGet()));
       MqttConnectionOptions limited = new MqttConnectionOptionsBuilder()
           .cleanStart(true)
@@ -227,7 +227,7 @@ class Mqtt5FullConformanceTest extends BaseTestConfig {
     byte[] receiveMaximumTwo = new byte[]{0x21, 0x00, 0x02};
 
     try (MqttWireClient subscriber = new MqttWireClient("localhost", 1883);
-         MqttClient publisher = client()) {
+         CloseableMqtt5Client publisher = client()) {
       subscriber.send(MqttWireClient.connect5(
           "mqtt5-receive-max-" + UUID.randomUUID(),
           true,
@@ -325,8 +325,8 @@ class Mqtt5FullConformanceTest extends BaseTestConfig {
     String topic = topic("retain-as-published");
     AtomicReference<MqttMessage> received = new AtomicReference<>();
 
-    try (MqttClient subscriber = client();
-         MqttClient publisher = client()) {
+    try (CloseableMqtt5Client subscriber = client();
+         CloseableMqtt5Client publisher = client()) {
       subscriber.setCallback(callback((name, message) -> received.set(message)));
       subscriber.connect(options(true, 0));
       MqttSubscription subscription = new MqttSubscription(topic, 1);
@@ -358,8 +358,8 @@ class Mqtt5FullConformanceTest extends BaseTestConfig {
     String topic = topic("retain-handling");
     AtomicInteger received = new AtomicInteger();
 
-    try (MqttClient publisher = client();
-         MqttClient subscriber = client()) {
+    try (CloseableMqtt5Client publisher = client();
+         CloseableMqtt5Client subscriber = client()) {
       publisher.connect(options(true, 0));
       MqttMessage retained = new MqttMessage("stored".getBytes(StandardCharsets.UTF_8));
       retained.setQos(1);
@@ -382,8 +382,8 @@ class Mqtt5FullConformanceTest extends BaseTestConfig {
     }
   }
 
-  private MqttClient client() throws Exception {
-    return new MqttClient(URL, "mqtt5-full-" + UUID.randomUUID(), new MemoryPersistence());
+  private CloseableMqtt5Client client() throws Exception {
+    return new CloseableMqtt5Client(URL, "mqtt5-full-" + UUID.randomUUID());
   }
 
   private MqttConnectionOptions options(boolean cleanStart, long sessionExpiry) {
