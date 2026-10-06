@@ -119,6 +119,10 @@ final class RawStompConnection implements AutoCloseable {
     return input.read();
   }
 
+  void setReadTimeout(int timeoutMillis) throws IOException {
+    socket.setSoTimeout(timeoutMillis);
+  }
+
   @Override
   public void close() throws IOException {
     socket.close();
