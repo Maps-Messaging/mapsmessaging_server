@@ -4,6 +4,7 @@
  */
 package io.mapsmessaging.network.protocol.conformance.mqtt3;
 
+import io.mapsmessaging.network.protocol.conformance.common.CloseableMqtt311Client;
 import io.mapsmessaging.network.protocol.conformance.common.MqttWireClient;
 import io.mapsmessaging.network.protocol.conformance.common.ProtocolRequirement;
 import io.mapsmessaging.test.BaseTestConfig;
@@ -19,7 +20,6 @@ import org.eclipse.paho.client.mqttv3.MqttCallback;
 import org.eclipse.paho.client.mqttv3.MqttClient;
 import org.eclipse.paho.client.mqttv3.MqttConnectOptions;
 import org.eclipse.paho.client.mqttv3.MqttMessage;
-import org.eclipse.paho.client.mqttv3.persist.MemoryPersistence;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
@@ -36,8 +36,8 @@ class Mqtt311SemanticConformanceTest extends BaseTestConfig {
   @ProtocolRequirement(specification = "MQTT-3.1.1", value = "Section 3.3.1 RETAIN", source = ProtocolRequirement.MQTT_311_SOURCE)
   void retainedMessagesAreDeliveredToNewSubscription() throws Exception {
     String prefix = topic("retained");
-    try (MqttClient publisher = client();
-         MqttClient subscriber = client()) {
+    try (CloseableMqtt311Client publisher = client();
+         CloseableMqtt311Client subscriber = client()) {
       connect(publisher, true);
       for (int qos = 0; qos <= 2; qos++) {
         MqttMessage message = new MqttMessage(("retained-" + qos).getBytes(StandardCharsets.UTF_8));
@@ -71,8 +71,8 @@ class Mqtt311SemanticConformanceTest extends BaseTestConfig {
     String clientId = "mqtt311-offline-" + UUID.randomUUID();
     AtomicInteger received = new AtomicInteger();
 
-    try (MqttClient subscriber = new MqttClient(URL, clientId, new MemoryPersistence());
-         MqttClient publisher = client()) {
+    try (CloseableMqtt311Client subscriber = new CloseableMqtt311Client(URL, clientId);
+         CloseableMqtt311Client publisher = client()) {
       subscriber.setCallback(callback((name, message) -> received.incrementAndGet()));
       MqttConnectOptions persistent = options(false);
       subscriber.connect(persistent);
@@ -97,7 +97,7 @@ class Mqtt311SemanticConformanceTest extends BaseTestConfig {
     String exact = prefix + "/value";
     List<Integer> qosValues = new ArrayList<>();
 
-    try (MqttClient client = client()) {
+    try (CloseableMqtt311Client client = client()) {
       client.setCallback(callback((name, message) -> qosValues.add(message.getQos())));
       connect(client, true);
       client.subscribe(prefix + "/#", 2);
@@ -117,7 +117,7 @@ class Mqtt311SemanticConformanceTest extends BaseTestConfig {
     AtomicInteger received = new AtomicInteger();
     String systemTopic = "$maps/conformance/" + UUID.randomUUID();
 
-    try (MqttClient client = client()) {
+    try (CloseableMqtt311Client client = client()) {
       client.setCallback(callback((name, message) -> received.incrementAndGet()));
       connect(client, true);
       client.subscribe("#", 1);
@@ -134,7 +134,7 @@ class Mqtt311SemanticConformanceTest extends BaseTestConfig {
     String topic = topic("unsubscribe");
     AtomicInteger received = new AtomicInteger();
 
-    try (MqttClient client = client()) {
+    try (CloseableMqtt311Client client = client()) {
       client.setCallback(callback((name, message) -> received.incrementAndGet()));
       connect(client, true);
       client.subscribe(topic, 1);
@@ -162,8 +162,8 @@ class Mqtt311SemanticConformanceTest extends BaseTestConfig {
     }
   }
 
-  private MqttClient client() throws Exception {
-    return new MqttClient(URL, "mqtt311-" + UUID.randomUUID(), new MemoryPersistence());
+  private CloseableMqtt311Client client() throws Exception {
+    return new CloseableMqtt311Client(URL, "mqtt311-" + UUID.randomUUID());
   }
 
   private MqttConnectOptions options(boolean cleanSession) {
