@@ -28,7 +28,6 @@ class Amqp10HeaderConformanceTest extends BaseTestConfig {
       "https://docs.oasis-open.org/amqp/core/v1.0/os/amqp-core-transport-v1.0-os.html";
 
   @Test
-  @Disabled("Known conformance gap: MSG-397")
   @ProtocolRequirement(
       specification = "AMQP-1.0",
       value = "Part 2 section 2.2 Version Negotiation: supported version header is echoed",
@@ -43,6 +42,7 @@ class Amqp10HeaderConformanceTest extends BaseTestConfig {
   }
 
   @Test
+  @Disabled("Known conformance gap: MSG-394")
   @ProtocolRequirement(
       specification = "AMQP-1.0",
       value = "Part 2 section 2.2 Version Negotiation: unsupported version returns supported header then closes",
@@ -58,7 +58,6 @@ class Amqp10HeaderConformanceTest extends BaseTestConfig {
       assertConnectionCloses(socket);
     }
   }
-
 
   private Socket connect() throws Exception {
     Socket socket = new Socket(HOST, PORT);
