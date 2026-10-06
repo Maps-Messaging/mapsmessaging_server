@@ -207,6 +207,131 @@ class Stomp12ConformanceTest extends StompBaseTest {
     }
   }
 
+
+  @Test
+  @ProtocolRequirement(
+      specification = SPEC,
+      value = "Section SEND: destination header is REQUIRED; unprocessable SEND MUST return ERROR then close",
+      source = SOURCE)
+  void sendWithoutDestinationIsRejected() throws Exception {
+    try (RawStompConnection connection = connected()) {
+      connection.send(
+          "SEND",
+          new LinkedHashMap<>(),
+          "payload".getBytes(StandardCharsets.UTF_8),
+          false,
+          true);
+
+      assertEquals("ERROR", connection.readFrame().command());
+      assertEquals(-1, connection.read());
+    }
+  }
+
+  @Test
+  @ProtocolRequirement(
+      specification = SPEC,
+      value = "Section SUBSCRIBE id Header: subscription identifiers MUST be unique within a connection",
+      source = SOURCE)
+  void duplicateSubscriptionIdIsRejected() throws Exception {
+    String firstDestination = "/topic/stomp-duplicate-id-a-" + UUID.randomUUID();
+    String secondDestination = "/topic/stomp-duplicate-id-b-" + UUID.randomUUID();
+
+    try (RawStompConnection connection = connected()) {
+      subscribe(connection, firstDestination, "duplicate-sub", "auto");
+
+      Map<String, String> headers = new LinkedHashMap<>();
+      headers.put("id", "duplicate-sub");
+      headers.put("destination", secondDestination);
+      connection.send("SUBSCRIBE", headers, new byte[0], false, false);
+
+      assertEquals("ERROR", connection.readFrame().command());
+      assertEquals(-1, connection.read());
+    }
+  }
+
+  @Test
+  @ProtocolRequirement(
+      specification = SPEC,
+      value = "Section UNSUBSCRIBE: id header is REQUIRED and MUST match an existing subscription",
+      source = SOURCE)
+  void unsubscribeWithoutIdIsRejected() throws Exception {
+    try (RawStompConnection connection = connected()) {
+      connection.send("UNSUBSCRIBE", new LinkedHashMap<>(), new byte[0], false, false);
+
+      assertEquals("ERROR", connection.readFrame().command());
+      assertEquals(-1, connection.read());
+    }
+  }
+
+  @Test
+  @ProtocolRequirement(
+      specification = SPEC,
+      value = "Sections BEGIN, COMMIT and ABORT: transaction header is REQUIRED",
+      source = SOURCE)
+  void transactionCommandsWithoutTransactionHeaderAreRejected() throws Exception {
+    for (String command : new String[] {"BEGIN", "COMMIT", "ABORT"}) {
+      try (RawStompConnection connection = connected()) {
+        connection.send(command, new LinkedHashMap<>(), new byte[0], false, false);
+
+        assertEquals("ERROR", connection.readFrame().command());
+        assertEquals(-1, connection.read());
+      }
+    }
+  }
+
+  @Test
+  @ProtocolRequirement(
+      specification = SPEC,
+      value = "Section BEGIN: transaction identifiers MUST be unique within the same connection",
+      source = SOURCE)
+  void duplicateTransactionIdIsRejected() throws Exception {
+    try (RawStompConnection connection = connected()) {
+      Map<String, String> headers = new LinkedHashMap<>();
+      headers.put("transaction", "tx-duplicate");
+      headers.put("receipt", "tx-started");
+      connection.send("BEGIN", headers, new byte[0], false, false);
+      assertReceipt(connection.readFrame(), "tx-started");
+
+      Map<String, String> duplicate = new LinkedHashMap<>();
+      duplicate.put("transaction", "tx-duplicate");
+      connection.send("BEGIN", duplicate, new byte[0], false, false);
+
+      assertEquals("ERROR", connection.readFrame().command());
+      assertEquals(-1, connection.read());
+    }
+  }
+
+  @Test
+  @ProtocolRequirement(
+      specification = SPEC,
+      value = "Section DISCONNECT: graceful shutdown uses receipt and server returns matching RECEIPT",
+      source = SOURCE)
+  void disconnectReceiptConfirmsGracefulShutdown() throws Exception {
+    try (RawStompConnection connection = connected()) {
+      Map<String, String> headers = new LinkedHashMap<>();
+      headers.put("receipt", "disconnect-77");
+      connection.send("DISCONNECT", headers, new byte[0], false, false);
+
+      assertReceipt(connection.readFrame(), "disconnect-77");
+    }
+  }
+
+  @Test
+  @ProtocolRequirement(
+      specification = SPEC,
+      value = "Section Value Encoding: undefined header escape sequences MUST be treated as fatal protocol errors",
+      source = SOURCE)
+  void undefinedHeaderEscapeIsFatalProtocolError() throws Exception {
+    try (RawStompConnection connection = connected()) {
+      String frame =
+          "SEND\ndestination:/topic/stomp-invalid-escape\ninvalid:value\\tbad\n\npayload\u0000";
+      connection.sendBytes(frame.getBytes(StandardCharsets.UTF_8));
+
+      assertEquals("ERROR", connection.readFrame().command());
+      assertEquals(-1, connection.read());
+    }
+  }
+
   private RawStompConnection connected() throws Exception {
     RawStompConnection connection = new RawStompConnection(8674);
     connection.connect("1.2", "0,0");
