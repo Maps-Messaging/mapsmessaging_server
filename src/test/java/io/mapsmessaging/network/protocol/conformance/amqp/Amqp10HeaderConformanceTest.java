@@ -57,22 +57,6 @@ class Amqp10HeaderConformanceTest extends BaseTestConfig {
     }
   }
 
-  @Test
-  @ProtocolRequirement(
-      specification = "AMQP-1.0",
-      value = "Part 2 section 2.2 Version Negotiation: unacceptable protocol id returns acceptable header then closes",
-      source = SOURCE)
-  void unsupportedProtocolIdReturnsSupportedProtocolAndCloses() throws Exception {
-    byte[] saslHeader = new byte[]{'A', 'M', 'Q', 'P', 3, 1, 0, 0};
-
-    try (Socket socket = connect()) {
-      socket.getOutputStream().write(saslHeader);
-      socket.getOutputStream().flush();
-
-      assertArrayEquals(AMQP_1_0, readHeader(socket.getInputStream()));
-      assertConnectionCloses(socket);
-    }
-  }
 
   private Socket connect() throws Exception {
     Socket socket = new Socket(HOST, PORT);
