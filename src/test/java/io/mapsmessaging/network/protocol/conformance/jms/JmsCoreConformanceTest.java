@@ -206,9 +206,11 @@ class JmsCoreConformanceTest extends JmsConformanceSupport {
       ConnectionFactory factory = (ConnectionFactory) naming.lookup("qpidConnectionfactory");
       Topic topic = (Topic) naming.lookup("topicExchange");
 
+      String selector = "conformanceId = '" + clientId + "'";
+
       try (JMSContext durable = factory.createContext(JMSContext.AUTO_ACKNOWLEDGE)) {
         durable.setClientID(clientId);
-        JMSConsumer consumer = durable.createDurableConsumer(topic, subscription);
+        JMSConsumer consumer = durable.createDurableConsumer(topic, subscription, selector, false);
         consumer.close();
       }
 
@@ -223,7 +225,7 @@ class JmsCoreConformanceTest extends JmsConformanceSupport {
         JMSConsumer consumer = durable.createDurableConsumer(
             topic,
             subscription,
-            "conformanceId = '" + clientId + "'",
+            selector,
             false);
         TextMessage received = assertInstanceOf(TextMessage.class, consumer.receive(3_000));
         assertEquals("offline-durable", received.getText());
