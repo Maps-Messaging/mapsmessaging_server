@@ -4,6 +4,7 @@
  */
 package io.mapsmessaging.network.protocol.conformance.mqtt3;
 
+import io.mapsmessaging.network.protocol.conformance.common.CloseableMqtt311Client;
 import io.mapsmessaging.network.protocol.conformance.common.MqttWireClient;
 import io.mapsmessaging.network.protocol.conformance.common.MqttWireClient.WirePacket;
 import io.mapsmessaging.network.protocol.conformance.common.ProtocolRequirement;
@@ -15,10 +16,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import org.eclipse.paho.client.mqttv3.IMqttDeliveryToken;
 import org.eclipse.paho.client.mqttv3.MqttCallback;
-import org.eclipse.paho.client.mqttv3.MqttClient;
 import org.eclipse.paho.client.mqttv3.MqttConnectOptions;
 import org.eclipse.paho.client.mqttv3.MqttMessage;
-import org.eclipse.paho.client.mqttv3.persist.MemoryPersistence;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
@@ -57,7 +56,7 @@ class Mqtt311FullConformanceTest extends BaseTestConfig {
     byte[] expected = "keepalive-expiry".getBytes(StandardCharsets.UTF_8);
     AtomicReference<byte[]> received = new AtomicReference<>();
 
-    try (MqttClient subscriber = new MqttClient(URL, "mqtt311-will-sub-" + UUID.randomUUID(), new MemoryPersistence());
+    try (CloseableMqtt311Client subscriber = new CloseableMqtt311Client(URL, "mqtt311-will-sub-" + UUID.randomUUID());
          MqttWireClient idleClient = new MqttWireClient("localhost", 1883)) {
       subscriber.setCallback(callback((topic, message) -> received.set(message.getPayload())));
       MqttConnectOptions options = new MqttConnectOptions();
@@ -86,7 +85,7 @@ class Mqtt311FullConformanceTest extends BaseTestConfig {
     String topic = "conformance/mqtt311/redelivery/" + UUID.randomUUID();
 
     try (MqttWireClient subscriber = new MqttWireClient("localhost", 1883);
-         MqttClient publisher = new MqttClient(URL, "mqtt311-pub-" + UUID.randomUUID(), new MemoryPersistence())) {
+         CloseableMqtt311Client publisher = new CloseableMqtt311Client(URL, "mqtt311-pub-" + UUID.randomUUID())) {
       subscriber.send(MqttWireClient.connect311(clientId, false));
       WirePacket connAck = subscriber.readPacket();
       assertEquals(0, connAck.body()[1] & 0xff);
