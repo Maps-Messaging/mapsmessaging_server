@@ -22,6 +22,9 @@ public @interface ProtocolRequirement {
   String STOMP_12_SOURCE =
       "https://stomp.github.io/stomp-specification-1.2.html";
 
+  String MQTT_SN_12_SOURCE =
+      "https://www.oasis-open.org/committees/document.php?document_id=66091&wg_abbrev=mqtt";
+
   String specification();
 
   /**
