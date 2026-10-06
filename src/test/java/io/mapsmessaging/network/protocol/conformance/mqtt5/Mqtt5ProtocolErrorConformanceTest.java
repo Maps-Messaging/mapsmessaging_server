@@ -220,6 +220,37 @@ class Mqtt5ProtocolErrorConformanceTest extends BaseTestConfig {
   @Test
   @ProtocolRequirement(
       specification = "MQTT-5.0",
+      value = "Section 4.12 Enhanced Authentication [MQTT-4.12.0-1]",
+      source = ProtocolRequirement.MQTT_5_SOURCE)
+  void unsupportedAuthenticationMethodIsRejectedAndConnectionClosed() throws Exception {
+    byte[] unsupportedAuthenticationMethod =
+        new byte[]{0x15, 0x00, 0x05, 'b', 'o', 'g', 'u', 's'};
+
+    try (MqttWireClient client = new MqttWireClient("localhost", 1883)) {
+      client.send(MqttWireClient.connect5(
+          "mqtt5-unsupported-auth-" + UUID.randomUUID(),
+          true,
+          30,
+          unsupportedAuthenticationMethod));
+      client.setReadTimeoutMillis(2_000);
+
+      try {
+        WirePacket connAck = client.readPacket();
+        assertEquals(2, connAck.type(), connAck::toString);
+        assertTrue(connAck.body().length >= 2);
+        int reason = connAck.body()[1] & 0xff;
+        assertTrue(reason == 0x8C || reason == 0x87,
+            "Unsupported authentication method must be rejected, got 0x" + Integer.toHexString(reason));
+        assertClosedAfterError(client);
+      } catch (EOFException closed) {
+        // MQTT-4.12.0-1 requires closure; CONNACK is optional.
+      }
+    }
+  }
+
+  @Test
+  @ProtocolRequirement(
+      specification = "MQTT-5.0",
       value = "Section 4.3.3 QoS 2 and PUBREC Packet Identifier not found (0x92)",
       source = ProtocolRequirement.MQTT_5_SOURCE)
   void unknownPubRecReturnsPubRelPacketIdentifierNotFound() throws Exception {
