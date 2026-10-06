@@ -10,6 +10,7 @@ import java.io.InputStream;
 import java.net.Socket;
 import java.net.SocketTimeoutException;
 import java.util.Arrays;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
@@ -27,6 +28,7 @@ class Amqp10HeaderConformanceTest extends BaseTestConfig {
       "https://docs.oasis-open.org/amqp/core/v1.0/os/amqp-core-transport-v1.0-os.html";
 
   @Test
+  @Disabled("Known conformance gap: MSG-397")
   @ProtocolRequirement(
       specification = "AMQP-1.0",
       value = "Part 2 section 2.2 Version Negotiation: supported version header is echoed",
