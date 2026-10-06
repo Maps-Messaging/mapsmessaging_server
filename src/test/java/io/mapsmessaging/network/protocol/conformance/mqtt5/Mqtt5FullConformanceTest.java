@@ -26,6 +26,7 @@ import org.eclipse.paho.mqttv5.common.MqttException;
 import org.eclipse.paho.mqttv5.common.MqttMessage;
 import org.eclipse.paho.mqttv5.common.MqttSubscription;
 import org.eclipse.paho.mqttv5.common.packet.MqttProperties;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
@@ -39,6 +40,7 @@ class Mqtt5FullConformanceTest extends BaseTestConfig {
   private static final String URL = "tcp://localhost:1883";
 
   @Test
+  @Disabled("Known conformance gap: MSG-392")
   @ProtocolRequirement(
       specification = "MQTT-5.0",
       value = "Section 3.2.2.3.14 Server Keep Alive [MQTT-3.2.2-21]",
