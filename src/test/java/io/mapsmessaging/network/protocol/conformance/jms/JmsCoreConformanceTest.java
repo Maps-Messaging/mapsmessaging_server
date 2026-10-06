@@ -6,15 +6,16 @@ package io.mapsmessaging.network.protocol.conformance.jms;
 
 import io.mapsmessaging.network.protocol.conformance.common.ProtocolRequirement;
 import jakarta.jms.BytesMessage;
+import jakarta.jms.Connection;
 import jakarta.jms.ConnectionFactory;
-import jakarta.jms.DeliveryMode;
 import jakarta.jms.JMSConsumer;
-import jakarta.jms.JMSContext;
-import jakarta.jms.JMSProducer;
 import jakarta.jms.MapMessage;
 import jakarta.jms.Message;
-import jakarta.jms.Queue;
+import jakarta.jms.MessageConsumer;
+import jakarta.jms.MessageProducer;
+import jakarta.jms.Session;
 import jakarta.jms.TemporaryQueue;
+import jakarta.jms.TemporaryTopic;
 import jakarta.jms.TextMessage;
 import jakarta.jms.Topic;
 import java.nio.charset.StandardCharsets;
@@ -36,48 +37,50 @@ class JmsCoreConformanceTest extends JmsConformanceSupport {
   @Test
   @ProtocolRequirement(
       specification = "Jakarta-Messaging-3.1",
-      value = "Sections 4.1.2 and 6.2: queue semantics and session producer/consumer creation",
+      value = "Sections 4.1.2, 6.2 and 7: queue producer/consumer send and receive",
       source = JMS_SOURCE)
   void queueSendReceivePreservesTextAndProperties() throws Exception {
-    try (CloseableNamingContext naming = namingContext()) {
-      ConnectionFactory factory = (ConnectionFactory) naming.lookup("qpidConnectionfactory");
-      try (JMSContext context = factory.createContext(JMSContext.AUTO_ACKNOWLEDGE)) {
-        TemporaryQueue queue = context.createTemporaryQueue();
-        JMSProducer producer = context.createProducer();
-        JMSConsumer consumer = context.createConsumer(queue);
+    try (CloseableNamingContext naming = namingContext();
+         Connection connection = ((ConnectionFactory) naming.lookup("qpidConnectionfactory")).createConnection();
+         Session session = connection.createSession(Session.AUTO_ACKNOWLEDGE)) {
+      TemporaryQueue queue = session.createTemporaryQueue();
+      try (MessageProducer producer = session.createProducer(queue);
+           MessageConsumer consumer = session.createConsumer(queue)) {
+        connection.start();
 
-        TextMessage sent = context.createTextMessage("queue-payload");
+        TextMessage sent = session.createTextMessage("queue-payload");
         sent.setStringProperty("source", "conformance");
         sent.setIntProperty("sequence", 42);
-        producer.send(queue, sent);
+        producer.send(sent);
 
-        Message raw = consumer.receive(3_000);
-        TextMessage received = assertInstanceOf(TextMessage.class, raw);
+        TextMessage received = assertInstanceOf(TextMessage.class, consumer.receive(3_000));
         assertEquals("queue-payload", received.getText());
         assertEquals("conformance", received.getStringProperty("source"));
         assertEquals(42, received.getIntProperty("sequence"));
-
-        queue.delete();
       }
+      queue.delete();
     }
   }
 
   @Test
   @ProtocolRequirement(
       specification = "Jakarta-Messaging-3.1",
-      value = "Section 4.2.2: topic semantics",
+      value = "Sections 4.2.2 and 8: topic publish/subscribe semantics",
       source = JMS_SOURCE)
   void topicPublicationIsDeliveredToActiveSubscriber() throws Exception {
-    try (CloseableNamingContext naming = namingContext()) {
-      ConnectionFactory factory = (ConnectionFactory) naming.lookup("qpidConnectionfactory");
-      try (JMSContext context = factory.createContext(JMSContext.AUTO_ACKNOWLEDGE)) {
-        Topic topic = context.createTemporaryTopic();
-        JMSConsumer consumer = context.createConsumer(topic);
-        context.createProducer().send(topic, "topic-payload");
+    try (CloseableNamingContext naming = namingContext();
+         Connection connection = ((ConnectionFactory) naming.lookup("qpidConnectionfactory")).createConnection();
+         Session session = connection.createSession(Session.AUTO_ACKNOWLEDGE)) {
+      TemporaryTopic topic = session.createTemporaryTopic();
+      try (MessageProducer producer = session.createProducer(topic);
+           MessageConsumer consumer = session.createConsumer(topic)) {
+        connection.start();
+        producer.send(session.createTextMessage("topic-payload"));
 
         TextMessage received = assertInstanceOf(TextMessage.class, consumer.receive(3_000));
         assertEquals("topic-payload", received.getText());
       }
+      topic.delete();
     }
   }
 
@@ -87,116 +90,118 @@ class JmsCoreConformanceTest extends JmsConformanceSupport {
       value = "Section 3.8: message selectors use message headers and properties",
       source = JMS_SOURCE)
   void selectorDeliversOnlyMatchingMessages() throws Exception {
-    try (CloseableNamingContext naming = namingContext()) {
-      ConnectionFactory factory = (ConnectionFactory) naming.lookup("qpidConnectionfactory");
-      try (JMSContext context = factory.createContext(JMSContext.AUTO_ACKNOWLEDGE)) {
-        TemporaryQueue queue = context.createTemporaryQueue();
-        JMSConsumer france = context.createConsumer(queue, "Country = 'France'");
-        JMSProducer producer = context.createProducer();
+    try (CloseableNamingContext naming = namingContext();
+         Connection connection = ((ConnectionFactory) naming.lookup("qpidConnectionfactory")).createConnection();
+         Session session = connection.createSession(Session.AUTO_ACKNOWLEDGE)) {
+      TemporaryQueue queue = session.createTemporaryQueue();
+      try (MessageProducer producer = session.createProducer(queue);
+           MessageConsumer france = session.createConsumer(queue, "Country = 'France'")) {
+        connection.start();
 
-        TextMessage germany = context.createTextMessage("berlin");
+        TextMessage germany = session.createTextMessage("berlin");
         germany.setStringProperty("Country", "Germany");
-        producer.send(queue, germany);
+        producer.send(germany);
 
-        TextMessage matching = context.createTextMessage("paris");
+        TextMessage matching = session.createTextMessage("paris");
         matching.setStringProperty("Country", "France");
-        producer.send(queue, matching);
+        producer.send(matching);
 
         TextMessage received = assertInstanceOf(TextMessage.class, france.receive(3_000));
         assertEquals("paris", received.getText());
         assertNull(france.receiveNoWait());
-
-        queue.delete();
       }
+      queue.delete();
     }
   }
 
   @Test
   @ProtocolRequirement(
       specification = "Jakarta-Messaging-3.1",
-      value = "Section 6.2.10: CLIENT_ACKNOWLEDGE and session recovery",
+      value = "Section 6.2.10 and 3.5.11: CLIENT_ACKNOWLEDGE, recover, JMSRedelivered and JMSXDeliveryCount",
       source = JMS_SOURCE)
   void clientAcknowledgeRecoverRedeliversUnacknowledgedMessage() throws Exception {
-    try (CloseableNamingContext naming = namingContext()) {
-      ConnectionFactory factory = (ConnectionFactory) naming.lookup("qpidConnectionfactory");
-      try (JMSContext context = factory.createContext(JMSContext.CLIENT_ACKNOWLEDGE)) {
-        TemporaryQueue queue = context.createTemporaryQueue();
-        context.createProducer().send(queue, "redeliver-me");
-        JMSConsumer consumer = context.createConsumer(queue);
+    try (CloseableNamingContext naming = namingContext();
+         Connection connection = ((ConnectionFactory) naming.lookup("qpidConnectionfactory")).createConnection();
+         Session session = connection.createSession(Session.CLIENT_ACKNOWLEDGE)) {
+      TemporaryQueue queue = session.createTemporaryQueue();
+      try (MessageProducer producer = session.createProducer(queue);
+           MessageConsumer consumer = session.createConsumer(queue)) {
+        connection.start();
+        producer.send(session.createTextMessage("redeliver-me"));
 
         Message first = consumer.receive(3_000);
         assertNotNull(first);
         assertFalse(first.getJMSRedelivered());
         assertEquals(1, first.getIntProperty("JMSXDeliveryCount"));
 
-        context.recover();
+        session.recover();
 
         Message redelivered = consumer.receive(3_000);
         assertNotNull(redelivered);
         assertTrue(redelivered.getJMSRedelivered());
         assertTrue(redelivered.getIntProperty("JMSXDeliveryCount") >= 2);
         redelivered.acknowledge();
-
-        queue.delete();
       }
+      queue.delete();
     }
   }
 
   @Test
   @ProtocolRequirement(
       specification = "Jakarta-Messaging-3.1",
-      value = "Section 6.2.7: transacted session commit and rollback semantics",
+      value = "Section 6.2.7: transacted Session commit and rollback semantics",
       source = JMS_SOURCE)
   void transactionRollbackSuppressesProducedMessageAndCommitPublishesIt() throws Exception {
-    try (CloseableNamingContext naming = namingContext()) {
-      ConnectionFactory factory = (ConnectionFactory) naming.lookup("qpidConnectionfactory");
-      try (JMSContext context = factory.createContext(JMSContext.SESSION_TRANSACTED)) {
-        TemporaryQueue queue = context.createTemporaryQueue();
-        JMSProducer producer = context.createProducer();
-        JMSConsumer consumer = context.createConsumer(queue);
+    try (CloseableNamingContext naming = namingContext();
+         Connection connection = ((ConnectionFactory) naming.lookup("qpidConnectionfactory")).createConnection();
+         Session session = connection.createSession(Session.SESSION_TRANSACTED)) {
+      TemporaryQueue queue = session.createTemporaryQueue();
+      try (MessageProducer producer = session.createProducer(queue);
+           MessageConsumer consumer = session.createConsumer(queue)) {
+        connection.start();
 
-        producer.send(queue, "rolled-back");
-        context.rollback();
+        producer.send(session.createTextMessage("rolled-back"));
+        session.rollback();
         assertNull(consumer.receive(300));
 
-        producer.send(queue, "committed");
-        context.commit();
+        producer.send(session.createTextMessage("committed"));
+        session.commit();
 
         TextMessage committed = assertInstanceOf(TextMessage.class, consumer.receive(3_000));
         assertEquals("committed", committed.getText());
-        context.commit();
-
-        queue.delete();
+        session.commit();
       }
+      queue.delete();
     }
   }
 
   @Test
   @ProtocolRequirement(
       specification = "Jakarta-Messaging-3.1",
-      value = "Section 6.2.2: temporary destination scope and lifetime",
+      value = "Section 6.2.2: temporary destinations are scoped to a connection and may be consumed by another Session on it",
       source = JMS_SOURCE)
-  void temporaryQueueCanBeUsedAcrossSessionsInSameConnectionContext() throws Exception {
-    try (CloseableNamingContext naming = namingContext()) {
-      ConnectionFactory factory = (ConnectionFactory) naming.lookup("qpidConnectionfactory");
-      try (JMSContext parent = factory.createContext(JMSContext.AUTO_ACKNOWLEDGE);
-           JMSContext sibling = parent.createContext(JMSContext.AUTO_ACKNOWLEDGE)) {
-        TemporaryQueue queue = parent.createTemporaryQueue();
-        JMSConsumer consumer = sibling.createConsumer(queue);
-        parent.createProducer().send(queue, "temporary");
+  void temporaryQueueCanBeUsedAcrossSessionsInSameConnection() throws Exception {
+    try (CloseableNamingContext naming = namingContext();
+         Connection connection = ((ConnectionFactory) naming.lookup("qpidConnectionfactory")).createConnection();
+         Session producerSession = connection.createSession(Session.AUTO_ACKNOWLEDGE);
+         Session consumerSession = connection.createSession(Session.AUTO_ACKNOWLEDGE)) {
+      TemporaryQueue queue = producerSession.createTemporaryQueue();
+      try (MessageProducer producer = producerSession.createProducer(queue);
+           MessageConsumer consumer = consumerSession.createConsumer(queue)) {
+        connection.start();
+        producer.send(producerSession.createTextMessage("temporary"));
 
         TextMessage received = assertInstanceOf(TextMessage.class, consumer.receive(3_000));
         assertEquals("temporary", received.getText());
-
-        queue.delete();
       }
+      queue.delete();
     }
   }
 
   @Test
   @ProtocolRequirement(
       specification = "Jakarta-Messaging-3.1",
-      value = "Section 8.3.3: durable subscription retains messages while consumer is inactive",
+      value = "Section 8.3.3: durable subscription retains messages while inactive",
       source = JMS_SOURCE)
   void durableSubscriptionReceivesMessagePublishedWhileConsumerClosed() throws Exception {
     String clientId = "jms-durable-" + UUID.randomUUID();
@@ -205,32 +210,35 @@ class JmsCoreConformanceTest extends JmsConformanceSupport {
     try (CloseableNamingContext naming = namingContext()) {
       ConnectionFactory factory = (ConnectionFactory) naming.lookup("qpidConnectionfactory");
       Topic topic = (Topic) naming.lookup("topicExchange");
-
       String selector = "conformanceId = '" + clientId + "'";
 
-      try (JMSContext durable = factory.createContext(JMSContext.AUTO_ACKNOWLEDGE)) {
-        durable.setClientID(clientId);
-        JMSConsumer consumer = durable.createDurableConsumer(topic, subscription, selector, false);
-        consumer.close();
+      try (Connection connection = factory.createConnection()) {
+        connection.setClientID(clientId);
+        try (Session session = connection.createSession(Session.AUTO_ACKNOWLEDGE);
+             MessageConsumer consumer = session.createDurableConsumer(topic, subscription, selector, false)) {
+          connection.start();
+        }
       }
 
-      try (JMSContext publisher = factory.createContext(JMSContext.AUTO_ACKNOWLEDGE)) {
-        TextMessage message = publisher.createTextMessage("offline-durable");
+      try (Connection publisherConnection = factory.createConnection();
+           Session publisherSession = publisherConnection.createSession(Session.AUTO_ACKNOWLEDGE);
+           MessageProducer producer = publisherSession.createProducer(topic)) {
+        publisherConnection.start();
+        TextMessage message = publisherSession.createTextMessage("offline-durable");
         message.setStringProperty("conformanceId", clientId);
-        publisher.createProducer().send(topic, message);
+        producer.send(message);
       }
 
-      try (JMSContext durable = factory.createContext(JMSContext.AUTO_ACKNOWLEDGE)) {
-        durable.setClientID(clientId);
-        JMSConsumer consumer = durable.createDurableConsumer(
-            topic,
-            subscription,
-            selector,
-            false);
-        TextMessage received = assertInstanceOf(TextMessage.class, consumer.receive(3_000));
-        assertEquals("offline-durable", received.getText());
-        consumer.close();
-        durable.unsubscribe(subscription);
+      try (Connection connection = factory.createConnection()) {
+        connection.setClientID(clientId);
+        try (Session session = connection.createSession(Session.AUTO_ACKNOWLEDGE);
+             MessageConsumer consumer = session.createDurableConsumer(topic, subscription, selector, false)) {
+          connection.start();
+          TextMessage received = assertInstanceOf(TextMessage.class, consumer.receive(3_000));
+          assertEquals("offline-durable", received.getText());
+          consumer.close();
+          session.unsubscribe(subscription);
+        }
       }
     }
   }
@@ -238,27 +246,27 @@ class JmsCoreConformanceTest extends JmsConformanceSupport {
   @Test
   @ProtocolRequirement(
       specification = "Jakarta-Messaging-3.1",
-      value = "Sections 3.7 and 3.10: standard message body types and properties",
+      value = "Sections 3.7 and 3.10: TextMessage, BytesMessage and MapMessage bodies and properties",
       source = JMS_SOURCE)
   void textBytesAndMapMessagesRoundTrip() throws Exception {
-    try (CloseableNamingContext naming = namingContext()) {
-      ConnectionFactory factory = (ConnectionFactory) naming.lookup("qpidConnectionfactory");
-      try (JMSContext context = factory.createContext(JMSContext.AUTO_ACKNOWLEDGE)) {
-        TemporaryQueue queue = context.createTemporaryQueue();
-        JMSConsumer consumer = context.createConsumer(queue);
-        JMSProducer producer = context.createProducer();
+    try (CloseableNamingContext naming = namingContext();
+         Connection connection = ((ConnectionFactory) naming.lookup("qpidConnectionfactory")).createConnection();
+         Session session = connection.createSession(Session.AUTO_ACKNOWLEDGE)) {
+      TemporaryQueue queue = session.createTemporaryQueue();
+      try (MessageProducer producer = session.createProducer(queue);
+           MessageConsumer consumer = session.createConsumer(queue)) {
+        connection.start();
 
-        TextMessage text = context.createTextMessage("text");
-        producer.send(queue, text);
+        producer.send(session.createTextMessage("text"));
 
-        BytesMessage bytes = context.createBytesMessage();
+        BytesMessage bytes = session.createBytesMessage();
         bytes.writeBytes("bytes".getBytes(StandardCharsets.UTF_8));
-        producer.send(queue, bytes);
+        producer.send(bytes);
 
-        MapMessage map = context.createMapMessage();
+        MapMessage map = session.createMapMessage();
         map.setString("key", "value");
         map.setInt("count", 7);
-        producer.send(queue, map);
+        producer.send(map);
 
         assertEquals("text", assertInstanceOf(TextMessage.class, consumer.receive(3_000)).getText());
 
@@ -270,33 +278,32 @@ class JmsCoreConformanceTest extends JmsConformanceSupport {
         MapMessage receivedMap = assertInstanceOf(MapMessage.class, consumer.receive(3_000));
         assertEquals("value", receivedMap.getString("key"));
         assertEquals(7, receivedMap.getInt("count"));
-
-        queue.delete();
       }
+      queue.delete();
     }
   }
 
   @Test
   @ProtocolRequirement(
       specification = "Jakarta-Messaging-3.1",
-      value = "Section 3.4.9: message expiration",
+      value = "Section 3.4.9: expired messages must not be delivered",
       source = JMS_SOURCE)
   void expiredMessageIsNotDelivered() throws Exception {
-    try (CloseableNamingContext naming = namingContext()) {
-      ConnectionFactory factory = (ConnectionFactory) naming.lookup("qpidConnectionfactory");
-      try (JMSContext context = factory.createContext(JMSContext.AUTO_ACKNOWLEDGE)) {
-        TemporaryQueue queue = context.createTemporaryQueue();
-        JMSProducer producer = context.createProducer()
-            .setDeliveryMode(DeliveryMode.NON_PERSISTENT)
-            .setTimeToLive(200);
-        producer.send(queue, "expires");
-
-        Thread.sleep(500);
-
-        JMSConsumer consumer = context.createConsumer(queue);
-        assertNull(consumer.receive(300));
-        queue.delete();
+    try (CloseableNamingContext naming = namingContext();
+         Connection connection = ((ConnectionFactory) naming.lookup("qpidConnectionfactory")).createConnection();
+         Session session = connection.createSession(Session.AUTO_ACKNOWLEDGE)) {
+      TemporaryQueue queue = session.createTemporaryQueue();
+      try (MessageProducer producer = session.createProducer(queue)) {
+        producer.setTimeToLive(200);
+        producer.send(session.createTextMessage("expires"));
       }
+
+      Thread.sleep(500);
+      try (MessageConsumer consumer = session.createConsumer(queue)) {
+        connection.start();
+        assertNull(consumer.receive(300));
+      }
+      queue.delete();
     }
   }
 }
