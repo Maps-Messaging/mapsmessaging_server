@@ -4,6 +4,7 @@
  */
 package io.mapsmessaging.network.protocol.conformance.mqtt5;
 
+import io.mapsmessaging.network.protocol.conformance.common.CloseableMqtt5Client;
 import io.mapsmessaging.network.protocol.conformance.common.MqttWireClient;
 import io.mapsmessaging.network.protocol.conformance.common.ProtocolRequirement;
 import io.mapsmessaging.test.BaseTestConfig;
@@ -47,8 +48,8 @@ class Mqtt5SemanticConformanceTest extends BaseTestConfig {
     String topic = topic("retained");
     List<MqttMessage> received = new ArrayList<>();
 
-    try (MqttClient publisher = client();
-         MqttClient subscriber = client()) {
+    try (CloseableMqtt5Client publisher = client();
+         CloseableMqtt5Client subscriber = client()) {
       connect(publisher, true, 0);
       MqttProperties props = new MqttProperties();
       props.setUserProperties(List.of(new UserProperty("a", "2"), new UserProperty("c", "3")));
@@ -81,8 +82,8 @@ class Mqtt5SemanticConformanceTest extends BaseTestConfig {
     String id = "mqtt5-offline-" + UUID.randomUUID();
     AtomicInteger received = new AtomicInteger();
 
-    try (MqttClient subscriber = new MqttClient(URL, id, new MemoryPersistence());
-         MqttClient publisher = client()) {
+    try (CloseableMqtt5Client subscriber = new CloseableMqtt5Client(URL, id);
+         CloseableMqtt5Client publisher = client()) {
       subscriber.setCallback(callback((name, message) -> received.incrementAndGet()));
       MqttConnectionOptions persistent = options(false, 60);
       subscriber.connect(persistent);
@@ -107,7 +108,7 @@ class Mqtt5SemanticConformanceTest extends BaseTestConfig {
     String exact = prefix + "/value";
     List<Integer> qosValues = new ArrayList<>();
 
-    try (MqttClient client = client()) {
+    try (CloseableMqtt5Client client = client()) {
       client.setCallback(callback((name, message) -> qosValues.add(message.getQos())));
       connect(client, true, 0);
       client.subscribe(new MqttSubscription[]{new MqttSubscription(prefix + "/#", 2), new MqttSubscription(exact, 1)});
@@ -126,7 +127,7 @@ class Mqtt5SemanticConformanceTest extends BaseTestConfig {
     AtomicInteger received = new AtomicInteger();
     String systemTopic = "$maps/conformance/" + UUID.randomUUID();
 
-    try (MqttClient client = client()) {
+    try (CloseableMqtt5Client client = client()) {
       client.setCallback(callback((name, message) -> received.incrementAndGet()));
       connect(client, true, 0);
       client.subscribe("#", 1);
@@ -143,7 +144,7 @@ class Mqtt5SemanticConformanceTest extends BaseTestConfig {
     String topic = topic("unsubscribe");
     AtomicInteger received = new AtomicInteger();
 
-    try (MqttClient client = client()) {
+    try (CloseableMqtt5Client client = client()) {
       client.setCallback(callback((name, message) -> received.incrementAndGet()));
       connect(client, true, 0);
       client.subscribe(topic, 1);
@@ -161,7 +162,7 @@ class Mqtt5SemanticConformanceTest extends BaseTestConfig {
     String id = "mqtt5-expiry-" + UUID.randomUUID();
     String topic = topic("expiry");
 
-    try (MqttClient client = new MqttClient(URL, id, new MemoryPersistence())) {
+    try (CloseableMqtt5Client client = new CloseableMqtt5Client(URL, id)) {
       IMqttToken first = client.connectWithResult(options(true, 0));
       first.waitForCompletion();
       assertFalse(first.getSessionPresent());
@@ -180,7 +181,7 @@ class Mqtt5SemanticConformanceTest extends BaseTestConfig {
     String topic = topic("user-properties");
     AtomicReference<MqttMessage> received = new AtomicReference<>();
 
-    try (MqttClient client = client()) {
+    try (CloseableMqtt5Client client = client()) {
       client.setCallback(callback((name, message) -> received.set(message)));
       connect(client, true, 0);
       client.subscribe(topic, 2);
@@ -205,7 +206,7 @@ class Mqtt5SemanticConformanceTest extends BaseTestConfig {
     String topic = topic("payload-format");
     AtomicReference<MqttMessage> received = new AtomicReference<>();
 
-    try (MqttClient client = client()) {
+    try (CloseableMqtt5Client client = client()) {
       client.setCallback(callback((name, message) -> received.set(message)));
       connect(client, true, 0);
       client.subscribe(topic, 2);
@@ -227,7 +228,7 @@ class Mqtt5SemanticConformanceTest extends BaseTestConfig {
   @Test
   @ProtocolRequirement(specification = "MQTT-5.0", value = "Section 3.1.3.1 Client Identifier", source = ProtocolRequirement.MQTT_5_SOURCE)
   void emptyClientIdReceivesAssignedClientIdentifier() throws Exception {
-    try (MqttClient client = new MqttClient(URL, "", new MemoryPersistence())) {
+    try (CloseableMqtt5Client client = new CloseableMqtt5Client(URL, "")) {
       IMqttToken token = client.connectWithResult(options(true, 0));
       token.waitForCompletion();
       MqttProperties response = token.getResponseProperties();
@@ -244,7 +245,7 @@ class Mqtt5SemanticConformanceTest extends BaseTestConfig {
     String topic = topic("no-local");
     AtomicInteger received = new AtomicInteger();
 
-    try (MqttClient client = client()) {
+    try (CloseableMqtt5Client client = client()) {
       client.setCallback(callback((name, message) -> received.incrementAndGet()));
       connect(client, true, 0);
       MqttSubscription subscription = new MqttSubscription(topic, 1);
@@ -265,8 +266,8 @@ class Mqtt5SemanticConformanceTest extends BaseTestConfig {
     byte[] correlation = new byte[]{3, 3, 4};
     AtomicReference<MqttMessage> request = new AtomicReference<>();
 
-    try (MqttClient requester = client();
-         MqttClient responder = client()) {
+    try (CloseableMqtt5Client requester = client();
+         CloseableMqtt5Client responder = client()) {
       connect(requester, true, 0);
       connect(responder, true, 0);
       responder.setCallback(callback((name, message) -> request.set(message)));
@@ -330,9 +331,9 @@ class Mqtt5SemanticConformanceTest extends BaseTestConfig {
     AtomicInteger second = new AtomicInteger();
     int messageCount = 12;
 
-    try (MqttClient client1 = client();
-         MqttClient client2 = client();
-         MqttClient publisher = client()) {
+    try (CloseableMqtt5Client client1 = client();
+         CloseableMqtt5Client client2 = client();
+         CloseableMqtt5Client publisher = client()) {
       client1.setCallback(callback((name, message) -> first.incrementAndGet()));
       client2.setCallback(callback((name, message) -> second.incrementAndGet()));
       connect(client1, true, 0);
@@ -367,8 +368,8 @@ class Mqtt5SemanticConformanceTest extends BaseTestConfig {
     }
   }
 
-  private MqttClient client() throws Exception {
-    return new MqttClient(URL, "mqtt5-" + UUID.randomUUID(), new MemoryPersistence());
+  private CloseableMqtt5Client client() throws Exception {
+    return new CloseableMqtt5Client(URL, "mqtt5-" + UUID.randomUUID());
   }
 
   private MqttConnectionOptions options(boolean cleanStart, long sessionExpiry) {
