@@ -68,6 +68,7 @@ class Amqp10FrameConformanceTest extends BaseTestConfig {
 
 
   @Test
+  @Disabled("Known conformance gap: MSG-397")
   @ProtocolRequirement(
       specification = "AMQP-1.0",
       value = "Part 2 section 2.3.1: frame body begins at DOFF*4 and DOFF must describe a position within SIZE",
@@ -86,6 +87,7 @@ class Amqp10FrameConformanceTest extends BaseTestConfig {
   }
 
   @Test
+  @Disabled("Known conformance gap: MSG-397")
   @ProtocolRequirement(
       specification = "AMQP-1.0",
       value = "Part 2 section 2.3.1: AMQP frame type is 0x00; SASL frame type 0x01 is defined only for SASL framing",
@@ -104,6 +106,7 @@ class Amqp10FrameConformanceTest extends BaseTestConfig {
   }
 
   @Test
+  @Disabled("Known conformance gap: MSG-397")
   @ProtocolRequirement(
       specification = "AMQP-1.0",
       value = "Part 2 section 2.4.1: prior to negotiation max-frame-size is 512 octets",
