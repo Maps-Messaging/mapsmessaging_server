@@ -1,6 +1,7 @@
 package io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.listeners;
 
 import io.mapsmessaging.api.Session;
+import io.mapsmessaging.network.protocol.conformance.common.ProtocolRequirement;
 import io.mapsmessaging.api.features.DestinationMode;
 import io.mapsmessaging.api.features.QualityOfService;
 import io.mapsmessaging.config.protocol.impl.MqttSnConfig;
@@ -11,6 +12,7 @@ import io.mapsmessaging.network.protocol.Protocol;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.packet.*;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.state.StateEngine;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.state.TopicAliasManager;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -26,10 +28,17 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
+@Tag("conformance")
+@Tag("conformance-core")
+@Tag("mqtt-sn")
 class MqttSn12ListenerSpecificationTest {
+
+  private static final String SPEC = "MQTT-SN Version 1.2";
+  private static final String SOURCE = ProtocolRequirement.MQTT_SN_12_SOURCE;
 
   @ParameterizedTest
   @MethodSource("shortNames")
+  @ProtocolRequirement(specification = SPEC, value = "Section 5.4.15 SUBSCRIBE: short topic name is the literal two-octet topic selector", source = SOURCE)
   void subscribeShortTopicCreatesSubscriptionForLiteralTwoByteName(String shortName)
       throws Exception {
     Fixture fixture = fixture();
@@ -54,6 +63,7 @@ class MqttSn12ListenerSpecificationTest {
 
   @ParameterizedTest
   @MethodSource("normalTopics")
+  @ProtocolRequirement(specification = SPEC, value = "Sections 5.4.17 and 6.11 UNSUBSCRIBE: normal topic-name form identifies the subscription to remove", source = SOURCE)
   void unsubscribeNormalTopicRemovesLiteralTopicName(String topic) throws Exception {
     Fixture fixture = fixture();
     Unsubscribe unsubscribe = unsubscribeNormal(topic, 0x1111);
@@ -73,6 +83,7 @@ class MqttSn12ListenerSpecificationTest {
 
   @ParameterizedTest
   @MethodSource("shortNames")
+  @ProtocolRequirement(specification = SPEC, value = "Sections 5.4.17 and 6.11 UNSUBSCRIBE: short topic-name form identifies the subscription to remove", source = SOURCE)
   void unsubscribeShortTopicRemovesLiteralTwoByteTopicName(String shortName)
       throws Exception {
     Fixture fixture = fixture();
@@ -92,6 +103,7 @@ class MqttSn12ListenerSpecificationTest {
 
   @ParameterizedTest
   @MethodSource("predefinedTopics")
+  @ProtocolRequirement(specification = SPEC, value = "Sections 5.3.4 and 5.4.17 UNSUBSCRIBE: predefined topic id form selects a predefined topic", source = SOURCE)
   void unsubscribePredefinedTopicResolvesByAddressAndTopicType(
       int topicId, String resolvedTopic) throws Exception {
     Fixture fixture = fixture();
@@ -116,6 +128,7 @@ class MqttSn12ListenerSpecificationTest {
 
   @ParameterizedTest
   @MethodSource("predefinedTopics")
+  @ProtocolRequirement(specification = SPEC, value = "Sections 5.3.4 and 5.4.15 SUBSCRIBE: predefined topic id form selects a predefined topic", source = SOURCE)
   void subscribePredefinedTopicUsesConfiguredTopicMapping(
       int topicId, String resolvedTopic) throws Exception {
     Fixture fixture = fixture();
@@ -145,6 +158,7 @@ class MqttSn12ListenerSpecificationTest {
 
   @ParameterizedTest
   @MethodSource("normalTopics")
+  @ProtocolRequirement(specification = SPEC, value = "Section 5.4.15 SUBSCRIBE: normal topic-name form carries the topic name in the SUBSCRIBE packet", source = SOURCE)
   void subscribeNormalTopicCreatesSubscriptionWithoutRegistrationLookup(String topic)
       throws Exception {
     Fixture fixture = fixture();
@@ -175,6 +189,7 @@ class MqttSn12ListenerSpecificationTest {
   }
 
   @Test
+  @ProtocolRequirement(specification = SPEC, value = "Section 6.13 Message retransmission: duplicate requests are detected and the previous response is retransmitted", source = SOURCE)
   void duplicateSubscribeReturnsPreviousResponseWithoutCreatingSecondSubscription()
       throws Exception {
     Fixture fixture = fixture();
@@ -195,6 +210,7 @@ class MqttSn12ListenerSpecificationTest {
   }
 
   @Test
+  @ProtocolRequirement(specification = SPEC, value = "Section 5.4.16 SUBACK: invalid or unsupported topic selection is reported by ReturnCode", source = SOURCE)
   void unresolvedPredefinedSubscribeReturnsInvalidTopicId() throws Exception {
     Fixture fixture = fixture();
     Subscribe subscribe = subscribePredefined(77, 9);
@@ -213,6 +229,7 @@ class MqttSn12ListenerSpecificationTest {
   }
 
   @Test
+  @ProtocolRequirement(specification = SPEC, value = "Sections 5.4.15-5.4.16 SUBSCRIBE/SUBACK: granted QoS is returned in SUBACK", source = SOURCE)
   void subscribePreservesRequestedQosInSubscriptionAndSubAck() throws Exception {
     Fixture fixture = fixture();
     Subscribe subscribe = parseSubscribe(
