@@ -39,10 +39,18 @@ class ProtocolConformanceReferenceTest {
         assertFalse(requirement.specification().isBlank());
         assertFalse(requirement.value().isBlank());
         assertTrue(
+            hasRequirementIdentifier(requirement.value()),
+            () -> className + "#" + method.getName()
+                + " must include a specification section or normative requirement identifier");
+        assertTrue(
             requirement.source().startsWith("https://"),
             () -> className + "#" + method.getName()
                 + " must reference an authoritative specification URL");
       }
     }
+  }
+
+  private boolean hasRequirementIdentifier(String value) {
+    return value.matches("(?i).*(section|part\\s+\\d|MQTT-\\d).*");
   }
 }

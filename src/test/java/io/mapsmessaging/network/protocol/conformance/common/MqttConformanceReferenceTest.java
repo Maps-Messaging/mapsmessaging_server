@@ -50,6 +50,10 @@ class MqttConformanceReferenceTest {
         assertFalse(requirement.specification().isBlank());
         assertFalse(requirement.value().isBlank());
         assertTrue(
+            hasRequirementIdentifier(requirement.value()),
+            () -> className + "#" + method.getName()
+                + " must include a specification section or normative requirement identifier");
+        assertTrue(
             requirement.source().startsWith("https://docs.oasis-open.org/mqtt/"),
             () -> className + "#" + method.getName()
                 + " must reference an authoritative OASIS MQTT specification: "
@@ -82,11 +86,19 @@ class MqttConformanceReferenceTest {
         assertFalse(requirement.specification().isBlank());
         assertFalse(requirement.value().isBlank());
         assertTrue(
+            hasRequirementIdentifier(requirement.value()),
+            () -> className + "#" + method.getName()
+                + " must include a specification section or normative requirement identifier");
+        assertTrue(
             requirement.source().startsWith(sourcePrefix),
             () -> className + "#" + method.getName()
                 + " must reference its authoritative specification: "
                 + requirement.source());
       }
     }
+  }
+
+  private boolean hasRequirementIdentifier(String value) {
+    return value.matches("(?i).*(section|part\\s+\\d|MQTT-\\d).*");
   }
 }
