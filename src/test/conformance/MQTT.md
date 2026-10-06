@@ -81,4 +81,6 @@ The Java suite additionally checks:
 - QoS value 3 rejection;
 - unknown PUBREC -> PUBREL Packet Identifier not found;
 - Topic Alias zero handling;
-- full connection lifetime / error-close behaviour.
+- full connection lifetime / error-close behaviour;
+- outbound QoS 2 PUBLISH/PUBREC/PUBREL/PUBCOMP state machines for MQTT 3.1.1 and MQTT 5;
+- MQTT 5 unsupported Enhanced Authentication method rejection and connection closure.
