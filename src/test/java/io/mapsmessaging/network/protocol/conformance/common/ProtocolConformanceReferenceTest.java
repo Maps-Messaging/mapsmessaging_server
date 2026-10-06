@@ -25,7 +25,8 @@ class ProtocolConformanceReferenceTest {
       "io.mapsmessaging.network.protocol.conformance.jms.JmsFullConformanceTest",
       "io.mapsmessaging.network.protocol.conformance.jms.JmsUnidentifiedProducerConformanceTest",
       "io.mapsmessaging.network.protocol.impl.stomp.Stomp12ConformanceTest",
-      "io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.packet.MqttSn12SpecificationComplianceTest"
+      "io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.packet.MqttSn12SpecificationComplianceTest",
+      "io.mapsmessaging.network.protocol.impl.mqtt_sn.MqttSn12ConnectionlessPublishSpecificationTest"
   );
 
   @Test
