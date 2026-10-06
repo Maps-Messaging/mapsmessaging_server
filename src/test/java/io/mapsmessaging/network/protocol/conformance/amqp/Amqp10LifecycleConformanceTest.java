@@ -125,13 +125,9 @@ class Amqp10LifecycleConformanceTest extends BaseTestConfig {
       output.writeShort(0);
       output.flush();
 
-      socket.setSoTimeout(300);
-      try {
-        int next = socket.getInputStream().read();
-        assertTrue(next == -1 || next >= 0);
-      } catch (SocketTimeoutException expected) {
-        // Silence is valid; the important point is that the peer did not fail the heartbeat frame.
-      }
+      sendFrame(socket, 0, beginPerformative());
+      Frame response = readFrame(socket);
+      assertEquals(0x11, response.descriptorCode());
     }
   }
 
