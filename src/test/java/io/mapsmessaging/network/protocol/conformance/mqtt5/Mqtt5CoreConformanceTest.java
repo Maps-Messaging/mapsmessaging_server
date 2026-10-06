@@ -185,7 +185,11 @@ class Mqtt5CoreConformanceTest extends BaseTestConfig {
     assertTrue(connAck.body().length >= 3, connAck::toString);
     assertEquals(0, connAck.body()[1] & 0xff, "CONNACK reason code must be Success");
     int propertyLength = MqttWireClient.readVariableByteInteger(connAck.body(), 2);
-    assertTrue(propertyLength >= 0);
+    int propertyLengthBytes = MqttWireClient.variableByteIntegerSize(propertyLength);
+    assertEquals(
+        connAck.body().length,
+        2 + propertyLengthBytes + propertyLength,
+        "CONNACK Property Length must exactly describe the remaining properties");
   }
 
   private String clientId() {

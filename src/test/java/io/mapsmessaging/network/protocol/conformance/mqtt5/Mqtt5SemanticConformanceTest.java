@@ -201,7 +201,7 @@ class Mqtt5SemanticConformanceTest extends BaseTestConfig {
   }
 
   @Test
-  @ProtocolRequirement(specification = "MQTT-5.0", value = "Payload Format Indicator and Content Type", source = ProtocolRequirement.MQTT_5_SOURCE)
+  @ProtocolRequirement(specification = "MQTT-5.0", value = "MQTT-3.3.2-4 and MQTT-3.3.2-20: Payload Format Indicator and Content Type are forwarded unaltered", source = ProtocolRequirement.MQTT_5_SOURCE)
   void payloadFormatAndContentTypeRoundTrip() throws Exception {
     String topic = topic("payload-format");
     AtomicReference<MqttMessage> received = new AtomicReference<>();
@@ -240,7 +240,7 @@ class Mqtt5SemanticConformanceTest extends BaseTestConfig {
   }
 
   @Test
-  @ProtocolRequirement(specification = "MQTT-5.0", value = "No Local subscription option", source = ProtocolRequirement.MQTT_5_SOURCE)
+  @ProtocolRequirement(specification = "MQTT-5.0", value = "MQTT-3.8.3-3: No Local prevents forwarding to the publishing ClientID", source = ProtocolRequirement.MQTT_5_SOURCE)
   void noLocalPreventsSelfDelivery() throws Exception {
     String topic = topic("no-local");
     AtomicInteger received = new AtomicInteger();
@@ -259,7 +259,7 @@ class Mqtt5SemanticConformanceTest extends BaseTestConfig {
   }
 
   @Test
-  @ProtocolRequirement(specification = "MQTT-5.0", value = "Response Topic and Correlation Data", source = ProtocolRequirement.MQTT_5_SOURCE)
+  @ProtocolRequirement(specification = "MQTT-5.0", value = "MQTT-3.3.2-15 and MQTT-3.3.2-16: Response Topic and Correlation Data are forwarded unaltered", source = ProtocolRequirement.MQTT_5_SOURCE)
   void requestResponsePropertiesRoundTrip() throws Exception {
     String requestTopic = topic("request");
     String responseTopic = topic("response");
@@ -288,7 +288,7 @@ class Mqtt5SemanticConformanceTest extends BaseTestConfig {
   }
 
   @Test
-  @ProtocolRequirement(specification = "MQTT-5.0", value = "Subscription Identifier", source = ProtocolRequirement.MQTT_5_SOURCE)
+  @ProtocolRequirement(specification = "MQTT-5.0", value = "MQTT-3.3.4-3: matching PUBLISH includes the Subscription Identifier supplied by the Client", source = ProtocolRequirement.MQTT_5_SOURCE)
   void subscriptionIdentifierIsReturnedOnMatchingPublish() throws Exception {
     String topic = topic("subscription-id");
     AtomicReference<MqttMessage> received = new AtomicReference<>();
