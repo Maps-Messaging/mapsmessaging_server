@@ -192,7 +192,7 @@ class Mqtt5FullConformanceTest extends BaseTestConfig {
       value = "Section 3.1.2.11.4 Maximum Packet Size",
       source = ProtocolRequirement.MQTT_5_SOURCE)
   void serverDoesNotSendPacketLargerThanClientMaximum() throws Exception {
-    String topic = topic("maximum-packet");
+    String topic = "m5/max";
     AtomicInteger received = new AtomicInteger();
 
     try (CloseableMqtt5Client subscriber = client();
