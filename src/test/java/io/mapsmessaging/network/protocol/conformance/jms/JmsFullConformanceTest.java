@@ -96,7 +96,7 @@ class JmsFullConformanceTest extends JmsConformanceSupport {
   @Test
   @ProtocolRequirement(
       specification = "Jakarta-Messaging-3.1",
-      value = "Section 6.2: QueueBrowser enumerates messages without consuming them",
+      value = "Section 4.1.6: QueueBrowser enumerates queue messages without removing them",
       source = JMS_SOURCE)
   void queueBrowserDoesNotConsumeMessages() throws Exception {
     try (CloseableNamingContext naming = namingContext();
@@ -109,6 +109,7 @@ class JmsFullConformanceTest extends JmsConformanceSupport {
         }
       }
 
+      connection.start();
       try (QueueBrowser browser = session.createBrowser(queue)) {
         Enumeration<?> enumeration = browser.getEnumeration();
         int browsed = 0;
@@ -120,7 +121,6 @@ class JmsFullConformanceTest extends JmsConformanceSupport {
       }
 
       try (MessageConsumer consumer = session.createConsumer(queue)) {
-        connection.start();
         for (int i = 0; i < 3; i++) {
           assertNotNull(consumer.receive(3_000));
         }
