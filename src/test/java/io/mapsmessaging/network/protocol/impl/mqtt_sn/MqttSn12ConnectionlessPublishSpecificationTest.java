@@ -1,6 +1,7 @@
 package io.mapsmessaging.network.protocol.impl.mqtt_sn;
 
 import io.mapsmessaging.api.SessionManager;
+import io.mapsmessaging.network.protocol.conformance.common.ProtocolRequirement;
 import io.mapsmessaging.config.protocol.PredefinedTopics;
 import io.mapsmessaging.config.protocol.impl.MqttSnConfig;
 import io.mapsmessaging.network.io.EndPoint;
@@ -9,6 +10,7 @@ import io.mapsmessaging.network.io.impl.SelectorTask;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.packet.MQTT_SNPacket;
 import io.mapsmessaging.network.protocol.transformation.ProtocolMessageTransformation;
 import io.mapsmessaging.network.protocol.transformation.TransformationManager;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.mockito.MockedStatic;
 
@@ -20,9 +22,16 @@ import java.util.concurrent.CompletableFuture;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
+@Tag("conformance")
+@Tag("conformance-core")
+@Tag("mqtt-sn")
 class MqttSn12ConnectionlessPublishSpecificationTest {
 
+  private static final String SPEC = "MQTT-SN Version 1.2";
+  private static final String SOURCE = ProtocolRequirement.MQTT_SN_12_SOURCE;
+
   @Test
+  @ProtocolRequirement(specification = SPEC, value = "Section 6.14 QoS -1: connectionless PUBLISH MAY use a predefined topic id", source = SOURCE)
   void qosMinusOnePredefinedTopicPublishesWithoutSession() throws Exception {
     Fixture fixture = fixture("", List.of(predefined(42, "pre/topic")));
 
@@ -44,6 +53,7 @@ class MqttSn12ConnectionlessPublishSpecificationTest {
   }
 
   @Test
+  @ProtocolRequirement(specification = SPEC, value = "Section 6.14 QoS -1: connectionless PUBLISH MAY use a two-octet short topic name", source = SOURCE)
   void qosMinusOneShortTopicPublishesLiteralTwoByteNameWithoutSession() throws Exception {
     Fixture fixture = fixture("", List.of());
 
@@ -65,6 +75,7 @@ class MqttSn12ConnectionlessPublishSpecificationTest {
   }
 
   @Test
+  @ProtocolRequirement(specification = SPEC, value = "Section 6.14 QoS -1: connectionless PUBLISH is restricted to predefined or short topic forms", source = SOURCE)
   void qosMinusOneNormalRegisteredTopicIdIsNotAllowedWithoutSession() throws Exception {
     Fixture fixture = fixture("*,42,dynamic/topic", List.of());
 
@@ -86,6 +97,7 @@ class MqttSn12ConnectionlessPublishSpecificationTest {
   }
 
   @Test
+  @ProtocolRequirement(specification = SPEC, value = "Sections 6.2 and 6.14: only QoS -1 publishing bypasses prior connection setup", source = SOURCE)
   void ordinaryQosZeroPublishWithoutSessionIsNotAcceptedAsConnectionlessPublish()
       throws Exception {
     Fixture fixture = fixture("*,42,dynamic/topic", List.of());
