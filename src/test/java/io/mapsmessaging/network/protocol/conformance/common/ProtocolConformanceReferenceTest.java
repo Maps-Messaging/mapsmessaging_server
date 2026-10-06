@@ -1,11 +1,13 @@
 package io.mapsmessaging.network.protocol.conformance.common;
 
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import java.lang.reflect.Method;
 import java.util.List;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
-
-import static org.junit.jupiter.api.Assertions.*;
 
 @Tag("conformance")
 @Tag("conformance-core")
@@ -20,7 +22,8 @@ class ProtocolConformanceReferenceTest {
       "io.mapsmessaging.network.protocol.conformance.jms.JmsAmqpSemanticConformanceTest",
       "io.mapsmessaging.network.protocol.conformance.jms.JmsCoreConformanceTest",
       "io.mapsmessaging.network.protocol.conformance.jms.JmsFullConformanceTest",
-      "io.mapsmessaging.network.protocol.conformance.jms.JmsUnidentifiedProducerConformanceTest"
+      "io.mapsmessaging.network.protocol.conformance.jms.JmsUnidentifiedProducerConformanceTest",
+      "io.mapsmessaging.network.protocol.impl.stomp.Stomp12ConformanceTest"
   );
 
   @Test

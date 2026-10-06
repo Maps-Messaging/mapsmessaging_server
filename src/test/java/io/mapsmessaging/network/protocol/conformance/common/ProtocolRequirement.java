@@ -19,10 +19,13 @@ public @interface ProtocolRequirement {
   String MQTT_5_SOURCE =
       "https://docs.oasis-open.org/mqtt/mqtt/v5.0/os/mqtt-v5.0-os.html";
 
+  String STOMP_12_SOURCE =
+      "https://stomp.github.io/stomp-specification-1.2.html";
+
   String specification();
 
   /**
-   * Normative section and, where available, the MQTT requirement identifier.
+   * Normative section and, where available, the protocol requirement identifier.
    */
   String value();
 
