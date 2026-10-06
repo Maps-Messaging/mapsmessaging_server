@@ -2,7 +2,7 @@
  * Copyright [ 2024 - 2026 ] MapsMessaging B.V.
  * Licensed under the Apache License, Version 2.0 with the Commons Clause.
  */
-package io.mapsmessaging.network.protocol.conformance.amqp;
+package io.mapsmessaging.network.protocol.conformance.jms;
 
 import io.mapsmessaging.network.protocol.conformance.common.ProtocolRequirement;
 import io.mapsmessaging.network.protocol.impl.amqp.jms.BaseConnection;
@@ -24,18 +24,19 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 @Tag("conformance")
 @Tag("conformance-semantic")
-@Tag("amqp10")
-class Amqp10SemanticConformanceTest extends BaseConnection {
+@Tag("jms")
+@Tag("jms-amqp")
+class JmsAmqpSemanticConformanceTest extends BaseConnection {
 
   private static final String SOURCE =
-      "https://docs.oasis-open.org/amqp/core/v1.0/os/amqp-core-transport-v1.0-os.html";
+      "https://jakarta.ee/specifications/messaging/3.1/jakarta-messaging-spec-3.1.html";
 
   @Test
   @ProtocolRequirement(
-      specification = "AMQP-1.0",
-      value = "Part 2 sections 2.4, 2.5, 2.6 and 2.7: connection, session, link and transfer",
+      specification = "Jakarta-Messaging-3.1",
+      value = "Sections 6.2.1, 7 and 8: session-created producer and consumer exchange a message",
       source = SOURCE)
-  void messageTransfersAcrossEstablishedConnectionSessionAndLinks() throws Exception {
+  void producerAndConsumerExchangeMessageOverAmqpProvider() throws Exception {
     Context context = loadContext();
     try {
       ConnectionFactory factory = (ConnectionFactory) context.lookup("qpidConnectionfactory");
@@ -45,11 +46,11 @@ class Amqp10SemanticConformanceTest extends BaseConnection {
         connection.start();
 
         try (Session session = connection.createSession(Session.AUTO_ACKNOWLEDGE)) {
-          Topic topic = session.createTopic("conformance.amqp." + UUID.randomUUID());
+          Topic topic = session.createTopic("conformance.jms.amqp." + UUID.randomUUID());
 
           try (MessageConsumer consumer = session.createConsumer(topic);
                MessageProducer producer = session.createProducer(topic)) {
-            String payload = "amqp-transfer-" + UUID.randomUUID();
+            String payload = "jms-amqp-" + UUID.randomUUID();
             producer.send(session.createTextMessage(payload));
 
             TextMessage received = assertInstanceOf(TextMessage.class, consumer.receive(3_000));
