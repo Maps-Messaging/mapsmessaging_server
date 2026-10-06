@@ -382,6 +382,42 @@ class Mqtt5FullConformanceTest extends BaseTestConfig {
     }
   }
 
+  @Test
+  @ProtocolRequirement(
+      specification = "MQTT-5.0",
+      value = "Section 4.3.3 QoS 2 delivery: PUBLISH/PUBREC/PUBREL/PUBCOMP",
+      source = ProtocolRequirement.MQTT_5_SOURCE)
+  void outboundQosTwoCompletesFourStepExchange() throws Exception {
+    String topic = topic("qos2-out");
+
+    try (MqttWireClient subscriber = new MqttWireClient("localhost", 1883);
+         CloseableMqtt5Client publisher = client()) {
+      subscriber.send(MqttWireClient.connect5("mqtt5-qos2-sub-" + UUID.randomUUID(), true));
+      assertEquals(0, subscriber.readPacket().body()[1] & 0xff);
+
+      subscriber.send(MqttWireClient.subscribe5(501, topic, 2));
+      WirePacket subAck = subscriber.readPacket();
+      assertEquals(9, subAck.type(), subAck::toString);
+      assertEquals(2, subAck.body()[3] & 0xff);
+
+      publisher.connect(options(true, 0));
+      publisher.publish(topic, "qos2".getBytes(StandardCharsets.UTF_8), 2, false);
+
+      WirePacket publish = subscriber.readPacket();
+      assertEquals(3, publish.type(), publish::toString);
+      assertEquals(2, (publish.fixedHeader() >>> 1) & 0x03);
+      int packetId = MqttWireClient.publishPacketIdentifier(publish);
+
+      subscriber.send(MqttWireClient.pubRec(packetId));
+      WirePacket pubRel = subscriber.readPacket();
+      assertEquals(6, pubRel.type(), pubRel::toString);
+      assertEquals(0x02, pubRel.flags());
+      assertEquals(packetId, MqttWireClient.unsignedShort(pubRel.body(), 0));
+
+      subscriber.send(MqttWireClient.pubComp(packetId));
+    }
+  }
+
   private CloseableMqtt5Client client() throws Exception {
     return new CloseableMqtt5Client(URL, "mqtt5-full-" + UUID.randomUUID());
   }
