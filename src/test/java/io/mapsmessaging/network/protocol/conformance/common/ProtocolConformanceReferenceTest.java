@@ -8,6 +8,7 @@ import java.lang.reflect.Method;
 import java.util.List;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
 
 @Tag("conformance")
 @Tag("conformance-core")
@@ -23,7 +24,8 @@ class ProtocolConformanceReferenceTest {
       "io.mapsmessaging.network.protocol.conformance.jms.JmsCoreConformanceTest",
       "io.mapsmessaging.network.protocol.conformance.jms.JmsFullConformanceTest",
       "io.mapsmessaging.network.protocol.conformance.jms.JmsUnidentifiedProducerConformanceTest",
-      "io.mapsmessaging.network.protocol.impl.stomp.Stomp12ConformanceTest"
+      "io.mapsmessaging.network.protocol.impl.stomp.Stomp12ConformanceTest",
+      "io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.packet.MqttSn12SpecificationComplianceTest"
   );
 
   @Test
@@ -31,7 +33,8 @@ class ProtocolConformanceReferenceTest {
     for (String className : CONFORMANCE_CLASSES) {
       Class<?> type = Class.forName(className);
       for (Method method : type.getDeclaredMethods()) {
-        if (!method.isAnnotationPresent(Test.class)) {
+        if (!method.isAnnotationPresent(Test.class)
+            && !method.isAnnotationPresent(ParameterizedTest.class)) {
           continue;
         }
 
