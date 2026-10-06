@@ -5,7 +5,6 @@
 package io.mapsmessaging.network.protocol.conformance.jms;
 
 import io.mapsmessaging.network.protocol.conformance.common.ProtocolRequirement;
-import io.mapsmessaging.network.protocol.impl.amqp.jms.BaseConnection;
 import jakarta.jms.BytesMessage;
 import jakarta.jms.ConnectionFactory;
 import jakarta.jms.DeliveryMode;
@@ -20,7 +19,6 @@ import jakarta.jms.TextMessage;
 import jakarta.jms.Topic;
 import java.nio.charset.StandardCharsets;
 import java.util.UUID;
-import javax.naming.Context;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
@@ -30,7 +28,7 @@ import static org.junit.jupiter.api.Assertions.*;
 @Tag("conformance-core")
 @Tag("jms")
 @Tag("amqp10")
-class JmsCoreConformanceTest extends BaseConnection {
+class JmsCoreConformanceTest extends JmsConformanceSupport {
 
   private static final String JMS_SOURCE =
       "https://jakarta.ee/specifications/messaging/3.1/jakarta-messaging-spec-3.1.html";
@@ -41,7 +39,7 @@ class JmsCoreConformanceTest extends BaseConnection {
       value = "Sections 4.1.2 and 6.2: queue semantics and session producer/consumer creation",
       source = JMS_SOURCE)
   void queueSendReceivePreservesTextAndProperties() throws Exception {
-    try (Context naming = loadContext()) {
+    try (CloseableNamingContext naming = namingContext()) {
       ConnectionFactory factory = (ConnectionFactory) naming.lookup("qpidConnectionfactory");
       try (JMSContext context = factory.createContext(JMSContext.AUTO_ACKNOWLEDGE)) {
         TemporaryQueue queue = context.createTemporaryQueue();
@@ -70,7 +68,7 @@ class JmsCoreConformanceTest extends BaseConnection {
       value = "Section 4.2.2: topic semantics",
       source = JMS_SOURCE)
   void topicPublicationIsDeliveredToActiveSubscriber() throws Exception {
-    try (Context naming = loadContext()) {
+    try (CloseableNamingContext naming = namingContext()) {
       ConnectionFactory factory = (ConnectionFactory) naming.lookup("qpidConnectionfactory");
       try (JMSContext context = factory.createContext(JMSContext.AUTO_ACKNOWLEDGE)) {
         Topic topic = context.createTemporaryTopic();
@@ -89,7 +87,7 @@ class JmsCoreConformanceTest extends BaseConnection {
       value = "Section 3.8: message selectors use message headers and properties",
       source = JMS_SOURCE)
   void selectorDeliversOnlyMatchingMessages() throws Exception {
-    try (Context naming = loadContext()) {
+    try (CloseableNamingContext naming = namingContext()) {
       ConnectionFactory factory = (ConnectionFactory) naming.lookup("qpidConnectionfactory");
       try (JMSContext context = factory.createContext(JMSContext.AUTO_ACKNOWLEDGE)) {
         TemporaryQueue queue = context.createTemporaryQueue();
@@ -119,7 +117,7 @@ class JmsCoreConformanceTest extends BaseConnection {
       value = "Section 6.2.10: CLIENT_ACKNOWLEDGE and session recovery",
       source = JMS_SOURCE)
   void clientAcknowledgeRecoverRedeliversUnacknowledgedMessage() throws Exception {
-    try (Context naming = loadContext()) {
+    try (CloseableNamingContext naming = namingContext()) {
       ConnectionFactory factory = (ConnectionFactory) naming.lookup("qpidConnectionfactory");
       try (JMSContext context = factory.createContext(JMSContext.CLIENT_ACKNOWLEDGE)) {
         TemporaryQueue queue = context.createTemporaryQueue();
@@ -150,7 +148,7 @@ class JmsCoreConformanceTest extends BaseConnection {
       value = "Section 6.2.7: transacted session commit and rollback semantics",
       source = JMS_SOURCE)
   void transactionRollbackSuppressesProducedMessageAndCommitPublishesIt() throws Exception {
-    try (Context naming = loadContext()) {
+    try (CloseableNamingContext naming = namingContext()) {
       ConnectionFactory factory = (ConnectionFactory) naming.lookup("qpidConnectionfactory");
       try (JMSContext context = factory.createContext(JMSContext.SESSION_TRANSACTED)) {
         TemporaryQueue queue = context.createTemporaryQueue();
@@ -179,7 +177,7 @@ class JmsCoreConformanceTest extends BaseConnection {
       value = "Section 6.2.2: temporary destination scope and lifetime",
       source = JMS_SOURCE)
   void temporaryQueueCanBeUsedAcrossSessionsInSameConnectionContext() throws Exception {
-    try (Context naming = loadContext()) {
+    try (CloseableNamingContext naming = namingContext()) {
       ConnectionFactory factory = (ConnectionFactory) naming.lookup("qpidConnectionfactory");
       try (JMSContext parent = factory.createContext(JMSContext.AUTO_ACKNOWLEDGE);
            JMSContext sibling = parent.createContext(JMSContext.AUTO_ACKNOWLEDGE)) {
@@ -204,7 +202,7 @@ class JmsCoreConformanceTest extends BaseConnection {
     String clientId = "jms-durable-" + UUID.randomUUID();
     String subscription = "sub-" + UUID.randomUUID();
 
-    try (Context naming = loadContext()) {
+    try (CloseableNamingContext naming = namingContext()) {
       ConnectionFactory factory = (ConnectionFactory) naming.lookup("qpidConnectionfactory");
       Topic topic = (Topic) naming.lookup("topicExchange");
 
@@ -241,7 +239,7 @@ class JmsCoreConformanceTest extends BaseConnection {
       value = "Sections 3.7 and 3.10: standard message body types and properties",
       source = JMS_SOURCE)
   void textBytesAndMapMessagesRoundTrip() throws Exception {
-    try (Context naming = loadContext()) {
+    try (CloseableNamingContext naming = namingContext()) {
       ConnectionFactory factory = (ConnectionFactory) naming.lookup("qpidConnectionfactory");
       try (JMSContext context = factory.createContext(JMSContext.AUTO_ACKNOWLEDGE)) {
         TemporaryQueue queue = context.createTemporaryQueue();
@@ -282,7 +280,7 @@ class JmsCoreConformanceTest extends BaseConnection {
       value = "Section 3.4.9: message expiration",
       source = JMS_SOURCE)
   void expiredMessageIsNotDelivered() throws Exception {
-    try (Context naming = loadContext()) {
+    try (CloseableNamingContext naming = namingContext()) {
       ConnectionFactory factory = (ConnectionFactory) naming.lookup("qpidConnectionfactory");
       try (JMSContext context = factory.createContext(JMSContext.AUTO_ACKNOWLEDGE)) {
         TemporaryQueue queue = context.createTemporaryQueue();
