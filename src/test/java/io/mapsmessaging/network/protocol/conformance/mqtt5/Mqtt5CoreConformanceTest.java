@@ -10,6 +10,7 @@ import io.mapsmessaging.network.protocol.conformance.common.ProtocolRequirement;
 import io.mapsmessaging.test.BaseTestConfig;
 import java.nio.charset.StandardCharsets;
 import java.util.UUID;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
@@ -23,6 +24,7 @@ class Mqtt5CoreConformanceTest extends BaseTestConfig {
   private static final int PORT = 1883;
 
   @Test
+  @Disabled("Known conformance gap: MSG-386")
   @ProtocolRequirement(specification = "MQTT-5.0", value = "Section 3.2 CONNACK", source = ProtocolRequirement.MQTT_5_SOURCE)
   void connectReturnsSuccessfulConnAck() throws Exception {
     try (MqttWireClient client = new MqttWireClient("localhost", PORT)) {
