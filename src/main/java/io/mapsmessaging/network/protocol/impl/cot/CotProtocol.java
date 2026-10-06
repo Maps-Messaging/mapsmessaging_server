@@ -74,6 +74,11 @@ public class CotProtocol extends Protocol implements Selectable {
 
   private static final String DESTINATION_NAME = "/tak/cot/inbound";
   private static final int MAX_BUFFER_SIZE = 1_048_576; // 1MB safety cap against a malformed/never-terminated stream
+  // A TLS record is indivisible and decrypts to up to 16 KB, so every read must have room for a
+  // whole record. The packet handed over by protocol detection is only 1 KB and must not be reused
+  // for reads: over ssl:// any record carrying more than 1 KB of CoT would never decode.
+  private static final int MIN_READ_BUFFER_SIZE = 32 * 1024;
+  private static final String READER_THREAD_PREFIX = "CoT Protocol Reader::";
   private static final String UPDATE_SOURCE = "cot-ingest";
 
   private static final byte[] EVENT_START = "<event".getBytes(StandardCharsets.US_ASCII);
@@ -98,14 +103,23 @@ public class CotProtocol extends Protocol implements Selectable {
 
   public CotProtocol(EndPoint endPoint, Packet initialPacket, CotProtocolConfigDTO config) throws IOException {
     super(endPoint, config != null ? config : new CotProtocolConfigDTO());
-    this.packet = initialPacket;
+    this.packet = new Packet(readBufferSize(endPoint), false);
     this.sessionId = "cot-" + UUID.randomUUID();
     createSession();
     logger.debug("CoT passthrough connection created on {}", endPoint.getConfig().getUrl());
-    if (initialPacket.available() > 0) {
+    if (initialPacket != null && initialPacket.available() > 0) {
       appendAndProcess(initialPacket);
     }
     endPoint.register(SelectionKey.OP_READ, this);
+  }
+
+  /** The configured server read buffer size, never smaller than one TLS record and never above the 1 MB cap. */
+  static int readBufferSize(EndPoint endPoint) {
+    long configured = 0;
+    if (endPoint.getConfig() != null && endPoint.getConfig().getEndPointConfig() != null) {
+      configured = endPoint.getConfig().getEndPointConfig().getServerReadBufferSize();
+    }
+    return (int) Math.max(MIN_READ_BUFFER_SIZE, Math.min(configured, MAX_BUFFER_SIZE));
   }
 
   private void createSession() throws IOException {
@@ -137,20 +151,41 @@ public class CotProtocol extends Protocol implements Selectable {
   private final class ReadTask implements Runnable {
     @Override
     public void run() {
-      Thread.currentThread().setName("CoT Protocol Reader::" + Thread.currentThread().getName());
+      // The pool reuses threads, so prefix for this run only - prefixing the current name every
+      // time grew it without bound over the life of the server.
+      Thread current = Thread.currentThread();
+      String poolName = current.getName();
+      current.setName(READER_THREAD_PREFIX + poolName);
+      try {
+        readAvailable();
+      } finally {
+        current.setName(poolName);
+      }
+    }
+
+    private void readAvailable() {
       try {
         int read;
         boolean first = true;
         do {
           packet.clear();
           read = endPoint.readPacket(packet);
-          if (read > 0) {
+          int applicationBytes = packet.position();
+          if (read > 0 && applicationBytes > 0) {
             EndPoint.totalReceived.increment();
             packet.flip();
             appendAndProcess(packet);
-          } else if (first) {
+          } else if (first && read <= 0) {
+            // Nothing readable on the first pass: the peer has gone away.
             closeQuietly();
             return;
+          } else {
+            // read > 0 but no application data was produced - e.g. an SSL read
+            // consumed encrypted bytes for a partial record and decoded nothing
+            // yet (readPacket then reports the encrypted count, not application
+            // payload). Stop draining and wait for the selector to signal fresh
+            // data instead of busy-spinning on a count that carries no payload.
+            break;
           }
           first = false;
         } while (read > 0);
