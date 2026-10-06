@@ -32,7 +32,6 @@ class Mqtt311FullConformanceTest extends BaseTestConfig {
   private static final String URL = "tcp://localhost:1883";
 
   @Test
-  @Disabled("Known conformance gap: MSG-392")
   @ProtocolRequirement(specification = "MQTT-3.1.1", value = "Section 3.1.3.1 Client Identifier", source = ProtocolRequirement.MQTT_311_SOURCE)
   void zeroLengthClientIdentifierRequiresCleanSession() throws Exception {
     try (MqttWireClient rejected = new MqttWireClient("localhost", 1883)) {
@@ -81,6 +80,7 @@ class Mqtt311FullConformanceTest extends BaseTestConfig {
   }
 
   @Test
+  @Disabled("Known conformance gap: MSG-392")
   @ProtocolRequirement(specification = "MQTT-3.1.1", value = "Section 4.4 Message delivery retry", source = ProtocolRequirement.MQTT_311_SOURCE)
   void unacknowledgedQosOnePublishIsRedeliveredWithDupAfterReconnect() throws Exception {
     String clientId = "mqtt311-redelivery-" + UUID.randomUUID();

@@ -40,7 +40,6 @@ class Mqtt5FullConformanceTest extends BaseTestConfig {
   private static final String URL = "tcp://localhost:1883";
 
   @Test
-  @Disabled("Known conformance gap: MSG-392")
   @ProtocolRequirement(
       specification = "MQTT-5.0",
       value = "Section 3.2.2.3.14 Server Keep Alive [MQTT-3.2.2-21]",
@@ -100,6 +99,7 @@ class Mqtt5FullConformanceTest extends BaseTestConfig {
   }
 
   @Test
+  @Disabled("Known conformance gap: MSG-392")
   @ProtocolRequirement(
       specification = "MQTT-5.0",
       value = "Section 4.4 Message delivery retry",

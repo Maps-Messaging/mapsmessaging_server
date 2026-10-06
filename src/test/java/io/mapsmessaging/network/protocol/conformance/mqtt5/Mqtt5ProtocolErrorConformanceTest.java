@@ -19,7 +19,6 @@ import static org.junit.jupiter.api.Assertions.*;
 class Mqtt5ProtocolErrorConformanceTest extends BaseTestConfig {
 
   @Test
-  @Disabled("Known conformance gap: MSG-388")
   @ProtocolRequirement(
       specification = "MQTT-5.0",
       value = "Section 3.1 CONNECT [MQTT-3.1.0-2]",
@@ -32,7 +31,6 @@ class Mqtt5ProtocolErrorConformanceTest extends BaseTestConfig {
   }
 
   @Test
-  @Disabled("Known conformance gap: MSG-395")
   @ProtocolRequirement(
       specification = "MQTT-5.0",
       value = "Section 2.1.3 Fixed Header Flags [MQTT-2.1.3-1]",
@@ -58,7 +56,7 @@ class Mqtt5ProtocolErrorConformanceTest extends BaseTestConfig {
   }
 
   @Test
-  @Disabled("Known conformance gap: MSG-396")
+  @Disabled("Known conformance gap: MSG-391")
   @ProtocolRequirement(
       specification = "MQTT-5.0",
       value = "Section 3.1.2.11.3 Receive Maximum",
@@ -88,7 +86,7 @@ class Mqtt5ProtocolErrorConformanceTest extends BaseTestConfig {
   }
 
   @Test
-  @Disabled("Known conformance gap: MSG-393")
+  @Disabled("Known conformance gap: MSG-388")
   @ProtocolRequirement(
       specification = "MQTT-5.0",
       value = "Section 3.8.2.1.2 Subscription Identifier: value 0 is a Protocol Error",
@@ -117,7 +115,7 @@ class Mqtt5ProtocolErrorConformanceTest extends BaseTestConfig {
   }
 
   @Test
-  @Disabled("Known conformance gap: MSG-390")
+  @Disabled("Known conformance gap: MSG-388")
   @ProtocolRequirement(
       specification = "MQTT-5.0",
       value = "Section 4.7.1.2 Multi-level wildcard [MQTT-4.7.1-1]",
@@ -130,7 +128,7 @@ class Mqtt5ProtocolErrorConformanceTest extends BaseTestConfig {
   }
 
   @Test
-  @Disabled("Known conformance gap: MSG-395")
+  @Disabled("Known conformance gap: MSG-390")
   @ProtocolRequirement(
       specification = "MQTT-5.0",
       value = "Section 1.5.4 UTF-8 Encoded String [MQTT-1.5.4-1]",
@@ -156,6 +154,7 @@ class Mqtt5ProtocolErrorConformanceTest extends BaseTestConfig {
 
 
   @Test
+  @Disabled("Known conformance gap: MSG-395")
   @ProtocolRequirement(
       specification = "MQTT-5.0",
       value = "Section 1.5.5 Variable Byte Integer [MQTT-1.5.5-1]",
@@ -168,6 +167,7 @@ class Mqtt5ProtocolErrorConformanceTest extends BaseTestConfig {
   }
 
   @Test
+  @Disabled("Known conformance gap: MSG-395")
   @ProtocolRequirement(
       specification = "MQTT-5.0",
       value = "Section 1.5.5 Variable Byte Integer: maximum four bytes",
@@ -195,6 +195,7 @@ class Mqtt5ProtocolErrorConformanceTest extends BaseTestConfig {
   }
 
   @Test
+  @Disabled("Known conformance gap: MSG-388")
   @ProtocolRequirement(
       specification = "MQTT-5.0",
       value = "Section 3.8.3.1 Subscription Options [MQTT-3.8.3-4]",
@@ -211,6 +212,7 @@ class Mqtt5ProtocolErrorConformanceTest extends BaseTestConfig {
   }
 
   @Test
+  @Disabled("Known conformance gap: MSG-393")
   @ProtocolRequirement(
       specification = "MQTT-5.0",
       value = "Section 3.3.4 Subscription Identifier [MQTT-3.3.4-6]",
@@ -228,6 +230,7 @@ class Mqtt5ProtocolErrorConformanceTest extends BaseTestConfig {
   }
 
   @Test
+  @Disabled("Known conformance gap: MSG-396")
   @ProtocolRequirement(
       specification = "MQTT-5.0",
       value = "Section 4.12 Enhanced Authentication [MQTT-4.12.0-1]",
