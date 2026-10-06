@@ -13,6 +13,7 @@ import jakarta.jms.MapMessage;
 import jakarta.jms.Message;
 import jakarta.jms.MessageConsumer;
 import jakarta.jms.MessageProducer;
+import jakarta.jms.Queue;
 import jakarta.jms.Session;
 import jakarta.jms.TemporaryQueue;
 import jakarta.jms.TemporaryTopic;
@@ -308,4 +309,98 @@ class JmsCoreConformanceTest extends JmsConformanceSupport {
       queue.delete();
     }
   }
+
+  @Test
+  @ProtocolRequirement(
+      specification = "Jakarta-Messaging-3.1",
+      value = "Sections 3.4.1, 3.4.3, 3.4.4 and 3.4.11: provider sets destination, message ID and timestamp on synchronous send",
+      source = JMS_SOURCE)
+  void providerSetsMessageIdentityTimestampAndDestination() throws Exception {
+    try (CloseableNamingContext naming = namingContext();
+         Connection connection = ((ConnectionFactory) naming.lookup("qpidConnectionfactory")).createConnection();
+         Session session = connection.createSession(Session.AUTO_ACKNOWLEDGE)) {
+      TemporaryQueue queue = session.createTemporaryQueue();
+      try (MessageProducer producer = session.createProducer(queue);
+           MessageConsumer consumer = session.createConsumer(queue)) {
+        connection.start();
+
+        TextMessage sent = session.createTextMessage("headers");
+        long beforeSend = System.currentTimeMillis();
+        producer.send(sent);
+        long afterSend = System.currentTimeMillis();
+
+        assertNotNull(sent.getJMSDestination());
+        assertEquals(queue.getQueueName(), ((Queue) sent.getJMSDestination()).getQueueName());
+        assertNotNull(sent.getJMSMessageID());
+        assertTrue(sent.getJMSMessageID().startsWith("ID:"));
+        assertTrue(sent.getJMSTimestamp() >= beforeSend);
+        assertTrue(sent.getJMSTimestamp() <= afterSend);
+
+        Message received = consumer.receive(3_000);
+        assertNotNull(received);
+        assertEquals(sent.getJMSMessageID(), received.getJMSMessageID());
+        assertEquals(sent.getJMSTimestamp(), received.getJMSTimestamp());
+        assertEquals(queue.getQueueName(), ((Queue) received.getJMSDestination()).getQueueName());
+      }
+      queue.delete();
+    }
+  }
+
+  @Test
+  @ProtocolRequirement(
+      specification = "Jakarta-Messaging-3.1",
+      value = "Sections 2.16, 3.4.5, 3.4.6 and 3.4.8: correlation ID, reply-to and type headers are transmitted to consumers",
+      source = JMS_SOURCE)
+  void applicationHeadersRoundTrip() throws Exception {
+    try (CloseableNamingContext naming = namingContext();
+         Connection connection = ((ConnectionFactory) naming.lookup("qpidConnectionfactory")).createConnection();
+         Session session = connection.createSession(Session.AUTO_ACKNOWLEDGE)) {
+      TemporaryQueue queue = session.createTemporaryQueue();
+      TemporaryQueue replyTo = session.createTemporaryQueue();
+      try (MessageProducer producer = session.createProducer(queue);
+           MessageConsumer consumer = session.createConsumer(queue)) {
+        connection.start();
+
+        TextMessage sent = session.createTextMessage("request");
+        sent.setJMSCorrelationID("correlation-42");
+        sent.setJMSReplyTo(replyTo);
+        sent.setJMSType("conformance.request");
+        producer.send(sent);
+
+        Message received = consumer.receive(3_000);
+        assertNotNull(received);
+        assertEquals("correlation-42", received.getJMSCorrelationID());
+        assertEquals("conformance.request", received.getJMSType());
+        assertNotNull(received.getJMSReplyTo());
+        assertEquals(replyTo.getQueueName(), ((Queue) received.getJMSReplyTo()).getQueueName());
+      }
+      replyTo.delete();
+      queue.delete();
+    }
+  }
+
+  @Test
+  @ProtocolRequirement(
+      specification = "Jakarta-Messaging-3.1",
+      value = "Section 6.1.5: stopped connection inhibits consumer delivery until the connection is started",
+      source = JMS_SOURCE)
+  void stoppedConnectionInhibitsDeliveryUntilStarted() throws Exception {
+    try (CloseableNamingContext naming = namingContext();
+         Connection connection = ((ConnectionFactory) naming.lookup("qpidConnectionfactory")).createConnection();
+         Session session = connection.createSession(Session.AUTO_ACKNOWLEDGE)) {
+      TemporaryQueue queue = session.createTemporaryQueue();
+      try (MessageProducer producer = session.createProducer(queue);
+           MessageConsumer consumer = session.createConsumer(queue)) {
+        producer.send(session.createTextMessage("held-while-stopped"));
+
+        assertNull(consumer.receive(250));
+        connection.start();
+
+        TextMessage received = assertInstanceOf(TextMessage.class, consumer.receive(3_000));
+        assertEquals("held-while-stopped", received.getText());
+      }
+      queue.delete();
+    }
+  }
+
 }
