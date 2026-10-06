@@ -129,12 +129,14 @@ class JmsCoreConformanceTest extends BaseConnection {
         Message first = consumer.receive(3_000);
         assertNotNull(first);
         assertFalse(first.getJMSRedelivered());
+        assertEquals(1, first.getIntProperty("JMSXDeliveryCount"));
 
         context.recover();
 
         Message redelivered = consumer.receive(3_000);
         assertNotNull(redelivered);
         assertTrue(redelivered.getJMSRedelivered());
+        assertTrue(redelivered.getIntProperty("JMSXDeliveryCount") >= 2);
         redelivered.acknowledge();
 
         queue.delete();
