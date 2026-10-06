@@ -18,7 +18,8 @@ class ProtocolConformanceReferenceTest {
       "io.mapsmessaging.network.protocol.conformance.amqp.Amqp10SaslConformanceTest",
       "io.mapsmessaging.network.protocol.conformance.jms.JmsAmqpSemanticConformanceTest",
       "io.mapsmessaging.network.protocol.conformance.jms.JmsCoreConformanceTest",
-      "io.mapsmessaging.network.protocol.conformance.jms.JmsFullConformanceTest"
+      "io.mapsmessaging.network.protocol.conformance.jms.JmsFullConformanceTest",
+      "io.mapsmessaging.network.protocol.conformance.jms.JmsUnidentifiedProducerConformanceTest"
   );
 
   @Test
