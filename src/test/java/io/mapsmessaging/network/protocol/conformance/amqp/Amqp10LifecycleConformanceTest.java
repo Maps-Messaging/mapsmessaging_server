@@ -17,10 +17,9 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
-import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
-import static org.junit.jupiter.api.Assertions.fail;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 @Tag("conformance")
 @Tag("conformance-core")
@@ -33,7 +32,6 @@ class Amqp10LifecycleConformanceTest extends BaseTestConfig {
       "https://docs.oasis-open.org/amqp/core/v1.0/os/amqp-core-transport-v1.0-os.html";
 
   @Test
-  @Disabled("Known conformance gap: MSG-397")
   @ProtocolRequirement(
       specification = "AMQP-1.0",
       value = "Part 2 sections 2.4.1 and 2.7.1: OPEN is the first connection performative and uses channel 0",
@@ -50,7 +48,6 @@ class Amqp10LifecycleConformanceTest extends BaseTestConfig {
   }
 
   @Test
-  @Disabled("Known conformance gap: MSG-397")
   @ProtocolRequirement(
       specification = "AMQP-1.0",
       value = "Part 2 section 2.5.1: BEGIN establishes a session after OPEN",
@@ -85,8 +82,8 @@ class Amqp10LifecycleConformanceTest extends BaseTestConfig {
     }
   }
 
-
   @Test
+  @Disabled("Known conformance gap: MSG-397")
   @ProtocolRequirement(
       specification = "AMQP-1.0",
       value = "Part 2 sections 2.4.1 and 2.7.1: OPEN must be the first frame and can only use channel 0",
@@ -99,6 +96,7 @@ class Amqp10LifecycleConformanceTest extends BaseTestConfig {
   }
 
   @Test
+  @Disabled("Known conformance gap: MSG-397")
   @ProtocolRequirement(
       specification = "AMQP-1.0",
       value = "Part 2 section 2.4.1: OPEN can only be sent on channel 0",
@@ -136,7 +134,6 @@ class Amqp10LifecycleConformanceTest extends BaseTestConfig {
       }
     }
   }
-
 
   private void assertEventuallyClosed(Socket socket) throws Exception {
     socket.setSoTimeout(2_000);
