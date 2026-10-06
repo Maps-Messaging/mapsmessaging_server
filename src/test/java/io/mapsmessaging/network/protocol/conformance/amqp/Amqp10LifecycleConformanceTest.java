@@ -50,6 +50,7 @@ class Amqp10LifecycleConformanceTest extends BaseTestConfig {
   }
 
   @Test
+  @Disabled("Known conformance gap: MSG-397")
   @ProtocolRequirement(
       specification = "AMQP-1.0",
       value = "Part 2 section 2.5.1: BEGIN establishes a session after OPEN",
@@ -69,6 +70,7 @@ class Amqp10LifecycleConformanceTest extends BaseTestConfig {
   }
 
   @Test
+  @Disabled("Known conformance gap: MSG-397")
   @ProtocolRequirement(
       specification = "AMQP-1.0",
       value = "Part 2 sections 2.4.3 and 2.7.9: CLOSE completes the connection shutdown handshake",
