@@ -40,6 +40,12 @@ public @interface ProtocolRequirement {
   String WEBSOCKET_RFC6455_SOURCE =
       "https://www.rfc-editor.org/rfc/rfc6455.html";
 
+  String MAVLINK_SERIALIZATION_SOURCE =
+      "https://mavlink.io/en/guide/serialization.html";
+
+  String MAVLINK_XML_SCHEMA_SOURCE =
+      "https://mavlink.io/en/guide/xml_schema.html";
+
   String specification();
 
   /**
