@@ -26,6 +26,7 @@ public final class MqttSn2PacketDecoder {
     MqttSn2FrameCodec.Frame frame = MqttSn2FrameCodec.decode(wire);
     Object content = switch (frame.type()) {
       case CONNECT -> MqttSn2ConnectCodec.decode(frame);
+      case CONNACK -> MqttSn2ConnAckCodec.decode(frame);
       case PUBLISH, PUBWOS -> MqttSn2PublishCodec.decode(frame);
       case PUBACK, PUBREC, PUBREL, PUBCOMP, UNSUBACK -> MqttSn2AckCodec.decode(frame);
       case SUBSCRIBE, UNSUBSCRIBE -> MqttSn2SubscriptionCodec.decode(frame);
@@ -44,7 +45,7 @@ public final class MqttSn2PacketDecoder {
       case GWINFO -> MqttSn2GatewayCodec.decodeGatewayInfo(frame);
       case FORWARDER_ENCAPSULATION -> MqttSn2EncapsulationCodec.decodeForwarder(frame);
       case CONNECTION_ENCAPSULATION -> MqttSn2EncapsulationCodec.decodeConnection(frame);
-      case CONNACK, PROTECTION_ENCAPSULATION ->
+      case PROTECTION_ENCAPSULATION ->
           throw new IOException("MQTT-SN 2.0 decoder not implemented for " + frame.type());
     };
     return new Decoded(frame.type(), content);
