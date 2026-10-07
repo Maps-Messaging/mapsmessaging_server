@@ -34,6 +34,40 @@ public final class MqttSn2ConnectCodec {
   private MqttSn2ConnectCodec() {
   }
 
+  public static ByteBuffer encode(Connect request) {
+    if (request == null || request.packetIdentifier() < 1 || request.packetIdentifier() > 65535
+        || request.keepAliveSeconds() < 1 || request.keepAliveSeconds() > 65535
+        || request.maximumPacketSize() < 0 || request.maximumPacketSize() > 65535
+        || (request.maximumPacketSize() != 0 && request.maximumPacketSize() < 10)) {
+      throw new IllegalArgumentException("Invalid MQTT-SN 2.0 CONNECT parameters");
+    }
+    byte[] id = request.clientIdentifier().getBytes(StandardCharsets.UTF_8);
+    byte[] method = request.authenticationMethod() == null ? new byte[0]
+        : request.authenticationMethod().getBytes(StandardCharsets.UTF_8);
+    byte[] data = request.authenticationData();
+    if (request.authentication() && (method.length == 0 || method.length > 255
+        || data.length > 65535)) {
+      throw new IllegalArgumentException("Invalid CONNECT authentication fields");
+    }
+    if (!request.authentication() && (method.length != 0 || data.length != 0)) {
+      throw new IllegalArgumentException("Unexpected CONNECT authentication fields");
+    }
+    int flags = (request.cleanStart() ? 1 : 0) | (request.will() ? 2 : 0)
+        | (request.authentication() ? 4 : 0)
+        | (request.addressChanges() ? 0x20 : 0)
+        | (request.serverSuggestedValues() ? 0x40 : 0);
+    ByteBuffer body = ByteBuffer.allocate(8 + id.length
+        + (request.authentication() ? method.length + data.length + 3 : 0));
+    body.put((byte) flags).putShort((short) request.packetIdentifier()).put((byte) 2)
+        .putShort((short) request.keepAliveSeconds())
+        .putShort((short) request.maximumPacketSize());
+    if (request.authentication()) {
+      body.put((byte) method.length).put(method).putShort((short) data.length).put(data);
+    }
+    body.put(id).flip();
+    return MqttSn2FrameCodec.encode(MqttSn2PacketType.CONNECT, body);
+  }
+
   public static Connect decode(MqttSn2FrameCodec.Frame frame) throws IOException {
     if (frame.type() != MqttSn2PacketType.CONNECT) {
       throw new IOException("Expected MQTT-SN 2.0 CONNECT");
