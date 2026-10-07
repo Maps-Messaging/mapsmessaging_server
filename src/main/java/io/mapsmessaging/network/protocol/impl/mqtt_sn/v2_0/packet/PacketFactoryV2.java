@@ -32,11 +32,7 @@ public class PacketFactoryV2 extends PacketFactory {
   protected MQTT_SNPacket create(int type, int length, Packet packet) throws IOException {
     switch (type) {
       case MQTT_SNPacket.CONNECT:
-        try {
-          return new Connect(packet, length);
-        } catch (Exception e) {
-          return getConnectError(ReasonCodes.NOT_SUPPORTED);
-        }
+        return new Connect(packet, length);
 
       case MQTT_SNPacket.DISCONNECT:
         return new Disconnect(packet, length);
@@ -48,11 +44,7 @@ public class PacketFactoryV2 extends PacketFactory {
         return new Unsubscribe(packet);
 
       case MQTT_SNPacket.PINGREQ:
-        try {
-          return new PingRequestV2(packet, length);
-        } catch (Exception e) {
-          return new PingResponse();
-        }
+        return new PingRequestV2(packet, length);
 
       case MQTT_SNPacket.PINGRESP:
         return new PingResponse();
