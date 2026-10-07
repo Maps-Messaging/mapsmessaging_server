@@ -38,6 +38,13 @@ public final class MqttSn2ControlCodec {
   private MqttSn2ControlCodec() {
   }
 
+  public static ByteBuffer encodePingRequest(int identifier) {
+    checkIdentifier(identifier);
+    ByteBuffer body = ByteBuffer.allocate(2);
+    body.putShort((short) identifier).flip();
+    return MqttSn2FrameCodec.encode(MqttSn2PacketType.PINGREQ, body);
+  }
+
   public static int decodePingRequest(MqttSn2FrameCodec.Frame frame) throws IOException {
     ByteBuffer body = requireBody(frame, MqttSn2PacketType.PINGREQ);
     if (body.remaining() != 2) {
