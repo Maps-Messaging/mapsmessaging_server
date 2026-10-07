@@ -245,11 +245,18 @@ public final class MqttSn2Protocol extends Protocol {
   public void sendMessage(MessageEvent event) {
     ParsedMessage parsed = parseOutboundMessage(event);
     if (parsed == null) return;
-    byte[] topic = parsed.getDestinationName().getBytes(StandardCharsets.UTF_8);
-    byte[] payload = parsed.getMessage().getOpaqueData();
-    ByteBuffer body = ByteBuffer.allocate(3 + topic.length + payload.length);
-    body.put((byte) 0).putShort((short) topic.length).put(topic).put(payload).flip();
-    send(MqttSn2FrameCodec.encode(MqttSn2PacketType.PUBLISH, body), event.getCompletionTask());
+    int qosLevel = parsed.getMessage().getQualityOfService().getLevel();
+    if (qosLevel != 0) {
+      // The v2 protocol state machine must own QoS1/2 Packet Identifiers,
+      // retransmission and acknowledgement callbacks (Block 2). Never
+      // silently downgrade a subscription's delivery guarantee to QoS0.
+      throw new UnsupportedOperationException(
+          "MQTT-SN 2.0 outbound QoS" + qosLevel + " is not enabled");
+    }
+    MqttSn2PublishCodec.Publish publish = new MqttSn2PublishCodec.Publish(
+        false, 0, false, parsed.getMessage().isRetain(), 0, 0,
+        parsed.getDestinationName(), 0, parsed.getMessage().getOpaqueData());
+    send(MqttSn2PublishCodec.encode(publish), event.getCompletionTask());
   }
 
   @Override
