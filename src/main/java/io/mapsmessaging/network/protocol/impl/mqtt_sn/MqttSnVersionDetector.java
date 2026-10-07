@@ -47,7 +47,7 @@ public final class MqttSnVersionDetector {
     if (type == 0x04 && remaining >= 4) {
       int flags = Byte.toUnsignedInt(buffer.get(payload));
       int protocolId = Byte.toUnsignedInt(buffer.get(payload + 1));
-      return (flags & 0xF8) == 0 && protocolId == 1 ? Version.V1_2 : Version.UNKNOWN;
+      return (flags & 0xF3) == 0 && protocolId == 1 ? Version.V1_2 : Version.UNKNOWN;
     }
     if (type == 0x01 && remaining >= 8) {
       int flags = Byte.toUnsignedInt(buffer.get(payload));
