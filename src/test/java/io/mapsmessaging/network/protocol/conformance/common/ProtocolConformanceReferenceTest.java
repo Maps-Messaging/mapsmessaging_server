@@ -28,7 +28,10 @@ class ProtocolConformanceReferenceTest {
       "io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.packet.MqttSn12SpecificationComplianceTest",
       "io.mapsmessaging.network.protocol.impl.mqtt_sn.MqttSn12ConnectionlessPublishSpecificationTest",
       "io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.listeners.MqttSn12ListenerSpecificationTest",
-      "io.mapsmessaging.network.protocol.impl.nats.NatsClientProtocolConformanceTest"
+      "io.mapsmessaging.network.protocol.impl.nats.NatsClientProtocolConformanceTest",
+      "io.mapsmessaging.network.protocol.impl.coap.packet.CoapProtocolConformanceTest",
+      "io.mapsmessaging.network.protocol.impl.websockets.WebSocketHandshakeConformanceTest",
+      "io.mapsmessaging.network.protocol.impl.websockets.endpoint.WebSocketFrameConformanceTest"
   );
 
   @Test
@@ -60,6 +63,6 @@ class ProtocolConformanceReferenceTest {
   }
 
   private boolean hasRequirementIdentifier(String value) {
-    return value.matches("(?i).*(section|part\\s+\\d|MQTT-\\d).*");
+    return value.matches("(?i).*(section|§|part\\s+\\d|MQTT-\\d).*");
   }
 }
