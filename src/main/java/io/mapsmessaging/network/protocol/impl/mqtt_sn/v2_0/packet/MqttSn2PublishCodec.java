@@ -36,8 +36,8 @@ public final class MqttSn2PublishCodec {
     int type = publish.topicType();
     int qos = publish.qos();
     boolean wos = publish.withoutSession();
-    if (type < 0 || type > 2 || qos < 0 || qos > 2
-        || (wos && (type == 1 || qos != 0 || publish.duplicate()))
+    if ((type != 0 && type != 1 && type != 3) || qos < 0 || qos > 2
+        || (wos && (type == 0 || qos != 0 || publish.duplicate()))
         || (!wos && publish.duplicate() && qos != 2)) {
       throw new IllegalArgumentException("Invalid MQTT-SN 2.0 PUBLISH flags");
     }
@@ -45,7 +45,7 @@ public final class MqttSn2PublishCodec {
       throw new IllegalArgumentException("Invalid PUBLISH Packet Identifier");
     }
     byte[] topic;
-    if (type == 0) {
+    if (type == 3) {
       if (publish.topicName() == null || publish.topicName().isEmpty()
           || publish.topicName().indexOf('#') >= 0 || publish.topicName().indexOf('+') >= 0
           || publish.topicName().indexOf('\u0000') >= 0) {
@@ -67,7 +67,7 @@ public final class MqttSn2PublishCodec {
         | (wos ? 0 : qos << 5) | (publish.duplicate() ? 0x80 : 0);
     data.put((byte) flags);
     if (!wos && qos > 0) data.putShort((short) publish.packetIdentifier());
-    if (type == 0) {
+    if (type == 3) {
       data.putShort((short) topic.length).put(topic);
     } else {
       data.putShort((short) publish.topicAlias());
@@ -91,7 +91,7 @@ public final class MqttSn2PublishCodec {
     boolean duplicate = (flags & 0x80) != 0;
     int qos = (flags >>> 5) & 3;
     if (wos) {
-      if ((flags & 0xEC) != 0 || topicType == 1) {
+      if ((flags & 0xEC) != 0 || topicType == 0 || topicType == 2) {
         throw new IOException("Invalid PUBWOS flags or topic type");
       }
     } else if ((flags & 0x0C) != 0 || qos == 3 || (duplicate && qos != 2)) {
@@ -114,7 +114,7 @@ public final class MqttSn2PublishCodec {
     int topicValue = Short.toUnsignedInt(body.getShort());
     int alias = 0;
     String name = null;
-    if (topicType == 0) {
+    if (topicType == 3) {
       if (body.remaining() < topicValue) {
         throw new IOException("Truncated PUBLISH Topic Name");
       }
@@ -133,7 +133,7 @@ public final class MqttSn2PublishCodec {
         throw new IOException("Invalid PUBLISH Topic Name");
       }
     } else {
-      if (topicType == 3 || topicValue == 0) {
+      if (topicType == 2 || topicValue == 0) {
         throw new IOException("Invalid PUBLISH topic alias");
       }
       alias = topicValue;
