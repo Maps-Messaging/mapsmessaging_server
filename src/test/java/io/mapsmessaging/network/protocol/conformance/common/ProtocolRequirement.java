@@ -28,6 +28,18 @@ public @interface ProtocolRequirement {
   String NATS_CLIENT_PROTOCOL_SOURCE =
       "https://docs.nats.io/reference/protocols/client";
 
+  String COAP_RFC7252_SOURCE =
+      "https://www.rfc-editor.org/rfc/rfc7252.html";
+
+  String COAP_RFC7641_SOURCE =
+      "https://www.rfc-editor.org/rfc/rfc7641.html";
+
+  String COAP_RFC7959_SOURCE =
+      "https://www.rfc-editor.org/rfc/rfc7959.html";
+
+  String WEBSOCKET_RFC6455_SOURCE =
+      "https://www.rfc-editor.org/rfc/rfc6455.html";
+
   String specification();
 
   /**
