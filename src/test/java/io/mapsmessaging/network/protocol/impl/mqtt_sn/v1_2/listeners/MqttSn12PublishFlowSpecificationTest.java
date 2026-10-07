@@ -7,6 +7,7 @@ import io.mapsmessaging.api.features.DestinationType;
 import io.mapsmessaging.network.io.EndPoint;
 import io.mapsmessaging.network.io.Packet;
 import io.mapsmessaging.network.protocol.conformance.common.ProtocolRequirement;
+import io.mapsmessaging.network.protocol.impl.mqtt_sn.RegisteredTopicConfiguration;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.MQTT_SNProtocol;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.packet.*;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.state.StateEngine;
@@ -40,7 +41,7 @@ class MqttSn12PublishFlowSpecificationTest {
   void qosOnePublishReturnsMatchingPubAck() throws Exception {
     Fixture fixture = fixture("sensor/temp", 42);
     Publish publish = parsePublish(
-        bytes(8, MQTT_SNPacket.PUBLISH, 0x20, 0, 42, 0x12, 0x34, 'x'));
+        bytes(8, MQTT_SNPacket.PUBLISH, 0x21, 0, 42, 0x12, 0x34, 'x'));
 
     new PublishListener().handlePacket(
         publish,
@@ -68,7 +69,7 @@ class MqttSn12PublishFlowSpecificationTest {
     Transaction transaction = mock(Transaction.class);
     when(fixture.session.startTransaction("client:4660")).thenReturn(transaction);
     Publish publish = parsePublish(
-        bytes(8, MQTT_SNPacket.PUBLISH, 0x40, 0, 42, 0x12, 0x34, 'x'));
+        bytes(8, MQTT_SNPacket.PUBLISH, 0x41, 0, 42, 0x12, 0x34, 'x'));
 
     new PublishListener().handlePacket(
         publish,
@@ -124,9 +125,10 @@ class MqttSn12PublishFlowSpecificationTest {
 
     MQTT_SNProtocol protocol = mock(MQTT_SNProtocol.class, RETURNS_DEEP_STUBS);
     StateEngine engine = mock(StateEngine.class);
-    TopicAliasManager aliases = mock(TopicAliasManager.class);
+    RegisteredTopicConfiguration registered = mock(RegisteredTopicConfiguration.class);
+    TopicAliasManager aliases = new TopicAliasManager(registered, 20);
     when(engine.getTopicAliasManager()).thenReturn(aliases);
-    when(aliases.getTopic(nullable(SocketAddress.class), eq(topicId), eq(MQTT_SNPacket.TOPIC_NAME)))
+    when(registered.getTopic(nullable(SocketAddress.class), eq(topicId)))
         .thenReturn(topicName);
     when(protocol.getProtocolMessageTransformation()).thenReturn(null);
     when(protocol.getProtocolConfig().getMessageDefaults()).thenReturn(null);
