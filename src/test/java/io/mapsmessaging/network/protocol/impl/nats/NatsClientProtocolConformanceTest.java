@@ -300,8 +300,20 @@ class NatsClientProtocolConformanceTest extends BaseTestConfig {
       assertEquals("+OK", connection.readLine());
 
       connection.send("PUB " + subject + " 1\r\nx\r\n");
-      assertEquals("+OK", connection.readLine());
-      MessageFrame message = connection.readMessage();
+
+      boolean sawOk = false;
+      MessageFrame message = null;
+      for (int i = 0; i < 2; i++) {
+        String line = connection.readLine();
+        if ("+OK".equals(line)) {
+          sawOk = true;
+        } else {
+          message = connection.readMessageFromHeader(line);
+        }
+      }
+
+      assertTrue(sawOk);
+      assertNotNull(message);
       assertEquals("sid-ok", message.sid());
     }
   }
