@@ -50,7 +50,8 @@ public final class MqttSn2ProtectionCodec {
    * Encode an already protected payload and authentication tag. The crypto
    * provider creates these bytes and is responsible for authentication.
    */
-  public static ByteBuffer encode(Envelope envelope) {
+  public static ByteBuffer encode(Envelope envelope, TagLengthResolver tagResolver) throws IOException {
+    Objects.requireNonNull(tagResolver, "tagResolver");
     Objects.requireNonNull(envelope, "envelope");
     int counterLength = envelope.monotonicCounter().length;
     int counterCode = switch (counterLength) {
@@ -71,6 +72,9 @@ public final class MqttSn2ProtectionCodec {
         || (envelope.scheme() >= 5 && envelope.scheme() <= 0x3B)
         || (envelope.scheme() >= 0x4A && envelope.scheme() <= 0xEF)) {
       throw new IllegalArgumentException("Invalid Protection Encapsulation fields");
+    }
+    if (tagResolver.length(envelope.scheme(), envelope.tagLengthCode()) != envelope.authenticationTag().length) {
+      throw new IOException("Protection authentication tag length does not match provider");
     }
     int flags = (envelope.tagLengthCode() << 4) | (materialCode << 2) | counterCode;
     ByteBuffer body = ByteBuffer.allocate(14 + materialLength + counterLength
