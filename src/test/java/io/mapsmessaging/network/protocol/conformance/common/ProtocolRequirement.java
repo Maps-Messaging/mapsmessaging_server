@@ -49,6 +49,9 @@ public @interface ProtocolRequirement {
   String COT_20_SOURCE =
       "https://www.mitre.org/sites/default/files/pdf/09_4937.pdf";
 
+  String TAK_PROTOCOL_SOURCE =
+      "https://github.com/TAK-Product-Center/atak-civ/blob/main/takproto/README.txt";
+
   String specification();
 
   /**
