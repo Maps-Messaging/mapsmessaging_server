@@ -137,8 +137,8 @@ public final class MqttSn2Protocol extends Protocol {
       throw new IOException("Duplicate MQTT-SN 2.0 CONNECT");
     }
     if (request.will() || request.authentication() || endPoint.getConfig().getSaslConfig() != null) {
-      // Do not establish a session without the v2 WILL/AUTH negotiation.
-      // These are implemented by the dedicated v2 lifecycle phase.
+      // Fail closed until the dedicated v2 AUTH/WILL exchanges are wired.
+      // Never create a broker session before completing negotiation.
       throw new IOException("MQTT-SN 2.0 WILL/AUTH negotiation not yet available");
     }
     lifecycle.begin(request.authentication() || endPoint.getConfig().getSaslConfig() != null, request.will());
@@ -161,6 +161,10 @@ public final class MqttSn2Protocol extends Protocol {
         return;
       }
       try {
+        if (closed || lifecycle.state() != MqttSn2Lifecycle.State.ESTABLISHING) {
+          SessionManager.getInstance().close(created, false);
+          return;
+        }
         setSession(created);
         created.login();
         ByteBuffer response = MqttSn2ConnAckCodec.encode(new MqttSn2ConnAckCodec.ConnAck(
