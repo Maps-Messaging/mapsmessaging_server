@@ -36,8 +36,8 @@ class CotXmlStreamingConformanceTest {
     assertEquals("alpha", parsed.uid());
     assertEquals("a-f-G-U-C", parsed.type());
     assertEquals("m-g", parsed.how());
-    assertEquals(0, parsed.point().lat().compareTo(new java.math.BigDecimal("34.1234")));
-    assertEquals(0, parsed.point().lon().compareTo(new java.math.BigDecimal("-117.1234")));
+    assertEquals(0, parsed.point().latitude().compareTo(new java.math.BigDecimal("34.1234")));
+    assertEquals(0, parsed.point().longitude().compareTo(new java.math.BigDecimal("-117.1234")));
   }
 
   @Test
