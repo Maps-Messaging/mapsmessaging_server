@@ -31,6 +31,51 @@ public final class MqttSn2PublishCodec {
   private MqttSn2PublishCodec() {
   }
 
+  public static ByteBuffer encode(Publish publish) {
+    if (publish == null) throw new IllegalArgumentException("Missing PUBLISH");
+    int type = publish.topicType();
+    int qos = publish.qos();
+    boolean wos = publish.withoutSession();
+    if (type < 0 || type > 2 || qos < 0 || qos > 2
+        || (wos && (type == 1 || qos != 0 || publish.duplicate()))
+        || (!wos && publish.duplicate() && qos != 2)) {
+      throw new IllegalArgumentException("Invalid MQTT-SN 2.0 PUBLISH flags");
+    }
+    if (!wos && qos > 0 && (publish.packetIdentifier() < 1 || publish.packetIdentifier() > 65535)) {
+      throw new IllegalArgumentException("Invalid PUBLISH Packet Identifier");
+    }
+    byte[] topic;
+    if (type == 0) {
+      if (publish.topicName() == null || publish.topicName().isEmpty()
+          || publish.topicName().indexOf('#') >= 0 || publish.topicName().indexOf('+') >= 0
+          || publish.topicName().indexOf('\u0000') >= 0) {
+        throw new IllegalArgumentException("Invalid PUBLISH Topic Name");
+      }
+      topic = publish.topicName().getBytes(StandardCharsets.UTF_8);
+      if (topic.length > 65535) throw new IllegalArgumentException("Topic Name too long");
+    } else {
+      if (publish.topicAlias() < 1 || publish.topicAlias() > 65535) {
+        throw new IllegalArgumentException("Invalid PUBLISH Topic Alias");
+      }
+      topic = null;
+    }
+    byte[] payload = publish.payload();
+    int bodySize = 3 + ((!wos && qos > 0) ? 2 : 0)
+        + (topic == null ? 0 : topic.length) + payload.length;
+    ByteBuffer data = ByteBuffer.allocate(bodySize);
+    int flags = type | (publish.retained() ? 0x10 : 0)
+        | (wos ? 0 : qos << 5) | (publish.duplicate() ? 0x80 : 0);
+    data.put((byte) flags);
+    if (!wos && qos > 0) data.putShort((short) publish.packetIdentifier());
+    if (type == 0) {
+      data.putShort((short) topic.length).put(topic);
+    } else {
+      data.putShort((short) publish.topicAlias());
+    }
+    data.put(payload).flip();
+    return MqttSn2FrameCodec.encode(wos ? MqttSn2PacketType.PUBWOS : MqttSn2PacketType.PUBLISH, data);
+  }
+
   public static Publish decode(MqttSn2FrameCodec.Frame frame) throws IOException {
     boolean wos = frame.type() == MqttSn2PacketType.PUBWOS;
     if (frame.type() != MqttSn2PacketType.PUBLISH && !wos) {
