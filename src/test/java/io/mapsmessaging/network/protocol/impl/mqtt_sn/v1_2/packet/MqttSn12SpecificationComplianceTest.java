@@ -315,12 +315,16 @@ class MqttSn12SpecificationComplianceTest {
       specification = SPEC,
       value = "Section 5.4.18 UNSUBACK: acknowledgment carries the MsgId of the UNSUBSCRIBE request",
       source = SOURCE)
-  void unsubAckPreservesMessageId() throws Exception {
-    UnSubAck ack = assertInstanceOf(
-        UnSubAck.class,
-        parse(bytes(4, MQTT_SNPacket.UNSUBACK, 0x12, 0x34)));
+  void unsubAckEncodesMatchingMessageId() {
+    UnSubAck ack = new UnSubAck(0x1234);
+    Packet packet = new Packet(8, false);
 
-    assertEquals(0x1234, ack.getMsgId());
+    assertEquals(4, ack.packFrame(packet));
+    packet.flip();
+    assertEquals(4, packet.getByte());
+    assertEquals(MQTT_SNPacket.UNSUBACK, packet.getByte());
+    assertEquals(0x1234, packet.getShort());
+    assertEquals(0, packet.available());
   }
 
   @Test
