@@ -30,6 +30,7 @@ class ProtocolConformanceReferenceTest {
       "io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.listeners.MqttSn12ListenerSpecificationTest",
       "io.mapsmessaging.network.protocol.impl.nats.NatsClientProtocolConformanceTest",
       "io.mapsmessaging.network.protocol.impl.coap.packet.CoapProtocolConformanceTest",
+      "io.mapsmessaging.network.protocol.impl.coap.CoapLifecycleConformanceTest",
       "io.mapsmessaging.network.protocol.impl.websockets.WebSocketHandshakeConformanceTest",
       "io.mapsmessaging.network.protocol.impl.websockets.endpoint.WebSocketFrameConformanceTest"
   );
