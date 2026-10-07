@@ -20,6 +20,7 @@
 package io.mapsmessaging.network.protocol.impl.nats;
 
 import io.mapsmessaging.MessageDaemon;
+import io.mapsmessaging.dto.rest.config.protocol.impl.NatsConfigDTO;
 import io.mapsmessaging.network.io.EndPoint;
 import io.mapsmessaging.network.io.Packet;
 import io.mapsmessaging.network.io.ServerPacket;
@@ -41,9 +42,12 @@ public class NatsProtocolFactory extends ProtocolImplFactory {
 
 
   @Override
-  public ServerPacket getInitialPacket() {
+  public ServerPacket getInitialPacket(EndPoint endPoint) {
     MessageDaemon daemon = MessageDaemon.getInstance();
-    return new InfoFrame(1024 * 1024, daemon.getUuid().toString(), daemon.getId());
+    NatsConfigDTO config =
+        (NatsConfigDTO) endPoint.getConfig().getProtocolConfig("nats");
+    int maxPayload = config != null ? config.getMaxBufferSize() : new NatsConfigDTO().getMaxBufferSize();
+    return new InfoFrame(maxPayload, daemon.getUuid().toString(), daemon.getId());
   }
 
   @Override
