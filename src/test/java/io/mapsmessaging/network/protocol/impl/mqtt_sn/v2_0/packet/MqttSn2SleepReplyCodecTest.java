@@ -37,11 +37,11 @@ class MqttSn2SleepReplyCodecTest {
 
   @Test
   void subscriptionAcknowledgementRoundTrips() throws Exception {
-    MqttSn2ReplyCodec.SubAck ack = new MqttSn2ReplyCodec.SubAck(2, 17, 8, 0);
+    MqttSn2ReplyCodec.SubAck ack = new MqttSn2ReplyCodec.SubAck(0, 17, 8, 0);
     ByteBuffer encoded = MqttSn2ReplyCodec.encodeSubAck(ack);
     assertEquals(ack, MqttSn2ReplyCodec.decodeSubAck(MqttSn2FrameCodec.decode(encoded)));
     assertThrows(IllegalArgumentException.class, () ->
-        MqttSn2ReplyCodec.encodeSubAck(new MqttSn2ReplyCodec.SubAck(0, 1, 1, null)));
+        MqttSn2ReplyCodec.encodeSubAck(new MqttSn2ReplyCodec.SubAck(3, 1, 1, null)));
   }
 
   private static byte[] toBytes(ByteBuffer input) {
