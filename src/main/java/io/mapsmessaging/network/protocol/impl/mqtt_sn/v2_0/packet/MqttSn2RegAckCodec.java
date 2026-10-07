@@ -20,7 +20,7 @@ public final class MqttSn2RegAckCodec {
     if (data.remaining() < 3) throw new IOException("Truncated REGACK");
     int flags = Byte.toUnsignedInt(data.get());
     int type = flags & 3;
-    if ((flags & 0xF8) != 0 || (type != 1 && type != 2)) {
+    if ((flags & 0xF8) != 0 || (type != 0 && type != 1)) {
       throw new IOException("Malformed REGACK flags");
     }
     int id = Short.toUnsignedInt(data.getShort());
@@ -36,7 +36,7 @@ public final class MqttSn2RegAckCodec {
   }
 
   public static ByteBuffer encode(RegAck ack) {
-    if (ack.topicType() != 1 && ack.topicType() != 2) {
+    if (ack.topicType() != 0 && ack.topicType() != 1) {
       throw new IllegalArgumentException("REGACK must specify an alias type");
     }
     checkId(ack.packetIdentifier());
