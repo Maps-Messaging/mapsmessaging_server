@@ -213,6 +213,46 @@ class CotProtocolPublishingCoverageTest {
   }
 
   @Test
+  void partialOutboundWriteRetainsRemainderUntilWritableAgain() throws Exception {
+    try (Fixture fixture = new Fixture()) {
+      byte[] payload = bytes("<?xml version='1.0'?><event version='2.0' uid='x' type='a-f-G-U-C' time='2026-10-07T07:00:00Z' start='2026-10-07T07:00:00Z' stale='2026-10-07T07:01:00Z' how='m-g'><point lat='1' lon='2' hae='3' ce='4' le='5'/></event>");
+      Packet packet = new Packet(payload.length, false);
+      packet.put(payload);
+      packet.flip();
+
+      @SuppressWarnings("unchecked")
+      java.util.Queue<Packet> queue =
+          (java.util.Queue<Packet>) field(fixture.protocol, CotProtocol.class, "outboundPackets");
+      queue.offer(packet);
+
+      when(fixture.endpoint.sendPacket(any(Packet.class))).thenAnswer(invocation -> {
+        Packet outbound = invocation.getArgument(0);
+        int remaining = outbound.available();
+        int write = Math.max(1, remaining / 2);
+        outbound.position(outbound.position() + write);
+        return write;
+      });
+
+      invoke(fixture.protocol, "flushOutbound", new Class<?>[0]);
+
+      assertEquals(1, queue.size());
+      verify(fixture.endpoint).register(SelectionKey.OP_READ | SelectionKey.OP_WRITE, fixture.protocol);
+
+      when(fixture.endpoint.sendPacket(any(Packet.class))).thenAnswer(invocation -> {
+        Packet outbound = invocation.getArgument(0);
+        int remaining = outbound.available();
+        outbound.position(outbound.limit());
+        return remaining;
+      });
+
+      invoke(fixture.protocol, "flushOutbound", new Class<?>[0]);
+
+      assertTrue(queue.isEmpty());
+      verify(fixture.endpoint).register(SelectionKey.OP_READ, fixture.protocol);
+    }
+  }
+
+  @Test
   void selectedClosedEndpointReturnsWithoutSchedulingRead() throws Exception {
     try (Fixture fixture = new Fixture()) {
       doThrow(new ClosedChannelException()).when(fixture.endpoint).deregister(anyInt());
@@ -234,6 +274,12 @@ class CotProtocolPublishingCoverageTest {
     Method method = CotProtocol.class.getDeclaredMethod(name, parameterTypes);
     method.setAccessible(true);
     return (T) method.invoke(target, args);
+  }
+
+  private static Object field(Object target, Class<?> owner, String name) throws Exception {
+    Field field = owner.getDeclaredField(name);
+    field.setAccessible(true);
+    return field.get(target);
   }
 
   private static void setField(Object target, Class<?> owner, String name, Object value)
