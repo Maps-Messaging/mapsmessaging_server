@@ -340,6 +340,22 @@ class NatsClientProtocolConformanceTest extends BaseTestConfig {
   }
 
   @Test
+  @Disabled("Known NATS client/server operation-direction gap: MSG-367")
+  @ProtocolRequirement(
+      specification = SPEC,
+      value = "Section Protocol Messages: MSG is a server-to-client operation and is not a valid client-to-server command",
+      source = SOURCE)
+  void clientCannotSendServerOnlyMsgOperation() throws Exception {
+    try (RawNatsConnection connection = connected(false, true, true)) {
+      connection.send("MSG illegal sid 1\r\nx\r\n");
+      String error = connection.readLine();
+      assertNotNull(error);
+      assertTrue(error.startsWith("-ERR"));
+      assertTrue(connection.awaitClose());
+    }
+  }
+
+  @Test
   @ProtocolRequirement(
       specification = SPEC,
       value = "Section +OK/ERR Errors: Unknown Protocol Operation is non-recoverable and invalidates the connection",
