@@ -16,6 +16,18 @@ public final class MqttSn2SleepCodec {
 
   private MqttSn2SleepCodec() {}
 
+  public static ByteBuffer encodeRequest(SleepRequest request) {
+    checkIdentifier(request.packetIdentifier());
+    if (request.durationSeconds() < 1 || request.durationSeconds() > 0xFFFFFFFFL) {
+      throw new IllegalArgumentException("Invalid SLEEPREQ duration");
+    }
+    ByteBuffer body = ByteBuffer.allocate(7);
+    body.put((byte) (request.retainAliases() ? 1 : 0))
+        .putShort((short) request.packetIdentifier())
+        .putInt((int) request.durationSeconds()).flip();
+    return MqttSn2FrameCodec.encode(MqttSn2PacketType.SLEEPREQ, body);
+  }
+
   public static SleepRequest decodeRequest(MqttSn2FrameCodec.Frame frame) throws IOException {
     ByteBuffer b = body(frame, MqttSn2PacketType.SLEEPREQ);
     if (b.remaining() != 7) throw new IOException("SLEEPREQ must have seven payload octets");
