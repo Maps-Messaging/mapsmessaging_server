@@ -31,7 +31,10 @@ import io.mapsmessaging.network.protocol.impl.nats.jetstream.stream.consumer.Nam
 import io.mapsmessaging.network.protocol.impl.nats.listener.FrameListener;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 
 public class ConnectedState implements State {
@@ -85,11 +88,31 @@ public class ConnectedState implements State {
 
 
   private PayloadFrame sendToList(PayloadFrame duplicate, List<SubscriptionContext> subscriptions, SessionState engine) {
-    boolean multiple = subscriptions.size() > 1;
-    for (SubscriptionContext duplicates : subscriptions) {
-      duplicate.setSubscriptionId(duplicates.getAlias());
+    List<SubscriptionContext> recipients = new ArrayList<>();
+    Map<String, List<SubscriptionContext>> queueGroups = new LinkedHashMap<>();
+
+    for (SubscriptionContext subscription : subscriptions) {
+      if (subscription.isSharedSubscription()) {
+        queueGroups.computeIfAbsent(subscription.getSharedName(), ignored -> new ArrayList<>()).add(subscription);
+      } else {
+        recipients.add(subscription);
+      }
+    }
+
+    for (Map.Entry<String, List<SubscriptionContext>> entry : queueGroups.entrySet()) {
+      List<SubscriptionContext> group = entry.getValue();
+      int index = engine.nextQueueGroupIndex(
+          group.getFirst().getDestinationName(), entry.getKey(), group.size());
+      recipients.add(group.get(index));
+    }
+
+    boolean multiple = recipients.size() > 1;
+    for (SubscriptionContext recipient : recipients) {
+      duplicate.setSubscriptionId(recipient.getAlias());
       engine.send(duplicate);
-      if (multiple) duplicate = duplicate.duplicate();
+      if (multiple) {
+        duplicate = duplicate.duplicate();
+      }
       duplicate.setCallback(null);
     }
     return duplicate;
