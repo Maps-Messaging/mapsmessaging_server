@@ -61,8 +61,9 @@ public class ProtocolAcceptRunner implements Selectable {
     protocolFactory = new ProtocolFactory(protocols);
     timeout = endPoint.getServer().getConfig().getEndPointConfig().getConnectionTimeout();
     ProtocolImplFactory bounded = protocolFactory.getBoundedProtocol();
-    if(bounded != null && bounded.getInitialPacket() != null) {
-      ServerPacket serverPacket = bounded.getInitialPacket();
+    ServerPacket initialPacket = bounded == null ? null : bounded.getInitialPacket(endPoint);
+    if (initialPacket != null) {
+      ServerPacket serverPacket = initialPacket;
       Packet send = new Packet(ByteBuffer.allocate(1024));
       serverPacket.packFrame(send);
       send.flip();
