@@ -127,6 +127,8 @@ class MqttSn12PublishFlowSpecificationTest {
     when(engine.getTopicAliasManager()).thenReturn(aliases);
     when(aliases.getTopic(any(), eq(topicId), eq(MQTT_SNPacket.TOPIC_NAME)))
         .thenReturn(topicName);
+    when(protocol.getProtocolMessageTransformation()).thenReturn(null);
+    when(protocol.getProtocolConfig().getMessageDefaults()).thenReturn(null);
 
     return new Fixture(
         session,
