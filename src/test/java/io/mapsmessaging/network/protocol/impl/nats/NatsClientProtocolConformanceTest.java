@@ -21,7 +21,6 @@ import java.util.List;
 import java.util.UUID;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
@@ -35,7 +34,6 @@ class NatsClientProtocolConformanceTest extends BaseTestConfig {
   private static final int PORT = 4222;
 
   @Test
-  @Disabled("Known NATS INFO control-line framing gap: MSG-367")
   @ProtocolRequirement(
       specification = SPEC,
       value = "Section INFO: INFO and its JSON payload are one protocol control line terminated by CRLF",
