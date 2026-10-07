@@ -62,7 +62,9 @@ import java.nio.channels.SelectionKey;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Map;
+import java.util.Queue;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -108,6 +110,7 @@ public class CotProtocol extends Protocol implements Selectable {
   private final CotValidator cotValidator = new CotValidator();
   private final String sessionId;
   private volatile String inboundDestinationName = DESTINATION_NAME;
+  private final Queue<Packet> outboundPackets = new ConcurrentLinkedQueue<>();
 
   private Session session;
   private boolean closed;
@@ -141,6 +144,18 @@ public class CotProtocol extends Protocol implements Selectable {
 
   @Override
   public void selected(Selectable selectable, Selector selector, int selection) {
+    if ((selection & SelectionKey.OP_WRITE) != 0) {
+      try {
+        flushOutbound();
+      } catch (IOException e) {
+        logger.warn("Exception writing CoT XML stream", e);
+        closeQuietly();
+        return;
+      }
+    }
+    if ((selection & SelectionKey.OP_READ) == 0) {
+      return;
+    }
     try {
       endPoint.deregister(SelectionKey.OP_READ);
     } catch (ClosedChannelException e) {
@@ -378,8 +393,8 @@ public class CotProtocol extends Protocol implements Selectable {
       Packet packet = new Packet(encoded.length, false);
       packet.put(encoded);
       packet.flip();
-      endPoint.sendPacket(packet);
-      sentMessage();
+      outboundPackets.offer(packet);
+      endPoint.register(SelectionKey.OP_READ | SelectionKey.OP_WRITE, this);
     } catch (IOException | RuntimeException e) {
       logger.warn("Failed to send CoT XML event", e);
     } finally {
@@ -387,6 +402,26 @@ public class CotProtocol extends Protocol implements Selectable {
         messageEvent.getCompletionTask().run();
       }
     }
+  }
+
+  private void flushOutbound() throws IOException {
+    Packet packet = outboundPackets.peek();
+    while (packet != null) {
+      int before = packet.position();
+      endPoint.sendPacket(packet);
+      if (packet.hasRemaining()) {
+        if (packet.position() == before) {
+          endPoint.register(SelectionKey.OP_READ | SelectionKey.OP_WRITE, this);
+          return;
+        }
+        endPoint.register(SelectionKey.OP_READ | SelectionKey.OP_WRITE, this);
+        return;
+      }
+      outboundPackets.poll();
+      sentMessage();
+      packet = outboundPackets.peek();
+    }
+    endPoint.register(SelectionKey.OP_READ, this);
   }
 
   @Override
