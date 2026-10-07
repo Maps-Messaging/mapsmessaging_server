@@ -123,6 +123,10 @@ public class MavlinkInterfaceManager implements SelectorCallback, MavlinkConnect
     for(byte[] data:packets) {
       writeTlog(data);
       int systemId = MavlinkFrameExtractor.getSystemId(data);
+      int componentId = MavlinkFrameExtractor.getComponentId(data);
+      if (systemId == 0 || componentId == 0) {
+        continue;
+      }
       if (!isAllowedSystem(systemId)) {
         if (!forwardedSource) {
           forwardPacket(data);
