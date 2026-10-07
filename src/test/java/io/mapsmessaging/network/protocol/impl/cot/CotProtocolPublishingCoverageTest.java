@@ -9,6 +9,9 @@
 package io.mapsmessaging.network.protocol.impl.cot;
 
 import io.mapsmessaging.MessageDaemon;
+import io.mapsmessaging.cot.CotStreamDecoder;
+import io.mapsmessaging.cot.CotStreamEncoder;
+import io.mapsmessaging.cot.CotValidator;
 import io.mapsmessaging.SubSystemManager;
 import io.mapsmessaging.api.Destination;
 import io.mapsmessaging.api.Session;
@@ -214,7 +217,7 @@ class CotProtocolPublishingCoverageTest {
     try (Fixture fixture = new Fixture()) {
       doThrow(new ClosedChannelException()).when(fixture.endpoint).deregister(anyInt());
 
-      fixture.protocol.selected(mock(Selectable.class), null, 0);
+      fixture.protocol.selected(mock(Selectable.class), null, SelectionKey.OP_READ);
 
       verify(fixture.endpoint).deregister(SelectionKey.OP_READ);
       verify(fixture.endpoint, never()).readPacket(any());
@@ -268,6 +271,11 @@ class CotProtocolPublishingCoverageTest {
       daemonStatic.when(MessageDaemon::getInstance).thenReturn(daemon);
 
       setField(protocol, CotProtocol.class, "buffer", buffer);
+      setField(protocol, CotProtocol.class, "streamDecoder", new CotStreamDecoder(1_048_576));
+      setField(protocol, CotProtocol.class, "streamEncoder", new CotStreamEncoder());
+      setField(protocol, CotProtocol.class, "cotValidator", new CotValidator());
+      setField(protocol, CotProtocol.class, "inboundDestinationName", "/tak/cot/inbound");
+      setField(protocol, CotProtocol.class, "outboundPackets", new java.util.concurrent.ConcurrentLinkedQueue<Packet>());
       setField(protocol, CotProtocol.class, "cotToTwinMapper", mapper);
       setField(protocol, CotProtocol.class, "session", session);
       setField(protocol, CotProtocol.class, "logger", logger);
