@@ -15,7 +15,7 @@ class MqttSn2ExtendedWireTest {
   @Test
   void publishAndPubwosEncodeRoundTrip() throws Exception {
     MqttSn2PublishCodec.Publish qosOne =
-        new MqttSn2PublishCodec.Publish(false, 1, false, true, 0, 27, "sensor/temp",
+        new MqttSn2PublishCodec.Publish(false, 1, false, true, 3, 27, "sensor/temp",
             0, new byte[]{10, 20, 30});
     ByteBuffer encoded = MqttSn2PublishCodec.encode(qosOne);
     assertEquals(3, Byte.toUnsignedInt(encoded.get(1)));
@@ -27,7 +27,7 @@ class MqttSn2ExtendedWireTest {
     assertArrayEquals(qosOne.payload(), decoded.payload());
 
     MqttSn2PublishCodec.Publish wos =
-        new MqttSn2PublishCodec.Publish(true, 0, false, false, 2, 0, null, 15, new byte[]{7});
+        new MqttSn2PublishCodec.Publish(true, 0, false, false, 1, 0, null, 15, new byte[]{7});
     MqttSn2PublishCodec.Publish decodedWos =
         MqttSn2PublishCodec.decode(MqttSn2FrameCodec.decode(MqttSn2PublishCodec.encode(wos)));
     assertTrue(decodedWos.withoutSession());
@@ -36,7 +36,7 @@ class MqttSn2ExtendedWireTest {
 
   @Test
   void regAckAndConnAckAreDispatchedIndependently() throws Exception {
-    ByteBuffer regAck = MqttSn2RegAckCodec.encode(new MqttSn2RegAckCodec.RegAck(2, 12, 4, 0));
+    ByteBuffer regAck = MqttSn2RegAckCodec.encode(new MqttSn2RegAckCodec.RegAck(0, 12, 4, 0));
     MqttSn2PacketDecoder.Decoded decoded = MqttSn2PacketDecoder.decode(regAck);
     assertEquals(MqttSn2PacketType.REGACK, decoded.type());
     assertInstanceOf(MqttSn2RegAckCodec.RegAck.class, decoded.content());
