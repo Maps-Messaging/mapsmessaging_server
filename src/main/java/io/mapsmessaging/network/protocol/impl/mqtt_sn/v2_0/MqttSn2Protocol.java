@@ -1,0 +1,265 @@
+/*
+ * Copyright [ 2024 - 2026 ] MapsMessaging B.V.
+ * Licensed under the Apache License, Version 2.0 with the Commons Clause.
+ */
+package io.mapsmessaging.network.protocol.impl.mqtt_sn.v2_0;
+
+import io.mapsmessaging.api.MessageBuilder;
+import io.mapsmessaging.api.MessageEvent;
+import io.mapsmessaging.api.Session;
+import io.mapsmessaging.api.SessionContextBuilder;
+import io.mapsmessaging.api.SessionManager;
+import io.mapsmessaging.api.SubscriptionContextBuilder;
+import io.mapsmessaging.api.features.QualityOfService;
+import io.mapsmessaging.api.message.Message;
+import io.mapsmessaging.api.transformers.ParsedMessage;
+import io.mapsmessaging.config.protocol.impl.MqttSnConfig;
+import io.mapsmessaging.dto.rest.protocol.ProtocolInformationDTO;
+import io.mapsmessaging.dto.rest.protocol.impl.MqttSnProtocolInformation;
+import io.mapsmessaging.network.ProtocolClientConnection;
+import io.mapsmessaging.network.io.EndPoint;
+import io.mapsmessaging.network.io.Packet;
+import io.mapsmessaging.network.io.impl.SelectorTask;
+import io.mapsmessaging.network.protocol.Protocol;
+import io.mapsmessaging.network.protocol.impl.mqtt_sn.MQTTSNInterfaceManager;
+import io.mapsmessaging.network.protocol.impl.mqtt_sn.v2_0.packet.*;
+import lombok.Getter;
+import lombok.Setter;
+
+import javax.security.auth.Subject;
+import java.io.IOException;
+import java.net.SocketAddress;
+import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.CompletionException;
+import java.util.concurrent.atomic.AtomicInteger;
+
+/**
+ * Independent MQTT-SN 2.0 server protocol adapter.
+ *
+ * <p>Does not inherit the 1.2 protocol, packet factory, state engine or
+ * listener hierarchy. Implements the base transport/session boundary only.
+ * AUTH, WILL, sleeping clients and QoS2 require their own v2 state-machine
+ * work before full conformance can be claimed.</p>
+ */
+public final class MqttSn2Protocol extends Protocol {
+
+  private final MQTTSNInterfaceManager manager;
+  private final SelectorTask selectorTask;
+  private final SocketAddress address;
+  private final AtomicInteger aliasSequence = new AtomicInteger();
+  private final Map<String, Integer> topicAliases = new HashMap<>();
+  private final Map<Integer, String> aliasTopics = new HashMap<>();
+  @Getter
+  @Setter
+  private volatile Session session;
+  private volatile boolean closed;
+  private volatile boolean connected;
+  private String clientIdentifier = "waiting";
+
+  public MqttSn2Protocol(MQTTSNInterfaceManager manager, EndPoint endpoint,
+      SocketAddress address, SelectorTask selectorTask, MqttSnConfig config) {
+    super(endpoint, address, config);
+    this.manager = manager;
+    this.address = address;
+    this.selectorTask = selectorTask;
+  }
+
+  public String getVersion() {
+    return "2.0";
+  }
+
+  public String getName() {
+    return "MQTT_SN";
+  }
+
+  @Override
+  public String getSessionId() {
+    return session == null ? clientIdentifier : session.getName();
+  }
+
+  @Override
+  public Subject getSubject() {
+    return session == null ? new Subject() : session.getSecurityContext().getSubject();
+  }
+
+  @Override
+  public ProtocolInformationDTO getInformation() {
+    MqttSnProtocolInformation information = new MqttSnProtocolInformation();
+    updateInformation(information);
+    if (session != null) {
+      information.setSessionInfo(session.getSessionInformation());
+    }
+    return information;
+  }
+
+  @Override
+  public boolean processPacket(Packet packet) throws IOException {
+    ByteBuffer input = packet.getRawBuffer().asReadOnlyBuffer();
+    MqttSn2PacketDecoder.Decoded decoded = MqttSn2PacketDecoder.decode(input);
+    if (decoded.type() == MqttSn2PacketType.CONNECT) {
+      connect((MqttSn2ConnectCodec.Connect) decoded.content());
+      return true;
+    }
+    if (!connected || session == null) {
+      throw new IOException("MQTT-SN 2.0 packet before completed CONNECT");
+    }
+    switch (decoded.type()) {
+      case PINGREQ -> send(MqttSn2FrameCodec.encode(MqttSn2PacketType.PINGRESP,
+          ByteBuffer.allocate(2).putShort((short) ((Integer) decoded.content()).intValue()).flip()), null);
+      case SUBSCRIBE -> subscribe((MqttSn2SubscriptionCodec.Request) decoded.content());
+      case UNSUBSCRIBE -> unsubscribe((MqttSn2SubscriptionCodec.Request) decoded.content());
+      case REGISTER -> register((MqttSn2RegisterCodec.Register) decoded.content());
+      case PUBLISH, PUBWOS -> publish((MqttSn2PublishCodec.Publish) decoded.content());
+      case DISCONNECT -> close();
+      default -> throw new IOException("Unsupported MQTT-SN 2.0 state transition: " + decoded.type());
+    }
+    return true;
+  }
+
+  public void start(ByteBuffer connectFrame) throws IOException {
+    MqttSn2PacketDecoder.Decoded decoded = MqttSn2PacketDecoder.decode(connectFrame);
+    if (decoded.type() != MqttSn2PacketType.CONNECT) {
+      throw new IOException("Expected MQTT-SN 2.0 CONNECT");
+    }
+    connect((MqttSn2ConnectCodec.Connect) decoded.content());
+  }
+
+  private void connect(MqttSn2ConnectCodec.Connect request) throws IOException {
+    if (connected || session != null) {
+      throw new IOException("Duplicate MQTT-SN 2.0 CONNECT");
+    }
+    if (request.will() || request.authentication() || endPoint.getConfig().getSaslConfig() != null) {
+      // Do not establish a session without the v2 WILL/AUTH negotiation.
+      // These are implemented by the dedicated v2 lifecycle phase.
+      throw new IOException("MQTT-SN 2.0 WILL/AUTH negotiation not yet available");
+    }
+    clientIdentifier = request.clientIdentifier().isEmpty()
+        ? java.util.UUID.randomUUID().toString() : request.clientIdentifier();
+    setKeepAlive(request.keepAliveSeconds() * 1000L);
+    SessionContextBuilder builder = new SessionContextBuilder(
+        clientIdentifier, new ProtocolClientConnection(this));
+    builder.setResetState(request.cleanStart());
+    builder.setPersistentSession(!request.cleanStart());
+    builder.setReceiveMaximum(1);
+    builder.setSessionExpiry(0);
+    SessionManager.getInstance().createAsync(builder.build(), this).whenComplete((created, failure) -> {
+      if (failure != null || created == null) {
+        try {
+          close();
+        } catch (IOException ignored) {
+          // Session establishment has already failed.
+        }
+        return;
+      }
+      try {
+        setSession(created);
+        created.login();
+        ByteBuffer response = MqttSn2ConnAckCodec.encode(new MqttSn2ConnAckCodec.ConnAck(
+            created.isRestored(), request.packetIdentifier(), 0, null, null, null, null,
+            request.clientIdentifier().isEmpty() ? clientIdentifier : ""));
+        send(response, created::resumeState);
+        connected = true;
+        setConnected(true);
+      } catch (IOException | RuntimeException e) {
+        try {
+          close();
+        } catch (IOException ignored) {
+          // Cleanup after failed session negotiation.
+        }
+      }
+    });
+  }
+
+  private void subscribe(MqttSn2SubscriptionCodec.Request request) throws IOException {
+    if (request.topicType() != 0) {
+      throw new IOException("MQTT-SN 2.0 subscription topic alias not registered");
+    }
+    QualityOfService qos = qos(request.maximumQos());
+    SubscriptionContextBuilder builder =
+        new SubscriptionContextBuilder(request.topic(), qos.getClientAcknowledgement());
+    builder.setReceiveMaximum(1);
+    builder.setQos(qos);
+    session.addSubscription(builder.build());
+    int alias = topicAliases.computeIfAbsent(request.topic(), topic -> aliasSequence.incrementAndGet());
+    aliasTopics.put(alias, request.topic());
+    send(MqttSn2ReplyCodec.encodeSubAck(new MqttSn2ReplyCodec.SubAck(
+        2, alias, request.packetIdentifier(), 0)), null);
+  }
+
+  private void unsubscribe(MqttSn2SubscriptionCodec.Request request) throws IOException {
+    String topic = request.topicType() == 0
+        ? request.topic() : aliasTopics.get(request.topicAlias());
+    if (topic == null) {
+      throw new IOException("Unknown subscription topic alias");
+    }
+    session.removeSubscription(topic);
+    send(MqttSn2AckCodec.encode(new MqttSn2AckCodec.Ack(
+        MqttSn2PacketType.UNSUBACK, request.packetIdentifier(), null)), null);
+  }
+
+  private void register(MqttSn2RegisterCodec.Register request) {
+    int alias = topicAliases.computeIfAbsent(request.topicName(), topic -> aliasSequence.incrementAndGet());
+    aliasTopics.put(alias, request.topicName());
+    send(MqttSn2RegAckCodec.encode(new MqttSn2RegAckCodec.RegAck(
+        2, alias, request.packetIdentifier(), 0)), null);
+  }
+
+  private void publish(MqttSn2PublishCodec.Publish publish) throws IOException {
+    if (publish.qos() == 2) {
+      throw new IOException("MQTT-SN 2.0 QoS2 transaction integration pending");
+    }
+    String topic = publish.topicType() == 0 ? publish.topicName() : aliasTopics.get(publish.topicAlias());
+    if (topic == null) {
+      throw new IOException("Unknown MQTT-SN 2.0 topic alias");
+    }
+    MessageBuilder builder = new MessageBuilder();
+    builder.setOpaqueData(publish.payload()).setRetain(publish.retained())
+        .setQoS(qos(publish.qos())).setTransformation(getProtocolMessageTransformation());
+    Message message = builder.build();
+    SessionManager.getInstance().publish(topic, message).whenComplete((result, error) -> {
+      if (!publish.withoutSession() && publish.qos() == 1) {
+        send(MqttSn2AckCodec.encode(new MqttSn2AckCodec.Ack(
+            MqttSn2PacketType.PUBACK, publish.packetIdentifier(), error == null ? null : 0x80)), null);
+      }
+    });
+  }
+
+  private static QualityOfService qos(int value) throws IOException {
+    return switch (value) {
+      case 0 -> QualityOfService.AT_MOST_ONCE;
+      case 1 -> QualityOfService.AT_LEAST_ONCE;
+      case 2 -> QualityOfService.EXACTLY_ONCE;
+      default -> throw new IOException("Invalid MQTT-SN 2.0 QoS");
+    };
+  }
+
+  private void send(ByteBuffer wire, Runnable completion) {
+    selectorTask.push(new MqttSn2OutboundPacket(wire, address, completion));
+    sentMessage();
+  }
+
+  @Override
+  public void sendMessage(MessageEvent event) {
+    ParsedMessage parsed = parseOutboundMessage(event);
+    if (parsed == null) return;
+    byte[] topic = parsed.getDestinationName().getBytes(StandardCharsets.UTF_8);
+    byte[] payload = parsed.getMessage().getOpaqueData();
+    ByteBuffer body = ByteBuffer.allocate(3 + topic.length + payload.length);
+    body.put((byte) 0).putShort((short) topic.length).put(topic).put(payload).flip();
+    send(MqttSn2FrameCodec.encode(MqttSn2PacketType.PUBLISH, body), event.getCompletionTask());
+  }
+
+  @Override
+  public void close() throws IOException {
+    if (closed) return;
+    closed = true;
+    if (session != null && !session.isClosed()) {
+      SessionManager.getInstance().close(session, false);
+    }
+    manager.close(address);
+    super.close();
+  }
+}
