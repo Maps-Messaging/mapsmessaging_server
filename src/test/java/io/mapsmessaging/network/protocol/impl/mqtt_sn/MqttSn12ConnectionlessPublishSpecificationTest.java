@@ -31,7 +31,7 @@ class MqttSn12ConnectionlessPublishSpecificationTest {
   private static final String SOURCE = ProtocolRequirement.MQTT_SN_12_SOURCE;
 
   @Test
-  @ProtocolRequirement(specification = SPEC, value = "Section 6.14 QoS -1: connectionless PUBLISH MAY use a predefined topic id", source = SOURCE)
+  @ProtocolRequirement(specification = SPEC, value = "Section 6.8 QoS -1: connectionless PUBLISH MAY use a predefined topic id", source = SOURCE)
   void qosMinusOnePredefinedTopicPublishesWithoutSession() throws Exception {
     Fixture fixture = fixture("", List.of(predefined(42, "pre/topic")));
 
@@ -53,7 +53,7 @@ class MqttSn12ConnectionlessPublishSpecificationTest {
   }
 
   @Test
-  @ProtocolRequirement(specification = SPEC, value = "Section 6.14 QoS -1: connectionless PUBLISH MAY use a two-octet short topic name", source = SOURCE)
+  @ProtocolRequirement(specification = SPEC, value = "Section 6.8 QoS -1: connectionless PUBLISH MAY use a two-octet short topic name", source = SOURCE)
   void qosMinusOneShortTopicPublishesLiteralTwoByteNameWithoutSession() throws Exception {
     Fixture fixture = fixture("", List.of());
 
@@ -75,7 +75,7 @@ class MqttSn12ConnectionlessPublishSpecificationTest {
   }
 
   @Test
-  @ProtocolRequirement(specification = SPEC, value = "Section 6.14 QoS -1: connectionless PUBLISH is restricted to predefined or short topic forms", source = SOURCE)
+  @ProtocolRequirement(specification = SPEC, value = "Section 6.8 QoS -1: connectionless PUBLISH is restricted to predefined or short topic forms", source = SOURCE)
   void qosMinusOneNormalRegisteredTopicIdIsNotAllowedWithoutSession() throws Exception {
     Fixture fixture = fixture("*,42,dynamic/topic", List.of());
 
@@ -97,7 +97,7 @@ class MqttSn12ConnectionlessPublishSpecificationTest {
   }
 
   @Test
-  @ProtocolRequirement(specification = SPEC, value = "Sections 6.2 and 6.14: only QoS -1 publishing bypasses prior connection setup", source = SOURCE)
+  @ProtocolRequirement(specification = SPEC, value = "Sections 6.2 and 6.8: only QoS -1 publishing bypasses prior connection setup", source = SOURCE)
   void ordinaryQosZeroPublishWithoutSessionIsNotAcceptedAsConnectionlessPublish()
       throws Exception {
     Fixture fixture = fixture("*,42,dynamic/topic", List.of());

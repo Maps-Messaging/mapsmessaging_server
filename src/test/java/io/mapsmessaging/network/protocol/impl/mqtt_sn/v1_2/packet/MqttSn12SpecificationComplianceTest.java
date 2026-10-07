@@ -66,7 +66,7 @@ class MqttSn12SpecificationComplianceTest {
   }
 
   @Test
-  @ProtocolRequirement(specification = SPEC, value = "Section 6.14 QoS -1: PUBLISH uses predefined or short topic and MsgId 0 without a connection", source = SOURCE)
+  @ProtocolRequirement(specification = SPEC, value = "Section 6.8 QoS -1: PUBLISH uses predefined or short topic and MsgId 0 without a connection", source = SOURCE)
   void qosMinusOnePublishUsesPredefinedTopicIdAndZeroMessageId() throws Exception {
     Publish publish = assertInstanceOf(
         Publish.class,
@@ -88,7 +88,7 @@ class MqttSn12SpecificationComplianceTest {
   }
 
   @Test
-  @ProtocolRequirement(specification = SPEC, value = "Sections 5.3.4 and 6.14 QoS -1: TopicIdType 0b10 carries a two-octet short topic name", source = SOURCE)
+  @ProtocolRequirement(specification = SPEC, value = "Sections 5.3.4 and 6.8 QoS -1: TopicIdType 0b10 carries a two-octet short topic name", source = SOURCE)
   void qosMinusOnePublishShortTopicCarriesTwoOctetTopicName() throws Exception {
     Publish publish = assertInstanceOf(
         Publish.class,

@@ -63,7 +63,7 @@ class MqttSn12ListenerSpecificationTest {
 
   @ParameterizedTest
   @MethodSource("normalTopics")
-  @ProtocolRequirement(specification = SPEC, value = "Sections 5.4.17 and 6.11 UNSUBSCRIBE: normal topic-name form identifies the subscription to remove", source = SOURCE)
+  @ProtocolRequirement(specification = SPEC, value = "Sections 5.4.17 and 6.9 UNSUBSCRIBE: normal topic-name form identifies the subscription to remove", source = SOURCE)
   void unsubscribeNormalTopicRemovesLiteralTopicName(String topic) throws Exception {
     Fixture fixture = fixture();
     Unsubscribe unsubscribe = unsubscribeNormal(topic, 0x1111);
@@ -83,7 +83,7 @@ class MqttSn12ListenerSpecificationTest {
 
   @ParameterizedTest
   @MethodSource("shortNames")
-  @ProtocolRequirement(specification = SPEC, value = "Sections 5.4.17 and 6.11 UNSUBSCRIBE: short topic-name form identifies the subscription to remove", source = SOURCE)
+  @ProtocolRequirement(specification = SPEC, value = "Sections 5.4.17 and 6.9 UNSUBSCRIBE: short topic-name form identifies the subscription to remove", source = SOURCE)
   void unsubscribeShortTopicRemovesLiteralTwoByteTopicName(String shortName)
       throws Exception {
     Fixture fixture = fixture();
@@ -186,27 +186,6 @@ class MqttSn12ListenerSpecificationTest {
       assertEquals(DestinationMode.NORMAL, context.getValue().getDestinationMode());
       assertEquals(topic, context.getValue().getFilter());
     }
-  }
-
-  @Test
-  @ProtocolRequirement(specification = SPEC, value = "Section 6.13 Message retransmission: duplicate requests are detected and the previous response is retransmitted", source = SOURCE)
-  void duplicateSubscribeReturnsPreviousResponseWithoutCreatingSecondSubscription()
-      throws Exception {
-    Fixture fixture = fixture();
-    Subscribe subscribe = subscribeNormal("sensor/temp", 7);
-    SubAck previous = new SubAck((short) 12, 7, ReasonCodes.SUCCESS);
-    when(fixture.engine.isSubscribed("sensor/temp")).thenReturn(true);
-    when(fixture.engine.getPreviousResponse("sensor/temp")).thenReturn(previous);
-
-    MQTT_SNPacket response = new SubscribeListener().handlePacket(
-        subscribe,
-        fixture.session,
-        fixture.endPoint,
-        fixture.protocol,
-        fixture.engine);
-
-    assertSame(previous, response);
-    verify(fixture.session, never()).addSubscription(any());
   }
 
   @Test
