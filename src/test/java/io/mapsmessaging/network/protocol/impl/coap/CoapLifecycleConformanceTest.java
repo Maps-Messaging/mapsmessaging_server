@@ -56,7 +56,7 @@ class CoapLifecycleConformanceTest {
       specification = RFC7252,
       value = "RFC 7252 Section 4.2 and 4.4: late or unmatched acknowledgements do not create a new exchange or crash the endpoint",
       source = ProtocolRequirement.COAP_RFC7252_SOURCE)
-  void unknownAcknowledgementIsIgnoredSafely() {
+  void unknownAcknowledgementIsIgnoredSafely() throws Exception {
     CoapProtocol protocol = mock(CoapProtocol.class);
     PacketPipeline pipeline = new PacketPipeline(protocol);
     try {
