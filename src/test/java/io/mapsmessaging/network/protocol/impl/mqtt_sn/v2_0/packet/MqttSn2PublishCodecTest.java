@@ -14,7 +14,7 @@ class MqttSn2PublishCodecTest {
   @Test
   void decodeQoSOneTopicNameAndPayload() throws Exception {
     ByteBuffer bytes = ByteBuffer.wrap(new byte[]{
-        12, 3, 0x20, 0, 42, 0, 2, 'a', 'b', 1, 2, 3
+        12, 3, 0x23, 0, 42, 0, 2, 'a', 'b', 1, 2, 3
     });
     MqttSn2PublishCodec.Publish publish =
         MqttSn2PublishCodec.decode(MqttSn2FrameCodec.decode(bytes));
@@ -29,13 +29,13 @@ class MqttSn2PublishCodecTest {
   @Test
   void decodeQoSZeroAliasAndPubWos() throws Exception {
     MqttSn2PublishCodec.Publish publish = MqttSn2PublishCodec.decode(
-        MqttSn2FrameCodec.decode(ByteBuffer.wrap(new byte[]{6, 3, 2, 0, 15, 99})));
+        MqttSn2FrameCodec.decode(ByteBuffer.wrap(new byte[]{6, 3, 0, 0, 15, 99})));
     assertEquals(0, publish.packetIdentifier());
     assertEquals(15, publish.topicAlias());
-    assertEquals(2, publish.topicType());
+    assertEquals(0, publish.topicType());
 
     MqttSn2PublishCodec.Publish wos = MqttSn2PublishCodec.decode(
-        MqttSn2FrameCodec.decode(ByteBuffer.wrap(new byte[]{6, 18, 2, 0, 7, 42})));
+        MqttSn2FrameCodec.decode(ByteBuffer.wrap(new byte[]{6, 18, 1, 0, 7, 42})));
     assertTrue(wos.withoutSession());
     assertEquals(7, wos.topicAlias());
   }
@@ -47,8 +47,8 @@ class MqttSn2PublishCodecTest {
         {5, 3, 1, 0, 0},
         {5, 3, 3, 0, 1},
         {5, 3, 0x20, 0, 1},
-        {6, 3, 0, 0, 4, 'a'},
-        {5, 18, 1, 0, 1}
+        {6, 3, 3, 0, 4, 'a'},
+        {5, 18, 0, 0, 1}
     };
     for (byte[] frame : frames) {
       assertThrows(IOException.class, () ->
