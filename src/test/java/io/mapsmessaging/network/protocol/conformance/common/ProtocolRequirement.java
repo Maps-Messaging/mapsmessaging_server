@@ -46,6 +46,9 @@ public @interface ProtocolRequirement {
   String MAVLINK_XML_SCHEMA_SOURCE =
       "https://mavlink.io/en/guide/xml_schema.html";
 
+  String COT_20_SOURCE =
+      "https://www.mitre.org/sites/default/files/pdf/09_4937.pdf";
+
   String specification();
 
   /**
