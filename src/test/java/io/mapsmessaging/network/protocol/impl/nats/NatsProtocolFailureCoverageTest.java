@@ -10,7 +10,9 @@ package io.mapsmessaging.network.protocol.impl.nats;
 
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.network.io.EndPoint;
+import io.mapsmessaging.network.io.EndPointStatus;
 import io.mapsmessaging.network.io.Packet;
+import io.mapsmessaging.network.protocol.impl.nats.frames.ErrFrame;
 import io.mapsmessaging.network.io.impl.SelectorTask;
 import io.mapsmessaging.network.protocol.EndOfBufferException;
 import io.mapsmessaging.network.protocol.Protocol;
@@ -42,8 +44,10 @@ class NatsProtocolFailureCoverageTest {
   }
 
   @Test
-  void malformedFrameClosesEndpointAndPropagatesIOException() throws Exception {
+  void malformedFrameQueuesProtocolErrorBeforeClose() throws Exception {
     EndPoint endPoint = mock(EndPoint.class);
+    EndPointStatus status = mock(EndPointStatus.class);
+    when(endPoint.getEndPointStatus()).thenReturn(status);
     SelectorTask selectorTask = mock(SelectorTask.class);
     FrameFactory factory = mock(FrameFactory.class);
     Packet packet = mock(Packet.class);
@@ -52,8 +56,9 @@ class NatsProtocolFailureCoverageTest {
 
     NatsProtocol protocol = protocol(endPoint, selectorTask, factory);
 
-    assertThrows(NatsProtocolException.class, () -> protocol.processPacket(packet));
-    verify(endPoint).close();
+    assertFalse(protocol.processPacket(packet));
+    verify(selectorTask).push(isA(ErrFrame.class));
+    verify(endPoint, never()).close();
   }
 
   private static NatsProtocol protocol(
