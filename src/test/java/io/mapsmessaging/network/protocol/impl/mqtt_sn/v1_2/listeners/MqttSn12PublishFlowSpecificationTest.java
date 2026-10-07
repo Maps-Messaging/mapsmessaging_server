@@ -16,6 +16,7 @@ import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 
 import java.net.InetSocketAddress;
+import java.net.SocketAddress;
 import java.nio.ByteBuffer;
 import java.util.concurrent.CompletableFuture;
 
@@ -125,7 +126,7 @@ class MqttSn12PublishFlowSpecificationTest {
     StateEngine engine = mock(StateEngine.class);
     TopicAliasManager aliases = mock(TopicAliasManager.class);
     when(engine.getTopicAliasManager()).thenReturn(aliases);
-    when(aliases.getTopic(any(), eq(topicId), eq(MQTT_SNPacket.TOPIC_NAME)))
+    when(aliases.getTopic(nullable(SocketAddress.class), eq(topicId), eq(MQTT_SNPacket.TOPIC_NAME)))
         .thenReturn(topicName);
     when(protocol.getProtocolMessageTransformation()).thenReturn(null);
     when(protocol.getProtocolConfig().getMessageDefaults()).thenReturn(null);
