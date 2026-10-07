@@ -5,6 +5,9 @@
 package io.mapsmessaging.network.protocol.impl.mqtt_sn.v2_0.packet;
 
 import java.nio.ByteBuffer;
+import java.io.IOException;
+import java.nio.charset.CharacterCodingException;
+import java.nio.charset.CodingErrorAction;
 import java.nio.charset.StandardCharsets;
 
 /** MQTT-SN 2.0 CSD01 CONNACK encoder matching the reference-client decoder. */
@@ -90,4 +93,60 @@ public final class MqttSn2ConnAckCodec {
     body.put(clientId).flip();
     return MqttSn2FrameCodec.encode(MqttSn2PacketType.CONNACK, body);
   }
+  public static ConnAck decode(MqttSn2FrameCodec.Frame frame) throws IOException {
+    if (frame.type() != MqttSn2PacketType.CONNACK) {
+      throw new IOException("Expected CONNACK");
+    }
+    ByteBuffer body = frame.payload().asReadOnlyBuffer();
+    if (body.remaining() < 4) throw new IOException("Truncated CONNACK");
+    int flags = Byte.toUnsignedInt(body.get());
+    if ((flags & 0xF0) != 0) throw new IOException("Reserved CONNACK flags");
+    int identifier = Short.toUnsignedInt(body.getShort());
+    if (identifier == 0) throw new IOException("Zero CONNACK Packet Identifier");
+    int reason = Byte.toUnsignedInt(body.get());
+    if ((flags & 1) != 0 && reason != 0) {
+      throw new IOException("Session Present must be zero on failed CONNACK");
+    }
+    Long expiry = null;
+    Integer keepAlive = null;
+    String method = null;
+    byte[] authData = null;
+    if ((flags & 2) != 0) {
+      if (body.remaining() < 4) throw new IOException("Truncated CONNACK expiry");
+      expiry = Integer.toUnsignedLong(body.getInt());
+    }
+    if ((flags & 4) != 0) {
+      if (body.remaining() < 2) throw new IOException("Truncated CONNACK keep alive");
+      keepAlive = Short.toUnsignedInt(body.getShort());
+      if (keepAlive == 0) throw new IOException("Zero server keep alive");
+    }
+    if ((flags & 8) != 0) {
+      if (!body.hasRemaining()) throw new IOException("Truncated CONNACK auth method length");
+      int len = Byte.toUnsignedInt(body.get());
+      if (body.remaining() < len + 2) throw new IOException("Truncated CONNACK auth method");
+      byte[] methodBytes = new byte[len];
+      body.get(methodBytes);
+      method = strictUtf8(methodBytes);
+      int dataLength = Short.toUnsignedInt(body.getShort());
+      if (body.remaining() < dataLength) throw new IOException("Truncated CONNACK auth data");
+      authData = new byte[dataLength];
+      body.get(authData);
+    }
+    byte[] identifierBytes = new byte[body.remaining()];
+    body.get(identifierBytes);
+    return new ConnAck((flags & 1) != 0, identifier, reason, expiry, keepAlive,
+        method, authData, strictUtf8(identifierBytes));
+  }
+
+  private static String strictUtf8(byte[] bytes) throws IOException {
+    try {
+      return StandardCharsets.UTF_8.newDecoder()
+          .onMalformedInput(CodingErrorAction.REPORT)
+          .onUnmappableCharacter(CodingErrorAction.REPORT)
+          .decode(ByteBuffer.wrap(bytes)).toString();
+    } catch (CharacterCodingException e) {
+      throw new IOException("Malformed CONNACK UTF-8 string", e);
+    }
+  }
+
 }
