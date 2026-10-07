@@ -49,7 +49,7 @@ public final class MqttSn2PublishCodec {
       if ((flags & 0xEC) != 0 || topicType == 1) {
         throw new IOException("Invalid PUBWOS flags or topic type");
       }
-    } else if ((flags & 0x0C) != 0 || (duplicate && qos != 2)) {
+    } else if ((flags & 0x0C) != 0 || qos == 3 || (duplicate && qos != 2)) {
       throw new IOException("Invalid PUBLISH flags");
     }
 
