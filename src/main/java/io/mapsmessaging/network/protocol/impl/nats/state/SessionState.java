@@ -257,15 +257,27 @@ public class SessionState implements CloseHandler, CompletionHandler {
   }
 
   public synchronized void removeSubscription(String subscriptionId) {
-    activeSubscriptions.remove(subscriptionId);
+    SubscribedEventManager manager = activeSubscriptions.remove(subscriptionId);
 
     String emptyDestination = null;
     for (Map.Entry<String, List<SubscriptionContext>> entry : subscriptions.entrySet()) {
-      boolean removed = entry.getValue().removeIf(context -> subscriptionId.equals(context.getAlias()));
-      if (removed && entry.getValue().isEmpty()) {
-        emptyDestination = entry.getKey();
-        break;
+      List<SubscriptionContext> contexts = entry.getValue();
+      boolean removed = contexts.removeIf(context -> subscriptionId.equals(context.getAlias()));
+      if (!removed) {
+        continue;
       }
+
+      String registeredAlias = destinationSubscriptionAliases.get(entry.getKey());
+      if (contexts.isEmpty()) {
+        emptyDestination = entry.getKey();
+      } else if (subscriptionId.equals(registeredAlias)) {
+        String replacementAlias = contexts.getFirst().getAlias();
+        destinationSubscriptionAliases.put(entry.getKey(), replacementAlias);
+        if (manager != null) {
+          activeSubscriptions.put(replacementAlias, manager);
+        }
+      }
+      break;
     }
 
     if (emptyDestination != null) {
