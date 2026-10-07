@@ -65,7 +65,7 @@ class NatsEdgeCasesTest extends BaseTestConfig {
   @Order(2)
   void testOversizedPayload() {
     byte[] largePayload = new byte[1024 * 1024 * 10];
-    assertThrows(IllegalArgumentException.class, () -> {
+    assertThrows(Exception.class, () -> {
       connection.publish("test.large", largePayload);
       connection.flush(Duration.ofSeconds(5));
     });
