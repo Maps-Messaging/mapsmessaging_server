@@ -7,6 +7,8 @@ import java.util.List;
 
 public final class MavlinkFrameExtractor {
 
+  private static final int MAVLINK_V2_SUPPORTED_INCOMPAT_FLAGS = 0x01;
+
   private MavlinkFrameExtractor() {}
 
   public static List<byte[]> extractMavlinkFrames(byte[] data) {
@@ -36,6 +38,10 @@ public final class MavlinkFrameExtractor {
         }
 
         int incompatibilityFlags = Byte.toUnsignedInt(data[offset + 2]);
+        if ((incompatibilityFlags & ~MAVLINK_V2_SUPPORTED_INCOMPAT_FLAGS) != 0) {
+          offset++;
+          continue;
+        }
         frameLength = payloadLength + 12;
 
         if ((incompatibilityFlags & 0x01) != 0) {
