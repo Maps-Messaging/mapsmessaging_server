@@ -46,6 +46,42 @@ public final class MqttSn2ProtectionCodec {
 
   private MqttSn2ProtectionCodec() {}
 
+  /**
+   * Encode an already protected payload and authentication tag. The crypto
+   * provider creates these bytes and is responsible for authentication.
+   */
+  public static ByteBuffer encode(Envelope envelope) {
+    Objects.requireNonNull(envelope, "envelope");
+    int counterLength = envelope.monotonicCounter().length;
+    int counterCode = switch (counterLength) {
+      case 0 -> 0; case 2 -> 1; case 4 -> 2;
+      default -> throw new IllegalArgumentException("Invalid monotonic counter length");
+    };
+    int materialLength = envelope.cryptographicMaterial().length;
+    int materialCode = switch (materialLength) {
+      case 0 -> 0; case 2 -> 1; case 4 -> 2; case 12 -> 3;
+      default -> throw new IllegalArgumentException("Invalid cryptographic material length");
+    };
+    if (envelope.senderIdentifier().length != 8 || envelope.random().length != 4
+        || envelope.tagLengthCode() < 0 || envelope.tagLengthCode() > 15
+        || envelope.tagLengthCode() == 2 || envelope.tagLengthCode() == 3
+        || envelope.authenticationTag().length == 0
+        || envelope.protectedPacket().length == 0
+        || envelope.scheme() < 0 || envelope.scheme() > 255
+        || (envelope.scheme() >= 5 && envelope.scheme() <= 0x3B)
+        || (envelope.scheme() >= 0x4A && envelope.scheme() <= 0xEF)) {
+      throw new IllegalArgumentException("Invalid Protection Encapsulation fields");
+    }
+    int flags = (envelope.tagLengthCode() << 4) | (materialCode << 2) | counterCode;
+    ByteBuffer body = ByteBuffer.allocate(14 + materialLength + counterLength
+        + envelope.protectedPacket().length + envelope.authenticationTag().length);
+    body.put((byte) flags).put((byte) envelope.scheme())
+        .put(envelope.senderIdentifier()).put(envelope.random())
+        .put(envelope.cryptographicMaterial()).put(envelope.monotonicCounter())
+        .put(envelope.protectedPacket()).put(envelope.authenticationTag()).flip();
+    return MqttSn2FrameCodec.encode(MqttSn2PacketType.PROTECTION_ENCAPSULATION, body);
+  }
+
   public static Envelope decode(ByteBuffer wire, TagLengthResolver tagResolver)
       throws IOException {
     Objects.requireNonNull(wire, "wire");
