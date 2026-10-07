@@ -4,6 +4,7 @@
  */
 package io.mapsmessaging.network.protocol.impl.mqtt_sn.v2_0;
 
+import io.mapsmessaging.api.Destination;
 import io.mapsmessaging.api.MessageBuilder;
 import io.mapsmessaging.api.MessageEvent;
 import io.mapsmessaging.api.Session;
@@ -11,6 +12,9 @@ import io.mapsmessaging.api.SessionContextBuilder;
 import io.mapsmessaging.api.SessionManager;
 import io.mapsmessaging.api.SubscriptionContextBuilder;
 import io.mapsmessaging.api.features.QualityOfService;
+import io.mapsmessaging.api.features.DestinationType;
+import io.mapsmessaging.api.features.DestinationMode;
+import io.mapsmessaging.engine.destination.MessageOverrides;
 import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.api.transformers.ParsedMessage;
 import io.mapsmessaging.config.protocol.impl.MqttSnConfig;
@@ -212,17 +216,32 @@ public final class MqttSn2Protocol extends Protocol {
       throw new IOException("MQTT-SN 2.0 QoS2 transaction integration pending");
     }
     String topic = publish.topicType() == 3 ? publish.topicName() : aliasTopics.get(publish.topicAlias());
-    if (topic == null) {
-      throw new IOException("Unknown MQTT-SN 2.0 topic alias");
+    if (topic == null || (topic.startsWith("$")
+        && !topic.toLowerCase(java.util.Locale.ROOT)
+            .startsWith(DestinationMode.SCHEMA.getNamespace()))) {
+      throw new IOException("Invalid or unknown MQTT-SN 2.0 publication topic");
     }
     MessageBuilder builder = new MessageBuilder();
     builder.setOpaqueData(publish.payload()).setRetain(publish.retained())
         .setQoS(qos(publish.qos())).setTransformation(getProtocolMessageTransformation());
-    Message message = builder.build();
-    SessionManager.getInstance().publish(topic, message).whenComplete((result, error) -> {
+
+    // Resolve through the client's Session, never the server-wide publish API:
+    // destination discovery and authorisation must retain the session identity.
+    session.findDestination(topic, DestinationType.TOPIC).whenComplete((destination, failure) -> {
+      boolean succeeded = false;
+      if (failure == null && destination != null) {
+        try {
+          Message message = MessageOverrides.createMessageBuilder(
+              getProtocolConfig().getMessageDefaults(), builder).build();
+          destination.storeMessage(message);
+          succeeded = true;
+        } catch (IOException error) {
+          // Send an error acknowledgement where one is required.
+        }
+      }
       if (!publish.withoutSession() && publish.qos() == 1) {
         send(MqttSn2AckCodec.encode(new MqttSn2AckCodec.Ack(
-            MqttSn2PacketType.PUBACK, publish.packetIdentifier(), error == null ? null : 0x80)), null);
+            MqttSn2PacketType.PUBACK, publish.packetIdentifier(), succeeded ? null : 0x80)), null);
       }
     });
   }
