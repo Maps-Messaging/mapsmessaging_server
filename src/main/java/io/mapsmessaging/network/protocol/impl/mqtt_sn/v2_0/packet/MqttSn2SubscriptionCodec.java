@@ -24,6 +24,47 @@ public final class MqttSn2SubscriptionCodec {
   private MqttSn2SubscriptionCodec() {
   }
 
+  public static ByteBuffer encode(Request request) {
+    if (request == null) throw new IllegalArgumentException("Missing subscription request");
+    if (request.packetIdentifier() < 1 || request.packetIdentifier() > 65535) {
+      throw new IllegalArgumentException("Invalid subscription Packet Identifier");
+    }
+    if (request.topicType() < 0 || request.topicType() > 2) {
+      throw new IllegalArgumentException("Invalid subscription topic type");
+    }
+    byte[] topicBytes;
+    if (request.topicType() == 0) {
+      if (request.topic() == null || request.topic().isEmpty()
+          || request.topic().indexOf('\u0000') >= 0) {
+        throw new IllegalArgumentException("Invalid subscription topic");
+      }
+      topicBytes = request.topic().getBytes(StandardCharsets.UTF_8);
+    } else {
+      if (request.topicAlias() < 1 || request.topicAlias() > 65535) {
+        throw new IllegalArgumentException("Invalid subscription alias");
+      }
+      topicBytes = ByteBuffer.allocate(2).putShort((short) request.topicAlias()).array();
+    }
+    int flags = request.topicType();
+    if (request.subscribe()) {
+      if (request.maximumQos() < 0 || request.maximumQos() > 2
+          || request.retainHandling() < 0 || request.retainHandling() > 2) {
+        throw new IllegalArgumentException("Reserved SUBSCRIBE QoS or retain handling");
+      }
+      flags |= request.maximumQos() << 5;
+      flags |= request.retainHandling() << 2;
+      if (request.noLocal()) flags |= 0x80;
+      if (request.retainAsPublished()) flags |= 0x10;
+    } else if (request.maximumQos() != 0 || request.retainHandling() != 0
+        || request.noLocal() || request.retainAsPublished()) {
+      throw new IllegalArgumentException("UNSUBSCRIBE must not carry subscription options");
+    }
+    ByteBuffer body = ByteBuffer.allocate(3 + topicBytes.length);
+    body.put((byte) flags).putShort((short) request.packetIdentifier()).put(topicBytes).flip();
+    return MqttSn2FrameCodec.encode(request.subscribe()
+        ? MqttSn2PacketType.SUBSCRIBE : MqttSn2PacketType.UNSUBSCRIBE, body);
+  }
+
   public static Request decode(MqttSn2FrameCodec.Frame frame) throws IOException {
     boolean subscribe = frame.type() == MqttSn2PacketType.SUBSCRIBE;
     if (!subscribe && frame.type() != MqttSn2PacketType.UNSUBSCRIBE) {
