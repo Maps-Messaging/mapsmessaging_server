@@ -8,6 +8,7 @@ import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTimeoutPreemptively;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.mockito.ArgumentMatchers.any;
@@ -21,6 +22,9 @@ import io.mapsmessaging.state.drone.core.TwinManager;
 import io.mapsmessaging.state.drone.core.TwinObserver;
 import io.mapsmessaging.state.drone.core.TwinUpdateContext;
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 
@@ -144,6 +148,75 @@ class CotIngestAdapterTest {
     assertEquals(0L, adapter.getTimeOut());
     assertNull(adapter.getPrincipal());
     assertDoesNotThrow(adapter::sendKeepAlive);
+  }
+
+  @Test
+  void sendMessage_onlyQueues_andStillRunsCompletion() {
+    TwinManager twinManager = new TwinManager();
+    CotIngestAdapter adapter = new CotIngestAdapter("/tak/cot/inbound/#", twinManager);
+    MessageEvent event = mock(MessageEvent.class);
+    Message message = mock(Message.class);
+    Runnable completion = mock(Runnable.class);
+    org.mockito.Mockito.when(event.getMessage()).thenReturn(message);
+    org.mockito.Mockito.when(event.getDestinationName()).thenReturn("/tak/cot/inbound/edge-a");
+    org.mockito.Mockito.when(event.getCompletionTask()).thenReturn(completion);
+    org.mockito.Mockito.when(message.getOpaqueData()).thenReturn(cot("asset-1"));
+
+    adapter.sendMessage(event);
+
+    // No worker started: nothing may have touched the twins on the delivery (calling) thread.
+    assertEquals(0, twinManager.getTwinCount());
+    assertEquals(1, adapter.getQueueSize());
+    verify(completion).run();
+  }
+
+  @Test
+  void enqueue_returnsAtOnce_whileTheTwinPipelineIsBlocked() throws Exception {
+    // Same failure mode as the 2026-10-07 central stall: the delivery thread must never wait for twin updates.
+    TwinManager twinManager = new TwinManager();
+    CountDownLatch insideObserver = new CountDownLatch(1);
+    CountDownLatch release = new CountDownLatch(1);
+    CountDownLatch secondAdded = new CountDownLatch(2);
+    twinManager.addObserver(new TwinObserver() {
+      @Override
+      public void onTwinAdded(io.mapsmessaging.state.drone.core.EntityTwin twin, TwinUpdateContext context) {
+        insideObserver.countDown();
+        secondAdded.countDown();
+        try {
+          release.await(10, TimeUnit.SECONDS);
+        } catch (InterruptedException e) {
+          Thread.currentThread().interrupt();
+        }
+      }
+    });
+    CotIngestAdapter adapter = new CotIngestAdapter("/tak/cot/inbound/#", twinManager);
+    adapter.startWorker();
+    try {
+      adapter.enqueue("/tak/cot/inbound/edge-a", cot("asset-1"));
+      assertTrue(insideObserver.await(5, TimeUnit.SECONDS), "worker should be blocked inside the twin pipeline");
+
+      assertTimeoutPreemptively(Duration.ofSeconds(1), () -> adapter.enqueue("/tak/cot/inbound/edge-a", cot("asset-2")));
+      assertEquals(1, adapter.getQueueSize());
+
+      release.countDown();
+      assertTrue(secondAdded.await(5, TimeUnit.SECONDS), "queued message should be processed once the pipeline frees up");
+      assertTrue(twinManager.getTwin("asset-2").isPresent());
+    } finally {
+      release.countDown();
+      adapter.stopWorker();
+    }
+  }
+
+  @Test
+  void enqueue_whenQueueIsFull_dropsTheOldestMessage() {
+    CotIngestAdapter adapter = new CotIngestAdapter("/tak/cot/inbound/#", new TwinManager());
+
+    for (int index = 0; index <= CotIngestAdapter.MAX_QUEUE_SIZE; index++) {
+      adapter.enqueue("/tak/cot/inbound/edge-a", cot("asset-" + index));
+    }
+
+    assertEquals(CotIngestAdapter.MAX_QUEUE_SIZE, adapter.getQueueSize());
+    assertEquals(1, adapter.getQueueFullDropCount());
   }
 
   private byte[] cot(String uid) {
