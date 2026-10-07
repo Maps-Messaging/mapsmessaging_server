@@ -201,6 +201,9 @@ public class MQTTSNInterfaceManager implements SelectorCallback {
 
   private void processUnconnectedDiscovery(Packet packet) throws IOException {
     ByteBuffer wire = packet.getRawBuffer().asReadOnlyBuffer();
+    if (!wire.hasRemaining()) {
+      throw new IOException("Empty MQTT-SN datagram");
+    }
     int first = Byte.toUnsignedInt(wire.get(wire.position()));
     int typeOffset = first == 1 ? 3 : 1;
     if (wire.remaining() > typeOffset) {
