@@ -38,8 +38,12 @@ import io.mapsmessaging.network.io.impl.udp.session.UDPSessionManager;
 import io.mapsmessaging.network.io.impl.udp.session.UDPSessionState;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.MQTT_SNProtocol;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.packet.*;
-import io.mapsmessaging.network.protocol.impl.mqtt_sn.v2_0.MQTT_SNProtocolV2;
-import io.mapsmessaging.network.protocol.impl.mqtt_sn.v2_0.packet.PacketFactoryV2;
+import io.mapsmessaging.network.protocol.Protocol;
+import io.mapsmessaging.network.protocol.impl.mqtt_sn.v2_0.MqttSn2Protocol;
+import io.mapsmessaging.network.protocol.impl.mqtt_sn.v2_0.packet.MqttSn2FrameCodec;
+import io.mapsmessaging.network.protocol.impl.mqtt_sn.v2_0.packet.MqttSn2GatewayCodec;
+import io.mapsmessaging.network.protocol.impl.mqtt_sn.v2_0.packet.MqttSn2PacketType;
+import io.mapsmessaging.network.protocol.impl.mqtt_sn.v2_0.MqttSn2OutboundPacket;
 import io.mapsmessaging.network.protocol.transformation.ProtocolMessageTransformation;
 import io.mapsmessaging.network.protocol.transformation.TransformationManager;
 
@@ -47,6 +51,7 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.net.SocketAddress;
 import java.net.SocketException;
+import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
@@ -62,7 +67,7 @@ public class MQTTSNInterfaceManager implements SelectorCallback {
   private final Logger logger;
   private final SelectorTask selectorTask;
   private final EndPoint endPoint;
-  private final UDPSessionManager<MQTT_SNProtocol> currentSessions;
+  private final UDPSessionManager<Protocol> currentSessions;
   private final PacketFactory[] packetFactory;
   private final AdvertiserTask advertiserTask;
   private final byte gatewayId;
@@ -88,9 +93,8 @@ public class MQTTSNInterfaceManager implements SelectorCallback {
     enableAddressChanges = mqttSnConfig.isEnableAddressChanges();
     advertiseGateway = mqttSnConfig.isAdvertiseGateway();
     currentSessions = new UDPSessionManager<>(timeout);
-    packetFactory = new PacketFactory[2];
+    packetFactory = new PacketFactory[1];
     packetFactory[0] = new PacketFactory();
-    packetFactory[1] = new PacketFactoryV2();
     transformation = TransformationManager.getInstance().getTransformation(
         endPoint.getProtocol(),
         endPoint.getName(),
@@ -112,9 +116,8 @@ public class MQTTSNInterfaceManager implements SelectorCallback {
     advertiseGateway = mqttSnConfig.isAdvertiseGateway();
 
     currentSessions = new UDPSessionManager<>(timeout);
-    packetFactory = new PacketFactory[2];
+    packetFactory = new PacketFactory[1];
     packetFactory[0] = new PacketFactory();
-    packetFactory[1] = new PacketFactoryV2();
 
     selectorTask = new SelectorTask(this, endPoint.getConfig().getEndPointConfig(), endPoint.isUDP());
     selectorTask.register(SelectionKey.OP_READ);
@@ -149,44 +152,71 @@ public class MQTTSNInterfaceManager implements SelectorCallback {
     if (packet.getFromAddress() == null) {
       return true; // Ignoring packet since unknown client
     }
-    UDPSessionState<MQTT_SNProtocol> state = currentSessions.getState(packet.getFromAddress());
-    if(state == null && enablePortChanges){
+    UDPSessionState<Protocol> state = currentSessions.getState(packet.getFromAddress());
+    if (state == null && enablePortChanges) {
       state = lookupByPacket(packet);
     }
 
-    if (state != null && state.getContext() != null) {
-      MQTT_SNProtocol protocol = state.getContext();
-      // OK we have an existing protocol, so simply hand over the packet for processing
-      protocol.processPacket(packet);
-    } else {
-      int offset = 0;
-      if (packet.get(0) == 1) {
-        offset = 2;
+    try {
+      if (state != null && state.getContext() != null) {
+        state.getContext().processPacket(packet);
+      } else {
+        MqttSnVersionDetector.Version version =
+            MqttSnVersionDetector.detect(packet.getRawBuffer().asReadOnlyBuffer());
+        if (version == MqttSnVersionDetector.Version.V2_0) {
+          acceptV2Connection(packet);
+        } else if (version == MqttSnVersionDetector.Version.V1_2) {
+          processIncomingPacket(packet, packetFactory[0]);
+        } else {
+          processUnconnectedDiscovery(packet);
+        }
       }
-      int version = -1;
-      boolean isConnect = packet.get(1 + offset) == MQTT_SNPacket.CONNECT;
-      if (isConnect && (packet.get(2 + offset) & 0b11111000) == 0) {
-        version = packet.get(3 + offset);
-      }
-      //
-      // OK so this is either a new connection request or an admin request
-      //
-      PacketFactory factory = packetFactory[0];
-      if (version == 2) {
-        factory = packetFactory[1];
-      }
-
-      try {
-        processIncomingPacket(packet, factory);
-      } catch (IOException ioException) {
-        logger.log( ServerLogMessages.MQTT_SN_EXCEPTION_RASIED, ioException);
-      }
+    } catch (IOException e) {
+      logger.log(ServerLogMessages.MQTT_SN_EXCEPTION_RASIED, e);
     }
     selectorTask.register(SelectionKey.OP_READ);
     return true;
   }
 
-  private UDPSessionState<MQTT_SNProtocol> lookupByPacket(Packet packet) throws IOException {
+  private void acceptV2Connection(Packet packet) throws IOException {
+    ByteBuffer incoming = packet.getRawBuffer().asReadOnlyBuffer();
+    var connect = io.mapsmessaging.network.protocol.impl.mqtt_sn.v2_0.packet.MqttSn2ConnectCodec.decode(
+        MqttSn2FrameCodec.decode(incoming));
+    UDPFacadeEndPoint facade = new UDPFacadeEndPoint(
+        endPoint, packet.getFromAddress(), endPoint.getServer());
+    MqttSn2Protocol protocol = new MqttSn2Protocol(this, facade,
+        packet.getFromAddress(), selectorTask, mqttSnConfig);
+    UDPSessionState<Protocol> state = new UDPSessionState<>(protocol);
+    state.setClientIdentifier(connect.clientIdentifier());
+    currentSessions.addState(packet.getFromAddress(), state);
+    try {
+      protocol.start(packet.getRawBuffer().asReadOnlyBuffer());
+    } catch (IOException | RuntimeException error) {
+      currentSessions.deleteState(packet.getFromAddress());
+      protocol.close();
+      throw error;
+    }
+    facade.updateReadBytes(packet.available());
+  }
+
+  private void processUnconnectedDiscovery(Packet packet) throws IOException {
+    ByteBuffer wire = packet.getRawBuffer().asReadOnlyBuffer();
+    try {
+      MqttSn2FrameCodec.Frame frame = MqttSn2FrameCodec.decode(wire);
+      if (frame.type() == MqttSn2PacketType.SEARCHGW) {
+        MqttSn2GatewayCodec.decodeSearchGateway(frame);
+        ByteBuffer response = MqttSn2GatewayCodec.encodeGatewayInfo(
+            new MqttSn2GatewayCodec.GatewayInfo(Byte.toUnsignedInt(gatewayId), new byte[0]));
+        selectorTask.push(new MqttSn2OutboundPacket(response, packet.getFromAddress(), null));
+        return;
+      }
+    } catch (IOException exception) {
+      // Unconnected datagrams may also be MQTT-SN 1.2 packets.
+    }
+    processIncomingPacket(packet, packetFactory[0]);
+  }
+
+  private UDPSessionState<Protocol> lookupByPacket(Packet packet) throws IOException {
     byte type = packet.get(1);
     if(type == MQTT_SNPacket.PINGREQ){
       for (PacketFactory factory : packetFactory) {
@@ -194,9 +224,11 @@ public class MQTTSNInterfaceManager implements SelectorCallback {
         packet.position(0);
         if (mqttMsg instanceof PingRequest pingRequest
             && pingRequest.getClientId() != null) {
-          UDPSessionState<MQTT_SNProtocol> state = currentSessions.findAndUpdate(pingRequest.getClientId(), packet.getFromAddress(), enableAddressChanges);
+          UDPSessionState<Protocol> state = currentSessions.findAndUpdate(pingRequest.getClientId(), packet.getFromAddress(), enableAddressChanges);
           if (state != null) {
-            state.getContext().setAddressKey(packet.getFromAddress());
+            if (state.getContext() instanceof MQTT_SNProtocol oldProtocol) {
+              oldProtocol.setAddressKey(packet.getFromAddress());
+            }
             return state;
           }
         }
@@ -214,18 +246,8 @@ public class MQTTSNInterfaceManager implements SelectorCallback {
       // of current sessions
       UDPFacadeEndPoint facade = new UDPFacadeEndPoint(endPoint, packet.getFromAddress(), endPoint.getServer());
       MQTT_SNProtocol impl = new MQTT_SNProtocol(this, facade, packet.getFromAddress(), selectorTask, registeredTopicConfiguration, matchedConnect, mqttSnConfig);
-      UDPSessionState<MQTT_SNProtocol> state = new UDPSessionState<>(impl);
+      UDPSessionState<Protocol> state = new UDPSessionState<>(impl);
       state.setClientIdentifier( (matchedConnect).getClientId());
-      currentSessions.addState(packet.getFromAddress(), state);
-      facade.updateReadBytes(len);
-      facade.updateWriteBytes(len);
-    } else if (mqttSn instanceof io.mapsmessaging.network.protocol.impl.mqtt_sn.v2_0.packet.Connect connectV2) {
-      // Cool, so we have a new connect, so let's create a new protocol Impl and add it into our list
-      // of current sessions
-      UDPFacadeEndPoint facade = new UDPFacadeEndPoint(endPoint, packet.getFromAddress(), endPoint.getServer());
-      MQTT_SNProtocol impl = new MQTT_SNProtocolV2(this, facade, packet.getFromAddress(), selectorTask, registeredTopicConfiguration, connectV2, mqttSnConfig);
-      UDPSessionState<MQTT_SNProtocol> state = new UDPSessionState<>(impl);
-      state.setClientIdentifier(connectV2.getClientId());
       currentSessions.addState(packet.getFromAddress(), state);
       facade.updateReadBytes(len);
       facade.updateWriteBytes(len);
