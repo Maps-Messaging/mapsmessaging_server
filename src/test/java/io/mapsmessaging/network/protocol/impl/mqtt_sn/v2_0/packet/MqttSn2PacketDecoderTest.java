@@ -21,7 +21,7 @@ class MqttSn2PacketDecoderTest {
     assertEquals(42, ping.content());
 
     MqttSn2PacketDecoder.Decoded publish = MqttSn2PacketDecoder.decode(
-        ByteBuffer.wrap(new byte[]{6, 18, 2, 0, 7, 42}));
+        ByteBuffer.wrap(new byte[]{6, 18, 1, 0, 7, 42}));
     assertEquals(MqttSn2PacketType.PUBWOS, publish.type());
     assertInstanceOf(MqttSn2PublishCodec.Publish.class, publish.content());
     assertEquals(7, ((MqttSn2PublishCodec.Publish) publish.content()).topicAlias());
