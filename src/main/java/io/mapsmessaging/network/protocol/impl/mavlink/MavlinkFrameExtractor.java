@@ -68,4 +68,12 @@ public final class MavlinkFrameExtractor {
       default -> throw new IllegalArgumentException("Not a MAVLink frame");
     };
   }
+
+  public static int getComponentId(byte[] frame) {
+    return switch (Byte.toUnsignedInt(frame[0])) {
+      case 0xFE -> Byte.toUnsignedInt(frame[4]);
+      case 0xFD -> Byte.toUnsignedInt(frame[6]);
+      default -> throw new IllegalArgumentException("Not a MAVLink frame");
+    };
+  }
 }
