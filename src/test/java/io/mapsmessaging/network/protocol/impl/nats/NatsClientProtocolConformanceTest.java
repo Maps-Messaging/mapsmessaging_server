@@ -220,6 +220,62 @@ class NatsClientProtocolConformanceTest extends BaseTestConfig {
   @Test
   @ProtocolRequirement(
       specification = SPEC,
+      value = "Section SUB and subject wildcards: '*' matches exactly one subject token",
+      source = SOURCE)
+  void singleTokenWildcardSubscriptionReceivesMatchingSubject() throws Exception {
+    String root = subject("wildcard");
+    String filter = root + ".*";
+    String actual = root + ".value";
+    try (RawNatsConnection connection = connected(false, true, true)) {
+      connection.send("SUB " + filter + " sid-wild\r\n");
+      connection.send("PUB " + actual + " 1\r\nx\r\n");
+
+      MessageFrame message = connection.readMessage();
+      assertEquals(actual, message.subject());
+      assertEquals("sid-wild", message.sid());
+    }
+  }
+
+  @Test
+  @ProtocolRequirement(
+      specification = SPEC,
+      value = "Section SUB queue group: subscribers in the same queue group load-balance each message to one group member",
+      source = SOURCE)
+  void queueGroupDeliversEachMessageToOnlyOneMember() throws Exception {
+    String subject = subject("queue");
+    try (RawNatsConnection connection = connected(false, true, true)) {
+      connection.send("SUB " + subject + " workers sid-a\r\n");
+      connection.send("SUB " + subject + " workers sid-b\r\n");
+      connection.send("PUB " + subject + " 1\r\nx\r\n");
+      connection.send("PING\r\n");
+
+      MessageFrame message = connection.readMessage();
+      assertTrue(message.sid().equals("sid-a") || message.sid().equals("sid-b"));
+      assertEquals("PONG", connection.readLine());
+    }
+  }
+
+  @Test
+  @ProtocolRequirement(
+      specification = SPEC,
+      value = "Sections CONNECT and +OK/ERR: verbose=true causes well-formed client operations to receive +OK",
+      source = SOURCE)
+  void verboseModeAcknowledgesSubAndPubOperations() throws Exception {
+    String subject = subject("verbose");
+    try (RawNatsConnection connection = connected(true, true, true)) {
+      connection.send("SUB " + subject + " sid-ok\r\n");
+      assertEquals("+OK", connection.readLine());
+
+      connection.send("PUB " + subject + " 1\r\nx\r\n");
+      assertEquals("+OK", connection.readLine());
+      MessageFrame message = connection.readMessage();
+      assertEquals("sid-ok", message.sid());
+    }
+  }
+
+  @Test
+  @ProtocolRequirement(
+      specification = SPEC,
       value = "Section protocol framing: multiple complete operations may be coalesced in one TCP write",
       source = SOURCE)
   void coalescedOperationsAreParsedIndependently() throws Exception {
