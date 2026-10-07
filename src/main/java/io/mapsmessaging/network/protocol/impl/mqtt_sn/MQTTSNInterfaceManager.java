@@ -201,6 +201,18 @@ public class MQTTSNInterfaceManager implements SelectorCallback {
 
   private void processUnconnectedDiscovery(Packet packet) throws IOException {
     ByteBuffer wire = packet.getRawBuffer().asReadOnlyBuffer();
+    int first = Byte.toUnsignedInt(wire.get(wire.position()));
+    int typeOffset = first == 1 ? 3 : 1;
+    if (wire.remaining() > typeOffset) {
+      int type = Byte.toUnsignedInt(wire.get(wire.position() + typeOffset));
+      // MQTT-SN 1.2 SEARCHGW (0x01) is always exactly three octets.
+      // A longer packet with type 0x01 is not a valid 1.2 discovery
+      // request and must not be accepted as a legacy fallback for a
+      // malformed MQTT-SN 2.0 CONNECT.
+      if (type == 0x01 && wire.remaining() != 3) {
+        throw new IOException("Malformed MQTT-SN 2.0 CONNECT or 1.2 SEARCHGW");
+      }
+    }
     try {
       MqttSn2FrameCodec.Frame frame = MqttSn2FrameCodec.decode(wire);
       if (frame.type() == MqttSn2PacketType.SEARCHGW) {
