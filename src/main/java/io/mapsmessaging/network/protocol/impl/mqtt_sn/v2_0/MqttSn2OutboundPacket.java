@@ -10,6 +10,7 @@ import io.mapsmessaging.network.io.ServerPacket;
 import java.net.SocketAddress;
 import java.nio.ByteBuffer;
 import java.util.Objects;
+import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * Transport adapter for independently encoded MQTT-SN 2.0 wire frames.
@@ -19,7 +20,7 @@ public final class MqttSn2OutboundPacket implements ServerPacket {
 
   private final byte[] wire;
   private final SocketAddress destination;
-  private final Runnable completion;
+  private final AtomicReference<Runnable> completion;
 
   public MqttSn2OutboundPacket(ByteBuffer frame, SocketAddress destination, Runnable completion) {
     Objects.requireNonNull(frame, "frame");
@@ -27,12 +28,12 @@ public final class MqttSn2OutboundPacket implements ServerPacket {
     wire = new byte[data.remaining()];
     data.get(wire);
     this.destination = Objects.requireNonNull(destination, "destination");
-    this.completion = completion;
+    this.completion = new AtomicReference<>(completion);
   }
 
   @Override
   public int packFrame(Packet packet) {
-    if (packet.capacity() - packet.position() < wire.length) {
+    if (packet.limit() - packet.position() < wire.length) {
       throw new IllegalArgumentException("Insufficient outbound MQTT-SN 2.0 packet capacity");
     }
     packet.put(wire);
@@ -42,8 +43,9 @@ public final class MqttSn2OutboundPacket implements ServerPacket {
 
   @Override
   public void complete() {
-    if (completion != null) {
-      completion.run();
+    Runnable callback = completion.getAndSet(null);
+    if (callback != null) {
+      callback.run();
     }
   }
 
