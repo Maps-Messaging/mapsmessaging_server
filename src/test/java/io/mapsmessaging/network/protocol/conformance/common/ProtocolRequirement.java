@@ -25,6 +25,9 @@ public @interface ProtocolRequirement {
   String MQTT_SN_12_SOURCE =
       "https://www.oasis-open.org/committees/document.php?document_id=66091&wg_abbrev=mqtt";
 
+  String NATS_CLIENT_PROTOCOL_SOURCE =
+      "https://docs.nats.io/reference/protocols/client";
+
   String specification();
 
   /**
