@@ -19,6 +19,7 @@ import io.mapsmessaging.api.features.DestinationType;
 import io.mapsmessaging.api.features.QualityOfService;
 import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.network.io.EndPoint;
+import io.mapsmessaging.network.io.EndPointStatus;
 import io.mapsmessaging.network.io.Packet;
 import io.mapsmessaging.network.io.Selectable;
 import io.mapsmessaging.network.protocol.Protocol;
@@ -298,6 +299,7 @@ class CotProtocolPublishingCoverageTest {
     private final CotToTwinMapper mapper = mock(CotToTwinMapper.class);
     private final Session session = mock(Session.class);
     private final EndPoint endpoint = mock(EndPoint.class);
+    private final EndPointStatus endpointStatus = mock(EndPointStatus.class);
     private final Logger logger = mock(Logger.class);
     private final CotProtocol protocol = mock(CotProtocol.class, CALLS_REAL_METHODS);
     private final ByteArrayOutputStream buffer = new ByteArrayOutputStream();
@@ -310,6 +312,7 @@ class CotProtocolPublishingCoverageTest {
       when(stateManager.getStateMessageAdapter(CotIngestAdapter.class))
           .thenReturn(Optional.of(adapter));
       when(stateManager.getTwinManager()).thenReturn(twinManager);
+      when(endpoint.getEndPointStatus()).thenReturn(endpointStatus);
       when(adapter.publishLocal(any(byte[].class))).thenReturn(true);
       when(mapper.routeToTwinManager(
           eq(twinManager), any(byte[].class), eq("cot-ingest"))).thenReturn(true);
