@@ -19,6 +19,7 @@ import io.mapsmessaging.api.features.DestinationType;
 import io.mapsmessaging.api.features.QualityOfService;
 import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.network.io.EndPoint;
+import io.mapsmessaging.network.io.Packet;
 import io.mapsmessaging.network.io.Selectable;
 import io.mapsmessaging.network.protocol.Protocol;
 import io.mapsmessaging.state.StateManagerAgent;
