@@ -50,4 +50,14 @@ public final class MqttSn2PacketDecoder {
     };
     return new Decoded(frame.type(), content);
   }
+  /**
+   * Protection envelopes require a configured provider to supply a tag size.
+   * This only parses the envelope; callers must authenticate and decrypt it
+   * before passing the embedded control packet to the session.
+   */
+  public static MqttSn2ProtectionCodec.Envelope decodeProtected(
+      ByteBuffer wire, MqttSn2ProtectionCodec.TagLengthResolver resolver) throws IOException {
+    return MqttSn2ProtectionCodec.decode(wire, resolver);
+  }
+
 }
