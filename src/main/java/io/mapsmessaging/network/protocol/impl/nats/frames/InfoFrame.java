@@ -66,7 +66,7 @@ public class InfoFrame extends NatsFrame {
 
   @Override
   protected void parseLine(String json) {
-    this.infoData = GsonFactory.getInstance().getSimpleGson().fromJson(json, InfoData.class);
+    this.infoData = WIRE_GSON.fromJson(json, InfoData.class);
   }
 
   @Override
