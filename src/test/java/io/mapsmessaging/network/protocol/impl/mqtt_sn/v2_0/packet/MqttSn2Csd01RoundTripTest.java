@@ -40,7 +40,7 @@ class MqttSn2Csd01RoundTripTest {
         1, 1, new byte[]{0, 0, 0, 0, 0, 0, 0, 1},
         new byte[]{1, 2, 3, 4}, new byte[0], new byte[0], new byte[0],
         new byte[]{4, 12, 0, 1}, new byte[]{11, 12, 13, 14});
-    ByteBuffer wire = MqttSn2ProtectionCodec.encode(source);
+    ByteBuffer wire = MqttSn2ProtectionCodec.encode(source, (scheme, tagCode) -> 4);
     MqttSn2ProtectionCodec.Envelope decoded =
         MqttSn2ProtectionCodec.decode(wire, (scheme, tagCode) -> 4);
     assertEquals(1, decoded.scheme());
