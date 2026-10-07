@@ -55,12 +55,32 @@ public class SubFrame extends NatsFrame {
       throw new NatsProtocolException("Invalid SUB frame header: " + line);
     }
     subject = parts[0];
+    validateSubject(subject);
     if (parts.length == 2) {
       subscriptionId = parts[1];
       shareName = null;
     } else {
       shareName = parts[1];
       subscriptionId = parts[2];
+    }
+  }
+
+  private void validateSubject(String value) throws NatsProtocolException {
+    if (value.isEmpty() || value.startsWith(".") || value.endsWith(".") || value.contains("..")) {
+      throw new NatsProtocolException("Invalid Subject");
+    }
+    String[] tokens = value.split("\\.", -1);
+    for (int index = 0; index < tokens.length; index++) {
+      String token = tokens[index];
+      if (token.isEmpty()) {
+        throw new NatsProtocolException("Invalid Subject");
+      }
+      if (token.contains(">") && (!token.equals(">") || index != tokens.length - 1)) {
+        throw new NatsProtocolException("Invalid Subject");
+      }
+      if (token.contains("*") && !token.equals("*")) {
+        throw new NatsProtocolException("Invalid Subject");
+      }
     }
   }
 
