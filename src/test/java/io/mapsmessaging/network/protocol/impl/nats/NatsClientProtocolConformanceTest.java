@@ -407,8 +407,6 @@ class NatsClientProtocolConformanceTest extends BaseTestConfig {
       long maxPayload = jsonLong(connection.info(), "max_payload");
       int declaredSize = Math.toIntExact(maxPayload + 1);
       connection.send("PUB " + subject("oversize") + " " + declaredSize + "\r\n");
-      connection.sendBytes(new byte[declaredSize]);
-      connection.send("\r\n");
       String error = connection.readLine();
       assertTrue(error.startsWith("-ERR"));
       assertTrue(error.toLowerCase().contains("payload"));
