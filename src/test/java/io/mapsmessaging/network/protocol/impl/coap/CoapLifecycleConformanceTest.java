@@ -154,7 +154,7 @@ class CoapLifecycleConformanceTest {
   }
 
   private static BasePacket getRequest(String path, int messageId, int observeValue) {
-    BasePacket packet = new BasePacket(PacketFactory.GET, TYPE.CON, Code.valueOf((byte)1), 1, messageId, new byte[]{1,2});
+    BasePacket packet = new BasePacket(PacketFactory.GET, TYPE.CON, Code.EMPTY, 1, messageId, new byte[]{1,2});
     UriPath uriPath = new UriPath();
     uriPath.setPath(path);
     packet.getOptions().putOption(uriPath);
