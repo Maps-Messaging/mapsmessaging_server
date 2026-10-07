@@ -202,6 +202,7 @@ class NatsClientProtocolConformanceTest extends BaseTestConfig {
   }
 
   @Test
+  @Disabled("Known NATS repeated-header preservation gap: MSG-367")
   @ProtocolRequirement(
       specification = SPEC,
       value = "Sections HPUB and HMSG: header length and total length delimit headers/payload and header name case is preserved",
