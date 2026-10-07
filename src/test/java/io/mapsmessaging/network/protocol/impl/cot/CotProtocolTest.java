@@ -40,7 +40,7 @@ class CotProtocolTest {
           new CotProtocol(endpoint, new Packet(0, false), new CotProtocolConfigDTO());
 
       assertEquals("CoT", protocol.getName());
-      assertEquals("1.0", protocol.getVersion());
+      assertEquals("CoT 2.0 XML Streaming", protocol.getVersion());
       assertTrue(protocol.getSessionId().startsWith("cot-"));
       assertSame(subject, protocol.getSubject());
       assertFalse(protocol.processPacket(new Packet(0, false)));
