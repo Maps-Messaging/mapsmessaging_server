@@ -1,6 +1,9 @@
 package io.mapsmessaging.network.protocol.impl.nats;
 
 import io.mapsmessaging.MessageDaemon;
+import io.mapsmessaging.dto.rest.config.network.EndPointServerConfigDTO;
+import io.mapsmessaging.dto.rest.config.protocol.impl.NatsConfigDTO;
+import io.mapsmessaging.network.io.EndPoint;
 import io.mapsmessaging.network.protocol.impl.nats.frames.FrameFactory;
 import io.mapsmessaging.network.io.Packet;
 import io.mapsmessaging.network.protocol.impl.nats.frames.InfoFrame;
@@ -54,12 +57,20 @@ class NatsInfoFrameIdentityTest {
     try (MockedStatic<MessageDaemon> daemon = mockStatic(MessageDaemon.class)) {
       daemon.when(MessageDaemon::getInstance).thenReturn(messageDaemon);
 
+      EndPoint endPoint = mock(EndPoint.class);
+      EndPointServerConfigDTO endPointConfig = mock(EndPointServerConfigDTO.class);
+      NatsConfigDTO natsConfig = new NatsConfigDTO();
+      natsConfig.setMaxBufferSize(123456);
+      when(endPoint.getConfig()).thenReturn(endPointConfig);
+      when(endPointConfig.getProtocolConfig("nats")).thenReturn(natsConfig);
+
       InfoFrame frame = assertInstanceOf(
           InfoFrame.class,
-          new NatsProtocolFactory().getInitialPacket());
+          new NatsProtocolFactory().getInitialPacket(endPoint));
 
       assertEquals(uuid.toString(), frame.getInfoData().getServerId());
       assertEquals("maps-test", frame.getInfoData().getServerName());
+      assertEquals(123456, frame.getInfoData().getMaxPayloadLength());
     }
   }
 }
