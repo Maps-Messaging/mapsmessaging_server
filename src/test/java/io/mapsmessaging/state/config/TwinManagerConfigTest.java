@@ -21,6 +21,7 @@ package io.mapsmessaging.state.config;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -497,6 +498,34 @@ class TwinManagerConfigTest {
     assertEquals("TLSv1.3", server.getTlsContext());
     assertNull(server.getKeyStore());
     assertNull(server.getTrustStore());
+  }
+
+  @Test
+  void tak_single_additional_server_is_parsed_when_the_loader_unwraps_the_list() throws ReflectiveOperationException {
+    // MAPS' YAML loader replaces a list with exactly one entry by that entry.
+    ConfigurationProperties keyStore = new ConfigurationProperties();
+    keyStore.put("type", "PKCS12");
+    keyStore.put("path", "/opt/maps/conf/maps-cot-dist.p12");
+    ConfigurationProperties tak2 = new ConfigurationProperties();
+    tak2.put("hostname", "tak2.ic.example.org");
+    tak2.put("port", 8089);
+    tak2.put("tlsEnabled", true);
+    tak2.put("keyStore", keyStore);
+    ConfigurationProperties tak = new ConfigurationProperties();
+    tak.put("hostname", "tak.ic.example.org");
+    tak.put("port", 8089);
+    tak.put("additionalServers", tak2);
+    ConfigurationProperties root = new ConfigurationProperties();
+    root.put("tak", tak);
+
+    TwinManagerConfig config = newTwinManagerConfig(root);
+
+    assertEquals(1, config.getTak().getAdditionalServers().size());
+    TakServerDTO server = config.getTak().getAdditionalServers().get(0);
+    assertEquals("tak2.ic.example.org", server.getHostname());
+    assertEquals(8089, server.getPort());
+    assertTrue(server.isTlsEnabled());
+    assertNotNull(server.getKeyStore());
   }
 
   @Test
