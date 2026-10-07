@@ -34,6 +34,7 @@ public final class MqttSn2PacketDecoder {
       case AUTH -> MqttSn2ControlCodec.decodeAuth(frame);
       case REGISTER -> MqttSn2RegisterCodec.decode(frame);
       case SUBACK -> MqttSn2ReplyCodec.decodeSubAck(frame);
+      case REGACK -> MqttSn2RegAckCodec.decode(frame);
       case SLEEPREQ -> MqttSn2SleepCodec.decodeRequest(frame);
       case SLEEPRESP -> MqttSn2SleepCodec.decodeResponse(frame);
       case WAKEUP -> MqttSn2SleepCodec.decodeWakeup(frame);
@@ -43,7 +44,7 @@ public final class MqttSn2PacketDecoder {
       case GWINFO -> MqttSn2GatewayCodec.decodeGatewayInfo(frame);
       case FORWARDER_ENCAPSULATION -> MqttSn2EncapsulationCodec.decodeForwarder(frame);
       case CONNECTION_ENCAPSULATION -> MqttSn2EncapsulationCodec.decodeConnection(frame);
-      case CONNACK, REGACK, PROTECTION_ENCAPSULATION ->
+      case CONNACK, PROTECTION_ENCAPSULATION ->
           throw new IOException("MQTT-SN 2.0 decoder not implemented for " + frame.type());
     };
     return new Decoded(frame.type(), content);
