@@ -9,6 +9,7 @@
 package io.mapsmessaging.network.protocol.impl.cot;
 
 import io.mapsmessaging.MessageDaemon;
+import io.mapsmessaging.cot.CotStreamDecoder;
 import io.mapsmessaging.SubSystemManager;
 import io.mapsmessaging.api.Session;
 import io.mapsmessaging.network.io.Packet;
@@ -78,19 +79,19 @@ class CotProtocolStreamCoverageTest {
         Arguments.of(List.of("<event>1</event>junk<event>2</event>"),
             List.of("<event>1</event>", "<event>2</event>"), ""),
         Arguments.of(List.of("<?xml?><event></event>"),
-            List.of("<?xml?><event></event>"), ""),
+            List.of("<event></event>"), ""),
         Arguments.of(List.of("<?xml?> <event></event>"),
-            List.of("<?xml?> <event></event>"), ""),
+            List.of("<event></event>"), ""),
         Arguments.of(List.of("<?xml?>\n\t<event></event>"),
-            List.of("<?xml?>\n\t<event></event>"), ""),
+            List.of("<event></event>"), ""),
         Arguments.of(List.of("<?xml?>X<event></event>"),
             List.of("<event></event>"), ""),
         Arguments.of(List.of("noise<?xml?> <event></event>"),
-            List.of("<?xml?> <event></event>"), ""),
+            List.of("<event></event>"), ""),
         Arguments.of(List.of("<?xml<event></event>"),
             List.of("<event></event>"), ""),
         Arguments.of(List.of("<?xml?><event>1</event><?xml?><event>2</event>"),
-            List.of("<?xml?><event>1</event>", "<?xml?><event>2</event>"), ""),
+            List.of("<event>1</event>", "<event>2</event>"), ""),
         Arguments.of(List.of("<ev", "ent></event>"),
             List.of("<event></event>"), ""),
         Arguments.of(List.of("<event></ev", "ent>"),
@@ -104,9 +105,9 @@ class CotProtocolStreamCoverageTest {
         Arguments.of(List.of("<event>1</event><ev", "ent>2</event>"),
             List.of("<event>1</event>", "<event>2</event>"), ""),
         Arguments.of(List.of("<?xml?>", "   ", "<event>1</event>"),
-            List.of("<?xml?>   <event>1</event>"), ""),
+            List.of("<event>1</event>"), ""),
         Arguments.of(List.of("abc<?xml?>", "\n", "<event>1</event>xyz"),
-            List.of("<?xml?>\n<event>1</event>"), "xyz"),
+            List.of("<event>1</event>"), "xyz"),
         Arguments.of(List.of("<event>one</event>\n<event>two</event>\n"),
             List.of("<event>one</event>", "<event>two</event>"), "\n")
     );
@@ -159,6 +160,7 @@ class CotProtocolStreamCoverageTest {
       daemonStatic.when(MessageDaemon::getInstance).thenReturn(daemon);
 
       setField(protocol, "buffer", new ByteArrayOutputStream());
+      setField(protocol, "streamDecoder", new CotStreamDecoder(1_048_576));
       setField(protocol, "cotToTwinMapper", mapper);
       setField(protocol, "session", session);
     }
