@@ -47,6 +47,10 @@ public abstract class ProtocolImplFactory implements Service {
     return null;
   }
 
+  public ServerPacket getInitialPacket(EndPoint endPoint) {
+    return getInitialPacket();
+  }
+
   public abstract Protocol connect(EndPoint endPoint, String sessionId, String username, String password, Map<String, String> topicMap) throws IOException;
 
   public abstract void create(EndPoint endPoint, Packet packet) throws IOException;
