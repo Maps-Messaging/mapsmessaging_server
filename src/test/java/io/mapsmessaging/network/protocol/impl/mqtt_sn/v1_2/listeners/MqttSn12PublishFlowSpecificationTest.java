@@ -15,6 +15,7 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 
+import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
 import java.util.concurrent.CompletableFuture;
 
@@ -48,7 +49,7 @@ class MqttSn12PublishFlowSpecificationTest {
         fixture.engine);
 
     ArgumentCaptor<MQTT_SNPacket> response = ArgumentCaptor.forClass(MQTT_SNPacket.class);
-    verify(fixture.protocol).writeFrame(response.capture());
+    verify(fixture.protocol, timeout(1_000)).writeFrame(response.capture());
     PubAck ack = assertInstanceOf(PubAck.class, response.getValue());
     assertEquals(42, ack.getTopicId());
     assertEquals(0x1234, ack.getMessageId());
@@ -76,7 +77,7 @@ class MqttSn12PublishFlowSpecificationTest {
         fixture.engine);
 
     ArgumentCaptor<MQTT_SNPacket> response = ArgumentCaptor.forClass(MQTT_SNPacket.class);
-    verify(fixture.protocol).writeFrame(response.capture());
+    verify(fixture.protocol, timeout(1_000)).writeFrame(response.capture());
     PubRec pubRec = assertInstanceOf(PubRec.class, response.getValue());
     assertEquals(0x1234, pubRec.getMessageId());
     verify(transaction).add(eq(fixture.destination), any());
@@ -136,9 +137,11 @@ class MqttSn12PublishFlowSpecificationTest {
   }
 
   private Publish parsePublish(byte[] wire) throws Exception {
+    Packet packet = new Packet(ByteBuffer.wrap(wire));
+    packet.setFromAddress(new InetSocketAddress("127.0.0.1", 1884));
     return assertInstanceOf(
         Publish.class,
-        new PacketFactory().parseFrame(new Packet(ByteBuffer.wrap(wire))));
+        new PacketFactory().parseFrame(packet));
   }
 
   private static byte[] bytes(int... values) {
