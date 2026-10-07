@@ -123,8 +123,11 @@ final class KpiEvaluator implements MtiStatusRegistry.StatusListener {
   synchronized void evaluate() {
     Instant now = clock.instant();
     Map<String, TwinInfo> twins = new HashMap<>();
+    // MTI and the mission KPIs only apply to friendly assets: adversary and unknown ones never join
+    // the roster, and a member reclassified as non-friendly is left out below.
     for (TwinInfo twin : sources.twins().get()) {
-      if (config.getTwinTypes().contains(twin.twinType())) {
+      if (config.getTwinTypes().contains(twin.twinType())
+          && KpiCalculator.isFriendly(sources.classifications().apply(twin.uid()))) {
         twins.put(twin.uid(), twin);
         roster.observe(twin.uid(), twin.lastSeenAt() == null ? now : twin.lastSeenAt());
       }
@@ -136,6 +139,10 @@ final class KpiEvaluator implements MtiStatusRegistry.StatusListener {
 
     List<AssetAssessment> assets = new ArrayList<>();
     for (String uid : roster.members()) {
+      ClassificationRegistry.Classification classification = sources.classifications().apply(uid);
+      if (!KpiCalculator.isFriendly(classification)) {
+        continue;
+      }
       TwinInfo twin = twins.get(uid);
       assets.add(KpiCalculator.assess(
           uid,
@@ -143,7 +150,7 @@ final class KpiEvaluator implements MtiStatusRegistry.StatusListener {
           twin == null ? null : twin.lastSeenAt(),
           sources.mti().apply(uid),
           roster.wasAnnounced(uid),
-          sources.classifications().apply(uid),
+          classification,
           config.getExpectedClassifications().get(uid),
           config,
           now));
