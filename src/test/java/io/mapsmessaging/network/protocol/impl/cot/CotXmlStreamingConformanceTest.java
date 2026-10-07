@@ -32,12 +32,12 @@ class CotXmlStreamingConformanceTest {
 
     var parsed = new CotParser().parse(xml);
 
-    assertEquals("2.0", parsed.getVersion());
-    assertEquals("alpha", parsed.getUid());
-    assertEquals("a-f-G-U-C", parsed.getType());
-    assertEquals("m-g", parsed.getHow());
-    assertEquals(0, parsed.getPoint().getLat().compareTo(new java.math.BigDecimal("34.1234")));
-    assertEquals(0, parsed.getPoint().getLon().compareTo(new java.math.BigDecimal("-117.1234")));
+    assertEquals("2.0", parsed.version());
+    assertEquals("alpha", parsed.uid());
+    assertEquals("a-f-G-U-C", parsed.type());
+    assertEquals("m-g", parsed.how());
+    assertEquals(0, parsed.point().lat().compareTo(new java.math.BigDecimal("34.1234")));
+    assertEquals(0, parsed.point().lon().compareTo(new java.math.BigDecimal("-117.1234")));
   }
 
   @Test
