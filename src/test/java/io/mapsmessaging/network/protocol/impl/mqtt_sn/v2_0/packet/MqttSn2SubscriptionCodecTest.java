@@ -14,7 +14,7 @@ class MqttSn2SubscriptionCodecTest {
   @Test
   void decodeSubscribeTopicAndOptions() throws Exception {
     MqttSn2SubscriptionCodec.Request request = decode(new byte[]{
-        8, 8, (byte) 0xB4, 0, 23, 'a', '/', 'b'
+        8, 8, (byte) 0xB7, 0, 23, 'a', '/', 'b'
     });
     assertTrue(request.subscribe());
     assertEquals(23, request.packetIdentifier());
@@ -28,7 +28,7 @@ class MqttSn2SubscriptionCodecTest {
   @Test
   void decodeUnsubscribeAlias() throws Exception {
     MqttSn2SubscriptionCodec.Request request = decode(
-        new byte[]{7, 10, 2, 0, 17, 0, 9});
+        new byte[]{7, 10, 0, 0, 17, 0, 9});
     assertFalse(request.subscribe());
     assertEquals(17, request.packetIdentifier());
     assertEquals(9, request.topicAlias());
