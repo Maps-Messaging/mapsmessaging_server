@@ -12,7 +12,7 @@ public final class MqttSn2SleepCodec {
 
   public record SleepRequest(boolean retainAliases, int packetIdentifier, long durationSeconds) {}
   public record SleepResponse(int packetIdentifier, Long durationSeconds, Integer reasonCode) {}
-  public record Wakeup(int packetIdentifier, Integer maximumMessages) {}
+  public record Wakeup() {}
 
   private MqttSn2SleepCodec() {}
 
@@ -64,10 +64,13 @@ public final class MqttSn2SleepCodec {
   }
 
   public static Wakeup decodeWakeup(MqttSn2FrameCodec.Frame frame) throws IOException {
-    ByteBuffer b = body(frame, MqttSn2PacketType.WAKEUP);
-    if (b.remaining() != 2 && b.remaining() != 3) throw new IOException("Invalid WAKEUP payload length");
-    int id = identifier(b);
-    return new Wakeup(id, b.hasRemaining() ? Byte.toUnsignedInt(b.get()) : null);
+    ByteBuffer body = body(frame, MqttSn2PacketType.WAKEUP);
+    if (body.hasRemaining()) throw new IOException("WAKEUP must have an empty body");
+    return new Wakeup();
+  }
+
+  public static ByteBuffer encodeWakeup() {
+    return MqttSn2FrameCodec.encode(MqttSn2PacketType.WAKEUP, ByteBuffer.allocate(0));
   }
 
   private static ByteBuffer body(MqttSn2FrameCodec.Frame frame, MqttSn2PacketType expected)
