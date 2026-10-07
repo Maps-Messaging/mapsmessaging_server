@@ -405,7 +405,10 @@ class NatsClientProtocolConformanceTest extends BaseTestConfig {
   void declaredPayloadAboveMaxPayloadIsRejectedAndClosed() throws Exception {
     try (RawNatsConnection connection = connected(false, true, true)) {
       long maxPayload = jsonLong(connection.info(), "max_payload");
-      connection.send("PUB " + subject("oversize") + " " + (maxPayload + 1) + "\r\n");
+      int declaredSize = Math.toIntExact(maxPayload + 1);
+      connection.send("PUB " + subject("oversize") + " " + declaredSize + "\r\n");
+      connection.sendBytes(new byte[declaredSize]);
+      connection.send("\r\n");
       String error = connection.readLine();
       assertTrue(error.startsWith("-ERR"));
       assertTrue(error.toLowerCase().contains("payload"));
