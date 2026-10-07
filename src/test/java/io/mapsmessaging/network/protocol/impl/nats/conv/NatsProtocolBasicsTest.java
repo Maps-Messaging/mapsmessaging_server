@@ -71,7 +71,7 @@ class NatsProtocolBasicsTest extends BaseTestConfig {
     helper.send("PUB " + subject + " 3\r\none\r\n");
     helper.send("PUB " + subject + " 3\r\ntwo\r\n");
 
-    List<String> msgs = helper.expectAllMsgs(2, 1000);
+    List<String> msgs = helper.expectMsgs(2, 1000);
 
     assertEquals(2, msgs.size());
     assertTrue(msgs.stream().allMatch(msg -> msg.contains("MSG " + subject + " 2")));
