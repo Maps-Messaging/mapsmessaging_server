@@ -2,7 +2,9 @@ package io.mapsmessaging.network.protocol.impl.nats;
 
 import io.mapsmessaging.MessageDaemon;
 import io.mapsmessaging.network.protocol.impl.nats.frames.FrameFactory;
+import io.mapsmessaging.network.io.Packet;
 import io.mapsmessaging.network.protocol.impl.nats.frames.InfoFrame;
+import java.nio.charset.StandardCharsets;
 import org.junit.jupiter.api.Test;
 import org.mockito.MockedStatic;
 
@@ -22,6 +24,24 @@ class NatsInfoFrameIdentityTest {
       assertDoesNotThrow(() -> new FrameFactory(4096, false));
       daemon.verifyNoInteractions();
     }
+  }
+
+
+  @Test
+  void infoFrameUsesSingleLineCompactJsonOnWire() {
+    InfoFrame frame = new InfoFrame(1024, "server-id", "server-name");
+    Packet packet = new Packet(2048, false);
+
+    frame.packFrame(packet);
+    packet.flip();
+    byte[] bytes = new byte[packet.available()];
+    packet.get(bytes);
+    String wire = new String(bytes, StandardCharsets.US_ASCII);
+
+    assertTrue(wire.startsWith("INFO {"));
+    assertTrue(wire.endsWith("\r\n"));
+    assertFalse(wire.substring(0, wire.length() - 2).contains("\r"));
+    assertFalse(wire.substring(0, wire.length() - 2).contains("\n"));
   }
 
   @Test
