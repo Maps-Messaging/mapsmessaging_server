@@ -252,7 +252,10 @@ public class MavlinkProtocol extends Protocol {
     endPoint.getEndPointStatus().incrementReceivedMessages();
     endPoint.updateReadBytes(raw.length);
     ProcessedFrame env = mavlinkEventFactory.unpack(endPoint.getName(), ByteBuffer.wrap(raw)).orElse(null);
-    if(env == null) {
+    if (env == null || !env.isValid()) {
+      return;
+    }
+    if (env.getFrame().getSystemId() == 0 || env.getFrame().getComponentId() == 0) {
       return;
     }
     if (!detectedDialect && env.getFrame().getMessageId() == 0) {
@@ -391,7 +394,7 @@ public class MavlinkProtocol extends Protocol {
 
   @Override
   public String getVersion() {
-    return "1.0";
+    return "1/2";
   }
 
   protected String computeTopicName(String template, Frame envelope, String messageName) {
