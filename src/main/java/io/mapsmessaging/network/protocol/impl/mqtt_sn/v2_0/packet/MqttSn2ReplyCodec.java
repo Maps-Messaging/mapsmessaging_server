@@ -17,7 +17,7 @@ public final class MqttSn2ReplyCodec {
 
   public static ByteBuffer encodeSubAck(SubAck ack) {
     checkId(ack.packetIdentifier());
-    if (ack.topicType() != 1 && ack.topicType() != 2) {
+    if (ack.topicType() != 0 && ack.topicType() != 1) {
       throw new IllegalArgumentException("SUBACK must reference a topic alias");
     }
     if (ack.topicAlias() != null) checkId(ack.topicAlias());
@@ -37,7 +37,7 @@ public final class MqttSn2ReplyCodec {
     if (body.remaining() < 3) throw new IOException("Truncated SUBACK");
     int flags = Byte.toUnsignedInt(body.get());
     int topicType = flags & 3;
-    if ((flags & 0xF8) != 0 || (topicType != 1 && topicType != 2)) {
+    if ((flags & 0xF8) != 0 || (topicType != 0 && topicType != 1)) {
       throw new IOException("Invalid SUBACK flags");
     }
     int id = readId(body);
