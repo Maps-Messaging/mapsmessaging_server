@@ -60,7 +60,7 @@ public final class MqttSn2Protocol extends Protocol {
   @Setter
   private volatile Session session;
   private volatile boolean closed;
-  private volatile boolean connected;
+  private final MqttSn2Lifecycle lifecycle = new MqttSn2Lifecycle();
   private String clientIdentifier = "waiting";
 
   public MqttSn2Protocol(MQTTSNInterfaceManager manager, EndPoint endpoint,
@@ -103,11 +103,12 @@ public final class MqttSn2Protocol extends Protocol {
   public boolean processPacket(Packet packet) throws IOException {
     ByteBuffer input = packet.getRawBuffer().asReadOnlyBuffer();
     MqttSn2PacketDecoder.Decoded decoded = MqttSn2PacketDecoder.decode(input);
+    lifecycle.checkAllowed(decoded.type());
     if (decoded.type() == MqttSn2PacketType.CONNECT) {
       connect((MqttSn2ConnectCodec.Connect) decoded.content());
       return true;
     }
-    if (!connected || session == null) {
+    if (session == null) {
       throw new IOException("MQTT-SN 2.0 packet before completed CONNECT");
     }
     switch (decoded.type()) {
@@ -132,7 +133,7 @@ public final class MqttSn2Protocol extends Protocol {
   }
 
   private void connect(MqttSn2ConnectCodec.Connect request) throws IOException {
-    if (connected || session != null) {
+    if (lifecycle.state() != MqttSn2Lifecycle.State.NEW || session != null) {
       throw new IOException("Duplicate MQTT-SN 2.0 CONNECT");
     }
     if (request.will() || request.authentication() || endPoint.getConfig().getSaslConfig() != null) {
@@ -140,6 +141,7 @@ public final class MqttSn2Protocol extends Protocol {
       // These are implemented by the dedicated v2 lifecycle phase.
       throw new IOException("MQTT-SN 2.0 WILL/AUTH negotiation not yet available");
     }
+    lifecycle.begin(request.authentication() || endPoint.getConfig().getSaslConfig() != null, request.will());
     clientIdentifier = request.clientIdentifier().isEmpty()
         ? java.util.UUID.randomUUID().toString() : request.clientIdentifier();
     setKeepAlive(request.keepAliveSeconds() * 1000L);
@@ -165,7 +167,7 @@ public final class MqttSn2Protocol extends Protocol {
             created.isRestored(), request.packetIdentifier(), 0, null, null, null, null,
             request.clientIdentifier().isEmpty() ? clientIdentifier : ""));
         send(response, created::resumeState);
-        connected = true;
+        lifecycle.connected();
         setConnected(true);
       } catch (IOException | RuntimeException e) {
         try {
@@ -282,6 +284,7 @@ public final class MqttSn2Protocol extends Protocol {
   public void close() throws IOException {
     if (closed) return;
     closed = true;
+    lifecycle.close();
     if (session != null && !session.isClosed()) {
       SessionManager.getInstance().close(session, false);
     }
