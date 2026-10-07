@@ -29,11 +29,11 @@ public final class MqttSn2SubscriptionCodec {
     if (request.packetIdentifier() < 1 || request.packetIdentifier() > 65535) {
       throw new IllegalArgumentException("Invalid subscription Packet Identifier");
     }
-    if (request.topicType() < 0 || request.topicType() > 2) {
+    if (request.topicType() != 0 && request.topicType() != 1 && request.topicType() != 3) {
       throw new IllegalArgumentException("Invalid subscription topic type");
     }
     byte[] topicBytes;
-    if (request.topicType() == 0) {
+    if (request.topicType() == 3) {
       if (request.topic() == null || request.topic().isEmpty()
           || request.topic().indexOf('\u0000') >= 0) {
         throw new IllegalArgumentException("Invalid subscription topic");
@@ -76,7 +76,7 @@ public final class MqttSn2SubscriptionCodec {
     }
     int flags = Byte.toUnsignedInt(body.get());
     int topicType = flags & 3;
-    if (topicType == 3) {
+    if (topicType == 2) {
       throw new IOException("Reserved subscription topic type");
     }
     int qos = 0;
@@ -100,7 +100,7 @@ public final class MqttSn2SubscriptionCodec {
     }
     String topic = null;
     int alias = 0;
-    if (topicType == 0) {
+    if (topicType == 3) {
       if (!body.hasRemaining()) {
         throw new IOException("Missing subscription topic");
       }
