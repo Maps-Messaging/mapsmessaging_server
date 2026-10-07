@@ -57,6 +57,8 @@ public class SessionState implements CloseHandler, CompletionHandler {
   private final int maxBufferSize;
   private final Logger logger;
   private final Map<String, SubscribedEventManager> activeSubscriptions;
+  private final Map<String, String> destinationSubscriptionAliases;
+  private final Map<String, AtomicInteger> queueGroupCounters;
   private final Map<String, String> destinationMap;
   @Getter
   private final Map<String, List<SubscriptionContext>> subscriptions;
@@ -88,6 +90,8 @@ public class SessionState implements CloseHandler, CompletionHandler {
     subscriptions = new ConcurrentHashMap<>();
     logger = protocolImpl.getLogger();
     activeSubscriptions = new LinkedHashMap<>();
+    destinationSubscriptionAliases = new ConcurrentHashMap<>();
+    queueGroupCounters = new ConcurrentHashMap<>();
     session = null;
     isValid = true;
     currentState = new InitialServerState();
@@ -175,6 +179,8 @@ public class SessionState implements CloseHandler, CompletionHandler {
       CompletableFuture<Session> future = SessionManager.getInstance().closeAsync(session, false);
       try {
         activeSubscriptions.clear();
+        destinationSubscriptionAliases.clear();
+        queueGroupCounters.clear();
         namedConsumers.clear();
         jetStreamRequestManager.close();
         subscriptions.clear();
@@ -235,22 +241,49 @@ public class SessionState implements CloseHandler, CompletionHandler {
     List<SubscriptionContext> existing = subscriptions.get(context.getDestinationName());
     if (existing != null) {
       existing.add(context);
-      return activeSubscriptions.get(context.getAlias());
+      String registeredAlias = destinationSubscriptionAliases.get(context.getDestinationName());
+      SubscribedEventManager subscription = activeSubscriptions.get(registeredAlias);
+      activeSubscriptions.put(context.getAlias(), subscription);
+      return subscription;
     }
     existing = new ArrayList<>();
     existing.add(context);
     subscriptions.put(context.getDestinationName(), existing);
     SubscribedEventManager subscription = getSession().addSubscription(context);
     activeSubscriptions.put(context.getAlias(), subscription);
+    destinationSubscriptionAliases.put(context.getDestinationName(), context.getAlias());
     session.resumeState();
     return subscription;
   }
 
-  public void removeSubscription(String subscriptionId) {
-    SubscribedEventManager subscription = activeSubscriptions.remove(subscriptionId);
-    if (subscription != null) {
-      session.removeSubscription(subscriptionId);
+  public synchronized void removeSubscription(String subscriptionId) {
+    activeSubscriptions.remove(subscriptionId);
+
+    String emptyDestination = null;
+    for (Map.Entry<String, List<SubscriptionContext>> entry : subscriptions.entrySet()) {
+      boolean removed = entry.getValue().removeIf(context -> subscriptionId.equals(context.getAlias()));
+      if (removed && entry.getValue().isEmpty()) {
+        emptyDestination = entry.getKey();
+        break;
+      }
     }
+
+    if (emptyDestination != null) {
+      subscriptions.remove(emptyDestination);
+      String registeredAlias = destinationSubscriptionAliases.remove(emptyDestination);
+      if (registeredAlias != null) {
+        activeSubscriptions.remove(registeredAlias);
+        session.removeSubscription(registeredAlias);
+      }
+    }
+  }
+
+  public int nextQueueGroupIndex(String destinationName, String sharedName, int size) {
+    if (size <= 1) {
+      return 0;
+    }
+    String key = destinationName + "\u0000" + sharedName;
+    return Math.floorMod(queueGroupCounters.computeIfAbsent(key, ignored -> new AtomicInteger()).getAndIncrement(), size);
   }
 
   public String getSessionId() {
