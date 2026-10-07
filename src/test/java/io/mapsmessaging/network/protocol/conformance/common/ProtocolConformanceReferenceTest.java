@@ -34,7 +34,8 @@ class ProtocolConformanceReferenceTest {
       "io.mapsmessaging.network.protocol.impl.websockets.WebSocketHandshakeConformanceTest",
       "io.mapsmessaging.network.protocol.impl.websockets.endpoint.WebSocketFrameConformanceTest",
       "io.mapsmessaging.network.protocol.impl.mavlink.MavlinkFramingConformanceTest",
-      "io.mapsmessaging.network.protocol.impl.mavlink.MavlinkDialectConformanceTest"
+      "io.mapsmessaging.network.protocol.impl.mavlink.MavlinkDialectConformanceTest",
+      "io.mapsmessaging.network.protocol.impl.cot.CotXmlStreamingConformanceTest"
   );
 
   @Test
