@@ -41,6 +41,7 @@ public class MavlinkStreamHandler implements StreamHandler {
   private static final int MAVLINK_V2_CRC_LEN = 2;
   private static final int MAVLINK_V2_SIGNATURE_LEN = 13;
   private static final int MAVLINK_V2_INCOMPAT_FLAG_SIGNED = 0x01;
+  private static final int MAVLINK_V2_SUPPORTED_INCOMPAT_FLAGS = MAVLINK_V2_INCOMPAT_FLAG_SIGNED;
 
   private final byte[] inputBuffer;
   private final byte[] outputBuffer;
@@ -120,6 +121,9 @@ public class MavlinkStreamHandler implements StreamHandler {
     readFully(input, inputBuffer, 0, MAVLINK_V2_HEADER_REST);
 
     int incompatFlags = inputBuffer[0] & 0xFF;
+    if ((incompatFlags & ~MAVLINK_V2_SUPPORTED_INCOMPAT_FLAGS) != 0) {
+      throw new IOException("Unsupported MAVLink 2 incompatibility flags: 0x" + Integer.toHexString(incompatFlags));
+    }
     boolean signed = (incompatFlags & MAVLINK_V2_INCOMPAT_FLAG_SIGNED) != 0;
 
     int frameLength = 2 + MAVLINK_V2_HEADER_REST + payloadLength + MAVLINK_V2_CRC_LEN + (signed ? MAVLINK_V2_SIGNATURE_LEN : 0);
