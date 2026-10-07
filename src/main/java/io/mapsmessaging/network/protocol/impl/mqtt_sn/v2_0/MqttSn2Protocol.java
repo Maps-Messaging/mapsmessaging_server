@@ -174,7 +174,7 @@ public final class MqttSn2Protocol extends Protocol {
   }
 
   private void subscribe(MqttSn2SubscriptionCodec.Request request) throws IOException {
-    if (request.topicType() != 0) {
+    if (request.topicType() != 3) {
       throw new IOException("MQTT-SN 2.0 subscription topic alias not registered");
     }
     QualityOfService qos = qos(request.maximumQos());
@@ -186,11 +186,11 @@ public final class MqttSn2Protocol extends Protocol {
     int alias = topicAliases.computeIfAbsent(request.topic(), topic -> aliasSequence.incrementAndGet());
     aliasTopics.put(alias, request.topic());
     send(MqttSn2ReplyCodec.encodeSubAck(new MqttSn2ReplyCodec.SubAck(
-        2, alias, request.packetIdentifier(), 0)), null);
+        0, alias, request.packetIdentifier(), 0)), null);
   }
 
   private void unsubscribe(MqttSn2SubscriptionCodec.Request request) throws IOException {
-    String topic = request.topicType() == 0
+    String topic = request.topicType() == 3
         ? request.topic() : aliasTopics.get(request.topicAlias());
     if (topic == null) {
       throw new IOException("Unknown subscription topic alias");
@@ -204,14 +204,14 @@ public final class MqttSn2Protocol extends Protocol {
     int alias = topicAliases.computeIfAbsent(request.topicName(), topic -> aliasSequence.incrementAndGet());
     aliasTopics.put(alias, request.topicName());
     send(MqttSn2RegAckCodec.encode(new MqttSn2RegAckCodec.RegAck(
-        2, alias, request.packetIdentifier(), 0)), null);
+        0, alias, request.packetIdentifier(), 0)), null);
   }
 
   private void publish(MqttSn2PublishCodec.Publish publish) throws IOException {
     if (publish.qos() == 2) {
       throw new IOException("MQTT-SN 2.0 QoS2 transaction integration pending");
     }
-    String topic = publish.topicType() == 0 ? publish.topicName() : aliasTopics.get(publish.topicAlias());
+    String topic = publish.topicType() == 3 ? publish.topicName() : aliasTopics.get(publish.topicAlias());
     if (topic == null) {
       throw new IOException("Unknown MQTT-SN 2.0 topic alias");
     }
@@ -254,7 +254,7 @@ public final class MqttSn2Protocol extends Protocol {
           "MQTT-SN 2.0 outbound QoS" + qosLevel + " is not enabled");
     }
     MqttSn2PublishCodec.Publish publish = new MqttSn2PublishCodec.Publish(
-        false, 0, false, parsed.getMessage().isRetain(), 0, 0,
+        false, 0, false, parsed.getMessage().isRetain(), 3, 0,
         parsed.getDestinationName(), 0, parsed.getMessage().getOpaqueData());
     send(MqttSn2PublishCodec.encode(publish), event.getCompletionTask());
   }
