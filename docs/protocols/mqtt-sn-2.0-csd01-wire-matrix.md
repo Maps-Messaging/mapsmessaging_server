@@ -4,7 +4,7 @@ Normative baseline: OASIS MQTT-SN 2.0 CSD01, August 2026, specification source c
 
 Reference-client catalogue: `Maps-Messaging/mqtt-sn-2.0-client/shared/control-packet-types.json`.
 
-This matrix records implemented packet and session paths, not proof of full MQTT-SN 2.0 conformance. The focused test suite has not yet been executed because Maven and JDK 21 are unavailable in this checkout. No inheritance from MQTT-SN 1.2 is used by the active 2.0 protocol and wire decoder.
+This matrix records implemented packet and session paths, not proof of full MQTT-SN 2.0 conformance. The active 2.0 protocol and wire decoder do not inherit MQTT-SN 1.2 semantics. Jenkins #171 successfully compiled and ran the server-wide suite on the refit branch (commit 0b574404), reporting 7,812 tests, 0 failures, 79 skipped. The remaining normative and security gaps below must not be construed as passing conformance requirements.
 
 | Wire packet | CSD01 type | Decoder | Encoder | Notes |
 |---|---:|---|---|---|
@@ -34,7 +34,7 @@ This matrix records implemented packet and session paths, not proof of full MQTT
 | GWINFO | 0x18 | MqttSn2GatewayCodec | MqttSn2GatewayCodec | Gateway address |
 | FORWARDER_ENCAPSULATION | 0xFC | MqttSn2EncapsulationCodec | MqttSn2EncapsulationCodec | Embedded frame validation |
 | CONNECTION_ENCAPSULATION | 0xFE | MqttSn2EncapsulationCodec | MqttSn2EncapsulationCodec | Embedded frame validation/allowlist |
-| PROTECTION_ENCAPSULATION | 0xFF | MqttSn2ProtectionCodec | MqttSn2ProtectionCodec | Requires provider-defined tag size and authenticated encryption |
+| PROTECTION_ENCAPSULATION | 0xFF | MqttSn2ProtectionCodec (envelope only) | MqttSn2ProtectionCodec (envelope only) | **Not integrated:** inbound authenticated verification/decryption, replay protection and key-provider policy are not implemented in the live protocol |
 
 ## Version and integration boundary
 
@@ -53,12 +53,13 @@ This matrix records implemented packet and session paths, not proof of full MQTT
 
 ## Remaining scope and validation
 
-- Short-form CONNECT Will topic aliases that are not configured predefined topics are rejected. Full alias ownership/retention semantics and protection encapsulation require additional work.
-- Complete response reason-code applicability and a full normative statement audit remain future conformance work.
-- The released `0.1.0` client artifact is not currently present in `maps_releases`; `release-0.1.0` still publishes `0.1.0-SNAPSHOT`. The test dependency defaults to the requested release coordinate. Local compilation and tests used the published snapshot with `-DmqttSn2ClientVersion=0.1.0-SNAPSHOT`.
-- The BC protection artifact is a regular test dependency, and its provider test runs in the normal test suite. It passes against the published snapshot with the same version override used for the client artifact.
-- The focused client/server suite compiled, but UDP socket creation is denied by the local execution environment (`SocketException: Operation not permitted`). Its live protocol assertions have not passed locally. The retry unit test caught and fixed a DUP flag defect; 87 non-network MQTT-SN unit tests passed. The partial JaCoCo report shows 67% line coverage in the active protocol package and 72% in the packet codec package; 80% is the target, not a measured result.
-- Jenkins is intentionally not run.
+- MQTT-SN 2.0 Protection Encapsulation is **not available in the live session path**. The generic decoder intentionally rejects its packet identifier until an authentication provider, key management, replay counter enforcement and unwrapping have been integrated. Envelope parsing or Bouncy Castle reference-provider tests do not make the server compliant with protected messaging.
+- Session/predefined alias ownership, retention, malformed-response policy and a full line-by-line normative statement audit remain unverified. Do not claim complete CSD01 conformance.
+- `mqtt-sn-2-client` and optional `mqtt-sn-2-client-protection-bc` test artifacts use the **unreleased** `0.1.0-SNAPSHOT` coordinate. No `0.1.0` release has been made.
+- The user reported 88 MQTT-SN 2.0 tests passing in IntelliJ and subsequently confirmed SCRAM authentication success. These are user-reported local results.
+- The full Jenkins branch run [#171](https://jenkins.mapsmessaging.io/job/mapsmessaging-server-junit/171/) at revision `0b574404af5fefebd307f9ff1f27c402d160f7ee` completed **SUCCESS**: **7,812 total, 0 failed, 79 skipped**. This supersedes the outdated local socket restriction and no-Jenkins status recorded earlier.
+- Jenkins SonarCloud analysis was uploaded under the `development` branch identity. This is intentionally accepted for now and must not be presented as a distinct branch analysis.
+- The user explicitly deferred the 80% coverage gate. Coverage has **not** been signed off as meeting a threshold.
 
 ## Block 3 conformance test trace
 
@@ -80,6 +81,10 @@ The test suite identifies the August 2026 CSD01 source commit pinned above. The 
 
 The target is at least 80% coverage of the active MQTT-SN v2 protocol and codecs. The partial local report is below target (67% protocol package, 72% packet codec package); state/listener test paths and live protocol assertions remain unmeasured because the integration suite cannot open local sockets here.
 
-## Validation gate
+## Validation gate and disposition
 
-This file records implementation and test traceability, **not passing conformance tests**. Do not mark Jira MSG-324 Done or describe the server as CSD01 compliant until the released client dependency resolves, the full local test suite passes, and coverage is measured against the 80% target. Jenkins is intentionally not triggered for this block.
+**Automated build/test gate: PASSED** on Jenkins #171 at the revision above. This establishes compilation and suite execution for that revision, not independent certification against all CSD01 MUST requirements.
+
+**Full normative conformance: NOT SIGNED OFF.** Authenticated Protection Encapsulation, complete alias semantics and clause-level negative-behaviour verification still require explicit implementation or documented unsupported-feature policy.
+
+Coverage is deferred at the user's request. No merge, formal release or Jira Done transition has been authorised.
