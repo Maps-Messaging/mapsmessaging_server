@@ -8,6 +8,7 @@ import io.mapsmessaging.network.io.EndPoint;
 import io.mapsmessaging.network.io.Packet;
 import io.mapsmessaging.network.io.impl.SelectorTask;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.packet.MQTT_SNPacket;
+import io.mapsmessaging.network.protocol.impl.mqtt_sn.v2_0.packet.MqttSn2PublishCodec;
 import io.mapsmessaging.network.protocol.transformation.ProtocolMessageTransformation;
 import io.mapsmessaging.network.protocol.transformation.TransformationManager;
 import org.junit.jupiter.api.Tag;
@@ -113,6 +114,44 @@ class MqttSn12ConnectionlessPublishSpecificationTest {
               42,
               "payload".getBytes()));
 
+      verifyNoInteractions(manager);
+    }
+  }
+
+  @Test
+  @ProtocolRequirement(specification = "MQTT-SN 2.0 CSD01",
+      value = "Sections 3.6 and 4.2.1 PUBWOS by Topic Name without a Virtual Connection",
+      source = SOURCE)
+  void v2PubwosByNamePublishesWithoutCreatingLegacySession() throws Exception {
+    Fixture fixture = fixture("", List.of());
+    try (MockedStatic<SessionManager> sessions = mockStatic(SessionManager.class)) {
+      SessionManager manager = mock(SessionManager.class);
+      sessions.when(SessionManager::getInstance).thenReturn(manager);
+      when(manager.publish(eq("v2/telemetry"), any()))
+          .thenReturn(CompletableFuture.completedFuture(1));
+      ByteBuffer frame = MqttSn2PublishCodec.encode(new MqttSn2PublishCodec.Publish(
+          true, 0, false, false, 3, 0, "v2/telemetry", 0, new byte[]{7}));
+      Packet packet = new Packet(frame);
+      packet.setFromAddress(fixture.address);
+      fixture.manager.processPacket(packet);
+      verify(manager).publish(eq("v2/telemetry"), any());
+    }
+  }
+
+  @Test
+  @ProtocolRequirement(specification = "MQTT-SN 2.0 CSD01",
+      value = "Shared-version UDP dispatch rejects ambiguous unprotected 0x12 alias forms",
+      source = SOURCE)
+  void v2PubwosPredefinedAliasDoesNotMasqueradeAsLegacySubscribe() throws Exception {
+    Fixture fixture = fixture("", List.of(predefined(42, "pre/topic")));
+    try (MockedStatic<SessionManager> sessions = mockStatic(SessionManager.class)) {
+      SessionManager manager = mock(SessionManager.class);
+      sessions.when(SessionManager::getInstance).thenReturn(manager);
+      ByteBuffer frame = MqttSn2PublishCodec.encode(new MqttSn2PublishCodec.Publish(
+          true, 0, false, false, 1, 0, null, 42, new byte[]{7}));
+      Packet packet = new Packet(frame);
+      packet.setFromAddress(fixture.address);
+      fixture.manager.processPacket(packet);
       verifyNoInteractions(manager);
     }
   }
