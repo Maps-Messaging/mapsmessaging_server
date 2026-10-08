@@ -32,8 +32,6 @@ import io.mapsmessaging.network.protocol.impl.mqtt_sn.MQTTSNInterfaceManager;
 import io.mapsmessaging.network.protocol.sasl.SaslAuthenticationMechanism;
 import io.mapsmessaging.utilities.threads.SimpleTaskScheduler;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v2_0.packet.*;
-import lombok.Getter;
-import lombok.Setter;
 
 import javax.security.auth.Subject;
 import java.io.IOException;
@@ -44,6 +42,7 @@ import java.util.Map;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 import javax.security.sasl.Sasl;
 
 /**
@@ -62,9 +61,16 @@ public final class MqttSn2Protocol extends Protocol {
   private final AtomicInteger aliasSequence = new AtomicInteger();
   private final Map<String, Integer> topicAliases = new HashMap<>();
   private final Map<Integer, String> aliasTopics = new HashMap<>();
-  @Getter
-  @Setter
-  private volatile Session session;
+  private final AtomicReference<Session> session = new AtomicReference<>();
+
+  public Session getSession() {
+    return session.get();
+  }
+
+  @Override
+  public void setSession(Session value) {
+    session.set(value);
+  }
   private volatile boolean closed;
   private final MqttSn2Lifecycle lifecycle = new MqttSn2Lifecycle();
   private final MqttSn2OutgoingDeliveryManager outgoing = new MqttSn2OutgoingDeliveryManager();
@@ -98,20 +104,20 @@ public final class MqttSn2Protocol extends Protocol {
 
   @Override
   public String getSessionId() {
-    return session == null ? clientIdentifier : session.getName();
+    return session.get() == null ? clientIdentifier : session.get().getName();
   }
 
   @Override
   public Subject getSubject() {
-    return session == null ? new Subject() : session.getSecurityContext().getSubject();
+    return session.get() == null ? new Subject() : session.get().getSecurityContext().getSubject();
   }
 
   @Override
   public ProtocolInformationDTO getInformation() {
     MqttSnProtocolInformation information = new MqttSnProtocolInformation();
     updateInformation(information);
-    if (session != null) {
-      information.setSessionInfo(session.getSessionInformation());
+    if (session.get() != null) {
+      information.setSessionInfo(session.get().getSessionInformation());
     }
     return information;
   }
@@ -129,7 +135,7 @@ public final class MqttSn2Protocol extends Protocol {
       authenticate((MqttSn2ControlCodec.Auth) decoded.content());
       return true;
     }
-    if (session == null) {
+    if (session.get() == null) {
       throw new IOException("MQTT-SN 2.0 packet before completed CONNECT");
     }
     switch (decoded.type()) {
@@ -156,7 +162,7 @@ public final class MqttSn2Protocol extends Protocol {
   }
 
   private void connect(MqttSn2ConnectCodec.Connect request) throws IOException {
-    if (lifecycle.state() != MqttSn2Lifecycle.State.NEW || session != null) {
+    if (lifecycle.state() != MqttSn2Lifecycle.State.NEW || session.get() != null) {
       throw new IOException("Duplicate MQTT-SN 2.0 CONNECT");
     }
     var saslConfig = endPoint.getConfig().getSaslConfig();
@@ -262,7 +268,10 @@ public final class MqttSn2Protocol extends Protocol {
           SessionManager.getInstance().close(created, true);
           return;
         }
-        setSession(created);
+        if (!session.compareAndSet(null, created)) {
+          SessionManager.getInstance().close(created, true);
+          return;
+        }
         created.login();
         ByteBuffer response = MqttSn2ConnAckCodec.encode(new MqttSn2ConnAckCodec.ConnAck(
             created.isRestored(), request.packetIdentifier(), 0, request.sessionExpirySeconds(), null,
@@ -301,7 +310,7 @@ public final class MqttSn2Protocol extends Protocol {
         new SubscriptionContextBuilder(request.topic(), qos.getClientAcknowledgement());
     builder.setReceiveMaximum(1);
     builder.setQos(qos);
-    session.addSubscription(builder.build());
+    session.get().addSubscription(builder.build());
     int alias = topicAliases.computeIfAbsent(request.topic(), topic -> aliasSequence.incrementAndGet());
     aliasTopics.put(alias, request.topic());
     send(MqttSn2ReplyCodec.encodeSubAck(new MqttSn2ReplyCodec.SubAck(
@@ -314,7 +323,7 @@ public final class MqttSn2Protocol extends Protocol {
     if (topic == null) {
       throw new IOException("Unknown subscription topic alias");
     }
-    session.removeSubscription(topic);
+    session.get().removeSubscription(topic);
     send(MqttSn2AckCodec.encode(new MqttSn2AckCodec.Ack(
         MqttSn2PacketType.UNSUBACK, request.packetIdentifier(), null)), null);
   }
@@ -354,14 +363,14 @@ public final class MqttSn2Protocol extends Protocol {
     }
     // Resolve through the client's Session, never the server-wide publish API:
     // destination discovery and authorisation must retain the session identity.
-    session.findDestination(topic, DestinationType.TOPIC).whenComplete((destination, failure) -> {
+    session.get().findDestination(topic, DestinationType.TOPIC).whenComplete((destination, failure) -> {
       boolean succeeded = false;
       try {
         if (!closed && failure == null && destination != null) {
           Message message = MessageOverrides.createMessageBuilder(
               getProtocolConfig().getMessageDefaults(), builder).build();
           if (publish.qos() == 2) {
-            Transaction transaction = session.startTransaction(
+            Transaction transaction = session.get().startTransaction(
                 qos2TransactionName(publish.packetIdentifier()));
             try {
               transaction.add(destination, message);
@@ -369,7 +378,7 @@ public final class MqttSn2Protocol extends Protocol {
                 incomingQos2.put(publish.packetIdentifier(), transaction);
               }
             } catch (IOException | RuntimeException error) {
-              session.closeTransaction(transaction);
+              session.get().closeTransaction(transaction);
               throw error;
             }
           } else {
@@ -413,7 +422,7 @@ public final class MqttSn2Protocol extends Protocol {
       try {
         transaction.commit();
       } finally {
-        session.closeTransaction(transaction);
+        session.get().closeTransaction(transaction);
       }
     }
     send(MqttSn2AckCodec.encode(new MqttSn2AckCodec.Ack(
@@ -423,13 +432,13 @@ public final class MqttSn2Protocol extends Protocol {
   private Transaction qos2Transaction(int packetIdentifier) {
     synchronized (incomingQos2) {
       Transaction transaction = incomingQos2.get(packetIdentifier);
-      return transaction == null && session != null
-          ? session.getTransaction(qos2TransactionName(packetIdentifier)) : transaction;
+      return transaction == null && session.get() != null
+          ? session.get().getTransaction(qos2TransactionName(packetIdentifier)) : transaction;
     }
   }
 
   private String qos2TransactionName(int packetIdentifier) {
-    return session.getName() + ":" + packetIdentifier;
+    return session.get().getName() + ":" + packetIdentifier;
   }
 
   private void acknowledge(MqttSn2AckCodec.Ack ack) throws IOException {
@@ -569,8 +578,9 @@ public final class MqttSn2Protocol extends Protocol {
     if (retryTask != null) retryTask.cancel(false);
     if (sleepTask != null) sleepTask.cancel(false);
     if (sasl != null) sasl.close();
-    if (session != null && !session.isClosed()) {
-      SessionManager.getInstance().close(session, cleanWillOnClose);
+    Session closingSession = session.getAndSet(null);
+    if (closingSession != null && !closingSession.isClosed()) {
+      SessionManager.getInstance().close(closingSession, cleanWillOnClose);
     }
     manager.close(address);
     super.close();
