@@ -56,7 +56,7 @@ This matrix records implemented packet and session paths, not proof of full MQTT
 - Short-form CONNECT Will topic aliases that are not configured predefined topics are rejected. Full alias ownership/retention semantics and protection encapsulation require additional work.
 - Complete response reason-code applicability and a full normative statement audit remain future conformance work.
 - The released `0.1.0` client artifact is not currently present in `maps_releases`; `release-0.1.0` still publishes `0.1.0-SNAPSHOT`. The test dependency defaults to the requested release coordinate. Local compilation and tests used the published snapshot with `-DmqttSn2ClientVersion=0.1.0-SNAPSHOT`.
-- The optional BC protection profile resolves and its provider test passes against the published snapshot using `-DmqttSn2ProtectionBc=true` and the same version override.
+- The BC protection artifact is a regular test dependency, and its provider test runs in the normal test suite. It passes against the published snapshot with the same version override used for the client artifact.
 - The focused client/server suite compiled, but UDP socket creation is denied by the local execution environment (`SocketException: Operation not permitted`). Its live protocol assertions have not passed locally. The retry unit test caught and fixed a DUP flag defect; 87 non-network MQTT-SN unit tests passed. The partial JaCoCo report shows 67% line coverage in the active protocol package and 72% in the packet codec package; 80% is the target, not a measured result.
 - Jenkins is intentionally not run.
 
@@ -76,7 +76,7 @@ The test suite identifies the August 2026 CSD01 source commit pinned above. The 
 | Gateway discovery and malformed traffic | `MqttSn2ClientServerConformanceTest.searchGatewayReturnsGatewayInfo`, `reservedPacketTypeIsDroppedWithoutCorruptingTheGateway`, packet codec tests | MQTT-SN 2.1.2, 2.1.3, 6.1.2, 6.1.3 |
 | MQTT 3.1.1 and MQTT 5 bridging | `MqttSn2ClientServerConformanceTest.qosOneAndTwoPublicationsBridgeToMqtt311AndMqtt5` | MQTT-SN 5, MQTT 3.1.1, MQTT 5.0 |
 | MQTT-SN 1.2 regression | `src/test/java/io/mapsmessaging/network/protocol/impl/mqtt_sn/v1_2` and retained MQTT-SN 1.2/Paho tests | MQTT-SN 1.2, 14 November 2013 |
-| Optional BC protection provider | `MqttSn2ProtectionArtifactTest` with `-DmqttSn2ProtectionBc=true` | MQTT-SN 2.1.3, 4.13 |
+| BC protection provider | `MqttSn2ProtectionArtifactTest` in the normal test suite | MQTT-SN 2.1.3, 4.13 |
 
 The target is at least 80% coverage of the active MQTT-SN v2 protocol and codecs. The partial local report is below target (67% protocol package, 72% packet codec package); state/listener test paths and live protocol assertions remain unmeasured because the integration suite cannot open local sockets here.
 

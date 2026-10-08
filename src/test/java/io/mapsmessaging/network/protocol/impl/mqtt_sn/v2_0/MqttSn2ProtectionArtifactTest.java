@@ -7,27 +7,18 @@ package io.mapsmessaging.network.protocol.impl.mqtt_sn.v2_0;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.lang.reflect.Proxy;
-import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.Test;
 
-/** Optional profile check for the released protection-bc provider artifact. */
+/** Verifies the protection-bc test dependency is available on every test run. */
 class MqttSn2ProtectionArtifactTest {
 
   @Test
-  void optionalBouncyCastleProviderLoadsAndAdvertisesCsd01Schemes() throws Exception {
+  void bouncyCastleProviderLoadsAndAdvertisesCsd01Schemes() throws Exception {
     // CSD01 MQTT-SN-4.13 and MQTT-SN-2.1.3-1..3.
-    Class<?> providerType;
-    Class<?> resolverType;
-    try {
-      providerType = Class.forName(
-          "io.mapsmessaging.mqttsn.protection.bc.BouncyCastleProtectionProvider");
-      resolverType = Class.forName(
-          "io.mapsmessaging.mqttsn.protection.bc.ProtectionKeyResolver");
-    } catch (ClassNotFoundException absent) {
-      Assumptions.assumeTrue(false,
-          "Enable -DmqttSn2ProtectionBc=true to test the optional BC artifact");
-      return;
-    }
+    Class<?> providerType = Class.forName(
+        "io.mapsmessaging.mqttsn.protection.bc.BouncyCastleProtectionProvider");
+    Class<?> resolverType = Class.forName(
+        "io.mapsmessaging.mqttsn.protection.bc.ProtectionKeyResolver");
 
     Object resolver = Proxy.newProxyInstance(resolverType.getClassLoader(),
         new Class<?>[] {resolverType}, (proxy, method, arguments) -> {

@@ -166,24 +166,6 @@
   -->
   <profiles>
     <profile>
-      <id>mqtt-sn-2-protection-bc-tests</id>
-      <activation>
-        <property>
-          <name>mqttSn2ProtectionBc</name>
-          <value>true</value>
-        </property>
-      </activation>
-      <dependencies>
-        <dependency>
-          <groupId>io.mapsmessaging</groupId>
-          <artifactId>mqtt-sn-2-client-protection-bc</artifactId>
-          <version>${mqttSn2ClientVersion}</version>
-          <scope>test</scope>
-        </dependency>
-      </dependencies>
-    </profile>
-
-    <profile>
       <id>buildkite-dependency-check-cache</id>
       <activation>
         <property>
@@ -1230,6 +1212,13 @@
     <dependency>
       <groupId>io.mapsmessaging</groupId>
       <artifactId>mqtt-sn-2-client</artifactId>
+      <version>${mqttSn2ClientVersion}</version>
+      <scope>test</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>io.mapsmessaging</groupId>
+      <artifactId>mqtt-sn-2-client-protection-bc</artifactId>
       <version>${mqttSn2ClientVersion}</version>
       <scope>test</scope>
     </dependency>
