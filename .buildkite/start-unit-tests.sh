@@ -29,9 +29,7 @@ cd mapsmessaging_server
 
 ulimit -a
 
-git clone https://github.com/eclipse/paho.mqtt.testing.git
-
-mvn clean test -Dpython_command=python3 -Dcom.datastax.driver.FORCE_NIO=true -Ddebug_domain=false -Psnapshot
+mvn clean test -Dcom.datastax.driver.FORCE_NIO=true -Ddebug_domain=false -Psnapshot
 
 # Extract test results
 RESULTS_DIR="$HOME/mapsmessaging-test-results"
