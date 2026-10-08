@@ -73,6 +73,7 @@ public final class MqttSn2Protocol extends Protocol {
   private String clientIdentifier = "waiting";
   private MqttSn2ConnectCodec.Connect connectRequest;
   private SaslAuthenticationMechanism sasl;
+  private byte[] saslFinalResponse;
   private ScheduledFuture<?> retryTask;
   private ScheduledFuture<?> sleepTask;
   private boolean cleanWillOnClose;
@@ -184,6 +185,7 @@ public final class MqttSn2Protocol extends Protocol {
             "mqtt-sn", props, endPoint.getConfig());
         byte[] response = sasl.challenge(request.authenticationData());
         if (sasl.complete()) {
+          saslFinalResponse = response == null ? null : response.clone();
           lifecycle.authenticated(request.will());
           establishSession();
         } else {
@@ -208,6 +210,7 @@ public final class MqttSn2Protocol extends Protocol {
     try {
       byte[] response = sasl.challenge(auth.data());
       if (sasl.complete()) {
+        saslFinalResponse = response == null ? null : response.clone();
         lifecycle.authenticated(connectRequest.will());
         establishSession();
       } else {
@@ -262,7 +265,7 @@ public final class MqttSn2Protocol extends Protocol {
         created.login();
         ByteBuffer response = MqttSn2ConnAckCodec.encode(new MqttSn2ConnAckCodec.ConnAck(
             created.isRestored(), request.packetIdentifier(), 0, request.sessionExpirySeconds(), null,
-            request.authentication() ? request.authenticationMethod() : null, null,
+            request.authentication() ? request.authenticationMethod() : null, saslFinalResponse,
             request.clientIdentifier().isEmpty() ? clientIdentifier : ""));
         send(response, created::resumeState);
         lifecycle.connected();
