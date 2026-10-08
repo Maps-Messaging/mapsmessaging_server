@@ -70,7 +70,7 @@ public final class MqttSn2Protocol extends Protocol {
   }
   private volatile boolean closed;
   private final MqttSn2Lifecycle lifecycle = new MqttSn2Lifecycle();
-  private volatile MqttSn2ProtectionVerifier protectionVerifier;
+  private volatile MqttSn2HmacProtectionSession protectionSession;
   private final MqttSn2OutgoingDeliveryManager outgoing = new MqttSn2OutgoingDeliveryManager();
   private final Map<Integer, Transaction> incomingQos2 = new HashMap<>();
   private final java.util.Set<Integer> incomingQos2Pending = new java.util.HashSet<>();
@@ -120,24 +120,22 @@ public final class MqttSn2Protocol extends Protocol {
     return information;
   }
 
-  /**
-   * Configure an authenticated CSD01 protection provider for this client.
-   * Do not use the legacy HMAC datagram wrapper for these frames.
-   */
-  public void setProtectionVerifier(MqttSn2ProtectionVerifier verifier) {
-    protectionVerifier = java.util.Objects.requireNonNull(verifier, "verifier");
+  /** Require verified inbound protection and signed outbound protection. */
+  public void configureProtection(MqttSn2HmacProtectionSession policy) {
+    protectionSession = java.util.Objects.requireNonNull(policy, "policy");
   }
 
   @Override
   public boolean processPacket(Packet packet) throws IOException {
     ByteBuffer input = packet.getRawBuffer().asReadOnlyBuffer();
-    if (MqttSn2FrameCodec.decode(input.asReadOnlyBuffer()).type()
-        == MqttSn2PacketType.PROTECTION_ENCAPSULATION) {
-      MqttSn2ProtectionVerifier verifier = protectionVerifier;
-      if (verifier == null) {
-        throw new IOException("Protected MQTT-SN 2.0 packet without configured verifier");
-      }
-      input = verifier.verify(input);
+    boolean wrapped = MqttSn2FrameCodec.decode(input.asReadOnlyBuffer()).type()
+        == MqttSn2PacketType.PROTECTION_ENCAPSULATION;
+    MqttSn2HmacProtectionSession policy = protectionSession;
+    if (policy != null) {
+      if (!wrapped) throw new IOException("Unprotected MQTT-SN 2.0 packet on secured session");
+      input = policy.receive(input);
+    } else if (wrapped) {
+      throw new IOException("Protected MQTT-SN 2.0 packet without configured security policy");
     }
     MqttSn2PacketDecoder.Decoded decoded = MqttSn2PacketDecoder.decode(input);
     lifecycle.checkAllowed(decoded.type());
@@ -548,6 +546,20 @@ public final class MqttSn2Protocol extends Protocol {
   }
 
   private void send(ByteBuffer wire, Runnable completion) {
+    MqttSn2HmacProtectionSession policy = protectionSession;
+    if (policy != null) {
+      try {
+        wire = policy.send(wire);
+      } catch (IOException error) {
+        AUTH_LOGGER.log(ServerLogMessages.MQTT_SN_EXCEPTION_RASIED, error);
+        try {
+          close();
+        } catch (IOException ignored) {
+          // Fail closed. Never downgrade to an unprotected response.
+        }
+        return;
+      }
+    }
     selectorTask.push(new MqttSn2OutboundPacket(wire, address, completion));
     sentMessage();
   }
