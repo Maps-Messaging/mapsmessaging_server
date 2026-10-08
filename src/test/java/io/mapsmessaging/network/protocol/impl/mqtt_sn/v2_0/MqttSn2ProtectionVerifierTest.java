@@ -68,7 +68,7 @@ class MqttSn2ProtectionVerifierTest {
     // Short MQTT-SN frame plus CSD01 Protection Encapsulation fixed fields.
     ByteBuffer prefix = ByteBuffer.allocate(18);
     prefix.put((byte)(18 + inner.length + 32)).put((byte)0xff)
-        .put((byte)0x10).put((byte)0);
+        .put((byte)0x11).put((byte)0);
     prefix.put(new byte[]{0,0,0,0,0,0,0,7});
     prefix.put(new byte[]{1,2,3,4});
     prefix.putShort((short)counter);
