@@ -7,6 +7,7 @@ package io.mapsmessaging.network.protocol.impl.mqtt_sn.v2_0;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import io.mapsmessaging.mqttsn.ConnectOptions;
 import io.mapsmessaging.mqttsn.DecodedPacket;
