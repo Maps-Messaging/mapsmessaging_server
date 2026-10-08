@@ -23,6 +23,7 @@ import io.mapsmessaging.network.io.Packet;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.packet.MQTT_SNPacket;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.packet.PacketFactory;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.packet.ReasonCodes;
+import io.mapsmessaging.network.protocol.impl.mqtt.packet.MalformedException;
 
 import java.io.IOException;
 
@@ -44,7 +45,11 @@ public class PacketFactoryV2 extends PacketFactory {
         return new Unsubscribe(packet);
 
       case MQTT_SNPacket.PINGREQ:
-        return new PingRequestV2(packet, length);
+        try {
+          return new PingRequestV2(packet, length);
+        } catch (MalformedException malformed) {
+          throw new IOException("Malformed MQTT-SN 2.0 PINGREQ", malformed);
+        }
 
       case MQTT_SNPacket.PINGRESP:
         return new PingResponse();

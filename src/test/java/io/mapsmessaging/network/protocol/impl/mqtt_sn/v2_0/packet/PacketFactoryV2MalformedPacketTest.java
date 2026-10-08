@@ -4,6 +4,8 @@
  */
 package io.mapsmessaging.network.protocol.impl.mqtt_sn.v2_0.packet;
 
+import java.io.IOException;
+
 import io.mapsmessaging.network.io.Packet;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.packet.MQTT_SNPacket;
 import org.junit.jupiter.api.Test;
@@ -19,7 +21,7 @@ class PacketFactoryV2MalformedPacketTest {
   void malformedConnectIsNotSilentlyConvertedToConnAck() {
     Packet packet = frame(4, MQTT_SNPacket.CONNECT, 0xF8, 2);
 
-    assertThrows(Exception.class, () -> factory.parseFrame(packet));
+    assertThrows(IOException.class, () -> factory.parseFrame(packet));
   }
 
   @Test
@@ -27,7 +29,7 @@ class PacketFactoryV2MalformedPacketTest {
     // A client identifier length of ten bytes with no identifier payload.
     Packet packet = frame(5, MQTT_SNPacket.PINGREQ, 0, 0, 10);
 
-    assertThrows(Exception.class, () -> factory.parseFrame(packet));
+    assertThrows(IOException.class, () -> factory.parseFrame(packet));
   }
 
   @Test
