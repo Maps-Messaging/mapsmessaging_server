@@ -28,6 +28,7 @@ public final class MqttSn2HmacProtectionSession {
   private final byte[] senderIdentifier;
   private final int scheme;
   private final SecureRandom random = new SecureRandom();
+  private long lastOutgoingCounter = -1;
 
   public MqttSn2HmacProtectionSession(MqttSn2ProtectionVerifier verifier,
       CounterSource counterSource, byte[] senderIdentifier, int scheme) {
@@ -47,13 +48,20 @@ public final class MqttSn2HmacProtectionSession {
     return verifier.verify(protectedFrame);
   }
 
-  public ByteBuffer send(ByteBuffer inner) throws IOException {
+  public synchronized ByteBuffer send(ByteBuffer inner) throws IOException {
     byte[] next = counterSource.nextCounter();
     if (next == null || (next.length != 2 && next.length != 4)) {
       throw new IOException("Protection counter source did not return a valid counter");
     }
+    long value = 0;
+    for (byte octet : next) value = (value << 8) | (octet & 0xffL);
+    if (value <= lastOutgoingCounter) {
+      throw new IOException("Protection counter source supplied a repeated or decreasing value");
+    }
     byte[] nonce = new byte[4];
     random.nextBytes(nonce);
-    return verifier.protect(inner, scheme, senderIdentifier, nonce, next);
+    ByteBuffer protectedFrame = verifier.protect(inner, scheme, senderIdentifier, nonce, next);
+    lastOutgoingCounter = value;
+    return protectedFrame;
   }
 }
