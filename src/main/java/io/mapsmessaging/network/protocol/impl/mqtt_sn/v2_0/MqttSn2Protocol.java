@@ -317,6 +317,16 @@ public final class MqttSn2Protocol extends Protocol {
   }
 
   private void publish(MqttSn2PublishCodec.Publish publish) throws IOException {
+    String topic = publish.topicType() == 3 ? publish.topicName() : aliasTopics.get(publish.topicAlias());
+    if (topic == null || (topic.startsWith("$")
+        && !topic.toLowerCase(java.util.Locale.ROOT)
+            .startsWith(DestinationMode.SCHEMA.getNamespace()))) {
+      throw new IOException("Invalid or unknown MQTT-SN 2.0 publication topic");
+    }
+    MessageBuilder builder = new MessageBuilder();
+    builder.setOpaqueData(publish.payload()).setRetain(publish.retained())
+        .setQoS(qos(publish.qos())).setTransformation(getProtocolMessageTransformation());
+
     if (publish.qos() == 2) {
       synchronized (incomingQos2) {
         if (incomingQos2Pending.contains(publish.packetIdentifier())) {
@@ -332,16 +342,6 @@ public final class MqttSn2Protocol extends Protocol {
         incomingQos2Pending.add(publish.packetIdentifier());
       }
     }
-    String topic = publish.topicType() == 3 ? publish.topicName() : aliasTopics.get(publish.topicAlias());
-    if (topic == null || (topic.startsWith("$")
-        && !topic.toLowerCase(java.util.Locale.ROOT)
-            .startsWith(DestinationMode.SCHEMA.getNamespace()))) {
-      throw new IOException("Invalid or unknown MQTT-SN 2.0 publication topic");
-    }
-    MessageBuilder builder = new MessageBuilder();
-    builder.setOpaqueData(publish.payload()).setRetain(publish.retained())
-        .setQoS(qos(publish.qos())).setTransformation(getProtocolMessageTransformation());
-
     // Resolve through the client's Session, never the server-wide publish API:
     // destination discovery and authorisation must retain the session identity.
     session.findDestination(topic, DestinationType.TOPIC).whenComplete((destination, failure) -> {
