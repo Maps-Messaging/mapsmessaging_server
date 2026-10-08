@@ -123,6 +123,22 @@ class MqttSn2ClientServerConformanceTest extends BaseTestConfig {
   }
 
   @Test
+  void noLocalSubscriptionDoesNotEchoOwnPublication() throws Exception {
+    // CSD01 SUBSCRIBE No Local option, carried into broker subscription context.
+    String topic = "mqttsn/block3/no-local/" + UUID.randomUUID();
+    try (UdpMqttSnClient client = client(clientId("no-local"), 74, true)) {
+      client.send(MqttSnCodec.encodeSubscribe(new SubscribeOptions(
+          75, TopicRef.filter(topic), 0, true, QoS.AT_MOST_ONCE, false)));
+      assertEquals(PacketType.SUBACK, receive(client).type());
+      client.send(MqttSnCodec.encodePublish(new PublishOptions(
+          QoS.AT_MOST_ONCE, false, false, 0, TopicRef.name(topic), new byte[]{7})));
+      assertThrows(SocketTimeoutException.class, () ->
+          client.receive(Duration.ofMillis(500), ignored -> {}),
+          "CSD01 No Local must suppress delivery to the publishing client");
+    }
+  }
+
+  @Test
   void pingAndReconnectKeepTheSameClientIdentifier() throws Exception {
     // CSD01 MQTT-SN-3.12.2-1..4, MQTT-SN-3.1.2-6, MQTT-SN-3.2.2-1..4.
     String clientId = clientId("session");
