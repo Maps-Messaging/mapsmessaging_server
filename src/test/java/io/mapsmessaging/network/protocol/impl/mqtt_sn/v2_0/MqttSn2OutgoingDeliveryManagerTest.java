@@ -65,7 +65,7 @@ class MqttSn2OutgoingDeliveryManagerTest {
   }
 
   @Test
-  void failed_pubrec_releases_identifier_and_completes_without_pubrel() throws Exception {
+  void failed_pubrec_releases_identifier_without_success_callback() throws Exception {
     MqttSn2OutgoingDeliveryManager manager = new MqttSn2OutgoingDeliveryManager(100, 3);
     AtomicInteger completed = new AtomicInteger();
     ByteBuffer publish = manager.enqueue("sensor/one", new byte[]{1}, 2, false,
@@ -76,7 +76,19 @@ class MqttSn2OutgoingDeliveryManagerTest {
         MqttSn2PacketType.PUBREC, packetIdentifier, 0x80), 1_001);
 
     assertNull(next);
-    assertEquals(1, completed.get());
+    assertEquals(0, completed.get());
+    assertFalse(manager.hasInFlightDelivery());
+  }
+
+  @Test
+  void negative_puback_never_completes_delivery_as_success() throws Exception {
+    MqttSn2OutgoingDeliveryManager manager = new MqttSn2OutgoingDeliveryManager();
+    AtomicInteger completed = new AtomicInteger();
+    ByteBuffer first = manager.enqueue("sensor/one", new byte[]{1}, 1, false,
+        completed::incrementAndGet, 1_000);
+    int id = MqttSn2PublishCodec.decode(MqttSn2FrameCodec.decode(first)).packetIdentifier();
+    manager.acknowledge(new MqttSn2AckCodec.Ack(MqttSn2PacketType.PUBACK, id, 0x80), 1_001);
+    assertEquals(0, completed.get());
     assertFalse(manager.hasInFlightDelivery());
   }
 
