@@ -346,34 +346,39 @@ public final class MqttSn2Protocol extends Protocol {
     // destination discovery and authorisation must retain the session identity.
     session.findDestination(topic, DestinationType.TOPIC).whenComplete((destination, failure) -> {
       boolean succeeded = false;
-      if (failure == null && destination != null) {
-        try {
+      try {
+        if (!closed && failure == null && destination != null) {
           Message message = MessageOverrides.createMessageBuilder(
               getProtocolConfig().getMessageDefaults(), builder).build();
           if (publish.qos() == 2) {
-            Transaction transaction = session.startTransaction(qos2TransactionName(publish.packetIdentifier()));
+            Transaction transaction = session.startTransaction(
+                qos2TransactionName(publish.packetIdentifier()));
             try {
               transaction.add(destination, message);
-              synchronized (incomingQos2) { incomingQos2.put(publish.packetIdentifier(), transaction); }
-            } catch (IOException e) {
+              synchronized (incomingQos2) {
+                incomingQos2.put(publish.packetIdentifier(), transaction);
+              }
+            } catch (IOException | RuntimeException error) {
               session.closeTransaction(transaction);
-              throw e;
+              throw error;
             }
           } else {
             destination.storeMessage(message);
           }
           succeeded = true;
-        } catch (IOException error) {
-          // Send an error acknowledgement where one is required.
+        }
+      } catch (IOException | RuntimeException error) {
+        // Failure is reported by the appropriate negative acknowledgement.
+      } finally {
+        if (publish.qos() == 2) {
+          synchronized (incomingQos2) {
+            incomingQos2Pending.remove(publish.packetIdentifier());
+          }
         }
       }
-      if (publish.qos() == 2) {
-        synchronized (incomingQos2) {
-          incomingQos2Pending.remove(publish.packetIdentifier());
-        }
-      }
-      if (!publish.withoutSession() && publish.qos() > 0) {
-        MqttSn2PacketType type = publish.qos() == 1 ? MqttSn2PacketType.PUBACK : MqttSn2PacketType.PUBREC;
+      if (!closed && !publish.withoutSession() && publish.qos() > 0) {
+        MqttSn2PacketType type = publish.qos() == 1
+            ? MqttSn2PacketType.PUBACK : MqttSn2PacketType.PUBREC;
         send(MqttSn2AckCodec.encode(new MqttSn2AckCodec.Ack(
             type, publish.packetIdentifier(), succeeded ? null : 0x80)), null);
       }
