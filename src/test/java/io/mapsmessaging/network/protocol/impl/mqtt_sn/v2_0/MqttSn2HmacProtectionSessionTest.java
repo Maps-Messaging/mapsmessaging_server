@@ -40,6 +40,17 @@ class MqttSn2HmacProtectionSessionTest {
     assertThrows(IOException.class, () -> session.send(ByteBuffer.wrap(new byte[]{4,12,0,9})));
   }
 
+  @Test
+  void repeatedOutboundCounterFailsClosed() throws Exception {
+    byte[] sender = {0,0,0,0,0,0,0,7};
+    MqttSn2ProtectionVerifier verifier = new MqttSn2ProtectionVerifier((id, scheme) -> new byte[32]);
+    MqttSn2HmacProtectionSession policy = new MqttSn2HmacProtectionSession(verifier,
+        () -> new byte[]{0,1}, sender, 0);
+    ByteBuffer inner = ByteBuffer.wrap(new byte[]{4,12,0,9});
+    assertNotNull(policy.send(inner));
+    assertThrows(IOException.class, () -> policy.send(inner));
+  }
+
   private static byte[] read(ByteBuffer frame) {
     byte[] bytes = new byte[frame.remaining()];
     frame.get(bytes);
