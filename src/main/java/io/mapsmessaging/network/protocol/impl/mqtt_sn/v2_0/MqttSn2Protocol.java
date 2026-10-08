@@ -12,6 +12,7 @@ import io.mapsmessaging.api.SessionManager;
 import io.mapsmessaging.api.Transaction;
 import io.mapsmessaging.api.SubscriptionContextBuilder;
 import io.mapsmessaging.api.features.QualityOfService;
+import io.mapsmessaging.api.features.RetainHandler;
 import io.mapsmessaging.api.features.DestinationType;
 import io.mapsmessaging.api.features.DestinationMode;
 import io.mapsmessaging.engine.destination.MessageOverrides;
@@ -324,6 +325,9 @@ public final class MqttSn2Protocol extends Protocol {
         new SubscriptionContextBuilder(topic, qos.getClientAcknowledgement());
     builder.setReceiveMaximum(1);
     builder.setQos(qos);
+    builder.setNoLocalMessages(request.noLocal());
+    builder.setRetainAsPublish(request.retainAsPublished());
+    builder.setRetainHandler(RetainHandler.getInstance(request.retainHandling()));
     session.get().addSubscription(builder.build());
     // CSD01 4.7.2.2-2/-3: wildcard filters MUST NOT receive an alias.
     // A configured predefined alias MUST take precedence over a session alias.
