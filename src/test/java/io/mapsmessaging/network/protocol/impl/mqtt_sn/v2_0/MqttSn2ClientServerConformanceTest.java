@@ -90,6 +90,8 @@ class MqttSn2ClientServerConformanceTest extends BaseTestConfig {
       assertEquals(PacketType.SUBACK, subAckPacket.type());
       assertNull(MqttSnCodec.decodeSubAck(subAckPacket).topicAlias(),
           "CSD01 4.7.2.2-3 wildcard subscription must not receive an alias");
+      assertEquals(Integer.valueOf(2), MqttSnCodec.decodeSubAck(subAckPacket).reasonCode(),
+          "CSD01 3.8 SUBACK must report the granted QoS 2");
 
       client.send(MqttSnCodec.encodePublish(new PublishOptions(
           QoS.AT_MOST_ONCE, false, false, 0, TopicRef.name("mqttsn/block3/loop"),
