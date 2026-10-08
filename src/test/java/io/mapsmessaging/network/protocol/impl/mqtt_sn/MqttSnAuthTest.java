@@ -12,6 +12,7 @@ import io.mapsmessaging.auth.priviliges.SessionPrivileges;
 import io.mapsmessaging.mqttsn.AuthPacket;
 import io.mapsmessaging.mqttsn.ConnectOptions;
 import io.mapsmessaging.mqttsn.DecodedPacket;
+import io.mapsmessaging.mqttsn.DisconnectOptions;
 import io.mapsmessaging.mqttsn.MqttSnCodec;
 import io.mapsmessaging.mqttsn.PacketType;
 import io.mapsmessaging.mqttsn.auth.AuthenticationExchange;
@@ -84,6 +85,9 @@ class MqttSnAuthTest extends BaseMqttSnConfig {
       }
       assertEquals(true, connected, "server must finish the enhanced authentication exchange");
       assertEquals("ACTIVE", client.session().state().name());
+      // Cleanly close the authenticated server session before daemon teardown.
+      client.send(MqttSnCodec.encodeDisconnect(new DisconnectOptions(null, null, null, "")));
+      assertEquals("DISCONNECTED", client.session().state().name());
     } finally {
       authManager.delUser(username);
     }
