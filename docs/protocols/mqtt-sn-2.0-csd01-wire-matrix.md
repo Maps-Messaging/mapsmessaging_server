@@ -34,7 +34,7 @@ This matrix records implemented packet and session paths, not proof of full MQTT
 | GWINFO | 0x18 | MqttSn2GatewayCodec | MqttSn2GatewayCodec | Gateway address |
 | FORWARDER_ENCAPSULATION | 0xFC | MqttSn2EncapsulationCodec | MqttSn2EncapsulationCodec | Embedded frame validation |
 | CONNECTION_ENCAPSULATION | 0xFE | MqttSn2EncapsulationCodec | MqttSn2EncapsulationCodec | Embedded frame validation/allowlist |
-| PROTECTION_ENCAPSULATION | 0xFF | MqttSn2ProtectionCodec + opt-in MqttSn2ProtectionVerifier | MqttSn2ProtectionCodec (envelope only) | HMAC-SHA-256/SHA3-256 inbound verification with monotonic replay checks is implemented behind an explicit key resolver; bidirectional protection, AEAD and durable replay counters remain unavailable |
+| PROTECTION_ENCAPSULATION | 0xFF | MqttSn2ProtectionCodec + opt-in MqttSn2ProtectionVerifier | MqttSn2ProtectionCodec (envelope only) | HMAC-SHA-256/SHA3-256 inbound verification and signed outbound frames are implemented behind an opt-in endpoint policy; durable key/counter provisioning and AEAD providers remain unconfigured |
 
 ## Version and integration boundary
 
@@ -53,10 +53,10 @@ This matrix records implemented packet and session paths, not proof of full MQTT
 
 ## Remaining scope and validation
 
-- MQTT-SN 2.0 Protection Encapsulation now supports an **opt-in inbound HMAC verification boundary** (schemes 0x00/0x01), authenticates the entire prefix plus inner packet and rejects replay using per-sender monotonic counters. The endpoint must explicitly supply a trusted key resolver. **This is not a complete bidirectional protection implementation:** outgoing packets are not automatically encapsulated, AEAD schemes are not wired and counters are not durably persisted. Do not enable it as a production security profile or claim full protected-messaging conformance until those are resolved.
-- Session/predefined alias ownership, retention, malformed-response policy and a full line-by-line normative statement audit remain unverified. Do not claim complete CSD01 conformance.
+- MQTT-SN 2.0 Protection Encapsulation supports **opt-in bidirectional HMAC** (schemes 0x00/0x01), authenticating the exact prefix and inner packet, rejecting inbound replay and protecting outbound frames. The endpoint must explicitly supply a key resolver and a **durable, monotonic outbound counter source**. A secured endpoint fails closed on plaintext input and a signing failure. **Production activation is not complete:** no server configuration maps key identities to endpoint policies, no durable inbound replay store is yet wired, and AEAD providers are not integrated. The older UDP HMAC wrapper is not reused. Do not claim full protected-messaging conformance until these provisions are complete.
+- Active topic alias handling now separates session and predefined namespaces, avoids session aliases for wildcard SUBSCRIBE filters (CSD01 4.7.2.2-3), prefers predefined aliases in SUBACK and clears session aliases on SLEEPREQ when Retain Topic Aliases is zero. **Session persistence across reconnection, REGISTER conflict reason codes and the remaining normative statement audit still require verification.** Do not claim complete CSD01 conformance.
 - `mqtt-sn-2-client` and optional `mqtt-sn-2-client-protection-bc` test artifacts use the **unreleased** `0.1.0-SNAPSHOT` coordinate. No `0.1.0` release has been made.
-- The user reported 88 MQTT-SN 2.0 tests passing in IntelliJ and subsequently confirmed SCRAM authentication success. These are user-reported local results.
+- The user reported 88 MQTT-SN 2.0 tests passing in IntelliJ and subsequently confirmed SCRAM authentication success. These are user-reported local results. Further HMAC, alias and negative-path tests were committed later and must be rerun.
 - The full Jenkins branch run [#171](https://jenkins.mapsmessaging.io/job/mapsmessaging-server-junit/171/) at revision `0b574404af5fefebd307f9ff1f27c402d160f7ee` completed **SUCCESS**: **7,812 total, 0 failed, 79 skipped**. This supersedes the outdated local socket restriction and no-Jenkins status recorded earlier.
 - Jenkins SonarCloud analysis was uploaded under the `development` branch identity. This is intentionally accepted for now and must not be presented as a distinct branch analysis.
 - The user subsequently requested SonarCloud coverage to guide the remaining improvements. The accepted `development` branch analysis after Jenkins #171 reports **74.7% overall coverage, 78.2% line coverage and 66.4% branch coverage** for the server. Active `MqttSn2Protocol` is **60.5% overall coverage**; `MqttSn2Lifecycle` and `MqttSn2OutgoingDeliveryManager` are approximately 88.8% and 88.9%. Many obsolete 2.0 implementation classes have 0% coverage and must not be confused with the active protocol path. These metrics precede the latest protection and topic-alias changes.
@@ -85,6 +85,6 @@ The target is at least 80% coverage of the active MQTT-SN v2 protocol and codecs
 
 **Automated build/test gate: PASSED** on Jenkins #171 at the revision above. This establishes compilation and suite execution for that revision, not independent certification against all CSD01 MUST requirements.
 
-**Full normative conformance: NOT SIGNED OFF.** Authenticated Protection Encapsulation, complete alias semantics and clause-level negative-behaviour verification still require explicit implementation or documented unsupported-feature policy.
+**Full normative conformance: NOT SIGNED OFF.** Key provisioning, durable replay state, AEAD schemes, persistent alias semantics and clause-level negative-behaviour verification still require explicit implementation or documented unsupported-feature policy.
 
 Coverage metrics are available in SonarCloud and inform test prioritisation. No merge, formal release or Jira Done transition has been authorised.
