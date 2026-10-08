@@ -20,6 +20,8 @@ import io.mapsmessaging.api.transformers.ParsedMessage;
 import io.mapsmessaging.config.protocol.impl.MqttSnConfig;
 import io.mapsmessaging.dto.rest.protocol.ProtocolInformationDTO;
 import io.mapsmessaging.dto.rest.protocol.impl.MqttSnProtocolInformation;
+import io.mapsmessaging.logging.Logger;
+import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.network.ProtocolClientConnection;
 import io.mapsmessaging.network.io.EndPoint;
 import io.mapsmessaging.network.io.Packet;
@@ -50,6 +52,8 @@ import javax.security.sasl.Sasl;
  * listener hierarchy. Implements the CSD01 flows on the shared session API.</p>
  */
 public final class MqttSn2Protocol extends Protocol {
+
+  private static final Logger AUTH_LOGGER = LoggerFactory.getLogger(MqttSn2Protocol.class);
 
   private final MQTTSNInterfaceManager manager;
   private final SelectorTask selectorTask;
@@ -187,6 +191,7 @@ public final class MqttSn2Protocol extends Protocol {
               request.packetIdentifier(), 0x18, request.authenticationMethod(), response)), null);
         }
       } catch (IOException failure) {
+        AUTH_LOGGER.warn("MQTT-SN 2.0 SCRAM CONNECT rejected: {}", failure.getClass().getSimpleName());
         sendConnectFailure(request, 0x87);
       }
       return;
@@ -210,6 +215,7 @@ public final class MqttSn2Protocol extends Protocol {
             auth.packetIdentifier(), 0x18, auth.mechanism(), response)), null);
       }
     } catch (IOException failure) {
+      AUTH_LOGGER.warn("MQTT-SN 2.0 SCRAM AUTH rejected: {}", failure.getClass().getSimpleName());
       sendConnectFailure(connectRequest, 0x87);
     }
   }
