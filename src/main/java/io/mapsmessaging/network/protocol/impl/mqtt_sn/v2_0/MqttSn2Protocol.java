@@ -422,6 +422,8 @@ public final class MqttSn2Protocol extends Protocol {
     if (retryTask != null) retryTask.cancel(false);
     if (next != null) {
       send(next, null);
+    }
+    if (outgoing.hasInFlightDelivery()) {
       scheduleRetry();
     }
     if (lifecycle.state() == MqttSn2Lifecycle.State.AWAKE && !outgoing.hasInFlightDelivery()) {
