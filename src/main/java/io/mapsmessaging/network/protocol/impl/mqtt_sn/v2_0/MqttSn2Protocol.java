@@ -73,6 +73,7 @@ public final class MqttSn2Protocol extends Protocol {
   }
   private volatile boolean closed;
   private final MqttSn2Lifecycle lifecycle = new MqttSn2Lifecycle();
+  private volatile MqttSn2ProtectionVerifier protectionVerifier;
   private final MqttSn2OutgoingDeliveryManager outgoing = new MqttSn2OutgoingDeliveryManager();
   private final Map<Integer, Transaction> incomingQos2 = new HashMap<>();
   private final java.util.Set<Integer> incomingQos2Pending = new java.util.HashSet<>();
@@ -122,9 +123,25 @@ public final class MqttSn2Protocol extends Protocol {
     return information;
   }
 
+  /**
+   * Configure an authenticated CSD01 protection provider for this client.
+   * Do not use the legacy HMAC datagram wrapper for these frames.
+   */
+  public void setProtectionVerifier(MqttSn2ProtectionVerifier verifier) {
+    protectionVerifier = java.util.Objects.requireNonNull(verifier, "verifier");
+  }
+
   @Override
   public boolean processPacket(Packet packet) throws IOException {
     ByteBuffer input = packet.getRawBuffer().asReadOnlyBuffer();
+    if (MqttSn2FrameCodec.decode(input.asReadOnlyBuffer()).type()
+        == MqttSn2PacketType.PROTECTION_ENCAPSULATION) {
+      MqttSn2ProtectionVerifier verifier = protectionVerifier;
+      if (verifier == null) {
+        throw new IOException("Protected MQTT-SN 2.0 packet without configured verifier");
+      }
+      input = verifier.verify(input);
+    }
     MqttSn2PacketDecoder.Decoded decoded = MqttSn2PacketDecoder.decode(input);
     lifecycle.checkAllowed(decoded.type());
     if (decoded.type() == MqttSn2PacketType.CONNECT) {
