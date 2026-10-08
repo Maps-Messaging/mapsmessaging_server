@@ -155,7 +155,7 @@
 
     <license.fetch.skip>false</license.fetch.skip>
     <license.fetch.dir>${project.build.directory}/license</license.fetch.dir>
-    <mqttSn2ClientVersion>0.1.0</mqttSn2ClientVersion>
+    <mqttSn2ClientVersion>0.1.0-SNAPSHOT</mqttSn2ClientVersion>
 
   </properties>
 
