@@ -104,4 +104,56 @@ class MqttSn2OutgoingDeliveryManagerTest {
     assertEquals(sent.packetIdentifier(), resent.packetIdentifier());
     assertArrayEquals(sent.payload(), resent.payload());
   }
+  @Test
+  void wrong_acknowledgement_and_identifier_leave_delivery_pending() throws Exception {
+    MqttSn2OutgoingDeliveryManager manager = new MqttSn2OutgoingDeliveryManager(100, 3);
+    AtomicInteger completed = new AtomicInteger();
+    ByteBuffer publish = manager.enqueue("sensor/one", new byte[]{1}, 2, false,
+        completed::incrementAndGet, 1_000);
+    int id = MqttSn2PublishCodec.decode(MqttSn2FrameCodec.decode(publish)).packetIdentifier();
+    assertThrows(java.io.IOException.class, () -> manager.acknowledge(
+        new MqttSn2AckCodec.Ack(MqttSn2PacketType.PUBCOMP, id, null), 1_001));
+    assertThrows(java.io.IOException.class, () -> manager.acknowledge(
+        new MqttSn2AckCodec.Ack(MqttSn2PacketType.PUBREC, id + 1, null), 1_002));
+    assertTrue(manager.hasInFlightDelivery());
+    assertEquals(0, completed.get());
+
+    ByteBuffer rel = manager.acknowledge(
+        new MqttSn2AckCodec.Ack(MqttSn2PacketType.PUBREC, id, null), 1_003);
+    assertEquals(MqttSn2PacketType.PUBREL, MqttSn2FrameCodec.decode(rel).type());
+    assertThrows(java.io.IOException.class, () -> manager.acknowledge(
+        new MqttSn2AckCodec.Ack(MqttSn2PacketType.PUBACK, id, null), 1_004));
+    assertEquals(0, completed.get());
+    manager.acknowledge(new MqttSn2AckCodec.Ack(
+        MqttSn2PacketType.PUBCOMP, id, null), 1_005);
+    assertEquals(1, completed.get());
+  }
+
+  @Test
+  void retriesStopAtConfiguredLimitWithoutReportingSuccess() throws Exception {
+    MqttSn2OutgoingDeliveryManager manager = new MqttSn2OutgoingDeliveryManager(100, 2);
+    AtomicInteger completed = new AtomicInteger();
+    manager.enqueue("sensor/one", new byte[]{1}, 1, false,
+        completed::incrementAndGet, 1_000);
+    assertNull(manager.retryExpired(1_099));
+    assertNotNull(manager.retryExpired(1_100));
+    assertNotNull(manager.retryExpired(1_200));
+    assertNull(manager.retryExpired(1_300));
+    assertTrue(manager.isRetryExhausted());
+    assertEquals(0, completed.get());
+  }
+
+  @Test
+  void negative_pubcomp_does_not_report_delivery_success() throws Exception {
+    MqttSn2OutgoingDeliveryManager manager = new MqttSn2OutgoingDeliveryManager(100, 2);
+    AtomicInteger completed = new AtomicInteger();
+    ByteBuffer initial = manager.enqueue("sensor/one", new byte[]{1}, 2, false,
+        completed::incrementAndGet, 1_000);
+    int id = MqttSn2PublishCodec.decode(MqttSn2FrameCodec.decode(initial)).packetIdentifier();
+    manager.acknowledge(new MqttSn2AckCodec.Ack(MqttSn2PacketType.PUBREC, id, null), 1_001);
+    manager.acknowledge(new MqttSn2AckCodec.Ack(MqttSn2PacketType.PUBCOMP, id, 0x80), 1_002);
+    assertEquals(0, completed.get());
+    assertFalse(manager.hasInFlightDelivery());
+  }
+
 }
