@@ -117,6 +117,11 @@ public class MQTTSNInterfaceManager implements SelectorCallback {
     return registeredTopicConfiguration.getTopic(address, topicId);
   }
 
+  /** Reverse lookup for configured predefined aliases, respecting address scoping. */
+  public int resolvePredefinedAlias(SocketAddress address, String name) {
+    return registeredTopicConfiguration.getRegisteredTopicAliasType(address, name);
+  }
+
   public MQTTSNInterfaceManager(InterfaceInformation info, EndPoint endPoint, byte gatewayId) throws IOException {
     logger = LoggerFactory.getLogger("MQTT-SN Protocol on " + endPoint.getName());
     this.endPoint = endPoint;
