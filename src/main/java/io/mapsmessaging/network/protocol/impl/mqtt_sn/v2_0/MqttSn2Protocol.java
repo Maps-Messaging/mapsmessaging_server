@@ -22,6 +22,7 @@ import io.mapsmessaging.dto.rest.protocol.ProtocolInformationDTO;
 import io.mapsmessaging.dto.rest.protocol.impl.MqttSnProtocolInformation;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
+import io.mapsmessaging.logging.ServerLogMessages;
 import io.mapsmessaging.network.ProtocolClientConnection;
 import io.mapsmessaging.network.io.EndPoint;
 import io.mapsmessaging.network.io.Packet;
@@ -193,7 +194,7 @@ public final class MqttSn2Protocol extends Protocol {
               request.packetIdentifier(), 0x18, request.authenticationMethod(), response)), null);
         }
       } catch (IOException failure) {
-        AUTH_LOGGER.warn("MQTT-SN 2.0 SCRAM CONNECT rejected: {}", failure.getClass().getSimpleName());
+        AUTH_LOGGER.log(ServerLogMessages.MQTT_SN_AUTHENTICATION_FAILED, failure);
         sendConnectFailure(request, 0x87);
       }
       return;
@@ -218,7 +219,7 @@ public final class MqttSn2Protocol extends Protocol {
             auth.packetIdentifier(), 0x18, auth.mechanism(), response)), null);
       }
     } catch (IOException failure) {
-      AUTH_LOGGER.warn("MQTT-SN 2.0 SCRAM AUTH rejected: {}", failure.getClass().getSimpleName());
+      AUTH_LOGGER.log(ServerLogMessages.MQTT_SN_AUTHENTICATION_FAILED, failure);
       sendConnectFailure(connectRequest, 0x87);
     }
   }
