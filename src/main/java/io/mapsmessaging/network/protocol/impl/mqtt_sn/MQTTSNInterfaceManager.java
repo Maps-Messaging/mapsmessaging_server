@@ -40,7 +40,7 @@ import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.MQTT_SNProtocol;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.packet.*;
 import io.mapsmessaging.network.protocol.Protocol;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v2_0.MqttSn2Protocol;
-import io.mapsmessaging.network.protocol.impl.mqtt_sn.v2_0.MqttSn2ProtectionVerifier;
+import io.mapsmessaging.network.protocol.impl.mqtt_sn.v2_0.MqttSn2HmacProtectionSession;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v2_0.packet.MqttSn2FrameCodec;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v2_0.packet.MqttSn2GatewayCodec;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v2_0.packet.MqttSn2PacketType;
@@ -80,11 +80,11 @@ public class MQTTSNInterfaceManager implements SelectorCallback {
   private final boolean advertiseGateway;
 
   private final MqttSnConfig mqttSnConfig;
-  private volatile MqttSn2ProtectionVerifier protectionVerifier;
+  private volatile MqttSn2HmacProtectionSession protectionSession;
 
-  /** Opt-in protection with a trusted endpoint key resolver; no key is created by default. */
-  public void setProtectionVerifier(MqttSn2ProtectionVerifier verifier) {
-    protectionVerifier = java.util.Objects.requireNonNull(verifier, "verifier");
+  /** Opt-in secured MQTT-SN 2.0 endpoint; requires durable counter source and key resolver. */
+  public void configureProtection(MqttSn2HmacProtectionSession policy) {
+    protectionSession = java.util.Objects.requireNonNull(policy, "policy");
   }
 
 
@@ -200,12 +200,14 @@ public class MQTTSNInterfaceManager implements SelectorCallback {
 
   private void acceptV2Connection(Packet packet) throws IOException {
     ByteBuffer incoming = packet.getRawBuffer().asReadOnlyBuffer();
-    MqttSn2ProtectionVerifier verifier = protectionVerifier;
+    MqttSn2HmacProtectionSession policy = protectionSession;
     if (isProtectedV2(packet)) {
-      if (verifier == null) {
-        throw new IOException("Protected MQTT-SN 2.0 CONNECT without endpoint verifier");
+      if (policy == null) {
+        throw new IOException("Protected MQTT-SN 2.0 CONNECT without endpoint policy");
       }
-      incoming = verifier.verify(incoming);
+      incoming = policy.receive(incoming);
+    } else if (policy != null) {
+      throw new IOException("Unprotected MQTT-SN 2.0 CONNECT on secured endpoint");
     }
     var connect = io.mapsmessaging.network.protocol.impl.mqtt_sn.v2_0.packet.MqttSn2ConnectCodec.decode(
         MqttSn2FrameCodec.decode(incoming));
@@ -213,7 +215,7 @@ public class MQTTSNInterfaceManager implements SelectorCallback {
         endPoint, packet.getFromAddress(), endPoint.getServer());
     MqttSn2Protocol protocol = new MqttSn2Protocol(this, facade,
         packet.getFromAddress(), selectorTask, mqttSnConfig);
-    if (verifier != null) protocol.setProtectionVerifier(verifier);
+    if (policy != null) protocol.configureProtection(policy);
     UDPSessionState<Protocol> state = new UDPSessionState<>(protocol);
     state.setClientIdentifier(connect.clientIdentifier());
     currentSessions.addState(packet.getFromAddress(), state);
