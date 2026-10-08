@@ -40,6 +40,7 @@ import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.MQTT_SNProtocol;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.packet.*;
 import io.mapsmessaging.network.protocol.Protocol;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v2_0.MqttSn2Protocol;
+import io.mapsmessaging.network.protocol.impl.mqtt_sn.v2_0.MqttSn2ProtectionVerifier;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v2_0.packet.MqttSn2FrameCodec;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v2_0.packet.MqttSn2GatewayCodec;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v2_0.packet.MqttSn2PacketType;
@@ -79,6 +80,12 @@ public class MQTTSNInterfaceManager implements SelectorCallback {
   private final boolean advertiseGateway;
 
   private final MqttSnConfig mqttSnConfig;
+  private volatile MqttSn2ProtectionVerifier protectionVerifier;
+
+  /** Opt-in protection with a trusted endpoint key resolver; no key is created by default. */
+  public void setProtectionVerifier(MqttSn2ProtectionVerifier verifier) {
+    protectionVerifier = java.util.Objects.requireNonNull(verifier, "verifier");
+  }
 
 
   public MQTTSNInterfaceManager(byte gatewayId, SelectorTask selectorTask, EndPoint endPoint) {
@@ -168,7 +175,7 @@ public class MQTTSNInterfaceManager implements SelectorCallback {
       } else {
         MqttSnVersionDetector.Version version =
             MqttSnVersionDetector.detect(packet.getRawBuffer().asReadOnlyBuffer());
-        if (version == MqttSnVersionDetector.Version.V2_0) {
+        if (version == MqttSnVersionDetector.Version.V2_0 || isProtectedV2(packet)) {
           acceptV2Connection(packet);
         } else if (version == MqttSnVersionDetector.Version.V1_2) {
           processIncomingPacket(packet, packetFactory[0]);
@@ -183,19 +190,35 @@ public class MQTTSNInterfaceManager implements SelectorCallback {
     return true;
   }
 
+  private static boolean isProtectedV2(Packet packet) {
+    ByteBuffer data = packet.getRawBuffer().asReadOnlyBuffer();
+    if (data.remaining() < 2) return false;
+    int offset = Byte.toUnsignedInt(data.get(data.position())) == 1 ? 3 : 1;
+    return data.remaining() > offset
+        && Byte.toUnsignedInt(data.get(data.position() + offset)) == 0xFF;
+  }
+
   private void acceptV2Connection(Packet packet) throws IOException {
     ByteBuffer incoming = packet.getRawBuffer().asReadOnlyBuffer();
+    MqttSn2ProtectionVerifier verifier = protectionVerifier;
+    if (isProtectedV2(packet)) {
+      if (verifier == null) {
+        throw new IOException("Protected MQTT-SN 2.0 CONNECT without endpoint verifier");
+      }
+      incoming = verifier.verify(incoming);
+    }
     var connect = io.mapsmessaging.network.protocol.impl.mqtt_sn.v2_0.packet.MqttSn2ConnectCodec.decode(
         MqttSn2FrameCodec.decode(incoming));
     UDPFacadeEndPoint facade = new UDPFacadeEndPoint(
         endPoint, packet.getFromAddress(), endPoint.getServer());
     MqttSn2Protocol protocol = new MqttSn2Protocol(this, facade,
         packet.getFromAddress(), selectorTask, mqttSnConfig);
+    if (verifier != null) protocol.setProtectionVerifier(verifier);
     UDPSessionState<Protocol> state = new UDPSessionState<>(protocol);
     state.setClientIdentifier(connect.clientIdentifier());
     currentSessions.addState(packet.getFromAddress(), state);
     try {
-      protocol.start(packet.getRawBuffer().asReadOnlyBuffer());
+      protocol.start(incoming.asReadOnlyBuffer());
     } catch (IOException | RuntimeException error) {
       currentSessions.deleteState(packet.getFromAddress());
       protocol.close();
