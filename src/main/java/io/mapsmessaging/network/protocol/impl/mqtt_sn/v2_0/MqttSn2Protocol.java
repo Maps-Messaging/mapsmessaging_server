@@ -374,7 +374,14 @@ public final class MqttSn2Protocol extends Protocol {
       throw new IOException("Invalid or unknown MQTT-SN 2.0 publication topic");
     }
     MessageBuilder builder = new MessageBuilder();
-    builder.setOpaqueData(publish.payload()).setRetain(publish.retained())
+    // No Local filtering compares this value with the subscriber session ID.
+    Session publishingSession = session.get();
+    if (publishingSession == null) {
+      throw new IOException("MQTT-SN 2.0 publication without a broker session");
+    }
+    builder.setMeta(Map.of("sessionId", publishingSession.getName(),
+            "protocol", "MQTT-SN", "version", "2.0"))
+        .setOpaqueData(publish.payload()).setRetain(publish.retained())
         .setQoS(qos(publish.qos())).setTransformation(getProtocolMessageTransformation());
 
     if (publish.qos() == 2) {
