@@ -104,6 +104,23 @@ class MqttSn2ClientServerConformanceTest extends BaseTestConfig {
   }
 
   @Test
+  void predefinedTopicRegistrationReturnsAliasExists() throws Exception {
+    // CSD01 4.7.2.2-4/-5: do not create a session alias over a predefined alias.
+    try (UdpMqttSnClient client = client(clientId("predefined-alias"), 71, true)) {
+      client.send(MqttSnCodec.encodeRegister(72, "predefined/topic"));
+      DecodedPacket result = receive(client);
+      assertEquals(PacketType.REGACK, result.type());
+      ByteBuffer body = result.body().asReadOnlyBuffer();
+      int flags = Byte.toUnsignedInt(body.get());
+      assertEquals(1, flags & 3, "predefined alias topic type");
+      assertEquals(1, (flags & 4) >>> 2, "REGACK includes the predefined alias");
+      assertEquals(72, Short.toUnsignedInt(body.getShort()));
+      assertEquals(1, Short.toUnsignedInt(body.getShort()));
+      assertEquals(0x1A, Byte.toUnsignedInt(body.get()), "CSD01 Topic Alias Exists");
+    }
+  }
+
+  @Test
   void pingAndReconnectKeepTheSameClientIdentifier() throws Exception {
     // CSD01 MQTT-SN-3.12.2-1..4, MQTT-SN-3.1.2-6, MQTT-SN-3.2.2-1..4.
     String clientId = clientId("session");
