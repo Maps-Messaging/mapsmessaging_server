@@ -19,6 +19,12 @@ class MqttSnVersionDetectorTest {
   }
 
   @Test
+  void recognizesCsd01ConnectWithWillAndOptionalSessionFields() {
+    assertEquals(V2_0, detect(20, 1, 0x1B, 0x17, 0, 23, 2,
+        0, 60, 0, 20, 0, 0, 0, 1, 5, 'c', 'l', 'i', 'd'));
+  }
+
+  @Test
   void doesNotMisclassifyDiscoveryOrPublishAsConnect() {
     assertEquals(UNKNOWN, detect(3, 1, 5));
     assertEquals(UNKNOWN, detect(5, 3, 0, 0, 1));

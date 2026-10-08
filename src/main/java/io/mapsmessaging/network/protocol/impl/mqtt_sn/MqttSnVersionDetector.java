@@ -51,10 +51,12 @@ public final class MqttSnVersionDetector {
     }
     if (type == 0x01 && remaining >= 8) {
       int flags = Byte.toUnsignedInt(buffer.get(payload));
-      int packetIdentifier = (Byte.toUnsignedInt(buffer.get(payload + 1)) << 8)
-          | Byte.toUnsignedInt(buffer.get(payload + 2));
-      int protocolId = Byte.toUnsignedInt(buffer.get(payload + 3));
-      return (flags & 0x98) == 0 && packetIdentifier != 0 && protocolId == 2
+      int willFlagsLength = (flags & 0x02) == 0 ? 0 : 1;
+      int packetIdentifierOffset = payload + 1 + willFlagsLength;
+      int packetIdentifier = (Byte.toUnsignedInt(buffer.get(packetIdentifierOffset)) << 8)
+          | Byte.toUnsignedInt(buffer.get(packetIdentifierOffset + 1));
+      int protocolId = Byte.toUnsignedInt(buffer.get(packetIdentifierOffset + 2));
+      return (flags & 0x80) == 0 && packetIdentifier != 0 && protocolId == 2
           ? Version.V2_0 : Version.UNKNOWN;
     }
     return Version.UNKNOWN;
