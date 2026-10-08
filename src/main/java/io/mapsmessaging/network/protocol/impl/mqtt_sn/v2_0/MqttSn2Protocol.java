@@ -41,7 +41,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import javax.security.sasl.Sasl;
 
@@ -58,9 +57,7 @@ public final class MqttSn2Protocol extends Protocol {
   private final MQTTSNInterfaceManager manager;
   private final SelectorTask selectorTask;
   private final SocketAddress address;
-  private final AtomicInteger aliasSequence = new AtomicInteger();
-  private final Map<String, Integer> topicAliases = new HashMap<>();
-  private final Map<Integer, String> aliasTopics = new HashMap<>();
+  private final MqttSn2TopicAliases aliases = new MqttSn2TopicAliases();
   private final AtomicReference<Session> session = new AtomicReference<>();
 
   public Session getSession() {
@@ -318,42 +315,38 @@ public final class MqttSn2Protocol extends Protocol {
     });
   }
 
+  private String resolveTopic(int type, int alias, String name) throws IOException {
+    return aliases.resolve(type, alias, name, id -> manager.resolvePredefinedTopic(address, id));
+  }
+
   private void subscribe(MqttSn2SubscriptionCodec.Request request) throws IOException {
-    if (request.topicType() != 3) {
-      throw new IOException("MQTT-SN 2.0 subscription topic alias not registered");
-    }
+    String topic = resolveTopic(request.topicType(), request.topicAlias(), request.topic());
     QualityOfService qos = qos(request.maximumQos());
     SubscriptionContextBuilder builder =
-        new SubscriptionContextBuilder(request.topic(), qos.getClientAcknowledgement());
+        new SubscriptionContextBuilder(topic, qos.getClientAcknowledgement());
     builder.setReceiveMaximum(1);
     builder.setQos(qos);
     session.get().addSubscription(builder.build());
-    int alias = topicAliases.computeIfAbsent(request.topic(), topic -> aliasSequence.incrementAndGet());
-    aliasTopics.put(alias, request.topic());
+    int alias = aliases.register(topic);
     send(MqttSn2ReplyCodec.encodeSubAck(new MqttSn2ReplyCodec.SubAck(
         0, alias, request.packetIdentifier(), 0)), null);
   }
 
   private void unsubscribe(MqttSn2SubscriptionCodec.Request request) throws IOException {
-    String topic = request.topicType() == 3
-        ? request.topic() : aliasTopics.get(request.topicAlias());
-    if (topic == null) {
-      throw new IOException("Unknown subscription topic alias");
-    }
+    String topic = resolveTopic(request.topicType(), request.topicAlias(), request.topic());
     session.get().removeSubscription(topic);
     send(MqttSn2AckCodec.encode(new MqttSn2AckCodec.Ack(
         MqttSn2PacketType.UNSUBACK, request.packetIdentifier(), null)), null);
   }
 
-  private void register(MqttSn2RegisterCodec.Register request) {
-    int alias = topicAliases.computeIfAbsent(request.topicName(), topic -> aliasSequence.incrementAndGet());
-    aliasTopics.put(alias, request.topicName());
+  private void register(MqttSn2RegisterCodec.Register request) throws IOException {
+    int alias = aliases.register(request.topicName());
     send(MqttSn2RegAckCodec.encode(new MqttSn2RegAckCodec.RegAck(
         0, alias, request.packetIdentifier(), 0)), null);
   }
 
   private void publish(MqttSn2PublishCodec.Publish publish) throws IOException {
-    String topic = publish.topicType() == 3 ? publish.topicName() : aliasTopics.get(publish.topicAlias());
+    String topic = resolveTopic(publish.topicType(), publish.topicAlias(), publish.topicName());
     if (topic == null || (topic.startsWith("$")
         && !topic.toLowerCase(java.util.Locale.ROOT)
             .startsWith(DestinationMode.SCHEMA.getNamespace()))) {
@@ -592,6 +585,7 @@ public final class MqttSn2Protocol extends Protocol {
     if (closed) return;
     closed = true;
     lifecycle.close();
+    aliases.clear();
     if (retryTask != null) retryTask.cancel(false);
     if (sleepTask != null) sleepTask.cancel(false);
     if (sasl != null) sasl.close();
