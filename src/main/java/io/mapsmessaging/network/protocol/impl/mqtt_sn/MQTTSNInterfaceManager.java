@@ -272,24 +272,34 @@ public class MQTTSNInterfaceManager implements SelectorCallback {
         throw new IOException("Malformed MQTT-SN 2.0 CONNECT or 1.2 SEARCHGW");
       }
     }
+    MqttSn2FrameCodec.Frame frame;
     try {
-      MqttSn2FrameCodec.Frame frame = MqttSn2FrameCodec.decode(wire);
-      if (frame.type() == MqttSn2PacketType.SEARCHGW) {
-        MqttSn2GatewayCodec.decodeSearchGateway(frame);
-        ByteBuffer response = MqttSn2GatewayCodec.encodeGatewayInfo(
-            new MqttSn2GatewayCodec.GatewayInfo(Byte.toUnsignedInt(gatewayId), new byte[0]));
-        selectorTask.push(new MqttSn2OutboundPacket(response, packet.getFromAddress(), null));
-        return;
+      frame = MqttSn2FrameCodec.decode(wire);
+    } catch (IOException malformedV2) {
+      // The packet may belong to the legacy MQTT-SN 1.2 parser.
+      processIncomingPacket(packet, packetFactory[0]);
+      return;
+    }
+    if (frame.type() == MqttSn2PacketType.SEARCHGW) {
+      MqttSn2GatewayCodec.decodeSearchGateway(frame);
+      ByteBuffer response = MqttSn2GatewayCodec.encodeGatewayInfo(
+          new MqttSn2GatewayCodec.GatewayInfo(Byte.toUnsignedInt(gatewayId), new byte[0]));
+      selectorTask.push(new MqttSn2OutboundPacket(response, packet.getFromAddress(), null));
+      return;
+    }
+    if (frame.type() == MqttSn2PacketType.PUBWOS) {
+      if (protectionSession != null) {
+        throw new IOException("Unprotected PUBWOS rejected by secured MQTT-SN 2.0 endpoint");
       }
-      if (frame.type() == MqttSn2PacketType.PUBWOS) {
-        if (protectionSession != null) {
-          throw new IOException("Unprotected PUBWOS rejected by secured MQTT-SN 2.0 endpoint");
-        }
-        publishWithoutV2Connection(packet.getFromAddress(), MqttSn2PublishCodec.decode(frame));
-        return;
+      MqttSn2PublishCodec.Publish publish = MqttSn2PublishCodec.decode(frame);
+      // A predefined-alias PUBWOS is indistinguishable from certain MQTT-SN
+      // 1.2 SUBSCRIBE frames (both type 0x12). Reject ambiguous sessionless
+      // traffic rather than risk dispatching a legacy request as a publish.
+      if (publish.topicType() != 3) {
+        throw new IOException("Ambiguous unprotected sessionless alias on dual-version UDP port");
       }
-    } catch (IOException exception) {
-      // Unconnected datagrams may also be MQTT-SN 1.2 packets.
+      publishWithoutV2Connection(packet.getFromAddress(), publish);
+      return;
     }
     processIncomingPacket(packet, packetFactory[0]);
   }
