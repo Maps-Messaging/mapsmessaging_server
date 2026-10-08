@@ -1,87 +1,96 @@
 /*
- *
- *  Copyright [ 2020 - 2024 ] Matthew Buckton
- *  Copyright [ 2024 - 2026 ] MapsMessaging B.V.
- *
- *  Licensed under the Apache License, Version 2.0 with the Commons Clause
- *  (the "License"); you may not use this file except in compliance with the License.
- *  You may obtain a copy of the License at:
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *      https://commonsclause.com/
- *
- *  Unless required by applicable law or agreed to in writing, software
- *  distributed under the License is distributed on an "AS IS" BASIS,
- *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *  See the License for the specific language governing permissions and
- *  limitations under the License.
+ * Copyright [ 2024 - 2026 ] MapsMessaging B.V.
+ * Licensed under the Apache License, Version 2.0 with the Commons Clause.
  */
-
 package io.mapsmessaging.network.protocol.impl.mqtt_sn;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import io.mapsmessaging.auth.AuthManager;
 import io.mapsmessaging.auth.priviliges.SessionPrivileges;
+import io.mapsmessaging.mqttsn.AuthPacket;
+import io.mapsmessaging.mqttsn.ConnectOptions;
+import io.mapsmessaging.mqttsn.DecodedPacket;
+import io.mapsmessaging.mqttsn.MqttSnCodec;
+import io.mapsmessaging.mqttsn.PacketType;
+import io.mapsmessaging.mqttsn.auth.AuthenticationExchange;
+import io.mapsmessaging.mqttsn.auth.SaslAuthenticationMechanism;
+import io.mapsmessaging.mqttsn.udp.UdpMqttSnClient;
 import io.mapsmessaging.network.protocol.impl.mqtt5.ClientCallbackHandler;
-import java.io.IOException;
+import java.net.InetSocketAddress;
+import java.time.Duration;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
-import java.util.concurrent.atomic.AtomicBoolean;
 import javax.security.sasl.Sasl;
-import org.junit.jupiter.api.Assertions;
+import javax.security.sasl.SaslClient;
 import org.junit.jupiter.api.Test;
-import org.slj.mqtt.sn.client.MqttsnClientConnectException;
-import org.slj.mqtt.sn.client.spi.SaslAuthHandler;
-import org.slj.mqtt.sn.model.IAuthHandler;
-import org.slj.mqtt.sn.model.IClientIdentifierContext;
-import org.slj.mqtt.sn.model.MqttsnQueueAcceptException;
-import org.slj.mqtt.sn.spi.IMqttsnMessage;
-import org.slj.mqtt.sn.spi.IMqttsnPublishReceivedListener;
-import org.slj.mqtt.sn.spi.MqttsnException;
-import org.slj.mqtt.sn.utils.TopicPath;
 
 class MqttSnAuthTest extends BaseMqttSnConfig {
 
   @Test
-  void simpleAuthValidation() throws MqttsnException, MqttsnClientConnectException, IOException, MqttsnQueueAcceptException {
+  void scramAuthenticationUsesTheCsd01AuthExchange() throws Exception {
+    // CSD01 MQTT-SN-3.1.2.3-1/-2, MQTT-SN-3.3.2-1,
+    // MQTT-SN-3.3.3-1 and MQTT-SN-4.11.1-1..7.
     String username = "mqtt-sn-auth-" + UUID.randomUUID();
     String password = "mqtt-sn-test-password";
     AuthManager authManager = AuthManager.getInstance();
-    Assertions.assertTrue(
-        authManager.addUser(username, password.toCharArray(), SessionPrivileges.create(username), new String[]{"everyone"}),
-        "Should create isolated MQTT-SN authentication user");
+    assertTrue(authManager.addUser(username, password.toCharArray(),
+        SessionPrivileges.create(username), new String[] {"everyone"}));
 
-    Map<String, String> props = new HashMap<>();
-    props.put(Sasl.QOP, "auth");
-    String mechanisms = "SCRAM-SHA-256";
-    ClientCallbackHandler clientHandler = new ClientCallbackHandler(username, password, "servername");
-
-    IAuthHandler authHandler = new SaslAuthHandler(mechanisms, null, "localhost", props, clientHandler);
-    MqttSnClient client = new MqttSnClient("localhost", 1887, 2, authHandler);
-    try {
-      client.connect(50, true);
-      Assertions.assertTrue(client.isConnected());
-      AtomicBoolean receivedEvent = new AtomicBoolean(false);
-      client.registerPublishListener(new IMqttsnPublishReceivedListener() {
-        @Override
-        public void receive(IClientIdentifierContext iMqttsnContext, TopicPath topicPath, int i, boolean b, byte[] bytes, IMqttsnMessage iMqttsnMessage) {
-          receivedEvent.set(true);
-          System.err.println("Received event");
+    Map<String, String> properties = new HashMap<>();
+    properties.put(Sasl.QOP, "auth");
+    ClientCallbackHandler callbackHandler = new ClientCallbackHandler(
+        username, password, "localhost");
+    SaslAuthenticationMechanism mechanism = new SaslAuthenticationMechanism(() -> {
+      try {
+        SaslClient saslClient = Sasl.createSaslClient(new String[] {"SCRAM-SHA-256"},
+            null, "MQTT-SN", "localhost", properties, callbackHandler);
+        if (saslClient == null) {
+          throw new IllegalStateException("SCRAM-SHA-256 is not installed in the test runtime");
         }
-      });
-      client.subscribe("/topic", 0);
-      client.publish("/topic", 2, "This is a message".getBytes());
-      long timeout = System.currentTimeMillis() + 10000;
-      while (!receivedEvent.get() && timeout > System.currentTimeMillis()) {
-        delay(10);
+        return saslClient;
+      } catch (Exception ex) {
+        throw new IllegalStateException("Unable to create the test SASL client", ex);
       }
-      Assertions.assertTrue(receivedEvent.get(), "Should have received the event");
+    });
+
+    try (AuthenticationExchange authentication = new AuthenticationExchange(mechanism);
+         UdpMqttSnClient client = new UdpMqttSnClient(
+             new InetSocketAddress("127.0.0.1", 1887))) {
+      int connectId = client.session().nextPacketIdentifier();
+      client.send(MqttSnCodec.encodeConnect(
+          new ConnectOptions(true, false, false, connectId, 50, 0, username),
+          authentication.method(), authentication.initialResponse()));
+
+      boolean connected = false;
+      long deadline = System.nanoTime() + Duration.ofSeconds(10).toNanos();
+      while (!connected && System.nanoTime() < deadline) {
+        DecodedPacket packet = receive(client);
+        if (packet.type() == PacketType.AUTH) {
+          AuthPacket challenge = MqttSnCodec.decodeAuth(packet);
+          AuthPacket response = authentication.continueAuthentication(
+              challenge, connectId);
+          client.send(MqttSnCodec.encodeAuth(response));
+        } else if (packet.type() == PacketType.CONNACK) {
+          authentication.acceptConnAck(MqttSnCodec.decodeConnAck(packet));
+          connected = true;
+        }
+      }
+      assertEquals(true, connected, "server must finish the enhanced authentication exchange");
+      assertEquals("ACTIVE", client.session().state().name());
     } finally {
-      if (client.isConnected()) {
-        client.disconnect();
-      }
       authManager.delUser(username);
-      delay(500);
     }
+  }
+
+  private static DecodedPacket receive(UdpMqttSnClient client) throws Exception {
+    DecodedPacket[] received = new DecodedPacket[1];
+    client.receive(Duration.ofSeconds(5), packet -> received[0] = packet);
+    if (received[0] == null) {
+      throw new AssertionError("server returned an empty MQTT-SN datagram");
+    }
+    return received[0];
   }
 }

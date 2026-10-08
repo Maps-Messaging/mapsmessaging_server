@@ -55,8 +55,31 @@ This matrix records implemented packet and session paths, not proof of full MQTT
 
 - Short-form CONNECT Will topic aliases that are not configured predefined topics are rejected. Full alias ownership/retention semantics and protection encapsulation require additional work.
 - Complete response reason-code applicability and a full normative statement audit remain future conformance work.
-- Added tests reference CSD01 CONNECT/session, AUTH lifecycle, QoS flows/retries, and sleeping lifecycle requirements. They have not been executed in this checkout because Maven and JDK 21 are unavailable (only JDK 17 is installed). Jenkins was not run. Do not claim a passing conformance suite or full CSD01 compliance until local tests and integration fixtures run on the project toolchain.
+- The released `0.1.0` client artifact is not currently present in `maps_releases`; `release-0.1.0` still publishes `0.1.0-SNAPSHOT`. The test dependency defaults to the requested release coordinate. Local compilation and tests used the published snapshot with `-DmqttSn2ClientVersion=0.1.0-SNAPSHOT`.
+- The optional BC protection profile resolves and its provider test passes against the published snapshot using `-DmqttSn2ProtectionBc=true` and the same version override.
+- The focused client/server suite compiled, but UDP socket creation is denied by the local execution environment (`SocketException: Operation not permitted`). Its live protocol assertions have not passed locally. The retry unit test caught and fixed a DUP flag defect; 87 non-network MQTT-SN unit tests passed. The partial JaCoCo report shows 67% line coverage in the active protocol package and 72% in the packet codec package; 80% is the target, not a measured result.
+- Jenkins is intentionally not run.
+
+## Block 3 conformance test trace
+
+The test suite identifies the August 2026 CSD01 source commit pinned above. The legacy third-party test client is now restricted to MQTT-SN 1.2; the released CSD01 client is the MQTT-SN 2.0 test peer.
+
+| Requirement area | Test coverage | Normative reference |
+|---|---|---|
+| Version selection, including WILL CONNECT optional fields | `MqttSnVersionDetectorTest` | MQTT-SN 2.1.2, 2.1.3, 3.1.2 |
+| CONNECT / CONNACK and inline WILL | `MqttSn2ConnectCodecTest`, `MqttSn2ClientServerConformanceTest.connectCarriesWillConfigurationInTheCsd01SessionRequest` | MQTT-SN 3.1.2, 3.2.2 |
+| SASL AUTH challenge/response | `MqttSnAuthTest.scramAuthenticationUsesTheCsd01AuthExchange` | MQTT-SN 3.1.2.3, 3.3.2, 3.3.3, 4.11.1 |
+| Topic names, subscriptions, delivery, unsubscribe | `MqttSn2ClientServerConformanceTest.subscribePublishAndUnsubscribeUseNameTopics` | MQTT-SN 3.7.2, 3.7.3, 3.8.2, 3.9.2, 3.9.3 |
+| QoS 0, 1 and 2 acknowledgement flows | `MqttSn2ClientServerConformanceTest.connectPublishQos1AndQos2AndDisconnect`, `MqttSn2OutgoingDeliveryManagerTest` | MQTT-SN 4.3.2, 4.3.3, 4.3.4 |
+| Retry identifiers and duplicate handling | `MqttSn2OutgoingDeliveryManagerTest.qos_one_retry_sets_dup_and_reuses_packet_identifier`, `qos_two_retries_pubrel_without_retransmitting_publish_after_pubrec` | MQTT-SN 4.3.3, 4.3.4, 4.4.2 |
+| Session reconnect, sleeping and wake | `MqttSn2ClientServerConformanceTest.pingAndReconnectKeepTheSameClientIdentifier`, `sleepingClientWakesWithPingReq`, `MqttSn2LifecycleTest` | MQTT-SN 3.1.2, 3.2.2, 4.14.1, 4.14.2 |
+| Gateway discovery and malformed traffic | `MqttSn2ClientServerConformanceTest.searchGatewayReturnsGatewayInfo`, `reservedPacketTypeIsDroppedWithoutCorruptingTheGateway`, packet codec tests | MQTT-SN 2.1.2, 2.1.3, 6.1.2, 6.1.3 |
+| MQTT 3.1.1 and MQTT 5 bridging | `MqttSn2ClientServerConformanceTest.qosOneAndTwoPublicationsBridgeToMqtt311AndMqtt5` | MQTT-SN 5, MQTT 3.1.1, MQTT 5.0 |
+| MQTT-SN 1.2 regression | `src/test/java/io/mapsmessaging/network/protocol/impl/mqtt_sn/v1_2` and retained MQTT-SN 1.2/Paho tests | MQTT-SN 1.2, 14 November 2013 |
+| Optional BC protection provider | `MqttSn2ProtectionArtifactTest` with `-DmqttSn2ProtectionBc=true` | MQTT-SN 2.1.3, 4.13 |
+
+The target is at least 80% coverage of the active MQTT-SN v2 protocol and codecs. The partial local report is below target (67% protocol package, 72% packet codec package); state/listener test paths and live protocol assertions remain unmeasured because the integration suite cannot open local sockets here.
 
 ## Validation gate
 
-This file records code coverage, **not passing conformance tests**. Do not mark Jira MSG-324 Done or describe the server as CSD01 compliant until the branch compiles, unit and integration tests pass, and wire fixtures are compared to the exact August draft. Jenkins was intentionally not triggered during Block 1.
+This file records implementation and test traceability, **not passing conformance tests**. Do not mark Jira MSG-324 Done or describe the server as CSD01 compliant until the released client dependency resolves, the full local test suite passes, and coverage is measured against the 80% target. Jenkins is intentionally not triggered for this block.

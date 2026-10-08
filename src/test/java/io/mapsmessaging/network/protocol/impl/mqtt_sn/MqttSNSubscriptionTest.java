@@ -203,7 +203,7 @@ class MqttSNSubscriptionTest extends BaseMqttSnConfig {
   }
 
   public void subscribeQoSnTopicAndPublish(int qos, int version) throws InterruptedException, MqttsnException, MqttsnClientConnectException, MqttsnQueueAcceptException {
-    MqttSnClient client = new MqttSnClient("localhost",1884, version );
+    MqttSn12Client client = new MqttSn12Client("localhost",1884);
     CountDownLatch published = new CountDownLatch(PUBLISH_COUNT);
     CountDownLatch received = new CountDownLatch(PUBLISH_COUNT);
 
@@ -255,7 +255,7 @@ class MqttSNSubscriptionTest extends BaseMqttSnConfig {
     CountDownLatch published = new CountDownLatch(PUBLISH_COUNT);
     CountDownLatch received = new CountDownLatch(PUBLISH_COUNT);
 
-    MqttSnClient subscriber = new MqttSnClient("localhost", 1884, version);
+    MqttSn12Client subscriber = new MqttSn12Client("localhost", 1884);
     subscriber.connect(120, true);
     subscriber.registerPublishListener((iMqttsnContext, topicPath, i, b, bytes, iMqttsnMessage) -> {
       received.countDown();
@@ -263,7 +263,7 @@ class MqttSNSubscriptionTest extends BaseMqttSnConfig {
     subscriber.subscribe("/mqttsn/test/wild/+", qos);
 
     Thread.sleep(2000);
-    MqttSnClient publisher = new MqttSnClient( "localhost",1884, version );
+    MqttSn12Client publisher = new MqttSn12Client( "localhost",1884);
     publisher.connect(120, true);
     publisher.registerSentListener((iMqttsnContext, topicPath, i, b, bytes, iMqttsnMessage) -> {
       published.countDown();

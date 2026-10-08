@@ -25,8 +25,6 @@ import org.slj.mqtt.sn.client.impl.MqttsnClient;
 import org.slj.mqtt.sn.client.impl.MqttsnClientRuntimeRegistry;
 import org.slj.mqtt.sn.client.impl.MqttsnClientUdpOptions;
 import org.slj.mqtt.sn.client.spi.MqttsnClientOptions;
-import org.slj.mqtt.sn.codec.MqttsnCodecs;
-import org.slj.mqtt.sn.model.IAuthHandler;
 import org.slj.mqtt.sn.model.MqttsnOptions;
 import org.slj.mqtt.sn.model.MqttsnQueueAcceptException;
 import org.slj.mqtt.sn.model.MqttsnSecurityOptions;
@@ -36,28 +34,24 @@ import org.slj.mqtt.sn.net.MqttsnUdpTransport;
 import org.slj.mqtt.sn.net.NetworkAddress;
 import org.slj.mqtt.sn.spi.*;
 
-public class MqttSnClient {
+public class MqttSn12Client {
 
   private final MqttsnClient client;
 
-  public MqttSnClient(String host, int port, int version) throws MqttsnException {
-    this( host, port, version, null);
-  }
-
-  public MqttSnClient(String host, int port, int version, IAuthHandler auth) throws MqttsnException {
+  public MqttSn12Client(String host, int port) throws MqttsnException {
 
     //-- using a default configuration for the controllers will just work out of the box, alternatively
     //-- you can supply your own implementations to change underlying storage or business logic as is required
-    IMqttsnCodec codecs = (version == 2) ? MqttsnCodecs.MQTTSN_CODEC_VERSION_2_0 : MqttsnCodecs.MQTTSN_CODEC_VERSION_1_2;
+    IMqttsnCodec codecs = org.slj.mqtt.sn.codec.MqttsnCodecs.MQTTSN_CODEC_VERSION_1_2;
 
     //-- the client is Closeable and so use a try with resource
     client = new MqttsnClient();
     //-- the client needs to be started using the configuration you constructed above
-    client.start(createClientRuntimeRegistry(codecs, host, port, auth));
+    client.start(createClientRuntimeRegistry(codecs, host, port));
   }
 
 
-  protected MqttsnClientRuntimeRegistry createClientRuntimeRegistry(IMqttsnCodec codecs, String host, int port,  IAuthHandler auth){
+  protected MqttsnClientRuntimeRegistry createClientRuntimeRegistry(IMqttsnCodec codecs, String host, int port){
     IMqttsnStorageService storageService = new MemoryStorage();
     MqttsnUdpOptions udpOptions = new MqttsnClientUdpOptions().
         withHost(host).
@@ -69,12 +63,6 @@ public class MqttSnClient {
         withMaxMessagesInflight(1).
         withMaxWait(60000).
         withPredefinedTopic("predefined/topic", 1);
-    if(auth != null) {
-      MqttsnSecurityOptions securityOptions = new MqttsnSecurityOptions().
-          withAuthHandler(auth);
-      options.setSecurityOptions(securityOptions);
-    }
-
     return (MqttsnClientRuntimeRegistry) MqttsnClientRuntimeRegistry.defaultConfiguration(storageService, options).
         withTransport(new MqttsnUdpTransport(udpOptions)).
         withCodec(codecs);
