@@ -46,6 +46,31 @@ class MqttSn2ConnectCodecTest {
   }
 
   @Test
+  /** CSD01 MQTT-SN 3.1.2 and 3.1.9 CONNECT Will and Session Expiry fields. */
+  void decodesSessionExpiryAwakeLimitAndWillFromConnect() throws Exception {
+    byte[] topic = "device/offline".getBytes(StandardCharsets.UTF_8);
+    byte[] willPayload = new byte[]{0, 1, 2, 3};
+    ByteBuffer body = ByteBuffer.allocate(9 + 4 + 1 + 2 + topic.length + 2 + willPayload.length + 1);
+    body.put((byte) 0x1B).put((byte) 0x17).putShort((short) 81).put((byte) 2)
+        .putShort((short) 120).putShort((short) 4096)
+        .putInt(3600).put((byte) 5)
+        .putShort((short) topic.length).put(topic)
+        .putShort((short) willPayload.length).put(willPayload).put((byte) 'C').flip();
+
+    MqttSn2ConnectCodec.Connect connect = decode(body);
+
+    assertEquals(3600, connect.sessionExpirySeconds());
+    assertEquals(5, connect.defaultAwakeMessages());
+    assertTrue(connect.will());
+    assertEquals(3, connect.willTopicType());
+    assertEquals(1, connect.willQos());
+    assertTrue(connect.willRetained());
+    assertEquals("device/offline", connect.willTopicName());
+    assertArrayEquals(willPayload, connect.willPayload());
+    assertEquals("C", connect.clientIdentifier());
+  }
+
+  @Test
   void rejectsTruncatedOrInvalidConnectBodies() {
     byte[][] inputs = {
         new byte[0],

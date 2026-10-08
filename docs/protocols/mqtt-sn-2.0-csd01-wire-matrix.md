@@ -4,13 +4,13 @@ Normative baseline: OASIS MQTT-SN 2.0 CSD01, August 2026, specification source c
 
 Reference-client catalogue: `Maps-Messaging/mqtt-sn-2.0-client/shared/control-packet-types.json`.
 
-This matrix is **wire-codec scope**, not proof of operational MQTT-SN 2.0 conformance. The codecs are committed but their test suite has not yet been executed in Maven/Jenkins. No inheritance from MQTT-SN 1.2 is used by the *active* 2.0 protocol and wire decoder.
+This matrix records implemented packet and session paths, not proof of full MQTT-SN 2.0 conformance. The focused test suite has not yet been executed because Maven and JDK 21 are unavailable in this checkout. No inheritance from MQTT-SN 1.2 is used by the active 2.0 protocol and wire decoder.
 
 | Wire packet | CSD01 type | Decoder | Encoder | Notes |
 |---|---:|---|---|---|
 | CONNECT | 0x01 | MqttSn2ConnectCodec | MqttSn2ConnectCodec | Independent 2.0 flags and authentication fields |
 | CONNACK | 0x02 | MqttSn2ConnAckCodec | MqttSn2ConnAckCodec | Optional expiry, keepalive and auth |
-| PUBLISH | 0x03 | MqttSn2PublishCodec | MqttSn2PublishCodec | QoS 0–2 wire payloads; QoS2 state machine pending |
+| PUBLISH | 0x03 | MqttSn2PublishCodec | MqttSn2PublishCodec | QoS 0–2; independent inbound/outbound QoS 1/2 tracking |
 | PUBACK | 0x04 | MqttSn2AckCodec | MqttSn2AckCodec | Identifier/optional reason |
 | PUBREC | 0x05 | MqttSn2AckCodec | MqttSn2AckCodec | Identifier/optional reason |
 | PUBREL | 0x06 | MqttSn2AckCodec | MqttSn2AckCodec | Identifier/optional reason |
@@ -20,13 +20,13 @@ This matrix is **wire-codec scope**, not proof of operational MQTT-SN 2.0 confor
 | UNSUBSCRIBE | 0x0A | MqttSn2SubscriptionCodec | MqttSn2SubscriptionCodec | CSD01 topic types |
 | UNSUBACK | 0x0B | MqttSn2AckCodec | MqttSn2AckCodec | Identifier/optional reason |
 | PINGREQ | 0x0C | MqttSn2ControlCodec | MqttSn2ControlCodec | Packet Identifier |
-| PINGRESP | 0x0D | MqttSn2ControlCodec | MqttSn2ControlCodec | Optional remaining count |
+| PINGRESP | 0x0D | MqttSn2ControlCodec | MqttSn2ControlCodec | Optional 16-bit remaining count, including 0xFFFF sentinel |
 | DISCONNECT | 0x0E | MqttSn2DisconnectCodec | MqttSn2DisconnectCodec | Optional reason/expiry |
-| AUTH | 0x0F | MqttSn2ControlCodec | MqttSn2ControlCodec | SASL exchange pending |
+| AUTH | 0x0F | MqttSn2ControlCodec | MqttSn2ControlCodec | Existing SASL mechanism exchange |
 | REGISTER | 0x10 | MqttSn2RegisterCodec | MqttSn2RegisterCodec | Topic Name/Packet Identifier |
 | REGACK | 0x11 | MqttSn2RegAckCodec | MqttSn2RegAckCodec | Optional alias |
 | PUBWOS | 0x12 | MqttSn2PublishCodec | MqttSn2PublishCodec | Sessionless QoS 0 |
-| SLEEPREQ | 0x13 | MqttSn2SleepCodec | MqttSn2SleepCodec | Duration/alias retention |
+| SLEEPREQ | 0x13 | MqttSn2SleepCodec | MqttSn2SleepCodec | Duration, buffered delivery and PINGREQ wake |
 | SLEEPRESP | 0x14 | MqttSn2SleepCodec | MqttSn2SleepCodec | Optional duration/reason |
 | WAKEUP | 0x15 | MqttSn2SleepCodec | MqttSn2SleepCodec | Empty control packet |
 | ADVERTISE | 0x16 | MqttSn2GatewayCodec | MqttSn2GatewayCodec | Gateway information |
@@ -42,16 +42,20 @@ This matrix is **wire-codec scope**, not proof of operational MQTT-SN 2.0 confor
 
 `MqttSn2PacketDecoder` never dispatches 2.0 packets through `v1_2.packet.PacketFactory`. `MqttSn2OutboundPacket` adapts encoded frames to the existing UDP write pipeline. Previous `MQTT_SNProtocolV2` and `PacketFactoryV2` classes remain in the tree temporarily as legacy implementation, but are not used for new 2.0 connections.
 
-## Deferred to lifecycle/authentication (Block 2)
+## Block 2 lifecycle implementation
 
-- Full SASL AUTH state negotiation and explicit identity authorisation.
-- WILL negotiation, clean start, session expiry, reconnect and recovery.
-- Complete session-alias/predefined-alias ownership and registration semantics.
-- QoS 1/2 retransmission, inflight ordering, PUBREC/PUBREL/PUBCOMP transaction state and outbound delivery callbacks.
-- Sleeping clients and wakeup flow control.
-- Cryptographic Protection Provider integration and authenticated decryption.
-- Complete response reason-code applicability and draft normative statement audit.
-- Rejection/error packet policy on invalid transitions and malformed transport input.
+- CONNECT AUTH uses the configured SASL mechanism. Session creation waits for successful AUTH; the same method is returned in CONNACK.
+- CONNECT Will Name and configured predefined topics are installed in broker session state. Normal DISCONNECT clears the Will; abnormal close leaves the broker Will task active.
+- Clean Start and Session Expiry configure persistent session restoration through the existing SessionManager path.
+- QoS 1/2 inbound acknowledgements are sent after storage; inbound QoS 2 stages and commits a broker transaction on PUBREL. Outbound QoS 1/2 is serialized per client, acknowledged through PUBACK or PUBREC/PUBREL/PUBCOMP, and retransmitted with the appropriate duplicate behavior. Retry exhaustion closes the virtual connection.
+- SLEEPREQ buffers subscription events while asleep. PINGREQ wakes the client, delivers within Default Awake Messages, returns PINGRESP Remaining Messages, then returns to sleep. The sleep timer uses 1.5 times the requested interval.
+- MQTT-SN 1.2 continues through the existing v1.2 manager and protocol implementation.
+
+## Remaining scope and validation
+
+- Short-form CONNECT Will topic aliases that are not configured predefined topics are rejected. Full alias ownership/retention semantics and protection encapsulation require additional work.
+- Complete response reason-code applicability and a full normative statement audit remain future conformance work.
+- Added tests reference CSD01 CONNECT/session, AUTH lifecycle, QoS flows/retries, and sleeping lifecycle requirements. They have not been executed in this checkout because Maven and JDK 21 are unavailable (only JDK 17 is installed). Jenkins was not run. Do not claim a passing conformance suite or full CSD01 compliance until local tests and integration fixtures run on the project toolchain.
 
 ## Validation gate
 

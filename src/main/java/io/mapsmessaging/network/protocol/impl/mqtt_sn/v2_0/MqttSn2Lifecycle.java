@@ -15,7 +15,7 @@ import java.io.IOException;
  */
 public final class MqttSn2Lifecycle {
 
-  public enum State { NEW, AUTHENTICATING, NEGOTIATING_WILL, ESTABLISHING, CONNECTED, ASLEEP, CLOSED }
+  public enum State { NEW, AUTHENTICATING, NEGOTIATING_WILL, ESTABLISHING, CONNECTED, ASLEEP, AWAKE, CLOSED }
 
   private State state = State.NEW;
 
@@ -51,7 +51,12 @@ public final class MqttSn2Lifecycle {
 
   public synchronized void wake() throws IOException {
     require(State.ASLEEP);
-    state = State.CONNECTED;
+    state = State.AWAKE;
+  }
+
+  public synchronized void sleepAgain() throws IOException {
+    require(State.AWAKE);
+    state = State.ASLEEP;
   }
 
   public synchronized void checkAllowed(MqttSn2PacketType type) throws IOException {
@@ -64,7 +69,10 @@ public final class MqttSn2Lifecycle {
       case NEGOTIATING_WILL, ESTABLISHING -> false;
       case CONNECTED -> type != MqttSn2PacketType.CONNECT && type != MqttSn2PacketType.CONNACK
           && type != MqttSn2PacketType.AUTH && type != MqttSn2PacketType.SLEEPRESP;
-      case ASLEEP -> type == MqttSn2PacketType.WAKEUP || type == MqttSn2PacketType.DISCONNECT;
+      case ASLEEP -> type == MqttSn2PacketType.PINGREQ || type == MqttSn2PacketType.DISCONNECT;
+      case AWAKE -> type == MqttSn2PacketType.PUBACK || type == MqttSn2PacketType.PUBREC
+          || type == MqttSn2PacketType.PUBCOMP || type == MqttSn2PacketType.REGACK
+          || type == MqttSn2PacketType.DISCONNECT;
       case CLOSED -> false;
     };
     if (!allowed) {

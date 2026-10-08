@@ -105,6 +105,11 @@ public class MQTTSNInterfaceManager implements SelectorCallback {
     registeredTopicConfiguration = new RegisteredTopicConfiguration(mqttSnConfig);
   }
 
+  /** Resolves a configured MQTT-SN predefined topic for the independent v2 adapter. */
+  public String resolvePredefinedTopic(SocketAddress address, int topicId) {
+    return registeredTopicConfiguration.getTopic(address, topicId);
+  }
+
   public MQTTSNInterfaceManager(InterfaceInformation info, EndPoint endPoint, byte gatewayId) throws IOException {
     logger = LoggerFactory.getLogger("MQTT-SN Protocol on " + endPoint.getName());
     this.endPoint = endPoint;

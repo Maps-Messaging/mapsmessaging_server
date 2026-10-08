@@ -38,7 +38,7 @@ public final class MqttSn2PublishCodec {
     boolean wos = publish.withoutSession();
     if ((type != 0 && type != 1 && type != 3) || qos < 0 || qos > 2
         || (wos && (type == 0 || qos != 0 || publish.duplicate()))
-        || (!wos && publish.duplicate() && qos != 2)) {
+        || (!wos && publish.duplicate() && qos == 0)) {
       throw new IllegalArgumentException("Invalid MQTT-SN 2.0 PUBLISH flags");
     }
     if (!wos && qos > 0 && (publish.packetIdentifier() < 1 || publish.packetIdentifier() > 65535)) {
@@ -94,7 +94,7 @@ public final class MqttSn2PublishCodec {
       if ((flags & 0xEC) != 0 || topicType == 0 || topicType == 2) {
         throw new IOException("Invalid PUBWOS flags or topic type");
       }
-    } else if ((flags & 0x0C) != 0 || qos == 3 || (duplicate && qos != 2)) {
+    } else if ((flags & 0x0C) != 0 || qos == 3 || (duplicate && qos == 0)) {
       throw new IOException("Invalid PUBLISH flags");
     }
 

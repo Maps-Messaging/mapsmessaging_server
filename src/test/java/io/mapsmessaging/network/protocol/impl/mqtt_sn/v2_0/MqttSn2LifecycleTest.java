@@ -26,6 +26,7 @@ class MqttSn2LifecycleTest {
   }
 
   @Test
+  /** CSD01 MQTT-SN 4.11 AUTH completes before 3.1.2 Will/session setup. */
   void saslMustCompleteBeforeWillAndSessionEstablishment() throws Exception {
     MqttSn2Lifecycle lifecycle = new MqttSn2Lifecycle();
     lifecycle.begin(true, true);
@@ -41,15 +42,20 @@ class MqttSn2LifecycleTest {
   }
 
   @Test
-  void sleepingClientOnlyAcceptsWakeupOrDisconnect() throws Exception {
+  /** CSD01 MQTT-SN 4.14.2 uses PINGREQ to wake a sleeping session. */
+  void sleepingClientWakesWithPingRequestAndOnlyExchangesAllowedPackets() throws Exception {
     MqttSn2Lifecycle lifecycle = new MqttSn2Lifecycle();
     lifecycle.begin(false, false);
     lifecycle.connected();
     lifecycle.sleep();
     assertThrows(IOException.class, () -> lifecycle.checkAllowed(MqttSn2PacketType.PUBLISH));
-    lifecycle.checkAllowed(MqttSn2PacketType.WAKEUP);
+    lifecycle.checkAllowed(MqttSn2PacketType.PINGREQ);
+    assertThrows(IOException.class, () -> lifecycle.checkAllowed(MqttSn2PacketType.CONNECT));
     lifecycle.wake();
-    lifecycle.checkAllowed(MqttSn2PacketType.PUBLISH);
+    lifecycle.checkAllowed(MqttSn2PacketType.PUBACK);
+    assertThrows(IOException.class, () -> lifecycle.checkAllowed(MqttSn2PacketType.SUBSCRIBE));
+    lifecycle.sleepAgain();
+    assertEquals(MqttSn2Lifecycle.State.ASLEEP, lifecycle.state());
   }
 
   @Test
