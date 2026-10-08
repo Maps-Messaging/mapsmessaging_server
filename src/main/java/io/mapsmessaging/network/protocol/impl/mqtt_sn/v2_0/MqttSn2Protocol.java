@@ -325,9 +325,21 @@ public final class MqttSn2Protocol extends Protocol {
     builder.setReceiveMaximum(1);
     builder.setQos(qos);
     session.get().addSubscription(builder.build());
-    int alias = aliases.register(topic);
+    // CSD01 4.7.2.2-2/-3: wildcard filters MUST NOT receive an alias.
+    // A configured predefined alias MUST take precedence over a session alias.
+    Integer alias = null;
+    int aliasType = 0;
+    if (topic.indexOf('+') < 0 && topic.indexOf('#') < 0) {
+      int predefined = manager.resolvePredefinedAlias(address, topic);
+      if (predefined > 0) {
+        alias = predefined;
+        aliasType = 1;
+      } else {
+        alias = aliases.register(topic);
+      }
+    }
     send(MqttSn2ReplyCodec.encodeSubAck(new MqttSn2ReplyCodec.SubAck(
-        0, alias, request.packetIdentifier(), 0)), null);
+        aliasType, alias, request.packetIdentifier(), 0)), null);
   }
 
   private void unsubscribe(MqttSn2SubscriptionCodec.Request request) throws IOException {
@@ -481,6 +493,10 @@ public final class MqttSn2Protocol extends Protocol {
 
   private void sleep(MqttSn2SleepCodec.SleepRequest request) throws IOException {
     lifecycle.sleep();
+    if (!request.retainAliases()) {
+      // CSD01 3.15.2.1: clear session aliases only; predefined aliases remain configured.
+      aliases.clear();
+    }
     send(MqttSn2SleepCodec.encodeResponse(new MqttSn2SleepCodec.SleepResponse(
         request.packetIdentifier(), null, 0)), null);
     if (sleepTask != null) sleepTask.cancel(false);
