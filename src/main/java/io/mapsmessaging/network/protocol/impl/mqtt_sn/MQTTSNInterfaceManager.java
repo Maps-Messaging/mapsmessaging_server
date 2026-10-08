@@ -46,6 +46,7 @@ import io.mapsmessaging.network.protocol.impl.mqtt_sn.v2_0.MqttSn2ProtectionVeri
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v2_0.packet.MqttSn2FrameCodec;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v2_0.packet.MqttSn2GatewayCodec;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v2_0.packet.MqttSn2PacketType;
+import io.mapsmessaging.network.protocol.impl.mqtt_sn.v2_0.packet.MqttSn2PublishCodec;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v2_0.MqttSn2OutboundPacket;
 import io.mapsmessaging.network.protocol.transformation.ProtocolMessageTransformation;
 import io.mapsmessaging.network.protocol.transformation.TransformationManager;
@@ -230,8 +231,12 @@ public class MQTTSNInterfaceManager implements SelectorCallback {
     } else if (policy != null) {
       throw new IOException("Unprotected MQTT-SN 2.0 CONNECT on secured endpoint");
     }
-    var connect = io.mapsmessaging.network.protocol.impl.mqtt_sn.v2_0.packet.MqttSn2ConnectCodec.decode(
-        MqttSn2FrameCodec.decode(incoming));
+    MqttSn2FrameCodec.Frame initial = MqttSn2FrameCodec.decode(incoming);
+    if (initial.type() == MqttSn2PacketType.PUBWOS) {
+      publishWithoutV2Connection(packet.getFromAddress(), MqttSn2PublishCodec.decode(initial));
+      return;
+    }
+    var connect = io.mapsmessaging.network.protocol.impl.mqtt_sn.v2_0.packet.MqttSn2ConnectCodec.decode(initial);
     UDPFacadeEndPoint facade = new UDPFacadeEndPoint(
         endPoint, packet.getFromAddress(), endPoint.getServer());
     MqttSn2Protocol protocol = new MqttSn2Protocol(this, facade,
@@ -276,10 +281,40 @@ public class MQTTSNInterfaceManager implements SelectorCallback {
         selectorTask.push(new MqttSn2OutboundPacket(response, packet.getFromAddress(), null));
         return;
       }
+      if (frame.type() == MqttSn2PacketType.PUBWOS) {
+        if (protectionSession != null) {
+          throw new IOException("Unprotected PUBWOS rejected by secured MQTT-SN 2.0 endpoint");
+        }
+        publishWithoutV2Connection(packet.getFromAddress(), MqttSn2PublishCodec.decode(frame));
+        return;
+      }
     } catch (IOException exception) {
       // Unconnected datagrams may also be MQTT-SN 1.2 packets.
     }
     processIncomingPacket(packet, packetFactory[0]);
+  }
+
+  private void publishWithoutV2Connection(SocketAddress sender, MqttSn2PublishCodec.Publish publish)
+      throws IOException {
+    if (!publish.withoutSession() || publish.qos() != 0) {
+      throw new IOException("Only QoS 0 PUBWOS can publish without a virtual connection");
+    }
+    String topic = publish.topicType() == 3 ? publish.topicName()
+        : publish.topicType() == 1
+            ? resolvePredefinedTopic(sender, publish.topicAlias()) : null;
+    if (topic == null || topic.isEmpty() || topic.indexOf('+') >= 0 || topic.indexOf('#') >= 0
+        || topic.startsWith("$")) {
+      throw new IOException("Invalid or unconfigured PUBWOS topic");
+    }
+    MessageBuilder builder = new MessageBuilder();
+    builder.setOpaqueData(publish.payload()).setQoS(QualityOfService.AT_MOST_ONCE)
+        .setRetain(publish.retained()).storeOffline(publish.retained())
+        .setTransformation(transformation);
+    Message message = MessageOverrides.createMessageBuilder(
+        mqttSnConfig.getMessageDefaults(), builder).build();
+    SessionManager.getInstance().publish(topic, message).whenComplete((result, failure) -> {
+      if (failure != null) logger.log(ServerLogMessages.MQTT_SN_EXCEPTION_RASIED, failure);
+    });
   }
 
   private UDPSessionState<Protocol> lookupByPacket(Packet packet) throws IOException {
