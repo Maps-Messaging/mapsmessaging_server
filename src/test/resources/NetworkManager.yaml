@@ -210,6 +210,7 @@ NetworkManager:
         url: "tcp://0.0.0.0:5674/"
         protocol: amqp
         sasl:
+          realmName: localhost
           mechanism: SCRAM-SHA-256
           identityProvider: system
 
