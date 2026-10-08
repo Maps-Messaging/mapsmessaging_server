@@ -47,6 +47,15 @@ class MqttSnVersionDetectorTest {
     assertEquals(1, wire.position());
   }
 
+  @Test
+  void preservesValidMqttSn12WillAndCleanStartFlags() {
+    // MQTT-SN 1.2 CONNECT: 0x08 WILL, 0x04 CleanSession, 0x01 ProtocolId.
+    assertEquals(V1_2, detect(7, 4, 0x08, 1, 0, 30, 'a'));
+    assertEquals(V1_2, detect(7, 4, 0x0C, 1, 0, 30, 'a'));
+    assertEquals(V1_2, detect(7, 4, 0x04, 1, 0, 30, 'a'));
+    assertEquals(UNKNOWN, detect(7, 4, 0x80, 1, 0, 30, 'a'));
+  }
+
   private static MqttSnVersionDetector.Version detect(int... values) {
     ByteBuffer wire = ByteBuffer.allocate(values.length);
     for (int value : values) {
