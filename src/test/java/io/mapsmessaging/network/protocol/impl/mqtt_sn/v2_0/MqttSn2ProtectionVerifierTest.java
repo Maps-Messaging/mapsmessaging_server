@@ -51,6 +51,19 @@ class MqttSn2ProtectionVerifierTest {
     assertEquals(1, calls.get());
   }
 
+  @Test
+  void outboundHmacRoundTripsThroughIndependentVerifier() throws Exception {
+    MqttSn2ProtectionVerifier sender = new MqttSn2ProtectionVerifier((id, scheme) -> KEY.clone());
+    MqttSn2ProtectionVerifier receiver = new MqttSn2ProtectionVerifier((id, scheme) -> KEY.clone());
+    byte[] inner = {4, 12, 0, 9};
+    ByteBuffer wire = sender.protect(ByteBuffer.wrap(inner), 0,
+        new byte[]{0,0,0,0,0,0,0,7}, new byte[]{1,2,3,4}, new byte[]{0,1});
+    assertArrayEquals(inner, bytes(receiver.verify(wire)));
+    assertThrows(IOException.class, () -> receiver.verify(wire));
+    assertThrows(IOException.class, () -> sender.protect(ByteBuffer.wrap(inner), 0,
+        new byte[]{0,0,0,0,0,0,0,7}, new byte[]{1,2,3,4}, new byte[0]));
+  }
+
   private static byte[] protect(byte[] inner, int counter) throws Exception {
     // Short MQTT-SN frame plus CSD01 Protection Encapsulation fixed fields.
     ByteBuffer prefix = ByteBuffer.allocate(18);
