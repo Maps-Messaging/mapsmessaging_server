@@ -64,6 +64,7 @@ public final class MqttSn2Protocol extends Protocol {
   private final MqttSn2Lifecycle lifecycle = new MqttSn2Lifecycle();
   private final MqttSn2OutgoingDeliveryManager outgoing = new MqttSn2OutgoingDeliveryManager();
   private final Map<Integer, Transaction> incomingQos2 = new HashMap<>();
+  private final java.util.Set<Integer> incomingQos2Pending = new java.util.HashSet<>();
   private final java.util.ArrayDeque<MessageEvent> sleepingQueue = new java.util.ArrayDeque<>();
   private String clientIdentifier = "waiting";
   private MqttSn2ConnectCodec.Connect connectRequest;
@@ -316,10 +317,20 @@ public final class MqttSn2Protocol extends Protocol {
   }
 
   private void publish(MqttSn2PublishCodec.Publish publish) throws IOException {
-    if (publish.qos() == 2 && qos2Transaction(publish.packetIdentifier()) != null) {
-      send(MqttSn2AckCodec.encode(new MqttSn2AckCodec.Ack(
-          MqttSn2PacketType.PUBREC, publish.packetIdentifier(), null)), null);
-      return;
+    if (publish.qos() == 2) {
+      synchronized (incomingQos2) {
+        if (incomingQos2Pending.contains(publish.packetIdentifier())) {
+          // The original asynchronous destination lookup has not finished.
+          // Never begin another transaction or acknowledge an unpersisted packet.
+          return;
+        }
+        if (qos2Transaction(publish.packetIdentifier()) != null) {
+          send(MqttSn2AckCodec.encode(new MqttSn2AckCodec.Ack(
+              MqttSn2PacketType.PUBREC, publish.packetIdentifier(), null)), null);
+          return;
+        }
+        incomingQos2Pending.add(publish.packetIdentifier());
+      }
     }
     String topic = publish.topicType() == 3 ? publish.topicName() : aliasTopics.get(publish.topicAlias());
     if (topic == null || (topic.startsWith("$")
@@ -356,6 +367,11 @@ public final class MqttSn2Protocol extends Protocol {
           // Send an error acknowledgement where one is required.
         }
       }
+      if (publish.qos() == 2) {
+        synchronized (incomingQos2) {
+          incomingQos2Pending.remove(publish.packetIdentifier());
+        }
+      }
       if (!publish.withoutSession() && publish.qos() > 0) {
         MqttSn2PacketType type = publish.qos() == 1 ? MqttSn2PacketType.PUBACK : MqttSn2PacketType.PUBREC;
         send(MqttSn2AckCodec.encode(new MqttSn2AckCodec.Ack(
@@ -365,8 +381,19 @@ public final class MqttSn2Protocol extends Protocol {
   }
 
   private void receivePubRel(MqttSn2AckCodec.Ack ack) throws IOException {
-    Transaction transaction = qos2Transaction(ack.packetIdentifier());
-    synchronized (incomingQos2) { incomingQos2.remove(ack.packetIdentifier()); }
+    Transaction transaction;
+    synchronized (incomingQos2) {
+      if (incomingQos2Pending.contains(ack.packetIdentifier())) {
+        throw new IOException("PUBREL received before PUBREC transaction is ready");
+      }
+      transaction = qos2Transaction(ack.packetIdentifier());
+      if (transaction == null) {
+        send(MqttSn2AckCodec.encode(new MqttSn2AckCodec.Ack(
+            MqttSn2PacketType.PUBCOMP, ack.packetIdentifier(), 0x92)), null);
+        return;
+      }
+      incomingQos2.remove(ack.packetIdentifier());
+    }
     if (transaction != null) {
       try {
         transaction.commit();
