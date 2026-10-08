@@ -46,7 +46,7 @@ class MqttSnAuthTest extends BaseMqttSnConfig {
     SaslAuthenticationMechanism mechanism = new SaslAuthenticationMechanism(() -> {
       try {
         SaslClient saslClient = Sasl.createSaslClient(new String[] {"SCRAM-SHA-256"},
-            null, "MQTT-SN", "localhost", properties, callbackHandler);
+            null, "mqtt-sn", "localhost", properties, callbackHandler);
         if (saslClient == null) {
           throw new IllegalStateException("SCRAM-SHA-256 is not installed in the test runtime");
         }
@@ -74,7 +74,11 @@ class MqttSnAuthTest extends BaseMqttSnConfig {
               challenge, connectId);
           client.send(MqttSnCodec.encodeAuth(response));
         } else if (packet.type() == PacketType.CONNACK) {
-          authentication.acceptConnAck(MqttSnCodec.decodeConnAck(packet));
+          var connAck = MqttSnCodec.decodeConnAck(packet);
+          assertEquals(0, connAck.reasonCode(),
+              "SCRAM connection rejected with CONNACK reason 0x"
+                  + Integer.toHexString(connAck.reasonCode()));
+          authentication.acceptConnAck(connAck);
           connected = true;
         }
       }
