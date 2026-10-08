@@ -339,7 +339,7 @@ public final class MqttSn2Protocol extends Protocol {
       }
     }
     send(MqttSn2ReplyCodec.encodeSubAck(new MqttSn2ReplyCodec.SubAck(
-        aliasType, alias, request.packetIdentifier(), 0)), null);
+        aliasType, alias, request.packetIdentifier(), request.maximumQos())), null);
   }
 
   private void unsubscribe(MqttSn2SubscriptionCodec.Request request) throws IOException {
