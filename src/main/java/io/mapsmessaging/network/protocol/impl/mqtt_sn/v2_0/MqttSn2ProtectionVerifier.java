@@ -34,11 +34,28 @@ public final class MqttSn2ProtectionVerifier {
     byte[] resolve(byte[] senderIdentifier, int scheme) throws IOException;
   }
 
+  /** Durable receiver replay state, shared across client reconnects and restarts. */
+  @FunctionalInterface
+  public interface ReplayStore {
+    boolean accept(byte[] senderIdentifier, int scheme, long counter) throws IOException;
+  }
+
   private final KeyResolver keys;
   private final Map<String, Long> lastCounters = new HashMap<>();
+  private final ReplayStore durableReplayStore;
 
+  /** In-memory replay state is intended for unit tests only. */
   public MqttSn2ProtectionVerifier(KeyResolver keys) {
+    this(keys, null);
+  }
+
+  public MqttSn2ProtectionVerifier(KeyResolver keys, ReplayStore durableReplayStore) {
     this.keys = Objects.requireNonNull(keys, "keys");
+    this.durableReplayStore = durableReplayStore;
+  }
+
+  public boolean hasDurableReplayStore() {
+    return durableReplayStore != null;
   }
 
   /**
@@ -86,11 +103,17 @@ public final class MqttSn2ProtectionVerifier {
         + ":" + scheme;
     long value = 0;
     for (byte b : counter) value = (value << 8) | (b & 0xFFL);
-    Long previous = lastCounters.get(sender);
-    if (previous != null && value <= previous) {
-      throw new IOException("MQTT-SN 2.0 protection replay detected");
+    if (durableReplayStore != null) {
+      if (!durableReplayStore.accept(envelope.senderIdentifier(), scheme, value)) {
+        throw new IOException("MQTT-SN 2.0 protection replay detected");
+      }
+    } else {
+      Long previous = lastCounters.get(sender);
+      if (previous != null && value <= previous) {
+        throw new IOException("MQTT-SN 2.0 protection replay detected");
+      }
+      lastCounters.put(sender, value);
     }
-    lastCounters.put(sender, value);
     return ByteBuffer.wrap(inner).asReadOnlyBuffer();
   }
 
