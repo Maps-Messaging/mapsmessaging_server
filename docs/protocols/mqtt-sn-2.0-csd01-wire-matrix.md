@@ -34,7 +34,7 @@ This matrix records implemented packet and session paths, not proof of full MQTT
 | GWINFO | 0x18 | MqttSn2GatewayCodec | MqttSn2GatewayCodec | Gateway address |
 | FORWARDER_ENCAPSULATION | 0xFC | MqttSn2EncapsulationCodec | MqttSn2EncapsulationCodec | Embedded frame validation |
 | CONNECTION_ENCAPSULATION | 0xFE | MqttSn2EncapsulationCodec | MqttSn2EncapsulationCodec | Embedded frame validation/allowlist |
-| PROTECTION_ENCAPSULATION | 0xFF | MqttSn2ProtectionCodec (envelope only) | MqttSn2ProtectionCodec (envelope only) | **Not integrated:** inbound authenticated verification/decryption, replay protection and key-provider policy are not implemented in the live protocol |
+| PROTECTION_ENCAPSULATION | 0xFF | MqttSn2ProtectionCodec + opt-in MqttSn2ProtectionVerifier | MqttSn2ProtectionCodec (envelope only) | HMAC-SHA-256/SHA3-256 inbound verification with monotonic replay checks is implemented behind an explicit key resolver; bidirectional protection, AEAD and durable replay counters remain unavailable |
 
 ## Version and integration boundary
 
@@ -53,13 +53,13 @@ This matrix records implemented packet and session paths, not proof of full MQTT
 
 ## Remaining scope and validation
 
-- MQTT-SN 2.0 Protection Encapsulation is **not available in the live session path**. The generic decoder intentionally rejects its packet identifier until an authentication provider, key management, replay counter enforcement and unwrapping have been integrated. Envelope parsing or Bouncy Castle reference-provider tests do not make the server compliant with protected messaging.
+- MQTT-SN 2.0 Protection Encapsulation now supports an **opt-in inbound HMAC verification boundary** (schemes 0x00/0x01), authenticates the entire prefix plus inner packet and rejects replay using per-sender monotonic counters. The endpoint must explicitly supply a trusted key resolver. **This is not a complete bidirectional protection implementation:** outgoing packets are not automatically encapsulated, AEAD schemes are not wired and counters are not durably persisted. Do not enable it as a production security profile or claim full protected-messaging conformance until those are resolved.
 - Session/predefined alias ownership, retention, malformed-response policy and a full line-by-line normative statement audit remain unverified. Do not claim complete CSD01 conformance.
 - `mqtt-sn-2-client` and optional `mqtt-sn-2-client-protection-bc` test artifacts use the **unreleased** `0.1.0-SNAPSHOT` coordinate. No `0.1.0` release has been made.
 - The user reported 88 MQTT-SN 2.0 tests passing in IntelliJ and subsequently confirmed SCRAM authentication success. These are user-reported local results.
 - The full Jenkins branch run [#171](https://jenkins.mapsmessaging.io/job/mapsmessaging-server-junit/171/) at revision `0b574404af5fefebd307f9ff1f27c402d160f7ee` completed **SUCCESS**: **7,812 total, 0 failed, 79 skipped**. This supersedes the outdated local socket restriction and no-Jenkins status recorded earlier.
 - Jenkins SonarCloud analysis was uploaded under the `development` branch identity. This is intentionally accepted for now and must not be presented as a distinct branch analysis.
-- The user explicitly deferred the 80% coverage gate. Coverage has **not** been signed off as meeting a threshold.
+- The user subsequently requested SonarCloud coverage to guide the remaining improvements. The accepted `development` branch analysis after Jenkins #171 reports **74.7% overall coverage, 78.2% line coverage and 66.4% branch coverage** for the server. Active `MqttSn2Protocol` is **60.5% overall coverage**; `MqttSn2Lifecycle` and `MqttSn2OutgoingDeliveryManager` are approximately 88.8% and 88.9%. Many obsolete 2.0 implementation classes have 0% coverage and must not be confused with the active protocol path. These metrics precede the latest protection and topic-alias changes.
 
 ## Block 3 conformance test trace
 
@@ -87,4 +87,4 @@ The target is at least 80% coverage of the active MQTT-SN v2 protocol and codecs
 
 **Full normative conformance: NOT SIGNED OFF.** Authenticated Protection Encapsulation, complete alias semantics and clause-level negative-behaviour verification still require explicit implementation or documented unsupported-feature policy.
 
-Coverage is deferred at the user's request. No merge, formal release or Jira Done transition has been authorised.
+Coverage metrics are available in SonarCloud and inform test prioritisation. No merge, formal release or Jira Done transition has been authorised.
