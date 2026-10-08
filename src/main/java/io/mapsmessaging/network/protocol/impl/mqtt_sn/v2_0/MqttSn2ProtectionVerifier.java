@@ -94,6 +94,65 @@ public final class MqttSn2ProtectionVerifier {
     return ByteBuffer.wrap(inner).asReadOnlyBuffer();
   }
 
+  /**
+   * Sign an outbound frame with the same CSD01 authentication-only HMAC format.
+   * The caller owns the sender identifier and a durable monotonic counter source.
+   * No counter is generated here, since silently resetting one on restart is unsafe.
+   */
+  public ByteBuffer protect(ByteBuffer packet, int scheme, byte[] senderIdentifier,
+      byte[] random, byte[] counter) throws IOException {
+    Objects.requireNonNull(packet, "packet");
+    if (scheme != 0 && scheme != 1) {
+      throw new IOException("Unsupported outbound HMAC scheme");
+    }
+    if (senderIdentifier == null || senderIdentifier.length != 8
+        || random == null || random.length != 4
+        || counter == null || (counter.length != 2 && counter.length != 4)) {
+      throw new IOException("Invalid outbound protection fields");
+    }
+    ByteBuffer innerBuffer = packet.asReadOnlyBuffer();
+    MqttSn2FrameCodec.Frame innerFrame = MqttSn2FrameCodec.decode(innerBuffer);
+    if (innerFrame.type() == MqttSn2PacketType.FORWARDER_ENCAPSULATION
+        || innerFrame.type() == MqttSn2PacketType.PROTECTION_ENCAPSULATION) {
+      throw new IOException("Disallowed protected inner packet type");
+    }
+    byte[] inner = new byte[innerBuffer.remaining()];
+    innerBuffer.get(inner);
+    byte[] key = keys.resolve(senderIdentifier.clone(), scheme);
+    if (key == null || key.length < 16) {
+      throw new IOException("Missing or invalid outbound sender key");
+    }
+    int countCode = counter.length == 2 ? 1 : 2;
+    int bodySize = 14 + counter.length + inner.length + 32;
+    int shortLength = bodySize + 2;
+    boolean extended = shortLength > 255;
+    int length = bodySize + (extended ? 4 : 2);
+    if (length > 0xffff) {
+      throw new IOException("Protected MQTT-SN packet exceeds maximum size");
+    }
+    ByteBuffer prefix = ByteBuffer.allocate(length - inner.length - 32);
+    if (extended) prefix.put((byte) 1).putShort((short) length);
+    else prefix.put((byte) length);
+    prefix.put((byte) 0xff).put((byte) (0x10 | countCode)).put((byte) scheme)
+        .put(senderIdentifier).put(random).put(counter);
+    if (prefix.hasRemaining()) {
+      throw new IOException("Invalid outbound protection prefix size");
+    }
+    byte[] tag;
+    try {
+      String algorithm = scheme == 0 ? "HmacSHA256" : "HmacSHA3-256";
+      Mac mac = Mac.getInstance(algorithm);
+      mac.init(new SecretKeySpec(key, algorithm));
+      mac.update(prefix.array());
+      tag = mac.doFinal(inner);
+    } catch (GeneralSecurityException e) {
+      throw new IOException("Unable to authenticate outbound MQTT-SN packet", e);
+    }
+    ByteBuffer output = ByteBuffer.allocate(length);
+    output.put(prefix.array()).put(inner).put(tag).flip();
+    return output.asReadOnlyBuffer();
+  }
+
   private static int tagLength(int scheme, int code) throws IOException {
     if (scheme != 0 && scheme != 1) {
       throw new IOException("Unsupported protection scheme");
