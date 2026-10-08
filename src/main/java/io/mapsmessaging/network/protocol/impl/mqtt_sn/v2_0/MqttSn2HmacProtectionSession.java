@@ -44,6 +44,10 @@ public final class MqttSn2HmacProtectionSession {
     this.scheme = scheme;
   }
 
+  public boolean hasDurableReplayStore() {
+    return verifier.hasDurableReplayStore();
+  }
+
   public ByteBuffer receive(ByteBuffer protectedFrame) throws IOException {
     return verifier.verify(protectedFrame);
   }
