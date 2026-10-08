@@ -30,6 +30,8 @@ class MqttSn12ConnectionlessPublishSpecificationTest {
 
   private static final String SPEC = "MQTT-SN Version 1.2";
   private static final String SOURCE = ProtocolRequirement.MQTT_SN_12_SOURCE;
+  private static final String V2_SOURCE =
+      "https://groups.oasis-open.org/discussion/mqtt-sn-20-draft-pdf-august-2026-uploaded-1";
 
   @Test
   @ProtocolRequirement(specification = SPEC, value = "Section 6.8 QoS -1: connectionless PUBLISH MAY use a predefined topic id", source = SOURCE)
@@ -121,7 +123,7 @@ class MqttSn12ConnectionlessPublishSpecificationTest {
   @Test
   @ProtocolRequirement(specification = "MQTT-SN 2.0 CSD01",
       value = "Sections 3.6 and 4.2.1 PUBWOS by Topic Name without a Virtual Connection",
-      source = SOURCE)
+      source = V2_SOURCE)
   void v2PubwosByNamePublishesWithoutCreatingLegacySession() throws Exception {
     Fixture fixture = fixture("", List.of());
     try (MockedStatic<SessionManager> sessions = mockStatic(SessionManager.class)) {
@@ -141,7 +143,7 @@ class MqttSn12ConnectionlessPublishSpecificationTest {
   @Test
   @ProtocolRequirement(specification = "MQTT-SN 2.0 CSD01",
       value = "Shared-version UDP dispatch rejects ambiguous unprotected 0x12 alias forms",
-      source = SOURCE)
+      source = V2_SOURCE)
   void v2PubwosPredefinedAliasDoesNotMasqueradeAsLegacySubscribe() throws Exception {
     Fixture fixture = fixture("", List.of(predefined(42, "pre/topic")));
     try (MockedStatic<SessionManager> sessions = mockStatic(SessionManager.class)) {
