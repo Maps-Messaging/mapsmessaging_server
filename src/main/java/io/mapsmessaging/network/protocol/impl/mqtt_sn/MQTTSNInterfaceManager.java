@@ -41,6 +41,8 @@ import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.packet.*;
 import io.mapsmessaging.network.protocol.Protocol;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v2_0.MqttSn2Protocol;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v2_0.MqttSn2HmacProtectionSession;
+import io.mapsmessaging.network.protocol.impl.mqtt_sn.v2_0.MqttSn2PersistentCounterStore;
+import io.mapsmessaging.network.protocol.impl.mqtt_sn.v2_0.MqttSn2ProtectionVerifier;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v2_0.packet.MqttSn2FrameCodec;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v2_0.packet.MqttSn2GatewayCodec;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v2_0.packet.MqttSn2PacketType;
@@ -53,6 +55,7 @@ import java.io.UncheckedIOException;
 import java.net.SocketAddress;
 import java.net.SocketException;
 import java.nio.ByteBuffer;
+import java.nio.file.Path;
 import java.nio.channels.SelectionKey;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
@@ -84,7 +87,20 @@ public class MQTTSNInterfaceManager implements SelectorCallback {
 
   /** Opt-in secured MQTT-SN 2.0 endpoint; requires durable counter source and key resolver. */
   public void configureProtection(MqttSn2HmacProtectionSession policy) {
-    protectionSession = java.util.Objects.requireNonNull(policy, "policy");
+    java.util.Objects.requireNonNull(policy, "policy");
+    if (!policy.hasDurableReplayStore()) {
+      throw new IllegalArgumentException("Secured MQTT-SN endpoint requires durable replay tracking");
+    }
+    protectionSession = policy;
+  }
+
+  /** Explicit HMAC protection profile with a persistent counter file and key provider. */
+  public void configureHmacProtection(MqttSn2ProtectionVerifier.KeyResolver keys,
+      Path counterFile, byte[] localSenderIdentifier, int scheme) {
+    MqttSn2PersistentCounterStore counters = new MqttSn2PersistentCounterStore(counterFile);
+    MqttSn2ProtectionVerifier verifier = new MqttSn2ProtectionVerifier(keys, counters);
+    configureProtection(new MqttSn2HmacProtectionSession(
+        verifier, counters, localSenderIdentifier, scheme));
   }
 
 
