@@ -142,7 +142,7 @@ class MqttSn12ConnectionlessPublishSpecificationTest {
 
   @Test
   @ProtocolRequirement(specification = "MQTT-SN 2.0 CSD01",
-      value = "Shared-version UDP dispatch rejects ambiguous unprotected 0x12 alias forms",
+      value = "CSD01 sections 2.1.3 and 3.6.1.2.1: shared-version UDP dispatch rejects ambiguous unprotected 0x12 alias forms",
       source = V2_SOURCE)
   void v2PubwosPredefinedAliasDoesNotMasqueradeAsLegacySubscribe() throws Exception {
     Fixture fixture = fixture("", List.of(predefined(42, "pre/topic")));
