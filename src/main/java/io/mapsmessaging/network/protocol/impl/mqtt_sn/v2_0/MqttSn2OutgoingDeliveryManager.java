@@ -126,8 +126,8 @@ public final class MqttSn2OutgoingDeliveryManager {
     inFlight.retries++;
     inFlight.lastSentAt = now;
     if (inFlight.stage == Stage.WAIT_PUBACK || inFlight.stage == Stage.WAIT_PUBREC) {
-      return MqttSn2PublishCodec.encode(new MqttSn2PublishCodec.Publish(true,
-          inFlight.delivery.qos(), false, inFlight.delivery.retain(), 3,
+      return MqttSn2PublishCodec.encode(new MqttSn2PublishCodec.Publish(false,
+          inFlight.delivery.qos(), true, inFlight.delivery.retain(), 3,
           inFlight.packetIdentifier, inFlight.delivery.topic(), 0, inFlight.delivery.payload()));
     }
     return duplicate(inFlight.lastFrame);
