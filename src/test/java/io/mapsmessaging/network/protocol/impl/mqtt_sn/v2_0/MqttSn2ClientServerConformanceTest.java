@@ -5,6 +5,7 @@
 package io.mapsmessaging.network.protocol.impl.mqtt_sn.v2_0;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import io.mapsmessaging.mqttsn.ConnectOptions;
@@ -85,7 +86,10 @@ class MqttSn2ClientServerConformanceTest extends BaseTestConfig {
       client.send(MqttSnCodec.encodeSubscribe(new SubscribeOptions(
           12, TopicRef.filter("mqttsn/block3/#"), 0, false,
           QoS.EXACTLY_ONCE, false)));
-      assertEquals(PacketType.SUBACK, receive(client).type());
+      DecodedPacket subAckPacket = receive(client);
+      assertEquals(PacketType.SUBACK, subAckPacket.type());
+      assertNull(MqttSnCodec.decodeSubAck(subAckPacket).topicAlias(),
+          "CSD01 4.7.2.2-3 wildcard subscription must not receive an alias");
 
       client.send(MqttSnCodec.encodePublish(new PublishOptions(
           QoS.AT_MOST_ONCE, false, false, 0, TopicRef.name("mqttsn/block3/loop"),
