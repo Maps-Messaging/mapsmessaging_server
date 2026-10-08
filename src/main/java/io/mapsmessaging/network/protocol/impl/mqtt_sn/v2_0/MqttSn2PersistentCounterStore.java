@@ -128,6 +128,13 @@ public final class MqttSn2PersistentCounterStore implements
       }
       try (FileChannel directory = FileChannel.open(parent, StandardOpenOption.READ)) {
         directory.force(true);
+      } catch (IOException unsupportedDirectorySync) {
+        // Windows does not expose directory handles via FileChannel. The
+        // replacement file was force-synced before its atomic rename.
+        if (!System.getProperty("os.name", "").toLowerCase(java.util.Locale.ROOT)
+            .contains("windows")) {
+          throw unsupportedDirectorySync;
+        }
       }
     } finally {
       Files.deleteIfExists(temp);
