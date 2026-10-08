@@ -350,6 +350,13 @@ public final class MqttSn2Protocol extends Protocol {
   }
 
   private void register(MqttSn2RegisterCodec.Register request) throws IOException {
+    // CSD01 4.7.2.2-4/-5: session aliases cannot shadow predefined mappings.
+    int predefined = manager.resolvePredefinedAlias(address, request.topicName());
+    if (predefined > 0) {
+      send(MqttSn2RegAckCodec.encode(new MqttSn2RegAckCodec.RegAck(
+          1, predefined, request.packetIdentifier(), 0x1A)), null);
+      return;
+    }
     int alias = aliases.register(request.topicName());
     send(MqttSn2RegAckCodec.encode(new MqttSn2RegAckCodec.RegAck(
         0, alias, request.packetIdentifier(), 0)), null);
