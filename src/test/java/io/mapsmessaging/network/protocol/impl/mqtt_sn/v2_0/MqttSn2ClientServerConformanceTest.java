@@ -133,7 +133,9 @@ class MqttSn2ClientServerConformanceTest extends BaseTestConfig {
       client.send(MqttSnCodec.encodePublish(new PublishOptions(
           QoS.AT_MOST_ONCE, false, false, 0, TopicRef.name(topic), new byte[]{7})));
       assertThrows(SocketTimeoutException.class, () ->
-          client.receive(Duration.ofMillis(500), ignored -> {}),
+          client.receive(Duration.ofMillis(500), packet -> fail(
+              "CSD01 No Local unexpectedly delivered " + packet.type()
+                  + " with body " + packet.body())),
           "CSD01 No Local must suppress delivery to the publishing client");
     }
   }
