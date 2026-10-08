@@ -34,7 +34,7 @@ This matrix records implemented packet and session paths, not proof of full MQTT
 | GWINFO | 0x18 | MqttSn2GatewayCodec | MqttSn2GatewayCodec | Gateway address |
 | FORWARDER_ENCAPSULATION | 0xFC | MqttSn2EncapsulationCodec | MqttSn2EncapsulationCodec | Embedded frame validation |
 | CONNECTION_ENCAPSULATION | 0xFE | MqttSn2EncapsulationCodec | MqttSn2EncapsulationCodec | Embedded frame validation/allowlist |
-| PROTECTION_ENCAPSULATION | 0xFF | MqttSn2ProtectionCodec + opt-in MqttSn2ProtectionVerifier | MqttSn2ProtectionCodec (envelope only) | HMAC-SHA-256/SHA3-256 inbound verification and signed outbound frames are implemented behind an opt-in endpoint policy; durable key/counter provisioning and AEAD providers remain unconfigured |
+| PROTECTION_ENCAPSULATION | 0xFF | MqttSn2ProtectionCodec + opt-in MqttSn2ProtectionVerifier | MqttSn2ProtectionCodec (envelope only) | HMAC-SHA-256/SHA3-256 authenticated ingress/egress, replay checks and file-backed counter persistence; endpoint must explicitly provision keys/counter path, AEAD not integrated |
 
 ## Version and integration boundary
 
@@ -53,13 +53,27 @@ This matrix records implemented packet and session paths, not proof of full MQTT
 
 ## Remaining scope and validation
 
-- MQTT-SN 2.0 Protection Encapsulation supports **opt-in bidirectional HMAC** (schemes 0x00/0x01), authenticating the exact prefix and inner packet, rejecting inbound replay and protecting outbound frames. The endpoint must explicitly supply a key resolver and a **durable, monotonic outbound counter source**. A secured endpoint fails closed on plaintext input and a signing failure. **Production activation is not complete:** no server configuration maps key identities to endpoint policies, no durable inbound replay store is yet wired, and AEAD providers are not integrated. The older UDP HMAC wrapper is not reused. Do not claim full protected-messaging conformance until these provisions are complete.
-- Active topic alias handling now separates session and predefined namespaces, avoids session aliases for wildcard SUBSCRIBE filters (CSD01 4.7.2.2-3), prefers predefined aliases in SUBACK and clears session aliases on SLEEPREQ when Retain Topic Aliases is zero. **Session persistence across reconnection, REGISTER conflict reason codes and the remaining normative statement audit still require verification.** Do not claim complete CSD01 conformance.
+- MQTT-SN 2.0 Protection Encapsulation supports **opt-in bidirectional HMAC** (schemes 0x00/0x01), authenticating the exact prefix and inner packet, rejecting replay and protecting outbound responses. `MqttSn2PersistentCounterStore` persists inbound and outbound counters with an OS lock and atomic replacement; `MQTTSNInterfaceManager.configureHmacProtection` requires a sender key resolver, local sender ID, scheme and a caller-chosen counter path. Production activation still requires explicit configuration/key-provisioning integration and interoperability validation; AEAD schemes are not yet implemented in the server. The older UDP HMAC wrapper is deliberately separate.
+- Active topic alias handling separates session and predefined namespaces, avoids aliases for wildcard SUBSCRIBE filters (CSD01 4.7.2.2-3), returns `0x1A` Topic Alias Exists on predefined REGISTER collision, and clears session aliases on SLEEPREQ when Retain Topic Aliases is zero. SUBACK reports the granted QoS and maps No Local / Retain Handling / Retain As Published into broker subscriptions. **Alias persistence across session reconnection and a full normative statement audit still require verification.** Do not claim complete CSD01 conformance.
 - `mqtt-sn-2-client` and optional `mqtt-sn-2-client-protection-bc` test artifacts use the **unreleased** `0.1.0-SNAPSHOT` coordinate. No `0.1.0` release has been made.
-- The user reported 88 MQTT-SN 2.0 tests passing in IntelliJ and subsequently confirmed SCRAM authentication success. These are user-reported local results. Further HMAC, alias and negative-path tests were committed later and must be rerun.
+- The user reported 88 MQTT-SN 2.0 tests passing in IntelliJ and subsequently confirmed SCRAM authentication success. These are user-reported local results. More HMAC, persistence, alias, SUBACK and connectionless-publishing tests were committed after that run and require revalidation.
 - The full Jenkins branch run [#171](https://jenkins.mapsmessaging.io/job/mapsmessaging-server-junit/171/) at revision `0b574404af5fefebd307f9ff1f27c402d160f7ee` completed **SUCCESS**: **7,812 total, 0 failed, 79 skipped**. This supersedes the outdated local socket restriction and no-Jenkins status recorded earlier.
 - Jenkins SonarCloud analysis was uploaded under the `development` branch identity. This is intentionally accepted for now and must not be presented as a distinct branch analysis.
 - The user subsequently requested SonarCloud coverage to guide the remaining improvements. The accepted `development` branch analysis after Jenkins #171 reports **74.7% overall coverage, 78.2% line coverage and 66.4% branch coverage** for the server. Active `MqttSn2Protocol` is **60.5% overall coverage**; `MqttSn2Lifecycle` and `MqttSn2OutgoingDeliveryManager` are approximately 88.8% and 88.9%. Many obsolete 2.0 implementation classes have 0% coverage and must not be confused with the active protocol path. These metrics precede the latest protection and topic-alias changes.
+
+## Sessionless PUBWOS on a mixed-version UDP listener
+
+CSD01 §3.6 permits PUBWOS without a Virtual Connection. The server now handles
+an unprotected PUBWOS by explicit Topic Name as QoS 0, without treating it as
+MQTT-SN 1.2 traffic. **Unprotected predefined-alias PUBWOS is deliberately
+rejected on the dual-version UDP port**, because its type `0x12` collides
+with MQTT-SN 1.2 SUBSCRIBE and some frames are ambiguous. When authenticated
+Protection Encapsulation is configured, the outer 2.0 frame removes that
+ambiguity and the predefined alias can be safely decoded after authentication.
+
+This mixed-version limitation must be documented for deployments requiring
+unprotected sessionless predefined-alias PUBWOS: use a version-specific
+endpoint strategy before declaring that particular profile supported.
 
 ## Block 3 conformance test trace
 
