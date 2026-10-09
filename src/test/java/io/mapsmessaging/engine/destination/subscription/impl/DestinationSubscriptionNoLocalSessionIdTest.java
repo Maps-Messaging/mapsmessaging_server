@@ -21,6 +21,7 @@ import io.mapsmessaging.engine.destination.subscription.state.MessageStateManage
 import io.mapsmessaging.engine.destination.subscription.transaction.AcknowledgementController;
 import io.mapsmessaging.engine.session.SessionImpl;
 import io.mapsmessaging.utilities.threads.tasks.ThreadLocalContext;
+import java.util.HashMap;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
 import org.mockito.MockedStatic;
@@ -37,7 +38,7 @@ class DestinationSubscriptionNoLocalSessionIdTest {
         mock(DestinationImpl.class), context, mock(SessionImpl.class), sessionId,
         mock(AcknowledgementController.class), state, false);
     Message message = new MessageBuilder()
-        .setMeta(Map.of("sessionId", sessionId, "protocol", "MQTT-SN", "version", "2.0"))
+        .setMeta(new HashMap<>(Map.of("sessionId", sessionId, "protocol", "MQTT-SN", "version", "2.0")))
         .setOpaqueData(new byte[] {7}).build();
 
     try (MockedStatic<ThreadLocalContext> ignored = mockStatic(ThreadLocalContext.class)) {
@@ -61,7 +62,7 @@ class DestinationSubscriptionNoLocalSessionIdTest {
         mock(AcknowledgementController.class), state, false));
     doReturn(true).when(subscription).schedule();
     Message message = new MessageBuilder()
-        .setMeta(Map.of("sessionId", publisherId, "protocol", "MQTT-SN", "version", "2.0"))
+        .setMeta(new HashMap<>(Map.of("sessionId", publisherId, "protocol", "MQTT-SN", "version", "2.0")))
         .setOpaqueData(new byte[] {8}).build();
 
     try (MockedStatic<ThreadLocalContext> ignored = mockStatic(ThreadLocalContext.class)) {
