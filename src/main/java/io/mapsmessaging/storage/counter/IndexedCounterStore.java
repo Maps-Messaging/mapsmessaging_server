@@ -192,15 +192,23 @@ public final class IndexedCounterStore implements CounterStore {
           || offset + PAIR_SIZE > data.size() || offsets.putIfAbsent(key, offset) != null) {
         throw new IOException("Invalid or duplicate counter index entry");
       }
-      readCurrentOn(data, offset);
+      // Reject corruption at startup rather than waiting for the first packet.\n      validatePair(data, offset);
       position += entry.capacity();
     }
   }
 
-  private static void readCurrentOn(FileChannel data, long offset) throws IOException {
-    // Validate record readability during recovery; full checks occur before use.
-    ByteBuffer record = ByteBuffer.allocate(PAIR_SIZE);
-    readFully(data, record, offset);
+  private static void validatePair(FileChannel data, long offset) throws IOException {
+    boolean valid = false;
+    for (int i = 0; i < 2; i++) {
+      ByteBuffer buffer = ByteBuffer.allocate(SLOT_SIZE).order(ByteOrder.BIG_ENDIAN);
+      readFully(data, buffer, offset + (long) i * SLOT_SIZE);
+      byte[] bytes = buffer.array();
+      if (buffer.getInt(16) == checksum(bytes, 0, 16)
+          && buffer.getLong(0) >= 0 && buffer.getLong(8) >= 0) {
+        valid = true;
+      }
+    }
+    if (!valid) throw new IOException("Both counter slots are invalid during recovery");
   }
 
   private static String validateKey(String key) {
