@@ -5,6 +5,8 @@
 package io.mapsmessaging.network.protocol.impl.mqtt_sn.v2_0;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -25,6 +27,7 @@ import io.mapsmessaging.network.protocol.conformance.common.CloseableMqtt5Client
 import io.mapsmessaging.test.BaseTestConfig;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v2_0.packet.MqttSn2ConnectCodec;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v2_0.packet.MqttSn2FrameCodec;
+import io.mapsmessaging.network.protocol.impl.mqtt_sn.v2_0.packet.MqttSn2SubscriptionCodec;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v2_0.packet.MqttSn2PacketType;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v2_0.packet.MqttSn2SleepCodec;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v2_0.packet.MqttSn2ControlCodec;
@@ -129,8 +132,15 @@ class MqttSn2ClientServerConformanceTest extends BaseTestConfig {
     String topic = "mqttsn/block3/no-local/" + UUID.randomUUID();
     try (UdpMqttSnClient subscriber = client(clientId("no-local-subscriber"), 74, true);
          UdpMqttSnClient publisher = client(clientId("no-local-publisher"), 76, true)) {
-      subscriber.send(MqttSnCodec.encodeSubscribe(new SubscribeOptions(
-          75, TopicRef.filter(topic), 0, true, QoS.AT_MOST_ONCE, false)));
+      // SubscribeOptions orders retainAsPublished before noLocal.
+      // Verify the actual wire request independently of the client-side API.
+      byte[] noLocalSubscribe = MqttSnCodec.encodeSubscribe(new SubscribeOptions(
+          75, TopicRef.filter(topic), 0, false, QoS.AT_MOST_ONCE, true));
+      var decodedSubscribe = MqttSn2SubscriptionCodec.decode(
+          MqttSn2FrameCodec.decode(ByteBuffer.wrap(noLocalSubscribe)));
+      assertTrue(decodedSubscribe.noLocal(), "SUBSCRIBE must enable No Local on the wire");
+      assertFalse(decodedSubscribe.retainAsPublished(), "Retain As Published is independent of No Local");
+      subscriber.send(noLocalSubscribe);
       assertEquals(PacketType.SUBACK, receive(subscriber).type());
 
       subscriber.send(MqttSnCodec.encodePublish(new PublishOptions(
