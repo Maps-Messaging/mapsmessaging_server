@@ -7,7 +7,6 @@ package io.mapsmessaging.network.protocol.impl.mqtt_sn.v2_0;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.fail;
 
 import io.mapsmessaging.mqttsn.ConnectOptions;
 import io.mapsmessaging.mqttsn.DecodedPacket;
@@ -124,20 +123,25 @@ class MqttSn2ClientServerConformanceTest extends BaseTestConfig {
   }
 
   @Test
-  void noLocalSubscriptionDoesNotEchoOwnPublication() throws Exception {
-    // CSD01 SUBSCRIBE No Local option, carried into broker subscription context.
+  void noLocalSuppressesOwnPublicationButReceivesFromAnotherSession() throws Exception {
+    // CSD01 SUBSCRIBE No Local: a subscriber must not receive its own publication,
+    // but must receive an otherwise matching publication from another session.
     String topic = "mqttsn/block3/no-local/" + UUID.randomUUID();
-    try (UdpMqttSnClient client = client(clientId("no-local"), 74, true)) {
-      client.send(MqttSnCodec.encodeSubscribe(new SubscribeOptions(
+    try (UdpMqttSnClient subscriber = client(clientId("no-local-subscriber"), 74, true);
+         UdpMqttSnClient publisher = client(clientId("no-local-publisher"), 76, true)) {
+      subscriber.send(MqttSnCodec.encodeSubscribe(new SubscribeOptions(
           75, TopicRef.filter(topic), 0, true, QoS.AT_MOST_ONCE, false)));
-      assertEquals(PacketType.SUBACK, receive(client).type());
-      client.send(MqttSnCodec.encodePublish(new PublishOptions(
-          QoS.AT_MOST_ONCE, false, false, 0, TopicRef.name(topic), new byte[]{7})));
-      assertThrows(SocketTimeoutException.class, () ->
-          client.receive(Duration.ofMillis(500), packet -> fail(
-              "CSD01 No Local unexpectedly delivered " + packet.type()
-                  + " with body " + packet.body())),
-          "CSD01 No Local must suppress delivery to the publishing client");
+      assertEquals(PacketType.SUBACK, receive(subscriber).type());
+
+      subscriber.send(MqttSnCodec.encodePublish(new PublishOptions(
+          QoS.AT_MOST_ONCE, false, false, 0, TopicRef.name(topic), new byte[] {7})));
+      publisher.send(MqttSnCodec.encodePublish(new PublishOptions(
+          QoS.AT_MOST_ONCE, false, false, 0, TopicRef.name(topic), new byte[] {8})));
+
+      DecodedPacket delivered = receiveType(subscriber, PacketType.PUBLISH);
+      assertEquals(topic, MqttSnCodec.decodePublish(delivered).topic().name());
+      assertEquals(8, Byte.toUnsignedInt(MqttSnCodec.decodePublish(delivered).payload()[0]),
+          "No Local must suppress the earlier self-publication and deliver the other session's payload");
     }
   }
 
