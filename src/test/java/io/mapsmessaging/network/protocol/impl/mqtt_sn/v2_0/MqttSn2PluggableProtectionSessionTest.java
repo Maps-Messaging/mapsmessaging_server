@@ -73,6 +73,18 @@ class MqttSn2PluggableProtectionSessionTest {
     }
   }
 
+  @Test void badAeadTruncatedTagFlagIsRejectedEvenWhenTagLengthMatches() throws Exception {
+    try (MqttSn2IndexedCounterStore store =
+        new MqttSn2IndexedCounterStore(root.resolve("illegal-tag-code"))) {
+      MqttSn2ProtectionSession policy = policy(store, 0x48);
+      byte[] wire = bytes(policy.send(MqttSn2ControlCodec.encodePingResponse(9, null)));
+      int headerLength = (wire[0] & 0xff) == 1 ? 3 : 1;
+      // 0x8 means a truncated authentication-only tag. AEAD forbids this.
+      wire[headerLength + 1] = (byte) ((wire[headerLength + 1] & 0x0f) | 0x80);
+      assertThrows(IOException.class, () -> policy.receive(ByteBuffer.wrap(wire)));
+    }
+  }
+
   @Test void sadDisabledInboundSchemeFailsWithoutFallback() throws Exception {
     try (MqttSn2IndexedCounterStore first = new MqttSn2IndexedCounterStore(root.resolve("tx"))) {
       MqttSn2ProtectionSession signer = policy(first, 0x46);
