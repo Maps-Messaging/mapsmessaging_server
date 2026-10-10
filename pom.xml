@@ -790,6 +790,13 @@
       <version>${maps.auth.version}</version>
     </dependency>
 
+    <!-- MQTT-SN 2.0 AES-CCM provider (explicit dependency, not transitive Auth leakage) -->
+    <dependency>
+      <groupId>org.bouncycastle</groupId>
+      <artifactId>bcprov-jdk18on</artifactId>
+      <version>1.84</version>
+    </dependency>
+
     <!-- Consul client API -->
     <dependency>
       <groupId>com.ecwid.consul</groupId>
