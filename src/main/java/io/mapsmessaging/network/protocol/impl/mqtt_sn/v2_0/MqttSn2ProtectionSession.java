@@ -151,7 +151,6 @@ public final class MqttSn2ProtectionSession implements MqttSn2ProtectionPolicy {
     // Truncated authentication-only tags require a provider policy; currently
     // unsupported rather than silently misinterpreted.
     throw new IOException("Unsupported authentication-only tag-length code");
-    throw new IOException("Invalid protection authentication-tag length");
   }
 
   private static byte[] nonce(int scheme, byte[] prefix) {
