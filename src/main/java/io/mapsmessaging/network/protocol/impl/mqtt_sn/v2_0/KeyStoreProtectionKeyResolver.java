@@ -43,8 +43,8 @@ public final class KeyStoreProtectionKeyResolver implements MqttSn2ProtectionVer
     this.entryPassword = entryPassword.clone();
   }
 
-  @Override
-  public byte[] resolve(byte[] senderIdentifier, int scheme) throws IOException {
+  /** Return the JCA key directly for AEAD providers and HSM-capable backends. */
+  public SecretKey resolveSecretKey(byte[] senderIdentifier, int scheme) throws IOException {
     if (senderIdentifier == null || senderIdentifier.length != 8
         || scheme < 0 || scheme > 255) throw new IOException("Invalid sender or scheme");
     String identity = HexFormat.of().formatHex(senderIdentifier) + ":" + scheme;
@@ -52,13 +52,26 @@ public final class KeyStoreProtectionKeyResolver implements MqttSn2ProtectionVer
     if (alias == null || alias.isBlank()) throw new IOException("Unknown protection security association");
     try {
       SecretKey key = secretKeys.getSecretKey(alias, entryPassword);
-      byte[] encoded = key.getEncoded();
-      if (encoded == null || encoded.length == 0) {
-        throw new IOException("Non-exportable key not supported by current HMAC byte-array API");
-      }
-      return encoded;
+      if (key == null) throw new IOException("Secret key lookup returned null");
+      return key;
     } catch (GeneralSecurityException failure) {
       throw new IOException("Unable to resolve protection key", failure);
     }
+  }
+
+  /** Legacy HMAC verifier adapter until the provider API consumes SecretKey. */
+  @Override
+  public byte[] resolve(byte[] senderIdentifier, int scheme) throws IOException {
+    if (scheme != 0 && scheme != 1) throw new IOException("HMAC resolver accepts schemes 0 and 1");
+    SecretKey key = resolveSecretKey(senderIdentifier, scheme);
+    String expected = scheme == 0 ? "HmacSHA256" : "HmacSHA3-256";
+    if (!key.getAlgorithm().equalsIgnoreCase(expected)) {
+      throw new IOException("Key algorithm does not match selected HMAC scheme");
+    }
+    byte[] encoded = key.getEncoded();
+    if (encoded == null || encoded.length < 16) {
+      throw new IOException("Missing or non-exportable HMAC key material");
+    }
+    return encoded;
   }
 }
