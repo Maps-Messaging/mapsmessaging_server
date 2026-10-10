@@ -356,6 +356,44 @@ class MqttSn2ClientServerConformanceTest extends BaseTestConfig {
   }
 
   @Test
+  void sessionlessPredefinedAliasPubwosReachesSubscriberWithoutAck() throws Exception {
+    // CSD01 4.3.1 and 4.7.2.1: a predefined alias is valid without a
+    // virtual connection. MQTT-SN 1.2 SUBSCRIBE is routed through its
+    // established session before this unconnected PUBWOS path.
+    List<String> received = new CopyOnWriteArrayList<>();
+    try (CloseableMqtt311Client subscriber = new CloseableMqtt311Client(
+            "tcp://localhost:1883", "msg324-pubwos-alias-" + UUID.randomUUID());
+         DatagramSocket sender = new DatagramSocket()) {
+      MqttConnectOptions options = new MqttConnectOptions();
+      options.setMqttVersion(MqttConnectOptions.MQTT_VERSION_3_1_1);
+      options.setConnectionTimeout(5);
+      subscriber.connect(options);
+      subscriber.setCallback(new org.eclipse.paho.client.mqttv3.MqttCallback() {
+        @Override public void connectionLost(Throwable failure) { }
+        @Override public void messageArrived(String name,
+            org.eclipse.paho.client.mqttv3.MqttMessage message) {
+          received.add(new String(message.getPayload(), java.nio.charset.StandardCharsets.UTF_8));
+        }
+        @Override public void deliveryComplete(
+            org.eclipse.paho.client.mqttv3.IMqttDeliveryToken token) { }
+      });
+      subscriber.subscribe("predefined/topic", 0);
+      var publication = new io.mapsmessaging.network.protocol.impl.mqtt_sn.v2_0.packet.MqttSn2PublishCodec.Publish(
+          true, 0, false, false, 1, 0, null, 1,
+          "via-alias".getBytes(java.nio.charset.StandardCharsets.UTF_8));
+      byte[] wire = bytes(io.mapsmessaging.network.protocol.impl.mqtt_sn.v2_0.packet.MqttSn2PublishCodec.encode(publication));
+      sender.setSoTimeout(500);
+      sender.send(new DatagramPacket(wire, wire.length,
+          new InetSocketAddress("127.0.0.1", 1884)));
+      WaitForState.waitFor(5, TimeUnit.SECONDS, () -> received.size() == 1);
+      assertEquals(List.of("via-alias"), received);
+      assertThrows(SocketTimeoutException.class,
+          () -> sender.receive(new DatagramPacket(new byte[256], 256)),
+          "PUBWOS must not send an acknowledgement");
+    }
+  }
+
+  @Test
   void qos0PublishDoesNotWaitForAnAcknowledgement() throws Exception {
     // CSD01 MQTT-SN-4.3.2-1..3: QoS 0 PUBLISH carries no Packet Identifier.
     try (UdpMqttSnClient client = client(clientId("qos0"), 31, true)) {
