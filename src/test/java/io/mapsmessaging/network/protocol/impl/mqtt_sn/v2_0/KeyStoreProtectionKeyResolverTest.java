@@ -66,6 +66,15 @@ class KeyStoreProtectionKeyResolverTest {
     assertThrows(IOException.class, () -> resolver.resolve(SENDER, 0));
   }
 
+  @Test void badAlgorithmCannotBeUsedAsHmacKey() throws Exception {
+    createKey("aes-only", "AES");
+    KeyStoreProtectionKeyResolver resolver = new KeyStoreProtectionKeyResolver(
+        configuration(), Map.of("0102030405060708:0", "aes-only"), PASSWORD);
+    assertEquals("AES", resolver.resolveSecretKey(SENDER, 0).getAlgorithm());
+    assertThrows(IOException.class, () -> resolver.resolve(SENDER, 0),
+        "AES key must not be silently reinterpreted as an HMAC key");
+  }
+
   @Test void murphyMissingAliasFailsClosed() throws Exception {
     createKey("device-key", "HmacSHA256");
     KeyStoreProtectionKeyResolver resolver = new KeyStoreProtectionKeyResolver(
