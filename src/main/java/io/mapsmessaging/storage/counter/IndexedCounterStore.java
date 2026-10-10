@@ -9,6 +9,7 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.channels.FileChannel;
 import java.nio.channels.FileLock;
+import java.nio.channels.OverlappingFileLockException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
@@ -79,6 +80,9 @@ public final class IndexedCounterStore implements CounterStore {
       if (openedValues != null) openedValues.close();
       if (acquired != null) acquired.close();
       ownershipChannel.close();
+      if (failure instanceof OverlappingFileLockException) {
+        throw new IOException("Counter store already has a writer", failure);
+      }
       throw failure;
     }
   }
