@@ -49,7 +49,20 @@ class MqttSn2IndexedCounterStoreTest {
       assertEquals(2L, unsignedCounter(store.nextCounter()));
     }
     try (MqttSn2IndexedCounterStore store = new MqttSn2IndexedCounterStore(storePath())) {
-      assertEquals(3L, unsignedCounter(store.nextCounter()));
+      assertEquals(1025L, unsignedCounter(store.nextCounter()), "Unused reserved counters must not be reused");
+    }
+  }
+
+  @Test
+  void happyRangeRolloverIsContiguousWhileRunning() throws Exception {
+    try (MqttSn2IndexedCounterStore store = new MqttSn2IndexedCounterStore(storePath())) {
+      for (int i = 1; i <= 2050; i++) {
+        assertEquals(i, unsignedCounter(store.nextCounter()), "Counter gap during live range rollover");
+      }
+    }
+    try (MqttSn2IndexedCounterStore restarted = new MqttSn2IndexedCounterStore(storePath())) {
+      assertEquals(3073L, unsignedCounter(restarted.nextCounter()),
+          "Restart skips remaining reserved range after two rollovers");
     }
   }
 
