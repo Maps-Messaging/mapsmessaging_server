@@ -105,6 +105,20 @@ class MqttSn2LiveUdpClientInteropTest extends BaseMqttSnConfig {
   }
 
   @Test
+  void cleanStartClientReconnectsWithSameIdentifierUsingNewUdpSocket() throws Exception {
+    String identity = "v2-restart-" + UUID.randomUUID();
+    try (UdpMqttSnClient first = new UdpMqttSnClient(MAPS)) {
+      connect(first, identity);
+      first.send(MqttSnCodec.encodeDisconnect(new DisconnectOptions(null, null, null, "")));
+    }
+    try (UdpMqttSnClient second = new UdpMqttSnClient(MAPS)) {
+      connect(second, identity);
+      second.send(MqttSnCodec.encodePingReq(14));
+      assertEquals(PacketType.PINGRESP, receive(second).type());
+    }
+  }
+
+  @Test
   void qosTwoCompletesFourStepHandshakeAcrossActualUdpListener() throws Exception {
     String topic = "v2/interop/qos2/" + UUID.randomUUID();
     byte[] payload = ("qos2-" + UUID.randomUUID()).getBytes(StandardCharsets.UTF_8);
