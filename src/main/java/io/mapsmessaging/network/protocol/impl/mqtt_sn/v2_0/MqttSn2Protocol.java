@@ -285,6 +285,8 @@ public final class MqttSn2Protocol extends Protocol {
           SessionManager.getInstance().close(created, true);
           return;
         }
+        // Restore persistent session mappings before the CONNACK permits packets.
+        aliases.attach(created.getOrCreateTopicAliasRegistry(65535));
         created.login();
         ByteBuffer response = MqttSn2ConnAckCodec.encode(new MqttSn2ConnAckCodec.ConnAck(
             created.isRestored(), request.packetIdentifier(), 0, request.sessionExpirySeconds(), null,
@@ -631,7 +633,7 @@ public final class MqttSn2Protocol extends Protocol {
     if (closed) return;
     closed = true;
     lifecycle.close();
-    aliases.clear();
+    // Disconnect must not destroy aliases belonging to a persistent session.
     if (retryTask != null) retryTask.cancel(false);
     if (sleepTask != null) sleepTask.cancel(false);
     if (sasl != null) sasl.close();
