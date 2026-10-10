@@ -110,15 +110,26 @@ class JmsFullConformanceTest extends JmsConformanceSupport {
       }
 
       connection.start();
-      try (QueueBrowser browser = session.createBrowser(queue)) {
-        Enumeration<?> enumeration = browser.getEnumeration();
-        int browsed = 0;
-        while (enumeration.hasMoreElements()) {
-          assertNotNull(enumeration.nextElement());
-          browsed++;
+      // Browser enumeration may snapshot the queue before asynchronous delivery
+      // has reached the broker. Poll fresh browsers until all sent messages
+      // are visible, without weakening the strict conformance assertion.
+      int browsed = 0;
+      long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(5);
+      do {
+        try (QueueBrowser browser = session.createBrowser(queue)) {
+          Enumeration<?> enumeration = browser.getEnumeration();
+          browsed = 0;
+          while (enumeration.hasMoreElements()) {
+            assertNotNull(enumeration.nextElement());
+            browsed++;
+          }
         }
-        assertEquals(3, browsed);
-      }
+        if (browsed == 3 || System.nanoTime() >= deadline) {
+          break;
+        }
+        Thread.sleep(50);
+      } while (true);
+      assertEquals(3, browsed, "Browser must observe all three queued messages without consuming them");
 
       try (MessageConsumer consumer = session.createConsumer(queue)) {
         for (int i = 0; i < 3; i++) {
