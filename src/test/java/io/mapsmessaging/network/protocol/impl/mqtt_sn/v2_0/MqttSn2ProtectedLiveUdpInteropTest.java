@@ -139,6 +139,20 @@ class MqttSn2ProtectedLiveUdpInteropTest extends BaseTestConfig {
       // Plaintext traffic must also be rejected on this protected session.
       send(client, remote, MqttSnCodec.encodePingReq(3));
       assertThrows(SocketTimeoutException.class, () -> receive(client));
+      // Cryptographically valid frames from unknown senders must not be accepted.
+      var unknownSender = new ProtectionEnvelope(scheme, 1, new byte[8],
+          new byte[]{7, 8, 9, 10}, new byte[0],
+          ByteBuffer.allocate(4).putInt(6).array(), MqttSnCodec.encodePingReq(6));
+      send(client, remote, ProtectionCodec.encode(unknownSender, provider));
+      assertThrows(SocketTimeoutException.class, () -> receive(client));
+
+      // The right sender identity with a different symmetric key also fails.
+      byte[] wrongMaterial = material.clone();
+      wrongMaterial[0] ^= 0x7f;
+      var wrongKeyProvider = new BouncyCastleProtectionProvider(ctx -> wrongMaterial);
+      send(client, remote, wrap(wrongKeyProvider, scheme, 7, MqttSnCodec.encodePingReq(7)));
+      assertThrows(SocketTimeoutException.class, () -> receive(client));
+
       // Corrupt ciphertext/tag must never return an authenticated response.
       byte[] corrupt = wrap(provider, scheme, 5, MqttSnCodec.encodePingReq(4));
       corrupt[corrupt.length - 1] ^= 1;
