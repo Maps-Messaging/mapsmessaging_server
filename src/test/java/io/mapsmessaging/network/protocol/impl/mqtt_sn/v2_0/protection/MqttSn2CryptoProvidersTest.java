@@ -18,21 +18,23 @@ class MqttSn2CryptoProvidersTest {
 
   @Test void goodServiceLoaderDiscoversHmacAndAead() {
     MqttSn2CryptoProviders registry = new MqttSn2CryptoProviders();
-    for (int scheme : new int[] {0, 1, 0x46, 0x47, 0x48, 0x49}) {
+    for (int scheme : new int[] {0, 1, 0x40, 0x41, 0x42, 0x43, 0x44, 0x45, 0x46, 0x47, 0x48, 0x49}) {
       assertTrue(registry.require(scheme).supportedSchemes().contains(scheme));
     }
   }
 
   @Test void goodAeadRoundTripsEverySupportedKeySize() throws Exception {
     MqttSn2CryptoProviders registry = new MqttSn2CryptoProviders();
-    for (int scheme : new int[] {0x46, 0x47, 0x48, 0x49}) {
-      int length = scheme == 0x49 ? 32 : 16 + 8 * (scheme - 0x46);
+    for (int scheme : new int[] {0x40, 0x41, 0x42, 0x43, 0x44, 0x45, 0x46, 0x47, 0x48, 0x49}) {
+      int length = scheme == 0x49 ? 32 : scheme < 0x46
+          ? 16 + 8 * ((scheme - 0x40) % 3) : 16 + 8 * (scheme - 0x46);
       var key = new SecretKeySpec(new byte[length], scheme == 0x49 ? "ChaCha20" : "AES");
       var provider = registry.require(scheme);
-      var protectedValue = provider.protect(scheme, key, NONCE, AAD, MESSAGE);
+      var protectedValue = provider.protect(scheme, key,
+          scheme < 0x46 ? new byte[13] : NONCE, AAD, MESSAGE);
       assertFalse(java.util.Arrays.equals(MESSAGE, protectedValue.protectedBytes()));
-      assertEquals(16, protectedValue.tag().length);
-      assertArrayEquals(MESSAGE, provider.unprotect(scheme, key, NONCE, AAD, protectedValue));
+      assertEquals(scheme < 0x43 ? 8 : 16, protectedValue.tag().length);
+      assertArrayEquals(MESSAGE, provider.unprotect(scheme, key, scheme < 0x46 ? new byte[13] : NONCE, AAD, protectedValue));
     }
   }
 
