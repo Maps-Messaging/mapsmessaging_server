@@ -80,7 +80,7 @@ class MqttSn2ProtectedLiveUdpInteropTest extends BaseTestConfig {
                 "passphrase", new String(STORE_PASS))),
             "senderAliases", new ConfigurationProperties(Map.of(
                 HexFormat.of().formatHex(CLIENT) + ":" + scheme, "client-key",
-                HexFormat.of().formatHex(GATEWAY) + ":" + scheme, "gateway-key")))));
+                HexFormat.of().formatHex(GATEWAY) + ":" + scheme, "gateway-key"))))));
     var protocolConfig = new MqttSnConfig(config, () -> ENTRY_PASS.clone());
     EndPointServerConfigDTO endpoint = new EndPointServerConfigDTO();
     endpoint.setName("mqtt-sn-secure-test-" + scheme);
