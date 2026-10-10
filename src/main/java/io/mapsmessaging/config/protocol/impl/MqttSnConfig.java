@@ -34,6 +34,7 @@ public class MqttSnConfig extends MqttSnConfigDTO implements Config {
   private final java.util.function.Supplier<char[]> protectionEntryPasswordSupplier;
 
   /** Endpoint-only secure settings are deliberately excluded from REST DTO serialization. */
+  @com.fasterxml.jackson.annotation.JsonIgnore
   public ConfigurationProperties getProtectionConfiguration() {
     return protectionConfiguration;
   }
