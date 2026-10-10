@@ -100,7 +100,15 @@ public class StateEngine {
 
   public CompletableFuture<Session> createSession(SessionContextBuilder scb, MQTT_SNProtocol protocol) {
     scb.setReceiveMaximum(1);
-    return SessionManager.getInstance().createAsync(scb.build(), protocol);
+    return SessionManager.getInstance().createAsync(scb.build(), protocol)
+        .thenApply(session -> {
+          try {
+            topicAliasManager.attach(session.getOrCreateTopicAliasRegistry(65535));
+            return session;
+          } catch (IOException error) {
+            throw new java.util.concurrent.CompletionException(error);
+          }
+        });
   }
 
   public void queueMessage(@NotNull @NonNull MessageEvent messageEvent) {
