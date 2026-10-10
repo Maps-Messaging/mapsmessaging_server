@@ -105,6 +105,32 @@ class MqttSn2LiveUdpClientInteropTest extends BaseMqttSnConfig {
   }
 
   @Test
+  void qosTwoCompletesFourStepHandshakeAcrossActualUdpListener() throws Exception {
+    String topic = "v2/interop/qos2/" + UUID.randomUUID();
+    byte[] payload = ("qos2-" + UUID.randomUUID()).getBytes(StandardCharsets.UTF_8);
+    try (UdpMqttSnClient subscriber = new UdpMqttSnClient(MAPS);
+         UdpMqttSnClient publisher = new UdpMqttSnClient(MAPS)) {
+      connect(subscriber, "q2-sub-" + UUID.randomUUID());
+      connect(publisher, "q2-pub-" + UUID.randomUUID());
+      subscriber.send(MqttSnCodec.encodeSubscribe(
+          new SubscribeOptions(11, TopicRef.filter(topic), 0, false, QoS.AT_MOST_ONCE, false)));
+      assertEquals(PacketType.SUBACK, receive(subscriber).type());
+      publisher.send(MqttSnCodec.encodePublish(new PublishOptions(
+          QoS.EXACTLY_ONCE, false, false, 12, TopicRef.name(topic), payload)));
+      var pubrec = receive(publisher);
+      assertEquals(PacketType.PUBREC, pubrec.type());
+      assertEquals(12, MqttSnCodec.decodeAck(pubrec).packetIdentifier());
+      publisher.send(MqttSnCodec.encodeAck(PacketType.PUBREL, 12, null));
+      var pubcomp = receive(publisher);
+      assertEquals(PacketType.PUBCOMP, pubcomp.type());
+      assertEquals(12, MqttSnCodec.decodeAck(pubcomp).packetIdentifier());
+      var delivered = receive(subscriber);
+      assertEquals(PacketType.PUBLISH, delivered.type());
+      assertArrayEquals(payload, MqttSnCodec.decodePublish(delivered).payload());
+    }
+  }
+
+  @Test
   void sessionlessPubwosFromReferenceClientIsDeliveredThroughBroker() throws Exception {
     String topic = "v2/interop/pubwos/" + UUID.randomUUID();
     byte[] payload = ("pubwos-" + UUID.randomUUID()).getBytes(StandardCharsets.UTF_8);
