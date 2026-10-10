@@ -185,6 +185,7 @@ public class SessionImpl {
   void close() {
     logger.log(ServerLogMessages.SESSION_MANAGER_CLOSING_SESSION, context.getId());
     isClosed = true;
+    if (topicAliasRegistry != null) topicAliasRegistry.suspend();
     securityContext.logout();
     if (scheduledFuture != null) {
       scheduledFuture.cancel(false);
