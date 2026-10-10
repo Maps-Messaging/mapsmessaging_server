@@ -16,7 +16,7 @@ import java.util.Objects;
  * durable state. Do not reuse a fresh counter starting at zero after restart.
  * This policy is deliberately not inferred from legacy transport HMAC config.</p>
  */
-public final class MqttSn2HmacProtectionSession {
+public final class MqttSn2HmacProtectionSession implements MqttSn2ProtectionPolicy {
 
   @FunctionalInterface
   public interface CounterSource {
