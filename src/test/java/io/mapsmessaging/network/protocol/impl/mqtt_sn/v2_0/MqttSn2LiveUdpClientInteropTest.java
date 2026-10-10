@@ -17,6 +17,9 @@ import io.mapsmessaging.mqttsn.QoS;
 import io.mapsmessaging.mqttsn.SubscribeOptions;
 import io.mapsmessaging.mqttsn.TopicRef;
 import io.mapsmessaging.mqttsn.udp.UdpMqttSnClient;
+import io.mapsmessaging.mqttsn.protection.ProtectionCodec;
+import io.mapsmessaging.mqttsn.protection.ProtectionEnvelope;
+import io.mapsmessaging.mqttsn.protection.bc.BouncyCastleProtectionProvider;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.BaseMqttSnConfig;
 import java.net.InetSocketAddress;
 import java.net.SocketTimeoutException;
@@ -101,6 +104,26 @@ class MqttSn2LiveUdpClientInteropTest extends BaseMqttSnConfig {
       var forwarded = receive(subscriber);
       assertEquals(PacketType.PUBLISH, forwarded.type());
       assertArrayEquals(payload, MqttSnCodec.decodePublish(forwarded).payload());
+    }
+  }
+
+  @Test
+  void unprotectedMapsListenerRejectsProtectedConnectWithoutConfiguredKey() throws Exception {
+    byte[] inner = MqttSnCodec.encodeConnect(
+        new ConnectOptions(true, false, false, 1, 60, 0, "untrusted-" + UUID.randomUUID()));
+    var provider = new BouncyCastleProtectionProvider(context -> new byte[32]);
+    byte[] protectedConnect = ProtectionCodec.encode(
+        new ProtectionEnvelope(0x48, 1,
+            java.util.HexFormat.of().parseHex("aabbccddeeff0011"),
+            new byte[]{1, 2, 3, 4}, new byte[0],
+            new byte[]{0, 0, 0, 1}, inner), provider);
+    try (java.net.DatagramSocket socket = new java.net.DatagramSocket()) {
+      socket.setSoTimeout(350);
+      socket.send(new java.net.DatagramPacket(protectedConnect, protectedConnect.length, MAPS));
+      byte[] response = new byte[256];
+      assertThrows(SocketTimeoutException.class,
+          () -> socket.receive(new java.net.DatagramPacket(response, response.length)),
+          "Listener without a security policy must not acknowledge protected CONNECT");
     }
   }
 
