@@ -47,6 +47,15 @@ public class PersistentSession extends SessionImpl{
     sessionDetails = storeLookup.getSessionDetails(context);
     context.setUniqueId(sessionDetails.getUniqueId());
     storeName = storeLookup.getDataPath() + "/" + sessionDetails.getUniqueId() + ".bin";
+    if (context.isResetState()) {
+      // Clean Start retires any snapshot from the previous incarnation,
+      // even if this session never accesses a topic alias.
+      try {
+        Files.deleteIfExists(Paths.get(storeName.replaceFirst("\\.bin$", ".aliases")));
+      } catch (IOException error) {
+        throw new java.io.UncheckedIOException("Unable to reset session alias state", error);
+      }
+    }
     if(context.isResetState() || sessionDetails.getSubscriptionContextList().isEmpty()){ // this will delete it and recreate
       sessionDetails.getSubscriptionContextList().clear(); // ensure it is clear
       saveState();
