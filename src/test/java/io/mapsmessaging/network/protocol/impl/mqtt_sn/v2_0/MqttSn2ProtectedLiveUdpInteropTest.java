@@ -132,6 +132,38 @@ class MqttSn2ProtectedLiveUdpInteropTest extends BaseTestConfig {
       assertEquals(PacketType.PUBLISH, publish.type());
       assertArrayEquals(payload, MqttSnCodec.decodePublish(publish).payload());
 
+      // QoS 1 must produce a protected PUBACK and deliver through routing.
+      send(client, remote, wrap(provider, scheme, 5,
+          MqttSnCodec.encodePublish(new PublishOptions(
+              QoS.AT_LEAST_ONCE, false, false, 20, TopicRef.name(topic), payload))));
+      var firstQ1 = MqttSnCodec.decode(ByteBuffer.wrap(
+          ProtectionCodec.decode(receive(client), provider).mqttSnPacket()));
+      var secondQ1 = MqttSnCodec.decode(ByteBuffer.wrap(
+          ProtectionCodec.decode(receive(client), provider).mqttSnPacket()));
+      java.util.Set<PacketType> q1Types = java.util.Set.of(firstQ1.type(), secondQ1.type());
+      assertEquals(java.util.Set.of(PacketType.PUBACK, PacketType.PUBLISH), q1Types);
+      var q1Delivered = firstQ1.type() == PacketType.PUBLISH ? firstQ1 : secondQ1;
+      assertArrayEquals(payload, MqttSnCodec.decodePublish(q1Delivered).payload());
+
+      // QoS 2 uses PUBREC/PUBREL/PUBCOMP over authenticated UDP.
+      send(client, remote, wrap(provider, scheme, 6,
+          MqttSnCodec.encodePublish(new PublishOptions(
+              QoS.EXACTLY_ONCE, false, false, 21, TopicRef.name(topic), payload))));
+      var rec = MqttSnCodec.decode(ByteBuffer.wrap(
+          ProtectionCodec.decode(receive(client), provider).mqttSnPacket()));
+      assertEquals(PacketType.PUBREC, rec.type());
+      assertEquals(21, MqttSnCodec.decodeAck(rec).packetIdentifier());
+      send(client, remote, wrap(provider, scheme, 7,
+          MqttSnCodec.encodeAck(PacketType.PUBREL, 21, null)));
+      var firstQ2 = MqttSnCodec.decode(ByteBuffer.wrap(
+          ProtectionCodec.decode(receive(client), provider).mqttSnPacket()));
+      var secondQ2 = MqttSnCodec.decode(ByteBuffer.wrap(
+          ProtectionCodec.decode(receive(client), provider).mqttSnPacket()));
+      assertEquals(java.util.Set.of(PacketType.PUBCOMP, PacketType.PUBLISH),
+          java.util.Set.of(firstQ2.type(), secondQ2.type()));
+      var q2Delivered = firstQ2.type() == PacketType.PUBLISH ? firstQ2 : secondQ2;
+      assertArrayEquals(payload, MqttSnCodec.decodePublish(q2Delivered).payload());
+
       // Duplicate authenticated sender counter cannot be applied twice.
       client.setSoTimeout(350);
       send(client, remote, wrapped);
@@ -142,7 +174,7 @@ class MqttSn2ProtectedLiveUdpInteropTest extends BaseTestConfig {
       // Cryptographically valid frames from unknown senders must not be accepted.
       var unknownSender = new ProtectionEnvelope(scheme, 1, new byte[8],
           new byte[]{7, 8, 9, 10}, new byte[0],
-          ByteBuffer.allocate(4).putInt(6).array(), MqttSnCodec.encodePingReq(6));
+          ByteBuffer.allocate(4).putInt(8).array(), MqttSnCodec.encodePingReq(6));
       send(client, remote, ProtectionCodec.encode(unknownSender, provider));
       assertThrows(SocketTimeoutException.class, () -> receive(client));
 
@@ -150,11 +182,11 @@ class MqttSn2ProtectedLiveUdpInteropTest extends BaseTestConfig {
       byte[] wrongMaterial = material.clone();
       wrongMaterial[0] ^= 0x7f;
       var wrongKeyProvider = new BouncyCastleProtectionProvider(ctx -> wrongMaterial);
-      send(client, remote, wrap(wrongKeyProvider, scheme, 7, MqttSnCodec.encodePingReq(7)));
+      send(client, remote, wrap(wrongKeyProvider, scheme, 9, MqttSnCodec.encodePingReq(7)));
       assertThrows(SocketTimeoutException.class, () -> receive(client));
 
       // Corrupt ciphertext/tag must never return an authenticated response.
-      byte[] corrupt = wrap(provider, scheme, 5, MqttSnCodec.encodePingReq(4));
+      byte[] corrupt = wrap(provider, scheme, 10, MqttSnCodec.encodePingReq(4));
       corrupt[corrupt.length - 1] ^= 1;
       send(client, remote, corrupt);
       assertThrows(SocketTimeoutException.class, () -> receive(client));
