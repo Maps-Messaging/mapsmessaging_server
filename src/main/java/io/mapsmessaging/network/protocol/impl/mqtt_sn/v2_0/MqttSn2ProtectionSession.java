@@ -141,7 +141,8 @@ public final class MqttSn2ProtectionSession implements MqttSn2ProtectionPolicy {
   private int tagLength(int scheme, int code) throws IOException {
     if (!accepted.contains(scheme)) throw new IOException("Disallowed protection scheme");
     int expected = providers.require(scheme).tagLength(scheme);
-    if ((expected == 32 && code == 0) || (code >= 4 && code <= 15 && code * 2 == expected)) {
+    if ((expected == 32 && (code == 0 || code == 1))
+        || (code >= 4 && code <= 15 && code * 2 == expected)) {
       return expected;
     }
     throw new IOException("Invalid protection authentication-tag length");
