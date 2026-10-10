@@ -79,6 +79,24 @@ import java.util.concurrent.*;
  */
 public class SessionImpl {
 
+  private io.mapsmessaging.storage.alias.TopicAliasRegistry topicAliasRegistry;
+
+  /** One registry per session. Repeated attachment reuses the existing instance. */
+  public synchronized io.mapsmessaging.storage.alias.TopicAliasRegistry getOrCreateTopicAliasRegistry(int maximum) {
+    if (topicAliasRegistry == null) {
+      topicAliasRegistry = new io.mapsmessaging.storage.alias.TopicAliasRegistry(maximum);
+    }
+    return topicAliasRegistry;
+  }
+
+  /** A persistent session can attach a restored registry exactly once. */
+  protected synchronized io.mapsmessaging.storage.alias.TopicAliasRegistry attachTopicAliasRegistry(
+      io.mapsmessaging.storage.alias.TopicAliasRegistry registry) {
+    if (topicAliasRegistry == null) topicAliasRegistry = java.util.Objects.requireNonNull(registry);
+    return topicAliasRegistry;
+  }
+
+
   protected final Logger logger;
   private final Future<?> scheduledFuture;
   private final SubscriptionController subscriptionManager;
