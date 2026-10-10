@@ -155,6 +155,16 @@ public class MQTTSNInterfaceManager implements SelectorCallback {
     // Validate the outbound key before acquiring storage or accepting traffic.
     javax.crypto.SecretKey outgoingKey = resolver.resolveSecretKey(localSenderIdentifier, outboundScheme);
     if (outgoingKey == null) throw new IOException("Missing outbound protection key");
+    // Fail endpoint configuration, not the first production packet, if the
+    // provider cannot use this secret key or the configured key length.
+    try {
+      int nonceLength = outboundScheme >= 0x40 && outboundScheme <= 0x45 ? 13
+          : outboundScheme >= 0x46 && outboundScheme <= 0x49 ? 12 : 0;
+      providers.require(outboundScheme).protect(outboundScheme, outgoingKey,
+          new byte[nonceLength], new byte[] {1}, new byte[] {1});
+    } catch (java.security.GeneralSecurityException error) {
+      throw new IOException("Outbound protection key and scheme are incompatible", error);
+    }
     MqttSn2IndexedCounterStore counters = new MqttSn2IndexedCounterStore(counterDirectory);
     try {
       configureProtection(new MqttSn2ProtectionSession(
