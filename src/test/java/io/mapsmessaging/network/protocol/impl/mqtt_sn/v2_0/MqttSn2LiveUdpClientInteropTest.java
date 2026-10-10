@@ -7,6 +7,8 @@ package io.mapsmessaging.network.protocol.impl.mqtt_sn.v2_0;
 import static org.junit.jupiter.api.Assertions.*;
 
 import io.mapsmessaging.mqttsn.ConnectOptions;
+import io.mapsmessaging.mqttsn.PubWosPacket;
+import io.mapsmessaging.mqttsn.DisconnectOptions;
 import io.mapsmessaging.mqttsn.DecodedPacket;
 import io.mapsmessaging.mqttsn.MqttSnCodec;
 import io.mapsmessaging.mqttsn.PacketType;
@@ -63,6 +65,61 @@ class MqttSn2LiveUdpClientInteropTest extends BaseMqttSnConfig {
       DecodedPacket delivered = receive(subscriber);
       assertEquals(PacketType.PUBLISH, delivered.type(), "MAPS must route to the second UDP client");
       assertArrayEquals(payload, MqttSnCodec.decodePublish(delivered).payload());
+    }
+  }
+
+  @Test
+  void pingAndUnsubscribeHaveCorrectResponsesOnRealUdpSession() throws Exception {
+    String topic = "v2/interop/unsub/" + UUID.randomUUID();
+    try (UdpMqttSnClient client = new UdpMqttSnClient(MAPS)) {
+      connect(client, "lifecycle-" + UUID.randomUUID());
+      client.send(MqttSnCodec.encodePingReq(3));
+      assertEquals(PacketType.PINGRESP, receive(client).type());
+      client.send(MqttSnCodec.encodeSubscribe(
+          new SubscribeOptions(4, TopicRef.filter(topic), 0, false, QoS.AT_MOST_ONCE, false)));
+      assertEquals(PacketType.SUBACK, receive(client).type());
+      client.send(MqttSnCodec.encodeUnsubscribe(5, TopicRef.filter(topic)));
+      assertEquals(PacketType.UNSUBACK, receive(client).type());
+      client.send(MqttSnCodec.encodeDisconnect(new DisconnectOptions(null, null, null, "")));
+    }
+  }
+
+  @Test
+  void qosOnePublisherGetsPubackAndSubscriberGetsUnmodifiedPayload() throws Exception {
+    String topic = "v2/interop/qos1/" + UUID.randomUUID();
+    byte[] payload = ("qos1-" + UUID.randomUUID()).getBytes(StandardCharsets.UTF_8);
+    try (UdpMqttSnClient subscriber = new UdpMqttSnClient(MAPS);
+         UdpMqttSnClient publisher = new UdpMqttSnClient(MAPS)) {
+      connect(subscriber, "q1-sub-" + UUID.randomUUID());
+      connect(publisher, "q1-pub-" + UUID.randomUUID());
+      subscriber.send(MqttSnCodec.encodeSubscribe(
+          new SubscribeOptions(7, TopicRef.filter(topic), 0, false, QoS.AT_MOST_ONCE, false)));
+      assertEquals(PacketType.SUBACK, receive(subscriber).type());
+      publisher.send(MqttSnCodec.encodePublish(new PublishOptions(
+          QoS.AT_LEAST_ONCE, false, false, 8, TopicRef.name(topic), payload)));
+      assertEquals(PacketType.PUBACK, receive(publisher).type());
+      var forwarded = receive(subscriber);
+      assertEquals(PacketType.PUBLISH, forwarded.type());
+      assertArrayEquals(payload, MqttSnCodec.decodePublish(forwarded).payload());
+    }
+  }
+
+  @Test
+  void sessionlessPubwosFromReferenceClientIsDeliveredThroughBroker() throws Exception {
+    String topic = "v2/interop/pubwos/" + UUID.randomUUID();
+    byte[] payload = ("pubwos-" + UUID.randomUUID()).getBytes(StandardCharsets.UTF_8);
+    try (UdpMqttSnClient subscriber = new UdpMqttSnClient(MAPS);
+         java.net.DatagramSocket sessionless = new java.net.DatagramSocket()) {
+      connect(subscriber, "wos-sub-" + UUID.randomUUID());
+      subscriber.send(MqttSnCodec.encodeSubscribe(
+          new SubscribeOptions(9, TopicRef.filter(topic), 0, false, QoS.AT_MOST_ONCE, false)));
+      assertEquals(PacketType.SUBACK, receive(subscriber).type());
+      byte[] packet = MqttSnCodec.encodePubWos(
+          new PubWosPacket(false, TopicRef.name(topic), payload));
+      sessionless.send(new java.net.DatagramPacket(packet, packet.length, MAPS));
+      var forwarded = receive(subscriber);
+      assertEquals(PacketType.PUBLISH, forwarded.type());
+      assertArrayEquals(payload, MqttSnCodec.decodePublish(forwarded).payload());
     }
   }
 
