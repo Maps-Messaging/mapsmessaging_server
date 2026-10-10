@@ -56,12 +56,12 @@ public final class IndexedCounterStoreBenchmark {
         count = target;
 
         started = System.nanoTime();
-        long check = 0;
         for (int i = 0; i < samples; i++) {
-          check += store.highWaterMark("session/" + random.nextInt(count) + "/scheme/0");
+          if (store.highWaterMark("session/" + random.nextInt(count) + "/scheme/0") < 1) {
+            throw new IllegalStateException("Missing or invalid counter");
+          }
         }
         long lookupNanos = System.nanoTime() - started;
-        if (check != samples) throw new IllegalStateException("Incorrect lookup results");
 
         // Update a single existing record, to isolate the value-write cost
         // from index appends. The number of updates is intentionally bounded.
