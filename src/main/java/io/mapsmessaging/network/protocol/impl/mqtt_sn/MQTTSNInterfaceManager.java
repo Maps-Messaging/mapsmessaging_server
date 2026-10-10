@@ -285,6 +285,7 @@ public class MQTTSNInterfaceManager implements SelectorCallback {
         PROTOCOL_NAME,
         "<registered>"
     );
+    initializeConfiguredProtection();
   }
 
   /** Initialize explicitly configured protection; never expose secret configuration through REST. */
@@ -334,7 +335,6 @@ public class MQTTSNInterfaceManager implements SelectorCallback {
     } finally {
       java.util.Arrays.fill(entryPassword, (char) 0);
     }
-    initializeConfiguredProtection();
   }
 
   private boolean startAdvertiseTask(InterfaceInformation info) throws SocketException {
