@@ -63,6 +63,12 @@ public class Session {
     destinations = new ConcurrentHashMap<>();
   }
 
+  /** Returns this session's existing alias registry, creating it only once. */
+  public io.mapsmessaging.storage.alias.TopicAliasRegistry getOrCreateTopicAliasRegistry(
+      int maximum) throws IOException {
+    return sessionImpl.getOrCreateTopicAliasRegistry(maximum);
+  }
+
   public void login() throws IOException {
     sessionImpl.login();
   }
