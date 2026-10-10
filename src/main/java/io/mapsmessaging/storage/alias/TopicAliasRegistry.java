@@ -48,6 +48,7 @@ public final class TopicAliasRegistry {
   private boolean poisoned;
   private boolean loaded;
   private boolean destroyed;
+  private boolean suspended;
 
   public TopicAliasRegistry(int maximum) {
     this(maximum, PersistenceMode.MEMORY_ONLY, null);
@@ -168,6 +169,11 @@ public final class TopicAliasRegistry {
     destroyed = true;
   }
 
+  /** Disable a closed connection's view; preserve persistent state for restore. */
+  public synchronized void suspend() {
+    suspended = true;
+  }
+
   public synchronized void clear() throws IOException {
     checkUsable();
     commit(Map.of(), 1);
@@ -253,7 +259,7 @@ public final class TopicAliasRegistry {
   }
 
   private void checkUsable() throws IOException {
-    if (poisoned || !loaded || destroyed) throw new IOException("Alias registry is not active");
+    if (poisoned || !loaded || destroyed || suspended) throw new IOException("Alias registry is not active");
   }
 
   private void validateAlias(int alias) throws IOException {
