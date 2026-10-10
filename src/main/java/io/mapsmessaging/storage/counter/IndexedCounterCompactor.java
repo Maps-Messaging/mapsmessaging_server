@@ -43,9 +43,9 @@ public final class IndexedCounterCompactor {
     Path absolute = sourceBase.toAbsolutePath().normalize();
     Path target = newDirectory.toAbsolutePath().normalize();
     if (Files.exists(target)) throw new IOException("Compaction destination already exists");
-    if (target.startsWith(absolute.getParent().resolve(absolute.getFileName() + "."))
-        || target.equals(absolute.getParent())) {
-      throw new IOException("Invalid compaction destination");
+    if (target.equals(absolute.getParent()) || target.equals(absolute)
+        || target.startsWith(absolute)) {
+      throw new IOException("Compaction destination overlaps source");
     }
     Set<String> retired = Set.copyOf(permanentlyRetiredKeys);
     try (IndexedCounterStore source = new IndexedCounterStore(absolute);
