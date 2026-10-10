@@ -105,6 +105,19 @@ class MqttSn2LiveUdpClientInteropTest extends BaseMqttSnConfig {
   }
 
   @Test
+  void malformedReferenceClientDatagramDoesNotCreateProtocolSession() throws Exception {
+    try (java.net.DatagramSocket socket = new java.net.DatagramSocket()) {
+      socket.setSoTimeout(350);
+      // Claims a truncated extended packet length and must not produce CONNACK.
+      byte[] malformed = {(byte) 0x01, 0, 10, 0x01};
+      socket.send(new java.net.DatagramPacket(malformed, malformed.length, MAPS));
+      byte[] response = new byte[256];
+      assertThrows(SocketTimeoutException.class,
+          () -> socket.receive(new java.net.DatagramPacket(response, response.length)));
+    }
+  }
+
+  @Test
   void cleanStartClientReconnectsWithSameIdentifierUsingNewUdpSocket() throws Exception {
     String identity = "v2-restart-" + UUID.randomUUID();
     try (UdpMqttSnClient first = new UdpMqttSnClient(MAPS)) {
