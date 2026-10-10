@@ -50,6 +50,11 @@ class MqttSn2PluggableProtectionSessionTest {
         MqttSn2ProtectionSession session = policy(store, scheme);
         ByteBuffer packet = MqttSn2ControlCodec.encodePingResponse(123, null);
         ByteBuffer wire = session.send(packet);
+        byte[] encoded = bytes(wire);
+        int lengthFieldBytes = (encoded[0] & 0xff) == 1 ? 3 : 1;
+        int protectionFlags = encoded[lengthFieldBytes + 1] & 0xff;
+        assertEquals(1, protectionFlags >>> 4,
+            "CSD01 §3.17.2.3-1 requires nominal authentication tag code 0x1 for AEAD");
         assertArrayEquals(bytes(packet), bytes(session.receive(wire.duplicate())));
         assertThrows(IOException.class, () -> session.receive(wire.duplicate()),
             "Replay must be rejected after successful authentication");
