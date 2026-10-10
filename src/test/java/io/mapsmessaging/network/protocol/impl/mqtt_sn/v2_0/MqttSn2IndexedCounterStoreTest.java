@@ -87,6 +87,23 @@ class MqttSn2IndexedCounterStoreTest {
   }
 
   @Test
+  void murphyWireCounterExhaustionNeverWraps() throws Exception {
+    try (io.mapsmessaging.storage.counter.GenerationCounterStore setup =
+        new io.mapsmessaging.storage.counter.GenerationCounterStore(
+            storePath(), io.mapsmessaging.storage.counter.CounterDurability.STRICT,
+            1, 0, 0.25)) {
+      setup.accept("tx.counter", 0xffff_fffeL);
+    }
+    try (MqttSn2IndexedCounterStore store = new MqttSn2IndexedCounterStore(storePath())) {
+      assertEquals(0xffff_ffffL, unsignedCounter(store.nextCounter()));
+      assertThrows(IOException.class, store::nextCounter);
+    }
+    try (MqttSn2IndexedCounterStore reopened = new MqttSn2IndexedCounterStore(storePath())) {
+      assertThrows(IOException.class, reopened::nextCounter);
+    }
+  }
+
+  @Test
   void sadInvalidSenderAndCounterFailClosed() throws Exception {
     byte[] sender = {1, 2, 3, 4, 5, 6, 7, 8};
     try (MqttSn2IndexedCounterStore store = new MqttSn2IndexedCounterStore(storePath())) {
