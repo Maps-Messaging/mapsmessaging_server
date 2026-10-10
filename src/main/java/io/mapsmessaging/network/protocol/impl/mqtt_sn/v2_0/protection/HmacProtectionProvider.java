@@ -17,7 +17,11 @@ public final class HmacProtectionProvider implements MqttSn2CryptoProvider {
 
   @Override public ProtectedPayload protect(int scheme, SecretKey key, byte[] nonce,
       byte[] authenticatedPrefix, byte[] plaintext) throws GeneralSecurityException {
-    Mac mac = Mac.getInstance(algorithm(scheme));
+    String algorithm = algorithm(scheme);
+    if (!key.getAlgorithm().equalsIgnoreCase(algorithm)) {
+      throw new GeneralSecurityException("HMAC key algorithm does not match protection scheme");
+    }
+    Mac mac = Mac.getInstance(algorithm);
     mac.init(key);
     mac.update(authenticatedPrefix);
     return new ProtectedPayload(plaintext, mac.doFinal(plaintext));
