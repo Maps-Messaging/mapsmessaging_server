@@ -147,10 +147,10 @@ public final class MqttSn2ProtectionSession implements MqttSn2ProtectionPolicy {
       if (code == 1) return expected;
       throw new IOException("AEAD requires nominal authentication-tag code 0x1");
     }
-    if ((expected == 32 && (code == 0 || code == 1))
-        || (code >= 4 && code <= 15 && code * 2 == expected)) {
-      return expected;
-    }
+    if (code == 0 || code == 1) return expected;
+    // Truncated authentication-only tags require a provider policy; currently
+    // unsupported rather than silently misinterpreted.
+    throw new IOException("Unsupported authentication-only tag-length code");
     throw new IOException("Invalid protection authentication-tag length");
   }
 
