@@ -196,7 +196,8 @@ public final class IndexedCounterStore implements CounterStore {
           || offset + PAIR_SIZE > data.size() || offsets.putIfAbsent(key, offset) != null) {
         throw new IOException("Invalid or duplicate counter index entry");
       }
-      // Reject corruption at startup rather than waiting for the first packet.\n      validatePair(data, offset);
+      // Reject corruption at startup rather than waiting for the first packet.
+      validatePair(data, offset);
       position += entry.capacity();
     }
   }
