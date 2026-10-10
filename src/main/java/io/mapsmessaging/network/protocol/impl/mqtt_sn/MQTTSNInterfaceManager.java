@@ -183,9 +183,17 @@ public class MQTTSNInterfaceManager implements SelectorCallback {
     java.util.Objects.requireNonNull(keys, "keys");
     MqttSn2IndexedCounterStore counters = new MqttSn2IndexedCounterStore(counterDirectory);
     try {
-      MqttSn2ProtectionVerifier verifier = new MqttSn2ProtectionVerifier(keys, counters);
-      configureProtection(new MqttSn2HmacProtectionSession(
-          verifier, counters, localSenderIdentifier, scheme));
+      configureProtection(new MqttSn2ProtectionSession(
+          new MqttSn2CryptoProviders(),
+          (sender, incomingScheme) -> {
+            if (incomingScheme != 0 && incomingScheme != 1) {
+              throw new IOException("Unsupported HMAC scheme");
+            }
+            byte[] key = keys.resolve(sender, incomingScheme);
+            if (key == null || key.length < 16) throw new IOException("Invalid HMAC key");
+            return new javax.crypto.spec.SecretKeySpec(key,
+                incomingScheme == 0 ? "HmacSHA256" : "HmacSHA3-256");
+          }, counters, java.util.Set.of(scheme), scheme, localSenderIdentifier));
       ownedCounterStore = counters;
     } catch (RuntimeException | Error failure) {
       try {
