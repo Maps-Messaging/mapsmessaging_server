@@ -82,7 +82,7 @@ public class SessionImpl {
   private io.mapsmessaging.storage.alias.TopicAliasRegistry topicAliasRegistry;
 
   /** One registry per session. Repeated attachment reuses the existing instance. */
-  public synchronized io.mapsmessaging.storage.alias.TopicAliasRegistry getOrCreateTopicAliasRegistry(int maximum) {
+  public synchronized io.mapsmessaging.storage.alias.TopicAliasRegistry getOrCreateTopicAliasRegistry(int maximum) throws IOException {
     if (topicAliasRegistry == null) {
       topicAliasRegistry = new io.mapsmessaging.storage.alias.TopicAliasRegistry(maximum);
     }
