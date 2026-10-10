@@ -21,8 +21,11 @@ class MqttSnProtectionConfigTest {
     MqttSnConfig config = new MqttSnConfig(new ConfigurationProperties(
         Map.of("protection", protection)));
     assertSame(protection, config.getProtectionConfiguration());
-    assertFalse(config.toConfigurationProperties().getMap().containsKey("protection"),
-        "Keystore credentials must not be published by REST configuration serialization");
+    assertSame(protection, config.toConfigurationProperties().get("protection"),
+        "Protection must survive server configuration saves");
+    String restJson = new com.fasterxml.jackson.databind.ObjectMapper().writeValueAsString(config);
+    assertFalse(restJson.contains("protectionConfiguration"),
+        "Keystore protection settings must not leak through REST JSON");
   }
 
   @Test
