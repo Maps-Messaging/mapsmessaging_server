@@ -105,7 +105,10 @@ public class PersistentSessionManager {
         boolean delete = false;
         try (FileInputStream fileInputStream = new FileInputStream(child)) {
           SessionDetails details = new SessionDetails(fileInputStream);
-          if(!details.getSubscriptionContextList().isEmpty()){
+          // Alias-only sessions are still persistent sessions and must be expired/cleaned normally.
+          if (!details.getSubscriptionContextList().isEmpty()
+              || (details.getUniqueId() != null && Files.isRegularFile(
+                  new File(dataPath, details.getUniqueId() + ".aliases").toPath()))) {
             persistentMap.put(details.getSessionName(), details);
             if(details.isNeedsUpdating()){
               updateFileToNewVersion(details, child);
