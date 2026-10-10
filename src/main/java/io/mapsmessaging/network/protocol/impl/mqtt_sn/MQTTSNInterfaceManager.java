@@ -297,14 +297,19 @@ public class MQTTSNInterfaceManager implements SelectorCallback {
         || !(protection.get("senderAliases") instanceof ConfigurationProperties aliasesConfig)) {
       throw new IOException("MQTT-SN protection keyStore and senderAliases are required");
     }
-    String passwordEnvironment = protection.getProperty("keyEntryPasswordEnv");
-    if (passwordEnvironment == null || passwordEnvironment.isBlank()) {
-      throw new IOException("Missing key entry password environment variable name");
+    char[] configuredPassword = mqttSnConfig.resolveProtectionEntryPassword();
+    if (configuredPassword == null) {
+      String passwordEnvironment = protection.getProperty("keyEntryPasswordEnv");
+      if (passwordEnvironment == null || passwordEnvironment.isBlank()) {
+        throw new IOException("Missing key entry password environment variable name");
+      }
+      String passwordValue = System.getenv(passwordEnvironment);
+      if (passwordValue == null || passwordValue.isEmpty()) {
+        throw new IOException("MQTT-SN key entry password environment variable is unset");
+      }
+      configuredPassword = passwordValue.toCharArray();
     }
-    String passwordValue = System.getenv(passwordEnvironment);
-    if (passwordValue == null || passwordValue.isEmpty()) {
-      throw new IOException("MQTT-SN key entry password environment variable is unset");
-    }
+    if (configuredPassword.length == 0) throw new IOException("Empty protection entry password");
     String senderValue = protection.getProperty("senderIdentifier");
     byte[] sender;
     try {
@@ -329,12 +334,11 @@ public class MQTTSNInterfaceManager implements SelectorCallback {
       aliases.put(entry.getKey().toString().toLowerCase(java.util.Locale.ROOT),
           entry.getValue().toString());
     }
-    char[] entryPassword = passwordValue.toCharArray();
     try {
-      configureKeystoreProtection(keyStore, aliases, entryPassword, Path.of(directory),
+      configureKeystoreProtection(keyStore, aliases, configuredPassword, Path.of(directory),
           sender, protection.getIntProperty("outboundScheme", -1), schemes);
     } finally {
-      java.util.Arrays.fill(entryPassword, (char) 0);
+      java.util.Arrays.fill(configuredPassword, (char) 0);
     }
   }
 
