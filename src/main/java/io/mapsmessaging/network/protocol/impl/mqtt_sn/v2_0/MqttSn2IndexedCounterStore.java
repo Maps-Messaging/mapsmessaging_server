@@ -16,7 +16,7 @@ import java.util.Objects;
  * MQTT-SN protection adapter for the protocol-neutral indexed store.
  * Inbound replay checks are always durable; outbound reservations are durably
  * committed before returning the counter, including across JVM restarts.
- * No counter state is silently migrated from the legacy Properties format.
+ * Unused outbound reservations are deliberately skipped following restart.
  */
 public final class MqttSn2IndexedCounterStore implements
     MqttSn2ProtectionVerifier.ReplayStore,
@@ -24,6 +24,9 @@ public final class MqttSn2IndexedCounterStore implements
 
   private static final long MAX_WIRE_COUNTER = 0xffff_ffffL;
   private static final String TX = "tx.counter";
+  private static final int RESERVATION_SIZE = 1024;
+  private long nextOutbound;
+  private long reservedThrough;
   private final GenerationCounterStore store;
 
   public MqttSn2IndexedCounterStore(Path directory) throws IOException {
@@ -43,10 +46,17 @@ public final class MqttSn2IndexedCounterStore implements
 
   @Override
   public synchronized byte[] nextCounter() throws IOException {
-    if (store.highWaterMark(TX) >= MAX_WIRE_COUNTER) {
-      throw new IOException("Outbound MQTT-SN protection counter exhausted");
+    if (nextOutbound == 0 || nextOutbound > reservedThrough) {
+      long persisted = store.highWaterMark(TX);
+      if (persisted >= MAX_WIRE_COUNTER) {
+        throw new IOException("Outbound MQTT-SN protection counter exhausted");
+      }
+      int count = (int) Math.min(RESERVATION_SIZE, MAX_WIRE_COUNTER - persisted);
+      var range = store.reserve(TX, count);
+      nextOutbound = range.first();
+      reservedThrough = range.last();
     }
-    long next = store.reserve(TX, 1).first();
+    long next = nextOutbound++;
     return ByteBuffer.allocate(4).putInt((int) next).array();
   }
 
