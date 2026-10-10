@@ -26,6 +26,8 @@ import io.mapsmessaging.network.protocol.impl.mqtt5.packet.properties.TopicAlias
 
 import io.mapsmessaging.storage.alias.TopicAliasRegistry;
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 
 public class TopicAliasMapping {
 
@@ -33,6 +35,7 @@ public class TopicAliasMapping {
 
   private final String aliasName;
   private TopicAliasRegistry registry;
+  private final Map<String, TopicAlias> originalProperties = new HashMap<>();
 
   private int aliasMaximum;
 
@@ -56,8 +59,15 @@ public class TopicAliasMapping {
       return false;
     }
     try {
-      // MQTT 5 explicitly permits reassignment of an alias within a connection.
+      Integer existing = registry.alias(name);
+      if (existing != null && existing != topicAlias.getTopicAlias()) {
+        logger.log(ServerLogMessages.MQTT5_TOPIC_ALIAS_ALREADY_EXISTS, name);
+        return false;
+      }
+      String displaced = registry.topic(topicAlias.getTopicAlias());
       registry.rebind(topicAlias.getTopicAlias(), name);
+      if (displaced != null && !displaced.equals(name)) originalProperties.remove(displaced);
+      originalProperties.put(name, topicAlias);
       return true;
     } catch (IOException invalid) {
       logger.log(ServerLogMessages.MQTT5_TOPIC_ALIAS_EXCEEDED_MAXIMUM);
@@ -73,12 +83,12 @@ public class TopicAliasMapping {
   public synchronized TopicAlias find(String name) {
     try {
       Integer id = registry.alias(name);
-      return id == null ? null : new TopicAlias(id);
+      return id == null ? null : originalProperties.computeIfAbsent(name, ignored -> new TopicAlias(id));
     } catch (IOException e) { throw new IllegalStateException("MQTT 5 alias registry unavailable", e); }
   }
 
   public synchronized void clearAll() {
-    try { registry.clear(); }
+    try { registry.clear(); originalProperties.clear(); }
     catch (IOException e) { throw new IllegalStateException("MQTT 5 alias registry unavailable", e); }
   }
 
@@ -89,6 +99,7 @@ public class TopicAliasMapping {
       aliasMaximum = requested;
       // Never preserve mappings when the negotiated connection limit changes.
       registry = new TopicAliasRegistry(Math.max(1, Math.min(65535, requested)));
+      originalProperties.clear();
       logger.log(ServerLogMessages.MQTT5_TOPIC_ALIAS_SET_MAXIMUM, aliasName, requested);
     }
   }
@@ -97,8 +108,12 @@ public class TopicAliasMapping {
     if (aliasMaximum == 0) return null;
     try {
       Integer existing = registry.alias(destinationName);
-      if (existing != null) return new TopicAlias(existing);
-      return new TopicAlias(registry.register(destinationName));
+      if (existing != null) return originalProperties.computeIfAbsent(destinationName,
+          ignored -> new TopicAlias(existing));
+      int allocated = registry.register(destinationName);
+      TopicAlias property = new TopicAlias(allocated);
+      originalProperties.put(destinationName, property);
+      return property;
     } catch (IOException full) {
       return null;
     }
