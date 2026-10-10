@@ -31,6 +31,9 @@ public final class IndexedCounterStoreBenchmark {
     int samples = args.length > 1 ? Integer.parseInt(args[1]) : 1_000;
     CounterDurability durability = args.length > 2
         ? CounterDurability.valueOf(args[2].toUpperCase(Locale.ROOT)) : CounterDurability.STRICT;
+    if (durability == CounterDurability.RESERVED_RANGE) {
+      throw new IllegalArgumentException("RESERVED_RANGE requires a reservation benchmark, not inbound accept()");
+    }
     if (maximum < 1 || maximum > 1_000_000 || samples < 1) {
       throw new IllegalArgumentException("maximum must be 1..1000000 and samples positive");
     }
