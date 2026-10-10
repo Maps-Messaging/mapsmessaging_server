@@ -53,6 +53,28 @@ public class PersistentSession extends SessionImpl{
     }
   }
   @Override
+  public synchronized io.mapsmessaging.storage.alias.TopicAliasRegistry getOrCreateTopicAliasRegistry(
+      int maximum) throws IOException {
+    if (aliasRegistry != null) return aliasRegistry;
+    io.mapsmessaging.storage.alias.FileAliasSnapshotPersistence persistence =
+        new io.mapsmessaging.storage.alias.FileAliasSnapshotPersistence(
+            java.nio.file.Path.of(storeName.replaceFirst("\\.bin$", ".aliases")));
+    io.mapsmessaging.storage.alias.TopicAliasRegistry candidate =
+        new io.mapsmessaging.storage.alias.TopicAliasRegistry(maximum,
+            io.mapsmessaging.storage.alias.TopicAliasRegistry.PersistenceMode.SESSION_PERSISTENT,
+            persistence);
+    // A Clean Start replaces old session metadata. The old snapshot is not reusable.
+    if (getContext().isResetState()) {
+      persistence.delete();
+    }
+    candidate.load();
+    aliasRegistry = attachTopicAliasRegistry(candidate);
+    return aliasRegistry;
+  }
+
+  private io.mapsmessaging.storage.alias.TopicAliasRegistry aliasRegistry;
+
+  @Override
   public void setExpiryTime(long expiry) {
     super.setExpiryTime(expiry);
     sessionDetails.setExpiryTime(expiry);
