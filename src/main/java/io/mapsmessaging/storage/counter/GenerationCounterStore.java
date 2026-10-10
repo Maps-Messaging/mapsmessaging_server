@@ -64,7 +64,10 @@ public final class GenerationCounterStore implements CounterStore {
     FileLock acquired;
     try {
       acquired = lockChannel.tryLock();
-      if (acquired == null) throw new IOException("Counter generations already have an owner");
+      if (acquired == null) {
+        lockChannel.close();
+        throw new IOException("Counter generations already have an owner");
+      }
     } catch (OverlappingFileLockException e) {
       lockChannel.close();
       throw new IOException("Counter generations already have an owner", e);
