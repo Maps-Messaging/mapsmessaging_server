@@ -151,26 +151,33 @@ public final class GenerationCounterStore implements CounterStore {
   public synchronized void compact() throws IOException {
     requireOpen();
     active.flush();
-    String next = "gen-" + UUID.randomUUID();
-    Path target = root.resolve(next);
-    IndexedCounterCompactor.compact(root.resolve(generation).resolve("counters"), target, retired);
-    try (IndexedCounterStore check = new IndexedCounterStore(target.resolve("counters"))) {
-      // Opening validates every index record and both-slot recoverability.
-    }
-    // Ensure no dirty old values remain before making a new generation active.
-    active.flush();
-    writeManifest(next);
-    // After the manifest has switched, failures must be terminal rather than
-    // continue writing the old generation.
-    IndexedCounterStore old = active;
+    // Release the source file lock while retaining the generation owner's lock.
+    // This excludes every other GenerationCounterStore and enforces quiescence.
+    active.close();
     closed = true;
+    String next = "gen-" + UUID.randomUUID();
     try {
-      old.close();
-      active = openGeneration(next);
+      Path target = root.resolve(next);
+      IndexedCounterCompactor.compact(root.resolve(generation).resolve("counters"), target, retired);
+      try (IndexedCounterStore check = new IndexedCounterStore(target.resolve("counters"))) {
+        // Startup validation is required before publishing the new manifest.
+      }
+      writeManifest(next);
       generation = next;
+      active = openGeneration(next);
       closed = false;
-    } catch (IOException failure) {
-      throw new IOException("Generation switched but new store could not open; reopen required", failure);
+    } catch (IOException | RuntimeException failure) {
+      // The manifest might already refer to the new generation. Always
+      // reload its authoritative value, never guess which generation won.
+      try {
+        generation = decodeManifest(Files.readAllBytes(manifest));
+        active = openGeneration(generation);
+        closed = false;
+      } catch (IOException recoveryFailure) {
+        failure.addSuppressed(recoveryFailure);
+      }
+      if (failure instanceof IOException io) throw io;
+      throw failure;
     }
   }
 
