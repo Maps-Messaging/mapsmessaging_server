@@ -108,7 +108,9 @@ public final class MqttSn2ProtectionSession implements MqttSn2ProtectionPolicy {
     byte[] salt = new byte[4];
     random.nextBytes(salt);
     int tagSize = provider.tagLength(outboundScheme);
-    int tagCode = tagSize == 32 ? 0 : tagSize / 2;
+    // CSD01 §3.17.2.3: AEAD MUST use nominal tag length code 0x1.
+    // HMAC uses 0x1 for the nominal tag as well.
+    int tagCode = 1;
     if (tagSize != 32 && tagSize != 16 && tagSize != 8) {
       throw new IOException("Unsupported MQTT-SN protection tag size");
     }
@@ -141,6 +143,10 @@ public final class MqttSn2ProtectionSession implements MqttSn2ProtectionPolicy {
   private int tagLength(int scheme, int code) throws IOException {
     if (!accepted.contains(scheme)) throw new IOException("Disallowed protection scheme");
     int expected = providers.require(scheme).tagLength(scheme);
+    if (scheme >= 0x40 && scheme <= 0x49) {
+      if (code == 1) return expected;
+      throw new IOException("AEAD requires nominal authentication-tag code 0x1");
+    }
     if ((expected == 32 && (code == 0 || code == 1))
         || (code >= 4 && code <= 15 && code * 2 == expected)) {
       return expected;
