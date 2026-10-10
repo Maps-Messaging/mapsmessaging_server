@@ -42,6 +42,9 @@ import io.mapsmessaging.network.protocol.Protocol;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v2_0.MqttSn2Protocol;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v2_0.MqttSn2HmacProtectionSession;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v2_0.MqttSn2IndexedCounterStore;
+import io.mapsmessaging.network.protocol.impl.mqtt_sn.v2_0.KeyStoreProtectionKeyResolver;
+import io.mapsmessaging.configuration.ConfigurationProperties;
+import java.util.Map;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v2_0.MqttSn2ProtectionVerifier;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v2_0.packet.MqttSn2FrameCodec;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v2_0.packet.MqttSn2GatewayCodec;
@@ -94,6 +97,33 @@ public class MQTTSNInterfaceManager implements SelectorCallback {
       throw new IllegalArgumentException("Secured MQTT-SN endpoint requires durable replay tracking");
     }
     protectionSession = policy;
+  }
+
+  /**
+   * Configure HMAC protection with symmetric keys resolved via Authentication
+   * library's ServiceLoader-selected keystore manager. Mapping keys use
+   * lowercase hexadecimal sender ID followed by ':' and the numeric scheme.
+   */
+  public synchronized void configureKeystoreHmacProtection(
+      ConfigurationProperties keyStoreConfiguration,
+      Map<String, String> senderSchemeAliases,
+      char[] keyEntryPassword,
+      Path counterDirectory,
+      byte[] localSenderIdentifier,
+      int outboundScheme) throws IOException {
+    if (ownedCounterStore != null || protectionSession != null) {
+      throw new IllegalStateException("Protection is already configured on this endpoint");
+    }
+    KeyStoreProtectionKeyResolver resolver = new KeyStoreProtectionKeyResolver(
+        keyStoreConfiguration, senderSchemeAliases, keyEntryPassword);
+    // Fail startup if the local sender cannot obtain a suitable key.
+    byte[] key = resolver.resolve(localSenderIdentifier, outboundScheme);
+    try {
+      if (key.length < 16) throw new IOException("Outbound HMAC key is too short");
+    } finally {
+      java.util.Arrays.fill(key, (byte) 0);
+    }
+    configureHmacProtection(resolver, counterDirectory, localSenderIdentifier, outboundScheme);
   }
 
   /** Configure an indexed persistent protection store in a dedicated directory. */
