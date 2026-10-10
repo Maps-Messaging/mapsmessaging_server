@@ -54,6 +54,26 @@ class MqttSn2IndexedCounterStoreTest {
   }
 
   @Test
+  void authenticatedReplayIsRejectedByVerifierAfterRestart() throws Exception {
+    byte[] key = new byte[32];
+    byte[] peer = {0, 0, 0, 0, 0, 0, 0, 9};
+    MqttSn2ProtectionVerifier signer = new MqttSn2ProtectionVerifier(
+        (id, scheme) -> key.clone());
+    ByteBuffer authenticated = signer.protect(ByteBuffer.wrap(new byte[]{4, 12, 0, 9}),
+        0, peer, new byte[]{1, 2, 3, 4}, new byte[]{0, 1});
+    try (MqttSn2IndexedCounterStore first = new MqttSn2IndexedCounterStore(storePath())) {
+      MqttSn2ProtectionVerifier verifier = new MqttSn2ProtectionVerifier(
+          (id, scheme) -> key.clone(), first);
+      assertNotNull(verifier.verify(authenticated.duplicate()));
+    }
+    try (MqttSn2IndexedCounterStore restarted = new MqttSn2IndexedCounterStore(storePath())) {
+      MqttSn2ProtectionVerifier verifier = new MqttSn2ProtectionVerifier(
+          (id, scheme) -> key.clone(), restarted);
+      assertThrows(IOException.class, () -> verifier.verify(authenticated.duplicate()));
+    }
+  }
+
+  @Test
   void happyRangeRolloverIsContiguousWhileRunning() throws Exception {
     try (MqttSn2IndexedCounterStore store = new MqttSn2IndexedCounterStore(storePath())) {
       for (int i = 1; i <= 2050; i++) {
