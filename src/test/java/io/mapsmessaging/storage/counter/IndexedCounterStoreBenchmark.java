@@ -45,8 +45,8 @@ public final class IndexedCounterStoreBenchmark {
     for (int size : SIZES) if (size <= maximum) checkpoints.add(size);
     if (checkpoints.isEmpty() || checkpoints.getLast() != maximum) checkpoints.add(maximum);
 
-    try (IndexedCounterStore store = new IndexedCounterStore(base)) {
-      for (int target : checkpoints) {
+    for (int target : checkpoints) {
+      try (IndexedCounterStore store = new IndexedCounterStore(base)) {
         long started = System.nanoTime();
         for (int id = count; id < target; id++) {
           store.accept("session/" + id + "/scheme/0", 1);
@@ -73,20 +73,20 @@ public final class IndexedCounterStoreBenchmark {
         long updateNanos = System.nanoTime() - started;
         previous += updates;
 
-        System.out.printf(Locale.ROOT, "%d,%.2f,%.2f,%.2f,%s,%d,%d%n",
+        System.out.printf(Locale.ROOT, "%d,%.2f,%.2f,%.2f,",
             count, addNanos / (double) added / 1_000.0,
             lookupNanos / (double) samples / 1_000.0,
-            updateNanos / (double) updates / 1_000.0, "pending",
-            Files.size(directory.resolve("counters.idx")),
-            Files.size(directory.resolve("counters.dat")));
+            updateNanos / (double) updates / 1_000.0);
       }
+      double reopenMs = measureReopen(base, count, samples, random);
+      System.out.printf(Locale.ROOT, "%.2f,%d,%d%n", reopenMs,
+          Files.size(directory.resolve("counters.idx")),
+          Files.size(directory.resolve("counters.dat")));
     }
-
-    startedReopen(base, count, samples, random);
     System.out.println("Files retained for inspection: " + directory);
   }
 
-  private static void startedReopen(Path base, int count, int samples, Random random) throws Exception {
+  private static double measureReopen(Path base, int count, int samples, Random random) throws Exception {
     long start = System.nanoTime();
     try (IndexedCounterStore reopened = new IndexedCounterStore(base)) {
       double millis = (System.nanoTime() - start) / 1_000_000.0;
@@ -95,7 +95,7 @@ public final class IndexedCounterStoreBenchmark {
           throw new IllegalStateException("Lost counter during restart");
         }
       }
-      System.out.printf(Locale.ROOT, "REOPEN,%d,%.2f ms%n", count, millis);
+      return millis;
     }
   }
 }
