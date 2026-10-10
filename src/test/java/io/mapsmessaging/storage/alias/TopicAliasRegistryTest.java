@@ -140,4 +140,17 @@ class TopicAliasRegistryTest {
     assertThrows(IOException.class, target::load);
     assertThrows(IOException.class, () -> target.register("not-safe"));
   }
+  @Test void closedOwnerCannotMutateStateButRestoredOwnerCan() throws Exception {
+    MemoryPersistence backend = new MemoryPersistence();
+    TopicAliasRegistry oldOwner = persistent(backend);
+    oldOwner.register("alpha");
+    oldOwner.suspend();
+    assertThrows(IOException.class, () -> oldOwner.register("beta"));
+    assertThrows(IOException.class, () -> oldOwner.clear());
+    TopicAliasRegistry newOwner = persistent(backend);
+    assertEquals("alpha", newOwner.topic(1));
+    assertEquals(2, newOwner.register("beta"));
+  }
+
+
 }
