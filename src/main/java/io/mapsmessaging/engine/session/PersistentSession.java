@@ -68,6 +68,13 @@ public class PersistentSession extends SessionImpl{
       persistence.delete();
     }
     candidate.load();
+    // The session record must exist even when there are no subscriptions.
+    // Otherwise restart enumeration would orphan an alias-only session.
+    if (!Files.isRegularFile(Paths.get(storeName))) {
+      try (FileOutputStream output = new FileOutputStream(storeName)) {
+        sessionDetails.save(output);
+      }
+    }
     aliasRegistry = attachTopicAliasRegistry(candidate);
     return aliasRegistry;
   }
