@@ -41,7 +41,7 @@ import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.packet.*;
 import io.mapsmessaging.network.protocol.Protocol;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v2_0.MqttSn2Protocol;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v2_0.MqttSn2HmacProtectionSession;
-import io.mapsmessaging.network.protocol.impl.mqtt_sn.v2_0.MqttSn2PersistentCounterStore;
+import io.mapsmessaging.network.protocol.impl.mqtt_sn.v2_0.MqttSn2IndexedCounterStore;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v2_0.MqttSn2ProtectionVerifier;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v2_0.packet.MqttSn2FrameCodec;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v2_0.packet.MqttSn2GatewayCodec;
@@ -85,6 +85,7 @@ public class MQTTSNInterfaceManager implements SelectorCallback {
 
   private final MqttSnConfig mqttSnConfig;
   private volatile MqttSn2HmacProtectionSession protectionSession;
+  private MqttSn2IndexedCounterStore ownedCounterStore;
 
   /** Opt-in secured MQTT-SN 2.0 endpoint; requires durable counter source and key resolver. */
   public void configureProtection(MqttSn2HmacProtectionSession policy) {
@@ -95,13 +96,32 @@ public class MQTTSNInterfaceManager implements SelectorCallback {
     protectionSession = policy;
   }
 
-  /** Explicit HMAC protection profile with a persistent counter file and key provider. */
-  public void configureHmacProtection(MqttSn2ProtectionVerifier.KeyResolver keys,
-      Path counterFile, byte[] localSenderIdentifier, int scheme) {
-    MqttSn2PersistentCounterStore counters = new MqttSn2PersistentCounterStore(counterFile);
-    MqttSn2ProtectionVerifier verifier = new MqttSn2ProtectionVerifier(keys, counters);
-    configureProtection(new MqttSn2HmacProtectionSession(
-        verifier, counters, localSenderIdentifier, scheme));
+  /** Configure an indexed persistent protection store in a dedicated directory. */
+  public synchronized void configureHmacProtection(MqttSn2ProtectionVerifier.KeyResolver keys,
+      Path counterDirectory, byte[] localSenderIdentifier, int scheme) throws IOException {
+    if (ownedCounterStore != null || protectionSession != null) {
+      throw new IllegalStateException("Protection is already configured on this endpoint");
+    }
+    // Validate all inputs before constructing/publishing an empty durable store.
+    if (localSenderIdentifier == null || localSenderIdentifier.length != 8
+        || (scheme != 0 && scheme != 1)) {
+      throw new IllegalArgumentException("Invalid protection sender identifier or HMAC scheme");
+    }
+    java.util.Objects.requireNonNull(keys, "keys");
+    MqttSn2IndexedCounterStore counters = new MqttSn2IndexedCounterStore(counterDirectory);
+    try {
+      MqttSn2ProtectionVerifier verifier = new MqttSn2ProtectionVerifier(keys, counters);
+      configureProtection(new MqttSn2HmacProtectionSession(
+          verifier, counters, localSenderIdentifier, scheme));
+      ownedCounterStore = counters;
+    } catch (RuntimeException | Error failure) {
+      try {
+        counters.close();
+      } catch (IOException closeFailure) {
+        failure.addSuppressed(closeFailure);
+      }
+      throw failure;
+    }
   }
 
 
@@ -445,6 +465,15 @@ public class MQTTSNInterfaceManager implements SelectorCallback {
       advertiserTask.stop();
     }
     currentSessions.close();
+    MqttSn2IndexedCounterStore counters = ownedCounterStore;
+    if (counters != null) {
+      try {
+        counters.close();
+      } catch (IOException failure) {
+        logger.log(ServerLogMessages.MQTT_SN_EXCEPTION_RASIED, failure);
+      }
+      ownedCounterStore = null;
+    }
   }
 
   @Override
