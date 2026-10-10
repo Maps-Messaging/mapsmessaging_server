@@ -35,6 +35,8 @@ public final class TopicAliasRegistry {
     byte[] load() throws IOException;
     /** Commit the entire snapshot durably before returning. */
     void save(byte[] snapshot) throws IOException;
+    /** Remove the snapshot when the owning session is permanently discarded. */
+    void delete() throws IOException;
   }
 
   private final int maximum;
@@ -45,6 +47,7 @@ public final class TopicAliasRegistry {
   private int nextAlias = 1;
   private boolean poisoned;
   private boolean loaded;
+  private boolean destroyed;
 
   public TopicAliasRegistry(int maximum) {
     this(maximum, PersistenceMode.MEMORY_ONLY, null);
@@ -148,6 +151,23 @@ public final class TopicAliasRegistry {
     return byAlias.size();
   }
 
+  /** Permanent session removal/expiry; normal disconnect must not call this. */
+  public synchronized void destroy() throws IOException {
+    checkUsable();
+    if (mode == PersistenceMode.SESSION_PERSISTENT) {
+      try {
+        persistence.delete();
+      } catch (IOException | RuntimeException failure) {
+        poisoned = true;
+        throw failure;
+      }
+    }
+    byAlias.clear();
+    byTopic.clear();
+    nextAlias = 1;
+    destroyed = true;
+  }
+
   public synchronized void clear() throws IOException {
     checkUsable();
     commit(Map.of(), 1);
@@ -233,7 +253,7 @@ public final class TopicAliasRegistry {
   }
 
   private void checkUsable() throws IOException {
-    if (poisoned || !loaded) throw new IOException("Alias registry requires successful reload");
+    if (poisoned || !loaded || destroyed) throw new IOException("Alias registry is not active");
   }
 
   private void validateAlias(int alias) throws IOException {
