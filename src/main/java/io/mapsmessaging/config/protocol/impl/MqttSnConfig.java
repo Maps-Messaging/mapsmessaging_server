@@ -31,14 +31,26 @@ import java.util.List;
 public class MqttSnConfig extends MqttSnConfigDTO implements Config {
 
   private final ConfigurationProperties protectionConfiguration;
+  private final java.util.function.Supplier<char[]> protectionEntryPasswordSupplier;
 
   /** Endpoint-only secure settings are deliberately excluded from REST DTO serialization. */
   public ConfigurationProperties getProtectionConfiguration() {
     return protectionConfiguration;
   }
 
+  public char[] resolveProtectionEntryPassword() {
+    return protectionEntryPasswordSupplier == null ? null : protectionEntryPasswordSupplier.get();
+  }
+
 
   public MqttSnConfig(ConfigurationProperties config) {
+    this(config, null);
+  }
+
+  /** Optional transient password provider for programmatic endpoint creation. */
+  public MqttSnConfig(ConfigurationProperties config,
+      java.util.function.Supplier<char[]> protectionEntryPasswordSupplier) {
+    this.protectionEntryPasswordSupplier = protectionEntryPasswordSupplier;
     protectionConfiguration = config.get("protection") instanceof ConfigurationProperties nested
         ? nested : null;
     setType("mqtt-sn");
