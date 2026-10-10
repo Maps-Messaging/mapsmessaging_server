@@ -69,11 +69,24 @@ public final class MqttSn2ProtectionSession implements MqttSn2ProtectionPolicy {
     byte[] nonce = nonce(scheme, prefix);
     byte[] clear;
     try {
-      clear = provider.unprotect(scheme,
-          keys.resolveSecretKey(envelope.senderIdentifier(), scheme),
-          nonce, prefix,
-          new MqttSn2CryptoProvider.ProtectedPayload(
-              envelope.protectedPacket(), envelope.authenticationTag()));
+      SecretKey key = keys.resolveSecretKey(envelope.senderIdentifier(), scheme);
+      var protectedContent = new MqttSn2CryptoProvider.ProtectedPayload(
+          envelope.protectedPacket(), envelope.authenticationTag());
+      if (scheme <= 0x04 && envelope.tagLengthCode() >= 4) {
+        // CSD01 permits leftmost-bit truncation for authentication-only
+        // schemes. Compare fixed-length tags in constant time and never
+        // advance replay state until authentication and framing both pass.
+        byte[] full = provider.protect(scheme, key, nonce, prefix,
+            protectedContent.protectedBytes()).tag();
+        byte[] receivedTag = protectedContent.tag();
+        if (!java.security.MessageDigest.isEqual(
+            Arrays.copyOf(full, receivedTag.length), receivedTag)) {
+          throw new GeneralSecurityException("Truncated authentication tag mismatch");
+        }
+        clear = protectedContent.protectedBytes();
+      } else {
+        clear = provider.unprotect(scheme, key, nonce, prefix, protectedContent);
+      }
     } catch (GeneralSecurityException error) {
       throw new IOException("MQTT-SN protection authentication failed", error);
     }
@@ -148,9 +161,10 @@ public final class MqttSn2ProtectionSession implements MqttSn2ProtectionPolicy {
       throw new IOException("AEAD requires nominal authentication-tag code 0x1");
     }
     if (code == 0 || code == 1) return expected;
-    // Truncated authentication-only tags require a provider policy; currently
-    // unsupported rather than silently misinterpreted.
-    throw new IOException("Unsupported authentication-only tag-length code");
+    if (scheme <= 0x04 && code >= 4 && code <= 15 && code * 2 <= expected) {
+      return code * 2;
+    }
+    throw new IOException("Invalid authentication-only tag-length code");
   }
 
   private static byte[] nonce(int scheme, byte[] prefix) {
