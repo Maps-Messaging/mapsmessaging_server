@@ -1,101 +1,78 @@
 /*
- *
- *  Copyright [ 2020 - 2024 ] Matthew Buckton
- *  Copyright [ 2024 - 2026 ] MapsMessaging B.V.
- *
- *  Licensed under the Apache License, Version 2.0 with the Commons Clause
- *  (the "License"); you may not use this file except in compliance with the License.
- *  You may obtain a copy of the License at:
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *      https://commonsclause.com/
- *
- *  Unless required by applicable law or agreed to in writing, software
- *  distributed under the License is distributed on an "AS IS" BASIS,
- *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *  See the License for the specific language governing permissions and
- *  limitations under the License.
+ * Copyright [ 2024 - 2026 ] MapsMessaging B.V.
+ * Licensed under the Apache, Version 2.0 with the Commons Clause.
  */
-
 package io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.state;
 
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.RegisteredTopicConfiguration;
-
+import io.mapsmessaging.storage.alias.TopicAliasRegistry;
+import java.io.IOException;
 import java.net.SocketAddress;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.Map;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import static io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.packet.MQTT_SNPacket.TOPIC_NAME;
 import static io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.packet.MQTT_SNPacket.TOPIC_PRE_DEFINED_ID;
 
+/**
+ * MQTT-SN 1.2 protocol adapter for a per-state-engine alias dictionary.
+ * Keeps legacy allocation behaviour (first allocated ID is 2).
+ */
 public class TopicAliasManager {
-
-  private final HashMap<String, Short> topicAlias;
+  private final TopicAliasRegistry aliases = new TopicAliasRegistry(65535);
   private final RegisteredTopicConfiguration registeredTopicConfiguration;
-  private final AtomicInteger aliasGenerator;
   private final int maxSize;
+  private int nextAlias = 2;
 
   public TopicAliasManager(RegisteredTopicConfiguration registeredTopicConfiguration, int maxSize) {
-    this.maxSize = maxSize;
-    topicAlias = new LinkedHashMap<>();
-    aliasGenerator = new AtomicInteger(1);
     this.registeredTopicConfiguration = registeredTopicConfiguration;
+    this.maxSize = maxSize;
   }
 
-  public void clear() {
-    aliasGenerator.set(1);
-    topicAlias.clear();
-  }
-
-  public short getTopicAlias(String name) {
-    Short alias = topicAlias.get(name);
-    if (alias == null && topicAlias.size() < maxSize) {
-      alias = (short) aliasGenerator.incrementAndGet();
-      topicAlias.put(name, alias);
+  public synchronized void clear() {
+    try {
+      aliases.clear();
+      nextAlias = 2;
+    } catch (IOException e) {
+      throw new IllegalStateException("MQTT-SN 1.2 alias state unavailable", e);
     }
-    if (alias == null) {
+  }
+
+  public synchronized short getTopicAlias(String name) {
+    try {
+      Integer alias = aliases.alias(name);
+      if (alias != null) return (short) (int) alias;
+      if (aliases.size() >= maxSize || nextAlias > 65535) return -1;
+      int id = nextAlias++;
+      aliases.register(id, name);
+      return (short) id;
+    } catch (IOException e) {
       return -1;
     }
-    return alias;
   }
 
-  public String getTopic(int alias) {
-    for (Map.Entry<String, Short> entries : topicAlias.entrySet()) {
-      if (entries.getValue() == alias) {
-        return entries.getKey();
-      }
+  public synchronized String getTopic(int alias) {
+    try {
+      return aliases.topic(Short.toUnsignedInt((short) alias));
+    } catch (IOException e) {
+      throw new IllegalStateException("MQTT-SN 1.2 alias lookup failed", e);
     }
-    return null;
   }
 
-  public String getTopic(SocketAddress address, int alias, int topicType) {
-    if (topicType == TOPIC_NAME) {
-      for (Map.Entry<String, Short> entries : topicAlias.entrySet()) {
-        if (entries.getValue() == alias) {
-          return entries.getKey();
-        }
-      }
-    } else {
-      return registeredTopicConfiguration.getTopic(address, alias);
-    }
-    return null;
+  public synchronized String getTopic(SocketAddress address, int alias, int topicType) {
+    return topicType == TOPIC_NAME ? getTopic(alias)
+        : registeredTopicConfiguration.getTopic(address, alias);
   }
 
-  public short findTopicAlias(String name) {
-    Short alias = topicAlias.get(name);
-    if (alias == null) {
-      return -1;
+  public synchronized short findTopicAlias(String name) {
+    try {
+      Integer alias = aliases.alias(name);
+      return alias == null ? -1 : (short) (int) alias;
+    } catch (IOException e) {
+      throw new IllegalStateException("MQTT-SN 1.2 alias lookup failed", e);
     }
-    return alias;
   }
 
-  public int getTopicAliasType(String destinationName) {
-    if (topicAlias.containsKey(destinationName)) {
-      return TOPIC_NAME;
-    }
-    return TOPIC_PRE_DEFINED_ID;
+  public synchronized int getTopicAliasType(String destinationName) {
+    return findTopicAlias(destinationName) != -1 ? TOPIC_NAME : TOPIC_PRE_DEFINED_ID;
   }
 
   public int findRegisteredTopicAlias(SocketAddress key, String destinationName) {
