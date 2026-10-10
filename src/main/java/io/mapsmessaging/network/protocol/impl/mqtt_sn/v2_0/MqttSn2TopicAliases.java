@@ -15,7 +15,7 @@ import java.util.function.IntFunction;
  * Caller supplies configured predefined topic resolution separately.
  */
 public final class MqttSn2TopicAliases {
-  private final TopicAliasRegistry registry;
+  private TopicAliasRegistry registry;
 
   public MqttSn2TopicAliases() {
     this(new TopicAliasRegistry(65535));
@@ -23,6 +23,10 @@ public final class MqttSn2TopicAliases {
 
   public MqttSn2TopicAliases(TopicAliasRegistry registry) {
     this.registry = Objects.requireNonNull(registry);
+  }
+
+  public synchronized void attach(TopicAliasRegistry persistentSessionRegistry) {
+    registry = Objects.requireNonNull(persistentSessionRegistry);
   }
 
   public synchronized int register(String name) throws IOException {
