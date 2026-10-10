@@ -41,6 +41,9 @@ import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.packet.*;
 import io.mapsmessaging.network.protocol.Protocol;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v2_0.MqttSn2Protocol;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v2_0.MqttSn2HmacProtectionSession;
+import io.mapsmessaging.network.protocol.impl.mqtt_sn.v2_0.MqttSn2ProtectionPolicy;
+import io.mapsmessaging.network.protocol.impl.mqtt_sn.v2_0.MqttSn2ProtectionSession;
+import io.mapsmessaging.network.protocol.impl.mqtt_sn.v2_0.protection.MqttSn2CryptoProviders;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v2_0.MqttSn2IndexedCounterStore;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v2_0.KeyStoreProtectionKeyResolver;
 import io.mapsmessaging.configuration.ConfigurationProperties;
@@ -87,11 +90,11 @@ public class MQTTSNInterfaceManager implements SelectorCallback {
   private final boolean advertiseGateway;
 
   private final MqttSnConfig mqttSnConfig;
-  private volatile MqttSn2HmacProtectionSession protectionSession;
+  private volatile MqttSn2ProtectionPolicy protectionSession;
   private MqttSn2IndexedCounterStore ownedCounterStore;
 
   /** Opt-in secured MQTT-SN 2.0 endpoint; requires durable counter source and key resolver. */
-  public void configureProtection(MqttSn2HmacProtectionSession policy) {
+  public void configureProtection(MqttSn2ProtectionPolicy policy) {
     java.util.Objects.requireNonNull(policy, "policy");
     if (!policy.hasDurableReplayStore()) {
       throw new IllegalArgumentException("Secured MQTT-SN endpoint requires durable replay tracking");
@@ -124,6 +127,46 @@ public class MQTTSNInterfaceManager implements SelectorCallback {
       java.util.Arrays.fill(key, (byte) 0);
     }
     configureHmacProtection(resolver, counterDirectory, localSenderIdentifier, outboundScheme);
+  }
+
+  /**
+   * Configure ServiceLoader-backed HMAC or AEAD protection using Authentication
+   * library SecretKey entries and durable counter storage.
+   */
+  public synchronized void configureKeystoreProtection(
+      ConfigurationProperties keyStoreConfiguration,
+      Map<String, String> senderSchemeAliases,
+      char[] entryPassword,
+      Path counterDirectory,
+      byte[] localSenderIdentifier,
+      int outboundScheme,
+      java.util.Set<Integer> acceptedSchemes) throws IOException {
+    if (ownedCounterStore != null || protectionSession != null) {
+      throw new IllegalStateException("Protection is already configured");
+    }
+    KeyStoreProtectionKeyResolver resolver = new KeyStoreProtectionKeyResolver(
+        keyStoreConfiguration, senderSchemeAliases, entryPassword);
+    MqttSn2CryptoProviders providers = new MqttSn2CryptoProviders();
+    java.util.Objects.requireNonNull(acceptedSchemes, "acceptedSchemes");
+    if (!acceptedSchemes.contains(outboundScheme)) {
+      throw new IllegalArgumentException("Outbound scheme must be explicitly permitted");
+    }
+    for (int scheme : acceptedSchemes) providers.require(scheme);
+    // Validate the outbound key before acquiring storage or accepting traffic.
+    javax.crypto.SecretKey outgoingKey = resolver.resolveSecretKey(localSenderIdentifier, outboundScheme);
+    if (outgoingKey == null) throw new IOException("Missing outbound protection key");
+    MqttSn2IndexedCounterStore counters = new MqttSn2IndexedCounterStore(counterDirectory);
+    try {
+      configureProtection(new MqttSn2ProtectionSession(
+          providers, resolver::resolveSecretKey, counters, acceptedSchemes,
+          outboundScheme, localSenderIdentifier));
+      ownedCounterStore = counters;
+    } catch (RuntimeException | Error failure) {
+      try { counters.close(); } catch (IOException closeFailure) {
+        failure.addSuppressed(closeFailure);
+      }
+      throw failure;
+    }
   }
 
   /** Configure an indexed persistent protection store in a dedicated directory. */
@@ -272,7 +315,7 @@ public class MQTTSNInterfaceManager implements SelectorCallback {
 
   private void acceptV2Connection(Packet packet) throws IOException {
     ByteBuffer incoming = packet.getRawBuffer().asReadOnlyBuffer();
-    MqttSn2HmacProtectionSession policy = protectionSession;
+    MqttSn2ProtectionPolicy policy = protectionSession;
     if (isProtectedV2(packet)) {
       if (policy == null) {
         throw new IOException("Protected MQTT-SN 2.0 CONNECT without endpoint policy");
