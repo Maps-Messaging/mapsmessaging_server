@@ -317,6 +317,45 @@ class MqttSn2ClientServerConformanceTest extends BaseTestConfig {
   }
 
   @Test
+  void pubwosWithoutConnectBridgesAtQosZeroAndNeverAcknowledges() throws Exception {
+    // CSD01 MQTT-SN-4.3.1-1/-2: PUBWOS is sessionless, no response or retry.
+    String topic = "mqttsn/pubwos/" + UUID.randomUUID();
+    List<String> received = new CopyOnWriteArrayList<>();
+    try (CloseableMqtt311Client subscriber = new CloseableMqtt311Client(
+            "tcp://localhost:1883", "msg324-pubwos-" + UUID.randomUUID());
+         DatagramSocket sender = new DatagramSocket()) {
+      MqttConnectOptions options = new MqttConnectOptions();
+      options.setMqttVersion(MqttConnectOptions.MQTT_VERSION_3_1_1);
+      options.setConnectionTimeout(5);
+      subscriber.connect(options);
+      subscriber.setCallback(new org.eclipse.paho.client.mqttv3.MqttCallback() {
+        @Override public void connectionLost(Throwable failure) { }
+        @Override public void messageArrived(String name,
+            org.eclipse.paho.client.mqttv3.MqttMessage message) {
+          received.add(new String(message.getPayload(), java.nio.charset.StandardCharsets.UTF_8));
+        }
+        @Override public void deliveryComplete(
+            org.eclipse.paho.client.mqttv3.IMqttDeliveryToken token) { }
+      });
+      subscriber.subscribe(topic, 0);
+
+      var pubwos = new io.mapsmessaging.network.protocol.impl.mqtt_sn.v2_0.packet.MqttSn2PublishCodec.Publish(
+          true, 0, false, false, 3, 0, topic, 0,
+          "without-connect".getBytes(java.nio.charset.StandardCharsets.UTF_8));
+      byte[] wire = bytes(io.mapsmessaging.network.protocol.impl.mqtt_sn.v2_0.packet.MqttSn2PublishCodec.encode(pubwos));
+      sender.setSoTimeout(500);
+      sender.send(new DatagramPacket(wire, wire.length,
+          new InetSocketAddress("127.0.0.1", 1884)));
+      WaitForState.waitFor(5, TimeUnit.SECONDS, () -> received.size() == 1);
+      assertEquals(List.of("without-connect"), received,
+          "CSD01 4.3.1-2: accepted sessionless publication must be delivered");
+      DatagramPacket reply = new DatagramPacket(new byte[256], 256);
+      assertThrows(SocketTimeoutException.class, () -> sender.receive(reply),
+          "CSD01 4.3.1: PUBWOS must never produce an acknowledgement");
+    }
+  }
+
+  @Test
   void qos0PublishDoesNotWaitForAnAcknowledgement() throws Exception {
     // CSD01 MQTT-SN-4.3.2-1..3: QoS 0 PUBLISH carries no Packet Identifier.
     try (UdpMqttSnClient client = client(clientId("qos0"), 31, true)) {
