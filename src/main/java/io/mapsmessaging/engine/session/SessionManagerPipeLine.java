@@ -288,6 +288,7 @@ public class SessionManagerPipeLine {
       return;
     }
     deleteStateFile(storeLookup.getDataPath() + "/" + details.getUniqueId() + ".bin");
+    deleteStateFile(storeLookup.getDataPath() + "/" + details.getUniqueId() + ".aliases");
   }
 
   private void finaliseWill(String sessionId, WillFinalisation finalisation) {
