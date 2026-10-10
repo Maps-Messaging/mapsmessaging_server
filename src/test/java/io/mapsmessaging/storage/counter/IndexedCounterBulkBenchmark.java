@@ -9,6 +9,8 @@ import java.nio.file.Path;
 import java.util.Iterator;
 import java.util.Locale;
 import java.util.Random;
+import java.lang.management.ManagementFactory;
+import java.lang.management.MemoryMXBean;
 
 /** Opt-in cardinality benchmark using atomic fresh-store bulk initialization. */
 public final class IndexedCounterBulkBenchmark {
@@ -23,7 +25,7 @@ public final class IndexedCounterBulkBenchmark {
     }
     Path root = Files.createTempDirectory("counter-bulk-benchmark-");
     System.out.println("JVM: " + System.getProperty("java.version"));
-    System.out.println("Sessions,bulk_load_ms,reopen_ms,lookup_us_per_op,update_us_per_op,flush_ms,index_bytes,value_bytes");
+    System.out.println("Sessions,bulk_load_ms,reopen_ms,lookup_us_per_op,update_us_per_op,flush_ms,index_bytes,value_bytes,heap_before_bytes,heap_loaded_bytes,heap_after_close_bytes");
     for (int requested : SIZES) {
       if (requested > maximum) break;
       Path directory = root.resolve("sessions-" + requested);
@@ -39,15 +41,18 @@ public final class IndexedCounterBulkBenchmark {
       IndexedCounterBulkLoader.initialize(directory, entries);
       double loadMs = (System.nanoTime() - started) / 1_000_000.0;
       Path base = directory.resolve("counters");
+      long heapBefore = heapUsed();
       started = System.nanoTime();
       double reopenMs;
       double lookupUs;
       double updateUs;
       double flushMs;
+      long heapLoaded;
       Random random = new Random(324);
       try (IndexedCounterStore store = new IndexedCounterStore(
           base, CounterDurability.BATCHED, Integer.MAX_VALUE - 1, 0)) {
         reopenMs = (System.nanoTime() - started) / 1_000_000.0;
+        heapLoaded = heapUsed();
         started = System.nanoTime();
         for (int i = 0; i < samples; i++) {
           if (store.highWaterMark("session/" + random.nextInt(requested) + "/scheme/0") < 1) {
@@ -67,11 +72,18 @@ public final class IndexedCounterBulkBenchmark {
         store.flush();
         flushMs = (System.nanoTime() - started) / 1_000_000.0;
       }
-      System.out.printf(Locale.ROOT, "%d,%.2f,%.2f,%.2f,%.2f,%.3f,%d,%d%n",
+      long heapAfterClose = heapUsed();
+      System.out.printf(Locale.ROOT, "%d,%.2f,%.2f,%.2f,%.2f,%.3f,%d,%d,%d,%d,%d%n",
           requested, loadMs, reopenMs, lookupUs, updateUs, flushMs,
           Files.size(directory.resolve("counters.idx")),
-          Files.size(directory.resolve("counters.dat")));
+          Files.size(directory.resolve("counters.dat")),
+          heapBefore, heapLoaded, heapAfterClose);
     }
     System.out.println("Files retained: " + root);
+  }
+
+  private static long heapUsed() {
+    MemoryMXBean memory = ManagementFactory.getMemoryMXBean();
+    return memory.getHeapMemoryUsage().getUsed();
   }
 }
