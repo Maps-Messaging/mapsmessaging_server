@@ -8,7 +8,8 @@ import java.io.IOException;
 
 /**
  * Protocol-independent, durable monotonic counters.
- * Implementations must never report success before durable commit.
+ * Strict and reserved-range operations require durable commit before success.
+ * BATCHED operations can lose acknowledged updates after power failure.
  */
 public interface CounterStore extends AutoCloseable {
   /**
@@ -25,6 +26,9 @@ public interface CounterStore extends AutoCloseable {
 
   /** Read the highest committed value, or zero for a new key. */
   long highWaterMark(String key) throws IOException;
+
+  /** Force pending updates to durable storage. */
+  void flush() throws IOException;
 
   record Range(long first, long last) {}
 
