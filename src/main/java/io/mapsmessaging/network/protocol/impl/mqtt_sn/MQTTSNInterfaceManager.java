@@ -287,6 +287,56 @@ public class MQTTSNInterfaceManager implements SelectorCallback {
     );
   }
 
+  /** Initialize explicitly configured protection; never expose secret configuration through REST. */
+  private void initializeConfiguredProtection() throws IOException {
+    ConfigurationProperties protection = mqttSnConfig.getProtectionConfiguration();
+    if (protection == null || !protection.getBooleanProperty("enabled", false)) return;
+    if (!(protection.get("keyStore") instanceof ConfigurationProperties keyStore)
+        || !(protection.get("senderAliases") instanceof ConfigurationProperties aliasesConfig)) {
+      throw new IOException("MQTT-SN protection keyStore and senderAliases are required");
+    }
+    String passwordEnvironment = protection.getProperty("keyEntryPasswordEnv");
+    if (passwordEnvironment == null || passwordEnvironment.isBlank()) {
+      throw new IOException("Missing key entry password environment variable name");
+    }
+    String passwordValue = System.getenv(passwordEnvironment);
+    if (passwordValue == null || passwordValue.isEmpty()) {
+      throw new IOException("MQTT-SN key entry password environment variable is unset");
+    }
+    String senderValue = protection.getProperty("senderIdentifier");
+    byte[] sender;
+    try {
+      sender = java.util.HexFormat.of().parseHex(senderValue);
+    } catch (IllegalArgumentException | NullPointerException invalid) {
+      throw new IOException("Invalid MQTT-SN sender identifier", invalid);
+    }
+    if (sender.length != 8) throw new IOException("Sender identifier must contain eight octets");
+    String directory = protection.getProperty("counterDirectory");
+    String accepted = protection.getProperty("acceptedSchemes");
+    if (directory == null || directory.isBlank() || accepted == null || accepted.isBlank()) {
+      throw new IOException("Missing protection counter directory or scheme policy");
+    }
+    java.util.Set<Integer> schemes = new java.util.HashSet<>();
+    try {
+      for (String item : accepted.split(",")) schemes.add(Integer.decode(item.trim()));
+    } catch (NumberFormatException invalid) {
+      throw new IOException("Invalid protection scheme list", invalid);
+    }
+    Map<String, String> aliases = new java.util.HashMap<>();
+    for (var entry : aliasesConfig.getMap().entrySet()) {
+      aliases.put(entry.getKey().toString().toLowerCase(java.util.Locale.ROOT),
+          entry.getValue().toString());
+    }
+    char[] entryPassword = passwordValue.toCharArray();
+    try {
+      configureKeystoreProtection(keyStore, aliases, entryPassword, Path.of(directory),
+          sender, protection.getIntProperty("outboundScheme", -1), schemes);
+    } finally {
+      java.util.Arrays.fill(entryPassword, (char) 0);
+    }
+    initializeConfiguredProtection();
+  }
+
   private boolean startAdvertiseTask(InterfaceInformation info) throws SocketException {
     return advertiseGateway && info.getBroadcast() != null && !info.isLoopback();
   }
