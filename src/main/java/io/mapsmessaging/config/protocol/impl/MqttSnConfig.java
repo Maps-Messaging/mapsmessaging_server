@@ -171,6 +171,8 @@ public class MqttSnConfig extends MqttSnConfigDTO implements Config {
     properties.put("maxInFlightEvents", this.maxInFlightEvents);
     properties.put("dropQoS0Events", this.dropQoS0);
     properties.put("eventQueueTimeout", this.eventQueueTimeout);
+    // Persist endpoint security policy in server configuration; JSON REST getter is ignored.
+    if (protectionConfiguration != null) properties.put("protection", protectionConfiguration);
 
     // Add predefined topics list to properties
     List<ConfigurationProperties> predefinedPropsList = new ArrayList<>();
