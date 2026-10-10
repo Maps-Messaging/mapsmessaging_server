@@ -46,7 +46,7 @@ public final class IndexedCounterBulkBenchmark {
       double flushMs;
       Random random = new Random(324);
       try (IndexedCounterStore store = new IndexedCounterStore(
-          base, CounterDurability.BATCHED, Integer.MAX_VALUE, 0)) {
+          base, CounterDurability.BATCHED, Integer.MAX_VALUE - 1, 0)) {
         reopenMs = (System.nanoTime() - started) / 1_000_000.0;
         started = System.nanoTime();
         for (int i = 0; i < samples; i++) {
