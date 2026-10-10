@@ -1,2 +1,3 @@
 io.mapsmessaging.network.protocol.impl.mqtt_sn.v2_0.protection.HmacProtectionProvider
 io.mapsmessaging.network.protocol.impl.mqtt_sn.v2_0.protection.JcaAeadProtectionProvider
+io.mapsmessaging.network.protocol.impl.mqtt_sn.v2_0.protection.BouncyCastleCcmProtectionProvider
