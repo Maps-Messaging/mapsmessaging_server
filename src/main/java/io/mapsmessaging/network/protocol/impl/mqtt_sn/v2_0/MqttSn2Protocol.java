@@ -71,7 +71,7 @@ public final class MqttSn2Protocol extends Protocol {
   }
   private volatile boolean closed;
   private final MqttSn2Lifecycle lifecycle = new MqttSn2Lifecycle();
-  private volatile MqttSn2HmacProtectionSession protectionSession;
+  private volatile MqttSn2ProtectionPolicy protectionSession;
   private final MqttSn2OutgoingDeliveryManager outgoing = new MqttSn2OutgoingDeliveryManager();
   private final Map<Integer, Transaction> incomingQos2 = new HashMap<>();
   private final java.util.Set<Integer> incomingQos2Pending = new java.util.HashSet<>();
@@ -122,7 +122,7 @@ public final class MqttSn2Protocol extends Protocol {
   }
 
   /** Require verified inbound protection and signed outbound protection. */
-  public void configureProtection(MqttSn2HmacProtectionSession policy) {
+  public void configureProtection(MqttSn2ProtectionPolicy policy) {
     protectionSession = java.util.Objects.requireNonNull(policy, "policy");
   }
 
@@ -131,7 +131,7 @@ public final class MqttSn2Protocol extends Protocol {
     ByteBuffer input = packet.getRawBuffer().asReadOnlyBuffer();
     boolean wrapped = MqttSn2FrameCodec.decode(input.asReadOnlyBuffer()).type()
         == MqttSn2PacketType.PROTECTION_ENCAPSULATION;
-    MqttSn2HmacProtectionSession policy = protectionSession;
+    MqttSn2ProtectionPolicy policy = protectionSession;
     if (policy != null) {
       if (!wrapped) throw new IOException("Unprotected MQTT-SN 2.0 packet on secured session");
       input = policy.receive(input);
@@ -582,7 +582,7 @@ public final class MqttSn2Protocol extends Protocol {
   }
 
   private void send(ByteBuffer wire, Runnable completion) {
-    MqttSn2HmacProtectionSession policy = protectionSession;
+    MqttSn2ProtectionPolicy policy = protectionSession;
     if (policy != null) {
       try {
         wire = policy.send(wire);
