@@ -197,11 +197,17 @@ public final class IndexedCounterStore implements CounterStore {
   }
 
   /** Make all writes already issued by this store durable. */
+  @Override
   public synchronized void flush() throws IOException {
     ensureOpen();
     if (pendingWrites == 0) return;
-    values.force(false);
-    pendingWrites = 0;
+    try {
+      values.force(false);
+      pendingWrites = 0;
+    } catch (IOException error) {
+      backgroundFailure = error;
+      throw error;
+    }
   }
 
   private Slot readCurrent(long offset) throws IOException {
