@@ -265,7 +265,6 @@ public class MQTTSNInterfaceManager implements SelectorCallback {
     packetFactory[0] = new PacketFactory();
 
     selectorTask = new SelectorTask(this, endPoint.getConfig().getEndPointConfig(), endPoint.isUDP());
-    selectorTask.register(SelectionKey.OP_READ);
     if (startAdvertiseTask(info)) {
       AdvertiserTask tmp = null;
       try {
@@ -286,6 +285,8 @@ public class MQTTSNInterfaceManager implements SelectorCallback {
         "<registered>"
     );
     initializeConfiguredProtection();
+    // Do not accept traffic until the protection policy and keys are valid.
+    selectorTask.register(SelectionKey.OP_READ);
   }
 
   /** Initialize explicitly configured protection; never expose secret configuration through REST. */
