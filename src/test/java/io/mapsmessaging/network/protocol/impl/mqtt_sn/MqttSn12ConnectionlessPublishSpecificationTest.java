@@ -142,19 +142,22 @@ class MqttSn12ConnectionlessPublishSpecificationTest {
 
   @Test
   @ProtocolRequirement(specification = "MQTT-SN 2.0 CSD01",
-      value = "CSD01 sections 2.1.3 and 3.6.1.2.1: shared-version UDP dispatch rejects ambiguous unprotected 0x12 alias forms",
+      value = "CSD01 sections 3.6.1 and 4.3.1: unconnected PUBWOS can use configured predefined aliases",
       source = V2_SOURCE)
-  void v2PubwosPredefinedAliasDoesNotMasqueradeAsLegacySubscribe() throws Exception {
+  void v2PubwosPredefinedAliasPublishesWithoutLegacySession() throws Exception {
     Fixture fixture = fixture("", List.of(predefined(42, "pre/topic")));
     try (MockedStatic<SessionManager> sessions = mockStatic(SessionManager.class)) {
       SessionManager manager = mock(SessionManager.class);
       sessions.when(SessionManager::getInstance).thenReturn(manager);
+      when(manager.publish(eq("pre/topic"), any()))
+          .thenReturn(CompletableFuture.completedFuture(1));
       ByteBuffer frame = MqttSn2PublishCodec.encode(new MqttSn2PublishCodec.Publish(
           true, 0, false, false, 1, 0, null, 42, new byte[]{7}));
       Packet packet = new Packet(frame);
       packet.setFromAddress(fixture.address);
       fixture.manager.processPacket(packet);
-      verifyNoInteractions(manager);
+      verify(manager).publish(eq("pre/topic"), any());
+      verifyNoMoreInteractions(manager);
     }
   }
 
