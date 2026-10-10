@@ -159,8 +159,10 @@ class IndexedCounterStoreTest {
     try (CounterStore store = new IndexedCounterStore(base())) {
       store.accept("rx", 41);
     }
-    overwrite(values(), 8 + 16, new byte[] {0, 0, 0, 0});
-    overwrite(values(), 8 + 24 + 16, new byte[] {0, 0, 0, 0});
+    // Corrupt the generation bytes in both slots, leaving their stored CRCs unchanged.
+    // Writing zero CRC bytes is unreliable: zero-initialized records may already match.
+    overwrite(values(), 8, new byte[] {(byte) 0xFF});
+    overwrite(values(), 8 + 24, new byte[] {(byte) 0xFF});
     assertThrows(IOException.class, () -> new IndexedCounterStore(base()));
   }
 
