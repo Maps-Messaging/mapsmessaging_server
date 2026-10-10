@@ -13,6 +13,10 @@ import io.mapsmessaging.dto.rest.config.network.EndPointServerConfigDTO;
 import io.mapsmessaging.mqttsn.ConnectOptions;
 import io.mapsmessaging.mqttsn.MqttSnCodec;
 import io.mapsmessaging.mqttsn.PacketType;
+import io.mapsmessaging.mqttsn.QoS;
+import io.mapsmessaging.mqttsn.PublishOptions;
+import io.mapsmessaging.mqttsn.SubscribeOptions;
+import io.mapsmessaging.mqttsn.TopicRef;
 import io.mapsmessaging.mqttsn.protection.ProtectionCodec;
 import io.mapsmessaging.mqttsn.protection.ProtectionEnvelope;
 import io.mapsmessaging.mqttsn.protection.bc.BouncyCastleProtectionProvider;
@@ -112,6 +116,22 @@ class MqttSn2ProtectedLiveUdpInteropTest extends BaseTestConfig {
       var ping = ProtectionCodec.decode(receive(client), provider).mqttSnPacket();
       assertEquals(PacketType.PINGRESP, MqttSnCodec.decode(ByteBuffer.wrap(ping)).type());
 
+      // Complete subscription and data delivery through the protected session.
+      String topic = "v2/secure/" + scheme + "/" + System.nanoTime();
+      send(client, remote, wrap(provider, scheme, 3,
+          MqttSnCodec.encodeSubscribe(new SubscribeOptions(
+              7, TopicRef.filter(topic), 0, false, QoS.AT_MOST_ONCE, false))));
+      var suback = ProtectionCodec.decode(receive(client), provider).mqttSnPacket();
+      assertEquals(PacketType.SUBACK, MqttSnCodec.decode(ByteBuffer.wrap(suback)).type());
+      byte[] payload = ("secure-" + scheme).getBytes(java.nio.charset.StandardCharsets.UTF_8);
+      send(client, remote, wrap(provider, scheme, 4,
+          MqttSnCodec.encodePublish(new PublishOptions(
+              QoS.AT_MOST_ONCE, false, false, 0, TopicRef.name(topic), payload))));
+      var data = ProtectionCodec.decode(receive(client), provider).mqttSnPacket();
+      var publish = MqttSnCodec.decode(ByteBuffer.wrap(data));
+      assertEquals(PacketType.PUBLISH, publish.type());
+      assertArrayEquals(payload, MqttSnCodec.decodePublish(publish).payload());
+
       // Duplicate authenticated sender counter cannot be applied twice.
       client.setSoTimeout(350);
       send(client, remote, wrapped);
@@ -120,7 +140,7 @@ class MqttSn2ProtectedLiveUdpInteropTest extends BaseTestConfig {
       send(client, remote, MqttSnCodec.encodePingReq(3));
       assertThrows(SocketTimeoutException.class, () -> receive(client));
       // Corrupt ciphertext/tag must never return an authenticated response.
-      byte[] corrupt = wrap(provider, scheme, 3, MqttSnCodec.encodePingReq(4));
+      byte[] corrupt = wrap(provider, scheme, 5, MqttSnCodec.encodePingReq(4));
       corrupt[corrupt.length - 1] ^= 1;
       send(client, remote, corrupt);
       assertThrows(SocketTimeoutException.class, () -> receive(client));
