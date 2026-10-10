@@ -5,41 +5,35 @@
 package io.mapsmessaging.network.protocol.impl.mqtt_sn.v2_0;
 
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
+import io.mapsmessaging.storage.alias.TopicAliasRegistry;
 import java.util.Objects;
 import java.util.function.IntFunction;
 
 /**
- * Connection-scoped MQTT-SN 2.0 topic aliases.
+ * MQTT-SN 2.0 topic aliases; storage owned by this protocol instance until attached to session persistence.
  * CSD01: 0=session alias, 1=predefined alias, 2=reserved, 3=topic name.
  * Caller supplies configured predefined topic resolution separately.
  */
 public final class MqttSn2TopicAliases {
-  private final Map<String, Integer> nameToAlias = new HashMap<>();
-  private final Map<Integer, String> aliasToName = new HashMap<>();
-  private int nextAlias = 1;
+  private final TopicAliasRegistry registry;
+
+  public MqttSn2TopicAliases() {
+    this(new TopicAliasRegistry(65535));
+  }
+
+  public MqttSn2TopicAliases(TopicAliasRegistry registry) {
+    this.registry = Objects.requireNonNull(registry);
+  }
 
   public synchronized int register(String name) throws IOException {
-    if (name == null || name.isEmpty()) {
-      throw new IOException("MQTT-SN 2.0 empty Topic Name");
-    }
-    Integer existing = nameToAlias.get(name);
-    if (existing != null) return existing;
-    if (nextAlias > 0xffff) {
-      throw new IOException("MQTT-SN 2.0 session alias space exhausted");
-    }
-    int value = nextAlias++;
-    nameToAlias.put(name, value);
-    aliasToName.put(value, name);
-    return value;
+    return registry.register(name);
   }
 
   public synchronized String resolve(int type, int alias, String topicName,
       IntFunction<String> predefinedLookup) throws IOException {
     Objects.requireNonNull(predefinedLookup, "predefinedLookup");
     String name = switch (type) {
-      case 0 -> aliasToName.get(alias);
+      case 0 -> registry.topic(alias);
       case 1 -> predefinedLookup.apply(alias);
       case 3 -> topicName;
       default -> throw new IOException("Reserved MQTT-SN 2.0 topic type");
@@ -50,9 +44,7 @@ public final class MqttSn2TopicAliases {
     return name;
   }
 
-  public synchronized void clear() {
-    nameToAlias.clear();
-    aliasToName.clear();
-    nextAlias = 1;
+  public synchronized void clear() throws IOException {
+    registry.clear();
   }
 }
