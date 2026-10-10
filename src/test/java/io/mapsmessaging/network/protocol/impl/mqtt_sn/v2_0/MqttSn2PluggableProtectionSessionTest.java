@@ -26,6 +26,9 @@ class MqttSn2PluggableProtectionSessionTest {
     return switch (scheme) {
       case 0 -> new SecretKeySpec(new byte[32], "HmacSHA256");
       case 1 -> new SecretKeySpec(new byte[32], "HmacSHA3-256");
+      case 0x40, 0x43 -> new SecretKeySpec(new byte[16], "AES");
+      case 0x41, 0x44 -> new SecretKeySpec(new byte[24], "AES");
+      case 0x42, 0x45 -> new SecretKeySpec(new byte[32], "AES");
       case 0x46 -> new SecretKeySpec(new byte[16], "AES");
       case 0x47 -> new SecretKeySpec(new byte[24], "AES");
       case 0x48 -> new SecretKeySpec(new byte[32], "AES");
@@ -41,7 +44,7 @@ class MqttSn2PluggableProtectionSessionTest {
   }
 
   @Test void goodFullEnvelopeRoundTripEveryInstalledScheme() throws Exception {
-    for (int scheme : new int[]{0, 1, 0x46, 0x47, 0x48, 0x49}) {
+    for (int scheme : new int[]{0, 1, 0x40, 0x41, 0x42, 0x43, 0x44, 0x45, 0x46, 0x47, 0x48, 0x49}) {
       Path storeDir = root.resolve("scheme-" + scheme);
       try (MqttSn2IndexedCounterStore store = new MqttSn2IndexedCounterStore(storeDir)) {
         MqttSn2ProtectionSession session = policy(store, scheme);
