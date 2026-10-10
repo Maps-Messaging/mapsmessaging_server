@@ -10,154 +10,259 @@ import java.nio.ByteOrder;
 import java.nio.charset.CharacterCodingException;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Set;
 import java.util.zip.CRC32C;
 
 /**
- * A single owner's topic alias dictionary. No global state or filesystem I/O.
+ * Instance-owned, register-once topic alias dictionary with O(1) lookups.
+ * The owner determines whether it lives only on a connection (MQTT 5), or
+ * participates in session persistence (MQTT-SN).
  *
- * Persistence belongs to the owning session: call snapshot() on mutation,
- * commit through session persistence, and restore the snapshot before
- * processing packets on a recovered session. MQTT 5 connection owners must
- * not persist their mappings across network connections.
+ * Snapshots are complete and CRC-protected. The persistence adapter MUST
+ * atomically/durably commit each snapshot before returning from save().
+ * Ambiguous save failures poison the registry until a fresh load.
  */
 public final class TopicAliasRegistry {
   private static final int MAGIC = 0x54415231; // TAR1
   private static final int VERSION = 1;
-  private static final int HEADER_BYTES = 16;
   private static final int MAX_TOPIC_BYTES = 65_535;
+
+  public enum PersistenceMode { MEMORY_ONLY, SESSION_PERSISTENT }
+
+  public interface SnapshotPersistence {
+    /** Return null for a previously uninitialized session. */
+    byte[] load() throws IOException;
+    /** Commit the entire snapshot durably before returning. */
+    void save(byte[] snapshot) throws IOException;
+  }
+
   private final int maximum;
+  private final PersistenceMode mode;
+  private final SnapshotPersistence persistence;
   private final Map<Integer, String> byAlias = new HashMap<>();
   private final Map<String, Integer> byTopic = new HashMap<>();
   private int nextAlias = 1;
+  private boolean poisoned;
+  private boolean loaded;
 
   public TopicAliasRegistry(int maximum) {
-    if (maximum < 1 || maximum > 65535) {
+    this(maximum, PersistenceMode.MEMORY_ONLY, null);
+  }
+
+  public TopicAliasRegistry(int maximum, PersistenceMode mode, SnapshotPersistence persistence) {
+    if (maximum < 1 || maximum > 65_535) {
       throw new IllegalArgumentException("Alias maximum must be 1..65535");
     }
     this.maximum = maximum;
+    this.mode = Objects.requireNonNull(mode, "mode");
+    if ((mode == PersistenceMode.SESSION_PERSISTENT) != (persistence != null)) {
+      throw new IllegalArgumentException("Persistent mode requires an adapter; memory mode forbids one");
+    }
+    this.persistence = persistence;
+    loaded = mode == PersistenceMode.MEMORY_ONLY;
   }
 
+  public PersistenceMode persistenceMode() {
+    return mode;
+  }
+
+  /** Must complete before any restored session publishes or registers. */
+  public synchronized void load() throws IOException {
+    if (mode == PersistenceMode.MEMORY_ONLY) return;
+    if (loaded) throw new IOException("Alias registry already loaded");
+    try {
+      byte[] bytes = persistence.load();
+      if (bytes != null) decodeInto(bytes);
+      loaded = true;
+      poisoned = false;
+    } catch (IOException | RuntimeException error) {
+      poisoned = true;
+      throw error;
+    }
+  }
+
+  /** Allocate one unique alias, returning the existing value on repeat registration. */
   public synchronized int register(String topic) throws IOException {
+    checkUsable();
     validateTopic(topic);
     Integer existing = byTopic.get(topic);
     if (existing != null) return existing;
-    if (nextAlias > maximum) throw new IOException("Topic alias space exhausted");
-    int allocated = nextAlias++;
+    int allocated = nextFree();
+    Map<Integer, String> candidate = new HashMap<>(byAlias);
+    candidate.put(allocated, topic);
+    commit(candidate, allocated == maximum ? maximum + 1 : allocated + 1);
     byAlias.put(allocated, topic);
     byTopic.put(topic, allocated);
+    nextAlias = allocated + 1;
     return allocated;
   }
 
-  /** Add a server-assigned numeric alias; conflicting mappings fail closed. */
+  /** Server-assigned mapping; conflicting reassignment is rejected. */
   public synchronized void register(int alias, String topic) throws IOException {
+    checkUsable();
     validateTopic(topic);
-    if (alias < 1 || alias > maximum) throw new IOException("Topic alias out of range");
-    String existingTopic = byAlias.get(alias);
-    Integer existingAlias = byTopic.get(topic);
-    if ((existingTopic != null && !existingTopic.equals(topic))
-        || (existingAlias != null && existingAlias != alias)) {
-      throw new IOException("Conflicting topic alias mapping");
-    }
-    if (existingTopic != null) return;
+    validateAlias(alias);
+    String existing = byAlias.get(alias);
+    Integer old = byTopic.get(topic);
+    if ((existing != null && !existing.equals(topic))
+        || (old != null && old != alias)) throw new IOException("Conflicting topic alias mapping");
+    if (existing != null) return;
+    Map<Integer, String> candidate = new HashMap<>(byAlias);
+    candidate.put(alias, topic);
+    int next = Math.max(nextAlias, alias + 1);
+    commit(candidate, next);
     byAlias.put(alias, topic);
     byTopic.put(topic, alias);
-    if (alias >= nextAlias) nextAlias = alias + 1;
+    nextAlias = next;
   }
 
-  public synchronized String topic(int alias) {
+  /**
+   * MQTT 5 only: a sender may reassign an existing alias on its connection.
+   * This deliberately does NOT perform the session-persistent register-once policy.
+   */
+  public synchronized void rebind(int alias, String topic) throws IOException {
+    checkUsable();
+    if (mode != PersistenceMode.MEMORY_ONLY) throw new IOException("Rebinding persistent aliases forbidden");
+    validateAlias(alias);
+    validateTopic(topic);
+    String previous = byAlias.put(alias, topic);
+    if (previous != null) byTopic.remove(previous);
+    Integer oldAlias = byTopic.put(topic, alias);
+    if (oldAlias != null && oldAlias != alias) byAlias.remove(oldAlias);
+    nextAlias = Math.max(nextAlias, alias + 1);
+  }
+
+  public synchronized String topic(int alias) throws IOException {
+    checkUsable();
     return byAlias.get(alias);
   }
 
-  /** Returns null if a topic has no session alias. */
-  public synchronized Integer alias(String topic) {
+  public synchronized Integer alias(String topic) throws IOException {
+    checkUsable();
     return byTopic.get(topic);
   }
 
-  public synchronized int size() {
+  public synchronized int size() throws IOException {
+    checkUsable();
     return byAlias.size();
   }
 
-  public synchronized void clear() {
+  public synchronized void clear() throws IOException {
+    checkUsable();
+    commit(Map.of(), 1);
     byAlias.clear();
     byTopic.clear();
     nextAlias = 1;
   }
 
-  /** Versioned, checksum-protected deterministic snapshot. No storage side effects. */
-  public synchronized byte[] snapshot() {
-    int length = HEADER_BYTES + 4;
-    for (String topic : byTopic.keySet()) {
-      length += 6 + topic.getBytes(StandardCharsets.UTF_8).length;
-    }
-    ByteBuffer buffer = ByteBuffer.allocate(length).order(ByteOrder.BIG_ENDIAN);
-    buffer.putInt(MAGIC).putInt(VERSION).putInt(nextAlias).putInt(byAlias.size());
-    byAlias.entrySet().stream().sorted(Map.Entry.comparingByKey()).forEach(entry -> {
-      byte[] topic = entry.getValue().getBytes(StandardCharsets.UTF_8);
-      buffer.putInt(entry.getKey()).putShort((short) topic.length).put(topic);
-    });
-    buffer.putInt(crc(buffer.array(), 0, buffer.position()));
-    return buffer.array();
+  /** Snapshot in-memory state. MQTT 5 must not save this across connections. */
+  public synchronized byte[] snapshot() throws IOException {
+    checkUsable();
+    return encode(byAlias, nextAlias);
   }
 
-  /** Restore atomically: a corrupt snapshot never alters this registry. */
-  public synchronized void restore(byte[] snapshot) throws IOException {
-    Objects.requireNonNull(snapshot, "snapshot");
-    if (snapshot.length < HEADER_BYTES + 4) throw new IOException("Truncated alias snapshot");
-    ByteBuffer b = ByteBuffer.wrap(snapshot).order(ByteOrder.BIG_ENDIAN);
+  /** Manual restore is only for memory-only ownership and tests. */
+  public synchronized void restore(byte[] bytes) throws IOException {
+    checkUsable();
+    if (mode == PersistenceMode.SESSION_PERSISTENT) {
+      throw new IOException("Persistent registry must restore through owner load()");
+    }
+    decodeInto(bytes);
+  }
+
+  private int nextFree() throws IOException {
+    int next = nextAlias;
+    while (next <= maximum && byAlias.containsKey(next)) next++;
+    if (next > maximum) throw new IOException("Topic alias space exhausted");
+    return next;
+  }
+
+  private void commit(Map<Integer, String> candidate, int next) throws IOException {
+    if (mode != PersistenceMode.SESSION_PERSISTENT) return;
+    try {
+      persistence.save(encode(candidate, next));
+    } catch (IOException | RuntimeException error) {
+      poisoned = true;
+      throw error;
+    }
+  }
+
+  private void decodeInto(byte[] bytes) throws IOException {
+    if (bytes == null || bytes.length < 20) throw new IOException("Truncated alias snapshot");
+    ByteBuffer b = ByteBuffer.wrap(bytes).order(ByteOrder.BIG_ENDIAN);
     if (b.getInt() != MAGIC || b.getInt() != VERSION) throw new IOException("Unsupported alias snapshot");
-    int candidateNext = b.getInt();
-    int entries = b.getInt();
-    if (candidateNext < 1 || candidateNext > maximum + 1
-        || entries < 0 || entries > maximum || entries > (snapshot.length - 20) / 7
-        || b.getInt(snapshot.length - 4) != crc(snapshot, 0, snapshot.length - 4)) {
-      throw new IOException("Invalid alias snapshot header or checksum");
+    int savedNext = b.getInt();
+    int count = b.getInt();
+    if (savedNext < 1 || savedNext > maximum + 1 || count < 0 || count > maximum
+        || count > (bytes.length - 20) / 7
+        || b.getInt(bytes.length - 4) != crc(bytes, bytes.length - 4)) {
+      throw new IOException("Corrupt alias snapshot");
     }
     Map<Integer, String> ids = new HashMap<>();
     Map<String, Integer> names = new HashMap<>();
     int highest = 0;
-    for (int i = 0; i < entries; i++) {
-      if (b.remaining() < 10) throw new IOException("Truncated alias mapping");
-      int alias = b.getInt();
+    for (int i = 0; i < count; i++) {
+      if (b.remaining() < 10) throw new IOException("Truncated alias entry");
+      int id = b.getInt();
       int size = Short.toUnsignedInt(b.getShort());
-      if (alias < 1 || alias > maximum || size < 1 || size > MAX_TOPIC_BYTES
-          || b.remaining() < size + 4) throw new IOException("Invalid alias mapping");
-      byte[] encoded = new byte[size];
-      b.get(encoded);
+      if (id < 1 || id > maximum || size < 1 || size > MAX_TOPIC_BYTES
+          || b.remaining() < size + 4) throw new IOException("Invalid alias entry");
+      byte[] raw = new byte[size];
+      b.get(raw);
       String topic;
       try {
-        topic = StandardCharsets.UTF_8.newDecoder().decode(ByteBuffer.wrap(encoded)).toString();
+        topic = StandardCharsets.UTF_8.newDecoder().decode(ByteBuffer.wrap(raw)).toString();
       } catch (CharacterCodingException e) {
-        throw new IOException("Malformed alias topic UTF-8", e);
+        throw new IOException("Invalid alias topic UTF-8", e);
       }
       validateTopic(topic);
-      if (ids.putIfAbsent(alias, topic) != null || names.putIfAbsent(topic, alias) != null) {
-        throw new IOException("Duplicate alias mapping");
+      if (ids.putIfAbsent(id, topic) != null || names.putIfAbsent(topic, id) != null) {
+        throw new IOException("Duplicate alias or topic");
       }
-      highest = Math.max(highest, alias);
+      highest = Math.max(highest, id);
     }
-    if (b.position() != snapshot.length - 4 || candidateNext <= highest) {
-      throw new IOException("Inconsistent alias snapshot");
+    if (b.position() != bytes.length - 4 || highest >= savedNext) {
+      throw new IOException("Invalid alias allocation state");
     }
     byAlias.clear();
     byAlias.putAll(ids);
     byTopic.clear();
     byTopic.putAll(names);
-    nextAlias = candidateNext;
+    nextAlias = savedNext;
+  }
+
+  private void checkUsable() throws IOException {
+    if (poisoned || !loaded) throw new IOException("Alias registry requires successful reload");
+  }
+
+  private void validateAlias(int alias) throws IOException {
+    if (alias < 1 || alias > maximum) throw new IOException("Alias out of range");
   }
 
   private static void validateTopic(String topic) throws IOException {
-    if (topic == null || topic.isEmpty() || topic.getBytes(StandardCharsets.UTF_8).length > MAX_TOPIC_BYTES) {
-      throw new IOException("Invalid topic name");
+    if (topic == null || topic.isEmpty()
+        || topic.getBytes(StandardCharsets.UTF_8).length > MAX_TOPIC_BYTES) {
+      throw new IOException("Invalid alias topic");
     }
   }
 
-  private static int crc(byte[] bytes, int start, int count) {
-    CRC32C crc = new CRC32C();
-    crc.update(bytes, start, count);
-    return (int) crc.getValue();
+  private static byte[] encode(Map<Integer, String> mapping, int next) {
+    int size = 20;
+    for (String topic : mapping.values()) size += 6 + topic.getBytes(StandardCharsets.UTF_8).length;
+    ByteBuffer b = ByteBuffer.allocate(size).order(ByteOrder.BIG_ENDIAN);
+    b.putInt(MAGIC).putInt(VERSION).putInt(next).putInt(mapping.size());
+    mapping.entrySet().stream().sorted(Map.Entry.comparingByKey()).forEach(entry -> {
+      byte[] bytes = entry.getValue().getBytes(StandardCharsets.UTF_8);
+      b.putInt(entry.getKey()).putShort((short) bytes.length).put(bytes);
+    });
+    b.putInt(crc(b.array(), b.position()));
+    return b.array();
+  }
+
+  private static int crc(byte[] bytes, int length) {
+    CRC32C checksum = new CRC32C();
+    checksum.update(bytes, 0, length);
+    return (int) checksum.getValue();
   }
 }
