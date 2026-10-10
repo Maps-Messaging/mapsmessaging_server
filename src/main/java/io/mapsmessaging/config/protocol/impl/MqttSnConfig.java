@@ -30,7 +30,17 @@ import java.util.List;
 
 public class MqttSnConfig extends MqttSnConfigDTO implements Config {
 
+  private final ConfigurationProperties protectionConfiguration;
+
+  /** Endpoint-only secure settings are deliberately excluded from REST DTO serialization. */
+  public ConfigurationProperties getProtectionConfiguration() {
+    return protectionConfiguration;
+  }
+
+
   public MqttSnConfig(ConfigurationProperties config) {
+    protectionConfiguration = config.get("protection") instanceof ConfigurationProperties nested
+        ? nested : null;
     setType("mqtt-sn");
     ProtocolConfigFactory.unpack(config, this);
 
