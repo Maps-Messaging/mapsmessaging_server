@@ -17,7 +17,7 @@ import static io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.packet.MQTT_SN
  * Keeps legacy allocation behaviour (first allocated ID is 2).
  */
 public class TopicAliasManager {
-  private final TopicAliasRegistry aliases = new TopicAliasRegistry(65535);
+  private TopicAliasRegistry aliases = new TopicAliasRegistry(65535);
   private final RegisteredTopicConfiguration registeredTopicConfiguration;
   private final int maxSize;
   private int nextAlias = 2;
@@ -25,6 +25,10 @@ public class TopicAliasManager {
   public TopicAliasManager(RegisteredTopicConfiguration registeredTopicConfiguration, int maxSize) {
     this.registeredTopicConfiguration = registeredTopicConfiguration;
     this.maxSize = maxSize;
+  }
+
+  public synchronized void attach(TopicAliasRegistry registry) {
+    aliases = java.util.Objects.requireNonNull(registry);
   }
 
   public synchronized void clear() {
@@ -41,6 +45,8 @@ public class TopicAliasManager {
       Integer alias = aliases.alias(name);
       if (alias != null) return (short) (int) alias;
       if (aliases.size() >= maxSize || nextAlias > 65535) return -1;
+      while (nextAlias <= 65535 && aliases.topic(nextAlias) != null) nextAlias++;
+      if (nextAlias > 65535) return -1;
       int id = nextAlias++;
       aliases.register(id, name);
       return (short) id;
