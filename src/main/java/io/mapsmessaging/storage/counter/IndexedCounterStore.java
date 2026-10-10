@@ -16,6 +16,9 @@ import java.nio.file.StandardOpenOption;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 import java.util.zip.CRC32C;
 
 /**
@@ -39,10 +42,31 @@ public final class IndexedCounterStore implements CounterStore {
   private final FileChannel ownershipChannel;
   private final FileLock ownership;
   private final Map<String, Long> offsets = new HashMap<>();
+  private final CounterDurability durability;
+  private final int flushEveryWrites;
+  private final ScheduledExecutorService flushExecutor;
+  private int pendingWrites;
+  private IOException backgroundFailure;
   private boolean closed;
 
   public IndexedCounterStore(Path base) throws IOException {
+    this(base, CounterDurability.STRICT, 1, 0);
+  }
+
+  /**
+   * Batched mode reduces force calls but does not guarantee that accepted
+   * counters survive a crash. Do not use it for replay protection.
+   */
+  public IndexedCounterStore(Path base, CounterDurability durability,
+      int flushEveryWrites, long flushIntervalMillis) throws IOException {
     Objects.requireNonNull(base, "base");
+    this.durability = Objects.requireNonNull(durability, "durability");
+    if (flushEveryWrites < 1 || flushIntervalMillis < 0
+        || (durability == CounterDurability.BATCHED && flushIntervalMillis == 0
+            && flushEveryWrites == Integer.MAX_VALUE)) {
+      throw new IllegalArgumentException("Invalid flush policy");
+    }
+    this.flushEveryWrites = flushEveryWrites;
     Path absolute = base.toAbsolutePath().normalize();
     Path indexPath = absolute.resolveSibling(absolute.getFileName() + ".idx");
     Path valuesPath = absolute.resolveSibling(absolute.getFileName() + ".dat");
@@ -85,16 +109,39 @@ public final class IndexedCounterStore implements CounterStore {
       }
       throw failure;
     }
+    if (durability == CounterDurability.BATCHED && flushIntervalMillis > 0) {
+      flushExecutor = Executors.newSingleThreadScheduledExecutor(task -> {
+        Thread thread = new Thread(task, "indexed-counter-flush");
+        thread.setDaemon(true);
+        return thread;
+      });
+      flushExecutor.scheduleWithFixedDelay(() -> {
+        synchronized (this) {
+          if (!closed && pendingWrites > 0 && backgroundFailure == null) {
+            try {
+              flush();
+            } catch (IOException failure) {
+              backgroundFailure = failure;
+            }
+          }
+        }
+      }, flushIntervalMillis, flushIntervalMillis, TimeUnit.MILLISECONDS);
+    } else {
+      flushExecutor = null;
+    }
   }
 
   @Override
   public synchronized boolean accept(String key, long value) throws IOException {
     ensureOpen();
+    if (durability == CounterDurability.RESERVED_RANGE) {
+      throw new IOException("Reserved-range store cannot accept inbound counters");
+    }
     if (value <= 0) throw new IllegalArgumentException("counter must be positive");
     long offset = locate(key);
     Slot current = readCurrent(offset);
     if (value <= current.value) return false;
-    writeNext(offset, current, value);
+    writeNext(offset, current, value, durability == CounterDurability.STRICT);
     return true;
   }
 
@@ -106,7 +153,9 @@ public final class IndexedCounterStore implements CounterStore {
     Slot current = readCurrent(offset);
     if (current.value > Long.MAX_VALUE - count) throw new IOException("Counter exhausted");
     long next = current.value + count;
-    writeNext(offset, current, next);
+    // Reservation is durable even when the store is otherwise batched.
+    // This prevents reissuing any counter in the range after a restart.
+    writeNext(offset, current, next, true);
     return new Range(current.value + 1, next);
   }
 
@@ -137,11 +186,22 @@ public final class IndexedCounterStore implements CounterStore {
     return offset;
   }
 
-  private void writeNext(long offset, Slot current, long value) throws IOException {
+  private void writeNext(long offset, Slot current, long value, boolean force) throws IOException {
     if (current.generation == Long.MAX_VALUE) throw new IOException("Counter generation exhausted");
     int nextSlot = 1 - current.slot;
     writeFully(values, slot(current.generation + 1, value), offset + (long) nextSlot * SLOT_SIZE);
+    pendingWrites++;
+    if (force || (durability == CounterDurability.BATCHED && pendingWrites >= flushEveryWrites)) {
+      flush();
+    }
+  }
+
+  /** Make all writes already issued by this store durable. */
+  public synchronized void flush() throws IOException {
+    ensureOpen();
+    if (pendingWrites == 0) return;
     values.force(false);
+    pendingWrites = 0;
   }
 
   private Slot readCurrent(long offset) throws IOException {
@@ -260,15 +320,26 @@ public final class IndexedCounterStore implements CounterStore {
 
   private void ensureOpen() throws IOException {
     if (closed) throw new IOException("Counter store is closed");
+    if (backgroundFailure != null) throw new IOException("Background counter flush failed", backgroundFailure);
   }
 
   @Override
   public synchronized void close() throws IOException {
     if (closed) return;
+    if (flushExecutor != null) flushExecutor.shutdown();
+    IOException failure = null;
+    try {
+      if (pendingWrites > 0) flush();
+    } catch (IOException e) {
+      failure = e;
+    }
     closed = true;
     try {
       index.close();
       values.close();
+    } catch (IOException e) {
+      if (failure == null) failure = e;
+      else failure.addSuppressed(e);
     } finally {
       try {
         ownership.release();
@@ -276,6 +347,7 @@ public final class IndexedCounterStore implements CounterStore {
         ownershipChannel.close();
       }
     }
+    if (failure != null) throw failure;
   }
 
   private record Slot(int slot, long generation, long value) {}
