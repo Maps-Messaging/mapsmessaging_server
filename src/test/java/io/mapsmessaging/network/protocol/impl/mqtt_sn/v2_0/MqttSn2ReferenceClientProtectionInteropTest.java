@@ -61,6 +61,28 @@ class MqttSn2ReferenceClientProtectionInteropTest {
   }
 
   @Test
+  void referenceClientTruncatedHmacAndCmacTagsAuthenticateAndRejectTampering() throws Exception {
+    for (int scheme : new int[] {0, 1, 2, 3, 4}) {
+      var provider = new BouncyCastleProtectionProvider(ctx -> keyBytes(ctx.scheme()));
+      byte[] inner = bytes(MqttSn2ControlCodec.encodePingResponse(31, null));
+      byte[] wire = ProtectionCodec.encode(new ProtectionEnvelope(
+          scheme, 4, SENDER, RANDOM, new byte[0],
+          new byte[]{0, 0, 0, 1}, inner), provider);
+      try (var store = new MqttSn2IndexedCounterStore(storage.resolve("truncate-" + scheme))) {
+        var policy = new MqttSn2ProtectionSession(
+            new MqttSn2CryptoProviders(), (sender, requestedScheme) ->
+            secretKey(requestedScheme), store, Set.of(scheme), scheme, SENDER);
+        byte[] corrupted = wire.clone();
+        corrupted[corrupted.length - 1] ^= 1;
+        assertThrows(java.io.IOException.class,
+            () -> policy.receive(ByteBuffer.wrap(corrupted)),
+            "Corrupted reference client tag must fail before replay tracking");
+        assertArrayEquals(inner, bytes(policy.receive(ByteBuffer.wrap(wire))));
+      }
+    }
+  }
+
+  @Test
   void independentClientAndServerCanProtectAndUnprotectEveryStandardScheme() throws Exception {
     for (int scheme : new int[] {0, 1, 2, 3, 4,
         0x40, 0x41, 0x42, 0x43, 0x44, 0x45, 0x46, 0x47, 0x48, 0x49}) {
