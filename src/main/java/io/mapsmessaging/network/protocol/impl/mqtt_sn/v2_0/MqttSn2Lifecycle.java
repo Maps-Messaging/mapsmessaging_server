@@ -25,8 +25,13 @@ public final class MqttSn2Lifecycle {
 
   public synchronized void begin(boolean authentication, boolean will) throws IOException {
     require(State.NEW);
-    state = authentication ? State.AUTHENTICATING
-        : will ? State.NEGOTIATING_WILL : State.ESTABLISHING;
+    if (authentication) {
+      state = State.AUTHENTICATING;
+    } else if (will) {
+      state = State.NEGOTIATING_WILL;
+    } else {
+      state = State.ESTABLISHING;
+    }
   }
 
   public synchronized void authenticated(boolean will) throws IOException {
