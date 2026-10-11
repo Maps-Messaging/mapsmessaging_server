@@ -99,7 +99,8 @@ public class NamedConsumer {
         inFlightPolls.remove(stream);
         if(val instanceof MessageResponse messageResponse){
           MessageEvent msg = messageResponse.getResponse();
-          if(msg != null){
+          if (msg != null) {
+            index = (index + 1) % streams.size();
             return msg;
           }
         }
