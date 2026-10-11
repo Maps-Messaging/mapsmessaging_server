@@ -16,6 +16,8 @@ import java.nio.charset.StandardCharsets;
  */
 public final class MqttSn2PublishCodec {
 
+  // Protocol value container; payload bytes are cloned and compared explicitly in tests.
+  @SuppressWarnings("java:S6218")
   public record Publish(boolean withoutSession, int qos, boolean duplicate, boolean retained,
                         int topicType, int packetIdentifier, String topicName, int topicAlias,
                         byte[] payload) {
