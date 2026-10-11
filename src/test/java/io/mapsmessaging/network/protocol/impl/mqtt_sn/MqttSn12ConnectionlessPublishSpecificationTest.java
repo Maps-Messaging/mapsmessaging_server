@@ -142,9 +142,9 @@ class MqttSn12ConnectionlessPublishSpecificationTest {
 
   @Test
   @ProtocolRequirement(specification = "MQTT-SN 2.0 CSD01",
-      value = "CSD01 sections 3.6.1 and 4.3.1: unconnected PUBWOS can use configured predefined aliases",
+      value = "Shared MQTT-SN 1.2/2.0 listener rejects ambiguous unprotected predefined-alias PUBWOS",
       source = V2_SOURCE)
-  void v2PubwosPredefinedAliasPublishesWithoutLegacySession() throws Exception {
+  void v2PubwosPredefinedAliasDoesNotPublishOnSharedListener() throws Exception {
     Fixture fixture = fixture("", List.of(predefined(42, "pre/topic")));
     try (MockedStatic<SessionManager> sessions = mockStatic(SessionManager.class)) {
       SessionManager manager = mock(SessionManager.class);
@@ -156,8 +156,7 @@ class MqttSn12ConnectionlessPublishSpecificationTest {
       Packet packet = new Packet(frame);
       packet.setFromAddress(fixture.address);
       fixture.manager.processPacket(packet);
-      verify(manager).publish(eq("pre/topic"), any());
-      verifyNoMoreInteractions(manager);
+      verifyNoInteractions(manager);
     }
   }
 
