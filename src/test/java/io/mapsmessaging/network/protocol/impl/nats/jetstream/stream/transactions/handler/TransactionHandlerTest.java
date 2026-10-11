@@ -125,4 +125,29 @@ class TransactionHandlerTest {
     verifyNoInteractions(subscription);
   }
 
+
+  @Test
+  void replyToAcknowledgementProducesConfirmation() throws Exception {
+    io.mapsmessaging.network.protocol.impl.nats.jetstream.JetStreamRequestManager requests =
+        mock(io.mapsmessaging.network.protocol.impl.nats.jetstream.JetStreamRequestManager.class);
+    when(session.getJetStreamRequestManager()).thenReturn(requests);
+    when(frame.getReplyTo()).thenReturn("_INBOX.confirm");
+    when(frame.getPayload()).thenReturn("+ACK".getBytes(StandardCharsets.UTF_8));
+    when(requests.getSid("_INBOX.confirm")).thenReturn("4");
+
+    var response = handler.handle(frame, null, session);
+
+    org.junit.jupiter.api.Assertions.assertInstanceOf(PayloadFrame.class, response);
+    PayloadFrame payload = (PayloadFrame) response;
+    org.junit.jupiter.api.Assertions.assertEquals("_INBOX.confirm", payload.getSubject());
+    org.junit.jupiter.api.Assertions.assertEquals("4", payload.getSubscriptionId());
+    verify(subscription).ackReceived(42L);
+  }
+
+  @Test
+  void acknowledgementWithoutReplyDoesNotProduceConfirmation() throws Exception {
+    when(frame.getPayload()).thenReturn("+ACK".getBytes(StandardCharsets.UTF_8));
+    assertNull(handler.handle(frame, null, session));
+    verify(subscription).ackReceived(42L);
+  }
 }
