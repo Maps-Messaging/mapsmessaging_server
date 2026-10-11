@@ -437,34 +437,15 @@ public class DestinationSubscription extends Subscription {
           && messageSession != null
           && context.noLocalMessages()
           && messageSession.equals(sessionId)) {
-        if (message.getQualityOfService().getLevel() == 2) {
-          System.err.printf("[MSG-324] QoS2 rejected by NoLocal subscriber=%s session=%s publisher=%s%n",
-              getName(), sessionId, messageSession);
-        }
         messagesIgnored++;
         return 0;
       }
     }
     if (!hibernating || message.isStoreOffline()) {
-      if (message.getQualityOfService().getLevel() == 2) {
-        System.err.printf("[MSG-324] QoS2 accepted subscriber=%s session=%s messageId=%d%n",
-            getName(), sessionId, message.getIdentifier());
-      }
       messageStateManager.register(message);
       messagesRegistered++;
-      if (message.getQualityOfService().getLevel() == 2) {
-        System.err.printf("[MSG-324] QoS2 readiness subscriber=%s ready=%s paused=%s sync=%s hibernating=%s atRest=%s contextEmpty=%s canSend=%s flowBlocked=%s outstanding=%d credit=%d%n",
-            getName(), isReady(), isPaused, sync, hibernating,
-            messageStateManager.hasAtRestMessages(), isContextEmpty(),
-            acknowledgementController.canSend(), flowControlBlocked,
-            acknowledgementController.size(), acknowledgementController.getMaxOutstanding());
-      }
       schedule();
       return 1;
-    }
-    if (message.getQualityOfService().getLevel() == 2) {
-      System.err.printf("[MSG-324] QoS2 rejected hibernating subscriber=%s session=%s storeOffline=%s%n",
-          getName(), sessionId, message.isStoreOffline());
     }
     messagesIgnored++;
     return 0;
