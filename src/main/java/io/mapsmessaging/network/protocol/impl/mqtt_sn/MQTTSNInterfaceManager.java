@@ -382,6 +382,16 @@ public class MQTTSNInterfaceManager implements SelectorCallback {
         }
       }
     } catch (IOException e) {
+      if (state != null && state.getContext() instanceof MqttSn2Protocol protocol) {
+        // An invalid frame or illegal protocol transition invalidates only this v2
+        // virtual connection. Legacy 1.2 error handling is unchanged.
+        currentSessions.deleteState(packet.getFromAddress());
+        try {
+          protocol.close();
+        } catch (IOException closeFailure) {
+          e.addSuppressed(closeFailure);
+        }
+      }
       logger.log(ServerLogMessages.MQTT_SN_EXCEPTION_RASIED, e);
     }
     selectorTask.register(SelectionKey.OP_READ);
