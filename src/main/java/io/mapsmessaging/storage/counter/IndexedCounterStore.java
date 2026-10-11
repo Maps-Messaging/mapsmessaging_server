@@ -100,10 +100,18 @@ public final class IndexedCounterStore implements CounterStore {
       values = openedValues;
       ownership = acquired;
     } catch (IOException | RuntimeException failure) {
-      if (openedIndex != null) openedIndex.close();
-      if (openedValues != null) openedValues.close();
-      if (acquired != null) acquired.close();
-      ownershipChannel.close();
+      // Preserve the original initialization failure while attempting to
+      // release every acquired handle, even if an individual close fails.
+      if (openedIndex != null) {
+        try { openedIndex.close(); } catch (IOException closeFailure) { failure.addSuppressed(closeFailure); }
+      }
+      if (openedValues != null) {
+        try { openedValues.close(); } catch (IOException closeFailure) { failure.addSuppressed(closeFailure); }
+      }
+      if (acquired != null) {
+        try { acquired.close(); } catch (IOException closeFailure) { failure.addSuppressed(closeFailure); }
+      }
+      try { ownershipChannel.close(); } catch (IOException closeFailure) { failure.addSuppressed(closeFailure); }
       if (failure instanceof OverlappingFileLockException) {
         throw new IOException("Counter store already has a writer", failure);
       }
