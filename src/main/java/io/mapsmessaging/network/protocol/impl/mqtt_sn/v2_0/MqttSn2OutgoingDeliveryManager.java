@@ -19,6 +19,8 @@ public final class MqttSn2OutgoingDeliveryManager {
 
   private enum Stage { WAIT_PUBACK, WAIT_PUBREC, WAIT_PUBCOMP }
 
+  // Internal queue entry is not used as a value-equality key; callback identity matters.
+  @SuppressWarnings("java:S6218")
   private record Delivery(String topic, byte[] payload, int qos, boolean retain, Runnable completion) {
     private Delivery {
       payload = payload.clone();
@@ -175,6 +177,8 @@ public final class MqttSn2OutgoingDeliveryManager {
         delivery.topic(), 0, delivery.payload()));
   }
 
+  // Encapsulation helper deliberately stays beside the QoS state-machine implementation.
+  @SuppressWarnings("java:S3398")
   private static ByteBuffer duplicate(ByteBuffer frame) {
     return frame.asReadOnlyBuffer();
   }
