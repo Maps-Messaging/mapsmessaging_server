@@ -62,6 +62,7 @@ public class NamedConsumer {
   private boolean closed;
   private long consumerSequence;
   private long terminalCount;
+  private long maxDeliveryCount;
   private final Map<StreamSubscriptionInfo, Future<Response>> inFlightPolls = new HashMap<>();
   private final Map<Long, PendingDelivery> outstanding = new HashMap<>();
   private final Map<String, Integer> deliveryAttempts = new HashMap<>();
@@ -182,6 +183,29 @@ public class NamedConsumer {
       }
     }
     return null;
+  }
+
+  /**
+   * Move a max-delivery-exhausted message past this MAPS consumer cursor.
+   * The JetStream archive flag keeps the physical stream record available.
+   */
+  public synchronized boolean terminateIfMaxDelivered(String destinationName, long messageId) {
+    int maximum = config.getMaxDeliver();
+    if (maximum <= 0) {
+      return false;
+    }
+    StreamSubscriptionInfo owner = findSubscription(destinationName);
+    if (owner == null) {
+      return false;
+    }
+    String key = owner.getDestination().getFullyQualifiedNamespace() + "\u0000" + messageId;
+    if (deliveryAttempts.getOrDefault(key, 0) < maximum) {
+      return false;
+    }
+    deliveryAttempts.remove(key);
+    maxDeliveryCount++;
+    owner.getSubscribedEventManager().ackReceived(messageId);
+    return true;
   }
 
   public synchronized boolean knowsAcknowledgement(TransactionSubject subject) {

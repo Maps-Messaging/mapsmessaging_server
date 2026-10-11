@@ -115,6 +115,23 @@ class NamedConsumerAckLifecycleTest {
     fixture.consumer.close();
   }
 
+  @Test
+  void maxDeliveryLimitStopsConsumerAttemptsWithoutDeletingTheArchive() {
+    Fixture fixture = fixture(TimeUnit.SECONDS.toNanos(10));
+    fixture.consumer.getConfig().setMaxDeliver(1);
+    TransactionSubject subject = fixture.consumer.recordDelivery("STREAM/orders/new", message(27));
+    assertNotNull(subject);
+    assertFalse(fixture.consumer.terminateIfMaxDelivered("STREAM/orders/new", 28));
+
+    assertTrue(fixture.consumer.negativeAcknowledgement(subject, 0));
+    assertTrue(fixture.consumer.terminateIfMaxDelivered("STREAM/orders/new", 27));
+    assertFalse(fixture.consumer.terminateIfMaxDelivered("STREAM/orders/new", 27));
+    assertEquals(1, fixture.consumer.getMaxDeliveryCount());
+    verify(fixture.subscription).rollbackReceived(27L);
+    verify(fixture.subscription).ackReceived(27L);
+    fixture.consumer.close();
+  }
+
   private static Message message(long identifier) {
     Message message = mock(Message.class);
     when(message.getIdentifier()).thenReturn(identifier);

@@ -78,6 +78,9 @@ public class MessageHandler  extends JetStreamFrameHandler {
       MessageEvent msg = consumer.getNextMessage(noWait);
       if (msg != null) {
         String destinationName = msg.getDestinationName();
+        if (consumer.terminateIfMaxDelivered(destinationName, msg.getMessage().getIdentifier())) {
+          continue;
+        }
         String prefix = consumer.getStreamName() + "/";
         String publishedSubject = destinationName.startsWith(prefix) ? destinationName.substring(prefix.length()) : destinationName;
         PayloadFrame payloadFrame = sessionState.buildPayloadFrame(msg.getMessage(), publishedSubject);
