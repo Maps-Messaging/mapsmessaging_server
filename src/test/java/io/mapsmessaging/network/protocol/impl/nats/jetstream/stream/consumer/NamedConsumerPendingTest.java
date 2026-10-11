@@ -84,4 +84,19 @@ class NamedConsumerPendingTest {
     org.junit.jupiter.api.Assertions.assertNull(consumer.getNextMessage());
   }
 
+
+  @Test
+  void repeatedNoWaitPullReusesPendingFuture() throws Exception {
+    SubscribedEventManager manager = mock(SubscribedEventManager.class);
+    StreamSubscriptionInfo info = mock(StreamSubscriptionInfo.class);
+    when(info.getSubscribedEventManager()).thenReturn(manager);
+    java.util.concurrent.CompletableFuture<io.mapsmessaging.engine.tasks.Response> pending = new java.util.concurrent.CompletableFuture<>();
+    when(manager.getNext()).thenReturn(pending);
+    NamedConsumer consumer = new NamedConsumer("consumer", "stream", new ConsumerConfig(), List.of(info));
+
+    org.junit.jupiter.api.Assertions.assertNull(consumer.getNextMessage(true));
+    org.junit.jupiter.api.Assertions.assertNull(consumer.getNextMessage(true));
+    verify(manager, times(1)).getNext();
+  }
+
 }
