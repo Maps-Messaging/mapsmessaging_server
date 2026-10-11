@@ -21,6 +21,7 @@ import io.mapsmessaging.mqttsn.protection.ProtectionCodec;
 import io.mapsmessaging.mqttsn.protection.ProtectionEnvelope;
 import io.mapsmessaging.mqttsn.protection.bc.BouncyCastleProtectionProvider;
 import io.mapsmessaging.network.EndPointManager;
+import io.mapsmessaging.network.protocol.impl.mqtt_sn.v2_0.protection.MqttSn2CryptoProviders;
 import io.mapsmessaging.network.EndPointURLFactory;
 import io.mapsmessaging.network.io.impl.udp.UDPEndPointServerFactory;
 import io.mapsmessaging.test.BaseTestConfig;
@@ -82,6 +83,31 @@ class MqttSn2ProtectedLiveUdpInteropTest extends BaseTestConfig {
                 HexFormat.of().formatHex(CLIENT) + ":" + scheme, "client-key",
                 HexFormat.of().formatHex(GATEWAY) + ":" + scheme, "gateway-key"))))));
     var protocolConfig = new MqttSnConfig(config, () -> ENTRY_PASS.clone());
+    // Fail at the precise cryptographic/keystore boundary rather than hiding
+    // an inbound rejection as a generic three-second UDP receive timeout.
+    var keystoreConfig = (ConfigurationProperties)
+        ((ConfigurationProperties) config.get("protection")).get("keyStore");
+    var aliasConfig = (ConfigurationProperties)
+        ((ConfigurationProperties) config.get("protection")).get("senderAliases");
+    Map<String, String> aliases = new java.util.HashMap<>();
+    for (var entry : aliasConfig.getMap().entrySet()) {
+      aliases.put(entry.getKey().toString(), entry.getValue().toString());
+    }
+    var keyResolver = new KeyStoreProtectionKeyResolver(keystoreConfig, aliases, ENTRY_PASS);
+    var provider = new BouncyCastleProtectionProvider(context -> material.clone());
+    byte[] connect = MqttSnCodec.encodeConnect(
+        new ConnectOptions(true, false, false, 1, 60, 0,
+            "secure-" + scheme + "-" + System.nanoTime()));
+    byte[] wrapped = wrap(provider, scheme, 1, connect);
+    try (var preflightCounters = new MqttSn2IndexedCounterStore(
+        directory.resolve("preflight-counters"))) {
+      var preflight = new MqttSn2ProtectionSession(
+          new MqttSn2CryptoProviders(), keyResolver::resolveSecretKey,
+          preflightCounters, java.util.Set.of(scheme), scheme, GATEWAY);
+      byte[] decoded = new byte[connect.length];
+      preflight.receive(ByteBuffer.wrap(wrapped)).get(decoded);
+      assertArrayEquals(connect, decoded, "Reference client and keystore-backed server protection must agree");
+    }
     EndPointServerConfigDTO endpoint = new EndPointServerConfigDTO();
     endpoint.setName("mqtt-sn-secure-test-" + scheme);
     endpoint.setUrl("udp://127.0.0.1:" + port + "/");
@@ -93,7 +119,6 @@ class MqttSn2ProtectedLiveUdpInteropTest extends BaseTestConfig {
     endpoint.setEndPointConfig(existing.getEndPointConfig());
     endpoint.setAuthenticationRealm(existing.getAuthenticationRealm());
 
-    var provider = new BouncyCastleProtectionProvider(context -> material.clone());
     try (EndPointManager secured = new EndPointManager(
         EndPointURLFactory.getInstance().create(endpoint.getUrl()),
         new UDPEndPointServerFactory(), endpoint, null);
@@ -101,10 +126,6 @@ class MqttSn2ProtectedLiveUdpInteropTest extends BaseTestConfig {
       secured.start();
       client.setSoTimeout(3_000);
       InetSocketAddress remote = new InetSocketAddress("127.0.0.1", port);
-      byte[] connect = MqttSnCodec.encodeConnect(
-          new ConnectOptions(true, false, false, 1, 60, 0,
-              "secure-" + scheme + "-" + System.nanoTime()));
-      byte[] wrapped = wrap(provider, scheme, 1, connect);
       send(client, remote, wrapped);
       byte[] connAckWire = receive(client);
       var connAck = ProtectionCodec.decode(connAckWire, provider).mqttSnPacket();
