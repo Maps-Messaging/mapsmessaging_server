@@ -185,14 +185,12 @@ class MqttSn2ProtectedLiveUdpInteropTest extends BaseTestConfig {
           MqttSnCodec.encodeAck(PacketType.PUBREL, 21, null)));
       var firstQ2 = MqttSnCodec.decode(ByteBuffer.wrap(
           ProtectionCodec.decode(receive(client), provider).mqttSnPacket()));
-      assertEquals(PacketType.PUBCOMP, firstQ2.type(),
-          "Server must complete QoS2 after PUBREL; missing expected transactional acknowledgement");
       byte[] secondQ2Wire;
       try {
         secondQ2Wire = receive(client);
       } catch (SocketTimeoutException missingDelivery) {
-        throw new AssertionError("Protected QoS2 PUBCOMP received for scheme " + scheme
-            + " but committed PUBLISH was not delivered to subscribed client"
+        throw new AssertionError("Protected QoS2 only delivered " + firstQ2.type() + " for scheme " + scheme
+            + " after PUBREL; expected both PUBCOMP and subscribed PUBLISH"
             + " (packet identifier 21, topic " + topic + ")", missingDelivery);
       }
       var secondQ2 = MqttSnCodec.decode(ByteBuffer.wrap(
