@@ -53,6 +53,7 @@ public class UDPEndPointServer extends EndPointServer {
   private final List<UDPInterfaceInformation> udpInterfaceInformations;
   private final List<UDPEndPoint> bondedEndPoints;
   private final int port;
+  private final java.net.InetAddress requestedBindAddress;
 
   public UDPEndPointServer(InetSocketAddress inetSocketAddress, ProtocolFactory protocolFactory, EndPointURL url, SelectorLoadManager selectorLoadManager,
       EndPointManagerJMX managerMBean, EndPointServerConfigDTO config)
@@ -64,6 +65,7 @@ public class UDPEndPointServer extends EndPointServer {
     bondedEndPoints = new ArrayList<>();
     authenticationConfig = config.getAuthenticationRealm();
     port = url.getPort();
+    requestedBindAddress = inetSocketAddress.getAddress();
     udpInterfaceInformations = createInterfaceList(inetSocketAddress);
   }
 
@@ -92,6 +94,13 @@ public class UDPEndPointServer extends EndPointServer {
     ProtocolImplFactory protocolImplFactory = protocolFactory.getBoundedProtocol();
     for (UDPInterfaceInformation info : udpInterfaceInformations) {
       for (InterfaceAddress interfaceAddress : info.getInterfaces()) {
+        // An explicitly configured address must not bind every address on the
+        // same network interface (e.g. IPv4 + IPv6 loopback). Doing so can
+        // instantiate multiple protocol managers for a single endpoint policy.
+        if (requestedBindAddress != null && !requestedBindAddress.isAnyLocalAddress()
+            && !requestedBindAddress.equals(interfaceAddress.getAddress())) {
+          continue;
+        }
         InetSocketAddress bonded = new InetSocketAddress(interfaceAddress.getAddress(), port);
         UDPEndPoint endPoint = createEndPoint(bonded);
         UDPInterfaceInformation nInfo = new UDPInterfaceInformation(info, interfaceAddress.getBroadcast());
