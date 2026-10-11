@@ -170,6 +170,10 @@ class MqttSn2ProtectedLiveUdpInteropTest extends BaseTestConfig {
           ProtectionCodec.decode(receive(client), provider).mqttSnPacket()));
       java.util.Set<PacketType> q1Types = java.util.Set.of(firstQ1.type(), secondQ1.type());
       assertEquals(java.util.Set.of(PacketType.PUBACK, PacketType.PUBLISH), q1Types);
+      var qosOneAck = firstQ1.type() == PacketType.PUBACK ? firstQ1 : secondQ1;
+      Integer qosOneReason = MqttSnCodec.decodeAck(qosOneAck).reasonCode();
+      assertTrue(qosOneReason == null || qosOneReason == 0,
+          "QoS1 PUBACK must confirm successful acceptance, actual reason " + qosOneReason);
       var q1Delivered = firstQ1.type() == PacketType.PUBLISH ? firstQ1 : secondQ1;
       assertArrayEquals(payload, MqttSnCodec.decodePublish(q1Delivered).payload());
 
