@@ -83,11 +83,7 @@ public class NamedConsumer {
     for (int x = 0; x < streams.size(); x++) {
       Future<Response> response = streams.get(index).getSubscribedEventManager().getNext();
       try {
-        if (noWait && !response.isDone()) {
-          index = (index + 1) % streams.size();
-          continue;
-        }
-        Response val = noWait ? response.get() : response.get(100, TimeUnit.MILLISECONDS);
+        Response val = response.get(100, TimeUnit.MILLISECONDS);
         if(val instanceof MessageResponse messageResponse){
           MessageEvent msg = messageResponse.getResponse();
           if(msg != null){
