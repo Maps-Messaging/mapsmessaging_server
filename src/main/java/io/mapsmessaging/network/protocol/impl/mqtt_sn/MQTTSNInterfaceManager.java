@@ -385,7 +385,7 @@ public class MQTTSNInterfaceManager implements SelectorCallback {
       if (state != null && state.getContext() instanceof MqttSn2Protocol protocol) {
         // An invalid frame or illegal protocol transition invalidates only this v2
         // virtual connection. Legacy 1.2 error handling is unchanged.
-        currentSessions.deleteState(packet.getFromAddress());
+        close(packet.getFromAddress(), protocol);
         try {
           protocol.close();
         } catch (IOException closeFailure) {
