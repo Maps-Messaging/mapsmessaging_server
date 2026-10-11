@@ -27,10 +27,14 @@ import io.mapsmessaging.api.message.TypedData;
 import io.mapsmessaging.engine.destination.MessageOverrides;
 import io.mapsmessaging.network.protocol.impl.nats.frames.*;
 import io.mapsmessaging.network.protocol.impl.nats.state.SessionState;
+import io.mapsmessaging.network.protocol.impl.nats.streams.NamespaceManager;
 
 import java.io.IOException;
 import java.util.HashMap;
+import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 
@@ -48,39 +52,46 @@ public class PubListener implements FrameListener {
     }
     String destName = convertSubject(msgFrame.getSubject());
     String lookup = engine.getMapping(destName);
-    CompletableFuture<Destination> future = engine.getSession().findDestination(lookup, DestinationType.TOPIC);
-    if (future == null) {
-      return;
+    Set<String> destinations = new LinkedHashSet<>();
+    destinations.add(lookup);
+    if (engine.getProtocol().getNatsConfig().isEnableStreams()) {
+      // Resolve stream targets before finding the public destination, since finding it can create a MAPS namespace.
+      destinations.addAll(getMatchingStreamDestinations(msgFrame.getSubject()));
     }
 
-    try {
-      Destination destination = future.get();
-      if (destination != null) {
-        try {
-          handleMessageStoreToDestination(destination, engine, msgFrame);
-          if (engine.isVerbose()) {
-            engine.send(new OkFrame());
-          }
-        } catch (IOException e) {
-          ErrFrame errFrame = new ErrFrame();
-          errFrame.setError(e.getMessage());
-          engine.send(errFrame);
+    for (String namespace : destinations) {
+      CompletableFuture<Destination> future = engine.getSession().findDestination(namespace, DestinationType.TOPIC);
+      if (future == null) {
+        return;
+      }
+      try {
+        Destination destination = future.get();
+        if (destination == null) {
+          engine.send(new ErrFrame("No such destination"));
+          return;
         }
-      } else {
-        ErrFrame errFrame = new ErrFrame();
-        errFrame.setError("No such destination");
-        engine.send(errFrame);
+        handleMessageStoreToDestination(destination, engine, msgFrame);
+      } catch (InterruptedException e) {
+        Thread.currentThread().interrupt();
+        throw new IOException("Interrupted while resolving NATS destination", e);
+      } catch (ExecutionException e) {
+        Throwable cause = e.getCause();
+        if (cause instanceof IOException ioException) {
+          throw ioException;
+        }
+        throw new IOException("Failed to resolve NATS destination", cause);
+      } catch (IOException e) {
+        engine.send(new ErrFrame(e.getMessage()));
+        return;
       }
-    } catch (InterruptedException e) {
-      Thread.currentThread().interrupt();
-      throw new IOException("Interrupted while resolving NATS destination", e);
-    } catch (ExecutionException e) {
-      Throwable cause = e.getCause();
-      if (cause instanceof IOException ioException) {
-        throw ioException;
-      }
-      throw new IOException("Failed to resolve NATS destination", cause);
     }
+    if (engine.isVerbose()) {
+      engine.send(new OkFrame());
+    }
+  }
+
+  protected List<String> getMatchingStreamDestinations(String subject) {
+    return NamespaceManager.getInstance().getMatchingStreamDestinations(subject);
   }
 
   protected void handleMessageStoreToDestination(Destination destination, SessionState engine, PayloadFrame msgFrame) throws IOException {

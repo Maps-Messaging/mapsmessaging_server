@@ -27,6 +27,9 @@ import io.mapsmessaging.network.protocol.impl.nats.jetstream.stream.api.handlers
 import io.mapsmessaging.network.protocol.impl.nats.jetstream.stream.api.handlers.data.StreamEntry;
 
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.LinkedHashSet;
+import java.util.Set;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -120,6 +123,53 @@ public class NamespaceManager implements DestinationManagerListener {
       streamEntryManager.set(tmp);
     }
     return tmp.list;
+  }
+
+  /**
+   * Returns already registered MAPS stream destinations matching a public NATS subject.
+   * The stream's MAPS destination owns storage and acknowledgement state.
+   */
+  public List<String> getMatchingStreamDestinations(String publishedSubject) {
+    return matchingStreamDestinations(publishedSubject, streams.values());
+  }
+
+  static List<String> matchingStreamDestinations(String publishedSubject, Collection<StreamInfoList> availableStreams) {
+    Set<String> destinations = new LinkedHashSet<>();
+    if (publishedSubject == null || publishedSubject.isBlank()) {
+      return List.of();
+    }
+    for (StreamInfoList stream : availableStreams) {
+      for (StreamInfo info : stream.getSubjects()) {
+        if (matchesSubject(info.getSubject(), publishedSubject) && info.getDestination() != null) {
+          String namespace = info.getDestination().getFullyQualifiedNamespace();
+          if (namespace != null && !namespace.isBlank()) {
+            destinations.add(namespace);
+          }
+        }
+      }
+    }
+    return List.copyOf(destinations);
+  }
+
+  static boolean matchesSubject(String filter, String subject) {
+    if (filter == null || subject == null || filter.isBlank() || subject.isBlank()) {
+      return false;
+    }
+    String[] pattern = filter.replace('/', '.').split("\\.", -1);
+    String[] tokens = subject.split("\\.", -1);
+    int index = 0;
+    for (int i = 0; i < pattern.length; i++) {
+      String token = pattern[i];
+      if (">".equals(token)) {
+        return i == pattern.length - 1 && index < tokens.length;
+      }
+      if (index >= tokens.length || tokens[index].isEmpty()
+          || (!"*".equals(token) && !token.equals(tokens[index]))) {
+        return false;
+      }
+      index++;
+    }
+    return index == tokens.length;
   }
 
   public StreamInfoList getStream(final String streamName) {
