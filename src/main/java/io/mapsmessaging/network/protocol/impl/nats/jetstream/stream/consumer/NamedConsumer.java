@@ -94,6 +94,10 @@ public class NamedConsumer {
   }
 
   public int getAckPendingCount() {
-    return 0;
+    int pending = 0;
+    for (StreamSubscriptionInfo stream : streams) {
+      pending += Math.max(0, stream.getSubscribedEventManager().getPending());
+    }
+    return pending;
   }
 }
