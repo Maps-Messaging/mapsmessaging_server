@@ -432,7 +432,7 @@ public class MQTTSNInterfaceManager implements SelectorCallback {
   }
 
   /** Replace an existing v2 virtual connection after CONNECT has been authenticated. */
-  public void replaceV2Connection(Packet packet, ByteBuffer verifiedConnect, byte[] authenticatedSender) throws IOException {
+  public synchronized void replaceV2Connection(Packet packet, ByteBuffer verifiedConnect, byte[] authenticatedSender) throws IOException {
     UDPSessionState<Protocol> previous = currentSessions.getState(packet.getFromAddress());
     if (previous != null && previous.getContext() instanceof MqttSn2Protocol oldProtocol) {
       currentSessions.deleteState(packet.getFromAddress());
@@ -442,7 +442,7 @@ public class MQTTSNInterfaceManager implements SelectorCallback {
     acceptDecodedV2Connection(packet, verifiedConnect, authenticatedSender);
   }
 
-  private void acceptDecodedV2Connection(Packet packet, ByteBuffer incoming, byte[] authenticatedSender) throws IOException {
+  private synchronized void acceptDecodedV2Connection(Packet packet, ByteBuffer incoming, byte[] authenticatedSender) throws IOException {
     MqttSn2FrameCodec.Frame initial = MqttSn2FrameCodec.decode(incoming.asReadOnlyBuffer());
     if (initial.type() != MqttSn2PacketType.CONNECT) {
       throw new IOException("Replacement MQTT-SN 2.0 connection requires CONNECT");
@@ -463,7 +463,7 @@ public class MQTTSNInterfaceManager implements SelectorCallback {
     try {
       protocol.start(incoming.asReadOnlyBuffer());
     } catch (IOException | RuntimeException error) {
-      currentSessions.deleteState(packet.getFromAddress());
+      close(packet.getFromAddress(), protocol);
       protocol.close();
       throw error;
     }
