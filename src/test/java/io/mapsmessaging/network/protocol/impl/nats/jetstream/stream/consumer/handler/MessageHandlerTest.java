@@ -44,4 +44,38 @@ class MessageHandlerTest {
     assertNotNull(response);
     verify(session, never()).getNamedConsumers();
   }
+
+  @Test
+  void emptyPullRequestUsesDefaultBatchWithoutThrowing() throws Exception {
+    PayloadFrame request = mock(PayloadFrame.class);
+    SessionState session = mock(SessionState.class);
+    io.mapsmessaging.network.protocol.impl.nats.jetstream.stream.consumer.NamedConsumer consumer =
+        mock(io.mapsmessaging.network.protocol.impl.nats.jetstream.stream.consumer.NamedConsumer.class);
+    when(request.getSubject()).thenReturn("$JS.API.CONSUMER.MSG.NEXT.stream.consumer");
+    when(request.getReplyTo()).thenReturn("_INBOX.test");
+    when(session.getNamedConsumers()).thenReturn(java.util.Map.of("consumer", consumer));
+    when(consumer.getStreamName()).thenReturn("stream");
+
+    assertNull(new MessageHandler().handle(request, null, session));
+    verify(consumer).getNextMessage();
+  }
+
+  @Test
+  void zeroBatchIsRejectedBeforeFetching() throws Exception {
+    PayloadFrame request = mock(PayloadFrame.class);
+    SessionState session = mock(SessionState.class);
+    JetStreamRequestManager manager = mock(JetStreamRequestManager.class);
+    io.mapsmessaging.network.protocol.impl.nats.jetstream.stream.consumer.NamedConsumer consumer =
+        mock(io.mapsmessaging.network.protocol.impl.nats.jetstream.stream.consumer.NamedConsumer.class);
+    when(request.getSubject()).thenReturn("$JS.API.CONSUMER.MSG.NEXT.stream.consumer");
+    when(request.getReplyTo()).thenReturn("_INBOX.test");
+    when(session.getNamedConsumers()).thenReturn(java.util.Map.of("consumer", consumer));
+    when(consumer.getStreamName()).thenReturn("stream");
+    when(session.getJetStreamRequestManager()).thenReturn(manager);
+    com.google.gson.JsonObject json = new com.google.gson.JsonObject();
+    json.addProperty("batch", 0);
+
+    assertNotNull(new MessageHandler().handle(request, json, session));
+    verify(consumer, never()).getNextMessage();
+  }
 }
