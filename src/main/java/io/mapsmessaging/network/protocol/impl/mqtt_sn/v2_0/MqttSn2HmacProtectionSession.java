@@ -52,6 +52,11 @@ public final class MqttSn2HmacProtectionSession implements MqttSn2ProtectionPoli
     return verifier.verify(protectedFrame);
   }
 
+  @Override
+  public Authenticated receiveAuthenticated(ByteBuffer protectedFrame) throws IOException {
+    return verifier.verifyAuthenticated(protectedFrame);
+  }
+
   public synchronized ByteBuffer send(ByteBuffer inner) throws IOException {
     byte[] next = counterSource.nextCounter();
     if (next == null || (next.length != 2 && next.length != 4)) {
