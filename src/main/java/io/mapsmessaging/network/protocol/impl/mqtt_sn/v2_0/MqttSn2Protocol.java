@@ -80,6 +80,7 @@ public final class MqttSn2Protocol extends Protocol {
   // Retain completed packet identifiers so repeated PUBREL never commits twice.
   private final java.util.Set<Integer> incomingQos2Committed = new java.util.HashSet<>();
   private final java.util.ArrayDeque<MessageEvent> sleepingQueue = new java.util.ArrayDeque<>();
+  private byte[] authenticatedSender;
   private String clientIdentifier = "waiting";
   private MqttSn2ConnectCodec.Connect connectRequest;
   private SaslAuthenticationMechanism sasl;
@@ -130,6 +131,21 @@ public final class MqttSn2Protocol extends Protocol {
     protectionSession = java.util.Objects.requireNonNull(policy, "policy");
   }
 
+  /** Bind the virtual connection to the eight-octet sender verified on CONNECT. */
+  public void setAuthenticatedSender(byte[] senderIdentifier) {
+    if (senderIdentifier == null || senderIdentifier.length != 8) {
+      throw new IllegalArgumentException("Verified protection sender must be eight octets");
+    }
+    authenticatedSender = senderIdentifier.clone();
+  }
+
+  /** Use a distinct MAPS session namespace for each authenticated sender. */
+  public String brokerSessionIdentifier(String clientId) {
+    if (authenticatedSender == null) return clientId;
+    return "mqtt-sn2/" + java.util.HexFormat.of().formatHex(authenticatedSender)
+        + "/" + clientId.length() + ":" + clientId;
+  }
+
   @Override
   public boolean processPacket(Packet packet) throws IOException {
     ByteBuffer input = packet.getRawBuffer().asReadOnlyBuffer();
@@ -138,7 +154,12 @@ public final class MqttSn2Protocol extends Protocol {
     MqttSn2ProtectionPolicy policy = protectionSession;
     if (policy != null) {
       if (!wrapped) throw new IOException("Unprotected MQTT-SN 2.0 packet on secured session");
-      input = policy.receive(input);
+      MqttSn2ProtectionPolicy.Authenticated verified = policy.receiveAuthenticated(input);
+      if (authenticatedSender == null || !java.util.Arrays.equals(
+          authenticatedSender, verified.senderIdentifier())) {
+        throw new IOException("Protection sender does not match virtual connection identity");
+      }
+      input = verified.plaintext();
     } else if (wrapped) {
       throw new IOException("Protected MQTT-SN 2.0 packet without configured security policy");
     }
@@ -255,7 +276,7 @@ public final class MqttSn2Protocol extends Protocol {
     MqttSn2ConnectCodec.Connect request = connectRequest;
     if (lifecycle.state() == MqttSn2Lifecycle.State.NEGOTIATING_WILL) lifecycle.willAccepted();
     SessionContextBuilder builder = new SessionContextBuilder(
-        clientIdentifier, new ProtocolClientConnection(this));
+        brokerSessionIdentifier(clientIdentifier), new ProtocolClientConnection(this));
     builder.setResetState(request.cleanStart());
     long expiry = request.sessionExpirySeconds() == null ? 0 : request.sessionExpirySeconds();
     builder.setPersistentSession(expiry > 0);
