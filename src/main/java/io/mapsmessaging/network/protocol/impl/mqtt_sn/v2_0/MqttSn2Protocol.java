@@ -264,8 +264,14 @@ public final class MqttSn2Protocol extends Protocol {
       builder.isAuthorized(true);
     }
     if (request.will()) {
-      String willTopic = request.willTopicType() == 3 ? request.willTopicName()
-          : request.willTopicType() == 1 ? manager.resolvePredefinedTopic(address, request.willTopicAlias()) : null;
+      String willTopic;
+      if (request.willTopicType() == 3) {
+        willTopic = request.willTopicName();
+      } else if (request.willTopicType() == 1) {
+        willTopic = manager.resolvePredefinedTopic(address, request.willTopicAlias());
+      } else {
+        willTopic = null;
+      }
       if (willTopic == null) throw new IOException("Unknown or unsupported CONNECT Will Topic alias");
       MessageBuilder will = new MessageBuilder().setOpaqueData(request.willPayload())
           .setRetain(request.willRetained()).setQoS(qos(request.willQos()))
@@ -319,6 +325,8 @@ public final class MqttSn2Protocol extends Protocol {
     });
   }
 
+  // Close is best-effort after a negative CONNACK has already been sent.
+  @SuppressWarnings("java:S108")
   private void sendConnectFailure(MqttSn2ConnectCodec.Connect request, int reason) {
     send(MqttSn2ConnAckCodec.encode(new MqttSn2ConnAckCodec.ConnAck(false,
         request.packetIdentifier(), reason, null, null, null, null, request.clientIdentifier())), () -> {
@@ -459,6 +467,8 @@ public final class MqttSn2Protocol extends Protocol {
     });
   }
 
+  // Transaction existence has been checked under the QoS2 lock before commit.
+  @SuppressWarnings("java:S2589")
   private void receivePubRel(MqttSn2AckCodec.Ack ack) throws IOException {
     Transaction transaction;
     synchronized (incomingQos2) {
