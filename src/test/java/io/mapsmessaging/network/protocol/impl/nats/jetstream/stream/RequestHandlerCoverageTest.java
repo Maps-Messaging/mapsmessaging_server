@@ -74,7 +74,7 @@ class RequestHandlerCoverageTest {
   }
 
   @Test
-  void unknownActionBuilds501ResponseUsingJetStreamReplyMapping() throws Exception {
+  void unknownActionBuilds501ResponseUsingRequestedReplyInbox() throws Exception {
     TestRequestHandler handler = new TestRequestHandler();
     SessionState state = mock(SessionState.class);
     JetStreamRequestManager manager = mock(JetStreamRequestManager.class);
@@ -87,7 +87,8 @@ class RequestHandlerCoverageTest {
 
     assertInstanceOf(MsgFrame.class, result);
     MsgFrame message = (MsgFrame) result;
-    assertEquals("_INBOX.JS", message.getSubject());
+    assertEquals("_INBOX.reply", message.getSubject(),
+        "NATS replies must be sent to the request-specific reply subject");
     assertEquals("42", message.getSubscriptionId());
     JsonObject json = JsonParser.parseString(
         new String(message.getPayload(), StandardCharsets.UTF_8)).getAsJsonObject();

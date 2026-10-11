@@ -31,8 +31,9 @@ class JetStreamRequestManagerCoverageTest {
   @Test
   void sidLookupUsesRegisteredPrefixAndCloseClearsMappings() {
     JetStreamRequestManager manager = new JetStreamRequestManager();
-    manager.registerSid("_INBOX.A.", "sid-a");
-    manager.registerSid("_INBOX.B.", "sid-b");
+    // NATS requires an explicit wildcard token for hierarchical inbox subscriptions.
+    manager.registerSid("_INBOX.A.>", "sid-a");
+    manager.registerSid("_INBOX.B.>", "sid-b");
 
     assertEquals("sid-a", manager.getSid("_INBOX.A.123"));
     assertEquals("sid-b", manager.getSid("_INBOX.B.456"));
@@ -112,12 +113,13 @@ class JetStreamRequestManagerCoverageTest {
         Arguments.of("", false),
         Arguments.of("foo", false),
         Arguments.of("$J", false),
-        Arguments.of("$JS", true),
+        // Namespace roots without an API action are not JetStream requests.
+        Arguments.of("$JS", false),
         Arguments.of("$JS.", true),
         Arguments.of("$JS.API.INFO", true),
-        Arguments.of("$KV", true),
+        Arguments.of("$KV", false),
         Arguments.of("$KV.bucket.key", true),
-        Arguments.of("$O", true),
+        Arguments.of("$O", false),
         Arguments.of("$O.bucket", true),
         Arguments.of("x$JS.API", false)
     );
