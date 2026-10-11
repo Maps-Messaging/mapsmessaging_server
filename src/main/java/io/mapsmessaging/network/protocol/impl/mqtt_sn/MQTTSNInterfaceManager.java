@@ -589,7 +589,7 @@ public class MQTTSNInterfaceManager implements SelectorCallback {
       handlePublish(packet, matchedPublish);
     } else if (mqttSn instanceof Advertise matchedAdvertise) {
       handleAdvertise(packet, matchedAdvertise);
-    } else if (mqttSn instanceof ConnAck || mqttSn instanceof io.mapsmessaging.network.protocol.impl.mqtt_sn.v2_0.packet.ConnAck) {
+    } else if (mqttSn instanceof ConnAck) {
       Packet error = new Packet(32, false);
       mqttSn.packFrame(error);
       error.setFromAddress(packet.getFromAddress());
