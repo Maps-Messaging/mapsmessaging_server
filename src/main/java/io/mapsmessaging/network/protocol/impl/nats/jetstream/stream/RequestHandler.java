@@ -51,7 +51,7 @@ public abstract class RequestHandler extends BaseStreamApiHandler {
       }
     }
     for (JetStreamFrameHandler handler : handlers) {
-      if (action.startsWith(handler.getName())) {
+      if (action.equals(handler.getName()) || action.startsWith(handler.getName() + ".")) {
         return handler.handle(frame, json, sessionState);
       }
     }

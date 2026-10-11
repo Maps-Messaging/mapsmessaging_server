@@ -34,7 +34,7 @@ import java.util.concurrent.ConcurrentHashMap;
 public class JetStreamRequestManager {
   private final JetStreamApiManager jetStreamApiManager;
 
-  private Map<String, String> subscriptionId = new ConcurrentHashMap<>();
+  private final Map<String, String> subscriptionId = new ConcurrentHashMap<>();
 
   @Getter
   @Setter
@@ -48,25 +48,57 @@ public class JetStreamRequestManager {
     subscriptionId.clear();
   }
 
-  public void registerSid(String key, String sid){
-    subscriptionId.put(key, sid);
+  public void registerSid(String subscriptionPattern, String sid) {
+    if (subscriptionPattern != null && sid != null) {
+      subscriptionId.put(subscriptionPattern, sid);
+    }
   }
 
-  public String getSid(String reply){
-    for(Map.Entry<String, String> entry : subscriptionId.entrySet()){
-      if(reply.startsWith(entry.getKey())){
-        return entry.getValue();
+  public void unregisterSid(String sid) {
+    subscriptionId.entrySet().removeIf(entry -> entry.getValue().equals(sid));
+  }
+
+  public String getSid(String reply) {
+    if (reply == null || reply.isEmpty()) {
+      return "";
+    }
+    String mostSpecific = "";
+    String sid = "";
+    for (Map.Entry<String, String> entry : subscriptionId.entrySet()) {
+      if (entry.getKey().length() > mostSpecific.length() && matchesInbox(entry.getKey(), reply)) {
+        mostSpecific = entry.getKey();
+        sid = entry.getValue();
       }
     }
-    return "";
+    return sid;
+  }
+
+  private static boolean matchesInbox(String subscription, String reply) {
+    if (subscription.equals(reply)) {
+      return true;
+    }
+    int wildcard = subscription.lastIndexOf('.');
+    if (wildcard <= 0) {
+      return false;
+    }
+    String token = subscription.substring(wildcard + 1);
+    String prefix = subscription.substring(0, wildcard + 1);
+    if (!reply.startsWith(prefix)) {
+      return false;
+    }
+    String remaining = reply.substring(prefix.length());
+    if (remaining.isEmpty()) {
+      return false;
+    }
+    return ">".equals(token) || ("*".equals(token) && !remaining.contains("."));
   }
 
   public boolean isJetStreamRequest(PayloadFrame frame) {
     String subject = frame.getSubject();
     return (subject != null && (
-        subject.startsWith("$JS")
-            || subject.startsWith("$KV")
-            || subject.startsWith("$O")));
+        subject.startsWith("$JS.")
+            || subject.startsWith("$KV.")
+            || subject.startsWith("$O.")));
   }
 
   public NatsFrame process(PayloadFrame frame, SessionState sessionState) throws IOException {
