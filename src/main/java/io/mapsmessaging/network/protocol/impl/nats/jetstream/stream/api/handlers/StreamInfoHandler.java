@@ -72,8 +72,8 @@ public class StreamInfoHandler extends JetStreamFrameHandler {
     return gson.toJson(streamInfoResponse);
   }
 
-  private void packResponse(StreamInfoResponse response, StreamInfoList streamInfoList) {
-    buildState(response, streamInfoList);
+  void packResponse(StreamInfoResponse response, StreamInfoList streamInfoList) {
+    response.setState(buildState(response, streamInfoList));
     response.setConfig(buildConfig(streamInfoList));
   }
 
@@ -93,7 +93,7 @@ public class StreamInfoHandler extends JetStreamFrameHandler {
     StreamState aggregateState = new StreamState();
 
     long totalMessages = 0;
-    long firstSeq = Long.MAX_VALUE;
+    long totalBytes = 0;
     long lastSeq = 0;
     int totalConsumers = 0;
 
@@ -102,6 +102,7 @@ public class StreamInfoHandler extends JetStreamFrameHandler {
       DestinationImpl destination = info.getDestination();
       DestinationStats stats = destination.getStats();
       totalMessages += stats.getStoredMessages();
+      totalBytes += Math.max(0, destination.getCurrentStorageBytes());
       totalConsumers += destination.getSubscriptionStates().size();
       Date destDate = destination.getResourceProperties().getDate();
       if (destDate != null && destDate.before(created)) {
@@ -111,8 +112,8 @@ public class StreamInfoHandler extends JetStreamFrameHandler {
 
     response.setCreated(created.toInstant());
     aggregateState.setMessages(totalMessages);
-    aggregateState.setBytes(-1);
-    aggregateState.setFirst_seq(firstSeq == Long.MAX_VALUE ? 1 : firstSeq);
+    aggregateState.setBytes(totalBytes);
+    aggregateState.setFirst_seq(totalMessages == 0 ? 0 : 1);
     aggregateState.setLast_seq(lastSeq);
     aggregateState.setConsumer_count(totalConsumers);
     return aggregateState;
