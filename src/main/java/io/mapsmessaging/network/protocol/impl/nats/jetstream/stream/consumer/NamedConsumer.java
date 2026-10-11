@@ -68,7 +68,15 @@ public class NamedConsumer {
   private final Map<String, Integer> deliveryAttempts = new HashMap<>();
   private final Map<Long, Long> completedSequences = new LinkedHashMap<>();
 
+  private final ScheduledExecutorService deadlineScheduler;
+
   public NamedConsumer(String name, String streamName, ConsumerConfig config, List<StreamSubscriptionInfo> streams) {
+    this(name, streamName, config, streams, ACK_DEADLINES);
+  }
+
+  NamedConsumer(String name, String streamName, ConsumerConfig config, List<StreamSubscriptionInfo> streams,
+                ScheduledExecutorService deadlineScheduler) {
+    this.deadlineScheduler = java.util.Objects.requireNonNull(deadlineScheduler);
     this.name = name;
     this.streamName = streamName;
     this.config = config;
@@ -245,7 +253,7 @@ public class NamedConsumer {
       outstanding.remove(subject.getConsumerSequence());
       pending.stream.getSubscribedEventManager().rollbackReceived(pending.messageId);
     } else {
-      pending.deadline = ACK_DEADLINES.schedule(() -> expire(subject.getConsumerSequence(), pending),
+      pending.deadline = deadlineScheduler.schedule(() -> expire(subject.getConsumerSequence(), pending),
           delayNanos, TimeUnit.NANOSECONDS);
     }
     return true;
@@ -289,7 +297,7 @@ public class NamedConsumer {
 
   private void scheduleDeadline(long sequence, PendingDelivery delivery, long durationNanos) {
     cancelDeadline(delivery);
-    delivery.deadline = ACK_DEADLINES.schedule(() -> expire(sequence, delivery),
+    delivery.deadline = deadlineScheduler.schedule(() -> expire(sequence, delivery),
         durationNanos, TimeUnit.NANOSECONDS);
   }
 

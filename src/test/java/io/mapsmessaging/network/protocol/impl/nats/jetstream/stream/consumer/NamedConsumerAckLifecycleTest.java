@@ -29,6 +29,9 @@ import org.junit.jupiter.api.Test;
 
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
+import org.mockito.ArgumentCaptor;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -56,22 +59,39 @@ class NamedConsumerAckLifecycleTest {
 
   @Test
   void timedOutAcknowledgementReturnsDeliveryToMaps() {
-    Fixture fixture = fixture(TimeUnit.MILLISECONDS.toNanos(25));
+    ScheduledExecutorService scheduler = mock(ScheduledExecutorService.class);
+    ScheduledFuture<?> deadline = mock(ScheduledFuture.class);
+    when(scheduler.schedule(any(Runnable.class), anyLong(), eq(TimeUnit.NANOSECONDS))).thenReturn(deadline);
+    Fixture fixture = fixture(TimeUnit.MILLISECONDS.toNanos(25), scheduler);
+
     TransactionSubject subject = fixture.consumer.recordDelivery("STREAM/orders/new", message(9));
     assertNotNull(subject);
+    ArgumentCaptor<Runnable> task = ArgumentCaptor.forClass(Runnable.class);
+    verify(scheduler).schedule(task.capture(), eq(TimeUnit.MILLISECONDS.toNanos(25)), eq(TimeUnit.NANOSECONDS));
+    task.getValue().run();
 
-    verify(fixture.subscription, timeout(2000)).rollbackReceived(9L);
+    verify(fixture.subscription).rollbackReceived(9L);
     assertEquals(0, fixture.consumer.getOutstandingCount());
     fixture.consumer.close();
   }
 
   @Test
   void delayedNegativeAcknowledgementUsesSpecifiedNanosecondDelay() {
-    Fixture fixture = fixture(TimeUnit.SECONDS.toNanos(10));
+    ScheduledExecutorService scheduler = mock(ScheduledExecutorService.class);
+    ScheduledFuture<?> original = mock(ScheduledFuture.class);
+    ScheduledFuture<?> delayed = mock(ScheduledFuture.class);
+    when(scheduler.schedule(any(Runnable.class), anyLong(), eq(TimeUnit.NANOSECONDS)))
+        .thenReturn(original, delayed);
+    Fixture fixture = fixture(TimeUnit.SECONDS.toNanos(10), scheduler);
     TransactionSubject subject = fixture.consumer.recordDelivery("STREAM/orders/new", message(12));
 
     assertTrue(fixture.consumer.negativeAcknowledgement(subject, TimeUnit.MILLISECONDS.toNanos(25)));
-    verify(fixture.subscription, timeout(2000)).rollbackReceived(12L);
+    verify(original).cancel(false);
+    ArgumentCaptor<Runnable> tasks = ArgumentCaptor.forClass(Runnable.class);
+    verify(scheduler, times(2)).schedule(tasks.capture(), anyLong(), eq(TimeUnit.NANOSECONDS));
+    tasks.getAllValues().get(1).run();
+
+    verify(fixture.subscription).rollbackReceived(12L);
     assertEquals(0, fixture.consumer.getOutstandingCount());
     fixture.consumer.close();
   }
@@ -140,6 +160,10 @@ class NamedConsumerAckLifecycleTest {
   }
 
   private static Fixture fixture(long ackWaitNanos) {
+    return fixture(ackWaitNanos, null);
+  }
+
+  private static Fixture fixture(long ackWaitNanos, ScheduledExecutorService scheduler) {
     SubscribedEventManager subscription = mock(SubscribedEventManager.class);
     StreamSubscriptionInfo stream = mock(StreamSubscriptionInfo.class);
     DestinationImpl destination = mock(DestinationImpl.class);
@@ -148,7 +172,9 @@ class NamedConsumerAckLifecycleTest {
     when(stream.getSubscribedEventManager()).thenReturn(subscription);
     ConsumerConfig config = new ConsumerConfig();
     config.setAckWait(ackWaitNanos);
-    NamedConsumer consumer = new NamedConsumer("consumer", "STREAM", config, List.of(stream));
+    NamedConsumer consumer = scheduler == null
+        ? new NamedConsumer("consumer", "STREAM", config, List.of(stream))
+        : new NamedConsumer("consumer", "STREAM", config, List.of(stream), scheduler);
     return new Fixture(consumer, subscription);
   }
 
