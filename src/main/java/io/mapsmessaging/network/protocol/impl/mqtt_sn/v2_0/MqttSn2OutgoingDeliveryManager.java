@@ -106,11 +106,11 @@ public final class MqttSn2OutgoingDeliveryManager {
         throw new IOException("Unknown MQTT-SN 2.0 outgoing Packet Identifier");
       }
       if (inFlight.stage == Stage.WAIT_PUBACK && ack.type() == MqttSn2PacketType.PUBACK) {
-        completion = successful(ack.reasonCode()) ? finishCurrent() : discardCurrent();
+        completion = finishCurrent();
         response = startNext(now);
       } else if (inFlight.stage == Stage.WAIT_PUBREC && ack.type() == MqttSn2PacketType.PUBREC) {
         if (ack.reasonCode() != null && ack.reasonCode() >= 0x80) {
-          discardCurrent();
+          completion = finishCurrent();
           response = startNext(now);
         } else {
           inFlight.stage = Stage.WAIT_PUBCOMP;
@@ -121,7 +121,7 @@ public final class MqttSn2OutgoingDeliveryManager {
           response = duplicate(inFlight.lastFrame);
         }
       } else if (inFlight.stage == Stage.WAIT_PUBCOMP && ack.type() == MqttSn2PacketType.PUBCOMP) {
-        completion = successful(ack.reasonCode()) ? finishCurrent() : discardCurrent();
+        completion = finishCurrent();
         response = startNext(now);
       } else {
         throw new IOException("Unexpected MQTT-SN 2.0 acknowledgement " + ack.type());
@@ -168,15 +168,6 @@ public final class MqttSn2OutgoingDeliveryManager {
     nextPacketIdentifier = nextPacketIdentifier == 65535 ? 1 : nextPacketIdentifier + 1;
     inFlight = new InFlight(delivery, identifier, now);
     return duplicate(inFlight.lastFrame);
-  }
-
-  private static boolean successful(Integer reasonCode) {
-    return reasonCode == null || reasonCode < 0x80;
-  }
-
-  private Runnable discardCurrent() {
-    inFlight = null;
-    return null;
   }
 
   private Runnable finishCurrent() {
