@@ -66,6 +66,14 @@ public final class MqttSn2ProtectionVerifier {
    */
   // Authenticate and validate framing before committing replay state.
   @SuppressWarnings("java:S3776")
+  /** Return the sender identifier only after cryptographic and replay verification. */
+  public synchronized MqttSn2ProtectionPolicy.Authenticated verifyAuthenticated(ByteBuffer wire) throws IOException {
+    MqttSn2ProtectionCodec.Envelope envelope =
+        MqttSn2ProtectionCodec.decode(wire.asReadOnlyBuffer(), MqttSn2ProtectionVerifier::tagLength);
+    ByteBuffer inner = verify(wire);
+    return new MqttSn2ProtectionPolicy.Authenticated(inner, envelope.senderIdentifier());
+  }
+
   public synchronized ByteBuffer verify(ByteBuffer wire) throws IOException {
     MqttSn2ProtectionCodec.Envelope envelope =
         MqttSn2ProtectionCodec.decode(wire, MqttSn2ProtectionVerifier::tagLength);
