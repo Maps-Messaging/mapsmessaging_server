@@ -105,7 +105,11 @@ class MqttSn2ProtectedLiveUdpInteropTest extends BaseTestConfig {
           new MqttSn2CryptoProviders(), keyResolver::resolveSecretKey,
           preflightCounters, java.util.Set.of(scheme), scheme, GATEWAY);
       byte[] decoded = new byte[connect.length];
-      preflight.receive(ByteBuffer.wrap(wrapped)).get(decoded);
+      MqttSn2ProtectionPolicy.Authenticated verified =
+          preflight.receiveAuthenticated(ByteBuffer.wrap(wrapped));
+      verified.plaintext().get(decoded);
+      assertArrayEquals(CLIENT, verified.senderIdentifier(),
+          "Authenticated sender ID must survive protection verification");
       assertArrayEquals(connect, decoded, "Reference client and keystore-backed server protection must agree");
       byte[] serverReply = MqttSnCodec.encode(PacketType.PINGRESP, new byte[]{0, 2});
       var protectedReply = preflight.send(ByteBuffer.wrap(serverReply));
