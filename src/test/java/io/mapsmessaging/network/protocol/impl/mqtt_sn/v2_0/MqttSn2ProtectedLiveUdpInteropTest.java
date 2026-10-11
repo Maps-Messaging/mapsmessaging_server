@@ -107,6 +107,13 @@ class MqttSn2ProtectedLiveUdpInteropTest extends BaseTestConfig {
       byte[] decoded = new byte[connect.length];
       preflight.receive(ByteBuffer.wrap(wrapped)).get(decoded);
       assertArrayEquals(connect, decoded, "Reference client and keystore-backed server protection must agree");
+      byte[] serverReply = MqttSnCodec.encode(PacketType.PINGRESP, new byte[]{0, 2});
+      var protectedReply = preflight.send(ByteBuffer.wrap(serverReply));
+      byte[] outbound = new byte[protectedReply.remaining()];
+      protectedReply.get(outbound);
+      assertArrayEquals(serverReply, ProtectionCodec.decode(outbound, provider).mqttSnPacket(),
+          "Keystore-backed server outgoing protection must be accepted by the client");
+
     }
     EndPointServerConfigDTO endpoint = new EndPointServerConfigDTO();
     endpoint.setName("mqtt-sn-secure-test-" + scheme);
