@@ -61,7 +61,7 @@ class NamedConsumerAckLifecycleTest {
   void timedOutAcknowledgementReturnsDeliveryToMaps() {
     ScheduledExecutorService scheduler = mock(ScheduledExecutorService.class);
     ScheduledFuture<?> deadline = mock(ScheduledFuture.class);
-    when(scheduler.schedule(any(Runnable.class), anyLong(), eq(TimeUnit.NANOSECONDS))).thenReturn(deadline);
+    doReturn(deadline).when(scheduler).schedule(any(Runnable.class), anyLong(), eq(TimeUnit.NANOSECONDS));
     Fixture fixture = fixture(TimeUnit.MILLISECONDS.toNanos(25), scheduler);
 
     TransactionSubject subject = fixture.consumer.recordDelivery("STREAM/orders/new", message(9));
@@ -80,8 +80,8 @@ class NamedConsumerAckLifecycleTest {
     ScheduledExecutorService scheduler = mock(ScheduledExecutorService.class);
     ScheduledFuture<?> original = mock(ScheduledFuture.class);
     ScheduledFuture<?> delayed = mock(ScheduledFuture.class);
-    when(scheduler.schedule(any(Runnable.class), anyLong(), eq(TimeUnit.NANOSECONDS)))
-        .thenReturn(original, delayed);
+    doReturn(original, delayed).when(scheduler)
+        .schedule(any(Runnable.class), anyLong(), eq(TimeUnit.NANOSECONDS));
     Fixture fixture = fixture(TimeUnit.SECONDS.toNanos(10), scheduler);
     TransactionSubject subject = fixture.consumer.recordDelivery("STREAM/orders/new", message(12));
 
