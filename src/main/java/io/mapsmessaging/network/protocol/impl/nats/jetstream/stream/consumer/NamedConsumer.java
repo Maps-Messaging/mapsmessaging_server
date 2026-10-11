@@ -31,6 +31,8 @@ import java.io.IOException;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.HashMap;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -45,6 +47,7 @@ public class NamedConsumer {
   private final List<StreamSubscriptionInfo> streams;
   private List<Event> events;
   private int index;
+  private final Map<StreamSubscriptionInfo, Future<Response>> inFlightPolls = new HashMap<>();
 
   public NamedConsumer(String name, String streamName, ConsumerConfig config, List<StreamSubscriptionInfo> streams) {
     this.name = name;
@@ -81,9 +84,19 @@ public class NamedConsumer {
       return null;
     }
     for (int x = 0; x < streams.size(); x++) {
-      Future<Response> response = streams.get(index).getSubscribedEventManager().getNext();
+      StreamSubscriptionInfo stream = streams.get(index);
+      Future<Response> response = inFlightPolls.get(stream);
+      if (response == null) {
+        response = stream.getSubscribedEventManager().getNext();
+        inFlightPolls.put(stream, response);
+      }
       try {
-        Response val = response.get(100, TimeUnit.MILLISECONDS);
+        if (noWait && !response.isDone()) {
+          index = (index + 1) % streams.size();
+          continue;
+        }
+        Response val = noWait ? response.get() : response.get(100, TimeUnit.MILLISECONDS);
+        inFlightPolls.remove(stream);
         if(val instanceof MessageResponse messageResponse){
           MessageEvent msg = messageResponse.getResponse();
           if(msg != null){
@@ -96,6 +109,7 @@ public class NamedConsumer {
         Thread.currentThread().interrupt();
         throw new IOException(e);
       } catch (Exception e) {
+        inFlightPolls.remove(stream);
         throw new IOException(e);
       }
       index = (index + 1) % streams.size();
