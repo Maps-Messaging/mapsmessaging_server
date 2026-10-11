@@ -64,6 +64,7 @@ public class NatsProtocol extends Protocol {
   @Getter
   private final int maxReceiveSize;
   private final SessionState sessionState;
+  private final NatsOutboundCompletionTracker outboundCompletions = new NatsOutboundCompletionTracker();
   @Getter
   private final NatsConfigDTO natsConfig;
   private NatsFrame activeFrame;
@@ -94,6 +95,7 @@ public class NatsProtocol extends Protocol {
   @Override
   public void close() {
     logger.log(ServerLogMessages.NATS_CLOSING, endPoint.toString());
+    outboundCompletions.failOutstandingWrites();
     try {
       super.close();
       sessionState.close();
@@ -174,9 +176,15 @@ public class NatsProtocol extends Protocol {
   }
 
   public void writeFrame(NatsFrame frame) {
-    sentMessage();
-    selectorTask.push(frame);
-    logger.log(ServerLogMessages.STOMP_PUSHED_WRITE, frame);
+    outboundCompletions.track(frame);
+    try {
+      sentMessage();
+      selectorTask.push(frame);
+      logger.log(ServerLogMessages.STOMP_PUSHED_WRITE, frame);
+    } catch (RuntimeException failure) {
+      frame.complete();
+      throw failure;
+    }
   }
 
   public boolean processPacket(Packet packet) throws IOException {

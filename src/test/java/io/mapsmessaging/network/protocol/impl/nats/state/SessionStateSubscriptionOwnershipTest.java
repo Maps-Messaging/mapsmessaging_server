@@ -85,4 +85,20 @@ class SessionStateSubscriptionOwnershipTest {
     org.junit.jupiter.api.Assertions.assertFalse(state.addNamedConsumer(replacement));
     assertSame(original, state.getNamedConsumers().get("shared"));
   }
+  @Test
+  void closeWithoutEstablishedMapsSessionReleasesNamedConsumers() throws Exception {
+    NatsProtocol protocol = mock(NatsProtocol.class);
+    when(protocol.getEndPoint()).thenReturn(mock(EndPoint.class));
+    SessionState state = new SessionState(protocol);
+    io.mapsmessaging.network.protocol.impl.nats.jetstream.stream.consumer.NamedConsumer consumer =
+        mock(io.mapsmessaging.network.protocol.impl.nats.jetstream.stream.consumer.NamedConsumer.class);
+    when(consumer.getName()).thenReturn("consumer");
+    state.addNamedConsumer(consumer);
+
+    state.close();
+
+    verify(consumer).close();
+    org.junit.jupiter.api.Assertions.assertTrue(state.getNamedConsumers().isEmpty());
+    org.junit.jupiter.api.Assertions.assertFalse(state.send(new io.mapsmessaging.network.protocol.impl.nats.frames.MsgFrame(32)));
+  }
 }

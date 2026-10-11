@@ -174,21 +174,24 @@ public class SessionState implements CloseHandler, CompletionHandler {
 
   public void close() throws IOException {
     isValid = false;
-    if(session != null) {
-      CompletableFuture<Session> future = SessionManager.getInstance().closeAsync(session, false);
-      try {
-        activeSubscriptions.clear();
-        destinationSubscriptionAliases.clear();
-        queueGroupCounters.clear();
-        namedConsumers.values().forEach(NamedConsumer::close);
-        namedConsumers.clear();
-        jetStreamRequestManager.close();
-        subscriptions.clear();
-        future.get();
-      } catch (InterruptedException | ExecutionException e) {
-        Thread.currentThread().interrupt();
-        throw new IOException(e);
-      }
+    namedConsumers.values().forEach(NamedConsumer::close);
+    namedConsumers.clear();
+    jetStreamRequestManager.close();
+    activeSubscriptions.clear();
+    destinationSubscriptionAliases.clear();
+    queueGroupCounters.clear();
+    subscriptions.clear();
+    if (session == null) {
+      return;
+    }
+    CompletableFuture<Session> future = SessionManager.getInstance().closeAsync(session, false);
+    try {
+      future.get();
+    } catch (InterruptedException interrupted) {
+      Thread.currentThread().interrupt();
+      throw new IOException("Interrupted while closing NATS session", interrupted);
+    } catch (ExecutionException failure) {
+      throw new IOException("Failed to close NATS session", failure.getCause());
     }
   }
 
