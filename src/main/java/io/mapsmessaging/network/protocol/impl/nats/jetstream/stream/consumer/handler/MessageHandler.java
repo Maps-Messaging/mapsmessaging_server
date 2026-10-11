@@ -69,7 +69,7 @@ public class MessageHandler  extends JetStreamFrameHandler {
     }
 
     for (int i = 0; i < request.getBatch(); i++) {
-      MessageEvent msg = consumer.getNextMessage();
+      MessageEvent msg = consumer.getNextMessage(request.isNo_wait());
       if (msg != null) {
         PayloadFrame payloadFrame = sessionState.buildPayloadFrame(msg.getMessage(), msg.getDestinationName());
         TransactionSubject replyToSubject = new TransactionSubject(consumer, msg.getDestinationName(), msg.getMessage().getIdentifier());
