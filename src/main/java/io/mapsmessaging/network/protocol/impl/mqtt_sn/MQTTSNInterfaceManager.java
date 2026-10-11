@@ -468,9 +468,11 @@ public class MQTTSNInterfaceManager implements SelectorCallback {
         throw new IOException("Unprotected PUBWOS rejected by secured MQTT-SN 2.0 endpoint");
       }
       MqttSn2PublishCodec.Publish publish = MqttSn2PublishCodec.decode(frame);
-      // Established sessions were dispatched before arriving here. Only
-      // sessionless PUBWOS is valid on this unconnected path; predefined
-      // aliases are resolved against the gateway's configured topic table.
+      // MQTT-SN 1.2 SUBSCRIBE shares the PUBWOS packet identifier 0x12.
+      // A predefined alias is ambiguous without version or authenticated identity.
+      if (publish.topicType() == 1) {
+        throw new IOException("Ambiguous unprotected predefined-alias PUBWOS on shared MQTT-SN listener");
+      }
       publishWithoutV2Connection(packet.getFromAddress(), publish);
       return;
     }
