@@ -32,11 +32,8 @@ import io.mapsmessaging.network.protocol.impl.nats.listener.FrameListener;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.ArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.Map;
 
 
 public class ConnectedState implements State {
