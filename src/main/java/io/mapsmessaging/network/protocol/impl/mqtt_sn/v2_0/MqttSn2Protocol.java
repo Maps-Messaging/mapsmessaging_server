@@ -497,6 +497,8 @@ public final class MqttSn2Protocol extends Protocol {
       }
       incomingQos2Committed.add(ack.packetIdentifier());
     }
+    // The destination dispatches delivery asynchronously. Keep the transaction
+    // open until PUBCOMP transmission finishes, but never commit it twice.
     try {
       transaction.commit();
     } catch (IOException | RuntimeException failure) {
@@ -504,12 +506,6 @@ public final class MqttSn2Protocol extends Protocol {
         incomingQos2Committed.remove(ack.packetIdentifier());
       }
       throw failure;
-    }
-    if (transaction != null) {
-      // The destination's transactional commit dispatches delivery asynchronously.
-      // Keep the committed transaction registered until PUBCOMP is transmitted,
-      // matching the MQTT 5 PUBREL lifecycle; removing it before the write
-      // completion can race the destination's commit/delivery work.
     }
     Transaction completed = transaction;
     send(MqttSn2AckCodec.encode(new MqttSn2AckCodec.Ack(
