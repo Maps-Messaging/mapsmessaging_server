@@ -45,21 +45,28 @@ public class TransactionHandler extends JetStreamFrameHandler {
     String subject = frame.getSubject();
 
     String[] parts = subject.split("\\.");
-    if (parts.length >= 6) {
-      TransactionSubject transactionSubject = TransactionSubject.parse(subject);
+    if (parts.length == 9) {
+      TransactionSubject transactionSubject;
+      try {
+        transactionSubject = TransactionSubject.parse(subject);
+      } catch (IllegalArgumentException exception) {
+        return null;
+      }
       StreamSubscriptionInfo info = lookupInfo(transactionSubject, sessionState);
       if (info != null) {
-        String commandString = new String(frame.getPayload()).trim().toLowerCase();
+        String commandString = frame.getPayload() == null ? "" : new String(frame.getPayload(), java.nio.charset.StandardCharsets.UTF_8).trim().toLowerCase(java.util.Locale.ROOT);
         switch (commandString) {
-          case "+ack", "+term":
+          case "", "+ack", "+term":
             ackProcessor.handle(info, transactionSubject);
             break;
           case "-nak":
             nackProcessor.handle(info, transactionSubject);
             break;
 
-          case "+nxt":
           default:
+            if (commandString.startsWith("-nak ")) {
+              nackProcessor.handle(info, transactionSubject);
+            }
             break;
         }
       }
@@ -70,7 +77,7 @@ public class TransactionHandler extends JetStreamFrameHandler {
 
   private StreamSubscriptionInfo lookupInfo( TransactionSubject transactionSubject, SessionState sessionState ) {
     NamedConsumer consumer = sessionState.getNamedConsumers().get(transactionSubject.getConsumer());
-    if(consumer != null && transactionSubject.getDestinationIndex() < consumer.getStreams().size()) {
+    if (consumer != null && transactionSubject.getDestinationIndex() >= 0 && transactionSubject.getDestinationIndex() < consumer.getStreams().size()) {
       return consumer.getStreams().get(transactionSubject.getDestinationIndex());
     }
     return null;
