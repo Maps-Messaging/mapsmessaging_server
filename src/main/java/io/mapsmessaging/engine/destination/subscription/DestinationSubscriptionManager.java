@@ -89,9 +89,21 @@ public class DestinationSubscriptionManager implements Subscribable {
 
   @Override
   public int register(Message message) {
+    boolean trace = message.getMeta() != null
+        && "2.0".equals(message.getMeta().get("version"))
+        && "MQTT-SN".equals(message.getMeta().get("protocol"))
+        && message.getQualityOfService().getLevel() == 2;
+    if (trace) {
+      System.err.printf("[MSG-324] QoS2 messageId=%d subscriptions=%d names=%s%n",
+          message.getIdentifier(), subscriptions.size(), subscriptions.keySet());
+    }
     int count = 0;
     for (Subscribable subscribable : subscriptions.values()) {
       int updated = subscribable.register(message);
+      if (trace) {
+        System.err.printf("[MSG-324] subscriber=%s session=%s registerResult=%d%n",
+            subscribable.getName(), subscribable.getSessionId(), updated);
+      }
       if (updated != 0) {
         count += updated;
       }
