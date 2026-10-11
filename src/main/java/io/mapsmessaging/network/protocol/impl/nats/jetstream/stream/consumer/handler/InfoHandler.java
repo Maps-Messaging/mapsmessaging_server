@@ -57,7 +57,7 @@ public class InfoHandler extends JetStreamFrameHandler {
     String consumerName = parts[5];
 
     NamedConsumer consumer = sessionState.getNamedConsumers().get(consumerName);
-    if (consumer == null) {
+    if (consumer == null || !stream.equals(consumer.getStreamName())) {
       return buildError(TYPE,"Consumer '" + consumerName + "' not found", replyTo, sessionState);
     }
 
