@@ -84,4 +84,19 @@ class ConnectedStateDeliveryTest {
     written.getAllValues().get(1).complete();
     assertEquals(1, completions.get());
   }
+
+  @Test
+  void noMatchingSubscriptionCompletesOnceWithoutWriting() {
+    SessionState session = mock(SessionState.class);
+    SubscriptionContext context = mock(SubscriptionContext.class);
+    Message message = mock(Message.class);
+    when(session.buildPayloadFrame(message, "events.topic")).thenReturn(new MsgFrame(1024));
+    when(session.getSubscriptions()).thenReturn(Map.of());
+    when(session.getNamedConsumers()).thenReturn(Map.of());
+    AtomicInteger completions = new AtomicInteger();
+
+    assertTrue(new ConnectedState().sendMessage(session, "events.topic", context, message, completions::incrementAndGet));
+    assertEquals(1, completions.get());
+    verify(session, never()).send(any(NatsFrame.class));
+  }
 }
