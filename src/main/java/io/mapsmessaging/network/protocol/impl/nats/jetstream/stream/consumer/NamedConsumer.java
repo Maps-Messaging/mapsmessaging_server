@@ -73,10 +73,21 @@ public class NamedConsumer {
   }
 
   public synchronized MessageEvent getNextMessage() throws IOException {
-    for(int x=0;x<streams.size();x++) {
+    return getNextMessage(false);
+  }
+
+  public synchronized MessageEvent getNextMessage(boolean noWait) throws IOException {
+    if (streams.isEmpty()) {
+      return null;
+    }
+    for (int x = 0; x < streams.size(); x++) {
       Future<Response> response = streams.get(index).getSubscribedEventManager().getNext();
       try {
-        Response  val = response.get(100, TimeUnit.MILLISECONDS);
+        if (noWait && !response.isDone()) {
+          index = (index + 1) % streams.size();
+          continue;
+        }
+        Response val = noWait ? response.get() : response.get(100, TimeUnit.MILLISECONDS);
         if(val instanceof MessageResponse messageResponse){
           MessageEvent msg = messageResponse.getResponse();
           if(msg != null){
