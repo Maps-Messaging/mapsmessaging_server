@@ -91,7 +91,8 @@ public class TransactionHandler extends JetStreamFrameHandler {
 
   private StreamSubscriptionInfo lookupInfo( TransactionSubject transactionSubject, SessionState sessionState ) {
     NamedConsumer consumer = sessionState.getNamedConsumers().get(transactionSubject.getConsumer());
-    if (consumer != null && transactionSubject.getDestinationIndex() >= 0 && transactionSubject.getDestinationIndex() < consumer.getStreams().size()) {
+    if (consumer != null && consumer.getStreamName().equals(transactionSubject.getStream())
+        && transactionSubject.getDestinationIndex() >= 0 && transactionSubject.getDestinationIndex() < consumer.getStreams().size()) {
       return consumer.getStreams().get(transactionSubject.getDestinationIndex());
     }
     return null;
