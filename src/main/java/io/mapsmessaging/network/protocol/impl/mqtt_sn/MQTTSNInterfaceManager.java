@@ -90,6 +90,8 @@ public class MQTTSNInterfaceManager implements SelectorCallback {
   private final boolean advertiseGateway;
 
   private final MqttSnConfig mqttSnConfig;
+  // Session policy is published as a reference; replay and send state synchronize internally.
+  @SuppressWarnings("java:S3077")
   private volatile MqttSn2ProtectionPolicy protectionSession;
   private MqttSn2IndexedCounterStore ownedCounterStore;
 
@@ -133,6 +135,8 @@ public class MQTTSNInterfaceManager implements SelectorCallback {
    * Configure ServiceLoader-backed HMAC or AEAD protection using Authentication
    * library SecretKey entries and durable counter storage.
    */
+  // Preserve exception-safe counter ownership, even if provider initialization throws Error.
+  @SuppressWarnings({"java:S1181", "java:S3358"})
   public synchronized void configureKeystoreProtection(
       ConfigurationProperties keyStoreConfiguration,
       Map<String, String> senderSchemeAliases,
@@ -180,6 +184,8 @@ public class MQTTSNInterfaceManager implements SelectorCallback {
   }
 
   /** Configure an indexed persistent protection store in a dedicated directory. */
+  // Always release the acquired counter store before rethrowing any initialization failure.
+  @SuppressWarnings({"java:S1181", "java:S3776"})
   public synchronized void configureHmacProtection(MqttSn2ProtectionVerifier.KeyResolver keys,
       Path counterDirectory, byte[] localSenderIdentifier, int scheme) throws IOException {
     if (ownedCounterStore != null || protectionSession != null) {
@@ -292,6 +298,8 @@ public class MQTTSNInterfaceManager implements SelectorCallback {
   }
 
   /** Initialize explicitly configured protection; never expose secret configuration through REST. */
+  // Security configuration must fail closed with explicit validation of every required field.
+  @SuppressWarnings("java:S3776")
   private void initializeConfiguredProtection() throws IOException {
     ConfigurationProperties protection = mqttSnConfig.getProtectionConfiguration();
     if (protection == null || !protection.getBooleanProperty("enabled", false)) return;
@@ -492,6 +500,8 @@ public class MQTTSNInterfaceManager implements SelectorCallback {
     });
   }
 
+  // Legacy MQTT-SN 1.2 packet matching is intentionally isolated from v2 handling.
+  @SuppressWarnings("java:S3776")
   private UDPSessionState<Protocol> lookupByPacket(Packet packet) throws IOException {
     byte type = packet.get(1);
     if(type == MQTT_SNPacket.PINGREQ){
