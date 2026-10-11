@@ -31,6 +31,8 @@ public final class MqttSn2PublishCodec {
   private MqttSn2PublishCodec() {
   }
 
+  // Protocol wire-layout validation follows CSD01 field order; keep it auditable.
+  @SuppressWarnings("java:S3776")
   public static ByteBuffer encode(Publish publish) {
     if (publish == null) throw new IllegalArgumentException("Missing PUBLISH");
     int type = publish.topicType();
@@ -76,6 +78,8 @@ public final class MqttSn2PublishCodec {
     return MqttSn2FrameCodec.encode(wos ? MqttSn2PacketType.PUBWOS : MqttSn2PacketType.PUBLISH, data);
   }
 
+  // Protocol wire-layout validation follows CSD01 field order; keep it auditable.
+  @SuppressWarnings("java:S3776")
   public static Publish decode(MqttSn2FrameCodec.Frame frame) throws IOException {
     boolean wos = frame.type() == MqttSn2PacketType.PUBWOS;
     if (frame.type() != MqttSn2PacketType.PUBLISH && !wos) {
