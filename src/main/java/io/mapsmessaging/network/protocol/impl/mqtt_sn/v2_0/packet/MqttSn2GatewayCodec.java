@@ -14,6 +14,8 @@ public final class MqttSn2GatewayCodec {
   public record Advertise(int gatewayIdentifier, int durationSeconds) {
   }
 
+  // Protocol value container; payload bytes are cloned and compared explicitly in tests.
+  @SuppressWarnings("java:S6218")
   public record GatewayInfo(int gatewayIdentifier, byte[] address) {
     public GatewayInfo {
       address = Objects.requireNonNull(address, "address").clone();
