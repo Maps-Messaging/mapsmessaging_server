@@ -21,12 +21,14 @@ package io.mapsmessaging.network.protocol.impl.nats.jetstream.stream.consumer.ha
 
 import com.google.gson.JsonObject;
 import io.mapsmessaging.api.SubscribedEventManager;
+import io.mapsmessaging.api.Session;
 import io.mapsmessaging.api.features.ClientAcknowledgement;
 import io.mapsmessaging.network.protocol.impl.nats.frames.ErrFrame;
 import io.mapsmessaging.network.protocol.impl.nats.frames.NatsFrame;
 import io.mapsmessaging.network.protocol.impl.nats.frames.PayloadFrame;
 import io.mapsmessaging.network.protocol.impl.nats.jetstream.stream.JetStreamFrameHandler;
 import io.mapsmessaging.network.protocol.impl.nats.jetstream.stream.consumer.NamedConsumer;
+import io.mapsmessaging.network.protocol.impl.nats.jetstream.stream.consumer.DurableConsumerSession;
 import io.mapsmessaging.network.protocol.impl.nats.jetstream.stream.consumer.data.*;
 import io.mapsmessaging.network.protocol.impl.nats.state.SessionState;
 import io.mapsmessaging.network.protocol.impl.nats.streams.NamespaceManager;
@@ -76,6 +78,10 @@ public class CreateHandler extends JetStreamFrameHandler {
     applyDefaults(config);
     String name = parts.length == 6 ? parts[5] : consumerName(config);
     config.setName(name);
+    boolean durable = config.getDurableName() != null && !config.getDurableName().isBlank();
+    if (durable && !name.equals(config.getDurableName())) {
+      return buildError(TYPE, 400, "Durable name must match the consumer name", replyTo, sessionState);
+    }
 
     List<StreamInfo> subjects = streamInfoList.getSubjects();
     if (config.getFilterSubject() != null && !config.getFilterSubject().isBlank()) {
@@ -87,29 +93,42 @@ public class CreateHandler extends JetStreamFrameHandler {
 
     NamedConsumer consumer;
     List<StreamSubscriptionInfo> registered = new ArrayList<>();
+    Session durableSession = null;
     synchronized (sessionState) {
       if (sessionState.contains(name)) {
         return buildError(TYPE, "Duplicate consumer name", replyTo, sessionState);
       }
       try {
+        if (durable) {
+          durableSession = DurableConsumerSession.open(sessionState, stream, name);
+        }
         int index = 0;
         for (StreamInfo streamInfo : subjects) {
           String subscriptionAlias = "jetstream:" + stream + ":" + name + ":" + index++;
-          SubscribedEventManager manager = subscribeConsumerSubject(sessionState, config, streamInfo, stream, subscriptionAlias);
+          SubscribedEventManager manager;
+          if (durableSession != null) {
+            manager = DurableConsumerSession.subscribe(durableSession,
+                stream + "." + streamInfo.getSubject(), subscriptionAlias, getClientAcknowledgement(config), 1);
+          } else {
+            manager = subscribeConsumerSubject(sessionState, config, streamInfo, stream, subscriptionAlias);
+          }
           if (manager == null) {
-            releaseSubscriptions(sessionState, registered);
-            return buildError(TYPE, "Unable to register consumer subscription", replyTo, sessionState);
+            throw new IOException("Unable to register consumer subscription " + streamInfo.getSubject());
           }
           registered.add(new StreamSubscriptionInfo(manager, streamInfo, subscriptionAlias));
-          manager.replayStoredMessages();
+          if (durableSession == null) {
+            manager.replayStoredMessages();
+          }
         }
         consumer = new NamedConsumer(name, stream, config, registered);
         if (!sessionState.addNamedConsumer(consumer)) {
-          releaseSubscriptions(sessionState, registered);
-          return buildError(TYPE, "Duplicate consumer name", replyTo, sessionState);
+          throw new IOException("Duplicate consumer name");
+        }
+        if (durableSession != null) {
+          consumer.attachDurableMapsSession(durableSession);
         }
       } catch (IOException | RuntimeException exception) {
-        releaseSubscriptions(sessionState, registered);
+        cleanupFailedConsumer(sessionState, durableSession, registered);
         return buildError(TYPE, "Failed to register consumer: " + exception.getMessage(), replyTo, sessionState);
       }
     }
@@ -124,6 +143,19 @@ public class CreateHandler extends JetStreamFrameHandler {
     created.setConfig(config);
     ((PayloadFrame) response).setPayload(gson.toJson(created).getBytes(StandardCharsets.UTF_8));
     return response;
+  }
+
+  private void cleanupFailedConsumer(SessionState state, Session durable, List<StreamSubscriptionInfo> registered) {
+    if (durable == null) {
+      releaseSubscriptions(state, registered);
+      return;
+    }
+    if (!durable.isRestored()) {
+      for (StreamSubscriptionInfo subscription : registered) {
+        durable.removeSubscription(subscription.getSubscriptionAlias());
+      }
+    }
+    DurableConsumerSession.close(state, durable);
   }
 
   private void releaseSubscriptions(SessionState sessionState, List<StreamSubscriptionInfo> registered) {

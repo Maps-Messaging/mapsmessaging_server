@@ -174,24 +174,54 @@ public class SessionState implements CloseHandler, CompletionHandler {
 
   public void close() throws IOException {
     isValid = false;
-    namedConsumers.values().forEach(NamedConsumer::close);
+    clearAuthenticatedCredentials();
+    List<CompletableFuture<Session>> closures = new ArrayList<>();
+    IOException problem = null;
+    for (NamedConsumer consumer : namedConsumers.values()) {
+      try {
+        consumer.close();
+        if (consumer.getDurableMapsSession() != null) {
+          closures.add(io.mapsmessaging.network.protocol.impl.nats.jetstream.stream.consumer.DurableConsumerSession.close(
+              this, consumer.getDurableMapsSession()));
+        }
+      } catch (RuntimeException failed) {
+        if (problem == null) {
+          problem = new IOException("Failed to clean up JetStream consumer", failed);
+        }
+      }
+    }
     namedConsumers.clear();
     jetStreamRequestManager.close();
     activeSubscriptions.clear();
     destinationSubscriptionAliases.clear();
     queueGroupCounters.clear();
     subscriptions.clear();
-    if (session == null) {
-      return;
+    if (session != null) {
+      try {
+        closures.add(SessionManager.getInstance().closeAsync(session, false));
+      } catch (RuntimeException failed) {
+        if (problem == null) {
+          problem = new IOException("Failed to queue NATS session closure", failed);
+        }
+      }
     }
-    CompletableFuture<Session> future = SessionManager.getInstance().closeAsync(session, false);
-    try {
-      future.get();
-    } catch (InterruptedException interrupted) {
-      Thread.currentThread().interrupt();
-      throw new IOException("Interrupted while closing NATS session", interrupted);
-    } catch (ExecutionException failure) {
-      throw new IOException("Failed to close NATS session", failure.getCause());
+    for (CompletableFuture<Session> closing : closures) {
+      try {
+        closing.get();
+      } catch (InterruptedException interrupted) {
+        Thread.currentThread().interrupt();
+        if (problem == null) {
+          problem = new IOException("Interrupted closing NATS session", interrupted);
+        }
+        break;
+      } catch (ExecutionException failed) {
+        if (problem == null) {
+          problem = new IOException("Failed to close NATS session", failed.getCause());
+        }
+      }
+    }
+    if (problem != null) {
+      throw problem;
     }
   }
 

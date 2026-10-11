@@ -25,6 +25,7 @@ import io.mapsmessaging.network.protocol.impl.nats.frames.NatsFrame;
 import io.mapsmessaging.network.protocol.impl.nats.frames.PayloadFrame;
 import io.mapsmessaging.network.protocol.impl.nats.jetstream.stream.JetStreamFrameHandler;
 import io.mapsmessaging.network.protocol.impl.nats.jetstream.stream.consumer.NamedConsumer;
+import io.mapsmessaging.network.protocol.impl.nats.jetstream.stream.consumer.DurableConsumerSession;
 import io.mapsmessaging.network.protocol.impl.nats.state.SessionState;
 import io.mapsmessaging.network.protocol.impl.nats.streams.NamespaceManager;
 import io.mapsmessaging.network.protocol.impl.nats.streams.StreamInfoList;
@@ -74,11 +75,26 @@ public class DeleteHandler extends JetStreamFrameHandler {
         return buildError(TYPE, "Consumer '" + consumerName + "' no longer exists", replyTo, sessionState);
       }
       for (StreamSubscriptionInfo subscription : namedConsumer.getStreams()) {
-        if (subscription.getSubscriptionAlias() != null) {
+        if (subscription.getSubscriptionAlias() == null) {
+          continue;
+        }
+        if (namedConsumer.getDurableMapsSession() != null) {
+          namedConsumer.getDurableMapsSession().removeSubscription(subscription.getSubscriptionAlias());
+        } else {
           sessionState.removeSubscription(subscription.getSubscriptionAlias());
         }
       }
       namedConsumer.close();
+      if (namedConsumer.getDurableMapsSession() != null) {
+        try {
+          DurableConsumerSession.close(sessionState, namedConsumer.getDurableMapsSession()).get();
+        } catch (InterruptedException interrupted) {
+          Thread.currentThread().interrupt();
+          throw new IOException("Interrupted deleting durable consumer", interrupted);
+        } catch (java.util.concurrent.ExecutionException failure) {
+          throw new IOException("Could not delete durable consumer", failure);
+        }
+      }
     }
 
     JsonObject response = new JsonObject();

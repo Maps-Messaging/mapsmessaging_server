@@ -52,6 +52,15 @@ public class NamedConsumer {
     return thread;
   });
 
+  private io.mapsmessaging.api.Session durableMapsSession;
+
+  public synchronized void attachDurableMapsSession(io.mapsmessaging.api.Session session) {
+    if (durableMapsSession != null) {
+      throw new IllegalStateException("Durable MAPS session already attached");
+    }
+    durableMapsSession = java.util.Objects.requireNonNull(session);
+  }
+
   private final ConsumerConfig config;
   private final String name;
   private final String streamName;
