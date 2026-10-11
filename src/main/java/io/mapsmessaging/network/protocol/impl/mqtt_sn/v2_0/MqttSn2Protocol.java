@@ -71,6 +71,8 @@ public final class MqttSn2Protocol extends Protocol {
   }
   private volatile boolean closed;
   private final MqttSn2Lifecycle lifecycle = new MqttSn2Lifecycle();
+  // Policy is safely published to IO callbacks; its mutable operations are synchronized.
+  @SuppressWarnings("java:S3077")
   private volatile MqttSn2ProtectionPolicy protectionSession;
   private final MqttSn2OutgoingDeliveryManager outgoing = new MqttSn2OutgoingDeliveryManager();
   private final Map<Integer, Transaction> incomingQos2 = new HashMap<>();
@@ -174,6 +176,8 @@ public final class MqttSn2Protocol extends Protocol {
     connect((MqttSn2ConnectCodec.Connect) decoded.content());
   }
 
+  // Preserve CSD01 negotiation and authentication state transitions.
+  @SuppressWarnings("java:S3776")
   private void connect(MqttSn2ConnectCodec.Connect request) throws IOException {
     if (lifecycle.state() != MqttSn2Lifecycle.State.NEW || session.get() != null) {
       throw new IOException("Duplicate MQTT-SN 2.0 CONNECT");
@@ -243,6 +247,8 @@ public final class MqttSn2Protocol extends Protocol {
     }
   }
 
+  // Preserve asynchronous session restoration and CONNACK ordering.
+  @SuppressWarnings("java:S3776")
   private void establishSession() throws IOException {
     MqttSn2ConnectCodec.Connect request = connectRequest;
     if (lifecycle.state() == MqttSn2Lifecycle.State.NEGOTIATING_WILL) lifecycle.willAccepted();
@@ -372,6 +378,8 @@ public final class MqttSn2Protocol extends Protocol {
         0, alias, request.packetIdentifier(), 0)), null);
   }
 
+  // QoS0, QoS1 and QoS2 have different broker transaction contracts.
+  @SuppressWarnings("java:S3776")
   private void publish(MqttSn2PublishCodec.Publish publish) throws IOException {
     String topic = resolveTopic(publish.topicType(), publish.topicAlias(), publish.topicName());
     if (topic == null || (topic.startsWith("$")
