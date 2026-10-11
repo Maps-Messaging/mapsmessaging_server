@@ -176,6 +176,8 @@ class MqttSn2ProtectedLiveUdpInteropTest extends BaseTestConfig {
           "QoS1 PUBACK must confirm successful acceptance, actual reason " + qosOneReason);
       var q1Delivered = firstQ1.type() == PacketType.PUBLISH ? firstQ1 : secondQ1;
       assertArrayEquals(payload, MqttSnCodec.decodePublish(q1Delivered).payload());
+      assertEquals(QoS.AT_MOST_ONCE, MqttSnCodec.decodePublish(q1Delivered).qos(),
+          "QoS 0 subscription must never receive QoS 1 publication at QoS 1");
 
       // QoS 2 uses PUBREC/PUBREL/PUBCOMP over authenticated UDP.
       send(client, remote, wrap(provider, scheme, 6,
@@ -207,6 +209,8 @@ class MqttSn2ProtectedLiveUdpInteropTest extends BaseTestConfig {
           java.util.Set.of(firstQ2.type(), secondQ2.type()));
       var q2Delivered = firstQ2.type() == PacketType.PUBLISH ? firstQ2 : secondQ2;
       assertArrayEquals(payload, MqttSnCodec.decodePublish(q2Delivered).payload());
+      assertEquals(QoS.AT_MOST_ONCE, MqttSnCodec.decodePublish(q2Delivered).qos(),
+          "QoS 0 subscription must cap QoS 2 publication delivery to QoS 0");
 
       // Duplicate authenticated sender counter cannot be applied twice.
       client.setSoTimeout(350);
