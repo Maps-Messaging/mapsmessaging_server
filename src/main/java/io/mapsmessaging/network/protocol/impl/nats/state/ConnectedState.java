@@ -27,7 +27,6 @@ import io.mapsmessaging.network.protocol.impl.nats.frames.CompletionHandler;
 import io.mapsmessaging.network.protocol.impl.nats.frames.ErrFrame;
 import io.mapsmessaging.network.protocol.impl.nats.frames.NatsFrame;
 import io.mapsmessaging.network.protocol.impl.nats.frames.PayloadFrame;
-import io.mapsmessaging.network.protocol.impl.nats.jetstream.stream.consumer.NamedConsumer;
 import io.mapsmessaging.network.protocol.impl.nats.listener.FrameListener;
 
 import java.io.IOException;
@@ -71,13 +70,8 @@ public class ConnectedState implements State {
       }
     }
 
-    NamedConsumer named = engine.getNamedConsumers().get(context.getAlias());
-    if (named != null) {
-      named.receive(message, destinationName, completionTask);
-    }
-
     if (outgoing.isEmpty()) {
-      if (named == null && completionTask != null) {
+      if (completionTask != null) {
         completionTask.run();
       }
       return true;
