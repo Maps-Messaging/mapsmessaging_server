@@ -234,6 +234,16 @@ public class SessionState implements CloseHandler, CompletionHandler {
     return null;
   }
 
+  public SubscribedEventManager subscribeJetStream(String subject, String alias, ClientAcknowledgement acknowledgement, int maxReceive)
+      throws IOException {
+    SubscriptionContextBuilder builder = new SubscriptionContextBuilder(convertSubject(subject), acknowledgement);
+    builder.setAlias(alias);
+    builder.setSync(true);
+    builder.setNoLocalMessages(false);
+    builder.setReceiveMaximum(maxReceive);
+    return createSubscription(builder.build());
+  }
+
   public synchronized SubscribedEventManager createSubscription(SubscriptionContext context) throws IOException {
     if (context.getFilter().startsWith("queue")) {
       getSession().findDestination(context.getFilter(), DestinationType.QUEUE);

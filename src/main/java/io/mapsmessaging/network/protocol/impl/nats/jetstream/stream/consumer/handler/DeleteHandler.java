@@ -28,6 +28,7 @@ import io.mapsmessaging.network.protocol.impl.nats.jetstream.stream.consumer.Nam
 import io.mapsmessaging.network.protocol.impl.nats.state.SessionState;
 import io.mapsmessaging.network.protocol.impl.nats.streams.NamespaceManager;
 import io.mapsmessaging.network.protocol.impl.nats.streams.StreamInfoList;
+import io.mapsmessaging.network.protocol.impl.nats.streams.StreamSubscriptionInfo;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -68,9 +69,17 @@ public class DeleteHandler extends JetStreamFrameHandler {
       return buildError(TYPE,"Consumer '" + consumerName + "' not found", replyTo, sessionState);
     }
 
-    sessionState.getNamedConsumers().remove(consumerName, namedConsumer);
-    sessionState.removeSubscription(consumerName);
-    namedConsumer.close();
+    synchronized (sessionState) {
+      if (!sessionState.getNamedConsumers().remove(consumerName, namedConsumer)) {
+        return buildError(TYPE, "Consumer '" + consumerName + "' no longer exists", replyTo, sessionState);
+      }
+      for (StreamSubscriptionInfo subscription : namedConsumer.getStreams()) {
+        if (subscription.getSubscriptionAlias() != null) {
+          sessionState.removeSubscription(subscription.getSubscriptionAlias());
+        }
+      }
+      namedConsumer.close();
+    }
 
     JsonObject response = new JsonObject();
     response.addProperty("type", TYPE);

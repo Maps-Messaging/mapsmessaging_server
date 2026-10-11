@@ -19,6 +19,7 @@
 
 package io.mapsmessaging.network.protocol.impl.nats.jetstream.stream.consumer.handler;
 
+import com.google.gson.JsonObject;
 import io.mapsmessaging.network.protocol.impl.nats.jetstream.stream.consumer.data.AckPolicy;
 import io.mapsmessaging.network.protocol.impl.nats.jetstream.stream.consumer.data.ConsumerConfig;
 import io.mapsmessaging.network.protocol.impl.nats.jetstream.stream.consumer.data.DeliverPolicy;
@@ -60,14 +61,39 @@ class CreateHandlerDefaultsTest {
     assertEquals(DeliverPolicy.ALL, config.getDeliverPolicy());
   }
   @Test
-  void consumerSubscriptionFailureIsObservableToCreation() {
+  void consumerSubscriptionFailureIsObservableToCreation() throws Exception {
     SessionState session = mock(SessionState.class);
     StreamInfo stream = mock(StreamInfo.class);
     when(stream.getSubject()).thenReturn("orders.created");
     ConsumerConfig config = new ConsumerConfig();
     CreateHandler.applyDefaults(config);
 
-    assertNull(new CreateHandler().subscribeConsumerSubject(session, config, stream, "consumer"));
-    verify(session).subscribe("orders.created", "consumer", null, ClientAcknowledgement.INDIVIDUAL, 1, true);
+    assertNull(new CreateHandler().subscribeConsumerSubject(session, config, stream, "orders_stream", "jetstream:orders_stream:consumer:0"));
+    verify(session).subscribeJetStream("orders_stream.orders.created", "jetstream:orders_stream:consumer:0", ClientAcknowledgement.INDIVIDUAL, 1);
+  }
+  @Test
+  void wrappedOfficialConsumerConfigurationRetainsDurableFields() {
+    JsonObject config = new JsonObject();
+    config.addProperty("durable_name", "durable");
+    config.addProperty("ack_policy", "explicit");
+    config.addProperty("max_deliver", 5);
+    JsonObject request = new JsonObject();
+    request.add("config", config);
+
+    ConsumerConfig parsed = new CreateHandler().parseConfig(request);
+
+    assertEquals("durable", parsed.getDurableName());
+    assertEquals(AckPolicy.EXPLICIT, parsed.getAckPolicy());
+    assertEquals(5, parsed.getMaxDeliver());
+  }
+
+  @Test
+  void filterSubjectUsesNatsTokensNotMapsSlashes() {
+    assertTrue(CreateHandler.matchesFilter("orders/created", "orders.*"));
+    assertTrue(CreateHandler.matchesFilter("orders/created/new", "orders.>"));
+    assertFalse(CreateHandler.matchesFilter("orders/created", "other.*"));
+    assertFalse(CreateHandler.matchesFilter("orders", "orders.>"));
+    assertFalse(CreateHandler.matchesFilter("orders/created/new", "orders.*"));
+    assertFalse(CreateHandler.matchesFilter("orders/created", "orders.created.extra"));
   }
 }

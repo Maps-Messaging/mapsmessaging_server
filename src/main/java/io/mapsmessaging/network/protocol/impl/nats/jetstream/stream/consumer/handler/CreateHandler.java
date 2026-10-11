@@ -40,10 +40,11 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 public class CreateHandler extends JetStreamFrameHandler {
+
   private static final String TYPE = "io.nats.jetstream.api.v1.consumer_create_response";
+
   @Override
   public String getName() {
     return "CONSUMER.CREATE";
@@ -52,80 +53,109 @@ public class CreateHandler extends JetStreamFrameHandler {
   @Override
   public NatsFrame handle(PayloadFrame frame, JsonObject json, SessionState sessionState) throws IOException {
     String replyTo = frame.getReplyTo();
-    if (replyTo == null || replyTo.isEmpty()) {
-      return buildError(TYPE,"Missing reply subject", replyTo, sessionState);
+    if (replyTo == null || replyTo.isBlank()) {
+      return new ErrFrame("Missing reply subject");
     }
 
-    String subject = frame.getSubject();
-    NatsFrame msg = buildResponse(subject, frame, sessionState);
-    if (msg instanceof ErrFrame) {
-      return msg;
+    NatsFrame response = buildResponse(frame.getSubject(), frame, sessionState);
+    if (response instanceof ErrFrame) {
+      return response;
     }
 
-    String[] parts = subject.split("\\.");
-    if (parts.length < 5) {
-      return buildError(TYPE,"Invalid consume create subject", replyTo, sessionState);
+    String[] parts = frame.getSubject().split("\\.");
+    if (parts.length < 5 || parts.length > 6) {
+      return buildError(TYPE, "Invalid consumer create subject", replyTo, sessionState);
     }
-
     String stream = parts[4];
     StreamInfoList streamInfoList = NamespaceManager.getInstance().getStream(stream);
     if (streamInfoList == null) {
-      return buildError(TYPE,"Stream '" + stream + "' not found", replyTo, sessionState);
+      return buildError(TYPE, "Stream '" + stream + "' not found", replyTo, sessionState);
     }
 
-    String name = "";
-    if(parts.length == 6){
-      name = parts[5];
-    }
-    else{
-      name = "_Ephemeral-" + UUID.randomUUID();
-    }
-
-    ConsumerConfig config = json == null ? new ConsumerConfig() : gson.fromJson(json, ConsumerConfig.class);
-    if (config == null) {
-      config = new ConsumerConfig();
-    }
+    ConsumerConfig config = parseConfig(json);
     applyDefaults(config);
-    List<StreamInfo> subjectList = streamInfoList.getSubjects();
-    if (config.getFilterSubject() != null) {
-      subjectList = filterSubjects(config.getFilterSubject(), subjectList);
-      if (subjectList.isEmpty()) {
-        return buildError(TYPE,"Invalid filter", replyTo, sessionState);
+    String name = parts.length == 6 ? parts[5] : consumerName(config);
+    config.setName(name);
+
+    List<StreamInfo> subjects = streamInfoList.getSubjects();
+    if (config.getFilterSubject() != null && !config.getFilterSubject().isBlank()) {
+      subjects = subjects.stream().filter(info -> matchesFilter(info.getSubject(), config.getFilterSubject())).toList();
+      if (subjects.isEmpty()) {
+        return buildError(TYPE, "Invalid filter subject", replyTo, sessionState);
       }
     }
-    // Register with the session state
-    if(sessionState.contains(name)) {
-      return buildError(TYPE,"Duplicate consumer name", replyTo, sessionState);
-    }
-    List<StreamSubscriptionInfo> subscriptionInfoList = new ArrayList<>();
-    // Add the specific subscriptions
-    for(StreamInfo streamInfo : subjectList) {
-      ClientAcknowledgement acknowledgement = getClientAcknowledgement(config);
-      SubscribedEventManager eventManager = sessionState.subscribe(streamInfo.getSubject(), name, null, acknowledgement, 1, true); // only allow 1 event at a time here
-      StreamSubscriptionInfo streamSubscriptionInfo = new StreamSubscriptionInfo(eventManager, streamInfo);
-      subscriptionInfoList.add(streamSubscriptionInfo);
-    }
-    NamedConsumer namedConsumer = new NamedConsumer(name, stream, config, subscriptionInfoList);
-    sessionState.getNamedConsumers().put(name, namedConsumer);
-    ConsumerCreateResponse createResponse = new ConsumerCreateResponse();
-    createResponse.setName(name);
-    createResponse.setStream_name(stream);
-    createResponse.setDelivered(new ConsumerCreateResponse.DeliveryInfo(0, 0));
-    createResponse.setAck_floor(new ConsumerCreateResponse.AckFloor(0, 0));
 
-    createResponse.setCreated(namedConsumer.getCreated());
-    createResponse.setTs(new Date(System.currentTimeMillis()).toInstant());
-    config.setName(name);
-    createResponse.setConfig(config);
+    NamedConsumer consumer;
+    List<StreamSubscriptionInfo> registered = new ArrayList<>();
+    synchronized (sessionState) {
+      if (sessionState.contains(name)) {
+        return buildError(TYPE, "Duplicate consumer name", replyTo, sessionState);
+      }
+      try {
+        int index = 0;
+        for (StreamInfo streamInfo : subjects) {
+          String subscriptionAlias = "jetstream:" + stream + ":" + name + ":" + index++;
+          SubscribedEventManager manager = subscribeConsumerSubject(sessionState, config, streamInfo, stream, subscriptionAlias);
+          if (manager == null) {
+            releaseSubscriptions(sessionState, registered);
+            return buildError(TYPE, "Unable to register consumer subscription", replyTo, sessionState);
+          }
+          registered.add(new StreamSubscriptionInfo(manager, streamInfo, subscriptionAlias));
+        }
+        consumer = new NamedConsumer(name, stream, config, registered);
+        if (!sessionState.addNamedConsumer(consumer)) {
+          releaseSubscriptions(sessionState, registered);
+          return buildError(TYPE, "Duplicate consumer name", replyTo, sessionState);
+        }
+      } catch (IOException | RuntimeException exception) {
+        releaseSubscriptions(sessionState, registered);
+        return buildError(TYPE, "Failed to register consumer: " + exception.getMessage(), replyTo, sessionState);
+      }
+    }
 
-    PayloadFrame payloadFrame = (PayloadFrame) msg;
-    payloadFrame.setPayload((gson.toJson(createResponse)).getBytes(StandardCharsets.UTF_8));
-    return msg;
+    ConsumerCreateResponse created = new ConsumerCreateResponse();
+    created.setName(name);
+    created.setStream_name(stream);
+    created.setDelivered(new ConsumerCreateResponse.DeliveryInfo(0, 0));
+    created.setAck_floor(new ConsumerCreateResponse.AckFloor(0, 0));
+    created.setCreated(consumer.getCreated());
+    created.setTs(new Date().toInstant());
+    created.setConfig(config);
+    ((PayloadFrame) response).setPayload(gson.toJson(created).getBytes(StandardCharsets.UTF_8));
+    return response;
   }
 
-  SubscribedEventManager subscribeConsumerSubject(SessionState sessionState, ConsumerConfig config, StreamInfo streamInfo, String name) {
+  private void releaseSubscriptions(SessionState sessionState, List<StreamSubscriptionInfo> registered) {
+    for (StreamSubscriptionInfo info : registered) {
+      sessionState.removeSubscription(info.getSubscriptionAlias());
+    }
+  }
+
+  private static String consumerName(ConsumerConfig config) {
+    if (config.getDurableName() != null && !config.getDurableName().isBlank()) {
+      return config.getDurableName();
+    }
+    if (config.getName() != null && !config.getName().isBlank()) {
+      return config.getName();
+    }
+    return "_Ephemeral-" + UUID.randomUUID();
+  }
+
+  SubscribedEventManager subscribeConsumerSubject(SessionState sessionState, ConsumerConfig config, StreamInfo streamInfo,
+                                                   String streamName, String alias) throws IOException {
     ClientAcknowledgement acknowledgement = getClientAcknowledgement(config);
-    return sessionState.subscribe(streamInfo.getSubject(), name, null, acknowledgement, 1, true);
+    String subject = streamName + "." + streamInfo.getSubject().replace('/', '.');
+    return sessionState.subscribeJetStream(subject, alias, acknowledgement, 1);
+  }
+
+  ConsumerConfig parseConfig(JsonObject request) {
+    JsonObject config = request != null && request.has("config") && request.get("config").isJsonObject()
+        ? request.getAsJsonObject("config") : request;
+    if (config == null) {
+      return new ConsumerConfig();
+    }
+    ConsumerConfig consumerConfig = gson.fromJson(config, ConsumerConfig.class);
+    return consumerConfig == null ? new ConsumerConfig() : consumerConfig;
   }
 
   static void applyDefaults(ConsumerConfig config) {
@@ -147,52 +177,33 @@ public class CreateHandler extends JetStreamFrameHandler {
   }
 
   private ClientAcknowledgement getClientAcknowledgement(ConsumerConfig config) {
-    if(config.getAckPolicy() == null) return ClientAcknowledgement.AUTO;
-    switch (config.getAckPolicy()){
-      case NONE:
-        return ClientAcknowledgement.AUTO;
-
-      case ALL:
-        return ClientAcknowledgement.BLOCK;
-
-      case EXPLICIT:
-        return ClientAcknowledgement.INDIVIDUAL;
-
-      default:
-        return ClientAcknowledgement.AUTO;
+    if (config.getAckPolicy() == null) {
+      return ClientAcknowledgement.AUTO;
     }
+    return switch (config.getAckPolicy()) {
+      case NONE -> ClientAcknowledgement.AUTO;
+      case ALL -> ClientAcknowledgement.BLOCK;
+      case EXPLICIT -> ClientAcknowledgement.INDIVIDUAL;
+    };
   }
 
-  private List<StreamInfo> filterSubjects(String filter, List<StreamInfo> subjectList) {
-    return subjectList.stream().filter(streamInfo -> matchesFilter(streamInfo.getSubject(), filter)).collect(Collectors.toList());
-  }
-
-  private boolean matchesFilter(String subject, String filter) {
-    if (filter == null) return true; // No filter means match all
-
-    String[] subjectParts = subject.split("\\.");
-    String[] filterParts = filter.split("\\.");
-
-    int i = 0;
-    while (i < filterParts.length) {
-      String f = filterParts[i];
-
-      if (f.equals(">")) {
-        return true; // matches rest
+  static boolean matchesFilter(String subject, String filter) {
+    if (filter == null || filter.isBlank()) {
+      return true;
+    }
+    String[] subjectTokens = subject.replace('/', '.').split("\\.");
+    String[] filterTokens = filter.split("\\.");
+    int position = 0;
+    for (int tokenIndex = 0; tokenIndex < filterTokens.length; tokenIndex++) {
+      String token = filterTokens[tokenIndex];
+      if (">".equals(token)) {
+        return tokenIndex == filterTokens.length - 1 && position < subjectTokens.length;
       }
-
-      if (i >= subjectParts.length) {
+      if (position >= subjectTokens.length || (!"*".equals(token) && !token.equals(subjectTokens[position]))) {
         return false;
       }
-
-      if (!f.equals("*") && !f.equals(subjectParts[i])) {
-        return false;
-      }
-
-      i++;
+      position++;
     }
-
-    return i == subjectParts.length;
+    return position == subjectTokens.length;
   }
-
 }
