@@ -123,4 +123,19 @@ class NamedConsumerPendingTest {
     verify(firstManager, times(1)).getNext();
     verify(secondManager, times(1)).getNext();
   }
+  @Test
+  void closeCancelsOutstandingPollAndReleasesIt() throws Exception {
+    SubscribedEventManager manager = mock(SubscribedEventManager.class);
+    StreamSubscriptionInfo info = mock(StreamSubscriptionInfo.class);
+    when(info.getSubscribedEventManager()).thenReturn(manager);
+    java.util.concurrent.CompletableFuture<io.mapsmessaging.engine.tasks.Response> pending = new java.util.concurrent.CompletableFuture<>();
+    when(manager.getNext()).thenReturn(pending);
+    NamedConsumer consumer = new NamedConsumer("consumer", "stream", new ConsumerConfig(), List.of(info));
+
+    org.junit.jupiter.api.Assertions.assertNull(consumer.getNextMessage(true));
+    consumer.close();
+
+    org.junit.jupiter.api.Assertions.assertTrue(pending.isCancelled());
+    org.junit.jupiter.api.Assertions.assertTrue(consumer.getEvents().isEmpty());
+  }
 }

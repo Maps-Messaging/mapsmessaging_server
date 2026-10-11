@@ -118,6 +118,14 @@ public class NamedConsumer {
     return null;
   }
 
+  public synchronized void close() {
+    for (Future<Response> future : inFlightPolls.values()) {
+      future.cancel(false);
+    }
+    inFlightPolls.clear();
+    events.clear();
+  }
+
   public int getAckPendingCount() {
     int pending = 0;
     for (StreamSubscriptionInfo stream : streams) {

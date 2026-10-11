@@ -181,6 +181,7 @@ public class SessionState implements CloseHandler, CompletionHandler {
         activeSubscriptions.clear();
         destinationSubscriptionAliases.clear();
         queueGroupCounters.clear();
+        namedConsumers.values().forEach(NamedConsumer::close);
         namedConsumers.clear();
         jetStreamRequestManager.close();
         subscriptions.clear();
@@ -257,8 +258,6 @@ public class SessionState implements CloseHandler, CompletionHandler {
   }
 
   public synchronized void removeSubscription(String subscriptionId) {
-    activeSubscriptions.remove(subscriptionId);
-
     for (Map.Entry<String, List<SubscriptionContext>> entry : subscriptions.entrySet()) {
       String destination = entry.getKey();
       List<SubscriptionContext> contexts = entry.getValue();
@@ -271,12 +270,14 @@ public class SessionState implements CloseHandler, CompletionHandler {
         subscriptions.remove(destination, contexts);
         destinationSubscriptionAliases.remove(destination);
         if (registeredAlias != null) {
+          activeSubscriptions.remove(registeredAlias);
           session.removeSubscription(registeredAlias);
         }
-      } else if (subscriptionId.equals(registeredAlias)) {
-        String replacementAlias = contexts.getFirst().getAlias();
-        destinationSubscriptionAliases.put(destination, replacementAlias);
+      } else if (!subscriptionId.equals(registeredAlias)) {
+        activeSubscriptions.remove(subscriptionId);
       }
+      // Keep the original registered alias until the last context is removed.
+      // The underlying MAPS subscription is still registered under that alias.
     }
   }
 

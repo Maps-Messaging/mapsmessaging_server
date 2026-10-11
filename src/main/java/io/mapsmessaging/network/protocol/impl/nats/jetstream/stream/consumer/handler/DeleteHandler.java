@@ -70,8 +70,7 @@ public class DeleteHandler extends JetStreamFrameHandler {
 
     sessionState.getNamedConsumers().remove(consumerName, namedConsumer);
     sessionState.removeSubscription(consumerName);
-    namedConsumer.getEvents().clear();
-    namedConsumer.getStreams().clear();
+    namedConsumer.close();
 
     JsonObject response = new JsonObject();
     response.addProperty("type", TYPE);
