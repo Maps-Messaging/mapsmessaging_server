@@ -63,7 +63,10 @@ public class MessageHandler  extends JetStreamFrameHandler {
     if(!consumer.getStreamName().equals(stream)){
       return buildError(TYPE,"Consumer '" + consumerName + "' not bound to stream "+stream, replyTo, sessionState);
     }
-    NextRequest request = gson.fromJson(json, NextRequest.class);
+    NextRequest request = json == null ? new NextRequest() : gson.fromJson(json, NextRequest.class);
+    if (request == null || request.getBatch() <= 0) {
+      return buildError(TYPE, "Invalid MSG.NEXT batch", replyTo, sessionState);
+    }
 
     for (int i = 0; i < request.getBatch(); i++) {
       MessageEvent msg = consumer.getNextMessage();
