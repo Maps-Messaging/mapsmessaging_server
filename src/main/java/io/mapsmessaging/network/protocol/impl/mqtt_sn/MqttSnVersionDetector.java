@@ -22,6 +22,8 @@ public final class MqttSnVersionDetector {
   private MqttSnVersionDetector() {
   }
 
+  // Keep protocol-version wire position checks explicit and auditable.
+  @SuppressWarnings({"java:S3776", "java:S2589"})
   public static Version detect(ByteBuffer wire) {
     ByteBuffer buffer = wire.asReadOnlyBuffer();
     int available = buffer.remaining();
