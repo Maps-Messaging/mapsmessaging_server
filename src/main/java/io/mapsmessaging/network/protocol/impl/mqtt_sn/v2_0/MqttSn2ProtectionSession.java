@@ -56,6 +56,15 @@ public final class MqttSn2ProtectionSession implements MqttSn2ProtectionPolicy {
   @Override public boolean hasDurableReplayStore() { return true; }
 
   @Override
+  public synchronized Authenticated receiveAuthenticated(ByteBuffer wire) throws IOException {
+    MqttSn2ProtectionCodec.Envelope envelope =
+        MqttSn2ProtectionCodec.decode(wire.asReadOnlyBuffer(), this::tagLength);
+    // Read the sender ID only after the full frame, tag and replay checks succeed.
+    ByteBuffer plaintext = receive(wire);
+    return new Authenticated(plaintext, envelope.senderIdentifier());
+  }
+
+  @Override
   public synchronized ByteBuffer receive(ByteBuffer wire) throws IOException {
     MqttSn2ProtectionCodec.Envelope envelope = MqttSn2ProtectionCodec.decode(
         wire, this::tagLength);
