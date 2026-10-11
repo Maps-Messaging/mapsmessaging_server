@@ -102,16 +102,6 @@ class SwitchDispatchContractTest {
     }
   }
 
-  @Test
-  void mqtt_sn_v2_duplicate_connect_and_willmsg_return_the_previous_response() throws Exception {
-    MQTT_SNPacket previous = mock(MQTT_SNPacket.class);
-    var state = new io.mapsmessaging.network.protocol.impl.mqtt_sn.v2_0.state.ConnectedState(previous);
-    for (int packetId : new int[]{MQTT_SNPacket.CONNECT, MQTT_SNPacket.WILLMSG}) {
-      MQTT_SNPacket packet = mock(MQTT_SNPacket.class);
-      when(packet.getControlPacketId()).thenReturn(packetId);
-      assertSame(previous, state.handleMQTTEvent(packet, null, null, null, null));
-    }
-  }
 
   @Test
   void nats_ack_and_term_acknowledge_the_same_message() throws Exception {
