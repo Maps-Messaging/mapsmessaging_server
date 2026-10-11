@@ -69,4 +69,20 @@ class SessionStateSubscriptionOwnershipTest {
     when(context.getAlias()).thenReturn(alias);
     return context;
   }
+  @Test
+  void duplicateNamedConsumerRegistrationCannotReplaceExistingConsumer() {
+    NatsProtocol protocol = mock(NatsProtocol.class);
+    when(protocol.getEndPoint()).thenReturn(mock(EndPoint.class));
+    SessionState state = new SessionState(protocol);
+    io.mapsmessaging.network.protocol.impl.nats.jetstream.stream.consumer.NamedConsumer original =
+        mock(io.mapsmessaging.network.protocol.impl.nats.jetstream.stream.consumer.NamedConsumer.class);
+    io.mapsmessaging.network.protocol.impl.nats.jetstream.stream.consumer.NamedConsumer replacement =
+        mock(io.mapsmessaging.network.protocol.impl.nats.jetstream.stream.consumer.NamedConsumer.class);
+    when(original.getName()).thenReturn("shared");
+    when(replacement.getName()).thenReturn("shared");
+
+    org.junit.jupiter.api.Assertions.assertTrue(state.addNamedConsumer(original));
+    org.junit.jupiter.api.Assertions.assertFalse(state.addNamedConsumer(replacement));
+    assertSame(original, state.getNamedConsumers().get("shared"));
+  }
 }

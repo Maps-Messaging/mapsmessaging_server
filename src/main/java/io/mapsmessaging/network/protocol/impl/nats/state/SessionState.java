@@ -129,11 +129,7 @@ public class SessionState implements CloseHandler, CompletionHandler {
   }
 
   public boolean addNamedConsumer(NamedConsumer namedConsumer) {
-    if(!namedConsumers.containsKey(namedConsumer.getName())) {
-      namedConsumers.put(namedConsumer.getName(), namedConsumer);
-      return true;
-    }
-    return false;
+    return namedConsumers.putIfAbsent(namedConsumer.getName(), namedConsumer) == null;
   }
 
   public void sendConnect(String username, String password) {
