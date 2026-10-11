@@ -712,19 +712,31 @@ public class DestinationImpl implements BaseDestination {
    */
   @Override
   public int storeMessage(@NonNull @NotNull Message message) throws IOException {
-    if(message.isBound()){
+    checkMessageBound(message);
+    return storePreparedMessage(applyMessageOverrides(message));
+  }
+
+  public long storeMessageReturningIdentifier(@NonNull @NotNull Message message) throws IOException {
+    checkMessageBound(message);
+    Message prepared = applyMessageOverrides(message);
+    storePreparedMessage(prepared);
+    return prepared.getIdentifier();
+  }
+
+  private void checkMessageBound(Message message) throws IOException {
+    if (message.isBound()) {
       throw new IOException("Message is bound to another destination, can not loop events");
     }
-    message = applyMessageOverrides(message);
+  }
+
+  private int storePreparedMessage(Message message) throws IOException {
     Callable<Response> task;
     if (message.getDelayed() > 0 && delayedMessageManager != null) {
       task = new DelayedStoreMessageTask(this, message, delayedMessageManager, message.getDelayed());
+    } else if (getResourceType().isTopic()) {
+      task = new NonDelayedStoreMessageTask(this, subscriptionManager, message);
     } else {
-      if (getResourceType().isTopic()) {
-        task = new NonDelayedStoreMessageTask(this, subscriptionManager, message);
-      } else {
-        task = new QueueBasedStoreMessageTask(this, subscriptionManager, message);
-      }
+      task = new QueueBasedStoreMessageTask(this, subscriptionManager, message);
     }
     return handleTask(task);
   }

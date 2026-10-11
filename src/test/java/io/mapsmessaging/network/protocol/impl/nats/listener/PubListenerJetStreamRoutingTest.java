@@ -89,6 +89,31 @@ class PubListenerJetStreamRoutingTest {
     verify(state.getSession(), times(1)).findDestination("ack/order", DestinationType.TOPIC);
   }
 
+  @Test
+  void streamStorageReturnsActualMapsAssignedIdentifier() throws Exception {
+    Destination destination = mock(Destination.class);
+    io.mapsmessaging.api.message.Message message = mock(io.mapsmessaging.api.message.Message.class);
+    when(destination.storeMessageReturningIdentifier(message)).thenReturn(312L);
+
+    long sequence = new PubListener().storeToMapDestination(destination, message, true);
+
+    assertEquals(312L, sequence);
+    verify(destination).storeMessageReturningIdentifier(message);
+    verify(destination, never()).storeMessage(message);
+  }
+
+  @Test
+  void ordinaryCoreNatsPublishKeepsExistingStorageContract() throws Exception {
+    Destination destination = mock(Destination.class);
+    io.mapsmessaging.api.message.Message message = mock(io.mapsmessaging.api.message.Message.class);
+
+    long sequence = new PubListener().storeToMapDestination(destination, message, false);
+
+    assertEquals(0L, sequence);
+    verify(destination).storeMessage(message);
+    verify(destination, never()).storeMessageReturningIdentifier(message);
+  }
+
   private static SessionState setup(boolean streamsEnabled) {
     SessionState state = mock(SessionState.class);
     NatsProtocol protocol = mock(NatsProtocol.class);

@@ -64,6 +64,20 @@ public class Destination implements BaseDestination {
 
   @Override
   public int storeMessage(@NonNull @NotNull Message message) throws IOException {
+    validatePublication(message);
+    return destinationImpl.storeMessage(message);
+  }
+
+  /**
+   * Publish while returning the identifier assigned to the actual stored MAPS message.
+   * Required for protocol acknowledgements when message overrides create another instance.
+   */
+  public long storeMessageReturningIdentifier(@NonNull @NotNull Message message) throws IOException {
+    validatePublication(message);
+    return destinationImpl.storeMessageReturningIdentifier(message);
+  }
+
+  private void validatePublication(Message message) throws IOException {
     if(destinationImpl.getSchema() != null) {
       // Ensure the schema is applied to the incoming message
       String schemaId = destinationImpl.getSchema().getUniqueId();

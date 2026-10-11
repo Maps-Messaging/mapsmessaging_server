@@ -170,9 +170,16 @@ public class PubListener implements FrameListener {
           }
         }
       }
-      destination.storeMessage(message);
-      return message.getIdentifier();
+      return storeToMapDestination(destination, message, streamTarget);
     }
+    return 0;
+  }
+
+  protected long storeToMapDestination(Destination destination, Message message, boolean streamTarget) throws IOException {
+    if (streamTarget) {
+      return destination.storeMessageReturningIdentifier(message);
+    }
+    destination.storeMessage(message);
     return 0;
   }
 
