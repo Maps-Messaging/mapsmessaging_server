@@ -92,19 +92,37 @@ public class UDPEndPointServer extends EndPointServer {
   @Override
   public void start() throws IOException {
     ProtocolImplFactory protocolImplFactory = protocolFactory.getBoundedProtocol();
+    if (requestedBindAddress != null && !requestedBindAddress.isAnyLocalAddress()) {
+      // The configured address is authoritative. Do not silently create zero
+      // listeners when interface-address enumeration differs from DNS/bind
+      // resolution, or multiple listeners for IPv4/IPv6 loopback aliases.
+      if (udpInterfaceInformations.isEmpty()) {
+        throw new IOException("No network interface for explicit UDP bind " + requestedBindAddress);
+      }
+      UDPInterfaceInformation info = udpInterfaceInformations.get(0);
+      java.net.InetAddress broadcast = null;
+      for (InterfaceAddress address : info.getInterfaces()) {
+        if (requestedBindAddress.equals(address.getAddress())) {
+          broadcast = address.getBroadcast();
+          break;
+        }
+      }
+      UDPEndPoint endPoint = createEndPoint(new InetSocketAddress(requestedBindAddress, port));
+      try {
+        protocolImplFactory.create(endPoint, new UDPInterfaceInformation(info, broadcast));
+        bondedEndPoints.add(endPoint);
+      } catch (IOException | RuntimeException failure) {
+        try { endPoint.close(); } catch (IOException cleanup) { failure.addSuppressed(cleanup); }
+        throw failure;
+      }
+      return;
+    }
     for (UDPInterfaceInformation info : udpInterfaceInformations) {
       for (InterfaceAddress interfaceAddress : info.getInterfaces()) {
-        // An explicitly configured address must not bind every address on the
-        // same network interface (e.g. IPv4 + IPv6 loopback). Doing so can
-        // instantiate multiple protocol managers for a single endpoint policy.
-        if (requestedBindAddress != null && !requestedBindAddress.isAnyLocalAddress()
-            && !requestedBindAddress.equals(interfaceAddress.getAddress())) {
-          continue;
-        }
         InetSocketAddress bonded = new InetSocketAddress(interfaceAddress.getAddress(), port);
         UDPEndPoint endPoint = createEndPoint(bonded);
-        UDPInterfaceInformation nInfo = new UDPInterfaceInformation(info, interfaceAddress.getBroadcast());
-        protocolImplFactory.create(endPoint, nInfo);
+        protocolImplFactory.create(endPoint,
+            new UDPInterfaceInformation(info, interfaceAddress.getBroadcast()));
         bondedEndPoints.add(endPoint);
       }
     }
