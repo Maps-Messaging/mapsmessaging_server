@@ -17,6 +17,8 @@ import java.util.Objects;
  */
 public final class MqttSn2ControlCodec {
 
+  // Protocol value container; payload bytes are cloned and compared explicitly in tests.
+  @SuppressWarnings("java:S6218")
   public record Auth(int packetIdentifier, int reasonCode, String mechanism, byte[] data) {
     public Auth {
       if (packetIdentifier < 1 || packetIdentifier > 65535 || reasonCode < 0 || reasonCode > 255) {
