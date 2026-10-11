@@ -18,6 +18,8 @@ public final class MqttSn2DisconnectCodec {
 
   private MqttSn2DisconnectCodec() {}
 
+  // Protocol wire-layout validation follows CSD01 field order; keep it auditable.
+  @SuppressWarnings("java:S3776")
   public static Disconnect decode(MqttSn2FrameCodec.Frame frame) throws IOException {
     if (frame.type() != MqttSn2PacketType.DISCONNECT) throw new IOException("Expected DISCONNECT");
     ByteBuffer body = frame.payload().asReadOnlyBuffer();
@@ -53,6 +55,8 @@ public final class MqttSn2DisconnectCodec {
     return new Disconnect(packetIdentifier, reasonCode, expiry, message);
   }
 
+  // Protocol wire-layout validation follows CSD01 field order; keep it auditable.
+  @SuppressWarnings("java:S3776")
   public static ByteBuffer encode(Disconnect packet) {
     int flags = 0;
     int length = 1;
