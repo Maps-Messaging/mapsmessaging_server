@@ -47,6 +47,7 @@ class TransactionHandlerTest {
     subscription = mock(SubscribedEventManager.class);
     NamedConsumer consumer = mock(NamedConsumer.class);
     StreamSubscriptionInfo info = mock(StreamSubscriptionInfo.class);
+    when(consumer.getStreamName()).thenReturn("stream");
     when(consumer.getStreams()).thenReturn(List.of(info));
     when(info.getSubscribedEventManager()).thenReturn(subscription);
     when(session.getNamedConsumers()).thenReturn(Map.of("consumer", consumer));
@@ -150,4 +151,13 @@ class TransactionHandlerTest {
     assertNull(handler.handle(frame, null, session));
     verify(subscription).ackReceived(42L);
   }
+
+  @Test
+  void acknowledgementCannotAffectDifferentStream() throws Exception {
+    when(frame.getSubject()).thenReturn("$JS.ACK.other.consumer.1.0.42.123.0");
+
+    assertNull(handler.handle(frame, null, session));
+    verifyNoInteractions(subscription);
+  }
+
 }
