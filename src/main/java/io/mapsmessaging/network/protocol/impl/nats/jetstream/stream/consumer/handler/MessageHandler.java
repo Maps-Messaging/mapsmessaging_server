@@ -71,8 +71,11 @@ public class MessageHandler  extends JetStreamFrameHandler {
     for (int i = 0; i < request.getBatch(); i++) {
       MessageEvent msg = consumer.getNextMessage(request.isNo_wait());
       if (msg != null) {
-        PayloadFrame payloadFrame = sessionState.buildPayloadFrame(msg.getMessage(), msg.getDestinationName());
-        TransactionSubject replyToSubject = new TransactionSubject(consumer, msg.getDestinationName(), msg.getMessage().getIdentifier());
+        String destinationName = msg.getDestinationName();
+        String prefix = consumer.getStreamName() + "/";
+        String publishedSubject = destinationName.startsWith(prefix) ? destinationName.substring(prefix.length()) : destinationName;
+        PayloadFrame payloadFrame = sessionState.buildPayloadFrame(msg.getMessage(), publishedSubject);
+        TransactionSubject replyToSubject = new TransactionSubject(consumer, destinationName, msg.getMessage().getIdentifier());
 
         payloadFrame.setReplyTo(replyToSubject.toSubject());
         payloadFrame.setSubscriptionId(sessionState.getJetStreamRequestManager().getSid(replyTo));

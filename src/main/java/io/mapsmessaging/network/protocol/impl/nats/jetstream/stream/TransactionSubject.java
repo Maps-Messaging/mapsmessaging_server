@@ -78,7 +78,9 @@ public class TransactionSubject {
   }
 
   private int findDestinationIndex(NamedConsumer consumer, String destinationName) {
-    String lookup = consumer.getStreamName()+"/"+destinationName;
+    String normalized = destinationName.replace('.', '/');
+    String prefix = consumer.getStreamName() + "/";
+    String lookup = normalized.startsWith(prefix) ? normalized : prefix + normalized;
     for(int x=0;x<consumer.getStreams().size();x++){
       if(consumer.getStreams().get(x).getDestination().getFullyQualifiedNamespace().equals(lookup)){
         return x;

@@ -96,4 +96,43 @@ class MessageHandlerTest {
     assertNull(new MessageHandler().handle(request, json, session));
     verify(consumer, times(1)).getNextMessage(true);
   }
+
+  @Test
+  void fetchedMessagesUsePublicSubjectRatherThanInternalStreamNamespace() throws Exception {
+    PayloadFrame request = mock(PayloadFrame.class);
+    SessionState session = mock(SessionState.class);
+    JetStreamRequestManager requests = mock(JetStreamRequestManager.class);
+    io.mapsmessaging.network.protocol.impl.nats.jetstream.stream.consumer.NamedConsumer consumer =
+        mock(io.mapsmessaging.network.protocol.impl.nats.jetstream.stream.consumer.NamedConsumer.class);
+    io.mapsmessaging.network.protocol.impl.nats.streams.StreamSubscriptionInfo subscription =
+        mock(io.mapsmessaging.network.protocol.impl.nats.streams.StreamSubscriptionInfo.class);
+    io.mapsmessaging.engine.destination.DestinationImpl destination =
+        mock(io.mapsmessaging.engine.destination.DestinationImpl.class);
+    io.mapsmessaging.api.MessageEvent event = mock(io.mapsmessaging.api.MessageEvent.class);
+    io.mapsmessaging.api.message.Message message = mock(io.mapsmessaging.api.message.Message.class);
+    PayloadFrame outbound = new io.mapsmessaging.network.protocol.impl.nats.frames.MsgFrame(1024);
+
+    when(request.getSubject()).thenReturn("$JS.API.CONSUMER.MSG.NEXT.EVENTS.reader");
+    when(request.getReplyTo()).thenReturn("_INBOX.reply");
+    when(session.getJetStreamRequestManager()).thenReturn(requests);
+    when(requests.getSid("_INBOX.reply")).thenReturn("reply-sid");
+    when(session.getNamedConsumers()).thenReturn(java.util.Map.of("reader", consumer));
+    when(consumer.getStreamName()).thenReturn("EVENTS");
+    when(consumer.getName()).thenReturn("reader");
+    when(consumer.getStreams()).thenReturn(java.util.List.of(subscription));
+    when(subscription.getDestination()).thenReturn(destination);
+    when(destination.getFullyQualifiedNamespace()).thenReturn("EVENTS/telemetry/data");
+    when(consumer.getNextMessage(false)).thenReturn(event);
+    when(event.getDestinationName()).thenReturn("EVENTS/telemetry/data");
+    when(event.getMessage()).thenReturn(message);
+    when(message.getIdentifier()).thenReturn(42L);
+    when(session.buildPayloadFrame(message, "telemetry/data")).thenReturn(outbound);
+
+    assertNull(new MessageHandler().handle(request, null, session));
+
+    verify(session).buildPayloadFrame(message, "telemetry/data");
+    assertEquals("reply-sid", outbound.getSubscriptionId());
+    assertTrue(outbound.getReplyTo().startsWith("$JS.ACK.EVENTS.reader.1.0.42."));
+    verify(session).send(outbound);
+  }
 }
