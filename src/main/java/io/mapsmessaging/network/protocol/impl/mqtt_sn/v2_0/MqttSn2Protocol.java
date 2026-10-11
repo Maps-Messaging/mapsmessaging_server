@@ -563,7 +563,9 @@ public final class MqttSn2Protocol extends Protocol {
   }
 
   private void sleep(MqttSn2SleepCodec.SleepRequest request) throws IOException {
-    lifecycle.sleep();
+    synchronized (sleepingQueue) {
+      lifecycle.sleep();
+    }
     if (!request.retainAliases()) {
       // CSD01 3.15.2.1: clear session aliases only; predefined aliases remain configured.
       aliases.clear();
@@ -577,8 +579,12 @@ public final class MqttSn2Protocol extends Protocol {
   }
 
   private void ping(int packetIdentifier) throws IOException {
-    if (lifecycle.state() == MqttSn2Lifecycle.State.ASLEEP) {
-      lifecycle.wake();
+    boolean waking;
+    synchronized (sleepingQueue) {
+      waking = lifecycle.state() == MqttSn2Lifecycle.State.ASLEEP;
+      if (waking) lifecycle.wake();
+    }
+    if (waking) {
       if (sleepTask != null) sleepTask.cancel(false);
       if (defaultAwakeMessages == 0) {
         lifecycle.sleepAgain();
@@ -600,21 +606,33 @@ public final class MqttSn2Protocol extends Protocol {
     synchronized (sleepingQueue) { return Math.min(0xFFFF, sleepingQueue.size()); }
   }
 
-  private void drainSleepingQueue() {
-    int sent = 0;
-    while (sent < awakeBudget && !outgoing.hasInFlightDelivery()) {
+  private synchronized void drainSleepingQueue() {
+    while (awakeBudget > 0 && !outgoing.hasInFlightDelivery()) {
       MessageEvent event;
-      synchronized (sleepingQueue) { event = sleepingQueue.pollFirst(); }
+      synchronized (sleepingQueue) {
+        if (lifecycle.state() != MqttSn2Lifecycle.State.AWAKE) return;
+        event = sleepingQueue.pollFirst();
+        if (event != null) awakeBudget--;
+      }
       if (event == null) break;
-      awakeBudget--;
-      sent++;
+      // Never call protocol/network delivery while holding the queue lock.
       deliver(event);
     }
-    if (!outgoing.hasInFlightDelivery()) {
-      try {
-        lifecycle.sleepAgain();
-        send(MqttSn2ControlCodec.encodePingResponse(wakePacketIdentifier, queueSize()), null);
-      } catch (IOException ignored) { }
+    int remaining = -1;
+    synchronized (sleepingQueue) {
+      if (!outgoing.hasInFlightDelivery()
+          && lifecycle.state() == MqttSn2Lifecycle.State.AWAKE
+          && (sleepingQueue.isEmpty() || awakeBudget == 0)) {
+        try {
+          lifecycle.sleepAgain();
+          remaining = Math.min(0xFFFF, sleepingQueue.size());
+        } catch (IOException ignored) {
+          // Connection lifecycle changed while draining.
+        }
+      }
+    }
+    if (remaining >= 0) {
+      send(MqttSn2ControlCodec.encodePingResponse(wakePacketIdentifier, remaining), null);
     }
   }
 
@@ -653,8 +671,18 @@ public final class MqttSn2Protocol extends Protocol {
 
   @Override
   public void sendMessage(MessageEvent event) {
-    if (lifecycle.state() == MqttSn2Lifecycle.State.ASLEEP) {
-      synchronized (sleepingQueue) { sleepingQueue.addLast(event); }
+    boolean queued = false;
+    boolean drain = false;
+    synchronized (sleepingQueue) {
+      MqttSn2Lifecycle.State state = lifecycle.state();
+      if (state == MqttSn2Lifecycle.State.ASLEEP || state == MqttSn2Lifecycle.State.AWAKE) {
+        sleepingQueue.addLast(event);
+        queued = true;
+        drain = state == MqttSn2Lifecycle.State.AWAKE;
+      }
+    }
+    if (queued) {
+      if (drain) drainSleepingQueue();
       return;
     }
     deliver(event);
