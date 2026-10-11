@@ -127,12 +127,16 @@ class MessageHandlerTest {
     when(event.getMessage()).thenReturn(message);
     when(message.getIdentifier()).thenReturn(42L);
     when(session.buildPayloadFrame(message, "telemetry/data")).thenReturn(outbound);
+    when(consumer.recordDelivery("EVENTS/telemetry/data", message))
+        .thenReturn(new io.mapsmessaging.network.protocol.impl.nats.jetstream.stream.TransactionSubject(
+            "EVENTS", "reader", 1, 42, 1, 1730000000000000000L, 0));
 
     assertNull(new MessageHandler().handle(request, null, session));
 
     verify(session).buildPayloadFrame(message, "telemetry/data");
     assertEquals("reply-sid", outbound.getSubscriptionId());
-    assertTrue(outbound.getReplyTo().startsWith("$JS.ACK.EVENTS.reader.1.0.42."));
+    assertEquals("$JS.ACK.EVENTS.reader.1.42.1.1730000000000000000.0", outbound.getReplyTo());
+    assertEquals("_INBOX.reply", outbound.getSubject());
     verify(session).send(outbound);
   }
 }

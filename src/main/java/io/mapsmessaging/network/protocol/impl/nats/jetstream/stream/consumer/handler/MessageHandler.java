@@ -68,22 +68,41 @@ public class MessageHandler  extends JetStreamFrameHandler {
       return buildError(TYPE, "Invalid MSG.NEXT batch", replyTo, sessionState);
     }
 
-    for (int i = 0; i < request.getBatch(); i++) {
-      MessageEvent msg = consumer.getNextMessage(request.isNo_wait());
+    deliverNext(consumer, replyTo, sessionState, request.getBatch(), request.isNo_wait());
+    return null;
+  }
+
+  public int deliverNext(NamedConsumer consumer, String replyTo, SessionState sessionState, int batch, boolean noWait) throws IOException {
+    int delivered = 0;
+    for (int i = 0; i < batch; i++) {
+      MessageEvent msg = consumer.getNextMessage(noWait);
       if (msg != null) {
         String destinationName = msg.getDestinationName();
         String prefix = consumer.getStreamName() + "/";
         String publishedSubject = destinationName.startsWith(prefix) ? destinationName.substring(prefix.length()) : destinationName;
         PayloadFrame payloadFrame = sessionState.buildPayloadFrame(msg.getMessage(), publishedSubject);
-        TransactionSubject replyToSubject = new TransactionSubject(consumer, destinationName, msg.getMessage().getIdentifier());
-
-        payloadFrame.setReplyTo(replyToSubject.toSubject());
+        TransactionSubject acknowledgement = consumer.recordDelivery(destinationName, msg.getMessage());
+        if (acknowledgement == null) {
+          consumer.rollbackUnregistered(destinationName, msg.getMessage().getIdentifier());
+          throw new IOException("Unable to register pending JetStream delivery");
+        }
+        payloadFrame.setSubject(replyTo);
+        payloadFrame.setReplyTo(acknowledgement.toSubject());
         payloadFrame.setSubscriptionId(sessionState.getJetStreamRequestManager().getSid(replyTo));
-        sessionState.send(payloadFrame);
+        try {
+          if (!sessionState.send(payloadFrame)) {
+            consumer.rollbackUnsent(acknowledgement);
+            break;
+          }
+        } catch (RuntimeException failure) {
+          consumer.rollbackUnsent(acknowledgement);
+          throw failure;
+        }
+        delivered++;
       } else {
         break;
       }
     }
-    return null;
+    return delivered;
   }
 }

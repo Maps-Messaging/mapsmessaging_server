@@ -19,40 +19,33 @@
 
 package io.mapsmessaging.network.protocol.impl.nats.jetstream.stream;
 
-import io.mapsmessaging.engine.destination.DestinationImpl;
-import io.mapsmessaging.network.protocol.impl.nats.jetstream.stream.consumer.NamedConsumer;
-import io.mapsmessaging.network.protocol.impl.nats.streams.StreamSubscriptionInfo;
 import org.junit.jupiter.api.Test;
 
-import java.util.List;
-
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
 
 class TransactionSubjectLookupTest {
 
   @Test
-  void resolvesAbsoluteAndRelativeMapsDestinationsToTheSameAckOwner() {
-    NamedConsumer consumer = mock(NamedConsumer.class);
-    StreamSubscriptionInfo subscription = mock(StreamSubscriptionInfo.class);
-    DestinationImpl destination = mock(DestinationImpl.class);
-    when(consumer.getStreamName()).thenReturn("EVENTS");
-    when(consumer.getName()).thenReturn("reader");
-    when(consumer.getStreams()).thenReturn(List.of(subscription));
-    when(subscription.getDestination()).thenReturn(destination);
-    when(destination.getFullyQualifiedNamespace()).thenReturn("EVENTS/telemetry/data");
+  void standardMetadataRoundTripsWithoutInternalMapsIdentifiers() {
+    TransactionSubject original = new TransactionSubject("EVENTS", "reader", 3, 14, 9, 1730000000000000000L, 7);
+    TransactionSubject parsed = TransactionSubject.parse(original.toSubject());
 
-    assertEquals(0, new TransactionSubject(consumer, "EVENTS/telemetry/data", 42).getDestinationIndex());
-    assertEquals(0, new TransactionSubject(consumer, "telemetry.data", 42).getDestinationIndex());
-    assertEquals(0, new TransactionSubject(consumer, "telemetry/data", 42).getDestinationIndex());
+    assertEquals("$JS.ACK.EVENTS.reader.3.14.9.1730000000000000000.7", original.toSubject());
+    assertEquals("EVENTS", parsed.getStream());
+    assertEquals("reader", parsed.getConsumer());
+    assertEquals(3, parsed.getDeliverySequence());
+    assertEquals(14, parsed.getStreamSequence());
+    assertEquals(9, parsed.getConsumerSequence());
+    assertEquals(1730000000000000000L, parsed.getTimestamp());
+    assertEquals(7, parsed.getPending());
   }
 
   @Test
-  void unresolvedDestinationDoesNotResolveToAnotherStream() {
-    NamedConsumer consumer = mock(NamedConsumer.class);
-    when(consumer.getStreamName()).thenReturn("EVENTS");
-    when(consumer.getStreams()).thenReturn(List.of());
-
-    assertEquals(Integer.MAX_VALUE, new TransactionSubject(consumer, "OTHER/telemetry", 42).getDestinationIndex());
+  void invalidSubjectsAreRejected() {
+    assertThrows(IllegalArgumentException.class, () -> TransactionSubject.parse("$JS.ACK.ORDERS.reader.1.2"));
+    assertThrows(IllegalArgumentException.class, () -> TransactionSubject.parse("$JS.ACK.ORDERS.reader.1.bad.1.0.0"));
+    assertThrows(IllegalArgumentException.class, () -> TransactionSubject.parse("$JS.ACK.ORDERS.reader.1.0.1.0.0"));
+    assertThrows(IllegalArgumentException.class, () -> TransactionSubject.parse("$JS.ACK.ORDERS.reader.1.-2.1.0.0"));
+    assertThrows(IllegalArgumentException.class, () -> TransactionSubject.parse(null));
   }
 }
