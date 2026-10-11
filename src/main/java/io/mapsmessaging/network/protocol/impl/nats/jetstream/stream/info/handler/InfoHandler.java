@@ -20,15 +20,18 @@
 package io.mapsmessaging.network.protocol.impl.nats.jetstream.stream.info.handler;
 
 import com.google.gson.JsonObject;
-import io.mapsmessaging.BuildInfo;
-import io.mapsmessaging.MessageDaemon;
+import io.mapsmessaging.engine.destination.DestinationImpl;
 import io.mapsmessaging.network.protocol.impl.nats.frames.ErrFrame;
 import io.mapsmessaging.network.protocol.impl.nats.frames.NatsFrame;
 import io.mapsmessaging.network.protocol.impl.nats.frames.PayloadFrame;
 import io.mapsmessaging.network.protocol.impl.nats.jetstream.stream.JetStreamFrameHandler;
 import io.mapsmessaging.network.protocol.impl.nats.state.SessionState;
+import io.mapsmessaging.network.protocol.impl.nats.streams.NamespaceManager;
+import io.mapsmessaging.network.protocol.impl.nats.streams.StreamInfo;
+import io.mapsmessaging.network.protocol.impl.nats.streams.StreamInfoList;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 
 public class InfoHandler extends JetStreamFrameHandler {
 
@@ -39,26 +42,59 @@ public class InfoHandler extends JetStreamFrameHandler {
 
   @Override
   public NatsFrame handle(PayloadFrame frame, JsonObject json, SessionState sessionState) throws IOException {
-    NatsFrame response = super.buildResponse(frame.getSubject(), frame, sessionState);
+    NatsFrame response = buildResponse(frame.getSubject(), frame, sessionState);
     if (response instanceof ErrFrame) {
       return response;
     }
-    ((PayloadFrame) response).setPayload(buildInfo().getBytes());
+    ((PayloadFrame) response).setPayload(buildInfo(sessionState).getBytes(StandardCharsets.UTF_8));
     return response;
   }
 
-  private String buildInfo() {
-    JsonObject root = new JsonObject();
-    root.addProperty("type", "io.nats.jetstream.api.v1.info_response");
-    root.addProperty("server_id", MessageDaemon.getInstance().getUuid().toString());
-    root.addProperty("server_name", MessageDaemon.getInstance().getHostname());
-    root.addProperty("version", BuildInfo.getBuildVersion());
-    root.addProperty("jetstream", true);
+  private String buildInfo(SessionState sessionState) {
+    NamespaceManager namespaces = NamespaceManager.getInstance();
+    long memoryBytes = 0;
+    long storageBytes = 0;
+    for (var stream : namespaces.getStreamEntries()) {
+      StreamInfoList streamInfo = namespaces.getStream(stream.getConfig().getName());
+      if (streamInfo == null) {
+        continue;
+      }
+      for (StreamInfo info : streamInfo.getSubjects()) {
+        DestinationImpl destination = info.getDestination();
+        long bytes = destination.getCurrentStorageBytes();
+        if (destination.isPersistent()) {
+          storageBytes += bytes;
+        } else {
+          memoryBytes += bytes;
+        }
+      }
+    }
 
-    JsonObject config = new JsonObject();
-    config.addProperty("api_prefix", "$JS.API");
-    root.add("config", config);
-    return gson.toJson(root);
+    JsonObject limits = new JsonObject();
+    limits.addProperty("max_memory", -1);
+    limits.addProperty("max_storage", -1);
+    limits.addProperty("max_streams", -1);
+    limits.addProperty("max_consumers", -1);
+    limits.addProperty("max_ack_pending", -1);
+    limits.addProperty("memory_max_stream_bytes", -1);
+    limits.addProperty("storage_max_stream_bytes", -1);
+    limits.addProperty("max_bytes_required", false);
+
+    JsonObject api = new JsonObject();
+    api.addProperty("total", sessionState.getJetStreamRequestManager().getApiRequests());
+    api.addProperty("errors", sessionState.getJetStreamRequestManager().getApiErrors());
+    api.addProperty("level", 0);
+
+    JsonObject response = new JsonObject();
+    response.addProperty("type", "io.nats.jetstream.api.v1.account_info_response");
+    response.addProperty("memory", memoryBytes);
+    response.addProperty("storage", storageBytes);
+    response.addProperty("reserved_memory", 0);
+    response.addProperty("reserved_storage", 0);
+    response.addProperty("streams", namespaces.getStreamEntries().size());
+    response.addProperty("consumers", sessionState.getNamedConsumers().size());
+    response.add("limits", limits);
+    response.add("api", api);
+    return gson.toJson(response);
   }
-
 }

@@ -542,6 +542,27 @@ public class DestinationImpl implements BaseDestination {
     return resource.size();
   }
 
+  /**
+   * Returns the storage's measured physical size for protocol account usage reporting.
+   */
+  public long getCurrentStorageBytes() {
+    io.mapsmessaging.storage.Statistics statistics = resource.getStatistics();
+    if (statistics instanceof io.mapsmessaging.storage.impl.cache.CacheStatistics cached) {
+      statistics = cached.getStorageStatistics();
+    }
+    if (statistics instanceof io.mapsmessaging.storage.impl.tier.memory.MemoryTierStatistics tier) {
+      long memory = tier.getMemoryStatistics() instanceof io.mapsmessaging.storage.StorageStatistics storage
+          ? storage.getTotalSize() : 0;
+      long disk = tier.getFileStatistics() instanceof io.mapsmessaging.storage.StorageStatistics storage
+          ? storage.getTotalSize() : 0;
+      return Math.max(0, memory) + Math.max(0, disk);
+    }
+    if (statistics instanceof io.mapsmessaging.storage.StorageStatistics storage) {
+      return Math.max(0, storage.getTotalSize());
+    }
+    return 0;
+  }
+
   //</editor-fold>
 
   //<editor-fold desc="Subscription management APIs">

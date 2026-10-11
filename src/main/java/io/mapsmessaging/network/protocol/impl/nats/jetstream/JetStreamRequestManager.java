@@ -19,6 +19,7 @@
 
 package io.mapsmessaging.network.protocol.impl.nats.jetstream;
 
+import com.google.gson.JsonParser;
 import io.mapsmessaging.network.protocol.impl.nats.frames.ErrFrame;
 import io.mapsmessaging.network.protocol.impl.nats.frames.NatsFrame;
 import io.mapsmessaging.network.protocol.impl.nats.frames.PayloadFrame;
@@ -30,9 +31,13 @@ import lombok.Setter;
 import java.io.IOException;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicLong;
+import java.nio.charset.StandardCharsets;
 
 public class JetStreamRequestManager {
   private final JetStreamApiManager jetStreamApiManager;
+  private final AtomicLong apiRequests = new AtomicLong();
+  private final AtomicLong apiErrors = new AtomicLong();
 
   private final Map<String, String> subscriptionId = new ConcurrentHashMap<>();
 
@@ -101,29 +106,55 @@ public class JetStreamRequestManager {
             || subject.startsWith("$O.")));
   }
 
-  public NatsFrame process(PayloadFrame frame, SessionState sessionState) throws IOException {
-    String subject = frame.getSubject();
-
-    if (subject.startsWith("$JS.")) {
-      if (!sessionState.getProtocol().getNatsConfig().isEnableStreams()) {
-        return new ErrFrame("Streams are disabled");
-      }
-      return jetStreamApiManager.process(subject, frame, sessionState);
-    } else if (subject.startsWith("$KV.")) {
-      if (!sessionState.getProtocol().getNatsConfig().isEnableKeyValues()) {
-        return new ErrFrame("Key Values are disabled");
-      }
-      return new ErrFrame("KeyValue handler not yet implemented");
-
-    } else if (subject.startsWith("$O.")) {
-      if (!sessionState.getProtocol().getNatsConfig().isEnableObjectStore()) {
-        return new ErrFrame("Object Store is disabled");
-      }
-      return new ErrFrame("ObjectStore handler not yet implemented");
-
-    } else {
-      return new ErrFrame("Unknown JetStream request: " + subject);
-    }
+  public long getApiRequests() {
+    return apiRequests.get();
   }
 
+  public long getApiErrors() {
+    return apiErrors.get();
+  }
+
+  public NatsFrame process(PayloadFrame frame, SessionState sessionState) throws IOException {
+    String subject = frame.getSubject();
+    boolean isApi = subject.startsWith("$JS.API.");
+    if (isApi) {
+      apiRequests.incrementAndGet();
+    }
+
+    NatsFrame response;
+    if (subject.startsWith("$JS.")) {
+      if (sessionState.getProtocol().getNatsConfig().isEnableStreams()) {
+        response = jetStreamApiManager.process(subject, frame, sessionState);
+      } else {
+        response = new ErrFrame("Streams are disabled");
+      }
+    } else if (subject.startsWith("$KV.")) {
+      response = new ErrFrame(sessionState.getProtocol().getNatsConfig().isEnableKeyValues()
+          ? "KeyValue handler not yet implemented" : "Key Values are disabled");
+    } else if (subject.startsWith("$O.")) {
+      response = new ErrFrame(sessionState.getProtocol().getNatsConfig().isEnableObjectStore()
+          ? "ObjectStore handler not yet implemented" : "Object Store is disabled");
+    } else {
+      response = new ErrFrame("Unknown JetStream request: " + subject);
+    }
+
+    if (isApi && isError(response)) {
+      apiErrors.incrementAndGet();
+    }
+    return response;
+  }
+
+  private boolean isError(NatsFrame frame) {
+    if (frame instanceof ErrFrame) {
+      return true;
+    }
+    if (frame instanceof PayloadFrame payload && payload.getPayload() != null) {
+      try {
+        return JsonParser.parseString(new String(payload.getPayload(), StandardCharsets.UTF_8)).getAsJsonObject().has("error");
+      } catch (RuntimeException ignored) {
+        return false;
+      }
+    }
+    return false;
+  }
 }
