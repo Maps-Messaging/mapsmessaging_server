@@ -269,6 +269,9 @@ public final class MqttSn2Protocol extends Protocol {
     }
     SessionManager.getInstance().createAsync(builder.build(), this).whenComplete((created, failure) -> {
       if (failure != null || created == null) {
+        AUTH_LOGGER.log(ServerLogMessages.MQTT_SN_EXCEPTION_RASIED,
+            failure == null ? new IOException("MQTT-SN 2.0 session creation returned null")
+                : new IOException("MQTT-SN 2.0 session creation failed", failure));
         try {
           close();
         } catch (IOException ignored) {
@@ -300,6 +303,7 @@ public final class MqttSn2Protocol extends Protocol {
           sasl = null;
         }
       } catch (IOException | RuntimeException e) {
+        AUTH_LOGGER.log(ServerLogMessages.MQTT_SN_EXCEPTION_RASIED, e);
         try {
           close();
         } catch (IOException ignored) {
