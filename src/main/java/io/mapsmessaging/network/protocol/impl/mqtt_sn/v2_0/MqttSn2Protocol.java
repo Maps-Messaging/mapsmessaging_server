@@ -164,6 +164,11 @@ public final class MqttSn2Protocol extends Protocol {
       throw new IOException("Protected MQTT-SN 2.0 packet without configured security policy");
     }
     MqttSn2PacketDecoder.Decoded decoded = MqttSn2PacketDecoder.decode(input);
+    if (decoded.type() == MqttSn2PacketType.CONNECT
+        && lifecycle.state() != MqttSn2Lifecycle.State.NEW) {
+      manager.replaceV2Connection(packet, input.asReadOnlyBuffer(), authenticatedSender);
+      return true;
+    }
     lifecycle.checkAllowed(decoded.type());
     if (decoded.type() == MqttSn2PacketType.CONNECT) {
       connect((MqttSn2ConnectCodec.Connect) decoded.content());
