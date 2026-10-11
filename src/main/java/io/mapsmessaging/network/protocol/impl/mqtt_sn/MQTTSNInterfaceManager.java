@@ -222,7 +222,9 @@ public class MQTTSNInterfaceManager implements SelectorCallback {
     this.selectorTask = selectorTask;
     advertiserTask = null;
     this.endPoint = endPoint;
-    mqttSnConfig = (MqttSnConfig) endPoint.getConfig().getProtocolConfig(PROTOCOL_NAME);
+    mqttSnConfig = java.util.Objects.requireNonNull(
+        (MqttSnConfig) endPoint.getConfig().getProtocolConfig(PROTOCOL_NAME),
+        "MQTT-SN protocol configuration is required");
     long timeout = mqttSnConfig.getIdleSessionTimeout();
     enablePortChanges = mqttSnConfig.isEnablePortChanges();
     enableAddressChanges = mqttSnConfig.isEnableAddressChanges();
@@ -331,7 +333,7 @@ public class MQTTSNInterfaceManager implements SelectorCallback {
     }
     Map<String, String> aliases = new java.util.HashMap<>();
     for (var entry : aliasesConfig.getMap().entrySet()) {
-      aliases.put(entry.getKey().toString().toLowerCase(java.util.Locale.ROOT),
+      aliases.put(entry.getKey().toLowerCase(java.util.Locale.ROOT),
           entry.getValue().toString());
     }
     try {
