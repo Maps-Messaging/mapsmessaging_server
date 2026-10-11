@@ -17,6 +17,8 @@ public interface MqttSn2CryptoProvider {
       byte[] authenticatedPrefix, byte[] plaintext) throws GeneralSecurityException;
   byte[] unprotect(int scheme, SecretKey key, byte[] nonce,
       byte[] authenticatedPrefix, ProtectedPayload payload) throws GeneralSecurityException;
+  // Protocol value container; payload bytes are cloned and compared explicitly in tests.
+  @SuppressWarnings("java:S6218")
   record ProtectedPayload(byte[] protectedBytes, byte[] tag) {
     public ProtectedPayload {
       protectedBytes = protectedBytes.clone();
