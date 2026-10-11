@@ -57,7 +57,7 @@ class MessageHandlerTest {
     when(consumer.getStreamName()).thenReturn("stream");
 
     assertNull(new MessageHandler().handle(request, null, session));
-    verify(consumer).getNextMessage();
+    verify(consumer).getNextMessage(false);
   }
 
   @Test
