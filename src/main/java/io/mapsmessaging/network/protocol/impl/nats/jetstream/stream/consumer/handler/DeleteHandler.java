@@ -63,11 +63,12 @@ public class DeleteHandler extends JetStreamFrameHandler {
       return buildError(TYPE,"Stream '" + stream + "' not found", replyTo, sessionState);
     }
 
-    NamedConsumer namedConsumer = sessionState.getNamedConsumers().remove(consumerName);
-    if (namedConsumer == null) {
+    NamedConsumer namedConsumer = sessionState.getNamedConsumers().get(consumerName);
+    if (namedConsumer == null || !stream.equals(namedConsumer.getStreamName())) {
       return buildError(TYPE,"Consumer '" + consumerName + "' not found", replyTo, sessionState);
     }
 
+    sessionState.getNamedConsumers().remove(consumerName, namedConsumer);
     sessionState.removeSubscription(consumerName);
     namedConsumer.getEvents().clear();
     namedConsumer.getStreams().clear();
