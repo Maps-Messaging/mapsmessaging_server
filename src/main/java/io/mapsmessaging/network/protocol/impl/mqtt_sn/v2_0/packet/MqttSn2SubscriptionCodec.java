@@ -24,6 +24,8 @@ public final class MqttSn2SubscriptionCodec {
   private MqttSn2SubscriptionCodec() {
   }
 
+  // Protocol wire-layout validation follows CSD01 field order; keep it auditable.
+  @SuppressWarnings("java:S3776")
   public static ByteBuffer encode(Request request) {
     if (request == null) throw new IllegalArgumentException("Missing subscription request");
     if (request.packetIdentifier() < 1 || request.packetIdentifier() > 65535) {
@@ -65,6 +67,8 @@ public final class MqttSn2SubscriptionCodec {
         ? MqttSn2PacketType.SUBSCRIBE : MqttSn2PacketType.UNSUBSCRIBE, body);
   }
 
+  // Protocol wire-layout validation follows CSD01 field order; keep it auditable.
+  @SuppressWarnings("java:S3776")
   public static Request decode(MqttSn2FrameCodec.Frame frame) throws IOException {
     boolean subscribe = frame.type() == MqttSn2PacketType.SUBSCRIBE;
     if (!subscribe && frame.type() != MqttSn2PacketType.UNSUBSCRIBE) {
