@@ -142,7 +142,7 @@ class MqttSn12ConnectionlessPublishSpecificationTest {
 
   @Test
   @ProtocolRequirement(specification = "MQTT-SN 2.0 CSD01",
-      value = "Shared MQTT-SN 1.2/2.0 listener rejects ambiguous unprotected predefined-alias PUBWOS",
+      value = "Sections 3.6.1 and 4.3.1: shared-listener safety guard rejects ambiguous unprotected predefined-alias PUBWOS",
       source = V2_SOURCE)
   void v2PubwosPredefinedAliasDoesNotPublishOnSharedListener() throws Exception {
     Fixture fixture = fixture("", List.of(predefined(42, "pre/topic")));
