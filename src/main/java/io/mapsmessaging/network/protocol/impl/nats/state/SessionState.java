@@ -257,35 +257,25 @@ public class SessionState implements CloseHandler, CompletionHandler {
   }
 
   public synchronized void removeSubscription(String subscriptionId) {
-    SubscribedEventManager manager = activeSubscriptions.remove(subscriptionId);
+    activeSubscriptions.remove(subscriptionId);
 
-    String emptyDestination = null;
     for (Map.Entry<String, List<SubscriptionContext>> entry : subscriptions.entrySet()) {
+      String destination = entry.getKey();
       List<SubscriptionContext> contexts = entry.getValue();
-      boolean removed = contexts.removeIf(context -> subscriptionId.equals(context.getAlias()));
-      if (!removed) {
+      if (!contexts.removeIf(context -> subscriptionId.equals(context.getAlias()))) {
         continue;
       }
 
-      String registeredAlias = destinationSubscriptionAliases.get(entry.getKey());
+      String registeredAlias = destinationSubscriptionAliases.get(destination);
       if (contexts.isEmpty()) {
-        emptyDestination = entry.getKey();
+        subscriptions.remove(destination, contexts);
+        destinationSubscriptionAliases.remove(destination);
+        if (registeredAlias != null) {
+          session.removeSubscription(registeredAlias);
+        }
       } else if (subscriptionId.equals(registeredAlias)) {
         String replacementAlias = contexts.getFirst().getAlias();
-        destinationSubscriptionAliases.put(entry.getKey(), replacementAlias);
-        if (manager != null) {
-          activeSubscriptions.put(replacementAlias, manager);
-        }
-      }
-      break;
-    }
-
-    if (emptyDestination != null) {
-      subscriptions.remove(emptyDestination);
-      String registeredAlias = destinationSubscriptionAliases.remove(emptyDestination);
-      if (registeredAlias != null) {
-        activeSubscriptions.remove(registeredAlias);
-        session.removeSubscription(registeredAlias);
+        destinationSubscriptionAliases.put(destination, replacementAlias);
       }
     }
   }
