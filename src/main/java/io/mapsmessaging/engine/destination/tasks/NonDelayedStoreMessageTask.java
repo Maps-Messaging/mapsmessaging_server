@@ -44,16 +44,10 @@ public class NonDelayedStoreMessageTask extends StoreMessageTask {
   @Override
   public Response taskCall() throws Exception {
     destination.getStats().messagePublished();
-    boolean hasSubscribers = subscriptionManager.hasSubscriptions();
-    boolean jetStreamArchive = destination.getResourceProperties() != null && destination.getResourceProperties().isJetStreamArchive()
-        || message.isStoreOffline() && "true".equals(message.getMeta().get("nats.jetstream"));
-    if (hasSubscribers || message.isRetain() || jetStreamArchive) {
+    if (subscriptionManager.hasSubscriptions() || message.isRetain()) {
       storeMessage(destination, message);
-      if (hasSubscribers) {
-        Future<Response> response = destination.submit(new SubscriptionUpdateTask(destination, subscriptionManager, message));
-        return new FutureResponse(response);
-      }
-      return new LongResponse(0);
+      Future<Response> response = destination.submit(new SubscriptionUpdateTask(destination, subscriptionManager, message));
+      return new FutureResponse(response);
     }
     // We are also complete here, no queue required
     destination.getStats().noInterest();

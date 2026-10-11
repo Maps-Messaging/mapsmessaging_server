@@ -134,7 +134,7 @@ public class StreamUpdateHandler extends JetStreamFrameHandler {
         return buildError("io.nats.jetstream.api.v1.stream_update_response", 500, "Unable to create stream subject",
             frame.getReplyTo(), sessionState);
       }
-      destination.markJetStreamArchive();
+      // Stream persistence is not configured through shared MAPS destination extensions.
     }
     PayloadFrame payloadFrame = (PayloadFrame) msg;
     JsonObject responseJson = new JsonObject();

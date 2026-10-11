@@ -94,11 +94,8 @@ public class StreamCreateHandler extends JetStreamFrameHandler {
       if (destination == null) {
         return buildError(RESPONSE_TYPE, 500, "Stream destination creation returned null", frame.getReplyTo(), sessionState);
       }
-      try {
-        destination.markJetStreamArchive();
-      } catch (IOException ioException) {
-        return buildError(RESPONSE_TYPE, 500, "Unable to initialise persistent stream storage", frame.getReplyTo(), sessionState);
-      }
+      // A normal MAPS destination is not an append-only JetStream archive.
+      // Archive retention must be implemented within NATS or through an agreed generic API.
     }
 
     // Prepare response

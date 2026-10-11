@@ -135,9 +135,6 @@ public final class DurableConsumerSession {
     builder.setNoLocalMessages(false);
     builder.setReceiveMaximum(receiveMaximum);
     SubscribedEventManager manager = persistent.addSubscription(builder.build());
-    if (manager != null) {
-      manager.replayStoredMessages();
-    }
     return manager;
   }
 

@@ -303,51 +303,6 @@ public class DestinationImpl implements BaseDestination {
     return resource.getResourceProperties();
   }
 
-  /**
-   * JetStream streams retain messages independently of consumer acknowledgements.
-   * The marker is kept in the MAPS resource metadata so it survives reload.
-   */
-  public synchronized void markJetStreamArchive() throws IOException {
-    if (!resource.getResourceProperties().isJetStreamArchive()) {
-      resource.getResourceProperties().setJetStreamArchive(true);
-      if (isPersistent()) {
-        resource.getResourceProperties().write(new File(fullyQualifiedDirectoryRoot));
-      }
-    }
-  }
-
-  /**
-   * Reconstruct the initial delivery cursor from already archived MAPS records.
-   * Executed on the subscription scheduler to preserve MAPS ordering.
-   */
-  public void replayJetStreamArchive(DestinationSubscription subscription) throws IOException {
-    if (!resource.getResourceProperties().isJetStreamArchive()) {
-      return;
-    }
-    Future<Response> future = submit(() -> {
-      long replayed = 0;
-      for (Long identifier : resource.getKeys()) {
-        if (identifier == null || subscription.hasMessage(identifier)) {
-          continue;
-        }
-        Message message = getMessage(identifier);
-        if (message != null) {
-          subscription.register(identifier);
-          replayed++;
-        }
-      }
-      return new LongResponse(replayed);
-    });
-    try {
-      future.get(60, TimeUnit.SECONDS);
-    } catch (InterruptedException interrupted) {
-      Thread.currentThread().interrupt();
-      throw new IOException("Interrupted replaying archived JetStream messages", interrupted);
-    } catch (ExecutionException | TimeoutException failure) {
-      throw new IOException("Could not replay archived JetStream messages", failure);
-    }
-  }
-
   private ScheduledFuture<?> queueReaper() {
     return SimpleTaskScheduler.getInstance().scheduleAtFixedRate(new EventReaper(), 5, 5, TimeUnit.SECONDS);
   }
@@ -587,27 +542,6 @@ public class DestinationImpl implements BaseDestination {
     return resource.size();
   }
 
-  /**
-   * Returns the storage's measured physical size for protocol account usage reporting.
-   */
-  public long getCurrentStorageBytes() {
-    io.mapsmessaging.storage.Statistics statistics = resource.getStatistics();
-    if (statistics instanceof io.mapsmessaging.storage.impl.cache.CacheStatistics cached) {
-      statistics = cached.getStorageStatistics();
-    }
-    if (statistics instanceof io.mapsmessaging.storage.impl.tier.memory.MemoryTierStatistics tier) {
-      long memory = tier.getMemoryStatistics() instanceof io.mapsmessaging.storage.StorageStatistics storage
-          ? storage.getTotalSize() : 0;
-      long disk = tier.getFileStatistics() instanceof io.mapsmessaging.storage.StorageStatistics storage
-          ? storage.getTotalSize() : 0;
-      return Math.max(0, memory) + Math.max(0, disk);
-    }
-    if (statistics instanceof io.mapsmessaging.storage.StorageStatistics storage) {
-      return Math.max(0, storage.getTotalSize());
-    }
-    return 0;
-  }
-
   //</editor-fold>
 
   //<editor-fold desc="Subscription management APIs">
@@ -712,31 +646,19 @@ public class DestinationImpl implements BaseDestination {
    */
   @Override
   public int storeMessage(@NonNull @NotNull Message message) throws IOException {
-    checkMessageBound(message);
-    return storePreparedMessage(applyMessageOverrides(message));
-  }
-
-  public long storeMessageReturningIdentifier(@NonNull @NotNull Message message) throws IOException {
-    checkMessageBound(message);
-    Message prepared = applyMessageOverrides(message);
-    storePreparedMessage(prepared);
-    return prepared.getIdentifier();
-  }
-
-  private void checkMessageBound(Message message) throws IOException {
-    if (message.isBound()) {
+    if(message.isBound()){
       throw new IOException("Message is bound to another destination, can not loop events");
     }
-  }
-
-  private int storePreparedMessage(Message message) throws IOException {
+    message = applyMessageOverrides(message);
     Callable<Response> task;
     if (message.getDelayed() > 0 && delayedMessageManager != null) {
       task = new DelayedStoreMessageTask(this, message, delayedMessageManager, message.getDelayed());
-    } else if (getResourceType().isTopic()) {
-      task = new NonDelayedStoreMessageTask(this, subscriptionManager, message);
     } else {
-      task = new QueueBasedStoreMessageTask(this, subscriptionManager, message);
+      if (getResourceType().isTopic()) {
+        task = new NonDelayedStoreMessageTask(this, subscriptionManager, message);
+      } else {
+        task = new QueueBasedStoreMessageTask(this, subscriptionManager, message);
+      }
     }
     return handleTask(task);
   }
@@ -963,10 +885,6 @@ public class DestinationImpl implements BaseDestination {
 
     @Override
     public void run() {
-      if (resource.getResourceProperties().isJetStreamArchive()) {
-        completionQueue.getAndClear();
-        return;
-      }
       if(countDown <= 0) {
         Queue<Long> completedQueue = completionQueue.getAndClear();
         if (!completedQueue.isEmpty()) {

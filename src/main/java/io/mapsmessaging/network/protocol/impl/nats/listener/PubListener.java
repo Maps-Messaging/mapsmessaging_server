@@ -176,11 +176,10 @@ public class PubListener implements FrameListener {
   }
 
   protected long storeToMapDestination(Destination destination, Message message, boolean streamTarget) throws IOException {
-    if (streamTarget) {
-      return destination.storeMessageReturningIdentifier(message);
-    }
     destination.storeMessage(message);
-    return 0;
+    // MAPS assigns the identifier to the original message only when no overrides clone it.
+    // Never fabricate a JetStream sequence when MAPS cannot report a stored identifier.
+    return streamTarget ? message.getIdentifier() : 0;
   }
 
   private Object convert(String value) {

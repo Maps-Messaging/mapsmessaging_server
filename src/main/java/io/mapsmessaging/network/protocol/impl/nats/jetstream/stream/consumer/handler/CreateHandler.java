@@ -116,9 +116,7 @@ public class CreateHandler extends JetStreamFrameHandler {
             throw new IOException("Unable to register consumer subscription " + streamInfo.getSubject());
           }
           registered.add(new StreamSubscriptionInfo(manager, streamInfo, subscriptionAlias));
-          if (durableSession == null) {
-            manager.replayStoredMessages();
-          }
+          // JetStream historical replay is not provided by the generic MAPS subscription API.
         }
         consumer = new NamedConsumer(name, stream, config, registered);
         if (!sessionState.addNamedConsumer(consumer)) {

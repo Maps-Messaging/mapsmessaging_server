@@ -90,16 +90,15 @@ class PubListenerJetStreamRoutingTest {
   }
 
   @Test
-  void streamStorageReturnsActualMapsAssignedIdentifier() throws Exception {
+  void streamStorageReportsIdentifierOnlyWhenAssignedToTheSuppliedMessage() throws Exception {
     Destination destination = mock(Destination.class);
     io.mapsmessaging.api.message.Message message = mock(io.mapsmessaging.api.message.Message.class);
-    when(destination.storeMessageReturningIdentifier(message)).thenReturn(312L);
+    when(message.getIdentifier()).thenReturn(312L);
 
     long sequence = new PubListener().storeToMapDestination(destination, message, true);
 
     assertEquals(312L, sequence);
-    verify(destination).storeMessageReturningIdentifier(message);
-    verify(destination, never()).storeMessage(message);
+    verify(destination).storeMessage(message);
   }
 
   @Test
@@ -111,7 +110,6 @@ class PubListenerJetStreamRoutingTest {
 
     assertEquals(0L, sequence);
     verify(destination).storeMessage(message);
-    verify(destination, never()).storeMessageReturningIdentifier(message);
   }
 
   private static SessionState setup(boolean streamsEnabled) {
