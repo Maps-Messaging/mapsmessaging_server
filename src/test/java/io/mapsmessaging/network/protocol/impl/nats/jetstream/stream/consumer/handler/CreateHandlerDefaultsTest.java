@@ -24,6 +24,11 @@ import io.mapsmessaging.network.protocol.impl.nats.jetstream.stream.consumer.dat
 import io.mapsmessaging.network.protocol.impl.nats.jetstream.stream.consumer.data.DeliverPolicy;
 import io.mapsmessaging.network.protocol.impl.nats.jetstream.stream.consumer.data.ReplayPolicy;
 import org.junit.jupiter.api.Test;
+import io.mapsmessaging.network.protocol.impl.nats.state.SessionState;
+import io.mapsmessaging.network.protocol.impl.nats.streams.StreamInfo;
+import io.mapsmessaging.api.features.ClientAcknowledgement;
+
+import static org.mockito.Mockito.*;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -53,5 +58,16 @@ class CreateHandlerDefaultsTest {
     assertEquals(1000, config.getMaxAckPending());
     assertEquals(ReplayPolicy.INSTANT, config.getReplayPolicy());
     assertEquals(DeliverPolicy.ALL, config.getDeliverPolicy());
+  }
+  @Test
+  void consumerSubscriptionFailureIsObservableToCreation() {
+    SessionState session = mock(SessionState.class);
+    StreamInfo stream = mock(StreamInfo.class);
+    when(stream.getSubject()).thenReturn("orders.created");
+    ConsumerConfig config = new ConsumerConfig();
+    CreateHandler.applyDefaults(config);
+
+    assertNull(new CreateHandler().subscribeConsumerSubject(session, config, stream, "consumer"));
+    verify(session).subscribe("orders.created", "consumer", null, ClientAcknowledgement.INDIVIDUAL, 1, true);
   }
 }

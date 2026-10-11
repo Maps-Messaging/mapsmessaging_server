@@ -123,6 +123,11 @@ public class CreateHandler extends JetStreamFrameHandler {
     return msg;
   }
 
+  SubscribedEventManager subscribeConsumerSubject(SessionState sessionState, ConsumerConfig config, StreamInfo streamInfo, String name) {
+    ClientAcknowledgement acknowledgement = getClientAcknowledgement(config);
+    return sessionState.subscribe(streamInfo.getSubject(), name, null, acknowledgement, 1, true);
+  }
+
   static void applyDefaults(ConsumerConfig config) {
     if (config.getAckPolicy() == null) {
       config.setAckPolicy(AckPolicy.EXPLICIT);
