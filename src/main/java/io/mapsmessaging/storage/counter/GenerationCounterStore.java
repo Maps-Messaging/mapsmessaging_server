@@ -97,10 +97,11 @@ public final class GenerationCounterStore implements CounterStore {
   }
 
   private IndexedCounterStore openGeneration(String name) throws IOException {
+    final String counterBaseName = "counters";
     if (!name.matches("gen-[a-zA-Z0-9-]+")) throw new IOException("Invalid generation name");
-    Path base = root.resolve(name).resolve("counters");
-    if (!Files.isRegularFile(base.resolveSibling("counters.idx"))
-        || !Files.isRegularFile(base.resolveSibling("counters.dat"))) {
+    Path base = root.resolve(name).resolve(counterBaseName);
+    if (!Files.isRegularFile(base.resolveSibling(counterBaseName + ".idx"))
+        || !Files.isRegularFile(base.resolveSibling(counterBaseName + ".dat"))) {
       throw new IOException("Active generation files missing");
     }
     return new IndexedCounterStore(base, durability, flushWrites, flushMillis);
