@@ -34,6 +34,8 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.ArrayList;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.Map;
 
 
@@ -62,60 +64,49 @@ public class ConnectedState implements State {
 
   @Override
   public boolean sendMessage(SessionState engine, String destinationName, SubscriptionContext context, Message message, Runnable completionTask) {
-    PayloadFrame msg = engine.buildPayloadFrame(message, destinationName);
-    // This handles non-wildcard subscriptions
-    List<SubscriptionContext> subscriptions = engine.getSubscriptions().get(destinationName);
-    PayloadFrame duplicate = msg;
-    if (subscriptions != null) {
-      duplicate = sendToList(duplicate, subscriptions, engine);
-    }
-
-    // Now handle wildcard subscriptions
+    PayloadFrame template = engine.buildPayloadFrame(message, destinationName);
+    List<PayloadFrame> outgoing = new ArrayList<>();
+    List<SubscriptionContext> direct = engine.getSubscriptions().get(destinationName);
+    addSubscriptionFrames(outgoing, template, direct);
     for (String destinationKey : engine.getSubscriptions().keySet()) {
       if ((destinationKey.contains("#") || destinationKey.contains("+")) && DestinationSet.matches(destinationKey, destinationName)) {
-        List<SubscriptionContext> subContext = engine.getSubscriptions().get(destinationKey);
-        duplicate = sendToList(duplicate, subContext, engine);
+        addSubscriptionFrames(outgoing, template, engine.getSubscriptions().get(destinationKey));
       }
     }
 
-    NamedConsumer named =  engine.getNamedConsumers().get(context.getAlias());
-    if(named != null) {
+    NamedConsumer named = engine.getNamedConsumers().get(context.getAlias());
+    if (named != null) {
       named.receive(message, destinationName, completionTask);
     }
-    completionTask.run();
+
+    if (outgoing.isEmpty()) {
+      if (named == null && completionTask != null) {
+        completionTask.run();
+      }
+      return true;
+    }
+
+    AtomicInteger outstanding = new AtomicInteger(outgoing.size());
+    for (PayloadFrame frame : outgoing) {
+      frame.setCallback(() -> {
+        if (outstanding.decrementAndGet() == 0 && completionTask != null) {
+          completionTask.run();
+        }
+      });
+      engine.send(frame);
+    }
     return true;
   }
 
-
-  private PayloadFrame sendToList(PayloadFrame duplicate, List<SubscriptionContext> subscriptions, SessionState engine) {
-    List<SubscriptionContext> recipients = new ArrayList<>();
-    Map<String, List<SubscriptionContext>> queueGroups = new LinkedHashMap<>();
-
+  private void addSubscriptionFrames(List<PayloadFrame> outgoing, PayloadFrame template, List<SubscriptionContext> subscriptions) {
+    if (subscriptions == null) {
+      return;
+    }
     for (SubscriptionContext subscription : subscriptions) {
-      if (subscription.isSharedSubscription()) {
-        queueGroups.computeIfAbsent(subscription.getSharedName(), ignored -> new ArrayList<>()).add(subscription);
-      } else {
-        recipients.add(subscription);
-      }
+      PayloadFrame frame = template.duplicate();
+      frame.setSubscriptionId(subscription.getAlias());
+      outgoing.add(frame);
     }
-
-    for (Map.Entry<String, List<SubscriptionContext>> entry : queueGroups.entrySet()) {
-      List<SubscriptionContext> group = entry.getValue();
-      int index = engine.nextQueueGroupIndex(
-          group.getFirst().getDestinationName(), entry.getKey(), group.size());
-      recipients.add(group.get(index));
-    }
-
-    boolean multiple = recipients.size() > 1;
-    for (SubscriptionContext recipient : recipients) {
-      duplicate.setSubscriptionId(recipient.getAlias());
-      engine.send(duplicate);
-      if (multiple) {
-        duplicate = duplicate.duplicate();
-      }
-      duplicate.setCallback(null);
-    }
-    return duplicate;
   }
 
   static class MessageCompletionHandler implements CompletionHandler {
