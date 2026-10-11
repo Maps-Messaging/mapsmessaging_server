@@ -57,6 +57,8 @@ public final class IndexedCounterStore implements CounterStore {
    * Batched mode reduces force calls but does not guarantee that accepted
    * counters survive a crash. Do not use it for replay protection.
    */
+  // Constructor explicitly closes every channel and lock on failure; ownership persists until close().
+  @SuppressWarnings({"java:S2095", "java:S3776"})
   public IndexedCounterStore(Path base, CounterDurability durability,
       int flushEveryWrites, long flushIntervalMillis) throws IOException {
     Objects.requireNonNull(base, "base");
