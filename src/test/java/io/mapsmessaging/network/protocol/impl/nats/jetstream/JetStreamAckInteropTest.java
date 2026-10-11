@@ -43,7 +43,9 @@ class JetStreamAckInteropTest extends JetStreamBaseTest {
     try {
       PullSubscribeOptions options = PullSubscribeOptions.builder().stream(stream).build();
       JetStreamSubscription consumer = jetStream.subscribe(null, options);
-      jetStream.publish(subject, "payload".getBytes(StandardCharsets.UTF_8));
+      // Core NATS publish isolates consumer ACK handling from JetStream publisher acknowledgement support.
+      natsConnection.publish(subject, "payload".getBytes(StandardCharsets.UTF_8));
+      natsConnection.flush(Duration.ofSeconds(2));
       consumer.pull(1);
       List<Message> messages = consumer.fetch(1, Duration.ofSeconds(4));
       assertEquals(1, messages.size());
