@@ -138,4 +138,18 @@ class NamedConsumerPendingTest {
     org.junit.jupiter.api.Assertions.assertTrue(pending.isCancelled());
     org.junit.jupiter.api.Assertions.assertTrue(consumer.getEvents().isEmpty());
   }
+  @Test
+  void closedConsumerNeverIssuesAnotherPoll() throws Exception {
+    SubscribedEventManager manager = mock(SubscribedEventManager.class);
+    StreamSubscriptionInfo info = mock(StreamSubscriptionInfo.class);
+    when(info.getSubscribedEventManager()).thenReturn(manager);
+    NamedConsumer consumer = new NamedConsumer("consumer", "stream", new ConsumerConfig(), List.of(info));
+
+    consumer.close();
+
+    org.junit.jupiter.api.Assertions.assertNull(consumer.getNextMessage(true));
+    org.junit.jupiter.api.Assertions.assertNull(consumer.getNextMessage());
+    verify(manager, never()).getNext();
+  }
+
 }

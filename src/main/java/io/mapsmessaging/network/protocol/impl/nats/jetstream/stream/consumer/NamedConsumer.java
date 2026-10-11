@@ -47,6 +47,7 @@ public class NamedConsumer {
   private final List<StreamSubscriptionInfo> streams;
   private List<Event> events;
   private int index;
+  private boolean closed;
   private final Map<StreamSubscriptionInfo, Future<Response>> inFlightPolls = new HashMap<>();
 
   public NamedConsumer(String name, String streamName, ConsumerConfig config, List<StreamSubscriptionInfo> streams) {
@@ -80,7 +81,7 @@ public class NamedConsumer {
   }
 
   public synchronized MessageEvent getNextMessage(boolean noWait) throws IOException {
-    if (streams.isEmpty()) {
+    if (closed || streams.isEmpty()) {
       return null;
     }
     for (int x = 0; x < streams.size(); x++) {
@@ -119,6 +120,7 @@ public class NamedConsumer {
   }
 
   public synchronized void close() {
+    closed = true;
     for (Future<Response> future : inFlightPolls.values()) {
       future.cancel(false);
     }
