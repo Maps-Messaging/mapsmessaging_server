@@ -35,6 +35,7 @@ class StreamInfoHandlerStateTest {
     new StreamInfoHandler().packResponse(response, stream);
 
     assertEquals("EVENTS", response.getConfig().getName());
+    assertEquals("memory", response.getConfig().getStorage());
     assertNotNull(response.getState());
     assertEquals(0, response.getState().getMessages());
     assertEquals(0, response.getState().getBytes());
