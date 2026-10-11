@@ -12,7 +12,7 @@ import org.junit.jupiter.api.Test;
 
 class MqttSnProtectionConfigTest {
   @Test
-  void happyEndpointProtectionRetainsPrivateConfigurationButNotRestDto() {
+  void happyEndpointProtectionRetainsPrivateConfigurationButNotRestDto() throws Exception {
     ConfigurationProperties protection = new ConfigurationProperties(Map.of(
         "enabled", true,
         "counterDirectory", "/tmp/counter-test",
