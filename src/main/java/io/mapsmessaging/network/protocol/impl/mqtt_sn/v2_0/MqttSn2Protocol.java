@@ -628,7 +628,11 @@ public final class MqttSn2Protocol extends Protocol {
   private void deliver(MessageEvent event) {
     ParsedMessage parsed = parseOutboundMessage(event);
     if (parsed == null) return;
-    int qosLevel = parsed.getMessage().getQualityOfService().getLevel();
+    // Delivery QoS is bounded by the subscription's granted maximum, not
+    // merely the publishing client's QoS. Otherwise a QoS 0 subscriber can
+    // receive QoS 1 and consume send credit waiting for an ACK it cannot owe.
+    int qosLevel = Math.min(parsed.getMessage().getQualityOfService().getLevel(),
+        event.getSubscription().getContext().getQualityOfService().getLevel());
     if (qosLevel == 0) {
       MqttSn2PublishCodec.Publish publish = new MqttSn2PublishCodec.Publish(
           false, 0, false, parsed.getMessage().isRetain(), 3, 0,
