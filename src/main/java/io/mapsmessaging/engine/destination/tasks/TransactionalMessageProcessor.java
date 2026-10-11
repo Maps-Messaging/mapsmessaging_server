@@ -35,13 +35,6 @@ public class TransactionalMessageProcessor extends MessageProcessor {
   @Override
   protected long processMessage(Message message) {
     destination.getStats().transactionalPublish();
-    if (message.getMeta() != null
-        && "MQTT-SN".equals(message.getMeta().get("protocol"))
-        && message.getQualityOfService().getLevel() == 2) {
-      System.err.printf("[MSG-324] QoS2 transaction destination=%s messageId=%d delayed=%d%n",
-          destination.getFullyQualifiedNamespace(), message.getIdentifier(),
-          message.getDelayed());
-    }
     long delayed = message.getDelayed();
     if (delayed > 0) {
       delayed = System.currentTimeMillis() + delayed;
