@@ -31,7 +31,11 @@ import io.mapsmessaging.network.protocol.impl.nats.listener.FrameListener;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 
 
@@ -60,44 +64,80 @@ public class ConnectedState implements State {
 
   @Override
   public boolean sendMessage(SessionState engine, String destinationName, SubscriptionContext context, Message message, Runnable completionTask) {
-    PayloadFrame template = engine.buildPayloadFrame(message, destinationName);
-    List<PayloadFrame> outgoing = new ArrayList<>();
-    List<SubscriptionContext> direct = engine.getSubscriptions().get(destinationName);
-    addSubscriptionFrames(outgoing, template, direct);
-    for (String destinationKey : engine.getSubscriptions().keySet()) {
-      if ((destinationKey.contains("#") || destinationKey.contains("+")) && DestinationSet.matches(destinationKey, destinationName)) {
-        addSubscriptionFrames(outgoing, template, engine.getSubscriptions().get(destinationKey));
-      }
-    }
-
-    if (outgoing.isEmpty()) {
+    List<SubscriptionContext> matched = resolveSubscriptionContexts(engine, destinationName, context);
+    List<SubscriptionContext> recipients = selectRecipients(engine, destinationName, matched);
+    if (recipients.isEmpty()) {
       if (completionTask != null) {
         completionTask.run();
       }
       return true;
     }
 
-    AtomicInteger outstanding = new AtomicInteger(outgoing.size());
-    for (PayloadFrame frame : outgoing) {
+    PayloadFrame template = engine.buildPayloadFrame(message, destinationName);
+    AtomicInteger outstanding = new AtomicInteger(recipients.size());
+    for (SubscriptionContext subscription : recipients) {
+      PayloadFrame frame = template.duplicate();
+      frame.setSubscriptionId(subscription.getAlias());
       frame.setCallback(() -> {
         if (outstanding.decrementAndGet() == 0 && completionTask != null) {
           completionTask.run();
         }
       });
-      engine.send(frame);
+      if (!engine.send(frame)) {
+        frame.complete();
+      }
     }
     return true;
   }
 
-  private void addSubscriptionFrames(List<PayloadFrame> outgoing, PayloadFrame template, List<SubscriptionContext> subscriptions) {
-    if (subscriptions == null) {
-      return;
+  private List<SubscriptionContext> resolveSubscriptionContexts(SessionState engine, String destinationName, SubscriptionContext deliveredContext) {
+    synchronized (engine) {
+      Map<String, List<SubscriptionContext>> subscriptions = engine.getSubscriptions();
+      String deliveredAlias = deliveredContext == null ? null : deliveredContext.getAlias();
+      if (deliveredAlias != null) {
+        for (List<SubscriptionContext> contexts : subscriptions.values()) {
+          if (contexts.stream().anyMatch(item -> deliveredAlias.equals(item.getAlias()))) {
+            return new ArrayList<>(contexts);
+          }
+        }
+      }
+
+      List<SubscriptionContext> direct = subscriptions.get(destinationName);
+      if (direct != null) {
+        return new ArrayList<>(direct);
+      }
+      List<SubscriptionContext> wildcardMatches = new ArrayList<>();
+      for (Map.Entry<String, List<SubscriptionContext>> entry : subscriptions.entrySet()) {
+        String filter = entry.getKey();
+        if ((filter.contains("#") || filter.contains("+")) && DestinationSet.matches(filter, destinationName)) {
+          wildcardMatches.addAll(entry.getValue());
+        }
+      }
+      return wildcardMatches;
     }
-    for (SubscriptionContext subscription : subscriptions) {
-      PayloadFrame frame = template.duplicate();
-      frame.setSubscriptionId(subscription.getAlias());
-      outgoing.add(frame);
+  }
+
+  private List<SubscriptionContext> selectRecipients(SessionState engine, String destinationName, List<SubscriptionContext> matches) {
+    List<SubscriptionContext> recipients = new ArrayList<>();
+    Map<String, List<SubscriptionContext>> queueGroups = new LinkedHashMap<>();
+    Set<String> aliases = new HashSet<>();
+    for (SubscriptionContext subscription : matches) {
+      if (!aliases.add(subscription.getAlias())) {
+        continue;
+      }
+      String sharedName = subscription.getSharedName();
+      if (sharedName == null || sharedName.isEmpty()) {
+        recipients.add(subscription);
+      } else {
+        queueGroups.computeIfAbsent(sharedName, ignored -> new ArrayList<>()).add(subscription);
+      }
     }
+    for (Map.Entry<String, List<SubscriptionContext>> group : queueGroups.entrySet()) {
+      List<SubscriptionContext> members = group.getValue();
+      int index = engine.nextQueueGroupIndex(destinationName, group.getKey(), members.size());
+      recipients.add(members.get(index));
+    }
+    return recipients;
   }
 
   static class MessageCompletionHandler implements CompletionHandler {

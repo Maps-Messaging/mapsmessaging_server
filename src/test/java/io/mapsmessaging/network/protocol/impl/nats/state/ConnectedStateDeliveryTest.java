@@ -39,6 +39,7 @@ class ConnectedStateDeliveryTest {
   @Test
   void completesOnlyWhenWrittenFrameCompletes() {
     SessionState session = mock(SessionState.class);
+    when(session.send(any(NatsFrame.class))).thenReturn(true);
     SubscriptionContext subscription = mock(SubscriptionContext.class);
     Message message = mock(Message.class);
     PayloadFrame frame = new MsgFrame(1024);
@@ -63,6 +64,7 @@ class ConnectedStateDeliveryTest {
   @Test
   void multipleSubscriptionsCompleteDeliveryOnceAfterBothWrites() {
     SessionState session = mock(SessionState.class);
+    when(session.send(any(NatsFrame.class))).thenReturn(true);
     SubscriptionContext first = mock(SubscriptionContext.class);
     SubscriptionContext second = mock(SubscriptionContext.class);
     Message message = mock(Message.class);
@@ -99,4 +101,93 @@ class ConnectedStateDeliveryTest {
     assertEquals(1, completions.get());
     verify(session, never()).send(any(NatsFrame.class));
   }
+  @Test
+  void overlappingFiltersUseOnlyTheOwningMapsSubscription() {
+    SessionState session = mock(SessionState.class);
+    SubscriptionContext wildcard = mock(SubscriptionContext.class);
+    SubscriptionContext exact = mock(SubscriptionContext.class);
+    Message message = mock(Message.class);
+    PayloadFrame frame = new MsgFrame(1024);
+    frame.setSubject("events.a");
+    frame.setPayload(new byte[]{1});
+    when(wildcard.getAlias()).thenReturn("wildcard");
+    when(exact.getAlias()).thenReturn("exact");
+    when(session.getSubscriptions()).thenReturn(Map.of("events/+", List.of(wildcard), "events/a", List.of(exact)));
+    when(session.buildPayloadFrame(message, "events/a")).thenReturn(frame);
+    when(session.send(any(NatsFrame.class))).thenReturn(true);
+    AtomicInteger completions = new AtomicInteger();
+
+    assertTrue(new ConnectedState().sendMessage(session, "events/a", wildcard, message, completions::incrementAndGet));
+    var captured = org.mockito.ArgumentCaptor.forClass(NatsFrame.class);
+    verify(session).send(captured.capture());
+    assertEquals("wildcard", ((PayloadFrame) captured.getValue()).getSubscriptionId());
+    captured.getValue().complete();
+    assertEquals(1, completions.get());
+  }
+
+  @Test
+  void queueGroupSelectsExactlyOneMemberOnEachDelivery() {
+    SessionState session = mock(SessionState.class);
+    SubscriptionContext first = mock(SubscriptionContext.class);
+    SubscriptionContext second = mock(SubscriptionContext.class);
+    Message message = mock(Message.class);
+    PayloadFrame frame = new MsgFrame(1024);
+    frame.setSubject("jobs.work");
+    frame.setPayload(new byte[]{1});
+    when(first.getAlias()).thenReturn("member-1");
+    when(second.getAlias()).thenReturn("member-2");
+    when(first.getSharedName()).thenReturn("workers");
+    when(second.getSharedName()).thenReturn("workers");
+    when(session.getSubscriptions()).thenReturn(Map.of("jobs.work", List.of(first, second)));
+    when(session.buildPayloadFrame(message, "jobs.work")).thenReturn(frame);
+    when(session.nextQueueGroupIndex("jobs.work", "workers", 2)).thenReturn(0, 1);
+    when(session.send(any(NatsFrame.class))).thenReturn(true);
+
+    ConnectedState state = new ConnectedState();
+    AtomicInteger completions = new AtomicInteger();
+    assertTrue(state.sendMessage(session, "jobs.work", first, message, completions::incrementAndGet));
+    assertTrue(state.sendMessage(session, "jobs.work", first, message, completions::incrementAndGet));
+    var captured = org.mockito.ArgumentCaptor.forClass(NatsFrame.class);
+    verify(session, times(2)).send(captured.capture());
+    assertEquals("member-1", ((PayloadFrame) captured.getAllValues().get(0)).getSubscriptionId());
+    assertEquals("member-2", ((PayloadFrame) captured.getAllValues().get(1)).getSubscriptionId());
+    captured.getAllValues().forEach(NatsFrame::complete);
+    assertEquals(2, completions.get());
+  }
+
+  @Test
+  void failedQueueSubmissionStillReleasesMapsCompletion() {
+    SessionState session = mock(SessionState.class);
+    SubscriptionContext subscriber = mock(SubscriptionContext.class);
+    Message message = mock(Message.class);
+    PayloadFrame frame = new MsgFrame(1024);
+    frame.setSubject("events.topic");
+    frame.setPayload(new byte[]{1});
+    when(subscriber.getAlias()).thenReturn("sid");
+    when(session.getSubscriptions()).thenReturn(Map.of("events.topic", List.of(subscriber)));
+    when(session.buildPayloadFrame(message, "events.topic")).thenReturn(frame);
+    AtomicInteger completions = new AtomicInteger();
+
+    assertTrue(new ConnectedState().sendMessage(session, "events.topic", subscriber, message, completions::incrementAndGet));
+    assertEquals(1, completions.get());
+  }
+
+  @Test
+  void repeatedSubscriptionAliasDoesNotDuplicateNetworkFrames() {
+    SessionState session = mock(SessionState.class);
+    SubscriptionContext one = mock(SubscriptionContext.class);
+    SubscriptionContext duplicate = mock(SubscriptionContext.class);
+    Message message = mock(Message.class);
+    PayloadFrame frame = new MsgFrame(1024);
+    frame.setSubject("events.topic");
+    frame.setPayload(new byte[]{1});
+    when(one.getAlias()).thenReturn("sid");
+    when(duplicate.getAlias()).thenReturn("sid");
+    when(session.getSubscriptions()).thenReturn(Map.of("events.topic", List.of(one, duplicate)));
+    when(session.buildPayloadFrame(message, "events.topic")).thenReturn(frame);
+
+    assertTrue(new ConnectedState().sendMessage(session, "events.topic", one, message, null));
+    verify(session).send(any(NatsFrame.class));
+  }
+
 }

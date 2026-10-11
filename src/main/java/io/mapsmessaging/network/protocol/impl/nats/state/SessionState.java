@@ -75,7 +75,7 @@ public class SessionState implements CloseHandler, CompletionHandler {
   @Getter
   @Setter
   private Session session;
-  private boolean isValid;
+  private volatile boolean isValid;
   private long requestCounter;
   private State currentState;
   @Getter
@@ -153,6 +153,9 @@ public class SessionState implements CloseHandler, CompletionHandler {
   }
 
   public boolean send(NatsFrame frame) {
+    if (!isValid) {
+      return false;
+    }
     protocol.writeFrame(frame);
     return true;
   }
@@ -231,7 +234,7 @@ public class SessionState implements CloseHandler, CompletionHandler {
     return null;
   }
 
-  public SubscribedEventManager createSubscription(SubscriptionContext context) throws IOException {
+  public synchronized SubscribedEventManager createSubscription(SubscriptionContext context) throws IOException {
     if (context.getFilter().startsWith("queue")) {
       getSession().findDestination(context.getFilter(), DestinationType.QUEUE);
     }
