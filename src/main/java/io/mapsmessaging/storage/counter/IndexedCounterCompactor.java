@@ -116,8 +116,8 @@ public final class IndexedCounterCompactor {
           throw new IOException("Counter index checksum mismatch");
         }
         byte[] keyBytes = new byte[keyLength];
-        record.position(4);
-        record.get(keyBytes);
+        entryBuffer.position(4);
+        entryBuffer.get(keyBytes);
         String key;
         try {
           key = StandardCharsets.UTF_8.newDecoder().decode(ByteBuffer.wrap(keyBytes)).toString();
