@@ -33,6 +33,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 @Getter
 public class NamedConsumer {
@@ -82,6 +83,8 @@ public class NamedConsumer {
             return msg;
           }
         }
+      } catch (TimeoutException e) {
+        // No message was available within this poll window; try the next subscribed stream.
       } catch (InterruptedException e) {
         Thread.currentThread().interrupt();
         throw new IOException(e);
