@@ -64,6 +64,8 @@ public final class MqttSn2ProtectionVerifier {
    * Counter persistence across server restarts is the deployer's responsibility;
    * do not enable for persistent protection sessions without durable counters.
    */
+  // Authenticate and validate framing before committing replay state.
+  @SuppressWarnings("java:S3776")
   public synchronized ByteBuffer verify(ByteBuffer wire) throws IOException {
     MqttSn2ProtectionCodec.Envelope envelope =
         MqttSn2ProtectionCodec.decode(wire, MqttSn2ProtectionVerifier::tagLength);
@@ -122,6 +124,8 @@ public final class MqttSn2ProtectionVerifier {
    * The caller owns the sender identifier and a durable monotonic counter source.
    * No counter is generated here, since silently resetting one on restart is unsafe.
    */
+  // Preserve the exact authenticated wire prefix for CSD01 protected packets.
+  @SuppressWarnings("java:S3776")
   public ByteBuffer protect(ByteBuffer packet, int scheme, byte[] senderIdentifier,
       byte[] random, byte[] counter) throws IOException {
     Objects.requireNonNull(packet, "packet");
