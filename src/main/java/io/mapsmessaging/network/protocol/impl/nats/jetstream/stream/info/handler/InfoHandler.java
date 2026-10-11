@@ -25,6 +25,7 @@ import io.mapsmessaging.network.protocol.impl.nats.frames.ErrFrame;
 import io.mapsmessaging.network.protocol.impl.nats.frames.NatsFrame;
 import io.mapsmessaging.network.protocol.impl.nats.frames.PayloadFrame;
 import io.mapsmessaging.network.protocol.impl.nats.jetstream.stream.JetStreamFrameHandler;
+import io.mapsmessaging.network.protocol.impl.nats.jetstream.stream.JetStreamStorageUsage;
 import io.mapsmessaging.network.protocol.impl.nats.state.SessionState;
 import io.mapsmessaging.network.protocol.impl.nats.streams.NamespaceManager;
 import io.mapsmessaging.network.protocol.impl.nats.streams.StreamInfo;
@@ -61,7 +62,7 @@ public class InfoHandler extends JetStreamFrameHandler {
       }
       for (StreamInfo info : streamInfo.getSubjects()) {
         DestinationImpl destination = info.getDestination();
-        long bytes = destination.getCurrentStorageBytes();
+        long bytes = JetStreamStorageUsage.sampledPhysicalBytes(destination);
         if (destination.isPersistent()) {
           storageBytes += bytes;
         } else {
