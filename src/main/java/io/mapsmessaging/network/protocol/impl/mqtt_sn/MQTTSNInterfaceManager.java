@@ -482,9 +482,14 @@ public class MQTTSNInterfaceManager implements SelectorCallback {
     if (!publish.withoutSession() || publish.qos() != 0) {
       throw new IOException("Only QoS 0 PUBWOS can publish without a virtual connection");
     }
-    String topic = publish.topicType() == 3 ? publish.topicName()
-        : publish.topicType() == 1
-            ? resolvePredefinedTopic(sender, publish.topicAlias()) : null;
+    String topic;
+    if (publish.topicType() == 3) {
+      topic = publish.topicName();
+    } else if (publish.topicType() == 1) {
+      topic = resolvePredefinedTopic(sender, publish.topicAlias());
+    } else {
+      topic = null;
+    }
     if (topic == null || topic.isEmpty() || topic.indexOf('+') >= 0 || topic.indexOf('#') >= 0
         || topic.startsWith("$")) {
       throw new IOException("Invalid or unconfigured PUBWOS topic");
