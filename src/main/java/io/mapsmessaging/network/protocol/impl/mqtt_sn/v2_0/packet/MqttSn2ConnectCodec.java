@@ -50,6 +50,8 @@ public final class MqttSn2ConnectCodec {
   private MqttSn2ConnectCodec() {
   }
 
+  // Protocol wire-layout validation follows CSD01 field order; keep it auditable.
+  @SuppressWarnings("java:S3776")
   public static ByteBuffer encode(Connect request) {
     if (request == null || request.packetIdentifier() < 1 || request.packetIdentifier() > 65535
         || request.keepAliveSeconds() < 1 || request.keepAliveSeconds() > 65535
@@ -129,6 +131,8 @@ public final class MqttSn2ConnectCodec {
     return MqttSn2FrameCodec.encode(MqttSn2PacketType.CONNECT, body);
   }
 
+  // Protocol wire-layout validation follows CSD01 field order; keep it auditable.
+  @SuppressWarnings("java:S3776")
   public static Connect decode(MqttSn2FrameCodec.Frame frame) throws IOException {
     if (frame.type() != MqttSn2PacketType.CONNECT) {
       throw new IOException("Expected MQTT-SN 2.0 CONNECT");
