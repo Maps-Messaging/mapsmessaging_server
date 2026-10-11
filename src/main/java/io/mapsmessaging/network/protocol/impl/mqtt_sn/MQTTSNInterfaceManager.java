@@ -697,6 +697,13 @@ public class MQTTSNInterfaceManager implements SelectorCallback {
     return endPoint;
   }
 
+  public synchronized void close(SocketAddress remoteClient, Protocol expected) {
+    UDPSessionState<Protocol> current = currentSessions.getState(remoteClient);
+    if (current != null && current.getContext() == expected) {
+      currentSessions.deleteState(remoteClient);
+    }
+  }
+
   public void close(SocketAddress remoteClient) {
     currentSessions.deleteState(remoteClient);
   }
