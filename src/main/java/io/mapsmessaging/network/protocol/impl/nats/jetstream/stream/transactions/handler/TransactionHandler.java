@@ -21,6 +21,7 @@ package io.mapsmessaging.network.protocol.impl.nats.jetstream.stream.transaction
 
 import com.google.gson.JsonObject;
 import io.mapsmessaging.network.protocol.impl.nats.frames.NatsFrame;
+import io.mapsmessaging.network.protocol.impl.nats.frames.MsgFrame;
 import io.mapsmessaging.network.protocol.impl.nats.frames.PayloadFrame;
 import io.mapsmessaging.network.protocol.impl.nats.jetstream.stream.JetStreamFrameHandler;
 import io.mapsmessaging.network.protocol.impl.nats.jetstream.stream.TransactionSubject;
@@ -58,14 +59,15 @@ public class TransactionHandler extends JetStreamFrameHandler {
         switch (commandString) {
           case "", "+ack", "+term":
             ackProcessor.handle(info, transactionSubject);
-            break;
+            return confirmation(frame, sessionState);
           case "-nak":
             nackProcessor.handle(info, transactionSubject);
-            break;
+            return confirmation(frame, sessionState);
 
           default:
             if (commandString.startsWith("-nak ")) {
               nackProcessor.handle(info, transactionSubject);
+              return confirmation(frame, sessionState);
             }
             break;
         }
@@ -74,6 +76,18 @@ public class TransactionHandler extends JetStreamFrameHandler {
     return null;
   }
 
+
+  private NatsFrame confirmation(PayloadFrame request, SessionState sessionState) {
+    String replyTo = request.getReplyTo();
+    if (replyTo == null || replyTo.isBlank()) {
+      return null;
+    }
+    MsgFrame reply = new MsgFrame(0);
+    reply.setSubject(replyTo);
+    reply.setSubscriptionId(sessionState.getJetStreamRequestManager().getSid(replyTo));
+    reply.setPayload(new byte[0]);
+    return reply;
+  }
 
   private StreamSubscriptionInfo lookupInfo( TransactionSubject transactionSubject, SessionState sessionState ) {
     NamedConsumer consumer = sessionState.getNamedConsumers().get(transactionSubject.getConsumer());
