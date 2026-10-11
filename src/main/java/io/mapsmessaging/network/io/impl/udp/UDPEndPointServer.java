@@ -90,6 +90,8 @@ public class UDPEndPointServer extends EndPointServer {
   }
 
   @Override
+  // Preserve exact-address and wildcard multi-interface bind semantics.
+  @SuppressWarnings("java:S3776")
   public void start() throws IOException {
     ProtocolImplFactory protocolImplFactory = protocolFactory.getBoundedProtocol();
     if (requestedBindAddress != null && !requestedBindAddress.isAnyLocalAddress()) {
