@@ -212,6 +212,18 @@ class MqttSn2ProtectedLiveUdpInteropTest extends BaseTestConfig {
       assertEquals(QoS.AT_MOST_ONCE, MqttSnCodec.decodePublish(q2Delivered).qos(),
           "QoS 0 subscription must cap QoS 2 publication delivery to QoS 0");
 
+      // A retransmitted PUBREL must complete idempotently without another
+      // subscriber delivery, even after the original PUBCOMP has been sent.
+      send(client, remote, wrap(provider, scheme, 8,
+          MqttSnCodec.encodeAck(PacketType.PUBREL, 21, null)));
+      var duplicateCompletion = MqttSnCodec.decode(ByteBuffer.wrap(
+          ProtectionCodec.decode(receive(client), provider).mqttSnPacket()));
+      assertEquals(PacketType.PUBCOMP, duplicateCompletion.type());
+      assertEquals(21, MqttSnCodec.decodeAck(duplicateCompletion).packetIdentifier());
+      client.setSoTimeout(350);
+      assertThrows(SocketTimeoutException.class, () -> receive(client));
+      client.setSoTimeout(3_000);
+
       // Duplicate authenticated sender counter cannot be applied twice.
       client.setSoTimeout(350);
       send(client, remote, wrapped);
