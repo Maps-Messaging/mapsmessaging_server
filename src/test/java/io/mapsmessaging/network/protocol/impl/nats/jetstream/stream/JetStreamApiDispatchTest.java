@@ -97,4 +97,26 @@ class JetStreamApiDispatchTest {
 
     assertTrue(error.getError().contains("Unknown JetStream API call"));
   }
+
+  @Test
+  void invalidStreamCreateReturnsTypedErrorToReplyInbox() throws Exception {
+    SessionState state = mock(SessionState.class);
+    JetStreamRequestManager requests = mock(JetStreamRequestManager.class);
+    when(state.getJetStreamRequestManager()).thenReturn(requests);
+    when(requests.getSid("_INBOX.api.reply")).thenReturn("sid-api");
+    MsgFrame request = new MsgFrame(128);
+    request.setSubject("$JS.API.STREAM.CREATE.EVENTS");
+    request.setReplyTo("_INBOX.api.reply");
+    request.setPayload(new byte[0]);
+
+    PayloadFrame response = assertInstanceOf(PayloadFrame.class,
+        new JetStreamApiManager().process(request.getSubject(), request, state));
+
+    assertEquals("_INBOX.api.reply", response.getSubject());
+    assertEquals("sid-api", response.getSubscriptionId());
+    JsonObject body = JsonParser.parseString(new String(response.getPayload(), StandardCharsets.UTF_8)).getAsJsonObject();
+    assertEquals("io.nats.jetstream.api.v1.stream_create_response", body.get("type").getAsString());
+    assertEquals(400, body.getAsJsonObject("error").get("code").getAsInt());
+    verify(state, never()).getSession();
+  }
 }

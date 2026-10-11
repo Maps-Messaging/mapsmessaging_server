@@ -43,6 +43,7 @@ import java.util.concurrent.TimeoutException;
 public class StreamCreateHandler extends JetStreamFrameHandler {
 
   private static final String SUBJECTS_KEY = "subjects";
+  private static final String RESPONSE_TYPE = "io.nats.jetstream.api.v1.stream_create_response";
 
 
   @Override
@@ -59,14 +60,14 @@ public class StreamCreateHandler extends JetStreamFrameHandler {
     }
 
     String[] parts = subject.split("\\.");
-    if (parts.length < 5) {
-      return new ErrFrame("Invalid stream create subject");
+    if (parts.length != 5) {
+      return buildError(RESPONSE_TYPE, 400, "Invalid stream create subject", frame.getReplyTo(), sessionState);
     }
     String streamName = parts[4];
 
     // Process subjects
-    if (!json.has(SUBJECTS_KEY) || !json.get(SUBJECTS_KEY).isJsonArray()) {
-      return new ErrFrame("Missing or invalid 'subjects' array");
+    if (json == null || !json.has(SUBJECTS_KEY) || !json.get(SUBJECTS_KEY).isJsonArray()) {
+      return buildError(RESPONSE_TYPE, 400, "Missing or invalid 'subjects' array", frame.getReplyTo(), sessionState);
     }
 
     JsonArray subjectsArray = json.getAsJsonArray(SUBJECTS_KEY);
@@ -80,17 +81,17 @@ public class StreamCreateHandler extends JetStreamFrameHandler {
       CompletableFuture<Void> all = CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]));
       all.get(20, TimeUnit.SECONDS);
     } catch (TimeoutException e) {
-      return new ErrFrame("Timed out waiting for destination creation");
+      return buildError(RESPONSE_TYPE, 503, "Timed out waiting for destination creation", frame.getReplyTo(), sessionState);
     } catch (InterruptedException e) {
       Thread.currentThread().interrupt();
-      return new ErrFrame("Failed to create one or more destinations");
+      return buildError(RESPONSE_TYPE, 500, "Failed to create one or more destinations", frame.getReplyTo(), sessionState);
     } catch (ExecutionException e) {
-      return new ErrFrame("Failed to create one or more destinations");
+      return buildError(RESPONSE_TYPE, 500, "Failed to create one or more destinations", frame.getReplyTo(), sessionState);
     }
 
     // Prepare response
     JsonObject response = new JsonObject();
-    response.addProperty("type", "io.nats.jetstream.api.v1.stream_create_response");
+    response.addProperty("type", RESPONSE_TYPE);
     response.add("config", json.deepCopy());
     response.addProperty("created", Instant.now().toString());
 
