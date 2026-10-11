@@ -370,10 +370,9 @@ class MqttSn2ClientServerConformanceTest extends BaseTestConfig {
   }
 
   @Test
-  void sessionlessPredefinedAliasPubwosReachesSubscriberWithoutAck() throws Exception {
-    // CSD01 4.3.1 and 4.7.2.1: a predefined alias is valid without a
-    // virtual connection. MQTT-SN 1.2 SUBSCRIBE is routed through its
-    // established session before this unconnected PUBWOS path.
+  void sessionlessPredefinedAliasPubwosIsRejectedOnSharedListener() throws Exception {
+    // Unprotected predefined-alias PUBWOS is ambiguous with MQTT-SN 1.2
+    // SUBSCRIBE on the shared listener and must never reach subscribers.
     List<String> received = new CopyOnWriteArrayList<>();
     try (CloseableMqtt311Client subscriber = new CloseableMqtt311Client(
             "tcp://localhost:1883", "msg324-pubwos-alias-" + UUID.randomUUID());
@@ -399,11 +398,10 @@ class MqttSn2ClientServerConformanceTest extends BaseTestConfig {
       sender.setSoTimeout(500);
       sender.send(new DatagramPacket(wire, wire.length,
           new InetSocketAddress("127.0.0.1", 1884)));
-      WaitForState.waitFor(5, TimeUnit.SECONDS, () -> received.size() == 1);
-      assertEquals(List.of("via-alias"), received);
       assertThrows(SocketTimeoutException.class,
           () -> sender.receive(new DatagramPacket(new byte[256], 256)),
-          "PUBWOS must not send an acknowledgement");
+          "Rejected ambiguous PUBWOS must not send an acknowledgement");
+      assertTrue(received.isEmpty(), "Ambiguous PUBWOS must not deliver an application message");
     }
   }
 
