@@ -177,7 +177,7 @@ public final class IndexedCounterStore implements CounterStore {
   }
 
   private long locate(String key) throws IOException {
-    key = validateKey(key);
+    validateKey(key);
     Long existing = offsets.get(key);
     if (existing != null) return existing;
     byte[] raw = key.getBytes(java.nio.charset.StandardCharsets.UTF_8);
