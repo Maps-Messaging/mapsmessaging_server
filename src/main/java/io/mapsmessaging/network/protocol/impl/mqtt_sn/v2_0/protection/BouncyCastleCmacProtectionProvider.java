@@ -6,7 +6,6 @@ package io.mapsmessaging.network.protocol.impl.mqtt_sn.v2_0.protection;
 
 import java.security.GeneralSecurityException;
 import java.security.MessageDigest;
-import java.util.Arrays;
 import java.util.Set;
 import javax.crypto.Mac;
 import javax.crypto.SecretKey;
