@@ -39,11 +39,6 @@ public class MessageDeliveredListener extends EngineTask {
   @Override
   public Response taskCall() {
     long messageId = acknowledgementController.messageSent();
-    if (subscription.getDestinationImpl().getFullyQualifiedNamespace().startsWith("v2/secure/")) {
-      System.err.printf("[MSG-324] delivery completion processed topic=%s messageId=%d outstanding=%d credit=%d%n",
-          subscription.getDestinationImpl().getFullyQualifiedNamespace(), messageId,
-          acknowledgementController.size(), acknowledgementController.getMaxOutstanding());
-    }
     if (messageId > -1) {
       subscription.completeMessage(messageId);
     }
