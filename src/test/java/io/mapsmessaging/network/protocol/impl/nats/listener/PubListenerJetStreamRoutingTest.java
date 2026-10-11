@@ -26,6 +26,10 @@ import io.mapsmessaging.dto.rest.config.protocol.impl.NatsConfigDTO;
 import io.mapsmessaging.network.protocol.impl.nats.NatsProtocol;
 import io.mapsmessaging.network.protocol.impl.nats.frames.PayloadFrame;
 import io.mapsmessaging.network.protocol.impl.nats.frames.PubFrame;
+import io.mapsmessaging.network.protocol.impl.nats.frames.MsgFrame;
+import com.google.gson.JsonParser;
+import java.nio.charset.StandardCharsets;
+import org.mockito.ArgumentCaptor;
 import io.mapsmessaging.network.protocol.impl.nats.jetstream.JetStreamRequestManager;
 import io.mapsmessaging.network.protocol.impl.nats.state.SessionState;
 import org.junit.jupiter.api.Test;
@@ -122,8 +126,66 @@ class PubListenerJetStreamRoutingTest {
     }
 
     @Override
-    protected void handleMessageStoreToDestination(Destination destination, SessionState state, PayloadFrame frame) {
+    protected long handleMessageStoreToDestination(Destination destination, SessionState state, PayloadFrame frame, boolean streamTarget) {
       delivered.add(destination);
+      return streamTarget ? 1 : 0;
     }
+  }
+
+  @Test
+  void repliesWithPersistedStreamSequenceAfterDelivery() throws Exception {
+    SessionState state = setup(true);
+    Destination core = mock(Destination.class);
+    Destination stream = mock(Destination.class);
+    when(state.getSession().findDestination("ack/order", DestinationType.TOPIC))
+        .thenReturn(CompletableFuture.completedFuture(core));
+    when(state.getSession().findDestination("ACK/ack/order", DestinationType.TOPIC))
+        .thenReturn(CompletableFuture.completedFuture(stream));
+    when(state.getJetStreamRequestManager().getSid("_INBOX.publish")).thenReturn("sid-8");
+
+    PubFrame frame = publish("ack.order");
+    frame.setReplyTo("_INBOX.publish");
+    new RecordingListener(List.of("ACK/ack/order")).frameEvent(frame, state, true);
+
+    ArgumentCaptor<io.mapsmessaging.network.protocol.impl.nats.frames.NatsFrame> sent =
+        ArgumentCaptor.forClass(io.mapsmessaging.network.protocol.impl.nats.frames.NatsFrame.class);
+    verify(state).send(sent.capture());
+    MsgFrame response = assertInstanceOf(MsgFrame.class, sent.getValue());
+    var body = JsonParser.parseString(new String(response.getPayload(), StandardCharsets.UTF_8)).getAsJsonObject();
+    assertEquals("ACK", body.get("stream").getAsString());
+    assertEquals(1L, body.get("seq").getAsLong());
+    assertFalse(body.get("duplicate").getAsBoolean());
+    assertEquals("_INBOX.publish", response.getSubject());
+    assertEquals("sid-8", response.getSubscriptionId());
+  }
+
+  @Test
+  void failedStreamStorageDoesNotPublishSuccessAcknowledgement() throws Exception {
+    SessionState state = setup(true);
+    Destination core = mock(Destination.class);
+    Destination stream = mock(Destination.class);
+    when(state.getSession().findDestination("ack/order", DestinationType.TOPIC))
+        .thenReturn(CompletableFuture.completedFuture(core));
+    when(state.getSession().findDestination("ACK/ack/order", DestinationType.TOPIC))
+        .thenReturn(CompletableFuture.completedFuture(stream));
+
+    PubFrame frame = publish("ack.order");
+    frame.setReplyTo("_INBOX.publish");
+    RecordingListener listener = new RecordingListener(List.of("ACK/ack/order")) {
+      @Override
+      protected long handleMessageStoreToDestination(Destination destination, SessionState engine,
+                                                      PayloadFrame payload, boolean streamTarget) {
+        return 0;
+      }
+    };
+    listener.frameEvent(frame, state, true);
+
+    ArgumentCaptor<io.mapsmessaging.network.protocol.impl.nats.frames.NatsFrame> sent =
+        ArgumentCaptor.forClass(io.mapsmessaging.network.protocol.impl.nats.frames.NatsFrame.class);
+    verify(state).send(sent.capture());
+    MsgFrame response = assertInstanceOf(MsgFrame.class, sent.getValue());
+    var body = JsonParser.parseString(new String(response.getPayload(), StandardCharsets.UTF_8)).getAsJsonObject();
+    assertTrue(body.has("error"));
+    assertFalse(body.has("seq"));
   }
 }

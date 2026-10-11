@@ -28,6 +28,8 @@ import io.mapsmessaging.engine.destination.MessageOverrides;
 import io.mapsmessaging.network.protocol.impl.nats.frames.*;
 import io.mapsmessaging.network.protocol.impl.nats.state.SessionState;
 import io.mapsmessaging.network.protocol.impl.nats.streams.NamespaceManager;
+import com.google.gson.JsonObject;
+import java.nio.charset.StandardCharsets;
 
 import java.io.IOException;
 import java.util.HashMap;
@@ -59,6 +61,10 @@ public class PubListener implements FrameListener {
       destinations.addAll(getMatchingStreamDestinations(msgFrame.getSubject()));
     }
 
+    String publisherReply = msgFrame.getReplyTo();
+    String publishedStream = null;
+    long publishedSequence = 0;
+    boolean streamPublication = false;
     for (String namespace : destinations) {
       CompletableFuture<Destination> future = engine.getSession().findDestination(namespace, DestinationType.TOPIC);
       if (future == null) {
@@ -70,7 +76,15 @@ public class PubListener implements FrameListener {
           engine.send(new ErrFrame("No such destination"));
           return;
         }
-        handleMessageStoreToDestination(destination, engine, msgFrame);
+        boolean streamTarget = !namespace.equals(lookup);
+        long assignedId = handleMessageStoreToDestination(destination, engine, msgFrame, streamTarget);
+        if (streamTarget) {
+          streamPublication = true;
+          if (publishedStream == null) {
+            publishedStream = namespace.substring(0, namespace.indexOf('/'));
+            publishedSequence = assignedId;
+          }
+        }
       } catch (InterruptedException e) {
         Thread.currentThread().interrupt();
         throw new IOException("Interrupted while resolving NATS destination", e);
@@ -85,16 +99,48 @@ public class PubListener implements FrameListener {
         return;
       }
     }
+    if (publisherReply != null && !publisherReply.isBlank() && streamPublication) {
+      if (publishedSequence > 0) {
+        sendPublishAcknowledgement(engine, publisherReply, publishedStream, publishedSequence);
+      } else {
+        sendPublishError(engine, publisherReply, "JetStream message was not stored");
+      }
+    }
     if (engine.isVerbose()) {
       engine.send(new OkFrame());
     }
+  }
+
+  private void sendPublishAcknowledgement(SessionState engine, String replyTo, String stream, long sequence) {
+    JsonObject body = new JsonObject();
+    body.addProperty("stream", stream);
+    body.addProperty("seq", sequence);
+    body.addProperty("duplicate", false);
+    sendPublishResponse(engine, replyTo, body);
+  }
+
+  private void sendPublishError(SessionState engine, String replyTo, String description) {
+    JsonObject error = new JsonObject();
+    error.addProperty("code", 500);
+    error.addProperty("description", description);
+    JsonObject body = new JsonObject();
+    body.add("error", error);
+    sendPublishResponse(engine, replyTo, body);
+  }
+
+  private void sendPublishResponse(SessionState engine, String replyTo, JsonObject body) {
+    MsgFrame response = new MsgFrame(0);
+    response.setSubject(replyTo);
+    response.setSubscriptionId(engine.getJetStreamRequestManager().getSid(replyTo));
+    response.setPayload(body.toString().getBytes(StandardCharsets.UTF_8));
+    engine.send(response);
   }
 
   protected List<String> getMatchingStreamDestinations(String subject) {
     return NamespaceManager.getInstance().getMatchingStreamDestinations(subject);
   }
 
-  protected void handleMessageStoreToDestination(Destination destination, SessionState engine, PayloadFrame msgFrame) throws IOException {
+  protected long handleMessageStoreToDestination(Destination destination, SessionState engine, PayloadFrame msgFrame, boolean streamTarget) throws IOException {
     if (destination != null) {
       Map<String, TypedData> dataMap = new HashMap<>();
       Map<String, String> metaData = new HashMap<>();
@@ -102,11 +148,16 @@ public class PubListener implements FrameListener {
       metaData.put("version", engine.getProtocol().getVersion());
       metaData.put("sessionId", engine.getSession().getName());
       metaData.put("time_ms", "" + System.currentTimeMillis());
+      if (streamTarget) {
+        metaData.put("nats.jetstream", "true");
+        metaData.put("nats.subject", msgFrame.getSubject());
+      }
 
       MessageBuilder mb = new MessageBuilder();
       mb.setDataMap(dataMap)
           .setOpaqueData(msgFrame.getPayload())
           .setMeta(metaData)
+          .storeOffline(streamTarget)
           .setCorrelationData(msgFrame.getReplyTo())
           .setTransformation(engine.getProtocol().getProtocolMessageTransformation());
       Message message = MessageOverrides.createMessageBuilder(engine.getProtocol().getProtocolConfig().getMessageDefaults(), mb).build();
@@ -120,7 +171,9 @@ public class PubListener implements FrameListener {
         }
       }
       destination.storeMessage(message);
+      return message.getIdentifier();
     }
+    return 0;
   }
 
   private Object convert(String value) {

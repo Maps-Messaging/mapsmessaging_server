@@ -23,6 +23,7 @@ import io.nats.client.JetStreamSubscription;
 import io.nats.client.Message;
 import io.nats.client.PullSubscribeOptions;
 import io.nats.client.api.StreamConfiguration;
+import io.nats.client.api.PublishAck;
 import org.junit.jupiter.api.Test;
 
 import java.nio.charset.StandardCharsets;
@@ -53,6 +54,22 @@ class JetStreamAckInteropTest extends JetStreamBaseTest {
       assertEquals("payload", new String(message.getData(), StandardCharsets.UTF_8));
       assertNotNull(message.metaData(), "ACK reply subject must expose valid standard JetStream metadata");
       message.ackSync(Duration.ofSeconds(4));
+    } finally {
+      jetStreamManagement.deleteStream(stream);
+    }
+  }
+
+  @Test
+  void officialPublisherGetsAcknowledgementAfterStreamStorage() throws Exception {
+    String suffix = UUID.randomUUID().toString().replace("-", "");
+    String stream = "PUB_" + suffix;
+    String subject = "publishing." + suffix;
+    jetStreamManagement.addStream(StreamConfiguration.builder().name(stream).addSubjects(subject).build());
+    try {
+      PublishAck acknowledged = jetStream.publish(subject, "archived".getBytes(StandardCharsets.UTF_8));
+      assertEquals(stream, acknowledged.getStream());
+      assertTrue(acknowledged.getSeqno() > 0);
+      assertFalse(acknowledged.isDuplicate());
     } finally {
       jetStreamManagement.deleteStream(stream);
     }
