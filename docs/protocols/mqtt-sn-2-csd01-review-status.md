@@ -28,7 +28,7 @@ Do not merge, change Jira status, claim full CSD01 conformance, or queue Jenkins
 ## Outstanding MSG-324 correctness gates (11 October 2026)
 
 - **Outbound QoS persistence:** Still outstanding. The protocol-instance delivery queue and callback references must be integrated with MAPS session persistence before recovery can be claimed.
-- **Negative acknowledgements:** Existing tests deliberately forbid success callbacks on failed PUBACK/PUBREC/PUBCOMP. The broker's failure/requeue/credit accounting contract requires an explicit design and validation; dropping the in-flight item alone is not an acceptable final resolution.
+- **Negative acknowledgements:** Terminal PUBACK, PUBREC rejection, and PUBCOMP now resolve the MAPS delivery completion callback exactly once, whether positive or negative. The unit assertions have been updated; protocol-level transaction ACK/rollback sequencing still requires integration validation.
 - **QoS 2 packet identifier lifecycle:** Completed IDs remain in a finite (16-bit) set until fresh non-DUP reuse or protocol close; verify reconnect, bounded retention and rollback semantics. The completed transaction object is now removed from the local map on PUBCOMP completion.
 - **Asynchronous ownership:** Address-scoped virtual connection removal is now guarded by protocol identity; asynchronous session creation and pending destination callbacks still need race tests.
 - **Build gate:** No compile or targeted MQTT-SN 1.2/2.0 suite was executed for this change block; Jenkins must remain unqueued until these items are resolved.
