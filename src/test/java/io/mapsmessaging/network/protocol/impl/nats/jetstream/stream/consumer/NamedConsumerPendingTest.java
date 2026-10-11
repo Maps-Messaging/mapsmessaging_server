@@ -114,8 +114,8 @@ class NamedConsumerPendingTest {
     io.mapsmessaging.engine.tasks.MessageResponse secondResponse = mock(io.mapsmessaging.engine.tasks.MessageResponse.class);
     when(firstResponse.getResponse()).thenReturn(firstEvent);
     when(secondResponse.getResponse()).thenReturn(secondEvent);
-    when(firstManager.getNext()).thenReturn(java.util.concurrent.CompletableFuture.completedFuture(firstResponse));
-    when(secondManager.getNext()).thenReturn(java.util.concurrent.CompletableFuture.completedFuture(secondResponse));
+    when(firstManager.getNext()).thenReturn(java.util.concurrent.CompletableFuture.<io.mapsmessaging.engine.tasks.Response>completedFuture(firstResponse));
+    when(secondManager.getNext()).thenReturn(java.util.concurrent.CompletableFuture.<io.mapsmessaging.engine.tasks.Response>completedFuture(secondResponse));
     NamedConsumer consumer = new NamedConsumer("consumer", "stream", new ConsumerConfig(), List.of(first, second));
 
     org.junit.jupiter.api.Assertions.assertSame(firstEvent, consumer.getNextMessage(true));
