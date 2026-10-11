@@ -5,7 +5,6 @@
 package io.mapsmessaging.network.protocol.impl.mqtt_sn.v2_0;
 
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v2_0.packet.MqttSn2AckCodec;
-import io.mapsmessaging.network.protocol.impl.mqtt_sn.v2_0.packet.MqttSn2FrameCodec;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v2_0.packet.MqttSn2PacketType;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v2_0.packet.MqttSn2PublishCodec;
 
