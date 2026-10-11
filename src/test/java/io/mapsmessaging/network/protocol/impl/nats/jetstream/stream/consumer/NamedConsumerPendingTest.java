@@ -99,4 +99,28 @@ class NamedConsumerPendingTest {
     verify(manager, times(1)).getNext();
   }
 
+
+  @Test
+  void successfulPullRotatesAcrossSubscribedStreams() throws Exception {
+    SubscribedEventManager firstManager = mock(SubscribedEventManager.class);
+    SubscribedEventManager secondManager = mock(SubscribedEventManager.class);
+    StreamSubscriptionInfo first = mock(StreamSubscriptionInfo.class);
+    StreamSubscriptionInfo second = mock(StreamSubscriptionInfo.class);
+    when(first.getSubscribedEventManager()).thenReturn(firstManager);
+    when(second.getSubscribedEventManager()).thenReturn(secondManager);
+    io.mapsmessaging.api.MessageEvent firstEvent = mock(io.mapsmessaging.api.MessageEvent.class);
+    io.mapsmessaging.api.MessageEvent secondEvent = mock(io.mapsmessaging.api.MessageEvent.class);
+    io.mapsmessaging.engine.tasks.MessageResponse firstResponse = mock(io.mapsmessaging.engine.tasks.MessageResponse.class);
+    io.mapsmessaging.engine.tasks.MessageResponse secondResponse = mock(io.mapsmessaging.engine.tasks.MessageResponse.class);
+    when(firstResponse.getResponse()).thenReturn(firstEvent);
+    when(secondResponse.getResponse()).thenReturn(secondEvent);
+    when(firstManager.getNext()).thenReturn(java.util.concurrent.CompletableFuture.completedFuture(firstResponse));
+    when(secondManager.getNext()).thenReturn(java.util.concurrent.CompletableFuture.completedFuture(secondResponse));
+    NamedConsumer consumer = new NamedConsumer("consumer", "stream", new ConsumerConfig(), List.of(first, second));
+
+    org.junit.jupiter.api.Assertions.assertSame(firstEvent, consumer.getNextMessage(true));
+    org.junit.jupiter.api.Assertions.assertSame(secondEvent, consumer.getNextMessage(true));
+    verify(firstManager, times(1)).getNext();
+    verify(secondManager, times(1)).getNext();
+  }
 }
