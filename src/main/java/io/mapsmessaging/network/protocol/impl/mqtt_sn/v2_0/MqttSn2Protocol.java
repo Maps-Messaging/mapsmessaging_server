@@ -776,7 +776,7 @@ public final class MqttSn2Protocol extends Protocol {
     if (closingSession != null && !closingSession.isClosed()) {
       SessionManager.getInstance().close(closingSession, cleanWillOnClose);
     }
-    manager.close(address);
+    manager.close(address, this);
     super.close();
   }
 }
