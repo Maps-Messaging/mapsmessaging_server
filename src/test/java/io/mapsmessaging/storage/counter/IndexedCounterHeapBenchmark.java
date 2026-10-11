@@ -19,6 +19,8 @@ import java.util.Locale;
 public final class IndexedCounterHeapBenchmark {
   private IndexedCounterHeapBenchmark() {}
 
+  // Isolated heap experiment: explicit GC, sleep and nulling are intentional measurement steps.
+  @SuppressWarnings({"java:S1854", "java:S1066"})
   public static void main(String[] args) throws Exception {
     int sessions = args.length > 0 ? Integer.parseInt(args[0]) : 1_000_000;
     if (sessions < 1 || sessions > 1_000_000) {
@@ -27,13 +29,11 @@ public final class IndexedCounterHeapBenchmark {
     Path directory = args.length > 1
         ? Path.of(args[1]) : Files.createTempDirectory("counter-heap-isolated-");
     Path base = directory.resolve("counters");
-    if (!Files.exists(base.resolveSibling("counters.idx"))) {
-      if (Files.exists(directory)) {
+    if (!Files.exists(base.resolveSibling("counters.idx")) && Files.exists(directory)) {
         // Atomic bulk loader requires an unpublished directory.
         Path target = directory.resolve("initialized");
         IndexedCounterBulkLoader.initialize(target, entries(sessions));
         base = target.resolve("counters");
-      }
     }
     fullGc();
     long before = heapUsed();
@@ -47,7 +47,7 @@ public final class IndexedCounterHeapBenchmark {
     }
     if (lookupSum != 1000) throw new IllegalStateException("Incorrect index state");
     System.out.printf(Locale.ROOT, "sessions=%d before_bytes=%d loaded_bytes=%d retained_delta_bytes=%d gc_and_probe_ms=%.2f%n",
-        sessions, before, loaded, loaded - before, (System.nanoTime() - started) / 1_000_000.0);
+        sessions, before, loaded, loaded - before, (double) (System.nanoTime() - started) / 1_000_000.0);
     store.close();
     store = null;
     fullGc();
@@ -69,6 +69,8 @@ public final class IndexedCounterHeapBenchmark {
     return bean.getHeapMemoryUsage().getUsed();
   }
 
+  // Sleeping between forced GC requests is intentional in this manual benchmark.
+  @SuppressWarnings("java:S2925")
   private static void fullGc() throws InterruptedException {
     for (int i = 0; i < 3; i++) {
       System.gc();
