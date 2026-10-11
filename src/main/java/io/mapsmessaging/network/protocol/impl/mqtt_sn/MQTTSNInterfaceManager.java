@@ -428,7 +428,27 @@ public class MQTTSNInterfaceManager implements SelectorCallback {
       publishWithoutV2Connection(packet.getFromAddress(), MqttSn2PublishCodec.decode(initial));
       return;
     }
+    acceptDecodedV2Connection(packet, incoming, authenticatedSender);
+  }
+
+  /** Replace an existing v2 virtual connection after CONNECT has been authenticated. */
+  public void replaceV2Connection(Packet packet, ByteBuffer verifiedConnect, byte[] authenticatedSender) throws IOException {
+    UDPSessionState<Protocol> previous = currentSessions.getState(packet.getFromAddress());
+    if (previous != null && previous.getContext() instanceof MqttSn2Protocol oldProtocol) {
+      currentSessions.deleteState(packet.getFromAddress());
+      // Closing the old MAPS session honours its Clean Start, expiry and Will contracts.
+      oldProtocol.close();
+    }
+    acceptDecodedV2Connection(packet, verifiedConnect, authenticatedSender);
+  }
+
+  private void acceptDecodedV2Connection(Packet packet, ByteBuffer incoming, byte[] authenticatedSender) throws IOException {
+    MqttSn2FrameCodec.Frame initial = MqttSn2FrameCodec.decode(incoming.asReadOnlyBuffer());
+    if (initial.type() != MqttSn2PacketType.CONNECT) {
+      throw new IOException("Replacement MQTT-SN 2.0 connection requires CONNECT");
+    }
     var connect = io.mapsmessaging.network.protocol.impl.mqtt_sn.v2_0.packet.MqttSn2ConnectCodec.decode(initial);
+    MqttSn2ProtectionPolicy policy = protectionSession;
     UDPFacadeEndPoint facade = new UDPFacadeEndPoint(
         endPoint, packet.getFromAddress(), endPoint.getServer());
     MqttSn2Protocol protocol = new MqttSn2Protocol(this, facade,
