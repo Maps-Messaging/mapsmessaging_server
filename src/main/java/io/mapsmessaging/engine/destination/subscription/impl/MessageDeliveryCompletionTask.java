@@ -34,11 +34,6 @@ public class MessageDeliveryCompletionTask implements Runnable {
 
   @Override
   public void run() {
-    if (subscription.getDestinationImpl().getFullyQualifiedNamespace().startsWith("v2/secure/")) {
-      System.err.printf("[MSG-324] completion callback topic=%s outstanding=%d credit=%d%n",
-          subscription.getDestinationImpl().getFullyQualifiedNamespace(),
-          acknowledgementController.size(), acknowledgementController.getMaxOutstanding());
-    }
     subscription.getDestinationImpl().submit(new MessageDeliveredListener(subscription, acknowledgementController));
   }
 }
