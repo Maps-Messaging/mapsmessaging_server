@@ -45,6 +45,7 @@ public class ResourceProperties {
   private String buildVersion;
   private Map<String, Object> schema;
   private String schemaId;
+  private boolean jetStreamArchive;
 
   public ResourceProperties() {}
 

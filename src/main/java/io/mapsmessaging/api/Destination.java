@@ -54,6 +54,10 @@ public class Destination implements BaseDestination {
     this.securityContext = context;
     protectedResource = new ProtectedResource(impl.getResourceType().getName(), impl.getFullyQualifiedNamespace(), null);
   }
+  public void markJetStreamArchive() throws IOException {
+    destinationImpl.markJetStreamArchive();
+  }
+
   public boolean isClosed(){
     return destinationImpl.isClosed();
   }

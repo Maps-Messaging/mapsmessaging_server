@@ -85,7 +85,7 @@ public class StreamUpdateHandler extends JetStreamFrameHandler {
     subjectsArray.forEach(e -> newSubjects.add(e.getAsString()));
 
     Set<String> currentSubjects = info.getSubjects().stream()
-        .map(s -> s.getDestination().getFullyQualifiedNamespace())
+        .map(s -> s.getSubject())
         .collect(Collectors.toSet());
 
 // Subjects to add
@@ -106,7 +106,7 @@ public class StreamUpdateHandler extends JetStreamFrameHandler {
     if (sessionState.getProtocol().getNatsConfig().isEnableStreamDelete()) {
       for (String subjectName : toRemove) {
         info.getSubjects().stream()
-            .filter(s -> s.getDestination().getFullyQualifiedNamespace().equals(subjectName))
+            .filter(s -> s.getSubject().equals(subjectName))
             .findFirst()
             .ifPresent(s -> deletes.add(sessionState.getSession().deleteDestinationImpl(s.getDestination())));
       }
@@ -119,14 +119,26 @@ public class StreamUpdateHandler extends JetStreamFrameHandler {
       all.get(20, TimeUnit.SECONDS);
     } catch (TimeoutException e) {
       return new ErrFrame("Timed out waiting for destination creation");
-    } catch (ExecutionException | InterruptedException e) {
+    } catch (InterruptedException e) {
       Thread.currentThread().interrupt();
-      return new ErrFrame("Failed to create one or more destinations");
+      return buildError("io.nats.jetstream.api.v1.stream_update_response", 500,
+          "Interrupted while updating stream destinations", frame.getReplyTo(), sessionState);
+    } catch (ExecutionException e) {
+      return buildError("io.nats.jetstream.api.v1.stream_update_response", 500,
+          "Failed to update stream destinations", frame.getReplyTo(), sessionState);
     }
 
+    for (CompletableFuture<Destination> pending : futures) {
+      Destination destination = pending.getNow(null);
+      if (destination == null) {
+        return buildError("io.nats.jetstream.api.v1.stream_update_response", 500, "Unable to create stream subject",
+            frame.getReplyTo(), sessionState);
+      }
+      destination.markJetStreamArchive();
+    }
     PayloadFrame payloadFrame = (PayloadFrame) msg;
     JsonObject responseJson = new JsonObject();
-    responseJson.addProperty("type", "io.nats.jetstream.api.v1.stream_create_response");
+    responseJson.addProperty("type", "io.nats.jetstream.api.v1.stream_update_response");
     responseJson.add("config", json.deepCopy());
     responseJson.addProperty("created", Instant.now().toString());
     payloadFrame.setPayload(gson.toJson(responseJson).getBytes(StandardCharsets.UTF_8));

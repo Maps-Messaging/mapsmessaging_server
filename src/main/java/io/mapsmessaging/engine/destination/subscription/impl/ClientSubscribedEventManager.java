@@ -54,6 +54,13 @@ public class ClientSubscribedEventManager implements SubscribedEventManager {
   }
 
   @Override
+  public void replayStoredMessages() throws IOException {
+    if (subscription instanceof DestinationSubscription destinationSubscription) {
+      destination.replayJetStreamArchive(destinationSubscription);
+    }
+  }
+
+  @Override
   public SubscriptionContext getContext() {
     return subscription.getContext();
   }

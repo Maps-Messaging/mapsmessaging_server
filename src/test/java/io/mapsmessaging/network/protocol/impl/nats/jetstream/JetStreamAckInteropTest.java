@@ -74,4 +74,23 @@ class JetStreamAckInteropTest extends JetStreamBaseTest {
       jetStreamManagement.deleteStream(stream);
     }
   }
+
+  @Test
+  void archivedPublicationCanBeConsumedAfterConsumerCreation() throws Exception {
+    String suffix = UUID.randomUUID().toString().replace("-", "");
+    String stream = "HISTORY_" + suffix;
+    String subject = "historical." + suffix;
+    jetStreamManagement.addStream(StreamConfiguration.builder().name(stream).addSubjects(subject).build());
+    try {
+      io.nats.client.api.PublishAck publication = jetStream.publish(subject, "before-consumer".getBytes(StandardCharsets.UTF_8));
+      assertTrue(publication.getSeqno() > 0);
+      JetStreamSubscription consumer = jetStream.subscribe(null, PullSubscribeOptions.builder().stream(stream).build());
+      List<Message> messages = consumer.fetch(1, Duration.ofSeconds(4));
+      assertEquals(1, messages.size());
+      assertEquals("before-consumer", new String(messages.get(0).getData(), StandardCharsets.UTF_8));
+      messages.get(0).ackSync(Duration.ofSeconds(4));
+    } finally {
+      jetStreamManagement.deleteStream(stream);
+    }
+  }
 }

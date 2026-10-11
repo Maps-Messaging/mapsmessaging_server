@@ -89,6 +89,18 @@ public class StreamCreateHandler extends JetStreamFrameHandler {
       return buildError(RESPONSE_TYPE, 500, "Failed to create one or more destinations", frame.getReplyTo(), sessionState);
     }
 
+    for (CompletableFuture<Destination> pending : futures) {
+      Destination destination = pending.getNow(null);
+      if (destination == null) {
+        return buildError(RESPONSE_TYPE, 500, "Stream destination creation returned null", frame.getReplyTo(), sessionState);
+      }
+      try {
+        destination.markJetStreamArchive();
+      } catch (IOException ioException) {
+        return buildError(RESPONSE_TYPE, 500, "Unable to initialise persistent stream storage", frame.getReplyTo(), sessionState);
+      }
+    }
+
     // Prepare response
     JsonObject response = new JsonObject();
     response.addProperty("type", RESPONSE_TYPE);

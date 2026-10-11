@@ -47,6 +47,10 @@ public interface SubscribedEventManager {
    */
   void ackReceived(long messageId);
 
+  /** Replays already archived messages for a new JetStream consumer, where supported. */
+  default void replayStoredMessages() throws IOException {
+  }
+
   /**
    * Retrieves the SubscriptionContext that created this subscription
    *

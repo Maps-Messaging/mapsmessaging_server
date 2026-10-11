@@ -45,7 +45,8 @@ public class NonDelayedStoreMessageTask extends StoreMessageTask {
   public Response taskCall() throws Exception {
     destination.getStats().messagePublished();
     boolean hasSubscribers = subscriptionManager.hasSubscriptions();
-    boolean jetStreamArchive = message.isStoreOffline() && "true".equals(message.getMeta().get("nats.jetstream"));
+    boolean jetStreamArchive = destination.getResourceProperties() != null && destination.getResourceProperties().isJetStreamArchive()
+        || message.isStoreOffline() && "true".equals(message.getMeta().get("nats.jetstream"));
     if (hasSubscribers || message.isRetain() || jetStreamArchive) {
       storeMessage(destination, message);
       if (hasSubscribers) {

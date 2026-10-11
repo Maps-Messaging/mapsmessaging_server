@@ -101,6 +101,7 @@ public class CreateHandler extends JetStreamFrameHandler {
             return buildError(TYPE, "Unable to register consumer subscription", replyTo, sessionState);
           }
           registered.add(new StreamSubscriptionInfo(manager, streamInfo, subscriptionAlias));
+          manager.replayStoredMessages();
         }
         consumer = new NamedConsumer(name, stream, config, registered);
         if (!sessionState.addNamedConsumer(consumer)) {
