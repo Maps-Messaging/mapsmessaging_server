@@ -19,7 +19,7 @@ Tracking: MSG-324. This document distinguishes implementation changes from execu
 
 ## Cleanup and deployment gates
 
-The legacy `MQTT_SNProtocolV2`, `PacketFactoryV2`, and their packet/state/listener hierarchy appear disconnected from the active `MqttSn2Protocol` instantiation path, but deletion requires checking all tests, compatibility extensions and protocol references. Keep those files until the correctness changes above have passed local validation.
+The obsolete `MQTT_SNProtocolV2`, `PacketFactoryV2`, and the legacy v2 packet/state/listener hierarchy have been removed (32 files). The active `MqttSn2Protocol`, its CSD01 codecs, security providers and the MQTT-SN 1.2 implementation are retained. Compile and regression-test the removals before merging; absence of references in repository searches is not proof of runtime compatibility.
 
 Format all remaining active Java sources using the repository's Google Java conventions with a 180-character line limit, and use the standard Maps Messaging copyright/license header. Formatting must not alter packet handling or protocol semantics.
 
