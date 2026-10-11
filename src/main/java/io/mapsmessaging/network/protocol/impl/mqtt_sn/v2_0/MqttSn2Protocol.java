@@ -483,15 +483,15 @@ public final class MqttSn2Protocol extends Protocol {
           Message message = MessageOverrides.createMessageBuilder(
               getProtocolConfig().getMessageDefaults(), builder).build();
           if (publish.qos() == 2) {
-            Transaction transaction = session.get().startTransaction(
-                qos2TransactionName(publish.packetIdentifier()));
+            Transaction transaction = publishingSession.startTransaction(
+                publishingSession.getName() + ":" + publish.packetIdentifier());
             try {
               transaction.add(destination, message);
               synchronized (incomingQos2) {
                 incomingQos2.put(publish.packetIdentifier(), transaction);
               }
             } catch (IOException | RuntimeException error) {
-              session.get().closeTransaction(transaction);
+              publishingSession.closeTransaction(transaction);
               throw error;
             }
           } else {
