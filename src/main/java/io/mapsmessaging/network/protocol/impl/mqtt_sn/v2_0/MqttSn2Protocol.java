@@ -564,6 +564,7 @@ public final class MqttSn2Protocol extends Protocol {
           AUTH_LOGGER.log(ServerLogMessages.MQTT_SN_EXCEPTION_RASIED, failure);
         } finally {
           synchronized (incomingQos2) {
+            incomingQos2.remove(ack.packetIdentifier(), completed);
             incomingQos2AwaitingPubComp.remove(ack.packetIdentifier());
           }
         }
