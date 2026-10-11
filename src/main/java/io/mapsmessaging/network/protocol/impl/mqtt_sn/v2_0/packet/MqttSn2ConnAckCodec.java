@@ -30,6 +30,8 @@ public final class MqttSn2ConnAckCodec {
   private MqttSn2ConnAckCodec() {
   }
 
+  // Protocol wire-layout validation follows CSD01 field order; keep it auditable.
+  @SuppressWarnings("java:S3776")
   public static ByteBuffer encode(ConnAck ack) {
     if (ack.packetIdentifier() < 1 || ack.packetIdentifier() > 65535
         || ack.reasonCode() < 0 || ack.reasonCode() > 255) {
@@ -93,6 +95,8 @@ public final class MqttSn2ConnAckCodec {
     body.put(clientId).flip();
     return MqttSn2FrameCodec.encode(MqttSn2PacketType.CONNACK, body);
   }
+  // Protocol wire-layout validation follows CSD01 field order; keep it auditable.
+  @SuppressWarnings("java:S3776")
   public static ConnAck decode(MqttSn2FrameCodec.Frame frame) throws IOException {
     if (frame.type() != MqttSn2PacketType.CONNACK) {
       throw new IOException("Expected CONNACK");
