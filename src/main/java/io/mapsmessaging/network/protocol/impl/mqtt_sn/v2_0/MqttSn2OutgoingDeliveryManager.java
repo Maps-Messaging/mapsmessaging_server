@@ -80,6 +80,8 @@ public final class MqttSn2OutgoingDeliveryManager {
   }
 
   /** Applies a peer acknowledgement and starts the next queued delivery when possible. */
+  // QoS1 and QoS2 acknowledgement transitions are intentionally explicit.
+  @SuppressWarnings({"java:S3776", "java:S1871"})
   public ByteBuffer acknowledge(MqttSn2AckCodec.Ack ack, long now) throws IOException {
     Runnable completion = null;
     ByteBuffer response;
