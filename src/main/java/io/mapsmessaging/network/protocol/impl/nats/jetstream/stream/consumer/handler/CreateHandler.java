@@ -85,21 +85,7 @@ public class CreateHandler extends JetStreamFrameHandler {
     if (config == null) {
       config = new ConsumerConfig();
     }
-    if (config.getAckPolicy() == null) {
-      config.setAckPolicy(AckPolicy.EXPLICIT);
-    }
-    if (config.getReplayPolicy() == null) {
-      config.setReplayPolicy(ReplayPolicy.INSTANT);
-    }
-    if (config.getDeliverPolicy() == null) {
-      config.setDeliverPolicy(DeliverPolicy.ALL);
-    }
-    if (config.getMaxDeliver() == 0) {
-      config.setMaxDeliver(-1);
-    }
-    if (config.getMaxAckPending() == null) {
-      config.setMaxAckPending(1000);
-    }
+    applyDefaults(config);
     List<StreamInfo> subjectList = streamInfoList.getSubjects();
     if (config.getFilterSubject() != null) {
       subjectList = filterSubjects(config.getFilterSubject(), subjectList);
@@ -135,6 +121,24 @@ public class CreateHandler extends JetStreamFrameHandler {
     PayloadFrame payloadFrame = (PayloadFrame) msg;
     payloadFrame.setPayload((gson.toJson(createResponse)).getBytes(StandardCharsets.UTF_8));
     return msg;
+  }
+
+  static void applyDefaults(ConsumerConfig config) {
+    if (config.getAckPolicy() == null) {
+      config.setAckPolicy(AckPolicy.EXPLICIT);
+    }
+    if (config.getReplayPolicy() == null) {
+      config.setReplayPolicy(ReplayPolicy.INSTANT);
+    }
+    if (config.getDeliverPolicy() == null) {
+      config.setDeliverPolicy(DeliverPolicy.ALL);
+    }
+    if (config.getMaxDeliver() == 0) {
+      config.setMaxDeliver(-1);
+    }
+    if (config.getMaxAckPending() == null) {
+      config.setMaxAckPending(1000);
+    }
   }
 
   private ClientAcknowledgement getClientAcknowledgement(ConsumerConfig config) {
