@@ -23,6 +23,8 @@ public final class MqttSn2EncapsulationCodec {
       MqttSn2PacketType.DISCONNECT, MqttSn2PacketType.SLEEPREQ,
       MqttSn2PacketType.PINGREQ);
 
+  // Packet bytes use explicit defensive copies and wire-level comparisons.
+  @SuppressWarnings("java:S6218")
   public record Forwarder(byte[] addressing, byte[] embeddedPacket) {
     public Forwarder {
       addressing = addressing.clone();
@@ -32,6 +34,8 @@ public final class MqttSn2EncapsulationCodec {
     @Override public byte[] embeddedPacket() { return embeddedPacket.clone(); }
   }
 
+  // Packet bytes use explicit defensive copies and wire-level comparisons.
+  @SuppressWarnings("java:S6218")
   public record Connection(String clientIdentifier, byte[] embeddedPacket) {
     public Connection { embeddedPacket = embeddedPacket.clone(); }
     @Override public byte[] embeddedPacket() { return embeddedPacket.clone(); }
