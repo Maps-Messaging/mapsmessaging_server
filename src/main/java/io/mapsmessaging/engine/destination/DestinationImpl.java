@@ -684,7 +684,11 @@ public class DestinationImpl implements BaseDestination {
    * @throws IOException If the file system raises any File I/O exceptions during the operation
    */
   public void commit(long transactionId) throws IOException {
-    submit(new TransactionalMessageProcessor(this, subscriptionManager, transactionMessageManager, transactionId));
+    // A successful transaction commit must mean that its destination work has
+    // completed. Otherwise QoS 2 can send PUBCOMP while delivery is still
+    // pending, or even after an asynchronous delivery failure.
+    handleTask(new TransactionalMessageProcessor(
+        this, subscriptionManager, transactionMessageManager, transactionId));
   }
 
   /**
