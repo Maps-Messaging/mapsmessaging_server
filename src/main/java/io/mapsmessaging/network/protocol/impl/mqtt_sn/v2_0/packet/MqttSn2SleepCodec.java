@@ -12,6 +12,8 @@ public final class MqttSn2SleepCodec {
 
   public record SleepRequest(boolean retainAliases, int packetIdentifier, long durationSeconds) {}
   public record SleepResponse(int packetIdentifier, Long durationSeconds, Integer reasonCode) {}
+  // WAKEUP has no payload fields by design, per CSD01.
+  @SuppressWarnings("java:S2094")
   public record Wakeup() {}
 
   private MqttSn2SleepCodec() {}
