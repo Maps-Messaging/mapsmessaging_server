@@ -102,4 +102,27 @@ class TransactionHandlerTest {
     assertNull(handler.handle(frame, null, session));
     verifyNoInteractions(subscription);
   }
+
+  @Test
+  void explicitAcknowledgementCompletesDelivery() throws Exception {
+    when(frame.getPayload()).thenReturn("+ACK".getBytes(StandardCharsets.UTF_8));
+    assertNull(handler.handle(frame, null, session));
+    verify(subscription).ackReceived(42L);
+  }
+
+  @Test
+  void terminalAcknowledgementCompletesMapDelivery() throws Exception {
+    when(frame.getPayload()).thenReturn("+TERM".getBytes(StandardCharsets.UTF_8));
+    assertNull(handler.handle(frame, null, session));
+    verify(subscription).ackReceived(42L);
+    verify(subscription, never()).rollbackReceived(anyLong());
+  }
+
+  @Test
+  void unsupportedProgressCommandDoesNotAcknowledge() throws Exception {
+    when(frame.getPayload()).thenReturn("+WPI".getBytes(StandardCharsets.UTF_8));
+    assertNull(handler.handle(frame, null, session));
+    verifyNoInteractions(subscription);
+  }
+
 }
