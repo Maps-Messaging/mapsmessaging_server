@@ -11,5 +11,22 @@ import java.nio.ByteBuffer;
 public interface MqttSn2ProtectionPolicy {
   boolean hasDurableReplayStore();
   ByteBuffer receive(ByteBuffer wire) throws IOException;
+
+  /** Authenticated sender identity, available only after verification succeeds. */
+  record Authenticated(ByteBuffer plaintext, byte[] senderIdentifier) {
+    public Authenticated {
+      senderIdentifier = senderIdentifier == null ? null : senderIdentifier.clone();
+    }
+
+    @Override
+    public byte[] senderIdentifier() {
+      return senderIdentifier == null ? null : senderIdentifier.clone();
+    }
+  }
+
+  /** Compatibility hook for policies that do not expose authenticated sender IDs. */
+  default Authenticated receiveAuthenticated(ByteBuffer wire) throws IOException {
+    return new Authenticated(receive(wire), null);
+  }
   ByteBuffer send(ByteBuffer inner) throws IOException;
 }
