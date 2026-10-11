@@ -455,6 +455,10 @@ public class DestinationSubscription extends Subscription {
       schedule();
       return 1;
     }
+    if (message.getQualityOfService().getLevel() == 2) {
+      System.err.printf("[MSG-324] QoS2 rejected hibernating subscriber=%s session=%s storeOffline=%s%n",
+          getName(), sessionId, message.isStoreOffline());
+    }
     messagesIgnored++;
     return 0;
   }
