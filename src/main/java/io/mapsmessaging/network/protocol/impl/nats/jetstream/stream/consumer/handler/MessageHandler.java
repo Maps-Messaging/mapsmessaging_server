@@ -49,7 +49,7 @@ public class MessageHandler  extends JetStreamFrameHandler {
     }
 
     String[] parts = subject.split("\\.");
-    if (parts.length < 6) {
+    if (parts.length != 7) {
       return buildError(TYPE,"Invalid MSG.NEXT subject", replyTo, sessionState);
     }
 
