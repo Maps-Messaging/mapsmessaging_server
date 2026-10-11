@@ -22,6 +22,8 @@ public final class MqttSn2ProtectionCodec {
     int length(int scheme, int tagLengthCode) throws IOException;
   }
 
+  // Protocol value container; payload bytes are cloned and compared explicitly in tests.
+  @SuppressWarnings("java:S6218")
   public record Envelope(int scheme, int tagLengthCode, byte[] senderIdentifier,
                          byte[] random, byte[] cryptographicMaterial,
                          byte[] monotonicCounter, byte[] authenticatedPrefix,
