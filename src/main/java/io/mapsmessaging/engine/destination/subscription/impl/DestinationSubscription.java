@@ -437,11 +437,19 @@ public class DestinationSubscription extends Subscription {
           && messageSession != null
           && context.noLocalMessages()
           && messageSession.equals(sessionId)) {
+        if (message.getQualityOfService().getLevel() == 2) {
+          System.err.printf("[MSG-324] QoS2 rejected by NoLocal subscriber=%s session=%s publisher=%s%n",
+              getName(), sessionId, messageSession);
+        }
         messagesIgnored++;
         return 0;
       }
     }
     if (!hibernating || message.isStoreOffline()) {
+      if (message.getQualityOfService().getLevel() == 2) {
+        System.err.printf("[MSG-324] QoS2 accepted subscriber=%s session=%s messageId=%d%n",
+            getName(), sessionId, message.getIdentifier());
+      }
       messageStateManager.register(message);
       messagesRegistered++;
       schedule();
