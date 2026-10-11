@@ -108,11 +108,11 @@ public final class IndexedCounterCompactor {
         if (keyLength <= 0 || keyLength > MAX_KEY_BYTES || length - offset < keyLength + 16L) {
           throw new IOException("Corrupt counter index entry");
         }
-        ByteBuffer record = read(channel, keyLength + 16, offset);
-        byte[] data = record.array();
+        ByteBuffer entryBuffer = read(channel, keyLength + 16, offset);
+        byte[] data = entryBuffer.array();
         CRC32C crc = new CRC32C();
         crc.update(data, 0, data.length - 4);
-        if (record.getInt(data.length - 4) != (int) crc.getValue()) {
+        if (entryBuffer.getInt(data.length - 4) != (int) crc.getValue()) {
           throw new IOException("Counter index checksum mismatch");
         }
         byte[] keyBytes = new byte[keyLength];
@@ -134,6 +134,8 @@ public final class IndexedCounterCompactor {
     }
   }
 
+  // Kept adjacent to the file format validator for ease of auditing offsets.
+  @SuppressWarnings("java:S3398")
   private static ByteBuffer read(FileChannel channel, int length, long offset) throws IOException {
     ByteBuffer buffer = ByteBuffer.allocate(length).order(ByteOrder.BIG_ENDIAN);
     while (buffer.hasRemaining()) {
