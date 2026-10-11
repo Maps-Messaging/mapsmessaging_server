@@ -77,6 +77,8 @@ public final class MqttSn2Protocol extends Protocol {
   private final MqttSn2OutgoingDeliveryManager outgoing = new MqttSn2OutgoingDeliveryManager();
   private final Map<Integer, Transaction> incomingQos2 = new HashMap<>();
   private final java.util.Set<Integer> incomingQos2Pending = new java.util.HashSet<>();
+  // Retain completed packet identifiers so repeated PUBREL never commits twice.
+  private final java.util.Set<Integer> incomingQos2Committed = new java.util.HashSet<>();
   private final java.util.ArrayDeque<MessageEvent> sleepingQueue = new java.util.ArrayDeque<>();
   private String clientIdentifier = "waiting";
   private MqttSn2ConnectCodec.Connect connectRequest;
@@ -408,6 +410,13 @@ public final class MqttSn2Protocol extends Protocol {
 
     if (publish.qos() == 2) {
       synchronized (incomingQos2) {
+        if (incomingQos2Committed.contains(publish.packetIdentifier())) {
+          if (publish.duplicate()) {
+            // Retransmission of the already completed publication.
+            return;
+          }
+          incomingQos2Committed.remove(publish.packetIdentifier());
+        }
         if (incomingQos2Pending.contains(publish.packetIdentifier())) {
           // The original asynchronous destination lookup has not finished.
           // Never begin another transaction or acknowledge an unpersisted packet.
@@ -472,6 +481,11 @@ public final class MqttSn2Protocol extends Protocol {
   private void receivePubRel(MqttSn2AckCodec.Ack ack) throws IOException {
     Transaction transaction;
     synchronized (incomingQos2) {
+      if (incomingQos2Committed.contains(ack.packetIdentifier())) {
+        send(MqttSn2AckCodec.encode(new MqttSn2AckCodec.Ack(
+            MqttSn2PacketType.PUBCOMP, ack.packetIdentifier(), null)), null);
+        return;
+      }
       if (incomingQos2Pending.contains(ack.packetIdentifier())) {
         throw new IOException("PUBREL received before PUBREC transaction is ready");
       }
@@ -481,14 +495,21 @@ public final class MqttSn2Protocol extends Protocol {
             MqttSn2PacketType.PUBCOMP, ack.packetIdentifier(), 0x92)), null);
         return;
       }
-      incomingQos2.remove(ack.packetIdentifier());
+      incomingQos2Committed.add(ack.packetIdentifier());
+    }
+    try {
+      transaction.commit();
+    } catch (IOException | RuntimeException failure) {
+      synchronized (incomingQos2) {
+        incomingQos2Committed.remove(ack.packetIdentifier());
+      }
+      throw failure;
     }
     if (transaction != null) {
       // The destination's transactional commit dispatches delivery asynchronously.
       // Keep the committed transaction registered until PUBCOMP is transmitted,
       // matching the MQTT 5 PUBREL lifecycle; removing it before the write
       // completion can race the destination's commit/delivery work.
-      transaction.commit();
     }
     Transaction completed = transaction;
     send(MqttSn2AckCodec.encode(new MqttSn2AckCodec.Ack(
