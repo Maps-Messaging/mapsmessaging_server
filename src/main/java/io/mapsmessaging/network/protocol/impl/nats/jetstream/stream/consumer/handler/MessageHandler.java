@@ -77,7 +77,7 @@ public class MessageHandler  extends JetStreamFrameHandler {
         payloadFrame.setReplyTo(replyToSubject.toSubject());
         payloadFrame.setSubscriptionId(sessionState.getJetStreamRequestManager().getSid(replyTo));
         sessionState.send(payloadFrame);
-      } else if (!request.isNo_wait()) {
+      } else {
         break;
       }
     }
