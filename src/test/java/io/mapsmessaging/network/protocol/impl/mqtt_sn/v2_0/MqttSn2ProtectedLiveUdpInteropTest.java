@@ -181,6 +181,10 @@ class MqttSn2ProtectedLiveUdpInteropTest extends BaseTestConfig {
           ProtectionCodec.decode(receive(client), provider).mqttSnPacket()));
       assertEquals(PacketType.PUBREC, rec.type());
       assertEquals(21, MqttSnCodec.decodeAck(rec).packetIdentifier());
+      assertTrue(MqttSnCodec.decodeAck(rec).reasonCode() == null
+              || MqttSnCodec.decodeAck(rec).reasonCode() == 0,
+          "QoS2 PUBREC must signal accepted transaction; actual reason "
+              + MqttSnCodec.decodeAck(rec).reasonCode());
       send(client, remote, wrap(provider, scheme, 7,
           MqttSnCodec.encodeAck(PacketType.PUBREL, 21, null)));
       var firstQ2 = MqttSnCodec.decode(ByteBuffer.wrap(
