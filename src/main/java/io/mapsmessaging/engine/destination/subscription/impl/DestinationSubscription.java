@@ -453,10 +453,11 @@ public class DestinationSubscription extends Subscription {
       messageStateManager.register(message);
       messagesRegistered++;
       if (message.getQualityOfService().getLevel() == 2) {
-        System.err.printf("[MSG-324] QoS2 readiness subscriber=%s ready=%s paused=%s sync=%s hibernating=%s atRest=%s contextEmpty=%s canSend=%s flowBlocked=%s%n",
+        System.err.printf("[MSG-324] QoS2 readiness subscriber=%s ready=%s paused=%s sync=%s hibernating=%s atRest=%s contextEmpty=%s canSend=%s flowBlocked=%s outstanding=%d credit=%d%n",
             getName(), isReady(), isPaused, sync, hibernating,
             messageStateManager.hasAtRestMessages(), isContextEmpty(),
-            acknowledgementController.canSend(), flowControlBlocked);
+            acknowledgementController.canSend(), flowControlBlocked,
+            acknowledgementController.size(), acknowledgementController.getMaxOutstanding());
       }
       schedule();
       return 1;
