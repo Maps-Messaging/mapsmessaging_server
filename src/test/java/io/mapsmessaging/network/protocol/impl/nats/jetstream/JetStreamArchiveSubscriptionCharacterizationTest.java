@@ -106,10 +106,10 @@ class JetStreamArchiveSubscriptionCharacterizationTest extends JetStreamBaseTest
       assertNotNull(archive);
       assertNotNull(createdOnly);
       destination.storeMessage(new MessageBuilder()
-          .setMeta(Map.of("stream", "created"))
+          .setMeta(new java.util.HashMap<>(Map.of("stream", "created")))
           .setOpaqueData("order-1".getBytes(StandardCharsets.UTF_8)).build());
       destination.storeMessage(new MessageBuilder()
-          .setMeta(Map.of("stream", "paid"))
+          .setMeta(new java.util.HashMap<>(Map.of("stream", "paid")))
           .setOpaqueData("order-2".getBytes(StandardCharsets.UTF_8)).build());
 
       assertEquals(2, archive.getPending(), "Archive sees the whole shared topic");
