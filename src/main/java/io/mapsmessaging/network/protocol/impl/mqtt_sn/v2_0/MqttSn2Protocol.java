@@ -463,14 +463,23 @@ public final class MqttSn2Protocol extends Protocol {
       incomingQos2.remove(ack.packetIdentifier());
     }
     if (transaction != null) {
-      try {
-        transaction.commit();
-      } finally {
-        session.get().closeTransaction(transaction);
-      }
+      // The destination's transactional commit dispatches delivery asynchronously.
+      // Keep the committed transaction registered until PUBCOMP is transmitted,
+      // matching the MQTT 5 PUBREL lifecycle; removing it before the write
+      // completion can race the destination's commit/delivery work.
+      transaction.commit();
     }
+    Transaction completed = transaction;
     send(MqttSn2AckCodec.encode(new MqttSn2AckCodec.Ack(
-        MqttSn2PacketType.PUBCOMP, ack.packetIdentifier(), null)), null);
+        MqttSn2PacketType.PUBCOMP, ack.packetIdentifier(), null)), () -> {
+      if (completed != null) {
+        try {
+          session.get().closeTransaction(completed);
+        } catch (IOException failure) {
+          AUTH_LOGGER.log(ServerLogMessages.MQTT_SN_EXCEPTION_RASIED, failure);
+        }
+      }
+    });
   }
 
   private Transaction qos2Transaction(int packetIdentifier) {
