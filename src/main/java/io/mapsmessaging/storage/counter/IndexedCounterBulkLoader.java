@@ -66,10 +66,10 @@ public final class IndexedCounterBulkLoader {
           if (key == null || key.isBlank()) throw new IOException("Invalid bulk key");
           byte[] bytes = key.getBytes(StandardCharsets.UTF_8);
           if (bytes.length > 4096 || !seen.add(key)) throw new IOException("Oversize or duplicate bulk key");
-          ByteBuffer record = ByteBuffer.allocate(4 + bytes.length + 8 + 4).order(ByteOrder.BIG_ENDIAN);
-          record.putInt(bytes.length).put(bytes).putLong(offset);
-          record.putInt(crc(record.array(), 0, record.position())).flip();
-          indexWriter.append(record);
+          ByteBuffer indexEntry = ByteBuffer.allocate(4 + bytes.length + 8 + 4).order(ByteOrder.BIG_ENDIAN);
+          indexEntry.putInt(bytes.length).put(bytes).putLong(offset);
+          indexEntry.putInt(crc(indexEntry.array(), 0, indexEntry.position())).flip();
+          indexWriter.append(indexEntry);
           // The two valid generations allow ordinary updates immediately.
           valueWriter.append(slot(0, entry.value()));
           valueWriter.append(slot(0, entry.value()));
