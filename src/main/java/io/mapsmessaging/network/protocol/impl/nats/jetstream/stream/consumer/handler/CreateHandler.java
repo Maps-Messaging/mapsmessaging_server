@@ -81,7 +81,25 @@ public class CreateHandler extends JetStreamFrameHandler {
       name = "_Ephemeral-" + UUID.randomUUID();
     }
 
-    ConsumerConfig config = gson.fromJson(json, ConsumerConfig.class);
+    ConsumerConfig config = json == null ? new ConsumerConfig() : gson.fromJson(json, ConsumerConfig.class);
+    if (config == null) {
+      config = new ConsumerConfig();
+    }
+    if (config.getAckPolicy() == null) {
+      config.setAckPolicy(AckPolicy.EXPLICIT);
+    }
+    if (config.getReplayPolicy() == null) {
+      config.setReplayPolicy(ReplayPolicy.INSTANT);
+    }
+    if (config.getDeliverPolicy() == null) {
+      config.setDeliverPolicy(DeliverPolicy.ALL);
+    }
+    if (config.getMaxDeliver() == 0) {
+      config.setMaxDeliver(-1);
+    }
+    if (config.getMaxAckPending() == null) {
+      config.setMaxAckPending(1000);
+    }
     List<StreamInfo> subjectList = streamInfoList.getSubjects();
     if (config.getFilterSubject() != null) {
       subjectList = filterSubjects(config.getFilterSubject(), subjectList);
@@ -102,11 +120,6 @@ public class CreateHandler extends JetStreamFrameHandler {
       subscriptionInfoList.add(streamSubscriptionInfo);
     }
     NamedConsumer namedConsumer = new NamedConsumer(name, stream, config, subscriptionInfoList);
-    config.setAckPolicy(AckPolicy.EXPLICIT);
-    config.setReplayPolicy(ReplayPolicy.INSTANT);
-    config.setDeliverPolicy(DeliverPolicy.ALL);
-    config.setMaxDeliver(-1);
-    config.setMaxAckPending(1000);
     sessionState.getNamedConsumers().put(name, namedConsumer);
     ConsumerCreateResponse createResponse = new ConsumerCreateResponse();
     createResponse.setName(name);
