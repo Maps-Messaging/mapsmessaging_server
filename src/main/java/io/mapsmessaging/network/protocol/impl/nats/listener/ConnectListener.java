@@ -48,7 +48,6 @@ public class ConnectListener implements FrameListener {
       try {
         session.login();
         engine.setSession(session);
-        engine.setAuthenticatedCredentials(session.getSecurityContext().getUsername(), connect.getPass());
         ProtocolMessageTransformation transformation = TransformationManager.getInstance().getTransformation(
             engine.getProtocol().getEndPoint().getProtocol(),
             engine.getProtocol().getEndPoint().getName(),

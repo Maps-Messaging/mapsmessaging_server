@@ -28,13 +28,14 @@ import io.mapsmessaging.api.SubscriptionContextBuilder;
 import io.mapsmessaging.api.features.ClientAcknowledgement;
 import io.mapsmessaging.api.features.DestinationType;
 import io.mapsmessaging.network.ProtocolClientConnection;
+import io.mapsmessaging.engine.session.SessionContext;
+import io.mapsmessaging.engine.session.security.SecurityContext;
 import io.mapsmessaging.network.protocol.impl.nats.state.SessionState;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.util.Arrays;
 import java.util.HexFormat;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
@@ -67,44 +68,59 @@ public final class DurableConsumerSession {
   }
 
   public static Session open(SessionState connection, String stream, String consumer) throws IOException {
-    Session authenticated = connection.getSession();
-    String user = connection.getAuthenticatedUser();
-    if (authenticated == null || authenticated.isClosed() || user == null || user.isBlank()) {
-      throw new IOException("An authenticated NATS connection is required for durable consumers");
-    }
-    if (!user.equals(authenticated.getSecurityContext().getUsername())) {
-      throw new IOException("Durable consumer user does not match the authenticated connection");
-    }
-
-    String id = sessionId(user, stream, consumer);
+    SessionContext context = authenticatedContext(connection, stream, consumer);
+    String id = context.getId();
     if (ATTACHED.putIfAbsent(id, connection) != null) {
       throw new IOException("Durable consumer is already attached to an active NATS connection");
     }
-    char[] password = connection.copyAuthenticatedPassword();
-    try {
-      SessionContextBuilder builder = new SessionContextBuilder(id,
-          new ProtocolClientConnection(connection.getProtocol()));
-      builder.setUsername(user);
-      builder.setPassword(password);
-      builder.setPersistentSession(true);
-      builder.setSessionExpiry(DURABLE_SESSION_EXPIRY_SECONDS);
-      builder.setReceiveMaximum(connection.getProtocol().getMaxReceiveSize());
 
-      Session persistent = await(SessionManager.getInstance().createAsync(builder.build(), connection.getProtocol()));
+    try {
+      Session persistent = await(SessionManager.getInstance().createAsync(context, connection.getProtocol()));
       try {
         persistent.login();
         persistent.resumeState();
         return persistent;
-      } catch (IOException failedLogin) {
+      } catch (IOException | RuntimeException failedLogin) {
         SessionManager.getInstance().closeAsync(persistent, true);
         throw failedLogin;
       }
     } catch (IOException | RuntimeException failure) {
       ATTACHED.remove(id, connection);
       throw failure;
-    } finally {
-      Arrays.fill(password, (char) 0);
     }
+  }
+
+  /**
+   * Derive a persistent consumer session from an already authenticated MAPS session.
+   * No password is copied, cached, or obtained from the NATS CONNECT frame.
+   * MAPS still performs its normal persistent-session permission checks at login.
+   */
+  static SessionContext authenticatedContext(SessionState connection, String stream, String consumer) throws IOException {
+    if (connection == null) {
+      throw new IOException("An authenticated NATS connection is required for durable consumers");
+    }
+    Session authenticated = connection.getSession();
+    if (authenticated == null || authenticated.isClosed()) {
+      throw new IOException("An active authenticated MAPS session is required for durable consumers");
+    }
+
+    SecurityContext securityContext = authenticated.getSecurityContext();
+    if (securityContext == null || !securityContext.isLoggedIn() || securityContext.getSubject() == null) {
+      throw new IOException("The NATS MAPS session has not completed authentication");
+    }
+    String user = securityContext.getUsername();
+    if (user == null || user.isBlank()) {
+      throw new IOException("The authenticated MAPS session has no user identity");
+    }
+
+    return new SessionContextBuilder(sessionId(user, stream, consumer),
+        new ProtocolClientConnection(connection.getProtocol()))
+        .setUsername(user)
+        .isAuthorized(true)
+        .setPersistentSession(true)
+        .setSessionExpiry(DURABLE_SESSION_EXPIRY_SECONDS)
+        .setReceiveMaximum(connection.getProtocol().getMaxReceiveSize())
+        .build();
   }
 
   public static CompletableFuture<Session> close(SessionState connection, Session durable) {

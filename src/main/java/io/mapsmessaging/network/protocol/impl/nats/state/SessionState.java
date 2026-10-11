@@ -174,7 +174,6 @@ public class SessionState implements CloseHandler, CompletionHandler {
 
   public void close() throws IOException {
     isValid = false;
-    clearAuthenticatedCredentials();
     List<CompletableFuture<Session>> closures = new ArrayList<>();
     IOException problem = null;
     for (NamedConsumer consumer : namedConsumers.values()) {
