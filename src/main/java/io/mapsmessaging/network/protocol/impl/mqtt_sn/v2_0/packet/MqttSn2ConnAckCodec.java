@@ -13,6 +13,8 @@ import java.nio.charset.StandardCharsets;
 /** MQTT-SN 2.0 CSD01 CONNACK encoder matching the reference-client decoder. */
 public final class MqttSn2ConnAckCodec {
 
+  // Protocol value container; payload bytes are cloned and compared explicitly in tests.
+  @SuppressWarnings("java:S6218")
   public record ConnAck(boolean sessionPresent, int packetIdentifier, int reasonCode,
                         Long sessionExpirySeconds, Integer serverKeepAliveSeconds,
                         String authenticationMethod, byte[] authenticationData,
