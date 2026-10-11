@@ -409,11 +409,17 @@ public class MQTTSNInterfaceManager implements SelectorCallback {
   private void acceptV2Connection(Packet packet) throws IOException {
     ByteBuffer incoming = packet.getRawBuffer().asReadOnlyBuffer();
     MqttSn2ProtectionPolicy policy = protectionSession;
+    byte[] authenticatedSender = null;
     if (isProtectedV2(packet)) {
       if (policy == null) {
         throw new IOException("Protected MQTT-SN 2.0 CONNECT without endpoint policy");
       }
-      incoming = policy.receive(incoming);
+      MqttSn2ProtectionPolicy.Authenticated verified = policy.receiveAuthenticated(incoming);
+      authenticatedSender = verified.senderIdentifier();
+      if (authenticatedSender == null || authenticatedSender.length != 8) {
+        throw new IOException("Protected CONNECT missing authenticated sender identity");
+      }
+      incoming = verified.plaintext();
     } else if (policy != null) {
       throw new IOException("Unprotected MQTT-SN 2.0 CONNECT on secured endpoint");
     }
@@ -427,9 +433,12 @@ public class MQTTSNInterfaceManager implements SelectorCallback {
         endPoint, packet.getFromAddress(), endPoint.getServer());
     MqttSn2Protocol protocol = new MqttSn2Protocol(this, facade,
         packet.getFromAddress(), selectorTask, mqttSnConfig);
-    if (policy != null) protocol.configureProtection(policy);
+    if (policy != null) {
+      protocol.configureProtection(policy);
+      protocol.setAuthenticatedSender(authenticatedSender);
+    }
     UDPSessionState<Protocol> state = new UDPSessionState<>(protocol);
-    state.setClientIdentifier(connect.clientIdentifier());
+    state.setClientIdentifier(protocol.brokerSessionIdentifier(connect.clientIdentifier()));
     currentSessions.addState(packet.getFromAddress(), state);
     try {
       protocol.start(incoming.asReadOnlyBuffer());
