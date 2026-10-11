@@ -30,8 +30,11 @@ import java.util.List;
 
 public class MqttSnConfig extends MqttSnConfigDTO implements Config {
 
+  // Persisted separately by toConfigurationProperties; not part of the REST DTO wire form.
+  @SuppressWarnings("java:S1948")
   private final ConfigurationProperties protectionConfiguration;
-  private final java.util.function.Supplier<char[]> protectionEntryPasswordSupplier;
+  // A runtime-only secret supplier must never be serialized with endpoint configuration.
+  private final transient java.util.function.Supplier<char[]> protectionEntryPasswordSupplier;
 
   /** Endpoint-only secure settings are deliberately excluded from REST DTO serialization. */
   @com.fasterxml.jackson.annotation.JsonIgnore
