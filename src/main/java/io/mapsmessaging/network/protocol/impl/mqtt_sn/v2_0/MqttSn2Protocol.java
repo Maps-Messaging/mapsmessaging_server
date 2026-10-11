@@ -431,7 +431,10 @@ public final class MqttSn2Protocol extends Protocol {
           succeeded = true;
         }
       } catch (IOException | RuntimeException error) {
-        // Failure is reported by the appropriate negative acknowledgement.
+        // Preserve the underlying destination/transaction failure while
+        // reporting it in PUBACK/PUBREC. Acknowledgement type alone does not
+        // mean a QoS 1/2 publication was accepted.
+        AUTH_LOGGER.log(ServerLogMessages.MQTT_SN_EXCEPTION_RASIED, error);
       } finally {
         if (publish.qos() == 2) {
           synchronized (incomingQos2) {
