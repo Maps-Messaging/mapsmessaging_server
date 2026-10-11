@@ -13,6 +13,8 @@ import java.nio.charset.StandardCharsets;
 /** MQTT-SN 2.0 CSD01 CONNECT decoder and encoder, section 3.1. */
 public final class MqttSn2ConnectCodec {
 
+  // Protocol value container; payload bytes are cloned and compared explicitly in tests.
+  @SuppressWarnings("java:S6218")
   public record Connect(boolean cleanStart, boolean will, boolean authentication,
                         boolean addressChanges, boolean serverSuggestedValues,
                         int packetIdentifier, int keepAliveSeconds, int maximumPacketSize,
