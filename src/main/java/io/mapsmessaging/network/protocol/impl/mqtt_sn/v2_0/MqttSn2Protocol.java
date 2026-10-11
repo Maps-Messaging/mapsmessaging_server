@@ -79,6 +79,7 @@ public final class MqttSn2Protocol extends Protocol {
   private final java.util.Set<Integer> incomingQos2Pending = new java.util.HashSet<>();
   // Retain completed packet identifiers so repeated PUBREL never commits twice.
   private final java.util.Set<Integer> incomingQos2Committed = new java.util.HashSet<>();
+  private final java.util.Set<Integer> incomingQos2AwaitingPubComp = new java.util.HashSet<>();
   private final java.util.ArrayDeque<MessageEvent> sleepingQueue = new java.util.ArrayDeque<>();
   private byte[] authenticatedSender;
   private String clientIdentifier = "waiting";
@@ -437,10 +438,13 @@ public final class MqttSn2Protocol extends Protocol {
     if (publish.qos() == 2) {
       synchronized (incomingQos2) {
         if (incomingQos2Committed.contains(publish.packetIdentifier())) {
-          if (publish.duplicate()) {
-            // Retransmission of the already completed publication.
+          if (publish.duplicate() || incomingQos2AwaitingPubComp.contains(publish.packetIdentifier())) {
+            // Previously committed; never construct a second broker transaction.
+            send(MqttSn2AckCodec.encode(new MqttSn2AckCodec.Ack(
+                MqttSn2PacketType.PUBREC, publish.packetIdentifier(), null)), null);
             return;
           }
+          // Fresh packet-ID reuse is permitted only after PUBCOMP has completed.
           incomingQos2Committed.remove(publish.packetIdentifier());
         }
         if (incomingQos2Pending.contains(publish.packetIdentifier())) {
@@ -522,6 +526,7 @@ public final class MqttSn2Protocol extends Protocol {
         return;
       }
       incomingQos2Committed.add(ack.packetIdentifier());
+      incomingQos2AwaitingPubComp.add(ack.packetIdentifier());
     }
     // The destination dispatches delivery asynchronously. Keep the transaction
     // open until PUBCOMP transmission finishes, but never commit it twice.
@@ -530,6 +535,7 @@ public final class MqttSn2Protocol extends Protocol {
     } catch (IOException | RuntimeException failure) {
       synchronized (incomingQos2) {
         incomingQos2Committed.remove(ack.packetIdentifier());
+        incomingQos2AwaitingPubComp.remove(ack.packetIdentifier());
       }
       throw failure;
     }
@@ -538,9 +544,14 @@ public final class MqttSn2Protocol extends Protocol {
         MqttSn2PacketType.PUBCOMP, ack.packetIdentifier(), null)), () -> {
       if (completed != null) {
         try {
-          session.get().closeTransaction(completed);
+          Session activeSession = session.get();
+          if (activeSession != null) activeSession.closeTransaction(completed);
         } catch (IOException failure) {
           AUTH_LOGGER.log(ServerLogMessages.MQTT_SN_EXCEPTION_RASIED, failure);
+        } finally {
+          synchronized (incomingQos2) {
+            incomingQos2AwaitingPubComp.remove(ack.packetIdentifier());
+          }
         }
       }
     });
