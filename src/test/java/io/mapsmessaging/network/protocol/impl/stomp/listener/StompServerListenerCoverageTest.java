@@ -371,6 +371,7 @@ class StompServerListenerCoverageTest {
         Arguments.of("1.0,1.2", 1.2f),
         Arguments.of("1.1,1.2", 1.2f),
         Arguments.of("1.0,1.1,1.2", 1.2f),
+        Arguments.of("1.15,1.1,1.3", 1.1f),
         Arguments.of(" 1.0 , 1.2 ", 1.2f)
     );
   }
@@ -383,7 +384,11 @@ class StompServerListenerCoverageTest {
         Arguments.of("abc"),
         Arguments.of("2.0"),
         Arguments.of("0.9"),
-        Arguments.of("1.2,garbage")
+        Arguments.of("1.15"),
+        Arguments.of("1.20"),
+        Arguments.of("1.2,garbage"),
+        Arguments.of("1.2, "),
+        Arguments.of("1.2,,1.1")
     );
   }
 

@@ -261,6 +261,34 @@ class StompFrameComplianceTest {
     assertThrows(StompProtocolException.class, () -> parse(frameText));
   }
 
+
+  @Test
+  void trimsTrailingSpacesBeforeCrLfInStompHeaders() throws Exception {
+    for (String header : new String[] {
+        "destination:/folder/topic1 ",
+        "destination : /folder/topic1   ",
+        " destination  :  /folder/topic1\t "
+    }) {
+      Send send = assertInstanceOf(
+          Send.class,
+          parse("SEND\r\n" + header + "\r\n\r\npayload\0"));
+
+      assertTrue(send.isValid());
+      assertEquals("/folder/topic1", send.getDestination());
+    }
+  }
+
+  @Test
+  void trimsHeaderWhitespaceWithoutChangingInternalValueSpaces() throws Exception {
+    Send send = assertInstanceOf(
+        Send.class,
+        parse("SEND\r\ndestination : /folder/topic1\r\n"
+            + "note :  first  second  \r\n\r\npayload\0"));
+
+    assertTrue(send.isValid());
+    assertEquals("first  second", send.getHeader("note"));
+  }
+
   private Frame parse(String value) throws Exception {
     Packet packet = new Packet(ByteBuffer.wrap(value.getBytes(StandardCharsets.UTF_8)));
     Frame frame = new FrameFactory(1024, false, false).parseFrame(packet);
