@@ -105,7 +105,8 @@ public final class AmqpInboundFrameValidator {
     int doff = frameHeader[4] & 0xff;
     int type = frameHeader[5] & 0xff;
     int channel = ((frameHeader[6] & 0xff) << 8) | (frameHeader[7] & 0xff);
-    if (size < HEADER_LENGTH || doff < 2 || (long) doff * 4 > size) {
+    if (size < HEADER_LENGTH || size > Integer.MAX_VALUE
+        || doff < 2 || (long) doff * 4 > size) {
       throw new IOException("Malformed AMQP frame SIZE or DOFF");
     }
     if (type != (sasl ? 1 : 0)) {
