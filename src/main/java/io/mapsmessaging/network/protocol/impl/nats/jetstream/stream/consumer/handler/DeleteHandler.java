@@ -78,16 +78,16 @@ public class DeleteHandler extends JetStreamFrameHandler {
         if (subscription.getSubscriptionAlias() == null) {
           continue;
         }
-        if (namedConsumer.getDurableMapsSession() != null) {
-          namedConsumer.getDurableMapsSession().removeSubscription(subscription.getSubscriptionAlias());
+        if (namedConsumer.getMapsSession() != null) {
+          namedConsumer.getMapsSession().removeSubscription(subscription.getSubscriptionAlias());
         } else {
           sessionState.removeSubscription(subscription.getSubscriptionAlias());
         }
       }
       namedConsumer.close();
-      if (namedConsumer.getDurableMapsSession() != null) {
+      if (namedConsumer.getMapsSession() != null) {
         try {
-          DurableConsumerSession.close(sessionState, namedConsumer.getDurableMapsSession()).get();
+          DurableConsumerSession.close(sessionState, namedConsumer.getMapsSession()).get();
         } catch (InterruptedException interrupted) {
           Thread.currentThread().interrupt();
           throw new IOException("Interrupted deleting durable consumer", interrupted);

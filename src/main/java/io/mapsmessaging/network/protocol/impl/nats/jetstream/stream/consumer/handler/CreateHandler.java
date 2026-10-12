@@ -27,6 +27,8 @@ import io.mapsmessaging.network.protocol.impl.nats.frames.ErrFrame;
 import io.mapsmessaging.network.protocol.impl.nats.frames.NatsFrame;
 import io.mapsmessaging.network.protocol.impl.nats.frames.PayloadFrame;
 import io.mapsmessaging.network.protocol.impl.nats.jetstream.stream.JetStreamFrameHandler;
+import io.mapsmessaging.network.protocol.impl.nats.jetstream.stream.JetStreamArchiveManager;
+import io.mapsmessaging.network.protocol.impl.nats.jetstream.stream.JetStreamSubscriptionInitializer;
 import io.mapsmessaging.network.protocol.impl.nats.jetstream.stream.consumer.NamedConsumer;
 import io.mapsmessaging.network.protocol.impl.nats.jetstream.stream.consumer.DurableConsumerSession;
 import io.mapsmessaging.network.protocol.impl.nats.jetstream.stream.consumer.data.*;
@@ -82,6 +84,12 @@ public class CreateHandler extends JetStreamFrameHandler {
     if (durable && !name.equals(config.getDurableName())) {
       return buildError(TYPE, 400, "Durable name must match the consumer name", replyTo, sessionState);
     }
+    // The initial archive-copy operation currently supports the all/new policies.
+    // Do not silently replay ALL when the client requested LAST or a start position.
+    if (config.getDeliverPolicy() != DeliverPolicy.ALL && config.getDeliverPolicy() != DeliverPolicy.NEW) {
+      return buildError(TYPE, 400, "JetStream delivery policy is not implemented: "
+          + config.getDeliverPolicy(), replyTo, sessionState);
+    }
 
     List<StreamInfo> subjects = streamInfoList.getSubjects();
     if (config.getFilterSubject() != null && !config.getFilterSubject().isBlank()) {
@@ -93,40 +101,40 @@ public class CreateHandler extends JetStreamFrameHandler {
 
     NamedConsumer consumer;
     List<StreamSubscriptionInfo> registered = new ArrayList<>();
-    Session durableSession = null;
+    Session consumerSession = null;
     synchronized (sessionState) {
       if (sessionState.contains(name)) {
         return buildError(TYPE, "Duplicate consumer name", replyTo, sessionState);
       }
       try {
-        if (durable) {
-          durableSession = DurableConsumerSession.open(sessionState, stream, name);
-        }
+        consumerSession = durable
+            ? DurableConsumerSession.open(sessionState, stream, name)
+            : DurableConsumerSession.openEphemeral(sessionState);
         int index = 0;
         for (StreamInfo streamInfo : subjects) {
           String subscriptionAlias = "jetstream:" + stream + ":" + name + ":" + index++;
-          SubscribedEventManager manager;
-          if (durableSession != null) {
-            manager = DurableConsumerSession.subscribe(durableSession,
-                stream + "." + streamInfo.getSubject(), subscriptionAlias, getClientAcknowledgement(config), 1);
-          } else {
-            manager = subscribeConsumerSubject(sessionState, config, streamInfo, stream, subscriptionAlias);
-          }
+          String mapsTopic = streamInfo.getDestination().getFullyQualifiedNamespace();
+          String archiveId = JetStreamArchiveManager.getInstance().ensureArchive(sessionState, stream, mapsTopic);
+          boolean resumed = durable && consumerSession.isRestored()
+              && streamInfo.getDestination().getSubscription(consumerSession.getName()) != null;
+          SubscribedEventManager manager =
+              subscribeConsumerSubject(consumerSession, config, streamInfo, stream, subscriptionAlias);
           if (manager == null) {
             throw new IOException("Unable to register consumer subscription " + streamInfo.getSubject());
           }
+          if (!resumed && config.getDeliverPolicy() == DeliverPolicy.ALL) {
+            JetStreamSubscriptionInitializer.seedFromArchive(
+                streamInfo.getDestination(), archiveId, consumerSession.getName());
+          }
           registered.add(new StreamSubscriptionInfo(manager, streamInfo, subscriptionAlias));
-          // JetStream historical replay is not provided by the generic MAPS subscription API.
         }
         consumer = new NamedConsumer(name, stream, config, registered);
         if (!sessionState.addNamedConsumer(consumer)) {
           throw new IOException("Duplicate consumer name");
         }
-        if (durableSession != null) {
-          consumer.attachDurableMapsSession(durableSession);
-        }
+        consumer.attachMapsSession(consumerSession);
       } catch (IOException | RuntimeException exception) {
-        cleanupFailedConsumer(sessionState, durableSession, registered);
+        cleanupFailedConsumer(sessionState, consumerSession, registered);
         return buildError(TYPE, "Failed to register consumer: " + exception.getMessage(), replyTo, sessionState);
       }
     }
@@ -143,23 +151,17 @@ public class CreateHandler extends JetStreamFrameHandler {
     return response;
   }
 
-  private void cleanupFailedConsumer(SessionState state, Session durable, List<StreamSubscriptionInfo> registered) {
-    if (durable == null) {
-      releaseSubscriptions(state, registered);
+  private void cleanupFailedConsumer(SessionState state, Session consumerSession,
+                                     List<StreamSubscriptionInfo> registered) {
+    if (consumerSession == null) {
       return;
     }
-    if (!durable.isRestored()) {
+    if (!consumerSession.isRestored()) {
       for (StreamSubscriptionInfo subscription : registered) {
-        durable.removeSubscription(subscription.getSubscriptionAlias());
+        consumerSession.removeSubscription(subscription.getSubscriptionAlias());
       }
     }
-    DurableConsumerSession.close(state, durable);
-  }
-
-  private void releaseSubscriptions(SessionState sessionState, List<StreamSubscriptionInfo> registered) {
-    for (StreamSubscriptionInfo info : registered) {
-      sessionState.removeSubscription(info.getSubscriptionAlias());
-    }
+    DurableConsumerSession.close(state, consumerSession);
   }
 
   private static String consumerName(ConsumerConfig config) {
@@ -172,11 +174,11 @@ public class CreateHandler extends JetStreamFrameHandler {
     return "_Ephemeral-" + UUID.randomUUID();
   }
 
-  SubscribedEventManager subscribeConsumerSubject(SessionState sessionState, ConsumerConfig config, StreamInfo streamInfo,
+  SubscribedEventManager subscribeConsumerSubject(Session consumerSession, ConsumerConfig config, StreamInfo streamInfo,
                                                    String streamName, String alias) throws IOException {
     ClientAcknowledgement acknowledgement = getClientAcknowledgement(config);
     String subject = streamName + "." + streamInfo.getSubject().replace('/', '.');
-    return sessionState.subscribeJetStream(subject, alias, acknowledgement, 1);
+    return DurableConsumerSession.subscribe(consumerSession, subject, alias, acknowledgement, 1);
   }
 
   ConsumerConfig parseConfig(JsonObject request) {

@@ -76,6 +76,43 @@ class JetStreamAckInteropTest extends JetStreamBaseTest {
   }
 
   @Test
+  void independentLateConsumersGetArchiveHistoryAndSubsequentPublications() throws Exception {
+    String suffix = UUID.randomUUID().toString().replace("-", "");
+    String stream = "COPY_" + suffix;
+    String subject = "copy." + suffix;
+    jetStreamManagement.addStream(StreamConfiguration.builder().name(stream).addSubjects(subject).build());
+    try {
+      for (int i = 1; i <= 3; i++) {
+        jetStream.publish(subject, ("event-" + i).getBytes(StandardCharsets.UTF_8));
+      }
+
+      PullSubscribeOptions options = PullSubscribeOptions.builder().stream(stream).build();
+      JetStreamSubscription first = jetStream.subscribe(null, options);
+      JetStreamSubscription second = jetStream.subscribe(null, options);
+
+      for (int i = 4; i <= 5; i++) {
+        jetStream.publish(subject, ("event-" + i).getBytes(StandardCharsets.UTF_8));
+      }
+
+      List<Message> firstMessages = first.fetch(5, Duration.ofSeconds(10));
+      List<Message> secondMessages = second.fetch(5, Duration.ofSeconds(10));
+      List<String> expected = List.of("event-1", "event-2", "event-3", "event-4", "event-5");
+      assertEquals(expected, firstMessages.stream()
+          .map(message -> new String(message.getData(), StandardCharsets.UTF_8)).toList());
+      assertEquals(expected, secondMessages.stream()
+          .map(message -> new String(message.getData(), StandardCharsets.UTF_8)).toList());
+      for (Message message : firstMessages) {
+        message.ackSync(Duration.ofSeconds(4));
+      }
+      for (Message message : secondMessages) {
+        message.ackSync(Duration.ofSeconds(4));
+      }
+    } finally {
+      jetStreamManagement.deleteStream(stream);
+    }
+  }
+
+  @Test
   void archivedPublicationCanBeConsumedAfterConsumerCreation() throws Exception {
     String suffix = UUID.randomUUID().toString().replace("-", "");
     String stream = "HISTORY_" + suffix;

@@ -28,6 +28,7 @@ import io.mapsmessaging.network.protocol.impl.nats.frames.ErrFrame;
 import io.mapsmessaging.network.protocol.impl.nats.frames.NatsFrame;
 import io.mapsmessaging.network.protocol.impl.nats.frames.PayloadFrame;
 import io.mapsmessaging.network.protocol.impl.nats.jetstream.stream.JetStreamFrameHandler;
+import io.mapsmessaging.network.protocol.impl.nats.jetstream.stream.JetStreamArchiveManager;
 import io.mapsmessaging.network.protocol.impl.nats.state.SessionState;
 import io.mapsmessaging.network.protocol.impl.nats.streams.NamespaceManager;
 import io.mapsmessaging.network.protocol.impl.nats.streams.StreamInfoList;
@@ -134,7 +135,14 @@ public class StreamUpdateHandler extends JetStreamFrameHandler {
         return buildError("io.nats.jetstream.api.v1.stream_update_response", 500, "Unable to create stream subject",
             frame.getReplyTo(), sessionState);
       }
-      // Stream persistence is not configured through shared MAPS destination extensions.
+      try {
+        JetStreamArchiveManager.getInstance().ensureArchive(sessionState, streamName,
+            destination.getFullyQualifiedNamespace());
+      } catch (IOException failure) {
+        return buildError("io.nats.jetstream.api.v1.stream_update_response", 500,
+            "Unable to initialise JetStream archive: " + failure.getMessage(),
+            frame.getReplyTo(), sessionState);
+      }
     }
     PayloadFrame payloadFrame = (PayloadFrame) msg;
     JsonObject responseJson = new JsonObject();

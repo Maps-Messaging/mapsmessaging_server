@@ -20,6 +20,7 @@
 package io.mapsmessaging.network.protocol.impl.nats.listener;
 
 import io.mapsmessaging.api.Destination;
+import io.mapsmessaging.api.NatsJetStreamStorage;
 import io.mapsmessaging.api.MessageBuilder;
 import io.mapsmessaging.api.features.DestinationType;
 import io.mapsmessaging.api.message.Message;
@@ -28,6 +29,7 @@ import io.mapsmessaging.engine.destination.MessageOverrides;
 import io.mapsmessaging.network.protocol.impl.nats.frames.*;
 import io.mapsmessaging.network.protocol.impl.nats.state.SessionState;
 import io.mapsmessaging.network.protocol.impl.nats.streams.NamespaceManager;
+import io.mapsmessaging.network.protocol.impl.nats.jetstream.stream.JetStreamArchiveManager;
 import com.google.gson.JsonObject;
 import java.nio.charset.StandardCharsets;
 
@@ -77,6 +79,14 @@ public class PubListener implements FrameListener {
           return;
         }
         boolean streamTarget = !namespace.equals(lookup);
+        if (streamTarget) {
+          int separator = namespace.indexOf('/');
+          if (separator <= 0) {
+            throw new IOException("Invalid JetStream destination: " + namespace);
+          }
+          ensureArchiveForStream(engine, namespace.substring(0, separator),
+              destination.getFullyQualifiedNamespace());
+        }
         long assignedId = handleMessageStoreToDestination(destination, engine, msgFrame, streamTarget);
         if (streamTarget) {
           streamPublication = true;
@@ -95,7 +105,11 @@ public class PubListener implements FrameListener {
         }
         throw new IOException("Failed to resolve NATS destination", cause);
       } catch (IOException e) {
-        engine.send(new ErrFrame(e.getMessage()));
+        if (publisherReply != null && !publisherReply.isBlank() && !namespace.equals(lookup)) {
+          sendPublishError(engine, publisherReply, e.getMessage());
+        } else {
+          engine.send(new ErrFrame(e.getMessage()));
+        }
         return;
       }
     }
@@ -134,6 +148,10 @@ public class PubListener implements FrameListener {
     response.setSubscriptionId(engine.getJetStreamRequestManager().getSid(replyTo));
     response.setPayload(body.toString().getBytes(StandardCharsets.UTF_8));
     engine.send(response);
+  }
+
+  protected void ensureArchiveForStream(SessionState connection, String stream, String destination) throws IOException {
+    JetStreamArchiveManager.getInstance().ensureArchive(connection, stream, destination);
   }
 
   protected List<String> getMatchingStreamDestinations(String subject) {
@@ -176,10 +194,11 @@ public class PubListener implements FrameListener {
   }
 
   protected long storeToMapDestination(Destination destination, Message message, boolean streamTarget) throws IOException {
+    if (streamTarget) {
+      return NatsJetStreamStorage.store(destination, message);
+    }
     destination.storeMessage(message);
-    // MAPS assigns the identifier to the original message only when no overrides clone it.
-    // Never fabricate a JetStream sequence when MAPS cannot report a stored identifier.
-    return streamTarget ? message.getIdentifier() : 0;
+    return 0;
   }
 
   private Object convert(String value) {

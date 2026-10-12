@@ -179,9 +179,9 @@ public class SessionState implements CloseHandler, CompletionHandler {
     for (NamedConsumer consumer : namedConsumers.values()) {
       try {
         consumer.close();
-        if (consumer.getDurableMapsSession() != null) {
+        if (consumer.getMapsSession() != null) {
           closures.add(io.mapsmessaging.network.protocol.impl.nats.jetstream.stream.consumer.DurableConsumerSession.close(
-              this, consumer.getDurableMapsSession()));
+              this, consumer.getMapsSession()));
         }
       } catch (RuntimeException failed) {
         if (problem == null) {

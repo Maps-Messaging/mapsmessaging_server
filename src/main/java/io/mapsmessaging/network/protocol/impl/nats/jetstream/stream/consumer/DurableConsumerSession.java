@@ -41,6 +41,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
+import java.util.UUID;
 
 /**
  * Durable JetStream consumers use MAPS persistent sessions, not a second cursor store.
@@ -121,6 +122,31 @@ public final class DurableConsumerSession {
         .setSessionExpiry(DURABLE_SESSION_EXPIRY_SECONDS)
         .setReceiveMaximum(connection.getProtocol().getMaxReceiveSize())
         .build();
+  }
+
+  /**
+   * Each ephemeral JetStream consumer owns a separate MAPS subscription session.
+   * No NATS CONNECT password is retained or replayed.
+   */
+  public static Session openEphemeral(SessionState connection) throws IOException {
+    String user = authenticatedContext(connection, "_ephemeral_", "_ephemeral_").getUsername();
+    SessionContextBuilder builder = new SessionContextBuilder(
+        "nats-jetstream-ephemeral-" + UUID.randomUUID(),
+        new ProtocolClientConnection(connection.getProtocol()));
+    builder.setUsername(user);
+    builder.isAuthorized(true);
+    builder.setPersistentSession(false);
+    builder.setSessionExpiry(0);
+    builder.setReceiveMaximum(connection.getProtocol().getMaxReceiveSize());
+    Session ephemeral = await(SessionManager.getInstance().createAsync(builder.build(), connection.getProtocol()));
+    try {
+      ephemeral.login();
+      ephemeral.resumeState();
+      return ephemeral;
+    } catch (IOException | RuntimeException failure) {
+      SessionManager.getInstance().closeAsync(ephemeral, true);
+      throw failure;
+    }
   }
 
   public static CompletableFuture<Session> close(SessionState connection, Session durable) {

@@ -52,13 +52,13 @@ public class NamedConsumer {
     return thread;
   });
 
-  private io.mapsmessaging.api.Session durableMapsSession;
+  private io.mapsmessaging.api.Session mapsSession;
 
-  public synchronized void attachDurableMapsSession(io.mapsmessaging.api.Session session) {
-    if (durableMapsSession != null) {
-      throw new IllegalStateException("Durable MAPS session already attached");
+  public synchronized void attachMapsSession(io.mapsmessaging.api.Session session) {
+    if (mapsSession != null) {
+      throw new IllegalStateException("JetStream MAPS session already attached");
     }
-    durableMapsSession = java.util.Objects.requireNonNull(session);
+    mapsSession = java.util.Objects.requireNonNull(session);
   }
 
   private final ConsumerConfig config;

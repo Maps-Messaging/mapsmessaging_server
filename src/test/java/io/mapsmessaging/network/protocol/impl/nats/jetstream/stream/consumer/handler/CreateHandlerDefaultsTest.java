@@ -25,7 +25,11 @@ import io.mapsmessaging.network.protocol.impl.nats.jetstream.stream.consumer.dat
 import io.mapsmessaging.network.protocol.impl.nats.jetstream.stream.consumer.data.DeliverPolicy;
 import io.mapsmessaging.network.protocol.impl.nats.jetstream.stream.consumer.data.ReplayPolicy;
 import org.junit.jupiter.api.Test;
-import io.mapsmessaging.network.protocol.impl.nats.state.SessionState;
+import io.mapsmessaging.api.Session;
+import io.mapsmessaging.api.Destination;
+import io.mapsmessaging.engine.destination.subscription.SubscriptionContext;
+import io.mapsmessaging.api.features.DestinationType;
+import java.util.concurrent.CompletableFuture;
 import io.mapsmessaging.network.protocol.impl.nats.streams.StreamInfo;
 import io.mapsmessaging.api.features.ClientAcknowledgement;
 
@@ -62,14 +66,19 @@ class CreateHandlerDefaultsTest {
   }
   @Test
   void consumerSubscriptionFailureIsObservableToCreation() throws Exception {
-    SessionState session = mock(SessionState.class);
+    Session session = mock(Session.class);
     StreamInfo stream = mock(StreamInfo.class);
     when(stream.getSubject()).thenReturn("orders.created");
+    when(session.findDestination("orders_stream/orders/created", DestinationType.TOPIC))
+        .thenReturn(CompletableFuture.completedFuture(mock(Destination.class)));
     ConsumerConfig config = new ConsumerConfig();
     CreateHandler.applyDefaults(config);
 
-    assertNull(new CreateHandler().subscribeConsumerSubject(session, config, stream, "orders_stream", "jetstream:orders_stream:consumer:0"));
-    verify(session).subscribeJetStream("orders_stream.orders.created", "jetstream:orders_stream:consumer:0", ClientAcknowledgement.INDIVIDUAL, 1);
+    assertNull(new CreateHandler().subscribeConsumerSubject(session, config, stream,
+        "orders_stream", "jetstream:orders_stream:consumer:0"));
+    verify(session).addSubscription(argThat((SubscriptionContext context) ->
+        context.getAlias().equals("jetstream:orders_stream:consumer:0")
+            && context.isSync() && context.getAcknowledgementController() == ClientAcknowledgement.INDIVIDUAL));
   }
   @Test
   void wrappedOfficialConsumerConfigurationRetainsDurableFields() {

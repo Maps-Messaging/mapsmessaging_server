@@ -28,6 +28,7 @@ import io.mapsmessaging.network.protocol.impl.nats.frames.ErrFrame;
 import io.mapsmessaging.network.protocol.impl.nats.frames.NatsFrame;
 import io.mapsmessaging.network.protocol.impl.nats.frames.PayloadFrame;
 import io.mapsmessaging.network.protocol.impl.nats.jetstream.stream.JetStreamFrameHandler;
+import io.mapsmessaging.network.protocol.impl.nats.jetstream.stream.JetStreamArchiveManager;
 import io.mapsmessaging.network.protocol.impl.nats.state.SessionState;
 
 import java.io.IOException;
@@ -94,8 +95,13 @@ public class StreamCreateHandler extends JetStreamFrameHandler {
       if (destination == null) {
         return buildError(RESPONSE_TYPE, 500, "Stream destination creation returned null", frame.getReplyTo(), sessionState);
       }
-      // A normal MAPS destination is not an append-only JetStream archive.
-      // Archive retention must be implemented within NATS or through an agreed generic API.
+      try {
+        JetStreamArchiveManager.getInstance().ensureArchive(sessionState, streamName,
+            destination.getFullyQualifiedNamespace());
+      } catch (IOException failure) {
+        return buildError(RESPONSE_TYPE, 500, "Unable to initialise JetStream archive: "
+            + failure.getMessage(), frame.getReplyTo(), sessionState);
+      }
     }
 
     // Prepare response

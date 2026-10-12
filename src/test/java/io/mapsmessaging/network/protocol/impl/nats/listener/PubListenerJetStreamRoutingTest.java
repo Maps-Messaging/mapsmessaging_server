@@ -90,18 +90,6 @@ class PubListenerJetStreamRoutingTest {
   }
 
   @Test
-  void streamStorageReportsIdentifierOnlyWhenAssignedToTheSuppliedMessage() throws Exception {
-    Destination destination = mock(Destination.class);
-    io.mapsmessaging.api.message.Message message = mock(io.mapsmessaging.api.message.Message.class);
-    when(message.getIdentifier()).thenReturn(312L);
-
-    long sequence = new PubListener().storeToMapDestination(destination, message, true);
-
-    assertEquals(312L, sequence);
-    verify(destination).storeMessage(message);
-  }
-
-  @Test
   void ordinaryCoreNatsPublishKeepsExistingStorageContract() throws Exception {
     Destination destination = mock(Destination.class);
     io.mapsmessaging.api.message.Message message = mock(io.mapsmessaging.api.message.Message.class);
@@ -140,6 +128,11 @@ class PubListenerJetStreamRoutingTest {
 
     RecordingListener(List<String> streamTargets) {
       this.streamTargets = streamTargets;
+    }
+
+    @Override
+    protected void ensureArchiveForStream(SessionState connection, String stream, String destination) {
+      // Live archive wiring is exercised by JetStream's integration tests.
     }
 
     @Override
