@@ -608,6 +608,80 @@ class Stomp12ConformanceTest extends StompBaseTest {
     }
   }
 
+
+  @Test
+  @ProtocolRequirement(
+      specification = SPEC,
+      value = "Protocol Negotiation: only exact supported versions 1.0, 1.1 and 1.2 can be selected",
+      source = SOURCE)
+  void pseudoVersionsAreNeverNegotiated() throws Exception {
+    for (String version : new String[] {"1.15", "1.20", "1.3", "1", "2.0"}) {
+      try (RawStompConnection connection = new RawStompConnection(8674)) {
+        Map<String, String> headers = new LinkedHashMap<>();
+        headers.put("accept-version", version);
+        headers.put("host", "localhost");
+        connection.send("STOMP", headers, new byte[0], false, false);
+
+        assertEquals("ERROR", connection.readFrame().command(), version);
+        assertEquals(-1, connection.read(), version);
+      }
+    }
+  }
+
+  @Test
+  @ProtocolRequirement(
+      specification = SPEC,
+      value = "Protocol Negotiation: unsupported version tokens do not mask the highest exact common version",
+      source = SOURCE)
+  void unsupportedVersionTokenDoesNotOverrideAnExactMatch() throws Exception {
+    try (RawStompConnection connection = new RawStompConnection(8674)) {
+      connection.connect("1.15,1.1,1.3", "0,0");
+      RawStompConnection.StompFrame connected = connection.readFrame();
+      assertEquals("CONNECTED", connected.command());
+      assertEquals("1.1", connected.headers().get("version"));
+    }
+  }
+
+  @Test
+  @ProtocolRequirement(
+      specification = SPEC,
+      value = "SEND: an unknown named transaction MUST produce ERROR, then close the connection",
+      source = SOURCE)
+  void sendWithUnknownTransactionReturnsErrorAndCloses() throws Exception {
+    try (RawStompConnection connection = connected()) {
+      Map<String, String> headers = new LinkedHashMap<>();
+      headers.put("destination", "/topic/stomp-unknown-transaction-" + UUID.randomUUID());
+      headers.put("transaction", "not-started");
+      headers.put("receipt", "invalid-transaction");
+      connection.send("SEND", headers, "payload".getBytes(StandardCharsets.UTF_8), false, true);
+
+      RawStompConnection.StompFrame error = connection.readFrame();
+      assertEquals("ERROR", error.command());
+      assertEquals("invalid-transaction", error.headers().get("receipt-id"));
+      assertEquals(-1, connection.read());
+    }
+  }
+
+  @Test
+  @ProtocolRequirement(
+      specification = SPEC,
+      value = "SUBSCRIBE id: two subscriptions on one connection MUST NOT share an identifier",
+      source = SOURCE)
+  void duplicateSubscriptionIdReturnsErrorAndCloses() throws Exception {
+    try (RawStompConnection connection = connected()) {
+      subscribe(connection, "/topic/stomp-duplicate-a-" + UUID.randomUUID(), "duplicate-id", "auto");
+
+      Map<String, String> headers = new LinkedHashMap<>();
+      headers.put("destination", "/topic/stomp-duplicate-b-" + UUID.randomUUID());
+      headers.put("id", "duplicate-id");
+      connection.send("SUBSCRIBE", headers, new byte[0], false, false);
+
+      RawStompConnection.StompFrame error = connection.readFrame();
+      assertEquals("ERROR", error.command());
+      assertEquals(-1, connection.read());
+    }
+  }
+
   private RawStompConnection connected() throws Exception {
     RawStompConnection connection = new RawStompConnection(8674);
     connection.connect("1.2", "0,0");

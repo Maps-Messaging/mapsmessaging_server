@@ -20,6 +20,8 @@
 package io.mapsmessaging.network.protocol.impl.stomp.frames;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -180,6 +182,50 @@ class StompFrameComplianceTest {
     Frame frame = new FrameFactory(32768, false, false).parseFrame(packet);
 
     assertThrows(StompProtocolException.class, () -> frame.scanFrame(packet));
+  }
+
+
+  @Test
+  void parsedHeadersAreCaseSensitiveAndPreserveDistinctSpelling() throws Exception {
+    Send send = assertInstanceOf(
+        Send.class,
+        parse("SEND\\ndestination:/topic/casing\\n"
+            + "Trace-ID:upper\\ntrace-id:lower\\nTrace-ID:ignored\\n"
+            + "Destination:/topic/not-the-destination\\n\\npayload\\0"));
+
+    assertTrue(send.isValid());
+    assertEquals("/topic/casing", send.getDestination());
+    assertEquals("upper", send.getHeader("Trace-ID"));
+    assertEquals("lower", send.getHeader("trace-id"));
+    assertEquals("/topic/not-the-destination", send.getHeader("Destination"));
+    assertNull(send.getHeader("TRACE-ID"));
+  }
+
+  @Test
+  void differentlyCasedRequiredHeaderDoesNotMatchDestination() throws Exception {
+    Send send = assertInstanceOf(
+        Send.class, parse("SEND\\nDestination:/topic/uppercase\\n\\npayload\\0"));
+
+    assertFalse(send.isValid());
+  }
+
+  @Test
+  void subscriptionIdentifierAndDestinationWhitespaceArePreserved() throws Exception {
+    Subscribe subscribe = assertInstanceOf(
+        Subscribe.class,
+        parse("SUBSCRIBE\\nid: sub-id \\ndestination: /topic/space \\nack:client\\n\\n\\0"));
+
+    assertTrue(subscribe.isValid());
+    assertEquals(" sub-id ", subscribe.getId());
+    assertEquals(" /topic/space ", subscribe.getDestination());
+  }
+
+  @Test
+  void acknowledgementModeMustUseExactProtocolValue() throws Exception {
+    Subscribe subscribe = assertInstanceOf(
+        Subscribe.class, parse("SUBSCRIBE\\nid:sub\\ndestination:/topic/a\\nack:AUTO\\n\\n\\0"));
+
+    assertFalse(subscribe.isValid());
   }
 
   private Frame parse(String value) throws Exception {
