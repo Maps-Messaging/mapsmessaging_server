@@ -142,6 +142,15 @@ public class Connect5 extends MQTTPacket5 {
     keepAlive = readShort(packet);
 
     loadProperties(packet);
+    MessageProperty receiveMaximum = getProperties().get(MessagePropertyFactory.RECEIVE_MAXIMUM);
+    if (receiveMaximum instanceof ReceiveMaximum receive
+        && receive.getReceiveMaximum() == 0) {
+      throw new MalformedException("MQTT 5 Receive Maximum must not be zero [MQTT-3.1.2.11.3]");
+    }
+    if (getProperties().duplicates().stream()
+        .anyMatch(property -> property.getId() == MessagePropertyFactory.RECEIVE_MAXIMUM)) {
+      throw new MalformedException("MQTT 5 Receive Maximum property must not repeat [MQTT-3.1.2.11.3]");
+    }
 
     sessionId = readUTF8(packet);
 

@@ -60,6 +60,25 @@ public class ConnectListener5 extends PacketListener5 {
     }
     Connect5 connect = (Connect5) mqttPacket;
     ConnAck5 connAck = new ConnAck5();
+    AuthenticationMethod requestedMethod = (AuthenticationMethod) connect.getProperties()
+        .get(MessagePropertyFactory.AUTHENTICATION_METHOD);
+    AuthenticationContext configuredAuthentication = ((MQTT5Protocol) protocol).getAuthenticationContext();
+    if (requestedMethod != null
+        && (configuredAuthentication == null
+            || !configuredAuthentication.getAuthMethod().equals(requestedMethod.getAuthenticationMethod()))) {
+      // MQTT-4.12.0-1: an unsupported enhanced authentication method cannot
+      // fall through into ordinary username/password session establishment.
+      connAck.setStatusCode(StatusCode.BAD_AUTHENTICATION_METHOD);
+      ((MQTT5Protocol) protocol).setClosing(true);
+      connAck.setCallback(() -> {
+        try {
+          endPoint.close();
+        } catch (IOException e) {
+          logger.log(ServerLogMessages.END_POINT_CLOSE_EXCEPTION, e);
+        }
+      });
+      return connAck;
+    }
 
     String sessionId = connect.getSessionId();
     if (sessionId.isEmpty()) {
