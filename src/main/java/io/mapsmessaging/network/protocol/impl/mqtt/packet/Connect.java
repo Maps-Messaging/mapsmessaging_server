@@ -42,6 +42,11 @@ public class Connect extends MQTTPacket {
   private static final byte[] MQTT31 = "MQIsdp".getBytes();
 
   private byte protocolLevel;
+  private boolean supportedProtocolLevel;
+
+  public boolean hasSupportedProtocolLevel() {
+    return supportedProtocolLevel;
+  }
 
   //
   // Will fields
@@ -114,6 +119,7 @@ public class Connect extends MQTTPacket {
         }
       }
       protocolLevel = packet.get();
+      supportedProtocolLevel = protocolLevel == 3;
     } else if (header[2] == MQTT311[2]) {
       for (int x = 2; x < len; x++) {
         if (header[x] != MQTT311[x]) {
@@ -121,6 +127,7 @@ public class Connect extends MQTTPacket {
         }
       }
       protocolLevel = packet.get();
+      supportedProtocolLevel = protocolLevel == 4;
     } else {
       throw new MalformedException(NO_PROTOCOL_FOUND_MSG);
     }

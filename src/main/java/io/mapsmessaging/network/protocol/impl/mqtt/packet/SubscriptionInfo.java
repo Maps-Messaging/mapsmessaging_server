@@ -24,7 +24,6 @@ import io.mapsmessaging.api.features.RetainHandler;
 import io.mapsmessaging.network.protocol.impl.mqtt5.packet.properties.SubscriptionIdentifier;
 import lombok.Getter;
 
-import java.util.StringTokenizer;
 
 public class SubscriptionInfo {
 
@@ -55,12 +54,11 @@ public class SubscriptionInfo {
     this.noLocal = noLocal;
     this.retainAsPublished = retainAsPublished;
     this.subscriptionIdentifier = subscriptionIdentifier;
-    if (topicName.toLowerCase().startsWith("$share")) {
+    if (MqttTopicFilterValidator.isShared(topicName)) {
       sharedSubscription = true;
-      StringTokenizer st = new StringTokenizer(topicName, "/");
-      st.nextElement(); // Should be $share
-      sharedSubscriptionName = st.nextElement().toString();
-      this.topicName = topicName.substring(sharedSubscriptionName.length() + 8);
+      int groupEnd = topicName.indexOf('/', "$share/".length());
+      sharedSubscriptionName = topicName.substring("$share/".length(), groupEnd);
+      this.topicName = topicName.substring(groupEnd + 1);
     } else {
       this.topicName = topicName;
       sharedSubscription = false;

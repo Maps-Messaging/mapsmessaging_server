@@ -55,6 +55,19 @@ public class ConnectListener extends BaseConnectionListener {
     }
     Connect connect = (Connect) mqttPacket;
     ConnAck connAck = new ConnAck();
+    if (!connect.hasSupportedProtocolLevel()) {
+      // MQTT-3.1.2-2: return CONNACK 0x01, then close the connection.
+      // ServerPacket.complete() runs after the frame has been fully written.
+      connAck.setResponseCode(ConnAck.INVALID_PROTOCOL);
+      connAck.setCallback(() -> {
+        try {
+          endPoint.close();
+        } catch (IOException e) {
+          logger.log(ServerLogMessages.END_POINT_CLOSE_EXCEPTION, e);
+        }
+      });
+      return connAck;
+    }
 
     boolean strict = checkStrict(connect, protocol);
 

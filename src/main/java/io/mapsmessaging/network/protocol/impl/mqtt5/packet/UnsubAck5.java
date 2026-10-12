@@ -23,14 +23,35 @@ import io.mapsmessaging.network.io.Packet;
 import io.mapsmessaging.network.protocol.EndOfBufferException;
 import io.mapsmessaging.network.protocol.impl.mqtt.packet.MQTTPacket;
 import io.mapsmessaging.network.protocol.impl.mqtt.packet.MalformedException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 
 public class UnsubAck5 extends MQTTPacket5 {
 
   private int packetId;
+  private final List<StatusCode> reasonCodes;
 
   public UnsubAck5(int packetId) {
+    this(packetId, new StatusCode[]{StatusCode.SUCCESS});
+  }
+
+  public UnsubAck5(int packetId, StatusCode[] reasons) {
     super(MQTTPacket.UNSUBACK);
+    if (reasons == null || reasons.length == 0) {
+      throw new IllegalArgumentException("UNSUBACK requires at least one reason code");
+    }
     this.packetId = packetId;
+    reasonCodes = Collections.unmodifiableList(Arrays.asList(reasons.clone()));
+  }
+
+  public int getPacketId() {
+    return packetId;
+  }
+
+  public List<StatusCode> getReasonCodes() {
+    return reasonCodes;
   }
 
   public UnsubAck5(byte fixedHeader, long remainingLen, Packet packet) throws MalformedException, EndOfBufferException {
@@ -48,26 +69,51 @@ public class UnsubAck5 extends MQTTPacket5 {
       throw new MalformedException("UnsubAck malformed: remaining length too small");
     }
 
-    // Payload (optional in v5): may contain one or more reason codes
-    if (payloadLen > 0) {
-      for (int i = 0; i < payloadLen; i++) {
-        packet.get(); // Consume reason codes without retaining them.
-      }
+    if (payloadLen == 0 || payloadLen > Integer.MAX_VALUE) {
+      throw new MalformedException("UNSUBACK requires at least one reason code");
     }
+    List<StatusCode> reasons = new ArrayList<>((int) payloadLen);
+    for (int i = 0; i < payloadLen; i++) {
+      byte value = packet.get();
+      StatusCode reason;
+      try {
+        reason = StatusCode.getInstance(value);
+      } catch (IllegalArgumentException unknown) {
+        throw new MalformedException("Unknown UNSUBACK reason code " + (value & 0xff));
+      }
+      if (!isAllowedReason(reason)) {
+        throw new MalformedException("Invalid UNSUBACK reason code " + (value & 0xff));
+      }
+      reasons.add(reason);
+    }
+    reasonCodes = Collections.unmodifiableList(reasons);
+  }
+
+  private static boolean isAllowedReason(StatusCode reason) {
+    return reason == StatusCode.SUCCESS || reason == StatusCode.NO_SUBSCRIPTION_EXISTED
+        || reason == StatusCode.UNSPECIFIED_ERROR
+        || reason == StatusCode.IMPLEMENTATION_SPECIFIC_ERROR
+        || reason == StatusCode.NOT_AUTHORISED || reason == StatusCode.TOPIC_FILTER_INVALID
+        || reason == StatusCode.PACKET_IDENTIFIER_INUSE;
   }
 
   @Override
   public String toString() {
-    return "MQTTv5 UnsubAck[Packet Id:" + packetId + "]";
+    return "MQTTv5 UnsubAck[Packet Id:" + packetId + " Reasons:" + reasonCodes + "]";
   }
 
   @Override
   public int packFrame(Packet packet) {
-    int len = propertiesSize();
+    int propertiesLength = propertiesSize();
+    int remaining = 2 + propertiesLength + lengthSize(propertiesLength) + reasonCodes.size();
+    int start = packet.position();
     packControlByte(packet, 0);
-    packet.put((byte) (2 + len + lengthSize(len)));
+    writeVariableInt(packet, remaining);
     writeShort(packet, packetId);
-    packProperties(packet, len);
-    return 4;
+    packProperties(packet, propertiesLength);
+    for (StatusCode reason : reasonCodes) {
+      packet.put(reason.getValue());
+    }
+    return packet.position() - start;
   }
 }
