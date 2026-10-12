@@ -37,12 +37,16 @@ final class WebSocketFrameWriter {
 
   private PendingFrame currentFrame;
   private int lastNetworkBytesWritten;
+  private boolean closing;
 
   WebSocketFrameWriter(PacketSink sink) {
     this.sink = sink;
   }
 
   synchronized int writeBinary(Packet payload) throws IOException {
+    if (closing) {
+      throw new IOException("WebSocket is closing; application frames are no longer accepted");
+    }
     lastNetworkBytesWritten = 0;
     PendingFrame frame = sourceFrames.get(payload);
     if (frame == null) {
@@ -70,6 +74,16 @@ final class WebSocketFrameWriter {
       throw new IOException("WebSocket control payload exceeds 125 bytes");
     }
 
+    if (closing && opcode != WebSocketFrameDecoder.CLOSE) {
+      throw new IOException("WebSocket is closing; further control frames are not accepted");
+    }
+    if (opcode == WebSocketFrameDecoder.CLOSE) {
+      closing = true;
+      // A partly transmitted frame may finish, but queued application frames
+      // must not be flushed after the closing handshake begins.
+      dataFrames.clear();
+      sourceFrames.clear();
+    }
     lastNetworkBytesWritten = 0;
     PendingFrame frame = PendingFrame.forControl(opcode, payload);
     controlFrames.offer(frame);
@@ -91,7 +105,7 @@ final class WebSocketFrameWriter {
     while (true) {
       if (currentFrame == null) {
         currentFrame = controlFrames.poll();
-        if (currentFrame == null) {
+        if (currentFrame == null && !closing) {
           currentFrame = dataFrames.poll();
         }
         if (currentFrame == null) {

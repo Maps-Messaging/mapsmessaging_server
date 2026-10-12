@@ -66,13 +66,18 @@ final class WebSocketFrameDecoder {
   private int pendingOutputOffset;
 
   int decode(Packet source, Packet destination, Listener listener) throws IOException {
+    if (closeReceived) {
+      // A CLOSE frame ends inbound application-data processing, even when another
+      // frame is buffered in this or a later network read.
+      return 0;
+    }
     int initialPosition = destination.position();
     drain(destination);
     if (hasPendingOutput() || !destination.hasRemaining()) {
       return destination.position() - initialPosition;
     }
 
-    while (source.hasRemaining()) {
+    while (source.hasRemaining() && !closeReceived) {
       switch (state) {
         case FIRST_BYTE -> readFirstByte(source);
         case SECOND_BYTE -> readSecondByte(source);
@@ -81,6 +86,9 @@ final class WebSocketFrameDecoder {
         case PAYLOAD -> readPayload(source, listener);
       }
 
+      if (closeReceived) {
+        return destination.position() - initialPosition;
+      }
       drain(destination);
       if (hasPendingOutput() || !destination.hasRemaining()) {
         return destination.position() - initialPosition;
@@ -90,6 +98,9 @@ final class WebSocketFrameDecoder {
   }
 
   int drain(Packet destination) {
+    if (closeReceived) {
+      return 0;
+    }
     int initialPosition = destination.position();
     while (pendingOutput != null
         && pendingOutputOffset < pendingOutput.length
@@ -263,6 +274,12 @@ final class WebSocketFrameDecoder {
       case CLOSE -> {
         validateClosePayload(controlPayload);
         closeReceived = true;
+        // An unfinished fragmented message must never become visible after CLOSE.
+        fragmentedOpcode = -1;
+        messagePayload = null;
+        pendingOutput = null;
+        pendingOutputOffset = 0;
+        resetUtf8Validation();
         if (listener != null) {
           listener.onClose(Arrays.copyOf(controlPayload, controlPayload.length));
         }
