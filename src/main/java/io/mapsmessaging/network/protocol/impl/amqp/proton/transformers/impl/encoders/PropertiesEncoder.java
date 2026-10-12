@@ -36,6 +36,7 @@ import java.util.concurrent.TimeUnit;
 
 public class PropertiesEncoder {
 
+  private static final String ORIGINAL_ABSOLUTE_EXPIRY = "amqp.original.absolute.expiry";
   private static final List<JMSProperty> encodingList;
   protected static final List<String> propertyNames;
 
@@ -61,9 +62,12 @@ public class PropertiesEncoder {
       messageBuilder.setContentType(properties.getContentType().toString());
     }
     if (properties.getAbsoluteExpiryTime() != null) {
-      long expiry = properties.getAbsoluteExpiryTime().getTime();
-      expiry = (expiry - System.currentTimeMillis());
-      messageBuilder.setMessageExpiryInterval(expiry, TimeUnit.MILLISECONDS);
+      long absoluteExpiry = properties.getAbsoluteExpiryTime().getTime();
+      messageBuilder.setMeta(Map.of(ORIGINAL_ABSOLUTE_EXPIRY, Long.toString(absoluteExpiry)));
+      // The engine stores remaining lifetime, while the original absolute
+      // JMSExpiration must survive the AMQP -> MAPS -> AMQP translation exactly.
+      long remaining = Math.max(0L, absoluteExpiry - System.currentTimeMillis());
+      messageBuilder.setMessageExpiryInterval(remaining, TimeUnit.MILLISECONDS);
     }
 
     if (properties.getCreationTime() != null) {
@@ -82,6 +86,11 @@ public class PropertiesEncoder {
       jmsProperty.pack(message, properties);
     }
     properties.setCreationTime(new Date(message.getCreation()));
+    String originalExpiry = message.getMeta() == null
+        ? null : message.getMeta().get(ORIGINAL_ABSOLUTE_EXPIRY);
+    if (originalExpiry != null) {
+      properties.setAbsoluteExpiryTime(new Date(Long.parseLong(originalExpiry)));
+    }
   }
 
   private PropertiesEncoder() {
