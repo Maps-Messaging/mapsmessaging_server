@@ -189,9 +189,9 @@ class StompFrameComplianceTest {
   void parsedHeadersAreCaseSensitiveAndPreserveDistinctSpelling() throws Exception {
     Send send = assertInstanceOf(
         Send.class,
-        parse("SEND\\ndestination:/topic/casing\\n"
-            + "Trace-ID:upper\\ntrace-id:lower\\nTrace-ID:ignored\\n"
-            + "Destination:/topic/not-the-destination\\n\\npayload\\0"));
+        parse("SEND\ndestination:/topic/casing\n"
+            + "Trace-ID:upper\ntrace-id:lower\nTrace-ID:ignored\n"
+            + "Destination:/topic/not-the-destination\n\npayload\0"));
 
     assertTrue(send.isValid());
     assertEquals("/topic/casing", send.getDestination());
@@ -204,7 +204,7 @@ class StompFrameComplianceTest {
   @Test
   void differentlyCasedRequiredHeaderDoesNotMatchDestination() throws Exception {
     Send send = assertInstanceOf(
-        Send.class, parse("SEND\\nDestination:/topic/uppercase\\n\\npayload\\0"));
+        Send.class, parse("SEND\nDestination:/topic/uppercase\n\npayload\0"));
 
     assertFalse(send.isValid());
   }
@@ -213,7 +213,7 @@ class StompFrameComplianceTest {
   void subscriptionIdentifierAndDestinationWhitespaceArePreserved() throws Exception {
     Subscribe subscribe = assertInstanceOf(
         Subscribe.class,
-        parse("SUBSCRIBE\\nid: sub-id \\ndestination: /topic/space \\nack:client\\n\\n\\0"));
+        parse("SUBSCRIBE\nid: sub-id \ndestination: /topic/space \nack:client\n\n\0"));
 
     assertTrue(subscribe.isValid());
     assertEquals(" sub-id ", subscribe.getId());
@@ -223,7 +223,7 @@ class StompFrameComplianceTest {
   @Test
   void acknowledgementModeMustUseExactProtocolValue() throws Exception {
     Subscribe subscribe = assertInstanceOf(
-        Subscribe.class, parse("SUBSCRIBE\\nid:sub\\ndestination:/topic/a\\nack:AUTO\\n\\n\\0"));
+        Subscribe.class, parse("SUBSCRIBE\nid:sub\ndestination:/topic/a\nack:AUTO\n\n\0"));
 
     assertFalse(subscribe.isValid());
   }
