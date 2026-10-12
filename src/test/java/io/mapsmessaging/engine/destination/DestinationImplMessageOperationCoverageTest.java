@@ -2,10 +2,12 @@ package io.mapsmessaging.engine.destination;
 
 import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.engine.destination.subscription.DestinationSubscriptionManager;
+import io.mapsmessaging.engine.destination.tasks.ExpireSubscriptionsTask;
 import io.mapsmessaging.engine.destination.tasks.RemoveMessageTask;
 import io.mapsmessaging.engine.resources.Resource;
 import io.mapsmessaging.utilities.queue.EventReaperQueue;
 import io.mapsmessaging.utilities.threads.tasks.PriorityTaskScheduler;
+import io.mapsmessaging.utilities.threads.tasks.TaskScheduler;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
@@ -73,7 +75,12 @@ class DestinationImplMessageOperationCoverageTest {
     verify(fixture.resourceTaskQueue)
         .submit(captor.capture(), eq(DestinationImpl.RETRIEVE_PRIORITY));
     assertInstanceOf(RemoveMessageTask.class, captor.getValue());
+    ArgumentCaptor<Callable> expiry = ArgumentCaptor.forClass(Callable.class);
+    verify(fixture.subscriptionTaskQueue).submit(expiry.capture());
+    assertInstanceOf(ExpireSubscriptionsTask.class, expiry.getValue());
+    expiry.getValue().call();
     verify(fixture.subscriptionManager).expired(id);
+    verify(fixture.schemaSubscriptionManager).expired(id);
     verify(fixture.stats).expiredMessage();
     verify(fixture.stats, never()).retrievedMessage();
   }
@@ -237,16 +244,21 @@ class DestinationImplMessageOperationCoverageTest {
     private final RetainManager retainManager = mock(RetainManager.class);
     private final DestinationSubscriptionManager subscriptionManager =
         mock(DestinationSubscriptionManager.class);
+    private final DestinationSubscriptionManager schemaSubscriptionManager =
+        mock(DestinationSubscriptionManager.class);
     private final EventReaperQueue completionQueue = mock(EventReaperQueue.class);
     private final PriorityTaskScheduler resourceTaskQueue = mock(PriorityTaskScheduler.class);
+    private final TaskScheduler subscriptionTaskQueue = mock(TaskScheduler.class);
 
     private Fixture() throws Exception {
       set("resource", resource);
       set("stats", stats);
       set("retainManager", retainManager);
       set("subscriptionManager", subscriptionManager);
+      set("schemaSubscriptionManager", schemaSubscriptionManager);
       set("completionQueue", completionQueue);
       set("resourceTaskQueue", resourceTaskQueue);
+      set("subscriptionTaskQueue", subscriptionTaskQueue);
     }
 
     private void set(String name, Object value) throws Exception {

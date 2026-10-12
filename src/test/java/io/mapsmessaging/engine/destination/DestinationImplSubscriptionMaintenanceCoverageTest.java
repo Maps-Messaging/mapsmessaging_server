@@ -9,6 +9,7 @@ import io.mapsmessaging.engine.destination.subscription.impl.DestinationSubscrip
 import io.mapsmessaging.engine.destination.subscription.impl.shared.SharedSubscriptionManager;
 import io.mapsmessaging.engine.destination.subscription.impl.shared.SharedSubscriptionRegister;
 import io.mapsmessaging.engine.destination.tasks.BulkRemoveMessageTask;
+import io.mapsmessaging.engine.destination.tasks.ExpireSubscriptionsTask;
 import io.mapsmessaging.engine.destination.tasks.TransactionalMessageProcessor;
 import io.mapsmessaging.engine.resources.Resource;
 import io.mapsmessaging.utilities.threads.tasks.PriorityTaskScheduler;
@@ -244,9 +245,16 @@ class DestinationImplSubscriptionMaintenanceCoverageTest {
 
     fixture.destination.scanForOrphanedMessages();
 
+    ArgumentCaptor<Callable> queued = ArgumentCaptor.forClass(Callable.class);
+    verify(fixture.subscriptionTaskQueue).submit(queued.capture());
+    assertInstanceOf(ExpireSubscriptionsTask.class, queued.getValue());
+    queued.getValue().call();
+
     verify(fixture.subscriptionManager, never()).expired(121L);
     verify(fixture.subscriptionManager).expired(122L);
     verify(fixture.subscriptionManager).expired(123L);
+    verify(fixture.schemaSubscriptionManager).expired(122L);
+    verify(fixture.schemaSubscriptionManager).expired(123L);
   }
 
   @Test
