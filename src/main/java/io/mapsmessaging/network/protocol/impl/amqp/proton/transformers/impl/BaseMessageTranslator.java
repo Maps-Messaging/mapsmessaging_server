@@ -42,6 +42,7 @@ public class BaseMessageTranslator implements MessageTranslator {
   private static final String STRING_TYPE = "string";
   private static final String BYTE_ARRAY_TYPE = "byteArray";
   private static final String DATA_TYPE = "data";
+  private static final Symbol JMS_DELIVERY_TIME = Symbol.valueOf("x-opt-delivery-time");
 
   @Override
   public @NonNull @NotNull MessageBuilder decode(@NonNull @NotNull MessageBuilder messageBuilder, @NonNull @NotNull org.apache.qpid.proton.message.Message protonMessage) {
@@ -55,6 +56,15 @@ public class BaseMessageTranslator implements MessageTranslator {
     }
     ApplicationMapEncoder.unpackApplicationMap(dataMap, protonMessage);
     messageBuilder.setDataMap(dataMap);
+    MessageAnnotations inboundAnnotations = protonMessage.getMessageAnnotations();
+    if (inboundAnnotations != null) {
+      Object scheduled = inboundAnnotations.getValue().get(JMS_DELIVERY_TIME);
+      if (scheduled instanceof Number timestamp) {
+        // Qpid JMS supplies an absolute epoch-millisecond delivery time.
+        // MAPS MessageBuilder accepts a duration and the engine performs scheduling.
+        messageBuilder.setDelayed(Math.max(0, timestamp.longValue() - System.currentTimeMillis()));
+      }
+    }
 
     Map<String, String> meta = messageBuilder.getMeta();
     if (meta == null) {
@@ -101,6 +111,9 @@ public class BaseMessageTranslator implements MessageTranslator {
     Map<Symbol, Object> map = new LinkedHashMap<>();
     Symbol type = Symbol.getSymbol("x-opt-jms-msg-type");
     map.put(type, getType());
+    if (message.getDelayed() > 0) {
+      map.put(JMS_DELIVERY_TIME, message.getDelayed());
+    }
     MessageAnnotations annotations = new MessageAnnotations(map);
     protonMessage.setMessageAnnotations(annotations);
 
