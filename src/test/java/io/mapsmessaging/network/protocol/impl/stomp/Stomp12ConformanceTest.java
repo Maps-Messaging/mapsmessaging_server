@@ -349,7 +349,6 @@ class Stomp12ConformanceTest extends StompBaseTest {
   }
 
   @Test
-  @org.junit.jupiter.api.Disabled("Known STOMP 1.2 UNSUBSCRIBE delivery conformance gap: MSG-402")
   @ProtocolRequirement(
       specification = SPEC,
       value = "Section UNSUBSCRIBE: removing a subscription stops further MESSAGE delivery for that subscription",

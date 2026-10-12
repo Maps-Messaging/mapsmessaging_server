@@ -192,11 +192,34 @@ public class SubscriptionController implements DestinationManagerListener {
    * @return true if there was such a subscription to start with else false if unable to locate the subscription
    */
   public boolean delSubscription(String id) {
+    // The destination namespace remains the primary subscription identity.
+    if (removeSubscriptionByNamespace(id)) {
+      return true;
+    }
+
+    // Preserve historical alias removal without changing how subscriptions are indexed.
+    // Resolve an alias to the already-registered namespace, then use the usual removal.
+    String namespace = null;
+    for (SubscriptionContext context : contextMap.values()) {
+      if (id.equals(context.getAlias())) {
+        String candidate = context.getKey();
+        if (namespace != null && !namespace.equals(candidate)) {
+          return false; // Ambiguous alias: never remove an arbitrary destination.
+        }
+        namespace = candidate;
+      }
+    }
+    return namespace != null && removeSubscriptionByNamespace(namespace);
+  }
+
+  private boolean removeSubscriptionByNamespace(String namespace) {
     boolean found = false;
-    for(SubscriptionModeManager managers: subscriptionModeManager.values()){
-      if(managers.delSubscription(id, subscriptions, this)){
+    for (SubscriptionModeManager manager : subscriptionModeManager.values()) {
+      if (manager.delSubscription(namespace, subscriptions, this)) {
         found = true;
-        contextMap.remove(managers.getMode().getNamespace()+id);
+        String prefix = manager.getMode().getNamespace();
+        String key = namespace.startsWith(prefix) ? namespace : prefix + namespace;
+        contextMap.remove(key);
       }
     }
     return found;
