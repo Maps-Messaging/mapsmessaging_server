@@ -34,7 +34,7 @@ import org.slj.mqtt.sn.net.MqttsnUdpTransport;
 import org.slj.mqtt.sn.net.NetworkAddress;
 import org.slj.mqtt.sn.spi.*;
 
-public class MqttSn12Client {
+public class MqttSn12Client implements AutoCloseable {
 
   private final MqttsnClient client;
 
@@ -122,6 +122,11 @@ public class MqttSn12Client {
 
 
   public void disconnect() throws MqttsnException {
+    close();
+  }
+
+  @Override
+  public void close() throws MqttsnException {
     client.close();
   }
 

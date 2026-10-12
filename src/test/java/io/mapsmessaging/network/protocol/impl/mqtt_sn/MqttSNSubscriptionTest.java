@@ -202,40 +202,34 @@ class MqttSNSubscriptionTest extends BaseMqttSnConfig {
     return createQoSVersionStream();
   }
 
-  public void subscribeQoSnTopicAndPublish(int qos, int version) throws InterruptedException, MqttsnException, MqttsnClientConnectException, MqttsnQueueAcceptException {
-    MqttSn12Client client = new MqttSn12Client("localhost",1884);
+  public void subscribeQoSnTopicAndPublish(int qos, int version)
+      throws InterruptedException, MqttsnException, MqttsnClientConnectException, MqttsnQueueAcceptException {
     CountDownLatch published = new CountDownLatch(PUBLISH_COUNT);
     CountDownLatch received = new CountDownLatch(PUBLISH_COUNT);
 
+    try (MqttSn12Client client = new MqttSn12Client("localhost", 1884)) {
+      client.registerPublishListener((context, topic, id, retain, payload, message) -> published.countDown());
+      client.registerSentListener((context, topic, id, retain, payload, message) -> received.countDown());
+      client.connect(50, true);
+      client.subscribe("predefined/topic", qos);
 
-    client.registerPublishListener((iMqttsnContext, topicPath, i, b, bytes, iMqttsnMessage) -> published.countDown());
-    client.registerSentListener((iMqttsnContext, topicPath, i, b, bytes, iMqttsnMessage) -> received.countDown());
-
-
-    client.connect(50,true);
-    //
-    // Test Registered Topics
-    //
-    client.subscribe("predefined/topic", qos);
-
-    long count = published.getCount();
-    for(int x=0;x<PUBLISH_COUNT;x++){
-      client.publish("predefined/topic", qos, "Hi There MQTT-SN test".getBytes());
-      if(qos != 0) {
-        long timeout = System.currentTimeMillis() + TIMEOUT;
-        while (count == published.getCount()) {
-          delay(100);
-          Assertions.assertFalse(timeout < System.currentTimeMillis());
+      long count = published.getCount();
+      for (int x = 0; x < PUBLISH_COUNT; x++) {
+        client.publish("predefined/topic", qos, "Hi There MQTT-SN test".getBytes());
+        if (qos != 0) {
+          long timeout = System.currentTimeMillis() + TIMEOUT;
+          while (count == published.getCount()) {
+            delay(100);
+            Assertions.assertFalse(timeout < System.currentTimeMillis());
+          }
+          count = published.getCount();
         }
-        count = published.getCount();
       }
+      if (qos != 0) {
+        Assertions.assertTrue(published.await(TIMEOUT, TimeUnit.MILLISECONDS));
+      }
+      Assertions.assertTrue(received.await(TIMEOUT, TimeUnit.MILLISECONDS));
     }
-    if(qos != 0) {
-      Assertions.assertTrue(published.await(TIMEOUT, TimeUnit.MILLISECONDS));
-    }
-    Assertions.assertTrue(received.await(TIMEOUT, TimeUnit.MILLISECONDS));
-
-    client.disconnect();
   }
 
 
@@ -255,38 +249,31 @@ class MqttSNSubscriptionTest extends BaseMqttSnConfig {
     CountDownLatch published = new CountDownLatch(PUBLISH_COUNT);
     CountDownLatch received = new CountDownLatch(PUBLISH_COUNT);
 
-    MqttSn12Client subscriber = new MqttSn12Client("localhost", 1884);
-    subscriber.connect(120, true);
-    subscriber.registerPublishListener((iMqttsnContext, topicPath, i, b, bytes, iMqttsnMessage) -> {
-      received.countDown();
-    });
-    subscriber.subscribe("/mqttsn/test/wild/+", qos);
+    try (MqttSn12Client subscriber = new MqttSn12Client("localhost", 1884)) {
+      subscriber.connect(120, true);
+      subscriber.registerPublishListener((context, topic, id, retain, payload, message) -> received.countDown());
+      subscriber.subscribe("/mqttsn/test/wild/+", qos);
 
-    Thread.sleep(2000);
-    MqttSn12Client publisher = new MqttSn12Client( "localhost",1884);
-    publisher.connect(120, true);
-    publisher.registerSentListener((iMqttsnContext, topicPath, i, b, bytes, iMqttsnMessage) -> {
-      published.countDown();
-    });
+      Thread.sleep(2000);
+      try (MqttSn12Client publisher = new MqttSn12Client("localhost", 1884)) {
+        publisher.connect(120, true);
+        publisher.registerSentListener((context, topic, id, retain, payload, message) -> published.countDown());
 
-    long count = published.getCount();
-    for(int x=0;x<PUBLISH_COUNT;x++){
-      publisher.publish("/mqttsn/test/wild/topic"+x%5, qos, "Hi There MQTT-SN test".getBytes());
-      long timeout = System.currentTimeMillis() + TIMEOUT;
-      while (count == published.getCount()) {
-        delay(100);
-        Assertions.assertFalse(timeout < System.currentTimeMillis());
-      }
-      count = published.getCount();
-      if (qos == 0) {
-        delay(100);
-      } else {
-        delay(20);
+        long count = published.getCount();
+        for (int x = 0; x < PUBLISH_COUNT; x++) {
+          publisher.publish("/mqttsn/test/wild/topic" + x % 5, qos, "Hi There MQTT-SN test".getBytes());
+          long timeout = System.currentTimeMillis() + TIMEOUT;
+          while (count == published.getCount()) {
+            delay(100);
+            Assertions.assertFalse(timeout < System.currentTimeMillis());
+          }
+          count = published.getCount();
+          delay(qos == 0 ? 100 : 20);
+        }
+        Assertions.assertTrue(received.await(TIMEOUT, TimeUnit.MILLISECONDS),
+            "Expected " + PUBLISH_COUNT + " received count down at " + received.getCount());
       }
     }
-    Assertions.assertTrue(received.await(TIMEOUT, TimeUnit.MILLISECONDS), "Expected "+PUBLISH_COUNT+" received count down at "+received.getCount());
-    publisher.disconnect();
-    subscriber.disconnect();
   }
 
 }
