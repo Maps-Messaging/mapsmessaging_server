@@ -10,7 +10,6 @@ import io.mapsmessaging.network.protocol.impl.websockets.frames.Frame;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
@@ -83,7 +82,6 @@ class WebSocketHandshakeConformanceTest {
   }
 
   @Test
-  @Disabled("Known WebSocket HTTP upgrade line-termination gap: MSG-370")
   @ProtocolRequirement(
       specification = SPEC,
       value = "RFC 6455 §4.2.1 uses HTTP/1.1 opening handshake syntax with CRLF line termination",
@@ -93,6 +91,26 @@ class WebSocketHandshakeConformanceTest {
         + "Host: example.test\nUpgrade: websocket\nConnection: Upgrade\n"
         + "Sec-WebSocket-Key: " + KEY + "\nSec-WebSocket-Version: 13\n\n");
     assertThrows(IOException.class, () -> new Connecting().handle(packet(request), endpoint()));
+  }
+
+  @Test
+  @ProtocolRequirement(
+      specification = SPEC,
+      value = "RFC 6455 §4.2.1 HTTP/1.1 handshake requires CRLF on every header line",
+      source = SOURCE)
+  void lfOnlyIndividualHeaderLineIsRejected() {
+    String malformed = baseHeaders().replace(
+        "Upgrade: websocket\r\n", "Upgrade: websocket\n");
+    assertThrows(IOException.class,
+        () -> new Connecting().handle(packet(request("GET /ws HTTP/1.1", malformed)), endpoint()));
+  }
+
+  @Test
+  void carriageReturnNotFollowedByLineFeedIsRejected() {
+    String malformed = baseHeaders().replace(
+        "Upgrade: websocket\r\n", "Upgrade: web\rsocket\r\n");
+    assertThrows(IOException.class,
+        () -> new Connecting().handle(packet(request("GET /ws HTTP/1.1", malformed)), endpoint()));
   }
 
   private static String baseHeaders() {

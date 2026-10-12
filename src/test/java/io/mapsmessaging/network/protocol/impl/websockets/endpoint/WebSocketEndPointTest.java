@@ -22,6 +22,7 @@ package io.mapsmessaging.network.protocol.impl.websockets.endpoint;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
@@ -132,6 +133,55 @@ class WebSocketEndPointTest {
 
     assertArrayEquals(
         new byte[] {(byte) 0x88, 0x02, 0x03, (byte) 0xE8}, delegate.writtenBytes());
+  }
+
+  @Test
+  void ignoresCoalescedDataAfterCloseAndRefusesApplicationWrites() throws IOException {
+    byte[] close = maskedFrame(WebSocketFrameDecoder.CLOSE, true,
+        new byte[] {0x03, (byte) 0xE8}, MASK);
+    byte[] trailing = maskedFrame(WebSocketFrameDecoder.BINARY, true, new byte[] {1, 2, 3}, MASK);
+    byte[] combined = new byte[close.length + trailing.length];
+    System.arraycopy(close, 0, combined, 0, close.length);
+    System.arraycopy(trailing, 0, combined, close.length, trailing.length);
+    TestEndPoint delegate = new TestEndPoint();
+    delegate.queueRead(combined);
+    WebSocketEndPoint webSocket = new WebSocketEndPoint(delegate);
+    Packet decoded = new Packet(16, false);
+
+    assertEquals(-1, webSocket.readPacket(decoded));
+    assertEquals(0, decoded.position());
+    assertArrayEquals(new byte[] {(byte) 0x88, 0x02, 0x03, (byte) 0xE8},
+        delegate.writtenBytes());
+    assertThrows(ClosedChannelException.class,
+        () -> webSocket.sendPacket(new Packet(ByteBuffer.wrap(new byte[] {8}))));
+    assertEquals(-1, webSocket.readPacket(new Packet(16, false)));
+    assertEquals(1, delegate.readCalls());
+  }
+
+  @Test
+  void ignoresApplicationFrameInFollowingNetworkReadAfterClose() throws IOException {
+    TestEndPoint delegate = new TestEndPoint();
+    delegate.queueRead(maskedFrame(WebSocketFrameDecoder.CLOSE, true,
+        new byte[] {0x03, (byte) 0xE8}, MASK));
+    delegate.queueRead(maskedFrame(WebSocketFrameDecoder.BINARY, true,
+        new byte[] {1, 2, 3}, MASK));
+    WebSocketEndPoint webSocket = new WebSocketEndPoint(delegate);
+
+    assertEquals(-1, webSocket.readPacket(new Packet(16, false)));
+    assertEquals(-1, webSocket.readPacket(new Packet(16, false)));
+    assertEquals(1, delegate.readCalls(), "No additional network data must be consumed after CLOSE");
+  }
+
+  @Test
+  void protocolErrorCloseAlsoRejectsOutboundApplicationFrames() {
+    TestEndPoint delegate = new TestEndPoint();
+    delegate.queueRead(new byte[] {(byte) 0x81, 0x01, 'x'});
+    WebSocketEndPoint webSocket = new WebSocketEndPoint(delegate);
+
+    assertThrows(IOException.class, () -> webSocket.readPacket(new Packet(8, false)));
+    assertThrows(ClosedChannelException.class,
+        () -> webSocket.sendPacket(new Packet(ByteBuffer.wrap(new byte[] {1}))));
+    assertTrue(delegate.writtenBytes().length > 0);
   }
 
   private static byte[] maskedFrame(int opcode, boolean finish, byte[] payload, byte[] mask) {

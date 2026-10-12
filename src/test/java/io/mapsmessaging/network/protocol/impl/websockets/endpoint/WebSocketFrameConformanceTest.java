@@ -8,7 +8,6 @@ import io.mapsmessaging.network.protocol.conformance.common.ProtocolRequirement;
 import java.io.ByteArrayOutputStream;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
@@ -163,7 +162,6 @@ class WebSocketFrameConformanceTest {
   }
 
   @Test
-  @Disabled("Known WebSocket post-CLOSE buffered-data processing gap: MSG-370")
   @ProtocolRequirement(
       specification = SPEC,
       value = "RFC 6455 §7.1.2: after receiving Close, endpoint starts closing handshake and must not continue normal application-data processing",
@@ -178,6 +176,27 @@ class WebSocketFrameConformanceTest {
     System.arraycopy(data, 0, both, close.length, data.length);
     decoder.decode(new Packet(ByteBuffer.wrap(both)), destination, mock(WebSocketFrameDecoder.Listener.class));
     assertEquals(0, destination.position());
+  }
+
+  @Test
+  @ProtocolRequirement(
+      specification = SPEC,
+      value = "RFC 6455 §7.1.2: application frames in later network reads are ignored after Close",
+      source = SOURCE)
+  void applicationDataInLaterReadAfterCloseIsNotDelivered() throws Exception {
+    WebSocketFrameDecoder decoder = new WebSocketFrameDecoder();
+    WebSocketFrameDecoder.Listener listener = mock(WebSocketFrameDecoder.Listener.class);
+    Packet destination = new Packet(32, false);
+    decoder.decode(new Packet(ByteBuffer.wrap(
+        maskedFrame(0x88, new byte[] {0x03, (byte) 0xE8}))), destination, listener);
+
+    Packet additional = new Packet(ByteBuffer.wrap(maskedFrame(0x82, new byte[] {1, 2, 3})));
+    assertTrue(decoder.isCloseReceived());
+    assertEquals(0, decoder.decode(additional, destination, listener));
+    assertEquals(0, additional.position(), "Decoder must not consume data after CLOSE");
+    assertEquals(0, destination.position());
+    verify(listener).onClose(new byte[] {0x03, (byte) 0xE8});
+    verifyNoMoreInteractions(listener);
   }
 
   private static int decode(byte[] wire, WebSocketFrameDecoder decoder) throws Exception {
