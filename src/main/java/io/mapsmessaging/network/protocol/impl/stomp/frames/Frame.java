@@ -34,7 +34,6 @@ import java.nio.charset.CharacterCodingException;
 import java.nio.charset.CodingErrorAction;
 import java.nio.charset.StandardCharsets;
 import java.util.LinkedHashMap;
-import java.util.Locale;
 import java.util.Map;
 
 public abstract class Frame implements ServerPacket {
@@ -49,7 +48,6 @@ public abstract class Frame implements ServerPacket {
 
   @Getter
   private final Map<String, String> header;
-  private final Map<String, String> caseHeader;
   @Getter
   private FrameListener frameListener;
 
@@ -65,7 +63,6 @@ public abstract class Frame implements ServerPacket {
 
   protected Frame() {
     header = new LinkedHashMap<>();
-    caseHeader = new LinkedHashMap<>();
     completionHandler = null;
     endOfHeader = false;
     hasEndOfFrame = false;
@@ -74,40 +71,24 @@ public abstract class Frame implements ServerPacket {
   }
 
   protected String getHeader(String key) {
-    String val = header.get(key);
-    if (val == null) {
-      String keyLookup = caseHeader.get(normaliseKey(key));
-      if (keyLookup != null) {
-        val = header.get(keyLookup);
-      }
-    }
-    return val;
+    return header.get(key);
   }
 
   protected void putHeader(String key, String val) {
-    String normalised = normaliseKey(key);
-    String existing = caseHeader.put(normalised, key);
-    if (existing != null && !existing.equals(key)) {
-      header.remove(existing);
-    }
     header.put(key, val);
   }
 
   private void putParsedHeader(String key, String val) {
-    String normalised = normaliseKey(key);
-    if (!caseHeader.containsKey(normalised)) {
-      caseHeader.put(normalised, key);
-      header.put(key, val);
-    }
+    // Identical header names use the first value; differently-cased names are distinct.
+    header.putIfAbsent(key, val);
   }
 
   protected String removeHeader(String key) {
-    String caseKey = caseHeader.remove(normaliseKey(key));
-    return caseKey == null ? null : header.remove(caseKey);
+    return header.remove(key);
   }
 
   protected boolean headerContainsKey(String key) {
-    return caseHeader.containsKey(normaliseKey(key));
+    return header.containsKey(key);
   }
 
   abstract byte[] getCommand();
@@ -394,7 +375,4 @@ public abstract class Frame implements ServerPacket {
     return null;
   }
 
-  private String normaliseKey(String key) {
-    return key.toLowerCase(Locale.ROOT);
-  }
 }

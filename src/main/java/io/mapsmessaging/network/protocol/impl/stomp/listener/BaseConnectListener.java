@@ -26,9 +26,6 @@ import java.nio.charset.StandardCharsets;
 
 public abstract class BaseConnectListener implements FrameListener {
 
-  private static final float MIN_VERSION = 1.0f;
-  private static final float MAX_VERSION = 1.2f;
-
   protected static final String CONTENT_TYPE_TEXT = "text/plain";
 
   protected float processVersion(SessionState engine, String versionHeader) {
@@ -55,21 +52,20 @@ public abstract class BaseConnectListener implements FrameListener {
   }
 
   private float calculateVersion(String versionHeader) {
-    float max = Float.NaN;
-    String[] versions = versionHeader.split(",");
-    for (String candidate : versions) {
-      float value;
-      try {
-        value = Float.parseFloat(candidate.trim());
-      } catch (NumberFormatException invalidVersion) {
-        return Float.NaN;
-      }
-      if (value >= MIN_VERSION && value <= MAX_VERSION
-          && (Float.isNaN(max) || value > max)) {
-        max = value;
+    float highest = Float.NaN;
+    for (String candidate : versionHeader.split(",", -1)) {
+      // Version identifiers are exact STOMP tokens, not floating-point ranges.
+      float supported = switch (candidate) {
+        case "1.0" -> 1.0f;
+        case "1.1" -> 1.1f;
+        case "1.2" -> 1.2f;
+        default -> Float.NaN;
+      };
+      if (!Float.isNaN(supported) && (Float.isNaN(highest) || supported > highest)) {
+        highest = supported;
       }
     }
-    return max;
+    return highest;
   }
 
   private void sendError(SessionState engine, String message) {
