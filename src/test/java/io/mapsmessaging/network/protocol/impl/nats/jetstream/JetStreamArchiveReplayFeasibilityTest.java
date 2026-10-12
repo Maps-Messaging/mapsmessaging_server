@@ -45,8 +45,8 @@ import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Characterizes MAPS subscription-state seeding without adding replay APIs.
- * The existing browser is a snapshot, while NATS could attach a listener
- * before taking its snapshot to avoid losing concurrent publications.
+ * The existing browser is a snapshot. History plus live delivery is verified
+ * separately by JetStreamArchiveReplaySubscriptionTest using normal subscriptions.
  */
 class JetStreamArchiveReplayFeasibilityTest {
 
@@ -71,7 +71,7 @@ class JetStreamArchiveReplayFeasibilityTest {
   }
 
   @Test
-  void browserIteratorMustFollowMessagesPublishedAfterSeeding() throws Exception {
+  void browser_iterator_remains_a_snapshot_after_subsequent_publication() throws Exception {
     MessageStateManagerImpl archive = createManager(3);
     try {
       archive.register(message(1));
@@ -79,8 +79,10 @@ class JetStreamArchiveReplayFeasibilityTest {
           "jetstream-browser-" + UUID.randomUUID(), 4L, archive, true);
       try {
         archive.register(message(2));
-        assertEquals(List.of(1L, 2L), new ArrayList<>(browser.getAllAtRest()),
-            "Late consumer must receive new messages as well as the historical snapshot");
+        assertEquals(List.of(1L, 2L), new ArrayList<>(archive.getAllAtRest()),
+            "The archive must retain the subsequent publication");
+        assertEquals(List.of(1L), new ArrayList<>(browser.getAllAtRest()),
+            "A browser must retain its seeded snapshot without following subsequent publications");
       } finally {
         browser.close();
       }
