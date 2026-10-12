@@ -24,6 +24,7 @@ import io.mapsmessaging.network.protocol.impl.nats.frames.ErrFrame;
 import io.mapsmessaging.network.protocol.impl.nats.frames.NatsFrame;
 import io.mapsmessaging.network.protocol.impl.nats.frames.PayloadFrame;
 import io.mapsmessaging.network.protocol.impl.nats.jetstream.stream.JetStreamFrameHandler;
+import io.mapsmessaging.network.protocol.impl.nats.jetstream.stream.JetStreamArchiveManager;
 import io.mapsmessaging.network.protocol.impl.nats.state.SessionState;
 import io.mapsmessaging.network.protocol.impl.nats.streams.NamespaceManager;
 import io.mapsmessaging.network.protocol.impl.nats.streams.StreamInfoList;
@@ -85,6 +86,7 @@ public class StreamDeleteHandler extends JetStreamFrameHandler {
     } catch (ExecutionException e) {
       return new ErrFrame("Error while deleting stream destinations");
     }
+    JetStreamArchiveManager.getInstance().releaseStream(streamName);
     result.setPayload(success().getBytes());
 
     return result;

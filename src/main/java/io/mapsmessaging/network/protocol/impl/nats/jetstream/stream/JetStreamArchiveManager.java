@@ -35,7 +35,9 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.Collection;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.HashSet;
 import java.util.HexFormat;
 import java.util.Map;
@@ -79,7 +81,7 @@ public final class JetStreamArchiveManager {
     String sessionId = archiveSessionId(user, stream);
     Archive archive = archives.get(sessionId);
     if (archive == null || archive.session().isClosed()) {
-      archive = new Archive(openArchive(connection, user, sessionId), new HashSet<>());
+      archive = new Archive(stream, openArchive(connection, user, sessionId), new HashSet<>());
       archives.put(sessionId, archive);
     }
 
@@ -93,7 +95,7 @@ public final class JetStreamArchiveManager {
       if (restored == null) {
         SubscriptionContextBuilder builder = new SubscriptionContextBuilder(
             topic, ClientAcknowledgement.INDIVIDUAL);
-        builder.setAlias("nats-archive:" + stream + ":" + topic);
+        builder.setAlias(archiveAlias(stream, topic));
         builder.setSync(true);
         builder.setNoLocalMessages(false);
         builder.setReceiveMaximum(1);
@@ -104,6 +106,51 @@ public final class JetStreamArchiveManager {
       archive.topics().add(topic);
     }
     return archive.session().getName();
+  }
+
+  /**
+   * Stop retaining topics removed from an updated JetStream stream. The archive
+   * belongs to NATS, not to the publishing TCP connection.
+   */
+  public synchronized void releaseTopics(String stream, Collection<String> topics) {
+    for (Iterator<Map.Entry<String, Archive>> iterator = archives.entrySet().iterator(); iterator.hasNext();) {
+      Map.Entry<String, Archive> entry = iterator.next();
+      Archive archive = entry.getValue();
+      if (!archive.stream().equals(stream)) {
+        continue;
+      }
+      for (String topic : topics) {
+        if (archive.topics().remove(topic)) {
+          archive.session().removeSubscription(archiveAlias(stream, topic));
+        }
+      }
+      if (archive.topics().isEmpty()) {
+        SessionManager.getInstance().closeAsync(archive.session(), true);
+        iterator.remove();
+      }
+    }
+  }
+
+  /**
+   * A deleted stream must release its archive subscriptions so the persistent
+   * MAPS session does not keep an orphaned destination alive.
+   */
+  public synchronized void releaseStream(String stream) {
+    for (Iterator<Map.Entry<String, Archive>> iterator = archives.entrySet().iterator(); iterator.hasNext();) {
+      Map.Entry<String, Archive> entry = iterator.next();
+      Archive archive = entry.getValue();
+      if (archive.stream().equals(stream)) {
+        for (String topic : archive.topics()) {
+          archive.session().removeSubscription(archiveAlias(stream, topic));
+        }
+        SessionManager.getInstance().closeAsync(archive.session(), true);
+        iterator.remove();
+      }
+    }
+  }
+
+  private static String archiveAlias(String stream, String topic) {
+    return "nats-archive:" + stream + ":" + topic;
   }
 
   static String archiveSessionId(String username, String stream) {
@@ -159,6 +206,6 @@ public final class JetStreamArchiveManager {
     }
   }
 
-  private record Archive(Session session, Set<String> topics) {
+  private record Archive(String stream, Session session, Set<String> topics) {
   }
 }

@@ -96,6 +96,10 @@ public class StreamUpdateHandler extends JetStreamFrameHandler {
 // Subjects to remove
     Set<String> toRemove = new HashSet<>(currentSubjects);
     toRemove.removeAll(newSubjects);
+    List<String> removedTopics = info.getSubjects().stream()
+        .filter(existing -> toRemove.contains(existing.getSubject()))
+        .map(existing -> existing.getDestination().getFullyQualifiedNamespace())
+        .toList();
 
     List<CompletableFuture<Destination>> futures = new ArrayList<>();
 
@@ -143,6 +147,9 @@ public class StreamUpdateHandler extends JetStreamFrameHandler {
             "Unable to initialise JetStream archive: " + failure.getMessage(),
             frame.getReplyTo(), sessionState);
       }
+    }
+    if (sessionState.getProtocol().getNatsConfig().isEnableStreamDelete()) {
+      JetStreamArchiveManager.getInstance().releaseTopics(streamName, removedTopics);
     }
     PayloadFrame payloadFrame = (PayloadFrame) msg;
     JsonObject responseJson = new JsonObject();
