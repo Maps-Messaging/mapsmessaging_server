@@ -6,7 +6,6 @@ import io.mapsmessaging.network.protocol.conformance.common.ProtocolRequirement;
 import io.mapsmessaging.test.BaseTestConfig;
 import java.net.SocketTimeoutException;
 import java.util.UUID;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
@@ -18,7 +17,6 @@ import static org.junit.jupiter.api.Assertions.*;
 class Mqtt311ProtocolErrorConformanceTest extends BaseTestConfig {
 
   @Test
-  @Disabled("Known conformance gap: MSG-389")
   @ProtocolRequirement(
       specification = "MQTT-3.1.1",
       value = "Section 3.1.2.2 Protocol Level [MQTT-3.1.2-2]",
@@ -58,7 +56,6 @@ class Mqtt311ProtocolErrorConformanceTest extends BaseTestConfig {
   }
 
   @Test
-  @Disabled("Known conformance gap: MSG-388")
   @ProtocolRequirement(
       specification = "MQTT-3.1.1",
       value = "Section 2.3.1 Packet Identifier [MQTT-2.3.1-1]",
@@ -71,7 +68,6 @@ class Mqtt311ProtocolErrorConformanceTest extends BaseTestConfig {
   }
 
   @Test
-  @Disabled("Known conformance gap: MSG-388")
   @ProtocolRequirement(
       specification = "MQTT-3.1.1",
       value = "Section 4.7.1.2 Multi-level wildcard [MQTT-4.7.1-2]",

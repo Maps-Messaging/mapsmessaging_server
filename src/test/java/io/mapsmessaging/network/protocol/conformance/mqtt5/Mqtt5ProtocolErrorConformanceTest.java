@@ -7,7 +7,6 @@ import io.mapsmessaging.test.BaseTestConfig;
 import java.io.EOFException;
 import java.net.SocketTimeoutException;
 import java.util.UUID;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
@@ -43,7 +42,6 @@ class Mqtt5ProtocolErrorConformanceTest extends BaseTestConfig {
   }
 
   @Test
-  @Disabled("Known conformance gap: MSG-388")
   @ProtocolRequirement(
       specification = "MQTT-5.0",
       value = "Section 2.2.1 Packet Identifier [MQTT-2.2.1-3]",
@@ -84,7 +82,6 @@ class Mqtt5ProtocolErrorConformanceTest extends BaseTestConfig {
   }
 
   @Test
-  @Disabled("Known conformance gap: MSG-388")
   @ProtocolRequirement(
       specification = "MQTT-5.0",
       value = "Section 3.8.2.1.2 Subscription Identifier: value 0 is a Protocol Error",
@@ -99,7 +96,6 @@ class Mqtt5ProtocolErrorConformanceTest extends BaseTestConfig {
   }
 
   @Test
-  @Disabled("Known conformance gap: MSG-388")
   @ProtocolRequirement(
       specification = "MQTT-5.0",
       value = "Section 3.8.3.1 Subscription Options: Maximum QoS value 3 is a Protocol Error",
@@ -113,7 +109,6 @@ class Mqtt5ProtocolErrorConformanceTest extends BaseTestConfig {
   }
 
   @Test
-  @Disabled("Known conformance gap: MSG-388")
   @ProtocolRequirement(
       specification = "MQTT-5.0",
       value = "Section 4.7.1.2 Multi-level wildcard [MQTT-4.7.1-1]",
@@ -190,7 +185,6 @@ class Mqtt5ProtocolErrorConformanceTest extends BaseTestConfig {
   }
 
   @Test
-  @Disabled("Known conformance gap: MSG-388")
   @ProtocolRequirement(
       specification = "MQTT-5.0",
       value = "Section 3.8.3.1 Subscription Options [MQTT-3.8.3-4]",
