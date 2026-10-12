@@ -53,6 +53,17 @@ public class BaseMessageTranslator implements MessageTranslator {
     Properties props = protonMessage.getProperties();
     if (props != null) {
       PropertiesEncoder.unpackProperties(props, dataMap, messageBuilder);
+      if (props.getAbsoluteExpiryTime() == null
+          && props.getCreationTime() != null
+          && protonMessage.getHeader() != null
+          && protonMessage.getHeader().getTtl() != null) {
+        // JMSExpiration is assigned from the original producer timestamp and
+        // TTL. Recomputing TTL on forward introduces millisecond drift.
+        long originalExpiry = props.getCreationTime().getTime()
+            + protonMessage.getHeader().getTtl().longValue();
+        messageBuilder.setMeta(Map.of(
+            PropertiesEncoder.ORIGINAL_ABSOLUTE_EXPIRY, Long.toString(originalExpiry)));
+      }
     }
     ApplicationMapEncoder.unpackApplicationMap(dataMap, protonMessage);
     messageBuilder.setDataMap(dataMap);

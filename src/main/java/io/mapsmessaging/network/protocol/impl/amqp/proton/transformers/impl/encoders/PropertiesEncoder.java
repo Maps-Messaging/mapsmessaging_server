@@ -36,7 +36,7 @@ import java.util.concurrent.TimeUnit;
 
 public class PropertiesEncoder {
 
-  private static final String ORIGINAL_ABSOLUTE_EXPIRY = "amqp.original.absolute.expiry";
+  public static final String ORIGINAL_ABSOLUTE_EXPIRY = "amqp.original.absolute.expiry";
   private static final List<JMSProperty> encodingList;
   protected static final List<String> propertyNames;
 
