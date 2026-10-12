@@ -13,7 +13,6 @@ import jakarta.jms.MessageProducer;
 import jakarta.jms.Session;
 import jakarta.jms.TemporaryQueue;
 import jakarta.jms.TextMessage;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
@@ -30,7 +29,6 @@ class JmsUnidentifiedProducerConformanceTest extends JmsConformanceSupport {
       "https://jakarta.ee/specifications/messaging/3.1/jakarta-messaging-spec-3.1.html";
 
   @Test
-  @Disabled("Known conformance gap: MSG-398")
   @ProtocolRequirement(
       specification = "Jakarta-Messaging-3.1",
       value = "Sections 2.8 and 7.1: JMSProducer.send supplies the Destination on every send",
@@ -49,7 +47,6 @@ class JmsUnidentifiedProducerConformanceTest extends JmsConformanceSupport {
   }
 
   @Test
-  @Disabled("Known conformance gap: MSG-398")
   @ProtocolRequirement(
       specification = "Jakarta-Messaging-3.1",
       value = "Section 7.1: unidentified MessageProducer created with null Destination sends to Destination supplied per call",

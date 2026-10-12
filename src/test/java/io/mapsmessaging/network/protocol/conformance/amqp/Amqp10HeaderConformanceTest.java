@@ -10,7 +10,6 @@ import java.io.InputStream;
 import java.net.Socket;
 import java.net.SocketTimeoutException;
 import java.util.Arrays;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
@@ -42,7 +41,6 @@ class Amqp10HeaderConformanceTest extends BaseTestConfig {
   }
 
   @Test
-  @Disabled("Known conformance gap: MSG-394")
   @ProtocolRequirement(
       specification = "AMQP-1.0",
       value = "Part 2 section 2.2 Version Negotiation: unsupported version returns supported header then closes",

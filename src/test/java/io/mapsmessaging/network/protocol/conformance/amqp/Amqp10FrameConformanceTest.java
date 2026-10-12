@@ -10,7 +10,6 @@ import java.io.DataOutputStream;
 import java.io.InputStream;
 import java.net.Socket;
 import java.net.SocketTimeoutException;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
@@ -28,7 +27,6 @@ class Amqp10FrameConformanceTest extends BaseTestConfig {
       "https://docs.oasis-open.org/amqp/core/v1.0/os/amqp-core-transport-v1.0-os.html";
 
   @Test
-  @Disabled("Known conformance gap: MSG-397")
   @ProtocolRequirement(
       specification = "AMQP-1.0",
       value = "Part 2 section 2.3.1: frame SIZE must be at least 8 octets",
@@ -47,7 +45,6 @@ class Amqp10FrameConformanceTest extends BaseTestConfig {
   }
 
   @Test
-  @Disabled("Known conformance gap: MSG-397")
   @ProtocolRequirement(
       specification = "AMQP-1.0",
       value = "Part 2 section 2.3.1: data offset must describe a valid frame header",
@@ -66,7 +63,6 @@ class Amqp10FrameConformanceTest extends BaseTestConfig {
   }
 
   @Test
-  @Disabled("Known conformance gap: MSG-397")
   @ProtocolRequirement(
       specification = "AMQP-1.0",
       value = "Part 2 section 2.3.1: frame body begins at DOFF*4 and DOFF must describe a position within SIZE",
@@ -85,7 +81,6 @@ class Amqp10FrameConformanceTest extends BaseTestConfig {
   }
 
   @Test
-  @Disabled("Known conformance gap: MSG-397")
   @ProtocolRequirement(
       specification = "AMQP-1.0",
       value = "Part 2 section 2.4.1: prior to negotiation max-frame-size is 512 octets",

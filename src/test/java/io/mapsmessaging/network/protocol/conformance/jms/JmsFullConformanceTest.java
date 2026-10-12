@@ -24,7 +24,6 @@ import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
@@ -40,7 +39,6 @@ class JmsFullConformanceTest extends JmsConformanceSupport {
       "https://jakarta.ee/specifications/messaging/3.1/jakarta-messaging-spec-3.1.html";
 
   @Test
-  @Disabled("Known AMQP link-close conformance gap: MSG-397")
   @ProtocolRequirement(
       specification = "Jakarta-Messaging-3.1",
       value = "Section 8.3.4: shared durable subscription delivers each message to only one consumer",
@@ -171,7 +169,6 @@ class JmsFullConformanceTest extends JmsConformanceSupport {
   }
 
   @Test
-  @Disabled("Known conformance gap: MSG-399")
   @ProtocolRequirement(
       specification = "Jakarta-Messaging-3.1",
       value = "Section 7.9: delivery delay prevents delivery before JMSDeliveryTime",

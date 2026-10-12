@@ -12,7 +12,6 @@ import java.io.DataOutputStream;
 import java.net.Socket;
 import java.net.SocketTimeoutException;
 import java.nio.charset.StandardCharsets;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
@@ -67,7 +66,6 @@ class Amqp10LifecycleConformanceTest extends BaseTestConfig {
   }
 
   @Test
-  @Disabled("Known conformance gap: MSG-397")
   @ProtocolRequirement(
       specification = "AMQP-1.0",
       value = "Part 2 sections 2.4.3 and 2.7.9: CLOSE completes the connection shutdown handshake",
@@ -83,7 +81,6 @@ class Amqp10LifecycleConformanceTest extends BaseTestConfig {
   }
 
   @Test
-  @Disabled("Known conformance gap: MSG-397")
   @ProtocolRequirement(
       specification = "AMQP-1.0",
       value = "Part 2 sections 2.4.1 and 2.7.1: OPEN must be the first frame and can only use channel 0",
@@ -96,7 +93,6 @@ class Amqp10LifecycleConformanceTest extends BaseTestConfig {
   }
 
   @Test
-  @Disabled("Known conformance gap: MSG-397")
   @ProtocolRequirement(
       specification = "AMQP-1.0",
       value = "Part 2 section 2.4.1: OPEN can only be sent on channel 0",
