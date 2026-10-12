@@ -210,14 +210,14 @@ class StompFrameComplianceTest {
   }
 
   @Test
-  void subscriptionIdentifierAndDestinationWhitespaceArePreserved() throws Exception {
+  void subscriptionIdentifierAndDestinationWhitespaceAreTrimmed() throws Exception {
     Subscribe subscribe = assertInstanceOf(
         Subscribe.class,
         parse("SUBSCRIBE\nid: sub-id \ndestination: /topic/space \nack:client\n\n\0"));
 
     assertTrue(subscribe.isValid());
-    assertEquals(" sub-id ", subscribe.getId());
-    assertEquals(" /topic/space ", subscribe.getDestination());
+    assertEquals("sub-id", subscribe.getId());
+    assertEquals("/topic/space", subscribe.getDestination());
   }
 
   @Test
@@ -226,6 +226,39 @@ class StompFrameComplianceTest {
         Subscribe.class, parse("SUBSCRIBE\nid:sub\ndestination:/topic/a\nack:AUTO\n\n\0"));
 
     assertFalse(subscribe.isValid());
+  }
+
+
+  @Test
+  void trimsHeaderWhitespaceAfterSplittingOnlyAtFirstColon() throws Exception {
+    Send send = assertInstanceOf(
+        Send.class,
+        parse("SEND\n destination :  /topic/spaced  \n"
+            + " Trace-ID :  value:with:colon  \n"
+            + "Trace-ID:ignored\n"
+            + "Destination :  /topic/not-the-destination  \n"
+            + "\npayload\0"));
+
+    assertTrue(send.isValid());
+    assertEquals("/topic/spaced", send.getDestination());
+    assertEquals("value:with:colon", send.getHeader("Trace-ID"));
+    assertEquals("/topic/not-the-destination", send.getHeader("Destination"));
+  }
+
+  @Test
+  void headerValuesKeepLiteralQuotationMarks() throws Exception {
+    Send send = assertInstanceOf(
+        Send.class,
+        parse("SEND\ndestination : \"/folder/topic1\"  \n\npayload\0"));
+
+    assertTrue(send.isValid());
+    assertEquals("\"/folder/topic1\"", send.getDestination());
+  }
+
+  @Test
+  void rejectsHeaderNameContainingOnlyWhitespace() {
+    String frameText = "SEND\n  :value\ndestination:/topic/a\n\npayload\0";
+    assertThrows(StompProtocolException.class, () -> parse(frameText));
   }
 
   private Frame parse(String value) throws Exception {

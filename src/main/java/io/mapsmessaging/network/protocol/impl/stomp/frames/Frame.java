@@ -229,8 +229,13 @@ public abstract class Frame implements ServerPacket {
         throw new StompProtocolException("STOMP frame contains too many headers");
       }
 
-      String key = line.substring(0, delimiter);
-      String value = line.substring(delimiter + 1);
+      // MAPS permits whitespace around the first ':' separator for compatibility.
+      // Unlike strict STOMP 1.2, surrounding header whitespace is normalized.
+      String key = line.substring(0, delimiter).trim();
+      String value = line.substring(delimiter + 1).trim();
+      if (key.isEmpty()) {
+        throw new StompProtocolException("Invalid STOMP header name");
+      }
       if (escapeHeaders()) {
         key = decodeHeader(key);
         value = decodeHeader(value);

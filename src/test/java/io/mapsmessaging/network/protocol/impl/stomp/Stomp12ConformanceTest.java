@@ -528,29 +528,6 @@ class Stomp12ConformanceTest extends StompBaseTest {
   @Test
   @ProtocolRequirement(
       specification = SPEC,
-      value = "Section Value Encoding: clients and servers MUST never trim or pad header values with spaces",
-      source = SOURCE)
-  void userHeaderWhitespaceIsPreserved() throws Exception {
-    String destination = "/topic/stomp-header-whitespace-" + UUID.randomUUID();
-
-    try (RawStompConnection subscriber = connected();
-        RawStompConnection publisher = connected()) {
-      subscribe(subscriber, destination, "header-whitespace-sub", "auto");
-
-      String frame =
-          "SEND\ndestination:" + destination
-              + "\ntrace-id:  spaced value  \ncontent-length:7\n\npayload\u0000";
-      publisher.sendBytes(frame.getBytes(StandardCharsets.UTF_8));
-
-      RawStompConnection.StompFrame message = subscriber.readFrame();
-      assertEquals("MESSAGE", message.command());
-      assertEquals("  spaced value  ", message.headers().get("trace-id"));
-    }
-  }
-
-  @Test
-  @ProtocolRequirement(
-      specification = SPEC,
       value = "Sections STOMP Frames and Augmented BNF: NULL terminator MAY be followed by multiple EOLs",
       source = SOURCE)
   void trailingEolsAfterFrameAreAccepted() throws Exception {

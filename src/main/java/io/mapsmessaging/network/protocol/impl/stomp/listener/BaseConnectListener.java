@@ -55,7 +55,7 @@ public abstract class BaseConnectListener implements FrameListener {
     float highest = Float.NaN;
     for (String candidate : versionHeader.split(",", -1)) {
       // Version identifiers are exact STOMP tokens, not floating-point ranges.
-      float supported = switch (candidate) {
+      float supported = switch (candidate.trim()) {
         case "1.0" -> 1.0f;
         case "1.1" -> 1.1f;
         case "1.2" -> 1.2f;
