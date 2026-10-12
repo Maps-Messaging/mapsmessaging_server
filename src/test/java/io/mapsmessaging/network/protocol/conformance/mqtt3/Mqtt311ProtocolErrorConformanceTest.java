@@ -84,7 +84,6 @@ class Mqtt311ProtocolErrorConformanceTest extends BaseTestConfig {
   }
 
   @Test
-  @Disabled("Known conformance gap: MSG-390")
   @ProtocolRequirement(
       specification = "MQTT-3.1.1",
       value = "Section 1.5.3 UTF-8 encoded strings",
@@ -98,7 +97,6 @@ class Mqtt311ProtocolErrorConformanceTest extends BaseTestConfig {
 
 
   @Test
-  @Disabled("Known conformance gap: MSG-395")
   @ProtocolRequirement(
       specification = "MQTT-3.1.1",
       value = "Section 2.2.3 Remaining Length: maximum four bytes",

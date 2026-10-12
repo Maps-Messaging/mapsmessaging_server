@@ -56,7 +56,6 @@ class Mqtt5ProtocolErrorConformanceTest extends BaseTestConfig {
   }
 
   @Test
-  @Disabled("Known conformance gap: MSG-391")
   @ProtocolRequirement(
       specification = "MQTT-5.0",
       value = "Section 3.1.2.11.3 Receive Maximum",
@@ -71,7 +70,6 @@ class Mqtt5ProtocolErrorConformanceTest extends BaseTestConfig {
   }
 
   @Test
-  @Disabled("Known conformance gap: MSG-391")
   @ProtocolRequirement(
       specification = "MQTT-5.0",
       value = "Section 3.1.2.11.3 Receive Maximum: property MUST NOT appear more than once",
@@ -128,7 +126,6 @@ class Mqtt5ProtocolErrorConformanceTest extends BaseTestConfig {
   }
 
   @Test
-  @Disabled("Known conformance gap: MSG-390")
   @ProtocolRequirement(
       specification = "MQTT-5.0",
       value = "Section 1.5.4 UTF-8 Encoded String [MQTT-1.5.4-1]",
@@ -154,7 +151,6 @@ class Mqtt5ProtocolErrorConformanceTest extends BaseTestConfig {
 
 
   @Test
-  @Disabled("Known conformance gap: MSG-395")
   @ProtocolRequirement(
       specification = "MQTT-5.0",
       value = "Section 1.5.5 Variable Byte Integer [MQTT-1.5.5-1]",
@@ -167,7 +163,6 @@ class Mqtt5ProtocolErrorConformanceTest extends BaseTestConfig {
   }
 
   @Test
-  @Disabled("Known conformance gap: MSG-395")
   @ProtocolRequirement(
       specification = "MQTT-5.0",
       value = "Section 1.5.5 Variable Byte Integer: maximum four bytes",
@@ -212,7 +207,6 @@ class Mqtt5ProtocolErrorConformanceTest extends BaseTestConfig {
   }
 
   @Test
-  @Disabled("Known conformance gap: MSG-393")
   @ProtocolRequirement(
       specification = "MQTT-5.0",
       value = "Section 3.3.4 Subscription Identifier [MQTT-3.3.4-6]",
@@ -230,7 +224,6 @@ class Mqtt5ProtocolErrorConformanceTest extends BaseTestConfig {
   }
 
   @Test
-  @Disabled("Known conformance gap: MSG-396")
   @ProtocolRequirement(
       specification = "MQTT-5.0",
       value = "Section 4.12 Enhanced Authentication [MQTT-4.12.0-1]",
