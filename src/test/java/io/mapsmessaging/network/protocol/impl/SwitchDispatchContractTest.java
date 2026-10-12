@@ -20,6 +20,7 @@
 package io.mapsmessaging.network.protocol.impl;
 
 import io.mapsmessaging.api.MessageBuilder;
+import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.api.Session;
 import io.mapsmessaging.api.SubscribedEventManager;
 import io.mapsmessaging.api.features.QualityOfService;
@@ -32,6 +33,9 @@ import io.mapsmessaging.network.protocol.impl.coap.listeners.GetListener;
 import io.mapsmessaging.network.protocol.impl.coap.listeners.PatchListener;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.packet.MQTT_SNPacket;
 import io.mapsmessaging.network.protocol.impl.nats.frames.PayloadFrame;
+import io.mapsmessaging.engine.destination.DestinationImpl;
+import io.mapsmessaging.network.protocol.impl.nats.jetstream.stream.TransactionSubject;
+import io.mapsmessaging.network.protocol.impl.nats.jetstream.stream.consumer.data.ConsumerConfig;
 import io.mapsmessaging.network.protocol.impl.nats.state.SessionState;
 import io.mapsmessaging.network.protocol.impl.nats.jetstream.stream.consumer.NamedConsumer;
 import io.mapsmessaging.network.protocol.impl.nats.streams.StreamSubscriptionInfo;
@@ -107,17 +111,33 @@ class SwitchDispatchContractTest {
   void nats_ack_and_term_acknowledge_the_same_message() throws Exception {
     for (String command : List.of("+ack", "+term")) {
       SessionState state = mock(SessionState.class);
-      NamedConsumer consumer = mock(NamedConsumer.class);
       StreamSubscriptionInfo info = mock(StreamSubscriptionInfo.class);
       SubscribedEventManager events = mock(SubscribedEventManager.class);
-      when(state.getNamedConsumers()).thenReturn(Map.of("consumer", consumer));
-      when(consumer.getStreams()).thenReturn(List.of(info));
+      DestinationImpl destination = mock(DestinationImpl.class);
+      when(destination.getFullyQualifiedNamespace()).thenReturn("stream/orders");
+      when(info.getDestination()).thenReturn(destination);
       when(info.getSubscribedEventManager()).thenReturn(events);
-      PayloadFrame frame = mock(PayloadFrame.class);
-      when(frame.getSubject()).thenReturn("$JS.ACK.stream.consumer.1.0.42.123.token");
-      when(frame.getPayload()).thenReturn(command.getBytes(java.nio.charset.StandardCharsets.UTF_8));
-      assertNull(new TransactionHandler().handle(frame, null, state));
-      verify(events).ackReceived(42);
+
+      NamedConsumer consumer = new NamedConsumer("consumer", "stream", new ConsumerConfig(), List.of(info));
+      try {
+        when(state.getNamedConsumers()).thenReturn(Map.of("consumer", consumer));
+        Message message = mock(Message.class);
+        when(message.getIdentifier()).thenReturn(42L);
+        when(message.getCreation()).thenReturn(1_730_000_000_000L);
+        TransactionSubject subject = consumer.recordDelivery("stream/orders", message);
+        assertNotNull(subject);
+
+        PayloadFrame frame = mock(PayloadFrame.class);
+        when(frame.getSubject()).thenReturn(subject.toSubject());
+        when(frame.getPayload()).thenReturn(command.getBytes(java.nio.charset.StandardCharsets.UTF_8));
+        assertNull(new TransactionHandler().handle(frame, null, state));
+
+        verify(events).ackReceived(42L);
+        assertEquals(0, consumer.getOutstandingCount());
+        assertEquals("+term".equals(command) ? 1 : 0, consumer.getTerminalCount());
+      } finally {
+        consumer.close();
+      }
     }
   }
 
