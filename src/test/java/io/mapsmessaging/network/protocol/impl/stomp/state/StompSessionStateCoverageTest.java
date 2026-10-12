@@ -68,6 +68,28 @@ class StompSessionStateCoverageTest {
   }
 
   @Test
+  void duplicateSubscriptionIdCannotReplaceRegisteredSubscription() throws Exception {
+    Fixture fixture = fixture(false);
+    Session session = mock(Session.class);
+    SubscribedEventManager existing = mock(SubscribedEventManager.class);
+    SubscriptionContext first = new SubscriptionContext("/topic/a");
+    first.setAlias("duplicate-id");
+    SubscriptionContext second = new SubscriptionContext("/topic/b");
+    second.setAlias("duplicate-id");
+    when(session.addSubscription(first)).thenReturn(existing);
+    fixture.state.setSession(session);
+
+    assertSame(existing, fixture.state.createSubscription(first));
+    StompProtocolException failure = assertThrows(
+        StompProtocolException.class, () -> fixture.state.createSubscription(second));
+
+    assertTrue(failure.getMessage().contains("duplicate-id"));
+    assertSame(existing, fixture.state.findSubscription("duplicate-id"));
+    verify(session).addSubscription(first);
+    verify(session, never()).addSubscription(second);
+  }
+
+  @Test
   void queueSubscriptionRequestsQueueDestinationBeforeRegistration() throws Exception {
     Fixture fixture = fixture(false);
     Session session = mock(Session.class);
