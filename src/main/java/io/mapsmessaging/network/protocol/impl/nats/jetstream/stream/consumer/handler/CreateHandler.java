@@ -98,10 +98,6 @@ public class CreateHandler extends JetStreamFrameHandler {
     }
 
     List<StreamInfo> subjects = streamInfoList.getSubjects();
-    if (subjects.stream().map(info -> info.getDestination().getFullyQualifiedNamespace()).distinct().count() > 1) {
-      return buildError(TYPE, 501,
-          "JetStream stream-global sequences across multiple MAPS destinations are not implemented", replyTo, sessionState);
-    }
     if (config.getFilterSubject() != null && !config.getFilterSubject().isBlank()) {
       subjects = subjects.stream().filter(info -> matchesFilter(info.getSubject(), config.getFilterSubject())).toList();
       if (subjects.isEmpty()) {

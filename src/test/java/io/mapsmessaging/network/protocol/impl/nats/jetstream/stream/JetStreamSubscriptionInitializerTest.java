@@ -189,9 +189,9 @@ class JetStreamSubscriptionInitializerTest {
     MessageStateManagerImpl consumerState = manager(102);
     try {
       var included = new MessageBuilder().setId(1).setPriority(Priority.HIGHEST)
-          .setMeta(java.util.Map.of("nats.subject", "orders.created")).setOpaqueData(new byte[]{1}).build();
+          .setMeta(new java.util.HashMap<>(java.util.Map.of("nats.subject", "orders.created"))).setOpaqueData(new byte[]{1}).build();
       var excluded = new MessageBuilder().setId(2).setPriority(Priority.NORMAL)
-          .setMeta(java.util.Map.of("nats.subject", "orders.deleted")).setOpaqueData(new byte[]{2}).build();
+          .setMeta(new java.util.HashMap<>(java.util.Map.of("nats.subject", "orders.deleted"))).setOpaqueData(new byte[]{2}).build();
       archiveState.register(included);
       archiveState.register(excluded);
       DestinationSubscription archive = mock(DestinationSubscription.class);

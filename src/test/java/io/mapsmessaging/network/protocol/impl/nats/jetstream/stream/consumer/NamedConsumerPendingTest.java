@@ -159,9 +159,9 @@ class NamedConsumerPendingTest {
     when(stream.getSubscribedEventManager()).thenReturn(manager);
     when(stream.getSubject()).thenReturn("orders/>");
     var excluded = new io.mapsmessaging.api.MessageBuilder().setId(1)
-        .setMeta(java.util.Map.of("nats.subject", "orders.deleted")).setOpaqueData(new byte[]{1}).build();
+        .setMeta(new java.util.HashMap<>(java.util.Map.of("nats.subject", "orders.deleted"))).setOpaqueData(new byte[]{1}).build();
     var included = new io.mapsmessaging.api.MessageBuilder().setId(2)
-        .setMeta(java.util.Map.of("nats.subject", "orders.created")).setOpaqueData(new byte[]{2}).build();
+        .setMeta(new java.util.HashMap<>(java.util.Map.of("nats.subject", "orders.created"))).setOpaqueData(new byte[]{2}).build();
     var excludedEvent = new io.mapsmessaging.api.MessageEvent("EVENTS/orders/>", manager, excluded, () -> {});
     var includedEvent = new io.mapsmessaging.api.MessageEvent("EVENTS/orders/>", manager, included, () -> {});
     when(manager.getNext()).thenReturn(
