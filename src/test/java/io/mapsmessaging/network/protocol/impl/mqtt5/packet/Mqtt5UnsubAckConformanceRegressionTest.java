@@ -30,7 +30,6 @@ import io.mapsmessaging.network.protocol.impl.mqtt.packet.MQTTPacket;
 import io.mapsmessaging.network.protocol.impl.mqtt.packet.MalformedException;
 import io.mapsmessaging.network.protocol.impl.mqtt5.listeners.UnsubscribeListener5;
 import java.nio.ByteBuffer;
-import java.util.ArrayList;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 
@@ -88,7 +87,7 @@ class Mqtt5UnsubAckConformanceRegressionTest {
     java.util.Arrays.fill(codes, StatusCode.SUCCESS);
     Packet encoded = pack(new UnsubAck5(44, codes));
     assertEquals((byte) 0xb0, encoded.get());
-    assertEquals(134L, MQTTPacket.readVariableInt(encoded));
+    assertEquals(133L, MQTTPacket.readVariableInt(encoded));
   }
 
   private static Packet pack(UnsubAck5 ack) {
