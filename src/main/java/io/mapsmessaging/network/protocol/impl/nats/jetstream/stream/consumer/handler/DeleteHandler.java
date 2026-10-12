@@ -20,14 +20,17 @@
 package io.mapsmessaging.network.protocol.impl.nats.jetstream.stream.consumer.handler;
 
 import com.google.gson.JsonObject;
+import io.mapsmessaging.api.NatsJetStreamSubscriptions;
 import io.mapsmessaging.network.protocol.impl.nats.frames.MsgFrame;
 import io.mapsmessaging.network.protocol.impl.nats.frames.NatsFrame;
 import io.mapsmessaging.network.protocol.impl.nats.frames.PayloadFrame;
 import io.mapsmessaging.network.protocol.impl.nats.jetstream.stream.JetStreamFrameHandler;
 import io.mapsmessaging.network.protocol.impl.nats.jetstream.stream.consumer.NamedConsumer;
+import io.mapsmessaging.network.protocol.impl.nats.jetstream.stream.consumer.DurableConsumerSession;
 import io.mapsmessaging.network.protocol.impl.nats.state.SessionState;
 import io.mapsmessaging.network.protocol.impl.nats.streams.NamespaceManager;
 import io.mapsmessaging.network.protocol.impl.nats.streams.StreamInfoList;
+import io.mapsmessaging.network.protocol.impl.nats.streams.StreamSubscriptionInfo;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -63,14 +66,38 @@ public class DeleteHandler extends JetStreamFrameHandler {
       return buildError(TYPE,"Stream '" + stream + "' not found", replyTo, sessionState);
     }
 
-    NamedConsumer namedConsumer = sessionState.getNamedConsumers().remove(consumerName);
-    if (namedConsumer == null) {
+    NamedConsumer namedConsumer = sessionState.getNamedConsumers().get(consumerName);
+    if (namedConsumer == null || !stream.equals(namedConsumer.getStreamName())) {
       return buildError(TYPE,"Consumer '" + consumerName + "' not found", replyTo, sessionState);
     }
 
-    sessionState.removeSubscription(consumerName);
-    namedConsumer.getEvents().clear();
-    namedConsumer.getStreams().clear();
+    synchronized (sessionState) {
+      if (!sessionState.getNamedConsumers().remove(consumerName, namedConsumer)) {
+        return buildError(TYPE, "Consumer '" + consumerName + "' no longer exists", replyTo, sessionState);
+      }
+      for (StreamSubscriptionInfo subscription : namedConsumer.getStreams()) {
+        if (subscription.getSubscriptionAlias() == null) {
+          continue;
+        }
+        if (namedConsumer.getMapsSession() != null) {
+          NatsJetStreamSubscriptions.remove(
+              namedConsumer.getMapsSession(), subscription.getSubscribedEventManager());
+        } else {
+          sessionState.removeSubscription(subscription.getSubscriptionAlias());
+        }
+      }
+      namedConsumer.close();
+      if (namedConsumer.getMapsSession() != null) {
+        try {
+          DurableConsumerSession.close(sessionState, namedConsumer.getMapsSession()).get();
+        } catch (InterruptedException interrupted) {
+          Thread.currentThread().interrupt();
+          throw new IOException("Interrupted deleting durable consumer", interrupted);
+        } catch (java.util.concurrent.ExecutionException failure) {
+          throw new IOException("Could not delete durable consumer", failure);
+        }
+      }
+    }
 
     JsonObject response = new JsonObject();
     response.addProperty("type", TYPE);

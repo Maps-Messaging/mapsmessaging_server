@@ -39,7 +39,7 @@ public class StreamManager extends RequestHandler {
 
   @Override
   public String getType() {
-    return "$JS.API.STREAM.";
+    return "$JS.API.STREAM";
   }
 
 }

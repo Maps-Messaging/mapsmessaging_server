@@ -75,7 +75,7 @@ public class SessionState implements CloseHandler, CompletionHandler {
   @Getter
   @Setter
   private Session session;
-  private boolean isValid;
+  private volatile boolean isValid;
   private long requestCounter;
   private State currentState;
   @Getter
@@ -129,11 +129,7 @@ public class SessionState implements CloseHandler, CompletionHandler {
   }
 
   public boolean addNamedConsumer(NamedConsumer namedConsumer) {
-    if(!namedConsumers.containsKey(namedConsumer.getName())) {
-      namedConsumers.put(namedConsumer.getName(), namedConsumer);
-      return true;
-    }
-    return false;
+    return namedConsumers.putIfAbsent(namedConsumer.getName(), namedConsumer) == null;
   }
 
   public void sendConnect(String username, String password) {
@@ -157,6 +153,9 @@ public class SessionState implements CloseHandler, CompletionHandler {
   }
 
   public boolean send(NatsFrame frame) {
+    if (!isValid) {
+      return false;
+    }
     protocol.writeFrame(frame);
     return true;
   }
@@ -175,20 +174,53 @@ public class SessionState implements CloseHandler, CompletionHandler {
 
   public void close() throws IOException {
     isValid = false;
-    if(session != null) {
-      CompletableFuture<Session> future = SessionManager.getInstance().closeAsync(session, false);
+    List<CompletableFuture<Session>> closures = new ArrayList<>();
+    IOException problem = null;
+    for (NamedConsumer consumer : namedConsumers.values()) {
       try {
-        activeSubscriptions.clear();
-        destinationSubscriptionAliases.clear();
-        queueGroupCounters.clear();
-        namedConsumers.clear();
-        jetStreamRequestManager.close();
-        subscriptions.clear();
-        future.get();
-      } catch (InterruptedException | ExecutionException e) {
-        Thread.currentThread().interrupt();
-        throw new IOException(e);
+        consumer.close();
+        if (consumer.getMapsSession() != null) {
+          closures.add(io.mapsmessaging.network.protocol.impl.nats.jetstream.stream.consumer.DurableConsumerSession.close(
+              this, consumer.getMapsSession()));
+        }
+      } catch (RuntimeException failed) {
+        if (problem == null) {
+          problem = new IOException("Failed to clean up JetStream consumer", failed);
+        }
       }
+    }
+    namedConsumers.clear();
+    jetStreamRequestManager.close();
+    activeSubscriptions.clear();
+    destinationSubscriptionAliases.clear();
+    queueGroupCounters.clear();
+    subscriptions.clear();
+    if (session != null) {
+      try {
+        closures.add(SessionManager.getInstance().closeAsync(session, false));
+      } catch (RuntimeException failed) {
+        if (problem == null) {
+          problem = new IOException("Failed to queue NATS session closure", failed);
+        }
+      }
+    }
+    for (CompletableFuture<Session> closing : closures) {
+      try {
+        closing.get();
+      } catch (InterruptedException interrupted) {
+        Thread.currentThread().interrupt();
+        if (problem == null) {
+          problem = new IOException("Interrupted closing NATS session", interrupted);
+        }
+        break;
+      } catch (ExecutionException failed) {
+        if (problem == null) {
+          problem = new IOException("Failed to close NATS session", failed.getCause());
+        }
+      }
+    }
+    if (problem != null) {
+      throw problem;
     }
   }
 
@@ -234,7 +266,17 @@ public class SessionState implements CloseHandler, CompletionHandler {
     return null;
   }
 
-  public SubscribedEventManager createSubscription(SubscriptionContext context) throws IOException {
+  public SubscribedEventManager subscribeJetStream(String subject, String alias, ClientAcknowledgement acknowledgement, int maxReceive)
+      throws IOException {
+    SubscriptionContextBuilder builder = new SubscriptionContextBuilder(convertSubject(subject), acknowledgement);
+    builder.setAlias(alias);
+    builder.setSync(true);
+    builder.setNoLocalMessages(false);
+    builder.setReceiveMaximum(maxReceive);
+    return createSubscription(builder.build());
+  }
+
+  public synchronized SubscribedEventManager createSubscription(SubscriptionContext context) throws IOException {
     if (context.getFilter().startsWith("queue")) {
       getSession().findDestination(context.getFilter(), DestinationType.QUEUE);
     }
@@ -257,36 +299,26 @@ public class SessionState implements CloseHandler, CompletionHandler {
   }
 
   public synchronized void removeSubscription(String subscriptionId) {
-    SubscribedEventManager manager = activeSubscriptions.remove(subscriptionId);
-
-    String emptyDestination = null;
     for (Map.Entry<String, List<SubscriptionContext>> entry : subscriptions.entrySet()) {
+      String destination = entry.getKey();
       List<SubscriptionContext> contexts = entry.getValue();
-      boolean removed = contexts.removeIf(context -> subscriptionId.equals(context.getAlias()));
-      if (!removed) {
+      if (!contexts.removeIf(context -> subscriptionId.equals(context.getAlias()))) {
         continue;
       }
 
-      String registeredAlias = destinationSubscriptionAliases.get(entry.getKey());
+      String registeredAlias = destinationSubscriptionAliases.get(destination);
       if (contexts.isEmpty()) {
-        emptyDestination = entry.getKey();
-      } else if (subscriptionId.equals(registeredAlias)) {
-        String replacementAlias = contexts.getFirst().getAlias();
-        destinationSubscriptionAliases.put(entry.getKey(), replacementAlias);
-        if (manager != null) {
-          activeSubscriptions.put(replacementAlias, manager);
+        subscriptions.remove(destination, contexts);
+        destinationSubscriptionAliases.remove(destination);
+        if (registeredAlias != null) {
+          activeSubscriptions.remove(registeredAlias);
+          session.removeSubscription(registeredAlias);
         }
+      } else if (!subscriptionId.equals(registeredAlias)) {
+        activeSubscriptions.remove(subscriptionId);
       }
-      break;
-    }
-
-    if (emptyDestination != null) {
-      subscriptions.remove(emptyDestination);
-      String registeredAlias = destinationSubscriptionAliases.remove(emptyDestination);
-      if (registeredAlias != null) {
-        activeSubscriptions.remove(registeredAlias);
-        session.removeSubscription(registeredAlias);
-      }
+      // Keep the original registered alias until the last context is removed.
+      // The underlying MAPS subscription is still registered under that alias.
     }
   }
 

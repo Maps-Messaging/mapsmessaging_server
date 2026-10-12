@@ -61,8 +61,8 @@ public class ListHandler extends JetStreamFrameHandler {
     }
 
     String stream = parts[4];
-    int offset = json.has(OFFSET_KEY) ? json.get(OFFSET_KEY).getAsInt() : 0;
-    int limit = json.has(LIMIT_KEY) ? json.get(LIMIT_KEY).getAsInt() : 1024;
+    int offset = json != null && json.has(OFFSET_KEY) ? json.get(OFFSET_KEY).getAsInt() : 0;
+    int limit = json != null && json.has(LIMIT_KEY) ? json.get(LIMIT_KEY).getAsInt() : 256;
 
     List<NamedConsumer> all = sessionState.getNamedConsumers().values().stream()
         .filter(c -> stream.equalsIgnoreCase(c.getStreamName()))
@@ -70,7 +70,8 @@ public class ListHandler extends JetStreamFrameHandler {
 
     int total = all.size();
     offset = Math.clamp(offset, 0, total);
-    int toIndex = Math.min(offset + limit, total);
+    limit = Math.clamp(limit, 1, 256);
+    int toIndex = offset + Math.min(limit, total - offset);
     List<NamedConsumer> page = all.subList(offset, toIndex);
 
     JsonArray consumers = new JsonArray();

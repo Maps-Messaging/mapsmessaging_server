@@ -20,11 +20,12 @@
 package io.mapsmessaging.engine.resources;
 
 import io.mapsmessaging.engine.destination.DestinationImpl;
-import io.mapsmessaging.engine.destination.tasks.BulkRemoveMessageTask;
+import io.mapsmessaging.engine.destination.tasks.BulkExpireMessagesTask;
 import io.mapsmessaging.storage.ExpiredStorableHandler;
 import lombok.Setter;
 
 import java.io.IOException;
+import java.util.ArrayDeque;
 import java.util.Queue;
 
 public class MessageExpiryHandler implements ExpiredStorableHandler {
@@ -40,7 +41,13 @@ public class MessageExpiryHandler implements ExpiredStorableHandler {
 
   @Override
   public void expired(Queue<Long> queue) throws IOException {
-    destination.submit(new BulkRemoveMessageTask(destination, queue), DestinationImpl.DELETE_PRIORITY);
+    if (!queue.isEmpty()) {
+      // Storage may reuse or close the callback's queue immediately on return.
+      // Serialize removal behind the resource operation that triggered expiry,
+      // then notify subscriptions after its registration tasks have been queued.
+      destination.submit(new BulkExpireMessagesTask(destination, new ArrayDeque<>(queue)),
+          DestinationImpl.DELETE_PRIORITY);
+    }
   }
 
 }
