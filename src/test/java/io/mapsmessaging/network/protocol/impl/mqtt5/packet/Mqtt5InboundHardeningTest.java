@@ -20,6 +20,7 @@ package io.mapsmessaging.network.protocol.impl.mqtt5.packet;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -66,7 +67,7 @@ class Mqtt5InboundHardeningTest {
   @Test
   void absentReceiveMaximumRemainsValid() throws Exception {
     Connect5 connect = parseConnect(new byte[0]);
-    assertEquals(null, connect.getProperties().get(MessagePropertyFactory.RECEIVE_MAXIMUM));
+    assertNull(connect.getProperties().get(MessagePropertyFactory.RECEIVE_MAXIMUM));
   }
 
   @Test

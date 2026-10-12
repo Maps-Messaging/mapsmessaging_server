@@ -24,6 +24,8 @@ import io.mapsmessaging.network.io.Packet;
 import io.mapsmessaging.network.protocol.EndOfBufferException;
 import io.mapsmessaging.network.protocol.impl.mqtt.packet.MalformedException;
 import io.mapsmessaging.network.protocol.impl.mqtt5.packet.properties.MessageProperty;
+import io.mapsmessaging.network.protocol.impl.mqtt5.packet.properties.MessagePropertyFactory;
+import io.mapsmessaging.network.protocol.impl.mqtt5.packet.properties.ReceiveMaximum;
 import lombok.Getter;
 import lombok.Setter;
 

@@ -85,7 +85,7 @@ class Mqtt5ListenerHardeningTest {
     Disconnect5 rejection = assertInstanceOf(Disconnect5.class,
         new PublishListener5().handlePacket(publish, null, endPoint, protocol));
 
-    assertEquals(StatusCode.PROTOCOL_ERROR, rejection.getStatusCode());
+    assertEquals(StatusCode.PROTOCOL_ERROR, rejection.getDisconnectReason());
     assertTrue(rejection.getCallback() != null);
     verify(protocol).setClosing(true);
   }
