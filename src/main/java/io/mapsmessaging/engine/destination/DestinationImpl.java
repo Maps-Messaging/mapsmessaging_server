@@ -63,6 +63,7 @@ import org.jetbrains.annotations.Nullable;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Queue;
@@ -380,10 +381,14 @@ public class DestinationImpl implements BaseDestination {
     list.addAll(subscriptionManager.getAll());
     if(list.size() != resource.size()) {
       resource.keepOnly(list);
+      Queue<Long> expired = new ArrayDeque<>();
       for(Long subId:list){
         if(!resource.contains(subId)){
-          subscriptionManager.expired(subId);
+          expired.add(subId);
         }
+      }
+      if (!expired.isEmpty()) {
+        expireSubscriptions(expired);
       }
     }
   }
@@ -582,6 +587,15 @@ public class DestinationImpl implements BaseDestination {
   }
   //</editor-fold>
 
+  /**
+   * Invalidate delivery references globally while leaving each subscription's
+   * acknowledgement controller available to finish in-flight protocol exchanges.
+   */
+  public Future<Response> expireSubscriptions(Queue<Long> expired) {
+    return submit(new ExpireSubscriptionsTask(subscriptionManager, schemaSubscriptionManager,
+        new ArrayDeque<>(expired)));
+  }
+
   public void addSchemaSubscription(@NonNull @NotNull Subscription subscription) {
     stats.subscriptionAdded();
     schemaSubscriptionManager.put(subscription.getSessionId(), subscription);
@@ -610,7 +624,7 @@ public class DestinationImpl implements BaseDestination {
       long expiry = message.getExpiry();
       if (expiry > 0 && expiry < System.currentTimeMillis()) {
         submit(new RemoveMessageTask(this, messageId), RETRIEVE_PRIORITY);
-        subscriptionManager.expired(messageId);
+        expireSubscriptions(new ArrayDeque<>(List.of(messageId)));
         message = null;
         stats.expiredMessage();
       } else {

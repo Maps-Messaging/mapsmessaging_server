@@ -151,6 +151,26 @@ class DestinationSubscriptionManagerTest {
   }
 
   @Test
+  void expired_clears_every_subscription_even_when_the_first_reports_success() {
+    DestinationSubscriptionManager manager = new DestinationSubscriptionManager("dest");
+    FakeSubscribable first = new FakeSubscribable("first", "first-session")
+        .withInterest(Set.of(99L)).withAll(Set.of(99L)).withExpiredResult(true);
+    FakeSubscribable second = new FakeSubscribable("second", "second-session")
+        .withInterest(Set.of(99L)).withAll(Set.of(99L)).withExpiredResult(true);
+    FakeSubscribable third = new FakeSubscribable("third", "third-session")
+        .withInterest(Set.of(99L)).withAll(Set.of(99L)).withExpiredResult(true);
+    manager.put("first", first);
+    manager.put("second", second);
+    manager.put("third", third);
+    Assertions.assertTrue(manager.expired(99));
+    Assertions.assertFalse(manager.hasInterest(99));
+    Assertions.assertTrue(manager.getAll().isEmpty());
+    Assertions.assertEquals(1, first.expiredCalls.get());
+    Assertions.assertEquals(1, second.expiredCalls.get());
+    Assertions.assertEquals(1, third.expiredCalls.get());
+  }
+
+  @Test
   void pauseAndResume_fanOutToAllSubscribables() {
     DestinationSubscriptionManager manager = new DestinationSubscriptionManager("dest");
 
@@ -244,6 +264,7 @@ class DestinationSubscriptionManagerTest {
     private volatile int size;
     private volatile SubscriptionStateDTO state;
 
+    private final AtomicInteger expiredCalls = new AtomicInteger();
     private final AtomicInteger registerCalls = new AtomicInteger();
     private final AtomicInteger pauseCalls = new AtomicInteger();
     private final AtomicInteger resumeCalls = new AtomicInteger();
@@ -308,6 +329,11 @@ class DestinationSubscriptionManagerTest {
 
     @Override
     public boolean expired(long messageIdentifier) {
+      expiredCalls.incrementAndGet();
+      if (expiredResult) {
+        interest.remove(messageIdentifier);
+        all.remove(messageIdentifier);
+      }
       return expiredResult;
     }
 
