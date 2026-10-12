@@ -49,4 +49,57 @@ class JetStreamArchiveManagerIdentityTest {
         () -> JetStreamArchiveManager.getInstance().ensureArchive(connection, "AUTH_CHECK", "AUTH_CHECK/events"));
   }
 
+  @Test
+  void cached_and_restored_topic_names_are_rechecked_against_the_current_destination() throws Exception {
+    var connection = mock(io.mapsmessaging.network.protocol.impl.nats.state.SessionState.class);
+    var parent = mock(io.mapsmessaging.api.Session.class);
+    var security = mock(io.mapsmessaging.engine.session.security.SecurityContext.class);
+    when(connection.getSession()).thenReturn(parent);
+    when(parent.getSecurityContext()).thenReturn(security);
+    when(security.isLoggedIn()).thenReturn(true);
+    when(security.getSubject()).thenReturn(new javax.security.auth.Subject());
+    when(security.getUsername()).thenReturn("archive-recreation-test");
+    var protocol = mock(io.mapsmessaging.network.protocol.impl.nats.NatsProtocol.class);
+    when(protocol.getEndPoint()).thenReturn(mock(io.mapsmessaging.network.io.EndPoint.class));
+    when(connection.getProtocol()).thenReturn(protocol);
+    String stream = "RECREATED_" + java.util.UUID.randomUUID().toString().replace("-", "");
+    String topic = stream + "/events";
+    var archive = mock(io.mapsmessaging.api.Session.class);
+    String archiveId = JetStreamArchiveManager.archiveSessionId("archive-recreation-test", stream);
+    when(archive.getName()).thenReturn(archiveId);
+    var firstDestination = mock(io.mapsmessaging.api.Destination.class);
+    var replacementDestination = mock(io.mapsmessaging.api.Destination.class);
+    when(archive.findDestination(topic, io.mapsmessaging.api.features.DestinationType.TOPIC)).thenReturn(
+        java.util.concurrent.CompletableFuture.completedFuture(firstDestination),
+        java.util.concurrent.CompletableFuture.completedFuture(replacementDestination));
+    var sessions = mock(io.mapsmessaging.api.SessionManager.class);
+    when(sessions.createAsync(any(io.mapsmessaging.engine.session.SessionContext.class),
+        any(io.mapsmessaging.api.MessageListener.class))).thenReturn(java.util.concurrent.CompletableFuture.completedFuture(archive));
+    when(sessions.closeAsync(archive, true)).thenReturn(java.util.concurrent.CompletableFuture.completedFuture(archive));
+    var firstManager = mock(io.mapsmessaging.api.SubscribedEventManager.class);
+    var replacementManager = mock(io.mapsmessaging.api.SubscribedEventManager.class);
+    try (var sessionAccess = mockStatic(io.mapsmessaging.api.SessionManager.class);
+         var subscriptions = mockStatic(io.mapsmessaging.api.NatsJetStreamSubscriptions.class)) {
+      sessionAccess.when(io.mapsmessaging.api.SessionManager::getInstance).thenReturn(sessions);
+      // Simulate a persistent topic name already present before the first lookup.
+      subscriptions.when(() -> io.mapsmessaging.api.NatsJetStreamSubscriptions.filters(archive))
+          .thenReturn(java.util.Set.of(topic));
+      subscriptions.when(() -> io.mapsmessaging.api.NatsJetStreamSubscriptions.ensure(
+          eq(archive), eq(firstDestination), any())).thenReturn(firstManager);
+      subscriptions.when(() -> io.mapsmessaging.api.NatsJetStreamSubscriptions.ensure(
+          eq(archive), eq(replacementDestination), any())).thenReturn(replacementManager);
+      try {
+        assertEquals(archiveId, JetStreamArchiveManager.getInstance().ensureArchive(connection, stream, topic));
+        assertEquals(archiveId, JetStreamArchiveManager.getInstance().ensureArchive(connection, stream, topic));
+        verify(archive, times(2)).findDestination(topic, io.mapsmessaging.api.features.DestinationType.TOPIC);
+        subscriptions.verify(() -> io.mapsmessaging.api.NatsJetStreamSubscriptions.ensure(
+            eq(archive), eq(firstDestination), any()));
+        subscriptions.verify(() -> io.mapsmessaging.api.NatsJetStreamSubscriptions.ensure(
+            eq(archive), eq(replacementDestination), any()));
+      } finally {
+        JetStreamArchiveManager.getInstance().releaseStream(stream);
+      }
+    }
+  }
+
 }

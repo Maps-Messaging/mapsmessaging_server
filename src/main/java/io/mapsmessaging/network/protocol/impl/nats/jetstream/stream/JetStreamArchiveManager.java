@@ -25,7 +25,6 @@ import io.mapsmessaging.api.features.RetainHandler;
 import io.mapsmessaging.api.Session;
 import io.mapsmessaging.api.SessionContextBuilder;
 import io.mapsmessaging.api.SessionManager;
-import io.mapsmessaging.api.SubscribedEventManager;
 import io.mapsmessaging.api.SubscriptionContextBuilder;
 import io.mapsmessaging.api.features.ClientAcknowledgement;
 import io.mapsmessaging.api.features.DestinationType;
@@ -87,27 +86,23 @@ public final class JetStreamArchiveManager {
       archives.put(sessionId, archive);
     }
 
-    if (!archive.topics().contains(topic)) {
-      Destination destination = await(archive.session().findDestination(topic, DestinationType.TOPIC));
-      if (destination == null) {
-        throw new IOException("MAPS topic not found for JetStream archive: " + topic);
-      }
-      SubscribedEventManager restored = archive.session().isRestored()
-          ? NatsJetStreamSubscriptions.restore(archive.session(), destination) : null;
-      if (restored == null) {
-        SubscriptionContextBuilder builder = new SubscriptionContextBuilder(
-            topic, ClientAcknowledgement.INDIVIDUAL);
-        builder.setAlias(archiveAlias(stream, topic));
-        builder.setSync(true);
-        builder.setRetainHandler(RetainHandler.DO_NOT_SEND);
-        builder.setNoLocalMessages(false);
-        builder.setReceiveMaximum(1);
-        if (NatsJetStreamSubscriptions.subscribe(archive.session(), destination, builder.build()) == null) {
-          throw new IOException("MAPS did not register the JetStream archive for " + topic);
-        }
-      }
-      archive.topics().add(topic);
+    // Always resolve the current destination. Cached topic names and restored
+    // metadata can outlive a physically deleted/recreated MAPS destination.
+    Destination destination = await(archive.session().findDestination(topic, DestinationType.TOPIC));
+    if (destination == null) {
+      throw new IOException("MAPS topic not found for JetStream archive: " + topic);
     }
+    SubscriptionContextBuilder builder = new SubscriptionContextBuilder(
+        topic, ClientAcknowledgement.INDIVIDUAL);
+    builder.setAlias(archiveAlias(stream, topic));
+    builder.setSync(true);
+    builder.setRetainHandler(RetainHandler.DO_NOT_SEND);
+    builder.setNoLocalMessages(false);
+    builder.setReceiveMaximum(1);
+    if (NatsJetStreamSubscriptions.ensure(archive.session(), destination, builder.build()) == null) {
+      throw new IOException("MAPS did not register the JetStream archive for " + topic);
+    }
+    archive.topics().add(topic);
     return archive.session().getName();
   }
 

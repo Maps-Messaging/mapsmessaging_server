@@ -71,6 +71,22 @@ public final class NatsJetStreamSubscriptions {
     return session.addSubscription(context);
   }
 
+  public static SubscribedEventManager ensure(Session session, Destination destination,
+                                              SubscriptionContext context) throws IOException {
+    SubscribedEventManager existing = restore(session, destination);
+    if (existing != null) {
+      return existing;
+    }
+    // A topic name in persisted metadata does not prove that its old destination
+    // object still exists. Retire only the stale NATS registration, then bind the
+    // ordinary subscription to the current destination through the normal API.
+    String topic = destination.getFullyQualifiedNamespace();
+    if (filters(session).contains(topic)) {
+      session.removeSubscription(topic);
+    }
+    return subscribe(session, destination, context);
+  }
+
   public static Set<String> filters(Session session) {
     Set<String> filters = new HashSet<>();
     for (var context : session.getSessionInformation().getSubscriptionInfo().getSubscriptionContextList()) {

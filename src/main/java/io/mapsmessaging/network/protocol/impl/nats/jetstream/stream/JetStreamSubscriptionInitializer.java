@@ -62,9 +62,13 @@ public final class JetStreamSubscriptionInitializer {
     Future<Response> future = destination.submit(() -> {
       DestinationSubscription archive = destination.getSubscription(archiveSessionId);
       DestinationSubscription consumer = destination.getSubscription(consumerSessionId);
-      if (archive == null || consumer == null) {
-        throw new IOException("JetStream archive or consumer subscription is missing for "
-            + destination.getFullyQualifiedNamespace());
+      if (archive == null) {
+        throw new IOException("JetStream archive subscription is missing for "
+            + destination.getFullyQualifiedNamespace() + " (session " + archiveSessionId + ")");
+      }
+      if (consumer == null) {
+        throw new IOException("JetStream consumer subscription is missing for "
+            + destination.getFullyQualifiedNamespace() + " (session " + consumerSessionId + ")");
       }
       if (!archive.isSync() || !consumer.isSync()) {
         throw new IOException("JetStream archive must be synchronous and unconsumed");

@@ -141,7 +141,7 @@ public class CreateHandler extends JetStreamFrameHandler {
         consumer.attachMapsSession(consumerSession);
       } catch (IOException | RuntimeException exception) {
         cleanupFailedConsumer(sessionState, consumerSession, registered);
-        return buildError(TYPE, "Failed to register consumer: " + exception.getMessage(), replyTo, sessionState);
+        return buildError(TYPE, 500, "Failed to register consumer: " + exception.getMessage(), replyTo, sessionState);
       }
     }
 

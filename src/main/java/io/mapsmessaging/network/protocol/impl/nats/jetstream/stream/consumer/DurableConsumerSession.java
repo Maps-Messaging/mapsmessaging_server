@@ -170,20 +170,13 @@ public final class DurableConsumerSession {
     if (bound == null) {
       throw new IOException("No MAPS destination for durable JetStream consumer: " + destination);
     }
-    if (persistent.isRestored()) {
-      SubscribedEventManager resumed = NatsJetStreamSubscriptions.restore(persistent, bound);
-      if (resumed != null) {
-        return resumed;
-      }
-    }
     SubscriptionContextBuilder builder = new SubscriptionContextBuilder(destination.replace('.', '/'), acknowledgement);
     builder.setAlias(alias);
     builder.setSync(true);
     builder.setRetainHandler(RetainHandler.DO_NOT_SEND);
     builder.setNoLocalMessages(false);
     builder.setReceiveMaximum(receiveMaximum);
-    SubscribedEventManager manager = NatsJetStreamSubscriptions.subscribe(persistent, bound, builder.build());
-    return manager;
+    return NatsJetStreamSubscriptions.ensure(persistent, bound, builder.build());
   }
 
   private static <T> T await(CompletableFuture<T> future) throws IOException {

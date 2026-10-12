@@ -92,7 +92,7 @@ class CreateHandlerDefaultsTest {
     try (var subscriptions = mockStatic(io.mapsmessaging.api.NatsJetStreamSubscriptions.class)) {
       assertNull(new CreateHandler().subscribeConsumerSubject(session, config, stream,
           "orders_stream", "jetstream:orders_stream:consumer:0"));
-      subscriptions.verify(() -> io.mapsmessaging.api.NatsJetStreamSubscriptions.subscribe(
+      subscriptions.verify(() -> io.mapsmessaging.api.NatsJetStreamSubscriptions.ensure(
           eq(session), any(Destination.class), argThat((SubscriptionContext context) ->
               context.getAlias().equals("jetstream:orders_stream:consumer:0")
                   && context.isSync()

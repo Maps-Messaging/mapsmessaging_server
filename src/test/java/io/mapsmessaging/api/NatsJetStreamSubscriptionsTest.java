@@ -110,4 +110,73 @@ class NatsJetStreamSubscriptionsTest {
     assertEquals(java.util.Set.of(first.getFilter(), second.getFilter()), NatsJetStreamSubscriptions.filters(session));
   }
 
+  @Test
+  void ensure_replaces_stale_metadata_when_the_destination_was_recreated() throws Exception {
+    SessionImpl engine = mock(SessionImpl.class);
+    SecurityContext security = mock(SecurityContext.class);
+    when(engine.getSecurityContext()).thenReturn(security);
+    when(engine.getName()).thenReturn("archive");
+    when(engine.getContext()).thenReturn(mock(io.mapsmessaging.engine.session.SessionContext.class));
+    Session session = new Session(engine, event -> {});
+    DestinationImpl resource = mock(DestinationImpl.class);
+    when(resource.getResourceType()).thenReturn(io.mapsmessaging.api.features.DestinationType.TOPIC);
+    when(resource.getFullyQualifiedNamespace()).thenReturn("EVENTS/orders/created");
+    Destination destination = new Destination(resource, security);
+    var context = new SubscriptionContextBuilder("EVENTS/orders/created",
+        io.mapsmessaging.api.features.ClientAcknowledgement.INDIVIDUAL).setSync(true).build();
+    var details = new io.mapsmessaging.dto.rest.session.SessionInformationDTO();
+    var subscriptions = new io.mapsmessaging.dto.rest.session.SubscriptionInformationDTO();
+    subscriptions.setSubscriptionContextList(java.util.List.of(context.getDetails()));
+    details.setSubscriptionInfo(subscriptions);
+    when(engine.getSessionInformation()).thenReturn(details);
+    doAnswer(invocation -> {
+      Callable<Response> task = invocation.getArgument(0);
+      return CompletableFuture.completedFuture(task.call());
+    }).when(resource).submit(any(Callable.class));
+    SubscribedEventManager replacement = mock(SubscribedEventManager.class);
+    when(engine.addSubscription(context)).thenReturn(replacement);
+    AuthManager auth = mock(AuthManager.class);
+    when(auth.canAccess(any(), any(), any())).thenReturn(true);
+    try (var authentication = mockStatic(AuthManager.class)) {
+      authentication.when(AuthManager::getInstance).thenReturn(auth);
+      assertSame(replacement, NatsJetStreamSubscriptions.ensure(session, destination, context));
+      var order = inOrder(engine);
+      order.verify(engine).removeSubscription("EVENTS/orders/created");
+      order.verify(engine).addSubscription(context);
+    }
+  }
+
+  @Test
+  void ensure_preserves_valid_subscription_without_removing_or_readding_state() throws Exception {
+    SessionImpl engine = mock(SessionImpl.class);
+    SecurityContext security = mock(SecurityContext.class);
+    when(engine.getSecurityContext()).thenReturn(security);
+    when(engine.getName()).thenReturn("archive");
+    when(engine.getContext()).thenReturn(mock(io.mapsmessaging.engine.session.SessionContext.class));
+    Session session = new Session(engine, event -> {});
+    DestinationImpl resource = mock(DestinationImpl.class);
+    when(resource.getResourceType()).thenReturn(io.mapsmessaging.api.features.DestinationType.TOPIC);
+    when(resource.getFullyQualifiedNamespace()).thenReturn("EVENTS/orders/created");
+    Destination destination = new Destination(resource, security);
+    DestinationSubscription existing = mock(DestinationSubscription.class);
+    when(existing.isSync()).thenReturn(true);
+    when(resource.getSubscription("archive")).thenReturn(existing);
+    doAnswer(invocation -> {
+      Callable<Response> task = invocation.getArgument(0);
+      return CompletableFuture.completedFuture(task.call());
+    }).when(resource).submit(any(Callable.class));
+    AuthManager auth = mock(AuthManager.class);
+    when(auth.canAccess(any(), any(), any())).thenReturn(true);
+    var context = new SubscriptionContextBuilder("EVENTS/orders/created",
+        io.mapsmessaging.api.features.ClientAcknowledgement.INDIVIDUAL).setSync(true).build();
+    try (var authentication = mockStatic(AuthManager.class)) {
+      authentication.when(AuthManager::getInstance).thenReturn(auth);
+      assertNotNull(NatsJetStreamSubscriptions.ensure(session, destination, context));
+      verify(engine, never()).removeSubscription(anyString());
+      verify(engine, never()).addSubscription(any());
+      verify(engine, never()).getSessionInformation();
+      verify(existing).wakeUp(engine);
+    }
+  }
+
 }
