@@ -68,6 +68,7 @@ class NatsProtocolFailureCoverageTest {
     set(NatsProtocol.class, protocol, "selectorTask", selectorTask);
     set(NatsProtocol.class, protocol, "logger", mock(Logger.class));
     set(NatsProtocol.class, protocol, "factory", factory);
+    set(NatsProtocol.class, protocol, "outboundCompletions", new NatsOutboundCompletionTracker());
     return protocol;
   }
 

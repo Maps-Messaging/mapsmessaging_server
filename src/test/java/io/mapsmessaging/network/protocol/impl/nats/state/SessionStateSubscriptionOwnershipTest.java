@@ -20,6 +20,8 @@
 package io.mapsmessaging.network.protocol.impl.nats.state;
 
 import io.mapsmessaging.api.Session;
+import io.mapsmessaging.api.SubscriptionContextBuilder;
+import io.mapsmessaging.api.features.ClientAcknowledgement;
 import io.mapsmessaging.api.SubscribedEventManager;
 import io.mapsmessaging.engine.destination.subscription.SubscriptionContext;
 import io.mapsmessaging.network.io.EndPoint;
@@ -64,10 +66,8 @@ class SessionStateSubscriptionOwnershipTest {
   }
 
   private static SubscriptionContext context(String destination, String alias) {
-    SubscriptionContext context = mock(SubscriptionContext.class);
-    when(context.getDestinationName()).thenReturn(destination);
-    when(context.getAlias()).thenReturn(alias);
-    return context;
+    return new SubscriptionContextBuilder(destination, ClientAcknowledgement.AUTO)
+        .setAlias(alias).build();
   }
   @Test
   void duplicateNamedConsumerRegistrationCannotReplaceExistingConsumer() {
